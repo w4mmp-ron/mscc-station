@@ -5,10 +5,6 @@ Private workspace for Multus SDR / MSCC / Proficio firmware and tools.
 **Owner:** w4mmp-ron  
 **Share with Stew:** invite collaborator on this GitHub repo.
 
-## Excluded from this repo
-- `solar-monitor/`
-- `mscc-client/` (client app development not in this tree)
-- `main/` (empty placeholder)
 
 ## Notable projects
 | Path | Notes |
