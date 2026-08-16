@@ -1,0 +1,560 @@
+C51 COMPILER V9.51   I2C_DISPLAY                                                           08/15/2026 23:55:57 PAGE 1   
+
+
+C51 COMPILER V9.51, COMPILATION OF MODULE I2C_DISPLAY
+OBJECT MODULE PLACED IN .\DP8051\DP8051_Keil_951\Debug\I2C_DISPLAY.obj
+COMPILER INVOKED BY: C:\Program Files (x86)\Cypress\PSoC Creator\4.2\PSoC Creator\import\keil\pk51\9.51\C51\BIN\c51.exe 
+                    -Generated_Source\PSoC3\I2C_DISPLAY.c NOIV LARGE MODDP2 OMF2 VB(1) NOIP INCDIR(.,Generated_Source\PSoC3) FF(3) DB WL(2) P
+                    -R(.\DP8051\DP8051_Keil_951\Debug/I2C_DISPLAY.lst) CD OT(5,SPEED) OA OJ(.\DP8051\DP8051_Keil_951\Debug\I2C_DISPLAY.obj)
+
+line level    source
+
+   1          /*******************************************************************************
+   2          * File Name: I2C_DISPLAY.c
+   3          * Version 3.50
+   4          *
+   5          * Description:
+   6          *  This file provides the source code of APIs for the I2C component.
+   7          *  The actual protocol and operation code resides in the interrupt service
+   8          *  routine file.
+   9          *
+  10          *******************************************************************************
+  11          * Copyright 2008-2015, Cypress Semiconductor Corporation. All rights reserved.
+  12          * You may use this file only in accordance with the license, terms, conditions,
+  13          * disclaimers, and limitations in the end user license agreement accompanying
+  14          * the software package with which this file was provided.
+  15          *******************************************************************************/
+  16          
+  17          #include "I2C_DISPLAY_PVT.h"
+  18          
+  19          
+  20          /**********************************
+  21          *      System variables
+  22          **********************************/
+  23          
+  24          uint8 I2C_DISPLAY_initVar = 0u; /* Defines if component was initialized */
+  25          
+  26          volatile uint8 I2C_DISPLAY_state;  /* Current state of I2C FSM */
+  27          
+  28          
+  29          /*******************************************************************************
+  30          * Function Name: I2C_DISPLAY_Init
+  31          ********************************************************************************
+  32          *
+  33          * Summary:
+  34          *  Initializes I2C registers with initial values provided from customizer.
+  35          *
+  36          * Parameters:
+  37          *  None.
+  38          *
+  39          * Return:
+  40          *  None.
+  41          *
+  42          * Global variables:
+  43          *  None.
+  44          *
+  45          * Reentrant:
+  46          *  No.
+  47          *
+  48          *******************************************************************************/
+  49          void I2C_DISPLAY_Init(void) 
+  50          {
+  51   1      #if (I2C_DISPLAY_FF_IMPLEMENTED)
+  52   1          /* Configure fixed function block */
+  53   1          I2C_DISPLAY_CFG_REG  = I2C_DISPLAY_DEFAULT_CFG;
+C51 COMPILER V9.51   I2C_DISPLAY                                                           08/15/2026 23:55:57 PAGE 2   
+
+  54   1          I2C_DISPLAY_XCFG_REG = I2C_DISPLAY_DEFAULT_XCFG;
+  55   1          I2C_DISPLAY_ADDR_REG = I2C_DISPLAY_DEFAULT_ADDR;
+  56   1          I2C_DISPLAY_CLKDIV1_REG = LO8(I2C_DISPLAY_DEFAULT_DIVIDE_FACTOR);
+  57   1          I2C_DISPLAY_CLKDIV2_REG = HI8(I2C_DISPLAY_DEFAULT_DIVIDE_FACTOR);
+  58   1      
+  59   1      #else
+                  uint8 intState;
+              
+                  /* Configure control and interrupt sources */
+                  I2C_DISPLAY_CFG_REG      = I2C_DISPLAY_DEFAULT_CFG;
+                  I2C_DISPLAY_INT_MASK_REG = I2C_DISPLAY_DEFAULT_INT_MASK;
+              
+                  /* Enable interrupt generation in status */
+                  intState = CyEnterCriticalSection();
+                  I2C_DISPLAY_INT_ENABLE_REG |= I2C_DISPLAY_INTR_ENABLE;
+                  CyExitCriticalSection(intState);
+              
+                  /* Configure bit counter */
+                  #if (I2C_DISPLAY_MODE_SLAVE_ENABLED)
+                      I2C_DISPLAY_PERIOD_REG = I2C_DISPLAY_DEFAULT_PERIOD;
+                  #endif  /* (I2C_DISPLAY_MODE_SLAVE_ENABLED) */
+              
+                  /* Configure clock generator */
+                  #if (I2C_DISPLAY_MODE_MASTER_ENABLED)
+                      I2C_DISPLAY_MCLK_PRD_REG = I2C_DISPLAY_DEFAULT_MCLK_PRD;
+                      I2C_DISPLAY_MCLK_CMP_REG = I2C_DISPLAY_DEFAULT_MCLK_CMP;
+                  #endif /* (I2C_DISPLAY_MODE_MASTER_ENABLED) */
+              #endif /* (I2C_DISPLAY_FF_IMPLEMENTED) */
+  82   1      
+  83   1      #if (I2C_DISPLAY_TIMEOUT_ENABLED)
+                  I2C_DISPLAY_TimeoutInit();
+              #endif /* (I2C_DISPLAY_TIMEOUT_ENABLED) */
+  86   1      
+  87   1          /* Configure internal interrupt */
+  88   1          CyIntDisable    (I2C_DISPLAY_ISR_NUMBER);
+  89   1          CyIntSetPriority(I2C_DISPLAY_ISR_NUMBER, I2C_DISPLAY_ISR_PRIORITY);
+  90   1          #if (I2C_DISPLAY_INTERN_I2C_INTR_HANDLER)
+  91   1              (void) CyIntSetVector(I2C_DISPLAY_ISR_NUMBER, &I2C_DISPLAY_ISR);
+  92   1          #endif /* (I2C_DISPLAY_INTERN_I2C_INTR_HANDLER) */
+  93   1      
+  94   1          /* Set FSM to default state */
+  95   1          I2C_DISPLAY_state = I2C_DISPLAY_SM_IDLE;
+  96   1      
+  97   1      #if (I2C_DISPLAY_MODE_SLAVE_ENABLED)
+                  /* Clear status and buffers index */
+                  I2C_DISPLAY_slStatus = 0u;
+                  I2C_DISPLAY_slRdBufIndex = 0u;
+                  I2C_DISPLAY_slWrBufIndex = 0u;
+              
+                  /* Configure matched address */
+                  I2C_DISPLAY_SlaveSetAddress(I2C_DISPLAY_DEFAULT_ADDR);
+              #endif /* (I2C_DISPLAY_MODE_SLAVE_ENABLED) */
+ 106   1      
+ 107   1      #if (I2C_DISPLAY_MODE_MASTER_ENABLED)
+ 108   1          /* Clear status and buffers index */
+ 109   1          I2C_DISPLAY_mstrStatus = 0u;
+ 110   1          I2C_DISPLAY_mstrRdBufIndex = 0u;
+ 111   1          I2C_DISPLAY_mstrWrBufIndex = 0u;
+ 112   1      #endif /* (I2C_DISPLAY_MODE_MASTER_ENABLED) */
+ 113   1      }
+ 114          
+ 115          
+C51 COMPILER V9.51   I2C_DISPLAY                                                           08/15/2026 23:55:57 PAGE 3   
+
+ 116          /*******************************************************************************
+ 117          * Function Name: I2C_DISPLAY_Enable
+ 118          ********************************************************************************
+ 119          *
+ 120          * Summary:
+ 121          *  Enables I2C operations.
+ 122          *
+ 123          * Parameters:
+ 124          *  None.
+ 125          *
+ 126          * Return:
+ 127          *  None.
+ 128          *
+ 129          * Global variables:
+ 130          *  None.
+ 131          *
+ 132          *******************************************************************************/
+ 133          void I2C_DISPLAY_Enable(void) 
+ 134          {
+ 135   1      #if (I2C_DISPLAY_FF_IMPLEMENTED)
+ 136   1          uint8 intState;
+ 137   1      
+ 138   1          /* Enable power to block */
+ 139   1          intState = CyEnterCriticalSection();
+ 140   1          I2C_DISPLAY_ACT_PWRMGR_REG  |= I2C_DISPLAY_ACT_PWR_EN;
+ 141   1          I2C_DISPLAY_STBY_PWRMGR_REG |= I2C_DISPLAY_STBY_PWR_EN;
+ 142   1          CyExitCriticalSection(intState);
+ 143   1      #else
+                  #if (I2C_DISPLAY_MODE_SLAVE_ENABLED)
+                      /* Enable bit counter */
+                      uint8 intState = CyEnterCriticalSection();
+                      I2C_DISPLAY_COUNTER_AUX_CTL_REG |= I2C_DISPLAY_CNT7_ENABLE;
+                      CyExitCriticalSection(intState);
+                  #endif /* (I2C_DISPLAY_MODE_SLAVE_ENABLED) */
+              
+                  /* Enable slave or master bits */
+                  I2C_DISPLAY_CFG_REG |= I2C_DISPLAY_ENABLE_MS;
+              #endif /* (I2C_DISPLAY_FF_IMPLEMENTED) */
+ 154   1      
+ 155   1      #if (I2C_DISPLAY_TIMEOUT_ENABLED)
+                  I2C_DISPLAY_TimeoutEnable();
+              #endif /* (I2C_DISPLAY_TIMEOUT_ENABLED) */
+ 158   1      }
+ 159          
+ 160          
+ 161          /*******************************************************************************
+ 162          * Function Name: I2C_DISPLAY_Start
+ 163          ********************************************************************************
+ 164          *
+ 165          * Summary:
+ 166          *  Starts the I2C hardware. Enables Active mode power template bits or clock
+ 167          *  gating as appropriate. It is required to be executed before I2C bus
+ 168          *  operation.
+ 169          *
+ 170          * Parameters:
+ 171          *  None.
+ 172          *
+ 173          * Return:
+ 174          *  None.
+ 175          *
+ 176          * Side Effects:
+ 177          *  This component automatically enables its interrupt.  If I2C is enabled !
+C51 COMPILER V9.51   I2C_DISPLAY                                                           08/15/2026 23:55:57 PAGE 4   
+
+ 178          *  without the interrupt enabled, it can lock up the I2C bus.
+ 179          *
+ 180          * Global variables:
+ 181          *  I2C_DISPLAY_initVar - This variable is used to check the initial
+ 182          *                             configuration, modified on the first
+ 183          *                             function call.
+ 184          *
+ 185          * Reentrant:
+ 186          *  No.
+ 187          *
+ 188          *******************************************************************************/
+ 189          void I2C_DISPLAY_Start(void) 
+ 190          {
+ 191   1          if (0u == I2C_DISPLAY_initVar)
+ 192   1          {
+ 193   2              I2C_DISPLAY_Init();
+ 194   2              I2C_DISPLAY_initVar = 1u; /* Component initialized */
+ 195   2          }
+ 196   1      
+ 197   1          I2C_DISPLAY_Enable();
+ 198   1          I2C_DISPLAY_EnableInt();
+ 199   1      }
+ 200          
+ 201          
+ 202          /*******************************************************************************
+ 203          * Function Name: I2C_DISPLAY_Stop
+ 204          ********************************************************************************
+ 205          *
+ 206          * Summary:
+ 207          *  Disables I2C hardware and disables I2C interrupt. Disables Active mode power
+ 208          *  template bits or clock gating as appropriate.
+ 209          *
+ 210          * Parameters:
+ 211          *  None.
+ 212          *
+ 213          * Return:
+ 214          *  None.
+ 215          *
+ 216          *******************************************************************************/
+ 217          void I2C_DISPLAY_Stop(void) 
+ 218          {
+ 219   1          I2C_DISPLAY_DisableInt();
+ 220   1      
+ 221   1      #if (I2C_DISPLAY_TIMEOUT_ENABLED)
+                  I2C_DISPLAY_TimeoutStop();
+              #endif  /* End (I2C_DISPLAY_TIMEOUT_ENABLED) */
+ 224   1      
+ 225   1      #if (I2C_DISPLAY_FF_IMPLEMENTED)
+ 226   1          {
+ 227   2              uint8 intState;
+ 228   2              uint16 blockResetCycles;
+ 229   2      
+ 230   2              /* Store registers effected by block disable */
+ 231   2              I2C_DISPLAY_backup.addr    = I2C_DISPLAY_ADDR_REG;
+ 232   2              I2C_DISPLAY_backup.clkDiv1 = I2C_DISPLAY_CLKDIV1_REG;
+ 233   2              I2C_DISPLAY_backup.clkDiv2 = I2C_DISPLAY_CLKDIV2_REG;
+ 234   2      
+ 235   2              /* Calculate number of cycles to reset block */
+ 236   2              blockResetCycles = ((uint16) ((uint16) I2C_DISPLAY_CLKDIV2_REG << 8u) | I2C_DISPLAY_CLKDIV1_REG) +
+             - 1u;
+ 237   2      
+ 238   2              /* Disable block */
+C51 COMPILER V9.51   I2C_DISPLAY                                                           08/15/2026 23:55:57 PAGE 5   
+
+ 239   2              I2C_DISPLAY_CFG_REG &= (uint8) ~I2C_DISPLAY_CFG_EN_SLAVE;
+ 240   2              /* Wait for block reset before disable power */
+ 241   2              CyDelayCycles((uint32) blockResetCycles);
+ 242   2      
+ 243   2              /* Disable power to block */
+ 244   2              intState = CyEnterCriticalSection();
+ 245   2              I2C_DISPLAY_ACT_PWRMGR_REG  &= (uint8) ~I2C_DISPLAY_ACT_PWR_EN;
+ 246   2              I2C_DISPLAY_STBY_PWRMGR_REG &= (uint8) ~I2C_DISPLAY_STBY_PWR_EN;
+ 247   2              CyExitCriticalSection(intState);
+ 248   2      
+ 249   2              /* Enable block */
+ 250   2              I2C_DISPLAY_CFG_REG |= (uint8) I2C_DISPLAY_ENABLE_MS;
+ 251   2      
+ 252   2              /* Restore registers effected by block disable. Ticket ID#198004 */
+ 253   2              I2C_DISPLAY_ADDR_REG    = I2C_DISPLAY_backup.addr;
+ 254   2              I2C_DISPLAY_ADDR_REG    = I2C_DISPLAY_backup.addr;
+ 255   2              I2C_DISPLAY_CLKDIV1_REG = I2C_DISPLAY_backup.clkDiv1;
+ 256   2              I2C_DISPLAY_CLKDIV2_REG = I2C_DISPLAY_backup.clkDiv2;
+ 257   2          }
+ 258   1      #else
+              
+                  /* Disable slave or master bits */
+                  I2C_DISPLAY_CFG_REG &= (uint8) ~I2C_DISPLAY_ENABLE_MS;
+              
+              #if (I2C_DISPLAY_MODE_SLAVE_ENABLED)
+                  {
+                      /* Disable bit counter */
+                      uint8 intState = CyEnterCriticalSection();
+                      I2C_DISPLAY_COUNTER_AUX_CTL_REG &= (uint8) ~I2C_DISPLAY_CNT7_ENABLE;
+                      CyExitCriticalSection(intState);
+                  }
+              #endif /* (I2C_DISPLAY_MODE_SLAVE_ENABLED) */
+              
+                  /* Clear interrupt source register */
+                  (void) I2C_DISPLAY_CSR_REG;
+              #endif /* (I2C_DISPLAY_FF_IMPLEMENTED) */
+ 275   1      
+ 276   1          /* Disable interrupt on stop (enabled by write transaction) */
+ 277   1          I2C_DISPLAY_DISABLE_INT_ON_STOP;
+ 278   1          I2C_DISPLAY_ClearPendingInt();
+ 279   1      
+ 280   1          /* Reset FSM to default state */
+ 281   1          I2C_DISPLAY_state = I2C_DISPLAY_SM_IDLE;
+ 282   1      
+ 283   1          /* Clear busy statuses */
+ 284   1      #if (I2C_DISPLAY_MODE_SLAVE_ENABLED)
+                  I2C_DISPLAY_slStatus &= (uint8) ~(I2C_DISPLAY_SSTAT_RD_BUSY | I2C_DISPLAY_SSTAT_WR_BUSY);
+              #endif /* (I2C_DISPLAY_MODE_SLAVE_ENABLED) */
+ 287   1      }
+ 288          
+ 289          
+ 290          /* [] END OF FILE */
+C51 COMPILER V9.51   I2C_DISPLAY                                                           08/15/2026 23:55:57 PAGE 6   
+
+ASSEMBLY LISTING OF GENERATED OBJECT CODE
+
+
+             ; FUNCTION I2C_DISPLAY_Init (BEGIN)
+                                           ; SOURCE LINE # 49
+                                           ; SOURCE LINE # 50
+                                           ; SOURCE LINE # 53
+                       MOV     DPTR,#049D6H
+                       MOV     A,#02H
+                       MOVX    @DPTR,A
+                                           ; SOURCE LINE # 54
+                       MOV     DPTR,#049C8H
+                       MOV     A,#081H
+                       MOVX    @DPTR,A
+                                           ; SOURCE LINE # 55
+                       MOV     DPTR,#049CAH
+                       MOV     A,#037H
+                       MOVX    @DPTR,A
+                                           ; SOURCE LINE # 56
+                       MOV     DPTR,#049DBH
+                       MOV     A,#03H
+                       MOVX    @DPTR,A
+                                           ; SOURCE LINE # 57
+                       INC     DPTR
+                       CLR     A
+                       MOVX    @DPTR,A
+                                           ; SOURCE LINE # 88
+                       MOV     DPTR,#044C9H
+                       MOV     A,#080H
+                       MOVX    @DPTR,A
+                                           ; SOURCE LINE # 89
+                       MOV     R5,#07H
+                       MOV     R7,#0FH
+                 E     CALL    _CyIntSetPriority
+                                           ; SOURCE LINE # 91
+                 E     MOV     R4,#HIGH I2C_DISPLAY_ISR
+                 E     MOV     R5,#LOW I2C_DISPLAY_ISR
+                       MOV     R7,#0FH
+                 E     CALL    _CyIntSetVector
+                                           ; SOURCE LINE # 95
+                 R     MOV     DPTR,#I2C_DISPLAY_state
+                       MOV     A,#010H
+                       MOVX    @DPTR,A
+                                           ; SOURCE LINE # 109
+                       CLR     A
+                 E     MOV     DPTR,#I2C_DISPLAY_mstrStatus
+                       MOVX    @DPTR,A
+                                           ; SOURCE LINE # 110
+                 E     MOV     DPTR,#I2C_DISPLAY_mstrRdBufIndex
+                       MOVX    @DPTR,A
+                                           ; SOURCE LINE # 111
+                 E     MOV     DPTR,#I2C_DISPLAY_mstrWrBufIndex
+                       MOVX    @DPTR,A
+                                           ; SOURCE LINE # 113
+                       RET     
+             ; FUNCTION I2C_DISPLAY_Init (END)
+
+             ; FUNCTION I2C_DISPLAY_Enable (BEGIN)
+                                           ; SOURCE LINE # 133
+                                           ; SOURCE LINE # 134
+                                           ; SOURCE LINE # 139
+                 E     CALL    CyEnterCriticalSection
+C51 COMPILER V9.51   I2C_DISPLAY                                                           08/15/2026 23:55:57 PAGE 7   
+
+;---- Variable 'intState' assigned to Register 'R7' ----
+                                           ; SOURCE LINE # 140
+                       MOV     DPTR,#043A5H
+                       MOVX    A,@DPTR
+                       ORL     A,#04H
+                       MOVX    @DPTR,A
+                                           ; SOURCE LINE # 141
+                       MOV     DPTR,#043B5H
+                       MOVX    A,@DPTR
+                       ORL     A,#04H
+                       MOVX    @DPTR,A
+                                           ; SOURCE LINE # 142
+                 E     CALL    _CyExitCriticalSection
+                                           ; SOURCE LINE # 158
+                       RET     
+             ; FUNCTION I2C_DISPLAY_Enable (END)
+
+             ; FUNCTION I2C_DISPLAY_Start (BEGIN)
+                                           ; SOURCE LINE # 189
+                                           ; SOURCE LINE # 190
+                                           ; SOURCE LINE # 191
+                 R     MOV     DPTR,#I2C_DISPLAY_initVar
+                       MOVX    A,@DPTR
+                 R     xJNZ    ?C0003
+                                           ; SOURCE LINE # 192
+                                           ; SOURCE LINE # 193
+                 R     CALL    I2C_DISPLAY_Init
+                                           ; SOURCE LINE # 194
+                 R     MOV     DPTR,#I2C_DISPLAY_initVar
+                       MOV     A,#01H
+                       MOVX    @DPTR,A
+                                           ; SOURCE LINE # 195
+             ?C0003:
+                                           ; SOURCE LINE # 197
+                 R     CALL    I2C_DISPLAY_Enable
+                                           ; SOURCE LINE # 198
+                       MOV     DPTR,#044C1H
+                       MOV     A,#080H
+                       MOVX    @DPTR,A
+                                           ; SOURCE LINE # 199
+                       RET     
+             ; FUNCTION I2C_DISPLAY_Start (END)
+
+             ; FUNCTION I2C_DISPLAY_Stop (BEGIN)
+                                           ; SOURCE LINE # 217
+                                           ; SOURCE LINE # 218
+                                           ; SOURCE LINE # 219
+                       MOV     DPTR,#044C9H
+                       MOV     A,#080H
+                       MOVX    @DPTR,A
+                                           ; SOURCE LINE # 226
+                                           ; SOURCE LINE # 231
+                       MOV     DPTR,#049CAH
+                       MOVX    A,@DPTR
+                 E     MOV     DPTR,#I2C_DISPLAY_backup+03H
+                       MOVX    @DPTR,A
+                                           ; SOURCE LINE # 232
+                       MOV     DPTR,#049DBH
+                       MOVX    A,@DPTR
+                 E     MOV     DPTR,#I2C_DISPLAY_backup+04H
+                       MOVX    @DPTR,A
+                                           ; SOURCE LINE # 233
+C51 COMPILER V9.51   I2C_DISPLAY                                                           08/15/2026 23:55:57 PAGE 8   
+
+                       MOV     DPTR,#049DCH
+                       MOVX    A,@DPTR
+                 E     MOV     DPTR,#I2C_DISPLAY_backup+05H
+                       MOVX    @DPTR,A
+                                           ; SOURCE LINE # 236
+                       MOV     DPTR,#049DCH
+                       MOVX    A,@DPTR
+                       MOV     R6,A
+                       MOV     DPTR,#049DBH
+                       MOVX    A,@DPTR
+                       MOV     R5,A
+                       MOV     A,R6
+                       MOV     A,R5
+                       ADD     A,#01H
+                       MOV     R7,A
+                       CLR     A
+                       ADDC    A,R6
+                 R     MOV     DPTR,#blockResetCycles
+                       MOVX    @DPTR,A
+                       INC     DPTR
+                       MOV     A,R7
+                       MOVX    @DPTR,A
+                                           ; SOURCE LINE # 239
+                       MOV     DPTR,#049D6H
+                       MOVX    A,@DPTR
+                       ANL     A,#0FEH
+                       MOVX    @DPTR,A
+                                           ; SOURCE LINE # 241
+                 R     MOV     DPTR,#blockResetCycles
+                       MOVX    A,@DPTR
+                       MOV     R6,A
+                       INC     DPTR
+                       MOVX    A,@DPTR
+                       MOV     R7,A
+                       CLR     A
+                       MOV     R4,A
+                       MOV     R5,A
+                 E     CALL    _CyDelayCycles
+                                           ; SOURCE LINE # 244
+                 E     CALL    CyEnterCriticalSection
+                 R     MOV     DPTR,#intState
+                       MOV     A,R7
+                       MOVX    @DPTR,A
+                                           ; SOURCE LINE # 245
+                       MOV     DPTR,#043A5H
+                       MOVX    A,@DPTR
+                       ANL     A,#0FBH
+                       MOVX    @DPTR,A
+                                           ; SOURCE LINE # 246
+                       MOV     DPTR,#043B5H
+                       MOVX    A,@DPTR
+                       ANL     A,#0FBH
+                       MOVX    @DPTR,A
+                                           ; SOURCE LINE # 247
+                 R     MOV     DPTR,#intState
+                       MOVX    A,@DPTR
+                       MOV     R7,A
+                 E     CALL    _CyExitCriticalSection
+                                           ; SOURCE LINE # 250
+                       MOV     DPTR,#049D6H
+                       MOVX    A,@DPTR
+                       ORL     A,#02H
+C51 COMPILER V9.51   I2C_DISPLAY                                                           08/15/2026 23:55:57 PAGE 9   
+
+                       MOVX    @DPTR,A
+                                           ; SOURCE LINE # 253
+                 E     MOV     DPTR,#I2C_DISPLAY_backup+03H
+                       MOVX    A,@DPTR
+                       MOV     R7,A
+                       MOV     DPTR,#049CAH
+                       MOVX    @DPTR,A
+                                           ; SOURCE LINE # 254
+                       MOV     A,R7
+                       MOVX    @DPTR,A
+                                           ; SOURCE LINE # 255
+                 E     MOV     DPTR,#I2C_DISPLAY_backup+04H
+                       MOVX    A,@DPTR
+                       MOV     DPTR,#049DBH
+                       MOVX    @DPTR,A
+                                           ; SOURCE LINE # 256
+                 E     MOV     DPTR,#I2C_DISPLAY_backup+05H
+                       MOVX    A,@DPTR
+                       MOV     DPTR,#049DCH
+                       MOVX    @DPTR,A
+                                           ; SOURCE LINE # 257
+                                           ; SOURCE LINE # 277
+                       MOV     DPTR,#049D6H
+                       MOVX    A,@DPTR
+                       ANL     A,#0EFH
+                       MOVX    @DPTR,A
+                                           ; SOURCE LINE # 278
+                       MOV     DPTR,#044D9H
+                       MOV     A,#080H
+                       MOVX    @DPTR,A
+                                           ; SOURCE LINE # 281
+                 R     MOV     DPTR,#I2C_DISPLAY_state
+                       MOV     A,#010H
+                       MOVX    @DPTR,A
+                                           ; SOURCE LINE # 287
+                       RET     
+             ; FUNCTION I2C_DISPLAY_Stop (END)
+
+
+
+MODULE INFORMATION:   STATIC OVERLAYABLE
+   CODE SIZE        =    277    ----
+   CONSTANT SIZE    =   ----    ----
+   XDATA SIZE       =      2       3
+   PDATA SIZE       =   ----    ----
+   DATA SIZE        =   ----    ----
+   IDATA SIZE       =   ----    ----
+   BIT SIZE         =   ----    ----
+   EDATA SIZE       =   ----    ----
+   HDATA SIZE       =   ----    ----
+   XDATA CONST SIZE =   ----    ----
+   FAR CONST SIZE   =   ----    ----
+END OF MODULE INFORMATION.
+
+
+C51 COMPILATION COMPLETE.  0 WARNING(S),  0 ERROR(S)

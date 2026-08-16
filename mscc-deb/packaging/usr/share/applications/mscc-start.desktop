@@ -1,0 +1,11 @@
+[Desktop Entry]
+Type=Application
+Name=MSCC Start
+GenericName=Start MSCC servers
+Comment=Start MSCC servers on this Pi (sdrcore-recv, sdrcore-trans, ms-sdr)
+Exec=mscc-desktop-ctl start
+Icon=media-playback-start
+Terminal=false
+Categories=X-MSCC;
+Keywords=MSCC;SDR;Proficio;Multus;start;
+StartupNotify=false

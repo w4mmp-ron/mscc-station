@@ -1,0 +1,3147 @@
+C51 COMPILER V9.51   SI5351A                                                               08/14/2026 12:27:14 PAGE 1   
+
+
+C51 COMPILER V9.51, COMPILATION OF MODULE SI5351A
+OBJECT MODULE PLACED IN .\DP8051\DP8051_Keil_951\Debug\si5351a.obj
+COMPILER INVOKED BY: C:\Program Files (x86)\Cypress\PSoC Creator\4.2\PSoC Creator\import\keil\pk51\9.51\C51\BIN\c51.exe 
+                    -si5351a.c NOIV LARGE MODDP2 OMF2 VB(1) NOIP INCDIR(.,Generated_Source\PSoC3) FF(3) DB WL(2) PR(.\DP8051\DP8051_Keil_951\
+                    -Debug/si5351a.lst) CD OT(5,SPEED) OA OJ(.\DP8051\DP8051_Keil_951\Debug\si5351a.obj)
+
+line level    source
+
+   1          // Copyright 2013 David Turnbull AE9RB
+   2          //
+   3          // Licensed under the Apache License, Version 2.0 (the "License");
+   4          // you may not use this file except in compliance with the License.
+   5          // You may obtain a copy of the License at
+   6          //
+   7          //     http://www.apache.org/licenses/LICENSE-2.0
+   8          //
+   9          // Unless required by applicable law or agreed to in writing, software
+  10          // distributed under the License is distributed on an "AS IS" BASIS,
+  11          // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+  12          // See the License for the specific language governing permissions and
+  13          // limitations under the License.
+  14          // 10/01/2016 Added support for Proficio
+  15          // 02/18/2017 Added support for native CW
+  16          // Copyright © 2015-2017 Omnia SDR
+  17          
+  18          // Variable naming conventions:     E_<variable> -> Externally defined global
+  19          //                                  ff_<variable> -> Externally defined global stored in flash memory
+  20          //                                  ee_<variable> -> Externally defined global to be stored in EEPROM memo
+             -ry
+  21          //                                  l_<variable> -> locally defined variable
+  22          //                                  All UPPERCASE -> Define
+  23          // Author: Hans Summers, 2015
+  24          // Website: http://www.hanssummers.com
+  25          //
+  26          // A very very simple Si5351a demonstration
+  27          // using the Si5351a module kit http://www.hanssummers.com/synth
+  28          // Please also refer to SiLabs AN619 which describes all the registers to use
+  29          //
+  30          //#include <inttypes.h>
+  31          #include <basic-plus.h>
+  32          #include "si5351.h"
+  33          #include "si5351a.h"
+  34          #include "MATH.H"
+  35          
+  36          
+  37          //#define TEMPERATURE_DRIFT_PPM   0.1925
+  38          uint32 E_l_freq = 0;
+  39          uint32 E_l_freq_temp = 0;
+  40          
+  41          //
+  42          // Set up specified PLL with mult, num and denom
+  43          // mult is 15..90
+  44          // num is 0..1,048,575 (0xFFFFF)
+  45          // denom is 0..1,048,575 (0xFFFFF)
+  46          //
+  47          uint8 setupPLL(uint8_t pll, uint8_t mult, uint32 num, uint32 denom)
+  48          {
+  49   1              static uint32 P1;                                       // PLL config register P1
+  50   1              static uint32 P2;                                       // PLL config register P2
+  51   1              static uint32 P3;                                       // PLL config register P3
+  52   1          static uint8 state = 0;
+C51 COMPILER V9.51   SI5351A                                                               08/14/2026 12:27:14 PAGE 2   
+
+  53   1          
+  54   1          switch(state){
+  55   2              case 0:
+  56   2                  P1 = (uint32)(128 * ((float)num / (float)denom));
+  57   2                      P1 = (uint32)(128 * (uint32)(mult) + P1 - 512);
+  58   2                      P2 = (uint32)(128 * ((float)num / (float)denom));
+  59   2                      P2 = (uint32)(128 * num - denom * P2);
+  60   2                      P3 = denom;
+  61   2                  si5351_write_init(pll + 0, (P3 & 0x0000FF00) >> 8);
+  62   2                  state++;
+  63   2                  break;
+  64   2             case 1:
+  65   2                      si5351_write_init(pll + 1, (P3 & 0x000000FF));
+  66   2                  //si5351_write_queue(pll + 1, (P3 & 0x000000FF));
+  67   2                  state++;
+  68   2                  break;
+  69   2              case 2:
+  70   2                      si5351_write_init(pll + 2, (P1 & 0x00030000) >> 16);
+  71   2                  //si5351_write_queue(pll + 2, (P1 & 0x00030000) >> 16);
+  72   2                  state++;
+  73   2                  break;
+  74   2              case 3:
+  75   2                      si5351_write_init(pll + 3, (P1 & 0x0000FF00) >> 8);
+  76   2                  //si5351_write_queue(pll + 3, (P1 & 0x0000FF00) >> 8);
+  77   2                  state++;
+  78   2                  break;
+  79   2              case 4:
+  80   2                      si5351_write_init(pll + 4, (P1 & 0x000000FF));
+  81   2                  //si5351_write_queue(pll + 4, (P1 & 0x000000FF));
+  82   2                  state++;
+  83   2                  break;
+  84   2              case 5:
+  85   2                      si5351_write_init(pll + 5, ((P3 & 0x000F0000) >> 12) | ((P2 & 0x000F0000) >> 16));
+  86   2                  //si5351_write_queue(pll + 5, ((P3 & 0x000F0000) >> 12) | ((P2 & 0x000F0000) >> 16));
+  87   2                  state++;
+  88   2                  break;
+  89   2              case 6:
+  90   2                      si5351_write_init(pll + 6, (P2 & 0x0000FF00) >> 8);
+  91   2                  //si5351_write_queue(pll + 6, (P2 & 0x0000FF00) >> 8);
+  92   2                  state++;
+  93   2                  break;
+  94   2              case 7:
+  95   2                      si5351_write_init(pll + 7, (P2 & 0x000000FF));
+  96   2                  //si5351_write_queue(pll + 7, (P2 & 0x000000FF));
+  97   2                  state = 0;
+  98   2                  break;
+  99   2          }
+ 100   1          return state;
+ 101   1      }
+ 102          
+ 103          //
+ 104          // Set up MultiSynth with integer divider and R divider
+ 105          // R divider is the bit value which is OR'ed onto the appropriate register, it is a #define in si5351a.h
+ 106          //
+ 107          uint8 setupMultisynth(uint8_t synth, uint32 divider, uint8_t rDiv)
+ 108          {
+ 109   1              static uint32 P1;                                       // Synth config register P1
+ 110   1              static uint32 P2;                                       // Synth config register P2
+ 111   1              static uint32 P3;                                       // Synth config register P3
+ 112   1          static uint8 state = 0;
+ 113   1      
+ 114   1              
+C51 COMPILER V9.51   SI5351A                                                               08/14/2026 12:27:14 PAGE 3   
+
+ 115   1          switch(state){
+ 116   2              case 0:
+ 117   2                  P1 = 128 * divider - 512;
+ 118   2                      P2 = 0;                                                 // P2 = 0, P3 = 1 forces an integer value for the divider
+ 119   2                      P3 = 1;
+ 120   2                  si5351_write_init(synth + 0,   (P3 & 0x0000FF00) >> 8);
+ 121   2                  //si5351_write_queue(synth + 0,   (P3 & 0x0000FF00) >> 8);
+ 122   2                  state++;
+ 123   2                  break;
+ 124   2              case 1:
+ 125   2                      si5351_write_init(synth + 1,   (P3 & 0x000000FF));
+ 126   2                  //si5351_write_queue(synth + 1,   (P3 & 0x000000FF));
+ 127   2                  state++;
+ 128   2                  break;
+ 129   2              case 2:        
+ 130   2                      si5351_write_init(synth + 2,   ((P1 & 0x00030000) >> 16) | rDiv);
+ 131   2                  //si5351_write_queue(synth + 2,   ((P1 & 0x00030000) >> 16) | rDiv);
+ 132   2                  state++;
+ 133   2                  break;
+ 134   2              case 3:
+ 135   2                      si5351_write_init(synth + 3,   (P1 & 0x0000FF00) >> 8);
+ 136   2                  //si5351_write_queue(synth + 3,   (P1 & 0x0000FF00) >> 8);
+ 137   2                  state++;
+ 138   2                  break;
+ 139   2              case 4:
+ 140   2                      si5351_write_init(synth + 4,   (P1 & 0x000000FF));
+ 141   2                  //si5351_write_queue(synth + 4,   (P1 & 0x000000FF));
+ 142   2                  state++;
+ 143   2                  break;
+ 144   2              case 5:
+ 145   2                      si5351_write_init(synth + 5,   ((P3 & 0x000F0000) >> 12) | ((P2 & 0x000F0000) >> 16));
+ 146   2                  //si5351_write_queue(synth + 5,   ((P3 & 0x000F0000) >> 12) | ((P2 & 0x000F0000) >> 16));
+ 147   2                  state++;
+ 148   2                  break;
+ 149   2              case 6:      
+ 150   2                      si5351_write_init(synth + 6,   (P2 & 0x0000FF00) >> 8);
+ 151   2                  //si5351_write_queue(synth + 6,   (P2 & 0x0000FF00) >> 8);
+ 152   2                  state++;
+ 153   2                  break;
+ 154   2              case 7:
+ 155   2                      si5351_write_init(synth + 7,   (P2 & 0x000000FF));
+ 156   2                  //si5351_write_queue(synth + 7,   (P2 & 0x000000FF));
+ 157   2                  state = 0;
+ 158   2                  break;
+ 159   2          }
+ 160   1          return state;
+ 161   1      }
+ 162          
+ 163          //
+ 164          // Switches off Si5351a output
+ 165          // Example: si5351aOutputOff(SI_CLK0_CONTROL);
+ 166          // will switch off output CLK0
+ 167          //
+ 168          void si5351aOutputOff(uint8_t clk)
+ 169          {
+ 170   1              //si5351_write_queue(clk, 0x80);                // Refer to SiLabs AN619 to see bit values - 0x80 turns off the output 
+             -stage
+ 171   1          si5351_write_init(clk, 0x80);
+ 172   1      }
+ 173          
+ 174          /*
+ 175           * Si5351 soft-tune strategy (Si570-like):
+C51 COMPILER V9.51   SI5351A                                                               08/14/2026 12:27:14 PAGE 4   
+
+ 176           *
+ 177           * Old approach recomputed Multisynth every step as even(900e6 / fout). That
+ 178           * changes MS at fixed clock boundaries (~14.0625 / 28.125 MHz LO-class edges),
+ 179           * which matched the observed mid-band pops (e.g. 14.080 / 28.140 with offsets).
+ 180           * On LF the same edges occur every ~100 Hz (2200 m) / ~1 kHz (630 m).
+ 181           *
+ 182           * New approach:
+ 183           *  - SOFT: hold Multisynth divider fixed; only rewrite PLL fractional.
+ 184           *          Skip MS register writes and SI_PLL_RESET. Valid while VCO stays
+ 185           *          in [VCO_MIN, VCO_MAX] and PLL mult in 15..90.
+ 186           *  - HARD: pick a new even MS divider targeting ~VCO_CENTER (not the 900 MHz
+ 187           *          ceiling), rewrite MS+PLL, then PLL_RESET once.
+ 188           *
+ 189           * Centering VCO puts ham-band MS edges outside typical amateur segments so
+ 190           * a whole band can soft-tune after one hard entry.
+ 191           */
+ 192          #define SI5351_VCO_MIN     600000000UL
+ 193          #define SI5351_VCO_MAX     900000000UL
+ 194          #define SI5351_VCO_CENTER  750000000UL
+ 195          #define SI5351_MS_MIN      6UL
+ 196          #define SI5351_MS_MAX      1800UL
+ 197          /* Extra SetFrequency() visits with CLK0 off after hard PLL_RESET.
+ 198           * SetFrequency runs ~once per full main beater cycle (~4 ms @ 2 kHz BEAT).
+ 199           * 6 ≈ 24 ms post-reset hold (125 ≈ 500 ms was a test — too long for normal use).
+ 200           * Soft path never blanks. Does not touch CW timers / CONTROL_RX / PTT. */
+ 201          #define SI5351_HARD_BLANK_HOLD  6u
+ 202          #define SI5351_CLK0_OFF         0x80u
+ 203          #define SI5351_CLK0_ON          (0x4Fu | SI_CLK_SRC_PLL_A)
+ 204          
+ 205          // 
+ 206          // Set CLK0 output ON and to the specified frequency
+ 207          // Frequency is in the range 1MHz to 150MHz
+ 208          // Example: si5351aSetFrequency(10000000);
+ 209          // will set output CLK0 to 10MHz
+ 210          //
+ 211          // This example sets up PLL A
+ 212          // and MultiSynth 0
+ 213          // and produces the output on CLK0
+ 214          //
+ 215          //void si5351aSetFrequency(uint32 frequency,int8_t ppm_int,int8_t ppm_dec, uint8_t smooth)
+ 216          uint8 si5351aSetFrequency(uint32 LO_freq)
+ 217          {
+ 218   1              static uint32 pllFreq;
+ 219   1              uint32 xtalFreq = SI5351_XTAL_FREQ;
+ 220   1              static uint32 l;
+ 221   1              static uint8_t mult;
+ 222   1              static uint32 num,denom,divider;
+ 223   1          static uint32 freq_previous = 0;
+ 224   1          static uint32 prev_ms_divider = 0; /* held Multisynth divider for soft path */
+ 225   1          static uint8 soft_ms_hold = 0;     /* 1 = keep MS, PLL-only update */
+ 226   1          static uint8 clk0_blanked = 0;     /* 1 = CLK0 powered down for hard retune */
+ 227   1          static uint8 hard_blank_hold = 0;  /* post-reset blank countdown */
+ 228   1          float delta_freq ,ppm, f;
+ 229   1          int32 delta_freq_int;
+ 230   1          static uint8 state = 0;
+ 231   1          uint8 pll_status;
+ 232   1          uint8 multi_status;
+ 233   1          static int8 l_ppm_int;
+ 234   1          static int8 l_ppm_dec;
+ 235   1          uint8 try_soft;
+ 236   1           
+ 237   1          switch(state){
+C51 COMPILER V9.51   SI5351A                                                               08/14/2026 12:27:14 PAGE 5   
+
+ 238   2              case 0:
+ 239   2                  switch(E_PPM_needs_set){  //When the PPM has changed the LO needs bumped for it to take immedi
+             -ate effect
+ 240   3                      case 0:
+ 241   3                          E_l_freq_temp = LO_freq;
+ 242   3                          break;
+ 243   3                      case E_PPM_NEEDS_SET_STEP_1:
+ 244   3                          E_l_freq_temp = LO_freq + 100;
+ 245   3                          E_PPM_needs_set = E_PPM_NEEDS_SET_STEP_2;
+ 246   3                          break;
+ 247   3                      case E_PPM_NEEDS_SET_STEP_2:
+ 248   3                          E_l_freq_temp = LO_freq;
+ 249   3                          E_PPM_needs_set = 0;
+ 250   3                          break;
+ 251   3                  }
+ 252   2                  if(!TX_Request){
+ 253   3                      if(freq_previous != (E_l_freq_temp + E_current_rit_freq)){
+ 254   4                          //E_l_freq = (LO_freq + E_current_rit_freq);
+ 255   4                          E_l_freq = (E_l_freq_temp + E_current_rit_freq);
+ 256   4                          freq_previous = E_l_freq;
+ 257   4                          state++;
+ 258   4                      }
+ 259   3                  }else{
+ 260   3                      if(freq_previous != E_l_freq_temp){
+ 261   4                          E_l_freq = E_l_freq_temp;
+ 262   4                          freq_previous = E_l_freq_temp;
+ 263   4                          state++;
+ 264   4                      }
+ 265   3                  }
+ 266   2                  break;
+ 267   2              case 1:
+ 268   2                  //This applies both the main PPM adjustment and drift frequency and then calculates the freque
+             -ncy adjustment 
+ 269   2                  l_ppm_int = ee_ppm_int;
+ 270   2                  l_ppm_dec = ee_ppm_dec;
+ 271   2                  ppm = (float)((float)l_ppm_dec / 100);
+ 272   2                  ppm = ppm + (float) l_ppm_int;
+ 273   2                  delta_freq = (float)E_l_freq / 1000000; 
+ 274   2                  delta_freq = ((delta_freq * ppm) * 4) * -1;
+ 275   2                  delta_freq_int = (int32)delta_freq;
+ 276   2                  //Frequencies must always multiples of 4
+ 277   2                  //while((delta_freq_int%4) != 0){
+ 278   2                  //    delta_freq_int++;
+ 279   2                  //}
+ 280   2                  if(delta_freq_int < 0){
+ 281   3                      while((delta_freq_int%4) !=0){
+ 282   4                          delta_freq_int++;
+ 283   4                      }
+ 284   3                  }else {
+ 285   3                      if(delta_freq_int > 0){
+ 286   4                          while((delta_freq_int%4) != 0){
+ 287   5                              delta_freq_int--;
+ 288   5                          }
+ 289   4                      }
+ 290   3                  }
+ 291   2                  //Now set the frequency for the Si5351 which four (4) times the LO sent by the host
+ 292   2                  E_l_freq = E_l_freq * 4;
+ 293   2                  //Now add the PPM correction
+ 294   2                  E_l_freq = E_l_freq + delta_freq_int;
+ 295   2      
+ 296   2                  soft_ms_hold = 0;
+ 297   2                  try_soft = 0;
+C51 COMPILER V9.51   SI5351A                                                               08/14/2026 12:27:14 PAGE 6   
+
+ 298   2                  /* Prefer holding Multisynth when VCO stays legal (true soft-tune). */
+ 299   2                  if (prev_ms_divider >= SI5351_MS_MIN && E_l_freq > 0UL) {
+ 300   3                      if (E_l_freq <= (SI5351_VCO_MAX / prev_ms_divider)) {
+ 301   4                          pllFreq = prev_ms_divider * E_l_freq;
+ 302   4                          if (pllFreq >= SI5351_VCO_MIN) {
+ 303   5                              mult = (uint8_t)(pllFreq / xtalFreq);
+ 304   5                              if (mult >= 15u && mult <= 90u) {
+ 305   6                                  try_soft = 1;
+ 306   6                              }
+ 307   5                          }
+ 308   4                      }
+ 309   3                  }
+ 310   2      
+ 311   2                  if (try_soft) {
+ 312   3                      divider = prev_ms_divider;
+ 313   3                      soft_ms_hold = 1;
+ 314   3                      E_smooth = TRUE; /* skip PLL_RESET */
+ 315   3                  } else {
+ 316   3                      /* HARD: center VCO so next MS edge falls outside the band */
+ 317   3                      divider = SI5351_VCO_CENTER / E_l_freq;
+ 318   3                      if (divider < SI5351_MS_MIN) {
+ 319   4                          divider = SI5351_MS_MIN;
+ 320   4                      }
+ 321   3                      if (divider > SI5351_MS_MAX) {
+ 322   4                          divider = SI5351_MS_MAX;
+ 323   4                      }
+ 324   3                      if (divider % 2UL) {
+ 325   4                          divider--;
+ 326   4                      }
+ 327   3                      if (divider < SI5351_MS_MIN) {
+ 328   4                          divider = SI5351_MS_MIN;
+ 329   4                      }
+ 330   3                      pllFreq = divider * E_l_freq;
+ 331   3                      /* If even-rounding left VCO out of range, fall back to classic ceiling */
+ 332   3                      if (pllFreq > SI5351_VCO_MAX || pllFreq < SI5351_VCO_MIN) {
+ 333   4                          divider = SI5351_VCO_MAX / E_l_freq;
+ 334   4                          if (divider % 2UL) {
+ 335   5                              divider--;
+ 336   5                          }
+ 337   4                          if (divider < SI5351_MS_MIN) {
+ 338   5                              divider = SI5351_MS_MIN;
+ 339   5                          }
+ 340   4                          pllFreq = divider * E_l_freq;
+ 341   4                      }
+ 342   3                      soft_ms_hold = 0;
+ 343   3                      E_smooth = FALSE; /* require PLL_RESET */
+ 344   3                  }
+ 345   2      
+ 346   2                      mult = (uint8_t)(pllFreq / xtalFreq); /* mult 15..90 */
+ 347   2                      l = pllFreq % xtalFreq;                 // It has three parts:
+ 348   2                      f = l;                                                  // mult is an integer that must be in the range 15..90
+ 349   2                      f *= 1048575;                                   // num and denom are the fractional parts, the numerator and denominator
+ 350   2                      f /= xtalFreq;                                  // each is 20 bits (range 0..1048575)
+ 351   2                      num = f;                                                // the actual multiplier is  mult + num / denom
+ 352   2                      denom = 1048575;                                // For simplicity we set the denominator to the maximum 1048575
+ 353   2                  hard_blank_hold = 0;
+ 354   2                  state++;
+ 355   2                  break;
+ 356   2              case 2:
+ 357   2                  /* Hard retune only: silence CLK0 before MS/PLL reconfig + PLL_RESET.
+ 358   2                   * Soft path never blanks — CW pitch / fine-tune stay continuous. */
+ 359   2                  if (!soft_ms_hold && !clk0_blanked) {
+C51 COMPILER V9.51   SI5351A                                                               08/14/2026 12:27:14 PAGE 7   
+
+ 360   3                      si5351_write_init(SI_CLK0_CONTROL, SI5351_CLK0_OFF);
+ 361   3                      clk0_blanked = 1;
+ 362   3                  }
+ 363   2                      pll_status = setupPLL(SI_SYNTH_PLL_A, mult, num, denom);
+ 364   2                  // Set up PLL A with the calculated multiplication ratio
+ 365   2                  if(pll_status == 0){
+ 366   3                      state++;
+ 367   3                  }
+ 368   2                  break;
+ 369   2              case 3:
+ 370   2                  /* Soft path: Multisynth registers already correct — do not rewrite. */
+ 371   2                  if (soft_ms_hold) {
+ 372   3                      state++;
+ 373   3                      break;
+ 374   3                  }
+ 375   2                  multi_status = setupMultisynth(SI_SYNTH_MS_0, divider, SI_R_DIV_1);
+ 376   2                  // Sets up MultiSynth divider 0, with the calculated divider. 
+ 377   2                          // The final R division stage can divide by a power of two, from 1..128. 
+ 378   2                  // reprented by constants SI_R_DIV1 to SI_R_DIV128 (see si5351a.h header file)
+ 379   2                          // If you want to output frequencies below 1MHz, you have to use the 
+ 380   2                          // final R division stage
+ 381   2                  if(multi_status == 0){
+ 382   3                      state++;
+ 383   3                  }
+ 384   2                  break;
+ 385   2              case 4:
+ 386   2                      //if(!smooth) si5351_write_queue(SI_PLL_RESET, 0xA0);   
+ 387   2                  /* Soft (MS held): skip PLL_RESET — no glitch.
+ 388   2                   * Hard (MS changed / first tune): reset required while CLK0 still off. */
+ 389   2                  if(!E_smooth) {
+ 390   3                      si5351_write_init(SI_PLL_RESET, 0xA0);  
+ 391   3                      E_smooth = TRUE;
+ 392   3                      hard_blank_hold = SI5351_HARD_BLANK_HOLD;
+ 393   3                  } else {
+ 394   3                      hard_blank_hold = 0;
+ 395   3                  }
+ 396   2                  prev_ms_divider = divider;
+ 397   2                  // Resets the PLL. This causes a glitch in the output. For small changes to 
+ 398   2                              // the parameters, you don't need to reset the PLL, and there is no glitch
+ 399   2                  state = 5;
+ 400   2                  break;
+ 401   2              case 5:
+ 402   2                  /* Hold blank after hard reset so mixer/ADC see silence, not the glitch. */
+ 403   2                  if (hard_blank_hold != 0u) {
+ 404   3                      hard_blank_hold--;
+ 405   3                      break;
+ 406   3                  }
+ 407   2                  //si5351_write_queue(SI_CLK0_CONTROL, 0x4F | SI_CLK_SRC_PLL_A);
+ 408   2                  si5351_write_init(SI_CLK0_CONTROL, SI5351_CLK0_ON);
+ 409   2                  // Finally switch on the CLK0 output (0x4F)
+ 410   2                          // and set the MultiSynth0 input to be PLL A
+ 411   2                  clk0_blanked = 0;
+ 412   2                  state = 0;
+ 413   2                  break;
+ 414   2          }
+ 415   1          return state;
+ 416   1         
+ 417   1      }
+ 418          
+C51 COMPILER V9.51   SI5351A                                                               08/14/2026 12:27:14 PAGE 8   
+
+ASSEMBLY LISTING OF GENERATED OBJECT CODE
+
+
+             ; FUNCTION _setupPLL (BEGIN)
+                                           ; SOURCE LINE # 47
+                 R     MOV     DPTR,#pll
+                       MOV     A,R7
+                       MOVX    @DPTR,A
+                       INC     DPTR
+                       MOV     A,R5
+                       MOVX    @DPTR,A
+                                           ; SOURCE LINE # 48
+                                           ; SOURCE LINE # 54
+                 R     MOV     DPTR,#state
+                       MOVX    A,@DPTR
+                 R     CJNE    A,#08H,?C0066
+             ?C0066:
+                 R     xJNC    ?C0001
+                 R     MOV     DPTR,#?C0067
+                       MOV     R0,A
+                       ADD     A,R0
+                       ADD     A,R0
+                       JMP     @A+DPTR
+             ?C0067:
+                 R     LJMP    ?C0002
+                 R     LJMP    ?C0003
+                 R     LJMP    ?C0004
+                 R     LJMP    ?C0005
+                 R     LJMP    ?C0006
+                 R     LJMP    ?C0007
+                 R     LJMP    ?C0008
+                 R     LJMP    ?C0009
+                                           ; SOURCE LINE # 55
+             ?C0002:
+                                           ; SOURCE LINE # 56
+                 R     MOV     DPTR,#denom
+                       MOVX    A,@DPTR
+                       MOV     R4,A
+                       INC     DPTR
+                       MOVX    A,@DPTR
+                       MOV     R5,A
+                       INC     DPTR
+                       MOVX    A,@DPTR
+                       MOV     R6,A
+                       INC     DPTR
+                       MOVX    A,@DPTR
+                       MOV     R7,A
+                       CLR     A
+                 E     CALL    ?C?FCASTL
+                       PUSH    AR4
+                       PUSH    AR5
+                       PUSH    AR6
+                       PUSH    AR7
+                 R     MOV     DPTR,#num
+                       MOVX    A,@DPTR
+                       MOV     R4,A
+                       INC     DPTR
+                       MOVX    A,@DPTR
+                       MOV     R5,A
+                       INC     DPTR
+                       MOVX    A,@DPTR
+                       MOV     R6,A
+C51 COMPILER V9.51   SI5351A                                                               08/14/2026 12:27:14 PAGE 9   
+
+                       INC     DPTR
+                       MOVX    A,@DPTR
+                       MOV     R7,A
+                       CLR     A
+                 E     CALL    ?C?FCASTL
+                       POP     AR3
+                       POP     AR2
+                       POP     AR1
+                       POP     AR0
+                 E     CALL    ?C?FPDIV
+                       CLR     A
+                       MOV     R3,A
+                       MOV     R2,A
+                       MOV     R1,A
+                       MOV     R0,#043H
+                 E     CALL    ?C?FPMUL
+                 E     CALL    ?C?CASTF
+                 R     MOV     DPTR,#P1
+                 E     CALL    ?C?LSTXDATA
+                                           ; SOURCE LINE # 57
+                 R     MOV     DPTR,#mult
+                       MOVX    A,@DPTR
+                       MOV     R7,A
+                       MOV     R6,#00H
+                       MOV     R4,#00H
+                       MOV     R5,#080H
+                 E     CALL    ?C?LIMUL
+                 R     MOV     DPTR,#P1
+                       MOVX    A,@DPTR
+                       MOV     R0,A
+                       INC     DPTR
+                       MOVX    A,@DPTR
+                       MOV     R1,A
+                       INC     DPTR
+                       MOVX    A,@DPTR
+                       MOV     R2,A
+                       INC     DPTR
+                       MOVX    A,@DPTR
+                       ADD     A,R7
+                       MOV     R7,A
+                       MOV     A,R2
+                       ADDC    A,R6
+                       MOV     R6,A
+                       MOV     A,R1
+                       ADDC    A,R5
+                       MOV     R5,A
+                       MOV     A,R0
+                       ADDC    A,R4
+                       MOV     R4,A
+                       CLR     A
+                       ADD     A,R7
+                       MOV     R7,A
+                       MOV     A,R6
+                       ADDC    A,#0FEH
+                       MOV     R6,A
+                       MOV     A,R5
+                       ADDC    A,#0FFH
+                       MOV     R5,A
+                       MOV     A,R4
+                       ADDC    A,#0FFH
+                       MOV     R4,A
+                 R     MOV     DPTR,#P1
+C51 COMPILER V9.51   SI5351A                                                               08/14/2026 12:27:14 PAGE 10  
+
+                 E     CALL    ?C?LSTXDATA
+                                           ; SOURCE LINE # 58
+                 R     MOV     DPTR,#denom
+                       MOVX    A,@DPTR
+                       MOV     R4,A
+                       INC     DPTR
+                       MOVX    A,@DPTR
+                       MOV     R5,A
+                       INC     DPTR
+                       MOVX    A,@DPTR
+                       MOV     R6,A
+                       INC     DPTR
+                       MOVX    A,@DPTR
+                       MOV     R7,A
+                       CLR     A
+                 E     CALL    ?C?FCASTL
+                       PUSH    AR4
+                       PUSH    AR5
+                       PUSH    AR6
+                       PUSH    AR7
+                 R     MOV     DPTR,#num
+                       MOVX    A,@DPTR
+                       MOV     R4,A
+                       INC     DPTR
+                       MOVX    A,@DPTR
+                       MOV     R5,A
+                       INC     DPTR
+                       MOVX    A,@DPTR
+                       MOV     R6,A
+                       INC     DPTR
+                       MOVX    A,@DPTR
+                       MOV     R7,A
+                       CLR     A
+                 E     CALL    ?C?FCASTL
+                       POP     AR3
+                       POP     AR2
+                       POP     AR1
+                       POP     AR0
+                 E     CALL    ?C?FPDIV
+                       CLR     A
+                       MOV     R3,A
+                       MOV     R2,A
+                       MOV     R1,A
+                       MOV     R0,#043H
+                 E     CALL    ?C?FPMUL
+                 E     CALL    ?C?CASTF
+                 R     MOV     DPTR,#P2
+                 E     CALL    ?C?LSTXDATA
+                                           ; SOURCE LINE # 59
+                 R     MOV     DPTR,#P2
+                       MOVX    A,@DPTR
+                       MOV     R4,A
+                       INC     DPTR
+                       MOVX    A,@DPTR
+                       MOV     R5,A
+                       INC     DPTR
+                       MOVX    A,@DPTR
+                       MOV     R6,A
+                       INC     DPTR
+                       MOVX    A,@DPTR
+                       MOV     R7,A
+                 R     MOV     DPTR,#denom
+C51 COMPILER V9.51   SI5351A                                                               08/14/2026 12:27:14 PAGE 11  
+
+                       MOVX    A,@DPTR
+                       MOV     R0,A
+                       INC     DPTR
+                       MOVX    A,@DPTR
+                       MOV     R1,A
+                       INC     DPTR
+                       MOVX    A,@DPTR
+                       MOV     R2,A
+                       INC     DPTR
+                       MOVX    A,@DPTR
+                       MOV     R3,A
+                 E     CALL    ?C?LMUL
+                       PUSH    AR4
+                       PUSH    AR5
+                       PUSH    AR6
+                       PUSH    AR7
+                       CLR     A
+                       MOV     R7,#080H
+                       MOV     R6,A
+                       MOV     R5,A
+                       MOV     R4,A
+                 R     MOV     DPTR,#num
+                       MOVX    A,@DPTR
+                       MOV     R0,A
+                       INC     DPTR
+                       MOVX    A,@DPTR
+                       MOV     R1,A
+                       INC     DPTR
+                       MOVX    A,@DPTR
+                       MOV     R2,A
+                       INC     DPTR
+                       MOVX    A,@DPTR
+                       MOV     R3,A
+                 E     CALL    ?C?LMUL
+                       POP     AR3
+                       POP     AR2
+                       POP     AR1
+                       POP     AR0
+                       CLR     C
+                       MOV     A,R7
+                       SUBB    A,R3
+                       MOV     R7,A
+                       MOV     A,R6
+                       SUBB    A,R2
+                       MOV     R6,A
+                       MOV     A,R5
+                       SUBB    A,R1
+                       MOV     R5,A
+                       MOV     A,R4
+                       SUBB    A,R0
+                       MOV     R4,A
+                 R     MOV     DPTR,#P2
+                 E     CALL    ?C?LSTXDATA
+                                           ; SOURCE LINE # 60
+                 R     MOV     DPTR,#denom
+                       MOVX    A,@DPTR
+                       MOV     R4,A
+                       INC     DPTR
+                       MOVX    A,@DPTR
+                       MOV     R5,A
+                       INC     DPTR
+                       MOVX    A,@DPTR
+C51 COMPILER V9.51   SI5351A                                                               08/14/2026 12:27:14 PAGE 12  
+
+                       MOV     R6,A
+                       INC     DPTR
+                       MOVX    A,@DPTR
+                       MOV     R7,A
+                 R     MOV     DPTR,#P3
+                 E     CALL    ?C?LSTXDATA
+                                           ; SOURCE LINE # 61
+                 R     MOV     DPTR,#P3
+                       MOVX    A,@DPTR
+                       MOV     R4,A
+                       INC     DPTR
+                       MOVX    A,@DPTR
+                       MOV     R5,A
+                       INC     DPTR
+                       MOVX    A,@DPTR
+                       MOV     R6,A
+                       INC     DPTR
+                       MOVX    A,@DPTR
+                       CLR     A
+                       MOV     R7,A
+                       MOV     A,R6
+                       CLR     A
+                       MOV     R5,A
+                       MOV     R4,A
+                       MOV     R0,#08H
+                 E     CALL    ?C?ULSHR
+                       MOV     R5,AR7
+                 R     MOV     DPTR,#pll
+                       MOVX    A,@DPTR
+                       MOV     R7,A
+                 E     CALL    _si5351_write_init
+                                           ; SOURCE LINE # 62
+                 R     MOV     DPTR,#state
+                       MOVX    A,@DPTR
+                       INC     A
+                       MOVX    @DPTR,A
+                                           ; SOURCE LINE # 63
+                 R     xJMP    ?C0001
+                                           ; SOURCE LINE # 64
+             ?C0003:
+                                           ; SOURCE LINE # 65
+                 R     MOV     DPTR,#pll
+                       MOVX    A,@DPTR
+                       INC     A
+                       MOV     R7,A
+                       PUSH    AR7
+                 R     MOV     DPTR,#P3
+                       MOVX    A,@DPTR
+                       MOV     R4,A
+                       INC     DPTR
+                       MOVX    A,@DPTR
+                       MOV     R5,A
+                       INC     DPTR
+                       MOVX    A,@DPTR
+                       MOV     R6,A
+                       INC     DPTR
+                       MOVX    A,@DPTR
+                       MOV     R7,A
+                       CLR     A
+                       MOV     R5,AR7
+                       POP     AR7
+                 E     CALL    _si5351_write_init
+C51 COMPILER V9.51   SI5351A                                                               08/14/2026 12:27:14 PAGE 13  
+
+                                           ; SOURCE LINE # 67
+                 R     MOV     DPTR,#state
+                       MOVX    A,@DPTR
+                       INC     A
+                       MOVX    @DPTR,A
+                                           ; SOURCE LINE # 68
+                 R     xJMP    ?C0001
+                                           ; SOURCE LINE # 69
+             ?C0004:
+                                           ; SOURCE LINE # 70
+                 R     MOV     DPTR,#pll
+                       MOVX    A,@DPTR
+                       ADD     A,#02H
+                       MOV     R7,A
+                       PUSH    AR7
+                 R     MOV     DPTR,#P1
+                       MOVX    A,@DPTR
+                       MOV     R4,A
+                       INC     DPTR
+                       MOVX    A,@DPTR
+                       MOV     R5,A
+                       INC     DPTR
+                       MOVX    A,@DPTR
+                       MOV     R6,A
+                       INC     DPTR
+                       MOVX    A,@DPTR
+                       CLR     A
+                       MOV     R7,A
+                       MOV     R6,A
+                       MOV     A,R5
+                       ANL     A,#03H
+                       MOV     R5,A
+                       CLR     A
+                       MOV     R4,A
+                       MOV     R0,#010H
+                 E     CALL    ?C?ULSHR
+                       MOV     R5,AR7
+                       POP     AR7
+                 E     CALL    _si5351_write_init
+                                           ; SOURCE LINE # 72
+                 R     MOV     DPTR,#state
+                       MOVX    A,@DPTR
+                       INC     A
+                       MOVX    @DPTR,A
+                                           ; SOURCE LINE # 73
+                 R     xJMP    ?C0001
+                                           ; SOURCE LINE # 74
+             ?C0005:
+                                           ; SOURCE LINE # 75
+                 R     MOV     DPTR,#pll
+                       MOVX    A,@DPTR
+                       ADD     A,#03H
+                       MOV     R7,A
+                       PUSH    AR7
+                 R     MOV     DPTR,#P1
+                       MOVX    A,@DPTR
+                       MOV     R4,A
+                       INC     DPTR
+                       MOVX    A,@DPTR
+                       MOV     R5,A
+                       INC     DPTR
+                       MOVX    A,@DPTR
+C51 COMPILER V9.51   SI5351A                                                               08/14/2026 12:27:14 PAGE 14  
+
+                       MOV     R6,A
+                       INC     DPTR
+                       MOVX    A,@DPTR
+                       CLR     A
+                       MOV     R7,A
+                       MOV     A,R6
+                       CLR     A
+                       MOV     R5,A
+                       MOV     R4,A
+                       MOV     R0,#08H
+                 E     CALL    ?C?ULSHR
+                       MOV     R5,AR7
+                       POP     AR7
+                 E     CALL    _si5351_write_init
+                                           ; SOURCE LINE # 77
+                 R     MOV     DPTR,#state
+                       MOVX    A,@DPTR
+                       INC     A
+                       MOVX    @DPTR,A
+                                           ; SOURCE LINE # 78
+                 R     xJMP    ?C0001
+                                           ; SOURCE LINE # 79
+             ?C0006:
+                                           ; SOURCE LINE # 80
+                 R     MOV     DPTR,#pll
+                       MOVX    A,@DPTR
+                       ADD     A,#04H
+                       MOV     R7,A
+                       PUSH    AR7
+                 R     MOV     DPTR,#P1
+                       MOVX    A,@DPTR
+                       MOV     R4,A
+                       INC     DPTR
+                       MOVX    A,@DPTR
+                       MOV     R5,A
+                       INC     DPTR
+                       MOVX    A,@DPTR
+                       MOV     R6,A
+                       INC     DPTR
+                       MOVX    A,@DPTR
+                       MOV     R7,A
+                       CLR     A
+                       MOV     R5,AR7
+                       POP     AR7
+                 E     CALL    _si5351_write_init
+                                           ; SOURCE LINE # 82
+                 R     MOV     DPTR,#state
+                       MOVX    A,@DPTR
+                       INC     A
+                       MOVX    @DPTR,A
+                                           ; SOURCE LINE # 83
+                 R     xJMP    ?C0001
+                                           ; SOURCE LINE # 84
+             ?C0007:
+                                           ; SOURCE LINE # 85
+                 R     MOV     DPTR,#pll
+                       MOVX    A,@DPTR
+                       ADD     A,#05H
+                       MOV     R7,A
+                       PUSH    AR7
+                 R     MOV     DPTR,#P2
+                       MOVX    A,@DPTR
+C51 COMPILER V9.51   SI5351A                                                               08/14/2026 12:27:14 PAGE 15  
+
+                       MOV     R4,A
+                       INC     DPTR
+                       MOVX    A,@DPTR
+                       MOV     R5,A
+                       INC     DPTR
+                       MOVX    A,@DPTR
+                       MOV     R6,A
+                       INC     DPTR
+                       MOVX    A,@DPTR
+                       CLR     A
+                       MOV     R7,A
+                       MOV     R6,A
+                       MOV     A,R5
+                       ANL     A,#0FH
+                       MOV     R5,A
+                       CLR     A
+                       MOV     R4,A
+                       MOV     R0,#010H
+                 E     CALL    ?C?ULSHR
+                       PUSH    AR4
+                       PUSH    AR5
+                       PUSH    AR6
+                       PUSH    AR7
+                       INC     DPTR
+                       MOVX    A,@DPTR
+                       MOV     R4,A
+                       INC     DPTR
+                       MOVX    A,@DPTR
+                       MOV     R5,A
+                       INC     DPTR
+                       MOVX    A,@DPTR
+                       MOV     R6,A
+                       INC     DPTR
+                       MOVX    A,@DPTR
+                       CLR     A
+                       MOV     R7,A
+                       MOV     R6,A
+                       MOV     A,R5
+                       ANL     A,#0FH
+                       MOV     R5,A
+                       CLR     A
+                       MOV     R4,A
+                       MOV     R0,#0CH
+                 E     CALL    ?C?ULSHR
+                       POP     AR3
+                       POP     AR2
+                       POP     AR1
+                       POP     AR0
+                       MOV     A,R7
+                       ORL     A,R3
+                       MOV     R7,A
+                       MOV     A,R6
+                       ORL     A,R2
+                       MOV     A,R5
+                       ORL     A,R1
+                       MOV     A,R4
+                       ORL     A,R0
+                       MOV     R5,AR7
+                       POP     AR7
+                 E     CALL    _si5351_write_init
+                                           ; SOURCE LINE # 87
+                 R     MOV     DPTR,#state
+C51 COMPILER V9.51   SI5351A                                                               08/14/2026 12:27:14 PAGE 16  
+
+                       MOVX    A,@DPTR
+                       INC     A
+                       MOVX    @DPTR,A
+                                           ; SOURCE LINE # 88
+                 R     xJMP    ?C0001
+                                           ; SOURCE LINE # 89
+             ?C0008:
+                                           ; SOURCE LINE # 90
+                 R     MOV     DPTR,#pll
+                       MOVX    A,@DPTR
+                       ADD     A,#06H
+                       MOV     R7,A
+                       PUSH    AR7
+                 R     MOV     DPTR,#P2
+                       MOVX    A,@DPTR
+                       MOV     R4,A
+                       INC     DPTR
+                       MOVX    A,@DPTR
+                       MOV     R5,A
+                       INC     DPTR
+                       MOVX    A,@DPTR
+                       MOV     R6,A
+                       INC     DPTR
+                       MOVX    A,@DPTR
+                       CLR     A
+                       MOV     R7,A
+                       MOV     A,R6
+                       CLR     A
+                       MOV     R5,A
+                       MOV     R4,A
+                       MOV     R0,#08H
+                 E     CALL    ?C?ULSHR
+                       MOV     R5,AR7
+                       POP     AR7
+                 E     CALL    _si5351_write_init
+                                           ; SOURCE LINE # 92
+                 R     MOV     DPTR,#state
+                       MOVX    A,@DPTR
+                       INC     A
+                       MOVX    @DPTR,A
+                                           ; SOURCE LINE # 93
+                 R     xJMP    ?C0001
+                                           ; SOURCE LINE # 94
+             ?C0009:
+                                           ; SOURCE LINE # 95
+                 R     MOV     DPTR,#pll
+                       MOVX    A,@DPTR
+                       ADD     A,#07H
+                       MOV     R7,A
+                       PUSH    AR7
+                 R     MOV     DPTR,#P2
+                       MOVX    A,@DPTR
+                       MOV     R4,A
+                       INC     DPTR
+                       MOVX    A,@DPTR
+                       MOV     R5,A
+                       INC     DPTR
+                       MOVX    A,@DPTR
+                       MOV     R6,A
+                       INC     DPTR
+                       MOVX    A,@DPTR
+                       MOV     R7,A
+C51 COMPILER V9.51   SI5351A                                                               08/14/2026 12:27:14 PAGE 17  
+
+                       CLR     A
+                       MOV     R5,AR7
+                       POP     AR7
+                 E     CALL    _si5351_write_init
+                                           ; SOURCE LINE # 97
+                       CLR     A
+                 R     MOV     DPTR,#state
+                       MOVX    @DPTR,A
+                                           ; SOURCE LINE # 98
+                                           ; SOURCE LINE # 99
+             ?C0001:
+                                           ; SOURCE LINE # 100
+                 R     MOV     DPTR,#state
+                       MOVX    A,@DPTR
+                       MOV     R7,A
+                                           ; SOURCE LINE # 101
+             ?C0010:
+                       RET     
+             ; FUNCTION _setupPLL (END)
+
+             ; FUNCTION _setupMultisynth (BEGIN)
+                                           ; SOURCE LINE # 107
+                 R     MOV     DPTR,#synth
+                       MOV     A,R7
+                       MOVX    @DPTR,A
+                                           ; SOURCE LINE # 108
+                                           ; SOURCE LINE # 115
+                 R     MOV     DPTR,#state
+                       MOVX    A,@DPTR
+                 R     CJNE    A,#08H,?C0068
+             ?C0068:
+                 R     xJNC    ?C0011
+                 R     MOV     DPTR,#?C0069
+                       MOV     R0,A
+                       ADD     A,R0
+                       ADD     A,R0
+                       JMP     @A+DPTR
+             ?C0069:
+                 R     LJMP    ?C0012
+                 R     LJMP    ?C0013
+                 R     LJMP    ?C0014
+                 R     LJMP    ?C0015
+                 R     LJMP    ?C0016
+                 R     LJMP    ?C0017
+                 R     LJMP    ?C0018
+                 R     LJMP    ?C0019
+                                           ; SOURCE LINE # 116
+             ?C0012:
+                                           ; SOURCE LINE # 117
+                       CLR     A
+                       MOV     R7,#080H
+                       MOV     R6,A
+                       MOV     R5,A
+                       MOV     R4,A
+                 R     MOV     DPTR,#divider
+                       MOVX    A,@DPTR
+                       MOV     R0,A
+                       INC     DPTR
+                       MOVX    A,@DPTR
+                       MOV     R1,A
+                       INC     DPTR
+                       MOVX    A,@DPTR
+C51 COMPILER V9.51   SI5351A                                                               08/14/2026 12:27:14 PAGE 18  
+
+                       MOV     R2,A
+                       INC     DPTR
+                       MOVX    A,@DPTR
+                       MOV     R3,A
+                 E     CALL    ?C?LMUL
+                       CLR     A
+                       ADD     A,R7
+                       MOV     R7,A
+                       MOV     A,R6
+                       ADDC    A,#0FEH
+                       MOV     R6,A
+                       MOV     A,R5
+                       ADDC    A,#0FFH
+                       MOV     R5,A
+                       MOV     A,R4
+                       ADDC    A,#0FFH
+                       MOV     R4,A
+                 R     MOV     DPTR,#P1
+                 E     CALL    ?C?LSTXDATA
+                                           ; SOURCE LINE # 118
+                       CLR     A
+                       MOV     R7,A
+                       MOV     R6,A
+                       MOV     R5,A
+                       MOV     R4,A
+                 R     MOV     DPTR,#P2
+                 E     CALL    ?C?LSTXDATA
+                                           ; SOURCE LINE # 119
+                       CLR     A
+                       MOV     R7,#01H
+                       MOV     R6,A
+                       MOV     R5,A
+                       MOV     R4,A
+                 R     MOV     DPTR,#P3
+                 E     CALL    ?C?LSTXDATA
+                                           ; SOURCE LINE # 120
+                 R     MOV     DPTR,#P3
+                       MOVX    A,@DPTR
+                       MOV     R4,A
+                       INC     DPTR
+                       MOVX    A,@DPTR
+                       MOV     R5,A
+                       INC     DPTR
+                       MOVX    A,@DPTR
+                       MOV     R6,A
+                       INC     DPTR
+                       MOVX    A,@DPTR
+                       CLR     A
+                       MOV     R7,A
+                       MOV     A,R6
+                       CLR     A
+                       MOV     R5,A
+                       MOV     R4,A
+                       MOV     R0,#08H
+                 E     CALL    ?C?ULSHR
+                       MOV     R5,AR7
+                 R     MOV     DPTR,#synth
+                       MOVX    A,@DPTR
+                       MOV     R7,A
+                 E     CALL    _si5351_write_init
+                                           ; SOURCE LINE # 122
+                 R     MOV     DPTR,#state
+C51 COMPILER V9.51   SI5351A                                                               08/14/2026 12:27:14 PAGE 19  
+
+                       MOVX    A,@DPTR
+                       INC     A
+                       MOVX    @DPTR,A
+                                           ; SOURCE LINE # 123
+                 R     xJMP    ?C0011
+                                           ; SOURCE LINE # 124
+             ?C0013:
+                                           ; SOURCE LINE # 125
+                 R     MOV     DPTR,#synth
+                       MOVX    A,@DPTR
+                       INC     A
+                       MOV     R7,A
+                       PUSH    AR7
+                 R     MOV     DPTR,#P3
+                       MOVX    A,@DPTR
+                       MOV     R4,A
+                       INC     DPTR
+                       MOVX    A,@DPTR
+                       MOV     R5,A
+                       INC     DPTR
+                       MOVX    A,@DPTR
+                       MOV     R6,A
+                       INC     DPTR
+                       MOVX    A,@DPTR
+                       MOV     R7,A
+                       CLR     A
+                       MOV     R5,AR7
+                       POP     AR7
+                 E     CALL    _si5351_write_init
+                                           ; SOURCE LINE # 127
+                 R     MOV     DPTR,#state
+                       MOVX    A,@DPTR
+                       INC     A
+                       MOVX    @DPTR,A
+                                           ; SOURCE LINE # 128
+                 R     xJMP    ?C0011
+                                           ; SOURCE LINE # 129
+             ?C0014:
+                                           ; SOURCE LINE # 130
+                 R     MOV     DPTR,#synth
+                       MOVX    A,@DPTR
+                       ADD     A,#02H
+                       MOV     R7,A
+                       PUSH    AR7
+                 R     MOV     DPTR,#P1
+                       MOVX    A,@DPTR
+                       MOV     R4,A
+                       INC     DPTR
+                       MOVX    A,@DPTR
+                       MOV     R5,A
+                       INC     DPTR
+                       MOVX    A,@DPTR
+                       MOV     R6,A
+                       INC     DPTR
+                       MOVX    A,@DPTR
+                       CLR     A
+                       MOV     R7,A
+                       MOV     R6,A
+                       MOV     A,R5
+                       ANL     A,#03H
+                       MOV     R5,A
+                       CLR     A
+C51 COMPILER V9.51   SI5351A                                                               08/14/2026 12:27:14 PAGE 20  
+
+                       MOV     R4,A
+                       MOV     R0,#010H
+                 E     CALL    ?C?ULSHR
+                       MOV     R0,AR4
+                       MOV     R1,AR5
+                       MOV     R2,AR6
+                       MOV     R3,AR7
+                 R     MOV     DPTR,#rDiv
+                       MOVX    A,@DPTR
+                       MOV     R7,A
+                       CLR     A
+                       MOV     A,R3
+                       ORL     A,R7
+                       MOV     R7,A
+                       MOV     A,R2
+                       MOV     A,R1
+                       MOV     A,R0
+                       MOV     R5,AR7
+                       POP     AR7
+                 E     CALL    _si5351_write_init
+                                           ; SOURCE LINE # 132
+                 R     MOV     DPTR,#state
+                       MOVX    A,@DPTR
+                       INC     A
+                       MOVX    @DPTR,A
+                                           ; SOURCE LINE # 133
+                 R     xJMP    ?C0011
+                                           ; SOURCE LINE # 134
+             ?C0015:
+                                           ; SOURCE LINE # 135
+                 R     MOV     DPTR,#synth
+                       MOVX    A,@DPTR
+                       ADD     A,#03H
+                       MOV     R7,A
+                       PUSH    AR7
+                 R     MOV     DPTR,#P1
+                       MOVX    A,@DPTR
+                       MOV     R4,A
+                       INC     DPTR
+                       MOVX    A,@DPTR
+                       MOV     R5,A
+                       INC     DPTR
+                       MOVX    A,@DPTR
+                       MOV     R6,A
+                       INC     DPTR
+                       MOVX    A,@DPTR
+                       CLR     A
+                       MOV     R7,A
+                       MOV     A,R6
+                       CLR     A
+                       MOV     R5,A
+                       MOV     R4,A
+                       MOV     R0,#08H
+                 E     CALL    ?C?ULSHR
+                       MOV     R5,AR7
+                       POP     AR7
+                 E     CALL    _si5351_write_init
+                                           ; SOURCE LINE # 137
+                 R     MOV     DPTR,#state
+                       MOVX    A,@DPTR
+                       INC     A
+                       MOVX    @DPTR,A
+C51 COMPILER V9.51   SI5351A                                                               08/14/2026 12:27:14 PAGE 21  
+
+                                           ; SOURCE LINE # 138
+                 R     xJMP    ?C0011
+                                           ; SOURCE LINE # 139
+             ?C0016:
+                                           ; SOURCE LINE # 140
+                 R     MOV     DPTR,#synth
+                       MOVX    A,@DPTR
+                       ADD     A,#04H
+                       MOV     R7,A
+                       PUSH    AR7
+                 R     MOV     DPTR,#P1
+                       MOVX    A,@DPTR
+                       MOV     R4,A
+                       INC     DPTR
+                       MOVX    A,@DPTR
+                       MOV     R5,A
+                       INC     DPTR
+                       MOVX    A,@DPTR
+                       MOV     R6,A
+                       INC     DPTR
+                       MOVX    A,@DPTR
+                       MOV     R7,A
+                       CLR     A
+                       MOV     R5,AR7
+                       POP     AR7
+                 E     CALL    _si5351_write_init
+                                           ; SOURCE LINE # 142
+                 R     MOV     DPTR,#state
+                       MOVX    A,@DPTR
+                       INC     A
+                       MOVX    @DPTR,A
+                                           ; SOURCE LINE # 143
+                 R     xJMP    ?C0011
+                                           ; SOURCE LINE # 144
+             ?C0017:
+                                           ; SOURCE LINE # 145
+                 R     MOV     DPTR,#synth
+                       MOVX    A,@DPTR
+                       ADD     A,#05H
+                       MOV     R7,A
+                       PUSH    AR7
+                 R     MOV     DPTR,#P2
+                       MOVX    A,@DPTR
+                       MOV     R4,A
+                       INC     DPTR
+                       MOVX    A,@DPTR
+                       MOV     R5,A
+                       INC     DPTR
+                       MOVX    A,@DPTR
+                       MOV     R6,A
+                       INC     DPTR
+                       MOVX    A,@DPTR
+                       CLR     A
+                       MOV     R7,A
+                       MOV     R6,A
+                       MOV     A,R5
+                       ANL     A,#0FH
+                       MOV     R5,A
+                       CLR     A
+                       MOV     R4,A
+                       MOV     R0,#010H
+                 E     CALL    ?C?ULSHR
+C51 COMPILER V9.51   SI5351A                                                               08/14/2026 12:27:14 PAGE 22  
+
+                       PUSH    AR4
+                       PUSH    AR5
+                       PUSH    AR6
+                       PUSH    AR7
+                       INC     DPTR
+                       MOVX    A,@DPTR
+                       MOV     R4,A
+                       INC     DPTR
+                       MOVX    A,@DPTR
+                       MOV     R5,A
+                       INC     DPTR
+                       MOVX    A,@DPTR
+                       MOV     R6,A
+                       INC     DPTR
+                       MOVX    A,@DPTR
+                       CLR     A
+                       MOV     R7,A
+                       MOV     R6,A
+                       MOV     A,R5
+                       ANL     A,#0FH
+                       MOV     R5,A
+                       CLR     A
+                       MOV     R4,A
+                       MOV     R0,#0CH
+                 E     CALL    ?C?ULSHR
+                       POP     AR3
+                       POP     AR2
+                       POP     AR1
+                       POP     AR0
+                       MOV     A,R7
+                       ORL     A,R3
+                       MOV     R7,A
+                       MOV     A,R6
+                       ORL     A,R2
+                       MOV     A,R5
+                       ORL     A,R1
+                       MOV     A,R4
+                       ORL     A,R0
+                       MOV     R5,AR7
+                       POP     AR7
+                 E     CALL    _si5351_write_init
+                                           ; SOURCE LINE # 147
+                 R     MOV     DPTR,#state
+                       MOVX    A,@DPTR
+                       INC     A
+                       MOVX    @DPTR,A
+                                           ; SOURCE LINE # 148
+                 R     xJMP    ?C0011
+                                           ; SOURCE LINE # 149
+             ?C0018:
+                                           ; SOURCE LINE # 150
+                 R     MOV     DPTR,#synth
+                       MOVX    A,@DPTR
+                       ADD     A,#06H
+                       MOV     R7,A
+                       PUSH    AR7
+                 R     MOV     DPTR,#P2
+                       MOVX    A,@DPTR
+                       MOV     R4,A
+                       INC     DPTR
+                       MOVX    A,@DPTR
+                       MOV     R5,A
+C51 COMPILER V9.51   SI5351A                                                               08/14/2026 12:27:14 PAGE 23  
+
+                       INC     DPTR
+                       MOVX    A,@DPTR
+                       MOV     R6,A
+                       INC     DPTR
+                       MOVX    A,@DPTR
+                       CLR     A
+                       MOV     R7,A
+                       MOV     A,R6
+                       CLR     A
+                       MOV     R5,A
+                       MOV     R4,A
+                       MOV     R0,#08H
+                 E     CALL    ?C?ULSHR
+                       MOV     R5,AR7
+                       POP     AR7
+                 E     CALL    _si5351_write_init
+                                           ; SOURCE LINE # 152
+                 R     MOV     DPTR,#state
+                       MOVX    A,@DPTR
+                       INC     A
+                       MOVX    @DPTR,A
+                                           ; SOURCE LINE # 153
+                 R     xJMP    ?C0011
+                                           ; SOURCE LINE # 154
+             ?C0019:
+                                           ; SOURCE LINE # 155
+                 R     MOV     DPTR,#synth
+                       MOVX    A,@DPTR
+                       ADD     A,#07H
+                       MOV     R7,A
+                       PUSH    AR7
+                 R     MOV     DPTR,#P2
+                       MOVX    A,@DPTR
+                       MOV     R4,A
+                       INC     DPTR
+                       MOVX    A,@DPTR
+                       MOV     R5,A
+                       INC     DPTR
+                       MOVX    A,@DPTR
+                       MOV     R6,A
+                       INC     DPTR
+                       MOVX    A,@DPTR
+                       MOV     R7,A
+                       CLR     A
+                       MOV     R5,AR7
+                       POP     AR7
+                 E     CALL    _si5351_write_init
+                                           ; SOURCE LINE # 157
+                       CLR     A
+                 R     MOV     DPTR,#state
+                       MOVX    @DPTR,A
+                                           ; SOURCE LINE # 158
+                                           ; SOURCE LINE # 159
+             ?C0011:
+                                           ; SOURCE LINE # 160
+                 R     MOV     DPTR,#state
+                       MOVX    A,@DPTR
+                       MOV     R7,A
+                                           ; SOURCE LINE # 161
+             ?C0020:
+                       RET     
+             ; FUNCTION _setupMultisynth (END)
+C51 COMPILER V9.51   SI5351A                                                               08/14/2026 12:27:14 PAGE 24  
+
+
+             ; FUNCTION _si5351aOutputOff (BEGIN)
+                                           ; SOURCE LINE # 168
+;---- Variable 'clk' assigned to Register 'R7' ----
+                                           ; SOURCE LINE # 169
+                                           ; SOURCE LINE # 171
+                       MOV     R5,#080H
+                 E     CALL    _si5351_write_init
+                                           ; SOURCE LINE # 172
+                       RET     
+             ; FUNCTION _si5351aOutputOff (END)
+
+             ; FUNCTION _si5351aSetFrequency (BEGIN)
+                                           ; SOURCE LINE # 216
+                 R     MOV     DPTR,#LO_freq
+                 E     CALL    ?C?LSTXDATA
+                                           ; SOURCE LINE # 217
+                                           ; SOURCE LINE # 219
+                       MOV     R7,#040H
+                       MOV     R6,#078H
+                       MOV     R5,#07DH
+                       MOV     R4,#01H
+                 R     MOV     DPTR,#xtalFreq
+                 E     CALL    ?C?LSTXDATA
+                                           ; SOURCE LINE # 237
+                 R     MOV     DPTR,#state
+                       MOVX    A,@DPTR
+                       DEC     A
+                 R     xJZ     ?C0032
+                       DEC     A
+                 R     xJZ     ?C0054
+                       DEC     A
+                 R     xJZ     ?C0057
+                       DEC     A
+                 R     xJZ     ?C0060
+                       DEC     A
+                 R     xJZ     ?C0063
+                       ADD     A,#05H
+                 R     xJNZ    ?C0022
+                                           ; SOURCE LINE # 238
+             ?C0023:
+                                           ; SOURCE LINE # 239
+                 E     MOV     DPTR,#E_PPM_needs_set
+                       MOVX    A,@DPTR
+                       ADD     A,#0FEH
+                 R     xJZ     ?C0026
+                       DEC     A
+                 R     xJZ     ?C0027
+                       ADD     A,#03H
+                 R     xJNZ    ?C0024
+                                           ; SOURCE LINE # 240
+             ?C0025:
+                                           ; SOURCE LINE # 241
+                 R     MOV     DPTR,#LO_freq
+                       MOVX    A,@DPTR
+                       MOV     R4,A
+                       INC     DPTR
+                       MOVX    A,@DPTR
+                       MOV     R5,A
+                       INC     DPTR
+                       MOVX    A,@DPTR
+                       MOV     R6,A
+C51 COMPILER V9.51   SI5351A                                                               08/14/2026 12:27:14 PAGE 25  
+
+                       INC     DPTR
+                       MOVX    A,@DPTR
+                       MOV     R7,A
+                 R     MOV     DPTR,#E_l_freq_temp
+                 E     CALL    ?C?LSTXDATA
+                                           ; SOURCE LINE # 242
+                 R     xJMP    ?C0024
+                                           ; SOURCE LINE # 243
+             ?C0026:
+                                           ; SOURCE LINE # 244
+                 R     MOV     DPTR,#LO_freq
+                       MOVX    A,@DPTR
+                       MOV     R4,A
+                       INC     DPTR
+                       MOVX    A,@DPTR
+                       MOV     R5,A
+                       INC     DPTR
+                       MOVX    A,@DPTR
+                       MOV     R6,A
+                       INC     DPTR
+                       MOVX    A,@DPTR
+                       ADD     A,#064H
+                       MOV     R7,A
+                       CLR     A
+                       ADDC    A,R6
+                       MOV     R6,A
+                       CLR     A
+                       ADDC    A,R5
+                       MOV     R5,A
+                       CLR     A
+                       ADDC    A,R4
+                       MOV     R4,A
+                 R     MOV     DPTR,#E_l_freq_temp
+                 E     CALL    ?C?LSTXDATA
+                                           ; SOURCE LINE # 245
+                 E     MOV     DPTR,#E_PPM_needs_set
+                       MOV     A,#03H
+                       MOVX    @DPTR,A
+                                           ; SOURCE LINE # 246
+                 R     xJMP    ?C0024
+                                           ; SOURCE LINE # 247
+             ?C0027:
+                                           ; SOURCE LINE # 248
+                 R     MOV     DPTR,#LO_freq
+                       MOVX    A,@DPTR
+                       MOV     R4,A
+                       INC     DPTR
+                       MOVX    A,@DPTR
+                       MOV     R5,A
+                       INC     DPTR
+                       MOVX    A,@DPTR
+                       MOV     R6,A
+                       INC     DPTR
+                       MOVX    A,@DPTR
+                       MOV     R7,A
+                 R     MOV     DPTR,#E_l_freq_temp
+                 E     CALL    ?C?LSTXDATA
+                                           ; SOURCE LINE # 249
+                       CLR     A
+                 E     MOV     DPTR,#E_PPM_needs_set
+                       MOVX    @DPTR,A
+                                           ; SOURCE LINE # 250
+C51 COMPILER V9.51   SI5351A                                                               08/14/2026 12:27:14 PAGE 26  
+
+                                           ; SOURCE LINE # 251
+             ?C0024:
+                                           ; SOURCE LINE # 252
+                 E     MOV     DPTR,#TX_Request
+                       MOVX    A,@DPTR
+                 R     xJNZ    ?C0028
+                                           ; SOURCE LINE # 253
+                 E     MOV     DPTR,#E_current_rit_freq
+                       MOVX    A,@DPTR
+                       MOV     R4,A
+                       INC     DPTR
+                       MOVX    A,@DPTR
+                       MOV     R5,A
+                       INC     DPTR
+                       MOVX    A,@DPTR
+                       MOV     R6,A
+                       INC     DPTR
+                       MOVX    A,@DPTR
+                       MOV     R7,A
+                 R     MOV     DPTR,#E_l_freq_temp
+                       MOVX    A,@DPTR
+                       MOV     R0,A
+                       INC     DPTR
+                       MOVX    A,@DPTR
+                       MOV     R1,A
+                       INC     DPTR
+                       MOVX    A,@DPTR
+                       MOV     R2,A
+                       INC     DPTR
+                       MOVX    A,@DPTR
+                       ADD     A,R7
+                       MOV     R7,A
+                       MOV     A,R2
+                       ADDC    A,R6
+                       MOV     R6,A
+                       MOV     A,R1
+                       ADDC    A,R5
+                       MOV     R5,A
+                       MOV     A,R0
+                       ADDC    A,R4
+                       MOV     R4,A
+                 R     MOV     DPTR,#freq_previous
+                       MOVX    A,@DPTR
+                       MOV     R0,A
+                       INC     DPTR
+                       MOVX    A,@DPTR
+                       MOV     R1,A
+                       INC     DPTR
+                       MOVX    A,@DPTR
+                       MOV     R2,A
+                       INC     DPTR
+                       MOVX    A,@DPTR
+                       MOV     R3,A
+                       CLR     C
+                 E     CALL    ?C?ULCMP
+                 R     xJZ     ?C0022
+                                           ; SOURCE LINE # 255
+                 E     MOV     DPTR,#E_current_rit_freq
+                       MOVX    A,@DPTR
+                       MOV     R4,A
+                       INC     DPTR
+                       MOVX    A,@DPTR
+C51 COMPILER V9.51   SI5351A                                                               08/14/2026 12:27:14 PAGE 27  
+
+                       MOV     R5,A
+                       INC     DPTR
+                       MOVX    A,@DPTR
+                       MOV     R6,A
+                       INC     DPTR
+                       MOVX    A,@DPTR
+                       MOV     R7,A
+                 R     MOV     DPTR,#E_l_freq_temp
+                       MOVX    A,@DPTR
+                       MOV     R0,A
+                       INC     DPTR
+                       MOVX    A,@DPTR
+                       MOV     R1,A
+                       INC     DPTR
+                       MOVX    A,@DPTR
+                       MOV     R2,A
+                       INC     DPTR
+                       MOVX    A,@DPTR
+                       ADD     A,R7
+                       MOV     R7,A
+                       MOV     A,R2
+                       ADDC    A,R6
+                       MOV     R6,A
+                       MOV     A,R1
+                       ADDC    A,R5
+                       MOV     R5,A
+                       MOV     A,R0
+                       ADDC    A,R4
+                       MOV     R4,A
+                 R     MOV     DPTR,#E_l_freq
+                 E     CALL    ?C?LSTXDATA
+                                           ; SOURCE LINE # 256
+                 R     MOV     DPTR,#E_l_freq
+                       MOVX    A,@DPTR
+                       MOV     R4,A
+                       INC     DPTR
+                       MOVX    A,@DPTR
+                       MOV     R5,A
+                       INC     DPTR
+                       MOVX    A,@DPTR
+                       MOV     R6,A
+                       INC     DPTR
+                       MOVX    A,@DPTR
+                       MOV     R7,A
+                 R     MOV     DPTR,#freq_previous
+                 E     CALL    ?C?LSTXDATA
+                                           ; SOURCE LINE # 257
+                 R     MOV     DPTR,#state
+                       MOVX    A,@DPTR
+                       INC     A
+                       MOVX    @DPTR,A
+                                           ; SOURCE LINE # 258
+                                           ; SOURCE LINE # 259
+                 R     xJMP    ?C0022
+             ?C0028:
+                                           ; SOURCE LINE # 260
+                 R     MOV     DPTR,#E_l_freq_temp
+                       MOVX    A,@DPTR
+                       MOV     R4,A
+                       INC     DPTR
+                       MOVX    A,@DPTR
+                       MOV     R5,A
+C51 COMPILER V9.51   SI5351A                                                               08/14/2026 12:27:14 PAGE 28  
+
+                       INC     DPTR
+                       MOVX    A,@DPTR
+                       MOV     R6,A
+                       INC     DPTR
+                       MOVX    A,@DPTR
+                       MOV     R7,A
+                 R     MOV     DPTR,#freq_previous
+                       MOVX    A,@DPTR
+                       MOV     R0,A
+                       INC     DPTR
+                       MOVX    A,@DPTR
+                       MOV     R1,A
+                       INC     DPTR
+                       MOVX    A,@DPTR
+                       MOV     R2,A
+                       INC     DPTR
+                       MOVX    A,@DPTR
+                       MOV     R3,A
+                       CLR     C
+                 E     CALL    ?C?ULCMP
+                 R     xJZ     ?C0022
+                                           ; SOURCE LINE # 261
+                 R     MOV     DPTR,#E_l_freq_temp
+                       MOVX    A,@DPTR
+                       MOV     R4,A
+                       INC     DPTR
+                       MOVX    A,@DPTR
+                       MOV     R5,A
+                       INC     DPTR
+                       MOVX    A,@DPTR
+                       MOV     R6,A
+                       INC     DPTR
+                       MOVX    A,@DPTR
+                       MOV     R7,A
+                 R     MOV     DPTR,#E_l_freq
+                 E     CALL    ?C?LSTXDATA
+                                           ; SOURCE LINE # 262
+                 R     MOV     DPTR,#E_l_freq_temp
+                       MOVX    A,@DPTR
+                       MOV     R4,A
+                       INC     DPTR
+                       MOVX    A,@DPTR
+                       MOV     R5,A
+                       INC     DPTR
+                       MOVX    A,@DPTR
+                       MOV     R6,A
+                       INC     DPTR
+                       MOVX    A,@DPTR
+                       MOV     R7,A
+                 R     MOV     DPTR,#freq_previous
+                 E     CALL    ?C?LSTXDATA
+                                           ; SOURCE LINE # 263
+                 R     MOV     DPTR,#state
+                       MOVX    A,@DPTR
+                       INC     A
+                       MOVX    @DPTR,A
+                                           ; SOURCE LINE # 264
+                                           ; SOURCE LINE # 265
+                                           ; SOURCE LINE # 266
+                 R     xJMP    ?C0022
+                                           ; SOURCE LINE # 267
+             ?C0032:
+C51 COMPILER V9.51   SI5351A                                                               08/14/2026 12:27:14 PAGE 29  
+
+                                           ; SOURCE LINE # 269
+                 E     MOV     DPTR,#ee_ppm_int
+                       MOVX    A,@DPTR
+                 R     MOV     DPTR,#l_ppm_int
+                       MOVX    @DPTR,A
+                                           ; SOURCE LINE # 270
+                 E     MOV     DPTR,#ee_ppm_dec
+                       MOVX    A,@DPTR
+                 R     MOV     DPTR,#l_ppm_dec
+                       MOVX    @DPTR,A
+                                           ; SOURCE LINE # 271
+                       MOVX    A,@DPTR
+                       MOV     R4,A
+                 E     CALL    ?C?FCASTC
+                       CLR     A
+                       MOV     R3,A
+                       MOV     R2,A
+                       MOV     R1,#0C8H
+                       MOV     R0,#042H
+                 E     CALL    ?C?FPDIV
+                 R     MOV     DPTR,#ppm
+                 E     CALL    ?C?LSTXDATA
+                                           ; SOURCE LINE # 272
+                 R     MOV     DPTR,#ppm
+                       MOVX    A,@DPTR
+                       MOV     R0,A
+                       INC     DPTR
+                       MOVX    A,@DPTR
+                       MOV     R1,A
+                       INC     DPTR
+                       MOVX    A,@DPTR
+                       MOV     R2,A
+                       INC     DPTR
+                       MOVX    A,@DPTR
+                       MOV     R3,A
+                       PUSH    AR0
+                       PUSH    AR1
+                       PUSH    AR2
+                       PUSH    AR3
+                 R     MOV     DPTR,#l_ppm_int
+                       MOVX    A,@DPTR
+                       MOV     R4,A
+                 E     CALL    ?C?FCASTC
+                       POP     AR3
+                       POP     AR2
+                       POP     AR1
+                       POP     AR0
+                 E     CALL    ?C?FPADD
+                 R     MOV     DPTR,#ppm
+                 E     CALL    ?C?LSTXDATA
+                                           ; SOURCE LINE # 273
+                 R     MOV     DPTR,#E_l_freq
+                       MOVX    A,@DPTR
+                       MOV     R4,A
+                       INC     DPTR
+                       MOVX    A,@DPTR
+                       MOV     R5,A
+                       INC     DPTR
+                       MOVX    A,@DPTR
+                       MOV     R6,A
+                       INC     DPTR
+                       MOVX    A,@DPTR
+C51 COMPILER V9.51   SI5351A                                                               08/14/2026 12:27:14 PAGE 30  
+
+                       MOV     R7,A
+                       CLR     A
+                 E     CALL    ?C?FCASTL
+                       MOV     R3,#00H
+                       MOV     R2,#024H
+                       MOV     R1,#074H
+                       MOV     R0,#049H
+                 E     CALL    ?C?FPDIV
+                 R     MOV     DPTR,#delta_freq
+                 E     CALL    ?C?LSTXDATA
+                                           ; SOURCE LINE # 274
+                 R     MOV     DPTR,#ppm
+                       MOVX    A,@DPTR
+                       MOV     R4,A
+                       INC     DPTR
+                       MOVX    A,@DPTR
+                       MOV     R5,A
+                       INC     DPTR
+                       MOVX    A,@DPTR
+                       MOV     R6,A
+                       INC     DPTR
+                       MOVX    A,@DPTR
+                       MOV     R7,A
+                 R     MOV     DPTR,#delta_freq
+                       MOVX    A,@DPTR
+                       MOV     R0,A
+                       INC     DPTR
+                       MOVX    A,@DPTR
+                       MOV     R1,A
+                       INC     DPTR
+                       MOVX    A,@DPTR
+                       MOV     R2,A
+                       INC     DPTR
+                       MOVX    A,@DPTR
+                       MOV     R3,A
+                 E     CALL    ?C?FPMUL
+                       CLR     A
+                       MOV     R3,A
+                       MOV     R2,A
+                       MOV     R1,#080H
+                       MOV     R0,#0C0H
+                 E     CALL    ?C?FPMUL
+                 R     MOV     DPTR,#delta_freq
+                 E     CALL    ?C?LSTXDATA
+                                           ; SOURCE LINE # 275
+                 R     MOV     DPTR,#delta_freq
+                       MOVX    A,@DPTR
+                       MOV     R4,A
+                       INC     DPTR
+                       MOVX    A,@DPTR
+                       MOV     R5,A
+                       INC     DPTR
+                       MOVX    A,@DPTR
+                       MOV     R6,A
+                       INC     DPTR
+                       MOVX    A,@DPTR
+                       MOV     R7,A
+                 E     CALL    ?C?CASTF
+                 R     MOV     DPTR,#delta_freq_int
+                 E     CALL    ?C?LSTXDATA
+                                           ; SOURCE LINE # 280
+                       CLR     A
+C51 COMPILER V9.51   SI5351A                                                               08/14/2026 12:27:14 PAGE 31  
+
+                       MOV     R7,A
+                       MOV     R6,A
+                       MOV     R5,A
+                       MOV     R4,A
+                 R     MOV     DPTR,#delta_freq_int
+                       MOVX    A,@DPTR
+                       MOV     R0,A
+                       INC     DPTR
+                       MOVX    A,@DPTR
+                       MOV     R1,A
+                       INC     DPTR
+                       MOVX    A,@DPTR
+                       MOV     R2,A
+                       INC     DPTR
+                       MOVX    A,@DPTR
+                       MOV     R3,A
+                       CLR     C
+                 E     CALL    ?C?SLCMP
+                 R     xJGE    ?C0033
+             ?C0034:
+                                           ; SOURCE LINE # 281
+                       CLR     A
+                       MOV     R3,#04H
+                       MOV     R2,A
+                       MOV     R1,A
+                       MOV     R0,A
+                 R     MOV     DPTR,#delta_freq_int
+                       MOVX    A,@DPTR
+                       MOV     R4,A
+                       INC     DPTR
+                       MOVX    A,@DPTR
+                       MOV     R5,A
+                       INC     DPTR
+                       MOVX    A,@DPTR
+                       MOV     R6,A
+                       INC     DPTR
+                       MOVX    A,@DPTR
+                       MOV     R7,A
+                 E     CALL    ?C?SLDIV
+                       MOV     R4,AR0
+                       MOV     R5,AR1
+                       MOV     R6,AR2
+                       MOV     R7,AR3
+                       CLR     A
+                       MOV     R3,A
+                       MOV     R2,A
+                       MOV     R1,A
+                       MOV     R0,A
+                       CLR     C
+                 E     CALL    ?C?SLCMP
+                 R     xJZ     ?C0036
+                                           ; SOURCE LINE # 282
+                 R     MOV     DPTR,#delta_freq_int
+                       MOVX    A,@DPTR
+                       MOV     R4,A
+                       INC     DPTR
+                       MOVX    A,@DPTR
+                       MOV     R5,A
+                       INC     DPTR
+                       MOVX    A,@DPTR
+                       MOV     R6,A
+                       INC     DPTR
+C51 COMPILER V9.51   SI5351A                                                               08/14/2026 12:27:14 PAGE 32  
+
+                       MOVX    A,@DPTR
+                       MOV     R7,A
+                       CLR     A
+                       INC     R3
+                       MOV     R0,A
+                       MOV     A,R7
+                       ADD     A,R3
+                       MOV     R7,A
+                       MOV     A,R2
+                       ADDC    A,R6
+                       MOV     R6,A
+                       MOV     A,R1
+                       ADDC    A,R5
+                       MOV     R5,A
+                       MOV     A,R0
+                       ADDC    A,R4
+                       MOV     R4,A
+                 R     MOV     DPTR,#delta_freq_int
+                 E     CALL    ?C?LSTXDATA
+                                           ; SOURCE LINE # 283
+                 R     xJMP    ?C0034
+                                           ; SOURCE LINE # 284
+             ?C0033:
+                                           ; SOURCE LINE # 285
+                       CLR     A
+                       MOV     R7,A
+                       MOV     R6,A
+                       MOV     R5,A
+                       MOV     R4,A
+                 R     MOV     DPTR,#delta_freq_int
+                       MOVX    A,@DPTR
+                       MOV     R0,A
+                       INC     DPTR
+                       MOVX    A,@DPTR
+                       MOV     R1,A
+                       INC     DPTR
+                       MOVX    A,@DPTR
+                       MOV     R2,A
+                       INC     DPTR
+                       MOVX    A,@DPTR
+                       MOV     R3,A
+                       SETB    C
+                 E     CALL    ?C?SLCMP
+                 R     xJLT    ?C0036
+             ?C0038:
+                                           ; SOURCE LINE # 286
+                       CLR     A
+                       MOV     R3,#04H
+                       MOV     R2,A
+                       MOV     R1,A
+                       MOV     R0,A
+                 R     MOV     DPTR,#delta_freq_int
+                       MOVX    A,@DPTR
+                       MOV     R4,A
+                       INC     DPTR
+                       MOVX    A,@DPTR
+                       MOV     R5,A
+                       INC     DPTR
+                       MOVX    A,@DPTR
+                       MOV     R6,A
+                       INC     DPTR
+                       MOVX    A,@DPTR
+C51 COMPILER V9.51   SI5351A                                                               08/14/2026 12:27:14 PAGE 33  
+
+                       MOV     R7,A
+                 E     CALL    ?C?SLDIV
+                       MOV     R4,AR0
+                       MOV     R5,AR1
+                       MOV     R6,AR2
+                       MOV     R7,AR3
+                       CLR     A
+                       MOV     R3,A
+                       MOV     R2,A
+                       MOV     R1,A
+                       MOV     R0,A
+                       CLR     C
+                 E     CALL    ?C?SLCMP
+                 R     xJZ     ?C0036
+                                           ; SOURCE LINE # 287
+                 R     MOV     DPTR,#delta_freq_int
+                       MOVX    A,@DPTR
+                       MOV     R4,A
+                       INC     DPTR
+                       MOVX    A,@DPTR
+                       MOV     R5,A
+                       INC     DPTR
+                       MOVX    A,@DPTR
+                       MOV     R6,A
+                       INC     DPTR
+                       MOVX    A,@DPTR
+                       MOV     R7,A
+                       MOV     A,#0FFH
+                       MOV     A,R7
+                       ADD     A,#0FFH
+                       MOV     R7,A
+                       MOV     A,R6
+                       ADDC    A,#0FFH
+                       MOV     R6,A
+                       MOV     A,R5
+                       ADDC    A,#0FFH
+                       MOV     R5,A
+                       MOV     A,R4
+                       ADDC    A,#0FFH
+                       MOV     R4,A
+                 R     MOV     DPTR,#delta_freq_int
+                 E     CALL    ?C?LSTXDATA
+                                           ; SOURCE LINE # 288
+                 R     xJMP    ?C0038
+                                           ; SOURCE LINE # 289
+                                           ; SOURCE LINE # 290
+             ?C0036:
+                                           ; SOURCE LINE # 292
+                 R     MOV     DPTR,#E_l_freq
+                       MOVX    A,@DPTR
+                       MOV     R4,A
+                       INC     DPTR
+                       MOVX    A,@DPTR
+                       MOV     R5,A
+                       INC     DPTR
+                       MOVX    A,@DPTR
+                       MOV     R6,A
+                       INC     DPTR
+                       MOVX    A,@DPTR
+                       MOV     R7,A
+                       CLR     A
+                       MOV     R3,#04H
+C51 COMPILER V9.51   SI5351A                                                               08/14/2026 12:27:14 PAGE 34  
+
+                       MOV     R2,A
+                       MOV     R1,A
+                       MOV     R0,A
+                 E     CALL    ?C?LMUL
+                 R     MOV     DPTR,#E_l_freq
+                 E     CALL    ?C?LSTXDATA
+                                           ; SOURCE LINE # 294
+                 R     MOV     DPTR,#E_l_freq
+                       MOVX    A,@DPTR
+                       MOV     R0,A
+                       INC     DPTR
+                       MOVX    A,@DPTR
+                       MOV     R1,A
+                       INC     DPTR
+                       MOVX    A,@DPTR
+                       MOV     R2,A
+                       INC     DPTR
+                       MOVX    A,@DPTR
+                       MOV     R3,A
+                 R     MOV     DPTR,#delta_freq_int
+                       MOVX    A,@DPTR
+                       MOV     R4,A
+                       INC     DPTR
+                       MOVX    A,@DPTR
+                       MOV     R5,A
+                       INC     DPTR
+                       MOVX    A,@DPTR
+                       MOV     R6,A
+                       INC     DPTR
+                       MOVX    A,@DPTR
+                       MOV     R7,A
+                       MOV     A,R3
+                       ADD     A,R7
+                       MOV     R7,A
+                       MOV     A,R2
+                       ADDC    A,R6
+                       MOV     R6,A
+                       MOV     A,R1
+                       ADDC    A,R5
+                       MOV     R5,A
+                       MOV     A,R0
+                       ADDC    A,R4
+                       MOV     R4,A
+                 R     MOV     DPTR,#E_l_freq
+                 E     CALL    ?C?LSTXDATA
+                                           ; SOURCE LINE # 296
+                       CLR     A
+                 R     MOV     DPTR,#soft_ms_hold
+                       MOVX    @DPTR,A
+                                           ; SOURCE LINE # 297
+                 R     MOV     DPTR,#try_soft
+                       MOVX    @DPTR,A
+                                           ; SOURCE LINE # 299
+                       MOV     R7,#06H
+                       MOV     R6,A
+                       MOV     R5,A
+                       MOV     R4,A
+                 R     MOV     DPTR,#prev_ms_divider
+                       MOVX    A,@DPTR
+                       MOV     R0,A
+                       INC     DPTR
+                       MOVX    A,@DPTR
+C51 COMPILER V9.51   SI5351A                                                               08/14/2026 12:27:14 PAGE 35  
+
+                       MOV     R1,A
+                       INC     DPTR
+                       MOVX    A,@DPTR
+                       MOV     R2,A
+                       INC     DPTR
+                       MOVX    A,@DPTR
+                       MOV     R3,A
+                       CLR     C
+                 E     CALL    ?C?ULCMP
+                 R     xJLT    ?C0040
+                       CLR     A
+                       MOV     R7,A
+                       MOV     R6,A
+                       MOV     R5,A
+                       MOV     R4,A
+                 R     MOV     DPTR,#E_l_freq
+                       MOVX    A,@DPTR
+                       MOV     R0,A
+                       INC     DPTR
+                       MOVX    A,@DPTR
+                       MOV     R1,A
+                       INC     DPTR
+                       MOVX    A,@DPTR
+                       MOV     R2,A
+                       INC     DPTR
+                       MOVX    A,@DPTR
+                       MOV     R3,A
+                       SETB    C
+                 E     CALL    ?C?ULCMP
+                 R     xJLT    ?C0040
+                                           ; SOURCE LINE # 300
+                 R     MOV     DPTR,#prev_ms_divider
+                       MOVX    A,@DPTR
+                       MOV     R0,A
+                       INC     DPTR
+                       MOVX    A,@DPTR
+                       MOV     R1,A
+                       INC     DPTR
+                       MOVX    A,@DPTR
+                       MOV     R2,A
+                       INC     DPTR
+                       MOVX    A,@DPTR
+                       MOV     R3,A
+                       MOV     R7,#00H
+                       MOV     R6,#0E9H
+                       MOV     R5,#0A4H
+                       MOV     R4,#035H
+                 E     CALL    ?C?ULDIV
+                 R     MOV     DPTR,#E_l_freq
+                       MOVX    A,@DPTR
+                       MOV     R0,A
+                       INC     DPTR
+                       MOVX    A,@DPTR
+                       MOV     R1,A
+                       INC     DPTR
+                       MOVX    A,@DPTR
+                       MOV     R2,A
+                       INC     DPTR
+                       MOVX    A,@DPTR
+                       MOV     R3,A
+                       SETB    C
+                 E     CALL    ?C?ULCMP
+C51 COMPILER V9.51   SI5351A                                                               08/14/2026 12:27:14 PAGE 36  
+
+                 R     xJGE    ?C0040
+                                           ; SOURCE LINE # 301
+                 R     MOV     DPTR,#E_l_freq
+                       MOVX    A,@DPTR
+                       MOV     R4,A
+                       INC     DPTR
+                       MOVX    A,@DPTR
+                       MOV     R5,A
+                       INC     DPTR
+                       MOVX    A,@DPTR
+                       MOV     R6,A
+                       INC     DPTR
+                       MOVX    A,@DPTR
+                       MOV     R7,A
+                 R     MOV     DPTR,#prev_ms_divider
+                       MOVX    A,@DPTR
+                       MOV     R0,A
+                       INC     DPTR
+                       MOVX    A,@DPTR
+                       MOV     R1,A
+                       INC     DPTR
+                       MOVX    A,@DPTR
+                       MOV     R2,A
+                       INC     DPTR
+                       MOVX    A,@DPTR
+                       MOV     R3,A
+                 E     CALL    ?C?LMUL
+                 R     MOV     DPTR,#pllFreq
+                 E     CALL    ?C?LSTXDATA
+                                           ; SOURCE LINE # 302
+                       MOV     R7,#00H
+                       MOV     R6,#046H
+                       MOV     R5,#0C3H
+                       MOV     R4,#023H
+                 R     MOV     DPTR,#pllFreq
+                       MOVX    A,@DPTR
+                       MOV     R0,A
+                       INC     DPTR
+                       MOVX    A,@DPTR
+                       MOV     R1,A
+                       INC     DPTR
+                       MOVX    A,@DPTR
+                       MOV     R2,A
+                       INC     DPTR
+                       MOVX    A,@DPTR
+                       MOV     R3,A
+                       CLR     C
+                 E     CALL    ?C?ULCMP
+                 R     xJLT    ?C0040
+                                           ; SOURCE LINE # 303
+                 R     MOV     DPTR,#xtalFreq
+                       MOVX    A,@DPTR
+                       MOV     R0,A
+                       INC     DPTR
+                       MOVX    A,@DPTR
+                       MOV     R1,A
+                       INC     DPTR
+                       MOVX    A,@DPTR
+                       MOV     R2,A
+                       INC     DPTR
+                       MOVX    A,@DPTR
+                       MOV     R3,A
+C51 COMPILER V9.51   SI5351A                                                               08/14/2026 12:27:14 PAGE 37  
+
+                 R     MOV     DPTR,#pllFreq
+                       MOVX    A,@DPTR
+                       MOV     R4,A
+                       INC     DPTR
+                       MOVX    A,@DPTR
+                       MOV     R5,A
+                       INC     DPTR
+                       MOVX    A,@DPTR
+                       MOV     R6,A
+                       INC     DPTR
+                       MOVX    A,@DPTR
+                       MOV     R7,A
+                 E     CALL    ?C?ULDIV
+                 R     MOV     DPTR,#mult
+                       MOV     A,R7
+                       MOVX    @DPTR,A
+                                           ; SOURCE LINE # 304
+                       CLR     C
+                       SUBB    A,#0FH
+                 R     xJLT    ?C0040
+                       MOVX    A,@DPTR
+                       SETB    C
+                       SUBB    A,#05AH
+                 R     xJGE    ?C0040
+                                           ; SOURCE LINE # 305
+                 R     MOV     DPTR,#try_soft
+                       MOV     A,#01H
+                       MOVX    @DPTR,A
+                                           ; SOURCE LINE # 306
+                                           ; SOURCE LINE # 307
+                                           ; SOURCE LINE # 308
+                                           ; SOURCE LINE # 309
+             ?C0040:
+                                           ; SOURCE LINE # 311
+                 R     MOV     DPTR,#try_soft
+                       MOVX    A,@DPTR
+                 R     xJZ     ?C0044
+                                           ; SOURCE LINE # 312
+                 R     MOV     DPTR,#prev_ms_divider
+                       MOVX    A,@DPTR
+                       MOV     R4,A
+                       INC     DPTR
+                       MOVX    A,@DPTR
+                       MOV     R5,A
+                       INC     DPTR
+                       MOVX    A,@DPTR
+                       MOV     R6,A
+                       INC     DPTR
+                       MOVX    A,@DPTR
+                       MOV     R7,A
+                 R     MOV     DPTR,#divider
+                 E     CALL    ?C?LSTXDATA
+                                           ; SOURCE LINE # 313
+                 R     MOV     DPTR,#soft_ms_hold
+                       MOV     A,#01H
+                       MOVX    @DPTR,A
+                                           ; SOURCE LINE # 314
+                 E     MOV     DPTR,#E_smooth
+                       MOVX    @DPTR,A
+                                           ; SOURCE LINE # 315
+                 R     xJMP    ?C0045
+             ?C0044:
+C51 COMPILER V9.51   SI5351A                                                               08/14/2026 12:27:14 PAGE 38  
+
+                                           ; SOURCE LINE # 317
+                 R     MOV     DPTR,#E_l_freq
+                       MOVX    A,@DPTR
+                       MOV     R0,A
+                       INC     DPTR
+                       MOVX    A,@DPTR
+                       MOV     R1,A
+                       INC     DPTR
+                       MOVX    A,@DPTR
+                       MOV     R2,A
+                       INC     DPTR
+                       MOVX    A,@DPTR
+                       MOV     R3,A
+                       MOV     R7,#080H
+                       MOV     R6,#017H
+                       MOV     R5,#0B4H
+                       MOV     R4,#02CH
+                 E     CALL    ?C?ULDIV
+                 R     MOV     DPTR,#divider
+                 E     CALL    ?C?LSTXDATA
+                                           ; SOURCE LINE # 318
+                       CLR     A
+                       MOV     R7,#06H
+                       MOV     R6,A
+                       MOV     R5,A
+                       MOV     R4,A
+                 R     MOV     DPTR,#divider
+                       MOVX    A,@DPTR
+                       MOV     R0,A
+                       INC     DPTR
+                       MOVX    A,@DPTR
+                       MOV     R1,A
+                       INC     DPTR
+                       MOVX    A,@DPTR
+                       MOV     R2,A
+                       INC     DPTR
+                       MOVX    A,@DPTR
+                       MOV     R3,A
+                       CLR     C
+                 E     CALL    ?C?ULCMP
+                 R     xJGE    ?C0046
+                                           ; SOURCE LINE # 319
+                       CLR     A
+                       MOV     R7,#06H
+                       MOV     R6,A
+                       MOV     R5,A
+                       MOV     R4,A
+                 R     MOV     DPTR,#divider
+                 E     CALL    ?C?LSTXDATA
+                                           ; SOURCE LINE # 320
+             ?C0046:
+                                           ; SOURCE LINE # 321
+                       CLR     A
+                       MOV     R7,#08H
+                       MOV     R6,#07H
+                       MOV     R5,A
+                       MOV     R4,A
+                 R     MOV     DPTR,#divider
+                       MOVX    A,@DPTR
+                       MOV     R0,A
+                       INC     DPTR
+                       MOVX    A,@DPTR
+C51 COMPILER V9.51   SI5351A                                                               08/14/2026 12:27:14 PAGE 39  
+
+                       MOV     R1,A
+                       INC     DPTR
+                       MOVX    A,@DPTR
+                       MOV     R2,A
+                       INC     DPTR
+                       MOVX    A,@DPTR
+                       MOV     R3,A
+                       SETB    C
+                 E     CALL    ?C?ULCMP
+                 R     xJLT    ?C0047
+                                           ; SOURCE LINE # 322
+                       CLR     A
+                       MOV     R7,#08H
+                       MOV     R6,#07H
+                       MOV     R5,A
+                       MOV     R4,A
+                 R     MOV     DPTR,#divider
+                 E     CALL    ?C?LSTXDATA
+                                           ; SOURCE LINE # 323
+             ?C0047:
+                                           ; SOURCE LINE # 324
+                 R     MOV     DPTR,#divider
+                       MOVX    A,@DPTR
+                       MOV     R4,A
+                       INC     DPTR
+                       MOVX    A,@DPTR
+                       MOV     R5,A
+                       INC     DPTR
+                       MOVX    A,@DPTR
+                       MOV     R6,A
+                       INC     DPTR
+                       MOVX    A,@DPTR
+                       ANL     A,#01H
+                       MOV     R7,A
+                       CLR     A
+                       MOV     R6,A
+                       MOV     R5,A
+                       MOV     R4,A
+                       MOV     A,R7
+                 R     xJZ     ?C0048
+                                           ; SOURCE LINE # 325
+                 R     MOV     DPTR,#divider
+                       MOVX    A,@DPTR
+                       MOV     R4,A
+                       INC     DPTR
+                       MOVX    A,@DPTR
+                       MOV     R5,A
+                       INC     DPTR
+                       MOVX    A,@DPTR
+                       MOV     R6,A
+                       INC     DPTR
+                       MOVX    A,@DPTR
+                       MOV     R7,A
+                       MOV     A,#0FFH
+                       MOV     A,R7
+                       ADD     A,#0FFH
+                       MOV     R7,A
+                       MOV     A,R6
+                       ADDC    A,#0FFH
+                       MOV     R6,A
+                       MOV     A,R5
+                       ADDC    A,#0FFH
+C51 COMPILER V9.51   SI5351A                                                               08/14/2026 12:27:14 PAGE 40  
+
+                       MOV     R5,A
+                       MOV     A,R4
+                       ADDC    A,#0FFH
+                       MOV     R4,A
+                 R     MOV     DPTR,#divider
+                 E     CALL    ?C?LSTXDATA
+                                           ; SOURCE LINE # 326
+             ?C0048:
+                                           ; SOURCE LINE # 327
+                       CLR     A
+                       MOV     R7,#06H
+                       MOV     R6,A
+                       MOV     R5,A
+                       MOV     R4,A
+                 R     MOV     DPTR,#divider
+                       MOVX    A,@DPTR
+                       MOV     R0,A
+                       INC     DPTR
+                       MOVX    A,@DPTR
+                       MOV     R1,A
+                       INC     DPTR
+                       MOVX    A,@DPTR
+                       MOV     R2,A
+                       INC     DPTR
+                       MOVX    A,@DPTR
+                       MOV     R3,A
+                       CLR     C
+                 E     CALL    ?C?ULCMP
+                 R     xJGE    ?C0049
+                                           ; SOURCE LINE # 328
+                       CLR     A
+                       MOV     R7,#06H
+                       MOV     R6,A
+                       MOV     R5,A
+                       MOV     R4,A
+                 R     MOV     DPTR,#divider
+                 E     CALL    ?C?LSTXDATA
+                                           ; SOURCE LINE # 329
+             ?C0049:
+                                           ; SOURCE LINE # 330
+                 R     MOV     DPTR,#E_l_freq
+                       MOVX    A,@DPTR
+                       MOV     R4,A
+                       INC     DPTR
+                       MOVX    A,@DPTR
+                       MOV     R5,A
+                       INC     DPTR
+                       MOVX    A,@DPTR
+                       MOV     R6,A
+                       INC     DPTR
+                       MOVX    A,@DPTR
+                       MOV     R7,A
+                 R     MOV     DPTR,#divider
+                       MOVX    A,@DPTR
+                       MOV     R0,A
+                       INC     DPTR
+                       MOVX    A,@DPTR
+                       MOV     R1,A
+                       INC     DPTR
+                       MOVX    A,@DPTR
+                       MOV     R2,A
+                       INC     DPTR
+C51 COMPILER V9.51   SI5351A                                                               08/14/2026 12:27:14 PAGE 41  
+
+                       MOVX    A,@DPTR
+                       MOV     R3,A
+                 E     CALL    ?C?LMUL
+                 R     MOV     DPTR,#pllFreq
+                 E     CALL    ?C?LSTXDATA
+                                           ; SOURCE LINE # 332
+                       MOV     R7,#00H
+                       MOV     R6,#0E9H
+                       MOV     R5,#0A4H
+                       MOV     R4,#035H
+                 R     MOV     DPTR,#pllFreq
+                       MOVX    A,@DPTR
+                       MOV     R0,A
+                       INC     DPTR
+                       MOVX    A,@DPTR
+                       MOV     R1,A
+                       INC     DPTR
+                       MOVX    A,@DPTR
+                       MOV     R2,A
+                       INC     DPTR
+                       MOVX    A,@DPTR
+                       MOV     R3,A
+                       SETB    C
+                 E     CALL    ?C?ULCMP
+                 R     xJGE    ?C0051
+                       MOV     R7,#00H
+                       MOV     R6,#046H
+                       MOV     R5,#0C3H
+                       MOV     R4,#023H
+                 R     MOV     DPTR,#pllFreq
+                       MOVX    A,@DPTR
+                       MOV     R0,A
+                       INC     DPTR
+                       MOVX    A,@DPTR
+                       INC     DPTR
+                       MOVX    A,@DPTR
+                       INC     DPTR
+                       MOVX    A,@DPTR
+                       CLR     C
+                 E     CALL    ?C?ULCMP
+                 R     xJGE    ?C0050
+             ?C0051:
+                                           ; SOURCE LINE # 333
+                 R     MOV     DPTR,#E_l_freq
+                       MOVX    A,@DPTR
+                       MOV     R0,A
+                       INC     DPTR
+                       MOVX    A,@DPTR
+                       MOV     R1,A
+                       INC     DPTR
+                       MOVX    A,@DPTR
+                       MOV     R2,A
+                       INC     DPTR
+                       MOVX    A,@DPTR
+                       MOV     R3,A
+                       MOV     R7,#00H
+                       MOV     R6,#0E9H
+                       MOV     R5,#0A4H
+                       MOV     R4,#035H
+                 E     CALL    ?C?ULDIV
+                 R     MOV     DPTR,#divider
+                 E     CALL    ?C?LSTXDATA
+C51 COMPILER V9.51   SI5351A                                                               08/14/2026 12:27:14 PAGE 42  
+
+                                           ; SOURCE LINE # 334
+                 R     MOV     DPTR,#divider
+                       MOVX    A,@DPTR
+                       MOV     R4,A
+                       INC     DPTR
+                       MOVX    A,@DPTR
+                       MOV     R5,A
+                       INC     DPTR
+                       MOVX    A,@DPTR
+                       MOV     R6,A
+                       INC     DPTR
+                       MOVX    A,@DPTR
+                       ANL     A,#01H
+                       MOV     R7,A
+                       CLR     A
+                       MOV     R6,A
+                       MOV     R5,A
+                       MOV     R4,A
+                       MOV     A,R7
+                 R     xJZ     ?C0052
+                                           ; SOURCE LINE # 335
+                 R     MOV     DPTR,#divider
+                       MOVX    A,@DPTR
+                       MOV     R4,A
+                       INC     DPTR
+                       MOVX    A,@DPTR
+                       MOV     R5,A
+                       INC     DPTR
+                       MOVX    A,@DPTR
+                       MOV     R6,A
+                       INC     DPTR
+                       MOVX    A,@DPTR
+                       MOV     R7,A
+                       MOV     A,#0FFH
+                       MOV     A,R7
+                       ADD     A,#0FFH
+                       MOV     R7,A
+                       MOV     A,R6
+                       ADDC    A,#0FFH
+                       MOV     R6,A
+                       MOV     A,R5
+                       ADDC    A,#0FFH
+                       MOV     R5,A
+                       MOV     A,R4
+                       ADDC    A,#0FFH
+                       MOV     R4,A
+                 R     MOV     DPTR,#divider
+                 E     CALL    ?C?LSTXDATA
+                                           ; SOURCE LINE # 336
+             ?C0052:
+                                           ; SOURCE LINE # 337
+                       CLR     A
+                       MOV     R7,#06H
+                       MOV     R6,A
+                       MOV     R5,A
+                       MOV     R4,A
+                 R     MOV     DPTR,#divider
+                       MOVX    A,@DPTR
+                       MOV     R0,A
+                       INC     DPTR
+                       MOVX    A,@DPTR
+                       MOV     R1,A
+C51 COMPILER V9.51   SI5351A                                                               08/14/2026 12:27:14 PAGE 43  
+
+                       INC     DPTR
+                       MOVX    A,@DPTR
+                       MOV     R2,A
+                       INC     DPTR
+                       MOVX    A,@DPTR
+                       MOV     R3,A
+                       CLR     C
+                 E     CALL    ?C?ULCMP
+                 R     xJGE    ?C0053
+                                           ; SOURCE LINE # 338
+                       CLR     A
+                       MOV     R7,#06H
+                       MOV     R6,A
+                       MOV     R5,A
+                       MOV     R4,A
+                 R     MOV     DPTR,#divider
+                 E     CALL    ?C?LSTXDATA
+                                           ; SOURCE LINE # 339
+             ?C0053:
+                                           ; SOURCE LINE # 340
+                 R     MOV     DPTR,#E_l_freq
+                       MOVX    A,@DPTR
+                       MOV     R4,A
+                       INC     DPTR
+                       MOVX    A,@DPTR
+                       MOV     R5,A
+                       INC     DPTR
+                       MOVX    A,@DPTR
+                       MOV     R6,A
+                       INC     DPTR
+                       MOVX    A,@DPTR
+                       MOV     R7,A
+                 R     MOV     DPTR,#divider
+                       MOVX    A,@DPTR
+                       MOV     R0,A
+                       INC     DPTR
+                       MOVX    A,@DPTR
+                       MOV     R1,A
+                       INC     DPTR
+                       MOVX    A,@DPTR
+                       MOV     R2,A
+                       INC     DPTR
+                       MOVX    A,@DPTR
+                       MOV     R3,A
+                 E     CALL    ?C?LMUL
+                 R     MOV     DPTR,#pllFreq
+                 E     CALL    ?C?LSTXDATA
+                                           ; SOURCE LINE # 341
+             ?C0050:
+                                           ; SOURCE LINE # 342
+                       CLR     A
+                 R     MOV     DPTR,#soft_ms_hold
+                       MOVX    @DPTR,A
+                                           ; SOURCE LINE # 343
+                 E     MOV     DPTR,#E_smooth
+                       MOVX    @DPTR,A
+                                           ; SOURCE LINE # 344
+             ?C0045:
+                                           ; SOURCE LINE # 346
+                 R     MOV     DPTR,#xtalFreq
+                       MOVX    A,@DPTR
+                       MOV     R0,A
+C51 COMPILER V9.51   SI5351A                                                               08/14/2026 12:27:14 PAGE 44  
+
+                       INC     DPTR
+                       MOVX    A,@DPTR
+                       MOV     R1,A
+                       INC     DPTR
+                       MOVX    A,@DPTR
+                       MOV     R2,A
+                       INC     DPTR
+                       MOVX    A,@DPTR
+                       MOV     R3,A
+                 R     MOV     DPTR,#pllFreq
+                       MOVX    A,@DPTR
+                       MOV     R4,A
+                       INC     DPTR
+                       MOVX    A,@DPTR
+                       MOV     R5,A
+                       INC     DPTR
+                       MOVX    A,@DPTR
+                       MOV     R6,A
+                       INC     DPTR
+                       MOVX    A,@DPTR
+                       MOV     R7,A
+                 E     CALL    ?C?ULDIV
+                 R     MOV     DPTR,#mult
+                       MOV     A,R7
+                       MOVX    @DPTR,A
+                                           ; SOURCE LINE # 347
+                 R     MOV     DPTR,#xtalFreq
+                       MOVX    A,@DPTR
+                       MOV     R0,A
+                       INC     DPTR
+                       MOVX    A,@DPTR
+                       MOV     R1,A
+                       INC     DPTR
+                       MOVX    A,@DPTR
+                       MOV     R2,A
+                       INC     DPTR
+                       MOVX    A,@DPTR
+                       MOV     R3,A
+                 R     MOV     DPTR,#pllFreq
+                       MOVX    A,@DPTR
+                       MOV     R4,A
+                       INC     DPTR
+                       MOVX    A,@DPTR
+                       MOV     R5,A
+                       INC     DPTR
+                       MOVX    A,@DPTR
+                       MOV     R6,A
+                       INC     DPTR
+                       MOVX    A,@DPTR
+                       MOV     R7,A
+                 E     CALL    ?C?ULDIV
+                       MOV     R4,AR0
+                       MOV     R5,AR1
+                       MOV     R6,AR2
+                       MOV     R7,AR3
+                 R     MOV     DPTR,#l
+                 E     CALL    ?C?LSTXDATA
+                                           ; SOURCE LINE # 348
+                 R     MOV     DPTR,#l
+                       MOVX    A,@DPTR
+                       MOV     R4,A
+                       INC     DPTR
+C51 COMPILER V9.51   SI5351A                                                               08/14/2026 12:27:14 PAGE 45  
+
+                       MOVX    A,@DPTR
+                       MOV     R5,A
+                       INC     DPTR
+                       MOVX    A,@DPTR
+                       MOV     R6,A
+                       INC     DPTR
+                       MOVX    A,@DPTR
+                       MOV     R7,A
+                       CLR     A
+                 E     CALL    ?C?FCASTL
+                 R     MOV     DPTR,#f
+                 E     CALL    ?C?LSTXDATA
+                                           ; SOURCE LINE # 349
+                 R     MOV     DPTR,#f
+                       MOVX    A,@DPTR
+                       MOV     R4,A
+                       INC     DPTR
+                       MOVX    A,@DPTR
+                       MOV     R5,A
+                       INC     DPTR
+                       MOVX    A,@DPTR
+                       MOV     R6,A
+                       INC     DPTR
+                       MOVX    A,@DPTR
+                       MOV     R7,A
+                       MOV     R3,#0F0H
+                       MOV     R2,#0FFH
+                       MOV     R1,#07FH
+                       MOV     R0,#049H
+                 E     CALL    ?C?FPMUL
+                 R     MOV     DPTR,#f
+                 E     CALL    ?C?LSTXDATA
+                                           ; SOURCE LINE # 350
+                 R     MOV     DPTR,#f
+                       MOVX    A,@DPTR
+                       MOV     R4,A
+                       INC     DPTR
+                       MOVX    A,@DPTR
+                       MOV     R5,A
+                       INC     DPTR
+                       MOVX    A,@DPTR
+                       MOV     R6,A
+                       INC     DPTR
+                       MOVX    A,@DPTR
+                       MOV     R7,A
+                       PUSH    AR4
+                       PUSH    AR5
+                       PUSH    AR6
+                       PUSH    AR7
+                 R     MOV     DPTR,#xtalFreq
+                       MOVX    A,@DPTR
+                       MOV     R4,A
+                       INC     DPTR
+                       MOVX    A,@DPTR
+                       MOV     R5,A
+                       INC     DPTR
+                       MOVX    A,@DPTR
+                       MOV     R6,A
+                       INC     DPTR
+                       MOVX    A,@DPTR
+                       MOV     R7,A
+                       CLR     A
+C51 COMPILER V9.51   SI5351A                                                               08/14/2026 12:27:14 PAGE 46  
+
+                 E     CALL    ?C?FCASTL
+                       MOV     R0,AR4
+                       MOV     R1,AR5
+                       MOV     R2,AR6
+                       MOV     R3,AR7
+                       POP     AR7
+                       POP     AR6
+                       POP     AR5
+                       POP     AR4
+                 E     CALL    ?C?FPDIV
+                 R     MOV     DPTR,#f
+                 E     CALL    ?C?LSTXDATA
+                                           ; SOURCE LINE # 351
+                 R     MOV     DPTR,#f
+                       MOVX    A,@DPTR
+                       MOV     R4,A
+                       INC     DPTR
+                       MOVX    A,@DPTR
+                       MOV     R5,A
+                       INC     DPTR
+                       MOVX    A,@DPTR
+                       MOV     R6,A
+                       INC     DPTR
+                       MOVX    A,@DPTR
+                       MOV     R7,A
+                 E     CALL    ?C?CASTF
+                 R     MOV     DPTR,#num
+                 E     CALL    ?C?LSTXDATA
+                                           ; SOURCE LINE # 352
+                       MOV     R7,#0FFH
+                       MOV     R6,#0FFH
+                       MOV     R5,#0FH
+                       MOV     R4,#00H
+                 R     MOV     DPTR,#denom
+                 E     CALL    ?C?LSTXDATA
+                                           ; SOURCE LINE # 353
+                       CLR     A
+                 R     MOV     DPTR,#hard_blank_hold
+                       MOVX    @DPTR,A
+                                           ; SOURCE LINE # 354
+                       INC     DPTR
+                       MOVX    A,@DPTR
+                       INC     A
+                       MOVX    @DPTR,A
+                                           ; SOURCE LINE # 355
+                 R     xJMP    ?C0022
+                                           ; SOURCE LINE # 356
+             ?C0054:
+                                           ; SOURCE LINE # 359
+                 R     MOV     DPTR,#soft_ms_hold
+                       MOVX    A,@DPTR
+                 R     xJNZ    ?C0055
+                       INC     DPTR
+                       MOVX    A,@DPTR
+                 R     xJNZ    ?C0055
+                                           ; SOURCE LINE # 360
+                       MOV     R5,#080H
+                       MOV     R7,#010H
+                 E     CALL    _si5351_write_init
+                                           ; SOURCE LINE # 361
+                 R     MOV     DPTR,#clk0_blanked
+                       MOV     A,#01H
+C51 COMPILER V9.51   SI5351A                                                               08/14/2026 12:27:14 PAGE 47  
+
+                       MOVX    @DPTR,A
+                                           ; SOURCE LINE # 362
+             ?C0055:
+                                           ; SOURCE LINE # 363
+                 R     MOV     DPTR,#num
+                       MOVX    A,@DPTR
+                       MOV     R4,A
+                       INC     DPTR
+                       MOVX    A,@DPTR
+                       MOV     R5,A
+                       INC     DPTR
+                       MOVX    A,@DPTR
+                       MOV     R6,A
+                       INC     DPTR
+                       MOVX    A,@DPTR
+                       MOV     R7,A
+                 R     MOV     DPTR,#?_setupPLL?BYTE+02H
+                 E     CALL    ?C?LSTXDATA
+                 R     MOV     DPTR,#denom
+                       MOVX    A,@DPTR
+                       MOV     R4,A
+                       INC     DPTR
+                       MOVX    A,@DPTR
+                       MOV     R5,A
+                       INC     DPTR
+                       MOVX    A,@DPTR
+                       MOV     R6,A
+                       INC     DPTR
+                       MOVX    A,@DPTR
+                       MOV     R7,A
+                 R     MOV     DPTR,#?_setupPLL?BYTE+06H
+                 E     CALL    ?C?LSTXDATA
+                 R     MOV     DPTR,#mult
+                       MOVX    A,@DPTR
+                       MOV     R5,A
+                       MOV     R7,#01AH
+                 R     CALL    _setupPLL
+;---- Variable 'pll_status' assigned to Register 'R7' ----
+                                           ; SOURCE LINE # 365
+                       MOV     A,R7
+                 R     xJNZ    ?C0022
+                                           ; SOURCE LINE # 366
+                 R     MOV     DPTR,#state
+                       MOVX    A,@DPTR
+                       INC     A
+                       MOVX    @DPTR,A
+                                           ; SOURCE LINE # 367
+                                           ; SOURCE LINE # 368
+                 R     xJMP    ?C0022
+                                           ; SOURCE LINE # 369
+             ?C0057:
+                                           ; SOURCE LINE # 371
+                 R     MOV     DPTR,#soft_ms_hold
+                       MOVX    A,@DPTR
+                 R     xJZ     ?C0058
+                                           ; SOURCE LINE # 372
+                 R     MOV     DPTR,#state
+                       MOVX    A,@DPTR
+                       INC     A
+                       MOVX    @DPTR,A
+                                           ; SOURCE LINE # 373
+                 R     xJMP    ?C0022
+C51 COMPILER V9.51   SI5351A                                                               08/14/2026 12:27:14 PAGE 48  
+
+                                           ; SOURCE LINE # 374
+             ?C0058:
+                                           ; SOURCE LINE # 375
+                 R     MOV     DPTR,#divider
+                       MOVX    A,@DPTR
+                       MOV     R4,A
+                       INC     DPTR
+                       MOVX    A,@DPTR
+                       MOV     R5,A
+                       INC     DPTR
+                       MOVX    A,@DPTR
+                       MOV     R6,A
+                       INC     DPTR
+                       MOVX    A,@DPTR
+                       MOV     R7,A
+                 R     MOV     DPTR,#?_setupMultisynth?BYTE+01H
+                 E     CALL    ?C?LSTXDATA
+                       CLR     A
+                 R     MOV     DPTR,#?_setupMultisynth?BYTE+05H
+                       MOVX    @DPTR,A
+                       MOV     R7,#02AH
+                 R     CALL    _setupMultisynth
+;---- Variable 'multi_status' assigned to Register 'R7' ----
+                                           ; SOURCE LINE # 381
+                       MOV     A,R7
+                 R     xJNZ    ?C0022
+                                           ; SOURCE LINE # 382
+                 R     MOV     DPTR,#state
+                       MOVX    A,@DPTR
+                       INC     A
+                       MOVX    @DPTR,A
+                                           ; SOURCE LINE # 383
+                                           ; SOURCE LINE # 384
+                 R     xJMP    ?C0022
+                                           ; SOURCE LINE # 385
+             ?C0060:
+                                           ; SOURCE LINE # 389
+                 E     MOV     DPTR,#E_smooth
+                       MOVX    A,@DPTR
+                 R     xJNZ    ?C0061
+                                           ; SOURCE LINE # 390
+                       MOV     R5,#0A0H
+                       MOV     R7,#0B1H
+                 E     CALL    _si5351_write_init
+                                           ; SOURCE LINE # 391
+                 E     MOV     DPTR,#E_smooth
+                       MOV     A,#01H
+                       MOVX    @DPTR,A
+                                           ; SOURCE LINE # 392
+                 R     MOV     DPTR,#hard_blank_hold
+                       MOV     A,#06H
+                       MOVX    @DPTR,A
+                                           ; SOURCE LINE # 393
+                 R     xJMP    ?C0062
+             ?C0061:
+                                           ; SOURCE LINE # 394
+                       CLR     A
+                 R     MOV     DPTR,#hard_blank_hold
+                       MOVX    @DPTR,A
+                                           ; SOURCE LINE # 395
+             ?C0062:
+                                           ; SOURCE LINE # 396
+C51 COMPILER V9.51   SI5351A                                                               08/14/2026 12:27:14 PAGE 49  
+
+                 R     MOV     DPTR,#divider
+                       MOVX    A,@DPTR
+                       MOV     R4,A
+                       INC     DPTR
+                       MOVX    A,@DPTR
+                       MOV     R5,A
+                       INC     DPTR
+                       MOVX    A,@DPTR
+                       MOV     R6,A
+                       INC     DPTR
+                       MOVX    A,@DPTR
+                       MOV     R7,A
+                 R     MOV     DPTR,#prev_ms_divider
+                 E     CALL    ?C?LSTXDATA
+                                           ; SOURCE LINE # 399
+                 R     MOV     DPTR,#state
+                       MOV     A,#05H
+                       MOVX    @DPTR,A
+                                           ; SOURCE LINE # 400
+                 R     xJMP    ?C0022
+                                           ; SOURCE LINE # 401
+             ?C0063:
+                                           ; SOURCE LINE # 403
+                 R     MOV     DPTR,#hard_blank_hold
+                       MOVX    A,@DPTR
+                 R     xJZ     ?C0064
+                                           ; SOURCE LINE # 404
+                       DEC     A
+                       MOVX    @DPTR,A
+                                           ; SOURCE LINE # 405
+                 R     xJMP    ?C0022
+                                           ; SOURCE LINE # 406
+             ?C0064:
+                                           ; SOURCE LINE # 408
+                       MOV     R5,#04FH
+                       MOV     R7,#010H
+                 E     CALL    _si5351_write_init
+                                           ; SOURCE LINE # 411
+                       CLR     A
+                 R     MOV     DPTR,#clk0_blanked
+                       MOVX    @DPTR,A
+                                           ; SOURCE LINE # 412
+                 R     MOV     DPTR,#state
+                       MOVX    @DPTR,A
+                                           ; SOURCE LINE # 413
+                                           ; SOURCE LINE # 414
+             ?C0022:
+                                           ; SOURCE LINE # 415
+                 R     MOV     DPTR,#state
+                       MOVX    A,@DPTR
+                       MOV     R7,A
+                                           ; SOURCE LINE # 417
+             ?C0065:
+                       RET     
+             ; FUNCTION _si5351aSetFrequency (END)
+
+
+
+MODULE INFORMATION:   STATIC OVERLAYABLE
+   CODE SIZE        =   3517    ----
+   CONSTANT SIZE    =   ----    ----
+   XDATA SIZE       =     69      41
+C51 COMPILER V9.51   SI5351A                                                               08/14/2026 12:27:14 PAGE 50  
+
+   PDATA SIZE       =   ----    ----
+   DATA SIZE        =   ----    ----
+   IDATA SIZE       =   ----    ----
+   BIT SIZE         =   ----    ----
+   EDATA SIZE       =   ----    ----
+   HDATA SIZE       =   ----    ----
+   XDATA CONST SIZE =   ----    ----
+   FAR CONST SIZE   =   ----    ----
+END OF MODULE INFORMATION.
+
+
+C51 COMPILATION COMPLETE.  0 WARNING(S),  0 ERROR(S)

@@ -1,0 +1,511 @@
+C51 COMPILER V9.51   I2C_DISPLAY_PM                                                        08/15/2026 23:55:57 PAGE 1   
+
+
+C51 COMPILER V9.51, COMPILATION OF MODULE I2C_DISPLAY_PM
+OBJECT MODULE PLACED IN .\DP8051\DP8051_Keil_951\Debug\I2C_DISPLAY_PM.obj
+COMPILER INVOKED BY: C:\Program Files (x86)\Cypress\PSoC Creator\4.2\PSoC Creator\import\keil\pk51\9.51\C51\BIN\c51.exe 
+                    -Generated_Source\PSoC3\I2C_DISPLAY_PM.c NOIV LARGE MODDP2 OMF2 VB(1) NOIP INCDIR(.,Generated_Source\PSoC3) FF(3) DB WL(2
+                    -) PR(.\DP8051\DP8051_Keil_951\Debug/I2C_DISPLAY_PM.lst) CD OT(5,SPEED) OA OJ(.\DP8051\DP8051_Keil_951\Debug\I2C_DISPLAY_
+                    -PM.obj)
+
+line level    source
+
+   1          /*******************************************************************************
+   2          * File Name: I2C_DISPLAY_PM.c
+   3          * Version 3.50
+   4          *
+   5          * Description:
+   6          *  This file provides low power mode APIs for the I2C component.
+   7          *
+   8          ********************************************************************************
+   9          * Copyright 2008-2015, Cypress Semiconductor Corporation. All rights reserved.
+  10          * You may use this file only in accordance with the license, terms, conditions,
+  11          * disclaimers, and limitations in the end user license agreement accompanying
+  12          * the software package with which this file was provided.
+  13          *******************************************************************************/
+  14          
+  15          #include "I2C_DISPLAY_PVT.h"
+  16          
+  17          I2C_DISPLAY_BACKUP_STRUCT I2C_DISPLAY_backup =
+  18          {
+  19              I2C_DISPLAY_DISABLE,
+  20          
+  21          #if (I2C_DISPLAY_FF_IMPLEMENTED)
+  22              I2C_DISPLAY_DEFAULT_XCFG,
+  23              I2C_DISPLAY_DEFAULT_CFG,
+  24              I2C_DISPLAY_DEFAULT_ADDR,
+  25              LO8(I2C_DISPLAY_DEFAULT_DIVIDE_FACTOR),
+  26              HI8(I2C_DISPLAY_DEFAULT_DIVIDE_FACTOR),
+  27          #else  /* (I2C_DISPLAY_UDB_IMPLEMENTED) */
+                  I2C_DISPLAY_DEFAULT_CFG,
+              #endif /* (I2C_DISPLAY_FF_IMPLEMENTED) */
+  30          
+  31          #if (I2C_DISPLAY_TIMEOUT_ENABLED)
+                  I2C_DISPLAY_DEFAULT_TMOUT_PERIOD,
+                  I2C_DISPLAY_DEFAULT_TMOUT_INTR_MASK,
+              #endif /* (I2C_DISPLAY_TIMEOUT_ENABLED) */
+  35          };
+  36          
+  37          #if ((I2C_DISPLAY_FF_IMPLEMENTED) && (I2C_DISPLAY_WAKEUP_ENABLED))
+                  volatile uint8 I2C_DISPLAY_wakeupSource;
+              #endif /* ((I2C_DISPLAY_FF_IMPLEMENTED) && (I2C_DISPLAY_WAKEUP_ENABLED)) */
+  40          
+  41          
+  42          /*******************************************************************************
+  43          * Function Name: I2C_DISPLAY_SaveConfig
+  44          ********************************************************************************
+  45          *
+  46          * Summary:
+  47          *  The Enable wakeup from Sleep Mode selection influences this function
+  48          *  implementation:
+  49          *   Unchecked: Stores the component non-retention configuration registers.
+  50          *   Checked:   Disables the master, if it was enabled before, and enables
+  51          *              backup regulator of the I2C hardware. If a transaction intended
+  52          *              for component executes during this function call, it waits until
+C51 COMPILER V9.51   I2C_DISPLAY_PM                                                        08/15/2026 23:55:57 PAGE 2   
+
+  53          *              the current transaction is completed and I2C hardware is ready
+  54          *              to enter sleep mode. All subsequent I2C traffic is NAKed until
+  55          *              the device is put into sleep mode.
+  56          *
+  57          * Parameters:
+  58          *  None.
+  59          *
+  60          * Return:
+  61          *  None.
+  62          *
+  63          * Global Variables:
+  64          *  I2C_DISPLAY_backup - The global variable used to save the component
+  65          *                            configuration and non-retention registers before
+  66          *                            entering the sleep mode.
+  67          *
+  68          * Reentrant:
+  69          *  No.
+  70          *
+  71          *******************************************************************************/
+  72          void I2C_DISPLAY_SaveConfig(void) 
+  73          {
+  74   1      #if (I2C_DISPLAY_FF_IMPLEMENTED)
+  75   1          #if (I2C_DISPLAY_WAKEUP_ENABLED)
+                      uint8 intState;
+                  #endif /* (I2C_DISPLAY_WAKEUP_ENABLED) */
+  78   1      
+  79   1          /* Store registers before enter low power mode */
+  80   1          I2C_DISPLAY_backup.cfg     = I2C_DISPLAY_CFG_REG;
+  81   1          I2C_DISPLAY_backup.xcfg    = I2C_DISPLAY_XCFG_REG;
+  82   1          I2C_DISPLAY_backup.addr    = I2C_DISPLAY_ADDR_REG;
+  83   1          I2C_DISPLAY_backup.clkDiv1 = I2C_DISPLAY_CLKDIV1_REG;
+  84   1          I2C_DISPLAY_backup.clkDiv2 = I2C_DISPLAY_CLKDIV2_REG;
+  85   1      
+  86   1      #if (I2C_DISPLAY_WAKEUP_ENABLED)
+                  /* Disable master */
+                  I2C_DISPLAY_CFG_REG &= (uint8) ~I2C_DISPLAY_ENABLE_MASTER;
+              
+                  /* Enable backup regulator to keep block powered in low power mode */
+                  intState = CyEnterCriticalSection();
+                  I2C_DISPLAY_PWRSYS_CR1_REG |= I2C_DISPLAY_PWRSYS_CR1_I2C_REG_BACKUP;
+                  CyExitCriticalSection(intState);
+              
+                  /* 1) Set force NACK to ignore I2C transactions;
+                  *  2) Wait unti I2C is ready go to Sleep; !!
+                  *  3) These bits are cleared on wake up.
+                  */
+                  /* Wait when block is ready for sleep */
+                  I2C_DISPLAY_XCFG_REG |= I2C_DISPLAY_XCFG_FORCE_NACK;
+                  while (0u == (I2C_DISPLAY_XCFG_REG & I2C_DISPLAY_XCFG_RDY_TO_SLEEP))
+                  {
+                  }
+              
+                  /* Setup wakeup interrupt */
+                  I2C_DISPLAY_DisableInt();
+                  (void) CyIntSetVector(I2C_DISPLAY_ISR_NUMBER, &I2C_DISPLAY_WAKEUP_ISR);
+                  I2C_DISPLAY_wakeupSource = 0u;
+                  I2C_DISPLAY_EnableInt();
+              #endif /* (I2C_DISPLAY_WAKEUP_ENABLED) */
+ 111   1      
+ 112   1      #else
+                  /* Store only address match bit */
+                  I2C_DISPLAY_backup.control = (I2C_DISPLAY_CFG_REG & I2C_DISPLAY_CTRL_ANY_ADDRESS_MASK);
+C51 COMPILER V9.51   I2C_DISPLAY_PM                                                        08/15/2026 23:55:57 PAGE 3   
+
+              #endif /* (I2C_DISPLAY_FF_IMPLEMENTED) */
+ 116   1      
+ 117   1      #if (I2C_DISPLAY_TIMEOUT_ENABLED)
+                  I2C_DISPLAY_TimeoutSaveConfig();
+              #endif /* (I2C_DISPLAY_TIMEOUT_ENABLED) */
+ 120   1      }
+ 121          
+ 122          
+ 123          /*******************************************************************************
+ 124          * Function Name: I2C_DISPLAY_Sleep
+ 125          ********************************************************************************
+ 126          *
+ 127          * Summary:
+ 128          *  This is the preferred method to prepare the component before device enters
+ 129          *  sleep mode. The Enable wakeup from Sleep Mode selection influences this
+ 130          *  function implementation:
+ 131          *   Unchecked: Checks current I2C component state, saves it, and disables the
+ 132          *              component by calling I2C_Stop() if it is currently enabled.
+ 133          *              I2C_SaveConfig() is then called to save the component
+ 134          *              non-retention configuration registers.
+ 135          *   Checked:   If a transaction intended for component executes during this
+ 136          *              function call, it waits until the current transaction is
+ 137          *              completed. All subsequent I2C traffic intended for component
+ 138          *              is NAKed until the device is put to sleep mode. The address
+ 139          *              match event wakes up the device.
+ 140          *
+ 141          * Parameters:
+ 142          *  None.
+ 143          *
+ 144          * Return:
+ 145          *  None.
+ 146          *
+ 147          * Reentrant:
+ 148          *  No.
+ 149          *
+ 150          *******************************************************************************/
+ 151          void I2C_DISPLAY_Sleep(void) 
+ 152          {
+ 153   1      #if (I2C_DISPLAY_WAKEUP_ENABLED)
+                  /* Do not enable block after exit low power mode if it is wakeup source */
+                  I2C_DISPLAY_backup.enableState = I2C_DISPLAY_DISABLE;
+              
+                  #if (I2C_DISPLAY_TIMEOUT_ENABLED)
+                      I2C_DISPLAY_TimeoutStop();
+                  #endif /* (I2C_DISPLAY_TIMEOUT_ENABLED) */
+              
+              #else
+ 162   1          /* Store enable state */
+ 163   1          I2C_DISPLAY_backup.enableState = (uint8) I2C_DISPLAY_IS_ENABLED;
+ 164   1      
+ 165   1          if (0u != I2C_DISPLAY_backup.enableState)
+ 166   1          {
+ 167   2              I2C_DISPLAY_Stop();
+ 168   2          }
+ 169   1      #endif /* (I2C_DISPLAY_WAKEUP_ENABLED) */
+ 170   1      
+ 171   1          I2C_DISPLAY_SaveConfig();
+ 172   1      }
+ 173          
+ 174          
+ 175          /*******************************************************************************
+ 176          * Function Name: I2C_DISPLAY_RestoreConfig
+C51 COMPILER V9.51   I2C_DISPLAY_PM                                                        08/15/2026 23:55:57 PAGE 4   
+
+ 177          ********************************************************************************
+ 178          *
+ 179          * Summary:
+ 180          *  The Enable wakeup from Sleep Mode selection influences this function
+ 181          *  implementation:
+ 182          *   Unchecked: Restores the component non-retention configuration registers
+ 183          *              to the state they were in before I2C_Sleep() or I2C_SaveConfig()
+ 184          *              was called.
+ 185          *   Checked:   Disables the backup regulator of the I2C hardware. Sets up the
+ 186          *              regular component interrupt handler and generates the component
+ 187          *              interrupt if it was wake up source to release the bus and
+ 188          *              continue in-coming I2C transaction.
+ 189          *
+ 190          * Parameters:
+ 191          *  None.
+ 192          *
+ 193          * Return:
+ 194          *  None.
+ 195          *
+ 196          * Global Variables:
+ 197          *  I2C_DISPLAY_backup - The global variable used to save the component
+ 198          *                            configuration and non-retention registers before
+ 199          *                            exiting the sleep mode.
+ 200          *
+ 201          * Reentrant:
+ 202          *  No.
+ 203          *
+ 204          * Side Effects:
+ 205          *  Calling this function before I2C_DISPLAY_SaveConfig() or
+ 206          *  I2C_DISPLAY_Sleep() will lead to unpredictable results.
+ 207          *
+ 208          *******************************************************************************/
+ 209          void I2C_DISPLAY_RestoreConfig(void) 
+ 210          {
+ 211   1      #if (I2C_DISPLAY_FF_IMPLEMENTED)
+ 212   1          uint8 intState;
+ 213   1      
+ 214   1          if (I2C_DISPLAY_CHECK_PWRSYS_I2C_BACKUP)
+ 215   1          /* Low power mode was Sleep - backup regulator is enabled */
+ 216   1          {
+ 217   2              /* Enable backup regulator in active mode */
+ 218   2              intState = CyEnterCriticalSection();
+ 219   2              I2C_DISPLAY_PWRSYS_CR1_REG &= (uint8) ~I2C_DISPLAY_PWRSYS_CR1_I2C_REG_BACKUP;
+ 220   2              CyExitCriticalSection(intState);
+ 221   2      
+ 222   2              /* Restore master */
+ 223   2              I2C_DISPLAY_CFG_REG = I2C_DISPLAY_backup.cfg;
+ 224   2          }
+ 225   1          else
+ 226   1          /* Low power mode was Hibernate - backup regulator is disabled. All registers are cleared */
+ 227   1          {
+ 228   2          #if (I2C_DISPLAY_WAKEUP_ENABLED)
+                      /* Disable power to block before register restore */
+                      intState = CyEnterCriticalSection();
+                      I2C_DISPLAY_ACT_PWRMGR_REG  &= (uint8) ~I2C_DISPLAY_ACT_PWR_EN;
+                      I2C_DISPLAY_STBY_PWRMGR_REG &= (uint8) ~I2C_DISPLAY_STBY_PWR_EN;
+                      CyExitCriticalSection(intState);
+              
+                      /* Enable component in I2C_Wakeup() after register restore */
+                      I2C_DISPLAY_backup.enableState = I2C_DISPLAY_ENABLE;
+                  #endif /* (I2C_DISPLAY_WAKEUP_ENABLED) */
+ 238   2      
+C51 COMPILER V9.51   I2C_DISPLAY_PM                                                        08/15/2026 23:55:57 PAGE 5   
+
+ 239   2              /* Restore component registers after Hibernate */
+ 240   2              I2C_DISPLAY_XCFG_REG    = I2C_DISPLAY_backup.xcfg;
+ 241   2              I2C_DISPLAY_CFG_REG     = I2C_DISPLAY_backup.cfg;
+ 242   2              I2C_DISPLAY_ADDR_REG    = I2C_DISPLAY_backup.addr;
+ 243   2              I2C_DISPLAY_CLKDIV1_REG = I2C_DISPLAY_backup.clkDiv1;
+ 244   2              I2C_DISPLAY_CLKDIV2_REG = I2C_DISPLAY_backup.clkDiv2;
+ 245   2          }
+ 246   1      
+ 247   1      #if (I2C_DISPLAY_WAKEUP_ENABLED)
+                  I2C_DISPLAY_DisableInt();
+                  (void) CyIntSetVector(I2C_DISPLAY_ISR_NUMBER, &I2C_DISPLAY_ISR);
+                  if (0u != I2C_DISPLAY_wakeupSource)
+                  {
+                      /* Generate interrupt to process incoming transaction */
+                      I2C_DISPLAY_SetPendingInt();
+                  }
+                  I2C_DISPLAY_EnableInt();
+              #endif /* (I2C_DISPLAY_WAKEUP_ENABLED) */
+ 257   1      
+ 258   1      #else
+                  I2C_DISPLAY_CFG_REG = I2C_DISPLAY_backup.control;
+              #endif /* (I2C_DISPLAY_FF_IMPLEMENTED) */
+ 261   1      
+ 262   1      #if (I2C_DISPLAY_TIMEOUT_ENABLED)
+                  I2C_DISPLAY_TimeoutRestoreConfig();
+              #endif /* (I2C_DISPLAY_TIMEOUT_ENABLED) */
+ 265   1      }
+ 266          
+ 267          
+ 268          /*******************************************************************************
+ 269          * Function Name: I2C_DISPLAY_Wakeup
+ 270          ********************************************************************************
+ 271          *
+ 272          * Summary:
+ 273          *  This is the preferred method to prepare the component for active mode
+ 274          *  operation (when device exits sleep mode). The Enable wakeup from Sleep Mode
+ 275          *  selection influences this function implementation:
+ 276          *   Unchecked: Restores the component non-retention configuration registers
+ 277          *              by calling I2C_RestoreConfig(). If the component was enabled
+ 278          *              before the I2C_Sleep() function was called, I2C_Wakeup()
+ 279          *              re-enables it.
+ 280          *   Checked:   Enables  master functionality if it was enabled before sleep,
+ 281          *              and disables the backup regulator of the I2C hardware.
+ 282          *              The incoming transaction continues as soon as the regular
+ 283          *              I2C interrupt handler is set up (global interrupts has to be
+ 284          *              enabled to service I2C component interrupt).
+ 285          *
+ 286          * Parameters:
+ 287          *  None.
+ 288          *
+ 289          * Return:
+ 290          *  None.
+ 291          *
+ 292          * Reentrant:
+ 293          *  No.
+ 294          *
+ 295          * Side Effects:
+ 296          *  Calling this function before I2C_DISPLAY_SaveConfig() or
+ 297          *  I2C_DISPLAY_Sleep() will lead to unpredictable results.
+ 298          *
+ 299          *******************************************************************************/
+ 300          void I2C_DISPLAY_Wakeup(void) 
+C51 COMPILER V9.51   I2C_DISPLAY_PM                                                        08/15/2026 23:55:57 PAGE 6   
+
+ 301          {
+ 302   1          I2C_DISPLAY_RestoreConfig();
+ 303   1      
+ 304   1          /* Restore component enable state */
+ 305   1          if (0u != I2C_DISPLAY_backup.enableState)
+ 306   1          {
+ 307   2              I2C_DISPLAY_Enable();
+ 308   2              I2C_DISPLAY_EnableInt();
+ 309   2          }
+ 310   1          else
+ 311   1          {
+ 312   2          #if (I2C_DISPLAY_TIMEOUT_ENABLED)
+                      I2C_DISPLAY_TimeoutEnable();
+                  #endif /* (I2C_DISPLAY_TIMEOUT_ENABLED) */
+ 315   2          }
+ 316   1      }
+ 317          
+ 318          
+ 319          /* [] END OF FILE */
+C51 COMPILER V9.51   I2C_DISPLAY_PM                                                        08/15/2026 23:55:57 PAGE 7   
+
+ASSEMBLY LISTING OF GENERATED OBJECT CODE
+
+
+             ; FUNCTION I2C_DISPLAY_SaveConfig (BEGIN)
+                                           ; SOURCE LINE # 72
+                                           ; SOURCE LINE # 73
+                                           ; SOURCE LINE # 80
+                       MOV     DPTR,#049D6H
+                       MOVX    A,@DPTR
+                 R     MOV     DPTR,#I2C_DISPLAY_backup+02H
+                       MOVX    @DPTR,A
+                                           ; SOURCE LINE # 81
+                       MOV     DPTR,#049C8H
+                       MOVX    A,@DPTR
+                 R     MOV     DPTR,#I2C_DISPLAY_backup+01H
+                       MOVX    @DPTR,A
+                                           ; SOURCE LINE # 82
+                       MOV     DPTR,#049CAH
+                       MOVX    A,@DPTR
+                 R     MOV     DPTR,#I2C_DISPLAY_backup+03H
+                       MOVX    @DPTR,A
+                                           ; SOURCE LINE # 83
+                       MOV     DPTR,#049DBH
+                       MOVX    A,@DPTR
+                 R     MOV     DPTR,#I2C_DISPLAY_backup+04H
+                       MOVX    @DPTR,A
+                                           ; SOURCE LINE # 84
+                       MOV     DPTR,#049DCH
+                       MOVX    A,@DPTR
+                 R     MOV     DPTR,#I2C_DISPLAY_backup+05H
+                       MOVX    @DPTR,A
+                                           ; SOURCE LINE # 120
+                       RET     
+             ; FUNCTION I2C_DISPLAY_SaveConfig (END)
+
+             ; FUNCTION I2C_DISPLAY_Sleep (BEGIN)
+                                           ; SOURCE LINE # 151
+                                           ; SOURCE LINE # 152
+                                           ; SOURCE LINE # 163
+                       MOV     DPTR,#043A5H
+                       MOVX    A,@DPTR
+                 R     xJNB    ACC.2,?C0002
+                       MOV     R7,#01H
+                 R     xJMP    ?C0003
+             ?C0002:
+                       MOV     R7,#00H
+             ?C0003:
+                 R     MOV     DPTR,#I2C_DISPLAY_backup
+                       MOV     A,R7
+                       MOVX    @DPTR,A
+                                           ; SOURCE LINE # 165
+                 R     xJZ     ?C0004
+                                           ; SOURCE LINE # 166
+                                           ; SOURCE LINE # 167
+                 E     CALL    I2C_DISPLAY_Stop
+                                           ; SOURCE LINE # 168
+             ?C0004:
+                                           ; SOURCE LINE # 171
+                 R     CALL    I2C_DISPLAY_SaveConfig
+                                           ; SOURCE LINE # 172
+                       RET     
+             ; FUNCTION I2C_DISPLAY_Sleep (END)
+C51 COMPILER V9.51   I2C_DISPLAY_PM                                                        08/15/2026 23:55:57 PAGE 8   
+
+
+             ; FUNCTION I2C_DISPLAY_RestoreConfig (BEGIN)
+                                           ; SOURCE LINE # 209
+                                           ; SOURCE LINE # 210
+                                           ; SOURCE LINE # 214
+                       MOV     DPTR,#04331H
+                       MOVX    A,@DPTR
+                       ANL     A,#04H
+                 R     xJZ     ?C0006
+                                           ; SOURCE LINE # 216
+                                           ; SOURCE LINE # 218
+                 E     CALL    CyEnterCriticalSection
+;---- Variable 'intState' assigned to Register 'R7' ----
+                                           ; SOURCE LINE # 219
+                       MOV     DPTR,#04331H
+                       MOVX    A,@DPTR
+                       ANL     A,#0FBH
+                       MOVX    @DPTR,A
+                                           ; SOURCE LINE # 220
+                 E     CALL    _CyExitCriticalSection
+                                           ; SOURCE LINE # 223
+                 R     MOV     DPTR,#I2C_DISPLAY_backup+02H
+                       MOVX    A,@DPTR
+                       MOV     DPTR,#049D6H
+                       MOVX    @DPTR,A
+                                           ; SOURCE LINE # 224
+                       RET     
+             ?C0006:
+                                           ; SOURCE LINE # 227
+                                           ; SOURCE LINE # 240
+                 R     MOV     DPTR,#I2C_DISPLAY_backup+01H
+                       MOVX    A,@DPTR
+                       MOV     DPTR,#049C8H
+                       MOVX    @DPTR,A
+                                           ; SOURCE LINE # 241
+                 R     MOV     DPTR,#I2C_DISPLAY_backup+02H
+                       MOVX    A,@DPTR
+                       MOV     DPTR,#049D6H
+                       MOVX    @DPTR,A
+                                           ; SOURCE LINE # 242
+                 R     MOV     DPTR,#I2C_DISPLAY_backup+03H
+                       MOVX    A,@DPTR
+                       MOV     DPTR,#049CAH
+                       MOVX    @DPTR,A
+                                           ; SOURCE LINE # 243
+                 R     MOV     DPTR,#I2C_DISPLAY_backup+04H
+                       MOVX    A,@DPTR
+                       MOV     DPTR,#049DBH
+                       MOVX    @DPTR,A
+                                           ; SOURCE LINE # 244
+                 R     MOV     DPTR,#I2C_DISPLAY_backup+05H
+                       MOVX    A,@DPTR
+                       MOV     DPTR,#049DCH
+                       MOVX    @DPTR,A
+                                           ; SOURCE LINE # 245
+                                           ; SOURCE LINE # 265
+             ?C0008:
+                       RET     
+             ; FUNCTION I2C_DISPLAY_RestoreConfig (END)
+
+             ; FUNCTION I2C_DISPLAY_Wakeup (BEGIN)
+                                           ; SOURCE LINE # 300
+C51 COMPILER V9.51   I2C_DISPLAY_PM                                                        08/15/2026 23:55:57 PAGE 9   
+
+                                           ; SOURCE LINE # 301
+                                           ; SOURCE LINE # 302
+                 R     CALL    I2C_DISPLAY_RestoreConfig
+                                           ; SOURCE LINE # 305
+                 R     MOV     DPTR,#I2C_DISPLAY_backup
+                       MOVX    A,@DPTR
+                 R     xJZ     ?C0011
+                                           ; SOURCE LINE # 306
+                                           ; SOURCE LINE # 307
+                 E     CALL    I2C_DISPLAY_Enable
+                                           ; SOURCE LINE # 308
+                       MOV     DPTR,#044C1H
+                       MOV     A,#080H
+                       MOVX    @DPTR,A
+                                           ; SOURCE LINE # 309
+                                           ; SOURCE LINE # 311
+                                           ; SOURCE LINE # 315
+                                           ; SOURCE LINE # 316
+             ?C0011:
+                       RET     
+             ; FUNCTION I2C_DISPLAY_Wakeup (END)
+
+
+
+MODULE INFORMATION:   STATIC OVERLAYABLE
+   CODE SIZE        =    171    ----
+   CONSTANT SIZE    =   ----    ----
+   XDATA SIZE       =      6    ----
+   PDATA SIZE       =   ----    ----
+   DATA SIZE        =   ----    ----
+   IDATA SIZE       =   ----    ----
+   BIT SIZE         =   ----    ----
+   EDATA SIZE       =   ----    ----
+   HDATA SIZE       =   ----    ----
+   XDATA CONST SIZE =   ----    ----
+   FAR CONST SIZE   =   ----    ----
+END OF MODULE INFORMATION.
+
+
+C51 COMPILATION COMPLETE.  0 WARNING(S),  0 ERROR(S)

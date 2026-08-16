@@ -1,0 +1,11 @@
+[Desktop Entry]
+Type=Application
+Name=MSCC Init
+GenericName=MSCC configuration
+Comment=Configure MSCC on this Pi (CAT, keyer, operator audio)
+Exec=mscc-init-gui
+Icon=preferences-desktop-sound
+Terminal=false
+Categories=X-MSCC;
+Keywords=MSCC;SDR;Proficio;Multus;audio;
+StartupNotify=true

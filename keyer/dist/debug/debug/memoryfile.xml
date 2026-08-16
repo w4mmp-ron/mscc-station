@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project>
+  <executable name="dist/debug/debug\PSoC3-PCIe-MKIII.X.debug.hex">
+    <memory name="program">
+      <units>words</units>
+      <length>16384</length>
+      <used>4303</used>
+      <free>12081</free>
+    </memory>
+    <memory name="data">
+      <units>bytes</units>
+      <length>2048</length>
+      <used>598</used>
+      <free>1450</free>
+    </memory>
+  </executable>
+</project>

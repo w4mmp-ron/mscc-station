@@ -1,0 +1,91 @@
+C51 COMPILER V9.51   SYNCSOF_API                                                           08/05/2026 14:07:22 PAGE 1   
+
+
+C51 COMPILER V9.51, COMPILATION OF MODULE SYNCSOF_API
+OBJECT MODULE PLACED IN .\DP8051\DP8051_Keil_951\Debug\SyncSOF_api.obj
+COMPILER INVOKED BY: C:\Program Files (x86)\Cypress\PSoC Creator\4.2\PSoC Creator\import\keil\pk51\9.51\C51\BIN\c51.exe 
+                    -Generated_Source\PSoC3\SyncSOF_api.c NOIV LARGE MODDP2 OMF2 VB(1) NOIP INCDIR(.,Generated_Source\PSoC3) FF(3) DB WL(2) P
+                    -R(.\DP8051\DP8051_Keil_951\Debug/SyncSOF_api.lst) CD OT(5,SPEED) OA OJ(.\DP8051\DP8051_Keil_951\Debug\SyncSOF_api.obj)
+
+line level    source
+
+   1          // ========================================
+   2          // Copyright 2013 David Turnbull AE9RB
+   3          //
+   4          // Licensed under the Apache License, Version 2.0 (the "License");
+   5          // you may not use this file except in compliance with the License.
+   6          // You may obtain a copy of the License at
+   7          //
+   8          //     http://www.apache.org/licenses/LICENSE-2.0
+   9          //
+  10          // Unless required by applicable law or agreed to in writing, software
+  11          // distributed under the License is distributed on an "AS IS" BASIS,
+  12          // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+  13          // See the License for the specific language governing permissions and
+  14          // limitations under the License.
+  15          // ========================================
+  16          
+  17          #include "SyncSOF_api.h"
+  18          #include <device.h>
+  19          
+  20          
+  21          void SyncSOF_Start(void) {
+  22   1          CY_SET_REG8(SyncSOF_Counter2__CONTROL_AUX_CTL_REG, 0x20);
+  23   1          CY_SET_REG8(SyncSOF_Counter1__CONTROL_AUX_CTL_REG, 0x20);
+  24   1          CY_SET_REG8(SyncSOF_Counter0__CONTROL_AUX_CTL_REG, 0x20);
+  25   1      }
+  26          
+  27          // Returns the buffer number 0-1 which is to be used for USB DMA
+  28          uint8 SyncSOF_USB_Buffer(void) {
+  29   1          return CY_GET_REG8(SyncSOF_BUFFER__STATUS_REG);
+  30   1      }
+C51 COMPILER V9.51   SYNCSOF_API                                                           08/05/2026 14:07:22 PAGE 2   
+
+ASSEMBLY LISTING OF GENERATED OBJECT CODE
+
+
+             ; FUNCTION SyncSOF_Start (BEGIN)
+                                           ; SOURCE LINE # 21
+                                           ; SOURCE LINE # 22
+                       MOV     DPTR,#06495H
+                       MOV     A,#020H
+                       MOVX    @DPTR,A
+                                           ; SOURCE LINE # 23
+                       MOV     DPTR,#06492H
+                       MOVX    @DPTR,A
+                                           ; SOURCE LINE # 24
+                       MOV     DPTR,#06491H
+                       MOVX    @DPTR,A
+                                           ; SOURCE LINE # 25
+                       RET     
+             ; FUNCTION SyncSOF_Start (END)
+
+             ; FUNCTION SyncSOF_USB_Buffer (BEGIN)
+                                           ; SOURCE LINE # 28
+                                           ; SOURCE LINE # 29
+                       MOV     DPTR,#06465H
+                       MOVX    A,@DPTR
+                       MOV     R7,A
+                                           ; SOURCE LINE # 30
+             ?C0002:
+                       RET     
+             ; FUNCTION SyncSOF_USB_Buffer (END)
+
+
+
+MODULE INFORMATION:   STATIC OVERLAYABLE
+   CODE SIZE        =     21    ----
+   CONSTANT SIZE    =   ----    ----
+   XDATA SIZE       =   ----    ----
+   PDATA SIZE       =   ----    ----
+   DATA SIZE        =   ----    ----
+   IDATA SIZE       =   ----    ----
+   BIT SIZE         =   ----    ----
+   EDATA SIZE       =   ----    ----
+   HDATA SIZE       =   ----    ----
+   XDATA CONST SIZE =   ----    ----
+   FAR CONST SIZE   =   ----    ----
+END OF MODULE INFORMATION.
+
+
+C51 COMPILATION COMPLETE.  0 WARNING(S),  0 ERROR(S)

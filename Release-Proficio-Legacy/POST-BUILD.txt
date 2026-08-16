@@ -1,0 +1,12 @@
+# PSoC Creator post-build: copy hex + cyacd to Release\
+
+Creator does **not** run Post Build through cmd.exe.
+Do **not** use:  call ...
+
+## Correct Post Build line (Legacy)
+
+    cmd /c "${ProjDir}\post-build-release.bat"
+
+or
+
+    cmd /c "C:\Users\Ron\.grok\worktrees\Release-Proficio-Legacy\copy-release.bat"

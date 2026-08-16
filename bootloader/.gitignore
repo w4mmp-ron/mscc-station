@@ -1,0 +1,12 @@
+.DS_Store
+*.cywrk.*
+*.cyprj.*
+*.cycdx
+*.cyfit
+*.rpt
+*_timing.html
+*.cydsn/codegentemp
+*.cydsn/Generated_Source
+*.cydsn/DP8051
+*.Archive.*
+

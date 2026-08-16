@@ -1,0 +1,124 @@
+SWR meter / MSCC — summary for developers
+==========================================
+
+Context
+-------
+We have a WiFi SWR meter and a Python remote UI (this folder: swr-meter-json.pyw).
+There is also work to wire the meter directly into the MSCC GUI. That is fine for a
+local GUI, but it does not reliably work when the GUI runs remote (different
+LAN/VPN/host) while the meter sits with the radio/Pi.
+
+Goal
+----
+Feed forward power, reverse power, and SWR into the existing MSCC control path so
+any GUI that talks to ms-sdr gets the same readings, without requiring the GUI to
+reach the meter on WiFi.
+
+Recommended architecture
+------------------------
+
+  SWR meter (WiFi)  --UDP JSON-->  Pi / ms-sdr  --existing opcodes-->  MSCC GUI
+                                                      (local or remote)
+
+  Component     Role
+  -----------   --------------------------------------------------------------
+  SWR meter     Publishes telemetry on the shack/radio network
+  ms-sdr (Pi)   Listens near the meter, parses data, drives existing GUI meter
+                commands
+  MSCC GUI      Displays F/R/SWR as it already does for the I2C/onboard meter path
+
+Optional: keep GUI <-> meter direct for a local convenience UI; treat ms-sdr
+ingest as the path that makes remote GUI work.
+
+Meter API (from the Python template)
+------------------------------------
+
+Telemetry (meter -> host)
+  Transport:  UDP
+  Listen:     0.0.0.0:6999
+  Payload:    UTF-8 JSON (one object per datagram)
+  Source IP:  Meter's address (Python app auto-learns it from the packet)
+
+JSON fields used:
+
+  Key     Meaning
+  ------  --------------------
+  v       Forward voltage
+  fwd     Forward power (W)
+  ref     Reflected power (W)
+  swr     SWR
+  fault   Fault flag (int)
+
+Example:
+  {"v":1.2,"fwd":10.5,"ref":0.3,"swr":1.15,"fault":0}
+
+Control (host -> meter)
+  Transport:  HTTP GET
+  URL:        http://{meter_ip}/reset
+  Use:        Clear fault / reset on the meter (used by the Python app)
+
+Config in the Python app:
+  ~/.swr_meter_config.json  (meter_ip, low_power_threshold, reset_delay, etc.)
+
+Existing ms-sdr / GUI opcodes
+-----------------------------
+No new spectrum-style opcodes are needed for F/R/SWR. The I2C/onboard meter path
+already sends to the GUI via Gui_send_param_extended:
+
+  Opcode                      Value   Content
+  --------------------------  ------  ------------------------------------------
+  CMD_SET_FORWARD_POWER       0x0B    Forward power (scaled integer packing as
+                                      today in meter.c Send_data())
+  CMD_SET_REVERSE_POWER       0x0C    Reverse power (same packing)
+  CMD_SET_SWR                 0x0D    SWR * 10 as uint8 (e.g. 1.5 -> 15)
+
+Also used today:
+  CMD_SET_FOWARD_POWER_VALUE  0x38    Forward power to sdrcore-trans (not GUI)
+  Gui_Add_Message(...)                Text path for SWR fault messages
+
+Implication: WiFi integration is mostly "parse JSON -> fill the same variables /
+call the same Send_data() (or equivalent) path," not inventing a new GUI protocol
+for power/SWR.
+
+What is not already a dedicated GUI opcode
+------------------------------------------
+  - v (voltage) as a numeric GUI field
+  - structured fault as a dedicated numeric opcode
+    (fault is handled more as message / side-effect today)
+
+Implementation sketch (ms-sdr, future work)
+-------------------------------------------
+  1. Config: meter IP optional (or auto from first UDP packet); enable WiFi vs
+     I2C backend.
+  2. Thread: bind UDP 6999, parse JSON, update F/R/SWR (and fault).
+  3. Reuse existing meter send path to GUI (0x0B / 0x0C / 0x0D).
+  4. Timeouts / "meter offline" if no packets.
+  5. Optional: HTTP GET /reset when clearing fault.
+  6. Reliability: WiFi latency/jitter is fine for display; be careful if using
+     network SWR for hard TX foldback (I2C is tighter).
+
+Difficulty (agreed view)
+------------------------
+  - Sockets / JSON / map to existing opcodes: moderate, days-scale if the protocol
+    stays as above.
+  - Harder parts: reconnect/timeouts, config UX, and how aggressively to trust
+    WiFi SWR for protection vs telemetry.
+
+Related (separate, deferred)
+----------------------------
+A general server -> GUI warning/error path was discussed for things like
+"Proficio not connected" (opcode + msgcode + data, UDP size = length, forward
+from cores through ms-sdr). That is not required for F/R/SWR if existing meter
+opcodes are reused; it remains a later UX improvement.
+
+Artifact location
+-----------------
+  This folder: swr-meter
+  Python reference UI/API: swr-meter-json.pyw
+  This summary: SWR-METER-MSCC-SUMMARY.txt
+
+Bottom line
+-----------
+Direct GUI <-> meter is OK on the same network as the meter. For remote GUI,
+meter telemetry should land in ms-sdr and ride the existing 0x0B / 0x0C / 0x0D
+path so remote clients keep working without WiFi reachability to the meter.

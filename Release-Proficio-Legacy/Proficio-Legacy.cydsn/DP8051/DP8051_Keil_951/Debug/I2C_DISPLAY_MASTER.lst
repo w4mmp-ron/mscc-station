@@ -1,0 +1,1779 @@
+C51 COMPILER V9.51   I2C_DISPLAY_MASTER                                                    08/14/2026 10:16:38 PAGE 1   
+
+
+C51 COMPILER V9.51, COMPILATION OF MODULE I2C_DISPLAY_MASTER
+OBJECT MODULE PLACED IN .\DP8051\DP8051_Keil_951\Debug\I2C_DISPLAY_MASTER.obj
+COMPILER INVOKED BY: C:\Program Files (x86)\Cypress\PSoC Creator\4.2\PSoC Creator\import\keil\pk51\9.51\C51\BIN\c51.exe 
+                    -Generated_Source\PSoC3\I2C_DISPLAY_MASTER.c NOIV LARGE MODDP2 OMF2 VB(1) NOIP INCDIR(.,Generated_Source\PSoC3) FF(3) DB 
+                    -WL(2) PR(.\DP8051\DP8051_Keil_951\Debug/I2C_DISPLAY_MASTER.lst) CD OT(5,SPEED) OA OJ(.\DP8051\DP8051_Keil_951\Debug\I2C_
+                    -DISPLAY_MASTER.obj)
+
+line level    source
+
+   1          /*******************************************************************************
+   2          * File Name: I2C_DISPLAY_MASTER.c
+   3          * Version 3.50
+   4          *
+   5          * Description:
+   6          *  This file provides the source code of APIs for the I2C component master mode.
+   7          *
+   8          *******************************************************************************
+   9          * Copyright 2012-2015, Cypress Semiconductor Corporation. All rights reserved.
+  10          * You may use this file only in accordance with the license, terms, conditions,
+  11          * disclaimers, and limitations in the end user license agreement accompanying
+  12          * the software package with which this file was provided.
+  13          *******************************************************************************/
+  14          
+  15          #include "I2C_DISPLAY_PVT.h"
+  16          
+  17          #if(I2C_DISPLAY_MODE_MASTER_ENABLED)
+  18          
+  19          /**********************************
+  20          *      System variables
+  21          **********************************/
+  22          
+  23          volatile uint8 I2C_DISPLAY_mstrStatus;     /* Master Status byte  */
+  24          volatile uint8 I2C_DISPLAY_mstrControl;    /* Master Control byte */
+  25          
+  26          /* Transmit buffer variables */
+  27          volatile uint8 * I2C_DISPLAY_mstrRdBufPtr;     /* Pointer to Master Read buffer */
+  28          volatile uint8   I2C_DISPLAY_mstrRdBufSize;    /* Master Read buffer size       */
+  29          volatile uint8   I2C_DISPLAY_mstrRdBufIndex;   /* Master Read buffer Index      */
+  30          
+  31          /* Receive buffer variables */
+  32          volatile uint8 * I2C_DISPLAY_mstrWrBufPtr;     /* Pointer to Master Write buffer */
+  33          volatile uint8   I2C_DISPLAY_mstrWrBufSize;    /* Master Write buffer size       */
+  34          volatile uint8   I2C_DISPLAY_mstrWrBufIndex;   /* Master Write buffer Index      */
+  35          
+  36          
+  37          /*******************************************************************************
+  38          * Function Name: I2C_DISPLAY_MasterWriteBuf
+  39          ********************************************************************************
+  40          *
+  41          * Summary:
+  42          *  Automatically writes an entire buffer of data to a slave device. Once the
+  43          *  data transfer is initiated by this function, further data transfer is handled
+  44          *  by the included ISR in byte by byte mode.
+  45          *
+  46          * Parameters:
+  47          *  slaveAddr: 7-bit slave address.
+  48          *  xferData:  Pointer to buffer of data to be sent.
+  49          *  cnt:       Size of buffer to send.
+  50          *  mode:      Transfer mode defines: start or restart condition generation at
+  51          *             begin of the transfer and complete the transfer or halt before
+  52          *             generating a stop.
+C51 COMPILER V9.51   I2C_DISPLAY_MASTER                                                    08/14/2026 10:16:38 PAGE 2   
+
+  53          *
+  54          * Return:
+  55          *  Status error - Zero means no errors.
+  56          *
+  57          * Side Effects:
+  58          *  The included ISR will start a transfer after a start or restart condition is
+  59          *  generated.
+  60          *
+  61          * Global variables:
+  62          *  I2C_DISPLAY_mstrStatus  - The global variable used to store a current
+  63          *                                 status of the I2C Master.
+  64          *  I2C_DISPLAY_state       - The global variable used to store a current
+  65          *                                 state of the software FSM.
+  66          *  I2C_DISPLAY_mstrControl - The global variable used to control the master
+  67          *                                 end of a transaction with or without Stop
+  68          *                                 generation.
+  69          *  I2C_DISPLAY_mstrWrBufPtr - The global variable used to store a pointer
+  70          *                                  to the master write buffer.
+  71          *  I2C_DISPLAY_mstrWrBufIndex - The global variable used to store current
+  72          *                                    index within the master write buffer.
+  73          *  I2C_DISPLAY_mstrWrBufSize - The global variable used to store a master
+  74          *                                   write buffer size.
+  75          *
+  76          * Reentrant:
+  77          *  No
+  78          *
+  79          *******************************************************************************/
+  80          uint8 I2C_DISPLAY_MasterWriteBuf(uint8 slaveAddress, uint8 * wrData, uint8 cnt, uint8 mode)
+  81                
+  82          {
+  83   1          uint8 errStatus;
+  84   1      
+  85   1          errStatus = I2C_DISPLAY_MSTR_NOT_READY;
+  86   1      
+  87   1          if(NULL != wrData)
+  88   1          {
+  89   2              /* Check I2C state to allow transfer: valid states are IDLE or HALT */
+  90   2              if(I2C_DISPLAY_SM_IDLE == I2C_DISPLAY_state)
+  91   2              {
+  92   3                  /* Master is ready for transaction: check if bus is free */
+  93   3                  if(I2C_DISPLAY_CHECK_BUS_FREE(I2C_DISPLAY_MCSR_REG))
+  94   3                  {
+  95   4                      errStatus = I2C_DISPLAY_MSTR_NO_ERROR;
+  96   4                  }
+  97   3                  else
+  98   3                  {
+  99   4                      errStatus = I2C_DISPLAY_MSTR_BUS_BUSY;
+ 100   4                  }
+ 101   3              }
+ 102   2              else if(I2C_DISPLAY_SM_MSTR_HALT == I2C_DISPLAY_state)
+ 103   2              {
+ 104   3                  /* Master is ready and waiting for ReStart */
+ 105   3                  errStatus = I2C_DISPLAY_MSTR_NO_ERROR;
+ 106   3      
+ 107   3                  I2C_DISPLAY_ClearPendingInt();
+ 108   3                  I2C_DISPLAY_mstrStatus &= (uint8) ~I2C_DISPLAY_MSTAT_XFER_HALT;
+ 109   3              }
+ 110   2              else
+ 111   2              {
+ 112   3                  /* errStatus = I2C_DISPLAY_MSTR_NOT_READY was send before */
+ 113   3              }
+ 114   2      
+C51 COMPILER V9.51   I2C_DISPLAY_MASTER                                                    08/14/2026 10:16:38 PAGE 3   
+
+ 115   2              if(I2C_DISPLAY_MSTR_NO_ERROR == errStatus)
+ 116   2              {
+ 117   3                  /* Set state to start write transaction */
+ 118   3                  I2C_DISPLAY_state = I2C_DISPLAY_SM_MSTR_WR_ADDR;
+ 119   3      
+ 120   3                  /* Prepare write buffer */
+ 121   3                  I2C_DISPLAY_mstrWrBufIndex = 0u;
+ 122   3                  I2C_DISPLAY_mstrWrBufSize  = cnt;
+ 123   3                  I2C_DISPLAY_mstrWrBufPtr   = (volatile uint8 *) wrData;
+ 124   3      
+ 125   3                  /* Set end of transaction flag: Stop or Halt (following ReStart) */
+ 126   3                  I2C_DISPLAY_mstrControl = mode;
+ 127   3      
+ 128   3                  /* Clear write status history */
+ 129   3                  I2C_DISPLAY_mstrStatus &= (uint8) ~I2C_DISPLAY_MSTAT_WR_CMPLT;
+ 130   3      
+ 131   3                  /* Hardware actions: write address and generate Start or ReStart */
+ 132   3                  I2C_DISPLAY_DATA_REG = (uint8) (slaveAddress << I2C_DISPLAY_SLAVE_ADDR_SHIFT);
+ 133   3      
+ 134   3                  if(I2C_DISPLAY_CHECK_RESTART(mode))
+ 135   3                  {
+ 136   4                      I2C_DISPLAY_GENERATE_RESTART;
+ 137   4                  }
+ 138   3                  else
+ 139   3                  {
+ 140   4                      I2C_DISPLAY_GENERATE_START;
+ 141   4                  }
+ 142   3      
+ 143   3                  /* Enable interrupt to complete transfer */
+ 144   3                  I2C_DISPLAY_EnableInt();
+ 145   3              }
+ 146   2          }
+ 147   1      
+ 148   1          return(errStatus);
+ 149   1      }
+ 150          
+ 151          
+ 152          /*******************************************************************************
+ 153          * Function Name: I2C_DISPLAY_MasterReadBuf
+ 154          ********************************************************************************
+ 155          *
+ 156          * Summary:
+ 157          *  Automatically writes an entire buffer of data to a slave device. Once the
+ 158          *  data transfer is initiated by this function, further data transfer is handled
+ 159          *  by the included ISR in byte by byte mode.
+ 160          *
+ 161          * Parameters:
+ 162          *  slaveAddr: 7-bit slave address.
+ 163          *  xferData:  Pointer to buffer where to put data from slave.
+ 164          *  cnt:       Size of buffer to read.
+ 165          *  mode:      Transfer mode defines: start or restart condition generation at
+ 166          *             begin of the transfer and complete the transfer or halt before
+ 167          *             generating a stop.
+ 168          *
+ 169          * Return:
+ 170          *  Status error - Zero means no errors.
+ 171          *
+ 172          * Side Effects:
+ 173          *  The included ISR will start a transfer after start or restart condition is
+ 174          *  generated.
+ 175          *
+ 176          * Global variables:
+C51 COMPILER V9.51   I2C_DISPLAY_MASTER                                                    08/14/2026 10:16:38 PAGE 4   
+
+ 177          *  I2C_DISPLAY_mstrStatus  - The global variable used to store a current
+ 178          *                                 status of the I2C Master.
+ 179          *  I2C_DISPLAY_state       - The global variable used to store a current
+ 180          *                                 state of the software FSM.
+ 181          *  I2C_DISPLAY_mstrControl - The global variable used to control the master
+ 182          *                                 end of a transaction with or without
+ 183          *                                 Stop generation.
+ 184          *  I2C_DISPLAY_mstrRdBufPtr - The global variable used to store a pointer
+ 185          *                                  to the master write buffer.
+ 186          *  I2C_DISPLAY_mstrRdBufIndex - The global variable  used to store a
+ 187          *                                    current index within the master
+ 188          *                                    write buffer.
+ 189          *  I2C_DISPLAY_mstrRdBufSize - The global variable used to store a master
+ 190          *                                   write buffer size.
+ 191          *
+ 192          * Reentrant:
+ 193          *  No.
+ 194          *
+ 195          *******************************************************************************/
+ 196          uint8 I2C_DISPLAY_MasterReadBuf(uint8 slaveAddress, uint8 * rdData, uint8 cnt, uint8 mode)
+ 197                
+ 198          {
+ 199   1          uint8 errStatus;
+ 200   1      
+ 201   1          errStatus = I2C_DISPLAY_MSTR_NOT_READY;
+ 202   1      
+ 203   1          if(NULL != rdData)
+ 204   1          {
+ 205   2              /* Check I2C state to allow transfer: valid states are IDLE or HALT */
+ 206   2              if(I2C_DISPLAY_SM_IDLE == I2C_DISPLAY_state)
+ 207   2              {
+ 208   3                  /* Master is ready to transaction: check if bus is free */
+ 209   3                  if(I2C_DISPLAY_CHECK_BUS_FREE(I2C_DISPLAY_MCSR_REG))
+ 210   3                  {
+ 211   4                      errStatus = I2C_DISPLAY_MSTR_NO_ERROR;
+ 212   4                  }
+ 213   3                  else
+ 214   3                  {
+ 215   4                      errStatus = I2C_DISPLAY_MSTR_BUS_BUSY;
+ 216   4                  }
+ 217   3              }
+ 218   2              else if(I2C_DISPLAY_SM_MSTR_HALT == I2C_DISPLAY_state)
+ 219   2              {
+ 220   3                  /* Master is ready and waiting for ReStart */
+ 221   3                  errStatus = I2C_DISPLAY_MSTR_NO_ERROR;
+ 222   3      
+ 223   3                  I2C_DISPLAY_ClearPendingInt();
+ 224   3                  I2C_DISPLAY_mstrStatus &= (uint8) ~I2C_DISPLAY_MSTAT_XFER_HALT;
+ 225   3              }
+ 226   2              else
+ 227   2              {
+ 228   3                  /* errStatus = I2C_DISPLAY_MSTR_NOT_READY was set before */
+ 229   3              }
+ 230   2      
+ 231   2              if(I2C_DISPLAY_MSTR_NO_ERROR == errStatus)
+ 232   2              {
+ 233   3                  /* Set state to start write transaction */
+ 234   3                  I2C_DISPLAY_state = I2C_DISPLAY_SM_MSTR_RD_ADDR;
+ 235   3      
+ 236   3                  /* Prepare read buffer */
+ 237   3                  I2C_DISPLAY_mstrRdBufIndex  = 0u;
+ 238   3                  I2C_DISPLAY_mstrRdBufSize   = cnt;
+C51 COMPILER V9.51   I2C_DISPLAY_MASTER                                                    08/14/2026 10:16:38 PAGE 5   
+
+ 239   3                  I2C_DISPLAY_mstrRdBufPtr    = (volatile uint8 *) rdData;
+ 240   3      
+ 241   3                  /* Set end of transaction flag: Stop or Halt (following ReStart) */
+ 242   3                  I2C_DISPLAY_mstrControl = mode;
+ 243   3      
+ 244   3                  /* Clear read status history */
+ 245   3                  I2C_DISPLAY_mstrStatus &= (uint8) ~I2C_DISPLAY_MSTAT_RD_CMPLT;
+ 246   3      
+ 247   3                  /* Hardware actions: write address and generate Start or ReStart */
+ 248   3                  I2C_DISPLAY_DATA_REG = ((uint8) (slaveAddress << I2C_DISPLAY_SLAVE_ADDR_SHIFT) |
+ 249   3                                                        I2C_DISPLAY_READ_FLAG);
+ 250   3      
+ 251   3                  if(I2C_DISPLAY_CHECK_RESTART(mode))
+ 252   3                  {
+ 253   4                      I2C_DISPLAY_GENERATE_RESTART;
+ 254   4                  }
+ 255   3                  else
+ 256   3                  {
+ 257   4                      I2C_DISPLAY_GENERATE_START;
+ 258   4                  }
+ 259   3      
+ 260   3                  /* Enable interrupt to complete transfer */
+ 261   3                  I2C_DISPLAY_EnableInt();
+ 262   3              }
+ 263   2          }
+ 264   1      
+ 265   1          return(errStatus);
+ 266   1      }
+ 267          
+ 268          
+ 269          /*******************************************************************************
+ 270          * Function Name: I2C_DISPLAY_MasterSendStart
+ 271          ********************************************************************************
+ 272          *
+ 273          * Summary:
+ 274          *  Generates Start condition and sends slave address with read/write bit.
+ 275          *
+ 276          * Parameters:
+ 277          *  slaveAddress:  7-bit slave address.
+ 278          *  R_nW:          Zero, send write command, non-zero send read command.
+ 279          *
+ 280          * Return:
+ 281          *  Status error - Zero means no errors.
+ 282          *
+ 283          * Side Effects:
+ 284          *  This function is entered without a "byte complete" bit set in the I2C_CSR
+ 285          *  register. It does not exit until it is set.
+ 286          *
+ 287          * Global variables:
+ 288          *  I2C_DISPLAY_state - The global variable used to store a current state of
+ 289          *                           the software FSM.
+ 290          *
+ 291          * Reentrant:
+ 292          *  No.
+ 293          *
+ 294          *******************************************************************************/
+ 295          uint8 I2C_DISPLAY_MasterSendStart(uint8 slaveAddress, uint8 R_nW)
+ 296                
+ 297          {
+ 298   1          uint8 errStatus;
+ 299   1      
+ 300   1          errStatus = I2C_DISPLAY_MSTR_NOT_READY;
+C51 COMPILER V9.51   I2C_DISPLAY_MASTER                                                    08/14/2026 10:16:38 PAGE 6   
+
+ 301   1      
+ 302   1          /* If IDLE, check if bus is free */
+ 303   1          if(I2C_DISPLAY_SM_IDLE == I2C_DISPLAY_state)
+ 304   1          {
+ 305   2              /* If bus is free, generate Start condition */
+ 306   2              if(I2C_DISPLAY_CHECK_BUS_FREE(I2C_DISPLAY_MCSR_REG))
+ 307   2              {
+ 308   3                  /* Disable interrupt for manual master operation */
+ 309   3                  I2C_DISPLAY_DisableInt();
+ 310   3      
+ 311   3                  /* Set address and read/write flag */
+ 312   3                  slaveAddress = (uint8) (slaveAddress << I2C_DISPLAY_SLAVE_ADDR_SHIFT);
+ 313   3                  if(0u != R_nW)
+ 314   3                  {
+ 315   4                      slaveAddress |= I2C_DISPLAY_READ_FLAG;
+ 316   4                      I2C_DISPLAY_state = I2C_DISPLAY_SM_MSTR_RD_ADDR;
+ 317   4                  }
+ 318   3                  else
+ 319   3                  {
+ 320   4                      I2C_DISPLAY_state = I2C_DISPLAY_SM_MSTR_WR_ADDR;
+ 321   4                  }
+ 322   3      
+ 323   3                  /* Hardware actions: write address and generate Start */
+ 324   3                  I2C_DISPLAY_DATA_REG = slaveAddress;
+ 325   3                  I2C_DISPLAY_GENERATE_START_MANUAL;
+ 326   3      
+ 327   3                  /* Wait until address is transferred */
+ 328   3                  while(I2C_DISPLAY_WAIT_BYTE_COMPLETE(I2C_DISPLAY_CSR_REG))
+ 329   3                  {
+ 330   4                  }
+ 331   3      
+ 332   3              #if(I2C_DISPLAY_MODE_MULTI_MASTER_SLAVE_ENABLED)
+                          if(I2C_DISPLAY_CHECK_START_GEN(I2C_DISPLAY_MCSR_REG))
+                          {
+                              I2C_DISPLAY_CLEAR_START_GEN;
+              
+                              /* Start condition was not generated: reset FSM to IDLE */
+                              I2C_DISPLAY_state = I2C_DISPLAY_SM_IDLE;
+                              errStatus = I2C_DISPLAY_MSTR_ERR_ABORT_START_GEN;
+                          }
+                          else
+                      #endif /* (I2C_DISPLAY_MODE_MULTI_MASTER_SLAVE_ENABLED) */
+ 343   3      
+ 344   3              #if(I2C_DISPLAY_MODE_MULTI_MASTER_ENABLED)
+                          if(I2C_DISPLAY_CHECK_LOST_ARB(I2C_DISPLAY_CSR_REG))
+                          {
+                              I2C_DISPLAY_BUS_RELEASE_MANUAL;
+              
+                              /* Master lost arbitrage: reset FSM to IDLE */
+                              I2C_DISPLAY_state = I2C_DISPLAY_SM_IDLE;
+                              errStatus = I2C_DISPLAY_MSTR_ERR_ARB_LOST;
+                          }
+                          else
+                      #endif /* (I2C_DISPLAY_MODE_MULTI_MASTER_ENABLED) */
+ 355   3      
+ 356   3                  if(I2C_DISPLAY_CHECK_ADDR_NAK(I2C_DISPLAY_CSR_REG))
+ 357   3                  {
+ 358   4                      /* Address has been NACKed: reset FSM to IDLE */
+ 359   4                      I2C_DISPLAY_state = I2C_DISPLAY_SM_IDLE;
+ 360   4                      errStatus = I2C_DISPLAY_MSTR_ERR_LB_NAK;
+ 361   4                  }
+ 362   3                  else
+C51 COMPILER V9.51   I2C_DISPLAY_MASTER                                                    08/14/2026 10:16:38 PAGE 7   
+
+ 363   3                  {
+ 364   4                      /* Start was sent without errors */
+ 365   4                      errStatus = I2C_DISPLAY_MSTR_NO_ERROR;
+ 366   4                  }
+ 367   3              }
+ 368   2              else
+ 369   2              {
+ 370   3                  errStatus = I2C_DISPLAY_MSTR_BUS_BUSY;
+ 371   3              }
+ 372   2          }
+ 373   1      
+ 374   1          return(errStatus);
+ 375   1      }
+ 376          
+ 377          
+ 378          /*******************************************************************************
+ 379          * Function Name: I2C_DISPLAY_MasterSendRestart
+ 380          ********************************************************************************
+ 381          *
+ 382          * Summary:
+ 383          *  Generates ReStart condition and sends slave address with read/write bit.
+ 384          *
+ 385          * Parameters:
+ 386          *  slaveAddress:  7-bit slave address.
+ 387          *  R_nW:          Zero, send write command, non-zero send read command.
+ 388          *
+ 389          * Return:
+ 390          *  Status error - Zero means no errors.
+ 391          *
+ 392          * Side Effects:
+ 393          *  This function is entered without a "byte complete" bit set in the I2C_CSR
+ 394          *  register. It does not exit until it is set.
+ 395          *
+ 396          * Global variables:
+ 397          *  I2C_DISPLAY_state - The global variable used to store a current state of
+ 398          *                           the software FSM.
+ 399          *
+ 400          * Reentrant:
+ 401          *  No.
+ 402          *
+ 403          *******************************************************************************/
+ 404          uint8 I2C_DISPLAY_MasterSendRestart(uint8 slaveAddress, uint8 R_nW)
+ 405                
+ 406          {
+ 407   1          uint8 errStatus;
+ 408   1      
+ 409   1          errStatus = I2C_DISPLAY_MSTR_NOT_READY;
+ 410   1      
+ 411   1          /* Check if START condition was generated */
+ 412   1          if(I2C_DISPLAY_CHECK_MASTER_MODE(I2C_DISPLAY_MCSR_REG))
+ 413   1          {
+ 414   2              /* Set address and read/write flag */
+ 415   2              slaveAddress = (uint8) (slaveAddress << I2C_DISPLAY_SLAVE_ADDR_SHIFT);
+ 416   2              if(0u != R_nW)
+ 417   2              {
+ 418   3                  slaveAddress |= I2C_DISPLAY_READ_FLAG;
+ 419   3                  I2C_DISPLAY_state = I2C_DISPLAY_SM_MSTR_RD_ADDR;
+ 420   3              }
+ 421   2              else
+ 422   2              {
+ 423   3                  I2C_DISPLAY_state = I2C_DISPLAY_SM_MSTR_WR_ADDR;
+ 424   3              }
+C51 COMPILER V9.51   I2C_DISPLAY_MASTER                                                    08/14/2026 10:16:38 PAGE 8   
+
+ 425   2      
+ 426   2              /* Hardware actions: write address and generate ReStart */
+ 427   2              I2C_DISPLAY_DATA_REG = slaveAddress;
+ 428   2              I2C_DISPLAY_GENERATE_RESTART_MANUAL;
+ 429   2      
+ 430   2              /* Wait until address has been transferred */
+ 431   2              while(I2C_DISPLAY_WAIT_BYTE_COMPLETE(I2C_DISPLAY_CSR_REG))
+ 432   2              {
+ 433   3              }
+ 434   2      
+ 435   2          #if(I2C_DISPLAY_MODE_MULTI_MASTER_ENABLED)
+                      if(I2C_DISPLAY_CHECK_LOST_ARB(I2C_DISPLAY_CSR_REG))
+                      {
+                          I2C_DISPLAY_BUS_RELEASE_MANUAL;
+              
+                          /* Master lost arbitrage: reset FSM to IDLE */
+                          I2C_DISPLAY_state = I2C_DISPLAY_SM_IDLE;
+                          errStatus = I2C_DISPLAY_MSTR_ERR_ARB_LOST;
+                      }
+                      else
+                  #endif /* (I2C_DISPLAY_MODE_MULTI_MASTER_ENABLED) */
+ 446   2      
+ 447   2              if(I2C_DISPLAY_CHECK_ADDR_NAK(I2C_DISPLAY_CSR_REG))
+ 448   2              {
+ 449   3                  /* Address has been NACKed: reset FSM to IDLE */
+ 450   3                  I2C_DISPLAY_state = I2C_DISPLAY_SM_IDLE;
+ 451   3                  errStatus = I2C_DISPLAY_MSTR_ERR_LB_NAK;
+ 452   3              }
+ 453   2              else
+ 454   2              {
+ 455   3                  /* ReStart was sent without errors */
+ 456   3                  errStatus = I2C_DISPLAY_MSTR_NO_ERROR;
+ 457   3              }
+ 458   2          }
+ 459   1      
+ 460   1          return(errStatus);
+ 461   1      }
+ 462          
+ 463          
+ 464          /*******************************************************************************
+ 465          * Function Name: I2C_DISPLAY_MasterSendStop
+ 466          ********************************************************************************
+ 467          *
+ 468          * Summary:
+ 469          *  Generates I2C Stop condition on bus. Function do nothing if Start or Restart
+ 470          *  condition was failed before call this function.
+ 471          *
+ 472          * Parameters:
+ 473          *  None.
+ 474          *
+ 475          * Return:
+ 476          *  Status error - Zero means no errors.
+ 477          *
+ 478          * Side Effects:
+ 479          *  Stop generation is required to complete the transaction.
+ 480          *  This function does not wait until a Stop condition is generated.
+ 481          *
+ 482          * Global variables:
+ 483          *  I2C_DISPLAY_state - The global variable used to store a current state of
+ 484          *                           the software FSM.
+ 485          *
+ 486          * Reentrant:
+C51 COMPILER V9.51   I2C_DISPLAY_MASTER                                                    08/14/2026 10:16:38 PAGE 9   
+
+ 487          *  No.
+ 488          *
+ 489          *******************************************************************************/
+ 490          uint8 I2C_DISPLAY_MasterSendStop(void) 
+ 491          {
+ 492   1          uint8 errStatus;
+ 493   1      
+ 494   1          errStatus = I2C_DISPLAY_MSTR_NOT_READY;
+ 495   1      
+ 496   1          /* Check if master is active on bus */
+ 497   1          if(I2C_DISPLAY_CHECK_MASTER_MODE(I2C_DISPLAY_MCSR_REG))
+ 498   1          {
+ 499   2              I2C_DISPLAY_GENERATE_STOP_MANUAL;
+ 500   2              I2C_DISPLAY_state = I2C_DISPLAY_SM_IDLE;
+ 501   2      
+ 502   2              /* Wait until stop has been generated */
+ 503   2              while(I2C_DISPLAY_WAIT_STOP_COMPLETE(I2C_DISPLAY_CSR_REG))
+ 504   2              {
+ 505   3              }
+ 506   2      
+ 507   2              errStatus = I2C_DISPLAY_MSTR_NO_ERROR;
+ 508   2      
+ 509   2          #if(I2C_DISPLAY_MODE_MULTI_MASTER_ENABLED)
+                      if(I2C_DISPLAY_CHECK_LOST_ARB(I2C_DISPLAY_CSR_REG))
+                      {
+                          I2C_DISPLAY_BUS_RELEASE_MANUAL;
+              
+                          /* NACK was generated by instead Stop */
+                          errStatus = I2C_DISPLAY_MSTR_ERR_ARB_LOST;
+                      }
+                  #endif /* (I2C_DISPLAY_MODE_MULTI_MASTER_ENABLED) */
+ 518   2          }
+ 519   1      
+ 520   1          return(errStatus);
+ 521   1      }
+ 522          
+ 523          
+ 524          /*******************************************************************************
+ 525          * Function Name: I2C_DISPLAY_MasterWriteByte
+ 526          ********************************************************************************
+ 527          *
+ 528          * Summary:
+ 529          *  Sends one byte to a slave. A valid Start or ReStart condition must be
+ 530          *  generated before this call this function. Function do nothing if Start or
+ 531          *  Restart condition was failed before call this function.
+ 532          *
+ 533          * Parameters:
+ 534          *  data:  The data byte to send to the slave.
+ 535          *
+ 536          * Return:
+ 537          *  Status error - Zero means no errors.
+ 538          *
+ 539          * Side Effects:
+ 540          *  This function is entered without a "byte complete" bit set in the I2C_CSR
+ 541          *  register. It does not exit until it is set.
+ 542          *
+ 543          * Global variables:
+ 544          *  I2C_DISPLAY_state - The global variable used to store a current state of
+ 545          *                           the software FSM.
+ 546          *
+ 547          *******************************************************************************/
+ 548          uint8 I2C_DISPLAY_MasterWriteByte(uint8 theByte) 
+C51 COMPILER V9.51   I2C_DISPLAY_MASTER                                                    08/14/2026 10:16:38 PAGE 10  
+
+ 549          {
+ 550   1          uint8 errStatus;
+ 551   1      
+ 552   1          errStatus = I2C_DISPLAY_MSTR_NOT_READY;
+ 553   1      
+ 554   1          /* Check if START condition was generated */
+ 555   1          if(I2C_DISPLAY_CHECK_MASTER_MODE(I2C_DISPLAY_MCSR_REG))
+ 556   1          {
+ 557   2              I2C_DISPLAY_DATA_REG = theByte;   /* Write DATA register */
+ 558   2              I2C_DISPLAY_TRANSMIT_DATA_MANUAL; /* Set transmit mode   */
+ 559   2              I2C_DISPLAY_state = I2C_DISPLAY_SM_MSTR_WR_DATA;
+ 560   2      
+ 561   2              /* Wait until data byte has been transmitted */
+ 562   2              while(I2C_DISPLAY_WAIT_BYTE_COMPLETE(I2C_DISPLAY_CSR_REG))
+ 563   2              {
+ 564   3              }
+ 565   2      
+ 566   2          #if(I2C_DISPLAY_MODE_MULTI_MASTER_ENABLED)
+                      if(I2C_DISPLAY_CHECK_LOST_ARB(I2C_DISPLAY_CSR_REG))
+                      {
+                          I2C_DISPLAY_BUS_RELEASE_MANUAL;
+              
+                          /* Master lost arbitrage: reset FSM to IDLE */
+                          I2C_DISPLAY_state = I2C_DISPLAY_SM_IDLE;
+                          errStatus = I2C_DISPLAY_MSTR_ERR_ARB_LOST;
+                      }
+                      /* Check LRB bit */
+                      else
+                  #endif /* (I2C_DISPLAY_MODE_MULTI_MASTER_ENABLED) */
+ 578   2      
+ 579   2              if(I2C_DISPLAY_CHECK_DATA_ACK(I2C_DISPLAY_CSR_REG))
+ 580   2              {
+ 581   3                  I2C_DISPLAY_state = I2C_DISPLAY_SM_MSTR_HALT;
+ 582   3                  errStatus = I2C_DISPLAY_MSTR_NO_ERROR;
+ 583   3              }
+ 584   2              else
+ 585   2              {
+ 586   3                  I2C_DISPLAY_state = I2C_DISPLAY_SM_MSTR_HALT;
+ 587   3                  errStatus = I2C_DISPLAY_MSTR_ERR_LB_NAK;
+ 588   3              }
+ 589   2          }
+ 590   1      
+ 591   1          return(errStatus);
+ 592   1      }
+ 593          
+ 594          
+ 595          /*******************************************************************************
+ 596          * Function Name: I2C_DISPLAY_MasterReadByte
+ 597          ********************************************************************************
+ 598          *
+ 599          * Summary:
+ 600          *  Reads one byte from a slave and ACK or NACK the transfer. A valid Start or
+ 601          *  ReStart condition must be generated before this call this function. Function
+ 602          *  do nothing if Start or Restart condition was failed before call this
+ 603          *  function.
+ 604          *
+ 605          * Parameters:
+ 606          *  acknNack:  Zero, response with NACK, if non-zero response with ACK.
+ 607          *
+ 608          * Return:
+ 609          *  Byte read from slave.
+ 610          *
+C51 COMPILER V9.51   I2C_DISPLAY_MASTER                                                    08/14/2026 10:16:38 PAGE 11  
+
+ 611          * Side Effects:
+ 612          *  This function is entered without a "byte complete" bit set in the I2C_CSR
+ 613          *  register. It does not exit until it is set.
+ 614          *
+ 615          * Global variables:
+ 616          *  I2C_DISPLAY_state - The global variable used to store a current
+ 617          *                           state of the software FSM.
+ 618          *
+ 619          * Reentrant:
+ 620          *  No.
+ 621          *
+ 622          *******************************************************************************/
+ 623          uint8 I2C_DISPLAY_MasterReadByte(uint8 acknNak) 
+ 624          {
+ 625   1          uint8 theByte;
+ 626   1      
+ 627   1          theByte = 0u;
+ 628   1      
+ 629   1          /* Check if START condition was generated */
+ 630   1          if(I2C_DISPLAY_CHECK_MASTER_MODE(I2C_DISPLAY_MCSR_REG))
+ 631   1          {
+ 632   2              /* When address phase needs to release bus and receive byte,
+ 633   2              * then decide ACK or NACK
+ 634   2              */
+ 635   2              if(I2C_DISPLAY_SM_MSTR_RD_ADDR == I2C_DISPLAY_state)
+ 636   2              {
+ 637   3                  I2C_DISPLAY_READY_TO_READ_MANUAL;
+ 638   3                  I2C_DISPLAY_state = I2C_DISPLAY_SM_MSTR_RD_DATA;
+ 639   3              }
+ 640   2      
+ 641   2              /* Wait until data byte has been received */
+ 642   2              while(I2C_DISPLAY_WAIT_BYTE_COMPLETE(I2C_DISPLAY_CSR_REG))
+ 643   2              {
+ 644   3              }
+ 645   2      
+ 646   2              theByte = I2C_DISPLAY_DATA_REG;
+ 647   2      
+ 648   2              /* Command ACK to receive next byte and continue transfer.
+ 649   2              *  Do nothing for NACK. The NACK will be generated by
+ 650   2              *  Stop or ReStart routine.
+ 651   2              */
+ 652   2              if(acknNak != 0u) /* Generate ACK */
+ 653   2              {
+ 654   3                  I2C_DISPLAY_ACK_AND_RECEIVE_MANUAL;
+ 655   3              }
+ 656   2              else              /* Do nothing for the follwong NACK */
+ 657   2              {
+ 658   3                  I2C_DISPLAY_state = I2C_DISPLAY_SM_MSTR_HALT;
+ 659   3              }
+ 660   2          }
+ 661   1      
+ 662   1          return(theByte);
+ 663   1      }
+ 664          
+ 665          
+ 666          /*******************************************************************************
+ 667          * Function Name: I2C_DISPLAY_MasterStatus
+ 668          ********************************************************************************
+ 669          *
+ 670          * Summary:
+ 671          *  Returns the master's communication status.
+ 672          *
+C51 COMPILER V9.51   I2C_DISPLAY_MASTER                                                    08/14/2026 10:16:38 PAGE 12  
+
+ 673          * Parameters:
+ 674          *  None.
+ 675          *
+ 676          * Return:
+ 677          *  Current status of I2C master.
+ 678          *
+ 679          * Global variables:
+ 680          *  I2C_DISPLAY_mstrStatus - The global variable used to store a current
+ 681          *                                status of the I2C Master.
+ 682          *
+ 683          *******************************************************************************/
+ 684          uint8 I2C_DISPLAY_MasterStatus(void) 
+ 685          {
+ 686   1          uint8 status;
+ 687   1      
+ 688   1          I2C_DISPLAY_DisableInt(); /* Lock from interrupt */
+ 689   1      
+ 690   1          /* Read master status */
+ 691   1          status = I2C_DISPLAY_mstrStatus;
+ 692   1      
+ 693   1          if (I2C_DISPLAY_CHECK_SM_MASTER)
+ 694   1          {
+ 695   2              /* Set transfer in progress flag in status */
+ 696   2              status |= I2C_DISPLAY_MSTAT_XFER_INP;
+ 697   2          }
+ 698   1      
+ 699   1          I2C_DISPLAY_EnableInt(); /* Release lock */
+ 700   1      
+ 701   1          return (status);
+ 702   1      }
+ 703          
+ 704          
+ 705          /*******************************************************************************
+ 706          * Function Name: I2C_DISPLAY_MasterClearStatus
+ 707          ********************************************************************************
+ 708          *
+ 709          * Summary:
+ 710          *  Clears all status flags and returns the master status.
+ 711          *
+ 712          * Parameters:
+ 713          *  None.
+ 714          *
+ 715          * Return:
+ 716          *  Current status of I2C master.
+ 717          *
+ 718          * Global variables:
+ 719          *  I2C_DISPLAY_mstrStatus - The global variable used to store a current
+ 720          *                                status of the I2C Master.
+ 721          *
+ 722          * Reentrant:
+ 723          *  No.
+ 724          *
+ 725          *******************************************************************************/
+ 726          uint8 I2C_DISPLAY_MasterClearStatus(void) 
+ 727          {
+ 728   1          uint8 status;
+ 729   1      
+ 730   1          I2C_DISPLAY_DisableInt(); /* Lock from interrupt */
+ 731   1      
+ 732   1          /* Read and clear master status */
+ 733   1          status = I2C_DISPLAY_mstrStatus;
+ 734   1          I2C_DISPLAY_mstrStatus = I2C_DISPLAY_MSTAT_CLEAR;
+C51 COMPILER V9.51   I2C_DISPLAY_MASTER                                                    08/14/2026 10:16:38 PAGE 13  
+
+ 735   1      
+ 736   1          I2C_DISPLAY_EnableInt(); /* Release lock */
+ 737   1      
+ 738   1          return (status);
+ 739   1      }
+ 740          
+ 741          
+ 742          /*******************************************************************************
+ 743          * Function Name: I2C_DISPLAY_MasterGetReadBufSize
+ 744          ********************************************************************************
+ 745          *
+ 746          * Summary:
+ 747          *  Returns the amount of bytes that has been transferred with an
+ 748          *  I2C_MasterReadBuf command.
+ 749          *
+ 750          * Parameters:
+ 751          *  None.
+ 752          *
+ 753          * Return:
+ 754          *  Byte count of transfer. If the transfer is not yet complete, it will return
+ 755          *  the byte count transferred so far.
+ 756          *
+ 757          * Global variables:
+ 758          *  I2C_DISPLAY_mstrRdBufIndex - The global variable stores current index
+ 759          *                                    within the master read buffer.
+ 760          *
+ 761          *******************************************************************************/
+ 762          uint8 I2C_DISPLAY_MasterGetReadBufSize(void) 
+ 763          {
+ 764   1          return (I2C_DISPLAY_mstrRdBufIndex);
+ 765   1      }
+ 766          
+ 767          
+ 768          /*******************************************************************************
+ 769          * Function Name: I2C_DISPLAY_MasterGetWriteBufSize
+ 770          ********************************************************************************
+ 771          *
+ 772          * Summary:
+ 773          *  Returns the amount of bytes that has been transferred with an
+ 774          *  I2C_MasterWriteBuf command.
+ 775          *
+ 776          * Parameters:
+ 777          *  None.
+ 778          *
+ 779          * Return:
+ 780          *  Byte count of transfer. If the transfer is not yet complete, it will return
+ 781          *  the byte count transferred so far.
+ 782          *
+ 783          * Global variables:
+ 784          *  I2C_DISPLAY_mstrWrBufIndex -  The global variable used to stores current
+ 785          *                                     index within master write buffer.
+ 786          *
+ 787          *******************************************************************************/
+ 788          uint8 I2C_DISPLAY_MasterGetWriteBufSize(void) 
+ 789          {
+ 790   1          return (I2C_DISPLAY_mstrWrBufIndex);
+ 791   1      }
+ 792          
+ 793          
+ 794          /*******************************************************************************
+ 795          * Function Name: I2C_DISPLAY_MasterClearReadBuf
+ 796          ********************************************************************************
+C51 COMPILER V9.51   I2C_DISPLAY_MASTER                                                    08/14/2026 10:16:38 PAGE 14  
+
+ 797          *
+ 798          * Summary:
+ 799          *  Resets the read buffer pointer back to the first byte in the buffer.
+ 800          *
+ 801          * Parameters:
+ 802          *  None.
+ 803          *
+ 804          * Return:
+ 805          *  None.
+ 806          *
+ 807          * Global variables:
+ 808          *  I2C_DISPLAY_mstrRdBufIndex - The global variable used to stores current
+ 809          *                                    index within master read buffer.
+ 810          *  I2C_DISPLAY_mstrStatus - The global variable used to store a current
+ 811          *                                status of the I2C Master.
+ 812          *
+ 813          * Reentrant:
+ 814          *  No.
+ 815          *
+ 816          *******************************************************************************/
+ 817          void I2C_DISPLAY_MasterClearReadBuf(void) 
+ 818          {
+ 819   1          I2C_DISPLAY_DisableInt(); /* Lock from interrupt */
+ 820   1      
+ 821   1          I2C_DISPLAY_mstrRdBufIndex = 0u;
+ 822   1          I2C_DISPLAY_mstrStatus    &= (uint8) ~I2C_DISPLAY_MSTAT_RD_CMPLT;
+ 823   1      
+ 824   1          I2C_DISPLAY_EnableInt(); /* Release lock */
+ 825   1      }
+ 826          
+ 827          
+ 828          /*******************************************************************************
+ 829          * Function Name: I2C_DISPLAY_MasterClearWriteBuf
+ 830          ********************************************************************************
+ 831          *
+ 832          * Summary:
+ 833          *  Resets the write buffer pointer back to the first byte in the buffer.
+ 834          *
+ 835          * Parameters:
+ 836          *  None.
+ 837          *
+ 838          * Return:
+ 839          *  None.
+ 840          *
+ 841          * Global variables:
+ 842          *  I2C_DISPLAY_mstrRdBufIndex - The global variable used to stote current
+ 843          *                                    index within master read buffer.
+ 844          *  I2C_DISPLAY_mstrStatus - The global variable used to store a current
+ 845          *                                status of the I2C Master.
+ 846          *
+ 847          * Reentrant:
+ 848          *  No.
+ 849          *
+ 850          *******************************************************************************/
+ 851          void I2C_DISPLAY_MasterClearWriteBuf(void) 
+ 852          {
+ 853   1          I2C_DISPLAY_DisableInt(); /* Lock from interrupt */
+ 854   1      
+ 855   1          I2C_DISPLAY_mstrWrBufIndex = 0u;
+ 856   1          I2C_DISPLAY_mstrStatus    &= (uint8) ~I2C_DISPLAY_MSTAT_WR_CMPLT;
+ 857   1      
+ 858   1          I2C_DISPLAY_EnableInt(); /* Release lock */
+C51 COMPILER V9.51   I2C_DISPLAY_MASTER                                                    08/14/2026 10:16:38 PAGE 15  
+
+ 859   1      }
+ 860          
+ 861          #endif /* (I2C_DISPLAY_MODE_MASTER_ENABLED) */
+ 862          
+ 863          
+ 864          /* [] END OF FILE */
+C51 COMPILER V9.51   I2C_DISPLAY_MASTER                                                    08/14/2026 10:16:38 PAGE 16  
+
+ASSEMBLY LISTING OF GENERATED OBJECT CODE
+
+
+             ; FUNCTION _I2C_DISPLAY_MasterWriteBuf (BEGIN)
+                                           ; SOURCE LINE # 80
+                 R     MOV     DPTR,#wrData
+                       MOV     A,R3
+                       MOVX    @DPTR,A
+                       INC     DPTR
+                       MOV     A,R2
+                       MOVX    @DPTR,A
+                       INC     DPTR
+                       MOV     A,R1
+                       MOVX    @DPTR,A
+;---- Variable 'slaveAddress' assigned to Register 'R4' ----
+                       MOV     R4,AR7
+                                           ; SOURCE LINE # 82
+                                           ; SOURCE LINE # 85
+;---- Variable 'errStatus' assigned to Register 'R5' ----
+                       MOV     R5,#02H
+                                           ; SOURCE LINE # 87
+                 R     MOV     DPTR,#wrData
+                       MOVX    A,@DPTR
+                       MOV     R3,A
+                       INC     DPTR
+                       MOVX    A,@DPTR
+                       MOV     R2,A
+                       INC     DPTR
+                       MOVX    A,@DPTR
+                       ORL     A,R2
+                       ORL     A,R3
+                 R     xJZ     ?C0001
+                                           ; SOURCE LINE # 88
+                                           ; SOURCE LINE # 90
+                 E     MOV     DPTR,#I2C_DISPLAY_state
+                       MOVX    A,@DPTR
+                 R     xJNE    A,#010H,?C0002
+                                           ; SOURCE LINE # 91
+                                           ; SOURCE LINE # 93
+                       MOV     DPTR,#049D9H
+                       MOVX    A,@DPTR
+                       ANL     A,#08H
+                 R     xJNZ    ?C0003
+                                           ; SOURCE LINE # 94
+                                           ; SOURCE LINE # 95
+                       MOV     R5,A
+                                           ; SOURCE LINE # 96
+                 R     xJMP    ?C0005
+             ?C0003:
+                                           ; SOURCE LINE # 98
+                                           ; SOURCE LINE # 99
+                       MOV     R5,#01H
+                                           ; SOURCE LINE # 100
+                                           ; SOURCE LINE # 101
+                 R     xJMP    ?C0005
+             ?C0002:
+                                           ; SOURCE LINE # 102
+                 E     MOV     DPTR,#I2C_DISPLAY_state
+                       MOVX    A,@DPTR
+                 R     xJNE    A,#060H,?C0005
+                                           ; SOURCE LINE # 103
+                                           ; SOURCE LINE # 105
+C51 COMPILER V9.51   I2C_DISPLAY_MASTER                                                    08/14/2026 10:16:38 PAGE 17  
+
+                       CLR     A
+                       MOV     R5,A
+                                           ; SOURCE LINE # 107
+                       MOV     DPTR,#044D9H
+                       MOV     A,#080H
+                       MOVX    @DPTR,A
+                                           ; SOURCE LINE # 108
+                 R     MOV     DPTR,#I2C_DISPLAY_mstrStatus
+                       MOVX    A,@DPTR
+                       ANL     A,#0F7H
+                       MOVX    @DPTR,A
+                                           ; SOURCE LINE # 109
+                                           ; SOURCE LINE # 111
+                                           ; SOURCE LINE # 113
+             ?C0005:
+                                           ; SOURCE LINE # 115
+                       MOV     A,R5
+                 R     xJNZ    ?C0001
+                                           ; SOURCE LINE # 116
+                                           ; SOURCE LINE # 118
+                 E     MOV     DPTR,#I2C_DISPLAY_state
+                       MOV     A,#045H
+                       MOVX    @DPTR,A
+                                           ; SOURCE LINE # 121
+                       CLR     A
+                 R     MOV     DPTR,#I2C_DISPLAY_mstrWrBufIndex
+                       MOVX    @DPTR,A
+                                           ; SOURCE LINE # 122
+                 R     MOV     DPTR,#cnt
+                       MOVX    A,@DPTR
+                 R     MOV     DPTR,#I2C_DISPLAY_mstrWrBufSize
+                       MOVX    @DPTR,A
+                                           ; SOURCE LINE # 123
+                 R     MOV     DPTR,#wrData
+                       MOVX    A,@DPTR
+                       MOV     R1,A
+                       INC     DPTR
+                       MOVX    A,@DPTR
+                       MOV     R2,A
+                       INC     DPTR
+                       MOVX    A,@DPTR
+                 R     MOV     DPTR,#I2C_DISPLAY_mstrWrBufPtr
+                       XCH     A,R1
+                       MOVX    @DPTR,A
+                       INC     DPTR
+                       MOV     A,R2
+                       MOVX    @DPTR,A
+                       INC     DPTR
+                       MOV     A,R1
+                       MOVX    @DPTR,A
+                                           ; SOURCE LINE # 126
+                 R     MOV     DPTR,#mode
+                       MOVX    A,@DPTR
+                       MOV     R7,A
+                 R     MOV     DPTR,#I2C_DISPLAY_mstrControl
+                       MOVX    @DPTR,A
+                                           ; SOURCE LINE # 129
+                 R     MOV     DPTR,#I2C_DISPLAY_mstrStatus
+                       MOVX    A,@DPTR
+                       ANL     A,#0FDH
+                       MOVX    @DPTR,A
+                                           ; SOURCE LINE # 132
+C51 COMPILER V9.51   I2C_DISPLAY_MASTER                                                    08/14/2026 10:16:38 PAGE 18  
+
+                       MOV     R6,AR4
+                       MOV     A,R6
+                       ADD     A,ACC
+                       MOV     DPTR,#049D8H
+                       MOVX    @DPTR,A
+                                           ; SOURCE LINE # 134
+                       MOV     A,R7
+                       ANL     A,#01H
+                 R     xJZ     ?C0016
+                                           ; SOURCE LINE # 135
+                                           ; SOURCE LINE # 136
+                       INC     DPTR
+                       MOV     A,#012H
+                       MOVX    @DPTR,A
+                       MOV     DPTR,#049D7H
+                       MOV     A,#04H
+                       MOVX    @DPTR,A
+                                           ; SOURCE LINE # 137
+                 R     xJMP    ?C0013
+                                           ; SOURCE LINE # 139
+             ?C0016:
+                                           ; SOURCE LINE # 140
+                       MOV     DPTR,#049D9H
+                       MOV     A,#01H
+                       MOVX    @DPTR,A
+                                           ; SOURCE LINE # 141
+             ?C0013:
+                                           ; SOURCE LINE # 144
+                       MOV     DPTR,#044C1H
+                       MOV     A,#080H
+                       MOVX    @DPTR,A
+                                           ; SOURCE LINE # 145
+                                           ; SOURCE LINE # 146
+             ?C0001:
+                                           ; SOURCE LINE # 148
+                       MOV     R7,AR5
+                                           ; SOURCE LINE # 149
+             ?C0017:
+                       RET     
+             ; FUNCTION _I2C_DISPLAY_MasterWriteBuf (END)
+
+             ; FUNCTION _I2C_DISPLAY_MasterReadBuf (BEGIN)
+                                           ; SOURCE LINE # 196
+                 R     MOV     DPTR,#rdData
+                       MOV     A,R3
+                       MOVX    @DPTR,A
+                       INC     DPTR
+                       MOV     A,R2
+                       MOVX    @DPTR,A
+                       INC     DPTR
+                       MOV     A,R1
+                       MOVX    @DPTR,A
+;---- Variable 'slaveAddress' assigned to Register 'R4' ----
+                       MOV     R4,AR7
+                                           ; SOURCE LINE # 198
+                                           ; SOURCE LINE # 201
+;---- Variable 'errStatus' assigned to Register 'R5' ----
+                       MOV     R5,#02H
+                                           ; SOURCE LINE # 203
+                 R     MOV     DPTR,#rdData
+                       MOVX    A,@DPTR
+                       MOV     R3,A
+C51 COMPILER V9.51   I2C_DISPLAY_MASTER                                                    08/14/2026 10:16:38 PAGE 19  
+
+                       INC     DPTR
+                       MOVX    A,@DPTR
+                       MOV     R2,A
+                       INC     DPTR
+                       MOVX    A,@DPTR
+                       ORL     A,R2
+                       ORL     A,R3
+                 R     xJZ     ?C0018
+                                           ; SOURCE LINE # 204
+                                           ; SOURCE LINE # 206
+                 E     MOV     DPTR,#I2C_DISPLAY_state
+                       MOVX    A,@DPTR
+                 R     xJNE    A,#010H,?C0019
+                                           ; SOURCE LINE # 207
+                                           ; SOURCE LINE # 209
+                       MOV     DPTR,#049D9H
+                       MOVX    A,@DPTR
+                       ANL     A,#08H
+                 R     xJNZ    ?C0020
+                                           ; SOURCE LINE # 210
+                                           ; SOURCE LINE # 211
+                       MOV     R5,A
+                                           ; SOURCE LINE # 212
+                 R     xJMP    ?C0022
+             ?C0020:
+                                           ; SOURCE LINE # 214
+                                           ; SOURCE LINE # 215
+                       MOV     R5,#01H
+                                           ; SOURCE LINE # 216
+                                           ; SOURCE LINE # 217
+                 R     xJMP    ?C0022
+             ?C0019:
+                                           ; SOURCE LINE # 218
+                 E     MOV     DPTR,#I2C_DISPLAY_state
+                       MOVX    A,@DPTR
+                 R     xJNE    A,#060H,?C0022
+                                           ; SOURCE LINE # 219
+                                           ; SOURCE LINE # 221
+                       CLR     A
+                       MOV     R5,A
+                                           ; SOURCE LINE # 223
+                       MOV     DPTR,#044D9H
+                       MOV     A,#080H
+                       MOVX    @DPTR,A
+                                           ; SOURCE LINE # 224
+                 R     MOV     DPTR,#I2C_DISPLAY_mstrStatus
+                       MOVX    A,@DPTR
+                       ANL     A,#0F7H
+                       MOVX    @DPTR,A
+                                           ; SOURCE LINE # 225
+                                           ; SOURCE LINE # 227
+                                           ; SOURCE LINE # 229
+             ?C0022:
+                                           ; SOURCE LINE # 231
+                       MOV     A,R5
+                 R     xJNZ    ?C0018
+                                           ; SOURCE LINE # 232
+                                           ; SOURCE LINE # 234
+                 E     MOV     DPTR,#I2C_DISPLAY_state
+                       MOV     A,#049H
+                       MOVX    @DPTR,A
+                                           ; SOURCE LINE # 237
+C51 COMPILER V9.51   I2C_DISPLAY_MASTER                                                    08/14/2026 10:16:38 PAGE 20  
+
+                       CLR     A
+                 R     MOV     DPTR,#I2C_DISPLAY_mstrRdBufIndex
+                       MOVX    @DPTR,A
+                                           ; SOURCE LINE # 238
+                 R     MOV     DPTR,#cnt
+                       MOVX    A,@DPTR
+                 R     MOV     DPTR,#I2C_DISPLAY_mstrRdBufSize
+                       MOVX    @DPTR,A
+                                           ; SOURCE LINE # 239
+                 R     MOV     DPTR,#rdData
+                       MOVX    A,@DPTR
+                       MOV     R1,A
+                       INC     DPTR
+                       MOVX    A,@DPTR
+                       MOV     R2,A
+                       INC     DPTR
+                       MOVX    A,@DPTR
+                 R     MOV     DPTR,#I2C_DISPLAY_mstrRdBufPtr
+                       XCH     A,R1
+                       MOVX    @DPTR,A
+                       INC     DPTR
+                       MOV     A,R2
+                       MOVX    @DPTR,A
+                       INC     DPTR
+                       MOV     A,R1
+                       MOVX    @DPTR,A
+                                           ; SOURCE LINE # 242
+                 R     MOV     DPTR,#mode
+                       MOVX    A,@DPTR
+                       MOV     R7,A
+                 R     MOV     DPTR,#I2C_DISPLAY_mstrControl
+                       MOVX    @DPTR,A
+                                           ; SOURCE LINE # 245
+                 R     MOV     DPTR,#I2C_DISPLAY_mstrStatus
+                       MOVX    A,@DPTR
+                       ANL     A,#0FEH
+                       MOVX    @DPTR,A
+                                           ; SOURCE LINE # 248
+                       MOV     R6,AR4
+                       MOV     A,R6
+                       ADD     A,ACC
+                       ORL     A,#01H
+                       MOV     DPTR,#049D8H
+                       MOVX    @DPTR,A
+                                           ; SOURCE LINE # 251
+                       MOV     A,R7
+                       ANL     A,#01H
+                 R     xJZ     ?C0033
+                                           ; SOURCE LINE # 252
+                                           ; SOURCE LINE # 253
+                       INC     DPTR
+                       MOV     A,#012H
+                       MOVX    @DPTR,A
+                       MOV     DPTR,#049D7H
+                       MOV     A,#04H
+                       MOVX    @DPTR,A
+                                           ; SOURCE LINE # 254
+                 R     xJMP    ?C0030
+                                           ; SOURCE LINE # 256
+             ?C0033:
+                                           ; SOURCE LINE # 257
+                       MOV     DPTR,#049D9H
+C51 COMPILER V9.51   I2C_DISPLAY_MASTER                                                    08/14/2026 10:16:38 PAGE 21  
+
+                       MOV     A,#01H
+                       MOVX    @DPTR,A
+                                           ; SOURCE LINE # 258
+             ?C0030:
+                                           ; SOURCE LINE # 261
+                       MOV     DPTR,#044C1H
+                       MOV     A,#080H
+                       MOVX    @DPTR,A
+                                           ; SOURCE LINE # 262
+                                           ; SOURCE LINE # 263
+             ?C0018:
+                                           ; SOURCE LINE # 265
+                       MOV     R7,AR5
+                                           ; SOURCE LINE # 266
+             ?C0034:
+                       RET     
+             ; FUNCTION _I2C_DISPLAY_MasterReadBuf (END)
+
+             ; FUNCTION _I2C_DISPLAY_MasterSendStart (BEGIN)
+                                           ; SOURCE LINE # 295
+;---- Variable 'slaveAddress' assigned to Register 'R7' ----
+;---- Variable 'R_nW' assigned to Register 'R5' ----
+                                           ; SOURCE LINE # 297
+                                           ; SOURCE LINE # 300
+;---- Variable 'errStatus' assigned to Register 'R6' ----
+                       MOV     R6,#02H
+                                           ; SOURCE LINE # 303
+                 E     MOV     DPTR,#I2C_DISPLAY_state
+                       MOVX    A,@DPTR
+                       XRL     A,#010H
+                 R     xJNZ    ?C0035
+                                           ; SOURCE LINE # 304
+                                           ; SOURCE LINE # 306
+                       MOV     DPTR,#049D9H
+                       MOVX    A,@DPTR
+                       ANL     A,#08H
+                 R     xJNZ    ?C0036
+                                           ; SOURCE LINE # 307
+                                           ; SOURCE LINE # 309
+                       MOV     DPTR,#044C9H
+                       MOV     A,#080H
+                       MOVX    @DPTR,A
+                                           ; SOURCE LINE # 312
+                       MOV     A,R7
+                       ADD     A,ACC
+                       MOV     R7,A
+                                           ; SOURCE LINE # 313
+                       MOV     A,R5
+                 R     xJZ     ?C0037
+                                           ; SOURCE LINE # 314
+                                           ; SOURCE LINE # 315
+                       MOV     A,R7
+                       ORL     A,#01H
+                       MOV     R7,A
+                                           ; SOURCE LINE # 316
+                 E     MOV     DPTR,#I2C_DISPLAY_state
+                       MOV     A,#049H
+                       MOVX    @DPTR,A
+                                           ; SOURCE LINE # 317
+                 R     xJMP    ?C0038
+             ?C0037:
+                                           ; SOURCE LINE # 319
+C51 COMPILER V9.51   I2C_DISPLAY_MASTER                                                    08/14/2026 10:16:38 PAGE 22  
+
+                                           ; SOURCE LINE # 320
+                 E     MOV     DPTR,#I2C_DISPLAY_state
+                       MOV     A,#045H
+                       MOVX    @DPTR,A
+                                           ; SOURCE LINE # 321
+             ?C0038:
+                                           ; SOURCE LINE # 324
+                       MOV     DPTR,#049D8H
+                       MOV     A,R7
+                       MOVX    @DPTR,A
+                                           ; SOURCE LINE # 325
+                       INC     DPTR
+                       MOV     A,#01H
+                       MOVX    @DPTR,A
+             ?C0042:
+                                           ; SOURCE LINE # 328
+                       MOV     DPTR,#049D7H
+                       MOVX    A,@DPTR
+                       ANL     A,#01H
+                 R     xJZ     ?C0042
+                                           ; SOURCE LINE # 329
+                                           ; SOURCE LINE # 330
+             ?C0043:
+                                           ; SOURCE LINE # 356
+                       MOV     DPTR,#049D7H
+                       MOVX    A,@DPTR
+                       ANL     A,#0AH
+                       XRL     A,#0AH
+                 R     xJNZ    ?C0044
+                                           ; SOURCE LINE # 357
+                                           ; SOURCE LINE # 359
+                 E     MOV     DPTR,#I2C_DISPLAY_state
+                       MOV     A,#010H
+                       MOVX    @DPTR,A
+                                           ; SOURCE LINE # 360
+                       MOV     R6,#03H
+                                           ; SOURCE LINE # 361
+                 R     xJMP    ?C0035
+             ?C0044:
+                                           ; SOURCE LINE # 363
+                                           ; SOURCE LINE # 365
+                       CLR     A
+                       MOV     R6,A
+                                           ; SOURCE LINE # 366
+                                           ; SOURCE LINE # 367
+                 R     xJMP    ?C0035
+             ?C0036:
+                                           ; SOURCE LINE # 369
+                                           ; SOURCE LINE # 370
+                       MOV     R6,#01H
+                                           ; SOURCE LINE # 371
+                                           ; SOURCE LINE # 372
+             ?C0035:
+                                           ; SOURCE LINE # 374
+                       MOV     R7,AR6
+                                           ; SOURCE LINE # 375
+             ?C0047:
+                       RET     
+             ; FUNCTION _I2C_DISPLAY_MasterSendStart (END)
+
+             ; FUNCTION _I2C_DISPLAY_MasterSendRestart (BEGIN)
+                                           ; SOURCE LINE # 404
+C51 COMPILER V9.51   I2C_DISPLAY_MASTER                                                    08/14/2026 10:16:38 PAGE 23  
+
+;---- Variable 'slaveAddress' assigned to Register 'R7' ----
+;---- Variable 'R_nW' assigned to Register 'R5' ----
+                                           ; SOURCE LINE # 406
+                                           ; SOURCE LINE # 409
+;---- Variable 'errStatus' assigned to Register 'R6' ----
+                       MOV     R6,#02H
+                                           ; SOURCE LINE # 412
+                       MOV     DPTR,#049D9H
+                       MOVX    A,@DPTR
+                       ANL     A,#04H
+                 R     xJZ     ?C0048
+                                           ; SOURCE LINE # 413
+                                           ; SOURCE LINE # 415
+                       MOV     A,R7
+                       ADD     A,ACC
+                       MOV     R7,A
+                                           ; SOURCE LINE # 416
+                       MOV     A,R5
+                 R     xJZ     ?C0049
+                                           ; SOURCE LINE # 417
+                                           ; SOURCE LINE # 418
+                       MOV     A,R7
+                       ORL     A,#01H
+                       MOV     R7,A
+                                           ; SOURCE LINE # 419
+                 E     MOV     DPTR,#I2C_DISPLAY_state
+                       MOV     A,#049H
+                       MOVX    @DPTR,A
+                                           ; SOURCE LINE # 420
+                 R     xJMP    ?C0050
+             ?C0049:
+                                           ; SOURCE LINE # 422
+                                           ; SOURCE LINE # 423
+                 E     MOV     DPTR,#I2C_DISPLAY_state
+                       MOV     A,#045H
+                       MOVX    @DPTR,A
+                                           ; SOURCE LINE # 424
+             ?C0050:
+                                           ; SOURCE LINE # 427
+                       MOV     DPTR,#049D8H
+                       MOV     A,R7
+                       MOVX    @DPTR,A
+                                           ; SOURCE LINE # 428
+                       INC     DPTR
+                       MOV     A,#012H
+                       MOVX    @DPTR,A
+                       MOV     DPTR,#049D7H
+                       MOV     A,#04H
+                       MOVX    @DPTR,A
+             ?C0054:
+                                           ; SOURCE LINE # 431
+                       MOV     DPTR,#049D7H
+                       MOVX    A,@DPTR
+                       ANL     A,#01H
+                 R     xJZ     ?C0054
+                                           ; SOURCE LINE # 432
+                                           ; SOURCE LINE # 433
+             ?C0055:
+                                           ; SOURCE LINE # 447
+                       MOV     DPTR,#049D7H
+                       MOVX    A,@DPTR
+                       ANL     A,#0AH
+C51 COMPILER V9.51   I2C_DISPLAY_MASTER                                                    08/14/2026 10:16:38 PAGE 24  
+
+                       XRL     A,#0AH
+                 R     xJNZ    ?C0056
+                                           ; SOURCE LINE # 448
+                                           ; SOURCE LINE # 450
+                 E     MOV     DPTR,#I2C_DISPLAY_state
+                       MOV     A,#010H
+                       MOVX    @DPTR,A
+                                           ; SOURCE LINE # 451
+                       MOV     R6,#03H
+                                           ; SOURCE LINE # 452
+                 R     xJMP    ?C0048
+             ?C0056:
+                                           ; SOURCE LINE # 454
+                                           ; SOURCE LINE # 456
+                       CLR     A
+                       MOV     R6,A
+                                           ; SOURCE LINE # 457
+                                           ; SOURCE LINE # 458
+             ?C0048:
+                                           ; SOURCE LINE # 460
+                       MOV     R7,AR6
+                                           ; SOURCE LINE # 461
+             ?C0058:
+                       RET     
+             ; FUNCTION _I2C_DISPLAY_MasterSendRestart (END)
+
+             ; FUNCTION I2C_DISPLAY_MasterSendStop (BEGIN)
+                                           ; SOURCE LINE # 490
+                                           ; SOURCE LINE # 491
+                                           ; SOURCE LINE # 494
+;---- Variable 'errStatus' assigned to Register 'R7' ----
+                       MOV     R7,#02H
+                                           ; SOURCE LINE # 497
+                       MOV     DPTR,#049D9H
+                       MOVX    A,@DPTR
+                       ANL     A,#04H
+                 R     xJZ     ?C0059
+                                           ; SOURCE LINE # 498
+                                           ; SOURCE LINE # 499
+                       MOV     A,#010H
+                       MOVX    @DPTR,A
+                       MOV     DPTR,#049D7H
+                       MOV     A,#04H
+                       MOVX    @DPTR,A
+                                           ; SOURCE LINE # 500
+                 E     MOV     DPTR,#I2C_DISPLAY_state
+                       MOV     A,#010H
+                       MOVX    @DPTR,A
+             ?C0063:
+                                           ; SOURCE LINE # 503
+                       MOV     DPTR,#049D7H
+                       MOVX    A,@DPTR
+                       ANL     A,#021H
+                 R     xJZ     ?C0063
+                                           ; SOURCE LINE # 504
+                                           ; SOURCE LINE # 505
+             ?C0064:
+                                           ; SOURCE LINE # 507
+                       CLR     A
+                       MOV     R7,A
+                                           ; SOURCE LINE # 518
+             ?C0059:
+C51 COMPILER V9.51   I2C_DISPLAY_MASTER                                                    08/14/2026 10:16:38 PAGE 25  
+
+                                           ; SOURCE LINE # 520
+                                           ; SOURCE LINE # 521
+             ?C0065:
+                       RET     
+             ; FUNCTION I2C_DISPLAY_MasterSendStop (END)
+
+             ; FUNCTION _I2C_DISPLAY_MasterWriteByte (BEGIN)
+                                           ; SOURCE LINE # 548
+;---- Variable 'theByte' assigned to Register 'R7' ----
+                                           ; SOURCE LINE # 549
+                                           ; SOURCE LINE # 552
+;---- Variable 'errStatus' assigned to Register 'R6' ----
+                       MOV     R6,#02H
+                                           ; SOURCE LINE # 555
+                       MOV     DPTR,#049D9H
+                       MOVX    A,@DPTR
+                       ANL     A,#04H
+                 R     xJZ     ?C0066
+                                           ; SOURCE LINE # 556
+                                           ; SOURCE LINE # 557
+                       MOV     DPTR,#049D8H
+                       MOV     A,R7
+                       MOVX    @DPTR,A
+                                           ; SOURCE LINE # 558
+                       MOV     DPTR,#049D7H
+                       MOV     A,#04H
+                       MOVX    @DPTR,A
+                                           ; SOURCE LINE # 559
+                 E     MOV     DPTR,#I2C_DISPLAY_state
+                       MOV     A,#046H
+                       MOVX    @DPTR,A
+             ?C0070:
+                                           ; SOURCE LINE # 562
+                       MOV     DPTR,#049D7H
+                       MOVX    A,@DPTR
+                       ANL     A,#01H
+                 R     xJZ     ?C0070
+                                           ; SOURCE LINE # 563
+                                           ; SOURCE LINE # 564
+             ?C0071:
+                                           ; SOURCE LINE # 579
+                       MOV     DPTR,#049D7H
+                       MOVX    A,@DPTR
+                       ANL     A,#02H
+                 R     xJNZ    ?C0072
+                                           ; SOURCE LINE # 580
+                                           ; SOURCE LINE # 581
+                 E     MOV     DPTR,#I2C_DISPLAY_state
+                       MOV     A,#060H
+                       MOVX    @DPTR,A
+                                           ; SOURCE LINE # 582
+                       CLR     A
+                       MOV     R6,A
+                                           ; SOURCE LINE # 583
+                 R     xJMP    ?C0066
+             ?C0072:
+                                           ; SOURCE LINE # 585
+                                           ; SOURCE LINE # 586
+                 E     MOV     DPTR,#I2C_DISPLAY_state
+                       MOV     A,#060H
+                       MOVX    @DPTR,A
+                                           ; SOURCE LINE # 587
+C51 COMPILER V9.51   I2C_DISPLAY_MASTER                                                    08/14/2026 10:16:38 PAGE 26  
+
+                       MOV     R6,#03H
+                                           ; SOURCE LINE # 588
+                                           ; SOURCE LINE # 589
+             ?C0066:
+                                           ; SOURCE LINE # 591
+                       MOV     R7,AR6
+                                           ; SOURCE LINE # 592
+             ?C0074:
+                       RET     
+             ; FUNCTION _I2C_DISPLAY_MasterWriteByte (END)
+
+             ; FUNCTION _I2C_DISPLAY_MasterReadByte (BEGIN)
+                                           ; SOURCE LINE # 623
+;---- Variable 'acknNak' assigned to Register 'R7' ----
+                                           ; SOURCE LINE # 624
+                                           ; SOURCE LINE # 627
+;---- Variable 'theByte' assigned to Register 'R6' ----
+                       CLR     A
+                       MOV     R6,A
+                                           ; SOURCE LINE # 630
+                       MOV     DPTR,#049D9H
+                       MOVX    A,@DPTR
+                       ANL     A,#04H
+                 R     xJZ     ?C0075
+                                           ; SOURCE LINE # 631
+                                           ; SOURCE LINE # 635
+                 E     MOV     DPTR,#I2C_DISPLAY_state
+                       MOVX    A,@DPTR
+                 R     xJNE    A,#049H,?C0080
+                                           ; SOURCE LINE # 636
+                                           ; SOURCE LINE # 637
+                       MOV     DPTR,#049D7H
+                       CLR     A
+                       MOVX    @DPTR,A
+                                           ; SOURCE LINE # 638
+                 E     MOV     DPTR,#I2C_DISPLAY_state
+                       MOV     A,#04AH
+                       MOVX    @DPTR,A
+                                           ; SOURCE LINE # 639
+             ?C0080:
+                                           ; SOURCE LINE # 642
+                       MOV     DPTR,#049D7H
+                       MOVX    A,@DPTR
+                       ANL     A,#01H
+                 R     xJZ     ?C0080
+                                           ; SOURCE LINE # 643
+                                           ; SOURCE LINE # 644
+             ?C0081:
+                                           ; SOURCE LINE # 646
+                       MOV     DPTR,#049D8H
+                       MOVX    A,@DPTR
+                       MOV     R6,A
+                                           ; SOURCE LINE # 652
+                       MOV     A,R7
+                 R     xJZ     ?C0082
+                                           ; SOURCE LINE # 653
+                                           ; SOURCE LINE # 654
+                       MOV     DPTR,#049D7H
+                       MOV     A,#010H
+                       MOVX    @DPTR,A
+                                           ; SOURCE LINE # 655
+                 R     xJMP    ?C0075
+C51 COMPILER V9.51   I2C_DISPLAY_MASTER                                                    08/14/2026 10:16:38 PAGE 27  
+
+             ?C0082:
+                                           ; SOURCE LINE # 657
+                                           ; SOURCE LINE # 658
+                 E     MOV     DPTR,#I2C_DISPLAY_state
+                       MOV     A,#060H
+                       MOVX    @DPTR,A
+                                           ; SOURCE LINE # 659
+                                           ; SOURCE LINE # 660
+             ?C0075:
+                                           ; SOURCE LINE # 662
+                       MOV     R7,AR6
+                                           ; SOURCE LINE # 663
+             ?C0087:
+                       RET     
+             ; FUNCTION _I2C_DISPLAY_MasterReadByte (END)
+
+             ; FUNCTION I2C_DISPLAY_MasterStatus (BEGIN)
+                                           ; SOURCE LINE # 684
+                                           ; SOURCE LINE # 685
+                                           ; SOURCE LINE # 688
+                       MOV     DPTR,#044C9H
+                       MOV     A,#080H
+                       MOVX    @DPTR,A
+                                           ; SOURCE LINE # 691
+                 R     MOV     DPTR,#I2C_DISPLAY_mstrStatus
+                       MOVX    A,@DPTR
+                       MOV     R7,A
+;---- Variable 'status' assigned to Register 'R7' ----
+                                           ; SOURCE LINE # 693
+                 E     MOV     DPTR,#I2C_DISPLAY_state
+                       MOVX    A,@DPTR
+                       ANL     A,#040H
+                 R     xJZ     ?C0088
+                                           ; SOURCE LINE # 694
+                                           ; SOURCE LINE # 696
+                       MOV     A,R7
+                       ORL     A,#04H
+                       MOV     R7,A
+                                           ; SOURCE LINE # 697
+             ?C0088:
+                                           ; SOURCE LINE # 699
+                       MOV     DPTR,#044C1H
+                       MOV     A,#080H
+                       MOVX    @DPTR,A
+                                           ; SOURCE LINE # 701
+                                           ; SOURCE LINE # 702
+             ?C0089:
+                       RET     
+             ; FUNCTION I2C_DISPLAY_MasterStatus (END)
+
+             ; FUNCTION I2C_DISPLAY_MasterClearStatus (BEGIN)
+                                           ; SOURCE LINE # 726
+                                           ; SOURCE LINE # 727
+                                           ; SOURCE LINE # 730
+                       MOV     DPTR,#044C9H
+                       MOV     A,#080H
+                       MOVX    @DPTR,A
+                                           ; SOURCE LINE # 733
+                 R     MOV     DPTR,#I2C_DISPLAY_mstrStatus
+                       MOVX    A,@DPTR
+                       MOV     R7,A
+;---- Variable 'status' assigned to Register 'R7' ----
+C51 COMPILER V9.51   I2C_DISPLAY_MASTER                                                    08/14/2026 10:16:38 PAGE 28  
+
+                                           ; SOURCE LINE # 734
+                       CLR     A
+                       MOVX    @DPTR,A
+                                           ; SOURCE LINE # 736
+                       MOV     DPTR,#044C1H
+                       MOV     A,#080H
+                       MOVX    @DPTR,A
+                                           ; SOURCE LINE # 738
+                                           ; SOURCE LINE # 739
+             ?C0090:
+                       RET     
+             ; FUNCTION I2C_DISPLAY_MasterClearStatus (END)
+
+             ; FUNCTION I2C_DISPLAY_MasterGetReadBufSize (BEGIN)
+                                           ; SOURCE LINE # 762
+                                           ; SOURCE LINE # 763
+                                           ; SOURCE LINE # 764
+                 R     MOV     DPTR,#I2C_DISPLAY_mstrRdBufIndex
+                       MOVX    A,@DPTR
+                       MOV     R7,A
+                                           ; SOURCE LINE # 765
+             ?C0091:
+                       RET     
+             ; FUNCTION I2C_DISPLAY_MasterGetReadBufSize (END)
+
+             ; FUNCTION I2C_DISPLAY_MasterGetWriteBufSize (BEGIN)
+                                           ; SOURCE LINE # 788
+                                           ; SOURCE LINE # 789
+                                           ; SOURCE LINE # 790
+                 R     MOV     DPTR,#I2C_DISPLAY_mstrWrBufIndex
+                       MOVX    A,@DPTR
+                       MOV     R7,A
+                                           ; SOURCE LINE # 791
+             ?C0092:
+                       RET     
+             ; FUNCTION I2C_DISPLAY_MasterGetWriteBufSize (END)
+
+             ; FUNCTION I2C_DISPLAY_MasterClearReadBuf (BEGIN)
+                                           ; SOURCE LINE # 817
+                                           ; SOURCE LINE # 818
+                                           ; SOURCE LINE # 819
+                       MOV     DPTR,#044C9H
+                       MOV     A,#080H
+                       MOVX    @DPTR,A
+                                           ; SOURCE LINE # 821
+                       CLR     A
+                 R     MOV     DPTR,#I2C_DISPLAY_mstrRdBufIndex
+                       MOVX    @DPTR,A
+                                           ; SOURCE LINE # 822
+                 R     MOV     DPTR,#I2C_DISPLAY_mstrStatus
+                       MOVX    A,@DPTR
+                       ANL     A,#0FEH
+                       MOVX    @DPTR,A
+                                           ; SOURCE LINE # 824
+                       MOV     DPTR,#044C1H
+                       MOV     A,#080H
+                       MOVX    @DPTR,A
+                                           ; SOURCE LINE # 825
+                       RET     
+             ; FUNCTION I2C_DISPLAY_MasterClearReadBuf (END)
+
+             ; FUNCTION I2C_DISPLAY_MasterClearWriteBuf (BEGIN)
+C51 COMPILER V9.51   I2C_DISPLAY_MASTER                                                    08/14/2026 10:16:38 PAGE 29  
+
+                                           ; SOURCE LINE # 851
+                                           ; SOURCE LINE # 852
+                                           ; SOURCE LINE # 853
+                       MOV     DPTR,#044C9H
+                       MOV     A,#080H
+                       MOVX    @DPTR,A
+                                           ; SOURCE LINE # 855
+                       CLR     A
+                 R     MOV     DPTR,#I2C_DISPLAY_mstrWrBufIndex
+                       MOVX    @DPTR,A
+                                           ; SOURCE LINE # 856
+                 R     MOV     DPTR,#I2C_DISPLAY_mstrStatus
+                       MOVX    A,@DPTR
+                       ANL     A,#0FDH
+                       MOVX    @DPTR,A
+                                           ; SOURCE LINE # 858
+                       MOV     DPTR,#044C1H
+                       MOV     A,#080H
+                       MOVX    @DPTR,A
+                                           ; SOURCE LINE # 859
+                       RET     
+             ; FUNCTION I2C_DISPLAY_MasterClearWriteBuf (END)
+
+
+
+MODULE INFORMATION:   STATIC OVERLAYABLE
+   CODE SIZE        =    915    ----
+   CONSTANT SIZE    =   ----    ----
+   XDATA SIZE       =     12      12
+   PDATA SIZE       =   ----    ----
+   DATA SIZE        =   ----    ----
+   IDATA SIZE       =   ----    ----
+   BIT SIZE         =   ----    ----
+   EDATA SIZE       =   ----    ----
+   HDATA SIZE       =   ----    ----
+   XDATA CONST SIZE =   ----    ----
+   FAR CONST SIZE   =   ----    ----
+END OF MODULE INFORMATION.
+
+
+C51 COMPILATION COMPLETE.  0 WARNING(S),  0 ERROR(S)

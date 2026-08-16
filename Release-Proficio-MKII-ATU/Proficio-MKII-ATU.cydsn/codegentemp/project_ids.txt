@@ -1,0 +1,7 @@
+C:\Users\Ron\.grok\worktrees\Release-Proficio-MKII-ATU\Proficio-MKII-ATU.cydsn\Proficio-MKII-ATU.cyprj|51c15579-a799-4166-86e5-0313f1395b8c
+C:\Program Files (x86)\Cypress\PSoC Creator\4.2\PSoC Creator\psoc\content\default\CyAnnotationLibrary\CyAnnotationLibrary.cylib\CyAnnotationLibrary.cyprj|2f19a7cf-b19b-402a-97e0-6c92d325e48a
+C:\Users\Ron\Documents\PSoC Creator\4.2\Downloads ( 4.2).cylib\Downloads ( 4.2).cyprj|0545867e-027c-4c1a-91e4-e2e7c21ee81a
+C:\Program Files (x86)\Cypress\PSoC Creator\4.2\PSoC Creator\psoc\content\cycomponentlibraryupdates\CyComponentLibraryUpdates.cylib\CyComponentLibraryUpdates.cyprj|b5075da6-2b78-46d2-91fc-e2408a035f83
+C:\Program Files (x86)\Cypress\PSoC Creator\4.2\PSoC Creator\psoc\content\cycomponentlibrary\CyComponentLibrary.cylib\CyComponentLibrary.cyprj|d128460f-d24f-4ab8-ab7f-600cf376cc8f
+C:\Program Files (x86)\Cypress\PSoC Creator\4.2\PSoC Creator\psoc\content\cyprimitives\CyPrimitives.cylib\CyPrimitives.cyprj|a71598c9-9995-4b08-a67d-d485ba898917
+C:\Program Files (x86)\Cypress\PSoC Creator\4.2\PSoC Creator\psoc\content\default\CyReferenceLibrary\CyReferenceLibrary.cylib\CyReferenceLibrary.cyprj|debd5c6b-d31b-4c35-a705-bfc614e04413

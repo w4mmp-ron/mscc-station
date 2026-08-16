@@ -1,0 +1,19 @@
+#!/bin/bash
+set -e
+
+case "$1" in
+remove|upgrade|deconfigure)
+  # Remove system-wide links only (leave $HOME/mscc and config for the user)
+  rm -f /usr/local/bin/mscc-init /usr/local/bin/mscc \
+        /usr/local/bin/mscc-audio-setup /usr/local/bin/mscc-virtual-audio \
+        /usr/local/bin/mscc-desktop-ctl
+  ;;
+failed-upgrade)
+  ;;
+*)
+  echo "prerm called with unknown argument \`$1'" >&2
+  exit 1
+  ;;
+esac
+
+exit 0

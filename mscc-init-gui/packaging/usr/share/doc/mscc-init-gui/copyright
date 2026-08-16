@@ -1,0 +1,9 @@
+Format: https://www.debian.org/doc/packaging-manuals/copyright-format/1.0/
+Upstream-Name: mscc-init-gui
+Source: local MSCC Linux packaging
+
+Files: *
+Copyright: Multus SDR / MSCC Linux contributors
+License: MIT-like / project local
+ This package is distributed with the MSCC Linux stack for Raspberry Pi OS.
+ See project documentation for terms.

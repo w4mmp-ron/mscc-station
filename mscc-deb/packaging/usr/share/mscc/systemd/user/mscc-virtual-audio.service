@@ -1,0 +1,15 @@
+[Unit]
+Description=MSCC virtual digi audio (Pulse/PipeWire VirtualA/B)
+Documentation=file:///usr/share/mscc/bin/mscc-virtual-audio.sh
+# User session audio stack (Pi OS Bookworm+: PipeWire providing Pulse)
+After=pipewire.service pipewire-pulse.service sound.target
+Wants=pipewire.service
+
+[Service]
+Type=oneshot
+# Absolute path — works for every user (no /home/USER hard-coding)
+ExecStart=/usr/share/mscc/bin/mscc-virtual-audio.sh
+RemainAfterExit=yes
+
+[Install]
+WantedBy=default.target

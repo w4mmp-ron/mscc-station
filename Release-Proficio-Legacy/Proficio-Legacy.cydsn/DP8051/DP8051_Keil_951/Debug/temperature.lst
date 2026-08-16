@@ -1,0 +1,448 @@
+C51 COMPILER V9.51   TEMPERATURE                                                           08/14/2026 10:16:35 PAGE 1   
+
+
+C51 COMPILER V9.51, COMPILATION OF MODULE TEMPERATURE
+OBJECT MODULE PLACED IN .\DP8051\DP8051_Keil_951\Debug\temperature.obj
+COMPILER INVOKED BY: C:\Program Files (x86)\Cypress\PSoC Creator\4.2\PSoC Creator\import\keil\pk51\9.51\C51\BIN\c51.exe 
+                    -temperature.c NOIV LARGE MODDP2 OMF2 VB(1) NOIP INCDIR(.,Generated_Source\PSoC3) FF(3) DB WL(2) PR(.\DP8051\DP8051_Keil_
+                    -951\Debug/temperature.lst) CD OT(5,SPEED) OA OJ(.\DP8051\DP8051_Keil_951\Debug\temperature.obj)
+
+line level    source
+
+   1          /* ========================================
+   2           *
+   3           * Copyright YOUR COMPANY, THE YEAR
+   4           * All Rights Reserved
+   5           * UNPUBLISHED, LICENSED SOFTWARE.
+   6           *
+   7           * CONFIDENTIAL AND PROPRIETARY INFORMATION
+   8           * WHICH IS THE PROPERTY OF your company.
+   9           *
+  10           * ========================================
+  11          */
+  12          #include "basic-plus.h"
+  13          
+  14          #define TEMP_REFRESH 10000
+  15          #define TEMPERATURE_DRIFT_PPM   0.1925
+  16          #define STARTUP_DELAY 871000
+  17          #define AVERAGE_LIMIT 400
+  18          
+  19          int32 E_temp = 0;
+  20          int32 E_delta_drift_int = 0;
+  21          uint8 E_temperature_processing = FALSE;
+  22          volatile int32 E_transceiver_temp = 0;
+  23          
+  24          /*void average_temps(int32 temp){
+  25              static int32 average_temp[AVERAGE_LIMIT] = {0};
+  26              static uint16 count = 0;
+  27              uint16 average_count = 0;
+  28              int32 temp_delta = 0;
+  29              int32 average = 0;
+  30              
+  31              if(E_PPM_needs_set >= E_PPM_NEEDS_SET_STEP_1){
+  32                  memset(average_temp,0,AVERAGE_LIMIT);
+  33                  E_delta_drift_int = 0;
+  34                  count = 0;
+  35              }
+  36              average_temp[count] = temp;
+  37              for(average_count = 0;average_count < AVERAGE_LIMIT;average_count++){
+  38                  average = average + average_temp[average_count];
+  39              }
+  40              E_delta_drift_int = average / average_count;
+  41              temp_delta = E_delta_drift_int;
+  42              count++;
+  43              if(count >= AVERAGE_LIMIT){
+  44                  count = 0;
+  45              }
+  46          }
+  47          
+  48          uint8 Apply_temp_delta(){
+  49              static uint8 state = 0;
+  50              static int16 previous_temperature = 0;
+  51              static int16 delta_temp = 0;
+  52              static float delta_drift_freq;
+  53              int16 l_drift;
+C51 COMPILER V9.51   TEMPERATURE                                                           08/14/2026 10:16:35 PAGE 2   
+
+  54              static uint8 first_pass = 3;
+  55              static int32 l_delta_drift;
+  56              
+  57              if(first_pass != 0){ // The manual says to throw out the first iteration. Do three for good measure
+  58                  state = 0;
+  59                  first_pass--;
+  60                  previous_temperature = E_temp;
+  61                  return state;
+  62              }
+  63              switch(state){
+  64                  case 0:
+  65                      //This determines the freq in Hz adjustment for temperature drift. 
+  66                      //It assumes a linear drift based on temperature    
+  67                      if(E_temp < previous_temperature){
+  68                          delta_temp = (previous_temperature - E_temp) * -1;
+  69                      }else {
+  70                          delta_temp = (E_temp - previous_temperature) ;
+  71                      }
+  72                      previous_temperature = E_temp;
+  73                      delta_drift_freq = (float)E_l_freq / 1000000;
+  74                      delta_drift_freq = delta_drift_freq * 
+  75                                              (float)((TEMPERATURE_DRIFT_PPM * (float)delta_temp));
+  76                      //The frequency sent to the Si5351 must be four (4) times 
+  77                      //the LO received from the host.
+  78                      delta_drift_freq = delta_drift_freq * 4;
+  79                      l_delta_drift = (int32)delta_drift_freq;
+  80                      state++;
+  81                      break;
+  82                  case 1:
+  83                      //Frequencies must always multiples of 4 or zero
+  84                      //The temperature compensation seems to work best if 
+  85                      //the frequency set closer to zero verses away from zero
+  86                      if(l_delta_drift < 0){
+  87                          while((l_delta_drift%4) !=0){
+  88                              l_delta_drift++;
+  89                          }
+  90                      }else {
+  91                          if(l_delta_drift > 0){
+  92                              while((l_delta_drift%4) != 0){
+  93                                  l_delta_drift--;
+  94                              }
+  95                          }
+  96                      }
+  97                      l_drift = l_delta_drift;
+  98                      state++;
+  99                      break;
+ 100                  case 2:
+ 101                      average_temps(l_delta_drift);
+ 102                      state = 0;
+ 103              }
+ 104              return state;
+ 105          }*/
+ 106          
+ 107          void Check_temperature(){
+ 108   1          static uint8_t state = 0;
+ 109   1          //static uint8_t apply_state = 0;
+ 110   1          cystatus status = 0;
+ 111   1          static uint16 temp_refresh = TEMP_REFRESH;
+ 112   1          static int16 real_temp;
+ 113   1          static uint32 startup_delay = STARTUP_DELAY;
+ 114   1         
+ 115   1          if(startup_delay == 0){
+C51 COMPILER V9.51   TEMPERATURE                                                           08/14/2026 10:16:35 PAGE 3   
+
+ 116   2              if(temp_refresh == 0){
+ 117   3                  switch(state){
+ 118   4                      case 0:
+ 119   4                          status = DieTemp_1_Start();
+ 120   4                          switch(status){
+ 121   5                              case CYRET_STARTED:
+ 122   5                                  state++;
+ 123   5                                  //E_temperature_processing = TRUE;
+ 124   5                                  break;
+ 125   5                              case CYRET_TIMEOUT:
+ 126   5                                  state = 0;
+ 127   5                                  break;
+ 128   5                              case CYRET_LOCKED:
+ 129   5                                  status = DieTemp_1_Query(&real_temp);
+ 130   5                                  state = 0;
+ 131   5                                  break;
+ 132   5                          }
+ 133   4                          break;
+ 134   4                      case 1:
+ 135   4                          status = DieTemp_1_Query(&real_temp);
+ 136   4                          switch(status){
+ 137   5                              case CYRET_SUCCESS:
+ 138   5                                  E_temp = real_temp;
+ 139   5                                  state++;
+ 140   5                                  break;
+ 141   5                              case CYRET_STARTED:
+ 142   5                                  state = 1;
+ 143   5                                  break;
+ 144   5                              case CYRET_TIMEOUT:
+ 145   5                                  state = 0;
+ 146   5                                  break;
+ 147   5                          }
+ 148   4                          break;
+ 149   4                      case 2:
+ 150   4                          /*apply_state = Apply_temp_delta();
+ 151   4                          if(apply_state == 0){
+ 152   4                              E_transceiver_temp = (E_temp);
+ 153   4                              temp_refresh = TEMP_REFRESH;
+ 154   4                              state = 0;
+ 155   4                          }*/
+ 156   4                          E_transceiver_temp = (E_temp);
+ 157   4                          temp_refresh = TEMP_REFRESH;
+ 158   4                          state = 0;
+ 159   4                          break;
+ 160   4                  }
+ 161   3              }else{
+ 162   3                  temp_refresh--;
+ 163   3              }
+ 164   2          }else{
+ 165   2              startup_delay--;
+ 166   2          }
+ 167   1      }
+ 168          
+ 169          /* [] END OF FILE */
+C51 COMPILER V9.51   TEMPERATURE                                                           08/14/2026 10:16:35 PAGE 4   
+
+ASSEMBLY LISTING OF GENERATED OBJECT CODE
+
+
+             ; FUNCTION Check_temperature (BEGIN)
+                                           ; SOURCE LINE # 107
+                                           ; SOURCE LINE # 110
+                       CLR     A
+                 R     MOV     DPTR,#status
+                       MOVX    @DPTR,A
+                                           ; SOURCE LINE # 115
+                       MOV     R7,A
+                       MOV     R6,A
+                       MOV     R5,A
+                       MOV     R4,A
+                 R     MOV     DPTR,#startup_delay
+                       MOVX    A,@DPTR
+                       MOV     R0,A
+                       INC     DPTR
+                       MOVX    A,@DPTR
+                       MOV     R1,A
+                       INC     DPTR
+                       MOVX    A,@DPTR
+                       MOV     R2,A
+                       INC     DPTR
+                       MOVX    A,@DPTR
+                       MOV     R3,A
+                       CLR     C
+                 E     CALL    ?C?ULCMP
+                 R     xJNZ    ?C0001
+                                           ; SOURCE LINE # 116
+                 R     MOV     DPTR,#temp_refresh
+                       MOVX    A,@DPTR
+                 R     JNZ     ?C0018
+                       INC     DPTR
+                       MOVX    A,@DPTR
+             ?C0018:
+                 R     xJNZ    ?C0002
+                                           ; SOURCE LINE # 117
+                 R     MOV     DPTR,#state
+                       MOVX    A,@DPTR
+                       DEC     A
+                 R     xJZ     ?C0009
+                       DEC     A
+                 R     xJZ     ?C0014
+                       ADD     A,#02H
+                 R     xJNZ    ?C0017
+                                           ; SOURCE LINE # 118
+             ?C0004:
+                                           ; SOURCE LINE # 119
+                 E     CALL    DieTemp_1_Start
+                 R     MOV     DPTR,#status
+                       MOV     A,R7
+                       MOVX    @DPTR,A
+                                           ; SOURCE LINE # 120
+                       ADD     A,#0FCH
+                 R     xJZ     ?C0008
+                       ADD     A,#0F4H
+                 R     xJZ     ?C0007
+                       ADD     A,#09H
+                 R     xJNZ    ?C0017
+                                           ; SOURCE LINE # 121
+             ?C0006:
+C51 COMPILER V9.51   TEMPERATURE                                                           08/14/2026 10:16:35 PAGE 5   
+
+                                           ; SOURCE LINE # 122
+                 R     MOV     DPTR,#state
+                       MOVX    A,@DPTR
+                       INC     A
+                       MOVX    @DPTR,A
+                                           ; SOURCE LINE # 124
+                       RET     
+                                           ; SOURCE LINE # 125
+             ?C0007:
+                                           ; SOURCE LINE # 126
+                       CLR     A
+                 R     MOV     DPTR,#state
+                       MOVX    @DPTR,A
+                                           ; SOURCE LINE # 127
+                       RET     
+                                           ; SOURCE LINE # 128
+             ?C0008:
+                                           ; SOURCE LINE # 129
+                       MOV     R3,#01H
+                 R     MOV     R2,#HIGH real_temp
+                 R     MOV     R1,#LOW real_temp
+                 E     CALL    _DieTemp_1_Query
+                 R     MOV     DPTR,#status
+                       MOV     A,R7
+                       MOVX    @DPTR,A
+                                           ; SOURCE LINE # 130
+                       CLR     A
+                 R     MOV     DPTR,#state
+                       MOVX    @DPTR,A
+                                           ; SOURCE LINE # 131
+                       RET     
+                                           ; SOURCE LINE # 132
+                                           ; SOURCE LINE # 133
+                       RET     
+                                           ; SOURCE LINE # 134
+             ?C0009:
+                                           ; SOURCE LINE # 135
+                       MOV     R3,#01H
+                 R     MOV     R2,#HIGH real_temp
+                 R     MOV     R1,#LOW real_temp
+                 E     CALL    _DieTemp_1_Query
+                 R     MOV     DPTR,#status
+                       MOV     A,R7
+                       MOVX    @DPTR,A
+                                           ; SOURCE LINE # 136
+                       ADD     A,#0F9H
+                 R     xJZ     ?C0012
+                       ADD     A,#0F7H
+                 R     xJZ     ?C0013
+                       ADD     A,#010H
+                 R     xJNZ    ?C0017
+                                           ; SOURCE LINE # 137
+             ?C0011:
+                                           ; SOURCE LINE # 138
+                 R     MOV     DPTR,#real_temp
+                       MOVX    A,@DPTR
+                       MOV     R6,A
+                       INC     DPTR
+                       MOVX    A,@DPTR
+                       MOV     R7,A
+                       MOV     A,R6
+                       RLC     A
+C51 COMPILER V9.51   TEMPERATURE                                                           08/14/2026 10:16:35 PAGE 6   
+
+                       SUBB    A,ACC
+                       MOV     R5,A
+                       MOV     R4,A
+                 R     MOV     DPTR,#E_temp
+                 E     CALL    ?C?LSTXDATA
+                                           ; SOURCE LINE # 139
+                 R     MOV     DPTR,#state
+                       MOVX    A,@DPTR
+                       INC     A
+                       MOVX    @DPTR,A
+                                           ; SOURCE LINE # 140
+                       RET     
+                                           ; SOURCE LINE # 141
+             ?C0012:
+                                           ; SOURCE LINE # 142
+                 R     MOV     DPTR,#state
+                       MOV     A,#01H
+                       MOVX    @DPTR,A
+                                           ; SOURCE LINE # 143
+                       RET     
+                                           ; SOURCE LINE # 144
+             ?C0013:
+                                           ; SOURCE LINE # 145
+                       CLR     A
+                 R     MOV     DPTR,#state
+                       MOVX    @DPTR,A
+                                           ; SOURCE LINE # 146
+                       RET     
+                                           ; SOURCE LINE # 147
+                                           ; SOURCE LINE # 148
+                       RET     
+                                           ; SOURCE LINE # 149
+             ?C0014:
+                                           ; SOURCE LINE # 156
+                 R     MOV     DPTR,#E_temp
+                       MOVX    A,@DPTR
+                       MOV     R4,A
+                       INC     DPTR
+                       MOVX    A,@DPTR
+                       MOV     R5,A
+                       INC     DPTR
+                       MOVX    A,@DPTR
+                       MOV     R6,A
+                       INC     DPTR
+                       MOVX    A,@DPTR
+                       MOV     R7,A
+                       INC     DPTR
+                 E     CALL    ?C?LSTXDATA
+                                           ; SOURCE LINE # 157
+                 R     MOV     DPTR,#temp_refresh
+                       MOV     A,#027H
+                       MOVX    @DPTR,A
+                       INC     DPTR
+                       MOV     A,#010H
+                       MOVX    @DPTR,A
+                                           ; SOURCE LINE # 158
+                       CLR     A
+                 R     MOV     DPTR,#state
+                       MOVX    @DPTR,A
+                                           ; SOURCE LINE # 159
+                       RET     
+                                           ; SOURCE LINE # 160
+C51 COMPILER V9.51   TEMPERATURE                                                           08/14/2026 10:16:35 PAGE 7   
+
+                                           ; SOURCE LINE # 161
+                       RET     
+             ?C0002:
+                                           ; SOURCE LINE # 162
+                 R     MOV     DPTR,#temp_refresh+01H
+                       MOVX    A,@DPTR
+                       ADD     A,#0FFH
+                       MOVX    @DPTR,A
+                 R     MOV     DPTR,#temp_refresh
+                       MOVX    A,@DPTR
+                       ADDC    A,#0FFH
+                       MOVX    @DPTR,A
+                                           ; SOURCE LINE # 163
+                                           ; SOURCE LINE # 164
+                       RET     
+             ?C0001:
+                                           ; SOURCE LINE # 165
+                 R     MOV     DPTR,#startup_delay
+                       MOVX    A,@DPTR
+                       MOV     R4,A
+                       INC     DPTR
+                       MOVX    A,@DPTR
+                       MOV     R5,A
+                       INC     DPTR
+                       MOVX    A,@DPTR
+                       MOV     R6,A
+                       INC     DPTR
+                       MOVX    A,@DPTR
+                       MOV     R7,A
+                       MOV     A,#0FFH
+                       MOV     A,R7
+                       ADD     A,#0FFH
+                       MOV     R7,A
+                       MOV     A,R6
+                       ADDC    A,#0FFH
+                       MOV     R6,A
+                       MOV     A,R5
+                       ADDC    A,#0FFH
+                       MOV     R5,A
+                       MOV     A,R4
+                       ADDC    A,#0FFH
+                       MOV     R4,A
+                 R     MOV     DPTR,#startup_delay
+                 E     CALL    ?C?LSTXDATA
+                                           ; SOURCE LINE # 166
+                                           ; SOURCE LINE # 167
+             ?C0017:
+                       RET     
+             ; FUNCTION Check_temperature (END)
+
+
+
+MODULE INFORMATION:   STATIC OVERLAYABLE
+   CODE SIZE        =    296    ----
+   CONSTANT SIZE    =   ----    ----
+   XDATA SIZE       =     22       1
+   PDATA SIZE       =   ----    ----
+   DATA SIZE        =   ----    ----
+   IDATA SIZE       =   ----    ----
+   BIT SIZE         =   ----    ----
+   EDATA SIZE       =   ----    ----
+   HDATA SIZE       =   ----    ----
+C51 COMPILER V9.51   TEMPERATURE                                                           08/14/2026 10:16:35 PAGE 8   
+
+   XDATA CONST SIZE =   ----    ----
+   FAR CONST SIZE   =   ----    ----
+END OF MODULE INFORMATION.
+
+
+C51 COMPILATION COMPLETE.  0 WARNING(S),  0 ERROR(S)

@@ -1,0 +1,349 @@
+#!/bin/bash
+# mscc postinst — install into the real user's home, not root's
+set -e
+
+SHARE="/usr/share/mscc"
+BIN_SRC="$SHARE/binaries"
+INIT_SRC="$SHARE/init-files"
+TTY_SRC="$SHARE/tty0tty/module"
+
+log() { echo "mscc: $*"; }
+warn() { echo "mscc: WARNING: $*" >&2; }
+die() { echo "mscc: ERROR: $*" >&2; exit 1; }
+
+resolve_user() {
+  local u=""
+  if [[ -n "${SUDO_USER:-}" && "${SUDO_USER}" != "root" ]]; then
+    u="$SUDO_USER"
+  elif [[ -n "${PKEXEC_UID:-}" ]]; then
+    u="$(getent passwd "$PKEXEC_UID" | cut -d: -f1 || true)"
+  fi
+  if [[ -z "$u" || "$u" == "root" ]]; then
+    # last non-root login console user if available
+    u="$(logname 2>/dev/null || true)"
+  fi
+  if [[ -z "$u" || "$u" == "root" ]]; then
+    die "cannot determine non-root install user.
+  Install with:  sudo -u YOURUSER apt install ./mscc_*.deb
+  or:            sudo apt install ./mscc_*.deb   (from a normal user sudo session)"
+  fi
+  echo "$u"
+}
+
+stop_mscc_servers() {
+  local u="$1"
+  local home="$2"
+  local mscc="$home/mscc"
+  log "stopping MSCC servers (if running)…"
+  # Prefer installed mscc stop as the user
+  if [[ -x "$mscc/mscc.sh" ]]; then
+    if command -v runuser >/dev/null 2>&1; then
+      runuser -u "$u" -- env HOME="$home" USER="$u" LOGNAME="$u" \
+        PATH="/usr/local/bin:/usr/bin:/bin" \
+        "$mscc/mscc.sh" stop 2>/dev/null || true
+    else
+      su - "$u" -s /bin/bash -c "HOME='$home' '$mscc/mscc.sh' stop" 2>/dev/null || true
+    fi
+  elif [[ -x /usr/local/bin/mscc ]]; then
+    if command -v runuser >/dev/null 2>&1; then
+      runuser -u "$u" -- env HOME="$home" mscc stop 2>/dev/null || true
+    fi
+  fi
+  # Ensure processes are gone so binaries can be replaced
+  pkill -x sdrcore-trans 2>/dev/null || true
+  pkill -x sdrcore-recv 2>/dev/null || true
+  pkill -x ms-sdr 2>/dev/null || true
+  pkill -x mscc-init 2>/dev/null || true
+  sleep 0.5
+  log "MSCC servers stopped (or were not running)"
+}
+
+confirm_stop_servers() {
+  # Interactive: require explicit yes. Default N aborts install.
+  # Non-interactive (apt -y / DEBIAN_FRONTEND=noninteractive): proceed with stop.
+  if [[ "${DEBIAN_FRONTEND:-}" == "noninteractive" ]] || [[ ! -r /dev/tty ]]; then
+    log "non-interactive install: will stop MSCC servers if running"
+    return 0
+  fi
+  {
+    echo
+    echo "================================================================"
+    echo "  MSCC package install / upgrade"
+    echo "================================================================"
+    echo "  This will STOP the MSCC servers if they are running:"
+    echo "    ms-sdr, sdrcore-recv, sdrcore-trans"
+    echo "  so binaries under \$HOME/mscc can be updated."
+    echo
+    echo "  Continue? [y/N]"
+    echo "================================================================"
+    echo
+  } > /dev/tty
+  local ans=""
+  echo -n "Continue? [y/N] " > /dev/tty
+  if ! IFS= read -r ans < /dev/tty; then
+    ans=""
+  fi
+  case "${ans}" in
+    y|Y|yes|YES)
+      return 0
+      ;;
+    *)
+      echo > /dev/tty
+      echo "mscc: install aborted (servers not stopped; package not configured)." > /dev/tty
+      echo "mscc: re-run when ready:  sudo apt install -y ./mscc_*.deb" > /dev/tty
+      echo > /dev/tty
+      exit 1
+      ;;
+  esac
+}
+
+case "$1" in
+configure)
+  REAL_USER="$(resolve_user)"
+  HOME_DIR="$(getent passwd "$REAL_USER" | cut -d: -f6)"
+  [[ -n "$HOME_DIR" && -d "$HOME_DIR" ]] || die "home for $REAL_USER not found"
+
+  MSCC_DIR="$HOME_DIR/mscc"
+  CFG_DIR="$HOME_DIR/.local/mscc"
+
+  log "install user: $REAL_USER"
+  log "binaries → $MSCC_DIR"
+  log "config   → $CFG_DIR (seed only if missing/empty)"
+
+  # Confirm before stopping servers / replacing binaries
+  confirm_stop_servers
+  stop_mscc_servers "$REAL_USER" "$HOME_DIR"
+
+  # --- binaries ---
+  mkdir -p "$MSCC_DIR/logs"
+  cp -a "$BIN_SRC/." "$MSCC_DIR/"
+  # Drop legacy ALSA digi helper if present in package tree or old installs
+  rm -f "$MSCC_DIR/audio-setup" /usr/local/bin/mscc-audio-setup 2>/dev/null || true
+  chmod 755 "$MSCC_DIR/ms-sdr" "$MSCC_DIR/sdrcore-recv" "$MSCC_DIR/sdrcore-trans" \
+            "$MSCC_DIR/mscc-init" "$MSCC_DIR/mscc.sh" 2>/dev/null || true
+  chown -R "$REAL_USER:$REAL_USER" "$MSCC_DIR"
+
+  # --- config seed (never overwrite existing files) ---
+  if [[ ! -d "$CFG_DIR" ]]; then
+    mkdir -p "$CFG_DIR"
+    cp -a "$INIT_SRC/." "$CFG_DIR/"
+    chown -R "$REAL_USER:$REAL_USER" "$HOME_DIR/.local"
+    log "seeded config into $CFG_DIR"
+  elif [[ -z "$(find "$CFG_DIR" -mindepth 1 -maxdepth 1 2>/dev/null | head -1)" ]]; then
+    cp -a "$INIT_SRC/." "$CFG_DIR/"
+    chown -R "$REAL_USER:$REAL_USER" "$CFG_DIR"
+    log "seeded empty config dir $CFG_DIR"
+  else
+    log "left existing config in $CFG_DIR untouched"
+  fi
+
+  # --- system-wide symlinks ---
+  mkdir -p /usr/local/bin
+  ln -sfn "$MSCC_DIR/mscc-init"    /usr/local/bin/mscc-init
+  ln -sfn "$MSCC_DIR/mscc.sh"      /usr/local/bin/mscc
+  ln -sfn /usr/share/mscc/bin/mscc-virtual-audio.sh /usr/local/bin/mscc-virtual-audio
+  ln -sfn /usr/share/mscc/bin/mscc-desktop-ctl.sh /usr/local/bin/mscc-desktop-ctl
+  chmod 755 /usr/share/mscc/bin/mscc-virtual-audio.sh 2>/dev/null || true
+  chmod 755 /usr/share/mscc/bin/mscc-desktop-ctl.sh 2>/dev/null || true
+  chmod 755 /usr/share/mscc/bin/mscc-status-report 2>/dev/null || true
+  log "links: /usr/local/bin/mscc-init → $MSCC_DIR/mscc-init"
+  log "links: /usr/local/bin/mscc → $MSCC_DIR/mscc.sh"
+  log "links: /usr/local/bin/mscc-virtual-audio → /usr/share/mscc/bin/mscc-virtual-audio.sh"
+  log "links: /usr/local/bin/mscc-desktop-ctl → /usr/share/mscc/bin/mscc-desktop-ctl.sh"
+  log "status report: /usr/share/mscc/bin/mscc-status-report (via mscc status)"
+  if command -v update-desktop-database >/dev/null 2>&1; then
+    update-desktop-database -q /usr/share/applications 2>/dev/null || true
+  fi
+
+  # --- groups: dialout (tnt*), plugdev (Proficio USB), audio (sound) ---
+  if getent group dialout >/dev/null 2>&1; then
+    usermod -aG dialout "$REAL_USER" 2>/dev/null || warn "could not add $REAL_USER to dialout"
+    log "user $REAL_USER in group dialout (re-login may be required)"
+  fi
+  if getent group plugdev >/dev/null 2>&1; then
+    usermod -aG plugdev "$REAL_USER" 2>/dev/null || warn "could not add $REAL_USER to plugdev"
+    log "user $REAL_USER in group plugdev (re-login may be required)"
+  else
+    warn "group plugdev not found — Proficio udev rule still installed with MODE=0666"
+  fi
+  if getent group audio >/dev/null 2>&1; then
+    usermod -aG audio "$REAL_USER" 2>/dev/null || warn "could not add $REAL_USER to audio"
+    log "user $REAL_USER in group audio (re-login may be required)"
+  fi
+
+  # --- Proficio udev rule (libusb + sound) ---
+  UDEV_SRC="$SHARE/udev/99-proficio.rules"
+  UDEV_DST="/etc/udev/rules.d/99-proficio.rules"
+  if [[ -f "$UDEV_SRC" ]]; then
+    cp -a "$UDEV_SRC" "$UDEV_DST"
+    chmod 644 "$UDEV_DST"
+    udevadm control --reload-rules 2>/dev/null || true
+    udevadm trigger 2>/dev/null || true
+    log "installed $UDEV_DST (Proficio USB 16c0:05dc)"
+  else
+    warn "Proficio udev rules missing from package: $UDEV_SRC"
+  fi
+
+  # --- AudioInjector HAT: dtoverlay in boot config ---
+  # Bookworm+: /boot/firmware/config.txt ; older: /boot/config.txt
+  OVERLAY_LINE="dtoverlay=audioinjector-wm8731-audio"
+  BOOT_CFG=""
+  for cand in /boot/firmware/config.txt /boot/config.txt; do
+    if [[ -f "$cand" ]]; then
+      BOOT_CFG="$cand"
+      break
+    fi
+  done
+  if [[ -n "$BOOT_CFG" ]]; then
+    if grep -qE '^[[:space:]]*dtoverlay=audioinjector-wm8731-audio' "$BOOT_CFG" 2>/dev/null; then
+      log "boot config already has $OVERLAY_LINE ($BOOT_CFG)"
+    else
+      {
+        echo ""
+        echo "# MSCC — AudioInjector stereo HAT (operator audio)"
+        echo "$OVERLAY_LINE"
+      } >>"$BOOT_CFG"
+      log "appended $OVERLAY_LINE to $BOOT_CFG"
+      log "REBOOT required for AudioInjector overlay to take effect"
+    fi
+  else
+    warn "no /boot/firmware/config.txt or /boot/config.txt — add manually:"
+    warn "  $OVERLAY_LINE"
+  fi
+
+  # --- digi audio: Pulse/PipeWire VirtualA/B only (ALSA MSCC_Cable path removed) ---
+  # Clean leftovers from older packages (snd-aloop autoload, asound conf, boot units).
+  log "removing legacy ALSA digi-audio leftovers (if any)…"
+  systemctl stop "mscc-audio-setup@${REAL_USER}.service" 2>/dev/null || true
+  systemctl disable "mscc-audio-setup@${REAL_USER}.service" 2>/dev/null || true
+  rm -f /etc/systemd/system/mscc-audio-setup@.service
+  rm -f /etc/modules-load.d/mscc-aloop.conf
+  rm -f /etc/modprobe.d/mscc-aloop.conf
+  rm -f /etc/alsa/conf.d/99-mscc-virtual.conf
+  # Strip MSCC digi block from /etc/asound.conf if present (leave other user content)
+  if [[ -f /etc/asound.conf ]] && grep -q 'BEGIN MSCC virtual digi cable' /etc/asound.conf 2>/dev/null; then
+    tmp_as="$(mktemp)"
+    awk '
+      /# BEGIN MSCC virtual digi cable/ {skip=1; next}
+      /# END MSCC virtual digi cable/ {skip=0; next}
+      !skip {print}
+    ' /etc/asound.conf >"$tmp_as" && cp -f "$tmp_as" /etc/asound.conf
+    rm -f "$tmp_as"
+    log "removed MSCC digi block from /etc/asound.conf (if any)"
+  fi
+  systemctl daemon-reload 2>/dev/null || true
+
+  # System-wide script + per-user systemd unit (paths are absolute — any install user)
+  VA_SCRIPT_SRC="$SHARE/bin/mscc-virtual-audio.sh"
+  VA_UNIT_SRC="$SHARE/systemd/user/mscc-virtual-audio.service"
+  if [[ -f "$VA_SCRIPT_SRC" ]]; then
+    chmod 755 "$VA_SCRIPT_SRC"
+    log "installed $VA_SCRIPT_SRC"
+  else
+    warn "mscc-virtual-audio.sh missing from package: $VA_SCRIPT_SRC"
+  fi
+  if [[ -f "$VA_UNIT_SRC" ]]; then
+    mkdir -p /usr/lib/systemd/user
+    cp -a "$VA_UNIT_SRC" /usr/lib/systemd/user/mscc-virtual-audio.service
+    chmod 644 /usr/lib/systemd/user/mscc-virtual-audio.service
+    log "installed /usr/lib/systemd/user/mscc-virtual-audio.service"
+  else
+    warn "mscc-virtual-audio.service missing from package: $VA_UNIT_SRC"
+  fi
+
+  # Enable + start for the installing user (user systemd; no hard-coded home)
+  REAL_UID="$(id -u "$REAL_USER" 2>/dev/null || true)"
+  if [[ -n "$REAL_UID" && -f /usr/lib/systemd/user/mscc-virtual-audio.service ]]; then
+    if command -v runuser >/dev/null 2>&1; then
+      runuser -u "$REAL_USER" -- env \
+        HOME="$HOME_DIR" USER="$REAL_USER" LOGNAME="$REAL_USER" \
+        XDG_RUNTIME_DIR="${XDG_RUNTIME_DIR:-/run/user/${REAL_UID}}" \
+        DBUS_SESSION_BUS_ADDRESS="${DBUS_SESSION_BUS_ADDRESS:-unix:path=/run/user/${REAL_UID}/bus}" \
+        systemctl --user daemon-reload 2>/dev/null || true
+      if runuser -u "$REAL_USER" -- env \
+          HOME="$HOME_DIR" USER="$REAL_USER" LOGNAME="$REAL_USER" \
+          XDG_RUNTIME_DIR="/run/user/${REAL_UID}" \
+          DBUS_SESSION_BUS_ADDRESS="unix:path=/run/user/${REAL_UID}/bus" \
+          systemctl --user enable --now mscc-virtual-audio.service 2>/dev/null; then
+        log "enabled user service mscc-virtual-audio.service for $REAL_USER"
+      else
+        # Enable for next login if session bus not up (e.g. non-graphical install)
+        runuser -u "$REAL_USER" -- env \
+          HOME="$HOME_DIR" \
+          XDG_RUNTIME_DIR="/run/user/${REAL_UID}" \
+          systemctl --user enable mscc-virtual-audio.service 2>/dev/null || true
+        warn "could not start mscc-virtual-audio now — after login: systemctl --user enable --now mscc-virtual-audio"
+        warn "or run once: mscc-virtual-audio"
+      fi
+      # Best-effort run once during install if Pulse is already up
+      if [[ -x /usr/share/mscc/bin/mscc-virtual-audio.sh ]]; then
+        runuser -u "$REAL_USER" -- env \
+          HOME="$HOME_DIR" USER="$REAL_USER" LOGNAME="$REAL_USER" \
+          XDG_RUNTIME_DIR="/run/user/${REAL_UID}" \
+          /usr/share/mscc/bin/mscc-virtual-audio.sh 2>/dev/null || true
+      fi
+    else
+      warn "runuser missing — enable after login: systemctl --user enable --now mscc-virtual-audio"
+    fi
+  fi
+
+  # --- tty0tty module ---
+  KVER="$(uname -r)"
+  if [[ ! -d "/lib/modules/$KVER/build" ]]; then
+    warn "kernel headers not found for $KVER (/lib/modules/$KVER/build missing)."
+    warn "On Raspberry Pi OS, install headers then rebuild tty0tty:"
+    warn "  sudo apt install -y linux-headers-$KVER"
+    warn "  # or: linux-headers-rpi-v8  /  linux-headers-rpi-2712"
+    warn "  cd $TTY_SRC && sudo make && sudo make install"
+  else
+    log "building tty0tty for kernel $KVER …"
+    (
+      cd "$TTY_SRC"
+      make clean >/dev/null 2>&1 || true
+      make
+      make install
+    )
+    log "tty0tty installed; /dev/tnt0–tnt7 should exist after load"
+    if [[ ! -e /dev/tnt0 ]]; then
+      modprobe tty0tty 2>/dev/null || warn "modprobe tty0tty failed — check dmesg"
+    fi
+  fi
+
+  log "done."
+  echo
+  echo "================================================================"
+  echo "  MSCC installed for user: $REAL_USER"
+  echo "================================================================"
+  echo "  Binaries:  $MSCC_DIR"
+  echo "  Config:    $CFG_DIR"
+  echo "  Links:     mscc , mscc-init , mscc-virtual-audio , mscc-desktop-ctl"
+  echo "  Desktop:   menu category MSCC — Start / Stop / Status (log out/in if missing)"
+  echo "  Groups:    dialout, plugdev, audio (log out/in if just added)"
+  echo "  Udev:      /etc/udev/rules.d/99-proficio.rules"
+  echo "  Boot:      dtoverlay=audioinjector-wm8731-audio (reboot if newly added)"
+  echo "  Digi:      VirtualA/B via mscc-virtual-audio (user systemd at login)"
+  echo
+  echo "  *** REQUIRED AFTER INSTALL FINISHES ***"
+  echo "  Do not run mscc-init during the package install."
+  echo "  After this install completes, as user $REAL_USER:"
+  echo
+  echo "    1. Log out/in (or reboot) if groups or AudioInjector overlay changed."
+  echo "    2. Verify digi:  pactl list short sinks | grep Virtual"
+  echo "       If missing:   mscc-virtual-audio"
+  echo "    3. Run:          mscc-init"
+  echo "       (operator audio only; digi is fixed VirtualA / VirtualB.monitor)"
+  echo "    4. Then:         mscc start"
+  echo
+  echo "  PortAudio with Pulse: \$HOME/portaudio-install (mscc.sh uses it)."
+  echo "================================================================"
+  echo
+  ;;
+abort-upgrade|abort-remove|abort-deconfigure)
+  ;;
+*)
+  echo "postinst called with unknown argument \`$1'" >&2
+  exit 1
+  ;;
+esac
+
+exit 0

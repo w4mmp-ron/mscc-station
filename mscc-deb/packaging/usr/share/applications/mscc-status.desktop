@@ -1,0 +1,12 @@
+[Desktop Entry]
+Type=Application
+Name=MSCC Status
+GenericName=MSCC status and install check
+Comment=Show MSCC servers, config, PortAudio device match, CAT port
+# Hold the window open so the report is readable (default Terminal exits immediately).
+Exec=bash -lc 'mscc-desktop-ctl status; echo; read -r -p "Press Enter to close… "'
+Icon=dialog-information
+Terminal=true
+Categories=X-MSCC;
+Keywords=MSCC;SDR;Proficio;Multus;status;check;
+StartupNotify=false

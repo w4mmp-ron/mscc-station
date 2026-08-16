@@ -1,0 +1,2848 @@
+#include <stdio.h>
+#include <sys/types.h>
+#include <errno.h>
+#include "port_defines.h"
+#include "usbavrcmd.h"
+//#include "SRDLL.h"
+#include "extern.h"
+#include "version.h"
+
+// VERSION_MAJOR / VERSION_MINOR / VERSION_MS_SDRCORE live in version.h
+// VERSION_MINOR is auto-incremented on every build (Windows PreBuild / Linux bump-version.sh)
+
+#define BUFLEN 1024  //Max length of buffer
+#define LINE_COUNT line_number++
+#define PROFICIO_INI_SET_OFFSET 0x70
+#define PROFICIO_INI_GET_OFFSET 0X90
+#define METER_INITIALIZED 5
+#define S_METER_DELAY 15
+#define SMETER_AVERAGE_LIMIT 20
+
+int G_smeter = 0;
+uint8_t G_smeter_ready = 0;
+int16_t G_smeter_dBm = 0;
+int G_QSK = FALSE;
+int G_Transceiver_Busy = FALSE;
+int G_MSCC_Initialized = FALSE;
+/* Headless: cores/rig brought up without waiting for MSCC client */
+static int G_appliance_startup_done = FALSE;
+
+/*
+ * Apply user_controls.ini + startup.ini to sdrcore-recv/trans and Proficio LO
+ * without a GUI connection. Safe to call once after G_network_initialized.
+ */
+int Apply_Appliance_Startup(void)
+{
+    print_time(1);
+    fprintf(G_fp_logfile, "[%d] Apply_Appliance_Startup. Called (headless cores/rig init)\n",
+        line_number++);
+
+    if (!G_network_initialized) {
+        print_time(0);
+        fprintf(G_fp_logfile,
+            "[%d] Apply_Appliance_Startup. SKIP — network not ready\n", line_number++);
+        return -1;
+    }
+
+    /* Volumes / P-D / filters from user_controls.ini */
+    User_Controls_Apply_To_Cores();
+
+    /* Frequency + RF mode letter from startup.ini */
+    Get_Startup(&G_tune_freq, &G_mode);
+    print_time(0);
+    fprintf(G_fp_logfile, "[%d] Apply_Appliance_Startup. Startup freq=%lu mode=%c\n",
+        line_number++, (unsigned long)G_tune_freq, G_mode);
+
+    Set_band_normal(G_tune_freq, TRUE);
+    if (G_band_normal == FREQ_OUT_OF_RANGE) {
+        G_band_normal = 20;
+    }
+
+    /*
+     * Apply MODE from startup.ini to cores + Proficio (was freq-only before).
+     * User_Controls_Apply_To_Cores already sent user_controls mode; startup.ini wins for RF.
+     */
+    {
+        int mode_num = mode_to_number(G_mode);
+
+        if (mode_num != 9) {
+            SDRcore_recv_send_param(CMD_SET_MAIN_MODE, mode_num);
+            SDRcore_trans_send_param(CMD_SET_MAIN_MODE, mode_num);
+            print_time(0);
+            fprintf(G_fp_logfile,
+                "[%d] Apply_Appliance_Startup. Cores mode from startup.ini: %c (%d)\n",
+                line_number++, G_mode, mode_num);
+        } else {
+            print_time(0);
+            fprintf(G_fp_logfile,
+                "[%d] Apply_Appliance_Startup. WARNING: bad MODE in startup.ini (%c) — skip core mode\n",
+                line_number++, G_mode);
+        }
+        /* Radio USB mode (same path as GUI mode button) */
+        ModeChanged(G_mode);
+    }
+
+    print_time(0);
+    fprintf(G_fp_logfile, "[%d] Apply_Appliance_Startup. Band=%d — queue LO to Proficio\n",
+        line_number++, G_band_normal);
+    freq_queue_add(G_tune_freq);
+
+    G_appliance_startup_done = TRUE;
+    print_time(0);
+    fprintf(G_fp_logfile, "[%d] Apply_Appliance_Startup. Finished\n", line_number++);
+    return 0;
+}
+int G_Remote_GUI_Attached = FALSE;
+/* Single-client session: first successful CMD_CHECK_GUI_STATUS owns the radio. */
+int G_client_session_active = FALSE;
+static struct sockaddr_in G_session_client;
+static int G_session_client_valid = FALSE;
+unsigned long long G_sdrcore_recv_keep_alive = 0;
+unsigned long long G_sdrcore_trans_keep_alive = 0;
+byte G_Antenna_Switch = 0;
+//const char *homedir;
+char G_receive_buf[BUFLEN];
+byte G_Shutdown_Status = 0;
+byte G_Monitor = 0;
+int32_t Smeter_average_limit = SMETER_AVERAGE_LIMIT;
+int32_t Smeter_average_array[SMETER_AVERAGE_LIMIT];
+int G_TX_Hold = 0;
+byte G_Split = 0;
+int32_t G_Split_RX_FREQ = 0;
+int32_t G_Split_TX_FREQ = 0;
+byte Fortis_Configuration = 0;
+char G_Client_Host_Name[80] = {0};
+byte G_Transceiver_type = 10;
+int16_t G_spectrum_cycle_count = SPECTRUM_CYCLE_LIMIT;
+
+struct {
+    int Major;
+    int Minor;
+    char year[20];
+    int month;
+    int day_number;
+    char day[20];
+    char date[20];
+} Version;
+
+struct cfg {
+    float speed_wpm;
+    uint8_t speed_min;
+    uint8_t speed_max;
+    uint8_t message;
+    int8_t mode;
+    int8_t memory;
+    int8_t spacing;
+    float weight;
+    uint8_t paddle;
+    uint8_t lag;
+    float tone;
+    uint8_t volume;
+    uint8_t sidetone;
+    uint8_t backlight;
+} cfg;
+
+struct cw_parameters_record cw_record;
+
+struct sockaddr_in si_me, si_other, si_gui;
+int dll_s, gui_s, recv_len;
+int slen = sizeof (si_other);
+
+/* Session lock helpers (single GUI client). */
+static int Session_Is_Owner(const struct sockaddr_in *peer) {
+    if (!G_client_session_active || !G_session_client_valid || peer == NULL) {
+        return FALSE;
+    }
+    if (peer->sin_family != G_session_client.sin_family) {
+        return FALSE;
+    }
+    if (peer->sin_addr.s_addr != G_session_client.sin_addr.s_addr) {
+        return FALSE;
+    }
+    if (peer->sin_port != G_session_client.sin_port) {
+        return FALSE;
+    }
+    return TRUE;
+}
+
+static void Session_Claim(const struct sockaddr_in *peer) {
+    if (peer != NULL) {
+        G_session_client = *peer;
+        G_session_client_valid = TRUE;
+        /* Prefer live peer for all GUI replies (critical under WSL; MSCC_IP may differ). */
+        si_gui = *peer;
+        G_Remote_GUI_Attached = TRUE;
+    } else {
+        G_session_client_valid = FALSE;
+    }
+    G_client_session_active = TRUE;
+    G_MSCC_Initialized = TRUE;
+    G_gui_running = 1;
+    print_time(0);
+    fprintf(G_fp_logfile, "[%d] Session_Claim. Client session active. peer %s:%u\n",
+        line_number++,
+        peer ? inet_ntoa(peer->sin_addr) : "(none)",
+        peer ? (unsigned)ntohs(peer->sin_port) : 0);
+    /* Immediate I'm-Alive so client watchdog (~10s) does not fire during long handshake. */
+    Gui_send_param(CMD_SET_KEEP_ALIVE, 1);
+    Gui_send_param(CMD_SET_KEEP_ALIVE, 1);
+}
+
+void Session_Release(void) {
+    print_time(0);
+    fprintf(G_fp_logfile, "[%d] Session_Release. Clearing client session\n", line_number++);
+    G_client_session_active = FALSE;
+    G_session_client_valid = FALSE;
+    memset(&G_session_client, 0, sizeof(G_session_client));
+    G_MSCC_Initialized = FALSE;
+    G_gui_running = 0;
+}
+
+static void Session_Reject(struct sockaddr_in *peer) {
+    char msg[] = "SESSION IN USE - SINGLE CLIENT ONLY";
+    char peer_ip[32] = {0};
+    char owner_ip[32] = {0};
+
+    if (peer != NULL) {
+        strncpy(peer_ip, inet_ntoa(peer->sin_addr), sizeof(peer_ip) - 1);
+    } else {
+        strncpy(peer_ip, "(none)", sizeof(peer_ip) - 1);
+    }
+    if (G_session_client_valid) {
+        strncpy(owner_ip, inet_ntoa(G_session_client.sin_addr), sizeof(owner_ip) - 1);
+    } else {
+        strncpy(owner_ip, "(none)", sizeof(owner_ip) - 1);
+    }
+
+    print_time(0);
+    fprintf(G_fp_logfile,
+        "[%d] Session_Reject. Second client refused. peer %s:%u (session owned by %s:%u)\n",
+        line_number++,
+        peer_ip,
+        peer ? (unsigned)ntohs(peer->sin_port) : 0,
+        owner_ip,
+        G_session_client_valid ? (unsigned)ntohs(G_session_client.sin_port) : 0);
+
+    /*
+     * Do NOT send CMD_GET_SET_MSSDR_STATUS (0xF5) on reject: legacy MSCC treats
+     * any 0xF5 as "MSSDR running" and would complete a false handshake.
+     * Send an extended server-error string to the requesting peer instead.
+     */
+    if (peer != NULL) {
+        char buf[PATH_MAX] = {0};
+        int dest_len = sizeof(*peer);
+        size_t msg_len = strlen(msg) + 1;
+
+        buf[0] = CMD_SET_EXTENDED_COMMAND;
+        buf[1] = CMD_SET_SERVER_ERROR;
+        memcpy(&buf[2], msg, msg_len);
+        if (sendto(gui_s, buf, (int)(msg_len + 2), 0, (struct sockaddr *)peer, dest_len) == SOCKET_ERROR) {
+            print_time(0);
+            fprintf(G_fp_logfile, "[%d] Session_Reject. extended sendto FAILED: %s\n",
+                line_number++, strerror(errno));
+        }
+    }
+    /* Also queue for the owning GUI (configured si_gui path). */
+    Gui_Add_Message(msg);
+}
+
+//For SDRcore-recv
+struct sockaddr_in si_sdrcore_recv;
+int sdrcore_s_recv;
+
+//For SDRcore-trans
+struct sockaddr_in si_sdrcore_trans;
+int sdrcore_s_trans;
+
+//For Spectrum
+struct sockaddr_in si_spectrum;
+int spectrum_s;
+
+//For Waterfall
+struct sockaddr_in si_waterfall;
+int waterfall_s;
+
+//for RPi GUI
+struct sockaddr_in si_RPI_mscc;
+int RPI_mscc_s;
+
+#define MAX_PANADAPTER_X 800
+
+void Stop_all(uint8_t up_date_transceiver, uint8_t shutdown_status) {
+    int ret = 0;
+    uint8_t status = 0;
+
+    print_time(1);
+    fprintf(G_fp_logfile, "[%d] Stop_all Called. update_transceiver: %d, shutdown_status: %d\n",
+            line_number++, up_date_transceiver, shutdown_status);
+    G_Shutdown_Status = shutdown_status;
+    if (G_network_initialized == TRUE) {
+        if (G_delete_SDRcore_init_files == 1) {
+            print_time(0);
+            fprintf(G_fp_logfile, "[%d] Stop_all. Sending Command to delete SDRcore initialization files. \n", line_number++);
+            SDRcore_recv_send_param(CMD_DELETE_SDRCORE_INIT, 0);
+            SDRcore_trans_send_param(CMD_DELETE_SDRCORE_INIT, 0);
+            Sleep(50);
+        }
+        SDRcore_recv_send_param(CMD_SET_STOP, 0);
+        Sleep(50);
+        SDRcore_trans_send_param(CMD_SET_STOP, 0);
+        Sleep(50);
+        Gui_send_param(CMD_SET_STOP, 1);
+        //Spectrum_Waterfall_send_param(CMD_SET_STOP, 0);
+        Sleep(2000);
+    }
+    status = User_Controls_Update_Init_File();
+    Sleep(1000);
+    switch (G_Shutdown_Status) {
+        case 0:
+            //status = Radio_send_parameters(SET_CW_MODE, 'U', 1);
+            print_time(0);
+            fprintf(G_fp_logfile, "[%d] Stop_all. NORMAL EXIT \n", line_number++);
+            break;
+        case STOP_PROFICIO:
+            print_time(0);
+            fprintf(G_fp_logfile, "[%d] Stop_all. STOP_PROFICIO \n", line_number++);
+            break;
+        case STOP_PROFICIO_COMMS:
+            print_time(0);
+            fprintf(G_fp_logfile, "[%d] Stop_all. STOP_PROFICIO_COMMS \n", line_number++);
+            abort();
+            break;
+        case STOP_LOGFILE_FAILED:
+            print_time(0);
+            fprintf(G_fp_logfile, "[%d] Stop_all. STOP_LOGFILE_FAILED \n", line_number++);
+            break;
+        case STOP_PROFICIO_SERIAL_NUMBER:
+            print_time(0);
+            fprintf(G_fp_logfile, "[%d] Stop_all. STOP_PROFICIO_SERIAL_NUMBER \n", line_number++);
+            break;
+        case STOP_MFC:
+            print_time(0);
+            fprintf(G_fp_logfile, "[%d] Stop_all. STOP_MFC \n", line_number++);
+            break;
+        case STOP_MASTER_CONTROLLER:
+            print_time(0);
+            fprintf(G_fp_logfile, "[%d] Stop_all. STOP_MASTER_CONTROLLER \n", line_number++);
+            break;
+        case STOP_PROFICIO_VERSION:
+            print_time(0);
+            fprintf(G_fp_logfile, "[%d] Stop_all. STOP_PROFICIO_VERSION \n", line_number++);
+            break;
+        case STOP_THREADS_START_FAILED:
+            print_time(0);
+            fprintf(G_fp_logfile, "[%d] Stop_all. STOP_THREADS_START_FAILED \n", line_number++);
+            break;
+        case STOP_NETWORK_FAILED:
+            print_time(0);
+            fprintf(G_fp_logfile, "[%d] Stop_all. STOP_NETWORK_FAILED \n", line_number++);
+            break;
+    }
+    print_time(0);
+    fprintf(G_fp_logfile, "[%d] Stop_all. FINISHED\n", line_number++);
+    if (G_Shutdown_Status == 0) {
+        G_thread_sleep_time = 1;
+        G_all_threads_run = 0;
+        Sleep(1000);
+        G_main_thread_run = 0;
+    } else {
+        exit(1);
+    }
+}
+
+void *Gui_send_message(void *t) {
+    char buf[PATH_MAX] = { 0 };
+    int slen = sizeof (si_gui);
+    char message[PATH_MAX];
+    int size = 0;
+    int message_status = 0;
+
+    print_time(0);
+    fprintf(G_fp_logfile, "[%d] Gui_send_message. STARTED\n", line_number++);
+    while (G_all_threads_run) {
+        buf[0] = CMD_SET_EXTENDED_COMMAND;
+        buf[1] = CMD_SET_SERVER_ERROR;
+        if (G_Remote_GUI_Attached == TRUE && G_MSCC_Initialized == TRUE) {
+            message_status = message_queue_dequeue(message);
+            if (message_status != 0) {
+                size = sizeof (message);
+                strcpy(&buf[2], message);
+                if (sendto(gui_s, buf, (size + 2), 0, (struct sockaddr *) &si_gui, slen) == SOCKET_ERROR) {
+                    print_time(0);
+                    fprintf(G_fp_logfile, "[%d] Gui_send_message. sentto gui_s FAILED. error code : %s\n",
+                            line_number++, strerror(errno));
+
+                }
+            }
+        }
+        Sleep(10);
+    }
+    print_time(0);
+    fprintf(G_fp_logfile, "[%d] Gui_send_message. NORMAL EXIT\n",
+            line_number++);
+    pthread_exit(0);
+    return NULL;
+}
+
+void print_opcode(uint8_t opcode, int opcode_data) {
+    print_time(1);
+    fprintf(G_fp_logfile, "[%d] Print_opcode . Opcode Received: %d (hex: %X), Opcode Data: %d (hex:%X)\n",
+            line_number++, opcode, opcode, opcode_data, opcode_data);
+}
+
+/*int Spectrum_Waterfall_send_param(uint8_t op_code, int op_data) {
+    char buf[50] = { 0 };
+    int slen = sizeof (si_gui);
+    int status = 0;
+
+    print_time(0);
+    fprintf(G_fp_logfile, "[%d] Spectrum_Waterfall_send_param. op_code: 0x%X, op_data: %d\n", line_number++, op_code, op_data);
+    buf[0] = op_code;
+    if (G_network_initialized) {
+        memcpy(&buf[1], &op_data, 4);
+        if (sendto(gui_s, buf, 5, 0, (struct sockaddr *) &si_gui, slen) == SOCKET_ERROR) {
+            print_time(0);
+            fprintf(G_fp_logfile, "[%d] Spectrum_Waterfall_send_param. Sendto gui_s. error code : %s FAILED\n",
+                    line_number++, strerror(errno));
+        }
+        if (sendto(waterfall_s, buf, 5, 0, (struct sockaddr *) &si_waterfall, slen) == SOCKET_ERROR) {
+            print_time(0);
+            fprintf(G_fp_logfile, "[%d] Spectrum_Waterfall_send_param. Sendto waterfall_s. error code : %s FAILED\n",
+                    line_number++, strerror(errno));
+        }
+    } else {
+        print_time(0);
+        fprintf(G_fp_logfile, "[%d] Spectrum_Waterfall_send_param. Network NOT INITIALIZED\n", line_number++);
+    }
+    Sleep(50);
+    return status;
+}*/
+
+int Gui_send_param(uint8_t op_code, int op_data) {
+    char buf[50] = { 0 };
+    int slen;
+    struct sockaddr_in *dest = NULL;
+    /* One send only (Pi OS). Prefer bound server socket (dll_s / port 8888). */
+    int out_sock = (dll_s != INVALID_SOCKET && dll_s > 0) ? dll_s : gui_s;
+
+    buf[0] = op_code;
+    memcpy(&buf[1], &op_data, 4);
+
+    if (G_session_client_valid) {
+        dest = &G_session_client;
+        slen = sizeof(G_session_client);
+    } else if (G_Remote_GUI_Attached == TRUE) {
+        dest = &si_gui;
+        slen = sizeof(si_gui);
+    } else {
+        return 0;
+    }
+
+    if (sendto(out_sock, buf, 5, 0, (struct sockaddr *) dest, slen) == SOCKET_ERROR) {
+        print_time(0);
+        fprintf(G_fp_logfile, "[%d] Gui_send_param . sentto FAILED: %s (op 0x%X)\n",
+                line_number++, strerror(errno), op_code);
+        return 0;
+    }
+    /* Keep-alive must be cheap and frequent — no Sleep (was 10ms every GUI packet). */
+    if (op_code != CMD_SET_KEEP_ALIVE) {
+        Sleep(10);
+    }
+    return 1;
+}
+
+int Gui_send_param_extended(byte command, byte *op_data, int size) {
+    char buf[PATH_MAX] = { 0 };
+    int slen = sizeof (si_gui);
+
+
+    buf[0] = CMD_SET_EXTENDED_COMMAND;
+    buf[1] = command;
+    memcpy(&buf[2], op_data, size);
+    //print_time(0);
+    //fprintf(G_fp_logfile, "[%d] Gui_send_param_extended . NEW MESSAGE: %s\n", line_number++, (char *) buf);
+    if (G_Remote_GUI_Attached == TRUE && G_MSCC_Initialized == TRUE) {
+        if (sendto(gui_s, buf, (size + 2), 0, (struct sockaddr *) &si_gui, slen) == SOCKET_ERROR) {
+            print_time(0);
+            fprintf(G_fp_logfile, "[%d] Gui_send_param_extended . sentto gui_s FAILED with error code : %s\n",
+                    line_number++, strerror(errno));
+        }
+    } else {
+        print_time(0);
+        fprintf(G_fp_logfile, "[%d] Gui_send_param_extended . GUI NOT READY\n", line_number++);
+    }
+    Sleep(10);
+
+    return 1;
+}
+
+int SDRcore_trans_send_param(uint8_t op_code, int op_data) {
+    char buf[20] = { 0 };
+    int slen = sizeof (si_sdrcore_recv);
+
+    if (G_network_initialized) {
+        buf[0] = op_code;
+        memcpy(&buf[1], &op_data, 4);
+        if (sendto(sdrcore_s_trans, buf, 5, 0, (struct sockaddr *) &si_sdrcore_trans, slen) == SOCKET_ERROR) {
+            print_time(0);
+            fprintf(G_fp_logfile, "[%d] SDRcore_trans_send_param-> sentto FAILED with error code : %s\n", line_number++, strerror(errno));
+        }
+    } else {
+
+        print_time(0);
+        fprintf(G_fp_logfile, "[%d] SDRcore_trans_send_param. Network NOT INITIALIZED\n", line_number++);
+    }
+    return 1;
+}
+
+int SDRcore_recv_send_param(uint8_t op_code, int op_data) {
+    char buf[20] = { 0 };
+    int slen = sizeof (si_sdrcore_recv);
+
+    if (G_network_initialized) {
+        buf[0] = op_code;
+        memcpy(&buf[1], &op_data, 4);
+        if (sendto(sdrcore_s_recv, buf, 5, 0, (struct sockaddr *) &si_sdrcore_recv, slen) == SOCKET_ERROR) {
+            print_time(0);
+            fprintf(G_fp_logfile, "[%d] SDRcore_recv_send_param-> sentto FAILED with error code : %s\n", line_number++, strerror(errno));
+        }
+    } else {
+
+        print_time(0);
+        fprintf(G_fp_logfile, "[%d] SDRcore_recv_send_param. Network NOT INITIALIZED\n", line_number++);
+    }
+    return 1;
+}
+
+/*int Db_to_Smeter(int db) {
+    int smeter_value = 0;
+
+    if (db <= -130) return 0;
+    if (db <= -121) return 1;
+    if (db <= -115) return 2;
+    if (db <= -109) return 3;
+    if (db <= -103) return 4;
+    if (db <= -97) return 5;
+    if (db <= -91) return 6;
+    if (db <= -85) return 7;
+    if (db <= -79) return 8;
+    if (db <= -73) return 9;
+    if (db <= -63) return 10;
+    if (db <= -53) return 11; //S20
+    if (db <= -43) return 12; //S30 Need to change Proficio firmware to handles S levels above S20
+    if (db <= -33) return 12; //S40
+    if (db <= -23) return 12; //S50
+    if (db <= -13) return 12; //S60
+
+    return smeter_value;
+}*/
+
+
+
+int16_t Smeter_Average(int16_t smeter_value) {
+    int16_t smeter = 0;
+    int32_t average_count = 0;
+    int32_t Smeter_average = 0;
+    int i = 0;
+    static int initialized = 0;
+
+    if (initialized == 0) {
+        for (i = 0; i < Smeter_average_limit; i++) {
+            Smeter_average_array[i] = 0;
+            initialized = 1;
+        }
+    }
+
+    Smeter_average_array[0] = smeter_value;
+    for (average_count = 0; average_count < Smeter_average_limit; average_count++) {
+        Smeter_average = Smeter_average + Smeter_average_array [average_count];
+    }
+    smeter = Smeter_average / average_count;
+    for (i = (Smeter_average_limit - 1); i > 0; i--) {
+
+        Smeter_average_array[i] = Smeter_average_array[(i - 1)];
+    }
+    return smeter;
+}
+
+void Gui_get_param(uint8_t op_code, char *buffer) {
+    int status;
+    uint8_t t_opcode_data;
+    short int *opcode_data;
+    short int s_opcode_data;
+    int *op_code_data_32;
+    int i_opcode_data;
+    uint32_t u_int_data;
+    int band;
+    static int count = 0;
+    int16_t smeter = 0;
+    static uint8_t key_hold = 0;
+    static uint8_t key_state = 0;
+   
+    t_opcode_data = (uint8_t) (buffer[1]);
+    opcode_data = (short int*) &buffer[1];
+    memcpy(&s_opcode_data, opcode_data, 2);
+    op_code_data_32 = (int*) &buffer[1];
+    memcpy(&u_int_data, (uint32_t*) & buffer[1], 4);
+    memcpy(&i_opcode_data, op_code_data_32, 4);
+
+    //print_time(0);
+    //fprintf(G_fp_logfile, "[%d] Gui_get_param . Command received: %X \n", line_number++, op_code);
+    switch (op_code) {
+
+        case CMD_SET_NR:
+            /* Store NR_VALUE in user_controls.ini + forward to sdrcore-recv */
+            User_Controls_Process(op_code, buffer, FALSE);
+            break;
+
+        case CMD_SET_CALIBRATION_DATA:
+            Process_Frequency_Calibration(op_code, buffer);
+            break;
+
+        case CMD_SET_CAL_DATA_PROCESSED:
+            Process_Frequency_Calibration(op_code, buffer);
+            break;
+
+        case CMD_GET_SET_SMETER: //This is call by the sdrcore_recv server
+            //smeter = Smeter_Average(s_opcode_data);
+            smeter = s_opcode_data;
+            G_smeter_dBm = smeter;
+            if (G_mode == 'C') { //Prevents the Smeter from bumping when returning from KEY_DOWN in CW mode.
+                key_state = G_key; //when switching between key states (KEY_UP, KEY_DOWN);
+                switch (key_state) {
+                    case KEY_UP:
+                        if (key_hold <= 0) {
+                            Gui_send_param(CMD_GET_SET_SMETER, smeter);
+                            //print_time(0);
+                            //fprintf(G_fp_logfile, "[%d] Gui_get_parm. CMD_GET_SET_SMETER. KEY_UP-0 key_state: %d, key_hold: %d\n",
+                            //        line_number++, key_state, key_hold);
+                        } else {
+                            key_hold--;
+                            Gui_send_param(CMD_GET_SET_SMETER, 0);
+                            //print_time(0);
+                            //fprintf(G_fp_logfile, "[%d] Gui_get_parm. CMD_GET_SET_SMETER. KEY_UP-1. key_state: %d, key_hold: %d\n",
+                            //       line_number++, key_state, key_hold);
+                        }
+                        break;
+                    case KEY_DOWN:
+                        key_hold = KEY_HOLD_COUNT;
+                        //print_time(0);
+                        //fprintf(G_fp_logfile, "[%d] Gui_get_parm. CMD_GET_SET_SMETER. KEY_DOWN. key_state: %d, key_hold: %d\n",
+                        //        line_number++, key_state, key_hold);
+                        break;
+                }
+            } else {
+                //print_time(0);
+                //fprintf(G_fp_logfile, "[%d] Gui_get_parm. CMD_GET_SET_SMETER. Gui_send_param. smeter %d\n", line_number++, smeter);
+                Gui_send_param(CMD_GET_SET_SMETER, smeter);
+            }
+            break;
+
+        case CMD_GET_SET_PANADAPTER:
+            if (count++ < 10) {
+                print_time(0);
+                fprintf(G_fp_logfile, "[%d] Gui_get_parm. CMD_GET_SET_PANADAPTER. Receive Count: %d, Sequence %d\n", line_number++, recv_len,
+                    t_opcode_data);
+            }
+            if (G_spectrum_cycle_count <= 0) {
+                if (sendto(gui_s, buffer, recv_len, 0, (struct sockaddr*)&si_gui, slen) == SOCKET_ERROR) {
+                    print_time(0);
+                    fprintf(G_fp_logfile, "[%d] Gui_get_parm. CMD_GET_SET_PANADAPTER. Sendto spectrum_s . FAILED with error code : %s\n",
+                        line_number++, strerror(errno));
+                }
+            }
+            else {
+                G_spectrum_cycle_count--;
+            }
+
+            //if (sendto(waterfall_s, buffer, recv_len, 0, (struct sockaddr *) &si_waterfall, slen) == SOCKET_ERROR) {
+            //    print_time(0);
+            //    fprintf(G_fp_logfile, "[%d] Gui_get_parm. Sendto waterfall_s . FAILED with error code : %s\n",
+            //            line_number++, strerror(errno));
+            //}
+            //print_time(0);
+            //fprintf(G_fp_logfile, "[%d] Gui_get_parm. CMD_GET_SET_PANADAPTER. Receive Count: %d, Sequence %d\n", line_number++, recv_len,
+            //    t_opcode_data);
+            break;
+
+        case CMD_GET_SET_MSSDR_STATUS:
+            print_time(1);
+            fprintf(G_fp_logfile, "[%d] Gui_get_parm. CMD_GET_SET_MSSDR_STATUS. %d \n", line_number++, t_opcode_data);
+            print_time(0);
+            fprintf(G_fp_logfile, "[%d] Gui_get_parm. CMD_GET_SET_MSSDR_STATUS. Calling Gui_send_param with param: %d \n", line_number++, 1);
+            Gui_send_param(CMD_GET_SET_MSSDR_STATUS, 1);
+            break;
+
+        case CMD_GET_SET_LAST_USED_BAND:
+            band = s_opcode_data;
+            print_time(1);
+            fprintf(G_fp_logfile, "[%d] Gui_get_parm. CMD_GET_SET_LAST_USED_BAND. Calling Send_last_used with band: %d \n",
+                    line_number++, band);
+            switch (G_vfo) {
+                case VFO_A:
+                    Gui_send_param(CMD_SET_VFO, VFO_A);
+                    Sleep(100);
+                    Send_last_used_VFO_A(band, 0);
+                    break;
+                case VFO_B:
+                    Gui_send_param(CMD_SET_VFO, VFO_B);
+                    Sleep(100);
+                    Send_last_used_VFO_B(band, 0);
+                    break;
+            }
+            break;
+
+        case CMD_GET_SET_LAST_USED_MODE:
+            band = s_opcode_data;
+            print_time(1);
+            fprintf(G_fp_logfile, "[%d] Gui_get_parm. CMD_GET_SET_LAST_USED_MODE. Calling Send_last_used with band: %d \n",
+                    line_number++, band);
+            switch (G_vfo) {
+                case VFO_A:
+                    Gui_send_param(CMD_SET_VFO, VFO_A);
+                    Sleep(100);
+                    Send_last_used_VFO_A(band, 0);
+                    break;
+                case VFO_B:
+                    Gui_send_param(CMD_SET_VFO, VFO_B);
+                    Sleep(100);
+                    Send_last_used_VFO_B(band, 0);
+                    break;
+            }
+            break;
+
+        case CMD_GET_BAND_INIT:
+            if (G_network_initialized) {
+                print_time(1);
+                fprintf(G_fp_logfile, "[%d] Gui_get_param. CMD_GET_BAND_INIT. Calling Gui_send_param with param %d\n",
+                        line_number++, G_band_normal);
+                Gui_send_param(CMD_GET_BAND_INIT, G_band_normal);
+            }
+            break;
+
+        case CMD_GET_MODE_INIT:
+            if (G_network_initialized) {
+                print_time(1);
+                fprintf(G_fp_logfile, "[%d] Gui_get_param. CMD_GET_MODE_INIT. Calling Gui_send_param with param %c\n",
+                        line_number++, G_mode);
+                Gui_send_param(CMD_GET_MODE_INIT, G_mode);
+            }
+            break;
+
+        case CMD_GET_HDSDR_STATUS:
+            if (!G_Hw_Started) {
+                status = Gui_send_param(CMD_SET_HDSDR_STATUS, HDSDR_STATUS_STOP_MODE);
+            } else {
+                status = Gui_send_param(CMD_SET_HDSDR_STATUS, 0);
+            }
+            break;
+
+        case CMD_GET_FREQ_INIT:
+            print_time(1);
+            fprintf(G_fp_logfile, "[%d] Gui_get_param. CMD_GET_FREQ_INIT. Called\n", line_number++);
+            Gui_send_param(CMD_GET_FREQ_INIT, G_tune_freq);
+            print_time(0);
+            fprintf(G_fp_logfile, "[%d] Gui_get_param. CMD_GET_FREQ_INIT. Finished\n", line_number++);
+            break;
+
+
+        default:
+            print_time(0);
+            fprintf(G_fp_logfile, "[%d] Gui_get_param. Unknown Opcode received. Opcode : %d (hex: %X)\n",
+                    line_number++, op_code, op_code);
+            break;
+    }
+}
+
+int Radio_send_parameters(int command, int cmd_value, int print) {
+    int status = 0;
+    int retry_count = 4;
+    int size = 0;
+    int failed = FALSE;
+    static int keyer_mem_seq = 0;
+    unsigned char keyer_mem_pkt[4];
+
+    G_Transceiver_Busy = TRUE;
+    size = sizeof (cmd_value);
+
+    print_time(0);
+    fprintf(G_fp_logfile, "[%d] Radio_send_parameters called. Opcode: 0x%X, Value: %d, Size: %d\n", LINE_COUNT,
+            command, cmd_value, size);
+    print_time(0);
+    fprintf(G_fp_logfile, "[%d] Radio_send_parameters. Calling usbControlMsgOUT\n", LINE_COUNT);
+
+    while (retry_count-- > 0) {
+        if (command == CMD_SET_KEYER_MEMORY) {
+            /* 2-byte payload: param + rolling seq (Proficio E_keyer_mem_pkt[2]) */
+            keyer_mem_seq++;
+            if (keyer_mem_seq <= 0 || keyer_mem_seq > 255)
+                keyer_mem_seq = 1;
+            keyer_mem_pkt[0] = (unsigned char)(cmd_value & 0xFF);
+            keyer_mem_pkt[1] = (unsigned char)keyer_mem_seq;
+            keyer_mem_pkt[2] = 0;
+            keyer_mem_pkt[3] = 0;
+            status = usbControlMsgOUT(command, 0x0700 + 27, 0, (char *)keyer_mem_pkt, 2);
+            if (status == 2)
+                break;
+        } else {
+            status = usbControlMsgOUT(command, 0x0700 + 27, 0, (char *)(&cmd_value), size);
+            if (status == size)
+                break;
+        }
+        Sleep(50);
+    }
+    if (command == CMD_SET_KEYER_MEMORY) {
+        if (status != 2) {
+            print_time(0);
+            fprintf(G_fp_logfile, "[%d] Radio_send_parameters. KEYER_MEMORY FAILED status: %d\n",
+                    line_number++, status);
+            failed = TRUE;
+        } else {
+            /* Pace USB → Proficio so I2C can drain (one 0x9C pair at a time) */
+            Sleep(KEYER_MEM_USB_GAP_MS);
+            /* EEPROM commit needs a beat before PLAY (or next store) */
+            if ((cmd_value & 0xFF) == KEYER_MEM_STORE_END)
+                Sleep(KEYER_MEM_END_SETTLE_MS);
+        }
+    } else if (status != size) {
+        print_time(0);
+        fprintf(G_fp_logfile, "[%d] Radio_send_parameters. usbControlMsgOUT FAILED. Status: %d \n",
+                line_number++, status);
+        failed = TRUE;
+    }
+    if (failed) {
+        if (command != CMD_SET_KEYER_MEMORY)
+            Stop_all(0, STOP_PROFICIO_COMMS);
+    } else if (print == 0) {
+        print_time(0);
+        fprintf(G_fp_logfile, "[%d] Radio_send_parameters. Status: %d, Size: %d FINISHED\n",
+                LINE_COUNT, status, size);
+    }
+    G_Transceiver_Busy = FALSE;
+    return status;
+}
+
+/*
+ * Keyer CQ memory helpers (CMD_SET_KEYER_MEMORY 0x9C).
+ * Each call → one USB vendor OUT [param,seq]; pacing is in Radio_send_parameters.
+ * Returns 0 on success, -1 on failure / keyer not installed.
+ */
+int Keyer_Memory_Param(int param)
+{
+    int status;
+
+    if (!G_proficio_mkii || cw_record.keyer_Installed != 1)
+        return -1;
+    status = Radio_send_parameters(CMD_SET_KEYER_MEMORY, param & 0xFF, 1);
+    return (status == 2) ? 0 : -1;
+}
+
+int Keyer_Memory_Select(int slot)
+{
+    if (slot < 0)
+        slot = 0;
+    if (slot > 3)
+        slot = 3;
+    print_time(0);
+    fprintf(G_fp_logfile, "[%d] Keyer_Memory_Select slot=%d\n", line_number++, slot);
+    if (Keyer_Memory_Param(KEYER_MEM_SELECT) != 0)
+        return -1;
+    return Keyer_Memory_Param(slot);
+}
+
+int Keyer_Memory_Play(void)
+{
+    print_time(0);
+    fprintf(G_fp_logfile, "[%d] Keyer_Memory_Play\n", line_number++);
+    return Keyer_Memory_Param(KEYER_MEM_PLAY);
+}
+
+/*
+ * Select slot, store begin, append printable ASCII (max 48), store end.
+ * text may be NULL (empty message). Skips non-printable bytes.
+ */
+int Keyer_Memory_Store(int slot, const char *text)
+{
+    int n = 0;
+    int i;
+    unsigned char c;
+
+    if (cw_record.keyer_Installed != 1)
+        return -1;
+    if (text == NULL)
+        text = "";
+
+    print_time(0);
+    fprintf(G_fp_logfile, "[%d] Keyer_Memory_Store slot=%d text=\"%.48s\"\n",
+            line_number++, slot, text);
+
+    if (Keyer_Memory_Select(slot) != 0)
+        return -1;
+    if (Keyer_Memory_Param(KEYER_MEM_STORE_BEGIN) != 0)
+        return -1;
+
+    for (i = 0; text[i] != '\0' && n < KEYER_MEM_MAX_CHARS; i++) {
+        c = (unsigned char)text[i];
+        if (c < 0x20 || c > 0x7E)
+            continue;
+        if (Keyer_Memory_Param((int)c) != 0)
+            return -1;
+        n++;
+    }
+
+    if (Keyer_Memory_Param(KEYER_MEM_STORE_END) != 0)
+        return -1;
+
+    print_time(0);
+    fprintf(G_fp_logfile, "[%d] Keyer_Memory_Store done chars=%d\n", line_number++, n);
+    return 0;
+}
+
+void Get_Version_Month() {
+    if (strstr(Version.date, "Jan") != NULL) Version.month = 1 * 100;
+    if (strstr(Version.date, "Feb") != NULL) Version.month = 2 * 100;
+    if (strstr(Version.date, "Mar") != NULL) Version.month = 3 * 100;
+    if (strstr(Version.date, "Apr") != NULL) Version.month = 4 * 100;
+    if (strstr(Version.date, "May") != NULL) Version.month = 5 * 100;
+    if (strstr(Version.date, "Jun") != NULL) Version.month = 6 * 100;
+    if (strstr(Version.date, "Jul") != NULL) Version.month = 7 * 100;
+    if (strstr(Version.date, "Aug") != NULL) Version.month = 8 * 100;
+    if (strstr(Version.date, "Sep") != NULL) Version.month = 9 * 100;
+    if (strstr(Version.date, "Oct") != NULL) Version.month = 110;
+    if (strstr(Version.date, "Nov") != NULL) Version.month = 120;
+    if (strstr(Version.date, "Dec") != NULL) Version.month = 130;
+
+}
+
+uint8_t Extended_command(char *receive_buffer) {
+    uint8_t opcode = 0;
+    uint8_t t_opcode_data;
+    //short int *opcode_data;
+    //short int s_opcode_data;
+    int *op_code_data_32;
+    int i_opcode_data;
+
+    opcode = receive_buffer[1];
+    t_opcode_data = (uint8_t) (receive_buffer[2]);
+    op_code_data_32 = (int*) &receive_buffer[2];
+    memcpy(&i_opcode_data, op_code_data_32, sizeof (int));
+    switch (opcode) {
+        case CMD_SET_RIT_STEP:
+            G_Rit_Step = t_opcode_data;
+            print_time(0);
+            fprintf(G_fp_logfile, "[%d] Extended_command . CMD_SET_RIT_STEP Opcode: %X, Data: %d\n",
+                    line_number++, opcode, t_opcode_data);
+            break;
+        case CMD_SET_WATERFALL_DIRECTION:
+            User_Controls_Process(opcode, &t_opcode_data, TRUE);
+            print_time(0);
+            fprintf(G_fp_logfile, "[%d] Extended_command . CMD_SET_WATERFALL_DIRECTION Opcode: %X, Data: %d\n",
+                    line_number++, opcode, t_opcode_data);
+            break;
+        case CMD_SET_WATERFALL_DISPLAY:
+            User_Controls_Process(opcode, &t_opcode_data, TRUE);
+            print_time(0);
+            fprintf(G_fp_logfile, "[%d] Extended_command . CMD_SET_WATERFALL_DISPLAY Opcode: %X, Data: %d\n",
+                    line_number++, opcode, t_opcode_data);
+            break;
+        case CMD_SET_WATERFALL_GRID:
+            User_Controls_Process(opcode, &t_opcode_data, TRUE);
+            print_time(0);
+            fprintf(G_fp_logfile, "[%d] Extended_command . CMD_SET_WATERFALL_GRID Opcode: %X, Data: %d\n",
+                    line_number++, opcode, t_opcode_data);
+            break;
+        case CMD_SET_WATERFALL_PALET:
+            User_Controls_Process(opcode, &t_opcode_data, TRUE);
+            print_time(0);
+            fprintf(G_fp_logfile, "[%d] Extended_command . CMD_SET_WATERFALL_PALET Opcode: %X, Data: %d\n",
+                    line_number++, opcode, t_opcode_data);
+            break;
+        case CMD_SET_WATERFALL_GAIN:
+            print_time(0);
+            fprintf(G_fp_logfile, "[%d] Extended_command . CMD_SET_WATERFALL_GAIN Opcode: %X, Data: %d\n",
+                    line_number++, opcode, i_opcode_data);
+            User_Controls_Process(opcode, (char *) &i_opcode_data, TRUE);
+            break;
+        case CMD_SET_WATERFALL_ZERO:
+            User_Controls_Process(opcode, (char *) &i_opcode_data, TRUE);
+            print_time(0);
+            fprintf(G_fp_logfile, "[%d] Extended_command . CMD_SET_WATERFALL_ZERO Opcode: %X, Data: %d\n",
+                    line_number++, opcode, i_opcode_data);
+            break;
+        case CMD_SET_WATERFALL_SPEED:
+            User_Controls_Process(opcode, (char *) &i_opcode_data, TRUE);
+            print_time(0);
+            fprintf(G_fp_logfile, "[%d] Extended_command . CMD_SET_WATERFALL_SPEED Opcode: %X, Data: %d\n",
+                    line_number++, opcode, i_opcode_data);
+            break;
+        case CMD_SET_ANTENNA_SWITCH:
+            G_Antenna_Switch = t_opcode_data;
+            print_time(0);
+            fprintf(G_fp_logfile, "[%d] Extended_command . CMD_SET_ANTENNA_SWITCH Opcode: %X, Data: %d\n",
+                    line_number++, opcode, t_opcode_data);
+            break;
+        case CMD_SET_IQBD_MONITOR:
+            //IQ_calibration(opcode, &t_opcode_data);
+            print_time(0);
+            fprintf(G_fp_logfile, "[%d] Extended_command . CMD_SET_IQBD_MONITOR Opcode: %X, Data: %d\n",
+                    line_number++, opcode, t_opcode_data);
+            break;
+        case CMD_MFC_AUTO_ZERO:
+            //G_Auto_zero = t_opcode_data;
+            print_time(0);
+            fprintf(G_fp_logfile, "[%d] Extended_command . CMD_MFC_AUTO_ZERO Opcode: %X, Data: %d\n",
+                    line_number++, opcode, t_opcode_data);
+            break;
+        case CMD_MFC_SET_ZERO:
+            //G_Freq_digit = t_opcode_data;
+            print_time(0);
+            fprintf(G_fp_logfile, "[%d] Extended_command . CMD_MFC_SET_ZERO Opcode: %X, Data: %d\n",
+                    line_number++, opcode, t_opcode_data);
+            break;
+        case CMD_SET_KNOB_SWITCH:
+            //Process_MFC_Controls(opcode, (char *) &t_opcode_data);
+            print_time(0);
+            fprintf(G_fp_logfile, "[%d] Extended_command . CMD_SET_KNOB_SWITCH Opcode: %X, Data: %d\n",
+                    line_number++, opcode, t_opcode_data);
+            break;
+        case CMD_SET_LEFT_SWITCH:
+            //Process_MFC_Controls(opcode, (char *) &t_opcode_data);
+            print_time(0);
+            fprintf(G_fp_logfile, "[%d] Extended_command . CMD_SET_LEFT_SWITCH Opcode: %X, Data: %d\n",
+                    line_number++, opcode, t_opcode_data);
+            break;
+        case CMD_SET_MIDDLE_SWITCH:
+            //Process_MFC_Controls(opcode, (char *) &t_opcode_data);
+            print_time(0);
+            fprintf(G_fp_logfile, "[%d] Extended_command . CMD_SET_MIDDLE_SWITCH Opcode: %X, Data: %d\n",
+                    line_number++, opcode, t_opcode_data);
+            break;
+        case CMD_SET_RIGHT_SWITCH:
+            //Process_MFC_Controls(opcode, (char *) &t_opcode_data);
+            print_time(0);
+            fprintf(G_fp_logfile, "[%d] Extended_command . CMD_SET_RIGHT_SWITCH Opcode: %X, Data: %d\n",
+                    line_number++, opcode, t_opcode_data);
+            break;
+        case CMD_SET_PTT_SWITCH:
+            //Process_MFC_Controls(opcode, (char *) &t_opcode_data);
+            print_time(0);
+            fprintf(G_fp_logfile, "[%d] Extended_command . CMD_SET_PTT_SWITCH Opcode: %X, Data: %d\n",
+                    line_number++, opcode, t_opcode_data);
+            break;
+        case CMD_SET_METER_HOLD:
+            //G_Meter_hold = t_opcode_data;
+            print_time(0);
+            fprintf(G_fp_logfile, "[%d] Extended_command . CMD_SET_METER_HOLD Opcode: %X, Data: %d\n",
+                    line_number++, opcode, t_opcode_data);
+
+            break;
+        default:
+            print_time(0);
+            fprintf(G_fp_logfile, "[%d] Extended_command . Invalid Extended Opcode: %X , Value: %d\n", line_number++,
+                    opcode, t_opcode_data);
+    }
+    return opcode;
+}
+
+/*void Manage_Configuration_Command(uint8_t op_code_data) {
+    int ret = 0;
+    char buf[PATH_MAX];
+    int status = 0;
+
+    
+    strcpy(buf, "test");
+    switch (op_code_data) {
+        case DIGITAL_AUDIO:
+            SDRcore_recv_send_param(CMD_SET_CONFIGURATION_COMMAND, op_code_data);
+            SDRcore_trans_send_param(CMD_SET_CONFIGURATION_COMMAND, op_code_data);
+            print_time(0);
+            fprintf(G_fp_logfile, "[%d] Manage_Configuration_Command . DIGITAL_AUDIO . ret: %d, error: %s\n",
+                    line_number++, ret, buf);
+            break;
+        case AUTO_START_ON:
+            print_time(0);
+            fprintf(G_fp_logfile, "[%d] Manage_Configuration_Command . AUTO_START_ON . ret: %d, error: %s\n",
+                    line_number++, ret, buf);
+            break;
+        case AUTO_START_OFF:
+            print_time(0);
+            fprintf(G_fp_logfile, "[%d] Manage_Configuration_Command . AUTO_START_OFF . ret: %d, error: %s\n",
+                    line_number++, ret, buf);
+            break;
+        case OPERATOR_AUDIO:
+            SDRcore_recv_send_param(CMD_SET_CONFIGURATION_COMMAND, op_code_data);
+            SDRcore_trans_send_param(CMD_SET_CONFIGURATION_COMMAND, op_code_data);
+            print_time(0);
+            fprintf(G_fp_logfile, "[%d] Manage_Configuration_Command . OPERATOR_AUDIO . ret: %d, error: %s\n",
+                    line_number++, ret, buf);
+            break;
+        case KEYBOARD_DISPLAY:
+            print_time(0);
+            fprintf(G_fp_logfile, "[%d] Manage_Configuration_Command . KEYBOARD_DISPLAY . ret: %d, error: %s\n",
+                    line_number++, ret, buf);
+            break;
+        case KEYBOARD_DISPLAY_NUMPAD:
+            print_time(0);
+            fprintf(G_fp_logfile, "[%d] Manage_Configuration_Command . KEYBOARD_DISPLAY_NUMPAD . ret: %d, error: %s\n",
+                    line_number++, ret, buf);
+            break;
+        case KEYBOARD_STOP:
+            print_time(0);
+            fprintf(G_fp_logfile, "[%d] Manage_Configuration_Command . KEYBOARD_STOP . ret: %d, error: %s\n",
+                    line_number++, ret, buf);
+            break;
+        default:
+            print_time(0);
+            fprintf(G_fp_logfile, "[%d] Manage_Configuration_Command . UNKNOWN COMMAND: op_code: %d\n",
+                    line_number++, op_code_data);
+    }
+}*/
+
+int Intialize_GUI_Last_Used_VFO_B() {
+    int status = 0;
+
+    Gui_send_param(CMD_SET_VFO, VFO_B);
+    Sleep(10);
+    Send_last_used_VFO_B(160, 0);
+    Sleep(10);
+    Send_last_used_VFO_B(80, 0);
+    Sleep(10);
+    Send_last_used_VFO_B(60, 0);
+    Sleep(10);
+    Send_last_used_VFO_B(40, 0);
+    Sleep(10);
+    Send_last_used_VFO_B(30, 0);
+    Sleep(10);
+    Send_last_used_VFO_B(20, 0);
+    Sleep(10);
+    Send_last_used_VFO_B(17, 0);
+    Sleep(10);
+    Send_last_used_VFO_B(15, 0);
+    Sleep(10);
+    Send_last_used_VFO_B(12, 0);
+    Sleep(10);
+    Send_last_used_VFO_B(10, 0);
+    Sleep(10);
+    Send_last_used_VFO_B(2200, 0);
+    Sleep(10);
+    Send_last_used_VFO_B(630, 0);
+    Sleep(10);
+    Gui_send_param(CMD_SET_VFO, G_current_vfo);
+    return status;
+}
+
+int Intialize_GUI_Last_Used_VFO_A() {
+    int status = 0;
+
+    Gui_send_param(CMD_SET_VFO, VFO_A);
+    Sleep(10);
+    Send_last_used_VFO_A(160, 0);
+    Sleep(10);
+    Send_last_used_VFO_A(80, 0);
+    Sleep(10);
+    Send_last_used_VFO_A(60, 0);
+    Sleep(10);
+    Send_last_used_VFO_A(40, 0);
+    Sleep(10);
+    Send_last_used_VFO_A(30, 0);
+    Sleep(10);
+    Send_last_used_VFO_A(20, 0);
+    Sleep(10);
+    Send_last_used_VFO_A(17, 0);
+    Sleep(10);
+    Send_last_used_VFO_A(15, 0);
+    Sleep(10);
+    Send_last_used_VFO_A(12, 0);
+    Sleep(10);
+    Send_last_used_VFO_A(10, 0);
+    Sleep(10);
+    Send_last_used_VFO_A(2200, 0);
+    Sleep(10);
+    Send_last_used_VFO_A(630, 0);
+    Sleep(10);
+    Gui_send_param(CMD_SET_VFO, G_current_vfo);
+    return status;
+}
+
+void * Command_Processor(void *my_param) {
+    int count = 0;
+    uint8_t opcode;
+    uint8_t t_opcode_data;
+    short int *opcode_data;
+    short int s_opcode_data;
+    int *op_code_data_32 = 0;
+    int i_opcode_data;
+    int ret_status = 0;
+    char mode = 'w';
+    uint8_t iq_mode = 0;
+    uint8_t mia_status = 0;
+    int r = 0;
+    struct hostent *host_name;
+    struct in_addr **ipaddress;
+    int i = 0;
+    char gui_ip[80] = {0};
+    char message[MAX_PATH] = { 0 };
+    byte server_keep_alive_count = 0;
+    WSADATA dll_wsa;
+
+    Sleep(3);
+    ///////////////////////////////////////////////////////////////////////////////////
+    // Set up the ms-sdr port for receiving UDP packets from any IP address
+    print_time(0);
+    fprintf(G_fp_logfile, "[%d] CW_Command_Interface . Started\n", line_number++);
+    if (WSAStartup(MAKEWORD(2, 2), &dll_wsa) != NO_ERROR)
+    {
+        print_time(0);
+        fprintf(G_fp_logfile, "[%d] Setup_UDP -> Initializing Winsock: Failed. Error Code : %d\n", line_number++, WSAGetLastError());
+        Stop_all(0, 0);
+    }
+    if ((dll_s = socket(AF_INET, SOCK_DGRAM, IPPROTO_UDP)) == INVALID_SOCKET) {
+        print_time(0);
+        fprintf(G_fp_logfile, "[%d] Command_Interface. ms-sdr Create Socket: Failed. Error Code : %s\n", line_number++, strerror(errno));
+        Stop_all(0, 0);
+    } else {
+        print_time(0);
+        fprintf(G_fp_logfile, "[%d] Command_Interface. ms-sdr Socket Created\n", line_number++);
+    }
+    if (G_ms_sdr_port == 0) {
+        print_time(0);
+        fprintf(G_fp_logfile, "[%d] Command_Interface. ms-sdr Server Port. Using default: %d\n", line_number++, MS_SDR_PORT);
+        G_ms_sdr_port = MS_SDR_PORT;
+    }
+    memset((char *) &si_me, 0, sizeof (si_me));
+    si_me.sin_family = AF_INET;
+    si_me.sin_port = htons(G_ms_sdr_port);
+    si_me.sin_addr.s_addr = htonl(INADDR_ANY);
+    if (bind(dll_s, (struct sockaddr*) &si_me, sizeof (si_me)) != 0) {
+        print_time(0);
+        fprintf(G_fp_logfile, "[%d] Command_Interface. Server Bind Failed. Error Code : %s\n", line_number++, strerror(errno));
+        Stop_all(0, STOP_NETWORK_FAILED);
+    }
+
+    ///////////////////////////////////////////////////////////////////////////////////
+    //Set up the Remote Client UDP connection configuration
+    if (G_gui_port == 0) {
+        print_time(0);
+        fprintf(G_fp_logfile, "[%d] Command_Interface. Invalid ClientPort. Using default: %d\n", line_number++, MSCC_PORT);
+        G_gui_port = MSCC_PORT;
+    }
+    if ((gui_s = socket(AF_INET, SOCK_DGRAM , IPPROTO_UDP)) == INVALID_SOCKET) {
+        print_time(0);
+        fprintf(G_fp_logfile, "[%d] Command_Interface. Remote Client Socket: Failed. Error Code : %s\n", line_number++, strerror(errno));
+        Stop_all(0, STOP_NETWORK_FAILED);
+    } else {
+        print_time(0);
+        fprintf(G_fp_logfile, "[%d] Command_Interface. Remote Client Socket Created\n", line_number++);
+    }
+    /* Client address from mscc.ini MSCC_IP=... (see initialize_mscc).
+     * Empty / unresolvable → 127.0.0.1 for local Windows client + WSL. */
+    if (G_Client_Host_Name[0] == '\0') {
+        strcpy(G_Client_Host_Name, "127.0.0.1");
+        print_time(0);
+        fprintf(G_fp_logfile, "[%d] Command_Interface. MSCC_IP empty — defaulting to 127.0.0.1\n",
+            line_number++);
+    }
+    gui_ip[0] = '\0';
+    /* Numeric IP: skip DNS */
+    if (inet_addr(G_Client_Host_Name) != INADDR_NONE) {
+        strncpy(gui_ip, G_Client_Host_Name, sizeof(gui_ip) - 1);
+    } else {
+        host_name = gethostbyname(G_Client_Host_Name);
+        if (host_name != NULL) {
+            ipaddress = (struct in_addr **) host_name->h_addr_list;
+            if (ipaddress[0] != NULL) {
+                strncpy(gui_ip, inet_ntoa(*ipaddress[0]), sizeof(gui_ip) - 1);
+            }
+        }
+    }
+    if (gui_ip[0] == '\0') {
+        print_time(0);
+        fprintf(G_fp_logfile, "[%d] Command_Interface. Client Host FAILED: NOT FOUND: Name: %s — using 127.0.0.1\n",
+            line_number++, G_Client_Host_Name);
+        strcpy(gui_ip, "127.0.0.1");
+        strcpy(G_Client_Host_Name, "127.0.0.1");
+    }
+    print_time(0);
+    fprintf(G_fp_logfile, "[%d] Command_Interface. Client IP Address: Name: %s, IP: %s\n", line_number++, G_Client_Host_Name,
+            gui_ip);
+    G_Remote_GUI_Attached = TRUE;
+    memset((char *) &si_gui, 0, sizeof (si_gui));
+    si_gui.sin_family = AF_INET;
+    si_gui.sin_port = htons(G_gui_port);
+    si_gui.sin_addr.s_addr = inet_addr(gui_ip);
+
+    ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+    //Set up the SDRcore_recv connection configuration
+    if ((sdrcore_s_recv = socket(AF_INET, SOCK_DGRAM ,IPPROTO_UDP)) == INVALID_SOCKET) {
+        print_time(0);
+        fprintf(G_fp_logfile, "[%d] Command_Interface. SDRcore-recv Create Socket: Failed. Error Code : %s\n", line_number++, strerror(errno));
+        Stop_all(0, STOP_NETWORK_FAILED);
+        pthread_exit(NULL);
+    } else {
+        print_time(0);
+        fprintf(G_fp_logfile, "[%d] Command_Interface. SDRcore-recv Socket Created\n", line_number++);
+    }
+    if (G_sdrcore_recv_port == 0) {
+        print_time(0);
+        fprintf(G_fp_logfile, "[%d] Command_Interface. Invalid SDRcore Port. Using default: %d\n", line_number++, SDRCORE_RECV_PORT);
+        G_sdrcore_recv_port = SDRCORE_RECV_PORT;
+    }
+    memset((char *) &si_sdrcore_recv, 0, sizeof (si_sdrcore_recv));
+    si_sdrcore_recv.sin_family = AF_INET;
+    si_sdrcore_recv.sin_port = htons(G_sdrcore_recv_port);
+    si_sdrcore_recv.sin_addr.s_addr = inet_addr("127.0.0.1");
+
+
+    //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+    //Set up the SDRcore-trans connection configuration
+    if ((sdrcore_s_trans = socket(AF_INET, SOCK_DGRAM , IPPROTO_UDP)) == INVALID_SOCKET) {
+        print_time(0);
+        fprintf(G_fp_logfile, "[%d] Command_Interface. SDRcore-trans Create Socket: Failed. Error Code : %s\n", line_number++, strerror(errno));
+        Stop_all(0, STOP_NETWORK_FAILED);
+    } else {
+        print_time(0);
+        fprintf(G_fp_logfile, "[%d] Command_Interface. SDRcore-trans Socket Created\n", line_number++);
+    }
+    if (G_sdrcore_trans_port == 0) {
+        print_time(0);
+        fprintf(G_fp_logfile, "[%d] Command_Interface. Invalid SDRcore Port. Using default: %d\n",
+                line_number++, SDRCORE_TRANS_PORT);
+        G_sdrcore_trans_port = SDRCORE_TRANS_PORT;
+    }
+    memset((char *) &si_sdrcore_trans, 0, sizeof (si_sdrcore_trans));
+    si_sdrcore_trans.sin_family = AF_INET;
+    si_sdrcore_trans.sin_port = htons(G_sdrcore_trans_port);
+    si_sdrcore_trans.sin_addr.s_addr = inet_addr("127.0.0.1");
+
+    //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+    //Set up the Spectrum  connection configuration
+    if ((spectrum_s = socket(AF_INET, SOCK_DGRAM , IPPROTO_UDP)) == INVALID_SOCKET) {
+        print_time(0);
+        fprintf(G_fp_logfile, "[%d] Command_Interface. spectrum_s Create Socket: Failed. Error Code : %s\n", line_number++, strerror(errno));
+        Stop_all(0, STOP_NETWORK_FAILED);
+    } else {
+        print_time(0);
+        fprintf(G_fp_logfile, "[%d] Command_Interface. spectrum_s Socket Created\n", line_number++);
+    }
+    if (G_spectrum_port == 0) {
+        print_time(0);
+        fprintf(G_fp_logfile, "[%d] Command_Interface. Invalid G_spectrum_port. Using default: %d\n",
+                line_number++, SPECTRUM_PORT);
+        G_spectrum_port = SPECTRUM_PORT;
+    }
+    memset((char *) &si_spectrum, 0, sizeof (si_spectrum));
+    si_spectrum.sin_family = AF_INET;
+    si_spectrum.sin_port = htons(G_spectrum_port);
+    si_spectrum.sin_addr.s_addr = inet_addr("127.0.0.1");
+
+    //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+    //Set up the Waterfall  connection configuration
+    if ((waterfall_s = socket(AF_INET, SOCK_DGRAM , IPPROTO_UDP)) == INVALID_SOCKET) {
+        print_time(0);
+        fprintf(G_fp_logfile, "[%d] Command_Interface. waterfall_s Create Socket: Failed. Error Code : %s\n", line_number++, strerror(errno));
+        Stop_all(0, STOP_NETWORK_FAILED);
+    } else {
+        print_time(0);
+        fprintf(G_fp_logfile, "[%d] Command_Interface. waterfall_s Socket Created\n", line_number++);
+    }
+    if (G_waterfall_port == 0) {
+        print_time(0);
+        fprintf(G_fp_logfile, "[%d] Command_Interface. Invalid G_waterfall_port. Using default: %d\n",
+                line_number++, WATERFALL_PORT);
+        G_waterfall_port = WATERFALL_PORT;
+    }
+    memset((char *) &si_waterfall, 0, sizeof (si_waterfall));
+    si_waterfall.sin_family = AF_INET;
+    si_waterfall.sin_port = htons(G_waterfall_port);
+    si_waterfall.sin_addr.s_addr = inet_addr("127.0.0.1");
+    print_time(0);
+    fprintf(G_fp_logfile, "[%d] Command_Interface. Network Interface Setup FINISHED\n", line_number++);
+
+    strcpy(Version.date, COMPILE_DATE);
+    strcpy(Version.year, &Version.date[7]);
+    Version.Major = atoi(Version.year);
+    Version.Major = (Version.Major - 2000) + 100;
+    strncpy(Version.day, &Version.date[4], 2);
+    Version.day_number = atoi(Version.day);
+    Version.month = 0;
+    Get_Version_Month();
+    Version.Minor = Version.month + Version.day_number;
+    print_time(0);
+    fprintf(G_fp_logfile, "[%d] Command_Interface. Version Date: %s, string year: %s, month: %d, Major: %d Minor: %d \n",
+            line_number++, Version.date, Version.year, Version.month, Version.Major, Version.Minor);
+    G_network_initialized = TRUE;
+    Sleep(50);
+    SDRcore_trans_send_param(CMD_SET_PCB_VERSION, G_pcb_version);
+    Sleep(50);
+    SDRcore_recv_send_param(CMD_SET_PCB_VERSION, G_pcb_version);
+    Sleep(50);
+    //SDRcore_recv_send_param(CMD_SET_SPEAKER_VOLUME, 0);
+    //Sleep(50);
+    //SDRcore_trans_send_param(CMD_SET_MIC_VOLUME, 0);
+    //Sleep(50);
+    // Listening for data
+    while (G_all_threads_run) {
+        //try to receive some data, this is a blocking call
+        memset(G_receive_buf, 0, sizeof (G_receive_buf));
+        if ((recv_len = recvfrom(dll_s, G_receive_buf, BUFLEN, 0, (struct sockaddr *) &si_other, &slen)) == SOCKET_ERROR) {
+            print_time(0);
+            fprintf(G_fp_logfile, "[%d] Command_Interface . recvfrom Failed. Error Code : %s\n", line_number++, strerror(errno));
+            fflush(G_fp_logfile);
+            Stop_all(0, 0);
+        }
+        opcode = (uint8_t) G_receive_buf[0];
+        t_opcode_data = (uint8_t) (G_receive_buf[1]);
+        opcode_data = (short int*) &G_receive_buf[1];
+        memcpy(&s_opcode_data, opcode_data, 2);
+        op_code_data_32 = (int *) &G_receive_buf[1];
+        memcpy(&i_opcode_data, op_code_data_32, 4);
+        switch (opcode) {
+        case CMD_CHECK_GUI_STATUS:
+            if (t_opcode_data == 1) {
+                /* Single-session lock: only one client may complete the handshake. */
+                if (G_client_session_active) {
+                    if (Session_Is_Owner(&si_other)) {
+                        /* Owner re-poll (e.g. reconnect while session still held): ack only. */
+                        print_time(0);
+                        fprintf(G_fp_logfile,
+                            "[%d] Command_Interface. CMD_CHECK_GUI_STATUS. Session owner re-ack\n",
+                            line_number++);
+                        Gui_send_param(CMD_GET_SET_MSSDR_STATUS, 1);
+                    } else {
+                        Session_Reject(&si_other);
+                    }
+                    break;
+                }
+
+                Session_Claim(&si_other);
+                print_time(1);
+                fprintf(G_fp_logfile, "[%d] Command_Interface. CMD_CHECK_GUI_STATUS. Session claimed. data: %d\n",
+                    line_number++, t_opcode_data);
+                print_time(0);
+                /* One packed word for client 0xB2 — set in srGetVersion (see G_firmware_version_packed) */
+                if (G_firmware_version_packed == 0 && (G_major_version || G_minor_version)) {
+                    G_firmware_version_packed =
+                        ((G_minor_version << 8) & 0xff00) | (G_major_version & 0x00ff);
+                }
+                fprintf(G_fp_logfile,
+                    "[%d] Command_Interface. CMD_GET_SET_FIRMWARE_VERSION: Major: %d, Minor: %d (packed 0x%04X)\n",
+                    line_number++, G_major_version, G_minor_version,
+                    (unsigned)G_firmware_version_packed);
+                Gui_send_param(CMD_GET_SET_FIRMWARE_VERSION, G_firmware_version_packed);
+                print_time(0);
+                fprintf(G_fp_logfile, "[%d] Command_Interface . CMD_GET_SET_MSSDR_VERSION: Major: %d, Minor: %d\n",
+                    line_number++, VERSION_MAJOR, VERSION_MINOR);
+                Gui_send_param(CMD_GET_SET_MSSDR_VERSION, VERSION_MS_SDRCORE);
+                r = usbControlMsgIN(CMD_GET_PPM_INT, 0xA55A, 0, (char*)&G_current_int, sizeof(G_current_int));
+                r = usbControlMsgIN(CMD_GET_PPM_DEC, 0xA55A, 0, (char*)&G_current_dec, sizeof(G_current_dec));
+                print_time(0);
+                fprintf(G_fp_logfile, "[%d] Command_Interface. CMD_GET_PPM. G_current_int: %d, G_current_dec: %d \n",
+                    line_number++, G_current_int, G_current_dec);
+                //Gui_send_param(CMD_GET_MIA_STATUS, 1);
+                Sleep(100);
+                Gui_send_param(CMD_GET_OPTIONS_STATUS, 1);
+                Sleep(100);
+                print_time(0);
+                fprintf(G_fp_logfile, "[%d] Command_Interface. CMD_SET_SOLIDUS_STATUS . G_Transceiver_type: %d \n",
+                    line_number++, G_Transceiver_type);
+                Gui_send_param_extended(CMD_SET_SOLIDUS_STATUS, &G_Transceiver_type, sizeof(G_Transceiver_type));
+                /*
+                 * Headless split: cores may already be live from Apply_Appliance_Startup().
+                 * On client connect: re-apply cores (sync) + GUI-only user_controls push.
+                 */
+                if (!G_appliance_startup_done) {
+                    Apply_Appliance_Startup();
+                } else {
+                    User_Controls_Apply_To_Cores();
+                }
+                User_Controls_Send_To_Gui();
+                /* cw.ini was loaded at startup; re-push keyer fields now that the client session exists */
+                Send_CW_params_to_gui();
+                /* Ensure freq/band globals match startup.ini for GUI display */
+                if (!G_appliance_startup_done || G_tune_freq == 0) {
+                    Get_Startup(&G_tune_freq, &G_mode);
+                    Set_band_normal(G_tune_freq, TRUE);
+                    if (G_band_normal == FREQ_OUT_OF_RANGE) {
+                        G_band_normal = 20;
+                    }
+                    freq_queue_add(G_tune_freq);
+                }
+                print_time(0);
+                fprintf(G_fp_logfile, "[%d] Command_Interface . Start Up Frequency: %ld Band: %d\n",
+                    line_number++, G_tune_freq, G_band_normal);
+                print_time(0);
+                fprintf(G_fp_logfile, "[%d] Command_Interface . CMD_GET_MIA_STATUS. r: %d ,mia_status: %d\n",
+                    line_number++, r, mia_status);
+                Sleep(100);
+                print_time(0);
+                fprintf(G_fp_logfile, "[%d] Command_Interface . Sending Start Up Band %d to GUI\n",
+                    line_number++, G_band_normal);
+                Gui_send_param(CMD_SET_BAND, G_band_normal);
+                Gui_send_param(CMD_SET_DISPLAY_FREQ, G_tune_freq);
+                Sleep(100);
+                Gui_send_param(CMD_GET_SET_MSSDR_STATUS, 1);
+                //Spectrum_Waterfall_send_param(CMD_GET_SET_MSSDR_STATUS, t_opcode_data);
+            }
+            else {
+                print_time(0);
+                fprintf(G_fp_logfile, "[%d] Command_Interface . CMD_GUI_RUNNING : MSCC Not Initialized %d\n",
+                    line_number++, t_opcode_data);
+            }
+            break;
+
+        case CMD_SET_X_POSITION:
+            //Spectrum_Waterfall_send_param(CMD_SET_X_POSITION, s_opcode_data);
+            print_time(0);
+            fprintf(G_fp_logfile, "[%d] Command_Interface. CMD_SET_X_POSITION. s_opcode_data: %d\n",
+                line_number++, s_opcode_data);
+            break;
+
+        case CMD_SET_Y_POSITION:
+            //Spectrum_Waterfall_send_param(CMD_SET_Y_POSITION, s_opcode_data);
+            print_time(0);
+            fprintf(G_fp_logfile, "[%d] Command_Interface. CMD_SET_Y_POSITION. s_opcode_data: %d\n",
+                line_number++, s_opcode_data);
+            break;
+
+        case CMD_SET_METER_HILO:
+            //G_Meter_hi_low = t_opcode_data;
+            //print_time(0);
+            //fprintf(G_fp_logfile, "[%d] Command_Interface. CMD_SET_METER_HILO. G_hi_low: %d\n", line_number++, G_Meter_hi_low);
+            break;
+        case CMD_SET_SPLIT:
+            G_Split = t_opcode_data;
+            print_time(0);
+            fprintf(G_fp_logfile, "[%d] Command_Interface . CMD_SET_SPLIT. G_Split: %d\n",
+                line_number++, G_Split);
+            break;
+
+        case CMD_SET_SPLIT_RX_FREQ:
+            op_code_data_32 = (int*)&G_receive_buf[1];
+            memcpy(&i_opcode_data, op_code_data_32, 4);
+            G_Split_RX_FREQ = i_opcode_data;
+            print_time(0);
+            fprintf(G_fp_logfile, "[%d] Command_Interface . CMD_SET_SPLIT_TX_FREQ. G_Split_RX_FREQ: %ld\n",
+                line_number++, G_Split_RX_FREQ);
+            break;
+
+        case CMD_SET_SPLIT_TX_FREQ:
+            op_code_data_32 = (int*)&G_receive_buf[1];
+            memcpy(&i_opcode_data, op_code_data_32, 4);
+            G_Split_TX_FREQ = i_opcode_data;
+            print_time(0);
+            fprintf(G_fp_logfile, "[%d] Command_Interface . CMD_SET_SPLIT_TX_FREQ. G_Split_TX_FREQ: %ld\n",
+                line_number++, G_Split_TX_FREQ);
+            break;
+
+        case CMD_SET_VFO:
+            G_vfo = t_opcode_data;
+            G_current_vfo = t_opcode_data;
+            print_time(0);
+            fprintf(G_fp_logfile, "[%d] Command_Interface . CMD_SET_VFO. G_vfo: %d\n",
+                line_number++, G_vfo);
+            break;
+
+        case CMD_SET_CONFIGURATION_COMMAND:
+            print_time(0);
+            fprintf(G_fp_logfile, "[%d] Command_Interface . CMD_SET_CONFIGURATION_COMMAND. t_opcode_data: %d\n",
+                line_number++, t_opcode_data);
+            //Manage_Configuration_Command(t_opcode_data);
+            break;
+
+        case CMD_START_STOP_IMAGE_VALUE:
+            SDRcore_recv_send_param(CMD_START_STOP_IMAGE_VALUE, t_opcode_data);
+            break;
+
+        case CMD_REPORT_IMAGE_VALUE:
+            memcpy(&i_opcode_data, op_code_data_32, 4);
+            //print_time(0);
+            //fprintf(G_fp_logfile, "[%d] Command_Interface . CMD_REPORT_IMAGE_VALUE: %d\n",
+            //        line_number++, i_opcode_data);
+            Gui_send_param(CMD_REPORT_IMAGE_VALUE, i_opcode_data);
+            break;
+
+        case CMD_SET_ALC_MULTIPLIER:
+            SDRcore_trans_send_param(CMD_SET_ALC_MULTIPLIER, t_opcode_data);
+            print_time(0);
+            fprintf(G_fp_logfile, "[%d] Command_Interface . CMD_SET_ALC_MULTIPLIER: %d\n",
+                line_number++, t_opcode_data);
+            break;
+
+        case CMD_SET_AMPLIFIER_CALIBRATION_RESET:
+            SDRcore_trans_send_param(CMD_SET_AMPLIFIER_CALIBRATION_RESET, t_opcode_data);
+            print_time(0);
+            fprintf(G_fp_logfile, "[%d] Command_Interface . CMD_SET_AMPLIFIER_CALIBRATION_RESET: %d\n",
+                line_number++, t_opcode_data);
+            break;
+
+        case CMD_SET_BIAS:
+            //G_BIAS_Mode = t_opcode_data;
+            //print_time(0);
+            //fprintf(G_fp_logfile, "[%d] Command_Interface . CMD_SET_BIAS . G_BIAS_Mode: %d\n",
+            //        line_number++, G_BIAS_Mode);
+            break;
+
+        case CMD_SET_DISPLAY_MODE:
+            //Spectrum_Waterfall_send_param(CMD_SET_DISPLAY_MODE, t_opcode_data);
+            break;
+
+        case CMD_SET_SPECTRUM_VIEW_GRID:
+            //Spectrum_Waterfall_send_param(CMD_SET_SPECTRUM_VIEW_GRID, t_opcode_data);
+            break;
+
+        case CMD_SET_SPECTRUM_SHARP:
+            //Spectrum_Waterfall_send_param(CMD_SET_SPECTRUM_SHARP, t_opcode_data);
+            break;
+
+        case CMD_SET_SMETER_AVERAGE:
+            switch (t_opcode_data) {
+            case 0:
+                Smeter_average_limit = 5;
+                break;
+            case 1:
+                Smeter_average_limit = 10;
+                break;
+            case 2:
+                Smeter_average_limit = 15;
+                break;
+            case 3:
+                Smeter_average_limit = 20;
+                break;
+            default:
+                Smeter_average_limit = 20;
+            }
+            print_time(0);
+            fprintf(G_fp_logfile, "[%d] Command_Interface . t_opcode_data: %d, Smeter_average_limit: %d\n",
+                line_number++, t_opcode_data, Smeter_average_limit);
+            break;
+
+        case CMD_SET_MONITOR:
+            G_Monitor = t_opcode_data;
+            SDRcore_recv_send_param(CMD_SET_MONITOR, G_Monitor);
+            //Spectrum_Waterfall_send_param(CMD_SET_MONITOR, G_Monitor);
+            print_time(0);
+            fprintf(G_fp_logfile, "[%d] Command_Interface . CMD_SET_MONITOR: %d\n",
+                line_number++, G_Monitor);
+            break;
+        case CMD_SET_FAN_CONTROL:
+            //G_FAN_Control = t_opcode_data;
+            //print_time(0);
+            //fprintf(G_fp_logfile, "[%d] Command_Interface . CMD_SET_FAN_CONTROL: %d\n",
+            //        line_number++, G_FAN_Control);
+            break;
+
+        case CMD_SET_FAN_ON_TEMPERATURE:
+            //G_FAN_On_Temperature = t_opcode_data;
+            //print_time(0);
+            //fprintf(G_fp_logfile, "[%d] Command_Interface . CMD_SET_FAN_ON_TEMPERATURE: %d\n",
+            //        line_number++, G_FAN_On_Temperature);
+            break;
+
+        case CMD_SET_TRANS_SMETER:
+            if (G_MSCC_Initialized == TRUE) {
+                Gui_send_param(CMD_SET_TRANS_SMETER, s_opcode_data);
+            }
+            break;
+
+        case CMD_SET_TX_ON:
+            //SDRcore_trans_send_param(CMD_SET_TX_ON, t_opcode_data);
+            //SDRcore_recv_send_param(CMD_SET_TX_ON, t_opcode_data);
+            Set_PTT(t_opcode_data, FALSE);
+            print_time(0);
+            fprintf(G_fp_logfile, "[%d] CMD_SET_TX_ON. Set_PTT CALLED. t_opcode_data: %d FINISHED\n",
+                line_number++, t_opcode_data);
+            break;
+
+        case CMD_SET_RIG_TUNE:
+            Tune_button(t_opcode_data, FALSE);
+            SDRcore_trans_send_param(CMD_SET_TX_ON, t_opcode_data);
+            SDRcore_recv_send_param(CMD_SET_TX_ON, t_opcode_data);
+            if (G_QRP == 1) {//QRO mode
+                Sleep(150); //Give SDRcore-trans time to set TUNE mode and set the correct drive level when in QRO mode
+            }
+            break;
+
+        case CMD_SET_TRANSCEIVER_DISPLAY:
+            print_time(0);
+            fprintf(G_fp_logfile, "[%d] Command_Interface . CMD_SET_TRANSCEIVER_DISPLAY . Value: %d\n",
+                line_number++, t_opcode_data);
+            //E_buttons = t_opcode_data;
+            break;
+
+        case CMD_SET_STAR:
+            print_time(0);
+            fprintf(G_fp_logfile, "[%d] Command_Interface . CMD_SET_STAR . Value: %X\n",
+                line_number++, t_opcode_data);
+            break;
+
+        case CMD_SET_STEP_VALUE:
+            print_time(0);
+            fprintf(G_fp_logfile, "[%d] Command_Interface . CMD_SET_STEP_VALUE . Value: %X\n",
+                line_number++, t_opcode_data);
+            //Spectrum_Waterfall_send_param(CMD_SET_STEP_VALUE, t_opcode_data);
+            //G_Multiplier = t_opcode_data;
+            Sleep(100);
+            break;
+
+            //Amplifier Power Output Settings
+        case CMD_SET_POTENTIA_CALIBRATION:
+            G_dll_active = TRUE;
+            Amplifier_Set_Power_Level(opcode, G_receive_buf);
+            G_dll_active = FALSE;
+            break;
+
+        case CMD_SET_AMPLIFIER_INITIALIZE:
+            G_dll_active = TRUE;
+            Amplifier_Set_Power_Level(opcode, G_receive_buf);
+            G_dll_active = FALSE;
+            break;
+
+        case CMD_SET_AMPLIFIER_POWER:
+            G_dll_active = TRUE;
+            Amplifier_Set_Power_Level(opcode, G_receive_buf);
+            G_dll_active = FALSE;
+            break;
+
+        case CMD_GET_AMPLIFIER_POWER:
+            G_dll_active = TRUE;
+            Amplifier_Set_Power_Level(opcode, G_receive_buf);
+            G_dll_active = FALSE;
+            break;
+
+        case CMD_GET_POTENTIA_BIAS:
+            G_dll_active = TRUE;
+            Amplifier_Set_Power_Level(opcode, G_receive_buf);
+            G_dll_active = FALSE;
+            break;
+            // End of Amplifier Power Output Settings
+
+        case CMD_SET_EXTENDED_COMMAND:
+            t_opcode_data = Extended_command(G_receive_buf);
+            break;
+
+        case CMD_SET_ALC:
+            /* Forward ALC meter to client only — no per-sample log spam */
+            Gui_send_param(CMD_SET_ALC, s_opcode_data);
+            break;
+
+        case CMD_SET_VOLUME_ATTN:
+            User_Controls_Process(opcode, G_receive_buf, FALSE);
+            break;
+
+        case CMD_SET_DIGITAL_VOLUME_ATTN:
+            User_Controls_Process(opcode, G_receive_buf, FALSE);
+            break;
+
+        case CMD_SET_AGC_FAST_LEVEL:
+            User_Controls_Process(opcode, G_receive_buf, FALSE);
+            break;
+
+        case CMD_SET_MICROPHONE_STATUS:
+            User_Controls_Process(opcode, G_receive_buf, FALSE);
+            break;
+
+        case CMD_SET_SMETER_DISPLAY:
+            User_Controls_Process(opcode, G_receive_buf, FALSE);
+            break;
+
+        case CMD_SET_PANADAPTER_DISPLAY:
+            User_Controls_Process(opcode, G_receive_buf, FALSE);
+            break;
+
+        case CMD_SET_PA_BYPASS:
+            User_Controls_Process(opcode, G_receive_buf, FALSE);
+            break;
+
+        case CMD_SET_AUTO_SNAP_STATUS:
+            User_Controls_Process(opcode, G_receive_buf, FALSE);
+            break;
+
+        case CMD_SET_AUTO_SNAP_INDEX:
+            User_Controls_Process(opcode, G_receive_buf, FALSE);
+            break;
+
+        case CMD_GET_SET_AUTO_NOTCH:
+            User_Controls_Process(opcode, G_receive_buf, FALSE);
+            break;
+
+        case CMD_GET_SET_AGC:
+            User_Controls_Process(opcode, G_receive_buf, FALSE);
+            break;
+
+        case CMD_SET_TWO_TONE:
+            User_Controls_Process(opcode, G_receive_buf, FALSE);
+            break;
+
+        case CMD_GET_SET_PANADAPTER_BASE:
+            User_Controls_Process(opcode, G_receive_buf, FALSE);
+            break;
+
+        case CMD_GET_SET_PANADAPTER_GAIN:
+            User_Controls_Process(opcode, G_receive_buf, FALSE);
+            break;
+
+        case CMD_GET_SET_PANADAPTER_REFRESH:
+            User_Controls_Process(opcode, G_receive_buf, FALSE);
+            break;
+
+        case CMD_GET_SET_PANADAPTER_SMOOTHING:
+            User_Controls_Process(opcode, G_receive_buf, FALSE);
+            break;
+
+        case CMD_GET_SET_PANADAPTER_FILL:
+            User_Controls_Process(opcode, G_receive_buf, FALSE);
+            break;
+
+        case CMD_GET_SET_PANADAPTER_LINE:
+            User_Controls_Process(opcode, G_receive_buf, FALSE);
+            break;
+
+        case CMD_GET_SET_PANADAPTER_MARKER:
+            User_Controls_Process(opcode, G_receive_buf, FALSE);
+            break;
+
+        case CMD_GET_SET_PANADAPTER_BACKGROUND:
+            User_Controls_Process(opcode, G_receive_buf, FALSE);
+            break;
+
+        case CMD_GET_SET_PANADAPTER_CURSOR:
+            User_Controls_Process(opcode, G_receive_buf, FALSE);
+            break;
+
+        case CMD_GET_SET_HR50_COMM_PORT:
+            //Process_hr50(opcode, buf);
+            break;
+
+        case CMD_GET_SET_HR50_COMM_START:
+            //Process_hr50(opcode, buf);
+            break;
+
+        case CMD_GET_SET_HR50_COMM_NAME_INDEX:
+            //Process_hr50(opcode, buf);
+            break;
+
+        case CMD_GET_SET_HR50_COMM_PASS_THRU:
+            //Process_hr50(opcode, buf);
+            break;
+
+        case CMD_SET_RIT_STATUS:
+            G_Rit_Status = t_opcode_data;
+            print_time(0);
+            fprintf(G_fp_logfile, "[%d] SET_RIT_STATUS. G_Rit_Status: %d\n", line_number++, G_Rit_Status);
+            freq_queue_add(G_tune_freq);
+            break;
+
+        case CMD_SET_RIT_FREQ:
+            op_code_data_32 = (int*)&G_receive_buf[1];
+            memcpy(&i_opcode_data, op_code_data_32, 4);
+            /* Client sends signed int32 LE (BitConverter); keep signed for negative RIT */
+            G_Rit_Offset = (int32_t)i_opcode_data;
+            if (G_Rit_Offset > 500)
+                G_Rit_Offset = 500;
+            else if (G_Rit_Offset < -500)
+                G_Rit_Offset = -500;
+            if (G_Rit_Status == TRUE) {
+                freq_queue_add(G_tune_freq);
+            }
+            print_time(0);
+            fprintf(G_fp_logfile, "[%d] SET_RIT_FREQUENCY. G_Rit_Offset: %d\n",
+                line_number++, (int)G_Rit_Offset);
+            break;
+
+        case CMD_GET_SET_NB_ENABLE:
+            User_Controls_Process(opcode, G_receive_buf, FALSE);
+            break;
+
+        case CMD_GET_SET_NB_THRESHOLD:
+            User_Controls_Process(opcode, G_receive_buf, FALSE);
+            break;
+
+        case CMD_GET_SET_NB_PULSE_WIDTH:
+            User_Controls_Process(opcode, G_receive_buf, FALSE);
+            break;
+
+        case CMD_SET_OVERDRIVEN:
+            print_time(1);
+            fprintf(G_fp_logfile, "[%d] CMD_SET_OVERDRIVEN . Overdriven State: %d \n", line_number++, t_opcode_data);
+            Gui_send_param(CMD_SET_OVERDRIVEN, t_opcode_data);
+            print_time(0);
+            fprintf(G_fp_logfile, "[%d] CMD_SET_OVERDRIVEN . Finished \n", line_number++);
+            break;
+
+        case CMD_GET_SET_SDRCORE_TRANS_VERSION:
+            /* Version only — keep-alive is CMD_SET_KEEP_ALIVE (0xF4) from cores. */
+            break;
+
+        case CMD_GET_SET_SDRCORE_RECV_VERSION:
+            /* Version only — keep-alive is CMD_SET_KEEP_ALIVE (0xF4) from cores. */
+            break;
+
+        case CMD_SET_KEEP_ALIVE:
+            /*
+             * Unified keep-alive opcode 0xF4. Payload selects source:
+             *   KEEP_ALIVE_FROM_CLIENT (1) — MSCC GUI / client → G_Heart_beat
+             *   KEEP_ALIVE_FROM_RECV   (2) — sdrcore-recv
+             *   KEEP_ALIVE_FROM_TRANS  (3) — sdrcore-trans
+             * ms-sdr itself sends 0xF4 TO the cores (not handled here).
+             */
+            if (t_opcode_data == KEEP_ALIVE_FROM_RECV ||
+                i_opcode_data == KEEP_ALIVE_FROM_RECV) {
+                G_sdrcore_recv_keep_alive++;
+                if ((G_sdrcore_recv_keep_alive % 10) == 1) {
+                    print_time(0);
+                    fprintf(G_fp_logfile,
+                        "[%d] Command_Interface. KEEP-ALIVE from sdrcore-recv count=%llu\n",
+                        line_number++,
+                        (unsigned long long)G_sdrcore_recv_keep_alive);
+                    fflush(G_fp_logfile);
+                }
+            } else if (t_opcode_data == KEEP_ALIVE_FROM_TRANS ||
+                       i_opcode_data == KEEP_ALIVE_FROM_TRANS) {
+                G_sdrcore_trans_keep_alive++;
+                if ((G_sdrcore_trans_keep_alive % 10) == 1) {
+                    print_time(0);
+                    fprintf(G_fp_logfile,
+                        "[%d] Command_Interface. KEEP-ALIVE from sdrcore-trans count=%llu\n",
+                        line_number++,
+                        (unsigned long long)G_sdrcore_trans_keep_alive);
+                    fflush(G_fp_logfile);
+                }
+            } else {
+                /* Client / default: only session owner advances GUI heartbeat */
+                if (!G_client_session_active || Session_Is_Owner(&si_other)) {
+                    G_Heart_beat++;
+                } else {
+                    print_time(0);
+                    fprintf(G_fp_logfile,
+                        "[%d] Command_Interface. CMD_SET_KEEP_ALIVE ignored (not session owner)\n",
+                        line_number++);
+                }
+            }
+            break;
+
+        case CMD_SET_IQ_DEFAULTS:
+            print_time(1);
+            fprintf(G_fp_logfile, "[%d] CMD_SET_IQ_DEFAULTS\n", line_number++);
+            G_dll_active = TRUE;
+            iq_mode = 1;
+            IQ_calibration(opcode, G_receive_buf);
+            G_dll_active = FALSE;
+            break;
+
+        case IQ_CALIBRATION_RX_TX:
+            G_dll_active = TRUE;
+            iq_mode = 1;
+            IQ_calibration(opcode, G_receive_buf);
+            G_dll_active = FALSE;
+            break;
+
+        case CMD_SET_IQ_BAND:
+            G_dll_active = TRUE;
+            iq_mode = 1;
+            IQ_calibration(opcode, G_receive_buf);
+            G_dll_active = FALSE;
+            break;
+
+        case CMD_SET_IQ_OFFSET:
+            G_dll_active = TRUE;
+            iq_mode = 1;
+            IQ_calibration(opcode, G_receive_buf);
+            G_dll_active = FALSE;
+            break;
+
+        case CMD_GET_IQ_VALUE:
+            op_code_data_32 = (int*)&G_receive_buf[1];
+            memcpy(&i_opcode_data, op_code_data_32, 4);
+            print_time(0);
+            fprintf(G_fp_logfile, "[%d] CMD_GET_IQ_VALUE . Calling Gui_send_param with %d \n", line_number++,
+                i_opcode_data);
+            Gui_send_param(CMD_GET_IQ_VALUE, i_opcode_data);
+            break;
+
+        case CMD_SET_COMMIT_IQ:
+            G_dll_active = TRUE;
+            IQ_calibration(opcode, G_receive_buf);
+            G_dll_active = FALSE;
+            break;
+
+        case IQ_CALIBRATION_TUNE:
+            G_dll_active = TRUE;
+            IQ_calibration(opcode, G_receive_buf);
+            print_time(0);
+            fprintf(G_fp_logfile, "[%d] IQ_CALIBRATION_TUNE . Calling IQ_Calibration \n", line_number++);
+            G_dll_active = FALSE;
+            break;
+
+        case CMD_SET_PHONES_VOLUME_LEVEL:
+        case CMD_SET_PHONES_MIC_GAIN_LEVEL:
+        case CMD_SET_DIGITAL_VOLUME_LEVEL:
+        case CMD_SET_DIGITAL_MIC_GAIN_LEVEL:
+        case CMD_SET_AUDIO_DEVICE:
+        case CMD_GET_SET_MIC_DEVICE:
+        case CMD_SET_COMPRESSION_STATE:
+        case CMD_SET_COMPRESSION_LEVEL:
+        case CMD_SET_MIC_MUTE:
+        case CMD_SET_MIC_VOLUME:
+        case CMD_SET_MIC_GAIN:
+        case CMD_SET_DIGITAL_MIC_GAIN:
+        case CMD_GET_SET_SPEAKER_DEVICE:
+        case CMD_SET_SPEAKER_MUTE:
+        case CMD_SET_SPEAKER_VOLUME:
+        case CMD_SET_TX_HICUT:
+        case CMD_SET_BW_LOCUT:
+        case CMD_SET_BW_HICUT:
+        case CMD_SET_CW_PITCH:
+        case CMD_SET_CW_BW:
+        case CMD_SET_BW_LOCUT_DEFAULT:
+        case CMD_SET_BW_HICUT_DEFAULT:
+        case CMD_SET_CW_BW_DEFAULT:
+            User_Controls_Process(opcode, G_receive_buf, FALSE);
+            break;
+
+        case CMD_DELETE_SDRCORE_INIT:
+            print_time(1);
+            fprintf(G_fp_logfile, "[%d] CMD_DELETE_SDRCORE_INIT . Will delete SDRcore Initialization files on shutdown\n", line_number++);
+            G_delete_SDRcore_init_files = 1;
+            break;
+
+        case CMD_SET_AM_POWER:
+            print_time(1);
+            fprintf(G_fp_logfile, "[%d] CMD_SET_AM_POWER . AM POWER: %d \n", line_number++, t_opcode_data);
+            print_time(0);
+            fprintf(G_fp_logfile, "[%d] CMD_SET_AM_POWER . Calling SDRcore_trans_send_param with param %d \n", line_number++, t_opcode_data);
+            SDRcore_trans_send_param(CMD_SET_AM_POWER, t_opcode_data);
+            print_time(0);
+            fprintf(G_fp_logfile, "[%d] CMD_SET_AM_POWER . Finished \n", line_number++);
+            break;
+
+        case CMD_SET_MAIN_POWER: //LSB AND USB
+            print_time(1);
+            fprintf(G_fp_logfile, "[%d] CMD_SET_MAIN_POWER . MAIN POWER: %d \n", line_number++, t_opcode_data);
+            print_time(0);
+            fprintf(G_fp_logfile, "[%d] CMD_SET_MAIN_POWER . Calling SDRcore_trans_send_param with param %d \n", line_number++, t_opcode_data);
+            SDRcore_trans_send_param(CMD_SET_MAIN_POWER, t_opcode_data);
+            print_time(0);
+            fprintf(G_fp_logfile, "[%d] CMD_SET_MAIN_POWER . Finished \n", line_number++);
+            break;
+
+        case CMD_SET_CW_POWER:
+            print_time(1);
+            fprintf(G_fp_logfile, "[%d] CMD_SET_CW_POWER . CW POWER: %d \n", line_number++, t_opcode_data);
+            print_time(0);
+            fprintf(G_fp_logfile, "[%d] CMD_SET_CW_POWER . Calling SDRcore_trans_send_param with param %d \n", line_number++, t_opcode_data);
+            SDRcore_trans_send_param(CMD_SET_CW_POWER, t_opcode_data);
+            print_time(0);
+            fprintf(G_fp_logfile, "[%d] CMD_SET_CW_POWER . Finished \n", line_number++);
+            break;
+
+        case CMD_SET_TUNE_POWER:
+            print_time(1);
+            fprintf(G_fp_logfile, "[%d] CMD_SET_TUNE_POWER . TUNE POWER: %d \n", line_number++, t_opcode_data);
+            print_time(0);
+            fprintf(G_fp_logfile, "[%d] CMD_SET_TUNE_POWER . Calling SDRcore_trans_send_param with param %d \n", line_number++,
+                t_opcode_data);
+            SDRcore_trans_send_param(CMD_SET_TUNE_POWER, t_opcode_data);
+            G_Tune_Power = t_opcode_data;
+            print_time(0);
+            fprintf(G_fp_logfile, "[%d] CMD_SET_TUNE_POWER . Finished \n", line_number++);
+            break;
+
+        case CMD_SET_STOP:
+            print_time(0);
+            fprintf(G_fp_logfile, "[%d] CMD_SET_STOP . calling Stop_all. t_opcode_data: %d \n",
+                line_number++, t_opcode_data);
+            Stop_all(0, t_opcode_data);
+            break;
+
+        case CMD_SET_MAIN_FREQ:
+            op_code_data_32 = (int*)&G_receive_buf[1];
+            memcpy(&i_opcode_data, op_code_data_32, 4);
+            G_dll_active = TRUE;
+            print_time(1);
+            fprintf(G_fp_logfile, "[%d] Command_Interface. CMD_SET_MAIN_FREQ: %ld\n", line_number++, i_opcode_data);
+            G_tune_freq = i_opcode_data;
+            //E_freq = i_opcode_data;
+            //Display_freq_queue_add(i_opcode_data);
+            print_time(0);
+            fprintf(G_fp_logfile, "[%d] Command_Interface. CMD_SET_MAIN_FREQ. Calling SetHWLO with: %ld\n", line_number++, (G_tune_freq));
+            freq_queue_add(G_tune_freq);
+            print_time(0);
+            fprintf(G_fp_logfile, "[%d] Command_Interface. CMD_SET_MAIN_FREQ. Calling set_last_used for Freq: %ld\n", line_number++, (G_tune_freq));
+            //set_last_used(G_tune_freq, G_mode);
+            //Set_band_normal(G_tune_freq, TRUE);
+            if (iq_mode == 1) {
+                iq_mode = 0;
+            }
+            //SDRcore_trans_send_param(CMD_SET_SDR_CORE_BAND, G_band_normal);
+            //SDRcore_recv_send_param(CMD_SET_SDR_CORE_BAND, G_band_normal);
+            print_time(0);
+            fprintf(G_fp_logfile, "[%d] Command_Interface. CMD_SET_MAIN_FREQ. G_band_normal: %d\n", line_number++, G_band_normal);
+            //Process_hr50(CMD_GET_SET_HR50_COMM_SEND_FREQ_INFO, buf);
+            G_receive_buf[0] = CMD_GET_SET_HR50_COMM_SEND_BAND_INFO;
+            memcpy(&G_receive_buf[1], &G_band_normal, sizeof(G_band_normal));
+            //Process_hr50(CMD_GET_SET_HR50_COMM_SEND_BAND_INFO, buf);
+            G_dll_active = FALSE;
+            G_calibration_mode = FALSE;
+            //Spectrum_Waterfall_send_param(CMD_SET_SPECTRUM_WATERFALL_FREQ, G_tune_freq);
+            print_time(0);
+            fprintf(G_fp_logfile, "[%d] Command_Interface. CMD_SET_MAIN_FREQ. Finished\n", line_number++);
+            break;
+
+        case CMD_SET_MAIN_MODE:
+            G_dll_active = TRUE;
+            print_time(1);
+            fprintf(G_fp_logfile, "[%d] Command_Interface. CMD_SET_MAIN_MODE: %d\n", line_number++, t_opcode_data);
+            switch (t_opcode_data) {
+            case MODE_AM:
+                mode = 'A';
+                break;
+            case MODE_LSB:
+                mode = 'L';
+                break;
+            case MODE_USB:
+                mode = 'U';
+                break;
+            case MODE_CW:
+                mode = 'C';
+                break;
+            case MODE_TUNE:
+                mode = 'T';
+                break;
+            case 5:
+                mode = 'E';
+                break;
+            case 6:
+                mode = 'D';
+                break;
+            }
+            ModeChanged(mode);
+            Sleep(50);
+            //G_MFC_Mode = t_opcode_data;
+            SDRcore_recv_send_param(CMD_SET_MAIN_MODE, t_opcode_data);
+            SDRcore_trans_send_param(CMD_SET_MAIN_MODE, t_opcode_data);
+            //Spectrum_Waterfall_send_param(CMD_SET_SPECTRUM_WATERFALL_MODE, mode);
+            User_Controls_Process(opcode, G_receive_buf, FALSE);
+            print_time(0);
+            fprintf(G_fp_logfile, "[%d] Command_Interface. CMD_SET_MAIN_MODE. Finished. mode: %c\n",
+                line_number++, mode);
+            G_dll_active = FALSE;
+            break;
+
+        //Frequency Calibration
+        case CMD_SET_STANDARD_CARRIER:
+        case CMD_SET_CAL_LOOSE:
+        case CMD_SET_CAL_SET_COARSE:
+        case CMD_SET_CAL_SET_FINE:
+        case CMD_SET_CALIBRATION_FINISHED:
+        case CMD_SET_CAL_RESET:
+        case CMD_SET_CAL_MODE:
+        case CMD_SET_FREQ_CAL_CHECK:
+        case CMD_GET_SET_CAL_FREQ_DELTA:
+        case CMD_SET_FORCE_CALIBRATION:
+            Process_Frequency_Calibration(opcode, G_receive_buf);
+            break;
+        //End Frequency Calibration
+
+        case CMD_GET_SET_FIRMWARE_VERSION:
+            print_time(1);
+            if (G_firmware_version_packed == 0 && (G_major_version || G_minor_version)) {
+                G_firmware_version_packed =
+                    ((G_minor_version << 8) & 0xff00) | (G_major_version & 0x00ff);
+            }
+            fprintf(G_fp_logfile,
+                "[%d] Command_Interface . CMD_GET_FIRMWARE_VERSION: Major: %d, Minor: %d (packed 0x%04X)\n",
+                line_number++, G_major_version, G_minor_version,
+                (unsigned)G_firmware_version_packed);
+            Gui_send_param(CMD_GET_SET_FIRMWARE_VERSION, G_firmware_version_packed);
+            break;
+
+            //Power Calibration 
+        case CMD_SET_BAND_POWER_BAND:
+            G_dll_active = TRUE;
+            Power_calibration(opcode, G_receive_buf);
+            G_dll_active = FALSE;
+            break;
+
+        case CMD_SET_BAND_POWER_POWER:
+            G_dll_active = TRUE;
+            Power_calibration(opcode, G_receive_buf);
+            G_dll_active = FALSE;
+            break;
+
+        case CMD_SET_BAND_VOLUME_DEFAULTS:
+            G_dll_active = TRUE;
+            Power_calibration(opcode, G_receive_buf);
+            G_dll_active = FALSE;
+            break;
+
+        case CMD_GET_BAND_POWER:
+            G_dll_active = TRUE;
+            Power_calibration(opcode, G_receive_buf);
+            G_dll_active = FALSE;
+            break;
+
+        case CMD_CALIBRATION_MASTER_RESET:
+            G_dll_active = TRUE;
+            Power_calibration(opcode, G_receive_buf);
+            G_dll_active = FALSE;
+            break;
+
+        case CMD_CALIBRATION_TUNE:
+            G_dll_active = TRUE;
+            Power_calibration(opcode, G_receive_buf);
+            G_dll_active = FALSE;
+            break;
+
+        case CMD_SET_TRANSVERTER:
+            print_time(1);
+            fprintf(G_fp_logfile, "[%d] Command_Interface . CMD_SET_TRANSVERTER - Called\n", line_number++);
+            Radio_send_parameters(opcode, t_opcode_data, 1);
+            Sleep(100);
+            break;
+
+        case CMD_START_CALIBRATE:
+            Process_Frequency_Calibration(opcode, G_receive_buf);
+            break;
+
+        case CMD_CW_SNAP_START:
+            CW_Snap_Process_Frequency_Calibration(opcode, G_receive_buf);
+            break;
+
+        case CMD_CW_SNAP_SET_CALIBRATION_DATA:
+            CW_Snap_Process_Frequency_Calibration(opcode, G_receive_buf);
+            break;
+
+        case CMD_CW_SNAP_DATA_PROCESSED:
+            CW_Snap_Process_Frequency_Calibration(opcode, G_receive_buf);
+            break;
+
+            //case CMD_SET_RELOAD_FILE:
+              //  print_time(1);
+                //fprintf(G_fp_logfile, "[%d] Command_Interface . CMD_SET_RELOAD_FILE - Called\n", line_number++);
+                //get_cw_params();
+                //break;
+
+        /*
+         * PIC keyer USB config: MKII only (G_proficio_mkii).
+         * Legacy still gets SET_TX_HOLD (hang) and host cw.ini updates.
+         */
+        case SET_KEYER_MODE:
+            cw_record.keyer_mode = t_opcode_data;
+            cfg.mode = t_opcode_data;
+            if (G_proficio_mkii)
+                Radio_send_parameters(opcode, t_opcode_data, 1);
+            Update_CW_ini();
+            break;
+
+        case SET_CW_PADDLE:
+            cw_record.paddle = t_opcode_data;
+            cfg.paddle = t_opcode_data;
+            if (G_proficio_mkii)
+                Radio_send_parameters(opcode, t_opcode_data, 1);
+            Update_CW_ini();
+            break;
+
+        case SET_SPACING:
+            cw_record.spacing = t_opcode_data;
+            cfg.spacing = t_opcode_data;
+            if (G_proficio_mkii)
+                Radio_send_parameters(opcode, t_opcode_data, 1);
+            Update_CW_ini();
+            break;
+
+        case SET_WEIGHT:
+            cw_record.weight = t_opcode_data;
+            cfg.weight = ((float)t_opcode_data) / 100.00f;
+            if (G_proficio_mkii)
+                Radio_send_parameters(opcode, t_opcode_data, 1);
+            Update_CW_ini();
+            break;
+
+        case SET_TX_HOLD:
+            /* Always to radio — hang/semi-break-in on MKII and legacy */
+            cw_record.tx_hold = t_opcode_data;
+            Radio_send_parameters(opcode, t_opcode_data, 1);
+            Update_CW_ini();
+            G_TX_Hold = t_opcode_data;
+            break;
+
+        case SET_WPM:
+            cw_record.speed = t_opcode_data;
+            cfg.speed_wpm = (float)t_opcode_data;
+            if (G_proficio_mkii)
+                Radio_send_parameters(opcode, t_opcode_data, 1);
+            Update_CW_ini();
+            break;
+
+        /*
+         * Memory-play Farnsworth text WPM (SET_MEM_TEXT_WPM 0x76).
+         * MKII + keyer only; legacy does not get this USB op.
+         */
+        case SET_MEM_TEXT_WPM:
+            cw_record.text_wpm = t_opcode_data;
+            print_time(0);
+            fprintf(G_fp_logfile, "[%d] SET_MEM_TEXT_WPM text_wpm=%d\n",
+                line_number++, (int)t_opcode_data);
+            if (G_proficio_mkii && cw_record.keyer_Installed == 1)
+                Radio_send_parameters(SET_MEM_TEXT_WPM, (int)t_opcode_data, 1);
+            Update_CW_ini();
+            break;
+
+        case SET_QSK:
+            Radio_send_parameters(opcode, t_opcode_data, 1);
+            break;
+
+        /*
+         * PIC keyer CQ memory (CMD_SET_KEYER_MEMORY 0x9C) — MKII + keyer only.
+         */
+        case CMD_SET_KEYER_MEMORY:
+            if (!G_proficio_mkii) {
+                print_time(0);
+                fprintf(G_fp_logfile,
+                    "[%d] CMD_SET_KEYER_MEMORY ignored — legacy (PROFICIO-MKII=0)\n",
+                    line_number++);
+            } else if (cw_record.keyer_Installed == 1) {
+                int p = (int)t_opcode_data & 0xFF;
+
+                print_time(0);
+                if (p == KEYER_MEM_PLAY)
+                    fprintf(G_fp_logfile, "[%d] CMD_SET_KEYER_MEMORY PLAY\n", line_number++);
+                else if (p == KEYER_MEM_STORE_BEGIN)
+                    fprintf(G_fp_logfile, "[%d] CMD_SET_KEYER_MEMORY STORE_BEGIN\n", line_number++);
+                else if (p == KEYER_MEM_STORE_END)
+                    fprintf(G_fp_logfile, "[%d] CMD_SET_KEYER_MEMORY STORE_END\n", line_number++);
+                else if (p == KEYER_MEM_SELECT)
+                    fprintf(G_fp_logfile, "[%d] CMD_SET_KEYER_MEMORY SELECT (next=slot)\n",
+                        line_number++);
+                else if (p >= 0x20 && p <= 0x7E)
+                    fprintf(G_fp_logfile, "[%d] CMD_SET_KEYER_MEMORY CHAR '%c'\n",
+                        line_number++, (char)p);
+                else
+                    fprintf(G_fp_logfile, "[%d] CMD_SET_KEYER_MEMORY param=%d\n",
+                        line_number++, p);
+                Keyer_Memory_Param(p);
+            } else {
+                print_time(0);
+                fprintf(G_fp_logfile, "[%d] CMD_SET_KEYER_MEMORY ignored — keyer not installed\n",
+                    line_number++);
+            }
+            break;
+
+        default:
+            Gui_get_param(opcode, G_receive_buf);
+            break;
+        }
+    }//End While(G_all_threads_run)
+    //G_all_threads_run = 0;
+    print_time(0);
+    fprintf(G_fp_logfile, "[%d] Command_Interface . NORMAL EXIT.\n", line_number++);
+    pthread_exit(NULL);
+
+    return NULL;
+}
+
+int Update_CW_ini() {
+    FILE *fp_cw_ini;
+    char file_name[PATH_MAX] = {0};
+
+    print_time(1);
+    fprintf(G_fp_logfile, "[%d] Update_CW_ini called\n", LINE_COUNT);
+    if ((homedir = My_getenv("HOME")) != NULL) {
+        print_time(0);
+        fprintf(G_fp_logfile, "[%d] Update_CW_ini. Default Path: %s\n", LINE_COUNT, homedir);
+        strcpy(file_name, homedir);
+        strcat(file_name, "/cw.ini");
+
+        print_time(0);
+        fprintf(G_fp_logfile, "[%d] Update_CW_ini. File: %s\n", LINE_COUNT, file_name);
+        fp_cw_ini = fopen(file_name, "w");
+        if (fp_cw_ini != NULL) {
+            rewind(fp_cw_ini);
+            fprintf(fp_cw_ini, "CW_Keyer_Installed=%d;\n", cw_record.keyer_Installed);
+            fprintf(fp_cw_ini, "CW_Keyer_Mode=%d;\n", cw_record.keyer_mode);
+            fprintf(fp_cw_ini, "CW_Iambic_Type=%d;\n", 0);
+            fprintf(fp_cw_ini, "CW_Iambic_Calibrate=%d;\n", 0);
+            fprintf(fp_cw_ini, "CW_Memory=%d;\n", 0);
+            fprintf(fp_cw_ini, "CW_Spacing=%d;\n", cw_record.spacing);
+            fprintf(fp_cw_ini, "CW_Paddle=%d;\n", cw_record.paddle);
+            fprintf(fp_cw_ini, "CW_Weight=%d;\n", cw_record.weight);
+            fprintf(fp_cw_ini, "CW_Tx_Hold=%d;\n", cw_record.tx_hold);
+            fprintf(fp_cw_ini, "CW_Speed=%d;\n", cw_record.speed);
+            fprintf(fp_cw_ini, "CW_Mem_Text_WPM=%d;\n", cw_record.text_wpm);
+            fprintf(fp_cw_ini, "CW_Semi_Break_In=%d;\n", 0);
+            fprintf(fp_cw_ini, "CW_Semi_Control=%d;\n", 0);
+            fprintf(fp_cw_ini, "CW_Side_Tone_Volume=%d;\n", 0);
+            fflush(fp_cw_ini);
+            fclose(fp_cw_ini);
+            print_time(0);
+            fprintf(G_fp_logfile, "[%d] Update_CW_ini. Updated Parameters\n", LINE_COUNT);
+        } else {
+            print_time(0);
+            fprintf(G_fp_logfile, "[%d] Update_CW_ini. open file FAILED\n", line_number++);
+            return 0;
+        }
+    }
+    print_time(0);
+    fprintf(G_fp_logfile, "[%d] Update_CW_ini. Finished \n", LINE_COUNT);
+    return 1;
+}
+
+/* Push cw_record (from cw.ini) to the MSCC client. Safe to call after Session_Claim. */
+void Send_CW_params_to_gui(void) {
+    uint8_t cmd_value;
+
+    print_time(0);
+    fprintf(G_fp_logfile, "[%d] Send_CW_params_to_gui. Installed=%d Speed=%d Mode=%d\n",
+            line_number++, cw_record.keyer_Installed, cw_record.speed, cw_record.keyer_mode);
+
+    cmd_value = cw_record.keyer_Installed;
+    Gui_send_param(SET_KEYER_INSTALLED, cmd_value);
+
+    if (cmd_value != 1) {
+        print_time(0);
+        fprintf(G_fp_logfile, "[%d] Send_CW_params_to_gui. Keyer not installed — only SET_KEYER_INSTALLED sent\n",
+                line_number++);
+        return;
+    }
+
+    Gui_send_param(SET_SPACING, cw_record.spacing);
+    Gui_send_param(SET_CW_PADDLE, cw_record.paddle);
+    Gui_send_param(SET_WEIGHT, cw_record.weight);
+    Gui_send_param(SET_TX_HOLD, cw_record.tx_hold);
+    Gui_send_param(SET_WPM, cw_record.speed);
+    Gui_send_param(SET_MEM_TEXT_WPM, cw_record.text_wpm);
+    Gui_send_param(SET_KEYER_MODE, cw_record.keyer_mode);
+
+    print_time(0);
+    fprintf(G_fp_logfile, "[%d] Send_CW_params_to_gui. Finished\n", line_number++);
+}
+
+int initialize_keyer() {
+    uint8_t cmd_value = 0;
+    int status = 0;
+
+    Sleep(1000); //Allow other threads to finish initializing
+
+    /*
+     * Legacy (PROFICIO-MKII=0): only SET_TX_HOLD to the radio (hang).
+     * No PIC keyer USB config / memory opcodes.
+     */
+    if (!G_proficio_mkii) {
+        cmd_value = cw_record.tx_hold;
+        print_time(0);
+        fprintf(G_fp_logfile,
+            "[%d] initialize_keyer. legacy: only SET_TX_HOLD data=%d (skip PIC keyer USB)\n",
+            line_number++, cmd_value);
+        status = Radio_send_parameters(SET_TX_HOLD, cmd_value, 1);
+        print_time(0);
+        fprintf(G_fp_logfile, "[%d] initialize_keyer. Radio_send_parameters returned with status: %d\n",
+            line_number++, status);
+        print_time(0);
+        fprintf(G_fp_logfile, "[%d] initialize_keyer. FINISHED (legacy)\n", line_number++);
+        return status;
+    }
+
+    cmd_value = cw_record.keyer_Installed;
+    print_time(0);
+    fprintf(G_fp_logfile, "[%d] initialize_keyer. calling Radio_send_parameters. SET_KEYER_INSTALLED. data: %d\n", line_number++,
+            cmd_value);
+    status = Radio_send_parameters(SET_KEYER_INSTALLED, cmd_value, 1);
+    print_time(0);
+    fprintf(G_fp_logfile, "[%d] initialize_keyer. Radio_send_parameters returned with status: %d\n", line_number++, status);
+    Sleep(300); //Give transceiver time to set SET_KEYER_INSTALLED value. 
+
+    if (cmd_value == 1) { //Send the remaining values only if the keyer is installed
+        cmd_value = cw_record.spacing;
+        print_time(0);
+        fprintf(G_fp_logfile, "[%d] initialize_keyer. calling Radio_send_parameters.  SET_SPACING. data: %d\n", line_number++,
+                cmd_value);
+        status = Radio_send_parameters(SET_SPACING, cmd_value, 1);
+        print_time(0);
+        fprintf(G_fp_logfile, "[%d] initialize_keyer. Radio_send_parameters returned with status: %d\n", line_number++, status);
+
+        cmd_value = cw_record.paddle;
+        print_time(0);
+        fprintf(G_fp_logfile, "[%d] initialize_keyer. calling Radio_send_parameters.  SET_CW_PADDLE. data: %d\n", line_number++,
+                cmd_value);
+        status = Radio_send_parameters(SET_CW_PADDLE, cmd_value, 1);
+        print_time(0);
+        fprintf(G_fp_logfile, "[%d] initialize_keyer. Radio_send_parameters returned with status: %d\n", line_number++, status);
+
+        cmd_value = cw_record.weight;
+        print_time(0);
+        fprintf(G_fp_logfile, "[%d] initialize_keyer. calling Radio_send_parameters.  SET_WEIGHT. data: %d\n", line_number++,
+                cmd_value);
+        status = Radio_send_parameters(SET_WEIGHT, cmd_value, 1);
+        print_time(0);
+        fprintf(G_fp_logfile, "[%d] initialize_keyer. Radio_send_parameters returned with status: %d\n", line_number++, status);
+
+        cmd_value = cw_record.tx_hold;
+        print_time(0);
+        fprintf(G_fp_logfile, "[%d] initialize_keyer. calling Radio_send_parameters.  SET_TX_HOLD. data: %d\n", line_number++,
+                cmd_value);
+        status = Radio_send_parameters(SET_TX_HOLD, cmd_value, 1);
+        print_time(0);
+        fprintf(G_fp_logfile, "[%d] initialize_keyer. Radio_send_parameters returned with status: %d\n", line_number++, status);
+
+        cmd_value = cw_record.speed;
+        print_time(0);
+        fprintf(G_fp_logfile, "[%d] initialize_keyer. calling Radio_send_parameters.  SET_WPM. data: %d\n", line_number++,
+                cmd_value);
+        status = Radio_send_parameters(SET_WPM, cmd_value, 1);
+        print_time(0);
+        fprintf(G_fp_logfile, "[%d] initialize_keyer. Radio_send_parameters returned with status: %d\n", line_number++, status);
+
+        cmd_value = cw_record.text_wpm;
+        print_time(0);
+        fprintf(G_fp_logfile, "[%d] initialize_keyer. calling Radio_send_parameters.  SET_MEM_TEXT_WPM. data: %d\n",
+                line_number++, cmd_value);
+        status = Radio_send_parameters(SET_MEM_TEXT_WPM, cmd_value, 1);
+        print_time(0);
+        fprintf(G_fp_logfile, "[%d] initialize_keyer. Radio_send_parameters returned with status: %d\n", line_number++, status);
+
+        cmd_value = cw_record.keyer_mode;
+        print_time(0);
+        fprintf(G_fp_logfile, "[%d] initialize_keyer. calling Radio_send_parameters.  SET_KEYER_MODE. data: %d\n", line_number++,
+                cmd_value);
+        status = Radio_send_parameters(SET_KEYER_MODE, cmd_value, 1);
+        print_time(0);
+        fprintf(G_fp_logfile, "[%d] initialize_keyer. Radio_send_parameters returned with status: %d\n", line_number++, status);
+    } else {
+        /* No PIC keyer: still push hang time for Proficio CW */
+        cmd_value = cw_record.tx_hold;
+        print_time(0);
+        fprintf(G_fp_logfile, "[%d] initialize_keyer. keyer not installed — SET_TX_HOLD only data=%d\n",
+            line_number++, cmd_value);
+        status = Radio_send_parameters(SET_TX_HOLD, cmd_value, 1);
+    }
+    /* GUI push is on client session claim (Send_CW_params_to_gui) — not here. */
+    print_time(0);
+    fprintf(G_fp_logfile, "[%d] initialize_keyer. FINISHED\n", line_number++);
+    return status;
+}
+
+int parse_cw_init_record(char *record) {
+    int cmd_value;
+    char *parameter;
+    int status = 0;
+    int length;
+
+    parameter = strstr(record, "CW_Keyer_Mode=");
+    if (parameter != NULL) {
+        length = strlen("CW_Keyer_Mode=");
+        cmd_value = atoi(&parameter[length]);
+        print_time(0);
+        fprintf(G_fp_logfile, "[%d] Parse_cw_init . CW_Keyer_Mode: %d\n", line_number++, cmd_value);
+        cw_record.keyer_mode = cmd_value;
+    }
+
+    parameter = strstr(record, "CW_Keyer_Installed=");
+    if (parameter != NULL) {
+        length = strlen("CW_Keyer_Installed=");
+        cmd_value = atoi(&parameter[length]);
+        print_time(0);
+        fprintf(G_fp_logfile, "[%d] Parse_cw_init . CW_Keyer_Installed: %d\n", line_number++, cmd_value);
+        cw_record.keyer_Installed = cmd_value;
+    }
+
+    /*parameter = strstr(record, "CW_Memory=");
+    if (parameter != NULL) {
+        length = strlen("CW_Memory=");
+        cmd_value = atoi(&parameter[length]);
+        print_time(0);
+        fprintf(G_fp_logfile, "[%d] Parse_cw_init . CW_Memory: %d\n", line_number++, cmd_value);
+        cw_record.memory = cmd_value;
+        cfg.memory = (int8_t) cmd_value;
+    }*/
+
+    parameter = strstr(record, "CW_Spacing=");
+    if (parameter != NULL) {
+        length = strlen("CW_Spacing=");
+        cmd_value = atoi(&parameter[length]);
+        print_time(0);
+        fprintf(G_fp_logfile, "[%d] Parse_cw_init . CW_Spacing: %d\n", line_number++, cmd_value);
+        cw_record.spacing = cmd_value;
+        cfg.spacing = (int8_t) cmd_value;
+    }
+    parameter = strstr(record, "CW_Paddle=");
+    if (parameter != NULL) {
+        length = strlen("CW_Paddle=");
+        cmd_value = atoi(&parameter[length]);
+        print_time(0);
+        fprintf(G_fp_logfile, "[%d] Parse_cw_init . CW_Paddle: %d\n", line_number++, cmd_value);
+        cw_record.paddle = cmd_value;
+        cfg.paddle = (uint8_t) cmd_value;
+    }
+    parameter = strstr(record, "CW_Weight=");
+    if (parameter != NULL) {
+        length = strlen("CW_Weight=");
+        cmd_value = atoi(&parameter[length]);
+        print_time(0);
+        fprintf(G_fp_logfile, "[%d] Parse_cw_init . CW_Weight: %d\n", line_number++, cmd_value);
+        cw_record.weight = cmd_value;
+        cfg.weight = (float) cmd_value;
+    }
+    /*parameter = strstr(record, "CW_Iambic_Calibrate=");
+    if (parameter != NULL) {
+        length = strlen("CW_Iambic_Calibrate=");
+        cmd_value = atoi(&parameter[length]);
+        print_time(0);
+        fprintf(G_fp_logfile, "[%d] Parse_cw_init . CW_Iambic_Calibrate: %d\n", line_number++, cmd_value);
+        proficio_ini[SET_IAMBIC_TUNING - PROFICIO_INI_SET_OFFSET].opcode = SET_IAMBIC_TUNING;
+        proficio_ini[SET_IAMBIC_TUNING - PROFICIO_INI_SET_OFFSET].opcode_data = cmd_value;
+    }*/
+    parameter = strstr(record, "CW_Tx_Hold=");
+    if (parameter != NULL) {
+        length = strlen("CW_Tx_Hold=");
+        cmd_value = atoi(&parameter[length]);
+        print_time(0);
+        fprintf(G_fp_logfile, "[%d] Parse_cw_init . CW_Tx_Hold: %d\n", line_number++, cmd_value);
+        G_TX_Hold = cmd_value;
+        cw_record.tx_hold = cmd_value;
+    }
+    parameter = strstr(record, "CW_Speed=");
+    if (parameter != NULL) {
+        length = strlen("CW_Speed=");
+        cmd_value = atoi(&parameter[length]);
+        print_time(0);
+        fprintf(G_fp_logfile, "[%d] Parse_cw_init . CW_Speed: %d\n", line_number++, cmd_value);
+        if (cmd_value < 5) {
+            cmd_value = 5;
+        }
+        cw_record.speed = cmd_value;
+        cfg.speed_wpm = (float) cmd_value;
+    }
+    parameter = strstr(record, "CW_Mem_Text_WPM=");
+    if (parameter != NULL) {
+        length = strlen("CW_Mem_Text_WPM=");
+        cmd_value = atoi(&parameter[length]);
+        print_time(0);
+        fprintf(G_fp_logfile, "[%d] Parse_cw_init . CW_Mem_Text_WPM: %d\n", line_number++, cmd_value);
+        /* 0 = Farnsworth off; else clamp to keyer WPM range */
+        if (cmd_value != 0 && cmd_value < 5)
+            cmd_value = 5;
+        if (cmd_value > 60)
+            cmd_value = 60;
+        cw_record.text_wpm = (uint8_t)cmd_value;
+    }
+    /*parameter = strstr(record, "CW_Semi_Break_In=");
+    if (parameter != NULL) {
+        length = strlen("CW_Semi_Break_In=");
+        cmd_value = atoi(&parameter[length]);
+        print_time(0);
+        fprintf(G_fp_logfile, "[%d] Parse_cw_init . CW_Semi_Break_In: %d\n", line_number++, cmd_value);
+        if (cmd_value == 1) {
+            G_QSK = TRUE;
+        } else {
+            G_QSK = FALSE;
+        }
+        print_time(0);
+        fprintf(G_fp_logfile, "[%d] Parse_cw_init . Radio_send_parameters returned with status: %d\n", line_number++, status);
+        proficio_ini[SET_SEMI_BREAKIN - PROFICIO_INI_SET_OFFSET].opcode = SET_SEMI_BREAKIN;
+        proficio_ini[SET_SEMI_BREAKIN - PROFICIO_INI_SET_OFFSET].opcode_data = cmd_value;
+    }*/
+    /*parameter = strstr(record, "CW_Semi_Control=");
+    if (parameter != NULL) {
+        length = strlen("CW_Semi_Break_In=");
+        cmd_value = atoi(&parameter[length]);
+        print_time(0);
+        fprintf(G_fp_logfile, "[%d] Parse_cw_init . CW_Semi_Control: %d\n", line_number++, cmd_value);
+        proficio_ini[SET_SEMI_CONTROL - PROFICIO_INI_SET_OFFSET].opcode = SET_SEMI_CONTROL;
+        proficio_ini[SET_SEMI_CONTROL - PROFICIO_INI_SET_OFFSET].opcode_data = cmd_value;
+    }*/
+    /*parameter = strstr(record, "CW_Iambic_Type=");
+    if (parameter != NULL) {
+        length = strlen("CW_Iambic_Type=");
+        cmd_value = atoi(&parameter[length]);
+        print_time(0);
+        fprintf(G_fp_logfile, "[%d] Parse_cw_init . CW_Iambic_Type: %d\n", line_number++, cmd_value);
+        proficio_ini[SET_IAMBIC_TYPE - PROFICIO_INI_SET_OFFSET].opcode = SET_IAMBIC_TYPE;
+        proficio_ini[SET_IAMBIC_TYPE - PROFICIO_INI_SET_OFFSET].opcode_data = cmd_value;
+        cfg.mode = (int8_t) cmd_value;
+    }
+    parameter = strstr(record, "CW_Side_Tone_Volume=");
+    if (parameter != NULL) {
+        length = strlen("CW_Side_Tone_Volume=");
+        cmd_value = atoi(&parameter[length]);
+        print_time(0);
+        fprintf(G_fp_logfile, "[%d] Parse_cw_init . CW_Side_Tone_Volume: %d\n", line_number++, cmd_value);
+        proficio_ini[SET_SIDE_TONE_VOLUME - PROFICIO_INI_SET_OFFSET].opcode = SET_SIDE_TONE_VOLUME;
+        proficio_ini[SET_SIDE_TONE_VOLUME - PROFICIO_INI_SET_OFFSET].opcode_data = cmd_value;
+        cfg.tone = (float) cmd_value;
+    }*/
+    return 1;
+}
+
+int get_cw_params() {
+    FILE *cw_ini;
+    char file_name[PATH_MAX] = {0};
+    int lenght = 0;
+    char cw_init_record[PATH_MAX] = {0};
+    char *record_status = NULL;
+
+    if ((homedir = My_getenv("HOME")) != NULL) {
+        print_time(0);
+        fprintf(G_fp_logfile, "[%d] get_cw_params . Default Path: %s\n", line_number++, homedir);
+        strcpy(file_name, homedir);
+        strcat(file_name, "/cw.ini");
+
+        print_time(0);
+        fprintf(G_fp_logfile, "[%d] get_cw_params. File: %s\n", line_number++, file_name);
+        fflush(G_fp_logfile);
+        cw_ini = fopen(file_name, "r");
+        if (cw_ini == NULL) {
+            /* Create a minimal default so Linux/WSL can run without Windows MSCC-NET9 tree */
+            print_time(0);
+            fprintf(G_fp_logfile, "[%d] get_cw_params Open: FAILED — creating default %s\n",
+                line_number++, file_name);
+            cw_ini = fopen(file_name, "w");
+            if (cw_ini != NULL) {
+                fprintf(cw_ini,
+                    "CW_Keyer_Installed=0;\n"
+                    "CW_Keyer_Mode=1;\n"
+                    "CW_Iambic_Type=0;\n"
+                    "CW_Iambic_Calibrate=0;\n"
+                    "CW_Memory=0;\n"
+                    "CW_Spacing=0;\n"
+                    "CW_Paddle=1;\n"
+                    "CW_Weight=50;\n"
+                    "CW_Tx_Hold=15;\n"
+                    "CW_Speed=18;\n"
+                    "CW_Semi_Break_In=0;\n"
+                    "CW_Semi_Control=0;\n"
+                    "CW_Side_Tone_Volume=0;\n");
+                fclose(cw_ini);
+                cw_ini = fopen(file_name, "r");
+            }
+        }
+        if (cw_ini != NULL) {
+            record_status = fgets(cw_init_record, sizeof (cw_init_record), cw_ini);
+            while (record_status != NULL) {
+                parse_cw_init_record(cw_init_record);
+                record_status = fgets(cw_init_record, sizeof (cw_init_record), cw_ini);
+            }
+            if (cw_ini != NULL) {
+                fclose(cw_ini);
+            }
+        } else {
+            print_time(0);
+            fprintf(G_fp_logfile, "[%d] get_cw_params Open: FAILED (continuing without cw.ini)\n", line_number++);
+            /* Do not Stop_all — keeps main loop alive for handshake testing */
+        }
+        print_time(0);
+        fprintf(G_fp_logfile, "[%d] get_cw_params . Finished\n", line_number++);
+    }
+    return 1;
+}
+
+void Parse_mscc_record(char *record) {
+    int cmd_value;
+    char *parameter;
+    int status = 0;
+    int length;
+    char temp_mscc_IP[PATH_MAX] = {0};
+    char *field_start;
+    char *field_end;
+
+    parameter = strstr(record, "MSCC_PORT=");
+    if (parameter != NULL) {
+        length = strlen("MSCC_PORT=");
+        cmd_value = atoi(&parameter[length]);
+        G_RPI_mscc_port = cmd_value;
+        print_time(0);
+        fprintf(G_fp_logfile, "[%d] Parse_mscc_record. MSCC_PORT: %d\n", line_number++, cmd_value);
+        status = 1;
+    }
+
+    parameter = strstr(record, "MSCC_IP=");
+    if (parameter != NULL) {
+        field_start = strstr(record, "MSCC_IP=");
+        field_end = strstr(field_start, ";");
+        strncat(G_Client_Host_Name, &field_start[8], ((field_end - (field_start + 8))));
+        print_time(0);
+        fprintf(G_fp_logfile, "[%d] Parse_mscc_record. G_Client_Host_Name: %s\n", line_number++, G_Client_Host_Name);
+    }
+
+    parameter = strstr(record, "PCB_VERSION=");
+    if (parameter != NULL) {
+        length = strlen("PCB_VERSION=");
+        cmd_value = atoi(&parameter[length]);
+        G_pcb_version = cmd_value;
+        print_time(0);
+        fprintf(G_fp_logfile, "[%d] Parse_mscc_record. G_pcb_version: %d\n", line_number++, G_pcb_version);
+        status = 1;
+    }
+
+    /* PROFICIO-MKII=1 → MKII host features (PTT sense thread). 0 = legacy.
+     * Also accept PROFICIO_MKII= for underscored typo safety. Default stays 1. */
+    parameter = strstr(record, "PROFICIO-MKII=");
+    if (parameter == NULL)
+        parameter = strstr(record, "PROFICIO_MKII=");
+    if (parameter != NULL) {
+        length = (int)(strchr(parameter, '=') - parameter + 1);
+        cmd_value = atoi(&parameter[length]);
+        if (cmd_value != 0)
+            cmd_value = 1;
+        G_proficio_mkii = (uint8_t)cmd_value;
+        print_time(0);
+        fprintf(G_fp_logfile, "[%d] Parse_mscc_record. G_proficio_mkii: %d\n",
+            line_number++, (int)G_proficio_mkii);
+        status = 1;
+    }
+}
+
+int initialize_mscc() {
+    FILE *fp_mscc_ini;
+    char file_name[PATH_MAX] = {0};
+    int status = 0;
+    char init_record[PATH_MAX] = {0};
+    char *record_status = NULL;
+
+    if ((homedir = My_getenv("HOME")) != NULL) {
+        print_time(0);
+        fprintf(G_fp_logfile, "[%d] initialize_mscc. Default Path: %s\n", line_number++, homedir);
+        strcpy(file_name, homedir);
+        strcat(file_name, "/mscc.ini");
+        print_time(0);
+        fprintf(G_fp_logfile, "[%d] initialize_mscc. File: %s\n", line_number++, file_name);
+        fflush(G_fp_logfile);
+        fp_mscc_ini = fopen(file_name, "r");
+        if (fp_mscc_ini == NULL) {
+            /* Default for WSL: client on same machine via localhost */
+            print_time(0);
+            fprintf(G_fp_logfile, "[%d] initialize_mscc Open: FAILED — creating default %s\n",
+                line_number++, file_name);
+            fp_mscc_ini = fopen(file_name, "w");
+            if (fp_mscc_ini != NULL) {
+                fprintf(fp_mscc_ini,
+                    "MSCC_PORT=8889;\n"
+                    "MSCC_IP=127.0.0.1;\n"
+                    "PCB_VERSION=10;\n"
+                    "PROFICIO-MKII=1;\n");
+                fclose(fp_mscc_ini);
+                fp_mscc_ini = fopen(file_name, "r");
+            }
+        }
+        if (fp_mscc_ini != NULL) {
+            record_status = fgets(init_record, sizeof (init_record), fp_mscc_ini);
+            while (record_status != NULL) {
+                Parse_mscc_record(init_record);
+                record_status = fgets(init_record, sizeof (init_record), fp_mscc_ini);
+            }
+            if (fp_mscc_ini != NULL) {
+                fclose(fp_mscc_ini);
+            }
+        } else {
+            print_time(0);
+            fprintf(G_fp_logfile, "[%d] initialize_mscc Open: FAILED (continuing; MSCC_IP defaults later)\n",
+                line_number++);
+            /* Do not Stop_all — keeps UDP command thread alive for handshake */
+        }
+        if (G_proficio_mkii == 0)
+            G_PTT_Switch_Allow = FALSE;
+        print_time(0);
+        fprintf(G_fp_logfile, "[%d] initialize_mscc. Finished. G_proficio_mkii=%d\n",
+            line_number++, (int)G_proficio_mkii);
+    }
+    return 1;
+}

@@ -1,0 +1,477 @@
+/*
+ * mscc-init (Linux) — interactive base configuration for MSCC-MKII.
+ * Writes $HOME/*.ini used by ms-sdr / sdrcore-recv / sdrcore-trans.
+ *
+ * Transceiver identity: libusb-1.0 control path (VID/PID Multus).
+ * Audio device selection: PortAudio only (not USB control).
+ * CAT serial: /dev/ttyUSB* / ttyACM* or 0 = PTY for ms-sdr.
+ */
+#include "platform.h"
+#include "port_defines.h"
+#include <libusb-1.0/libusb.h>
+#include <ctype.h>
+
+#define MULTUS_VID 0x16C0
+#define MULTUS_PID 0x05DC
+#define MAX_INPUT_DEVICES 50
+#define NO_DEVICE 100
+
+struct input_devices {
+    int record_number;
+    int device_index;
+    char name[512];
+    int num_channels;
+    int default_input_device;
+};
+
+struct output_devices {
+    int record_number;
+    int device_index;
+    char name[512];
+    int num_channels;
+    int default_output_device;
+};
+
+static struct input_devices G_input_devices[MAX_INPUT_DEVICES];
+static struct output_devices G_output_devices[MAX_INPUT_DEVICES];
+static int num_input_devices_found = 0;
+static int num_output_devices_found = 0;
+
+static char G_Usb_serial_number[MAX_PATH];
+static char G_string_host_name[MAX_PATH];
+static char G_string_server_IP[MAX_PATH];
+static int G_mscc_port;
+static int G_server_port;
+static uint8_t G_PCB_Version = 10;
+static uint8_t G_Keyer_Installed = 0;
+static char G_l_path[MAX_PATH];
+static const PaDeviceInfo *lpInfo;
+
+static char *My_getenv(const char *myenv)
+{
+    const char *home;
+    (void)myenv;
+    memset(G_l_path, 0, sizeof(G_l_path));
+    home = getenv("HOME");
+    if (home == NULL || home[0] == '\0')
+        home = "/tmp";
+    strncpy(G_l_path, home, sizeof(G_l_path) - 1);
+    return G_l_path;
+}
+
+/* --- Multus control USB (libusb-1.0): serial number only --- */
+static int read_multus_serial(void)
+{
+    libusb_context *ctx = NULL;
+    libusb_device **list = NULL;
+    ssize_t cnt, i;
+    int rc;
+    int found = -1;
+
+    G_Usb_serial_number[0] = '\0';
+    rc = libusb_init(&ctx);
+    if (rc != 0) {
+        fprintf(stderr, "libusb_init failed: %s\n", libusb_strerror(rc));
+        return -1;
+    }
+    cnt = libusb_get_device_list(ctx, &list);
+    if (cnt < 0) {
+        fprintf(stderr, "libusb_get_device_list failed\n");
+        libusb_exit(ctx);
+        return -1;
+    }
+    for (i = 0; i < cnt; i++) {
+        struct libusb_device_descriptor desc;
+        libusb_device_handle *h = NULL;
+        unsigned char sn[256];
+
+        if (libusb_get_device_descriptor(list[i], &desc) != 0)
+            continue;
+        if (desc.idVendor != MULTUS_VID || desc.idProduct != MULTUS_PID)
+            continue;
+
+        printf("TRANSCEIVER FOUND (VID=0x%04X PID=0x%04X)\n",
+            desc.idVendor, desc.idProduct);
+        if (libusb_open(list[i], &h) != 0) {
+            fprintf(stderr, "libusb_open failed (permissions? try udev rule or sudo)\n");
+            continue;
+        }
+        if (desc.iSerialNumber != 0) {
+            rc = libusb_get_string_descriptor_ascii(h, desc.iSerialNumber, sn, sizeof(sn));
+            if (rc > 0) {
+                sn[rc < (int)sizeof(sn) ? rc : (int)sizeof(sn) - 1] = '\0';
+                strncpy(G_Usb_serial_number, (char *)sn, sizeof(G_Usb_serial_number) - 1);
+                printf("TRANSCEIVER SERIAL NUMBER: %s\n", G_Usb_serial_number);
+                found = 0;
+            }
+        }
+        libusb_close(h);
+        if (found == 0)
+            break;
+    }
+    libusb_free_device_list(list, 1);
+    libusb_exit(ctx);
+    return found;
+}
+
+static int init_mscc(void)
+{
+    FILE *fp;
+    char path[PATH_MAX];
+    const char *home = My_getenv("HOME");
+
+    snprintf(path, sizeof(path), "%s/mscc.ini", home);
+    printf("mscc initialization path: %s\n", path);
+    fp = fopen(path, "w");
+    if (!fp)
+        return -1;
+    fprintf(fp, "PROFICIO_SERIAL_NUMBER=%s;\n", G_Usb_serial_number);
+    fprintf(fp, "MSCC_PORT=%d;\n", G_mscc_port);
+    fprintf(fp, "MSCC_IP=%s;\n", G_string_host_name);
+    fprintf(fp, "PROFICIO_DLL_PORT=%d;\n", G_server_port);
+    fprintf(fp, "PROFICIO_DLL_IP=%s;\n", G_string_server_IP);
+    fprintf(fp, "PCB_VERSION=%d;\n", G_PCB_Version);
+    fclose(fp);
+    return 0;
+}
+
+static int Create_Fortis_I2C(int mfc, int meter)
+{
+    FILE *fp;
+    char path[PATH_MAX];
+    const char *home = My_getenv("HOME");
+
+    snprintf(path, sizeof(path), "%s/i2c.ini", home);
+    fp = fopen(path, "w");
+    if (!fp)
+        return -1;
+    fputs("G_MASTER_CONTROLLER_attached=2;\n", fp);
+    fprintf(fp, "G_MFC_attached=%d;\n", mfc);
+    fputs("G_SOLIDUS_TEMP_SENSOR_attached=0;\n", fp);
+    fprintf(fp, "G_METER_attached=%d;\n", meter);
+    fputs("G_IQBD_attached=0;\n", fp);
+    fputs("G_CURRENT_SENSOR_attached=0;\n", fp);
+    fclose(fp);
+    return 0;
+}
+
+static int Update_CW_ini(void)
+{
+    FILE *fp;
+    char path[PATH_MAX];
+    const char *home = My_getenv("HOME");
+
+    snprintf(path, sizeof(path), "%s/cw.ini", home);
+    fp = fopen(path, "w");
+    if (!fp)
+        return -1;
+    fprintf(fp, "CW_Keyer_Installed=%d;\n", G_Keyer_Installed);
+    fprintf(fp, "CW_Keyer_Mode=%d;\n", 0);
+    fprintf(fp, "CW_Iambic_Type=%d;\n", 0);
+    fprintf(fp, "CW_Iambic_Calibrate=%d;\n", 120);
+    fprintf(fp, "CW_Memory=%d;\n", 0);
+    fprintf(fp, "CW_Spacing=%d;\n", 0);
+    fprintf(fp, "CW_Paddle=%d;\n", 0);
+    fprintf(fp, "CW_Weight=%d;\n", 50);
+    fprintf(fp, "CW_Tx_Hold=%d;\n", 15);
+    fprintf(fp, "CW_Speed=%d;\n", 18);
+    fprintf(fp, "CW_Semi_Break_In=%d;\n", 0);
+    fprintf(fp, "CW_Semi_Control=%d;\n", 0);
+    fprintf(fp, "CW_Side_Tone_Volume=%d;\n", 0);
+    fclose(fp);
+    return 0;
+}
+
+/* CAT: 0 = PTY for ms-sdr Linux; else write device path like /dev/ttyUSB0 */
+static int Update_Serial_Config_linux(const char *port_name)
+{
+    FILE *fp;
+    char path[PATH_MAX];
+    const char *home = My_getenv("HOME");
+
+    snprintf(path, sizeof(path), "%s/comm-port.ini", home);
+    fp = fopen(path, "w");
+    if (!fp) {
+        printf("Open FAILED. %s\n", path);
+        return -1;
+    }
+    if (port_name == NULL || port_name[0] == '\0' || strcmp(port_name, "0") == 0) {
+        fprintf(fp,
+            "COMM_PORT_NAME=PTY,COMM_PORT_INDEX=0,BAUD_RATE_INDEX=3,"
+            "PARITY_INDEX=0,DATA_BITS_INDEX=1,STOP_BITS_INDEX=0,PIN=0;\n");
+        printf("CAT: PTY (ms-sdr ~/ms-sdr-cat)\n");
+    } else {
+        fprintf(fp,
+            "COMM_PORT_NAME=%s,COMM_PORT_INDEX=0,BAUD_RATE_INDEX=3,"
+            "PARITY_INDEX=0,DATA_BITS_INDEX=1,STOP_BITS_INDEX=0,PIN=0;\n",
+            port_name);
+        printf("CAT: %s\n", port_name);
+    }
+    fclose(fp);
+    return 0;
+}
+
+static void List_Serial_Ports(void)
+{
+    DIR *d;
+    struct dirent *e;
+    int n = 0;
+
+    printf("Serial devices (for CAT / digi):\n");
+    printf("  0  -> PTY (recommended for Linux ms-sdr Kenwood CAT)\n");
+    d = opendir("/dev");
+    if (!d)
+        return;
+    while ((e = readdir(d)) != NULL) {
+        if (strncmp(e->d_name, "ttyUSB", 6) == 0 ||
+            strncmp(e->d_name, "ttyACM", 6) == 0 ||
+            strncmp(e->d_name, "ttyS", 4) == 0) {
+            printf("  /dev/%s\n", e->d_name);
+            n++;
+        }
+    }
+    closedir(d);
+    if (n == 0)
+        printf("  (no ttyUSB/ttyACM found)\n");
+}
+
+static int host_api_prefer(void)
+{
+    PaHostApiIndex n = Pa_GetHostApiCount();
+    PaHostApiIndex i, prefer = 0;
+    const PaHostApiInfo *info;
+
+    for (i = 0; i < n; i++) {
+        info = Pa_GetHostApiInfo(i);
+        if (info && info->name) {
+            printf("Host API %d: %s\n", (int)i, info->name);
+            if (strstr(info->name, "ALSA"))
+                prefer = i;
+        }
+    }
+    return (int)prefer;
+}
+
+static void Get_Speaker_Audio_Device(void)
+{
+    PaDeviceIndex j, devCount = Pa_GetDeviceCount();
+    const PaHostApiInfo *apiInfo;
+
+    (void)host_api_prefer();
+    num_output_devices_found = 0;
+    printf("Get_Speaker_Audio_Device (PortAudio device count=%d)\n", (int)devCount);
+    for (j = 0; j < devCount && num_output_devices_found < MAX_INPUT_DEVICES; j++) {
+        lpInfo = Pa_GetDeviceInfo(j);
+        if (!lpInfo || !lpInfo->name || lpInfo->maxOutputChannels < 1)
+            continue;
+        strncpy(G_output_devices[num_output_devices_found].name, lpInfo->name,
+            sizeof(G_output_devices[0].name) - 1);
+        G_output_devices[num_output_devices_found].device_index = (int)j;
+        G_output_devices[num_output_devices_found].num_channels = lpInfo->maxOutputChannels;
+        G_output_devices[num_output_devices_found].record_number = num_output_devices_found;
+        apiInfo = Pa_GetHostApiInfo(lpInfo->hostApi);
+        /* List everything with output, including Multus and MSCC virtual */
+        printf("Speaker Device: Number: %d, api=%s, name: %s\n",
+            num_output_devices_found,
+            (apiInfo && apiInfo->name) ? apiInfo->name : "?",
+            lpInfo->name);
+        num_output_devices_found++;
+    }
+    if (num_output_devices_found == 0)
+        printf("(no PortAudio output devices)\n");
+}
+
+static void Get_Microphone_Audio_Device(void)
+{
+    PaDeviceIndex j, devCount = Pa_GetDeviceCount();
+    const PaHostApiInfo *apiInfo;
+
+    num_input_devices_found = 0;
+    printf("Get_Microphone_Audio_Device (PortAudio device count=%d)\n", (int)devCount);
+    for (j = 0; j < devCount && num_input_devices_found < MAX_INPUT_DEVICES; j++) {
+        lpInfo = Pa_GetDeviceInfo(j);
+        if (!lpInfo || !lpInfo->name || lpInfo->maxInputChannels < 1)
+            continue;
+        /* List Multus + virtual cable + normal mics (user picks) */
+        strncpy(G_input_devices[num_input_devices_found].name, lpInfo->name,
+            sizeof(G_input_devices[0].name) - 1);
+        G_input_devices[num_input_devices_found].device_index = (int)j;
+        G_input_devices[num_input_devices_found].num_channels = lpInfo->maxInputChannels;
+        G_input_devices[num_input_devices_found].record_number = num_input_devices_found;
+        apiInfo = Pa_GetHostApiInfo(lpInfo->hostApi);
+        printf("Microphone Device: Number: %d, api=%s, name: %s\n",
+            num_input_devices_found,
+            (apiInfo && apiInfo->name) ? apiInfo->name : "?",
+            lpInfo->name);
+        num_input_devices_found++;
+    }
+    if (num_input_devices_found == 0)
+        printf("(no PortAudio input devices)\n");
+}
+
+static int write_device_name_file(const char *filename, const char *devname)
+{
+    FILE *fp;
+    char path[PATH_MAX];
+    char namebuf[512];
+    char *name;
+    const char *home = My_getenv("HOME");
+
+    snprintf(path, sizeof(path), "%s/%s", home, filename);
+    fp = fopen(path, "w");
+    if (!fp) {
+        printf("Open FAILED. %s\n", path);
+        return -1;
+    }
+    strncpy(namebuf, devname, sizeof(namebuf) - 1);
+    namebuf[sizeof(namebuf) - 1] = '\0';
+    name = strtok(namebuf, "(");
+    if (name == NULL)
+        name = namebuf;
+    while (*name == ' ')
+        name++;
+    fprintf(fp, "%s", name);
+    fclose(fp);
+    printf("Wrote %s -> %s\n", path, name);
+    return 0;
+}
+
+static int Update_Operator_Speaker_Config(int record)
+{
+    if (record < 0 || record >= num_output_devices_found)
+        return -1;
+    return write_device_name_file("operator-speaker.ini",
+        G_output_devices[record].name);
+}
+
+static int Update_Digital_Speaker_Config(int record)
+{
+    if (record < 0 || record >= num_output_devices_found)
+        return -1;
+    return write_device_name_file("digital-speaker.ini",
+        G_output_devices[record].name);
+}
+
+static int Update_Operator_Microphone_Config(int record)
+{
+    if (record < 0 || record >= num_input_devices_found)
+        return -1;
+    return write_device_name_file("operator-microphone.ini",
+        G_input_devices[record].name);
+}
+
+static int Update_Digital_Microphone_Config(int record)
+{
+    if (record < 0 || record >= num_input_devices_found)
+        return -1;
+    return write_device_name_file("digital-microphone.ini",
+        G_input_devices[record].name);
+}
+
+static void Audio_Device_Error(PaError err)
+{
+    fprintf(stdout, "PortAudio error %d: %s\n", err,
+        err != paNoError ? Pa_GetErrorText(err) : "(none)");
+    MessageBoxA(NULL, "mscc-init PortAudio failed", "mscc-init", MB_OK);
+    Pa_Terminate();
+    exit(1);
+}
+
+int main(int argc, char **argv)
+{
+    int status;
+    int exit_status = 0;
+    int mfc = 0, meter = 0;
+    PaError err;
+    int speaker_device = 0;
+    int microphone_device = 0;
+    char cat_choice[128];
+    int scan_status;
+
+    (void)argc;
+    (void)argv;
+
+    printf("mscc-init (Linux): base configuration for MSCC-MKII\n");
+    printf("HOME config directory: %s\n", My_getenv("HOME"));
+
+    status = read_multus_serial();
+    if (status >= 0) {
+        G_mscc_port = MSCC_PORT;
+        G_server_port = MS_SDR_PORT;
+        if (gethostname(G_string_server_IP, sizeof(G_string_server_IP)) != 0)
+            strncpy(G_string_server_IP, "127.0.0.1", sizeof(G_string_server_IP) - 1);
+        strncpy(G_string_host_name, G_string_server_IP, sizeof(G_string_host_name) - 1);
+        printf("HOSTNAME: %s\n", G_string_server_IP);
+        G_PCB_Version = 10;
+
+        printf("IS THE PROFICIO MKII KEYER INSTALLED? ENTER 0 FOR NO, 1 FOR YES: ");
+        scan_status = scanf("%hhd", &G_Keyer_Installed);
+        (void)scan_status;
+
+        if (Create_Fortis_I2C(mfc, meter) < 0)
+            printf("i2c.ini Creation Failed\n");
+        if (init_mscc() < 0) {
+            printf("mscc.ini Creation Failed\n");
+            exit_status = 5;
+        } else if (Update_CW_ini() < 0) {
+            printf("cw.ini Creation Failed\n");
+            exit_status = 5;
+        }
+    } else {
+        printf("TRANSCEIVER NOT FOUND via libusb (VID/PID Multus).\n");
+        printf("You may still configure CAT and audio devices.\n");
+        G_mscc_port = MSCC_PORT;
+        G_server_port = MS_SDR_PORT;
+        if (gethostname(G_string_server_IP, sizeof(G_string_server_IP)) != 0)
+            strncpy(G_string_server_IP, "127.0.0.1", sizeof(G_string_server_IP) - 1);
+        strncpy(G_string_host_name, G_string_server_IP, sizeof(G_string_host_name) - 1);
+        strncpy(G_Usb_serial_number, "UNKNOWN", sizeof(G_Usb_serial_number) - 1);
+        Create_Fortis_I2C(0, 0);
+        init_mscc();
+        Update_CW_ini();
+        /* continue so audio/CAT can still be set on Pi without radio attached */
+    }
+
+    List_Serial_Ports();
+    printf("SELECT CAT: enter 0 for PTY, or full path e.g. /dev/ttyUSB0: ");
+    cat_choice[0] = '\0';
+    if (scanf("%127s", cat_choice) == 1)
+        Update_Serial_Config_linux(cat_choice);
+    else
+        Update_Serial_Config_linux("0");
+
+    err = Pa_Initialize();
+    if (err != paNoError)
+        Audio_Device_Error(err);
+    printf("PortAudio Version: 0x%08X\n", Pa_GetVersion());
+    if (Pa_GetVersionInfo())
+        printf("PortAudio: %s\n", Pa_GetVersionInfo()->versionText);
+
+    Get_Speaker_Audio_Device();
+    if (num_output_devices_found == 0) {
+        printf("WARNING: no PortAudio output devices (continue anyway)\n");
+    } else {
+        printf("Enter Operator Speaker device number: ");
+        if (scanf("%d", &speaker_device) == 1)
+            Update_Operator_Speaker_Config(speaker_device);
+        printf("Enter Digital Speaker device number: ");
+        if (scanf("%d", &speaker_device) == 1)
+            Update_Digital_Speaker_Config(speaker_device);
+    }
+
+    Get_Microphone_Audio_Device();
+    if (num_input_devices_found == 0) {
+        printf("WARNING: no PortAudio input devices (continue anyway)\n");
+    } else {
+        printf("Enter Operator Microphone device number: ");
+        if (scanf("%d", &microphone_device) == 1)
+            Update_Operator_Microphone_Config(microphone_device);
+        printf("Enter Digital Microphone device number: ");
+        if (scanf("%d", &microphone_device) == 1)
+            Update_Digital_Microphone_Config(microphone_device);
+    }
+
+    Pa_Terminate();
+    printf("mscc-init FINISHED. Config files written under %s\n", My_getenv("HOME"));
+    return exit_status;
+}

@@ -1,0 +1,139 @@
+C51 COMPILER V9.51   FRACN_API                                                             08/14/2026 10:16:38 PAGE 1   
+
+
+C51 COMPILER V9.51, COMPILATION OF MODULE FRACN_API
+OBJECT MODULE PLACED IN .\DP8051\DP8051_Keil_951\Debug\FracN_api.obj
+COMPILER INVOKED BY: C:\Program Files (x86)\Cypress\PSoC Creator\4.2\PSoC Creator\import\keil\pk51\9.51\C51\BIN\c51.exe 
+                    -Generated_Source\PSoC3\FracN_api.c NOIV LARGE MODDP2 OMF2 VB(1) NOIP INCDIR(.,Generated_Source\PSoC3) FF(3) DB WL(2) PR(
+                    -.\DP8051\DP8051_Keil_951\Debug/FracN_api.lst) CD OT(5,SPEED) OA OJ(.\DP8051\DP8051_Keil_951\Debug\FracN_api.obj)
+
+line level    source
+
+   1          // ========================================
+   2          // Copyright 2013 David Turnbull AE9RB
+   3          //
+   4          // Licensed under the Apache License, Version 2.0 (the "License");
+   5          // you may not use this file except in compliance with the License.
+   6          // You may obtain a copy of the License at
+   7          //
+   8          //     http://www.apache.org/licenses/LICENSE-2.0
+   9          //
+  10          // Unless required by applicable law or agreed to in writing, software
+  11          // distributed under the License is distributed on an "AS IS" BASIS,
+  12          // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+  13          // See the License for the specific language governing permissions and
+  14          // limitations under the License.
+  15          // ========================================
+  16          
+  17          #include "FracN_api.h"
+  18          #include <device.h>
+  19          
+  20          void FracN_Start2(uint8 dma) {
+  21   1          uint8 td;
+  22   1          
+  23   1          FracN_Set(FracN_DEFAULT);
+  24   1      
+  25   1          td = CyDmaTdAllocate();
+  26   1          CyDmaTdSetConfiguration(td, 1, td, 0);
+  27   1          CyDmaTdSetAddress(td, LO16((uint32)FracN_PLL_P__STATUS_REG), LO16((uint32)&FASTCLK_PLL_P));
+  28   1          CyDmaChSetInitialTd(dma, td);
+  29   1          CyDmaChEnable(dma, 1);
+  30   1      }
+  31          
+  32          void FracN_Set(uint16 frac) {
+  33   1          CY_SET_REG8(FracN_FRAC_HI__CONTROL_REG, frac >> 8);
+  34   1          CY_SET_REG8(FracN_FRAC_LO__CONTROL_REG, frac & 0xFF);
+  35   1      }
+C51 COMPILER V9.51   FRACN_API                                                             08/14/2026 10:16:38 PAGE 2   
+
+ASSEMBLY LISTING OF GENERATED OBJECT CODE
+
+
+             ; FUNCTION _FracN_Start2 (BEGIN)
+                                           ; SOURCE LINE # 20
+                 R     MOV     DPTR,#dma
+                       MOV     A,R7
+                       MOVX    @DPTR,A
+                                           ; SOURCE LINE # 23
+                       MOV     R7,#0F4H
+                       MOV     R6,#03DH
+                 R     CALL    _FracN_Set
+                                           ; SOURCE LINE # 25
+                 E     CALL    CyDmaTdAllocate
+                 R     MOV     DPTR,#td
+                       MOV     A,R7
+                       MOVX    @DPTR,A
+                                           ; SOURCE LINE # 26
+                       MOVX    A,@DPTR
+                       MOV     R3,A
+                       MOV     R7,A
+                       CLR     A
+                 E     MOV     DPTR,#?_CyDmaTdSetConfiguration?BYTE+04H
+                       MOVX    @DPTR,A
+                       MOV     R5,#01H
+                       MOV     R4,A
+                 E     CALL    _CyDmaTdSetConfiguration
+                                           ; SOURCE LINE # 27
+                 R     MOV     DPTR,#td
+                       MOVX    A,@DPTR
+                       MOV     R7,A
+                       MOV     R3,#022H
+                       MOV     R2,#042H
+                       MOV     R5,#067H
+                       MOV     R4,#064H
+                 E     CALL    _CyDmaTdSetAddress
+                                           ; SOURCE LINE # 28
+                 R     MOV     DPTR,#dma
+                       MOVX    A,@DPTR
+                       MOV     R7,A
+                       INC     DPTR
+                       MOVX    A,@DPTR
+                       MOV     R5,A
+                 E     CALL    _CyDmaChSetInitialTd
+                                           ; SOURCE LINE # 29
+                 R     MOV     DPTR,#dma
+                       MOVX    A,@DPTR
+                       MOV     R7,A
+                       MOV     R5,#01H
+                 E     CALL    _CyDmaChEnable
+                                           ; SOURCE LINE # 30
+                       RET     
+             ; FUNCTION _FracN_Start2 (END)
+
+             ; FUNCTION _FracN_Set (BEGIN)
+                                           ; SOURCE LINE # 32
+;---- Variable 'frac' assigned to Register 'R4/R5' ----
+                       MOV     R5,AR7
+                       MOV     R4,AR6
+                                           ; SOURCE LINE # 33
+                       MOV     A,R4
+                       MOV     DPTR,#06579H
+C51 COMPILER V9.51   FRACN_API                                                             08/14/2026 10:16:38 PAGE 3   
+
+                       MOVX    @DPTR,A
+                                           ; SOURCE LINE # 34
+                       MOV     A,R7
+                       MOV     DPTR,#06578H
+                       MOVX    @DPTR,A
+                                           ; SOURCE LINE # 35
+                       RET     
+             ; FUNCTION _FracN_Set (END)
+
+
+
+MODULE INFORMATION:   STATIC OVERLAYABLE
+   CODE SIZE        =     87    ----
+   CONSTANT SIZE    =   ----    ----
+   XDATA SIZE       =   ----       2
+   PDATA SIZE       =   ----    ----
+   DATA SIZE        =   ----    ----
+   IDATA SIZE       =   ----    ----
+   BIT SIZE         =   ----    ----
+   EDATA SIZE       =   ----    ----
+   HDATA SIZE       =   ----    ----
+   XDATA CONST SIZE =   ----    ----
+   FAR CONST SIZE   =   ----    ----
+END OF MODULE INFORMATION.
+
+
+C51 COMPILATION COMPLETE.  0 WARNING(S),  0 ERROR(S)

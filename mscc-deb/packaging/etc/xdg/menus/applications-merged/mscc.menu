@@ -1,0 +1,14 @@
+<!DOCTYPE Menu PUBLIC "-//freedesktop//DTD Menu 1.0//EN"
+  "http://www.freedesktop.org/standards/menu-spec/menu-1.0.dtd">
+<Menu>
+  <Name>Applications</Name>
+  <Menu>
+    <Name>MSCC</Name>
+    <Directory>mscc.directory</Directory>
+    <Include>
+      <And>
+        <Category>X-MSCC</Category>
+      </And>
+    </Include>
+  </Menu>
+</Menu>

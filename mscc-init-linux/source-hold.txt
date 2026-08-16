@@ -1,0 +1,106 @@
+int Create_I2C_Test() {
+    int status = 0;
+    FILE *Multus_ini;
+    char l_path[MAX_PATH] = {0};
+    char directry[MAX_PATH] = {0};
+
+    if ((homedir = My_getenv("HOME")) != NULL) {
+        strcpy(l_path, homedir);
+        strcat(l_path, "/i2c.ini");
+        Multus_ini = fopen(l_path, "w");
+        if (Multus_ini != NULL) {
+            fputs("G_MASTER_CONTROLLER_attached=2;\n", Multus_ini);
+            fputs("G_MFC_attached=0;\n", Multus_ini);
+            fputs("G_SOLIDUS_TEMP_SENSOR_attached=0;\n", Multus_ini);
+            fputs("G_METER_attached=0;\n", Multus_ini);
+            fputs("G_IQBD_attached=0;\n", Multus_ini);
+            fputs("G_CURRENT_SENSOR_attached=0;\n", Multus_ini);
+            fflush(Multus_ini);
+            fclose(Multus_ini);
+        } else status = -1;
+    } else status = -1;
+    return status;
+}
+int Create_NO_PA_i2c() {
+    int status = 0;
+    FILE *Multus_ini;
+    char l_path[MAX_PATH] = {0};
+    char directry[MAX_PATH] = {0};
+
+    if ((homedir = My_getenv("HOME")) != NULL) {
+        strcpy(l_path, homedir);
+        strcat(l_path, "/i2c.ini");
+        Multus_ini = fopen(l_path, "w");
+        if (Multus_ini != NULL) {
+            fputs("G_MASTER_CONTROLLER_attached=1;\n", Multus_ini);
+            fputs("G_MFC_attached=1;\n", Multus_ini);
+            fputs("G_SOLIDUS_TEMP_SENSOR_attached=0;\n", Multus_ini);
+            fputs("G_METER_attached=1;\n", Multus_ini);
+            fputs("G_IQBD_attached=1;\n", Multus_ini);
+            fputs("G_CURRENT_SENSOR_attached=0;\n", Multus_ini);
+            fflush(Multus_ini);
+            fclose(Multus_ini);
+        } else status = -1;
+    } else status = -1;
+    return status;
+}
+int Create_PA_i2c() {
+    int status = 0;
+    FILE *Multus_ini;
+    char l_path[MAX_PATH] = {0};
+    char directry[MAX_PATH] = {0};
+
+    if ((homedir = My_getenv("HOME")) != NULL) {
+        strcpy(l_path, homedir);
+        strcat(l_path, "/i2c.ini");
+        Multus_ini = fopen(l_path, "w");
+        if (Multus_ini != NULL) {
+            fputs("G_MASTER_CONTROLLER_attached=1;\n", Multus_ini);
+            fputs("G_MFC_attached=1;\n", Multus_ini);
+            fputs("G_SOLIDUS_TEMP_SENSOR_attached=1;\n", Multus_ini);
+            fputs("G_METER_attached=1;\n", Multus_ini);
+            fputs("G_IQBD_attached=1;\n", Multus_ini);
+            fputs("G_CURRENT_SENSOR_attached=1;\n", Multus_ini);
+            fflush(Multus_ini);
+            fclose(Multus_ini);
+        } else status = -1;
+    } else status = -1;
+    return status;
+}
+int RPI_Init() {
+    int status = 01;
+    FILE *Multus_ini;
+    char l_path[MAX_PATH] = {0};
+    //char directry[PATH_MAX] = {0};
+
+    if ((homedir = My_getenv("HOME")) != NULL) {
+        strcpy(l_path, homedir);
+        strcat(l_path, "/mscc-rpi.ini");
+        Multus_ini = fopen(l_path, "w");
+        if (Multus_ini != NULL) {
+            fprintf(Multus_ini, "PROFICIO_SERIAL_NUMBER=%s;\n", G_Usb_serial_number);
+            fprintf(Multus_ini, "MSCC_PORT=%d;\n", G_mscc_port);
+            fprintf(Multus_ini, "MSCC_IP=%s;\n", G_mscc_RPI_IP);
+            fprintf(Multus_ini, "PROFICIO_DLL_PORT=%d;\n", G_server_port);
+            fprintf(Multus_ini, "PROFICIO_DLL_IP=%s;\n", G_string_server_IP);
+            fprintf(Multus_ini, "PCB_VERSION=%d;\n", G_PCB_Version);
+            fputs("CW_Restore_Defaults=0;\n", Multus_ini);
+            fputs("CW_Iambic_Mode_On_Off=0;\n", Multus_ini);
+            fputs("CW_Iambic_Type=0;\n", Multus_ini);
+            fputs("CW_Iambic_Calibrate=120;\n", Multus_ini);
+            fputs("CW_Memory=3;\n", Multus_ini);
+            fputs("CW_Spacing=1;\n", Multus_ini);
+            fputs("CW_Paddle=0;\n", Multus_ini);
+            fputs("CW_Weight=50;\n", Multus_ini);
+            fputs("CW_Tx_Hold=10;\n", Multus_ini);
+            fputs("CW_Speed=18;\n", Multus_ini);
+            fputs("CW_Semi_Break_In=0;\n", Multus_ini);
+            fputs("CW_Semi_Control=0;\n", Multus_ini);
+            fputs("CW_Side_Tone=1;\n", Multus_ini);
+            fputs("Highlimit=3000;\n", Multus_ini);
+            fflush(Multus_ini);
+            fclose(Multus_ini);
+        } else status = -1;
+    } else status = -1;
+    return status;
+}

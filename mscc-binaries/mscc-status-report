@@ -1,0 +1,504 @@
+#!/usr/bin/env python3
+"""
+MSCC install / runtime report — used by `mscc status` (CLI and desktop).
+
+Reads $HOME/.local/mscc config, matches PortAudio devices, checks CAT port,
+binaries, Virtual sinks, and Proficio USB. Exit 0 if no FAIL, else 1.
+"""
+from __future__ import annotations
+
+import os
+import re
+import subprocess
+import sys
+from pathlib import Path
+from typing import List, Optional, Tuple
+
+
+def home() -> Path:
+    return Path(os.environ.get("HOME") or Path.home())
+
+
+def cfg_dir() -> Path:
+    return home() / ".local" / "mscc"
+
+
+def mscc_dir() -> Path:
+    return Path(os.environ.get("MSCC_DIR") or (home() / "mscc"))
+
+
+class Report:
+    def __init__(self) -> None:
+        self.fails = 0
+        self.warns = 0
+        self.lines: List[str] = []
+
+    def section(self, title: str) -> None:
+        self.lines.append("")
+        self.lines.append(f"=== {title} ===")
+
+    def ok(self, msg: str) -> None:
+        self.lines.append(f"  OK    {msg}")
+
+    def warn(self, msg: str) -> None:
+        self.warns += 1
+        self.lines.append(f"  WARN  {msg}")
+
+    def fail(self, msg: str) -> None:
+        self.fails += 1
+        self.lines.append(f"  FAIL  {msg}")
+
+    def info(self, msg: str) -> None:
+        self.lines.append(f"        {msg}")
+
+
+def read_text_file(path: Path) -> Optional[str]:
+    try:
+        return path.read_text(encoding="utf-8", errors="replace")
+    except OSError:
+        return None
+
+
+def read_first_line(path: Path) -> Optional[str]:
+    raw = read_text_file(path)
+    if raw is None:
+        return None
+    for line in raw.splitlines():
+        s = line.strip()
+        if s:
+            return s
+    return ""
+
+
+def parse_comm_port(line: str) -> Tuple[str, str]:
+    """Return (port_name, pin) from comm-port.ini line."""
+    name, pin = "?", "?"
+    m = re.search(r"COMM_PORT_NAME=([^,;]+)", line)
+    if m:
+        name = m.group(1).strip()
+    m = re.search(r"PIN=([0-9]+)", line)
+    if m:
+        pin = m.group(1)
+    return name, pin
+
+
+def parse_mscc_ini(text: str) -> dict:
+    out = {}
+    for part in re.split(r"[;\n]", text):
+        part = part.strip()
+        if "=" in part:
+            k, v = part.split("=", 1)
+            out[k.strip()] = v.strip()
+    return out
+
+
+def pgrep_x(name: str) -> List[str]:
+    try:
+        r = subprocess.run(
+            ["pgrep", "-x", name],
+            capture_output=True,
+            text=True,
+            timeout=5,
+        )
+        if r.returncode != 0:
+            return []
+        return [p for p in r.stdout.split() if p]
+    except (OSError, subprocess.TimeoutExpired):
+        return []
+
+
+def check_processes(R: Report) -> None:
+    R.section("Servers")
+    for name in ("sdrcore-recv", "sdrcore-trans", "ms-sdr"):
+        pids = pgrep_x(name)
+        if pids:
+            R.ok(f"{name}: running (pid {' '.join(pids)})")
+        else:
+            R.info(f"{name}: stopped")
+
+
+def check_binaries(R: Report) -> None:
+    R.section("Binaries")
+    d = mscc_dir()
+    R.info(f"MSCC_DIR={d}")
+    if not d.is_dir():
+        R.fail(f"missing directory {d}")
+        return
+    for b in ("sdrcore-recv", "sdrcore-trans", "ms-sdr", "mscc.sh"):
+        p = d / b
+        if p.is_file() and os.access(p, os.X_OK):
+            R.ok(f"{b}")
+        else:
+            R.fail(f"missing or not executable: {p}")
+
+
+def check_portaudio_link(R: Report) -> None:
+    R.section("PortAudio (library used by cores)")
+    recv = mscc_dir() / "sdrcore-recv"
+    if not recv.is_file():
+        R.warn("sdrcore-recv not present — skip ldd")
+        return
+    try:
+        r = subprocess.run(
+            ["ldd", str(recv)],
+            capture_output=True,
+            text=True,
+            timeout=10,
+        )
+        text = r.stdout + r.stderr
+    except (OSError, subprocess.TimeoutExpired) as e:
+        R.warn(f"ldd failed: {e}")
+        return
+    pa_lines = [ln.strip() for ln in text.splitlines() if "portaudio" in ln.lower()]
+    if not pa_lines:
+        R.fail("ldd shows no libportaudio — rebuild/reinstall mscc?")
+        return
+    for ln in pa_lines:
+        R.info(ln)
+    joined = "\n".join(pa_lines)
+    if "/usr/local/lib" in joined:
+        R.ok("linked against /usr/local (mscc-portaudio)")
+    elif "not found" in joined.lower():
+        R.fail("libportaudio not found at runtime")
+    else:
+        R.warn("not using /usr/local — digi VirtualA/B may be missing; install mscc-portaudio")
+
+
+def list_pa_devices() -> Tuple[List[dict], Optional[str]]:
+    try:
+        import pyaudio  # type: ignore
+    except ImportError:
+        return [], (
+            "python3-pyaudio not installed "
+            "(sudo apt install -y python3-pyaudio) — cannot list PortAudio devices"
+        )
+
+    devices: List[dict] = []
+    # Quiet ALSA spam
+    try:
+        devnull = open(os.devnull, "w")
+        old_err = os.dup(2)
+        os.dup2(devnull.fileno(), 2)
+    except OSError:
+        old_err = None
+        devnull = None
+
+    try:
+        pa = pyaudio.PyAudio()
+        try:
+            n = pa.get_device_count()
+            for i in range(n):
+                try:
+                    info = pa.get_device_info_by_index(i)
+                except Exception:
+                    continue
+                name = str(info.get("name") or "")
+                try:
+                    api = pa.get_host_api_info_by_index(int(info["hostApi"]))
+                    api_name = str(api.get("name") or "?")
+                except Exception:
+                    api_name = "?"
+                devices.append(
+                    {
+                        "index": i,
+                        "name": name,
+                        "api": api_name,
+                        "in": int(info.get("maxInputChannels") or 0),
+                        "out": int(info.get("maxOutputChannels") or 0),
+                        "rate": float(info.get("defaultSampleRate") or 0),
+                    }
+                )
+        finally:
+            pa.terminate()
+    except Exception as e:
+        return [], f"PortAudio init failed: {e}"
+    finally:
+        if old_err is not None:
+            try:
+                os.dup2(old_err, 2)
+                os.close(old_err)
+            except OSError:
+                pass
+        if devnull is not None:
+            devnull.close()
+
+    return devices, None
+
+
+def score_match(want: str, name: str, api: str, *, for_output: bool, out_ch: int) -> int:
+    """Rough match similar to sdrcore digi scoring / strstr for operator."""
+    if not want or not name:
+        return -1
+    if for_output and out_ch < 1:
+        return -1
+    if for_output and (".monitor" in name or ".Monitor" in name):
+        return -1
+    if name == want:
+        score = 10000
+    else:
+        p = name.find(want)
+        if p < 0:
+            return -1
+        after = name[p + len(want) : p + len(want) + 1]
+        if after and after not in (" ", ":", "(", "."):
+            score = 2000
+        else:
+            score = 5000
+        score -= len(name)
+    if "Virtual" in want and "Pulse" in api:
+        score += 500
+    return score
+
+
+def best_match(
+    want: str,
+    devices: List[dict],
+    *,
+    want_out: Optional[bool],
+) -> Optional[dict]:
+    best = None
+    best_sc = -1
+    for d in devices:
+        if want_out is True and d["out"] < 1:
+            continue
+        if want_out is False and d["in"] < 1:
+            continue
+        sc = score_match(
+            want,
+            d["name"],
+            d["api"],
+            for_output=(want_out is True),
+            out_ch=d["out"],
+        )
+        if sc > best_sc:
+            best_sc = sc
+            best = d
+    return best
+
+
+def is_proficio_name(name: str) -> bool:
+    n = name.lower()
+    return "proficio" in n or "multus" in n
+
+
+def check_config_and_audio(R: Report) -> None:
+    R.section("Config ($HOME/.local/mscc)")
+    d = cfg_dir()
+    R.info(f"config dir: {d}")
+    if not d.is_dir():
+        R.fail(f"missing {d} — run MSCC Init")
+        return
+
+    keys = {
+        "operator-speaker.ini": "operator speaker",
+        "operator-microphone.ini": "operator mic",
+        "digital-speaker.ini": "digital speaker",
+        "digital-microphone.ini": "digital mic",
+        "comm-port.ini": "CAT / comm",
+        "mscc.ini": "mscc.ini",
+    }
+    values = {}
+    for fn, label in keys.items():
+        p = d / fn
+        if not p.is_file():
+            R.fail(f"missing {fn}")
+            values[fn] = None
+            continue
+        if fn == "comm-port.ini":
+            line = read_first_line(p) or ""
+            port, pin = parse_comm_port(line)
+            values[fn] = line
+            R.ok(f"{label}: COMM_PORT_NAME={port}  PIN={pin}")
+            R.info(f"  file: {p}")
+        elif fn == "mscc.ini":
+            text = read_text_file(p) or ""
+            kv = parse_mscc_ini(text)
+            values[fn] = kv
+            R.ok(
+                f"{label}: serial={kv.get('PROFICIO_SERIAL_NUMBER', '?')}  "
+                f"MSCC_IP={kv.get('MSCC_IP', '?')}  "
+                f"ports {kv.get('MSCC_PORT', '?')}/{kv.get('PROFICIO_DLL_PORT', '?')}"
+            )
+        else:
+            val = read_first_line(p)
+            values[fn] = val
+            if val:
+                R.ok(f"{label}: {val}")
+            else:
+                R.fail(f"{label}: empty file {p}")
+
+    R.section("PortAudio devices vs config")
+    devices, err = list_pa_devices()
+    if err:
+        R.warn(err)
+        R.info("Install python3-pyaudio to match sound devices here.")
+        return
+    if not devices:
+        R.fail("PortAudio reports zero devices")
+        return
+
+    # Count host APIs briefly
+    apis = sorted({d["api"] for d in devices})
+    R.info(f"PortAudio sees {len(devices)} devices; host APIs: {', '.join(apis)}")
+
+    # Show Proficio-looking devices
+    prof = [d for d in devices if is_proficio_name(d["name"])]
+    if prof:
+        for d in prof:
+            R.ok(
+                f"Proficio/Multus present: pa={d['index']} api={d['api']} "
+                f"in={d['in']} out={d['out']} name='{d['name']}'"
+            )
+    else:
+        R.warn("no PortAudio name containing Proficio/Multus (radio powered / USB?)")
+
+    def check_want(label: str, want: Optional[str], want_out: Optional[bool]) -> None:
+        if not want:
+            R.fail(f"{label}: no config name")
+            return
+        m = best_match(want, devices, want_out=want_out)
+        if m:
+            R.ok(
+                f"{label}: matched pa={m['index']} api={m['api']} "
+                f"in={m['in']} out={m['out']} rate={m['rate']:.0f} "
+                f"name='{m['name']}'"
+            )
+            if is_proficio_name(m["name"]) and "operator" in label.lower():
+                R.warn(
+                    f"{label}: matched Proficio/Multus — usually wrong for operator phones/mic"
+                )
+        else:
+            R.fail(f"{label}: no PortAudio device matches '{want}'")
+
+    check_want("Operator speaker", values.get("operator-speaker.ini"), True)
+    check_want("Operator mic", values.get("operator-microphone.ini"), False)
+    check_want("Digital speaker", values.get("digital-speaker.ini") or "VirtualA", True)
+    check_want(
+        "Digital mic", values.get("digital-microphone.ini") or "VirtualB.monitor", False
+    )
+
+def check_virtual_pulse(R: Report) -> None:
+    R.section("Digital sinks (Pulse/PipeWire)")
+    if not shutil_which("pactl"):
+        R.warn("pactl not found — cannot check VirtualA/B")
+        return
+    try:
+        r = subprocess.run(
+            ["pactl", "list", "short", "sinks"],
+            capture_output=True,
+            text=True,
+            timeout=10,
+        )
+        sinks = r.stdout
+    except (OSError, subprocess.TimeoutExpired) as e:
+        R.warn(f"pactl failed: {e}")
+        return
+    for name in ("VirtualA", "VirtualB"):
+        if re.search(rf"\b{name}\b", sinks):
+            R.ok(f"sink {name} present")
+        else:
+            R.fail(
+                f"sink {name} missing — run: systemctl --user enable --now mscc-virtual-audio"
+            )
+
+
+def shutil_which(cmd: str) -> Optional[str]:
+    from shutil import which
+
+    return which(cmd)
+
+
+def check_comm_port(R: Report) -> None:
+    R.section("CAT / serial")
+    line = read_first_line(cfg_dir() / "comm-port.ini")
+    if line is None:
+        R.fail("comm-port.ini missing")
+        return
+    port, pin = parse_comm_port(line)
+    if port.upper() == "PTY" or port == "0":
+        R.ok(f"CAT mode PTY (text only, no hardware PTT pins)  PIN={pin}")
+        return
+    path = Path(port)
+    if not path.is_absolute():
+        # allow bare tnt0
+        if not port.startswith("/"):
+            path = Path("/dev") / port
+    if path.exists():
+        R.ok(f"device exists: {path}  PIN={pin}")
+        try:
+            st = path.stat()
+            mode = oct(st.st_mode & 0o777)
+            R.info(f"  mode={mode}")
+        except OSError:
+            pass
+        # writable check (non-destructive)
+        if os.access(path, os.R_OK | os.W_OK):
+            R.ok(f"read/write access OK for {path}")
+        else:
+            R.warn(
+                f"no r/w access to {path} — add user to dialout and re-login"
+            )
+    else:
+        R.fail(f"device missing: {path} (tty0tty loaded? reboot after headers install?)")
+
+
+def check_proficio_usb(R: Report) -> None:
+    R.section("Proficio USB (control 16c0:05dc)")
+    base = Path("/sys/bus/usb/devices")
+    found = False
+    if base.is_dir():
+        try:
+            for entry in base.iterdir():
+                try:
+                    v = (entry / "idVendor").read_text().strip()
+                    p = (entry / "idProduct").read_text().strip()
+                except OSError:
+                    continue
+                if v.lower() == "16c0" and p.lower() == "05dc":
+                    found = True
+                    sn = "?"
+                    try:
+                        sn = (entry / "serial").read_text().strip()
+                    except OSError:
+                        pass
+                    R.ok(f"USB control device present  serial={sn}")
+                    break
+        except OSError:
+            pass
+    if not found:
+        R.warn("Proficio control USB not seen (power / cable / udev?)")
+
+
+def summary(R: Report) -> str:
+    if R.fails:
+        return f"MSCC status: {R.fails} FAIL, {R.warns} WARN — see details"
+    if R.warns:
+        return f"MSCC status: OK with {R.warns} WARN"
+    return "MSCC status: OK"
+
+
+def main() -> int:
+    R = Report()
+    R.lines.append(f"MSCC status report — {home()}")
+    check_processes(R)
+    check_binaries(R)
+    check_portaudio_link(R)
+    check_config_and_audio(R)
+    check_virtual_pulse(R)
+    check_comm_port(R)
+    check_proficio_usb(R)
+    R.section("Summary")
+    R.lines.append(f"  {summary(R)}")
+    R.lines.append(
+        f"  FAIL={R.fails}  WARN={R.warns}  "
+        f"(exit {'1' if R.fails else '0'})"
+    )
+    print("\n".join(R.lines))
+    # Optional one-line for notify: print to stderr if MSCC_STATUS_SUMMARY=1
+    if os.environ.get("MSCC_STATUS_SUMMARY") == "1":
+        print(summary(R), file=sys.stderr)
+    return 1 if R.fails else 0
+
+
+if __name__ == "__main__":
+    sys.exit(main())

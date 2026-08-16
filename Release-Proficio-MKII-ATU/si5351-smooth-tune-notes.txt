@@ -1,0 +1,421 @@
+================================================================================
+Si5351 "smooth tune" / spectrum pop notes for Proficio PSoC firmware
+================================================================================
+Date:     2026-07-20
+Audience: Ron (PSoC author) + Nate
+Source:   Release-Proficio-MKII-ATU / Proficio-MKII-ATU.cydsn
+          Key files: si5351.c, si5351a.c, si570.c, basic-plus.h, main.c
+Purpose:  Explain why LO glitches on every Hz at LF/MF, why HF is better,
+          and suggest concrete fixes. Discussion / example code only —
+          not applied to the tree unless you choose to.
+
+Symptom (operator report)
+-------------------------
+- Sensation type: RF LO discontinuity (not just UI panadapter re-center).
+- LF/MF (e.g. 630 m / 2200 m / low MF): spectrum JUMPS/POPS on EVERY Hz
+  of tuning.
+- HF: can tune several kHz before a pop (exact window not measured).
+
+That pattern matches a smooth-tune gate that is effectively "always hard
+retune" at low frequency, and only sometimes hard on HF.
+
+
+--------------------------------------------------------------------------------
+1. What classic Si570 smooth tune did (si570.c)
+--------------------------------------------------------------------------------
+Real Softrock-era behavior:
+
+  SI570_SMOOTH_PPM = 3500
+
+  On new fout:
+    testdco = fout * hsdiv * n1
+    if DCO still in [DCO_MIN, DCO_MAX]
+       AND |testdco - old_dco| < (DCO_CENTER * 3500 / 1e6)
+         -> SMOOTH: freeze DSPLL, write RFREQ only, unfreeze (no full reconfig)
+    else
+         -> HARD: recompute HS_DIV / N1, full retune (glitch)
+
+Si570 smooth keeps dividers and only nudges RFREQ inside the DCO window.
+
+
+--------------------------------------------------------------------------------
+2. What the Si5351 path already tries to do (good instincts)
+--------------------------------------------------------------------------------
+Host still speaks Si570-style LO (Si570_LO via USB). LO is applied to Si5351
+in si5351.c / si5351a.c (Softrock *4 clock style).
+
+A) Decision — si5351.c  smooth_tuning()
+
+    #define TUNING_PPM      3500
+    #define MAX_FREQ_DELTA  1000000   /* 1 MHz */
+
+    On each new E_current_LO_freq:
+      E_smooth = smooth_tuning(E_current_LO_freq);
+
+    Rough idea:
+      if |Δf| >= 1 MHz              -> not smooth
+      else if |Δf| > ppm_window     -> not smooth
+      else                          -> smooth
+
+B) Action — si5351aSetFrequency()  (and similar in si5351a-cw.c)
+
+    Always recompute PLL A + MultiSynth registers.
+    ONLY if (!E_smooth):
+        write SI_PLL_RESET (reg 177) = 0xA0;   // glitch / spectrum pop
+        E_smooth = TRUE;
+
+    Comments already say (Hans Summers / AN619 style):
+      "Resets the PLL. This causes a glitch in the output. For small
+       changes to the parameters, you don't need to reset the PLL,
+       and there is no glitch."
+
+So the PATH is there: skip PLL reset on small steps. The gate is wrong
+on LF, and the retune strategy is not as strong as true Si570 smooth.
+
+
+--------------------------------------------------------------------------------
+3. Smoking gun: integer division zeros the ppm window below 1 MHz
+--------------------------------------------------------------------------------
+Current code (si5351.c):
+
+    uint8 smooth_tuning(uint32 freq){
+        static uint32 previous_freq = 0;
+        uint8 smooth = TRUE;
+        uint32 abs_freq;
+        int32 freq_diff;
+        volatile uint32 max_ppm_freq;
+
+        freq_diff = (int32)(freq - previous_freq);
+        abs_freq = labs((freq_diff));
+        if(abs_freq >= MAX_FREQ_DELTA){
+            smooth = FALSE;
+        } else {
+            max_ppm_freq = freq / 1000000;   /* <<<< INTEGER DIVISION */
+            max_ppm_freq *= TUNING_PPM;
+            if (abs_freq > max_ppm_freq){
+                smooth = FALSE;
+            }
+        }
+        previous_freq = freq;
+        return smooth;
+    }
+
+Table (LO in Hz as used by E_current_LO_freq — host dial/LO, not *4 clock):
+
+  LO (approx)     freq/1000000   max_ppm_freq (= window for smooth)
+  -------------   ------------   ----------------------------------
+  14_000_000      14             14 * 3500 = 49_000 Hz
+  7_000_000       7              24_500 Hz
+  1_800_000       1               3_500 Hz
+  1_000_000       1               3_500 Hz
+  999_999         0               0 Hz     <<<< ANY step > 0 forces HARD
+  472_000 (630m)  0               0 Hz
+  137_000 (2200m) 0               0 Hz
+
+On LF/MF, max_ppm_freq is ALWAYS 0, so EVERY 1 Hz step sets
+E_smooth = FALSE, so EVERY step does SI_PLL_RESET → spectrum jump/pop.
+
+On HF, window is tens of kHz → can tune a while before |Δf| since last
+"hard" baseline exceeds the window (and previous_freq advances every call,
+so cumulative small steps can still eventually force hard — but not every Hz).
+
+This alone fully explains the reported LF vs HF sensation.
+
+
+--------------------------------------------------------------------------------
+4. Second nuance: Si5351 soft-tune is weaker than Si570
+--------------------------------------------------------------------------------
+Even after fixing the math, current path still:
+
+  - Recalculates Multisynth integer divider every time:
+        divider = 900000000 / E_l_freq;  /* after LO * 4 in si5351aSetFrequency */
+        if (divider % 2) divider--;
+  - Rewrites BOTH PLL fractional AND Multisynth
+  - Only SKIPS PLL_RESET when E_smooth is true
+
+If Multisynth divider changes between steps, you can still get a
+discontinuity even without reg 177. True Si5351 "smooth" (closer to Si570)
+is usually:
+
+  - Hold Multisynth (and R) FIXED for a band segment
+  - Only change PLL fractional (mult/num/denom) within a limited ppm band
+  - When you leave that band: one hard reconfig + PLL reset, then soft again
+
+Worth doing after the integer bug fix if small residual pops remain.
+
+
+--------------------------------------------------------------------------------
+5. Suggested fix A — correct smooth_tuning() math (minimal, high value)
+--------------------------------------------------------------------------------
+Use 64-bit (or careful 32-bit) ppm so the window scales below 1 MHz.
+
+Example replacement for smooth_tuning() in si5351.c:
+
+---------------------------------------------------------------------------
+#include <stdint.h>   /* if not already available in the project */
+
+#define TUNING_PPM      3500
+#define MAX_FREQ_DELTA  1000000u
+
+/* Optional floor so tiny LOs still allow some soft range (Hz).
+   Example: at least 100 Hz window of pure ppm at VLF.
+   Tune experimentally. Set to 0 to use pure ppm only. */
+#define MIN_SMOOTH_HZ   100u
+
+uint8 smooth_tuning(uint32 freq)
+{
+    static uint32 previous_freq = 0;
+    uint8 smooth = TRUE;
+    uint32 abs_freq;
+    int32 freq_diff;
+    uint32 max_ppm_freq;
+
+    if (previous_freq == 0) {
+        /* First LO after boot: force hard (PLL not yet settled / unknown). */
+        previous_freq = freq;
+        return FALSE;
+    }
+
+    freq_diff = (int32)(freq - previous_freq);
+    abs_freq = (uint32)labs(freq_diff);
+
+    if (abs_freq >= MAX_FREQ_DELTA) {
+        smooth = FALSE;
+    } else {
+        /* Correct ppm window: (freq * TUNING_PPM) / 1e6
+           Use 64-bit to avoid overflow: 30e6 * 3500 fits in 32-bit,
+           but *4 LO clocks and headroom make 64-bit safer. */
+        max_ppm_freq = (uint32)(((uint64_t)freq * (uint64_t)TUNING_PPM) / 1000000ULL);
+
+        if (max_ppm_freq < MIN_SMOOTH_HZ)
+            max_ppm_freq = MIN_SMOOTH_HZ;
+
+        if (abs_freq > max_ppm_freq)
+            smooth = FALSE;
+    }
+
+    previous_freq = freq;
+    return smooth;
+}
+---------------------------------------------------------------------------
+
+Expected windows with pure ppm (MIN_SMOOTH_HZ = 0):
+
+  14 MHz  -> ~49 kHz
+  1.8 MHz -> ~6.3 kHz
+  472 kHz -> ~1.65 kHz
+  137 kHz -> ~0.48 kHz
+
+So on 630 m, steps of a few hundred Hz to ~1.5 kHz can soft-tune;
+1 Hz steps should almost always be smooth. That should kill "pop every Hz".
+
+Keil / PSoC3 notes:
+  - Prefer uint64_t if the compiler supports it (ARM/Keil usually does with
+    long long). Alternative without uint64:
+
+      max_ppm_freq = (freq / 1000u) * (TUNING_PPM / 10u) / 100u;
+      /* (freq/1000)*350 / 100  = freq * 3.5 / 1000 = freq * 3500 / 1e6 */
+      /* Integer; less precise at very low freq but never zero until freq < 1000. */
+
+  Rough 32-bit-only variant:
+
+      /* max_ppm ≈ freq * 3500 / 1e6 = freq * 7 / 2000 */
+      max_ppm_freq = (freq / 2000u) * 7u;
+      if (max_ppm_freq == 0 && freq > 0)
+          max_ppm_freq = 1;   /* allow at least 1 Hz soft at VLF */
+
+
+--------------------------------------------------------------------------------
+6. Suggested fix B — also force hard when Multisynth divider changes
+--------------------------------------------------------------------------------
+In si5351aSetFrequency(), after computing new `divider` (the even integer MS
+divider), compare to a static previous_divider:
+
+  static uint32 prev_divider = 0;
+
+  ... compute divider as today ...
+
+  if (prev_divider != 0 && divider != prev_divider)
+      need_pll_reset = 1;   /* divider change is not "small parameter" */
+
+  if (!E_smooth || need_pll_reset)
+      si5351_write_init(SI_PLL_RESET, 0xA0);
+
+  prev_divider = divider;
+  E_smooth = TRUE;   /* next small step eligible again */
+
+This avoids "smooth" path when MS ratio actually changed (safer).
+May slightly increase hard retunes at band edges where 900e6/freq crosses
+an even divider boundary — that is correct behavior.
+
+
+--------------------------------------------------------------------------------
+7. Suggested fix C — stronger true soft-tune (if A+B still not good enough)
+--------------------------------------------------------------------------------
+Higher effort, closer to Si570 philosophy:
+
+  1) On hard retune: choose Multisynth divider for target, set PLL, PLL_RESET.
+  2) Remember divider + last output frequency.
+  3) On subsequent small Δf: keep Multisynth registers UNCHANGED; recompute
+     only PLL mult/num/denom so pllFreq = divider * new_fout (with *4 clock
+     rules as you already use).
+  4) If required PLL mult would leave 15..90 or fractional limits, or Δf
+     exceeds TUNING_PPM of current f: fall back to full hard retune (step 1).
+
+Do not rewrite Multisynth on soft path at all. That is the main nuance
+people miss when porting Si570 smooth to Si5351.
+
+
+--------------------------------------------------------------------------------
+8. Host / MSCC side (secondary only)
+--------------------------------------------------------------------------------
+MSCC / USB LO updates cannot fix the integer-zero window: even 1 Hz steps
+hard-reset on LF with current code.
+
+Host can still help after firmware fix:
+  - Avoid huge LO jumps for fine wheel motion
+  - Accept one glitch on band change
+
+Primary fix belongs in PSoC (si5351.c / si5351a.c), not MSCC.
+
+
+--------------------------------------------------------------------------------
+9. Quick test plan after a firmware build
+--------------------------------------------------------------------------------
+1) 630 m or 2200 m: slow 1 Hz / 10 Hz steps while watching spectrum.
+   Expect: NO pop every step after fix A.
+2) HF 20 m: confirm still smooth for small steps; one pop on big hop OK.
+3) Band jump HF→LF: one pop OK, then fine-tune smooth.
+4) CW pitch / RIT if those retune LO: same smooth rules should apply
+   (si5351a-cw.c also gates PLL reset on E_smooth — same flag).
+5) Optional: scope CLK0 or listen for click on speaker as LO steps.
+
+
+--------------------------------------------------------------------------------
+10. File / symbol cheat sheet
+--------------------------------------------------------------------------------
+  basic-plus.h     SI570_SMOOTH_PPM 3500, E_smooth extern
+  main.c           E_smooth = FALSE at init
+  si570.c          real Si570 smooth (legacy path)
+  si5351.c         smooth_tuning(), sets E_smooth on LO change
+  si5351a.c        si5351aSetFrequency(): PLL+MS write; PLL_RESET if !E_smooth
+  si5351a-cw.c     same PLL_RESET gate for CW LO moves
+  convert.c        host frequency formats
+  usbvend.c        Si570_LO / USB vendor commands
+
+
+--------------------------------------------------------------------------------
+11. Bottom line for Ron
+--------------------------------------------------------------------------------
+You already built the right STRUCTURE for Si5351 soft-tune (E_smooth +
+conditional SI_PLL_RESET). What is missing is mostly math nuance:
+
+  1) freq/1000000 as integer kills smooth entirely below 1 MHz
+     -> every Hz = PLL reset = spectrum pop on LF/MF.  FIX THIS FIRST.
+
+  2) Optionally treat Multisynth divider changes as hard.
+
+  3) Optionally only fractional-tune PLL with Multisynth held fixed
+     for true Si570-like soft tune.
+
+3500 ppm matches the old Si570 constant; keep it after the math fix and
+only retune TUNING_PPM if HF feels too sticky or LF still glitches when
+MS divider is changing.
+
+Hope this jogs the right code path — the framework is already there.
+
+— Notes from Nate's Grok Build session reviewing Release-Proficio-MKII-ATU
+
+
+--------------------------------------------------------------------------------
+12. Changes applied in tree (2026-07-20) — SOURCE DONE, HEX needs local build
+--------------------------------------------------------------------------------
+Source modifications were applied under Proficio-MKII-ATU.cydsn:
+
+  si5351.c
+    - Fixed smooth_tuning() ppm math (Keil C51-safe):
+        max_ppm = ((freq / 1000) * TUNING_PPM) / 1000
+      + MIN_SMOOTH_HZ floor (100 Hz)
+      + first LO after boot forces hard retune
+  si5351a.c
+    - Force E_smooth = FALSE when Multisynth divider changes
+    - Remember prev_ms_divider after apply
+  si5351a-cw.c
+    - Same divider-change hard-reset logic (not in current link set,
+      kept in sync for consistency)
+
+Build status on Nate's Build PC (PSoC Creator 4.4) — earlier attempt:
+  - Full cyprjmgr -build FAILED when bootloader dependency path was missing.
+  - Incremental C51 on unlicensed Keil produced .lst but no .obj (C500 LIC).
+
+--------------------------------------------------------------------------------
+13. Build SUCCESS on shack / this PC (2026-07-21) — PSoC Creator 4.4
+--------------------------------------------------------------------------------
+Environment:
+  - PSoC Creator 4.4 + licensed Keil C51 V9.51 (SN present; no C500).
+  - Bootloader staged at project-relative path expected by Bootloadable:
+      ..\..\bootloader\bootloader.cydsn\DP8051\DP8051_Keil_951\Release\
+    Files copied from Multus firmware-all-models bootloader Release:
+      bootloader.hex, bootloader.elf
+    Absolute path used:
+      C:\Users\n8vet\OneDrive\Documents\mscc-net9\Backup-Refs\References\bootloader\...
+
+Command:
+  cyprjmgr -wrk Proficio-MKII-ATU.cywrk -prj Proficio-MKII-ATU -build
+
+Result: Build Succeeded 07/21/2026 12:00:27
+  Flash used: 52721 of 65536 (80.4%). App ~36081 + bootloader 16384.
+  SRAM used: 3234 of 8192 (39.5%).
+  Known non-fatal warnings only (async USB SOF paths, FRAC_CLK setup,
+  L15 multiple call to USBFS_LoadNextInEP — same class as historical builds).
+
+Outputs (flash these):
+  Proficio-MKII-ATU.cydsn\DP8051\DP8051_Keil_951\Debug\Proficio-MKII-ATU.cyacd
+    -> bootloadable app update (normal field update path)
+  Proficio-MKII-ATU.cydsn\DP8051\DP8051_Keil_951\Debug\Proficio-MKII-ATU.hex
+    -> full image merged with bootloader (programmer / full flash)
+
+Verify fix in listing:
+  si5351.lst  -> MIN_SMOOTH_HZ and (freq/1000)*TUNING_PPM/1000
+  si5351a.lst -> prev_ms_divider hard-reset gate
+
+Test plan (section 9): HF fine-tune first, then 630 m / 2200 m 1 Hz steps.
+
+
+--------------------------------------------------------------------------------
+14. Field results v1 + MS-hold soft-tune v2 (2026-07-22)
+--------------------------------------------------------------------------------
+v1 results (smooth-tune-results.txt): LF improved but not enough
+  (<100 Hz / 1 kHz); HF single pop at ~14.080 / ~28.140.
+
+Root cause of residual: still recomputing Multisynth every step from
+  even(900e6/fout). Those edges are *inside* 20 m / 10 m and every
+  ~100 Hz–1 kHz on LF. Forcing hard on MS change was correct safety but
+  left the pops visible.
+
+v2 source (si5351a.c / si5351a-cw.c / si5351.c):
+  - True soft path: HOLD Multisynth, PLL fractional only, skip MS write
+    and PLL_RESET while VCO in [600e6, 900e6] and mult 15..90.
+  - Hard path: choose MS for VCO_CENTER 750e6 so soft range covers whole
+    amateur bands (edges "miss" the bands).
+  - smooth_tuning ppm raised (backup only; MS-hold is authoritative).
+
+Build Succeeded 07/22/2026 10:50:37 — flash same .cyacd path as before.
+
+
+--------------------------------------------------------------------------------
+15. Hard-retune CLK0 blank (band-change click) — 2026-07-22
+--------------------------------------------------------------------------------
+In-band soft-tune validated (full band, minor LO pumping only). Band change
+still hard-resets Si5351 → audible click + spectrum pop.
+
+Priority 1 (firmware, host-agnostic):
+  - HARD path only: power-down CLK0 (reg 16 = 0x80) before MS/PLL reconfig
+    and SI_PLL_RESET; hold blank SI5351_HARD_BLANK_HOLD visits; re-enable
+    CLK0 (0x4F | PLL_A).
+  - SOFT path: never blanks (CW pitch / fine-tune untouched).
+  - Does NOT touch CW_Hold_Timer, CONTROL_RX/AMP, TX_Request, or keyer.
+
+Fallback if residual click: MSCC Priority 3 blank on large Δf.
+
+================================================================================

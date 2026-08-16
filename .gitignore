@@ -1,0 +1,49 @@
+# Not shared
+solar-monitor/
+mscc-client/
+main/
+
+# Nested VCS leftovers (if any)
+**/.git/
+**/.git.bak-monorepo/
+
+# IDE / OS
+.vs/
+**/.vs/
+*.user
+*.suo
+*.ncb
+*.aps
+Thumbs.db
+Desktop.ini
+.DS_Store
+
+# Build / cache junk
+**/.pio/
+**/ipch/
+*.ipch
+**/Browse.VC.db
+**/Browse.VC.db-shm
+**/Browse.VC.db-wal
+**/__pycache__/
+**/node_modules/
+**/bin/Debug/
+**/bin/Release/
+**/obj/
+**/*.o
+**/*.obj
+**/*.pdb
+**/*.ilk
+**/*.exp
+
+# PSoC local clutter (keep project sources)
+**/Archive/
+**/Backup/
+**/build-out/
+**/*.cyprj.*/
+!**/*.cyprj
+!**/*.cyprj.Ron
+
+# Large local logs
+**/*.log
+!**/POST-BUILD.txt

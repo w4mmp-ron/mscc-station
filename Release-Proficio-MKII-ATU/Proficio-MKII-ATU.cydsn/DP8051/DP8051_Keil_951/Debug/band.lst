@@ -1,0 +1,1273 @@
+C51 COMPILER V9.51   BAND                                                                  08/15/2026 23:55:53 PAGE 1   
+
+
+C51 COMPILER V9.51, COMPILATION OF MODULE BAND
+OBJECT MODULE PLACED IN .\DP8051\DP8051_Keil_951\Debug\band.obj
+COMPILER INVOKED BY: C:\Program Files (x86)\Cypress\PSoC Creator\4.2\PSoC Creator\import\keil\pk51\9.51\C51\BIN\c51.exe 
+                    -band.c NOIV LARGE MODDP2 OMF2 VB(1) NOIP INCDIR(.,Generated_Source\PSoC3) FF(3) DB WL(2) PR(.\DP8051\DP8051_Keil_951\Deb
+                    -ug/band.lst) CD OT(5,SPEED) OA OJ(.\DP8051\DP8051_Keil_951\Debug\band.obj)
+
+line level    source
+
+   1          // Copyright 2013 David Turnbull AE9RB
+   2          //
+   3          // Licensed under the Apache License, Version 2.0 (the "License");
+   4          // you may not use this file except in compliance with the License.
+   5          // You may obtain a copy of the License at
+   6          //
+   7          //     http://www.apache.org/licenses/LICENSE-2.0
+   8          //
+   9          // Unless required by applicable law or agreed to in writing, software
+  10          // distributed under the License is distributed on an "AS IS" BASIS,
+  11          // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+  12          // See the License for the specific language governing permissions and
+  13          // limitations under the License.
+  14          // 09/30/2014 Additions to support low latency CW and Iambic funtionality  Ron Patton / W4MMP
+  15          // 01/01/2015 Added Semi Break-in Support Ron Patton / W4MMP
+  16          // 10/20/2016 Added Support for Omnia SDR Proficio
+  17          // Copyright © 2015-2016 Omnia SDR
+  18          
+  19          // Variable naming conventions:     E_<variable> -> Externally defined global
+  20          //                                  ff_<variable> -> Externally defined global stored in flash memory
+  21          //                                  ee_<variable> -> Externally defined global to be stored in EEPROM memo
+             -ry
+  22          //                                  l_<variable> -> locally defined variable
+  23          //                                  All UPPERCASE -> Define
+  24          
+  25          #include<basic-plus.h>
+  26          #include <usbvend.h>
+  27          
+  28          
+  29          //uint8 E_meter_band;
+  30          //uint8 volume_buffer[CYDEV_EEPROM_ROW_SIZE];
+  31          //uint8 E_volume_band = 0;
+  32          //uint8 E_volume_value = 0;
+  33          
+  34          
+  35          //Profico Real band        160  80  60  40  30  20  17  15  12  10  6 (Proficio does not support 6M)
+  36          //Proficio band number:     0    1   2   3   4   5   6   7   8   9  10
+  37          //uint8_t Band_Map[11][1] = {{10},{9},{8},{7},{6},{5},{4},{3},{2},{1},{0}}; //Maps Proficio band number to
+             - mWattmeter band number
+  38          
+  39          uint8 Band_Main(void) {
+  40   1          static uint32 i;
+  41   1         
+  42   1          if (i != E_current_LO_freq) {
+  43   2              i = E_current_LO_freq;
+  44   2              // Watch for special IQ reversal frequencies
+  45   2              switch (i) {
+  46   3                  case 33333333: Audio_IQ_Channels = 0; // 33.333333 MHz
+  47   3                      break; 
+  48   3                  case 33444444: Audio_IQ_Channels = 1; // 33.444444 MHz
+  49   3                      break; 
+  50   3                  case 33555555: Audio_IQ_Channels = 2; // 33.555555 MHz
+  51   3                      break;
+C51 COMPILER V9.51   BAND                                                                  08/15/2026 23:55:53 PAGE 2   
+
+  52   3                  case 33666666: Audio_IQ_Channels = 3; // 33.666666 MHz
+  53   3              } //End of switch (i)
+  54   2              if (i > 55000000) T1_Band_Number = 12; // 55.000 MHz (This will not be set. Proficio doesn't go th
+             -is high anyway)
+  55   2              else if (i > 31000000) T1_Band_Number = 11; // 31.000 MHz (This will not be set. Proficio doesn't 
+             -go this high anyway)
+  56   2              else if (i > 26000000) T1_Band_Number = 10; // 26.000 MHz
+  57   2              else if (i > 22000000) T1_Band_Number = 9; // 22.000 MHz
+  58   2              else if (i > 19000000) T1_Band_Number = 8; // 19.000 MHz
+  59   2              else if (i > 16000000) T1_Band_Number = 7; // 16.000 MHz
+  60   2              else if (i > 12000000) T1_Band_Number = 6; // 12.000 MHz
+  61   2              else if (i > 9000000) T1_Band_Number = 5; // 9.000 MHz
+  62   2              else if (i > 6000000) T1_Band_Number = 4; // 6.000 MHz
+  63   2              else if (i > 5000000) T1_Band_Number = 3; // 5.000 MHz
+  64   2              else if (i > 3000000) T1_Band_Number = 2; // 3.000 MHz
+  65   2              else if (i > 1500000) T1_Band_Number = 1; // 1.500 MHz
+  66   2              else T1_Band_Number = 0;
+  67   2                          
+  68   2              // Set the correct LPF and BPF
+  69   2              if (i > 24000000) {
+  70   3                  Band_Control_Write(CONTROL_BAND_10_12); // 12/10M LPF
+  71   3              } else if (i > 15000000) {
+  72   3                  Band_Control_Write(CONTROL_BAND_15_17); // 15/17F LPF
+  73   3              } else if (i > 9000000) { 
+  74   3                  Band_Control_Write(CONTROL_BAND_20_30); // 30/20M LPF
+  75   3              } else if (i > 4600000) {
+  76   3                  Band_Control_Write(CONTROL_BAND_40_60); // 60/40M LPF
+  77   3              } else if (i > 2800000) {
+  78   3                  Band_Control_Write(CONTROL_BAND_80); // 80M LPF
+  79   3              } else { 
+  80   3                  Band_Control_Write(CONTROL_BAND_160); // 160M LPF - This does not set a relay. All relays off
+  81   3              }
+  82   2              //Inhibit transmitter as necessary
+  83   2              //Allow TX only on the ham bands to keep the FCC happy
+  84   2              //Also Set the Band Indicator and PCM3060 Output Volume
+  85   2              TX_Inhibit = 1;//Default to disable TX
+  86   2              if (i >= 1780000 && i <= 2010000) {
+  87   3                  E_band = BAND_160M;
+  88   3                  TX_Inhibit = 0;
+  89   3              }//160M 
+  90   2              else if (i >= 3480000 && i <= 4010000) {
+  91   3                  E_band = BAND_80M;
+  92   3                  TX_Inhibit = 0;
+  93   3              }//80-75M
+  94   2              else if (i >= 5310500 && i <= 5413500) {
+  95   3                  E_band = BAND_60M;
+  96   3                  TX_Inhibit = 0;
+  97   3              }//60M
+  98   2              else if (i >= 6980000 && i <= 7310000) {
+  99   3                  E_band = BAND_40M;
+ 100   3                  TX_Inhibit = 0;
+ 101   3              }//40M
+ 102   2              else if (i >= 10080000 && i <= 10160000) {
+ 103   3                  E_band = BAND_30M;
+ 104   3                  TX_Inhibit = 0;
+ 105   3              }//30M
+ 106   2              else if (i >= 18048000 && i <= 18170000) {
+ 107   3                  E_band = BAND_17M;
+ 108   3                  TX_Inhibit = 0;
+ 109   3              }//17M
+ 110   2              else if (i >= 13980000 && i <= 14360000) {
+ 111   3                  E_band = BAND_20M; 
+C51 COMPILER V9.51   BAND                                                                  08/15/2026 23:55:53 PAGE 3   
+
+ 112   3                  TX_Inhibit = 0;
+ 113   3              }//20M
+ 114   2              else if (i >= 20980000 && i <= 21460000) {
+ 115   3                  E_band = BAND_15M;
+ 116   3                  TX_Inhibit = 0;
+ 117   3              }//15M
+ 118   2              else if (i >= 24870000 && i <= 25000000) {
+ 119   3                  E_band = BAND_12M;
+ 120   3                  TX_Inhibit = 0;
+ 121   3              }//12M
+ 122   2              else if (i >= 27980000 && i <= 29710000) {
+ 123   3                  E_band = BAND_10M;
+ 124   3                  TX_Inhibit = 0;
+ 125   3              }//10M
+ 126   2              //Special case if Transverter is enabled
+ 127   2              if(i >= 27980000 && E_transverter){
+ 128   3                  E_band = BAND_10M;
+ 129   3                  TX_Inhibit = 0;
+ 130   3              }
+ 131   2            
+ 132   2              //E_meter_band = Band_Map[E_band][0];
+ 133   2              
+ 134   2              //if(previous_left_offset != E_band_and_volume[E_band].left_offset){
+ 135   2              //    PCM3060_Adj_Output_Volume(output_volume);
+ 136   2                //  previous_left_offset = E_band_and_volume[E_band].left_offset;
+ 137   2              //}
+ 138   2              //if(previous_right_offset != E_band_and_volume[E_band].right_offset){
+ 139   2              //    PCM3060_Adj_Output_Volume(output_volume);
+ 140   2              //    previous_left_offset = E_band_and_volume[E_band].right_offset;
+ 141   2              //}
+ 142   2          }
+ 143   1          return(0);
+ 144   1      }
+ 145          
+ 146          
+C51 COMPILER V9.51   BAND                                                                  08/15/2026 23:55:53 PAGE 4   
+
+ASSEMBLY LISTING OF GENERATED OBJECT CODE
+
+
+             ; FUNCTION Band_Main (BEGIN)
+                                           ; SOURCE LINE # 39
+                                           ; SOURCE LINE # 42
+                 E     MOV     DPTR,#E_current_LO_freq
+                       MOVX    A,@DPTR
+                       MOV     R4,A
+                       INC     DPTR
+                       MOVX    A,@DPTR
+                       MOV     R5,A
+                       INC     DPTR
+                       MOVX    A,@DPTR
+                       MOV     R6,A
+                       INC     DPTR
+                       MOVX    A,@DPTR
+                       MOV     R7,A
+                 R     MOV     DPTR,#i
+                       MOVX    A,@DPTR
+                       MOV     R0,A
+                       INC     DPTR
+                       MOVX    A,@DPTR
+                       MOV     R1,A
+                       INC     DPTR
+                       MOVX    A,@DPTR
+                       MOV     R2,A
+                       INC     DPTR
+                       MOVX    A,@DPTR
+                       MOV     R3,A
+                       CLR     C
+                 E     CALL    ?C?ULCMP
+                 R     xJZ     ?C0001
+                                           ; SOURCE LINE # 43
+                 E     MOV     DPTR,#E_current_LO_freq
+                       MOVX    A,@DPTR
+                       MOV     R4,A
+                       INC     DPTR
+                       MOVX    A,@DPTR
+                       MOV     R5,A
+                       INC     DPTR
+                       MOVX    A,@DPTR
+                       MOV     R6,A
+                       INC     DPTR
+                       MOVX    A,@DPTR
+                       MOV     R7,A
+                 R     MOV     DPTR,#i
+                 E     CALL    ?C?LSTXDATA
+                                           ; SOURCE LINE # 45
+                 R     MOV     DPTR,#i
+                       MOVX    A,@DPTR
+                       MOV     R4,A
+                       INC     DPTR
+                       MOVX    A,@DPTR
+                       MOV     R5,A
+                       INC     DPTR
+                       MOVX    A,@DPTR
+                       MOV     R6,A
+                       INC     DPTR
+                       MOVX    A,@DPTR
+                       MOV     R7,A
+                 E     CALL    ?C?LCASE
+C51 COMPILER V9.51   BAND                                                                  08/15/2026 23:55:53 PAGE 5   
+
+                 R     DW      ?C0003
+                       DW      01FCH
+                       DW      0A055H
+                 R     DW      ?C0004
+                       DW      01FEH
+                       DW      0525CH
+                 R     DW      ?C0005
+                       DW      0200H
+                       DW      0463H
+                 R     DW      ?C0006
+                       DW      0201H
+                       DW      0B66AH
+                       DW      00H
+                 R     DW      ?C0002
+                                           ; SOURCE LINE # 46
+             ?C0003:
+                       CLR     A
+                 E     MOV     DPTR,#Audio_IQ_Channels
+                       MOVX    @DPTR,A
+                                           ; SOURCE LINE # 47
+                 R     xJMP    ?C0002
+                                           ; SOURCE LINE # 48
+             ?C0004:
+                 E     MOV     DPTR,#Audio_IQ_Channels
+                       MOV     A,#01H
+                       MOVX    @DPTR,A
+                                           ; SOURCE LINE # 49
+                 R     xJMP    ?C0002
+                                           ; SOURCE LINE # 50
+             ?C0005:
+                 E     MOV     DPTR,#Audio_IQ_Channels
+                       MOV     A,#02H
+                       MOVX    @DPTR,A
+                                           ; SOURCE LINE # 51
+                 R     xJMP    ?C0002
+                                           ; SOURCE LINE # 52
+             ?C0006:
+                 E     MOV     DPTR,#Audio_IQ_Channels
+                       MOV     A,#03H
+                       MOVX    @DPTR,A
+                                           ; SOURCE LINE # 53
+             ?C0002:
+                                           ; SOURCE LINE # 54
+                       MOV     R7,#0C0H
+                       MOV     R6,#03BH
+                       MOV     R5,#047H
+                       MOV     R4,#03H
+                 R     MOV     DPTR,#i
+                       MOVX    A,@DPTR
+                       MOV     R0,A
+                       INC     DPTR
+                       MOVX    A,@DPTR
+                       MOV     R1,A
+                       INC     DPTR
+                       MOVX    A,@DPTR
+                       MOV     R2,A
+                       INC     DPTR
+                       MOVX    A,@DPTR
+                       MOV     R3,A
+                       SETB    C
+                 E     CALL    ?C?ULCMP
+                 R     xJLT    ?C0007
+C51 COMPILER V9.51   BAND                                                                  08/15/2026 23:55:53 PAGE 6   
+
+                 E     MOV     DPTR,#T1_Band_Number
+                       MOV     A,#0CH
+                       MOVX    @DPTR,A
+                 R     xJMP    ?C0008
+             ?C0007:
+                                           ; SOURCE LINE # 55
+                       MOV     R7,#0C0H
+                       MOV     R6,#05H
+                       MOV     R5,#0D9H
+                       MOV     R4,#01H
+                 R     MOV     DPTR,#i
+                       MOVX    A,@DPTR
+                       MOV     R0,A
+                       INC     DPTR
+                       MOVX    A,@DPTR
+                       MOV     R1,A
+                       INC     DPTR
+                       MOVX    A,@DPTR
+                       MOV     R2,A
+                       INC     DPTR
+                       MOVX    A,@DPTR
+                       MOV     R3,A
+                       SETB    C
+                 E     CALL    ?C?ULCMP
+                 R     xJLT    ?C0009
+                 E     MOV     DPTR,#T1_Band_Number
+                       MOV     A,#0BH
+                       MOVX    @DPTR,A
+                 R     xJMP    ?C0008
+             ?C0009:
+                                           ; SOURCE LINE # 56
+                       MOV     R7,#080H
+                       MOV     R6,#0BAH
+                       MOV     R5,#08CH
+                       MOV     R4,#01H
+                 R     MOV     DPTR,#i
+                       MOVX    A,@DPTR
+                       MOV     R0,A
+                       INC     DPTR
+                       MOVX    A,@DPTR
+                       MOV     R1,A
+                       INC     DPTR
+                       MOVX    A,@DPTR
+                       MOV     R2,A
+                       INC     DPTR
+                       MOVX    A,@DPTR
+                       MOV     R3,A
+                       SETB    C
+                 E     CALL    ?C?ULCMP
+                 R     xJLT    ?C0011
+                 E     MOV     DPTR,#T1_Band_Number
+                       MOV     A,#0AH
+                       MOVX    @DPTR,A
+                 R     xJMP    ?C0008
+             ?C0011:
+                                           ; SOURCE LINE # 57
+                       MOV     R7,#080H
+                       MOV     R6,#0B1H
+                       MOV     R5,#04FH
+                       MOV     R4,#01H
+                 R     MOV     DPTR,#i
+                       MOVX    A,@DPTR
+C51 COMPILER V9.51   BAND                                                                  08/15/2026 23:55:53 PAGE 7   
+
+                       MOV     R0,A
+                       INC     DPTR
+                       MOVX    A,@DPTR
+                       MOV     R1,A
+                       INC     DPTR
+                       MOVX    A,@DPTR
+                       MOV     R2,A
+                       INC     DPTR
+                       MOVX    A,@DPTR
+                       MOV     R3,A
+                       SETB    C
+                 E     CALL    ?C?ULCMP
+                 R     xJLT    ?C0013
+                 E     MOV     DPTR,#T1_Band_Number
+                       MOV     A,#09H
+                       MOVX    @DPTR,A
+                 R     xJMP    ?C0008
+             ?C0013:
+                                           ; SOURCE LINE # 58
+                       MOV     R7,#0C0H
+                       MOV     R6,#0EAH
+                       MOV     R5,#021H
+                       MOV     R4,#01H
+                 R     MOV     DPTR,#i
+                       MOVX    A,@DPTR
+                       MOV     R0,A
+                       INC     DPTR
+                       MOVX    A,@DPTR
+                       MOV     R1,A
+                       INC     DPTR
+                       MOVX    A,@DPTR
+                       MOV     R2,A
+                       INC     DPTR
+                       MOVX    A,@DPTR
+                       MOV     R3,A
+                       SETB    C
+                 E     CALL    ?C?ULCMP
+                 R     xJLT    ?C0015
+                 E     MOV     DPTR,#T1_Band_Number
+                       MOV     A,#08H
+                       MOVX    @DPTR,A
+                 R     xJMP    ?C0008
+             ?C0015:
+                                           ; SOURCE LINE # 59
+                       MOV     R7,#00H
+                       MOV     R6,#024H
+                       MOV     R5,#0F4H
+                       MOV     R4,#00H
+                 R     MOV     DPTR,#i
+                       MOVX    A,@DPTR
+                       MOV     R0,A
+                       INC     DPTR
+                       MOVX    A,@DPTR
+                       MOV     R1,A
+                       INC     DPTR
+                       MOVX    A,@DPTR
+                       MOV     R2,A
+                       INC     DPTR
+                       MOVX    A,@DPTR
+                       MOV     R3,A
+                       SETB    C
+                 E     CALL    ?C?ULCMP
+C51 COMPILER V9.51   BAND                                                                  08/15/2026 23:55:53 PAGE 8   
+
+                 R     xJLT    ?C0017
+                 E     MOV     DPTR,#T1_Band_Number
+                       MOV     A,#07H
+                       MOVX    @DPTR,A
+                 R     xJMP    ?C0008
+             ?C0017:
+                                           ; SOURCE LINE # 60
+                       MOV     R7,#00H
+                       MOV     R6,#01BH
+                       MOV     R5,#0B7H
+                       MOV     R4,#00H
+                 R     MOV     DPTR,#i
+                       MOVX    A,@DPTR
+                       MOV     R0,A
+                       INC     DPTR
+                       MOVX    A,@DPTR
+                       MOV     R1,A
+                       INC     DPTR
+                       MOVX    A,@DPTR
+                       MOV     R2,A
+                       INC     DPTR
+                       MOVX    A,@DPTR
+                       MOV     R3,A
+                       SETB    C
+                 E     CALL    ?C?ULCMP
+                 R     xJLT    ?C0019
+                 E     MOV     DPTR,#T1_Band_Number
+                       MOV     A,#06H
+                       MOVX    @DPTR,A
+                 R     xJMP    ?C0008
+             ?C0019:
+                                           ; SOURCE LINE # 61
+                       MOV     R7,#040H
+                       MOV     R6,#054H
+                       MOV     R5,#089H
+                       MOV     R4,#00H
+                 R     MOV     DPTR,#i
+                       MOVX    A,@DPTR
+                       MOV     R0,A
+                       INC     DPTR
+                       MOVX    A,@DPTR
+                       MOV     R1,A
+                       INC     DPTR
+                       MOVX    A,@DPTR
+                       MOV     R2,A
+                       INC     DPTR
+                       MOVX    A,@DPTR
+                       MOV     R3,A
+                       SETB    C
+                 E     CALL    ?C?ULCMP
+                 R     xJLT    ?C0021
+                 E     MOV     DPTR,#T1_Band_Number
+                       MOV     A,#05H
+                       MOVX    @DPTR,A
+                 R     xJMP    ?C0008
+             ?C0021:
+                                           ; SOURCE LINE # 62
+                       MOV     R7,#080H
+                       MOV     R6,#08DH
+                       MOV     R5,#05BH
+                       MOV     R4,#00H
+                 R     MOV     DPTR,#i
+C51 COMPILER V9.51   BAND                                                                  08/15/2026 23:55:53 PAGE 9   
+
+                       MOVX    A,@DPTR
+                       MOV     R0,A
+                       INC     DPTR
+                       MOVX    A,@DPTR
+                       MOV     R1,A
+                       INC     DPTR
+                       MOVX    A,@DPTR
+                       MOV     R2,A
+                       INC     DPTR
+                       MOVX    A,@DPTR
+                       MOV     R3,A
+                       SETB    C
+                 E     CALL    ?C?ULCMP
+                 R     xJLT    ?C0023
+                 E     MOV     DPTR,#T1_Band_Number
+                       MOV     A,#04H
+                       MOVX    @DPTR,A
+                 R     xJMP    ?C0008
+             ?C0023:
+                                           ; SOURCE LINE # 63
+                       MOV     R7,#040H
+                       MOV     R6,#04BH
+                       MOV     R5,#04CH
+                       MOV     R4,#00H
+                 R     MOV     DPTR,#i
+                       MOVX    A,@DPTR
+                       MOV     R0,A
+                       INC     DPTR
+                       MOVX    A,@DPTR
+                       MOV     R1,A
+                       INC     DPTR
+                       MOVX    A,@DPTR
+                       MOV     R2,A
+                       INC     DPTR
+                       MOVX    A,@DPTR
+                       MOV     R3,A
+                       SETB    C
+                 E     CALL    ?C?ULCMP
+                 R     xJLT    ?C0025
+                 E     MOV     DPTR,#T1_Band_Number
+                       MOV     A,#03H
+                       MOVX    @DPTR,A
+                 R     xJMP    ?C0008
+             ?C0025:
+                                           ; SOURCE LINE # 64
+                       MOV     R7,#0C0H
+                       MOV     R6,#0C6H
+                       MOV     R5,#02DH
+                       MOV     R4,#00H
+                 R     MOV     DPTR,#i
+                       MOVX    A,@DPTR
+                       MOV     R0,A
+                       INC     DPTR
+                       MOVX    A,@DPTR
+                       MOV     R1,A
+                       INC     DPTR
+                       MOVX    A,@DPTR
+                       MOV     R2,A
+                       INC     DPTR
+                       MOVX    A,@DPTR
+                       MOV     R3,A
+                       SETB    C
+C51 COMPILER V9.51   BAND                                                                  08/15/2026 23:55:53 PAGE 10  
+
+                 E     CALL    ?C?ULCMP
+                 R     xJLT    ?C0027
+                 E     MOV     DPTR,#T1_Band_Number
+                       MOV     A,#02H
+                       MOVX    @DPTR,A
+                 R     xJMP    ?C0008
+             ?C0027:
+                                           ; SOURCE LINE # 65
+                       MOV     R7,#060H
+                       MOV     R6,#0E3H
+                       MOV     R5,#016H
+                       MOV     R4,#00H
+                 R     MOV     DPTR,#i
+                       MOVX    A,@DPTR
+                       MOV     R0,A
+                       INC     DPTR
+                       MOVX    A,@DPTR
+                       MOV     R1,A
+                       INC     DPTR
+                       MOVX    A,@DPTR
+                       MOV     R2,A
+                       INC     DPTR
+                       MOVX    A,@DPTR
+                       MOV     R3,A
+                       SETB    C
+                 E     CALL    ?C?ULCMP
+                 R     xJLT    ?C0029
+                 E     MOV     DPTR,#T1_Band_Number
+                       MOV     A,#01H
+                       MOVX    @DPTR,A
+                 R     xJMP    ?C0008
+             ?C0029:
+                                           ; SOURCE LINE # 66
+                       CLR     A
+                 E     MOV     DPTR,#T1_Band_Number
+                       MOVX    @DPTR,A
+             ?C0008:
+                                           ; SOURCE LINE # 69
+                       MOV     R7,#00H
+                       MOV     R6,#036H
+                       MOV     R5,#06EH
+                       MOV     R4,#01H
+                 R     MOV     DPTR,#i
+                       MOVX    A,@DPTR
+                       MOV     R0,A
+                       INC     DPTR
+                       MOVX    A,@DPTR
+                       MOV     R1,A
+                       INC     DPTR
+                       MOVX    A,@DPTR
+                       MOV     R2,A
+                       INC     DPTR
+                       MOVX    A,@DPTR
+                       MOV     R3,A
+                       SETB    C
+                 E     CALL    ?C?ULCMP
+                 R     xJLT    ?C0031
+                                           ; SOURCE LINE # 70
+                       CLR     A
+                       MOV     R7,A
+                 E     CALL    _Band_Control_Write
+                                           ; SOURCE LINE # 71
+C51 COMPILER V9.51   BAND                                                                  08/15/2026 23:55:53 PAGE 11  
+
+                 R     xJMP    ?C0032
+             ?C0031:
+                       MOV     R7,#0C0H
+                       MOV     R6,#0E1H
+                       MOV     R5,#0E4H
+                       MOV     R4,#00H
+                 R     MOV     DPTR,#i
+                       MOVX    A,@DPTR
+                       MOV     R0,A
+                       INC     DPTR
+                       MOVX    A,@DPTR
+                       MOV     R1,A
+                       INC     DPTR
+                       MOVX    A,@DPTR
+                       MOV     R2,A
+                       INC     DPTR
+                       MOVX    A,@DPTR
+                       MOV     R3,A
+                       SETB    C
+                 E     CALL    ?C?ULCMP
+                 R     xJLT    ?C0033
+                                           ; SOURCE LINE # 72
+                       MOV     R7,#01H
+                 E     CALL    _Band_Control_Write
+                                           ; SOURCE LINE # 73
+                 R     xJMP    ?C0032
+             ?C0033:
+                       MOV     R7,#040H
+                       MOV     R6,#054H
+                       MOV     R5,#089H
+                       MOV     R4,#00H
+                 R     MOV     DPTR,#i
+                       MOVX    A,@DPTR
+                       MOV     R0,A
+                       INC     DPTR
+                       MOVX    A,@DPTR
+                       MOV     R1,A
+                       INC     DPTR
+                       MOVX    A,@DPTR
+                       MOV     R2,A
+                       INC     DPTR
+                       MOVX    A,@DPTR
+                       MOV     R3,A
+                       SETB    C
+                 E     CALL    ?C?ULCMP
+                 R     xJLT    ?C0035
+                                           ; SOURCE LINE # 74
+                       MOV     R7,#02H
+                 E     CALL    _Band_Control_Write
+                                           ; SOURCE LINE # 75
+                 R     xJMP    ?C0032
+             ?C0035:
+                       MOV     R7,#0C0H
+                       MOV     R6,#030H
+                       MOV     R5,#046H
+                       MOV     R4,#00H
+                 R     MOV     DPTR,#i
+                       MOVX    A,@DPTR
+                       MOV     R0,A
+                       INC     DPTR
+                       MOVX    A,@DPTR
+                       MOV     R1,A
+C51 COMPILER V9.51   BAND                                                                  08/15/2026 23:55:53 PAGE 12  
+
+                       INC     DPTR
+                       MOVX    A,@DPTR
+                       MOV     R2,A
+                       INC     DPTR
+                       MOVX    A,@DPTR
+                       MOV     R3,A
+                       SETB    C
+                 E     CALL    ?C?ULCMP
+                 R     xJLT    ?C0037
+                                           ; SOURCE LINE # 76
+                       MOV     R7,#03H
+                 E     CALL    _Band_Control_Write
+                                           ; SOURCE LINE # 77
+                 R     xJMP    ?C0032
+             ?C0037:
+                       MOV     R7,#080H
+                       MOV     R6,#0B9H
+                       MOV     R5,#02AH
+                       MOV     R4,#00H
+                 R     MOV     DPTR,#i
+                       MOVX    A,@DPTR
+                       MOV     R0,A
+                       INC     DPTR
+                       MOVX    A,@DPTR
+                       MOV     R1,A
+                       INC     DPTR
+                       MOVX    A,@DPTR
+                       MOV     R2,A
+                       INC     DPTR
+                       MOVX    A,@DPTR
+                       MOV     R3,A
+                       SETB    C
+                 E     CALL    ?C?ULCMP
+                 R     xJLT    ?C0039
+                                           ; SOURCE LINE # 78
+                       MOV     R7,#04H
+                 E     CALL    _Band_Control_Write
+                                           ; SOURCE LINE # 79
+                 R     xJMP    ?C0032
+             ?C0039:
+                                           ; SOURCE LINE # 80
+                       MOV     R7,#05H
+                 E     CALL    _Band_Control_Write
+                                           ; SOURCE LINE # 81
+             ?C0032:
+                                           ; SOURCE LINE # 85
+                 E     MOV     DPTR,#TX_Inhibit
+                       MOV     A,#01H
+                       MOVX    @DPTR,A
+                                           ; SOURCE LINE # 86
+                       MOV     R7,#020H
+                       MOV     R6,#029H
+                       MOV     R5,#01BH
+                       MOV     R4,#00H
+                 R     MOV     DPTR,#i
+                       MOVX    A,@DPTR
+                       MOV     R0,A
+                       INC     DPTR
+                       MOVX    A,@DPTR
+                       MOV     R1,A
+                       INC     DPTR
+                       MOVX    A,@DPTR
+C51 COMPILER V9.51   BAND                                                                  08/15/2026 23:55:53 PAGE 13  
+
+                       MOV     R2,A
+                       INC     DPTR
+                       MOVX    A,@DPTR
+                       MOV     R3,A
+                       CLR     C
+                 E     CALL    ?C?ULCMP
+                 R     xJLT    ?C0041
+                       MOV     R7,#090H
+                       MOV     R6,#0ABH
+                       MOV     R5,#01EH
+                       MOV     R4,#00H
+                 R     MOV     DPTR,#i
+                       MOVX    A,@DPTR
+                       MOV     R0,A
+                       INC     DPTR
+                       MOVX    A,@DPTR
+                       INC     DPTR
+                       MOVX    A,@DPTR
+                       INC     DPTR
+                       MOVX    A,@DPTR
+                       SETB    C
+                 E     CALL    ?C?ULCMP
+                 R     xJGE    ?C0041
+                                           ; SOURCE LINE # 87
+                       CLR     A
+                 E     MOV     DPTR,#E_band
+                       MOVX    @DPTR,A
+                                           ; SOURCE LINE # 88
+                 E     MOV     DPTR,#TX_Inhibit
+                       MOVX    @DPTR,A
+                                           ; SOURCE LINE # 89
+                 R     xJMP    ?C0042
+             ?C0041:
+                                           ; SOURCE LINE # 90
+                       MOV     R7,#0C0H
+                       MOV     R6,#019H
+                       MOV     R5,#035H
+                       MOV     R4,#00H
+                 R     MOV     DPTR,#i
+                       MOVX    A,@DPTR
+                       MOV     R0,A
+                       INC     DPTR
+                       MOVX    A,@DPTR
+                       MOV     R1,A
+                       INC     DPTR
+                       MOVX    A,@DPTR
+                       MOV     R2,A
+                       INC     DPTR
+                       MOVX    A,@DPTR
+                       MOV     R3,A
+                       CLR     C
+                 E     CALL    ?C?ULCMP
+                 R     xJLT    ?C0043
+                       MOV     R7,#010H
+                       MOV     R6,#030H
+                       MOV     R5,#03DH
+                       MOV     R4,#00H
+                 R     MOV     DPTR,#i
+                       MOVX    A,@DPTR
+                       MOV     R0,A
+                       INC     DPTR
+                       MOVX    A,@DPTR
+C51 COMPILER V9.51   BAND                                                                  08/15/2026 23:55:53 PAGE 14  
+
+                       INC     DPTR
+                       MOVX    A,@DPTR
+                       INC     DPTR
+                       MOVX    A,@DPTR
+                       SETB    C
+                 E     CALL    ?C?ULCMP
+                 R     xJGE    ?C0043
+                                           ; SOURCE LINE # 91
+                 E     MOV     DPTR,#E_band
+                       MOV     A,#01H
+                       MOVX    @DPTR,A
+                                           ; SOURCE LINE # 92
+                       CLR     A
+                 E     MOV     DPTR,#TX_Inhibit
+                       MOVX    @DPTR,A
+                                           ; SOURCE LINE # 93
+                 R     xJMP    ?C0042
+             ?C0043:
+                                           ; SOURCE LINE # 94
+                       MOV     R7,#024H
+                       MOV     R6,#08H
+                       MOV     R5,#051H
+                       MOV     R4,#00H
+                 R     MOV     DPTR,#i
+                       MOVX    A,@DPTR
+                       MOV     R0,A
+                       INC     DPTR
+                       MOVX    A,@DPTR
+                       MOV     R1,A
+                       INC     DPTR
+                       MOVX    A,@DPTR
+                       MOV     R2,A
+                       INC     DPTR
+                       MOVX    A,@DPTR
+                       MOV     R3,A
+                       CLR     C
+                 E     CALL    ?C?ULCMP
+                 R     xJLT    ?C0045
+                       MOV     R7,#07CH
+                       MOV     R6,#09AH
+                       MOV     R5,#052H
+                       MOV     R4,#00H
+                 R     MOV     DPTR,#i
+                       MOVX    A,@DPTR
+                       MOV     R0,A
+                       INC     DPTR
+                       MOVX    A,@DPTR
+                       INC     DPTR
+                       MOVX    A,@DPTR
+                       INC     DPTR
+                       MOVX    A,@DPTR
+                       SETB    C
+                 E     CALL    ?C?ULCMP
+                 R     xJGE    ?C0045
+                                           ; SOURCE LINE # 95
+                 E     MOV     DPTR,#E_band
+                       MOV     A,#02H
+                       MOVX    @DPTR,A
+                                           ; SOURCE LINE # 96
+                       CLR     A
+                 E     MOV     DPTR,#TX_Inhibit
+                       MOVX    @DPTR,A
+C51 COMPILER V9.51   BAND                                                                  08/15/2026 23:55:53 PAGE 15  
+
+                                           ; SOURCE LINE # 97
+                 R     xJMP    ?C0042
+             ?C0045:
+                                           ; SOURCE LINE # 98
+                       MOV     R7,#0A0H
+                       MOV     R6,#081H
+                       MOV     R5,#06AH
+                       MOV     R4,#00H
+                 R     MOV     DPTR,#i
+                       MOVX    A,@DPTR
+                       MOV     R0,A
+                       INC     DPTR
+                       MOVX    A,@DPTR
+                       MOV     R1,A
+                       INC     DPTR
+                       MOVX    A,@DPTR
+                       MOV     R2,A
+                       INC     DPTR
+                       MOVX    A,@DPTR
+                       MOV     R3,A
+                       CLR     C
+                 E     CALL    ?C?ULCMP
+                 R     xJLT    ?C0047
+                       MOV     R7,#0B0H
+                       MOV     R6,#08AH
+                       MOV     R5,#06FH
+                       MOV     R4,#00H
+                 R     MOV     DPTR,#i
+                       MOVX    A,@DPTR
+                       MOV     R0,A
+                       INC     DPTR
+                       MOVX    A,@DPTR
+                       INC     DPTR
+                       MOVX    A,@DPTR
+                       INC     DPTR
+                       MOVX    A,@DPTR
+                       SETB    C
+                 E     CALL    ?C?ULCMP
+                 R     xJGE    ?C0047
+                                           ; SOURCE LINE # 99
+                 E     MOV     DPTR,#E_band
+                       MOV     A,#03H
+                       MOVX    @DPTR,A
+                                           ; SOURCE LINE # 100
+                       CLR     A
+                 E     MOV     DPTR,#TX_Inhibit
+                       MOVX    @DPTR,A
+                                           ; SOURCE LINE # 101
+                 R     xJMP    ?C0042
+             ?C0047:
+                                           ; SOURCE LINE # 102
+                       MOV     R7,#00H
+                       MOV     R6,#0CFH
+                       MOV     R5,#099H
+                       MOV     R4,#00H
+                 R     MOV     DPTR,#i
+                       MOVX    A,@DPTR
+                       MOV     R0,A
+                       INC     DPTR
+                       MOVX    A,@DPTR
+                       MOV     R1,A
+                       INC     DPTR
+C51 COMPILER V9.51   BAND                                                                  08/15/2026 23:55:53 PAGE 16  
+
+                       MOVX    A,@DPTR
+                       MOV     R2,A
+                       INC     DPTR
+                       MOVX    A,@DPTR
+                       MOV     R3,A
+                       CLR     C
+                 E     CALL    ?C?ULCMP
+                 R     xJLT    ?C0049
+                       MOV     R7,#080H
+                       MOV     R6,#07H
+                       MOV     R5,#09BH
+                       MOV     R4,#00H
+                 R     MOV     DPTR,#i
+                       MOVX    A,@DPTR
+                       MOV     R0,A
+                       INC     DPTR
+                       MOVX    A,@DPTR
+                       INC     DPTR
+                       MOVX    A,@DPTR
+                       INC     DPTR
+                       MOVX    A,@DPTR
+                       SETB    C
+                 E     CALL    ?C?ULCMP
+                 R     xJGE    ?C0049
+                                           ; SOURCE LINE # 103
+                 E     MOV     DPTR,#E_band
+                       MOV     A,#04H
+                       MOVX    @DPTR,A
+                                           ; SOURCE LINE # 104
+                       CLR     A
+                 E     MOV     DPTR,#TX_Inhibit
+                       MOVX    @DPTR,A
+                                           ; SOURCE LINE # 105
+                 R     xJMP    ?C0042
+             ?C0049:
+                                           ; SOURCE LINE # 106
+                       MOV     R7,#00H
+                       MOV     R6,#064H
+                       MOV     R5,#013H
+                       MOV     R4,#01H
+                 R     MOV     DPTR,#i
+                       MOVX    A,@DPTR
+                       MOV     R0,A
+                       INC     DPTR
+                       MOVX    A,@DPTR
+                       MOV     R1,A
+                       INC     DPTR
+                       MOVX    A,@DPTR
+                       MOV     R2,A
+                       INC     DPTR
+                       MOVX    A,@DPTR
+                       MOV     R3,A
+                       CLR     C
+                 E     CALL    ?C?ULCMP
+                 R     xJLT    ?C0051
+                       MOV     R7,#090H
+                       MOV     R6,#040H
+                       MOV     R5,#015H
+                       MOV     R4,#01H
+                 R     MOV     DPTR,#i
+                       MOVX    A,@DPTR
+                       MOV     R0,A
+C51 COMPILER V9.51   BAND                                                                  08/15/2026 23:55:53 PAGE 17  
+
+                       INC     DPTR
+                       MOVX    A,@DPTR
+                       INC     DPTR
+                       MOVX    A,@DPTR
+                       INC     DPTR
+                       MOVX    A,@DPTR
+                       SETB    C
+                 E     CALL    ?C?ULCMP
+                 R     xJGE    ?C0051
+                                           ; SOURCE LINE # 107
+                 E     MOV     DPTR,#E_band
+                       MOV     A,#06H
+                       MOVX    @DPTR,A
+                                           ; SOURCE LINE # 108
+                       CLR     A
+                 E     MOV     DPTR,#TX_Inhibit
+                       MOVX    @DPTR,A
+                                           ; SOURCE LINE # 109
+                 R     xJMP    ?C0042
+             ?C0051:
+                                           ; SOURCE LINE # 110
+                       MOV     R7,#060H
+                       MOV     R6,#051H
+                       MOV     R5,#0D5H
+                       MOV     R4,#00H
+                 R     MOV     DPTR,#i
+                       MOVX    A,@DPTR
+                       MOV     R0,A
+                       INC     DPTR
+                       MOVX    A,@DPTR
+                       MOV     R1,A
+                       INC     DPTR
+                       MOVX    A,@DPTR
+                       MOV     R2,A
+                       INC     DPTR
+                       MOVX    A,@DPTR
+                       MOV     R3,A
+                       CLR     C
+                 E     CALL    ?C?ULCMP
+                 R     xJLT    ?C0053
+                       MOV     R7,#0C0H
+                       MOV     R6,#01DH
+                       MOV     R5,#0DBH
+                       MOV     R4,#00H
+                 R     MOV     DPTR,#i
+                       MOVX    A,@DPTR
+                       MOV     R0,A
+                       INC     DPTR
+                       MOVX    A,@DPTR
+                       INC     DPTR
+                       MOVX    A,@DPTR
+                       INC     DPTR
+                       MOVX    A,@DPTR
+                       SETB    C
+                 E     CALL    ?C?ULCMP
+                 R     xJGE    ?C0053
+                                           ; SOURCE LINE # 111
+                 E     MOV     DPTR,#E_band
+                       MOV     A,#05H
+                       MOVX    @DPTR,A
+                                           ; SOURCE LINE # 112
+                       CLR     A
+C51 COMPILER V9.51   BAND                                                                  08/15/2026 23:55:53 PAGE 18  
+
+                 E     MOV     DPTR,#TX_Inhibit
+                       MOVX    @DPTR,A
+                                           ; SOURCE LINE # 113
+                 R     xJMP    ?C0042
+             ?C0053:
+                                           ; SOURCE LINE # 114
+                       MOV     R7,#020H
+                       MOV     R6,#021H
+                       MOV     R5,#040H
+                       MOV     R4,#01H
+                 R     MOV     DPTR,#i
+                       MOVX    A,@DPTR
+                       MOV     R0,A
+                       INC     DPTR
+                       MOVX    A,@DPTR
+                       MOV     R1,A
+                       INC     DPTR
+                       MOVX    A,@DPTR
+                       MOV     R2,A
+                       INC     DPTR
+                       MOVX    A,@DPTR
+                       MOV     R3,A
+                       CLR     C
+                 E     CALL    ?C?ULCMP
+                 R     xJLT    ?C0055
+                       MOV     R7,#020H
+                       MOV     R6,#074H
+                       MOV     R5,#047H
+                       MOV     R4,#01H
+                 R     MOV     DPTR,#i
+                       MOVX    A,@DPTR
+                       MOV     R0,A
+                       INC     DPTR
+                       MOVX    A,@DPTR
+                       INC     DPTR
+                       MOVX    A,@DPTR
+                       INC     DPTR
+                       MOVX    A,@DPTR
+                       SETB    C
+                 E     CALL    ?C?ULCMP
+                 R     xJGE    ?C0055
+                                           ; SOURCE LINE # 115
+                 E     MOV     DPTR,#E_band
+                       MOV     A,#07H
+                       MOVX    @DPTR,A
+                                           ; SOURCE LINE # 116
+                       CLR     A
+                 E     MOV     DPTR,#TX_Inhibit
+                       MOVX    @DPTR,A
+                                           ; SOURCE LINE # 117
+                 R     xJMP    ?C0042
+             ?C0055:
+                                           ; SOURCE LINE # 118
+                       MOV     R7,#070H
+                       MOV     R6,#07CH
+                       MOV     R5,#07BH
+                       MOV     R4,#01H
+                 R     MOV     DPTR,#i
+                       MOVX    A,@DPTR
+                       MOV     R0,A
+                       INC     DPTR
+                       MOVX    A,@DPTR
+C51 COMPILER V9.51   BAND                                                                  08/15/2026 23:55:53 PAGE 19  
+
+                       MOV     R1,A
+                       INC     DPTR
+                       MOVX    A,@DPTR
+                       MOV     R2,A
+                       INC     DPTR
+                       MOVX    A,@DPTR
+                       MOV     R3,A
+                       CLR     C
+                 E     CALL    ?C?ULCMP
+                 R     xJLT    ?C0057
+                       MOV     R7,#040H
+                       MOV     R6,#078H
+                       MOV     R5,#07DH
+                       MOV     R4,#01H
+                 R     MOV     DPTR,#i
+                       MOVX    A,@DPTR
+                       MOV     R0,A
+                       INC     DPTR
+                       MOVX    A,@DPTR
+                       INC     DPTR
+                       MOVX    A,@DPTR
+                       INC     DPTR
+                       MOVX    A,@DPTR
+                       SETB    C
+                 E     CALL    ?C?ULCMP
+                 R     xJGE    ?C0057
+                                           ; SOURCE LINE # 119
+                 E     MOV     DPTR,#E_band
+                       MOV     A,#08H
+                       MOVX    @DPTR,A
+                                           ; SOURCE LINE # 120
+                       CLR     A
+                 E     MOV     DPTR,#TX_Inhibit
+                       MOVX    @DPTR,A
+                                           ; SOURCE LINE # 121
+                 R     xJMP    ?C0042
+             ?C0057:
+                                           ; SOURCE LINE # 122
+                       MOV     R7,#0E0H
+                       MOV     R6,#0F0H
+                       MOV     R5,#0AAH
+                       MOV     R4,#01H
+                 R     MOV     DPTR,#i
+                       MOVX    A,@DPTR
+                       MOV     R0,A
+                       INC     DPTR
+                       MOVX    A,@DPTR
+                       MOV     R1,A
+                       INC     DPTR
+                       MOVX    A,@DPTR
+                       MOV     R2,A
+                       INC     DPTR
+                       MOVX    A,@DPTR
+                       MOV     R3,A
+                       CLR     C
+                 E     CALL    ?C?ULCMP
+                 R     xJLT    ?C0042
+                       MOV     R7,#0B0H
+                       MOV     R6,#056H
+                       MOV     R5,#0C5H
+                       MOV     R4,#01H
+                 R     MOV     DPTR,#i
+C51 COMPILER V9.51   BAND                                                                  08/15/2026 23:55:53 PAGE 20  
+
+                       MOVX    A,@DPTR
+                       MOV     R0,A
+                       INC     DPTR
+                       MOVX    A,@DPTR
+                       INC     DPTR
+                       MOVX    A,@DPTR
+                       INC     DPTR
+                       MOVX    A,@DPTR
+                       SETB    C
+                 E     CALL    ?C?ULCMP
+                 R     xJGE    ?C0042
+                                           ; SOURCE LINE # 123
+                 E     MOV     DPTR,#E_band
+                       MOV     A,#09H
+                       MOVX    @DPTR,A
+                                           ; SOURCE LINE # 124
+                       CLR     A
+                 E     MOV     DPTR,#TX_Inhibit
+                       MOVX    @DPTR,A
+                                           ; SOURCE LINE # 125
+             ?C0042:
+                                           ; SOURCE LINE # 127
+                       MOV     R7,#0E0H
+                       MOV     R6,#0F0H
+                       MOV     R5,#0AAH
+                       MOV     R4,#01H
+                 R     MOV     DPTR,#i
+                       MOVX    A,@DPTR
+                       MOV     R0,A
+                       INC     DPTR
+                       MOVX    A,@DPTR
+                       MOV     R1,A
+                       INC     DPTR
+                       MOVX    A,@DPTR
+                       MOV     R2,A
+                       INC     DPTR
+                       MOVX    A,@DPTR
+                       MOV     R3,A
+                       CLR     C
+                 E     CALL    ?C?ULCMP
+                 R     xJLT    ?C0001
+                 E     MOV     DPTR,#E_transverter
+                       MOVX    A,@DPTR
+                 R     xJZ     ?C0001
+                                           ; SOURCE LINE # 128
+                 E     MOV     DPTR,#E_band
+                       MOV     A,#09H
+                       MOVX    @DPTR,A
+                                           ; SOURCE LINE # 129
+                       CLR     A
+                 E     MOV     DPTR,#TX_Inhibit
+                       MOVX    @DPTR,A
+                                           ; SOURCE LINE # 130
+                                           ; SOURCE LINE # 142
+             ?C0001:
+                                           ; SOURCE LINE # 143
+                       MOV     R7,#00H
+                                           ; SOURCE LINE # 144
+             ?C0061:
+                       RET     
+             ; FUNCTION Band_Main (END)
+
+C51 COMPILER V9.51   BAND                                                                  08/15/2026 23:55:53 PAGE 21  
+
+
+
+MODULE INFORMATION:   STATIC OVERLAYABLE
+   CODE SIZE        =   1604    ----
+   CONSTANT SIZE    =   ----    ----
+   XDATA SIZE       =      4    ----
+   PDATA SIZE       =   ----    ----
+   DATA SIZE        =   ----    ----
+   IDATA SIZE       =   ----    ----
+   BIT SIZE         =   ----    ----
+   EDATA SIZE       =   ----    ----
+   HDATA SIZE       =   ----    ----
+   XDATA CONST SIZE =   ----    ----
+   FAR CONST SIZE   =   ----    ----
+END OF MODULE INFORMATION.
+
+
+C51 COMPILATION COMPLETE.  0 WARNING(S),  0 ERROR(S)

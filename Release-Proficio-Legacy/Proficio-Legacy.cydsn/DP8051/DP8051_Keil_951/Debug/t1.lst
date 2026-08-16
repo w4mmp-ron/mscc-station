@@ -1,0 +1,467 @@
+C51 COMPILER V9.51   T1                                                                    08/14/2026 10:16:32 PAGE 1   
+
+
+C51 COMPILER V9.51, COMPILATION OF MODULE T1
+OBJECT MODULE PLACED IN .\DP8051\DP8051_Keil_951\Debug\t1.obj
+COMPILER INVOKED BY: C:\Program Files (x86)\Cypress\PSoC Creator\4.2\PSoC Creator\import\keil\pk51\9.51\C51\BIN\c51.exe 
+                    -t1.c NOIV LARGE MODDP2 OMF2 VB(1) NOIP INCDIR(.,Generated_Source\PSoC3) FF(3) DB WL(2) PR(.\DP8051\DP8051_Keil_951\Debug
+                    -/t1.lst) CD OT(5,SPEED) OA OJ(.\DP8051\DP8051_Keil_951\Debug\t1.obj)
+
+line level    source
+
+   1          // Copyright 2013 David Turnbull AE9RB
+   2          //
+   3          // Licensed under the Apache License, Version 2.0 (the "License");
+   4          // you may not use this file except in compliance with the License.
+   5          // You may obtain a copy of the License at
+   6          //
+   7          //     http://www.apache.org/licenses/LICENSE-2.0
+   8          //
+   9          // Unless required by applicable law or agreed to in writing, software
+  10          // distributed under the License is distributed on an "AS IS" BASIS,
+  11          // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+  12          // See the License for the specific language governing permissions and
+  13          // limitations under the License.
+  14          // 10/01/2016 Added support for Proficio
+  15          // 02/18/2017 Added support for native CW
+  16          // Copyright © 2015-2017 Omnia SDR
+  17          
+  18          // Variable naming conventions:     E_<variable> -> Externally defined global
+  19          //                                  ff_<variable> -> Externally defined global stored in flash memory
+  20          //                                  ee_<variable> -> Externally defined global to be stored in EEPROM memo
+             -ry
+  21          //                                  l_<variable> -> locally defined variable
+  22          //                                  All UPPERCASE -> Define
+  23          
+  24          
+  25          #include <basic-plus.h>
+  26          #define PULSE_TUNER_TIME 5000;
+  27          
+  28          // Full support for Elecraft T1 Automatic Antenna Tuner
+  29          
+  30          uint8 T1_Band_Number;
+  31          uint8 T1_Tune_Request;
+  32          uint32 Pulse_Tuner = PULSE_TUNER_TIME
+  33          
+  34          void T1_Main(void) {
+  35   1          static uint8 state = 0, timer, band, send, bits, band_request, band_request_timer;
+  36   1          static uint16 tune_timer; 
+  37   1          //static uint8 previous_E_AMP_Bypass = 100;
+  38   1          //static uint8 band_refresh_count = 3;
+  39   1          
+  40   1          if(Pulse_Tuner-- == 0){
+  41   2              band = 0;
+  42   2              Pulse_Tuner = PULSE_TUNER_TIME;
+  43   2          }
+  44   1          if (tune_timer) {
+  45   2              tune_timer--;
+  46   2              if (!tune_timer) {
+  47   3                  Control_Write(Control_Read() & ~CONTROL_ATU_1);
+  48   3              }
+  49   2          }
+  50   1      
+  51   1          if (band_request_timer) band_request_timer--;
+  52   1          else if (T1_Band_Number != band) {
+C51 COMPILER V9.51   T1                                                                    08/14/2026 10:16:32 PAGE 2   
+
+  53   2              band_request = 1;
+  54   2              band_request_timer = 200;
+  55   2              Pulse_Tuner = PULSE_TUNER_TIME;
+  56   2          }
+  57   1      
+  58   1          switch(state) {
+  59   2          case 0: // idle
+  60   2              if (Status_Read() & STATUS_ATU_0) timer++;
+  61   2              else {
+  62   3                  if (timer >= 85 && timer <= 115) {
+  63   4                      state = 1;
+  64   4                      timer = 20;
+  65   4                      send = band = T1_Band_Number;
+  66   4                      bits = 4;
+  67   4                      Control_Write(Control_Read() & ~CONTROL_ATU_0 | CONTROL_ATU_0_OE);
+  68   4                  }
+  69   3                  else {
+  70   4                      timer = 0;
+  71   4                      if (band_request || T1_Tune_Request) {
+  72   5                          Control_Write(Control_Read() | CONTROL_ATU_1);
+  73   5                          if (T1_Tune_Request) tune_timer = 1000;
+  74   5                          else tune_timer = 10;
+  75   5                          band_request = T1_Tune_Request = 0;
+  76   5                      }
+  77   4                  }
+  78   3              }
+  79   2              break;
+  80   2          case 1: // data low
+  81   2              timer--;
+  82   2              if (!timer) {
+  83   3                  if (bits) {
+  84   4                      Control_Write(Control_Read() | CONTROL_ATU_0);
+  85   4                      if (send & 0x08) timer = 8;
+  86   4                      else timer = 3;
+  87   4                      send <<= 1;
+  88   4                      bits--;
+  89   4                      state = 2;
+  90   4                  } else {
+  91   4                      Control_Write(Control_Read() & ~(CONTROL_ATU_0 | CONTROL_ATU_0_OE));
+  92   4                      state = 0;
+  93   4                  }
+  94   3              }
+  95   2              break;
+  96   2          case 2: // data high
+  97   2              timer--;
+  98   2              if (!timer) {
+  99   3                  if (bits) timer = 3;
+ 100   3                  else timer = 10;
+ 101   3                  Control_Write(Control_Read() & ~CONTROL_ATU_0);
+ 102   3                  state = 1;
+ 103   3              }
+ 104   2              break;
+ 105   2          }   
+ 106   1      
+ 107   1      }
+C51 COMPILER V9.51   T1                                                                    08/14/2026 10:16:32 PAGE 3   
+
+ASSEMBLY LISTING OF GENERATED OBJECT CODE
+
+
+             ; FUNCTION T1_Main (BEGIN)
+                                           ; SOURCE LINE # 34
+                                           ; SOURCE LINE # 40
+                 R     MOV     DPTR,#Pulse_Tuner
+                       MOV     A,#0FFH
+                 E     CALL    ?C?LLDIXDATA8
+                       CLR     A
+                       MOV     R3,A
+                       MOV     R2,A
+                       MOV     R1,A
+                       MOV     R0,A
+                       CLR     C
+                 E     CALL    ?C?ULCMP
+                 R     xJNZ    ?C0001
+                                           ; SOURCE LINE # 41
+                 R     MOV     DPTR,#band
+                       MOVX    @DPTR,A
+                                           ; SOURCE LINE # 42
+                       MOV     R7,#088H
+                       MOV     R6,#013H
+                       MOV     R5,A
+                       MOV     R4,A
+                 R     MOV     DPTR,#Pulse_Tuner
+                 E     CALL    ?C?LSTXDATA
+                                           ; SOURCE LINE # 43
+             ?C0001:
+                                           ; SOURCE LINE # 44
+                 R     MOV     DPTR,#tune_timer
+                       MOVX    A,@DPTR
+                 R     JNZ     ?C0028
+                       INC     DPTR
+                       MOVX    A,@DPTR
+             ?C0028:
+                 R     xJZ     ?C0002
+                                           ; SOURCE LINE # 45
+                 R     MOV     DPTR,#tune_timer+01H
+                       MOVX    A,@DPTR
+                       ADD     A,#0FFH
+                       MOVX    @DPTR,A
+                 R     MOV     DPTR,#tune_timer
+                       MOVX    A,@DPTR
+                       ADDC    A,#0FFH
+                       MOVX    @DPTR,A
+                                           ; SOURCE LINE # 46
+                       MOVX    A,@DPTR
+                 R     JNZ     ?C0029
+                       INC     DPTR
+                       MOVX    A,@DPTR
+             ?C0029:
+                 R     xJNZ    ?C0002
+                                           ; SOURCE LINE # 47
+                 E     CALL    Control_Read
+                       MOV     A,R7
+                       ANL     A,#07FH
+                       MOV     R7,A
+                 E     CALL    _Control_Write
+                                           ; SOURCE LINE # 48
+                                           ; SOURCE LINE # 49
+             ?C0002:
+C51 COMPILER V9.51   T1                                                                    08/14/2026 10:16:32 PAGE 4   
+
+                                           ; SOURCE LINE # 51
+                 R     MOV     DPTR,#band_request_timer
+                       MOVX    A,@DPTR
+                 R     xJZ     ?C0004
+                       DEC     A
+                       MOVX    @DPTR,A
+                 R     xJMP    ?C0005
+             ?C0004:
+                                           ; SOURCE LINE # 52
+                 R     MOV     DPTR,#band
+                       MOVX    A,@DPTR
+                       MOV     R7,A
+                 R     MOV     DPTR,#T1_Band_Number
+                       MOVX    A,@DPTR
+                       XRL     A,R7
+                 R     xJZ     ?C0005
+                                           ; SOURCE LINE # 53
+                 R     MOV     DPTR,#band_request
+                       MOV     A,#01H
+                       MOVX    @DPTR,A
+                                           ; SOURCE LINE # 54
+                       INC     DPTR
+                       MOV     A,#0C8H
+                       MOVX    @DPTR,A
+                                           ; SOURCE LINE # 55
+                       CLR     A
+                       MOV     R7,#088H
+                       MOV     R6,#013H
+                       MOV     R5,A
+                       MOV     R4,A
+                 R     MOV     DPTR,#Pulse_Tuner
+                 E     CALL    ?C?LSTXDATA
+                                           ; SOURCE LINE # 56
+             ?C0005:
+                                           ; SOURCE LINE # 58
+                 R     MOV     DPTR,#state
+                       MOVX    A,@DPTR
+                       DEC     A
+                 R     xJZ     ?C0017
+                       DEC     A
+                 R     xJZ     ?C0023
+                       ADD     A,#02H
+                 R     xJNZ    ?C0027
+                                           ; SOURCE LINE # 59
+             ?C0008:
+                                           ; SOURCE LINE # 60
+                 E     CALL    Status_Read
+                       MOV     A,R7
+                 R     xJNB    ACC.4,?C0009
+                 R     MOV     DPTR,#timer
+                       MOVX    A,@DPTR
+                       INC     A
+                       MOVX    @DPTR,A
+                       RET     
+             ?C0009:
+                                           ; SOURCE LINE # 61
+                                           ; SOURCE LINE # 62
+                 R     MOV     DPTR,#timer
+                       MOVX    A,@DPTR
+                       MOV     R7,A
+                       CLR     C
+                       SUBB    A,#055H
+C51 COMPILER V9.51   T1                                                                    08/14/2026 10:16:32 PAGE 5   
+
+                 R     xJLT    ?C0011
+                       MOV     A,R7
+                       SETB    C
+                       SUBB    A,#073H
+                 R     xJGE    ?C0011
+                                           ; SOURCE LINE # 63
+                 R     MOV     DPTR,#state
+                       MOV     A,#01H
+                       MOVX    @DPTR,A
+                                           ; SOURCE LINE # 64
+                       INC     DPTR
+                       MOV     A,#014H
+                       MOVX    @DPTR,A
+                                           ; SOURCE LINE # 65
+                 R     MOV     DPTR,#T1_Band_Number
+                       MOVX    A,@DPTR
+                 R     MOV     DPTR,#band
+                       MOVX    @DPTR,A
+                       INC     DPTR
+                       MOVX    @DPTR,A
+                                           ; SOURCE LINE # 66
+                       INC     DPTR
+                       MOV     A,#04H
+                       MOVX    @DPTR,A
+                                           ; SOURCE LINE # 67
+                 E     CALL    Control_Read
+                       MOV     A,R7
+                       ANL     A,#0DFH
+                       ORL     A,#040H
+                       MOV     R7,A
+                 E     CALL    _Control_Write
+                                           ; SOURCE LINE # 68
+                       RET     
+             ?C0011:
+                                           ; SOURCE LINE # 69
+                                           ; SOURCE LINE # 70
+                       CLR     A
+                 R     MOV     DPTR,#timer
+                       MOVX    @DPTR,A
+                                           ; SOURCE LINE # 71
+                 R     MOV     DPTR,#band_request
+                       MOVX    A,@DPTR
+                 R     xJNZ    ?C0014
+                 R     MOV     DPTR,#T1_Tune_Request
+                       MOVX    A,@DPTR
+                 R     xJZ     ?C0027
+             ?C0014:
+                                           ; SOURCE LINE # 72
+                 E     CALL    Control_Read
+                       MOV     A,R7
+                       ORL     A,#080H
+                       MOV     R7,A
+                 E     CALL    _Control_Write
+                                           ; SOURCE LINE # 73
+                 R     MOV     DPTR,#T1_Tune_Request
+                       MOVX    A,@DPTR
+                 R     xJZ     ?C0015
+                 R     MOV     DPTR,#tune_timer
+                       MOV     A,#03H
+                       MOVX    @DPTR,A
+                       INC     DPTR
+                       MOV     A,#0E8H
+C51 COMPILER V9.51   T1                                                                    08/14/2026 10:16:32 PAGE 6   
+
+                       MOVX    @DPTR,A
+                 R     xJMP    ?C0016
+             ?C0015:
+                                           ; SOURCE LINE # 74
+                 R     MOV     DPTR,#tune_timer
+                       CLR     A
+                       MOVX    @DPTR,A
+                       INC     DPTR
+                       MOV     A,#0AH
+                       MOVX    @DPTR,A
+             ?C0016:
+                                           ; SOURCE LINE # 75
+                       CLR     A
+                 R     MOV     DPTR,#T1_Tune_Request
+                       MOVX    @DPTR,A
+                 R     MOV     DPTR,#band_request
+                       MOVX    @DPTR,A
+                                           ; SOURCE LINE # 76
+                                           ; SOURCE LINE # 77
+                                           ; SOURCE LINE # 78
+                                           ; SOURCE LINE # 79
+                       RET     
+                                           ; SOURCE LINE # 80
+             ?C0017:
+                                           ; SOURCE LINE # 81
+                 R     MOV     DPTR,#timer
+                       MOVX    A,@DPTR
+                       DEC     A
+                       MOVX    @DPTR,A
+                                           ; SOURCE LINE # 82
+                       MOVX    A,@DPTR
+                 R     xJNZ    ?C0027
+                                           ; SOURCE LINE # 83
+                 R     MOV     DPTR,#bits
+                       MOVX    A,@DPTR
+                 R     xJZ     ?C0019
+                                           ; SOURCE LINE # 84
+                 E     CALL    Control_Read
+                       MOV     A,R7
+                       ORL     A,#020H
+                       MOV     R7,A
+                 E     CALL    _Control_Write
+                                           ; SOURCE LINE # 85
+                 R     MOV     DPTR,#send
+                       MOVX    A,@DPTR
+                       MOV     R7,A
+                 R     xJNB    ACC.3,?C0020
+                 R     MOV     DPTR,#timer
+                       MOV     A,#08H
+                       MOVX    @DPTR,A
+                 R     xJMP    ?C0021
+             ?C0020:
+                                           ; SOURCE LINE # 86
+                 R     MOV     DPTR,#timer
+                       MOV     A,#03H
+                       MOVX    @DPTR,A
+             ?C0021:
+                                           ; SOURCE LINE # 87
+                       MOV     A,R7
+                       ADD     A,ACC
+                 R     MOV     DPTR,#send
+                       MOVX    @DPTR,A
+C51 COMPILER V9.51   T1                                                                    08/14/2026 10:16:32 PAGE 7   
+
+                                           ; SOURCE LINE # 88
+                       INC     DPTR
+                       MOVX    A,@DPTR
+                       DEC     A
+                       MOVX    @DPTR,A
+                                           ; SOURCE LINE # 89
+                 R     MOV     DPTR,#state
+                       MOV     A,#02H
+                       MOVX    @DPTR,A
+                                           ; SOURCE LINE # 90
+                       RET     
+             ?C0019:
+                                           ; SOURCE LINE # 91
+                 E     CALL    Control_Read
+                       MOV     A,R7
+                       ANL     A,#09FH
+                       MOV     R7,A
+                 E     CALL    _Control_Write
+                                           ; SOURCE LINE # 92
+                       CLR     A
+                 R     MOV     DPTR,#state
+                       MOVX    @DPTR,A
+                                           ; SOURCE LINE # 93
+                                           ; SOURCE LINE # 94
+                                           ; SOURCE LINE # 95
+                       RET     
+                                           ; SOURCE LINE # 96
+             ?C0023:
+                                           ; SOURCE LINE # 97
+                 R     MOV     DPTR,#timer
+                       MOVX    A,@DPTR
+                       DEC     A
+                       MOVX    @DPTR,A
+                                           ; SOURCE LINE # 98
+                       MOVX    A,@DPTR
+                 R     xJNZ    ?C0027
+                                           ; SOURCE LINE # 99
+                 R     MOV     DPTR,#bits
+                       MOVX    A,@DPTR
+                 R     xJZ     ?C0025
+                 R     MOV     DPTR,#timer
+                       MOV     A,#03H
+                       MOVX    @DPTR,A
+                 R     xJMP    ?C0026
+             ?C0025:
+                                           ; SOURCE LINE # 100
+                 R     MOV     DPTR,#timer
+                       MOV     A,#0AH
+                       MOVX    @DPTR,A
+             ?C0026:
+                                           ; SOURCE LINE # 101
+                 E     CALL    Control_Read
+                       MOV     A,R7
+                       ANL     A,#0DFH
+                       MOV     R7,A
+                 E     CALL    _Control_Write
+                                           ; SOURCE LINE # 102
+                 R     MOV     DPTR,#state
+                       MOV     A,#01H
+                       MOVX    @DPTR,A
+                                           ; SOURCE LINE # 103
+                                           ; SOURCE LINE # 104
+C51 COMPILER V9.51   T1                                                                    08/14/2026 10:16:32 PAGE 8   
+
+                                           ; SOURCE LINE # 105
+                                           ; SOURCE LINE # 107
+             ?C0027:
+                       RET     
+             ; FUNCTION T1_Main (END)
+
+
+
+MODULE INFORMATION:   STATIC OVERLAYABLE
+   CODE SIZE        =    454    ----
+   CONSTANT SIZE    =   ----    ----
+   XDATA SIZE       =     15    ----
+   PDATA SIZE       =   ----    ----
+   DATA SIZE        =   ----    ----
+   IDATA SIZE       =   ----    ----
+   BIT SIZE         =   ----    ----
+   EDATA SIZE       =   ----    ----
+   HDATA SIZE       =   ----    ----
+   XDATA CONST SIZE =   ----    ----
+   FAR CONST SIZE   =   ----    ----
+END OF MODULE INFORMATION.
+
+
+C51 COMPILATION COMPLETE.  0 WARNING(S),  0 ERROR(S)

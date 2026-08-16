@@ -1,0 +1,1389 @@
+#include "extern.h"
+#define _CRT_SECURE_NO_WARNINGS 1
+#include <math.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <limits.h>
+#include <sys/types.h>
+#include <string.h>
+#include <errno.h>
+#if !defined(__linux__) && !defined(__APPLE__)
+#include <sys/timeb.h>
+#endif
+
+#include "usbavrcmd.h"
+//#include <usb.h>
+#include "SRDLL.h"
+
+#include "version.h"
+#include "band_stack.h"
+#include "last_used.h"
+#include "iq.h"
+//Pthreads
+
+#ifdef _DEBUG
+#undef THIS_FILE
+static char THIS_FILE[] = __FILE__;
+#define new DEBUG_NEW
+#endif
+//#define CONSOLEWND	1	// set to 1 if the console window for capturing _cprintf() output is needed
+
+typedef enum {
+    extHw_modeRX = 0
+    , extHw_modeTX = 1
+} extHw_ModeRxTxT;
+
+uint32_t line_number = 0;
+
+BOOL hasconsole = FALSE;
+
+#define MULTUS_VID 0x16C0
+#define MULTUS_PID 0x05DC
+#define MULTUS_MAJOR_VERSION_119 1
+#define MULTUS_MINOR_VERSION_81 1
+#define MULTUS_MAJOR_VERSION_MKII 124
+#define MULTUS_MINOR_VERSION_MKII 92
+
+pid_t G_main_pid;
+FILE *G_fp_logfile;
+const char *homedir;
+TCHAR G_serial_number[80] = {0};
+char G_Multus_serial_number[80] = {0};
+char G_Usb_serial_number[80] = {0};
+uint32_t G_tune_freq;
+uint8_t G_serial_number_success = TRUE;
+uint8_t G_cw_firmware_option = 0;
+int G_Hw_Started = TRUE;
+char G_mode = 'U';
+static char G_previous_mode;
+int G_SetModeRxTX = FALSE;
+int G_network_initialized = FALSE;
+int G_dll_active = FALSE;
+int G_transceiver_initialization_status = TRUE;
+uint8_t G_setting_power_band = 0;
+uint16_t G_previous_power_band = 0;
+uint16_t G_prvious_power_level = 0;
+uint16_t G_gui_port = 0;
+uint16_t G_ms_sdr_port = 0;
+uint16_t G_sdrcore_recv_port = 0;
+uint16_t G_sdrcore_trans_port = 0;
+uint16_t G_spectrum_port = 0;
+uint16_t G_waterfall_port = 0;
+uint16_t G_RPI_mscc_port = 0;
+char G_gui_IP[PATH_MAX];
+char G_ms_sdr_IP[PATH_MAX];
+char G_RPI_IP[PATH_MAX];
+uint16_t G_band_normal = 0;
+uint8_t G_pcb_version = 0;
+int G_previous_high_cut = 3000;
+uint8_t G_gui_running = 0;
+uint8_t G_all_threads_run = 1;
+uint8_t G_main_thread_run = 1;
+ULONG32 G_thread_sleep_time = THREAD_SLEEP_TIME;
+uint8_t G_updating_last_used = 0;
+uint8_t G_setting_last_used = 0;
+uint8_t G_calibration_mode = 0;
+uint8_t G_in_IQ_calibration_mode = 0;
+uint8_t G_Speaker_Mute_Status = 0;
+ULONG64 G_Heart_beat = 0;
+uint8_t G_delete_SDRcore_init_files = 0;
+uint8_t G_delete_Comm_port_init_file = 0;
+uint8_t G_Message_Box_Displayed = 0;
+uint8_t G_Rit_Status = 0;
+uint32_t G_Rit_Offset = 0;
+uint8_t G_Rit_Step = 0;
+uint8_t G_CW_Snap_Running = 0;
+int G_CW_Offset = -600;
+INT8 G_int = 0;
+INT8 G_dec = 0;
+INT16 G_current_int = 0;
+INT16 G_current_dec = 0;
+int G_current_PPM = 0;
+int G_Tune_Power = 0;
+uint8_t G_TX = 0;
+uint8_t G_TX_Inhibit = FALSE;
+int G_High_Power_Count = 0;
+uint8_t G_High_Power_Toggle = 0;
+uint8_t G_Tune = FALSE;
+uint8_t G_PTT = FALSE;
+uint8_t G_PTT_Switch_Allow = TRUE;
+uint8_t G_PTT_Switch_Active = 0;
+uint8_t G_Allow_Log_Write = TRUE;
+uint8_t G_Threads_Started = FALSE;
+int G_major_version = 0;
+int G_minor_version = 0;
+char G_l_path[MAX_PATH] = { 0 };
+long t = 0;
+uint8_t G_Sound_Device = 0;
+
+char G_log_file_name[PATH_MAX] = {0};
+int G_comm_port_status = FALSE;
+uint16_t G_subsys_initialized = 0x0000;
+int ret = 0;
+
+struct band_stack G_band_stack[10];
+struct last_used_stack G_last_used_stack[10];
+
+//For the Get_Key_Down_Status
+pthread_t G_Get_Key_Status_thread;
+int G_Get_Key_Status_rc;
+int G_key;
+int G_Get_Key_Status_Thread_Running = 1;
+
+//For the CW_Command_Interface_thread
+pthread_t G_CW_Command_Interface_thread;
+int G_CW_Command_Interface_rc;
+
+//For the flusher thread
+pthread_t G_Flusher_thread;
+int G_Flusher_thread_rc;
+
+//For the last used updater thread
+pthread_t G_Update_last_used_thread;
+int G_Udate_last_used_thread_rc;
+
+pthread_t G_Check_temperature_thread;
+int G_Check_temperature_rc;
+
+pthread_t G_Power_thread;
+int G_Check_Power_rc;
+
+pthread_t G_Bias_thread;
+int G_Bias_rc;
+
+pthread_t G_Freq_Queue_thread;
+int G_Freq_Queue_rc;
+
+pthread_t G_Master_controller_thread;
+int G_Master_controller_rc;
+
+pthread_t G_Meter_main_thread;
+int G_Meter_main_rc;
+
+pthread_t G_IQBD_thread;
+int G_IQBD_rc;
+
+pthread_t G_CW_thread;
+int G_CW_rc;
+
+pthread_t G_MFC_thread;
+int G_MFC_rc;
+
+pthread_t G_PWM_thread;
+int G_PWM_rc;
+
+pthread_t G_Display_thread;
+int G_Display_rc;
+
+pthread_t G_Message_thread;
+int G_Message_rc;
+
+pthread_t G_PTT_thread;
+int G_PTT_rc;
+
+extern struct sockaddr_in si_me;
+extern struct sockaddr_in si_other;
+extern struct sockaddr_in si_gui;
+extern struct sockaddr_in si_RPI_mscc;
+extern int dll_s;
+extern int gui_s;
+extern int RPI_mscc_s;
+extern int recv_len;
+
+pthread_mutex_t Master_Device_Token_available = PTHREAD_MUTEX_INITIALIZER;
+pthread_mutex_t Freq_Queue_Token_available = PTHREAD_MUTEX_INITIALIZER;
+pthread_mutex_t Display_Queue_Token_available = PTHREAD_MUTEX_INITIALIZER;
+
+
+void signal_callback_handler(int signum) {
+    print_time(0);
+    fprintf(G_fp_logfile, "[%d] signal_callback_handler. signal: %d\n", line_number++, signum);
+    pthread_exit(NULL);
+    //exit(signum);
+}
+
+char* My_getenv(char* myenv)
+{
+    memset(G_l_path, 0, sizeof(G_l_path));
+
+#if defined(__linux__) || defined(__APPLE__)
+    {
+        const char *home = getenv("HOME");
+        (void)myenv;
+
+        if (home == NULL || home[0] == '\0') {
+            home = "/tmp";
+        }
+
+        snprintf(G_l_path, sizeof(G_l_path), "%s/.local/mscc", home);
+    }
+#else
+    // Windows
+    {
+        WCHAR path[MAX_PATH] = { 0 };
+        PWSTR lpPath = path;
+        HRESULT hr = SHGetKnownFolderPath(&FOLDERID_LocalAppData, 0, NULL, &lpPath);
+        (void)myenv;
+
+        if (SUCCEEDED(hr)) {
+            WideCharToMultiByte(CP_ACP, WC_COMPOSITECHECK, lpPath, -1, 
+                                G_l_path, sizeof(G_l_path), NULL, NULL);
+            strcat(G_l_path, "\\MSCC");
+        } else {
+            strcpy(G_l_path, "C:\\Temp\\MSCC");   // fallback
+        }
+    }
+#endif
+
+    return G_l_path;
+}
+void sig_term_handler(int signum) {
+    print_time(0);
+    fprintf(G_fp_logfile, "[%d] sig_term_handler. Calling stop_all. signal: %d\n", line_number++, signum);
+    Stop_all(1, 0);
+}
+
+int Get_random_time(void) {
+    int num = 0;
+    //num = (rand() % (1500 - 100 + 1));
+    num = (rand() % 10);
+    if (num <= 0) {
+        num = 1;
+    }
+    if (num > 10) {
+        num = 10;
+    }
+    if (num <= 0 || num > 10) {
+        print_time(0);
+        fprintf(G_fp_logfile, "[%d] Get_random_time. num: %d\n", line_number++, num);
+    }
+    return num;
+}
+
+char mode_to_letter(int number) {
+    char mode = 'N';
+
+    switch (number) {
+        case MODE_AM:
+            mode = 'A';
+            break;
+        case MODE_LSB:
+            mode = 'L';
+            break;
+        case MODE_USB:
+            mode = 'U';
+            break;
+        case MODE_CW:
+            mode = 'C';
+            break;
+        case MODE_TUNE:
+            mode = 'T';
+            break;
+        case 5:
+            mode = 'E';
+            break;
+        case 6:
+            mode = 'D';
+            break;
+    }
+    return mode;
+}
+
+int mode_to_number(char mode) {
+    int mode_number = 9;
+
+    switch (mode) {
+        case MODE_AM_LETTER:
+            mode_number = MODE_AM;
+            break;
+        case MODE_LSB_LETTER:
+            mode_number = MODE_LSB;
+            break;
+        case MODE_USB_LETTER:
+            mode_number = MODE_USB;
+            break;
+        case MODE_CW_LETTER:
+            mode_number = MODE_CW;
+            break;
+        case MODE_TUNE_LETTER:
+            mode_number = MODE_TUNE;
+            break;
+    }
+    return mode_number;
+}
+
+int Open_log_file() {
+    FILE *log_file_dir;
+    char log_file__dir_name[PATH_MAX] = {0};
+    char log_file_record[PATH_MAX] = {0};
+
+   if ((homedir = My_getenv("HOME")) != NULL) {
+        strcpy(log_file__dir_name, homedir);
+        strcat(log_file__dir_name, "/log_file_dir.ini");
+        log_file_dir = fopen(log_file__dir_name, "r");
+        if (log_file_dir != NULL) {
+            fgets(log_file_record, sizeof(log_file_record), log_file_dir);
+            char* start = strstr(log_file_record, "LOGFILE_DIRECTORY");
+            if (start != NULL) {
+                start += 18;
+                char* end = strstr(start, ";");
+                if (end != NULL) {
+                    size_t size = (size_t)(end - start);
+                    strcpy(G_log_file_name, homedir);
+                    strncat(G_log_file_name, start, size);
+                    strcat(G_log_file_name, "/ms-sdr.log");
+                    printf("[%d] Open_log_file. User File Name: %s\n", line_number++, G_log_file_name);
+                }
+            }
+            fclose(log_file_dir);
+        }
+        /* Default log path if no log_file_dir.ini */
+        if (G_log_file_name[0] == '\0') {
+            snprintf(G_log_file_name, sizeof(G_log_file_name), "%s/ms-sdr.log", homedir);
+        }
+        /* "w" truncates each run — expected; tail -f will report "file truncated". */
+        G_fp_logfile = fopen(G_log_file_name, "w");
+        if (G_fp_logfile == NULL) {
+            printf("[%d] Open_log_file. File Open Failed: %s\n", line_number++, G_log_file_name);
+            return 0;
+        }
+        /* Line-buffer so tail -f shows output without waiting for 4KB fill. */
+        setvbuf(G_fp_logfile, NULL, _IOLBF, 0);
+        printf("[%d] Open_log_file. Finished -> %s\n", line_number++, G_log_file_name);
+        fprintf(G_fp_logfile, "[%d] Logfile Opened.  Logfile: %s\n", line_number++, G_log_file_name);
+        fflush(G_fp_logfile);
+    }
+    return 1;
+}
+
+/*int Open_log_file() {
+    FILE* log_file_dir;
+    char log_file__dir_name[PATH_MAX] = { 0 };
+    char log_file_record[PATH_MAX] = { 0 };
+
+    struct {
+        char* start;
+        char* end;
+        int size;
+    } log_file_dir_field;
+
+    if ((homedir = My_getenv("HOME")) != NULL) {
+        strcpy(log_file__dir_name, homedir);
+        strcat(log_file__dir_name, "/log_file_dir.ini");
+        log_file_dir = fopen(log_file__dir_name, "r");
+        if (log_file_dir != NULL) {
+            fgets(log_file_record, sizeof(log_file_record), log_file_dir);
+            log_file_dir_field.start = strstr(log_file_record, "LOGFILE_DIRECTORY");
+            log_file_dir_field.start = log_file_dir_field.start + 18;
+            //Now find the ending point
+            log_file_dir_field.end = strstr(log_file_dir_field.start, ";");
+            log_file_dir_field.size = (log_file_dir_field.end - (log_file_dir_field.start));
+            strcpy(G_log_file_name, homedir);
+            strncat(G_log_file_name, log_file_dir_field.start, log_file_dir_field.size);
+            strcat(G_log_file_name, "/ms-sdr.log");
+            printf("[%d] Open_log_file. User File Name: %s\n", line_number++, G_log_file_name);
+            fclose(log_file_dir);
+        }
+        G_fp_logfile = fopen(G_log_file_name, "w");
+        if (G_fp_logfile == NULL) {
+            printf("[%d] Open_log_file. File Open Failed: %s\n", line_number++, G_log_file_name);
+            return 0;
+        }
+        printf("[%d] Open_log_file. Finished\n", line_number++);
+        fprintf(G_fp_logfile, "[%d] Logfile Opened.  Logfile: %s\n", line_number++, G_log_file_name);
+    }
+    return 1;
+}*/
+void Reset_Logfile() {
+    time_t tim;
+    struct tm *local_time;
+    static byte log_reset = FALSE;
+
+    tim = time(NULL);
+    local_time = localtime(&tim);
+    if (local_time->tm_hour == 0 && log_reset == FALSE) {
+        G_Allow_Log_Write = FALSE;
+        log_reset = TRUE;
+        line_number = 0;
+        fflush(G_fp_logfile);
+        fclose(G_fp_logfile);
+        Open_log_file();
+        G_Allow_Log_Write = TRUE;
+    }
+    if (local_time->tm_hour != 0 && log_reset == TRUE) {
+        log_reset = FALSE;
+    }
+}
+
+void print_time(int print_new_line) {
+    time_t tim;
+    struct tm *now;
+    unsigned short mills = 0;
+#if defined(__linux__) || defined(__APPLE__)
+    struct timeval tv;
+#endif
+
+    if (G_Allow_Log_Write == TRUE) {
+#if defined(__linux__) || defined(__APPLE__)
+        gettimeofday(&tv, NULL);
+        tim = tv.tv_sec;
+        mills = (unsigned short)(tv.tv_usec / 1000);
+#else
+        {
+            struct timeb my_start;
+            tim = time(NULL);
+            ftime(&my_start);
+            mills = my_start.millitm;
+        }
+#endif
+        now = gmtime(&tim);
+        if (print_new_line == 1)fprintf(G_fp_logfile, "\n");
+        fprintf(G_fp_logfile, "[%02d:%02d:%02d:%02d:%03u]", now->tm_mday, now->tm_hour, now->tm_min, now->tm_sec, (unsigned)mills);
+    }
+}
+
+void* Flusher_thread(void* t) {
+    int gui_count = 0;
+    int servers_count = 0;
+    int ka_log_count = 0;
+    static ULONG64 previous_heart_beat = 0;
+    static ULONG64 previous_sdrcore_recv_keep_alive = 0;
+    static ULONG64 previous_sdrcore_trans_keep_alive = 0;
+    int servers_failed = 0;
+    uint8_t op_code;
+    int op_data;
+    int comm_port_status = FALSE;
+    byte comm_port_retry = 0;
+    int thread_status = 2;
+    uint32_t previous_startup_freq = 0;
+
+    print_time(0);
+    fprintf(G_fp_logfile, "[%d] Flusher_thread. thread started \n", line_number++);
+    op_code = CMD_CHECK_GUI_STATUS;
+    op_data = 1;
+    while (G_all_threads_run) {
+        /*
+         * Client watchdog is ~10s. Send I'm-Alive (0xF4) every 1s while session
+         * is active — independent of log flush / other work.
+         */
+        if (G_MSCC_Initialized == 1 || G_client_session_active) {
+            Gui_send_param(CMD_SET_KEEP_ALIVE, 1);
+            if ((ka_log_count++ % 10) == 0) {
+                print_time(0);
+                fprintf(G_fp_logfile, "[%d] Flusher_thread. Sent CMD_SET_KEEP_ALIVE (0xF4) to client\n",
+                    line_number++);
+            }
+        }
+        Sleep(1000);
+
+        if (G_Allow_Log_Write == TRUE) {
+            fflush(G_fp_logfile);
+            if (previous_startup_freq != G_tune_freq && G_TX == FALSE) {
+                Update_Startup(G_tune_freq, G_mode);
+                previous_startup_freq = G_tune_freq;
+            }
+            /* ms-sdr → cores: real keep-alive opcode (payload = client style value) */
+            if (G_network_initialized) {
+                SDRcore_recv_send_param(CMD_SET_KEEP_ALIVE, KEEP_ALIVE_FROM_CLIENT);
+                SDRcore_trans_send_param(CMD_SET_KEEP_ALIVE, KEEP_ALIVE_FROM_CLIENT);
+            }
+            if (G_MSCC_Initialized == 1 || G_client_session_active) {
+                if (gui_count++ >= 15) {
+#if defined(MS_SDR_NO_USB)
+                    previous_heart_beat = G_Heart_beat;
+#else
+                    if (G_Heart_beat > previous_heart_beat) {
+                        previous_heart_beat = G_Heart_beat;
+                    }
+                    else {
+                        servers_failed = 1;
+                    }
+#endif
+                    gui_count = 0;
+                }
+            }
+            /*
+             * Core keep-alive: expect CMD_SET_KEEP_ALIVE (0xF4) with source
+             * KEEP_ALIVE_FROM_RECV / KEEP_ALIVE_FROM_TRANS (not version opcodes).
+             * Always log missing KA; under full build also stop MSCC.
+             */
+            if (G_Threads_Started == TRUE) {
+                if (servers_count++ >= 10) {
+                    print_time(0);
+                    fprintf(G_fp_logfile,
+                        "[%d] Flusher_thread. core KA status recv=%llu (was %llu) trans=%llu (was %llu)\n",
+                        line_number++,
+                        (unsigned long long)G_sdrcore_recv_keep_alive,
+                        (unsigned long long)previous_sdrcore_recv_keep_alive,
+                        (unsigned long long)G_sdrcore_trans_keep_alive,
+                        (unsigned long long)previous_sdrcore_trans_keep_alive);
+                    fflush(G_fp_logfile);
+                    if (G_sdrcore_recv_keep_alive > previous_sdrcore_recv_keep_alive) {
+                        previous_sdrcore_recv_keep_alive = G_sdrcore_recv_keep_alive;
+                    }
+                    else {
+                        print_time(0);
+                        fprintf(G_fp_logfile,
+                            "[%d] Flusher_thread. KEEP-ALIVE missing from sdrcore-recv "
+                            "(no 0xF4 source=RECV). count still %llu\n",
+                            line_number++,
+                            (unsigned long long)G_sdrcore_recv_keep_alive);
+                        fflush(G_fp_logfile);
+                        servers_failed = 2;
+                    }
+                    if (G_sdrcore_trans_keep_alive > previous_sdrcore_trans_keep_alive) {
+                        previous_sdrcore_trans_keep_alive = G_sdrcore_trans_keep_alive;
+                    }
+                    else {
+                        print_time(0);
+                        fprintf(G_fp_logfile,
+                            "[%d] Flusher_thread. KEEP-ALIVE missing from sdrcore-trans "
+                            "(no 0xF4 source=TRANS). count still %llu\n",
+                            line_number++,
+                            (unsigned long long)G_sdrcore_trans_keep_alive);
+                        fflush(G_fp_logfile);
+                        if (servers_failed == 0)
+                            servers_failed = 3;
+                    }
+                    servers_count = 0;
+                }
+            }
+            if (servers_failed > 0) {
+                print_time(0);
+                switch (servers_failed) {
+                case 1:
+                    fprintf(G_fp_logfile, "[%d] Flusher_thread. Client FAILED: %d\n",
+                        line_number++, servers_failed);
+                    Session_Release();
+                    servers_failed = 0;
+                    break;
+                case 2:
+                    fprintf(G_fp_logfile, "[%d] Flusher_thread. Sdrcore-recv FAILED (keep-alive)\n",
+                        line_number++);
+#if defined(MS_SDR_NO_USB)
+                    /* Log only — do not kill bring-up stack */
+                    servers_failed = 0;
+#else
+                    Gui_Add_Message("NO RESPONSE FROM Sdrcore-recv\n MSCC WILL NOW STOP");
+                    Sleep(5000);
+                    Stop_all(1, 0);
+#endif
+                    break;
+                case 3:
+                    fprintf(G_fp_logfile, "[%d] Flusher_thread. Sdrcore-trans FAILED (keep-alive)\n",
+                        line_number++);
+#if defined(MS_SDR_NO_USB)
+                    servers_failed = 0;
+#else
+                    Gui_Add_Message("NO RESPONSE FROM Sdrcore-trans\n MSCC WILL NOW STOP");
+                    Sleep(5000);
+                    Stop_all(1, 0);
+#endif
+                    break;
+                }
+            }
+        }
+    }
+    print_time(0);
+    if (servers_failed <= 0) {
+        fprintf(G_fp_logfile, "[%d] Flusher_thread . NORMAL EXIT \n", line_number++);
+    } else {
+        fprintf(G_fp_logfile, "[%d] Flusher_thread . ABNORMAL Exit \n", line_number++);
+    }
+    fflush(G_fp_logfile);
+    pthread_exit(0);
+    return NULL;
+}
+
+void *Update_last_used_thread(void *last_used_tread) {
+    int status = 0;
+    uint32_t previous_startup_freq = 0;
+
+    print_time(0);
+    fprintf(G_fp_logfile, "[%d] Update_last_used_thread . Started\n", line_number++);
+    Sleep(3000); //Wait until the remaining subsystems are initialized
+    while (G_all_threads_run) {
+        if (!G_dll_active && G_MSCC_Initialized == 1) {
+            if (!G_setting_power_band) {
+                switch (G_vfo) {
+                    case VFO_A:
+                        status = Update_last_used_VFO_A();
+                        break;
+                    case VFO_B:
+                        status = Update_last_used_VFO_B();
+                        break;
+                }
+                if (status != 0) {
+                    if (G_tune_freq != 0) {
+                        if (previous_startup_freq != G_tune_freq && G_TX == FALSE) {
+                            if (G_vfo == VFO_A) {
+                                Update_Startup(G_tune_freq, G_mode);
+                                previous_startup_freq = G_tune_freq;
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        Sleep(G_thread_sleep_time);
+    }
+    print_time(0);
+    fprintf(G_fp_logfile, "[%d] Update_last_used_thread . NORMAL EXIT.\n", line_number++);
+    pthread_exit(0);
+    return NULL;
+
+}
+
+uint16_t Get_band_by_frequency(uint32_t freq, uint8_t apply_offset) {
+    uint32_t offset = 0;
+    uint16_t band = GENERAL_BAND;
+    if (apply_offset) {
+        offset = 12000;
+    }
+    print_time(0);
+    fprintf(G_fp_logfile, "[%d] Get_band_by_frequency . Frequency: %ld, Offset: %ld \n", line_number++, freq, offset);
+    if (freq >= (1800000 - offset) && freq <= (2000000 + offset)) band = 160;
+    if (freq >= 3500000 - offset && freq <= 4000000 + offset) band = 80;
+    if (freq >= 5330500 - offset && freq <= 5403500 + offset) band = 60;
+    if (freq >= 7000000 - offset && freq <= 7300000 + offset) band = 40;
+    if (freq >= 10100000 - offset && freq <= 10150000 + offset) band = 30;
+    if (freq >= 14000000 - offset && freq <= 14350000 + offset) band = 20;
+    if (freq >= 18068000 - offset && freq <= 18168000 + offset) band = 17;
+    if (freq >= 21000000 - offset && freq <= 21450000 + offset) band = 15;
+    if (freq >= 24890000 - offset && freq <= 24990000 + offset) band = 12;
+    if (freq >= 28000000 - offset && freq <= 29700000 + offset) band = 10;
+    if (freq >= 135700 - offset && freq <= 137800 + offset) band = 2200;
+    if (freq >= 472000 - offset && freq <= 479000 + offset) band = 630;
+    print_time(0);
+    fprintf(G_fp_logfile, "[%d] Get_band_by_frequency . Finished . Band: %ld\n", line_number++, band);
+    return band;
+}
+
+void Set_band_normal(uint32_t freq, uint8_t apply_offset) {
+    uint32_t offset = 0;
+
+    if (apply_offset) {
+        offset = 12000;
+    }
+    print_time(0);
+    fprintf(G_fp_logfile, "[%d] Set_band_normal . Frequency: %ld, Offset: %ld \n", line_number++, freq, offset);
+    G_dll_active = 1;
+    G_band_normal = FREQ_OUT_OF_RANGE;
+    if (freq >= 500000 - offset && freq <= 30000000 + offset) G_band_normal = GENERAL_BAND;
+    if (freq >= (1800000 - offset) && freq <= (2000000 + offset)) G_band_normal = 160;
+    if (freq >= 3500000 - offset && freq <= 4000000 + offset) G_band_normal = 80;
+    if (freq >= 5330500 - offset && freq <= 5403500 + offset) G_band_normal = 60;
+    if (freq >= 7000000 - offset && freq <= 7300000 + offset) G_band_normal = 40;
+    if (freq >= 10100000 - offset && freq <= 10150000 + offset) G_band_normal = 30;
+    if (freq >= 14000000 - offset && freq <= 14350000 + offset) G_band_normal = 20;
+    if (freq >= 18068000 - offset && freq <= 18168000 + offset) G_band_normal = 17;
+    if (freq >= 21000000 - offset && freq <= 21450000 + offset) G_band_normal = 15;
+    if (freq >= 24890000 - offset && freq <= 24990000 + offset) G_band_normal = 12;
+    if (freq >= 28000000 - offset && freq <= 29700000 + offset) G_band_normal = 10;
+    if (freq >= 135700 - offset && freq <= 137800 + offset) G_band_normal = 2200;
+    if (freq >= 472000 - offset && freq <= 479000 + offset) G_band_normal = 630;
+    print_time(0);
+    fprintf(G_fp_logfile, "[%d] Set_band_normal . Finished . Band: %ld\n", line_number++, G_band_normal);
+    G_dll_active = 0;
+}
+
+void Set_PTT(int on_off, uint8_t allow_MKII_PTT_Switch) {
+    static uint8_t ptt_switch_inhibited = FALSE;
+
+    if (G_TX_Inhibit == FALSE) {
+        G_dll_active = TRUE;
+        if (on_off == TRUE && allow_MKII_PTT_Switch == FALSE) {
+            G_PTT_Switch_Allow = FALSE;
+            ptt_switch_inhibited = TRUE;
+        }
+        G_PTT = on_off;
+        if (G_PTT) {
+            G_spectrum_cycle_count = SPECTRUM_CYCLE_LIMIT;
+        }
+        SDRcore_recv_send_param(CMD_SET_TX_ON, on_off);
+        SDRcore_trans_send_param(CMD_SET_TX_ON, on_off);
+        SetModeRxTx(on_off, 0);
+    } else {
+        print_time(0);
+        fprintf(G_fp_logfile, "[%d] Set_PTT . G_TX_Inhibit: %d\n", line_number++, G_TX_Inhibit);
+    }
+    if (on_off == FALSE && ptt_switch_inhibited == TRUE) {
+        ptt_switch_inhibited = FALSE;
+        G_PTT_Switch_Allow = TRUE;
+    }
+    G_dll_active = FALSE;
+    print_time(0);
+    fprintf(G_fp_logfile, "[%d] Set_PTT. FINISHED. on_off: %d, ptt_switch_inhibited: %d, G_PTT_Switch_Allow: %d\n",
+            line_number++, on_off, ptt_switch_inhibited, G_PTT_Switch_Allow);
+}
+
+int Tune_button(int on_off, uint8_t allow_MKII_PTT_Switch) {
+    static uint8_t ptt_switch_inhibited = FALSE;
+
+    print_time(0);
+    fprintf(G_fp_logfile, "[%d] Tune_button called . on_off: %d, previous_mode: %c,G_mode: %c\n",
+            line_number++, on_off, G_previous_mode, G_mode);
+    if (G_TX_Inhibit == FALSE && G_check_bias == FALSE) {
+        G_dll_active = TRUE;
+        if (on_off == TRUE && allow_MKII_PTT_Switch == FALSE) {
+            G_PTT_Switch_Allow = FALSE;
+            ptt_switch_inhibited = TRUE;
+        }
+        G_Tune = on_off;
+        SetModeRxTx(on_off, 0);
+        //Spectrum_Waterfall_send_param(CMD_SET_TX_ON, on_off);
+        if (on_off == FALSE && ptt_switch_inhibited == TRUE) {
+            ptt_switch_inhibited = FALSE;
+            G_PTT_Switch_Allow = TRUE;
+        }
+    } else {
+        print_time(0);
+        fprintf(G_fp_logfile, "[%d] Tune_button . G_TX_Inhibit: %d, G_check_bias: %d\n", line_number++, G_TX_Inhibit, G_check_bias);
+    }
+    print_time(0);
+    fprintf(G_fp_logfile, "[%d] Tune_button . Finished. Status: %d\n", line_number++, on_off);
+    G_dll_active = FALSE;
+    return on_off;
+}
+
+int static TX_Hold_Timer(int period, int reset) {
+    int status = FALSE;
+    static int end = 0;
+    static int counter = 0;
+    static int key_up_count = 0;
+    static int threshold = 0;
+
+    if (reset) {
+        counter = period * 100;
+        end = 0;
+        key_up_count = 0;
+        threshold = G_TX_Hold;
+    } else {
+        ++end;
+        if (end >= counter) {
+            ++key_up_count;
+        }
+        if (end >= counter && key_up_count >= threshold) {
+            status = TRUE;
+        }
+    }
+    return status;
+}
+
+void *Manage_MKII_PTT_Switch(void *my_parm) {
+    int r = 0;
+    int tx_mode = FALSE;
+    static int previous_tx_mode = 0;
+    int ptt = FALSE;
+    int sleep_time = 1;
+
+    while (G_all_threads_run) {
+        if (G_PTT_Switch_Allow == TRUE) {
+            r = usbControlMsgIN(CMD_GET_PTT, 0, 0, (char*) &ptt, sizeof (ptt));
+            if (r) {
+                tx_mode = ptt;
+                if (previous_tx_mode != tx_mode) {
+                    Set_PTT(tx_mode, TRUE);
+                    SDRcore_recv_send_param(CMD_SET_TX_ON, tx_mode);
+                    SDRcore_trans_send_param(CMD_SET_TX_ON, tx_mode);
+                    Gui_send_param(CMD_SET_TX_SET_BY_SERVER, tx_mode);
+                    previous_tx_mode = tx_mode;
+                    print_time(0);
+                    fprintf(G_fp_logfile, "[%d] Manage_MKII_PTT_Switch. Set_PTT. tx_mode: %d\n",
+                            line_number++, tx_mode);
+                }
+
+            }
+        }
+        delayMicroseconds(sleep_time);
+    }
+    print_time(0);
+    fprintf(G_fp_logfile, "[%d] Manage_MKII_PTT_Switch. NORMAL EXIT.\n",
+            line_number++);
+    pthread_exit(NULL);
+    return (NULL);
+}
+
+void *Get_Key_Status(void *my_parm) {
+    int r = 0;
+    int key = FALSE;
+    int sleep_time = 1;
+    static int previous_key = FALSE;
+
+    print_time(0);
+    fprintf(G_fp_logfile, "[%d] Get_Key_Status. Polling for key down and PTT status\n",
+            line_number++);
+    while (G_all_threads_run) {
+        if (G_TX_Inhibit == FALSE) {
+            r = usbControlMsgIN(CMD_GET_KEY_DOWN, 0, 0, (char*)&key, sizeof(key));
+            if (r) {
+                if (previous_key != key) {
+                    previous_key = key;
+                    //Spectrum_Waterfall_send_param(CMD_SET_TX_ON, key);
+                    fprintf(G_fp_logfile, "[%d] Get_Key_Status. key: %d\n", line_number++, key);
+                }
+            }
+        }
+        delayMicroseconds(sleep_time);
+    }
+    print_time(0);
+    fprintf(G_fp_logfile, "[%d] Get_Key_Down_Status NORMAL EXIT.  key: %d\n",
+            line_number++, key);
+    pthread_exit(NULL);
+    return (NULL);
+}
+
+int SetModeRxTx(int transmit, int tx_delay) {
+    int key = 0;
+    int ret = TRUE;
+    int delay_time = 1;
+    int wait_count = 0;
+
+    print_time(1);
+    fprintf(G_fp_logfile, "[%d] SetModeRxTx Called . transmit %d \n", line_number++, transmit);
+    delay_time = delay_time * 1000;
+    G_SetModeRxTX = transmit;
+    G_dll_active = TRUE;
+    if (G_gui_running) {
+        if (transmit == 1) {
+            G_TX = TRUE;
+            if (G_Split == FALSE) {
+                freq_queue_add(G_tune_freq);
+            } else {
+                freq_queue_add(G_Split_TX_FREQ);
+            }
+            ret = srSetPTTGetCWInp(transmit, &key);
+        } else {
+            ret = srSetPTTGetCWInp(transmit, &key);
+            G_TX = FALSE;
+            if (G_Split == FALSE) {
+                freq_queue_add(G_tune_freq);
+            } else {
+                freq_queue_add(G_Split_RX_FREQ);
+            }
+        }
+    } else {
+        print_time(0);
+        fprintf(G_fp_logfile, "[%d] SetModeRxTx . GUI NOT Running.\n", line_number++);
+    }
+    if (ret == FALSE) {
+        print_time(0);
+        fprintf(G_fp_logfile, "[%d] SetModeRxTx . FAILED key: %d, ret: %d. Calling Stop_all\n",
+                line_number++, key, ret);
+        Stop_all(0, STOP_PROFICIO_COMMS);
+    }
+    print_time(0);
+    fprintf(G_fp_logfile, "[%d] SetModeRxTx. FINISHED. wait_count: %d\n", line_number++, wait_count);
+    G_dll_active = FALSE;
+    return TRUE;
+}
+
+int SetHWLO_queue(long tune_freq) {
+    double offset_lo = 0.0;
+    int status = 0;
+    static long previous_freq = 0;
+    long delta_freq = 0;
+    byte mute_active = FALSE;
+    int set_last_used_status = FALSE;
+    static uint16_t previous_band = FREQ_OUT_OF_RANGE;
+
+    delta_freq = (labs) ((previous_freq - tune_freq));
+    G_dll_active = TRUE;
+    previous_freq = tune_freq;
+    switch (G_mode) {
+        case 'A':
+            if (G_SetModeRxTX) {
+                offset_lo = (double) (tune_freq + AM_OFFSET_TX + G_delta_drift_int);
+            } else {
+                offset_lo = (double) (tune_freq + AM_OFFSET_RX + G_delta_drift_int);
+            }
+            break;
+        case 'C':
+            if (G_SetModeRxTX) {
+                offset_lo = (double) (tune_freq + SSB_OFFSET + G_delta_drift_int);
+            } else {
+                offset_lo = (double) (tune_freq + SSB_OFFSET + (G_CW_Offset) + G_delta_drift_int);
+            }
+            print_time(0);
+            fprintf(G_fp_logfile, "[%d] SetHWLO_queue. Mode C. TX mode: %d, tune_freq: %ld, offset_lo: %f, G_CW_Offset: %d  \n",
+                    line_number++, G_SetModeRxTX, tune_freq, offset_lo, G_CW_Offset);
+            break;
+        default:
+            offset_lo = (double) (tune_freq + SSB_OFFSET + G_delta_drift_int);
+    }
+    //Mute the Speaker when the frequency change is 100000Hz or greater. Prevents pop noise cause by PLL reset of the Si5351
+    if (delta_freq >= 100000) {
+        if (!G_Speaker_Mute_Status) {
+            mute_active = TRUE;
+            //SDRcore_recv_send_param(CMD_SET_SPEAKER_MUTE, 1);
+            print_time(0);
+            fprintf(G_fp_logfile, "[%d] SetHWLO_queue. CMD_SET_SPEAKER_MUTE. mute_active: %d, delta_freq %ld\n",
+                    line_number++, mute_active, delta_freq);
+        }
+    }
+    status = srSetFreq(offset_lo, 27);
+    if (status == FALSE) {
+        print_time(0);
+        fprintf(G_fp_logfile, "[%d] SetHWLO_queue. srSetFreq . FAILED.  status: %d. Calling Stop_all\n",
+                line_number++, status);
+        Stop_all(0, STOP_PROFICIO_COMMS);
+    }
+    if (mute_active) {
+        mute_active = FALSE;
+        //SDRcore_recv_send_param(CMD_SET_SPEAKER_MUTE, 0);
+        print_time(0);
+        fprintf(G_fp_logfile, "[%d] SetHWLO_queue . CMD_SET_SPEAKER_MUTE . mute_active: %d, Delta Freq %ld\n",
+                line_number++, mute_active, delta_freq);
+    }
+    G_dll_active = FALSE;
+    Set_band_normal(G_tune_freq, TRUE);
+    if (previous_band != G_band_normal) {
+        SDRcore_trans_send_param(CMD_SET_SDR_CORE_BAND, G_band_normal);
+        SDRcore_recv_send_param(CMD_SET_SDR_CORE_BAND, G_band_normal);
+        previous_band = G_band_normal;
+    }
+    if (G_band_normal != GENERAL_BAND) {
+        switch (G_vfo) {
+            case VFO_A:
+                set_last_used_status = Set_last_used_VFO_A(G_tune_freq, G_mode);
+                if (set_last_used_status == FALSE) { // Try again.  Update_Last_Used is busy
+                    print_time(0);
+                    fprintf(G_fp_logfile, "[%d] SetHWLO_queue . set_last_used-> BUSY. set_last_used_status: %d \n",
+                            line_number++, set_last_used_status);
+                    Sleep(100);
+                    set_last_used_status = Set_last_used_VFO_A(G_tune_freq, G_mode);
+                }
+                break;
+            case VFO_B:
+                set_last_used_status = Set_last_used_VFO_B(G_tune_freq, G_mode);
+                if (set_last_used_status == FALSE) { // Try again.  Update_Last_Used is busy
+                    print_time(0);
+                    fprintf(G_fp_logfile, "[%d] SetHWLO_queue . set_last_used-> BUSY. set_last_used_status: %d \n",
+                            line_number++, set_last_used_status);
+                    Sleep(100);
+                    set_last_used_status = Set_last_used_VFO_B(G_tune_freq, G_mode);
+                }
+        }
+    }
+    return status;
+}
+
+long GetHWLO(void) {
+    //The return value is the current LO frequency, expressed in units of Hz.
+    long LOfreq;
+    double pMHz;
+    int ret;
+
+    print_time(1);
+    G_dll_active = TRUE;
+    fprintf(G_fp_logfile, "[%d] GetHWLO Called.\n", line_number++);
+    print_time(0);
+    ret = srGetFreq(&pMHz);
+    LOfreq = (long) pMHz;
+    print_time(0);
+    fprintf(G_fp_logfile, "[%d] GetHWLO Called-> LOfreq: %ld\n", line_number++, LOfreq);
+    print_time(0);
+    fprintf(G_fp_logfile, "[%d] GetHWLO Called-> Finished\n", line_number++);
+    G_dll_active = FALSE;
+    return LOfreq; //LOfreq;
+}
+
+void ModeChanged(char mode) {
+    int status = 0;
+    long t = 0;
+    static int signal_sent = 0;
+
+    print_time(0);
+    fprintf(G_fp_logfile, "[%d] ModeChanged. mode: %c,G_calibrating: %d. STARTED\n", line_number++, mode, G_calibration_mode);
+    //Disable mode setting if the application is in Power Calibration mode.  
+    //Power Calibration has control of the Proficio
+    if (!G_calibration_mode) {
+        G_dll_active = TRUE;
+        status = Radio_send_parameters(SET_CW_MODE, mode, 1);
+        Sleep(50);
+        print_time(0);
+        fprintf(G_fp_logfile, "[%d] ModeChanged. mode: %c, Return Status: %d\n", line_number++, mode, status);
+        if (status > 0) {
+            G_mode = mode;
+            freq_queue_add(G_tune_freq);
+        } else {
+            print_time(0);
+            fprintf(G_fp_logfile, "[%d] ModeChanged. Call to usbControlMsgOUT Failed . status: %d\n", line_number++, status);
+        }
+        if (!G_in_IQ_calibration_mode) {
+            if (G_band_normal != GENERAL_BAND) {
+                print_time(0);
+                fprintf(G_fp_logfile, "[%d] ModeChanged. Calling set_last_used for mode %c \n", line_number++, G_mode);
+                switch (G_vfo) {
+                    case VFO_A:
+                        status = Set_last_used_VFO_A(G_tune_freq, G_mode);
+                        if (status == FALSE) { // Try again.  Update_Last_Used is busy
+                            Sleep(100);
+                            status = Set_last_used_VFO_A(G_tune_freq, G_mode);
+                        }
+                        break;
+                    case VFO_B:
+                        status = Set_last_used_VFO_B(G_tune_freq, G_mode);
+                        if (status == FALSE) { // Try again.  Update_Last_Used is busy
+                            Sleep(100);
+                            status = Set_last_used_VFO_B(G_tune_freq, G_mode);
+                        }
+                }
+            }
+        }
+        print_time(0);
+        fprintf(G_fp_logfile, "[%d] ModeChanged. FINISHED \n", line_number++);
+        G_dll_active = FALSE;
+    }
+}
+
+
+int static Start_Key_status_thread() {
+    int status = TRUE;
+    long last_used_t = 0;
+
+    print_time(0);
+    fprintf(G_fp_logfile, "[%d] main. Starting Start_Key_PTT_status_thread thread \n", line_number++);
+    G_Get_Key_Status_rc = pthread_create(&G_Get_Key_Status_thread, NULL, Get_Key_Status, (void *) last_used_t);
+    if (G_Get_Key_Status_rc) {
+        print_time(0);
+        fprintf(G_fp_logfile, "[%d] main. Start G_Get_Key_Down_Status_thread thread failed, return code from pthread_create() is %d\n",
+                line_number++, G_Get_Key_Status_rc);
+        status = -1;
+    } else {
+        print_time(0);
+        fprintf(G_fp_logfile, "[%d] main.  G_Get_Key_Down_Status_thread Started, return code from pthread_create() is %d\n",
+                line_number++, G_Get_Key_Status_rc);
+    }
+    return status;
+}
+int static Start_check_temperature_thread() {
+    int status = TRUE;
+    long last_used_t = 0;
+
+    print_time(0);
+    fprintf(G_fp_logfile, "[%d] main . Starting Check_temperature thread \n", line_number++);
+    G_Check_temperature_rc = pthread_create(&G_Check_temperature_thread, NULL, Check_temperature, (void *) last_used_t);
+    if (G_Check_temperature_rc) {
+        print_time(0);
+        fprintf(G_fp_logfile, "[%d] main . Start Check_temperature thread failed, return code from pthread_create() is %d\n",
+                line_number++, G_Check_temperature_rc);
+        status = -1;
+    } else {
+        print_time(0);
+        fprintf(G_fp_logfile, "[%d] main . Start Check_temperature thread Started, return code from pthread_create() is %d\n",
+                line_number++, G_Check_temperature_rc);
+    }
+    return status;
+}
+int static Start_PTT_thread() {
+    long t = 0;
+    int status = 1;
+
+    print_time(0);
+    fprintf(G_fp_logfile, "[%d] main. Starting Start_PTT_thread thread \n", line_number++);
+    G_PTT_rc = pthread_create(&G_PTT_thread, NULL, Manage_MKII_PTT_Switch, (void *) t);
+    if (G_PTT_rc) {
+        print_time(0);
+        fprintf(G_fp_logfile, "[%d] main. Start Start_PTT_thread thread failed, return code from pthread_create() is %d\n",
+                line_number++, G_PTT_rc);
+        status = -1;
+    } else {
+        print_time(0);
+        fprintf(G_fp_logfile, "[%d] main. Start Start_PTT_thread thread Started, return code from pthread_create() is %d\n",
+                line_number++, G_PTT_rc);
+    }
+    return status;
+}
+int static Start_Message_thread() {
+    long t = 0;
+    int status = 1;
+
+    print_time(0);
+    fprintf(G_fp_logfile, "[%d] main . Starting Gui_send_message thread \n", line_number++);
+    G_Message_rc = pthread_create(&G_Message_thread, NULL, Gui_send_message, (void *) t);
+    if (G_Message_rc) {
+        print_time(0);
+        fprintf(G_fp_logfile, "[%d] main . Start Gui_send_message thread failed, return code: %d\n",
+                line_number++, G_Message_rc);
+        status = -1;
+    } else {
+        print_time(0);
+        fprintf(G_fp_logfile, "[%d] main . Start Gui_send_message thread Started, return code: %d\n",
+                line_number++, G_Message_rc);
+    }
+    return status;
+}
+int static Start_Threads() {
+    long t = 0;
+    int status = 1;
+    //int check_status = 1;
+    int meter_check_limit = 0;
+    char message[PATH_MAX] = {0};
+
+    print_time(1);
+    fprintf(G_fp_logfile, "[%d] main. Start_Threads CALLED, \n", line_number++);
+    status = Start_Message_thread();
+
+    print_time(0);
+    fprintf(G_fp_logfile, "[%d] main. Starting Flusher_thread \n", line_number++);
+    G_Flusher_thread_rc = pthread_create(&G_Flusher_thread, NULL, Flusher_thread, (void *) t);
+    if (G_Flusher_thread_rc) {
+        print_time(0);
+        fprintf(G_fp_logfile, "[%d] main. Start Flusher_thread thread failed, return code from pthread_create() is %d\n", line_number++,
+                G_Flusher_thread_rc);
+        status = -1;
+    } else {
+        print_time(0);
+        fprintf(G_fp_logfile, "[%d] main. Start Flusher_thread thread started, return code from pthread_create() is %d\n", line_number++,
+                G_Flusher_thread_rc);
+    }
+
+    status = Start_check_temperature_thread();
+    //Init_I2C_Controls();
+
+    /*if (G_pcb_version != GEMINUS) {
+        check_status = Check_i2c_devices();
+        //if (G_METER_attached == TRUE) {
+        //    print_time(0);
+        //    fprintf(G_fp_logfile, "[%d] Start_Device_Threads. Start_meter_thread \n", line_number++);
+        //    status = Start_meter_thread();
+        //}
+
+        //if (G_MASTER_CONTROLLER_attached == TRUE) {
+        //    status = Start_master_controller_thread();
+        //    Sleep(2000);
+        //}
+        if (G_MFC_attached == TRUE) {
+            status = Start_MFC_thread();
+            if (status == 1) {
+                Sleep(2000);
+                if (G_Display_attached == TRUE) {
+                    Start_Display_thread();
+                    Sleep(2000);
+                }
+            }
+        }
+        //if (G_SOLIDUS_TEMP_SENSOR_attached == TRUE) {
+        //    status = Start_Solidus_Temperature_thread();
+        //    Sleep(2000);
+        //}
+
+        //if (G_IQBD_attached == TRUE) {
+        //    status = Start_iqbd_thread();
+        //    Sleep(2000);
+        //}
+        //if (G_CURRENT_SENSOR_attached == TRUE) {
+        //    status = Start_Bias_thread();
+        //    Sleep(2000);
+        //}
+    }*/
+    print_time(0);
+    fprintf(G_fp_logfile, "[%d] main. Starting Command Interface Thread \n", line_number++);
+    G_CW_Command_Interface_rc = pthread_create(&G_CW_Command_Interface_thread, NULL, Command_Processor, (void *) t);
+    if (G_CW_Command_Interface_rc) {
+        print_time(0);
+        fprintf(G_fp_logfile, "[%d] main. Start Command_Interface thread failed, return code from pthread_create() is %d\n",
+                line_number++, G_CW_Command_Interface_rc);
+        //MessageBoxA(NULL,"Command Interface Thread Startup Failed. main will now exit", "main", MB_OK);
+        status = -1;
+    } else {
+        print_time(0);
+        fprintf(G_fp_logfile, "[%d] main. Start Command_Interface thread Started, return code from pthread_create() is %d\n",
+                line_number++, G_CW_Command_Interface_rc);
+    }
+    Sleep(2000);
+    /*print_time(0);
+    fprintf(G_fp_logfile, "[%d] main. Starting Update_last_used_thread \n", line_number++);
+    G_Udate_last_used_thread_rc = pthread_create(&G_Update_last_used_thread, NULL,
+            Update_last_used_thread, (void *) t);
+    if (G_Udate_last_used_thread_rc) {
+        print_time(0);
+        fprintf(G_fp_logfile, "[%d] main. Start Update_last_used_thread thread failed, return code from pthread_create() is %d\n",
+                line_number++, G_Udate_last_used_thread_rc);
+        status = -1;
+    } else {
+        print_time(0);
+        fprintf(G_fp_logfile, "[%d] main. Start Update_last_used_thread thread Started, return code from pthread_create() is %d\n",
+                line_number++, G_Udate_last_used_thread_rc);
+    }*/
+    print_time(0);
+    fprintf(G_fp_logfile, "[%d] main. Starting Freq_Dequeue_thread \n", line_number++);
+    G_Freq_Queue_rc = pthread_create(&G_Freq_Queue_thread, NULL, Freq_Dequeue_thread, (void *) t);
+    if (G_Freq_Queue_rc) {
+        print_time(0);
+        fprintf(G_fp_logfile, "[%d] main. Start Freq_Dequeue_thread thread failed, return code from pthread_create() is %d\n",
+                line_number++, G_Freq_Queue_rc);
+        status = -1;
+    } else {
+        print_time(0);
+        fprintf(G_fp_logfile, "[%d] main. Start Freq_Dequeue_thread thread Started, return code from pthread_create() is %d\n",
+                line_number++, G_Freq_Queue_rc);
+    }
+    Start_Key_status_thread();
+    Sleep(1000);
+    Start_PTT_thread();
+    Sleep(1000);
+    Start_Serial_Port();
+    print_time(0);
+    fprintf(G_fp_logfile, "[%d] main. Start_Threads FINISHED \n\n", line_number++);
+    G_Threads_Started = TRUE;
+    return (status);
+}
+int main(int argc, char **argv) {
+    int status;
+    int ret_status;
+    uint8_t mode;
+    long t = 0;
+    long gui_t = 0;
+    long last_used_t = 0;
+    int completion_status = TRUE;
+    int dir_configured = 0;
+    //char *message;
+    time_t random_time;
+
+    ret_status = Open_log_file(dir_configured);
+    if (!ret_status) {
+        Stop_all(0, STOP_LOGFILE_FAILED);
+        exit(1);
+    }
+    //G_main_pid = getpid();
+    srand((unsigned) time(&random_time));
+    print_time(0);
+    fprintf(G_fp_logfile, "[%d] main starting . Compile Date %s, Compile Time %s \n", line_number++,
+            COMPILE_DATE, COMPILE_TIME);
+    print_time(0);
+    fprintf(G_fp_logfile, "[%d] main . Calling: Get_serial_number \n", line_number++);
+    //G_serial_number_success = Get_serial_number(); //Disable call to Get_serial_number()
+
+#if defined(MS_SDR_NO_USB)
+    /* Network / client-handshake testing without radio hardware (WSL default). */
+    print_time(0);
+    fprintf(G_fp_logfile, "[%d] main . MS_SDR_NO_USB: skipping USB open and firmware checks\n", line_number++);
+    G_transceiver_initialization_status = TRUE;
+    G_major_version = MULTUS_MAJOR_VERSION_MKII;
+    G_minor_version = MULTUS_MINOR_VERSION_MKII;
+    status = 1;
+    (void)mode;
+#else
+    print_time(0);
+    fprintf(G_fp_logfile, "[%d] main . Calling: srOpen . USB VID: %X, USB PID %X \n", line_number++, MULTUS_VID, MULTUS_PID);
+    srOpen(MULTUS_VID, MULTUS_PID, (TCHAR *)"", (TCHAR * )"", (TCHAR *)"", -1, &status);
+    if (!status) {
+        print_time(0);
+        fprintf(G_fp_logfile, "[%d] main . Open USB ***FAILED***, Status: %d\n", line_number++, status);
+        G_transceiver_initialization_status = FALSE;
+        Stop_all(0, STOP_PROFICIO);
+    } else {
+        print_time(0);
+        fprintf(G_fp_logfile, "[%d] main . Calling srGetVersion\n", line_number++);
+        ret_status = srGetVersion(&G_major_version, &G_minor_version);
+        if (ret_status) {
+            print_time(0);
+            fprintf(G_fp_logfile, "[%d] main . srGetVersion returned Transceiver Firmware Version: %d.%d \n",
+                    line_number++, G_major_version, G_minor_version);
+            if (G_major_version >= MULTUS_MAJOR_VERSION_119 && G_minor_version >= MULTUS_MINOR_VERSION_81) {
+                print_time(0);
+                fprintf(G_fp_logfile, "[%d] main . Firmware OK. \n", line_number++);
+            } else {
+                print_time(0);
+                fprintf(G_fp_logfile, "[%d] main. Invalid firmware. ***main WILL NOT FUNCTION***\n",
+                        line_number++);
+                G_transceiver_initialization_status = FALSE;
+                Stop_all(0, STOP_PROFICIO_VERSION);
+            }
+        } else {
+            print_time(0);
+            fprintf(G_fp_logfile, "[%d] main . Called to srGetVersion ***FAILED***, Status: %d \n", line_number++, ret_status);
+            G_transceiver_initialization_status = FALSE;
+            Stop_all(0, STOP_PROFICIO);
+        }
+    }
+    print_time(0);
+    fprintf(G_fp_logfile, "[%d] main . Sending Si5351 DLL . Calling usbControlMsgOUT \n", line_number++);
+    mode = SI5351_DLL;
+    status = Radio_send_parameters(SET_DLL_VERSION, SI5351_DLL, 1);
+    Sleep(10);
+    print_time(0);
+    fprintf(G_fp_logfile, "[%d] main . Sending Si5351 DLL . Finished-> mode: %d, status: %d\n", line_number++, mode, status);
+    if (status < 0) {
+        print_time(0);
+        fprintf(G_fp_logfile, "[%d] main . Send Si5351 DLL . Failed-> mode: %d, status: %d\n", line_number++, mode, status);
+        G_transceiver_initialization_status = FALSE;
+        Stop_all(0, STOP_PROFICIO);
+    }
+#endif
+    print_time(0);
+    fprintf(G_fp_logfile, "[%d] main . Calling get_cw_params \n", line_number++);
+    get_cw_params();
+    print_time(0);
+    fprintf(G_fp_logfile, "[%d] main . Calling initialize_msccs \n", line_number++);
+    initialize_mscc();
+    
+    if (G_transceiver_initialization_status == TRUE) {
+        status = Create_power_ini_file();
+        Check_Amplifier_Version();
+        status = Create_amplifier_ini_file();
+    }
+    print_time(0);
+    fprintf(G_fp_logfile, "[%d] main . Calling Init_last_used_VFO_A \n", line_number++);
+    status = Init_last_used_VFO_A();
+    print_time(0);
+    fprintf(G_fp_logfile, "[%d] main . Calling Init_last_used_VFO_B \n", line_number++);
+    status = Init_last_used_VFO_B();
+    Sleep(10);
+    print_time(0);
+    fprintf(G_fp_logfile, "[%d] main. Calling User_Controls_Init \n", line_number++);
+    User_Controls_Init();
+    print_time(0);
+    fprintf(G_fp_logfile, "[%d] main. Waiting for network to initialize \n", line_number++);
+    if (G_transceiver_initialization_status == FALSE) {
+        Sleep(3000);
+        print_time(0);
+        fprintf(G_fp_logfile, "[%d] main. Transceiver Initialization Failed\n", line_number++);
+        Stop_all(0, STOP_PROFICIO);
+    }
+    if (completion_status == FALSE) {
+        print_time(0);
+        fprintf(G_fp_logfile, "[%d] main. main initialization failed.  Terminating\n", line_number++);
+        Gui_send_param(CMD_SET_STOP, 0);
+        Stop_all(1, 0);
+    }
+    //wiringPiSetupSys();
+    status = Start_Threads();
+    if (status < 0) {
+        print_time(0);
+        fprintf(G_fp_logfile, "[%d] main. Threads Start FAILED\n", line_number++);
+        Stop_all(0, STOP_THREADS_START_FAILED);
+    }
+    print_time(0);
+    fprintf(G_fp_logfile, "[%d] main. Calling initialize_keyer\n", line_number++);
+    initialize_keyer();
+    print_time(0);
+    fprintf(G_fp_logfile, "[%d] main. initialize_keyer FINISHED.\n", line_number++);
+    print_time(0);
+    fprintf(G_fp_logfile, "[%d] main. Initializing FINISHED\n", line_number++);
+    print_time(0);
+    fprintf(G_fp_logfile, "[%d] main. Running \n", line_number++);
+
+    while (G_main_thread_run) {
+        Sleep(G_thread_sleep_time);
+    }
+    print_time(0);
+    fprintf(G_fp_logfile, "[%d] main. NORMAL EXIT \n", line_number++);
+    if (G_Shutdown_Status == STOP_SHUTDOWN) {
+        print_time(0);
+        fprintf(G_fp_logfile, "[%d] main. G_Shutdown_Status = STOP_SHUTDOWN \n", line_number++);
+        if (G_fp_logfile != NULL) {
+            fflush(G_fp_logfile);
+            fclose(G_fp_logfile);
+        }
+        Sleep(3000);
+    }
+    if (G_fp_logfile != NULL) {
+        fflush(G_fp_logfile);
+        fclose(G_fp_logfile);
+    }
+    return TRUE;
+}
+

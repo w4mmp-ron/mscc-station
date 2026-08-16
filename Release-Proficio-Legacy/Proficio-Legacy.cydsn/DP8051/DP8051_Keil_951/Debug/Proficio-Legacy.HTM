@@ -1,0 +1,4225 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<html>
+<head>
+<title>LX51 Static Call Analysis</title>
+<meta http-equiv="Content-Type" content="text/html; charset=windows-1252">
+<style type="text/css">
+<!--
+p            { font-family: Verdana; font-size: 8pt; margin-top: 2; margin-bottom: 2 }
+.LI2         { margin-top: 2; margin-bottom: 2 }
+.Release     { background-color: #CCCCCC; font-weight: bold; padding: 6 }
+.ToolT       { font-size: 8pt; color: #808080 }
+.TinyT       { font-size: 8pt; text-align: Center }
+ul           { font-family: Verdana; font-size: 8pt; list-style-type: square;  margin-top: 2; margin-bottom: 2 }
+ol           { font-family: Verdana; font-size: 8pt }
+h1           { font-family: Verdana; font-size: 14pt; color: #000080; font-weight: bold; text-align: Center; margin-right: 3 }
+h2           { font-family: Verdana; font-size: 8pt; color: #000080; font-weight: bold; margin-top: 12; margin-bottom: 3; background-color: #CCCCCC; padding: 6 }
+h3           { font-family: Verdana; font-size: 8pt; font-weight: bold; margin-top: 12; margin-bottom: 3; background-color: #CCCCCC; padding: 6 }
+pre          { font-family: Courier New; font-size: 8pt; background-color: #CCFFCC; margin-left: 24; margin-right: 24 }
+li           { margin-top: 3; margin-bottom: 0 }
+-->
+</style>
+</head>
+<body>
+<h1>Static Call Analysis for<br>.\DP8051\DP8051_Keil_951\Debug\Proficio-Legacy.omf (MAIN)</h1>
+
+<p class="TinyT">
+Created from: <b>LX51 LINKER/LOCATER V4.64.0.0</b><br>
+Creation time: <b>08/14/2026  11:59:40</b><p>
+
+<hr>
+
+
+<h2><a name="S4"></a>?PR?MAIN?MAIN (C:005C57H - C:005D89H)</h2>
+<p><br><b>Maximum Stack:</b> Bottom=15 Bytes (<a href="#S103">?PR?MANAGE_PADDLES_PORT?CW</a>)<p>
+<p><br><b>Calls to:</b></p>
+<ul>
+<li><a href="#S186">?PR?_CONTROL_WRITE?CONTROL</a></li>
+<li><a href="#S256">?PR?_CW_HOLD_TIMER_WRITEPERIOD?CW_HOLD_TIMER</a></li>
+<li><a href="#S8">?PR?_ERROR?MAIN</a></li>
+<li><a href="#S36">?PR?_SI5351ASETFREQUENCY?SI5351A</a></li>
+<li><a href="#S17">?PR?AUDIO_MAIN?AUDIO</a></li>
+<li><a href="#S66">?PR?BAND_MAIN?BAND</a></li>
+<li><a href="#S212">?PR?BOOTLOADABLE_LOAD?BOOTLOADABLE</a></li>
+<li><a href="#S90">?PR?CHECK_TEMPERATURE?TEMPERATURE</a></li>
+<li><a href="#S187">?PR?CONTROL_READ?CONTROL</a></li>
+<li><a href="#S238">?PR?CYXTAL_READSTATUS?CYLIB</a></li>
+<li><a href="#S1">?PR?MAIN_INIT?MAIN</a></li>
+<li><a href="#S3">?PR?MAIN_USB_VBUS?MAIN</a></li>
+<li><a href="#S103">?PR?MANAGE_PADDLES_PORT?CW</a></li>
+<li><a href="#S63">?PR?SETTINGS_MAIN?SETTINGS01</a></li>
+<li><a href="#S41">?PR?SI5351_MAIN?SI5351</a></li>
+<li><a href="#S176">?PR?STATUS_READ?STATUS</a></li>
+<li><a href="#S26">?PR?SYNC_MAIN?SYNC</a></li>
+<li><a href="#S23">?PR?T1_MAIN?T1</a></li>
+<li><a href="#S19">?PR?TX_MAIN?TX</a></li>
+</ul>
+
+<h2><a name="S0"></a>?PR?_?SWAP16?MAIN (I:000000H - I:0000A7H)</h2>
+<p><br><b>Maximum Stack:</b> Bottom=2 Bytes (<a href="#S365">?C?LIB_CODE</a>)<p>
+<p><br><b>Calls to:</b></p>
+<ul>
+<li><a href="#S365">?C?LIB_CODE</a></li>
+</ul>
+
+<h2><a name="S0"></a>?PR?_SI5351AOUTPUTOFF?SI5351A (I:000000H - I:000004H)</h2>
+<p><br><b>Maximum Stack:</b> Bottom=2 Bytes (<a href="#S55">?PR?_SI5351_WRITE_INIT?SI5351</a>)<p>
+<p><br><b>Calls to:</b></p>
+<ul>
+<li><a href="#S55">?PR?_SI5351_WRITE_INIT?SI5351</a></li>
+</ul>
+
+<h2><a name="S0"></a>?PR?_SI5351_UPDATE_SYS_STATUS?SI5351 (I:000000H - I:0000A7H)</h2>
+<p><br><b>Maximum Stack:</b> Bottom=4 Bytes (<a href="#S57">?PR?_SI5351_READ?SI5351</a>)<p>
+<p><br><b>Calls to:</b></p>
+<ul>
+<li><a href="#S365">?C?LIB_CODE</a></li>
+<li><a href="#S57">?PR?_SI5351_READ?SI5351</a></li>
+</ul>
+
+<h2><a name="S0"></a>?PR?_SI5351_UPDATE_INT_STATUS?SI5351 (I:000000H - I:00008CH)</h2>
+<p><br><b>Maximum Stack:</b> Bottom=4 Bytes (<a href="#S57">?PR?_SI5351_READ?SI5351</a>)<p>
+<p><br><b>Calls to:</b></p>
+<ul>
+<li><a href="#S365">?C?LIB_CODE</a></li>
+<li><a href="#S57">?PR?_SI5351_READ?SI5351</a></li>
+</ul>
+
+<h2><a name="S0"></a>?PR?_PCM3060_SETTXBUFADDRESS?PCM3060 (I:000000H - I:000030H)</h2>
+<p><br><b>Maximum Stack:</b> Bottom=2 Bytes (<a href="#S189">?PR?SYNCSOF_USB_BUFFER?SYNCSOF_API</a>)<p>
+<p><br><b>Calls to:</b></p>
+<ul>
+<li><a href="#S278">?PR?CYWRITE16?CYMEM</a></li>
+<li><a href="#S189">?PR?SYNCSOF_USB_BUFFER?SYNCSOF_API</a></li>
+</ul>
+
+<h2><a name="S0"></a>?PR?PCM3060_SETTXBUFADDRESSDEFAULT?PCM3060 (I:000000H - I:000046H)</h2>
+<p><br><b>Maximum Stack:</b> Bottom=2 Bytes (<a href="#S189">?PR?SYNCSOF_USB_BUFFER?SYNCSOF_API</a>)<p>
+<p><br><b>Calls to:</b></p>
+<ul>
+<li><a href="#S278">?PR?CYWRITE16?CYMEM</a></li>
+<li><a href="#S189">?PR?SYNCSOF_USB_BUFFER?SYNCSOF_API</a></li>
+</ul>
+
+<h2><a name="S0"></a>?PR?CONFIGURE_CW?CW (I:000000H - I:00025EH)</h2>
+<p><br><b>Maximum Stack:</b> Bottom=6 Bytes (<a href="#S0">?PR?_KEYER_WRITE?CW</a>)<p>
+<p><br><b>Calls to:</b></p>
+<ul>
+<li><a href="#S0">?PR?_KEYER_WRITE?CW</a></li>
+</ul>
+
+<h2><a name="S110"></a>?PR?CYFITTER_CFG?CYFITTER_CFG (C:00A52AH - C:00A6F0H)</h2>
+<p><br><b>Maximum Stack:</b> Bottom=5 Bytes (<a href="#S105">?PR?CFG_DMA_INIT?CYFITTER_CFG</a>)<p>
+<p><br><b>Calls to:</b></p>
+<ul>
+<li><a href="#S272">?PR?_CYCONFIGCPY?CYMEM</a></li>
+<li><a href="#S109">?PR?ANALOGSETDEFAULT?CYFITTER_CFG</a></li>
+<li><a href="#S105">?PR?CFG_DMA_INIT?CYFITTER_CFG</a></li>
+<li><a href="#S107">?PR?CLOCKSETUP?CYFITTER_CFG</a></li>
+<li><a href="#S274">?PR?CYCONFIGCPYCODE?CYMEM</a></li>
+<li><a href="#S271">?PR?CYMEMZERO?CYMEM</a></li>
+<li><a href="#S275">?PR?CYREAD8?CYMEM</a></li>
+<li><a href="#S279">?PR?CYWRITE32?CYMEM</a></li>
+<li><a href="#S276">?PR?CYWRITE8?CYMEM</a></li>
+</ul>
+
+<h2><a name="S116"></a>?PR?_USBFS_INITCOMPONENT?USBFS (C:00A815H - C:00A8AFH)</h2>
+<p><br><b>Maximum Stack:</b> Bottom=4 Bytes (<a href="#S329">?PR?_USBFS_EP_DMA_DONE_ISR_STARTEX?USBFS_EP_DMA_DONE_ISR</a>)<p>
+<p><br><b>Calls to:</b></p>
+<ul>
+<li><a href="#S329">?PR?_USBFS_EP_DMA_DONE_ISR_STARTEX?USBFS_EP_DMA_DONE_ISR</a></li>
+<li><a href="#S267">?PR?CYDELAYCYCLES?CYBOOTASMKEIL</a></li>
+<li><a href="#S324">?PR?USBFS_EP17_DMA_DONE_SR_INTERRUPTENABLE?USBFS_EP17_DMA_DONE_SR</a></li>
+<li><a href="#S337">?PR?USBFS_EP8_DMA_DONE_SR_INTERRUPTENABLE?USBFS_EP8_DMA_DONE_SR</a></li>
+</ul>
+
+<h2><a name="S0"></a>?PR?_USBFS_LOADINEP?USBFS (I:000000H - I:00036FH)</h2>
+<p><br><b>Maximum Stack:</b> Bottom=8 Bytes (<a href="#S123">?PR?_USBFS_INITEP_DMA?USBFS</a>)<p>
+<p><br><b>Calls to:</b></p>
+<ul>
+<li><a href="#S220">?PR?_CYDMACHDISABLE?CYDMAC</a></li>
+<li><a href="#S219">?PR?_CYDMACHENABLE?CYDMAC</a></li>
+<li><a href="#S225">?PR?_CYDMACHSETINITIALTD?CYDMAC</a></li>
+<li><a href="#S221">?PR?_CYDMACLEARPENDINGDRQ?CYDMAC</a></li>
+<li><a href="#S235">?PR?_CYDMATDSETADDRESS?CYDMAC</a></li>
+<li><a href="#S233">?PR?_CYDMATDSETCONFIGURATION?CYDMAC</a></li>
+<li><a href="#S123">?PR?_USBFS_INITEP_DMA?USBFS</a></li>
+</ul>
+
+<h2><a name="S0"></a>?PR?_USBFS_READOUTEP?USBFS (I:000000H - I:000119H)</h2>
+<p><br><b>Maximum Stack:</b> Bottom=8 Bytes (<a href="#S123">?PR?_USBFS_INITEP_DMA?USBFS</a>)<p>
+<p><br><b>Calls to:</b></p>
+<ul>
+<li><a href="#S220">?PR?_CYDMACHDISABLE?CYDMAC</a></li>
+<li><a href="#S219">?PR?_CYDMACHENABLE?CYDMAC</a></li>
+<li><a href="#S225">?PR?_CYDMACHSETINITIALTD?CYDMAC</a></li>
+<li><a href="#S221">?PR?_CYDMACLEARPENDINGDRQ?CYDMAC</a></li>
+<li><a href="#S235">?PR?_CYDMATDSETADDRESS?CYDMAC</a></li>
+<li><a href="#S233">?PR?_CYDMATDSETCONFIGURATION?CYDMAC</a></li>
+<li><a href="#S123">?PR?_USBFS_INITEP_DMA?USBFS</a></li>
+</ul>
+
+<h2><a name="S133"></a>?PR?USBFS_EP_0_ISR?USBFS_DRV (C:00B173H - C:00B273H)</h2>
+<p><br><b>Maximum Stack:</b> Bottom=36 Bytes (<a href="#S135">?PR?USBFS_HANDLESETUP?USBFS_DRV</a>)<p>
+<p><br><b>Calls to:</b></p>
+<ul>
+<li><a href="#S137">?PR?USBFS_HANDLEIN?USBFS_DRV</a></li>
+<li><a href="#S138">?PR?USBFS_HANDLEOUT?USBFS_DRV</a></li>
+<li><a href="#S135">?PR?USBFS_HANDLESETUP?USBFS_DRV</a></li>
+</ul>
+
+<h2><a name="S166"></a>?PR?I2S_ENABLE?I2S (C:006B48H - C:006B5CH)</h2>
+<p><br><b>Maximum Stack:</b> Bottom=2 Bytes (<a href="#S269">?PR?CYENTERCRITICALSECTION?CYBOOTASMKEIL</a>)<p>
+<p><br><b>Calls to:</b></p>
+<ul>
+<li><a href="#S269">?PR?CYENTERCRITICALSECTION?CYBOOTASMKEIL</a></li>
+<li><a href="#S270">?PR?CYEXITCRITICALSECTION?CYBOOTASMKEIL</a></li>
+</ul>
+
+<h2><a name="S0"></a>?PR?I2S_STOP?I2S (I:000000H - I:000024H)</h2>
+<p><br><b>Maximum Stack:</b> Bottom=4 Bytes (<a href="#S170">?PR?I2S_DISABLETX?I2S</a>)<p>
+<p><br><b>Calls to:</b></p>
+<ul>
+<li><a href="#S269">?PR?CYENTERCRITICALSECTION?CYBOOTASMKEIL</a></li>
+<li><a href="#S270">?PR?CYEXITCRITICALSECTION?CYBOOTASMKEIL</a></li>
+<li><a href="#S174">?PR?I2S_CLEARRXFIFO?I2S</a></li>
+<li><a href="#S171">?PR?I2S_CLEARTXFIFO?I2S</a></li>
+<li><a href="#S173">?PR?I2S_DISABLERX?I2S</a></li>
+<li><a href="#S170">?PR?I2S_DISABLETX?I2S</a></li>
+</ul>
+
+<h2><a name="S169"></a>?PR?I2S_ENABLETX?I2S (C:007FD6H - C:007FEAH)</h2>
+<p><br><b>Maximum Stack:</b> Bottom=2 Bytes (<a href="#S269">?PR?CYENTERCRITICALSECTION?CYBOOTASMKEIL</a>)<p>
+<p><br><b>Calls to:</b></p>
+<ul>
+<li><a href="#S269">?PR?CYENTERCRITICALSECTION?CYBOOTASMKEIL</a></li>
+<li><a href="#S270">?PR?CYEXITCRITICALSECTION?CYBOOTASMKEIL</a></li>
+</ul>
+
+<h2><a name="S0"></a>?PR?STATUS_INTERRUPTENABLE?STATUS (I:000000H - I:00000CH)</h2>
+<p><br><b>Maximum Stack:</b> Bottom=2 Bytes (<a href="#S269">?PR?CYENTERCRITICALSECTION?CYBOOTASMKEIL</a>)<p>
+<p><br><b>Calls to:</b></p>
+<ul>
+<li><a href="#S269">?PR?CYENTERCRITICALSECTION?CYBOOTASMKEIL</a></li>
+<li><a href="#S270">?PR?CYEXITCRITICALSECTION?CYBOOTASMKEIL</a></li>
+</ul>
+
+<h2><a name="S0"></a>?PR?STATUS_INTERRUPTDISABLE?STATUS (I:000000H - I:00000CH)</h2>
+<p><br><b>Maximum Stack:</b> Bottom=2 Bytes (<a href="#S269">?PR?CYENTERCRITICALSECTION?CYBOOTASMKEIL</a>)<p>
+<p><br><b>Calls to:</b></p>
+<ul>
+<li><a href="#S269">?PR?CYENTERCRITICALSECTION?CYBOOTASMKEIL</a></li>
+<li><a href="#S270">?PR?CYEXITCRITICALSECTION?CYBOOTASMKEIL</a></li>
+</ul>
+
+<h2><a name="S0"></a>?PR?RXI2S_BUFF_DMARELEASE?RXI2S_BUFF_DMA (I:000000H - I:000007H)</h2>
+<p><br><b>Calls to:</b></p>
+<ul>
+<li><a href="#S220">?PR?_CYDMACHDISABLE?CYDMAC</a></li>
+</ul>
+
+<h2><a name="S0"></a>?PR?RXI2S_STAGE_DMARELEASE?RXI2S_STAGE_DMA (I:000000H - I:000007H)</h2>
+<p><br><b>Calls to:</b></p>
+<ul>
+<li><a href="#S220">?PR?_CYDMACHDISABLE?CYDMAC</a></li>
+</ul>
+
+<h2><a name="S0"></a>?PR?TXI2S_BUFF_DMARELEASE?TXI2S_BUFF_DMA (I:000000H - I:000007H)</h2>
+<p><br><b>Calls to:</b></p>
+<ul>
+<li><a href="#S220">?PR?_CYDMACHDISABLE?CYDMAC</a></li>
+</ul>
+
+<h2><a name="S0"></a>?PR?TXI2S_STAGE_DMARELEASE?TXI2S_STAGE_DMA (I:000000H - I:000007H)</h2>
+<p><br><b>Calls to:</b></p>
+<ul>
+<li><a href="#S220">?PR?_CYDMACHDISABLE?CYDMAC</a></li>
+</ul>
+
+<h2><a name="S196"></a>?PR?EEPROM_ENABLE?EEPROM (C:008BE8H - C:008BE9H)</h2>
+<p><br><b>Maximum Stack:</b> Bottom=8 Bytes (<a href="#S342">?PR?CYSETTEMP?CYFLASH</a>)<p>
+<p><br><b>Calls to:</b></p>
+<ul>
+<li><a href="#S342">?PR?CYSETTEMP?CYFLASH</a></li>
+</ul>
+
+<h2><a name="S0"></a>?PR?EEPROM_STOP?EEPROM (I:000000H - I:000002H)</h2>
+<p><br><b>Maximum Stack:</b> Bottom=2 Bytes (<a href="#S0">?PR?CYEEPROM_STOP?CYFLASH</a>)<p>
+<p><br><b>Calls to:</b></p>
+<ul>
+<li><a href="#S0">?PR?CYEEPROM_STOP?CYFLASH</a></li>
+</ul>
+
+<h2><a name="S0"></a>?PR?_EEPROM_WRITEBYTE?EEPROM (I:000000H - I:000123H)</h2>
+<p><br><b>Maximum Stack:</b> Bottom=4 Bytes (<a href="#S347">?PR?CYSPCSTART?CYSPC</a>)<p>
+<p><br><b>Calls to:</b></p>
+<ul>
+<li><a href="#S0">?PR?_CYSPCLOADMULTIBYTE?CYSPC</a></li>
+<li><a href="#S352">?PR?_CYSPCWRITEROW?CYSPC</a></li>
+<li><a href="#S355">?PR?CYSPCLOCK?CYSPC</a></li>
+<li><a href="#S347">?PR?CYSPCSTART?CYSPC</a></li>
+<li><a href="#S357">?PR?CYSPCUNLOCK?CYSPC</a></li>
+</ul>
+
+<h2><a name="S0"></a>?PR?_EEPROM_READBYTE?EEPROM (I:000000H - I:000039H)</h2>
+<p><br><b>Maximum Stack:</b> Bottom=2 Bytes (<a href="#S269">?PR?CYENTERCRITICALSECTION?CYBOOTASMKEIL</a>)<p>
+<p><br><b>Calls to:</b></p>
+<ul>
+<li><a href="#S0">?PR?CYEEPROM_READRELEASE?CYFLASH</a></li>
+<li><a href="#S0">?PR?CYEEPROM_READRESERVE?CYFLASH</a></li>
+<li><a href="#S269">?PR?CYENTERCRITICALSECTION?CYBOOTASMKEIL</a></li>
+<li><a href="#S270">?PR?CYEXITCRITICALSECTION?CYBOOTASMKEIL</a></li>
+</ul>
+
+<h2><a name="S0"></a>?PR?EEPROM_UPDATETEMPERATURE?EEPROM (I:000000H - I:000002H)</h2>
+<p><br><b>Maximum Stack:</b> Bottom=6 Bytes (<a href="#S342">?PR?CYSETTEMP?CYFLASH</a>)<p>
+<p><br><b>Calls to:</b></p>
+<ul>
+<li><a href="#S342">?PR?CYSETTEMP?CYFLASH</a></li>
+</ul>
+
+<h2><a name="S0"></a>?PR?_EEPROM_ERASESECTOR?EEPROM (I:000000H - I:00006EH)</h2>
+<p><br><b>Maximum Stack:</b> Bottom=4 Bytes (<a href="#S347">?PR?CYSPCSTART?CYSPC</a>)<p>
+<p><br><b>Calls to:</b></p>
+<ul>
+<li><a href="#S0">?PR?_CYSPCERASESECTOR?CYSPC</a></li>
+<li><a href="#S355">?PR?CYSPCLOCK?CYSPC</a></li>
+<li><a href="#S347">?PR?CYSPCSTART?CYSPC</a></li>
+<li><a href="#S357">?PR?CYSPCUNLOCK?CYSPC</a></li>
+</ul>
+
+<h2><a name="S0"></a>?PR?_EEPROM_WRITE?EEPROM (I:000000H - I:0000E1H)</h2>
+<p><br><b>Maximum Stack:</b> Bottom=4 Bytes (<a href="#S347">?PR?CYSPCSTART?CYSPC</a>)<p>
+<p><br><b>Calls to:</b></p>
+<ul>
+<li><a href="#S350">?PR?_CYSPCLOADROW?CYSPC</a></li>
+<li><a href="#S352">?PR?_CYSPCWRITEROW?CYSPC</a></li>
+<li><a href="#S355">?PR?CYSPCLOCK?CYSPC</a></li>
+<li><a href="#S347">?PR?CYSPCSTART?CYSPC</a></li>
+<li><a href="#S357">?PR?CYSPCUNLOCK?CYSPC</a></li>
+</ul>
+
+<h2><a name="S0"></a>?PR?_EEPROM_STARTERASE?EEPROM (I:000000H - I:000045H)</h2>
+<p><br><b>Maximum Stack:</b> Bottom=4 Bytes (<a href="#S347">?PR?CYSPCSTART?CYSPC</a>)<p>
+<p><br><b>Calls to:</b></p>
+<ul>
+<li><a href="#S0">?PR?_CYSPCERASESECTOR?CYSPC</a></li>
+<li><a href="#S355">?PR?CYSPCLOCK?CYSPC</a></li>
+<li><a href="#S347">?PR?CYSPCSTART?CYSPC</a></li>
+</ul>
+
+<h2><a name="S0"></a>?PR?_EEPROM_BYTEWRITEPOS?EEPROM (I:000000H - I:0000E7H)</h2>
+<p><br><b>Maximum Stack:</b> Bottom=4 Bytes (<a href="#S347">?PR?CYSPCSTART?CYSPC</a>)<p>
+<p><br><b>Calls to:</b></p>
+<ul>
+<li><a href="#S0">?PR?_CYSPCLOADMULTIBYTE?CYSPC</a></li>
+<li><a href="#S352">?PR?_CYSPCWRITEROW?CYSPC</a></li>
+<li><a href="#S355">?PR?CYSPCLOCK?CYSPC</a></li>
+<li><a href="#S347">?PR?CYSPCSTART?CYSPC</a></li>
+<li><a href="#S357">?PR?CYSPCUNLOCK?CYSPC</a></li>
+</ul>
+
+<h2><a name="S0"></a>?PR?TXI2S_ZERO_DMARELEASE?TXI2S_ZERO_DMA (I:000000H - I:000007H)</h2>
+<p><br><b>Calls to:</b></p>
+<ul>
+<li><a href="#S220">?PR?_CYDMACHDISABLE?CYDMAC</a></li>
+</ul>
+
+<h2><a name="S0"></a>?PR?P_DMA_DMARELEASE?P_DMA_DMA (I:000000H - I:000007H)</h2>
+<p><br><b>Calls to:</b></p>
+<ul>
+<li><a href="#S220">?PR?_CYDMACHDISABLE?CYDMAC</a></li>
+</ul>
+
+<h2><a name="S0"></a>?PR?FRAC_CLK_STOPBLOCK?FRAC_CLK (I:000000H - I:00006CH)</h2>
+<p><br><b>Maximum Stack:</b> Bottom=2 Bytes (<a href="#S277">?PR?CYREAD16?CYMEM</a>)<p>
+<p><br><b>Calls to:</b></p>
+<ul>
+<li><a href="#S277">?PR?CYREAD16?CYMEM</a></li>
+<li><a href="#S278">?PR?CYWRITE16?CYMEM</a></li>
+</ul>
+
+<h2><a name="S0"></a>?PR?_FRAC_CLK_SETSOURCEREGISTER?FRAC_CLK (I:000000H - I:000061H)</h2>
+<p><br><b>Maximum Stack:</b> Bottom=2 Bytes (<a href="#S210">?PR?FRAC_CLK_GETDIVIDERREGISTER?FRAC_CLK</a>)<p>
+<p><br><b>Calls to:</b></p>
+<ul>
+<li><a href="#S210">?PR?FRAC_CLK_GETDIVIDERREGISTER?FRAC_CLK</a></li>
+<li><a href="#S211">?PR?FRAC_CLK_GETSOURCEREGISTER?FRAC_CLK</a></li>
+</ul>
+
+<h2><a name="S0"></a>?PR?_BOOTLOADABLE_SETFLASHBYTE?BOOTLOADABLE (I:000000H - I:0000F9H)</h2>
+<p><br><b>Maximum Stack:</b> Bottom=5 Bytes (<a href="#S0">?PR?_CYWRITEROWDATA?CYFLASH</a>)<p>
+<p><br><b>Calls to:</b></p>
+<ul>
+<li><a href="#S365">?C?LIB_CODE</a></li>
+<li><a href="#S0">?PR?_CYWRITEROWDATA?CYFLASH</a></li>
+</ul>
+
+<h2><a name="S0"></a>?PR?_DIETEMP_1_GETTEMP?DIETEMP_1 (I:000000H - I:000039H)</h2>
+<p><br><b>Maximum Stack:</b> Bottom=8 Bytes (<a href="#S0">?PR?_DIETEMP_1_GETTEMPT?DIETEMP_1</a>)<p>
+<p><br><b>Calls to:</b></p>
+<ul>
+<li><a href="#S0">?PR?_DIETEMP_1_GETTEMPT?DIETEMP_1</a></li>
+</ul>
+
+<h2><a name="S0"></a>?PR?_CYDMACCLEARERROR?CYDMAC (I:000000H - I:00000EH)</h2>
+<p><br><b>Calls to:</b></p>
+<ul>
+<li><a href="#S365">?C?LIB_CODE</a></li>
+</ul>
+
+<h2><a name="S0"></a>?PR?CYDMACERRORADDRESS?CYDMAC (I:000000H - I:000008H)</h2>
+<p><br><b>Calls to:</b></p>
+<ul>
+<li><a href="#S0">?PR?CYREAD32?CYMEM</a></li>
+</ul>
+
+<h2><a name="S0"></a>?PR?CYDMACHALLOC?CYDMAC (I:000000H - I:0000BDH)</h2>
+<p><br><b>Maximum Stack:</b> Bottom=2 Bytes (<a href="#S365">?C?LIB_CODE</a>)<p>
+<p><br><b>Calls to:</b></p>
+<ul>
+<li><a href="#S365">?C?LIB_CODE</a></li>
+<li><a href="#S269">?PR?CYENTERCRITICALSECTION?CYBOOTASMKEIL</a></li>
+<li><a href="#S270">?PR?CYEXITCRITICALSECTION?CYBOOTASMKEIL</a></li>
+</ul>
+
+<h2><a name="S0"></a>?PR?_CYDMACHFREE?CYDMAC (I:000000H - I:000063H)</h2>
+<p><br><b>Maximum Stack:</b> Bottom=4 Bytes (<a href="#S365">?C?LIB_CODE</a>)<p>
+<p><br><b>Calls to:</b></p>
+<ul>
+<li><a href="#S365">?C?LIB_CODE</a></li>
+<li><a href="#S269">?PR?CYENTERCRITICALSECTION?CYBOOTASMKEIL</a></li>
+<li><a href="#S270">?PR?CYEXITCRITICALSECTION?CYBOOTASMKEIL</a></li>
+</ul>
+
+<h2><a name="S0"></a>?PR?_CYDMACHSTATUS?CYDMAC (I:000000H - I:000071H)</h2>
+<p><br><b>Maximum Stack:</b> Bottom=2 Bytes (<a href="#S365">?C?LIB_CODE</a>)<p>
+<p><br><b>Calls to:</b></p>
+<ul>
+<li><a href="#S365">?C?LIB_CODE</a></li>
+</ul>
+
+<h2><a name="S0"></a>?PR?_CYDMATDGETCONFIGURATION?CYDMAC (I:000000H - I:0000C8H)</h2>
+<p><br><b>Maximum Stack:</b> Bottom=2 Bytes (<a href="#S277">?PR?CYREAD16?CYMEM</a>)<p>
+<p><br><b>Calls to:</b></p>
+<ul>
+<li><a href="#S365">?C?LIB_CODE</a></li>
+<li><a href="#S277">?PR?CYREAD16?CYMEM</a></li>
+</ul>
+
+<h2><a name="S0"></a>?PR?_CYDMATDGETADDRESS?CYDMAC (I:000000H - I:0000A5H)</h2>
+<p><br><b>Maximum Stack:</b> Bottom=2 Bytes (<a href="#S277">?PR?CYREAD16?CYMEM</a>)<p>
+<p><br><b>Calls to:</b></p>
+<ul>
+<li><a href="#S365">?C?LIB_CODE</a></li>
+<li><a href="#S277">?PR?CYREAD16?CYMEM</a></li>
+</ul>
+
+<h2><a name="S0"></a>?PR?_CYPLL_OUT_SETPQ?CYLIB (I:000000H - I:000068H)</h2>
+<p><br><b>Maximum Stack:</b> Bottom=4 Bytes (<a href="#S239">?PR?_?CYHALT?CYLIB</a>)<p>
+<p><br><b>Calls to:</b></p>
+<ul>
+<li><a href="#S239">?PR?_?CYHALT?CYLIB</a></li>
+</ul>
+
+<h2><a name="S0"></a>?PR?_CYPLL_OUT_SETSOURCE?CYLIB (I:000000H - I:000030H)</h2>
+<p><br><b>Maximum Stack:</b> Bottom=4 Bytes (<a href="#S239">?PR?_?CYHALT?CYLIB</a>)<p>
+<p><br><b>Calls to:</b></p>
+<ul>
+<li><a href="#S239">?PR?_?CYHALT?CYLIB</a></li>
+</ul>
+
+<h2><a name="S0"></a>?PR?_?CYDELAYFREQ?CYLIB (I:000000H - I:0000B6H)</h2>
+<p><br><b>Maximum Stack:</b> Bottom=2 Bytes (<a href="#S365">?C?LIB_CODE</a>)<p>
+<p><br><b>Calls to:</b></p>
+<ul>
+<li><a href="#S365">?C?LIB_CODE</a></li>
+</ul>
+
+<h2><a name="S0"></a>?PR?CYVDREALTIMESTATUS?CYLIB (I:000000H - I:000017H)</h2>
+<p><br><b>Maximum Stack:</b> Bottom=2 Bytes (<a href="#S269">?PR?CYENTERCRITICALSECTION?CYBOOTASMKEIL</a>)<p>
+<p><br><b>Calls to:</b></p>
+<ul>
+<li><a href="#S269">?PR?CYENTERCRITICALSECTION?CYBOOTASMKEIL</a></li>
+<li><a href="#S270">?PR?CYEXITCRITICALSECTION?CYBOOTASMKEIL</a></li>
+</ul>
+
+<h2><a name="S0"></a>?PR?CYDISABLEINTS?CYLIB (I:000000H - I:0000CFH)</h2>
+<p><br><b>Maximum Stack:</b> Bottom=3 Bytes (<a href="#S365">?C?LIB_CODE</a>)<p>
+<p><br><b>Calls to:</b></p>
+<ul>
+<li><a href="#S365">?C?LIB_CODE</a></li>
+<li><a href="#S269">?PR?CYENTERCRITICALSECTION?CYBOOTASMKEIL</a></li>
+<li><a href="#S270">?PR?CYEXITCRITICALSECTION?CYBOOTASMKEIL</a></li>
+</ul>
+
+<h2><a name="S0"></a>?PR?_CYENABLEINTS?CYLIB (I:000000H - I:000065H)</h2>
+<p><br><b>Maximum Stack:</b> Bottom=2 Bytes (<a href="#S365">?C?LIB_CODE</a>)<p>
+<p><br><b>Calls to:</b></p>
+<ul>
+<li><a href="#S365">?C?LIB_CODE</a></li>
+<li><a href="#S269">?PR?CYENTERCRITICALSECTION?CYBOOTASMKEIL</a></li>
+<li><a href="#S270">?PR?CYEXITCRITICALSECTION?CYBOOTASMKEIL</a></li>
+</ul>
+
+<h2><a name="S244"></a>?PR?CYINTINITVECTORS?CYLIB (C:00B975H - C:00B9A4H)</h2>
+<p><br><b>Maximum Stack:</b> Bottom=2 Bytes (<a href="#S278">?PR?CYWRITE16?CYMEM</a>)<p>
+<p><br><b>Calls to:</b></p>
+<ul>
+<li><a href="#S278">?PR?CYWRITE16?CYMEM</a></li>
+</ul>
+
+<h2><a name="S0"></a>?PR?_CYINTGETVECTOR?CYLIB (I:000000H - I:00002DH)</h2>
+<p><br><b>Maximum Stack:</b> Bottom=4 Bytes (<a href="#S239">?PR?_?CYHALT?CYLIB</a>)<p>
+<p><br><b>Calls to:</b></p>
+<ul>
+<li><a href="#S239">?PR?_?CYHALT?CYLIB</a></li>
+<li><a href="#S277">?PR?CYREAD16?CYMEM</a></li>
+</ul>
+
+<h2><a name="S0"></a>?PR?_CYINTGETPRIORITY?CYLIB (I:000000H - I:00002AH)</h2>
+<p><br><b>Maximum Stack:</b> Bottom=4 Bytes (<a href="#S239">?PR?_?CYHALT?CYLIB</a>)<p>
+<p><br><b>Calls to:</b></p>
+<ul>
+<li><a href="#S239">?PR?_?CYHALT?CYLIB</a></li>
+</ul>
+
+<h2><a name="S0"></a>?PR?_CYINTGETSTATE?CYLIB (I:000000H - I:00004BH)</h2>
+<p><br><b>Maximum Stack:</b> Bottom=4 Bytes (<a href="#S239">?PR?_?CYHALT?CYLIB</a>)<p>
+<p><br><b>Calls to:</b></p>
+<ul>
+<li><a href="#S239">?PR?_?CYHALT?CYLIB</a></li>
+</ul>
+
+<h2><a name="S0"></a>?PR?CW_HOLD_TIMER_SOFTWARECAPTURE?CW_HOLD_TIMER (I:000000H - I:000008H)</h2>
+<p><br><b>Calls to:</b></p>
+<ul>
+<li><a href="#S277">?PR?CYREAD16?CYMEM</a></li>
+</ul>
+
+<h2><a name="S0"></a>?PR?CW_HOLD_TIMER_READPERIOD?CW_HOLD_TIMER (I:000000H - I:000008H)</h2>
+<p><br><b>Calls to:</b></p>
+<ul>
+<li><a href="#S277">?PR?CYREAD16?CYMEM</a></li>
+</ul>
+
+<h2><a name="S0"></a>?PR?CW_HOLD_TIMER_READCAPTURE?CW_HOLD_TIMER (I:000000H - I:000008H)</h2>
+<p><br><b>Calls to:</b></p>
+<ul>
+<li><a href="#S277">?PR?CYREAD16?CYMEM</a></li>
+</ul>
+
+<h2><a name="S0"></a>?PR?CW_HOLD_TIMER_READCOUNTER?CW_HOLD_TIMER (I:000000H - I:000011H)</h2>
+<p><br><b>Maximum Stack:</b> Bottom=2 Bytes (<a href="#S277">?PR?CYREAD16?CYMEM</a>)<p>
+<p><br><b>Calls to:</b></p>
+<ul>
+<li><a href="#S277">?PR?CYREAD16?CYMEM</a></li>
+</ul>
+
+<h2><a name="S0"></a>?PR?CW_ISR_START?CW_ISR (I:000000H - I:000011H)</h2>
+<p><br><b>Maximum Stack:</b> Bottom=2 Bytes (<a href="#S266">?PR?CW_ISR_DISABLE?CW_ISR</a>)<p>
+<p><br><b>Calls to:</b></p>
+<ul>
+<li><a href="#S264">?PR?_CW_ISR_SETPRIORITY?CW_ISR</a></li>
+<li><a href="#S263">?PR?_CW_ISR_SETVECTOR?CW_ISR</a></li>
+<li><a href="#S266">?PR?CW_ISR_DISABLE?CW_ISR</a></li>
+<li><a href="#S265">?PR?CW_ISR_ENABLE?CW_ISR</a></li>
+</ul>
+
+<h2><a name="S0"></a>?PR?CW_ISR_STOP?CW_ISR (I:000000H - I:000002H)</h2>
+<p><br><b>Calls to:</b></p>
+<ul>
+<li><a href="#S266">?PR?CW_ISR_DISABLE?CW_ISR</a></li>
+</ul>
+
+<h2><a name="S0"></a>?PR?CW_ISR_GETVECTOR?CW_ISR (I:000000H - I:000008H)</h2>
+<p><br><b>Calls to:</b></p>
+<ul>
+<li><a href="#S277">?PR?CYREAD16?CYMEM</a></li>
+</ul>
+
+<h2><a name="S265"></a>?PR?CW_ISR_ENABLE?CW_ISR (C:00BD82H - C:00BD88H)</h2>
+<p><br><b>Called from:</b></p>
+<ul>
+<li><a href="#S0">?PR?CW_ISR_START?CW_ISR</a></li>
+</ul>
+
+<h2><a name="S0"></a>?PR?CYREAD32?CYMEM (I:000000H - I:000014H)</h2>
+<p><br><b>Called from:</b></p>
+<ul>
+<li><a href="#S0">?PR?CYDMACERRORADDRESS?CYDMAC</a></li>
+</ul>
+
+<h2><a name="S288"></a>?PR?USBFS_BUS_RESET_ISR?USBFS_EPISR (C:00AE1DH - C:00AE6CH)</h2>
+<p><br><b>Maximum Stack:</b> Bottom=21 Bytes (<a href="#S118">?PR?USBFS_REINITCOMPONENT?USBFS</a>)<p>
+<p><br><b>Calls to:</b></p>
+<ul>
+<li><a href="#S118">?PR?USBFS_REINITCOMPONENT?USBFS</a></li>
+</ul>
+
+<h2><a name="S289"></a>?PR?USBFS_ARB_ISR?USBFS_EPISR (C:00BE49H - C:00BF8AH)</h2>
+<p><br><b>Maximum Stack:</b> Bottom=23 Bytes (<a href="#S127">?PR?_USBFS_LOADNEXTINEP?USBFS</a>)<p>
+<p><br><b>Calls to:</b></p>
+<ul>
+<li><a href="#S127">?PR?_USBFS_LOADNEXTINEP?USBFS</a></li>
+</ul>
+
+<h2><a name="S291"></a>?PR?USBFS_EP_DMA_DONE_ISR?USBFS_EPISR (C:00BF8BH - C:00C0A8H)</h2>
+<p><br><b>Maximum Stack:</b> Bottom=23 Bytes (<a href="#S127">?PR?_USBFS_LOADNEXTINEP?USBFS</a>)<p>
+<p><br><b>Calls to:</b></p>
+<ul>
+<li><a href="#S127">?PR?_USBFS_LOADNEXTINEP?USBFS</a></li>
+<li><a href="#S323">?PR?USBFS_EP17_DMA_DONE_SR_READ?USBFS_EP17_DMA_DONE_SR</a></li>
+<li><a href="#S336">?PR?USBFS_EP8_DMA_DONE_SR_READ?USBFS_EP8_DMA_DONE_SR</a></li>
+</ul>
+
+<h2><a name="S293"></a>?PR?USBFS_DP_ISR?USBFS_PM (C:00C0A9H - C:00C0F9H)</h2>
+<p><br><b>Maximum Stack:</b> Bottom=21 Bytes (<a href="#S328">?PR?USBFS_DP_CLEARINTERRUPT?USBFS_DP</a>)<p>
+<p><br><b>Calls to:</b></p>
+<ul>
+<li><a href="#S328">?PR?USBFS_DP_CLEARINTERRUPT?USBFS_DP</a></li>
+</ul>
+
+<h2><a name="S0"></a>?PR?USBFS_SUSPEND?USBFS_PM (I:000000H - I:000092H)</h2>
+<p><br><b>Maximum Stack:</b> Bottom=6 Bytes (<a href="#S125">?PR?_USBFS_STOP_DMA?USBFS</a>)<p>
+<p><br><b>Calls to:</b></p>
+<ul>
+<li><a href="#S125">?PR?_USBFS_STOP_DMA?USBFS</a></li>
+<li><a href="#S268">?PR?CYDELAYUS?CYBOOTASMKEIL</a></li>
+<li><a href="#S269">?PR?CYENTERCRITICALSECTION?CYBOOTASMKEIL</a></li>
+<li><a href="#S270">?PR?CYEXITCRITICALSECTION?CYBOOTASMKEIL</a></li>
+<li><a href="#S328">?PR?USBFS_DP_CLEARINTERRUPT?USBFS_DP</a></li>
+</ul>
+
+<h2><a name="S0"></a>?PR?USBFS_RESUME?USBFS_PM (I:000000H - I:00009CH)</h2>
+<p><br><b>Maximum Stack:</b> Bottom=4 Bytes (<a href="#S0">?PR?USBFS_RESTORECONFIG?USBFS_PM</a>)<p>
+<p><br><b>Calls to:</b></p>
+<ul>
+<li><a href="#S267">?PR?CYDELAYCYCLES?CYBOOTASMKEIL</a></li>
+<li><a href="#S268">?PR?CYDELAYUS?CYBOOTASMKEIL</a></li>
+<li><a href="#S269">?PR?CYENTERCRITICALSECTION?CYBOOTASMKEIL</a></li>
+<li><a href="#S270">?PR?CYEXITCRITICALSECTION?CYBOOTASMKEIL</a></li>
+<li><a href="#S0">?PR?USBFS_RESTORECONFIG?USBFS_PM</a></li>
+</ul>
+
+<h2><a name="S317"></a>?PR?I2C_DISPLAY_ISR?I2C_DISPLAY_INT (C:00AAF4H - C:00ADA6H)</h2>
+<p><br><b>Maximum Stack:</b> Bottom=23 Bytes (<a href="#S239">?PR?_?CYHALT?CYLIB</a>)<p>
+<p><br><b>Calls to:</b></p>
+<ul>
+<li><a href="#S365">?C?LIB_CODE</a></li>
+<li><a href="#S239">?PR?_?CYHALT?CYLIB</a></li>
+</ul>
+
+<h2><a name="S0"></a>?PR?I2C_DISPLAY_SAVECONFIG?I2C_DISPLAY_PM (I:000000H - I:000028H)</h2>
+<p><br><b>Called from:</b></p>
+<ul>
+<li><a href="#S0">?PR?I2C_DISPLAY_SLEEP?I2C_DISPLAY_PM</a></li>
+</ul>
+
+<h2><a name="S0"></a>?PR?I2C_DISPLAY_SLEEP?I2C_DISPLAY_PM (I:000000H - I:000019H)</h2>
+<p><br><b>Maximum Stack:</b> Bottom=4 Bytes (<a href="#S155">?PR?I2C_DISPLAY_STOP?I2C_DISPLAY</a>)<p>
+<p><br><b>Calls to:</b></p>
+<ul>
+<li><a href="#S0">?PR?I2C_DISPLAY_SAVECONFIG?I2C_DISPLAY_PM</a></li>
+<li><a href="#S155">?PR?I2C_DISPLAY_STOP?I2C_DISPLAY</a></li>
+</ul>
+
+<h2><a name="S0"></a>?PR?I2C_DISPLAY_WAKEUP?I2C_DISPLAY_PM (I:000000H - I:000012H)</h2>
+<p><br><b>Maximum Stack:</b> Bottom=4 Bytes (<a href="#S0">?PR?I2C_DISPLAY_RESTORECONFIG?I2C_DISPLAY_PM</a>)<p>
+<p><br><b>Calls to:</b></p>
+<ul>
+<li><a href="#S153">?PR?I2C_DISPLAY_ENABLE?I2C_DISPLAY</a></li>
+<li><a href="#S0">?PR?I2C_DISPLAY_RESTORECONFIG?I2C_DISPLAY_PM</a></li>
+</ul>
+
+<h2><a name="S0"></a>?PR?USBFS_EP3_DMARELEASE?USBFS_EP3_DMA (I:000000H - I:000007H)</h2>
+<p><br><b>Calls to:</b></p>
+<ul>
+<li><a href="#S220">?PR?_CYDMACHDISABLE?CYDMAC</a></li>
+</ul>
+
+<h2><a name="S0"></a>?PR?USBFS_EP17_DMA_DONE_SR_INTERRUPTDISABLE?USBFS_EP17_DMA_DONE_SR (I:000000H - I:00000CH)</h2>
+<p><br><b>Maximum Stack:</b> Bottom=2 Bytes (<a href="#S269">?PR?CYENTERCRITICALSECTION?CYBOOTASMKEIL</a>)<p>
+<p><br><b>Calls to:</b></p>
+<ul>
+<li><a href="#S269">?PR?CYENTERCRITICALSECTION?CYBOOTASMKEIL</a></li>
+<li><a href="#S270">?PR?CYEXITCRITICALSECTION?CYBOOTASMKEIL</a></li>
+</ul>
+
+<h2><a name="S0"></a>?PR?USBFS_EP2_DMARELEASE?USBFS_EP2_DMA (I:000000H - I:000007H)</h2>
+<p><br><b>Calls to:</b></p>
+<ul>
+<li><a href="#S220">?PR?_CYDMACHDISABLE?CYDMAC</a></li>
+</ul>
+
+<h2><a name="S0"></a>?PR?USBFS_EP_DMA_DONE_ISR_START?USBFS_EP_DMA_DONE_ISR (I:000000H - I:000011H)</h2>
+<p><br><b>Maximum Stack:</b> Bottom=2 Bytes (<a href="#S335">?PR?USBFS_EP_DMA_DONE_ISR_DISABLE?USBFS_EP_DMA_DONE_ISR</a>)<p>
+<p><br><b>Calls to:</b></p>
+<ul>
+<li><a href="#S333">?PR?_USBFS_EP_DMA_DONE_ISR_SETPRIORITY?USBFS_EP_DMA_DONE_ISR</a></li>
+<li><a href="#S332">?PR?_USBFS_EP_DMA_DONE_ISR_SETVECTOR?USBFS_EP_DMA_DONE_ISR</a></li>
+<li><a href="#S335">?PR?USBFS_EP_DMA_DONE_ISR_DISABLE?USBFS_EP_DMA_DONE_ISR</a></li>
+<li><a href="#S334">?PR?USBFS_EP_DMA_DONE_ISR_ENABLE?USBFS_EP_DMA_DONE_ISR</a></li>
+</ul>
+
+<h2><a name="S0"></a>?PR?USBFS_EP_DMA_DONE_ISR_STOP?USBFS_EP_DMA_DONE_ISR (I:000000H - I:000002H)</h2>
+<p><br><b>Calls to:</b></p>
+<ul>
+<li><a href="#S335">?PR?USBFS_EP_DMA_DONE_ISR_DISABLE?USBFS_EP_DMA_DONE_ISR</a></li>
+</ul>
+
+<h2><a name="S0"></a>?PR?USBFS_EP_DMA_DONE_ISR_GETVECTOR?USBFS_EP_DMA_DONE_ISR (I:000000H - I:000008H)</h2>
+<p><br><b>Calls to:</b></p>
+<ul>
+<li><a href="#S277">?PR?CYREAD16?CYMEM</a></li>
+</ul>
+
+<h2><a name="S334"></a>?PR?USBFS_EP_DMA_DONE_ISR_ENABLE?USBFS_EP_DMA_DONE_ISR (C:00AA93H - C:00AA99H)</h2>
+<p><br><b>Called from:</b></p>
+<ul>
+<li><a href="#S0">?PR?USBFS_EP_DMA_DONE_ISR_START?USBFS_EP_DMA_DONE_ISR</a></li>
+</ul>
+
+<h2><a name="S0"></a>?PR?USBFS_EP8_DMA_DONE_SR_INTERRUPTDISABLE?USBFS_EP8_DMA_DONE_SR (I:000000H - I:00000CH)</h2>
+<p><br><b>Maximum Stack:</b> Bottom=2 Bytes (<a href="#S269">?PR?CYENTERCRITICALSECTION?CYBOOTASMKEIL</a>)<p>
+<p><br><b>Calls to:</b></p>
+<ul>
+<li><a href="#S269">?PR?CYENTERCRITICALSECTION?CYBOOTASMKEIL</a></li>
+<li><a href="#S270">?PR?CYEXITCRITICALSECTION?CYBOOTASMKEIL</a></li>
+</ul>
+
+<h2><a name="S0"></a>?PR?CYFLASH_START?CYFLASH (I:000000H - I:00002FH)</h2>
+<p><br><b>Maximum Stack:</b> Bottom=2 Bytes (<a href="#S269">?PR?CYENTERCRITICALSECTION?CYBOOTASMKEIL</a>)<p>
+<p><br><b>Calls to:</b></p>
+<ul>
+<li><a href="#S269">?PR?CYENTERCRITICALSECTION?CYBOOTASMKEIL</a></li>
+<li><a href="#S270">?PR?CYEXITCRITICALSECTION?CYBOOTASMKEIL</a></li>
+</ul>
+
+<h2><a name="S0"></a>?PR?CYFLASH_STOP?CYFLASH (I:000000H - I:000013H)</h2>
+<p><br><b>Maximum Stack:</b> Bottom=2 Bytes (<a href="#S269">?PR?CYENTERCRITICALSECTION?CYBOOTASMKEIL</a>)<p>
+<p><br><b>Calls to:</b></p>
+<ul>
+<li><a href="#S269">?PR?CYENTERCRITICALSECTION?CYBOOTASMKEIL</a></li>
+<li><a href="#S270">?PR?CYEXITCRITICALSECTION?CYBOOTASMKEIL</a></li>
+</ul>
+
+<h2><a name="S0"></a>?PR?_CYFLASH_ERASEROW?CYFLASH (I:000000H - I:0000AFH)</h2>
+<p><br><b>Maximum Stack:</b> Bottom=4 Bytes (<a href="#S355">?PR?CYSPCLOCK?CYSPC</a>)<p>
+<p><br><b>Calls to:</b></p>
+<ul>
+<li><a href="#S365">?C?LIB_CODE</a></li>
+<li><a href="#S0">?PR?_CYSPCERASEROW?CYSPC</a></li>
+<li><a href="#S268">?PR?CYDELAYUS?CYBOOTASMKEIL</a></li>
+<li><a href="#S355">?PR?CYSPCLOCK?CYSPC</a></li>
+<li><a href="#S357">?PR?CYSPCUNLOCK?CYSPC</a></li>
+</ul>
+
+<h2><a name="S0"></a>?PR?_CYSETFLASHEEBUFFER?CYFLASH (I:000000H - I:00007CH)</h2>
+<p><br><b>Maximum Stack:</b> Bottom=4 Bytes (<a href="#S347">?PR?CYSPCSTART?CYSPC</a>)<p>
+<p><br><b>Calls to:</b></p>
+<ul>
+<li><a href="#S355">?PR?CYSPCLOCK?CYSPC</a></li>
+<li><a href="#S347">?PR?CYSPCSTART?CYSPC</a></li>
+<li><a href="#S357">?PR?CYSPCUNLOCK?CYSPC</a></li>
+</ul>
+
+<h2><a name="S0"></a>?PR?_CYWRITEROWDATA?CYFLASH (I:000000H - I:000032H)</h2>
+<p><br><b>Maximum Stack:</b> Bottom=5 Bytes (<a href="#S0">?PR?_CYWRITEROWFULL?CYFLASH</a>)<p>
+<p><br><b>Calls to:</b></p>
+<ul>
+<li><a href="#S0">?PR?_CYWRITEROWFULL?CYFLASH</a></li>
+</ul>
+
+<p><br><b>Called from:</b></p>
+<ul>
+<li><a href="#S0">?PR?_BOOTLOADABLE_SETFLASHBYTE?BOOTLOADABLE</a></li>
+</ul>
+
+<h2><a name="S0"></a>?PR?_CYWRITEROWFULL?CYFLASH (I:000000H - I:000192H)</h2>
+<p><br><b>Maximum Stack:</b> Bottom=5 Bytes (<a href="#S0">?PR?_CYSPCLOADROWFULL?CYSPC</a>)<p>
+<p><br><b>Calls to:</b></p>
+<ul>
+<li><a href="#S365">?C?LIB_CODE</a></li>
+<li><a href="#S0">?PR?_CYSPCLOADROWFULL?CYSPC</a></li>
+<li><a href="#S352">?PR?_CYSPCWRITEROW?CYSPC</a></li>
+<li><a href="#S268">?PR?CYDELAYUS?CYBOOTASMKEIL</a></li>
+<li><a href="#S355">?PR?CYSPCLOCK?CYSPC</a></li>
+<li><a href="#S357">?PR?CYSPCUNLOCK?CYSPC</a></li>
+</ul>
+
+<p><br><b>Called from:</b></p>
+<ul>
+<li><a href="#S0">?PR?_CYWRITEROWDATA?CYFLASH</a></li>
+</ul>
+
+<h2><a name="S344"></a>?PR?CYEEPROM_START?CYFLASH (C:008BEAH - C:008C19H)</h2>
+<p><br><b>Maximum Stack:</b> Bottom=2 Bytes (<a href="#S269">?PR?CYENTERCRITICALSECTION?CYBOOTASMKEIL</a>)<p>
+<p><br><b>Calls to:</b></p>
+<ul>
+<li><a href="#S269">?PR?CYENTERCRITICALSECTION?CYBOOTASMKEIL</a></li>
+<li><a href="#S270">?PR?CYEXITCRITICALSECTION?CYBOOTASMKEIL</a></li>
+</ul>
+
+<h2><a name="S0"></a>?PR?CYEEPROM_STOP?CYFLASH (I:000000H - I:000013H)</h2>
+<p><br><b>Maximum Stack:</b> Bottom=2 Bytes (<a href="#S269">?PR?CYENTERCRITICALSECTION?CYBOOTASMKEIL</a>)<p>
+<p><br><b>Calls to:</b></p>
+<ul>
+<li><a href="#S269">?PR?CYENTERCRITICALSECTION?CYBOOTASMKEIL</a></li>
+<li><a href="#S270">?PR?CYEXITCRITICALSECTION?CYBOOTASMKEIL</a></li>
+</ul>
+
+<p><br><b>Called from:</b></p>
+<ul>
+<li><a href="#S0">?PR?EEPROM_STOP?EEPROM</a></li>
+</ul>
+
+<h2><a name="S0"></a>?PR?CYPMSAVECLOCKS?CYPM (I:000000H - I:0001B0H)</h2>
+<p><br><b>Maximum Stack:</b> Bottom=8 Bytes (<a href="#S0">?PR?_CYIMO_SETFREQ?CYLIB</a>)<p>
+<p><br><b>Calls to:</b></p>
+<ul>
+<li><a href="#S365">?C?LIB_CODE</a></li>
+<li><a href="#S239">?PR?_?CYHALT?CYLIB</a></li>
+<li><a href="#S0">?PR?_CYBUSCLK_SETDIVIDER?CYLIB</a></li>
+<li><a href="#S0">?PR?_CYFLASH_SETWAITCYCLES?CYFLASH</a></li>
+<li><a href="#S0">?PR?_CYIMO_SETFREQ?CYLIB</a></li>
+<li><a href="#S0">?PR?_CYIMO_SETSOURCE?CYLIB</a></li>
+<li><a href="#S0">?PR?_CYIMO_START?CYLIB</a></li>
+<li><a href="#S0">?PR?_CYMASTERCLK_SETDIVIDER?CYLIB</a></li>
+<li><a href="#S0">?PR?_CYMASTERCLK_SETSOURCE?CYLIB</a></li>
+<li><a href="#S268">?PR?CYDELAYUS?CYBOOTASMKEIL</a></li>
+<li><a href="#S0">?PR?CYIMO_DISABLEDOUBLER?CYLIB</a></li>
+<li><a href="#S0">?PR?CYPLL_OUT_STOP?CYLIB</a></li>
+<li><a href="#S0">?PR?CYXTAL_STOP?CYLIB</a></li>
+</ul>
+
+<h2><a name="S0"></a>?PR?CYPMRESTORECLOCKS?CYPM (I:000000H - I:000251H)</h2>
+<p><br><b>Maximum Stack:</b> Bottom=8 Bytes (<a href="#S0">?PR?_CYIMO_SETFREQ?CYLIB</a>)<p>
+<p><br><b>Calls to:</b></p>
+<ul>
+<li><a href="#S365">?C?LIB_CODE</a></li>
+<li><a href="#S0">?PR?_CYBUSCLK_SETDIVIDER?CYLIB</a></li>
+<li><a href="#S0">?PR?_CYFLASH_SETWAITCYCLES?CYFLASH</a></li>
+<li><a href="#S0">?PR?_CYIMO_SETFREQ?CYLIB</a></li>
+<li><a href="#S0">?PR?_CYIMO_SETSOURCE?CYLIB</a></li>
+<li><a href="#S0">?PR?_CYIMO_START?CYLIB</a></li>
+<li><a href="#S0">?PR?_CYMASTERCLK_SETDIVIDER?CYLIB</a></li>
+<li><a href="#S0">?PR?_CYMASTERCLK_SETSOURCE?CYLIB</a></li>
+<li><a href="#S0">?PR?_CYPLL_OUT_START?CYLIB</a></li>
+<li><a href="#S0">?PR?_CYXTAL_START?CYLIB</a></li>
+<li><a href="#S267">?PR?CYDELAYCYCLES?CYBOOTASMKEIL</a></li>
+<li><a href="#S268">?PR?CYDELAYUS?CYBOOTASMKEIL</a></li>
+<li><a href="#S0">?PR?CYIMO_ENABLEDOUBLER?CYLIB</a></li>
+<li><a href="#S0">?PR?CYIMO_STOP?CYLIB</a></li>
+</ul>
+
+<h2><a name="S0"></a>?PR?_CYPMALTACT?CYPM (I:000000H - I:0000DFH)</h2>
+<p><br><b>Maximum Stack:</b> Bottom=6 Bytes (<a href="#S0">?PR?CYPMOPPSSET?CYPM</a>)<p>
+<p><br><b>Calls to:</b></p>
+<ul>
+<li><a href="#S0">?PR?_CYPMCTWSETINTERVAL?CYPM</a></li>
+<li><a href="#S0">?PR?_CYPMFTWSETINTERVAL?CYPM</a></li>
+<li><a href="#S0">?PR?CYPMOPPSSET?CYPM</a></li>
+</ul>
+
+<h2><a name="S0"></a>?PR?_CYPMSLEEP?CYPM (I:000000H - I:00017AH)</h2>
+<p><br><b>Maximum Stack:</b> Bottom=6 Bytes (<a href="#S0">?PR?CYPMOPPSSET?CYPM</a>)<p>
+<p><br><b>Calls to:</b></p>
+<ul>
+<li><a href="#S239">?PR?_?CYHALT?CYLIB</a></li>
+<li><a href="#S0">?PR?_CYPMCTWSETINTERVAL?CYPM</a></li>
+<li><a href="#S269">?PR?CYENTERCRITICALSECTION?CYBOOTASMKEIL</a></li>
+<li><a href="#S270">?PR?CYEXITCRITICALSECTION?CYBOOTASMKEIL</a></li>
+<li><a href="#S0">?PR?CYPMHIBSLPRESTORE?CYPM</a></li>
+<li><a href="#S0">?PR?CYPMHIBSLPSAVESET?CYPM</a></li>
+<li><a href="#S0">?PR?CYPMOPPSSET?CYPM</a></li>
+</ul>
+
+<h2><a name="S0"></a>?PR?CYPMHIBERNATE?CYPM (I:000000H - I:000006H)</h2>
+<p><br><b>Maximum Stack:</b> Bottom=10 Bytes (<a href="#S0">?PR?_CYPMHIBERNATEEX?CYPM</a>)<p>
+<p><br><b>Calls to:</b></p>
+<ul>
+<li><a href="#S0">?PR?_CYPMHIBERNATEEX?CYPM</a></li>
+</ul>
+
+<h2><a name="S0"></a>?PR?_CYPMHIBERNATEEX?CYPM (I:000000H - I:0000D3H)</h2>
+<p><br><b>Maximum Stack:</b> Bottom=10 Bytes (<a href="#S0">?PR?CYPMHIBSAVESET?CYPM</a>)<p>
+<p><br><b>Calls to:</b></p>
+<ul>
+<li><a href="#S269">?PR?CYENTERCRITICALSECTION?CYBOOTASMKEIL</a></li>
+<li><a href="#S270">?PR?CYEXITCRITICALSECTION?CYBOOTASMKEIL</a></li>
+<li><a href="#S0">?PR?CYPMHIBRESTORE?CYPM</a></li>
+<li><a href="#S0">?PR?CYPMHIBSAVESET?CYPM</a></li>
+</ul>
+
+<p><br><b>Called from:</b></p>
+<ul>
+<li><a href="#S0">?PR?CYPMHIBERNATE?CYPM</a></li>
+</ul>
+
+<h2><a name="S0"></a>?PR?CYSPCSTOP?CYSPC (I:000000H - I:000013H)</h2>
+<p><br><b>Maximum Stack:</b> Bottom=2 Bytes (<a href="#S269">?PR?CYENTERCRITICALSECTION?CYBOOTASMKEIL</a>)<p>
+<p><br><b>Calls to:</b></p>
+<ul>
+<li><a href="#S269">?PR?CYENTERCRITICALSECTION?CYBOOTASMKEIL</a></li>
+<li><a href="#S270">?PR?CYEXITCRITICALSECTION?CYBOOTASMKEIL</a></li>
+</ul>
+
+<h2><a name="S1"></a>?PR?MAIN_INIT?MAIN (C:005A79H - C:005B3CH)</h2>
+<p><br><b>Maximum Stack:</b> Bottom=11 Bytes (<a href="#S36">?PR?_SI5351ASETFREQUENCY?SI5351A</a>) Top=2 Bytes (<a href="#S4">?PR?MAIN?MAIN</a>)<p>
+<p><br><b>Calls to:</b></p>
+<ul>
+<li><a href="#S365">?C?LIB_CODE</a></li>
+<li><a href="#S241">?PR?_?CYDELAY?CYLIB</a></li>
+<li><a href="#S213">?PR?_BAND_CONTROL_WRITE?BAND_CONTROL</a></li>
+<li><a href="#S186">?PR?_CONTROL_WRITE?CONTROL</a></li>
+<li><a href="#S260">?PR?_CW_ISR_STARTEX?CW_ISR</a></li>
+<li><a href="#S8">?PR?_ERROR?MAIN</a></li>
+<li><a href="#S43">?PR?_SI5351_INIT?SI5351</a></li>
+<li><a href="#S36">?PR?_SI5351ASETFREQUENCY?SI5351A</a></li>
+<li><a href="#S187">?PR?CONTROL_READ?CONTROL</a></li>
+<li><a href="#S254">?PR?CW_HOLD_TIMER_START?CW_HOLD_TIMER</a></li>
+<li><a href="#S163">?PR?I2C_DISPLAY_MASTERCLEARSTATUS?I2C_DISPLAY_MASTER</a></li>
+<li><a href="#S154">?PR?I2C_DISPLAY_START?I2C_DISPLAY</a></li>
+<li><a href="#S155">?PR?I2C_DISPLAY_STOP?I2C_DISPLAY</a></li>
+<li><a href="#S85">?PR?PCM3060_INIT?PCM3060</a></li>
+<li><a href="#S59">?PR?SETTINGS_INIT?SETTINGS01</a></li>
+<li><a href="#S25">?PR?SYNC_START?SYNC</a></li>
+</ul>
+
+<p><br><b>Called from:</b></p>
+<ul>
+<li><a href="#S4">?PR?MAIN?MAIN</a></li>
+</ul>
+
+<h2><a name="S3"></a>?PR?MAIN_USB_VBUS?MAIN (C:005C28H - C:005C50H)</h2>
+<p><br><b>Maximum Stack:</b> Bottom=10 Bytes (<a href="#S112">?PR?_USBFS_START?USBFS</a>) Top=2 Bytes (<a href="#S4">?PR?MAIN?MAIN</a>)<p>
+<p><br><b>Calls to:</b></p>
+<ul>
+<li><a href="#S112">?PR?_USBFS_START?USBFS</a></li>
+<li><a href="#S16">?PR?AUDIO_START?AUDIO</a></li>
+<li><a href="#S86">?PR?PCM3060_START?PCM3060</a></li>
+<li><a href="#S87">?PR?PCM3060_STOP?PCM3060</a></li>
+<li><a href="#S119">?PR?USBFS_STOP?USBFS</a></li>
+<li><a href="#S131">?PR?USBFS_VBUSPRESENT?USBFS</a></li>
+</ul>
+
+<p><br><b>Called from:</b></p>
+<ul>
+<li><a href="#S4">?PR?MAIN?MAIN</a></li>
+</ul>
+
+<h2><a name="S7"></a>?PR?_?SWAP32?MAIN (C:005FF8H - C:0060FFH)</h2>
+<p><br><b>Maximum Stack:</b> Bottom=2 Bytes (<a href="#S365">?C?LIB_CODE</a>) Top=25 Bytes (<a href="#S70">?PR?USBFS_HANDLEVENDORRQST?USBVEND01</a>)<p>
+<p><br><b>Calls to:</b></p>
+<ul>
+<li><a href="#S365">?C?LIB_CODE</a></li>
+</ul>
+
+<p><br><b>Called from:</b></p>
+<ul>
+<li><a href="#S29">?PR?_CONVERT_FROM_HOST?CONVERT</a></li>
+<li><a href="#S43">?PR?_SI5351_INIT?SI5351</a></li>
+<li><a href="#S41">?PR?SI5351_MAIN?SI5351</a></li>
+<li><a href="#S70">?PR?USBFS_HANDLEVENDORRQST?USBVEND01</a></li>
+</ul>
+
+<h2><a name="S8"></a>?PR?_ERROR?MAIN (C:005BC4H - C:005C27H)</h2>
+<p><br><b>Maximum Stack:</b> Bottom=8 Bytes (<a href="#S119">?PR?USBFS_STOP?USBFS</a>) Top=4 Bytes (<a href="#S1">?PR?MAIN_INIT?MAIN</a>)<p>
+<p><br><b>Calls to:</b></p>
+<ul>
+<li><a href="#S365">?C?LIB_CODE</a></li>
+<li><a href="#S186">?PR?_CONTROL_WRITE?CONTROL</a></li>
+<li><a href="#S21">?PR?_MORSE_MAIN?MORSE</a></li>
+<li><a href="#S187">?PR?CONTROL_READ?CONTROL</a></li>
+<li><a href="#S176">?PR?STATUS_READ?STATUS</a></li>
+<li><a href="#S119">?PR?USBFS_STOP?USBFS</a></li>
+</ul>
+
+<p><br><b>Called from:</b></p>
+<ul>
+<li><a href="#S4">?PR?MAIN?MAIN</a></li>
+<li><a href="#S1">?PR?MAIN_INIT?MAIN</a></li>
+</ul>
+
+<h2><a name="S12"></a>?PR?_AUDIO_USB_LOADINEP?AUDIO (C:006100H - C:006266H)</h2>
+<p><br><b>Maximum Stack:</b> Bottom=4 Bytes (<a href="#S233">?PR?_CYDMATDSETCONFIGURATION?CYDMAC</a>) Top=4 Bytes (<a href="#S17">?PR?AUDIO_MAIN?AUDIO</a>)<p>
+<p><br><b>Calls to:</b></p>
+<ul>
+<li><a href="#S220">?PR?_CYDMACHDISABLE?CYDMAC</a></li>
+<li><a href="#S219">?PR?_CYDMACHENABLE?CYDMAC</a></li>
+<li><a href="#S225">?PR?_CYDMACHSETINITIALTD?CYDMAC</a></li>
+<li><a href="#S221">?PR?_CYDMACLEARPENDINGDRQ?CYDMAC</a></li>
+<li><a href="#S235">?PR?_CYDMATDSETADDRESS?CYDMAC</a></li>
+<li><a href="#S233">?PR?_CYDMATDSETCONFIGURATION?CYDMAC</a></li>
+</ul>
+
+<p><br><b>Called from:</b></p>
+<ul>
+<li><a href="#S17">?PR?AUDIO_MAIN?AUDIO</a></li>
+</ul>
+
+<h2><a name="S14"></a>?PR?_AUDIO_USB_READOUTEP?AUDIO (C:0067FEH - C:006901H)</h2>
+<p><br><b>Maximum Stack:</b> Bottom=4 Bytes (<a href="#S233">?PR?_CYDMATDSETCONFIGURATION?CYDMAC</a>) Top=4 Bytes (<a href="#S17">?PR?AUDIO_MAIN?AUDIO</a>)<p>
+<p><br><b>Calls to:</b></p>
+<ul>
+<li><a href="#S220">?PR?_CYDMACHDISABLE?CYDMAC</a></li>
+<li><a href="#S219">?PR?_CYDMACHENABLE?CYDMAC</a></li>
+<li><a href="#S225">?PR?_CYDMACHSETINITIALTD?CYDMAC</a></li>
+<li><a href="#S221">?PR?_CYDMACLEARPENDINGDRQ?CYDMAC</a></li>
+<li><a href="#S235">?PR?_CYDMATDSETADDRESS?CYDMAC</a></li>
+<li><a href="#S233">?PR?_CYDMATDSETCONFIGURATION?CYDMAC</a></li>
+</ul>
+
+<p><br><b>Called from:</b></p>
+<ul>
+<li><a href="#S17">?PR?AUDIO_MAIN?AUDIO</a></li>
+<li><a href="#S16">?PR?AUDIO_START?AUDIO</a></li>
+</ul>
+
+<h2><a name="S16"></a>?PR?AUDIO_START?AUDIO (C:006902H - C:00692EH)</h2>
+<p><br><b>Maximum Stack:</b> Bottom=8 Bytes (<a href="#S123">?PR?_USBFS_INITEP_DMA?USBFS</a>) Top=4 Bytes (<a href="#S3">?PR?MAIN_USB_VBUS?MAIN</a>)<p>
+<p><br><b>Calls to:</b></p>
+<ul>
+<li><a href="#S14">?PR?_AUDIO_USB_READOUTEP?AUDIO</a></li>
+<li><a href="#S123">?PR?_USBFS_INITEP_DMA?USBFS</a></li>
+<li><a href="#S82">?PR?PCM3060_RXBUF?PCM3060</a></li>
+<li><a href="#S81">?PR?PCM3060_TXBUF?PCM3060</a></li>
+</ul>
+
+<p><br><b>Called from:</b></p>
+<ul>
+<li><a href="#S3">?PR?MAIN_USB_VBUS?MAIN</a></li>
+</ul>
+
+<h2><a name="S17"></a>?PR?AUDIO_MAIN?AUDIO (C:006267H - C:0062D1H)</h2>
+<p><br><b>Maximum Stack:</b> Bottom=6 Bytes (<a href="#S14">?PR?_AUDIO_USB_READOUTEP?AUDIO</a>) Top=2 Bytes (<a href="#S4">?PR?MAIN?MAIN</a>)<p>
+<p><br><b>Calls to:</b></p>
+<ul>
+<li><a href="#S12">?PR?_AUDIO_USB_LOADINEP?AUDIO</a></li>
+<li><a href="#S14">?PR?_AUDIO_USB_READOUTEP?AUDIO</a></li>
+<li><a href="#S130">?PR?_USBFS_DISABLEOUTEP?USBFS</a></li>
+<li><a href="#S129">?PR?_USBFS_ENABLEOUTEP?USBFS</a></li>
+<li><a href="#S122">?PR?_USBFS_GETEPSTATE?USBFS</a></li>
+<li><a href="#S121">?PR?_USBFS_GETINTERFACESETTING?USBFS</a></li>
+<li><a href="#S82">?PR?PCM3060_RXBUF?PCM3060</a></li>
+<li><a href="#S81">?PR?PCM3060_TXBUF?PCM3060</a></li>
+<li><a href="#S120">?PR?USBFS_ISCONFIGURATIONCHANGED?USBFS</a></li>
+</ul>
+
+<p><br><b>Called from:</b></p>
+<ul>
+<li><a href="#S4">?PR?MAIN?MAIN</a></li>
+</ul>
+
+<h2><a name="S19"></a>?PR?TX_MAIN?TX (C:005F19H - C:005F83H)</h2>
+<p><br><b>Maximum Stack:</b> Bottom=2 Bytes (<a href="#S187">?PR?CONTROL_READ?CONTROL</a>) Top=2 Bytes (<a href="#S4">?PR?MAIN?MAIN</a>)<p>
+<p><br><b>Calls to:</b></p>
+<ul>
+<li><a href="#S186">?PR?_CONTROL_WRITE?CONTROL</a></li>
+<li><a href="#S187">?PR?CONTROL_READ?CONTROL</a></li>
+</ul>
+
+<p><br><b>Called from:</b></p>
+<ul>
+<li><a href="#S4">?PR?MAIN?MAIN</a></li>
+</ul>
+
+<h2><a name="S21"></a>?PR?_MORSE_MAIN?MORSE (C:006FA4H - C:0070E9H)</h2>
+<p><br><b>Maximum Stack:</b> Bottom=2 Bytes (<a href="#S365">?C?LIB_CODE</a>) Top=6 Bytes (<a href="#S8">?PR?_ERROR?MAIN</a>)<p>
+<p><br><b>Calls to:</b></p>
+<ul>
+<li><a href="#S365">?C?LIB_CODE</a></li>
+<li><a href="#S186">?PR?_CONTROL_WRITE?CONTROL</a></li>
+<li><a href="#S187">?PR?CONTROL_READ?CONTROL</a></li>
+</ul>
+
+<p><br><b>Called from:</b></p>
+<ul>
+<li><a href="#S8">?PR?_ERROR?MAIN</a></li>
+</ul>
+
+<h2><a name="S23"></a>?PR?T1_MAIN?T1 (C:005D8AH - C:005F12H)</h2>
+<p><br><b>Maximum Stack:</b> Bottom=2 Bytes (<a href="#S365">?C?LIB_CODE</a>) Top=2 Bytes (<a href="#S4">?PR?MAIN?MAIN</a>)<p>
+<p><br><b>Calls to:</b></p>
+<ul>
+<li><a href="#S365">?C?LIB_CODE</a></li>
+<li><a href="#S186">?PR?_CONTROL_WRITE?CONTROL</a></li>
+<li><a href="#S187">?PR?CONTROL_READ?CONTROL</a></li>
+<li><a href="#S176">?PR?STATUS_READ?STATUS</a></li>
+</ul>
+
+<p><br><b>Called from:</b></p>
+<ul>
+<li><a href="#S4">?PR?MAIN?MAIN</a></li>
+</ul>
+
+<h2><a name="S25"></a>?PR?SYNC_START?SYNC (C:006BF1H - C:006C0CH)</h2>
+<p><br><b>Maximum Stack:</b> Bottom=6 Bytes (<a href="#S205">?PR?_P_DMA_DMAINITIALIZE?P_DMA_DMA</a>) Top=4 Bytes (<a href="#S1">?PR?MAIN_INIT?MAIN</a>)<p>
+<p><br><b>Calls to:</b></p>
+<ul>
+<li><a href="#S241">?PR?_?CYDELAY?CYLIB</a></li>
+<li><a href="#S177">?PR?_FRACN_START2?FRACN_API</a></li>
+<li><a href="#S205">?PR?_P_DMA_DMAINITIALIZE?P_DMA_DMA</a></li>
+<li><a href="#S188">?PR?SYNCSOF_START?SYNCSOF_API</a></li>
+</ul>
+
+<p><br><b>Called from:</b></p>
+<ul>
+<li><a href="#S1">?PR?MAIN_INIT?MAIN</a></li>
+</ul>
+
+<h2><a name="S26"></a>?PR?SYNC_MAIN?SYNC (C:0070EAH - C:0072C6H)</h2>
+<p><br><b>Maximum Stack:</b> Bottom=4 Bytes (<a href="#S208">?PR?_FRAC_CLK_SETDIVIDERREGISTER?FRAC_CLK</a>) Top=2 Bytes (<a href="#S4">?PR?MAIN?MAIN</a>)<p>
+<p><br><b>Calls to:</b></p>
+<ul>
+<li><a href="#S365">?C?LIB_CODE</a></li>
+<li><a href="#S186">?PR?_CONTROL_WRITE?CONTROL</a></li>
+<li><a href="#S208">?PR?_FRAC_CLK_SETDIVIDERREGISTER?FRAC_CLK</a></li>
+<li><a href="#S179">?PR?_FRACN_SET?FRACN_API</a></li>
+<li><a href="#S187">?PR?CONTROL_READ?CONTROL</a></li>
+</ul>
+
+<p><br><b>Called from:</b></p>
+<ul>
+<li><a href="#S4">?PR?MAIN?MAIN</a></li>
+</ul>
+
+<h2><a name="S29"></a>?PR?_CONVERT_FROM_HOST?CONVERT (C:007404H - C:0074CAH)</h2>
+<p><br><b>Maximum Stack:</b> Bottom=4 Bytes (<a href="#S7">?PR?_?SWAP32?MAIN</a>) Top=4 Bytes (<a href="#S41">?PR?SI5351_MAIN?SI5351</a>)<p>
+<p><br><b>Calls to:</b></p>
+<ul>
+<li><a href="#S366">?C?LDIV</a></li>
+<li><a href="#S365">?C?LIB_CODE</a></li>
+<li><a href="#S7">?PR?_?SWAP32?MAIN</a></li>
+</ul>
+
+<p><br><b>Called from:</b></p>
+<ul>
+<li><a href="#S41">?PR?SI5351_MAIN?SI5351</a></li>
+</ul>
+
+<h2><a name="S31"></a>?PR?_SETUPPLL?SI5351A (C:0077B9H - C:007AB6H)</h2>
+<p><br><b>Maximum Stack:</b> Bottom=7 Bytes (<a href="#S365">?C?LIB_CODE</a>) Top=8 Bytes (<a href="#S36">?PR?_SI5351ASETFREQUENCY?SI5351A</a>)<p>
+<p><br><b>Calls to:</b></p>
+<ul>
+<li><a href="#S365">?C?LIB_CODE</a></li>
+<li><a href="#S55">?PR?_SI5351_WRITE_INIT?SI5351</a></li>
+</ul>
+
+<p><br><b>Called from:</b></p>
+<ul>
+<li><a href="#S36">?PR?_SI5351ASETFREQUENCY?SI5351A</a></li>
+</ul>
+
+<h2><a name="S34"></a>?PR?_SETUPMULTISYNTH?SI5351A (C:007BCFH - C:007DE5H)</h2>
+<p><br><b>Maximum Stack:</b> Bottom=7 Bytes (<a href="#S365">?C?LIB_CODE</a>) Top=8 Bytes (<a href="#S36">?PR?_SI5351ASETFREQUENCY?SI5351A</a>)<p>
+<p><br><b>Calls to:</b></p>
+<ul>
+<li><a href="#S365">?C?LIB_CODE</a></li>
+<li><a href="#S55">?PR?_SI5351_WRITE_INIT?SI5351</a></li>
+</ul>
+
+<p><br><b>Called from:</b></p>
+<ul>
+<li><a href="#S36">?PR?_SI5351ASETFREQUENCY?SI5351A</a></li>
+</ul>
+
+<h2><a name="S36"></a>?PR?_SI5351ASETFREQUENCY?SI5351A (C:0080A0H - C:0088C7H)</h2>
+<p><br><b>Maximum Stack:</b> Bottom=9 Bytes (<a href="#S31">?PR?_SETUPPLL?SI5351A</a>) Top=6 Bytes (<a href="#S102">?PR?CW_SESSION_END?CW</a>)<p>
+<p><br><b>Calls to:</b></p>
+<ul>
+<li><a href="#S366">?C?LDIV</a></li>
+<li><a href="#S365">?C?LIB_CODE</a></li>
+<li><a href="#S34">?PR?_SETUPMULTISYNTH?SI5351A</a></li>
+<li><a href="#S31">?PR?_SETUPPLL?SI5351A</a></li>
+<li><a href="#S55">?PR?_SI5351_WRITE_INIT?SI5351</a></li>
+</ul>
+
+<p><br><b>Called from:</b></p>
+<ul>
+<li><a href="#S102">?PR?CW_SESSION_END?CW</a></li>
+<li><a href="#S99">?PR?CW_SESSION_START?CW</a></li>
+<li><a href="#S4">?PR?MAIN?MAIN</a></li>
+<li><a href="#S1">?PR?MAIN_INIT?MAIN</a></li>
+<li><a href="#S103">?PR?MANAGE_PADDLES_PORT?CW</a></li>
+</ul>
+
+<h2><a name="S38"></a>?PR?_SMOOTH_TUNING?SI5351 (C:0088C8H - C:0089F0H)</h2>
+<p><br><b>Maximum Stack:</b> Bottom=2 Bytes (<a href="#S365">?C?LIB_CODE</a>) Top=4 Bytes (<a href="#S41">?PR?SI5351_MAIN?SI5351</a>)<p>
+<p><br><b>Calls to:</b></p>
+<ul>
+<li><a href="#S365">?C?LIB_CODE</a></li>
+<li><a href="#S368">?PR?_LABS?LABS</a></li>
+</ul>
+
+<p><br><b>Called from:</b></p>
+<ul>
+<li><a href="#S41">?PR?SI5351_MAIN?SI5351</a></li>
+</ul>
+
+<h2><a name="S41"></a>?PR?SI5351_MAIN?SI5351 (C:0074CBH - C:0077B8H)</h2>
+<p><br><b>Maximum Stack:</b> Bottom=6 Bytes (<a href="#S29">?PR?_CONVERT_FROM_HOST?CONVERT</a>) Top=2 Bytes (<a href="#S4">?PR?MAIN?MAIN</a>)<p>
+<p><br><b>Calls to:</b></p>
+<ul>
+<li><a href="#S365">?C?LIB_CODE</a></li>
+<li><a href="#S7">?PR?_?SWAP32?MAIN</a></li>
+<li><a href="#S29">?PR?_CONVERT_FROM_HOST?CONVERT</a></li>
+<li><a href="#S38">?PR?_SMOOTH_TUNING?SI5351</a></li>
+<li><a href="#S269">?PR?CYENTERCRITICALSECTION?CYBOOTASMKEIL</a></li>
+<li><a href="#S270">?PR?CYEXITCRITICALSECTION?CYBOOTASMKEIL</a></li>
+</ul>
+
+<p><br><b>Called from:</b></p>
+<ul>
+<li><a href="#S4">?PR?MAIN?MAIN</a></li>
+</ul>
+
+<h2><a name="S43"></a>?PR?_SI5351_INIT?SI5351 (C:007AF8H - C:007BCEH)</h2>
+<p><br><b>Maximum Stack:</b> Bottom=6 Bytes (<a href="#S47">?PR?_SI5351_DRIVE_STRENGTH?SI5351</a>) Top=4 Bytes (<a href="#S1">?PR?MAIN_INIT?MAIN</a>)<p>
+<p><br><b>Calls to:</b></p>
+<ul>
+<li><a href="#S365">?C?LIB_CODE</a></li>
+<li><a href="#S7">?PR?_?SWAP32?MAIN</a></li>
+<li><a href="#S47">?PR?_SI5351_DRIVE_STRENGTH?SI5351</a></li>
+<li><a href="#S45">?PR?_SI5351_OUTPUT_ENABLE?SI5351</a></li>
+<li><a href="#S49">?PR?_SI5351_PLL_RESET?SI5351</a></li>
+<li><a href="#S53">?PR?_SI5351_SET_CLOCK_DISABLE?SI5351</a></li>
+<li><a href="#S51">?PR?_SI5351_SET_CLOCK_PWR?SI5351</a></li>
+<li><a href="#S55">?PR?_SI5351_WRITE_INIT?SI5351</a></li>
+</ul>
+
+<p><br><b>Called from:</b></p>
+<ul>
+<li><a href="#S1">?PR?MAIN_INIT?MAIN</a></li>
+</ul>
+
+<h2><a name="S45"></a>?PR?_SI5351_OUTPUT_ENABLE?SI5351 (C:007E39H - C:007E93H)</h2>
+<p><br><b>Maximum Stack:</b> Bottom=4 Bytes (<a href="#S57">?PR?_SI5351_READ?SI5351</a>) Top=6 Bytes (<a href="#S43">?PR?_SI5351_INIT?SI5351</a>)<p>
+<p><br><b>Calls to:</b></p>
+<ul>
+<li><a href="#S57">?PR?_SI5351_READ?SI5351</a></li>
+<li><a href="#S55">?PR?_SI5351_WRITE_INIT?SI5351</a></li>
+</ul>
+
+<p><br><b>Called from:</b></p>
+<ul>
+<li><a href="#S43">?PR?_SI5351_INIT?SI5351</a></li>
+</ul>
+
+<h2><a name="S47"></a>?PR?_SI5351_DRIVE_STRENGTH?SI5351 (C:0089F1H - C:008A81H)</h2>
+<p><br><b>Maximum Stack:</b> Bottom=4 Bytes (<a href="#S57">?PR?_SI5351_READ?SI5351</a>) Top=6 Bytes (<a href="#S43">?PR?_SI5351_INIT?SI5351</a>)<p>
+<p><br><b>Calls to:</b></p>
+<ul>
+<li><a href="#S57">?PR?_SI5351_READ?SI5351</a></li>
+<li><a href="#S55">?PR?_SI5351_WRITE_INIT?SI5351</a></li>
+</ul>
+
+<p><br><b>Called from:</b></p>
+<ul>
+<li><a href="#S43">?PR?_SI5351_INIT?SI5351</a></li>
+</ul>
+
+<h2><a name="S49"></a>?PR?_SI5351_PLL_RESET?SI5351 (C:007DE6H - C:007E00H)</h2>
+<p><br><b>Maximum Stack:</b> Bottom=4 Bytes (<a href="#S55">?PR?_SI5351_WRITE_INIT?SI5351</a>) Top=6 Bytes (<a href="#S43">?PR?_SI5351_INIT?SI5351</a>)<p>
+<p><br><b>Calls to:</b></p>
+<ul>
+<li><a href="#S55">?PR?_SI5351_WRITE_INIT?SI5351</a></li>
+</ul>
+
+<p><br><b>Called from:</b></p>
+<ul>
+<li><a href="#S43">?PR?_SI5351_INIT?SI5351</a></li>
+</ul>
+
+<h2><a name="S51"></a>?PR?_SI5351_SET_CLOCK_PWR?SI5351 (C:007E01H - C:007E38H)</h2>
+<p><br><b>Maximum Stack:</b> Bottom=4 Bytes (<a href="#S57">?PR?_SI5351_READ?SI5351</a>) Top=6 Bytes (<a href="#S43">?PR?_SI5351_INIT?SI5351</a>)<p>
+<p><br><b>Calls to:</b></p>
+<ul>
+<li><a href="#S57">?PR?_SI5351_READ?SI5351</a></li>
+<li><a href="#S55">?PR?_SI5351_WRITE_INIT?SI5351</a></li>
+</ul>
+
+<p><br><b>Called from:</b></p>
+<ul>
+<li><a href="#S43">?PR?_SI5351_INIT?SI5351</a></li>
+</ul>
+
+<h2><a name="S53"></a>?PR?_SI5351_SET_CLOCK_DISABLE?SI5351 (C:008A82H - C:008B60H)</h2>
+<p><br><b>Maximum Stack:</b> Bottom=4 Bytes (<a href="#S57">?PR?_SI5351_READ?SI5351</a>) Top=6 Bytes (<a href="#S43">?PR?_SI5351_INIT?SI5351</a>)<p>
+<p><br><b>Calls to:</b></p>
+<ul>
+<li><a href="#S57">?PR?_SI5351_READ?SI5351</a></li>
+<li><a href="#S55">?PR?_SI5351_WRITE_INIT?SI5351</a></li>
+</ul>
+
+<p><br><b>Called from:</b></p>
+<ul>
+<li><a href="#S43">?PR?_SI5351_INIT?SI5351</a></li>
+</ul>
+
+<h2><a name="S55"></a>?PR?_SI5351_WRITE_INIT?SI5351 (C:007AB7H - C:007AF7H)</h2>
+<p><br><b>Maximum Stack:</b> Bottom=2 Bytes (<a href="#S158">?PR?_I2C_DISPLAY_MASTERWRITEBUF?I2C_DISPLAY_MASTER</a>) Top=10 Bytes (<a href="#S31">?PR?_SETUPPLL?SI5351A</a>)<p>
+<p><br><b>Calls to:</b></p>
+<ul>
+<li><a href="#S158">?PR?_I2C_DISPLAY_MASTERWRITEBUF?I2C_DISPLAY_MASTER</a></li>
+<li><a href="#S164">?PR?I2C_DISPLAY_MASTERGETWRITEBUFSIZE?I2C_DISPLAY_MASTER</a></li>
+<li><a href="#S162">?PR?I2C_DISPLAY_MASTERSTATUS?I2C_DISPLAY_MASTER</a></li>
+</ul>
+
+<p><br><b>Called from:</b></p>
+<ul>
+<li><a href="#S34">?PR?_SETUPMULTISYNTH?SI5351A</a></li>
+<li><a href="#S31">?PR?_SETUPPLL?SI5351A</a></li>
+<li><a href="#S47">?PR?_SI5351_DRIVE_STRENGTH?SI5351</a></li>
+<li><a href="#S43">?PR?_SI5351_INIT?SI5351</a></li>
+<li><a href="#S45">?PR?_SI5351_OUTPUT_ENABLE?SI5351</a></li>
+<li><a href="#S49">?PR?_SI5351_PLL_RESET?SI5351</a></li>
+<li><a href="#S53">?PR?_SI5351_SET_CLOCK_DISABLE?SI5351</a></li>
+<li><a href="#S51">?PR?_SI5351_SET_CLOCK_PWR?SI5351</a></li>
+<li><a href="#S0">?PR?_SI5351AOUTPUTOFF?SI5351A</a></li>
+<li><a href="#S36">?PR?_SI5351ASETFREQUENCY?SI5351A</a></li>
+</ul>
+
+<h2><a name="S57"></a>?PR?_SI5351_READ?SI5351 (C:007E94H - C:007F1BH)</h2>
+<p><br><b>Maximum Stack:</b> Bottom=2 Bytes (<a href="#S162">?PR?I2C_DISPLAY_MASTERSTATUS?I2C_DISPLAY_MASTER</a>) Top=8 Bytes (<a href="#S47">?PR?_SI5351_DRIVE_STRENGTH?SI5351</a>)<p>
+<p><br><b>Calls to:</b></p>
+<ul>
+<li><a href="#S160">?PR?_I2C_DISPLAY_MASTERREADBUF?I2C_DISPLAY_MASTER</a></li>
+<li><a href="#S158">?PR?_I2C_DISPLAY_MASTERWRITEBUF?I2C_DISPLAY_MASTER</a></li>
+<li><a href="#S162">?PR?I2C_DISPLAY_MASTERSTATUS?I2C_DISPLAY_MASTER</a></li>
+</ul>
+
+<p><br><b>Called from:</b></p>
+<ul>
+<li><a href="#S47">?PR?_SI5351_DRIVE_STRENGTH?SI5351</a></li>
+<li><a href="#S45">?PR?_SI5351_OUTPUT_ENABLE?SI5351</a></li>
+<li><a href="#S53">?PR?_SI5351_SET_CLOCK_DISABLE?SI5351</a></li>
+<li><a href="#S51">?PR?_SI5351_SET_CLOCK_PWR?SI5351</a></li>
+<li><a href="#S0">?PR?_SI5351_UPDATE_INT_STATUS?SI5351</a></li>
+<li><a href="#S0">?PR?_SI5351_UPDATE_SYS_STATUS?SI5351</a></li>
+</ul>
+
+<h2><a name="S59"></a>?PR?SETTINGS_INIT?SETTINGS01 (C:008B61H - C:008BE7H)</h2>
+<p><br><b>Maximum Stack:</b> Bottom=4 Bytes (<a href="#S241">?PR?_?CYDELAY?CYLIB</a>) Top=4 Bytes (<a href="#S1">?PR?MAIN_INIT?MAIN</a>)<p>
+<p><br><b>Calls to:</b></p>
+<ul>
+<li><a href="#S365">?C?LIB_CODE</a></li>
+<li><a href="#S241">?PR?_?CYDELAY?CYLIB</a></li>
+<li><a href="#S197">?PR?EEPROM_START?EEPROM</a></li>
+</ul>
+
+<p><br><b>Called from:</b></p>
+<ul>
+<li><a href="#S1">?PR?MAIN_INIT?MAIN</a></li>
+</ul>
+
+<h2><a name="S61"></a>?PR?SET_PPM?SETTINGS01 (C:008F0FH - C:008FDDH)</h2>
+<p><br><b>Maximum Stack:</b> Bottom=6 Bytes (<a href="#S200">?PR?EEPROM_QUERY?EEPROM</a>) Top=4 Bytes (<a href="#S63">?PR?SETTINGS_MAIN?SETTINGS01</a>)<p>
+<p><br><b>Calls to:</b></p>
+<ul>
+<li><a href="#S365">?C?LIB_CODE</a></li>
+<li><a href="#S198">?PR?_EEPROM_STARTWRITE?EEPROM</a></li>
+<li><a href="#S200">?PR?EEPROM_QUERY?EEPROM</a></li>
+</ul>
+
+<p><br><b>Called from:</b></p>
+<ul>
+<li><a href="#S63">?PR?SETTINGS_MAIN?SETTINGS01</a></li>
+</ul>
+
+<h2><a name="S63"></a>?PR?SETTINGS_MAIN?SETTINGS01 (C:008FDEH - C:00902AH)</h2>
+<p><br><b>Maximum Stack:</b> Bottom=8 Bytes (<a href="#S61">?PR?SET_PPM?SETTINGS01</a>) Top=2 Bytes (<a href="#S4">?PR?MAIN?MAIN</a>)<p>
+<p><br><b>Calls to:</b></p>
+<ul>
+<li><a href="#S61">?PR?SET_PPM?SETTINGS01</a></li>
+</ul>
+
+<p><br><b>Called from:</b></p>
+<ul>
+<li><a href="#S4">?PR?MAIN?MAIN</a></li>
+</ul>
+
+<h2><a name="S66"></a>?PR?BAND_MAIN?BAND (C:00902BH - C:00958BH)</h2>
+<p><br><b>Maximum Stack:</b> Bottom=2 Bytes (<a href="#S365">?C?LIB_CODE</a>) Top=2 Bytes (<a href="#S4">?PR?MAIN?MAIN</a>)<p>
+<p><br><b>Calls to:</b></p>
+<ul>
+<li><a href="#S365">?C?LIB_CODE</a></li>
+<li><a href="#S213">?PR?_BAND_CONTROL_WRITE?BAND_CONTROL</a></li>
+</ul>
+
+<p><br><b>Called from:</b></p>
+<ul>
+<li><a href="#S4">?PR?MAIN?MAIN</a></li>
+</ul>
+
+<h2><a name="S68"></a>?PR?_?SWAP32_INT?USBVEND01 (C:009592H - C:009699H)</h2>
+<p><br><b>Maximum Stack:</b> Bottom=2 Bytes (<a href="#S365">?C?LIB_CODE</a>) Top=25 Bytes (<a href="#S70">?PR?USBFS_HANDLEVENDORRQST?USBVEND01</a>)<p>
+<p><br><b>Calls to:</b></p>
+<ul>
+<li><a href="#S365">?C?LIB_CODE</a></li>
+</ul>
+
+<p><br><b>Called from:</b></p>
+<ul>
+<li><a href="#S70">?PR?USBFS_HANDLEVENDORRQST?USBVEND01</a></li>
+</ul>
+
+<h2><a name="S69"></a>?PR?EMULATED_REGISTER?USBVEND01 (C:00969AH - C:0096B9H)</h2>
+<p><br><b>Maximum Stack:</b> Top=25 Bytes (<a href="#S70">?PR?USBFS_HANDLEVENDORRQST?USBVEND01</a>)<p>
+<p><br><b>Called from:</b></p>
+<ul>
+<li><a href="#S70">?PR?USBFS_HANDLEVENDORRQST?USBVEND01</a></li>
+</ul>
+
+<h2><a name="S70"></a>?PR?USBFS_HANDLEVENDORRQST?USBVEND01 (C:0096BAH - C:009D36H)</h2>
+<p><br><b>Maximum Stack:</b> Bottom=6 Bytes (<a href="#S140">?PR?USBFS_INITCONTROLREAD?USBFS_DRV</a>) Top=23 Bytes (<a href="#S135">?PR?USBFS_HANDLESETUP?USBFS_DRV</a>)<p>
+<p><br><b>Calls to:</b></p>
+<ul>
+<li><a href="#S365">?C?LIB_CODE</a></li>
+<li><a href="#S7">?PR?_?SWAP32?MAIN</a></li>
+<li><a href="#S68">?PR?_?SWAP32_INT?USBVEND01</a></li>
+<li><a href="#S277">?PR?CYREAD16?CYMEM</a></li>
+<li><a href="#S69">?PR?EMULATED_REGISTER?USBVEND01</a></li>
+<li><a href="#S140">?PR?USBFS_INITCONTROLREAD?USBFS_DRV</a></li>
+<li><a href="#S144">?PR?USBFS_INITCONTROLWRITE?USBFS_DRV</a></li>
+</ul>
+
+<p><br><b>Called from:</b></p>
+<ul>
+<li><a href="#S135">?PR?USBFS_HANDLESETUP?USBFS_DRV</a></li>
+</ul>
+
+<h2><a name="S73"></a>?PR?DMARXINIT?PCM3060 (C:006AC4H - C:006B30H)</h2>
+<p><br><b>Maximum Stack:</b> Bottom=6 Bytes (<a href="#S183">?PR?_RXI2S_STAGE_DMAINITIALIZE?RXI2S_STAGE_DMA</a>) Top=6 Bytes (<a href="#S85">?PR?PCM3060_INIT?PCM3060</a>)<p>
+<p><br><b>Calls to:</b></p>
+<ul>
+<li><a href="#S180">?PR?_RXI2S_BUFF_DMAINITIALIZE?RXI2S_BUFF_DMA</a></li>
+<li><a href="#S183">?PR?_RXI2S_STAGE_DMAINITIALIZE?RXI2S_STAGE_DMA</a></li>
+<li><a href="#S229">?PR?CYDMATDALLOCATE?CYDMAC</a></li>
+</ul>
+
+<p><br><b>Called from:</b></p>
+<ul>
+<li><a href="#S85">?PR?PCM3060_INIT?PCM3060</a></li>
+</ul>
+
+<h2><a name="S75"></a>?PR?DMARXSTART?PCM3060 (C:006695H - C:0067DFH)</h2>
+<p><br><b>Maximum Stack:</b> Bottom=4 Bytes (<a href="#S233">?PR?_CYDMATDSETCONFIGURATION?CYDMAC</a>) Top=4 Bytes (<a href="#S86">?PR?PCM3060_START?PCM3060</a>)<p>
+<p><br><b>Calls to:</b></p>
+<ul>
+<li><a href="#S219">?PR?_CYDMACHENABLE?CYDMAC</a></li>
+<li><a href="#S225">?PR?_CYDMACHSETINITIALTD?CYDMAC</a></li>
+<li><a href="#S221">?PR?_CYDMACLEARPENDINGDRQ?CYDMAC</a></li>
+<li><a href="#S235">?PR?_CYDMATDSETADDRESS?CYDMAC</a></li>
+<li><a href="#S233">?PR?_CYDMATDSETCONFIGURATION?CYDMAC</a></li>
+</ul>
+
+<p><br><b>Called from:</b></p>
+<ul>
+<li><a href="#S86">?PR?PCM3060_START?PCM3060</a></li>
+</ul>
+
+<h2><a name="S77"></a>?PR?DMATXINIT?PCM3060 (C:006A21H - C:006AC3H)</h2>
+<p><br><b>Maximum Stack:</b> Bottom=6 Bytes (<a href="#S190">?PR?_TXI2S_BUFF_DMAINITIALIZE?TXI2S_BUFF_DMA</a>) Top=6 Bytes (<a href="#S85">?PR?PCM3060_INIT?PCM3060</a>)<p>
+<p><br><b>Calls to:</b></p>
+<ul>
+<li><a href="#S190">?PR?_TXI2S_BUFF_DMAINITIALIZE?TXI2S_BUFF_DMA</a></li>
+<li><a href="#S193">?PR?_TXI2S_STAGE_DMAINITIALIZE?TXI2S_STAGE_DMA</a></li>
+<li><a href="#S202">?PR?_TXI2S_ZERO_DMAINITIALIZE?TXI2S_ZERO_DMA</a></li>
+<li><a href="#S229">?PR?CYDMATDALLOCATE?CYDMAC</a></li>
+</ul>
+
+<p><br><b>Called from:</b></p>
+<ul>
+<li><a href="#S85">?PR?PCM3060_INIT?PCM3060</a></li>
+</ul>
+
+<h2><a name="S79"></a>?PR?DMATXSTART?PCM3060 (C:006398H - C:0065C2H)</h2>
+<p><br><b>Maximum Stack:</b> Bottom=4 Bytes (<a href="#S233">?PR?_CYDMATDSETCONFIGURATION?CYDMAC</a>) Top=4 Bytes (<a href="#S86">?PR?PCM3060_START?PCM3060</a>)<p>
+<p><br><b>Calls to:</b></p>
+<ul>
+<li><a href="#S219">?PR?_CYDMACHENABLE?CYDMAC</a></li>
+<li><a href="#S225">?PR?_CYDMACHSETINITIALTD?CYDMAC</a></li>
+<li><a href="#S226">?PR?_CYDMACHSETREQUEST?CYDMAC</a></li>
+<li><a href="#S221">?PR?_CYDMACLEARPENDINGDRQ?CYDMAC</a></li>
+<li><a href="#S235">?PR?_CYDMATDSETADDRESS?CYDMAC</a></li>
+<li><a href="#S233">?PR?_CYDMATDSETCONFIGURATION?CYDMAC</a></li>
+</ul>
+
+<p><br><b>Called from:</b></p>
+<ul>
+<li><a href="#S86">?PR?PCM3060_START?PCM3060</a></li>
+</ul>
+
+<h2><a name="S81"></a>?PR?PCM3060_TXBUF?PCM3060 (C:0069CDH - C:0069E2H)</h2>
+<p><br><b>Maximum Stack:</b> Bottom=2 Bytes (<a href="#S189">?PR?SYNCSOF_USB_BUFFER?SYNCSOF_API</a>) Top=6 Bytes (<a href="#S16">?PR?AUDIO_START?AUDIO</a>)<p>
+<p><br><b>Calls to:</b></p>
+<ul>
+<li><a href="#S365">?C?LIB_CODE</a></li>
+<li><a href="#S189">?PR?SYNCSOF_USB_BUFFER?SYNCSOF_API</a></li>
+</ul>
+
+<p><br><b>Called from:</b></p>
+<ul>
+<li><a href="#S17">?PR?AUDIO_MAIN?AUDIO</a></li>
+<li><a href="#S16">?PR?AUDIO_START?AUDIO</a></li>
+</ul>
+
+<h2><a name="S82"></a>?PR?PCM3060_RXBUF?PCM3060 (C:006B5DH - C:006B72H)</h2>
+<p><br><b>Maximum Stack:</b> Bottom=2 Bytes (<a href="#S189">?PR?SYNCSOF_USB_BUFFER?SYNCSOF_API</a>) Top=6 Bytes (<a href="#S16">?PR?AUDIO_START?AUDIO</a>)<p>
+<p><br><b>Calls to:</b></p>
+<ul>
+<li><a href="#S365">?C?LIB_CODE</a></li>
+<li><a href="#S189">?PR?SYNCSOF_USB_BUFFER?SYNCSOF_API</a></li>
+</ul>
+
+<p><br><b>Called from:</b></p>
+<ul>
+<li><a href="#S17">?PR?AUDIO_MAIN?AUDIO</a></li>
+<li><a href="#S16">?PR?AUDIO_START?AUDIO</a></li>
+</ul>
+
+<h2><a name="S83"></a>?PR?_PCM3060_SETREGISTER?PCM3060 (C:007F3AH - C:007FB4H)</h2>
+<p><br><b>Maximum Stack:</b> Bottom=2 Bytes (<a href="#S158">?PR?_I2C_DISPLAY_MASTERWRITEBUF?I2C_DISPLAY_MASTER</a>) Top=6 Bytes (<a href="#S87">?PR?PCM3060_STOP?PCM3060</a>)<p>
+<p><br><b>Calls to:</b></p>
+<ul>
+<li><a href="#S365">?C?LIB_CODE</a></li>
+<li><a href="#S158">?PR?_I2C_DISPLAY_MASTERWRITEBUF?I2C_DISPLAY_MASTER</a></li>
+<li><a href="#S162">?PR?I2C_DISPLAY_MASTERSTATUS?I2C_DISPLAY_MASTER</a></li>
+</ul>
+
+<p><br><b>Called from:</b></p>
+<ul>
+<li><a href="#S86">?PR?PCM3060_START?PCM3060</a></li>
+<li><a href="#S87">?PR?PCM3060_STOP?PCM3060</a></li>
+</ul>
+
+<h2><a name="S85"></a>?PR?PCM3060_INIT?PCM3060 (C:006B31H - C:006B39H)</h2>
+<p><br><b>Maximum Stack:</b> Bottom=8 Bytes (<a href="#S73">?PR?DMARXINIT?PCM3060</a>) Top=4 Bytes (<a href="#S1">?PR?MAIN_INIT?MAIN</a>)<p>
+<p><br><b>Calls to:</b></p>
+<ul>
+<li><a href="#S73">?PR?DMARXINIT?PCM3060</a></li>
+<li><a href="#S77">?PR?DMATXINIT?PCM3060</a></li>
+<li><a href="#S168">?PR?I2S_START?I2S</a></li>
+<li><a href="#S87">?PR?PCM3060_STOP?PCM3060</a></li>
+</ul>
+
+<p><br><b>Called from:</b></p>
+<ul>
+<li><a href="#S1">?PR?MAIN_INIT?MAIN</a></li>
+</ul>
+
+<h2><a name="S86"></a>?PR?PCM3060_START?PCM3060 (C:007FB5H - C:007FD5H)</h2>
+<p><br><b>Maximum Stack:</b> Bottom=6 Bytes (<a href="#S75">?PR?DMARXSTART?PCM3060</a>) Top=2 Bytes (<a href="#S3">?PR?MAIN_USB_VBUS?MAIN</a>)<p>
+<p><br><b>Calls to:</b></p>
+<ul>
+<li><a href="#S83">?PR?_PCM3060_SETREGISTER?PCM3060</a></li>
+<li><a href="#S75">?PR?DMARXSTART?PCM3060</a></li>
+<li><a href="#S79">?PR?DMATXSTART?PCM3060</a></li>
+<li><a href="#S172">?PR?I2S_ENABLERX?I2S</a></li>
+</ul>
+
+<p><br><b>Called from:</b></p>
+<ul>
+<li><a href="#S3">?PR?MAIN_USB_VBUS?MAIN</a></li>
+</ul>
+
+<h2><a name="S87"></a>?PR?PCM3060_STOP?PCM3060 (C:005F84H - C:005FC4H)</h2>
+<p><br><b>Maximum Stack:</b> Bottom=4 Bytes (<a href="#S83">?PR?_PCM3060_SETREGISTER?PCM3060</a>) Top=4 Bytes (<a href="#S85">?PR?PCM3060_INIT?PCM3060</a>)<p>
+<p><br><b>Calls to:</b></p>
+<ul>
+<li><a href="#S220">?PR?_CYDMACHDISABLE?CYDMAC</a></li>
+<li><a href="#S83">?PR?_PCM3060_SETREGISTER?PCM3060</a></li>
+<li><a href="#S174">?PR?I2S_CLEARRXFIFO?I2S</a></li>
+<li><a href="#S171">?PR?I2S_CLEARTXFIFO?I2S</a></li>
+<li><a href="#S173">?PR?I2S_DISABLERX?I2S</a></li>
+<li><a href="#S170">?PR?I2S_DISABLETX?I2S</a></li>
+</ul>
+
+<p><br><b>Called from:</b></p>
+<ul>
+<li><a href="#S3">?PR?MAIN_USB_VBUS?MAIN</a></li>
+<li><a href="#S85">?PR?PCM3060_INIT?PCM3060</a></li>
+</ul>
+
+<h2><a name="S90"></a>?PR?CHECK_TEMPERATURE?TEMPERATURE (C:00A00AH - C:00A11CH)</h2>
+<p><br><b>Maximum Stack:</b> Bottom=6 Bytes (<a href="#S214">?PR?DIETEMP_1_START?DIETEMP_1</a>) Top=2 Bytes (<a href="#S4">?PR?MAIN?MAIN</a>)<p>
+<p><br><b>Calls to:</b></p>
+<ul>
+<li><a href="#S365">?C?LIB_CODE</a></li>
+<li><a href="#S216">?PR?_DIETEMP_1_QUERY?DIETEMP_1</a></li>
+<li><a href="#S214">?PR?DIETEMP_1_START?DIETEMP_1</a></li>
+</ul>
+
+<p><br><b>Called from:</b></p>
+<ul>
+<li><a href="#S4">?PR?MAIN?MAIN</a></li>
+</ul>
+
+<h2><a name="S0"></a>?PR?_KEYER_WRITE?CW (I:000000H - I:000067H)</h2>
+<p><br><b>Maximum Stack:</b> Bottom=4 Bytes (<a href="#S241">?PR?_?CYDELAY?CYLIB</a>) Top=2 Bytes (<a href="#S0">?PR?CONFIGURE_CW?CW</a>)<p>
+<p><br><b>Calls to:</b></p>
+<ul>
+<li><a href="#S241">?PR?_?CYDELAY?CYLIB</a></li>
+<li><a href="#S158">?PR?_I2C_DISPLAY_MASTERWRITEBUF?I2C_DISPLAY_MASTER</a></li>
+<li><a href="#S164">?PR?I2C_DISPLAY_MASTERGETWRITEBUFSIZE?I2C_DISPLAY_MASTER</a></li>
+<li><a href="#S162">?PR?I2C_DISPLAY_MASTERSTATUS?I2C_DISPLAY_MASTER</a></li>
+</ul>
+
+<p><br><b>Called from:</b></p>
+<ul>
+<li><a href="#S0">?PR?CONFIGURE_CW?CW</a></li>
+</ul>
+
+<h2><a name="S97"></a>?PR?CW_KEYS_DOWN?CW (C:00A16DH - C:00A1BBH)</h2>
+<p><br><b>Maximum Stack:</b> Bottom=2 Bytes (<a href="#S269">?PR?CYENTERCRITICALSECTION?CYBOOTASMKEIL</a>) Top=4 Bytes (<a href="#S103">?PR?MANAGE_PADDLES_PORT?CW</a>)<p>
+<p><br><b>Calls to:</b></p>
+<ul>
+<li><a href="#S269">?PR?CYENTERCRITICALSECTION?CYBOOTASMKEIL</a></li>
+<li><a href="#S270">?PR?CYEXITCRITICALSECTION?CYBOOTASMKEIL</a></li>
+<li><a href="#S176">?PR?STATUS_READ?STATUS</a></li>
+</ul>
+
+<p><br><b>Called from:</b></p>
+<ul>
+<li><a href="#S103">?PR?MANAGE_PADDLES_PORT?CW</a></li>
+</ul>
+
+<h2><a name="S99"></a>?PR?CW_SESSION_START?CW (C:00A31CH - C:00A351H)</h2>
+<p><br><b>Maximum Stack:</b> Bottom=9 Bytes (<a href="#S36">?PR?_SI5351ASETFREQUENCY?SI5351A</a>) Top=4 Bytes (<a href="#S103">?PR?MANAGE_PADDLES_PORT?CW</a>)<p>
+<p><br><b>Calls to:</b></p>
+<ul>
+<li><a href="#S186">?PR?_CONTROL_WRITE?CONTROL</a></li>
+<li><a href="#S36">?PR?_SI5351ASETFREQUENCY?SI5351A</a></li>
+<li><a href="#S187">?PR?CONTROL_READ?CONTROL</a></li>
+</ul>
+
+<p><br><b>Called from:</b></p>
+<ul>
+<li><a href="#S103">?PR?MANAGE_PADDLES_PORT?CW</a></li>
+</ul>
+
+<h2><a name="S100"></a>?PR?CW_MARK_ON?CW (C:00A2DFH - C:00A2F5H)</h2>
+<p><br><b>Maximum Stack:</b> Bottom=2 Bytes (<a href="#S187">?PR?CONTROL_READ?CONTROL</a>) Top=4 Bytes (<a href="#S103">?PR?MANAGE_PADDLES_PORT?CW</a>)<p>
+<p><br><b>Calls to:</b></p>
+<ul>
+<li><a href="#S186">?PR?_CONTROL_WRITE?CONTROL</a></li>
+<li><a href="#S187">?PR?CONTROL_READ?CONTROL</a></li>
+</ul>
+
+<p><br><b>Called from:</b></p>
+<ul>
+<li><a href="#S103">?PR?MANAGE_PADDLES_PORT?CW</a></li>
+</ul>
+
+<h2><a name="S101"></a>?PR?CW_MARK_OFF?CW (C:00A2C8H - C:00A2D8H)</h2>
+<p><br><b>Maximum Stack:</b> Bottom=2 Bytes (<a href="#S187">?PR?CONTROL_READ?CONTROL</a>) Top=4 Bytes (<a href="#S103">?PR?MANAGE_PADDLES_PORT?CW</a>)<p>
+<p><br><b>Calls to:</b></p>
+<ul>
+<li><a href="#S186">?PR?_CONTROL_WRITE?CONTROL</a></li>
+<li><a href="#S187">?PR?CONTROL_READ?CONTROL</a></li>
+</ul>
+
+<p><br><b>Called from:</b></p>
+<ul>
+<li><a href="#S103">?PR?MANAGE_PADDLES_PORT?CW</a></li>
+</ul>
+
+<h2><a name="S102"></a>?PR?CW_SESSION_END?CW (C:00A2F6H - C:00A31BH)</h2>
+<p><br><b>Maximum Stack:</b> Bottom=11 Bytes (<a href="#S36">?PR?_SI5351ASETFREQUENCY?SI5351A</a>) Top=4 Bytes (<a href="#S103">?PR?MANAGE_PADDLES_PORT?CW</a>)<p>
+<p><br><b>Calls to:</b></p>
+<ul>
+<li><a href="#S186">?PR?_CONTROL_WRITE?CONTROL</a></li>
+<li><a href="#S36">?PR?_SI5351ASETFREQUENCY?SI5351A</a></li>
+<li><a href="#S187">?PR?CONTROL_READ?CONTROL</a></li>
+</ul>
+
+<p><br><b>Called from:</b></p>
+<ul>
+<li><a href="#S103">?PR?MANAGE_PADDLES_PORT?CW</a></li>
+</ul>
+
+<h2><a name="S103"></a>?PR?MANAGE_PADDLES_PORT?CW (C:00A1BCH - C:00A2C7H)</h2>
+<p><br><b>Maximum Stack:</b> Bottom=13 Bytes (<a href="#S102">?PR?CW_SESSION_END?CW</a>) Top=2 Bytes (<a href="#S4">?PR?MAIN?MAIN</a>)<p>
+<p><br><b>Calls to:</b></p>
+<ul>
+<li><a href="#S365">?C?LIB_CODE</a></li>
+<li><a href="#S36">?PR?_SI5351ASETFREQUENCY?SI5351A</a></li>
+<li><a href="#S97">?PR?CW_KEYS_DOWN?CW</a></li>
+<li><a href="#S101">?PR?CW_MARK_OFF?CW</a></li>
+<li><a href="#S100">?PR?CW_MARK_ON?CW</a></li>
+<li><a href="#S102">?PR?CW_SESSION_END?CW</a></li>
+<li><a href="#S99">?PR?CW_SESSION_START?CW</a></li>
+</ul>
+
+<p><br><b>Called from:</b></p>
+<ul>
+<li><a href="#S4">?PR?MAIN?MAIN</a></li>
+</ul>
+
+<h2><a name="S104"></a>?PR?_CYCLOCKSTARTUPERROR?CYFITTER_CFG (C:00A352H - C:00A354H)</h2>
+<p><br><b>Maximum Stack:</b> Top=4 Bytes (<a href="#S107">?PR?CLOCKSETUP?CYFITTER_CFG</a>)<p>
+<p><br><b>Called from:</b></p>
+<ul>
+<li><a href="#S107">?PR?CLOCKSETUP?CYFITTER_CFG</a></li>
+</ul>
+
+<h2><a name="S105"></a>?PR?CFG_DMA_INIT?CYFITTER_CFG (C:00A70EH - C:00A7F6H)</h2>
+<p><br><b>Maximum Stack:</b> Top=2 Bytes (<a href="#S110">?PR?CYFITTER_CFG?CYFITTER_CFG</a>)<p>
+<p><br><b>Calls to:</b></p>
+<ul>
+<li><a href="#S365">?C?LIB_CODE</a></li>
+<li><a href="#S272">?PR?_CYCONFIGCPY?CYMEM</a></li>
+<li><a href="#S278">?PR?CYWRITE16?CYMEM</a></li>
+</ul>
+
+<p><br><b>Called from:</b></p>
+<ul>
+<li><a href="#S110">?PR?CYFITTER_CFG?CYFITTER_CFG</a></li>
+</ul>
+
+<h2><a name="S107"></a>?PR?CLOCKSETUP?CYFITTER_CFG (C:00A355H - C:00A529H)</h2>
+<p><br><b>Maximum Stack:</b> Bottom=2 Bytes (<a href="#S278">?PR?CYWRITE16?CYMEM</a>) Top=2 Bytes (<a href="#S110">?PR?CYFITTER_CFG?CYFITTER_CFG</a>)<p>
+<p><br><b>Calls to:</b></p>
+<ul>
+<li><a href="#S365">?C?LIB_CODE</a></li>
+<li><a href="#S104">?PR?_CYCLOCKSTARTUPERROR?CYFITTER_CFG</a></li>
+<li><a href="#S267">?PR?CYDELAYCYCLES?CYBOOTASMKEIL</a></li>
+<li><a href="#S275">?PR?CYREAD8?CYMEM</a></li>
+<li><a href="#S278">?PR?CYWRITE16?CYMEM</a></li>
+</ul>
+
+<p><br><b>Called from:</b></p>
+<ul>
+<li><a href="#S110">?PR?CYFITTER_CFG?CYFITTER_CFG</a></li>
+</ul>
+
+<h2><a name="S109"></a>?PR?ANALOGSETDEFAULT?CYFITTER_CFG (C:00A6F1H - C:00A70DH)</h2>
+<p><br><b>Maximum Stack:</b> Bottom=2 Bytes (<a href="#S275">?PR?CYREAD8?CYMEM</a>) Top=2 Bytes (<a href="#S110">?PR?CYFITTER_CFG?CYFITTER_CFG</a>)<p>
+<p><br><b>Calls to:</b></p>
+<ul>
+<li><a href="#S275">?PR?CYREAD8?CYMEM</a></li>
+</ul>
+
+<p><br><b>Called from:</b></p>
+<ul>
+<li><a href="#S110">?PR?CYFITTER_CFG?CYFITTER_CFG</a></li>
+</ul>
+
+<h2><a name="S112"></a>?PR?_USBFS_START?USBFS (C:00A7F7H - C:00A814H)</h2>
+<p><br><b>Maximum Stack:</b> Bottom=8 Bytes (<a href="#S114">?PR?USBFS_INIT?USBFS</a>) Top=4 Bytes (<a href="#S3">?PR?MAIN_USB_VBUS?MAIN</a>)<p>
+<p><br><b>Calls to:</b></p>
+<ul>
+<li><a href="#S114">?PR?USBFS_INIT?USBFS</a></li>
+</ul>
+
+<p><br><b>Called from:</b></p>
+<ul>
+<li><a href="#S3">?PR?MAIN_USB_VBUS?MAIN</a></li>
+</ul>
+
+<h2><a name="S114"></a>?PR?USBFS_INIT?USBFS (C:00A8B0H - C:00A9BBH)</h2>
+<p><br><b>Maximum Stack:</b> Bottom=6 Bytes (<a href="#S248">?PR?_CYINTSETPRIORITY?CYLIB</a>) Top=6 Bytes (<a href="#S112">?PR?_USBFS_START?USBFS</a>)<p>
+<p><br><b>Calls to:</b></p>
+<ul>
+<li><a href="#S248">?PR?_CYINTSETPRIORITY?CYLIB</a></li>
+<li><a href="#S246">?PR?_CYINTSETVECTOR?CYLIB</a></li>
+<li><a href="#S268">?PR?CYDELAYUS?CYBOOTASMKEIL</a></li>
+<li><a href="#S269">?PR?CYENTERCRITICALSECTION?CYBOOTASMKEIL</a></li>
+<li><a href="#S270">?PR?CYEXITCRITICALSECTION?CYBOOTASMKEIL</a></li>
+</ul>
+
+<p><br><b>Called from:</b></p>
+<ul>
+<li><a href="#S112">?PR?_USBFS_START?USBFS</a></li>
+</ul>
+
+<h2><a name="S118"></a>?PR?USBFS_REINITCOMPONENT?USBFS (C:00ADF3H - C:00AE1CH)</h2>
+<p><br><b>Maximum Stack:</b> Top=21 Bytes (<a href="#S288">?PR?USBFS_BUS_RESET_ISR?USBFS_EPISR</a>)<p>
+<p><br><b>Called from:</b></p>
+<ul>
+<li><a href="#S288">?PR?USBFS_BUS_RESET_ISR?USBFS_EPISR</a></li>
+</ul>
+
+<h2><a name="S119"></a>?PR?USBFS_STOP?USBFS (C:00AE6DH - C:00AED8H)</h2>
+<p><br><b>Maximum Stack:</b> Bottom=6 Bytes (<a href="#S125">?PR?_USBFS_STOP_DMA?USBFS</a>) Top=6 Bytes (<a href="#S8">?PR?_ERROR?MAIN</a>)<p>
+<p><br><b>Calls to:</b></p>
+<ul>
+<li><a href="#S125">?PR?_USBFS_STOP_DMA?USBFS</a></li>
+<li><a href="#S269">?PR?CYENTERCRITICALSECTION?CYBOOTASMKEIL</a></li>
+<li><a href="#S270">?PR?CYEXITCRITICALSECTION?CYBOOTASMKEIL</a></li>
+<li><a href="#S328">?PR?USBFS_DP_CLEARINTERRUPT?USBFS_DP</a></li>
+</ul>
+
+<p><br><b>Called from:</b></p>
+<ul>
+<li><a href="#S8">?PR?_ERROR?MAIN</a></li>
+<li><a href="#S3">?PR?MAIN_USB_VBUS?MAIN</a></li>
+</ul>
+
+<h2><a name="S120"></a>?PR?USBFS_ISCONFIGURATIONCHANGED?USBFS (C:00AFBAH - C:00AFC6H)</h2>
+<p><br><b>Maximum Stack:</b> Top=4 Bytes (<a href="#S17">?PR?AUDIO_MAIN?AUDIO</a>)<p>
+<p><br><b>Called from:</b></p>
+<ul>
+<li><a href="#S17">?PR?AUDIO_MAIN?AUDIO</a></li>
+</ul>
+
+<h2><a name="S121"></a>?PR?_USBFS_GETINTERFACESETTING?USBFS (C:00AFC7H - C:00AFD3H)</h2>
+<p><br><b>Maximum Stack:</b> Top=4 Bytes (<a href="#S17">?PR?AUDIO_MAIN?AUDIO</a>)<p>
+<p><br><b>Called from:</b></p>
+<ul>
+<li><a href="#S17">?PR?AUDIO_MAIN?AUDIO</a></li>
+</ul>
+
+<h2><a name="S122"></a>?PR?_USBFS_GETEPSTATE?USBFS (C:00630FH - C:00631FH)</h2>
+<p><br><b>Maximum Stack:</b> Top=4 Bytes (<a href="#S17">?PR?AUDIO_MAIN?AUDIO</a>)<p>
+<p><br><b>Called from:</b></p>
+<ul>
+<li><a href="#S17">?PR?AUDIO_MAIN?AUDIO</a></li>
+</ul>
+
+<h2><a name="S123"></a>?PR?_USBFS_INITEP_DMA?USBFS (C:00692FH - C:0069CCH)</h2>
+<p><br><b>Maximum Stack:</b> Bottom=6 Bytes (<a href="#S325">?PR?_USBFS_EP2_DMAINITIALIZE?USBFS_EP2_DMA</a>) Top=6 Bytes (<a href="#S16">?PR?AUDIO_START?AUDIO</a>)<p>
+<p><br><b>Calls to:</b></p>
+<ul>
+<li><a href="#S325">?PR?_USBFS_EP2_DMAINITIALIZE?USBFS_EP2_DMA</a></li>
+<li><a href="#S320">?PR?_USBFS_EP3_DMAINITIALIZE?USBFS_EP3_DMA</a></li>
+<li><a href="#S229">?PR?CYDMATDALLOCATE?CYDMAC</a></li>
+</ul>
+
+<p><br><b>Called from:</b></p>
+<ul>
+<li><a href="#S0">?PR?_USBFS_LOADINEP?USBFS</a></li>
+<li><a href="#S0">?PR?_USBFS_READOUTEP?USBFS</a></li>
+<li><a href="#S16">?PR?AUDIO_START?AUDIO</a></li>
+</ul>
+
+<h2><a name="S125"></a>?PR?_USBFS_STOP_DMA?USBFS (C:00AED9H - C:00AF68H)</h2>
+<p><br><b>Maximum Stack:</b> Bottom=4 Bytes (<a href="#S231">?PR?_CYDMATDFREE?CYDMAC</a>) Top=8 Bytes (<a href="#S119">?PR?USBFS_STOP?USBFS</a>)<p>
+<p><br><b>Calls to:</b></p>
+<ul>
+<li><a href="#S220">?PR?_CYDMACHDISABLE?CYDMAC</a></li>
+<li><a href="#S231">?PR?_CYDMATDFREE?CYDMAC</a></li>
+</ul>
+
+<p><br><b>Called from:</b></p>
+<ul>
+<li><a href="#S119">?PR?USBFS_STOP?USBFS</a></li>
+<li><a href="#S0">?PR?USBFS_SUSPEND?USBFS_PM</a></li>
+</ul>
+
+<h2><a name="S127"></a>?PR?_USBFS_LOADNEXTINEP?USBFS (C:00AFD4H - C:00B145H)</h2>
+<p><br><b>Maximum Stack:</b> Bottom=2 Bytes (<a href="#S278">?PR?CYWRITE16?CYMEM</a>) Top=21 Bytes (<a href="#S289">?PR?USBFS_ARB_ISR?USBFS_EPISR</a>)<p>
+<p><br><b>Calls to:</b></p>
+<ul>
+<li><a href="#S278">?PR?CYWRITE16?CYMEM</a></li>
+</ul>
+
+<p><br><b>Called from:</b></p>
+<ul>
+<li><a href="#S289">?PR?USBFS_ARB_ISR?USBFS_EPISR</a></li>
+<li><a href="#S291">?PR?USBFS_EP_DMA_DONE_ISR?USBFS_EPISR</a></li>
+</ul>
+
+<h2><a name="S129"></a>?PR?_USBFS_ENABLEOUTEP?USBFS (C:0062D2H - C:00630EH)</h2>
+<p><br><b>Maximum Stack:</b> Top=4 Bytes (<a href="#S17">?PR?AUDIO_MAIN?AUDIO</a>)<p>
+<p><br><b>Called from:</b></p>
+<ul>
+<li><a href="#S17">?PR?AUDIO_MAIN?AUDIO</a></li>
+</ul>
+
+<h2><a name="S130"></a>?PR?_USBFS_DISABLEOUTEP?USBFS (C:00B146H - C:00B163H)</h2>
+<p><br><b>Maximum Stack:</b> Top=4 Bytes (<a href="#S17">?PR?AUDIO_MAIN?AUDIO</a>)<p>
+<p><br><b>Called from:</b></p>
+<ul>
+<li><a href="#S17">?PR?AUDIO_MAIN?AUDIO</a></li>
+</ul>
+
+<h2><a name="S131"></a>?PR?USBFS_VBUSPRESENT?USBFS (C:00B164H - C:00B172H)</h2>
+<p><br><b>Maximum Stack:</b> Top=4 Bytes (<a href="#S3">?PR?MAIN_USB_VBUS?MAIN</a>)<p>
+<p><br><b>Called from:</b></p>
+<ul>
+<li><a href="#S3">?PR?MAIN_USB_VBUS?MAIN</a></li>
+</ul>
+
+<h2><a name="S135"></a>?PR?USBFS_HANDLESETUP?USBFS_DRV (C:00B3C6H - C:00B428H)</h2>
+<p><br><b>Maximum Stack:</b> Bottom=15 Bytes (<a href="#S295">?PR?USBFS_HANDLESTANDARDRQST?USBFS_STD</a>) Top=21 Bytes (<a href="#S133">?PR?USBFS_EP_0_ISR?USBFS_DRV</a>)<p>
+<p><br><b>Calls to:</b></p>
+<ul>
+<li><a href="#S149">?PR?_USBFS_UPDATESTATUSBLOCK?USBFS_DRV</a></li>
+<li><a href="#S283">?PR?USBFS_DISPATCHCLASSRQST?USBFS_CLS</a></li>
+<li><a href="#S295">?PR?USBFS_HANDLESTANDARDRQST?USBFS_STD</a></li>
+<li><a href="#S70">?PR?USBFS_HANDLEVENDORRQST?USBVEND01</a></li>
+</ul>
+
+<p><br><b>Called from:</b></p>
+<ul>
+<li><a href="#S133">?PR?USBFS_EP_0_ISR?USBFS_DRV</a></li>
+</ul>
+
+<h2><a name="S137"></a>?PR?USBFS_HANDLEIN?USBFS_DRV (C:00B274H - C:00B28AH)</h2>
+<p><br><b>Maximum Stack:</b> Bottom=6 Bytes (<a href="#S148">?PR?USBFS_NODATACONTROLSTATUSSTAGE?USBFS_DRV</a>) Top=21 Bytes (<a href="#S133">?PR?USBFS_EP_0_ISR?USBFS_DRV</a>)<p>
+<p><br><b>Calls to:</b></p>
+<ul>
+<li><a href="#S142">?PR?USBFS_CONTROLREADDATASTAGE?USBFS_DRV</a></li>
+<li><a href="#S146">?PR?USBFS_CONTROLWRITESTATUSSTAGE?USBFS_DRV</a></li>
+<li><a href="#S148">?PR?USBFS_NODATACONTROLSTATUSSTAGE?USBFS_DRV</a></li>
+</ul>
+
+<p><br><b>Called from:</b></p>
+<ul>
+<li><a href="#S133">?PR?USBFS_EP_0_ISR?USBFS_DRV</a></li>
+</ul>
+
+<h2><a name="S138"></a>?PR?USBFS_HANDLEOUT?USBFS_DRV (C:00B340H - C:00B35EH)</h2>
+<p><br><b>Maximum Stack:</b> Bottom=4 Bytes (<a href="#S143">?PR?USBFS_CONTROLREADSTATUSSTAGE?USBFS_DRV</a>) Top=21 Bytes (<a href="#S133">?PR?USBFS_EP_0_ISR?USBFS_DRV</a>)<p>
+<p><br><b>Calls to:</b></p>
+<ul>
+<li><a href="#S149">?PR?_USBFS_UPDATESTATUSBLOCK?USBFS_DRV</a></li>
+<li><a href="#S143">?PR?USBFS_CONTROLREADSTATUSSTAGE?USBFS_DRV</a></li>
+<li><a href="#S145">?PR?USBFS_CONTROLWRITEDATASTAGE?USBFS_DRV</a></li>
+</ul>
+
+<p><br><b>Called from:</b></p>
+<ul>
+<li><a href="#S133">?PR?USBFS_EP_0_ISR?USBFS_DRV</a></li>
+</ul>
+
+<h2><a name="S139"></a>?PR?USBFS_LOADEP0?USBFS_DRV (C:00B28BH - C:00B32FH)</h2>
+<p><br><b>Maximum Stack:</b> Bottom=2 Bytes (<a href="#S365">?C?LIB_CODE</a>) Top=31 Bytes (<a href="#S140">?PR?USBFS_INITCONTROLREAD?USBFS_DRV</a>)<p>
+<p><br><b>Calls to:</b></p>
+<ul>
+<li><a href="#S365">?C?LIB_CODE</a></li>
+</ul>
+
+<p><br><b>Called from:</b></p>
+<ul>
+<li><a href="#S140">?PR?USBFS_INITCONTROLREAD?USBFS_DRV</a></li>
+</ul>
+
+<h2><a name="S140"></a>?PR?USBFS_INITCONTROLREAD?USBFS_DRV (C:009D6EH - C:009DAFH)</h2>
+<p><br><b>Maximum Stack:</b> Bottom=4 Bytes (<a href="#S150">?PR?USBFS_INITIALIZESTATUSBLOCK?USBFS_DRV</a>) Top=29 Bytes (<a href="#S360">?PR?USBFS_DISPATCHAUDIOCLASSRQST?USBFS_AUDIO</a>)<p>
+<p><br><b>Calls to:</b></p>
+<ul>
+<li><a href="#S150">?PR?USBFS_INITIALIZESTATUSBLOCK?USBFS_DRV</a></li>
+<li><a href="#S141">?PR?USBFS_INITZEROLENGTHCONTROLTRANSFER?USBFS_DRV</a></li>
+<li><a href="#S139">?PR?USBFS_LOADEP0?USBFS_DRV</a></li>
+</ul>
+
+<p><br><b>Called from:</b></p>
+<ul>
+<li><a href="#S360">?PR?USBFS_DISPATCHAUDIOCLASSRQST?USBFS_AUDIO</a></li>
+<li><a href="#S295">?PR?USBFS_HANDLESTANDARDRQST?USBFS_STD</a></li>
+<li><a href="#S70">?PR?USBFS_HANDLEVENDORRQST?USBVEND01</a></li>
+</ul>
+
+<h2><a name="S141"></a>?PR?USBFS_INITZEROLENGTHCONTROLTRANSFER?USBFS_DRV (C:00B542H - C:00B55FH)</h2>
+<p><br><b>Maximum Stack:</b> Top=31 Bytes (<a href="#S140">?PR?USBFS_INITCONTROLREAD?USBFS_DRV</a>)<p>
+<p><br><b>Called from:</b></p>
+<ul>
+<li><a href="#S140">?PR?USBFS_INITCONTROLREAD?USBFS_DRV</a></li>
+</ul>
+
+<h2><a name="S142"></a>?PR?USBFS_CONTROLREADDATASTAGE?USBFS_DRV (C:00B28BH - C:00B28AH)</h2>
+<p><br><b>Maximum Stack:</b> Top=21 Bytes (<a href="#S137">?PR?USBFS_HANDLEIN?USBFS_DRV</a>)<p>
+<p><br><b>Called from:</b></p>
+<ul>
+<li><a href="#S137">?PR?USBFS_HANDLEIN?USBFS_DRV</a></li>
+</ul>
+
+<h2><a name="S143"></a>?PR?USBFS_CONTROLREADSTATUSSTAGE?USBFS_DRV (C:00B35FH - C:00B380H)</h2>
+<p><br><b>Maximum Stack:</b> Bottom=4 Bytes (<a href="#S149">?PR?_USBFS_UPDATESTATUSBLOCK?USBFS_DRV</a>) Top=21 Bytes (<a href="#S138">?PR?USBFS_HANDLEOUT?USBFS_DRV</a>)<p>
+<p><br><b>Calls to:</b></p>
+<ul>
+<li><a href="#S149">?PR?_USBFS_UPDATESTATUSBLOCK?USBFS_DRV</a></li>
+</ul>
+
+<p><br><b>Called from:</b></p>
+<ul>
+<li><a href="#S138">?PR?USBFS_HANDLEOUT?USBFS_DRV</a></li>
+</ul>
+
+<h2><a name="S144"></a>?PR?USBFS_INITCONTROLWRITE?USBFS_DRV (C:009D37H - C:009D6DH)</h2>
+<p><br><b>Maximum Stack:</b> Bottom=4 Bytes (<a href="#S150">?PR?USBFS_INITIALIZESTATUSBLOCK?USBFS_DRV</a>) Top=29 Bytes (<a href="#S360">?PR?USBFS_DISPATCHAUDIOCLASSRQST?USBFS_AUDIO</a>)<p>
+<p><br><b>Calls to:</b></p>
+<ul>
+<li><a href="#S150">?PR?USBFS_INITIALIZESTATUSBLOCK?USBFS_DRV</a></li>
+</ul>
+
+<p><br><b>Called from:</b></p>
+<ul>
+<li><a href="#S360">?PR?USBFS_DISPATCHAUDIOCLASSRQST?USBFS_AUDIO</a></li>
+<li><a href="#S70">?PR?USBFS_HANDLEVENDORRQST?USBVEND01</a></li>
+</ul>
+
+<h2><a name="S145"></a>?PR?USBFS_CONTROLWRITEDATASTAGE?USBFS_DRV (C:00B4B8H - C:00B541H)</h2>
+<p><br><b>Maximum Stack:</b> Bottom=2 Bytes (<a href="#S365">?C?LIB_CODE</a>) Top=21 Bytes (<a href="#S138">?PR?USBFS_HANDLEOUT?USBFS_DRV</a>)<p>
+<p><br><b>Calls to:</b></p>
+<ul>
+<li><a href="#S365">?C?LIB_CODE</a></li>
+</ul>
+
+<p><br><b>Called from:</b></p>
+<ul>
+<li><a href="#S138">?PR?USBFS_HANDLEOUT?USBFS_DRV</a></li>
+</ul>
+
+<h2><a name="S146"></a>?PR?USBFS_CONTROLWRITESTATUSSTAGE?USBFS_DRV (C:00B330H - C:00B33FH)</h2>
+<p><br><b>Maximum Stack:</b> Bottom=4 Bytes (<a href="#S149">?PR?_USBFS_UPDATESTATUSBLOCK?USBFS_DRV</a>) Top=21 Bytes (<a href="#S137">?PR?USBFS_HANDLEIN?USBFS_DRV</a>)<p>
+<p><br><b>Calls to:</b></p>
+<ul>
+<li><a href="#S149">?PR?_USBFS_UPDATESTATUSBLOCK?USBFS_DRV</a></li>
+</ul>
+
+<p><br><b>Called from:</b></p>
+<ul>
+<li><a href="#S137">?PR?USBFS_HANDLEIN?USBFS_DRV</a></li>
+</ul>
+
+<h2><a name="S147"></a>?PR?USBFS_INITNODATACONTROLTRANSFER?USBFS_DRV (C:00B560H - C:00B577H)</h2>
+<p><br><b>Maximum Stack:</b> Top=27 Bytes (<a href="#S312">?PR?USBFS_CLEARENDPOINTHALT?USBFS_STD</a>)<p>
+<p><br><b>Called from:</b></p>
+<ul>
+<li><a href="#S312">?PR?USBFS_CLEARENDPOINTHALT?USBFS_STD</a></li>
+<li><a href="#S295">?PR?USBFS_HANDLESTANDARDRQST?USBFS_STD</a></li>
+<li><a href="#S310">?PR?USBFS_SETENDPOINTHALT?USBFS_STD</a></li>
+</ul>
+
+<h2><a name="S148"></a>?PR?USBFS_NODATACONTROLSTATUSSTAGE?USBFS_DRV (C:00B429H - C:00B44AH)</h2>
+<p><br><b>Maximum Stack:</b> Bottom=4 Bytes (<a href="#S149">?PR?_USBFS_UPDATESTATUSBLOCK?USBFS_DRV</a>) Top=23 Bytes (<a href="#S137">?PR?USBFS_HANDLEIN?USBFS_DRV</a>)<p>
+<p><br><b>Calls to:</b></p>
+<ul>
+<li><a href="#S149">?PR?_USBFS_UPDATESTATUSBLOCK?USBFS_DRV</a></li>
+</ul>
+
+<p><br><b>Called from:</b></p>
+<ul>
+<li><a href="#S137">?PR?USBFS_HANDLEIN?USBFS_DRV</a></li>
+</ul>
+
+<h2><a name="S149"></a>?PR?_USBFS_UPDATESTATUSBLOCK?USBFS_DRV (C:00B381H - C:00B3C5H)</h2>
+<p><br><b>Maximum Stack:</b> Bottom=2 Bytes (<a href="#S365">?C?LIB_CODE</a>) Top=25 Bytes (<a href="#S148">?PR?USBFS_NODATACONTROLSTATUSSTAGE?USBFS_DRV</a>)<p>
+<p><br><b>Calls to:</b></p>
+<ul>
+<li><a href="#S365">?C?LIB_CODE</a></li>
+</ul>
+
+<p><br><b>Called from:</b></p>
+<ul>
+<li><a href="#S143">?PR?USBFS_CONTROLREADSTATUSSTAGE?USBFS_DRV</a></li>
+<li><a href="#S146">?PR?USBFS_CONTROLWRITESTATUSSTAGE?USBFS_DRV</a></li>
+<li><a href="#S138">?PR?USBFS_HANDLEOUT?USBFS_DRV</a></li>
+<li><a href="#S135">?PR?USBFS_HANDLESETUP?USBFS_DRV</a></li>
+<li><a href="#S148">?PR?USBFS_NODATACONTROLSTATUSSTAGE?USBFS_DRV</a></li>
+</ul>
+
+<h2><a name="S150"></a>?PR?USBFS_INITIALIZESTATUSBLOCK?USBFS_DRV (C:00B6FBH - C:00B735H)</h2>
+<p><br><b>Maximum Stack:</b> Bottom=2 Bytes (<a href="#S365">?C?LIB_CODE</a>) Top=31 Bytes (<a href="#S140">?PR?USBFS_INITCONTROLREAD?USBFS_DRV</a>)<p>
+<p><br><b>Calls to:</b></p>
+<ul>
+<li><a href="#S365">?C?LIB_CODE</a></li>
+</ul>
+
+<p><br><b>Called from:</b></p>
+<ul>
+<li><a href="#S140">?PR?USBFS_INITCONTROLREAD?USBFS_DRV</a></li>
+<li><a href="#S144">?PR?USBFS_INITCONTROLWRITE?USBFS_DRV</a></li>
+</ul>
+
+<h2><a name="S152"></a>?PR?I2C_DISPLAY_INIT?I2C_DISPLAY (C:00AA9AH - C:00AADCH)</h2>
+<p><br><b>Maximum Stack:</b> Bottom=6 Bytes (<a href="#S248">?PR?_CYINTSETPRIORITY?CYLIB</a>) Top=6 Bytes (<a href="#S154">?PR?I2C_DISPLAY_START?I2C_DISPLAY</a>)<p>
+<p><br><b>Calls to:</b></p>
+<ul>
+<li><a href="#S248">?PR?_CYINTSETPRIORITY?CYLIB</a></li>
+<li><a href="#S246">?PR?_CYINTSETVECTOR?CYLIB</a></li>
+</ul>
+
+<p><br><b>Called from:</b></p>
+<ul>
+<li><a href="#S154">?PR?I2C_DISPLAY_START?I2C_DISPLAY</a></li>
+</ul>
+
+<h2><a name="S153"></a>?PR?I2C_DISPLAY_ENABLE?I2C_DISPLAY (C:00ADDFH - C:00ADF2H)</h2>
+<p><br><b>Maximum Stack:</b> Bottom=2 Bytes (<a href="#S269">?PR?CYENTERCRITICALSECTION?CYBOOTASMKEIL</a>) Top=6 Bytes (<a href="#S154">?PR?I2C_DISPLAY_START?I2C_DISPLAY</a>)<p>
+<p><br><b>Calls to:</b></p>
+<ul>
+<li><a href="#S269">?PR?CYENTERCRITICALSECTION?CYBOOTASMKEIL</a></li>
+<li><a href="#S270">?PR?CYEXITCRITICALSECTION?CYBOOTASMKEIL</a></li>
+</ul>
+
+<p><br><b>Called from:</b></p>
+<ul>
+<li><a href="#S154">?PR?I2C_DISPLAY_START?I2C_DISPLAY</a></li>
+<li><a href="#S0">?PR?I2C_DISPLAY_WAKEUP?I2C_DISPLAY_PM</a></li>
+</ul>
+
+<h2><a name="S154"></a>?PR?I2C_DISPLAY_START?I2C_DISPLAY (C:00AADDH - C:00AAF3H)</h2>
+<p><br><b>Maximum Stack:</b> Bottom=8 Bytes (<a href="#S152">?PR?I2C_DISPLAY_INIT?I2C_DISPLAY</a>) Top=4 Bytes (<a href="#S1">?PR?MAIN_INIT?MAIN</a>)<p>
+<p><br><b>Calls to:</b></p>
+<ul>
+<li><a href="#S153">?PR?I2C_DISPLAY_ENABLE?I2C_DISPLAY</a></li>
+<li><a href="#S152">?PR?I2C_DISPLAY_INIT?I2C_DISPLAY</a></li>
+</ul>
+
+<p><br><b>Called from:</b></p>
+<ul>
+<li><a href="#S1">?PR?MAIN_INIT?MAIN</a></li>
+</ul>
+
+<h2><a name="S155"></a>?PR?I2C_DISPLAY_STOP?I2C_DISPLAY (C:00B736H - C:00B7D4H)</h2>
+<p><br><b>Maximum Stack:</b> Bottom=2 Bytes (<a href="#S267">?PR?CYDELAYCYCLES?CYBOOTASMKEIL</a>) Top=4 Bytes (<a href="#S1">?PR?MAIN_INIT?MAIN</a>)<p>
+<p><br><b>Calls to:</b></p>
+<ul>
+<li><a href="#S267">?PR?CYDELAYCYCLES?CYBOOTASMKEIL</a></li>
+<li><a href="#S269">?PR?CYENTERCRITICALSECTION?CYBOOTASMKEIL</a></li>
+<li><a href="#S270">?PR?CYEXITCRITICALSECTION?CYBOOTASMKEIL</a></li>
+</ul>
+
+<p><br><b>Called from:</b></p>
+<ul>
+<li><a href="#S0">?PR?I2C_DISPLAY_SLEEP?I2C_DISPLAY_PM</a></li>
+<li><a href="#S1">?PR?MAIN_INIT?MAIN</a></li>
+</ul>
+
+<h2><a name="S158"></a>?PR?_I2C_DISPLAY_MASTERWRITEBUF?I2C_DISPLAY_MASTER (C:007FF1H - C:00809FH)</h2>
+<p><br><b>Maximum Stack:</b> Top=12 Bytes (<a href="#S55">?PR?_SI5351_WRITE_INIT?SI5351</a>)<p>
+<p><br><b>Called from:</b></p>
+<ul>
+<li><a href="#S0">?PR?_KEYER_WRITE?CW</a></li>
+<li><a href="#S83">?PR?_PCM3060_SETREGISTER?PCM3060</a></li>
+<li><a href="#S57">?PR?_SI5351_READ?SI5351</a></li>
+<li><a href="#S55">?PR?_SI5351_WRITE_INIT?SI5351</a></li>
+</ul>
+
+<h2><a name="S160"></a>?PR?_I2C_DISPLAY_MASTERREADBUF?I2C_DISPLAY_MASTER (C:00B7D5H - C:00B886H)</h2>
+<p><br><b>Maximum Stack:</b> Top=10 Bytes (<a href="#S57">?PR?_SI5351_READ?SI5351</a>)<p>
+<p><br><b>Called from:</b></p>
+<ul>
+<li><a href="#S57">?PR?_SI5351_READ?SI5351</a></li>
+</ul>
+
+<h2><a name="S162"></a>?PR?I2C_DISPLAY_MASTERSTATUS?I2C_DISPLAY_MASTER (C:007F1CH - C:007F39H)</h2>
+<p><br><b>Maximum Stack:</b> Top=12 Bytes (<a href="#S55">?PR?_SI5351_WRITE_INIT?SI5351</a>)<p>
+<p><br><b>Called from:</b></p>
+<ul>
+<li><a href="#S0">?PR?_KEYER_WRITE?CW</a></li>
+<li><a href="#S83">?PR?_PCM3060_SETREGISTER?PCM3060</a></li>
+<li><a href="#S57">?PR?_SI5351_READ?SI5351</a></li>
+<li><a href="#S55">?PR?_SI5351_WRITE_INIT?SI5351</a></li>
+</ul>
+
+<h2><a name="S163"></a>?PR?I2C_DISPLAY_MASTERCLEARSTATUS?I2C_DISPLAY_MASTER (C:00B887H - C:00B89AH)</h2>
+<p><br><b>Maximum Stack:</b> Top=4 Bytes (<a href="#S1">?PR?MAIN_INIT?MAIN</a>)<p>
+<p><br><b>Called from:</b></p>
+<ul>
+<li><a href="#S1">?PR?MAIN_INIT?MAIN</a></li>
+</ul>
+
+<h2><a name="S164"></a>?PR?I2C_DISPLAY_MASTERGETWRITEBUFSIZE?I2C_DISPLAY_MASTER (C:007FEBH - C:007FF0H)</h2>
+<p><br><b>Maximum Stack:</b> Top=12 Bytes (<a href="#S55">?PR?_SI5351_WRITE_INIT?SI5351</a>)<p>
+<p><br><b>Called from:</b></p>
+<ul>
+<li><a href="#S0">?PR?_KEYER_WRITE?CW</a></li>
+<li><a href="#S55">?PR?_SI5351_WRITE_INIT?SI5351</a></li>
+</ul>
+
+<h2><a name="S167"></a>?PR?I2S_INIT?I2S (C:006F91H - C:006FA3H)</h2>
+<p><br><b>Maximum Stack:</b> Top=8 Bytes (<a href="#S168">?PR?I2S_START?I2S</a>)<p>
+<p><br><b>Called from:</b></p>
+<ul>
+<li><a href="#S168">?PR?I2S_START?I2S</a></li>
+</ul>
+
+<h2><a name="S168"></a>?PR?I2S_START?I2S (C:006B3AH - C:006B47H)</h2>
+<p><br><b>Maximum Stack:</b> Bottom=2 Bytes (<a href="#S167">?PR?I2S_INIT?I2S</a>) Top=6 Bytes (<a href="#S85">?PR?PCM3060_INIT?PCM3060</a>)<p>
+<p><br><b>Calls to:</b></p>
+<ul>
+<li><a href="#S167">?PR?I2S_INIT?I2S</a></li>
+</ul>
+
+<p><br><b>Called from:</b></p>
+<ul>
+<li><a href="#S85">?PR?PCM3060_INIT?PCM3060</a></li>
+</ul>
+
+<h2><a name="S170"></a>?PR?I2S_DISABLETX?I2S (C:00B89BH - C:00B8AEH)</h2>
+<p><br><b>Maximum Stack:</b> Bottom=2 Bytes (<a href="#S269">?PR?CYENTERCRITICALSECTION?CYBOOTASMKEIL</a>) Top=6 Bytes (<a href="#S87">?PR?PCM3060_STOP?PCM3060</a>)<p>
+<p><br><b>Calls to:</b></p>
+<ul>
+<li><a href="#S269">?PR?CYENTERCRITICALSECTION?CYBOOTASMKEIL</a></li>
+<li><a href="#S270">?PR?CYEXITCRITICALSECTION?CYBOOTASMKEIL</a></li>
+</ul>
+
+<p><br><b>Called from:</b></p>
+<ul>
+<li><a href="#S0">?PR?I2S_STOP?I2S</a></li>
+<li><a href="#S87">?PR?PCM3060_STOP?PCM3060</a></li>
+</ul>
+
+<h2><a name="S171"></a>?PR?I2S_CLEARTXFIFO?I2S (C:00B8AFH - C:00B8BFH)</h2>
+<p><br><b>Maximum Stack:</b> Bottom=2 Bytes (<a href="#S269">?PR?CYENTERCRITICALSECTION?CYBOOTASMKEIL</a>) Top=6 Bytes (<a href="#S87">?PR?PCM3060_STOP?PCM3060</a>)<p>
+<p><br><b>Calls to:</b></p>
+<ul>
+<li><a href="#S269">?PR?CYENTERCRITICALSECTION?CYBOOTASMKEIL</a></li>
+<li><a href="#S270">?PR?CYEXITCRITICALSECTION?CYBOOTASMKEIL</a></li>
+</ul>
+
+<p><br><b>Called from:</b></p>
+<ul>
+<li><a href="#S0">?PR?I2S_STOP?I2S</a></li>
+<li><a href="#S87">?PR?PCM3060_STOP?PCM3060</a></li>
+</ul>
+
+<h2><a name="S172"></a>?PR?I2S_ENABLERX?I2S (C:00B8C0H - C:00B8D4H)</h2>
+<p><br><b>Maximum Stack:</b> Bottom=2 Bytes (<a href="#S269">?PR?CYENTERCRITICALSECTION?CYBOOTASMKEIL</a>) Top=4 Bytes (<a href="#S86">?PR?PCM3060_START?PCM3060</a>)<p>
+<p><br><b>Calls to:</b></p>
+<ul>
+<li><a href="#S269">?PR?CYENTERCRITICALSECTION?CYBOOTASMKEIL</a></li>
+<li><a href="#S270">?PR?CYEXITCRITICALSECTION?CYBOOTASMKEIL</a></li>
+</ul>
+
+<p><br><b>Called from:</b></p>
+<ul>
+<li><a href="#S86">?PR?PCM3060_START?PCM3060</a></li>
+</ul>
+
+<h2><a name="S173"></a>?PR?I2S_DISABLERX?I2S (C:00B8D5H - C:00B8E8H)</h2>
+<p><br><b>Maximum Stack:</b> Bottom=2 Bytes (<a href="#S269">?PR?CYENTERCRITICALSECTION?CYBOOTASMKEIL</a>) Top=6 Bytes (<a href="#S87">?PR?PCM3060_STOP?PCM3060</a>)<p>
+<p><br><b>Calls to:</b></p>
+<ul>
+<li><a href="#S269">?PR?CYENTERCRITICALSECTION?CYBOOTASMKEIL</a></li>
+<li><a href="#S270">?PR?CYEXITCRITICALSECTION?CYBOOTASMKEIL</a></li>
+</ul>
+
+<p><br><b>Called from:</b></p>
+<ul>
+<li><a href="#S0">?PR?I2S_STOP?I2S</a></li>
+<li><a href="#S87">?PR?PCM3060_STOP?PCM3060</a></li>
+</ul>
+
+<h2><a name="S174"></a>?PR?I2S_CLEARRXFIFO?I2S (C:00B8E9H - C:00B8F9H)</h2>
+<p><br><b>Maximum Stack:</b> Bottom=2 Bytes (<a href="#S269">?PR?CYENTERCRITICALSECTION?CYBOOTASMKEIL</a>) Top=6 Bytes (<a href="#S87">?PR?PCM3060_STOP?PCM3060</a>)<p>
+<p><br><b>Calls to:</b></p>
+<ul>
+<li><a href="#S269">?PR?CYENTERCRITICALSECTION?CYBOOTASMKEIL</a></li>
+<li><a href="#S270">?PR?CYEXITCRITICALSECTION?CYBOOTASMKEIL</a></li>
+</ul>
+
+<p><br><b>Called from:</b></p>
+<ul>
+<li><a href="#S0">?PR?I2S_STOP?I2S</a></li>
+<li><a href="#S87">?PR?PCM3060_STOP?PCM3060</a></li>
+</ul>
+
+<h2><a name="S176"></a>?PR?STATUS_READ?STATUS (C:005F13H - C:005F18H)</h2>
+<p><br><b>Maximum Stack:</b> Top=6 Bytes (<a href="#S8">?PR?_ERROR?MAIN</a>)<p>
+<p><br><b>Called from:</b></p>
+<ul>
+<li><a href="#S8">?PR?_ERROR?MAIN</a></li>
+<li><a href="#S97">?PR?CW_KEYS_DOWN?CW</a></li>
+<li><a href="#S4">?PR?MAIN?MAIN</a></li>
+<li><a href="#S23">?PR?T1_MAIN?T1</a></li>
+</ul>
+
+<h2><a name="S177"></a>?PR?_FRACN_START2?FRACN_API (C:006BACH - C:006BF0H)</h2>
+<p><br><b>Maximum Stack:</b> Bottom=4 Bytes (<a href="#S229">?PR?CYDMATDALLOCATE?CYDMAC</a>) Top=6 Bytes (<a href="#S25">?PR?SYNC_START?SYNC</a>)<p>
+<p><br><b>Calls to:</b></p>
+<ul>
+<li><a href="#S219">?PR?_CYDMACHENABLE?CYDMAC</a></li>
+<li><a href="#S225">?PR?_CYDMACHSETINITIALTD?CYDMAC</a></li>
+<li><a href="#S235">?PR?_CYDMATDSETADDRESS?CYDMAC</a></li>
+<li><a href="#S233">?PR?_CYDMATDSETCONFIGURATION?CYDMAC</a></li>
+<li><a href="#S179">?PR?_FRACN_SET?FRACN_API</a></li>
+<li><a href="#S229">?PR?CYDMATDALLOCATE?CYDMAC</a></li>
+</ul>
+
+<p><br><b>Called from:</b></p>
+<ul>
+<li><a href="#S25">?PR?SYNC_START?SYNC</a></li>
+</ul>
+
+<h2><a name="S179"></a>?PR?_FRACN_SET?FRACN_API (C:006F73H - C:006F81H)</h2>
+<p><br><b>Maximum Stack:</b> Top=8 Bytes (<a href="#S177">?PR?_FRACN_START2?FRACN_API</a>)<p>
+<p><br><b>Called from:</b></p>
+<ul>
+<li><a href="#S177">?PR?_FRACN_START2?FRACN_API</a></li>
+<li><a href="#S26">?PR?SYNC_MAIN?SYNC</a></li>
+</ul>
+
+<h2><a name="S180"></a>?PR?_RXI2S_BUFF_DMAINITIALIZE?RXI2S_BUFF_DMA (C:006C51H - C:006C97H)</h2>
+<p><br><b>Maximum Stack:</b> Bottom=4 Bytes (<a href="#S223">?PR?_CYDMACHSETEXTENDEDADDRESS?CYDMAC</a>) Top=8 Bytes (<a href="#S73">?PR?DMARXINIT?PCM3060</a>)<p>
+<p><br><b>Calls to:</b></p>
+<ul>
+<li><a href="#S222">?PR?_CYDMACHPRIORITY?CYDMAC</a></li>
+<li><a href="#S227">?PR?_CYDMACHSETCONFIGURATION?CYDMAC</a></li>
+<li><a href="#S223">?PR?_CYDMACHSETEXTENDEDADDRESS?CYDMAC</a></li>
+</ul>
+
+<p><br><b>Called from:</b></p>
+<ul>
+<li><a href="#S73">?PR?DMARXINIT?PCM3060</a></li>
+</ul>
+
+<h2><a name="S183"></a>?PR?_RXI2S_STAGE_DMAINITIALIZE?RXI2S_STAGE_DMA (C:006CD8H - C:006D1EH)</h2>
+<p><br><b>Maximum Stack:</b> Bottom=4 Bytes (<a href="#S223">?PR?_CYDMACHSETEXTENDEDADDRESS?CYDMAC</a>) Top=8 Bytes (<a href="#S73">?PR?DMARXINIT?PCM3060</a>)<p>
+<p><br><b>Calls to:</b></p>
+<ul>
+<li><a href="#S222">?PR?_CYDMACHPRIORITY?CYDMAC</a></li>
+<li><a href="#S227">?PR?_CYDMACHSETCONFIGURATION?CYDMAC</a></li>
+<li><a href="#S223">?PR?_CYDMACHSETEXTENDEDADDRESS?CYDMAC</a></li>
+</ul>
+
+<p><br><b>Called from:</b></p>
+<ul>
+<li><a href="#S73">?PR?DMARXINIT?PCM3060</a></li>
+</ul>
+
+<h2><a name="S186"></a>?PR?_CONTROL_WRITE?CONTROL (C:004CFAH - C:004CFFH)</h2>
+<p><br><b>Maximum Stack:</b> Top=8 Bytes (<a href="#S21">?PR?_MORSE_MAIN?MORSE</a>)<p>
+<p><br><b>Called from:</b></p>
+<ul>
+<li><a href="#S8">?PR?_ERROR?MAIN</a></li>
+<li><a href="#S21">?PR?_MORSE_MAIN?MORSE</a></li>
+<li><a href="#S101">?PR?CW_MARK_OFF?CW</a></li>
+<li><a href="#S100">?PR?CW_MARK_ON?CW</a></li>
+<li><a href="#S102">?PR?CW_SESSION_END?CW</a></li>
+<li><a href="#S99">?PR?CW_SESSION_START?CW</a></li>
+<li><a href="#S4">?PR?MAIN?MAIN</a></li>
+<li><a href="#S1">?PR?MAIN_INIT?MAIN</a></li>
+<li><a href="#S26">?PR?SYNC_MAIN?SYNC</a></li>
+<li><a href="#S23">?PR?T1_MAIN?T1</a></li>
+<li><a href="#S19">?PR?TX_MAIN?TX</a></li>
+</ul>
+
+<h2><a name="S187"></a>?PR?CONTROL_READ?CONTROL (C:005C51H - C:005C56H)</h2>
+<p><br><b>Maximum Stack:</b> Top=8 Bytes (<a href="#S21">?PR?_MORSE_MAIN?MORSE</a>)<p>
+<p><br><b>Called from:</b></p>
+<ul>
+<li><a href="#S8">?PR?_ERROR?MAIN</a></li>
+<li><a href="#S21">?PR?_MORSE_MAIN?MORSE</a></li>
+<li><a href="#S101">?PR?CW_MARK_OFF?CW</a></li>
+<li><a href="#S100">?PR?CW_MARK_ON?CW</a></li>
+<li><a href="#S102">?PR?CW_SESSION_END?CW</a></li>
+<li><a href="#S99">?PR?CW_SESSION_START?CW</a></li>
+<li><a href="#S4">?PR?MAIN?MAIN</a></li>
+<li><a href="#S1">?PR?MAIN_INIT?MAIN</a></li>
+<li><a href="#S26">?PR?SYNC_MAIN?SYNC</a></li>
+<li><a href="#S23">?PR?T1_MAIN?T1</a></li>
+<li><a href="#S19">?PR?TX_MAIN?TX</a></li>
+</ul>
+
+<h2><a name="S188"></a>?PR?SYNCSOF_START?SYNCSOF_API (C:006F82H - C:006F90H)</h2>
+<p><br><b>Maximum Stack:</b> Top=6 Bytes (<a href="#S25">?PR?SYNC_START?SYNC</a>)<p>
+<p><br><b>Called from:</b></p>
+<ul>
+<li><a href="#S25">?PR?SYNC_START?SYNC</a></li>
+</ul>
+
+<h2><a name="S189"></a>?PR?SYNCSOF_USB_BUFFER?SYNCSOF_API (C:006B73H - C:006B78H)</h2>
+<p><br><b>Maximum Stack:</b> Top=8 Bytes (<a href="#S82">?PR?PCM3060_RXBUF?PCM3060</a>)<p>
+<p><br><b>Called from:</b></p>
+<ul>
+<li><a href="#S0">?PR?_PCM3060_SETTXBUFADDRESS?PCM3060</a></li>
+<li><a href="#S82">?PR?PCM3060_RXBUF?PCM3060</a></li>
+<li><a href="#S0">?PR?PCM3060_SETTXBUFADDRESSDEFAULT?PCM3060</a></li>
+<li><a href="#S81">?PR?PCM3060_TXBUF?PCM3060</a></li>
+</ul>
+
+<h2><a name="S190"></a>?PR?_TXI2S_BUFF_DMAINITIALIZE?TXI2S_BUFF_DMA (C:006D1FH - C:006D65H)</h2>
+<p><br><b>Maximum Stack:</b> Bottom=4 Bytes (<a href="#S223">?PR?_CYDMACHSETEXTENDEDADDRESS?CYDMAC</a>) Top=8 Bytes (<a href="#S77">?PR?DMATXINIT?PCM3060</a>)<p>
+<p><br><b>Calls to:</b></p>
+<ul>
+<li><a href="#S222">?PR?_CYDMACHPRIORITY?CYDMAC</a></li>
+<li><a href="#S227">?PR?_CYDMACHSETCONFIGURATION?CYDMAC</a></li>
+<li><a href="#S223">?PR?_CYDMACHSETEXTENDEDADDRESS?CYDMAC</a></li>
+</ul>
+
+<p><br><b>Called from:</b></p>
+<ul>
+<li><a href="#S77">?PR?DMATXINIT?PCM3060</a></li>
+</ul>
+
+<h2><a name="S193"></a>?PR?_TXI2S_STAGE_DMAINITIALIZE?TXI2S_STAGE_DMA (C:006DDEH - C:006E24H)</h2>
+<p><br><b>Maximum Stack:</b> Bottom=4 Bytes (<a href="#S223">?PR?_CYDMACHSETEXTENDEDADDRESS?CYDMAC</a>) Top=8 Bytes (<a href="#S77">?PR?DMATXINIT?PCM3060</a>)<p>
+<p><br><b>Calls to:</b></p>
+<ul>
+<li><a href="#S222">?PR?_CYDMACHPRIORITY?CYDMAC</a></li>
+<li><a href="#S227">?PR?_CYDMACHSETCONFIGURATION?CYDMAC</a></li>
+<li><a href="#S223">?PR?_CYDMACHSETEXTENDEDADDRESS?CYDMAC</a></li>
+</ul>
+
+<p><br><b>Called from:</b></p>
+<ul>
+<li><a href="#S77">?PR?DMATXINIT?PCM3060</a></li>
+</ul>
+
+<h2><a name="S197"></a>?PR?EEPROM_START?EEPROM (C:008BE8H - C:008BE7H)</h2>
+<p><br><b>Maximum Stack:</b> Top=6 Bytes (<a href="#S59">?PR?SETTINGS_INIT?SETTINGS01</a>)<p>
+<p><br><b>Called from:</b></p>
+<ul>
+<li><a href="#S59">?PR?SETTINGS_INIT?SETTINGS01</a></li>
+</ul>
+
+<h2><a name="S198"></a>?PR?_EEPROM_STARTWRITE?EEPROM (C:008D38H - C:008DECH)</h2>
+<p><br><b>Maximum Stack:</b> Bottom=4 Bytes (<a href="#S347">?PR?CYSPCSTART?CYSPC</a>) Top=6 Bytes (<a href="#S61">?PR?SET_PPM?SETTINGS01</a>)<p>
+<p><br><b>Calls to:</b></p>
+<ul>
+<li><a href="#S350">?PR?_CYSPCLOADROW?CYSPC</a></li>
+<li><a href="#S352">?PR?_CYSPCWRITEROW?CYSPC</a></li>
+<li><a href="#S355">?PR?CYSPCLOCK?CYSPC</a></li>
+<li><a href="#S347">?PR?CYSPCSTART?CYSPC</a></li>
+</ul>
+
+<p><br><b>Called from:</b></p>
+<ul>
+<li><a href="#S61">?PR?SET_PPM?SETTINGS01</a></li>
+</ul>
+
+<h2><a name="S200"></a>?PR?EEPROM_QUERY?EEPROM (C:008E1BH - C:008E53H)</h2>
+<p><br><b>Maximum Stack:</b> Bottom=4 Bytes (<a href="#S347">?PR?CYSPCSTART?CYSPC</a>) Top=6 Bytes (<a href="#S61">?PR?SET_PPM?SETTINGS01</a>)<p>
+<p><br><b>Calls to:</b></p>
+<ul>
+<li><a href="#S347">?PR?CYSPCSTART?CYSPC</a></li>
+<li><a href="#S357">?PR?CYSPCUNLOCK?CYSPC</a></li>
+</ul>
+
+<p><br><b>Called from:</b></p>
+<ul>
+<li><a href="#S61">?PR?SET_PPM?SETTINGS01</a></li>
+</ul>
+
+<h2><a name="S202"></a>?PR?_TXI2S_ZERO_DMAINITIALIZE?TXI2S_ZERO_DMA (C:006E9EH - C:006EE4H)</h2>
+<p><br><b>Maximum Stack:</b> Bottom=4 Bytes (<a href="#S223">?PR?_CYDMACHSETEXTENDEDADDRESS?CYDMAC</a>) Top=8 Bytes (<a href="#S77">?PR?DMATXINIT?PCM3060</a>)<p>
+<p><br><b>Calls to:</b></p>
+<ul>
+<li><a href="#S222">?PR?_CYDMACHPRIORITY?CYDMAC</a></li>
+<li><a href="#S227">?PR?_CYDMACHSETCONFIGURATION?CYDMAC</a></li>
+<li><a href="#S223">?PR?_CYDMACHSETEXTENDEDADDRESS?CYDMAC</a></li>
+</ul>
+
+<p><br><b>Called from:</b></p>
+<ul>
+<li><a href="#S77">?PR?DMATXINIT?PCM3060</a></li>
+</ul>
+
+<h2><a name="S205"></a>?PR?_P_DMA_DMAINITIALIZE?P_DMA_DMA (C:006C0DH - C:006C50H)</h2>
+<p><br><b>Maximum Stack:</b> Bottom=4 Bytes (<a href="#S223">?PR?_CYDMACHSETEXTENDEDADDRESS?CYDMAC</a>) Top=6 Bytes (<a href="#S25">?PR?SYNC_START?SYNC</a>)<p>
+<p><br><b>Calls to:</b></p>
+<ul>
+<li><a href="#S222">?PR?_CYDMACHPRIORITY?CYDMAC</a></li>
+<li><a href="#S227">?PR?_CYDMACHSETCONFIGURATION?CYDMAC</a></li>
+<li><a href="#S223">?PR?_CYDMACHSETEXTENDEDADDRESS?CYDMAC</a></li>
+</ul>
+
+<p><br><b>Called from:</b></p>
+<ul>
+<li><a href="#S25">?PR?SYNC_START?SYNC</a></li>
+</ul>
+
+<h2><a name="S208"></a>?PR?_FRAC_CLK_SETDIVIDERREGISTER?FRAC_CLK (C:0072C7H - C:0073F2H)</h2>
+<p><br><b>Maximum Stack:</b> Bottom=2 Bytes (<a href="#S211">?PR?FRAC_CLK_GETSOURCEREGISTER?FRAC_CLK</a>) Top=4 Bytes (<a href="#S26">?PR?SYNC_MAIN?SYNC</a>)<p>
+<p><br><b>Calls to:</b></p>
+<ul>
+<li><a href="#S278">?PR?CYWRITE16?CYMEM</a></li>
+<li><a href="#S210">?PR?FRAC_CLK_GETDIVIDERREGISTER?FRAC_CLK</a></li>
+<li><a href="#S211">?PR?FRAC_CLK_GETSOURCEREGISTER?FRAC_CLK</a></li>
+</ul>
+
+<p><br><b>Called from:</b></p>
+<ul>
+<li><a href="#S26">?PR?SYNC_MAIN?SYNC</a></li>
+</ul>
+
+<h2><a name="S210"></a>?PR?FRAC_CLK_GETDIVIDERREGISTER?FRAC_CLK (C:0073FBH - C:007403H)</h2>
+<p><br><b>Maximum Stack:</b> Top=6 Bytes (<a href="#S208">?PR?_FRAC_CLK_SETDIVIDERREGISTER?FRAC_CLK</a>)<p>
+<p><br><b>Calls to:</b></p>
+<ul>
+<li><a href="#S277">?PR?CYREAD16?CYMEM</a></li>
+</ul>
+
+<p><br><b>Called from:</b></p>
+<ul>
+<li><a href="#S208">?PR?_FRAC_CLK_SETDIVIDERREGISTER?FRAC_CLK</a></li>
+<li><a href="#S0">?PR?_FRAC_CLK_SETSOURCEREGISTER?FRAC_CLK</a></li>
+</ul>
+
+<h2><a name="S211"></a>?PR?FRAC_CLK_GETSOURCEREGISTER?FRAC_CLK (C:0073F3H - C:0073FAH)</h2>
+<p><br><b>Maximum Stack:</b> Top=6 Bytes (<a href="#S208">?PR?_FRAC_CLK_SETDIVIDERREGISTER?FRAC_CLK</a>)<p>
+<p><br><b>Called from:</b></p>
+<ul>
+<li><a href="#S208">?PR?_FRAC_CLK_SETDIVIDERREGISTER?FRAC_CLK</a></li>
+<li><a href="#S0">?PR?_FRAC_CLK_SETSOURCEREGISTER?FRAC_CLK</a></li>
+</ul>
+
+<h2><a name="S212"></a>?PR?BOOTLOADABLE_LOAD?BOOTLOADABLE (C:00B8FAH - C:00B8FFH)</h2>
+<p><br><b>Maximum Stack:</b> Top=2 Bytes (<a href="#S4">?PR?MAIN?MAIN</a>)<p>
+<p><br><b>Called from:</b></p>
+<ul>
+<li><a href="#S4">?PR?MAIN?MAIN</a></li>
+</ul>
+
+<h2><a name="S213"></a>?PR?_BAND_CONTROL_WRITE?BAND_CONTROL (C:00958CH - C:009591H)</h2>
+<p><br><b>Maximum Stack:</b> Top=4 Bytes (<a href="#S1">?PR?MAIN_INIT?MAIN</a>)<p>
+<p><br><b>Called from:</b></p>
+<ul>
+<li><a href="#S66">?PR?BAND_MAIN?BAND</a></li>
+<li><a href="#S1">?PR?MAIN_INIT?MAIN</a></li>
+</ul>
+
+<h2><a name="S214"></a>?PR?DIETEMP_1_START?DIETEMP_1 (C:008CEEH - C:008D18H)</h2>
+<p><br><b>Maximum Stack:</b> Bottom=4 Bytes (<a href="#S347">?PR?CYSPCSTART?CYSPC</a>) Top=4 Bytes (<a href="#S90">?PR?CHECK_TEMPERATURE?TEMPERATURE</a>)<p>
+<p><br><b>Calls to:</b></p>
+<ul>
+<li><a href="#S354">?PR?_CYSPCGETTEMP?CYSPC</a></li>
+<li><a href="#S355">?PR?CYSPCLOCK?CYSPC</a></li>
+<li><a href="#S347">?PR?CYSPCSTART?CYSPC</a></li>
+<li><a href="#S357">?PR?CYSPCUNLOCK?CYSPC</a></li>
+</ul>
+
+<p><br><b>Called from:</b></p>
+<ul>
+<li><a href="#S0">?PR?_DIETEMP_1_GETTEMPT?DIETEMP_1</a></li>
+<li><a href="#S90">?PR?CHECK_TEMPERATURE?TEMPERATURE</a></li>
+</ul>
+
+<h2><a name="S216"></a>?PR?_DIETEMP_1_QUERY?DIETEMP_1 (C:008E54H - C:008F0EH)</h2>
+<p><br><b>Maximum Stack:</b> Bottom=4 Bytes (<a href="#S357">?PR?CYSPCUNLOCK?CYSPC</a>) Top=4 Bytes (<a href="#S90">?PR?CHECK_TEMPERATURE?TEMPERATURE</a>)<p>
+<p><br><b>Calls to:</b></p>
+<ul>
+<li><a href="#S365">?C?LIB_CODE</a></li>
+<li><a href="#S268">?PR?CYDELAYUS?CYBOOTASMKEIL</a></li>
+<li><a href="#S357">?PR?CYSPCUNLOCK?CYSPC</a></li>
+</ul>
+
+<p><br><b>Called from:</b></p>
+<ul>
+<li><a href="#S0">?PR?_DIETEMP_1_GETTEMPT?DIETEMP_1</a></li>
+<li><a href="#S90">?PR?CHECK_TEMPERATURE?TEMPERATURE</a></li>
+</ul>
+
+<h2><a name="S0"></a>?PR?_DIETEMP_1_GETTEMPT?DIETEMP_1 (I:000000H - I:000078H)</h2>
+<p><br><b>Maximum Stack:</b> Bottom=6 Bytes (<a href="#S214">?PR?DIETEMP_1_START?DIETEMP_1</a>) Top=2 Bytes (<a href="#S0">?PR?_DIETEMP_1_GETTEMP?DIETEMP_1</a>)<p>
+<p><br><b>Calls to:</b></p>
+<ul>
+<li><a href="#S216">?PR?_DIETEMP_1_QUERY?DIETEMP_1</a></li>
+<li><a href="#S268">?PR?CYDELAYUS?CYBOOTASMKEIL</a></li>
+<li><a href="#S214">?PR?DIETEMP_1_START?DIETEMP_1</a></li>
+</ul>
+
+<p><br><b>Called from:</b></p>
+<ul>
+<li><a href="#S0">?PR?_DIETEMP_1_GETTEMP?DIETEMP_1</a></li>
+</ul>
+
+<h2><a name="S219"></a>?PR?_CYDMACHENABLE?CYDMAC (C:0065C3H - C:00660DH)</h2>
+<p><br><b>Maximum Stack:</b> Top=6 Bytes (<a href="#S177">?PR?_FRACN_START2?FRACN_API</a>)<p>
+<p><br><b>Called from:</b></p>
+<ul>
+<li><a href="#S12">?PR?_AUDIO_USB_LOADINEP?AUDIO</a></li>
+<li><a href="#S14">?PR?_AUDIO_USB_READOUTEP?AUDIO</a></li>
+<li><a href="#S177">?PR?_FRACN_START2?FRACN_API</a></li>
+<li><a href="#S0">?PR?_USBFS_LOADINEP?USBFS</a></li>
+<li><a href="#S0">?PR?_USBFS_READOUTEP?USBFS</a></li>
+<li><a href="#S75">?PR?DMARXSTART?PCM3060</a></li>
+<li><a href="#S79">?PR?DMATXSTART?PCM3060</a></li>
+</ul>
+
+<h2><a name="S220"></a>?PR?_CYDMACHDISABLE?CYDMAC (C:005FC5H - C:005FF7H)</h2>
+<p><br><b>Maximum Stack:</b> Top=10 Bytes (<a href="#S125">?PR?_USBFS_STOP_DMA?USBFS</a>)<p>
+<p><br><b>Called from:</b></p>
+<ul>
+<li><a href="#S12">?PR?_AUDIO_USB_LOADINEP?AUDIO</a></li>
+<li><a href="#S14">?PR?_AUDIO_USB_READOUTEP?AUDIO</a></li>
+<li><a href="#S0">?PR?_USBFS_LOADINEP?USBFS</a></li>
+<li><a href="#S0">?PR?_USBFS_READOUTEP?USBFS</a></li>
+<li><a href="#S125">?PR?_USBFS_STOP_DMA?USBFS</a></li>
+<li><a href="#S0">?PR?P_DMA_DMARELEASE?P_DMA_DMA</a></li>
+<li><a href="#S87">?PR?PCM3060_STOP?PCM3060</a></li>
+<li><a href="#S0">?PR?RXI2S_BUFF_DMARELEASE?RXI2S_BUFF_DMA</a></li>
+<li><a href="#S0">?PR?RXI2S_STAGE_DMARELEASE?RXI2S_STAGE_DMA</a></li>
+<li><a href="#S0">?PR?TXI2S_BUFF_DMARELEASE?TXI2S_BUFF_DMA</a></li>
+<li><a href="#S0">?PR?TXI2S_STAGE_DMARELEASE?TXI2S_STAGE_DMA</a></li>
+<li><a href="#S0">?PR?TXI2S_ZERO_DMARELEASE?TXI2S_ZERO_DMA</a></li>
+<li><a href="#S0">?PR?USBFS_EP2_DMARELEASE?USBFS_EP2_DMA</a></li>
+<li><a href="#S0">?PR?USBFS_EP3_DMARELEASE?USBFS_EP3_DMA</a></li>
+</ul>
+
+<h2><a name="S221"></a>?PR?_CYDMACLEARPENDINGDRQ?CYDMAC (C:006B79H - C:006BABH)</h2>
+<p><br><b>Maximum Stack:</b> Top=6 Bytes (<a href="#S14">?PR?_AUDIO_USB_READOUTEP?AUDIO</a>)<p>
+<p><br><b>Called from:</b></p>
+<ul>
+<li><a href="#S12">?PR?_AUDIO_USB_LOADINEP?AUDIO</a></li>
+<li><a href="#S14">?PR?_AUDIO_USB_READOUTEP?AUDIO</a></li>
+<li><a href="#S0">?PR?_USBFS_LOADINEP?USBFS</a></li>
+<li><a href="#S0">?PR?_USBFS_READOUTEP?USBFS</a></li>
+<li><a href="#S75">?PR?DMARXSTART?PCM3060</a></li>
+<li><a href="#S79">?PR?DMATXSTART?PCM3060</a></li>
+</ul>
+
+<h2><a name="S222"></a>?PR?_CYDMACHPRIORITY?CYDMAC (C:006C98H - C:006CD7H)</h2>
+<p><br><b>Maximum Stack:</b> Top=10 Bytes (<a href="#S183">?PR?_RXI2S_STAGE_DMAINITIALIZE?RXI2S_STAGE_DMA</a>)<p>
+<p><br><b>Called from:</b></p>
+<ul>
+<li><a href="#S205">?PR?_P_DMA_DMAINITIALIZE?P_DMA_DMA</a></li>
+<li><a href="#S180">?PR?_RXI2S_BUFF_DMAINITIALIZE?RXI2S_BUFF_DMA</a></li>
+<li><a href="#S183">?PR?_RXI2S_STAGE_DMAINITIALIZE?RXI2S_STAGE_DMA</a></li>
+<li><a href="#S190">?PR?_TXI2S_BUFF_DMAINITIALIZE?TXI2S_BUFF_DMA</a></li>
+<li><a href="#S193">?PR?_TXI2S_STAGE_DMAINITIALIZE?TXI2S_STAGE_DMA</a></li>
+<li><a href="#S202">?PR?_TXI2S_ZERO_DMAINITIALIZE?TXI2S_ZERO_DMA</a></li>
+<li><a href="#S325">?PR?_USBFS_EP2_DMAINITIALIZE?USBFS_EP2_DMA</a></li>
+<li><a href="#S320">?PR?_USBFS_EP3_DMAINITIALIZE?USBFS_EP3_DMA</a></li>
+</ul>
+
+<h2><a name="S223"></a>?PR?_CYDMACHSETEXTENDEDADDRESS?CYDMAC (C:006D66H - C:006DDDH)</h2>
+<p><br><b>Maximum Stack:</b> Bottom=2 Bytes (<a href="#S278">?PR?CYWRITE16?CYMEM</a>) Top=10 Bytes (<a href="#S183">?PR?_RXI2S_STAGE_DMAINITIALIZE?RXI2S_STAGE_DMA</a>)<p>
+<p><br><b>Calls to:</b></p>
+<ul>
+<li><a href="#S278">?PR?CYWRITE16?CYMEM</a></li>
+</ul>
+
+<p><br><b>Called from:</b></p>
+<ul>
+<li><a href="#S205">?PR?_P_DMA_DMAINITIALIZE?P_DMA_DMA</a></li>
+<li><a href="#S180">?PR?_RXI2S_BUFF_DMAINITIALIZE?RXI2S_BUFF_DMA</a></li>
+<li><a href="#S183">?PR?_RXI2S_STAGE_DMAINITIALIZE?RXI2S_STAGE_DMA</a></li>
+<li><a href="#S190">?PR?_TXI2S_BUFF_DMAINITIALIZE?TXI2S_BUFF_DMA</a></li>
+<li><a href="#S193">?PR?_TXI2S_STAGE_DMAINITIALIZE?TXI2S_STAGE_DMA</a></li>
+<li><a href="#S202">?PR?_TXI2S_ZERO_DMAINITIALIZE?TXI2S_ZERO_DMA</a></li>
+<li><a href="#S325">?PR?_USBFS_EP2_DMAINITIALIZE?USBFS_EP2_DMA</a></li>
+<li><a href="#S320">?PR?_USBFS_EP3_DMAINITIALIZE?USBFS_EP3_DMA</a></li>
+</ul>
+
+<h2><a name="S225"></a>?PR?_CYDMACHSETINITIALTD?CYDMAC (C:0067E0H - C:0067FDH)</h2>
+<p><br><b>Maximum Stack:</b> Top=8 Bytes (<a href="#S177">?PR?_FRACN_START2?FRACN_API</a>)<p>
+<p><br><b>Called from:</b></p>
+<ul>
+<li><a href="#S12">?PR?_AUDIO_USB_LOADINEP?AUDIO</a></li>
+<li><a href="#S14">?PR?_AUDIO_USB_READOUTEP?AUDIO</a></li>
+<li><a href="#S177">?PR?_FRACN_START2?FRACN_API</a></li>
+<li><a href="#S0">?PR?_USBFS_LOADINEP?USBFS</a></li>
+<li><a href="#S0">?PR?_USBFS_READOUTEP?USBFS</a></li>
+<li><a href="#S75">?PR?DMARXSTART?PCM3060</a></li>
+<li><a href="#S79">?PR?DMATXSTART?PCM3060</a></li>
+</ul>
+
+<h2><a name="S226"></a>?PR?_CYDMACHSETREQUEST?CYDMAC (C:00B93EH - C:00B962H)</h2>
+<p><br><b>Maximum Stack:</b> Top=6 Bytes (<a href="#S79">?PR?DMATXSTART?PCM3060</a>)<p>
+<p><br><b>Called from:</b></p>
+<ul>
+<li><a href="#S79">?PR?DMATXSTART?PCM3060</a></li>
+</ul>
+
+<h2><a name="S227"></a>?PR?_CYDMACHSETCONFIGURATION?CYDMAC (C:006E25H - C:006E9DH)</h2>
+<p><br><b>Maximum Stack:</b> Top=10 Bytes (<a href="#S183">?PR?_RXI2S_STAGE_DMAINITIALIZE?RXI2S_STAGE_DMA</a>)<p>
+<p><br><b>Called from:</b></p>
+<ul>
+<li><a href="#S205">?PR?_P_DMA_DMAINITIALIZE?P_DMA_DMA</a></li>
+<li><a href="#S180">?PR?_RXI2S_BUFF_DMAINITIALIZE?RXI2S_BUFF_DMA</a></li>
+<li><a href="#S183">?PR?_RXI2S_STAGE_DMAINITIALIZE?RXI2S_STAGE_DMA</a></li>
+<li><a href="#S190">?PR?_TXI2S_BUFF_DMAINITIALIZE?TXI2S_BUFF_DMA</a></li>
+<li><a href="#S193">?PR?_TXI2S_STAGE_DMAINITIALIZE?TXI2S_STAGE_DMA</a></li>
+<li><a href="#S202">?PR?_TXI2S_ZERO_DMAINITIALIZE?TXI2S_ZERO_DMA</a></li>
+<li><a href="#S325">?PR?_USBFS_EP2_DMAINITIALIZE?USBFS_EP2_DMA</a></li>
+<li><a href="#S320">?PR?_USBFS_EP3_DMAINITIALIZE?USBFS_EP3_DMA</a></li>
+</ul>
+
+<h2><a name="S229"></a>?PR?CYDMATDALLOCATE?CYDMAC (C:0069E3H - C:006A20H)</h2>
+<p><br><b>Maximum Stack:</b> Bottom=2 Bytes (<a href="#S269">?PR?CYENTERCRITICALSECTION?CYBOOTASMKEIL</a>) Top=8 Bytes (<a href="#S177">?PR?_FRACN_START2?FRACN_API</a>)<p>
+<p><br><b>Calls to:</b></p>
+<ul>
+<li><a href="#S269">?PR?CYENTERCRITICALSECTION?CYBOOTASMKEIL</a></li>
+<li><a href="#S270">?PR?CYEXITCRITICALSECTION?CYBOOTASMKEIL</a></li>
+</ul>
+
+<p><br><b>Called from:</b></p>
+<ul>
+<li><a href="#S177">?PR?_FRACN_START2?FRACN_API</a></li>
+<li><a href="#S123">?PR?_USBFS_INITEP_DMA?USBFS</a></li>
+<li><a href="#S73">?PR?DMARXINIT?PCM3060</a></li>
+<li><a href="#S77">?PR?DMATXINIT?PCM3060</a></li>
+</ul>
+
+<h2><a name="S231"></a>?PR?_CYDMATDFREE?CYDMAC (C:00AF69H - C:00AFA6H)</h2>
+<p><br><b>Maximum Stack:</b> Bottom=2 Bytes (<a href="#S269">?PR?CYENTERCRITICALSECTION?CYBOOTASMKEIL</a>) Top=10 Bytes (<a href="#S125">?PR?_USBFS_STOP_DMA?USBFS</a>)<p>
+<p><br><b>Calls to:</b></p>
+<ul>
+<li><a href="#S269">?PR?CYENTERCRITICALSECTION?CYBOOTASMKEIL</a></li>
+<li><a href="#S270">?PR?CYEXITCRITICALSECTION?CYBOOTASMKEIL</a></li>
+</ul>
+
+<p><br><b>Called from:</b></p>
+<ul>
+<li><a href="#S125">?PR?_USBFS_STOP_DMA?USBFS</a></li>
+</ul>
+
+<h2><a name="S233"></a>?PR?_CYDMATDSETCONFIGURATION?CYDMAC (C:00660EH - C:006694H)</h2>
+<p><br><b>Maximum Stack:</b> Bottom=2 Bytes (<a href="#S278">?PR?CYWRITE16?CYMEM</a>) Top=8 Bytes (<a href="#S177">?PR?_FRACN_START2?FRACN_API</a>)<p>
+<p><br><b>Calls to:</b></p>
+<ul>
+<li><a href="#S278">?PR?CYWRITE16?CYMEM</a></li>
+</ul>
+
+<p><br><b>Called from:</b></p>
+<ul>
+<li><a href="#S12">?PR?_AUDIO_USB_LOADINEP?AUDIO</a></li>
+<li><a href="#S14">?PR?_AUDIO_USB_READOUTEP?AUDIO</a></li>
+<li><a href="#S177">?PR?_FRACN_START2?FRACN_API</a></li>
+<li><a href="#S0">?PR?_USBFS_LOADINEP?USBFS</a></li>
+<li><a href="#S0">?PR?_USBFS_READOUTEP?USBFS</a></li>
+<li><a href="#S75">?PR?DMARXSTART?PCM3060</a></li>
+<li><a href="#S79">?PR?DMATXSTART?PCM3060</a></li>
+</ul>
+
+<h2><a name="S235"></a>?PR?_CYDMATDSETADDRESS?CYDMAC (C:006320H - C:006397H)</h2>
+<p><br><b>Maximum Stack:</b> Bottom=2 Bytes (<a href="#S278">?PR?CYWRITE16?CYMEM</a>) Top=8 Bytes (<a href="#S177">?PR?_FRACN_START2?FRACN_API</a>)<p>
+<p><br><b>Calls to:</b></p>
+<ul>
+<li><a href="#S278">?PR?CYWRITE16?CYMEM</a></li>
+</ul>
+
+<p><br><b>Called from:</b></p>
+<ul>
+<li><a href="#S12">?PR?_AUDIO_USB_LOADINEP?AUDIO</a></li>
+<li><a href="#S14">?PR?_AUDIO_USB_READOUTEP?AUDIO</a></li>
+<li><a href="#S177">?PR?_FRACN_START2?FRACN_API</a></li>
+<li><a href="#S0">?PR?_USBFS_LOADINEP?USBFS</a></li>
+<li><a href="#S0">?PR?_USBFS_READOUTEP?USBFS</a></li>
+<li><a href="#S75">?PR?DMARXSTART?PCM3060</a></li>
+<li><a href="#S79">?PR?DMATXSTART?PCM3060</a></li>
+</ul>
+
+<h2><a name="S0"></a>?PR?_CYPLL_OUT_START?CYLIB (I:000000H - I:00006DH)</h2>
+<p><br><b>Maximum Stack:</b> Bottom=4 Bytes (<a href="#S0">?PR?_CYPMFTWSETINTERVAL?CYPM</a>) Top=2 Bytes (<a href="#S0">?PR?CYPMRESTORECLOCKS?CYPM</a>)<p>
+<p><br><b>Calls to:</b></p>
+<ul>
+<li><a href="#S0">?PR?_CYPMFTWSETINTERVAL?CYPM</a></li>
+<li><a href="#S0">?PR?_CYPMREADSTATUS?CYPM</a></li>
+<li><a href="#S0">?PR?CYILO_STOP100K?CYLIB</a></li>
+</ul>
+
+<p><br><b>Called from:</b></p>
+<ul>
+<li><a href="#S0">?PR?CYPMRESTORECLOCKS?CYPM</a></li>
+</ul>
+
+<h2><a name="S0"></a>?PR?CYPLL_OUT_STOP?CYLIB (I:000000H - I:000007H)</h2>
+<p><br><b>Maximum Stack:</b> Top=2 Bytes (<a href="#S0">?PR?CYPMSAVECLOCKS?CYPM</a>)<p>
+<p><br><b>Called from:</b></p>
+<ul>
+<li><a href="#S0">?PR?CYPMSAVECLOCKS?CYPM</a></li>
+</ul>
+
+<h2><a name="S0"></a>?PR?_CYIMO_START?CYLIB (I:000000H - I:000052H)</h2>
+<p><br><b>Maximum Stack:</b> Bottom=4 Bytes (<a href="#S0">?PR?_CYPMFTWSETINTERVAL?CYPM</a>) Top=2 Bytes (<a href="#S0">?PR?CYPMSAVECLOCKS?CYPM</a>)<p>
+<p><br><b>Calls to:</b></p>
+<ul>
+<li><a href="#S0">?PR?_CYPMFTWSETINTERVAL?CYPM</a></li>
+<li><a href="#S0">?PR?_CYPMREADSTATUS?CYPM</a></li>
+<li><a href="#S0">?PR?CYILO_STOP100K?CYLIB</a></li>
+</ul>
+
+<p><br><b>Called from:</b></p>
+<ul>
+<li><a href="#S0">?PR?CYPMRESTORECLOCKS?CYPM</a></li>
+<li><a href="#S0">?PR?CYPMSAVECLOCKS?CYPM</a></li>
+</ul>
+
+<h2><a name="S0"></a>?PR?CYIMO_STOP?CYLIB (I:000000H - I:00000EH)</h2>
+<p><br><b>Maximum Stack:</b> Top=2 Bytes (<a href="#S0">?PR?CYPMRESTORECLOCKS?CYPM</a>)<p>
+<p><br><b>Called from:</b></p>
+<ul>
+<li><a href="#S0">?PR?CYPMRESTORECLOCKS?CYPM</a></li>
+</ul>
+
+<h2><a name="S0"></a>?PR?CYUSB_POWERONCHECK?CYLIB (I:000000H - I:000026H)</h2>
+<p><br><b>Maximum Stack:</b> Top=6 Bytes (<a href="#S0">?PR?_CYIMO_SETTRIMVALUE?CYLIB</a>)<p>
+<p><br><b>Called from:</b></p>
+<ul>
+<li><a href="#S0">?PR?_CYIMO_SETTRIMVALUE?CYLIB</a></li>
+</ul>
+
+<h2><a name="S0"></a>?PR?_CYIMO_SETTRIMVALUE?CYLIB (I:000000H - I:0000BBH)</h2>
+<p><br><b>Maximum Stack:</b> Bottom=4 Bytes (<a href="#S239">?PR?_?CYHALT?CYLIB</a>) Top=4 Bytes (<a href="#S0">?PR?_CYIMO_SETFREQ?CYLIB</a>)<p>
+<p><br><b>Calls to:</b></p>
+<ul>
+<li><a href="#S239">?PR?_?CYHALT?CYLIB</a></li>
+<li><a href="#S275">?PR?CYREAD8?CYMEM</a></li>
+<li><a href="#S0">?PR?CYUSB_POWERONCHECK?CYLIB</a></li>
+</ul>
+
+<p><br><b>Called from:</b></p>
+<ul>
+<li><a href="#S0">?PR?_CYIMO_SETFREQ?CYLIB</a></li>
+</ul>
+
+<h2><a name="S0"></a>?PR?_CYIMO_SETFREQ?CYLIB (I:000000H - I:00012AH)</h2>
+<p><br><b>Maximum Stack:</b> Bottom=6 Bytes (<a href="#S0">?PR?_CYIMO_SETTRIMVALUE?CYLIB</a>) Top=2 Bytes (<a href="#S0">?PR?CYPMSAVECLOCKS?CYPM</a>)<p>
+<p><br><b>Calls to:</b></p>
+<ul>
+<li><a href="#S239">?PR?_?CYHALT?CYLIB</a></li>
+<li><a href="#S0">?PR?_CYIMO_SETTRIMVALUE?CYLIB</a></li>
+<li><a href="#S0">?PR?CYIMO_DISABLEDOUBLER?CYLIB</a></li>
+<li><a href="#S0">?PR?CYIMO_ENABLEDOUBLER?CYLIB</a></li>
+</ul>
+
+<p><br><b>Called from:</b></p>
+<ul>
+<li><a href="#S0">?PR?CYPMRESTORECLOCKS?CYPM</a></li>
+<li><a href="#S0">?PR?CYPMSAVECLOCKS?CYPM</a></li>
+</ul>
+
+<h2><a name="S0"></a>?PR?_CYIMO_SETSOURCE?CYLIB (I:000000H - I:000033H)</h2>
+<p><br><b>Maximum Stack:</b> Bottom=2 Bytes (<a href="#S239">?PR?_?CYHALT?CYLIB</a>) Top=2 Bytes (<a href="#S0">?PR?CYPMSAVECLOCKS?CYPM</a>)<p>
+<p><br><b>Calls to:</b></p>
+<ul>
+<li><a href="#S239">?PR?_?CYHALT?CYLIB</a></li>
+</ul>
+
+<p><br><b>Called from:</b></p>
+<ul>
+<li><a href="#S0">?PR?CYPMRESTORECLOCKS?CYPM</a></li>
+<li><a href="#S0">?PR?CYPMSAVECLOCKS?CYPM</a></li>
+</ul>
+
+<h2><a name="S0"></a>?PR?CYIMO_ENABLEDOUBLER?CYLIB (I:000000H - I:000007H)</h2>
+<p><br><b>Maximum Stack:</b> Top=4 Bytes (<a href="#S0">?PR?_CYIMO_SETFREQ?CYLIB</a>)<p>
+<p><br><b>Called from:</b></p>
+<ul>
+<li><a href="#S0">?PR?_CYIMO_SETFREQ?CYLIB</a></li>
+<li><a href="#S0">?PR?CYPMRESTORECLOCKS?CYPM</a></li>
+</ul>
+
+<h2><a name="S0"></a>?PR?CYIMO_DISABLEDOUBLER?CYLIB (I:000000H - I:000007H)</h2>
+<p><br><b>Maximum Stack:</b> Top=4 Bytes (<a href="#S0">?PR?_CYIMO_SETFREQ?CYLIB</a>)<p>
+<p><br><b>Called from:</b></p>
+<ul>
+<li><a href="#S0">?PR?_CYIMO_SETFREQ?CYLIB</a></li>
+<li><a href="#S0">?PR?CYPMSAVECLOCKS?CYPM</a></li>
+</ul>
+
+<h2><a name="S0"></a>?PR?_CYMASTERCLK_SETSOURCE?CYLIB (I:000000H - I:00000CH)</h2>
+<p><br><b>Maximum Stack:</b> Top=2 Bytes (<a href="#S0">?PR?CYPMSAVECLOCKS?CYPM</a>)<p>
+<p><br><b>Called from:</b></p>
+<ul>
+<li><a href="#S0">?PR?CYPMRESTORECLOCKS?CYPM</a></li>
+<li><a href="#S0">?PR?CYPMSAVECLOCKS?CYPM</a></li>
+</ul>
+
+<h2><a name="S0"></a>?PR?_CYMASTERCLK_SETDIVIDER?CYLIB (I:000000H - I:000005H)</h2>
+<p><br><b>Maximum Stack:</b> Top=4 Bytes (<a href="#S0">?PR?_CYBUSCLK_SETDIVIDER?CYLIB</a>)<p>
+<p><br><b>Called from:</b></p>
+<ul>
+<li><a href="#S0">?PR?_CYBUSCLK_SETDIVIDER?CYLIB</a></li>
+<li><a href="#S0">?PR?CYPMRESTORECLOCKS?CYPM</a></li>
+<li><a href="#S0">?PR?CYPMSAVECLOCKS?CYPM</a></li>
+</ul>
+
+<h2><a name="S0"></a>?PR?_CYBUSCLK_INTERNAL_SETDIVIDER?CYLIB (I:000000H - I:000022H)</h2>
+<p><br><b>Maximum Stack:</b> Top=4 Bytes (<a href="#S0">?PR?_CYBUSCLK_SETDIVIDER?CYLIB</a>)<p>
+<p><br><b>Called from:</b></p>
+<ul>
+<li><a href="#S0">?PR?_CYBUSCLK_SETDIVIDER?CYLIB</a></li>
+</ul>
+
+<h2><a name="S0"></a>?PR?_CYBUSCLK_SETDIVIDER?CYLIB (I:000000H - I:000078H)</h2>
+<p><br><b>Maximum Stack:</b> Bottom=2 Bytes (<a href="#S269">?PR?CYENTERCRITICALSECTION?CYBOOTASMKEIL</a>) Top=2 Bytes (<a href="#S0">?PR?CYPMSAVECLOCKS?CYPM</a>)<p>
+<p><br><b>Calls to:</b></p>
+<ul>
+<li><a href="#S0">?PR?_CYBUSCLK_INTERNAL_SETDIVIDER?CYLIB</a></li>
+<li><a href="#S0">?PR?_CYMASTERCLK_SETDIVIDER?CYLIB</a></li>
+<li><a href="#S269">?PR?CYENTERCRITICALSECTION?CYBOOTASMKEIL</a></li>
+<li><a href="#S270">?PR?CYEXITCRITICALSECTION?CYBOOTASMKEIL</a></li>
+</ul>
+
+<p><br><b>Called from:</b></p>
+<ul>
+<li><a href="#S0">?PR?CYPMRESTORECLOCKS?CYPM</a></li>
+<li><a href="#S0">?PR?CYPMSAVECLOCKS?CYPM</a></li>
+</ul>
+
+<h2><a name="S0"></a>?PR?CYILO_START1K?CYLIB (I:000000H - I:000007H)</h2>
+<p><br><b>Maximum Stack:</b> Top=4 Bytes (<a href="#S0">?PR?_CYPMCTWSETINTERVAL?CYPM</a>)<p>
+<p><br><b>Called from:</b></p>
+<ul>
+<li><a href="#S0">?PR?_CYPMCTWSETINTERVAL?CYPM</a></li>
+<li><a href="#S0">?PR?CYPMHIBRESTORE?CYPM</a></li>
+</ul>
+
+<h2><a name="S0"></a>?PR?CYILO_START100K?CYLIB (I:000000H - I:000007H)</h2>
+<p><br><b>Maximum Stack:</b> Top=6 Bytes (<a href="#S0">?PR?_CYPMFTWSETINTERVAL?CYPM</a>)<p>
+<p><br><b>Called from:</b></p>
+<ul>
+<li><a href="#S0">?PR?_CYPMFTWSETINTERVAL?CYPM</a></li>
+<li><a href="#S0">?PR?CYPMHIBRESTORE?CYPM</a></li>
+</ul>
+
+<h2><a name="S0"></a>?PR?CYILO_STOP100K?CYLIB (I:000000H - I:000007H)</h2>
+<p><br><b>Maximum Stack:</b> Top=4 Bytes (<a href="#S0">?PR?_CYIMO_START?CYLIB</a>)<p>
+<p><br><b>Called from:</b></p>
+<ul>
+<li><a href="#S0">?PR?_CYIMO_START?CYLIB</a></li>
+<li><a href="#S0">?PR?_CYPLL_OUT_START?CYLIB</a></li>
+<li><a href="#S0">?PR?_CYXTAL_START?CYLIB</a></li>
+</ul>
+
+<h2><a name="S0"></a>?PR?_CYILO_SETPOWERMODE?CYLIB (I:000000H - I:000028H)</h2>
+<p><br><b>Maximum Stack:</b> Top=4 Bytes (<a href="#S0">?PR?CYPMHIBSAVESET?CYPM</a>)<p>
+<p><br><b>Called from:</b></p>
+<ul>
+<li><a href="#S0">?PR?CYPMHIBRESTORE?CYPM</a></li>
+<li><a href="#S0">?PR?CYPMHIBSAVESET?CYPM</a></li>
+</ul>
+
+<h2><a name="S0"></a>?PR?CYXTAL_32KHZ_START?CYLIB (I:000000H - I:00005CH)</h2>
+<p><br><b>Maximum Stack:</b> Bottom=2 Bytes (<a href="#S0">?PR?CYXTAL_32KHZ_READSTATUS?CYLIB</a>) Top=4 Bytes (<a href="#S0">?PR?CYPMOPPSSET?CYPM</a>)<p>
+<p><br><b>Calls to:</b></p>
+<ul>
+<li><a href="#S0">?PR?_CYXTAL_32KHZ_SETPOWERMODE?CYLIB</a></li>
+<li><a href="#S268">?PR?CYDELAYUS?CYBOOTASMKEIL</a></li>
+<li><a href="#S0">?PR?CYXTAL_32KHZ_READSTATUS?CYLIB</a></li>
+</ul>
+
+<p><br><b>Called from:</b></p>
+<ul>
+<li><a href="#S0">?PR?CYPMOPPSSET?CYPM</a></li>
+</ul>
+
+<h2><a name="S0"></a>?PR?CYXTAL_32KHZ_READSTATUS?CYLIB (I:000000H - I:000007H)</h2>
+<p><br><b>Maximum Stack:</b> Top=6 Bytes (<a href="#S0">?PR?CYXTAL_32KHZ_START?CYLIB</a>)<p>
+<p><br><b>Called from:</b></p>
+<ul>
+<li><a href="#S0">?PR?CYXTAL_32KHZ_START?CYLIB</a></li>
+</ul>
+
+<h2><a name="S0"></a>?PR?_CYXTAL_32KHZ_SETPOWERMODE?CYLIB (I:000000H - I:000065H)</h2>
+<p><br><b>Maximum Stack:</b> Bottom=2 Bytes (<a href="#S268">?PR?CYDELAYUS?CYBOOTASMKEIL</a>) Top=4 Bytes (<a href="#S0">?PR?CYXTAL_32KHZ_START?CYLIB</a>)<p>
+<p><br><b>Calls to:</b></p>
+<ul>
+<li><a href="#S268">?PR?CYDELAYUS?CYBOOTASMKEIL</a></li>
+</ul>
+
+<p><br><b>Called from:</b></p>
+<ul>
+<li><a href="#S0">?PR?CYXTAL_32KHZ_START?CYLIB</a></li>
+</ul>
+
+<h2><a name="S0"></a>?PR?_CYXTAL_START?CYLIB (I:000000H - I:00009FH)</h2>
+<p><br><b>Maximum Stack:</b> Bottom=4 Bytes (<a href="#S0">?PR?_CYPMFTWSETINTERVAL?CYPM</a>) Top=2 Bytes (<a href="#S0">?PR?CYPMRESTORECLOCKS?CYPM</a>)<p>
+<p><br><b>Calls to:</b></p>
+<ul>
+<li><a href="#S0">?PR?_CYPMFTWSETINTERVAL?CYPM</a></li>
+<li><a href="#S0">?PR?_CYPMREADSTATUS?CYPM</a></li>
+<li><a href="#S0">?PR?CYILO_STOP100K?CYLIB</a></li>
+</ul>
+
+<p><br><b>Called from:</b></p>
+<ul>
+<li><a href="#S0">?PR?CYPMRESTORECLOCKS?CYPM</a></li>
+</ul>
+
+<h2><a name="S0"></a>?PR?CYXTAL_STOP?CYLIB (I:000000H - I:000007H)</h2>
+<p><br><b>Maximum Stack:</b> Top=2 Bytes (<a href="#S0">?PR?CYPMSAVECLOCKS?CYPM</a>)<p>
+<p><br><b>Called from:</b></p>
+<ul>
+<li><a href="#S0">?PR?CYPMSAVECLOCKS?CYPM</a></li>
+</ul>
+
+<h2><a name="S238"></a>?PR?CYXTAL_READSTATUS?CYLIB (C:00B963H - C:00B971H)</h2>
+<p><br><b>Maximum Stack:</b> Top=2 Bytes (<a href="#S4">?PR?MAIN?MAIN</a>)<p>
+<p><br><b>Called from:</b></p>
+<ul>
+<li><a href="#S4">?PR?MAIN?MAIN</a></li>
+</ul>
+
+<h2><a name="S239"></a>?PR?_?CYHALT?CYLIB (C:00AA67H - C:00AA7AH)</h2>
+<p><br><b>Maximum Stack:</b> Bottom=2 Bytes (<a href="#S365">?C?LIB_CODE</a>) Top=21 Bytes (<a href="#S317">?PR?I2C_DISPLAY_ISR?I2C_DISPLAY_INT</a>)<p>
+<p><br><b>Calls to:</b></p>
+<ul>
+<li><a href="#S365">?C?LIB_CODE</a></li>
+</ul>
+
+<p><br><b>Called from:</b></p>
+<ul>
+<li><a href="#S0">?PR?_CYFLASH_SETWAITCYCLES?CYFLASH</a></li>
+<li><a href="#S0">?PR?_CYIMO_SETFREQ?CYLIB</a></li>
+<li><a href="#S0">?PR?_CYIMO_SETSOURCE?CYLIB</a></li>
+<li><a href="#S0">?PR?_CYIMO_SETTRIMVALUE?CYLIB</a></li>
+<li><a href="#S0">?PR?_CYINTGETPRIORITY?CYLIB</a></li>
+<li><a href="#S0">?PR?_CYINTGETSTATE?CYLIB</a></li>
+<li><a href="#S0">?PR?_CYINTGETVECTOR?CYLIB</a></li>
+<li><a href="#S248">?PR?_CYINTSETPRIORITY?CYLIB</a></li>
+<li><a href="#S246">?PR?_CYINTSETVECTOR?CYLIB</a></li>
+<li><a href="#S0">?PR?_CYPLL_OUT_SETPQ?CYLIB</a></li>
+<li><a href="#S0">?PR?_CYPLL_OUT_SETSOURCE?CYLIB</a></li>
+<li><a href="#S0">?PR?_CYPMSLEEP?CYPM</a></li>
+<li><a href="#S0">?PR?CYPMSAVECLOCKS?CYPM</a></li>
+<li><a href="#S317">?PR?I2C_DISPLAY_ISR?I2C_DISPLAY_INT</a></li>
+</ul>
+
+<h2><a name="S241"></a>?PR?_?CYDELAY?CYLIB (C:005B3DH - C:005BC3H)</h2>
+<p><br><b>Maximum Stack:</b> Bottom=2 Bytes (<a href="#S365">?C?LIB_CODE</a>) Top=6 Bytes (<a href="#S59">?PR?SETTINGS_INIT?SETTINGS01</a>)<p>
+<p><br><b>Calls to:</b></p>
+<ul>
+<li><a href="#S365">?C?LIB_CODE</a></li>
+<li><a href="#S267">?PR?CYDELAYCYCLES?CYBOOTASMKEIL</a></li>
+</ul>
+
+<p><br><b>Called from:</b></p>
+<ul>
+<li><a href="#S0">?PR?_KEYER_WRITE?CW</a></li>
+<li><a href="#S1">?PR?MAIN_INIT?MAIN</a></li>
+<li><a href="#S59">?PR?SETTINGS_INIT?SETTINGS01</a></li>
+<li><a href="#S25">?PR?SYNC_START?SYNC</a></li>
+</ul>
+
+<h2><a name="S0"></a>?PR?_CYVDLVDIGITENABLE?CYLIB (I:000000H - I:000082H)</h2>
+<p><br><b>Maximum Stack:</b> Bottom=4 Bytes (<a href="#S0">?PR?_CYVDSTICKYSTATUS?CYLIB</a>) Top=6 Bytes (<a href="#S0">?PR?CYPMHVILVIRESTORE?CYPM</a>)<p>
+<p><br><b>Calls to:</b></p>
+<ul>
+<li><a href="#S365">?C?LIB_CODE</a></li>
+<li><a href="#S0">?PR?_CYVDSTICKYSTATUS?CYLIB</a></li>
+<li><a href="#S268">?PR?CYDELAYUS?CYBOOTASMKEIL</a></li>
+<li><a href="#S269">?PR?CYENTERCRITICALSECTION?CYBOOTASMKEIL</a></li>
+<li><a href="#S270">?PR?CYEXITCRITICALSECTION?CYBOOTASMKEIL</a></li>
+</ul>
+
+<p><br><b>Called from:</b></p>
+<ul>
+<li><a href="#S0">?PR?CYPMHVILVIRESTORE?CYPM</a></li>
+</ul>
+
+<h2><a name="S0"></a>?PR?_CYVDLVANALOGENABLE?CYLIB (I:000000H - I:000081H)</h2>
+<p><br><b>Maximum Stack:</b> Bottom=4 Bytes (<a href="#S0">?PR?_CYVDSTICKYSTATUS?CYLIB</a>) Top=6 Bytes (<a href="#S0">?PR?CYPMHVILVIRESTORE?CYPM</a>)<p>
+<p><br><b>Calls to:</b></p>
+<ul>
+<li><a href="#S365">?C?LIB_CODE</a></li>
+<li><a href="#S0">?PR?_CYVDSTICKYSTATUS?CYLIB</a></li>
+<li><a href="#S268">?PR?CYDELAYUS?CYBOOTASMKEIL</a></li>
+<li><a href="#S269">?PR?CYENTERCRITICALSECTION?CYBOOTASMKEIL</a></li>
+<li><a href="#S270">?PR?CYEXITCRITICALSECTION?CYBOOTASMKEIL</a></li>
+</ul>
+
+<p><br><b>Called from:</b></p>
+<ul>
+<li><a href="#S0">?PR?CYPMHVILVIRESTORE?CYPM</a></li>
+</ul>
+
+<h2><a name="S0"></a>?PR?CYVDLVDIGITDISABLE?CYLIB (I:000000H - I:00001CH)</h2>
+<p><br><b>Maximum Stack:</b> Bottom=4 Bytes (<a href="#S0">?PR?_CYVDSTICKYSTATUS?CYLIB</a>) Top=6 Bytes (<a href="#S0">?PR?CYPMHVILVISAVEDISABLE?CYPM</a>)<p>
+<p><br><b>Calls to:</b></p>
+<ul>
+<li><a href="#S0">?PR?_CYVDSTICKYSTATUS?CYLIB</a></li>
+</ul>
+
+<p><br><b>Called from:</b></p>
+<ul>
+<li><a href="#S0">?PR?CYPMHVILVISAVEDISABLE?CYPM</a></li>
+</ul>
+
+<h2><a name="S0"></a>?PR?CYVDLVANALOGDISABLE?CYLIB (I:000000H - I:000017H)</h2>
+<p><br><b>Maximum Stack:</b> Bottom=4 Bytes (<a href="#S0">?PR?_CYVDSTICKYSTATUS?CYLIB</a>) Top=6 Bytes (<a href="#S0">?PR?CYPMHVILVISAVEDISABLE?CYPM</a>)<p>
+<p><br><b>Calls to:</b></p>
+<ul>
+<li><a href="#S0">?PR?_CYVDSTICKYSTATUS?CYLIB</a></li>
+</ul>
+
+<p><br><b>Called from:</b></p>
+<ul>
+<li><a href="#S0">?PR?CYPMHVILVISAVEDISABLE?CYPM</a></li>
+</ul>
+
+<h2><a name="S0"></a>?PR?CYVDHVANALOGENABLE?CYLIB (I:000000H - I:000054H)</h2>
+<p><br><b>Maximum Stack:</b> Bottom=4 Bytes (<a href="#S0">?PR?_CYVDSTICKYSTATUS?CYLIB</a>) Top=6 Bytes (<a href="#S0">?PR?CYPMHVILVIRESTORE?CYPM</a>)<p>
+<p><br><b>Calls to:</b></p>
+<ul>
+<li><a href="#S365">?C?LIB_CODE</a></li>
+<li><a href="#S0">?PR?_CYVDSTICKYSTATUS?CYLIB</a></li>
+<li><a href="#S268">?PR?CYDELAYUS?CYBOOTASMKEIL</a></li>
+<li><a href="#S269">?PR?CYENTERCRITICALSECTION?CYBOOTASMKEIL</a></li>
+<li><a href="#S270">?PR?CYEXITCRITICALSECTION?CYBOOTASMKEIL</a></li>
+</ul>
+
+<p><br><b>Called from:</b></p>
+<ul>
+<li><a href="#S0">?PR?CYPMHVILVIRESTORE?CYPM</a></li>
+</ul>
+
+<h2><a name="S0"></a>?PR?CYVDHVANALOGDISABLE?CYLIB (I:000000H - I:000010H)</h2>
+<p><br><b>Maximum Stack:</b> Bottom=4 Bytes (<a href="#S0">?PR?_CYVDSTICKYSTATUS?CYLIB</a>) Top=4 Bytes (<a href="#S0">?PR?CYPMHVILVISAVEDISABLE?CYPM</a>)<p>
+<p><br><b>Calls to:</b></p>
+<ul>
+<li><a href="#S0">?PR?_CYVDSTICKYSTATUS?CYLIB</a></li>
+</ul>
+
+<p><br><b>Called from:</b></p>
+<ul>
+<li><a href="#S0">?PR?CYPMHVILVISAVEDISABLE?CYPM</a></li>
+</ul>
+
+<h2><a name="S0"></a>?PR?_CYVDSTICKYSTATUS?CYLIB (I:000000H - I:000038H)</h2>
+<p><br><b>Maximum Stack:</b> Bottom=2 Bytes (<a href="#S269">?PR?CYENTERCRITICALSECTION?CYBOOTASMKEIL</a>) Top=8 Bytes (<a href="#S0">?PR?CYVDLVDIGITDISABLE?CYLIB</a>)<p>
+<p><br><b>Calls to:</b></p>
+<ul>
+<li><a href="#S269">?PR?CYENTERCRITICALSECTION?CYBOOTASMKEIL</a></li>
+<li><a href="#S270">?PR?CYEXITCRITICALSECTION?CYBOOTASMKEIL</a></li>
+</ul>
+
+<p><br><b>Called from:</b></p>
+<ul>
+<li><a href="#S0">?PR?_CYVDLVANALOGENABLE?CYLIB</a></li>
+<li><a href="#S0">?PR?_CYVDLVDIGITENABLE?CYLIB</a></li>
+<li><a href="#S0">?PR?CYVDHVANALOGDISABLE?CYLIB</a></li>
+<li><a href="#S0">?PR?CYVDHVANALOGENABLE?CYLIB</a></li>
+<li><a href="#S0">?PR?CYVDLVANALOGDISABLE?CYLIB</a></li>
+<li><a href="#S0">?PR?CYVDLVDIGITDISABLE?CYLIB</a></li>
+</ul>
+
+<h2><a name="S246"></a>?PR?_CYINTSETVECTOR?CYLIB (C:00A9BCH - C:00AA21H)</h2>
+<p><br><b>Maximum Stack:</b> Bottom=4 Bytes (<a href="#S239">?PR?_?CYHALT?CYLIB</a>) Top=8 Bytes (<a href="#S152">?PR?I2C_DISPLAY_INIT?I2C_DISPLAY</a>)<p>
+<p><br><b>Calls to:</b></p>
+<ul>
+<li><a href="#S239">?PR?_?CYHALT?CYLIB</a></li>
+<li><a href="#S277">?PR?CYREAD16?CYMEM</a></li>
+<li><a href="#S278">?PR?CYWRITE16?CYMEM</a></li>
+</ul>
+
+<p><br><b>Called from:</b></p>
+<ul>
+<li><a href="#S152">?PR?I2C_DISPLAY_INIT?I2C_DISPLAY</a></li>
+<li><a href="#S114">?PR?USBFS_INIT?USBFS</a></li>
+</ul>
+
+<h2><a name="S248"></a>?PR?_CYINTSETPRIORITY?CYLIB (C:00AA22H - C:00AA66H)</h2>
+<p><br><b>Maximum Stack:</b> Bottom=4 Bytes (<a href="#S239">?PR?_?CYHALT?CYLIB</a>) Top=8 Bytes (<a href="#S152">?PR?I2C_DISPLAY_INIT?I2C_DISPLAY</a>)<p>
+<p><br><b>Calls to:</b></p>
+<ul>
+<li><a href="#S239">?PR?_?CYHALT?CYLIB</a></li>
+</ul>
+
+<p><br><b>Called from:</b></p>
+<ul>
+<li><a href="#S152">?PR?I2C_DISPLAY_INIT?I2C_DISPLAY</a></li>
+<li><a href="#S114">?PR?USBFS_INIT?USBFS</a></li>
+</ul>
+
+<h2><a name="S250"></a>?PR?_CYGETUNIQUEID?CYLIB (C:00B9A5H - C:00BBEBH)</h2>
+<p><br><b>Maximum Stack:</b> Bottom=9 Bytes (<a href="#S275">?PR?CYREAD8?CYMEM</a>) Top=27 Bytes (<a href="#S298">?PR?_USBFS_READDIEID?USBFS_STD</a>)<p>
+<p><br><b>Calls to:</b></p>
+<ul>
+<li><a href="#S365">?C?LIB_CODE</a></li>
+<li><a href="#S275">?PR?CYREAD8?CYMEM</a></li>
+</ul>
+
+<p><br><b>Called from:</b></p>
+<ul>
+<li><a href="#S298">?PR?_USBFS_READDIEID?USBFS_STD</a></li>
+</ul>
+
+<h2><a name="S252"></a>?PR?CW_HOLD_TIMER_INIT?CW_HOLD_TIMER (C:00BCE9H - C:00BD25H)</h2>
+<p><br><b>Maximum Stack:</b> Bottom=2 Bytes (<a href="#S256">?PR?_CW_HOLD_TIMER_WRITEPERIOD?CW_HOLD_TIMER</a>) Top=6 Bytes (<a href="#S254">?PR?CW_HOLD_TIMER_START?CW_HOLD_TIMER</a>)<p>
+<p><br><b>Calls to:</b></p>
+<ul>
+<li><a href="#S257">?PR?_CW_HOLD_TIMER_WRITECOUNTER?CW_HOLD_TIMER</a></li>
+<li><a href="#S256">?PR?_CW_HOLD_TIMER_WRITEPERIOD?CW_HOLD_TIMER</a></li>
+</ul>
+
+<p><br><b>Called from:</b></p>
+<ul>
+<li><a href="#S254">?PR?CW_HOLD_TIMER_START?CW_HOLD_TIMER</a></li>
+</ul>
+
+<h2><a name="S254"></a>?PR?CW_HOLD_TIMER_START?CW_HOLD_TIMER (C:00BD2CH - C:00BD39H)</h2>
+<p><br><b>Maximum Stack:</b> Bottom=4 Bytes (<a href="#S252">?PR?CW_HOLD_TIMER_INIT?CW_HOLD_TIMER</a>) Top=4 Bytes (<a href="#S1">?PR?MAIN_INIT?MAIN</a>)<p>
+<p><br><b>Calls to:</b></p>
+<ul>
+<li><a href="#S252">?PR?CW_HOLD_TIMER_INIT?CW_HOLD_TIMER</a></li>
+</ul>
+
+<p><br><b>Called from:</b></p>
+<ul>
+<li><a href="#S1">?PR?MAIN_INIT?MAIN</a></li>
+</ul>
+
+<h2><a name="S256"></a>?PR?_CW_HOLD_TIMER_WRITEPERIOD?CW_HOLD_TIMER (C:00BD50H - C:00BD5CH)</h2>
+<p><br><b>Maximum Stack:</b> Top=8 Bytes (<a href="#S252">?PR?CW_HOLD_TIMER_INIT?CW_HOLD_TIMER</a>)<p>
+<p><br><b>Calls to:</b></p>
+<ul>
+<li><a href="#S278">?PR?CYWRITE16?CYMEM</a></li>
+</ul>
+
+<p><br><b>Called from:</b></p>
+<ul>
+<li><a href="#S252">?PR?CW_HOLD_TIMER_INIT?CW_HOLD_TIMER</a></li>
+<li><a href="#S4">?PR?MAIN?MAIN</a></li>
+</ul>
+
+<h2><a name="S257"></a>?PR?_CW_HOLD_TIMER_WRITECOUNTER?CW_HOLD_TIMER (C:00BD5DH - C:00BD69H)</h2>
+<p><br><b>Maximum Stack:</b> Top=8 Bytes (<a href="#S252">?PR?CW_HOLD_TIMER_INIT?CW_HOLD_TIMER</a>)<p>
+<p><br><b>Calls to:</b></p>
+<ul>
+<li><a href="#S278">?PR?CYWRITE16?CYMEM</a></li>
+</ul>
+
+<p><br><b>Called from:</b></p>
+<ul>
+<li><a href="#S252">?PR?CW_HOLD_TIMER_INIT?CW_HOLD_TIMER</a></li>
+</ul>
+
+<h2><a name="S260"></a>?PR?_CW_ISR_STARTEX?CW_ISR (C:00BD6AH - C:00BD81H)</h2>
+<p><br><b>Maximum Stack:</b> Bottom=2 Bytes (<a href="#S266">?PR?CW_ISR_DISABLE?CW_ISR</a>) Top=4 Bytes (<a href="#S1">?PR?MAIN_INIT?MAIN</a>)<p>
+<p><br><b>Calls to:</b></p>
+<ul>
+<li><a href="#S264">?PR?_CW_ISR_SETPRIORITY?CW_ISR</a></li>
+<li><a href="#S263">?PR?_CW_ISR_SETVECTOR?CW_ISR</a></li>
+<li><a href="#S266">?PR?CW_ISR_DISABLE?CW_ISR</a></li>
+</ul>
+
+<p><br><b>Called from:</b></p>
+<ul>
+<li><a href="#S1">?PR?MAIN_INIT?MAIN</a></li>
+</ul>
+
+<h2><a name="S263"></a>?PR?_CW_ISR_SETVECTOR?CW_ISR (C:00BD9AH - C:00BDA6H)</h2>
+<p><br><b>Maximum Stack:</b> Top=6 Bytes (<a href="#S260">?PR?_CW_ISR_STARTEX?CW_ISR</a>)<p>
+<p><br><b>Calls to:</b></p>
+<ul>
+<li><a href="#S278">?PR?CYWRITE16?CYMEM</a></li>
+</ul>
+
+<p><br><b>Called from:</b></p>
+<ul>
+<li><a href="#S260">?PR?_CW_ISR_STARTEX?CW_ISR</a></li>
+<li><a href="#S0">?PR?CW_ISR_START?CW_ISR</a></li>
+</ul>
+
+<h2><a name="S264"></a>?PR?_CW_ISR_SETPRIORITY?CW_ISR (C:00BD90H - C:00BD99H)</h2>
+<p><br><b>Maximum Stack:</b> Top=6 Bytes (<a href="#S260">?PR?_CW_ISR_STARTEX?CW_ISR</a>)<p>
+<p><br><b>Called from:</b></p>
+<ul>
+<li><a href="#S260">?PR?_CW_ISR_STARTEX?CW_ISR</a></li>
+<li><a href="#S0">?PR?CW_ISR_START?CW_ISR</a></li>
+</ul>
+
+<h2><a name="S266"></a>?PR?CW_ISR_DISABLE?CW_ISR (C:00BD89H - C:00BD8FH)</h2>
+<p><br><b>Maximum Stack:</b> Top=6 Bytes (<a href="#S260">?PR?_CW_ISR_STARTEX?CW_ISR</a>)<p>
+<p><br><b>Called from:</b></p>
+<ul>
+<li><a href="#S260">?PR?_CW_ISR_STARTEX?CW_ISR</a></li>
+<li><a href="#S0">?PR?CW_ISR_START?CW_ISR</a></li>
+<li><a href="#S0">?PR?CW_ISR_STOP?CW_ISR</a></li>
+</ul>
+
+<h2><a name="S267"></a>?PR?CYDELAYCYCLES?CYBOOTASMKEIL (C:004D00H - C:004D3AH)</h2>
+<p><br><b>Maximum Stack:</b> Top=8 Bytes (<a href="#S241">?PR?_?CYDELAY?CYLIB</a>)<p>
+<p><br><b>Called from:</b></p>
+<ul>
+<li><a href="#S241">?PR?_?CYDELAY?CYLIB</a></li>
+<li><a href="#S116">?PR?_USBFS_INITCOMPONENT?USBFS</a></li>
+<li><a href="#S107">?PR?CLOCKSETUP?CYFITTER_CFG</a></li>
+<li><a href="#S0">?PR?CYPMRESTORECLOCKS?CYPM</a></li>
+<li><a href="#S155">?PR?I2C_DISPLAY_STOP?I2C_DISPLAY</a></li>
+<li><a href="#S0">?PR?USBFS_RESUME?USBFS_PM</a></li>
+</ul>
+
+<h2><a name="S268"></a>?PR?CYDELAYUS?CYBOOTASMKEIL (C:004C3CH - C:004C68H)</h2>
+<p><br><b>Maximum Stack:</b> Top=8 Bytes (<a href="#S114">?PR?USBFS_INIT?USBFS</a>)<p>
+<p><br><b>Called from:</b></p>
+<ul>
+<li><a href="#S0">?PR?_CYFLASH_ERASEROW?CYFLASH</a></li>
+<li><a href="#S348">?PR?_CYSPCREADDATA?CYSPC</a></li>
+<li><a href="#S0">?PR?_CYVDLVANALOGENABLE?CYLIB</a></li>
+<li><a href="#S0">?PR?_CYVDLVDIGITENABLE?CYLIB</a></li>
+<li><a href="#S0">?PR?_CYWRITEROWFULL?CYFLASH</a></li>
+<li><a href="#S0">?PR?_CYXTAL_32KHZ_SETPOWERMODE?CYLIB</a></li>
+<li><a href="#S0">?PR?_DIETEMP_1_GETTEMPT?DIETEMP_1</a></li>
+<li><a href="#S216">?PR?_DIETEMP_1_QUERY?DIETEMP_1</a></li>
+<li><a href="#S340">?PR?CYFLASHGETSPCALGORITHM?CYFLASH</a></li>
+<li><a href="#S0">?PR?CYPMRESTORECLOCKS?CYPM</a></li>
+<li><a href="#S0">?PR?CYPMSAVECLOCKS?CYPM</a></li>
+<li><a href="#S338">?PR?CYSETTEMPINT?CYFLASH</a></li>
+<li><a href="#S0">?PR?CYVDHVANALOGENABLE?CYLIB</a></li>
+<li><a href="#S0">?PR?CYXTAL_32KHZ_START?CYLIB</a></li>
+<li><a href="#S114">?PR?USBFS_INIT?USBFS</a></li>
+<li><a href="#S0">?PR?USBFS_RESUME?USBFS_PM</a></li>
+<li><a href="#S0">?PR?USBFS_SUSPEND?USBFS_PM</a></li>
+</ul>
+
+<h2><a name="S269"></a>?PR?CYENTERCRITICALSECTION?CYBOOTASMKEIL (C:004CC0H - C:004CD4H)</h2>
+<p><br><b>Maximum Stack:</b> Top=12 Bytes (<a href="#S231">?PR?_CYDMATDFREE?CYDMAC</a>)<p>
+<p><br><b>Called from:</b></p>
+<ul>
+<li><a href="#S0">?PR?_CYBUSCLK_SETDIVIDER?CYLIB</a></li>
+<li><a href="#S0">?PR?_CYDMACHFREE?CYDMAC</a></li>
+<li><a href="#S231">?PR?_CYDMATDFREE?CYDMAC</a></li>
+<li><a href="#S0">?PR?_CYENABLEINTS?CYLIB</a></li>
+<li><a href="#S0">?PR?_CYFLASH_SETWAITCYCLES?CYFLASH</a></li>
+<li><a href="#S0">?PR?_CYPMHIBERNATEEX?CYPM</a></li>
+<li><a href="#S0">?PR?_CYPMREADSTATUS?CYPM</a></li>
+<li><a href="#S0">?PR?_CYPMSLEEP?CYPM</a></li>
+<li><a href="#S0">?PR?_CYVDLVANALOGENABLE?CYLIB</a></li>
+<li><a href="#S0">?PR?_CYVDLVDIGITENABLE?CYLIB</a></li>
+<li><a href="#S0">?PR?_CYVDSTICKYSTATUS?CYLIB</a></li>
+<li><a href="#S0">?PR?_EEPROM_READBYTE?EEPROM</a></li>
+<li><a href="#S97">?PR?CW_KEYS_DOWN?CW</a></li>
+<li><a href="#S0">?PR?CYDISABLEINTS?CYLIB</a></li>
+<li><a href="#S0">?PR?CYDMACHALLOC?CYDMAC</a></li>
+<li><a href="#S229">?PR?CYDMATDALLOCATE?CYDMAC</a></li>
+<li><a href="#S344">?PR?CYEEPROM_START?CYFLASH</a></li>
+<li><a href="#S0">?PR?CYEEPROM_STOP?CYFLASH</a></li>
+<li><a href="#S0">?PR?CYFLASH_START?CYFLASH</a></li>
+<li><a href="#S0">?PR?CYFLASH_STOP?CYFLASH</a></li>
+<li><a href="#S355">?PR?CYSPCLOCK?CYSPC</a></li>
+<li><a href="#S347">?PR?CYSPCSTART?CYSPC</a></li>
+<li><a href="#S0">?PR?CYSPCSTOP?CYSPC</a></li>
+<li><a href="#S357">?PR?CYSPCUNLOCK?CYSPC</a></li>
+<li><a href="#S0">?PR?CYVDHVANALOGENABLE?CYLIB</a></li>
+<li><a href="#S0">?PR?CYVDREALTIMESTATUS?CYLIB</a></li>
+<li><a href="#S153">?PR?I2C_DISPLAY_ENABLE?I2C_DISPLAY</a></li>
+<li><a href="#S0">?PR?I2C_DISPLAY_RESTORECONFIG?I2C_DISPLAY_PM</a></li>
+<li><a href="#S155">?PR?I2C_DISPLAY_STOP?I2C_DISPLAY</a></li>
+<li><a href="#S174">?PR?I2S_CLEARRXFIFO?I2S</a></li>
+<li><a href="#S171">?PR?I2S_CLEARTXFIFO?I2S</a></li>
+<li><a href="#S173">?PR?I2S_DISABLERX?I2S</a></li>
+<li><a href="#S170">?PR?I2S_DISABLETX?I2S</a></li>
+<li><a href="#S166">?PR?I2S_ENABLE?I2S</a></li>
+<li><a href="#S172">?PR?I2S_ENABLERX?I2S</a></li>
+<li><a href="#S169">?PR?I2S_ENABLETX?I2S</a></li>
+<li><a href="#S0">?PR?I2S_STOP?I2S</a></li>
+<li><a href="#S41">?PR?SI5351_MAIN?SI5351</a></li>
+<li><a href="#S0">?PR?STATUS_INTERRUPTDISABLE?STATUS</a></li>
+<li><a href="#S0">?PR?STATUS_INTERRUPTENABLE?STATUS</a></li>
+<li><a href="#S0">?PR?USBFS_EP17_DMA_DONE_SR_INTERRUPTDISABLE?USBFS_EP17_DMA_DONE_SR</a></li>
+<li><a href="#S324">?PR?USBFS_EP17_DMA_DONE_SR_INTERRUPTENABLE?USBFS_EP17_DMA_DONE_SR</a></li>
+<li><a href="#S0">?PR?USBFS_EP8_DMA_DONE_SR_INTERRUPTDISABLE?USBFS_EP8_DMA_DONE_SR</a></li>
+<li><a href="#S337">?PR?USBFS_EP8_DMA_DONE_SR_INTERRUPTENABLE?USBFS_EP8_DMA_DONE_SR</a></li>
+<li><a href="#S114">?PR?USBFS_INIT?USBFS</a></li>
+<li><a href="#S0">?PR?USBFS_RESUME?USBFS_PM</a></li>
+<li><a href="#S119">?PR?USBFS_STOP?USBFS</a></li>
+<li><a href="#S0">?PR?USBFS_SUSPEND?USBFS_PM</a></li>
+</ul>
+
+<h2><a name="S270"></a>?PR?CYEXITCRITICALSECTION?CYBOOTASMKEIL (C:004CA8H - C:004CBFH)</h2>
+<p><br><b>Maximum Stack:</b> Top=12 Bytes (<a href="#S231">?PR?_CYDMATDFREE?CYDMAC</a>)<p>
+<p><br><b>Called from:</b></p>
+<ul>
+<li><a href="#S0">?PR?_CYBUSCLK_SETDIVIDER?CYLIB</a></li>
+<li><a href="#S0">?PR?_CYDMACHFREE?CYDMAC</a></li>
+<li><a href="#S231">?PR?_CYDMATDFREE?CYDMAC</a></li>
+<li><a href="#S0">?PR?_CYENABLEINTS?CYLIB</a></li>
+<li><a href="#S0">?PR?_CYFLASH_SETWAITCYCLES?CYFLASH</a></li>
+<li><a href="#S0">?PR?_CYPMHIBERNATEEX?CYPM</a></li>
+<li><a href="#S0">?PR?_CYPMREADSTATUS?CYPM</a></li>
+<li><a href="#S0">?PR?_CYPMSLEEP?CYPM</a></li>
+<li><a href="#S0">?PR?_CYVDLVANALOGENABLE?CYLIB</a></li>
+<li><a href="#S0">?PR?_CYVDLVDIGITENABLE?CYLIB</a></li>
+<li><a href="#S0">?PR?_CYVDSTICKYSTATUS?CYLIB</a></li>
+<li><a href="#S0">?PR?_EEPROM_READBYTE?EEPROM</a></li>
+<li><a href="#S97">?PR?CW_KEYS_DOWN?CW</a></li>
+<li><a href="#S0">?PR?CYDISABLEINTS?CYLIB</a></li>
+<li><a href="#S0">?PR?CYDMACHALLOC?CYDMAC</a></li>
+<li><a href="#S229">?PR?CYDMATDALLOCATE?CYDMAC</a></li>
+<li><a href="#S344">?PR?CYEEPROM_START?CYFLASH</a></li>
+<li><a href="#S0">?PR?CYEEPROM_STOP?CYFLASH</a></li>
+<li><a href="#S0">?PR?CYFLASH_START?CYFLASH</a></li>
+<li><a href="#S0">?PR?CYFLASH_STOP?CYFLASH</a></li>
+<li><a href="#S355">?PR?CYSPCLOCK?CYSPC</a></li>
+<li><a href="#S347">?PR?CYSPCSTART?CYSPC</a></li>
+<li><a href="#S0">?PR?CYSPCSTOP?CYSPC</a></li>
+<li><a href="#S357">?PR?CYSPCUNLOCK?CYSPC</a></li>
+<li><a href="#S0">?PR?CYVDHVANALOGENABLE?CYLIB</a></li>
+<li><a href="#S0">?PR?CYVDREALTIMESTATUS?CYLIB</a></li>
+<li><a href="#S153">?PR?I2C_DISPLAY_ENABLE?I2C_DISPLAY</a></li>
+<li><a href="#S0">?PR?I2C_DISPLAY_RESTORECONFIG?I2C_DISPLAY_PM</a></li>
+<li><a href="#S155">?PR?I2C_DISPLAY_STOP?I2C_DISPLAY</a></li>
+<li><a href="#S174">?PR?I2S_CLEARRXFIFO?I2S</a></li>
+<li><a href="#S171">?PR?I2S_CLEARTXFIFO?I2S</a></li>
+<li><a href="#S173">?PR?I2S_DISABLERX?I2S</a></li>
+<li><a href="#S170">?PR?I2S_DISABLETX?I2S</a></li>
+<li><a href="#S166">?PR?I2S_ENABLE?I2S</a></li>
+<li><a href="#S172">?PR?I2S_ENABLERX?I2S</a></li>
+<li><a href="#S169">?PR?I2S_ENABLETX?I2S</a></li>
+<li><a href="#S0">?PR?I2S_STOP?I2S</a></li>
+<li><a href="#S41">?PR?SI5351_MAIN?SI5351</a></li>
+<li><a href="#S0">?PR?STATUS_INTERRUPTDISABLE?STATUS</a></li>
+<li><a href="#S0">?PR?STATUS_INTERRUPTENABLE?STATUS</a></li>
+<li><a href="#S0">?PR?USBFS_EP17_DMA_DONE_SR_INTERRUPTDISABLE?USBFS_EP17_DMA_DONE_SR</a></li>
+<li><a href="#S324">?PR?USBFS_EP17_DMA_DONE_SR_INTERRUPTENABLE?USBFS_EP17_DMA_DONE_SR</a></li>
+<li><a href="#S0">?PR?USBFS_EP8_DMA_DONE_SR_INTERRUPTDISABLE?USBFS_EP8_DMA_DONE_SR</a></li>
+<li><a href="#S337">?PR?USBFS_EP8_DMA_DONE_SR_INTERRUPTENABLE?USBFS_EP8_DMA_DONE_SR</a></li>
+<li><a href="#S114">?PR?USBFS_INIT?USBFS</a></li>
+<li><a href="#S0">?PR?USBFS_RESUME?USBFS_PM</a></li>
+<li><a href="#S119">?PR?USBFS_STOP?USBFS</a></li>
+<li><a href="#S0">?PR?USBFS_SUSPEND?USBFS_PM</a></li>
+</ul>
+
+<h2><a name="S271"></a>?PR?CYMEMZERO?CYMEM (C:004C8FH - C:004CA7H)</h2>
+<p><br><b>Maximum Stack:</b> Top=2 Bytes (<a href="#S110">?PR?CYFITTER_CFG?CYFITTER_CFG</a>)<p>
+<p><br><b>Called from:</b></p>
+<ul>
+<li><a href="#S110">?PR?CYFITTER_CFG?CYFITTER_CFG</a></li>
+</ul>
+
+<h2><a name="S272"></a>?PR?_CYCONFIGCPY?CYMEM (C:004C07H - C:004C3AH)</h2>
+<p><br><b>Maximum Stack:</b> Top=2 Bytes (<a href="#S105">?PR?CFG_DMA_INIT?CYFITTER_CFG</a>)<p>
+<p><br><b>Called from:</b></p>
+<ul>
+<li><a href="#S105">?PR?CFG_DMA_INIT?CYFITTER_CFG</a></li>
+<li><a href="#S110">?PR?CYFITTER_CFG?CYFITTER_CFG</a></li>
+</ul>
+
+<h2><a name="S274"></a>?PR?CYCONFIGCPYCODE?CYMEM (C:004C69H - C:004C8EH)</h2>
+<p><br><b>Maximum Stack:</b> Top=2 Bytes (<a href="#S110">?PR?CYFITTER_CFG?CYFITTER_CFG</a>)<p>
+<p><br><b>Called from:</b></p>
+<ul>
+<li><a href="#S110">?PR?CYFITTER_CFG?CYFITTER_CFG</a></li>
+</ul>
+
+<h2><a name="S275"></a>?PR?CYREAD8?CYMEM (C:004D59H - C:004D64H)</h2>
+<p><br><b>Maximum Stack:</b> Top=36 Bytes (<a href="#S250">?PR?_CYGETUNIQUEID?CYLIB</a>)<p>
+<p><br><b>Called from:</b></p>
+<ul>
+<li><a href="#S250">?PR?_CYGETUNIQUEID?CYLIB</a></li>
+<li><a href="#S0">?PR?_CYIMO_SETTRIMVALUE?CYLIB</a></li>
+<li><a href="#S0">?PR?_CYSPCLOADROWFULL?CYSPC</a></li>
+<li><a href="#S109">?PR?ANALOGSETDEFAULT?CYFITTER_CFG</a></li>
+<li><a href="#S107">?PR?CLOCKSETUP?CYFITTER_CFG</a></li>
+<li><a href="#S110">?PR?CYFITTER_CFG?CYFITTER_CFG</a></li>
+</ul>
+
+<h2><a name="S276"></a>?PR?CYWRITE8?CYMEM (C:004D65H - C:004D70H)</h2>
+<p><br><b>Maximum Stack:</b> Top=2 Bytes (<a href="#S110">?PR?CYFITTER_CFG?CYFITTER_CFG</a>)<p>
+<p><br><b>Called from:</b></p>
+<ul>
+<li><a href="#S110">?PR?CYFITTER_CFG?CYFITTER_CFG</a></li>
+</ul>
+
+<h2><a name="S277"></a>?PR?CYREAD16?CYMEM (C:004D3BH - C:004D49H)</h2>
+<p><br><b>Maximum Stack:</b> Top=25 Bytes (<a href="#S70">?PR?USBFS_HANDLEVENDORRQST?USBVEND01</a>)<p>
+<p><br><b>Called from:</b></p>
+<ul>
+<li><a href="#S0">?PR?_CYDMATDGETADDRESS?CYDMAC</a></li>
+<li><a href="#S0">?PR?_CYDMATDGETCONFIGURATION?CYDMAC</a></li>
+<li><a href="#S0">?PR?_CYINTGETVECTOR?CYLIB</a></li>
+<li><a href="#S246">?PR?_CYINTSETVECTOR?CYLIB</a></li>
+<li><a href="#S0">?PR?CW_HOLD_TIMER_READCAPTURE?CW_HOLD_TIMER</a></li>
+<li><a href="#S0">?PR?CW_HOLD_TIMER_READCOUNTER?CW_HOLD_TIMER</a></li>
+<li><a href="#S0">?PR?CW_HOLD_TIMER_READPERIOD?CW_HOLD_TIMER</a></li>
+<li><a href="#S0">?PR?CW_HOLD_TIMER_SOFTWARECAPTURE?CW_HOLD_TIMER</a></li>
+<li><a href="#S0">?PR?CW_ISR_GETVECTOR?CW_ISR</a></li>
+<li><a href="#S210">?PR?FRAC_CLK_GETDIVIDERREGISTER?FRAC_CLK</a></li>
+<li><a href="#S0">?PR?FRAC_CLK_STOPBLOCK?FRAC_CLK</a></li>
+<li><a href="#S0">?PR?USBFS_EP_DMA_DONE_ISR_GETVECTOR?USBFS_EP_DMA_DONE_ISR</a></li>
+<li><a href="#S70">?PR?USBFS_HANDLEVENDORRQST?USBVEND01</a></li>
+</ul>
+
+<h2><a name="S278"></a>?PR?CYWRITE16?CYMEM (C:004D4AH - C:004D58H)</h2>
+<p><br><b>Maximum Stack:</b> Top=23 Bytes (<a href="#S127">?PR?_USBFS_LOADNEXTINEP?USBFS</a>)<p>
+<p><br><b>Called from:</b></p>
+<ul>
+<li><a href="#S257">?PR?_CW_HOLD_TIMER_WRITECOUNTER?CW_HOLD_TIMER</a></li>
+<li><a href="#S256">?PR?_CW_HOLD_TIMER_WRITEPERIOD?CW_HOLD_TIMER</a></li>
+<li><a href="#S263">?PR?_CW_ISR_SETVECTOR?CW_ISR</a></li>
+<li><a href="#S223">?PR?_CYDMACHSETEXTENDEDADDRESS?CYDMAC</a></li>
+<li><a href="#S235">?PR?_CYDMATDSETADDRESS?CYDMAC</a></li>
+<li><a href="#S233">?PR?_CYDMATDSETCONFIGURATION?CYDMAC</a></li>
+<li><a href="#S246">?PR?_CYINTSETVECTOR?CYLIB</a></li>
+<li><a href="#S208">?PR?_FRAC_CLK_SETDIVIDERREGISTER?FRAC_CLK</a></li>
+<li><a href="#S0">?PR?_PCM3060_SETTXBUFADDRESS?PCM3060</a></li>
+<li><a href="#S332">?PR?_USBFS_EP_DMA_DONE_ISR_SETVECTOR?USBFS_EP_DMA_DONE_ISR</a></li>
+<li><a href="#S127">?PR?_USBFS_LOADNEXTINEP?USBFS</a></li>
+<li><a href="#S105">?PR?CFG_DMA_INIT?CYFITTER_CFG</a></li>
+<li><a href="#S107">?PR?CLOCKSETUP?CYFITTER_CFG</a></li>
+<li><a href="#S244">?PR?CYINTINITVECTORS?CYLIB</a></li>
+<li><a href="#S0">?PR?FRAC_CLK_STOPBLOCK?FRAC_CLK</a></li>
+<li><a href="#S0">?PR?PCM3060_SETTXBUFADDRESSDEFAULT?PCM3060</a></li>
+</ul>
+
+<h2><a name="S279"></a>?PR?CYWRITE32?CYMEM (C:004CD5H - C:004CE9H)</h2>
+<p><br><b>Maximum Stack:</b> Top=2 Bytes (<a href="#S110">?PR?CYFITTER_CFG?CYFITTER_CFG</a>)<p>
+<p><br><b>Called from:</b></p>
+<ul>
+<li><a href="#S110">?PR?CYFITTER_CFG?CYFITTER_CFG</a></li>
+</ul>
+
+<h2><a name="S283"></a>?PR?USBFS_DISPATCHCLASSRQST?USBFS_CLS (C:00B44BH - C:00B4B7H)</h2>
+<p><br><b>Maximum Stack:</b> Bottom=8 Bytes (<a href="#S360">?PR?USBFS_DISPATCHAUDIOCLASSRQST?USBFS_AUDIO</a>) Top=25 Bytes (<a href="#S295">?PR?USBFS_HANDLESTANDARDRQST?USBFS_STD</a>)<p>
+<p><br><b>Calls to:</b></p>
+<ul>
+<li><a href="#S360">?PR?USBFS_DISPATCHAUDIOCLASSRQST?USBFS_AUDIO</a></li>
+</ul>
+
+<p><br><b>Called from:</b></p>
+<ul>
+<li><a href="#S135">?PR?USBFS_HANDLESETUP?USBFS_DRV</a></li>
+<li><a href="#S295">?PR?USBFS_HANDLESTANDARDRQST?USBFS_STD</a></li>
+</ul>
+
+<h2><a name="S0"></a>?PR?USBFS_RESTORECONFIG?USBFS_PM (I:000000H - I:00000CH)</h2>
+<p><br><b>Maximum Stack:</b> Bottom=2 Bytes (<a href="#S300">?PR?USBFS_CONFIGREG?USBFS_STD</a>) Top=2 Bytes (<a href="#S0">?PR?USBFS_RESUME?USBFS_PM</a>)<p>
+<p><br><b>Calls to:</b></p>
+<ul>
+<li><a href="#S300">?PR?USBFS_CONFIGREG?USBFS_STD</a></li>
+<li><a href="#S0">?PR?USBFS_EPSTATEINIT?USBFS_STD</a></li>
+</ul>
+
+<p><br><b>Called from:</b></p>
+<ul>
+<li><a href="#S0">?PR?USBFS_RESUME?USBFS_PM</a></li>
+</ul>
+
+<h2><a name="S295"></a>?PR?USBFS_HANDLESTANDARDRQST?USBFS_STD (C:00C0FAH - C:00C513H)</h2>
+<p><br><b>Maximum Stack:</b> Bottom=13 Bytes (<a href="#S298">?PR?_USBFS_READDIEID?USBFS_STD</a>) Top=23 Bytes (<a href="#S135">?PR?USBFS_HANDLESETUP?USBFS_DRV</a>)<p>
+<p><br><b>Calls to:</b></p>
+<ul>
+<li><a href="#S365">?C?LIB_CODE</a></li>
+<li><a href="#S301">?PR?_USBFS_CONFIG?USBFS_STD</a></li>
+<li><a href="#S305">?PR?_USBFS_GETCONFIGTABLEPTR?USBFS_STD</a></li>
+<li><a href="#S298">?PR?_USBFS_READDIEID?USBFS_STD</a></li>
+<li><a href="#S312">?PR?USBFS_CLEARENDPOINTHALT?USBFS_STD</a></li>
+<li><a href="#S303">?PR?USBFS_CONFIGALTCHANGED?USBFS_STD</a></li>
+<li><a href="#S283">?PR?USBFS_DISPATCHCLASSRQST?USBFS_CLS</a></li>
+<li><a href="#S307">?PR?USBFS_GETDEVICETABLEPTR?USBFS_STD</a></li>
+<li><a href="#S140">?PR?USBFS_INITCONTROLREAD?USBFS_DRV</a></li>
+<li><a href="#S147">?PR?USBFS_INITNODATACONTROLTRANSFER?USBFS_DRV</a></li>
+<li><a href="#S310">?PR?USBFS_SETENDPOINTHALT?USBFS_STD</a></li>
+<li><a href="#S314">?PR?USBFS_VALIDATEALTERNATESETTING?USBFS_STD</a></li>
+</ul>
+
+<p><br><b>Called from:</b></p>
+<ul>
+<li><a href="#S135">?PR?USBFS_HANDLESETUP?USBFS_DRV</a></li>
+</ul>
+
+<h2><a name="S298"></a>?PR?_USBFS_READDIEID?USBFS_STD (C:00BBECH - C:00BCE8H)</h2>
+<p><br><b>Maximum Stack:</b> Bottom=11 Bytes (<a href="#S250">?PR?_CYGETUNIQUEID?CYLIB</a>) Top=25 Bytes (<a href="#S295">?PR?USBFS_HANDLESTANDARDRQST?USBFS_STD</a>)<p>
+<p><br><b>Calls to:</b></p>
+<ul>
+<li><a href="#S365">?C?LIB_CODE</a></li>
+<li><a href="#S250">?PR?_CYGETUNIQUEID?CYLIB</a></li>
+</ul>
+
+<p><br><b>Called from:</b></p>
+<ul>
+<li><a href="#S295">?PR?USBFS_HANDLESTANDARDRQST?USBFS_STD</a></li>
+</ul>
+
+<h2><a name="S300"></a>?PR?USBFS_CONFIGREG?USBFS_STD (C:00C7DCH - C:00C8A8H)</h2>
+<p><br><b>Maximum Stack:</b> Top=27 Bytes (<a href="#S301">?PR?_USBFS_CONFIG?USBFS_STD</a>)<p>
+<p><br><b>Called from:</b></p>
+<ul>
+<li><a href="#S301">?PR?_USBFS_CONFIG?USBFS_STD</a></li>
+<li><a href="#S0">?PR?USBFS_RESTORECONFIG?USBFS_PM</a></li>
+</ul>
+
+<h2><a name="S0"></a>?PR?USBFS_EPSTATEINIT?USBFS_STD (I:000000H - I:000041H)</h2>
+<p><br><b>Maximum Stack:</b> Top=4 Bytes (<a href="#S0">?PR?USBFS_RESTORECONFIG?USBFS_PM</a>)<p>
+<p><br><b>Called from:</b></p>
+<ul>
+<li><a href="#S0">?PR?USBFS_RESTORECONFIG?USBFS_PM</a></li>
+</ul>
+
+<h2><a name="S301"></a>?PR?_USBFS_CONFIG?USBFS_STD (C:00C8A9H - C:00CBE5H)</h2>
+<p><br><b>Maximum Stack:</b> Bottom=6 Bytes (<a href="#S308">?PR?USBFS_GETINTERFACECLASSTABLEPTR?USBFS_STD</a>) Top=25 Bytes (<a href="#S295">?PR?USBFS_HANDLESTANDARDRQST?USBFS_STD</a>)<p>
+<p><br><b>Calls to:</b></p>
+<ul>
+<li><a href="#S365">?C?LIB_CODE</a></li>
+<li><a href="#S305">?PR?_USBFS_GETCONFIGTABLEPTR?USBFS_STD</a></li>
+<li><a href="#S300">?PR?USBFS_CONFIGREG?USBFS_STD</a></li>
+<li><a href="#S308">?PR?USBFS_GETINTERFACECLASSTABLEPTR?USBFS_STD</a></li>
+</ul>
+
+<p><br><b>Called from:</b></p>
+<ul>
+<li><a href="#S295">?PR?USBFS_HANDLESTANDARDRQST?USBFS_STD</a></li>
+</ul>
+
+<h2><a name="S303"></a>?PR?USBFS_CONFIGALTCHANGED?USBFS_STD (C:00C5DEH - C:00C7BDH)</h2>
+<p><br><b>Maximum Stack:</b> Bottom=4 Bytes (<a href="#S305">?PR?_USBFS_GETCONFIGTABLEPTR?USBFS_STD</a>) Top=25 Bytes (<a href="#S295">?PR?USBFS_HANDLESTANDARDRQST?USBFS_STD</a>)<p>
+<p><br><b>Calls to:</b></p>
+<ul>
+<li><a href="#S305">?PR?_USBFS_GETCONFIGTABLEPTR?USBFS_STD</a></li>
+</ul>
+
+<p><br><b>Called from:</b></p>
+<ul>
+<li><a href="#S295">?PR?USBFS_HANDLESTANDARDRQST?USBFS_STD</a></li>
+</ul>
+
+<h2><a name="S305"></a>?PR?_USBFS_GETCONFIGTABLEPTR?USBFS_STD (C:00C514H - C:00C56BH)</h2>
+<p><br><b>Maximum Stack:</b> Bottom=2 Bytes (<a href="#S365">?C?LIB_CODE</a>) Top=29 Bytes (<a href="#S308">?PR?USBFS_GETINTERFACECLASSTABLEPTR?USBFS_STD</a>)<p>
+<p><br><b>Calls to:</b></p>
+<ul>
+<li><a href="#S365">?C?LIB_CODE</a></li>
+</ul>
+
+<p><br><b>Called from:</b></p>
+<ul>
+<li><a href="#S301">?PR?_USBFS_CONFIG?USBFS_STD</a></li>
+<li><a href="#S303">?PR?USBFS_CONFIGALTCHANGED?USBFS_STD</a></li>
+<li><a href="#S308">?PR?USBFS_GETINTERFACECLASSTABLEPTR?USBFS_STD</a></li>
+<li><a href="#S295">?PR?USBFS_HANDLESTANDARDRQST?USBFS_STD</a></li>
+<li><a href="#S314">?PR?USBFS_VALIDATEALTERNATESETTING?USBFS_STD</a></li>
+</ul>
+
+<h2><a name="S307"></a>?PR?USBFS_GETDEVICETABLEPTR?USBFS_STD (C:00C7BEH - C:00C7DBH)</h2>
+<p><br><b>Maximum Stack:</b> Top=25 Bytes (<a href="#S295">?PR?USBFS_HANDLESTANDARDRQST?USBFS_STD</a>)<p>
+<p><br><b>Called from:</b></p>
+<ul>
+<li><a href="#S295">?PR?USBFS_HANDLESTANDARDRQST?USBFS_STD</a></li>
+</ul>
+
+<h2><a name="S308"></a>?PR?USBFS_GETINTERFACECLASSTABLEPTR?USBFS_STD (C:00CBE6H - C:00CC4EH)</h2>
+<p><br><b>Maximum Stack:</b> Bottom=4 Bytes (<a href="#S305">?PR?_USBFS_GETCONFIGTABLEPTR?USBFS_STD</a>) Top=27 Bytes (<a href="#S301">?PR?_USBFS_CONFIG?USBFS_STD</a>)<p>
+<p><br><b>Calls to:</b></p>
+<ul>
+<li><a href="#S365">?C?LIB_CODE</a></li>
+<li><a href="#S305">?PR?_USBFS_GETCONFIGTABLEPTR?USBFS_STD</a></li>
+</ul>
+
+<p><br><b>Called from:</b></p>
+<ul>
+<li><a href="#S301">?PR?_USBFS_CONFIG?USBFS_STD</a></li>
+</ul>
+
+<h2><a name="S310"></a>?PR?USBFS_SETENDPOINTHALT?USBFS_STD (C:00B578H - C:00B607H)</h2>
+<p><br><b>Maximum Stack:</b> Bottom=2 Bytes (<a href="#S147">?PR?USBFS_INITNODATACONTROLTRANSFER?USBFS_DRV</a>) Top=25 Bytes (<a href="#S295">?PR?USBFS_HANDLESTANDARDRQST?USBFS_STD</a>)<p>
+<p><br><b>Calls to:</b></p>
+<ul>
+<li><a href="#S147">?PR?USBFS_INITNODATACONTROLTRANSFER?USBFS_DRV</a></li>
+</ul>
+
+<p><br><b>Called from:</b></p>
+<ul>
+<li><a href="#S295">?PR?USBFS_HANDLESTANDARDRQST?USBFS_STD</a></li>
+</ul>
+
+<h2><a name="S312"></a>?PR?USBFS_CLEARENDPOINTHALT?USBFS_STD (C:00B608H - C:00B6FAH)</h2>
+<p><br><b>Maximum Stack:</b> Bottom=2 Bytes (<a href="#S147">?PR?USBFS_INITNODATACONTROLTRANSFER?USBFS_DRV</a>) Top=25 Bytes (<a href="#S295">?PR?USBFS_HANDLESTANDARDRQST?USBFS_STD</a>)<p>
+<p><br><b>Calls to:</b></p>
+<ul>
+<li><a href="#S147">?PR?USBFS_INITNODATACONTROLTRANSFER?USBFS_DRV</a></li>
+</ul>
+
+<p><br><b>Called from:</b></p>
+<ul>
+<li><a href="#S295">?PR?USBFS_HANDLESTANDARDRQST?USBFS_STD</a></li>
+</ul>
+
+<h2><a name="S314"></a>?PR?USBFS_VALIDATEALTERNATESETTING?USBFS_STD (C:00C56CH - C:00C5DDH)</h2>
+<p><br><b>Maximum Stack:</b> Bottom=4 Bytes (<a href="#S305">?PR?_USBFS_GETCONFIGTABLEPTR?USBFS_STD</a>) Top=25 Bytes (<a href="#S295">?PR?USBFS_HANDLESTANDARDRQST?USBFS_STD</a>)<p>
+<p><br><b>Calls to:</b></p>
+<ul>
+<li><a href="#S365">?C?LIB_CODE</a></li>
+<li><a href="#S305">?PR?_USBFS_GETCONFIGTABLEPTR?USBFS_STD</a></li>
+</ul>
+
+<p><br><b>Called from:</b></p>
+<ul>
+<li><a href="#S295">?PR?USBFS_HANDLESTANDARDRQST?USBFS_STD</a></li>
+</ul>
+
+<h2><a name="S0"></a>?PR?I2C_DISPLAY_RESTORECONFIG?I2C_DISPLAY_PM (I:000000H - I:000046H)</h2>
+<p><br><b>Maximum Stack:</b> Bottom=2 Bytes (<a href="#S269">?PR?CYENTERCRITICALSECTION?CYBOOTASMKEIL</a>) Top=2 Bytes (<a href="#S0">?PR?I2C_DISPLAY_WAKEUP?I2C_DISPLAY_PM</a>)<p>
+<p><br><b>Calls to:</b></p>
+<ul>
+<li><a href="#S269">?PR?CYENTERCRITICALSECTION?CYBOOTASMKEIL</a></li>
+<li><a href="#S270">?PR?CYEXITCRITICALSECTION?CYBOOTASMKEIL</a></li>
+</ul>
+
+<p><br><b>Called from:</b></p>
+<ul>
+<li><a href="#S0">?PR?I2C_DISPLAY_WAKEUP?I2C_DISPLAY_PM</a></li>
+</ul>
+
+<h2><a name="S320"></a>?PR?_USBFS_EP3_DMAINITIALIZE?USBFS_EP3_DMA (C:006EE5H - C:006F2BH)</h2>
+<p><br><b>Maximum Stack:</b> Bottom=4 Bytes (<a href="#S223">?PR?_CYDMACHSETEXTENDEDADDRESS?CYDMAC</a>) Top=8 Bytes (<a href="#S123">?PR?_USBFS_INITEP_DMA?USBFS</a>)<p>
+<p><br><b>Calls to:</b></p>
+<ul>
+<li><a href="#S222">?PR?_CYDMACHPRIORITY?CYDMAC</a></li>
+<li><a href="#S227">?PR?_CYDMACHSETCONFIGURATION?CYDMAC</a></li>
+<li><a href="#S223">?PR?_CYDMACHSETEXTENDEDADDRESS?CYDMAC</a></li>
+</ul>
+
+<p><br><b>Called from:</b></p>
+<ul>
+<li><a href="#S123">?PR?_USBFS_INITEP_DMA?USBFS</a></li>
+</ul>
+
+<h2><a name="S323"></a>?PR?USBFS_EP17_DMA_DONE_SR_READ?USBFS_EP17_DMA_DONE_SR (C:00CC4FH - C:00CC54H)</h2>
+<p><br><b>Maximum Stack:</b> Top=21 Bytes (<a href="#S291">?PR?USBFS_EP_DMA_DONE_ISR?USBFS_EPISR</a>)<p>
+<p><br><b>Called from:</b></p>
+<ul>
+<li><a href="#S291">?PR?USBFS_EP_DMA_DONE_ISR?USBFS_EPISR</a></li>
+</ul>
+
+<h2><a name="S324"></a>?PR?USBFS_EP17_DMA_DONE_SR_INTERRUPTENABLE?USBFS_EP17_DMA_DONE_SR (C:00ADB8H - C:00ADC4H)</h2>
+<p><br><b>Maximum Stack:</b> Bottom=2 Bytes (<a href="#S269">?PR?CYENTERCRITICALSECTION?CYBOOTASMKEIL</a>) Top=2 Bytes (<a href="#S116">?PR?_USBFS_INITCOMPONENT?USBFS</a>)<p>
+<p><br><b>Calls to:</b></p>
+<ul>
+<li><a href="#S269">?PR?CYENTERCRITICALSECTION?CYBOOTASMKEIL</a></li>
+<li><a href="#S270">?PR?CYEXITCRITICALSECTION?CYBOOTASMKEIL</a></li>
+</ul>
+
+<p><br><b>Called from:</b></p>
+<ul>
+<li><a href="#S116">?PR?_USBFS_INITCOMPONENT?USBFS</a></li>
+</ul>
+
+<h2><a name="S325"></a>?PR?_USBFS_EP2_DMAINITIALIZE?USBFS_EP2_DMA (C:006F2CH - C:006F72H)</h2>
+<p><br><b>Maximum Stack:</b> Bottom=4 Bytes (<a href="#S223">?PR?_CYDMACHSETEXTENDEDADDRESS?CYDMAC</a>) Top=8 Bytes (<a href="#S123">?PR?_USBFS_INITEP_DMA?USBFS</a>)<p>
+<p><br><b>Calls to:</b></p>
+<ul>
+<li><a href="#S222">?PR?_CYDMACHPRIORITY?CYDMAC</a></li>
+<li><a href="#S227">?PR?_CYDMACHSETCONFIGURATION?CYDMAC</a></li>
+<li><a href="#S223">?PR?_CYDMACHSETEXTENDEDADDRESS?CYDMAC</a></li>
+</ul>
+
+<p><br><b>Called from:</b></p>
+<ul>
+<li><a href="#S123">?PR?_USBFS_INITEP_DMA?USBFS</a></li>
+</ul>
+
+<h2><a name="S328"></a>?PR?USBFS_DP_CLEARINTERRUPT?USBFS_DP (C:00AFA7H - C:00AFB9H)</h2>
+<p><br><b>Maximum Stack:</b> Top=21 Bytes (<a href="#S293">?PR?USBFS_DP_ISR?USBFS_PM</a>)<p>
+<p><br><b>Called from:</b></p>
+<ul>
+<li><a href="#S293">?PR?USBFS_DP_ISR?USBFS_PM</a></li>
+<li><a href="#S119">?PR?USBFS_STOP?USBFS</a></li>
+<li><a href="#S0">?PR?USBFS_SUSPEND?USBFS_PM</a></li>
+</ul>
+
+<h2><a name="S329"></a>?PR?_USBFS_EP_DMA_DONE_ISR_STARTEX?USBFS_EP_DMA_DONE_ISR (C:00AA7BH - C:00AA92H)</h2>
+<p><br><b>Maximum Stack:</b> Bottom=2 Bytes (<a href="#S335">?PR?USBFS_EP_DMA_DONE_ISR_DISABLE?USBFS_EP_DMA_DONE_ISR</a>) Top=2 Bytes (<a href="#S116">?PR?_USBFS_INITCOMPONENT?USBFS</a>)<p>
+<p><br><b>Calls to:</b></p>
+<ul>
+<li><a href="#S333">?PR?_USBFS_EP_DMA_DONE_ISR_SETPRIORITY?USBFS_EP_DMA_DONE_ISR</a></li>
+<li><a href="#S332">?PR?_USBFS_EP_DMA_DONE_ISR_SETVECTOR?USBFS_EP_DMA_DONE_ISR</a></li>
+<li><a href="#S335">?PR?USBFS_EP_DMA_DONE_ISR_DISABLE?USBFS_EP_DMA_DONE_ISR</a></li>
+</ul>
+
+<p><br><b>Called from:</b></p>
+<ul>
+<li><a href="#S116">?PR?_USBFS_INITCOMPONENT?USBFS</a></li>
+</ul>
+
+<h2><a name="S332"></a>?PR?_USBFS_EP_DMA_DONE_ISR_SETVECTOR?USBFS_EP_DMA_DONE_ISR (C:00ADC5H - C:00ADD1H)</h2>
+<p><br><b>Maximum Stack:</b> Top=4 Bytes (<a href="#S329">?PR?_USBFS_EP_DMA_DONE_ISR_STARTEX?USBFS_EP_DMA_DONE_ISR</a>)<p>
+<p><br><b>Calls to:</b></p>
+<ul>
+<li><a href="#S278">?PR?CYWRITE16?CYMEM</a></li>
+</ul>
+
+<p><br><b>Called from:</b></p>
+<ul>
+<li><a href="#S329">?PR?_USBFS_EP_DMA_DONE_ISR_STARTEX?USBFS_EP_DMA_DONE_ISR</a></li>
+<li><a href="#S0">?PR?USBFS_EP_DMA_DONE_ISR_START?USBFS_EP_DMA_DONE_ISR</a></li>
+</ul>
+
+<h2><a name="S333"></a>?PR?_USBFS_EP_DMA_DONE_ISR_SETPRIORITY?USBFS_EP_DMA_DONE_ISR (C:00ADAEH - C:00ADB7H)</h2>
+<p><br><b>Maximum Stack:</b> Top=4 Bytes (<a href="#S329">?PR?_USBFS_EP_DMA_DONE_ISR_STARTEX?USBFS_EP_DMA_DONE_ISR</a>)<p>
+<p><br><b>Called from:</b></p>
+<ul>
+<li><a href="#S329">?PR?_USBFS_EP_DMA_DONE_ISR_STARTEX?USBFS_EP_DMA_DONE_ISR</a></li>
+<li><a href="#S0">?PR?USBFS_EP_DMA_DONE_ISR_START?USBFS_EP_DMA_DONE_ISR</a></li>
+</ul>
+
+<h2><a name="S335"></a>?PR?USBFS_EP_DMA_DONE_ISR_DISABLE?USBFS_EP_DMA_DONE_ISR (C:00ADA7H - C:00ADADH)</h2>
+<p><br><b>Maximum Stack:</b> Top=4 Bytes (<a href="#S329">?PR?_USBFS_EP_DMA_DONE_ISR_STARTEX?USBFS_EP_DMA_DONE_ISR</a>)<p>
+<p><br><b>Called from:</b></p>
+<ul>
+<li><a href="#S329">?PR?_USBFS_EP_DMA_DONE_ISR_STARTEX?USBFS_EP_DMA_DONE_ISR</a></li>
+<li><a href="#S0">?PR?USBFS_EP_DMA_DONE_ISR_START?USBFS_EP_DMA_DONE_ISR</a></li>
+<li><a href="#S0">?PR?USBFS_EP_DMA_DONE_ISR_STOP?USBFS_EP_DMA_DONE_ISR</a></li>
+</ul>
+
+<h2><a name="S336"></a>?PR?USBFS_EP8_DMA_DONE_SR_READ?USBFS_EP8_DMA_DONE_SR (C:00CC56H - C:00CC5BH)</h2>
+<p><br><b>Maximum Stack:</b> Top=21 Bytes (<a href="#S291">?PR?USBFS_EP_DMA_DONE_ISR?USBFS_EPISR</a>)<p>
+<p><br><b>Called from:</b></p>
+<ul>
+<li><a href="#S291">?PR?USBFS_EP_DMA_DONE_ISR?USBFS_EPISR</a></li>
+</ul>
+
+<h2><a name="S337"></a>?PR?USBFS_EP8_DMA_DONE_SR_INTERRUPTENABLE?USBFS_EP8_DMA_DONE_SR (C:00ADD2H - C:00ADDEH)</h2>
+<p><br><b>Maximum Stack:</b> Bottom=2 Bytes (<a href="#S269">?PR?CYENTERCRITICALSECTION?CYBOOTASMKEIL</a>) Top=2 Bytes (<a href="#S116">?PR?_USBFS_INITCOMPONENT?USBFS</a>)<p>
+<p><br><b>Calls to:</b></p>
+<ul>
+<li><a href="#S269">?PR?CYENTERCRITICALSECTION?CYBOOTASMKEIL</a></li>
+<li><a href="#S270">?PR?CYEXITCRITICALSECTION?CYBOOTASMKEIL</a></li>
+</ul>
+
+<p><br><b>Called from:</b></p>
+<ul>
+<li><a href="#S116">?PR?_USBFS_INITCOMPONENT?USBFS</a></li>
+</ul>
+
+<h2><a name="S338"></a>?PR?CYSETTEMPINT?CYFLASH (C:008C7DH - C:008CCEH)</h2>
+<p><br><b>Maximum Stack:</b> Bottom=4 Bytes (<a href="#S347">?PR?CYSPCSTART?CYSPC</a>) Top=4 Bytes (<a href="#S342">?PR?CYSETTEMP?CYFLASH</a>)<p>
+<p><br><b>Calls to:</b></p>
+<ul>
+<li><a href="#S354">?PR?_CYSPCGETTEMP?CYSPC</a></li>
+<li><a href="#S348">?PR?_CYSPCREADDATA?CYSPC</a></li>
+<li><a href="#S268">?PR?CYDELAYUS?CYBOOTASMKEIL</a></li>
+<li><a href="#S355">?PR?CYSPCLOCK?CYSPC</a></li>
+<li><a href="#S347">?PR?CYSPCSTART?CYSPC</a></li>
+<li><a href="#S357">?PR?CYSPCUNLOCK?CYSPC</a></li>
+</ul>
+
+<p><br><b>Called from:</b></p>
+<ul>
+<li><a href="#S342">?PR?CYSETTEMP?CYFLASH</a></li>
+</ul>
+
+<h2><a name="S340"></a>?PR?CYFLASHGETSPCALGORITHM?CYFLASH (C:008C30H - C:008C7CH)</h2>
+<p><br><b>Maximum Stack:</b> Bottom=4 Bytes (<a href="#S347">?PR?CYSPCSTART?CYSPC</a>) Top=4 Bytes (<a href="#S342">?PR?CYSETTEMP?CYFLASH</a>)<p>
+<p><br><b>Calls to:</b></p>
+<ul>
+<li><a href="#S268">?PR?CYDELAYUS?CYBOOTASMKEIL</a></li>
+<li><a href="#S358">?PR?CYSPCGETALGORITHM?CYSPC</a></li>
+<li><a href="#S355">?PR?CYSPCLOCK?CYSPC</a></li>
+<li><a href="#S347">?PR?CYSPCSTART?CYSPC</a></li>
+<li><a href="#S357">?PR?CYSPCUNLOCK?CYSPC</a></li>
+</ul>
+
+<p><br><b>Called from:</b></p>
+<ul>
+<li><a href="#S342">?PR?CYSETTEMP?CYFLASH</a></li>
+</ul>
+
+<h2><a name="S342"></a>?PR?CYSETTEMP?CYFLASH (C:008C1AH - C:008C2FH)</h2>
+<p><br><b>Maximum Stack:</b> Bottom=6 Bytes (<a href="#S340">?PR?CYFLASHGETSPCALGORITHM?CYFLASH</a>) Top=2 Bytes (<a href="#S196">?PR?EEPROM_ENABLE?EEPROM</a>)<p>
+<p><br><b>Calls to:</b></p>
+<ul>
+<li><a href="#S340">?PR?CYFLASHGETSPCALGORITHM?CYFLASH</a></li>
+<li><a href="#S338">?PR?CYSETTEMPINT?CYFLASH</a></li>
+</ul>
+
+<p><br><b>Called from:</b></p>
+<ul>
+<li><a href="#S196">?PR?EEPROM_ENABLE?EEPROM</a></li>
+<li><a href="#S0">?PR?EEPROM_UPDATETEMPERATURE?EEPROM</a></li>
+</ul>
+
+<h2><a name="S0"></a>?PR?_CYFLASH_SETWAITCYCLES?CYFLASH (I:000000H - I:000053H)</h2>
+<p><br><b>Maximum Stack:</b> Bottom=4 Bytes (<a href="#S239">?PR?_?CYHALT?CYLIB</a>) Top=2 Bytes (<a href="#S0">?PR?CYPMSAVECLOCKS?CYPM</a>)<p>
+<p><br><b>Calls to:</b></p>
+<ul>
+<li><a href="#S239">?PR?_?CYHALT?CYLIB</a></li>
+<li><a href="#S269">?PR?CYENTERCRITICALSECTION?CYBOOTASMKEIL</a></li>
+<li><a href="#S270">?PR?CYEXITCRITICALSECTION?CYBOOTASMKEIL</a></li>
+</ul>
+
+<p><br><b>Called from:</b></p>
+<ul>
+<li><a href="#S0">?PR?CYPMRESTORECLOCKS?CYPM</a></li>
+<li><a href="#S0">?PR?CYPMSAVECLOCKS?CYPM</a></li>
+</ul>
+
+<h2><a name="S0"></a>?PR?CYEEPROM_READRESERVE?CYFLASH (I:000000H - I:00000FH)</h2>
+<p><br><b>Maximum Stack:</b> Top=2 Bytes (<a href="#S0">?PR?_EEPROM_READBYTE?EEPROM</a>)<p>
+<p><br><b>Called from:</b></p>
+<ul>
+<li><a href="#S0">?PR?_EEPROM_READBYTE?EEPROM</a></li>
+</ul>
+
+<h2><a name="S0"></a>?PR?CYEEPROM_READRELEASE?CYFLASH (I:000000H - I:000007H)</h2>
+<p><br><b>Maximum Stack:</b> Top=2 Bytes (<a href="#S0">?PR?_EEPROM_READBYTE?EEPROM</a>)<p>
+<p><br><b>Called from:</b></p>
+<ul>
+<li><a href="#S0">?PR?_EEPROM_READBYTE?EEPROM</a></li>
+</ul>
+
+<h2><a name="S0"></a>?PR?_CYPMREADSTATUS?CYPM (I:000000H - I:000038H)</h2>
+<p><br><b>Maximum Stack:</b> Bottom=2 Bytes (<a href="#S269">?PR?CYENTERCRITICALSECTION?CYBOOTASMKEIL</a>) Top=4 Bytes (<a href="#S0">?PR?_CYIMO_START?CYLIB</a>)<p>
+<p><br><b>Calls to:</b></p>
+<ul>
+<li><a href="#S269">?PR?CYENTERCRITICALSECTION?CYBOOTASMKEIL</a></li>
+<li><a href="#S270">?PR?CYEXITCRITICALSECTION?CYBOOTASMKEIL</a></li>
+</ul>
+
+<p><br><b>Called from:</b></p>
+<ul>
+<li><a href="#S0">?PR?_CYIMO_START?CYLIB</a></li>
+<li><a href="#S0">?PR?_CYPLL_OUT_START?CYLIB</a></li>
+<li><a href="#S0">?PR?_CYXTAL_START?CYLIB</a></li>
+</ul>
+
+<h2><a name="S0"></a>?PR?CYPMHIBSAVESET?CYPM (I:000000H - I:000075H)</h2>
+<p><br><b>Maximum Stack:</b> Bottom=8 Bytes (<a href="#S0">?PR?CYPMHVILVISAVEDISABLE?CYPM</a>) Top=2 Bytes (<a href="#S0">?PR?_CYPMHIBERNATEEX?CYPM</a>)<p>
+<p><br><b>Calls to:</b></p>
+<ul>
+<li><a href="#S0">?PR?_CYILO_SETPOWERMODE?CYLIB</a></li>
+<li><a href="#S0">?PR?CYPMHIBSLPSAVESET?CYPM</a></li>
+<li><a href="#S0">?PR?CYPMHVILVISAVEDISABLE?CYPM</a></li>
+</ul>
+
+<p><br><b>Called from:</b></p>
+<ul>
+<li><a href="#S0">?PR?_CYPMHIBERNATEEX?CYPM</a></li>
+</ul>
+
+<h2><a name="S0"></a>?PR?CYPMHIBRESTORE?CYPM (I:000000H - I:00003FH)</h2>
+<p><br><b>Maximum Stack:</b> Bottom=8 Bytes (<a href="#S0">?PR?CYPMHVILVIRESTORE?CYPM</a>) Top=2 Bytes (<a href="#S0">?PR?_CYPMHIBERNATEEX?CYPM</a>)<p>
+<p><br><b>Calls to:</b></p>
+<ul>
+<li><a href="#S0">?PR?_CYILO_SETPOWERMODE?CYLIB</a></li>
+<li><a href="#S0">?PR?CYILO_START100K?CYLIB</a></li>
+<li><a href="#S0">?PR?CYILO_START1K?CYLIB</a></li>
+<li><a href="#S0">?PR?CYPMHIBSLPRESTORE?CYPM</a></li>
+<li><a href="#S0">?PR?CYPMHVILVIRESTORE?CYPM</a></li>
+</ul>
+
+<p><br><b>Called from:</b></p>
+<ul>
+<li><a href="#S0">?PR?_CYPMHIBERNATEEX?CYPM</a></li>
+</ul>
+
+<h2><a name="S0"></a>?PR?_CYPMCTWSETINTERVAL?CYPM (I:000000H - I:000048H)</h2>
+<p><br><b>Maximum Stack:</b> Bottom=2 Bytes (<a href="#S0">?PR?CYILO_START1K?CYLIB</a>) Top=2 Bytes (<a href="#S0">?PR?_CYPMALTACT?CYPM</a>)<p>
+<p><br><b>Calls to:</b></p>
+<ul>
+<li><a href="#S0">?PR?CYILO_START1K?CYLIB</a></li>
+</ul>
+
+<p><br><b>Called from:</b></p>
+<ul>
+<li><a href="#S0">?PR?_CYPMALTACT?CYPM</a></li>
+<li><a href="#S0">?PR?_CYPMSLEEP?CYPM</a></li>
+</ul>
+
+<h2><a name="S0"></a>?PR?CYPMOPPSSET?CYPM (I:000000H - I:000016H)</h2>
+<p><br><b>Maximum Stack:</b> Bottom=4 Bytes (<a href="#S0">?PR?CYXTAL_32KHZ_START?CYLIB</a>) Top=2 Bytes (<a href="#S0">?PR?_CYPMALTACT?CYPM</a>)<p>
+<p><br><b>Calls to:</b></p>
+<ul>
+<li><a href="#S0">?PR?CYXTAL_32KHZ_START?CYLIB</a></li>
+</ul>
+
+<p><br><b>Called from:</b></p>
+<ul>
+<li><a href="#S0">?PR?_CYPMALTACT?CYPM</a></li>
+<li><a href="#S0">?PR?_CYPMSLEEP?CYPM</a></li>
+</ul>
+
+<h2><a name="S0"></a>?PR?_CYPMFTWSETINTERVAL?CYPM (I:000000H - I:00004CH)</h2>
+<p><br><b>Maximum Stack:</b> Bottom=2 Bytes (<a href="#S0">?PR?CYILO_START100K?CYLIB</a>) Top=4 Bytes (<a href="#S0">?PR?_CYIMO_START?CYLIB</a>)<p>
+<p><br><b>Calls to:</b></p>
+<ul>
+<li><a href="#S0">?PR?CYILO_START100K?CYLIB</a></li>
+</ul>
+
+<p><br><b>Called from:</b></p>
+<ul>
+<li><a href="#S0">?PR?_CYIMO_START?CYLIB</a></li>
+<li><a href="#S0">?PR?_CYPLL_OUT_START?CYLIB</a></li>
+<li><a href="#S0">?PR?_CYPMALTACT?CYPM</a></li>
+<li><a href="#S0">?PR?_CYXTAL_START?CYLIB</a></li>
+</ul>
+
+<h2><a name="S0"></a>?PR?CYPMHIBSLPSAVESET?CYPM (I:000000H - I:00018BH)</h2>
+<p><br><b>Maximum Stack:</b> Top=4 Bytes (<a href="#S0">?PR?CYPMHIBSAVESET?CYPM</a>)<p>
+<p><br><b>Called from:</b></p>
+<ul>
+<li><a href="#S0">?PR?_CYPMSLEEP?CYPM</a></li>
+<li><a href="#S0">?PR?CYPMHIBSAVESET?CYPM</a></li>
+</ul>
+
+<h2><a name="S0"></a>?PR?CYPMHIBSLPRESTORE?CYPM (I:000000H - I:00010CH)</h2>
+<p><br><b>Maximum Stack:</b> Top=4 Bytes (<a href="#S0">?PR?CYPMHIBRESTORE?CYPM</a>)<p>
+<p><br><b>Called from:</b></p>
+<ul>
+<li><a href="#S0">?PR?_CYPMSLEEP?CYPM</a></li>
+<li><a href="#S0">?PR?CYPMHIBRESTORE?CYPM</a></li>
+</ul>
+
+<h2><a name="S0"></a>?PR?CYPMHVILVISAVEDISABLE?CYPM (I:000000H - I:000080H)</h2>
+<p><br><b>Maximum Stack:</b> Bottom=6 Bytes (<a href="#S0">?PR?CYVDLVDIGITDISABLE?CYLIB</a>) Top=4 Bytes (<a href="#S0">?PR?CYPMHIBSAVESET?CYPM</a>)<p>
+<p><br><b>Calls to:</b></p>
+<ul>
+<li><a href="#S0">?PR?CYVDHVANALOGDISABLE?CYLIB</a></li>
+<li><a href="#S0">?PR?CYVDLVANALOGDISABLE?CYLIB</a></li>
+<li><a href="#S0">?PR?CYVDLVDIGITDISABLE?CYLIB</a></li>
+</ul>
+
+<p><br><b>Called from:</b></p>
+<ul>
+<li><a href="#S0">?PR?CYPMHIBSAVESET?CYPM</a></li>
+</ul>
+
+<h2><a name="S0"></a>?PR?CYPMHVILVIRESTORE?CYPM (I:000000H - I:000032H)</h2>
+<p><br><b>Maximum Stack:</b> Bottom=6 Bytes (<a href="#S0">?PR?_CYVDLVDIGITENABLE?CYLIB</a>) Top=4 Bytes (<a href="#S0">?PR?CYPMHIBRESTORE?CYPM</a>)<p>
+<p><br><b>Calls to:</b></p>
+<ul>
+<li><a href="#S0">?PR?_CYVDLVANALOGENABLE?CYLIB</a></li>
+<li><a href="#S0">?PR?_CYVDLVDIGITENABLE?CYLIB</a></li>
+<li><a href="#S0">?PR?CYVDHVANALOGENABLE?CYLIB</a></li>
+</ul>
+
+<p><br><b>Called from:</b></p>
+<ul>
+<li><a href="#S0">?PR?CYPMHIBRESTORE?CYPM</a></li>
+</ul>
+
+<h2><a name="S347"></a>?PR?CYSPCSTART?CYSPC (C:008CDAH - C:008CEDH)</h2>
+<p><br><b>Maximum Stack:</b> Bottom=2 Bytes (<a href="#S269">?PR?CYENTERCRITICALSECTION?CYBOOTASMKEIL</a>) Top=8 Bytes (<a href="#S200">?PR?EEPROM_QUERY?EEPROM</a>)<p>
+<p><br><b>Calls to:</b></p>
+<ul>
+<li><a href="#S269">?PR?CYENTERCRITICALSECTION?CYBOOTASMKEIL</a></li>
+<li><a href="#S270">?PR?CYEXITCRITICALSECTION?CYBOOTASMKEIL</a></li>
+</ul>
+
+<p><br><b>Called from:</b></p>
+<ul>
+<li><a href="#S0">?PR?_CYSETFLASHEEBUFFER?CYFLASH</a></li>
+<li><a href="#S0">?PR?_EEPROM_BYTEWRITEPOS?EEPROM</a></li>
+<li><a href="#S0">?PR?_EEPROM_ERASESECTOR?EEPROM</a></li>
+<li><a href="#S0">?PR?_EEPROM_STARTERASE?EEPROM</a></li>
+<li><a href="#S198">?PR?_EEPROM_STARTWRITE?EEPROM</a></li>
+<li><a href="#S0">?PR?_EEPROM_WRITE?EEPROM</a></li>
+<li><a href="#S0">?PR?_EEPROM_WRITEBYTE?EEPROM</a></li>
+<li><a href="#S340">?PR?CYFLASHGETSPCALGORITHM?CYFLASH</a></li>
+<li><a href="#S338">?PR?CYSETTEMPINT?CYFLASH</a></li>
+<li><a href="#S214">?PR?DIETEMP_1_START?DIETEMP_1</a></li>
+<li><a href="#S200">?PR?EEPROM_QUERY?EEPROM</a></li>
+</ul>
+
+<h2><a name="S348"></a>?PR?_CYSPCREADDATA?CYSPC (C:00CC5CH - C:00CCBBH)</h2>
+<p><br><b>Maximum Stack:</b> Bottom=2 Bytes (<a href="#S268">?PR?CYDELAYUS?CYBOOTASMKEIL</a>) Top=6 Bytes (<a href="#S338">?PR?CYSETTEMPINT?CYFLASH</a>)<p>
+<p><br><b>Calls to:</b></p>
+<ul>
+<li><a href="#S365">?C?LIB_CODE</a></li>
+<li><a href="#S268">?PR?CYDELAYUS?CYBOOTASMKEIL</a></li>
+</ul>
+
+<p><br><b>Called from:</b></p>
+<ul>
+<li><a href="#S338">?PR?CYSETTEMPINT?CYFLASH</a></li>
+</ul>
+
+<h2><a name="S0"></a>?PR?_CYSPCLOADMULTIBYTE?CYSPC (I:000000H - I:0000ACH)</h2>
+<p><br><b>Maximum Stack:</b> Bottom=2 Bytes (<a href="#S365">?C?LIB_CODE</a>) Top=2 Bytes (<a href="#S0">?PR?_EEPROM_WRITEBYTE?EEPROM</a>)<p>
+<p><br><b>Calls to:</b></p>
+<ul>
+<li><a href="#S365">?C?LIB_CODE</a></li>
+</ul>
+
+<p><br><b>Called from:</b></p>
+<ul>
+<li><a href="#S0">?PR?_EEPROM_BYTEWRITEPOS?EEPROM</a></li>
+<li><a href="#S0">?PR?_EEPROM_WRITEBYTE?EEPROM</a></li>
+</ul>
+
+<h2><a name="S350"></a>?PR?_CYSPCLOADROW?CYSPC (C:00CCBCH - C:00CD2EH)</h2>
+<p><br><b>Maximum Stack:</b> Bottom=2 Bytes (<a href="#S365">?C?LIB_CODE</a>) Top=8 Bytes (<a href="#S198">?PR?_EEPROM_STARTWRITE?EEPROM</a>)<p>
+<p><br><b>Calls to:</b></p>
+<ul>
+<li><a href="#S365">?C?LIB_CODE</a></li>
+</ul>
+
+<p><br><b>Called from:</b></p>
+<ul>
+<li><a href="#S198">?PR?_EEPROM_STARTWRITE?EEPROM</a></li>
+<li><a href="#S0">?PR?_EEPROM_WRITE?EEPROM</a></li>
+</ul>
+
+<h2><a name="S0"></a>?PR?_CYSPCLOADROWFULL?CYSPC (I:000000H - I:000142H)</h2>
+<p><br><b>Maximum Stack:</b> Bottom=3 Bytes (<a href="#S365">?C?LIB_CODE</a>) Top=2 Bytes (<a href="#S0">?PR?_CYWRITEROWFULL?CYFLASH</a>)<p>
+<p><br><b>Calls to:</b></p>
+<ul>
+<li><a href="#S365">?C?LIB_CODE</a></li>
+<li><a href="#S275">?PR?CYREAD8?CYMEM</a></li>
+</ul>
+
+<p><br><b>Called from:</b></p>
+<ul>
+<li><a href="#S0">?PR?_CYWRITEROWFULL?CYFLASH</a></li>
+</ul>
+
+<h2><a name="S352"></a>?PR?_CYSPCWRITEROW?CYSPC (C:00CD2FH - C:00CD82H)</h2>
+<p><br><b>Maximum Stack:</b> Top=8 Bytes (<a href="#S198">?PR?_EEPROM_STARTWRITE?EEPROM</a>)<p>
+<p><br><b>Called from:</b></p>
+<ul>
+<li><a href="#S0">?PR?_CYWRITEROWFULL?CYFLASH</a></li>
+<li><a href="#S0">?PR?_EEPROM_BYTEWRITEPOS?EEPROM</a></li>
+<li><a href="#S198">?PR?_EEPROM_STARTWRITE?EEPROM</a></li>
+<li><a href="#S0">?PR?_EEPROM_WRITE?EEPROM</a></li>
+<li><a href="#S0">?PR?_EEPROM_WRITEBYTE?EEPROM</a></li>
+</ul>
+
+<h2><a name="S0"></a>?PR?_CYSPCERASESECTOR?CYSPC (I:000000H - I:00002FH)</h2>
+<p><br><b>Maximum Stack:</b> Top=2 Bytes (<a href="#S0">?PR?_EEPROM_ERASESECTOR?EEPROM</a>)<p>
+<p><br><b>Called from:</b></p>
+<ul>
+<li><a href="#S0">?PR?_EEPROM_ERASESECTOR?EEPROM</a></li>
+<li><a href="#S0">?PR?_EEPROM_STARTERASE?EEPROM</a></li>
+</ul>
+
+<h2><a name="S0"></a>?PR?_CYSPCERASEROW?CYSPC (I:000000H - I:000053H)</h2>
+<p><br><b>Maximum Stack:</b> Top=2 Bytes (<a href="#S0">?PR?_CYFLASH_ERASEROW?CYFLASH</a>)<p>
+<p><br><b>Called from:</b></p>
+<ul>
+<li><a href="#S0">?PR?_CYFLASH_ERASEROW?CYFLASH</a></li>
+</ul>
+
+<h2><a name="S354"></a>?PR?_CYSPCGETTEMP?CYSPC (C:008DEDH - C:008E1AH)</h2>
+<p><br><b>Maximum Stack:</b> Top=6 Bytes (<a href="#S214">?PR?DIETEMP_1_START?DIETEMP_1</a>)<p>
+<p><br><b>Called from:</b></p>
+<ul>
+<li><a href="#S338">?PR?CYSETTEMPINT?CYFLASH</a></li>
+<li><a href="#S214">?PR?DIETEMP_1_START?DIETEMP_1</a></li>
+</ul>
+
+<h2><a name="S355"></a>?PR?CYSPCLOCK?CYSPC (C:008D19H - C:008D37H)</h2>
+<p><br><b>Maximum Stack:</b> Bottom=2 Bytes (<a href="#S269">?PR?CYENTERCRITICALSECTION?CYBOOTASMKEIL</a>) Top=8 Bytes (<a href="#S198">?PR?_EEPROM_STARTWRITE?EEPROM</a>)<p>
+<p><br><b>Calls to:</b></p>
+<ul>
+<li><a href="#S269">?PR?CYENTERCRITICALSECTION?CYBOOTASMKEIL</a></li>
+<li><a href="#S270">?PR?CYEXITCRITICALSECTION?CYBOOTASMKEIL</a></li>
+</ul>
+
+<p><br><b>Called from:</b></p>
+<ul>
+<li><a href="#S0">?PR?_CYFLASH_ERASEROW?CYFLASH</a></li>
+<li><a href="#S0">?PR?_CYSETFLASHEEBUFFER?CYFLASH</a></li>
+<li><a href="#S0">?PR?_CYWRITEROWFULL?CYFLASH</a></li>
+<li><a href="#S0">?PR?_EEPROM_BYTEWRITEPOS?EEPROM</a></li>
+<li><a href="#S0">?PR?_EEPROM_ERASESECTOR?EEPROM</a></li>
+<li><a href="#S0">?PR?_EEPROM_STARTERASE?EEPROM</a></li>
+<li><a href="#S198">?PR?_EEPROM_STARTWRITE?EEPROM</a></li>
+<li><a href="#S0">?PR?_EEPROM_WRITE?EEPROM</a></li>
+<li><a href="#S0">?PR?_EEPROM_WRITEBYTE?EEPROM</a></li>
+<li><a href="#S340">?PR?CYFLASHGETSPCALGORITHM?CYFLASH</a></li>
+<li><a href="#S338">?PR?CYSETTEMPINT?CYFLASH</a></li>
+<li><a href="#S214">?PR?DIETEMP_1_START?DIETEMP_1</a></li>
+</ul>
+
+<h2><a name="S357"></a>?PR?CYSPCUNLOCK?CYSPC (C:008CCFH - C:008CD9H)</h2>
+<p><br><b>Maximum Stack:</b> Bottom=2 Bytes (<a href="#S269">?PR?CYENTERCRITICALSECTION?CYBOOTASMKEIL</a>) Top=8 Bytes (<a href="#S200">?PR?EEPROM_QUERY?EEPROM</a>)<p>
+<p><br><b>Calls to:</b></p>
+<ul>
+<li><a href="#S269">?PR?CYENTERCRITICALSECTION?CYBOOTASMKEIL</a></li>
+<li><a href="#S270">?PR?CYEXITCRITICALSECTION?CYBOOTASMKEIL</a></li>
+</ul>
+
+<p><br><b>Called from:</b></p>
+<ul>
+<li><a href="#S0">?PR?_CYFLASH_ERASEROW?CYFLASH</a></li>
+<li><a href="#S0">?PR?_CYSETFLASHEEBUFFER?CYFLASH</a></li>
+<li><a href="#S0">?PR?_CYWRITEROWFULL?CYFLASH</a></li>
+<li><a href="#S216">?PR?_DIETEMP_1_QUERY?DIETEMP_1</a></li>
+<li><a href="#S0">?PR?_EEPROM_BYTEWRITEPOS?EEPROM</a></li>
+<li><a href="#S0">?PR?_EEPROM_ERASESECTOR?EEPROM</a></li>
+<li><a href="#S0">?PR?_EEPROM_WRITE?EEPROM</a></li>
+<li><a href="#S0">?PR?_EEPROM_WRITEBYTE?EEPROM</a></li>
+<li><a href="#S340">?PR?CYFLASHGETSPCALGORITHM?CYFLASH</a></li>
+<li><a href="#S338">?PR?CYSETTEMPINT?CYFLASH</a></li>
+<li><a href="#S214">?PR?DIETEMP_1_START?DIETEMP_1</a></li>
+<li><a href="#S200">?PR?EEPROM_QUERY?EEPROM</a></li>
+</ul>
+
+<h2><a name="S358"></a>?PR?CYSPCGETALGORITHM?CYSPC (C:00CD83H - C:00CD9DH)</h2>
+<p><br><b>Maximum Stack:</b> Top=6 Bytes (<a href="#S340">?PR?CYFLASHGETSPCALGORITHM?CYFLASH</a>)<p>
+<p><br><b>Called from:</b></p>
+<ul>
+<li><a href="#S340">?PR?CYFLASHGETSPCALGORITHM?CYFLASH</a></li>
+</ul>
+
+<h2><a name="S360"></a>?PR?USBFS_DISPATCHAUDIOCLASSRQST?USBFS_AUDIO (C:009DB0H - C:00A009H)</h2>
+<p><br><b>Maximum Stack:</b> Bottom=6 Bytes (<a href="#S140">?PR?USBFS_INITCONTROLREAD?USBFS_DRV</a>) Top=27 Bytes (<a href="#S283">?PR?USBFS_DISPATCHCLASSRQST?USBFS_CLS</a>)<p>
+<p><br><b>Calls to:</b></p>
+<ul>
+<li><a href="#S140">?PR?USBFS_INITCONTROLREAD?USBFS_DRV</a></li>
+<li><a href="#S144">?PR?USBFS_INITCONTROLWRITE?USBFS_DRV</a></li>
+</ul>
+
+<p><br><b>Called from:</b></p>
+<ul>
+<li><a href="#S283">?PR?USBFS_DISPATCHCLASSRQST?USBFS_CLS</a></li>
+</ul>
+
+<h2><a name="S365"></a>?C?LIB_CODE (C:00411AH - C:0047DAH)</h2>
+<p><br><b>Maximum Stack:</b> Top=36 Bytes (<a href="#S250">?PR?_CYGETUNIQUEID?CYLIB</a>)<p>
+<p><br><b>Called from:</b></p>
+<ul>
+<li><a href="#S241">?PR?_?CYDELAY?CYLIB</a></li>
+<li><a href="#S0">?PR?_?CYDELAYFREQ?CYLIB</a></li>
+<li><a href="#S239">?PR?_?CYHALT?CYLIB</a></li>
+<li><a href="#S0">?PR?_?SWAP16?MAIN</a></li>
+<li><a href="#S7">?PR?_?SWAP32?MAIN</a></li>
+<li><a href="#S68">?PR?_?SWAP32_INT?USBVEND01</a></li>
+<li><a href="#S0">?PR?_BOOTLOADABLE_SETFLASHBYTE?BOOTLOADABLE</a></li>
+<li><a href="#S29">?PR?_CONVERT_FROM_HOST?CONVERT</a></li>
+<li><a href="#S0">?PR?_CYDMACCLEARERROR?CYDMAC</a></li>
+<li><a href="#S0">?PR?_CYDMACHFREE?CYDMAC</a></li>
+<li><a href="#S0">?PR?_CYDMACHSTATUS?CYDMAC</a></li>
+<li><a href="#S0">?PR?_CYDMATDGETADDRESS?CYDMAC</a></li>
+<li><a href="#S0">?PR?_CYDMATDGETCONFIGURATION?CYDMAC</a></li>
+<li><a href="#S0">?PR?_CYENABLEINTS?CYLIB</a></li>
+<li><a href="#S0">?PR?_CYFLASH_ERASEROW?CYFLASH</a></li>
+<li><a href="#S250">?PR?_CYGETUNIQUEID?CYLIB</a></li>
+<li><a href="#S0">?PR?_CYSPCLOADMULTIBYTE?CYSPC</a></li>
+<li><a href="#S350">?PR?_CYSPCLOADROW?CYSPC</a></li>
+<li><a href="#S0">?PR?_CYSPCLOADROWFULL?CYSPC</a></li>
+<li><a href="#S348">?PR?_CYSPCREADDATA?CYSPC</a></li>
+<li><a href="#S0">?PR?_CYVDLVANALOGENABLE?CYLIB</a></li>
+<li><a href="#S0">?PR?_CYVDLVDIGITENABLE?CYLIB</a></li>
+<li><a href="#S0">?PR?_CYWRITEROWFULL?CYFLASH</a></li>
+<li><a href="#S216">?PR?_DIETEMP_1_QUERY?DIETEMP_1</a></li>
+<li><a href="#S8">?PR?_ERROR?MAIN</a></li>
+<li><a href="#S21">?PR?_MORSE_MAIN?MORSE</a></li>
+<li><a href="#S83">?PR?_PCM3060_SETREGISTER?PCM3060</a></li>
+<li><a href="#S34">?PR?_SETUPMULTISYNTH?SI5351A</a></li>
+<li><a href="#S31">?PR?_SETUPPLL?SI5351A</a></li>
+<li><a href="#S43">?PR?_SI5351_INIT?SI5351</a></li>
+<li><a href="#S0">?PR?_SI5351_UPDATE_INT_STATUS?SI5351</a></li>
+<li><a href="#S0">?PR?_SI5351_UPDATE_SYS_STATUS?SI5351</a></li>
+<li><a href="#S36">?PR?_SI5351ASETFREQUENCY?SI5351A</a></li>
+<li><a href="#S38">?PR?_SMOOTH_TUNING?SI5351</a></li>
+<li><a href="#S301">?PR?_USBFS_CONFIG?USBFS_STD</a></li>
+<li><a href="#S305">?PR?_USBFS_GETCONFIGTABLEPTR?USBFS_STD</a></li>
+<li><a href="#S298">?PR?_USBFS_READDIEID?USBFS_STD</a></li>
+<li><a href="#S149">?PR?_USBFS_UPDATESTATUSBLOCK?USBFS_DRV</a></li>
+<li><a href="#S66">?PR?BAND_MAIN?BAND</a></li>
+<li><a href="#S105">?PR?CFG_DMA_INIT?CYFITTER_CFG</a></li>
+<li><a href="#S90">?PR?CHECK_TEMPERATURE?TEMPERATURE</a></li>
+<li><a href="#S107">?PR?CLOCKSETUP?CYFITTER_CFG</a></li>
+<li><a href="#S0">?PR?CYDISABLEINTS?CYLIB</a></li>
+<li><a href="#S0">?PR?CYDMACHALLOC?CYDMAC</a></li>
+<li><a href="#S0">?PR?CYPMRESTORECLOCKS?CYPM</a></li>
+<li><a href="#S0">?PR?CYPMSAVECLOCKS?CYPM</a></li>
+<li><a href="#S0">?PR?CYVDHVANALOGENABLE?CYLIB</a></li>
+<li><a href="#S317">?PR?I2C_DISPLAY_ISR?I2C_DISPLAY_INT</a></li>
+<li><a href="#S1">?PR?MAIN_INIT?MAIN</a></li>
+<li><a href="#S103">?PR?MANAGE_PADDLES_PORT?CW</a></li>
+<li><a href="#S82">?PR?PCM3060_RXBUF?PCM3060</a></li>
+<li><a href="#S81">?PR?PCM3060_TXBUF?PCM3060</a></li>
+<li><a href="#S61">?PR?SET_PPM?SETTINGS01</a></li>
+<li><a href="#S59">?PR?SETTINGS_INIT?SETTINGS01</a></li>
+<li><a href="#S41">?PR?SI5351_MAIN?SI5351</a></li>
+<li><a href="#S26">?PR?SYNC_MAIN?SYNC</a></li>
+<li><a href="#S23">?PR?T1_MAIN?T1</a></li>
+<li><a href="#S145">?PR?USBFS_CONTROLWRITEDATASTAGE?USBFS_DRV</a></li>
+<li><a href="#S308">?PR?USBFS_GETINTERFACECLASSTABLEPTR?USBFS_STD</a></li>
+<li><a href="#S295">?PR?USBFS_HANDLESTANDARDRQST?USBFS_STD</a></li>
+<li><a href="#S70">?PR?USBFS_HANDLEVENDORRQST?USBVEND01</a></li>
+<li><a href="#S150">?PR?USBFS_INITIALIZESTATUSBLOCK?USBFS_DRV</a></li>
+<li><a href="#S139">?PR?USBFS_LOADEP0?USBFS_DRV</a></li>
+<li><a href="#S314">?PR?USBFS_VALIDATEALTERNATESETTING?USBFS_STD</a></li>
+</ul>
+
+<h2><a name="S366"></a>?C?LDIV (C:004BC3H - C:004C06H)</h2>
+<p><br><b>Maximum Stack:</b> Top=8 Bytes (<a href="#S36">?PR?_SI5351ASETFREQUENCY?SI5351A</a>)<p>
+<p><br><b>Called from:</b></p>
+<ul>
+<li><a href="#S29">?PR?_CONVERT_FROM_HOST?CONVERT</a></li>
+<li><a href="#S36">?PR?_SI5351ASETFREQUENCY?SI5351A</a></li>
+</ul>
+
+<h2><a name="S368"></a>?PR?_LABS?LABS (C:004D71H - C:004D78H)</h2>
+<p><br><b>Maximum Stack:</b> Top=6 Bytes (<a href="#S38">?PR?_SMOOTH_TUNING?SI5351</a>)<p>
+<p><br><b>Called from:</b></p>
+<ul>
+<li><a href="#S38">?PR?_SMOOTH_TUNING?SI5351</a></li>
+</ul>
+
+</body>
+</html>

@@ -1,0 +1,1913 @@
+C51 COMPILER V9.51   USBFS_DRV                                                             08/05/2026 14:07:20 PAGE 1   
+
+
+C51 COMPILER V9.51, COMPILATION OF MODULE USBFS_DRV
+OBJECT MODULE PLACED IN .\DP8051\DP8051_Keil_951\Debug\USBFS_drv.obj
+COMPILER INVOKED BY: C:\Program Files (x86)\Cypress\PSoC Creator\4.2\PSoC Creator\import\keil\pk51\9.51\C51\BIN\c51.exe 
+                    -Generated_Source\PSoC3\USBFS_drv.c NOIV LARGE MODDP2 OMF2 VB(1) NOIP INCDIR(.,Generated_Source\PSoC3) FF(3) DB WL(2) PR(
+                    -.\DP8051\DP8051_Keil_951\Debug/USBFS_drv.lst) CD OT(5,SPEED) OA OJ(.\DP8051\DP8051_Keil_951\Debug\USBFS_drv.obj)
+
+line level    source
+
+   1          /***************************************************************************//**
+   2          * \file USBFS_drv.c
+   3          * \version 3.20
+   4          *
+   5          * \brief
+   6          *  This file contains the Endpoint 0 Driver for the USBFS Component.  
+   7          *
+   8          ********************************************************************************
+   9          * \copyright
+  10          * Copyright 2008-2016, Cypress Semiconductor Corporation.  All rights reserved.
+  11          * You may use this file only in accordance with the license, terms, conditions,
+  12          * disclaimers, and limitations in the end user license agreement accompanying
+  13          * the software package with which this file was provided.
+  14          *******************************************************************************/
+  15          
+  16          #include "USBFS_pvt.h"
+  17          
+  18          
+  19          
+  20          /***************************************
+  21          * Global data allocation
+  22          ***************************************/
+  23          
+  24          volatile T_USBFS_EP_CTL_BLOCK USBFS_EP[USBFS_MAX_EP];
+  25          
+  26          /** Contains the current configuration number, which is set by the host using a 
+  27           * SET_CONFIGURATION request. This variable is initialized to zero in 
+  28           * USBFS_InitComponent() API and can be read by the USBFS_GetConfiguration() 
+  29           * API.*/
+  30          volatile uint8 USBFS_configuration;
+  31          
+  32          /** Contains the current interface number.*/
+  33          volatile uint8 USBFS_interfaceNumber;
+  34          
+  35          /** This variable is set to one after SET_CONFIGURATION and SET_INTERFACE 
+  36           *requests. It can be read by the USBFS_IsConfigurationChanged() API */
+  37          volatile uint8 USBFS_configurationChanged;
+  38          
+  39          /** Contains the current device address.*/
+  40          volatile uint8 USBFS_deviceAddress;
+  41          
+  42          /** This is a two-bit variable that contains power status in the bit 0 
+  43           * (DEVICE_STATUS_BUS_POWERED or DEVICE_STATUS_SELF_POWERED) and remote wakeup 
+  44           * status (DEVICE_STATUS_REMOTE_WAKEUP) in the bit 1. This variable is 
+  45           * initialized to zero in USBFS_InitComponent() API, configured by the 
+  46           * USBFS_SetPowerStatus() API. The remote wakeup status cannot be set using the 
+  47           * API SetPowerStatus(). */
+  48          volatile uint8 USBFS_deviceStatus;
+  49          
+  50          volatile uint8 USBFS_interfaceSetting[USBFS_MAX_INTERFACES_NUMBER];
+  51          volatile uint8 USBFS_interfaceSetting_last[USBFS_MAX_INTERFACES_NUMBER];
+  52          volatile uint8 USBFS_interfaceStatus[USBFS_MAX_INTERFACES_NUMBER];
+  53          
+C51 COMPILER V9.51   USBFS_DRV                                                             08/05/2026 14:07:20 PAGE 2   
+
+  54          /** Contains the started device number. This variable is set by the 
+  55           * USBFS_Start() or USBFS_InitComponent() APIs.*/
+  56          volatile uint8 USBFS_device;
+  57          
+  58          /** Initialized class array for each interface. It is used for handling Class 
+  59           * specific requests depend on interface class. Different classes in multiple 
+  60           * alternate settings are not supported.*/
+  61          const uint8 CYCODE *USBFS_interfaceClass;
+  62          
+  63          
+  64          /***************************************
+  65          * Local data allocation
+  66          ***************************************/
+  67          
+  68          volatile uint8  USBFS_ep0Toggle;
+  69          volatile uint8  USBFS_lastPacketSize;
+  70          
+  71          /** This variable is used by the communication functions to handle the current 
+  72          * transfer state.
+  73          * Initialized to TRANS_STATE_IDLE in the USBFS_InitComponent() API and after a 
+  74          * complete transfer in the status stage.
+  75          * Changed to the TRANS_STATE_CONTROL_READ or TRANS_STATE_CONTROL_WRITE in setup 
+  76          * transaction depending on the request type.
+  77          */
+  78          volatile uint8  USBFS_transferState;
+  79          volatile T_USBFS_TD USBFS_currentTD;
+  80          volatile uint8  USBFS_ep0Mode;
+  81          volatile uint8  USBFS_ep0Count;
+  82          volatile uint16 USBFS_transferByteCount;
+  83          
+  84          
+  85          /*******************************************************************************
+  86          * Function Name: USBFS_ep_0_Interrupt
+  87          ****************************************************************************//**
+  88          *
+  89          *  This Interrupt Service Routine handles Endpoint 0 (Control Pipe) traffic.
+  90          *  It dispatches setup requests and handles the data and status stages.
+  91          *
+  92          *
+  93          *******************************************************************************/
+  94          CY_ISR(USBFS_EP_0_ISR)
+  95          {
+  96   1          uint8 tempReg;
+  97   1          uint8 modifyReg;
+  98   1      
+  99   1      #ifdef USBFS_EP_0_ISR_ENTRY_CALLBACK
+                  USBFS_EP_0_ISR_EntryCallback();
+              #endif /* (USBFS_EP_0_ISR_ENTRY_CALLBACK) */
+ 102   1          
+ 103   1          tempReg = USBFS_EP0_CR_REG;
+ 104   1          if ((tempReg & USBFS_MODE_ACKD) != 0u)
+ 105   1          {
+ 106   2              modifyReg = 1u;
+ 107   2              if ((tempReg & USBFS_MODE_SETUP_RCVD) != 0u)
+ 108   2              {
+ 109   3                  if ((tempReg & USBFS_MODE_MASK) != USBFS_MODE_NAK_IN_OUT)
+ 110   3                  {
+ 111   4                      /* Mode not equal to NAK_IN_OUT: invalid setup */
+ 112   4                      modifyReg = 0u;
+ 113   4                  }
+ 114   3                  else
+ 115   3                  {
+C51 COMPILER V9.51   USBFS_DRV                                                             08/05/2026 14:07:20 PAGE 3   
+
+ 116   4                      USBFS_HandleSetup();
+ 117   4                      
+ 118   4                      if ((USBFS_ep0Mode & USBFS_MODE_SETUP_RCVD) != 0u)
+ 119   4                      {
+ 120   5                          /* SETUP bit set: exit without mode modificaiton */
+ 121   5                          modifyReg = 0u;
+ 122   5                      }
+ 123   4                  }
+ 124   3              }
+ 125   2              else if ((tempReg & USBFS_MODE_IN_RCVD) != 0u)
+ 126   2              {
+ 127   3                  USBFS_HandleIN();
+ 128   3              }
+ 129   2              else if ((tempReg & USBFS_MODE_OUT_RCVD) != 0u)
+ 130   2              {
+ 131   3                  USBFS_HandleOUT();
+ 132   3              }
+ 133   2              else
+ 134   2              {
+ 135   3                  modifyReg = 0u;
+ 136   3              }
+ 137   2              
+ 138   2              /* Modify the EP0_CR register */
+ 139   2              if (modifyReg != 0u)
+ 140   2              {
+ 141   3                  
+ 142   3                  tempReg = USBFS_EP0_CR_REG;
+ 143   3                  
+ 144   3                  /* Make sure that SETUP bit is cleared before modification */
+ 145   3                  if ((tempReg & USBFS_MODE_SETUP_RCVD) == 0u)
+ 146   3                  {
+ 147   4                      /* Update count register */
+ 148   4                      tempReg = (uint8) USBFS_ep0Toggle | USBFS_ep0Count;
+ 149   4                      USBFS_EP0_CNT_REG = tempReg;
+ 150   4                     
+ 151   4                      /* Make sure that previous write operaiton was successful */
+ 152   4                      if (tempReg == USBFS_EP0_CNT_REG)
+ 153   4                      {
+ 154   5                          /* Repeat until next successful write operation */
+ 155   5                          do
+ 156   5                          {
+ 157   6                              /* Init temporary variable */
+ 158   6                              modifyReg = USBFS_ep0Mode;
+ 159   6                              
+ 160   6                              /* Unlock register */
+ 161   6                              tempReg = (uint8) (USBFS_EP0_CR_REG & USBFS_MODE_SETUP_RCVD);
+ 162   6                              
+ 163   6                              /* Check if SETUP bit is not set */
+ 164   6                              if (0u == tempReg)
+ 165   6                              {
+ 166   7                                  /* Set the Mode Register  */
+ 167   7                                  USBFS_EP0_CR_REG = USBFS_ep0Mode;
+ 168   7                                  
+ 169   7                                  /* Writing check */
+ 170   7                                  modifyReg = USBFS_EP0_CR_REG & USBFS_MODE_MASK;
+ 171   7                              }
+ 172   6                          }
+ 173   5                          while (modifyReg != USBFS_ep0Mode);
+ 174   5                      }
+ 175   4                  }
+ 176   3              }
+ 177   2          }
+C51 COMPILER V9.51   USBFS_DRV                                                             08/05/2026 14:07:20 PAGE 4   
+
+ 178   1      
+ 179   1          USBFS_ClearSieInterruptSource(USBFS_INTR_SIE_EP0_INTR);
+ 180   1              
+ 181   1      #ifdef USBFS_EP_0_ISR_EXIT_CALLBACK
+                  USBFS_EP_0_ISR_ExitCallback();
+              #endif /* (USBFS_EP_0_ISR_EXIT_CALLBACK) */
+ 184   1      }
+ 185          
+ 186          
+ 187          /*******************************************************************************
+ 188          * Function Name: USBFS_HandleSetup
+ 189          ****************************************************************************//**
+ 190          *
+ 191          *  This Routine dispatches requests for the four USB request types
+ 192          *
+ 193          *
+ 194          * \reentrant
+ 195          *  No.
+ 196          *
+ 197          *******************************************************************************/
+ 198          void USBFS_HandleSetup(void) 
+ 199          {
+ 200   1          uint8 requestHandled;
+ 201   1          
+ 202   1          /* Clear register lock by SIE (read register) and clear setup bit 
+ 203   1          * (write any value in register).
+ 204   1          */
+ 205   1          requestHandled = (uint8) USBFS_EP0_CR_REG;
+ 206   1          USBFS_EP0_CR_REG = (uint8) requestHandled;
+ 207   1          requestHandled = (uint8) USBFS_EP0_CR_REG;
+ 208   1      
+ 209   1          if ((requestHandled & USBFS_MODE_SETUP_RCVD) != 0u)
+ 210   1          {
+ 211   2              /* SETUP bit is set: exit without mode modification. */
+ 212   2              USBFS_ep0Mode = requestHandled;
+ 213   2          }
+ 214   1          else
+ 215   1          {
+ 216   2              /* In case the previous transfer did not complete, close it out */
+ 217   2              USBFS_UpdateStatusBlock(USBFS_XFER_PREMATURE);
+ 218   2      
+ 219   2              /* Check request type. */
+ 220   2              switch (USBFS_bmRequestTypeReg & USBFS_RQST_TYPE_MASK)
+ 221   2              {
+ 222   3                  case USBFS_RQST_TYPE_STD:
+ 223   3                      requestHandled = USBFS_HandleStandardRqst();
+ 224   3                      break;
+ 225   3                      
+ 226   3                  case USBFS_RQST_TYPE_CLS:
+ 227   3                      requestHandled = USBFS_DispatchClassRqst();
+ 228   3                      break;
+ 229   3                      
+ 230   3                  case USBFS_RQST_TYPE_VND:
+ 231   3                      requestHandled = USBFS_HandleVendorRqst();
+ 232   3                      break;
+ 233   3                      
+ 234   3                  default:
+ 235   3                      requestHandled = USBFS_FALSE;
+ 236   3                      break;
+ 237   3              }
+ 238   2              
+ 239   2              /* If request is not recognized. Stall endpoint 0 IN and OUT. */
+C51 COMPILER V9.51   USBFS_DRV                                                             08/05/2026 14:07:20 PAGE 5   
+
+ 240   2              if (requestHandled == USBFS_FALSE)
+ 241   2              {
+ 242   3                  USBFS_ep0Mode = USBFS_MODE_STALL_IN_OUT;
+ 243   3              }
+ 244   2          }
+ 245   1      }
+ 246          
+ 247          
+ 248          /*******************************************************************************
+ 249          * Function Name: USBFS_HandleIN
+ 250          ****************************************************************************//**
+ 251          *
+ 252          *  This routine handles EP0 IN transfers.
+ 253          *
+ 254          *
+ 255          * \reentrant
+ 256          *  No.
+ 257          *
+ 258          *******************************************************************************/
+ 259          void USBFS_HandleIN(void) 
+ 260          {
+ 261   1          switch (USBFS_transferState)
+ 262   1          {
+ 263   2              case USBFS_TRANS_STATE_IDLE:
+ 264   2                  break;
+ 265   2              
+ 266   2              case USBFS_TRANS_STATE_CONTROL_READ:
+ 267   2                  USBFS_ControlReadDataStage();
+ 268   2                  break;
+ 269   2                  
+ 270   2              case USBFS_TRANS_STATE_CONTROL_WRITE:
+ 271   2                  USBFS_ControlWriteStatusStage();
+ 272   2                  break;
+ 273   2                  
+ 274   2              case USBFS_TRANS_STATE_NO_DATA_CONTROL:
+ 275   2                  USBFS_NoDataControlStatusStage();
+ 276   2                  break;
+ 277   2                  
+ 278   2              default:    /* there are no more states */
+ 279   2                  break;
+ 280   2          }
+ 281   1      }
+ 282          
+ 283          
+ 284          /*******************************************************************************
+ 285          * Function Name: USBFS_HandleOUT
+ 286          ****************************************************************************//**
+ 287          *
+ 288          *  This routine handles EP0 OUT transfers.
+ 289          *
+ 290          *
+ 291          * \reentrant
+ 292          *  No.
+ 293          *
+ 294          *******************************************************************************/
+ 295          void USBFS_HandleOUT(void) 
+ 296          {
+ 297   1          switch (USBFS_transferState)
+ 298   1          {
+ 299   2              case USBFS_TRANS_STATE_IDLE:
+ 300   2                  break;
+ 301   2              
+C51 COMPILER V9.51   USBFS_DRV                                                             08/05/2026 14:07:20 PAGE 6   
+
+ 302   2              case USBFS_TRANS_STATE_CONTROL_READ:
+ 303   2                  USBFS_ControlReadStatusStage();
+ 304   2                  break;
+ 305   2                  
+ 306   2              case USBFS_TRANS_STATE_CONTROL_WRITE:
+ 307   2                  USBFS_ControlWriteDataStage();
+ 308   2                  break;
+ 309   2                  
+ 310   2              case USBFS_TRANS_STATE_NO_DATA_CONTROL:
+ 311   2                  /* Update the completion block */
+ 312   2                  USBFS_UpdateStatusBlock(USBFS_XFER_ERROR);
+ 313   2                  
+ 314   2                  /* We expect no more data, so stall INs and OUTs */
+ 315   2                  USBFS_ep0Mode = USBFS_MODE_STALL_IN_OUT;
+ 316   2                  break;
+ 317   2                  
+ 318   2              default:    
+ 319   2                  /* There are no more states */
+ 320   2                  break;
+ 321   2          }
+ 322   1      }
+ 323          
+ 324          
+ 325          /*******************************************************************************
+ 326          * Function Name: USBFS_LoadEP0
+ 327          ****************************************************************************//**
+ 328          *
+ 329          *  This routine loads the EP0 data registers for OUT transfers. It uses the
+ 330          *  currentTD (previously initialized by the _InitControlWrite function and
+ 331          *  updated for each OUT transfer, and the bLastPacketSize) to determine how
+ 332          *  many uint8s to transfer on the current OUT.
+ 333          *
+ 334          *  If the number of uint8s remaining is zero and the last transfer was full,
+ 335          *  we need to send a zero length packet.  Otherwise we send the minimum
+ 336          *  of the control endpoint size (8) or remaining number of uint8s for the
+ 337          *  transaction.
+ 338          *
+ 339          *
+ 340          * \globalvars
+ 341          *  USBFS_transferByteCount - Update the transfer byte count from the
+ 342          *     last transaction.
+ 343          *  USBFS_ep0Count - counts the data loaded to the SIE memory in
+ 344          *     current packet.
+ 345          *  USBFS_lastPacketSize - remembers the USBFS_ep0Count value for the
+ 346          *     next packet.
+ 347          *  USBFS_transferByteCount - sum of the previous bytes transferred
+ 348          *     on previous packets(sum of USBFS_lastPacketSize)
+ 349          *  USBFS_ep0Toggle - inverted
+ 350          *  USBFS_ep0Mode  - prepare for mode register content.
+ 351          *  USBFS_transferState - set to TRANS_STATE_CONTROL_READ
+ 352          *
+ 353          * \reentrant
+ 354          *  No.
+ 355          *
+ 356          *******************************************************************************/
+ 357          void USBFS_LoadEP0(void) 
+ 358          {
+ 359   1          uint8 ep0Count = 0u;
+ 360   1      
+ 361   1          /* Update the transfer byte count from the last transaction */
+ 362   1          USBFS_transferByteCount += USBFS_lastPacketSize;
+ 363   1      
+C51 COMPILER V9.51   USBFS_DRV                                                             08/05/2026 14:07:20 PAGE 7   
+
+ 364   1          /* Now load the next transaction */
+ 365   1          while ((USBFS_currentTD.count > 0u) && (ep0Count < 8u))
+ 366   1          {
+ 367   2              USBFS_EP0_DR_BASE.epData[ep0Count] = (uint8) *USBFS_currentTD.pData;
+ 368   2              USBFS_currentTD.pData = &USBFS_currentTD.pData[1u];
+ 369   2              ep0Count++;
+ 370   2              USBFS_currentTD.count--;
+ 371   2          }
+ 372   1      
+ 373   1          /* Support zero-length packet */
+ 374   1          if ((USBFS_lastPacketSize == 8u) || (ep0Count > 0u))
+ 375   1          {
+ 376   2              /* Update the data toggle */
+ 377   2              USBFS_ep0Toggle ^= USBFS_EP0_CNT_DATA_TOGGLE;
+ 378   2              /* Set the Mode Register  */
+ 379   2              USBFS_ep0Mode = USBFS_MODE_ACK_IN_STATUS_OUT;
+ 380   2              /* Update the state (or stay the same) */
+ 381   2              USBFS_transferState = USBFS_TRANS_STATE_CONTROL_READ;
+ 382   2          }
+ 383   1          else
+ 384   1          {
+ 385   2              /* Expect Status Stage Out */
+ 386   2              USBFS_ep0Mode = USBFS_MODE_STATUS_OUT_ONLY;
+ 387   2              /* Update the state (or stay the same) */
+ 388   2              USBFS_transferState = USBFS_TRANS_STATE_CONTROL_READ;
+ 389   2          }
+ 390   1      
+ 391   1          /* Save the packet size for next time */
+ 392   1          USBFS_ep0Count =       (uint8) ep0Count;
+ 393   1          USBFS_lastPacketSize = (uint8) ep0Count;
+ 394   1      }
+ 395          
+ 396          
+ 397          /*******************************************************************************
+ 398          * Function Name: USBFS_InitControlRead
+ 399          ****************************************************************************//**
+ 400          *
+ 401          *  Initialize a control read transaction. It is used to send data to the host.
+ 402          *  The following global variables should be initialized before this function
+ 403          *  called. To send zero length packet use InitZeroLengthControlTransfer
+ 404          *  function.
+ 405          *
+ 406          *
+ 407          * \return
+ 408          *  requestHandled state.
+ 409          *
+ 410          * \globalvars
+ 411          *  USBFS_currentTD.count - counts of data to be sent.
+ 412          *  USBFS_currentTD.pData - data pointer.
+ 413          *
+ 414          * \reentrant
+ 415          *  No.
+ 416          *
+ 417          *******************************************************************************/
+ 418          uint8 USBFS_InitControlRead(void) 
+ 419          {
+ 420   1          uint16 xferCount;
+ 421   1      
+ 422   1          if (USBFS_currentTD.count == 0u)
+ 423   1          {
+ 424   2              (void) USBFS_InitZeroLengthControlTransfer();
+ 425   2          }
+C51 COMPILER V9.51   USBFS_DRV                                                             08/05/2026 14:07:20 PAGE 8   
+
+ 426   1          else
+ 427   1          {
+ 428   2              /* Set up the state machine */
+ 429   2              USBFS_transferState = USBFS_TRANS_STATE_CONTROL_READ;
+ 430   2              
+ 431   2              /* Set the toggle, it gets updated in LoadEP */
+ 432   2              USBFS_ep0Toggle = 0u;
+ 433   2              
+ 434   2              /* Initialize the Status Block */
+ 435   2              USBFS_InitializeStatusBlock();
+ 436   2              
+ 437   2              xferCount = ((uint16)((uint16) USBFS_lengthHiReg << 8u) | ((uint16) USBFS_lengthLoReg));
+ 438   2      
+ 439   2              if (USBFS_currentTD.count > xferCount)
+ 440   2              {
+ 441   3                  USBFS_currentTD.count = xferCount;
+ 442   3              }
+ 443   2              
+ 444   2              USBFS_LoadEP0();
+ 445   2          }
+ 446   1      
+ 447   1          return (USBFS_TRUE);
+ 448   1      }
+ 449          
+ 450          
+ 451          /*******************************************************************************
+ 452          * Function Name: USBFS_InitZeroLengthControlTransfer
+ 453          ****************************************************************************//**
+ 454          *
+ 455          *  Initialize a zero length data IN transfer.
+ 456          *
+ 457          * \return
+ 458          *  requestHandled state.
+ 459          *
+ 460          * \globalvars
+ 461          *  USBFS_ep0Toggle - set to EP0_CNT_DATA_TOGGLE
+ 462          *  USBFS_ep0Mode  - prepare for mode register content.
+ 463          *  USBFS_transferState - set to TRANS_STATE_CONTROL_READ
+ 464          *  USBFS_ep0Count - cleared, means the zero-length packet.
+ 465          *  USBFS_lastPacketSize - cleared.
+ 466          *
+ 467          * \reentrant
+ 468          *  No.
+ 469          *
+ 470          *******************************************************************************/
+ 471          uint8 USBFS_InitZeroLengthControlTransfer(void)
+ 472                                                          
+ 473          {
+ 474   1          /* Update the state */
+ 475   1          USBFS_transferState = USBFS_TRANS_STATE_CONTROL_READ;
+ 476   1          
+ 477   1          /* Set the data toggle */
+ 478   1          USBFS_ep0Toggle = USBFS_EP0_CNT_DATA_TOGGLE;
+ 479   1          
+ 480   1          /* Set the Mode Register  */
+ 481   1          USBFS_ep0Mode = USBFS_MODE_ACK_IN_STATUS_OUT;
+ 482   1          
+ 483   1          /* Save the packet size for next time */
+ 484   1          USBFS_lastPacketSize = 0u;
+ 485   1          
+ 486   1          USBFS_ep0Count = 0u;
+ 487   1      
+C51 COMPILER V9.51   USBFS_DRV                                                             08/05/2026 14:07:20 PAGE 9   
+
+ 488   1          return (USBFS_TRUE);
+ 489   1      }
+ 490          
+ 491          
+ 492          /*******************************************************************************
+ 493          * Function Name: USBFS_ControlReadDataStage
+ 494          ****************************************************************************//**
+ 495          *
+ 496          *  Handle the Data Stage of a control read transfer.
+ 497          *
+ 498          *
+ 499          * \reentrant
+ 500          *  No.
+ 501          *
+ 502          *******************************************************************************/
+ 503          void USBFS_ControlReadDataStage(void) 
+ 504          
+ 505          {
+ 506   1          USBFS_LoadEP0();
+ 507   1      }
+ 508          
+ 509          
+ 510          /*******************************************************************************
+ 511          * Function Name: USBFS_ControlReadStatusStage
+ 512          ****************************************************************************//**
+ 513          *
+ 514          *  Handle the Status Stage of a control read transfer.
+ 515          *
+ 516          *
+ 517          * \globalvars
+ 518          *  USBFS_USBFS_transferByteCount - updated with last packet size.
+ 519          *  USBFS_transferState - set to TRANS_STATE_IDLE.
+ 520          *  USBFS_ep0Mode  - set to MODE_STALL_IN_OUT.
+ 521          *
+ 522          * \reentrant
+ 523          *  No.
+ 524          *
+ 525          *******************************************************************************/
+ 526          void USBFS_ControlReadStatusStage(void) 
+ 527          {
+ 528   1          /* Update the transfer byte count */
+ 529   1          USBFS_transferByteCount += USBFS_lastPacketSize;
+ 530   1          
+ 531   1          /* Go Idle */
+ 532   1          USBFS_transferState = USBFS_TRANS_STATE_IDLE;
+ 533   1          
+ 534   1          /* Update the completion block */
+ 535   1          USBFS_UpdateStatusBlock(USBFS_XFER_STATUS_ACK);
+ 536   1          
+ 537   1          /* We expect no more data, so stall INs and OUTs */
+ 538   1          USBFS_ep0Mode = USBFS_MODE_STALL_IN_OUT;
+ 539   1      }
+ 540          
+ 541          
+ 542          /*******************************************************************************
+ 543          * Function Name: USBFS_InitControlWrite
+ 544          ****************************************************************************//**
+ 545          *
+ 546          *  Initialize a control write transaction
+ 547          *
+ 548          * \return
+ 549          *  requestHandled state.
+C51 COMPILER V9.51   USBFS_DRV                                                             08/05/2026 14:07:20 PAGE 10  
+
+ 550          *
+ 551          * \globalvars
+ 552          *  USBFS_USBFS_transferState - set to TRANS_STATE_CONTROL_WRITE
+ 553          *  USBFS_ep0Toggle - set to EP0_CNT_DATA_TOGGLE
+ 554          *  USBFS_ep0Mode  - set to MODE_ACK_OUT_STATUS_IN
+ 555          *
+ 556          * \reentrant
+ 557          *  No.
+ 558          *
+ 559          *******************************************************************************/
+ 560          uint8 USBFS_InitControlWrite(void) 
+ 561          {
+ 562   1          uint16 xferCount;
+ 563   1      
+ 564   1          /* Set up the state machine */
+ 565   1          USBFS_transferState = USBFS_TRANS_STATE_CONTROL_WRITE;
+ 566   1          
+ 567   1          /* This might not be necessary */
+ 568   1          USBFS_ep0Toggle = USBFS_EP0_CNT_DATA_TOGGLE;
+ 569   1          
+ 570   1          /* Initialize the Status Block */
+ 571   1          USBFS_InitializeStatusBlock();
+ 572   1      
+ 573   1          xferCount = ((uint16)((uint16) USBFS_lengthHiReg << 8u) | ((uint16) USBFS_lengthLoReg));
+ 574   1      
+ 575   1          if (USBFS_currentTD.count > xferCount)
+ 576   1          {
+ 577   2              USBFS_currentTD.count = xferCount;
+ 578   2          }
+ 579   1      
+ 580   1          /* Expect Data or Status Stage */
+ 581   1          USBFS_ep0Mode = USBFS_MODE_ACK_OUT_STATUS_IN;
+ 582   1      
+ 583   1          return(USBFS_TRUE);
+ 584   1      }
+ 585          
+ 586          
+ 587          /*******************************************************************************
+ 588          * Function Name: USBFS_ControlWriteDataStage
+ 589          ****************************************************************************//**
+ 590          *
+ 591          *  Handle the Data Stage of a control write transfer
+ 592          *       1. Get the data (We assume the destination was validated previously)
+ 593          *       2. Update the count and data toggle
+ 594          *       3. Update the mode register for the next transaction
+ 595          *
+ 596          *
+ 597          * \globalvars
+ 598          *  USBFS_transferByteCount - Update the transfer byte count from the
+ 599          *    last transaction.
+ 600          *  USBFS_ep0Count - counts the data loaded from the SIE memory
+ 601          *    in current packet.
+ 602          *  USBFS_transferByteCount - sum of the previous bytes transferred
+ 603          *    on previous packets(sum of USBFS_lastPacketSize)
+ 604          *  USBFS_ep0Toggle - inverted
+ 605          *  USBFS_ep0Mode  - set to MODE_ACK_OUT_STATUS_IN.
+ 606          *
+ 607          * \reentrant
+ 608          *  No.
+ 609          *
+ 610          *******************************************************************************/
+ 611          void USBFS_ControlWriteDataStage(void) 
+C51 COMPILER V9.51   USBFS_DRV                                                             08/05/2026 14:07:20 PAGE 11  
+
+ 612          {
+ 613   1          uint8 ep0Count;
+ 614   1          uint8 regIndex = 0u;
+ 615   1      
+ 616   1          ep0Count = (USBFS_EP0_CNT_REG & USBFS_EPX_CNT0_MASK) - USBFS_EPX_CNTX_CRC_COUNT;
+ 617   1      
+ 618   1          USBFS_transferByteCount += (uint8)ep0Count;
+ 619   1      
+ 620   1          while ((USBFS_currentTD.count > 0u) && (ep0Count > 0u))
+ 621   1          {
+ 622   2              *USBFS_currentTD.pData = (uint8) USBFS_EP0_DR_BASE.epData[regIndex];
+ 623   2              USBFS_currentTD.pData = &USBFS_currentTD.pData[1u];
+ 624   2              regIndex++;
+ 625   2              ep0Count--;
+ 626   2              USBFS_currentTD.count--;
+ 627   2          }
+ 628   1          
+ 629   1          USBFS_ep0Count = (uint8)ep0Count;
+ 630   1          
+ 631   1          /* Update the data toggle */
+ 632   1          USBFS_ep0Toggle ^= USBFS_EP0_CNT_DATA_TOGGLE;
+ 633   1          
+ 634   1          /* Expect Data or Status Stage */
+ 635   1          USBFS_ep0Mode = USBFS_MODE_ACK_OUT_STATUS_IN;
+ 636   1      }
+ 637          
+ 638          
+ 639          /*******************************************************************************
+ 640          * Function Name: USBFS_ControlWriteStatusStage
+ 641          ****************************************************************************//**
+ 642          *
+ 643          *  Handle the Status Stage of a control write transfer
+ 644          *
+ 645          * \globalvars
+ 646          *  USBFS_transferState - set to TRANS_STATE_IDLE.
+ 647          *  USBFS_USBFS_ep0Mode  - set to MODE_STALL_IN_OUT.
+ 648          *
+ 649          * \reentrant
+ 650          *  No.
+ 651          *
+ 652          *******************************************************************************/
+ 653          void USBFS_ControlWriteStatusStage(void) 
+ 654          {
+ 655   1          /* Go Idle */
+ 656   1          USBFS_transferState = USBFS_TRANS_STATE_IDLE;
+ 657   1          
+ 658   1          /* Update the completion block */    
+ 659   1          USBFS_UpdateStatusBlock(USBFS_XFER_STATUS_ACK);
+ 660   1          
+ 661   1          /* We expect no more data, so stall INs and OUTs */
+ 662   1          USBFS_ep0Mode = USBFS_MODE_STALL_IN_OUT;
+ 663   1      }
+ 664          
+ 665          
+ 666          /*******************************************************************************
+ 667          * Function Name: USBFS_InitNoDataControlTransfer
+ 668          ****************************************************************************//**
+ 669          *
+ 670          *  Initialize a no data control transfer
+ 671          *
+ 672          * \return
+ 673          *  requestHandled state.
+C51 COMPILER V9.51   USBFS_DRV                                                             08/05/2026 14:07:20 PAGE 12  
+
+ 674          *
+ 675          * \globalvars
+ 676          *  USBFS_transferState - set to TRANS_STATE_NO_DATA_CONTROL.
+ 677          *  USBFS_ep0Mode  - set to MODE_STATUS_IN_ONLY.
+ 678          *  USBFS_ep0Count - cleared.
+ 679          *  USBFS_ep0Toggle - set to EP0_CNT_DATA_TOGGLE
+ 680          *
+ 681          * \reentrant
+ 682          *  No.
+ 683          *
+ 684          *******************************************************************************/
+ 685          uint8 USBFS_InitNoDataControlTransfer(void) 
+ 686          {
+ 687   1          USBFS_transferState = USBFS_TRANS_STATE_NO_DATA_CONTROL;
+ 688   1          USBFS_ep0Mode       = USBFS_MODE_STATUS_IN_ONLY;
+ 689   1          USBFS_ep0Toggle     = USBFS_EP0_CNT_DATA_TOGGLE;
+ 690   1          USBFS_ep0Count      = 0u;
+ 691   1      
+ 692   1          return (USBFS_TRUE);
+ 693   1      }
+ 694          
+ 695          
+ 696          /*******************************************************************************
+ 697          * Function Name: USBFS_NoDataControlStatusStage
+ 698          ****************************************************************************//**
+ 699          *  Handle the Status Stage of a no data control transfer.
+ 700          *
+ 701          *  SET_ADDRESS is special, since we need to receive the status stage with
+ 702          *  the old address.
+ 703          *
+ 704          * \globalvars
+ 705          *  USBFS_transferState - set to TRANS_STATE_IDLE.
+ 706          *  USBFS_ep0Mode  - set to MODE_STALL_IN_OUT.
+ 707          *  USBFS_ep0Toggle - set to EP0_CNT_DATA_TOGGLE
+ 708          *  USBFS_deviceAddress - used to set new address and cleared
+ 709          *
+ 710          * \reentrant
+ 711          *  No.
+ 712          *
+ 713          *******************************************************************************/
+ 714          void USBFS_NoDataControlStatusStage(void) 
+ 715          {
+ 716   1          if (0u != USBFS_deviceAddress)
+ 717   1          {
+ 718   2              /* Update device address if we got new address. */
+ 719   2              USBFS_CR0_REG = (uint8) USBFS_deviceAddress | USBFS_CR0_ENABLE;
+ 720   2              USBFS_deviceAddress = 0u;
+ 721   2          }
+ 722   1      
+ 723   1          USBFS_transferState = USBFS_TRANS_STATE_IDLE;
+ 724   1          
+ 725   1          /* Update the completion block. */
+ 726   1          USBFS_UpdateStatusBlock(USBFS_XFER_STATUS_ACK);
+ 727   1          
+ 728   1          /* Stall IN and OUT, no more data is expected. */
+ 729   1          USBFS_ep0Mode = USBFS_MODE_STALL_IN_OUT;
+ 730   1      }
+ 731          
+ 732          
+ 733          /*******************************************************************************
+ 734          * Function Name: USBFS_UpdateStatusBlock
+ 735          ****************************************************************************//**
+C51 COMPILER V9.51   USBFS_DRV                                                             08/05/2026 14:07:20 PAGE 13  
+
+ 736          *
+ 737          *  Update the Completion Status Block for a Request.  The block is updated
+ 738          *  with the completion code the USBFS_transferByteCount.  The
+ 739          *  StatusBlock Pointer is set to NULL.
+ 740          *
+ 741          *  completionCode - status.
+ 742          *
+ 743          *
+ 744          * \globalvars
+ 745          *  USBFS_currentTD.pStatusBlock->status - updated by the
+ 746          *    completionCode parameter.
+ 747          *  USBFS_currentTD.pStatusBlock->length - updated.
+ 748          *  USBFS_currentTD.pStatusBlock - cleared.
+ 749          *
+ 750          * \reentrant
+ 751          *  No.
+ 752          *
+ 753          *******************************************************************************/
+ 754          void USBFS_UpdateStatusBlock(uint8 completionCode) 
+ 755          {
+ 756   1          if (USBFS_currentTD.pStatusBlock != NULL)
+ 757   1          {
+ 758   2              USBFS_currentTD.pStatusBlock->status = completionCode;
+ 759   2              USBFS_currentTD.pStatusBlock->length = USBFS_transferByteCount;
+ 760   2              USBFS_currentTD.pStatusBlock = NULL;
+ 761   2          }
+ 762   1      }
+ 763          
+ 764          
+ 765          /*******************************************************************************
+ 766          * Function Name: USBFS_InitializeStatusBlock
+ 767          ****************************************************************************//**
+ 768          *
+ 769          *  Initialize the Completion Status Block for a Request.  The completion
+ 770          *  code is set to USB_XFER_IDLE.
+ 771          *
+ 772          *  Also, initializes USBFS_transferByteCount.  Save some space,
+ 773          *  this is the only consumer.
+ 774          *
+ 775          * \globalvars
+ 776          *  USBFS_currentTD.pStatusBlock->status - set to XFER_IDLE.
+ 777          *  USBFS_currentTD.pStatusBlock->length - cleared.
+ 778          *  USBFS_transferByteCount - cleared.
+ 779          *
+ 780          * \reentrant
+ 781          *  No.
+ 782          *
+ 783          *******************************************************************************/
+ 784          void USBFS_InitializeStatusBlock(void) 
+ 785          {
+ 786   1          USBFS_transferByteCount = 0u;
+ 787   1          
+ 788   1          if (USBFS_currentTD.pStatusBlock != NULL)
+ 789   1          {
+ 790   2              USBFS_currentTD.pStatusBlock->status = USBFS_XFER_IDLE;
+ 791   2              USBFS_currentTD.pStatusBlock->length = 0u;
+ 792   2          }
+ 793   1      }
+ 794          
+ 795          
+ 796          /* [] END OF FILE */
+C51 COMPILER V9.51   USBFS_DRV                                                             08/05/2026 14:07:20 PAGE 14  
+
+ASSEMBLY LISTING OF GENERATED OBJECT CODE
+
+
+             ; FUNCTION USBFS_EP_0_ISR (BEGIN)
+                       PUSH    ACC
+                       PUSH    B
+                       PUSH    DPH
+                       PUSH    DPL
+                       PUSH    DPH1
+                       PUSH    DPL1
+                       PUSH    DPS
+                       MOV     DPS,#00H
+                 E     PUSH    ?C?XPAGE1SFR
+                 E     MOV     ?C?XPAGE1SFR,#?C?XPAGE1RST
+                       PUSH    PSW
+                       MOV     PSW,#00H
+                       PUSH    AR0
+                       PUSH    AR1
+                       PUSH    AR2
+                       PUSH    AR3
+                       PUSH    AR4
+                       PUSH    AR5
+                       PUSH    AR6
+                       PUSH    AR7
+                                           ; SOURCE LINE # 94
+                                           ; SOURCE LINE # 103
+                       MOV     DPTR,#06028H
+                       MOVX    A,@DPTR
+                 R     MOV     DPTR,#tempReg
+                       MOVX    @DPTR,A
+                                           ; SOURCE LINE # 104
+                       MOVX    A,@DPTR
+                       MOV     R7,A
+                       ANL     A,#010H
+                 R     xJZ     ?C0021
+                                           ; SOURCE LINE # 105
+                                           ; SOURCE LINE # 106
+                       INC     DPTR
+                       MOV     A,#01H
+                       MOVX    @DPTR,A
+                                           ; SOURCE LINE # 107
+                       MOV     A,R7
+                       ANL     A,#080H
+                 R     xJZ     ?C0002
+                                           ; SOURCE LINE # 108
+                                           ; SOURCE LINE # 109
+                 R     MOV     DPTR,#tempReg
+                       MOVX    A,@DPTR
+                       ANL     A,#0FH
+                       XRL     A,#01H
+                 R     xJZ     ?C0003
+                                           ; SOURCE LINE # 110
+                                           ; SOURCE LINE # 112
+                       INC     DPTR
+                       CLR     A
+                       MOVX    @DPTR,A
+                                           ; SOURCE LINE # 113
+                 R     xJMP    ?C0006
+             ?C0003:
+                                           ; SOURCE LINE # 115
+                                           ; SOURCE LINE # 116
+                 R     CALL    USBFS_HandleSetup
+C51 COMPILER V9.51   USBFS_DRV                                                             08/05/2026 14:07:20 PAGE 15  
+
+                                           ; SOURCE LINE # 118
+                 R     MOV     DPTR,#USBFS_ep0Mode
+                       MOVX    A,@DPTR
+                       ANL     A,#080H
+                 R     xJZ     ?C0006
+                                           ; SOURCE LINE # 119
+                                           ; SOURCE LINE # 121
+                 R     MOV     DPTR,#modifyReg
+                       CLR     A
+                       MOVX    @DPTR,A
+                                           ; SOURCE LINE # 122
+                                           ; SOURCE LINE # 123
+                                           ; SOURCE LINE # 124
+                 R     xJMP    ?C0006
+             ?C0002:
+                                           ; SOURCE LINE # 125
+                 R     MOV     DPTR,#tempReg
+                       MOVX    A,@DPTR
+                       ANL     A,#040H
+                 R     xJZ     ?C0007
+                                           ; SOURCE LINE # 126
+                                           ; SOURCE LINE # 127
+                 R     CALL    USBFS_HandleIN
+                                           ; SOURCE LINE # 128
+                 R     xJMP    ?C0006
+             ?C0007:
+                                           ; SOURCE LINE # 129
+                 R     MOV     DPTR,#tempReg
+                       MOVX    A,@DPTR
+                       ANL     A,#020H
+                 R     xJZ     ?C0009
+                                           ; SOURCE LINE # 130
+                                           ; SOURCE LINE # 131
+                 R     CALL    USBFS_HandleOUT
+                                           ; SOURCE LINE # 132
+                 R     xJMP    ?C0006
+             ?C0009:
+                                           ; SOURCE LINE # 134
+                                           ; SOURCE LINE # 135
+                 R     MOV     DPTR,#modifyReg
+                       CLR     A
+                       MOVX    @DPTR,A
+                                           ; SOURCE LINE # 136
+             ?C0006:
+                                           ; SOURCE LINE # 139
+                 R     MOV     DPTR,#modifyReg
+                       MOVX    A,@DPTR
+                 R     xJZ     ?C0021
+                                           ; SOURCE LINE # 140
+                                           ; SOURCE LINE # 142
+                       MOV     DPTR,#06028H
+                       MOVX    A,@DPTR
+                 R     MOV     DPTR,#tempReg
+                       MOVX    @DPTR,A
+                                           ; SOURCE LINE # 145
+                       MOVX    A,@DPTR
+                       ANL     A,#080H
+                 R     xJNZ    ?C0021
+                                           ; SOURCE LINE # 146
+                                           ; SOURCE LINE # 148
+                 R     MOV     DPTR,#USBFS_ep0Count
+                       MOVX    A,@DPTR
+C51 COMPILER V9.51   USBFS_DRV                                                             08/05/2026 14:07:20 PAGE 16  
+
+                       MOV     R7,A
+                 R     MOV     DPTR,#USBFS_ep0Toggle
+                       MOVX    A,@DPTR
+                       ORL     A,R7
+                 R     MOV     DPTR,#tempReg
+                       MOVX    @DPTR,A
+                                           ; SOURCE LINE # 149
+                       MOVX    A,@DPTR
+                       MOV     R7,A
+                       MOV     DPTR,#06029H
+                       MOVX    @DPTR,A
+                                           ; SOURCE LINE # 152
+                       MOVX    A,@DPTR
+                       MOV     R6,A
+                       MOV     A,R7
+                       XRL     A,R6
+                 R     xJNZ    ?C0021
+                                           ; SOURCE LINE # 153
+             ?C0016:
+                                           ; SOURCE LINE # 156
+                                           ; SOURCE LINE # 158
+                 R     MOV     DPTR,#USBFS_ep0Mode
+                       MOVX    A,@DPTR
+                 R     MOV     DPTR,#modifyReg
+                       MOVX    @DPTR,A
+                                           ; SOURCE LINE # 161
+                       MOV     DPTR,#06028H
+                       MOVX    A,@DPTR
+                       ANL     A,#080H
+                 R     MOV     DPTR,#tempReg
+                       MOVX    @DPTR,A
+                                           ; SOURCE LINE # 164
+                       MOVX    A,@DPTR
+                 R     xJNZ    ?C0014
+                                           ; SOURCE LINE # 165
+                                           ; SOURCE LINE # 167
+                 R     MOV     DPTR,#USBFS_ep0Mode
+                       MOVX    A,@DPTR
+                       MOV     DPTR,#06028H
+                       MOVX    @DPTR,A
+                                           ; SOURCE LINE # 170
+                       MOVX    A,@DPTR
+                       ANL     A,#0FH
+                 R     MOV     DPTR,#modifyReg
+                       MOVX    @DPTR,A
+                                           ; SOURCE LINE # 171
+                                           ; SOURCE LINE # 172
+             ?C0014:
+                                           ; SOURCE LINE # 173
+                 R     MOV     DPTR,#USBFS_ep0Mode
+                       MOVX    A,@DPTR
+                       MOV     R7,A
+                 R     MOV     DPTR,#modifyReg
+                       MOVX    A,@DPTR
+                 R     xJNE    A,AR7,?C0016
+                                           ; SOURCE LINE # 174
+                                           ; SOURCE LINE # 175
+                                           ; SOURCE LINE # 176
+                                           ; SOURCE LINE # 177
+                                           ; SOURCE LINE # 179
+                                           ; SOURCE LINE # 184
+             ?C0021:
+C51 COMPILER V9.51   USBFS_DRV                                                             08/05/2026 14:07:20 PAGE 17  
+
+                       POP     AR7
+                       POP     AR6
+                       POP     AR5
+                       POP     AR4
+                       POP     AR3
+                       POP     AR2
+                       POP     AR1
+                       POP     AR0
+                       POP     PSW
+                 E     POP     ?C?XPAGE1SFR
+                       POP     DPS
+                       POP     DPL1
+                       POP     DPH1
+                       POP     DPL
+                       POP     DPH
+                       POP     B
+                       POP     ACC
+                       RETI    
+             ; FUNCTION USBFS_EP_0_ISR (END)
+
+             ; FUNCTION USBFS_HandleSetup (BEGIN)
+                                           ; SOURCE LINE # 198
+                                           ; SOURCE LINE # 199
+                                           ; SOURCE LINE # 205
+                       MOV     DPTR,#06028H
+                       MOVX    A,@DPTR
+                 R     MOV     DPTR,#requestHandled
+                       MOVX    @DPTR,A
+                                           ; SOURCE LINE # 206
+                       MOVX    A,@DPTR
+                       MOV     DPTR,#06028H
+                       MOVX    @DPTR,A
+                                           ; SOURCE LINE # 207
+                       MOVX    A,@DPTR
+                 R     MOV     DPTR,#requestHandled
+                       MOVX    @DPTR,A
+                                           ; SOURCE LINE # 209
+                       MOVX    A,@DPTR
+                       MOV     R7,A
+                       ANL     A,#080H
+                 R     xJZ     ?C0022
+                                           ; SOURCE LINE # 210
+                                           ; SOURCE LINE # 212
+                 R     MOV     DPTR,#USBFS_ep0Mode
+                       MOV     A,R7
+                       MOVX    @DPTR,A
+                                           ; SOURCE LINE # 213
+                       RET     
+             ?C0022:
+                                           ; SOURCE LINE # 215
+                                           ; SOURCE LINE # 217
+                       MOV     R7,#02H
+                 R     CALL    _USBFS_UpdateStatusBlock
+                                           ; SOURCE LINE # 220
+                       MOV     DPTR,#06000H
+                       MOVX    A,@DPTR
+                       ANL     A,#060H
+                       ADD     A,#0E0H
+                 R     xJZ     ?C0026
+                       ADD     A,#0E0H
+                 R     xJZ     ?C0027
+                       ADD     A,#040H
+C51 COMPILER V9.51   USBFS_DRV                                                             08/05/2026 14:07:20 PAGE 18  
+
+                 R     xJNZ    ?C0028
+                                           ; SOURCE LINE # 221
+                                           ; SOURCE LINE # 222
+             ?C0025:
+                                           ; SOURCE LINE # 223
+                 E     CALL    USBFS_HandleStandardRqst
+                 R     MOV     DPTR,#requestHandled
+                       MOV     A,R7
+                       MOVX    @DPTR,A
+                                           ; SOURCE LINE # 224
+                 R     xJMP    ?C0024
+                                           ; SOURCE LINE # 226
+             ?C0026:
+                                           ; SOURCE LINE # 227
+                 E     CALL    USBFS_DispatchClassRqst
+                 R     MOV     DPTR,#requestHandled
+                       MOV     A,R7
+                       MOVX    @DPTR,A
+                                           ; SOURCE LINE # 228
+                 R     xJMP    ?C0024
+                                           ; SOURCE LINE # 230
+             ?C0027:
+                                           ; SOURCE LINE # 231
+                 E     CALL    USBFS_HandleVendorRqst
+                 R     MOV     DPTR,#requestHandled
+                       MOV     A,R7
+                       MOVX    @DPTR,A
+                                           ; SOURCE LINE # 232
+                 R     xJMP    ?C0024
+                                           ; SOURCE LINE # 234
+             ?C0028:
+                                           ; SOURCE LINE # 235
+                       CLR     A
+                 R     MOV     DPTR,#requestHandled
+                       MOVX    @DPTR,A
+                                           ; SOURCE LINE # 236
+                                           ; SOURCE LINE # 237
+             ?C0024:
+                                           ; SOURCE LINE # 240
+                 R     MOV     DPTR,#requestHandled
+                       MOVX    A,@DPTR
+                 R     xJNZ    ?C0030
+                                           ; SOURCE LINE # 241
+                                           ; SOURCE LINE # 242
+                 R     MOV     DPTR,#USBFS_ep0Mode
+                       MOV     A,#03H
+                       MOVX    @DPTR,A
+                                           ; SOURCE LINE # 243
+                                           ; SOURCE LINE # 244
+                                           ; SOURCE LINE # 245
+             ?C0030:
+                       RET     
+             ; FUNCTION USBFS_HandleSetup (END)
+
+             ; FUNCTION USBFS_HandleIN (BEGIN)
+                                           ; SOURCE LINE # 259
+                                           ; SOURCE LINE # 260
+                                           ; SOURCE LINE # 261
+                 R     MOV     DPTR,#USBFS_transferState
+                       MOVX    A,@DPTR
+                       ADD     A,#0FCH
+                 R     xJZ     ?C0034
+C51 COMPILER V9.51   USBFS_DRV                                                             08/05/2026 14:07:20 PAGE 19  
+
+                       ADD     A,#0FEH
+                 R     xJZ     ?C0035
+                       ADD     A,#04H
+                 R     xJNZ    ?C0037
+                                           ; SOURCE LINE # 262
+                                           ; SOURCE LINE # 263
+                                           ; SOURCE LINE # 264
+                                           ; SOURCE LINE # 266
+             ?C0033:
+                                           ; SOURCE LINE # 267
+                 R     CALL    USBFS_ControlReadDataStage
+                                           ; SOURCE LINE # 268
+                       RET     
+                                           ; SOURCE LINE # 270
+             ?C0034:
+                                           ; SOURCE LINE # 271
+                 R     CALL    USBFS_ControlWriteStatusStage
+                                           ; SOURCE LINE # 272
+                       RET     
+                                           ; SOURCE LINE # 274
+             ?C0035:
+                                           ; SOURCE LINE # 275
+                 R     CALL    USBFS_NoDataControlStatusStage
+                                           ; SOURCE LINE # 276
+                                           ; SOURCE LINE # 278
+                                           ; SOURCE LINE # 279
+                                           ; SOURCE LINE # 280
+                                           ; SOURCE LINE # 281
+             ?C0037:
+                       RET     
+             ; FUNCTION USBFS_HandleIN (END)
+
+             ; FUNCTION USBFS_HandleOUT (BEGIN)
+                                           ; SOURCE LINE # 295
+                                           ; SOURCE LINE # 296
+                                           ; SOURCE LINE # 297
+                 R     MOV     DPTR,#USBFS_transferState
+                       MOVX    A,@DPTR
+                       ADD     A,#0FCH
+                 R     xJZ     ?C0041
+                       ADD     A,#0FEH
+                 R     xJZ     ?C0042
+                       ADD     A,#04H
+                 R     xJNZ    ?C0044
+                                           ; SOURCE LINE # 298
+                                           ; SOURCE LINE # 299
+                                           ; SOURCE LINE # 300
+                                           ; SOURCE LINE # 302
+             ?C0040:
+                                           ; SOURCE LINE # 303
+                 R     CALL    USBFS_ControlReadStatusStage
+                                           ; SOURCE LINE # 304
+                       RET     
+                                           ; SOURCE LINE # 306
+             ?C0041:
+                                           ; SOURCE LINE # 307
+                 R     CALL    USBFS_ControlWriteDataStage
+                                           ; SOURCE LINE # 308
+                       RET     
+                                           ; SOURCE LINE # 310
+             ?C0042:
+                                           ; SOURCE LINE # 312
+C51 COMPILER V9.51   USBFS_DRV                                                             08/05/2026 14:07:20 PAGE 20  
+
+                       MOV     R7,#03H
+                 R     CALL    _USBFS_UpdateStatusBlock
+                                           ; SOURCE LINE # 315
+                 R     MOV     DPTR,#USBFS_ep0Mode
+                       MOV     A,#03H
+                       MOVX    @DPTR,A
+                                           ; SOURCE LINE # 316
+                                           ; SOURCE LINE # 318
+                                           ; SOURCE LINE # 320
+                                           ; SOURCE LINE # 321
+                                           ; SOURCE LINE # 322
+             ?C0044:
+                       RET     
+             ; FUNCTION USBFS_HandleOUT (END)
+
+             ; FUNCTION USBFS_LoadEP0 (BEGIN)
+                                           ; SOURCE LINE # 357
+                                           ; SOURCE LINE # 358
+                                           ; SOURCE LINE # 359
+;---- Variable 'ep0Count' assigned to Register 'R5' ----
+                       CLR     A
+                       MOV     R5,A
+                                           ; SOURCE LINE # 362
+                 R     MOV     DPTR,#USBFS_lastPacketSize
+                       MOVX    A,@DPTR
+                       MOV     R7,A
+                 R     MOV     DPTR,#USBFS_transferByteCount+01H
+                       MOVX    A,@DPTR
+                       ADD     A,R7
+                       MOVX    @DPTR,A
+                 R     MOV     DPTR,#USBFS_transferByteCount
+                       MOVX    A,@DPTR
+                       ADDC    A,#00H
+                       MOVX    @DPTR,A
+             ?C0045:
+                                           ; SOURCE LINE # 365
+                       SETB    C
+                 R     MOV     DPTR,#USBFS_currentTD+01H
+                       MOVX    A,@DPTR
+                       SUBB    A,#00H
+                 R     MOV     DPTR,#USBFS_currentTD
+                       MOVX    A,@DPTR
+                       SUBB    A,#00H
+                 R     xJLT    ?C0046
+                       MOV     A,R5
+                       SUBB    A,#08H
+                 R     xJGE    ?C0046
+                                           ; SOURCE LINE # 366
+                                           ; SOURCE LINE # 367
+                 R     MOV     DPTR,#USBFS_currentTD+02H
+                       MOVX    A,@DPTR
+                       MOV     R3,A
+                       INC     DPTR
+                       MOVX    A,@DPTR
+                       MOV     R2,A
+                       INC     DPTR
+                       MOVX    A,@DPTR
+                       MOV     R1,A
+                 E     CALL    ?C?CLDPTR
+                       MOV     R7,A
+                       CLR     A
+                       ADD     A,R5
+C51 COMPILER V9.51   USBFS_DRV                                                             08/05/2026 14:07:20 PAGE 21  
+
+                       MOV     DPL,A
+                       CLR     A
+                       ADDC    A,#060H
+                       MOV     DPH,A
+                       MOV     A,R7
+                       MOVX    @DPTR,A
+                                           ; SOURCE LINE # 368
+                 R     MOV     DPTR,#USBFS_currentTD+02H
+                       MOVX    A,@DPTR
+                       MOV     R3,A
+                       INC     DPTR
+                       MOVX    A,@DPTR
+                       MOV     R2,A
+                       INC     DPTR
+                       MOVX    A,@DPTR
+                       ADD     A,#01H
+                       MOV     R1,A
+                       CLR     A
+                       ADDC    A,R2
+                       MOV     R2,A
+                 R     MOV     DPTR,#USBFS_currentTD+02H
+                       MOV     A,R3
+                       MOVX    @DPTR,A
+                       INC     DPTR
+                       MOV     A,R2
+                       MOVX    @DPTR,A
+                       INC     DPTR
+                       MOV     A,R1
+                       MOVX    @DPTR,A
+                                           ; SOURCE LINE # 369
+                       INC     R5
+                                           ; SOURCE LINE # 370
+                 R     MOV     DPTR,#USBFS_currentTD+01H
+                       MOVX    A,@DPTR
+                       ADD     A,#0FFH
+                       MOVX    @DPTR,A
+                 R     MOV     DPTR,#USBFS_currentTD
+                       MOVX    A,@DPTR
+                       ADDC    A,#0FFH
+                       MOVX    @DPTR,A
+                                           ; SOURCE LINE # 371
+                 R     xJMP    ?C0045
+             ?C0046:
+                                           ; SOURCE LINE # 374
+                 R     MOV     DPTR,#USBFS_lastPacketSize
+                       MOVX    A,@DPTR
+                       XRL     A,#08H
+                 R     xJZ     ?C0048
+                       MOV     A,R5
+                       SETB    C
+                       SUBB    A,#00H
+                 R     xJLT    ?C0047
+             ?C0048:
+                                           ; SOURCE LINE # 375
+                                           ; SOURCE LINE # 377
+                 R     MOV     DPTR,#USBFS_ep0Toggle
+                       MOVX    A,@DPTR
+                       XRL     A,#080H
+                       MOVX    @DPTR,A
+                                           ; SOURCE LINE # 379
+                 R     MOV     DPTR,#USBFS_ep0Mode
+                       MOV     A,#0FH
+C51 COMPILER V9.51   USBFS_DRV                                                             08/05/2026 14:07:20 PAGE 22  
+
+                       MOVX    @DPTR,A
+                                           ; SOURCE LINE # 381
+                 R     MOV     DPTR,#USBFS_transferState
+                       MOV     A,#02H
+                       MOVX    @DPTR,A
+                                           ; SOURCE LINE # 382
+                 R     xJMP    ?C0049
+             ?C0047:
+                                           ; SOURCE LINE # 384
+                                           ; SOURCE LINE # 386
+                 R     MOV     DPTR,#USBFS_ep0Mode
+                       MOV     A,#02H
+                       MOVX    @DPTR,A
+                                           ; SOURCE LINE # 388
+                 R     MOV     DPTR,#USBFS_transferState
+                       MOVX    @DPTR,A
+                                           ; SOURCE LINE # 389
+             ?C0049:
+                                           ; SOURCE LINE # 392
+                 R     MOV     DPTR,#USBFS_ep0Count
+                       MOV     A,R5
+                       MOVX    @DPTR,A
+                                           ; SOURCE LINE # 393
+                 R     MOV     DPTR,#USBFS_lastPacketSize
+                       MOVX    @DPTR,A
+                                           ; SOURCE LINE # 394
+                       RET     
+             ; FUNCTION USBFS_LoadEP0 (END)
+
+             ; FUNCTION USBFS_InitControlRead (BEGIN)
+                                           ; SOURCE LINE # 418
+                                           ; SOURCE LINE # 419
+                                           ; SOURCE LINE # 422
+                 R     MOV     DPTR,#USBFS_currentTD
+                       MOVX    A,@DPTR
+                 R     JNZ     ?C0071
+                       INC     DPTR
+                       MOVX    A,@DPTR
+             ?C0071:
+                 R     xJNZ    ?C0051
+                                           ; SOURCE LINE # 423
+                                           ; SOURCE LINE # 424
+                 R     CALL    USBFS_InitZeroLengthControlTransfer
+                                           ; SOURCE LINE # 425
+                 R     xJMP    ?C0052
+             ?C0051:
+                                           ; SOURCE LINE # 427
+                                           ; SOURCE LINE # 429
+                 R     MOV     DPTR,#USBFS_transferState
+                       MOV     A,#02H
+                       MOVX    @DPTR,A
+                                           ; SOURCE LINE # 432
+                       CLR     A
+                 R     MOV     DPTR,#USBFS_ep0Toggle
+                       MOVX    @DPTR,A
+                                           ; SOURCE LINE # 435
+                 R     CALL    USBFS_InitializeStatusBlock
+                                           ; SOURCE LINE # 437
+                       MOV     DPTR,#06007H
+                       MOVX    A,@DPTR
+                       MOV     R6,A
+                       MOV     DPTR,#06006H
+C51 COMPILER V9.51   USBFS_DRV                                                             08/05/2026 14:07:20 PAGE 23  
+
+                       MOVX    A,@DPTR
+                       MOV     R5,A
+                       MOV     A,R6
+                       MOV     A,R5
+                       MOV     R7,A
+;---- Variable 'xferCount' assigned to Register 'R6/R7' ----
+                                           ; SOURCE LINE # 439
+                       SETB    C
+                 R     MOV     DPTR,#USBFS_currentTD+01H
+                       MOVX    A,@DPTR
+                       SUBB    A,R7
+                 R     MOV     DPTR,#USBFS_currentTD
+                       MOVX    A,@DPTR
+                       SUBB    A,R6
+                 R     xJLT    ?C0053
+                                           ; SOURCE LINE # 440
+                                           ; SOURCE LINE # 441
+                       MOV     A,R6
+                       MOVX    @DPTR,A
+                       INC     DPTR
+                       MOV     A,R7
+                       MOVX    @DPTR,A
+                                           ; SOURCE LINE # 442
+             ?C0053:
+                                           ; SOURCE LINE # 444
+                 R     CALL    USBFS_LoadEP0
+                                           ; SOURCE LINE # 445
+             ?C0052:
+                                           ; SOURCE LINE # 447
+                       MOV     R7,#01H
+                                           ; SOURCE LINE # 448
+             ?C0054:
+                       RET     
+             ; FUNCTION USBFS_InitControlRead (END)
+
+             ; FUNCTION USBFS_InitZeroLengthControlTransfer (BEGIN)
+                                           ; SOURCE LINE # 471
+                                           ; SOURCE LINE # 473
+                                           ; SOURCE LINE # 475
+                 R     MOV     DPTR,#USBFS_transferState
+                       MOV     A,#02H
+                       MOVX    @DPTR,A
+                                           ; SOURCE LINE # 478
+                 R     MOV     DPTR,#USBFS_ep0Toggle
+                       MOV     A,#080H
+                       MOVX    @DPTR,A
+                                           ; SOURCE LINE # 481
+                 R     MOV     DPTR,#USBFS_ep0Mode
+                       MOV     A,#0FH
+                       MOVX    @DPTR,A
+                                           ; SOURCE LINE # 484
+                       CLR     A
+                 R     MOV     DPTR,#USBFS_lastPacketSize
+                       MOVX    @DPTR,A
+                                           ; SOURCE LINE # 486
+                 R     MOV     DPTR,#USBFS_ep0Count
+                       MOVX    @DPTR,A
+                                           ; SOURCE LINE # 488
+                       MOV     R7,#01H
+                                           ; SOURCE LINE # 489
+             ?C0055:
+                       RET     
+C51 COMPILER V9.51   USBFS_DRV                                                             08/05/2026 14:07:20 PAGE 24  
+
+             ; FUNCTION USBFS_InitZeroLengthControlTransfer (END)
+
+             ; FUNCTION USBFS_ControlReadDataStage (BEGIN)
+                                           ; SOURCE LINE # 503
+                                           ; SOURCE LINE # 505
+                                           ; SOURCE LINE # 506
+                 R     CALL    USBFS_LoadEP0
+                                           ; SOURCE LINE # 507
+                       RET     
+             ; FUNCTION USBFS_ControlReadDataStage (END)
+
+             ; FUNCTION USBFS_ControlReadStatusStage (BEGIN)
+                                           ; SOURCE LINE # 526
+                                           ; SOURCE LINE # 527
+                                           ; SOURCE LINE # 529
+                 R     MOV     DPTR,#USBFS_lastPacketSize
+                       MOVX    A,@DPTR
+                       MOV     R7,A
+                 R     MOV     DPTR,#USBFS_transferByteCount+01H
+                       MOVX    A,@DPTR
+                       ADD     A,R7
+                       MOVX    @DPTR,A
+                 R     MOV     DPTR,#USBFS_transferByteCount
+                       MOVX    A,@DPTR
+                       ADDC    A,#00H
+                       MOVX    @DPTR,A
+                                           ; SOURCE LINE # 532
+                       CLR     A
+                 R     MOV     DPTR,#USBFS_transferState
+                       MOVX    @DPTR,A
+                                           ; SOURCE LINE # 535
+                       MOV     R7,#01H
+                 R     CALL    _USBFS_UpdateStatusBlock
+                                           ; SOURCE LINE # 538
+                 R     MOV     DPTR,#USBFS_ep0Mode
+                       MOV     A,#03H
+                       MOVX    @DPTR,A
+                                           ; SOURCE LINE # 539
+                       RET     
+             ; FUNCTION USBFS_ControlReadStatusStage (END)
+
+             ; FUNCTION USBFS_InitControlWrite (BEGIN)
+                                           ; SOURCE LINE # 560
+                                           ; SOURCE LINE # 561
+                                           ; SOURCE LINE # 565
+                 R     MOV     DPTR,#USBFS_transferState
+                       MOV     A,#04H
+                       MOVX    @DPTR,A
+                                           ; SOURCE LINE # 568
+                 R     MOV     DPTR,#USBFS_ep0Toggle
+                       MOV     A,#080H
+                       MOVX    @DPTR,A
+                                           ; SOURCE LINE # 571
+                 R     CALL    USBFS_InitializeStatusBlock
+                                           ; SOURCE LINE # 573
+                       MOV     DPTR,#06007H
+                       MOVX    A,@DPTR
+                       MOV     R6,A
+                       MOV     DPTR,#06006H
+                       MOVX    A,@DPTR
+                       MOV     R5,A
+                       MOV     A,R6
+C51 COMPILER V9.51   USBFS_DRV                                                             08/05/2026 14:07:20 PAGE 25  
+
+                       MOV     A,R5
+                       MOV     R7,A
+;---- Variable 'xferCount' assigned to Register 'R6/R7' ----
+                                           ; SOURCE LINE # 575
+                       SETB    C
+                 R     MOV     DPTR,#USBFS_currentTD+01H
+                       MOVX    A,@DPTR
+                       SUBB    A,R7
+                 R     MOV     DPTR,#USBFS_currentTD
+                       MOVX    A,@DPTR
+                       SUBB    A,R6
+                 R     xJLT    ?C0058
+                                           ; SOURCE LINE # 576
+                                           ; SOURCE LINE # 577
+                       MOV     A,R6
+                       MOVX    @DPTR,A
+                       INC     DPTR
+                       MOV     A,R7
+                       MOVX    @DPTR,A
+                                           ; SOURCE LINE # 578
+             ?C0058:
+                                           ; SOURCE LINE # 581
+                 R     MOV     DPTR,#USBFS_ep0Mode
+                       MOV     A,#0BH
+                       MOVX    @DPTR,A
+                                           ; SOURCE LINE # 583
+                       MOV     R7,#01H
+                                           ; SOURCE LINE # 584
+             ?C0059:
+                       RET     
+             ; FUNCTION USBFS_InitControlWrite (END)
+
+             ; FUNCTION USBFS_ControlWriteDataStage (BEGIN)
+                                           ; SOURCE LINE # 611
+                                           ; SOURCE LINE # 612
+                                           ; SOURCE LINE # 614
+;---- Variable 'regIndex' assigned to Register 'R7' ----
+                       CLR     A
+                       MOV     R7,A
+                                           ; SOURCE LINE # 616
+                       MOV     DPTR,#06029H
+                       MOVX    A,@DPTR
+                       ANL     A,#0FH
+                       ADD     A,#0FEH
+                       MOV     R6,A
+;---- Variable 'ep0Count' assigned to Register 'R6' ----
+                                           ; SOURCE LINE # 618
+                       MOV     R5,A
+                 R     MOV     DPTR,#USBFS_transferByteCount+01H
+                       MOVX    A,@DPTR
+                       ADD     A,R5
+                       MOVX    @DPTR,A
+                 R     MOV     DPTR,#USBFS_transferByteCount
+                       MOVX    A,@DPTR
+                       ADDC    A,#00H
+                       MOVX    @DPTR,A
+             ?C0060:
+                                           ; SOURCE LINE # 620
+                       SETB    C
+                 R     MOV     DPTR,#USBFS_currentTD+01H
+                       MOVX    A,@DPTR
+                       SUBB    A,#00H
+C51 COMPILER V9.51   USBFS_DRV                                                             08/05/2026 14:07:20 PAGE 26  
+
+                 R     MOV     DPTR,#USBFS_currentTD
+                       MOVX    A,@DPTR
+                       SUBB    A,#00H
+                 R     xJLT    ?C0061
+                       MOV     A,R6
+                       SETB    C
+                       SUBB    A,#00H
+                 R     xJLT    ?C0061
+                                           ; SOURCE LINE # 621
+                                           ; SOURCE LINE # 622
+                       CLR     A
+                       ADD     A,R7
+                       MOV     DPL,A
+                       CLR     A
+                       ADDC    A,#060H
+                       MOV     DPH,A
+                       MOVX    A,@DPTR
+                       MOV     R5,A
+                 R     MOV     DPTR,#USBFS_currentTD+02H
+                       MOVX    A,@DPTR
+                       MOV     R3,A
+                       INC     DPTR
+                       MOVX    A,@DPTR
+                       MOV     R2,A
+                       INC     DPTR
+                       MOVX    A,@DPTR
+                       MOV     R1,A
+                       MOV     A,R5
+                 E     CALL    ?C?CSTPTR
+                                           ; SOURCE LINE # 623
+                 R     MOV     DPTR,#USBFS_currentTD+02H
+                       MOVX    A,@DPTR
+                       MOV     R3,A
+                       INC     DPTR
+                       MOVX    A,@DPTR
+                       MOV     R2,A
+                       INC     DPTR
+                       MOVX    A,@DPTR
+                       ADD     A,#01H
+                       MOV     R1,A
+                       CLR     A
+                       ADDC    A,R2
+                       MOV     R2,A
+                 R     MOV     DPTR,#USBFS_currentTD+02H
+                       MOV     A,R3
+                       MOVX    @DPTR,A
+                       INC     DPTR
+                       MOV     A,R2
+                       MOVX    @DPTR,A
+                       INC     DPTR
+                       MOV     A,R1
+                       MOVX    @DPTR,A
+                                           ; SOURCE LINE # 624
+                       INC     R7
+                                           ; SOURCE LINE # 625
+                       DEC     R6
+                                           ; SOURCE LINE # 626
+                 R     MOV     DPTR,#USBFS_currentTD+01H
+                       MOVX    A,@DPTR
+                       ADD     A,#0FFH
+                       MOVX    @DPTR,A
+                 R     MOV     DPTR,#USBFS_currentTD
+C51 COMPILER V9.51   USBFS_DRV                                                             08/05/2026 14:07:20 PAGE 27  
+
+                       MOVX    A,@DPTR
+                       ADDC    A,#0FFH
+                       MOVX    @DPTR,A
+                                           ; SOURCE LINE # 627
+                 R     xJMP    ?C0060
+             ?C0061:
+                                           ; SOURCE LINE # 629
+                       MOV     R7,AR6
+                 R     MOV     DPTR,#USBFS_ep0Count
+                       MOV     A,R6
+                       MOVX    @DPTR,A
+                                           ; SOURCE LINE # 632
+                 R     MOV     DPTR,#USBFS_ep0Toggle
+                       MOVX    A,@DPTR
+                       XRL     A,#080H
+                       MOVX    @DPTR,A
+                                           ; SOURCE LINE # 635
+                 R     MOV     DPTR,#USBFS_ep0Mode
+                       MOV     A,#0BH
+                       MOVX    @DPTR,A
+                                           ; SOURCE LINE # 636
+                       RET     
+             ; FUNCTION USBFS_ControlWriteDataStage (END)
+
+             ; FUNCTION USBFS_ControlWriteStatusStage (BEGIN)
+                                           ; SOURCE LINE # 653
+                                           ; SOURCE LINE # 654
+                                           ; SOURCE LINE # 656
+                       CLR     A
+                 R     MOV     DPTR,#USBFS_transferState
+                       MOVX    @DPTR,A
+                                           ; SOURCE LINE # 659
+                       MOV     R7,#01H
+                 R     CALL    _USBFS_UpdateStatusBlock
+                                           ; SOURCE LINE # 662
+                 R     MOV     DPTR,#USBFS_ep0Mode
+                       MOV     A,#03H
+                       MOVX    @DPTR,A
+                                           ; SOURCE LINE # 663
+                       RET     
+             ; FUNCTION USBFS_ControlWriteStatusStage (END)
+
+             ; FUNCTION USBFS_InitNoDataControlTransfer (BEGIN)
+                                           ; SOURCE LINE # 685
+                                           ; SOURCE LINE # 686
+                                           ; SOURCE LINE # 687
+                 R     MOV     DPTR,#USBFS_transferState
+                       MOV     A,#06H
+                       MOVX    @DPTR,A
+                                           ; SOURCE LINE # 688
+                 R     MOV     DPTR,#USBFS_ep0Mode
+                       MOVX    @DPTR,A
+                                           ; SOURCE LINE # 689
+                 R     MOV     DPTR,#USBFS_ep0Toggle
+                       MOV     A,#080H
+                       MOVX    @DPTR,A
+                                           ; SOURCE LINE # 690
+                       CLR     A
+                 R     MOV     DPTR,#USBFS_ep0Count
+                       MOVX    @DPTR,A
+                                           ; SOURCE LINE # 692
+                       MOV     R7,#01H
+C51 COMPILER V9.51   USBFS_DRV                                                             08/05/2026 14:07:20 PAGE 28  
+
+                                           ; SOURCE LINE # 693
+             ?C0064:
+                       RET     
+             ; FUNCTION USBFS_InitNoDataControlTransfer (END)
+
+             ; FUNCTION USBFS_NoDataControlStatusStage (BEGIN)
+                                           ; SOURCE LINE # 714
+                                           ; SOURCE LINE # 715
+                                           ; SOURCE LINE # 716
+                 R     MOV     DPTR,#USBFS_deviceAddress
+                       MOVX    A,@DPTR
+                 R     xJZ     ?C0065
+                                           ; SOURCE LINE # 717
+                                           ; SOURCE LINE # 719
+                       MOVX    A,@DPTR
+                       ORL     A,#080H
+                       MOV     DPTR,#06008H
+                       MOVX    @DPTR,A
+                                           ; SOURCE LINE # 720
+                       CLR     A
+                 R     MOV     DPTR,#USBFS_deviceAddress
+                       MOVX    @DPTR,A
+                                           ; SOURCE LINE # 721
+             ?C0065:
+                                           ; SOURCE LINE # 723
+                       CLR     A
+                 R     MOV     DPTR,#USBFS_transferState
+                       MOVX    @DPTR,A
+                                           ; SOURCE LINE # 726
+                       MOV     R7,#01H
+                 R     CALL    _USBFS_UpdateStatusBlock
+                                           ; SOURCE LINE # 729
+                 R     MOV     DPTR,#USBFS_ep0Mode
+                       MOV     A,#03H
+                       MOVX    @DPTR,A
+                                           ; SOURCE LINE # 730
+                       RET     
+             ; FUNCTION USBFS_NoDataControlStatusStage (END)
+
+             ; FUNCTION _USBFS_UpdateStatusBlock (BEGIN)
+                                           ; SOURCE LINE # 754
+;---- Variable 'completionCode' assigned to Register 'R7' ----
+                                           ; SOURCE LINE # 755
+                                           ; SOURCE LINE # 756
+                 R     MOV     DPTR,#USBFS_currentTD+05H
+                       MOVX    A,@DPTR
+                       MOV     R3,A
+                       INC     DPTR
+                       MOVX    A,@DPTR
+                       MOV     R2,A
+                       INC     DPTR
+                       MOVX    A,@DPTR
+                       ORL     A,R2
+                       ORL     A,R3
+                 R     xJZ     ?C0068
+                                           ; SOURCE LINE # 757
+                                           ; SOURCE LINE # 758
+                 R     MOV     DPTR,#USBFS_currentTD+05H
+                       MOVX    A,@DPTR
+                       MOV     R3,A
+                       INC     DPTR
+                       MOVX    A,@DPTR
+C51 COMPILER V9.51   USBFS_DRV                                                             08/05/2026 14:07:20 PAGE 29  
+
+                       MOV     R2,A
+                       INC     DPTR
+                       MOVX    A,@DPTR
+                       MOV     R1,A
+                       MOV     A,R7
+                 E     CALL    ?C?CSTPTR
+                                           ; SOURCE LINE # 759
+                 R     MOV     DPTR,#USBFS_transferByteCount
+                       MOVX    A,@DPTR
+                       MOV     R6,A
+                       INC     DPTR
+                       MOVX    A,@DPTR
+                       MOV     R7,A
+                 R     MOV     DPTR,#USBFS_currentTD+05H
+                       MOVX    A,@DPTR
+                       MOV     R3,A
+                       INC     DPTR
+                       MOVX    A,@DPTR
+                       MOV     R2,A
+                       INC     DPTR
+                       MOVX    A,@DPTR
+                       ADD     A,#01H
+                       MOV     R1,A
+                       CLR     A
+                       ADDC    A,R2
+                       MOV     R2,A
+                       MOV     A,R6
+                       MOV     B,R7
+                 E     CALL    ?C?ISTPTR
+                                           ; SOURCE LINE # 760
+                 R     MOV     DPTR,#USBFS_currentTD+05H
+                       CLR     A
+                       MOVX    @DPTR,A
+                       INC     DPTR
+                       MOVX    @DPTR,A
+                       INC     DPTR
+                       MOVX    @DPTR,A
+                                           ; SOURCE LINE # 761
+                                           ; SOURCE LINE # 762
+             ?C0068:
+                       RET     
+             ; FUNCTION _USBFS_UpdateStatusBlock (END)
+
+             ; FUNCTION USBFS_InitializeStatusBlock (BEGIN)
+                                           ; SOURCE LINE # 784
+                                           ; SOURCE LINE # 785
+                                           ; SOURCE LINE # 786
+                       CLR     A
+                 R     MOV     DPTR,#USBFS_transferByteCount
+                       MOVX    @DPTR,A
+                       INC     DPTR
+                       MOVX    @DPTR,A
+                                           ; SOURCE LINE # 788
+                 R     MOV     DPTR,#USBFS_currentTD+05H
+                       MOVX    A,@DPTR
+                       MOV     R3,A
+                       INC     DPTR
+                       MOVX    A,@DPTR
+                       MOV     R2,A
+                       INC     DPTR
+                       MOVX    A,@DPTR
+                       ORL     A,R2
+C51 COMPILER V9.51   USBFS_DRV                                                             08/05/2026 14:07:20 PAGE 30  
+
+                       ORL     A,R3
+                 R     xJZ     ?C0070
+                                           ; SOURCE LINE # 789
+                                           ; SOURCE LINE # 790
+                 R     MOV     DPTR,#USBFS_currentTD+05H
+                       MOVX    A,@DPTR
+                       MOV     R3,A
+                       INC     DPTR
+                       MOVX    A,@DPTR
+                       MOV     R2,A
+                       INC     DPTR
+                       MOVX    A,@DPTR
+                       MOV     R1,A
+                       CLR     A
+                 E     CALL    ?C?CSTPTR
+                                           ; SOURCE LINE # 791
+                 R     MOV     DPTR,#USBFS_currentTD+05H
+                       MOVX    A,@DPTR
+                       MOV     R3,A
+                       INC     DPTR
+                       MOVX    A,@DPTR
+                       MOV     R2,A
+                       INC     DPTR
+                       MOVX    A,@DPTR
+                       ADD     A,#01H
+                       MOV     R1,A
+                       CLR     A
+                       ADDC    A,R2
+                       MOV     R2,A
+                       CLR     A
+                       MOV     B,A
+                 E     CALL    ?C?ISTPTR
+                                           ; SOURCE LINE # 792
+                                           ; SOURCE LINE # 793
+             ?C0070:
+                       RET     
+             ; FUNCTION USBFS_InitializeStatusBlock (END)
+
+
+
+MODULE INFORMATION:   STATIC OVERLAYABLE
+   CODE SIZE        =   1235    ----
+   CONSTANT SIZE    =   ----    ----
+   XDATA SIZE       =    134       3
+   PDATA SIZE       =   ----    ----
+   DATA SIZE        =   ----    ----
+   IDATA SIZE       =   ----    ----
+   BIT SIZE         =   ----    ----
+   EDATA SIZE       =   ----    ----
+   HDATA SIZE       =   ----    ----
+   XDATA CONST SIZE =   ----    ----
+   FAR CONST SIZE   =   ----    ----
+END OF MODULE INFORMATION.
+
+
+C51 COMPILATION COMPLETE.  0 WARNING(S),  0 ERROR(S)

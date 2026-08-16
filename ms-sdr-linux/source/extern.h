@@ -1,0 +1,576 @@
+#define _CRT_SECURE_NO_WARNINGS 1
+#pragma once
+
+#if defined(__linux__) || defined(__APPLE__)
+#include "platform.h"
+#include "typedefs.h"
+/* System pthreads — not the vendored Win32 pthreads headers in this tree */
+#include <pthread.h>
+#include <semaphore.h>
+/* Do not map getenv -> My_getenv on Linux; My_getenv still used for HOME path */
+#define delayMicroseconds Sleep
+#else
+#pragma comment(lib, "Ws2_32.lib")
+//#include <Windows.h>
+#include <WinSock2.h>
+#include <WS2tcpip.h>
+#include <conio.h>
+#include <ShlObj.h>
+#include <KnownFolders.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <stdint.h>
+#include <sys/types.h>
+#include <string.h>
+#include <errno.h>
+#include <math.h>
+#include <limits.h>
+#include <fcntl.h>
+#include <malloc.h>
+#include "typedefs.h"
+#include "pthread.h"
+#include "semaphore.h"
+#include "sched.h"
+
+//typedef	unsigned char   	uint8_t;
+//typedef	unsigned short  	uint16_t;
+//typedef	unsigned int    	uint32_t;
+typedef unsigned int UINT32;
+//typedef unsigned long ULONG32;
+typedef unsigned long long ULONG64;
+typedef signed char INT8;
+//typedef char TCHAR;
+typedef int BOOL;
+typedef unsigned char byte;
+typedef unsigned char UCHAR;
+//typedef int INT32;
+//typedef int INT16;
+#define PATH_MAX MAX_PATH
+#define getenv My_getenv
+#define delayMicroseconds Sleep
+
+#define FALSE 0
+#define TRUE 1
+#endif /* __linux__ */
+
+
+#define SSB_OFFSET (-12000)
+#define AM_OFFSET_RX (-11860)
+#define AM_OFFSET_TX (-12000)
+#define CW_OFFSET (- 600)
+#define PPM_INT_DEFAULT_VER_4 (-24)
+#define PPM_DEC_DEFAULT_VER_4 (-30)
+#define PPM_INT_DEFAULT_VER_5 (33)
+#define PPM_DEC_DEFAULT_VER_5 (0)
+#define THREAD_SLEEP_TIME 3000
+
+// I2C device addresses
+#define MCP23017_ADDRESS 0x20
+#define MCP23008_ADDRESS 0x21
+#define SOLIDUS_TEMP_SENSOR 0x18
+#define METER_ADDRESS 0x68
+#define IQBD_ADDRESS_1 0x4D
+#define IQBD_ADDRESS_2 0x49
+#define CURRENT_SENSOR_ADDRESS 0x40
+#define DISPLAY_ADDRESS_1 0x50
+#define DISPLAY_ADDRESS_2 0x50
+#define METER_HILO_ADDRESS 0x41
+#define MFC_ADDRESS_1 0x21
+#define MFC_ADDRESS_2 0x22
+
+#define SOLIDUS 1
+#define FORTIS 2
+#define FORTIS_MFC 3
+#define FORTIS_METER 4
+#define FORTIS_MFC_METER 5
+#define FORTIS_GEMINUS 6
+
+#define PROFICIO_1 1
+#define PROFICIO_C 2
+#define PROFICIO_4 4
+#define PROFICIO_5 5
+#define GEMINUS  6
+#define MAGNIS_DUO 7
+#define ULTIMUS 8
+#define PROFICIO_B 9
+#define PROFICIO_MKII 10
+
+#define MASTER_CONTROLLER_INITIALIZED 0x0001
+#define METER_MAIN_INITIALIZED 0x0002
+#define READ_SOLIDUS_TEMPERATURE_INITIALIZED 0x0004
+#define MANAGE_CW_KEY_INITIALIZED 0x0008
+#define MAIN_INITIALIZED 0x0010
+#define MFC_INITIALIZED 0x0020
+#define SUBSYSTEMS_INITIALIZED 0x0001
+#define SUBSYSTEMS_INITIALIZED_ALL (MASTER_CONTROLLER_INITIALIZED | METER_MAIN_INITIALIZED | READ_SOLIDUS_TEMPERATURE_INITIALIZED | \
+MANAGE_CW_KEY_INITIALIZED | MAIN_INITIALIZED | MFC_INITIALIZED)
+
+//For core i2c stuff
+#define I2C_BUSS 6
+extern int rtrim(char *s);
+extern struct i2c_adap *more_adapters(struct i2c_adap *adapters, int n);
+extern struct i2c_adap *gather_i2c_busses(void);
+extern int lookup_i2c_bus_by_name(const char *bus_name);
+extern int lookup_i2c_bus(const char *i2cbus_arg);
+extern int parse_i2c_address(const char *address_arg, int all_addrs);
+extern int open_i2c_dev(int i2cbus, char *filename, size_t size, int quiet);
+extern int set_slave_addr(int file, int address, int force);
+extern int Check_i2c_devices();
+extern int Init_I2C_Controls();
+//extern uint8_t I2C_BUSY;
+
+//For MFC
+//void *MFC_Thread(void *param);
+//int Process_MFC_Controls(uint8_t command, char *buf);
+extern int G_Left_switch;
+extern int G_Middle_switch;
+extern int G_Right_switch;
+extern int G_PTT_switch;
+extern int G_Multiplier;
+extern int G_Freq_digit;
+extern int G_Auto_zero;
+//extern int G_MFC_Mode;
+extern byte Knob_switch_function;
+extern byte Button_left_function;
+extern byte Button_middle_function;
+extern byte Button_right_function;
+extern byte PTT_switch_function;
+//extern uint8_t G_Speaker_volume;
+extern BOOL G_process_user_control_status;
+extern uint8_t G_Rit_Step;
+extern byte G_MFC_Active;
+extern int G_MFC_Address;
+
+//For IQBD stuff
+void *iqbd(void *t);
+extern uint32_t G_iqbd_value;
+extern uint8_t G_IQBD_Monitor_ON;
+extern uint8_t G_IQBD_New_Value_Set;
+//extern uint8_t G_iq_band;
+extern int G_Cancel_Calibration;
+extern int G_IQBD_Address;
+
+//For MCP23017_Controller stuff
+extern byte G_IQBD_allow;
+extern byte G_BIAS_allow;
+extern byte G_BIAS_Mode;
+extern byte G_TEMP_allow;
+extern int MCP23017_Controller_main(unsigned char GPIO_A, unsigned char GPIO_B);
+extern int MCP23008_Controller_main(unsigned char GPIO_A);
+extern int MCP_Init();
+extern int Write_i2c(int i2cbus, char *filename, int address, int daddress, unsigned char *buffer, int buffer_size,char *caller);
+extern int Read_i2c(int i2cbus, char *filename, int address, int daddress, unsigned char *buffer, int count);
+extern unsigned char G_controller_buffer[];
+void *Master_controller(void *param);
+extern unsigned char GP_A;
+extern unsigned char GP_B;
+extern byte G_Antenna_Switch;
+extern byte G_QRO_Relays_on;
+//extern byte G_FAN_Control;
+extern byte G_FAN_On_Temperature;
+extern byte G_QRP_TX_ACTIVE;
+extern byte G_Solidus_TX_Relay_ON;
+
+//For Meter stuff
+//void *Meter_main(void *param);
+extern double Forward_Power;
+extern double Reverse_Power;
+extern double SWR;
+extern double F_Volts;
+extern double R_Volts;
+extern byte G_swr_shutdown;
+extern byte G_high_power_flag;
+extern byte G_hi_low;
+//extern byte G_Meter_allow;
+extern int G_Meter_hold;
+extern byte G_MFC_allow;
+//extern byte G_Meter_hi_low;
+extern byte G_Meter_Calibrated;
+//int meter_calibrate(void);
+//extern byte G_Start_Mensuro_Calibrate;
+#define METER_CALIBRATING 3
+#define METER_CALIBRATED 2
+
+//For Solidus Temperature
+int Read_solidus_temperature();
+extern int32_t G_Solidus_Temperature;
+extern byte G_Amplifier_attached;
+extern byte G_Transceiver_type;
+
+//For Solidus Fan management
+void *Fan_PWM(void *param);
+
+//For Fortis Cube MFC / Display management
+#define DISPLAY_MAX_QUEUE 2
+//void *Process_Display_thread(void *t);
+//void Display_freq_queue_add(uint32_t command);
+extern int G_Display_attached;
+extern byte G_Display_allow;
+extern uint8_t E_star;
+extern uint8_t E_step;
+extern uint8_t E_display_addr;
+extern uint8_t E_s_meter;
+extern uint8_t E_band;
+//extern uint8_t E_buttons;
+//extern uint32_t E_freq;
+//extern byte G_fortis_Configuration;
+
+//extern int8_t DISPLAY_Position(uint8_t row, uint8_t column, int caller);
+//extern int DISPLAY_PutChar(char character);
+//extern void DISPLAY_Init(int type);
+//extern int DISPLAY_Get_Queue_Status();
+//extern int8_t DISPLAY_PrintString(uint8_t const string[]);
+//extern int Display_Open(int display_address);
+//extern int Display_Read(char *buffer, int length);
+
+
+//For CW Keyer
+//void *Manage_CW_Key(void *t);
+struct cw_parameters_record {
+    uint8_t keyer_Installed;
+    uint8_t keyer_mode;
+    uint8_t spacing;
+    uint8_t paddle;
+    uint8_t weight;
+    uint8_t tx_hold;
+    uint8_t speed;
+    uint8_t text_wpm; /* SET_MEM_TEXT_WPM 0x76: 0=off, else memory-play text WPM */
+    uint8_t tone_index;
+};
+extern struct cw_parameters_record cw_record;
+
+/*struct cfg {
+    float speed_wpm;
+    uint8_t speed_min;
+    uint8_t speed_max;
+    uint8_t message;
+    int8_t mode;
+    int8_t memory;
+    int8_t spacing;
+    float weight;
+    uint8_t paddle;
+    uint8_t lag;
+    float tone;
+    uint8_t volume;
+    uint8_t sidetone;
+    uint8_t backlight;
+};*/
+
+//extern struct cfg cfg;
+extern int G_TX_Hold;
+extern int G_MASTER_CONTROLLER_attached;
+extern int G_SOLIDUS_TEMP_SENSOR_attached;
+extern int G_METER_attached;
+extern int G_IQBD_attached;
+extern int G_CURRENT_SENSOR_attached;
+extern int G_MFC_attached;
+
+
+//usbcmd.c procedure calls
+extern int usbControlMsgOUT(int cmd, int value, int index, char* buffer, int buflen);
+extern int usbControlMsgIN(int cmd, int value, int index, char* buffer, int buflen);
+extern BOOL srSetPTTGetCWInp(int ptt, int* pCWkey);
+extern void* srOpen(int vid, int pid, const TCHAR* pManufacturer, const TCHAR* pProduct, const TCHAR* pSerialNumber, int iDevNum, int *status);
+extern BOOL srGetVersion(int* major, int* minor);
+extern BOOL srSetFreq(double MHz, int i2cAddr);
+extern BOOL srGetFreq(double* pMHz);
+
+
+
+//for Last_used
+extern int Get_Startup(uint32_t *freq, char *mode);
+extern int Create_Last_Used();
+extern int Init_last_used_VFO_A();
+extern int Init_last_used_VFO_B();
+extern int Update_last_used_VFO_A();
+extern int Update_last_used_VFO_B();
+extern int Set_last_used_VFO_A(uint32_t i, char mode);
+extern int Set_last_used_VFO_B(uint32_t i, char mode);
+extern int Send_last_used_VFO_A(uint16_t band, uint8_t element);
+extern int Send_last_used_VFO_B(uint16_t band, uint8_t element);
+extern int Update_Startup(uint32_t freq, char mode);
+extern uint8_t G_vfo;
+extern uint8_t G_current_vfo;
+#define VFO_A 0
+#define VFO_B 1
+
+//Main Globals
+extern void ModeChanged(char mode);
+extern char* My_getenv(char* myenv);
+extern int SetHWLO_queue(long LOfreq);
+extern int SetModeRxTx(int transmit, int offset);
+extern void Set_band_normal(uint32_t freq, uint8_t apply_offset);
+extern uint16_t Get_band_by_frequency(uint32_t freq, uint8_t apply_offset);
+extern long GetHWLO(void);
+extern int SDRcore_recv_send_param(uint8_t op_code, int op_data);
+extern int SDRcore_trans_send_param(uint8_t op_code, int op_data);
+extern char mode_to_letter(int number);
+extern int mode_to_number(char mode);
+extern void signal_callback_handler(int signum);
+extern void Gui_Add_Message(char * message);
+//extern int Check_Threads();
+extern void Stop_all(uint8_t up_date_transceiver, uint8_t normal);
+extern int get_cw_params();
+extern int initialize_mscc();
+//extern void Sleep(ULONG32 sleep_time);
+extern void print_time(int print_new_line);
+extern int Open_log_file();
+extern void *Command_Processor(void *my_param);
+extern int Tune_button(int on_off, uint8_t allow_MKII_PTT);
+extern int Gui_send_param(uint8_t op_code, int op_data);
+extern int Gui_send_param_extended(uint8_t op_code, byte *op_data, int size);
+extern int Spectrum_Waterfall_send_param(uint8_t op_code, int op_data);
+extern int Radio_send_parameters(int command, int cmd_value, int print);
+/* Keyer CQ memory (0x9C): one USB OUT per param; paced in Radio_send_parameters */
+extern int Keyer_Memory_Param(int param);
+extern int Keyer_Memory_Select(int slot);
+extern int Keyer_Memory_Play(void);
+extern int Keyer_Memory_Store(int slot, const char *text);
+extern void Set_PTT(int on_off,uint8_t allow_MKII_PTT);
+extern int message_queue_add(int command,char *message,int size);
+extern int message_queue_dequeue(char *buffer);
+extern void *Gui_send_message(void *t);
+extern int Get_random_time(void);
+extern int initialize_keyer();
+extern void Send_CW_params_to_gui(void);
+extern int Update_CW_ini();
+extern void *Manage_MKII_PTT_Switch(void *param);
+
+extern int G_transceiver_initialization_status;
+extern int G_MSCC_Initialized;
+extern int G_Remote_GUI_Attached;
+extern int G_client_session_active;
+extern void Session_Release(void);
+extern unsigned long long G_sdrcore_recv_keep_alive;
+extern unsigned long long G_sdrcore_trans_keep_alive;
+extern uint8_t G_gui_displayed;
+extern uint32_t G_tune_freq;
+extern uint8_t G_serial_number_success;
+extern char G_Multus_serial_number[80];
+extern uint8_t G_cw_firmware_option;
+extern TCHAR G_serial_number[80];
+extern char G_Multus_serial_number[80];
+extern char G_Usb_serial_number[80];
+extern char G_debug[80];
+extern int G_dll_active;
+extern int G_Hw_Started;
+extern uint16_t G_band_for_power;
+extern uint8_t G_setting_power_band;
+extern uint16_t G_previous_power_band;
+extern uint16_t G_prvious_power_level;
+extern int G_SetModeRxTX;
+extern uint16_t G_gui_port;
+extern uint16_t G_ms_sdr_port;
+extern uint16_t G_sdrcore_recv_port;
+extern uint16_t G_sdrcore_trans_port;
+extern uint16_t G_spectrum_port;
+extern uint16_t G_waterfall_port;
+extern uint16_t G_RPI_mscc_port;
+extern char G_gui_IP[PATH_MAX];
+extern char G_ms_sdr_IP[PATH_MAX];
+extern char G_RPI_IP[PATH_MAX];
+extern uint8_t G_pcb_version;
+/* 1 = Proficio MKII (PTT sense thread on); 0 = legacy. From mscc.ini PROFICIO-MKII= */
+extern uint8_t G_proficio_mkii;
+extern uint8_t G_gui_running;
+extern int G_Transmit;
+extern uint8_t G_updating_last_used;
+extern uint8_t G_setting_last_used;
+extern ULONG64 G_Heart_beat;
+extern uint8_t G_delete_SDRcore_init_files;
+extern uint8_t G_delete_Comm_port_init_file;
+extern uint8_t G_Message_Box_Displayed;
+extern uint8_t G_Rit_Status;
+extern int32_t G_Rit_Offset; /* signed Hz; client sends int, range ~-500..+500 */
+extern uint8_t G_CW_Snap_Running;
+extern int G_CW_Offset;
+extern uint8_t G_all_threads_run;
+extern uint8_t G_main_thread_run;
+extern ULONG32 G_thread_sleep_time;
+extern uint8_t G_TX_Inhibit;
+extern uint32_t line_number;
+extern int G_QSK;
+extern char G_mode;
+extern FILE *G_fp_logfile;
+extern int G_network_initialized;
+//extern int G_MSCC_Initialized;
+extern uint16_t G_subsys_initialized;
+extern uint16_t G_band_normal;
+extern int G_Transceiver_Busy;
+extern int G_Tune_Power;
+extern int G_smeter;
+extern uint8_t G_smeter_ready;
+extern int16_t G_smeter_dBm;
+extern uint8_t G_TX;
+extern byte G_Shutdown_Status;
+extern byte G_Monitor;
+extern int G_High_Power_Count;
+extern uint8_t G_Tune;
+extern uint8_t G_PTT;
+extern uint8_t G_PTT_Switch_Allow;
+extern byte G_Split;
+extern int32_t G_Split_RX_FREQ;
+extern int32_t G_Split_TX_FREQ;
+extern pthread_mutex_t Master_Device_Token_available;
+extern pthread_mutex_t Freq_Queue_Token_available;
+extern pthread_mutex_t Display_Queue_Token_available;
+extern pid_t G_main_pid;
+extern int G_major_version;
+extern int G_minor_version;
+/* USB FW word repacked for client 0xB2: (minor<<8)|major — same as Proficio FIRMWARE_VERSION */
+extern int G_firmware_version_packed;
+extern const char *homedir;
+extern uint8_t G_Sound_Device; 
+extern int16_t G_spectrum_cycle_count;
+#define SPECTRUM_CYCLE_LIMIT 85
+#define LOCK_FAILED_LIMIT 1
+
+// For Get_Key_Status
+#define KEY 8
+#define KEY_DOWN 1
+#define KEY_UP 0
+#define KEY_HOLD_COUNT 20 //For Smeter processing when in CW mode
+//extern pthread_t G_Get_Key_PTT_Status_thread;
+//extern int G_Get_Key_PTT_Status_rc;
+extern int G_key;
+//extern int G_Get_Key_PTT_Status_Thread_Running;
+//extern void *Get_Key_Status(void *my_parm);
+
+//For Comm Port
+//extern int Process_comm_command(int opcode, char *buffer, int recv_len);
+int Start_Serial_Port();
+//extern int set_comm_port_ini();
+//extern int Process_hr50(int opcode, char *buf);
+//extern int set_hr50_comm_port_ini();
+//extern int Init_Master_Comm_Port_File();
+
+//For I/Q Calibration routine
+extern int IQ_calibration(uint8_t command, char *buf);
+extern uint8_t G_calibration_mode;
+extern uint8_t G_IQBD_Monitor;
+extern uint8_t G_in_IQ_calibration_mode;
+
+//For Power Calibration
+extern int Power_calibration(uint32_t command, char *buffer);
+//extern uint8_t G_calibration_mode;
+extern int Create_power_ini_file();
+extern int Initialize_power_calibration();
+extern int Check_Power_Cal_Version();
+
+//For Amplifier Power Output
+extern int16_t G_Amplifier_band;
+extern int Check_Amplifier_Version();
+extern int Initialize_amplifier_power();
+extern int Amplifier_Set_Power_Level(uint8_t command, char *buf);
+extern int Create_amplifier_ini_file();
+
+// For User Controls processing
+
+struct User_Record {
+    uint8_t Version;
+    uint8_t Audio_Device;
+    uint8_t Digital_Volume_Level;
+    uint8_t Digital_Mic_Gain;
+    uint8_t Phones_Volume_Level;
+    uint8_t Phones_Mic_Gain;
+    uint8_t Speaker_Volume;
+    uint8_t Mic_Volume;
+    uint8_t Speaker_Muted;
+    uint8_t Mic_Muted;
+    uint8_t Mode;
+    uint8_t Filter_Low_index;
+    uint8_t Filter_High_index;
+    uint8_t AGC_Index;
+    int ALC_Value; //NOTE This has been reused for AGC_VALUE
+    uint8_t NR_Value;
+    uint8_t Compression;
+    uint8_t Compression_Level;
+    uint8_t NB;
+    int NB_Threshold;
+    int NB_Pulse_Width;
+    uint8_t Panadapter_Status;
+    uint8_t Smeter_Status;
+    uint8_t Panadapter_Average;
+    uint8_t Panadapter_Fill;
+    uint8_t Panadapter_Line;
+    uint8_t Panadapter_Marker;
+    uint8_t Panadapter_Background;
+    uint8_t CW_Pitch;
+    uint8_t Panadapter_Cursor;
+    uint8_t Panadapter_Refresh;
+    int Panadapter_Base;
+    int Panadapter_Gain;
+    uint8_t Auto_Notch;
+    uint8_t Filter_CW_Index;
+    uint8_t Auto_Snap;
+    uint8_t Auto_Snap_Index;
+    uint8_t QRP;
+    uint8_t Microphone_status;
+    uint8_t Waterfall_status;
+    uint8_t Waterfall_grid;
+    uint8_t Waterfall_pallet;
+    uint8_t Waterfall_direction;
+    int Waterfall_gain;
+    int Waterfall_zero;
+    int Waterfall_speed;
+    uint8_t TX_hi_cut;
+};
+struct Current_Filters_Record{
+    uint8_t High_Cut;
+    uint8_t Low_Cut;
+    uint8_t CW_BW;
+};
+
+extern struct User_Record User_Controls;
+extern int User_Controls_Process(uint8_t command, char *buf, byte extended);
+extern int User_Controls_Init();
+extern int User_Controls_Apply_To_Cores(); /* headless: push user_controls.ini to recv/trans */
+extern int User_Controls_Send_To_Gui();    /* client connect: sync UI only */
+extern int User_Controls_Send();           /* both (legacy) */
+extern int Apply_Appliance_Startup();     /* cores + startup.ini LO/band without client */
+extern int User_Controls_Update_Init_File();
+extern uint8_t G_Speaker_Mute_Status;
+extern uint8_t G_QRP;
+extern uint8_t G_Speaker_volume;
+extern BOOL G_process_user_control_status;
+
+//For Frequency Calibration
+#define STANDARD_CARRIER_LIMIT 10
+extern int Init_PPM();
+extern int Freq_Set_Transceiver_Calibration(int int_part,int dec_part);
+extern int Create_PPM_ini();
+extern INT8 G_int;
+extern INT8 G_dec;
+extern INT16 G_current_int;
+extern INT16 G_current_dec;
+extern int G_current_PPM;
+extern int G_Calibration_temperature;
+extern int Process_Frequency_Calibration(uint8_t command, char *buf);
+extern int CW_Snap_Process_Frequency_Calibration(uint8_t command, char *buf);
+extern uint8_t G_Standard_Carrier_number;
+extern uint8_t G_Calibration_reset;
+
+//For temperature process
+void *Check_temperature(void *t);
+extern INT8 G_delta_drift_int;
+extern uint8_t G_Proficio_temperature;
+//extern int Start_Temp_Check();
+extern uint8_t G_Proficio_Allow_Temp_Check;
+
+//For Check power
+//void *Check_Potentia_Temperature(void *t);
+extern uint8_t G_check_potentia;
+extern float G_Potentia_Temperature;
+extern uint8_t G_Potentia_Temparature_Average;
+
+//For Check Bias
+//void *Check_Potentia_Bias(void *t);
+extern uint8_t G_check_bias;
+unsigned long freq_queue_add(unsigned long command);
+void *Freq_Dequeue_thread(void *t);
+
+//For Comms port thread
+
+
+
+

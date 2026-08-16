@@ -1,0 +1,767 @@
+#include "extern.h"
+
+
+#define _CRT_SECURE_NO_WARNINGS 1
+#define RON 1
+
+
+
+#define PA_SAMPLE_TYPE      paFloat32
+typedef float SAMPLE;
+int keyChanged = 0;
+sp_float *inbuffer, *outbuffer;
+sp_float wold = 0;
+sp_cplx incplx[4097];
+sp_cplx outcplx[4096];
+float G_volumeLevel = 0.0f; //Start with the volume muted.
+
+/****** NOTE: Declared external in other modules and used as globals ******/
+state mystate;
+calstate mycalstate;
+panadapter_buffer panbuffer;
+agc_state agcstate;
+cs_state csstate;
+blanker_state nbstate;
+anotch_state anstate;
+nr_state nrstate = { 0, 0 };
+/**************************************************************************/
+
+PaStream *stream;
+const PaDeviceInfo* lpInfo;
+const PaDeviceInfo* lpInfo_Pulse;
+PaStreamParameters inputParameters, outputParameters;
+
+#ifdef RON
+#define NO_OUTPUT_DEVICE 100
+//For the UDP_Thread
+pthread_t p_UDP_thread;
+int UDP_thread_rc;
+
+
+//For the flusher Thread
+pthread_t p_Flusher_thread;
+int Flusher_thread_rc;
+
+//For the S_meter Thread
+pthread_t p_Smeter_thread;
+int Smeter_thread_rc;
+
+//For the Key_Read Thread
+pthread_t p_Key_Read_thread;
+int Key_Read_thread_rc;
+
+//For the Panadapter Thread
+pthread_t p_Panadapter_thread;
+int Panadapter_thread_rc;
+
+//For the Check_Image_Level Thread
+pthread_t p_Check_Image_Level_thread;
+int Check_Image_Level_thread_rc;
+
+FILE *G_fp_logfile;
+int G_all_threads_run = 0;
+int line_number = 0;
+long long G_keep_alive = 0;
+int G_output_device_index = NO_OUTPUT_DEVICE;
+int G_digital_output_device_index = NO_OUTPUT_DEVICE;
+struct output_devices G_output_devices[MAX_OUTPUT_DEVICES];
+struct output_devices G_digital_output_devices[MAX_OUTPUT_DEVICES];
+
+//PaDeviceIndex count = Pa_GetDeviceCount();
+PaDeviceIndex G_Pulse_Proficio_Device = 0;
+PaDeviceIndex G_Pulse_Output_Device = 0;
+#endif
+
+char G_l_path[MAX_PATH] = { 0 };
+
+char* My_getenv(char* myenv) {
+    memset(G_l_path, 0, sizeof(G_l_path));
+
+#if defined(__linux__) || defined(__APPLE__)
+    {
+        const char *home = getenv("HOME");
+        (void)myenv;
+        if (home == NULL || home[0] == '\0')
+            home = "/tmp";
+        strncpy(G_l_path, home, sizeof(G_l_path) - 1);
+        return G_l_path;
+    }
+#else
+    {
+        WCHAR path[MAX_PATH] = { 0 };
+        PWSTR lpPath = path;
+        HRESULT hr = SHGetKnownFolderPath(&FOLDERID_LocalAppData, 0, NULL, &lpPath);
+        (void)myenv;
+        if (SUCCEEDED(hr)) {
+            WideCharToMultiByte(CP_ACP, WC_COMPOSITECHECK, lpPath, -1, G_l_path, sizeof(G_l_path), NULL, NULL);
+            strcat(G_l_path, "/MSCC-NET9");
+        }
+        return G_l_path;
+    }
+#endif
+}
+
+//int main(void);
+
+static int sdrAudioCallback(const void *inputBuffer, void *outputBuffer,
+        unsigned long framesPerBuffer,
+        const PaStreamCallbackTimeInfo* timeInfo,
+        PaStreamCallbackFlags statusFlags,
+        void *userData);
+
+static int gNumNoInputs = 0;
+
+/* This routine will be called by the PortAudio engine when audio is needed.
+ ** It may be called at interrupt level on some machines so don't do anything
+ ** that could mess up the system like calling malloc() or free().
+ */
+static int sdrAudioCallback(const void *inputBuffer, void *outputBuffer,
+        unsigned long framesPerBuffer,
+        const PaStreamCallbackTimeInfo* timeInfo,
+        PaStreamCallbackFlags statusFlags,
+        void *userData) {
+    SAMPLE *out = (SAMPLE*) outputBuffer;
+    const SAMPLE *in = (const SAMPLE*) inputBuffer;
+    unsigned int i;
+    (void) timeInfo; /* Prevent unused variable warnings. */
+    (void) statusFlags;
+    (void) userData;
+
+    if (inputBuffer == NULL) {
+        for (i = 0; i < framesPerBuffer; i++) {
+            *out++ = 0; /* left - silent */
+            *out++ = 0; /* right - silent */
+        }
+        gNumNoInputs += 1;
+    } else {
+        inbuffer = (sp_float*) inputBuffer;
+        outbuffer = (sp_float*) outputBuffer;
+
+        /*
+                Mux samples into complex struct array. The "custom" typedef is to avoid consistency issues
+                across compilers with COMPLEX. 
+         */
+        framesToComplex(inbuffer, incplx, outcplx, framesPerBuffer);
+
+        /**************************** IF SHIFT -12000 Hz *********************************/
+        //ifShiftDown(incplx, framesPerBuffer);
+        complex_shift(incplx, framesPerBuffer);
+
+        /********************** Run calibration DSP, if engaged *************************/
+        if (mycalstate.calStart == TRUE) doRxCalibrate(incplx, framesPerBuffer);
+
+        /**************************** DO THE RADIO THING *********************************/
+        fastconv(incplx, outcplx, (int) framesPerBuffer);
+
+        /********************** Run AGC *************************************************/
+        if (!AGC_Initializing) doAGC(outcplx, (int) framesPerBuffer);
+
+        /********************** Run noise reduction *************************************/
+        if (nrstate.enabled) denoise(outcplx, (int) framesPerBuffer);
+
+        /********************** Run auto-notch *****************************************/
+        if (anstate.enabled) anotch(outcplx, (int) framesPerBuffer);
+
+        /*
+                De-mux samples back into packed I-Q-I-Q-I-Q format. In case there's any question,
+                Q should lead I by 90 degrees.
+         */
+
+        for (i = 0; i < framesPerBuffer; i++) {
+            outcplx[i].real *= G_volumeLevel;
+            *outbuffer = outcplx[i].real;
+            outbuffer++;
+            outcplx[i].imag *= G_volumeLevel;
+            *outbuffer = outcplx[i].imag;
+            outbuffer++;
+        }
+    }
+
+    return paContinue;
+}
+
+void Print_Message_Box(void *nothing, char *message, char * sender, int ok_button_and_symbol) {
+}
+
+//extern int usleep(__useconds_t __useconds);
+
+//void Sleep(long sleep_time) {
+//    sleep(sleep_time);
+//}
+
+void Audio_Device_Error(PaError err) {
+    /*
+     * Fatal audio init failure. Must not return — callers used to fall through
+     * and dereference Pa_GetDeviceInfo(paNoDevice) → segfault.
+     */
+    G_all_threads_run = 0;
+    if (G_fp_logfile != NULL) {
+        print_time();
+        fprintf(G_fp_logfile, "[%d] An error occured while using the portaudio stream\n", line_number++);
+        print_time();
+        fprintf(G_fp_logfile, "[%d] Error number: %d\n", line_number++, err);
+        print_time();
+        fprintf(G_fp_logfile, "[%d] Error message: %s\n", line_number++,
+            err != paNoError ? Pa_GetErrorText(err) : "(no PortAudio error — missing device)");
+        print_time();
+        fprintf(G_fp_logfile, "[%d] sdrcore-recv terminating (audio init failed)\n", line_number++);
+        fflush(G_fp_logfile);
+    }
+    MessageBoxA(NULL, "SDRcore-recv initialization FAILED.  Send logs to Multus SDR, LLC", "SDRcore-recv",
+            MB_OK | MB_ICONEXCLAMATION);
+    Pa_Terminate();
+    exit(1);
+}
+
+int manage_stream(int start_stop, int device, int channels) {
+    PaError err = 0;
+    int status = 0;
+    static int started = FALSE;
+    double sr = (double)mystate.samplerate;
+
+    if (channels > 2) {
+        print_time();
+        fprintf(G_fp_logfile, "[%d] Main Thread. manage_stream. Device %d. Channel Number: %d greater than 2. Setting channels to 2.\n",
+                line_number++, device, channels);
+        channels = 2;
+    }
+    if (start_stop == TRUE) {
+        if (started == FALSE) {
+            print_time();
+            fprintf(G_fp_logfile, "[%d] Main Thread. manage_stream. STARTED.  Device: %d, Channels %d\n",
+                    line_number++, device, channels);
+            print_time();
+            fprintf(G_fp_logfile,
+                "[%d] Main Thread. manage_stream. starting FULL-DUPLEX: "
+                "in_dev=%d in_ch=%d out_dev=%d out_ch=%d rate=%.0f\n",
+                line_number++,
+                (int)inputParameters.device, inputParameters.channelCount,
+                device, channels, sr);
+            outputParameters.device = device;
+            outputParameters.channelCount = channels;
+            outputParameters.sampleFormat = PA_SAMPLE_TYPE;
+            if (Pa_GetDeviceInfo(outputParameters.device) == NULL) {
+                print_time();
+                fprintf(G_fp_logfile, "[%d] manage_stream. invalid output device %d\n",
+                    line_number++, device);
+                return paInvalidDevice;
+            }
+            if (Pa_GetDeviceInfo(inputParameters.device) == NULL) {
+                print_time();
+                fprintf(G_fp_logfile, "[%d] manage_stream. invalid I/Q input device %d\n",
+                    line_number++, (int)inputParameters.device);
+                return paInvalidDevice;
+            }
+            outputParameters.suggestedLatency =
+                Pa_GetDeviceInfo(outputParameters.device)->defaultLowOutputLatency;
+            outputParameters.hostApiSpecificStreamInfo = NULL;
+            err = Pa_IsFormatSupported(&inputParameters, &outputParameters, sr);
+            if (err != paNoError) {
+                const PaHostErrorInfo* format_error = Pa_GetLastHostErrorInfo();
+                print_time();
+                fprintf(G_fp_logfile,
+                    "[%d] Main Thread. manage_stream. Pa_IsFormatSupported WARN rate=%.0f "
+                    "Device: %d ch=%d: %s — still trying Pa_OpenStream\n",
+                    line_number++, sr, device, channels,
+                    format_error && format_error->errorText ? format_error->errorText : Pa_GetErrorText(err));
+                /* ALSA often rejects IsFormatSupported but OpenStream still works */
+            }
+            err = Pa_OpenStream(
+                &stream,
+                &inputParameters,
+                &outputParameters,
+                sr,
+                mystate.frames,
+                0, /* paClipOff */
+                sdrAudioCallback,
+                NULL);
+            if (err != paNoError) {
+                const PaHostErrorInfo* lpError = Pa_GetLastHostErrorInfo();
+                print_time();
+                fprintf(G_fp_logfile,
+                    "[%d] Main Thread. manage_stream. Open Stream Failed: PA %d '%s' host='%s'\n",
+                    line_number++, err, Pa_GetErrorText(err),
+                    lpError && lpError->errorText ? lpError->errorText : "");
+            } else {
+                print_time();
+                fprintf(G_fp_logfile,
+                    "[%d] Main Thread. manage_stream. Pa_OpenStream OK — starting\n",
+                    line_number++);
+                err = Pa_StartStream(stream);
+                if (err != paNoError) {
+                    const PaHostErrorInfo* lpError = Pa_GetLastHostErrorInfo();
+                    print_time();
+                    fprintf(G_fp_logfile,
+                        "[%d] Main Thread. manage_stream. Start Stream Failed: PA %d '%s' host='%s'\n",
+                        line_number++, err, Pa_GetErrorText(err),
+                        lpError && lpError->errorText ? lpError->errorText : "");
+                    Pa_CloseStream(stream);
+                    stream = NULL;
+                } else {
+                    print_time();
+                    fprintf(G_fp_logfile,
+                        "[%d] Main Thread. manage_stream. Pa_StartStream OK (I/Q capture live)\n",
+                        line_number++);
+                }
+            }
+        }
+        if (err == paNoError) {
+            started = TRUE;
+        }
+    } else {
+        if (started == TRUE) {
+            print_time();
+            fprintf(G_fp_logfile, "[%d] Main Thread. manage_stream. STARTED.  Device: %d, Channels %d\n",
+                line_number++, device, channels);
+            print_time();
+            fprintf(G_fp_logfile, "[%d] Main Thread. manage_stream. Stoping Stream.  New device: %d, New Channels %d\n",
+                    line_number++, device, channels);
+            Pa_StopStream(stream);
+            Pa_CloseStream(stream);
+            started = FALSE;
+        } else {
+            print_time();
+            fprintf(G_fp_logfile, "[%d] Main Thread. manage_stream. start_stop: %d, started: %d\n",
+                    line_number++, start_stop, started);
+            err = 0;
+        }
+    }
+    status = err;
+    print_time();
+    fprintf(G_fp_logfile, "[%d] Main Thread. manage_stream.  FINISHED. status: %d\n", line_number++, status);
+    return status;
+}
+
+/*void Get_Pulse_Devices() {
+    const PaHostApiInfo* Pulse_lpApiInfo;
+    PaHostApiIndex hostApiCount;
+    PaDeviceIndex count = 0;
+    int Pulse_apiTypeId = 9999;
+    int i = 0;
+    int k = 0;
+    int pulse_api_found = 0;
+
+    hostApiCount = Pa_GetHostApiCount();
+    for (i = 0; i < hostApiCount; i++) {
+        Pulse_lpApiInfo = Pa_GetHostApiInfo(i);
+        print_time();
+        fprintf(G_fp_logfile, "[%d] Get_Pulse_Devices -> Host APIs: %s\n", line_number++, Pulse_lpApiInfo->name);
+        if (!strncmp("PulseAudio", Pulse_lpApiInfo->name, 3)) {
+            pulse_api_found = 1;
+            Pulse_apiTypeId = i;
+            print_time();
+            fprintf(G_fp_logfile, "[%d] Get_Pulse_Devices -> Host API: %s, Pulse_apiTypeId: %d\n",
+                    line_number++, Pulse_lpApiInfo->name, Pulse_apiTypeId);
+        }
+    }
+    if (pulse_api_found == 1) {
+        count = Pa_GetDeviceCount();
+        for (k = 0; k < count; k++) {
+            lpInfo_Pulse = Pa_GetDeviceInfo((PaDeviceIndex) k);
+            if (lpInfo_Pulse->hostApi == Pulse_apiTypeId) {
+                print_time();
+                fprintf(G_fp_logfile, "[%d] Get_Pulse_Devices -> count: %d, k: %d, hostApi: %d, name: %s, input: %d, output: %d\n",
+                        line_number++, count, k, lpInfo_Pulse->hostApi, lpInfo_Pulse->name,
+                        lpInfo_Pulse->maxInputChannels, lpInfo_Pulse->maxOutputChannels);
+                Build_pulse_output_devices((PaDeviceIndex) k);
+            }
+        }
+        Update_Pulse_sound_ini(G_num_pulse_output_devices_found);
+    } else {
+        print_time();
+        fprintf(G_fp_logfile, "[%d] Get_Pulse_Devices -> Pulse API NOT FOUND\n", line_number++);
+    }
+}*/
+
+/************************************* MAIN *********************************************/
+int main(int argc, char **argv) {
+    //PaStreamParameters inputParameters, outputParameters;
+    //PaStream *stream;
+    PaError err;
+    int j;
+    int key = 0;
+    float temp;
+    int status;
+    const PaHostApiInfo * lpApiInfo;
+    PaHostApiIndex hostApiCount;
+    int apiTypeId = 9999;
+    PaDeviceIndex recordDevice = 0;
+    PaDeviceIndex playDevice = 0;
+    PaDeviceIndex devCount = 0;
+
+
+    /************ DSP parameters *****************/
+    // See sdrcore.h for definitions
+    mystate.nfft = FFTSIZE; // # of FFT bins
+    mystate.filtertaps = FILTERTAPS; // # of taps in IF filterl
+    mystate.samplerate = SAMPLERATE; // Overall RX sampling rate 
+    mystate.frames = mystate.nfft - mystate.filtertaps; // frames per buffer
+    mystate.opmode = MODE_LSB;
+    setFilterOffsets(75.0f, 2700.0f);
+    mystate.iqReversed = 1; // Yes Virginia, we're reversed...
+    mystate.iMult = 1.0f; // I and Q mag adjustments = preset to "no action"
+    mystate.qMult = 1.0f;
+    mycalstate.freq_high = 598.0f;
+    mycalstate.freq_center = 600.0f;
+    mycalstate.freq_high = 602.f;
+
+    temp = 0.0f;
+    long t = 0;
+    int log_status;
+    int ini_status = 0;
+    //int priority_status;
+
+    /******* Init DSP ******/
+    mycalstate.Cycle_Count = 65536; //This the default cycle count. 
+    mycalstate.calbuffer = calloc(mycalstate.Cycle_Count, sizeof (sp_cplx)); // buffer for LO calibration - NOTE: Allocated before audio threads start, so should not blow up... ... !
+    initDSP();
+    printf("sdrcore_recive started\n");
+    fflush(stdout);
+    log_status = Open_log_file();
+    if (log_status) {
+        print_time();
+        fprintf(G_fp_logfile, "[%d] SDRcore Log file opened\n", line_number++);
+    } else {
+        MessageBoxA(NULL, "Log file open failed. SDRcore-recv is terminating", "SDRcore-recv", MB_OK);
+        exit(1);
+    }
+    G_all_threads_run = 1;
+    print_time(0);
+    fprintf(G_fp_logfile, "[%d] sdrcore-recv -> starting -> Compile Date %s, Compile Time %s \n",
+            line_number++, COMPILE_DATE, COMPILE_TIME);
+    //Now start the UDP Thread
+    print_time();
+    fprintf(G_fp_logfile, "[%d] main -> Starting UDP Thread\n", line_number++);
+    UDP_thread_rc = pthread_create(&p_UDP_thread, NULL, UDP_Thread, (void *) t);
+    if (UDP_thread_rc) {
+        print_time();
+        fprintf(G_fp_logfile, "[%d} Start up of UDP thread failed, return code from pthread_create() is %d\n",
+                line_number++, UDP_thread_rc);
+    }
+    print_time();
+    fprintf(G_fp_logfile, "[%d] main -> Starting Flusher Thread\n", line_number++);
+    Flusher_thread_rc = pthread_create(&p_Flusher_thread, NULL, Flusher_thread, (void *) t);
+    if (Flusher_thread_rc) {
+        print_time();
+        fprintf(G_fp_logfile, "[%d] Start up of Flusher thread failed, return code from pthread_create() is %d\n",
+                line_number++, Flusher_thread_rc);
+    }
+    print_time();
+    fprintf(G_fp_logfile, "[%d] main -> Starting S-meter Thread\n", line_number++);
+    Smeter_thread_rc = pthread_create(&p_Smeter_thread, NULL, Send_smeter_thread, (void *) t);
+    if (Smeter_thread_rc) {
+        print_time();
+        fprintf(G_fp_logfile, "[%d] Start up of S-meter thread failed, return code from pthread_create() is %d\n",
+                line_number++, Smeter_thread_rc);
+    }
+    print_time();
+    fprintf(G_fp_logfile, "[%d] main -> Check_Image_Level_thread Thread\n", line_number++);
+    Check_Image_Level_thread_rc = pthread_create(&p_Check_Image_Level_thread, NULL, Check_Image_Level_thread, (void *) t);
+    if (Check_Image_Level_thread_rc) {
+        print_time();
+        fprintf(G_fp_logfile, "[%d] Start up of S-meter thread failed, return code from pthread_create() is %d\n",
+                line_number++, Check_Image_Level_thread_rc);
+    }
+    print_time();
+    fprintf(G_fp_logfile, "[%d] main -> Starting Panadapter Thread\n", line_number++);
+    Panadapter_thread_rc = pthread_create(&p_Panadapter_thread, NULL, Panadapter_thread, (void *) t);
+    if (Panadapter_thread_rc) {
+        print_time();
+        fprintf(G_fp_logfile, "[%d] Start up of Panadapter thread failed, return code from pthread_create() is %d\n",
+                line_number++, Panadapter_thread_rc);
+    }
+
+    /*delete_ini_file();
+    ini_status = check_for_sound_ini_file();
+    if (ini_status == 1) {
+        print_time();
+        fprintf(G_fp_logfile, "[%d] sdrcore_recv.ini file exists\n", line_number++);
+    } else {
+        print_time();
+        fprintf(G_fp_logfile, "[%d] sdcore_recv.ini file does not exist. File will be created\n", line_number++);
+    }*/
+    Get_Sound_Device();
+    Get_Digital_Sound_Device();
+    /* I/Q capture is always Multus/Proficio radio audio — NOT operator-microphone.ini */
+    /******************************************************************/
+    err = Pa_Initialize();
+    if (err != paNoError) Audio_Device_Error(err);
+    print_time();
+    fprintf(G_fp_logfile, "[%d] main -> PortAudio Version: 0x%8X\n", line_number++, Pa_GetVersion());
+    print_time();
+    fprintf(G_fp_logfile, "[%d] main -> PortAudio Version text: '%s'\n", line_number++,
+            Pa_GetVersionInfo() ? Pa_GetVersionInfo()->versionText : "(null)");
+
+    /*
+     * Host API preference:
+     *   Windows: MME
+     *   Linux/Pi: ALSA first (low latency Multus sound device), else Pulse/JACK/any
+     */
+    hostApiCount = Pa_GetHostApiCount();
+    for (j = 0; j < hostApiCount; j++) {
+        lpApiInfo = Pa_GetHostApiInfo(j);
+        if (lpApiInfo == NULL || lpApiInfo->name == NULL)
+            continue;
+        print_time();
+        fprintf(G_fp_logfile, "[%d] main -> Host API %d: %s (devs=%d)\n",
+            line_number++, j, lpApiInfo->name, lpApiInfo->deviceCount);
+#if defined(__linux__) || defined(__APPLE__)
+        if (apiTypeId == 9999 && strstr(lpApiInfo->name, "ALSA"))
+            apiTypeId = j;
+#else
+        if (!strncmp("MME", lpApiInfo->name, 3))
+            apiTypeId = j;
+#endif
+    }
+#if defined(__linux__) || defined(__APPLE__)
+    if (apiTypeId == 9999) {
+        for (j = 0; j < hostApiCount; j++) {
+            lpApiInfo = Pa_GetHostApiInfo(j);
+            if (lpApiInfo && lpApiInfo->name &&
+                (strstr(lpApiInfo->name, "Pulse") || strstr(lpApiInfo->name, "JACK") ||
+                 strstr(lpApiInfo->name, "OSS") || strstr(lpApiInfo->name, "Core"))) {
+                apiTypeId = j;
+                break;
+            }
+        }
+    }
+    if (apiTypeId == 9999 && hostApiCount > 0)
+        apiTypeId = 0;
+#endif
+    print_time();
+    fprintf(G_fp_logfile, "[%d] main -> Selected hostApi index: %d\n", line_number++, apiTypeId);
+
+    recordDevice = paNoDevice;
+    {
+        /*
+         * Score candidates so Multus/Proficio wins over generic USB, and
+         * ALSA hw: devices beat default/pulse/dsnoop wrappers.
+         * PortAudio on Linux often names Proficio "USB Audio Device" not "Proficio".
+         * aplay -l can show card "Proficio" while Pa name does not — use ini + heuristics.
+         */
+        int best_score = -1;
+        const char *sel_reason = NULL;
+        devCount = Pa_GetDeviceCount();
+        print_time();
+        fprintf(G_fp_logfile, "[%d] main -> Device count: %d\n", line_number++, (int)devCount);
+        print_time();
+        fprintf(G_fp_logfile,
+            "[%d] main -> I/Q capture: Multus/Proficio radio audio only "
+            "(not operator mic / digi cable)\n",
+            line_number++);
+
+        for (j = 0; j < devCount; j++) {
+            int in_ch, out_ch, score;
+            int is_rig, is_usb_hw, is_virtual, is_wrapper;
+            const char *n;
+            lpInfo = Pa_GetDeviceInfo((PaDeviceIndex)j);
+            if (lpInfo == NULL || lpInfo->name == NULL)
+                continue;
+            n = lpInfo->name;
+            in_ch = (int)lpInfo->maxInputChannels;
+            out_ch = (int)lpInfo->maxOutputChannels;
+            print_time();
+            fprintf(G_fp_logfile,
+                "[%d] main -> dev %d api=%d in=%d out=%d name='%s'\n",
+                line_number++, j, lpInfo->hostApi, in_ch, out_ch, n);
+
+            /* Speakers: list devices on preferred host API (and all on Linux for matching) */
+#if defined(__linux__) || defined(__APPLE__)
+            if (out_ch > 0) {
+                build_output_devices((PaDeviceIndex)j);
+                build_digital_output_devices((PaDeviceIndex)j);
+            }
+#else
+            if (lpInfo->hostApi == apiTypeId) {
+                build_output_devices((PaDeviceIndex)j);
+                build_digital_output_devices((PaDeviceIndex)j);
+            }
+#endif
+            if (in_ch < 1)
+                continue;
+
+            /* Digi / virtual cables / operator path — never I/Q */
+            is_virtual =
+                (strstr(n, "Loopback") != NULL || strstr(n, "aloop") != NULL ||
+                 strstr(n, "MSCC_Cable") != NULL || strstr(n, "MSCC Cable") != NULL ||
+                 strstr(n, "mscc_out") != NULL || strstr(n, "mscc_in") != NULL ||
+                 strstr(n, "VB-Audio") != NULL || strstr(n, "CABLE") != NULL ||
+                 strstr(n, "Null") != NULL ||
+                 strstr(n, "audioinjector") != NULL || strstr(n, "AudioInjector") != NULL ||
+                 (strncmp(n, "mscc", 4) == 0 || strncmp(n, "MSCC", 4) == 0));
+            is_wrapper =
+                (strstr(n, "sysdefault") != NULL || strstr(n, "dmix") != NULL ||
+                 strstr(n, "dsnoop") != NULL || strstr(n, "front:") != NULL ||
+                 strstr(n, "surround") != NULL || strstr(n, "iec958") != NULL ||
+                 strstr(n, "hdmi") != NULL || strstr(n, "HDMI") != NULL ||
+                 strcmp(n, "default") == 0 || strstr(n, "pulse") != NULL ||
+                 strstr(n, "speex") != NULL || strstr(n, "upmix") != NULL ||
+                 strstr(n, "vdownmix") != NULL);
+            if (is_virtual || is_wrapper || in_ch > 8)
+                continue;
+
+            /* Transceiver I/Q only: Multus / Proficio product name */
+            is_rig = (strstr(n, "Multus") != NULL || strstr(n, "multus") != NULL ||
+                      strstr(n, "Proficio") != NULL || strstr(n, "proficio") != NULL ||
+                      strstr(n, "PROFICIO") != NULL);
+            /* Fallback: USB Audio hw: (Proficio when product string missing) */
+            is_usb_hw =
+                ((strstr(n, "USB") != NULL || strstr(n, "usb") != NULL) &&
+                 strstr(n, "hw:") != NULL &&
+                 (strstr(n, "Audio") != NULL || strstr(n, "CODEC") != NULL ||
+                  strstr(n, "Codec") != NULL));
+
+            /* Fixed priority — never scale by channel count (loopback 32/128) */
+            score = 0;
+            if (is_rig)
+                score = 10000;
+            else if (is_usb_hw && in_ch >= 2)
+                score = 2000;
+            else if (is_usb_hw && in_ch >= 1)
+                score = 1500;
+            if (score <= 0)
+                continue;
+            if (lpInfo->hostApi == apiTypeId)
+                score += 50;
+            if (in_ch >= 2)
+                score += 20;
+            if (out_ch >= 1 && out_ch <= 8)
+                score += 5;
+
+            print_time();
+            fprintf(G_fp_logfile,
+                "[%d] I/Q candidate score=%d in=%d out=%d api=%d name='%s'%s%s\n",
+                line_number++, score, in_ch, out_ch, lpInfo->hostApi, n,
+                is_rig ? " [rig]" : "", is_usb_hw ? " [usb]" : "");
+
+            if (score > best_score) {
+                best_score = score;
+                recordDevice = (PaDeviceIndex)j;
+                sel_reason = is_rig ? "Proficio/Multus I/Q radio" : "USB audio I/Q fallback";
+                print_time();
+                fprintf(G_fp_logfile,
+                    "[%d] I/Q capture BEST so far: index=%d score=%d reason=%s name='%s'\n",
+                    line_number++, j, score, sel_reason, n);
+            }
+        }
+        if (recordDevice != paNoDevice && sel_reason != NULL) {
+            print_time();
+            fprintf(G_fp_logfile,
+                "[%d] *** I/Q CAPTURE SELECTED: PaIndex=%d reason=%s ***\n",
+                line_number++, (int)recordDevice, sel_reason);
+        }
+    }
+
+    /* Fallbacks if ini names did not match any speaker */
+    if (G_output_device_index == NO_OUTPUT_DEVICE) {
+        PaDeviceIndex def_out = Pa_GetDefaultOutputDevice();
+        if (def_out != paNoDevice) {
+            for (j = 0; j < num_output_devices_found; j++) {
+                if (G_output_devices[j].device_index == (int)def_out) {
+                    G_output_device_index = j;
+                    break;
+                }
+            }
+            if (G_output_device_index == NO_OUTPUT_DEVICE && num_output_devices_found > 0)
+                G_output_device_index = 0;
+            print_time();
+            fprintf(G_fp_logfile,
+                "[%d] main. operator-speaker.ini unmatched (Windows name?) — "
+                "using output slot %d name='%s'\n",
+                line_number++, G_output_device_index,
+                G_output_device_index != NO_OUTPUT_DEVICE &&
+                    G_output_device_index < num_output_devices_found
+                    ? G_output_devices[G_output_device_index].name
+                    : "?");
+        }
+    }
+    if (G_digital_output_device_index == NO_OUTPUT_DEVICE && num_digital_output_devices_found > 0)
+        G_digital_output_device_index = 0;
+
+    if (recordDevice == paNoDevice) {
+        print_time();
+        fprintf(G_fp_logfile,
+            "[%d] No Proficio/Multus I/Q capture device found.\n"
+            "     Need PortAudio name containing Proficio/Multus (radio I/Q), not operator mic or MSCC cable.\n"
+            "     Check: arecord -l ; device list above must include 'Proficio: USB Audio (hw:...)'\n",
+            line_number++);
+        fflush(G_fp_logfile);
+        Audio_Device_Error(err);
+    }
+
+    inputParameters.device = recordDevice;
+    if (inputParameters.device == paNoDevice ||
+        Pa_GetDeviceInfo(inputParameters.device) == NULL) {
+        print_time();
+        fprintf(G_fp_logfile, "[%d] Error: I/Q capture device not usable.\n", line_number++);
+        Audio_Device_Error(err);
+    }
+    {
+        const PaDeviceInfo *cap = Pa_GetDeviceInfo(inputParameters.device);
+        int in_ch = cap ? (int)cap->maxInputChannels : 0;
+        /* I/Q is stereo when the card allows it */
+        inputParameters.channelCount = (in_ch >= 2) ? 2 : (in_ch >= 1 ? 1 : 2);
+        inputParameters.sampleFormat = PA_SAMPLE_TYPE;
+        inputParameters.suggestedLatency = cap->defaultLowInputLatency;
+        inputParameters.hostApiSpecificStreamInfo = NULL;
+        print_time();
+        fprintf(G_fp_logfile,
+            "[%d] main. I/Q CAPTURE open: PaIndex=%d ch=%d name='%s' rate=%d\n",
+            line_number++, (int)recordDevice, inputParameters.channelCount,
+            cap->name ? cap->name : "?", (int)mystate.samplerate);
+        fflush(G_fp_logfile);
+    }
+
+    if (G_digital_output_device_index == NO_OUTPUT_DEVICE) {
+        print_time();
+        fprintf(G_fp_logfile, "[%d] main. Warning: no digital output device matched\n",
+            line_number++);
+    }
+    if (G_output_device_index == NO_OUTPUT_DEVICE) {
+        print_time();
+        fprintf(G_fp_logfile, "[%d] main. Error: no operator speaker / output device\n",
+            line_number++);
+        Audio_Device_Error(err);
+    } else {
+        print_time();
+        fprintf(G_fp_logfile,
+            "[%d] main. Opening FULL-DUPLEX stream:\n"
+            "     CAPTURE  PaIndex=%d ch=%d name='%s'\n"
+            "     PLAYBACK PaIndex=%d ch=%d name='%s'\n",
+            line_number++,
+            (int)inputParameters.device,
+            inputParameters.channelCount,
+            Pa_GetDeviceInfo(inputParameters.device)->name,
+            G_output_devices[G_output_device_index].device_index,
+            G_output_devices[G_output_device_index].num_channels,
+            G_output_devices[G_output_device_index].name);
+        fflush(G_fp_logfile);
+        status = manage_stream(1, G_output_devices[G_output_device_index].device_index,
+                G_output_devices[G_output_device_index].num_channels);
+        if (status) {
+            err = status;
+            print_time();
+            fprintf(G_fp_logfile, "[%d] main. manage_stream FAILED status=%d\n",
+                line_number++, status);
+            Audio_Device_Error(err);
+        } else {
+            print_time();
+            fprintf(G_fp_logfile, "[%d] main. Audio stream STARTED OK (I/Q + speaker)\n",
+                line_number++);
+            fflush(G_fp_logfile);
+        }
+    }
+
+    while (G_all_threads_run) {
+        Sleep(100);
+    }
+    if (stream != NULL) {
+        err = Pa_CloseStream(stream);
+        if (err != paNoError)
+            Audio_Device_Error(err);
+    }
+    Sleep(100);
+    Pa_Terminate();
+    exit(0);
+}
+

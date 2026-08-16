@@ -1,0 +1,1416 @@
+C51 COMPILER V9.51   PCM3060                                                               08/14/2026 12:27:16 PAGE 1   
+
+
+C51 COMPILER V9.51, COMPILATION OF MODULE PCM3060
+OBJECT MODULE PLACED IN .\DP8051\DP8051_Keil_951\Debug\pcm3060.obj
+COMPILER INVOKED BY: C:\Program Files (x86)\Cypress\PSoC Creator\4.2\PSoC Creator\import\keil\pk51\9.51\C51\BIN\c51.exe 
+                    -pcm3060.c NOIV LARGE MODDP2 OMF2 VB(1) NOIP INCDIR(.,Generated_Source\PSoC3) FF(3) DB WL(2) PR(.\DP8051\DP8051_Keil_951\
+                    -Debug/pcm3060.lst) CD OT(5,SPEED) OA OJ(.\DP8051\DP8051_Keil_951\Debug\pcm3060.obj)
+
+line level    source
+
+   1          // Copyright 2013 David Turnbull AE9RB
+   2          //
+   3          // Licensed under the Apache License, Version 2.0 (the "License");
+   4          // you may not use this file except in compliance with the License.
+   5          // You may obtain a copy of the License at
+   6          //
+   7          //     http://www.apache.org/licenses/LICENSE-2.0
+   8          //
+   9          // Unless required by applicable law or agreed to in writing, software
+  10          // distributed under the License is distributed on an "AS IS" BASIS,
+  11          // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+  12          // See the License for the specific language governing permissions and
+  13          // limitations under the License.
+  14          // 09/30/2014 Additions to support low latency CW and Iambic funtionality  Ron Patton / W4MMP
+  15          // 01/01/2015 Added Semi Break-in Support Ron Patton / W4MMP
+  16          // 10/20/2016 Added Support for Omnia SDR Proficio
+  17          // Copyright © 2015-2016 Omnia SDR
+  18          
+  19          // Variable naming conventions:     E_<variable> -> Externally defined global
+  20          //                                  ff_<variable> -> Externally defined global stored in flash memory
+  21          //                                  ee_<variable> -> Externally defined global to be stored in EEPROM memo
+             -ry
+  22          //                                  l_<variable> -> locally defined variable
+  23          //                                  All UPPERCASE -> Define
+  24          #include "cytypes.h"
+  25          #include <basic-plus.h>
+  26          
+  27          #define PCM3060_I2C_ADDR 0x46
+  28          #define USB_AUDIO_BUFS 3
+  29          //extern struct band_volume E_band_and_volume[10];
+  30          
+  31          volatile uint8 RxI2S[USB_AUDIO_BUFS][I2S_BUF_SIZE], RxI2S_Stage;
+  32          volatile uint8 TxI2S[USB_AUDIO_BUFS][I2S_BUF_SIZE], TxI2S_Stage, TxI2S_Zero = 0;
+  33          
+  34          uint8 RxI2S_Stage_TD[3], RxI2S_Buff_TD[USB_AUDIO_BUFS];
+  35          
+  36          void DmaRxInit() {
+  37   1          uint8 i;
+  38   1          RxI2S_Stage_DmaInitialize(1, 1, HI16(CYDEV_PERIPH_BASE), HI16(CYDEV_SRAM_BASE));
+  39   1          RxI2S_Buff_DmaInitialize(1, 1, HI16(CYDEV_SRAM_BASE), HI16(CYDEV_SRAM_BASE));
+  40   1          for (i=0; i < 3; i++) RxI2S_Stage_TD[i]=CyDmaTdAllocate();
+  41   1          for (i=0; i < USB_AUDIO_BUFS; i++) RxI2S_Buff_TD[i]=CyDmaTdAllocate();
+  42   1      }
+  43          
+  44          void DmaRxStart(void) {
+  45   1          uint8 i, n;
+  46   1      
+  47   1          for (i=0; i < 3; i++) {
+  48   2              if (i==2) {
+  49   3                  CyDmaTdSetConfiguration(RxI2S_Stage_TD[i], 1, RxI2S_Stage_TD[0], 0 );
+  50   3              } else {
+  51   3                  CyDmaTdSetConfiguration(RxI2S_Stage_TD[i], 1, RxI2S_Stage_TD[i+1], RxI2S_Stage__TD_TERMOUT_EN 
+             -);
+C51 COMPILER V9.51   PCM3060                                                               08/14/2026 12:27:16 PAGE 2   
+
+  52   3              }
+  53   2              CyDmaTdSetAddress(RxI2S_Stage_TD[i], LO16((uint32)I2S_RX_FIFO_0_PTR), LO16((uint32)&RxI2S_Stage));
+  54   2          }
+  55   1          CyDmaClearPendingDrq(RxI2S_Stage_DmaHandle);
+  56   1          CyDmaChSetInitialTd(RxI2S_Stage_DmaHandle, RxI2S_Stage_TD[0]);
+  57   1      
+  58   1          for (i=0; i < USB_AUDIO_BUFS; i++) {
+  59   2              n = i + 1;
+  60   2              if (n >= USB_AUDIO_BUFS) n=0;
+  61   2              CyDmaTdSetConfiguration(RxI2S_Buff_TD[i], I2S_BUF_SIZE, RxI2S_Buff_TD[n], TD_INC_DST_ADR);
+  62   2              CyDmaTdSetAddress(RxI2S_Buff_TD[i], LO16((uint32)&RxI2S_Stage), LO16((uint32)RxI2S[i]));
+  63   2          }
+  64   1          CyDmaClearPendingDrq(RxI2S_Buff_DmaHandle);
+  65   1          CyDmaChSetInitialTd(RxI2S_Buff_DmaHandle, RxI2S_Buff_TD[0]);
+  66   1      
+  67   1          CyDmaChEnable(RxI2S_Buff_DmaHandle, 1u);
+  68   1          CyDmaChEnable(RxI2S_Stage_DmaHandle, 1u);
+  69   1      }
+  70          
+  71          
+  72          uint8 TxI2S_Stage_TD[3], TxI2S_Buff_TD[USB_AUDIO_BUFS], TxI2S_Zero_TD[USB_AUDIO_BUFS];
+  73          
+  74          void DmaTxInit() {
+  75   1          uint8 i;
+  76   1          TxI2S_Buff_DmaInitialize(1, 1, HI16(CYDEV_SRAM_BASE), HI16(CYDEV_SRAM_BASE));
+  77   1          TxI2S_Stage_DmaInitialize(1, 1, HI16(CYDEV_SRAM_BASE), HI16(CYDEV_PERIPH_BASE));
+  78   1          TxI2S_Zero_DmaInitialize(1, 1, HI16(CYDEV_SRAM_BASE), HI16(CYDEV_SRAM_BASE));
+  79   1          for (i=0; i < 3; i++) TxI2S_Stage_TD[i]=CyDmaTdAllocate();
+  80   1          for (i=0; i < USB_AUDIO_BUFS; i++) TxI2S_Buff_TD[i]=CyDmaTdAllocate();
+  81   1          for (i=0; i < USB_AUDIO_BUFS; i++) TxI2S_Zero_TD[i]=CyDmaTdAllocate();
+  82   1      }
+  83          
+  84          void DmaTxStart(void) {
+  85   1          uint8 i, n;
+  86   1          
+  87   1          for (i=0; i < 3; i++) {
+  88   2              if (i==2) {
+  89   3                  CyDmaTdSetConfiguration(TxI2S_Stage_TD[i], 1, TxI2S_Stage_TD[0], 0 );
+  90   3                  CyDmaTdSetAddress(TxI2S_Stage_TD[i], LO16((uint32)&TxI2S_Zero), LO16((uint32)I2S_TX_FIFO_0_PTR
+             -));
+  91   3              } else {
+  92   3                  CyDmaTdSetConfiguration(TxI2S_Stage_TD[i], 1, TxI2S_Stage_TD[i+1], TxI2S_Stage__TD_TERMOUT_EN 
+             -);
+  93   3                  CyDmaTdSetAddress(TxI2S_Stage_TD[i], LO16((uint32)&TxI2S_Stage), LO16((uint32)I2S_TX_FIFO_0_PT
+             -R));
+  94   3              }
+  95   2          }
+  96   1          CyDmaClearPendingDrq(TxI2S_Stage_DmaHandle);
+  97   1          CyDmaChSetInitialTd(TxI2S_Stage_DmaHandle, TxI2S_Stage_TD[0]);
+  98   1          
+  99   1          for (i=0; i < USB_AUDIO_BUFS; i++) {
+ 100   2              n = i + 1;
+ 101   2              if (n >= USB_AUDIO_BUFS) {
+ 102   3                  n=0;
+ 103   3                  CyDmaTdSetConfiguration(TxI2S_Buff_TD[i], I2S_BUF_SIZE, TxI2S_Buff_TD[n], TD_INC_SRC_ADR | TxI
+             -2S_Buff__TD_TERMOUT_EN);    
+ 104   3              } else {
+ 105   3                  CyDmaTdSetConfiguration(TxI2S_Buff_TD[i], I2S_BUF_SIZE, TxI2S_Buff_TD[n], TD_INC_SRC_ADR);    
+ 106   3              }
+ 107   2              CyDmaTdSetAddress(TxI2S_Buff_TD[i], LO16((uint32)TxI2S[i]), LO16((uint32)&TxI2S_Stage));
+ 108   2              CyDmaTdSetConfiguration(TxI2S_Zero_TD[i], I2S_BUF_SIZE, TxI2S_Zero_TD[n], TD_INC_DST_ADR );
+ 109   2              CyDmaTdSetAddress(TxI2S_Zero_TD[i], LO16((uint32)&TxI2S_Zero), LO16((uint32)TxI2S[i]));
+C51 COMPILER V9.51   PCM3060                                                               08/14/2026 12:27:16 PAGE 3   
+
+ 110   2          }
+ 111   1          CyDmaClearPendingDrq(TxI2S_Buff_DmaHandle);
+ 112   1          CyDmaChSetInitialTd(TxI2S_Buff_DmaHandle, TxI2S_Buff_TD[0]);
+ 113   1          CyDmaClearPendingDrq(TxI2S_Zero_DmaHandle);
+ 114   1          CyDmaChSetInitialTd(TxI2S_Zero_DmaHandle, TxI2S_Zero_TD[0]);
+ 115   1      
+ 116   1          CyDmaChEnable(TxI2S_Zero_DmaHandle, 1u);
+ 117   1          CyDmaChSetRequest(TxI2S_Buff_DmaHandle, CPU_REQ);
+ 118   1          CyDmaChEnable(TxI2S_Buff_DmaHandle, 1u);
+ 119   1          CyDmaChEnable(TxI2S_Stage_DmaHandle, 1u);
+ 120   1      }
+ 121          
+ 122          uint8* PCM3060_TxBuf(void) {
+ 123   1          return TxI2S[SyncSOF_USB_Buffer()];
+ 124   1      }
+ 125          
+ 126          uint8* PCM3060_RxBuf(void) {
+ 127   1          return RxI2S[SyncSOF_USB_Buffer()];
+ 128   1      }
+ 129          
+ 130          void PCM3060_SetTxBufAddress(uint16 source) 
+ 131          {
+ 132   1          uint8 buffer_idx = SyncSOF_USB_Buffer();
+ 133   1          // DMA register of the buffer source address.
+ 134   1          CY_SET_REG16((reg16*)&CY_DMA_TDMEM_STRUCT_PTR[TxI2S_Buff_TD[buffer_idx]].TD1[0u], source);
+ 135   1      }
+ 136          
+ 137          // Set the address of the TX buffer to be transmitted by the DMA to a default buffer address.
+ 138          void PCM3060_SetTxBufAddressDefault()
+ 139          {
+ 140   1          uint8 buffer_idx = SyncSOF_USB_Buffer();
+ 141   1          // DMA register of the buffer source address.
+ 142   1          CY_SET_REG16(
+ 144   1              (reg16*)&CY_DMA_TDMEM_STRUCT_PTR[TxI2S_Buff_TD[buffer_idx]].TD1[0u], 
+ 144   1              LO16((uint32)TxI2S[buffer_idx]));
+ 145   1      }
+ 146          
+ 147          uint8 PCM3060_SetRegister(uint8 reg, uint8 val) {
+ 148   1          uint8 pcm3060_cmd[2], i, state = 0;
+ 149   1          uint16 err = 0;
+ 150   1      
+ 151   1          while (state < 2) {
+ 152   2              switch (state) {
+ 153   3              case 0:
+ 154   3                  pcm3060_cmd[0] = reg;
+ 155   3                  pcm3060_cmd[1] = val;
+ 156   3                  I2C_DISPLAY_MasterWriteBuf(PCM3060_I2C_ADDR, pcm3060_cmd, 2, I2C_DISPLAY_MODE_COMPLETE_XFER);
+ 157   3                  state++;
+ 158   3                  break;
+ 159   3              case 1:
+ 160   3                  i = I2C_DISPLAY_MasterStatus();
+ 161   3                  if (i & I2C_DISPLAY_MSTAT_ERR_XFER) {
+ 162   4                      state--;
+ 163   4                  } else if (i & I2C_DISPLAY_MSTAT_WR_CMPLT) {
+ 164   4                      state++;
+ 165   4                  }
+ 166   3                  if (!--err) return 1;
+ 167   3                  break;
+ 168   3              }
+ 169   2          }
+ 170   1          return 0;
+ 171   1      }
+C51 COMPILER V9.51   PCM3060                                                               08/14/2026 12:27:16 PAGE 4   
+
+ 172          
+ 173          
+ 174          uint8 PCM3060_Init(void) {
+ 175   1          I2S_Start();
+ 176   1          DmaRxInit();
+ 177   1          DmaTxInit();
+ 178   1          return PCM3060_Stop();
+ 179   1      }
+ 180          
+ 181          void PCM3060_Start(void) {
+ 182   1          PCM3060_SetRegister(0x40, 0xC0); // Wakeup
+ 183   1          PCM3060_SetRegister(0x45, 0x80); // Slow rolloff filter
+ 184   1          PCM3060_SetRegister(0x41, 0xff); //Set the volume to full
+ 185   1          PCM3060_SetRegister(0x42, 0xff); //Set the volume to full
+ 186   1          DmaRxStart();
+ 187   1          DmaTxStart();
+ 188   1          I2S_EnableRx();
+ 189   1          I2S_EnableTx();
+ 190   1      }
+ 191          
+ 192          uint8 PCM3060_Stop(void) {
+ 193   1          uint8 ret;
+ 194   1          ret = PCM3060_SetRegister(0x40, 0xF0); // Sleep
+ 195   1          I2S_DisableRx();
+ 196   1          I2S_DisableTx();
+ 197   1          CyDmaChDisable(RxI2S_Stage_DmaHandle);
+ 198   1          CyDmaChDisable(RxI2S_Buff_DmaHandle);
+ 199   1          CyDmaChDisable(TxI2S_Stage_DmaHandle);
+ 200   1          CyDmaChDisable(TxI2S_Buff_DmaHandle);
+ 201   1          CyDmaChDisable(TxI2S_Zero_DmaHandle);
+ 202   1          I2S_ClearRxFIFO();
+ 203   1          I2S_ClearTxFIFO();
+ 204   1          return ret;
+ 205   1      }
+ 206          
+C51 COMPILER V9.51   PCM3060                                                               08/14/2026 12:27:16 PAGE 5   
+
+ASSEMBLY LISTING OF GENERATED OBJECT CODE
+
+
+             ; FUNCTION DmaRxInit (BEGIN)
+                                           ; SOURCE LINE # 36
+                                           ; SOURCE LINE # 38
+                       CLR     A
+                 E     MOV     DPTR,#?_RxI2S_Stage_DmaInitialize?BYTE+04H
+                       MOVX    @DPTR,A
+                       INC     DPTR
+                       MOVX    @DPTR,A
+                       MOV     R3,A
+                       MOV     R2,A
+                       MOV     R5,#01H
+                       MOV     R7,#01H
+                 E     CALL    _RxI2S_Stage_DmaInitialize
+                                           ; SOURCE LINE # 39
+                       CLR     A
+                 E     MOV     DPTR,#?_RxI2S_Buff_DmaInitialize?BYTE+04H
+                       MOVX    @DPTR,A
+                       INC     DPTR
+                       MOVX    @DPTR,A
+                       MOV     R3,A
+                       MOV     R2,A
+                       MOV     R5,#01H
+                       MOV     R7,#01H
+                 E     CALL    _RxI2S_Buff_DmaInitialize
+                                           ; SOURCE LINE # 40
+                       CLR     A
+                 R     MOV     DPTR,#i
+                       MOVX    @DPTR,A
+             ?C0001:
+                 R     MOV     DPTR,#i
+                       MOVX    A,@DPTR
+                       CLR     C
+                       SUBB    A,#03H
+                 R     xJGE    ?C0002
+                 E     CALL    CyDmaTdAllocate
+                 R     MOV     DPTR,#i
+                       MOVX    A,@DPTR
+                 R     ADD     A,#LOW RxI2S_Stage_TD
+                       MOV     DPL,A
+                       CLR     A
+                 R     ADDC    A,#HIGH RxI2S_Stage_TD
+                       MOV     DPH,A
+                       MOV     A,R7
+                       MOVX    @DPTR,A
+                 R     MOV     DPTR,#i
+                       MOVX    A,@DPTR
+                       INC     A
+                       MOVX    @DPTR,A
+                 R     xJMP    ?C0001
+             ?C0002:
+                                           ; SOURCE LINE # 41
+                       CLR     A
+                 R     MOV     DPTR,#i
+                       MOVX    @DPTR,A
+             ?C0004:
+                 R     MOV     DPTR,#i
+                       MOVX    A,@DPTR
+                       CLR     C
+                       SUBB    A,#03H
+C51 COMPILER V9.51   PCM3060                                                               08/14/2026 12:27:16 PAGE 6   
+
+                 R     xJGE    ?C0007
+                 E     CALL    CyDmaTdAllocate
+                 R     MOV     DPTR,#i
+                       MOVX    A,@DPTR
+                 R     ADD     A,#LOW RxI2S_Buff_TD
+                       MOV     DPL,A
+                       CLR     A
+                 R     ADDC    A,#HIGH RxI2S_Buff_TD
+                       MOV     DPH,A
+                       MOV     A,R7
+                       MOVX    @DPTR,A
+                 R     MOV     DPTR,#i
+                       MOVX    A,@DPTR
+                       INC     A
+                       MOVX    @DPTR,A
+                 R     xJMP    ?C0004
+                                           ; SOURCE LINE # 42
+             ?C0007:
+                       RET     
+             ; FUNCTION DmaRxInit (END)
+
+             ; FUNCTION DmaRxStart (BEGIN)
+                                           ; SOURCE LINE # 44
+                                           ; SOURCE LINE # 47
+                       CLR     A
+                 R     MOV     DPTR,#i
+                       MOVX    @DPTR,A
+             ?C0008:
+                 R     MOV     DPTR,#i
+                       MOVX    A,@DPTR
+                       MOV     R7,A
+                       CLR     C
+                       SUBB    A,#03H
+                 R     xJGE    ?C0009
+                                           ; SOURCE LINE # 48
+                       MOV     A,R7
+                 R     xJNE    A,#02H,?C0011
+                                           ; SOURCE LINE # 49
+                 R     ADD     A,#LOW RxI2S_Stage_TD
+                       MOV     DPL,A
+                       CLR     A
+                 R     ADDC    A,#HIGH RxI2S_Stage_TD
+                       MOV     DPH,A
+                       MOVX    A,@DPTR
+                       MOV     R7,A
+                 R     MOV     DPTR,#RxI2S_Stage_TD
+                       MOVX    A,@DPTR
+                       MOV     R3,A
+                       CLR     A
+                 E     MOV     DPTR,#?_CyDmaTdSetConfiguration?BYTE+04H
+                       MOVX    @DPTR,A
+                       MOV     R5,#01H
+                       MOV     R4,A
+                 E     CALL    _CyDmaTdSetConfiguration
+                                           ; SOURCE LINE # 50
+                 R     xJMP    ?C0012
+             ?C0011:
+                                           ; SOURCE LINE # 51
+                 R     MOV     DPTR,#i
+                       MOVX    A,@DPTR
+                       MOV     R6,A
+                 R     ADD     A,#LOW RxI2S_Stage_TD
+C51 COMPILER V9.51   PCM3060                                                               08/14/2026 12:27:16 PAGE 7   
+
+                       MOV     DPL,A
+                       CLR     A
+                 R     ADDC    A,#HIGH RxI2S_Stage_TD
+                       MOV     DPH,A
+                       MOVX    A,@DPTR
+                       MOV     R7,A
+                 R     MOV     A,#LOW RxI2S_Stage_TD+01H
+                       ADD     A,R6
+                       MOV     DPL,A
+                       CLR     A
+                 R     ADDC    A,#HIGH RxI2S_Stage_TD+01H
+                       MOV     DPH,A
+                       MOVX    A,@DPTR
+                       MOV     R3,A
+                 E     MOV     DPTR,#?_CyDmaTdSetConfiguration?BYTE+04H
+                       MOV     A,#04H
+                       MOVX    @DPTR,A
+                       MOV     R5,#01H
+                       MOV     R4,#00H
+                 E     CALL    _CyDmaTdSetConfiguration
+                                           ; SOURCE LINE # 52
+             ?C0012:
+                                           ; SOURCE LINE # 53
+                 R     MOV     DPTR,#i
+                       MOVX    A,@DPTR
+                 R     ADD     A,#LOW RxI2S_Stage_TD
+                       MOV     DPL,A
+                       CLR     A
+                 R     ADDC    A,#HIGH RxI2S_Stage_TD
+                       MOV     DPH,A
+                       MOVX    A,@DPTR
+                       MOV     R7,A
+                       MOV     R3,#01H
+                 R     MOV     R2,#HIGH RxI2S_Stage
+                 R     MOV     R1,#LOW RxI2S_Stage
+                       MOV     A,R1
+                       MOV     A,R2
+                       CLR     A
+                       MOV     R3,AR1
+                       MOV     R5,#049H
+                       MOV     R4,#065H
+                 E     CALL    _CyDmaTdSetAddress
+                                           ; SOURCE LINE # 54
+                 R     MOV     DPTR,#i
+                       MOVX    A,@DPTR
+                       INC     A
+                       MOVX    @DPTR,A
+                 R     xJMP    ?C0008
+             ?C0009:
+                                           ; SOURCE LINE # 55
+                 E     MOV     DPTR,#RxI2S_Stage_DmaHandle
+                       MOVX    A,@DPTR
+                       MOV     R7,A
+                 E     CALL    _CyDmaClearPendingDrq
+                                           ; SOURCE LINE # 56
+                 E     MOV     DPTR,#RxI2S_Stage_DmaHandle
+                       MOVX    A,@DPTR
+                       MOV     R7,A
+                 R     MOV     DPTR,#RxI2S_Stage_TD
+                       MOVX    A,@DPTR
+                       MOV     R5,A
+                 E     CALL    _CyDmaChSetInitialTd
+C51 COMPILER V9.51   PCM3060                                                               08/14/2026 12:27:16 PAGE 8   
+
+                                           ; SOURCE LINE # 58
+                       CLR     A
+                 R     MOV     DPTR,#i
+                       MOVX    @DPTR,A
+             ?C0013:
+                 R     MOV     DPTR,#i
+                       MOVX    A,@DPTR
+                       MOV     R7,A
+                       CLR     C
+                       SUBB    A,#03H
+                 R     xJGE    ?C0014
+                                           ; SOURCE LINE # 59
+                       MOV     A,R7
+                       INC     A
+                       INC     DPTR
+                       MOVX    @DPTR,A
+                                           ; SOURCE LINE # 60
+                       CLR     C
+                       SUBB    A,#03H
+                 R     xJLT    ?C0016
+                       CLR     A
+                       MOVX    @DPTR,A
+             ?C0016:
+                                           ; SOURCE LINE # 61
+                 R     MOV     DPTR,#i
+                       MOVX    A,@DPTR
+                 R     ADD     A,#LOW RxI2S_Buff_TD
+                       MOV     DPL,A
+                       CLR     A
+                 R     ADDC    A,#HIGH RxI2S_Buff_TD
+                       MOV     DPH,A
+                       MOVX    A,@DPTR
+                       MOV     R7,A
+                 R     MOV     DPTR,#n
+                       MOVX    A,@DPTR
+                 R     ADD     A,#LOW RxI2S_Buff_TD
+                       MOV     DPL,A
+                       CLR     A
+                 R     ADDC    A,#HIGH RxI2S_Buff_TD
+                       MOV     DPH,A
+                       MOVX    A,@DPTR
+                       MOV     R3,A
+                 E     MOV     DPTR,#?_CyDmaTdSetConfiguration?BYTE+04H
+                       MOV     A,#02H
+                       MOVX    @DPTR,A
+                       MOV     R5,#080H
+                       MOV     R4,#01H
+                 E     CALL    _CyDmaTdSetConfiguration
+                                           ; SOURCE LINE # 62
+                 R     MOV     DPTR,#i
+                       MOVX    A,@DPTR
+                       MOV     R1,A
+                       MOV     B,#080H
+                       MUL     AB
+                 R     ADD     A,#LOW RxI2S
+                       MOV     DPL,A
+                       MOV     A,B
+                 R     ADDC    A,#HIGH RxI2S
+                       MOV     DPH,A
+                       MOV     A,R1
+                       ADD     A,DPH
+                       MOV     DPH,A
+C51 COMPILER V9.51   PCM3060                                                               08/14/2026 12:27:16 PAGE 9   
+
+                       MOV     R6,A
+                       MOV     A,DPL
+                       MOV     A,R6
+                       CLR     A
+                       MOV     R3,DPL
+                       MOV     R2,AR6
+                       PUSH    AR2
+                       PUSH    AR3
+                 R     MOV     A,#LOW RxI2S_Buff_TD
+                       ADD     A,R1
+                       MOV     DPL,A
+                       CLR     A
+                 R     ADDC    A,#HIGH RxI2S_Buff_TD
+                       MOV     DPH,A
+                       MOVX    A,@DPTR
+                       MOV     R7,A
+                       MOV     R3,#01H
+                 R     MOV     R2,#HIGH RxI2S_Stage
+                 R     MOV     R1,#LOW RxI2S_Stage
+                       MOV     A,R1
+                       MOV     A,R2
+                       CLR     A
+                       MOV     R5,AR1
+                       MOV     R4,AR2
+                       POP     AR3
+                       POP     AR2
+                 E     CALL    _CyDmaTdSetAddress
+                                           ; SOURCE LINE # 63
+                 R     MOV     DPTR,#i
+                       MOVX    A,@DPTR
+                       INC     A
+                       MOVX    @DPTR,A
+                 R     xJMP    ?C0013
+             ?C0014:
+                                           ; SOURCE LINE # 64
+                 E     MOV     DPTR,#RxI2S_Buff_DmaHandle
+                       MOVX    A,@DPTR
+                       MOV     R7,A
+                 E     CALL    _CyDmaClearPendingDrq
+                                           ; SOURCE LINE # 65
+                 E     MOV     DPTR,#RxI2S_Buff_DmaHandle
+                       MOVX    A,@DPTR
+                       MOV     R7,A
+                 R     MOV     DPTR,#RxI2S_Buff_TD
+                       MOVX    A,@DPTR
+                       MOV     R5,A
+                 E     CALL    _CyDmaChSetInitialTd
+                                           ; SOURCE LINE # 67
+                 E     MOV     DPTR,#RxI2S_Buff_DmaHandle
+                       MOVX    A,@DPTR
+                       MOV     R7,A
+                       MOV     R5,#01H
+                 E     CALL    _CyDmaChEnable
+                                           ; SOURCE LINE # 68
+                 E     MOV     DPTR,#RxI2S_Stage_DmaHandle
+                       MOVX    A,@DPTR
+                       MOV     R7,A
+                       MOV     R5,#01H
+                 E     CALL    _CyDmaChEnable
+                                           ; SOURCE LINE # 69
+                       RET     
+             ; FUNCTION DmaRxStart (END)
+C51 COMPILER V9.51   PCM3060                                                               08/14/2026 12:27:16 PAGE 10  
+
+
+             ; FUNCTION DmaTxInit (BEGIN)
+                                           ; SOURCE LINE # 74
+                                           ; SOURCE LINE # 76
+                       CLR     A
+                 E     MOV     DPTR,#?_TxI2S_Buff_DmaInitialize?BYTE+04H
+                       MOVX    @DPTR,A
+                       INC     DPTR
+                       MOVX    @DPTR,A
+                       MOV     R3,A
+                       MOV     R2,A
+                       MOV     R5,#01H
+                       MOV     R7,#01H
+                 E     CALL    _TxI2S_Buff_DmaInitialize
+                                           ; SOURCE LINE # 77
+                       CLR     A
+                 E     MOV     DPTR,#?_TxI2S_Stage_DmaInitialize?BYTE+04H
+                       MOVX    @DPTR,A
+                       INC     DPTR
+                       MOVX    @DPTR,A
+                       MOV     R3,A
+                       MOV     R2,A
+                       MOV     R5,#01H
+                       MOV     R7,#01H
+                 E     CALL    _TxI2S_Stage_DmaInitialize
+                                           ; SOURCE LINE # 78
+                       CLR     A
+                 E     MOV     DPTR,#?_TxI2S_Zero_DmaInitialize?BYTE+04H
+                       MOVX    @DPTR,A
+                       INC     DPTR
+                       MOVX    @DPTR,A
+                       MOV     R3,A
+                       MOV     R2,A
+                       MOV     R5,#01H
+                       MOV     R7,#01H
+                 E     CALL    _TxI2S_Zero_DmaInitialize
+                                           ; SOURCE LINE # 79
+                       CLR     A
+                 R     MOV     DPTR,#i
+                       MOVX    @DPTR,A
+             ?C0018:
+                 R     MOV     DPTR,#i
+                       MOVX    A,@DPTR
+                       CLR     C
+                       SUBB    A,#03H
+                 R     xJGE    ?C0019
+                 E     CALL    CyDmaTdAllocate
+                 R     MOV     DPTR,#i
+                       MOVX    A,@DPTR
+                 R     ADD     A,#LOW TxI2S_Stage_TD
+                       MOV     DPL,A
+                       CLR     A
+                 R     ADDC    A,#HIGH TxI2S_Stage_TD
+                       MOV     DPH,A
+                       MOV     A,R7
+                       MOVX    @DPTR,A
+                 R     MOV     DPTR,#i
+                       MOVX    A,@DPTR
+                       INC     A
+                       MOVX    @DPTR,A
+                 R     xJMP    ?C0018
+             ?C0019:
+C51 COMPILER V9.51   PCM3060                                                               08/14/2026 12:27:16 PAGE 11  
+
+                                           ; SOURCE LINE # 80
+                       CLR     A
+                 R     MOV     DPTR,#i
+                       MOVX    @DPTR,A
+             ?C0021:
+                 R     MOV     DPTR,#i
+                       MOVX    A,@DPTR
+                       CLR     C
+                       SUBB    A,#03H
+                 R     xJGE    ?C0022
+                 E     CALL    CyDmaTdAllocate
+                 R     MOV     DPTR,#i
+                       MOVX    A,@DPTR
+                 R     ADD     A,#LOW TxI2S_Buff_TD
+                       MOV     DPL,A
+                       CLR     A
+                 R     ADDC    A,#HIGH TxI2S_Buff_TD
+                       MOV     DPH,A
+                       MOV     A,R7
+                       MOVX    @DPTR,A
+                 R     MOV     DPTR,#i
+                       MOVX    A,@DPTR
+                       INC     A
+                       MOVX    @DPTR,A
+                 R     xJMP    ?C0021
+             ?C0022:
+                                           ; SOURCE LINE # 81
+                       CLR     A
+                 R     MOV     DPTR,#i
+                       MOVX    @DPTR,A
+             ?C0024:
+                 R     MOV     DPTR,#i
+                       MOVX    A,@DPTR
+                       CLR     C
+                       SUBB    A,#03H
+                 R     xJGE    ?C0027
+                 E     CALL    CyDmaTdAllocate
+                 R     MOV     DPTR,#i
+                       MOVX    A,@DPTR
+                 R     ADD     A,#LOW TxI2S_Zero_TD
+                       MOV     DPL,A
+                       CLR     A
+                 R     ADDC    A,#HIGH TxI2S_Zero_TD
+                       MOV     DPH,A
+                       MOV     A,R7
+                       MOVX    @DPTR,A
+                 R     MOV     DPTR,#i
+                       MOVX    A,@DPTR
+                       INC     A
+                       MOVX    @DPTR,A
+                 R     xJMP    ?C0024
+                                           ; SOURCE LINE # 82
+             ?C0027:
+                       RET     
+             ; FUNCTION DmaTxInit (END)
+
+             ; FUNCTION DmaTxStart (BEGIN)
+                                           ; SOURCE LINE # 84
+                                           ; SOURCE LINE # 87
+                       CLR     A
+                 R     MOV     DPTR,#i
+                       MOVX    @DPTR,A
+C51 COMPILER V9.51   PCM3060                                                               08/14/2026 12:27:16 PAGE 12  
+
+             ?C0028:
+                 R     MOV     DPTR,#i
+                       MOVX    A,@DPTR
+                       MOV     R7,A
+                       CLR     C
+                       SUBB    A,#03H
+                 R     xJGE    ?C0029
+                                           ; SOURCE LINE # 88
+                       MOV     A,R7
+                       XRL     A,#02H
+                 R     xJNZ    ?C0031
+                                           ; SOURCE LINE # 89
+                       MOVX    A,@DPTR
+                 R     ADD     A,#LOW TxI2S_Stage_TD
+                       MOV     DPL,A
+                       CLR     A
+                 R     ADDC    A,#HIGH TxI2S_Stage_TD
+                       MOV     DPH,A
+                       MOVX    A,@DPTR
+                       MOV     R7,A
+                 R     MOV     DPTR,#TxI2S_Stage_TD
+                       MOVX    A,@DPTR
+                       MOV     R3,A
+                       CLR     A
+                 E     MOV     DPTR,#?_CyDmaTdSetConfiguration?BYTE+04H
+                       MOVX    @DPTR,A
+                       MOV     R5,#01H
+                       MOV     R4,A
+                 E     CALL    _CyDmaTdSetConfiguration
+                                           ; SOURCE LINE # 90
+                 R     MOV     DPTR,#i
+                       MOVX    A,@DPTR
+                 R     ADD     A,#LOW TxI2S_Stage_TD
+                       MOV     DPL,A
+                       CLR     A
+                 R     ADDC    A,#HIGH TxI2S_Stage_TD
+                       MOV     DPH,A
+                       MOVX    A,@DPTR
+                       MOV     R7,A
+                       MOV     R3,#01H
+                 R     MOV     R2,#HIGH TxI2S_Zero
+                 R     MOV     R1,#LOW TxI2S_Zero
+                       MOV     A,R1
+                       MOV     A,R2
+                       CLR     A
+                       MOV     R5,AR1
+                       MOV     R4,AR2
+                       MOV     R3,#04BH
+                       MOV     R2,#065H
+                 E     CALL    _CyDmaTdSetAddress
+                                           ; SOURCE LINE # 91
+                 R     xJMP    ?C0030
+             ?C0031:
+                                           ; SOURCE LINE # 92
+                 R     MOV     DPTR,#i
+                       MOVX    A,@DPTR
+                       MOV     R6,A
+                 R     ADD     A,#LOW TxI2S_Stage_TD
+                       MOV     DPL,A
+                       CLR     A
+                 R     ADDC    A,#HIGH TxI2S_Stage_TD
+                       MOV     DPH,A
+C51 COMPILER V9.51   PCM3060                                                               08/14/2026 12:27:16 PAGE 13  
+
+                       MOVX    A,@DPTR
+                       MOV     R7,A
+                 R     MOV     A,#LOW TxI2S_Stage_TD+01H
+                       ADD     A,R6
+                       MOV     DPL,A
+                       CLR     A
+                 R     ADDC    A,#HIGH TxI2S_Stage_TD+01H
+                       MOV     DPH,A
+                       MOVX    A,@DPTR
+                       MOV     R3,A
+                 E     MOV     DPTR,#?_CyDmaTdSetConfiguration?BYTE+04H
+                       MOV     A,#04H
+                       MOVX    @DPTR,A
+                       MOV     R5,#01H
+                       MOV     R4,#00H
+                 E     CALL    _CyDmaTdSetConfiguration
+                                           ; SOURCE LINE # 93
+                 R     MOV     DPTR,#i
+                       MOVX    A,@DPTR
+                 R     ADD     A,#LOW TxI2S_Stage_TD
+                       MOV     DPL,A
+                       CLR     A
+                 R     ADDC    A,#HIGH TxI2S_Stage_TD
+                       MOV     DPH,A
+                       MOVX    A,@DPTR
+                       MOV     R7,A
+                       MOV     R3,#01H
+                 R     MOV     R2,#HIGH TxI2S_Stage
+                 R     MOV     R1,#LOW TxI2S_Stage
+                       MOV     A,R1
+                       MOV     A,R2
+                       CLR     A
+                       MOV     R5,AR1
+                       MOV     R4,AR2
+                       MOV     R3,#04BH
+                       MOV     R2,#065H
+                 E     CALL    _CyDmaTdSetAddress
+                                           ; SOURCE LINE # 94
+                                           ; SOURCE LINE # 95
+             ?C0030:
+                 R     MOV     DPTR,#i
+                       MOVX    A,@DPTR
+                       INC     A
+                       MOVX    @DPTR,A
+                 R     xJMP    ?C0028
+             ?C0029:
+                                           ; SOURCE LINE # 96
+                 E     MOV     DPTR,#TxI2S_Stage_DmaHandle
+                       MOVX    A,@DPTR
+                       MOV     R7,A
+                 E     CALL    _CyDmaClearPendingDrq
+                                           ; SOURCE LINE # 97
+                 E     MOV     DPTR,#TxI2S_Stage_DmaHandle
+                       MOVX    A,@DPTR
+                       MOV     R7,A
+                 R     MOV     DPTR,#TxI2S_Stage_TD
+                       MOVX    A,@DPTR
+                       MOV     R5,A
+                 E     CALL    _CyDmaChSetInitialTd
+                                           ; SOURCE LINE # 99
+                       CLR     A
+                 R     MOV     DPTR,#i
+C51 COMPILER V9.51   PCM3060                                                               08/14/2026 12:27:16 PAGE 14  
+
+                       MOVX    @DPTR,A
+             ?C0033:
+                 R     MOV     DPTR,#i
+                       MOVX    A,@DPTR
+                       MOV     R7,A
+                       CLR     C
+                       SUBB    A,#03H
+                 R     xJGE    ?C0034
+                                           ; SOURCE LINE # 100
+                       MOV     A,R7
+                       INC     A
+                       INC     DPTR
+                       MOVX    @DPTR,A
+                                           ; SOURCE LINE # 101
+                       CLR     C
+                       SUBB    A,#03H
+                 R     xJLT    ?C0036
+                                           ; SOURCE LINE # 102
+                       CLR     A
+                       MOVX    @DPTR,A
+                                           ; SOURCE LINE # 103
+                 R     MOV     DPTR,#i
+                       MOVX    A,@DPTR
+                 R     ADD     A,#LOW TxI2S_Buff_TD
+                       MOV     DPL,A
+                       CLR     A
+                 R     ADDC    A,#HIGH TxI2S_Buff_TD
+                       MOV     DPH,A
+                       MOVX    A,@DPTR
+                       MOV     R7,A
+                 R     MOV     DPTR,#n
+                       MOVX    A,@DPTR
+                 R     ADD     A,#LOW TxI2S_Buff_TD
+                       MOV     DPL,A
+                       CLR     A
+                 R     ADDC    A,#HIGH TxI2S_Buff_TD
+                       MOV     DPH,A
+                       MOVX    A,@DPTR
+                       MOV     R3,A
+                 E     MOV     DPTR,#?_CyDmaTdSetConfiguration?BYTE+04H
+                       MOV     A,#05H
+                       MOVX    @DPTR,A
+                       MOV     R5,#080H
+                       MOV     R4,#01H
+                 E     CALL    _CyDmaTdSetConfiguration
+                                           ; SOURCE LINE # 104
+                 R     xJMP    ?C0037
+             ?C0036:
+                                           ; SOURCE LINE # 105
+                 R     MOV     DPTR,#i
+                       MOVX    A,@DPTR
+                 R     ADD     A,#LOW TxI2S_Buff_TD
+                       MOV     DPL,A
+                       CLR     A
+                 R     ADDC    A,#HIGH TxI2S_Buff_TD
+                       MOV     DPH,A
+                       MOVX    A,@DPTR
+                       MOV     R7,A
+                 R     MOV     DPTR,#n
+                       MOVX    A,@DPTR
+                 R     ADD     A,#LOW TxI2S_Buff_TD
+                       MOV     DPL,A
+C51 COMPILER V9.51   PCM3060                                                               08/14/2026 12:27:16 PAGE 15  
+
+                       CLR     A
+                 R     ADDC    A,#HIGH TxI2S_Buff_TD
+                       MOV     DPH,A
+                       MOVX    A,@DPTR
+                       MOV     R3,A
+                 E     MOV     DPTR,#?_CyDmaTdSetConfiguration?BYTE+04H
+                       MOV     A,#01H
+                       MOVX    @DPTR,A
+                       MOV     R5,#080H
+                       MOV     R4,A
+                 E     CALL    _CyDmaTdSetConfiguration
+                                           ; SOURCE LINE # 106
+             ?C0037:
+                                           ; SOURCE LINE # 107
+                 R     MOV     DPTR,#i
+                       MOVX    A,@DPTR
+                       MOV     R3,A
+                       MOV     B,#080H
+                       MUL     AB
+                 R     ADD     A,#LOW TxI2S
+                       MOV     DPL,A
+                       MOV     A,B
+                 R     ADDC    A,#HIGH TxI2S
+                       MOV     DPH,A
+                       MOV     A,R3
+                       ADD     A,DPH
+                       MOV     DPH,A
+                       MOV     R6,A
+                       MOV     A,DPL
+                       MOV     A,R6
+                       CLR     A
+                       MOV     R5,DPL
+                       MOV     R4,AR6
+                       PUSH    AR5
+                 R     MOV     A,#LOW TxI2S_Buff_TD
+                       ADD     A,R3
+                       MOV     DPL,A
+                       CLR     A
+                 R     ADDC    A,#HIGH TxI2S_Buff_TD
+                       MOV     DPH,A
+                       MOVX    A,@DPTR
+                       MOV     R7,A
+                       MOV     R3,#01H
+                 R     MOV     R2,#HIGH TxI2S_Stage
+                 R     MOV     R1,#LOW TxI2S_Stage
+                       MOV     A,R1
+                       MOV     A,R2
+                       CLR     A
+                       MOV     R3,AR1
+                       POP     AR5
+                 E     CALL    _CyDmaTdSetAddress
+                                           ; SOURCE LINE # 108
+                 R     MOV     DPTR,#i
+                       MOVX    A,@DPTR
+                 R     ADD     A,#LOW TxI2S_Zero_TD
+                       MOV     DPL,A
+                       CLR     A
+                 R     ADDC    A,#HIGH TxI2S_Zero_TD
+                       MOV     DPH,A
+                       MOVX    A,@DPTR
+                       MOV     R7,A
+                 R     MOV     DPTR,#n
+C51 COMPILER V9.51   PCM3060                                                               08/14/2026 12:27:16 PAGE 16  
+
+                       MOVX    A,@DPTR
+                 R     ADD     A,#LOW TxI2S_Zero_TD
+                       MOV     DPL,A
+                       CLR     A
+                 R     ADDC    A,#HIGH TxI2S_Zero_TD
+                       MOV     DPH,A
+                       MOVX    A,@DPTR
+                       MOV     R3,A
+                 E     MOV     DPTR,#?_CyDmaTdSetConfiguration?BYTE+04H
+                       MOV     A,#02H
+                       MOVX    @DPTR,A
+                       MOV     R5,#080H
+                       MOV     R4,#01H
+                 E     CALL    _CyDmaTdSetConfiguration
+                                           ; SOURCE LINE # 109
+                 R     MOV     DPTR,#i
+                       MOVX    A,@DPTR
+                       MOV     R1,A
+                       MOV     B,#080H
+                       MUL     AB
+                 R     ADD     A,#LOW TxI2S
+                       MOV     DPL,A
+                       MOV     A,B
+                 R     ADDC    A,#HIGH TxI2S
+                       MOV     DPH,A
+                       MOV     A,R1
+                       ADD     A,DPH
+                       MOV     DPH,A
+                       MOV     R6,A
+                       MOV     A,DPL
+                       MOV     A,R6
+                       CLR     A
+                       MOV     R3,DPL
+                       MOV     R2,AR6
+                       PUSH    AR2
+                       PUSH    AR3
+                 R     MOV     A,#LOW TxI2S_Zero_TD
+                       ADD     A,R1
+                       MOV     DPL,A
+                       CLR     A
+                 R     ADDC    A,#HIGH TxI2S_Zero_TD
+                       MOV     DPH,A
+                       MOVX    A,@DPTR
+                       MOV     R7,A
+                       MOV     R3,#01H
+                 R     MOV     R2,#HIGH TxI2S_Zero
+                 R     MOV     R1,#LOW TxI2S_Zero
+                       MOV     A,R1
+                       MOV     A,R2
+                       CLR     A
+                       MOV     R5,AR1
+                       MOV     R4,AR2
+                       POP     AR3
+                       POP     AR2
+                 E     CALL    _CyDmaTdSetAddress
+                                           ; SOURCE LINE # 110
+                 R     MOV     DPTR,#i
+                       MOVX    A,@DPTR
+                       INC     A
+                       MOVX    @DPTR,A
+                 R     xJMP    ?C0033
+             ?C0034:
+C51 COMPILER V9.51   PCM3060                                                               08/14/2026 12:27:16 PAGE 17  
+
+                                           ; SOURCE LINE # 111
+                 E     MOV     DPTR,#TxI2S_Buff_DmaHandle
+                       MOVX    A,@DPTR
+                       MOV     R7,A
+                 E     CALL    _CyDmaClearPendingDrq
+                                           ; SOURCE LINE # 112
+                 E     MOV     DPTR,#TxI2S_Buff_DmaHandle
+                       MOVX    A,@DPTR
+                       MOV     R7,A
+                 R     MOV     DPTR,#TxI2S_Buff_TD
+                       MOVX    A,@DPTR
+                       MOV     R5,A
+                 E     CALL    _CyDmaChSetInitialTd
+                                           ; SOURCE LINE # 113
+                 E     MOV     DPTR,#TxI2S_Zero_DmaHandle
+                       MOVX    A,@DPTR
+                       MOV     R7,A
+                 E     CALL    _CyDmaClearPendingDrq
+                                           ; SOURCE LINE # 114
+                 E     MOV     DPTR,#TxI2S_Zero_DmaHandle
+                       MOVX    A,@DPTR
+                       MOV     R7,A
+                 R     MOV     DPTR,#TxI2S_Zero_TD
+                       MOVX    A,@DPTR
+                       MOV     R5,A
+                 E     CALL    _CyDmaChSetInitialTd
+                                           ; SOURCE LINE # 116
+                 E     MOV     DPTR,#TxI2S_Zero_DmaHandle
+                       MOVX    A,@DPTR
+                       MOV     R7,A
+                       MOV     R5,#01H
+                 E     CALL    _CyDmaChEnable
+                                           ; SOURCE LINE # 117
+                 E     MOV     DPTR,#TxI2S_Buff_DmaHandle
+                       MOVX    A,@DPTR
+                       MOV     R7,A
+                       MOV     R5,#01H
+                 E     CALL    _CyDmaChSetRequest
+                                           ; SOURCE LINE # 118
+                 E     MOV     DPTR,#TxI2S_Buff_DmaHandle
+                       MOVX    A,@DPTR
+                       MOV     R7,A
+                       MOV     R5,#01H
+                 E     CALL    _CyDmaChEnable
+                                           ; SOURCE LINE # 119
+                 E     MOV     DPTR,#TxI2S_Stage_DmaHandle
+                       MOVX    A,@DPTR
+                       MOV     R7,A
+                       MOV     R5,#01H
+                 E     CALL    _CyDmaChEnable
+                                           ; SOURCE LINE # 120
+                       RET     
+             ; FUNCTION DmaTxStart (END)
+
+             ; FUNCTION PCM3060_TxBuf (BEGIN)
+                                           ; SOURCE LINE # 122
+                                           ; SOURCE LINE # 123
+                 E     CALL    SyncSOF_USB_Buffer
+                       MOV     R6,#00H
+                       MOV     R4,#01H
+                       MOV     R5,#080H
+                 E     CALL    ?C?IMUL
+C51 COMPILER V9.51   PCM3060                                                               08/14/2026 12:27:16 PAGE 18  
+
+                 R     MOV     A,#LOW TxI2S
+                       ADD     A,R7
+                       MOV     R1,A
+                 R     MOV     A,#HIGH TxI2S
+                       ADDC    A,R6
+                       MOV     R2,A
+                       MOV     R3,#01H
+                                           ; SOURCE LINE # 124
+             ?C0039:
+                       RET     
+             ; FUNCTION PCM3060_TxBuf (END)
+
+             ; FUNCTION PCM3060_RxBuf (BEGIN)
+                                           ; SOURCE LINE # 126
+                                           ; SOURCE LINE # 127
+                 E     CALL    SyncSOF_USB_Buffer
+                       MOV     R6,#00H
+                       MOV     R4,#01H
+                       MOV     R5,#080H
+                 E     CALL    ?C?IMUL
+                 R     MOV     A,#LOW RxI2S
+                       ADD     A,R7
+                       MOV     R1,A
+                 R     MOV     A,#HIGH RxI2S
+                       ADDC    A,R6
+                       MOV     R2,A
+                       MOV     R3,#01H
+                                           ; SOURCE LINE # 128
+             ?C0040:
+                       RET     
+             ; FUNCTION PCM3060_RxBuf (END)
+
+             ; FUNCTION _PCM3060_SetTxBufAddress (BEGIN)
+                                           ; SOURCE LINE # 130
+                 R     MOV     DPTR,#source
+                       MOV     A,R6
+                       MOVX    @DPTR,A
+                       INC     DPTR
+                       MOV     A,R7
+                       MOVX    @DPTR,A
+                                           ; SOURCE LINE # 131
+                                           ; SOURCE LINE # 132
+                 E     CALL    SyncSOF_USB_Buffer
+;---- Variable 'buffer_idx' assigned to Register 'R7' ----
+                                           ; SOURCE LINE # 134
+                 R     MOV     A,#LOW TxI2S_Buff_TD
+                       ADD     A,R7
+                       MOV     DPL,A
+                       CLR     A
+                 R     ADDC    A,#HIGH TxI2S_Buff_TD
+                       MOV     DPH,A
+                       MOVX    A,@DPTR
+                       MOV     B,#08H
+                       MUL     AB
+                       ADD     A,#04H
+                       MOV     R7,A
+                       MOV     A,B
+                       ADDC    A,#078H
+                       MOV     R2,A
+                       MOV     R1,AR7
+                       MOV     R3,#01H
+                 R     MOV     DPTR,#source
+C51 COMPILER V9.51   PCM3060                                                               08/14/2026 12:27:16 PAGE 19  
+
+                       MOVX    A,@DPTR
+                       MOV     R4,A
+                       INC     DPTR
+                       MOVX    A,@DPTR
+                       MOV     R5,A
+                 E     CALL    _cywrite16_nodpx
+                                           ; SOURCE LINE # 135
+                       RET     
+             ; FUNCTION _PCM3060_SetTxBufAddress (END)
+
+             ; FUNCTION PCM3060_SetTxBufAddressDefault (BEGIN)
+                                           ; SOURCE LINE # 138
+                                           ; SOURCE LINE # 139
+                                           ; SOURCE LINE # 140
+                 E     CALL    SyncSOF_USB_Buffer
+                 R     MOV     DPTR,#buffer_idx
+                       MOV     A,R7
+                       MOVX    @DPTR,A
+                                           ; SOURCE LINE # 144
+                       MOVX    A,@DPTR
+                 R     ADD     A,#LOW TxI2S_Buff_TD
+                       MOV     DPL,A
+                       CLR     A
+                 R     ADDC    A,#HIGH TxI2S_Buff_TD
+                       MOV     DPH,A
+                       MOVX    A,@DPTR
+                       MOV     B,#08H
+                       MUL     AB
+                       ADD     A,#04H
+                       MOV     R7,A
+                       MOV     A,B
+                       ADDC    A,#078H
+                       MOV     R2,A
+                       MOV     R1,AR7
+                       MOV     R3,#01H
+                 R     MOV     DPTR,#buffer_idx
+                       MOVX    A,@DPTR
+                       MOV     R7,A
+                       MOV     B,#080H
+                       MUL     AB
+                 R     ADD     A,#LOW TxI2S
+                       MOV     DPL,A
+                       MOV     A,B
+                 R     ADDC    A,#HIGH TxI2S
+                       MOV     DPH,A
+                       MOV     A,R7
+                       ADD     A,DPH
+                       MOV     DPH,A
+                       MOV     R6,A
+                       MOV     A,DPL
+                       MOV     A,R6
+                       CLR     A
+                       MOV     R5,DPL
+                       MOV     R4,AR6
+                 E     CALL    _cywrite16_nodpx
+                                           ; SOURCE LINE # 145
+                       RET     
+             ; FUNCTION PCM3060_SetTxBufAddressDefault (END)
+
+             ; FUNCTION _PCM3060_SetRegister (BEGIN)
+                                           ; SOURCE LINE # 147
+                 R     MOV     DPTR,#reg
+C51 COMPILER V9.51   PCM3060                                                               08/14/2026 12:27:16 PAGE 20  
+
+                       MOV     A,R7
+                       MOVX    @DPTR,A
+                       INC     DPTR
+                       MOV     A,R5
+                       MOVX    @DPTR,A
+                                           ; SOURCE LINE # 148
+                       CLR     A
+                 R     MOV     DPTR,#state
+                       MOVX    @DPTR,A
+                                           ; SOURCE LINE # 149
+                       INC     DPTR
+                       MOVX    @DPTR,A
+                       INC     DPTR
+                       MOVX    @DPTR,A
+             ?C0043:
+                                           ; SOURCE LINE # 151
+                 R     MOV     DPTR,#state
+                       MOVX    A,@DPTR
+                       MOV     R7,A
+                       CLR     C
+                       SUBB    A,#02H
+                 R     xJGE    ?C0044
+                                           ; SOURCE LINE # 152
+                       MOV     A,R7
+                       DEC     A
+                 R     xJZ     ?C0047
+                       INC     A
+                 R     xJNZ    ?C0043
+                                           ; SOURCE LINE # 153
+             ?C0046:
+                                           ; SOURCE LINE # 154
+                 R     MOV     DPTR,#reg
+                       MOVX    A,@DPTR
+                 R     MOV     DPTR,#pcm3060_cmd
+                       MOVX    @DPTR,A
+                                           ; SOURCE LINE # 155
+                 R     MOV     DPTR,#val
+                       MOVX    A,@DPTR
+                 R     MOV     DPTR,#pcm3060_cmd+01H
+                       MOVX    @DPTR,A
+                                           ; SOURCE LINE # 156
+                       MOV     R3,#01H
+                 R     MOV     R2,#HIGH pcm3060_cmd
+                 R     MOV     R1,#LOW pcm3060_cmd
+                 E     MOV     DPTR,#?_I2C_DISPLAY_MasterWriteBuf?BYTE+04H
+                       MOV     A,#02H
+                       MOVX    @DPTR,A
+                       CLR     A
+                       INC     DPTR
+                       MOVX    @DPTR,A
+                       MOV     R7,#046H
+                 E     CALL    _I2C_DISPLAY_MasterWriteBuf
+                                           ; SOURCE LINE # 157
+                 R     MOV     DPTR,#state
+                       MOVX    A,@DPTR
+                       INC     A
+                       MOVX    @DPTR,A
+                                           ; SOURCE LINE # 158
+                 R     xJMP    ?C0043
+                                           ; SOURCE LINE # 159
+             ?C0047:
+                                           ; SOURCE LINE # 160
+C51 COMPILER V9.51   PCM3060                                                               08/14/2026 12:27:16 PAGE 21  
+
+                 E     CALL    I2C_DISPLAY_MasterStatus
+;---- Variable 'i' assigned to Register 'R7' ----
+                                           ; SOURCE LINE # 161
+                       MOV     A,R7
+                 R     xJNB    ACC.7,?C0048
+                                           ; SOURCE LINE # 162
+                 R     MOV     DPTR,#state
+                       MOVX    A,@DPTR
+                       DEC     A
+                       MOVX    @DPTR,A
+                                           ; SOURCE LINE # 163
+                 R     xJMP    ?C0049
+             ?C0048:
+                       MOV     A,R7
+                 R     xJNB    ACC.1,?C0049
+                                           ; SOURCE LINE # 164
+                 R     MOV     DPTR,#state
+                       MOVX    A,@DPTR
+                       INC     A
+                       MOVX    @DPTR,A
+                                           ; SOURCE LINE # 165
+             ?C0049:
+                                           ; SOURCE LINE # 166
+                 R     MOV     DPTR,#err
+                       MOV     A,#0FFH
+                       MOV     B,A
+                 E     CALL    ?C?IILDX
+                       ORL     A,B
+                 R     xJNZ    ?C0043
+                       MOV     R7,#01H
+                       RET     
+                                           ; SOURCE LINE # 167
+                                           ; SOURCE LINE # 168
+                                           ; SOURCE LINE # 169
+                 R     xJMP    ?C0043
+             ?C0044:
+                                           ; SOURCE LINE # 170
+                       MOV     R7,#00H
+                                           ; SOURCE LINE # 171
+             ?C0052:
+                       RET     
+             ; FUNCTION _PCM3060_SetRegister (END)
+
+             ; FUNCTION PCM3060_Init (BEGIN)
+                                           ; SOURCE LINE # 174
+                                           ; SOURCE LINE # 175
+                 E     CALL    I2S_Start
+                                           ; SOURCE LINE # 176
+                 R     CALL    DmaRxInit
+                                           ; SOURCE LINE # 177
+                 R     CALL    DmaTxInit
+                                           ; SOURCE LINE # 178
+                 R     CALL    PCM3060_Stop
+                                           ; SOURCE LINE # 179
+             ?C0053:
+                       RET     
+             ; FUNCTION PCM3060_Init (END)
+
+             ; FUNCTION PCM3060_Start (BEGIN)
+                                           ; SOURCE LINE # 181
+                                           ; SOURCE LINE # 182
+                       MOV     R5,#0C0H
+C51 COMPILER V9.51   PCM3060                                                               08/14/2026 12:27:16 PAGE 22  
+
+                       MOV     R7,#040H
+                 R     CALL    _PCM3060_SetRegister
+                                           ; SOURCE LINE # 183
+                       MOV     R5,#080H
+                       MOV     R7,#045H
+                 R     CALL    _PCM3060_SetRegister
+                                           ; SOURCE LINE # 184
+                       MOV     R5,#0FFH
+                       MOV     R7,#041H
+                 R     CALL    _PCM3060_SetRegister
+                                           ; SOURCE LINE # 185
+                       MOV     R5,#0FFH
+                       MOV     R7,#042H
+                 R     CALL    _PCM3060_SetRegister
+                                           ; SOURCE LINE # 186
+                 R     CALL    DmaRxStart
+                                           ; SOURCE LINE # 187
+                 R     CALL    DmaTxStart
+                                           ; SOURCE LINE # 188
+                 E     CALL    I2S_EnableRx
+                                           ; SOURCE LINE # 189
+                 E     CALL    I2S_EnableTx
+                                           ; SOURCE LINE # 190
+                       RET     
+             ; FUNCTION PCM3060_Start (END)
+
+             ; FUNCTION PCM3060_Stop (BEGIN)
+                                           ; SOURCE LINE # 192
+                                           ; SOURCE LINE # 194
+                       MOV     R5,#0F0H
+                       MOV     R7,#040H
+                 R     CALL    _PCM3060_SetRegister
+                 R     MOV     DPTR,#ret
+                       MOV     A,R7
+                       MOVX    @DPTR,A
+                                           ; SOURCE LINE # 195
+                 E     CALL    I2S_DisableRx
+                                           ; SOURCE LINE # 196
+                 E     CALL    I2S_DisableTx
+                                           ; SOURCE LINE # 197
+                 E     MOV     DPTR,#RxI2S_Stage_DmaHandle
+                       MOVX    A,@DPTR
+                       MOV     R7,A
+                 E     CALL    _CyDmaChDisable
+                                           ; SOURCE LINE # 198
+                 E     MOV     DPTR,#RxI2S_Buff_DmaHandle
+                       MOVX    A,@DPTR
+                       MOV     R7,A
+                 E     CALL    _CyDmaChDisable
+                                           ; SOURCE LINE # 199
+                 E     MOV     DPTR,#TxI2S_Stage_DmaHandle
+                       MOVX    A,@DPTR
+                       MOV     R7,A
+                 E     CALL    _CyDmaChDisable
+                                           ; SOURCE LINE # 200
+                 E     MOV     DPTR,#TxI2S_Buff_DmaHandle
+                       MOVX    A,@DPTR
+                       MOV     R7,A
+                 E     CALL    _CyDmaChDisable
+                                           ; SOURCE LINE # 201
+                 E     MOV     DPTR,#TxI2S_Zero_DmaHandle
+                       MOVX    A,@DPTR
+C51 COMPILER V9.51   PCM3060                                                               08/14/2026 12:27:16 PAGE 23  
+
+                       MOV     R7,A
+                 E     CALL    _CyDmaChDisable
+                                           ; SOURCE LINE # 202
+                 E     CALL    I2S_ClearRxFIFO
+                                           ; SOURCE LINE # 203
+                 E     CALL    I2S_ClearTxFIFO
+                                           ; SOURCE LINE # 204
+                 R     MOV     DPTR,#ret
+                       MOVX    A,@DPTR
+                       MOV     R7,A
+                                           ; SOURCE LINE # 205
+             ?C0055:
+                       RET     
+             ; FUNCTION PCM3060_Stop (END)
+
+
+
+MODULE INFORMATION:   STATIC OVERLAYABLE
+   CODE SIZE        =   1681    ----
+   CONSTANT SIZE    =   ----    ----
+   XDATA SIZE       =   2322      17
+   PDATA SIZE       =   ----    ----
+   DATA SIZE        =   ----    ----
+   IDATA SIZE       =   ----    ----
+   BIT SIZE         =   ----    ----
+   EDATA SIZE       =   ----    ----
+   HDATA SIZE       =   ----    ----
+   XDATA CONST SIZE =   ----    ----
+   FAR CONST SIZE   =   ----    ----
+END OF MODULE INFORMATION.
+
+
+C51 COMPILATION COMPLETE.  0 WARNING(S),  0 ERROR(S)
