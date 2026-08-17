@@ -1,6 +1,6 @@
 -- Project:   Proficio-Legacy
--- Generated: 08/14/2026 10:14:34
--- PSoC Creator  4.2
+-- Generated: 08/17/2026 08:42:46
+-- PSoC Creator  4.4
 
 ENTITY \Proficio-Legacy\ IS
     PORT(

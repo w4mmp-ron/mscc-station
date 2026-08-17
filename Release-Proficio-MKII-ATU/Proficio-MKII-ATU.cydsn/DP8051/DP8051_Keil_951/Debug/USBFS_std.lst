@@ -1,9 +1,9 @@
-C51 COMPILER V9.51   USBFS_STD                                                             08/15/2026 23:55:56 PAGE 1   
+C51 COMPILER V9.51   USBFS_STD                                                             08/17/2026 08:28:29 PAGE 1   
 
 
 C51 COMPILER V9.51, COMPILATION OF MODULE USBFS_STD
 OBJECT MODULE PLACED IN .\DP8051\DP8051_Keil_951\Debug\USBFS_std.obj
-COMPILER INVOKED BY: C:\Program Files (x86)\Cypress\PSoC Creator\4.2\PSoC Creator\import\keil\pk51\9.51\C51\BIN\c51.exe 
+COMPILER INVOKED BY: C:\Program Files (x86)\Cypress\PSoC Creator\4.4\PSoC Creator\import\keil\pk51\9.51\C51\BIN\c51.exe 
                     -Generated_Source\PSoC3\USBFS_std.c NOIV LARGE MODDP2 OMF2 VB(1) NOIP INCDIR(.,Generated_Source\PSoC3) FF(3) DB WL(2) PR(
                     -.\DP8051\DP8051_Keil_951\Debug/USBFS_std.lst) CD OT(5,SPEED) OA OJ(.\DP8051\DP8051_Keil_951\Debug\USBFS_std.obj)
 
@@ -62,7 +62,7 @@ line level    source
                   *
                   ***************************************************************************/
                   void  USBFS_SerialNumString(uint8 snString[]) 
-C51 COMPILER V9.51   USBFS_STD                                                             08/15/2026 23:55:56 PAGE 2   
+C51 COMPILER V9.51   USBFS_STD                                                             08/17/2026 08:28:29 PAGE 2   
 
                   {
                       USBFS_snStringConfirm = USBFS_FALSE;
@@ -126,7 +126,7 @@ line level    source
  113   4                          USBFS_currentTD.pData = (volatile uint8 *)pTmp->p_list;
  114   4                          USBFS_currentTD.count = USBFS_DEVICE_DESCR_LENGTH;
  115   4                          
-C51 COMPILER V9.51   USBFS_STD                                                             08/15/2026 23:55:56 PAGE 3   
+C51 COMPILER V9.51   USBFS_STD                                                             08/17/2026 08:28:29 PAGE 3   
 
  116   4                          requestHandled  = USBFS_InitControlRead();
  117   4                      }
@@ -190,7 +190,7 @@ line level    source
                                   }
                               #endif /* (USBFS_ENABLE_MSOS_STRING) */
  173   4                      
-C51 COMPILER V9.51   USBFS_STD                                                             08/15/2026 23:55:56 PAGE 4   
+C51 COMPILER V9.51   USBFS_STD                                                             08/17/2026 08:28:29 PAGE 4   
 
  174   4                      /* SN string */
  175   4                      #if defined(USBFS_ENABLE_SN_STRING)
@@ -254,7 +254,7 @@ line level    source
  233   4                              break;
  234   4                      }
  235   3                      break;
-C51 COMPILER V9.51   USBFS_STD                                                             08/15/2026 23:55:56 PAGE 5   
+C51 COMPILER V9.51   USBFS_STD                                                             08/17/2026 08:28:29 PAGE 5   
 
  236   3                      
  237   3                  case USBFS_GET_CONFIGURATION:
@@ -318,7 +318,7 @@ line level    source
  295   4                          if (USBFS_interfaceSettingLast[interfaceNumber] != USBFS_interfaceSetting[interfaceNum
              -ber])
  296   4                          {
-C51 COMPILER V9.51   USBFS_STD                                                             08/15/2026 23:55:56 PAGE 6   
+C51 COMPILER V9.51   USBFS_STD                                                             08/17/2026 08:28:29 PAGE 6   
 
  297   5                              USBFS_configurationChanged = USBFS_TRUE;
  298   5                          
@@ -382,7 +382,7 @@ line level    source
  356   5                                  requestHandled = USBFS_InitNoDataControlTransfer();
  357   5                              }
  358   4                              break;
-C51 COMPILER V9.51   USBFS_STD                                                             08/15/2026 23:55:56 PAGE 7   
+C51 COMPILER V9.51   USBFS_STD                                                             08/17/2026 08:28:29 PAGE 7   
 
  359   4                              
  360   4                          case USBFS_RQST_RCPT_IFC:
@@ -446,7 +446,7 @@ line level    source
  418   3                      descr[i + 1u] = 0u;
  419   3                      descr[i + 2u] = (uint8) hex[(uniqueId[j] & 0x0Fu)];
  420   3                      descr[i + 3u] = 0u;
-C51 COMPILER V9.51   USBFS_STD                                                             08/15/2026 23:55:56 PAGE 8   
+C51 COMPILER V9.51   USBFS_STD                                                             08/17/2026 08:28:29 PAGE 8   
 
  421   3                      ++j;
  422   3                  }
@@ -510,7 +510,7 @@ line level    source
  480   3                  USBFS_SIE_EP_BASE.sieEp[ep].epCr0 = USBFS_MODE_STALL_DATA_EP;
  481   3              }
  482   2              
-C51 COMPILER V9.51   USBFS_STD                                                             08/15/2026 23:55:56 PAGE 9   
+C51 COMPILER V9.51   USBFS_STD                                                             08/17/2026 08:28:29 PAGE 9   
 
  483   2          #if (!USBFS_EP_MANAGEMENT_DMA_AUTO)
                       #if (CY_PSOC4)
@@ -574,7 +574,7 @@ line level    source
  541   3                  USBFS_EP[i].apiEpState = USBFS_EVENT_PENDING;
  542   3              }
  543   2              else
-C51 COMPILER V9.51   USBFS_STD                                                             08/15/2026 23:55:56 PAGE 10  
+C51 COMPILER V9.51   USBFS_STD                                                             08/17/2026 08:28:29 PAGE 10  
 
  544   2              {
  545   3                  /* OUT Endpoint */
@@ -638,7 +638,7 @@ line level    source
  603   3                  USBFS_interfaceSettingLast[i] = 0u;
  604   3              }
  605   2          }
-C51 COMPILER V9.51   USBFS_STD                                                             08/15/2026 23:55:56 PAGE 11  
+C51 COMPILER V9.51   USBFS_STD                                                             08/17/2026 08:28:29 PAGE 11  
 
  606   1      
  607   1          /* Init Endpoints and Device Status if configured */
@@ -702,7 +702,7 @@ line level    source
                                       USBFS_EP[curEp].apiEpState = USBFS_NO_EVENT_PENDING;
                                       
                                   #if (defined(USBFS_ENABLE_MIDI_STREAMING) && (USBFS_MIDI_OUT_BUFF_SIZE > 0))
-C51 COMPILER V9.51   USBFS_STD                                                             08/15/2026 23:55:56 PAGE 12  
+C51 COMPILER V9.51   USBFS_STD                                                             08/17/2026 08:28:29 PAGE 12  
 
                                       if ((pEP->bMisc == USBFS_CLASS_AUDIO) && (epType == USBFS_EP_TYPE_BULK))
                                       {
@@ -766,7 +766,7 @@ line level    source
  726   6                                  {
  727   7                                      /* OUT Endpoint */
  728   7                                      USBFS_EP[i].epMode     = USBFS_GET_ACTIVE_OUT_EP_CR0_MODE(epType);
-C51 COMPILER V9.51   USBFS_STD                                                             08/15/2026 23:55:56 PAGE 13  
+C51 COMPILER V9.51   USBFS_STD                                                             08/17/2026 08:28:29 PAGE 13  
 
  729   7                                      USBFS_EP[i].apiEpState = USBFS_NO_EVENT_PENDING;
  730   7                                      
@@ -830,7 +830,7 @@ line level    source
  788   2              /* Configure hardware registers */
  789   2              USBFS_ConfigReg();
  790   2          }
-C51 COMPILER V9.51   USBFS_STD                                                             08/15/2026 23:55:56 PAGE 14  
+C51 COMPILER V9.51   USBFS_STD                                                             08/17/2026 08:28:29 PAGE 14  
 
  791   1      }
  792          
@@ -894,7 +894,7 @@ line level    source
  850   5                          USBFS_EP[curEp].epMode     = USBFS_GET_ACTIVE_IN_EP_CR0_MODE(epType);
  851   5                          USBFS_EP[curEp].apiEpState = USBFS_EVENT_PENDING;
  852   5                      }
-C51 COMPILER V9.51   USBFS_STD                                                             08/15/2026 23:55:56 PAGE 15  
+C51 COMPILER V9.51   USBFS_STD                                                             08/17/2026 08:28:29 PAGE 15  
 
  853   4                      else
  854   4                      {
@@ -958,7 +958,7 @@ line level    source
                                   USBFS_ARB_EP16_BASE.arbEp[curEp].rwWa16  = (uint32) USBFS_EP[curEp].buffOffset;
                               #else
                                   USBFS_ARB_EP_BASE.arbEp[curEp].rwRa    = LO8(USBFS_EP[curEp].buffOffset);
-C51 COMPILER V9.51   USBFS_STD                                                             08/15/2026 23:55:56 PAGE 16  
+C51 COMPILER V9.51   USBFS_STD                                                             08/17/2026 08:28:29 PAGE 16  
 
                                   USBFS_ARB_EP_BASE.arbEp[curEp].rwRaMsb = HI8(USBFS_EP[curEp].buffOffset);
                                   USBFS_ARB_EP_BASE.arbEp[curEp].rwWa    = LO8(USBFS_EP[curEp].buffOffset);
@@ -1022,7 +1022,7 @@ line level    source
                   *
                   *  This routine returns a pointer a BOS table entry
                   *
-C51 COMPILER V9.51   USBFS_STD                                                             08/15/2026 23:55:56 PAGE 17  
+C51 COMPILER V9.51   USBFS_STD                                                             08/17/2026 08:28:29 PAGE 17  
 
                   *  
                   *
@@ -1086,7 +1086,7 @@ line level    source
 1036   1      
 1037   1          pTmp = USBFS_GetConfigTablePtr(USBFS_configuration - 1u);
 1038   1          if (pTmp != NULL)
-C51 COMPILER V9.51   USBFS_STD                                                             08/15/2026 23:55:56 PAGE 18  
+C51 COMPILER V9.51   USBFS_STD                                                             08/17/2026 08:28:29 PAGE 18  
 
 1039   1          {
 1040   2              currentInterfacesNum  = ((const uint8 *) pTmp->p_list)[USBFS_CONFIG_DESCR_NUM_INTERFACES];
@@ -1150,7 +1150,7 @@ line level    source
 1098          
 1099          
 1100          /*******************************************************************************
-C51 COMPILER V9.51   USBFS_STD                                                             08/15/2026 23:55:56 PAGE 19  
+C51 COMPILER V9.51   USBFS_STD                                                             08/17/2026 08:28:29 PAGE 19  
 
 1101          * Function Name: USBFS_SetEndpointHalt
 1102          ****************************************************************************//**
@@ -1214,7 +1214,7 @@ line level    source
 1160          *
 1161          *******************************************************************************/
 1162          uint8 USBFS_ClearEndpointHalt(void) 
-C51 COMPILER V9.51   USBFS_STD                                                             08/15/2026 23:55:56 PAGE 20  
+C51 COMPILER V9.51   USBFS_STD                                                             08/17/2026 08:28:29 PAGE 20  
 
 1163          {
 1164   1          uint8 requestHandled = USBFS_FALSE;
@@ -1278,7 +1278,7 @@ line level    source
 1222          *  Validates (and records) a SET INTERFACE request.
 1223          *
 1224          * \return
-C51 COMPILER V9.51   USBFS_STD                                                             08/15/2026 23:55:56 PAGE 21  
+C51 COMPILER V9.51   USBFS_STD                                                             08/17/2026 08:28:29 PAGE 21  
 
 1225          *  requestHandled.
 1226          *
@@ -1318,7 +1318,7 @@ line level    source
 1260          
 1261          
 1262          /* [] END OF FILE */
-C51 COMPILER V9.51   USBFS_STD                                                             08/15/2026 23:55:56 PAGE 22  
+C51 COMPILER V9.51   USBFS_STD                                                             08/17/2026 08:28:29 PAGE 22  
 
 ASSEMBLY LISTING OF GENERATED OBJECT CODE
 
@@ -1382,7 +1382,7 @@ ASSEMBLY LISTING OF GENERATED OBJECT CODE
                        MOV     A,R7
                        MOVX    @DPTR,A
                                            ; SOURCE LINE # 113
-C51 COMPILER V9.51   USBFS_STD                                                             08/15/2026 23:55:56 PAGE 23  
+C51 COMPILER V9.51   USBFS_STD                                                             08/17/2026 08:28:29 PAGE 23  
 
                        MOV     DPL,A
                        MOV     DPH,R6
@@ -1446,7 +1446,7 @@ ASSEMBLY LISTING OF GENERATED OBJECT CODE
                        MOV     R6,A
                        INC     DPTR
                        MOVX    A,@DPTR
-C51 COMPILER V9.51   USBFS_STD                                                             08/15/2026 23:55:56 PAGE 24  
+C51 COMPILER V9.51   USBFS_STD                                                             08/17/2026 08:28:29 PAGE 24  
 
                        MOV     DPL,A
                        MOV     DPH,R6
@@ -1510,7 +1510,7 @@ ASSEMBLY LISTING OF GENERATED OBJECT CODE
                        MOVX    @DPTR,A
                                            ; SOURCE LINE # 128
                  E     CALL    USBFS_InitControlRead
-C51 COMPILER V9.51   USBFS_STD                                                             08/15/2026 23:55:56 PAGE 25  
+C51 COMPILER V9.51   USBFS_STD                                                             08/17/2026 08:28:29 PAGE 25  
 
                  R     MOV     DPTR,#requestHandled
                        MOV     A,R7
@@ -1574,7 +1574,7 @@ ASSEMBLY LISTING OF GENERATED OBJECT CODE
                        MOV     A,R3
                        MOVX    @DPTR,A
                        INC     DPTR
-C51 COMPILER V9.51   USBFS_STD                                                             08/15/2026 23:55:56 PAGE 26  
+C51 COMPILER V9.51   USBFS_STD                                                             08/17/2026 08:28:29 PAGE 26  
 
                        MOV     A,R2
                        MOVX    @DPTR,A
@@ -1638,7 +1638,7 @@ ASSEMBLY LISTING OF GENERATED OBJECT CODE
                        MOV     A,R7
                        MOVX    @DPTR,A
                                            ; SOURCE LINE # 202
-C51 COMPILER V9.51   USBFS_STD                                                             08/15/2026 23:55:56 PAGE 27  
+C51 COMPILER V9.51   USBFS_STD                                                             08/17/2026 08:28:29 PAGE 27  
 
                  E     MOV     DPTR,#USBFS_currentTD+02H
                        MOV     A,R3
@@ -1702,7 +1702,7 @@ ASSEMBLY LISTING OF GENERATED OBJECT CODE
                        MOVX    @DPTR,A
                                            ; SOURCE LINE # 219
                        CLR     A
-C51 COMPILER V9.51   USBFS_STD                                                             08/15/2026 23:55:56 PAGE 28  
+C51 COMPILER V9.51   USBFS_STD                                                             08/17/2026 08:28:29 PAGE 28  
 
                        INC     DPTR
                        MOVX    @DPTR,A
@@ -1766,7 +1766,7 @@ ASSEMBLY LISTING OF GENERATED OBJECT CODE
                  R     xJMP    ?C0023
                                            ; SOURCE LINE # 232
                                            ; SOURCE LINE # 233
-C51 COMPILER V9.51   USBFS_STD                                                             08/15/2026 23:55:56 PAGE 29  
+C51 COMPILER V9.51   USBFS_STD                                                             08/17/2026 08:28:29 PAGE 29  
 
                                            ; SOURCE LINE # 234
                                            ; SOURCE LINE # 235
@@ -1830,7 +1830,7 @@ ASSEMBLY LISTING OF GENERATED OBJECT CODE
                        MOV     A,R7
                        MOVX    @DPTR,A
                                            ; SOURCE LINE # 247
-C51 COMPILER V9.51   USBFS_STD                                                             08/15/2026 23:55:56 PAGE 30  
+C51 COMPILER V9.51   USBFS_STD                                                             08/17/2026 08:28:29 PAGE 30  
 
                  R     xJMP    ?C0023
                                            ; SOURCE LINE # 249
@@ -1894,7 +1894,7 @@ ASSEMBLY LISTING OF GENERATED OBJECT CODE
                                            ; SOURCE LINE # 271
              ?C0027:
                                            ; SOURCE LINE # 274
-C51 COMPILER V9.51   USBFS_STD                                                             08/15/2026 23:55:56 PAGE 31  
+C51 COMPILER V9.51   USBFS_STD                                                             08/17/2026 08:28:29 PAGE 31  
 
                  R     MOV     DPTR,#configurationN
                        MOVX    A,@DPTR
@@ -1958,7 +1958,7 @@ ASSEMBLY LISTING OF GENERATED OBJECT CODE
 ;---- Variable 'interfaceNumber' assigned to Register 'R6' ----
                        MOV     R6,A
                                            ; SOURCE LINE # 292
-C51 COMPILER V9.51   USBFS_STD                                                             08/15/2026 23:55:56 PAGE 32  
+C51 COMPILER V9.51   USBFS_STD                                                             08/17/2026 08:28:29 PAGE 32  
 
                  E     MOV     DPTR,#USBFS_interfaceNumber
                        MOVX    @DPTR,A
@@ -2022,7 +2022,7 @@ ASSEMBLY LISTING OF GENERATED OBJECT CODE
                        MOV     A,R7
                        MOVX    @DPTR,A
                                            ; SOURCE LINE # 318
-C51 COMPILER V9.51   USBFS_STD                                                             08/15/2026 23:55:56 PAGE 33  
+C51 COMPILER V9.51   USBFS_STD                                                             08/17/2026 08:28:29 PAGE 33  
 
                                            ; SOURCE LINE # 319
                  R     xJMP    ?C0023
@@ -2086,7 +2086,7 @@ ASSEMBLY LISTING OF GENERATED OBJECT CODE
                                            ; SOURCE LINE # 335
                  R     xJMP    ?C0023
                                            ; SOURCE LINE # 336
-C51 COMPILER V9.51   USBFS_STD                                                             08/15/2026 23:55:56 PAGE 34  
+C51 COMPILER V9.51   USBFS_STD                                                             08/17/2026 08:28:29 PAGE 34  
 
                                            ; SOURCE LINE # 337
                                            ; SOURCE LINE # 338
@@ -2150,7 +2150,7 @@ ASSEMBLY LISTING OF GENERATED OBJECT CODE
                        SUBB    A,#04H
                  R     xJGE    ?C0023
                                            ; SOURCE LINE # 363
-C51 COMPILER V9.51   USBFS_STD                                                             08/15/2026 23:55:56 PAGE 35  
+C51 COMPILER V9.51   USBFS_STD                                                             08/17/2026 08:28:29 PAGE 35  
 
                                            ; SOURCE LINE # 364
                  E     MOV     A,#LOW USBFS_interfaceStatus
@@ -2214,7 +2214,7 @@ ASSEMBLY LISTING OF GENERATED OBJECT CODE
                  R     MOV     DPTR,#j
                        MOVX    @DPTR,A
                                            ; SOURCE LINE # 405
-C51 COMPILER V9.51   USBFS_STD                                                             08/15/2026 23:55:56 PAGE 36  
+C51 COMPILER V9.51   USBFS_STD                                                             08/17/2026 08:28:29 PAGE 36  
 
                  R     MOV     DPTR,#descr
                        MOVX    A,@DPTR
@@ -2278,7 +2278,7 @@ ASSEMBLY LISTING OF GENERATED OBJECT CODE
                        MOV     DPL,A
                        CLR     A
                  R     ADDC    A,#HIGH uniqueId
-C51 COMPILER V9.51   USBFS_STD                                                             08/15/2026 23:55:56 PAGE 37  
+C51 COMPILER V9.51   USBFS_STD                                                             08/17/2026 08:28:29 PAGE 37  
 
                        MOV     DPH,A
                        MOVX    A,@DPTR
@@ -2342,7 +2342,7 @@ ASSEMBLY LISTING OF GENERATED OBJECT CODE
                        MOV     A,R7
                        ADD     A,#02H
                        MOV     R7,A
-C51 COMPILER V9.51   USBFS_STD                                                             08/15/2026 23:55:56 PAGE 38  
+C51 COMPILER V9.51   USBFS_STD                                                             08/17/2026 08:28:29 PAGE 38  
 
                        MOV     A,R6
                        RLC     A
@@ -2406,7 +2406,7 @@ ASSEMBLY LISTING OF GENERATED OBJECT CODE
                                            ; SOURCE LINE # 437
                                            ; SOURCE LINE # 438
                                            ; SOURCE LINE # 442
-C51 COMPILER V9.51   USBFS_STD                                                             08/15/2026 23:55:56 PAGE 39  
+C51 COMPILER V9.51   USBFS_STD                                                             08/17/2026 08:28:29 PAGE 39  
 
 ;---- Variable 'epType' assigned to Register 'R7' ----
                        CLR     A
@@ -2470,7 +2470,7 @@ ASSEMBLY LISTING OF GENERATED OBJECT CODE
                                            ; SOURCE LINE # 459
                        MOV     B,#010H
                        MOV     A,R6
-C51 COMPILER V9.51   USBFS_STD                                                             08/15/2026 23:55:56 PAGE 40  
+C51 COMPILER V9.51   USBFS_STD                                                             08/17/2026 08:28:29 PAGE 40  
 
                        MUL     AB
                        ADD     A,#0FEH
@@ -2534,7 +2534,7 @@ ASSEMBLY LISTING OF GENERATED OBJECT CODE
              ?C0061:
                                            ; SOURCE LINE # 498
                        MOV     DPTR,#0608CH
-C51 COMPILER V9.51   USBFS_STD                                                             08/15/2026 23:55:56 PAGE 41  
+C51 COMPILER V9.51   USBFS_STD                                                             08/17/2026 08:28:29 PAGE 41  
 
                        MOV     A,#055H
                        MOVX    @DPTR,A
@@ -2598,7 +2598,7 @@ ASSEMBLY LISTING OF GENERATED OBJECT CODE
                                            ; SOURCE LINE # 539
                                            ; SOURCE LINE # 541
                        MOV     A,R7
-C51 COMPILER V9.51   USBFS_STD                                                             08/15/2026 23:55:56 PAGE 42  
+C51 COMPILER V9.51   USBFS_STD                                                             08/17/2026 08:28:29 PAGE 42  
 
                        MOV     B,#0BH
                        MUL     AB
@@ -2662,7 +2662,7 @@ ASSEMBLY LISTING OF GENERATED OBJECT CODE
                        CLR     A
                        MOVX    @DPTR,A
                                            ; SOURCE LINE # 589
-C51 COMPILER V9.51   USBFS_STD                                                             08/15/2026 23:55:56 PAGE 43  
+C51 COMPILER V9.51   USBFS_STD                                                             08/17/2026 08:28:29 PAGE 43  
 
                        MOV     A,R6
                        MOV     B,#0BH
@@ -2726,7 +2726,7 @@ ASSEMBLY LISTING OF GENERATED OBJECT CODE
                        MUL     AB
                  E     ADD     A,#LOW USBFS_EP+05H
                        MOV     DPL,A
-C51 COMPILER V9.51   USBFS_STD                                                             08/15/2026 23:55:56 PAGE 44  
+C51 COMPILER V9.51   USBFS_STD                                                             08/17/2026 08:28:29 PAGE 44  
 
                        CLR     A
                  E     ADDC    A,#HIGH USBFS_EP+05H
@@ -2790,7 +2790,7 @@ ASSEMBLY LISTING OF GENERATED OBJECT CODE
                  R     xJLT    ?C0102
                                            ; SOURCE LINE # 609
                                            ; SOURCE LINE # 614
-C51 COMPILER V9.51   USBFS_STD                                                             08/15/2026 23:55:56 PAGE 45  
+C51 COMPILER V9.51   USBFS_STD                                                             08/17/2026 08:28:29 PAGE 45  
 
                        MOVX    A,@DPTR
                        DEC     A
@@ -2854,7 +2854,7 @@ ASSEMBLY LISTING OF GENERATED OBJECT CODE
                        MOV     R7,A
                        CLR     A
                        ADDC    A,R4
-C51 COMPILER V9.51   USBFS_STD                                                             08/15/2026 23:55:56 PAGE 46  
+C51 COMPILER V9.51   USBFS_STD                                                             08/17/2026 08:28:29 PAGE 46  
 
                        MOV     R6,A
                  R     MOV     DPTR,#pTmp
@@ -2918,7 +2918,7 @@ ASSEMBLY LISTING OF GENERATED OBJECT CODE
                                            ; SOURCE LINE # 695
                                            ; SOURCE LINE # 696
                  R     MOV     DPTR,#pEP
-C51 COMPILER V9.51   USBFS_STD                                                             08/15/2026 23:55:56 PAGE 47  
+C51 COMPILER V9.51   USBFS_STD                                                             08/17/2026 08:28:29 PAGE 47  
 
                        MOVX    A,@DPTR
                        MOV     R4,A
@@ -2982,7 +2982,7 @@ ASSEMBLY LISTING OF GENERATED OBJECT CODE
                        MOVC    A,@A+DPTR
                        MOV     R4,A
                        MOV     A,#05H
-C51 COMPILER V9.51   USBFS_STD                                                             08/15/2026 23:55:56 PAGE 48  
+C51 COMPILER V9.51   USBFS_STD                                                             08/17/2026 08:28:29 PAGE 48  
 
                        MOVC    A,@A+DPTR
                        MOV     R5,A
@@ -3046,7 +3046,7 @@ ASSEMBLY LISTING OF GENERATED OBJECT CODE
                        MOV     B,#0BH
                        MUL     AB
                  E     ADD     A,#LOW USBFS_EP+04H
-C51 COMPILER V9.51   USBFS_STD                                                             08/15/2026 23:55:56 PAGE 49  
+C51 COMPILER V9.51   USBFS_STD                                                             08/17/2026 08:28:29 PAGE 49  
 
                        MOV     DPL,A
                        CLR     A
@@ -3110,7 +3110,7 @@ ASSEMBLY LISTING OF GENERATED OBJECT CODE
                        MUL     AB
                  E     ADD     A,#LOW USBFS_EP+05H
                        MOV     DPL,A
-C51 COMPILER V9.51   USBFS_STD                                                             08/15/2026 23:55:56 PAGE 50  
+C51 COMPILER V9.51   USBFS_STD                                                             08/17/2026 08:28:29 PAGE 50  
 
                        CLR     A
                  E     ADDC    A,#HIGH USBFS_EP+05H
@@ -3174,7 +3174,7 @@ ASSEMBLY LISTING OF GENERATED OBJECT CODE
                        MOVX    A,@DPTR
                        ADD     A,#07H
                        MOVX    @DPTR,A
-C51 COMPILER V9.51   USBFS_STD                                                             08/15/2026 23:55:56 PAGE 51  
+C51 COMPILER V9.51   USBFS_STD                                                             08/17/2026 08:28:29 PAGE 51  
 
                  R     MOV     DPTR,#pEP
                        MOVX    A,@DPTR
@@ -3238,7 +3238,7 @@ ASSEMBLY LISTING OF GENERATED OBJECT CODE
                        MOV     DPH,R6
                        CLR     A
                        MOVC    A,@A+DPTR
-C51 COMPILER V9.51   USBFS_STD                                                             08/15/2026 23:55:56 PAGE 52  
+C51 COMPILER V9.51   USBFS_STD                                                             08/17/2026 08:28:29 PAGE 52  
 
                        MOV     R5,A
                        MOV     A,#02H
@@ -3302,7 +3302,7 @@ ASSEMBLY LISTING OF GENERATED OBJECT CODE
                  R     CALL    _USBFS_GetConfigTablePtr
 ;---- Variable 'pTmp' assigned to Register 'R6/R7' ----
                                            ; SOURCE LINE # 821
-C51 COMPILER V9.51   USBFS_STD                                                             08/15/2026 23:55:56 PAGE 53  
+C51 COMPILER V9.51   USBFS_STD                                                             08/17/2026 08:28:29 PAGE 53  
 
                        MOV     A,R7
                        ADD     A,#04H
@@ -3366,7 +3366,7 @@ ASSEMBLY LISTING OF GENERATED OBJECT CODE
                        INC     A
                        MOVC    A,@A+DPTR
                        MOV     R7,A
-C51 COMPILER V9.51   USBFS_STD                                                             08/15/2026 23:55:56 PAGE 54  
+C51 COMPILER V9.51   USBFS_STD                                                             08/17/2026 08:28:29 PAGE 54  
 
                  E     MOV     A,#LOW USBFS_interfaceSetting
                        ADD     A,R6
@@ -3430,7 +3430,7 @@ ASSEMBLY LISTING OF GENERATED OBJECT CODE
                        MUL     AB
                  E     ADD     A,#LOW USBFS_EP
                        MOV     DPL,A
-C51 COMPILER V9.51   USBFS_STD                                                             08/15/2026 23:55:56 PAGE 55  
+C51 COMPILER V9.51   USBFS_STD                                                             08/17/2026 08:28:29 PAGE 55  
 
                        CLR     A
                  E     ADDC    A,#HIGH USBFS_EP
@@ -3494,7 +3494,7 @@ ASSEMBLY LISTING OF GENERATED OBJECT CODE
                        CLR     A
                  E     ADDC    A,#HIGH USBFS_EP+01H
                        MOV     DPH,A
-C51 COMPILER V9.51   USBFS_STD                                                             08/15/2026 23:55:56 PAGE 56  
+C51 COMPILER V9.51   USBFS_STD                                                             08/17/2026 08:28:29 PAGE 56  
 
                        MOV     A,#01H
                        MOVX    @DPTR,A
@@ -3558,7 +3558,7 @@ ASSEMBLY LISTING OF GENERATED OBJECT CODE
                        MOVX    @DPTR,A
                                            ; SOURCE LINE # 868
                        MOV     A,R2
-C51 COMPILER V9.51   USBFS_STD                                                             08/15/2026 23:55:56 PAGE 57  
+C51 COMPILER V9.51   USBFS_STD                                                             08/17/2026 08:28:29 PAGE 57  
 
                        ADD     A,#0FFH
                        MOV     R7,A
@@ -3622,7 +3622,7 @@ ASSEMBLY LISTING OF GENERATED OBJECT CODE
                                            ; SOURCE LINE # 891
                                            ; SOURCE LINE # 893
                        MOV     DPTR,#0608FH
-C51 COMPILER V9.51   USBFS_STD                                                             08/15/2026 23:55:56 PAGE 58  
+C51 COMPILER V9.51   USBFS_STD                                                             08/17/2026 08:28:29 PAGE 58  
 
                        PUSH    DPH
                        PUSH    DPL
@@ -3686,7 +3686,7 @@ ASSEMBLY LISTING OF GENERATED OBJECT CODE
                  E     ADDC    A,#HIGH USBFS_TABLE+01H
                        MOV     DPH,A
                        CLR     A
-C51 COMPILER V9.51   USBFS_STD                                                             08/15/2026 23:55:56 PAGE 59  
+C51 COMPILER V9.51   USBFS_STD                                                             08/17/2026 08:28:29 PAGE 59  
 
                        MOVC    A,@A+DPTR
                        MOV     A,#01H
@@ -3750,7 +3750,7 @@ ASSEMBLY LISTING OF GENERATED OBJECT CODE
              ; FUNCTION _USBFS_GetConfigTablePtr (END)
 
              ; FUNCTION USBFS_GetDeviceTablePtr (BEGIN)
-C51 COMPILER V9.51   USBFS_STD                                                             08/15/2026 23:55:56 PAGE 60  
+C51 COMPILER V9.51   USBFS_STD                                                             08/17/2026 08:28:29 PAGE 60  
 
                                            ; SOURCE LINE # 1011
                                            ; SOURCE LINE # 1013
@@ -3814,7 +3814,7 @@ ASSEMBLY LISTING OF GENERATED OBJECT CODE
                        MOV     R2,A
                  E     CALL    ?C?CLDPTR
 ;---- Variable 'currentInterfacesNum' assigned to Register 'R7' ----
-C51 COMPILER V9.51   USBFS_STD                                                             08/15/2026 23:55:56 PAGE 61  
+C51 COMPILER V9.51   USBFS_STD                                                             08/17/2026 08:28:29 PAGE 61  
 
                                            ; SOURCE LINE # 1043
                        ADD     A,#02H
@@ -3878,7 +3878,7 @@ ASSEMBLY LISTING OF GENERATED OBJECT CODE
              ?C0125:
                        RET     
              ; FUNCTION USBFS_GetInterfaceClassTablePtr (END)
-C51 COMPILER V9.51   USBFS_STD                                                             08/15/2026 23:55:56 PAGE 62  
+C51 COMPILER V9.51   USBFS_STD                                                             08/17/2026 08:28:29 PAGE 62  
 
 
              ; FUNCTION _USBFS_TerminateEP (BEGIN)
@@ -3942,7 +3942,7 @@ ASSEMBLY LISTING OF GENERATED OBJECT CODE
                        MOV     DPH,A
                        MOVX    A,@DPTR
                        ANL     A,#080H
-C51 COMPILER V9.51   USBFS_STD                                                             08/15/2026 23:55:56 PAGE 63  
+C51 COMPILER V9.51   USBFS_STD                                                             08/17/2026 08:28:29 PAGE 63  
 
                  R     xJZ     ?C0127
                                            ; SOURCE LINE # 1087
@@ -4006,7 +4006,7 @@ ASSEMBLY LISTING OF GENERATED OBJECT CODE
                        MUL     AB
                  E     ADD     A,#LOW USBFS_EP+02H
                        MOV     DPL,A
-C51 COMPILER V9.51   USBFS_STD                                                             08/15/2026 23:55:56 PAGE 64  
+C51 COMPILER V9.51   USBFS_STD                                                             08/17/2026 08:28:29 PAGE 64  
 
                        CLR     A
                  E     ADDC    A,#HIGH USBFS_EP+02H
@@ -4070,7 +4070,7 @@ ASSEMBLY LISTING OF GENERATED OBJECT CODE
                        MOV     A,R7
                        MUL     AB
                        ADD     A,#0FEH
-C51 COMPILER V9.51   USBFS_STD                                                             08/15/2026 23:55:56 PAGE 65  
+C51 COMPILER V9.51   USBFS_STD                                                             08/17/2026 08:28:29 PAGE 65  
 
                        MOV     DPL,A
                        MOV     A,B
@@ -4134,7 +4134,7 @@ ASSEMBLY LISTING OF GENERATED OBJECT CODE
                        MOV     B,#0BH
                        MUL     AB
                  E     ADD     A,#LOW USBFS_EP+03H
-C51 COMPILER V9.51   USBFS_STD                                                             08/15/2026 23:55:56 PAGE 66  
+C51 COMPILER V9.51   USBFS_STD                                                             08/17/2026 08:28:29 PAGE 66  
 
                        MOV     DPL,A
                        CLR     A
@@ -4198,7 +4198,7 @@ ASSEMBLY LISTING OF GENERATED OBJECT CODE
                        ADD     A,#0FEH
                        MOV     DPL,A
                        MOV     A,B
-C51 COMPILER V9.51   USBFS_STD                                                             08/15/2026 23:55:56 PAGE 67  
+C51 COMPILER V9.51   USBFS_STD                                                             08/17/2026 08:28:29 PAGE 67  
 
                        ADDC    A,#05FH
                        MOV     DPH,A
@@ -4262,7 +4262,7 @@ ASSEMBLY LISTING OF GENERATED OBJECT CODE
                        MOV     DPH,A
                        MOV     A,#09H
                        MOVX    @DPTR,A
-C51 COMPILER V9.51   USBFS_STD                                                             08/15/2026 23:55:56 PAGE 68  
+C51 COMPILER V9.51   USBFS_STD                                                             08/17/2026 08:28:29 PAGE 68  
 
                                            ; SOURCE LINE # 1208
                                            ; SOURCE LINE # 1209
@@ -4326,7 +4326,7 @@ ASSEMBLY LISTING OF GENERATED OBJECT CODE
                  R     MOV     DPTR,#interfaceNum
                        MOVX    A,@DPTR
                        MOV     R6,A
-C51 COMPILER V9.51   USBFS_STD                                                             08/15/2026 23:55:56 PAGE 69  
+C51 COMPILER V9.51   USBFS_STD                                                             08/17/2026 08:28:29 PAGE 69  
 
                        SETB    C
                        SUBB    A,R7
@@ -4390,7 +4390,7 @@ MODULE INFORMATION:   STATIC OVERLAYABLE
    PDATA SIZE       =   ----    ----
    DATA SIZE        =   ----    ----
    IDATA SIZE       =   ----    ----
-C51 COMPILER V9.51   USBFS_STD                                                             08/15/2026 23:55:56 PAGE 70  
+C51 COMPILER V9.51   USBFS_STD                                                             08/17/2026 08:28:29 PAGE 70  
 
    BIT SIZE         =   ----    ----
    EDATA SIZE       =   ----    ----

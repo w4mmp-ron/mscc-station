@@ -1,9 +1,9 @@
-C51 COMPILER V9.51   AUDIO                                                                 08/14/2026 10:16:31 PAGE 1   
+C51 COMPILER V9.51   AUDIO                                                                 08/17/2026 08:42:56 PAGE 1   
 
 
 C51 COMPILER V9.51, COMPILATION OF MODULE AUDIO
 OBJECT MODULE PLACED IN .\DP8051\DP8051_Keil_951\Debug\audio.obj
-COMPILER INVOKED BY: C:\Program Files (x86)\Cypress\PSoC Creator\4.2\PSoC Creator\import\keil\pk51\9.51\C51\BIN\c51.exe 
+COMPILER INVOKED BY: C:\Program Files (x86)\Cypress\PSoC Creator\4.4\PSoC Creator\import\keil\pk51\9.51\C51\BIN\c51.exe 
                     -audio.c NOIV LARGE MODDP2 OMF2 VB(1) NOIP INCDIR(.,Generated_Source\PSoC3) FF(3) DB WL(2) PR(.\DP8051\DP8051_Keil_951\De
                     -bug/audio.lst) CD OT(5,SPEED) OA OJ(.\DP8051\DP8051_Keil_951\Debug\audio.obj)
 
@@ -62,7 +62,7 @@ line level    source
   50   1          p = (uint8 *)&USBFS_ARB_RW1_DR_PTR[ri];
   51   1          if (Audio_IQ_Channels & 0x01) {
   52   2              td_config = TD_TERMIN_EN | TD_INC_SRC_ADR | TD_SWAP_EN;
-C51 COMPILER V9.51   AUDIO                                                                 08/14/2026 10:16:31 PAGE 2   
+C51 COMPILER V9.51   AUDIO                                                                 08/17/2026 08:42:56 PAGE 2   
 
   53   2          } else {
   54   2              td_config = TD_TERMIN_EN | TD_INC_SRC_ADR | TD_SWAP_EN | TD_SWAP_SIZE4;
@@ -126,7 +126,7 @@ line level    source
  112   2          }
  113   1      
  114   1          if(USBFS_IsConfigurationChanged()) {
-C51 COMPILER V9.51   AUDIO                                                                 08/14/2026 10:16:31 PAGE 3   
+C51 COMPILER V9.51   AUDIO                                                                 08/17/2026 08:42:56 PAGE 3   
 
  115   2              USBFS_EnableOutEP(TX_ENDPOINT);
  116   2          }   
@@ -139,7 +139,7 @@ line level    source
  123   2              Audio_USB_LoadInEP(RX_ENDPOINT, PCM3060_RxBuf(), I2S_BUF_SIZE);
  124   2          }
  125   1      }
-C51 COMPILER V9.51   AUDIO                                                                 08/14/2026 10:16:31 PAGE 4   
+C51 COMPILER V9.51   AUDIO                                                                 08/17/2026 08:42:56 PAGE 4   
 
 ASSEMBLY LISTING OF GENERATED OBJECT CODE
 
@@ -203,7 +203,7 @@ ASSEMBLY LISTING OF GENERATED OBJECT CODE
                  R     MOV     DPTR,#td_config
                        MOV     A,#091H
                        MOVX    @DPTR,A
-C51 COMPILER V9.51   AUDIO                                                                 08/14/2026 10:16:31 PAGE 5   
+C51 COMPILER V9.51   AUDIO                                                                 08/17/2026 08:42:56 PAGE 5   
 
                                            ; SOURCE LINE # 53
                  R     xJMP    ?C0002
@@ -267,7 +267,7 @@ ASSEMBLY LISTING OF GENERATED OBJECT CODE
                        MOV     R7,A
                  E     CALL    _CyDmaChDisable
                                            ; SOURCE LINE # 59
-C51 COMPILER V9.51   AUDIO                                                                 08/14/2026 10:16:31 PAGE 6   
+C51 COMPILER V9.51   AUDIO                                                                 08/17/2026 08:42:56 PAGE 6   
 
                  R     MOV     DPTR,#epNumber
                        MOVX    A,@DPTR
@@ -331,7 +331,7 @@ ASSEMBLY LISTING OF GENERATED OBJECT CODE
                        CLR     A
                        MOV     R3,AR7
                        POP     AR5
-C51 COMPILER V9.51   AUDIO                                                                 08/14/2026 10:16:31 PAGE 7   
+C51 COMPILER V9.51   AUDIO                                                                 08/17/2026 08:42:56 PAGE 7   
 
                        POP     AR7
                  E     CALL    _CyDmaTdSetAddress
@@ -395,7 +395,7 @@ ASSEMBLY LISTING OF GENERATED OBJECT CODE
                        MOVX    A,@DPTR
                        ADD     A,#080H
                        MOV     DPL,A
-C51 COMPILER V9.51   AUDIO                                                                 08/14/2026 10:16:31 PAGE 8   
+C51 COMPILER V9.51   AUDIO                                                                 08/17/2026 08:42:56 PAGE 8   
 
                        CLR     A
                        ADDC    A,#060H
@@ -459,7 +459,7 @@ ASSEMBLY LISTING OF GENERATED OBJECT CODE
                        MOVX    @DPTR,A
                                            ; SOURCE LINE # 76
                  R     MOV     DPTR,#Audio_IQ_Channels
-C51 COMPILER V9.51   AUDIO                                                                 08/14/2026 10:16:31 PAGE 9   
+C51 COMPILER V9.51   AUDIO                                                                 08/17/2026 08:42:56 PAGE 9   
 
                        MOVX    A,@DPTR
                  R     xJNB    ACC.1,?C0004
@@ -523,7 +523,7 @@ ASSEMBLY LISTING OF GENERATED OBJECT CODE
                  R     MOV     DPTR,#p
                        MOVX    A,@DPTR
                        MOV     R3,A
-C51 COMPILER V9.51   AUDIO                                                                 08/14/2026 10:16:31 PAGE 10  
+C51 COMPILER V9.51   AUDIO                                                                 08/17/2026 08:42:56 PAGE 10  
 
                        INC     DPTR
                        MOVX    A,@DPTR
@@ -587,7 +587,7 @@ ASSEMBLY LISTING OF GENERATED OBJECT CODE
                  E     CALL    _CyDmaChSetInitialTd
                                            ; SOURCE LINE # 86
                  R     MOV     DPTR,#epNumber
-C51 COMPILER V9.51   AUDIO                                                                 08/14/2026 10:16:31 PAGE 11  
+C51 COMPILER V9.51   AUDIO                                                                 08/17/2026 08:42:56 PAGE 11  
 
                        MOVX    A,@DPTR
                  E     ADD     A,#LOW USBFS_DmaChan
@@ -651,7 +651,7 @@ ASSEMBLY LISTING OF GENERATED OBJECT CODE
                  R     MOV     DPTR,#TX_Enabled
                        MOVX    A,@DPTR
                  R     xJNZ    ?C0012
-C51 COMPILER V9.51   AUDIO                                                                 08/14/2026 10:16:31 PAGE 12  
+C51 COMPILER V9.51   AUDIO                                                                 08/17/2026 08:42:56 PAGE 12  
 
                                            ; SOURCE LINE # 104
                        MOV     R7,#03H
@@ -715,7 +715,7 @@ ASSEMBLY LISTING OF GENERATED OBJECT CODE
                                            ; SOURCE LINE # 123
                  E     CALL    PCM3060_RxBuf
                  R     MOV     DPTR,#?_Audio_USB_LoadInEP?BYTE+04H
-C51 COMPILER V9.51   AUDIO                                                                 08/14/2026 10:16:31 PAGE 13  
+C51 COMPILER V9.51   AUDIO                                                                 08/17/2026 08:42:56 PAGE 13  
 
                        MOV     A,#01H
                        MOVX    @DPTR,A

@@ -55,54 +55,7 @@
 <v>Proficio-MKII-PTT\Proficio-MKII-PTT\Generated_Source</v>
 <v>Proficio-MKII-PTT\Proficio-MKII-PTT\Generated_Source\PSoC3</v>
 </ExpandedNodeIds>
-<VisibleNodeIds>
-<v>Proficio-MKII-PTT</v>
-<v>Proficio-MKII-PTT\Proficio-MKII-PTT</v>
-<v>Proficio-MKII-PTT\Proficio-MKII-PTT\TopDesign</v>
-<v>Proficio-MKII-PTT\Proficio-MKII-PTT\Proficio-MKII-PTT.cydwr</v>
-<v>Proficio-MKII-PTT\Proficio-MKII-PTT\Proficio-MKII-PTT.cydwr\Pins</v>
-<v>Proficio-MKII-PTT\Proficio-MKII-PTT\Proficio-MKII-PTT.cydwr\Analog</v>
-<v>Proficio-MKII-PTT\Proficio-MKII-PTT\Proficio-MKII-PTT.cydwr\Clocks</v>
-<v>Proficio-MKII-PTT\Proficio-MKII-PTT\Proficio-MKII-PTT.cydwr\Interrupts</v>
-<v>Proficio-MKII-PTT\Proficio-MKII-PTT\Proficio-MKII-PTT.cydwr\DMA</v>
-<v>Proficio-MKII-PTT\Proficio-MKII-PTT\Proficio-MKII-PTT.cydwr\System</v>
-<v>Proficio-MKII-PTT\Proficio-MKII-PTT\Proficio-MKII-PTT.cydwr\Directives</v>
-<v>Proficio-MKII-PTT\Proficio-MKII-PTT\Proficio-MKII-PTT.cydwr\Flash Security</v>
-<v>Proficio-MKII-PTT\Proficio-MKII-PTT\Proficio-MKII-PTT.cydwr\EEPROM</v>
-<v>Proficio-MKII-PTT\Proficio-MKII-PTT\Header Files</v>
-<v>Proficio-MKII-PTT\Proficio-MKII-PTT\Header Files\basic-plus.h</v>
-<v>Proficio-MKII-PTT\Proficio-MKII-PTT\Header Files\device.h</v>
-<v>Proficio-MKII-PTT\Proficio-MKII-PTT\Header Files\iambino.h</v>
-<v>Proficio-MKII-PTT\Proficio-MKII-PTT\Header Files\iqhump.h</v>
-<v>Proficio-MKII-PTT\Proficio-MKII-PTT\Header Files\si5351.h</v>
-<v>Proficio-MKII-PTT\Proficio-MKII-PTT\Header Files\si5351a.h</v>
-<v>Proficio-MKII-PTT\Proficio-MKII-PTT\Header Files\usbvend.h</v>
-<v>Proficio-MKII-PTT\Proficio-MKII-PTT\Source Files</v>
-<v>Proficio-MKII-PTT\Proficio-MKII-PTT\Source Files\audio.c</v>
-<v>Proficio-MKII-PTT\Proficio-MKII-PTT\Source Files\band.c</v>
-<v>Proficio-MKII-PTT\Proficio-MKII-PTT\Source Files\convert.c</v>
-<v>Proficio-MKII-PTT\Proficio-MKII-PTT\Source Files\cw.c</v>
-<v>Proficio-MKII-PTT\Proficio-MKII-PTT\Source Files\main.c</v>
-<v>Proficio-MKII-PTT\Proficio-MKII-PTT\Source Files\morse.c</v>
-<v>Proficio-MKII-PTT\Proficio-MKII-PTT\Source Files\pcm3060.c</v>
-<v>Proficio-MKII-PTT\Proficio-MKII-PTT\Source Files\settings01.c</v>
-<v>Proficio-MKII-PTT\Proficio-MKII-PTT\Source Files\si5351.c</v>
-<v>Proficio-MKII-PTT\Proficio-MKII-PTT\Source Files\si5351a.c</v>
-<v>Proficio-MKII-PTT\Proficio-MKII-PTT\Source Files\sync.c</v>
-<v>Proficio-MKII-PTT\Proficio-MKII-PTT\Source Files\t1.c</v>
-<v>Proficio-MKII-PTT\Proficio-MKII-PTT\Source Files\temperature.c</v>
-<v>Proficio-MKII-PTT\Proficio-MKII-PTT\Source Files\tx.c</v>
-<v>Proficio-MKII-PTT\Proficio-MKII-PTT\Source Files\usbvend01.c</v>
-<v>Proficio-MKII-PTT\Proficio-MKII-PTT\Generated_Source</v>
-<v>Proficio-MKII-PTT\Proficio-MKII-PTT\Generated_Source\PSoC3</v>
-<v>Proficio-MKII-PTT\Proficio-MKII-PTT\Generated_Source\PSoC3\Band_Control</v>
-<v>Proficio-MKII-PTT\Proficio-MKII-PTT\Generated_Source\PSoC3\Bootloadable</v>
-<v>Proficio-MKII-PTT\Proficio-MKII-PTT\Generated_Source\PSoC3\BS0</v>
-<v>Proficio-MKII-PTT\Proficio-MKII-PTT\Generated_Source\PSoC3\BS1</v>
-<v>Proficio-MKII-PTT\Proficio-MKII-PTT\Generated_Source\PSoC3\BS2</v>
-<v>Proficio-MKII-PTT\Proficio-MKII-PTT\Generated_Source\PSoC3\Control</v>
-<v>Proficio-MKII-PTT\Proficio-MKII-PTT\Generated_Source\PSoC3\CW_Clock</v>
-</VisibleNodeIds>
+<VisibleNodeIds />
 </CyGuid_2a325b3b-c96a-4e9f-b7a0-2c44ecb5f237>
 <CyGuid_2a325b3b-c96a-4e9f-b7a0-2c44ecb5f237 type_name="CyDesigner.Common.Base.Controls.CyTreeViewState" version="1" SelectedNodeId="">
 <ExpandedNodeIds>
@@ -123,24 +76,7 @@
 <v>Proficio-MKII-PTT\Proficio-MKII-PTT\TopDesign</v>
 <v>Proficio-MKII-PTT\Proficio-MKII-PTT\TopDesign\TopDesign.cysch</v>
 </ExpandedNodeIds>
-<VisibleNodeIds>
-<v>Proficio-MKII-PTT</v>
-<v>Proficio-MKII-PTT\Proficio-MKII-PTT</v>
-<v>Proficio-MKII-PTT\Proficio-MKII-PTT\FracN</v>
-<v>Proficio-MKII-PTT\Proficio-MKII-PTT\FracN\API</v>
-<v>Proficio-MKII-PTT\Proficio-MKII-PTT\FracN\API\api.c</v>
-<v>Proficio-MKII-PTT\Proficio-MKII-PTT\FracN\API\api.h</v>
-<v>Proficio-MKII-PTT\Proficio-MKII-PTT\FracN\FracN.cysym</v>
-<v>Proficio-MKII-PTT\Proficio-MKII-PTT\FracN\FracN.v</v>
-<v>Proficio-MKII-PTT\Proficio-MKII-PTT\SyncSOF</v>
-<v>Proficio-MKII-PTT\Proficio-MKII-PTT\SyncSOF\API</v>
-<v>Proficio-MKII-PTT\Proficio-MKII-PTT\SyncSOF\API\api.c</v>
-<v>Proficio-MKII-PTT\Proficio-MKII-PTT\SyncSOF\API\api.h</v>
-<v>Proficio-MKII-PTT\Proficio-MKII-PTT\SyncSOF\SyncSOF.cysym</v>
-<v>Proficio-MKII-PTT\Proficio-MKII-PTT\SyncSOF\SyncSOF.v</v>
-<v>Proficio-MKII-PTT\Proficio-MKII-PTT\TopDesign</v>
-<v>Proficio-MKII-PTT\Proficio-MKII-PTT\TopDesign\TopDesign.cysch</v>
-</VisibleNodeIds>
+<VisibleNodeIds />
 </CyGuid_2a325b3b-c96a-4e9f-b7a0-2c44ecb5f237>
 <CyGuid_2a325b3b-c96a-4e9f-b7a0-2c44ecb5f237 type_name="CyDesigner.Common.Base.Controls.CyTreeViewState" version="1" SelectedNodeId="">
 <ExpandedNodeIds>
@@ -240,54 +176,7 @@
 <v>Proficio-MKII-PTT\Proficio-MKII-PTT\Proficio-MKII-PTT.rpt</v>
 <v>Proficio-MKII-PTT\Proficio-MKII-PTT\Proficio-MKII-PTT_timing.html</v>
 </ExpandedNodeIds>
-<VisibleNodeIds>
-<v>Proficio-MKII-PTT</v>
-<v>Proficio-MKII-PTT\Proficio-MKII-PTT</v>
-<v>Proficio-MKII-PTT\Proficio-MKII-PTT\DP8051</v>
-<v>Proficio-MKII-PTT\Proficio-MKII-PTT\DP8051\DP8051_Keil_951</v>
-<v>Proficio-MKII-PTT\Proficio-MKII-PTT\DP8051\DP8051_Keil_951\Debug</v>
-<v>Proficio-MKII-PTT\Proficio-MKII-PTT\DP8051\DP8051_Keil_951\Debug\Listing Files</v>
-<v>Proficio-MKII-PTT\Proficio-MKII-PTT\DP8051\DP8051_Keil_951\Debug\Listing Files\audio.lst</v>
-<v>Proficio-MKII-PTT\Proficio-MKII-PTT\DP8051\DP8051_Keil_951\Debug\Listing Files\band.lst</v>
-<v>Proficio-MKII-PTT\Proficio-MKII-PTT\DP8051\DP8051_Keil_951\Debug\Listing Files\Band_Control.lst</v>
-<v>Proficio-MKII-PTT\Proficio-MKII-PTT\DP8051\DP8051_Keil_951\Debug\Listing Files\Band_Control_PM.lst</v>
-<v>Proficio-MKII-PTT\Proficio-MKII-PTT\DP8051\DP8051_Keil_951\Debug\Listing Files\Bootloadable.lst</v>
-<v>Proficio-MKII-PTT\Proficio-MKII-PTT\DP8051\DP8051_Keil_951\Debug\Listing Files\BS0.lst</v>
-<v>Proficio-MKII-PTT\Proficio-MKII-PTT\DP8051\DP8051_Keil_951\Debug\Listing Files\BS1.lst</v>
-<v>Proficio-MKII-PTT\Proficio-MKII-PTT\DP8051\DP8051_Keil_951\Debug\Listing Files\BS2.lst</v>
-<v>Proficio-MKII-PTT\Proficio-MKII-PTT\DP8051\DP8051_Keil_951\Debug\Listing Files\Control.lst</v>
-<v>Proficio-MKII-PTT\Proficio-MKII-PTT\DP8051\DP8051_Keil_951\Debug\Listing Files\Control_PM.lst</v>
-<v>Proficio-MKII-PTT\Proficio-MKII-PTT\DP8051\DP8051_Keil_951\Debug\Listing Files\convert.lst</v>
-<v>Proficio-MKII-PTT\Proficio-MKII-PTT\DP8051\DP8051_Keil_951\Debug\Listing Files\cw.lst</v>
-<v>Proficio-MKII-PTT\Proficio-MKII-PTT\DP8051\DP8051_Keil_951\Debug\Listing Files\CW_Clock.lst</v>
-<v>Proficio-MKII-PTT\Proficio-MKII-PTT\DP8051\DP8051_Keil_951\Debug\Listing Files\CW_Hold_Control.lst</v>
-<v>Proficio-MKII-PTT\Proficio-MKII-PTT\DP8051\DP8051_Keil_951\Debug\Listing Files\CW_Hold_Control_PM.lst</v>
-<v>Proficio-MKII-PTT\Proficio-MKII-PTT\DP8051\DP8051_Keil_951\Debug\Listing Files\CW_Hold_Timer.lst</v>
-<v>Proficio-MKII-PTT\Proficio-MKII-PTT\DP8051\DP8051_Keil_951\Debug\Listing Files\CW_Hold_Timer_PM.lst</v>
-<v>Proficio-MKII-PTT\Proficio-MKII-PTT\DP8051\DP8051_Keil_951\Debug\Listing Files\CW_isr.lst</v>
-<v>Proficio-MKII-PTT\Proficio-MKII-PTT\DP8051\DP8051_Keil_951\Debug\Listing Files\cy_em_eeprom.lst</v>
-<v>Proficio-MKII-PTT\Proficio-MKII-PTT\DP8051\DP8051_Keil_951\Debug\Listing Files\CyBootAsmKeil.lst</v>
-<v>Proficio-MKII-PTT\Proficio-MKII-PTT\DP8051\DP8051_Keil_951\Debug\Listing Files\CyDmac.lst</v>
-<v>Proficio-MKII-PTT\Proficio-MKII-PTT\DP8051\DP8051_Keil_951\Debug\Listing Files\cyfitter_cfg.lst</v>
-<v>Proficio-MKII-PTT\Proficio-MKII-PTT\DP8051\DP8051_Keil_951\Debug\Listing Files\CyFlash.lst</v>
-<v>Proficio-MKII-PTT\Proficio-MKII-PTT\DP8051\DP8051_Keil_951\Debug\Listing Files\CyLib.lst</v>
-<v>Proficio-MKII-PTT\Proficio-MKII-PTT\DP8051\DP8051_Keil_951\Debug\Listing Files\cymem.lst</v>
-<v>Proficio-MKII-PTT\Proficio-MKII-PTT\DP8051\DP8051_Keil_951\Debug\Listing Files\cyPm.lst</v>
-<v>Proficio-MKII-PTT\Proficio-MKII-PTT\DP8051\DP8051_Keil_951\Debug\Listing Files\CySpc.lst</v>
-<v>Proficio-MKII-PTT\Proficio-MKII-PTT\DP8051\DP8051_Keil_951\Debug\Listing Files\cyutils.lst</v>
-<v>Proficio-MKII-PTT\Proficio-MKII-PTT\DP8051\DP8051_Keil_951\Debug\Listing Files\DieTemp_1.lst</v>
-<v>Proficio-MKII-PTT\Proficio-MKII-PTT\DP8051\DP8051_Keil_951\Debug\Listing Files\EEPROM.lst</v>
-<v>Proficio-MKII-PTT\Proficio-MKII-PTT\DP8051\DP8051_Keil_951\Debug\Listing Files\FRAC_CLK.lst</v>
-<v>Proficio-MKII-PTT\Proficio-MKII-PTT\DP8051\DP8051_Keil_951\Debug\Listing Files\FracN_api.lst</v>
-<v>Proficio-MKII-PTT\Proficio-MKII-PTT\DP8051\DP8051_Keil_951\Debug\Listing Files\I2C_DISPLAY.lst</v>
-<v>Proficio-MKII-PTT\Proficio-MKII-PTT\DP8051\DP8051_Keil_951\Debug\Listing Files\I2C_DISPLAY_BOOT.lst</v>
-<v>Proficio-MKII-PTT\Proficio-MKII-PTT\DP8051\DP8051_Keil_951\Debug\Listing Files\I2C_DISPLAY_INT.lst</v>
-<v>Proficio-MKII-PTT\Proficio-MKII-PTT\DP8051\DP8051_Keil_951\Debug\Listing Files\I2C_DISPLAY_MASTER.lst</v>
-<v>Proficio-MKII-PTT\Proficio-MKII-PTT\DP8051\DP8051_Keil_951\Debug\Listing Files\I2C_DISPLAY_PM.lst</v>
-<v>Proficio-MKII-PTT\Proficio-MKII-PTT\DP8051\DP8051_Keil_951\Debug\Listing Files\I2C_DISPLAY_SLAVE.lst</v>
-<v>Proficio-MKII-PTT\Proficio-MKII-PTT\DP8051\DP8051_Keil_951\Debug\Listing Files\I2S.lst</v>
-<v>Proficio-MKII-PTT\Proficio-MKII-PTT\DP8051\DP8051_Keil_951\Debug\Listing Files\I2S_PM.lst</v>
-</VisibleNodeIds>
+<VisibleNodeIds />
 </CyGuid_2a325b3b-c96a-4e9f-b7a0-2c44ecb5f237>
 </TreeStates>
 <TreeKeysV2>
@@ -326,37 +215,7 @@
 <v>Proficio-MKII-PTT\Proficio-MKII-PTT\Timer_v2_80.pdf</v>
 <v>Proficio-MKII-PTT\Proficio-MKII-PTT\USBFS_v3_20.pdf</v>
 </ExpandedNodeIds>
-<VisibleNodeIds>
-<v>Proficio-MKII-PTT</v>
-<v>Proficio-MKII-PTT\Proficio-MKII-PTT</v>
-<v>Proficio-MKII-PTT\Proficio-MKII-PTT\PSoC 3 Architecture TRM</v>
-<v>Proficio-MKII-PTT\Proficio-MKII-PTT\CY8C32 Family Datasheet</v>
-<v>Proficio-MKII-PTT\Proficio-MKII-PTT\System Reference Guides</v>
-<v>Proficio-MKII-PTT\Proficio-MKII-PTT\System Reference Guides\cy_boot_v5_82</v>
-<v>Proficio-MKII-PTT\Proficio-MKII-PTT\and_v1_0</v>
-<v>Proficio-MKII-PTT\Proficio-MKII-PTT\and_v1_0\and_v1_0.pdf</v>
-<v>Proficio-MKII-PTT\Proficio-MKII-PTT\Bootloadable_v1_60.pdf</v>
-<v>Proficio-MKII-PTT\Proficio-MKII-PTT\cy_clock_v2_20</v>
-<v>Proficio-MKII-PTT\Proficio-MKII-PTT\cy_clock_v2_20\cy_clock_v2_20.pdf</v>
-<v>Proficio-MKII-PTT\Proficio-MKII-PTT\cy_dma_v1_70</v>
-<v>Proficio-MKII-PTT\Proficio-MKII-PTT\cy_dma_v1_70\cy_dma_v1_70.pdf</v>
-<v>Proficio-MKII-PTT\Proficio-MKII-PTT\cy_isr_v1_71.pdf</v>
-<v>Proficio-MKII-PTT\Proficio-MKII-PTT\cy_pins_v2_20</v>
-<v>Proficio-MKII-PTT\Proficio-MKII-PTT\cy_pins_v2_20\cy_pins_v2_20.pdf</v>
-<v>Proficio-MKII-PTT\Proficio-MKII-PTT\cy_sync_v1_0.pdf</v>
-<v>Proficio-MKII-PTT\Proficio-MKII-PTT\CyControlReg_v1_80</v>
-<v>Proficio-MKII-PTT\Proficio-MKII-PTT\CyControlReg_v1_80\CyControlReg_v1_80.pdf</v>
-<v>Proficio-MKII-PTT\Proficio-MKII-PTT\CyStatusReg_v1_90.pdf</v>
-<v>Proficio-MKII-PTT\Proficio-MKII-PTT\Debouncer_v1_0</v>
-<v>Proficio-MKII-PTT\Proficio-MKII-PTT\Debouncer_v1_0\Debouncer_v1_0.pdf</v>
-<v>Proficio-MKII-PTT\Proficio-MKII-PTT\DieTemp_v2_10.pdf</v>
-<v>Proficio-MKII-PTT\Proficio-MKII-PTT\EEPROM_v3_0.pdf</v>
-<v>Proficio-MKII-PTT\Proficio-MKII-PTT\I2C_v3_50.pdf</v>
-<v>Proficio-MKII-PTT\Proficio-MKII-PTT\I2S_v2_70.pdf</v>
-<v>Proficio-MKII-PTT\Proficio-MKII-PTT\not_v1_0.pdf</v>
-<v>Proficio-MKII-PTT\Proficio-MKII-PTT\Timer_v2_80.pdf</v>
-<v>Proficio-MKII-PTT\Proficio-MKII-PTT\USBFS_v3_20.pdf</v>
-</VisibleNodeIds>
+<VisibleNodeIds />
 </CyGuid_2a325b3b-c96a-4e9f-b7a0-2c44ecb5f237>
 </TreeStatesV2>
 </CyGuid_1b906a0f-a7b6-4e4d-a428-82f98b53cb35>
@@ -383,7 +242,7 @@
   Copyright (c) 2001-2016 Actipro Software LLC.  All rights reserved.
   http://www.actiprosoftware.com
 
---><DocumentLayout Version="1.0"><LayoutData><TabbedMdiRootContainer Orientation="Horizontal"><TabbedMdiContainer Size="1517, 719" SelectedTabbedMdiWindow="770f7706-c4f0-4acf-af4e-90b76f37ce13"><ToolWindow Key="Start Page:bd4649ab-da6b-4d04-a663-c722b8bf99db:Start Page" Guid="770f7706-c4f0-4acf-af4e-90b76f37ce13" /><DocumentWindow Key="C:\Users\Ron\.grok\worktrees\Release-Proficio-MKII-PTT\Proficio-MKII-PTT.cydsn\TopDesign\TopDesign.cysch" Guid="a261ce58-096d-4311-8d2b-2056477a6c69" /><DocumentWindow Key="C:\Users\Ron\.grok\worktrees\Release-Proficio-MKII-PTT\Proficio-MKII-PTT.cydsn\basic-plus.h" Guid="68be76be-b141-47c0-a856-ad787fc1f7e4" /><DocumentWindow Key="C:\Users\Ron\.grok\worktrees\Release-Proficio-MKII-PTT\Proficio-MKII-PTT.cydsn\usbvend01.c" Guid="5f075c46-6fe2-4c1e-b686-946744845122" /><DocumentWindow Key="C:\Users\Ron\.grok\worktrees\Release-Proficio-MKII-PTT\Proficio-MKII-PTT.cydsn\cw.c" Guid="f485d376-8599-46d1-8da0-d89b023e387b" /><DocumentWindow Key="C:\Users\Ron\.grok\worktrees\Release-Proficio-MKII-PTT\Proficio-MKII-PTT.cydsn\main.c" Guid="03f7534e-8fbc-44ea-abba-5e9c49a245db" /><DocumentWindow Key="C:\Users\Ron\.grok\worktrees\Release-Proficio-MKII-PTT\Proficio-MKII-PTT.cydsn\Proficio-MKII-PTT.cydwr" Guid="8a302248-f662-4163-a695-34b8f0b70a39" /></TabbedMdiContainer></TabbedMdiRootContainer><FloatingContainers /></LayoutData></DocumentLayout>]]></OpenDocsLayout>
+--><DocumentLayout Version="1.0"><LayoutData><TabbedMdiRootContainer Orientation="Horizontal"><TabbedMdiContainer Size="1305, 607" SelectedTabbedMdiWindow="770f7706-c4f0-4acf-af4e-90b76f37ce13"><ToolWindow Key="Start Page:bd4649ab-da6b-4d04-a663-c722b8bf99db:Start Page" Guid="770f7706-c4f0-4acf-af4e-90b76f37ce13" /><DocumentWindow Key="C:\Users\Ron\.grok\worktrees\Release-Proficio-MKII-PTT\Proficio-MKII-PTT.cydsn\TopDesign\TopDesign.cysch" Guid="a261ce58-096d-4311-8d2b-2056477a6c69" /><DocumentWindow Key="C:\Users\Ron\.grok\worktrees\Release-Proficio-MKII-PTT\Proficio-MKII-PTT.cydsn\basic-plus.h" Guid="68be76be-b141-47c0-a856-ad787fc1f7e4" /><DocumentWindow Key="C:\Users\Ron\.grok\worktrees\Release-Proficio-MKII-PTT\Proficio-MKII-PTT.cydsn\usbvend01.c" Guid="5f075c46-6fe2-4c1e-b686-946744845122" /><DocumentWindow Key="C:\Users\Ron\.grok\worktrees\Release-Proficio-MKII-PTT\Proficio-MKII-PTT.cydsn\cw.c" Guid="f485d376-8599-46d1-8da0-d89b023e387b" /><DocumentWindow Key="C:\Users\Ron\.grok\worktrees\Release-Proficio-MKII-PTT\Proficio-MKII-PTT.cydsn\main.c" Guid="03f7534e-8fbc-44ea-abba-5e9c49a245db" /><DocumentWindow Key="C:\Users\Ron\.grok\worktrees\Release-Proficio-MKII-PTT\Proficio-MKII-PTT.cydsn\Proficio-MKII-PTT.cydwr" Guid="8a302248-f662-4163-a695-34b8f0b70a39" /></TabbedMdiContainer></TabbedMdiRootContainer><FloatingContainers /></LayoutData></DocumentLayout>]]></OpenDocsLayout>
 <config v="" />
 <AutoUpdate v="true" />
 </CyGuid_843a90a4-0c4b-4e44-991d-05e7fb117a21>

@@ -1,9 +1,9 @@
-C51 COMPILER V9.51   SI5351A                                                               08/14/2026 12:27:14 PAGE 1   
+C51 COMPILER V9.51   SI5351A                                                               08/17/2026 08:36:16 PAGE 1   
 
 
 C51 COMPILER V9.51, COMPILATION OF MODULE SI5351A
 OBJECT MODULE PLACED IN .\DP8051\DP8051_Keil_951\Debug\si5351a.obj
-COMPILER INVOKED BY: C:\Program Files (x86)\Cypress\PSoC Creator\4.2\PSoC Creator\import\keil\pk51\9.51\C51\BIN\c51.exe 
+COMPILER INVOKED BY: C:\Program Files (x86)\Cypress\PSoC Creator\4.4\PSoC Creator\import\keil\pk51\9.51\C51\BIN\c51.exe 
                     -si5351a.c NOIV LARGE MODDP2 OMF2 VB(1) NOIP INCDIR(.,Generated_Source\PSoC3) FF(3) DB WL(2) PR(.\DP8051\DP8051_Keil_951\
                     -Debug/si5351a.lst) CD OT(5,SPEED) OA OJ(.\DP8051\DP8051_Keil_951\Debug\si5351a.obj)
 
@@ -62,7 +62,7 @@ line level    source
   50   1              static uint32 P2;                                       // PLL config register P2
   51   1              static uint32 P3;                                       // PLL config register P3
   52   1          static uint8 state = 0;
-C51 COMPILER V9.51   SI5351A                                                               08/14/2026 12:27:14 PAGE 2   
+C51 COMPILER V9.51   SI5351A                                                               08/17/2026 08:36:16 PAGE 2   
 
   53   1          
   54   1          switch(state){
@@ -126,7 +126,7 @@ line level    source
  112   1          static uint8 state = 0;
  113   1      
  114   1              
-C51 COMPILER V9.51   SI5351A                                                               08/14/2026 12:27:14 PAGE 3   
+C51 COMPILER V9.51   SI5351A                                                               08/17/2026 08:36:16 PAGE 3   
 
  115   1          switch(state){
  116   2              case 0:
@@ -190,7 +190,7 @@ line level    source
  173          
  174          /*
  175           * Si5351 soft-tune strategy (Si570-like):
-C51 COMPILER V9.51   SI5351A                                                               08/14/2026 12:27:14 PAGE 4   
+C51 COMPILER V9.51   SI5351A                                                               08/17/2026 08:36:16 PAGE 4   
 
  176           *
  177           * Old approach recomputed Multisynth every step as even(900e6 / fout). That
@@ -254,7 +254,7 @@ line level    source
  235   1          uint8 try_soft;
  236   1           
  237   1          switch(state){
-C51 COMPILER V9.51   SI5351A                                                               08/14/2026 12:27:14 PAGE 5   
+C51 COMPILER V9.51   SI5351A                                                               08/17/2026 08:36:16 PAGE 5   
 
  238   2              case 0:
  239   2                  switch(E_PPM_needs_set){  //When the PPM has changed the LO needs bumped for it to take immedi
@@ -318,7 +318,7 @@ line level    source
  295   2      
  296   2                  soft_ms_hold = 0;
  297   2                  try_soft = 0;
-C51 COMPILER V9.51   SI5351A                                                               08/14/2026 12:27:14 PAGE 6   
+C51 COMPILER V9.51   SI5351A                                                               08/17/2026 08:36:16 PAGE 6   
 
  298   2                  /* Prefer holding Multisynth when VCO stays legal (true soft-tune). */
  299   2                  if (prev_ms_divider >= SI5351_MS_MIN && E_l_freq > 0UL) {
@@ -382,7 +382,7 @@ line level    source
  357   2                  /* Hard retune only: silence CLK0 before MS/PLL reconfig + PLL_RESET.
  358   2                   * Soft path never blanks — CW pitch / fine-tune stay continuous. */
  359   2                  if (!soft_ms_hold && !clk0_blanked) {
-C51 COMPILER V9.51   SI5351A                                                               08/14/2026 12:27:14 PAGE 7   
+C51 COMPILER V9.51   SI5351A                                                               08/17/2026 08:36:16 PAGE 7   
 
  360   3                      si5351_write_init(SI_CLK0_CONTROL, SI5351_CLK0_OFF);
  361   3                      clk0_blanked = 1;
@@ -443,7 +443,7 @@ line level    source
  416   1         
  417   1      }
  418          
-C51 COMPILER V9.51   SI5351A                                                               08/14/2026 12:27:14 PAGE 8   
+C51 COMPILER V9.51   SI5351A                                                               08/17/2026 08:36:16 PAGE 8   
 
 ASSEMBLY LISTING OF GENERATED OBJECT CODE
 
@@ -507,7 +507,7 @@ ASSEMBLY LISTING OF GENERATED OBJECT CODE
                        INC     DPTR
                        MOVX    A,@DPTR
                        MOV     R6,A
-C51 COMPILER V9.51   SI5351A                                                               08/14/2026 12:27:14 PAGE 9   
+C51 COMPILER V9.51   SI5351A                                                               08/17/2026 08:36:16 PAGE 9   
 
                        INC     DPTR
                        MOVX    A,@DPTR
@@ -571,7 +571,7 @@ ASSEMBLY LISTING OF GENERATED OBJECT CODE
                        ADDC    A,#0FFH
                        MOV     R4,A
                  R     MOV     DPTR,#P1
-C51 COMPILER V9.51   SI5351A                                                               08/14/2026 12:27:14 PAGE 10  
+C51 COMPILER V9.51   SI5351A                                                               08/17/2026 08:36:16 PAGE 10  
 
                  E     CALL    ?C?LSTXDATA
                                            ; SOURCE LINE # 58
@@ -635,7 +635,7 @@ ASSEMBLY LISTING OF GENERATED OBJECT CODE
                        MOVX    A,@DPTR
                        MOV     R7,A
                  R     MOV     DPTR,#denom
-C51 COMPILER V9.51   SI5351A                                                               08/14/2026 12:27:14 PAGE 11  
+C51 COMPILER V9.51   SI5351A                                                               08/17/2026 08:36:16 PAGE 11  
 
                        MOVX    A,@DPTR
                        MOV     R0,A
@@ -699,7 +699,7 @@ ASSEMBLY LISTING OF GENERATED OBJECT CODE
                        MOV     R5,A
                        INC     DPTR
                        MOVX    A,@DPTR
-C51 COMPILER V9.51   SI5351A                                                               08/14/2026 12:27:14 PAGE 12  
+C51 COMPILER V9.51   SI5351A                                                               08/17/2026 08:36:16 PAGE 12  
 
                        MOV     R6,A
                        INC     DPTR
@@ -763,7 +763,7 @@ ASSEMBLY LISTING OF GENERATED OBJECT CODE
                        MOV     R5,AR7
                        POP     AR7
                  E     CALL    _si5351_write_init
-C51 COMPILER V9.51   SI5351A                                                               08/14/2026 12:27:14 PAGE 13  
+C51 COMPILER V9.51   SI5351A                                                               08/17/2026 08:36:16 PAGE 13  
 
                                            ; SOURCE LINE # 67
                  R     MOV     DPTR,#state
@@ -827,7 +827,7 @@ ASSEMBLY LISTING OF GENERATED OBJECT CODE
                        MOV     R5,A
                        INC     DPTR
                        MOVX    A,@DPTR
-C51 COMPILER V9.51   SI5351A                                                               08/14/2026 12:27:14 PAGE 14  
+C51 COMPILER V9.51   SI5351A                                                               08/17/2026 08:36:16 PAGE 14  
 
                        MOV     R6,A
                        INC     DPTR
@@ -891,7 +891,7 @@ ASSEMBLY LISTING OF GENERATED OBJECT CODE
                        PUSH    AR7
                  R     MOV     DPTR,#P2
                        MOVX    A,@DPTR
-C51 COMPILER V9.51   SI5351A                                                               08/14/2026 12:27:14 PAGE 15  
+C51 COMPILER V9.51   SI5351A                                                               08/17/2026 08:36:16 PAGE 15  
 
                        MOV     R4,A
                        INC     DPTR
@@ -955,7 +955,7 @@ ASSEMBLY LISTING OF GENERATED OBJECT CODE
                  E     CALL    _si5351_write_init
                                            ; SOURCE LINE # 87
                  R     MOV     DPTR,#state
-C51 COMPILER V9.51   SI5351A                                                               08/14/2026 12:27:14 PAGE 16  
+C51 COMPILER V9.51   SI5351A                                                               08/17/2026 08:36:16 PAGE 16  
 
                        MOVX    A,@DPTR
                        INC     A
@@ -1019,7 +1019,7 @@ ASSEMBLY LISTING OF GENERATED OBJECT CODE
                        INC     DPTR
                        MOVX    A,@DPTR
                        MOV     R7,A
-C51 COMPILER V9.51   SI5351A                                                               08/14/2026 12:27:14 PAGE 17  
+C51 COMPILER V9.51   SI5351A                                                               08/17/2026 08:36:16 PAGE 17  
 
                        CLR     A
                        MOV     R5,AR7
@@ -1083,7 +1083,7 @@ ASSEMBLY LISTING OF GENERATED OBJECT CODE
                        MOV     R1,A
                        INC     DPTR
                        MOVX    A,@DPTR
-C51 COMPILER V9.51   SI5351A                                                               08/14/2026 12:27:14 PAGE 18  
+C51 COMPILER V9.51   SI5351A                                                               08/17/2026 08:36:16 PAGE 18  
 
                        MOV     R2,A
                        INC     DPTR
@@ -1147,7 +1147,7 @@ ASSEMBLY LISTING OF GENERATED OBJECT CODE
                  E     CALL    _si5351_write_init
                                            ; SOURCE LINE # 122
                  R     MOV     DPTR,#state
-C51 COMPILER V9.51   SI5351A                                                               08/14/2026 12:27:14 PAGE 19  
+C51 COMPILER V9.51   SI5351A                                                               08/17/2026 08:36:16 PAGE 19  
 
                        MOVX    A,@DPTR
                        INC     A
@@ -1211,7 +1211,7 @@ ASSEMBLY LISTING OF GENERATED OBJECT CODE
                        ANL     A,#03H
                        MOV     R5,A
                        CLR     A
-C51 COMPILER V9.51   SI5351A                                                               08/14/2026 12:27:14 PAGE 20  
+C51 COMPILER V9.51   SI5351A                                                               08/17/2026 08:36:16 PAGE 20  
 
                        MOV     R4,A
                        MOV     R0,#010H
@@ -1275,7 +1275,7 @@ ASSEMBLY LISTING OF GENERATED OBJECT CODE
                        MOVX    A,@DPTR
                        INC     A
                        MOVX    @DPTR,A
-C51 COMPILER V9.51   SI5351A                                                               08/14/2026 12:27:14 PAGE 21  
+C51 COMPILER V9.51   SI5351A                                                               08/17/2026 08:36:16 PAGE 21  
 
                                            ; SOURCE LINE # 138
                  R     xJMP    ?C0011
@@ -1339,7 +1339,7 @@ ASSEMBLY LISTING OF GENERATED OBJECT CODE
                        MOV     R4,A
                        MOV     R0,#010H
                  E     CALL    ?C?ULSHR
-C51 COMPILER V9.51   SI5351A                                                               08/14/2026 12:27:14 PAGE 22  
+C51 COMPILER V9.51   SI5351A                                                               08/17/2026 08:36:16 PAGE 22  
 
                        PUSH    AR4
                        PUSH    AR5
@@ -1403,7 +1403,7 @@ ASSEMBLY LISTING OF GENERATED OBJECT CODE
                        INC     DPTR
                        MOVX    A,@DPTR
                        MOV     R5,A
-C51 COMPILER V9.51   SI5351A                                                               08/14/2026 12:27:14 PAGE 23  
+C51 COMPILER V9.51   SI5351A                                                               08/17/2026 08:36:16 PAGE 23  
 
                        INC     DPTR
                        MOVX    A,@DPTR
@@ -1467,7 +1467,7 @@ ASSEMBLY LISTING OF GENERATED OBJECT CODE
              ?C0020:
                        RET     
              ; FUNCTION _setupMultisynth (END)
-C51 COMPILER V9.51   SI5351A                                                               08/14/2026 12:27:14 PAGE 24  
+C51 COMPILER V9.51   SI5351A                                                               08/17/2026 08:36:16 PAGE 24  
 
 
              ; FUNCTION _si5351aOutputOff (BEGIN)
@@ -1531,7 +1531,7 @@ ASSEMBLY LISTING OF GENERATED OBJECT CODE
                        INC     DPTR
                        MOVX    A,@DPTR
                        MOV     R6,A
-C51 COMPILER V9.51   SI5351A                                                               08/14/2026 12:27:14 PAGE 25  
+C51 COMPILER V9.51   SI5351A                                                               08/17/2026 08:36:16 PAGE 25  
 
                        INC     DPTR
                        MOVX    A,@DPTR
@@ -1595,7 +1595,7 @@ ASSEMBLY LISTING OF GENERATED OBJECT CODE
                  E     MOV     DPTR,#E_PPM_needs_set
                        MOVX    @DPTR,A
                                            ; SOURCE LINE # 250
-C51 COMPILER V9.51   SI5351A                                                               08/14/2026 12:27:14 PAGE 26  
+C51 COMPILER V9.51   SI5351A                                                               08/17/2026 08:36:16 PAGE 26  
 
                                            ; SOURCE LINE # 251
              ?C0024:
@@ -1659,7 +1659,7 @@ ASSEMBLY LISTING OF GENERATED OBJECT CODE
                        MOV     R4,A
                        INC     DPTR
                        MOVX    A,@DPTR
-C51 COMPILER V9.51   SI5351A                                                               08/14/2026 12:27:14 PAGE 27  
+C51 COMPILER V9.51   SI5351A                                                               08/17/2026 08:36:16 PAGE 27  
 
                        MOV     R5,A
                        INC     DPTR
@@ -1723,7 +1723,7 @@ ASSEMBLY LISTING OF GENERATED OBJECT CODE
                        INC     DPTR
                        MOVX    A,@DPTR
                        MOV     R5,A
-C51 COMPILER V9.51   SI5351A                                                               08/14/2026 12:27:14 PAGE 28  
+C51 COMPILER V9.51   SI5351A                                                               08/17/2026 08:36:16 PAGE 28  
 
                        INC     DPTR
                        MOVX    A,@DPTR
@@ -1787,7 +1787,7 @@ ASSEMBLY LISTING OF GENERATED OBJECT CODE
                  R     xJMP    ?C0022
                                            ; SOURCE LINE # 267
              ?C0032:
-C51 COMPILER V9.51   SI5351A                                                               08/14/2026 12:27:14 PAGE 29  
+C51 COMPILER V9.51   SI5351A                                                               08/17/2026 08:36:16 PAGE 29  
 
                                            ; SOURCE LINE # 269
                  E     MOV     DPTR,#ee_ppm_int
@@ -1851,7 +1851,7 @@ ASSEMBLY LISTING OF GENERATED OBJECT CODE
                        MOV     R6,A
                        INC     DPTR
                        MOVX    A,@DPTR
-C51 COMPILER V9.51   SI5351A                                                               08/14/2026 12:27:14 PAGE 30  
+C51 COMPILER V9.51   SI5351A                                                               08/17/2026 08:36:16 PAGE 30  
 
                        MOV     R7,A
                        CLR     A
@@ -1915,7 +1915,7 @@ ASSEMBLY LISTING OF GENERATED OBJECT CODE
                  E     CALL    ?C?LSTXDATA
                                            ; SOURCE LINE # 280
                        CLR     A
-C51 COMPILER V9.51   SI5351A                                                               08/14/2026 12:27:14 PAGE 31  
+C51 COMPILER V9.51   SI5351A                                                               08/17/2026 08:36:16 PAGE 31  
 
                        MOV     R7,A
                        MOV     R6,A
@@ -1979,7 +1979,7 @@ ASSEMBLY LISTING OF GENERATED OBJECT CODE
                        MOVX    A,@DPTR
                        MOV     R6,A
                        INC     DPTR
-C51 COMPILER V9.51   SI5351A                                                               08/14/2026 12:27:14 PAGE 32  
+C51 COMPILER V9.51   SI5351A                                                               08/17/2026 08:36:16 PAGE 32  
 
                        MOVX    A,@DPTR
                        MOV     R7,A
@@ -2043,7 +2043,7 @@ ASSEMBLY LISTING OF GENERATED OBJECT CODE
                        MOV     R6,A
                        INC     DPTR
                        MOVX    A,@DPTR
-C51 COMPILER V9.51   SI5351A                                                               08/14/2026 12:27:14 PAGE 33  
+C51 COMPILER V9.51   SI5351A                                                               08/17/2026 08:36:16 PAGE 33  
 
                        MOV     R7,A
                  E     CALL    ?C?SLDIV
@@ -2107,7 +2107,7 @@ ASSEMBLY LISTING OF GENERATED OBJECT CODE
                        MOV     R7,A
                        CLR     A
                        MOV     R3,#04H
-C51 COMPILER V9.51   SI5351A                                                               08/14/2026 12:27:14 PAGE 34  
+C51 COMPILER V9.51   SI5351A                                                               08/17/2026 08:36:16 PAGE 34  
 
                        MOV     R2,A
                        MOV     R1,A
@@ -2171,7 +2171,7 @@ ASSEMBLY LISTING OF GENERATED OBJECT CODE
                        MOV     R0,A
                        INC     DPTR
                        MOVX    A,@DPTR
-C51 COMPILER V9.51   SI5351A                                                               08/14/2026 12:27:14 PAGE 35  
+C51 COMPILER V9.51   SI5351A                                                               08/17/2026 08:36:16 PAGE 35  
 
                        MOV     R1,A
                        INC     DPTR
@@ -2235,7 +2235,7 @@ ASSEMBLY LISTING OF GENERATED OBJECT CODE
                        MOV     R3,A
                        SETB    C
                  E     CALL    ?C?ULCMP
-C51 COMPILER V9.51   SI5351A                                                               08/14/2026 12:27:14 PAGE 36  
+C51 COMPILER V9.51   SI5351A                                                               08/17/2026 08:36:16 PAGE 36  
 
                  R     xJGE    ?C0040
                                            ; SOURCE LINE # 301
@@ -2299,7 +2299,7 @@ ASSEMBLY LISTING OF GENERATED OBJECT CODE
                        INC     DPTR
                        MOVX    A,@DPTR
                        MOV     R3,A
-C51 COMPILER V9.51   SI5351A                                                               08/14/2026 12:27:14 PAGE 37  
+C51 COMPILER V9.51   SI5351A                                                               08/17/2026 08:36:16 PAGE 37  
 
                  R     MOV     DPTR,#pllFreq
                        MOVX    A,@DPTR
@@ -2363,7 +2363,7 @@ ASSEMBLY LISTING OF GENERATED OBJECT CODE
                                            ; SOURCE LINE # 315
                  R     xJMP    ?C0045
              ?C0044:
-C51 COMPILER V9.51   SI5351A                                                               08/14/2026 12:27:14 PAGE 38  
+C51 COMPILER V9.51   SI5351A                                                               08/17/2026 08:36:16 PAGE 38  
 
                                            ; SOURCE LINE # 317
                  R     MOV     DPTR,#E_l_freq
@@ -2427,7 +2427,7 @@ ASSEMBLY LISTING OF GENERATED OBJECT CODE
                        MOV     R0,A
                        INC     DPTR
                        MOVX    A,@DPTR
-C51 COMPILER V9.51   SI5351A                                                               08/14/2026 12:27:14 PAGE 39  
+C51 COMPILER V9.51   SI5351A                                                               08/17/2026 08:36:16 PAGE 39  
 
                        MOV     R1,A
                        INC     DPTR
@@ -2491,7 +2491,7 @@ ASSEMBLY LISTING OF GENERATED OBJECT CODE
                        MOV     R6,A
                        MOV     A,R5
                        ADDC    A,#0FFH
-C51 COMPILER V9.51   SI5351A                                                               08/14/2026 12:27:14 PAGE 40  
+C51 COMPILER V9.51   SI5351A                                                               08/17/2026 08:36:16 PAGE 40  
 
                        MOV     R5,A
                        MOV     A,R4
@@ -2555,7 +2555,7 @@ ASSEMBLY LISTING OF GENERATED OBJECT CODE
                        MOVX    A,@DPTR
                        MOV     R2,A
                        INC     DPTR
-C51 COMPILER V9.51   SI5351A                                                               08/14/2026 12:27:14 PAGE 41  
+C51 COMPILER V9.51   SI5351A                                                               08/17/2026 08:36:16 PAGE 41  
 
                        MOVX    A,@DPTR
                        MOV     R3,A
@@ -2619,7 +2619,7 @@ ASSEMBLY LISTING OF GENERATED OBJECT CODE
                  E     CALL    ?C?ULDIV
                  R     MOV     DPTR,#divider
                  E     CALL    ?C?LSTXDATA
-C51 COMPILER V9.51   SI5351A                                                               08/14/2026 12:27:14 PAGE 42  
+C51 COMPILER V9.51   SI5351A                                                               08/17/2026 08:36:16 PAGE 42  
 
                                            ; SOURCE LINE # 334
                  R     MOV     DPTR,#divider
@@ -2683,7 +2683,7 @@ ASSEMBLY LISTING OF GENERATED OBJECT CODE
                        INC     DPTR
                        MOVX    A,@DPTR
                        MOV     R1,A
-C51 COMPILER V9.51   SI5351A                                                               08/14/2026 12:27:14 PAGE 43  
+C51 COMPILER V9.51   SI5351A                                                               08/17/2026 08:36:16 PAGE 43  
 
                        INC     DPTR
                        MOVX    A,@DPTR
@@ -2747,7 +2747,7 @@ ASSEMBLY LISTING OF GENERATED OBJECT CODE
                  R     MOV     DPTR,#xtalFreq
                        MOVX    A,@DPTR
                        MOV     R0,A
-C51 COMPILER V9.51   SI5351A                                                               08/14/2026 12:27:14 PAGE 44  
+C51 COMPILER V9.51   SI5351A                                                               08/17/2026 08:36:16 PAGE 44  
 
                        INC     DPTR
                        MOVX    A,@DPTR
@@ -2811,7 +2811,7 @@ ASSEMBLY LISTING OF GENERATED OBJECT CODE
                        MOVX    A,@DPTR
                        MOV     R4,A
                        INC     DPTR
-C51 COMPILER V9.51   SI5351A                                                               08/14/2026 12:27:14 PAGE 45  
+C51 COMPILER V9.51   SI5351A                                                               08/17/2026 08:36:16 PAGE 45  
 
                        MOVX    A,@DPTR
                        MOV     R5,A
@@ -2875,7 +2875,7 @@ ASSEMBLY LISTING OF GENERATED OBJECT CODE
                        MOVX    A,@DPTR
                        MOV     R7,A
                        CLR     A
-C51 COMPILER V9.51   SI5351A                                                               08/14/2026 12:27:14 PAGE 46  
+C51 COMPILER V9.51   SI5351A                                                               08/17/2026 08:36:16 PAGE 46  
 
                  E     CALL    ?C?FCASTL
                        MOV     R0,AR4
@@ -2939,7 +2939,7 @@ ASSEMBLY LISTING OF GENERATED OBJECT CODE
                                            ; SOURCE LINE # 361
                  R     MOV     DPTR,#clk0_blanked
                        MOV     A,#01H
-C51 COMPILER V9.51   SI5351A                                                               08/14/2026 12:27:14 PAGE 47  
+C51 COMPILER V9.51   SI5351A                                                               08/17/2026 08:36:16 PAGE 47  
 
                        MOVX    @DPTR,A
                                            ; SOURCE LINE # 362
@@ -3003,7 +3003,7 @@ ASSEMBLY LISTING OF GENERATED OBJECT CODE
                        MOVX    @DPTR,A
                                            ; SOURCE LINE # 373
                  R     xJMP    ?C0022
-C51 COMPILER V9.51   SI5351A                                                               08/14/2026 12:27:14 PAGE 48  
+C51 COMPILER V9.51   SI5351A                                                               08/17/2026 08:36:16 PAGE 48  
 
                                            ; SOURCE LINE # 374
              ?C0058:
@@ -3067,7 +3067,7 @@ ASSEMBLY LISTING OF GENERATED OBJECT CODE
                                            ; SOURCE LINE # 395
              ?C0062:
                                            ; SOURCE LINE # 396
-C51 COMPILER V9.51   SI5351A                                                               08/14/2026 12:27:14 PAGE 49  
+C51 COMPILER V9.51   SI5351A                                                               08/17/2026 08:36:16 PAGE 49  
 
                  R     MOV     DPTR,#divider
                        MOVX    A,@DPTR
@@ -3131,7 +3131,7 @@ MODULE INFORMATION:   STATIC OVERLAYABLE
    CODE SIZE        =   3517    ----
    CONSTANT SIZE    =   ----    ----
    XDATA SIZE       =     69      41
-C51 COMPILER V9.51   SI5351A                                                               08/14/2026 12:27:14 PAGE 50  
+C51 COMPILER V9.51   SI5351A                                                               08/17/2026 08:36:16 PAGE 50  
 
    PDATA SIZE       =   ----    ----
    DATA SIZE        =   ----    ----

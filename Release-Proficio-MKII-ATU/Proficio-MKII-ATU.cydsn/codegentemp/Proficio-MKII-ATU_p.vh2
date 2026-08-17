@@ -1,6 +1,6 @@
 -- Project:   Proficio-MKII-ATU
--- Generated: 08/16/2026 11:36:20
--- PSoC Creator  4.2
+-- Generated: 08/17/2026 08:28:08
+-- PSoC Creator  4.4
 
 ENTITY \Proficio-MKII-ATU\ IS
     PORT(

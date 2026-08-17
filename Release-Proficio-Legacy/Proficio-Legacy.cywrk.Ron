@@ -55,7 +55,50 @@
 <v>Proficio-Legacy\Proficio-Legacy\Generated_Source</v>
 <v>Proficio-Legacy\Proficio-Legacy\Generated_Source\PSoC3</v>
 </ExpandedNodeIds>
-<VisibleNodeIds />
+<VisibleNodeIds>
+<v>Proficio-Legacy</v>
+<v>Proficio-Legacy\Proficio-Legacy</v>
+<v>Proficio-Legacy\Proficio-Legacy\TopDesign</v>
+<v>Proficio-Legacy\Proficio-Legacy\Proficio-Legacy.cydwr</v>
+<v>Proficio-Legacy\Proficio-Legacy\Proficio-Legacy.cydwr\Pins</v>
+<v>Proficio-Legacy\Proficio-Legacy\Proficio-Legacy.cydwr\Analog</v>
+<v>Proficio-Legacy\Proficio-Legacy\Proficio-Legacy.cydwr\Clocks</v>
+<v>Proficio-Legacy\Proficio-Legacy\Proficio-Legacy.cydwr\Interrupts</v>
+<v>Proficio-Legacy\Proficio-Legacy\Proficio-Legacy.cydwr\DMA</v>
+<v>Proficio-Legacy\Proficio-Legacy\Proficio-Legacy.cydwr\System</v>
+<v>Proficio-Legacy\Proficio-Legacy\Proficio-Legacy.cydwr\Directives</v>
+<v>Proficio-Legacy\Proficio-Legacy\Proficio-Legacy.cydwr\Flash Security</v>
+<v>Proficio-Legacy\Proficio-Legacy\Proficio-Legacy.cydwr\EEPROM</v>
+<v>Proficio-Legacy\Proficio-Legacy\Header Files</v>
+<v>Proficio-Legacy\Proficio-Legacy\Header Files\basic-plus.h</v>
+<v>Proficio-Legacy\Proficio-Legacy\Header Files\device.h</v>
+<v>Proficio-Legacy\Proficio-Legacy\Header Files\iambino.h</v>
+<v>Proficio-Legacy\Proficio-Legacy\Header Files\iqhump.h</v>
+<v>Proficio-Legacy\Proficio-Legacy\Header Files\si5351.h</v>
+<v>Proficio-Legacy\Proficio-Legacy\Header Files\si5351a.h</v>
+<v>Proficio-Legacy\Proficio-Legacy\Header Files\usbvend.h</v>
+<v>Proficio-Legacy\Proficio-Legacy\Source Files</v>
+<v>Proficio-Legacy\Proficio-Legacy\Source Files\audio.c</v>
+<v>Proficio-Legacy\Proficio-Legacy\Source Files\band.c</v>
+<v>Proficio-Legacy\Proficio-Legacy\Source Files\convert.c</v>
+<v>Proficio-Legacy\Proficio-Legacy\Source Files\cw.c</v>
+<v>Proficio-Legacy\Proficio-Legacy\Source Files\main.c</v>
+<v>Proficio-Legacy\Proficio-Legacy\Source Files\morse.c</v>
+<v>Proficio-Legacy\Proficio-Legacy\Source Files\pcm3060.c</v>
+<v>Proficio-Legacy\Proficio-Legacy\Source Files\settings01.c</v>
+<v>Proficio-Legacy\Proficio-Legacy\Source Files\si5351.c</v>
+<v>Proficio-Legacy\Proficio-Legacy\Source Files\si5351a.c</v>
+<v>Proficio-Legacy\Proficio-Legacy\Source Files\sync.c</v>
+<v>Proficio-Legacy\Proficio-Legacy\Source Files\t1.c</v>
+<v>Proficio-Legacy\Proficio-Legacy\Source Files\temperature.c</v>
+<v>Proficio-Legacy\Proficio-Legacy\Source Files\tx.c</v>
+<v>Proficio-Legacy\Proficio-Legacy\Source Files\usbvend01.c</v>
+<v>Proficio-Legacy\Proficio-Legacy\Generated_Source</v>
+<v>Proficio-Legacy\Proficio-Legacy\Generated_Source\PSoC3</v>
+<v>Proficio-Legacy\Proficio-Legacy\Generated_Source\PSoC3\Band_Control</v>
+<v>Proficio-Legacy\Proficio-Legacy\Generated_Source\PSoC3\Bootloadable</v>
+<v>Proficio-Legacy\Proficio-Legacy\Generated_Source\PSoC3\BS0</v>
+</VisibleNodeIds>
 </CyGuid_2a325b3b-c96a-4e9f-b7a0-2c44ecb5f237>
 <CyGuid_2a325b3b-c96a-4e9f-b7a0-2c44ecb5f237 type_name="CyDesigner.Common.Base.Controls.CyTreeViewState" version="1" SelectedNodeId="">
 <ExpandedNodeIds>
@@ -76,7 +119,24 @@
 <v>Proficio-Legacy\Proficio-Legacy\TopDesign</v>
 <v>Proficio-Legacy\Proficio-Legacy\TopDesign\TopDesign.cysch</v>
 </ExpandedNodeIds>
-<VisibleNodeIds />
+<VisibleNodeIds>
+<v>Proficio-Legacy</v>
+<v>Proficio-Legacy\Proficio-Legacy</v>
+<v>Proficio-Legacy\Proficio-Legacy\FracN</v>
+<v>Proficio-Legacy\Proficio-Legacy\FracN\API</v>
+<v>Proficio-Legacy\Proficio-Legacy\FracN\API\api.c</v>
+<v>Proficio-Legacy\Proficio-Legacy\FracN\API\api.h</v>
+<v>Proficio-Legacy\Proficio-Legacy\FracN\FracN.cysym</v>
+<v>Proficio-Legacy\Proficio-Legacy\FracN\FracN.v</v>
+<v>Proficio-Legacy\Proficio-Legacy\SyncSOF</v>
+<v>Proficio-Legacy\Proficio-Legacy\SyncSOF\API</v>
+<v>Proficio-Legacy\Proficio-Legacy\SyncSOF\API\api.c</v>
+<v>Proficio-Legacy\Proficio-Legacy\SyncSOF\API\api.h</v>
+<v>Proficio-Legacy\Proficio-Legacy\SyncSOF\SyncSOF.cysym</v>
+<v>Proficio-Legacy\Proficio-Legacy\SyncSOF\SyncSOF.v</v>
+<v>Proficio-Legacy\Proficio-Legacy\TopDesign</v>
+<v>Proficio-Legacy\Proficio-Legacy\TopDesign\TopDesign.cysch</v>
+</VisibleNodeIds>
 </CyGuid_2a325b3b-c96a-4e9f-b7a0-2c44ecb5f237>
 <CyGuid_2a325b3b-c96a-4e9f-b7a0-2c44ecb5f237 type_name="CyDesigner.Common.Base.Controls.CyTreeViewState" version="1" SelectedNodeId="">
 <ExpandedNodeIds>
@@ -176,7 +236,50 @@
 <v>Proficio-Legacy\Proficio-Legacy\Proficio-Legacy.rpt</v>
 <v>Proficio-Legacy\Proficio-Legacy\Proficio-Legacy_timing.html</v>
 </ExpandedNodeIds>
-<VisibleNodeIds />
+<VisibleNodeIds>
+<v>Proficio-Legacy</v>
+<v>Proficio-Legacy\Proficio-Legacy</v>
+<v>Proficio-Legacy\Proficio-Legacy\DP8051</v>
+<v>Proficio-Legacy\Proficio-Legacy\DP8051\DP8051_Keil_951</v>
+<v>Proficio-Legacy\Proficio-Legacy\DP8051\DP8051_Keil_951\Debug</v>
+<v>Proficio-Legacy\Proficio-Legacy\DP8051\DP8051_Keil_951\Debug\Listing Files</v>
+<v>Proficio-Legacy\Proficio-Legacy\DP8051\DP8051_Keil_951\Debug\Listing Files\audio.lst</v>
+<v>Proficio-Legacy\Proficio-Legacy\DP8051\DP8051_Keil_951\Debug\Listing Files\band.lst</v>
+<v>Proficio-Legacy\Proficio-Legacy\DP8051\DP8051_Keil_951\Debug\Listing Files\Band_Control.lst</v>
+<v>Proficio-Legacy\Proficio-Legacy\DP8051\DP8051_Keil_951\Debug\Listing Files\Band_Control_PM.lst</v>
+<v>Proficio-Legacy\Proficio-Legacy\DP8051\DP8051_Keil_951\Debug\Listing Files\Bootloadable.lst</v>
+<v>Proficio-Legacy\Proficio-Legacy\DP8051\DP8051_Keil_951\Debug\Listing Files\BS0.lst</v>
+<v>Proficio-Legacy\Proficio-Legacy\DP8051\DP8051_Keil_951\Debug\Listing Files\BS1.lst</v>
+<v>Proficio-Legacy\Proficio-Legacy\DP8051\DP8051_Keil_951\Debug\Listing Files\BS2.lst</v>
+<v>Proficio-Legacy\Proficio-Legacy\DP8051\DP8051_Keil_951\Debug\Listing Files\Control.lst</v>
+<v>Proficio-Legacy\Proficio-Legacy\DP8051\DP8051_Keil_951\Debug\Listing Files\Control_PM.lst</v>
+<v>Proficio-Legacy\Proficio-Legacy\DP8051\DP8051_Keil_951\Debug\Listing Files\convert.lst</v>
+<v>Proficio-Legacy\Proficio-Legacy\DP8051\DP8051_Keil_951\Debug\Listing Files\cw.lst</v>
+<v>Proficio-Legacy\Proficio-Legacy\DP8051\DP8051_Keil_951\Debug\Listing Files\CW_Clock.lst</v>
+<v>Proficio-Legacy\Proficio-Legacy\DP8051\DP8051_Keil_951\Debug\Listing Files\CW_Hold_Control.lst</v>
+<v>Proficio-Legacy\Proficio-Legacy\DP8051\DP8051_Keil_951\Debug\Listing Files\CW_Hold_Control_PM.lst</v>
+<v>Proficio-Legacy\Proficio-Legacy\DP8051\DP8051_Keil_951\Debug\Listing Files\CW_Hold_Timer.lst</v>
+<v>Proficio-Legacy\Proficio-Legacy\DP8051\DP8051_Keil_951\Debug\Listing Files\CW_Hold_Timer_PM.lst</v>
+<v>Proficio-Legacy\Proficio-Legacy\DP8051\DP8051_Keil_951\Debug\Listing Files\CW_isr.lst</v>
+<v>Proficio-Legacy\Proficio-Legacy\DP8051\DP8051_Keil_951\Debug\Listing Files\cy_em_eeprom.lst</v>
+<v>Proficio-Legacy\Proficio-Legacy\DP8051\DP8051_Keil_951\Debug\Listing Files\CyBootAsmKeil.lst</v>
+<v>Proficio-Legacy\Proficio-Legacy\DP8051\DP8051_Keil_951\Debug\Listing Files\CyDmac.lst</v>
+<v>Proficio-Legacy\Proficio-Legacy\DP8051\DP8051_Keil_951\Debug\Listing Files\cyfitter_cfg.lst</v>
+<v>Proficio-Legacy\Proficio-Legacy\DP8051\DP8051_Keil_951\Debug\Listing Files\CyFlash.lst</v>
+<v>Proficio-Legacy\Proficio-Legacy\DP8051\DP8051_Keil_951\Debug\Listing Files\CyLib.lst</v>
+<v>Proficio-Legacy\Proficio-Legacy\DP8051\DP8051_Keil_951\Debug\Listing Files\cymem.lst</v>
+<v>Proficio-Legacy\Proficio-Legacy\DP8051\DP8051_Keil_951\Debug\Listing Files\cyPm.lst</v>
+<v>Proficio-Legacy\Proficio-Legacy\DP8051\DP8051_Keil_951\Debug\Listing Files\CySpc.lst</v>
+<v>Proficio-Legacy\Proficio-Legacy\DP8051\DP8051_Keil_951\Debug\Listing Files\cyutils.lst</v>
+<v>Proficio-Legacy\Proficio-Legacy\DP8051\DP8051_Keil_951\Debug\Listing Files\DieTemp_1.lst</v>
+<v>Proficio-Legacy\Proficio-Legacy\DP8051\DP8051_Keil_951\Debug\Listing Files\EEPROM.lst</v>
+<v>Proficio-Legacy\Proficio-Legacy\DP8051\DP8051_Keil_951\Debug\Listing Files\FRAC_CLK.lst</v>
+<v>Proficio-Legacy\Proficio-Legacy\DP8051\DP8051_Keil_951\Debug\Listing Files\FracN_api.lst</v>
+<v>Proficio-Legacy\Proficio-Legacy\DP8051\DP8051_Keil_951\Debug\Listing Files\I2C_DISPLAY.lst</v>
+<v>Proficio-Legacy\Proficio-Legacy\DP8051\DP8051_Keil_951\Debug\Listing Files\I2C_DISPLAY_BOOT.lst</v>
+<v>Proficio-Legacy\Proficio-Legacy\DP8051\DP8051_Keil_951\Debug\Listing Files\I2C_DISPLAY_INT.lst</v>
+<v>Proficio-Legacy\Proficio-Legacy\DP8051\DP8051_Keil_951\Debug\Listing Files\I2C_DISPLAY_MASTER.lst</v>
+</VisibleNodeIds>
 </CyGuid_2a325b3b-c96a-4e9f-b7a0-2c44ecb5f237>
 </TreeStates>
 <TreeKeysV2>
@@ -214,7 +317,36 @@
 <v>Proficio-Legacy\Proficio-Legacy\Timer_v2_80.pdf</v>
 <v>Proficio-Legacy\Proficio-Legacy\USBFS_v3_20.pdf</v>
 </ExpandedNodeIds>
-<VisibleNodeIds />
+<VisibleNodeIds>
+<v>Proficio-Legacy</v>
+<v>Proficio-Legacy\Proficio-Legacy</v>
+<v>Proficio-Legacy\Proficio-Legacy\PSoC 3 Architecture TRM</v>
+<v>Proficio-Legacy\Proficio-Legacy\CY8C32 Family Datasheet</v>
+<v>Proficio-Legacy\Proficio-Legacy\System Reference Guides</v>
+<v>Proficio-Legacy\Proficio-Legacy\System Reference Guides\cy_boot_v5_82</v>
+<v>Proficio-Legacy\Proficio-Legacy\and_v1_0</v>
+<v>Proficio-Legacy\Proficio-Legacy\and_v1_0\and_v1_0.pdf</v>
+<v>Proficio-Legacy\Proficio-Legacy\Bootloadable_v1_60.pdf</v>
+<v>Proficio-Legacy\Proficio-Legacy\cy_clock_v2_20</v>
+<v>Proficio-Legacy\Proficio-Legacy\cy_clock_v2_20\cy_clock_v2_20.pdf</v>
+<v>Proficio-Legacy\Proficio-Legacy\cy_dma_v1_70</v>
+<v>Proficio-Legacy\Proficio-Legacy\cy_dma_v1_70\cy_dma_v1_70.pdf</v>
+<v>Proficio-Legacy\Proficio-Legacy\cy_isr_v1_71.pdf</v>
+<v>Proficio-Legacy\Proficio-Legacy\cy_pins_v2_20</v>
+<v>Proficio-Legacy\Proficio-Legacy\cy_pins_v2_20\cy_pins_v2_20.pdf</v>
+<v>Proficio-Legacy\Proficio-Legacy\cy_sync_v1_0.pdf</v>
+<v>Proficio-Legacy\Proficio-Legacy\CyControlReg_v1_80</v>
+<v>Proficio-Legacy\Proficio-Legacy\CyControlReg_v1_80\CyControlReg_v1_80.pdf</v>
+<v>Proficio-Legacy\Proficio-Legacy\CyStatusReg_v1_90.pdf</v>
+<v>Proficio-Legacy\Proficio-Legacy\Debouncer_v1_0</v>
+<v>Proficio-Legacy\Proficio-Legacy\Debouncer_v1_0\Debouncer_v1_0.pdf</v>
+<v>Proficio-Legacy\Proficio-Legacy\DieTemp_v2_10.pdf</v>
+<v>Proficio-Legacy\Proficio-Legacy\EEPROM_v3_0.pdf</v>
+<v>Proficio-Legacy\Proficio-Legacy\I2C_v3_50.pdf</v>
+<v>Proficio-Legacy\Proficio-Legacy\I2S_v2_70.pdf</v>
+<v>Proficio-Legacy\Proficio-Legacy\Timer_v2_80.pdf</v>
+<v>Proficio-Legacy\Proficio-Legacy\USBFS_v3_20.pdf</v>
+</VisibleNodeIds>
 </CyGuid_2a325b3b-c96a-4e9f-b7a0-2c44ecb5f237>
 </TreeStatesV2>
 </CyGuid_1b906a0f-a7b6-4e4d-a428-82f98b53cb35>
@@ -243,7 +375,7 @@
   Copyright (c) 2001-2016 Actipro Software LLC.  All rights reserved.
   http://www.actiprosoftware.com
 
---><DocumentLayout Version="1.0"><LayoutData><TabbedMdiRootContainer Orientation="Horizontal"><TabbedMdiContainer Size="1258, 719" SelectedTabbedMdiWindow="419f87ab-d14c-49da-aabc-0db7d0d0d5a7"><ToolWindow Key="Start Page:bd4649ab-da6b-4d04-a663-c722b8bf99db:Start Page" Guid="770f7706-c4f0-4acf-af4e-90b76f37ce13" /><DocumentWindow Key="C:\Users\Ron\.grok\worktrees\Release-Proficio-Legacy\Proficio-Legacy.cydsn\TopDesign\TopDesign.cysch" Guid="9119e5e7-e7e3-4f06-8b70-01f501236b20" /><DocumentWindow Key="C:\Users\Ron\.grok\worktrees\Release-Proficio-Legacy\Proficio-Legacy.cydsn\basic-plus.h" Guid="9f229274-60c9-42e0-871f-3349dfafef3e" /><DocumentWindow Key="C:\Users\Ron\.grok\worktrees\Release-Proficio-Legacy\Proficio-Legacy.cydsn\cw.c" Guid="d8de912b-22a1-4243-a2bd-49dac728d6e5" /><DocumentWindow Key="C:\Users\Ron\.grok\worktrees\Release-Proficio-Legacy\Proficio-Legacy.cydsn\usbvend01.c" Guid="4ac236bb-006d-4eb1-96a3-52b5548306ea" /><DocumentWindow Key="C:\Users\Ron\.grok\worktrees\Release-Proficio-Legacy\Proficio-Legacy.cydsn\main.c" Guid="f47d602c-7ee2-4899-b924-a0c7720b0e52" /><DocumentWindow Key="C:\Users\Ron\.grok\worktrees\Release-Proficio-Legacy\Proficio-Legacy.cydsn\tx.c" Guid="a432b185-c908-4fc3-97b8-2af308137e49" /><DocumentWindow Key="C:\Users\Ron\.grok\worktrees\Release-Proficio-Legacy\Proficio-Legacy.cydsn\si5351a.c" Guid="419f87ab-d14c-49da-aabc-0db7d0d0d5a7" /><DocumentWindow Key="C:\Users\Ron\.grok\worktrees\Release-Proficio-Legacy\Proficio-Legacy.cydsn\t1.c" Guid="3a3b3f14-1b8f-4d9a-ba23-7097a863903a" /></TabbedMdiContainer></TabbedMdiRootContainer><FloatingContainers /></LayoutData></DocumentLayout>]]></OpenDocsLayout>
+--><DocumentLayout Version="1.0"><LayoutData><TabbedMdiRootContainer Orientation="Horizontal"><TabbedMdiContainer Size="1051, 607" SelectedTabbedMdiWindow="9119e5e7-e7e3-4f06-8b70-01f501236b20"><ToolWindow Key="Start Page:bd4649ab-da6b-4d04-a663-c722b8bf99db:Start Page" Guid="770f7706-c4f0-4acf-af4e-90b76f37ce13" /><DocumentWindow Key="C:\Users\Ron\.grok\worktrees\Release-Proficio-Legacy\Proficio-Legacy.cydsn\TopDesign\TopDesign.cysch" Guid="9119e5e7-e7e3-4f06-8b70-01f501236b20" /><DocumentWindow Key="C:\Users\Ron\.grok\worktrees\Release-Proficio-Legacy\Proficio-Legacy.cydsn\basic-plus.h" Guid="9f229274-60c9-42e0-871f-3349dfafef3e" /><DocumentWindow Key="C:\Users\Ron\.grok\worktrees\Release-Proficio-Legacy\Proficio-Legacy.cydsn\cw.c" Guid="d8de912b-22a1-4243-a2bd-49dac728d6e5" /><DocumentWindow Key="C:\Users\Ron\.grok\worktrees\Release-Proficio-Legacy\Proficio-Legacy.cydsn\usbvend01.c" Guid="4ac236bb-006d-4eb1-96a3-52b5548306ea" /><DocumentWindow Key="C:\Users\Ron\.grok\worktrees\Release-Proficio-Legacy\Proficio-Legacy.cydsn\main.c" Guid="f47d602c-7ee2-4899-b924-a0c7720b0e52" /><DocumentWindow Key="C:\Users\Ron\.grok\worktrees\Release-Proficio-Legacy\Proficio-Legacy.cydsn\tx.c" Guid="a432b185-c908-4fc3-97b8-2af308137e49" /><DocumentWindow Key="C:\Users\Ron\.grok\worktrees\Release-Proficio-Legacy\Proficio-Legacy.cydsn\si5351a.c" Guid="419f87ab-d14c-49da-aabc-0db7d0d0d5a7" /><DocumentWindow Key="C:\Users\Ron\.grok\worktrees\Release-Proficio-Legacy\Proficio-Legacy.cydsn\t1.c" Guid="3a3b3f14-1b8f-4d9a-ba23-7097a863903a" /></TabbedMdiContainer></TabbedMdiRootContainer><FloatingContainers /></LayoutData></DocumentLayout>]]></OpenDocsLayout>
 <config v="" />
 <AutoUpdate v="true" />
 </CyGuid_843a90a4-0c4b-4e44-991d-05e7fb117a21>

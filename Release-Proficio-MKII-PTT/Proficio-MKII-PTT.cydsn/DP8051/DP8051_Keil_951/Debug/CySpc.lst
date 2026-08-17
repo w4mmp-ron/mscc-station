@@ -1,9 +1,9 @@
-C51 COMPILER V9.51   CYSPC                                                                 08/05/2026 14:07:25 PAGE 1   
+C51 COMPILER V9.51   CYSPC                                                                 08/17/2026 08:36:25 PAGE 1   
 
 
 C51 COMPILER V9.51, COMPILATION OF MODULE CYSPC
 OBJECT MODULE PLACED IN .\DP8051\DP8051_Keil_951\Debug\CySpc.obj
-COMPILER INVOKED BY: C:\Program Files (x86)\Cypress\PSoC Creator\4.2\PSoC Creator\import\keil\pk51\9.51\C51\BIN\c51.exe 
+COMPILER INVOKED BY: C:\Program Files (x86)\Cypress\PSoC Creator\4.4\PSoC Creator\import\keil\pk51\9.51\C51\BIN\c51.exe 
                     -Generated_Source\PSoC3\CySpc.c NOIV LARGE MODDP2 OMF2 VB(1) NOIP INCDIR(.,Generated_Source\PSoC3) FF(3) DB WL(2) PR(.\DP
                     -8051\DP8051_Keil_951\Debug/CySpc.lst) CD OT(5,SPEED) OA OJ(.\DP8051\DP8051_Keil_951\Debug\CySpc.obj)
 
@@ -62,7 +62,7 @@ line level    source
   51          #if(CY_PSOC5)
               
                   /***************************************************************************
-C51 COMPILER V9.51   CYSPC                                                                 08/05/2026 14:07:25 PAGE 2   
+C51 COMPILER V9.51   CYSPC                                                                 08/17/2026 08:36:25 PAGE 2   
 
                   * The wait-state pipeline must be enabled prior to accessing the SPC
                   * register interface regardless of CPU frequency. The CySpcLock() saves
@@ -126,7 +126,7 @@ line level    source
  113          *
  114          * \return
  115          *  uint8:
-C51 COMPILER V9.51   CYSPC                                                                 08/05/2026 14:07:25 PAGE 3   
+C51 COMPILER V9.51   CYSPC                                                                 08/17/2026 08:36:25 PAGE 3   
 
  116          *   The number of bytes read from the SPC.
  117          *
@@ -190,7 +190,7 @@ line level    source
  175   3                  CY_SPC_CPU_DATA_REG = CY_SPC_KEY_ONE;
  176   3                  CY_SPC_CPU_DATA_REG = CY_SPC_KEY_TWO(CY_SPC_CMD_LD_MULTI_BYTE);
  177   3                  CY_SPC_CPU_DATA_REG = CY_SPC_CMD_LD_MULTI_BYTE;
-C51 COMPILER V9.51   CYSPC                                                                 08/05/2026 14:07:25 PAGE 4   
+C51 COMPILER V9.51   CYSPC                                                                 08/17/2026 08:36:25 PAGE 4   
 
  178   3      
  179   3                  if(CY_SPC_BUSY)
@@ -254,7 +254,7 @@ line level    source
  237          *******************************************************************************/
  238          cystatus CySpcLoadRow(uint8 array, const uint8 buffer[], uint16 size)
  239          {
-C51 COMPILER V9.51   CYSPC                                                                 08/05/2026 14:07:25 PAGE 5   
+C51 COMPILER V9.51   CYSPC                                                                 08/17/2026 08:36:25 PAGE 5   
 
  240   1          cystatus status = CYRET_STARTED;
  241   1          uint16 i;
@@ -318,7 +318,7 @@ line level    source
  299          *  CYRET_STARTED
  300          *  CYRET_CANCELED
  301          *  CYRET_LOCKED
-C51 COMPILER V9.51   CYSPC                                                                 08/05/2026 14:07:25 PAGE 6   
+C51 COMPILER V9.51   CYSPC                                                                 08/17/2026 08:36:25 PAGE 6   
 
  302          *
  303          *******************************************************************************/
@@ -382,7 +382,7 @@ line level    source
  361   3                  /*******************************************************************
  362   3                  * If "Enable Error Correcting Code (ECC)" DWR option is disabled,
  363   3                  * ECC section can be used for storing device configuration data
-C51 COMPILER V9.51   CYSPC                                                                 08/05/2026 14:07:25 PAGE 7   
+C51 COMPILER V9.51   CYSPC                                                                 08/17/2026 08:36:25 PAGE 7   
 
  364   3                  * ("Store Configuration Data in ECC" DWR option is enabled) or for
  365   3                  * storing user data in the ECC section ("Store Configuration Data in
@@ -446,7 +446,7 @@ line level    source
  423          *  \param uint16 address:
  424          *   flash/eeprom addrress
  425          *
-C51 COMPILER V9.51   CYSPC                                                                 08/05/2026 14:07:25 PAGE 8   
+C51 COMPILER V9.51   CYSPC                                                                 08/17/2026 08:36:25 PAGE 8   
 
  426          *  \param uint8 tempPolarity:
  427          *   temperature polarity.
@@ -510,7 +510,7 @@ line level    source
  485          *
  486          * \return
  487          *  CYRET_STARTED
-C51 COMPILER V9.51   CYSPC                                                                 08/05/2026 14:07:25 PAGE 9   
+C51 COMPILER V9.51   CYSPC                                                                 08/17/2026 08:36:25 PAGE 9   
 
  488          *  CYRET_CANCELED
  489          *  CYRET_LOCKED
@@ -574,7 +574,7 @@ line level    source
  547          *******************************************************************************/
  548          cystatus CySpcEraseRow(uint8 array, uint16 address, uint8 tempPolarity, uint8 tempMagnitude)\
  549          
-C51 COMPILER V9.51   CYSPC                                                                 08/05/2026 14:07:25 PAGE 10  
+C51 COMPILER V9.51   CYSPC                                                                 08/17/2026 08:36:25 PAGE 10  
 
  550          {
  551   1          cystatus status = CYRET_STARTED;
@@ -638,7 +638,7 @@ line level    source
  609   1          /* Make sure the SPC is ready to accept command */
  610   1          if(CY_SPC_IDLE)
  611   1          {
-C51 COMPILER V9.51   CYSPC                                                                 08/05/2026 14:07:25 PAGE 11  
+C51 COMPILER V9.51   CYSPC                                                                 08/17/2026 08:36:25 PAGE 11  
 
  612   2              CY_SPC_CPU_DATA_REG = CY_SPC_KEY_ONE;
  613   2              CY_SPC_CPU_DATA_REG = CY_SPC_KEY_TWO(CY_SPC_CMD_GET_TEMP);
@@ -702,7 +702,7 @@ line level    source
                               spcWaitPipeBypass = CY_SPC_CPU_WAITPIPE_BYPASS;
                           }
               
-C51 COMPILER V9.51   CYSPC                                                                 08/05/2026 14:07:25 PAGE 12  
+C51 COMPILER V9.51   CYSPC                                                                 08/17/2026 08:36:25 PAGE 12  
 
                       #endif  /* (CY_PSOC5) */
  675   2          }
@@ -766,7 +766,7 @@ line level    source
  733          cystatus CySpcGetAlgorithm(void)
  734          {
  735   1          cystatus status = CYRET_STARTED;
-C51 COMPILER V9.51   CYSPC                                                                 08/05/2026 14:07:25 PAGE 13  
+C51 COMPILER V9.51   CYSPC                                                                 08/17/2026 08:36:25 PAGE 13  
 
  736   1      
  737   1          /* Make sure the SPC is ready to accept command */
@@ -786,7 +786,7 @@ line level    source
  751          
  752          /* [] END OF FILE */
  753          
-C51 COMPILER V9.51   CYSPC                                                                 08/05/2026 14:07:25 PAGE 14  
+C51 COMPILER V9.51   CYSPC                                                                 08/17/2026 08:36:25 PAGE 14  
 
 ASSEMBLY LISTING OF GENERATED OBJECT CODE
 
@@ -850,7 +850,7 @@ ASSEMBLY LISTING OF GENERATED OBJECT CODE
                        MOV     A,R5
                        MOVX    @DPTR,A
                                            ; SOURCE LINE # 120
-C51 COMPILER V9.51   CYSPC                                                                 08/05/2026 14:07:25 PAGE 15  
+C51 COMPILER V9.51   CYSPC                                                                 08/17/2026 08:36:25 PAGE 15  
 
                                            ; SOURCE LINE # 123
                        CLR     A
@@ -914,7 +914,7 @@ ASSEMBLY LISTING OF GENERATED OBJECT CODE
                  R     MOV     DPTR,#i
                        MOVX    A,@DPTR
                        INC     A
-C51 COMPILER V9.51   CYSPC                                                                 08/05/2026 14:07:25 PAGE 16  
+C51 COMPILER V9.51   CYSPC                                                                 08/17/2026 08:36:25 PAGE 16  
 
                        MOVX    @DPTR,A
                  R     xJMP    ?C0003
@@ -978,7 +978,7 @@ ASSEMBLY LISTING OF GENERATED OBJECT CODE
                        MOVX    A,@DPTR
                        ANL     A,#02H
                  R     xJZ     ?C0014
-C51 COMPILER V9.51   CYSPC                                                                 08/05/2026 14:07:25 PAGE 17  
+C51 COMPILER V9.51   CYSPC                                                                 08/17/2026 08:36:25 PAGE 17  
 
                                            ; SOURCE LINE # 174
                                            ; SOURCE LINE # 175
@@ -1042,7 +1042,7 @@ ASSEMBLY LISTING OF GENERATED OBJECT CODE
                        INC     DPTR
                        MOVX    A,@DPTR
                        MOV     R2,A
-C51 COMPILER V9.51   CYSPC                                                                 08/05/2026 14:07:25 PAGE 18  
+C51 COMPILER V9.51   CYSPC                                                                 08/17/2026 08:36:25 PAGE 18  
 
                        INC     DPTR
                        MOVX    A,@DPTR
@@ -1106,7 +1106,7 @@ ASSEMBLY LISTING OF GENERATED OBJECT CODE
                        MOV     DPTR,#04722H
                        MOVX    A,@DPTR
                        ANL     A,#02H
-C51 COMPILER V9.51   CYSPC                                                                 08/05/2026 14:07:25 PAGE 19  
+C51 COMPILER V9.51   CYSPC                                                                 08/17/2026 08:36:25 PAGE 19  
 
                  R     xJZ     ?C0023
                                            ; SOURCE LINE # 245
@@ -1170,7 +1170,7 @@ ASSEMBLY LISTING OF GENERATED OBJECT CODE
              ?C0069:
                  R     xJMP    ?C0025
                                            ; SOURCE LINE # 259
-C51 COMPILER V9.51   CYSPC                                                                 08/05/2026 14:07:25 PAGE 20  
+C51 COMPILER V9.51   CYSPC                                                                 08/17/2026 08:36:25 PAGE 20  
 
              ?C0024:
                                            ; SOURCE LINE # 261
@@ -1234,7 +1234,7 @@ ASSEMBLY LISTING OF GENERATED OBJECT CODE
                        MOV     A,#0B6H
                        MOVX    @DPTR,A
                                            ; SOURCE LINE # 318
-C51 COMPILER V9.51   CYSPC                                                                 08/05/2026 14:07:25 PAGE 21  
+C51 COMPILER V9.51   CYSPC                                                                 08/17/2026 08:36:25 PAGE 21  
 
                        MOV     A,#0D5H
                        MOVX    @DPTR,A
@@ -1298,7 +1298,7 @@ ASSEMBLY LISTING OF GENERATED OBJECT CODE
                  R     MOV     DPTR,#i+01H
                        MOVX    A,@DPTR
                        INC     A
-C51 COMPILER V9.51   CYSPC                                                                 08/05/2026 14:07:25 PAGE 22  
+C51 COMPILER V9.51   CYSPC                                                                 08/17/2026 08:36:25 PAGE 22  
 
                        MOVX    @DPTR,A
                  R     JNZ     ?C0070
@@ -1362,7 +1362,7 @@ ASSEMBLY LISTING OF GENERATED OBJECT CODE
                        MOV     A,R6
                        ADDC    A,R2
                        MOV     R6,A
-C51 COMPILER V9.51   CYSPC                                                                 08/05/2026 14:07:25 PAGE 23  
+C51 COMPILER V9.51   CYSPC                                                                 08/17/2026 08:36:25 PAGE 23  
 
                        MOV     A,R5
                        ADDC    A,R1
@@ -1426,7 +1426,7 @@ ASSEMBLY LISTING OF GENERATED OBJECT CODE
                                            ; SOURCE LINE # 389
                  R     MOV     DPTR,#i+01H
                        MOVX    A,@DPTR
-C51 COMPILER V9.51   CYSPC                                                                 08/05/2026 14:07:25 PAGE 24  
+C51 COMPILER V9.51   CYSPC                                                                 08/17/2026 08:36:25 PAGE 24  
 
                        INC     A
                        MOVX    @DPTR,A
@@ -1490,7 +1490,7 @@ ASSEMBLY LISTING OF GENERATED OBJECT CODE
                        MOV     DPTR,#04720H
                        MOV     A,#0B6H
                        MOVX    @DPTR,A
-C51 COMPILER V9.51   CYSPC                                                                 08/05/2026 14:07:25 PAGE 25  
+C51 COMPILER V9.51   CYSPC                                                                 08/17/2026 08:36:25 PAGE 25  
 
                                            ; SOURCE LINE # 449
                        MOV     A,#0D8H
@@ -1554,7 +1554,7 @@ ASSEMBLY LISTING OF GENERATED OBJECT CODE
                                            ; SOURCE LINE # 492
 ;---- Variable 'sectorNumber' assigned to Register 'R5' ----
 ;---- Variable 'array' assigned to Register 'R7' ----
-C51 COMPILER V9.51   CYSPC                                                                 08/05/2026 14:07:25 PAGE 26  
+C51 COMPILER V9.51   CYSPC                                                                 08/17/2026 08:36:25 PAGE 26  
 
                                            ; SOURCE LINE # 493
                                            ; SOURCE LINE # 494
@@ -1618,7 +1618,7 @@ ASSEMBLY LISTING OF GENERATED OBJECT CODE
                        MOVX    @DPTR,A
                        INC     DPTR
                        MOV     A,R5
-C51 COMPILER V9.51   CYSPC                                                                 08/05/2026 14:07:25 PAGE 27  
+C51 COMPILER V9.51   CYSPC                                                                 08/17/2026 08:36:25 PAGE 27  
 
                        MOVX    @DPTR,A
 ;---- Variable 'array' assigned to Register 'R4' ----
@@ -1682,7 +1682,7 @@ ASSEMBLY LISTING OF GENERATED OBJECT CODE
                        MOV     R5,#09H
                                            ; SOURCE LINE # 572
                                            ; SOURCE LINE # 573
-C51 COMPILER V9.51   CYSPC                                                                 08/05/2026 14:07:25 PAGE 28  
+C51 COMPILER V9.51   CYSPC                                                                 08/17/2026 08:36:25 PAGE 28  
 
                  R     xJMP    ?C0056
              ?C0053:
@@ -1746,7 +1746,7 @@ ASSEMBLY LISTING OF GENERATED OBJECT CODE
                        MOV     R6,#04H
                                            ; SOURCE LINE # 629
              ?C0061:
-C51 COMPILER V9.51   CYSPC                                                                 08/05/2026 14:07:25 PAGE 29  
+C51 COMPILER V9.51   CYSPC                                                                 08/17/2026 08:36:25 PAGE 29  
 
                                            ; SOURCE LINE # 631
                        MOV     R7,AR6
@@ -1810,7 +1810,7 @@ ASSEMBLY LISTING OF GENERATED OBJECT CODE
                                            ; SOURCE LINE # 733
                                            ; SOURCE LINE # 734
                                            ; SOURCE LINE # 735
-C51 COMPILER V9.51   CYSPC                                                                 08/05/2026 14:07:25 PAGE 30  
+C51 COMPILER V9.51   CYSPC                                                                 08/17/2026 08:36:25 PAGE 30  
 
 ;---- Variable 'status' assigned to Register 'R7' ----
                        MOV     R7,#07H

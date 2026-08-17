@@ -1,9 +1,9 @@
-C51 COMPILER V9.51   I2C_DISPLAY_MASTER                                                    08/15/2026 23:55:57 PAGE 1   
+C51 COMPILER V9.51   I2C_DISPLAY_MASTER                                                    08/17/2026 08:28:30 PAGE 1   
 
 
 C51 COMPILER V9.51, COMPILATION OF MODULE I2C_DISPLAY_MASTER
 OBJECT MODULE PLACED IN .\DP8051\DP8051_Keil_951\Debug\I2C_DISPLAY_MASTER.obj
-COMPILER INVOKED BY: C:\Program Files (x86)\Cypress\PSoC Creator\4.2\PSoC Creator\import\keil\pk51\9.51\C51\BIN\c51.exe 
+COMPILER INVOKED BY: C:\Program Files (x86)\Cypress\PSoC Creator\4.4\PSoC Creator\import\keil\pk51\9.51\C51\BIN\c51.exe 
                     -Generated_Source\PSoC3\I2C_DISPLAY_MASTER.c NOIV LARGE MODDP2 OMF2 VB(1) NOIP INCDIR(.,Generated_Source\PSoC3) FF(3) DB 
                     -WL(2) PR(.\DP8051\DP8051_Keil_951\Debug/I2C_DISPLAY_MASTER.lst) CD OT(5,SPEED) OA OJ(.\DP8051\DP8051_Keil_951\Debug\I2C_
                     -DISPLAY_MASTER.obj)
@@ -62,7 +62,7 @@ line level    source
   50          *  mode:      Transfer mode defines: start or restart condition generation at
   51          *             begin of the transfer and complete the transfer or halt before
   52          *             generating a stop.
-C51 COMPILER V9.51   I2C_DISPLAY_MASTER                                                    08/15/2026 23:55:57 PAGE 2   
+C51 COMPILER V9.51   I2C_DISPLAY_MASTER                                                    08/17/2026 08:28:30 PAGE 2   
 
   53          *
   54          * Return:
@@ -126,7 +126,7 @@ line level    source
  112   3                  /* errStatus = I2C_DISPLAY_MSTR_NOT_READY was send before */
  113   3              }
  114   2      
-C51 COMPILER V9.51   I2C_DISPLAY_MASTER                                                    08/15/2026 23:55:57 PAGE 3   
+C51 COMPILER V9.51   I2C_DISPLAY_MASTER                                                    08/17/2026 08:28:30 PAGE 3   
 
  115   2              if(I2C_DISPLAY_MSTR_NO_ERROR == errStatus)
  116   2              {
@@ -190,7 +190,7 @@ line level    source
  174          *  generated.
  175          *
  176          * Global variables:
-C51 COMPILER V9.51   I2C_DISPLAY_MASTER                                                    08/15/2026 23:55:57 PAGE 4   
+C51 COMPILER V9.51   I2C_DISPLAY_MASTER                                                    08/17/2026 08:28:30 PAGE 4   
 
  177          *  I2C_DISPLAY_mstrStatus  - The global variable used to store a current
  178          *                                 status of the I2C Master.
@@ -254,7 +254,7 @@ line level    source
  236   3                  /* Prepare read buffer */
  237   3                  I2C_DISPLAY_mstrRdBufIndex  = 0u;
  238   3                  I2C_DISPLAY_mstrRdBufSize   = cnt;
-C51 COMPILER V9.51   I2C_DISPLAY_MASTER                                                    08/15/2026 23:55:57 PAGE 5   
+C51 COMPILER V9.51   I2C_DISPLAY_MASTER                                                    08/17/2026 08:28:30 PAGE 5   
 
  239   3                  I2C_DISPLAY_mstrRdBufPtr    = (volatile uint8 *) rdData;
  240   3      
@@ -318,7 +318,7 @@ line level    source
  298   1          uint8 errStatus;
  299   1      
  300   1          errStatus = I2C_DISPLAY_MSTR_NOT_READY;
-C51 COMPILER V9.51   I2C_DISPLAY_MASTER                                                    08/15/2026 23:55:57 PAGE 6   
+C51 COMPILER V9.51   I2C_DISPLAY_MASTER                                                    08/17/2026 08:28:30 PAGE 6   
 
  301   1      
  302   1          /* If IDLE, check if bus is free */
@@ -382,7 +382,7 @@ line level    source
  360   4                      errStatus = I2C_DISPLAY_MSTR_ERR_LB_NAK;
  361   4                  }
  362   3                  else
-C51 COMPILER V9.51   I2C_DISPLAY_MASTER                                                    08/15/2026 23:55:57 PAGE 7   
+C51 COMPILER V9.51   I2C_DISPLAY_MASTER                                                    08/17/2026 08:28:30 PAGE 7   
 
  363   3                  {
  364   4                      /* Start was sent without errors */
@@ -446,7 +446,7 @@ line level    source
  422   2              {
  423   3                  I2C_DISPLAY_state = I2C_DISPLAY_SM_MSTR_WR_ADDR;
  424   3              }
-C51 COMPILER V9.51   I2C_DISPLAY_MASTER                                                    08/15/2026 23:55:57 PAGE 8   
+C51 COMPILER V9.51   I2C_DISPLAY_MASTER                                                    08/17/2026 08:28:30 PAGE 8   
 
  425   2      
  426   2              /* Hardware actions: write address and generate ReStart */
@@ -510,7 +510,7 @@ line level    source
  484          *                           the software FSM.
  485          *
  486          * Reentrant:
-C51 COMPILER V9.51   I2C_DISPLAY_MASTER                                                    08/15/2026 23:55:57 PAGE 9   
+C51 COMPILER V9.51   I2C_DISPLAY_MASTER                                                    08/17/2026 08:28:30 PAGE 9   
 
  487          *  No.
  488          *
@@ -574,7 +574,7 @@ line level    source
  546          *
  547          *******************************************************************************/
  548          uint8 I2C_DISPLAY_MasterWriteByte(uint8 theByte) 
-C51 COMPILER V9.51   I2C_DISPLAY_MASTER                                                    08/15/2026 23:55:57 PAGE 10  
+C51 COMPILER V9.51   I2C_DISPLAY_MASTER                                                    08/17/2026 08:28:30 PAGE 10  
 
  549          {
  550   1          uint8 errStatus;
@@ -638,7 +638,7 @@ line level    source
  608          * Return:
  609          *  Byte read from slave.
  610          *
-C51 COMPILER V9.51   I2C_DISPLAY_MASTER                                                    08/15/2026 23:55:57 PAGE 11  
+C51 COMPILER V9.51   I2C_DISPLAY_MASTER                                                    08/17/2026 08:28:30 PAGE 11  
 
  611          * Side Effects:
  612          *  This function is entered without a "byte complete" bit set in the I2C_CSR
@@ -702,7 +702,7 @@ line level    source
  670          * Summary:
  671          *  Returns the master's communication status.
  672          *
-C51 COMPILER V9.51   I2C_DISPLAY_MASTER                                                    08/15/2026 23:55:57 PAGE 12  
+C51 COMPILER V9.51   I2C_DISPLAY_MASTER                                                    08/17/2026 08:28:30 PAGE 12  
 
  673          * Parameters:
  674          *  None.
@@ -766,7 +766,7 @@ line level    source
  732   1          /* Read and clear master status */
  733   1          status = I2C_DISPLAY_mstrStatus;
  734   1          I2C_DISPLAY_mstrStatus = I2C_DISPLAY_MSTAT_CLEAR;
-C51 COMPILER V9.51   I2C_DISPLAY_MASTER                                                    08/15/2026 23:55:57 PAGE 13  
+C51 COMPILER V9.51   I2C_DISPLAY_MASTER                                                    08/17/2026 08:28:30 PAGE 13  
 
  735   1      
  736   1          I2C_DISPLAY_EnableInt(); /* Release lock */
@@ -830,7 +830,7 @@ line level    source
  794          /*******************************************************************************
  795          * Function Name: I2C_DISPLAY_MasterClearReadBuf
  796          ********************************************************************************
-C51 COMPILER V9.51   I2C_DISPLAY_MASTER                                                    08/15/2026 23:55:57 PAGE 14  
+C51 COMPILER V9.51   I2C_DISPLAY_MASTER                                                    08/17/2026 08:28:30 PAGE 14  
 
  797          *
  798          * Summary:
@@ -894,7 +894,7 @@ line level    source
  856   1          I2C_DISPLAY_mstrStatus    &= (uint8) ~I2C_DISPLAY_MSTAT_WR_CMPLT;
  857   1      
  858   1          I2C_DISPLAY_EnableInt(); /* Release lock */
-C51 COMPILER V9.51   I2C_DISPLAY_MASTER                                                    08/15/2026 23:55:57 PAGE 15  
+C51 COMPILER V9.51   I2C_DISPLAY_MASTER                                                    08/17/2026 08:28:30 PAGE 15  
 
  859   1      }
  860          
@@ -902,7 +902,7 @@ line level    source
  862          
  863          
  864          /* [] END OF FILE */
-C51 COMPILER V9.51   I2C_DISPLAY_MASTER                                                    08/15/2026 23:55:57 PAGE 16  
+C51 COMPILER V9.51   I2C_DISPLAY_MASTER                                                    08/17/2026 08:28:30 PAGE 16  
 
 ASSEMBLY LISTING OF GENERATED OBJECT CODE
 
@@ -966,7 +966,7 @@ ASSEMBLY LISTING OF GENERATED OBJECT CODE
                  R     xJNE    A,#060H,?C0005
                                            ; SOURCE LINE # 103
                                            ; SOURCE LINE # 105
-C51 COMPILER V9.51   I2C_DISPLAY_MASTER                                                    08/15/2026 23:55:57 PAGE 17  
+C51 COMPILER V9.51   I2C_DISPLAY_MASTER                                                    08/17/2026 08:28:30 PAGE 17  
 
                        CLR     A
                        MOV     R5,A
@@ -1030,7 +1030,7 @@ ASSEMBLY LISTING OF GENERATED OBJECT CODE
                        ANL     A,#0FDH
                        MOVX    @DPTR,A
                                            ; SOURCE LINE # 132
-C51 COMPILER V9.51   I2C_DISPLAY_MASTER                                                    08/15/2026 23:55:57 PAGE 18  
+C51 COMPILER V9.51   I2C_DISPLAY_MASTER                                                    08/17/2026 08:28:30 PAGE 18  
 
                        MOV     R6,AR4
                        MOV     A,R6
@@ -1094,7 +1094,7 @@ ASSEMBLY LISTING OF GENERATED OBJECT CODE
                  R     MOV     DPTR,#rdData
                        MOVX    A,@DPTR
                        MOV     R3,A
-C51 COMPILER V9.51   I2C_DISPLAY_MASTER                                                    08/15/2026 23:55:57 PAGE 19  
+C51 COMPILER V9.51   I2C_DISPLAY_MASTER                                                    08/17/2026 08:28:30 PAGE 19  
 
                        INC     DPTR
                        MOVX    A,@DPTR
@@ -1158,7 +1158,7 @@ ASSEMBLY LISTING OF GENERATED OBJECT CODE
                        MOV     A,#049H
                        MOVX    @DPTR,A
                                            ; SOURCE LINE # 237
-C51 COMPILER V9.51   I2C_DISPLAY_MASTER                                                    08/15/2026 23:55:57 PAGE 20  
+C51 COMPILER V9.51   I2C_DISPLAY_MASTER                                                    08/17/2026 08:28:30 PAGE 20  
 
                        CLR     A
                  R     MOV     DPTR,#I2C_DISPLAY_mstrRdBufIndex
@@ -1222,7 +1222,7 @@ ASSEMBLY LISTING OF GENERATED OBJECT CODE
              ?C0033:
                                            ; SOURCE LINE # 257
                        MOV     DPTR,#049D9H
-C51 COMPILER V9.51   I2C_DISPLAY_MASTER                                                    08/15/2026 23:55:57 PAGE 21  
+C51 COMPILER V9.51   I2C_DISPLAY_MASTER                                                    08/17/2026 08:28:30 PAGE 21  
 
                        MOV     A,#01H
                        MOVX    @DPTR,A
@@ -1286,7 +1286,7 @@ ASSEMBLY LISTING OF GENERATED OBJECT CODE
                  R     xJMP    ?C0038
              ?C0037:
                                            ; SOURCE LINE # 319
-C51 COMPILER V9.51   I2C_DISPLAY_MASTER                                                    08/15/2026 23:55:57 PAGE 22  
+C51 COMPILER V9.51   I2C_DISPLAY_MASTER                                                    08/17/2026 08:28:30 PAGE 22  
 
                                            ; SOURCE LINE # 320
                  E     MOV     DPTR,#I2C_DISPLAY_state
@@ -1350,7 +1350,7 @@ ASSEMBLY LISTING OF GENERATED OBJECT CODE
 
              ; FUNCTION _I2C_DISPLAY_MasterSendRestart (BEGIN)
                                            ; SOURCE LINE # 404
-C51 COMPILER V9.51   I2C_DISPLAY_MASTER                                                    08/15/2026 23:55:57 PAGE 23  
+C51 COMPILER V9.51   I2C_DISPLAY_MASTER                                                    08/17/2026 08:28:30 PAGE 23  
 
 ;---- Variable 'slaveAddress' assigned to Register 'R7' ----
 ;---- Variable 'R_nW' assigned to Register 'R5' ----
@@ -1414,7 +1414,7 @@ ASSEMBLY LISTING OF GENERATED OBJECT CODE
                        MOV     DPTR,#049D7H
                        MOVX    A,@DPTR
                        ANL     A,#0AH
-C51 COMPILER V9.51   I2C_DISPLAY_MASTER                                                    08/15/2026 23:55:57 PAGE 24  
+C51 COMPILER V9.51   I2C_DISPLAY_MASTER                                                    08/17/2026 08:28:30 PAGE 24  
 
                        XRL     A,#0AH
                  R     xJNZ    ?C0056
@@ -1478,7 +1478,7 @@ ASSEMBLY LISTING OF GENERATED OBJECT CODE
                        MOV     R7,A
                                            ; SOURCE LINE # 518
              ?C0059:
-C51 COMPILER V9.51   I2C_DISPLAY_MASTER                                                    08/15/2026 23:55:57 PAGE 25  
+C51 COMPILER V9.51   I2C_DISPLAY_MASTER                                                    08/17/2026 08:28:30 PAGE 25  
 
                                            ; SOURCE LINE # 520
                                            ; SOURCE LINE # 521
@@ -1542,7 +1542,7 @@ ASSEMBLY LISTING OF GENERATED OBJECT CODE
                        MOV     A,#060H
                        MOVX    @DPTR,A
                                            ; SOURCE LINE # 587
-C51 COMPILER V9.51   I2C_DISPLAY_MASTER                                                    08/15/2026 23:55:57 PAGE 26  
+C51 COMPILER V9.51   I2C_DISPLAY_MASTER                                                    08/17/2026 08:28:30 PAGE 26  
 
                        MOV     R6,#03H
                                            ; SOURCE LINE # 588
@@ -1606,7 +1606,7 @@ ASSEMBLY LISTING OF GENERATED OBJECT CODE
                        MOVX    @DPTR,A
                                            ; SOURCE LINE # 655
                  R     xJMP    ?C0075
-C51 COMPILER V9.51   I2C_DISPLAY_MASTER                                                    08/15/2026 23:55:57 PAGE 27  
+C51 COMPILER V9.51   I2C_DISPLAY_MASTER                                                    08/17/2026 08:28:30 PAGE 27  
 
              ?C0082:
                                            ; SOURCE LINE # 657
@@ -1670,7 +1670,7 @@ ASSEMBLY LISTING OF GENERATED OBJECT CODE
                        MOVX    A,@DPTR
                        MOV     R7,A
 ;---- Variable 'status' assigned to Register 'R7' ----
-C51 COMPILER V9.51   I2C_DISPLAY_MASTER                                                    08/15/2026 23:55:57 PAGE 28  
+C51 COMPILER V9.51   I2C_DISPLAY_MASTER                                                    08/17/2026 08:28:30 PAGE 28  
 
                                            ; SOURCE LINE # 734
                        CLR     A
@@ -1734,7 +1734,7 @@ ASSEMBLY LISTING OF GENERATED OBJECT CODE
              ; FUNCTION I2C_DISPLAY_MasterClearReadBuf (END)
 
              ; FUNCTION I2C_DISPLAY_MasterClearWriteBuf (BEGIN)
-C51 COMPILER V9.51   I2C_DISPLAY_MASTER                                                    08/15/2026 23:55:57 PAGE 29  
+C51 COMPILER V9.51   I2C_DISPLAY_MASTER                                                    08/17/2026 08:28:30 PAGE 29  
 
                                            ; SOURCE LINE # 851
                                            ; SOURCE LINE # 852

@@ -1,9 +1,9 @@
-C51 COMPILER V9.51   I2C_DISPLAY                                                           08/14/2026 10:16:37 PAGE 1   
+C51 COMPILER V9.51   I2C_DISPLAY                                                           08/17/2026 08:43:04 PAGE 1   
 
 
 C51 COMPILER V9.51, COMPILATION OF MODULE I2C_DISPLAY
 OBJECT MODULE PLACED IN .\DP8051\DP8051_Keil_951\Debug\I2C_DISPLAY.obj
-COMPILER INVOKED BY: C:\Program Files (x86)\Cypress\PSoC Creator\4.2\PSoC Creator\import\keil\pk51\9.51\C51\BIN\c51.exe 
+COMPILER INVOKED BY: C:\Program Files (x86)\Cypress\PSoC Creator\4.4\PSoC Creator\import\keil\pk51\9.51\C51\BIN\c51.exe 
                     -Generated_Source\PSoC3\I2C_DISPLAY.c NOIV LARGE MODDP2 OMF2 VB(1) NOIP INCDIR(.,Generated_Source\PSoC3) FF(3) DB WL(2) P
                     -R(.\DP8051\DP8051_Keil_951\Debug/I2C_DISPLAY.lst) CD OT(5,SPEED) OA OJ(.\DP8051\DP8051_Keil_951\Debug\I2C_DISPLAY.obj)
 
@@ -62,7 +62,7 @@ line level    source
   51   1      #if (I2C_DISPLAY_FF_IMPLEMENTED)
   52   1          /* Configure fixed function block */
   53   1          I2C_DISPLAY_CFG_REG  = I2C_DISPLAY_DEFAULT_CFG;
-C51 COMPILER V9.51   I2C_DISPLAY                                                           08/14/2026 10:16:37 PAGE 2   
+C51 COMPILER V9.51   I2C_DISPLAY                                                           08/17/2026 08:43:04 PAGE 2   
 
   54   1          I2C_DISPLAY_XCFG_REG = I2C_DISPLAY_DEFAULT_XCFG;
   55   1          I2C_DISPLAY_ADDR_REG = I2C_DISPLAY_DEFAULT_ADDR;
@@ -126,7 +126,7 @@ line level    source
  113   1      }
  114          
  115          
-C51 COMPILER V9.51   I2C_DISPLAY                                                           08/14/2026 10:16:37 PAGE 3   
+C51 COMPILER V9.51   I2C_DISPLAY                                                           08/17/2026 08:43:04 PAGE 3   
 
  116          /*******************************************************************************
  117          * Function Name: I2C_DISPLAY_Enable
@@ -190,7 +190,7 @@ line level    source
  175          *
  176          * Side Effects:
  177          *  This component automatically enables its interrupt.  If I2C is enabled !
-C51 COMPILER V9.51   I2C_DISPLAY                                                           08/14/2026 10:16:37 PAGE 4   
+C51 COMPILER V9.51   I2C_DISPLAY                                                           08/17/2026 08:43:04 PAGE 4   
 
  178          *  without the interrupt enabled, it can lock up the I2C bus.
  179          *
@@ -254,7 +254,7 @@ line level    source
              - 1u;
  237   2      
  238   2              /* Disable block */
-C51 COMPILER V9.51   I2C_DISPLAY                                                           08/14/2026 10:16:37 PAGE 5   
+C51 COMPILER V9.51   I2C_DISPLAY                                                           08/17/2026 08:43:04 PAGE 5   
 
  239   2              I2C_DISPLAY_CFG_REG &= (uint8) ~I2C_DISPLAY_CFG_EN_SLAVE;
  240   2              /* Wait for block reset before disable power */
@@ -308,7 +308,7 @@ line level    source
  288          
  289          
  290          /* [] END OF FILE */
-C51 COMPILER V9.51   I2C_DISPLAY                                                           08/14/2026 10:16:37 PAGE 6   
+C51 COMPILER V9.51   I2C_DISPLAY                                                           08/17/2026 08:43:04 PAGE 6   
 
 ASSEMBLY LISTING OF GENERATED OBJECT CODE
 
@@ -372,7 +372,7 @@ ASSEMBLY LISTING OF GENERATED OBJECT CODE
                                            ; SOURCE LINE # 134
                                            ; SOURCE LINE # 139
                  E     CALL    CyEnterCriticalSection
-C51 COMPILER V9.51   I2C_DISPLAY                                                           08/14/2026 10:16:37 PAGE 7   
+C51 COMPILER V9.51   I2C_DISPLAY                                                           08/17/2026 08:43:04 PAGE 7   
 
 ;---- Variable 'intState' assigned to Register 'R7' ----
                                            ; SOURCE LINE # 140
@@ -436,7 +436,7 @@ ASSEMBLY LISTING OF GENERATED OBJECT CODE
                  E     MOV     DPTR,#I2C_DISPLAY_backup+04H
                        MOVX    @DPTR,A
                                            ; SOURCE LINE # 233
-C51 COMPILER V9.51   I2C_DISPLAY                                                           08/14/2026 10:16:37 PAGE 8   
+C51 COMPILER V9.51   I2C_DISPLAY                                                           08/17/2026 08:43:04 PAGE 8   
 
                        MOV     DPTR,#049DCH
                        MOVX    A,@DPTR
@@ -500,7 +500,7 @@ ASSEMBLY LISTING OF GENERATED OBJECT CODE
                        MOV     DPTR,#049D6H
                        MOVX    A,@DPTR
                        ORL     A,#02H
-C51 COMPILER V9.51   I2C_DISPLAY                                                           08/14/2026 10:16:37 PAGE 9   
+C51 COMPILER V9.51   I2C_DISPLAY                                                           08/17/2026 08:43:04 PAGE 9   
 
                        MOVX    @DPTR,A
                                            ; SOURCE LINE # 253

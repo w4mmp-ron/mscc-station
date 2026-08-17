@@ -98,10 +98,6 @@
 <v>Proficio-MKII-ATU\Proficio-MKII-ATU\Generated_Source\PSoC3\Band_Control</v>
 <v>Proficio-MKII-ATU\Proficio-MKII-ATU\Generated_Source\PSoC3\Bootloadable</v>
 <v>Proficio-MKII-ATU\Proficio-MKII-ATU\Generated_Source\PSoC3\BS0</v>
-<v>Proficio-MKII-ATU\Proficio-MKII-ATU\Generated_Source\PSoC3\BS1</v>
-<v>Proficio-MKII-ATU\Proficio-MKII-ATU\Generated_Source\PSoC3\BS2</v>
-<v>Proficio-MKII-ATU\Proficio-MKII-ATU\Generated_Source\PSoC3\Control</v>
-<v>Proficio-MKII-ATU\Proficio-MKII-ATU\Generated_Source\PSoC3\CW_Clock</v>
 </VisibleNodeIds>
 </CyGuid_2a325b3b-c96a-4e9f-b7a0-2c44ecb5f237>
 <CyGuid_2a325b3b-c96a-4e9f-b7a0-2c44ecb5f237 type_name="CyDesigner.Common.Base.Controls.CyTreeViewState" version="1" SelectedNodeId="">
@@ -283,10 +279,6 @@
 <v>Proficio-MKII-ATU\Proficio-MKII-ATU\DP8051\DP8051_Keil_951\Debug\Listing Files\I2C_DISPLAY_BOOT.lst</v>
 <v>Proficio-MKII-ATU\Proficio-MKII-ATU\DP8051\DP8051_Keil_951\Debug\Listing Files\I2C_DISPLAY_INT.lst</v>
 <v>Proficio-MKII-ATU\Proficio-MKII-ATU\DP8051\DP8051_Keil_951\Debug\Listing Files\I2C_DISPLAY_MASTER.lst</v>
-<v>Proficio-MKII-ATU\Proficio-MKII-ATU\DP8051\DP8051_Keil_951\Debug\Listing Files\I2C_DISPLAY_PM.lst</v>
-<v>Proficio-MKII-ATU\Proficio-MKII-ATU\DP8051\DP8051_Keil_951\Debug\Listing Files\I2C_DISPLAY_SLAVE.lst</v>
-<v>Proficio-MKII-ATU\Proficio-MKII-ATU\DP8051\DP8051_Keil_951\Debug\Listing Files\I2S.lst</v>
-<v>Proficio-MKII-ATU\Proficio-MKII-ATU\DP8051\DP8051_Keil_951\Debug\Listing Files\I2S_PM.lst</v>
 </VisibleNodeIds>
 </CyGuid_2a325b3b-c96a-4e9f-b7a0-2c44ecb5f237>
 </TreeStates>
@@ -379,7 +371,7 @@
   Copyright (c) 2001-2016 Actipro Software LLC.  All rights reserved.
   http://www.actiprosoftware.com
 
---><DocumentLayout Version="1.0"><LayoutData><TabbedMdiRootContainer Orientation="Horizontal"><TabbedMdiContainer Size="1258, 719" SelectedTabbedMdiWindow="877b8bcc-bd86-4c12-bdd1-d06be3f8b455"><ToolWindow Key="Start Page:bd4649ab-da6b-4d04-a663-c722b8bf99db:Start Page" Guid="770f7706-c4f0-4acf-af4e-90b76f37ce13" /><DocumentWindow Key="C:\Users\Ron\.grok\worktrees\Release-Proficio-MKII-ATU\Proficio-MKII-ATU.cydsn\si5351.c" Guid="cb88055e-d5bd-49d2-99ef-1985cec2f2cc" /><DocumentWindow Key="C:\Users\Ron\.grok\worktrees\Release-Proficio-MKII-ATU\Proficio-MKII-ATU.cydsn\si5351a.c" Guid="d8ac20ec-525d-4083-9724-5a1de6b095ce" /><DocumentWindow Key="C:\Users\Ron\.grok\worktrees\Release-Proficio-MKII-ATU\Proficio-MKII-ATU.cydsn\usbvend01.c" Guid="877b8bcc-bd86-4c12-bdd1-d06be3f8b455" /><DocumentWindow Key="C:\Users\Ron\.grok\worktrees\Release-Proficio-MKII-ATU\Proficio-MKII-ATU.cydsn\TopDesign\TopDesign.cysch" Guid="76f25a6e-21b7-4cf9-a0da-46a1dfa3f975" /></TabbedMdiContainer></TabbedMdiRootContainer><FloatingContainers /></LayoutData></DocumentLayout>]]></OpenDocsLayout>
+--><DocumentLayout Version="1.0"><LayoutData><TabbedMdiRootContainer Orientation="Horizontal"><TabbedMdiContainer Size="1051, 607" SelectedTabbedMdiWindow="877b8bcc-bd86-4c12-bdd1-d06be3f8b455"><ToolWindow Key="Start Page:bd4649ab-da6b-4d04-a663-c722b8bf99db:Start Page" Guid="770f7706-c4f0-4acf-af4e-90b76f37ce13" /><DocumentWindow Key="C:\Users\Ron\.grok\worktrees\Release-Proficio-MKII-ATU\Proficio-MKII-ATU.cydsn\si5351.c" Guid="cb88055e-d5bd-49d2-99ef-1985cec2f2cc" /><DocumentWindow Key="C:\Users\Ron\.grok\worktrees\Release-Proficio-MKII-ATU\Proficio-MKII-ATU.cydsn\si5351a.c" Guid="d8ac20ec-525d-4083-9724-5a1de6b095ce" /><DocumentWindow Key="C:\Users\Ron\.grok\worktrees\Release-Proficio-MKII-ATU\Proficio-MKII-ATU.cydsn\usbvend01.c" Guid="877b8bcc-bd86-4c12-bdd1-d06be3f8b455" /><DocumentWindow Key="C:\Users\Ron\.grok\worktrees\Release-Proficio-MKII-ATU\Proficio-MKII-ATU.cydsn\TopDesign\TopDesign.cysch" Guid="76f25a6e-21b7-4cf9-a0da-46a1dfa3f975" /></TabbedMdiContainer></TabbedMdiRootContainer><FloatingContainers /></LayoutData></DocumentLayout>]]></OpenDocsLayout>
 <config v="" />
 <AutoUpdate v="true" />
 </CyGuid_843a90a4-0c4b-4e44-991d-05e7fb117a21>

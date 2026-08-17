@@ -1,6 +1,6 @@
 -- ======================================================================
 -- Proficio-MKII-PTT.ctl generated from Proficio-MKII-PTT
--- 08/07/2026 at 15:08
+-- 08/17/2026 at 08:36
 -- This file is auto generated. ANY EDITS YOU MAKE MAY BE LOST WHEN THIS FILE IS REGENERATED!!!
 -- ======================================================================
 
