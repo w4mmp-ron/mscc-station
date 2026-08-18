@@ -1,34 +1,32 @@
 # Proficio MKII — Daughter board pinout for Stew
 
-> **Doc version: 2026-08-15d**
+> **Doc version: 2026-08-17** — pin figure is a **stick diagram** (exact labels). Tables below remain authoritative.
 
-**Send Stew these two files:**
+**Send Stew:**
 
 | File | Role |
 |------|------|
 | `STEW-DAUGHTER-BOARD-PINOUT.md` | **Authoritative tables** (this file) |
-| `STEW-BlackPill-pinout-diagram.jpg` | Overview diagram |
+| `STEW-BlackPill-pinout-diagram.jpg` | Stick diagram: mother-board nets → STM32 (+ unused pins) |
+| `WeAct-BlackPill-F411-Pinout.png` | WeAct Black Pill reference pinout |
+| `WeAct-STM32F4x1-Pin-Layout.pdf` | Official WeAct pin layout (optional) |
 
 **Folder:** `proficio-stm32f411\docs\`  
 (on Ron’s PC: `C:\Users\Ron\.grok\worktrees\proficio-stm32f411\docs\`)
 
 ---
 
-## Read this first (what “yellow nets” means)
+## Read this first
 
-The old MCU was a **Cypress PSoC 3**. Its firmware was designed in **PSoC Creator**. In screenshots of that design, the signals that **leave the chip and go to the rest of the MKII radio** were highlighted in **yellow**.
+These are the **MKII mother-board nets** — the signals that leave the MCU daughter and connect to the rest of the radio (DIN, BCK1, KEY_0, …). Same list the old PSoC used; new STM32F411 pins.
 
-| Term in these docs | Plain meaning for layout |
-|--------------------|---------------------------|
-| **Yellow net** / **yellow pin** | A real board signal name from the existing MKII (DIN, BCK1, KEY_0, …) |
-| **Mother board** | The main MKII radio board those signals connect to |
-| **This document** | Same signal list, reassigned to a **new STM32F411** daughter board |
+| Term | Plain meaning |
+|------|----------------|
+| **Mother-board net** | Radio/codec/control signal name on the existing MKII |
+| **Daughter board** | New STM32F411 board that replaces the PSoC |
+| **“Yellow” (old jargon)** | Ignore unless reading old PSoC Creator screenshots — not a PCB color |
 
-**You do not need PSoC Creator.**  
-**Your PCB is not yellow.**  
-“Yellow” only means: *this net was on the old chip’s external pin list — keep the same radio connection, new MCU pin.*
-
-**Goal of the daughter board:** replace the PSoC with an STM32F411 module while preserving those radio/codec/control interfaces. **I2S to the PCM3060 is required** for audio.
+**Goal:** replace the PSoC with an STM32F411 while keeping those radio/codec/control interfaces. **I2S to the PCM3060 is required** for audio.
 
 **MCU:** WeAct **STM32F411CEU6** Black Pill (or bare F411)  
 **Logic:** **3.3 V** GPIO only · common **GND**  
@@ -38,7 +36,7 @@ The old MCU was a **Cypress PSoC 3**. Its firmware was designed in **PSoC Creato
 
 ---
 
-## 1. MKII interface signals (complete pin list)
+## 1. MKII mother-board nets (complete pin list)
 
 Same nets that left the old PSoC to the radio. Map them to the STM32 pins below.
 
@@ -67,7 +65,7 @@ Same nets that left the old PSoC to the radio. Map them to the STM32 pins below.
 
 **USB:** PSoC USBFS pins → use **Black Pill USB-C** (PA11/PA12) to host for bring-up.
 
-**Not yellow external data pins:** PSoC `CONTROL_DIN` / `CONTROL_DOUT` register bits gate fabric (AND into DIN path). They are **not** the I2S DIN/DOUT nets. Software shadow only unless schematic shows extra enable pins.
+**Not mother-board data pins:** PSoC `CONTROL_DIN` / `CONTROL_DOUT` were fabric register bits (AND into DIN path). They are **not** the I2S DIN/DOUT nets. Software shadow only unless the schematic shows extra enable pins.
 
 ---
 
@@ -122,11 +120,13 @@ Daughter board: short **BCK1–BCK2**, **LRCK1–LRCK2**, **SCK1–SCK2** to the
 
 ## 5. PCB checklist
 
-1. Route **all MKII interface signals** in §1 (including **I2S** and **BOOT**).  
-2. Tie dual clock names (BCK/LRCK/SCK ×2) as above.  
-3. I2C pull-ups 4.7 kΩ to 3.3 V if needed.  
-4. PTT is **input** (sense), not a drive output.  
-5. AMP/RX active-low polarity match MKII.  
+1. Route **+3.3 V** and **GND** to the daughter (common ground with mother board). All GPIO is **3.3 V** logic — not 5 V I/O.  
+2. Route **all MKII interface signals** in §1 (including **I2S** and **BOOT**).  
+3. Tie dual clock names (BCK/LRCK/SCK ×2) as above.  
+4. I2C pull-ups 4.7 kΩ to 3.3 V if needed.  
+5. PTT is **input** (sense), not a drive output.  
+6. AMP/RX active-low polarity match MKII.  
+7. **PB12 = LRCK only** — do not tie PB12 to GND.
 6. 3.3 V only into STM32 I/O.  
 7. ST-Link + USB-C accessible on module.
 
@@ -140,4 +140,5 @@ Daughter board: short **BCK1–BCK2**, **LRCK1–LRCK2**, **SCK1–SCK2** to the
 
 ---
 
-**Version:** 2026-08-15d — plain-English “yellow nets” explanation for Stew; BOOT=PA8; PTT=input PA6  
+**Version:** 2026-08-17 — “mother-board nets” wording (drop yellow jargon); stick diagram; BOOT=PA8; PTT=input PA6  
+

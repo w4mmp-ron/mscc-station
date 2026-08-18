@@ -1,14 +1,14 @@
 /**
  * Control / status HAL — PSoC Control/Status model on Black Pill GPIO.
  *
- * Yellow mother-board nets (Creator pins.jpg / pins2.jpg):
+ * Mother-board nets:
  *   Out: BS0-2, AMP, RX, LED; I2S DIN/BCK/LRCK/SCK (AF later)
  *   In:  KEY_0, KEY_1, PTT, BOOT
  *   I2C: SDA, SCL
  *   I2S data in: DOUT from PCM3060
  *
  * CONTROL_DIN / CONTROL_DOUT bits: software shadow (fabric gates on PSoC;
- * not separate yellow I2S data pins).
+ * not separate I2S DIN/DOUT mother-board pins).
  */
 #include "control.h"
 #include "board_pins.h"
@@ -29,7 +29,7 @@ static void apply_control_gpio(uint8_t v)
     HAL_GPIO_WritePin(BOARD_AMP_GPIO, BOARD_AMP_PIN,
                       (v & CONTROL_AMP) ? GPIO_PIN_SET : GPIO_PIN_RESET);
 
-    /* CONTROL_DIN / CONTROL_DOUT: shadow only (no yellow pins) */
+    /* CONTROL_DIN / CONTROL_DOUT: shadow only (no mother-board pins) */
     (void)CONTROL_DIN;
     (void)CONTROL_DOUT;
 
@@ -112,13 +112,13 @@ uint8_t Status_Read(void)
         s |= STATUS_KEY_1;
     }
 
-    /* BOOT yellow pin → STATUS_BOOT */
+    /* BOOT pin → STATUS_BOOT */
     if (HAL_GPIO_ReadPin(BOARD_BOOT_GPIO, BOARD_BOOT_PIN) == GPIO_PIN_SET) {
         s |= STATUS_BOOT;
     }
 
     /*
-     * PTT yellow input. PSoC: pin → hardware inverter → Status.
+     * PTT input. PSoC: pin → hardware inverter → Status.
      * Active-low footswitch: pin low ⇒ PTT active after invert-equivalent.
      */
     ptt_pin = HAL_GPIO_ReadPin(BOARD_PTT_GPIO, BOARD_PTT_PIN);

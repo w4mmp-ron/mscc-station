@@ -17,7 +17,7 @@
 | SI5351 LO, CW/keyer **bridge**, band, PTT/GPIO | Done (keyer = I²C to PIC) |
 | Die temperature (`0xBF`) | Done (STM32 internal sensor) |
 | ROM bootloader entry | Done — BOOT pin / `0xFE` / BOOT0; see `docs/BOOTLOADER.md` |
-| Stew pinout | `docs/STEW-DAUGHTER-BOARD-PINOUT.md` |
+| Stew pinout | `docs/STEW-DAUGHTER-BOARD-PINOUT.md` + stick diagram + WeAct refs |
 | Hardware test | Pending Black Pill + mother board |
 | Absorb PIC keyer into STM | **Not planned for first board** — see below |
 

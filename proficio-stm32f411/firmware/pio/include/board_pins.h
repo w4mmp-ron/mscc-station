@@ -1,17 +1,15 @@
 /**
  * STM32F411CEU6 Black Pill — Proficio MKII mother-board pin map.
  *
- * Yellow pins from PSoC Creator TopDesign (pins.jpg / pins2.jpg) are the
- * nets that leave the MCU to the MKII mother board.
- *
- * Canonical design doc: docs/STEW-DAUGHTER-BOARD-PINOUT.md
+ * Mother-board nets = signals that leave the MCU daughter to the MKII radio
+ * (same list the old PSoC used). Canonical doc: docs/STEW-DAUGHTER-BOARD-PINOUT.md
  */
 #ifndef BOARD_PINS_H
 #define BOARD_PINS_H
 
 #include "stm32f4xx_hal.h"
 
-/* ---------- On-module (not mother-board yellow nets) ---------- */
+/* ---------- On-module (not mother-board nets) ---------- */
 #define BOARD_LED_GPIO          GPIOC
 #define BOARD_LED_PIN           GPIO_PIN_13  /* PC13 active-low WeAct LED */
 #define BOARD_USB_DM_GPIO       GPIOA
@@ -19,20 +17,20 @@
 #define BOARD_USB_DP_GPIO       GPIOA
 #define BOARD_USB_DP_PIN        GPIO_PIN_12
 
-/* ---------- I2C1: SDA / SCL (yellow) ---------- */
+/* ---------- I2C1: SDA / SCL ---------- */
 #define BOARD_I2C1_SCL_GPIO     GPIOB
 #define BOARD_I2C1_SCL_PIN      GPIO_PIN_8   /* PB8 SCL */
 #define BOARD_I2C1_SDA_GPIO     GPIOB
 #define BOARD_I2C1_SDA_PIN      GPIO_PIN_9   /* PB9 SDA */
 
-/* ---------- KEY_0 / KEY_1 (yellow inputs, debounced in FW) ---------- */
+/* ---------- KEY_0 / KEY_1 (inputs) ---------- */
 #define BOARD_KEY0_GPIO         GPIOB
 #define BOARD_KEY0_PIN          GPIO_PIN_0   /* PB0 */
 #define BOARD_KEY1_GPIO         GPIOB
 #define BOARD_KEY1_PIN          GPIO_PIN_1   /* PB1 */
 
 /*
- * PTT (yellow INPUT — PSoC: pin → inverter → debouncer → Status).
+ * PTT (INPUT — PSoC: pin → inverter → debouncer → Status).
  * Sense as active-low on the pin (common FOOTSWITCH); invert in Status_Read
  * to match PSoC hardware inverter polarity if board differs.
  */
@@ -40,11 +38,11 @@
 #define BOARD_PTT_PIN           GPIO_PIN_6   /* PA6 */
 #define BOARD_PTT_ACTIVE_LOW    1
 
-/* ---------- BOOT (yellow input → Status) ---------- */
+/* ---------- BOOT (input → Status) ---------- */
 #define BOARD_BOOT_GPIO         GPIOA
 #define BOARD_BOOT_PIN          GPIO_PIN_8   /* PA8 — mother-board BOOT */
 
-/* ---------- Band / control outputs (yellow) ---------- */
+/* ---------- Band / control outputs ---------- */
 #define BOARD_BS0_GPIO          GPIOA
 #define BOARD_BS0_PIN           GPIO_PIN_7   /* PA7 (moved off PB12 for I2S) */
 #define BOARD_BS1_GPIO          GPIOB
@@ -58,7 +56,7 @@
 /* LED1 on PSoC Control bit0 — use module PC13 (no extra mother-board wire) */
 
 /*
- * I2S / PCM3060 (yellow) — REQUIRED for audio.
+ * I2S / PCM3060 — REQUIRED for audio.
  * PSoC: one I2S Master; BCK1≡BCK2 and LRCK1≡LRCK2 (same sck/ws, two pins).
  * Daughter board: short BCK1–BCK2, LRCK1–LRCK2, SCK1–SCK2 to the single
  * STM32 driver pin each (or dual-drive later if layout needs split).
@@ -66,7 +64,7 @@
  *   DOUT = from PCM3060 → MCU   (I2S2ext_SD)
  *   DIN  = MCU → PCM3060        (I2S2_SD)
  *   BCK  = bit clock            (I2S2_CK)  → BCK1 & BCK2 nets
- *   LRCK = word select          (I2S2_WS)  → LRCK1 & LRCK2 nets
+ *   LRCK = word select          (I2S2_WS)  → LRCK1 & LRCK2 nets  (PB12 ≠ GND)
  *   SCK  = codec sysclk/MCLK    (I2S2_MCK) → SCK1 & SCK2 nets
  */
 #define BOARD_I2S_LRCK_GPIO     GPIOB
@@ -82,12 +80,11 @@
 
 /*
  * PSoC Control bits CONTROL_DIN / CONTROL_DOUT gate audio paths in fabric
- * (AND into DIN on TopDesign). They are NOT the yellow I2S DIN/DOUT pins.
- * No mother-board pin unless Stew finds them on the schematic; software
- * shadow only until proven otherwise.
+ * (AND into DIN on TopDesign). They are NOT the I2S DIN/DOUT mother-board pins.
+ * Software shadow only until proven otherwise on the schematic.
  */
 
-/* Optional VBUS sense (PSoC USBFS VBUS — not in yellow set; spare) */
+/* Optional VBUS sense (PSoC USBFS VBUS — spare, not a mother-board net) */
 #define BOARD_VBUS_SENSE_GPIO   GPIOA
 #define BOARD_VBUS_SENSE_PIN    GPIO_PIN_9
 
