@@ -23,6 +23,7 @@
 - Bit-identical PSoC Verilog (FracN, SyncSOF) — re-implement in STM32 timers/PLL/USB SOF sync as needed.
 - Day-one full IQ USB audio — hard; schedule after control path works.
 - Changing ms-sdr or PIC keyer unless a protocol gap forces it.
+- **Absorbing the PIC keyer into STM firmware on the first daughter board** — see [Keyer (PIC vs STM)](#keyer-pic-vs-stm) below and `RESUME.md`.
 
 ## Toolchain (planned)
 
@@ -41,7 +42,8 @@ proficio-stm32f411/
 
 ## Status
 
-**Buildable Phase 0 project** (PlatformIO + STM32Cube HAL) — LED blink on Black Pill.  
+**Product-scope firmware complete** (PlatformIO) — USB vendor + UAC1, PCM3060/I2S/SyncSOF, SI5351, CW **bridge** to PIC keyer, band/PTT, die temp, ROM bootloader.  
+**Hardware bring-up** still pending (Black Pill + mother board).  
 **Verified:** `pio run` succeeds (`firmware.elf` / `.bin`).
 
 | How to work | Path |
@@ -50,3 +52,23 @@ proficio-stm32f411/
 | **STM32CubeIDE** | Open/generate from `firmware/cubeide/Proficio_F411.ioc` |
 
 See `RESUME.md` and `docs/PHASE0-BRINGUP.md`.
+
+---
+
+## Keyer (PIC vs STM)
+
+**Current architecture (keep for first spin):**
+
+```text
+Host USB opcodes  →  STM32 (Configure_CW / keyer_write)  →  I²C  →  PIC16F18326
+```
+
+The PIC owns paddle feel, element timing, NCO sidetone, CQ memory (`0x9C`), Farnsworth (`0x76`), and EEPROM. STM does **not** replace that logic in product-scope firmware.
+
+**Could the keyer move into STM later?** Yes, technically — but it is a real port (timer-ISR timing, sidetone without NCO, flash for memories, direct key/paddle drive), not a copy-paste. Do **not** attempt during first radio bring-up.
+
+**Board spin:** A phased firmware plan (PIC now, onboard later) **without designing for both ⇒ second PCB spin** when the PIC is deleted.
+
+**One-spin option:** make the PIC footprint **optional (DNP)** on the first daughter — populate for phase 1; leave off and run onboard keyer for phase 2. Same PCB, two BOMs.
+
+Detail: [`RESUME.md`](RESUME.md) (section *PIC keyer vs STM*). PIC source: `worktrees/keyer`.
