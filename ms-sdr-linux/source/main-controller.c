@@ -453,26 +453,37 @@ int Gui_send_param(uint8_t op_code, int op_data) {
 
 int Gui_send_param_extended(byte command, byte *op_data, int size) {
     char buf[PATH_MAX] = { 0 };
-    int slen = sizeof (si_gui);
+    int slen;
+    struct sockaddr_in *dest = NULL;
+    /* Same egress path as Gui_send_param (session peer + dll_s) so WPF KA and
+     * meter updates share one reply path. */
+    int out_sock = (dll_s != INVALID_SOCKET && dll_s > 0) ? dll_s : gui_s;
 
+    if (size < 0 || size > (int)(sizeof(buf) - 2))
+        return 0;
 
     buf[0] = CMD_SET_EXTENDED_COMMAND;
     buf[1] = command;
-    memcpy(&buf[2], op_data, size);
-    //print_time(0);
-    //fprintf(G_fp_logfile, "[%d] Gui_send_param_extended . NEW MESSAGE: %s\n", line_number++, (char *) buf);
-    if (G_Remote_GUI_Attached == TRUE && G_MSCC_Initialized == TRUE) {
-        if (sendto(gui_s, buf, (size + 2), 0, (struct sockaddr *) &si_gui, slen) == SOCKET_ERROR) {
-            print_time(0);
-            fprintf(G_fp_logfile, "[%d] Gui_send_param_extended . sentto gui_s FAILED with error code : %s\n",
-                    line_number++, strerror(errno));
-        }
-    } else {
-        print_time(0);
-        fprintf(G_fp_logfile, "[%d] Gui_send_param_extended . GUI NOT READY\n", line_number++);
-    }
-    Sleep(10);
+    memcpy(&buf[2], op_data, (size_t)size);
 
+    if (!(G_Remote_GUI_Attached == TRUE && G_MSCC_Initialized == TRUE))
+        return 0;
+
+    if (G_session_client_valid) {
+        dest = &G_session_client;
+        slen = sizeof(G_session_client);
+    } else {
+        dest = &si_gui;
+        slen = sizeof(si_gui);
+    }
+
+    if (sendto(out_sock, buf, size + 2, 0, (struct sockaddr *)dest, slen) == SOCKET_ERROR) {
+        print_time(0);
+        fprintf(G_fp_logfile, "[%d] Gui_send_param_extended . sentto FAILED: %s (sub 0x%X)\n",
+                line_number++, strerror(errno), command);
+        return 0;
+    }
+    /* No Sleep here — high-rate meter/SWR extended traffic must not stall KA pacing. */
     return 1;
 }
 
@@ -2789,6 +2800,9 @@ void Parse_mscc_record(char *record) {
             line_number++, (int)G_proficio_mkii);
         status = 1;
     }
+
+    /* WiFi SWR meter keys (SWR_METER= etc.) — parsed in swr_wifi_meter.c */
+    Parse_swr_wifi_record(record);
 }
 
 int initialize_mscc() {
@@ -2818,7 +2832,9 @@ int initialize_mscc() {
                     "MSCC_PORT=8889;\n"
                     "MSCC_IP=127.0.0.1;\n"
                     "PCB_VERSION=10;\n"
-                    "PROFICIO-MKII=1;\n");
+                    "PROFICIO-MKII=1;\n"
+                    "SWR_METER=1;\n"
+                    "SWR_METER_PORT=6999;\n");
                 fclose(fp_mscc_ini);
                 fp_mscc_ini = fopen(file_name, "r");
             }

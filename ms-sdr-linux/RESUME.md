@@ -81,6 +81,20 @@ Rebuild deb only if shipping a release that should include this binary + updated
 
 Global: `G_proficio_mkii`. Parsed in `Parse_mscc_record` / `initialize_mscc`.
 
+## WiFi SWR meter (ms-sdr ingest)
+
+**Status:** implemented in `source/swr_wifi_meter.c` (UDP JSON → GUI `0x0B`/`0x0C`/`0x0D`).
+
+| `mscc.ini` key | Default | Meaning |
+|----------------|---------|---------|
+| `SWR_METER` | 1 | Enable thread |
+| `SWR_METER_PORT` | 6999 | UDP listen |
+| `SWR_METER_IP` | (any) | Optional source filter |
+| `SWR_METER_TIMEOUT` | 3000 | Offline ms → zero meters |
+| `SWR_METER_HTTP_RESET` | 1 | Enables `Swr_wifi_request_reset()` |
+
+Point meter UDP target at the Pi. Display only (no WiFi TX foldback). See `swr-meter/SWR-METER-MSCC-SUMMARY.txt`.
+
 ## Resume prompt (paste)
 
-> ms-sdr Linux: keyer 0x9C + 0x76; `mscc.ini` **PROFICIO-MKII=0/1** gates PTT sense thread. See RESUME.md.
+> ms-sdr Linux: keyer 0x9C + 0x76; WiFi SWR meter UDP ingest; `mscc.ini` **PROFICIO-MKII** / **SWR_METER**. See RESUME.md.

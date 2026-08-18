@@ -191,6 +191,25 @@ extern byte G_Meter_Calibrated;
 #define METER_CALIBRATING 3
 #define METER_CALIBRATED 2
 
+/* WiFi SWR meter (UDP JSON → existing GUI meter opcodes). See swr_wifi_meter.c */
+extern uint8_t G_swr_wifi_enable;
+extern uint16_t G_swr_wifi_port;
+extern char G_swr_wifi_meter_ip[64];
+extern int G_swr_wifi_timeout_ms;
+extern uint8_t G_swr_wifi_http_reset;
+extern uint8_t G_swr_wifi_to_gui;
+extern double G_swr_wifi_fwd;
+extern double G_swr_wifi_ref;
+extern double G_swr_wifi_swr;
+extern double G_swr_wifi_v;
+extern int G_swr_wifi_fault;
+extern uint8_t G_swr_wifi_online;
+extern char G_swr_wifi_learned_ip[64];
+extern void *Swr_wifi_meter_main(void *param);
+extern int Start_swr_wifi_meter_thread(void);
+extern void Parse_swr_wifi_record(const char *record);
+extern void Swr_wifi_request_reset(void);
+
 //For Solidus Temperature
 int Read_solidus_temperature();
 extern int32_t G_Solidus_Temperature;

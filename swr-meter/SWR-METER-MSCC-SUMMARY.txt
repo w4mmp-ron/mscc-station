@@ -86,23 +86,22 @@ What is not already a dedicated GUI opcode
   - structured fault as a dedicated numeric opcode
     (fault is handled more as message / side-effect today)
 
-Implementation sketch (ms-sdr, future work)
--------------------------------------------
-  1. Config: meter IP optional (or auto from first UDP packet); enable WiFi vs
-     I2C backend.
-  2. Thread: bind UDP 6999, parse JSON, update F/R/SWR (and fault).
-  3. Reuse existing meter send path to GUI (0x0B / 0x0C / 0x0D).
-  4. Timeouts / "meter offline" if no packets.
-  5. Optional: HTTP GET /reset when clearing fault.
-  6. Reliability: WiFi latency/jitter is fine for display; be careful if using
-     network SWR for hard TX foldback (I2C is tighter).
+Implementation (ms-sdr Linux — done)
+------------------------------------
+  File: ms-sdr-linux/source/swr_wifi_meter.c
+  Thread: Start_swr_wifi_meter_thread() from main Start_Threads
+  Sends: same packing as meter.c Send_data → GUI 0x0B/0x0C/0x0D + sdrcore 0x38
+  Display only — no G_swr_shutdown / TX foldback from WiFi path
 
-Difficulty (agreed view)
-------------------------
-  - Sockets / JSON / map to existing opcodes: moderate, days-scale if the protocol
-    stays as above.
-  - Harder parts: reconnect/timeouts, config UX, and how aggressively to trust
-    WiFi SWR for protection vs telemetry.
+  mscc.ini keys (HOME/mscc.ini):
+    SWR_METER=1;                 # 0 disables thread
+    SWR_METER_PORT=6999;
+    SWR_METER_IP=x.x.x.x;        # optional source filter; omit = any / auto-learn
+    SWR_METER_TIMEOUT=3000;      # ms offline → zero meters
+    SWR_METER_HTTP_RESET=1;      # enables Swr_wifi_request_reset() helper
+
+  Meter setup: set UDP target IP/port to the Pi (host running ms-sdr).
+  Do not run Python UI and ms-sdr both bound to 6999 on the same host.
 
 Related (separate, deferred)
 ----------------------------

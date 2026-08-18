@@ -1256,6 +1256,8 @@ int static Start_Threads() {
             "[%d] main. Start_PTT_thread SKIPPED (PROFICIO-MKII=0 / legacy)\n",
             line_number++);
     }
+    /* WiFi SWR meter: UDP JSON → GUI F/R/SWR (mscc.ini SWR_METER=) */
+    Start_swr_wifi_meter_thread();
     Start_Serial_Port();
     print_time(0);
     fprintf(G_fp_logfile, "[%d] main. Start_Threads FINISHED \n\n", line_number++);

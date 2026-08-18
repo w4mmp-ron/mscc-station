@@ -8,5 +8,5 @@
 //   Linux:   make → bump-version.sh (see Makefile)
 // Packed wire format: high byte = minor (0-255), low byte = major.
 #define VERSION_MAJOR 3
-#define VERSION_MINOR 151
+#define VERSION_MINOR 154
 #define VERSION_MS_SDRCORE ((((VERSION_MINOR) << 8) & 0xff00) | ((VERSION_MAJOR) & 0x00ff))
