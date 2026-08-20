@@ -51,12 +51,34 @@ dotnet run --project MsccAudioTestSender -c Release -- 127.0.0.1 9100 20
 
 You should hear a 440 Hz tone for ~20 seconds.
 
+## Playback EQ (local)
+
+3-band EQ on **phones RX only** (not mic TX, not Pi local speaker):
+
+| Band | Default freq |
+|------|----------------|
+| Low shelf | ~120 Hz |
+| Mid peak | ~2 kHz |
+| High shelf | ~5 kHz |
+
+Enable + sliders ±12 dB; **Reset EQ**.
+
+## Client settings (INI)
+
+Windows client settings (ports, devices, volume, mute, EQ, TX host):
+
+`%LocalAppData%\MSCC-NET9\MsccRemotePhones.ini`
+
+Example: `C:\Users\<you>\AppData\Local\MSCC-NET9\MsccRemotePhones.ini`
+
+**Not** `remote-phones.ini` — that file is for **sdrcore-recv** on the Pi (`~/.local/mscc/remote-phones.ini`).
+
 ## User steps
 
 ### RX (phones)
 1. Start **MSCC Remote Phones**  
 2. Listen port **9100** (or match Pi)  
-3. Play device + phones volume  
+3. Play device + phones volume (+ optional EQ)  
 4. **Start RX**  
 5. Run test sender or Pi stream  
 

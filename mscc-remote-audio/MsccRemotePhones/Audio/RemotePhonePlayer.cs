@@ -7,15 +7,18 @@ namespace MsccRemotePhones.Audio;
 public sealed class RemotePhonePlayer : IDisposable
 {
     private readonly JitterBuffer _buffer;
+    private readonly PlaybackEq _eq = new();
     private IWavePlayer? _player;
     private NetworkWaveProvider? _provider;
     private int _sampleRate = MsccAudioProtocol.DefaultSampleRate;
     private float _volume = 1f;
+    private bool _muted;
 
     public event Action<string>? Log;
 
     public bool IsPlaying => _player is not null;
     public string? DeviceName { get; private set; }
+    public PlaybackEq Eq => _eq;
 
     /// <summary>Local phones volume 0..1 (sample scale; works for WaveOut and WASAPI).</summary>
     public float Volume
@@ -26,6 +29,18 @@ public sealed class RemotePhonePlayer : IDisposable
             _volume = Math.Clamp(value, 0f, 1f);
             if (_provider is not null)
                 _provider.Volume = _volume;
+        }
+    }
+
+    /// <summary>Mute phones output without changing <see cref="Volume"/>.</summary>
+    public bool Muted
+    {
+        get => _muted;
+        set
+        {
+            _muted = value;
+            if (_provider is not null)
+                _provider.Muted = value;
         }
     }
     public int BufferedMs
@@ -76,28 +91,36 @@ public sealed class RemotePhonePlayer : IDisposable
             _sampleRate / 20,
             _sampleRate * Math.Max(50, jitterMs) / 1000 * ch);
 
-        _provider = new NetworkWaveProvider(_buffer, _sampleRate) { Volume = _volume };
+        _eq.SetSampleRate(_sampleRate);
+        _provider = new NetworkWaveProvider(_buffer, _sampleRate, _eq)
+        {
+            Volume = _volume,
+            Muted = _muted,
+        };
 
         Exception? last = null;
 
-        // Prefer WaveOutEvent — simpler shared path, fewer WASAPI format surprises
-        try
+        // Device list indices are WASAPI render endpoints (see ListPlayDevices).
+        // WaveOut DeviceNumber is a different namespace — only use WaveOut for "Default" (-1).
+        if (deviceIndex < 0)
         {
-            int waveDev = deviceIndex < 0 ? -1 : deviceIndex;
-            var wo = new WaveOutEvent
+            try
             {
-                DeviceNumber = waveDev,
-                DesiredLatency = Math.Clamp(jitterMs, 50, 200),
-                NumberOfBuffers = 3,
-            };
-            wo.Init(_provider);
-            _player = wo;
-            DeviceName = waveDev < 0 ? "Default (WaveOut)" : $"WaveOut #{waveDev}";
-        }
-        catch (Exception ex)
-        {
-            last = ex;
-            _player = null;
+                var wo = new WaveOutEvent
+                {
+                    DeviceNumber = -1,
+                    DesiredLatency = Math.Clamp(jitterMs, 50, 200),
+                    NumberOfBuffers = 3,
+                };
+                wo.Init(_provider);
+                _player = wo;
+                DeviceName = "Default (WaveOut)";
+            }
+            catch (Exception ex)
+            {
+                last = ex;
+                _player = null;
+            }
         }
 
         if (_player is null)
@@ -114,6 +137,8 @@ public sealed class RemotePhonePlayer : IDisposable
                 {
                     var enumr = new MMDeviceEnumerator();
                     var devices = enumr.EnumerateAudioEndPoints(DataFlow.Render, DeviceState.Active);
+                    if (deviceIndex < 0 || deviceIndex >= devices.Count)
+                        throw new InvalidOperationException($"Play device index {deviceIndex} out of range ({devices.Count} devices).");
                     var dev = devices[deviceIndex];
                     wasapi = new WasapiOut(dev, AudioClientShareMode.Shared, true, 100);
                     DeviceName = dev.FriendlyName;
@@ -131,7 +156,7 @@ public sealed class RemotePhonePlayer : IDisposable
             throw last ?? new InvalidOperationException("No playback device could be opened.");
 
         _player.Play();
-        Log?.Invoke($"Playing {_sampleRate} Hz (stereo out, src ch={ch}) → {DeviceName}");
+        Log?.Invoke($"Playing {_sampleRate} Hz (stereo out, src ch={ch}) → {DeviceName} (devIndex={deviceIndex})");
     }
 
     public void Stop()

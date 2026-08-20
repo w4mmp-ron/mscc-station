@@ -16,6 +16,15 @@ public partial class Form1 : Form
     private ComboBox _cmbDevice = null!;
     private TrackBar _trkVolume = null!;
     private Label _lblVolume = null!;
+    private CheckBox _chkMute = null!;
+    private CheckBox _chkEqEnable = null!;
+    private TrackBar _trkEqLow = null!;
+    private TrackBar _trkEqMid = null!;
+    private TrackBar _trkEqHigh = null!;
+    private Label _lblEqLow = null!;
+    private Label _lblEqMid = null!;
+    private Label _lblEqHigh = null!;
+    private Button _btnEqReset = null!;
     private TextBox _txtTxHost = null!;
     private NumericUpDown _numTxPort = null!;
     private ComboBox _cmbMic = null!;
@@ -31,7 +40,11 @@ public partial class Form1 : Form
 
     private int _lastRate = MsccAudioProtocol.DefaultSampleRate;
     private int _lastCh = MsccAudioProtocol.DefaultChannels;
+    private int _playDeviceIndex = int.MinValue; // device used for current player
     private bool _playerArmed;
+    /// <summary>True only after INI has been applied — blocks saves during construction.</summary>
+    private bool _settingsReady;
+    private bool _suppressSave;
 
     public Form1()
     {
@@ -43,21 +56,34 @@ public partial class Form1 : Form
         _mic.Log += AppendLog;
         _receiver.PacketAccepted += OnPacket;
 
+        // Load INI first so init-time ValueChanged handlers cannot overwrite it
+        // with control defaults before ApplySettingsToUi runs.
+        var saved = AppSettingsStore.Load();
+
+        _suppressSave = true;
         InitializeUi();
         LoadDevices();
         LoadMicDevices();
+        ApplySettingsToUi(saved);
+        _suppressSave = false;
+        _settingsReady = true;
+
         _statsTimer.Tick += (_, _) => UpdateStats();
         _statsTimer.Start();
+        AppendLog($"Settings loaded from {AppSettingsStore.ConfigPath}");
     }
 
     private void InitializeUi()
     {
         Text = "MSCC Remote Phones / Mic";
-        Width = 600;
-        Height = 640;
+        Width = 620;
+        Height = 780;
         StartPosition = FormStartPosition.CenterScreen;
         FormClosing += (_, _) =>
         {
+            _settingsReady = true;
+            _suppressSave = false;
+            SaveSettingsFromUi();
             _statsTimer.Stop();
             _mic.Stop();
             _player.Stop();
@@ -68,7 +94,7 @@ public partial class Form1 : Form
         {
             Dock = DockStyle.Fill,
             ColumnCount = 2,
-            RowCount = 13,
+            RowCount = 18,
             Padding = new Padding(10),
         };
         root.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, 130));
@@ -94,14 +120,21 @@ public partial class Form1 : Form
             Value = MsccAudioProtocol.DefaultPort,
             Width = 100,
         };
+        _numPort.ValueChanged += (_, _) => SaveSettingsFromUi();
         root.Controls.Add(_numPort, 1, row++);
 
         root.Controls.Add(new Label { Text = "Jitter target (ms)", AutoSize = true, Anchor = AnchorStyles.Left }, 0, row);
         _numJitter = new NumericUpDown { Minimum = 20, Maximum = 300, Value = 80, Width = 100 };
+        _numJitter.ValueChanged += (_, _) => SaveSettingsFromUi();
         root.Controls.Add(_numJitter, 1, row++);
 
         root.Controls.Add(new Label { Text = "Play device", AutoSize = true, Anchor = AnchorStyles.Left }, 0, row);
         _cmbDevice = new ComboBox { DropDownStyle = ComboBoxStyle.DropDownList, Dock = DockStyle.Fill };
+        _cmbDevice.SelectedIndexChanged += (_, _) =>
+        {
+            OnPlayDeviceChanged();
+            SaveSettingsFromUi();
+        };
         root.Controls.Add(_cmbDevice, 1, row++);
 
         root.Controls.Add(new Label { Text = "Phones volume", AutoSize = true, Anchor = AnchorStyles.Left }, 0, row);
@@ -109,8 +142,60 @@ public partial class Form1 : Form
         {
             _player.Volume = v / 100f;
             _lblVolume.Text = $"{v}%";
+            SaveSettingsFromUi();
         }), 1, row++);
         _player.Volume = 0.8f;
+
+        _chkMute = new CheckBox { Text = "Mute phones", AutoSize = true };
+        _chkMute.CheckedChanged += (_, _) =>
+        {
+            _player.Muted = _chkMute.Checked;
+            AppendLog(_chkMute.Checked ? "Phones muted" : "Phones unmuted");
+            SaveSettingsFromUi();
+        };
+        root.Controls.Add(new Label { Text = "", AutoSize = true }, 0, row);
+        root.Controls.Add(_chkMute, 1, row++);
+
+        // --- Playback EQ ---
+        var eqHdr = new Label
+        {
+            Text = "Playback EQ (local phones only)",
+            Font = new Font(Font, FontStyle.Bold),
+            AutoSize = true,
+        };
+        root.SetColumnSpan(eqHdr, 2);
+        root.Controls.Add(eqHdr, 0, row++);
+
+        _chkEqEnable = new CheckBox { Text = "Enable EQ", AutoSize = true };
+        _chkEqEnable.CheckedChanged += (_, _) =>
+        {
+            ApplyEqFromUi();
+            SaveSettingsFromUi();
+        };
+        root.Controls.Add(new Label { Text = "", AutoSize = true }, 0, row);
+        root.Controls.Add(_chkEqEnable, 1, row++);
+
+        root.Controls.Add(new Label { Text = "Low (~120 Hz)", AutoSize = true, Anchor = AnchorStyles.Left }, 0, row);
+        root.Controls.Add(MakeEqRow(out _trkEqLow, out _lblEqLow), 1, row++);
+        root.Controls.Add(new Label { Text = "Mid (~2 kHz)", AutoSize = true, Anchor = AnchorStyles.Left }, 0, row);
+        root.Controls.Add(MakeEqRow(out _trkEqMid, out _lblEqMid), 1, row++);
+        root.Controls.Add(new Label { Text = "High (~5 kHz)", AutoSize = true, Anchor = AnchorStyles.Left }, 0, row);
+        root.Controls.Add(MakeEqRow(out _trkEqHigh, out _lblEqHigh), 1, row++);
+
+        _btnEqReset = new Button { Text = "Reset EQ", Width = 90 };
+        _btnEqReset.Click += (_, _) =>
+        {
+            _suppressSave = true;
+            _chkEqEnable.Checked = false;
+            SetEqSlider(_trkEqLow, _lblEqLow, 0);
+            SetEqSlider(_trkEqMid, _lblEqMid, 0);
+            SetEqSlider(_trkEqHigh, _lblEqHigh, 0);
+            _suppressSave = false;
+            ApplyEqFromUi();
+            SaveSettingsFromUi();
+        };
+        root.Controls.Add(new Label { Text = "", AutoSize = true }, 0, row);
+        root.Controls.Add(_btnEqReset, 1, row++);
 
         var rxButtons = new FlowLayoutPanel { Dock = DockStyle.Fill, AutoSize = true };
         _btnStart = new Button { Text = "Start RX", Width = 90 };
@@ -134,6 +219,7 @@ public partial class Form1 : Form
 
         root.Controls.Add(new Label { Text = "TX host (Pi)", AutoSize = true, Anchor = AnchorStyles.Left }, 0, row);
         _txtTxHost = new TextBox { Text = "127.0.0.1", Dock = DockStyle.Fill };
+        _txtTxHost.Leave += (_, _) => SaveSettingsFromUi();
         root.Controls.Add(_txtTxHost, 1, row++);
 
         root.Controls.Add(new Label { Text = "TX UDP port", AutoSize = true, Anchor = AnchorStyles.Left }, 0, row);
@@ -144,10 +230,12 @@ public partial class Form1 : Form
             Value = MsccAudioProtocol.DefaultTxPort,
             Width = 100,
         };
+        _numTxPort.ValueChanged += (_, _) => SaveSettingsFromUi();
         root.Controls.Add(_numTxPort, 1, row++);
 
         root.Controls.Add(new Label { Text = "Microphone", AutoSize = true, Anchor = AnchorStyles.Left }, 0, row);
         _cmbMic = new ComboBox { DropDownStyle = ComboBoxStyle.DropDownList, Dock = DockStyle.Fill };
+        _cmbMic.SelectedIndexChanged += (_, _) => SaveSettingsFromUi();
         root.Controls.Add(_cmbMic, 1, row++);
 
         root.Controls.Add(new Label { Text = "Mic volume", AutoSize = true, Anchor = AnchorStyles.Left }, 0, row);
@@ -155,6 +243,7 @@ public partial class Form1 : Form
         {
             _mic.Volume = v / 100f;
             _lblMicVolume.Text = $"{v}%";
+            SaveSettingsFromUi();
         }), 1, row++);
         _mic.Volume = 0.8f;
 
@@ -232,6 +321,146 @@ public partial class Form1 : Form
         return volRow;
     }
 
+    /// <summary>EQ slider: -12..+12 dB mapped as track 0..240 (center 120 = 0 dB).</summary>
+    private Control MakeEqRow(out TrackBar track, out Label dbLabel)
+    {
+        var row = new TableLayoutPanel
+        {
+            Dock = DockStyle.Fill,
+            ColumnCount = 2,
+            RowCount = 1,
+            AutoSize = true,
+        };
+        row.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100));
+        row.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, 56));
+        track = new TrackBar
+        {
+            Minimum = 0,
+            Maximum = 240,
+            Value = 120,
+            TickFrequency = 20,
+            Dock = DockStyle.Fill,
+            Height = 36,
+        };
+        dbLabel = new Label
+        {
+            Text = "0.0 dB",
+            AutoSize = true,
+            Anchor = AnchorStyles.Left,
+            TextAlign = ContentAlignment.MiddleLeft,
+        };
+        var tb = track;
+        var lbl = dbLabel;
+        tb.ValueChanged += (_, _) =>
+        {
+            float db = TrackToDb(tb.Value);
+            lbl.Text = $"{db:+0.0;-0.0;0.0} dB";
+            if (!_suppressSave)
+            {
+                ApplyEqFromUi();
+                SaveSettingsFromUi();
+            }
+        };
+        row.Controls.Add(tb, 0, 0);
+        row.Controls.Add(dbLabel, 1, 0);
+        return row;
+    }
+
+    private static float TrackToDb(int trackValue) => (trackValue - 120) / 10f;
+    private static int DbToTrack(float db) => Math.Clamp((int)Math.Round(db * 10f) + 120, 0, 240);
+
+    private static void SetEqSlider(TrackBar track, Label lbl, float db)
+    {
+        track.Value = DbToTrack(db);
+        lbl.Text = $"{db:+0.0;-0.0;0.0} dB";
+    }
+
+    private void ApplySettingsToUi(AppSettings s)
+    {
+        _suppressSave = true;
+        try
+        {
+            _numPort.Value = Math.Clamp(s.RxPort, (int)_numPort.Minimum, (int)_numPort.Maximum);
+            _numJitter.Value = Math.Clamp(s.JitterMs, (int)_numJitter.Minimum, (int)_numJitter.Maximum);
+            SelectComboByName(_cmbDevice, s.PlayDevice);
+            _trkVolume.Value = Math.Clamp(s.VolumePct, 0, 100);
+            _lblVolume.Text = $"{_trkVolume.Value}%";
+            _player.Volume = _trkVolume.Value / 100f;
+            _chkMute.Checked = s.Mute;
+            _player.Muted = s.Mute;
+            _chkEqEnable.Checked = s.EqEnabled;
+            SetEqSlider(_trkEqLow, _lblEqLow, s.EqLowDb);
+            SetEqSlider(_trkEqMid, _lblEqMid, s.EqMidDb);
+            SetEqSlider(_trkEqHigh, _lblEqHigh, s.EqHighDb);
+            _txtTxHost.Text = string.IsNullOrWhiteSpace(s.TxHost) ? "127.0.0.1" : s.TxHost;
+            _numTxPort.Value = Math.Clamp(s.TxPort, (int)_numTxPort.Minimum, (int)_numTxPort.Maximum);
+            SelectComboByName(_cmbMic, s.MicDevice);
+            _trkMicVolume.Value = Math.Clamp(s.MicVolumePct, 0, 100);
+            _lblMicVolume.Text = $"{_trkMicVolume.Value}%";
+            _mic.Volume = _trkMicVolume.Value / 100f;
+            AppendLog(
+                $"Apply settings: RX={s.RxPort} jitter={s.JitterMs} play='{s.PlayDevice}' " +
+                $"vol={s.VolumePct} mute={s.Mute} tx={s.TxHost}:{s.TxPort}");
+        }
+        finally
+        {
+            _suppressSave = false;
+        }
+        ApplyEqFromUi();
+    }
+
+    private static void SelectComboByName(ComboBox cmb, string name)
+    {
+        if (string.IsNullOrWhiteSpace(name) || cmb.Items.Count == 0)
+        {
+            if (cmb.Items.Count > 0)
+                cmb.SelectedIndex = 0;
+            return;
+        }
+        for (int i = 0; i < cmb.Items.Count; i++)
+        {
+            if (cmb.Items[i] is DeviceItem di &&
+                string.Equals(di.Name, name, StringComparison.OrdinalIgnoreCase))
+            {
+                cmb.SelectedIndex = i;
+                return;
+            }
+        }
+        cmb.SelectedIndex = 0;
+    }
+
+    private void ApplyEqFromUi()
+    {
+        _player.Eq.ApplySettings(
+            _chkEqEnable.Checked,
+            TrackToDb(_trkEqLow.Value),
+            TrackToDb(_trkEqMid.Value),
+            TrackToDb(_trkEqHigh.Value));
+    }
+
+    private void SaveSettingsFromUi()
+    {
+        if (!_settingsReady || _suppressSave)
+            return;
+        var s = new AppSettings
+        {
+            RxPort = (int)_numPort.Value,
+            JitterMs = (int)_numJitter.Value,
+            PlayDevice = _cmbDevice.SelectedItem is DeviceItem pd ? pd.Name : "",
+            VolumePct = _trkVolume.Value,
+            Mute = _chkMute.Checked,
+            EqEnabled = _chkEqEnable.Checked,
+            EqLowDb = TrackToDb(_trkEqLow.Value),
+            EqMidDb = TrackToDb(_trkEqMid.Value),
+            EqHighDb = TrackToDb(_trkEqHigh.Value),
+            TxHost = _txtTxHost.Text.Trim(),
+            TxPort = (int)_numTxPort.Value,
+            MicDevice = _cmbMic.SelectedItem is DeviceItem md ? md.Name : "",
+            MicVolumePct = _trkMicVolume.Value,
+        };
+        AppSettingsStore.Save(s);
+    }
+
     private void LoadDevices()
     {
         _cmbDevice.Items.Clear();
@@ -264,8 +493,12 @@ public partial class Form1 : Form
             var jitter = (int)_numJitter.Value;
             var deviceIndex = SelectedDeviceIndex();
 
+            // Always tear down prior player so a new device selection is applied
+            // on the next audio packet (OnPacket / EnsurePlayer).
+            _player.Stop();
             _jitter.Clear();
             _playerArmed = false;
+            _playDeviceIndex = int.MinValue;
             _receiver.Start(port);
 
             _btnStart.Enabled = false;
@@ -287,9 +520,23 @@ public partial class Form1 : Form
         _player.Stop();
         _receiver.Stop();
         _playerArmed = false;
+        _playDeviceIndex = int.MinValue;
         _btnStart.Enabled = true;
         _btnStop.Enabled = false;
         _numPort.Enabled = true;
+        RefreshStatus();
+    }
+
+    private void OnPlayDeviceChanged()
+    {
+        if (!_receiver.IsRunning)
+            return;
+        // Force player reopen on next packet / immediately if already armed
+        _playerArmed = false;
+        _playDeviceIndex = int.MinValue;
+        _player.Stop();
+        AppendLog($"Play device → index {SelectedDeviceIndex()} (will apply on next audio)");
+        TryStartPlayer();
         RefreshStatus();
     }
 
@@ -359,22 +606,40 @@ public partial class Form1 : Form
             return;
         }
 
-        if (!_playerArmed || hdr.SampleRate != _lastRate || hdr.Channels != _lastCh)
-        {
-            _lastRate = (int)hdr.SampleRate;
-            _lastCh = hdr.Channels;
-            var deviceIndex = SelectedDeviceIndex();
+        _lastRate = (int)hdr.SampleRate;
+        _lastCh = hdr.Channels;
+        TryStartPlayer();
+    }
 
-            try
-            {
-                _player.Start(_lastRate, _lastCh, deviceIndex, (int)_numJitter.Value);
-                _playerArmed = true;
-                RefreshStatus();
-            }
-            catch (Exception ex)
-            {
-                AppendLog("Player reconfig failed: " + ex.Message);
-            }
+    /// <summary>
+    /// Open/reopen the player when disarmed, format changed, or play-device selection changed.
+    /// </summary>
+    private void TryStartPlayer()
+    {
+        if (!_receiver.IsRunning)
+            return;
+
+        int deviceIndex = SelectedDeviceIndex();
+        bool need =
+            !_playerArmed
+            || !_player.IsPlaying
+            || deviceIndex != _playDeviceIndex;
+
+        if (!need)
+            return;
+
+        try
+        {
+            _player.Start(_lastRate, _lastCh, deviceIndex, (int)_numJitter.Value);
+            _playDeviceIndex = deviceIndex;
+            _playerArmed = true;
+            RefreshStatus();
+        }
+        catch (Exception ex)
+        {
+            _playerArmed = false;
+            _playDeviceIndex = int.MinValue;
+            AppendLog("Player reconfig failed: " + ex.Message);
         }
     }
 
