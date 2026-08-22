@@ -1,5 +1,5 @@
-# Linux USB-HID PSoC bootloader host (Multus / Proficio)
-# Requires: libhidapi-dev + libusb-1.0-0-dev
+# Linux USB-HID PSoC firmware upload (Multus / Proficio)
+# Requires: libhidapi-dev (+ libusb if using hidapi-libusb)
 #   sudo apt-get install -y build-essential libhidapi-dev libusb-1.0-0-dev
 
 CC      ?= gcc
@@ -14,7 +14,6 @@ LIBS    := -lhidapi-libusb -lusb-1.0
 SRCS = \
 	src/main.c \
 	src/hid_comm.c \
-	src/app_usb.c \
 	cybootloaderutils/cybtldr_api.c \
 	cybootloaderutils/cybtldr_api2.c \
 	cybootloaderutils/cybtldr_command.c \

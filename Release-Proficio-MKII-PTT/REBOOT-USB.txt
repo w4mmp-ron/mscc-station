@@ -1,24 +1,17 @@
-Proficio MKII — USB reboot commands (PSoC)
-==========================================
+Proficio — USB reboot notes (PSoC app)
+======================================
 
-Added in usbvend.h / usbvend.c / main.c (PTT and ATU).
+Field firmware update does NOT use these opcodes.
+Use the BOOT jumper + bootloader host (.cyacd). See STEW-FIRMWARE-UPDATE.md.
 
-Opcode                 Value   Action
----------------------  ------  ----------------------------------------------
+Opcodes present in app firmware (usbvend / main):
+-----------------------------------------------
 CMD_REBOOT_APP         0x0F    Soft-reset application (CySoftwareReset)
-CMD_ENTER_BOOTLOADER   0x0E    Enter PSoC bootloader (Bootloadable_Load)
+CMD_ENTER_BOOTLOADER   0x0E    Schedules Bootloadable_Load()
 
 Notes
 -----
-- USB ISR only sets a flag; main loop performs the reset (~300 ms delay).
-- Host OUT typically 4 bytes (ignored), matching ms-sdr Radio_send_parameters.
-- Host may report "Pipe error" if the device resets mid-USB STATUS — often OK;
-  confirm the radio actually rebooted / re-enumerated.
-- Hardware BOOT jumper path unchanged.
-- Stop ms-sdr before ./bootloader --reboot-app / --enter-bootloader.
-- Rebuild/flash PSoC with Creator after pulling these sources.
-
-Test (example idea)
--------------------
-  Radio_send_parameters(0x0F, 0, 1);   // app reboot
-  Radio_send_parameters(0x0E, 0, 1);   // bootloader — then PSoC Programmer
+- USB ISR sets a flag; main loop acts after ~300 ms (avoids host PIPE mid-STATUS).
+- 0x0F: soft reboot of the running app only — no LOADER, no .cyacd.
+- 0x0E: not used for field updates; BOOT jumper is the supported enter-LOADER path.
+- Stop ms-sdr before any direct USB vendor test traffic.

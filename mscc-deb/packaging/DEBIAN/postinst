@@ -120,7 +120,7 @@ configure)
   # Drop legacy ALSA digi helper if present in package tree or old installs
   rm -f "$MSCC_DIR/audio-setup" /usr/local/bin/mscc-audio-setup 2>/dev/null || true
   chmod 755 "$MSCC_DIR/ms-sdr" "$MSCC_DIR/sdrcore-recv" "$MSCC_DIR/sdrcore-trans" \
-            "$MSCC_DIR/mscc-init" "$MSCC_DIR/mscc.sh" 2>/dev/null || true
+            "$MSCC_DIR/mscc-init" "$MSCC_DIR/mscc.sh" "$MSCC_DIR/bootloader" 2>/dev/null || true
   chown -R "$REAL_USER:$REAL_USER" "$MSCC_DIR"
 
   # --- config seed (never overwrite existing files) ---
@@ -141,6 +141,7 @@ configure)
   mkdir -p /usr/local/bin
   ln -sfn "$MSCC_DIR/mscc-init"    /usr/local/bin/mscc-init
   ln -sfn "$MSCC_DIR/mscc.sh"      /usr/local/bin/mscc
+  ln -sfn "$MSCC_DIR/bootloader"   /usr/local/bin/bootloader
   ln -sfn /usr/share/mscc/bin/mscc-virtual-audio.sh /usr/local/bin/mscc-virtual-audio
   ln -sfn /usr/share/mscc/bin/mscc-desktop-ctl.sh /usr/local/bin/mscc-desktop-ctl
   chmod 755 /usr/share/mscc/bin/mscc-virtual-audio.sh 2>/dev/null || true
@@ -148,6 +149,7 @@ configure)
   chmod 755 /usr/share/mscc/bin/mscc-status-report 2>/dev/null || true
   log "links: /usr/local/bin/mscc-init → $MSCC_DIR/mscc-init"
   log "links: /usr/local/bin/mscc → $MSCC_DIR/mscc.sh"
+  log "links: /usr/local/bin/bootloader → $MSCC_DIR/bootloader"
   log "links: /usr/local/bin/mscc-virtual-audio → /usr/share/mscc/bin/mscc-virtual-audio.sh"
   log "links: /usr/local/bin/mscc-desktop-ctl → /usr/share/mscc/bin/mscc-desktop-ctl.sh"
   log "status report: /usr/share/mscc/bin/mscc-status-report (via mscc status)"
@@ -179,7 +181,7 @@ configure)
     chmod 644 "$UDEV_DST"
     udevadm control --reload-rules 2>/dev/null || true
     udevadm trigger 2>/dev/null || true
-    log "installed $UDEV_DST (Proficio USB 16c0:05dc)"
+    log "installed $UDEV_DST (Proficio app 16c0:05dc + HID LOADER 04b4:b71d)"
   else
     warn "Proficio udev rules missing from package: $UDEV_SRC"
   fi
@@ -316,10 +318,11 @@ configure)
   echo "================================================================"
   echo "  Binaries:  $MSCC_DIR"
   echo "  Config:    $CFG_DIR"
-  echo "  Links:     mscc , mscc-init , mscc-virtual-audio , mscc-desktop-ctl"
+  echo "  Links:     mscc , mscc-init , bootloader , mscc-virtual-audio , mscc-desktop-ctl"
   echo "  Desktop:   menu category MSCC — Start / Stop / Status (log out/in if missing)"
   echo "  Groups:    dialout, plugdev, audio (log out/in if just added)"
-  echo "  Udev:      /etc/udev/rules.d/99-proficio.rules"
+  echo "  Udev:      /etc/udev/rules.d/99-proficio.rules (app + HID LOADER)"
+  echo "  Firmware:  bootloader file.cyacd  (BOOT jumper on; stop ms-sdr first)"
   echo "  Boot:      dtoverlay=audioinjector-wm8731-audio (reboot if newly added)"
   echo "  Digi:      VirtualA/B via mscc-virtual-audio (user systemd at login)"
   echo

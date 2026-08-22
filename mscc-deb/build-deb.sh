@@ -41,6 +41,7 @@ need_file "$BIN_SRC/mscc.sh"
 need_file "$BIN_SRC/sdrcore-trans"
 need_file "$BIN_SRC/sdrcore-recv"
 need_file "$BIN_SRC/mscc-init"
+need_file "$BIN_SRC/bootloader"
 need_file "$TTY_SRC/tty0tty.c"
 need_file "$TTY_SRC/Makefile"
 need_file "$TTY_SRC/99-tty0tty.rules"
@@ -81,6 +82,7 @@ fi
 echo "  ms-sdr:      $(wc -c < "$PKG/usr/share/mscc/binaries/ms-sdr") bytes"
 echo "  sdrcore-recv:$(wc -c < "$PKG/usr/share/mscc/binaries/sdrcore-recv") bytes"
 echo "  sdrcore-trans:$(wc -c < "$PKG/usr/share/mscc/binaries/sdrcore-trans") bytes"
+echo "  bootloader:  $(wc -c < "$PKG/usr/share/mscc/binaries/bootloader") bytes"
 
 # Re-copy virtual-audio assets from packaging source (stage wiped partial trees carefully)
 if [[ -f "$ROOT/packaging/usr/share/mscc/bin/mscc-virtual-audio.sh" ]]; then

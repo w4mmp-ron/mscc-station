@@ -45,7 +45,8 @@ On the Pi this is often mirrored under a home path or copied as needed.
 | `sdrcore-trans` | TX core (UDP 9200) |
 | `mscc-init` | Interactive device/config wizard |
 | `mscc.sh` | Start/stop/status/restart stack |
-| `audio-setup` | ALSA loopback → `MSCC_Cable_In` / `Out` (**2ch S16_LE 96k** — must match transceiver) |
+| `bootloader` | Proficio app `.cyacd` upload (BOOT jumper → HID `04b4:b71d`) |
+| `audio-setup` | *(removed from package — digi is Pulse VirtualA/B only)* |
 
 All four main ELFs are **aarch64**. Package is **binaries only** for apps (no compile of MSCC apps on install).
 

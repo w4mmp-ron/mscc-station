@@ -1,3 +1,2 @@
-# Proficio / Omnia — app + HID bootloader
-SUBSYSTEM=="usb", ATTR{idVendor}=="16c0", ATTR{idProduct}=="05dc", MODE="0666", GROUP="plugdev"
+# Proficio / Omnia — HID bootloader (BOOT jumper / LOADER mode)
 SUBSYSTEM=="usb", ATTR{idVendor}=="04b4", ATTR{idProduct}=="b71d", MODE="0666", GROUP="plugdev"
