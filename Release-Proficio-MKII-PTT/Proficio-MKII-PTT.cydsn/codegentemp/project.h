@@ -67,7 +67,6 @@
 #include "USBFS_Dp_aliases.h"
 #include "USBFS_EP_DMA_Done_isr.h"
 #include "USBFS_EP8_DMA_Done_SR.h"
-#include "cy_em_eeprom.h"
 #include "CyDmac.h"
 #include "CyFlash.h"
 #include "CyLib.h"
@@ -76,6 +75,7 @@
 #include "CySpc.h"
 #include "cytypes.h"
 #include "PSoC3_8051.h"
+#include "cy_em_eeprom.h"
 
 /*[]*/
 

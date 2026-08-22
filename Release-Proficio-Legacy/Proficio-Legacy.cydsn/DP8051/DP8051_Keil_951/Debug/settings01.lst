@@ -1,4 +1,4 @@
-C51 COMPILER V9.51   SETTINGS01                                                            08/17/2026 08:42:59 PAGE 1   
+C51 COMPILER V9.51   SETTINGS01                                                            08/22/2026 15:33:29 PAGE 1   
 
 
 C51 COMPILER V9.51, COMPILATION OF MODULE SETTINGS01
@@ -62,7 +62,7 @@ line level    source
   50   1          int8_t dec_sign = 0;
   51   1          
   52   1          EEPROM_Start();
-C51 COMPILER V9.51   SETTINGS01                                                            08/17/2026 08:42:59 PAGE 2   
+C51 COMPILER V9.51   SETTINGS01                                                            08/22/2026 15:33:29 PAGE 2   
 
   53   1          CyDelay(100);
   54   1          RegPointer = (reg8 *) (CYDEV_EE_BASE + 0u);
@@ -126,7 +126,7 @@ line level    source
  112   1        }
  113          
  114          
-C51 COMPILER V9.51   SETTINGS01                                                            08/17/2026 08:42:59 PAGE 3   
+C51 COMPILER V9.51   SETTINGS01                                                            08/22/2026 15:33:29 PAGE 3   
 
  115          
  116          void Settings_Main(){
@@ -190,14 +190,14 @@ line level    source
  174                      XTAL_DATA(buffer) = Si570_Xtal;
  175                      REVERSE_DATA(buffer) = Audio_IQ_Channels;
  176                      CySetTemp();
-C51 COMPILER V9.51   SETTINGS01                                                            08/17/2026 08:42:59 PAGE 4   
+C51 COMPILER V9.51   SETTINGS01                                                            08/22/2026 15:33:29 PAGE 4   
 
  177                      EEPROM_StartWrite(buffer, 0);
  178                  }
  179              }
  180          
  181          }*/
-C51 COMPILER V9.51   SETTINGS01                                                            08/17/2026 08:42:59 PAGE 5   
+C51 COMPILER V9.51   SETTINGS01                                                            08/22/2026 15:33:29 PAGE 5   
 
 ASSEMBLY LISTING OF GENERATED OBJECT CODE
 
@@ -261,7 +261,7 @@ ASSEMBLY LISTING OF GENERATED OBJECT CODE
                        MOVX    A,@DPTR
                  R     xJNE    A,#01H,?C0001
                                            ; SOURCE LINE # 61
-C51 COMPILER V9.51   SETTINGS01                                                            08/17/2026 08:42:59 PAGE 6   
+C51 COMPILER V9.51   SETTINGS01                                                            08/22/2026 15:33:29 PAGE 6   
 
                  E     MOV     DPTR,#ee_ppm_int
                        MOVX    A,@DPTR
@@ -325,7 +325,7 @@ ASSEMBLY LISTING OF GENERATED OBJECT CODE
                        MOVX    @DPTR,A
                                            ; SOURCE LINE # 83
                  R     MOV     DPTR,#RegPointer
-C51 COMPILER V9.51   SETTINGS01                                                            08/17/2026 08:42:59 PAGE 7   
+C51 COMPILER V9.51   SETTINGS01                                                            08/22/2026 15:33:29 PAGE 7   
 
                        MOV     A,#080H
                        MOVX    @DPTR,A
@@ -389,7 +389,7 @@ ASSEMBLY LISTING OF GENERATED OBJECT CODE
                        MOVX    @DPTR,A
                                            ; SOURCE LINE # 91
                  R     MOV     DPTR,#buffer+03H
-C51 COMPILER V9.51   SETTINGS01                                                            08/17/2026 08:42:59 PAGE 8   
+C51 COMPILER V9.51   SETTINGS01                                                            08/22/2026 15:33:29 PAGE 8   
 
                        MOV     A,#01H
                        MOVX    @DPTR,A
@@ -453,7 +453,7 @@ ASSEMBLY LISTING OF GENERATED OBJECT CODE
                        MOV     R3,#01H
                  R     MOV     R2,#HIGH buffer
                  R     MOV     R1,#LOW buffer
-C51 COMPILER V9.51   SETTINGS01                                                            08/17/2026 08:42:59 PAGE 9   
+C51 COMPILER V9.51   SETTINGS01                                                            08/22/2026 15:33:29 PAGE 9   
 
                        CLR     A
                        MOV     R5,A
@@ -517,7 +517,7 @@ ASSEMBLY LISTING OF GENERATED OBJECT CODE
                  R     MOV     DPTR,#l_calibration_int
                        MOVX    @DPTR,A
                                            ; SOURCE LINE # 130
-C51 COMPILER V9.51   SETTINGS01                                                            08/17/2026 08:42:59 PAGE 10  
+C51 COMPILER V9.51   SETTINGS01                                                            08/22/2026 15:33:29 PAGE 10  
 
                  E     MOV     DPTR,#E_calibration_dec
                        MOVX    A,@DPTR

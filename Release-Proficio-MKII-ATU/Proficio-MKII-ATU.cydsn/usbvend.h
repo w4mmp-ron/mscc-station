@@ -109,4 +109,14 @@
 #define CMD_SET_LEFT_VOLUME 0xE0
 #define CMD_SET_RIGHT_VOLUME 0xE1
 
+/*
+ * Host → device reboot (handled in main loop — not from USB ISR).
+ *   CMD_REBOOT_APP (0x0F): CySoftwareReset() — restart application only
+ *   CMD_ENTER_BOOTLOADER (0x0E): Bootloadable_Load() — PSoC bootload tool
+ * Matches historic ms-sdr CMD_REBOOT 0x0F for app restart.
+ */
+#define CMD_ENTER_BOOTLOADER 0x0E
+#define CMD_REBOOT_APP       0x0F
+#define CMD_REBOOT           CMD_REBOOT_APP /* alias */
+
 /* [] END OF FILE */

@@ -1,4 +1,4 @@
-C51 COMPILER V9.51   SYNCSOF_API                                                           08/17/2026 08:36:22 PAGE 1   
+C51 COMPILER V9.51   SYNCSOF_API                                                           08/22/2026 15:14:00 PAGE 1   
 
 
 C51 COMPILER V9.51, COMPILATION OF MODULE SYNCSOF_API
@@ -39,7 +39,7 @@ line level    source
   28          uint8 SyncSOF_USB_Buffer(void) {
   29   1          return CY_GET_REG8(SyncSOF_BUFFER__STATUS_REG);
   30   1      }
-C51 COMPILER V9.51   SYNCSOF_API                                                           08/17/2026 08:36:22 PAGE 2   
+C51 COMPILER V9.51   SYNCSOF_API                                                           08/22/2026 15:14:00 PAGE 2   
 
 ASSEMBLY LISTING OF GENERATED OBJECT CODE
 

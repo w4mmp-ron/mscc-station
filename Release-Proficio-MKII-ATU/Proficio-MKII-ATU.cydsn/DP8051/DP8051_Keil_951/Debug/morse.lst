@@ -1,4 +1,4 @@
-C51 COMPILER V9.51   MORSE                                                                 08/17/2026 08:28:23 PAGE 1   
+C51 COMPILER V9.51   MORSE                                                                 08/22/2026 15:31:40 PAGE 1   
 
 
 C51 COMPILER V9.51, COMPILATION OF MODULE MORSE
@@ -62,7 +62,7 @@ line level    source
   50          + (MCODE_C(0x##d##LU) << 8 - MCODE_L(0x##d##LU))\
   51          - MCODE_6(0x##d##LU))
   52          
-C51 COMPILER V9.51   MORSE                                                                 08/17/2026 08:28:23 PAGE 2   
+C51 COMPILER V9.51   MORSE                                                                 08/22/2026 15:31:40 PAGE 2   
 
   53          /*const*/ uint8 /*code*/ MCODES[] = {
   54              /* 0x22 " */ MCODE(131131),
@@ -126,7 +126,7 @@ line level    source
  112          
  113          #define MORSE_DOT  1
  114          #define MORSE_DASH 3
-C51 COMPILER V9.51   MORSE                                                                 08/17/2026 08:28:23 PAGE 3   
+C51 COMPILER V9.51   MORSE                                                                 08/22/2026 15:31:40 PAGE 3   
 
  115          #define MORSE_CHAR 3
  116          #define MORSE_WORD 7
@@ -182,7 +182,7 @@ line level    source
  166   2              else timer--;
  167   2          }
  168   1      }
-C51 COMPILER V9.51   MORSE                                                                 08/17/2026 08:28:23 PAGE 4   
+C51 COMPILER V9.51   MORSE                                                                 08/22/2026 15:31:40 PAGE 4   
 
 ASSEMBLY LISTING OF GENERATED OBJECT CODE
 
@@ -246,7 +246,7 @@ ASSEMBLY LISTING OF GENERATED OBJECT CODE
                        CLR     A
                        ADDC    A,R2
                        MOV     R2,A
-C51 COMPILER V9.51   MORSE                                                                 08/17/2026 08:28:23 PAGE 5   
+C51 COMPILER V9.51   MORSE                                                                 08/22/2026 15:31:40 PAGE 5   
 
                  E     CALL    ?C?CLDPTR
                  R     xJNZ    ?C0005
@@ -310,7 +310,7 @@ ASSEMBLY LISTING OF GENERATED OBJECT CODE
                        MOV     DPL,A
                        CLR     A
                  R     ADDC    A,#HIGH MCODES+0FFDEH
-C51 COMPILER V9.51   MORSE                                                                 08/17/2026 08:28:23 PAGE 6   
+C51 COMPILER V9.51   MORSE                                                                 08/22/2026 15:31:40 PAGE 6   
 
                        MOV     DPH,A
                        MOVX    A,@DPTR
@@ -374,7 +374,7 @@ ASSEMBLY LISTING OF GENERATED OBJECT CODE
                        MOVX    A,@DPTR
                        DEC     A
                        MOVX    @DPTR,A
-C51 COMPILER V9.51   MORSE                                                                 08/17/2026 08:28:23 PAGE 7   
+C51 COMPILER V9.51   MORSE                                                                 08/22/2026 15:31:40 PAGE 7   
 
                                            ; SOURCE LINE # 148
                  E     CALL    Control_Read
@@ -438,7 +438,7 @@ ASSEMBLY LISTING OF GENERATED OBJECT CODE
                  R     MOV     DPTR,#len
                        MOVX    A,@DPTR
                  R     xJNZ    ?C0022
-C51 COMPILER V9.51   MORSE                                                                 08/17/2026 08:28:23 PAGE 8   
+C51 COMPILER V9.51   MORSE                                                                 08/22/2026 15:31:40 PAGE 8   
 
                        INC     DPTR
                        MOVX    @DPTR,A

@@ -1,6 +1,6 @@
 ;*******************************************************************************
 ; \file PSoC3_8051.inc
-; \version 5.82
+; \version 6.10
 ;
 ; \brief 8051 register definitions for the PSoC3 family of parts.
 ;

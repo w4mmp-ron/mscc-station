@@ -11,6 +11,10 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
+//
+// 2026-08-22: Stay in bootloader when launched via Bootloadable_Load()
+// (USB CMD_ENTER_BOOTLOADER 0x0E). Previously, BOOT pin high always
+// jumped straight back to the app, so software enter-bootloader failed.
 
 #include <device.h>
 
@@ -105,14 +109,29 @@ CY_ISR(morse_interrupt)
 void main()
 {
     message = MORSE_BOOT;
-    if (Status_Read() & STATUS_BOOT) {
-        if (CyXTAL_ReadStatus()) message = MORSE_XTAL;
-        else {
-            if (CYRET_SUCCESS == Bootloader_ValidateBootloadable(0)) {
-                Bootloader_Exit(Bootloader_EXIT_TO_BTLDB);
+
+    /*
+     * Launch policy:
+     *
+     * 1) App called Bootloadable_Load() (USB 0x0E) → run type SCHEDULE_BTLDR
+     *    → stay in bootloader and wait for host (HID 04b4:b71d).
+     *
+     * 2) Cold start, BOOT pin high (no jumper), valid app → jump to app.
+     *
+     * 3) Cold start, BOOT pin low (jumper) → stay in bootloader.
+     */
+    if (Bootloader_GET_RUN_TYPE != Bootloader_SCHEDULE_BTLDR) {
+        if (Status_Read() & STATUS_BOOT) {
+            if (CyXTAL_ReadStatus()) {
+                message = MORSE_XTAL;
+            } else {
+                if (CYRET_SUCCESS == Bootloader_ValidateBootloadable(0)) {
+                    Bootloader_Exit(Bootloader_EXIT_TO_BTLDB);
+                }
             }
         }
     }
+
     morse_isr_StartEx(&morse_interrupt);
     Morse_Counter_Start();
     CyGlobalIntEnable;

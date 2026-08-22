@@ -1,4 +1,4 @@
-C51 COMPILER V9.51   CYDMAC                                                                08/17/2026 08:28:33 PAGE 1   
+C51 COMPILER V9.51   CYDMAC                                                                08/22/2026 15:31:48 PAGE 1   
 
 
 C51 COMPILER V9.51, COMPILATION OF MODULE CYDMAC
@@ -11,7 +11,7 @@ line level    source
 
    1          /***************************************************************************//**
    2          * \file CyDmac.c
-   3          * \version 5.82
+   3          * \version 6.10
    4          *
    5          * \brief
    6          * Provides an API for the DMAC component. The API includes functions for the
@@ -62,7 +62,7 @@ line level    source
   49          * by the startup code; you do not normally need to call it. You can call this
   50          * function if all of the DMA channels are inactive.
   51          *
-C51 COMPILER V9.51   CYDMAC                                                                08/17/2026 08:28:33 PAGE 2   
+C51 COMPILER V9.51   CYDMAC                                                                08/22/2026 15:31:48 PAGE 2   
 
   52          *******************************************************************************/
   53          void CyDmacConfigure(void) 
@@ -126,7 +126,7 @@ line level    source
  111          *  \param DMAC_PERIPH_ERR:
  112          *   Set to 1 when a peripheral responds to a bus transaction with an error
  113          *   response.
-C51 COMPILER V9.51   CYDMAC                                                                08/17/2026 08:28:33 PAGE 3   
+C51 COMPILER V9.51   CYDMAC                                                                08/22/2026 15:31:48 PAGE 3   
 
  114          *
  115          *  \param DMAC_UNPOP_ACC:
@@ -190,7 +190,7 @@ line level    source
  173   1          /* Look for free channel. */
  174   1          for(dmaIndex = 0u; dmaIndex < CY_DMA_NUMBEROF_CHANNELS; dmaIndex++)
  175   1          {
-C51 COMPILER V9.51   CYDMAC                                                                08/17/2026 08:28:33 PAGE 4   
+C51 COMPILER V9.51   CYDMAC                                                                08/22/2026 15:31:48 PAGE 4   
 
  176   2              if(0uL == (CyDmaChannels & channel))
  177   2              {
@@ -254,7 +254,7 @@ line level    source
  235          ****************************************************************************//**
  236          *
  237          *  Enables the DMA channel. A software or hardware request still must happen
-C51 COMPILER V9.51   CYDMAC                                                                08/17/2026 08:28:33 PAGE 5   
+C51 COMPILER V9.51   CYDMAC                                                                08/22/2026 15:31:48 PAGE 5   
 
  238          *  before the channel is executed.
  239          *
@@ -318,7 +318,7 @@ line level    source
  297          
  298          /*******************************************************************************
  299          * Function Name: CyDmaChDisable
-C51 COMPILER V9.51   CYDMAC                                                                08/17/2026 08:28:33 PAGE 6   
+C51 COMPILER V9.51   CYDMAC                                                                08/22/2026 15:31:48 PAGE 6   
 
  300          ****************************************************************************//**
  301          *
@@ -382,7 +382,7 @@ line level    source
  359   2              status = CYRET_SUCCESS;
  360   2          }
  361   1      
-C51 COMPILER V9.51   CYDMAC                                                                08/17/2026 08:28:33 PAGE 7   
+C51 COMPILER V9.51   CYDMAC                                                                08/22/2026 15:31:48 PAGE 7   
 
  362   1          return(status);
  363   1      }
@@ -446,7 +446,7 @@ line level    source
  421          {
  422   1          cystatus status = CYRET_BAD_PARAM;
  423   1          reg16 *convert;
-C51 COMPILER V9.51   CYDMAC                                                                08/17/2026 08:28:33 PAGE 8   
+C51 COMPILER V9.51   CYDMAC                                                                08/22/2026 15:31:48 PAGE 8   
 
  424   1      
  425   1          #if(CY_PSOC5)
@@ -510,7 +510,7 @@ line level    source
  483   1      
  484   1          return(status);
  485   1      }
-C51 COMPILER V9.51   CYDMAC                                                                08/17/2026 08:28:33 PAGE 9   
+C51 COMPILER V9.51   CYDMAC                                                                08/22/2026 15:31:48 PAGE 9   
 
  486          
  487          
@@ -574,7 +574,7 @@ line level    source
  545   2                                  (uint32)(CY_DMA_CPU_REQ | CY_DMA_CPU_TERM_TD | CY_DMA_CPU_TERM_CHAIN));
  546   2          }
  547   1      
-C51 COMPILER V9.51   CYDMAC                                                                08/17/2026 08:28:33 PAGE 10  
+C51 COMPILER V9.51   CYDMAC                                                                08/22/2026 15:31:48 PAGE 10  
 
  548   1          return(status);
  549   1      }
@@ -638,7 +638,7 @@ line level    source
  607          * Function Name: CyDmaChSetConfiguration
  608          ****************************************************************************//**
  609          *
-C51 COMPILER V9.51   CYDMAC                                                                08/17/2026 08:28:33 PAGE 11  
+C51 COMPILER V9.51   CYDMAC                                                                08/22/2026 15:31:48 PAGE 11  
 
  610          * Sets configuration information of the channel.
  611          *
@@ -702,7 +702,7 @@ line level    source
  668          ****************************************************************************//**
  669          *
  670          *  Allocates a TD for use with an allocated DMA channel.
-C51 COMPILER V9.51   CYDMAC                                                                08/17/2026 08:28:33 PAGE 12  
+C51 COMPILER V9.51   CYDMAC                                                                08/22/2026 15:31:48 PAGE 12  
 
  671          *
  672          * \return
@@ -766,7 +766,7 @@ line level    source
  730   2              CyDmaTdCurrentNumber++;
  731   2      
  732   2              /* Exit critical section! */
-C51 COMPILER V9.51   CYDMAC                                                                08/17/2026 08:28:33 PAGE 13  
+C51 COMPILER V9.51   CYDMAC                                                                08/22/2026 15:31:48 PAGE 13  
 
  733   2              CyExitCriticalSection(interruptState);
  734   2          }
@@ -830,7 +830,7 @@ line level    source
  792          *                              instance specific with the instance name followed
  793          *                              by two underscores. In this example, the instance
  794          *                              name is DMA.
-C51 COMPILER V9.51   CYDMAC                                                                08/17/2026 08:28:33 PAGE 14  
+C51 COMPILER V9.51   CYDMAC                                                                08/22/2026 15:31:48 PAGE 14  
 
  795          *
  796          *   CY_DMA_TD_INC_DST_ADR    - Increment DST_ADR according to the size of each
@@ -894,7 +894,7 @@ line level    source
  853          *
  854          * \return
  855          *  CYRET_SUCCESS if successful.
-C51 COMPILER V9.51   CYDMAC                                                                08/17/2026 08:28:33 PAGE 15  
+C51 COMPILER V9.51   CYDMAC                                                                08/22/2026 15:31:48 PAGE 15  
 
  856          *  CYRET_BAD_PARAM if tdHandle is invalid.
  857          *
@@ -958,7 +958,7 @@ line level    source
  914          *  \param uint16 destination:
  915          *   The lower 16 address bits of the destination of the data transfer.
  916          *
-C51 COMPILER V9.51   CYDMAC                                                                08/17/2026 08:28:33 PAGE 16  
+C51 COMPILER V9.51   CYDMAC                                                                08/22/2026 15:31:48 PAGE 16  
 
  917          * \return
  918          *  CYRET_SUCCESS if successful.
@@ -1022,7 +1022,7 @@ line level    source
  976   2              if(NULL != source)
  977   2              {
  978   3                  /* Get source address */
-C51 COMPILER V9.51   CYDMAC                                                                08/17/2026 08:28:33 PAGE 17  
+C51 COMPILER V9.51   CYDMAC                                                                08/22/2026 15:31:48 PAGE 17  
 
  979   3                  convert = (reg16 *) &CY_DMA_TDMEM_STRUCT_PTR[tdHandle].TD1[0u];
  980   3                  *source = CY_GET_REG16(convert);
@@ -1085,7 +1085,7 @@ line level    source
 1037          
 1038          
 1039          /* [] END OF FILE */
-C51 COMPILER V9.51   CYDMAC                                                                08/17/2026 08:28:33 PAGE 18  
+C51 COMPILER V9.51   CYDMAC                                                                08/22/2026 15:31:48 PAGE 18  
 
 ASSEMBLY LISTING OF GENERATED OBJECT CODE
 
@@ -1149,7 +1149,7 @@ ASSEMBLY LISTING OF GENERATED OBJECT CODE
                        MOV     R4,A
                        INC     DPTR
                        MOVX    A,@DPTR
-C51 COMPILER V9.51   CYDMAC                                                                08/17/2026 08:28:33 PAGE 19  
+C51 COMPILER V9.51   CYDMAC                                                                08/22/2026 15:31:48 PAGE 19  
 
                        MOV     R5,A
                        INC     DPTR
@@ -1213,7 +1213,7 @@ ASSEMBLY LISTING OF GENERATED OBJECT CODE
                  R     MOV     DPTR,#interruptState
                        MOV     A,R7
                        MOVX    @DPTR,A
-C51 COMPILER V9.51   CYDMAC                                                                08/17/2026 08:28:33 PAGE 20  
+C51 COMPILER V9.51   CYDMAC                                                                08/22/2026 15:31:48 PAGE 20  
 
                                            ; SOURCE LINE # 174
                        CLR     A
@@ -1277,7 +1277,7 @@ ASSEMBLY LISTING OF GENERATED OBJECT CODE
                        INC     DPTR
                        MOVX    A,@DPTR
                        MOV     R5,A
-C51 COMPILER V9.51   CYDMAC                                                                08/17/2026 08:28:33 PAGE 21  
+C51 COMPILER V9.51   CYDMAC                                                                08/22/2026 15:31:48 PAGE 21  
 
                        INC     DPTR
                        MOVX    A,@DPTR
@@ -1341,7 +1341,7 @@ ASSEMBLY LISTING OF GENERATED OBJECT CODE
              ?C0009:
                                            ; SOURCE LINE # 186
                  R     MOV     DPTR,#dmaIndex
-C51 COMPILER V9.51   CYDMAC                                                                08/17/2026 08:28:33 PAGE 22  
+C51 COMPILER V9.51   CYDMAC                                                                08/22/2026 15:31:48 PAGE 22  
 
                        MOVX    A,@DPTR
                        CLR     C
@@ -1405,7 +1405,7 @@ ASSEMBLY LISTING OF GENERATED OBJECT CODE
                        PUSH    AR1
                        CLR     A
                        MOV     R7,#01H
-C51 COMPILER V9.51   CYDMAC                                                                08/17/2026 08:28:33 PAGE 23  
+C51 COMPILER V9.51   CYDMAC                                                                08/22/2026 15:31:48 PAGE 23  
 
                        MOV     R6,A
                        MOV     R5,A
@@ -1469,7 +1469,7 @@ ASSEMBLY LISTING OF GENERATED OBJECT CODE
                                            ; SOURCE LINE # 275
                        MOV     A,R5
                  R     xJZ     ?C0017
-C51 COMPILER V9.51   CYDMAC                                                                08/17/2026 08:28:33 PAGE 24  
+C51 COMPILER V9.51   CYDMAC                                                                08/22/2026 15:31:48 PAGE 24  
 
                                            ; SOURCE LINE # 276
                                            ; SOURCE LINE # 280
@@ -1533,7 +1533,7 @@ ASSEMBLY LISTING OF GENERATED OBJECT CODE
                                            ; SOURCE LINE # 318
 ;---- Variable 'status' assigned to Register 'R6' ----
                        MOV     R6,#01H
-C51 COMPILER V9.51   CYDMAC                                                                08/17/2026 08:28:33 PAGE 25  
+C51 COMPILER V9.51   CYDMAC                                                                08/22/2026 15:31:48 PAGE 25  
 
                                            ; SOURCE LINE # 320
                        MOV     A,R7
@@ -1597,7 +1597,7 @@ ASSEMBLY LISTING OF GENERATED OBJECT CODE
                        ADD     A,#014H
                        MOV     DPL,A
                        MOV     A,B
-C51 COMPILER V9.51   CYDMAC                                                                08/17/2026 08:28:33 PAGE 26  
+C51 COMPILER V9.51   CYDMAC                                                                08/22/2026 15:31:48 PAGE 26  
 
                        ADDC    A,#070H
                        MOV     DPH,A
@@ -1661,7 +1661,7 @@ ASSEMBLY LISTING OF GENERATED OBJECT CODE
                        ANL     A,#07H
                        ADD     A,ACC
                        MOV     R7,A
-C51 COMPILER V9.51   CYDMAC                                                                08/17/2026 08:28:33 PAGE 27  
+C51 COMPILER V9.51   CYDMAC                                                                08/22/2026 15:31:48 PAGE 27  
 
                        CLR     A
                        RLC     A
@@ -1725,7 +1725,7 @@ ASSEMBLY LISTING OF GENERATED OBJECT CODE
                        MOV     B,#08H
                        MUL     AB
                        ADD     A,#04H
-C51 COMPILER V9.51   CYDMAC                                                                08/17/2026 08:28:33 PAGE 28  
+C51 COMPILER V9.51   CYDMAC                                                                08/22/2026 15:31:48 PAGE 28  
 
                        MOV     R7,A
                        MOV     A,B
@@ -1789,7 +1789,7 @@ ASSEMBLY LISTING OF GENERATED OBJECT CODE
              ; FUNCTION _CyDmaChSetExtendedAddress (END)
 
              ; FUNCTION _CyDmaChSetInitialTd (BEGIN)
-C51 COMPILER V9.51   CYDMAC                                                                08/17/2026 08:28:33 PAGE 29  
+C51 COMPILER V9.51   CYDMAC                                                                08/22/2026 15:31:48 PAGE 29  
 
                                            ; SOURCE LINE # 474
 ;---- Variable 'chHandle' assigned to Register 'R7' ----
@@ -1853,7 +1853,7 @@ ASSEMBLY LISTING OF GENERATED OBJECT CODE
                        MOVX    A,@DPTR
                        MOV     R7,A
                        MOV     A,R5
-C51 COMPILER V9.51   CYDMAC                                                                08/17/2026 08:28:33 PAGE 30  
+C51 COMPILER V9.51   CYDMAC                                                                08/22/2026 15:31:48 PAGE 30  
 
                        ANL     A,#07H
                        MOV     R5,A
@@ -1917,7 +1917,7 @@ ASSEMBLY LISTING OF GENERATED OBJECT CODE
                        MOV     A,R3
                        MOVX    @DPTR,A
                        INC     DPTR
-C51 COMPILER V9.51   CYDMAC                                                                08/17/2026 08:28:33 PAGE 31  
+C51 COMPILER V9.51   CYDMAC                                                                08/22/2026 15:31:48 PAGE 31  
 
                        MOV     A,R2
                        MOVX    @DPTR,A
@@ -1981,7 +1981,7 @@ ASSEMBLY LISTING OF GENERATED OBJECT CODE
                        INC     DPTR
                        MOVX    A,@DPTR
                        ORL     A,R2
-C51 COMPILER V9.51   CYDMAC                                                                08/17/2026 08:28:33 PAGE 32  
+C51 COMPILER V9.51   CYDMAC                                                                08/22/2026 15:31:48 PAGE 32  
 
                        ORL     A,R3
                  R     xJZ     ?C0036
@@ -2045,7 +2045,7 @@ ASSEMBLY LISTING OF GENERATED OBJECT CODE
                        MOV     A,R5
                        ANL     A,#07FH
                        ORL     A,R7
-C51 COMPILER V9.51   CYDMAC                                                                08/17/2026 08:28:33 PAGE 33  
+C51 COMPILER V9.51   CYDMAC                                                                08/22/2026 15:31:48 PAGE 33  
 
                        MOV     R7,A
                        MOV     B,#08H
@@ -2109,7 +2109,7 @@ ASSEMBLY LISTING OF GENERATED OBJECT CODE
                                            ; SOURCE LINE # 659
                        DEC     R2
                                            ; SOURCE LINE # 660
-C51 COMPILER V9.51   CYDMAC                                                                08/17/2026 08:28:33 PAGE 34  
+C51 COMPILER V9.51   CYDMAC                                                                08/22/2026 15:31:48 PAGE 34  
 
              ?C0038:
                                            ; SOURCE LINE # 662
@@ -2173,7 +2173,7 @@ ASSEMBLY LISTING OF GENERATED OBJECT CODE
              ; FUNCTION CyDmaTdAllocate (END)
 
              ; FUNCTION _CyDmaTdFree (BEGIN)
-C51 COMPILER V9.51   CYDMAC                                                                08/17/2026 08:28:33 PAGE 35  
+C51 COMPILER V9.51   CYDMAC                                                                08/22/2026 15:31:48 PAGE 35  
 
                                            ; SOURCE LINE # 716
                  R     MOV     DPTR,#tdHandle
@@ -2237,7 +2237,7 @@ ASSEMBLY LISTING OF GENERATED OBJECT CODE
                        MOV     R7,A
                                            ; SOURCE LINE # 751
              ?C0044:
-C51 COMPILER V9.51   CYDMAC                                                                08/17/2026 08:28:33 PAGE 36  
+C51 COMPILER V9.51   CYDMAC                                                                08/22/2026 15:31:48 PAGE 36  
 
                        RET     
              ; FUNCTION CyDmaTdFreeCount (END)
@@ -2301,7 +2301,7 @@ ASSEMBLY LISTING OF GENERATED OBJECT CODE
                                            ; SOURCE LINE # 819
                  R     MOV     DPTR,#nextTd
                        MOVX    A,@DPTR
-C51 COMPILER V9.51   CYDMAC                                                                08/17/2026 08:28:33 PAGE 37  
+C51 COMPILER V9.51   CYDMAC                                                                08/22/2026 15:31:48 PAGE 37  
 
                        MOV     R7,A
                  R     MOV     DPTR,#tdHandle
@@ -2365,7 +2365,7 @@ ASSEMBLY LISTING OF GENERATED OBJECT CODE
                        MOV     A,#01H
                        MOVX    @DPTR,A
                                            ; SOURCE LINE # 870
-C51 COMPILER V9.51   CYDMAC                                                                08/17/2026 08:28:33 PAGE 38  
+C51 COMPILER V9.51   CYDMAC                                                                08/22/2026 15:31:48 PAGE 38  
 
                        MOV     A,R7
                        CLR     C
@@ -2429,7 +2429,7 @@ ASSEMBLY LISTING OF GENERATED OBJECT CODE
                        MOVX    A,@DPTR
                        MOV     R2,A
                        INC     DPTR
-C51 COMPILER V9.51   CYDMAC                                                                08/17/2026 08:28:33 PAGE 39  
+C51 COMPILER V9.51   CYDMAC                                                                08/22/2026 15:31:48 PAGE 39  
 
                        MOVX    A,@DPTR
                        ORL     A,R2
@@ -2493,7 +2493,7 @@ ASSEMBLY LISTING OF GENERATED OBJECT CODE
                        MOV     R1,A
                        MOV     A,R7
                  E     CALL    ?C?CSTPTR
-C51 COMPILER V9.51   CYDMAC                                                                08/17/2026 08:28:33 PAGE 40  
+C51 COMPILER V9.51   CYDMAC                                                                08/22/2026 15:31:48 PAGE 40  
 
                                            ; SOURCE LINE # 892
              ?C0050:
@@ -2557,7 +2557,7 @@ ASSEMBLY LISTING OF GENERATED OBJECT CODE
                        MOVX    @DPTR,A
                                            ; SOURCE LINE # 931
                        MOV     R2,AR6
-C51 COMPILER V9.51   CYDMAC                                                                08/17/2026 08:28:33 PAGE 41  
+C51 COMPILER V9.51   CYDMAC                                                                08/22/2026 15:31:48 PAGE 41  
 
                        MOV     R1,A
                        MOV     R3,#01H
@@ -2621,7 +2621,7 @@ ASSEMBLY LISTING OF GENERATED OBJECT CODE
                        MOV     A,R1
                        MOVX    @DPTR,A
                  R     MOV     DPTR,#tdHandle
-C51 COMPILER V9.51   CYDMAC                                                                08/17/2026 08:28:33 PAGE 42  
+C51 COMPILER V9.51   CYDMAC                                                                08/22/2026 15:31:48 PAGE 42  
 
                        MOV     A,R7
                        MOVX    @DPTR,A
@@ -2685,7 +2685,7 @@ ASSEMBLY LISTING OF GENERATED OBJECT CODE
              ?C0055:
                                            ; SOURCE LINE # 984
                  R     MOV     DPTR,#destination
-C51 COMPILER V9.51   CYDMAC                                                                08/17/2026 08:28:33 PAGE 43  
+C51 COMPILER V9.51   CYDMAC                                                                08/22/2026 15:31:48 PAGE 43  
 
                        MOVX    A,@DPTR
                        MOV     R3,A
@@ -2749,7 +2749,7 @@ ASSEMBLY LISTING OF GENERATED OBJECT CODE
 
              ; FUNCTION _CyDmaChRoundRobin (BEGIN)
                                            ; SOURCE LINE # 1017
-C51 COMPILER V9.51   CYDMAC                                                                08/17/2026 08:28:33 PAGE 44  
+C51 COMPILER V9.51   CYDMAC                                                                08/22/2026 15:31:48 PAGE 44  
 
 ;---- Variable 'chHandle' assigned to Register 'R7' ----
 ;---- Variable 'enableRR' assigned to Register 'R5' ----
@@ -2813,7 +2813,7 @@ ASSEMBLY LISTING OF GENERATED OBJECT CODE
 
 MODULE INFORMATION:   STATIC OVERLAYABLE
    CODE SIZE        =   1989    ----
-C51 COMPILER V9.51   CYDMAC                                                                08/17/2026 08:28:33 PAGE 45  
+C51 COMPILER V9.51   CYDMAC                                                                08/22/2026 15:31:48 PAGE 45  
 
    CONSTANT SIZE    =   ----    ----
    XDATA SIZE       =      6      72

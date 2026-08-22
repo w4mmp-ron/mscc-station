@@ -26,6 +26,8 @@
 
 uint32 result;
 uint8 E_dll_version = SI570_DLL;
+/* Discard buffer for reboot OUT payloads (host often sends sizeof(int)=4). */
+static uint8 E_reboot_pad[4];
 
 // Maps PSoC registers into one that looks like the AVR
 uint8 emulated_register(void) {
@@ -492,8 +494,26 @@ uint8 USBFS_HandleVendorRqst(void)  //This called by the USBFS component.  This 
                     }
                     E_command_queue[E_command_queue_rear] = SET_CW_INTERFACE_METHOD;
                 }
-                break;        
-                
+                break;
+
+            /*
+             * Soft reboot / bootloader — do NOT call CySoftwareReset / Bootloadable_Load
+             * here (USB ISR). Set flag; main loop performs the reset.
+             * Host typically OUT 4 bytes (ms-sdr Radio_send_parameters int); payload ignored.
+             */
+            case CMD_REBOOT_APP:
+                USBFS_currentTD.pData = (void *)&E_reboot_pad;
+                USBFS_currentTD.count = sizeof(E_reboot_pad);
+                requestHandled = USBFS_InitControlWrite();
+                E_reboot_request = REBOOT_REQ_APP;
+                break;
+
+            case CMD_ENTER_BOOTLOADER:
+                USBFS_currentTD.pData = (void *)&E_reboot_pad;
+                USBFS_currentTD.count = sizeof(E_reboot_pad);
+                requestHandled = USBFS_InitControlWrite();
+                E_reboot_request = REBOOT_REQ_BOOTLOADER;
+                break;
 
         }//End switch (reqCmd)
     }//End if ((reqType & USBFS_RQST_DIR_MASK) == USBFS_RQST_DIR_D2H)

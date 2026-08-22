@@ -1,4 +1,4 @@
-C51 COMPILER V9.51   FRACN_API                                                             08/17/2026 08:36:21 PAGE 1   
+C51 COMPILER V9.51   FRACN_API                                                             08/22/2026 15:13:59 PAGE 1   
 
 
 C51 COMPILER V9.51, COMPILATION OF MODULE FRACN_API
@@ -44,7 +44,7 @@ line level    source
   33   1          CY_SET_REG8(FracN_FRAC_HI__CONTROL_REG, frac >> 8);
   34   1          CY_SET_REG8(FracN_FRAC_LO__CONTROL_REG, frac & 0xFF);
   35   1      }
-C51 COMPILER V9.51   FRACN_API                                                             08/17/2026 08:36:21 PAGE 2   
+C51 COMPILER V9.51   FRACN_API                                                             08/22/2026 15:13:59 PAGE 2   
 
 ASSEMBLY LISTING OF GENERATED OBJECT CODE
 
@@ -108,7 +108,7 @@ ASSEMBLY LISTING OF GENERATED OBJECT CODE
                                            ; SOURCE LINE # 33
                        MOV     A,R4
                        MOV     DPTR,#06575H
-C51 COMPILER V9.51   FRACN_API                                                             08/17/2026 08:36:21 PAGE 3   
+C51 COMPILER V9.51   FRACN_API                                                             08/22/2026 15:13:59 PAGE 3   
 
                        MOVX    @DPTR,A
                                            ; SOURCE LINE # 34

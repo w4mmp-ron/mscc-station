@@ -1,4 +1,4 @@
-C51 COMPILER V9.51   I2C_DISPLAY_BOOT                                                      08/17/2026 08:28:29 PAGE 1   
+C51 COMPILER V9.51   I2C_DISPLAY_BOOT                                                      08/22/2026 15:31:45 PAGE 1   
 
 
 C51 COMPILER V9.51, COMPILATION OF MODULE I2C_DISPLAY_BOOT
@@ -62,7 +62,7 @@ line level    source
               *
               * Global variables:
               *  I2C_DISPLAY_slWriteBuf - The global variable used to store a received
-C51 COMPILER V9.51   I2C_DISPLAY_BOOT                                                      08/17/2026 08:28:29 PAGE 2   
+C51 COMPILER V9.51   I2C_DISPLAY_BOOT                                                      08/22/2026 15:31:45 PAGE 2   
 
               *                                command.
               *  I2C_DISPLAY_slReadBuf -  The global variable used to store a response.
@@ -126,7 +126,7 @@ line level    source
                   I2C_DISPLAY_slRdBufSize = 0u;
               
                   /* Reset Write buffer and Read buffer */
-C51 COMPILER V9.51   I2C_DISPLAY_BOOT                                                      08/17/2026 08:28:29 PAGE 3   
+C51 COMPILER V9.51   I2C_DISPLAY_BOOT                                                      08/22/2026 15:31:45 PAGE 3   
 
                   I2C_DISPLAY_slRdBufIndex = 0u;
                   I2C_DISPLAY_slWrBufIndex = 0u;
@@ -190,7 +190,7 @@ line level    source
                           if(I2C_DISPLAY_slRdBufIndex == ((uint8) size))
                           {
                               I2C_DISPLAY_slRdBufSize  = 0u;
-C51 COMPILER V9.51   I2C_DISPLAY_BOOT                                                      08/17/2026 08:28:29 PAGE 4   
+C51 COMPILER V9.51   I2C_DISPLAY_BOOT                                                      08/22/2026 15:31:45 PAGE 4   
 
                               I2C_DISPLAY_slRdBufIndex = 0u;
               
@@ -254,7 +254,7 @@ line level    source
                               /* Define how many bytes host has been written */
                               byteCount = I2C_DISPLAY_slWrBufIndex;
                               *count = (uint16) byteCount;
-C51 COMPILER V9.51   I2C_DISPLAY_BOOT                                                      08/17/2026 08:28:29 PAGE 5   
+C51 COMPILER V9.51   I2C_DISPLAY_BOOT                                                      08/22/2026 15:31:45 PAGE 5   
 
               
                               /* Copy command to pData buffer */
@@ -281,7 +281,7 @@ line level    source
  260          
  261          
  262          /* [] END OF FILE */
-C51 COMPILER V9.51   I2C_DISPLAY_BOOT                                                      08/17/2026 08:28:29 PAGE 6   
+C51 COMPILER V9.51   I2C_DISPLAY_BOOT                                                      08/22/2026 15:31:45 PAGE 6   
 
 ASSEMBLY LISTING OF GENERATED OBJECT CODE
 

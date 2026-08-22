@@ -1,6 +1,6 @@
 ;*******************************************************************************
 ; \file KeilStart.a51
-; \version 5.82
+; \version 6.10
 ;
 ; \brief Bootup Code for PSoC3 chips using the Keil toolchain.
 ;

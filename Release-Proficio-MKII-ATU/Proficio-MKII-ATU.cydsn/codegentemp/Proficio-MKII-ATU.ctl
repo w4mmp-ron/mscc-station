@@ -1,6 +1,6 @@
 -- ======================================================================
 -- Proficio-MKII-ATU.ctl generated from Proficio-MKII-ATU
--- 08/17/2026 at 08:28
+-- 08/22/2026 at 15:31
 -- This file is auto generated. ANY EDITS YOU MAKE MAY BE LOST WHEN THIS FILE IS REGENERATED!!!
 -- ======================================================================
 

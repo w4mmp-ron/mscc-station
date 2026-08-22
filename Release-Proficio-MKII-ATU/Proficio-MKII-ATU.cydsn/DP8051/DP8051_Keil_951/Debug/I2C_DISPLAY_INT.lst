@@ -1,4 +1,4 @@
-C51 COMPILER V9.51   I2C_DISPLAY_INT                                                       08/17/2026 08:28:29 PAGE 1   
+C51 COMPILER V9.51   I2C_DISPLAY_INT                                                       08/22/2026 15:31:45 PAGE 1   
 
 
 C51 COMPILER V9.51, COMPILATION OF MODULE I2C_DISPLAY_INT
@@ -62,7 +62,7 @@ line level    source
               #endif  /* (I2C_DISPLAY_MODE_SLAVE_ENABLED) */
   51   1      
   52   1          uint8  tmpCsr;
-C51 COMPILER V9.51   I2C_DISPLAY_INT                                                       08/17/2026 08:28:29 PAGE 2   
+C51 COMPILER V9.51   I2C_DISPLAY_INT                                                       08/22/2026 15:31:45 PAGE 2   
 
   53   1          
   54   1      #ifdef I2C_DISPLAY_ISR_ENTRY_CALLBACK
@@ -126,7 +126,7 @@ line level    source
               
                       #endif /* (I2C_DISPLAY_MODE_MULTI_MASTER_SLAVE_ENABLED) */
                   }
-C51 COMPILER V9.51   I2C_DISPLAY_INT                                                       08/17/2026 08:28:29 PAGE 3   
+C51 COMPILER V9.51   I2C_DISPLAY_INT                                                       08/22/2026 15:31:45 PAGE 3   
 
               #endif /* (I2C_DISPLAY_MODE_MULTI_MASTER_ENABLED) */
  116   1      
@@ -190,7 +190,7 @@ line level    source
  173   5                          I2C_DISPLAY_mstrStatus |= (I2C_DISPLAY_MSTAT_ERR_XFER |
  174   5                                                          I2C_DISPLAY_MSTAT_ERR_ADDR_NAK);
  175   5      
-C51 COMPILER V9.51   I2C_DISPLAY_INT                                                       08/17/2026 08:28:29 PAGE 4   
+C51 COMPILER V9.51   I2C_DISPLAY_INT                                                       08/22/2026 15:31:45 PAGE 4   
 
  176   5                          if(I2C_DISPLAY_CHECK_NO_STOP(I2C_DISPLAY_mstrControl))
  177   5                          {
@@ -254,7 +254,7 @@ line level    source
  235   5                          /* Set write complete, short transfer and master halted */
  236   5                          I2C_DISPLAY_mstrStatus |= (I2C_DISPLAY_MSTAT_ERR_XFER       |
  237   5                                                          I2C_DISPLAY_MSTAT_ERR_SHORT_XFER |
-C51 COMPILER V9.51   I2C_DISPLAY_INT                                                       08/17/2026 08:28:29 PAGE 5   
+C51 COMPILER V9.51   I2C_DISPLAY_INT                                                       08/22/2026 15:31:45 PAGE 5   
 
  238   5                                                          I2C_DISPLAY_MSTAT_XFER_HALT      |
  239   5                                                          I2C_DISPLAY_MSTAT_WR_CMPLT);
@@ -318,7 +318,7 @@ line level    source
  297   2      
  298   2              /* Catches Stop: end of transaction */
  299   2              if(I2C_DISPLAY_CHECK_STOP_STS(tmpCsr))
-C51 COMPILER V9.51   I2C_DISPLAY_INT                                                       08/17/2026 08:28:29 PAGE 6   
+C51 COMPILER V9.51   I2C_DISPLAY_INT                                                       08/22/2026 15:31:45 PAGE 6   
 
  300   2              {
  301   3                  I2C_DISPLAY_mstrStatus |= I2C_DISPLAY_GET_MSTAT_CMPLT;
@@ -382,7 +382,7 @@ line level    source
                                           I2C_DISPLAY_slRdBufIndex++;
               
                                           I2C_DISPLAY_slStatus |= I2C_DISPLAY_SSTAT_RD_BUSY;
-C51 COMPILER V9.51   I2C_DISPLAY_INT                                                       08/17/2026 08:28:29 PAGE 7   
+C51 COMPILER V9.51   I2C_DISPLAY_INT                                                       08/22/2026 15:31:45 PAGE 7   
 
                                       }
                                       else    /* Overflow: provide 0xFF on bus */
@@ -446,7 +446,7 @@ line level    source
                                   {
                                       /* Load first data byte from array */
                                       I2C_DISPLAY_DATA_REG = I2C_DISPLAY_slRdBufPtr[I2C_DISPLAY_slRdBufIndex];
-C51 COMPILER V9.51   I2C_DISPLAY_INT                                                       08/17/2026 08:28:29 PAGE 8   
+C51 COMPILER V9.51   I2C_DISPLAY_INT                                                       08/22/2026 15:31:45 PAGE 8   
 
                                       I2C_DISPLAY_ACK_AND_TRANSMIT;
                                       I2C_DISPLAY_slRdBufIndex++;
@@ -510,7 +510,7 @@ line level    source
                                       I2C_DISPLAY_DATA_REG = I2C_DISPLAY_OVERFLOW_RETURN;
                                       I2C_DISPLAY_TRANSMIT_DATA;
               
-C51 COMPILER V9.51   I2C_DISPLAY_INT                                                       08/17/2026 08:28:29 PAGE 9   
+C51 COMPILER V9.51   I2C_DISPLAY_INT                                                       08/22/2026 15:31:45 PAGE 9   
 
                                       I2C_DISPLAY_slStatus |= I2C_DISPLAY_SSTAT_RD_ERR_OVFL;
                                   }
@@ -574,7 +574,7 @@ line level    source
                       I2C_DISPLAY_WAKEUP_ISR_EntryCallback();
                   #endif /* I2C_DISPLAY_WAKEUP_ISR_ENTRY_CALLBACK */
                        
-C51 COMPILER V9.51   I2C_DISPLAY_INT                                                       08/17/2026 08:28:29 PAGE 10  
+C51 COMPILER V9.51   I2C_DISPLAY_INT                                                       08/22/2026 15:31:45 PAGE 10  
 
                       /* Set flag to notify that matched address is received */
                       I2C_DISPLAY_wakeupSource = 1u;
@@ -589,7 +589,7 @@ line level    source
  558          
  559          
  560          /* [] END OF FILE */
-C51 COMPILER V9.51   I2C_DISPLAY_INT                                                       08/17/2026 08:28:29 PAGE 11  
+C51 COMPILER V9.51   I2C_DISPLAY_INT                                                       08/22/2026 15:31:45 PAGE 11  
 
 ASSEMBLY LISTING OF GENERATED OBJECT CODE
 
@@ -653,7 +653,7 @@ ASSEMBLY LISTING OF GENERATED OBJECT CODE
                        MOV     A,R7
                        ANL     A,#0DFH
                  R     MOV     DPTR,#tmpCsr
-C51 COMPILER V9.51   I2C_DISPLAY_INT                                                       08/17/2026 08:28:29 PAGE 12  
+C51 COMPILER V9.51   I2C_DISPLAY_INT                                                       08/22/2026 15:31:45 PAGE 12  
 
                        MOVX    @DPTR,A
                                            ; SOURCE LINE # 130
@@ -717,7 +717,7 @@ ASSEMBLY LISTING OF GENERATED OBJECT CODE
                        MOVX    @DPTR,A
                                            ; SOURCE LINE # 153
                  E     MOV     DPTR,#I2C_DISPLAY_state
-C51 COMPILER V9.51   I2C_DISPLAY_INT                                                       08/17/2026 08:28:29 PAGE 13  
+C51 COMPILER V9.51   I2C_DISPLAY_INT                                                       08/22/2026 15:31:45 PAGE 13  
 
                        MOV     A,#060H
                        MOVX    @DPTR,A
@@ -781,7 +781,7 @@ ASSEMBLY LISTING OF GENERATED OBJECT CODE
                        MOV     R7,A
                  E     MOV     DPTR,#I2C_DISPLAY_state
                        MOVX    A,@DPTR
-C51 COMPILER V9.51   I2C_DISPLAY_INT                                                       08/17/2026 08:28:29 PAGE 14  
+C51 COMPILER V9.51   I2C_DISPLAY_INT                                                       08/22/2026 15:31:45 PAGE 14  
 
                        ANL     A,#08H
                  R     xJZ     ?C0028
@@ -845,7 +845,7 @@ ASSEMBLY LISTING OF GENERATED OBJECT CODE
                  E     MOV     DPTR,#I2C_DISPLAY_mstrWrBufIndex
                        MOVX    A,@DPTR
                        CLR     C
-C51 COMPILER V9.51   I2C_DISPLAY_INT                                                       08/17/2026 08:28:29 PAGE 15  
+C51 COMPILER V9.51   I2C_DISPLAY_INT                                                       08/22/2026 15:31:45 PAGE 15  
 
                        SUBB    A,R7
                  R     xJGE    ?C0041
@@ -909,7 +909,7 @@ ASSEMBLY LISTING OF GENERATED OBJECT CODE
              ?C0050:
                                            ; SOURCE LINE # 228
                        MOV     DPTR,#049D6H
-C51 COMPILER V9.51   I2C_DISPLAY_INT                                                       08/17/2026 08:28:29 PAGE 16  
+C51 COMPILER V9.51   I2C_DISPLAY_INT                                                       08/22/2026 15:31:45 PAGE 16  
 
                        MOVX    A,@DPTR
                        ORL     A,#010H
@@ -973,7 +973,7 @@ ASSEMBLY LISTING OF GENERATED OBJECT CODE
                                            ; SOURCE LINE # 258
                        MOV     DPTR,#049D8H
                        MOVX    A,@DPTR
-C51 COMPILER V9.51   I2C_DISPLAY_INT                                                       08/17/2026 08:28:29 PAGE 17  
+C51 COMPILER V9.51   I2C_DISPLAY_INT                                                       08/22/2026 15:31:45 PAGE 17  
 
                        MOV     R7,A
                  E     MOV     DPTR,#I2C_DISPLAY_mstrRdBufPtr
@@ -1037,7 +1037,7 @@ ASSEMBLY LISTING OF GENERATED OBJECT CODE
                        MOV     DPTR,#044C9H
                        MOV     A,#080H
                        MOVX    @DPTR,A
-C51 COMPILER V9.51   I2C_DISPLAY_INT                                                       08/17/2026 08:28:29 PAGE 18  
+C51 COMPILER V9.51   I2C_DISPLAY_INT                                                       08/22/2026 15:31:45 PAGE 18  
 
                                            ; SOURCE LINE # 275
                  R     xJMP    ?C0002
@@ -1101,7 +1101,7 @@ ASSEMBLY LISTING OF GENERATED OBJECT CODE
                  R     xJMP    ?C0088
              ?C0001:
                                            ; SOURCE LINE # 308
-C51 COMPILER V9.51   I2C_DISPLAY_INT                                                       08/17/2026 08:28:29 PAGE 19  
+C51 COMPILER V9.51   I2C_DISPLAY_INT                                                       08/22/2026 15:31:45 PAGE 19  
 
                  E     MOV     DPTR,#I2C_DISPLAY_state
                        MOVX    A,@DPTR

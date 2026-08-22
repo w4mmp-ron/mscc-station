@@ -1,4 +1,4 @@
-C51 COMPILER V9.51   CW_CLOCK                                                              08/17/2026 08:36:25 PAGE 1   
+C51 COMPILER V9.51   CW_CLOCK                                                              08/22/2026 15:14:02 PAGE 1   
 
 
 C51 COMPILER V9.51, COMPILATION OF MODULE CW_CLOCK
@@ -62,7 +62,7 @@ line level    source
   51          
   52          
   53          /*******************************************************************************
-C51 COMPILER V9.51   CW_CLOCK                                                              08/17/2026 08:36:25 PAGE 2   
+C51 COMPILER V9.51   CW_CLOCK                                                              08/22/2026 15:14:02 PAGE 2   
 
   54          * Function Name: CW_Clock_Stop
   55          ********************************************************************************
@@ -126,7 +126,7 @@ line level    source
               #else
  114   2              CLK_DIST_DMASK = CW_Clock_CLKEN_MASK;
  115   2              CLK_DIST_AMASK = 0x00u;
-C51 COMPILER V9.51   CW_CLOCK                                                              08/17/2026 08:36:25 PAGE 3   
+C51 COMPILER V9.51   CW_CLOCK                                                              08/22/2026 15:14:02 PAGE 3   
 
  116   2      #endif /* CW_Clock__CFG3 */
  117   2      
@@ -190,7 +190,7 @@ line level    source
  175          *  Modifies the clock divider and, thus, the frequency. When the clock divider
  176          *  register is set to zero or changed from zero, the clock will be temporarily
  177          *  disabled in order to change the SSS mode bit. If the clock is enabled when
-C51 COMPILER V9.51   CW_CLOCK                                                              08/17/2026 08:36:25 PAGE 4   
+C51 COMPILER V9.51   CW_CLOCK                                                              08/22/2026 15:14:02 PAGE 4   
 
  178          *  SetDividerRegister is called, then the source clock must be running.
  179          *
@@ -254,7 +254,7 @@ line level    source
  237   4                      CLK_DIST_AMASK = 0x00u;
  238   4      #endif /* CW_Clock__CFG3 */
  239   4                      /* Clear mask of bus clock. */
-C51 COMPILER V9.51   CW_CLOCK                                                              08/17/2026 08:36:25 PAGE 5   
+C51 COMPILER V9.51   CW_CLOCK                                                              08/22/2026 15:14:02 PAGE 5   
 
  240   4                      CLK_DIST_BCFG2 &= (uint8)(~BCFG2_MASK);
  241   4      
@@ -318,7 +318,7 @@ line level    source
  299   1          return CY_GET_REG16(CW_Clock_DIV_PTR);
  300   1      }
  301          
-C51 COMPILER V9.51   CW_CLOCK                                                              08/17/2026 08:36:25 PAGE 6   
+C51 COMPILER V9.51   CW_CLOCK                                                              08/22/2026 15:14:02 PAGE 6   
 
  302          
  303          /*******************************************************************************
@@ -382,7 +382,7 @@ line level    source
  361          *   the clock. Specifically, see the CLKDIST.DCFG.CFG2 register.
  362          *
  363          * Returns:
-C51 COMPILER V9.51   CW_CLOCK                                                              08/17/2026 08:36:25 PAGE 7   
+C51 COMPILER V9.51   CW_CLOCK                                                              08/22/2026 15:14:02 PAGE 7   
 
  364          *  None
  365          *
@@ -446,7 +446,7 @@ line level    source
  423   1      
  424   1          if (((oldSrc != ((uint8)CYCLK_SRC_SEL_CLK_SYNC_D)) && 
  425   1              (clkSource == ((uint8)CYCLK_SRC_SEL_CLK_SYNC_D))) && (currDiv == 0u))
-C51 COMPILER V9.51   CW_CLOCK                                                              08/17/2026 08:36:25 PAGE 8   
+C51 COMPILER V9.51   CW_CLOCK                                                              08/22/2026 15:14:02 PAGE 8   
 
  426   1          {
  427   2              /* Switching to Master and divider is 1, set SSS, which will output master, */
@@ -510,7 +510,7 @@ line level    source
               *   disable the clock. clkPhase = 1 produces a 0ns delay and clkPhase = 11 
               *   produces a 10ns delay.
               *
-C51 COMPILER V9.51   CW_CLOCK                                                              08/17/2026 08:36:25 PAGE 9   
+C51 COMPILER V9.51   CW_CLOCK                                                              08/22/2026 15:14:02 PAGE 9   
 
               * Returns:
               *  None
@@ -546,7 +546,7 @@ line level    source
  519          
  520          
  521          /* [] END OF FILE */
-C51 COMPILER V9.51   CW_CLOCK                                                              08/17/2026 08:36:25 PAGE 10  
+C51 COMPILER V9.51   CW_CLOCK                                                              08/22/2026 15:14:02 PAGE 10  
 
 ASSEMBLY LISTING OF GENERATED OBJECT CODE
 
@@ -610,7 +610,7 @@ ASSEMBLY LISTING OF GENERATED OBJECT CODE
                        MOV     DPTR,#04008H
                        MOVX    A,@DPTR
                        ANL     A,#07FH
-C51 COMPILER V9.51   CW_CLOCK                                                              08/17/2026 08:36:25 PAGE 11  
+C51 COMPILER V9.51   CW_CLOCK                                                              08/22/2026 15:14:02 PAGE 11  
 
                        MOVX    @DPTR,A
                                            ; SOURCE LINE # 121
@@ -674,7 +674,7 @@ ASSEMBLY LISTING OF GENERATED OBJECT CODE
              ; FUNCTION CW_Clock_StopBlock (END)
 
              ; FUNCTION _CW_Clock_StandbyPower (BEGIN)
-C51 COMPILER V9.51   CW_CLOCK                                                              08/17/2026 08:36:25 PAGE 12  
+C51 COMPILER V9.51   CW_CLOCK                                                              08/22/2026 15:14:02 PAGE 12  
 
                                            ; SOURCE LINE # 157
 ;---- Variable 'state' assigned to Register 'R7' ----
@@ -738,7 +738,7 @@ ASSEMBLY LISTING OF GENERATED OBJECT CODE
                        XRL     A,R7
                  R     JNZ     ?C0038
                        MOV     A,R4
-C51 COMPILER V9.51   CW_CLOCK                                                              08/17/2026 08:36:25 PAGE 13  
+C51 COMPILER V9.51   CW_CLOCK                                                              08/22/2026 15:14:02 PAGE 13  
 
                        XRL     A,R6
              ?C0038:
@@ -802,7 +802,7 @@ ASSEMBLY LISTING OF GENERATED OBJECT CODE
                        MOVX    A,@DPTR
                        MOV     R5,A
                  E     CALL    _cywrite16_nodpx
-C51 COMPILER V9.51   CW_CLOCK                                                              08/17/2026 08:36:25 PAGE 14  
+C51 COMPILER V9.51   CW_CLOCK                                                              08/22/2026 15:14:02 PAGE 14  
 
                                            ; SOURCE LINE # 222
                                            ; SOURCE LINE # 223
@@ -866,7 +866,7 @@ ASSEMBLY LISTING OF GENERATED OBJECT CODE
                        MOVX    A,@DPTR
                        ANL     A,#01H
                  R     xJNZ    ?C0019
-C51 COMPILER V9.51   CW_CLOCK                                                              08/17/2026 08:36:25 PAGE 15  
+C51 COMPILER V9.51   CW_CLOCK                                                              08/22/2026 15:14:02 PAGE 15  
 
              ?C0020:
                                            ; SOURCE LINE # 253
@@ -930,7 +930,7 @@ ASSEMBLY LISTING OF GENERATED OBJECT CODE
                  R     MOV     DPTR,#clkDivider
                        MOVX    A,@DPTR
                        MOV     R4,A
-C51 COMPILER V9.51   CW_CLOCK                                                              08/17/2026 08:36:25 PAGE 16  
+C51 COMPILER V9.51   CW_CLOCK                                                              08/22/2026 15:14:02 PAGE 16  
 
                        INC     DPTR
                        MOVX    A,@DPTR
@@ -994,7 +994,7 @@ ASSEMBLY LISTING OF GENERATED OBJECT CODE
 ;---- Variable 'modeBitMask' assigned to Register 'R7' ----
                                            ; SOURCE LINE # 368
                                            ; SOURCE LINE # 369
-C51 COMPILER V9.51   CW_CLOCK                                                              08/17/2026 08:36:25 PAGE 17  
+C51 COMPILER V9.51   CW_CLOCK                                                              08/22/2026 15:14:02 PAGE 17  
 
                        MOV     DPTR,#0408AH
                        MOVX    A,@DPTR
@@ -1058,7 +1058,7 @@ ASSEMBLY LISTING OF GENERATED OBJECT CODE
                                            ; SOURCE LINE # 429
                        MOV     DPTR,#0408AH
                        MOVX    A,@DPTR
-C51 COMPILER V9.51   CW_CLOCK                                                              08/17/2026 08:36:25 PAGE 18  
+C51 COMPILER V9.51   CW_CLOCK                                                              08/22/2026 15:14:02 PAGE 18  
 
                        ORL     A,#040H
                        MOVX    @DPTR,A
@@ -1122,7 +1122,7 @@ ASSEMBLY LISTING OF GENERATED OBJECT CODE
                        MOV     DPTR,#0408AH
                        MOVX    A,@DPTR
                        ANL     A,#07H
-C51 COMPILER V9.51   CW_CLOCK                                                              08/17/2026 08:36:25 PAGE 19  
+C51 COMPILER V9.51   CW_CLOCK                                                              08/22/2026 15:14:02 PAGE 19  
 
                        MOV     R7,A
                                            ; SOURCE LINE # 467

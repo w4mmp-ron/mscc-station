@@ -109,3 +109,9 @@ Proficio-Mark-II-CW: TopDesign.cysch
 	CW_isr [v1.70] to [v1.71]
 
 
+Last Modified Date & Time: 08/22/2026 15:33:05
+
+Proficio-Legacy: Proficio-Legacy.cydwr
+	cy_boot [v5.82] to [v6.10]
+
+

@@ -118,8 +118,6 @@
   <file name="C:\Users\Ron\.grok\worktrees\Release-Proficio-Legacy\Proficio-Legacy.cydsn\codegentemp\USBFS_EP_DMA_Done_isr.h" value="HEADER;;;;;USBFS_EP_DMA_Done_isr" />
   <file name="C:\Users\Ron\.grok\worktrees\Release-Proficio-Legacy\Proficio-Legacy.cydsn\codegentemp\USBFS_EP8_DMA_Done_SR.c" value="SOURCE_C;DP8051;;;;USBFS_EP8_DMA_Done_SR" />
   <file name="C:\Users\Ron\.grok\worktrees\Release-Proficio-Legacy\Proficio-Legacy.cydsn\codegentemp\USBFS_EP8_DMA_Done_SR.h" value="HEADER;;;;;USBFS_EP8_DMA_Done_SR" />
-  <file name="C:\Users\Ron\.grok\worktrees\Release-Proficio-Legacy\Proficio-Legacy.cydsn\codegentemp\cy_em_eeprom.c" value="SOURCE_C;DP8051;;;;Em_EEPROM_Dynamic" />
-  <file name="C:\Users\Ron\.grok\worktrees\Release-Proficio-Legacy\Proficio-Legacy.cydsn\codegentemp\cy_em_eeprom.h" value="HEADER;;;;;Em_EEPROM_Dynamic" />
   <file name="C:\Users\Ron\.grok\worktrees\Release-Proficio-Legacy\Proficio-Legacy.cydsn\codegentemp\CyBootAsmKeil.a51" value="SOURCE_ASM;DP8051;;c659702b-5f69-4783-8160-eb7977f1c97a;;cy_boot" />
   <file name="C:\Users\Ron\.grok\worktrees\Release-Proficio-Legacy\Proficio-Legacy.cydsn\codegentemp\CyDmac.c" value="SOURCE_C;DP8051;;;;cy_boot" />
   <file name="C:\Users\Ron\.grok\worktrees\Release-Proficio-Legacy\Proficio-Legacy.cydsn\codegentemp\CyDmac.h" value="HEADER;;;;;cy_boot" />
@@ -138,6 +136,8 @@
   <file name="C:\Users\Ron\.grok\worktrees\Release-Proficio-Legacy\Proficio-Legacy.cydsn\codegentemp\KeilStart.a51" value="SOURCE_ASM;DP8051;;c659702b-5f69-4783-8160-eb7977f1c97a;;cy_boot" />
   <file name="C:\Users\Ron\.grok\worktrees\Release-Proficio-Legacy\Proficio-Legacy.cydsn\codegentemp\PSoC3_8051.h" value="HEADER;;;;;cy_boot" />
   <file name="C:\Users\Ron\.grok\worktrees\Release-Proficio-Legacy\Proficio-Legacy.cydsn\codegentemp\PSoC3_8051.inc" value="OTHER;;;;;cy_boot" />
+  <file name="C:\Users\Ron\.grok\worktrees\Release-Proficio-Legacy\Proficio-Legacy.cydsn\codegentemp\cy_em_eeprom.c" value="SOURCE_C;DP8051;;;;Em_EEPROM_Dynamic" />
+  <file name="C:\Users\Ron\.grok\worktrees\Release-Proficio-Legacy\Proficio-Legacy.cydsn\codegentemp\cy_em_eeprom.h" value="HEADER;;;;;Em_EEPROM_Dynamic" />
   <file name="C:\Users\Ron\.grok\worktrees\Release-Proficio-Legacy\Proficio-Legacy.cydsn\codegentemp\project.h" value="OTHER;;;;;" />
   <file name="C:\Users\Ron\.grok\worktrees\Release-Proficio-Legacy\Proficio-Legacy.cydsn\codegentemp\cycodeshareimport.ld" value="OTHER;;;;;" />
   <file name="C:\Users\Ron\.grok\worktrees\Release-Proficio-Legacy\Proficio-Legacy.cydsn\codegentemp\cycodeshareexport.ld" value="OTHER;;;;;" />

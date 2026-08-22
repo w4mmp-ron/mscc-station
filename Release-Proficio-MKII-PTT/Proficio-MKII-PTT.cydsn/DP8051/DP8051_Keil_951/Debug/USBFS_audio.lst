@@ -1,4 +1,4 @@
-C51 COMPILER V9.51   USBFS_AUDIO                                                           08/17/2026 08:36:19 PAGE 1   
+C51 COMPILER V9.51   USBFS_AUDIO                                                           08/22/2026 15:13:57 PAGE 1   
 
 
 C51 COMPILER V9.51, COMPILATION OF MODULE USBFS_AUDIO
@@ -62,7 +62,7 @@ line level    source
   50              volatile uint8 USBFS_frequencyChanged;
   51              /** Contains the mute configuration set by the host.*/
   52              volatile uint8 USBFS_currentMute;
-C51 COMPILER V9.51   USBFS_AUDIO                                                           08/17/2026 08:36:19 PAGE 2   
+C51 COMPILER V9.51   USBFS_AUDIO                                                           08/22/2026 15:13:57 PAGE 2   
 
   53              /** Contains the volume level set by the host.*/
   54              volatile uint8 USBFS_currentVolume[USBFS_VOLUME_LEN];
@@ -126,7 +126,7 @@ line level    source
  112   3                  /* Request recipient is to endpoint. */
  113   3                  switch (USBFS_bRequestReg)
  114   3                  {
-C51 COMPILER V9.51   USBFS_AUDIO                                                           08/17/2026 08:36:19 PAGE 3   
+C51 COMPILER V9.51   USBFS_AUDIO                                                           08/22/2026 15:13:57 PAGE 3   
 
  115   4                      case USBFS_GET_CUR:
  116   4                      #if defined(USBFS_ENABLE_AUDIO_STREAMING)
@@ -190,7 +190,7 @@ line level    source
  174   5      
  175   5                              /* Entity ID Control Selector is VOLUME, */
  176   5                              USBFS_currentTD.wCount = USBFS_VOLUME_LEN;
-C51 COMPILER V9.51   USBFS_AUDIO                                                           08/17/2026 08:36:19 PAGE 4   
+C51 COMPILER V9.51   USBFS_AUDIO                                                           08/22/2026 15:13:57 PAGE 4   
 
  177   5                              USBFS_currentTD.pData  = USBFS_currentVolume;
  178   5                              
@@ -254,7 +254,7 @@ line level    source
  236   4                      
  237   4                          /* `#START AUDIO_WRITE_REQUESTS` Place other request handler here */
  238   4      
-C51 COMPILER V9.51   USBFS_AUDIO                                                           08/17/2026 08:36:19 PAGE 5   
+C51 COMPILER V9.51   USBFS_AUDIO                                                           08/22/2026 15:13:57 PAGE 5   
 
  239   4                          /* `#END` */
  240   4                      
@@ -318,7 +318,7 @@ line level    source
  298   4                      #if defined(USBFS_ENABLE_AUDIO_STREAMING)
  299   4                          if (wValueHi == USBFS_MUTE_CONTROL)
  300   4                          {
-C51 COMPILER V9.51   USBFS_AUDIO                                                           08/17/2026 08:36:19 PAGE 6   
+C51 COMPILER V9.51   USBFS_AUDIO                                                           08/22/2026 15:13:57 PAGE 6   
 
  301   5                              /* `#START MUTE_SET_REQUEST` Place multi-channel handler here */
  302   5      
@@ -382,7 +382,7 @@ line level    source
  360   3                  /* Do not handle other requests recipients. */
  361   3              }
  362   2          }
-C51 COMPILER V9.51   USBFS_AUDIO                                                           08/17/2026 08:36:19 PAGE 7   
+C51 COMPILER V9.51   USBFS_AUDIO                                                           08/22/2026 15:13:57 PAGE 7   
 
  363   1      
  364   1          return (requestHandled);
@@ -402,7 +402,7 @@ line level    source
  378          
  379          
  380          /* [] END OF FILE */
-C51 COMPILER V9.51   USBFS_AUDIO                                                           08/17/2026 08:36:19 PAGE 8   
+C51 COMPILER V9.51   USBFS_AUDIO                                                           08/22/2026 15:13:57 PAGE 8   
 
 ASSEMBLY LISTING OF GENERATED OBJECT CODE
 
@@ -466,7 +466,7 @@ ASSEMBLY LISTING OF GENERATED OBJECT CODE
                                            ; SOURCE LINE # 121
                  R     MOV     DPTR,#epNumber
                        MOVX    A,@DPTR
-C51 COMPILER V9.51   USBFS_AUDIO                                                           08/17/2026 08:36:19 PAGE 9   
+C51 COMPILER V9.51   USBFS_AUDIO                                                           08/22/2026 15:13:57 PAGE 9   
 
                        MOV     B,#03H
                        MUL     AB
@@ -530,7 +530,7 @@ ASSEMBLY LISTING OF GENERATED OBJECT CODE
                        CLR     A
                        MOVX    @DPTR,A
                        INC     DPTR
-C51 COMPILER V9.51   USBFS_AUDIO                                                           08/17/2026 08:36:19 PAGE 10  
+C51 COMPILER V9.51   USBFS_AUDIO                                                           08/22/2026 15:13:57 PAGE 10  
 
                        INC     A
                        MOVX    @DPTR,A
@@ -594,7 +594,7 @@ ASSEMBLY LISTING OF GENERATED OBJECT CODE
                  R     MOV     DPTR,#wValueHi
                        MOVX    A,@DPTR
                        XRL     A,#02H
-C51 COMPILER V9.51   USBFS_AUDIO                                                           08/17/2026 08:36:19 PAGE 11  
+C51 COMPILER V9.51   USBFS_AUDIO                                                           08/22/2026 15:13:57 PAGE 11  
 
                  R     xJNZ    ?C0024
                                            ; SOURCE LINE # 195
@@ -658,7 +658,7 @@ ASSEMBLY LISTING OF GENERATED OBJECT CODE
                        MOV     A,R7
                        MOVX    @DPTR,A
                                            ; SOURCE LINE # 212
-C51 COMPILER V9.51   USBFS_AUDIO                                                           08/17/2026 08:36:19 PAGE 12  
+C51 COMPILER V9.51   USBFS_AUDIO                                                           08/22/2026 15:13:57 PAGE 12  
 
                                            ; SOURCE LINE # 213
                  R     xJMP    ?C0024
@@ -722,7 +722,7 @@ ASSEMBLY LISTING OF GENERATED OBJECT CODE
                                            ; SOURCE LINE # 255
              ?C0001:
                                            ; SOURCE LINE # 257
-C51 COMPILER V9.51   USBFS_AUDIO                                                           08/17/2026 08:36:19 PAGE 13  
+C51 COMPILER V9.51   USBFS_AUDIO                                                           08/22/2026 15:13:57 PAGE 13  
 
                                            ; SOURCE LINE # 260
                  R     MOV     DPTR,#RqstRcpt
@@ -786,7 +786,7 @@ ASSEMBLY LISTING OF GENERATED OBJECT CODE
                                            ; SOURCE LINE # 289
                                            ; SOURCE LINE # 290
                                            ; SOURCE LINE # 291
-C51 COMPILER V9.51   USBFS_AUDIO                                                           08/17/2026 08:36:19 PAGE 14  
+C51 COMPILER V9.51   USBFS_AUDIO                                                           08/22/2026 15:13:57 PAGE 14  
 
                  R     xJMP    ?C0024
              ?C0025:
@@ -850,7 +850,7 @@ ASSEMBLY LISTING OF GENERATED OBJECT CODE
                                            ; SOURCE LINE # 327
                        MOV     R3,#01H
                  R     MOV     R2,#HIGH USBFS_currentVolume
-C51 COMPILER V9.51   USBFS_AUDIO                                                           08/17/2026 08:36:19 PAGE 15  
+C51 COMPILER V9.51   USBFS_AUDIO                                                           08/22/2026 15:13:57 PAGE 15  
 
                  R     MOV     R1,#LOW USBFS_currentVolume
                  E     MOV     DPTR,#USBFS_currentTD+02H

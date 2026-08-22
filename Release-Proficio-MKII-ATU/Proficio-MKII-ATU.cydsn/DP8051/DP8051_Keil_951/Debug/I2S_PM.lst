@@ -1,4 +1,4 @@
-C51 COMPILER V9.51   I2S_PM                                                                08/17/2026 08:28:30 PAGE 1   
+C51 COMPILER V9.51   I2S_PM                                                                08/22/2026 15:31:46 PAGE 1   
 
 
 C51 COMPILER V9.51, COMPILATION OF MODULE I2S_PM
@@ -62,7 +62,7 @@ line level    source
   51          *  None.
   52          *
   53          * Return:
-C51 COMPILER V9.51   I2S_PM                                                                08/17/2026 08:28:30 PAGE 2   
+C51 COMPILER V9.51   I2S_PM                                                                08/22/2026 15:31:46 PAGE 2   
 
   54          *  None.
   55          *
@@ -126,7 +126,7 @@ line level    source
  113          {
  114   1          #if (I2S_DYNAMIC_BIT_RESOLUTION)
                       I2S_CONTROL_REG = I2S_backup.enableState & I2S_BIT_RESOLUTION_MODE_MASK;
-C51 COMPILER V9.51   I2S_PM                                                                08/17/2026 08:28:30 PAGE 3   
+C51 COMPILER V9.51   I2S_PM                                                                08/22/2026 15:31:46 PAGE 3   
 
                   #endif /* I2S_DYNAMIC_BIT_RESOLUTION */
  117   1      
@@ -154,7 +154,7 @@ line level    source
  139          
  140          
  141          /* [] END OF FILE */
-C51 COMPILER V9.51   I2S_PM                                                                08/17/2026 08:28:30 PAGE 4   
+C51 COMPILER V9.51   I2S_PM                                                                08/22/2026 15:31:46 PAGE 4   
 
 ASSEMBLY LISTING OF GENERATED OBJECT CODE
 
@@ -218,7 +218,7 @@ ASSEMBLY LISTING OF GENERATED OBJECT CODE
                  E     CALL    I2S_EnableRx
                                            ; SOURCE LINE # 135
                                            ; SOURCE LINE # 137
-C51 COMPILER V9.51   I2S_PM                                                                08/17/2026 08:28:30 PAGE 5   
+C51 COMPILER V9.51   I2S_PM                                                                08/22/2026 15:31:46 PAGE 5   
 
                                            ; SOURCE LINE # 138
              ?C0007:

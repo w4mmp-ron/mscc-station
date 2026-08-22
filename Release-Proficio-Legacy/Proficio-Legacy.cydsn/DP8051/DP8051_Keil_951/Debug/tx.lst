@@ -1,4 +1,4 @@
-C51 COMPILER V9.51   TX                                                                    08/17/2026 08:42:56 PAGE 1   
+C51 COMPILER V9.51   TX                                                                    08/22/2026 15:33:27 PAGE 1   
 
 
 C51 COMPILER V9.51, COMPILATION OF MODULE TX
@@ -62,7 +62,7 @@ line level    source
   50   3                      Control_Write(Control_Read() & ~(CONTROL_LED) | CONTROL_AMP);
   51   3                      state = 11;
   52   3                   }
-C51 COMPILER V9.51   TX                                                                    08/17/2026 08:42:56 PAGE 2   
+C51 COMPILER V9.51   TX                                                                    08/22/2026 15:33:27 PAGE 2   
 
   53   2                 break;
   54   2              case 11:
@@ -72,7 +72,7 @@ line level    source
   58   2          }
   59   1          
   60   1      }
-C51 COMPILER V9.51   TX                                                                    08/17/2026 08:42:56 PAGE 3   
+C51 COMPILER V9.51   TX                                                                    08/22/2026 15:33:27 PAGE 3   
 
 ASSEMBLY LISTING OF GENERATED OBJECT CODE
 
@@ -136,7 +136,7 @@ ASSEMBLY LISTING OF GENERATED OBJECT CODE
                        MOVX    A,@DPTR
                  R     xJNZ    ?C0008
                                            ; SOURCE LINE # 50
-C51 COMPILER V9.51   TX                                                                    08/17/2026 08:42:56 PAGE 4   
+C51 COMPILER V9.51   TX                                                                    08/22/2026 15:33:27 PAGE 4   
 
                  E     CALL    Control_Read
                        MOV     A,R7

@@ -1,4 +1,4 @@
-C51 COMPILER V9.51   T1                                                                    08/17/2026 08:36:15 PAGE 1   
+C51 COMPILER V9.51   T1                                                                    08/22/2026 15:13:54 PAGE 1   
 
 
 C51 COMPILER V9.51, COMPILATION OF MODULE T1
@@ -62,7 +62,7 @@ line level    source
   50          
   51              if (band_request_timer) band_request_timer--;
   52              else if (T1_Band_Number != band) {
-C51 COMPILER V9.51   T1                                                                    08/17/2026 08:36:15 PAGE 2   
+C51 COMPILER V9.51   T1                                                                    08/22/2026 15:13:54 PAGE 2   
 
   53                  band_request = 1;
   54                  band_request_timer = 200;
@@ -120,7 +120,7 @@ line level    source
  106          
  107          }
  108          */
-C51 COMPILER V9.51   T1                                                                    08/17/2026 08:36:15 PAGE 3   
+C51 COMPILER V9.51   T1                                                                    08/22/2026 15:13:54 PAGE 3   
 
 ASSEMBLY LISTING OF GENERATED OBJECT CODE
 

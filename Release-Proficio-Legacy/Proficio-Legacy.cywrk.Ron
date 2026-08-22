@@ -13,7 +13,7 @@
 <v>Output</v>
 </TreeKeys>
 <TreeStates>
-<CyGuid_2a325b3b-c96a-4e9f-b7a0-2c44ecb5f237 type_name="CyDesigner.Common.Base.Controls.CyTreeViewState" version="1" SelectedNodeId="Proficio-Legacy\Proficio-Legacy\Source Files\si5351a.c">
+<CyGuid_2a325b3b-c96a-4e9f-b7a0-2c44ecb5f237 type_name="CyDesigner.Common.Base.Controls.CyTreeViewState" version="1" SelectedNodeId="Proficio-Legacy">
 <ExpandedNodeIds>
 <v>Proficio-Legacy</v>
 <v>Proficio-Legacy\Proficio-Legacy</v>
@@ -239,46 +239,6 @@
 <VisibleNodeIds>
 <v>Proficio-Legacy</v>
 <v>Proficio-Legacy\Proficio-Legacy</v>
-<v>Proficio-Legacy\Proficio-Legacy\DP8051</v>
-<v>Proficio-Legacy\Proficio-Legacy\DP8051\DP8051_Keil_951</v>
-<v>Proficio-Legacy\Proficio-Legacy\DP8051\DP8051_Keil_951\Debug</v>
-<v>Proficio-Legacy\Proficio-Legacy\DP8051\DP8051_Keil_951\Debug\Listing Files</v>
-<v>Proficio-Legacy\Proficio-Legacy\DP8051\DP8051_Keil_951\Debug\Listing Files\audio.lst</v>
-<v>Proficio-Legacy\Proficio-Legacy\DP8051\DP8051_Keil_951\Debug\Listing Files\band.lst</v>
-<v>Proficio-Legacy\Proficio-Legacy\DP8051\DP8051_Keil_951\Debug\Listing Files\Band_Control.lst</v>
-<v>Proficio-Legacy\Proficio-Legacy\DP8051\DP8051_Keil_951\Debug\Listing Files\Band_Control_PM.lst</v>
-<v>Proficio-Legacy\Proficio-Legacy\DP8051\DP8051_Keil_951\Debug\Listing Files\Bootloadable.lst</v>
-<v>Proficio-Legacy\Proficio-Legacy\DP8051\DP8051_Keil_951\Debug\Listing Files\BS0.lst</v>
-<v>Proficio-Legacy\Proficio-Legacy\DP8051\DP8051_Keil_951\Debug\Listing Files\BS1.lst</v>
-<v>Proficio-Legacy\Proficio-Legacy\DP8051\DP8051_Keil_951\Debug\Listing Files\BS2.lst</v>
-<v>Proficio-Legacy\Proficio-Legacy\DP8051\DP8051_Keil_951\Debug\Listing Files\Control.lst</v>
-<v>Proficio-Legacy\Proficio-Legacy\DP8051\DP8051_Keil_951\Debug\Listing Files\Control_PM.lst</v>
-<v>Proficio-Legacy\Proficio-Legacy\DP8051\DP8051_Keil_951\Debug\Listing Files\convert.lst</v>
-<v>Proficio-Legacy\Proficio-Legacy\DP8051\DP8051_Keil_951\Debug\Listing Files\cw.lst</v>
-<v>Proficio-Legacy\Proficio-Legacy\DP8051\DP8051_Keil_951\Debug\Listing Files\CW_Clock.lst</v>
-<v>Proficio-Legacy\Proficio-Legacy\DP8051\DP8051_Keil_951\Debug\Listing Files\CW_Hold_Control.lst</v>
-<v>Proficio-Legacy\Proficio-Legacy\DP8051\DP8051_Keil_951\Debug\Listing Files\CW_Hold_Control_PM.lst</v>
-<v>Proficio-Legacy\Proficio-Legacy\DP8051\DP8051_Keil_951\Debug\Listing Files\CW_Hold_Timer.lst</v>
-<v>Proficio-Legacy\Proficio-Legacy\DP8051\DP8051_Keil_951\Debug\Listing Files\CW_Hold_Timer_PM.lst</v>
-<v>Proficio-Legacy\Proficio-Legacy\DP8051\DP8051_Keil_951\Debug\Listing Files\CW_isr.lst</v>
-<v>Proficio-Legacy\Proficio-Legacy\DP8051\DP8051_Keil_951\Debug\Listing Files\cy_em_eeprom.lst</v>
-<v>Proficio-Legacy\Proficio-Legacy\DP8051\DP8051_Keil_951\Debug\Listing Files\CyBootAsmKeil.lst</v>
-<v>Proficio-Legacy\Proficio-Legacy\DP8051\DP8051_Keil_951\Debug\Listing Files\CyDmac.lst</v>
-<v>Proficio-Legacy\Proficio-Legacy\DP8051\DP8051_Keil_951\Debug\Listing Files\cyfitter_cfg.lst</v>
-<v>Proficio-Legacy\Proficio-Legacy\DP8051\DP8051_Keil_951\Debug\Listing Files\CyFlash.lst</v>
-<v>Proficio-Legacy\Proficio-Legacy\DP8051\DP8051_Keil_951\Debug\Listing Files\CyLib.lst</v>
-<v>Proficio-Legacy\Proficio-Legacy\DP8051\DP8051_Keil_951\Debug\Listing Files\cymem.lst</v>
-<v>Proficio-Legacy\Proficio-Legacy\DP8051\DP8051_Keil_951\Debug\Listing Files\cyPm.lst</v>
-<v>Proficio-Legacy\Proficio-Legacy\DP8051\DP8051_Keil_951\Debug\Listing Files\CySpc.lst</v>
-<v>Proficio-Legacy\Proficio-Legacy\DP8051\DP8051_Keil_951\Debug\Listing Files\cyutils.lst</v>
-<v>Proficio-Legacy\Proficio-Legacy\DP8051\DP8051_Keil_951\Debug\Listing Files\DieTemp_1.lst</v>
-<v>Proficio-Legacy\Proficio-Legacy\DP8051\DP8051_Keil_951\Debug\Listing Files\EEPROM.lst</v>
-<v>Proficio-Legacy\Proficio-Legacy\DP8051\DP8051_Keil_951\Debug\Listing Files\FRAC_CLK.lst</v>
-<v>Proficio-Legacy\Proficio-Legacy\DP8051\DP8051_Keil_951\Debug\Listing Files\FracN_api.lst</v>
-<v>Proficio-Legacy\Proficio-Legacy\DP8051\DP8051_Keil_951\Debug\Listing Files\I2C_DISPLAY.lst</v>
-<v>Proficio-Legacy\Proficio-Legacy\DP8051\DP8051_Keil_951\Debug\Listing Files\I2C_DISPLAY_BOOT.lst</v>
-<v>Proficio-Legacy\Proficio-Legacy\DP8051\DP8051_Keil_951\Debug\Listing Files\I2C_DISPLAY_INT.lst</v>
-<v>Proficio-Legacy\Proficio-Legacy\DP8051\DP8051_Keil_951\Debug\Listing Files\I2C_DISPLAY_MASTER.lst</v>
 </VisibleNodeIds>
 </CyGuid_2a325b3b-c96a-4e9f-b7a0-2c44ecb5f237>
 </TreeStates>
@@ -293,7 +253,7 @@
 <v>Proficio-Legacy\Proficio-Legacy\PSoC 3 Architecture TRM</v>
 <v>Proficio-Legacy\Proficio-Legacy\CY8C32 Family Datasheet</v>
 <v>Proficio-Legacy\Proficio-Legacy\System Reference Guides</v>
-<v>Proficio-Legacy\Proficio-Legacy\System Reference Guides\cy_boot_v5_82</v>
+<v>Proficio-Legacy\Proficio-Legacy\System Reference Guides\cy_boot_v6_10</v>
 <v>Proficio-Legacy\Proficio-Legacy\and_v1_0</v>
 <v>Proficio-Legacy\Proficio-Legacy\and_v1_0\and_v1_0.pdf</v>
 <v>Proficio-Legacy\Proficio-Legacy\Bootloadable_v1_60.pdf</v>
@@ -323,7 +283,7 @@
 <v>Proficio-Legacy\Proficio-Legacy\PSoC 3 Architecture TRM</v>
 <v>Proficio-Legacy\Proficio-Legacy\CY8C32 Family Datasheet</v>
 <v>Proficio-Legacy\Proficio-Legacy\System Reference Guides</v>
-<v>Proficio-Legacy\Proficio-Legacy\System Reference Guides\cy_boot_v5_82</v>
+<v>Proficio-Legacy\Proficio-Legacy\System Reference Guides\cy_boot_v6_10</v>
 <v>Proficio-Legacy\Proficio-Legacy\and_v1_0</v>
 <v>Proficio-Legacy\Proficio-Legacy\and_v1_0\and_v1_0.pdf</v>
 <v>Proficio-Legacy\Proficio-Legacy\Bootloadable_v1_60.pdf</v>

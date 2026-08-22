@@ -1,4 +1,4 @@
-C51 COMPILER V9.51   BAND                                                                  08/17/2026 08:28:25 PAGE 1   
+C51 COMPILER V9.51   BAND                                                                  08/22/2026 15:31:42 PAGE 1   
 
 
 C51 COMPILER V9.51, COMPILATION OF MODULE BAND
@@ -62,7 +62,7 @@ line level    source
   49   3                      break; 
   50   3                  case 33555555: Audio_IQ_Channels = 2; // 33.555555 MHz
   51   3                      break;
-C51 COMPILER V9.51   BAND                                                                  08/17/2026 08:28:25 PAGE 2   
+C51 COMPILER V9.51   BAND                                                                  08/22/2026 15:31:42 PAGE 2   
 
   52   3                  case 33666666: Audio_IQ_Channels = 3; // 33.666666 MHz
   53   3              } //End of switch (i)
@@ -126,7 +126,7 @@ line level    source
  109   3              }//17M
  110   2              else if (i >= 13980000 && i <= 14360000) {
  111   3                  E_band = BAND_20M; 
-C51 COMPILER V9.51   BAND                                                                  08/17/2026 08:28:25 PAGE 3   
+C51 COMPILER V9.51   BAND                                                                  08/22/2026 15:31:42 PAGE 3   
 
  112   3                  TX_Inhibit = 0;
  113   3              }//20M
@@ -163,7 +163,7 @@ line level    source
  144   1      }
  145          
  146          
-C51 COMPILER V9.51   BAND                                                                  08/17/2026 08:28:25 PAGE 4   
+C51 COMPILER V9.51   BAND                                                                  08/22/2026 15:31:42 PAGE 4   
 
 ASSEMBLY LISTING OF GENERATED OBJECT CODE
 
@@ -227,7 +227,7 @@ ASSEMBLY LISTING OF GENERATED OBJECT CODE
                        MOVX    A,@DPTR
                        MOV     R7,A
                  E     CALL    ?C?LCASE
-C51 COMPILER V9.51   BAND                                                                  08/17/2026 08:28:25 PAGE 5   
+C51 COMPILER V9.51   BAND                                                                  08/22/2026 15:31:42 PAGE 5   
 
                  R     DW      ?C0003
                        DW      01FCH
@@ -291,7 +291,7 @@ ASSEMBLY LISTING OF GENERATED OBJECT CODE
                        SETB    C
                  E     CALL    ?C?ULCMP
                  R     xJLT    ?C0007
-C51 COMPILER V9.51   BAND                                                                  08/17/2026 08:28:25 PAGE 6   
+C51 COMPILER V9.51   BAND                                                                  08/22/2026 15:31:42 PAGE 6   
 
                  E     MOV     DPTR,#T1_Band_Number
                        MOV     A,#0CH
@@ -355,7 +355,7 @@ ASSEMBLY LISTING OF GENERATED OBJECT CODE
                        MOV     R4,#01H
                  R     MOV     DPTR,#i
                        MOVX    A,@DPTR
-C51 COMPILER V9.51   BAND                                                                  08/17/2026 08:28:25 PAGE 7   
+C51 COMPILER V9.51   BAND                                                                  08/22/2026 15:31:42 PAGE 7   
 
                        MOV     R0,A
                        INC     DPTR
@@ -419,7 +419,7 @@ ASSEMBLY LISTING OF GENERATED OBJECT CODE
                        MOV     R3,A
                        SETB    C
                  E     CALL    ?C?ULCMP
-C51 COMPILER V9.51   BAND                                                                  08/17/2026 08:28:25 PAGE 8   
+C51 COMPILER V9.51   BAND                                                                  08/22/2026 15:31:42 PAGE 8   
 
                  R     xJLT    ?C0017
                  E     MOV     DPTR,#T1_Band_Number
@@ -483,7 +483,7 @@ ASSEMBLY LISTING OF GENERATED OBJECT CODE
                        MOV     R5,#05BH
                        MOV     R4,#00H
                  R     MOV     DPTR,#i
-C51 COMPILER V9.51   BAND                                                                  08/17/2026 08:28:25 PAGE 9   
+C51 COMPILER V9.51   BAND                                                                  08/22/2026 15:31:42 PAGE 9   
 
                        MOVX    A,@DPTR
                        MOV     R0,A
@@ -547,7 +547,7 @@ ASSEMBLY LISTING OF GENERATED OBJECT CODE
                        MOVX    A,@DPTR
                        MOV     R3,A
                        SETB    C
-C51 COMPILER V9.51   BAND                                                                  08/17/2026 08:28:25 PAGE 10  
+C51 COMPILER V9.51   BAND                                                                  08/22/2026 15:31:42 PAGE 10  
 
                  E     CALL    ?C?ULCMP
                  R     xJLT    ?C0027
@@ -611,7 +611,7 @@ ASSEMBLY LISTING OF GENERATED OBJECT CODE
                        MOV     R7,A
                  E     CALL    _Band_Control_Write
                                            ; SOURCE LINE # 71
-C51 COMPILER V9.51   BAND                                                                  08/17/2026 08:28:25 PAGE 11  
+C51 COMPILER V9.51   BAND                                                                  08/22/2026 15:31:42 PAGE 11  
 
                  R     xJMP    ?C0032
              ?C0031:
@@ -675,7 +675,7 @@ ASSEMBLY LISTING OF GENERATED OBJECT CODE
                        INC     DPTR
                        MOVX    A,@DPTR
                        MOV     R1,A
-C51 COMPILER V9.51   BAND                                                                  08/17/2026 08:28:25 PAGE 12  
+C51 COMPILER V9.51   BAND                                                                  08/22/2026 15:31:42 PAGE 12  
 
                        INC     DPTR
                        MOVX    A,@DPTR
@@ -739,7 +739,7 @@ ASSEMBLY LISTING OF GENERATED OBJECT CODE
                        MOV     R1,A
                        INC     DPTR
                        MOVX    A,@DPTR
-C51 COMPILER V9.51   BAND                                                                  08/17/2026 08:28:25 PAGE 13  
+C51 COMPILER V9.51   BAND                                                                  08/22/2026 15:31:42 PAGE 13  
 
                        MOV     R2,A
                        INC     DPTR
@@ -803,7 +803,7 @@ ASSEMBLY LISTING OF GENERATED OBJECT CODE
                        MOV     R0,A
                        INC     DPTR
                        MOVX    A,@DPTR
-C51 COMPILER V9.51   BAND                                                                  08/17/2026 08:28:25 PAGE 14  
+C51 COMPILER V9.51   BAND                                                                  08/22/2026 15:31:42 PAGE 14  
 
                        INC     DPTR
                        MOVX    A,@DPTR
@@ -867,7 +867,7 @@ ASSEMBLY LISTING OF GENERATED OBJECT CODE
                        CLR     A
                  E     MOV     DPTR,#TX_Inhibit
                        MOVX    @DPTR,A
-C51 COMPILER V9.51   BAND                                                                  08/17/2026 08:28:25 PAGE 15  
+C51 COMPILER V9.51   BAND                                                                  08/22/2026 15:31:42 PAGE 15  
 
                                            ; SOURCE LINE # 97
                  R     xJMP    ?C0042
@@ -931,7 +931,7 @@ ASSEMBLY LISTING OF GENERATED OBJECT CODE
                        MOVX    A,@DPTR
                        MOV     R1,A
                        INC     DPTR
-C51 COMPILER V9.51   BAND                                                                  08/17/2026 08:28:25 PAGE 16  
+C51 COMPILER V9.51   BAND                                                                  08/22/2026 15:31:42 PAGE 16  
 
                        MOVX    A,@DPTR
                        MOV     R2,A
@@ -995,7 +995,7 @@ ASSEMBLY LISTING OF GENERATED OBJECT CODE
                  R     MOV     DPTR,#i
                        MOVX    A,@DPTR
                        MOV     R0,A
-C51 COMPILER V9.51   BAND                                                                  08/17/2026 08:28:25 PAGE 17  
+C51 COMPILER V9.51   BAND                                                                  08/22/2026 15:31:42 PAGE 17  
 
                        INC     DPTR
                        MOVX    A,@DPTR
@@ -1059,7 +1059,7 @@ ASSEMBLY LISTING OF GENERATED OBJECT CODE
                        MOVX    @DPTR,A
                                            ; SOURCE LINE # 112
                        CLR     A
-C51 COMPILER V9.51   BAND                                                                  08/17/2026 08:28:25 PAGE 18  
+C51 COMPILER V9.51   BAND                                                                  08/22/2026 15:31:42 PAGE 18  
 
                  E     MOV     DPTR,#TX_Inhibit
                        MOVX    @DPTR,A
@@ -1123,7 +1123,7 @@ ASSEMBLY LISTING OF GENERATED OBJECT CODE
                        MOV     R0,A
                        INC     DPTR
                        MOVX    A,@DPTR
-C51 COMPILER V9.51   BAND                                                                  08/17/2026 08:28:25 PAGE 19  
+C51 COMPILER V9.51   BAND                                                                  08/22/2026 15:31:42 PAGE 19  
 
                        MOV     R1,A
                        INC     DPTR
@@ -1187,7 +1187,7 @@ ASSEMBLY LISTING OF GENERATED OBJECT CODE
                        MOV     R5,#0C5H
                        MOV     R4,#01H
                  R     MOV     DPTR,#i
-C51 COMPILER V9.51   BAND                                                                  08/17/2026 08:28:25 PAGE 20  
+C51 COMPILER V9.51   BAND                                                                  08/22/2026 15:31:42 PAGE 20  
 
                        MOVX    A,@DPTR
                        MOV     R0,A
@@ -1251,7 +1251,7 @@ ASSEMBLY LISTING OF GENERATED OBJECT CODE
                        RET     
              ; FUNCTION Band_Main (END)
 
-C51 COMPILER V9.51   BAND                                                                  08/17/2026 08:28:25 PAGE 21  
+C51 COMPILER V9.51   BAND                                                                  08/22/2026 15:31:42 PAGE 21  
 
 
 

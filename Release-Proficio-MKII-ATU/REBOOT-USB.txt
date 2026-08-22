@@ -1,0 +1,24 @@
+Proficio MKII — USB reboot commands (PSoC)
+==========================================
+
+Added in usbvend.h / usbvend.c / main.c (PTT and ATU).
+
+Opcode                 Value   Action
+---------------------  ------  ----------------------------------------------
+CMD_REBOOT_APP         0x0F    Soft-reset application (CySoftwareReset)
+CMD_ENTER_BOOTLOADER   0x0E    Enter PSoC bootloader (Bootloadable_Load)
+
+Notes
+-----
+- USB ISR only sets a flag; main loop performs the reset (~300 ms delay).
+- Host OUT typically 4 bytes (ignored), matching ms-sdr Radio_send_parameters.
+- Host may report "Pipe error" if the device resets mid-USB STATUS — often OK;
+  confirm the radio actually rebooted / re-enumerated.
+- Hardware BOOT jumper path unchanged.
+- Stop ms-sdr before ./bootloader --reboot-app / --enter-bootloader.
+- Rebuild/flash PSoC with Creator after pulling these sources.
+
+Test (example idea)
+-------------------
+  Radio_send_parameters(0x0F, 0, 1);   // app reboot
+  Radio_send_parameters(0x0E, 0, 1);   // bootloader — then PSoC Programmer

@@ -19,8 +19,8 @@
   <block name="ATU_0" BASE="0x0" SIZE="0x0" desc="" visible="true" hidden="false" />
   <block name="Sync_2" BASE="0x0" SIZE="0x0" desc="" visible="true" hidden="false" />
   <block name="CW_isr" BASE="0x0" SIZE="0x0" desc="" visible="true" hidden="false" />
-  <block name="cy_boot" BASE="0x0" SIZE="0x0" desc="" visible="true" hidden="false" />
   <block name="Em_EEPROM_Dynamic" BASE="0x0" SIZE="0x0" desc="" visible="true" hidden="false" />
+  <block name="cy_boot" BASE="0x0" SIZE="0x0" desc="" visible="true" hidden="false" />
   <block name="ATU_1" BASE="0x0" SIZE="0x0" desc="" visible="true" hidden="false" />
   <block name="CW_Hold_Control" BASE="0x0" SIZE="0x0" desc="" visible="true" hidden="false">
     <register name="CW_Hold_Control_CONTROL_REG" address="0x6477" bitWidth="8" desc="" hidden="false" />

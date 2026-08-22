@@ -1,4 +1,4 @@
-C51 COMPILER V9.51   CW                                                                    08/17/2026 08:43:01 PAGE 1   
+C51 COMPILER V9.51   CW                                                                    08/22/2026 15:33:30 PAGE 1   
 
 
 C51 COMPILER V9.51, COMPILATION OF MODULE CW
@@ -62,7 +62,7 @@ line level    source
   50          
   51          CY_ISR(QSK_interrupt){
   52   1          QSK_pop_filter = FALSE;
-C51 COMPILER V9.51   CW                                                                    08/17/2026 08:43:01 PAGE 2   
+C51 COMPILER V9.51   CW                                                                    08/22/2026 15:33:30 PAGE 2   
 
   53   1      }
   54          
@@ -126,7 +126,7 @@ line level    source
  112   3                  E_keyer_mem_q_count++;
  113   3              }
  114   2          }
-C51 COMPILER V9.51   CW                                                                    08/17/2026 08:43:01 PAGE 3   
+C51 COMPILER V9.51   CW                                                                    08/22/2026 15:33:30 PAGE 3   
 
  115   1                 
  116   1          switch(state){
@@ -190,7 +190,7 @@ line level    source
  174   3                  buffer[0] = SET_WPM;
  175   3                  buffer[1] = E_wpm;
  176   3                  wpm = E_wpm;
-C51 COMPILER V9.51   CW                                                                    08/17/2026 08:43:01 PAGE 4   
+C51 COMPILER V9.51   CW                                                                    08/22/2026 15:33:30 PAGE 4   
 
  177   3                  state = 10;
  178   3              }else{
@@ -254,7 +254,7 @@ line level    source
  236   2              break;
  237   2              
  238   2              default:
-C51 COMPILER V9.51   CW                                                                    08/17/2026 08:43:01 PAGE 5   
+C51 COMPILER V9.51   CW                                                                    08/22/2026 15:33:30 PAGE 5   
 
  239   2                  break;
  240   2          }
@@ -318,7 +318,7 @@ line level    source
  298          /*
  299           * Latch AMP+RX for hang (idempotent if already on) + DIN mark.
  300           * Hang timer starts on key-up (cw_mark_off), not here — so a long hold
-C51 COMPILER V9.51   CW                                                                    08/17/2026 08:43:01 PAGE 6   
+C51 COMPILER V9.51   CW                                                                    08/22/2026 15:33:30 PAGE 6   
 
  301           * does not burn TX_HOLD before release.
  302           */
@@ -382,7 +382,7 @@ line level    source
  360   2                  if (cw_keys_down()) {
  361   3                      E_key_down = TRUE;
  362   3                      state = CW_ST_SESSION_START;
-C51 COMPILER V9.51   CW                                                                    08/17/2026 08:43:01 PAGE 7   
+C51 COMPILER V9.51   CW                                                                    08/22/2026 15:33:30 PAGE 7   
 
  363   3                  } else {
  364   3                      state = CW_ST_IDLE;
@@ -423,7 +423,7 @@ line level    source
  399   2          }
  400   1      }
  401            
-C51 COMPILER V9.51   CW                                                                    08/17/2026 08:43:01 PAGE 8   
+C51 COMPILER V9.51   CW                                                                    08/22/2026 15:33:30 PAGE 8   
 
 ASSEMBLY LISTING OF GENERATED OBJECT CODE
 
@@ -487,7 +487,7 @@ ASSEMBLY LISTING OF GENERATED OBJECT CODE
              ; FUNCTION QSK_interrupt (END)
 
              ; FUNCTION _keyer_write (BEGIN)
-C51 COMPILER V9.51   CW                                                                    08/17/2026 08:43:01 PAGE 9   
+C51 COMPILER V9.51   CW                                                                    08/22/2026 15:33:30 PAGE 9   
 
                                            ; SOURCE LINE # 55
 ;---- Variable 'buffer' assigned to Register 'R7' ----
@@ -551,7 +551,7 @@ ASSEMBLY LISTING OF GENERATED OBJECT CODE
                                            ; SOURCE LINE # 75
                  R     MOV     DPTR,#ret_status
                        MOV     A,#01H
-C51 COMPILER V9.51   CW                                                                    08/17/2026 08:43:01 PAGE 10  
+C51 COMPILER V9.51   CW                                                                    08/22/2026 15:33:30 PAGE 10  
 
                        MOVX    @DPTR,A
                                            ; SOURCE LINE # 76
@@ -615,7 +615,7 @@ ASSEMBLY LISTING OF GENERATED OBJECT CODE
                        MOV     A,R7
                        XRL     A,R5
                  R     xJNZ    ?C0011
-C51 COMPILER V9.51   CW                                                                    08/17/2026 08:43:01 PAGE 11  
+C51 COMPILER V9.51   CW                                                                    08/22/2026 15:33:30 PAGE 11  
 
                  R     MOV     DPTR,#last_mem_seq
                        MOVX    A,@DPTR
@@ -679,7 +679,7 @@ ASSEMBLY LISTING OF GENERATED OBJECT CODE
                  R     LJMP    ?C0032
                  R     LJMP    ?C0035
                  R     LJMP    ?C0013
-C51 COMPILER V9.51   CW                                                                    08/17/2026 08:43:01 PAGE 12  
+C51 COMPILER V9.51   CW                                                                    08/22/2026 15:33:30 PAGE 12  
 
                  R     LJMP    ?C0013
                  R     LJMP    ?C0038
@@ -743,7 +743,7 @@ ASSEMBLY LISTING OF GENERATED OBJECT CODE
                                            ; SOURCE LINE # 133
                  R     MOV     DPTR,#state
                        MOV     A,#0AH
-C51 COMPILER V9.51   CW                                                                    08/17/2026 08:43:01 PAGE 13  
+C51 COMPILER V9.51   CW                                                                    08/22/2026 15:33:30 PAGE 13  
 
                        MOVX    @DPTR,A
                                            ; SOURCE LINE # 134
@@ -807,7 +807,7 @@ ASSEMBLY LISTING OF GENERATED OBJECT CODE
                  R     MOV     DPTR,#buffer
                        MOV     A,#077H
                        MOVX    @DPTR,A
-C51 COMPILER V9.51   CW                                                                    08/17/2026 08:43:01 PAGE 14  
+C51 COMPILER V9.51   CW                                                                    08/22/2026 15:33:30 PAGE 14  
 
                                            ; SOURCE LINE # 153
                        INC     DPTR
@@ -871,7 +871,7 @@ ASSEMBLY LISTING OF GENERATED OBJECT CODE
              ?C0029:
                                            ; SOURCE LINE # 173
                  E     MOV     DPTR,#E_wpm
-C51 COMPILER V9.51   CW                                                                    08/17/2026 08:43:01 PAGE 15  
+C51 COMPILER V9.51   CW                                                                    08/22/2026 15:33:30 PAGE 15  
 
                        MOVX    A,@DPTR
                        MOV     R7,A
@@ -935,7 +935,7 @@ ASSEMBLY LISTING OF GENERATED OBJECT CODE
              ?C0033:
                                            ; SOURCE LINE # 191
                  R     MOV     DPTR,#state
-C51 COMPILER V9.51   CW                                                                    08/17/2026 08:43:01 PAGE 16  
+C51 COMPILER V9.51   CW                                                                    08/22/2026 15:33:30 PAGE 16  
 
                        MOVX    A,@DPTR
                        INC     A
@@ -999,7 +999,7 @@ ASSEMBLY LISTING OF GENERATED OBJECT CODE
                  R     MOV     DPTR,#send_state
                        MOVX    A,@DPTR
                        DEC     A
-C51 COMPILER V9.51   CW                                                                    08/17/2026 08:43:01 PAGE 17  
+C51 COMPILER V9.51   CW                                                                    08/22/2026 15:33:30 PAGE 17  
 
                  R     xJZ     ?C0043
                        INC     A
@@ -1063,7 +1063,7 @@ ASSEMBLY LISTING OF GENERATED OBJECT CODE
                                            ; SOURCE LINE # 228
                  R     xJMP    ?C0013
              ?C0044:
-C51 COMPILER V9.51   CW                                                                    08/17/2026 08:43:01 PAGE 18  
+C51 COMPILER V9.51   CW                                                                    08/22/2026 15:33:30 PAGE 18  
 
                                            ; SOURCE LINE # 229
                        CLR     A
@@ -1127,7 +1127,7 @@ ASSEMBLY LISTING OF GENERATED OBJECT CODE
                        MOVX    @DPTR,A
              ?C0049:
                                            ; SOURCE LINE # 278
-C51 COMPILER V9.51   CW                                                                    08/17/2026 08:43:01 PAGE 19  
+C51 COMPILER V9.51   CW                                                                    08/22/2026 15:33:30 PAGE 19  
 
                        MOV     A,R7
                  R     xJNB    ACC.1,?C0050
@@ -1191,7 +1191,7 @@ ASSEMBLY LISTING OF GENERATED OBJECT CODE
                        MOVX    A,@DPTR
                        MOV     R0,A
                        INC     DPTR
-C51 COMPILER V9.51   CW                                                                    08/17/2026 08:43:01 PAGE 20  
+C51 COMPILER V9.51   CW                                                                    08/22/2026 15:33:30 PAGE 20  
 
                        MOVX    A,@DPTR
                        MOV     R1,A
@@ -1255,7 +1255,7 @@ ASSEMBLY LISTING OF GENERATED OBJECT CODE
                                            ; SOURCE LINE # 320
                  E     MOV     DPTR,#E_cw_hold
                        MOV     A,#01H
-C51 COMPILER V9.51   CW                                                                    08/17/2026 08:43:01 PAGE 21  
+C51 COMPILER V9.51   CW                                                                    08/22/2026 15:33:30 PAGE 21  
 
                        MOVX    @DPTR,A
                                            ; SOURCE LINE # 321
@@ -1319,7 +1319,7 @@ ASSEMBLY LISTING OF GENERATED OBJECT CODE
              ?C0086:
                  R     xJNC    ?C0083
                  R     MOV     DPTR,#?C0087
-C51 COMPILER V9.51   CW                                                                    08/17/2026 08:43:01 PAGE 22  
+C51 COMPILER V9.51   CW                                                                    08/22/2026 15:33:30 PAGE 22  
 
                        MOV     R0,A
                        ADD     A,R0
@@ -1383,7 +1383,7 @@ ASSEMBLY LISTING OF GENERATED OBJECT CODE
                  E     CALL    _si5351aSetFrequency
                  R     MOV     DPTR,#SI5351_status
                        MOV     A,R7
-C51 COMPILER V9.51   CW                                                                    08/17/2026 08:43:01 PAGE 23  
+C51 COMPILER V9.51   CW                                                                    08/22/2026 15:33:30 PAGE 23  
 
                        MOVX    @DPTR,A
                                            ; SOURCE LINE # 351
@@ -1447,7 +1447,7 @@ ASSEMBLY LISTING OF GENERATED OBJECT CODE
                                            ; SOURCE LINE # 367
              ?C0070:
                                            ; SOURCE LINE # 368
-C51 COMPILER V9.51   CW                                                                    08/17/2026 08:43:01 PAGE 24  
+C51 COMPILER V9.51   CW                                                                    08/22/2026 15:33:30 PAGE 24  
 
                  R     CALL    cw_session_start
                  R     MOV     DPTR,#SI5351_status
@@ -1511,7 +1511,7 @@ ASSEMBLY LISTING OF GENERATED OBJECT CODE
                        MOVX    @DPTR,A
                                            ; SOURCE LINE # 389
                        RET     
-C51 COMPILER V9.51   CW                                                                    08/17/2026 08:43:01 PAGE 25  
+C51 COMPILER V9.51   CW                                                                    08/22/2026 15:33:30 PAGE 25  
 
              ?C0077:
                                            ; SOURCE LINE # 390

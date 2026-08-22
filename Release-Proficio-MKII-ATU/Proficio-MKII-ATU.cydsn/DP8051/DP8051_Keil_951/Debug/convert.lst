@@ -1,4 +1,4 @@
-C51 COMPILER V9.51   CONVERT                                                               08/17/2026 08:28:24 PAGE 1   
+C51 COMPILER V9.51   CONVERT                                                               08/22/2026 15:31:41 PAGE 1   
 
 
 C51 COMPILER V9.51, COMPILATION OF MODULE CONVERT
@@ -51,7 +51,7 @@ line level    source
   39   1          return freq_in_hz;
   40   1      }
   41          /* [] END OF FILE */
-C51 COMPILER V9.51   CONVERT                                                               08/17/2026 08:28:24 PAGE 2   
+C51 COMPILER V9.51   CONVERT                                                               08/22/2026 15:31:41 PAGE 2   
 
 ASSEMBLY LISTING OF GENERATED OBJECT CODE
 
@@ -115,7 +115,7 @@ ASSEMBLY LISTING OF GENERATED OBJECT CODE
                        MOV     R4,#049H
                  R     MOV     DPTR,#fout
                        MOVX    A,@DPTR
-C51 COMPILER V9.51   CONVERT                                                               08/17/2026 08:28:24 PAGE 3   
+C51 COMPILER V9.51   CONVERT                                                               08/22/2026 15:31:41 PAGE 3   
 
                        MOV     R0,A
                        INC     DPTR
@@ -179,7 +179,7 @@ ASSEMBLY LISTING OF GENERATED OBJECT CODE
                        MOV     R5,A
                        MOV     A,R0
                        ADDC    A,R4
-C51 COMPILER V9.51   CONVERT                                                               08/17/2026 08:28:24 PAGE 4   
+C51 COMPILER V9.51   CONVERT                                                               08/22/2026 15:31:41 PAGE 4   
 
                        MOV     R4,A
                  R     MOV     DPTR,#freq_in_hz

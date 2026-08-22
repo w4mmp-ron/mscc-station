@@ -21,8 +21,8 @@
   <block name="CW_Hold_Control" BASE="0x0" SIZE="0x0" desc="" visible="true" hidden="false">
     <register name="CW_Hold_Control_CONTROL_REG" address="0x6477" bitWidth="8" desc="" hidden="false" />
   </block>
-  <block name="cy_boot" BASE="0x0" SIZE="0x0" desc="" visible="true" hidden="false" />
   <block name="Em_EEPROM_Dynamic" BASE="0x0" SIZE="0x0" desc="" visible="true" hidden="false" />
+  <block name="cy_boot" BASE="0x0" SIZE="0x0" desc="" visible="true" hidden="false" />
   <block name="PTT_Debounce" BASE="0x0" SIZE="0x0" desc="" visible="true" hidden="false" />
   <block name="CW_Clock" BASE="0x0" SIZE="0x0" desc="" visible="true" hidden="false" />
   <block name="and_1" BASE="0x0" SIZE="0x0" desc="" visible="true" hidden="false" />

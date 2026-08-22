@@ -1,4 +1,4 @@
-C51 COMPILER V9.51   PCM3060                                                               08/17/2026 08:43:00 PAGE 1   
+C51 COMPILER V9.51   PCM3060                                                               08/22/2026 15:33:29 PAGE 1   
 
 
 C51 COMPILER V9.51, COMPILATION OF MODULE PCM3060
@@ -62,7 +62,7 @@ line level    source
   50   3              } else {
   51   3                  CyDmaTdSetConfiguration(RxI2S_Stage_TD[i], 1, RxI2S_Stage_TD[i+1], RxI2S_Stage__TD_TERMOUT_EN 
              -);
-C51 COMPILER V9.51   PCM3060                                                               08/17/2026 08:43:00 PAGE 2   
+C51 COMPILER V9.51   PCM3060                                                               08/22/2026 15:33:29 PAGE 2   
 
   52   3              }
   53   2              CyDmaTdSetAddress(RxI2S_Stage_TD[i], LO16((uint32)I2S_RX_FIFO_0_PTR), LO16((uint32)&RxI2S_Stage));
@@ -126,7 +126,7 @@ line level    source
  107   2              CyDmaTdSetAddress(TxI2S_Buff_TD[i], LO16((uint32)TxI2S[i]), LO16((uint32)&TxI2S_Stage));
  108   2              CyDmaTdSetConfiguration(TxI2S_Zero_TD[i], I2S_BUF_SIZE, TxI2S_Zero_TD[n], TD_INC_DST_ADR );
  109   2              CyDmaTdSetAddress(TxI2S_Zero_TD[i], LO16((uint32)&TxI2S_Zero), LO16((uint32)TxI2S[i]));
-C51 COMPILER V9.51   PCM3060                                                               08/17/2026 08:43:00 PAGE 3   
+C51 COMPILER V9.51   PCM3060                                                               08/22/2026 15:33:29 PAGE 3   
 
  110   2          }
  111   1          CyDmaClearPendingDrq(TxI2S_Buff_DmaHandle);
@@ -190,7 +190,7 @@ line level    source
  169   2          }
  170   1          return 0;
  171   1      }
-C51 COMPILER V9.51   PCM3060                                                               08/17/2026 08:43:00 PAGE 4   
+C51 COMPILER V9.51   PCM3060                                                               08/22/2026 15:33:29 PAGE 4   
 
  172          
  173          
@@ -227,7 +227,7 @@ line level    source
  204   1          return ret;
  205   1      }
  206          
-C51 COMPILER V9.51   PCM3060                                                               08/17/2026 08:43:00 PAGE 5   
+C51 COMPILER V9.51   PCM3060                                                               08/22/2026 15:33:29 PAGE 5   
 
 ASSEMBLY LISTING OF GENERATED OBJECT CODE
 
@@ -291,7 +291,7 @@ ASSEMBLY LISTING OF GENERATED OBJECT CODE
                        MOVX    A,@DPTR
                        CLR     C
                        SUBB    A,#03H
-C51 COMPILER V9.51   PCM3060                                                               08/17/2026 08:43:00 PAGE 6   
+C51 COMPILER V9.51   PCM3060                                                               08/22/2026 15:33:29 PAGE 6   
 
                  R     xJGE    ?C0007
                  E     CALL    CyDmaTdAllocate
@@ -355,7 +355,7 @@ ASSEMBLY LISTING OF GENERATED OBJECT CODE
                        MOVX    A,@DPTR
                        MOV     R6,A
                  R     ADD     A,#LOW RxI2S_Stage_TD
-C51 COMPILER V9.51   PCM3060                                                               08/17/2026 08:43:00 PAGE 7   
+C51 COMPILER V9.51   PCM3060                                                               08/22/2026 15:33:29 PAGE 7   
 
                        MOV     DPL,A
                        CLR     A
@@ -419,7 +419,7 @@ ASSEMBLY LISTING OF GENERATED OBJECT CODE
                        MOVX    A,@DPTR
                        MOV     R5,A
                  E     CALL    _CyDmaChSetInitialTd
-C51 COMPILER V9.51   PCM3060                                                               08/17/2026 08:43:00 PAGE 8   
+C51 COMPILER V9.51   PCM3060                                                               08/22/2026 15:33:29 PAGE 8   
 
                                            ; SOURCE LINE # 58
                        CLR     A
@@ -483,7 +483,7 @@ ASSEMBLY LISTING OF GENERATED OBJECT CODE
                        MOV     A,R1
                        ADD     A,DPH
                        MOV     DPH,A
-C51 COMPILER V9.51   PCM3060                                                               08/17/2026 08:43:00 PAGE 9   
+C51 COMPILER V9.51   PCM3060                                                               08/22/2026 15:33:29 PAGE 9   
 
                        MOV     R6,A
                        MOV     A,DPL
@@ -547,7 +547,7 @@ ASSEMBLY LISTING OF GENERATED OBJECT CODE
                                            ; SOURCE LINE # 69
                        RET     
              ; FUNCTION DmaRxStart (END)
-C51 COMPILER V9.51   PCM3060                                                               08/17/2026 08:43:00 PAGE 10  
+C51 COMPILER V9.51   PCM3060                                                               08/22/2026 15:33:29 PAGE 10  
 
 
              ; FUNCTION DmaTxInit (BEGIN)
@@ -611,7 +611,7 @@ ASSEMBLY LISTING OF GENERATED OBJECT CODE
                        MOVX    @DPTR,A
                  R     xJMP    ?C0018
              ?C0019:
-C51 COMPILER V9.51   PCM3060                                                               08/17/2026 08:43:00 PAGE 11  
+C51 COMPILER V9.51   PCM3060                                                               08/22/2026 15:33:29 PAGE 11  
 
                                            ; SOURCE LINE # 80
                        CLR     A
@@ -675,7 +675,7 @@ ASSEMBLY LISTING OF GENERATED OBJECT CODE
                        CLR     A
                  R     MOV     DPTR,#i
                        MOVX    @DPTR,A
-C51 COMPILER V9.51   PCM3060                                                               08/17/2026 08:43:00 PAGE 12  
+C51 COMPILER V9.51   PCM3060                                                               08/22/2026 15:33:29 PAGE 12  
 
              ?C0028:
                  R     MOV     DPTR,#i
@@ -739,7 +739,7 @@ ASSEMBLY LISTING OF GENERATED OBJECT CODE
                        CLR     A
                  R     ADDC    A,#HIGH TxI2S_Stage_TD
                        MOV     DPH,A
-C51 COMPILER V9.51   PCM3060                                                               08/17/2026 08:43:00 PAGE 13  
+C51 COMPILER V9.51   PCM3060                                                               08/22/2026 15:33:29 PAGE 13  
 
                        MOVX    A,@DPTR
                        MOV     R7,A
@@ -803,7 +803,7 @@ ASSEMBLY LISTING OF GENERATED OBJECT CODE
                                            ; SOURCE LINE # 99
                        CLR     A
                  R     MOV     DPTR,#i
-C51 COMPILER V9.51   PCM3060                                                               08/17/2026 08:43:00 PAGE 14  
+C51 COMPILER V9.51   PCM3060                                                               08/22/2026 15:33:29 PAGE 14  
 
                        MOVX    @DPTR,A
              ?C0033:
@@ -867,7 +867,7 @@ ASSEMBLY LISTING OF GENERATED OBJECT CODE
                        MOVX    A,@DPTR
                  R     ADD     A,#LOW TxI2S_Buff_TD
                        MOV     DPL,A
-C51 COMPILER V9.51   PCM3060                                                               08/17/2026 08:43:00 PAGE 15  
+C51 COMPILER V9.51   PCM3060                                                               08/22/2026 15:33:29 PAGE 15  
 
                        CLR     A
                  R     ADDC    A,#HIGH TxI2S_Buff_TD
@@ -931,7 +931,7 @@ ASSEMBLY LISTING OF GENERATED OBJECT CODE
                        MOVX    A,@DPTR
                        MOV     R7,A
                  R     MOV     DPTR,#n
-C51 COMPILER V9.51   PCM3060                                                               08/17/2026 08:43:00 PAGE 16  
+C51 COMPILER V9.51   PCM3060                                                               08/22/2026 15:33:29 PAGE 16  
 
                        MOVX    A,@DPTR
                  R     ADD     A,#LOW TxI2S_Zero_TD
@@ -995,7 +995,7 @@ ASSEMBLY LISTING OF GENERATED OBJECT CODE
                        MOVX    @DPTR,A
                  R     xJMP    ?C0033
              ?C0034:
-C51 COMPILER V9.51   PCM3060                                                               08/17/2026 08:43:00 PAGE 17  
+C51 COMPILER V9.51   PCM3060                                                               08/22/2026 15:33:29 PAGE 17  
 
                                            ; SOURCE LINE # 111
                  E     MOV     DPTR,#TxI2S_Buff_DmaHandle
@@ -1059,7 +1059,7 @@ ASSEMBLY LISTING OF GENERATED OBJECT CODE
                        MOV     R4,#01H
                        MOV     R5,#080H
                  E     CALL    ?C?IMUL
-C51 COMPILER V9.51   PCM3060                                                               08/17/2026 08:43:00 PAGE 18  
+C51 COMPILER V9.51   PCM3060                                                               08/22/2026 15:33:29 PAGE 18  
 
                  R     MOV     A,#LOW TxI2S
                        ADD     A,R7
@@ -1123,7 +1123,7 @@ ASSEMBLY LISTING OF GENERATED OBJECT CODE
                        MOV     R1,AR7
                        MOV     R3,#01H
                  R     MOV     DPTR,#source
-C51 COMPILER V9.51   PCM3060                                                               08/17/2026 08:43:00 PAGE 19  
+C51 COMPILER V9.51   PCM3060                                                               08/22/2026 15:33:29 PAGE 19  
 
                        MOVX    A,@DPTR
                        MOV     R4,A
@@ -1187,7 +1187,7 @@ ASSEMBLY LISTING OF GENERATED OBJECT CODE
              ; FUNCTION _PCM3060_SetRegister (BEGIN)
                                            ; SOURCE LINE # 147
                  R     MOV     DPTR,#reg
-C51 COMPILER V9.51   PCM3060                                                               08/17/2026 08:43:00 PAGE 20  
+C51 COMPILER V9.51   PCM3060                                                               08/22/2026 15:33:29 PAGE 20  
 
                        MOV     A,R7
                        MOVX    @DPTR,A
@@ -1251,7 +1251,7 @@ ASSEMBLY LISTING OF GENERATED OBJECT CODE
                                            ; SOURCE LINE # 159
              ?C0047:
                                            ; SOURCE LINE # 160
-C51 COMPILER V9.51   PCM3060                                                               08/17/2026 08:43:00 PAGE 21  
+C51 COMPILER V9.51   PCM3060                                                               08/22/2026 15:33:29 PAGE 21  
 
                  E     CALL    I2C_DISPLAY_MasterStatus
 ;---- Variable 'i' assigned to Register 'R7' ----
@@ -1315,7 +1315,7 @@ ASSEMBLY LISTING OF GENERATED OBJECT CODE
                                            ; SOURCE LINE # 181
                                            ; SOURCE LINE # 182
                        MOV     R5,#0C0H
-C51 COMPILER V9.51   PCM3060                                                               08/17/2026 08:43:00 PAGE 22  
+C51 COMPILER V9.51   PCM3060                                                               08/22/2026 15:33:29 PAGE 22  
 
                        MOV     R7,#040H
                  R     CALL    _PCM3060_SetRegister
@@ -1379,7 +1379,7 @@ ASSEMBLY LISTING OF GENERATED OBJECT CODE
                                            ; SOURCE LINE # 201
                  E     MOV     DPTR,#TxI2S_Zero_DmaHandle
                        MOVX    A,@DPTR
-C51 COMPILER V9.51   PCM3060                                                               08/17/2026 08:43:00 PAGE 23  
+C51 COMPILER V9.51   PCM3060                                                               08/22/2026 15:33:29 PAGE 23  
 
                        MOV     R7,A
                  E     CALL    _CyDmaChDisable

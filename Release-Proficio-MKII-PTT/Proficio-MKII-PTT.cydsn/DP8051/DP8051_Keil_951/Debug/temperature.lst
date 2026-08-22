@@ -1,4 +1,4 @@
-C51 COMPILER V9.51   TEMPERATURE                                                           08/17/2026 08:36:18 PAGE 1   
+C51 COMPILER V9.51   TEMPERATURE                                                           08/22/2026 15:13:56 PAGE 1   
 
 
 C51 COMPILER V9.51, COMPILATION OF MODULE TEMPERATURE
@@ -62,7 +62,7 @@ line level    source
   51              static int16 delta_temp = 0;
   52              static float delta_drift_freq;
   53              int16 l_drift;
-C51 COMPILER V9.51   TEMPERATURE                                                           08/17/2026 08:36:18 PAGE 2   
+C51 COMPILER V9.51   TEMPERATURE                                                           08/22/2026 15:13:56 PAGE 2   
 
   54              static uint8 first_pass = 3;
   55              static int32 l_delta_drift;
@@ -126,7 +126,7 @@ line level    source
  113   1          static uint32 startup_delay = STARTUP_DELAY;
  114   1         
  115   1          if(startup_delay == 0){
-C51 COMPILER V9.51   TEMPERATURE                                                           08/17/2026 08:36:18 PAGE 3   
+C51 COMPILER V9.51   TEMPERATURE                                                           08/22/2026 15:13:56 PAGE 3   
 
  116   2              if(temp_refresh == 0){
  117   3                  switch(state){
@@ -182,7 +182,7 @@ line level    source
  167   1      }
  168          
  169          /* [] END OF FILE */
-C51 COMPILER V9.51   TEMPERATURE                                                           08/17/2026 08:36:18 PAGE 4   
+C51 COMPILER V9.51   TEMPERATURE                                                           08/22/2026 15:13:56 PAGE 4   
 
 ASSEMBLY LISTING OF GENERATED OBJECT CODE
 
@@ -246,7 +246,7 @@ ASSEMBLY LISTING OF GENERATED OBJECT CODE
                  R     xJNZ    ?C0017
                                            ; SOURCE LINE # 121
              ?C0006:
-C51 COMPILER V9.51   TEMPERATURE                                                           08/17/2026 08:36:18 PAGE 5   
+C51 COMPILER V9.51   TEMPERATURE                                                           08/22/2026 15:13:56 PAGE 5   
 
                                            ; SOURCE LINE # 122
                  R     MOV     DPTR,#state
@@ -310,7 +310,7 @@ ASSEMBLY LISTING OF GENERATED OBJECT CODE
                        MOV     R7,A
                        MOV     A,R6
                        RLC     A
-C51 COMPILER V9.51   TEMPERATURE                                                           08/17/2026 08:36:18 PAGE 6   
+C51 COMPILER V9.51   TEMPERATURE                                                           08/22/2026 15:13:56 PAGE 6   
 
                        SUBB    A,ACC
                        MOV     R5,A
@@ -374,7 +374,7 @@ ASSEMBLY LISTING OF GENERATED OBJECT CODE
                                            ; SOURCE LINE # 159
                        RET     
                                            ; SOURCE LINE # 160
-C51 COMPILER V9.51   TEMPERATURE                                                           08/17/2026 08:36:18 PAGE 7   
+C51 COMPILER V9.51   TEMPERATURE                                                           08/22/2026 15:13:56 PAGE 7   
 
                                            ; SOURCE LINE # 161
                        RET     
@@ -438,7 +438,7 @@ MODULE INFORMATION:   STATIC OVERLAYABLE
    BIT SIZE         =   ----    ----
    EDATA SIZE       =   ----    ----
    HDATA SIZE       =   ----    ----
-C51 COMPILER V9.51   TEMPERATURE                                                           08/17/2026 08:36:18 PAGE 8   
+C51 COMPILER V9.51   TEMPERATURE                                                           08/22/2026 15:13:56 PAGE 8   
 
    XDATA CONST SIZE =   ----    ----
    FAR CONST SIZE   =   ----    ----

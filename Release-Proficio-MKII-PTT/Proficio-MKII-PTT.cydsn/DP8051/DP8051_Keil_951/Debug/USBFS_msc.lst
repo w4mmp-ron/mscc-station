@@ -1,4 +1,4 @@
-C51 COMPILER V9.51   USBFS_MSC                                                             08/17/2026 08:36:20 PAGE 1   
+C51 COMPILER V9.51   USBFS_MSC                                                             08/22/2026 15:13:59 PAGE 1   
 
 
 C51 COMPILER V9.51, COMPILATION OF MODULE USBFS_MSC
@@ -62,7 +62,7 @@ line level    source
   51          {
   52   1          uint8 requestHandled = USBFS_FALSE;
   53   1          
-C51 COMPILER V9.51   USBFS_MSC                                                             08/17/2026 08:36:20 PAGE 2   
+C51 COMPILER V9.51   USBFS_MSC                                                             08/22/2026 15:13:59 PAGE 2   
 
   54   1          /* Get request data. */
   55   1          uint16 value  = USBFS_GET_UINT16(USBFS_wValueHiReg,  USBFS_wValueLoReg);
@@ -126,7 +126,7 @@ line level    source
  113          * \globalvars
  114          *  USBFS_lunCount - stores number of LUN (logical units).
  115          *
-C51 COMPILER V9.51   USBFS_MSC                                                             08/17/2026 08:36:20 PAGE 3   
+C51 COMPILER V9.51   USBFS_MSC                                                             08/22/2026 15:13:59 PAGE 3   
 
  116          * \reentrant
  117          *  No.
@@ -163,7 +163,7 @@ line level    source
  148          
  149          
  150          /* [] END OF FILE */
-C51 COMPILER V9.51   USBFS_MSC                                                             08/17/2026 08:36:20 PAGE 4   
+C51 COMPILER V9.51   USBFS_MSC                                                             08/22/2026 15:13:59 PAGE 4   
 
 ASSEMBLY LISTING OF GENERATED OBJECT CODE
 
@@ -227,7 +227,7 @@ ASSEMBLY LISTING OF GENERATED OBJECT CODE
                        MOVX    A,@DPTR
              ?C0010:
                  R     xJNZ    ?C0004
-C51 COMPILER V9.51   USBFS_MSC                                                             08/17/2026 08:36:20 PAGE 5   
+C51 COMPILER V9.51   USBFS_MSC                                                             08/22/2026 15:13:59 PAGE 5   
 
                  R     MOV     DPTR,#dataLength
                        MOVX    A,@DPTR
@@ -291,7 +291,7 @@ ASSEMBLY LISTING OF GENERATED OBJECT CODE
                                            ; SOURCE LINE # 88
                  E     MOV     DPTR,#USBFS_currentTD
                        MOVX    @DPTR,A
-C51 COMPILER V9.51   USBFS_MSC                                                             08/17/2026 08:36:20 PAGE 6   
+C51 COMPILER V9.51   USBFS_MSC                                                             08/22/2026 15:13:59 PAGE 6   
 
                        INC     DPTR
                        MOVX    @DPTR,A

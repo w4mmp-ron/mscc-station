@@ -1,4 +1,4 @@
-C51 COMPILER V9.51   USBFS_CDC                                                             08/17/2026 08:36:19 PAGE 1   
+C51 COMPILER V9.51   USBFS_CDC                                                             08/22/2026 15:13:57 PAGE 1   
 
 
 C51 COMPILER V9.51, COMPILATION OF MODULE USBFS_CDC
@@ -62,7 +62,7 @@ line level    source
                   }
               };
               
-C51 COMPILER V9.51   USBFS_CDC                                                             08/17/2026 08:36:19 PAGE 2   
+C51 COMPILER V9.51   USBFS_CDC                                                             08/22/2026 15:13:57 PAGE 2   
 
               /**Used as a flag for the USBFS_IsLineChanged() API, to inform it that the
                * host has been sent a request to change line coding or control bitmap. It is 
@@ -126,7 +126,7 @@ line level    source
                       0u,                                         /* wLengthMSB      */
                       0u,                                         /* wSerialState    */
                       0u,                                         /* wSerialStateMSB */
-C51 COMPILER V9.51   USBFS_CDC                                                             08/17/2026 08:36:19 PAGE 3   
+C51 COMPILER V9.51   USBFS_CDC                                                             08/22/2026 15:13:57 PAGE 3   
 
                   };
                   static uint8 USBFS_activeCom = 0u;
@@ -190,7 +190,7 @@ line level    source
                           /* `#START CDC_READ_REQUESTS` Place other request handler here */
               
                           /* `#END` */
-C51 COMPILER V9.51   USBFS_CDC                                                             08/17/2026 08:36:19 PAGE 4   
+C51 COMPILER V9.51   USBFS_CDC                                                             08/22/2026 15:13:57 PAGE 4   
 
               
                           default:
@@ -254,7 +254,7 @@ line level    source
               *
               ***************************************************************************/
               uint8 USBFS_GetInterfaceComPort(uint8 interface) 
-C51 COMPILER V9.51   USBFS_CDC                                                             08/17/2026 08:36:19 PAGE 5   
+C51 COMPILER V9.51   USBFS_CDC                                                             08/22/2026 15:13:57 PAGE 5   
 
               {
                   uint8 comPort = 0u;
@@ -318,7 +318,7 @@ line level    source
                   USBFS_activeCom = 0u;
                   USBFS_linesChanged[USBFS_COM_PORT1] = 0u;
                   USBFS_linesChanged[USBFS_COM_PORT2] = 0u;
-C51 COMPILER V9.51   USBFS_CDC                                                             08/17/2026 08:36:19 PAGE 6   
+C51 COMPILER V9.51   USBFS_CDC                                                             08/22/2026 15:13:57 PAGE 6   
 
               
                   for(comPort = 0u; comPort<USBFS_MAX_MULTI_COM_NUM; comPort++)
@@ -382,7 +382,7 @@ line level    source
               
                   /* Limit length to maximum packet size for endpoint. */
                   if (length > USBFS_EP[epNumber].bufferSize)
-C51 COMPILER V9.51   USBFS_CDC                                                             08/17/2026 08:36:19 PAGE 7   
+C51 COMPILER V9.51   USBFS_CDC                                                             08/22/2026 15:13:57 PAGE 7   
 
                   {
                       /* Caution: Data will be lost if length is greater than Max Packet Size. */
@@ -446,7 +446,7 @@ line level    source
               *
               ***************************************************************************/
               void USBFS_PutString(const char8 string[]) 
-C51 COMPILER V9.51   USBFS_CDC                                                             08/17/2026 08:36:19 PAGE 8   
+C51 COMPILER V9.51   USBFS_CDC                                                             08/22/2026 15:13:57 PAGE 8   
 
               {
                   uint16 strLength;
@@ -510,7 +510,7 @@ line level    source
               *  No.
               *
               ***************************************************************************/
-C51 COMPILER V9.51   USBFS_CDC                                                             08/17/2026 08:36:19 PAGE 9   
+C51 COMPILER V9.51   USBFS_CDC                                                             08/22/2026 15:13:57 PAGE 9   
 
               void USBFS_PutChar(char8 txDataByte) 
               {
@@ -574,7 +574,7 @@ line level    source
                       bytesCount = USBFS_GetEPCount(epNumber);
                   }
                   else
-C51 COMPILER V9.51   USBFS_CDC                                                             08/17/2026 08:36:19 PAGE 10  
+C51 COMPILER V9.51   USBFS_CDC                                                             08/22/2026 15:13:57 PAGE 10  
 
                   {
                       bytesCount = 0u;
@@ -638,7 +638,7 @@ line level    source
               * Function Name: USBFS_GetData
               ************************************************************************//**
               *
-C51 COMPILER V9.51   USBFS_CDC                                                             08/17/2026 08:36:19 PAGE 11  
+C51 COMPILER V9.51   USBFS_CDC                                                             08/22/2026 15:13:57 PAGE 11  
 
               *  This function gets a specified number of bytes from the input buffer and
               *  places them in a data array specified by the passed pointer.
@@ -702,7 +702,7 @@ line level    source
               *  data is 64 bytes.
               *
               * \globalvars
-C51 COMPILER V9.51   USBFS_CDC                                                             08/17/2026 08:36:19 PAGE 12  
+C51 COMPILER V9.51   USBFS_CDC                                                             08/22/2026 15:13:57 PAGE 12  
 
               *   - \ref USBFS_cdcDataOutEp: CDC OUT endpoint number used.
               *   - \ref USBFS_EP[].bufferSize: EP max packet size is used as a
@@ -766,7 +766,7 @@ line level    source
               
                   /* Enable OUT endpoint to communicate with host. */
                   USBFS_EnableOutEP(epNumber);
-C51 COMPILER V9.51   USBFS_CDC                                                             08/17/2026 08:36:19 PAGE 13  
+C51 COMPILER V9.51   USBFS_CDC                                                             08/22/2026 15:13:57 PAGE 13  
 
               #endif /* (USBFS_EP_MANAGEMENT_DMA_MANUAL) */
               
@@ -830,7 +830,7 @@ line level    source
               * \return
               *  Returns a uint32 value of the data rate in bits per second.
               *
-C51 COMPILER V9.51   USBFS_CDC                                                             08/17/2026 08:36:19 PAGE 14  
+C51 COMPILER V9.51   USBFS_CDC                                                             08/22/2026 15:13:57 PAGE 14  
 
               * \globalvars
               *  USBFS_linesCoding: First four bytes converted to uint32
@@ -894,7 +894,7 @@ line level    source
               * \globalvars
               *  USBFS_linesCoding: used to get a parameter.
               *
-C51 COMPILER V9.51   USBFS_CDC                                                             08/17/2026 08:36:19 PAGE 15  
+C51 COMPILER V9.51   USBFS_CDC                                                             08/22/2026 15:13:57 PAGE 15  
 
               *******************************************************************************/
               uint8 USBFS_GetParityType(void) 
@@ -958,7 +958,7 @@ line level    source
               * Function Name: USBFS_SendSerialState
               ****************************************************************************//**
               *
-C51 COMPILER V9.51   USBFS_CDC                                                             08/17/2026 08:36:19 PAGE 16  
+C51 COMPILER V9.51   USBFS_CDC                                                             08/22/2026 15:13:57 PAGE 16  
 
               *  Sends the serial state notification to the host using the interrupt
               *  endpoint for the COM port selected using the API SetComPort().The
@@ -1022,7 +1022,7 @@ line level    source
               *  more notifications to the host; otherwise, it returns zero. The function
               *  should be called before sending new notifications when using
               *  USBFS_SendSerialState() to ensure that any previous
-C51 COMPILER V9.51   USBFS_CDC                                                             08/17/2026 08:36:19 PAGE 17  
+C51 COMPILER V9.51   USBFS_CDC                                                             08/22/2026 15:13:57 PAGE 17  
 
               *  notification data has been already sent to the host.
               *
@@ -1086,7 +1086,7 @@ line level    source
               uint8 USBFS_GetComPort(void) 
               {
                   return (USBFS_activeCom);
-C51 COMPILER V9.51   USBFS_CDC                                                             08/17/2026 08:36:19 PAGE 18  
+C51 COMPILER V9.51   USBFS_CDC                                                             08/22/2026 15:13:57 PAGE 18  
 
               }
               
@@ -1150,7 +1150,7 @@ line level    source
               
               /*******************************************************************************
               * Additional user functions supporting CDC Requests
-C51 COMPILER V9.51   USBFS_CDC                                                             08/17/2026 08:36:19 PAGE 19  
+C51 COMPILER V9.51   USBFS_CDC                                                             08/22/2026 15:13:57 PAGE 19  
 
               ********************************************************************************/
               
@@ -1162,7 +1162,7 @@ line level    source
 1112          
 1113          
 1114          /* [] END OF FILE */
-C51 COMPILER V9.51   USBFS_CDC                                                             08/17/2026 08:36:19 PAGE 20  
+C51 COMPILER V9.51   USBFS_CDC                                                             08/22/2026 15:13:57 PAGE 20  
 
 ASSEMBLY LISTING OF GENERATED OBJECT CODE
 

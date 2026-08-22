@@ -20,7 +20,7 @@ I1212: Iteration  3 :    10 unrouted : 0 seconds
 I1212: Iteration  4 :     2 unrouted : 0 seconds
 I1212: Iteration  5 :     2 unrouted : 0 seconds
 I1212: Iteration  6 :     2 unrouted : 0 seconds
-I1212: Iteration  7 :     0 unrouted : 1 seconds
+I1212: Iteration  7 :     0 unrouted : 0 seconds
 I1215: Routing is successful
 Warning-1366: Setup time violation found in a path from clock ( CyBUS_CLK ) to clock ( FRAC_CLK ).
 I1207: Completed routing
