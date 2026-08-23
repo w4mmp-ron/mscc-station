@@ -106,6 +106,13 @@ else
   echo "ERROR: missing mscc-status-report" >&2
   exit 1
 fi
+if [[ -f "$ROOT/packaging/usr/share/mscc/bin/bootloader-gui" ]]; then
+  cp -a "$ROOT/packaging/usr/share/mscc/bin/bootloader-gui" "$PKG/usr/share/mscc/bin/"
+  chmod 755 "$PKG/usr/share/mscc/bin/bootloader-gui"
+else
+  echo "ERROR: missing bootloader-gui" >&2
+  exit 1
+fi
 if [[ -d "$ROOT/packaging/usr/share/applications" ]]; then
   cp -a "$ROOT/packaging/usr/share/applications/." "$PKG/usr/share/applications/"
   chmod 644 "$PKG/usr/share/applications/"*.desktop 2>/dev/null || true
@@ -132,6 +139,9 @@ fi
 grep -q 'X-MSCC' "$PKG/usr/share/applications/mscc-start.desktop"
 grep -q 'X-MSCC' "$PKG/usr/share/applications/mscc-stop.desktop"
 grep -q 'X-MSCC' "$PKG/usr/share/applications/mscc-status.desktop"
+grep -q 'X-MSCC' "$PKG/usr/share/applications/mscc-bootloader.desktop"
+need_file "$ROOT/packaging/usr/share/mscc/bin/bootloader-gui"
+need_file "$ROOT/packaging/usr/share/applications/mscc-bootloader.desktop"
 grep -q 'mscc-desktop-ctl' "$PKG/usr/share/applications/mscc-start.desktop"
 grep -q 'mscc-desktop-ctl status' "$PKG/usr/share/applications/mscc-status.desktop"
 grep -q 'mscc-status-report' "$PKG/usr/share/mscc/binaries/mscc.sh"

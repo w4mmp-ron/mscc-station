@@ -22,12 +22,23 @@ If link fails: `make LIBS="-lhidapi-hidraw -lusb-1.0"`
 
 ## Use
 
+**CLI**
+
 ```bash
 # 1. BOOT jumper on, power on (LOADER)
 # 2. Stop ms-sdr
 ./bootloader /path/to/Proficio-MKII-PTT-YYYYMMDD.cyacd
 # 3. Power off, remove jumper, power on
 ```
+
+**GUI** (Windows USBBootloaderHost-style; needs `python3-tk`)
+
+```bash
+./bootloader-gui.py
+# or after mscc install:  bootloader-gui
+```
+
+Load File → `.cyacd`, wait for **Connected** (`04b4:b71d`), Program.
 
 Optional udev (no sudo):
 

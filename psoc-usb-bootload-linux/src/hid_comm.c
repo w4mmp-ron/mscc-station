@@ -66,8 +66,8 @@ int OpenConnection(void)
 
     if (!g_dev) {
         fprintf(stderr,
-            "No HID bootloader device %04x:%04x (is BOOT jumper set / CMD 0x0E sent?)\n"
-            "  Tip: sudo or udev rule; try --list\n",
+            "No HID bootloader device %04x:%04x (is BOOT jumper set? Morse LOADER?)\n"
+            "  Tip: sudo or udev rule; check: lsusb | grep -i 04b4\n",
             g_vid, g_pid);
         hid_exit();
         return CYRET_ERR_COMM_MASK;
