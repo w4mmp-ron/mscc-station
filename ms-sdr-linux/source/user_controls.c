@@ -13,6 +13,7 @@ int Write_User_Controls();
 #define VERSION 13
 #define DIGITAL_SOUND_DEVICE 0
 #define PHONES_SOUND_DEVICE 1
+#define REMOTE_SOUND_DEVICE 2  /* Phones + REMOTE AUDIO; levels use Phones gains */
 
 //const char *homedir;
 uint8_t G_QRP = 0;
@@ -1001,6 +1002,7 @@ int User_Controls_Process(uint8_t command, char *buf, byte extened) {
                     SDRcore_recv_send_param(CMD_SET_SPEAKER_VOLUME, User_Controls.Digital_Volume_Level);
                 }
                 else {
+                    /* Phones (1) or Remote (2): Phones levels */
                     SDRcore_trans_send_param(CMD_SET_MIC_VOLUME, User_Controls.Phones_Mic_Gain);
                     SDRcore_recv_send_param(CMD_SET_SPEAKER_VOLUME, User_Controls.Phones_Volume_Level);
                 }
@@ -1012,7 +1014,8 @@ int User_Controls_Process(uint8_t command, char *buf, byte extened) {
 
             case CMD_SET_PHONES_VOLUME_LEVEL:
                 User_Controls.Phones_Volume_Level = opcode_data_8_bit;
-                if (User_Controls.Audio_Device == PHONES_SOUND_DEVICE) {
+                if (User_Controls.Audio_Device == PHONES_SOUND_DEVICE ||
+                    User_Controls.Audio_Device == REMOTE_SOUND_DEVICE) {
                     SDRcore_recv_send_param(CMD_SET_SPEAKER_VOLUME, User_Controls.Phones_Volume_Level);
                 }
                 update_flag = FALSE;
@@ -1023,7 +1026,8 @@ int User_Controls_Process(uint8_t command, char *buf, byte extened) {
 
             case CMD_SET_PHONES_MIC_GAIN_LEVEL:
                 User_Controls.Phones_Mic_Gain = opcode_data_8_bit;
-                if (User_Controls.Audio_Device == PHONES_SOUND_DEVICE) {
+                if (User_Controls.Audio_Device == PHONES_SOUND_DEVICE ||
+                    User_Controls.Audio_Device == REMOTE_SOUND_DEVICE) {
                     SDRcore_trans_send_param(CMD_SET_MIC_VOLUME, User_Controls.Phones_Mic_Gain);
                 }
                 update_flag = FALSE;

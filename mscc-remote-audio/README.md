@@ -3,9 +3,31 @@
 Standalone **Windows** app for **operator remote audio**:
 
 - **RX:** play phones AF streamed from a Pi (or test sender) — UDP **9100**  
-- **TX:** capture mic and send MSA1 UDP (**9101** default) → Pi **sdrcore-trans** (`remote-mic.ini` ENABLED=1, Phones/P mode)  
+- **TX:** capture mic and send MSA1 UDP (**9101** default) → Pi **sdrcore-trans** when client sends `CMD_SET_AUDIO_DEVICE=2` (Phones + REMOTE AUDIO)  
 
 **Digital stays on the Pi** — this path is operator phones/mic only.
+
+**Stew (MSCC client):** see **[STEW-REMOTE-AUDIO.md](STEW-REMOTE-AUDIO.md)** — Remote Audio checkbox + `CMD_SET_AUDIO_DEVICE=2`.
+
+## Test: select audio device (0 / 1 / 2)
+
+Injects `CMD_SET_AUDIO_DEVICE` into a **live** ms-sdr session (no GUI handshake,
+so the MSCC client stays connected). From this folder:
+
+```powershell
+.\Set-AudioDevice.ps1 -HostName proficio -Mode remote   # 2
+.\Set-AudioDevice.ps1 -HostName proficio -Mode phones   # 1
+.\Set-AudioDevice.ps1 -HostName proficio -Mode digital  # 0
+```
+
+Or Python:
+
+```text
+python set-audio-device.py --host proficio --mode remote
+```
+
+Default: **ms-sdr UDP 8888** (forwards to both cores).  
+`-DirectTrans` / `--direct` → **sdrcore-trans:9200** only.
 
 ## Layout
 

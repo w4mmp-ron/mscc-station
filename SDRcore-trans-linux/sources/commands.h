@@ -18,6 +18,7 @@
 #define SI5351_DLL 1
 #define DIGITAL_AUDIO 0
 #define OPERATOR_AUDIO 1
+#define REMOTE_AUDIO 2   /* Phones + client REMOTE AUDIO → MSA1 UDP mic */
 
 #define CMD_SET_TWO_TONE 0x88
 #define CMD_SET_IQ_OFFSET 0x52

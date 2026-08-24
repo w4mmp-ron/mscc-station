@@ -780,13 +780,15 @@ void *UDP_Thread(void *my_param) {
                     }
                     break;
                 }
-                case OPERATOR_AUDIO: {
+                case OPERATOR_AUDIO:
+                case REMOTE_AUDIO: {
+                    /* Remote AF RX is MsccRemotePhones; local speaker path same as Phones. */
                     int dig = G_digital_output_device_index;
                     int op = G_output_device_index;
                     if (op < 0 || op >= MAX_OUTPUT_DEVICES || op == NO_OUTPUT_DEVICE) {
                         print_time();
                         fprintf(G_fp_logfile,
-                            "[%d] UDP Thread. OPERATOR: invalid operator index %d\n",
+                            "[%d] UDP Thread. OPERATOR/REMOTE: invalid operator index %d\n",
                             line_number++, op);
                         break;
                     }
@@ -796,6 +798,12 @@ void *UDP_Thread(void *my_param) {
                         manage_stream(0, 0, 2);
                     stream_status = manage_stream(1, G_output_devices[op].device_index,
                         G_output_devices[op].num_channels);
+                    print_time();
+                    fprintf(G_fp_logfile,
+                        "[%d] UDP Thread. CMD_SET_AUDIO_DEVICE %s done. op=%d stream_status=%d\n",
+                        line_number++,
+                        t_opcode_data == REMOTE_AUDIO ? "REMOTE" : "OPERATOR",
+                        op, stream_status);
                     break;
                 }
                 }

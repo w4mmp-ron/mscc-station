@@ -77,6 +77,7 @@
 //System Functions
 #define DIGITAL_AUDIO 0
 #define OPERATOR_AUDIO 1
+#define REMOTE_AUDIO 2   /* Phones + REMOTE AUDIO checkbox → MSA1 mic */
 #define KEYBOARD_DISPLAY 2
 #define KEYBOARD_STOP 3
 #define KEYBOARD_DISPLAY_NUMPAD 4

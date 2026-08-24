@@ -1,5 +1,6 @@
 #include "extern.h"
 #include "iq.h"
+#include "remote_mic.h"
 
 #define BUFLEN 512  //Max length of buffer
 
@@ -572,6 +573,31 @@ void *UDP_Thread(void *my_param) {
                 fflush(G_fp_logfile);
                 break;
             }
+            case REMOTE_AUDIO: {
+                int dig_idx = G_digital_input_device_index;
+                int op_idx = G_input_device_index;
+                if (op_idx < 0 || op_idx >= MAX_INPUT_DEVICES) {
+                    print_time();
+                    fprintf(G_fp_logfile,
+                        "[%d] UDP Thread. CMD_SET_AUDIO_DEVICE REMOTE: invalid operator index %d — abort switch\n",
+                        line_number++, op_idx);
+                    break;
+                }
+                if (dig_idx < 0 || dig_idx >= MAX_INPUT_DEVICES || dig_idx == NO_INPUT_DEVICE)
+                    dig_idx = op_idx;
+                G_audio_mode = REMOTE_AUDIO;
+                /* Same stream open as Phones; callbacks pull MSA1 instead of local mic. */
+                stream_status = manage_stream(0, G_digital_input_devices[dig_idx].device_index,
+                    G_digital_input_devices[dig_idx].num_channels);
+                stream_status = manage_stream(1, G_input_devices[op_idx].device_index,
+                    G_input_devices[op_idx].num_channels);
+                print_time();
+                fprintf(G_fp_logfile,
+                    "[%d] UDP Thread. CMD_SET_AUDIO_DEVICE REMOTE done. op_idx=%d stream_status=%d ready=%d\n",
+                    line_number++, op_idx, stream_status, remote_mic_ready());
+                fflush(G_fp_logfile);
+                break;
+            }
             }
             break;
 
@@ -1040,9 +1066,10 @@ void *UDP_Thread(void *my_param) {
                 current_mic_volume = t_opcode_data;
                 switch (G_audio_mode) {
                 case OPERATOR_AUDIO:
+                case REMOTE_AUDIO:
                     print_time();
-                    fprintf(G_fp_logfile, "[%d] UDP Thread. CMD_SET_MIC_VOLUME.  volume: %d, Calling Set_Mic_Volume\n",
-                        line_number++, current_mic_volume);
+                    fprintf(G_fp_logfile, "[%d] UDP Thread. CMD_SET_MIC_VOLUME.  volume: %d, Calling Set_Mic_Volume (mode=%d)\n",
+                        line_number++, current_mic_volume, G_audio_mode);
                     Set_Mic_Volume();
                     break;
                 case DIGITAL_AUDIO:

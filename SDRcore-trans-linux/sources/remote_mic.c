@@ -2,7 +2,8 @@
  * MSCC remote operator mic — Pi receiver (MSA1 UDP).
  * Protocol matches Windows MsccRemotePhones TX (default port 9101).
  *
- * INI ENABLED=1 → Phones (P) uses this path; ENABLED=0 → local operator mic.
+ * Client CMD_SET_AUDIO_DEVICE=2 (REMOTE_AUDIO) selects this mic path.
+ * INI supplies PORT only (ENABLED is ignored; kept for old files).
  * Digital (D) ignores this module.
  */
 #include "remote_mic.h"
@@ -27,8 +28,8 @@
 #define REMOTE_RATE         48000
 #define RING_FRAMES         16384 /* @ 48 kHz mono float */
 #define MAX_PKT_FRAMES      2048
-static int g_enabled;
 static int g_port = 9101;
+static int g_thread_started;
 
 static int g_sock = -1;
 static pthread_t g_thread;
@@ -80,7 +81,6 @@ static void load_config(void)
     FILE *fp;
     char line[256];
 
-    g_enabled = 0;
     g_port = 9101;
 
     {
@@ -95,7 +95,8 @@ static void load_config(void)
         if (G_fp_logfile) {
             print_time();
             fprintf(G_fp_logfile,
-                "[%d] remote_mic: no %s (disabled)\n", line_number++, path);
+                "[%d] remote_mic: no %s — using default PORT %d\n",
+                line_number++, path, g_port);
         }
         return;
     }
@@ -117,9 +118,8 @@ static void load_config(void)
             while (n > 0 && (v[n - 1] == '\n' || v[n - 1] == '\r' || v[n - 1] == ' '))
                 v[--n] = '\0';
         }
-        if (strcmp(k, "ENABLED") == 0 || strcmp(k, "enabled") == 0)
-            g_enabled = (atoi(v) != 0);
-        else if (strcmp(k, "PORT") == 0 || strcmp(k, "port") == 0)
+        /* ENABLED ignored — mode comes from CMD_SET_AUDIO_DEVICE=2 */
+        if (strcmp(k, "PORT") == 0 || strcmp(k, "port") == 0)
             g_port = atoi(v);
     }
     fclose(fp);
@@ -227,12 +227,11 @@ void remote_mic_init(void)
     g_w = g_r = 0;
     g_sock = -1;
     g_run = 0;
+    g_thread_started = 0;
     g_last_pkt_ms = 0;
     g_pkt_ok = g_pkt_bad = 0;
 
     load_config();
-    if (!g_enabled)
-        return;
 
     g_sock = socket(AF_INET, SOCK_DGRAM, 0);
     if (g_sock < 0) {
@@ -242,7 +241,6 @@ void remote_mic_init(void)
                 "[%d] remote_mic: socket failed: %s\n",
                 line_number++, strerror(errno));
         }
-        g_enabled = 0;
         return;
     }
     setsockopt(g_sock, SOL_SOCKET, SO_REUSEADDR, &yes, sizeof(yes));
@@ -260,7 +258,6 @@ void remote_mic_init(void)
         }
         close(g_sock);
         g_sock = -1;
-        g_enabled = 0;
         return;
     }
 
@@ -269,7 +266,6 @@ void remote_mic_init(void)
         close(g_sock);
         g_sock = -1;
         g_run = 0;
-        g_enabled = 0;
         if (G_fp_logfile) {
             print_time();
             fprintf(G_fp_logfile,
@@ -277,11 +273,12 @@ void remote_mic_init(void)
         }
         return;
     }
+    g_thread_started = 1;
 
     if (G_fp_logfile) {
         print_time();
         fprintf(G_fp_logfile,
-            "[%d] remote_mic: ENABLED listen UDP :%d (MSA1 → operator mic when active)\n",
+            "[%d] remote_mic: listen UDP :%d (use when CMD_SET_AUDIO_DEVICE=2)\n",
             line_number++, g_port);
         fflush(G_fp_logfile);
     }
@@ -297,15 +294,15 @@ void remote_mic_shutdown(void)
         close(g_sock);
         g_sock = -1;
     }
-    if (g_enabled) {
+    if (g_thread_started) {
         pthread_join(g_thread, NULL);
-        g_enabled = 0;
+        g_thread_started = 0;
     }
 }
 
-int remote_mic_enabled(void)
+int remote_mic_ready(void)
 {
-    return g_enabled && g_run;
+    return g_thread_started && g_run;
 }
 
 void remote_mic_fill_stereo_96k(float *stereo_interleaved, unsigned frames)
