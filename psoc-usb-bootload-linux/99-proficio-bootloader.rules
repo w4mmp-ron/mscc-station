@@ -1,2 +1,3 @@
 # Proficio / Omnia — HID bootloader (BOOT jumper / LOADER mode)
-SUBSYSTEM=="usb", ATTR{idVendor}=="04b4", ATTR{idProduct}=="b71d", MODE="0666", GROUP="plugdev"
+# Symlink: /dev/proficio-bootloader
+SUBSYSTEM=="usb", ATTR{idVendor}=="04b4", ATTR{idProduct}=="b71d", MODE="0666", GROUP="plugdev", SYMLINK+="proficio-bootloader"

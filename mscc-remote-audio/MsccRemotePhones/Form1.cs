@@ -217,7 +217,7 @@ public partial class Form1 : Form
         root.SetColumnSpan(txHdr, 2);
         root.Controls.Add(txHdr, 0, row++);
 
-        root.Controls.Add(new Label { Text = "TX host (Pi)", AutoSize = true, Anchor = AnchorStyles.Left }, 0, row);
+        root.Controls.Add(new Label { Text = "TX host (Pi IP or hostname)", AutoSize = true, Anchor = AnchorStyles.Left }, 0, row);
         _txtTxHost = new TextBox { Text = "127.0.0.1", Dock = DockStyle.Fill };
         _txtTxHost.Leave += (_, _) => SaveSettingsFromUi();
         root.Controls.Add(_txtTxHost, 1, row++);

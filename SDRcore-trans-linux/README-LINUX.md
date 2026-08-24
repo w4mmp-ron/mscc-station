@@ -20,6 +20,10 @@ make clean && make
 - I/Q out: Multus / Proficio / MSCC (stereo out to radio)
 - Mic: match `~/.local/mscc/operator-microphone.ini` (PortAudio name substring)
 - Digital mic: `~/.local/mscc/digital-microphone.ini` (same; if missing, D falls back to operator mic)
+- Remote operator mic (Phones/P only): `~/.local/mscc/remote-mic.ini`  
+  - `ENABLED=1` → MSA1 UDP listen (default **9101**) from Windows MsccRemotePhones  
+  - `ENABLED=0` → local operator mic  
+  - Digital (D) never uses this path
 - ms-sdr: **127.0.0.1:8888**
 
 ## Known fix: TUNE + Audio D

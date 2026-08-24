@@ -7,9 +7,10 @@
 #define RON
 #include "extern.h"
 #include "mscc_resampler.h"
+#include "commands.h"
+#include "remote_mic.h"
 //#include "sdrcoretx.h"
 //#include "dsputils.h"
-//#include "commands.h"
 
 
 #define PA_SAMPLE_TYPE      paFloat32
@@ -256,12 +257,24 @@ static int sdrAudioCallback(const void *inputBuffer, void *outputBuffer,
         PaStreamCallbackFlags statusFlags,
         void *userData) {
     SAMPLE *out = (SAMPLE*) outputBuffer;
+    static SAMPLE remote_buf[4096 * 2];
     unsigned int i;
     (void) timeInfo;
     (void) statusFlags;
     (void) userData;
 
     G_DSP_Busy = TRUE;
+    /*
+     * Phones (P) + remote-mic.ini ENABLED → MSA1 UDP instead of local operator mic.
+     * Digital (D) always uses PortAudio digi capture.
+     */
+    if (G_audio_mode == OPERATOR_AUDIO && remote_mic_enabled() &&
+        framesPerBuffer <= 4096u) {
+        remote_mic_fill_stereo_96k(remote_buf, (unsigned)framesPerBuffer);
+        process_mic_to_iq(remote_buf, out, framesPerBuffer, 2);
+        G_DSP_Busy = FALSE;
+        return paContinue;
+    }
     /*
      * TUNE/CW synthesize a carrier and do not need mic samples. On Linux (ALSA loopback /
      * virtual cable with no writer, or rare PortAudio underflows) inputBuffer can be NULL
@@ -294,6 +307,9 @@ static int sdrMicOnlyCallback(const void *inputBuffer, void *outputBuffer,
     (void)timeInfo;
     (void)statusFlags;
     (void)userData;
+    /* Phones+remote: I/Q callback pulls MSA1; do not mix local mic into the ring. */
+    if (G_audio_mode == OPERATOR_AUDIO && remote_mic_enabled())
+        return paContinue;
     if (inputBuffer == NULL || framesPerBuffer > 4096u)
         return paContinue;
     if (g_mic_resampler != NULL) {
@@ -324,6 +340,9 @@ static int sdrIqPlayOnlyCallback(const void *inputBuffer, void *outputBuffer,
     G_DSP_Busy = TRUE;
     if (mystate.opmode == MODE_TUNE || mystate.opmode == MODE_CW) {
         process_mic_to_iq(NULL, (SAMPLE *)outputBuffer, framesPerBuffer, 0);
+    } else if (G_audio_mode == OPERATOR_AUDIO && remote_mic_enabled()) {
+        remote_mic_fill_stereo_96k(micbuf, (unsigned)framesPerBuffer);
+        process_mic_to_iq(micbuf, (SAMPLE *)outputBuffer, framesPerBuffer, 2);
     } else {
         mic_ring_read(micbuf, framesPerBuffer);
         process_mic_to_iq(micbuf, (SAMPLE *)outputBuffer, framesPerBuffer, 2);
@@ -1015,9 +1034,11 @@ int main(int argc, char **argv) {
     }
 
     Init_Power_All();
+    remote_mic_init();
     while (G_all_threads_run) {
         Sleep(100);
     }
+    remote_mic_shutdown();
     if (stream != NULL) {
         err = Pa_CloseStream(stream);
         if (err != paNoError)
@@ -1047,6 +1068,7 @@ error:
     }
     MessageBoxA(NULL, "SDRcore-trans initialization FAILED.  Send logs to Multus SDR, LLC", "SDRcore-trans",
         MB_OK | MB_ICONEXCLAMATION);
+    remote_mic_shutdown();
     Pa_Terminate();
     exit(1);
 }

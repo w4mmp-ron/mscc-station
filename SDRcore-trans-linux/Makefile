@@ -65,6 +65,7 @@ SRCS = \
 	sources/sdrcoretx.c \
 	sources/power.c \
 	sources/udp_thread.c \
+	sources/remote_mic.c \
 	sources/alc.c \
 	sources/wsfirgen.c
 

@@ -7,8 +7,8 @@ using MsccRemotePhones.Protocol;
 namespace MsccRemotePhones.Audio;
 
 /// <summary>
-/// Captures local microphone and sends MSA1 UDP packets (Windows side only).
-/// Pi / sdrcore-trans ingest is not implemented yet — use for loopback test or future TX path.
+/// Captures local microphone and sends MSA1 UDP packets to the Pi (sdrcore-trans remote-mic).
+/// TX host may be an IPv4 address or a DNS hostname (IPv4 A record).
 /// </summary>
 public sealed class RemoteMicSender : IDisposable
 {
@@ -86,7 +86,8 @@ public sealed class RemoteMicSender : IDisposable
         _packet = new byte[MsccAudioProtocol.HeaderSize + payloadBytes];
 
         _udp = new UdpClient();
-        _ep = new IPEndPoint(IPAddress.Parse(host.Trim()), port);
+        var addr = ResolveHost(host.Trim());
+        _ep = new IPEndPoint(addr, port);
 
         int waveDev = deviceIndex < 0 ? 0 : deviceIndex;
         // WaveInEvent: DeviceNumber -1 is not always valid; 0 = first device, use 0 for default map
@@ -134,7 +135,45 @@ public sealed class RemoteMicSender : IDisposable
         }
 
         IsRunning = true;
-        Log?.Invoke($"Mic TX → {host}:{port} MSA1 {_sampleRate} Hz mono, {FramesPerPacket} frames/pkt, device={DeviceName}");
+        var resolved = _ep.Address.ToString();
+        var hostNote = string.Equals(host.Trim(), resolved, StringComparison.OrdinalIgnoreCase)
+            ? resolved
+            : $"{host.Trim()} ({resolved})";
+        Log?.Invoke($"Mic TX → {hostNote}:{port} MSA1 {_sampleRate} Hz mono, {FramesPerPacket} frames/pkt, device={DeviceName}");
+    }
+
+    /// <summary>
+    /// Accepts IPv4 dotted-quad or DNS hostname. Prefers IPv4 (Pi / mscc path).
+    /// </summary>
+    public static IPAddress ResolveHost(string host)
+    {
+        if (string.IsNullOrWhiteSpace(host))
+            throw new ArgumentException("Host is required.", nameof(host));
+
+        host = host.Trim();
+        if (IPAddress.TryParse(host, out var parsed))
+        {
+            if (parsed.AddressFamily == AddressFamily.InterNetwork)
+                return parsed;
+            throw new ArgumentException(
+                $"Host must be IPv4 or a hostname that resolves to IPv4 (got {parsed.AddressFamily}).",
+                nameof(host));
+        }
+
+        IPAddress[] addrs;
+        try
+        {
+            addrs = Dns.GetHostAddresses(host);
+        }
+        catch (Exception ex)
+        {
+            throw new ArgumentException($"Could not resolve host '{host}': {ex.Message}", nameof(host), ex);
+        }
+
+        var ipv4 = addrs.FirstOrDefault(a => a.AddressFamily == AddressFamily.InterNetwork);
+        if (ipv4 is null)
+            throw new ArgumentException($"Host '{host}' has no IPv4 address.", nameof(host));
+        return ipv4;
     }
 
     private void OnDataAvailable(object? sender, WaveInEventArgs e)

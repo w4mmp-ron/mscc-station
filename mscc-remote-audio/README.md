@@ -3,7 +3,7 @@
 Standalone **Windows** app for **operator remote audio**:
 
 - **RX:** play phones AF streamed from a Pi (or test sender) — UDP **9100**  
-- **TX:** capture mic and send MSA1 UDP (**9101** default) — **Windows only for now** (sdrcore-trans ingest TBD)  
+- **TX:** capture mic and send MSA1 UDP (**9101** default) → Pi **sdrcore-trans** (`remote-mic.ini` ENABLED=1, Phones/P mode)  
 
 **Digital stays on the Pi** — this path is operator phones/mic only.
 
@@ -84,7 +84,7 @@ Example: `C:\Users\<you>\AppData\Local\MSCC-NET9\MsccRemotePhones.ini`
 
 ### TX (mic) — Windows side only
 1. Set **TX host** (Pi IP, or `127.0.0.1` for loopback)  
-2. TX port **9101**  
+2. TX host = Pi **IPv4 or hostname** (must resolve to IPv4); TX port **9101**
 3. Choose microphone + mic volume  
 4. **Start Mic TX**  
 

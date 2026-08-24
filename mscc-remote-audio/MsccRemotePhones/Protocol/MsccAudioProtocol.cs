@@ -5,7 +5,7 @@ namespace MsccRemotePhones.Protocol;
 /// <summary>
 /// MSCC remote operator audio stream (v1) — MSA1 UDP.
 /// RX phones: Pi (or test sender) → Windows player (default port 9100).
-/// TX mic: Windows capture → Pi sdrcore-trans (default port 9101; Pi ingest TBD).
+/// TX mic: Windows capture → Pi sdrcore-trans (default port 9101; remote-mic.ini).
 /// Digi is never on this path.
 /// </summary>
 public static class MsccAudioProtocol
