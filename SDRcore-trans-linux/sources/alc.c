@@ -84,20 +84,30 @@ static int clamp_int(int v, int lo, int hi)
 
 int alc_float_to_meter(float alc)
 {
+    /*
+     * Map ALC gain → meter 0..100 over the real doALC gain span.
+     * doALC clamps gain to [0.1, 1.0]. Old scale was (1-gain)*1000, so
+     * gain 0.99 → 10 and gain 0.90 already pegged at 100 — a tiny step
+     * past the ALC threshold looked like a huge meter jump.
+     * Linear over [min_gain, 1.0]: just engaged → small reading; hard
+     * limiting near 0.1 → full scale.
+     */
+    const float max_gain = 1.0f;
+    const float min_gain = 0.1f; /* matches doALC floor */
+    float span;
     float deficit;
     int meter;
 
-    /* Guard NaN / nonsense */
-    if (alc != alc)          /* NaN */
+    if (alc != alc) /* NaN */
         return 0;
-    if (alc >= 1.0f)
+    if (alc >= max_gain)
         return 0;
-    if (alc <= 0.0f)
+    if (alc <= min_gain)
         return 100;
 
-    /* Distance below 1.0, in thousandths → 0.999f => 1, 0.900f => 100 */
-    deficit = 1.0f - alc;
-    meter = (int)(deficit * 1000.0f + 0.5f);  /* round half up */
+    span = max_gain - min_gain; /* 0.9 */
+    deficit = max_gain - alc;
+    meter = (int)(deficit / span * 100.0f + 0.5f);
 
     return clamp_int(meter, 0, 100);
 }
