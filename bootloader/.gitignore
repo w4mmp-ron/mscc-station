@@ -1,2 +1,4 @@
-# Track the full PSoC Creator tree (Generated_Source, DP8051, Archive, Backup, etc.)
+# Track full PSoC Creator tree, but not local archives
 .DS_Store
+Archive/
+Backup/

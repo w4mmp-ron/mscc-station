@@ -6,8 +6,9 @@ The bootloader project is static and seldom changes.
 The project was built with PSoC Creator 4.x
 http://www.cypress.com/
 
-The full PSoC Creator tree is tracked in git (including Generated_Source,
-DP8051 build outputs, Archive, and Backup) so clones have a complete folder. 
+The full PSoC Creator tree is tracked in git (including Generated_Source
+and DP8051 build outputs) so clones have a complete folder. Local
+Archive/ and Backup/ folders are not tracked. 
 
 
 

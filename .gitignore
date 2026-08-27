@@ -44,11 +44,7 @@ Desktop.ini
 !**/*.cyprj
 !**/*.cyprj.Ron
 
-# bootloader/: track full Creator tree (overrides clutter ignores above)
-!bootloader/Archive/
-!bootloader/Archive/**
-!bootloader/Backup/
-!bootloader/Backup/**
+# bootloader/: track Creator build tree (not Archive/Backup)
 !bootloader/**/*.obj
 !bootloader/**/*.o
 !bootloader/**/*.log
