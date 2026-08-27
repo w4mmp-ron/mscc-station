@@ -1,12 +1,2 @@
+# Track the full PSoC Creator tree (Generated_Source, DP8051, Archive, Backup, etc.)
 .DS_Store
-*.cywrk.*
-*.cyprj.*
-*.cycdx
-*.cyfit
-*.rpt
-*_timing.html
-*.cydsn/codegentemp
-*.cydsn/Generated_Source
-*.cydsn/DP8051
-*.Archive.*
-

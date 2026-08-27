@@ -1,0 +1,8 @@
+C:\Users\Ron\.grok\worktrees\bootloader\bootloader.cydsn\bootloader.cyprj|65ba441c-805c-4bfa-b907-e57c304737d9
+C:\Program Files (x86)\Cypress\PSoC Creator\4.4\PSoC Creator\psoc\content\default\CyAnnotationLibrary\CyAnnotationLibrary.cylib\CyAnnotationLibrary.cyprj|ee5a2517-00f8-4dfc-b4b5-254b5f77e95d
+C:\Users\Ron\Documents\PSoC Creator\4.4\Downloads ( 4.4).cylib\Downloads ( 4.4).cyprj|4e26d618-bd44-4cde-b446-f5c19f04889d
+C:\Users\Ron\Documents\PSoC Creator\4.2\Downloads ( 4.2).cylib\Downloads ( 4.2).cyprj|56b4c5db-75f4-4c8e-ad85-f429523856f3
+C:\Program Files (x86)\Cypress\PSoC Creator\4.4\PSoC Creator\psoc\content\cycomponentlibraryupdates\CyComponentLibraryUpdates.cylib\CyComponentLibraryUpdates.cyprj|c33ea6b1-3e3c-4a41-a863-756efce91f3e
+C:\Program Files (x86)\Cypress\PSoC Creator\4.4\PSoC Creator\psoc\content\cycomponentlibrary\CyComponentLibrary.cylib\CyComponentLibrary.cyprj|8990ad80-fe45-4a36-b067-6edc5e7915b9
+C:\Program Files (x86)\Cypress\PSoC Creator\4.4\PSoC Creator\psoc\content\cyprimitives\CyPrimitives.cylib\CyPrimitives.cyprj|79d3432e-e5ba-4640-997a-531f4cb8674e
+C:\Program Files (x86)\Cypress\PSoC Creator\4.4\PSoC Creator\psoc\content\default\CyReferenceLibrary\CyReferenceLibrary.cylib\CyReferenceLibrary.cyprj|fe695c1f-6923-4a59-8fef-0b2c1945b03f
