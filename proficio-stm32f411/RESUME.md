@@ -1,6 +1,9 @@
 # Proficio STM32F411 — resume / handoff
 
-**Updated:** 2026-08-17  
+**Updated:** 2026-08-28  
+**Production MCU:** WeAct **Black Pill F411** module on daughter (not a bare custom F411 PCB).  
+**I2S MCLK:** **PA3** (not PC6 — PC6 is not on WeAct headers).  
+
 **Tree:** `worktrees/proficio-stm32f411`  
 **Reference:** `worktrees/Release-Proficio-MKII-PTT` (logic only; no display/bias/legacy sensors)  
 **PIC keyer:** `worktrees/keyer` (stays external for this migration)
@@ -17,7 +20,7 @@
 | SI5351 LO, CW/keyer **bridge**, band, PTT/GPIO | Done (keyer = I²C to PIC) |
 | Die temperature (`0xBF`) | Done (STM32 internal sensor) |
 | ROM bootloader entry | Done — BOOT pin / `0xFE` / BOOT0; see `docs/BOOTLOADER.md` |
-| Stew pinout | `docs/STEW-DAUGHTER-BOARD-PINOUT.md` + stick diagram + WeAct refs |
+| Stew pinout | `docs/STEW-DAUGHTER-BOARD-PINOUT.md` + `docs/J5-BLACK-PILL-PINMAP.md` + WeAct refs |
 | Hardware test | Pending Black Pill + mother board |
 | Absorb PIC keyer into STM | **Not planned for first board** — see below |
 
@@ -66,7 +69,7 @@ cd C:\Users\Ron\.grok\worktrees\proficio-stm32f411\firmware\pio
 ## Next (hardware only)
 
 1. Flash Black Pill  
-2. USB enum + `CMD_GET_VERSION`  
+2. USB enum + `CMD_GET_VERSION` — Windows jig: `tools/stm32-test-jig/jig.py`  
 3. I2C LO / keyer / codec  
 4. Full IQ with ms-sdr  
 

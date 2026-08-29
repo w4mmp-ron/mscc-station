@@ -52,4 +52,4 @@ Details: `firmware/cubeide/README.md`.
 
 USB device enumerate + vendor control stub (TinyUSB or Cube USB).
 
-Pin map: [`PINOUT.md`](PINOUT.md)
+Pin map: [`STEW-DAUGHTER-BOARD-PINOUT.md`](STEW-DAUGHTER-BOARD-PINOUT.md) · J5: [`J5-BLACK-PILL-PINMAP.md`](J5-BLACK-PILL-PINMAP.md)

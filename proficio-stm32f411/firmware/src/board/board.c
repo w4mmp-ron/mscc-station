@@ -1,6 +1,6 @@
 /**
  * Black Pill board stubs — replace with real HAL GPIO/SysTick (Phase 0).
- * Pin names: board_pins.h / docs/PINOUT.md
+ * Pin names: board_pins.h / docs/STEW-DAUGHTER-BOARD-PINOUT.md
  */
 #include "board.h"
 #include "board_pins.h"

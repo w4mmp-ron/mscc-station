@@ -66,6 +66,9 @@
  *   BCK  = bit clock            (I2S2_CK)  → BCK1 & BCK2 nets
  *   LRCK = word select          (I2S2_WS)  → LRCK1 & LRCK2 nets  (PB12 ≠ GND)
  *   SCK  = codec sysclk/MCLK    (I2S2_MCK) → SCK1 & SCK2 nets
+ *
+ * WeAct Black Pill does NOT break out PC6. I2S2_MCK is also available on
+ * PA3 / PA6 (F411 AF). Production uses the Black Pill module → MCLK = PA3.
  */
 #define BOARD_I2S_LRCK_GPIO     GPIOB
 #define BOARD_I2S_LRCK_PIN      GPIO_PIN_12  /* PB12 I2S2_WS → LRCK1/LRCK2 */
@@ -75,8 +78,8 @@
 #define BOARD_I2S_DIN_PIN       GPIO_PIN_15  /* PB15 I2S2_SD  → DIN (to codec) */
 #define BOARD_I2S_DOUT_GPIO     GPIOB
 #define BOARD_I2S_DOUT_PIN      GPIO_PIN_14  /* PB14 I2S2ext  ← DOUT (from codec) */
-#define BOARD_I2S_MCLK_GPIO     GPIOC
-#define BOARD_I2S_MCLK_PIN      GPIO_PIN_6   /* PC6  I2S2_MCK → SCK1/SCK2 */
+#define BOARD_I2S_MCLK_GPIO     GPIOA
+#define BOARD_I2S_MCLK_PIN      GPIO_PIN_3   /* PA3 I2S2_MCK → SCK1/SCK2 (Black Pill) */
 
 /*
  * PSoC Control bits CONTROL_DIN / CONTROL_DOUT gate audio paths in fabric
@@ -84,15 +87,15 @@
  * Software shadow only until proven otherwise on the schematic.
  */
 
-/* Optional VBUS sense (PSoC USBFS VBUS — spare, not a mother-board net) */
-#define BOARD_VBUS_SENSE_GPIO   GPIOA
-#define BOARD_VBUS_SENSE_PIN    GPIO_PIN_9
+/* Optional VBUS sense (spare — not a mother-board net; unused on Black Pill) */
+#define BOARD_VBUS_SENSE_GPIO   GPIOB
+#define BOARD_VBUS_SENSE_PIN    GPIO_PIN_10  /* PB10 free on WeAct headers */
 
-/* Debug UART USART2 */
+/* Debug UART USART1 (PA3 taken by I2S2_MCK for Black Pill production) */
 #define BOARD_UART_TX_GPIO      GPIOA
-#define BOARD_UART_TX_PIN       GPIO_PIN_2
+#define BOARD_UART_TX_PIN       GPIO_PIN_9   /* PA9 USART1_TX */
 #define BOARD_UART_RX_GPIO      GPIOA
-#define BOARD_UART_RX_PIN       GPIO_PIN_3
+#define BOARD_UART_RX_PIN       GPIO_PIN_10  /* PA10 USART1_RX */
 
 /* Aliases matching older names */
 #define BOARD_BOOT_SENSE_GPIO   BOARD_BOOT_GPIO

@@ -47,13 +47,13 @@
 #define BOARD_I2S_BCK_PIN       13u  /* PB13 */
 #define BOARD_I2S_DOUT_PIN      14u  /* PB14 from codec */
 #define BOARD_I2S_DIN_PIN       15u  /* PB15 to codec */
-#define BOARD_I2S_MCLK_PIN      6u   /* PC6 */
+#define BOARD_I2S_MCLK_PIN      3u   /* PA3 I2S2_MCK — Black Pill (not PC6) */
 
-#define BOARD_VBUS_SENSE_PORT   GPIOA
-#define BOARD_VBUS_SENSE_PIN    9u
+#define BOARD_VBUS_SENSE_PORT   GPIOB
+#define BOARD_VBUS_SENSE_PIN    10u  /* PB10 spare */
 #define BOARD_UART_TX_PORT      GPIOA
-#define BOARD_UART_TX_PIN       2u
+#define BOARD_UART_TX_PIN       9u   /* PA9 USART1_TX */
 #define BOARD_UART_RX_PORT      GPIOA
-#define BOARD_UART_RX_PIN       3u
+#define BOARD_UART_RX_PIN       10u  /* PA10 USART1_RX */
 
 #endif /* BOARD_PINS_H */

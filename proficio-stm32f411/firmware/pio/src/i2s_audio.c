@@ -1,6 +1,7 @@
 /**
  * I2S2 full-duplex to PCM3060.
- * Pins: PB12 WS, PB13 CK, PB15 SD (TX→DIN), PB14 ext SD (RX←DOUT), PC6 MCK
+ * Pins: PB12 WS, PB13 CK, PB15 SD (TX→DIN), PB14 ext SD (RX←DOUT), PA3 MCK
+ * (PA3 = I2S2_MCK — WeAct Black Pill has no PC6 header pin)
  *
  * Master transmit @ ~96 kHz 16-bit stereo. I2S2ext for full-duplex RX.
  * DMA circular into/out of current PCM3060 Tx/Rx buffers.
@@ -26,8 +27,8 @@ static void i2s_gpio_init(void)
 {
     GPIO_InitTypeDef g = {0};
 
+    __HAL_RCC_GPIOA_CLK_ENABLE();
     __HAL_RCC_GPIOB_CLK_ENABLE();
-    __HAL_RCC_GPIOC_CLK_ENABLE();
 
     /* PB12 WS, PB13 CK, PB15 SD — AF5 I2S2 */
     g.Pin = BOARD_I2S_LRCK_PIN | BOARD_I2S_BCK_PIN | BOARD_I2S_DIN_PIN;
@@ -46,10 +47,10 @@ static void i2s_gpio_init(void)
 #endif
     HAL_GPIO_Init(GPIOB, &g);
 
-    /* PC6 MCK — AF5 */
+    /* PA3 MCK — AF5 I2S2_MCK (Black Pill: PC6 not on headers) */
     g.Pin = BOARD_I2S_MCLK_PIN;
     g.Alternate = GPIO_AF5_SPI2;
-    HAL_GPIO_Init(GPIOC, &g);
+    HAL_GPIO_Init(BOARD_I2S_MCLK_GPIO, &g);
 }
 
 static void i2s_dma_init(void)

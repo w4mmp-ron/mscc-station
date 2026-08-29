@@ -1,15 +1,16 @@
 # Proficio MKII — Daughter board pinout for Stew
 
-> **Doc version: 2026-08-17** — pin figure is a **stick diagram** (exact labels). Tables below remain authoritative.
+> **Doc version: 2026-08-29** — mother-board net → STM32 tables (this file). J5 connector pin-by-pin: **`J5-BLACK-PILL-PINMAP.md`**.
 
-**Send Stew:**
+**Canonical pin docs:**
 
 | File | Role |
 |------|------|
-| `STEW-DAUGHTER-BOARD-PINOUT.md` | **Authoritative tables** (this file) |
-| `STEW-BlackPill-pinout-diagram.jpg` | Stick diagram: mother-board nets → STM32 (+ unused pins) |
+| `STEW-DAUGHTER-BOARD-PINOUT.md` | **Authoritative net → STM32 tables** (this file) |
+| `J5-BLACK-PILL-PINMAP.md` | **J5 edge connector** pin-by-pin (A/B sides → Black Pill) |
 | `WeAct-BlackPill-F411-Pinout.png` | WeAct Black Pill reference pinout |
 | `WeAct-STM32F4x1-Pin-Layout.pdf` | Official WeAct pin layout (optional) |
+| `WeAct-BlackPill-F411-board.jpg` | Board photo |
 
 **Folder:** `proficio-stm32f411\docs\`  
 (on Ron’s PC: `C:\Users\Ron\.grok\worktrees\proficio-stm32f411\docs\`)
@@ -30,9 +31,8 @@ These are the **MKII mother-board nets** — the signals that leave the MCU daug
 
 **MCU:** WeAct **STM32F411CEU6** Black Pill (or bare F411)  
 **Logic:** **3.3 V** GPIO only · common **GND**  
-**Firmware pin macros:** `firmware/pio/include/board_pins.h`
-
-![Pinout diagram](STEW-BlackPill-pinout-diagram.jpg)
+**Firmware pin macros:** `firmware/pio/include/board_pins.h`  
+**J5 connector map:** [`J5-BLACK-PILL-PINMAP.md`](J5-BLACK-PILL-PINMAP.md)
 
 ---
 
@@ -48,8 +48,8 @@ Same nets that left the old PSoC to the radio. Map them to the STM32 pins below.
 | **BCK2** | out | *(same PB13)* | PSoC both from I2S `sck` |
 | **LRCK1** | out | **PB12** | I2S2_WS; **tie to LRCK2** on PCB |
 | **LRCK2** | out | *(same PB12)* | PSoC both from I2S `ws` |
-| **SCK1** | out | **PC6** | I2S2_MCK; **tie to SCK2** on PCB |
-| **SCK2** | out | *(same PC6)* | Codec sysclk |
+| **SCK1** | out | **PA3** | I2S2_MCK; **tie to SCK2** on PCB |
+| **SCK2** | out | *(same PA3)* | Codec sysclk |
 | **SDA** | OD | **PB9** | I2C1 |
 | **SCL** | OD | **PB8** | I2C1 |
 | **BS0** | out | **PA7** | Band bit0 |
@@ -89,7 +89,9 @@ STM32: **I2S2 + I2S2ext** (shared BCK/LRCK).
 | BCK | PB13 | I2S2_CK |
 | DIN (→ codec) | PB15 | I2S2_SD |
 | DOUT (← codec) | PB14 | I2S2ext_SD |
-| MCLK / SCK | PC6 | I2S2_MCK |
+| MCLK / SCK | **PA3** | I2S2_MCK |
+
+**Black Pill note:** WeAct headers do **not** break out **PC6**. F411 still offers **I2S2_MCK on PA3** (and PA6). Production uses the **Black Pill module** → route **SCK1/SCK2 to PA3** on the daughter connector. Do **not** look for PC6 on the silk.
 
 Daughter board: short **BCK1–BCK2**, **LRCK1–LRCK2**, **SCK1–SCK2** to the single driver each.
 
@@ -135,7 +137,8 @@ Daughter board: short **BCK1–BCK2**, **LRCK1–LRCK2**, **SCK1–SCK2** to the
 ## 6. Open questions
 
 - [ ] Confirm PTT polarity after PSoC inverter vs MKII footswitch wiring.  
-- [ ] Confirm SCK1/SCK2 frequency (I2S MCLK vs fixed clock).  
+- [ ] Confirm SCK1/SCK2 frequency (I2S MCLK on **PA3** vs fixed clock).  
+
 - [ ] Any discrete CONTROL_DIN/DOUT enable pins on schematic beyond I2S?
 
 ---
