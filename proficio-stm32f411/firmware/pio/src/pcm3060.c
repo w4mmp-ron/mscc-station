@@ -2,9 +2,20 @@
  * PCM3060 I2C control + triple audio buffers (PSoC pcm3060.c port).
  */
 #include "pcm3060.h"
+#include "board.h"
+#include "board_pins.h"
 #include "i2c_bus.h"
 #include "i2s_audio.h"
 #include <string.h>
+
+/* J5 A28 RESET → PA2: hold PCM3060 in reset, then release (active-low). */
+static void pcm3060_hw_reset_pulse(void)
+{
+    HAL_GPIO_WritePin(BOARD_CODEC_RESET_GPIO, BOARD_CODEC_RESET_PIN, GPIO_PIN_RESET);
+    board_delay_ms(2);
+    HAL_GPIO_WritePin(BOARD_CODEC_RESET_GPIO, BOARD_CODEC_RESET_PIN, GPIO_PIN_SET);
+    board_delay_ms(5);
+}
 
 uint8_t RxI2S[USB_AUDIO_BUFS][I2S_BUF_SIZE];
 uint8_t TxI2S[USB_AUDIO_BUFS][I2S_BUF_SIZE];
@@ -62,6 +73,7 @@ uint8_t PCM3060_Init(void)
     memset(TxI2S, 0, sizeof(TxI2S));
     s_buf_idx = 0;
     s_tx_override = 0;
+    pcm3060_hw_reset_pulse();
     i2s_audio_init();
     return PCM3060_Stop();
 }

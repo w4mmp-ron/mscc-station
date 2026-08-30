@@ -2,8 +2,8 @@
  * Control / status HAL — PSoC Control/Status model on Black Pill GPIO.
  *
  * Mother-board nets:
- *   Out: BS0-2, AMP, RX, LED; I2S DIN/BCK/LRCK/SCK (AF later)
- *   In:  KEY_0, KEY_1, PTT, BOOT
+ *   Out: BS0-2, AMP, RX, LED, codec RESET (PA2); I2S DIN/BCK/LRCK/SCK (AF later)
+ *   In:  KEY_0, KEY_1, PTT, BOOT (BOOT is daughter-local jumper)
  *   I2C: SDA, SCL
  *   I2S data in: DOUT from PCM3060
  *
@@ -57,9 +57,11 @@ void control_init(void)
     g.Pin = BOARD_LED_PIN;
     HAL_GPIO_Init(BOARD_LED_GPIO, &g);
 
-    /* Outputs: RX, BS0 */
-    g.Pin = BOARD_RX_PIN | BOARD_BS0_PIN;
+    /* Outputs: RX, BS0, codec RESET (PA2) */
+    g.Pin = BOARD_RX_PIN | BOARD_BS0_PIN | BOARD_CODEC_RESET_PIN;
     HAL_GPIO_Init(GPIOA, &g);
+    /* Release codec from reset (active-low RST) until PCM3060_Init pulses it */
+    HAL_GPIO_WritePin(BOARD_CODEC_RESET_GPIO, BOARD_CODEC_RESET_PIN, GPIO_PIN_SET);
 
     /* Outputs: AMP, BS1, BS2 */
     g.Pin = BOARD_AMP_PIN | BOARD_BS1_PIN | BOARD_BS2_PIN;

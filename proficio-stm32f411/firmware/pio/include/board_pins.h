@@ -55,6 +55,11 @@
 #define BOARD_RX_PIN            GPIO_PIN_1   /* PA1 active-low */
 /* LED1 on PSoC Control bit0 — use module PC13 (no extra mother-board wire) */
 
+/* ---------- Codec RESET (J5 A28 → mother-board RESET net) ---------- */
+#define BOARD_CODEC_RESET_GPIO  GPIOA
+#define BOARD_CODEC_RESET_PIN   GPIO_PIN_2   /* PA2 — PCM3060 RST (active-low) */
+#define BOARD_CODEC_RESET_ACTIVE_LOW  1
+
 /*
  * I2S / PCM3060 — REQUIRED for audio.
  * PSoC: one I2S Master; BCK1≡BCK2 and LRCK1≡LRCK2 (same sck/ws, two pins).

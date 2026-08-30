@@ -42,6 +42,10 @@
 #define BOARD_RX_PORT           GPIOA
 #define BOARD_RX_PIN            1u
 
+/* Codec RESET — J5 A28 → PA2 (PCM3060 RST, active-low) */
+#define BOARD_CODEC_RESET_PORT  GPIOA
+#define BOARD_CODEC_RESET_PIN   2u
+
 /* I2S PCM3060 */
 #define BOARD_I2S_LRCK_PIN      12u  /* PB12 */
 #define BOARD_I2S_BCK_PIN       13u  /* PB13 */
