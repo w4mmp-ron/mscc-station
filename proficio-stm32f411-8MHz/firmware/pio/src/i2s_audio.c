@@ -111,7 +111,7 @@ void i2s_audio_init(void)
     hi2s2.Init.ClockSource = I2S_CLOCK_PLL;
     hi2s2.Init.FullDuplexMode = I2S_FULLDUPLEXMODE_ENABLE;
 
-    /* PLLI2S for 96 kHz from 96 MHz SYSCLK path (HSE 25 MHz typical) */
+    /* PLLI2S for 96 kHz from 96 MHz SYSCLK path (HSE 8 MHz → PLL as in board.c) */
     {
         RCC_PeriphCLKInitTypeDef p = {0};
         p.PeriphClockSelection = RCC_PERIPHCLK_I2S;

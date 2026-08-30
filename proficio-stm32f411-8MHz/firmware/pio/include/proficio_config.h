@@ -4,7 +4,7 @@
 #ifndef PROFICIO_CONFIG_H
 #define PROFICIO_CONFIG_H
 
-#define PROFICIO_FW_NAME        "proficio-stm32f411"
+#define PROFICIO_FW_NAME        "proficio-stm32f411-8MHz"
 /* Firmware version reported to host (CMD_GET_VERSION).
  * Major 5 = STM32 port; minor bumps as features land. */
 #define FIRMWARE_VERSION_MAJOR  5

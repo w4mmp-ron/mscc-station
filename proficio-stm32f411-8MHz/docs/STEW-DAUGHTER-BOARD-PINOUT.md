@@ -12,8 +12,8 @@
 | `WeAct-STM32F4x1-Pin-Layout.pdf` | Official WeAct pin layout (optional) |
 | `WeAct-BlackPill-F411-board.jpg` | Board photo |
 
-**Folder:** `proficio-stm32f411\docs\`  
-(on Ron’s PC: `C:\Users\Ron\.grok\worktrees\proficio-stm32f411\docs\`)
+**Folder:** `proficio-stm32f411-8MHz\docs\`  
+(on Ron’s PC: `C:\Users\Ron\.grok\worktrees\proficio-stm32f411-8MHz\docs\`)
 
 ---
 

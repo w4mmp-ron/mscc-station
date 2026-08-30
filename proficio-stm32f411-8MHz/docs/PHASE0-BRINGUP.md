@@ -19,7 +19,7 @@ No Proficio wiring required yet.
 Project: `firmware/pio/`
 
 ```bash
-cd worktrees/proficio-stm32f411/firmware/pio
+cd worktrees/proficio-stm32f411-8MHz/firmware/pio
 pio run              # already verified SUCCESS
 pio run -t upload    # ST-Link connected
 ```

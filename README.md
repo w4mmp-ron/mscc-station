@@ -12,7 +12,7 @@ Private workspace for Multus SDR / MSCC / Proficio firmware and tools.
 | `Release-Proficio-MKII-PTT` | PSoC MKII PTT firmware |
 | `Release-Proficio-MKII-ATU` | PSoC MKII ATU firmware (+ keyer instrumentation) |
 | `Release-Proficio-Legacy` | Legacy Proficio |
-| `proficio-stm32f411` | STM32F411 migration (see `docs/STEW-DAUGHTER-BOARD-PINOUT.md`) |
+| `proficio-stm32f411-8MHz` | STM32F411 migration, 8 MHz HSE bring-up (see `docs/STEW-DAUGHTER-BOARD-PINOUT.md`) |
 | `keyer` | PIC keyer |
 | `ms-sdr-linux` | Linux ms-sdr |
 | `mscc-init-*` | Init tools |

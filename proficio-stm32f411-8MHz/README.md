@@ -4,7 +4,7 @@
 
 | | Path |
 |--|------|
-| **This tree** | `worktrees/proficio-stm32f411` |
+| **This tree** | `worktrees/proficio-stm32f411-8MHz` |
 | **PSoC reference (read-only source of truth)** | `worktrees/Release-Proficio-MKII-PTT/Proficio-MKII-PTT.cydsn` |
 | **Host (unchanged goal)** | ms-sdr USB vendor protocol + audio path |
 
@@ -33,7 +33,7 @@
 - Debug: SWD (ST-Link)
 
 ```text
-proficio-stm32f411/
+proficio-stm32f411-8MHz/
   README.md / RESUME.md
   docs/           # migration architecture, phases, pinout
   firmware/       # STM32 application skeleton

@@ -4,7 +4,7 @@
 **Production MCU:** WeAct **Black Pill F411** module on daughter (not a bare custom F411 PCB).  
 **I2S MCLK:** **PA3** (not PC6 — PC6 is not on WeAct headers).  
 
-**Tree:** `worktrees/proficio-stm32f411`  
+**Tree:** `worktrees/proficio-stm32f411-8MHz`  
 **Reference:** `worktrees/Release-Proficio-MKII-PTT` (logic only; no display/bias/legacy sensors)  
 **PIC keyer:** `worktrees/keyer` (stays external for this migration)
 
@@ -60,7 +60,7 @@ Same PCB, two population options. If spin 1 assumes “PIC always present,” ab
 ## Build
 
 ```powershell
-cd C:\Users\Ron\.grok\worktrees\proficio-stm32f411\firmware\pio
+cd C:\Users\Ron\.grok\worktrees\proficio-stm32f411-8MHz\firmware\pio
 & "$env:USERPROFILE\.platformio\penv\Scripts\pio.exe" run
 ```
 

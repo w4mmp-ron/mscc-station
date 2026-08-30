@@ -4,7 +4,7 @@
 #ifndef PROFICIO_CONFIG_H
 #define PROFICIO_CONFIG_H
 
-#define PROFICIO_FW_NAME     "proficio-stm32f411"
+#define PROFICIO_FW_NAME     "proficio-stm32f411-8MHz"
 #define PROFICIO_FW_VERSION  "0.1.0-control"
 
 /* Target MCU */

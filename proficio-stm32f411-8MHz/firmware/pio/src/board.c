@@ -40,7 +40,9 @@ uint32_t board_millis(void)
 }
 
 /**
- * HSE 25 MHz (typical WeAct) → 96 MHz SYSCLK, PLLQ → 48 MHz USB.
+ * HSE 8 MHz (this bring-up Black Pill) → 96 MHz SYSCLK, PLLQ → 48 MHz USB.
+ * PLLM=8: 8/8*192/2 = 96 MHz; USB = 192/4 = 48 MHz.
+ * (25 MHz WeAct boards need PLLM=25 and HSE_VALUE=25000000 — not this build.)
  * HSI fallback if HSE fails.
  */
 static void SystemClock_Config(void)
@@ -55,7 +57,7 @@ static void SystemClock_Config(void)
     osc.HSEState = RCC_HSE_ON;
     osc.PLL.PLLState = RCC_PLL_ON;
     osc.PLL.PLLSource = RCC_PLLSOURCE_HSE;
-    osc.PLL.PLLM = 25;
+    osc.PLL.PLLM = 8;
     osc.PLL.PLLN = 192;
     osc.PLL.PLLP = RCC_PLLP_DIV2;
     osc.PLL.PLLQ = 4;

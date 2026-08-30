@@ -21,7 +21,7 @@ Last verified: **SUCCESS** (~9.7 KB flash control-path image).
 
 | Feature | Status |
 |---------|--------|
-| Clock HSE 25 MHz → 96 MHz (HSI fallback) | yes |
+| Clock HSE 8 MHz → 96 MHz (HSI fallback); HSE_VALUE=8e6 | yes |
 | PC13 LED heartbeat | yes |
 | Control/Status GPIO (RX, AMP, BS0–2, KEY0/1) | yes |
 | I2C1 PB8/PB9 | yes |
