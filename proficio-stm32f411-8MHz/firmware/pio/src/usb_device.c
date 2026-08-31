@@ -26,6 +26,7 @@ static void usb_hw_init(void)
     __HAL_RCC_GPIOA_CLK_ENABLE();
     __HAL_RCC_USB_OTG_FS_CLK_ENABLE();
 
+    /* D-/D+ only. PA9 is PCM3060 RESET — do not claim it for VBUS. */
     g.Pin = GPIO_PIN_11 | GPIO_PIN_12;
     g.Mode = GPIO_MODE_AF_PP;
     g.Pull = GPIO_NOPULL;
@@ -33,18 +34,7 @@ static void usb_hw_init(void)
     g.Alternate = GPIO_AF10_OTG_FS;
     HAL_GPIO_Init(GPIOA, &g);
 
-    g.Pin = GPIO_PIN_9;
-    g.Mode = GPIO_MODE_INPUT;
-    g.Pull = GPIO_NOPULL;
-    HAL_GPIO_Init(GPIOA, &g);
-
-    g.Pin = GPIO_PIN_10;
-    g.Mode = GPIO_MODE_AF_OD;
-    g.Pull = GPIO_PULLUP;
-    g.Speed = GPIO_SPEED_FREQ_HIGH;
-    g.Alternate = GPIO_AF10_OTG_FS;
-    HAL_GPIO_Init(GPIOA, &g);
-
+    /* Device mode: ignore pad VBUS so bare-pill USB-C still enumerates. */
 #ifdef USB_OTG_GCCFG_NOVBUSSENS
     USB_OTG_FS->GCCFG |= USB_OTG_GCCFG_NOVBUSSENS;
 #endif

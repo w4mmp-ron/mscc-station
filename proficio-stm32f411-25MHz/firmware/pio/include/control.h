@@ -37,6 +37,9 @@ void     Control_Write(uint8_t value);
 uint8_t  Status_Read(void);
 void     Band_Control_Write(uint8_t band_code);
 
+/** Optional USBV+ sense (1 = present). Never required for USB enum. */
+uint8_t  vbus_sense_present(void);
+
 /* CW hold timer (ms remaining; 0 = expired). Polled by CW. */
 void     cw_hold_start_ms(uint32_t ms);
 void     cw_hold_poll(void);          /* call from SysTick / main */

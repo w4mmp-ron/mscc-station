@@ -24,7 +24,8 @@
 - **USBV+** arrives on **U2 B8** from the mother.  
 - **Still needed:** route **U2 B8 → resistor divider → free GPIO** (3.3 V max at the MCU).  
   **Do not use PA9** — that is **PCM3060 RESET**.  
-  Candidate spare (FW placeholder): **PB10** (`BOARD_VBUS_SENSE_*`), or another free pin Stew prefers.
+  FW placeholder: **PB10** (`BOARD_VBUS_SENSE_*` / `vbus_sense_present()`).  
+  Sense is **optional** — bare Black Pill USB-C still enumerates without it.
 
 ---
 

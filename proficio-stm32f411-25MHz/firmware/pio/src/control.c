@@ -78,7 +78,14 @@ void control_init(void)
     g.Pin = BOARD_PTT_PIN | BOARD_BOOT_PIN;
     HAL_GPIO_Init(GPIOA, &g);
 
-    /* USB uses PA11/PA12. PA9 = codec RESET (above). USBV+ sense not wired yet (U2 B8). */
+    /*
+     * USBV+ sense (optional): U2 B8 -> divider -> BOARD_VBUS_SENSE_*.
+     * Pulldown so bare pill / unwired pin reads absent. Does NOT gate USB.
+     */
+    g.Mode = GPIO_MODE_INPUT;
+    g.Pull = GPIO_PULLDOWN;
+    g.Pin = BOARD_VBUS_SENSE_PIN;
+    HAL_GPIO_Init(BOARD_VBUS_SENSE_GPIO, &g);
 
     /* I2S pins configured by i2s_audio_init() when audio feature enabled */
 
@@ -153,6 +160,12 @@ void Band_Control_Write(uint8_t band_code)
                       (band_code & 0x02u) ? GPIO_PIN_SET : GPIO_PIN_RESET);
     HAL_GPIO_WritePin(BOARD_BS2_GPIO, BOARD_BS2_PIN,
                       (band_code & 0x04u) ? GPIO_PIN_SET : GPIO_PIN_RESET);
+}
+
+uint8_t vbus_sense_present(void)
+{
+    return (HAL_GPIO_ReadPin(BOARD_VBUS_SENSE_GPIO, BOARD_VBUS_SENSE_PIN)
+            == GPIO_PIN_SET) ? 1u : 0u;
 }
 
 void cw_hold_start_ms(uint32_t ms)

@@ -92,9 +92,9 @@
  * Software shadow only until proven otherwise on the schematic.
  */
 
-/* USBV+ sense: connector B8; Stew still routing divider → GPIO (placeholder PB10) */
+/* USBV+ sense: U2 B8 -> divider -> this GPIO (placeholder until Stew picks pin) */
 #define BOARD_VBUS_SENSE_GPIO   GPIOB
-#define BOARD_VBUS_SENSE_PIN    GPIO_PIN_10  /* TBD — not PA9 (RESET) */
+#define BOARD_VBUS_SENSE_PIN    GPIO_PIN_10  /* optional; does not gate USB */
 
 /* Debug UART USART1 (PA3 taken by I2S2_MCK for Black Pill production) */
 #define BOARD_UART_TX_GPIO      GPIOA
