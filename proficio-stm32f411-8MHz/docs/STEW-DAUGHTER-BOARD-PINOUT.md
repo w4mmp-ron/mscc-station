@@ -1,13 +1,15 @@
 # Proficio MKII — Daughter board pinout for Stew
 
-> **Doc version: 2026-08-29** — mother-board net → STM32 tables (this file). J5 connector pin-by-pin: **`J5-BLACK-PILL-PINMAP.md`**.
+> **Doc version: 2026-08-31** — mother-board net → STM32 tables (this file). Connector pin-by-pin: **`J5-BLACK-PILL-PINMAP.md`**.
+
+**Connector naming:** mother board = **J5**; daughter board = **U2** (mates with J5). Black Pill is on the **daughter**. Same pin numbers on both sides.
 
 **Canonical pin docs:**
 
 | File | Role |
 |------|------|
 | `STEW-DAUGHTER-BOARD-PINOUT.md` | **Authoritative net → STM32 tables** (this file) |
-| `J5-BLACK-PILL-PINMAP.md` | **J5 edge connector** pin-by-pin (A/B sides → Black Pill) |
+| `J5-BLACK-PILL-PINMAP.md` | **J5 / U2** edge connector pin-by-pin (A/B sides → Black Pill) |
 | `WeAct-BlackPill-F411-Pinout.png` | WeAct Black Pill reference pinout |
 | `WeAct-STM32F4x1-Pin-Layout.pdf` | Official WeAct pin layout (optional) |
 | `WeAct-BlackPill-F411-board.jpg` | Board photo |
@@ -32,7 +34,7 @@ These are the **MKII mother-board nets** — the signals that leave the MCU daug
 **MCU:** WeAct **STM32F411CEU6** Black Pill (or bare F411)  
 **Logic:** **3.3 V** GPIO only · common **GND**  
 **Firmware pin macros:** `firmware/pio/include/board_pins.h`  
-**J5 connector map:** [`J5-BLACK-PILL-PINMAP.md`](J5-BLACK-PILL-PINMAP.md)
+**J5 / U2 connector map:** [`J5-BLACK-PILL-PINMAP.md`](J5-BLACK-PILL-PINMAP.md)
 
 ---
 
@@ -50,6 +52,7 @@ Same nets that left the old PSoC to the radio. Map them to the STM32 pins below.
 | **LRCK2** | out | *(same PB12)* | PSoC both from I2S `ws` |
 | **SCK1** | out | **PA3** | I2S2_MCK; **tie to SCK2** on PCB |
 | **SCK2** | out | *(same PA3)* | Codec sysclk |
+| **RESET** | out | **PA2** | **PCM3060** reset via **U2/J5 A28**; **not** MCU NRST |
 | **SDA** | OD | **PB9** | I2C1 |
 | **SCL** | OD | **PB8** | I2C1 |
 | **BS0** | out | **PA7** | Band bit0 |
@@ -123,14 +126,15 @@ Daughter board: short **BCK1–BCK2**, **LRCK1–LRCK2**, **SCK1–SCK2** to the
 ## 5. PCB checklist
 
 1. Route **+3.3 V** and **GND** to the daughter (common ground with mother board). All GPIO is **3.3 V** logic — not 5 V I/O.  
-2. Route **all MKII interface signals** in §1 (including **I2S** and **BOOT**).  
+2. Route **all MKII interface signals** in §1 (including **I2S**, **RESET→PA2**, and **BOOT**).  
 3. Tie dual clock names (BCK/LRCK/SCK ×2) as above.  
-4. I2C pull-ups 4.7 kΩ to 3.3 V if needed.  
-5. PTT is **input** (sense), not a drive output.  
-6. AMP/RX active-low polarity match MKII.  
-7. **PB12 = LRCK only** — do not tie PB12 to GND.
-6. 3.3 V only into STM32 I/O.  
-7. ST-Link + USB-C accessible on module.
+4. **RESET** (**U2/J5 A28**) → **PA2** → **PCM3060** only — do **not** tie to Black Pill **NRST**.  
+5. I2C pull-ups 4.7 kΩ to 3.3 V if needed.  
+6. PTT is **input** (sense), not a drive output.  
+7. AMP/RX active-low polarity match MKII.  
+8. **PB12 = LRCK only** — do not tie PB12 to GND.  
+9. 3.3 V only into STM32 I/O.  
+10. ST-Link + USB-C accessible on module.
 
 ---
 

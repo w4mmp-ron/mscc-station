@@ -1,8 +1,8 @@
-# J5 → Black Pill pin-by-pin (production)
+# J5 / U2 → Black Pill pin-by-pin (production)
 
-**J5:** `PCIE-064-02-F-D-TH` (64-pin). Mother board edge connector.  
-**MCU module:** WeAct **STM32F411CEU6 Black Pill** on the daughter.  
-**USB jack:** on MKII mother board → J5 → pill (PA11/PA12).
+**Mother J5 / daughter U2:** same mating edge connector (`PCIE-064-02-F-D-TH`, 64-pin).  
+**MCU module:** WeAct **STM32F411CEU6 Black Pill** on the **daughter** (wired from **U2**).  
+**USB jack:** on MKII mother board → **J5** → **U2** → pill (PA11/PA12).
 
 Clock pairs on the daughter are **shorted** to one MCU pin each (same as old PSoC dual-drive nets).
 
@@ -39,7 +39,7 @@ Clock pairs on the daughter are **shorted** to one MCU pin each (same as old PSo
 | A25 | — | — | NC |
 | A26 | **SCL** | **PB8** | I2C1 |
 | A27 | — | — | NC |
-| A28 | **RESET** | **TBD** | Codec RST — pick free GPIO |
+| A28 | **RESET** | **PA2** | **PCM3060** reset (via U2→PA2); **not** MCU NRST |
 | A29 | — | — | NC |
 | A30 | **BS2** | **PB3** | Band bit2 |
 | A31 | — | — | NC |
@@ -102,9 +102,8 @@ Clock pairs on the daughter are **shorted** to one MCU pin each (same as old PSo
 
 | Item | Status |
 |------|--------|
-| **RESET** (A28) | Need free GPIO assignment |
-| **PTT**, **BOOT** | Not on this J5 crop — confirm other connector/sheet |
-| **ATU_0 / ATU_1** | On J5; FW later |
+| **PTT**, **BOOT** | Not on this J5 crop — daughter-local (PA6 / PA8); see `PTT-CONFIGURATION.md`, `BOOT-CONFIGURATION.md` |
+| **ATU_0 / ATU_1** | On J5; FW later (PTT product may leave NC) |
 | Extra **GND / 3.3V** | Route all grounds / 3.3V per Stew power plan |
 
 ---
@@ -128,7 +127,7 @@ Clock pairs on the daughter are **shorted** to one MCU pin each (same as old PSo
 | **KEY_0** | **PB0** |
 | **KEY_1** | **PB1** |
 | **LED** | **PC13** (or as Stew buffers) |
-| **RESET** | TBD free GPIO |
+| **RESET** (PCM3060) | **PA2** |
 | **USB+** (mother jack via J5) | **PA12** |
 | **USB-** | **PA11** |
 | **USBV+** | VBUS / 5 V path on pill |
