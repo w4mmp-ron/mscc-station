@@ -55,3 +55,10 @@ Desktop.ini
 **/*.log
 !**/POST-BUILD.txt
 !bootloader/**/*.log
+
+# Local / generated (proficio STM32)
+proficio-stm32f411-8MHz/firmware/pio/release/
+proficio-stm32f411-8MHz/firmware/pio/.pio/
+proficio-stm32f411-8MHz/**/*.code-workspace
+proficio-stm32f411-8MHz/*.bin
+proficio-stm32f411-8MHz/tools/*.bin

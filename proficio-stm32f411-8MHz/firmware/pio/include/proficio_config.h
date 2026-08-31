@@ -12,9 +12,12 @@
 #define FIRMWARE_VERSION ((((FIRMWARE_VERSION_MINOR) << 8) & 0xff00) | \
                           ((FIRMWARE_VERSION_MAJOR) & 0x00ff))
 
+/* Set each PIO build by extra_tinyusb.py → include/build_info.h */
+#include "build_info.h"
+
 #define PROFICIO_MCU_STM32F411  1
 
-/* Feature gates — logic compiles; USB stack is shell until TinyUSB wired */
+/* Feature gates */
 #define PROFICIO_FEAT_USB_VENDOR  1
 #define PROFICIO_FEAT_SI5351      1
 #define PROFICIO_FEAT_KEYER_I2C   1
@@ -22,6 +25,8 @@
 #define PROFICIO_FEAT_BAND        1
 #define PROFICIO_FEAT_USB_AUDIO   1
 #define PROFICIO_FEAT_PCM3060     1
+
+/* USB audio via TinyUSB UAC2 (see tusb_config.h / usb_audio_uac2.c) */
 
 /* CW keying style: 1 = MKII PIN-diode (key RX per element), 0 = legacy DIN */
 #ifndef PROFICIO_CW_MKII

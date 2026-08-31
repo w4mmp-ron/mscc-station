@@ -1,0 +1,20 @@
+# Dump USB OTG FS regs while app is running (do not reset).
+init
+halt
+echo "PC:"
+reg pc
+echo "FLASH magic (vector):"
+mdw 0x08000000 2
+echo "USB GOTGCTL GUSBCFG GCCFG:"
+mdw 0x50000000 1
+mdw 0x5000000C 1
+mdw 0x50000038 1
+echo "USB DCFG DCTL DSTS:"
+mdw 0x50000800 1
+mdw 0x50000804 1
+mdw 0x50000808 1
+echo "GINTSTS GINTMSK:"
+mdw 0x50000014 1
+mdw 0x50000018 1
+resume
+shutdown

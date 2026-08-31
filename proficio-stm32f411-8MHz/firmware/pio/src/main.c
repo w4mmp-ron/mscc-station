@@ -6,6 +6,7 @@
 #include "board.h"
 #include "app.h"
 #include "system_boot.h"
+#include "usb_device.h"
 
 int main(void)
 {
@@ -27,7 +28,9 @@ int main(void)
         {
             static uint32_t last = 0;
             uint32_t now = board_millis();
-            if ((now - last) >= 500u) {
+            /* Fast blink when USB configured (enumerated); slow otherwise. */
+            uint32_t period = usb_device_configured() ? 50u : 500u;
+            if ((now - last) >= period) {
                 last = now;
                 board_led_toggle();
             }

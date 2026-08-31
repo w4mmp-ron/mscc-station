@@ -1,0 +1,10 @@
+# Vendored TinyUSB: only src/ is tracked
+examples/
+hw/
+test/
+tools/
+docs/
+lib/
+.github/
+.circleci/
+.idea/

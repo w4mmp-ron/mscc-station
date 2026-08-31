@@ -40,10 +40,9 @@ uint32_t board_millis(void)
 }
 
 /**
- * HSE 8 MHz (this bring-up Black Pill) → 96 MHz SYSCLK, PLLQ → 48 MHz USB.
- * PLLM=8: 8/8*192/2 = 96 MHz; USB = 192/4 = 48 MHz.
- * (25 MHz WeAct boards need PLLM=25 and HSE_VALUE=25000000 — not this build.)
- * HSI fallback if HSE fails.
+ * Black Pill clock — same recipe as TinyUSB stm32f411blackpill BSP (known-good USB).
+ * HSE 8 MHz: PLLM=8, N=336, P=/4 → 84 MHz SYSCLK; Q=7 → 48 MHz USB.
+ * (HSE_VALUE must match crystal; we define 8000000 in platformio.ini.)
  */
 static void SystemClock_Config(void)
 {
@@ -51,29 +50,18 @@ static void SystemClock_Config(void)
     RCC_ClkInitTypeDef clk = {0};
 
     __HAL_RCC_PWR_CLK_ENABLE();
-    __HAL_PWR_VOLTAGESCALING_CONFIG(PWR_REGULATOR_VOLTAGE_SCALE1);
+    __HAL_PWR_VOLTAGESCALING_CONFIG(PWR_REGULATOR_VOLTAGE_SCALE2);
 
     osc.OscillatorType = RCC_OSCILLATORTYPE_HSE;
     osc.HSEState = RCC_HSE_ON;
     osc.PLL.PLLState = RCC_PLL_ON;
     osc.PLL.PLLSource = RCC_PLLSOURCE_HSE;
-    osc.PLL.PLLM = 8;
-    osc.PLL.PLLN = 192;
-    osc.PLL.PLLP = RCC_PLLP_DIV2;
-    osc.PLL.PLLQ = 4;
+    osc.PLL.PLLM = (uint32_t)(HSE_VALUE / 1000000U);
+    osc.PLL.PLLN = 336;
+    osc.PLL.PLLP = RCC_PLLP_DIV4;
+    osc.PLL.PLLQ = 7;
     if (HAL_RCC_OscConfig(&osc) != HAL_OK) {
-        osc.OscillatorType = RCC_OSCILLATORTYPE_HSI;
-        osc.HSEState = RCC_HSE_OFF;
-        osc.HSIState = RCC_HSI_ON;
-        osc.HSICalibrationValue = RCC_HSICALIBRATION_DEFAULT;
-        osc.PLL.PLLSource = RCC_PLLSOURCE_HSI;
-        osc.PLL.PLLM = 16;
-        osc.PLL.PLLN = 192;
-        osc.PLL.PLLP = RCC_PLLP_DIV2;
-        osc.PLL.PLLQ = 4;
-        if (HAL_RCC_OscConfig(&osc) != HAL_OK) {
-            Error_Handler();
-        }
+        Error_Handler();
     }
 
     clk.ClockType = RCC_CLOCKTYPE_HCLK | RCC_CLOCKTYPE_SYSCLK
@@ -82,7 +70,7 @@ static void SystemClock_Config(void)
     clk.AHBCLKDivider = RCC_SYSCLK_DIV1;
     clk.APB1CLKDivider = RCC_HCLK_DIV2;
     clk.APB2CLKDivider = RCC_HCLK_DIV1;
-    if (HAL_RCC_ClockConfig(&clk, FLASH_LATENCY_3) != HAL_OK) {
+    if (HAL_RCC_ClockConfig(&clk, FLASH_LATENCY_2) != HAL_OK) {
         Error_Handler();
     }
 }

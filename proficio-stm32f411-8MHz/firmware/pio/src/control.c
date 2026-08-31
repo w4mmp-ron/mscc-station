@@ -78,10 +78,7 @@ void control_init(void)
     g.Pin = BOARD_PTT_PIN | BOARD_BOOT_PIN;
     HAL_GPIO_Init(GPIOA, &g);
 
-    /* Optional VBUS */
-    g.Pull = GPIO_NOPULL;
-    g.Pin = BOARD_VBUS_SENSE_PIN;
-    HAL_GPIO_Init(GPIOA, &g);
+    /* Do not touch PA9/PA10/PA11/PA12 here — USB uses PA11/PA12; VBUS sense unused on Black Pill */
 
     /* I2S pins configured by i2s_audio_init() when audio feature enabled */
 

@@ -13,6 +13,8 @@
 void usb_device_init(void);
 void usb_device_poll(void);
 uint8_t usb_device_configured(void);
+uint32_t usb_device_bus_resets(void);
+uint32_t usb_device_setups(void);
 
 /** True when host enabled streaming alts (TX interface alt 1). */
 uint8_t usb_audio_tx_enabled(void);
