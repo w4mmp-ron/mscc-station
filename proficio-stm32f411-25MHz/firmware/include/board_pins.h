@@ -42,9 +42,9 @@
 #define BOARD_RX_PORT           GPIOA
 #define BOARD_RX_PIN            1u
 
-/* Codec RESET — J5 A28 → PA2 (PCM3060 RST, active-low) */
+/* Codec RESET — U2/J5 A28 → PA9 (PCM3060 RST, active-low); Stew rev 6.0 */
 #define BOARD_CODEC_RESET_PORT  GPIOA
-#define BOARD_CODEC_RESET_PIN   2u
+#define BOARD_CODEC_RESET_PIN   9u
 
 /* I2S PCM3060 */
 #define BOARD_I2S_LRCK_PIN      12u  /* PB12 */

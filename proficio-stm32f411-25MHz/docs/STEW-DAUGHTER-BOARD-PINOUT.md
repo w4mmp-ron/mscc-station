@@ -52,7 +52,7 @@ Same nets that left the old PSoC to the radio. Map them to the STM32 pins below.
 | **LRCK2** | out | *(same PB12)* | PSoC both from I2S `ws` |
 | **SCK1** | out | **PA3** | I2S2_MCK; **tie to SCK2** on PCB |
 | **SCK2** | out | *(same PA3)* | Codec sysclk |
-| **RESET** | out | **PA2** | **PCM3060** reset via **U2/J5 A28**; **not** MCU NRST |
+| **RESET** | out | **PA9** | **PCM3060** reset via **U2/J5 A28**; **not** MCU NRST |
 | **SDA** | OD | **PB9** | I2C1 |
 | **SCL** | OD | **PB8** | I2C1 |
 | **BS0** | out | **PA7** | Band bit0 |
@@ -126,9 +126,9 @@ Daughter board: short **BCK1–BCK2**, **LRCK1–LRCK2**, **SCK1–SCK2** to the
 ## 5. PCB checklist
 
 1. Route **+3.3 V** and **GND** to the daughter (common ground with mother board). All GPIO is **3.3 V** logic — not 5 V I/O.  
-2. Route **all MKII interface signals** in §1 (including **I2S**, **RESET→PA2**, and **BOOT**).  
+2. Route **all MKII interface signals** in §1 (including **I2S**, **RESET→PA9**, and **BOOT**).  
 3. Tie dual clock names (BCK/LRCK/SCK ×2) as above.  
-4. **RESET** (**U2/J5 A28**) → **PA2** → **PCM3060** only — do **not** tie to Black Pill **NRST**.  
+4. **RESET** (**U2/J5 A28**) → **PA9** → **PCM3060** only — do **not** tie to Black Pill **NRST**.  
 5. I2C pull-ups 4.7 kΩ to 3.3 V if needed.  
 6. PTT is **input** (sense), not a drive output.  
 7. AMP/RX active-low polarity match MKII.  
