@@ -62,3 +62,8 @@ proficio-stm32f411-8MHz/firmware/pio/.pio/
 proficio-stm32f411-8MHz/**/*.code-workspace
 proficio-stm32f411-8MHz/*.bin
 proficio-stm32f411-8MHz/tools/*.bin
+proficio-stm32f411-25MHz/firmware/pio/release/
+proficio-stm32f411-25MHz/firmware/pio/.pio/
+proficio-stm32f411-25MHz/**/*.code-workspace
+proficio-stm32f411-25MHz/*.bin
+proficio-stm32f411-25MHz/tools/*.bin

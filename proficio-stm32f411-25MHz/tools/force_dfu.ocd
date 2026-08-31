@@ -1,0 +1,20 @@
+# Force STM32F411 into system-memory (ROM) bootloader and leave it running.
+# Usage: openocd -f interface/stlink.cfg -f target/stm32f4x.cfg -f tools/force_dfu.ocd
+
+init
+reset halt
+
+set msp_val [mrw 0x1FFF0000]
+set pc_val [mrw 0x1FFF0004]
+echo "ROM MSP=$msp_val  PC=$pc_val"
+
+# Point VTOR at system memory and jump to ROM reset handler
+mww 0xE000ED08 0x1FFF0000
+reg msp $msp_val
+reg pc $pc_val
+
+resume
+echo "Resumed in ROM bootloader — check PC for DFU 0483:DF11"
+# Stay attached without resetting so USB can enumerate
+sleep 60000
+shutdown
