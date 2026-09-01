@@ -1,8 +1,8 @@
-# USBV+ / VBUS sense — note for Stew (STM32 daughter)
+# USBV+ / VBUS sense — STM32 daughter (locked)
 
 **Date:** 2026-08-31  
 **MCU module:** WeAct Black Pill STM32F411.  
-**Schematic:** Stew *STM32F411CEU6-PCIe-CW* rev **6.0** — **USBV+ not yet routed to an MCU pin.**
+**Locked PCB:** Stew *STM32F411CEU6-PCIe-CW* — **USBV+ → divider → PA9**.
 
 ---
 
@@ -10,35 +10,48 @@
 
 | Connector net | J5 / U2 | Role |
 |---------------|---------|------|
-| **USBV+** | **B8** | Host USB VBUS to daughter (sense only) |
+| **USBV+** | **B8** | Host USB VBUS to daughter (**Proficio name** for host USB 5 V) |
 | **USB+** | (data) | D+ → **PA12** |
 | **USB−** | (data) | D− → **PA11** |
 
-**USBV+ is not the radio 5 V rail.** Pill **5V** comes from the daughter regulator.
+**USBV+ is not the radio 5 V rail.** Pill **5V** comes from the daughter regulator.  
+**USBV+** must be dropped through a **resistor divider to ≤ 3.3 V** at the MCU pin.
 
 ---
 
-## Status on rev 6.0
+## Locked MCU pin
 
-- **USB±** → PA12/PA11: done on schematic.  
-- **USBV+** arrives on **U2 B8** from the mother.  
-- **Still needed:** route **U2 B8 → resistor divider → free GPIO** (3.3 V max at the MCU).  
-  **Do not use PA9** — that is **PCM3060 RESET**.  
-  FW placeholder: **PB10** (`BOARD_VBUS_SENSE_*` / `vbus_sense_present()`).  
-  Sense is **optional** — bare Black Pill USB-C still enumerates without it.
+| Item | Value |
+|------|--------|
+| Connector | **U2 / J5 B8** |
+| Sense GPIO | **PA9** (MCU **input**) |
+| Conditioning | Resistor divider → 3.3 V logic at PA9 |
+
+**Do not use PA9 for PCM3060 RESET** — RESET is **PA2** (`CODEC-RESET-PIN.md`).
+
+Firmware: `BOARD_VBUS_SENSE_*` should track **PA9** (Ron — code update separate from this doc lock). Older **PB10** placeholder is obsolete for this board.
 
 ---
 
 ## Why it matters
 
-Pill stays powered from the board regulator across a **PC reboot**. Sensing USBV+ lets firmware drop/re-init USB without unplugging.
+Pill stays powered from the board regulator across a **PC reboot**. Sensing USBV+ lets firmware drop/re-init USB without unplugging. Sense is **optional** for first bring-up (USB still enumerates) but **routed on this PCB**.
 
 ---
 
-## Stew checklist
+## Checklist
 
-- [ ] **USBV+** (U2/J5 **B8**) ≠ short to regulator **5V** / pill 5V  
-- [ ] **USBV+** → divider → **chosen GPIO** (not PA9)  
-- [ ] Tell firmware which GPIO was chosen  
+- [x] **USBV+** (U2/J5 **B8**) routed to divider → **PA9** (schematic + PCB)  
+- [ ] Confirm divider ratios: PA9 never exceeds **3.3 V**  
+- [ ] **USBV+** ≠ short to regulator **5V** / pill 5V  
+- [ ] FW macros match **PA9** (Ron)
 
-**One-liner:** *USBV+ on U2 B8; still needs divider → free GPIO for sense (PA9 is RESET).*
+**One-liner:** *USBV+ on U2 B8 → divider → **PA9**; RESET is **PA2**; BOOT is **PA8**.*
+
+## Related locked triad
+
+| Net | STM32 |
+|-----|--------|
+| **RESET** (codec) | **PA2** |
+| **BOOT** | **PA8** |
+| **USBV+** (sense) | **PA9** |

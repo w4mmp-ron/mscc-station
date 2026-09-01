@@ -1,0 +1,43 @@
+<UserControl x:Class="MSCC.Wpf.Controls.SpectrumDisplayControl"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             Background="#FF0A0A0A">
+    <Grid>
+        <Image x:Name="SpectrumImage"
+               Stretch="Fill"
+               RenderOptions.BitmapScalingMode="NearestNeighbor"/>
+        <!-- Overlays: not hit-test so mouse reaches the spectrum image. -->
+        <Canvas x:Name="CursorOverlayCanvas" IsHitTestVisible="False">
+            <!-- Peak marker readout (S/W PEAK MARKER) — top-left, tinySA-style -->
+            <Border x:Name="PeakMarkerBox"
+                    Background="#CC222200"
+                    BorderBrush="#FFEECC00"
+                    BorderThickness="1"
+                    Padding="5,2"
+                    CornerRadius="2"
+                    Visibility="Collapsed"
+                    Canvas.Left="4" Canvas.Top="3">
+                <TextBlock x:Name="PeakMarkerText"
+                           FontFamily="Consolas"
+                           FontSize="13"
+                           FontWeight="Bold"
+                           Foreground="#FFEECC00" />
+            </Border>
+            <!-- Hover cursor frequency readout -->
+            <Border x:Name="CursorFreqBox"
+                    Background="#FF444444"
+                    BorderBrush="#FF888888"
+                    BorderThickness="1"
+                    Padding="4,2"
+                    CornerRadius="2"
+                    Visibility="Collapsed"
+                    Canvas.Top="3">
+                <TextBlock x:Name="CursorFreqText"
+                           FontFamily="Consolas"
+                           FontSize="16"
+                           FontWeight="Bold"
+                           Foreground="#00FFAA" />
+            </Border>
+        </Canvas>
+    </Grid>
+</UserControl>

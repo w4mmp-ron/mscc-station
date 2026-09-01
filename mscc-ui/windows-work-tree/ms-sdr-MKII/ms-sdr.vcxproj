@@ -1,0 +1,109 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project DefaultTargets="Build" ToolsVersion="15.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup Label="ProjectConfigurations">
+    <ProjectConfiguration Include="MFC|Win32">
+      <Configuration>MFC</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+  </ItemGroup>
+  <PropertyGroup Label="Globals">
+    <ProjectGuid>{E2C3A958-DB94-4F42-80C2-A4F3C17A6083}</ProjectGuid>
+    <Keyword>Win32Proj</Keyword>
+    <RootNamespace>appPath</RootNamespace>
+    <WindowsTargetPlatformVersion>10.0</WindowsTargetPlatformVersion>
+    <ProjectName>ms-sdr-MKII</ProjectName>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='MFC|Win32'" Label="Configuration">
+    <ConfigurationType>Application</ConfigurationType>
+    <UseDebugLibraries>false</UseDebugLibraries>
+    <PlatformToolset>v143</PlatformToolset>
+    <WholeProgramOptimization>true</WholeProgramOptimization>
+    <CharacterSet>Unicode</CharacterSet>
+    <CLRSupport>false</CLRSupport>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
+  <ImportGroup Label="ExtensionSettings">
+  </ImportGroup>
+  <ImportGroup Label="Shared">
+  </ImportGroup>
+  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='MFC|Win32'" Label="PropertySheets">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <PropertyGroup Label="UserMacros" />
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='MFC|Win32'">
+    <LinkIncremental>false</LinkIncremental>
+    <LibraryPath>.\LIBS;$(LibraryPath)</LibraryPath>
+    <TargetName>ms-sdr-MKII</TargetName>
+    <OutDir>..\..\Release\</OutDir>
+    <IntDir>.\Release\</IntDir>
+  </PropertyGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='MFC|Win32'">
+    <ClCompile>
+      <WarningLevel>Level3</WarningLevel>
+      <PrecompiledHeader>
+      </PrecompiledHeader>
+      <Optimization>MaxSpeed</Optimization>
+      <FunctionLevelLinking>true</FunctionLevelLinking>
+      <IntrinsicFunctions>true</IntrinsicFunctions>
+      <PreprocessorDefinitions>WIN32;NDEBUG;_CONSOLE;MFC;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
+      <ForcedIncludeFiles>mfc.h;%(ForcedIncludeFiles)</ForcedIncludeFiles>
+      <DisableSpecificWarnings>4996;%(DisableSpecificWarnings)</DisableSpecificWarnings>
+    </ClCompile>
+    <Link>
+      <SubSystem>Console</SubSystem>
+      <EnableCOMDATFolding>true</EnableCOMDATFolding>
+      <OptimizeReferences>true</OptimizeReferences>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+      <AdditionalDependencies>libusb.lib;pthreadVC2.lib;%(AdditionalDependencies)</AdditionalDependencies>
+    </Link>
+    <PreBuildEvent>
+      <Command>powershell -NoProfile -ExecutionPolicy Bypass -File "$(ProjectDir)increment-version.ps1"</Command>
+    </PreBuildEvent>
+    <PostBuildEvent>
+      <Command>
+xcopy /y /f "$(ProjectDir)LIBS\pthreadVC2.dll"  "$(OutDir)"</Command>
+    </PostBuildEvent>
+  </ItemDefinitionGroup>
+  <ItemGroup>
+    <ClInclude Include="source\cw.h" />
+    <ClInclude Include="source\display-driver.h" />
+    <ClInclude Include="source\extern.h" />
+    <ClInclude Include="source\hr50.h" />
+    <ClInclude Include="source\iambino.h" />
+    <ClInclude Include="source\iq.h" />
+    <ClInclude Include="source\last_used.h" />
+    <ClInclude Include="source\lusb0_usb.h" />
+    <ClInclude Include="source\mcp3422.h" />
+    <ClInclude Include="source\ms-sdr.h" />
+    <ClInclude Include="source\port_defines.h" />
+    <ClInclude Include="source\pthread.h" />
+    <ClInclude Include="source\sched.h" />
+    <ClInclude Include="source\semaphore.h" />
+    <ClInclude Include="source\typedefs.h" />
+    <ClInclude Include="source\usbavrcmd.h" />
+    <ClInclude Include="source\version.h" />
+    <ClInclude Include="targetver.h" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="source\amplifier.c" />
+    <ClCompile Include="source\calibrate.c" />
+    <ClCompile Include="source\comm-port.c" />
+    <ClCompile Include="source\crc.c" />
+    <ClCompile Include="source\cw-snap.c" />
+    <ClCompile Include="source\freq_queue.c" />
+    <ClCompile Include="source\iq.c" />
+    <ClCompile Include="source\last_used.c" />
+    <ClCompile Include="source\main-controller.c" />
+    <ClCompile Include="source\main.c" />
+    <ClCompile Include="source\message_queue.c" />
+    <ClCompile Include="source\power_calibration.c" />
+    <ClCompile Include="source\proficio-temperature.c" />
+    <ClCompile Include="source\usbcmd.c" />
+    <ClCompile Include="source\user_controls.c" />
+  </ItemGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
+  <ImportGroup Label="ExtensionTargets">
+  </ImportGroup>
+</Project>

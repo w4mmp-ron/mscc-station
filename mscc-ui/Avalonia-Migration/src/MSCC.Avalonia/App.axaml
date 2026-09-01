@@ -1,0 +1,245 @@
+<Application xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             x:Class="MSCC.Avalonia.App"
+             xmlns:local="using:MSCC.Avalonia"
+             RequestedThemeVariant="Dark">
+
+  <Application.DataTemplates>
+    <local:ViewLocator />
+  </Application.DataTemplates>
+
+  <Application.Resources>
+    <SolidColorBrush x:Key="UiWindowBackgroundBrush" Color="#1C1C1C"/>
+    <SolidColorBrush x:Key="UiPanelBackgroundBrush" Color="#252525"/>
+    <SolidColorBrush x:Key="UiPrimaryTextBrush" Color="White"/>
+    <SolidColorBrush x:Key="UiMutedTextBrush" Color="#D0D0D0"/>
+    <SolidColorBrush x:Key="UiButtonFaceBrush" Color="#FFCC00"/>
+    <SolidColorBrush x:Key="UiButtonBorderBrush" Color="#FFAA00"/>
+    <SolidColorBrush x:Key="UiButtonHoverBrush" Color="#FFDD55"/>
+    <SolidColorBrush x:Key="UiButtonTextBrush" Color="Black"/>
+    <SolidColorBrush x:Key="UiButtonSelectedBrush" Color="#FFAA00"/>
+    <SolidColorBrush x:Key="UiButtonSelectedBorderBrush" Color="#FF8800"/>
+  </Application.Resources>
+
+  <Application.Styles>
+    <FluentTheme />
+
+    <!--
+      Multus buttons: Fluent paints Background on ContentPresenter, so we must
+      set both Button and /template/ ContentPresenter or grey hover wins.
+    -->
+    <Style Selector="Button.mscc-gold">
+      <Setter Property="Background" Value="{DynamicResource UiButtonFaceBrush}"/>
+      <Setter Property="Foreground" Value="{DynamicResource UiButtonTextBrush}"/>
+      <Setter Property="BorderBrush" Value="{DynamicResource UiButtonBorderBrush}"/>
+      <Setter Property="BorderThickness" Value="1"/>
+      <Setter Property="FontWeight" Value="Bold"/>
+      <Setter Property="FontSize" Value="10"/>
+      <Setter Property="Padding" Value="4,1"/>
+      <Setter Property="MinHeight" Value="22"/>
+      <Setter Property="CornerRadius" Value="3"/>
+    </Style>
+    <Style Selector="Button.mscc-gold /template/ ContentPresenter#PART_ContentPresenter">
+      <Setter Property="Background" Value="{DynamicResource UiButtonFaceBrush}"/>
+      <Setter Property="BorderBrush" Value="{DynamicResource UiButtonBorderBrush}"/>
+      <Setter Property="BorderThickness" Value="1"/>
+      <Setter Property="CornerRadius" Value="3"/>
+    </Style>
+
+    <!-- Idle gold hover (cycle filters, unlatched buttons) -->
+    <Style Selector="Button.mscc-gold:pointerover">
+      <Setter Property="Background" Value="{DynamicResource UiButtonHoverBrush}"/>
+      <Setter Property="Foreground" Value="{DynamicResource UiButtonTextBrush}"/>
+    </Style>
+    <Style Selector="Button.mscc-gold:pointerover /template/ ContentPresenter#PART_ContentPresenter">
+      <Setter Property="Background" Value="{DynamicResource UiButtonHoverBrush}"/>
+      <Setter Property="BorderBrush" Value="{DynamicResource UiButtonBorderBrush}"/>
+    </Style>
+    <Style Selector="Button.mscc-gold:pressed /template/ ContentPresenter#PART_ContentPresenter">
+      <Setter Property="Background" Value="{DynamicResource UiButtonSelectedBrush}"/>
+    </Style>
+
+    <Style Selector="Button.mscc-gold:disabled">
+      <Setter Property="Background" Value="#FF555555"/>
+      <Setter Property="Foreground" Value="#FF999999"/>
+      <Setter Property="BorderBrush" Value="#FF444444"/>
+      <Setter Property="Opacity" Value="0.7"/>
+    </Style>
+    <Style Selector="Button.mscc-gold:disabled /template/ ContentPresenter#PART_ContentPresenter">
+      <Setter Property="Background" Value="#FF555555"/>
+      <Setter Property="BorderBrush" Value="#FF444444"/>
+    </Style>
+
+    <!-- PTT / TUN / AMP latched ON — red even while pointer is still over button -->
+    <Style Selector="Button.mscc-gold.mscc-tx-on">
+      <Setter Property="Background" Value="#FFE53935"/>
+      <Setter Property="Foreground" Value="White"/>
+      <Setter Property="BorderBrush" Value="#FFB71C1C"/>
+      <Setter Property="BorderThickness" Value="2"/>
+    </Style>
+    <Style Selector="Button.mscc-gold.mscc-tx-on /template/ ContentPresenter#PART_ContentPresenter">
+      <Setter Property="Background" Value="#FFE53935"/>
+      <Setter Property="BorderBrush" Value="#FFB71C1C"/>
+      <Setter Property="BorderThickness" Value="2"/>
+    </Style>
+    <Style Selector="Button.mscc-gold.mscc-tx-on:pointerover">
+      <Setter Property="Background" Value="#FFEF5350"/>
+      <Setter Property="Foreground" Value="White"/>
+      <Setter Property="BorderBrush" Value="#FFC62828"/>
+      <Setter Property="BorderThickness" Value="2"/>
+    </Style>
+    <Style Selector="Button.mscc-gold.mscc-tx-on:pointerover /template/ ContentPresenter#PART_ContentPresenter">
+      <Setter Property="Background" Value="#FFEF5350"/>
+      <Setter Property="BorderBrush" Value="#FFC62828"/>
+      <Setter Property="BorderThickness" Value="2"/>
+    </Style>
+    <Style Selector="Button.mscc-gold.mscc-tx-on:pressed">
+      <Setter Property="Background" Value="#FFC62828"/>
+      <Setter Property="Foreground" Value="White"/>
+      <Setter Property="BorderBrush" Value="#FFB71C1C"/>
+    </Style>
+    <Style Selector="Button.mscc-gold.mscc-tx-on:pressed /template/ ContentPresenter#PART_ContentPresenter">
+      <Setter Property="Background" Value="#FFC62828"/>
+      <Setter Property="BorderBrush" Value="#FFB71C1C"/>
+    </Style>
+    <!-- After unlatch while still hovering: force gold hover, not Fluent grey -->
+    <Style Selector="Button.mscc-gold.mscc-tx-on:pointerover:pressed /template/ ContentPresenter#PART_ContentPresenter">
+      <Setter Property="Background" Value="#FFC62828"/>
+      <Setter Property="BorderBrush" Value="#FFB71C1C"/>
+    </Style>
+
+    <!-- Selected / latched (mode, bands, NB/NR/AN, CMP, MON, cal) -->
+    <Style Selector="Button.mscc-gold.mscc-selected">
+      <Setter Property="Background" Value="{DynamicResource UiButtonSelectedBrush}"/>
+      <Setter Property="BorderBrush" Value="{DynamicResource UiButtonSelectedBorderBrush}"/>
+      <Setter Property="Foreground" Value="White"/>
+    </Style>
+    <Style Selector="Button.mscc-gold.mscc-selected /template/ ContentPresenter#PART_ContentPresenter">
+      <Setter Property="Background" Value="{DynamicResource UiButtonSelectedBrush}"/>
+      <Setter Property="BorderBrush" Value="{DynamicResource UiButtonSelectedBorderBrush}"/>
+    </Style>
+    <Style Selector="Button.mscc-gold.mscc-selected:pointerover">
+      <Setter Property="Background" Value="{DynamicResource UiButtonSelectedBrush}"/>
+      <Setter Property="BorderBrush" Value="{DynamicResource UiButtonSelectedBorderBrush}"/>
+      <Setter Property="Foreground" Value="White"/>
+    </Style>
+    <Style Selector="Button.mscc-gold.mscc-selected:pointerover /template/ ContentPresenter#PART_ContentPresenter">
+      <Setter Property="Background" Value="{DynamicResource UiButtonSelectedBrush}"/>
+      <Setter Property="BorderBrush" Value="{DynamicResource UiButtonSelectedBorderBrush}"/>
+    </Style>
+    <Style Selector="Button.mscc-gold.mscc-selected:pressed /template/ ContentPresenter#PART_ContentPresenter">
+      <Setter Property="Background" Value="{DynamicResource UiButtonSelectedBrush}"/>
+      <Setter Property="BorderBrush" Value="{DynamicResource UiButtonSelectedBorderBrush}"/>
+    </Style>
+
+    <!-- TX-on wins over selected under pointer -->
+    <Style Selector="Button.mscc-gold.mscc-tx-on.mscc-selected /template/ ContentPresenter#PART_ContentPresenter">
+      <Setter Property="Background" Value="#FFE53935"/>
+      <Setter Property="BorderBrush" Value="#FFB71C1C"/>
+      <Setter Property="BorderThickness" Value="2"/>
+    </Style>
+    <Style Selector="Button.mscc-gold.mscc-tx-on.mscc-selected:pointerover /template/ ContentPresenter#PART_ContentPresenter">
+      <Setter Property="Background" Value="#FFEF5350"/>
+      <Setter Property="BorderBrush" Value="#FFC62828"/>
+    </Style>
+
+    <!-- Stub / not wired -->
+    <Style Selector="Button.mscc-stub">
+      <Setter Property="Background" Value="#FF555555"/>
+      <Setter Property="Foreground" Value="#FFAAAAAA"/>
+      <Setter Property="BorderBrush" Value="#FF444444"/>
+      <Setter Property="BorderThickness" Value="1"/>
+      <Setter Property="FontWeight" Value="Bold"/>
+      <Setter Property="FontSize" Value="9"/>
+      <Setter Property="Padding" Value="3,1"/>
+      <Setter Property="MinHeight" Value="22"/>
+      <Setter Property="CornerRadius" Value="3"/>
+      <Setter Property="Opacity" Value="0.85"/>
+    </Style>
+
+    <Style Selector="TextBlock.mscc-section">
+      <Setter Property="Foreground" Value="#00FFAA"/>
+      <Setter Property="FontWeight" Value="Bold"/>
+      <Setter Property="FontSize" Value="10"/>
+      <Setter Property="Margin" Value="0,4,0,1"/>
+    </Style>
+
+    <Style Selector="TextBlock.mscc-label">
+      <Setter Property="Foreground" Value="White"/>
+      <Setter Property="FontSize" Value="9"/>
+      <Setter Property="VerticalAlignment" Value="Center"/>
+    </Style>
+
+    <!-- Inline slider + readout row height -->
+    <Style Selector="Slider.mscc-slider">
+      <Setter Property="MinHeight" Value="18"/>
+      <Setter Property="VerticalAlignment" Value="Center"/>
+      <Setter Property="Margin" Value="0"/>
+    </Style>
+
+    <Style Selector="TextBlock.mscc-readout">
+      <Setter Property="Foreground" Value="#00FFAA"/>
+      <Setter Property="FontSize" Value="10"/>
+      <Setter Property="FontWeight" Value="Bold"/>
+      <Setter Property="VerticalAlignment" Value="Center"/>
+      <Setter Property="HorizontalAlignment" Value="Right"/>
+      <Setter Property="MinWidth" Value="28"/>
+    </Style>
+
+    <!-- Calibration status lamp -->
+    <Style Selector="Border.cal-lamp">
+      <Setter Property="Background" Value="#FFFFFF"/>
+    </Style>
+    <Style Selector="Border.cal-lamp.calibrated">
+      <Setter Property="Background" Value="#00C853"/>
+    </Style>
+
+    <!-- Active VFO face (green highlight) -->
+    <Style Selector="Border.mscc-vfo-active">
+      <Setter Property="BorderBrush" Value="#00FF88"/>
+      <Setter Property="BorderThickness" Value="2"/>
+      <Setter Property="Opacity" Value="1"/>
+    </Style>
+    <Style Selector="Border.mscc-vfo-idle">
+      <Setter Property="BorderBrush" Value="#FF555555"/>
+      <Setter Property="BorderThickness" Value="1"/>
+      <Setter Property="Opacity" Value="0.78"/>
+    </Style>
+
+    <!-- Host / port entry: short box, larger centered text -->
+    <Style Selector="TextBox.mscc-hostport">
+      <Setter Property="FontSize" Value="12"/>
+      <Setter Property="FontWeight" Value="SemiBold"/>
+      <Setter Property="Height" Value="18"/>
+      <Setter Property="MinHeight" Value="18"/>
+      <Setter Property="Padding" Value="2,0"/>
+      <Setter Property="Background" Value="#FF333333"/>
+      <Setter Property="Foreground" Value="White"/>
+      <Setter Property="BorderBrush" Value="#FF666666"/>
+      <Setter Property="BorderThickness" Value="1"/>
+      <Setter Property="TextAlignment" Value="Center"/>
+      <Setter Property="VerticalContentAlignment" Value="Center"/>
+      <Setter Property="HorizontalContentAlignment" Value="Center"/>
+    </Style>
+
+    <Style Selector="Border.mscc-panel">
+      <Setter Property="Background" Value="{DynamicResource UiPanelBackgroundBrush}"/>
+      <Setter Property="BorderBrush" Value="#FF444444"/>
+      <Setter Property="BorderThickness" Value="1"/>
+      <Setter Property="CornerRadius" Value="4"/>
+      <Setter Property="Padding" Value="4"/>
+    </Style>
+
+    <!-- Tab headers — fuller WPF-style labels; room to use more of the bar -->
+    <Style Selector="TabItem">
+      <Setter Property="FontSize" Value="12"/>
+      <Setter Property="FontWeight" Value="SemiBold"/>
+      <Setter Property="Padding" Value="10,4"/>
+      <Setter Property="MinHeight" Value="26"/>
+      <Setter Property="Margin" Value="0,0,2,0"/>
+    </Style>
+    <Style Selector="TabControl">
+      <Setter Property="Padding" Value="2"/>
+    </Style>
+  </Application.Styles>
+</Application>

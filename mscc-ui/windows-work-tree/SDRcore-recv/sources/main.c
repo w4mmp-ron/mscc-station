@@ -1,0 +1,544 @@
+#include "extern.h"
+
+
+#define _CRT_SECURE_NO_WARNINGS 1
+#define RON 1
+
+
+
+#define PA_SAMPLE_TYPE      paFloat32
+typedef float SAMPLE;
+int keyChanged = 0;
+sp_float *inbuffer, *outbuffer;
+sp_float wold = 0;
+sp_cplx incplx[4097];
+sp_cplx outcplx[4096];
+float G_volumeLevel = 0.0f; //Start with the volume muted.
+
+/****** NOTE: Declared external in other modules and used as globals ******/
+state mystate;
+calstate mycalstate;
+panadapter_buffer panbuffer;
+agc_state agcstate;
+cs_state csstate;
+blanker_state nbstate;
+anotch_state anstate;
+nr_state nrstate = { 0, 0 };
+/**************************************************************************/
+
+PaStream *stream;
+const PaDeviceInfo* lpInfo;
+const PaDeviceInfo* lpInfo_Pulse;
+PaStreamParameters inputParameters, outputParameters;
+
+#ifdef RON
+#define NO_OUTPUT_DEVICE 100
+//For the UDP_Thread
+pthread_t p_UDP_thread;
+int UDP_thread_rc;
+
+
+//For the flusher Thread
+pthread_t p_Flusher_thread;
+int Flusher_thread_rc;
+
+//For the S_meter Thread
+pthread_t p_Smeter_thread;
+int Smeter_thread_rc;
+
+//For the Key_Read Thread
+pthread_t p_Key_Read_thread;
+int Key_Read_thread_rc;
+
+//For the Panadapter Thread
+pthread_t p_Panadapter_thread;
+int Panadapter_thread_rc;
+
+//For the Check_Image_Level Thread
+pthread_t p_Check_Image_Level_thread;
+int Check_Image_Level_thread_rc;
+
+FILE *G_fp_logfile;
+int G_all_threads_run = 0;
+int line_number = 0;
+long long G_keep_alive = 0;
+int G_output_device_index = NO_OUTPUT_DEVICE;
+int G_digital_output_device_index = NO_OUTPUT_DEVICE;
+struct output_devices G_output_devices[MAX_OUTPUT_DEVICES];
+struct output_devices G_digital_output_devices[MAX_OUTPUT_DEVICES];
+
+//PaDeviceIndex count = Pa_GetDeviceCount();
+PaDeviceIndex G_Pulse_Proficio_Device = 0;
+PaDeviceIndex G_Pulse_Output_Device = 0;
+#endif
+
+char G_l_path[MAX_PATH] = { 0 };
+
+char* My_getenv(char* myenv) {
+
+    //FILE* Multus_ini;
+    WCHAR path[MAX_PATH] = { 0 };
+    PWSTR lpPath = path;
+    int lenght = 0;
+
+    memset(G_l_path, 0, sizeof(G_l_path));
+
+    HRESULT hr = SHGetKnownFolderPath(&FOLDERID_LocalAppData, 0, NULL, &lpPath);
+    //fprintf("get_serial_number -> Get folder path \n");
+    if (SUCCEEDED(hr)) {
+        WideCharToMultiByte(CP_ACP, WC_COMPOSITECHECK, lpPath, -1, G_l_path, sizeof(G_l_path), NULL, NULL);
+        strcat(G_l_path, "/MSCC-NET9");
+        //printf("getenv: %s\n", G_l_path);
+    }
+    //$HOME = G_l_path;
+    return G_l_path;
+}
+
+//int main(void);
+
+static int sdrAudioCallback(const void *inputBuffer, void *outputBuffer,
+        unsigned long framesPerBuffer,
+        const PaStreamCallbackTimeInfo* timeInfo,
+        PaStreamCallbackFlags statusFlags,
+        void *userData);
+
+static int gNumNoInputs = 0;
+
+/* This routine will be called by the PortAudio engine when audio is needed.
+ ** It may be called at interrupt level on some machines so don't do anything
+ ** that could mess up the system like calling malloc() or free().
+ */
+static int sdrAudioCallback(const void *inputBuffer, void *outputBuffer,
+        unsigned long framesPerBuffer,
+        const PaStreamCallbackTimeInfo* timeInfo,
+        PaStreamCallbackFlags statusFlags,
+        void *userData) {
+    SAMPLE *out = (SAMPLE*) outputBuffer;
+    const SAMPLE *in = (const SAMPLE*) inputBuffer;
+    unsigned int i;
+    (void) timeInfo; /* Prevent unused variable warnings. */
+    (void) statusFlags;
+    (void) userData;
+
+    if (inputBuffer == NULL) {
+        for (i = 0; i < framesPerBuffer; i++) {
+            *out++ = 0; /* left - silent */
+            *out++ = 0; /* right - silent */
+        }
+        gNumNoInputs += 1;
+    } else {
+        inbuffer = (sp_float*) inputBuffer;
+        outbuffer = (sp_float*) outputBuffer;
+
+        /*
+                Mux samples into complex struct array. The "custom" typedef is to avoid consistency issues
+                across compilers with COMPLEX. 
+         */
+        framesToComplex(inbuffer, incplx, outcplx, framesPerBuffer);
+
+        /**************************** IF SHIFT -12000 Hz *********************************/
+        //ifShiftDown(incplx, framesPerBuffer);
+        complex_shift(incplx, framesPerBuffer);
+
+        /********************** Run calibration DSP, if engaged *************************/
+        if (mycalstate.calStart == TRUE) doRxCalibrate(incplx, framesPerBuffer);
+
+        /**************************** DO THE RADIO THING *********************************/
+        fastconv(incplx, outcplx, (int) framesPerBuffer);
+
+        /********************** Run AGC *************************************************/
+        if (!AGC_Initializing) doAGC(outcplx, (int) framesPerBuffer);
+
+        /********************** Run noise reduction *************************************/
+        if (nrstate.enabled) denoise(outcplx, (int) framesPerBuffer);
+
+        /********************** Run auto-notch *****************************************/
+        if (anstate.enabled) anotch(outcplx, (int) framesPerBuffer);
+
+        /*
+                De-mux samples back into packed I-Q-I-Q-I-Q format. In case there's any question,
+                Q should lead I by 90 degrees.
+         */
+
+        for (i = 0; i < framesPerBuffer; i++) {
+            outcplx[i].real *= G_volumeLevel;
+            *outbuffer = outcplx[i].real;
+            outbuffer++;
+            outcplx[i].imag *= G_volumeLevel;
+            *outbuffer = outcplx[i].imag;
+            outbuffer++;
+        }
+    }
+
+    return paContinue;
+}
+
+void Print_Message_Box(void *nothing, char *message, char * sender, int ok_button_and_symbol) {
+}
+
+//extern int usleep(__useconds_t __useconds);
+
+//void Sleep(long sleep_time) {
+//    sleep(sleep_time);
+//}
+
+void Audio_Device_Error(PaError err) {
+
+    Pa_Terminate();
+    print_time();
+    fprintf(G_fp_logfile, "[%d] An error occured while using the portaudio stream\n", line_number++);
+    print_time();
+    fprintf(G_fp_logfile, "[%d] Error number: %d\n", line_number++, err);
+    print_time();
+    fprintf(G_fp_logfile, "[%d] Error message: %s\n", line_number++, Pa_GetErrorText(err));
+    MessageBoxA(NULL, "SDRcore-recv initialization FAILED.  Send logs to Multus SDR, LLC", "SDRcore-recv",
+            MB_OK | MB_ICONEXCLAMATION);
+    G_all_threads_run = 0;
+}
+
+int manage_stream(int start_stop, int device, int channels) {
+    PaError err = 0;
+    int status = 0;
+    static int started = FALSE;
+
+    if (channels > 2) {
+        print_time();
+        fprintf(G_fp_logfile, "[%d] Main Thread. manage_stream. Device %d. Channel Number: %d greater than 2. Setting channels to 2.\n",
+                line_number++, device, channels);
+        channels = 2;
+    }
+    if (start_stop == TRUE) {
+        if (started == FALSE) {
+            print_time();
+            fprintf(G_fp_logfile, "[%d] Main Thread. manage_stream. STARTED.  Device: %d, Channels %d\n",
+                    line_number++, device, channels);
+            print_time();
+            fprintf(G_fp_logfile, "[%d] Main Thread. manage_stream. starting stream.  Device: %d, Channels %d\n",
+                line_number++, device, channels);
+            outputParameters.device = device;
+            outputParameters.channelCount = channels;
+            outputParameters.sampleFormat = PA_SAMPLE_TYPE;
+            outputParameters.suggestedLatency = Pa_GetDeviceInfo(outputParameters.device)->defaultLowOutputLatency;
+            outputParameters.hostApiSpecificStreamInfo = NULL;
+            err = Pa_IsFormatSupported(&inputParameters, &outputParameters, 96000);
+            if (err != paNoError) {
+                const PaHostErrorInfo* format_error = Pa_GetLastHostErrorInfo();
+                print_time();
+                fprintf(G_fp_logfile, "[%d] Main Thread.  manage_stream.  Pa_IsFormatSupported FAILED. Device: %d, Channels %d, error: %s\n",
+                        line_number++, device, channels, format_error->errorText);
+            }
+            else {
+                err = Pa_OpenStream(
+                    &stream,
+                    &inputParameters,
+                    &outputParameters,
+                    (int)mystate.samplerate,
+                    mystate.frames,
+                    0, /* paClipOff, */ /* we won't output out of range samples so don't bother clipping them */
+                    sdrAudioCallback,
+                    NULL);
+                if (err != paNoError) {
+                    const PaHostErrorInfo* lpError = Pa_GetLastHostErrorInfo();
+                    print_time();
+                    fprintf(G_fp_logfile, "[%d] Main Thread. manage_stream. Open Stream Failed: PA ERROR: %s\n",
+                        line_number++, lpError->errorText);
+                }
+                else {
+                    err = Pa_StartStream(stream);
+                    if (err != paNoError) {
+                        const PaHostErrorInfo* lpError = Pa_GetLastHostErrorInfo();
+                        print_time();
+                        fprintf(G_fp_logfile, "[%d] Main Thread. manage_stream. Start Stream Failed: PA ERROR: %s\n",
+                            line_number++, lpError->errorText);
+                    }
+                }
+            }
+        }
+        if (err == paNoError) {
+            started = TRUE;
+        }
+    } else {
+        if (started == TRUE) {
+            print_time();
+            fprintf(G_fp_logfile, "[%d] Main Thread. manage_stream. STARTED.  Device: %d, Channels %d\n",
+                line_number++, device, channels);
+            print_time();
+            fprintf(G_fp_logfile, "[%d] Main Thread. manage_stream. Stoping Stream.  New device: %d, New Channels %d\n",
+                    line_number++, device, channels);
+            Pa_StopStream(stream);
+            Pa_CloseStream(stream);
+            started = FALSE;
+        } else {
+            print_time();
+            fprintf(G_fp_logfile, "[%d] Main Thread. manage_stream. start_stop: %d, started: %d\n",
+                    line_number++, start_stop, started);
+            err = 0;
+        }
+    }
+    status = err;
+    print_time();
+    fprintf(G_fp_logfile, "[%d] Main Thread. manage_stream.  FINISHED. status: %d\n", line_number++, status);
+    return status;
+}
+
+/*void Get_Pulse_Devices() {
+    const PaHostApiInfo* Pulse_lpApiInfo;
+    PaHostApiIndex hostApiCount;
+    PaDeviceIndex count = 0;
+    int Pulse_apiTypeId = 9999;
+    int i = 0;
+    int k = 0;
+    int pulse_api_found = 0;
+
+    hostApiCount = Pa_GetHostApiCount();
+    for (i = 0; i < hostApiCount; i++) {
+        Pulse_lpApiInfo = Pa_GetHostApiInfo(i);
+        print_time();
+        fprintf(G_fp_logfile, "[%d] Get_Pulse_Devices -> Host APIs: %s\n", line_number++, Pulse_lpApiInfo->name);
+        if (!strncmp("PulseAudio", Pulse_lpApiInfo->name, 3)) {
+            pulse_api_found = 1;
+            Pulse_apiTypeId = i;
+            print_time();
+            fprintf(G_fp_logfile, "[%d] Get_Pulse_Devices -> Host API: %s, Pulse_apiTypeId: %d\n",
+                    line_number++, Pulse_lpApiInfo->name, Pulse_apiTypeId);
+        }
+    }
+    if (pulse_api_found == 1) {
+        count = Pa_GetDeviceCount();
+        for (k = 0; k < count; k++) {
+            lpInfo_Pulse = Pa_GetDeviceInfo((PaDeviceIndex) k);
+            if (lpInfo_Pulse->hostApi == Pulse_apiTypeId) {
+                print_time();
+                fprintf(G_fp_logfile, "[%d] Get_Pulse_Devices -> count: %d, k: %d, hostApi: %d, name: %s, input: %d, output: %d\n",
+                        line_number++, count, k, lpInfo_Pulse->hostApi, lpInfo_Pulse->name,
+                        lpInfo_Pulse->maxInputChannels, lpInfo_Pulse->maxOutputChannels);
+                Build_pulse_output_devices((PaDeviceIndex) k);
+            }
+        }
+        Update_Pulse_sound_ini(G_num_pulse_output_devices_found);
+    } else {
+        print_time();
+        fprintf(G_fp_logfile, "[%d] Get_Pulse_Devices -> Pulse API NOT FOUND\n", line_number++);
+    }
+}*/
+
+/************************************* MAIN *********************************************/
+int main(int argc, char **argv) {
+    //PaStreamParameters inputParameters, outputParameters;
+    //PaStream *stream;
+    PaError err;
+    int j;
+    int key = 0;
+    float temp;
+    int status;
+    const PaHostApiInfo * lpApiInfo;
+    PaHostApiIndex hostApiCount;
+    int apiTypeId = 9999;
+    PaDeviceIndex recordDevice = 0;
+    PaDeviceIndex playDevice = 0;
+    PaDeviceIndex devCount = 0;
+
+
+    /************ DSP parameters *****************/
+    // See sdrcore.h for definitions
+    mystate.nfft = FFTSIZE; // # of FFT bins
+    mystate.filtertaps = FILTERTAPS; // # of taps in IF filterl
+    mystate.samplerate = SAMPLERATE; // Overall RX sampling rate 
+    mystate.frames = mystate.nfft - mystate.filtertaps; // frames per buffer
+    mystate.opmode = MODE_LSB;
+    setFilterOffsets(75.0f, 2700.0f);
+    mystate.iqReversed = 1; // Yes Virginia, we're reversed...
+    mystate.iMult = 1.0f; // I and Q mag adjustments = preset to "no action"
+    mystate.qMult = 1.0f;
+    mycalstate.freq_high = 598.0f;
+    mycalstate.freq_center = 600.0f;
+    mycalstate.freq_high = 602.f;
+
+    temp = 0.0f;
+    long t = 0;
+    int log_status;
+    int ini_status = 0;
+    //int priority_status;
+
+    /******* Init DSP ******/
+    mycalstate.Cycle_Count = 65536; //This the default cycle count. 
+    mycalstate.calbuffer = calloc(mycalstate.Cycle_Count, sizeof (sp_cplx)); // buffer for LO calibration - NOTE: Allocated before audio threads start, so should not blow up... ... !
+    initDSP();
+    printf("sdrcore_recive started\n");
+    fflush(stdout);
+    log_status = Open_log_file();
+    if (log_status) {
+        print_time();
+        fprintf(G_fp_logfile, "[%d] SDRcore Log file opened\n", line_number++);
+    } else {
+        MessageBoxA(NULL, "Log file open failed. SDRcore-recv is terminating", "SDRcore-recv", MB_OK);
+        exit(1);
+    }
+    G_all_threads_run = 1;
+    print_time(0);
+    fprintf(G_fp_logfile, "[%d] sdrcore-recv -> starting -> Compile Date %s, Compile Time %s \n",
+            line_number++, COMPILE_DATE, COMPILE_TIME);
+    //Now start the UDP Thread
+    print_time();
+    fprintf(G_fp_logfile, "[%d] main -> Starting UDP Thread\n", line_number++);
+    UDP_thread_rc = pthread_create(&p_UDP_thread, NULL, UDP_Thread, (void *) t);
+    if (UDP_thread_rc) {
+        print_time();
+        fprintf(G_fp_logfile, "[%d} Start up of UDP thread failed, return code from pthread_create() is %d\n",
+                line_number++, UDP_thread_rc);
+    }
+    print_time();
+    fprintf(G_fp_logfile, "[%d] main -> Starting Flusher Thread\n", line_number++);
+    Flusher_thread_rc = pthread_create(&p_Flusher_thread, NULL, Flusher_thread, (void *) t);
+    if (Flusher_thread_rc) {
+        print_time();
+        fprintf(G_fp_logfile, "[%d] Start up of Flusher thread failed, return code from pthread_create() is %d\n",
+                line_number++, Flusher_thread_rc);
+    }
+    print_time();
+    fprintf(G_fp_logfile, "[%d] main -> Starting S-meter Thread\n", line_number++);
+    Smeter_thread_rc = pthread_create(&p_Smeter_thread, NULL, Send_smeter_thread, (void *) t);
+    if (Smeter_thread_rc) {
+        print_time();
+        fprintf(G_fp_logfile, "[%d] Start up of S-meter thread failed, return code from pthread_create() is %d\n",
+                line_number++, Smeter_thread_rc);
+    }
+    print_time();
+    fprintf(G_fp_logfile, "[%d] main -> Check_Image_Level_thread Thread\n", line_number++);
+    Check_Image_Level_thread_rc = pthread_create(&p_Check_Image_Level_thread, NULL, Check_Image_Level_thread, (void *) t);
+    if (Check_Image_Level_thread_rc) {
+        print_time();
+        fprintf(G_fp_logfile, "[%d] Start up of S-meter thread failed, return code from pthread_create() is %d\n",
+                line_number++, Check_Image_Level_thread_rc);
+    }
+    print_time();
+    fprintf(G_fp_logfile, "[%d] main -> Starting Panadapter Thread\n", line_number++);
+    Panadapter_thread_rc = pthread_create(&p_Panadapter_thread, NULL, Panadapter_thread, (void *) t);
+    if (Panadapter_thread_rc) {
+        print_time();
+        fprintf(G_fp_logfile, "[%d] Start up of Panadapter thread failed, return code from pthread_create() is %d\n",
+                line_number++, Panadapter_thread_rc);
+    }
+
+    /*delete_ini_file();
+    ini_status = check_for_sound_ini_file();
+    if (ini_status == 1) {
+        print_time();
+        fprintf(G_fp_logfile, "[%d] sdrcore_recv.ini file exists\n", line_number++);
+    } else {
+        print_time();
+        fprintf(G_fp_logfile, "[%d] sdcore_recv.ini file does not exist. File will be created\n", line_number++);
+    }*/
+    Get_Sound_Device();
+    Get_Digital_Sound_Device();
+    /******************************************************************/
+    err = Pa_Initialize();
+    if (err != paNoError) Audio_Device_Error(err);
+    print_time();
+    fprintf(G_fp_logfile, "[%d] main -> PortAudio Version: 0x%8X\n", line_number++, Pa_GetVersion());
+    print_time();
+    fprintf(G_fp_logfile, "[%d] main -> PortAudio Version text: '%s'\n", line_number++,
+            Pa_GetVersionInfo()->versionText);
+    //Now get the MME devices
+    hostApiCount = Pa_GetHostApiCount();
+    for (j = 0; j < hostApiCount; j++) {
+        lpApiInfo = Pa_GetHostApiInfo(j);
+        print_time();
+        fprintf(G_fp_logfile, "[%d] main -> Host API: %s\n", line_number++, lpApiInfo->name);
+        if (!strncmp("MME", lpApiInfo->name, 3)) {
+            apiTypeId = j;
+        }
+    }
+    devCount = Pa_GetDeviceCount();
+    for (int j = 0; j < devCount; j++) {
+        lpInfo = Pa_GetDeviceInfo((PaDeviceIndex) j);
+        if (lpInfo->hostApi == apiTypeId) {
+            build_output_devices((PaDeviceIndex)j);
+            build_digital_output_devices((PaDeviceIndex)j);
+        }
+        if (strstr(lpInfo->name, "Multus")) {
+            print_time();
+            fprintf(G_fp_logfile, "[%d] (1) Found Multus. Name: %s\n", line_number++, lpInfo->name);
+            print_time();
+            fprintf(G_fp_logfile, "[%d] (2) Found Multus: Input Channels %d\n", line_number++, lpInfo->maxInputChannels);
+            print_time();
+            fprintf(G_fp_logfile, "[%d] (3) Found Multus: Output Channels %d\n", line_number++, lpInfo->maxOutputChannels);
+            print_time();
+            fprintf(G_fp_logfile, "[%d] (4) Found Multus: API %d\n", line_number++, lpInfo->hostApi);
+            if (lpInfo->maxInputChannels == 2) {
+                if (lpInfo->hostApi == apiTypeId) // Force MME API - lowest latency sometimes... ?
+                {
+                    print_time();
+                    fprintf(G_fp_logfile, "[%d] Multus SDR device found: %s\n", line_number++, lpInfo->name);
+                    recordDevice = (PaDeviceIndex) j;
+#ifndef RON
+                    break;
+#endif
+                }
+            }
+        }
+    }
+    //recordDevice = G_Pulse_Proficio_Device;
+    if (recordDevice == 0) {
+        print_time();
+        fprintf(G_fp_logfile, "[%d] No Multus SDR Device found. Please check hardware and try again.\n", line_number++);
+        fflush(G_fp_logfile);
+        Audio_Device_Error(err);
+    }
+    inputParameters.device = recordDevice;
+    if (inputParameters.device == paNoDevice) {
+        print_time();
+        fprintf(G_fp_logfile, "[%d] Error: Multus SDR Device not functioning.\n", line_number++);
+        Audio_Device_Error(err);
+    }
+    inputParameters.channelCount = 2; /* stereo input */
+    inputParameters.sampleFormat = PA_SAMPLE_TYPE;
+    inputParameters.suggestedLatency = Pa_GetDeviceInfo(inputParameters.device)->defaultLowInputLatency;
+    inputParameters.hostApiSpecificStreamInfo = NULL;
+
+    //Now update the INI file if it does not exist
+    //if (ini_status == 0) {
+    //    update_sound_ini();
+    //}
+    //Initialize the output devices structure
+    //init_sound_ini();
+    //Now Start the audio stream
+    if (G_digital_output_device_index == NO_OUTPUT_DEVICE) {
+        print_time();
+        fprintf(G_fp_logfile, "[%d] main. Error: FAILED. No digital output device found\n", line_number++);
+    }
+    if (G_output_device_index == NO_OUTPUT_DEVICE) {
+        print_time();
+        fprintf(G_fp_logfile, "[%d] main. Error:  FAILED. No output device found\n", line_number++);
+        Audio_Device_Error(err);
+    } else {
+        status = manage_stream(1, G_output_devices[G_output_device_index].device_index,
+                G_output_devices[G_output_device_index].num_channels);
+        if (status) {
+            err = status;
+            Audio_Device_Error(err);
+        }
+    }
+    //wiringPiSetupSys();
+    /*print_time();
+    fprintf(G_fp_logfile, "[%d] SDRcore Starting Key_Read Thread\n", line_number++);
+    Key_Read_thread_rc = pthread_create(&p_Key_Read_thread, NULL, Read_Key_thread, (void *) t);
+    if (Key_Read_thread_rc) {
+        print_time();
+        fprintf(G_fp_logfile, "[%d] Start up of Key_Read thread failed, return code from pthread_create() is %d\n",
+                line_number++, Smeter_thread_rc);
+    }*/
+    while (G_all_threads_run) {
+        Sleep(100);
+    }
+    err = Pa_CloseStream(stream);
+    if (err != paNoError) {
+        Audio_Device_Error(err);
+    } else {
+        Sleep(100);
+        Pa_Terminate();
+        exit(0);
+    }
+
+}
+

@@ -1,0 +1,69 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <ItemGroup>
+    <PackageReference Include="CommunityToolkit.Mvvm" Version="8.4.2" />
+    <PackageReference Include="NAudio" Version="2.2.1" />
+    <PackageReference Include="System.IO.Ports" Version="9.0.0" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\MSCC.Core\MSCC.Core.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Resource Include="mscc-icon-1.ico" />
+  </ItemGroup>
+
+  <PropertyGroup>
+    <OutputType>WinExe</OutputType>
+    <TargetFramework>net9.0-windows</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <UseWPF>true</UseWPF>
+    <ApplicationIcon>mscc-icon-1.ico</ApplicationIcon>
+    <!-- Client product version: month.day.iteration (see IncrementClientVersion target) -->
+    <ClientVersionFile>$(MSBuildProjectDirectory)\ClientVersion.txt</ClientVersionFile>
+    <ClientVersionScript>$(MSBuildProjectDirectory)\bump-client-version.ps1</ClientVersionScript>
+  </PropertyGroup>
+
+  <!--
+    Version scheme: M.D.I  e.g. 7.16.0 then 7.16.1 same day; new calendar month/day → I resets to 0.
+    Displayed on AUD/SYS as MSCC: 7.16.0
+    Only the real project (not MSCC.Wpf_*_wpftmp) runs this once per build.
+  -->
+  <Target Name="IncrementClientVersion" BeforeTargets="GenerateAssemblyInfo;CoreGenerateAssemblyInfo;GetAssemblyVersion" Condition="'$(MSBuildProjectName)' == 'MSCC.Wpf' And '$(DesignTimeBuild)' != 'true'">
+    <Exec Command="powershell -NoProfile -ExecutionPolicy Bypass -File &quot;$(ClientVersionScript)&quot;" ConsoleToMSBuild="true" StandardOutputImportance="Low">
+      <Output TaskParameter="ConsoleOutput" ItemName="_ClientVerLines" />
+    </Exec>
+    <PropertyGroup>
+      <_ClientVer>$([System.String]::Copy('%(_ClientVerLines.Identity)').Trim())</_ClientVer>
+      <!-- Fallback if exec output empty: read file -->
+      <_ClientVer Condition="'$(_ClientVer)' == '' And Exists('$(ClientVersionFile)')">$([System.IO.File]::ReadAllText('$(ClientVersionFile)').Trim())</_ClientVer>
+      <_ClientVer Condition="'$(_ClientVer)' == ''">0.0.0</_ClientVer>
+      <Version>$(_ClientVer)</Version>
+      <InformationalVersion>$(_ClientVer)</InformationalVersion>
+      <!-- AssemblyVersion needs 4 parts: month.day.iteration.0 -->
+      <AssemblyVersion>$(_ClientVer).0</AssemblyVersion>
+      <FileVersion>$(_ClientVer).0</FileVersion>
+    </PropertyGroup>
+    <Message Text="MSCC client version → $(InformationalVersion)" Importance="high" />
+  </Target>
+
+  <!-- Copy the entire build output (MSCC.Wpf.exe + dependencies) to C:\mscc-net9
+       so that when the app runs from there, it discovers the subsystem binaries
+       (ms-sdr-MKII.exe, mscc-recv.exe, Mscc-trans.exe etc.) in the same folder,
+       exactly as the original mscc does via its runtime base directory. -->
+  <Target Name="CopyToMsccNet9" AfterTargets="Build">
+    <Message Text="Copying build output to C:\mscc-net9 for subsystem binary discovery..." Importance="high" />
+    <!-- Remove previous copies of our files (but leave the subsystem binaries and other content in C:\mscc-net9) -->
+    <ItemGroup>
+      <_OldMsccFiles Include="C:\mscc-net9\MSCC.Wpf.*;C:\mscc-net9\MSCC.Core.*" />
+    </ItemGroup>
+    <Delete Files="@(_OldMsccFiles)" />
+    <ItemGroup>
+      <OutputFiles Include="$(OutputPath)**\*.*" Exclude="$(OutputPath)**\*.pdb;$(OutputPath)**\*.xml" />
+    </ItemGroup>
+    <Copy SourceFiles="@(OutputFiles)" DestinationFolder="C:\mscc-net9\%(RecursiveDir)" SkipUnchangedFiles="true" />
+  </Target>
+
+</Project>

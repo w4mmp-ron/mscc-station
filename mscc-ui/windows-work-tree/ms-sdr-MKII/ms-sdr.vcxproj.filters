@@ -1,0 +1,40 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <ClCompile Include="source\cw-snap.c" />
+    <ClCompile Include="source\iq.c" />
+    <ClCompile Include="source\last_used.c" />
+    <ClCompile Include="source\power_calibration.c" />
+    <ClCompile Include="source\user_controls.c" />
+    <ClCompile Include="source\freq_queue.c" />
+    <ClCompile Include="source\proficio-temperature.c" />
+    <ClCompile Include="source\main.c" />
+    <ClCompile Include="source\usbcmd.c" />
+    <ClCompile Include="source\main-controller.c" />
+    <ClCompile Include="source\amplifier.c" />
+    <ClCompile Include="source\calibrate.c" />
+    <ClCompile Include="source\comm-port.c" />
+    <ClCompile Include="source\crc.c" />
+    <ClCompile Include="source\message_queue.c" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="source\cw.h" />
+    <ClInclude Include="source\extern.h" />
+    <ClInclude Include="source\hr50.h" />
+    <ClInclude Include="source\iambino.h" />
+    <ClInclude Include="source\iq.h" />
+    <ClInclude Include="source\last_used.h" />
+    <ClInclude Include="source\lusb0_usb.h" />
+    <ClInclude Include="source\ms-sdr.h" />
+    <ClInclude Include="source\port_defines.h" />
+    <ClInclude Include="source\pthread.h" />
+    <ClInclude Include="source\sched.h" />
+    <ClInclude Include="source\semaphore.h" />
+    <ClInclude Include="source\version.h" />
+    <ClInclude Include="targetver.h" />
+    <ClInclude Include="source\typedefs.h" />
+    <ClInclude Include="source\usbavrcmd.h" />
+    <ClInclude Include="source\mcp3422.h" />
+    <ClInclude Include="source\display-driver.h" />
+  </ItemGroup>
+</Project>

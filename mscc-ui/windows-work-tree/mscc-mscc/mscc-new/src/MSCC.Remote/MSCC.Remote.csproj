@@ -1,0 +1,32 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>WinExe</OutputType>
+    <TargetFramework>net9.0-windows</TargetFramework>
+    <Nullable>enable</Nullable>
+    <UseWindowsForms>true</UseWindowsForms>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <RootNamespace>MSCC.Remote</RootNamespace>
+    <AssemblyName>MSCC-Remote</AssemblyName>
+    <ApplicationIcon>mscc-remote.ico</ApplicationIcon>
+    <Product>MSCC Remote Servers</Product>
+    <Description>Start/stop MSCC backends and set legacy/MKII keyer mode without the full client</Description>
+    <Version>1.0.0</Version>
+    <ApplicationHighDpiMode>SystemAware</ApplicationHighDpiMode>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <Content Include="mscc-remote.ico" CopyToOutputDirectory="PreserveNewest" />
+  </ItemGroup>
+
+  <!-- Same pattern as MSCC.Wpf: deploy next to backends for desktop shortcut. -->
+  <Target Name="CopyToMsccNet9" AfterTargets="Build">
+    <ItemGroup>
+      <_Out Include="$(TargetDir)**\*.*" />
+    </ItemGroup>
+    <Message Text="Copying MSCC-Remote to C:\mscc-net9 ..." Importance="high" />
+    <MakeDir Directories="C:\mscc-net9" Condition="!Exists('C:\mscc-net9')" />
+    <Copy SourceFiles="@(_Out)" DestinationFolder="C:\mscc-net9\%(RecursiveDir)" SkipUnchangedFiles="true" />
+  </Target>
+
+</Project>

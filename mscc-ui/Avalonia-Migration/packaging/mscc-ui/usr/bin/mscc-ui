@@ -1,0 +1,13 @@
+#!/bin/sh
+# MSCC UI (Avalonia) launcher — self-contained app under /opt/mscc-ui
+set -e
+APPDIR="/opt/mscc-ui"
+BIN="$APPDIR/MSCC.Avalonia"
+if [ ! -x "$BIN" ]; then
+  echo "mscc-ui: missing $BIN — reinstall package mscc-ui" >&2
+  exit 1
+fi
+# Prefer app directory for native libs (libSkiaSharp, etc.)
+export LD_LIBRARY_PATH="$APPDIR${LD_LIBRARY_PATH:+:$LD_LIBRARY_PATH}"
+cd "$APPDIR" || exit 1
+exec "$BIN" "$@"

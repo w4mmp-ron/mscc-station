@@ -1,0 +1,11 @@
+[Desktop Entry]
+Type=Application
+Name=MSCC UI
+GenericName=MSCC radio client
+Comment=MSCC Avalonia client — connect to Multus/Proficio (start servers with MSCC Start first)
+Exec=mscc-ui
+Icon=mscc-ui
+Terminal=false
+Categories=X-MSCC;
+Keywords=MSCC;SDR;Proficio;Multus;Avalonia;radio;
+StartupNotify=true

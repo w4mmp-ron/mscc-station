@@ -1,12 +1,15 @@
-# Black Pill -> U2
+# Black Pill → U2 (locked)
+
+**Doc lock 2026-08-31** — matches Stew schematic + PCB.
 
 ```
 PA1  ->  U2 B32   RX
+PA2  ->  U2 A28   RESET     (PCM3060; not NRST)
 PA3  ->  U2 A8/A10  SCK
 PA6  ->  PTT
 PA7  ->  U2 B26   BS0
 PA8  ->  BOOT
-PA9  ->  U2 A28   RESET
+PA9  ->  U2 B8    USBV+     (host 5 V sense via divider → 3.3 V)
 PA11 ->  U2 B6    USB-
 PA12 ->  U2 B4    USB+
 
@@ -26,6 +29,12 @@ PC13 ->  U2 B30   LED
 
 5V   ->  U2 B14   5V
 GND  ->  U2 B11   GND
-
-U2 B8   USBV+
 ```
+
+## Locked triad (do not swap)
+
+| Net | Pin |
+|-----|-----|
+| **RESET** | **PA2** |
+| **BOOT** | **PA8** |
+| **USBV+** | **PA9** |

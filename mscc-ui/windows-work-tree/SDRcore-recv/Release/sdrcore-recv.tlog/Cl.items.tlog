@@ -1,0 +1,13 @@
+C:\Users\n8vet\OneDrive\Documents\MSCC-Grok-Build\SDRcore-recv\sources\blanker.c;C:\Users\n8vet\OneDrive\Documents\MSCC-Grok-Build\SDRcore-recv\Release\blanker.obj
+C:\Users\n8vet\OneDrive\Documents\MSCC-Grok-Build\SDRcore-recv\sources\dsputils.c;C:\Users\n8vet\OneDrive\Documents\MSCC-Grok-Build\SDRcore-recv\Release\dsputils.obj
+C:\Users\n8vet\OneDrive\Documents\MSCC-Grok-Build\SDRcore-recv\sources\filter.c;C:\Users\n8vet\OneDrive\Documents\MSCC-Grok-Build\SDRcore-recv\Release\filter.obj
+C:\Users\n8vet\OneDrive\Documents\MSCC-Grok-Build\SDRcore-recv\sources\flusher.c;C:\Users\n8vet\OneDrive\Documents\MSCC-Grok-Build\SDRcore-recv\Release\flusher.obj
+C:\Users\n8vet\OneDrive\Documents\MSCC-Grok-Build\SDRcore-recv\sources\iq.c;C:\Users\n8vet\OneDrive\Documents\MSCC-Grok-Build\SDRcore-recv\Release\iq.obj
+C:\Users\n8vet\OneDrive\Documents\MSCC-Grok-Build\SDRcore-recv\sources\main.c;C:\Users\n8vet\OneDrive\Documents\MSCC-Grok-Build\SDRcore-recv\Release\main.obj
+C:\Users\n8vet\OneDrive\Documents\MSCC-Grok-Build\SDRcore-recv\sources\panadapter.c;C:\Users\n8vet\OneDrive\Documents\MSCC-Grok-Build\SDRcore-recv\Release\panadapter.obj
+C:\Users\n8vet\OneDrive\Documents\MSCC-Grok-Build\SDRcore-recv\sources\print-utils.c;C:\Users\n8vet\OneDrive\Documents\MSCC-Grok-Build\SDRcore-recv\Release\print-utils.obj
+C:\Users\n8vet\OneDrive\Documents\MSCC-Grok-Build\SDRcore-recv\sources\sdrcore.c;C:\Users\n8vet\OneDrive\Documents\MSCC-Grok-Build\SDRcore-recv\Release\sdrcore.obj
+C:\Users\n8vet\OneDrive\Documents\MSCC-Grok-Build\SDRcore-recv\sources\output-devices.c;C:\Users\n8vet\OneDrive\Documents\MSCC-Grok-Build\SDRcore-recv\Release\output-devices.obj
+C:\Users\n8vet\OneDrive\Documents\MSCC-Grok-Build\SDRcore-recv\sources\tonegen.c;C:\Users\n8vet\OneDrive\Documents\MSCC-Grok-Build\SDRcore-recv\Release\tonegen.obj
+C:\Users\n8vet\OneDrive\Documents\MSCC-Grok-Build\SDRcore-recv\sources\udp_thread.c;C:\Users\n8vet\OneDrive\Documents\MSCC-Grok-Build\SDRcore-recv\Release\udp_thread.obj
+C:\Users\n8vet\OneDrive\Documents\MSCC-Grok-Build\SDRcore-recv\sources\wsfirgen.c;C:\Users\n8vet\OneDrive\Documents\MSCC-Grok-Build\SDRcore-recv\Release\wsfirgen.obj

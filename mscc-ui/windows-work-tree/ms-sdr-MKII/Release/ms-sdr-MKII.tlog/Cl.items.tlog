@@ -1,0 +1,15 @@
+C:\Users\n8vet\OneDrive\Documents\MSCC-Grok-Build\windows-work-tree\ms-sdr-MKII\source\amplifier.c;C:\Users\n8vet\OneDrive\Documents\MSCC-Grok-Build\windows-work-tree\ms-sdr-MKII\Release\amplifier.obj
+C:\Users\n8vet\OneDrive\Documents\MSCC-Grok-Build\windows-work-tree\ms-sdr-MKII\source\calibrate.c;C:\Users\n8vet\OneDrive\Documents\MSCC-Grok-Build\windows-work-tree\ms-sdr-MKII\Release\calibrate.obj
+C:\Users\n8vet\OneDrive\Documents\MSCC-Grok-Build\windows-work-tree\ms-sdr-MKII\source\comm-port.c;C:\Users\n8vet\OneDrive\Documents\MSCC-Grok-Build\windows-work-tree\ms-sdr-MKII\Release\comm-port.obj
+C:\Users\n8vet\OneDrive\Documents\MSCC-Grok-Build\windows-work-tree\ms-sdr-MKII\source\crc.c;C:\Users\n8vet\OneDrive\Documents\MSCC-Grok-Build\windows-work-tree\ms-sdr-MKII\Release\crc.obj
+C:\Users\n8vet\OneDrive\Documents\MSCC-Grok-Build\windows-work-tree\ms-sdr-MKII\source\cw-snap.c;C:\Users\n8vet\OneDrive\Documents\MSCC-Grok-Build\windows-work-tree\ms-sdr-MKII\Release\cw-snap.obj
+C:\Users\n8vet\OneDrive\Documents\MSCC-Grok-Build\windows-work-tree\ms-sdr-MKII\source\freq_queue.c;C:\Users\n8vet\OneDrive\Documents\MSCC-Grok-Build\windows-work-tree\ms-sdr-MKII\Release\freq_queue.obj
+C:\Users\n8vet\OneDrive\Documents\MSCC-Grok-Build\windows-work-tree\ms-sdr-MKII\source\iq.c;C:\Users\n8vet\OneDrive\Documents\MSCC-Grok-Build\windows-work-tree\ms-sdr-MKII\Release\iq.obj
+C:\Users\n8vet\OneDrive\Documents\MSCC-Grok-Build\windows-work-tree\ms-sdr-MKII\source\last_used.c;C:\Users\n8vet\OneDrive\Documents\MSCC-Grok-Build\windows-work-tree\ms-sdr-MKII\Release\last_used.obj
+C:\Users\n8vet\OneDrive\Documents\MSCC-Grok-Build\windows-work-tree\ms-sdr-MKII\source\main-controller.c;C:\Users\n8vet\OneDrive\Documents\MSCC-Grok-Build\windows-work-tree\ms-sdr-MKII\Release\main-controller.obj
+C:\Users\n8vet\OneDrive\Documents\MSCC-Grok-Build\windows-work-tree\ms-sdr-MKII\source\main.c;C:\Users\n8vet\OneDrive\Documents\MSCC-Grok-Build\windows-work-tree\ms-sdr-MKII\Release\main.obj
+C:\Users\n8vet\OneDrive\Documents\MSCC-Grok-Build\windows-work-tree\ms-sdr-MKII\source\message_queue.c;C:\Users\n8vet\OneDrive\Documents\MSCC-Grok-Build\windows-work-tree\ms-sdr-MKII\Release\message_queue.obj
+C:\Users\n8vet\OneDrive\Documents\MSCC-Grok-Build\windows-work-tree\ms-sdr-MKII\source\power_calibration.c;C:\Users\n8vet\OneDrive\Documents\MSCC-Grok-Build\windows-work-tree\ms-sdr-MKII\Release\power_calibration.obj
+C:\Users\n8vet\OneDrive\Documents\MSCC-Grok-Build\windows-work-tree\ms-sdr-MKII\source\proficio-temperature.c;C:\Users\n8vet\OneDrive\Documents\MSCC-Grok-Build\windows-work-tree\ms-sdr-MKII\Release\proficio-temperature.obj
+C:\Users\n8vet\OneDrive\Documents\MSCC-Grok-Build\windows-work-tree\ms-sdr-MKII\source\usbcmd.c;C:\Users\n8vet\OneDrive\Documents\MSCC-Grok-Build\windows-work-tree\ms-sdr-MKII\Release\usbcmd.obj
+C:\Users\n8vet\OneDrive\Documents\MSCC-Grok-Build\windows-work-tree\ms-sdr-MKII\source\user_controls.c;C:\Users\n8vet\OneDrive\Documents\MSCC-Grok-Build\windows-work-tree\ms-sdr-MKII\Release\user_controls.obj

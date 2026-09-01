@@ -1,6 +1,17 @@
 # Proficio MKII — Daughter board pinout for Stew
 
-> **Doc version: 2026-08-31** — mother-board net → STM32 tables (this file). Connector pin-by-pin: **`J5-BLACK-PILL-PINMAP.md`**.
+> **Doc version: 2026-08-31 (locked)** — mother-board net → STM32 tables (this file). Connector pin-by-pin: **`J5-BLACK-PILL-PINMAP.md`**.  
+> **PCB source of truth:** Stew schematic + PCB. Firmware pin macros (`board_pins.h`) are updated by Ron to match.
+
+## Locked triad (RESET / BOOT / USBV+)
+
+| Net | Dir (MCU) | STM32 | Notes |
+|-----|-----------|-------|--------|
+| **RESET** | out | **PA2** | PCM3060 via **U2/J5 A28** — **not** MCU NRST |
+| **BOOT** | in | **PA8** | Daughter recovery / status sense |
+| **USBV+** | in | **PA9** | Host USB 5 V (Proficio name) via **U2/J5 B8** → **divider → 3.3 V** at PA9 |
+
+Do **not** put codec RESET on PA9. Do **not** put USBV+ on PA2.
 
 **Connector naming:** mother board = **J5**; daughter board = **U2** (mates with J5). Black Pill is on the **daughter**. Same pin numbers on both sides.
 
@@ -14,8 +25,8 @@
 | `WeAct-STM32F4x1-Pin-Layout.pdf` | Official WeAct pin layout (optional) |
 | `WeAct-BlackPill-F411-board.jpg` | Board photo |
 
-**Folder:** `proficio-stm32f411-8MHz\docs\`  
-(on Ron’s PC: `C:\Users\Ron\.grok\worktrees\proficio-stm32f411-8MHz\docs\`)
+**Folder:** `proficio-stm32f411-25MHz\docs\`  
+(on Ron’s PC: `C:\Users\Ron\.grok\worktrees\proficio-stm32f411-25MHz\docs\`)
 
 ---
 
@@ -52,7 +63,7 @@ Same nets that left the old PSoC to the radio. Map them to the STM32 pins below.
 | **LRCK2** | out | *(same PB12)* | PSoC both from I2S `ws` |
 | **SCK1** | out | **PA3** | I2S2_MCK; **tie to SCK2** on PCB |
 | **SCK2** | out | *(same PA3)* | Codec sysclk |
-| **RESET** | out | **PA9** | **PCM3060** reset via **U2/J5 A28**; **not** MCU NRST |
+| **RESET** | out | **PA2** | **PCM3060** reset via **U2/J5 A28**; **not** MCU NRST |
 | **SDA** | OD | **PB9** | I2C1 |
 | **SCL** | OD | **PB8** | I2C1 |
 | **BS0** | out | **PA7** | Band bit0 |
@@ -62,11 +73,12 @@ Same nets that left the old PSoC to the radio. Map them to the STM32 pins below.
 | **RX** | out | **PA1** | Active low (PA / T-R) |
 | **AMP** | out | **PB4** | Active low |
 | **BOOT** | in | **PA8** | Status / bootload sense — **included** |
+| **USBV+** | in | **PA9** | Host USB 5 V sense via **U2/J5 B8** + divider (≤ 3.3 V) |
 | **KEY_0** | in | **PB0** | Pull-up; low = key down |
 | **KEY_1** | in | **PB1** | Pull-up; low = key down |
 | **PTT** | **in** | **PA6** | Sense (PSoC: invert + debounce); active-low assumed |
 
-**USB:** PSoC USBFS pins → use **Black Pill USB-C** (PA11/PA12) to host for bring-up.
+**USB data:** mother jack via J5 → **PA11/PA12** (D−/D+). Bring-up can also use Black Pill USB-C.
 
 **Not mother-board data pins:** PSoC `CONTROL_DIN` / `CONTROL_DOUT` were fabric register bits (AND into DIN path). They are **not** the I2S DIN/DOUT nets. Software shadow only unless the schematic shows extra enable pins.
 
@@ -126,15 +138,16 @@ Daughter board: short **BCK1–BCK2**, **LRCK1–LRCK2**, **SCK1–SCK2** to the
 ## 5. PCB checklist
 
 1. Route **+3.3 V** and **GND** to the daughter (common ground with mother board). All GPIO is **3.3 V** logic — not 5 V I/O.  
-2. Route **all MKII interface signals** in §1 (including **I2S**, **RESET→PA9**, and **BOOT**).  
+2. Route **all MKII interface signals** in §1 (including **I2S**, **RESET→PA2**, **BOOT→PA8**, **USBV+→PA9**).  
 3. Tie dual clock names (BCK/LRCK/SCK ×2) as above.  
-4. **RESET** (**U2/J5 A28**) → **PA9** → **PCM3060** only — do **not** tie to Black Pill **NRST**.  
-5. I2C pull-ups 4.7 kΩ to 3.3 V if needed.  
-6. PTT is **input** (sense), not a drive output.  
-7. AMP/RX active-low polarity match MKII.  
-8. **PB12 = LRCK only** — do not tie PB12 to GND.  
-9. 3.3 V only into STM32 I/O.  
-10. ST-Link + USB-C accessible on module.
+4. **RESET** (**U2/J5 A28**) → **PA2** → **PCM3060** only — do **not** tie to Black Pill **NRST**.  
+5. **USBV+** (**U2/J5 B8**) → resistor divider → **PA9** (≤ 3.3 V); not the radio 5 V rail.  
+6. I2C pull-ups 4.7 kΩ to 3.3 V if needed.  
+7. PTT is **input** (sense), not a drive output.  
+8. AMP/RX active-low polarity match MKII.  
+9. **PB12 = LRCK only** — do not tie PB12 to GND.  
+10. 3.3 V only into STM32 I/O.  
+11. ST-Link + USB-C accessible on module.
 
 ---
 
@@ -147,5 +160,5 @@ Daughter board: short **BCK1–BCK2**, **LRCK1–LRCK2**, **SCK1–SCK2** to the
 
 ---
 
-**Version:** 2026-08-17 — “mother-board nets” wording (drop yellow jargon); stick diagram; BOOT=PA8; PTT=input PA6  
+**Version:** 2026-08-31 — **Locked triad:** RESET=**PA2**, BOOT=**PA8**, USBV+=**PA9**. PCB is source of truth; FW follows.  
 

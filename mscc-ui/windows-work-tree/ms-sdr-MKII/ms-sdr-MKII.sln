@@ -1,0 +1,22 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 16
+VisualStudioVersion = 16.0.29806.167
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "ms-sdr", "ms-sdr.vcxproj", "{E2C3A958-DB94-4F42-80C2-A4F3C17A6083}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		MFC|Win32 = MFC|Win32
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{E2C3A958-DB94-4F42-80C2-A4F3C17A6083}.MFC|Win32.ActiveCfg = MFC|Win32
+		{E2C3A958-DB94-4F42-80C2-A4F3C17A6083}.MFC|Win32.Build.0 = MFC|Win32
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {2EF30ECC-FDBB-47D4-8510-8DA523C3D03C}
+	EndGlobalSection
+EndGlobal

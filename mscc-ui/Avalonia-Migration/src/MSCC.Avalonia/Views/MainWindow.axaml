@@ -1,0 +1,1476 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:vm="using:MSCC.Avalonia.ViewModels"
+        xmlns:ctrl="using:MSCC.Avalonia.Controls"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        mc:Ignorable="d"
+        d:DesignWidth="1280" d:DesignHeight="720"
+        x:Class="MSCC.Avalonia.Views.MainWindow"
+        x:DataType="vm:MainViewModel"
+        Icon="/Assets/avalonia-logo.ico"
+        Title="{Binding WindowTitle}"
+        Width="1280" Height="720"
+        MinWidth="1024" MinHeight="600"
+        Background="{DynamicResource UiWindowBackgroundBrush}"
+        Foreground="White">
+
+  <Design.DataContext>
+    <vm:MainViewModel />
+  </Design.DataContext>
+
+  <Grid Margin="4" ColumnDefinitions="160,*,160" RowDefinitions="*">
+
+    <!-- ===================== LEFT RAIL (dense — aim: no scrollbar at 1024×600) ===================== -->
+    <Border Grid.Column="0" Classes="mscc-panel" Margin="0,0,3,0">
+      <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
+        <StackPanel Spacing="0">
+
+          <!-- SERVER / Connect (live) -->
+          <TextBlock Classes="mscc-section" Text="SERVER" Margin="0,0,0,1"/>
+          <Button Content="{Binding ConnectButtonText}"
+                  Command="{Binding ToggleConnectCommand}"
+                  Classes="mscc-gold" HorizontalAlignment="Stretch" Height="24"/>
+          <TextBlock Text="{Binding StatusText}" FontSize="9" Foreground="#FFCC66"
+                     TextWrapping="Wrap" MaxLines="2" Margin="0,1,0,2"/>
+          <StackPanel Orientation="Horizontal" Spacing="2" Margin="0,0,0,1">
+            <CheckBox Content="Auto" IsChecked="{Binding AutoStart}"
+                      FontSize="8" IsEnabled="False" ToolTip.Tip="{Binding StubTip}"/>
+            <CheckBox Content="Launch" IsChecked="{Binding LaunchServers}"
+                      FontSize="8" IsEnabled="False" ToolTip.Tip="Pi: use MSCC Start; connect-only client"/>
+          </StackPanel>
+          <!-- Compact host/port: short boxes, larger centered text, no spinner -->
+          <Grid ColumnDefinitions="28,100" Margin="0,0,0,1">
+            <TextBlock Classes="mscc-label" Text="Host"/>
+            <TextBox Grid.Column="1" Text="{Binding Host}" Classes="mscc-hostport"
+                     Width="100" HorizontalAlignment="Left"
+                     IsEnabled="{Binding !IsConnected}"
+                     ToolTip.Tip="Server IP or hostname"/>
+          </Grid>
+          <Grid ColumnDefinitions="28,48" Margin="0,0,0,2">
+            <TextBlock Classes="mscc-label" Text="Port"/>
+            <TextBox Grid.Column="1" Text="{Binding RemotePortText}" Classes="mscc-hostport"
+                     Width="48" HorizontalAlignment="Left"
+                     IsEnabled="{Binding !IsConnected}"
+                     ToolTip.Tip="UDP remote port (default 8888)"/>
+          </Grid>
+
+          <!-- Phones (operator path) — live when connected -->
+          <TextBlock Classes="mscc-section" Text="Phones"/>
+          <Grid ColumnDefinitions="40,*,28" Height="20" Margin="0,0,0,1">
+            <TextBlock Classes="mscc-label" Text="Vol"/>
+            <Slider Grid.Column="1" Classes="mscc-slider" Minimum="0" Maximum="100"
+                    Value="{Binding PVolume}" IsEnabled="{Binding IsConnected}"
+                    ToolTip.Tip="Operator / phones volume"/>
+            <TextBlock Grid.Column="2" Classes="mscc-readout" Text="{Binding PVolume}"/>
+          </Grid>
+          <Grid ColumnDefinitions="40,*,28" Height="20" Margin="0,0,0,1">
+            <TextBlock Classes="mscc-label" Text="Mic"/>
+            <Slider Grid.Column="1" Classes="mscc-slider" Minimum="0" Maximum="100"
+                    Value="{Binding PMicGain}" IsEnabled="{Binding IsConnected}"
+                    ToolTip.Tip="Operator / phones mic gain"/>
+            <TextBlock Grid.Column="2" Classes="mscc-readout" Text="{Binding PMicGain}"/>
+          </Grid>
+
+          <!-- Digital (VAC / digi apps) -->
+          <TextBlock Classes="mscc-section" Text="Digital"/>
+          <Grid ColumnDefinitions="40,*,28" Height="20" Margin="0,0,0,1">
+            <TextBlock Classes="mscc-label" Text="Vol"/>
+            <Slider Grid.Column="1" Classes="mscc-slider" Minimum="0" Maximum="100"
+                    Value="{Binding DVolume}" IsEnabled="{Binding IsConnected}"
+                    ToolTip.Tip="Digital path volume"/>
+            <TextBlock Grid.Column="2" Classes="mscc-readout" Text="{Binding DVolume}"/>
+          </Grid>
+          <Grid ColumnDefinitions="40,*,28" Height="20" Margin="0,0,0,1">
+            <TextBlock Classes="mscc-label" Text="Mic"/>
+            <Slider Grid.Column="1" Classes="mscc-slider" Minimum="0" Maximum="100"
+                    Value="{Binding DMicGain}" IsEnabled="{Binding IsConnected}"
+                    ToolTip.Tip="Digital path mic gain"/>
+            <TextBlock Grid.Column="2" Classes="mscc-readout" Text="{Binding DMicGain}"/>
+          </Grid>
+          <StackPanel Orientation="Horizontal" Margin="0,1,0,1" Spacing="4">
+            <TextBlock Classes="mscc-label" Text="Audio" Width="36"/>
+            <Button Content="{Binding AudioPathButtonText}" Classes="mscc-gold" Width="64"
+                    Command="{Binding ToggleAudioDigitalCommand}"
+                    Classes.mscc-selected="{Binding IsDigitalAudio}"
+                    ToolTip.Tip="Phones = operator speaker/mic (P)&#x0a;Digital = VAC / digi apps (D)"/>
+          </StackPanel>
+
+          <!-- Filters / Step (live when connected) -->
+          <TextBlock Classes="mscc-section" Text="FILTERS / STEP"/>
+          <Grid ColumnDefinitions="24,*" Height="22" Margin="0,0,0,1">
+            <TextBlock Classes="mscc-label" Text="Lo"/>
+            <Button Grid.Column="1" Content="{Binding LowCutLabel}" Classes="mscc-gold"
+                    Command="{Binding CycleLowCutCommand}" HorizontalAlignment="Left" Width="64"
+                    ToolTip.Tip="Low cut filter (live). Cycles 500…75 Hz."/>
+          </Grid>
+          <Grid ColumnDefinitions="24,*" Height="22" Margin="0,0,0,1">
+            <TextBlock Classes="mscc-label" Text="Hi"/>
+            <Button Grid.Column="1" Content="{Binding HighCutLabel}" Classes="mscc-gold"
+                    Command="{Binding CycleHighCutCommand}" HorizontalAlignment="Left" Width="64"
+                    ToolTip.Tip="High cut filter (live). Cycles 5.5k…2.4k."/>
+          </Grid>
+          <Grid ColumnDefinitions="24,*" Height="22" Margin="0,0,0,1">
+            <TextBlock Classes="mscc-label" Text="CW"/>
+            <Button Grid.Column="1" Content="{Binding CwFilterLabel}" Classes="mscc-gold"
+                    Command="{Binding CycleCwFilterCommand}" HorizontalAlignment="Left" Width="64"
+                    ToolTip.Tip="CW bandwidth (live). 1.8k / 400 / 200 Hz."/>
+          </Grid>
+          <Grid ColumnDefinitions="24,*" Height="22" Margin="0,0,0,1">
+            <TextBlock Classes="mscc-label" Text="Step"/>
+            <Button Grid.Column="1" Content="{Binding StepLabel}" Classes="mscc-gold"
+                    Command="{Binding CycleStepCommand}" HorizontalAlignment="Left" Width="64"
+                    ToolTip.Tip="Tune step for VFO wheel"/>
+          </Grid>
+
+          <TextBlock Classes="mscc-section" Text="ZOOM"/>
+          <Grid ColumnDefinitions="*,28" Height="20" Margin="0,0,0,1">
+            <Slider Classes="mscc-slider" Minimum="1" Maximum="4" TickFrequency="1" IsSnapToTickEnabled="True"
+                    Value="{Binding SpectrumZoom}"
+                    ToolTip.Tip="Display zoom 1–4× (also in S/W window)"/>
+            <TextBlock Grid.Column="1" Classes="mscc-readout" Text="{Binding SpectrumZoom, StringFormat={}{0}×}"/>
+          </Grid>
+
+          <CheckBox Content="RIT" IsChecked="{Binding RitOn}"
+                    IsEnabled="{Binding IsConnected}" FontSize="9" Margin="0,1,0,0"
+                    ToolTip.Tip="Receive Incremental Tuning — offset RX without moving VFO"/>
+          <Grid ColumnDefinitions="40,*,32" Height="20" Margin="0,0,0,1">
+            <TextBlock Classes="mscc-label" Text="Offset"/>
+            <Slider Grid.Column="1" Classes="mscc-slider" Minimum="-500" Maximum="500"
+                    Value="{Binding RitOffset}" IsEnabled="{Binding IsConnected}"
+                    ToolTip.Tip="RIT offset Hz (−500…+500)"/>
+            <TextBlock Grid.Column="2" Classes="mscc-readout" Text="{Binding RitOffset}"/>
+          </Grid>
+          <Button Content="Clear RIT" Classes="mscc-gold" Width="72" HorizontalAlignment="Left" Margin="0,0,0,2"
+                  Command="{Binding ClearRitCommand}"
+                  ToolTip.Tip="RIT off and offset → 0"/>
+
+          <!-- Temps moved to SET tab (frees left rail). Optional session counters: -->
+          <TextBlock Text="{Binding PacketStatsText}" FontSize="8" Foreground="#888888" TextWrapping="Wrap" Margin="0,4,0,0"/>
+        </StackPanel>
+      </ScrollViewer>
+    </Border>
+
+    <!-- ===================== CENTER ===================== -->
+    <Grid Grid.Column="1" RowDefinitions="Auto,Auto,*" Margin="0,0,3,0">
+
+      <!-- Top: meters + VFO
+           Meter slots sized like WPF AnalogSMeter / AnalogAlc (180×120) so layout
+           stays stable when analog faces replace digital M1 later. -->
+      <Border Grid.Row="0" Classes="mscc-panel" Margin="0,0,0,2" Padding="4,2">
+        <Grid ColumnDefinitions="*,Auto,*,Auto,*,Auto,*,Auto,*">
+          <!-- S-meter analog face (live dBm → 0–15) -->
+          <ctrl:AnalogSMeterControl Grid.Column="1"
+                                    Width="180" Height="120"
+                                    VerticalAlignment="Center"
+                                    Value="{Binding SMeter}"
+                                    ToolTip.Tip="S-meter (live). S1–S9 / +10…+60 units. HOLD/Peak later."/>
+
+          <!-- VFO A — click to select; digit-hover wheel. Larger digits for easier hit-test. -->
+          <Border x:Name="VfoAPanel"
+                  Grid.Column="3"
+                  Width="176"
+                  Height="92"
+                  VerticalAlignment="Center"
+                  Background="#FF0A1A0A"
+                  BorderBrush="#00FF88"
+                  BorderThickness="2"
+                  CornerRadius="4"
+                  Padding="4,3"
+                  Cursor="SizeNorthSouth"
+                  Classes.mscc-vfo-active="{Binding UseVfoA}"
+                  Classes.mscc-vfo-idle="{Binding !UseVfoA}"
+                  ToolTip.Tip="Click to select VFO A. Hover a digit + wheel (lower → 0). Double-click cycles Step."
+                  Focusable="True"
+                  PointerPressed="VfoAPanel_OnPointerPressed"
+                  PointerWheelChanged="VfoAPanel_OnPointerWheelChanged"
+                  DoubleTapped="VfoAPanel_OnDoubleTapped">
+            <StackPanel VerticalAlignment="Center" Spacing="0">
+              <TextBlock Text="VFO A · digit + wheel" FontSize="8" Foreground="#00FFAA" HorizontalAlignment="Center"/>
+              <TextBlock x:Name="VfoAFreqText"
+                         Text="{Binding FrequencyDisplayMhz}" FontSize="26" FontWeight="Bold"
+                         FontFamily="Consolas, Courier New, monospace"
+                         Foreground="#00FF88" HorizontalAlignment="Center"
+                         PointerMoved="VfoAFreqText_OnPointerMoved"
+                         PointerExited="VfoFreqText_OnPointerExited"
+                         PointerWheelChanged="VfoAFreqText_OnPointerWheelChanged"/>
+              <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" Spacing="6" Margin="0,1,0,0">
+                <TextBlock Text="{Binding ModeText}" FontSize="11" FontWeight="Bold" Foreground="#00FFAA"/>
+                <TextBlock Text="{Binding VfoTuneStepDisplay}" FontSize="9" Foreground="#88CCAA"/>
+              </StackPanel>
+            </StackPanel>
+          </Border>
+
+          <!-- VFO B — active dual-VFO: click select, digit wheel, radio CMD_SET_VFO -->
+          <Border x:Name="VfoBPanel"
+                  Grid.Column="5"
+                  Width="156"
+                  Height="92"
+                  VerticalAlignment="Center"
+                  Background="#FF0A0A12"
+                  BorderBrush="#FF555555"
+                  BorderThickness="1"
+                  CornerRadius="4"
+                  Padding="4,3"
+                  Cursor="SizeNorthSouth"
+                  Classes.mscc-vfo-active="{Binding UseVfoB}"
+                  Classes.mscc-vfo-idle="{Binding UseVfoA}"
+                  ToolTip.Tip="Click to select VFO B. Hover a digit + wheel (lower → 0)."
+                  Focusable="True"
+                  PointerPressed="VfoBPanel_OnPointerPressed"
+                  PointerWheelChanged="VfoBPanel_OnPointerWheelChanged">
+            <StackPanel VerticalAlignment="Center" Spacing="0">
+              <TextBlock Text="VFO B · digit + wheel" FontSize="8" Foreground="#88AACC" HorizontalAlignment="Center"/>
+              <TextBlock x:Name="VfoBFreqText"
+                         Text="{Binding VfoBDisplayMhz}" FontSize="22" FontWeight="Bold"
+                         FontFamily="Consolas, Courier New, monospace"
+                         Foreground="#88DDFF" HorizontalAlignment="Center"
+                         PointerMoved="VfoBFreqText_OnPointerMoved"
+                         PointerExited="VfoFreqText_OnPointerExited"
+                         PointerWheelChanged="VfoBFreqText_OnPointerWheelChanged"/>
+              <TextBlock Text="{Binding VfoBModeText}" FontSize="10" FontWeight="Bold"
+                         Foreground="#88AACC" HorizontalAlignment="Center"/>
+            </StackPanel>
+          </Border>
+
+          <!-- ALC analog face (draw step; Value ready for live wire next) -->
+          <ctrl:AnalogAlcMeterControl Grid.Column="7"
+                                      Width="180" Height="120"
+                                      VerticalAlignment="Center"
+                                      Value="{Binding AlcValue}"
+                                      ToolTip.Tip="ALC meter (live 0–100, smoothed). HOLD/Peak next."/>
+        </Grid>
+      </Border>
+
+      <!-- Band bar: radio model | LF | HF | GEN | band label -->
+      <Border Grid.Row="1" Classes="mscc-panel" Margin="0,0,0,2" Padding="3,3">
+        <Grid ColumnDefinitions="Auto,Auto,Auto,*,*,*,*,*,*,*,*,*,*,Auto,Auto"
+              ColumnSpacing="2">
+          <Button Grid.Column="0" Content="{Binding RadioModelButtonText}" Classes="mscc-gold"
+                  Command="{Binding ToggleRadioModelCommand}"
+                  MinWidth="64" MinHeight="26" FontSize="10" FontWeight="Bold"
+                  HorizontalContentAlignment="Center" VerticalContentAlignment="Center"
+                  ToolTip.Tip="Proficio (HF) ↔ Geminus (LF). Gates band buttons and GEN list."/>
+          <!-- LF — Geminus only -->
+          <Button Grid.Column="1" Content="2200" Classes="mscc-gold"
+                  Command="{Binding SelectBandCommand}" CommandParameter="2200"
+                  IsEnabled="{Binding LfBandsEnabled}"
+                  Classes.mscc-selected="{Binding BandIs2200}"
+                  MinHeight="26" FontSize="10" HorizontalAlignment="Stretch"
+                  HorizontalContentAlignment="Center" VerticalContentAlignment="Center"
+                  ToolTip.Tip="2200m — Geminus / LF"/>
+          <Button Grid.Column="2" Content="630" Classes="mscc-gold"
+                  Command="{Binding SelectBandCommand}" CommandParameter="630"
+                  IsEnabled="{Binding LfBandsEnabled}"
+                  Classes.mscc-selected="{Binding BandIs630}"
+                  MinHeight="26" FontSize="10" HorizontalAlignment="Stretch"
+                  HorizontalContentAlignment="Center" VerticalContentAlignment="Center"
+                  ToolTip.Tip="630m — Geminus / LF"/>
+          <!-- HF — Proficio only -->
+          <Button Grid.Column="3" Content="160" Classes="mscc-gold" Command="{Binding SelectBandCommand}" CommandParameter="160"
+                  IsEnabled="{Binding HfBandsEnabled}" Classes.mscc-selected="{Binding BandIs160}"
+                  MinHeight="26" FontSize="11" HorizontalAlignment="Stretch"
+                  HorizontalContentAlignment="Center" VerticalContentAlignment="Center"/>
+          <Button Grid.Column="4" Content="80" Classes="mscc-gold" Command="{Binding SelectBandCommand}" CommandParameter="80"
+                  IsEnabled="{Binding HfBandsEnabled}" Classes.mscc-selected="{Binding BandIs80}"
+                  MinHeight="26" FontSize="11" HorizontalAlignment="Stretch"
+                  HorizontalContentAlignment="Center" VerticalContentAlignment="Center"/>
+          <Button Grid.Column="5" Content="60" Classes="mscc-gold" Command="{Binding SelectBandCommand}" CommandParameter="60"
+                  IsEnabled="{Binding HfBandsEnabled}" Classes.mscc-selected="{Binding BandIs60}"
+                  MinHeight="26" FontSize="11" HorizontalAlignment="Stretch"
+                  HorizontalContentAlignment="Center" VerticalContentAlignment="Center"/>
+          <Button Grid.Column="6" Content="40" Classes="mscc-gold" Command="{Binding SelectBandCommand}" CommandParameter="40"
+                  IsEnabled="{Binding HfBandsEnabled}" Classes.mscc-selected="{Binding BandIs40}"
+                  MinHeight="26" FontSize="11" HorizontalAlignment="Stretch"
+                  HorizontalContentAlignment="Center" VerticalContentAlignment="Center"/>
+          <Button Grid.Column="7" Content="30" Classes="mscc-gold" Command="{Binding SelectBandCommand}" CommandParameter="30"
+                  IsEnabled="{Binding HfBandsEnabled}" Classes.mscc-selected="{Binding BandIs30}"
+                  MinHeight="26" FontSize="11" HorizontalAlignment="Stretch"
+                  HorizontalContentAlignment="Center" VerticalContentAlignment="Center"/>
+          <Button Grid.Column="8" Content="20" Classes="mscc-gold" Command="{Binding SelectBandCommand}" CommandParameter="20"
+                  IsEnabled="{Binding HfBandsEnabled}" Classes.mscc-selected="{Binding BandIs20}"
+                  MinHeight="26" FontSize="11" HorizontalAlignment="Stretch"
+                  HorizontalContentAlignment="Center" VerticalContentAlignment="Center"/>
+          <Button Grid.Column="9" Content="17" Classes="mscc-gold" Command="{Binding SelectBandCommand}" CommandParameter="17"
+                  IsEnabled="{Binding HfBandsEnabled}" Classes.mscc-selected="{Binding BandIs17}"
+                  MinHeight="26" FontSize="11" HorizontalAlignment="Stretch"
+                  HorizontalContentAlignment="Center" VerticalContentAlignment="Center"/>
+          <Button Grid.Column="10" Content="15" Classes="mscc-gold" Command="{Binding SelectBandCommand}" CommandParameter="15"
+                  IsEnabled="{Binding HfBandsEnabled}" Classes.mscc-selected="{Binding BandIs15}"
+                  MinHeight="26" FontSize="11" HorizontalAlignment="Stretch"
+                  HorizontalContentAlignment="Center" VerticalContentAlignment="Center"/>
+          <Button Grid.Column="11" Content="12" Classes="mscc-gold" Command="{Binding SelectBandCommand}" CommandParameter="12"
+                  IsEnabled="{Binding HfBandsEnabled}" Classes.mscc-selected="{Binding BandIs12}"
+                  MinHeight="26" FontSize="11" HorizontalAlignment="Stretch"
+                  HorizontalContentAlignment="Center" VerticalContentAlignment="Center"/>
+          <Button Grid.Column="12" Content="10" Classes="mscc-gold" Command="{Binding SelectBandCommand}" CommandParameter="10"
+                  IsEnabled="{Binding HfBandsEnabled}" Classes.mscc-selected="{Binding BandIs10}"
+                  MinHeight="26" FontSize="11" HorizontalAlignment="Stretch"
+                  HorizontalContentAlignment="Center" VerticalContentAlignment="Center"/>
+          <Button Grid.Column="13" Content="{Binding GenButtonText}" Classes="mscc-gold"
+                  Command="{Binding SelectGenCommand}"
+                  Classes.mscc-selected="{Binding BandIsGen}"
+                  MinWidth="52" MinHeight="26" FontSize="10" FontWeight="Bold"
+                  HorizontalContentAlignment="Center" VerticalContentAlignment="Center"
+                  ToolTip.Tip="{Binding GenButtonTip}"/>
+          <TextBlock Grid.Column="14" Text="{Binding BandText, StringFormat=Band: {0}}"
+                     VerticalAlignment="Center" Margin="6,0,2,0" Foreground="#00FFAA" FontSize="11"/>
+        </Grid>
+      </Border>
+
+      <!-- Tabs — full WPF-style names, larger font (App styles) -->
+      <TabControl Grid.Row="2">
+        <TabItem Header="MAIN">
+          <Grid RowDefinitions="*">
+            <Border Background="#FF0A0A12" BorderBrush="#FF333333" BorderThickness="1" CornerRadius="2">
+              <ctrl:SpectrumDisplayControl x:Name="SpectrumDisplay"
+                                           SpectrumUpdate="{Binding CurrentSpectrum}"
+                                           ZoomFactor="{Binding SpectrumZoom}"/>
+            </Border>
+          </Grid>
+        </TabItem>
+
+        <TabItem Header="CW">
+          <Border Background="#FF1A1A1A" Padding="10" Margin="0">
+            <ScrollViewer HorizontalScrollBarVisibility="Auto" VerticalScrollBarVisibility="Auto">
+              <StackPanel Spacing="10">
+                <TextBlock Text="CW CONTROLS" FontWeight="SemiBold" Foreground="#00FFAA"/>
+                <TextBlock Text="Keyer / spacing / paddle / weight / pitch. Speed &amp; pitch also on right rail."
+                           FontSize="10" Foreground="#888" TextWrapping="Wrap"/>
+
+                <CheckBox Content="Use external electronic keyer (legacy)"
+                          IsChecked="{Binding ExternalElectronicKeyer}"
+                          Foreground="#CCC" FontSize="11"
+                          ToolTip.Tip="Checked → PROFICIO-MKII=0 (legacy / external keyer). Unchecked (default) → MKII internal keyer. Writes mscc.ini; restart ms-sdr to apply."/>
+                <TextBlock Text="Legacy mode: PIC keyer controls grayed — HOLD stays live. Restart backends after change."
+                           FontSize="10" Foreground="#FFAA66" TextWrapping="Wrap"
+                           IsVisible="{Binding ExternalElectronicKeyer}"/>
+
+                <!-- Lists row -->
+                <StackPanel Orientation="Horizontal" Spacing="8">
+                  <StackPanel Width="100" IsEnabled="{Binding PicKeyerControlsEnabled}">
+                    <TextBlock Text="KEYER MODE" Foreground="White" FontSize="10" HorizontalAlignment="Center"/>
+                    <ListBox Height="78"
+                             ItemsSource="{Binding CwKeyerModeOptions}"
+                             SelectedIndex="{Binding CwKeyerMode}"
+                             Background="#FF222222" Foreground="White" FontSize="11"
+                             IsEnabled="{Binding IsConnected}"/>
+                  </StackPanel>
+                  <StackPanel Width="88" IsEnabled="{Binding PicKeyerControlsEnabled}">
+                    <TextBlock Text="SPACING" Foreground="White" FontSize="10" HorizontalAlignment="Center"/>
+                    <ListBox Height="56"
+                             ItemsSource="{Binding CwSpacingOptions}"
+                             SelectedIndex="{Binding CwSpacing}"
+                             Background="#FF222222" Foreground="White" FontSize="11"
+                             IsEnabled="{Binding IsConnected}"/>
+                  </StackPanel>
+                  <StackPanel Width="88" IsEnabled="{Binding PicKeyerControlsEnabled}">
+                    <TextBlock Text="PADDLE" Foreground="White" FontSize="10" HorizontalAlignment="Center"/>
+                    <ListBox Height="56"
+                             ItemsSource="{Binding CwPaddleOptions}"
+                             SelectedIndex="{Binding CwPaddle}"
+                             Background="#FF222222" Foreground="White" FontSize="11"
+                             IsEnabled="{Binding IsConnected}"/>
+                  </StackPanel>
+                  <StackPanel Width="72" IsEnabled="{Binding PicKeyerControlsEnabled}">
+                    <TextBlock Text="WEIGHT" Foreground="White" FontSize="10" HorizontalAlignment="Center"/>
+                    <ListBox Height="78"
+                             ItemsSource="{Binding CwWeightOptions}"
+                             SelectedIndex="{Binding CwWeightIndex}"
+                             Background="#FF222222" Foreground="White" FontSize="11"
+                             IsEnabled="{Binding IsConnected}"/>
+                  </StackPanel>
+                  <StackPanel Width="80">
+                    <TextBlock Text="PITCH" Foreground="White" FontSize="10" HorizontalAlignment="Center"/>
+                    <ListBox Height="100"
+                             ItemsSource="{Binding CwPitchOptions}"
+                             SelectedIndex="{Binding CwPitchIndex}"
+                             Background="#FF222222" Foreground="White" FontSize="11"
+                             IsEnabled="{Binding IsConnected}"/>
+                  </StackPanel>
+                </StackPanel>
+
+                <!-- Speed, Hold, toggles -->
+                <StackPanel Orientation="Horizontal" Spacing="16">
+                  <StackPanel Orientation="Horizontal" Spacing="4" IsEnabled="{Binding PicKeyerControlsEnabled}">
+                    <TextBlock Text="SPEED" Foreground="White" VerticalAlignment="Center" FontSize="10" Width="48"/>
+                    <Border Background="#FF444444" BorderBrush="#FF888888" BorderThickness="1" Padding="4,1" MinWidth="32">
+                      <TextBlock Text="{Binding CwSpeed}" FontSize="12" FontWeight="Bold"
+                                 Foreground="#00FFAA" HorizontalAlignment="Center"/>
+                    </Border>
+                    <Button Content="−" Classes="mscc-gold" Width="24" Height="22"
+                            Command="{Binding DecCwSpeedCommand}"/>
+                    <Button Content="+" Classes="mscc-gold" Width="24" Height="22"
+                            Command="{Binding IncCwSpeedCommand}"/>
+                    <TextBlock Text="WPM" Foreground="#AAA" FontSize="9" VerticalAlignment="Center"/>
+                  </StackPanel>
+
+                  <StackPanel Orientation="Horizontal" Spacing="4">
+                    <TextBlock Text="HOLD" Foreground="White" VerticalAlignment="Center" FontSize="10" Width="40"/>
+                    <Border Background="#FF444444" BorderBrush="#FF888888" BorderThickness="1" Padding="4,1" MinWidth="36">
+                      <TextBlock Text="{Binding CwHold}" FontSize="12" FontWeight="Bold"
+                                 Foreground="#00FFAA" HorizontalAlignment="Center"/>
+                    </Border>
+                    <Button Content="−" Classes="mscc-gold" Width="24" Height="22"
+                            Command="{Binding DecCwHoldCommand}"/>
+                    <Button Content="+" Classes="mscc-gold" Width="24" Height="22"
+                            Command="{Binding IncCwHoldCommand}"/>
+                    <TextBlock Text="ms" Foreground="#AAA" FontSize="9" VerticalAlignment="Center"/>
+                  </StackPanel>
+
+                  <CheckBox Content="PHONES" IsChecked="{Binding CwPhones}"
+                            IsEnabled="{Binding IsConnected}" Foreground="White" FontSize="10"
+                            VerticalAlignment="Center"
+                            ToolTip.Tip="CW sidetone / phones path"/>
+                  <CheckBox Content="POTENTIA / QSK" IsChecked="{Binding CwQsk}"
+                            IsEnabled="{Binding IsConnected}" Foreground="White" FontSize="10"
+                            VerticalAlignment="Center"
+                            ToolTip.Tip="QSK / full break-in"/>
+                </StackPanel>
+
+                <!-- Keyer CQ memory: 4 slots × 48 chars; R=store to PIC, P=play once -->
+                <TextBlock Text="CQ MEMORY" FontWeight="SemiBold" Foreground="#00FFAA" Margin="0,8,0,0"/>
+                <TextBlock Text="R stores slot to keyer (EEPROM). P plays that slot once. Paddle aborts play. Max 48 chars. Text sticky in client; not read back from radio."
+                           FontSize="10" Foreground="#888" TextWrapping="Wrap"/>
+
+                <Grid ColumnDefinitions="*,Auto,Auto,Auto" RowDefinitions="Auto,Auto,Auto,Auto"
+                      IsEnabled="{Binding KeyerMemPanelEnabled}">
+                  <!-- Slot 0 -->
+                  <TextBox Grid.Row="0" Grid.Column="0" Margin="0,2,6,2" MaxLength="48"
+                           Text="{Binding KeyerMem0}" FontSize="12" FontFamily="Consolas,Courier New,monospace"
+                           Background="#FF222222" Foreground="#00FFAA" CaretBrush="#00FFAA"
+                           PlaceholderText="Slot 0 message (max 48)"/>
+                  <TextBlock Grid.Row="0" Grid.Column="1" Text="{Binding KeyerMem0Count}"
+                             Foreground="#666" FontSize="9" VerticalAlignment="Center" Margin="0,0,6,0" MinWidth="36"/>
+                  <Button Grid.Row="0" Grid.Column="2" Content="R" Classes="mscc-gold" Width="32" Height="26"
+                          Margin="0,2,4,2" FontWeight="Bold"
+                          Command="{Binding RecordKeyerMemCommand}" CommandParameter="0"
+                          IsEnabled="{Binding IsConnected}"
+                          ToolTip.Tip="Record / store slot 0 to keyer"/>
+                  <Button Grid.Row="0" Grid.Column="3" Content="P" Classes="mscc-gold" Width="32" Height="26"
+                          Margin="0,2,0,2" FontWeight="Bold"
+                          Command="{Binding PlayKeyerMemCommand}" CommandParameter="0"
+                          IsEnabled="{Binding IsConnected}"
+                          ToolTip.Tip="Play slot 0 once"/>
+
+                  <!-- Slot 1 -->
+                  <TextBox Grid.Row="1" Grid.Column="0" Margin="0,2,6,2" MaxLength="48"
+                           Text="{Binding KeyerMem1}" FontSize="12" FontFamily="Consolas,Courier New,monospace"
+                           Background="#FF222222" Foreground="#00FFAA" CaretBrush="#00FFAA"
+                           PlaceholderText="Slot 1 message (max 48)"/>
+                  <TextBlock Grid.Row="1" Grid.Column="1" Text="{Binding KeyerMem1Count}"
+                             Foreground="#666" FontSize="9" VerticalAlignment="Center" Margin="0,0,6,0" MinWidth="36"/>
+                  <Button Grid.Row="1" Grid.Column="2" Content="R" Classes="mscc-gold" Width="32" Height="26"
+                          Margin="0,2,4,2" FontWeight="Bold"
+                          Command="{Binding RecordKeyerMemCommand}" CommandParameter="1"
+                          IsEnabled="{Binding IsConnected}"
+                          ToolTip.Tip="Record / store slot 1 to keyer"/>
+                  <Button Grid.Row="1" Grid.Column="3" Content="P" Classes="mscc-gold" Width="32" Height="26"
+                          Margin="0,2,0,2" FontWeight="Bold"
+                          Command="{Binding PlayKeyerMemCommand}" CommandParameter="1"
+                          IsEnabled="{Binding IsConnected}"
+                          ToolTip.Tip="Play slot 1 once"/>
+
+                  <!-- Slot 2 -->
+                  <TextBox Grid.Row="2" Grid.Column="0" Margin="0,2,6,2" MaxLength="48"
+                           Text="{Binding KeyerMem2}" FontSize="12" FontFamily="Consolas,Courier New,monospace"
+                           Background="#FF222222" Foreground="#00FFAA" CaretBrush="#00FFAA"
+                           PlaceholderText="Slot 2 message (max 48)"/>
+                  <TextBlock Grid.Row="2" Grid.Column="1" Text="{Binding KeyerMem2Count}"
+                             Foreground="#666" FontSize="9" VerticalAlignment="Center" Margin="0,0,6,0" MinWidth="36"/>
+                  <Button Grid.Row="2" Grid.Column="2" Content="R" Classes="mscc-gold" Width="32" Height="26"
+                          Margin="0,2,4,2" FontWeight="Bold"
+                          Command="{Binding RecordKeyerMemCommand}" CommandParameter="2"
+                          IsEnabled="{Binding IsConnected}"
+                          ToolTip.Tip="Record / store slot 2 to keyer"/>
+                  <Button Grid.Row="2" Grid.Column="3" Content="P" Classes="mscc-gold" Width="32" Height="26"
+                          Margin="0,2,0,2" FontWeight="Bold"
+                          Command="{Binding PlayKeyerMemCommand}" CommandParameter="2"
+                          IsEnabled="{Binding IsConnected}"
+                          ToolTip.Tip="Play slot 2 once"/>
+
+                  <!-- Slot 3 -->
+                  <TextBox Grid.Row="3" Grid.Column="0" Margin="0,2,6,2" MaxLength="48"
+                           Text="{Binding KeyerMem3}" FontSize="12" FontFamily="Consolas,Courier New,monospace"
+                           Background="#FF222222" Foreground="#00FFAA" CaretBrush="#00FFAA"
+                           PlaceholderText="Slot 3 message (max 48)"/>
+                  <TextBlock Grid.Row="3" Grid.Column="1" Text="{Binding KeyerMem3Count}"
+                             Foreground="#666" FontSize="9" VerticalAlignment="Center" Margin="0,0,6,0" MinWidth="36"/>
+                  <Button Grid.Row="3" Grid.Column="2" Content="R" Classes="mscc-gold" Width="32" Height="26"
+                          Margin="0,2,4,2" FontWeight="Bold"
+                          Command="{Binding RecordKeyerMemCommand}" CommandParameter="3"
+                          IsEnabled="{Binding IsConnected}"
+                          ToolTip.Tip="Record / store slot 3 to keyer"/>
+                  <Button Grid.Row="3" Grid.Column="3" Content="P" Classes="mscc-gold" Width="32" Height="26"
+                          Margin="0,2,0,2" FontWeight="Bold"
+                          Command="{Binding PlayKeyerMemCommand}" CommandParameter="3"
+                          IsEnabled="{Binding IsConnected}"
+                          ToolTip.Tip="Play slot 3 once"/>
+                </Grid>
+
+                <TextBlock Text="{Binding KeyerMemStatus}" FontSize="10" Foreground="#AAA"
+                           TextWrapping="Wrap" MinHeight="16"/>
+
+                <TextBlock Text="RIT is on the left rail (RIT + Offset + Clear)."
+                           FontSize="10" Foreground="#666" Margin="0,4,0,0"/>
+              </StackPanel>
+            </ScrollViewer>
+          </Border>
+        </TabItem>
+
+        <TabItem Header="RX/TX">
+          <Border Background="#FF1A1A1A" Padding="8" Margin="0">
+            <ScrollViewer HorizontalScrollBarVisibility="Disabled" VerticalScrollBarVisibility="Auto">
+              <Grid ColumnDefinitions="*,*" ColumnSpacing="8">
+                <!-- Left: power levels + default filters placeholders -->
+                <Border Grid.Column="0" Background="#FF222222" CornerRadius="4" Padding="10">
+                  <StackPanel Spacing="4">
+                    <TextBlock Text="POWER LEVELS" FontWeight="SemiBold" Foreground="#00FFAA" Margin="0,0,0,6"/>
+                    <TextBlock Text="Used by TUN / mode (wired when connected)." FontSize="10" Foreground="#888" Margin="0,0,0,4" TextWrapping="Wrap"/>
+
+                    <Grid ColumnDefinitions="88,*,40" Height="26">
+                      <TextBlock Classes="mscc-label" Text="Tune Power" FontSize="11" VerticalAlignment="Center"/>
+                      <Slider Grid.Column="1" Classes="mscc-slider" Minimum="0" Maximum="100"
+                              Value="{Binding TunePowerPercent}"
+                              IsEnabled="{Binding IsConnected}"/>
+                      <TextBlock Grid.Column="2" Classes="mscc-readout"
+                                 Text="{Binding TunePowerPercent, StringFormat={}{0}%}"/>
+                    </Grid>
+                    <Grid ColumnDefinitions="88,*,40" Height="26">
+                      <TextBlock Classes="mscc-label" Text="CW Power" FontSize="11" VerticalAlignment="Center"/>
+                      <Slider Grid.Column="1" Classes="mscc-slider" Minimum="0" Maximum="100"
+                              Value="{Binding CwPowerPercent}"
+                              IsEnabled="{Binding IsConnected}"/>
+                      <TextBlock Grid.Column="2" Classes="mscc-readout"
+                                 Text="{Binding CwPowerPercent, StringFormat={}{0}%}"/>
+                    </Grid>
+                    <Grid ColumnDefinitions="88,*,40" Height="26">
+                      <TextBlock Classes="mscc-label" Text="SSB Power" FontSize="11" VerticalAlignment="Center"/>
+                      <Slider Grid.Column="1" Classes="mscc-slider" Minimum="0" Maximum="100"
+                              Value="{Binding SsbPowerPercent}"
+                              IsEnabled="{Binding IsConnected}"/>
+                      <TextBlock Grid.Column="2" Classes="mscc-readout"
+                                 Text="{Binding SsbPowerPercent, StringFormat={}{0}%}"/>
+                    </Grid>
+                    <Grid ColumnDefinitions="88,*,40" Height="26" Margin="0,0,0,10">
+                      <TextBlock Classes="mscc-label" Text="AM Carrier" FontSize="11" VerticalAlignment="Center"/>
+                      <Slider Grid.Column="1" Classes="mscc-slider" Minimum="0" Maximum="100"
+                              Value="{Binding AmCarrierPercent}"
+                              IsEnabled="{Binding IsConnected}"/>
+                      <TextBlock Grid.Column="2" Classes="mscc-readout"
+                                 Text="{Binding AmCarrierPercent, StringFormat={}{0}%}"/>
+                    </Grid>
+
+                    <TextBlock Text="DEFAULT FILTERS" FontWeight="SemiBold" Foreground="#00FFAA" Margin="0,4,0,4"/>
+                    <TextBlock Text="Radio defaults (saved on server). Active Lo/Hi/CW stay on the left rail."
+                               FontSize="10" Foreground="#888" TextWrapping="Wrap"/>
+                    <StackPanel Orientation="Horizontal" Spacing="8" Margin="0,6,0,0">
+                      <StackPanel Width="72">
+                        <TextBlock Text="LOW" Foreground="White" HorizontalAlignment="Center" FontSize="10"/>
+                        <ListBox Height="118"
+                                 ItemsSource="{Binding LowCutOptions}"
+                                 SelectedIndex="{Binding LowCutDefaultIndex}"
+                                 Background="#FF1A1A1A" Foreground="White" FontSize="11"
+                                 IsEnabled="{Binding IsConnected}"
+                                 ToolTip.Tip="Default low cut"/>
+                      </StackPanel>
+                      <StackPanel Width="72">
+                        <TextBlock Text="HIGH" Foreground="White" HorizontalAlignment="Center" FontSize="10"/>
+                        <ListBox Height="118"
+                                 ItemsSource="{Binding HighCutOptions}"
+                                 SelectedIndex="{Binding HighCutDefaultIndex}"
+                                 Background="#FF1A1A1A" Foreground="White" FontSize="11"
+                                 IsEnabled="{Binding IsConnected}"
+                                 ToolTip.Tip="Default high cut"/>
+                      </StackPanel>
+                      <StackPanel Width="72">
+                        <TextBlock Text="CW" Foreground="White" HorizontalAlignment="Center" FontSize="10"/>
+                        <ListBox Height="80"
+                                 ItemsSource="{Binding CwFilterOptions}"
+                                 SelectedIndex="{Binding CwFilterDefaultIndex}"
+                                 Background="#FF1A1A1A" Foreground="White" FontSize="11"
+                                 IsEnabled="{Binding IsConnected}"
+                                 ToolTip.Tip="Default CW bandwidth"/>
+                      </StackPanel>
+                      <StackPanel Width="72">
+                        <TextBlock Text="TX" Foreground="White" HorizontalAlignment="Center" FontSize="10"/>
+                        <ListBox Height="100"
+                                 ItemsSource="{Binding TxOptions}"
+                                 SelectedIndex="{Binding TxDefaultIndex}"
+                                 Background="#FF1A1A1A" Foreground="White" FontSize="11"
+                                 IsEnabled="{Binding IsConnected}"
+                                 ToolTip.Tip="Default TX high cut"/>
+                      </StackPanel>
+                    </StackPanel>
+                  </StackPanel>
+                </Border>
+
+                <!-- Right: TX options / processing -->
+                <Border Grid.Column="1" Background="#FF222222" CornerRadius="4" Padding="10">
+                  <StackPanel Spacing="6">
+                    <TextBlock Text="TX OPTIONS / PROCESSING" FontWeight="SemiBold" Foreground="#00FFAA"/>
+                    <TextBlock Text="NB, NR, AN and AGC Fast Release stay on the right operate rail."
+                               FontSize="10" Foreground="#AAA" TextWrapping="Wrap"/>
+
+                    <StackPanel Orientation="Horizontal" Spacing="12" Margin="0,8,0,0">
+                      <StackPanel Width="80">
+                        <TextBlock Text="TX BW" Foreground="White" HorizontalAlignment="Center" FontSize="10"/>
+                        <ListBox Height="100"
+                                 ItemsSource="{Binding TxOptions}"
+                                 SelectedIndex="{Binding TxBandwidthIndex}"
+                                 Background="#FF1A1A1A" Foreground="White" FontSize="11"
+                                 IsEnabled="{Binding IsConnected}"
+                                 ToolTip.Tip="Active TX bandwidth"/>
+                      </StackPanel>
+                      <StackPanel Width="80" Opacity="0.7">
+                        <TextBlock Text="AGC" Foreground="White" HorizontalAlignment="Center" FontSize="10"/>
+                        <Border Height="100" Background="#FF1A1A1A" BorderBrush="#FF555555" BorderThickness="1" CornerRadius="2">
+                          <StackPanel VerticalAlignment="Center" Spacing="4">
+                            <TextBlock Text="{Binding AgcButtonText}" HorizontalAlignment="Center"
+                                       Foreground="#00FFAA" FontSize="14" FontWeight="Bold"/>
+                            <TextBlock Text="Use right rail" HorizontalAlignment="Center" Foreground="#666" FontSize="9"/>
+                            <TextBlock Text="AGC button" HorizontalAlignment="Center" Foreground="#666" FontSize="9"/>
+                          </StackPanel>
+                        </Border>
+                      </StackPanel>
+                    </StackPanel>
+
+                    <TextBlock Text="TX BUTTONS" FontWeight="SemiBold" Foreground="#00FFAA" Margin="0,12,0,4"/>
+                    <UniformGrid Columns="2" Rows="2" Width="220" HorizontalAlignment="Left">
+                      <Button Content="QRP" Classes="mscc-stub" IsEnabled="False" Margin="3" MinHeight="28"
+                              ToolTip.Tip="PA path — wire with AMP in next operate sessions"/>
+                      <Button Content="Full Power" Classes="mscc-stub" IsEnabled="False" Margin="3" MinHeight="28"
+                              ToolTip.Tip="Not wired yet"/>
+                      <Button Content="ALC" Classes="mscc-stub" IsEnabled="False" Margin="3" MinHeight="28"
+                              ToolTip.Tip="Not wired yet"/>
+                      <Button Content="(reserved)" Classes="mscc-stub" IsEnabled="False" Margin="3" MinHeight="28" Opacity="0.4"/>
+                    </UniformGrid>
+
+                    <TextBlock Text="Active mode power bank is mirrored on the right-rail RF slider."
+                               FontSize="10" Foreground="#666" TextWrapping="Wrap" Margin="0,12,0,0"/>
+                    <TextBlock Text="{Binding ModeText, StringFormat=Current mode: {0}}"
+                               FontSize="11" Foreground="#00FFAA"/>
+                    <TextBlock Text="{Binding RfPower, StringFormat=RF mirror: {0}%}"
+                               FontSize="11" Foreground="#88CCAA"/>
+                  </StackPanel>
+                </Border>
+              </Grid>
+            </ScrollViewer>
+          </Border>
+        </TabItem>
+
+        <TabItem Header="FAVORITES">
+          <Border Background="#FF222222" CornerRadius="4" Padding="10" Margin="0">
+            <Grid RowDefinitions="Auto,Auto,*,Auto">
+              <TextBlock Grid.Row="0" Text="FAVORITES (BY BAND)"
+                         FontWeight="SemiBold" Foreground="#00FFAA" FontSize="14" Margin="0,0,0,8"/>
+
+              <StackPanel Grid.Row="1" Orientation="Horizontal" Spacing="6" Margin="0,0,0,8">
+                <TextBlock Text="Band" Foreground="White" VerticalAlignment="Center"/>
+                <ComboBox Width="84" Height="26"
+                          ItemsSource="{Binding FavoriteBandChoices}"
+                          SelectedItem="{Binding FavoriteBandFilter}"
+                          FontSize="11" FontWeight="Bold"
+                          ToolTip.Tip="Show favorites for this band only"/>
+                <TextBlock Text="Name" Foreground="White" VerticalAlignment="Center" Margin="8,0,0,0"/>
+                <TextBox Width="140" Height="26" Classes="mscc-hostport"
+                         Text="{Binding FavoriteNameInput}"
+                         MaxLength="32"
+                         ToolTip.Tip="Name for this band only (e.g. FT-8)"/>
+                <Button Content="SAVE" Classes="mscc-gold" Width="64" Height="26"
+                        Command="{Binding SaveFavoriteCommand}"
+                        ToolTip.Tip="Store current conditions under this name for the radio's current band"/>
+                <Button Content="RECALL" Classes="mscc-gold" Width="70" Height="26"
+                        Command="{Binding RecallFavoriteCommand}"
+                        ToolTip.Tip="Apply the selected favorite"/>
+                <Button Content="DELETE" Classes="mscc-gold" Width="70" Height="26"
+                        Command="{Binding DeleteFavoriteCommand}"
+                        ToolTip.Tip="Remove selected favorite (this session only)"/>
+              </StackPanel>
+
+              <Border Grid.Row="2" Background="#FF1A1A1A" BorderBrush="#444" BorderThickness="1" CornerRadius="4">
+                <DockPanel>
+                  <!-- Column headers -->
+                  <Grid DockPanel.Dock="Top" ColumnDefinitions="*,48,52,100,52,72,72,72"
+                        Margin="6,4" Background="#FF2A2A2A">
+                    <TextBlock Grid.Column="0" Text="Name" Foreground="#00FFAA" FontWeight="Bold" FontSize="11"/>
+                    <TextBlock Grid.Column="1" Text="VFO" Foreground="#00FFAA" FontWeight="Bold" FontSize="11"/>
+                    <TextBlock Grid.Column="2" Text="Band" Foreground="#00FFAA" FontWeight="Bold" FontSize="11"/>
+                    <TextBlock Grid.Column="3" Text="Frequency" Foreground="#00FFAA" FontWeight="Bold" FontSize="11"/>
+                    <TextBlock Grid.Column="4" Text="Mode" Foreground="#00FFAA" FontWeight="Bold" FontSize="11"/>
+                    <TextBlock Grid.Column="5" Text="Low" Foreground="#00FFAA" FontWeight="Bold" FontSize="11"/>
+                    <TextBlock Grid.Column="6" Text="High" Foreground="#00FFAA" FontWeight="Bold" FontSize="11"/>
+                    <TextBlock Grid.Column="7" Text="CW" Foreground="#00FFAA" FontWeight="Bold" FontSize="11"/>
+                  </Grid>
+                  <ListBox ItemsSource="{Binding FavoritesForBand}"
+                           SelectedItem="{Binding SelectedFavorite}"
+                           Background="Transparent" BorderThickness="0"
+                           FontSize="12">
+                    <ListBox.ItemTemplate>
+                      <DataTemplate>
+                        <Grid ColumnDefinitions="*,48,52,100,52,72,72,72" Margin="2,1">
+                          <TextBlock Grid.Column="0" Text="{Binding Name}" Foreground="White"/>
+                          <TextBlock Grid.Column="1" Text="{Binding Vfo}" Foreground="#CCC"/>
+                          <TextBlock Grid.Column="2" Text="{Binding Band}" Foreground="#CCC"/>
+                          <TextBlock Grid.Column="3" Text="{Binding FrequencyDisplay}"
+                                     FontFamily="Consolas, Courier New, monospace" Foreground="#00FFAA"/>
+                          <TextBlock Grid.Column="4" Text="{Binding Mode}" Foreground="#CCC"/>
+                          <TextBlock Grid.Column="5" Text="{Binding LowCutLabel}" Foreground="#AAA" FontSize="11"/>
+                          <TextBlock Grid.Column="6" Text="{Binding HighCutLabel}" Foreground="#AAA" FontSize="11"/>
+                          <TextBlock Grid.Column="7" Text="{Binding CwFilterLabel}" Foreground="#AAA" FontSize="11"/>
+                        </Grid>
+                      </DataTemplate>
+                    </ListBox.ItemTemplate>
+                  </ListBox>
+                </DockPanel>
+              </Border>
+
+              <TextBlock Grid.Row="3" Margin="0,8,0,0" Foreground="#AAA" FontSize="11" TextWrapping="Wrap"
+                         Text="Session-only (not saved to disk yet). Per-band lists: FT-8 on 20m ≠ FT-8 on 15m. SAVE uses the radio's current band. RECALL sets freq / mode / filters."/>
+            </Grid>
+          </Border>
+        </TabItem>
+
+        <!-- QRP CAL: enabled when AMP is off -->
+        <TabItem Header="QRP CAL" IsEnabled="{Binding IsPowerCalTabEnabled}"
+                 ToolTip.Tip="QRP / transceiver power calibration (AMP must be off)">
+          <Border Background="#FF222222" CornerRadius="4" Padding="10" Margin="0">
+            <ScrollViewer VerticalScrollBarVisibility="Auto">
+              <StackPanel Spacing="8">
+                <TextBlock Text="QRP / TRANSCEIVER" FontWeight="Bold" Foreground="#00FFAA" FontSize="14"/>
+                <TextBlock Text="{Binding PowerCalTabHint}" FontSize="10" Foreground="#888" TextWrapping="Wrap"/>
+
+                <Border Background="#FF252525" BorderBrush="#444" BorderThickness="1" CornerRadius="4" Padding="10,8">
+                  <StackPanel Spacing="6">
+                    <TextBlock Text="CALIBRATION STATUS" FontWeight="Bold" Foreground="#00FFAA" FontSize="12"/>
+                    <ItemsControl ItemsSource="{Binding PowerCalBandStatuses}">
+                      <ItemsControl.ItemsPanel>
+                        <ItemsPanelTemplate>
+                          <UniformGrid Rows="1"/>
+                        </ItemsPanelTemplate>
+                      </ItemsControl.ItemsPanel>
+                      <ItemsControl.ItemTemplate>
+                        <DataTemplate>
+                          <StackPanel HorizontalAlignment="Stretch" Margin="1,0">
+                            <TextBlock Text="{Binding BandLabel}" Foreground="White" FontSize="10" FontWeight="Bold"
+                                       HorizontalAlignment="Center" Margin="0,0,0,3"/>
+                            <Border Width="14" Height="14" CornerRadius="2" HorizontalAlignment="Center"
+                                    BorderBrush="#888" BorderThickness="1" Classes="cal-lamp"
+                                    Classes.calibrated="{Binding IsCalibrated}"/>
+                          </StackPanel>
+                        </DataTemplate>
+                      </ItemsControl.ItemTemplate>
+                    </ItemsControl>
+                    <TextBlock Text="Green = calibrated (this session). White = not calibrated."
+                               Foreground="#AAA" FontSize="10"/>
+                  </StackPanel>
+                </Border>
+
+                <Border Background="#FF252525" BorderBrush="#444" BorderThickness="1" CornerRadius="4" Padding="8">
+                  <StackPanel Spacing="6">
+                    <TextBlock Text="BAND SELECTION" FontWeight="Bold" Foreground="#00FFAA" FontSize="12"/>
+                    <ItemsControl ItemsSource="{Binding PowerCalBandStatuses}">
+                      <ItemsControl.ItemsPanel>
+                        <ItemsPanelTemplate>
+                          <UniformGrid Rows="1"/>
+                        </ItemsPanelTemplate>
+                      </ItemsControl.ItemsPanel>
+                      <ItemsControl.ItemTemplate>
+                        <DataTemplate>
+                          <Button Content="{Binding BandLabel}" Height="26" Margin="1,0" MinWidth="28"
+                                  HorizontalAlignment="Stretch" FontSize="10" FontWeight="Bold"
+                                  Classes="mscc-gold"
+                                  Classes.mscc-selected="{Binding IsSelected}"
+                                  Command="{Binding $parent[Window].((vm:MainViewModel)DataContext).SelectPowerCalBandCommand}"
+                                  CommandParameter="{Binding BandNumber}"
+                                  ToolTip.Tip="{Binding BandNumber, StringFormat={}{0}m}"/>
+                        </DataTemplate>
+                      </ItemsControl.ItemTemplate>
+                    </ItemsControl>
+                  </StackPanel>
+                </Border>
+
+                <CheckBox Content="Dummy load / matched antenna confirmed"
+                          IsChecked="{Binding PowerCalLoadConfirmed}"
+                          Foreground="White" FontSize="11"
+                          ToolTip.Tip="Required before TX or CALIBRATE"/>
+
+                <Grid ColumnDefinitions="56,*,Auto" Margin="0,4,0,0">
+                  <TextBlock Text="POWER" Foreground="White" FontWeight="Bold" VerticalAlignment="Center"/>
+                  <Slider Grid.Column="1" Classes="mscc-slider" Minimum="0" Maximum="100"
+                          Value="{Binding PowerCalSliderValue}"
+                          IsEnabled="{Binding PowerCalCalibrating}"
+                          ToolTip.Tip="Calibration drive (0xA2) while CALIBRATE active"/>
+                  <Border Grid.Column="2" Background="#444" BorderBrush="#888" BorderThickness="1"
+                          Padding="8,4" Margin="8,0,0,0" MinWidth="150">
+                    <TextBlock Text="{Binding PowerCalStepLabel}" Foreground="#00FFAA" FontWeight="Bold" FontSize="12"/>
+                  </Border>
+                </Grid>
+
+                <StackPanel Orientation="Horizontal" Spacing="8" Margin="0,4,0,0">
+                  <Button Content="{Binding PowerCalTxButtonText}" Classes="mscc-gold" Width="100" Height="28"
+                          Command="{Binding TogglePowerCalTxCommand}"
+                          Classes.mscc-tx-on="{Binding PowerCalTxOn}"
+                          IsEnabled="{Binding PowerCalTxButtonEnabled}"
+                          ToolTip.Tip="Calibration TX (0xAC)"/>
+                  <Button Content="{Binding PowerCalCalibrateButtonText}" Classes="mscc-gold" Width="120" Height="28"
+                          Command="{Binding TogglePowerCalCalibrateCommand}"
+                          Classes.mscc-selected="{Binding PowerCalCalibrating}"
+                          ToolTip.Tip="Start/stop manual cal (0xA2 + 0xAC)"/>
+                </StackPanel>
+
+                <StackPanel Orientation="Horizontal" Spacing="6" IsVisible="{Binding PowerCalAcceptPrompt}">
+                  <TextBlock Text="Accept this calibration?" Foreground="#FFCC66" VerticalAlignment="Center" FontSize="11"/>
+                  <Button Content="Accept" Classes="mscc-gold" Width="72" Height="24"
+                          Command="{Binding AcceptPowerCalCommand}"/>
+                  <Button Content="Reject" Classes="mscc-gold" Width="72" Height="24"
+                          Command="{Binding RejectPowerCalCommand}"/>
+                  <Button Content="Cancel" Classes="mscc-gold" Width="72" Height="24"
+                          Command="{Binding CancelPowerCalCommand}"/>
+                </StackPanel>
+
+                <TextBlock Text="Band: 0xA1 → step 0xB4. CALIBRATE: 0xA2 + TX 0xAC. Status lamps are session-only for now."
+                           Foreground="#888" FontSize="10" TextWrapping="Wrap"/>
+              </StackPanel>
+            </ScrollViewer>
+          </Border>
+        </TabItem>
+
+        <!-- AMP CAL: enabled when AMP is on -->
+        <TabItem Header="AMP CAL" IsEnabled="{Binding IsAmpCalTabEnabled}"
+                 ToolTip.Tip="Power amplifier calibration (AMP must be on)">
+          <Border Background="#FF222222" CornerRadius="4" Padding="10" Margin="0">
+            <ScrollViewer VerticalScrollBarVisibility="Auto">
+              <StackPanel Spacing="8">
+                <TextBlock Text="POWER AMPLIFIER" FontWeight="Bold" Foreground="#00FFAA" FontSize="14"/>
+                <TextBlock Text="{Binding AmpCalTabHint}" FontSize="10" Foreground="#888" TextWrapping="Wrap"/>
+
+                <Border Background="#FF252525" BorderBrush="#444" BorderThickness="1" CornerRadius="4" Padding="10,8">
+                  <StackPanel Spacing="6">
+                    <TextBlock Text="CALIBRATION STATUS" FontWeight="Bold" Foreground="#00FFAA" FontSize="12"/>
+                    <ItemsControl ItemsSource="{Binding AmpCalBandStatuses}">
+                      <ItemsControl.ItemsPanel>
+                        <ItemsPanelTemplate>
+                          <UniformGrid Rows="1"/>
+                        </ItemsPanelTemplate>
+                      </ItemsControl.ItemsPanel>
+                      <ItemsControl.ItemTemplate>
+                        <DataTemplate>
+                          <StackPanel HorizontalAlignment="Stretch" Margin="1,0">
+                            <TextBlock Text="{Binding BandLabel}" Foreground="White" FontSize="10" FontWeight="Bold"
+                                       HorizontalAlignment="Center" Margin="0,0,0,3"/>
+                            <Border Width="14" Height="14" CornerRadius="2" HorizontalAlignment="Center"
+                                    BorderBrush="#888" BorderThickness="1" Classes="cal-lamp"
+                                    Classes.calibrated="{Binding IsCalibrated}"/>
+                          </StackPanel>
+                        </DataTemplate>
+                      </ItemsControl.ItemTemplate>
+                    </ItemsControl>
+                    <TextBlock Text="Green = calibrated (this session). Needs QRP lamp green for that band before AMP CAL."
+                               Foreground="#AAA" FontSize="10" TextWrapping="Wrap"/>
+                  </StackPanel>
+                </Border>
+
+                <Border Background="#FF252525" BorderBrush="#444" BorderThickness="1" CornerRadius="4" Padding="8">
+                  <StackPanel Spacing="6">
+                    <TextBlock Text="BAND SELECTION" FontWeight="Bold" Foreground="#00FFAA" FontSize="12"/>
+                    <ItemsControl ItemsSource="{Binding AmpCalBandStatuses}">
+                      <ItemsControl.ItemsPanel>
+                        <ItemsPanelTemplate>
+                          <UniformGrid Rows="1"/>
+                        </ItemsPanelTemplate>
+                      </ItemsControl.ItemsPanel>
+                      <ItemsControl.ItemTemplate>
+                        <DataTemplate>
+                          <Button Content="{Binding BandLabel}" Height="26" Margin="1,0" MinWidth="28"
+                                  HorizontalAlignment="Stretch" FontSize="10" FontWeight="Bold"
+                                  Classes="mscc-gold"
+                                  Classes.mscc-selected="{Binding IsSelected}"
+                                  Command="{Binding $parent[Window].((vm:MainViewModel)DataContext).SelectAmpCalBandCommand}"
+                                  CommandParameter="{Binding BandNumber}"/>
+                        </DataTemplate>
+                      </ItemsControl.ItemTemplate>
+                    </ItemsControl>
+                  </StackPanel>
+                </Border>
+
+                <Grid ColumnDefinitions="56,*,Auto,Auto" Margin="0,4,0,0">
+                  <TextBlock Text="POWER" Foreground="White" FontWeight="Bold" VerticalAlignment="Center"/>
+                  <Slider Grid.Column="1" Classes="mscc-slider" Minimum="-99" Maximum="0"
+                          Value="{Binding AmpCalSliderValue}"
+                          IsEnabled="{Binding AmpCalCalibrating}"
+                          ToolTip.Tip="Amp cal step (0x08). STEP = 100 + value"/>
+                  <Border Grid.Column="2" Background="#444" BorderBrush="#888" BorderThickness="1"
+                          Padding="8,4" Margin="8,0,0,0" MinWidth="48">
+                    <TextBlock Text="{Binding AmpCalSliderValue}" Foreground="#00FFAA" FontWeight="Bold"
+                               FontSize="12" HorizontalAlignment="Center"/>
+                  </Border>
+                  <Border Grid.Column="3" Background="#444" BorderBrush="#888" BorderThickness="1"
+                          Padding="8,4" Margin="8,0,0,0" MinWidth="90">
+                    <TextBlock Text="{Binding AmpCalStepLabel}" Foreground="#00FFAA" FontWeight="Bold"
+                               FontSize="12" HorizontalAlignment="Center"/>
+                  </Border>
+                </Grid>
+
+                <StackPanel Orientation="Horizontal" Spacing="8" Margin="0,4,0,0">
+                  <Button Content="{Binding AmpCalTxButtonText}" Classes="mscc-gold" Width="100" Height="28"
+                          Command="{Binding ToggleAmpCalTxCommand}"
+                          Classes.mscc-tx-on="{Binding AmpCalTxOn}"
+                          IsEnabled="{Binding AmpCalTxButtonEnabled}"
+                          ToolTip.Tip="Amp cal TX: TUNE + RIG_TUNE"/>
+                  <Button Content="{Binding AmpCalCalibrateButtonText}" Classes="mscc-gold" Width="120" Height="28"
+                          Command="{Binding ToggleAmpCalCalibrateCommand}"
+                          Classes.mscc-selected="{Binding AmpCalCalibrating}"
+                          ToolTip.Tip="Manual amp cal + potentiia slider (0x08)"/>
+                </StackPanel>
+
+                <StackPanel Orientation="Horizontal" Spacing="6" IsVisible="{Binding AmpCalAcceptPrompt}">
+                  <TextBlock Text="Accept this AMP calibration?" Foreground="#FFCC66" VerticalAlignment="Center" FontSize="11"/>
+                  <Button Content="Accept" Classes="mscc-gold" Width="72" Height="24"
+                          Command="{Binding AcceptAmpCalCommand}"/>
+                  <Button Content="Reject" Classes="mscc-gold" Width="72" Height="24"
+                          Command="{Binding RejectAmpCalCommand}"/>
+                  <Button Content="Cancel" Classes="mscc-gold" Width="72" Height="24"
+                          Command="{Binding CancelAmpCalCommand}"/>
+                </StackPanel>
+
+                <TextBlock Text="Band: 0xF9+0xFA. TX: RIG_TUNE. CALIBRATE: 0x08 (−99…0). Status lamps session-only."
+                           Foreground="#888" FontSize="10" TextWrapping="Wrap"/>
+              </StackPanel>
+            </ScrollViewer>
+          </Border>
+        </TabItem>
+
+        <!-- RX IQ: controls top, spectrum below (no waterfall / no click-tune) -->
+        <TabItem Header="RX IQ" ToolTip.Tip="Receive I/Q calibration — spectrum aids image nulling">
+          <Border Background="#FF222222" CornerRadius="4" Padding="8" Margin="0">
+            <Grid RowDefinitions="Auto,*">
+              <Border Grid.Row="0" Background="#FF1A1A1A" BorderBrush="#555" BorderThickness="1"
+                      CornerRadius="4" Padding="8,6" Margin="0,0,0,6">
+                <StackPanel Spacing="4">
+                  <StackPanel Orientation="Horizontal" Spacing="8">
+                    <TextBlock Text="RECEIVE I/Q" FontWeight="Bold" Foreground="#00FFAA" FontSize="13"
+                               VerticalAlignment="Center"/>
+                    <TextBlock Text="BAND" Foreground="#AAA" FontSize="11" VerticalAlignment="Center"/>
+                    <Border Background="#444" BorderBrush="#888" BorderThickness="1" Padding="8,2" MinWidth="48">
+                      <TextBlock Text="{Binding RxIqBandLabel}" Foreground="#00FFAA" FontWeight="Bold"
+                                 FontSize="12" HorizontalAlignment="Center"/>
+                    </Border>
+                    <TextBlock Text="FREQ" Foreground="#AAA" FontSize="11" VerticalAlignment="Center"/>
+                    <Border Background="#444" BorderBrush="#888" BorderThickness="1" Padding="8,2" MinWidth="110">
+                      <TextBlock Text="{Binding RxIqFreqDisplay}" FontFamily="Consolas, Courier New, monospace"
+                                 Foreground="#00FFAA" FontWeight="Bold" FontSize="12" HorizontalAlignment="Center"/>
+                    </Border>
+                    <Button Content="{Binding RxIqStartButtonText}" Classes="mscc-gold" Width="88" Height="26"
+                            Command="{Binding StartRxIqCommand}"
+                            Classes.mscc-selected="{Binding RxIqSessionActive}"
+                            ToolTip.Tip="START: 0x58 band + 0x55 RX. Click again to end."/>
+                    <CheckBox Content="UP 24 kHz" IsChecked="{Binding RxIqUp24k}"
+                              IsEnabled="{Binding RxIqSessionActive}" Foreground="White" FontSize="11"
+                              VerticalAlignment="Center"
+                              ToolTip.Tip="Add +24 kHz to LO (image nulling aid)"/>
+                    <Button Content="APPLY" Classes="mscc-gold" Width="58" Height="26"
+                            Command="{Binding ApplyRxIqCommand}"
+                            IsEnabled="{Binding RxIqSessionActive}"
+                            ToolTip.Tip="Commit I/Q (0x57 → 0x56)"/>
+                    <Button Content="RESET ALL" Classes="mscc-gold" Width="80" Height="26"
+                            Command="{Binding ResetAllRxIqCommand}"
+                            IsEnabled="{Binding RxIqSessionActive}"
+                            ToolTip.Tip="Apply current offset to all bands (0x8D)"/>
+                  </StackPanel>
+
+                  <Grid ColumnDefinitions="88,*,Auto,Auto">
+                    <TextBlock Text="I/Q OFFSET" Foreground="#00FFAA" FontWeight="Bold" FontSize="11"
+                               VerticalAlignment="Center"/>
+                    <Slider Grid.Column="1" Classes="mscc-slider" Minimum="-200" Maximum="200"
+                            Value="{Binding RxIqOffset}" IsEnabled="{Binding RxIqSessionActive}"
+                            ToolTip.Tip="I/Q balance (0x52)"/>
+                    <Border Grid.Column="2" Background="#444" BorderBrush="#888" BorderThickness="1"
+                            Padding="6,2" Margin="8,0,0,0" MinWidth="48">
+                      <TextBlock Text="{Binding RxIqOffset}" Foreground="#00FFAA" FontWeight="Bold"
+                                 FontSize="11" HorizontalAlignment="Center"/>
+                    </Border>
+                    <Button Grid.Column="3" Content="ZERO" Classes="mscc-gold" Width="56" Height="24" Margin="8,0,0,0"
+                            Command="{Binding ZeroRxIqOffsetCommand}"
+                            IsEnabled="{Binding RxIqSessionActive}"/>
+                  </Grid>
+
+                  <Grid ColumnDefinitions="88,*,Auto,Auto">
+                    <TextBlock Text="LO FINE (Hz)" Foreground="#00FFAA" FontWeight="Bold" FontSize="11"
+                               VerticalAlignment="Center"/>
+                    <Slider Grid.Column="1" Classes="mscc-slider" Minimum="-1000" Maximum="2009"
+                            Value="{Binding RxIqFreqOffsetHz}" IsEnabled="{Binding RxIqSessionActive}"
+                            ToolTip.Tip="Fine LO offset (Hz)"/>
+                    <Border Grid.Column="2" Background="#444" BorderBrush="#888" BorderThickness="1"
+                            Padding="6,2" Margin="8,0,0,0" MinWidth="56">
+                      <TextBlock Text="{Binding RxIqFreqOffsetHz}" Foreground="#00FFAA" FontWeight="Bold"
+                                 FontSize="11" HorizontalAlignment="Center"/>
+                    </Border>
+                    <Button Grid.Column="3" Content="RESET FREQ" Classes="mscc-gold" Width="88" Height="24" Margin="8,0,0,0"
+                            Command="{Binding ResetRxIqFreqCommand}"
+                            IsEnabled="{Binding RxIqSessionActive}"/>
+                  </Grid>
+
+                  <StackPanel Orientation="Horizontal" Spacing="6" IsVisible="{Binding RxIqResetAllPrompt}">
+                    <TextBlock Text="Reset ALL bands to current I/Q?" Foreground="#FFCC66" FontSize="11" VerticalAlignment="Center"/>
+                    <Button Content="Confirm" Classes="mscc-gold" Width="72" Height="24"
+                            Command="{Binding ConfirmResetAllRxIqCommand}"/>
+                    <Button Content="Cancel" Classes="mscc-gold" Width="72" Height="24"
+                            Command="{Binding CancelResetAllRxIqCommand}"/>
+                  </StackPanel>
+
+                  <TextBlock Text="{Binding RxIqStatus}" Foreground="#00FFAA" FontSize="11" TextWrapping="Wrap"/>
+                </StackPanel>
+              </Border>
+
+              <ctrl:SpectrumDisplayControl Grid.Row="1"
+                                           SpectrumUpdate="{Binding CurrentSpectrum}"
+                                           ZoomFactor="{Binding SpectrumZoom}"
+                                           IsInteractive="False"
+                                           ShowWaterfall="False"
+                                           MinHeight="220"/>
+            </Grid>
+          </Border>
+        </TabItem>
+
+        <!-- TX IQ: QRP only (AMP off) -->
+        <TabItem Header="TX IQ" IsEnabled="{Binding IsTxIqTabEnabled}"
+                 ToolTip.Tip="Transmit I/Q balance — QRP only (AMP off)">
+          <Border Background="#FF222222" CornerRadius="4" Padding="10" Margin="0">
+            <ScrollViewer VerticalScrollBarVisibility="Auto">
+              <StackPanel Spacing="8">
+                <TextBlock Text="TRANSMIT I/Q BALANCE" FontWeight="Bold" Foreground="#00FFAA" FontSize="14"/>
+                <TextBlock Text="{Binding TxIqTabHint}" FontSize="10" Foreground="#888" TextWrapping="Wrap"/>
+
+                <Border Background="#FF252525" BorderBrush="#444" BorderThickness="1" CornerRadius="4" Padding="8">
+                  <StackPanel Spacing="6">
+                    <TextBlock Text="BAND SELECTION" FontWeight="Bold" Foreground="#00FFAA" FontSize="12"/>
+                    <ItemsControl ItemsSource="{Binding TxIqBandItems}">
+                      <ItemsControl.ItemsPanel>
+                        <ItemsPanelTemplate>
+                          <UniformGrid Rows="1"/>
+                        </ItemsPanelTemplate>
+                      </ItemsControl.ItemsPanel>
+                      <ItemsControl.ItemTemplate>
+                        <DataTemplate>
+                          <Button Content="{Binding BandLabel}" Height="26" Margin="1,0" MinWidth="28"
+                                  HorizontalAlignment="Stretch" FontSize="10" FontWeight="Bold"
+                                  Classes="mscc-gold"
+                                  Classes.mscc-selected="{Binding IsSelected}"
+                                  IsEnabled="{Binding $parent[Window].((vm:MainViewModel)DataContext).TxIqBandSelectEnabled}"
+                                  Command="{Binding $parent[Window].((vm:MainViewModel)DataContext).SelectTxIqBandCommand}"
+                                  CommandParameter="{Binding BandNumber}"/>
+                        </DataTemplate>
+                      </ItemsControl.ItemTemplate>
+                    </ItemsControl>
+                  </StackPanel>
+                </Border>
+
+                <Grid ColumnDefinitions="70,*,Auto">
+                  <TextBlock Text="POWER" Foreground="White" FontWeight="Bold" VerticalAlignment="Center"/>
+                  <Slider Grid.Column="1" Classes="mscc-slider" Minimum="0" Maximum="100"
+                          Value="{Binding TxIqPower}"
+                          ToolTip.Tip="Tune power for TX IQ (0xE4)"/>
+                  <Border Grid.Column="2" Background="#444" BorderBrush="#888" BorderThickness="1"
+                          Padding="8,4" Margin="12,0,0,0" MinWidth="48">
+                    <TextBlock Text="{Binding TxIqPower}" Foreground="#00FFAA" FontWeight="Bold"
+                               FontSize="12" HorizontalAlignment="Center"/>
+                  </Border>
+                </Grid>
+
+                <Grid ColumnDefinitions="70,*,Auto">
+                  <TextBlock Text="OFFSET" Foreground="White" FontWeight="Bold" VerticalAlignment="Center"/>
+                  <Slider Grid.Column="1" Classes="mscc-slider" Minimum="-200" Maximum="200"
+                          Value="{Binding TxIqOffset}" IsEnabled="{Binding TxIqTxOn}"
+                          ToolTip.Tip="TX IQ offset (0x52) while TX ON"/>
+                  <Border Grid.Column="2" Background="#444" BorderBrush="#888" BorderThickness="1"
+                          Padding="8,4" Margin="12,0,0,0" MinWidth="56">
+                    <TextBlock Text="{Binding TxIqOffset}" Foreground="#00FFAA" FontWeight="Bold"
+                               FontSize="12" HorizontalAlignment="Center"/>
+                  </Border>
+                </Grid>
+
+                <StackPanel Orientation="Horizontal" Spacing="12">
+                  <Button Content="{Binding TxIqTxButtonText}" Classes="mscc-gold" Width="110" Height="28"
+                          Command="{Binding ToggleTxIqTxCommand}"
+                          Classes.mscc-tx-on="{Binding TxIqTxOn}"
+                          ToolTip.Tip="TUNE + RIG_TUNE carrier for image nulling"/>
+                  <Button Content="APPLY" Classes="mscc-gold" Width="110" Height="28"
+                          Command="{Binding ApplyTxIqCommand}"
+                          ToolTip.Tip="Commit I/Q (0x57)"/>
+                  <Button Content="RESET ALL" Classes="mscc-gold" Width="110" Height="28"
+                          Command="{Binding ResetAllTxIqCommand}"
+                          ToolTip.Tip="Factory reset all I/Q bands (0x8D)"/>
+                </StackPanel>
+
+                <StackPanel Orientation="Horizontal" Spacing="6" IsVisible="{Binding TxIqResetAllPrompt}">
+                  <TextBlock Text="Factory-reset ALL I/Q bands?" Foreground="#FFCC66" FontSize="11" VerticalAlignment="Center"/>
+                  <Button Content="Confirm" Classes="mscc-gold" Width="72" Height="24"
+                          Command="{Binding ConfirmResetAllTxIqCommand}"/>
+                  <Button Content="Cancel" Classes="mscc-gold" Width="72" Height="24"
+                          Command="{Binding CancelResetAllTxIqCommand}"/>
+                </StackPanel>
+
+                <TextBlock Text="{Binding TxIqStatus}" Foreground="#00FFAA" FontSize="12" TextWrapping="Wrap"/>
+                <TextBlock Text="Band: 0x58 + cal freq. TX: 0x55 TX + TUNE. Offset: 0x52. Apply: 0x57 → 0x56. Use external RX to null the image."
+                           Foreground="#888" FontSize="10" TextWrapping="Wrap"/>
+              </StackPanel>
+            </ScrollViewer>
+          </Border>
+        </TabItem>
+
+        <!-- FREQ CAL: controls top, spectrum below (no waterfall) -->
+        <TabItem Header="FREQ CAL" ToolTip.Tip="Frequency calibration — WWV/standard carriers work best">
+          <Border Background="#FF222222" CornerRadius="4" Padding="8" Margin="0">
+            <Grid RowDefinitions="Auto,*">
+              <StackPanel Grid.Row="0" Spacing="6" Margin="0,0,0,6">
+                <TextBlock Text="FREQUENCY CALIBRATION" FontWeight="SemiBold" Foreground="#00FFAA" FontSize="14"/>
+                <TextBlock Text="Tune VFO to the carrier (e.g. WWV). AUTO/CHECK force CW + 200 Hz filter + 600 Hz pitch (restored after). Spectrum shifts for CW pitch so the signal sits under the cursor."
+                           FontSize="10" Foreground="#888" TextWrapping="Wrap"/>
+
+                <StackPanel Orientation="Horizontal" Spacing="6">
+                  <Button Content="{Binding FreqCalLooseButtonText}" Classes="mscc-gold" Width="80" Height="28"
+                          Command="{Binding ToggleFreqCalLooseCommand}"
+                          IsEnabled="{Binding FreqCalActionsEnabled}"
+                          ToolTip.Tip="LOOSE vs TIGHT detection sensitivity"/>
+                  <Button Content="AUTO" Classes="mscc-gold" Width="70" Height="28"
+                          Command="{Binding FreqCalAutoCommand}"
+                          IsEnabled="{Binding FreqCalActionsEnabled}"
+                          ToolTip.Tip="Automatic coarse or fine calibration sweep"/>
+                  <Button Content="{Binding FreqCalManualButtonText}" Classes="mscc-gold" Width="90" Height="28"
+                          Command="{Binding ToggleFreqCalManualCommand}"
+                          Classes.mscc-selected="{Binding FreqCalManualMode}"
+                          IsEnabled="{Binding FreqCalManualButtonEnabled}"
+                          ToolTip.Tip="Manual PPM offset (force cal)"/>
+                  <Button Content="CHECK" Classes="mscc-gold" Width="70" Height="28"
+                          Command="{Binding FreqCalCheckCommand}"
+                          IsEnabled="{Binding FreqCalActionsEnabled}"
+                          ToolTip.Tip="Measure error without applying"/>
+                  <Button Content="RESET" Classes="mscc-gold" Width="70" Height="28"
+                          Command="{Binding FreqCalResetCommand}"
+                          IsEnabled="{Binding FreqCalActionsEnabled}"
+                          ToolTip.Tip="Reset calibration"/>
+                </StackPanel>
+
+                <StackPanel Orientation="Horizontal" Spacing="6">
+                  <TextBlock Text="PPM:" Foreground="White" FontSize="12" VerticalAlignment="Center" Width="36"/>
+                  <Button Content="−" Classes="mscc-gold" Width="32" Height="26"
+                          Command="{Binding FreqCalPpmMinusCommand}"
+                          IsEnabled="{Binding FreqCalPpmEnabled}"
+                          ToolTip.Tip="PPM −1 (rate-limited)"/>
+                  <Border Background="#444" BorderBrush="#888" BorderThickness="1" Padding="6,2" MinWidth="40">
+                    <TextBlock Text="{Binding FreqCalManualPpm}" Foreground="#00FFAA" FontWeight="Bold"
+                               FontSize="13" HorizontalAlignment="Center"/>
+                  </Border>
+                  <Button Content="+" Classes="mscc-gold" Width="32" Height="26"
+                          Command="{Binding FreqCalPpmPlusCommand}"
+                          IsEnabled="{Binding FreqCalPpmEnabled}"
+                          ToolTip.Tip="PPM +1 (rate-limited)"/>
+                  <TextBlock Text="ST:" Foreground="#AAA" FontSize="12" VerticalAlignment="Center" Margin="8,0,0,0"/>
+                  <TextBlock Text="{Binding FreqCalStatus}" Foreground="#00FFAA" FontSize="12"
+                             VerticalAlignment="Center" TextWrapping="Wrap" MaxWidth="220"/>
+                  <ProgressBar Width="100" Height="16" Minimum="0" Maximum="100"
+                               Value="{Binding FreqCalProgress}" Margin="8,0,0,0"
+                               VerticalAlignment="Center"/>
+                </StackPanel>
+
+                <!-- AUTO: coarse / fine -->
+                <StackPanel Orientation="Horizontal" Spacing="6" IsVisible="{Binding FreqCalAutoModePrompt}">
+                  <TextBlock Text="AUTO:" Foreground="#FFCC66" VerticalAlignment="Center" FontSize="11"/>
+                  <Button Content="Coarse ±250 Hz" Classes="mscc-gold" Height="24" Padding="8,2"
+                          Command="{Binding FreqCalAutoCoarseCommand}"/>
+                  <Button Content="Fine ±50 Hz" Classes="mscc-gold" Height="24" Padding="8,2"
+                          Command="{Binding FreqCalAutoFineCommand}"/>
+                  <Button Content="Cancel" Classes="mscc-gold" Height="24" Padding="8,2"
+                          Command="{Binding FreqCalAutoCancelCommand}"/>
+                </StackPanel>
+
+                <!-- MANUAL exit accept -->
+                <StackPanel Orientation="Horizontal" Spacing="6" IsVisible="{Binding FreqCalManualAcceptPrompt}">
+                  <TextBlock Text="Accept manual calibration?" Foreground="#FFCC66" VerticalAlignment="Center" FontSize="11"/>
+                  <Button Content="Accept" Classes="mscc-gold" Width="72" Height="24"
+                          Command="{Binding AcceptFreqCalManualCommand}"/>
+                  <Button Content="Reject" Classes="mscc-gold" Width="72" Height="24"
+                          Command="{Binding RejectFreqCalManualCommand}"/>
+                </StackPanel>
+
+                <!-- RESET confirm -->
+                <StackPanel Orientation="Horizontal" Spacing="6" IsVisible="{Binding FreqCalResetPrompt}">
+                  <TextBlock Text="Reset frequency calibration?" Foreground="#FFCC66" VerticalAlignment="Center" FontSize="11"/>
+                  <Button Content="Confirm" Classes="mscc-gold" Width="72" Height="24"
+                          Command="{Binding ConfirmFreqCalResetCommand}"/>
+                  <Button Content="Cancel" Classes="mscc-gold" Width="72" Height="24"
+                          Command="{Binding CancelFreqCalResetCommand}"/>
+                </StackPanel>
+              </StackPanel>
+
+              <ctrl:SpectrumDisplayControl Grid.Row="1"
+                                           SpectrumUpdate="{Binding CurrentSpectrum}"
+                                           ZoomFactor="{Binding SpectrumZoom}"
+                                           IsInteractive="False"
+                                           ShowWaterfall="False"
+                                           MinHeight="240"/>
+            </Grid>
+          </Border>
+        </TabItem>
+
+        <TabItem Header="SETTINGS">
+          <Border Classes="mscc-panel" Margin="8">
+            <ScrollViewer VerticalScrollBarVisibility="Auto">
+              <StackPanel Margin="16" Spacing="10" MaxWidth="560">
+                <TextBlock Text="Settings" FontSize="18" FontWeight="Bold" Foreground="#00FFAA"/>
+                <TextBlock Text="Connection is on the left SERVER panel. COM / audio host settings stay on the Pi servers for now."
+                           Foreground="#AAA" TextWrapping="Wrap"/>
+                <TextBlock Text="Sticky client file:"
+                           Foreground="#AAA" TextWrapping="Wrap" Margin="0,4,0,0"/>
+                <TextBlock Text="{Binding SettingsFilePath}" FontSize="10" Foreground="#666" TextWrapping="Wrap"/>
+
+                <!-- UI Appearance (WPF UiAppearancePanel port) -->
+                <Border Background="#FF222222" BorderBrush="#FF444444" BorderThickness="1" CornerRadius="4" Padding="10" Margin="0,8,0,0">
+                  <StackPanel Spacing="8">
+                    <TextBlock Text="UI Appearance" FontWeight="SemiBold" Foreground="#00FFAA" FontSize="13"/>
+                    <TextBlock Text="Live preview. CUSTOM enables RGB sliders. CUSTOM background forces panel AUTO (slightly lighter)."
+                               FontSize="10" Foreground="#D0D0D0" TextWrapping="Wrap"/>
+                    <StackPanel Orientation="Horizontal" Spacing="12">
+                      <StackPanel>
+                        <TextBlock Text="UI BACKGROUND" FontSize="9" Foreground="#D0D0D0" Margin="0,0,0,2"/>
+                        <ListBox ItemsSource="{Binding UiBackgroundNames}"
+                                 SelectedItem="{Binding SelectedUiBackground}"
+                                 Width="90" Height="130" FontSize="10"
+                                 Background="#111" BorderBrush="#555"/>
+                        <TextBlock Text="{Binding UiBackgroundRgbText}" FontSize="10" Foreground="#00FFAA"
+                                   FontFamily="Consolas" Margin="0,4,0,0"/>
+                        <StackPanel IsVisible="{Binding ShowUiBackgroundRgb}" Spacing="2" Margin="0,4,0,0">
+                          <Grid ColumnDefinitions="16,*,28">
+                            <TextBlock Text="R" FontSize="9" VerticalAlignment="Center"/>
+                            <Slider Grid.Column="1" Minimum="0" Maximum="255" Value="{Binding UiBgR}"/>
+                            <TextBlock Grid.Column="2" Text="{Binding UiBgR}" FontSize="9" Foreground="#0FA" HorizontalAlignment="Right"/>
+                          </Grid>
+                          <Grid ColumnDefinitions="16,*,28">
+                            <TextBlock Text="G" FontSize="9" VerticalAlignment="Center"/>
+                            <Slider Grid.Column="1" Minimum="0" Maximum="255" Value="{Binding UiBgG}"/>
+                            <TextBlock Grid.Column="2" Text="{Binding UiBgG}" FontSize="9" Foreground="#0FA" HorizontalAlignment="Right"/>
+                          </Grid>
+                          <Grid ColumnDefinitions="16,*,28">
+                            <TextBlock Text="B" FontSize="9" VerticalAlignment="Center"/>
+                            <Slider Grid.Column="1" Minimum="0" Maximum="255" Value="{Binding UiBgB}"/>
+                            <TextBlock Grid.Column="2" Text="{Binding UiBgB}" FontSize="9" Foreground="#0FA" HorizontalAlignment="Right"/>
+                          </Grid>
+                        </StackPanel>
+                      </StackPanel>
+                      <StackPanel>
+                        <TextBlock Text="UI PANEL" FontSize="9" Foreground="#D0D0D0" Margin="0,0,0,2"/>
+                        <ListBox ItemsSource="{Binding UiPanelNames}"
+                                 SelectedItem="{Binding SelectedUiPanel}"
+                                 IsEnabled="{Binding UiPanelListEnabled}"
+                                 Width="90" Height="130" FontSize="10"
+                                 Background="#111" BorderBrush="#555"/>
+                        <TextBlock Text="{Binding UiPanelRgbText}" FontSize="10" Foreground="#00FFAA"
+                                   FontFamily="Consolas" Margin="0,4,0,0"/>
+                      </StackPanel>
+                      <StackPanel>
+                        <TextBlock Text="UI BUTTON" FontSize="9" Foreground="#D0D0D0" Margin="0,0,0,2"/>
+                        <ListBox ItemsSource="{Binding UiButtonNames}"
+                                 SelectedItem="{Binding SelectedUiButton}"
+                                 Width="90" Height="130" FontSize="10"
+                                 Background="#111" BorderBrush="#555"/>
+                        <TextBlock Text="{Binding UiButtonRgbText}" FontSize="10" Foreground="#00FFAA"
+                                   FontFamily="Consolas" Margin="0,4,0,0"/>
+                        <StackPanel IsVisible="{Binding ShowUiButtonRgb}" Spacing="2" Margin="0,4,0,0">
+                          <Grid ColumnDefinitions="16,*,28">
+                            <TextBlock Text="R" FontSize="9" VerticalAlignment="Center"/>
+                            <Slider Grid.Column="1" Minimum="0" Maximum="255" Value="{Binding UiBtnR}"/>
+                            <TextBlock Grid.Column="2" Text="{Binding UiBtnR}" FontSize="9" Foreground="#0FA" HorizontalAlignment="Right"/>
+                          </Grid>
+                          <Grid ColumnDefinitions="16,*,28">
+                            <TextBlock Text="G" FontSize="9" VerticalAlignment="Center"/>
+                            <Slider Grid.Column="1" Minimum="0" Maximum="255" Value="{Binding UiBtnG}"/>
+                            <TextBlock Grid.Column="2" Text="{Binding UiBtnG}" FontSize="9" Foreground="#0FA" HorizontalAlignment="Right"/>
+                          </Grid>
+                          <Grid ColumnDefinitions="16,*,28">
+                            <TextBlock Text="B" FontSize="9" VerticalAlignment="Center"/>
+                            <Slider Grid.Column="1" Minimum="0" Maximum="255" Value="{Binding UiBtnB}"/>
+                            <TextBlock Grid.Column="2" Text="{Binding UiBtnB}" FontSize="9" Foreground="#0FA" HorizontalAlignment="Right"/>
+                          </Grid>
+                        </StackPanel>
+                      </StackPanel>
+                      <StackPanel VerticalAlignment="Top" Width="140" Spacing="8" Margin="4,16,0,0">
+                        <TextBlock Text="RGB shows effective color. CUSTOM bg locks panel to AUTO lift."
+                                   FontSize="9" Foreground="#D0D0D0" TextWrapping="Wrap"/>
+                        <Button Content="Reset defaults" Classes="mscc-gold" Width="120" Height="26"
+                                Command="{Binding ResetUiChromeCommand}"
+                                ToolTip.Tip="BACKGROUND BLACK, PANEL AUTO, BUTTON YELLOW"/>
+                      </StackPanel>
+                    </StackPanel>
+                  </StackPanel>
+                </Border>
+
+                <TextBlock Text="TEMPS / STATUS" FontWeight="Bold" Foreground="#00FFAA" Margin="0,12,0,0"/>
+                <TextBlock Text="{Binding ProficioTempText, StringFormat=Proficio: {0}}" FontSize="12" Foreground="#CCCCCC"/>
+                <TextBlock Text="{Binding PaTempText, StringFormat=PA temp: {0}}" FontSize="12" Foreground="#CCCCCC"/>
+                <TextBlock Text="{Binding PaCurrentText, StringFormat=PA current: {0}}" FontSize="12" Foreground="#CCCCCC"/>
+                <TextBlock Text="{Binding PacketStatsText}" FontSize="11" Foreground="#888888" TextWrapping="Wrap"/>
+
+                <TextBlock Text="CONNECTION" FontWeight="Bold" Foreground="#00FFAA" Margin="0,12,0,0"/>
+                <TextBlock Text="{Binding LogFilePath, StringFormat=Log: {0}}" FontSize="11" Foreground="#666" TextWrapping="Wrap"/>
+                <TextBlock Text="Local RX port (pan):" Classes="mscc-label"/>
+                <TextBox Text="{Binding LocalPortText}" Classes="mscc-hostport" Width="56"
+                         HorizontalAlignment="Left" IsEnabled="{Binding !IsConnected}"
+                         ToolTip.Tip="Local UDP listen port for spectrum (default 8889)"/>
+                <TextBlock Text="Tune: hover VFO A and use mouse wheel. Step: left FILTERS/STEP (or double-click VFO)."
+                           Foreground="#888" TextWrapping="Wrap" FontSize="11" Margin="0,8,0,0"/>
+                <TextBlock Text="Spectrum pane background is under S/W (palette window)."
+                           Foreground="#666" TextWrapping="Wrap" FontSize="11"/>
+              </StackPanel>
+            </ScrollViewer>
+          </Border>
+        </TabItem>
+      </TabControl>
+    </Grid>
+
+    <!-- ===================== RIGHT RAIL =====================
+         Order: OPERATE (wide 2×3) → Power / COMP / AGC → MODE (wide) → RX helpers → CW → LOG popup -->
+    <Border Grid.Column="2" Classes="mscc-panel">
+      <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
+        <StackPanel Spacing="0">
+
+          <TextBlock Classes="mscc-section" Text="OPERATE"/>
+          <!-- 2×3: PTT | TUN / AGC | AMP / CMP | S/W  (AGC = SLO/MED/FST, was mislabeled ATT) -->
+          <UniformGrid Columns="2" Rows="3">
+            <Button Content="PTT" Margin="2" MinHeight="28" HorizontalAlignment="Stretch"
+                    Command="{Binding TogglePttCommand}"
+                    Classes="mscc-gold"
+                    Classes.mscc-tx-on="{Binding PttOn}"
+                    ToolTip.Tip="Transmit (PTT) for voice modes (USB/LSB/AM…). In CW, Proficio keys PA from the keyer/paddle line — host PTT does not drive CW RF. Red = host PTT latched."/>
+            <Button Content="TUN" Margin="2" MinHeight="28" HorizontalAlignment="Stretch"
+                    Command="{Binding ToggleTuneCommand}"
+                    Classes="mscc-gold"
+                    Classes.mscc-tx-on="{Binding TuneMode}"
+                    ToolTip.Tip="Antenna tune: TUNE mode + carrier (Tune Power). Red when on."/>
+            <Button Content="{Binding AgcButtonText}" Margin="2" MinHeight="28" HorizontalAlignment="Stretch"
+                    Command="{Binding CycleAgcCommand}"
+                    Classes="mscc-gold"
+                    ToolTip.Tip="AGC speed: cycle SLOW → MED → FAST (same as WPF AGC button)"/>
+            <Button Content="AMP" Margin="2" MinHeight="28" HorizontalAlignment="Stretch"
+                    Command="{Binding ToggleAmpCommand}"
+                    Classes="mscc-gold"
+                    Classes.mscc-tx-on="{Binding AmpOn}"
+                    ToolTip.Tip="External amp / QRO path (PA bypass). Red when AMP on."/>
+            <Button Content="CMP" Margin="2" MinHeight="28" HorizontalAlignment="Stretch"
+                    Command="{Binding ToggleCompressionCommand}"
+                    Classes="mscc-gold"
+                    Classes.mscc-selected="{Binding CompressionOn}"
+                    ToolTip.Tip="Speech compression on/off. Level = COMP slider."/>
+            <Button Content="S/W" Classes="mscc-gold" Margin="2" MinHeight="28" HorizontalAlignment="Stretch"
+                    Click="SwButton_OnClick"
+                    ToolTip.Tip="Spectrum / waterfall controls"/>
+          </UniformGrid>
+
+          <!-- Power mirror + COMP + AGC (under operate, before modes) -->
+          <TextBlock Classes="mscc-section" Text="POWER"/>
+          <Grid ColumnDefinitions="40,*,28" Height="22" Margin="0,0,0,1">
+            <TextBlock Classes="mscc-label" Text="RF"/>
+            <Slider Grid.Column="1" Classes="mscc-slider" Minimum="0" Maximum="100" Value="{Binding RfPower}"
+                    IsEnabled="{Binding IsConnected}"
+                    ToolTip.Tip="Mirrors active mode power (Tune/CW/SSB/AM). Full banks on RX/TX tab."/>
+            <TextBlock Grid.Column="2" Classes="mscc-readout" Text="{Binding RfPower}"/>
+          </Grid>
+          <Grid ColumnDefinitions="40,*,28" Height="22" Margin="0,0,0,1">
+            <TextBlock Classes="mscc-label" Text="COMP"/>
+            <Slider Grid.Column="1" Classes="mscc-slider" Minimum="0" Maximum="24" Value="{Binding Compression}"
+                    IsEnabled="{Binding IsConnected}"
+                    ToolTip.Tip="Compression level (0–24). CMP button = on/off."/>
+            <TextBlock Grid.Column="2" Classes="mscc-readout" Text="{Binding Compression}"/>
+          </Grid>
+          <Grid ColumnDefinitions="40,*,36" Height="22" Margin="0,0,0,2">
+            <TextBlock Classes="mscc-label" Text="AGC"/>
+            <Slider Grid.Column="1" Classes="mscc-slider" Minimum="0" Maximum="100" Value="{Binding AgcFastRelease}"
+                    IsEnabled="{Binding IsConnected}"
+                    ToolTip.Tip="AGC Fast Release (ms). Button above cycles SLO/MED/FST."/>
+            <TextBlock Grid.Column="2" Classes="mscc-readout" Text="{Binding AgcFastRelease, StringFormat={}{0}ms}" FontSize="9"/>
+          </Grid>
+
+          <TextBlock Classes="mscc-section" Text="MODE"/>
+          <UniformGrid Columns="3" Rows="2">
+            <Button Content="USB" Classes="mscc-gold" Command="{Binding SetModeCommand}" CommandParameter="USB"
+                    Margin="2" MinHeight="28" HorizontalAlignment="Stretch"
+                    Classes.mscc-selected="{Binding ModeIsUsb}"/>
+            <Button Content="LSB" Classes="mscc-gold" Command="{Binding SetModeCommand}" CommandParameter="LSB"
+                    Margin="2" MinHeight="28" HorizontalAlignment="Stretch"
+                    Classes.mscc-selected="{Binding ModeIsLsb}"/>
+            <Button Content="CW" Classes="mscc-gold" Command="{Binding SetModeCommand}" CommandParameter="CW"
+                    Margin="2" MinHeight="28" HorizontalAlignment="Stretch"
+                    Classes.mscc-selected="{Binding ModeIsCw}"/>
+            <Button Content="AM" Classes="mscc-gold" Command="{Binding SetModeCommand}" CommandParameter="AM"
+                    Margin="2" MinHeight="28" HorizontalAlignment="Stretch"
+                    Classes.mscc-selected="{Binding ModeIsAm}"/>
+            <Button Content="DIG-U" Classes="mscc-gold" Command="{Binding SetModeCommand}" CommandParameter="DIG-U"
+                    Margin="2" MinHeight="28" HorizontalAlignment="Stretch" FontSize="9"
+                    Classes.mscc-selected="{Binding ModeIsDigU}"/>
+            <Button Content="FM" Classes="mscc-stub" IsEnabled="False"
+                    Margin="2" MinHeight="28" HorizontalAlignment="Stretch"
+                    ToolTip.Tip="FM not supported yet (placeholder)"/>
+          </UniformGrid>
+
+          <TextBlock Classes="mscc-section" Text="RX / TX"/>
+          <!-- Equal-width cells so MON is not clipped on narrow right rail -->
+          <UniformGrid Columns="4" Margin="0,0,0,1">
+            <Button Content="NB" Classes="mscc-gold" Command="{Binding ToggleNbCommand}"
+                    Margin="1" MinHeight="26" HorizontalAlignment="Stretch" FontSize="10" Padding="2,1"
+                    Classes.mscc-selected="{Binding NbOn}"
+                    ToolTip.Tip="Noise blanker on/off"/>
+            <Button Content="NR" Classes="mscc-gold" Command="{Binding ToggleNrCommand}"
+                    Margin="1" MinHeight="26" HorizontalAlignment="Stretch" FontSize="10" Padding="2,1"
+                    Classes.mscc-selected="{Binding NrOn}"
+                    ToolTip.Tip="Noise reduction on/off (level = NR slider)"/>
+            <Button Content="AN" Classes="mscc-gold" Command="{Binding ToggleAnCommand}"
+                    Margin="1" MinHeight="26" HorizontalAlignment="Stretch" FontSize="10" Padding="2,1"
+                    Classes.mscc-selected="{Binding AnOn}"
+                    ToolTip.Tip="Auto notch on/off"/>
+            <Button Content="MON" Classes="mscc-gold" Command="{Binding ToggleMonitorCommand}"
+                    Margin="1" MinHeight="26" HorizontalAlignment="Stretch" FontSize="10" Padding="2,1"
+                    Classes.mscc-selected="{Binding MonitorOn}"
+                    ToolTip.Tip="TX monitor"/>
+          </UniformGrid>
+          <Grid ColumnDefinitions="32,*,26" Height="20" Margin="0,0,0,1">
+            <TextBlock Classes="mscc-label" Text="Pls"/>
+            <Slider Grid.Column="1" Classes="mscc-slider" Minimum="10" Maximum="510" Value="{Binding NbPulse}"
+                    IsEnabled="{Binding IsConnected}"/>
+            <TextBlock Grid.Column="2" Classes="mscc-readout" Text="{Binding NbPulse}"/>
+          </Grid>
+          <Grid ColumnDefinitions="32,*,26" Height="20" Margin="0,0,0,1">
+            <TextBlock Classes="mscc-label" Text="Thr"/>
+            <Slider Grid.Column="1" Classes="mscc-slider" Minimum="1" Maximum="100" Value="{Binding NbThreshold}"
+                    IsEnabled="{Binding IsConnected}"/>
+            <TextBlock Grid.Column="2" Classes="mscc-readout" Text="{Binding NbThreshold}"/>
+          </Grid>
+          <Grid ColumnDefinitions="32,*,26" Height="20" Margin="0,0,0,1">
+            <TextBlock Classes="mscc-label" Text="NR"/>
+            <Slider Grid.Column="1" Classes="mscc-slider" Minimum="0" Maximum="100" Value="{Binding NrLevel}"
+                    IsEnabled="{Binding IsConnected}"/>
+            <TextBlock Grid.Column="2" Classes="mscc-readout" Text="{Binding NrLevel}"/>
+          </Grid>
+
+          <TextBlock Classes="mscc-section" Text="CW"/>
+          <StackPanel Orientation="Horizontal" Spacing="2" Margin="0,0,0,2">
+            <Button Content="−" Classes="mscc-gold" Width="28"
+                    Command="{Binding DecCwSpeedCommand}"
+                    ToolTip.Tip="CW speed −1 WPM"/>
+            <TextBlock Text="{Binding CwSpeed}" Foreground="#00FFAA" FontWeight="Bold" FontSize="12"
+                       VerticalAlignment="Center" Width="24" TextAlignment="Center"/>
+            <Button Content="+" Classes="mscc-gold" Width="28"
+                    Command="{Binding IncCwSpeedCommand}"
+                    ToolTip.Tip="CW speed +1 WPM"/>
+            <Button Content="{Binding CwPitchLabel}" Classes="mscc-gold" Width="56" Margin="4,0,0,0"
+                    Command="{Binding CycleCwPitchCommand}"
+                    ToolTip.Tip="Cycle CW pitch (400/600/800/1000 Hz)"/>
+          </StackPanel>
+
+          <Button Content="LOG" Classes="mscc-gold" HorizontalAlignment="Stretch" Margin="0,4,0,0"
+                  MinHeight="28" Click="LogButton_OnClick"
+                  ToolTip.Tip="Open debug log window"/>
+        </StackPanel>
+      </ScrollViewer>
+    </Border>
+  </Grid>
+</Window>

@@ -1,0 +1,88 @@
+<Window x:Class="MSCC.Wpf.DebugLogWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="Debug Log"
+        Height="420" Width="720"
+        MinHeight="240" MinWidth="400"
+        WindowStartupLocation="CenterOwner"
+        Background="#FF1C1C1C" Foreground="White"
+        Icon="mscc-icon-1.ico">
+    <Window.Resources>
+        <Style x:Key="LogGoldButtonStyle" TargetType="Button">
+            <Setter Property="Background" Value="#FFCC00"/>
+            <Setter Property="BorderBrush" Value="#FFAA00"/>
+            <Setter Property="BorderThickness" Value="1"/>
+            <Setter Property="Foreground" Value="Black"/>
+            <Setter Property="FontWeight" Value="Bold"/>
+            <Setter Property="FontSize" Value="12"/>
+            <Setter Property="Height" Value="26"/>
+            <Style.Triggers>
+                <Trigger Property="IsMouseOver" Value="True">
+                    <Setter Property="Background" Value="#FFDD55"/>
+                    <Setter Property="BorderBrush" Value="#FFCC00"/>
+                </Trigger>
+                <Trigger Property="IsPressed" Value="True">
+                    <Setter Property="Background" Value="#FFAA00"/>
+                    <Setter Property="BorderBrush" Value="#FF4444"/>
+                    <Setter Property="Foreground" Value="White"/>
+                </Trigger>
+            </Style.Triggers>
+        </Style>
+    </Window.Resources>
+    <Grid Margin="10">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+        </Grid.RowDefinitions>
+
+        <TextBlock Text="DEBUG LOG" FontWeight="SemiBold" FontSize="14" Foreground="#00FFAA" Margin="0,0,0,8"/>
+
+        <StackPanel Grid.Row="1" Orientation="Horizontal" Margin="0,0,0,8" VerticalAlignment="Center">
+            <Button Content="RESET LOGS" Width="100" Margin="0,0,12,0"
+                    Command="{Binding ResetDebugLogsCommand}"
+                    Style="{StaticResource LogGoldButtonStyle}"
+                    ToolTip="Clear on-screen log and reset log file"/>
+            <CheckBox Content="Pause"
+                      IsChecked="{Binding MonitorSuspend, Mode=TwoWay}"
+                      Foreground="White" VerticalAlignment="Center" FontSize="13" Margin="0,0,12,0"
+                      ToolTip="Suspend UI display of debug log (file logging continues)"/>
+            <Button Content="EXIT" Width="72"
+                    Click="Exit_Click"
+                    Style="{StaticResource LogGoldButtonStyle}"
+                    ToolTip="Close debug log window"/>
+        </StackPanel>
+
+        <Border Grid.Row="2" Background="#FF1E1E1E" BorderBrush="#444" BorderThickness="1"
+                CornerRadius="2" Padding="4">
+            <ListBox x:Name="DebugLogListBox"
+                     ItemsSource="{Binding DebugLog}"
+                     FontFamily="Consolas" FontSize="12" Foreground="#D0D0D0"
+                     Background="Transparent" BorderThickness="0"
+                     ScrollViewer.VerticalScrollBarVisibility="Auto"
+                     ScrollViewer.HorizontalScrollBarVisibility="Disabled"
+                     VirtualizingStackPanel.IsVirtualizing="True"
+                     VirtualizingStackPanel.VirtualizationMode="Recycling">
+                <ListBox.ItemContainerStyle>
+                    <Style TargetType="ListBoxItem">
+                        <Setter Property="Padding" Value="0"/>
+                        <Setter Property="Margin" Value="0"/>
+                        <Setter Property="Background" Value="Transparent"/>
+                        <Setter Property="Template">
+                            <Setter.Value>
+                                <ControlTemplate TargetType="ListBoxItem">
+                                    <ContentPresenter/>
+                                </ControlTemplate>
+                            </Setter.Value>
+                        </Setter>
+                    </Style>
+                </ListBox.ItemContainerStyle>
+                <ListBox.ItemTemplate>
+                    <DataTemplate>
+                        <TextBlock Text="{Binding}" TextWrapping="Wrap"/>
+                    </DataTemplate>
+                </ListBox.ItemTemplate>
+            </ListBox>
+        </Border>
+    </Grid>
+</Window>

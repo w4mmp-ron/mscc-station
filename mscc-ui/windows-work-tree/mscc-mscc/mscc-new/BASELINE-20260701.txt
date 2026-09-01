@@ -1,0 +1,1 @@
+﻿MSCC baseline snapshot taken on 2026-07-01 after spectrum/waterfall fixes (double-buffer decode restore + per-pixel waterfall interpolation). This is the new fallback baseline. Backup at C:\Users\Ron\mscc-backups\mscc-new-20260701-baseline

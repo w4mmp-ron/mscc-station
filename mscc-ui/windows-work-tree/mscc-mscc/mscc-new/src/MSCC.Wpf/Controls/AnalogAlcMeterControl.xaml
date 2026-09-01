@@ -1,0 +1,65 @@
+<UserControl x:Class="MSCC.Wpf.Controls.AnalogAlcMeterControl"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             Width="180" Height="120"
+             MinWidth="164" MinHeight="110">
+    <Border Background="#FF0C0C0C"
+            BorderBrush="#FF666666"
+            BorderThickness="1"
+            CornerRadius="4"
+            Padding="3,2,3,2">
+        <Grid>
+            <Grid.RowDefinitions>
+                <RowDefinition Height="*"/>
+                <RowDefinition Height="Auto"/>
+            </Grid.RowDefinitions>
+
+            <!-- Face + needle (drawn in code-behind). Labels stay inside the arc so they are not clipped. -->
+            <Canvas x:Name="FaceCanvas"
+                    Grid.Row="0"
+                    ClipToBounds="True"
+                    HorizontalAlignment="Stretch"
+                    VerticalAlignment="Stretch"
+                    Background="#FF141414"/>
+
+            <!-- HOLD | reading | Peak  (client-side meter ballistics) -->
+            <StackPanel Grid.Row="1"
+                        Orientation="Horizontal"
+                        HorizontalAlignment="Center"
+                        VerticalAlignment="Center"
+                        Margin="0,2,0,0">
+                <CheckBox x:Name="HoldCheckBox"
+                          Content="HOLD"
+                          FontSize="9"
+                          FontWeight="Bold"
+                          Foreground="White"
+                          VerticalAlignment="Center"
+                          Margin="0,0,3,0"
+                          ToolTip="Slow fall of the main ALC needle when level drops (client-side). Off = needle tracks instantly."/>
+                <Border Background="#FF444444"
+                        BorderBrush="#FF888888"
+                        BorderThickness="1"
+                        CornerRadius="2"
+                        Padding="4,1"
+                        MinWidth="44"
+                        VerticalAlignment="Center">
+                    <TextBlock x:Name="ReadingText"
+                               Text="0"
+                               FontSize="11"
+                               FontWeight="Bold"
+                               Foreground="#00FFAA"
+                               FontFamily="Consolas"
+                               HorizontalAlignment="Center"/>
+                </Border>
+                <CheckBox x:Name="PeakCheckBox"
+                          Content="Peak"
+                          FontSize="9"
+                          FontWeight="Bold"
+                          Foreground="White"
+                          VerticalAlignment="Center"
+                          Margin="3,0,0,0"
+                          ToolTip="Orange peak needle: holds the highest ALC reading ~2 seconds, then falls (client-side)."/>
+            </StackPanel>
+        </Grid>
+    </Border>
+</UserControl>

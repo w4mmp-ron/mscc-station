@@ -39,7 +39,7 @@ Clock pairs on the daughter are **shorted** to one MCU pin each (same as old PSo
 | A25 | — | — | NC |
 | A26 | **SCL** | **PB8** | I2C1 |
 | A27 | — | — | NC |
-| A28 | **RESET** | **PA9** | **PCM3060** reset (via U2→PA9); **not** MCU NRST |
+| A28 | **RESET** | **PA2** | **PCM3060** reset (via U2→PA2); **not** MCU NRST |
 | A29 | — | — | NC |
 | A30 | **BS2** | **PB3** | Band bit2 |
 | A31 | — | — | NC |
@@ -58,7 +58,7 @@ Clock pairs on the daughter are **shorted** to one MCU pin each (same as old PSo
 | B05 | — | — | NC |
 | B06 | **USB-** | **PA11** | Mother USB jack D− |
 | B07 | — | — | NC |
-| B08 | **USBV+** | **sense TBD** | Host VBUS sense; needs divider → free GPIO (not PA9) |
+| B08 | **USBV+** | **PA9** | Host USB 5 V sense; **divider → ≤ 3.3 V** at PA9 (not radio 5 V) |
 | B09 | — | — | NC |
 | B10 | **ATU_1** | **TBD** | Not in FW yet |
 | B11 | **GND** | **GND** | Ground |
@@ -102,7 +102,7 @@ Clock pairs on the daughter are **shorted** to one MCU pin each (same as old PSo
 
 | Item | Status |
 |------|--------|
-| **USBV+** (B8) | On connector; Stew must route divider → free GPIO (see `VBUS-SENSE-FOR-STEW.md`) |
+| **USBV+** (B8) | **Locked → PA9** (divider); see `VBUS-SENSE-FOR-STEW.md` |
 | **PTT**, **BOOT** | Daughter-local (PA6 / PA8); see `PTT-CONFIGURATION.md`, `BOOT-CONFIGURATION.md` |
 | **ATU_0 / ATU_1** | On J5; FW later (PTT product may leave NC) |
 | Extra **GND / 3.3V** | Route all grounds / 3.3V per Stew power plan |
@@ -128,9 +128,11 @@ Clock pairs on the daughter are **shorted** to one MCU pin each (same as old PSo
 | **KEY_0** | **PB0** |
 | **KEY_1** | **PB1** |
 | **LED** | **PC13** (or as Stew buffers) |
-| **RESET** (PCM3060) | **PA9** |
+| **RESET** (PCM3060) | **PA2** |
+| **BOOT** | **PA8** |
+| **USBV+** (B8) | **PA9** (divider → ≤ 3.3 V) |
 | **USB+** (mother jack via J5) | **PA12** |
 | **USB-** | **PA11** |
-| **USBV+** (B8) | Sense TBD (divider → free GPIO; not PA9) |
 
-**Notes:** No **PC6**. USB connector is on the **MKII mother board** → J5 → pill.
+**Notes:** No **PC6**. USB connector is on the **MKII mother board** → J5 → pill.  
+**Locked triad:** RESET=**PA2**, BOOT=**PA8**, USBV+=**PA9** (2026-08-31).

@@ -1,0 +1,15 @@
+C:\Users\Ron\.grok\worktrees\SDRcore-trans\sources\amplifier.c;C:\Users\Ron\.grok\worktrees\SDRcore-trans\sdrcore-trans\MFC\amplifier.obj
+C:\Users\Ron\.grok\worktrees\SDRcore-trans\sources\driver.c;C:\Users\Ron\.grok\worktrees\SDRcore-trans\sdrcore-trans\MFC\driver.obj
+C:\Users\Ron\.grok\worktrees\SDRcore-trans\sources\dsputils.c;C:\Users\Ron\.grok\worktrees\SDRcore-trans\sdrcore-trans\MFC\dsputils.obj
+C:\Users\Ron\.grok\worktrees\SDRcore-trans\sources\filter.c;C:\Users\Ron\.grok\worktrees\SDRcore-trans\sdrcore-trans\MFC\filter.obj
+C:\Users\Ron\.grok\worktrees\SDRcore-trans\sources\flusher.c;C:\Users\Ron\.grok\worktrees\SDRcore-trans\sdrcore-trans\MFC\flusher.obj
+C:\Users\Ron\.grok\worktrees\SDRcore-trans\sources\input-devices.c;C:\Users\Ron\.grok\worktrees\SDRcore-trans\sdrcore-trans\MFC\input-devices.obj
+C:\Users\Ron\.grok\worktrees\SDRcore-trans\sources\iq.c;C:\Users\Ron\.grok\worktrees\SDRcore-trans\sdrcore-trans\MFC\iq.obj
+C:\Users\Ron\.grok\worktrees\SDRcore-trans\sources\main.c;C:\Users\Ron\.grok\worktrees\SDRcore-trans\sdrcore-trans\MFC\main.obj
+C:\Users\Ron\.grok\worktrees\SDRcore-trans\sources\overdriven.c;C:\Users\Ron\.grok\worktrees\SDRcore-trans\sdrcore-trans\MFC\overdriven.obj
+C:\Users\Ron\.grok\worktrees\SDRcore-trans\sources\print-utils.c;C:\Users\Ron\.grok\worktrees\SDRcore-trans\sdrcore-trans\MFC\print-utils.obj
+C:\Users\Ron\.grok\worktrees\SDRcore-trans\sources\sdrcoretx.c;C:\Users\Ron\.grok\worktrees\SDRcore-trans\sdrcore-trans\MFC\sdrcoretx.obj
+C:\Users\Ron\.grok\worktrees\SDRcore-trans\sources\power.c;C:\Users\Ron\.grok\worktrees\SDRcore-trans\sdrcore-trans\MFC\power.obj
+C:\Users\Ron\.grok\worktrees\SDRcore-trans\sources\udp_thread.c;C:\Users\Ron\.grok\worktrees\SDRcore-trans\sdrcore-trans\MFC\udp_thread.obj
+C:\Users\Ron\.grok\worktrees\SDRcore-trans\sources\alc.c;C:\Users\Ron\.grok\worktrees\SDRcore-trans\sdrcore-trans\MFC\alc.obj
+C:\Users\Ron\.grok\worktrees\SDRcore-trans\sources\wsfirgen.c;C:\Users\Ron\.grok\worktrees\SDRcore-trans\sdrcore-trans\MFC\wsfirgen.obj

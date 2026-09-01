@@ -1,0 +1,13 @@
+<Application x:Class="MSCC.Wpf.App"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:converters="clr-namespace:MSCC.Wpf.Converters">
+    <Application.Resources>
+        <converters:BoolToActiveBrushConverter x:Key="BoolToActiveBrushConverter"/>
+        <converters:BoolToBrushConverter x:Key="BoolToBrushConverter"/>
+        <converters:BoolToVisibilityConverter x:Key="BoolToVisibilityConverter"/>
+        <converters:BoolToCalStatusBrushConverter x:Key="BoolToCalStatusBrushConverter"/>
+        <converters:InverseBoolConverter x:Key="InverseBoolConverter"/>
+        <converters:StringNullOrEmptyToVisibilityConverter x:Key="StringNullOrEmptyToVisibilityConverter"/>
+    </Application.Resources>
+</Application>
