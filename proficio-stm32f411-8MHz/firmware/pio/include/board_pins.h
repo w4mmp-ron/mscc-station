@@ -55,9 +55,9 @@
 #define BOARD_RX_PIN            GPIO_PIN_1   /* PA1 active-low */
 /* LED1 on PSoC Control bit0 — use module PC13 (no extra mother-board wire) */
 
-/* ---------- Codec RESET (J5 A28 → mother-board RESET net) ---------- */
+/* ---------- Codec RESET (U2/J5 A28 → PCM3060) — Stew locked triad ---------- */
 #define BOARD_CODEC_RESET_GPIO  GPIOA
-#define BOARD_CODEC_RESET_PIN   GPIO_PIN_9   /* PA9 — PCM3060 RST (active-low); Stew rev 6.0 */
+#define BOARD_CODEC_RESET_PIN   GPIO_PIN_2   /* PA2 — PCM3060 RST (active-low) */
 #define BOARD_CODEC_RESET_ACTIVE_LOW  1
 
 /*
@@ -92,13 +92,13 @@
  * Software shadow only until proven otherwise on the schematic.
  */
 
-/* USBV+ sense: U2 B8 -> divider -> this GPIO (placeholder until Stew picks pin) */
-#define BOARD_VBUS_SENSE_GPIO   GPIOB
-#define BOARD_VBUS_SENSE_PIN    GPIO_PIN_10  /* optional; does not gate USB */
+/* USBV+ sense: U2/J5 B8 -> divider -> PA9 (Stew locked); does not gate USB */
+#define BOARD_VBUS_SENSE_GPIO   GPIOA
+#define BOARD_VBUS_SENSE_PIN    GPIO_PIN_9   /* PA9 */
 
-/* Debug UART USART1 (PA3 taken by I2S2_MCK for Black Pill production) */
+/* Debug UART — PA9 is USBV+ sense; PA3 is I2S MCLK — do not use default USART1 pins */
 #define BOARD_UART_TX_GPIO      GPIOA
-#define BOARD_UART_TX_PIN       GPIO_PIN_9   /* conflict: PA9 = codec RESET on this board */
+#define BOARD_UART_TX_PIN       GPIO_PIN_9   /* conflict: PA9 = USBV+ sense */
 #define BOARD_UART_RX_GPIO      GPIOA
 #define BOARD_UART_RX_PIN       GPIO_PIN_10  /* PA10 USART1_RX */
 

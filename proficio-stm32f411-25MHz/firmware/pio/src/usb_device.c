@@ -26,7 +26,7 @@ static void usb_hw_init(void)
     __HAL_RCC_GPIOA_CLK_ENABLE();
     __HAL_RCC_USB_OTG_FS_CLK_ENABLE();
 
-    /* D-/D+ only. PA9 is PCM3060 RESET — do not claim it for VBUS. */
+    /* D-/D+ only. PA9 is GPIO USBV+ sense (divider) — not OTG VBUS pad. */
     g.Pin = GPIO_PIN_11 | GPIO_PIN_12;
     g.Mode = GPIO_MODE_AF_PP;
     g.Pull = GPIO_NOPULL;

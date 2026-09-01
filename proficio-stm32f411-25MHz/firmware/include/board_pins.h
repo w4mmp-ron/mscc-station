@@ -42,9 +42,9 @@
 #define BOARD_RX_PORT           GPIOA
 #define BOARD_RX_PIN            1u
 
-/* Codec RESET — U2/J5 A28 → PA9 (PCM3060 RST, active-low); Stew rev 6.0 */
+/* Codec RESET — U2/J5 A28 → PA2 (PCM3060 RST, active-low); Stew locked */
 #define BOARD_CODEC_RESET_PORT  GPIOA
-#define BOARD_CODEC_RESET_PIN   9u
+#define BOARD_CODEC_RESET_PIN   2u
 
 /* I2S PCM3060 */
 #define BOARD_I2S_LRCK_PIN      12u  /* PB12 */
@@ -53,10 +53,10 @@
 #define BOARD_I2S_DIN_PIN       15u  /* PB15 to codec */
 #define BOARD_I2S_MCLK_PIN      3u   /* PA3 I2S2_MCK — Black Pill (not PC6) */
 
-#define BOARD_VBUS_SENSE_PORT   GPIOB
-#define BOARD_VBUS_SENSE_PIN    10u  /* PB10 spare */
+#define BOARD_VBUS_SENSE_PORT   GPIOA
+#define BOARD_VBUS_SENSE_PIN    9u   /* PA9 USBV+ sense (divider) */
 #define BOARD_UART_TX_PORT      GPIOA
-#define BOARD_UART_TX_PIN       9u   /* PA9 USART1_TX */
+#define BOARD_UART_TX_PIN       9u   /* conflict: PA9 = USBV+ sense */
 #define BOARD_UART_RX_PORT      GPIOA
 #define BOARD_UART_RX_PIN       10u  /* PA10 USART1_RX */
 

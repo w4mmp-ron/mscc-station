@@ -8,7 +8,7 @@
 #include "i2s_audio.h"
 #include <string.h>
 
-/* U2/J5 A28 RESET → PA9: hold PCM3060 in reset, then release (active-low). */
+/* U2/J5 A28 RESET → PA2: hold PCM3060 in reset, then release (active-low). */
 static void pcm3060_hw_reset_pulse(void)
 {
     HAL_GPIO_WritePin(BOARD_CODEC_RESET_GPIO, BOARD_CODEC_RESET_PIN, GPIO_PIN_RESET);
