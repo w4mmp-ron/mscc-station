@@ -184,6 +184,7 @@ public class UdpRadioService : IRadioService, IDisposable
         // Start expecting the full target; adapt down if server only sends 2 segs (old mscc-recv)
         _panSegmentsExpected = _panSegmentsTarget;
         _panIncompleteStreak = 0;
+        _panIncompleteLogCooldown = 0;
         for (int i = 0; i < PanMaxSegments; i++)
         {
             _panSegReady[i] = false;
@@ -2035,7 +2036,8 @@ public class UdpRadioService : IRadioService, IDisposable
     }
 
     private int _panIncompleteStreak;
-    private int _panSegmentsTarget = 2; // user-selected; may differ from what server actually sends
+    private int _panSegmentsTarget = 2; // user-selected; keep expecting this even after lossy frames
+    private int _panIncompleteLogCooldown;
 
     private void DecodePanadapterFrame(byte[] payload)
     {
@@ -2044,7 +2046,7 @@ public class UdpRadioService : IRadioService, IDisposable
         byte seq = payload[0];
         if (seq >= PanMaxSegments) return;
 
-        // Server may send more segs than we asked for — expand assembly window
+        // Server may send more segs than currently expected — expand assembly window
         int needSeg = seq + 1;
         if (needSeg > _panSegmentsExpected && needSeg <= PanMaxSegments)
         {
@@ -2056,11 +2058,14 @@ public class UdpRadioService : IRadioService, IDisposable
         int numSamples = dataBytes / 2;
         if (numSamples <= 0) return;
 
-        // New frame starts with seq 0. If prior frame was incomplete (e.g. asked for 4 segs
-        // but old mscc-recv only sent 2), flush contiguous 0..k so spectrum does not freeze.
+        // New frame starts with seq 0. If prior frame was incomplete, flush contiguous 0..k
+        // so spectrum does not freeze — but keep expecting full target for the next frame.
         if (seq == 0)
         {
             TryEmitPanFrame(forceIncomplete: true);
+            // Re-arm for full user resolution (do not stay stuck at a reduced segment count)
+            _panSegmentsExpected = _panSegmentsTarget;
+            _panBinsExpected = _panSegmentsExpected * PanSegmentBins;
             for (int s = 1; s < PanMaxSegments; s++)
             {
                 _panSegReady[s] = false;
@@ -2080,7 +2085,8 @@ public class UdpRadioService : IRadioService, IDisposable
 
     /// <summary>
     /// Emit a spectrum frame when all expected segments are ready, or (force) when a new
-    /// seq0 arrives with a contiguous incomplete prefix (old server only sends 2 segs).
+    /// seq0 arrives with a contiguous incomplete prefix (UDP loss under Start burst).
+    /// Does not permanently lower the expected segment count — Max stays Max.
     /// </summary>
     private void TryEmitPanFrame(bool forceIncomplete)
     {
@@ -2095,32 +2101,34 @@ public class UdpRadioService : IRadioService, IDisposable
         if (!complete)
         {
             // Incomplete: only flush when a new seq0 arrives (force) and we have ≥2 segs.
-            // This recovers when old mscc-recv still sends only seq0+seq1 while UI asked for High/Max.
             if (!forceIncomplete || contiguous < 2)
                 return;
 
             _panIncompleteStreak++;
-            if (contiguous < _panSegmentsTarget && _panSegmentsExpected != contiguous)
+            // Rate-limit: Start often drops a few segments once; do not imply recv is wrong.
+            if (_panIncompleteLogCooldown <= 0 && contiguous < _panSegmentsTarget)
             {
                 DebugMonitor.MonitorTextBoxText(
-                    $" Pan assembly: server only completed {contiguous} segment(s) " +
-                    $"(wanted {_panSegmentsTarget} ×400 = {_panSegmentsTarget * PanSegmentBins} bins). " +
-                    $"Using {contiguous * PanSegmentBins} bins — rebuild/redeploy mscc-recv for true High/Max.");
-                _panSegmentsExpected = contiguous;
-                _panBinsExpected = contiguous * PanSegmentBins;
+                    $" Pan assembly: incomplete frame ({contiguous}/{_panSegmentsTarget} segments) — " +
+                    $"showing {contiguous * PanSegmentBins} bins this frame; still targeting " +
+                    $"{_panSegmentsTarget * PanSegmentBins} bins (UDP loss under load is normal at Start).");
+                _panIncompleteLogCooldown = 30; // ~30 incomplete flushes before another log line
             }
+            else if (_panIncompleteLogCooldown > 0)
+            {
+                _panIncompleteLogCooldown--;
+            }
+            // Do NOT lower _panSegmentsExpected — that locked Max at 2000 after one lossy Start frame.
         }
         else
         {
-            _panIncompleteStreak = 0;
-            // Recover toward target if server later sends full High/Max frames
-            if (contiguous >= _panSegmentsTarget && _panSegmentsExpected < _panSegmentsTarget)
+            if (_panIncompleteStreak > 0 || _panIncompleteLogCooldown > 0)
             {
-                _panSegmentsExpected = _panSegmentsTarget;
-                _panBinsExpected = _panSegmentsExpected * PanSegmentBins;
                 DebugMonitor.MonitorTextBoxText(
                     $" Pan assembly: full {_panSegmentsExpected} segments — {_panBinsExpected} bins active");
             }
+            _panIncompleteStreak = 0;
+            _panIncompleteLogCooldown = 0;
         }
 
         int segs = complete ? _panSegmentsExpected : contiguous;
