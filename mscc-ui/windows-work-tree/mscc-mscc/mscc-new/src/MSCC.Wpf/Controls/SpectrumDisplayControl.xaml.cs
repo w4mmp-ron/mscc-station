@@ -192,6 +192,16 @@ public partial class SpectrumDisplayControl : UserControl
         // Maintain waterfall history (newest at end) -- only for new spectrum data, never for cursor redraws
         if (appendToWaterfall && update?.Data != null && update.Data.Length > 0)
         {
+            // Start / pan-resolution transitions can emit mixed bin lengths (e.g. 2400 then 3200).
+            // Mixing them in history caused IndexOutOfRange in the waterfall paint path.
+            if (_waterfallHistory.Count > 0 &&
+                _waterfallHistory[_waterfallHistory.Count - 1].Length != update.Data.Length)
+            {
+                _waterfallHistory.Clear();
+                _waterfallTimeMarkers.Clear();
+                _waterfallTimeLabels.Clear();
+            }
+
             bool mark = false;
             string? timeLabel = null;
             int grid = SpectrumColorSettings.WaterfallTimeMarker;
@@ -836,7 +846,8 @@ internal sealed class BasicSpectrumRenderer : ISpectrumRenderer
         if (hasWaterfall && waterfallHistory != null && waterfallHistory.Count > 0 && wfHeight > 20)
         {
             int numLines = waterfallHistory.Count;
-            int lineLen = waterfallHistory[0].Length;
+            // Reference length = current spectrum bins (cw offset scaled per row below).
+            int refLen = Math.Max(1, data.Length);
             bool directionNormal = SpectrumColorSettings.WaterfallDirectionNormal;
             for (int y = wfStartY; y < height - freqMargin; y++)
             {
@@ -849,16 +860,19 @@ internal sealed class BasicSpectrumRenderer : ISpectrumRenderer
                 int li0 = (int)lineIdxD;
                 int li1 = Math.Min(li0 + 1, numLines - 1);
                 double t = lineIdxD - li0;
+                float[] row0 = waterfallHistory[li0];
+                float[] row1 = waterfallHistory[li1];
 
                 for (int x = 0; x < width; x++)
                 {
                     double xt = width > 1 ? (double)x / (width - 1) : 0.5;
                     double dataFrac = viewStart + xt * viewWidth;
-                    int idx = (int)(dataFrac * (lineLen - 1) + cwOffsetBins);
-                    idx = Math.Clamp(idx, 0, lineLen - 1);
 
-                    float db0 = SpectrumColorSettings.ToDisplayDb(waterfallHistory[li0][idx]);
-                    float db1 = SpectrumColorSettings.ToDisplayDb(waterfallHistory[li1][idx]);
+                    // Per-row Length: never index all rows with history[0].Length (Start can mix sizes).
+                    float db0 = SpectrumColorSettings.ToDisplayDb(
+                        SampleWaterfallRow(row0, dataFrac, cwOffsetBins, refLen, minDb));
+                    float db1 = SpectrumColorSettings.ToDisplayDb(
+                        SampleWaterfallRow(row1, dataFrac, cwOffsetBins, refLen, minDb));
                     float dbv = (float)(db0 * (1.0 - t) + db1 * t);
 
                     // Color window = Waterfall Low/High (not spectrum GRID). Then GAIN/ZERO fine trim.
@@ -1268,6 +1282,26 @@ internal sealed class BasicSpectrumRenderer : ISpectrumRenderer
                 GetClassicWpfHeatMapColor(norm, out r, out g, out b);
                 break;
         }
+    }
+
+    /// <summary>
+    /// Sample one waterfall history row using that row's own Length (never history[0].Length).
+    /// Scales CW offset when the row bin count differs from the current spectrum.
+    /// </summary>
+    private static float SampleWaterfallRow(
+        float[]? row, double dataFrac, int cwOffsetBins, int refLen, float fallbackDb)
+    {
+        if (row == null || row.Length == 0)
+            return fallbackDb;
+        int len = row.Length;
+        int cw = refLen > 0
+            ? (int)Math.Round(cwOffsetBins * (len / (double)refLen))
+            : 0;
+        int idx = len == 1
+            ? 0
+            : (int)(dataFrac * (len - 1) + cw);
+        idx = Math.Clamp(idx, 0, len - 1);
+        return row[idx];
     }
 
     /// <summary>

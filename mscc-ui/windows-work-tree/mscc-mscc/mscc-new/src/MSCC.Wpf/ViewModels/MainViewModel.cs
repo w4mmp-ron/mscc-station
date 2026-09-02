@@ -4303,17 +4303,13 @@ public partial class MainViewModel : ObservableObject, IDisposable
         try
         {
             _ = _radioService.SetPanResolutionAsync(bins);
-            // Bin count change invalidates waterfall history lengths
+            // Bin count change invalidates waterfall history lengths — clear every spectrum control.
             Application.Current?.Dispatcher.BeginInvoke(() =>
             {
                 try
                 {
                     if (Application.Current?.MainWindow is MainWindow mw)
-                    {
-                        // MAIN tab spectrum only (Freq Cal displays are non-interactive refs)
-                        var mainSpec = FindVisualChild<Controls.SpectrumDisplayControl>(mw);
-                        mainSpec?.ClearWaterfallHistory();
-                    }
+                        ClearAllWaterfallHistories(mw);
                 }
                 catch { /* ignore */ }
             });
@@ -4326,18 +4322,14 @@ public partial class MainViewModel : ObservableObject, IDisposable
         }
     }
 
-    private static T? FindVisualChild<T>(DependencyObject parent) where T : DependencyObject
+    private static void ClearAllWaterfallHistories(DependencyObject parent)
     {
-        if (parent == null) return null;
+        if (parent == null) return;
+        if (parent is Controls.SpectrumDisplayControl spec)
+            spec.ClearWaterfallHistory();
         int n = System.Windows.Media.VisualTreeHelper.GetChildrenCount(parent);
         for (int i = 0; i < n; i++)
-        {
-            var child = System.Windows.Media.VisualTreeHelper.GetChild(parent, i);
-            if (child is T match) return match;
-            var nested = FindVisualChild<T>(child);
-            if (nested != null) return nested;
-        }
-        return null;
+            ClearAllWaterfallHistories(System.Windows.Media.VisualTreeHelper.GetChild(parent, i));
     }
 
     /// <summary>
