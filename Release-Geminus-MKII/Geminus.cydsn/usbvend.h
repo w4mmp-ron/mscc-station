@@ -54,7 +54,10 @@
 #define SET_CW_PADDLE 0x73
 #define SET_IAMBIC_TYPE 0x74
 #define SET_SPACING 0x75
-#define SET_MEMORY_TYPE 0x76
+/* Memory-play Farnsworth text WPM (was SET_MEMORY_TYPE).
+ * Param: 0=off; 5–60=text WPM for CQ memory inter-char gaps. Elements use SET_WPM. */
+#define SET_MEM_TEXT_WPM 0x76
+#define SET_MEMORY_TYPE SET_MEM_TEXT_WPM /* legacy alias */
 #define SET_WEIGHT 0x77
 #define SET_SEMI_BREAKIN 0x78
 #define SET_SEMI_CONTROL 0x79
@@ -65,10 +68,14 @@
 #define SET_CW_INTERFACE_METHOD 0x7E
 #define SET_SIDE_TONE 0x7F
 
-// CW Message Management
+// CW Message Management (legacy 0x80-0x82; NB uses those on host now)
 #define SET_CW_RECORD_MESSAGE 0x80
 #define SET_CW_PLAY_MSG 0x81
 #define SET_CW_STOP_MSG 0x82
+
+/* PIC keyer CQ memory — match ms-sdr CMD_SET_KEYER_MEMORY.
+ * Param: 0=play, 1=store begin, 2=store end, 0x20-0x7E=append ASCII char */
+#define CMD_SET_KEYER_MEMORY 0x9C
 
 //Special Commands
 #define CMD_SET_TRANSCEIVER_CW_PITCH 0x90           
@@ -101,5 +108,15 @@
 //Volume Calibration
 #define CMD_SET_LEFT_VOLUME 0xE0
 #define CMD_SET_RIGHT_VOLUME 0xE1
+
+/*
+ * Host → device reboot (handled in main loop — not from USB ISR).
+ *   CMD_REBOOT_APP (0x0F): CySoftwareReset() — restart application only
+ *   CMD_ENTER_BOOTLOADER (0x0E): Bootloadable_Load() — PSoC bootload tool
+ * Matches historic ms-sdr CMD_REBOOT 0x0F for app restart.
+ */
+#define CMD_ENTER_BOOTLOADER 0x0E
+#define CMD_REBOOT_APP       0x0F
+#define CMD_REBOOT           CMD_REBOOT_APP /* alias */
 
 /* [] END OF FILE */

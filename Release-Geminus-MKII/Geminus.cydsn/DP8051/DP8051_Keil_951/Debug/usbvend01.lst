@@ -1,9 +1,9 @@
-C51 COMPILER V9.51   USBVEND01                                                             03/03/2025 12:10:05 PAGE 1   
+C51 COMPILER V9.51   USBVEND01                                                             09/03/2026 15:33:29 PAGE 1   
 
 
 C51 COMPILER V9.51, COMPILATION OF MODULE USBVEND01
 OBJECT MODULE PLACED IN .\DP8051\DP8051_Keil_951\Debug\usbvend01.obj
-COMPILER INVOKED BY: C:\Program Files (x86)\Cypress\PSoC Creator\4.2\PSoC Creator\import\keil\pk51\9.51\C51\BIN\c51.exe 
+COMPILER INVOKED BY: C:\Program Files (x86)\Cypress\PSoC Creator\4.4\PSoC Creator\import\keil\pk51\9.51\C51\BIN\c51.exe 
                     -usbvend01.c NOIV LARGE MODDP2 OMF2 VB(1) NOIP INCDIR(.,Generated_Source\PSoC3) FF(3) DB WL(2) PR(.\DP8051\DP8051_Keil_95
                     -1\Debug/usbvend01.lst) CD OT(5,SPEED) OA OJ(.\DP8051\DP8051_Keil_951\Debug\usbvend01.obj)
 
@@ -47,326 +47,366 @@ line level    source
   35          uint8 E_dll_version = SI570_DLL;
   36          static uint8_t ppm_start = 0;
   37          static int32 proficio_temperature = 0;
-  38          
-  39          
+  38          /* Discard buffer for reboot OUT payloads (host often sends sizeof(int)=4). */
+  39          static uint8 E_reboot_pad[4];
   40          
-  41          int32 swap32_int(int32 original) CYREENTRANT {
-  42   1          uint8 *r, *o;
-  43   1          int32 ret;
-  44   1          r = (void*)&ret;
-  45   1          o = (void*)&original;
-  46   1          r[0] = o[3];
-  47   1          r[1] = o[2];
-  48   1          r[2] = o[1];
-  49   1          r[3] = o[0];
-  50   1          return ret;
-  51   1      }
-  52          
-C51 COMPILER V9.51   USBVEND01                                                             03/03/2025 12:10:05 PAGE 2   
+  41          
+  42          
+  43          int32 swap32_int(int32 original) CYREENTRANT {
+  44   1          uint8 *r, *o;
+  45   1          int32 ret;
+  46   1          r = (void*)&ret;
+  47   1          o = (void*)&original;
+  48   1          r[0] = o[3];
+  49   1          r[1] = o[2];
+  50   1          r[2] = o[1];
+  51   1          r[3] = o[0];
+  52   1          return ret;
+C51 COMPILER V9.51   USBVEND01                                                             09/03/2026 15:33:29 PAGE 2   
 
-  53          
-  54          // Maps PSoC registers into one that looks like the AVR
-  55          uint8 emulated_register(void) {
-  56   1          uint8 reg = 0, key;
-  57   1          if (TX_Request) reg |= 0x10;
-  58   1          //key = Status_Read();
-  59   1          key = E_key_down;
-  60   1          if (key & STATUS_KEY_0) reg |= 0x20;
-  61   1          if (key & STATUS_KEY_1) reg |= 0x02;
-  62   1          return reg;
-  63   1      }
-  64          
-  65          uint8 USBFS_HandleVendorRqst(void)  //This called by the USBFS component.  This is an interrupt handler. 
-  66          {                                   //This Interrupt handler can not call other routines.  
-  67   1          uint8 requestHandled = USBFS_FALSE;
-  68   1          uint8 reqType, reqCmd;
-  69   1          static int32 l_dec = 0;
-  70   1          static int32 l_int = 0;
-  71   1          uint8_t E_Potentia_temperature;
-  72   1          static int8_t int_value = 0;
-  73   1          
-  74   1           
-  75   1          reqType = CY_GET_REG8(USBFS_bmRequestType);
-  76   1          reqCmd = CY_GET_REG8(USBFS_bRequest);
-  77   1          
-  78   1          //These send DATA TO the HOST 
-  79   1          if ((reqType & USBFS_RQST_DIR_MASK) == USBFS_RQST_DIR_D2H)
-  80   1          {
-  81   2              switch (reqCmd)
-  82   2              {
-  83   3                  case 0x00: // CMD_GET_VERSION
-  84   3                      *(uint16*)&result = FIRMWARE_VERSION;
-  85   3                      USBFS_currentTD.pData = (void *)&result;
-  86   3                      USBFS_currentTD.count = 2;
-  87   3                      requestHandled  = USBFS_InitControlRead();
-  88   3                      break;
-  89   3                  case 0x02: // CMD_GET_PIN
-  90   3                      // used on the test tab in cfgsr
-  91   3                      *(uint8*)&result = emulated_register();
-  92   3                      result |= 0x08000000; // 3.3v indicator
-  93   3                      USBFS_currentTD.pData = (void *)&result;
-  94   3                      USBFS_currentTD.count = 1;
-  95   3                      requestHandled  = USBFS_InitControlRead();
-  96   3                      break;
-  97   3                  case 0x3A: // CMD_GET_FREQ
-  98   3                      USBFS_currentTD.pData = (void *)&Si570_LO;
-  99   3                      USBFS_currentTD.count = sizeof(Si570_LO);
- 100   3                      requestHandled  = USBFS_InitControlRead();
- 101   3                      break;
- 102   3                  case 0x3C: // CMD_GET_STARTUP
- 103   3                      result = swap32(SI570_STARTUP_FREQ * 0x0200000);
- 104   3                      USBFS_currentTD.pData = (void *)&result;
- 105   3                      USBFS_currentTD.count = sizeof(result);
- 106   3                      requestHandled  = USBFS_InitControlRead();
- 107   3                      break;
- 108   3                  case 0x3D: // CMD_GET_XTAL
- 109   3                      USBFS_currentTD.pData = (void *)&Si570_Xtal;
- 110   3                      USBFS_currentTD.count = sizeof(Si570_Xtal);
- 111   3                      requestHandled  = USBFS_InitControlRead();
- 112   3                      E_dll_version = SI570_DLL;
- 113   3                      break;
- 114   3                  case 0x3F: // CMD_GET_SI570
-C51 COMPILER V9.51   USBVEND01                                                             03/03/2025 12:10:05 PAGE 3   
+  53   1      }
+  54          
+  55          
+  56          // Maps PSoC registers into one that looks like the AVR
+  57          uint8 emulated_register(void) {
+  58   1          uint8 reg = 0, key;
+  59   1          if (TX_Request) reg |= 0x10;
+  60   1          //key = Status_Read();
+  61   1          key = E_key_down;
+  62   1          if (key & STATUS_KEY_0) reg |= 0x20;
+  63   1          if (key & STATUS_KEY_1) reg |= 0x02;
+  64   1          return reg;
+  65   1      }
+  66          
+  67          uint8 USBFS_HandleVendorRqst(void)  //This called by the USBFS component.  This is an interrupt handler. 
+  68          {                                   //This Interrupt handler can not call other routines.  
+  69   1          uint8 requestHandled = USBFS_FALSE;
+  70   1          uint8 reqType, reqCmd;
+  71   1          static int32 l_dec = 0;
+  72   1          static int32 l_int = 0;
+  73   1          uint8_t E_Potentia_temperature;
+  74   1          static int8_t int_value = 0;
+  75   1          
+  76   1           
+  77   1          reqType = CY_GET_REG8(USBFS_bmRequestType);
+  78   1          reqCmd = CY_GET_REG8(USBFS_bRequest);
+  79   1          
+  80   1          //These send DATA TO the HOST 
+  81   1          if ((reqType & USBFS_RQST_DIR_MASK) == USBFS_RQST_DIR_D2H)
+  82   1          {
+  83   2              switch (reqCmd)
+  84   2              {
+  85   3                  case 0x00: // CMD_GET_VERSION
+  86   3                      *(uint16*)&result = FIRMWARE_VERSION;
+  87   3                      USBFS_currentTD.pData = (void *)&result;
+  88   3                      USBFS_currentTD.count = 2;
+  89   3                      requestHandled  = USBFS_InitControlRead();
+  90   3                      break;
+  91   3                  case 0x02: // CMD_GET_PIN
+  92   3                      // used on the test tab in cfgsr
+  93   3                      *(uint8*)&result = emulated_register();
+  94   3                      result |= 0x08000000; // 3.3v indicator
+  95   3                      USBFS_currentTD.pData = (void *)&result;
+  96   3                      USBFS_currentTD.count = 1;
+  97   3                      requestHandled  = USBFS_InitControlRead();
+  98   3                      break;
+  99   3                  case 0x3A: // CMD_GET_FREQ
+ 100   3                      USBFS_currentTD.pData = (void *)&Si570_LO;
+ 101   3                      USBFS_currentTD.count = sizeof(Si570_LO);
+ 102   3                      requestHandled  = USBFS_InitControlRead();
+ 103   3                      break;
+ 104   3                  case 0x3C: // CMD_GET_STARTUP
+ 105   3                      result = swap32(SI570_STARTUP_FREQ * 0x0200000);
+ 106   3                      USBFS_currentTD.pData = (void *)&result;
+ 107   3                      USBFS_currentTD.count = sizeof(result);
+ 108   3                      requestHandled  = USBFS_InitControlRead();
+ 109   3                      break;
+ 110   3                  case 0x3D: // CMD_GET_XTAL
+ 111   3                      USBFS_currentTD.pData = (void *)&Si570_Xtal;
+ 112   3                      USBFS_currentTD.count = sizeof(Si570_Xtal);
+ 113   3                      requestHandled  = USBFS_InitControlRead();
+ 114   3                      E_dll_version = SI570_DLL;
+C51 COMPILER V9.51   USBVEND01                                                             09/03/2026 15:33:29 PAGE 3   
 
- 115   3                      USBFS_currentTD.pData = (void *)(Si570_Buf+2);
- 116   3                      USBFS_currentTD.count = 6;
- 117   3                      requestHandled  = USBFS_InitControlRead();
- 118   3                      break;
- 119   3                  case 0x50: // CMD_SET_USRP1
- 120   3                      if (CY_GET_REG8(USBFS_wValueLo) & 0x01){
- 121   4                          TX_Request = 1;
- 122   4                      }
- 123   3                      else{
- 124   4                          TX_Request = 0;
- 125   4                      }
- 126   3                          
- 127   3                      //nobreak, returns key value
- 128   3                  case 0x51: // CMD_GET_CW_KEY
- 129   3                      *(uint8*)&result = emulated_register();
- 130   3                      USBFS_currentTD.pData = (void *)&result;
- 131   3                      USBFS_currentTD.count = 1;
- 132   3                      requestHandled  = USBFS_InitControlRead();
- 133   3                      break;
- 134   3                  case 0x20: // CMD_SET_SI570
- 135   3                      // Fake a reset!  Used for calibration.
- 136   3                      if (CY_GET_REG8(USBFS_wValueHi) == 0x87 && CY_GET_REG16(USBFS_wIndex) == 0x01) {
- 137   4                          //Si570_Fake_Reset();
- 138   4                          *(uint8*)&result = 0;
- 139   4                          USBFS_currentTD.pData = (void *)&result;
- 140   4                          USBFS_currentTD.count = 1;
- 141   4                          requestHandled  = USBFS_InitControlRead();
- 142   4                      }
- 143   3                      break;
- 144   3                  case CMD_GET_KEY_DOWN:
- 145   3                      USBFS_currentTD.pData = (void *)&E_key_down;
- 146   3                      USBFS_currentTD.count = 1;
- 147   3                      requestHandled  = USBFS_InitControlRead();
- 148   3                      break;
- 149   3                      
- 150   3                  case CMD_GET_PTT:
- 151   3                      USBFS_currentTD.pData = (void *)&E_PTT;
- 152   3                      USBFS_currentTD.count = 1;
- 153   3                      requestHandled  = USBFS_InitControlRead();
- 154   3                      break;
- 155   3                                     
- 156   3                  case CMD_GET_TRANSCEIVER_TEMP:
- 157   3                      proficio_temperature = swap32_int(E_transceiver_temp);
- 158   3                      //*(uint16*)&result = FIRMWARE_VERSION;
- 159   3                      USBFS_currentTD.pData = (void *)&proficio_temperature;
- 160   3                      USBFS_currentTD.count = 4;
- 161   3                      requestHandled  = USBFS_InitControlRead();
- 162   3                      break;
- 163   3                      
- 164   3                  case CMD_GET_POTENTIA_TEMPERATURE:
- 165   3                      USBFS_currentTD.pData = (void *)&E_Potentia_temperature;
- 166   3                      USBFS_currentTD.count = 4;
- 167   3                      requestHandled  = USBFS_InitControlRead();
- 168   3                      break;
- 169   3                      
- 170   3                  case CMD_SET_XTAL_INT:
- 171   3                      int_value = ee_ppm_int;
- 172   3                      USBFS_currentTD.pData = (void *)&int_value;
- 173   3                      USBFS_currentTD.count = sizeof(int_value);
- 174   3                      requestHandled  = USBFS_InitControlRead();
- 175   3                      break;
- 176   3                      
-C51 COMPILER V9.51   USBVEND01                                                             03/03/2025 12:10:05 PAGE 4   
+ 115   3                      break;
+ 116   3                  case 0x3F: // CMD_GET_SI570
+ 117   3                      USBFS_currentTD.pData = (void *)(Si570_Buf+2);
+ 118   3                      USBFS_currentTD.count = 6;
+ 119   3                      requestHandled  = USBFS_InitControlRead();
+ 120   3                      break;
+ 121   3                  case 0x50: // CMD_SET_USRP1
+ 122   3                      if (CY_GET_REG8(USBFS_wValueLo) & 0x01){
+ 123   4                          TX_Request = 1;
+ 124   4                      }
+ 125   3                      else{
+ 126   4                          TX_Request = 0;
+ 127   4                      }
+ 128   3                          
+ 129   3                      //nobreak, returns key value
+ 130   3                  case 0x51: // CMD_GET_CW_KEY
+ 131   3                      *(uint8*)&result = emulated_register();
+ 132   3                      USBFS_currentTD.pData = (void *)&result;
+ 133   3                      USBFS_currentTD.count = 1;
+ 134   3                      requestHandled  = USBFS_InitControlRead();
+ 135   3                      break;
+ 136   3                  case 0x20: // CMD_SET_SI570
+ 137   3                      // Fake a reset!  Used for calibration.
+ 138   3                      if (CY_GET_REG8(USBFS_wValueHi) == 0x87 && CY_GET_REG16(USBFS_wIndex) == 0x01) {
+ 139   4                          //Si570_Fake_Reset();
+ 140   4                          *(uint8*)&result = 0;
+ 141   4                          USBFS_currentTD.pData = (void *)&result;
+ 142   4                          USBFS_currentTD.count = 1;
+ 143   4                          requestHandled  = USBFS_InitControlRead();
+ 144   4                      }
+ 145   3                      break;
+ 146   3                  case CMD_GET_KEY_DOWN:
+ 147   3                      USBFS_currentTD.pData = (void *)&E_key_down;
+ 148   3                      USBFS_currentTD.count = 1;
+ 149   3                      requestHandled  = USBFS_InitControlRead();
+ 150   3                      break;
+ 151   3                      
+ 152   3                  case CMD_GET_PTT:
+ 153   3                      USBFS_currentTD.pData = (void *)&E_PTT;
+ 154   3                      USBFS_currentTD.count = 1;
+ 155   3                      requestHandled  = USBFS_InitControlRead();
+ 156   3                      break;
+ 157   3                                     
+ 158   3                  case CMD_GET_TRANSCEIVER_TEMP:
+ 159   3                      proficio_temperature = swap32_int(E_transceiver_temp);
+ 160   3                      //*(uint16*)&result = FIRMWARE_VERSION;
+ 161   3                      USBFS_currentTD.pData = (void *)&proficio_temperature;
+ 162   3                      USBFS_currentTD.count = 4;
+ 163   3                      requestHandled  = USBFS_InitControlRead();
+ 164   3                      break;
+ 165   3                      
+ 166   3                  case CMD_GET_POTENTIA_TEMPERATURE:
+ 167   3                      USBFS_currentTD.pData = (void *)&E_Potentia_temperature;
+ 168   3                      USBFS_currentTD.count = 4;
+ 169   3                      requestHandled  = USBFS_InitControlRead();
+ 170   3                      break;
+ 171   3                      
+ 172   3                  case CMD_SET_XTAL_INT:
+ 173   3                      int_value = ee_ppm_int;
+ 174   3                      USBFS_currentTD.pData = (void *)&int_value;
+ 175   3                      USBFS_currentTD.count = sizeof(int_value);
+ 176   3                      requestHandled  = USBFS_InitControlRead();
+C51 COMPILER V9.51   USBVEND01                                                             09/03/2026 15:33:29 PAGE 4   
 
- 177   3                  case CMD_GET_PPM_INT:
- 178   3                      PPM_temp = ee_ppm_int;
- 179   3                      PPM_result = swap32_int(PPM_temp);
- 180   3                      USBFS_currentTD.pData = (void *)&PPM_result;
- 181   3                      USBFS_currentTD.count = 2;
- 182   3                      requestHandled  = USBFS_InitControlRead();
- 183   3                      break;
- 184   3                      
- 185   3                  case CMD_GET_PPM_DEC:
- 186   3                      PPM_temp = ee_ppm_dec;
- 187   3                      PPM_result = swap32_int(PPM_temp);
- 188   3                      USBFS_currentTD.pData = (void *)&PPM_result;
- 189   3                      USBFS_currentTD.count = 2;
- 190   3                      requestHandled  = USBFS_InitControlRead();
- 191   3                      break;
- 192   3                      
- 193   3                      
+ 177   3                      break;
+ 178   3                      
+ 179   3                  case CMD_GET_PPM_INT:
+ 180   3                      PPM_temp = ee_ppm_int;
+ 181   3                      PPM_result = swap32_int(PPM_temp);
+ 182   3                      USBFS_currentTD.pData = (void *)&PPM_result;
+ 183   3                      USBFS_currentTD.count = 2;
+ 184   3                      requestHandled  = USBFS_InitControlRead();
+ 185   3                      break;
+ 186   3                      
+ 187   3                  case CMD_GET_PPM_DEC:
+ 188   3                      PPM_temp = ee_ppm_dec;
+ 189   3                      PPM_result = swap32_int(PPM_temp);
+ 190   3                      USBFS_currentTD.pData = (void *)&PPM_result;
+ 191   3                      USBFS_currentTD.count = 2;
+ 192   3                      requestHandled  = USBFS_InitControlRead();
+ 193   3                      break;
  194   3                      
- 195   3                  /*case CMD_SET_XTAL_DEC:
- 196   3                      USBFS_currentTD.pData = (void *)&ee_ppm_int;
- 197   3                      USBFS_currentTD.count = 1;
- 198   3                      requestHandled  = USBFS_InitControlRead();
- 199   3                      break;
- 200   3                      */
- 201   3                      
- 202   3              }
- 203   2          }
- 204   1          
- 205   1          //These receive DATA FROM the HOST
- 206   1          if ((reqType & USBFS_RQST_DIR_MASK) == USBFS_RQST_DIR_H2D)
- 207   1          {
- 208   2              switch (reqCmd)
- 209   2              {
- 210   3                  case CMD_SET_FREQ_REG: // CMD_SET_FREQ_REG
- 211   3                      USBFS_currentTD.pData = (void *)&Si570_OLD;
- 212   3                      USBFS_currentTD.count = 6;
- 213   3                      requestHandled  = USBFS_InitControlWrite();
- 214   3                      break;
- 215   3                  case CMD_SET_FREQ: // CMD_SET_FREQ
- 216   3                      USBFS_currentTD.pData = (void *)&Si570_LO;
- 217   3                      USBFS_currentTD.count = sizeof(Si570_LO);
- 218   3                      requestHandled  = USBFS_InitControlWrite();
- 219   3                      break;
- 220   3                  case CMD_SET_XTAL_INT: // CMD_SET_XTAL_INT Integer Part
- 221   3                      USBFS_currentTD.pData = (void *)&E_calibration_int;
- 222   3                      USBFS_currentTD.count = sizeof(E_calibration_int);
- 223   3                      requestHandled  = USBFS_InitControlWrite();
- 224   3                      l_int = E_calibration_int;
- 225   3                      E_PPM_needs_updated = E_PPM_needs_updated | PPM_INT_RECEIVED;
- 226   3                      break;
- 227   3                  case CMD_SET_XTAL_DEC: // CMD_SET_XTAL_DEC  Decimal Part
- 228   3                      USBFS_currentTD.pData = (void *)&E_calibration_dec;
- 229   3                      USBFS_currentTD.count = sizeof(E_calibration_dec);
- 230   3                      requestHandled  = USBFS_InitControlWrite();
- 231   3                      l_dec = E_calibration_dec;
- 232   3                      E_PPM_needs_updated = E_PPM_needs_updated | PPM_DEC_RECEIVED;
- 233   3                      //Set_PPM in settings.c will set to 0 (zero) when the PPM has been set in EEPROM
- 234   3                      break;
- 235   3                  case CMD_SET_PPM:
- 236   3                      USBFS_currentTD.pData = (void *)&E_ppm;
- 237   3                      USBFS_currentTD.count = sizeof(E_ppm);
- 238   3                      requestHandled  = USBFS_InitControlWrite();
-C51 COMPILER V9.51   USBVEND01                                                             03/03/2025 12:10:05 PAGE 5   
+ 195   3                      
+ 196   3                      
+ 197   3                  /*case CMD_SET_XTAL_DEC:
+ 198   3                      USBFS_currentTD.pData = (void *)&ee_ppm_int;
+ 199   3                      USBFS_currentTD.count = 1;
+ 200   3                      requestHandled  = USBFS_InitControlRead();
+ 201   3                      break;
+ 202   3                      */
+ 203   3                      
+ 204   3              }
+ 205   2          }
+ 206   1          
+ 207   1          //These receive DATA FROM the HOST
+ 208   1          if ((reqType & USBFS_RQST_DIR_MASK) == USBFS_RQST_DIR_H2D)
+ 209   1          {
+ 210   2              switch (reqCmd)
+ 211   2              {
+ 212   3                  case CMD_SET_FREQ_REG: // CMD_SET_FREQ_REG
+ 213   3                      USBFS_currentTD.pData = (void *)&Si570_OLD;
+ 214   3                      USBFS_currentTD.count = 6;
+ 215   3                      requestHandled  = USBFS_InitControlWrite();
+ 216   3                      break;
+ 217   3                  case CMD_SET_FREQ: // CMD_SET_FREQ
+ 218   3                      USBFS_currentTD.pData = (void *)&Si570_LO;
+ 219   3                      USBFS_currentTD.count = sizeof(Si570_LO);
+ 220   3                      requestHandled  = USBFS_InitControlWrite();
+ 221   3                      break;
+ 222   3                  case CMD_SET_XTAL_INT: // CMD_SET_XTAL_INT Integer Part
+ 223   3                      USBFS_currentTD.pData = (void *)&E_calibration_int;
+ 224   3                      USBFS_currentTD.count = sizeof(E_calibration_int);
+ 225   3                      requestHandled  = USBFS_InitControlWrite();
+ 226   3                      l_int = E_calibration_int;
+ 227   3                      E_PPM_needs_updated = E_PPM_needs_updated | PPM_INT_RECEIVED;
+ 228   3                      break;
+ 229   3                  case CMD_SET_XTAL_DEC: // CMD_SET_XTAL_DEC  Decimal Part
+ 230   3                      USBFS_currentTD.pData = (void *)&E_calibration_dec;
+ 231   3                      USBFS_currentTD.count = sizeof(E_calibration_dec);
+ 232   3                      requestHandled  = USBFS_InitControlWrite();
+ 233   3                      l_dec = E_calibration_dec;
+ 234   3                      E_PPM_needs_updated = E_PPM_needs_updated | PPM_DEC_RECEIVED;
+ 235   3                      //Set_PPM in settings.c will set to 0 (zero) when the PPM has been set in EEPROM
+ 236   3                      break;
+ 237   3                  case CMD_SET_PPM:
+ 238   3                      USBFS_currentTD.pData = (void *)&E_ppm;
+C51 COMPILER V9.51   USBVEND01                                                             09/03/2026 15:33:29 PAGE 5   
 
- 239   3                      break;
- 240   3                  case DLL_VERSION: 
- 241   3                      USBFS_currentTD.pData = (void *)&E_dll_version;
- 242   3                      USBFS_currentTD.count = sizeof(E_dll_version);
- 243   3                      requestHandled  = USBFS_InitControlWrite();
- 244   3                      break;    
- 245   3                  case CMD_SET_TRANSVERTER: // Allow TX to 30MHz
- 246   3                      USBFS_currentTD.pData = (void *)&E_transverter;
- 247   3                      USBFS_currentTD.count = sizeof(E_transverter);
- 248   3                      requestHandled  = USBFS_InitControlWrite();
- 249   3                      //command_queue_add(CMD_SET_TRANSVERTER);
- 250   3                      break;
- 251   3                  case CMD_SET_PCB_VERSION: 
- 252   3                      USBFS_currentTD.pData = (void *)&E_pcb_version;
- 253   3                      USBFS_currentTD.count = sizeof(E_pcb_version);
- 254   3                      requestHandled  = USBFS_InitControlWrite();
- 255   3                      break;    
- 256   3                 case CMD_SET_PA_BYPASS: 
- 257   3                      USBFS_currentTD.pData = (void *)&E_Amplifier;
- 258   3                      USBFS_currentTD.count = sizeof(E_Amplifier);
- 259   3                      requestHandled  = USBFS_InitControlWrite();
- 260   3                      break;    
- 261   3       
- 262   3              //The following receive CW Mode setting commands and Parameters from the host computer
- 263   3                  case SET_CW_MODE:
- 264   3                      USBFS_currentTD.pData = (void *)&E_host_mode;
- 265   3                      USBFS_currentTD.count = sizeof(E_host_mode);
- 266   3                      requestHandled  = USBFS_InitControlWrite();
- 267   3                      break;
- 268   3                      
- 269   3                  case SET_QSK:
- 270   3                      USBFS_currentTD.pData = (void *)&E_QSK;
- 271   3                      USBFS_currentTD.count = sizeof(E_QSK);
- 272   3                      requestHandled  = USBFS_InitControlWrite();
- 273   3                      break;
- 274   3                      
- 275   3                  case SET_TX_HOLD:
- 276   3                      USBFS_currentTD.pData = (void *)&E_TX_Hold;
- 277   3                      USBFS_currentTD.count = sizeof(E_TX_Hold);
- 278   3                      requestHandled  = USBFS_InitControlWrite();
- 279   3                      break;
- 280   3                              
- 281   3                  case CMD_SET_TRANSCEIVER_CW_PITCH: // Get the CW Pitch Index
- 282   3                      USBFS_currentTD.pData = (void *)&E_cw_pitch;
- 283   3                      USBFS_currentTD.count = sizeof(E_cw_pitch);
- 284   3                      requestHandled  = USBFS_InitControlWrite();
- 285   3                      break;
- 286   3                      
- 287   3                  case SET_KEYER_MODE:
- 288   3                      USBFS_currentTD.pData = (void *)&E_keyer_mode;
- 289   3                      USBFS_currentTD.count = sizeof(E_keyer_mode);
- 290   3                      requestHandled  = USBFS_InitControlWrite();
- 291   3                      break;
- 292   3                      
- 293   3                  case SET_CW_PADDLE:
- 294   3                      USBFS_currentTD.pData = (void *)&E_paddle;
- 295   3                      USBFS_currentTD.count = sizeof(E_paddle);
- 296   3                      requestHandled  = USBFS_InitControlWrite();
- 297   3                      break;
- 298   3                      
- 299   3                  case SET_SPACING:
- 300   3                      USBFS_currentTD.pData = (void *)&E_spacing;
-C51 COMPILER V9.51   USBVEND01                                                             03/03/2025 12:10:05 PAGE 6   
+ 239   3                      USBFS_currentTD.count = sizeof(E_ppm);
+ 240   3                      requestHandled  = USBFS_InitControlWrite();
+ 241   3                      break;
+ 242   3                  case DLL_VERSION: 
+ 243   3                      USBFS_currentTD.pData = (void *)&E_dll_version;
+ 244   3                      USBFS_currentTD.count = sizeof(E_dll_version);
+ 245   3                      requestHandled  = USBFS_InitControlWrite();
+ 246   3                      break;    
+ 247   3                  case CMD_SET_TRANSVERTER: // Allow TX to 30MHz
+ 248   3                      USBFS_currentTD.pData = (void *)&E_transverter;
+ 249   3                      USBFS_currentTD.count = sizeof(E_transverter);
+ 250   3                      requestHandled  = USBFS_InitControlWrite();
+ 251   3                      //command_queue_add(CMD_SET_TRANSVERTER);
+ 252   3                      break;
+ 253   3                  case CMD_SET_PCB_VERSION: 
+ 254   3                      USBFS_currentTD.pData = (void *)&E_pcb_version;
+ 255   3                      USBFS_currentTD.count = sizeof(E_pcb_version);
+ 256   3                      requestHandled  = USBFS_InitControlWrite();
+ 257   3                      break;    
+ 258   3                 case CMD_SET_PA_BYPASS: 
+ 259   3                      USBFS_currentTD.pData = (void *)&E_Amplifier;
+ 260   3                      USBFS_currentTD.count = sizeof(E_Amplifier);
+ 261   3                      requestHandled  = USBFS_InitControlWrite();
+ 262   3                      break;    
+ 263   3       
+ 264   3              //The following receive CW Mode setting commands and Parameters from the host computer
+ 265   3                  case SET_CW_MODE:
+ 266   3                      USBFS_currentTD.pData = (void *)&E_host_mode;
+ 267   3                      USBFS_currentTD.count = sizeof(E_host_mode);
+ 268   3                      requestHandled  = USBFS_InitControlWrite();
+ 269   3                      break;
+ 270   3                      
+ 271   3                  case SET_QSK:
+ 272   3                      USBFS_currentTD.pData = (void *)&E_QSK;
+ 273   3                      USBFS_currentTD.count = sizeof(E_QSK);
+ 274   3                      requestHandled  = USBFS_InitControlWrite();
+ 275   3                      break;
+ 276   3                      
+ 277   3                  case SET_TX_HOLD:
+ 278   3                      USBFS_currentTD.pData = (void *)&E_TX_Hold;
+ 279   3                      USBFS_currentTD.count = sizeof(E_TX_Hold);
+ 280   3                      requestHandled  = USBFS_InitControlWrite();
+ 281   3                      break;
+ 282   3                              
+ 283   3                  case CMD_SET_TRANSCEIVER_CW_PITCH: // Get the CW Pitch Index
+ 284   3                      USBFS_currentTD.pData = (void *)&E_cw_pitch;
+ 285   3                      USBFS_currentTD.count = sizeof(E_cw_pitch);
+ 286   3                      requestHandled  = USBFS_InitControlWrite();
+ 287   3                      break;
+ 288   3                      
+ 289   3                  case SET_KEYER_MODE:
+ 290   3                      USBFS_currentTD.pData = (void *)&E_keyer_mode;
+ 291   3                      USBFS_currentTD.count = sizeof(E_keyer_mode);
+ 292   3                      requestHandled  = USBFS_InitControlWrite();
+ 293   3                      break;
+ 294   3                      
+ 295   3                  case SET_CW_PADDLE:
+ 296   3                      USBFS_currentTD.pData = (void *)&E_paddle;
+ 297   3                      USBFS_currentTD.count = sizeof(E_paddle);
+ 298   3                      requestHandled  = USBFS_InitControlWrite();
+ 299   3                      break;
+ 300   3                      
+C51 COMPILER V9.51   USBVEND01                                                             09/03/2026 15:33:29 PAGE 6   
 
- 301   3                      USBFS_currentTD.count = sizeof(E_spacing);
- 302   3                      requestHandled  = USBFS_InitControlWrite();
- 303   3                      break;
- 304   3                      
- 305   3                  case SET_WEIGHT:
- 306   3                      USBFS_currentTD.pData = (void *)&E_weight;
- 307   3                      USBFS_currentTD.count = sizeof(E_weight);
- 308   3                      requestHandled  = USBFS_InitControlWrite();
- 309   3                      break;
- 310   3                      
- 311   3                  case SET_WPM:
- 312   3                      USBFS_currentTD.pData = (void *)&E_wpm;
- 313   3                      USBFS_currentTD.count = sizeof(E_wpm);
- 314   3                      requestHandled  = USBFS_InitControlWrite();
- 315   3                      break;
- 316   3                      
- 317   3                  case SET_SIDE_TONE:
- 318   3                      USBFS_currentTD.pData = (void *)&E_side_tone;
- 319   3                      USBFS_currentTD.count = sizeof(E_side_tone);
- 320   3                      requestHandled  = USBFS_InitControlWrite();
- 321   3                      break;
- 322   3                      
- 323   3                  case SET_KEYER_INSTALLED:
- 324   3                      USBFS_currentTD.pData = (void *)&E_keyer_installed;
- 325   3                      USBFS_currentTD.count = sizeof(E_keyer_installed);
- 326   3                      requestHandled  = USBFS_InitControlWrite();
- 327   3                      break;
- 328   3                 
- 329   3                
- 330   3              }//End switch (reqCmd)
- 331   2          }//End if ((reqType & USBFS_RQST_DIR_MASK) == USBFS_RQST_DIR_D2H)
- 332   1          return(requestHandled);
- 333   1      }
- 334          
-C51 COMPILER V9.51   USBVEND01                                                             03/03/2025 12:10:05 PAGE 7   
+ 301   3                  case SET_SPACING:
+ 302   3                      USBFS_currentTD.pData = (void *)&E_spacing;
+ 303   3                      USBFS_currentTD.count = sizeof(E_spacing);
+ 304   3                      requestHandled  = USBFS_InitControlWrite();
+ 305   3                      break;
+ 306   3      
+ 307   3                  /* Memory-play text WPM (Farnsworth gaps); same control-write style as SET_WPM */
+ 308   3                  case SET_MEM_TEXT_WPM:
+ 309   3                      USBFS_currentTD.pData = (void *)&E_mem_text_wpm;
+ 310   3                      USBFS_currentTD.count = sizeof(E_mem_text_wpm);
+ 311   3                      requestHandled  = USBFS_InitControlWrite();
+ 312   3                      break;
+ 313   3                      
+ 314   3                  case SET_WEIGHT:
+ 315   3                      USBFS_currentTD.pData = (void *)&E_weight;
+ 316   3                      USBFS_currentTD.count = sizeof(E_weight);
+ 317   3                      requestHandled  = USBFS_InitControlWrite();
+ 318   3                      break;
+ 319   3                      
+ 320   3                  case SET_WPM:
+ 321   3                      USBFS_currentTD.pData = (void *)&E_wpm;
+ 322   3                      USBFS_currentTD.count = sizeof(E_wpm);
+ 323   3                      requestHandled  = USBFS_InitControlWrite();
+ 324   3                      break;
+ 325   3                      
+ 326   3                  case SET_SIDE_TONE:
+ 327   3                      USBFS_currentTD.pData = (void *)&E_side_tone;
+ 328   3                      USBFS_currentTD.count = sizeof(E_side_tone);
+ 329   3                      requestHandled  = USBFS_InitControlWrite();
+ 330   3                      break;
+ 331   3                      
+ 332   3                  case SET_KEYER_INSTALLED:
+ 333   3                      USBFS_currentTD.pData = (void *)&E_keyer_installed;
+ 334   3                      USBFS_currentTD.count = sizeof(E_keyer_installed);
+ 335   3                      requestHandled  = USBFS_InitControlWrite();
+ 336   3                      break;
+ 337   3      
+ 338   3                  /*
+ 339   3                   * PIC keyer CQ (0x9C). Control write 2 bytes into E_keyer_mem_pkt:
+ 340   3                   *   [0]=param  [1]=seq (host increments each time so Configure_CW sees a change).
+ 341   3                   * Same InitControlWrite style as SET_WPM (no zero-length OUT / USBFS_TRUE).
+ 342   3                   */
+ 343   3                  case CMD_SET_KEYER_MEMORY:
+ 344   3                      USBFS_currentTD.pData = (void *)E_keyer_mem_pkt;
+ 345   3                      USBFS_currentTD.count = 2;
+ 346   3                      requestHandled = USBFS_InitControlWrite();
+ 347   3                      break;
+ 348   3      
+ 349   3                  /*
+ 350   3                   * Soft reboot / bootloader — do NOT call CySoftwareReset / Bootloadable_Load
+ 351   3                   * here (USB ISR). Set flag; main loop performs the reset.
+ 352   3                   */
+ 353   3                  case CMD_REBOOT_APP:
+ 354   3                      USBFS_currentTD.pData = (void *)&E_reboot_pad;
+ 355   3                      USBFS_currentTD.count = sizeof(E_reboot_pad);
+ 356   3                      requestHandled = USBFS_InitControlWrite();
+ 357   3                      E_reboot_request = REBOOT_REQ_APP;
+ 358   3                      break;
+ 359   3      
+ 360   3                  case CMD_ENTER_BOOTLOADER:
+ 361   3                      USBFS_currentTD.pData = (void *)&E_reboot_pad;
+ 362   3                      USBFS_currentTD.count = sizeof(E_reboot_pad);
+C51 COMPILER V9.51   USBVEND01                                                             09/03/2026 15:33:29 PAGE 7   
+
+ 363   3                      requestHandled = USBFS_InitControlWrite();
+ 364   3                      E_reboot_request = REBOOT_REQ_BOOTLOADER;
+ 365   3                      break;
+ 366   3                 
+ 367   3                
+ 368   3              }//End switch (reqCmd)
+ 369   2          }//End if ((reqType & USBFS_RQST_DIR_MASK) == USBFS_RQST_DIR_D2H)
+ 370   1          return(requestHandled);
+ 371   1      }
+ 372          
+C51 COMPILER V9.51   USBVEND01                                                             09/03/2026 15:33:29 PAGE 8   
 
 ASSEMBLY LISTING OF GENERATED OBJECT CODE
 
 
              ; FUNCTION _?swap32_int (BEGIN)
-                                           ; SOURCE LINE # 41
+                                           ; SOURCE LINE # 43
                        MOV     DPTR,#0FFFCH
                  E     CALL    ?C?ADDXBP
                  E     CALL    ?C?LSTXDATA
                        MOV     DPTR,#0FFF6H
                  E     CALL    ?C?ADDXBP
-                                           ; SOURCE LINE # 44
+                                           ; SOURCE LINE # 46
                        MOV     R3,#01H
                        MOV     DPTR,#06H
                  E     CALL    ?C?XBPOFF
@@ -382,7 +422,7 @@ ASSEMBLY LISTING OF GENERATED OBJECT CODE
                        INC     DPTR
                        MOV     A,R1
                        MOVX    @DPTR,A
-                                           ; SOURCE LINE # 45
+                                           ; SOURCE LINE # 47
                        MOV     R3,#01H
                        MOV     DPTR,#0AH
                  E     CALL    ?C?XBPOFF
@@ -398,7 +438,7 @@ ASSEMBLY LISTING OF GENERATED OBJECT CODE
                        INC     DPTR
                        MOV     A,R1
                        MOVX    @DPTR,A
-                                           ; SOURCE LINE # 46
+                                           ; SOURCE LINE # 48
                        MOV     DPTR,#03H
                  E     CALL    ?C?XBPOFF
                        MOVX    A,@DPTR
@@ -418,7 +458,7 @@ ASSEMBLY LISTING OF GENERATED OBJECT CODE
                  E     MOV     DPH,?C_XBP
                  E     MOV     DPL,?C_XBP+01H
                        MOVX    A,@DPTR
-C51 COMPILER V9.51   USBVEND01                                                             03/03/2025 12:10:05 PAGE 8   
+C51 COMPILER V9.51   USBVEND01                                                             09/03/2026 15:33:29 PAGE 9   
 
                        MOV     R3,A
                        INC     DPTR
@@ -427,74 +467,6 @@ ASSEMBLY LISTING OF GENERATED OBJECT CODE
                        INC     DPTR
                        MOVX    A,@DPTR
                        MOV     R1,A
-                       MOV     A,R7
-                 E     CALL    ?C?CSTPTR
-                                           ; SOURCE LINE # 47
-                       MOV     DPTR,#03H
-                 E     CALL    ?C?XBPOFF
-                       MOVX    A,@DPTR
-                       MOV     R3,A
-                       INC     DPTR
-                       MOVX    A,@DPTR
-                       MOV     R2,A
-                       INC     DPTR
-                       MOVX    A,@DPTR
-                       ADD     A,#02H
-                       MOV     R1,A
-                       CLR     A
-                       ADDC    A,R2
-                       MOV     R2,A
-                 E     CALL    ?C?CLDPTR
-                       MOV     R7,A
-                 E     MOV     DPH,?C_XBP
-                 E     MOV     DPL,?C_XBP+01H
-                       MOVX    A,@DPTR
-                       MOV     R3,A
-                       INC     DPTR
-                       MOVX    A,@DPTR
-                       MOV     R2,A
-                       INC     DPTR
-                       MOVX    A,@DPTR
-                       ADD     A,#01H
-                       MOV     R1,A
-                       CLR     A
-                       ADDC    A,R2
-                       MOV     R2,A
-                       MOV     A,R7
-                 E     CALL    ?C?CSTPTR
-                                           ; SOURCE LINE # 48
-                       MOV     DPTR,#03H
-                 E     CALL    ?C?XBPOFF
-                       MOVX    A,@DPTR
-                       MOV     R3,A
-                       INC     DPTR
-                       MOVX    A,@DPTR
-                       MOV     R2,A
-                       INC     DPTR
-                       MOVX    A,@DPTR
-                       ADD     A,#01H
-                       MOV     R1,A
-                       CLR     A
-                       ADDC    A,R2
-                       MOV     R2,A
-                 E     CALL    ?C?CLDPTR
-                       MOV     R7,A
-                 E     MOV     DPH,?C_XBP
-                 E     MOV     DPL,?C_XBP+01H
-                       MOVX    A,@DPTR
-C51 COMPILER V9.51   USBVEND01                                                             03/03/2025 12:10:05 PAGE 9   
-
-                       MOV     R3,A
-                       INC     DPTR
-                       MOVX    A,@DPTR
-                       MOV     R2,A
-                       INC     DPTR
-                       MOVX    A,@DPTR
-                       ADD     A,#02H
-                       MOV     R1,A
-                       CLR     A
-                       ADDC    A,R2
-                       MOV     R2,A
                        MOV     A,R7
                  E     CALL    ?C?CSTPTR
                                            ; SOURCE LINE # 49
@@ -507,6 +479,74 @@ ASSEMBLY LISTING OF GENERATED OBJECT CODE
                        MOV     R2,A
                        INC     DPTR
                        MOVX    A,@DPTR
+                       ADD     A,#02H
+                       MOV     R1,A
+                       CLR     A
+                       ADDC    A,R2
+                       MOV     R2,A
+                 E     CALL    ?C?CLDPTR
+                       MOV     R7,A
+                 E     MOV     DPH,?C_XBP
+                 E     MOV     DPL,?C_XBP+01H
+                       MOVX    A,@DPTR
+                       MOV     R3,A
+                       INC     DPTR
+                       MOVX    A,@DPTR
+                       MOV     R2,A
+                       INC     DPTR
+                       MOVX    A,@DPTR
+                       ADD     A,#01H
+                       MOV     R1,A
+                       CLR     A
+                       ADDC    A,R2
+                       MOV     R2,A
+                       MOV     A,R7
+                 E     CALL    ?C?CSTPTR
+                                           ; SOURCE LINE # 50
+                       MOV     DPTR,#03H
+                 E     CALL    ?C?XBPOFF
+                       MOVX    A,@DPTR
+                       MOV     R3,A
+                       INC     DPTR
+                       MOVX    A,@DPTR
+                       MOV     R2,A
+                       INC     DPTR
+                       MOVX    A,@DPTR
+                       ADD     A,#01H
+                       MOV     R1,A
+                       CLR     A
+                       ADDC    A,R2
+                       MOV     R2,A
+                 E     CALL    ?C?CLDPTR
+                       MOV     R7,A
+                 E     MOV     DPH,?C_XBP
+                 E     MOV     DPL,?C_XBP+01H
+                       MOVX    A,@DPTR
+C51 COMPILER V9.51   USBVEND01                                                             09/03/2026 15:33:29 PAGE 10  
+
+                       MOV     R3,A
+                       INC     DPTR
+                       MOVX    A,@DPTR
+                       MOV     R2,A
+                       INC     DPTR
+                       MOVX    A,@DPTR
+                       ADD     A,#02H
+                       MOV     R1,A
+                       CLR     A
+                       ADDC    A,R2
+                       MOV     R2,A
+                       MOV     A,R7
+                 E     CALL    ?C?CSTPTR
+                                           ; SOURCE LINE # 51
+                       MOV     DPTR,#03H
+                 E     CALL    ?C?XBPOFF
+                       MOVX    A,@DPTR
+                       MOV     R3,A
+                       INC     DPTR
+                       MOVX    A,@DPTR
+                       MOV     R2,A
+                       INC     DPTR
+                       MOVX    A,@DPTR
                        MOV     R1,A
                  E     CALL    ?C?CLDPTR
                        MOV     R7,A
@@ -526,7 +566,7 @@ ASSEMBLY LISTING OF GENERATED OBJECT CODE
                        MOV     R2,A
                        MOV     A,R7
                  E     CALL    ?C?CSTPTR
-                                           ; SOURCE LINE # 50
+                                           ; SOURCE LINE # 52
                        MOV     DPTR,#06H
                  E     CALL    ?C?XBPOFF
                        MOVX    A,@DPTR
@@ -540,79 +580,79 @@ ASSEMBLY LISTING OF GENERATED OBJECT CODE
                        INC     DPTR
                        MOVX    A,@DPTR
                        MOV     R7,A
-                                           ; SOURCE LINE # 51
+                                           ; SOURCE LINE # 53
              ?C0001:
                        MOV     DPTR,#0EH
                  E     CALL    ?C?ADDXBP
                        RET     
              ; FUNCTION _?swap32_int (END)
-C51 COMPILER V9.51   USBVEND01                                                             03/03/2025 12:10:05 PAGE 10  
+C51 COMPILER V9.51   USBVEND01                                                             09/03/2026 15:33:29 PAGE 11  
 
 
              ; FUNCTION emulated_register (BEGIN)
-                                           ; SOURCE LINE # 55
-                                           ; SOURCE LINE # 56
+                                           ; SOURCE LINE # 57
+                                           ; SOURCE LINE # 58
 ;---- Variable 'reg' assigned to Register 'R7' ----
                        CLR     A
                        MOV     R7,A
-                                           ; SOURCE LINE # 57
+                                           ; SOURCE LINE # 59
                  E     MOV     DPTR,#TX_Request
                        MOVX    A,@DPTR
                  R     xJZ     ?C0002
                        MOV     A,#010H
                        MOV     R7,A
              ?C0002:
-                                           ; SOURCE LINE # 59
+                                           ; SOURCE LINE # 61
                  E     MOV     DPTR,#E_key_down
                        MOVX    A,@DPTR
                        MOV     R6,A
 ;---- Variable 'key' assigned to Register 'R6' ----
-                                           ; SOURCE LINE # 60
+                                           ; SOURCE LINE # 62
                  R     xJNB    ACC.0,?C0003
                        MOV     A,R7
                        ORL     A,#020H
                        MOV     R7,A
              ?C0003:
-                                           ; SOURCE LINE # 61
+                                           ; SOURCE LINE # 63
                        MOV     A,R6
                  R     xJNB    ACC.1,?C0004
                        MOV     A,R7
                        ORL     A,#02H
                        MOV     R7,A
              ?C0004:
-                                           ; SOURCE LINE # 62
-                                           ; SOURCE LINE # 63
+                                           ; SOURCE LINE # 64
+                                           ; SOURCE LINE # 65
              ?C0005:
                        RET     
              ; FUNCTION emulated_register (END)
 
              ; FUNCTION USBFS_HandleVendorRqst (BEGIN)
-                                           ; SOURCE LINE # 65
-                                           ; SOURCE LINE # 66
                                            ; SOURCE LINE # 67
+                                           ; SOURCE LINE # 68
+                                           ; SOURCE LINE # 69
                        CLR     A
                  R     MOV     DPTR,#requestHandled
                        MOVX    @DPTR,A
-                                           ; SOURCE LINE # 75
+                                           ; SOURCE LINE # 77
                        MOV     DPTR,#06000H
                        MOVX    A,@DPTR
                  R     MOV     DPTR,#reqType
                        MOVX    @DPTR,A
-                                           ; SOURCE LINE # 76
+                                           ; SOURCE LINE # 78
                        MOV     DPTR,#06001H
                        MOVX    A,@DPTR
                  R     MOV     DPTR,#reqCmd
                        MOVX    @DPTR,A
-                                           ; SOURCE LINE # 79
+                                           ; SOURCE LINE # 81
                  R     MOV     DPTR,#reqType
                        MOVX    A,@DPTR
                        ANL     A,#080H
                        XRL     A,#080H
                  R     xJNZ    ?C0006
-                                           ; SOURCE LINE # 80
-C51 COMPILER V9.51   USBVEND01                                                             03/03/2025 12:10:05 PAGE 11  
+                                           ; SOURCE LINE # 82
+C51 COMPILER V9.51   USBVEND01                                                             09/03/2026 15:33:29 PAGE 12  
 
-                                           ; SOURCE LINE # 81
+                                           ; SOURCE LINE # 83
                        INC     DPTR
                        MOVX    A,@DPTR
                  E     CALL    ?C?CCASE
@@ -650,17 +690,17 @@ ASSEMBLY LISTING OF GENERATED OBJECT CODE
                        DB      0BFH
                        DW      00H
                  R     DW      ?C0006
-                                           ; SOURCE LINE # 82
-                                           ; SOURCE LINE # 83
-             ?C0008:
                                            ; SOURCE LINE # 84
+                                           ; SOURCE LINE # 85
+             ?C0008:
+                                           ; SOURCE LINE # 86
                  R     MOV     DPTR,#result
-                       MOV     A,#096H
+                       MOV     A,#097H
                        MOVX    @DPTR,A
                        INC     DPTR
                        MOV     A,#02H
                        MOVX    @DPTR,A
-                                           ; SOURCE LINE # 85
+                                           ; SOURCE LINE # 87
                        MOV     R3,#01H
                  E     MOV     DPTR,#USBFS_currentTD+02H
                        DEC     A
@@ -671,30 +711,30 @@ ASSEMBLY LISTING OF GENERATED OBJECT CODE
                        INC     DPTR
                  R     MOV     A,#LOW result
                        MOVX    @DPTR,A
-                                           ; SOURCE LINE # 86
+                                           ; SOURCE LINE # 88
                  E     MOV     DPTR,#USBFS_currentTD
                        CLR     A
-C51 COMPILER V9.51   USBVEND01                                                             03/03/2025 12:10:05 PAGE 12  
+C51 COMPILER V9.51   USBVEND01                                                             09/03/2026 15:33:29 PAGE 13  
 
                        MOVX    @DPTR,A
                        INC     DPTR
                        MOV     A,#02H
                        MOVX    @DPTR,A
-                                           ; SOURCE LINE # 87
+                                           ; SOURCE LINE # 89
                  E     CALL    USBFS_InitControlRead
                  R     MOV     DPTR,#requestHandled
                        MOV     A,R7
                        MOVX    @DPTR,A
-                                           ; SOURCE LINE # 88
+                                           ; SOURCE LINE # 90
                  R     xJMP    ?C0006
-                                           ; SOURCE LINE # 89
-             ?C0009:
                                            ; SOURCE LINE # 91
+             ?C0009:
+                                           ; SOURCE LINE # 93
                  R     CALL    emulated_register
                  R     MOV     DPTR,#result
                        MOV     A,R7
                        MOVX    @DPTR,A
-                                           ; SOURCE LINE # 92
+                                           ; SOURCE LINE # 94
                        MOVX    A,@DPTR
                        MOV     R4,A
                        INC     DPTR
@@ -713,7 +753,7 @@ ASSEMBLY LISTING OF GENERATED OBJECT CODE
                        MOV     R4,A
                  R     MOV     DPTR,#result
                  E     CALL    ?C?LSTXDATA
-                                           ; SOURCE LINE # 93
+                                           ; SOURCE LINE # 95
                  E     MOV     DPTR,#USBFS_currentTD+02H
                        MOV     A,#01H
                        MOVX    @DPTR,A
@@ -723,25 +763,25 @@ ASSEMBLY LISTING OF GENERATED OBJECT CODE
                        INC     DPTR
                  R     MOV     A,#LOW result
                        MOVX    @DPTR,A
-                                           ; SOURCE LINE # 94
+                                           ; SOURCE LINE # 96
                  E     MOV     DPTR,#USBFS_currentTD
                        CLR     A
                        MOVX    @DPTR,A
                        INC     DPTR
                        INC     A
                        MOVX    @DPTR,A
-                                           ; SOURCE LINE # 95
+                                           ; SOURCE LINE # 97
                  E     CALL    USBFS_InitControlRead
                  R     MOV     DPTR,#requestHandled
                        MOV     A,R7
                        MOVX    @DPTR,A
-                                           ; SOURCE LINE # 96
+                                           ; SOURCE LINE # 98
                  R     xJMP    ?C0006
-                                           ; SOURCE LINE # 97
-C51 COMPILER V9.51   USBVEND01                                                             03/03/2025 12:10:05 PAGE 13  
+                                           ; SOURCE LINE # 99
+C51 COMPILER V9.51   USBVEND01                                                             09/03/2026 15:33:29 PAGE 14  
 
              ?C0010:
-                                           ; SOURCE LINE # 98
+                                           ; SOURCE LINE # 100
                  E     MOV     R2,#HIGH Si570_LO
                  E     MOV     R1,#LOW Si570_LO
                  E     MOV     DPTR,#USBFS_currentTD+02H
@@ -753,23 +793,23 @@ ASSEMBLY LISTING OF GENERATED OBJECT CODE
                        INC     DPTR
                  E     MOV     A,#LOW Si570_LO
                        MOVX    @DPTR,A
-                                           ; SOURCE LINE # 99
+                                           ; SOURCE LINE # 101
                  E     MOV     DPTR,#USBFS_currentTD
                        CLR     A
                        MOVX    @DPTR,A
                        INC     DPTR
                        MOV     A,#04H
                        MOVX    @DPTR,A
-                                           ; SOURCE LINE # 100
+                                           ; SOURCE LINE # 102
                  E     CALL    USBFS_InitControlRead
                  R     MOV     DPTR,#requestHandled
                        MOV     A,R7
                        MOVX    @DPTR,A
-                                           ; SOURCE LINE # 101
-                 R     xJMP    ?C0006
-                                           ; SOURCE LINE # 102
-             ?C0011:
                                            ; SOURCE LINE # 103
+                 R     xJMP    ?C0006
+                                           ; SOURCE LINE # 104
+             ?C0011:
+                                           ; SOURCE LINE # 105
                        MOV     R7,#070H
                        MOV     R6,#03DH
                        MOV     R5,#0AH
@@ -777,7 +817,7 @@ ASSEMBLY LISTING OF GENERATED OBJECT CODE
                  E     CALL    _?swap32
                  R     MOV     DPTR,#result
                  E     CALL    ?C?LSTXDATA
-                                           ; SOURCE LINE # 104
+                                           ; SOURCE LINE # 106
                  E     MOV     DPTR,#USBFS_currentTD+02H
                        MOV     A,#01H
                        MOVX    @DPTR,A
@@ -787,25 +827,25 @@ ASSEMBLY LISTING OF GENERATED OBJECT CODE
                        INC     DPTR
                  R     MOV     A,#LOW result
                        MOVX    @DPTR,A
-                                           ; SOURCE LINE # 105
+                                           ; SOURCE LINE # 107
                  E     MOV     DPTR,#USBFS_currentTD
                        CLR     A
                        MOVX    @DPTR,A
                        INC     DPTR
                        MOV     A,#04H
                        MOVX    @DPTR,A
-                                           ; SOURCE LINE # 106
+                                           ; SOURCE LINE # 108
                  E     CALL    USBFS_InitControlRead
                  R     MOV     DPTR,#requestHandled
                        MOV     A,R7
                        MOVX    @DPTR,A
-                                           ; SOURCE LINE # 107
+                                           ; SOURCE LINE # 109
                  R     xJMP    ?C0006
-                                           ; SOURCE LINE # 108
-C51 COMPILER V9.51   USBVEND01                                                             03/03/2025 12:10:05 PAGE 14  
+                                           ; SOURCE LINE # 110
+C51 COMPILER V9.51   USBVEND01                                                             09/03/2026 15:33:29 PAGE 15  
 
              ?C0012:
-                                           ; SOURCE LINE # 109
+                                           ; SOURCE LINE # 111
                  E     MOV     R2,#HIGH Si570_Xtal
                  E     MOV     R1,#LOW Si570_Xtal
                  E     MOV     DPTR,#USBFS_currentTD+02H
@@ -817,27 +857,27 @@ ASSEMBLY LISTING OF GENERATED OBJECT CODE
                        INC     DPTR
                  E     MOV     A,#LOW Si570_Xtal
                        MOVX    @DPTR,A
-                                           ; SOURCE LINE # 110
+                                           ; SOURCE LINE # 112
                  E     MOV     DPTR,#USBFS_currentTD
                        CLR     A
                        MOVX    @DPTR,A
                        INC     DPTR
                        MOV     A,#04H
                        MOVX    @DPTR,A
-                                           ; SOURCE LINE # 111
+                                           ; SOURCE LINE # 113
                  E     CALL    USBFS_InitControlRead
                  R     MOV     DPTR,#requestHandled
                        MOV     A,R7
                        MOVX    @DPTR,A
-                                           ; SOURCE LINE # 112
+                                           ; SOURCE LINE # 114
                        CLR     A
                  R     MOV     DPTR,#E_dll_version
                        MOVX    @DPTR,A
-                                           ; SOURCE LINE # 113
-                 R     xJMP    ?C0006
-                                           ; SOURCE LINE # 114
-             ?C0013:
                                            ; SOURCE LINE # 115
+                 R     xJMP    ?C0006
+                                           ; SOURCE LINE # 116
+             ?C0013:
+                                           ; SOURCE LINE # 117
                  E     MOV     DPTR,#USBFS_currentTD+02H
                        MOV     A,#01H
                        MOVX    @DPTR,A
@@ -847,49 +887,49 @@ ASSEMBLY LISTING OF GENERATED OBJECT CODE
                        INC     DPTR
                  E     MOV     A,#LOW Si570_Buf+02H
                        MOVX    @DPTR,A
-                                           ; SOURCE LINE # 116
+                                           ; SOURCE LINE # 118
                  E     MOV     DPTR,#USBFS_currentTD
                        CLR     A
                        MOVX    @DPTR,A
                        INC     DPTR
                        MOV     A,#06H
                        MOVX    @DPTR,A
-                                           ; SOURCE LINE # 117
+                                           ; SOURCE LINE # 119
                  E     CALL    USBFS_InitControlRead
                  R     MOV     DPTR,#requestHandled
                        MOV     A,R7
                        MOVX    @DPTR,A
-                                           ; SOURCE LINE # 118
-                 R     xJMP    ?C0006
-                                           ; SOURCE LINE # 119
-             ?C0014:
                                            ; SOURCE LINE # 120
+                 R     xJMP    ?C0006
+                                           ; SOURCE LINE # 121
+             ?C0014:
+                                           ; SOURCE LINE # 122
                        MOV     DPTR,#06002H
                        MOVX    A,@DPTR
-C51 COMPILER V9.51   USBVEND01                                                             03/03/2025 12:10:05 PAGE 15  
+C51 COMPILER V9.51   USBVEND01                                                             09/03/2026 15:33:29 PAGE 16  
 
                  R     xJNB    ACC.0,?C0015
-                                           ; SOURCE LINE # 121
+                                           ; SOURCE LINE # 123
                  E     MOV     DPTR,#TX_Request
                        MOV     A,#01H
                        MOVX    @DPTR,A
-                                           ; SOURCE LINE # 122
+                                           ; SOURCE LINE # 124
                  R     xJMP    ?C0017
              ?C0015:
-                                           ; SOURCE LINE # 123
-                                           ; SOURCE LINE # 124
+                                           ; SOURCE LINE # 125
+                                           ; SOURCE LINE # 126
                        CLR     A
                  E     MOV     DPTR,#TX_Request
                        MOVX    @DPTR,A
-                                           ; SOURCE LINE # 125
-                                           ; SOURCE LINE # 128
+                                           ; SOURCE LINE # 127
+                                           ; SOURCE LINE # 130
              ?C0017:
-                                           ; SOURCE LINE # 129
+                                           ; SOURCE LINE # 131
                  R     CALL    emulated_register
                  R     MOV     DPTR,#result
                        MOV     A,R7
                        MOVX    @DPTR,A
-                                           ; SOURCE LINE # 130
+                                           ; SOURCE LINE # 132
                  E     MOV     DPTR,#USBFS_currentTD+02H
                        MOV     A,#01H
                        MOVX    @DPTR,A
@@ -899,23 +939,23 @@ ASSEMBLY LISTING OF GENERATED OBJECT CODE
                        INC     DPTR
                  R     MOV     A,#LOW result
                        MOVX    @DPTR,A
-                                           ; SOURCE LINE # 131
+                                           ; SOURCE LINE # 133
                  E     MOV     DPTR,#USBFS_currentTD
                        CLR     A
                        MOVX    @DPTR,A
                        INC     DPTR
                        INC     A
                        MOVX    @DPTR,A
-                                           ; SOURCE LINE # 132
+                                           ; SOURCE LINE # 134
                  E     CALL    USBFS_InitControlRead
                  R     MOV     DPTR,#requestHandled
                        MOV     A,R7
                        MOVX    @DPTR,A
-                                           ; SOURCE LINE # 133
+                                           ; SOURCE LINE # 135
                  R     xJMP    ?C0006
-                                           ; SOURCE LINE # 134
-             ?C0018:
                                            ; SOURCE LINE # 136
+             ?C0018:
+                                           ; SOURCE LINE # 138
                        MOV     DPTR,#06003H
                        MOVX    A,@DPTR
                        XRL     A,#087H
@@ -928,12 +968,12 @@ ASSEMBLY LISTING OF GENERATED OBJECT CODE
                        XRL     A,#01H
                        ORL     A,R6
                  R     xJNZ    ?C0006
-                                           ; SOURCE LINE # 138
+                                           ; SOURCE LINE # 140
                  R     MOV     DPTR,#result
-C51 COMPILER V9.51   USBVEND01                                                             03/03/2025 12:10:05 PAGE 16  
+C51 COMPILER V9.51   USBVEND01                                                             09/03/2026 15:33:29 PAGE 17  
 
                        MOVX    @DPTR,A
-                                           ; SOURCE LINE # 139
+                                           ; SOURCE LINE # 141
                        MOV     R3,#01H
                  E     MOV     DPTR,#USBFS_currentTD+02H
                        INC     A
@@ -944,24 +984,24 @@ ASSEMBLY LISTING OF GENERATED OBJECT CODE
                        INC     DPTR
                  R     MOV     A,#LOW result
                        MOVX    @DPTR,A
-                                           ; SOURCE LINE # 140
+                                           ; SOURCE LINE # 142
                  E     MOV     DPTR,#USBFS_currentTD
                        CLR     A
                        MOVX    @DPTR,A
                        INC     DPTR
                        INC     A
                        MOVX    @DPTR,A
-                                           ; SOURCE LINE # 141
+                                           ; SOURCE LINE # 143
                  E     CALL    USBFS_InitControlRead
                  R     MOV     DPTR,#requestHandled
                        MOV     A,R7
                        MOVX    @DPTR,A
-                                           ; SOURCE LINE # 142
-                                           ; SOURCE LINE # 143
-                 R     xJMP    ?C0006
                                            ; SOURCE LINE # 144
-             ?C0020:
                                            ; SOURCE LINE # 145
+                 R     xJMP    ?C0006
+                                           ; SOURCE LINE # 146
+             ?C0020:
+                                           ; SOURCE LINE # 147
                  E     MOV     DPTR,#USBFS_currentTD+02H
                        MOV     A,#01H
                        MOVX    @DPTR,A
@@ -971,53 +1011,53 @@ ASSEMBLY LISTING OF GENERATED OBJECT CODE
                        INC     DPTR
                  E     MOV     A,#LOW E_key_down
                        MOVX    @DPTR,A
-                                           ; SOURCE LINE # 146
+                                           ; SOURCE LINE # 148
                  E     MOV     DPTR,#USBFS_currentTD
                        CLR     A
                        MOVX    @DPTR,A
                        INC     DPTR
                        INC     A
                        MOVX    @DPTR,A
-                                           ; SOURCE LINE # 147
+                                           ; SOURCE LINE # 149
                  E     CALL    USBFS_InitControlRead
                  R     MOV     DPTR,#requestHandled
                        MOV     A,R7
                        MOVX    @DPTR,A
-                                           ; SOURCE LINE # 148
-                 R     xJMP    ?C0006
                                            ; SOURCE LINE # 150
+                 R     xJMP    ?C0006
+                                           ; SOURCE LINE # 152
              ?C0021:
-                                           ; SOURCE LINE # 151
+                                           ; SOURCE LINE # 153
                  E     MOV     R2,#HIGH E_PTT
                  E     MOV     R1,#LOW E_PTT
                  E     MOV     DPTR,#USBFS_currentTD+02H
                        MOV     A,#01H
                        MOVX    @DPTR,A
                        INC     DPTR
-C51 COMPILER V9.51   USBVEND01                                                             03/03/2025 12:10:05 PAGE 17  
+C51 COMPILER V9.51   USBVEND01                                                             09/03/2026 15:33:29 PAGE 18  
 
                  E     MOV     A,#HIGH E_PTT
                        MOVX    @DPTR,A
                        INC     DPTR
                  E     MOV     A,#LOW E_PTT
                        MOVX    @DPTR,A
-                                           ; SOURCE LINE # 152
+                                           ; SOURCE LINE # 154
                  E     MOV     DPTR,#USBFS_currentTD
                        CLR     A
                        MOVX    @DPTR,A
                        INC     DPTR
                        INC     A
                        MOVX    @DPTR,A
-                                           ; SOURCE LINE # 153
+                                           ; SOURCE LINE # 155
                  E     CALL    USBFS_InitControlRead
                  R     MOV     DPTR,#requestHandled
                        MOV     A,R7
                        MOVX    @DPTR,A
-                                           ; SOURCE LINE # 154
-                 R     xJMP    ?C0006
                                            ; SOURCE LINE # 156
+                 R     xJMP    ?C0006
+                                           ; SOURCE LINE # 158
              ?C0022:
-                                           ; SOURCE LINE # 157
+                                           ; SOURCE LINE # 159
                  E     MOV     DPTR,#E_transceiver_temp
                        MOVX    A,@DPTR
                        MOV     R4,A
@@ -1033,7 +1073,7 @@ ASSEMBLY LISTING OF GENERATED OBJECT CODE
                  R     CALL    _?swap32_int
                  R     MOV     DPTR,#proficio_temperature
                  E     CALL    ?C?LSTXDATA
-                                           ; SOURCE LINE # 159
+                                           ; SOURCE LINE # 161
                  E     MOV     DPTR,#USBFS_currentTD+02H
                        MOV     A,#01H
                        MOVX    @DPTR,A
@@ -1043,25 +1083,25 @@ ASSEMBLY LISTING OF GENERATED OBJECT CODE
                        INC     DPTR
                  R     MOV     A,#LOW proficio_temperature
                        MOVX    @DPTR,A
-                                           ; SOURCE LINE # 160
+                                           ; SOURCE LINE # 162
                  E     MOV     DPTR,#USBFS_currentTD
                        CLR     A
                        MOVX    @DPTR,A
                        INC     DPTR
                        MOV     A,#04H
                        MOVX    @DPTR,A
-                                           ; SOURCE LINE # 161
+                                           ; SOURCE LINE # 163
                  E     CALL    USBFS_InitControlRead
                  R     MOV     DPTR,#requestHandled
                        MOV     A,R7
                        MOVX    @DPTR,A
-                                           ; SOURCE LINE # 162
-                 R     xJMP    ?C0006
                                            ; SOURCE LINE # 164
-C51 COMPILER V9.51   USBVEND01                                                             03/03/2025 12:10:05 PAGE 18  
+                 R     xJMP    ?C0006
+                                           ; SOURCE LINE # 166
+C51 COMPILER V9.51   USBVEND01                                                             09/03/2026 15:33:29 PAGE 19  
 
              ?C0023:
-                                           ; SOURCE LINE # 165
+                                           ; SOURCE LINE # 167
                  E     MOV     DPTR,#USBFS_currentTD+02H
                        MOV     A,#01H
                        MOVX    @DPTR,A
@@ -1071,28 +1111,28 @@ ASSEMBLY LISTING OF GENERATED OBJECT CODE
                        INC     DPTR
                  R     MOV     A,#LOW E_Potentia_temperature
                        MOVX    @DPTR,A
-                                           ; SOURCE LINE # 166
+                                           ; SOURCE LINE # 168
                  E     MOV     DPTR,#USBFS_currentTD
                        CLR     A
                        MOVX    @DPTR,A
                        INC     DPTR
                        MOV     A,#04H
                        MOVX    @DPTR,A
-                                           ; SOURCE LINE # 167
+                                           ; SOURCE LINE # 169
                  E     CALL    USBFS_InitControlRead
                  R     MOV     DPTR,#requestHandled
                        MOV     A,R7
                        MOVX    @DPTR,A
-                                           ; SOURCE LINE # 168
-                 R     xJMP    ?C0006
                                            ; SOURCE LINE # 170
+                 R     xJMP    ?C0006
+                                           ; SOURCE LINE # 172
              ?C0024:
-                                           ; SOURCE LINE # 171
+                                           ; SOURCE LINE # 173
                  E     MOV     DPTR,#ee_ppm_int
                        MOVX    A,@DPTR
                  R     MOV     DPTR,#int_value
                        MOVX    @DPTR,A
-                                           ; SOURCE LINE # 172
+                                           ; SOURCE LINE # 174
                  E     MOV     DPTR,#USBFS_currentTD+02H
                        MOV     A,#01H
                        MOVX    @DPTR,A
@@ -1102,27 +1142,27 @@ ASSEMBLY LISTING OF GENERATED OBJECT CODE
                        INC     DPTR
                  R     MOV     A,#LOW int_value
                        MOVX    @DPTR,A
-                                           ; SOURCE LINE # 173
+                                           ; SOURCE LINE # 175
                  E     MOV     DPTR,#USBFS_currentTD
                        CLR     A
                        MOVX    @DPTR,A
                        INC     DPTR
                        INC     A
                        MOVX    @DPTR,A
-                                           ; SOURCE LINE # 174
+                                           ; SOURCE LINE # 176
                  E     CALL    USBFS_InitControlRead
                  R     MOV     DPTR,#requestHandled
                        MOV     A,R7
                        MOVX    @DPTR,A
-                                           ; SOURCE LINE # 175
-                 R     xJMP    ?C0006
                                            ; SOURCE LINE # 177
+                 R     xJMP    ?C0006
+                                           ; SOURCE LINE # 179
              ?C0025:
-                                           ; SOURCE LINE # 178
+                                           ; SOURCE LINE # 180
                  E     MOV     DPTR,#ee_ppm_int
                        MOVX    A,@DPTR
                        MOV     R7,A
-C51 COMPILER V9.51   USBVEND01                                                             03/03/2025 12:10:05 PAGE 19  
+C51 COMPILER V9.51   USBVEND01                                                             09/03/2026 15:33:29 PAGE 20  
 
                        RLC     A
                        SUBB    A,ACC
@@ -1131,7 +1171,7 @@ ASSEMBLY LISTING OF GENERATED OBJECT CODE
                        MOV     R4,A
                  R     MOV     DPTR,#PPM_temp
                  E     CALL    ?C?LSTXDATA
-                                           ; SOURCE LINE # 179
+                                           ; SOURCE LINE # 181
                  R     MOV     DPTR,#PPM_temp
                        MOVX    A,@DPTR
                        MOV     R4,A
@@ -1147,7 +1187,7 @@ ASSEMBLY LISTING OF GENERATED OBJECT CODE
                  R     CALL    _?swap32_int
                  R     MOV     DPTR,#PPM_result
                  E     CALL    ?C?LSTXDATA
-                                           ; SOURCE LINE # 180
+                                           ; SOURCE LINE # 182
                  E     MOV     DPTR,#USBFS_currentTD+02H
                        MOV     A,#01H
                        MOVX    @DPTR,A
@@ -1157,23 +1197,23 @@ ASSEMBLY LISTING OF GENERATED OBJECT CODE
                        INC     DPTR
                  R     MOV     A,#LOW PPM_result
                        MOVX    @DPTR,A
-                                           ; SOURCE LINE # 181
+                                           ; SOURCE LINE # 183
                  E     MOV     DPTR,#USBFS_currentTD
                        CLR     A
                        MOVX    @DPTR,A
                        INC     DPTR
                        MOV     A,#02H
                        MOVX    @DPTR,A
-                                           ; SOURCE LINE # 182
+                                           ; SOURCE LINE # 184
                  E     CALL    USBFS_InitControlRead
                  R     MOV     DPTR,#requestHandled
                        MOV     A,R7
                        MOVX    @DPTR,A
-                                           ; SOURCE LINE # 183
-                 R     xJMP    ?C0006
                                            ; SOURCE LINE # 185
+                 R     xJMP    ?C0006
+                                           ; SOURCE LINE # 187
              ?C0026:
-                                           ; SOURCE LINE # 186
+                                           ; SOURCE LINE # 188
                  E     MOV     DPTR,#ee_ppm_dec
                        MOVX    A,@DPTR
                        MOV     R7,A
@@ -1184,9 +1224,9 @@ ASSEMBLY LISTING OF GENERATED OBJECT CODE
                        MOV     R4,A
                  R     MOV     DPTR,#PPM_temp
                  E     CALL    ?C?LSTXDATA
-                                           ; SOURCE LINE # 187
+                                           ; SOURCE LINE # 189
                  R     MOV     DPTR,#PPM_temp
-C51 COMPILER V9.51   USBVEND01                                                             03/03/2025 12:10:05 PAGE 20  
+C51 COMPILER V9.51   USBVEND01                                                             09/03/2026 15:33:29 PAGE 21  
 
                        MOVX    A,@DPTR
                        MOV     R4,A
@@ -1202,7 +1242,7 @@ ASSEMBLY LISTING OF GENERATED OBJECT CODE
                  R     CALL    _?swap32_int
                  R     MOV     DPTR,#PPM_result
                  E     CALL    ?C?LSTXDATA
-                                           ; SOURCE LINE # 188
+                                           ; SOURCE LINE # 190
                  E     MOV     DPTR,#USBFS_currentTD+02H
                        MOV     A,#01H
                        MOVX    @DPTR,A
@@ -1212,32 +1252,36 @@ ASSEMBLY LISTING OF GENERATED OBJECT CODE
                        INC     DPTR
                  R     MOV     A,#LOW PPM_result
                        MOVX    @DPTR,A
-                                           ; SOURCE LINE # 189
+                                           ; SOURCE LINE # 191
                  E     MOV     DPTR,#USBFS_currentTD
                        CLR     A
                        MOVX    @DPTR,A
                        INC     DPTR
                        MOV     A,#02H
                        MOVX    @DPTR,A
-                                           ; SOURCE LINE # 190
+                                           ; SOURCE LINE # 192
                  E     CALL    USBFS_InitControlRead
                  R     MOV     DPTR,#requestHandled
                        MOV     A,R7
                        MOVX    @DPTR,A
-                                           ; SOURCE LINE # 191
-                                           ; SOURCE LINE # 202
-                                           ; SOURCE LINE # 203
+                                           ; SOURCE LINE # 193
+                                           ; SOURCE LINE # 204
+                                           ; SOURCE LINE # 205
              ?C0006:
-                                           ; SOURCE LINE # 206
+                                           ; SOURCE LINE # 208
                  R     MOV     DPTR,#reqType
                        MOVX    A,@DPTR
                        ANL     A,#080H
                  R     xJNZ    ?C0027
-                                           ; SOURCE LINE # 207
-                                           ; SOURCE LINE # 208
+                                           ; SOURCE LINE # 209
+                                           ; SOURCE LINE # 210
                        INC     DPTR
                        MOVX    A,@DPTR
                  E     CALL    ?C?CCASE
+                 R     DW      ?C0052
+                       DB      0EH
+                 R     DW      ?C0051
+                       DB      0FH
                  R     DW      ?C0029
                        DB      030H
                  R     DW      ?C0030
@@ -1246,12 +1290,12 @@ ASSEMBLY LISTING OF GENERATED OBJECT CODE
                        DB      033H
                  R     DW      ?C0033
                        DB      035H
+C51 COMPILER V9.51   USBVEND01                                                             09/03/2026 15:33:29 PAGE 22  
+
                  R     DW      ?C0032
                        DB      03AH
                  R     DW      ?C0038
                        DB      070H
-C51 COMPILER V9.51   USBVEND01                                                             03/03/2025 12:10:05 PAGE 21  
-
                  R     DW      ?C0042
                        DB      071H
                  R     DW      ?C0039
@@ -1261,17 +1305,21 @@ ASSEMBLY LISTING OF GENERATED OBJECT CODE
                  R     DW      ?C0044
                        DB      075H
                  R     DW      ?C0045
+                       DB      076H
+                 R     DW      ?C0046
                        DB      077H
                  R     DW      ?C0040
                        DB      07AH
-                 R     DW      ?C0046
-                       DB      07BH
-                 R     DW      ?C0048
-                       DB      07DH
                  R     DW      ?C0047
+                       DB      07BH
+                 R     DW      ?C0049
+                       DB      07DH
+                 R     DW      ?C0048
                        DB      07FH
                  R     DW      ?C0041
                        DB      090H
+                 R     DW      ?C0050
+                       DB      09CH
                  R     DW      ?C0034
                        DB      0A0H
                  R     DW      ?C0035
@@ -1282,10 +1330,10 @@ ASSEMBLY LISTING OF GENERATED OBJECT CODE
                        DB      0F7H
                        DW      00H
                  R     DW      ?C0027
-                                           ; SOURCE LINE # 209
-                                           ; SOURCE LINE # 210
-             ?C0029:
                                            ; SOURCE LINE # 211
+                                           ; SOURCE LINE # 212
+             ?C0029:
+                                           ; SOURCE LINE # 213
                  E     MOV     DPTR,#USBFS_currentTD+02H
                        MOV     A,#01H
                        MOVX    @DPTR,A
@@ -1295,27 +1343,27 @@ ASSEMBLY LISTING OF GENERATED OBJECT CODE
                        INC     DPTR
                  E     MOV     A,#LOW Si570_OLD
                        MOVX    @DPTR,A
-                                           ; SOURCE LINE # 212
+                                           ; SOURCE LINE # 214
                  E     MOV     DPTR,#USBFS_currentTD
                        CLR     A
                        MOVX    @DPTR,A
                        INC     DPTR
                        MOV     A,#06H
                        MOVX    @DPTR,A
-                                           ; SOURCE LINE # 213
+                                           ; SOURCE LINE # 215
                  E     CALL    USBFS_InitControlWrite
                  R     MOV     DPTR,#requestHandled
                        MOV     A,R7
+C51 COMPILER V9.51   USBVEND01                                                             09/03/2026 15:33:29 PAGE 23  
+
                        MOVX    @DPTR,A
-                                           ; SOURCE LINE # 214
-                 R     xJMP    ?C0027
-                                           ; SOURCE LINE # 215
-             ?C0030:
                                            ; SOURCE LINE # 216
+                 R     xJMP    ?C0027
+                                           ; SOURCE LINE # 217
+             ?C0030:
+                                           ; SOURCE LINE # 218
                  E     MOV     R2,#HIGH Si570_LO
                  E     MOV     R1,#LOW Si570_LO
-C51 COMPILER V9.51   USBVEND01                                                             03/03/2025 12:10:05 PAGE 22  
-
                  E     MOV     DPTR,#USBFS_currentTD+02H
                        MOV     A,#01H
                        MOVX    @DPTR,A
@@ -1325,23 +1373,23 @@ ASSEMBLY LISTING OF GENERATED OBJECT CODE
                        INC     DPTR
                  E     MOV     A,#LOW Si570_LO
                        MOVX    @DPTR,A
-                                           ; SOURCE LINE # 217
+                                           ; SOURCE LINE # 219
                  E     MOV     DPTR,#USBFS_currentTD
                        CLR     A
                        MOVX    @DPTR,A
                        INC     DPTR
                        MOV     A,#04H
                        MOVX    @DPTR,A
-                                           ; SOURCE LINE # 218
+                                           ; SOURCE LINE # 220
                  E     CALL    USBFS_InitControlWrite
                  R     MOV     DPTR,#requestHandled
                        MOV     A,R7
                        MOVX    @DPTR,A
-                                           ; SOURCE LINE # 219
-                 R     xJMP    ?C0027
-                                           ; SOURCE LINE # 220
-             ?C0031:
                                            ; SOURCE LINE # 221
+                 R     xJMP    ?C0027
+                                           ; SOURCE LINE # 222
+             ?C0031:
+                                           ; SOURCE LINE # 223
                  E     MOV     R2,#HIGH E_calibration_int
                  E     MOV     R1,#LOW E_calibration_int
                  E     MOV     DPTR,#USBFS_currentTD+02H
@@ -1353,41 +1401,41 @@ ASSEMBLY LISTING OF GENERATED OBJECT CODE
                        INC     DPTR
                  E     MOV     A,#LOW E_calibration_int
                        MOVX    @DPTR,A
-                                           ; SOURCE LINE # 222
+                                           ; SOURCE LINE # 224
                  E     MOV     DPTR,#USBFS_currentTD
                        CLR     A
                        MOVX    @DPTR,A
                        INC     DPTR
                        INC     A
                        MOVX    @DPTR,A
-                                           ; SOURCE LINE # 223
+                                           ; SOURCE LINE # 225
                  E     CALL    USBFS_InitControlWrite
                  R     MOV     DPTR,#requestHandled
                        MOV     A,R7
                        MOVX    @DPTR,A
-                                           ; SOURCE LINE # 224
+                                           ; SOURCE LINE # 226
                  E     MOV     DPTR,#E_calibration_int
                        MOVX    A,@DPTR
                        MOV     R7,A
                        RLC     A
+C51 COMPILER V9.51   USBVEND01                                                             09/03/2026 15:33:29 PAGE 24  
+
                        SUBB    A,ACC
                        MOV     R6,A
                        MOV     R5,A
                        MOV     R4,A
                  R     MOV     DPTR,#l_int
                  E     CALL    ?C?LSTXDATA
-                                           ; SOURCE LINE # 225
+                                           ; SOURCE LINE # 227
                  E     MOV     DPTR,#E_PPM_needs_updated
-C51 COMPILER V9.51   USBVEND01                                                             03/03/2025 12:10:05 PAGE 23  
-
                        MOVX    A,@DPTR
                        ORL     A,#01H
                        MOVX    @DPTR,A
-                                           ; SOURCE LINE # 226
-                 R     xJMP    ?C0027
-                                           ; SOURCE LINE # 227
-             ?C0032:
                                            ; SOURCE LINE # 228
+                 R     xJMP    ?C0027
+                                           ; SOURCE LINE # 229
+             ?C0032:
+                                           ; SOURCE LINE # 230
                  E     MOV     R2,#HIGH E_calibration_dec
                  E     MOV     R1,#LOW E_calibration_dec
                  E     MOV     DPTR,#USBFS_currentTD+02H
@@ -1399,19 +1447,19 @@ ASSEMBLY LISTING OF GENERATED OBJECT CODE
                        INC     DPTR
                  E     MOV     A,#LOW E_calibration_dec
                        MOVX    @DPTR,A
-                                           ; SOURCE LINE # 229
+                                           ; SOURCE LINE # 231
                  E     MOV     DPTR,#USBFS_currentTD
                        CLR     A
                        MOVX    @DPTR,A
                        INC     DPTR
                        INC     A
                        MOVX    @DPTR,A
-                                           ; SOURCE LINE # 230
+                                           ; SOURCE LINE # 232
                  E     CALL    USBFS_InitControlWrite
                  R     MOV     DPTR,#requestHandled
                        MOV     A,R7
                        MOVX    @DPTR,A
-                                           ; SOURCE LINE # 231
+                                           ; SOURCE LINE # 233
                  E     MOV     DPTR,#E_calibration_dec
                        MOVX    A,@DPTR
                        MOV     R7,A
@@ -1422,18 +1470,20 @@ ASSEMBLY LISTING OF GENERATED OBJECT CODE
                        MOV     R4,A
                  R     MOV     DPTR,#l_dec
                  E     CALL    ?C?LSTXDATA
-                                           ; SOURCE LINE # 232
+                                           ; SOURCE LINE # 234
                  E     MOV     DPTR,#E_PPM_needs_updated
                        MOVX    A,@DPTR
                        ORL     A,#02H
                        MOVX    @DPTR,A
-                                           ; SOURCE LINE # 234
-                 R     xJMP    ?C0027
-                                           ; SOURCE LINE # 235
-             ?C0033:
                                            ; SOURCE LINE # 236
+                 R     xJMP    ?C0027
+                                           ; SOURCE LINE # 237
+             ?C0033:
+                                           ; SOURCE LINE # 238
                  E     MOV     R2,#HIGH E_ppm
                  E     MOV     R1,#LOW E_ppm
+C51 COMPILER V9.51   USBVEND01                                                             09/03/2026 15:33:29 PAGE 25  
+
                  E     MOV     DPTR,#USBFS_currentTD+02H
                        MOV     A,#01H
                        MOVX    @DPTR,A
@@ -1442,26 +1492,24 @@ ASSEMBLY LISTING OF GENERATED OBJECT CODE
                        MOVX    @DPTR,A
                        INC     DPTR
                  E     MOV     A,#LOW E_ppm
-C51 COMPILER V9.51   USBVEND01                                                             03/03/2025 12:10:05 PAGE 24  
-
                        MOVX    @DPTR,A
-                                           ; SOURCE LINE # 237
+                                           ; SOURCE LINE # 239
                  E     MOV     DPTR,#USBFS_currentTD
                        CLR     A
                        MOVX    @DPTR,A
                        INC     DPTR
                        INC     A
                        MOVX    @DPTR,A
-                                           ; SOURCE LINE # 238
+                                           ; SOURCE LINE # 240
                  E     CALL    USBFS_InitControlWrite
                  R     MOV     DPTR,#requestHandled
                        MOV     A,R7
                        MOVX    @DPTR,A
-                                           ; SOURCE LINE # 239
-                 R     xJMP    ?C0027
-                                           ; SOURCE LINE # 240
-             ?C0034:
                                            ; SOURCE LINE # 241
+                 R     xJMP    ?C0027
+                                           ; SOURCE LINE # 242
+             ?C0034:
+                                           ; SOURCE LINE # 243
                  E     MOV     DPTR,#USBFS_currentTD+02H
                        MOV     A,#01H
                        MOVX    @DPTR,A
@@ -1471,23 +1519,23 @@ ASSEMBLY LISTING OF GENERATED OBJECT CODE
                        INC     DPTR
                  R     MOV     A,#LOW E_dll_version
                        MOVX    @DPTR,A
-                                           ; SOURCE LINE # 242
+                                           ; SOURCE LINE # 244
                  E     MOV     DPTR,#USBFS_currentTD
                        CLR     A
                        MOVX    @DPTR,A
                        INC     DPTR
                        INC     A
                        MOVX    @DPTR,A
-                                           ; SOURCE LINE # 243
+                                           ; SOURCE LINE # 245
                  E     CALL    USBFS_InitControlWrite
                  R     MOV     DPTR,#requestHandled
                        MOV     A,R7
                        MOVX    @DPTR,A
-                                           ; SOURCE LINE # 244
-                 R     xJMP    ?C0027
-                                           ; SOURCE LINE # 245
-             ?C0035:
                                            ; SOURCE LINE # 246
+                 R     xJMP    ?C0027
+                                           ; SOURCE LINE # 247
+             ?C0035:
+                                           ; SOURCE LINE # 248
                  E     MOV     DPTR,#USBFS_currentTD+02H
                        MOV     A,#01H
                        MOVX    @DPTR,A
@@ -1497,25 +1545,25 @@ ASSEMBLY LISTING OF GENERATED OBJECT CODE
                        INC     DPTR
                  E     MOV     A,#LOW E_transverter
                        MOVX    @DPTR,A
-                                           ; SOURCE LINE # 247
+                                           ; SOURCE LINE # 249
+C51 COMPILER V9.51   USBVEND01                                                             09/03/2026 15:33:29 PAGE 26  
+
                  E     MOV     DPTR,#USBFS_currentTD
                        CLR     A
                        MOVX    @DPTR,A
                        INC     DPTR
                        INC     A
                        MOVX    @DPTR,A
-                                           ; SOURCE LINE # 248
+                                           ; SOURCE LINE # 250
                  E     CALL    USBFS_InitControlWrite
-C51 COMPILER V9.51   USBVEND01                                                             03/03/2025 12:10:05 PAGE 25  
-
                  R     MOV     DPTR,#requestHandled
                        MOV     A,R7
                        MOVX    @DPTR,A
-                                           ; SOURCE LINE # 250
-                 R     xJMP    ?C0027
-                                           ; SOURCE LINE # 251
-             ?C0036:
                                            ; SOURCE LINE # 252
+                 R     xJMP    ?C0027
+                                           ; SOURCE LINE # 253
+             ?C0036:
+                                           ; SOURCE LINE # 254
                  E     MOV     DPTR,#USBFS_currentTD+02H
                        MOV     A,#01H
                        MOVX    @DPTR,A
@@ -1525,23 +1573,23 @@ ASSEMBLY LISTING OF GENERATED OBJECT CODE
                        INC     DPTR
                  E     MOV     A,#LOW E_pcb_version
                        MOVX    @DPTR,A
-                                           ; SOURCE LINE # 253
+                                           ; SOURCE LINE # 255
                  E     MOV     DPTR,#USBFS_currentTD
                        CLR     A
                        MOVX    @DPTR,A
                        INC     DPTR
                        INC     A
                        MOVX    @DPTR,A
-                                           ; SOURCE LINE # 254
+                                           ; SOURCE LINE # 256
                  E     CALL    USBFS_InitControlWrite
                  R     MOV     DPTR,#requestHandled
                        MOV     A,R7
                        MOVX    @DPTR,A
-                                           ; SOURCE LINE # 255
-                 R     xJMP    ?C0027
-                                           ; SOURCE LINE # 256
-             ?C0037:
                                            ; SOURCE LINE # 257
+                 R     xJMP    ?C0027
+                                           ; SOURCE LINE # 258
+             ?C0037:
+                                           ; SOURCE LINE # 259
                  E     MOV     DPTR,#USBFS_currentTD+02H
                        MOV     A,#01H
                        MOVX    @DPTR,A
@@ -1551,27 +1599,27 @@ ASSEMBLY LISTING OF GENERATED OBJECT CODE
                        INC     DPTR
                  E     MOV     A,#LOW E_Amplifier
                        MOVX    @DPTR,A
-                                           ; SOURCE LINE # 258
+                                           ; SOURCE LINE # 260
                  E     MOV     DPTR,#USBFS_currentTD
                        CLR     A
                        MOVX    @DPTR,A
                        INC     DPTR
                        INC     A
                        MOVX    @DPTR,A
-                                           ; SOURCE LINE # 259
+                                           ; SOURCE LINE # 261
                  E     CALL    USBFS_InitControlWrite
                  R     MOV     DPTR,#requestHandled
                        MOV     A,R7
+C51 COMPILER V9.51   USBVEND01                                                             09/03/2026 15:33:29 PAGE 27  
+
                        MOVX    @DPTR,A
-                                           ; SOURCE LINE # 260
+                                           ; SOURCE LINE # 262
                  R     xJMP    ?C0027
-                                           ; SOURCE LINE # 263
+                                           ; SOURCE LINE # 265
              ?C0038:
-                                           ; SOURCE LINE # 264
+                                           ; SOURCE LINE # 266
                  E     MOV     DPTR,#USBFS_currentTD+02H
                        MOV     A,#01H
-C51 COMPILER V9.51   USBVEND01                                                             03/03/2025 12:10:05 PAGE 26  
-
                        MOVX    @DPTR,A
                        INC     DPTR
                  E     MOV     A,#HIGH E_host_mode
@@ -1579,23 +1627,23 @@ ASSEMBLY LISTING OF GENERATED OBJECT CODE
                        INC     DPTR
                  E     MOV     A,#LOW E_host_mode
                        MOVX    @DPTR,A
-                                           ; SOURCE LINE # 265
+                                           ; SOURCE LINE # 267
                  E     MOV     DPTR,#USBFS_currentTD
                        CLR     A
                        MOVX    @DPTR,A
                        INC     DPTR
                        INC     A
                        MOVX    @DPTR,A
-                                           ; SOURCE LINE # 266
+                                           ; SOURCE LINE # 268
                  E     CALL    USBFS_InitControlWrite
                  R     MOV     DPTR,#requestHandled
                        MOV     A,R7
                        MOVX    @DPTR,A
-                                           ; SOURCE LINE # 267
-                 R     xJMP    ?C0027
                                            ; SOURCE LINE # 269
+                 R     xJMP    ?C0027
+                                           ; SOURCE LINE # 271
              ?C0039:
-                                           ; SOURCE LINE # 270
+                                           ; SOURCE LINE # 272
                  E     MOV     DPTR,#USBFS_currentTD+02H
                        MOV     A,#01H
                        MOVX    @DPTR,A
@@ -1605,51 +1653,51 @@ ASSEMBLY LISTING OF GENERATED OBJECT CODE
                        INC     DPTR
                  E     MOV     A,#LOW E_QSK
                        MOVX    @DPTR,A
-                                           ; SOURCE LINE # 271
+                                           ; SOURCE LINE # 273
                  E     MOV     DPTR,#USBFS_currentTD
                        CLR     A
                        MOVX    @DPTR,A
                        INC     DPTR
                        INC     A
                        MOVX    @DPTR,A
-                                           ; SOURCE LINE # 272
+                                           ; SOURCE LINE # 274
                  E     CALL    USBFS_InitControlWrite
                  R     MOV     DPTR,#requestHandled
                        MOV     A,R7
                        MOVX    @DPTR,A
-                                           ; SOURCE LINE # 273
-                 R     xJMP    ?C0027
                                            ; SOURCE LINE # 275
+                 R     xJMP    ?C0027
+                                           ; SOURCE LINE # 277
              ?C0040:
-                                           ; SOURCE LINE # 276
+                                           ; SOURCE LINE # 278
                  E     MOV     DPTR,#USBFS_currentTD+02H
                        MOV     A,#01H
                        MOVX    @DPTR,A
                        INC     DPTR
+C51 COMPILER V9.51   USBVEND01                                                             09/03/2026 15:33:29 PAGE 28  
+
                  E     MOV     A,#HIGH E_TX_Hold
                        MOVX    @DPTR,A
                        INC     DPTR
                  E     MOV     A,#LOW E_TX_Hold
                        MOVX    @DPTR,A
-                                           ; SOURCE LINE # 277
+                                           ; SOURCE LINE # 279
                  E     MOV     DPTR,#USBFS_currentTD
                        CLR     A
-C51 COMPILER V9.51   USBVEND01                                                             03/03/2025 12:10:05 PAGE 27  
-
                        MOVX    @DPTR,A
                        INC     DPTR
                        INC     A
                        MOVX    @DPTR,A
-                                           ; SOURCE LINE # 278
+                                           ; SOURCE LINE # 280
                  E     CALL    USBFS_InitControlWrite
                  R     MOV     DPTR,#requestHandled
                        MOV     A,R7
                        MOVX    @DPTR,A
-                                           ; SOURCE LINE # 279
-                 R     xJMP    ?C0027
                                            ; SOURCE LINE # 281
+                 R     xJMP    ?C0027
+                                           ; SOURCE LINE # 283
              ?C0041:
-                                           ; SOURCE LINE # 282
+                                           ; SOURCE LINE # 284
                  E     MOV     R2,#HIGH E_cw_pitch
                  E     MOV     R1,#LOW E_cw_pitch
                  E     MOV     DPTR,#USBFS_currentTD+02H
@@ -1661,23 +1709,23 @@ ASSEMBLY LISTING OF GENERATED OBJECT CODE
                        INC     DPTR
                  E     MOV     A,#LOW E_cw_pitch
                        MOVX    @DPTR,A
-                                           ; SOURCE LINE # 283
+                                           ; SOURCE LINE # 285
                  E     MOV     DPTR,#USBFS_currentTD
                        CLR     A
                        MOVX    @DPTR,A
                        INC     DPTR
                        INC     A
                        MOVX    @DPTR,A
-                                           ; SOURCE LINE # 284
+                                           ; SOURCE LINE # 286
                  E     CALL    USBFS_InitControlWrite
                  R     MOV     DPTR,#requestHandled
                        MOV     A,R7
                        MOVX    @DPTR,A
-                                           ; SOURCE LINE # 285
-                 R     xJMP    ?C0027
                                            ; SOURCE LINE # 287
+                 R     xJMP    ?C0027
+                                           ; SOURCE LINE # 289
              ?C0042:
-                                           ; SOURCE LINE # 288
+                                           ; SOURCE LINE # 290
                  E     MOV     DPTR,#USBFS_currentTD+02H
                        MOV     A,#01H
                        MOVX    @DPTR,A
@@ -1687,25 +1735,25 @@ ASSEMBLY LISTING OF GENERATED OBJECT CODE
                        INC     DPTR
                  E     MOV     A,#LOW E_keyer_mode
                        MOVX    @DPTR,A
-                                           ; SOURCE LINE # 289
+                                           ; SOURCE LINE # 291
                  E     MOV     DPTR,#USBFS_currentTD
                        CLR     A
+C51 COMPILER V9.51   USBVEND01                                                             09/03/2026 15:33:29 PAGE 29  
+
                        MOVX    @DPTR,A
                        INC     DPTR
                        INC     A
                        MOVX    @DPTR,A
-                                           ; SOURCE LINE # 290
+                                           ; SOURCE LINE # 292
                  E     CALL    USBFS_InitControlWrite
                  R     MOV     DPTR,#requestHandled
                        MOV     A,R7
-C51 COMPILER V9.51   USBVEND01                                                             03/03/2025 12:10:05 PAGE 28  
-
                        MOVX    @DPTR,A
-                                           ; SOURCE LINE # 291
-                 R     xJMP    ?C0027
                                            ; SOURCE LINE # 293
+                 R     xJMP    ?C0027
+                                           ; SOURCE LINE # 295
              ?C0043:
-                                           ; SOURCE LINE # 294
+                                           ; SOURCE LINE # 296
                  E     MOV     DPTR,#USBFS_currentTD+02H
                        MOV     A,#01H
                        MOVX    @DPTR,A
@@ -1715,23 +1763,23 @@ ASSEMBLY LISTING OF GENERATED OBJECT CODE
                        INC     DPTR
                  E     MOV     A,#LOW E_paddle
                        MOVX    @DPTR,A
-                                           ; SOURCE LINE # 295
+                                           ; SOURCE LINE # 297
                  E     MOV     DPTR,#USBFS_currentTD
                        CLR     A
                        MOVX    @DPTR,A
                        INC     DPTR
                        INC     A
                        MOVX    @DPTR,A
-                                           ; SOURCE LINE # 296
+                                           ; SOURCE LINE # 298
                  E     CALL    USBFS_InitControlWrite
                  R     MOV     DPTR,#requestHandled
                        MOV     A,R7
                        MOVX    @DPTR,A
-                                           ; SOURCE LINE # 297
-                 R     xJMP    ?C0027
                                            ; SOURCE LINE # 299
+                 R     xJMP    ?C0027
+                                           ; SOURCE LINE # 301
              ?C0044:
-                                           ; SOURCE LINE # 300
+                                           ; SOURCE LINE # 302
                  E     MOV     DPTR,#USBFS_currentTD+02H
                        MOV     A,#01H
                        MOVX    @DPTR,A
@@ -1741,77 +1789,105 @@ ASSEMBLY LISTING OF GENERATED OBJECT CODE
                        INC     DPTR
                  E     MOV     A,#LOW E_spacing
                        MOVX    @DPTR,A
-                                           ; SOURCE LINE # 301
+                                           ; SOURCE LINE # 303
                  E     MOV     DPTR,#USBFS_currentTD
                        CLR     A
                        MOVX    @DPTR,A
                        INC     DPTR
                        INC     A
                        MOVX    @DPTR,A
-                                           ; SOURCE LINE # 302
+                                           ; SOURCE LINE # 304
                  E     CALL    USBFS_InitControlWrite
                  R     MOV     DPTR,#requestHandled
                        MOV     A,R7
                        MOVX    @DPTR,A
-                                           ; SOURCE LINE # 303
-                 R     xJMP    ?C0027
                                            ; SOURCE LINE # 305
+C51 COMPILER V9.51   USBVEND01                                                             09/03/2026 15:33:29 PAGE 30  
+
+                 R     xJMP    ?C0027
+                                           ; SOURCE LINE # 308
              ?C0045:
-                                           ; SOURCE LINE # 306
+                                           ; SOURCE LINE # 309
                  E     MOV     DPTR,#USBFS_currentTD+02H
                        MOV     A,#01H
                        MOVX    @DPTR,A
                        INC     DPTR
-C51 COMPILER V9.51   USBVEND01                                                             03/03/2025 12:10:05 PAGE 29  
-
+                 E     MOV     A,#HIGH E_mem_text_wpm
+                       MOVX    @DPTR,A
+                       INC     DPTR
+                 E     MOV     A,#LOW E_mem_text_wpm
+                       MOVX    @DPTR,A
+                                           ; SOURCE LINE # 310
+                 E     MOV     DPTR,#USBFS_currentTD
+                       CLR     A
+                       MOVX    @DPTR,A
+                       INC     DPTR
+                       INC     A
+                       MOVX    @DPTR,A
+                                           ; SOURCE LINE # 311
+                 E     CALL    USBFS_InitControlWrite
+                 R     MOV     DPTR,#requestHandled
+                       MOV     A,R7
+                       MOVX    @DPTR,A
+                                           ; SOURCE LINE # 312
+                 R     xJMP    ?C0027
+                                           ; SOURCE LINE # 314
+             ?C0046:
+                                           ; SOURCE LINE # 315
+                 E     MOV     DPTR,#USBFS_currentTD+02H
+                       MOV     A,#01H
+                       MOVX    @DPTR,A
+                       INC     DPTR
                  E     MOV     A,#HIGH E_weight
                        MOVX    @DPTR,A
                        INC     DPTR
                  E     MOV     A,#LOW E_weight
                        MOVX    @DPTR,A
-                                           ; SOURCE LINE # 307
+                                           ; SOURCE LINE # 316
                  E     MOV     DPTR,#USBFS_currentTD
                        CLR     A
                        MOVX    @DPTR,A
                        INC     DPTR
                        INC     A
                        MOVX    @DPTR,A
-                                           ; SOURCE LINE # 308
+                                           ; SOURCE LINE # 317
                  E     CALL    USBFS_InitControlWrite
                  R     MOV     DPTR,#requestHandled
                        MOV     A,R7
                        MOVX    @DPTR,A
-                                           ; SOURCE LINE # 309
+                                           ; SOURCE LINE # 318
                  R     xJMP    ?C0027
-                                           ; SOURCE LINE # 311
-             ?C0046:
-                                           ; SOURCE LINE # 312
+                                           ; SOURCE LINE # 320
+             ?C0047:
+                                           ; SOURCE LINE # 321
                  E     MOV     DPTR,#USBFS_currentTD+02H
                        MOV     A,#01H
                        MOVX    @DPTR,A
                        INC     DPTR
                  E     MOV     A,#HIGH E_wpm
                        MOVX    @DPTR,A
+C51 COMPILER V9.51   USBVEND01                                                             09/03/2026 15:33:29 PAGE 31  
+
                        INC     DPTR
                  E     MOV     A,#LOW E_wpm
                        MOVX    @DPTR,A
-                                           ; SOURCE LINE # 313
+                                           ; SOURCE LINE # 322
                  E     MOV     DPTR,#USBFS_currentTD
                        CLR     A
                        MOVX    @DPTR,A
                        INC     DPTR
                        INC     A
                        MOVX    @DPTR,A
-                                           ; SOURCE LINE # 314
+                                           ; SOURCE LINE # 323
                  E     CALL    USBFS_InitControlWrite
                  R     MOV     DPTR,#requestHandled
                        MOV     A,R7
                        MOVX    @DPTR,A
-                                           ; SOURCE LINE # 315
+                                           ; SOURCE LINE # 324
                  R     xJMP    ?C0027
-                                           ; SOURCE LINE # 317
-             ?C0047:
-                                           ; SOURCE LINE # 318
+                                           ; SOURCE LINE # 326
+             ?C0048:
+                                           ; SOURCE LINE # 327
                  E     MOV     DPTR,#USBFS_currentTD+02H
                        MOV     A,#01H
                        MOVX    @DPTR,A
@@ -1821,25 +1897,23 @@ ASSEMBLY LISTING OF GENERATED OBJECT CODE
                        INC     DPTR
                  E     MOV     A,#LOW E_side_tone
                        MOVX    @DPTR,A
-                                           ; SOURCE LINE # 319
+                                           ; SOURCE LINE # 328
                  E     MOV     DPTR,#USBFS_currentTD
                        CLR     A
                        MOVX    @DPTR,A
                        INC     DPTR
-C51 COMPILER V9.51   USBVEND01                                                             03/03/2025 12:10:05 PAGE 30  
-
                        INC     A
                        MOVX    @DPTR,A
-                                           ; SOURCE LINE # 320
+                                           ; SOURCE LINE # 329
                  E     CALL    USBFS_InitControlWrite
                  R     MOV     DPTR,#requestHandled
                        MOV     A,R7
                        MOVX    @DPTR,A
-                                           ; SOURCE LINE # 321
+                                           ; SOURCE LINE # 330
                  R     xJMP    ?C0027
-                                           ; SOURCE LINE # 323
-             ?C0048:
-                                           ; SOURCE LINE # 324
+                                           ; SOURCE LINE # 332
+             ?C0049:
+                                           ; SOURCE LINE # 333
                  E     MOV     DPTR,#USBFS_currentTD+02H
                        MOV     A,#01H
                        MOVX    @DPTR,A
@@ -1849,37 +1923,129 @@ ASSEMBLY LISTING OF GENERATED OBJECT CODE
                        INC     DPTR
                  E     MOV     A,#LOW E_keyer_installed
                        MOVX    @DPTR,A
-                                           ; SOURCE LINE # 325
+                                           ; SOURCE LINE # 334
                  E     MOV     DPTR,#USBFS_currentTD
                        CLR     A
                        MOVX    @DPTR,A
                        INC     DPTR
                        INC     A
                        MOVX    @DPTR,A
-                                           ; SOURCE LINE # 326
+C51 COMPILER V9.51   USBVEND01                                                             09/03/2026 15:33:29 PAGE 32  
+
+                                           ; SOURCE LINE # 335
                  E     CALL    USBFS_InitControlWrite
                  R     MOV     DPTR,#requestHandled
                        MOV     A,R7
                        MOVX    @DPTR,A
-                                           ; SOURCE LINE # 327
-                                           ; SOURCE LINE # 330
-                                           ; SOURCE LINE # 331
+                                           ; SOURCE LINE # 336
+                 R     xJMP    ?C0027
+                                           ; SOURCE LINE # 343
+             ?C0050:
+                                           ; SOURCE LINE # 344
+                 E     MOV     R2,#HIGH E_keyer_mem_pkt
+                 E     MOV     R1,#LOW E_keyer_mem_pkt
+                 E     MOV     DPTR,#USBFS_currentTD+02H
+                       MOV     A,#01H
+                       MOVX    @DPTR,A
+                       INC     DPTR
+                 E     MOV     A,#HIGH E_keyer_mem_pkt
+                       MOVX    @DPTR,A
+                       INC     DPTR
+                 E     MOV     A,#LOW E_keyer_mem_pkt
+                       MOVX    @DPTR,A
+                                           ; SOURCE LINE # 345
+                 E     MOV     DPTR,#USBFS_currentTD
+                       CLR     A
+                       MOVX    @DPTR,A
+                       INC     DPTR
+                       MOV     A,#02H
+                       MOVX    @DPTR,A
+                                           ; SOURCE LINE # 346
+                 E     CALL    USBFS_InitControlWrite
+                 R     MOV     DPTR,#requestHandled
+                       MOV     A,R7
+                       MOVX    @DPTR,A
+                                           ; SOURCE LINE # 347
+                 R     xJMP    ?C0027
+                                           ; SOURCE LINE # 353
+             ?C0051:
+                                           ; SOURCE LINE # 354
+                 E     MOV     DPTR,#USBFS_currentTD+02H
+                       MOV     A,#01H
+                       MOVX    @DPTR,A
+                       INC     DPTR
+                 R     MOV     A,#HIGH E_reboot_pad
+                       MOVX    @DPTR,A
+                       INC     DPTR
+                 R     MOV     A,#LOW E_reboot_pad
+                       MOVX    @DPTR,A
+                                           ; SOURCE LINE # 355
+                 E     MOV     DPTR,#USBFS_currentTD
+                       CLR     A
+                       MOVX    @DPTR,A
+                       INC     DPTR
+                       MOV     A,#04H
+                       MOVX    @DPTR,A
+                                           ; SOURCE LINE # 356
+                 E     CALL    USBFS_InitControlWrite
+                 R     MOV     DPTR,#requestHandled
+                       MOV     A,R7
+                       MOVX    @DPTR,A
+                                           ; SOURCE LINE # 357
+                 E     MOV     DPTR,#E_reboot_request
+                       MOV     A,#01H
+C51 COMPILER V9.51   USBVEND01                                                             09/03/2026 15:33:29 PAGE 33  
+
+                       MOVX    @DPTR,A
+                                           ; SOURCE LINE # 358
+                 R     xJMP    ?C0027
+                                           ; SOURCE LINE # 360
+             ?C0052:
+                                           ; SOURCE LINE # 361
+                 E     MOV     DPTR,#USBFS_currentTD+02H
+                       MOV     A,#01H
+                       MOVX    @DPTR,A
+                       INC     DPTR
+                 R     MOV     A,#HIGH E_reboot_pad
+                       MOVX    @DPTR,A
+                       INC     DPTR
+                 R     MOV     A,#LOW E_reboot_pad
+                       MOVX    @DPTR,A
+                                           ; SOURCE LINE # 362
+                 E     MOV     DPTR,#USBFS_currentTD
+                       CLR     A
+                       MOVX    @DPTR,A
+                       INC     DPTR
+                       MOV     A,#04H
+                       MOVX    @DPTR,A
+                                           ; SOURCE LINE # 363
+                 E     CALL    USBFS_InitControlWrite
+                 R     MOV     DPTR,#requestHandled
+                       MOV     A,R7
+                       MOVX    @DPTR,A
+                                           ; SOURCE LINE # 364
+                 E     MOV     DPTR,#E_reboot_request
+                       MOV     A,#02H
+                       MOVX    @DPTR,A
+                                           ; SOURCE LINE # 365
+                                           ; SOURCE LINE # 368
+                                           ; SOURCE LINE # 369
              ?C0027:
-                                           ; SOURCE LINE # 332
+                                           ; SOURCE LINE # 370
                  R     MOV     DPTR,#requestHandled
                        MOVX    A,@DPTR
                        MOV     R7,A
-                                           ; SOURCE LINE # 333
-             ?C0049:
+                                           ; SOURCE LINE # 371
+             ?C0053:
                        RET     
              ; FUNCTION USBFS_HandleVendorRqst (END)
 
 
 
 MODULE INFORMATION:   STATIC OVERLAYABLE
-   CODE SIZE        =   1964    ----
+   CODE SIZE        =   2127    ----
    CONSTANT SIZE    =   ----    ----
-   XDATA SIZE       =     27       4
+   XDATA SIZE       =     31       4
    PDATA SIZE       =   ----    ----
    DATA SIZE        =   ----    ----
    IDATA SIZE       =   ----    ----

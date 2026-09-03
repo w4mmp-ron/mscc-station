@@ -38,7 +38,7 @@
 
 
 #define FIRMWARE_VERSION_MAJOR 2
-#define FIRMWARE_VERSION_MINOR 150
+#define FIRMWARE_VERSION_MINOR 151
 #define FIRMWARE_VERSION ((((FIRMWARE_VERSION_MINOR) << 8) & 0xff00) | ((FIRMWARE_VERSION_MAJOR) & 0x00ff))
 #define EEPROM_PCB_VERSION_LOCATION 11
         
@@ -117,10 +117,23 @@ extern uint8 E_cw_hold;
 extern uint8_t E_keyer_mode;
 extern uint8_t E_wpm;
 extern uint8_t E_spacing;
+extern uint8_t E_mem_text_wpm; /* SET_MEM_TEXT_WPM 0x76: 0=off, else memory-play text WPM */
 extern uint8_t E_weight;
 extern uint8_t E_side_tone;
 extern uint8_t E_paddle;
 extern uint8_t E_keyer_installed;
+/*
+ * Keyer CQ memory USB packet (control write, 2 bytes — same style as other CW ops):
+ *   E_keyer_mem_pkt[0] = param (0=play, 1=begin, 2=end, 0x20-0x7E=ASCII)
+ *   E_keyer_mem_pkt[1] = sequence (host increments each transfer; never 0)
+ * Configure_CW: stable-read on seq change → ring queue → I2C one pair at a time.
+ */
+#define KEYER_MEM_Q_SIZE 80
+extern volatile uint8_t E_keyer_mem_pkt[2];
+extern volatile uint8_t E_keyer_mem_q[KEYER_MEM_Q_SIZE];
+extern volatile uint8_t E_keyer_mem_q_head;
+extern volatile uint8_t E_keyer_mem_q_tail;
+extern volatile uint8_t E_keyer_mem_q_count;
 //extern uint8 E_cw_defaults;
 
 extern uint32 E_current_rit_freq;
@@ -134,6 +147,11 @@ extern uint8_t E_Amplifier;
 extern uint8_t E_QSK;
 extern volatile uint8_t E_PTT;
 extern uint8_t E_band;
+/* USB reboot request: 0=none, 1=app soft reset, 2=enter PSoC bootloader */
+extern volatile uint8_t E_reboot_request;
+#define REBOOT_REQ_NONE        0u
+#define REBOOT_REQ_APP         1u
+#define REBOOT_REQ_BOOTLOADER  2u
 extern uint8 E_PPM_needs_updated;
 extern uint8 E_PPM_needs_set;
 

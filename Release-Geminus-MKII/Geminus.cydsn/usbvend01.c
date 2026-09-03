@@ -35,6 +35,8 @@ int32 PPM_temp = 0;
 uint8 E_dll_version = SI570_DLL;
 static uint8_t ppm_start = 0;
 static int32 proficio_temperature = 0;
+/* Discard buffer for reboot OUT payloads (host often sends sizeof(int)=4). */
+static uint8 E_reboot_pad[4];
 
 
 
@@ -301,6 +303,13 @@ uint8 USBFS_HandleVendorRqst(void)  //This called by the USBFS component.  This 
                 USBFS_currentTD.count = sizeof(E_spacing);
                 requestHandled  = USBFS_InitControlWrite();
                 break;
+
+            /* Memory-play text WPM (Farnsworth gaps); same control-write style as SET_WPM */
+            case SET_MEM_TEXT_WPM:
+                USBFS_currentTD.pData = (void *)&E_mem_text_wpm;
+                USBFS_currentTD.count = sizeof(E_mem_text_wpm);
+                requestHandled  = USBFS_InitControlWrite();
+                break;
                 
             case SET_WEIGHT:
                 USBFS_currentTD.pData = (void *)&E_weight;
@@ -324,6 +333,35 @@ uint8 USBFS_HandleVendorRqst(void)  //This called by the USBFS component.  This 
                 USBFS_currentTD.pData = (void *)&E_keyer_installed;
                 USBFS_currentTD.count = sizeof(E_keyer_installed);
                 requestHandled  = USBFS_InitControlWrite();
+                break;
+
+            /*
+             * PIC keyer CQ (0x9C). Control write 2 bytes into E_keyer_mem_pkt:
+             *   [0]=param  [1]=seq (host increments each time so Configure_CW sees a change).
+             * Same InitControlWrite style as SET_WPM (no zero-length OUT / USBFS_TRUE).
+             */
+            case CMD_SET_KEYER_MEMORY:
+                USBFS_currentTD.pData = (void *)E_keyer_mem_pkt;
+                USBFS_currentTD.count = 2;
+                requestHandled = USBFS_InitControlWrite();
+                break;
+
+            /*
+             * Soft reboot / bootloader — do NOT call CySoftwareReset / Bootloadable_Load
+             * here (USB ISR). Set flag; main loop performs the reset.
+             */
+            case CMD_REBOOT_APP:
+                USBFS_currentTD.pData = (void *)&E_reboot_pad;
+                USBFS_currentTD.count = sizeof(E_reboot_pad);
+                requestHandled = USBFS_InitControlWrite();
+                E_reboot_request = REBOOT_REQ_APP;
+                break;
+
+            case CMD_ENTER_BOOTLOADER:
+                USBFS_currentTD.pData = (void *)&E_reboot_pad;
+                USBFS_currentTD.count = sizeof(E_reboot_pad);
+                requestHandled = USBFS_InitControlWrite();
+                E_reboot_request = REBOOT_REQ_BOOTLOADER;
                 break;
            
           

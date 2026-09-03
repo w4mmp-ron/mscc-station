@@ -1,9 +1,9 @@
-C51 COMPILER V9.51   BAND_CONTROL                                                          12/05/2024 09:17:06 PAGE 1   
+C51 COMPILER V9.51   BAND_CONTROL                                                          09/03/2026 15:33:37 PAGE 1   
 
 
 C51 COMPILER V9.51, COMPILATION OF MODULE BAND_CONTROL
 OBJECT MODULE PLACED IN .\DP8051\DP8051_Keil_951\Debug\Band_Control.obj
-COMPILER INVOKED BY: C:\Program Files (x86)\Cypress\PSoC Creator\4.2\PSoC Creator\import\keil\pk51\9.51\C51\BIN\c51.exe 
+COMPILER INVOKED BY: C:\Program Files (x86)\Cypress\PSoC Creator\4.4\PSoC Creator\import\keil\pk51\9.51\C51\BIN\c51.exe 
                     -Generated_Source\PSoC3\Band_Control.c NOIV LARGE MODDP2 OMF2 VB(1) NOIP INCDIR(.,Generated_Source\PSoC3) FF(3) DB WL(2) 
                     -PR(.\DP8051\DP8051_Keil_951\Debug/Band_Control.lst) CD OT(5,SPEED) OA OJ(.\DP8051\DP8051_Keil_951\Debug\Band_Control.obj
                     -)
@@ -62,7 +62,7 @@ line level    source
   50          * Parameters:
   51          *  None.
   52          *
-C51 COMPILER V9.51   BAND_CONTROL                                                          12/05/2024 09:17:06 PAGE 2   
+C51 COMPILER V9.51   BAND_CONTROL                                                          09/03/2026 15:33:37 PAGE 2   
 
   53          * Return:
   54          *  Returns the current value in the Control Register.
@@ -77,7 +77,7 @@ line level    source
   63          
   64          
   65          /* [] END OF FILE */
-C51 COMPILER V9.51   BAND_CONTROL                                                          12/05/2024 09:17:06 PAGE 3   
+C51 COMPILER V9.51   BAND_CONTROL                                                          09/03/2026 15:33:37 PAGE 3   
 
 ASSEMBLY LISTING OF GENERATED OBJECT CODE
 

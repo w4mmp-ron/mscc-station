@@ -34,7 +34,7 @@ uint8 TX_Inhibit = 0;
 void TX_Main(void) {
     static uint8 state = 0; 
    
-    switch (state) {
+    /*switch (state) {
         case 0: // receiving
             if (TX_Request && !TX_Inhibit) {
                 state = 2;
@@ -48,6 +48,33 @@ void TX_Main(void) {
         case 10: // transmitting
             if (!TX_Request && !TX_Inhibit) {
                 Control_Write(Control_Read() & ~(CONTROL_LED) | CONTROL_AMP);
+                state = 11;
+             }
+           break;
+        case 11:
+            Control_Write(Control_Read() | CONTROL_RX);
+            state = 0;
+            break;
+    }*/
+     switch (state) {
+        case 0: // receiving to TX State
+            if (TX_Request && !TX_Inhibit) {
+                state = 1;
+                Control_Write(Control_Read() & ~CONTROL_RX);
+                Band_Control_Write(Band_Control_Read() | CONTROL_BAND_TX); //OR function
+            }
+            break;
+        case 1:
+            state = 2;//
+            break;
+        case 2:
+            Control_Write(Control_Read() & ~CONTROL_AMP);
+            state = 10;
+            break;
+        case 10: // transmitting to RX State
+            if (!TX_Request && !TX_Inhibit) {
+                Control_Write(Control_Read() & ~(CONTROL_LED) | CONTROL_AMP);
+                Band_Control_Write(Band_Control_Read() & ~ CONTROL_BAND_TX); //logical AND function to turn off TX and flipping state of pin
                 state = 11;
              }
            break;

@@ -55,16 +55,27 @@ CY_ISR(QSK_interrupt){
 uint8 keyer_write(uint8_t buffer)
 {
 	uint8_t msg_buffer = 0;
-	uint8_t ret_status = 1;
+	uint8_t ret_status = 0;
 	uint8_t write_status = 0;
     uint8 buffer_written = 0;
-        
-	msg_buffer = buffer;
-	write_status = I2C_DISPLAY_MasterWriteBuf(KEYER_SLAVE_ADDRESS,&msg_buffer,1u,I2C_DISPLAY_MODE_COMPLETE_XFER);
-    while((I2C_DISPLAY_MasterStatus() & I2C_DISPLAY_MSTAT_WR_CMPLT) == 0u){};
-    buffer_written = I2C_DISPLAY_MasterGetWriteBufSize();
-    if(buffer_written != (1u)) {
-        ret_status = 0;
+    uint8 attempt;
+
+    /*
+     * PIC may NACK while busy (e.g. EEPROM write on STORE_END). Retry a few
+     * times so a following PLAY is not dropped and keyer not marked missing.
+     */
+    msg_buffer = buffer;
+    for (attempt = 0; attempt < 8u; attempt++) {
+        write_status = I2C_DISPLAY_MasterWriteBuf(KEYER_SLAVE_ADDRESS, &msg_buffer, 1u,
+            I2C_DISPLAY_MODE_COMPLETE_XFER);
+        while ((I2C_DISPLAY_MasterStatus() & I2C_DISPLAY_MSTAT_WR_CMPLT) == 0u) {
+        }
+        buffer_written = I2C_DISPLAY_MasterGetWriteBufSize();
+        if (buffer_written == 1u) {
+            ret_status = 1;
+            break;
+        }
+        CyDelay(5u);
     }
     return ret_status;
 }
@@ -74,12 +85,33 @@ uint8 Configure_CW(){
     static uint8_t keyer_mode = 0;
     static uint8_t wpm = 0;
     static uint8_t spacing = 0;
+    static uint8_t mem_text_wpm = 0;
     static uint8_t weight = 0;
     static uint8_t side_tone = 0;
     static uint8_t paddle = 0;
     static uint8_t buffer[2];
 	static uint8_t send_state = 0;
+    static uint8_t last_mem_seq = 0;
     uint8 write_status = 0;
+    uint8_t p0, p1, s0, s1;
+
+    /*
+     * Always poll USB mem packet (even while I2C-sending state 10).
+     * Double-read so we do not catch a half-updated [param,seq] mid-write.
+     * Queue holds params until I2C can send (one 0x9C pair at a time).
+     */
+    p0 = E_keyer_mem_pkt[0];
+    s0 = E_keyer_mem_pkt[1];
+    p1 = E_keyer_mem_pkt[0];
+    s1 = E_keyer_mem_pkt[1];
+    if (s0 != 0 && s0 == s1 && p0 == p1 && s0 != last_mem_seq) {
+        last_mem_seq = s0;
+        if (E_keyer_mem_q_count < KEYER_MEM_Q_SIZE) {
+            E_keyer_mem_q[E_keyer_mem_q_head] = p0;
+            E_keyer_mem_q_head = (E_keyer_mem_q_head + 1) % KEYER_MEM_Q_SIZE;
+            E_keyer_mem_q_count++;
+        }
+    }
            
     switch(state){
         case 0:
@@ -144,6 +176,31 @@ uint8 Configure_CW(){
             wpm = E_wpm;
             state = 10;
         }else{
+            state++;
+        }
+        break;
+
+        case 6:
+        /* SET_MEM_TEXT_WPM 0x76 — push to PIC when host changes (PIC may no-op until Farnsworth) */
+        if(mem_text_wpm != E_mem_text_wpm){
+            buffer[0] = SET_MEM_TEXT_WPM;
+            buffer[1] = E_mem_text_wpm;
+            mem_text_wpm = E_mem_text_wpm;
+            state = 10;
+        }else{
+            state++;
+        }
+        break;
+
+        case 7:
+        /* Start one queued CQ-memory I2C transfer if idle path reached here */
+        if (E_keyer_mem_q_count > 0) {
+            buffer[0] = CMD_SET_KEYER_MEMORY;
+            buffer[1] = E_keyer_mem_q[E_keyer_mem_q_tail];
+            E_keyer_mem_q_tail = (E_keyer_mem_q_tail + 1) % KEYER_MEM_Q_SIZE;
+            E_keyer_mem_q_count--;
+            state = 10;
+        } else {
             state = 0;
         }
         break;
@@ -184,115 +241,147 @@ uint8 Configure_CW(){
     return state;
 }
 
-void Manage_Paddles_Port(void)  
+/*
+ * Geminus-MKII CW (relay T/R + internal PIC keyer):
+ *  - CONTROL_RX / CONTROL_AMP / CONTROL_BAND_TX (BS2): latched for the whole
+ *    semi-break-in session. Avoids relay chatter and wear.
+ *  - CONTROL_DIN: element keying — I/Q into PCM3060 (mark); clear blanks I/Q.
+ *  - CONTROL_DOUT: mute RX audio for the session.
+ * PIN-diode Proficio-MKII keyed CONTROL_RX per element; that is wrong here.
+ */
+
+#define CW_ST_IDLE          0
+#define CW_ST_WAIT_KEY      1
+#define CW_ST_SESSION_START 2
+#define CW_ST_MARK          3
+#define CW_ST_MARK_HOLD     5
+#define CW_ST_SPACE         6
+#define CW_ST_HANG          7
+#define CW_ST_HANG_POLL     10
+
+static uint8_t cw_keys_down(void)
 {
     uint8 key;
-    uint8 paddles_section;
-    static uint8_t state = 0;
-    uint8_t control_status = 0;
+    uint8 section;
+
+    section = CyEnterCriticalSection();
+    key = Status_Read();
+    CyExitCriticalSection(section);
+    if (key & STATUS_KEY_0)
+        E_key_0 = TRUE;
+    else
+        E_key_0 = FALSE;
+    if (key & STATUS_KEY_1)
+        E_key_1 = TRUE;
+    else
+        E_key_1 = FALSE;
+    return (uint8_t)(!E_key_0 || !E_key_1);
+}
+
+static uint8 cw_session_start(void)
+{
+    uint8_t c;
+
+    c = Control_Read();
+    c = c & ~CONTROL_DOUT;   /* PCM3060 RX out OFF */
+    c = c & ~CONTROL_DIN;    /* I/Q blank until mark */
+    Control_Write(c);
+    return si5351aSetFrequency(CW_LO_Freq + E_cw_pitch_freq);
+}
+
+static void cw_mark_on(void)
+{
+    uint8_t c;
+
+    c = Control_Read();
+    c = c & ~CONTROL_AMP;    /* AMP ON (active low) */
+    c = c & ~CONTROL_RX;     /* PA / T-R ON (active low) */
+    c = c | CONTROL_DIN;     /* I/Q on → RF */
+    Control_Write(c);
+    Band_Control_Write(Band_Control_Read() | CONTROL_BAND_TX); /* Geminus BS2 TX */
+    E_cw_hold = TRUE;
+}
+
+static void cw_mark_off(void)
+{
+    Control_Write(Control_Read() & ~CONTROL_DIN);
+    E_cw_hold = TRUE;
+    CW_Hold_Control_Write(CW_CONTROL_RESET);
+}
+
+static uint8 cw_session_end(void)
+{
+    uint8_t c;
+    uint8 st;
+
+    st = si5351aSetFrequency(CW_LO_Freq);
+    if (st != 0)
+        return st;
+    Band_Control_Write(Band_Control_Read() & ~CONTROL_BAND_TX);
+    c = Control_Read();
+    /* AMP off, PA off, RX audio on, restore I/Q path for later SSB */
+    c = c | CONTROL_AMP | CONTROL_RX | CONTROL_DOUT | CONTROL_DIN;
+    Control_Write(c);
+    E_key_down = FALSE;
+    return 0;
+}
+
+void Manage_Paddles_Port(void)  
+{
+    static uint8_t state = CW_ST_IDLE;
     static uint32 previous_CW_LO_Freq = 0;
     
-    switch(state){  //When in CW mode Manage_Paddles_Port manages the LO freq.
-        case 0:     //Idle state
-            if(previous_CW_LO_Freq != CW_LO_Freq){
+    switch(state){
+        case CW_ST_IDLE:
+            if (previous_CW_LO_Freq != CW_LO_Freq) {
                 SI5351_status = si5351aSetFrequency(CW_LO_Freq);
-                if(SI5351_status == 0){
+                if (SI5351_status == 0)
                     previous_CW_LO_Freq = CW_LO_Freq;
-                    if(!TX_Inhibit && (E_host_mode == 'C')){ //Do not process the CW KEY if TX_Inhibit active and NOT in CW mode
-                        state++; //Now check for key down
-                    }
-                }
-            }else{
-                if(!TX_Inhibit && (E_host_mode == 'C')){ //Do not process the CW KEY if TX_Inhibit active and NOT in CW mode
-                    state++; //CW_LO_Freq did not change. Now check for key down
-                }
-            }            
+                else
+                    break;
+            }
+            if (!TX_Inhibit && (E_host_mode == 'C'))
+                state = CW_ST_WAIT_KEY;
             break;
-        case 1: //Check for KEY DOWN
-            paddles_section = CyEnterCriticalSection();
-            key = Status_Read();
-            CyExitCriticalSection(paddles_section);
-            if (key & STATUS_KEY_0)  E_key_0 = TRUE; else E_key_0 = FALSE;
-            if (key & STATUS_KEY_1)  E_key_1 = TRUE; else E_key_1 = FALSE;
-            if(!E_key_0 || !E_key_1){ //Key is DOWN   
+        case CW_ST_WAIT_KEY:
+            if (cw_keys_down()) {
                 E_key_down = TRUE;
-                state++;
-            }else{
-                state = 0;//Key is not down return to idle state
+                state = CW_ST_SESSION_START;
+            } else {
+                state = CW_ST_IDLE;
             }
             break;
-        case 2: //A KEY is down and the CW Hold timer is not running
-            Control_Write(Control_Read() & ~CONTROL_DOUT);          //Turn OFF output from PCM3060. Do NOT Receive the Audio
-            SI5351_status = si5351aSetFrequency(CW_LO_Freq + E_cw_pitch_freq); //Set the LO to the CW TX frequency
-            if(SI5351_status == 0){
-                state++;   
+        case CW_ST_SESSION_START:
+            SI5351_status = cw_session_start();
+            if (SI5351_status == 0)
+                state = CW_ST_MARK;
+            break;
+        case CW_ST_MARK:
+            cw_mark_on();
+            state = CW_ST_MARK_HOLD;
+            break;
+        case CW_ST_MARK_HOLD:
+            if (!cw_keys_down())
+                state = CW_ST_SPACE;
+            break;
+        case CW_ST_SPACE:
+            cw_mark_off();
+            state = CW_ST_HANG;
+            break;
+        case CW_ST_HANG:
+            if (E_cw_hold == FALSE) {
+                SI5351_status = cw_session_end();
+                if (SI5351_status == 0)
+                    state = CW_ST_IDLE;
+            } else {
+                state = CW_ST_HANG_POLL;
             }
             break;
-        case 3:
-            control_status = Control_Read();
-            if(E_QSK == TRUE){//The Potentia 50 / 100 is attached.  They are QSK. Turn on the AMP port and the PA now.
-                control_status = control_status & ~CONTROL_AMP;     //Turn ON the AMP port - Negative logic level
-                control_status = control_status & ~CONTROL_RX;      //Turn ON PA - Negative logic level. PA controls CW ON/OFF 
-                Band_Control_Write(Band_Control_Read() | CONTROL_BAND_TX);//Geminus:Turn on PA
-                E_cw_hold = TRUE;                                   //CW_Hold_Control will set this to FALSE when the timer expires
-                CW_Hold_Control_Write(CW_CONTROL_RESET);            //Reset and start CW hold timer
-                state = 5;
-            }else{
-                control_status = control_status & ~CONTROL_AMP;     //Turn ON the AMP port - Negative logic level
-                state = 4;
-            }
-            Control_Write(control_status);
-            break;
-        case 4:
-            Control_Write(Control_Read() & ~CONTROL_RX);        //Turn ON PA - Negative logic level. PA controls CW ON/OFF 
-            Band_Control_Write(Band_Control_Read() | CONTROL_BAND_TX);//Geminus:Turn on PA
-            E_cw_hold = TRUE;                                   //CW_Hold_Control will set this to FALSE when the timer expires
-            CW_Hold_Control_Write(CW_CONTROL_RESET);            //Reset and start CW hold timer
-            state++;                                            //KEY is DOWN and PA output is now ON
-            break;
-        case 5: //Now check if KEY is UP
-            paddles_section = CyEnterCriticalSection();
-            key = Status_Read();
-            CyExitCriticalSection(paddles_section);
-            if (key & STATUS_KEY_0)  E_key_0 = TRUE; else E_key_0 = FALSE;
-            if (key & STATUS_KEY_1)  E_key_1 = TRUE; else E_key_1 = FALSE;
-            if((E_key_0 && E_key_1)){ //KEY is UP.  If NOT then the KEY is still down and nothing changes.
-                state++;
-            }
-            break;
-        case 6: //KEY is UP
-            Control_Write(Control_Read() | CONTROL_RX);         //Turn OFF PA - Negative logic level
-            Band_Control_Write(Band_Control_Read() & ~CONTROL_BAND_TX); //Geminus:Turn off PA
-            state++;
-            break;
-        case 7: //Check CW hold timer.  KEY is UP
-            if(E_cw_hold == FALSE){ //KEY is UP and timer expired.
-               SI5351_status = si5351aSetFrequency(CW_LO_Freq);    //Set the LO to the CW RX dial frequency
-                if(SI5351_status == 0){
-                    control_status = Control_Read();
-                    control_status = control_status | CONTROL_AMP;  //Turn OFF the AMP port - Negative logic level
-                    control_status = control_status | CONTROL_DOUT; //Turn ON output from PCM3060
-                    Control_Write(control_status);
-                    E_key_down = FALSE;
-                    state = 0;                                   //Return to idle state
-                }                           
-            }else{
-                state = 10;//KEY is UP but timer is still running. Check for KEY DOWN
-            }
-            break;
-        case 10: //Timer is still running but the KEY is UP.  Check for KEY DOWN
-            paddles_section = CyEnterCriticalSection();
-            key = Status_Read();
-            CyExitCriticalSection(paddles_section);
-            if (key & STATUS_KEY_0)  E_key_0 = TRUE; else E_key_0 = FALSE;
-            if (key & STATUS_KEY_1)  E_key_1 = TRUE; else E_key_1 = FALSE;
-            //Check if KEY is down
-            if(!E_key_0 || !E_key_1){ //Key is DOWN
-                state = 4; //KEY is DOWN. TURN ON PA in state 4
-            }else{
-                state = 7; //KEY is UP.  Check timer state;
-            }
+        case CW_ST_HANG_POLL:
+            if (cw_keys_down())
+                state = CW_ST_MARK;
+            else
+                state = CW_ST_HANG;
             break;
     }
 }
-  

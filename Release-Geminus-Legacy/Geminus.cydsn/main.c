@@ -38,7 +38,7 @@ uint8_t E_spacing = 0;
 uint8_t E_weight = 50;
 uint8_t E_side_tone = 0;
 uint8_t E_paddle = 0;
-uint8_t E_keyer_installed = TRUE;
+uint8_t E_keyer_installed = FALSE; /* Legacy: no onboard PIC keyer / no CW memory */
 //uint8_t E_side_tone = 0;
 
 uint32 E_current_rit_freq = 0;
@@ -54,6 +54,7 @@ uint8 E_si5351_status = 0;
 uint8_t E_Amplifier = FALSE;
 uint8_t E_QSK = FALSE;
 volatile uint8_t E_PTT = FALSE;
+volatile uint8_t E_reboot_request = REBOOT_REQ_NONE;
 
 
 void main_init() {
@@ -154,9 +155,11 @@ int main()
                     if(previous_host_mode != E_host_mode){
                         Control_Write(Control_Read() & ~CONTROL_LED);   //Restore LED operation to normal
                         Control_Write(Control_Read() | CONTROL_RX);     //Turn OFF PA - Negative logic level
+                        Band_Control_Write(Band_Control_Read() & ~CONTROL_BAND_TX);
                         control_status = Control_Read();
                         control_status = control_status | CONTROL_AMP;  //Turn OFF the AMP port - Negative logic level
                         control_status = control_status | CONTROL_DOUT; //Turn ON output from PCM3060
+                        control_status = control_status | CONTROL_DIN;  //Restore I/Q path for SSB
                         Control_Write(control_status);
                         TX_Request = 0;
                         previous_host_mode = E_host_mode;
@@ -190,7 +193,20 @@ int main()
                 if(E_host_mode != 'C'){//If mode is CW, frequency setting is managed in cw.c
                     E_si5351_status = si5351aSetFrequency(E_current_LO_freq);
                 }
+                /* Hardware BOOT jumper (existing) */
                 if (!(Status_Read() & STATUS_BOOT)) Bootloadable_Load();
+                /* USB-requested reboot (flags set in usbvend ISR).
+                 * Wait long enough for the control DATA/STATUS stage to finish
+                 * on the host — too short → host sees LIBUSB_ERROR_PIPE. */
+                if (E_reboot_request == REBOOT_REQ_APP) {
+                    E_reboot_request = REBOOT_REQ_NONE;
+                    CyDelay(300);
+                    CySoftwareReset();
+                } else if (E_reboot_request == REBOOT_REQ_BOOTLOADER) {
+                    E_reboot_request = REBOOT_REQ_NONE;
+                    CyDelay(300);
+                    Bootloadable_Load();
+                }
                 break;
             default:
                 main_usb_vbus();

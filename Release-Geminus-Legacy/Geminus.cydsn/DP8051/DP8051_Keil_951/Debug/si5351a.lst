@@ -1,11 +1,11 @@
-C51 COMPILER V9.51   SI5351A                                                               11/29/2024 11:36:25 PAGE 1   
+C51 COMPILER V9.51   SI5351A                                                               09/03/2026 15:23:28 PAGE 1   
 
 
 C51 COMPILER V9.51, COMPILATION OF MODULE SI5351A
-OBJECT MODULE PLACED IN .\DP8051\DP8051_Keil_951\Debug\si5351a.obj
-COMPILER INVOKED BY: C:\Program Files (x86)\Cypress\PSoC Creator\4.2\PSoC Creator\import\keil\pk51\9.51\C51\BIN\c51.exe 
-                    -si5351a.c NOIV LARGE MODDP2 OMF2 VB(1) NOIP INCDIR(.,Generated_Source\PSoC3) FF(3) DB WL(2) PR(.\DP8051\DP8051_Keil_951\
-                    -Debug/si5351a.lst) CD OT(5,SPEED) OA OJ(.\DP8051\DP8051_Keil_951\Debug\si5351a.obj)
+OBJECT MODULE PLACED IN DP8051\DP8051_Keil_951\Debug\si5351a.obj
+COMPILER INVOKED BY: C:\Program Files (x86)\Cypress\PSoC Creator\4.4\PSoC Creator\import\keil\pk51\9.51\C51\BIN\C51.exe 
+                    -si5351a.c NOIV LARGE MODDP2 OMF2 VB(1) NOIP INCDIR(.,Generated_Source\PSoC3) FF(3) DB WL(2) PR(DP8051\DP8051_Keil_951\De
+                    -bug\si5351a.lst) CD OT(5,SPEED) OA OJ(DP8051\DP8051_Keil_951\Debug\si5351a.obj)
 
 line level    source
 
@@ -62,7 +62,7 @@ line level    source
   50   1              static uint32 P2;                                       // PLL config register P2
   51   1              static uint32 P3;                                       // PLL config register P3
   52   1          static uint8 state = 0;
-C51 COMPILER V9.51   SI5351A                                                               11/29/2024 11:36:25 PAGE 2   
+C51 COMPILER V9.51   SI5351A                                                               09/03/2026 15:23:28 PAGE 2   
 
   53   1          
   54   1          switch(state){
@@ -126,7 +126,7 @@ line level    source
  112   1          static uint8 state = 0;
  113   1      
  114   1              
-C51 COMPILER V9.51   SI5351A                                                               11/29/2024 11:36:25 PAGE 3   
+C51 COMPILER V9.51   SI5351A                                                               09/03/2026 15:23:28 PAGE 3   
 
  115   1          switch(state){
  116   2              case 0:
@@ -188,158 +188,250 @@ line level    source
  171   1          si5351_write_init(clk, 0x80);
  172   1      }
  173          
- 174          // 
- 175          // Set CLK0 output ON and to the specified frequency
-C51 COMPILER V9.51   SI5351A                                                               11/29/2024 11:36:25 PAGE 4   
+ 174          /*
+ 175           * Si5351 soft-tune strategy (Si570-like) — ported from Proficio-MKII-ATU 2026-07:
+C51 COMPILER V9.51   SI5351A                                                               09/03/2026 15:23:28 PAGE 4   
 
- 176          // Frequency is in the range 1MHz to 150MHz
- 177          // Example: si5351aSetFrequency(10000000);
- 178          // will set output CLK0 to 10MHz
- 179          //
- 180          // This example sets up PLL A
- 181          // and MultiSynth 0
- 182          // and produces the output on CLK0
- 183          //
- 184          //void si5351aSetFrequency(uint32 frequency,int8_t ppm_int,int8_t ppm_dec, uint8_t smooth)
- 185          uint8 si5351aSetFrequency(uint32 LO_freq)
- 186          {
- 187   1              static uint32 pllFreq;
- 188   1              uint32 xtalFreq = SI5351_XTAL_FREQ;
- 189   1              static uint32 l;
- 190   1              static uint8_t mult;
- 191   1              static uint32 num,denom,divider;
- 192   1          static uint32 freq_previous = 0;
- 193   1          float delta_freq ,ppm, f;
- 194   1          int32 delta_freq_int;
- 195   1          static uint8 state = 0;
- 196   1          uint8 pll_status;
- 197   1          uint8 multi_status;
- 198   1          static int8 l_ppm_int;
- 199   1          static int8 l_ppm_dec;
- 200   1           
- 201   1          switch(state){
- 202   2              case 0:
- 203   2                  switch(E_PPM_needs_set){  //When the PPM has changed the LO needs bumped for it to take immedi
+ 176           *
+ 177           *  - SOFT: hold Multisynth divider fixed; only rewrite PLL fractional.
+ 178           *          Skip MS register writes and SI_PLL_RESET while VCO stays in
+ 179           *          [VCO_MIN, VCO_MAX] and PLL mult in 15..90.
+ 180           *  - HARD: pick even MS for VCO ~VCO_CENTER, rewrite MS+PLL, blank CLK0,
+ 181           *          PLL_RESET once, hold blank, re-enable CLK0.
+ 182           */
+ 183          #define SI5351_VCO_MIN     600000000UL
+ 184          #define SI5351_VCO_MAX     900000000UL
+ 185          #define SI5351_VCO_CENTER  750000000UL
+ 186          #define SI5351_MS_MIN      6UL
+ 187          #define SI5351_MS_MAX      1800UL
+ 188          /* Extra SetFrequency() visits with CLK0 off after hard PLL_RESET (~4 ms/visit). */
+ 189          #define SI5351_HARD_BLANK_HOLD  6u
+ 190          #define SI5351_CLK0_OFF         0x80u
+ 191          #define SI5351_CLK0_ON          (0x4Fu | SI_CLK_SRC_PLL_A)
+ 192          
+ 193          // 
+ 194          // Set CLK0 output ON and to the specified frequency
+ 195          // Frequency is in the range 1MHz to 150MHz
+ 196          // Example: si5351aSetFrequency(10000000);
+ 197          // will set output CLK0 to 10MHz
+ 198          //
+ 199          // This example sets up PLL A
+ 200          // and MultiSynth 0
+ 201          // and produces the output on CLK0
+ 202          //
+ 203          //void si5351aSetFrequency(uint32 frequency,int8_t ppm_int,int8_t ppm_dec, uint8_t smooth)
+ 204          uint8 si5351aSetFrequency(uint32 LO_freq)
+ 205          {
+ 206   1              static uint32 pllFreq;
+ 207   1              uint32 xtalFreq = SI5351_XTAL_FREQ;
+ 208   1              static uint32 l;
+ 209   1              static uint8_t mult;
+ 210   1              static uint32 num,denom,divider;
+ 211   1          static uint32 freq_previous = 0;
+ 212   1          static uint32 prev_ms_divider = 0; /* held Multisynth divider for soft path */
+ 213   1          static uint8 soft_ms_hold = 0;     /* 1 = keep MS, PLL-only update */
+ 214   1          static uint8 clk0_blanked = 0;     /* 1 = CLK0 powered down for hard retune */
+ 215   1          static uint8 hard_blank_hold = 0;  /* post-reset blank countdown */
+ 216   1          float delta_freq ,ppm, f;
+ 217   1          int32 delta_freq_int;
+ 218   1          static uint8 state = 0;
+ 219   1          uint8 pll_status;
+ 220   1          uint8 multi_status;
+ 221   1          static int8 l_ppm_int;
+ 222   1          static int8 l_ppm_dec;
+ 223   1          uint8 try_soft;
+ 224   1           
+ 225   1          switch(state){
+ 226   2              case 0:
+ 227   2                  switch(E_PPM_needs_set){  //When the PPM has changed the LO needs bumped for it to take immedi
              -ate effect
- 204   3                      case 0:
- 205   3                          E_l_freq_temp = LO_freq;
- 206   3                          break;
- 207   3                      case E_PPM_NEEDS_SET_STEP_1:
- 208   3                          E_l_freq_temp = LO_freq + 100;
- 209   3                          E_PPM_needs_set = E_PPM_NEEDS_SET_STEP_2;
- 210   3                          break;
- 211   3                      case E_PPM_NEEDS_SET_STEP_2:
- 212   3                          E_l_freq_temp = LO_freq;
- 213   3                          E_PPM_needs_set = 0;
- 214   3                          break;
- 215   3                  }
- 216   2                  if(!TX_Request){
- 217   3                      if(freq_previous != (E_l_freq_temp + E_current_rit_freq)){
- 218   4                          //E_l_freq = (LO_freq + E_current_rit_freq);
- 219   4                          E_l_freq = (E_l_freq_temp + E_current_rit_freq);
- 220   4                          freq_previous = E_l_freq;
- 221   4                          state++;
- 222   4                      }
- 223   3                  }else{
- 224   3                      if(freq_previous != E_l_freq_temp){
- 225   4                          E_l_freq = E_l_freq_temp;
- 226   4                          freq_previous = E_l_freq_temp;
- 227   4                          state++;
- 228   4                      }
- 229   3                  }
- 230   2                  break;
- 231   2              case 1:
- 232   2                  //This applies both the main PPM adjustment and drift frequency and then calculates the freque
+ 228   3                      case 0:
+ 229   3                          E_l_freq_temp = LO_freq;
+ 230   3                          break;
+ 231   3                      case E_PPM_NEEDS_SET_STEP_1:
+ 232   3                          E_l_freq_temp = LO_freq + 100;
+ 233   3                          E_PPM_needs_set = E_PPM_NEEDS_SET_STEP_2;
+ 234   3                          break;
+ 235   3                      case E_PPM_NEEDS_SET_STEP_2:
+ 236   3                          E_l_freq_temp = LO_freq;
+C51 COMPILER V9.51   SI5351A                                                               09/03/2026 15:23:28 PAGE 5   
+
+ 237   3                          E_PPM_needs_set = 0;
+ 238   3                          break;
+ 239   3                  }
+ 240   2                  if(!TX_Request){
+ 241   3                      if(freq_previous != (E_l_freq_temp + E_current_rit_freq)){
+ 242   4                          //E_l_freq = (LO_freq + E_current_rit_freq);
+ 243   4                          E_l_freq = (E_l_freq_temp + E_current_rit_freq);
+ 244   4                          freq_previous = E_l_freq;
+ 245   4                          state++;
+ 246   4                      }
+ 247   3                  }else{
+ 248   3                      if(freq_previous != E_l_freq_temp){
+ 249   4                          E_l_freq = E_l_freq_temp;
+ 250   4                          freq_previous = E_l_freq_temp;
+ 251   4                          state++;
+ 252   4                      }
+ 253   3                  }
+ 254   2                  break;
+ 255   2              case 1:
+ 256   2                  //This applies both the main PPM adjustment and drift frequency and then calculates the freque
              -ncy adjustment 
- 233   2                  l_ppm_int = ee_ppm_int;
- 234   2                  l_ppm_dec = ee_ppm_dec;
- 235   2                  ppm = (float)((float)l_ppm_dec / 100);
-C51 COMPILER V9.51   SI5351A                                                               11/29/2024 11:36:25 PAGE 5   
+ 257   2                  l_ppm_int = ee_ppm_int;
+ 258   2                  l_ppm_dec = ee_ppm_dec;
+ 259   2                  ppm = (float)((float)l_ppm_dec / 100);
+ 260   2                  ppm = ppm + (float) l_ppm_int;
+ 261   2                  delta_freq = (float)E_l_freq / 1000000; 
+ 262   2                  delta_freq = ((delta_freq * ppm) * 4) * -1;
+ 263   2                  delta_freq_int = (int32)delta_freq;
+ 264   2                  //Frequencies must always multiples of 4
+ 265   2                  //while((delta_freq_int%4) != 0){
+ 266   2                  //    delta_freq_int++;
+ 267   2                  //}
+ 268   2                  if(delta_freq_int < 0){
+ 269   3                      while((delta_freq_int%4) !=0){
+ 270   4                          delta_freq_int++;
+ 271   4                      }
+ 272   3                  }else {
+ 273   3                      if(delta_freq_int > 0){
+ 274   4                          while((delta_freq_int%4) != 0){
+ 275   5                              delta_freq_int--;
+ 276   5                          }
+ 277   4                      }
+ 278   3                  }
+ 279   2                  //Now set the frequency for the Si5351 which four (4) times the LO sent by the host
+ 280   2                  E_l_freq = E_l_freq * 4;
+ 281   2                  //Now add the PPM correction
+ 282   2                  E_l_freq = E_l_freq + delta_freq_int;
+ 283   2      
+ 284   2                  soft_ms_hold = 0;
+ 285   2                  try_soft = 0;
+ 286   2                  /* Prefer holding Multisynth when VCO stays legal (true soft-tune). */
+ 287   2                  if (prev_ms_divider >= SI5351_MS_MIN && E_l_freq > 0UL) {
+ 288   3                      if (E_l_freq <= (SI5351_VCO_MAX / prev_ms_divider)) {
+ 289   4                          pllFreq = prev_ms_divider * E_l_freq;
+ 290   4                          if (pllFreq >= SI5351_VCO_MIN) {
+ 291   5                              mult = (uint8_t)(pllFreq / xtalFreq);
+ 292   5                              if (mult >= 15u && mult <= 90u) {
+ 293   6                                  try_soft = 1;
+ 294   6                              }
+ 295   5                          }
+ 296   4                      }
+ 297   3                  }
+C51 COMPILER V9.51   SI5351A                                                               09/03/2026 15:23:28 PAGE 6   
 
- 236   2                  ppm = ppm + (float) l_ppm_int;
- 237   2                  delta_freq = (float)E_l_freq / 1000000; 
- 238   2                  delta_freq = ((delta_freq * ppm) * 4) * -1;
- 239   2                  delta_freq_int = (int32)delta_freq;
- 240   2                  //Frequencies must always multiples of 4
- 241   2                  //while((delta_freq_int%4) != 0){
- 242   2                  //    delta_freq_int++;
- 243   2                  //}
- 244   2                  if(delta_freq_int < 0){
- 245   3                      while((delta_freq_int%4) !=0){
- 246   4                          delta_freq_int++;
- 247   4                      }
- 248   3                  }else {
- 249   3                      if(delta_freq_int > 0){
- 250   4                          while((delta_freq_int%4) != 0){
- 251   5                              delta_freq_int--;
- 252   5                          }
- 253   4                      }
- 254   3                  }
- 255   2                  //Now set the frequency for the Si5351 which four (4) times the LO sent by the host
- 256   2                  E_l_freq = E_l_freq * 4;
- 257   2                  //Now add the PPM correction
- 258   2                  E_l_freq = E_l_freq + delta_freq_int;  
- 259   2                      divider = 900000000 / E_l_freq;   // Calculate the division ratio. 900,000,000 is the maximum int
-             -ernal 
- 260   2                                                                                      // PLL frequency: 900MHz
- 261   2                      if (divider % 2) divider--;             // Ensure an even integer division ratio
- 262   2                                                  // Calculate the pllFrequency: the divider * desired output fr
-             -equency
- 263   2         
- 264   2                      pllFreq = divider * E_l_freq; 
- 265   2      
- 266   2                      mult = pllFreq / xtalFreq;              // Determine the multiplier to get to the required pllFrequency
- 267   2                      l = pllFreq % xtalFreq;                 // It has three parts:
- 268   2                      f = l;                                                  // mult is an integer that must be in the range 15..90
- 269   2                      f *= 1048575;                                   // num and denom are the fractional parts, the numerator and denominator
- 270   2                      f /= xtalFreq;                                  // each is 20 bits (range 0..1048575)
- 271   2                      num = f;                                                // the actual multiplier is  mult + num / denom
- 272   2                      denom = 1048575;                                // For simplicity we set the denominator to the maximum 1048575
- 273   2                  state++;
- 274   2                  break;
- 275   2              case 2:
- 276   2                      pll_status = setupPLL(SI_SYNTH_PLL_A, mult, num, denom);
- 277   2                  // Set up PLL A with the calculated multiplication ratio
- 278   2                  if(pll_status == 0){
- 279   3                      state++;
- 280   3                  }
- 281   2                  break;
- 282   2              case 3:
- 283   2                  multi_status = setupMultisynth(SI_SYNTH_MS_0, divider, SI_R_DIV_1);
- 284   2                  // Sets up MultiSynth divider 0, with the calculated divider. 
- 285   2                          // The final R division stage can divide by a power of two, from 1..128. 
- 286   2                  // reprented by constants SI_R_DIV1 to SI_R_DIV128 (see si5351a.h header file)
- 287   2                          // If you want to output frequencies below 1MHz, you have to use the 
- 288   2                          // final R division stage
- 289   2                  if(multi_status == 0){
- 290   3                      state++;
- 291   3                  }
- 292   2                  break;
- 293   2              case 4:
- 294   2                      //if(!smooth) si5351_write_queue(SI_PLL_RESET, 0xA0);   
- 295   2                  if(!E_smooth) {
-C51 COMPILER V9.51   SI5351A                                                               11/29/2024 11:36:25 PAGE 6   
+ 298   2      
+ 299   2                  if (try_soft) {
+ 300   3                      divider = prev_ms_divider;
+ 301   3                      soft_ms_hold = 1;
+ 302   3                      E_smooth = TRUE; /* skip PLL_RESET */
+ 303   3                  } else {
+ 304   3                      /* HARD: center VCO so next MS edge falls outside the band */
+ 305   3                      divider = SI5351_VCO_CENTER / E_l_freq;
+ 306   3                      if (divider < SI5351_MS_MIN) {
+ 307   4                          divider = SI5351_MS_MIN;
+ 308   4                      }
+ 309   3                      if (divider > SI5351_MS_MAX) {
+ 310   4                          divider = SI5351_MS_MAX;
+ 311   4                      }
+ 312   3                      if (divider % 2UL) {
+ 313   4                          divider--;
+ 314   4                      }
+ 315   3                      if (divider < SI5351_MS_MIN) {
+ 316   4                          divider = SI5351_MS_MIN;
+ 317   4                      }
+ 318   3                      pllFreq = divider * E_l_freq;
+ 319   3                      /* If even-rounding left VCO out of range, fall back to classic ceiling */
+ 320   3                      if (pllFreq > SI5351_VCO_MAX || pllFreq < SI5351_VCO_MIN) {
+ 321   4                          divider = SI5351_VCO_MAX / E_l_freq;
+ 322   4                          if (divider % 2UL) {
+ 323   5                              divider--;
+ 324   5                          }
+ 325   4                          if (divider < SI5351_MS_MIN) {
+ 326   5                              divider = SI5351_MS_MIN;
+ 327   5                          }
+ 328   4                          pllFreq = divider * E_l_freq;
+ 329   4                      }
+ 330   3                      soft_ms_hold = 0;
+ 331   3                      E_smooth = FALSE; /* require PLL_RESET */
+ 332   3                  }
+ 333   2      
+ 334   2                      mult = (uint8_t)(pllFreq / xtalFreq); /* mult 15..90 */
+ 335   2                      l = pllFreq % xtalFreq;                 // It has three parts:
+ 336   2                      f = l;                                                  // mult is an integer that must be in the range 15..90
+ 337   2                      f *= 1048575;                                   // num and denom are the fractional parts, the numerator and denominator
+ 338   2                      f /= xtalFreq;                                  // each is 20 bits (range 0..1048575)
+ 339   2                      num = f;                                                // the actual multiplier is  mult + num / denom
+ 340   2                      denom = 1048575;                                // For simplicity we set the denominator to the maximum 1048575
+ 341   2                  hard_blank_hold = 0;
+ 342   2                  state++;
+ 343   2                  break;
+ 344   2              case 2:
+ 345   2                  /* Hard retune only: silence CLK0 before MS/PLL reconfig + PLL_RESET.
+ 346   2                   * Soft path never blanks — CW pitch / fine-tune stay continuous. */
+ 347   2                  if (!soft_ms_hold && !clk0_blanked) {
+ 348   3                      si5351_write_init(SI_CLK0_CONTROL, SI5351_CLK0_OFF);
+ 349   3                      clk0_blanked = 1;
+ 350   3                  }
+ 351   2                      pll_status = setupPLL(SI_SYNTH_PLL_A, mult, num, denom);
+ 352   2                  // Set up PLL A with the calculated multiplication ratio
+ 353   2                  if(pll_status == 0){
+ 354   3                      state++;
+ 355   3                  }
+ 356   2                  break;
+ 357   2              case 3:
+ 358   2                  /* Soft path: Multisynth registers already correct — do not rewrite. */
+ 359   2                  if (soft_ms_hold) {
+C51 COMPILER V9.51   SI5351A                                                               09/03/2026 15:23:28 PAGE 7   
 
- 296   3                      si5351_write_init(SI_PLL_RESET, 0xA0);  
- 297   3                      E_smooth = TRUE;
- 298   3                  }
- 299   2                  //Control_Write(Control_Read() & ~CONTROL_DOUT); 
- 300   2                  // Resets the PLL. This causes a glitch in the output. For small changes to 
- 301   2                              // the parameters, you don't need to reset the PLL, and there is no glitch
- 302   2                  state++;
- 303   2              case 5:
- 304   2                  //si5351_write_queue(SI_CLK0_CONTROL, 0x4F | SI_CLK_SRC_PLL_A);
- 305   2                  si5351_write_init(SI_CLK0_CONTROL, 0x4F | SI_CLK_SRC_PLL_A);
- 306   2                  // Finally switch on the CLK0 output (0x4F)
- 307   2                          // and set the MultiSynth0 input to be PLL A
- 308   2                  state = 0;
- 309   2                  break;
- 310   2          }
- 311   1          return state;
- 312   1         
- 313   1      }
- 314          
-C51 COMPILER V9.51   SI5351A                                                               11/29/2024 11:36:25 PAGE 7   
+ 360   3                      state++;
+ 361   3                      break;
+ 362   3                  }
+ 363   2                  multi_status = setupMultisynth(SI_SYNTH_MS_0, divider, SI_R_DIV_1);
+ 364   2                  // Sets up MultiSynth divider 0, with the calculated divider. 
+ 365   2                          // The final R division stage can divide by a power of two, from 1..128. 
+ 366   2                  // reprented by constants SI_R_DIV1 to SI_R_DIV128 (see si5351a.h header file)
+ 367   2                          // If you want to output frequencies below 1MHz, you have to use the 
+ 368   2                          // final R division stage
+ 369   2                  if(multi_status == 0){
+ 370   3                      state++;
+ 371   3                  }
+ 372   2                  break;
+ 373   2              case 4:
+ 374   2                      //if(!smooth) si5351_write_queue(SI_PLL_RESET, 0xA0);   
+ 375   2                  /* Soft (MS held): skip PLL_RESET — no glitch.
+ 376   2                   * Hard (MS changed / first tune): reset required while CLK0 still off. */
+ 377   2                  if(!E_smooth) {
+ 378   3                      si5351_write_init(SI_PLL_RESET, 0xA0);  
+ 379   3                      E_smooth = TRUE;
+ 380   3                      hard_blank_hold = SI5351_HARD_BLANK_HOLD;
+ 381   3                  } else {
+ 382   3                      hard_blank_hold = 0;
+ 383   3                  }
+ 384   2                  prev_ms_divider = divider;
+ 385   2                  // Resets the PLL. This causes a glitch in the output. For small changes to 
+ 386   2                              // the parameters, you don't need to reset the PLL, and there is no glitch
+ 387   2                  state = 5;
+ 388   2                  break;
+ 389   2              case 5:
+ 390   2                  /* Hold blank after hard reset so mixer/ADC see silence, not the glitch. */
+ 391   2                  if (hard_blank_hold != 0u) {
+ 392   3                      hard_blank_hold--;
+ 393   3                      break;
+ 394   3                  }
+ 395   2                  //si5351_write_queue(SI_CLK0_CONTROL, 0x4F | SI_CLK_SRC_PLL_A);
+ 396   2                  si5351_write_init(SI_CLK0_CONTROL, SI5351_CLK0_ON);
+ 397   2                  // Finally switch on the CLK0 output (0x4F)
+ 398   2                          // and set the MultiSynth0 input to be PLL A
+ 399   2                  clk0_blanked = 0;
+ 400   2                  state = 0;
+ 401   2                  break;
+ 402   2          }
+ 403   1          return state;
+ 404   1         
+ 405   1      }
+ 406          
+C51 COMPILER V9.51   SI5351A                                                               09/03/2026 15:23:28 PAGE 8   
 
 ASSEMBLY LISTING OF GENERATED OBJECT CODE
 
@@ -356,15 +448,15 @@ ASSEMBLY LISTING OF GENERATED OBJECT CODE
                                            ; SOURCE LINE # 54
                  R     MOV     DPTR,#state
                        MOVX    A,@DPTR
-                 R     CJNE    A,#08H,?C0049
-             ?C0049:
+                 R     CJNE    A,#08H,?C0066
+             ?C0066:
                  R     xJNC    ?C0001
-                 R     MOV     DPTR,#?C0050
+                 R     MOV     DPTR,#?C0067
                        MOV     R0,A
                        ADD     A,R0
                        ADD     A,R0
                        JMP     @A+DPTR
-             ?C0050:
+             ?C0067:
                  R     LJMP    ?C0002
                  R     LJMP    ?C0003
                  R     LJMP    ?C0004
@@ -403,7 +495,7 @@ ASSEMBLY LISTING OF GENERATED OBJECT CODE
                        INC     DPTR
                        MOVX    A,@DPTR
                        MOV     R6,A
-C51 COMPILER V9.51   SI5351A                                                               11/29/2024 11:36:25 PAGE 8   
+C51 COMPILER V9.51   SI5351A                                                               09/03/2026 15:23:28 PAGE 9   
 
                        INC     DPTR
                        MOVX    A,@DPTR
@@ -467,7 +559,7 @@ ASSEMBLY LISTING OF GENERATED OBJECT CODE
                        ADDC    A,#0FFH
                        MOV     R4,A
                  R     MOV     DPTR,#P1
-C51 COMPILER V9.51   SI5351A                                                               11/29/2024 11:36:25 PAGE 9   
+C51 COMPILER V9.51   SI5351A                                                               09/03/2026 15:23:28 PAGE 10  
 
                  E     CALL    ?C?LSTXDATA
                                            ; SOURCE LINE # 58
@@ -531,7 +623,7 @@ ASSEMBLY LISTING OF GENERATED OBJECT CODE
                        MOVX    A,@DPTR
                        MOV     R7,A
                  R     MOV     DPTR,#denom
-C51 COMPILER V9.51   SI5351A                                                               11/29/2024 11:36:25 PAGE 10  
+C51 COMPILER V9.51   SI5351A                                                               09/03/2026 15:23:28 PAGE 11  
 
                        MOVX    A,@DPTR
                        MOV     R0,A
@@ -595,7 +687,7 @@ ASSEMBLY LISTING OF GENERATED OBJECT CODE
                        MOV     R5,A
                        INC     DPTR
                        MOVX    A,@DPTR
-C51 COMPILER V9.51   SI5351A                                                               11/29/2024 11:36:25 PAGE 11  
+C51 COMPILER V9.51   SI5351A                                                               09/03/2026 15:23:28 PAGE 12  
 
                        MOV     R6,A
                        INC     DPTR
@@ -659,7 +751,7 @@ ASSEMBLY LISTING OF GENERATED OBJECT CODE
                        MOV     R5,AR7
                        POP     AR7
                  E     CALL    _si5351_write_init
-C51 COMPILER V9.51   SI5351A                                                               11/29/2024 11:36:25 PAGE 12  
+C51 COMPILER V9.51   SI5351A                                                               09/03/2026 15:23:28 PAGE 13  
 
                                            ; SOURCE LINE # 67
                  R     MOV     DPTR,#state
@@ -723,7 +815,7 @@ ASSEMBLY LISTING OF GENERATED OBJECT CODE
                        MOV     R5,A
                        INC     DPTR
                        MOVX    A,@DPTR
-C51 COMPILER V9.51   SI5351A                                                               11/29/2024 11:36:25 PAGE 13  
+C51 COMPILER V9.51   SI5351A                                                               09/03/2026 15:23:28 PAGE 14  
 
                        MOV     R6,A
                        INC     DPTR
@@ -787,7 +879,7 @@ ASSEMBLY LISTING OF GENERATED OBJECT CODE
                        PUSH    AR7
                  R     MOV     DPTR,#P2
                        MOVX    A,@DPTR
-C51 COMPILER V9.51   SI5351A                                                               11/29/2024 11:36:25 PAGE 14  
+C51 COMPILER V9.51   SI5351A                                                               09/03/2026 15:23:28 PAGE 15  
 
                        MOV     R4,A
                        INC     DPTR
@@ -851,7 +943,7 @@ ASSEMBLY LISTING OF GENERATED OBJECT CODE
                  E     CALL    _si5351_write_init
                                            ; SOURCE LINE # 87
                  R     MOV     DPTR,#state
-C51 COMPILER V9.51   SI5351A                                                               11/29/2024 11:36:25 PAGE 15  
+C51 COMPILER V9.51   SI5351A                                                               09/03/2026 15:23:28 PAGE 16  
 
                        MOVX    A,@DPTR
                        INC     A
@@ -915,7 +1007,7 @@ ASSEMBLY LISTING OF GENERATED OBJECT CODE
                        INC     DPTR
                        MOVX    A,@DPTR
                        MOV     R7,A
-C51 COMPILER V9.51   SI5351A                                                               11/29/2024 11:36:25 PAGE 16  
+C51 COMPILER V9.51   SI5351A                                                               09/03/2026 15:23:28 PAGE 17  
 
                        CLR     A
                        MOV     R5,AR7
@@ -946,15 +1038,15 @@ ASSEMBLY LISTING OF GENERATED OBJECT CODE
                                            ; SOURCE LINE # 115
                  R     MOV     DPTR,#state
                        MOVX    A,@DPTR
-                 R     CJNE    A,#08H,?C0051
-             ?C0051:
+                 R     CJNE    A,#08H,?C0068
+             ?C0068:
                  R     xJNC    ?C0011
-                 R     MOV     DPTR,#?C0052
+                 R     MOV     DPTR,#?C0069
                        MOV     R0,A
                        ADD     A,R0
                        ADD     A,R0
                        JMP     @A+DPTR
-             ?C0052:
+             ?C0069:
                  R     LJMP    ?C0012
                  R     LJMP    ?C0013
                  R     LJMP    ?C0014
@@ -979,7 +1071,7 @@ ASSEMBLY LISTING OF GENERATED OBJECT CODE
                        MOV     R1,A
                        INC     DPTR
                        MOVX    A,@DPTR
-C51 COMPILER V9.51   SI5351A                                                               11/29/2024 11:36:25 PAGE 17  
+C51 COMPILER V9.51   SI5351A                                                               09/03/2026 15:23:28 PAGE 18  
 
                        MOV     R2,A
                        INC     DPTR
@@ -1043,7 +1135,7 @@ ASSEMBLY LISTING OF GENERATED OBJECT CODE
                  E     CALL    _si5351_write_init
                                            ; SOURCE LINE # 122
                  R     MOV     DPTR,#state
-C51 COMPILER V9.51   SI5351A                                                               11/29/2024 11:36:25 PAGE 18  
+C51 COMPILER V9.51   SI5351A                                                               09/03/2026 15:23:28 PAGE 19  
 
                        MOVX    A,@DPTR
                        INC     A
@@ -1107,7 +1199,7 @@ ASSEMBLY LISTING OF GENERATED OBJECT CODE
                        ANL     A,#03H
                        MOV     R5,A
                        CLR     A
-C51 COMPILER V9.51   SI5351A                                                               11/29/2024 11:36:25 PAGE 19  
+C51 COMPILER V9.51   SI5351A                                                               09/03/2026 15:23:28 PAGE 20  
 
                        MOV     R4,A
                        MOV     R0,#010H
@@ -1171,7 +1263,7 @@ ASSEMBLY LISTING OF GENERATED OBJECT CODE
                        MOVX    A,@DPTR
                        INC     A
                        MOVX    @DPTR,A
-C51 COMPILER V9.51   SI5351A                                                               11/29/2024 11:36:25 PAGE 20  
+C51 COMPILER V9.51   SI5351A                                                               09/03/2026 15:23:28 PAGE 21  
 
                                            ; SOURCE LINE # 138
                  R     xJMP    ?C0011
@@ -1235,7 +1327,7 @@ ASSEMBLY LISTING OF GENERATED OBJECT CODE
                        MOV     R4,A
                        MOV     R0,#010H
                  E     CALL    ?C?ULSHR
-C51 COMPILER V9.51   SI5351A                                                               11/29/2024 11:36:25 PAGE 21  
+C51 COMPILER V9.51   SI5351A                                                               09/03/2026 15:23:28 PAGE 22  
 
                        PUSH    AR4
                        PUSH    AR5
@@ -1299,7 +1391,7 @@ ASSEMBLY LISTING OF GENERATED OBJECT CODE
                        INC     DPTR
                        MOVX    A,@DPTR
                        MOV     R5,A
-C51 COMPILER V9.51   SI5351A                                                               11/29/2024 11:36:25 PAGE 22  
+C51 COMPILER V9.51   SI5351A                                                               09/03/2026 15:23:28 PAGE 23  
 
                        INC     DPTR
                        MOVX    A,@DPTR
@@ -1363,7 +1455,7 @@ ASSEMBLY LISTING OF GENERATED OBJECT CODE
              ?C0020:
                        RET     
              ; FUNCTION _setupMultisynth (END)
-C51 COMPILER V9.51   SI5351A                                                               11/29/2024 11:36:25 PAGE 23  
+C51 COMPILER V9.51   SI5351A                                                               09/03/2026 15:23:28 PAGE 24  
 
 
              ; FUNCTION _si5351aOutputOff (BEGIN)
@@ -1378,35 +1470,35 @@ ASSEMBLY LISTING OF GENERATED OBJECT CODE
              ; FUNCTION _si5351aOutputOff (END)
 
              ; FUNCTION _si5351aSetFrequency (BEGIN)
-                                           ; SOURCE LINE # 185
+                                           ; SOURCE LINE # 204
                  R     MOV     DPTR,#LO_freq
                  E     CALL    ?C?LSTXDATA
-                                           ; SOURCE LINE # 186
-                                           ; SOURCE LINE # 188
+                                           ; SOURCE LINE # 205
+                                           ; SOURCE LINE # 207
                        MOV     R7,#040H
                        MOV     R6,#078H
                        MOV     R5,#07DH
                        MOV     R4,#01H
                  R     MOV     DPTR,#xtalFreq
                  E     CALL    ?C?LSTXDATA
-                                           ; SOURCE LINE # 201
+                                           ; SOURCE LINE # 225
                  R     MOV     DPTR,#state
                        MOVX    A,@DPTR
                        DEC     A
                  R     xJZ     ?C0032
                        DEC     A
-                 R     xJZ     ?C0041
+                 R     xJZ     ?C0054
                        DEC     A
-                 R     xJZ     ?C0043
+                 R     xJZ     ?C0057
                        DEC     A
-                 R     xJZ     ?C0045
+                 R     xJZ     ?C0060
                        DEC     A
-                 R     xJZ     ?C0047
+                 R     xJZ     ?C0063
                        ADD     A,#05H
                  R     xJNZ    ?C0022
-                                           ; SOURCE LINE # 202
+                                           ; SOURCE LINE # 226
              ?C0023:
-                                           ; SOURCE LINE # 203
+                                           ; SOURCE LINE # 227
                  E     MOV     DPTR,#E_PPM_needs_set
                        MOVX    A,@DPTR
                        ADD     A,#0FEH
@@ -1415,9 +1507,9 @@ ASSEMBLY LISTING OF GENERATED OBJECT CODE
                  R     xJZ     ?C0027
                        ADD     A,#03H
                  R     xJNZ    ?C0024
-                                           ; SOURCE LINE # 204
+                                           ; SOURCE LINE # 228
              ?C0025:
-                                           ; SOURCE LINE # 205
+                                           ; SOURCE LINE # 229
                  R     MOV     DPTR,#LO_freq
                        MOVX    A,@DPTR
                        MOV     R4,A
@@ -1427,18 +1519,18 @@ ASSEMBLY LISTING OF GENERATED OBJECT CODE
                        INC     DPTR
                        MOVX    A,@DPTR
                        MOV     R6,A
-C51 COMPILER V9.51   SI5351A                                                               11/29/2024 11:36:25 PAGE 24  
+C51 COMPILER V9.51   SI5351A                                                               09/03/2026 15:23:28 PAGE 25  
 
                        INC     DPTR
                        MOVX    A,@DPTR
                        MOV     R7,A
                  R     MOV     DPTR,#E_l_freq_temp
                  E     CALL    ?C?LSTXDATA
-                                           ; SOURCE LINE # 206
+                                           ; SOURCE LINE # 230
                  R     xJMP    ?C0024
-                                           ; SOURCE LINE # 207
+                                           ; SOURCE LINE # 231
              ?C0026:
-                                           ; SOURCE LINE # 208
+                                           ; SOURCE LINE # 232
                  R     MOV     DPTR,#LO_freq
                        MOVX    A,@DPTR
                        MOV     R4,A
@@ -1463,15 +1555,15 @@ ASSEMBLY LISTING OF GENERATED OBJECT CODE
                        MOV     R4,A
                  R     MOV     DPTR,#E_l_freq_temp
                  E     CALL    ?C?LSTXDATA
-                                           ; SOURCE LINE # 209
+                                           ; SOURCE LINE # 233
                  E     MOV     DPTR,#E_PPM_needs_set
                        MOV     A,#03H
                        MOVX    @DPTR,A
-                                           ; SOURCE LINE # 210
+                                           ; SOURCE LINE # 234
                  R     xJMP    ?C0024
-                                           ; SOURCE LINE # 211
+                                           ; SOURCE LINE # 235
              ?C0027:
-                                           ; SOURCE LINE # 212
+                                           ; SOURCE LINE # 236
                  R     MOV     DPTR,#LO_freq
                        MOVX    A,@DPTR
                        MOV     R4,A
@@ -1486,20 +1578,20 @@ ASSEMBLY LISTING OF GENERATED OBJECT CODE
                        MOV     R7,A
                  R     MOV     DPTR,#E_l_freq_temp
                  E     CALL    ?C?LSTXDATA
-                                           ; SOURCE LINE # 213
+                                           ; SOURCE LINE # 237
                        CLR     A
                  E     MOV     DPTR,#E_PPM_needs_set
                        MOVX    @DPTR,A
-                                           ; SOURCE LINE # 214
-C51 COMPILER V9.51   SI5351A                                                               11/29/2024 11:36:25 PAGE 25  
+                                           ; SOURCE LINE # 238
+C51 COMPILER V9.51   SI5351A                                                               09/03/2026 15:23:28 PAGE 26  
 
-                                           ; SOURCE LINE # 215
+                                           ; SOURCE LINE # 239
              ?C0024:
-                                           ; SOURCE LINE # 216
+                                           ; SOURCE LINE # 240
                  E     MOV     DPTR,#TX_Request
                        MOVX    A,@DPTR
                  R     xJNZ    ?C0028
-                                           ; SOURCE LINE # 217
+                                           ; SOURCE LINE # 241
                  E     MOV     DPTR,#E_current_rit_freq
                        MOVX    A,@DPTR
                        MOV     R4,A
@@ -1549,13 +1641,13 @@ ASSEMBLY LISTING OF GENERATED OBJECT CODE
                        CLR     C
                  E     CALL    ?C?ULCMP
                  R     xJZ     ?C0022
-                                           ; SOURCE LINE # 219
+                                           ; SOURCE LINE # 243
                  E     MOV     DPTR,#E_current_rit_freq
                        MOVX    A,@DPTR
                        MOV     R4,A
                        INC     DPTR
                        MOVX    A,@DPTR
-C51 COMPILER V9.51   SI5351A                                                               11/29/2024 11:36:25 PAGE 26  
+C51 COMPILER V9.51   SI5351A                                                               09/03/2026 15:23:28 PAGE 27  
 
                        MOV     R5,A
                        INC     DPTR
@@ -1588,7 +1680,7 @@ ASSEMBLY LISTING OF GENERATED OBJECT CODE
                        MOV     R4,A
                  R     MOV     DPTR,#E_l_freq
                  E     CALL    ?C?LSTXDATA
-                                           ; SOURCE LINE # 220
+                                           ; SOURCE LINE # 244
                  R     MOV     DPTR,#E_l_freq
                        MOVX    A,@DPTR
                        MOV     R4,A
@@ -1603,23 +1695,23 @@ ASSEMBLY LISTING OF GENERATED OBJECT CODE
                        MOV     R7,A
                  R     MOV     DPTR,#freq_previous
                  E     CALL    ?C?LSTXDATA
-                                           ; SOURCE LINE # 221
+                                           ; SOURCE LINE # 245
                  R     MOV     DPTR,#state
                        MOVX    A,@DPTR
                        INC     A
                        MOVX    @DPTR,A
-                                           ; SOURCE LINE # 222
-                                           ; SOURCE LINE # 223
+                                           ; SOURCE LINE # 246
+                                           ; SOURCE LINE # 247
                  R     xJMP    ?C0022
              ?C0028:
-                                           ; SOURCE LINE # 224
+                                           ; SOURCE LINE # 248
                  R     MOV     DPTR,#E_l_freq_temp
                        MOVX    A,@DPTR
                        MOV     R4,A
                        INC     DPTR
                        MOVX    A,@DPTR
                        MOV     R5,A
-C51 COMPILER V9.51   SI5351A                                                               11/29/2024 11:36:25 PAGE 27  
+C51 COMPILER V9.51   SI5351A                                                               09/03/2026 15:23:28 PAGE 28  
 
                        INC     DPTR
                        MOVX    A,@DPTR
@@ -1642,7 +1734,7 @@ ASSEMBLY LISTING OF GENERATED OBJECT CODE
                        CLR     C
                  E     CALL    ?C?ULCMP
                  R     xJZ     ?C0022
-                                           ; SOURCE LINE # 225
+                                           ; SOURCE LINE # 249
                  R     MOV     DPTR,#E_l_freq_temp
                        MOVX    A,@DPTR
                        MOV     R4,A
@@ -1657,7 +1749,7 @@ ASSEMBLY LISTING OF GENERATED OBJECT CODE
                        MOV     R7,A
                  R     MOV     DPTR,#E_l_freq
                  E     CALL    ?C?LSTXDATA
-                                           ; SOURCE LINE # 226
+                                           ; SOURCE LINE # 250
                  R     MOV     DPTR,#E_l_freq_temp
                        MOVX    A,@DPTR
                        MOV     R4,A
@@ -1672,30 +1764,30 @@ ASSEMBLY LISTING OF GENERATED OBJECT CODE
                        MOV     R7,A
                  R     MOV     DPTR,#freq_previous
                  E     CALL    ?C?LSTXDATA
-                                           ; SOURCE LINE # 227
+                                           ; SOURCE LINE # 251
                  R     MOV     DPTR,#state
                        MOVX    A,@DPTR
                        INC     A
                        MOVX    @DPTR,A
-                                           ; SOURCE LINE # 228
-                                           ; SOURCE LINE # 229
-                                           ; SOURCE LINE # 230
+                                           ; SOURCE LINE # 252
+                                           ; SOURCE LINE # 253
+                                           ; SOURCE LINE # 254
                  R     xJMP    ?C0022
-                                           ; SOURCE LINE # 231
+                                           ; SOURCE LINE # 255
              ?C0032:
-C51 COMPILER V9.51   SI5351A                                                               11/29/2024 11:36:25 PAGE 28  
+C51 COMPILER V9.51   SI5351A                                                               09/03/2026 15:23:28 PAGE 29  
 
-                                           ; SOURCE LINE # 233
+                                           ; SOURCE LINE # 257
                  E     MOV     DPTR,#ee_ppm_int
                        MOVX    A,@DPTR
                  R     MOV     DPTR,#l_ppm_int
                        MOVX    @DPTR,A
-                                           ; SOURCE LINE # 234
+                                           ; SOURCE LINE # 258
                  E     MOV     DPTR,#ee_ppm_dec
                        MOVX    A,@DPTR
                  R     MOV     DPTR,#l_ppm_dec
                        MOVX    @DPTR,A
-                                           ; SOURCE LINE # 235
+                                           ; SOURCE LINE # 259
                        MOVX    A,@DPTR
                        MOV     R4,A
                  E     CALL    ?C?FCASTC
@@ -1707,7 +1799,7 @@ ASSEMBLY LISTING OF GENERATED OBJECT CODE
                  E     CALL    ?C?FPDIV
                  R     MOV     DPTR,#ppm
                  E     CALL    ?C?LSTXDATA
-                                           ; SOURCE LINE # 236
+                                           ; SOURCE LINE # 260
                  R     MOV     DPTR,#ppm
                        MOVX    A,@DPTR
                        MOV     R0,A
@@ -1735,7 +1827,7 @@ ASSEMBLY LISTING OF GENERATED OBJECT CODE
                  E     CALL    ?C?FPADD
                  R     MOV     DPTR,#ppm
                  E     CALL    ?C?LSTXDATA
-                                           ; SOURCE LINE # 237
+                                           ; SOURCE LINE # 261
                  R     MOV     DPTR,#E_l_freq
                        MOVX    A,@DPTR
                        MOV     R4,A
@@ -1747,7 +1839,7 @@ ASSEMBLY LISTING OF GENERATED OBJECT CODE
                        MOV     R6,A
                        INC     DPTR
                        MOVX    A,@DPTR
-C51 COMPILER V9.51   SI5351A                                                               11/29/2024 11:36:25 PAGE 29  
+C51 COMPILER V9.51   SI5351A                                                               09/03/2026 15:23:28 PAGE 30  
 
                        MOV     R7,A
                        CLR     A
@@ -1759,7 +1851,7 @@ ASSEMBLY LISTING OF GENERATED OBJECT CODE
                  E     CALL    ?C?FPDIV
                  R     MOV     DPTR,#delta_freq
                  E     CALL    ?C?LSTXDATA
-                                           ; SOURCE LINE # 238
+                                           ; SOURCE LINE # 262
                  R     MOV     DPTR,#ppm
                        MOVX    A,@DPTR
                        MOV     R4,A
@@ -1793,7 +1885,7 @@ ASSEMBLY LISTING OF GENERATED OBJECT CODE
                  E     CALL    ?C?FPMUL
                  R     MOV     DPTR,#delta_freq
                  E     CALL    ?C?LSTXDATA
-                                           ; SOURCE LINE # 239
+                                           ; SOURCE LINE # 263
                  R     MOV     DPTR,#delta_freq
                        MOVX    A,@DPTR
                        MOV     R4,A
@@ -1809,9 +1901,9 @@ ASSEMBLY LISTING OF GENERATED OBJECT CODE
                  E     CALL    ?C?CASTF
                  R     MOV     DPTR,#delta_freq_int
                  E     CALL    ?C?LSTXDATA
-                                           ; SOURCE LINE # 244
+                                           ; SOURCE LINE # 268
                        CLR     A
-C51 COMPILER V9.51   SI5351A                                                               11/29/2024 11:36:25 PAGE 30  
+C51 COMPILER V9.51   SI5351A                                                               09/03/2026 15:23:28 PAGE 31  
 
                        MOV     R7,A
                        MOV     R6,A
@@ -1833,7 +1925,7 @@ ASSEMBLY LISTING OF GENERATED OBJECT CODE
                  E     CALL    ?C?SLCMP
                  R     xJGE    ?C0033
              ?C0034:
-                                           ; SOURCE LINE # 245
+                                           ; SOURCE LINE # 269
                        CLR     A
                        MOV     R3,#04H
                        MOV     R2,A
@@ -1864,7 +1956,7 @@ ASSEMBLY LISTING OF GENERATED OBJECT CODE
                        CLR     C
                  E     CALL    ?C?SLCMP
                  R     xJZ     ?C0036
-                                           ; SOURCE LINE # 246
+                                           ; SOURCE LINE # 270
                  R     MOV     DPTR,#delta_freq_int
                        MOVX    A,@DPTR
                        MOV     R4,A
@@ -1875,7 +1967,7 @@ ASSEMBLY LISTING OF GENERATED OBJECT CODE
                        MOVX    A,@DPTR
                        MOV     R6,A
                        INC     DPTR
-C51 COMPILER V9.51   SI5351A                                                               11/29/2024 11:36:25 PAGE 31  
+C51 COMPILER V9.51   SI5351A                                                               09/03/2026 15:23:28 PAGE 32  
 
                        MOVX    A,@DPTR
                        MOV     R7,A
@@ -1896,11 +1988,11 @@ ASSEMBLY LISTING OF GENERATED OBJECT CODE
                        MOV     R4,A
                  R     MOV     DPTR,#delta_freq_int
                  E     CALL    ?C?LSTXDATA
-                                           ; SOURCE LINE # 247
+                                           ; SOURCE LINE # 271
                  R     xJMP    ?C0034
-                                           ; SOURCE LINE # 248
+                                           ; SOURCE LINE # 272
              ?C0033:
-                                           ; SOURCE LINE # 249
+                                           ; SOURCE LINE # 273
                        CLR     A
                        MOV     R7,A
                        MOV     R6,A
@@ -1922,7 +2014,7 @@ ASSEMBLY LISTING OF GENERATED OBJECT CODE
                  E     CALL    ?C?SLCMP
                  R     xJLT    ?C0036
              ?C0038:
-                                           ; SOURCE LINE # 250
+                                           ; SOURCE LINE # 274
                        CLR     A
                        MOV     R3,#04H
                        MOV     R2,A
@@ -1939,7 +2031,7 @@ ASSEMBLY LISTING OF GENERATED OBJECT CODE
                        MOV     R6,A
                        INC     DPTR
                        MOVX    A,@DPTR
-C51 COMPILER V9.51   SI5351A                                                               11/29/2024 11:36:25 PAGE 32  
+C51 COMPILER V9.51   SI5351A                                                               09/03/2026 15:23:28 PAGE 33  
 
                        MOV     R7,A
                  E     CALL    ?C?SLDIV
@@ -1955,7 +2047,7 @@ ASSEMBLY LISTING OF GENERATED OBJECT CODE
                        CLR     C
                  E     CALL    ?C?SLCMP
                  R     xJZ     ?C0036
-                                           ; SOURCE LINE # 251
+                                           ; SOURCE LINE # 275
                  R     MOV     DPTR,#delta_freq_int
                        MOVX    A,@DPTR
                        MOV     R4,A
@@ -1983,12 +2075,12 @@ ASSEMBLY LISTING OF GENERATED OBJECT CODE
                        MOV     R4,A
                  R     MOV     DPTR,#delta_freq_int
                  E     CALL    ?C?LSTXDATA
-                                           ; SOURCE LINE # 252
+                                           ; SOURCE LINE # 276
                  R     xJMP    ?C0038
-                                           ; SOURCE LINE # 253
-                                           ; SOURCE LINE # 254
+                                           ; SOURCE LINE # 277
+                                           ; SOURCE LINE # 278
              ?C0036:
-                                           ; SOURCE LINE # 256
+                                           ; SOURCE LINE # 280
                  R     MOV     DPTR,#E_l_freq
                        MOVX    A,@DPTR
                        MOV     R4,A
@@ -2003,7 +2095,7 @@ ASSEMBLY LISTING OF GENERATED OBJECT CODE
                        MOV     R7,A
                        CLR     A
                        MOV     R3,#04H
-C51 COMPILER V9.51   SI5351A                                                               11/29/2024 11:36:25 PAGE 33  
+C51 COMPILER V9.51   SI5351A                                                               09/03/2026 15:23:28 PAGE 34  
 
                        MOV     R2,A
                        MOV     R1,A
@@ -2011,7 +2103,7 @@ ASSEMBLY LISTING OF GENERATED OBJECT CODE
                  E     CALL    ?C?LMUL
                  R     MOV     DPTR,#E_l_freq
                  E     CALL    ?C?LSTXDATA
-                                           ; SOURCE LINE # 258
+                                           ; SOURCE LINE # 282
                  R     MOV     DPTR,#E_l_freq
                        MOVX    A,@DPTR
                        MOV     R0,A
@@ -2050,8 +2142,57 @@ ASSEMBLY LISTING OF GENERATED OBJECT CODE
                        MOV     R4,A
                  R     MOV     DPTR,#E_l_freq
                  E     CALL    ?C?LSTXDATA
-                                           ; SOURCE LINE # 259
+                                           ; SOURCE LINE # 284
+                       CLR     A
+                 R     MOV     DPTR,#soft_ms_hold
+                       MOVX    @DPTR,A
+                                           ; SOURCE LINE # 285
+                 R     MOV     DPTR,#try_soft
+                       MOVX    @DPTR,A
+                                           ; SOURCE LINE # 287
+                       MOV     R7,#06H
+                       MOV     R6,A
+                       MOV     R5,A
+                       MOV     R4,A
+                 R     MOV     DPTR,#prev_ms_divider
+                       MOVX    A,@DPTR
+                       MOV     R0,A
+                       INC     DPTR
+                       MOVX    A,@DPTR
+C51 COMPILER V9.51   SI5351A                                                               09/03/2026 15:23:28 PAGE 35  
+
+                       MOV     R1,A
+                       INC     DPTR
+                       MOVX    A,@DPTR
+                       MOV     R2,A
+                       INC     DPTR
+                       MOVX    A,@DPTR
+                       MOV     R3,A
+                       CLR     C
+                 E     CALL    ?C?ULCMP
+                 R     xJLT    ?C0040
+                       CLR     A
+                       MOV     R7,A
+                       MOV     R6,A
+                       MOV     R5,A
+                       MOV     R4,A
                  R     MOV     DPTR,#E_l_freq
+                       MOVX    A,@DPTR
+                       MOV     R0,A
+                       INC     DPTR
+                       MOVX    A,@DPTR
+                       MOV     R1,A
+                       INC     DPTR
+                       MOVX    A,@DPTR
+                       MOV     R2,A
+                       INC     DPTR
+                       MOVX    A,@DPTR
+                       MOV     R3,A
+                       SETB    C
+                 E     CALL    ?C?ULCMP
+                 R     xJLT    ?C0040
+                                           ; SOURCE LINE # 288
+                 R     MOV     DPTR,#prev_ms_divider
                        MOVX    A,@DPTR
                        MOV     R0,A
                        INC     DPTR
@@ -2067,12 +2208,236 @@ ASSEMBLY LISTING OF GENERATED OBJECT CODE
                        MOV     R6,#0E9H
                        MOV     R5,#0A4H
                        MOV     R4,#035H
-C51 COMPILER V9.51   SI5351A                                                               11/29/2024 11:36:25 PAGE 34  
+                 E     CALL    ?C?ULDIV
+                 R     MOV     DPTR,#E_l_freq
+                       MOVX    A,@DPTR
+                       MOV     R0,A
+                       INC     DPTR
+                       MOVX    A,@DPTR
+                       MOV     R1,A
+                       INC     DPTR
+                       MOVX    A,@DPTR
+                       MOV     R2,A
+                       INC     DPTR
+                       MOVX    A,@DPTR
+                       MOV     R3,A
+                       SETB    C
+                 E     CALL    ?C?ULCMP
+C51 COMPILER V9.51   SI5351A                                                               09/03/2026 15:23:28 PAGE 36  
 
+                 R     xJGE    ?C0040
+                                           ; SOURCE LINE # 289
+                 R     MOV     DPTR,#E_l_freq
+                       MOVX    A,@DPTR
+                       MOV     R4,A
+                       INC     DPTR
+                       MOVX    A,@DPTR
+                       MOV     R5,A
+                       INC     DPTR
+                       MOVX    A,@DPTR
+                       MOV     R6,A
+                       INC     DPTR
+                       MOVX    A,@DPTR
+                       MOV     R7,A
+                 R     MOV     DPTR,#prev_ms_divider
+                       MOVX    A,@DPTR
+                       MOV     R0,A
+                       INC     DPTR
+                       MOVX    A,@DPTR
+                       MOV     R1,A
+                       INC     DPTR
+                       MOVX    A,@DPTR
+                       MOV     R2,A
+                       INC     DPTR
+                       MOVX    A,@DPTR
+                       MOV     R3,A
+                 E     CALL    ?C?LMUL
+                 R     MOV     DPTR,#pllFreq
+                 E     CALL    ?C?LSTXDATA
+                                           ; SOURCE LINE # 290
+                       MOV     R7,#00H
+                       MOV     R6,#046H
+                       MOV     R5,#0C3H
+                       MOV     R4,#023H
+                 R     MOV     DPTR,#pllFreq
+                       MOVX    A,@DPTR
+                       MOV     R0,A
+                       INC     DPTR
+                       MOVX    A,@DPTR
+                       MOV     R1,A
+                       INC     DPTR
+                       MOVX    A,@DPTR
+                       MOV     R2,A
+                       INC     DPTR
+                       MOVX    A,@DPTR
+                       MOV     R3,A
+                       CLR     C
+                 E     CALL    ?C?ULCMP
+                 R     xJLT    ?C0040
+                                           ; SOURCE LINE # 291
+                 R     MOV     DPTR,#xtalFreq
+                       MOVX    A,@DPTR
+                       MOV     R0,A
+                       INC     DPTR
+                       MOVX    A,@DPTR
+                       MOV     R1,A
+                       INC     DPTR
+                       MOVX    A,@DPTR
+                       MOV     R2,A
+                       INC     DPTR
+                       MOVX    A,@DPTR
+                       MOV     R3,A
+C51 COMPILER V9.51   SI5351A                                                               09/03/2026 15:23:28 PAGE 37  
+
+                 R     MOV     DPTR,#pllFreq
+                       MOVX    A,@DPTR
+                       MOV     R4,A
+                       INC     DPTR
+                       MOVX    A,@DPTR
+                       MOV     R5,A
+                       INC     DPTR
+                       MOVX    A,@DPTR
+                       MOV     R6,A
+                       INC     DPTR
+                       MOVX    A,@DPTR
+                       MOV     R7,A
+                 E     CALL    ?C?ULDIV
+                 R     MOV     DPTR,#mult
+                       MOV     A,R7
+                       MOVX    @DPTR,A
+                                           ; SOURCE LINE # 292
+                       CLR     C
+                       SUBB    A,#0FH
+                 R     xJLT    ?C0040
+                       MOVX    A,@DPTR
+                       SETB    C
+                       SUBB    A,#05AH
+                 R     xJGE    ?C0040
+                                           ; SOURCE LINE # 293
+                 R     MOV     DPTR,#try_soft
+                       MOV     A,#01H
+                       MOVX    @DPTR,A
+                                           ; SOURCE LINE # 294
+                                           ; SOURCE LINE # 295
+                                           ; SOURCE LINE # 296
+                                           ; SOURCE LINE # 297
+             ?C0040:
+                                           ; SOURCE LINE # 299
+                 R     MOV     DPTR,#try_soft
+                       MOVX    A,@DPTR
+                 R     xJZ     ?C0044
+                                           ; SOURCE LINE # 300
+                 R     MOV     DPTR,#prev_ms_divider
+                       MOVX    A,@DPTR
+                       MOV     R4,A
+                       INC     DPTR
+                       MOVX    A,@DPTR
+                       MOV     R5,A
+                       INC     DPTR
+                       MOVX    A,@DPTR
+                       MOV     R6,A
+                       INC     DPTR
+                       MOVX    A,@DPTR
+                       MOV     R7,A
+                 R     MOV     DPTR,#divider
+                 E     CALL    ?C?LSTXDATA
+                                           ; SOURCE LINE # 301
+                 R     MOV     DPTR,#soft_ms_hold
+                       MOV     A,#01H
+                       MOVX    @DPTR,A
+                                           ; SOURCE LINE # 302
+                 E     MOV     DPTR,#E_smooth
+                       MOVX    @DPTR,A
+                                           ; SOURCE LINE # 303
+                 R     xJMP    ?C0045
+             ?C0044:
+C51 COMPILER V9.51   SI5351A                                                               09/03/2026 15:23:28 PAGE 38  
+
+                                           ; SOURCE LINE # 305
+                 R     MOV     DPTR,#E_l_freq
+                       MOVX    A,@DPTR
+                       MOV     R0,A
+                       INC     DPTR
+                       MOVX    A,@DPTR
+                       MOV     R1,A
+                       INC     DPTR
+                       MOVX    A,@DPTR
+                       MOV     R2,A
+                       INC     DPTR
+                       MOVX    A,@DPTR
+                       MOV     R3,A
+                       MOV     R7,#080H
+                       MOV     R6,#017H
+                       MOV     R5,#0B4H
+                       MOV     R4,#02CH
                  E     CALL    ?C?ULDIV
                  R     MOV     DPTR,#divider
                  E     CALL    ?C?LSTXDATA
-                                           ; SOURCE LINE # 261
+                                           ; SOURCE LINE # 306
+                       CLR     A
+                       MOV     R7,#06H
+                       MOV     R6,A
+                       MOV     R5,A
+                       MOV     R4,A
+                 R     MOV     DPTR,#divider
+                       MOVX    A,@DPTR
+                       MOV     R0,A
+                       INC     DPTR
+                       MOVX    A,@DPTR
+                       MOV     R1,A
+                       INC     DPTR
+                       MOVX    A,@DPTR
+                       MOV     R2,A
+                       INC     DPTR
+                       MOVX    A,@DPTR
+                       MOV     R3,A
+                       CLR     C
+                 E     CALL    ?C?ULCMP
+                 R     xJGE    ?C0046
+                                           ; SOURCE LINE # 307
+                       CLR     A
+                       MOV     R7,#06H
+                       MOV     R6,A
+                       MOV     R5,A
+                       MOV     R4,A
+                 R     MOV     DPTR,#divider
+                 E     CALL    ?C?LSTXDATA
+                                           ; SOURCE LINE # 308
+             ?C0046:
+                                           ; SOURCE LINE # 309
+                       CLR     A
+                       MOV     R7,#08H
+                       MOV     R6,#07H
+                       MOV     R5,A
+                       MOV     R4,A
+                 R     MOV     DPTR,#divider
+                       MOVX    A,@DPTR
+                       MOV     R0,A
+                       INC     DPTR
+                       MOVX    A,@DPTR
+C51 COMPILER V9.51   SI5351A                                                               09/03/2026 15:23:28 PAGE 39  
+
+                       MOV     R1,A
+                       INC     DPTR
+                       MOVX    A,@DPTR
+                       MOV     R2,A
+                       INC     DPTR
+                       MOVX    A,@DPTR
+                       MOV     R3,A
+                       SETB    C
+                 E     CALL    ?C?ULCMP
+                 R     xJLT    ?C0047
+                                           ; SOURCE LINE # 310
+                       CLR     A
+                       MOV     R7,#08H
+                       MOV     R6,#07H
+                       MOV     R5,A
+                       MOV     R4,A
+                 R     MOV     DPTR,#divider
+                 E     CALL    ?C?LSTXDATA
+                                           ; SOURCE LINE # 311
+             ?C0047:
+                                           ; SOURCE LINE # 312
                  R     MOV     DPTR,#divider
                        MOVX    A,@DPTR
                        MOV     R4,A
@@ -2091,7 +2456,180 @@ ASSEMBLY LISTING OF GENERATED OBJECT CODE
                        MOV     R5,A
                        MOV     R4,A
                        MOV     A,R7
-                 R     xJZ     ?C0040
+                 R     xJZ     ?C0048
+                                           ; SOURCE LINE # 313
+                 R     MOV     DPTR,#divider
+                       MOVX    A,@DPTR
+                       MOV     R4,A
+                       INC     DPTR
+                       MOVX    A,@DPTR
+                       MOV     R5,A
+                       INC     DPTR
+                       MOVX    A,@DPTR
+                       MOV     R6,A
+                       INC     DPTR
+                       MOVX    A,@DPTR
+                       MOV     R7,A
+                       MOV     A,#0FFH
+                       MOV     A,R7
+                       ADD     A,#0FFH
+                       MOV     R7,A
+                       MOV     A,R6
+                       ADDC    A,#0FFH
+                       MOV     R6,A
+                       MOV     A,R5
+                       ADDC    A,#0FFH
+C51 COMPILER V9.51   SI5351A                                                               09/03/2026 15:23:28 PAGE 40  
+
+                       MOV     R5,A
+                       MOV     A,R4
+                       ADDC    A,#0FFH
+                       MOV     R4,A
+                 R     MOV     DPTR,#divider
+                 E     CALL    ?C?LSTXDATA
+                                           ; SOURCE LINE # 314
+             ?C0048:
+                                           ; SOURCE LINE # 315
+                       CLR     A
+                       MOV     R7,#06H
+                       MOV     R6,A
+                       MOV     R5,A
+                       MOV     R4,A
+                 R     MOV     DPTR,#divider
+                       MOVX    A,@DPTR
+                       MOV     R0,A
+                       INC     DPTR
+                       MOVX    A,@DPTR
+                       MOV     R1,A
+                       INC     DPTR
+                       MOVX    A,@DPTR
+                       MOV     R2,A
+                       INC     DPTR
+                       MOVX    A,@DPTR
+                       MOV     R3,A
+                       CLR     C
+                 E     CALL    ?C?ULCMP
+                 R     xJGE    ?C0049
+                                           ; SOURCE LINE # 316
+                       CLR     A
+                       MOV     R7,#06H
+                       MOV     R6,A
+                       MOV     R5,A
+                       MOV     R4,A
+                 R     MOV     DPTR,#divider
+                 E     CALL    ?C?LSTXDATA
+                                           ; SOURCE LINE # 317
+             ?C0049:
+                                           ; SOURCE LINE # 318
+                 R     MOV     DPTR,#E_l_freq
+                       MOVX    A,@DPTR
+                       MOV     R4,A
+                       INC     DPTR
+                       MOVX    A,@DPTR
+                       MOV     R5,A
+                       INC     DPTR
+                       MOVX    A,@DPTR
+                       MOV     R6,A
+                       INC     DPTR
+                       MOVX    A,@DPTR
+                       MOV     R7,A
+                 R     MOV     DPTR,#divider
+                       MOVX    A,@DPTR
+                       MOV     R0,A
+                       INC     DPTR
+                       MOVX    A,@DPTR
+                       MOV     R1,A
+                       INC     DPTR
+                       MOVX    A,@DPTR
+                       MOV     R2,A
+                       INC     DPTR
+C51 COMPILER V9.51   SI5351A                                                               09/03/2026 15:23:28 PAGE 41  
+
+                       MOVX    A,@DPTR
+                       MOV     R3,A
+                 E     CALL    ?C?LMUL
+                 R     MOV     DPTR,#pllFreq
+                 E     CALL    ?C?LSTXDATA
+                                           ; SOURCE LINE # 320
+                       MOV     R7,#00H
+                       MOV     R6,#0E9H
+                       MOV     R5,#0A4H
+                       MOV     R4,#035H
+                 R     MOV     DPTR,#pllFreq
+                       MOVX    A,@DPTR
+                       MOV     R0,A
+                       INC     DPTR
+                       MOVX    A,@DPTR
+                       MOV     R1,A
+                       INC     DPTR
+                       MOVX    A,@DPTR
+                       MOV     R2,A
+                       INC     DPTR
+                       MOVX    A,@DPTR
+                       MOV     R3,A
+                       SETB    C
+                 E     CALL    ?C?ULCMP
+                 R     xJGE    ?C0051
+                       MOV     R7,#00H
+                       MOV     R6,#046H
+                       MOV     R5,#0C3H
+                       MOV     R4,#023H
+                 R     MOV     DPTR,#pllFreq
+                       MOVX    A,@DPTR
+                       MOV     R0,A
+                       INC     DPTR
+                       MOVX    A,@DPTR
+                       INC     DPTR
+                       MOVX    A,@DPTR
+                       INC     DPTR
+                       MOVX    A,@DPTR
+                       CLR     C
+                 E     CALL    ?C?ULCMP
+                 R     xJGE    ?C0050
+             ?C0051:
+                                           ; SOURCE LINE # 321
+                 R     MOV     DPTR,#E_l_freq
+                       MOVX    A,@DPTR
+                       MOV     R0,A
+                       INC     DPTR
+                       MOVX    A,@DPTR
+                       MOV     R1,A
+                       INC     DPTR
+                       MOVX    A,@DPTR
+                       MOV     R2,A
+                       INC     DPTR
+                       MOVX    A,@DPTR
+                       MOV     R3,A
+                       MOV     R7,#00H
+                       MOV     R6,#0E9H
+                       MOV     R5,#0A4H
+                       MOV     R4,#035H
+                 E     CALL    ?C?ULDIV
+                 R     MOV     DPTR,#divider
+                 E     CALL    ?C?LSTXDATA
+C51 COMPILER V9.51   SI5351A                                                               09/03/2026 15:23:28 PAGE 42  
+
+                                           ; SOURCE LINE # 322
+                 R     MOV     DPTR,#divider
+                       MOVX    A,@DPTR
+                       MOV     R4,A
+                       INC     DPTR
+                       MOVX    A,@DPTR
+                       MOV     R5,A
+                       INC     DPTR
+                       MOVX    A,@DPTR
+                       MOV     R6,A
+                       INC     DPTR
+                       MOVX    A,@DPTR
+                       ANL     A,#01H
+                       MOV     R7,A
+                       CLR     A
+                       MOV     R6,A
+                       MOV     R5,A
+                       MOV     R4,A
+                       MOV     A,R7
+                 R     xJZ     ?C0052
+                                           ; SOURCE LINE # 323
                  R     MOV     DPTR,#divider
                        MOVX    A,@DPTR
                        MOV     R4,A
@@ -2119,8 +2657,42 @@ ASSEMBLY LISTING OF GENERATED OBJECT CODE
                        MOV     R4,A
                  R     MOV     DPTR,#divider
                  E     CALL    ?C?LSTXDATA
-             ?C0040:
-                                           ; SOURCE LINE # 264
+                                           ; SOURCE LINE # 324
+             ?C0052:
+                                           ; SOURCE LINE # 325
+                       CLR     A
+                       MOV     R7,#06H
+                       MOV     R6,A
+                       MOV     R5,A
+                       MOV     R4,A
+                 R     MOV     DPTR,#divider
+                       MOVX    A,@DPTR
+                       MOV     R0,A
+                       INC     DPTR
+                       MOVX    A,@DPTR
+                       MOV     R1,A
+C51 COMPILER V9.51   SI5351A                                                               09/03/2026 15:23:28 PAGE 43  
+
+                       INC     DPTR
+                       MOVX    A,@DPTR
+                       MOV     R2,A
+                       INC     DPTR
+                       MOVX    A,@DPTR
+                       MOV     R3,A
+                       CLR     C
+                 E     CALL    ?C?ULCMP
+                 R     xJGE    ?C0053
+                                           ; SOURCE LINE # 326
+                       CLR     A
+                       MOV     R7,#06H
+                       MOV     R6,A
+                       MOV     R5,A
+                       MOV     R4,A
+                 R     MOV     DPTR,#divider
+                 E     CALL    ?C?LSTXDATA
+                                           ; SOURCE LINE # 327
+             ?C0053:
+                                           ; SOURCE LINE # 328
                  R     MOV     DPTR,#E_l_freq
                        MOVX    A,@DPTR
                        MOV     R4,A
@@ -2131,8 +2703,6 @@ ASSEMBLY LISTING OF GENERATED OBJECT CODE
                        MOVX    A,@DPTR
                        MOV     R6,A
                        INC     DPTR
-C51 COMPILER V9.51   SI5351A                                                               11/29/2024 11:36:25 PAGE 35  
-
                        MOVX    A,@DPTR
                        MOV     R7,A
                  R     MOV     DPTR,#divider
@@ -2150,10 +2720,23 @@ ASSEMBLY LISTING OF GENERATED OBJECT CODE
                  E     CALL    ?C?LMUL
                  R     MOV     DPTR,#pllFreq
                  E     CALL    ?C?LSTXDATA
-                                           ; SOURCE LINE # 266
+                                           ; SOURCE LINE # 329
+             ?C0050:
+                                           ; SOURCE LINE # 330
+                       CLR     A
+                 R     MOV     DPTR,#soft_ms_hold
+                       MOVX    @DPTR,A
+                                           ; SOURCE LINE # 331
+                 E     MOV     DPTR,#E_smooth
+                       MOVX    @DPTR,A
+                                           ; SOURCE LINE # 332
+             ?C0045:
+                                           ; SOURCE LINE # 334
                  R     MOV     DPTR,#xtalFreq
                        MOVX    A,@DPTR
                        MOV     R0,A
+C51 COMPILER V9.51   SI5351A                                                               09/03/2026 15:23:28 PAGE 44  
+
                        INC     DPTR
                        MOVX    A,@DPTR
                        MOV     R1,A
@@ -2179,7 +2762,7 @@ ASSEMBLY LISTING OF GENERATED OBJECT CODE
                  R     MOV     DPTR,#mult
                        MOV     A,R7
                        MOVX    @DPTR,A
-                                           ; SOURCE LINE # 267
+                                           ; SOURCE LINE # 335
                  R     MOV     DPTR,#xtalFreq
                        MOVX    A,@DPTR
                        MOV     R0,A
@@ -2195,8 +2778,6 @@ ASSEMBLY LISTING OF GENERATED OBJECT CODE
                  R     MOV     DPTR,#pllFreq
                        MOVX    A,@DPTR
                        MOV     R4,A
-C51 COMPILER V9.51   SI5351A                                                               11/29/2024 11:36:25 PAGE 36  
-
                        INC     DPTR
                        MOVX    A,@DPTR
                        MOV     R5,A
@@ -2213,11 +2794,13 @@ ASSEMBLY LISTING OF GENERATED OBJECT CODE
                        MOV     R7,AR3
                  R     MOV     DPTR,#l
                  E     CALL    ?C?LSTXDATA
-                                           ; SOURCE LINE # 268
+                                           ; SOURCE LINE # 336
                  R     MOV     DPTR,#l
                        MOVX    A,@DPTR
                        MOV     R4,A
                        INC     DPTR
+C51 COMPILER V9.51   SI5351A                                                               09/03/2026 15:23:28 PAGE 45  
+
                        MOVX    A,@DPTR
                        MOV     R5,A
                        INC     DPTR
@@ -2230,7 +2813,7 @@ ASSEMBLY LISTING OF GENERATED OBJECT CODE
                  E     CALL    ?C?FCASTL
                  R     MOV     DPTR,#f
                  E     CALL    ?C?LSTXDATA
-                                           ; SOURCE LINE # 269
+                                           ; SOURCE LINE # 337
                  R     MOV     DPTR,#f
                        MOVX    A,@DPTR
                        MOV     R4,A
@@ -2250,7 +2833,7 @@ ASSEMBLY LISTING OF GENERATED OBJECT CODE
                  E     CALL    ?C?FPMUL
                  R     MOV     DPTR,#f
                  E     CALL    ?C?LSTXDATA
-                                           ; SOURCE LINE # 270
+                                           ; SOURCE LINE # 338
                  R     MOV     DPTR,#f
                        MOVX    A,@DPTR
                        MOV     R4,A
@@ -2259,8 +2842,6 @@ ASSEMBLY LISTING OF GENERATED OBJECT CODE
                        MOV     R5,A
                        INC     DPTR
                        MOVX    A,@DPTR
-C51 COMPILER V9.51   SI5351A                                                               11/29/2024 11:36:25 PAGE 37  
-
                        MOV     R6,A
                        INC     DPTR
                        MOVX    A,@DPTR
@@ -2282,6 +2863,8 @@ ASSEMBLY LISTING OF GENERATED OBJECT CODE
                        MOVX    A,@DPTR
                        MOV     R7,A
                        CLR     A
+C51 COMPILER V9.51   SI5351A                                                               09/03/2026 15:23:28 PAGE 46  
+
                  E     CALL    ?C?FCASTL
                        MOV     R0,AR4
                        MOV     R1,AR5
@@ -2294,7 +2877,7 @@ ASSEMBLY LISTING OF GENERATED OBJECT CODE
                  E     CALL    ?C?FPDIV
                  R     MOV     DPTR,#f
                  E     CALL    ?C?LSTXDATA
-                                           ; SOURCE LINE # 271
+                                           ; SOURCE LINE # 339
                  R     MOV     DPTR,#f
                        MOVX    A,@DPTR
                        MOV     R4,A
@@ -2310,25 +2893,46 @@ ASSEMBLY LISTING OF GENERATED OBJECT CODE
                  E     CALL    ?C?CASTF
                  R     MOV     DPTR,#num
                  E     CALL    ?C?LSTXDATA
-                                           ; SOURCE LINE # 272
+                                           ; SOURCE LINE # 340
                        MOV     R7,#0FFH
                        MOV     R6,#0FFH
                        MOV     R5,#0FH
                        MOV     R4,#00H
                  R     MOV     DPTR,#denom
                  E     CALL    ?C?LSTXDATA
-                                           ; SOURCE LINE # 273
-                 R     MOV     DPTR,#state
+                                           ; SOURCE LINE # 341
+                       CLR     A
+                 R     MOV     DPTR,#hard_blank_hold
+                       MOVX    @DPTR,A
+                                           ; SOURCE LINE # 342
+                       INC     DPTR
                        MOVX    A,@DPTR
                        INC     A
                        MOVX    @DPTR,A
-                                           ; SOURCE LINE # 274
-C51 COMPILER V9.51   SI5351A                                                               11/29/2024 11:36:25 PAGE 38  
-
+                                           ; SOURCE LINE # 343
                  R     xJMP    ?C0022
-                                           ; SOURCE LINE # 275
-             ?C0041:
-                                           ; SOURCE LINE # 276
+                                           ; SOURCE LINE # 344
+             ?C0054:
+                                           ; SOURCE LINE # 347
+                 R     MOV     DPTR,#soft_ms_hold
+                       MOVX    A,@DPTR
+                 R     xJNZ    ?C0055
+                       INC     DPTR
+                       MOVX    A,@DPTR
+                 R     xJNZ    ?C0055
+                                           ; SOURCE LINE # 348
+                       MOV     R5,#080H
+                       MOV     R7,#010H
+                 E     CALL    _si5351_write_init
+                                           ; SOURCE LINE # 349
+                 R     MOV     DPTR,#clk0_blanked
+                       MOV     A,#01H
+C51 COMPILER V9.51   SI5351A                                                               09/03/2026 15:23:28 PAGE 47  
+
+                       MOVX    @DPTR,A
+                                           ; SOURCE LINE # 350
+             ?C0055:
+                                           ; SOURCE LINE # 351
                  R     MOV     DPTR,#num
                        MOVX    A,@DPTR
                        MOV     R4,A
@@ -2363,20 +2967,35 @@ ASSEMBLY LISTING OF GENERATED OBJECT CODE
                        MOV     R7,#01AH
                  R     CALL    _setupPLL
 ;---- Variable 'pll_status' assigned to Register 'R7' ----
-                                           ; SOURCE LINE # 278
+                                           ; SOURCE LINE # 353
                        MOV     A,R7
                  R     xJNZ    ?C0022
-                                           ; SOURCE LINE # 279
+                                           ; SOURCE LINE # 354
                  R     MOV     DPTR,#state
                        MOVX    A,@DPTR
                        INC     A
                        MOVX    @DPTR,A
-                                           ; SOURCE LINE # 280
-                                           ; SOURCE LINE # 281
+                                           ; SOURCE LINE # 355
+                                           ; SOURCE LINE # 356
                  R     xJMP    ?C0022
-                                           ; SOURCE LINE # 282
-             ?C0043:
-                                           ; SOURCE LINE # 283
+                                           ; SOURCE LINE # 357
+             ?C0057:
+                                           ; SOURCE LINE # 359
+                 R     MOV     DPTR,#soft_ms_hold
+                       MOVX    A,@DPTR
+                 R     xJZ     ?C0058
+                                           ; SOURCE LINE # 360
+                 R     MOV     DPTR,#state
+                       MOVX    A,@DPTR
+                       INC     A
+                       MOVX    @DPTR,A
+                                           ; SOURCE LINE # 361
+                 R     xJMP    ?C0022
+C51 COMPILER V9.51   SI5351A                                                               09/03/2026 15:23:28 PAGE 48  
+
+                                           ; SOURCE LINE # 362
+             ?C0058:
+                                           ; SOURCE LINE # 363
                  R     MOV     DPTR,#divider
                        MOVX    A,@DPTR
                        MOV     R4,A
@@ -2387,8 +3006,6 @@ ASSEMBLY LISTING OF GENERATED OBJECT CODE
                        MOVX    A,@DPTR
                        MOV     R6,A
                        INC     DPTR
-C51 COMPILER V9.51   SI5351A                                                               11/29/2024 11:36:25 PAGE 39  
-
                        MOVX    A,@DPTR
                        MOV     R7,A
                  R     MOV     DPTR,#?_setupMultisynth?BYTE+01H
@@ -2399,68 +3016,111 @@ ASSEMBLY LISTING OF GENERATED OBJECT CODE
                        MOV     R7,#02AH
                  R     CALL    _setupMultisynth
 ;---- Variable 'multi_status' assigned to Register 'R7' ----
-                                           ; SOURCE LINE # 289
+                                           ; SOURCE LINE # 369
                        MOV     A,R7
                  R     xJNZ    ?C0022
-                                           ; SOURCE LINE # 290
+                                           ; SOURCE LINE # 370
                  R     MOV     DPTR,#state
                        MOVX    A,@DPTR
                        INC     A
                        MOVX    @DPTR,A
-                                           ; SOURCE LINE # 291
-                                           ; SOURCE LINE # 292
+                                           ; SOURCE LINE # 371
+                                           ; SOURCE LINE # 372
                  R     xJMP    ?C0022
-                                           ; SOURCE LINE # 293
-             ?C0045:
-                                           ; SOURCE LINE # 295
+                                           ; SOURCE LINE # 373
+             ?C0060:
+                                           ; SOURCE LINE # 377
                  E     MOV     DPTR,#E_smooth
                        MOVX    A,@DPTR
-                 R     xJNZ    ?C0046
-                                           ; SOURCE LINE # 296
+                 R     xJNZ    ?C0061
+                                           ; SOURCE LINE # 378
                        MOV     R5,#0A0H
                        MOV     R7,#0B1H
                  E     CALL    _si5351_write_init
-                                           ; SOURCE LINE # 297
+                                           ; SOURCE LINE # 379
                  E     MOV     DPTR,#E_smooth
                        MOV     A,#01H
                        MOVX    @DPTR,A
-                                           ; SOURCE LINE # 298
-             ?C0046:
-                                           ; SOURCE LINE # 302
-                 R     MOV     DPTR,#state
-                       MOVX    A,@DPTR
-                       INC     A
+                                           ; SOURCE LINE # 380
+                 R     MOV     DPTR,#hard_blank_hold
+                       MOV     A,#06H
                        MOVX    @DPTR,A
-                                           ; SOURCE LINE # 303
-             ?C0047:
-                                           ; SOURCE LINE # 305
+                                           ; SOURCE LINE # 381
+                 R     xJMP    ?C0062
+             ?C0061:
+                                           ; SOURCE LINE # 382
+                       CLR     A
+                 R     MOV     DPTR,#hard_blank_hold
+                       MOVX    @DPTR,A
+                                           ; SOURCE LINE # 383
+             ?C0062:
+                                           ; SOURCE LINE # 384
+C51 COMPILER V9.51   SI5351A                                                               09/03/2026 15:23:28 PAGE 49  
+
+                 R     MOV     DPTR,#divider
+                       MOVX    A,@DPTR
+                       MOV     R4,A
+                       INC     DPTR
+                       MOVX    A,@DPTR
+                       MOV     R5,A
+                       INC     DPTR
+                       MOVX    A,@DPTR
+                       MOV     R6,A
+                       INC     DPTR
+                       MOVX    A,@DPTR
+                       MOV     R7,A
+                 R     MOV     DPTR,#prev_ms_divider
+                 E     CALL    ?C?LSTXDATA
+                                           ; SOURCE LINE # 387
+                 R     MOV     DPTR,#state
+                       MOV     A,#05H
+                       MOVX    @DPTR,A
+                                           ; SOURCE LINE # 388
+                 R     xJMP    ?C0022
+                                           ; SOURCE LINE # 389
+             ?C0063:
+                                           ; SOURCE LINE # 391
+                 R     MOV     DPTR,#hard_blank_hold
+                       MOVX    A,@DPTR
+                 R     xJZ     ?C0064
+                                           ; SOURCE LINE # 392
+                       DEC     A
+                       MOVX    @DPTR,A
+                                           ; SOURCE LINE # 393
+                 R     xJMP    ?C0022
+                                           ; SOURCE LINE # 394
+             ?C0064:
+                                           ; SOURCE LINE # 396
                        MOV     R5,#04FH
                        MOV     R7,#010H
                  E     CALL    _si5351_write_init
-                                           ; SOURCE LINE # 308
+                                           ; SOURCE LINE # 399
                        CLR     A
+                 R     MOV     DPTR,#clk0_blanked
+                       MOVX    @DPTR,A
+                                           ; SOURCE LINE # 400
                  R     MOV     DPTR,#state
                        MOVX    @DPTR,A
-                                           ; SOURCE LINE # 309
-                                           ; SOURCE LINE # 310
+                                           ; SOURCE LINE # 401
+                                           ; SOURCE LINE # 402
              ?C0022:
-                                           ; SOURCE LINE # 311
+                                           ; SOURCE LINE # 403
                  R     MOV     DPTR,#state
                        MOVX    A,@DPTR
                        MOV     R7,A
-                                           ; SOURCE LINE # 313
-             ?C0048:
+                                           ; SOURCE LINE # 405
+             ?C0065:
                        RET     
-C51 COMPILER V9.51   SI5351A                                                               11/29/2024 11:36:25 PAGE 40  
-
              ; FUNCTION _si5351aSetFrequency (END)
 
 
 
 MODULE INFORMATION:   STATIC OVERLAYABLE
-   CODE SIZE        =   2764    ----
+   CODE SIZE        =   3517    ----
    CONSTANT SIZE    =   ----    ----
-   XDATA SIZE       =     62      40
+   XDATA SIZE       =     69      41
+C51 COMPILER V9.51   SI5351A                                                               09/03/2026 15:23:28 PAGE 50  
+
    PDATA SIZE       =   ----    ----
    DATA SIZE        =   ----    ----
    IDATA SIZE       =   ----    ----

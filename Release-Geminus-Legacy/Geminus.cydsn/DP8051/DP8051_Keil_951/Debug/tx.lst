@@ -1,11 +1,11 @@
-C51 COMPILER V9.51   TX                                                                    11/29/2024 11:36:24 PAGE 1   
+C51 COMPILER V9.51   TX                                                                    09/03/2026 15:23:26 PAGE 1   
 
 
 C51 COMPILER V9.51, COMPILATION OF MODULE TX
-OBJECT MODULE PLACED IN .\DP8051\DP8051_Keil_951\Debug\tx.obj
-COMPILER INVOKED BY: C:\Program Files (x86)\Cypress\PSoC Creator\4.2\PSoC Creator\import\keil\pk51\9.51\C51\BIN\c51.exe 
-                    -tx.c NOIV LARGE MODDP2 OMF2 VB(1) NOIP INCDIR(.,Generated_Source\PSoC3) FF(3) DB WL(2) PR(.\DP8051\DP8051_Keil_951\Debug
-                    -/tx.lst) CD OT(5,SPEED) OA OJ(.\DP8051\DP8051_Keil_951\Debug\tx.obj)
+OBJECT MODULE PLACED IN DP8051\DP8051_Keil_951\Debug\tx.obj
+COMPILER INVOKED BY: C:\Program Files (x86)\Cypress\PSoC Creator\4.4\PSoC Creator\import\keil\pk51\9.51\C51\BIN\C51.exe 
+                    -tx.c NOIV LARGE MODDP2 OMF2 VB(1) NOIP INCDIR(.,Generated_Source\PSoC3) FF(3) DB WL(2) PR(DP8051\DP8051_Keil_951\Debug\t
+                    -x.lst) CD OT(5,SPEED) OA OJ(DP8051\DP8051_Keil_951\Debug\tx.obj)
 
 line level    source
 
@@ -46,138 +46,190 @@ line level    source
   34          void TX_Main(void) {
   35   1          static uint8 state = 0; 
   36   1         
-  37   1          switch (state) {
-  38   2              case 0: // receiving
-  39   2                  if (TX_Request && !TX_Inhibit) {
-  40   3                      state = 2;
-  41   3                      Control_Write(Control_Read() & ~CONTROL_RX);
-  42   3                  }
-  43   2                  break;
-  44   2              case 2:
-  45   2                  Control_Write(Control_Read() & ~CONTROL_AMP);
-  46   2                  state = 10;
-  47   2                  break;
-  48   2              case 10: // transmitting
-  49   2                  if (!TX_Request && !TX_Inhibit) {
-  50   3                      Control_Write(Control_Read() & ~(CONTROL_LED) | CONTROL_AMP);
-  51   3                      state = 11;
-  52   3                   }
-C51 COMPILER V9.51   TX                                                                    11/29/2024 11:36:24 PAGE 2   
+  37   1          /*switch (state) {
+  38   1              case 0: // receiving
+  39   1                  if (TX_Request && !TX_Inhibit) {
+  40   1                      state = 2;
+  41   1                      Control_Write(Control_Read() & ~CONTROL_RX);
+  42   1                  }
+  43   1                  break;
+  44   1              case 2:
+  45   1                  Control_Write(Control_Read() & ~CONTROL_AMP);
+  46   1                  state = 10;
+  47   1                  break;
+  48   1              case 10: // transmitting
+  49   1                  if (!TX_Request && !TX_Inhibit) {
+  50   1                      Control_Write(Control_Read() & ~(CONTROL_LED) | CONTROL_AMP);
+  51   1                      state = 11;
+  52   1                   }
+C51 COMPILER V9.51   TX                                                                    09/03/2026 15:23:26 PAGE 2   
 
-  53   2                 break;
-  54   2              case 11:
-  55   2                  Control_Write(Control_Read() | CONTROL_RX);
-  56   2                  state = 0;
-  57   2                  break;
-  58   2          }
-  59   1          
-  60   1      }
-C51 COMPILER V9.51   TX                                                                    11/29/2024 11:36:24 PAGE 3   
+  53   1                 break;
+  54   1              case 11:
+  55   1                  Control_Write(Control_Read() | CONTROL_RX);
+  56   1                  state = 0;
+  57   1                  break;
+  58   1          }*/
+  59   1           switch (state) {
+  60   2              case 0: // receiving to TX State
+  61   2                  if (TX_Request && !TX_Inhibit) {
+  62   3                      state = 1;
+  63   3                      Control_Write(Control_Read() & ~CONTROL_RX);
+  64   3                      Band_Control_Write(Band_Control_Read() | CONTROL_BAND_TX); //OR function
+  65   3                  }
+  66   2                  break;
+  67   2              case 1:
+  68   2                  state = 2;//
+  69   2                  break;
+  70   2              case 2:
+  71   2                  Control_Write(Control_Read() & ~CONTROL_AMP);
+  72   2                  state = 10;
+  73   2                  break;
+  74   2              case 10: // transmitting to RX State
+  75   2                  if (!TX_Request && !TX_Inhibit) {
+  76   3                      Control_Write(Control_Read() & ~(CONTROL_LED) | CONTROL_AMP);
+  77   3                      Band_Control_Write(Band_Control_Read() & ~ CONTROL_BAND_TX); //logical AND function to tur
+             -n off TX and flipping state of pin
+  78   3                      state = 11;
+  79   3                   }
+  80   2                 break;
+  81   2              case 11:
+  82   2                  Control_Write(Control_Read() | CONTROL_RX);
+  83   2                  state = 0;
+  84   2                  break;
+  85   2          }
+  86   1          
+  87   1      }
+C51 COMPILER V9.51   TX                                                                    09/03/2026 15:23:26 PAGE 3   
 
 ASSEMBLY LISTING OF GENERATED OBJECT CODE
 
 
              ; FUNCTION TX_Main (BEGIN)
                                            ; SOURCE LINE # 34
-                                           ; SOURCE LINE # 37
+                                           ; SOURCE LINE # 59
                  R     MOV     DPTR,#state
                        MOVX    A,@DPTR
-                       ADD     A,#0FEH
-                 R     xJZ     ?C0004
-                       ADD     A,#0F8H
-                 R     xJZ     ?C0005
                        DEC     A
-                 R     xJZ     ?C0007
+                 R     xJZ     ?C0004
+                       DEC     A
+                 R     xJZ     ?C0005
+                       ADD     A,#0F8H
+                 R     xJZ     ?C0006
+                       DEC     A
+                 R     xJZ     ?C0008
                        ADD     A,#0BH
-                 R     xJNZ    ?C0008
-                                           ; SOURCE LINE # 38
+                 R     xJNZ    ?C0009
+                                           ; SOURCE LINE # 60
              ?C0002:
-                                           ; SOURCE LINE # 39
+                                           ; SOURCE LINE # 61
                  R     MOV     DPTR,#TX_Request
                        MOVX    A,@DPTR
-                 R     xJZ     ?C0008
+                 R     xJZ     ?C0009
                  R     MOV     DPTR,#TX_Inhibit
                        MOVX    A,@DPTR
-                 R     xJNZ    ?C0008
-                                           ; SOURCE LINE # 40
+                 R     xJNZ    ?C0009
+                                           ; SOURCE LINE # 62
                  R     MOV     DPTR,#state
-                       MOV     A,#02H
+                       INC     A
                        MOVX    @DPTR,A
-                                           ; SOURCE LINE # 41
+                                           ; SOURCE LINE # 63
                  E     CALL    Control_Read
                        MOV     A,R7
                        ANL     A,#0FDH
                        MOV     R7,A
                  E     CALL    _Control_Write
-                                           ; SOURCE LINE # 42
-                                           ; SOURCE LINE # 43
+                                           ; SOURCE LINE # 64
+                 E     CALL    Band_Control_Read
+                       MOV     A,R7
+                       ORL     A,#04H
+                       MOV     R7,A
+                 E     CALL    _Band_Control_Write
+                                           ; SOURCE LINE # 65
+                                           ; SOURCE LINE # 66
                        RET     
-                                           ; SOURCE LINE # 44
+                                           ; SOURCE LINE # 67
              ?C0004:
-                                           ; SOURCE LINE # 45
+                                           ; SOURCE LINE # 68
+                 R     MOV     DPTR,#state
+                       MOV     A,#02H
+                       MOVX    @DPTR,A
+                                           ; SOURCE LINE # 69
+                       RET     
+                                           ; SOURCE LINE # 70
+             ?C0005:
+                                           ; SOURCE LINE # 71
                  E     CALL    Control_Read
                        MOV     A,R7
                        ANL     A,#0F7H
                        MOV     R7,A
                  E     CALL    _Control_Write
-                                           ; SOURCE LINE # 46
+C51 COMPILER V9.51   TX                                                                    09/03/2026 15:23:26 PAGE 4   
+
+                                           ; SOURCE LINE # 72
                  R     MOV     DPTR,#state
                        MOV     A,#0AH
                        MOVX    @DPTR,A
-                                           ; SOURCE LINE # 47
+                                           ; SOURCE LINE # 73
                        RET     
-                                           ; SOURCE LINE # 48
-             ?C0005:
-                                           ; SOURCE LINE # 49
+                                           ; SOURCE LINE # 74
+             ?C0006:
+                                           ; SOURCE LINE # 75
                  R     MOV     DPTR,#TX_Request
                        MOVX    A,@DPTR
-                 R     xJNZ    ?C0008
+                 R     xJNZ    ?C0009
                  R     MOV     DPTR,#TX_Inhibit
                        MOVX    A,@DPTR
-                 R     xJNZ    ?C0008
-                                           ; SOURCE LINE # 50
-C51 COMPILER V9.51   TX                                                                    11/29/2024 11:36:24 PAGE 4   
-
+                 R     xJNZ    ?C0009
+                                           ; SOURCE LINE # 76
                  E     CALL    Control_Read
                        MOV     A,R7
                        ANL     A,#0FEH
                        ORL     A,#08H
                        MOV     R7,A
                  E     CALL    _Control_Write
-                                           ; SOURCE LINE # 51
+                                           ; SOURCE LINE # 77
+                 E     CALL    Band_Control_Read
+                       MOV     A,R7
+                       ANL     A,#0FBH
+                       MOV     R7,A
+                 E     CALL    _Band_Control_Write
+                                           ; SOURCE LINE # 78
                  R     MOV     DPTR,#state
                        MOV     A,#0BH
                        MOVX    @DPTR,A
-                                           ; SOURCE LINE # 52
-                                           ; SOURCE LINE # 53
+                                           ; SOURCE LINE # 79
+                                           ; SOURCE LINE # 80
                        RET     
-                                           ; SOURCE LINE # 54
-             ?C0007:
-                                           ; SOURCE LINE # 55
+                                           ; SOURCE LINE # 81
+             ?C0008:
+                                           ; SOURCE LINE # 82
                  E     CALL    Control_Read
                        MOV     A,R7
                        ORL     A,#02H
                        MOV     R7,A
                  E     CALL    _Control_Write
-                                           ; SOURCE LINE # 56
+                                           ; SOURCE LINE # 83
                        CLR     A
                  R     MOV     DPTR,#state
                        MOVX    @DPTR,A
-                                           ; SOURCE LINE # 57
-                                           ; SOURCE LINE # 58
-                                           ; SOURCE LINE # 60
-             ?C0008:
+                                           ; SOURCE LINE # 84
+                                           ; SOURCE LINE # 85
+                                           ; SOURCE LINE # 87
+             ?C0009:
                        RET     
              ; FUNCTION TX_Main (END)
 
 
 
 MODULE INFORMATION:   STATIC OVERLAYABLE
-   CODE SIZE        =    136    ----
+   CODE SIZE        =    167    ----
    CONSTANT SIZE    =   ----    ----
    XDATA SIZE       =      3    ----
    PDATA SIZE       =   ----    ----
    DATA SIZE        =   ----    ----
+C51 COMPILER V9.51   TX                                                                    09/03/2026 15:23:26 PAGE 5   
+
    IDATA SIZE       =   ----    ----
    BIT SIZE         =   ----    ----
    EDATA SIZE       =   ----    ----

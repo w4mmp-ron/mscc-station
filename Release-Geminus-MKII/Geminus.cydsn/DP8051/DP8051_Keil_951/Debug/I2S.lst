@@ -1,9 +1,9 @@
-C51 COMPILER V9.51   I2S                                                                   12/05/2024 09:17:05 PAGE 1   
+C51 COMPILER V9.51   I2S                                                                   09/03/2026 15:33:34 PAGE 1   
 
 
 C51 COMPILER V9.51, COMPILATION OF MODULE I2S
 OBJECT MODULE PLACED IN .\DP8051\DP8051_Keil_951\Debug\I2S.obj
-COMPILER INVOKED BY: C:\Program Files (x86)\Cypress\PSoC Creator\4.2\PSoC Creator\import\keil\pk51\9.51\C51\BIN\c51.exe 
+COMPILER INVOKED BY: C:\Program Files (x86)\Cypress\PSoC Creator\4.4\PSoC Creator\import\keil\pk51\9.51\C51\BIN\c51.exe 
                     -Generated_Source\PSoC3\I2S.c NOIV LARGE MODDP2 OMF2 VB(1) NOIP INCDIR(.,Generated_Source\PSoC3) FF(3) DB WL(2) PR(.\DP80
                     -51\DP8051_Keil_951\Debug/I2S.lst) CD OT(5,SPEED) OA OJ(.\DP8051\DP8051_Keil_951\Debug\I2S.obj)
 
@@ -62,7 +62,7 @@ line level    source
   51          
   52          
   53          /*******************************************************************************
-C51 COMPILER V9.51   I2S                                                                   12/05/2024 09:17:05 PAGE 2   
+C51 COMPILER V9.51   I2S                                                                   09/03/2026 15:33:34 PAGE 2   
 
   54          * Function Name: I2S_Init
   55          ********************************************************************************
@@ -126,7 +126,7 @@ line level    source
                           #if (I2S_CLIP_DETECT_ENABLE)
                               I2S_SET_POS_THRESHOLD(CH2, I2S_posThresholds[I2S_STEREO_2]);
                               I2S_SET_NEG_THRESHOLD(CH2, I2S_negThresholds[I2S_STEREO_2]);
-C51 COMPILER V9.51   I2S                                                                   12/05/2024 09:17:05 PAGE 3   
+C51 COMPILER V9.51   I2S                                                                   09/03/2026 15:33:34 PAGE 3   
 
                           #endif /* I2S_CLIP_DETECT_ENABLE */
                       #endif /* I2S_RX_STEREO_2_PRESENT */
@@ -190,7 +190,7 @@ line level    source
  175          *  Disables the I2S interface. The sck and ws outputs are set to 0. The Tx and
  176          *  Rx directions are disabled and their FIFOs are cleared.
  177          *
-C51 COMPILER V9.51   I2S                                                                   12/05/2024 09:17:05 PAGE 4   
+C51 COMPILER V9.51   I2S                                                                   09/03/2026 15:33:34 PAGE 4   
 
  178          * Parameters:
  179          *  None.
@@ -254,7 +254,7 @@ line level    source
                       status = CYRET_SUCCESS;
                       /* The component must be stopped prior calling this API. Therefore
                       * all the control bits except the bits modified are zeros.
-C51 COMPILER V9.51   I2S                                                                   12/05/2024 09:17:05 PAGE 5   
+C51 COMPILER V9.51   I2S                                                                   09/03/2026 15:33:34 PAGE 5   
 
                       */
                       switch(dataBits)
@@ -318,7 +318,7 @@ line level    source
  299              * Function Name: I2S_DisableTx
  300              ********************************************************************************
  301              *
-C51 COMPILER V9.51   I2S                                                                   12/05/2024 09:17:05 PAGE 6   
+C51 COMPILER V9.51   I2S                                                                   09/03/2026 15:33:34 PAGE 6   
 
  302              * Summary:
  303              *  Disables the Tx direction of the I2S interface.  At the next word
@@ -382,7 +382,7 @@ line level    source
                       #endif /* I2S_TX_STEREO_3_PRESENT */
  362   1              #if (I2S_TX_STEREO_4_PRESENT)
                           I2S_CLEAR_TX_FIFO(CH4);
-C51 COMPILER V9.51   I2S                                                                   12/05/2024 09:17:05 PAGE 7   
+C51 COMPILER V9.51   I2S                                                                   09/03/2026 15:33:34 PAGE 7   
 
                       #endif /* I2S_TX_STEREO_4_PRESENT */
  365   1              CyExitCriticalSection(enableInterrupts);
@@ -446,7 +446,7 @@ line level    source
  423   1              I2S_CONTROL_REG &= (uint8)~I2S_RX_EN;
  424   1      
  425   1              enableInterrupts = CyEnterCriticalSection();
-C51 COMPILER V9.51   I2S                                                                   12/05/2024 09:17:05 PAGE 8   
+C51 COMPILER V9.51   I2S                                                                   09/03/2026 15:33:34 PAGE 8   
 
  426   1              I2S_RX_STS0_1_ACTL_REG &= (uint8)~I2S_INT_EN;
  427   1              #ifdef I2S_RX_STS2_3_ACTL_REG
@@ -498,7 +498,7 @@ line level    source
  473          
  474          
  475          /* [] END OF FILE */
-C51 COMPILER V9.51   I2S                                                                   12/05/2024 09:17:05 PAGE 9   
+C51 COMPILER V9.51   I2S                                                                   09/03/2026 15:33:34 PAGE 9   
 
 ASSEMBLY LISTING OF GENERATED OBJECT CODE
 
@@ -562,7 +562,7 @@ ASSEMBLY LISTING OF GENERATED OBJECT CODE
                        MOVX    @DPTR,A
                                            ; SOURCE LINE # 164
              ?C0009:
-C51 COMPILER V9.51   I2S                                                                   12/05/2024 09:17:05 PAGE 10  
+C51 COMPILER V9.51   I2S                                                                   09/03/2026 15:33:34 PAGE 10  
 
                                            ; SOURCE LINE # 166
                  R     CALL    I2S_Enable
@@ -626,7 +626,7 @@ ASSEMBLY LISTING OF GENERATED OBJECT CODE
                        RET     
              ; FUNCTION I2S_EnableTx (END)
 
-C51 COMPILER V9.51   I2S                                                                   12/05/2024 09:17:05 PAGE 11  
+C51 COMPILER V9.51   I2S                                                                   09/03/2026 15:33:34 PAGE 11  
 
              ; FUNCTION I2S_DisableTx (BEGIN)
                                            ; SOURCE LINE # 314
@@ -690,7 +690,7 @@ ASSEMBLY LISTING OF GENERATED OBJECT CODE
                        MOVX    @DPTR,A
                                            ; SOURCE LINE # 402
                        RET     
-C51 COMPILER V9.51   I2S                                                                   12/05/2024 09:17:05 PAGE 12  
+C51 COMPILER V9.51   I2S                                                                   09/03/2026 15:33:34 PAGE 12  
 
              ; FUNCTION I2S_EnableRx (END)
 

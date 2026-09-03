@@ -33,8 +33,12 @@
 #define SI_5351_READ 2
 
 #define NO_CALIBRATION 127
-#define TUNING_PPM 3500
-#define MAX_FREQ_DELTA 1000000
+/* Legacy ppm gate for host LO steps. Real glitch avoidance is MS-hold in si5351a.c;
+ * keep a generous window so smooth_tuning rarely forces hard when MS can stay fixed. */
+#define TUNING_PPM 10000
+#define MAX_FREQ_DELTA 2000000
+/* Floor for soft-tune window (Hz). Whole-band soft on LF uses MS hold; this is backup. */
+#define MIN_SMOOTH_HZ 500u
 #define GET_TEMP_TIMER 43000
 #define AM_OFFSET 11860
 #define SSB_OFFSET 12000
@@ -89,21 +93,41 @@ int16 E_cw_pitch_freq = 0;
     }
 }*/
 
+/*
+ * Host-side soft-tune hint for E_smooth.
+ *
+ * Primary pop elimination is Multisynth-hold in si5351aSetFrequency()
+ * (si5351a.c), which overrides E_smooth when the VCO can stay legal.
+ * This function only biases large LO hops; MS-hold is authoritative.
+ *
+ * Math: max_ppm = ((freq/1000)*TUNING_PPM)/1000 + MIN_SMOOTH_HZ floor.
+ * First LO after boot returns hard.
+ * (Ported from Proficio-MKII-ATU smooth-tune work 2026-07.)
+ */
 uint8 smooth_tuning(uint32 freq){
     static uint32 previous_freq = 0;
     uint8 smooth = TRUE;
     uint32 abs_freq;
     int32 freq_diff;
-    volatile uint32 max_ppm_freq;
-    
-    freq_diff = (int32)(freq - previous_freq);   
-    abs_freq = labs((freq_diff));
-    if(abs_freq >= MAX_FREQ_DELTA){
+    uint32 max_ppm_freq;
+
+    /* First LO after boot / unknown previous: force hard retune */
+    if (previous_freq == 0) {
+        previous_freq = freq;
+        return FALSE;
+    }
+
+    freq_diff = (int32)(freq - previous_freq);
+    abs_freq = labs(freq_diff);
+    if (abs_freq >= MAX_FREQ_DELTA) {
         smooth = FALSE;
     } else {
-        max_ppm_freq = freq / 1000000;
-        max_ppm_freq *= TUNING_PPM;
-        if (abs_freq > max_ppm_freq){
+        /* ppm window in Hz without uint64 (8051/Keil C51) */
+        max_ppm_freq = ((freq / 1000u) * (uint32)TUNING_PPM) / 1000u;
+        if (max_ppm_freq < MIN_SMOOTH_HZ) {
+            max_ppm_freq = MIN_SMOOTH_HZ;
+        }
+        if (abs_freq > max_ppm_freq) {
             smooth = FALSE;
         }
     }

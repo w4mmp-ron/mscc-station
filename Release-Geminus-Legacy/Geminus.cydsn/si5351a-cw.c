@@ -128,6 +128,19 @@ void si5351aOutputOff_CW(uint8_t clk)
 // and MultiSynth 0
 // and produces the output on CLK0
 //
+/* VCO bounds / hard blank for MS-hold soft-tune (same policy as si5351a.c) */
+#ifndef SI5351_VCO_MIN
+#define SI5351_VCO_MIN     600000000UL
+#define SI5351_VCO_MAX     900000000UL
+#define SI5351_VCO_CENTER  750000000UL
+#define SI5351_MS_MIN      6UL
+#define SI5351_MS_MAX      1800UL
+#endif
+#ifndef SI5351_CLK0_OFF
+#define SI5351_CLK0_OFF    0x80u
+#define SI5351_CLK0_ON     (0x4Fu | SI_CLK_SRC_PLL_A)
+#endif
+
 //void si5351aSetFrequency(uint32 frequency,int8_t ppm_int,int8_t ppm_dec, uint8_t smooth)
 uint8 si5351aSetFrequency_CW(uint8_t transmit)
 {
@@ -136,6 +149,7 @@ uint8 si5351aSetFrequency_CW(uint8_t transmit)
 	static uint32 l;
 	static uint8_t mult;
 	static uint32 num,denom,divider;
+    static uint32 prev_ms_divider = 0; /* held Multisynth divider for soft path */
     //static uint32 freq_previous = 0;
     float delta_freq ,ppm, f;
     int32 delta_freq_int;
@@ -145,6 +159,8 @@ uint8 si5351aSetFrequency_CW(uint8_t transmit)
     static int8 l_ppm_int;
     static int8 l_ppm_dec;
     uint32 E_l_freq_CW = 0;
+    uint8 try_soft;
+    uint8 soft_ms_hold;
    
             if(!transmit){
                 E_l_freq_CW = (E_current_LO_freq + E_current_rit_freq);
@@ -177,38 +193,82 @@ uint8 si5351aSetFrequency_CW(uint8_t transmit)
             //Now set the frequency for the Si5351 which four (4) times the LO sent by the host
             E_l_freq_CW = E_l_freq_CW * 4;
             //Now add the PPM correction
-            E_l_freq_CW = E_l_freq_CW + delta_freq_int;  
-	        divider = 900000000 / E_l_freq_CW;   // Calculate the division ratio. 900,000,000 is the maximum internal 
-									        // PLL frequency: 900MHz
-	        if (divider % 2) divider--;		// Ensure an even integer division ratio
-                                            // Calculate the pllFrequency: the divider * desired output frequency
-   
-	        pllFreq = divider * E_l_freq_CW; 
+            E_l_freq_CW = E_l_freq_CW + delta_freq_int;
 
-	        mult = pllFreq / xtalFreq;		// Determine the multiplier to get to the required pllFrequency
+            soft_ms_hold = 0;
+            try_soft = 0;
+            if (prev_ms_divider >= SI5351_MS_MIN && E_l_freq_CW > 0UL) {
+                if (E_l_freq_CW <= (SI5351_VCO_MAX / prev_ms_divider)) {
+                    pllFreq = prev_ms_divider * E_l_freq_CW;
+                    if (pllFreq >= SI5351_VCO_MIN) {
+                        mult = (uint8_t)(pllFreq / xtalFreq);
+                        if (mult >= 15u && mult <= 90u) {
+                            try_soft = 1;
+                        }
+                    }
+                }
+            }
+
+            if (try_soft) {
+                divider = prev_ms_divider;
+                soft_ms_hold = 1;
+                E_smooth = TRUE;
+            } else {
+                divider = SI5351_VCO_CENTER / E_l_freq_CW;
+                if (divider < SI5351_MS_MIN) {
+                    divider = SI5351_MS_MIN;
+                }
+                if (divider > SI5351_MS_MAX) {
+                    divider = SI5351_MS_MAX;
+                }
+                if (divider % 2UL) {
+                    divider--;
+                }
+                if (divider < SI5351_MS_MIN) {
+                    divider = SI5351_MS_MIN;
+                }
+                pllFreq = divider * E_l_freq_CW;
+                if (pllFreq > SI5351_VCO_MAX || pllFreq < SI5351_VCO_MIN) {
+                    divider = SI5351_VCO_MAX / E_l_freq_CW;
+                    if (divider % 2UL) {
+                        divider--;
+                    }
+                    if (divider < SI5351_MS_MIN) {
+                        divider = SI5351_MS_MIN;
+                    }
+                    pllFreq = divider * E_l_freq_CW;
+                }
+                soft_ms_hold = 0;
+                E_smooth = FALSE;
+            }
+
+	        mult = (uint8_t)(pllFreq / xtalFreq);
 	        l = pllFreq % xtalFreq;			// It has three parts:
 	        f = l;							// mult is an integer that must be in the range 15..90
 	        f *= 1048575;					// num and denom are the fractional parts, the numerator and denominator
 	        f /= xtalFreq;					// each is 20 bits (range 0..1048575)
 	        num = f;						// the actual multiplier is  mult + num / denom
 	        denom = 1048575;				// For simplicity we set the denominator to the maximum 1048575
+            /* Hard only: blank CLK0 around MS rewrite + PLL_RESET (no CW timer/PTT). */
+            if (!soft_ms_hold) {
+                si5351_write_init(SI_CLK0_CONTROL, SI5351_CLK0_OFF);
+            }
 	        pll_status = setupPLL_CW(SI_SYNTH_PLL_A, mult, num, denom);
             // Set up PLL A with the calculated multiplication ratio
-            multi_status = setupMultisynth_CW(SI_SYNTH_MS_0, divider, SI_R_DIV_1);
-            // Sets up MultiSynth divider 0, with the calculated divider. 
-		    // The final R division stage can divide by a power of two, from 1..128. 
-            // reprented by constants SI_R_DIV1 to SI_R_DIV128 (see si5351a.h header file)
-		    // If you want to output frequencies below 1MHz, you have to use the 
-		    // final R division stage
+            if (!soft_ms_hold) {
+                multi_status = setupMultisynth_CW(SI_SYNTH_MS_0, divider, SI_R_DIV_1);
+            }
+            // Soft: Multisynth held — PLL fractional only, no PLL_RESET
 	        //if(!smooth) si5351_write_queue(SI_PLL_RESET, 0xA0);	
             if(!E_smooth) {
                 si5351_write_init(SI_PLL_RESET, 0xA0);	
                 E_smooth = TRUE;
             }
+            prev_ms_divider = divider;
             // Resets the PLL. This causes a glitch in the output. For small changes to 
 			// the parameters, you don't need to reset the PLL, and there is no glitch
             //si5351_write_queue(SI_CLK0_CONTROL, 0x4F | SI_CLK_SRC_PLL_A);
-            si5351_write_init(SI_CLK0_CONTROL, 0x4F | SI_CLK_SRC_PLL_A);
+            si5351_write_init(SI_CLK0_CONTROL, SI5351_CLK0_ON);
             // Finally switch on the CLK0 output (0x4F)
 		    // and set the MultiSynth0 input to be PLL A
     return state;

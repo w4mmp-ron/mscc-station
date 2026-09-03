@@ -37,7 +37,7 @@
 
 
 #define FIRMWARE_VERSION_MAJOR 224
-#define FIRMWARE_VERSION_MINOR 11
+#define FIRMWARE_VERSION_MINOR 12
 #define FIRMWARE_VERSION ((((FIRMWARE_VERSION_MINOR) << 8) & 0xff00) | ((FIRMWARE_VERSION_MAJOR) & 0x00ff))
 #define EEPROM_PCB_VERSION_LOCATION 11
         
@@ -133,6 +133,11 @@ extern uint8_t E_Amplifier;
 extern uint8_t E_QSK;
 extern volatile uint8_t E_PTT;
 extern uint8_t E_band;
+/* USB reboot request: 0=none, 1=app soft reset, 2=enter PSoC bootloader */
+extern volatile uint8_t E_reboot_request;
+#define REBOOT_REQ_NONE        0u
+#define REBOOT_REQ_APP         1u
+#define REBOOT_REQ_BOOTLOADER  2u
 extern uint8 E_PPM_needs_updated;
 extern uint8 E_PPM_needs_set;
 

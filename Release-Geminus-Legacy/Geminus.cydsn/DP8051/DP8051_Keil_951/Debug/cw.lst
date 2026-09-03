@@ -1,11 +1,11 @@
-C51 COMPILER V9.51   CW                                                                    11/29/2024 11:36:27 PAGE 1   
+C51 COMPILER V9.51   CW                                                                    09/03/2026 15:23:31 PAGE 1   
 
 
 C51 COMPILER V9.51, COMPILATION OF MODULE CW
-OBJECT MODULE PLACED IN .\DP8051\DP8051_Keil_951\Debug\cw.obj
-COMPILER INVOKED BY: C:\Program Files (x86)\Cypress\PSoC Creator\4.2\PSoC Creator\import\keil\pk51\9.51\C51\BIN\c51.exe 
-                    -cw.c NOIV LARGE MODDP2 OMF2 VB(1) NOIP INCDIR(.,Generated_Source\PSoC3) FF(3) DB WL(2) PR(.\DP8051\DP8051_Keil_951\Debug
-                    -/cw.lst) CD OT(5,SPEED) OA OJ(.\DP8051\DP8051_Keil_951\Debug\cw.obj)
+OBJECT MODULE PLACED IN DP8051\DP8051_Keil_951\Debug\cw.obj
+COMPILER INVOKED BY: C:\Program Files (x86)\Cypress\PSoC Creator\4.4\PSoC Creator\import\keil\pk51\9.51\C51\BIN\C51.exe 
+                    -cw.c NOIV LARGE MODDP2 OMF2 VB(1) NOIP INCDIR(.,Generated_Source\PSoC3) FF(3) DB WL(2) PR(DP8051\DP8051_Keil_951\Debug\c
+                    -w.lst) CD OT(5,SPEED) OA OJ(DP8051\DP8051_Keil_951\Debug\cw.obj)
 
 line level    source
 
@@ -28,8 +28,7 @@ line level    source
   17          
   18          // Variable naming conventions:     E_<variable> -> Externally defined global
   19          //                                  ff_<variable> -> Externally defined global stored in flash memory
-  20          //                                  ee_<variable> -> Externally defined global to be stored in EEPROM memo
-             -ry
+  20          //                                  ee_<variable> -> Externally defined global stored in EEPROM memory
   21          //                                  l_<variable> -> locally defined variable
   22          //                                  All UPPERCASE -> Define
   23          
@@ -62,9 +61,9 @@ line level    source
   50          
   51          CY_ISR(QSK_interrupt){
   52   1          QSK_pop_filter = FALSE;
-C51 COMPILER V9.51   CW                                                                    11/29/2024 11:36:27 PAGE 2   
-
   53   1      }
+C51 COMPILER V9.51   CW                                                                    09/03/2026 15:23:31 PAGE 2   
+
   54          
   55          uint8 keyer_write(uint8_t buffer)
   56          {
@@ -126,9 +125,9 @@ line level    source
  111   3                  spacing = E_spacing;
  112   3                  state = 10;
  113   3              }else{
-C51 COMPILER V9.51   CW                                                                    11/29/2024 11:36:27 PAGE 3   
-
  114   3                  state++;
+C51 COMPILER V9.51   CW                                                                    09/03/2026 15:23:31 PAGE 3   
+
  115   3              }
  116   2              break;
  117   2              
@@ -190,9 +189,9 @@ line level    source
  173   4                      send_state = 0;
  174   4                      //ERROR("K  ");
  175   4                      E_keyer_installed = FALSE;
-C51 COMPILER V9.51   CW                                                                    11/29/2024 11:36:27 PAGE 4   
-
  176   4                  }
+C51 COMPILER V9.51   CW                                                                    09/03/2026 15:23:31 PAGE 4   
+
  177   3                  break;
  178   3              }
  179   2              break;
@@ -203,122 +202,154 @@ line level    source
  184   1          return state;
  185   1      }
  186          
- 187          void Manage_Paddles_Port(void)  
- 188          {
- 189   1          uint8 key;
- 190   1          uint8 paddles_section;
- 191   1          static uint8_t state = 0;
- 192   1          uint8_t control_status = 0;
- 193   1          static uint32 previous_CW_LO_Freq = 0;
- 194   1          
- 195   1          switch(state){  //When in CW mode Manage_Paddles_Port manages the LO freq.
- 196   2              case 0:     //Idle state
- 197   2                  if(previous_CW_LO_Freq != CW_LO_Freq){
- 198   3                      SI5351_status = si5351aSetFrequency(CW_LO_Freq);
- 199   3                      if(SI5351_status == 0){
- 200   4                          previous_CW_LO_Freq = CW_LO_Freq;
- 201   4                          if(!TX_Inhibit && (E_host_mode == 'C')){ //Do not process the CW KEY if TX_Inhibit act
-             -ive and NOT in CW mode
- 202   5                              state++; //Now check for key down
- 203   5                          }
- 204   4                      }
- 205   3                  }else{
- 206   3                      if(!TX_Inhibit && (E_host_mode == 'C')){ //Do not process the CW KEY if TX_Inhibit active 
-             -and NOT in CW mode
- 207   4                          state++; //CW_LO_Freq did not change. Now check for key down
- 208   4                      }
- 209   3                  }            
- 210   2                  break;
- 211   2              case 1: //Check for KEY DOWN
- 212   2                  paddles_section = CyEnterCriticalSection();
- 213   2                  key = Status_Read();
- 214   2                  CyExitCriticalSection(paddles_section);
- 215   2                  if (key & STATUS_KEY_0)  E_key_0 = TRUE; else E_key_0 = FALSE;
- 216   2                  if (key & STATUS_KEY_1)  E_key_1 = TRUE; else E_key_1 = FALSE;
- 217   2                  if(!E_key_0 || !E_key_1){ //Key is DOWN   
- 218   3                      E_key_down = TRUE;
- 219   3                      state++;
- 220   3                  }else{
- 221   3                      state = 0;//Key is not down return to idle state
- 222   3                  }
- 223   2                  break;
- 224   2              case 2: //A KEY is down and the CW Hold timer is not running
- 225   2                  Control_Write(Control_Read() & ~CONTROL_DOUT);          //Turn OFF output from PCM3060. Do NOT
-             - Receive the Audio
- 226   2                  state++;
- 227   2                  break;
- 228   2              case 3:
- 229   2                  control_status = Control_Read();
- 230   2                  if(E_QSK == TRUE){//The Potentia 50 / 100 is attached.  They are QSK. Turn on the AMP port and
-             - the PA now.
- 231   3                      control_status = control_status & ~CONTROL_AMP;     //Turn ON the AMP port - Negative logi
-             -c level
- 232   3                      control_status = control_status & ~CONTROL_RX;      //Turn ON PA - Negative logic level. P
-C51 COMPILER V9.51   CW                                                                    11/29/2024 11:36:27 PAGE 5   
+ 187          /*
+ 188           * Geminus-Legacy CW (relay T/R, external keyer, no onboard PIC memories):
+ 189           *  - CONTROL_RX / CONTROL_AMP / CONTROL_BAND_TX (BS2): latched for the whole
+ 190           *    semi-break-in session. Avoids relay chatter and wear.
+ 191           *  - CONTROL_DIN: element keying from the key jack (external keyer or straight key).
+ 192           *  - CONTROL_DOUT: mute RX audio for the session.
+ 193           * Ported from Proficio-Legacy DIN session; Geminus also latches BS2 TX.
+ 194           */
+ 195          
+ 196          #define CW_ST_IDLE          0
+ 197          #define CW_ST_WAIT_KEY      1
+ 198          #define CW_ST_SESSION_START 2
+ 199          #define CW_ST_MARK          3
+ 200          #define CW_ST_MARK_HOLD     5
+ 201          #define CW_ST_SPACE         6
+ 202          #define CW_ST_HANG          7
+ 203          #define CW_ST_HANG_POLL     10
+ 204          
+ 205          static uint8_t cw_keys_down(void)
+ 206          {
+ 207   1          uint8 key;
+ 208   1          uint8 section;
+ 209   1      
+ 210   1          section = CyEnterCriticalSection();
+ 211   1          key = Status_Read();
+ 212   1          CyExitCriticalSection(section);
+ 213   1          if (key & STATUS_KEY_0)
+ 214   1              E_key_0 = TRUE;
+ 215   1          else
+ 216   1              E_key_0 = FALSE;
+ 217   1          if (key & STATUS_KEY_1)
+ 218   1              E_key_1 = TRUE;
+ 219   1          else
+ 220   1              E_key_1 = FALSE;
+ 221   1          return (uint8_t)(!E_key_0 || !E_key_1);
+ 222   1      }
+ 223          
+ 224          static uint8 cw_session_start(void)
+ 225          {
+ 226   1          uint8_t c;
+ 227   1      
+ 228   1          c = Control_Read();
+ 229   1          c = c & ~CONTROL_DOUT;   /* PCM3060 RX out OFF */
+ 230   1          c = c & ~CONTROL_DIN;    /* I/Q blank until mark */
+ 231   1          Control_Write(c);
+ 232   1          return si5351aSetFrequency(CW_LO_Freq + E_cw_pitch_freq);
+ 233   1      }
+ 234          
+ 235          static void cw_mark_on(void)
+ 236          {
+ 237   1          uint8_t c;
+ 238   1      
+C51 COMPILER V9.51   CW                                                                    09/03/2026 15:23:31 PAGE 5   
 
-             -A controls CW ON/OFF 
- 233   3                      E_cw_hold = TRUE;                                   //CW_Hold_Control will set this to FAL
-             -SE when the timer expires
- 234   3                      CW_Hold_Control_Write(CW_CONTROL_RESET);            //Reset and start CW hold timer
- 235   3                      state = 5;
- 236   3                  }else{
- 237   3                      control_status = control_status & ~CONTROL_AMP;     //Turn ON the AMP port - Negative logi
-             -c level
- 238   3                      state = 4;
- 239   3                  }
- 240   2                  Control_Write(control_status);
- 241   2                  break;
- 242   2              case 4:
- 243   2                  Control_Write(Control_Read() & ~CONTROL_RX);        //Turn ON PA - Negative logic level. PA co
-             -ntrols CW ON/OFF 
- 244   2                  E_cw_hold = TRUE;                                   //CW_Hold_Control will set this to FALSE w
-             -hen the timer expires
- 245   2                  CW_Hold_Control_Write(CW_CONTROL_RESET);            //Reset and start CW hold timer
- 246   2                  state++;                                            //KEY is DOWN and PA output is now ON
- 247   2                  break;
- 248   2              case 5: //Now check if KEY is UP
- 249   2                  paddles_section = CyEnterCriticalSection();
- 250   2                  key = Status_Read();
- 251   2                  CyExitCriticalSection(paddles_section);
- 252   2                  if (key & STATUS_KEY_0)  E_key_0 = TRUE; else E_key_0 = FALSE;
- 253   2                  if (key & STATUS_KEY_1)  E_key_1 = TRUE; else E_key_1 = FALSE;
- 254   2                  if((E_key_0 && E_key_1)){ //KEY is UP.  If NOT then the KEY is still down and nothing changes.
- 255   3                      state++;
- 256   3                  }
- 257   2                  break;
- 258   2              case 6: //KEY is UP
- 259   2                  Control_Write(Control_Read() | CONTROL_RX);         //Turn OFF PA - Negative logic level
- 260   2                  state++;
- 261   2                  break;
- 262   2              case 7: //Check CW hold timer.  KEY is UP
- 263   2                  if(E_cw_hold == FALSE){ //KEY is UP and timer expired.
- 264   3                      control_status = Control_Read();
- 265   3                      control_status = control_status | CONTROL_AMP;  //Turn OFF the AMP port - Negative logic l
-             -evel
- 266   3                      control_status = control_status | CONTROL_DOUT; //Turn ON output from PCM3060
- 267   3                      Control_Write(control_status);
- 268   3                      state = 0;                                      //Return to idle state
- 269   3                  }else{
- 270   3                      state = 10;//KEY is UP but timer is still running. Check for KEY DOWN
- 271   3                  }
- 272   2                  break;
- 273   2              case 10: //Timer is still running but the KEY is UP.  Check for KEY DOWN
- 274   2                  paddles_section = CyEnterCriticalSection();
- 275   2                  key = Status_Read();
- 276   2                  CyExitCriticalSection(paddles_section);
- 277   2                  if (key & STATUS_KEY_0)  E_key_0 = TRUE; else E_key_0 = FALSE;
- 278   2                  if (key & STATUS_KEY_1)  E_key_1 = TRUE; else E_key_1 = FALSE;
- 279   2                  //Check if KEY is down
- 280   2                  if(!E_key_0 || !E_key_1){ //Key is DOWN
- 281   3                      state = 4; //KEY is DOWN. TURN ON PA in state 4
- 282   3                  }else{
- 283   3                      state = 7; //KEY is UP.  Check timer state;
+ 239   1          c = Control_Read();
+ 240   1          c = c & ~CONTROL_AMP;    /* AMP ON (active low) */
+ 241   1          c = c & ~CONTROL_RX;     /* PA / T-R ON (active low) */
+ 242   1          c = c | CONTROL_DIN;     /* I/Q on → RF */
+ 243   1          Control_Write(c);
+ 244   1          Band_Control_Write(Band_Control_Read() | CONTROL_BAND_TX); /* Geminus BS2 TX */
+ 245   1          E_cw_hold = TRUE;
+ 246   1      }
+ 247          
+ 248          static void cw_mark_off(void)
+ 249          {
+ 250   1          Control_Write(Control_Read() & ~CONTROL_DIN);
+ 251   1          E_cw_hold = TRUE;
+ 252   1          CW_Hold_Control_Write(CW_CONTROL_RESET);
+ 253   1      }
+ 254          
+ 255          static uint8 cw_session_end(void)
+ 256          {
+ 257   1          uint8_t c;
+ 258   1          uint8 st;
+ 259   1      
+ 260   1          st = si5351aSetFrequency(CW_LO_Freq);
+ 261   1          if (st != 0)
+ 262   1              return st;
+ 263   1          Band_Control_Write(Band_Control_Read() & ~CONTROL_BAND_TX);
+ 264   1          c = Control_Read();
+ 265   1          c = c | CONTROL_AMP | CONTROL_RX | CONTROL_DOUT | CONTROL_DIN;
+ 266   1          Control_Write(c);
+ 267   1          E_key_down = FALSE;
+ 268   1          return 0;
+ 269   1      }
+ 270          
+ 271          void Manage_Paddles_Port(void)  
+ 272          {
+ 273   1          static uint8_t state = CW_ST_IDLE;
+ 274   1          static uint32 previous_CW_LO_Freq = 0;
+ 275   1          
+ 276   1          switch(state){
+ 277   2              case CW_ST_IDLE:
+ 278   2                  if (previous_CW_LO_Freq != CW_LO_Freq) {
+ 279   3                      SI5351_status = si5351aSetFrequency(CW_LO_Freq);
+ 280   3                      if (SI5351_status == 0)
+ 281   3                          previous_CW_LO_Freq = CW_LO_Freq;
+ 282   3                      else
+ 283   3                          break;
  284   3                  }
- 285   2                  break;
- 286   2          }
- 287   1      }
- 288            
-C51 COMPILER V9.51   CW                                                                    11/29/2024 11:36:27 PAGE 6   
+ 285   2                  if (!TX_Inhibit && (E_host_mode == 'C'))
+ 286   2                      state = CW_ST_WAIT_KEY;
+ 287   2                  break;
+ 288   2              case CW_ST_WAIT_KEY:
+ 289   2                  if (cw_keys_down()) {
+ 290   3                      E_key_down = TRUE;
+ 291   3                      state = CW_ST_SESSION_START;
+ 292   3                  } else {
+ 293   3                      state = CW_ST_IDLE;
+ 294   3                  }
+ 295   2                  break;
+ 296   2              case CW_ST_SESSION_START:
+ 297   2                  SI5351_status = cw_session_start();
+ 298   2                  if (SI5351_status == 0)
+ 299   2                      state = CW_ST_MARK;
+ 300   2                  break;
+C51 COMPILER V9.51   CW                                                                    09/03/2026 15:23:31 PAGE 6   
+
+ 301   2              case CW_ST_MARK:
+ 302   2                  cw_mark_on();
+ 303   2                  state = CW_ST_MARK_HOLD;
+ 304   2                  break;
+ 305   2              case CW_ST_MARK_HOLD:
+ 306   2                  if (!cw_keys_down())
+ 307   2                      state = CW_ST_SPACE;
+ 308   2                  break;
+ 309   2              case CW_ST_SPACE:
+ 310   2                  cw_mark_off();
+ 311   2                  state = CW_ST_HANG;
+ 312   2                  break;
+ 313   2              case CW_ST_HANG:
+ 314   2                  if (E_cw_hold == FALSE) {
+ 315   3                      SI5351_status = cw_session_end();
+ 316   3                      if (SI5351_status == 0)
+ 317   3                          state = CW_ST_IDLE;
+ 318   3                  } else {
+ 319   3                      state = CW_ST_HANG_POLL;
+ 320   3                  }
+ 321   2                  break;
+ 322   2              case CW_ST_HANG_POLL:
+ 323   2                  if (cw_keys_down())
+ 324   2                      state = CW_ST_MARK;
+ 325   2                  else
+ 326   2                      state = CW_ST_HANG;
+ 327   2                  break;
+ 328   2          }
+ 329   1      }
+C51 COMPILER V9.51   CW                                                                    09/03/2026 15:23:31 PAGE 7   
 
 ASSEMBLY LISTING OF GENERATED OBJECT CODE
 
@@ -382,7 +413,7 @@ ASSEMBLY LISTING OF GENERATED OBJECT CODE
              ; FUNCTION QSK_interrupt (END)
 
              ; FUNCTION _keyer_write (BEGIN)
-C51 COMPILER V9.51   CW                                                                    11/29/2024 11:36:27 PAGE 7   
+C51 COMPILER V9.51   CW                                                                    09/03/2026 15:23:31 PAGE 8   
 
                                            ; SOURCE LINE # 55
 ;---- Variable 'buffer' assigned to Register 'R7' ----
@@ -446,7 +477,7 @@ ASSEMBLY LISTING OF GENERATED OBJECT CODE
                        MOVX    A,@DPTR
                        MOV     R7,A
                                            ; SOURCE LINE # 70
-C51 COMPILER V9.51   CW                                                                    11/29/2024 11:36:27 PAGE 8   
+C51 COMPILER V9.51   CW                                                                    09/03/2026 15:23:31 PAGE 9   
 
              ?C0007:
                        RET     
@@ -510,7 +541,7 @@ ASSEMBLY LISTING OF GENERATED OBJECT CODE
                        MOVX    @DPTR,A
                                            ; SOURCE LINE # 93
                                            ; SOURCE LINE # 94
-C51 COMPILER V9.51   CW                                                                    11/29/2024 11:36:27 PAGE 9   
+C51 COMPILER V9.51   CW                                                                    09/03/2026 15:23:31 PAGE 10  
 
                  R     xJMP    ?C0008
                                            ; SOURCE LINE # 96
@@ -574,7 +605,7 @@ ASSEMBLY LISTING OF GENERATED OBJECT CODE
                  R     MOV     DPTR,#state
                        MOV     A,#0AH
                        MOVX    @DPTR,A
-C51 COMPILER V9.51   CW                                                                    11/29/2024 11:36:27 PAGE 10  
+C51 COMPILER V9.51   CW                                                                    09/03/2026 15:23:31 PAGE 11  
 
                                            ; SOURCE LINE # 113
                  R     xJMP    ?C0008
@@ -638,7 +669,7 @@ ASSEMBLY LISTING OF GENERATED OBJECT CODE
                        MOV     A,#07FH
                        MOVX    @DPTR,A
                                            ; SOURCE LINE # 132
-C51 COMPILER V9.51   CW                                                                    11/29/2024 11:36:27 PAGE 11  
+C51 COMPILER V9.51   CW                                                                    09/03/2026 15:23:31 PAGE 12  
 
                        INC     DPTR
                        MOV     A,R7
@@ -702,7 +733,7 @@ ASSEMBLY LISTING OF GENERATED OBJECT CODE
                  R     MOV     DPTR,#send_state
                        MOVX    A,@DPTR
                        DEC     A
-C51 COMPILER V9.51   CW                                                                    11/29/2024 11:36:27 PAGE 12  
+C51 COMPILER V9.51   CW                                                                    09/03/2026 15:23:31 PAGE 13  
 
                  R     xJZ     ?C0032
                        INC     A
@@ -766,7 +797,7 @@ ASSEMBLY LISTING OF GENERATED OBJECT CODE
                                            ; SOURCE LINE # 171
                  R     xJMP    ?C0008
              ?C0033:
-C51 COMPILER V9.51   CW                                                                    11/29/2024 11:36:27 PAGE 13  
+C51 COMPILER V9.51   CW                                                                    09/03/2026 15:23:31 PAGE 14  
 
                                            ; SOURCE LINE # 172
                        CLR     A
@@ -795,43 +826,268 @@ ASSEMBLY LISTING OF GENERATED OBJECT CODE
                        RET     
              ; FUNCTION Configure_CW (END)
 
-             ; FUNCTION Manage_Paddles_Port (BEGIN)
-                                           ; SOURCE LINE # 187
-                                           ; SOURCE LINE # 188
-                                           ; SOURCE LINE # 192
-                       CLR     A
-                 R     MOV     DPTR,#control_status
+             ; FUNCTION cw_keys_down (BEGIN)
+                                           ; SOURCE LINE # 205
+                                           ; SOURCE LINE # 206
+                                           ; SOURCE LINE # 210
+                 E     CALL    CyEnterCriticalSection
+                 R     MOV     DPTR,#section
+                       MOV     A,R7
                        MOVX    @DPTR,A
-                                           ; SOURCE LINE # 195
+                                           ; SOURCE LINE # 211
+                 E     CALL    Status_Read
+                 R     MOV     DPTR,#key
+                       MOV     A,R7
+                       MOVX    @DPTR,A
+                                           ; SOURCE LINE # 212
+                       INC     DPTR
+                       MOVX    A,@DPTR
+                       MOV     R7,A
+                 E     CALL    _CyExitCriticalSection
+                                           ; SOURCE LINE # 213
+                 R     MOV     DPTR,#key
+                       MOVX    A,@DPTR
+                       MOV     R7,A
+                 R     xJNB    ACC.0,?C0037
+                                           ; SOURCE LINE # 214
+                 E     MOV     DPTR,#E_key_0
+                       MOV     A,#01H
+                       MOVX    @DPTR,A
+                 R     xJMP    ?C0038
+             ?C0037:
+                                           ; SOURCE LINE # 216
+                       CLR     A
+                 E     MOV     DPTR,#E_key_0
+                       MOVX    @DPTR,A
+             ?C0038:
+                                           ; SOURCE LINE # 217
+C51 COMPILER V9.51   CW                                                                    09/03/2026 15:23:31 PAGE 15  
+
+                       MOV     A,R7
+                 R     xJNB    ACC.1,?C0039
+                                           ; SOURCE LINE # 218
+                 E     MOV     DPTR,#E_key_1
+                       MOV     A,#01H
+                       MOVX    @DPTR,A
+                 R     xJMP    ?C0040
+             ?C0039:
+                                           ; SOURCE LINE # 220
+                       CLR     A
+                 E     MOV     DPTR,#E_key_1
+                       MOVX    @DPTR,A
+             ?C0040:
+                                           ; SOURCE LINE # 221
+                 E     MOV     DPTR,#E_key_0
+                       MOVX    A,@DPTR
+                 R     xJZ     ?C0043
+                 E     MOV     DPTR,#E_key_1
+                       MOVX    A,@DPTR
+                 R     xJNZ    ?C0041
+             ?C0043:
+                       MOV     R7,#01H
+                 R     xJMP    ?C0042
+             ?C0041:
+                       MOV     R7,#00H
+             ?C0042:
+                                           ; SOURCE LINE # 222
+             ?C0044:
+                       RET     
+             ; FUNCTION cw_keys_down (END)
+
+             ; FUNCTION cw_session_start (BEGIN)
+                                           ; SOURCE LINE # 224
+                                           ; SOURCE LINE # 225
+                                           ; SOURCE LINE # 228
+                 E     CALL    Control_Read
+;---- Variable 'c' assigned to Register 'R7' ----
+                                           ; SOURCE LINE # 229
+                       MOV     A,R7
+                       ANL     A,#0EFH
+                       MOV     R7,A
+                                           ; SOURCE LINE # 230
+                       ANL     A,#0FBH
+                       MOV     R7,A
+                                           ; SOURCE LINE # 231
+                 E     CALL    _Control_Write
+                                           ; SOURCE LINE # 232
+                 E     MOV     DPTR,#E_cw_pitch_freq
+                       MOVX    A,@DPTR
+                       MOV     R6,A
+                       INC     DPTR
+                       MOVX    A,@DPTR
+                       MOV     R7,A
+                       MOV     A,R6
+                       RLC     A
+                       SUBB    A,ACC
+                       MOV     R5,A
+                       MOV     R4,A
+                 R     MOV     DPTR,#CW_LO_Freq
+                       MOVX    A,@DPTR
+                       MOV     R0,A
+                       INC     DPTR
+C51 COMPILER V9.51   CW                                                                    09/03/2026 15:23:31 PAGE 16  
+
+                       MOVX    A,@DPTR
+                       MOV     R1,A
+                       INC     DPTR
+                       MOVX    A,@DPTR
+                       MOV     R2,A
+                       INC     DPTR
+                       MOVX    A,@DPTR
+                       ADD     A,R7
+                       MOV     R7,A
+                       MOV     A,R2
+                       ADDC    A,R6
+                       MOV     R6,A
+                       MOV     A,R1
+                       ADDC    A,R5
+                       MOV     R5,A
+                       MOV     A,R0
+                       ADDC    A,R4
+                       MOV     R4,A
+                 E     CALL    _si5351aSetFrequency
+                                           ; SOURCE LINE # 233
+             ?C0045:
+                       RET     
+             ; FUNCTION cw_session_start (END)
+
+             ; FUNCTION cw_mark_on (BEGIN)
+                                           ; SOURCE LINE # 235
+                                           ; SOURCE LINE # 236
+                                           ; SOURCE LINE # 239
+                 E     CALL    Control_Read
+;---- Variable 'c' assigned to Register 'R7' ----
+                                           ; SOURCE LINE # 240
+                       MOV     A,R7
+                       ANL     A,#0F7H
+                       MOV     R7,A
+                                           ; SOURCE LINE # 241
+                       ANL     A,#0FDH
+                       MOV     R7,A
+                                           ; SOURCE LINE # 242
+                       ORL     A,#04H
+                       MOV     R7,A
+                                           ; SOURCE LINE # 243
+                 E     CALL    _Control_Write
+                                           ; SOURCE LINE # 244
+                 E     CALL    Band_Control_Read
+                       MOV     A,R7
+                       ORL     A,#04H
+                       MOV     R7,A
+                 E     CALL    _Band_Control_Write
+                                           ; SOURCE LINE # 245
+                 E     MOV     DPTR,#E_cw_hold
+                       MOV     A,#01H
+                       MOVX    @DPTR,A
+                                           ; SOURCE LINE # 246
+                       RET     
+             ; FUNCTION cw_mark_on (END)
+
+             ; FUNCTION cw_mark_off (BEGIN)
+                                           ; SOURCE LINE # 248
+                                           ; SOURCE LINE # 249
+                                           ; SOURCE LINE # 250
+                 E     CALL    Control_Read
+                       MOV     A,R7
+C51 COMPILER V9.51   CW                                                                    09/03/2026 15:23:31 PAGE 17  
+
+                       ANL     A,#0FBH
+                       MOV     R7,A
+                 E     CALL    _Control_Write
+                                           ; SOURCE LINE # 251
+                 E     MOV     DPTR,#E_cw_hold
+                       MOV     A,#01H
+                       MOVX    @DPTR,A
+                                           ; SOURCE LINE # 252
+                       MOV     R7,A
+                 E     CALL    _CW_Hold_Control_Write
+                                           ; SOURCE LINE # 253
+                       RET     
+             ; FUNCTION cw_mark_off (END)
+
+             ; FUNCTION cw_session_end (BEGIN)
+                                           ; SOURCE LINE # 255
+                                           ; SOURCE LINE # 256
+                                           ; SOURCE LINE # 260
+                 R     MOV     DPTR,#CW_LO_Freq
+                       MOVX    A,@DPTR
+                       MOV     R4,A
+                       INC     DPTR
+                       MOVX    A,@DPTR
+                       MOV     R5,A
+                       INC     DPTR
+                       MOVX    A,@DPTR
+                       MOV     R6,A
+                       INC     DPTR
+                       MOVX    A,@DPTR
+                       MOV     R7,A
+                 E     CALL    _si5351aSetFrequency
+;---- Variable 'st' assigned to Register 'R7' ----
+                                           ; SOURCE LINE # 261
+                       MOV     A,R7
+                 R     xJZ     ?C0048
+                                           ; SOURCE LINE # 262
+                       RET     
+             ?C0048:
+                                           ; SOURCE LINE # 263
+                 E     CALL    Band_Control_Read
+                       MOV     A,R7
+                       ANL     A,#0FBH
+                       MOV     R7,A
+                 E     CALL    _Band_Control_Write
+                                           ; SOURCE LINE # 264
+                 E     CALL    Control_Read
+;---- Variable 'c' assigned to Register 'R7' ----
+                                           ; SOURCE LINE # 265
+                       MOV     A,R7
+                       ORL     A,#01EH
+                       MOV     R7,A
+                                           ; SOURCE LINE # 266
+                 E     CALL    _Control_Write
+                                           ; SOURCE LINE # 267
+                       CLR     A
+                 E     MOV     DPTR,#E_key_down
+                       MOVX    @DPTR,A
+                                           ; SOURCE LINE # 268
+                       MOV     R7,A
+                                           ; SOURCE LINE # 269
+             ?C0049:
+                       RET     
+C51 COMPILER V9.51   CW                                                                    09/03/2026 15:23:31 PAGE 18  
+
+             ; FUNCTION cw_session_end (END)
+
+             ; FUNCTION Manage_Paddles_Port (BEGIN)
+                                           ; SOURCE LINE # 271
+                                           ; SOURCE LINE # 272
+                                           ; SOURCE LINE # 276
                  R     MOV     DPTR,#state
                        MOVX    A,@DPTR
-                 R     CJNE    A,#0BH,?C0076
-             ?C0076:
-                 R     xJNC    ?C0075
-                 R     MOV     DPTR,#?C0077
+                 R     CJNE    A,#0BH,?C0073
+             ?C0073:
+                 R     xJNC    ?C0072
+                 R     MOV     DPTR,#?C0074
                        MOV     R0,A
                        ADD     A,R0
                        ADD     A,R0
                        JMP     @A+DPTR
-             ?C0077:
-                 R     LJMP    ?C0038
-                 R     LJMP    ?C0044
-                 R     LJMP    ?C0052
-                 R     LJMP    ?C0053
+             ?C0074:
+                 R     LJMP    ?C0051
                  R     LJMP    ?C0056
-                 R     LJMP    ?C0057
-                 R     LJMP    ?C0063
+                 R     LJMP    ?C0059
+                 R     LJMP    ?C0061
+                 R     LJMP    ?C0072
+                 R     LJMP    ?C0062
                  R     LJMP    ?C0064
-                 R     LJMP    ?C0075
-                 R     LJMP    ?C0075
-                 R     LJMP    ?C0067
-                                           ; SOURCE LINE # 196
-             ?C0038:
-                                           ; SOURCE LINE # 197
+                 R     LJMP    ?C0065
+                 R     LJMP    ?C0072
+                 R     LJMP    ?C0072
+                 R     LJMP    ?C0069
+                                           ; SOURCE LINE # 277
+             ?C0051:
+                                           ; SOURCE LINE # 278
                  R     MOV     DPTR,#CW_LO_Freq
                        MOVX    A,@DPTR
-C51 COMPILER V9.51   CW                                                                    11/29/2024 11:36:27 PAGE 14  
-
                        MOV     R4,A
                        INC     DPTR
                        MOVX    A,@DPTR
@@ -856,11 +1112,13 @@ ASSEMBLY LISTING OF GENERATED OBJECT CODE
                        MOV     R3,A
                        CLR     C
                  E     CALL    ?C?ULCMP
-                 R     xJZ     ?C0039
-                                           ; SOURCE LINE # 198
+                 R     xJZ     ?C0052
+                                           ; SOURCE LINE # 279
                  R     MOV     DPTR,#CW_LO_Freq
                        MOVX    A,@DPTR
                        MOV     R4,A
+C51 COMPILER V9.51   CW                                                                    09/03/2026 15:23:31 PAGE 19  
+
                        INC     DPTR
                        MOVX    A,@DPTR
                        MOV     R5,A
@@ -874,9 +1132,9 @@ ASSEMBLY LISTING OF GENERATED OBJECT CODE
                  R     MOV     DPTR,#SI5351_status
                        MOV     A,R7
                        MOVX    @DPTR,A
-                                           ; SOURCE LINE # 199
-                 R     xJNZ    ?C0075
-                                           ; SOURCE LINE # 200
+                                           ; SOURCE LINE # 280
+                 R     xJNZ    ?C0072
+                                           ; SOURCE LINE # 281
                  R     MOV     DPTR,#CW_LO_Freq
                        MOVX    A,@DPTR
                        MOV     R4,A
@@ -891,396 +1149,153 @@ ASSEMBLY LISTING OF GENERATED OBJECT CODE
                        MOV     R7,A
                  R     MOV     DPTR,#previous_CW_LO_Freq
                  E     CALL    ?C?LSTXDATA
-                                           ; SOURCE LINE # 201
+                                           ; SOURCE LINE # 283
+                                           ; SOURCE LINE # 284
+             ?C0052:
+                                           ; SOURCE LINE # 285
                  E     MOV     DPTR,#TX_Inhibit
                        MOVX    A,@DPTR
-C51 COMPILER V9.51   CW                                                                    11/29/2024 11:36:27 PAGE 15  
-
-                 R     xJNZ    ?C0075
+                 R     xJNZ    ?C0072
                  E     MOV     DPTR,#E_host_mode
                        MOVX    A,@DPTR
                        XRL     A,#043H
-                 R     xJNZ    ?C0075
-                                           ; SOURCE LINE # 202
+                 R     xJNZ    ?C0072
+                                           ; SOURCE LINE # 286
                  R     MOV     DPTR,#state
-                       MOVX    A,@DPTR
                        INC     A
                        MOVX    @DPTR,A
-                                           ; SOURCE LINE # 203
-                                           ; SOURCE LINE # 204
-                                           ; SOURCE LINE # 205
+                                           ; SOURCE LINE # 287
                        RET     
-             ?C0039:
-                                           ; SOURCE LINE # 206
-                 E     MOV     DPTR,#TX_Inhibit
-                       MOVX    A,@DPTR
-                 R     xJNZ    ?C0075
-                 E     MOV     DPTR,#E_host_mode
-                       MOVX    A,@DPTR
-                       XRL     A,#043H
-                 R     xJNZ    ?C0075
-                                           ; SOURCE LINE # 207
-                 R     MOV     DPTR,#state
-                       MOVX    A,@DPTR
-                       INC     A
-                       MOVX    @DPTR,A
-                                           ; SOURCE LINE # 208
-                                           ; SOURCE LINE # 209
-                                           ; SOURCE LINE # 210
-                       RET     
-                                           ; SOURCE LINE # 211
-             ?C0044:
-                                           ; SOURCE LINE # 212
-                 E     CALL    CyEnterCriticalSection
-                 R     MOV     DPTR,#paddles_section
+                                           ; SOURCE LINE # 288
+             ?C0056:
+                                           ; SOURCE LINE # 289
+                 R     CALL    cw_keys_down
                        MOV     A,R7
-                       MOVX    @DPTR,A
-                                           ; SOURCE LINE # 213
-                 E     CALL    Status_Read
-                 R     MOV     DPTR,#key
-                       MOV     A,R7
-                       MOVX    @DPTR,A
-                                           ; SOURCE LINE # 214
-                       INC     DPTR
-                       MOVX    A,@DPTR
-                       MOV     R7,A
-                 E     CALL    _CyExitCriticalSection
-                                           ; SOURCE LINE # 215
-                 R     MOV     DPTR,#key
-                       MOVX    A,@DPTR
-                       MOV     R7,A
-                 R     xJNB    ACC.0,?C0045
-                 E     MOV     DPTR,#E_key_0
-                       MOV     A,#01H
-                       MOVX    @DPTR,A
-                 R     xJMP    ?C0046
-             ?C0045:
-                       CLR     A
-                 E     MOV     DPTR,#E_key_0
-                       MOVX    @DPTR,A
-C51 COMPILER V9.51   CW                                                                    11/29/2024 11:36:27 PAGE 16  
-
-             ?C0046:
-                                           ; SOURCE LINE # 216
-                       MOV     A,R7
-                 R     xJNB    ACC.1,?C0047
-                 E     MOV     DPTR,#E_key_1
-                       MOV     A,#01H
-                       MOVX    @DPTR,A
-                 R     xJMP    ?C0048
-             ?C0047:
-                       CLR     A
-                 E     MOV     DPTR,#E_key_1
-                       MOVX    @DPTR,A
-             ?C0048:
-                                           ; SOURCE LINE # 217
-                 E     MOV     DPTR,#E_key_0
-                       MOVX    A,@DPTR
-                 R     xJZ     ?C0050
-                 E     MOV     DPTR,#E_key_1
-                       MOVX    A,@DPTR
-                 R     xJNZ    ?C0049
-             ?C0050:
-                                           ; SOURCE LINE # 218
+                 R     xJZ     ?C0057
+                                           ; SOURCE LINE # 290
                  E     MOV     DPTR,#E_key_down
                        MOV     A,#01H
                        MOVX    @DPTR,A
-                                           ; SOURCE LINE # 219
+                                           ; SOURCE LINE # 291
                  R     MOV     DPTR,#state
-                       MOVX    A,@DPTR
                        INC     A
                        MOVX    @DPTR,A
-                                           ; SOURCE LINE # 220
+                                           ; SOURCE LINE # 292
+C51 COMPILER V9.51   CW                                                                    09/03/2026 15:23:31 PAGE 20  
+
                        RET     
-             ?C0049:
-                                           ; SOURCE LINE # 221
+             ?C0057:
+                                           ; SOURCE LINE # 293
                        CLR     A
                  R     MOV     DPTR,#state
                        MOVX    @DPTR,A
-                                           ; SOURCE LINE # 222
-                                           ; SOURCE LINE # 223
+                                           ; SOURCE LINE # 294
+                                           ; SOURCE LINE # 295
                        RET     
-                                           ; SOURCE LINE # 224
-             ?C0052:
-                                           ; SOURCE LINE # 225
-                 E     CALL    Control_Read
+                                           ; SOURCE LINE # 296
+             ?C0059:
+                                           ; SOURCE LINE # 297
+                 R     CALL    cw_session_start
+                 R     MOV     DPTR,#SI5351_status
                        MOV     A,R7
-                       ANL     A,#0EFH
-                       MOV     R7,A
-                 E     CALL    _Control_Write
-                                           ; SOURCE LINE # 226
+                       MOVX    @DPTR,A
+                                           ; SOURCE LINE # 298
+                 R     xJNZ    ?C0072
+                                           ; SOURCE LINE # 299
                  R     MOV     DPTR,#state
-                       MOVX    A,@DPTR
-                       INC     A
+                       MOV     A,#03H
                        MOVX    @DPTR,A
-                                           ; SOURCE LINE # 227
+                                           ; SOURCE LINE # 300
                        RET     
-                                           ; SOURCE LINE # 228
-             ?C0053:
-                                           ; SOURCE LINE # 229
-                 E     CALL    Control_Read
-                 R     MOV     DPTR,#control_status
-                       MOV     A,R7
-                       MOVX    @DPTR,A
-C51 COMPILER V9.51   CW                                                                    11/29/2024 11:36:27 PAGE 17  
-
-                                           ; SOURCE LINE # 230
-                 E     MOV     DPTR,#E_QSK
-                       MOVX    A,@DPTR
-                 R     xJNE    A,#01H,?C0054
-                                           ; SOURCE LINE # 231
-                 R     MOV     DPTR,#control_status
-                       MOVX    A,@DPTR
-                       ANL     A,#0F7H
-                       MOVX    @DPTR,A
-                                           ; SOURCE LINE # 232
-                       ANL     A,#0FDH
-                       MOVX    @DPTR,A
-                                           ; SOURCE LINE # 233
-                 E     MOV     DPTR,#E_cw_hold
-                       MOV     A,#01H
-                       MOVX    @DPTR,A
-                                           ; SOURCE LINE # 234
-                       MOV     R7,A
-                 E     CALL    _CW_Hold_Control_Write
-                                           ; SOURCE LINE # 235
+                                           ; SOURCE LINE # 301
+             ?C0061:
+                                           ; SOURCE LINE # 302
+                 R     CALL    cw_mark_on
+                                           ; SOURCE LINE # 303
                  R     MOV     DPTR,#state
                        MOV     A,#05H
                        MOVX    @DPTR,A
-                                           ; SOURCE LINE # 236
-                 R     xJMP    ?C0055
-             ?C0054:
-                                           ; SOURCE LINE # 237
-                 R     MOV     DPTR,#control_status
-                       MOVX    A,@DPTR
-                       ANL     A,#0F7H
-                       MOVX    @DPTR,A
-                                           ; SOURCE LINE # 238
-                 R     MOV     DPTR,#state
-                       MOV     A,#04H
-                       MOVX    @DPTR,A
-                                           ; SOURCE LINE # 239
-             ?C0055:
-                                           ; SOURCE LINE # 240
-                 R     MOV     DPTR,#control_status
-                       MOVX    A,@DPTR
-                       MOV     R7,A
-                 E     CALL    _Control_Write
-                                           ; SOURCE LINE # 241
+                                           ; SOURCE LINE # 304
                        RET     
-                                           ; SOURCE LINE # 242
-             ?C0056:
-                                           ; SOURCE LINE # 243
-                 E     CALL    Control_Read
+                                           ; SOURCE LINE # 305
+             ?C0062:
+                                           ; SOURCE LINE # 306
+                 R     CALL    cw_keys_down
                        MOV     A,R7
-                       ANL     A,#0FDH
-                       MOV     R7,A
-                 E     CALL    _Control_Write
-                                           ; SOURCE LINE # 244
-                 E     MOV     DPTR,#E_cw_hold
-                       MOV     A,#01H
-                       MOVX    @DPTR,A
-                                           ; SOURCE LINE # 245
-                       MOV     R7,A
-                 E     CALL    _CW_Hold_Control_Write
-                                           ; SOURCE LINE # 246
-                 R     MOV     DPTR,#state
-                       MOVX    A,@DPTR
-C51 COMPILER V9.51   CW                                                                    11/29/2024 11:36:27 PAGE 18  
-
-                       INC     A
-                       MOVX    @DPTR,A
-                                           ; SOURCE LINE # 247
-                       RET     
-                                           ; SOURCE LINE # 248
-             ?C0057:
-                                           ; SOURCE LINE # 249
-                 E     CALL    CyEnterCriticalSection
-                 R     MOV     DPTR,#paddles_section
-                       MOV     A,R7
-                       MOVX    @DPTR,A
-                                           ; SOURCE LINE # 250
-                 E     CALL    Status_Read
-                 R     MOV     DPTR,#key
-                       MOV     A,R7
-                       MOVX    @DPTR,A
-                                           ; SOURCE LINE # 251
-                       INC     DPTR
-                       MOVX    A,@DPTR
-                       MOV     R7,A
-                 E     CALL    _CyExitCriticalSection
-                                           ; SOURCE LINE # 252
-                 R     MOV     DPTR,#key
-                       MOVX    A,@DPTR
-                       MOV     R7,A
-                 R     xJNB    ACC.0,?C0058
-                 E     MOV     DPTR,#E_key_0
-                       MOV     A,#01H
-                       MOVX    @DPTR,A
-                 R     xJMP    ?C0059
-             ?C0058:
-                       CLR     A
-                 E     MOV     DPTR,#E_key_0
-                       MOVX    @DPTR,A
-             ?C0059:
-                                           ; SOURCE LINE # 253
-                       MOV     A,R7
-                 R     xJNB    ACC.1,?C0060
-                 E     MOV     DPTR,#E_key_1
-                       MOV     A,#01H
-                       MOVX    @DPTR,A
-                 R     xJMP    ?C0061
-             ?C0060:
-                       CLR     A
-                 E     MOV     DPTR,#E_key_1
-                       MOVX    @DPTR,A
-             ?C0061:
-                                           ; SOURCE LINE # 254
-                 E     MOV     DPTR,#E_key_0
-                       MOVX    A,@DPTR
-                 R     xJZ     ?C0075
-                 E     MOV     DPTR,#E_key_1
-                       MOVX    A,@DPTR
-                 R     xJZ     ?C0075
-                                           ; SOURCE LINE # 255
-                 R     MOV     DPTR,#state
-                       MOVX    A,@DPTR
-                       INC     A
-                       MOVX    @DPTR,A
-                                           ; SOURCE LINE # 256
-                                           ; SOURCE LINE # 257
-                       RET     
-C51 COMPILER V9.51   CW                                                                    11/29/2024 11:36:27 PAGE 19  
-
-                                           ; SOURCE LINE # 258
-             ?C0063:
-                                           ; SOURCE LINE # 259
-                 E     CALL    Control_Read
-                       MOV     A,R7
-                       ORL     A,#02H
-                       MOV     R7,A
-                 E     CALL    _Control_Write
-                                           ; SOURCE LINE # 260
-                 R     MOV     DPTR,#state
-                       MOVX    A,@DPTR
-                       INC     A
-                       MOVX    @DPTR,A
-                                           ; SOURCE LINE # 261
-                       RET     
-                                           ; SOURCE LINE # 262
-             ?C0064:
-                                           ; SOURCE LINE # 263
-                 E     MOV     DPTR,#E_cw_hold
-                       MOVX    A,@DPTR
-                 R     xJNZ    ?C0065
-                                           ; SOURCE LINE # 264
-                 E     CALL    Control_Read
-                 R     MOV     DPTR,#control_status
-                       MOV     A,R7
-                       MOVX    @DPTR,A
-                                           ; SOURCE LINE # 265
-                       ORL     A,#08H
-                       MOVX    @DPTR,A
-                                           ; SOURCE LINE # 266
-                       ORL     A,#010H
-                       MOV     R7,A
-                       MOVX    @DPTR,A
-                                           ; SOURCE LINE # 267
-                 E     CALL    _Control_Write
-                                           ; SOURCE LINE # 268
-                       CLR     A
-                 R     MOV     DPTR,#state
-                       MOVX    @DPTR,A
-                                           ; SOURCE LINE # 269
-                       RET     
-             ?C0065:
-                                           ; SOURCE LINE # 270
-                 R     MOV     DPTR,#state
-                       MOV     A,#0AH
-                       MOVX    @DPTR,A
-                                           ; SOURCE LINE # 271
-                                           ; SOURCE LINE # 272
-                       RET     
-                                           ; SOURCE LINE # 273
-             ?C0067:
-                                           ; SOURCE LINE # 274
-                 E     CALL    CyEnterCriticalSection
-                 R     MOV     DPTR,#paddles_section
-                       MOV     A,R7
-                       MOVX    @DPTR,A
-                                           ; SOURCE LINE # 275
-                 E     CALL    Status_Read
-                 R     MOV     DPTR,#key
-                       MOV     A,R7
-                       MOVX    @DPTR,A
-                                           ; SOURCE LINE # 276
-C51 COMPILER V9.51   CW                                                                    11/29/2024 11:36:27 PAGE 20  
-
-                       INC     DPTR
-                       MOVX    A,@DPTR
-                       MOV     R7,A
-                 E     CALL    _CyExitCriticalSection
-                                           ; SOURCE LINE # 277
-                 R     MOV     DPTR,#key
-                       MOVX    A,@DPTR
-                       MOV     R7,A
-                 R     xJNB    ACC.0,?C0068
-                 E     MOV     DPTR,#E_key_0
-                       MOV     A,#01H
-                       MOVX    @DPTR,A
-                 R     xJMP    ?C0069
-             ?C0068:
-                       CLR     A
-                 E     MOV     DPTR,#E_key_0
-                       MOVX    @DPTR,A
-             ?C0069:
-                                           ; SOURCE LINE # 278
-                       MOV     A,R7
-                 R     xJNB    ACC.1,?C0070
-                 E     MOV     DPTR,#E_key_1
-                       MOV     A,#01H
-                       MOVX    @DPTR,A
-                 R     xJMP    ?C0071
-             ?C0070:
-                       CLR     A
-                 E     MOV     DPTR,#E_key_1
-                       MOVX    @DPTR,A
-             ?C0071:
-                                           ; SOURCE LINE # 280
-                 E     MOV     DPTR,#E_key_0
-                       MOVX    A,@DPTR
-                 R     xJZ     ?C0073
-                 E     MOV     DPTR,#E_key_1
-                       MOVX    A,@DPTR
                  R     xJNZ    ?C0072
-             ?C0073:
-                                           ; SOURCE LINE # 281
+                                           ; SOURCE LINE # 307
                  R     MOV     DPTR,#state
-                       MOV     A,#04H
+                       MOV     A,#06H
                        MOVX    @DPTR,A
-                                           ; SOURCE LINE # 282
+                                           ; SOURCE LINE # 308
                        RET     
-             ?C0072:
-                                           ; SOURCE LINE # 283
+                                           ; SOURCE LINE # 309
+             ?C0064:
+                                           ; SOURCE LINE # 310
+                 R     CALL    cw_mark_off
+                                           ; SOURCE LINE # 311
                  R     MOV     DPTR,#state
                        MOV     A,#07H
                        MOVX    @DPTR,A
-                                           ; SOURCE LINE # 284
-                                           ; SOURCE LINE # 285
-                                           ; SOURCE LINE # 286
-                                           ; SOURCE LINE # 287
-             ?C0075:
+                                           ; SOURCE LINE # 312
+                       RET     
+                                           ; SOURCE LINE # 313
+             ?C0065:
+                                           ; SOURCE LINE # 314
+                 E     MOV     DPTR,#E_cw_hold
+                       MOVX    A,@DPTR
+                 R     xJNZ    ?C0066
+C51 COMPILER V9.51   CW                                                                    09/03/2026 15:23:31 PAGE 21  
+
+                                           ; SOURCE LINE # 315
+                 R     CALL    cw_session_end
+                 R     MOV     DPTR,#SI5351_status
+                       MOV     A,R7
+                       MOVX    @DPTR,A
+                                           ; SOURCE LINE # 316
+                 R     xJNZ    ?C0072
+                                           ; SOURCE LINE # 317
+                 R     MOV     DPTR,#state
+                       MOVX    @DPTR,A
+                                           ; SOURCE LINE # 318
+                       RET     
+             ?C0066:
+                                           ; SOURCE LINE # 319
+                 R     MOV     DPTR,#state
+                       MOV     A,#0AH
+                       MOVX    @DPTR,A
+                                           ; SOURCE LINE # 320
+                                           ; SOURCE LINE # 321
+                       RET     
+                                           ; SOURCE LINE # 322
+             ?C0069:
+                                           ; SOURCE LINE # 323
+                 R     CALL    cw_keys_down
+                       MOV     A,R7
+                 R     xJZ     ?C0070
+                                           ; SOURCE LINE # 324
+                 R     MOV     DPTR,#state
+                       MOV     A,#03H
+                       MOVX    @DPTR,A
+                       RET     
+             ?C0070:
+                                           ; SOURCE LINE # 326
+                 R     MOV     DPTR,#state
+                       MOV     A,#07H
+                       MOVX    @DPTR,A
+                                           ; SOURCE LINE # 327
+                                           ; SOURCE LINE # 328
+                                           ; SOURCE LINE # 329
+             ?C0072:
                        RET     
              ; FUNCTION Manage_Paddles_Port (END)
 
 
 
 MODULE INFORMATION:   STATIC OVERLAYABLE
-   CODE SIZE        =   1271    ----
+   CODE SIZE        =   1162    ----
    CONSTANT SIZE    =   ----    ----
-C51 COMPILER V9.51   CW                                                                    11/29/2024 11:36:27 PAGE 21  
-
-   XDATA SIZE       =     25       8
+   XDATA SIZE       =     25       7
    PDATA SIZE       =   ----    ----
    DATA SIZE        =   ----    ----
    IDATA SIZE       =   ----    ----

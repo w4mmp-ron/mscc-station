@@ -1,11 +1,11 @@
-C51 COMPILER V9.51   SETTINGS01                                                            11/29/2024 11:36:26 PAGE 1   
+C51 COMPILER V9.51   SETTINGS01                                                            09/03/2026 15:23:29 PAGE 1   
 
 
 C51 COMPILER V9.51, COMPILATION OF MODULE SETTINGS01
-OBJECT MODULE PLACED IN .\DP8051\DP8051_Keil_951\Debug\settings01.obj
-COMPILER INVOKED BY: C:\Program Files (x86)\Cypress\PSoC Creator\4.2\PSoC Creator\import\keil\pk51\9.51\C51\BIN\c51.exe 
-                    -settings01.c NOIV LARGE MODDP2 OMF2 VB(1) NOIP INCDIR(.,Generated_Source\PSoC3) FF(3) DB WL(2) PR(.\DP8051\DP8051_Keil_9
-                    -51\Debug/settings01.lst) CD OT(5,SPEED) OA OJ(.\DP8051\DP8051_Keil_951\Debug\settings01.obj)
+OBJECT MODULE PLACED IN DP8051\DP8051_Keil_951\Debug\settings01.obj
+COMPILER INVOKED BY: C:\Program Files (x86)\Cypress\PSoC Creator\4.4\PSoC Creator\import\keil\pk51\9.51\C51\BIN\C51.exe 
+                    -settings01.c NOIV LARGE MODDP2 OMF2 VB(1) NOIP INCDIR(.,Generated_Source\PSoC3) FF(3) DB WL(2) PR(DP8051\DP8051_Keil_951
+                    -\Debug\settings01.lst) CD OT(5,SPEED) OA OJ(DP8051\DP8051_Keil_951\Debug\settings01.obj)
 
 line level    source
 
@@ -62,7 +62,7 @@ line level    source
   50   1          CyDelay(100);
   51   1          RegPointer = (reg8 *) (CYDEV_EE_BASE + 0u);
   52   1          ee_ppm_int = RegPointer[PPM_INT];
-C51 COMPILER V9.51   SETTINGS01                                                            11/29/2024 11:36:26 PAGE 2   
+C51 COMPILER V9.51   SETTINGS01                                                            09/03/2026 15:23:29 PAGE 2   
 
   53   1          ee_ppm_dec = RegPointer[PPM_DEC];
   54   1          /*if(ee_ppm_int == 0){
@@ -126,7 +126,7 @@ line level    source
  112   1          if(l_audio_channels != Audio_IQ_Channels){
  113   1              critical_section = CyEnterCriticalSection();
  114   1              error = EEPROM_ByteWritePos(Audio_IQ_Channels,0u,AUDIO_CHANNELS);
-C51 COMPILER V9.51   SETTINGS01                                                            11/29/2024 11:36:26 PAGE 3   
+C51 COMPILER V9.51   SETTINGS01                                                            09/03/2026 15:23:29 PAGE 3   
 
  115   1              CyExitCriticalSection(critical_section);
  116   1          }*/
@@ -170,7 +170,7 @@ line level    source
  154              }
  155          
  156          }*/
-C51 COMPILER V9.51   SETTINGS01                                                            11/29/2024 11:36:26 PAGE 4   
+C51 COMPILER V9.51   SETTINGS01                                                            09/03/2026 15:23:29 PAGE 4   
 
 ASSEMBLY LISTING OF GENERATED OBJECT CODE
 
@@ -234,7 +234,7 @@ ASSEMBLY LISTING OF GENERATED OBJECT CODE
                  R     MOV     DPTR,#RegPointer
                        MOV     A,#080H
                        MOVX    @DPTR,A
-C51 COMPILER V9.51   SETTINGS01                                                            11/29/2024 11:36:26 PAGE 5   
+C51 COMPILER V9.51   SETTINGS01                                                            09/03/2026 15:23:29 PAGE 5   
 
                        INC     DPTR
                        CLR     A
@@ -298,7 +298,7 @@ ASSEMBLY LISTING OF GENERATED OBJECT CODE
                        MOV     R5,A
                  E     CALL    _EEPROM_StartWrite
                                            ; SOURCE LINE # 83
-C51 COMPILER V9.51   SETTINGS01                                                            11/29/2024 11:36:26 PAGE 6   
+C51 COMPILER V9.51   SETTINGS01                                                            09/03/2026 15:23:29 PAGE 6   
 
                        CLR     A
                  E     MOV     DPTR,#E_PPM_needs_updated
@@ -362,7 +362,7 @@ ASSEMBLY LISTING OF GENERATED OBJECT CODE
                        MOVX    A,@DPTR
                  R     MOV     DPTR,#l_calibration_dec
                        MOVX    @DPTR,A
-C51 COMPILER V9.51   SETTINGS01                                                            11/29/2024 11:36:26 PAGE 7   
+C51 COMPILER V9.51   SETTINGS01                                                            09/03/2026 15:23:29 PAGE 7   
 
                                            ; SOURCE LINE # 106
                  R     MOV     DPTR,#l_calibration_int

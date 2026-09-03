@@ -1,9 +1,9 @@
-C51 COMPILER V9.51   USBFS_DESCR                                                           12/05/2024 09:17:03 PAGE 1   
+C51 COMPILER V9.51   USBFS_DESCR                                                           09/03/2026 15:33:32 PAGE 1   
 
 
 C51 COMPILER V9.51, COMPILATION OF MODULE USBFS_DESCR
 OBJECT MODULE PLACED IN .\DP8051\DP8051_Keil_951\Debug\USBFS_descr.obj
-COMPILER INVOKED BY: C:\Program Files (x86)\Cypress\PSoC Creator\4.2\PSoC Creator\import\keil\pk51\9.51\C51\BIN\c51.exe 
+COMPILER INVOKED BY: C:\Program Files (x86)\Cypress\PSoC Creator\4.4\PSoC Creator\import\keil\pk51\9.51\C51\BIN\c51.exe 
                     -Generated_Source\PSoC3\USBFS_descr.c NOIV LARGE MODDP2 OMF2 VB(1) NOIP INCDIR(.,Generated_Source\PSoC3) FF(3) DB WL(2) P
                     -R(.\DP8051\DP8051_Keil_951\Debug/USBFS_descr.lst) CD OT(5,SPEED) OA OJ(.\DP8051\DP8051_Keil_951\Debug\USBFS_descr.obj)
 
@@ -62,7 +62,7 @@ line level    source
   51          };
   52          /*********************************************************************
   53          * Config Descriptor  
-C51 COMPILER V9.51   USBFS_DESCR                                                           12/05/2024 09:17:03 PAGE 2   
+C51 COMPILER V9.51   USBFS_DESCR                                                           09/03/2026 15:33:32 PAGE 2   
 
   54          *********************************************************************/
   55          const uint8 CYCODE USBFS_DEVICE0_CONFIGURATION0_DESCR[183u] = {
@@ -126,7 +126,7 @@ line level    source
  113          *********************************************************************/
  114          /*  AC Output Terminal Descriptor Length   */ 0x09u,
  115          /*  DescriptorType: AUDIO                  */ 0x24u,
-C51 COMPILER V9.51   USBFS_DESCR                                                           12/05/2024 09:17:03 PAGE 3   
+C51 COMPILER V9.51   USBFS_DESCR                                                           09/03/2026 15:33:32 PAGE 3   
 
  116          /*  bDescriptorSubtype                     */ 0x03u,
  117          /*  bTerminalID                            */ 0x02u,
@@ -190,7 +190,7 @@ line level    source
  175          /*  bDescriptorSubtype                     */ 0x01u,
  176          /*  bTerminalLink                          */ 0x02u,
  177          /*  bDelay                                 */ 0x02u,
-C51 COMPILER V9.51   USBFS_DESCR                                                           12/05/2024 09:17:03 PAGE 4   
+C51 COMPILER V9.51   USBFS_DESCR                                                           09/03/2026 15:33:32 PAGE 4   
 
  178          /*  wFormatTag                             */ 0x01u, 0x00u,
  179          /*********************************************************************
@@ -254,7 +254,7 @@ line level    source
  237          *********************************************************************/
  238          /*  AS General Descriptor Length           */ 0x07u,
  239          /*  DescriptorType: AUDIO                  */ 0x24u,
-C51 COMPILER V9.51   USBFS_DESCR                                                           12/05/2024 09:17:03 PAGE 5   
+C51 COMPILER V9.51   USBFS_DESCR                                                           09/03/2026 15:33:32 PAGE 5   
 
  240          /*  bDescriptorSubtype                     */ 0x01u,
  241          /*  bTerminalLink                          */ 0x03u,
@@ -318,7 +318,7 @@ line level    source
  299           (uint8)'P', 0u,(uint8)'e', 0u,(uint8)'a', 0u,(uint8)'b', 0u,(uint8)'e', 0u,
  300           (uint8)'r', 0u,(uint8)'r', 0u,(uint8)'y', 0u,(uint8)' ', 0u,(uint8)'S', 0u,
  301           (uint8)'D', 0u,(uint8)'R', 0u,
-C51 COMPILER V9.51   USBFS_DESCR                                                           12/05/2024 09:17:03 PAGE 6   
+C51 COMPILER V9.51   USBFS_DESCR                                                           09/03/2026 15:33:32 PAGE 6   
 
  302          /*********************************************************************
  303          * String Descriptor: "Peaberry Receive"
@@ -382,7 +382,7 @@ line level    source
  361          *********************************************************************/
  362          /* Descriptor Length                       */ 0x24u,
  363          /* DescriptorType: STRING                  */ 0x03u,
-C51 COMPILER V9.51   USBFS_DESCR                                                           12/05/2024 09:17:03 PAGE 7   
+C51 COMPILER V9.51   USBFS_DESCR                                                           09/03/2026 15:33:32 PAGE 7   
 
  364           (uint8)'M', 0u,(uint8)'u', 0u,(uint8)'l', 0u,(uint8)'t', 0u,(uint8)'u', 0u,
  365           (uint8)'s', 0u,(uint8)' ', 0u,(uint8)'I', 0u,(uint8)'Q', 0u,(uint8)' ', 0u,
@@ -446,7 +446,7 @@ line level    source
  423          
  424          
  425          
-C51 COMPILER V9.51   USBFS_DESCR                                                           12/05/2024 09:17:03 PAGE 8   
+C51 COMPILER V9.51   USBFS_DESCR                                                           09/03/2026 15:33:32 PAGE 8   
 
  426          /*********************************************************************
  427          * Endpoint Setting Table -- This table contain the endpoint setting
@@ -510,7 +510,7 @@ line level    source
                   /* DescriptorType: STRING                  */   0x03u,
                   /* qwSignature - "MSFT100"                 */   (uint8)'M', 0u, (uint8)'S', 0u, (uint8)'F', 0u, (uint8
              -)'T', 0u,
-C51 COMPILER V9.51   USBFS_DESCR                                                           12/05/2024 09:17:03 PAGE 9   
+C51 COMPILER V9.51   USBFS_DESCR                                                           09/03/2026 15:33:32 PAGE 9   
 
                                                                   (uint8)'1', 0u, (uint8)'0', 0u, (uint8)'0', 0u,
                   /* bMS_VendorCode:                         */   USBFS_GET_EXTENDED_CONFIG_DESCRIPTOR,
@@ -545,7 +545,7 @@ line level    source
  515          
  516          
  517          /* [] END OF FILE */
-C51 COMPILER V9.51   USBFS_DESCR                                                           12/05/2024 09:17:03 PAGE 10  
+C51 COMPILER V9.51   USBFS_DESCR                                                           09/03/2026 15:33:32 PAGE 10  
 
 ASSEMBLY LISTING OF GENERATED OBJECT CODE
 
