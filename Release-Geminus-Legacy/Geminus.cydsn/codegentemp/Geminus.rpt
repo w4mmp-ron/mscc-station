@@ -1,0 +1,13 @@
+Loading plugins phase: Elapsed time ==> 0s.141ms
+<CYPRESSTAG name="CyDsfit arguments...">
+cydsfit arguments: -.fdsnotice -.fdswarpdepfile=warp_dependencies.txt -.fdselabdepfile=elab_dependencies.txt -.fdsbldfile=generated_files.txt -.fdsreffile=referenced_files.txt -p C:\Users\n8vet\OneDrive\Documents\Multus\Hardware\Geminus SDR\Firmware\Release-Geminus\Geminus.cydsn\Geminus.cyprj -d CY8C3246PVI-147 -s C:\Users\n8vet\OneDrive\Documents\Multus\Hardware\Geminus SDR\Firmware\Release-Geminus\Geminus.cydsn\Generated_Source\PSoC3 -- -yv2 -q10 -ygs -o2 -v3 -.fftcfgtype=BE
+</CYPRESSTAG>
+<CYPRESSTAG name="Design elaboration results...">
+ADD: sdb.M0033: error: The instance 'CW_isr', of component cy_isr_v1_71, contains an error. Unable to locate and customize component 'cy_isr_v1_71' used in schematic 'C:\Users\n8vet\OneDrive\Documents\Multus\Hardware\Geminus SDR\Firmware\Release-Geminus\Geminus.cydsn\TopDesign\TopDesign.cysch'.
+ *  (Component Update Tool)
+ * C:\Users\n8vet\OneDrive\Documents\Multus\Hardware\Geminus SDR\Firmware\Release-Geminus\Geminus.cydsn\TopDesign\TopDesign.cysch (Instance:CW_isr)
+
+ADD: sdb.M0052: error: Unable to find component "cy_boot_v5_82".
+
+</CYPRESSTAG>
+Elaboration phase: Elapsed time ==> 2s.478ms

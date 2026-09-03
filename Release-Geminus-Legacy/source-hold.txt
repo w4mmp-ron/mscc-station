@@ -1,0 +1,49 @@
+   case CMD_SET_TRANSCEIVER_DISPLAY:
+                USBFS_currentTD.pData = (void *)&E_buttons;
+                USBFS_currentTD.count = sizeof(E_buttons);
+                requestHandled  = USBFS_InitControlWrite();
+                break;
+                
+            case CMD_SET_STAR:
+                USBFS_currentTD.pData = (void *)&E_star;
+                USBFS_currentTD.count = sizeof(E_star);
+                requestHandled  = USBFS_InitControlWrite();
+                break;
+                
+            case CMD_SET_STEP_VALUE:
+                USBFS_currentTD.pData = (void *)&E_step;
+                USBFS_currentTD.count = sizeof(E_step);
+                requestHandled  = USBFS_InitControlWrite();
+                break;
+                
+            case CMD_SET_S_METER:
+                USBFS_currentTD.pData = (void *)&E_s_meter;
+                USBFS_currentTD.count = sizeof(E_s_meter);
+                requestHandled  = USBFS_InitControlWrite();
+                break;
+				
+				   case SET_CW_DEFAULTS:
+                USBFS_currentTD.pData = (void *)&E_cw_defaults;
+                USBFS_currentTD.count = sizeof(E_cw_defaults);
+                requestHandled  = USBFS_InitControlWrite();
+                //E_cw_command = SET_CW_DEFAULTS;
+                //command_queue_add(SET_CW_DEFAULTS);
+                break;        
+                
+            case CMD_SET_PA_BYPASS:
+                USBFS_currentTD.pData = (void *)&E_AMP_Bypass;
+                USBFS_currentTD.count = sizeof(E_AMP_Bypass);
+                requestHandled  = USBFS_InitControlWrite();
+                //command_queue_add(CMD_SET_PA_BYPASS);
+                break;
+                
+         
+                  case SET_SEMI_BREAKIN:
+                USBFS_currentTD.pData = (void *)&ee_QSK;
+                USBFS_currentTD.count = sizeof(ee_QSK);
+                E_cw_QSK = ee_QSK;
+                requestHandled  = USBFS_InitControlWrite();
+                //E_cw_command = SET_SEMI_BREAKIN;
+                //command_queue_add(SET_SEMI_BREAKIN);
+                break;                
+ 

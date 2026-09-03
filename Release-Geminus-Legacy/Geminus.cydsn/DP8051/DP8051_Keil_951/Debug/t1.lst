@@ -1,0 +1,145 @@
+C51 COMPILER V9.51   T1                                                                    11/29/2024 11:36:24 PAGE 1   
+
+
+C51 COMPILER V9.51, COMPILATION OF MODULE T1
+OBJECT MODULE PLACED IN .\DP8051\DP8051_Keil_951\Debug\t1.obj
+COMPILER INVOKED BY: C:\Program Files (x86)\Cypress\PSoC Creator\4.2\PSoC Creator\import\keil\pk51\9.51\C51\BIN\c51.exe 
+                    -t1.c NOIV LARGE MODDP2 OMF2 VB(1) NOIP INCDIR(.,Generated_Source\PSoC3) FF(3) DB WL(2) PR(.\DP8051\DP8051_Keil_951\Debug
+                    -/t1.lst) CD OT(5,SPEED) OA OJ(.\DP8051\DP8051_Keil_951\Debug\t1.obj)
+
+line level    source
+
+   1          // Copyright 2013 David Turnbull AE9RB
+   2          //
+   3          // Licensed under the Apache License, Version 2.0 (the "License");
+   4          // you may not use this file except in compliance with the License.
+   5          // You may obtain a copy of the License at
+   6          //
+   7          //     http://www.apache.org/licenses/LICENSE-2.0
+   8          //
+   9          // Unless required by applicable law or agreed to in writing, software
+  10          // distributed under the License is distributed on an "AS IS" BASIS,
+  11          // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+  12          // See the License for the specific language governing permissions and
+  13          // limitations under the License.
+  14          // 10/01/2016 Added support for Proficio
+  15          // 02/18/2017 Added support for native CW
+  16          // Copyright © 2015-2017 Omnia SDR
+  17          
+  18          // Variable naming conventions:     E_<variable> -> Externally defined global
+  19          //                                  ff_<variable> -> Externally defined global stored in flash memory
+  20          //                                  ee_<variable> -> Externally defined global to be stored in EEPROM memo
+             -ry
+  21          //                                  l_<variable> -> locally defined variable
+  22          //                                  All UPPERCASE -> Define
+  23          
+  24          
+  25          #include <basic-plus.h>
+  26          #define PULSE_TUNER_TIME 5000;
+  27          
+  28          // Full support for Elecraft T1 Automatic Antenna Tuner
+  29          
+  30          uint8 T1_Band_Number;
+  31          uint8 T1_Tune_Request;
+  32          uint32 Pulse_Tuner = PULSE_TUNER_TIME
+  33          
+  34          /* void T1_Main(void) {
+  35              static uint8 state = 0, timer, band, send, bits, band_request, band_request_timer;
+  36              static uint16 tune_timer; 
+  37              //static uint8 previous_E_AMP_Bypass = 100;
+  38              //static uint8 band_refresh_count = 3;
+  39              
+  40              if(Pulse_Tuner-- == 0){
+  41                  band = 0;
+  42                  Pulse_Tuner = PULSE_TUNER_TIME;
+  43              }
+  44              if (tune_timer) {
+  45                  tune_timer--;
+  46                  if (!tune_timer) {
+  47                      Control_Write(Control_Read() & ~CONTROL_ATU_1);
+  48                  }
+  49              }
+  50          
+  51              if (band_request_timer) band_request_timer--;
+  52              else if (T1_Band_Number != band) {
+C51 COMPILER V9.51   T1                                                                    11/29/2024 11:36:24 PAGE 2   
+
+  53                  band_request = 1;
+  54                  band_request_timer = 200;
+  55                  Pulse_Tuner = PULSE_TUNER_TIME;
+  56              }
+  57          
+  58              switch(state) {
+  59              case 0: // idle
+  60                  if (Status_Read() & STATUS_ATU_0) timer++;
+  61                  else {
+  62                      if (timer >= 85 && timer <= 115) {
+  63                          state = 1;
+  64                          timer = 20;
+  65                          send = band = T1_Band_Number;
+  66                          bits = 4;
+  67                          Control_Write(Control_Read() & ~CONTROL_ATU_0 | CONTROL_ATU_0_OE);
+  68                      }
+  69                      else {
+  70                          timer = 0;
+  71                          if (band_request || T1_Tune_Request) {
+  72                              Control_Write(Control_Read() | CONTROL_ATU_1);
+  73                              if (T1_Tune_Request) tune_timer = 1000;
+  74                              else tune_timer = 10;
+  75                              band_request = T1_Tune_Request = 0;
+  76                          }
+  77                      }
+  78                  }
+  79                  break;
+  80              case 1: // data low
+  81                  timer--;
+  82                  if (!timer) {
+  83                      if (bits) {
+  84                          Control_Write(Control_Read() | CONTROL_ATU_0);
+  85                          if (send & 0x08) timer = 8;
+  86                          else timer = 3;
+  87                          send <<= 1;
+  88                          bits--;
+  89                          state = 2;
+  90                      } else {
+  91                          Control_Write(Control_Read() & ~(CONTROL_ATU_0 | CONTROL_ATU_0_OE));
+  92                          state = 0;
+  93                      }
+  94                  }
+  95                  break;
+  96              case 2: // data high
+  97                  timer--;
+  98                  if (!timer) {
+  99                      if (bits) timer = 3;
+ 100                      else timer = 10;
+ 101                      Control_Write(Control_Read() & ~CONTROL_ATU_0);
+ 102                      state = 1;
+ 103                  }
+ 104                  break;
+ 105              }   
+ 106          
+ 107          }
+ 108          */
+C51 COMPILER V9.51   T1                                                                    11/29/2024 11:36:24 PAGE 3   
+
+ASSEMBLY LISTING OF GENERATED OBJECT CODE
+
+
+
+
+MODULE INFORMATION:   STATIC OVERLAYABLE
+   CODE SIZE        =   ----    ----
+   CONSTANT SIZE    =   ----    ----
+   XDATA SIZE       =      6    ----
+   PDATA SIZE       =   ----    ----
+   DATA SIZE        =   ----    ----
+   IDATA SIZE       =   ----    ----
+   BIT SIZE         =   ----    ----
+   EDATA SIZE       =   ----    ----
+   HDATA SIZE       =   ----    ----
+   XDATA CONST SIZE =   ----    ----
+   FAR CONST SIZE   =   ----    ----
+END OF MODULE INFORMATION.
+
+
+C51 COMPILATION COMPLETE.  0 WARNING(S),  0 ERROR(S)

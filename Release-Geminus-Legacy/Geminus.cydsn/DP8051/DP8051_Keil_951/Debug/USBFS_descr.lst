@@ -1,0 +1,570 @@
+C51 COMPILER V9.51   USBFS_DESCR                                                           11/29/2024 11:35:22 PAGE 1   
+
+
+C51 COMPILER V9.51, COMPILATION OF MODULE USBFS_DESCR
+OBJECT MODULE PLACED IN .\DP8051\DP8051_Keil_951\Debug\USBFS_descr.obj
+COMPILER INVOKED BY: C:\Program Files (x86)\Cypress\PSoC Creator\4.2\PSoC Creator\import\keil\pk51\9.51\C51\BIN\c51.exe 
+                    -Generated_Source\PSoC3\USBFS_descr.c NOIV LARGE MODDP2 OMF2 VB(1) NOIP INCDIR(.,Generated_Source\PSoC3) FF(3) DB WL(2) P
+                    -R(.\DP8051\DP8051_Keil_951\Debug/USBFS_descr.lst) CD OT(5,SPEED) OA OJ(.\DP8051\DP8051_Keil_951\Debug\USBFS_descr.obj)
+
+line level    source
+
+   1          /***************************************************************************//**
+   2          * \file USBFS_descr.c
+   3          * \version 3.20
+   4          *
+   5          * \brief
+   6          *  This file contains the USB descriptors and storage.
+   7          *
+   8          ********************************************************************************
+   9          * \copyright
+  10          * Copyright 2008-2016, Cypress Semiconductor Corporation.  All rights reserved.
+  11          * You may use this file only in accordance with the license, terms, conditions,
+  12          * disclaimers, and limitations in the end user license agreement accompanying
+  13          * the software package with which this file was provided.
+  14          *******************************************************************************/
+  15          
+  16          #include "USBFS_pvt.h"
+  17          
+  18          
+  19          /*****************************************************************************
+  20          *  User supplied descriptors.  If you want to specify your own descriptors,
+  21          *  define USER_SUPPLIED_DESCRIPTORS below and add your descriptors.
+  22          *****************************************************************************/
+  23          /* `#START USER_DESCRIPTORS_DECLARATIONS` Place your declaration here */
+  24          
+  25          /* `#END` */
+  26          
+  27          
+  28          /***************************************
+  29          *  USB Customizer Generated Descriptors
+  30          ***************************************/
+  31          
+  32          #if !defined(USER_SUPPLIED_DESCRIPTORS)
+  33          /*********************************************************************
+  34          * Device Descriptors
+  35          *********************************************************************/
+  36          const uint8 CYCODE USBFS_DEVICE0_DESCR[18u] = {
+  37          /* Descriptor Length                       */ 0x12u,
+  38          /* DescriptorType: DEVICE                  */ 0x01u,
+  39          /* bcdUSB (ver 2.0)                        */ 0x00u, 0x02u,
+  40          /* bDeviceClass                            */ 0x00u,
+  41          /* bDeviceSubClass                         */ 0x00u,
+  42          /* bDeviceProtocol                         */ 0x00u,
+  43          /* bMaxPacketSize0                         */ 0x08u,
+  44          /* idVendor                                */ 0xC0u, 0x16u,
+  45          /* idProduct                               */ 0xDCu, 0x05u,
+  46          /* bcdDevice                               */ 0x03u, 0x00u,
+  47          /* iManufacturer                           */ 0x0Fu,
+  48          /* iProduct                                */ 0x0Eu,
+  49          /* iSerialNumber                           */ 0x80u,
+  50          /* bNumConfigurations                      */ 0x01u
+  51          };
+  52          /*********************************************************************
+  53          * Config Descriptor  
+C51 COMPILER V9.51   USBFS_DESCR                                                           11/29/2024 11:35:22 PAGE 2   
+
+  54          *********************************************************************/
+  55          const uint8 CYCODE USBFS_DEVICE0_CONFIGURATION0_DESCR[183u] = {
+  56          /*  Config Descriptor Length               */ 0x09u,
+  57          /*  DescriptorType: CONFIG                 */ 0x02u,
+  58          /*  wTotalLength                           */ 0xB7u, 0x00u,
+  59          /*  bNumInterfaces                         */ 0x04u,
+  60          /*  bConfigurationValue                    */ 0x01u,
+  61          /*  iConfiguration                         */ 0x00u,
+  62          /*  bmAttributes                           */ 0xC0u,
+  63          /*  bMaxPower                              */ 0x02u,
+  64          /*********************************************************************
+  65          * Interface Descriptor
+  66          *********************************************************************/
+  67          /*  Interface Descriptor Length            */ 0x09u,
+  68          /*  DescriptorType: INTERFACE              */ 0x04u,
+  69          /*  bInterfaceNumber                       */ 0x00u,
+  70          /*  bAlternateSetting                      */ 0x00u,
+  71          /*  bNumEndpoints                          */ 0x00u,
+  72          /*  bInterfaceClass                        */ 0xFFu,
+  73          /*  bInterfaceSubClass                     */ 0x00u,
+  74          /*  bInterfaceProtocol                     */ 0x00u,
+  75          /*  iInterface                             */ 0x0Cu,
+  76          /*********************************************************************
+  77          * AudioControl Interface Descriptor
+  78          *********************************************************************/
+  79          /*  Interface Descriptor Length            */ 0x09u,
+  80          /*  DescriptorType: INTERFACE              */ 0x04u,
+  81          /*  bInterfaceNumber                       */ 0x01u,
+  82          /*  bAlternateSetting                      */ 0x00u,
+  83          /*  bNumEndpoints                          */ 0x00u,
+  84          /*  bInterfaceClass                        */ 0x01u,
+  85          /*  bInterfaceSubClass                     */ 0x01u,
+  86          /*  bInterfaceProtocol                     */ 0x00u,
+  87          /*  iInterface                             */ 0x09u,
+  88          /*********************************************************************
+  89          * AC Header Descriptor
+  90          *********************************************************************/
+  91          /*  AC Header Descriptor Length            */ 0x0Au,
+  92          /*  DescriptorType: AUDIO                  */ 0x24u,
+  93          /*  bDescriptorSubtype                     */ 0x01u,
+  94          /*  bcdADC                                 */ 0x00u, 0x01u,
+  95          /*  wTotalLength                           */ 0x34u, 0x00u,
+  96          /*  bInCollection                          */ 0x02u,
+  97          /*  baInterfaceNr                          */ 0x02u, 0x03u,
+  98          /*********************************************************************
+  99          * AC Input Terminal Descriptor
+ 100          *********************************************************************/
+ 101          /*  AC Input Terminal Descriptor Length    */ 0x0Cu,
+ 102          /*  DescriptorType: AUDIO                  */ 0x24u,
+ 103          /*  bDescriptorSubtype                     */ 0x02u,
+ 104          /*  bTerminalID                            */ 0x01u,
+ 105          /*  wTerminalType                          */ 0x03u, 0x06u,
+ 106          /*  bAssocTerminal                         */ 0x00u,
+ 107          /*  bNrChannels                            */ 0x02u,
+ 108          /*  wChannelConfig                         */ 0x03u, 0x00u,
+ 109          /*  iChannelNames                          */ 0x00u,
+ 110          /*  iTerminal                              */ 0x00u,
+ 111          /*********************************************************************
+ 112          * AC Output Terminal Descriptor
+ 113          *********************************************************************/
+ 114          /*  AC Output Terminal Descriptor Length   */ 0x09u,
+ 115          /*  DescriptorType: AUDIO                  */ 0x24u,
+C51 COMPILER V9.51   USBFS_DESCR                                                           11/29/2024 11:35:22 PAGE 3   
+
+ 116          /*  bDescriptorSubtype                     */ 0x03u,
+ 117          /*  bTerminalID                            */ 0x02u,
+ 118          /*  wTerminalType                          */ 0x01u, 0x01u,
+ 119          /*  bAssocTerminal                         */ 0x00u,
+ 120          /*  bSourceID                              */ 0x01u,
+ 121          /*  iTerminal                              */ 0x00u,
+ 122          /*********************************************************************
+ 123          * AC Input Terminal Descriptor
+ 124          *********************************************************************/
+ 125          /*  AC Input Terminal Descriptor Length    */ 0x0Cu,
+ 126          /*  DescriptorType: AUDIO                  */ 0x24u,
+ 127          /*  bDescriptorSubtype                     */ 0x02u,
+ 128          /*  bTerminalID                            */ 0x03u,
+ 129          /*  wTerminalType                          */ 0x01u, 0x01u,
+ 130          /*  bAssocTerminal                         */ 0x00u,
+ 131          /*  bNrChannels                            */ 0x02u,
+ 132          /*  wChannelConfig                         */ 0x03u, 0x00u,
+ 133          /*  iChannelNames                          */ 0x00u,
+ 134          /*  iTerminal                              */ 0x00u,
+ 135          /*********************************************************************
+ 136          * AC Output Terminal Descriptor
+ 137          *********************************************************************/
+ 138          /*  AC Output Terminal Descriptor Length   */ 0x09u,
+ 139          /*  DescriptorType: AUDIO                  */ 0x24u,
+ 140          /*  bDescriptorSubtype                     */ 0x03u,
+ 141          /*  bTerminalID                            */ 0x04u,
+ 142          /*  wTerminalType                          */ 0x03u, 0x06u,
+ 143          /*  bAssocTerminal                         */ 0x00u,
+ 144          /*  bSourceID                              */ 0x03u,
+ 145          /*  iTerminal                              */ 0x00u,
+ 146          /*********************************************************************
+ 147          * AudioStreaming Interface Descriptor
+ 148          *********************************************************************/
+ 149          /*  Interface Descriptor Length            */ 0x09u,
+ 150          /*  DescriptorType: INTERFACE              */ 0x04u,
+ 151          /*  bInterfaceNumber                       */ 0x02u,
+ 152          /*  bAlternateSetting                      */ 0x00u,
+ 153          /*  bNumEndpoints                          */ 0x00u,
+ 154          /*  bInterfaceClass                        */ 0x01u,
+ 155          /*  bInterfaceSubClass                     */ 0x02u,
+ 156          /*  bInterfaceProtocol                     */ 0x00u,
+ 157          /*  iInterface                             */ 0x0Au,
+ 158          /*********************************************************************
+ 159          * AudioStreaming Interface Descriptor
+ 160          *********************************************************************/
+ 161          /*  Interface Descriptor Length            */ 0x09u,
+ 162          /*  DescriptorType: INTERFACE              */ 0x04u,
+ 163          /*  bInterfaceNumber                       */ 0x02u,
+ 164          /*  bAlternateSetting                      */ 0x01u,
+ 165          /*  bNumEndpoints                          */ 0x01u,
+ 166          /*  bInterfaceClass                        */ 0x01u,
+ 167          /*  bInterfaceSubClass                     */ 0x02u,
+ 168          /*  bInterfaceProtocol                     */ 0x00u,
+ 169          /*  iInterface                             */ 0x0Au,
+ 170          /*********************************************************************
+ 171          * AS General Descriptor
+ 172          *********************************************************************/
+ 173          /*  AS General Descriptor Length           */ 0x07u,
+ 174          /*  DescriptorType: AUDIO                  */ 0x24u,
+ 175          /*  bDescriptorSubtype                     */ 0x01u,
+ 176          /*  bTerminalLink                          */ 0x02u,
+ 177          /*  bDelay                                 */ 0x02u,
+C51 COMPILER V9.51   USBFS_DESCR                                                           11/29/2024 11:35:22 PAGE 4   
+
+ 178          /*  wFormatTag                             */ 0x01u, 0x00u,
+ 179          /*********************************************************************
+ 180          * AS Format Type I Descriptor
+ 181          *********************************************************************/
+ 182          /*  AS Format Type I Descriptor Length     */ 0x0Bu,
+ 183          /*  DescriptorType: AUDIO                  */ 0x24u,
+ 184          /*  bDescriptorSubtype                     */ 0x02u,
+ 185          /*  bFormatType                            */ 0x01u,
+ 186          /*  bNrChannels                            */ 0x02u,
+ 187          /*  bSubframeSize                          */ 0x02u,
+ 188          /*  bBitResolution                         */ 0x10u,
+ 189          /*  bSamFreqType                           */ 0x01u,
+ 190          /*  tSamFreq                               */ 0x00u, 0x77u, 0x01u,
+ 191          /*********************************************************************
+ 192          * Endpoint Descriptor
+ 193          *********************************************************************/
+ 194          /*  Endpoint Descriptor Length             */ 0x09u,
+ 195          /*  DescriptorType: ENDPOINT               */ 0x05u,
+ 196          /*  bEndpointAddress                       */ 0x82u,
+ 197          /*  bmAttributes                           */ 0x2Du,
+ 198          /*  wMaxPacketSize                         */ 0x80u, 0x01u,
+ 199          /*  bInterval                              */ 0x01u,
+ 200          /*  bRefresh                               */ 0x00u,
+ 201          /*  bSynchAddress                          */ 0x00u,
+ 202          /*********************************************************************
+ 203          * AS Endpoint Descriptor
+ 204          *********************************************************************/
+ 205          /*  Endpoint Descriptor Length             */ 0x07u,
+ 206          /*  DescriptorType: CS_ENDPOINT            */ 0x25u,
+ 207          /*  bDescriptorSubtype                     */ 0x01u,
+ 208          /*  bmAttributes                           */ 0x80u,
+ 209          /*  bLockDelayUnits                        */ 0x01u,
+ 210          /*  wLockDelay                             */ 0x00u, 0x00u,
+ 211          /*********************************************************************
+ 212          * AudioStreaming Interface Descriptor
+ 213          *********************************************************************/
+ 214          /*  Interface Descriptor Length            */ 0x09u,
+ 215          /*  DescriptorType: INTERFACE              */ 0x04u,
+ 216          /*  bInterfaceNumber                       */ 0x03u,
+ 217          /*  bAlternateSetting                      */ 0x00u,
+ 218          /*  bNumEndpoints                          */ 0x00u,
+ 219          /*  bInterfaceClass                        */ 0x01u,
+ 220          /*  bInterfaceSubClass                     */ 0x02u,
+ 221          /*  bInterfaceProtocol                     */ 0x00u,
+ 222          /*  iInterface                             */ 0x0Bu,
+ 223          /*********************************************************************
+ 224          * AudioStreaming Interface Descriptor
+ 225          *********************************************************************/
+ 226          /*  Interface Descriptor Length            */ 0x09u,
+ 227          /*  DescriptorType: INTERFACE              */ 0x04u,
+ 228          /*  bInterfaceNumber                       */ 0x03u,
+ 229          /*  bAlternateSetting                      */ 0x01u,
+ 230          /*  bNumEndpoints                          */ 0x01u,
+ 231          /*  bInterfaceClass                        */ 0x01u,
+ 232          /*  bInterfaceSubClass                     */ 0x02u,
+ 233          /*  bInterfaceProtocol                     */ 0x00u,
+ 234          /*  iInterface                             */ 0x0Bu,
+ 235          /*********************************************************************
+ 236          * AS General Descriptor
+ 237          *********************************************************************/
+ 238          /*  AS General Descriptor Length           */ 0x07u,
+ 239          /*  DescriptorType: AUDIO                  */ 0x24u,
+C51 COMPILER V9.51   USBFS_DESCR                                                           11/29/2024 11:35:22 PAGE 5   
+
+ 240          /*  bDescriptorSubtype                     */ 0x01u,
+ 241          /*  bTerminalLink                          */ 0x03u,
+ 242          /*  bDelay                                 */ 0x01u,
+ 243          /*  wFormatTag                             */ 0x01u, 0x00u,
+ 244          /*********************************************************************
+ 245          * AS Format Type I Descriptor
+ 246          *********************************************************************/
+ 247          /*  AS Format Type I Descriptor Length     */ 0x0Bu,
+ 248          /*  DescriptorType: AUDIO                  */ 0x24u,
+ 249          /*  bDescriptorSubtype                     */ 0x02u,
+ 250          /*  bFormatType                            */ 0x01u,
+ 251          /*  bNrChannels                            */ 0x02u,
+ 252          /*  bSubframeSize                          */ 0x02u,
+ 253          /*  bBitResolution                         */ 0x10u,
+ 254          /*  bSamFreqType                           */ 0x01u,
+ 255          /*  tSamFreq                               */ 0x00u, 0x77u, 0x01u,
+ 256          /*********************************************************************
+ 257          * Endpoint Descriptor
+ 258          *********************************************************************/
+ 259          /*  Endpoint Descriptor Length             */ 0x09u,
+ 260          /*  DescriptorType: ENDPOINT               */ 0x05u,
+ 261          /*  bEndpointAddress                       */ 0x03u,
+ 262          /*  bmAttributes                           */ 0x2Du,
+ 263          /*  wMaxPacketSize                         */ 0x80u, 0x01u,
+ 264          /*  bInterval                              */ 0x01u,
+ 265          /*  bRefresh                               */ 0x00u,
+ 266          /*  bSynchAddress                          */ 0x00u,
+ 267          /*********************************************************************
+ 268          * AS Endpoint Descriptor
+ 269          *********************************************************************/
+ 270          /*  Endpoint Descriptor Length             */ 0x07u,
+ 271          /*  DescriptorType: CS_ENDPOINT            */ 0x25u,
+ 272          /*  bDescriptorSubtype                     */ 0x01u,
+ 273          /*  bmAttributes                           */ 0x80u,
+ 274          /*  bLockDelayUnits                        */ 0x01u,
+ 275          /*  wLockDelay                             */ 0x00u, 0x00u
+ 276          };
+ 277          
+ 278          /*********************************************************************
+ 279          * String Descriptor Table
+ 280          *********************************************************************/
+ 281          const uint8 CYCODE USBFS_STRING_DESCRIPTORS[453u] = {
+ 282          /*********************************************************************
+ 283          * Language ID Descriptor
+ 284          *********************************************************************/
+ 285          /* Descriptor Length                       */ 0x04u,
+ 286          /* DescriptorType: STRING                  */ 0x03u,
+ 287          /* Language Id                             */ 0x09u, 0x04u,
+ 288          /*********************************************************************
+ 289          * String Descriptor: "AE9RB"
+ 290          *********************************************************************/
+ 291          /* Descriptor Length                       */ 0x0Cu,
+ 292          /* DescriptorType: STRING                  */ 0x03u,
+ 293           (uint8)'A', 0u,(uint8)'E', 0u,(uint8)'9', 0u,(uint8)'R', 0u,(uint8)'B', 0u,
+ 294          /*********************************************************************
+ 295          * String Descriptor: "Peaberry SDR"
+ 296          *********************************************************************/
+ 297          /* Descriptor Length                       */ 0x1Au,
+ 298          /* DescriptorType: STRING                  */ 0x03u,
+ 299           (uint8)'P', 0u,(uint8)'e', 0u,(uint8)'a', 0u,(uint8)'b', 0u,(uint8)'e', 0u,
+ 300           (uint8)'r', 0u,(uint8)'r', 0u,(uint8)'y', 0u,(uint8)' ', 0u,(uint8)'S', 0u,
+ 301           (uint8)'D', 0u,(uint8)'R', 0u,
+C51 COMPILER V9.51   USBFS_DESCR                                                           11/29/2024 11:35:22 PAGE 6   
+
+ 302          /*********************************************************************
+ 303          * String Descriptor: "Peaberry Receive"
+ 304          *********************************************************************/
+ 305          /* Descriptor Length                       */ 0x22u,
+ 306          /* DescriptorType: STRING                  */ 0x03u,
+ 307           (uint8)'P', 0u,(uint8)'e', 0u,(uint8)'a', 0u,(uint8)'b', 0u,(uint8)'e', 0u,
+ 308           (uint8)'r', 0u,(uint8)'r', 0u,(uint8)'y', 0u,(uint8)' ', 0u,(uint8)'R', 0u,
+ 309           (uint8)'e', 0u,(uint8)'c', 0u,(uint8)'e', 0u,(uint8)'i', 0u,(uint8)'v', 0u,
+ 310           (uint8)'e', 0u,
+ 311          /*********************************************************************
+ 312          * String Descriptor: "Peaberry Transmit"
+ 313          *********************************************************************/
+ 314          /* Descriptor Length                       */ 0x24u,
+ 315          /* DescriptorType: STRING                  */ 0x03u,
+ 316           (uint8)'P', 0u,(uint8)'e', 0u,(uint8)'a', 0u,(uint8)'b', 0u,(uint8)'e', 0u,
+ 317           (uint8)'r', 0u,(uint8)'r', 0u,(uint8)'y', 0u,(uint8)' ', 0u,(uint8)'T', 0u,
+ 318           (uint8)'r', 0u,(uint8)'a', 0u,(uint8)'n', 0u,(uint8)'s', 0u,(uint8)'m', 0u,
+ 319           (uint8)'i', 0u,(uint8)'t', 0u,
+ 320          /*********************************************************************
+ 321          * String Descriptor: "Peaberry Radio"
+ 322          *********************************************************************/
+ 323          /* Descriptor Length                       */ 0x1Eu,
+ 324          /* DescriptorType: STRING                  */ 0x03u,
+ 325           (uint8)'P', 0u,(uint8)'e', 0u,(uint8)'a', 0u,(uint8)'b', 0u,(uint8)'e', 0u,
+ 326           (uint8)'r', 0u,(uint8)'r', 0u,(uint8)'y', 0u,(uint8)' ', 0u,(uint8)'R', 0u,
+ 327           (uint8)'a', 0u,(uint8)'d', 0u,(uint8)'i', 0u,(uint8)'o', 0u,
+ 328          /*********************************************************************
+ 329          * String Descriptor: "DG8SAQ-I2C"
+ 330          *********************************************************************/
+ 331          /* Descriptor Length                       */ 0x16u,
+ 332          /* DescriptorType: STRING                  */ 0x03u,
+ 333           (uint8)'D', 0u,(uint8)'G', 0u,(uint8)'8', 0u,(uint8)'S', 0u,(uint8)'A', 0u,
+ 334           (uint8)'Q', 0u,(uint8)'-', 0u,(uint8)'I', 0u,(uint8)'2', 0u,(uint8)'C', 0u,
+ 335          /*********************************************************************
+ 336          * String Descriptor: "www.obdev.at"
+ 337          *********************************************************************/
+ 338          /* Descriptor Length                       */ 0x1Au,
+ 339          /* DescriptorType: STRING                  */ 0x03u,
+ 340           (uint8)'w', 0u,(uint8)'w', 0u,(uint8)'w', 0u,(uint8)'.', 0u,(uint8)'o', 0u,
+ 341           (uint8)'b', 0u,(uint8)'d', 0u,(uint8)'e', 0u,(uint8)'v', 0u,(uint8)'.', 0u,
+ 342           (uint8)'a', 0u,(uint8)'t', 0u,
+ 343          /*********************************************************************
+ 344          * String Descriptor: "Multus Control"
+ 345          *********************************************************************/
+ 346          /* Descriptor Length                       */ 0x1Eu,
+ 347          /* DescriptorType: STRING                  */ 0x03u,
+ 348           (uint8)'M', 0u,(uint8)'u', 0u,(uint8)'l', 0u,(uint8)'t', 0u,(uint8)'u', 0u,
+ 349           (uint8)'s', 0u,(uint8)' ', 0u,(uint8)'C', 0u,(uint8)'o', 0u,(uint8)'n', 0u,
+ 350           (uint8)'t', 0u,(uint8)'r', 0u,(uint8)'o', 0u,(uint8)'l', 0u,
+ 351          /*********************************************************************
+ 352          * String Descriptor: "Multus IQ Sound"
+ 353          *********************************************************************/
+ 354          /* Descriptor Length                       */ 0x20u,
+ 355          /* DescriptorType: STRING                  */ 0x03u,
+ 356           (uint8)'M', 0u,(uint8)'u', 0u,(uint8)'l', 0u,(uint8)'t', 0u,(uint8)'u', 0u,
+ 357           (uint8)'s', 0u,(uint8)' ', 0u,(uint8)'I', 0u,(uint8)'Q', 0u,(uint8)' ', 0u,
+ 358           (uint8)'S', 0u,(uint8)'o', 0u,(uint8)'u', 0u,(uint8)'n', 0u,(uint8)'d', 0u,
+ 359          /*********************************************************************
+ 360          * String Descriptor: "Multus IQ Receive"
+ 361          *********************************************************************/
+ 362          /* Descriptor Length                       */ 0x24u,
+ 363          /* DescriptorType: STRING                  */ 0x03u,
+C51 COMPILER V9.51   USBFS_DESCR                                                           11/29/2024 11:35:22 PAGE 7   
+
+ 364           (uint8)'M', 0u,(uint8)'u', 0u,(uint8)'l', 0u,(uint8)'t', 0u,(uint8)'u', 0u,
+ 365           (uint8)'s', 0u,(uint8)' ', 0u,(uint8)'I', 0u,(uint8)'Q', 0u,(uint8)' ', 0u,
+ 366           (uint8)'R', 0u,(uint8)'e', 0u,(uint8)'c', 0u,(uint8)'e', 0u,(uint8)'i', 0u,
+ 367           (uint8)'v', 0u,(uint8)'e', 0u,
+ 368          /*********************************************************************
+ 369          * String Descriptor: "Multus IQ Transmit"
+ 370          *********************************************************************/
+ 371          /* Descriptor Length                       */ 0x26u,
+ 372          /* DescriptorType: STRING                  */ 0x03u,
+ 373           (uint8)'M', 0u,(uint8)'u', 0u,(uint8)'l', 0u,(uint8)'t', 0u,(uint8)'u', 0u,
+ 374           (uint8)'s', 0u,(uint8)' ', 0u,(uint8)'I', 0u,(uint8)'Q', 0u,(uint8)' ', 0u,
+ 375           (uint8)'T', 0u,(uint8)'r', 0u,(uint8)'a', 0u,(uint8)'n', 0u,(uint8)'s', 0u,
+ 376           (uint8)'m', 0u,(uint8)'i', 0u,(uint8)'t', 0u,
+ 377          /*********************************************************************
+ 378          * String Descriptor: "Multus SDR Control"
+ 379          *********************************************************************/
+ 380          /* Descriptor Length                       */ 0x26u,
+ 381          /* DescriptorType: STRING                  */ 0x03u,
+ 382           (uint8)'M', 0u,(uint8)'u', 0u,(uint8)'l', 0u,(uint8)'t', 0u,(uint8)'u', 0u,
+ 383           (uint8)'s', 0u,(uint8)' ', 0u,(uint8)'S', 0u,(uint8)'D', 0u,(uint8)'R', 0u,
+ 384           (uint8)' ', 0u,(uint8)'C', 0u,(uint8)'o', 0u,(uint8)'n', 0u,(uint8)'t', 0u,
+ 385           (uint8)'r', 0u,(uint8)'o', 0u,(uint8)'l', 0u,
+ 386          /*********************************************************************
+ 387          * String Descriptor: "Multus SDR,LLC."
+ 388          *********************************************************************/
+ 389          /* Descriptor Length                       */ 0x20u,
+ 390          /* DescriptorType: STRING                  */ 0x03u,
+ 391           (uint8)'M', 0u,(uint8)'u', 0u,(uint8)'l', 0u,(uint8)'t', 0u,(uint8)'u', 0u,
+ 392           (uint8)'s', 0u,(uint8)' ', 0u,(uint8)'S', 0u,(uint8)'D', 0u,(uint8)'R', 0u,
+ 393           (uint8)',', 0u,(uint8)'L', 0u,(uint8)'L', 0u,(uint8)'C', 0u,(uint8)'.', 0u,
+ 394          /*********************************************************************
+ 395          * String Descriptor: "Proficio"
+ 396          *********************************************************************/
+ 397          /* Descriptor Length                       */ 0x12u,
+ 398          /* DescriptorType: STRING                  */ 0x03u,
+ 399           (uint8)'P', 0u,(uint8)'r', 0u,(uint8)'o', 0u,(uint8)'f', 0u,(uint8)'i', 0u,
+ 400           (uint8)'c', 0u,(uint8)'i', 0u,(uint8)'o', 0u,
+ 401          /*********************************************************************
+ 402          * String Descriptor: "www.multus-sdr.com"
+ 403          *********************************************************************/
+ 404          /* Descriptor Length                       */ 0x26u,
+ 405          /* DescriptorType: STRING                  */ 0x03u,
+ 406           (uint8)'w', 0u,(uint8)'w', 0u,(uint8)'w', 0u,(uint8)'.', 0u,(uint8)'m', 0u,
+ 407           (uint8)'u', 0u,(uint8)'l', 0u,(uint8)'t', 0u,(uint8)'u', 0u,(uint8)'s', 0u,
+ 408           (uint8)'-', 0u,(uint8)'s', 0u,(uint8)'d', 0u,(uint8)'r', 0u,(uint8)'.', 0u,
+ 409           (uint8)'c', 0u,(uint8)'o', 0u,(uint8)'m', 0u,
+ 410          /*********************************************************************/
+ 411          /* Marks the end of the list.              */ 0x00u};
+ 412          /*********************************************************************/
+ 413          
+ 414          /*********************************************************************
+ 415          * Serial Number String Descriptor
+ 416          *********************************************************************/
+ 417          const uint8 CYCODE USBFS_SN_STRING_DESCRIPTOR[18] = {
+ 418          /* Descriptor Length                       */ 0x12u,
+ 419          /* DescriptorType: STRING                  */ 0x03u,
+ 420          (uint8)'P', 0u,(uint8)'E', 0u,(uint8)'0', 0u,(uint8)'F', 0u,(uint8)'K', 0u,
+ 421           (uint8)'O', 0u,(uint8)'-', 0u,(uint8)'0', 0u
+ 422          };
+ 423          
+ 424          
+ 425          
+C51 COMPILER V9.51   USBFS_DESCR                                                           11/29/2024 11:35:22 PAGE 8   
+
+ 426          /*********************************************************************
+ 427          * Endpoint Setting Table -- This table contain the endpoint setting
+ 428          *                           for each endpoint in the configuration. It
+ 429          *                           contains the necessary information to
+ 430          *                           configure the endpoint hardware for each
+ 431          *                           interface and alternate setting.
+ 432          *********************************************************************/
+ 433          const T_USBFS_EP_SETTINGS_BLOCK CYCODE USBFS_DEVICE0_CONFIGURATION0_EP_SETTINGS_TABLE[2u] = {
+ 434          /* IFC  ALT    EPAddr bmAttr MaxPktSize Class ********************/
+ 435          {0x02u, 0x01u, 0x82u, 0x2Du, 0x0180u,   0x01u},
+ 436          {0x03u, 0x01u, 0x03u, 0x2Du, 0x0180u,   0x01u}
+ 437          };
+ 438          const uint8 CYCODE USBFS_DEVICE0_CONFIGURATION0_INTERFACE_CLASS[4u] = {
+ 439          0xFFu, 0x01u, 0x01u, 0x01u, 
+ 440          };
+ 441          /*********************************************************************
+ 442          * Config Dispatch Table -- Points to the Config Descriptor and each of
+ 443          *                          and endpoint setup table and to each
+ 444          *                          interface table if it specifies a USB Class
+ 445          *********************************************************************/
+ 446          const T_USBFS_LUT CYCODE USBFS_DEVICE0_CONFIGURATION0_TABLE[7u] = {
+ 447              {0x01u,     &USBFS_DEVICE0_CONFIGURATION0_DESCR},
+ 448              {0x02u,     &USBFS_DEVICE0_CONFIGURATION0_EP_SETTINGS_TABLE},
+ 449              {0x00u,    NULL},
+ 450              {0x00u,    NULL},
+ 451              {0x00u,    NULL},
+ 452              {0x00u,    NULL},
+ 453              {0x00u,     &USBFS_DEVICE0_CONFIGURATION0_INTERFACE_CLASS}
+ 454          };
+ 455          /*********************************************************************
+ 456          * Device Dispatch Table -- Points to the Device Descriptor and each of
+ 457          *                          and Configuration Tables for this Device 
+ 458          *********************************************************************/
+ 459          const T_USBFS_LUT CYCODE USBFS_DEVICE0_TABLE[3u] = {
+ 460              {0x01u,     &USBFS_DEVICE0_DESCR},
+ 461              {0x00u,    NULL},
+ 462              {0x01u,     &USBFS_DEVICE0_CONFIGURATION0_TABLE}
+ 463          };
+ 464          /*********************************************************************
+ 465          * Device Table -- Indexed by the device number.
+ 466          *********************************************************************/
+ 467          const T_USBFS_LUT CYCODE USBFS_TABLE[1u] = {
+ 468              {0x01u,     &USBFS_DEVICE0_TABLE}
+ 469          };
+ 470          
+ 471          #endif /* USER_SUPPLIED_DESCRIPTORS */
+ 472          
+ 473          #if defined(USBFS_ENABLE_MSOS_STRING)
+              
+                  /******************************************************************************
+                  *  USB Microsoft OS String Descriptor
+                  *  "MSFT" identifies a Microsoft host
+                  *  "100" specifies version 1.00
+                  *  USBFS_GET_EXTENDED_CONFIG_DESCRIPTOR becomes the bRequest value
+                  *  in a host vendor device/class request
+                  ******************************************************************************/
+              
+                  const uint8 CYCODE USBFS_MSOS_DESCRIPTOR[USBFS_MSOS_DESCRIPTOR_LENGTH] = {
+                  /* Descriptor Length                       */   0x12u,
+                  /* DescriptorType: STRING                  */   0x03u,
+                  /* qwSignature - "MSFT100"                 */   (uint8)'M', 0u, (uint8)'S', 0u, (uint8)'F', 0u, (uint8
+             -)'T', 0u,
+C51 COMPILER V9.51   USBFS_DESCR                                                           11/29/2024 11:35:22 PAGE 9   
+
+                                                                  (uint8)'1', 0u, (uint8)'0', 0u, (uint8)'0', 0u,
+                  /* bMS_VendorCode:                         */   USBFS_GET_EXTENDED_CONFIG_DESCRIPTOR,
+                  /* bPad                                    */   0x00u
+                  };
+              
+                  /* Extended Configuration Descriptor */
+              
+                  const uint8 CYCODE USBFS_MSOS_CONFIGURATION_DESCR[USBFS_MSOS_CONF_DESCR_LENGTH] = {
+                  /*  Length of the descriptor 4 bytes       */   0x28u, 0x00u, 0x00u, 0x00u,
+                  /*  Version of the descriptor 2 bytes      */   0x00u, 0x01u,
+                  /*  wIndex - Fixed:INDEX_CONFIG_DESCRIPTOR */   0x04u, 0x00u,
+                  /*  bCount - Count of device functions.    */   0x01u,
+                  /*  Reserved : 7 bytes                     */   0x00u, 0x00u, 0x00u, 0x00u, 0x00u, 0x00u, 0x00u,
+                  /*  bFirstInterfaceNumber                  */   0x00u,
+                  /*  Reserved                               */   0x01u,
+                  /*  compatibleID    - "CYUSB\0\0"          */   (uint8)'C', (uint8)'Y', (uint8)'U', (uint8)'S', (uint8
+             -)'B',
+                                                                  0x00u, 0x00u, 0x00u,
+                  /*  subcompatibleID - "00001\0\0"          */   (uint8)'0', (uint8)'0', (uint8)'0', (uint8)'0', (uint8
+             -)'1',
+                                                                  0x00u, 0x00u, 0x00u,
+                  /*  Reserved : 6 bytes                     */   0x00u, 0x00u, 0x00u, 0x00u, 0x00u, 0x00u
+                  };
+              
+              #endif /* USBFS_ENABLE_MSOS_STRING */
+ 510          
+ 511          /* DIE ID string descriptor for 8 bytes ID */
+ 512          #if defined(USBFS_ENABLE_IDSN_STRING)
+ 513              uint8 USBFS_idSerialNumberStringDescriptor[USBFS_IDSN_DESCR_LENGTH];
+ 514          #endif /* USBFS_ENABLE_IDSN_STRING */
+ 515          
+ 516          
+ 517          /* [] END OF FILE */
+C51 COMPILER V9.51   USBFS_DESCR                                                           11/29/2024 11:35:22 PAGE 10  
+
+ASSEMBLY LISTING OF GENERATED OBJECT CODE
+
+
+
+
+MODULE INFORMATION:   STATIC OVERLAYABLE
+   CODE SIZE        =   ----    ----
+   CONSTANT SIZE    =    734    ----
+   XDATA SIZE       =     34    ----
+   PDATA SIZE       =   ----    ----
+   DATA SIZE        =   ----    ----
+   IDATA SIZE       =   ----    ----
+   BIT SIZE         =   ----    ----
+   EDATA SIZE       =   ----    ----
+   HDATA SIZE       =   ----    ----
+   XDATA CONST SIZE =   ----    ----
+   FAR CONST SIZE   =   ----    ----
+END OF MODULE INFORMATION.
+
+
+C51 COMPILATION COMPLETE.  0 WARNING(S),  0 ERROR(S)

@@ -1,0 +1,325 @@
+C51 COMPILER V9.51   BS1                                                                   03/06/2019 16:04:05 PAGE 1   
+
+
+C51 COMPILER V9.51, COMPILATION OF MODULE BS1
+OBJECT MODULE PLACED IN .\DP8051\DP8051_Keil_951\Release\BS1.obj
+COMPILER INVOKED BY: C:\Program Files (x86)\Cypress\PSoC Creator\4.2\PSoC Creator\import\keil\pk51\9.51\C51\BIN\c51.exe 
+                    -Generated_Source\PSoC3\BS1.c NOIV LARGE MODDP2 OMF2 VB(1) NOIP INCDIR(.,Generated_Source\PSoC3) FF(3) DB DF(NDEBUG) WL(2
+                    -) PR(.\DP8051\DP8051_Keil_951\Release/BS1.lst) CD OT(5,SIZE) OA OJ(.\DP8051\DP8051_Keil_951\Release\BS1.obj)
+
+line level    source
+
+   1          /*******************************************************************************
+   2          * File Name: BS1.c  
+   3          * Version 2.20
+   4          *
+   5          * Description:
+   6          *  This file contains API to enable firmware control of a Pins component.
+   7          *
+   8          * Note:
+   9          *
+  10          ********************************************************************************
+  11          * Copyright 2008-2015, Cypress Semiconductor Corporation.  All rights reserved.
+  12          * You may use this file only in accordance with the license, terms, conditions, 
+  13          * disclaimers, and limitations in the end user license agreement accompanying 
+  14          * the software package with which this file was provided.
+  15          *******************************************************************************/
+  16          
+  17          #include "cytypes.h"
+  18          #include "BS1.h"
+  19          
+  20          
+  21          /*******************************************************************************
+  22          * Function Name: BS1_Write
+  23          ****************************************************************************//**
+  24          *
+  25          * \brief Writes the value to the physical port (data output register), masking
+  26          *  and shifting the bits appropriately. 
+  27          *
+  28          * The data output register controls the signal applied to the physical pin in 
+  29          * conjunction with the drive mode parameter. This function avoids changing 
+  30          * other bits in the port by using the appropriate method (read-modify-write or
+  31          * bit banding).
+  32          *
+  33          * <b>Note</b> This function should not be used on a hardware digital output pin 
+  34          * as it is driven by the hardware signal attached to it.
+  35          *
+  36          * \param value
+  37          *  Value to write to the component instance.
+  38          *
+  39          * \return 
+  40          *  None 
+  41          *
+  42          * \sideeffect
+  43          *  If you use read-modify-write operations that are not atomic; the Interrupt 
+  44          *  Service Routines (ISR) can cause corruption of this function. An ISR that 
+  45          *  interrupts this function and performs writes to the Pins component data 
+  46          *  register can cause corrupted port data. To avoid this issue, you should 
+  47          *  either use the Per-Pin APIs (primary method) or disable interrupts around 
+  48          *  this function.
+  49          *
+  50          * \funcusage
+  51          *  \snippet BS1_SUT.c usage_BS1_Write
+  52          *******************************************************************************/
+  53          void BS1_Write(uint8 value) 
+C51 COMPILER V9.51   BS1                                                                   03/06/2019 16:04:05 PAGE 2   
+
+  54          {
+  55   1          uint8 staticBits = (BS1_DR & (uint8)(~BS1_MASK));
+  56   1          BS1_DR = staticBits | ((uint8)(value << BS1_SHIFT) & BS1_MASK);
+  57   1      }
+  58          
+  59          
+  60          /*******************************************************************************
+  61          * Function Name: BS1_SetDriveMode
+  62          ****************************************************************************//**
+  63          *
+  64          * \brief Sets the drive mode for each of the Pins component's pins.
+  65          * 
+  66          * <b>Note</b> This affects all pins in the Pins component instance. Use the
+  67          * Per-Pin APIs if you wish to control individual pin's drive modes.
+  68          *
+  69          * \param mode
+  70          *  Mode for the selected signals. Valid options are documented in 
+  71          *  \ref driveMode.
+  72          *
+  73          * \return
+  74          *  None
+  75          *
+  76          * \sideeffect
+  77          *  If you use read-modify-write operations that are not atomic, the ISR can
+  78          *  cause corruption of this function. An ISR that interrupts this function 
+  79          *  and performs writes to the Pins component Drive Mode registers can cause 
+  80          *  corrupted port data. To avoid this issue, you should either use the Per-Pin
+  81          *  APIs (primary method) or disable interrupts around this function.
+  82          *
+  83          * \funcusage
+  84          *  \snippet BS1_SUT.c usage_BS1_SetDriveMode
+  85          *******************************************************************************/
+  86          void BS1_SetDriveMode(uint8 mode) 
+  87          {
+  88   1              CyPins_SetPinDriveMode(BS1_0, mode);
+  89   1      }
+  90          
+  91          
+  92          /*******************************************************************************
+  93          * Function Name: BS1_Read
+  94          ****************************************************************************//**
+  95          *
+  96          * \brief Reads the associated physical port (pin status register) and masks 
+  97          *  the required bits according to the width and bit position of the component
+  98          *  instance. 
+  99          *
+ 100          * The pin's status register returns the current logic level present on the 
+ 101          * physical pin.
+ 102          *
+ 103          * \return 
+ 104          *  The current value for the pins in the component as a right justified number.
+ 105          *
+ 106          * \funcusage
+ 107          *  \snippet BS1_SUT.c usage_BS1_Read  
+ 108          *******************************************************************************/
+ 109          uint8 BS1_Read(void) 
+ 110          {
+ 111   1          return (BS1_PS & BS1_MASK) >> BS1_SHIFT;
+ 112   1      }
+ 113          
+ 114          
+ 115          /*******************************************************************************
+C51 COMPILER V9.51   BS1                                                                   03/06/2019 16:04:05 PAGE 3   
+
+ 116          * Function Name: BS1_ReadDataReg
+ 117          ****************************************************************************//**
+ 118          *
+ 119          * \brief Reads the associated physical port's data output register and masks 
+ 120          *  the correct bits according to the width and bit position of the component 
+ 121          *  instance. 
+ 122          *
+ 123          * The data output register controls the signal applied to the physical pin in 
+ 124          * conjunction with the drive mode parameter. This is not the same as the 
+ 125          * preferred BS1_Read() API because the 
+ 126          * BS1_ReadDataReg() reads the data register instead of the status 
+ 127          * register. For output pins this is a useful function to determine the value 
+ 128          * just written to the pin.
+ 129          *
+ 130          * \return 
+ 131          *  The current value of the data register masked and shifted into a right 
+ 132          *  justified number for the component instance.
+ 133          *
+ 134          * \funcusage
+ 135          *  \snippet BS1_SUT.c usage_BS1_ReadDataReg 
+ 136          *******************************************************************************/
+ 137          uint8 BS1_ReadDataReg(void) 
+ 138          {
+ 139   1          return (BS1_DR & BS1_MASK) >> BS1_SHIFT;
+ 140   1      }
+ 141          
+ 142          
+ 143          /* If interrupt is connected for this Pins component */ 
+ 144          #if defined(BS1_INTSTAT) 
+              
+                  /*******************************************************************************
+                  * Function Name: BS1_SetInterruptMode
+                  ****************************************************************************//**
+                  *
+                  * \brief Configures the interrupt mode for each of the Pins component's
+                  *  pins. Alternatively you may set the interrupt mode for all the pins
+                  *  specified in the Pins component.
+                  *
+                  *  <b>Note</b> The interrupt is port-wide and therefore any enabled pin
+                  *  interrupt may trigger it.
+                  *
+                  * \param position
+                  *  The pin position as listed in the Pins component. You may OR these to be 
+                  *  able to configure the interrupt mode of multiple pins within a Pins 
+                  *  component. Or you may use BS1_INTR_ALL to configure the
+                  *  interrupt mode of all the pins in the Pins component.       
+                  *  - BS1_0_INTR       (First pin in the list)
+                  *  - BS1_1_INTR       (Second pin in the list)
+                  *  - ...
+                  *  - BS1_INTR_ALL     (All pins in Pins component)
+                  *
+                  * \param mode
+                  *  Interrupt mode for the selected pins. Valid options are documented in
+                  *  \ref intrMode.
+                  *
+                  * \return 
+                  *  None
+                  *  
+                  * \sideeffect
+                  *  It is recommended that the interrupt be disabled before calling this 
+                  *  function to avoid unintended interrupt requests. Note that the interrupt
+                  *  type is port wide, and therefore will trigger for any enabled pin on the 
+C51 COMPILER V9.51   BS1                                                                   03/06/2019 16:04:05 PAGE 4   
+
+                  *  port.
+                  *
+                  * \funcusage
+                  *  \snippet BS1_SUT.c usage_BS1_SetInterruptMode
+                  *******************************************************************************/
+                  void BS1_SetInterruptMode(uint16 position, uint16 mode) 
+                                          
+                  {
+                              if((position & BS1_0_INTR) != 0u) 
+                              { 
+                                       BS1_0_INTTYPE_REG = (uint8)mode; 
+                              }
+                  }
+                  
+                  
+                  /*******************************************************************************
+                  * Function Name: BS1_ClearInterrupt
+                  ****************************************************************************//**
+                  *
+                  * \brief Clears any active interrupts attached with the component and returns 
+                  *  the value of the interrupt status register allowing determination of which
+                  *  pins generated an interrupt event.
+                  *
+                  * \return 
+                  *  The right-shifted current value of the interrupt status register. Each pin 
+                  *  has one bit set if it generated an interrupt event. For example, bit 0 is 
+                  *  for pin 0 and bit 1 is for pin 1 of the Pins component.
+                  *  
+                  * \sideeffect
+                  *  Clears all bits of the physical port's interrupt status register, not just
+                  *  those associated with the Pins component.
+                  *
+                  * \funcusage
+                  *  \snippet BS1_SUT.c usage_BS1_ClearInterrupt
+                  *******************************************************************************/
+                  uint8 BS1_ClearInterrupt(void) 
+                  {
+                      return (BS1_INTSTAT & BS1_MASK) >> BS1_SHIFT;
+                  }
+              
+              #endif /* (BS1_INTSTAT) */ 
+ 219          
+ 220          
+ 221          /* [] END OF FILE */
+C51 COMPILER V9.51   BS1                                                                   03/06/2019 16:04:05 PAGE 5   
+
+ASSEMBLY LISTING OF GENERATED OBJECT CODE
+
+
+             ; FUNCTION _BS1_Write (BEGIN)
+                                           ; SOURCE LINE # 53
+;---- Variable 'value' assigned to Register 'R7' ----
+                                           ; SOURCE LINE # 54
+                                           ; SOURCE LINE # 55
+                       MOV     DPTR,#051C0H
+                       MOVX    A,@DPTR
+                       ANL     A,#0FEH
+                       MOV     R6,A
+;---- Variable 'staticBits' assigned to Register 'R6' ----
+                                           ; SOURCE LINE # 56
+                       MOV     A,R7
+                       ANL     A,#01H
+                       ORL     A,R6
+                       MOVX    @DPTR,A
+                                           ; SOURCE LINE # 57
+                       RET     
+             ; FUNCTION _BS1_Write (END)
+
+             ; FUNCTION _BS1_SetDriveMode (BEGIN)
+                                           ; SOURCE LINE # 86
+;---- Variable 'mode' assigned to Register 'R7' ----
+                                           ; SOURCE LINE # 87
+                                           ; SOURCE LINE # 88
+                       MOV     A,R7
+                       ANL     A,#0EH
+                       MOV     R7,A
+                       MOV     DPTR,#05060H
+                       MOVX    A,@DPTR
+                       ANL     A,#0F1H
+                       ORL     A,R7
+                       MOVX    @DPTR,A
+                                           ; SOURCE LINE # 89
+                       RET     
+             ; FUNCTION _BS1_SetDriveMode (END)
+
+             ; FUNCTION BS1_Read (BEGIN)
+                                           ; SOURCE LINE # 109
+                                           ; SOURCE LINE # 110
+                                           ; SOURCE LINE # 111
+                       MOV     DPTR,#051C1H
+                       MOVX    A,@DPTR
+                       ANL     A,#01H
+                       MOV     R7,A
+                                           ; SOURCE LINE # 112
+             ?C0003:
+                       RET     
+             ; FUNCTION BS1_Read (END)
+
+             ; FUNCTION BS1_ReadDataReg (BEGIN)
+                                           ; SOURCE LINE # 137
+                                           ; SOURCE LINE # 138
+                                           ; SOURCE LINE # 139
+                       MOV     DPTR,#051C0H
+                       MOVX    A,@DPTR
+                       ANL     A,#01H
+                       MOV     R7,A
+                                           ; SOURCE LINE # 140
+             ?C0004:
+C51 COMPILER V9.51   BS1                                                                   03/06/2019 16:04:05 PAGE 6   
+
+                       RET     
+             ; FUNCTION BS1_ReadDataReg (END)
+
+
+
+MODULE INFORMATION:   STATIC OVERLAYABLE
+   CODE SIZE        =     42    ----
+   CONSTANT SIZE    =   ----    ----
+   XDATA SIZE       =   ----    ----
+   PDATA SIZE       =   ----    ----
+   DATA SIZE        =   ----    ----
+   IDATA SIZE       =   ----    ----
+   BIT SIZE         =   ----    ----
+   EDATA SIZE       =   ----    ----
+   HDATA SIZE       =   ----    ----
+   XDATA CONST SIZE =   ----    ----
+   FAR CONST SIZE   =   ----    ----
+END OF MODULE INFORMATION.
+
+
+C51 COMPILATION COMPLETE.  0 WARNING(S),  0 ERROR(S)
