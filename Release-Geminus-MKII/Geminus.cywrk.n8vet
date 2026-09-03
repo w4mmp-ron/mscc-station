@@ -1,0 +1,310 @@
+<?xml version="1.0" encoding="utf-8"?>
+<CyXmlSerializer>
+<!--This file is machine generated and read. It is not intended to be edited by hand.-->
+<!--Due to this, there is no schema for this file.-->
+<CyGuid_843a90a4-0c4b-4e44-991d-05e7fb117a21 type_name="CyDesigner.Common.ProjMgmt.Model.CyPrjMgmtWrkspcCustomData" version="4">
+<CyGuid_fdba8dfd-b15b-4469-9bbb-9e40c3e70997 type_name="CyDesigner.Common.Base.CyCustomData" version="2">
+<userData>
+<dataGuid v="1b906a0f-a7b6-4e4d-a428-82f98b53cb35">
+<CyGuid_1b906a0f-a7b6-4e4d-a428-82f98b53cb35 type_name="CyDesigner.Common.ProjMgmt.GUI.CyExplorerWindow+CyExplorerWindowState" version="3" SelectedTab="Source">
+<TreeKeys>
+<v>Source</v>
+<v>Components</v>
+<v>Output</v>
+</TreeKeys>
+<TreeStates>
+<CyGuid_2a325b3b-c96a-4e9f-b7a0-2c44ecb5f237 type_name="CyDesigner.Common.Base.Controls.CyTreeViewState" version="1" SelectedNodeId="">
+<ExpandedNodeIds>
+<v>Geminus</v>
+<v>Geminus\Geminus</v>
+<v>Geminus\Geminus\TopDesign</v>
+<v>Geminus\Geminus\Geminus.cydwr</v>
+<v>Geminus\Geminus\Geminus.cydwr\Pins</v>
+<v>Geminus\Geminus\Geminus.cydwr\Analog</v>
+<v>Geminus\Geminus\Geminus.cydwr\Clocks</v>
+<v>Geminus\Geminus\Geminus.cydwr\Interrupts</v>
+<v>Geminus\Geminus\Geminus.cydwr\DMA</v>
+<v>Geminus\Geminus\Geminus.cydwr\System</v>
+<v>Geminus\Geminus\Geminus.cydwr\Directives</v>
+<v>Geminus\Geminus\Geminus.cydwr\Flash Security</v>
+<v>Geminus\Geminus\Geminus.cydwr\EEPROM</v>
+<v>Geminus\Geminus\Header Files</v>
+<v>Geminus\Geminus\Header Files\basic-plus.h</v>
+<v>Geminus\Geminus\Header Files\device.h</v>
+<v>Geminus\Geminus\Header Files\iambino.h</v>
+<v>Geminus\Geminus\Header Files\iqhump.h</v>
+<v>Geminus\Geminus\Header Files\si5351.h</v>
+<v>Geminus\Geminus\Header Files\si5351a.h</v>
+<v>Geminus\Geminus\Header Files\usbvend.h</v>
+<v>Geminus\Geminus\Source Files</v>
+<v>Geminus\Geminus\Source Files\audio.c</v>
+<v>Geminus\Geminus\Source Files\band.c</v>
+<v>Geminus\Geminus\Source Files\convert.c</v>
+<v>Geminus\Geminus\Source Files\cw.c</v>
+<v>Geminus\Geminus\Source Files\main.c</v>
+<v>Geminus\Geminus\Source Files\morse.c</v>
+<v>Geminus\Geminus\Source Files\pcm3060.c</v>
+<v>Geminus\Geminus\Source Files\settings01.c</v>
+<v>Geminus\Geminus\Source Files\si5351.c</v>
+<v>Geminus\Geminus\Source Files\si5351a.c</v>
+<v>Geminus\Geminus\Source Files\sync.c</v>
+<v>Geminus\Geminus\Source Files\t1.c</v>
+<v>Geminus\Geminus\Source Files\temperature.c</v>
+<v>Geminus\Geminus\Source Files\tx.c</v>
+<v>Geminus\Geminus\Source Files\usbvend01.c</v>
+<v>Geminus\Geminus\Generated_Source</v>
+<v>Geminus\Geminus\Generated_Source\PSoC3</v>
+</ExpandedNodeIds>
+<VisibleNodeIds>
+<v>Geminus</v>
+<v>Geminus\Geminus</v>
+<v>Geminus\Geminus\TopDesign</v>
+<v>Geminus\Geminus\Geminus.cydwr</v>
+<v>Geminus\Geminus\Geminus.cydwr\Pins</v>
+<v>Geminus\Geminus\Geminus.cydwr\Analog</v>
+<v>Geminus\Geminus\Geminus.cydwr\Clocks</v>
+<v>Geminus\Geminus\Geminus.cydwr\Interrupts</v>
+<v>Geminus\Geminus\Geminus.cydwr\DMA</v>
+<v>Geminus\Geminus\Geminus.cydwr\System</v>
+<v>Geminus\Geminus\Geminus.cydwr\Directives</v>
+<v>Geminus\Geminus\Geminus.cydwr\Flash Security</v>
+<v>Geminus\Geminus\Geminus.cydwr\EEPROM</v>
+<v>Geminus\Geminus\Header Files</v>
+<v>Geminus\Geminus\Header Files\basic-plus.h</v>
+<v>Geminus\Geminus\Header Files\device.h</v>
+<v>Geminus\Geminus\Header Files\iambino.h</v>
+<v>Geminus\Geminus\Header Files\iqhump.h</v>
+<v>Geminus\Geminus\Header Files\si5351.h</v>
+<v>Geminus\Geminus\Header Files\si5351a.h</v>
+<v>Geminus\Geminus\Header Files\usbvend.h</v>
+<v>Geminus\Geminus\Source Files</v>
+<v>Geminus\Geminus\Source Files\audio.c</v>
+<v>Geminus\Geminus\Source Files\band.c</v>
+<v>Geminus\Geminus\Source Files\convert.c</v>
+<v>Geminus\Geminus\Source Files\cw.c</v>
+<v>Geminus\Geminus\Source Files\main.c</v>
+<v>Geminus\Geminus\Source Files\morse.c</v>
+<v>Geminus\Geminus\Source Files\pcm3060.c</v>
+<v>Geminus\Geminus\Source Files\settings01.c</v>
+<v>Geminus\Geminus\Source Files\si5351.c</v>
+<v>Geminus\Geminus\Source Files\si5351a.c</v>
+<v>Geminus\Geminus\Source Files\sync.c</v>
+<v>Geminus\Geminus\Source Files\t1.c</v>
+<v>Geminus\Geminus\Source Files\temperature.c</v>
+</VisibleNodeIds>
+</CyGuid_2a325b3b-c96a-4e9f-b7a0-2c44ecb5f237>
+<CyGuid_2a325b3b-c96a-4e9f-b7a0-2c44ecb5f237 type_name="CyDesigner.Common.Base.Controls.CyTreeViewState" version="1" SelectedNodeId="">
+<ExpandedNodeIds>
+<v>Geminus</v>
+<v>Geminus\Geminus</v>
+<v>Geminus\Geminus\FracN</v>
+<v>Geminus\Geminus\FracN\API</v>
+<v>Geminus\Geminus\FracN\API\api.c</v>
+<v>Geminus\Geminus\FracN\API\api.h</v>
+<v>Geminus\Geminus\FracN\FracN.cysym</v>
+<v>Geminus\Geminus\FracN\FracN.v</v>
+<v>Geminus\Geminus\SyncSOF</v>
+<v>Geminus\Geminus\SyncSOF\API</v>
+<v>Geminus\Geminus\SyncSOF\API\api.c</v>
+<v>Geminus\Geminus\SyncSOF\API\api.h</v>
+<v>Geminus\Geminus\SyncSOF\SyncSOF.cysym</v>
+<v>Geminus\Geminus\SyncSOF\SyncSOF.v</v>
+<v>Geminus\Geminus\TopDesign</v>
+<v>Geminus\Geminus\TopDesign\TopDesign.cysch</v>
+</ExpandedNodeIds>
+<VisibleNodeIds>
+<v>Geminus</v>
+<v>Geminus\Geminus</v>
+<v>Geminus\Geminus\FracN</v>
+<v>Geminus\Geminus\FracN\API</v>
+<v>Geminus\Geminus\FracN\API\api.c</v>
+<v>Geminus\Geminus\FracN\API\api.h</v>
+<v>Geminus\Geminus\FracN\FracN.cysym</v>
+<v>Geminus\Geminus\FracN\FracN.v</v>
+<v>Geminus\Geminus\SyncSOF</v>
+<v>Geminus\Geminus\SyncSOF\API</v>
+<v>Geminus\Geminus\SyncSOF\API\api.c</v>
+<v>Geminus\Geminus\SyncSOF\API\api.h</v>
+<v>Geminus\Geminus\SyncSOF\SyncSOF.cysym</v>
+<v>Geminus\Geminus\SyncSOF\SyncSOF.v</v>
+<v>Geminus\Geminus\TopDesign</v>
+<v>Geminus\Geminus\TopDesign\TopDesign.cysch</v>
+</VisibleNodeIds>
+</CyGuid_2a325b3b-c96a-4e9f-b7a0-2c44ecb5f237>
+<CyGuid_2a325b3b-c96a-4e9f-b7a0-2c44ecb5f237 type_name="CyDesigner.Common.Base.Controls.CyTreeViewState" version="1" SelectedNodeId="">
+<ExpandedNodeIds>
+<v>Geminus</v>
+<v>Geminus\Geminus</v>
+<v>Geminus\Geminus\DP8051</v>
+<v>Geminus\Geminus\DP8051\DP8051_Keil_951</v>
+<v>Geminus\Geminus\DP8051\DP8051_Keil_951\Debug</v>
+<v>Geminus\Geminus\DP8051\DP8051_Keil_951\Debug\Listing Files</v>
+<v>Geminus\Geminus\DP8051\DP8051_Keil_951\Debug\Listing Files\audio.lst</v>
+<v>Geminus\Geminus\DP8051\DP8051_Keil_951\Debug\Listing Files\band.lst</v>
+<v>Geminus\Geminus\DP8051\DP8051_Keil_951\Debug\Listing Files\Band_Control.lst</v>
+<v>Geminus\Geminus\DP8051\DP8051_Keil_951\Debug\Listing Files\Band_Control_PM.lst</v>
+<v>Geminus\Geminus\DP8051\DP8051_Keil_951\Debug\Listing Files\Bootloadable.lst</v>
+<v>Geminus\Geminus\DP8051\DP8051_Keil_951\Debug\Listing Files\BS0.lst</v>
+<v>Geminus\Geminus\DP8051\DP8051_Keil_951\Debug\Listing Files\BS1.lst</v>
+<v>Geminus\Geminus\DP8051\DP8051_Keil_951\Debug\Listing Files\BS2.lst</v>
+<v>Geminus\Geminus\DP8051\DP8051_Keil_951\Debug\Listing Files\Control.lst</v>
+<v>Geminus\Geminus\DP8051\DP8051_Keil_951\Debug\Listing Files\Control_PM.lst</v>
+<v>Geminus\Geminus\DP8051\DP8051_Keil_951\Debug\Listing Files\convert.lst</v>
+<v>Geminus\Geminus\DP8051\DP8051_Keil_951\Debug\Listing Files\cw.lst</v>
+<v>Geminus\Geminus\DP8051\DP8051_Keil_951\Debug\Listing Files\CW_Clock.lst</v>
+<v>Geminus\Geminus\DP8051\DP8051_Keil_951\Debug\Listing Files\CW_Hold_Control.lst</v>
+<v>Geminus\Geminus\DP8051\DP8051_Keil_951\Debug\Listing Files\CW_Hold_Control_PM.lst</v>
+<v>Geminus\Geminus\DP8051\DP8051_Keil_951\Debug\Listing Files\CW_Hold_Timer.lst</v>
+<v>Geminus\Geminus\DP8051\DP8051_Keil_951\Debug\Listing Files\CW_Hold_Timer_PM.lst</v>
+<v>Geminus\Geminus\DP8051\DP8051_Keil_951\Debug\Listing Files\CW_isr.lst</v>
+<v>Geminus\Geminus\DP8051\DP8051_Keil_951\Debug\Listing Files\cy_em_eeprom.lst</v>
+<v>Geminus\Geminus\DP8051\DP8051_Keil_951\Debug\Listing Files\CyBootAsmKeil.lst</v>
+<v>Geminus\Geminus\DP8051\DP8051_Keil_951\Debug\Listing Files\CyDmac.lst</v>
+<v>Geminus\Geminus\DP8051\DP8051_Keil_951\Debug\Listing Files\cyfitter_cfg.lst</v>
+<v>Geminus\Geminus\DP8051\DP8051_Keil_951\Debug\Listing Files\CyFlash.lst</v>
+<v>Geminus\Geminus\DP8051\DP8051_Keil_951\Debug\Listing Files\CyLib.lst</v>
+<v>Geminus\Geminus\DP8051\DP8051_Keil_951\Debug\Listing Files\cymem.lst</v>
+<v>Geminus\Geminus\DP8051\DP8051_Keil_951\Debug\Listing Files\cyPm.lst</v>
+<v>Geminus\Geminus\DP8051\DP8051_Keil_951\Debug\Listing Files\CySpc.lst</v>
+<v>Geminus\Geminus\DP8051\DP8051_Keil_951\Debug\Listing Files\cyutils.lst</v>
+<v>Geminus\Geminus\DP8051\DP8051_Keil_951\Debug\Listing Files\DieTemp_1.lst</v>
+<v>Geminus\Geminus\DP8051\DP8051_Keil_951\Debug\Listing Files\EEPROM.lst</v>
+<v>Geminus\Geminus\DP8051\DP8051_Keil_951\Debug\Listing Files\FRAC_CLK.lst</v>
+<v>Geminus\Geminus\DP8051\DP8051_Keil_951\Debug\Listing Files\FracN_api.lst</v>
+<v>Geminus\Geminus\DP8051\DP8051_Keil_951\Debug\Listing Files\I2C_DISPLAY.lst</v>
+<v>Geminus\Geminus\DP8051\DP8051_Keil_951\Debug\Listing Files\I2C_DISPLAY_BOOT.lst</v>
+<v>Geminus\Geminus\DP8051\DP8051_Keil_951\Debug\Listing Files\I2C_DISPLAY_INT.lst</v>
+<v>Geminus\Geminus\DP8051\DP8051_Keil_951\Debug\Listing Files\I2C_DISPLAY_MASTER.lst</v>
+<v>Geminus\Geminus\DP8051\DP8051_Keil_951\Debug\Listing Files\I2C_DISPLAY_PM.lst</v>
+<v>Geminus\Geminus\DP8051\DP8051_Keil_951\Debug\Listing Files\I2C_DISPLAY_SLAVE.lst</v>
+<v>Geminus\Geminus\DP8051\DP8051_Keil_951\Debug\Listing Files\I2S.lst</v>
+<v>Geminus\Geminus\DP8051\DP8051_Keil_951\Debug\Listing Files\I2S_PM.lst</v>
+<v>Geminus\Geminus\DP8051\DP8051_Keil_951\Debug\Listing Files\KeilStart.lst</v>
+<v>Geminus\Geminus\DP8051\DP8051_Keil_951\Debug\Listing Files\main.lst</v>
+<v>Geminus\Geminus\DP8051\DP8051_Keil_951\Debug\Listing Files\morse.lst</v>
+<v>Geminus\Geminus\DP8051\DP8051_Keil_951\Debug\Listing Files\P_DMA_dma.lst</v>
+<v>Geminus\Geminus\DP8051\DP8051_Keil_951\Debug\Listing Files\pcm3060.lst</v>
+<v>Geminus\Geminus\DP8051\DP8051_Keil_951\Debug\Listing Files\RxI2S_Buff_dma.lst</v>
+<v>Geminus\Geminus\DP8051\DP8051_Keil_951\Debug\Listing Files\RxI2S_Stage_dma.lst</v>
+<v>Geminus\Geminus\DP8051\DP8051_Keil_951\Debug\Listing Files\settings01.lst</v>
+<v>Geminus\Geminus\DP8051\DP8051_Keil_951\Debug\Listing Files\si5351.lst</v>
+<v>Geminus\Geminus\DP8051\DP8051_Keil_951\Debug\Listing Files\si5351a.lst</v>
+<v>Geminus\Geminus\DP8051\DP8051_Keil_951\Debug\Listing Files\Status.lst</v>
+<v>Geminus\Geminus\DP8051\DP8051_Keil_951\Debug\Listing Files\sync.lst</v>
+<v>Geminus\Geminus\DP8051\DP8051_Keil_951\Debug\Listing Files\SyncSOF_api.lst</v>
+<v>Geminus\Geminus\DP8051\DP8051_Keil_951\Debug\Listing Files\t1.lst</v>
+<v>Geminus\Geminus\DP8051\DP8051_Keil_951\Debug\Listing Files\temperature.lst</v>
+<v>Geminus\Geminus\DP8051\DP8051_Keil_951\Debug\Listing Files\tx.lst</v>
+<v>Geminus\Geminus\DP8051\DP8051_Keil_951\Debug\Listing Files\TxI2S_Buff_dma.lst</v>
+<v>Geminus\Geminus\DP8051\DP8051_Keil_951\Debug\Listing Files\TxI2S_Stage_dma.lst</v>
+<v>Geminus\Geminus\DP8051\DP8051_Keil_951\Debug\Listing Files\TxI2S_Zero_dma.lst</v>
+<v>Geminus\Geminus\DP8051\DP8051_Keil_951\Debug\Listing Files\USBFS.lst</v>
+<v>Geminus\Geminus\DP8051\DP8051_Keil_951\Debug\Listing Files\USBFS_audio.lst</v>
+<v>Geminus\Geminus\DP8051\DP8051_Keil_951\Debug\Listing Files\USBFS_boot.lst</v>
+<v>Geminus\Geminus\DP8051\DP8051_Keil_951\Debug\Listing Files\USBFS_cdc.lst</v>
+<v>Geminus\Geminus\DP8051\DP8051_Keil_951\Debug\Listing Files\USBFS_cls.lst</v>
+<v>Geminus\Geminus\DP8051\DP8051_Keil_951\Debug\Listing Files\USBFS_descr.lst</v>
+<v>Geminus\Geminus\DP8051\DP8051_Keil_951\Debug\Listing Files\USBFS_Dm.lst</v>
+<v>Geminus\Geminus\DP8051\DP8051_Keil_951\Debug\Listing Files\USBFS_Dp.lst</v>
+<v>Geminus\Geminus\DP8051\DP8051_Keil_951\Debug\Listing Files\USBFS_drv.lst</v>
+<v>Geminus\Geminus\DP8051\DP8051_Keil_951\Debug\Listing Files\USBFS_EP_DMA_Done_isr.lst</v>
+<v>Geminus\Geminus\DP8051\DP8051_Keil_951\Debug\Listing Files\USBFS_EP17_DMA_Done_SR.lst</v>
+<v>Geminus\Geminus\DP8051\DP8051_Keil_951\Debug\Listing Files\USBFS_ep2_dma.lst</v>
+<v>Geminus\Geminus\DP8051\DP8051_Keil_951\Debug\Listing Files\USBFS_ep3_dma.lst</v>
+<v>Geminus\Geminus\DP8051\DP8051_Keil_951\Debug\Listing Files\USBFS_EP8_DMA_Done_SR.lst</v>
+<v>Geminus\Geminus\DP8051\DP8051_Keil_951\Debug\Listing Files\USBFS_episr.lst</v>
+<v>Geminus\Geminus\DP8051\DP8051_Keil_951\Debug\Listing Files\USBFS_hid.lst</v>
+<v>Geminus\Geminus\DP8051\DP8051_Keil_951\Debug\Listing Files\USBFS_midi.lst</v>
+<v>Geminus\Geminus\DP8051\DP8051_Keil_951\Debug\Listing Files\USBFS_msc.lst</v>
+<v>Geminus\Geminus\DP8051\DP8051_Keil_951\Debug\Listing Files\USBFS_pm.lst</v>
+<v>Geminus\Geminus\DP8051\DP8051_Keil_951\Debug\Listing Files\USBFS_std.lst</v>
+<v>Geminus\Geminus\DP8051\DP8051_Keil_951\Debug\Listing Files\USBFS_VBUS.lst</v>
+<v>Geminus\Geminus\DP8051\DP8051_Keil_951\Debug\Listing Files\USBFS_vnd.lst</v>
+<v>Geminus\Geminus\DP8051\DP8051_Keil_951\Debug\Listing Files\usbvend01.lst</v>
+<v>Geminus\Geminus\DP8051\DP8051_Keil_951\Debug\Geminus.cyacd</v>
+<v>Geminus\Geminus\DP8051\DP8051_Keil_951\Debug\Geminus.elf</v>
+<v>Geminus\Geminus\DP8051\DP8051_Keil_951\Debug\Geminus.hex</v>
+<v>Geminus\Geminus\DP8051\DP8051_Keil_951\Debug\Geminus.map</v>
+<v>Geminus\Geminus\Geminus.gpdsc</v>
+<v>Geminus\Geminus\Geminus.rpt</v>
+<v>Geminus\Geminus\Geminus_timing.html</v>
+</ExpandedNodeIds>
+<VisibleNodeIds>
+<v>Geminus</v>
+<v>Geminus\Geminus</v>
+<v>Geminus\Geminus\DP8051</v>
+<v>Geminus\Geminus\DP8051\DP8051_Keil_951</v>
+<v>Geminus\Geminus\DP8051\DP8051_Keil_951\Debug</v>
+<v>Geminus\Geminus\DP8051\DP8051_Keil_951\Debug\Listing Files</v>
+<v>Geminus\Geminus\DP8051\DP8051_Keil_951\Debug\Listing Files\audio.lst</v>
+<v>Geminus\Geminus\DP8051\DP8051_Keil_951\Debug\Listing Files\band.lst</v>
+<v>Geminus\Geminus\DP8051\DP8051_Keil_951\Debug\Listing Files\Band_Control.lst</v>
+<v>Geminus\Geminus\DP8051\DP8051_Keil_951\Debug\Listing Files\Band_Control_PM.lst</v>
+<v>Geminus\Geminus\DP8051\DP8051_Keil_951\Debug\Listing Files\Bootloadable.lst</v>
+<v>Geminus\Geminus\DP8051\DP8051_Keil_951\Debug\Listing Files\BS0.lst</v>
+<v>Geminus\Geminus\DP8051\DP8051_Keil_951\Debug\Listing Files\BS1.lst</v>
+<v>Geminus\Geminus\DP8051\DP8051_Keil_951\Debug\Listing Files\BS2.lst</v>
+<v>Geminus\Geminus\DP8051\DP8051_Keil_951\Debug\Listing Files\Control.lst</v>
+<v>Geminus\Geminus\DP8051\DP8051_Keil_951\Debug\Listing Files\Control_PM.lst</v>
+<v>Geminus\Geminus\DP8051\DP8051_Keil_951\Debug\Listing Files\convert.lst</v>
+<v>Geminus\Geminus\DP8051\DP8051_Keil_951\Debug\Listing Files\cw.lst</v>
+<v>Geminus\Geminus\DP8051\DP8051_Keil_951\Debug\Listing Files\CW_Clock.lst</v>
+<v>Geminus\Geminus\DP8051\DP8051_Keil_951\Debug\Listing Files\CW_Hold_Control.lst</v>
+<v>Geminus\Geminus\DP8051\DP8051_Keil_951\Debug\Listing Files\CW_Hold_Control_PM.lst</v>
+<v>Geminus\Geminus\DP8051\DP8051_Keil_951\Debug\Listing Files\CW_Hold_Timer.lst</v>
+<v>Geminus\Geminus\DP8051\DP8051_Keil_951\Debug\Listing Files\CW_Hold_Timer_PM.lst</v>
+<v>Geminus\Geminus\DP8051\DP8051_Keil_951\Debug\Listing Files\CW_isr.lst</v>
+<v>Geminus\Geminus\DP8051\DP8051_Keil_951\Debug\Listing Files\cy_em_eeprom.lst</v>
+<v>Geminus\Geminus\DP8051\DP8051_Keil_951\Debug\Listing Files\CyBootAsmKeil.lst</v>
+<v>Geminus\Geminus\DP8051\DP8051_Keil_951\Debug\Listing Files\CyDmac.lst</v>
+<v>Geminus\Geminus\DP8051\DP8051_Keil_951\Debug\Listing Files\cyfitter_cfg.lst</v>
+<v>Geminus\Geminus\DP8051\DP8051_Keil_951\Debug\Listing Files\CyFlash.lst</v>
+<v>Geminus\Geminus\DP8051\DP8051_Keil_951\Debug\Listing Files\CyLib.lst</v>
+<v>Geminus\Geminus\DP8051\DP8051_Keil_951\Debug\Listing Files\cymem.lst</v>
+<v>Geminus\Geminus\DP8051\DP8051_Keil_951\Debug\Listing Files\cyPm.lst</v>
+<v>Geminus\Geminus\DP8051\DP8051_Keil_951\Debug\Listing Files\CySpc.lst</v>
+<v>Geminus\Geminus\DP8051\DP8051_Keil_951\Debug\Listing Files\cyutils.lst</v>
+<v>Geminus\Geminus\DP8051\DP8051_Keil_951\Debug\Listing Files\DieTemp_1.lst</v>
+</VisibleNodeIds>
+</CyGuid_2a325b3b-c96a-4e9f-b7a0-2c44ecb5f237>
+</TreeStates>
+<TreeKeysV2>
+<v>Datasheet</v>
+</TreeKeysV2>
+<TreeStatesV2>
+<CyGuid_2a325b3b-c96a-4e9f-b7a0-2c44ecb5f237 type_name="CyDesigner.Common.Base.Controls.CyTreeViewState" version="1" SelectedNodeId="">
+<ExpandedNodeIds>
+<v>Geminus</v>
+<v>Geminus\Geminus</v>
+<v>Geminus\Geminus\PSoC 3 Architecture TRM</v>
+<v>Geminus\Geminus\CY8C32 Family Datasheet</v>
+<v>Geminus\Geminus\System Reference Guides</v>
+</ExpandedNodeIds>
+<VisibleNodeIds>
+<v>Geminus</v>
+<v>Geminus\Geminus</v>
+<v>Geminus\Geminus\PSoC 3 Architecture TRM</v>
+<v>Geminus\Geminus\CY8C32 Family Datasheet</v>
+<v>Geminus\Geminus\System Reference Guides</v>
+</VisibleNodeIds>
+</CyGuid_2a325b3b-c96a-4e9f-b7a0-2c44ecb5f237>
+</TreeStatesV2>
+</CyGuid_1b906a0f-a7b6-4e4d-a428-82f98b53cb35>
+</dataGuid>
+</userData>
+</CyGuid_fdba8dfd-b15b-4469-9bbb-9e40c3e70997>
+<Unloaded />
+<OpenDocs>
+<name v=".\Geminus.cydsn\basic-plus.h" />
+</OpenDocs>
+<OpenDocsLayout><![CDATA[<?xml version="1.0"?><!--
+
+  Actipro Docking/MDI for WinForms
+  Copyright (c) 2001-2016 Actipro Software LLC.  All rights reserved.
+  http://www.actiprosoftware.com
+
+--><DocumentLayout Version="1.0"><LayoutData><TabbedMdiRootContainer Orientation="Horizontal"><TabbedMdiContainer Size="1030, 487" SelectedTabbedMdiWindow="299ce7c8-62e6-416d-9e5f-14466718bc8c"><DocumentWindow Key="C:\Users\n8vet\OneDrive\Documents\MSCC-Grok-Build\Backup-Refs\References\Release-Geminus-MKII\Geminus.cydsn\basic-plus.h" Guid="299ce7c8-62e6-416d-9e5f-14466718bc8c" /></TabbedMdiContainer></TabbedMdiRootContainer><FloatingContainers /></LayoutData></DocumentLayout>]]></OpenDocsLayout>
+<config v="" />
+<AutoUpdate v="true" />
+</CyGuid_843a90a4-0c4b-4e44-991d-05e7fb117a21>
+</CyXmlSerializer>

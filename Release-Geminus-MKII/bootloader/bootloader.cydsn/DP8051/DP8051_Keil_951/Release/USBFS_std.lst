@@ -1,0 +1,4052 @@
+C51 COMPILER V9.51   USBFS_STD                                                             03/06/2019 16:03:59 PAGE 1   
+
+
+C51 COMPILER V9.51, COMPILATION OF MODULE USBFS_STD
+OBJECT MODULE PLACED IN .\DP8051\DP8051_Keil_951\Release\USBFS_std.obj
+COMPILER INVOKED BY: C:\Program Files (x86)\Cypress\PSoC Creator\4.2\PSoC Creator\import\keil\pk51\9.51\C51\BIN\c51.exe 
+                    -Generated_Source\PSoC3\USBFS_std.c NOIV LARGE MODDP2 OMF2 VB(1) NOIP INCDIR(.,Generated_Source\PSoC3) FF(3) DB DF(NDEBUG
+                    -) WL(2) PR(.\DP8051\DP8051_Keil_951\Release/USBFS_std.lst) CD OT(5,SIZE) OA OJ(.\DP8051\DP8051_Keil_951\Release\USBFS_st
+                    -d.obj)
+
+line level    source
+
+   1          /***************************************************************************//**
+   2          * \file USBFS_std.c
+   3          * \version 3.20
+   4          *
+   5          * \brief
+   6          *  This file contains the USB Standard request handler.
+   7          *
+   8          ********************************************************************************
+   9          * \copyright
+  10          * Copyright 2008-2016, Cypress Semiconductor Corporation.  All rights reserved.
+  11          * You may use this file only in accordance with the license, terms, conditions,
+  12          * disclaimers, and limitations in the end user license agreement accompanying
+  13          * the software package with which this file was provided.
+  14          *******************************************************************************/
+  15          
+  16          #include "USBFS_pvt.h"
+  17          
+  18          /***************************************
+  19          *   Static data allocation
+  20          ***************************************/
+  21          
+  22          #if defined(USBFS_ENABLE_FWSN_STRING)
+                  static volatile uint8* USBFS_fwSerialNumberStringDescriptor;
+                  static volatile uint8  USBFS_snStringConfirm = USBFS_FALSE;
+              #endif  /* (USBFS_ENABLE_FWSN_STRING) */
+  26          
+  27          #if defined(USBFS_ENABLE_FWSN_STRING)
+                  /***************************************************************************
+                  * Function Name: USBFS_SerialNumString
+                  ************************************************************************//**
+                  *
+                  *  This function is available only when the User Call Back option in the 
+                  *  Serial Number String descriptor properties is selected. Application 
+                  *  firmware can provide the source of the USB device serial number string 
+                  *  descriptor during run time. The default string is used if the application 
+                  *  firmware does not use this function or sets the wrong string descriptor.
+                  *
+                  *  \param snString:  Pointer to the user-defined string descriptor. The 
+                  *  string descriptor should meet the Universal Serial Bus Specification 
+                  *  revision 2.0 chapter 9.6.7
+                  *  Offset|Size|Value|Description
+                  *  ------|----|------|---------------------------------
+                  *  0     |1   |N     |Size of this descriptor in bytes
+                  *  1     |1   |0x03  |STRING Descriptor Type
+                  *  2     |N-2 |Number|UNICODE encoded string
+                  *  
+                  * *For example:* uint8 snString[16]={0x0E,0x03,'F',0,'W',0,'S',0,'N',0,'0',0,'1',0};
+                  *
+                  * \reentrant
+                  *  No.
+                  *
+                  ***************************************************************************/
+C51 COMPILER V9.51   USBFS_STD                                                             03/06/2019 16:03:59 PAGE 2   
+
+                  void  USBFS_SerialNumString(uint8 snString[]) 
+                  {
+                      USBFS_snStringConfirm = USBFS_FALSE;
+                      
+                      if (snString != NULL)
+                      {
+                          /* Check descriptor validation */
+                          if ((snString[0u] > 1u) && (snString[1u] == USBFS_DESCR_STRING))
+                          {
+                              USBFS_fwSerialNumberStringDescriptor = snString;
+                              USBFS_snStringConfirm = USBFS_TRUE;
+                          }
+                      }
+                  }
+              #endif  /* USBFS_ENABLE_FWSN_STRING */
+  68          
+  69          
+  70          /*******************************************************************************
+  71          * Function Name: USBFS_HandleStandardRqst
+  72          ****************************************************************************//**
+  73          *
+  74          *  This Routine dispatches standard requests
+  75          *
+  76          *
+  77          * \return
+  78          *  TRUE if request handled.
+  79          *
+  80          * \reentrant
+  81          *  No.
+  82          *
+  83          *******************************************************************************/
+  84          uint8 USBFS_HandleStandardRqst(void) 
+  85          {
+  86   1          uint8 requestHandled = USBFS_FALSE;
+  87   1          uint8 interfaceNumber;
+  88   1          uint8 configurationN;
+  89   1          uint8 bmRequestType = USBFS_bmRequestTypeReg;
+  90   1      
+  91   1      #if defined(USBFS_ENABLE_STRINGS)
+  92   1          volatile uint8 *pStr = 0u;
+  93   1          #if defined(USBFS_ENABLE_DESCRIPTOR_STRINGS)
+  94   1              uint8 nStr;
+  95   1              uint8 descrLength;
+  96   1          #endif /* (USBFS_ENABLE_DESCRIPTOR_STRINGS) */
+  97   1      #endif /* (USBFS_ENABLE_STRINGS) */
+  98   1          
+  99   1          static volatile uint8 USBFS_tBuffer[USBFS_STATUS_LENGTH_MAX];
+ 100   1          const T_USBFS_LUT CYCODE *pTmp;
+ 101   1      
+ 102   1          USBFS_currentTD.count = 0u;
+ 103   1      
+ 104   1          if (USBFS_RQST_DIR_D2H == (bmRequestType & USBFS_RQST_DIR_MASK))
+ 105   1          {
+ 106   2              /* Control Read */
+ 107   2              switch (USBFS_bRequestReg)
+ 108   2              {
+ 109   3                  case USBFS_GET_DESCRIPTOR:
+ 110   3                      if (USBFS_DESCR_DEVICE ==USBFS_wValueHiReg)
+ 111   3                      {
+ 112   4                          pTmp = USBFS_GetDeviceTablePtr();
+ 113   4                          USBFS_currentTD.pData = (volatile uint8 *)pTmp->p_list;
+ 114   4                          USBFS_currentTD.count = USBFS_DEVICE_DESCR_LENGTH;
+C51 COMPILER V9.51   USBFS_STD                                                             03/06/2019 16:03:59 PAGE 3   
+
+ 115   4                          
+ 116   4                          requestHandled  = USBFS_InitControlRead();
+ 117   4                      }
+ 118   3                      else if (USBFS_DESCR_CONFIG == USBFS_wValueHiReg)
+ 119   3                      {
+ 120   4                          pTmp = USBFS_GetConfigTablePtr((uint8) USBFS_wValueLoReg);
+ 121   4                          
+ 122   4                          /* Verify that requested descriptor exists */
+ 123   4                          if (pTmp != NULL)
+ 124   4                          {
+ 125   5                              USBFS_currentTD.pData = (volatile uint8 *)pTmp->p_list;
+ 126   5                              USBFS_currentTD.count = (uint16)((uint16)(USBFS_currentTD.pData)[USBFS_CONFIG_DESC
+             -R_TOTAL_LENGTH_HI] << 8u) | \
+ 127   5                                                                                  (USBFS_currentTD.pData)[USBFS_
+             -CONFIG_DESCR_TOTAL_LENGTH_LOW];
+ 128   5                              requestHandled  = USBFS_InitControlRead();
+ 129   5                          }
+ 130   4                      }
+ 131   3                      
+ 132   3                  #if(USBFS_BOS_ENABLE)
+                              else if (USBFS_DESCR_BOS == USBFS_wValueHiReg)
+                              {
+                                  pTmp = USBFS_GetBOSPtr();
+                                  
+                                  /* Verify that requested descriptor exists */
+                                  if (pTmp != NULL)
+                                  {
+                                      USBFS_currentTD.pData = (volatile uint8 *)pTmp;
+                                      USBFS_currentTD.count = ((uint16)((uint16)(USBFS_currentTD.pData)[USBFS_BOS_DESCR_
+             -TOTAL_LENGTH_HI] << 8u)) | \
+                                                                                           (USBFS_currentTD.pData)[USBFS
+             -_BOS_DESCR_TOTAL_LENGTH_LOW];
+                                      requestHandled  = USBFS_InitControlRead();
+                                  }
+                              }
+                          #endif /*(USBFS_BOS_ENABLE)*/
+ 147   3                  
+ 148   3                  #if defined(USBFS_ENABLE_STRINGS)
+ 149   3                      else if (USBFS_DESCR_STRING == USBFS_wValueHiReg)
+ 150   3                      {
+ 151   4                      /* Descriptor Strings */
+ 152   4                      #if defined(USBFS_ENABLE_DESCRIPTOR_STRINGS)
+ 153   4                          nStr = 0u;
+ 154   4                          pStr = (volatile uint8 *) &USBFS_STRING_DESCRIPTORS[0u];
+ 155   4                          
+ 156   4                          while ((USBFS_wValueLoReg > nStr) && (*pStr != 0u))
+ 157   4                          {
+ 158   5                              /* Read descriptor length from 1st byte */
+ 159   5                              descrLength = *pStr;
+ 160   5                              /* Move to next string descriptor */
+ 161   5                              pStr = &pStr[descrLength];
+ 162   5                              nStr++;
+ 163   5                          }
+ 164   4                      #endif /* (USBFS_ENABLE_DESCRIPTOR_STRINGS) */
+ 165   4                      
+ 166   4                      /* Microsoft OS String */
+ 167   4                      #if defined(USBFS_ENABLE_MSOS_STRING)
+                                  if (USBFS_STRING_MSOS == USBFS_wValueLoReg)
+                                  {
+                                      pStr = (volatile uint8 *)& USBFS_MSOS_DESCRIPTOR[0u];
+                                  }
+                              #endif /* (USBFS_ENABLE_MSOS_STRING) */
+C51 COMPILER V9.51   USBFS_STD                                                             03/06/2019 16:03:59 PAGE 4   
+
+ 173   4                      
+ 174   4                      /* SN string */
+ 175   4                      #if defined(USBFS_ENABLE_SN_STRING)
+ 176   4                          if ((USBFS_wValueLoReg != 0u) && 
+ 177   4                              (USBFS_wValueLoReg == USBFS_DEVICE0_DESCR[USBFS_DEVICE_DESCR_SN_SHIFT]))
+ 178   4                          {
+ 179   5                          #if defined(USBFS_ENABLE_IDSN_STRING)
+                                      /* Read DIE ID and generate string descriptor in RAM */
+                                      USBFS_ReadDieID(USBFS_idSerialNumberStringDescriptor);
+                                      pStr = USBFS_idSerialNumberStringDescriptor;
+                                  #elif defined(USBFS_ENABLE_FWSN_STRING)
+                                      
+                                      if(USBFS_snStringConfirm != USBFS_FALSE)
+                                      {
+                                          pStr = USBFS_fwSerialNumberStringDescriptor;
+                                      }
+                                      else
+                                      {
+                                          pStr = (volatile uint8 *)&USBFS_SN_STRING_DESCRIPTOR[0u];
+                                      }
+                                  #else
+ 194   5                              pStr = (volatile uint8 *)&USBFS_SN_STRING_DESCRIPTOR[0u];
+ 195   5                          #endif  /* (USBFS_ENABLE_IDSN_STRING) */
+ 196   5                          }
+ 197   4                      #endif /* (USBFS_ENABLE_SN_STRING) */
+ 198   4                      
+ 199   4                          if (*pStr != 0u)
+ 200   4                          {
+ 201   5                              USBFS_currentTD.count = *pStr;
+ 202   5                              USBFS_currentTD.pData = pStr;
+ 203   5                              requestHandled  = USBFS_InitControlRead();
+ 204   5                          }
+ 205   4                      }
+ 206   3                  #endif /*  USBFS_ENABLE_STRINGS */
+ 207   3                      else
+ 208   3                      {
+ 209   4                          requestHandled = USBFS_DispatchClassRqst();
+ 210   4                      }
+ 211   3                      break;
+ 212   3                      
+ 213   3                  case USBFS_GET_STATUS:
+ 214   3                      switch (bmRequestType & USBFS_RQST_RCPT_MASK)
+ 215   3                      {
+ 216   4                          case USBFS_RQST_RCPT_EP:
+ 217   4                              USBFS_currentTD.count = USBFS_EP_STATUS_LENGTH;
+ 218   4                              USBFS_tBuffer[0u]     = USBFS_EP[USBFS_wIndexLoReg & USBFS_DIR_UNUSED].hwEpState;
+ 219   4                              USBFS_tBuffer[1u]     = 0u;
+ 220   4                              USBFS_currentTD.pData = &USBFS_tBuffer[0u];
+ 221   4                              
+ 222   4                              requestHandled  = USBFS_InitControlRead();
+ 223   4                              break;
+ 224   4                          case USBFS_RQST_RCPT_DEV:
+ 225   4                              USBFS_currentTD.count = USBFS_DEVICE_STATUS_LENGTH;
+ 226   4                              USBFS_tBuffer[0u]     = USBFS_deviceStatus;
+ 227   4                              USBFS_tBuffer[1u]     = 0u;
+ 228   4                              USBFS_currentTD.pData = &USBFS_tBuffer[0u];
+ 229   4                              
+ 230   4                              requestHandled  = USBFS_InitControlRead();
+ 231   4                              break;
+ 232   4                          default:    /* requestHandled is initialized as FALSE by default */
+ 233   4                              break;
+ 234   4                      }
+C51 COMPILER V9.51   USBFS_STD                                                             03/06/2019 16:03:59 PAGE 5   
+
+ 235   3                      break;
+ 236   3                      
+ 237   3                  case USBFS_GET_CONFIGURATION:
+ 238   3                      USBFS_currentTD.count = 1u;
+ 239   3                      USBFS_currentTD.pData = (volatile uint8 *) &USBFS_configuration;
+ 240   3                      requestHandled  = USBFS_InitControlRead();
+ 241   3                      break;
+ 242   3                      
+ 243   3                  case USBFS_GET_INTERFACE:
+ 244   3                      USBFS_currentTD.count = 1u;
+ 245   3                      USBFS_currentTD.pData = (volatile uint8 *) &USBFS_interfaceSetting[USBFS_wIndexLoReg];
+ 246   3                      requestHandled  = USBFS_InitControlRead();
+ 247   3                      break;
+ 248   3                      
+ 249   3                  default: /* requestHandled is initialized as FALSE by default */
+ 250   3                      break;
+ 251   3              }
+ 252   2          }
+ 253   1          else
+ 254   1          {
+ 255   2              /* Control Write */
+ 256   2              switch (USBFS_bRequestReg)
+ 257   2              {
+ 258   3                  case USBFS_SET_ADDRESS:
+ 259   3                      /* Store address to be set in USBFS_NoDataControlStatusStage(). */
+ 260   3                      USBFS_deviceAddress = (uint8) USBFS_wValueLoReg;
+ 261   3                      requestHandled = USBFS_InitNoDataControlTransfer();
+ 262   3                      break;
+ 263   3                      
+ 264   3                  case USBFS_SET_CONFIGURATION:
+ 265   3                      configurationN = USBFS_wValueLoReg;
+ 266   3                      
+ 267   3                      /* Verify that configuration descriptor exists */
+ 268   3                      if(configurationN > 0u)
+ 269   3                      {
+ 270   4                          pTmp = USBFS_GetConfigTablePtr((uint8) configurationN - 1u);
+ 271   4                      }
+ 272   3                      
+ 273   3                      /* Responds with a Request Error when configuration number is invalid */
+ 274   3                      if (((configurationN > 0u) && (pTmp != NULL)) || (configurationN == 0u))
+ 275   3                      {
+ 276   4                          /* Set new configuration if it has been changed */
+ 277   4                          if(configurationN != USBFS_configuration)
+ 278   4                          {
+ 279   5                              USBFS_configuration = (uint8) configurationN;
+ 280   5                              USBFS_configurationChanged = USBFS_TRUE;
+ 281   5                              USBFS_Config(USBFS_TRUE);
+ 282   5                          }
+ 283   4                          requestHandled = USBFS_InitNoDataControlTransfer();
+ 284   4                      }
+ 285   3                      break;
+ 286   3                      
+ 287   3                  case USBFS_SET_INTERFACE:
+ 288   3                      if (0u != USBFS_ValidateAlternateSetting())
+ 289   3                      {
+ 290   4                          /* Get interface number from the request. */
+ 291   4                          interfaceNumber = USBFS_wIndexLoReg;
+ 292   4                          USBFS_interfaceNumber = (uint8) USBFS_wIndexLoReg;
+ 293   4                           
+ 294   4                          /* Check if alternate settings is changed for interface. */
+ 295   4                          if (USBFS_interfaceSettingLast[interfaceNumber] != USBFS_interfaceSetting[interfaceNum
+             -ber])
+C51 COMPILER V9.51   USBFS_STD                                                             03/06/2019 16:03:59 PAGE 6   
+
+ 296   4                          {
+ 297   5                              USBFS_configurationChanged = USBFS_TRUE;
+ 298   5                          
+ 299   5                              /* Change alternate setting for the endpoints. */
+ 300   5                          #if (USBFS_EP_MANAGEMENT_MANUAL && USBFS_EP_ALLOC_DYNAMIC)
+                                      USBFS_Config(USBFS_FALSE);
+                                  #else
+ 303   5                              USBFS_ConfigAltChanged();
+ 304   5                          #endif /* (USBFS_EP_MANAGEMENT_MANUAL && USBFS_EP_ALLOC_DYNAMIC) */
+ 305   5                          }
+ 306   4                          
+ 307   4                          requestHandled = USBFS_InitNoDataControlTransfer();
+ 308   4                      }
+ 309   3                      break;
+ 310   3                      
+ 311   3                  case USBFS_CLEAR_FEATURE:
+ 312   3                      switch (bmRequestType & USBFS_RQST_RCPT_MASK)
+ 313   3                      {
+ 314   4                          case USBFS_RQST_RCPT_EP:
+ 315   4                              if (USBFS_wValueLoReg == USBFS_ENDPOINT_HALT)
+ 316   4                              {
+ 317   5                                  requestHandled = USBFS_ClearEndpointHalt();
+ 318   5                              }
+ 319   4                              break;
+ 320   4                          case USBFS_RQST_RCPT_DEV:
+ 321   4                              /* Clear device REMOTE_WAKEUP */
+ 322   4                              if (USBFS_wValueLoReg == USBFS_DEVICE_REMOTE_WAKEUP)
+ 323   4                              {
+ 324   5                                  USBFS_deviceStatus &= (uint8)~USBFS_DEVICE_STATUS_REMOTE_WAKEUP;
+ 325   5                                  requestHandled = USBFS_InitNoDataControlTransfer();
+ 326   5                              }
+ 327   4                              break;
+ 328   4                          case USBFS_RQST_RCPT_IFC:
+ 329   4                              /* Validate interfaceNumber */
+ 330   4                              if (USBFS_wIndexLoReg < USBFS_MAX_INTERFACES_NUMBER)
+ 331   4                              {
+ 332   5                                  USBFS_interfaceStatus[USBFS_wIndexLoReg] &= (uint8) ~USBFS_wValueLoReg;
+ 333   5                                  requestHandled = USBFS_InitNoDataControlTransfer();
+ 334   5                              }
+ 335   4                              break;
+ 336   4                          default:    /* requestHandled is initialized as FALSE by default */
+ 337   4                              break;
+ 338   4                      }
+ 339   3                      break;
+ 340   3                      
+ 341   3                  case USBFS_SET_FEATURE:
+ 342   3                      switch (bmRequestType & USBFS_RQST_RCPT_MASK)
+ 343   3                      {
+ 344   4                          case USBFS_RQST_RCPT_EP:
+ 345   4                              if (USBFS_wValueLoReg == USBFS_ENDPOINT_HALT)
+ 346   4                              {
+ 347   5                                  requestHandled = USBFS_SetEndpointHalt();
+ 348   5                              }
+ 349   4                              break;
+ 350   4                              
+ 351   4                          case USBFS_RQST_RCPT_DEV:
+ 352   4                              /* Set device REMOTE_WAKEUP */
+ 353   4                              if (USBFS_wValueLoReg == USBFS_DEVICE_REMOTE_WAKEUP)
+ 354   4                              {
+ 355   5                                  USBFS_deviceStatus |= USBFS_DEVICE_STATUS_REMOTE_WAKEUP;
+ 356   5                                  requestHandled = USBFS_InitNoDataControlTransfer();
+ 357   5                              }
+C51 COMPILER V9.51   USBFS_STD                                                             03/06/2019 16:03:59 PAGE 7   
+
+ 358   4                              break;
+ 359   4                              
+ 360   4                          case USBFS_RQST_RCPT_IFC:
+ 361   4                              /* Validate interfaceNumber */
+ 362   4                              if (USBFS_wIndexLoReg < USBFS_MAX_INTERFACES_NUMBER)
+ 363   4                              {
+ 364   5                                  USBFS_interfaceStatus[USBFS_wIndexLoReg] &= (uint8) ~USBFS_wValueLoReg;
+ 365   5                                  requestHandled = USBFS_InitNoDataControlTransfer();
+ 366   5                              }
+ 367   4                              break;
+ 368   4                          
+ 369   4                          default:    /* requestHandled is initialized as FALSE by default */
+ 370   4                              break;
+ 371   4                      }
+ 372   3                      break;
+ 373   3                      
+ 374   3                  default:    /* requestHandled is initialized as FALSE by default */
+ 375   3                      break;
+ 376   3              }
+ 377   2          }
+ 378   1          
+ 379   1          return (requestHandled);
+ 380   1      }
+ 381          
+ 382          
+ 383          #if defined(USBFS_ENABLE_IDSN_STRING)
+                  /***************************************************************************
+                  * Function Name: USBFS_ReadDieID
+                  ************************************************************************//**
+                  *
+                  *  This routine read Die ID and generate Serial Number string descriptor.
+                  *
+                  *  \param descr:  pointer on string descriptor. This string size has to be equal or
+                  *          greater than USBFS_IDSN_DESCR_LENGTH.
+                  *
+                  *
+                  * \reentrant
+                  *  No.
+                  *
+                  ***************************************************************************/
+                  void USBFS_ReadDieID(uint8 descr[]) 
+                  {
+                      const char8 CYCODE hex[] = "0123456789ABCDEF";
+                      uint8 i;
+                      uint8 j = 0u;
+                      uint8 uniqueId[8u];
+              
+                      if (NULL != descr)
+                      {
+                          /* Initialize descriptor header. */
+                          descr[0u] = USBFS_IDSN_DESCR_LENGTH;
+                          descr[1u] = USBFS_DESCR_STRING;
+                          
+                          /* Unique ID size is 8 bytes. */
+                          CyGetUniqueId((uint32 *) uniqueId);
+              
+                          /* Fill descriptor with unique device ID. */
+                          for (i = 2u; i < USBFS_IDSN_DESCR_LENGTH; i += 4u)
+                          {
+                              descr[i]      = (uint8) hex[(uniqueId[j] >> 4u)];
+                              descr[i + 1u] = 0u;
+                              descr[i + 2u] = (uint8) hex[(uniqueId[j] & 0x0Fu)];
+C51 COMPILER V9.51   USBFS_STD                                                             03/06/2019 16:03:59 PAGE 8   
+
+                              descr[i + 3u] = 0u;
+                              ++j;
+                          }
+                      }
+                  }
+              #endif /* (USBFS_ENABLE_IDSN_STRING) */
+ 426          
+ 427          
+ 428          /*******************************************************************************
+ 429          * Function Name: USBFS_ConfigReg
+ 430          ****************************************************************************//**
+ 431          *
+ 432          *  This routine configures hardware registers from the variables.
+ 433          *  It is called from USBFS_Config() function and from RestoreConfig
+ 434          *  after Wakeup.
+ 435          *
+ 436          *******************************************************************************/
+ 437          void USBFS_ConfigReg(void) 
+ 438          {
+ 439   1          uint8 ep;
+ 440   1      
+ 441   1      #if (USBFS_EP_MANAGEMENT_DMA_AUTO)
+                  uint8 epType = 0u;
+              #endif /* (USBFS_EP_MANAGEMENT_DMA_AUTO) */
+ 444   1      
+ 445   1          /* Go thought all endpoints and set hardware configuration */
+ 446   1          for (ep = USBFS_EP1; ep < USBFS_MAX_EP; ++ep)
+ 447   1          {
+ 448   2              USBFS_ARB_EP_BASE.arbEp[ep].epCfg = USBFS_ARB_EPX_CFG_DEFAULT;
+ 449   2              
+ 450   2          #if (USBFS_EP_MANAGEMENT_DMA)
+                      /* Enable arbiter endpoint interrupt sources */
+                      USBFS_ARB_EP_BASE.arbEp[ep].epIntEn = USBFS_ARB_EPX_INT_MASK;
+                  #endif /* (USBFS_EP_MANAGEMENT_DMA) */
+ 454   2          
+ 455   2              if (USBFS_EP[ep].epMode != USBFS_MODE_DISABLE)
+ 456   2              {
+ 457   3                  if (0u != (USBFS_EP[ep].addr & USBFS_DIR_IN))
+ 458   3                  {
+ 459   4                      USBFS_SIE_EP_BASE.sieEp[ep].epCr0 = USBFS_MODE_NAK_IN;
+ 460   4                      
+ 461   4                  #if (USBFS_EP_MANAGEMENT_DMA_AUTO && CY_PSOC4)
+                              /* Clear DMA_TERMIN for IN endpoint. */
+                              USBFS_ARB_EP_BASE.arbEp[ep].epIntEn &= (uint32) ~USBFS_ARB_EPX_INT_DMA_TERMIN;
+                          #endif /* (USBFS_EP_MANAGEMENT_DMA_AUTO && CY_PSOC4) */
+ 465   4                  }
+ 466   3                  else
+ 467   3                  {
+ 468   4                      USBFS_SIE_EP_BASE.sieEp[ep].epCr0 = USBFS_MODE_NAK_OUT;
+ 469   4      
+ 470   4                  #if (USBFS_EP_MANAGEMENT_DMA_AUTO)
+                              /* (CY_PSOC4): DMA_TERMIN for OUT endpoint is set above. */
+                              
+                              /* Prepare endpoint type mask. */
+                              epType |= (uint8) (0x01u << (ep - USBFS_EP1));
+                          #endif /* (USBFS_EP_MANAGEMENT_DMA_AUTO) */
+ 476   4                  }
+ 477   3              }
+ 478   2              else
+ 479   2              {
+ 480   3                  USBFS_SIE_EP_BASE.sieEp[ep].epCr0 = USBFS_MODE_STALL_DATA_EP;
+ 481   3              }
+C51 COMPILER V9.51   USBFS_STD                                                             03/06/2019 16:03:59 PAGE 9   
+
+ 482   2              
+ 483   2          #if (!USBFS_EP_MANAGEMENT_DMA_AUTO)
+ 484   2              #if (CY_PSOC4)
+                          USBFS_ARB_EP16_BASE.arbEp[ep].rwRa16  = (uint32) USBFS_EP[ep].buffOffset;
+                          USBFS_ARB_EP16_BASE.arbEp[ep].rwWa16  = (uint32) USBFS_EP[ep].buffOffset;
+                      #else
+ 488   2                  USBFS_ARB_EP_BASE.arbEp[ep].rwRa    = LO8(USBFS_EP[ep].buffOffset);
+ 489   2                  USBFS_ARB_EP_BASE.arbEp[ep].rwRaMsb = HI8(USBFS_EP[ep].buffOffset);
+ 490   2                  USBFS_ARB_EP_BASE.arbEp[ep].rwWa    = LO8(USBFS_EP[ep].buffOffset);
+ 491   2                  USBFS_ARB_EP_BASE.arbEp[ep].rwWaMsb = HI8(USBFS_EP[ep].buffOffset);
+ 492   2              #endif /* (CY_PSOC4) */
+ 493   2          #endif /* (!USBFS_EP_MANAGEMENT_DMA_AUTO) */
+ 494   2          }
+ 495   1      
+ 496   1      #if (USBFS_EP_MANAGEMENT_DMA_AUTO)
+                   /* BUF_SIZE depend on DMA_THRESS value:0x55-32 bytes  0x44-16 bytes 0x33-8 bytes 0x22-4 bytes 0x11-2 
+             -bytes */
+                  USBFS_BUF_SIZE_REG = USBFS_DMA_BUF_SIZE;
+              
+                  /* Configure DMA burst threshold */
+              #if (CY_PSOC4)
+                  USBFS_DMA_THRES16_REG   = USBFS_DMA_BYTES_PER_BURST;
+              #else
+                  USBFS_DMA_THRES_REG     = USBFS_DMA_BYTES_PER_BURST;
+                  USBFS_DMA_THRES_MSB_REG = 0u;
+              #endif /* (CY_PSOC4) */
+                  USBFS_EP_ACTIVE_REG = USBFS_DEFAULT_ARB_INT_EN;
+                  USBFS_EP_TYPE_REG   = epType;
+                  
+                  /* Cfg_cmp bit set to 1 once configuration is complete. */
+                  /* Lock arbiter configtuation */
+                  USBFS_ARB_CFG_REG |= (uint8)  USBFS_ARB_CFG_CFG_CMP;
+                  /* Cfg_cmp bit set to 0 during configuration of PFSUSB Registers. */
+                  USBFS_ARB_CFG_REG &= (uint8) ~USBFS_ARB_CFG_CFG_CMP;
+              
+              #endif /* (USBFS_EP_MANAGEMENT_DMA_AUTO) */
+ 517   1      
+ 518   1          /* Enable interrupt SIE interurpt source from EP0-EP1 */
+ 519   1          USBFS_SIE_EP_INT_EN_REG = (uint8) USBFS_DEFAULT_SIE_EP_INT_EN;
+ 520   1      }
+ 521          
+ 522          
+ 523          /*******************************************************************************
+ 524          * Function Name: USBFS_EpStateInit
+ 525          ****************************************************************************//**
+ 526          *
+ 527          *  This routine initialize state of Data end points based of its type: 
+ 528          *   IN  - USBFS_IN_BUFFER_EMPTY (USBFS_EVENT_PENDING)
+ 529          *   OUT - USBFS_OUT_BUFFER_EMPTY (USBFS_NO_EVENT_PENDING)
+ 530          *
+ 531          *******************************************************************************/
+ 532          void USBFS_EpStateInit(void) 
+ 533          {
+ 534   1          uint8 i;
+ 535   1      
+ 536   1          for (i = USBFS_EP1; i < USBFS_MAX_EP; i++)
+ 537   1          { 
+ 538   2              if (0u != (USBFS_EP[i].addr & USBFS_DIR_IN))
+ 539   2              {
+ 540   3                  /* IN Endpoint */
+ 541   3                  USBFS_EP[i].apiEpState = USBFS_EVENT_PENDING;
+ 542   3              }
+C51 COMPILER V9.51   USBFS_STD                                                             03/06/2019 16:03:59 PAGE 10  
+
+ 543   2              else
+ 544   2              {
+ 545   3                  /* OUT Endpoint */
+ 546   3                  USBFS_EP[i].apiEpState = USBFS_NO_EVENT_PENDING;
+ 547   3              }
+ 548   2          }
+ 549   1                          
+ 550   1      }
+ 551          
+ 552          
+ 553          /*******************************************************************************
+ 554          * Function Name: USBFS_Config
+ 555          ****************************************************************************//**
+ 556          *
+ 557          *  This routine configures endpoints for the entire configuration by scanning
+ 558          *  the configuration descriptor.
+ 559          *
+ 560          *  \param clearAltSetting: It configures the bAlternateSetting 0 for each interface.
+ 561          *
+ 562          * USBFS_interfaceClass - Initialized class array for each interface.
+ 563          *   It is used for handling Class specific requests depend on interface class.
+ 564          *   Different classes in multiple Alternate settings does not supported.
+ 565          *
+ 566          * \reentrant
+ 567          *  No.
+ 568          *
+ 569          *******************************************************************************/
+ 570          void USBFS_Config(uint8 clearAltSetting) 
+ 571          {
+ 572   1          uint8 ep;
+ 573   1          uint8 curEp;
+ 574   1          uint8 i;
+ 575   1          uint8 epType;
+ 576   1          const uint8 *pDescr;
+ 577   1          
+ 578   1          #if (!USBFS_EP_MANAGEMENT_DMA_AUTO)
+ 579   1              uint16 buffCount = 0u;
+ 580   1          #endif /* (!USBFS_EP_MANAGEMENT_DMA_AUTO) */
+ 581   1      
+ 582   1          const T_USBFS_LUT CYCODE *pTmp;
+ 583   1          const T_USBFS_EP_SETTINGS_BLOCK CYCODE *pEP;
+ 584   1      
+ 585   1          /* Clear endpoints settings */
+ 586   1          for (ep = 0u; ep < USBFS_MAX_EP; ++ep)
+ 587   1          {
+ 588   2              USBFS_EP[ep].attrib     = 0u;
+ 589   2              USBFS_EP[ep].hwEpState  = 0u;
+ 590   2              USBFS_EP[ep].epToggle   = 0u;
+ 591   2              USBFS_EP[ep].bufferSize = 0u;
+ 592   2              USBFS_EP[ep].interface  = 0u;
+ 593   2              USBFS_EP[ep].apiEpState = USBFS_NO_EVENT_PENDING;
+ 594   2              USBFS_EP[ep].epMode     = USBFS_MODE_DISABLE;   
+ 595   2          }
+ 596   1      
+ 597   1          /* Clear Alternate settings for all interfaces. */
+ 598   1          if (0u != clearAltSetting)
+ 599   1          {
+ 600   2              for (i = 0u; i < USBFS_MAX_INTERFACES_NUMBER; ++i)
+ 601   2              {
+ 602   3                  USBFS_interfaceSetting[i]     = 0u;
+ 603   3                  USBFS_interfaceSettingLast[i] = 0u;
+ 604   3              }
+C51 COMPILER V9.51   USBFS_STD                                                             03/06/2019 16:03:59 PAGE 11  
+
+ 605   2          }
+ 606   1      
+ 607   1          /* Init Endpoints and Device Status if configured */
+ 608   1          if (USBFS_configuration > 0u)
+ 609   1          {
+ 610   2              #if defined(USBFS_ENABLE_CDC_CLASS)
+                          uint8 cdcComNums = 0u;
+                      #endif  /* (USBFS_ENABLE_CDC_CLASS) */  
+ 613   2      
+ 614   2              pTmp = USBFS_GetConfigTablePtr(USBFS_configuration - 1u);
+ 615   2              
+ 616   2              /* Set Power status for current configuration */
+ 617   2              pDescr = (const uint8 *)pTmp->p_list;
+ 618   2              if ((pDescr[USBFS_CONFIG_DESCR_ATTRIB] & USBFS_CONFIG_DESCR_ATTRIB_SELF_POWERED) != 0u)
+ 619   2              {
+ 620   3                  USBFS_deviceStatus |= (uint8)  USBFS_DEVICE_STATUS_SELF_POWERED;
+ 621   3              }
+ 622   2              else
+ 623   2              {
+ 624   3                  USBFS_deviceStatus &= (uint8) ~USBFS_DEVICE_STATUS_SELF_POWERED;
+ 625   3              }
+ 626   2              
+ 627   2              /* Move to next element */
+ 628   2              pTmp = &pTmp[1u];
+ 629   2              ep = pTmp->c;  /* For this table, c is the number of endpoints configurations  */
+ 630   2      
+ 631   2              #if (USBFS_EP_MANAGEMENT_MANUAL && USBFS_EP_ALLOC_DYNAMIC)
+                          /* Configure for dynamic EP memory allocation */
+                          /* p_list points the endpoint setting table. */
+                          pEP = (T_USBFS_EP_SETTINGS_BLOCK *) pTmp->p_list;
+                          
+                          for (i = 0u; i < ep; i++)
+                          {     
+                              /* Compare current Alternate setting with EP Alt */
+                              if (USBFS_interfaceSetting[pEP->interface] == pEP->altSetting)
+                              {                                                          
+                                  curEp  = pEP->addr & USBFS_DIR_UNUSED;
+                                  epType = pEP->attributes & USBFS_EP_TYPE_MASK;
+                                  
+                                  USBFS_EP[curEp].addr       = pEP->addr;
+                                  USBFS_EP[curEp].attrib     = pEP->attributes;
+                                  USBFS_EP[curEp].bufferSize = pEP->bufferSize;
+              
+                                  if (0u != (pEP->addr & USBFS_DIR_IN))
+                                  {
+                                      /* IN Endpoint */
+                                      USBFS_EP[curEp].epMode     = USBFS_GET_ACTIVE_IN_EP_CR0_MODE(epType);
+                                      USBFS_EP[curEp].apiEpState = USBFS_EVENT_PENDING;
+                                  
+                                  #if (defined(USBFS_ENABLE_MIDI_STREAMING) && (USBFS_MIDI_IN_BUFF_SIZE > 0))
+                                      if ((pEP->bMisc == USBFS_CLASS_AUDIO) && (epType == USBFS_EP_TYPE_BULK))
+                                      {
+                                          USBFS_midi_in_ep = curEp;
+                                      }
+                                  #endif  /* (USBFS_ENABLE_MIDI_STREAMING) */
+                                  }
+                                  else
+                                  {
+                                      /* OUT Endpoint */
+                                      USBFS_EP[curEp].epMode     = USBFS_GET_ACTIVE_OUT_EP_CR0_MODE(epType);
+                                      USBFS_EP[curEp].apiEpState = USBFS_NO_EVENT_PENDING;
+                                      
+C51 COMPILER V9.51   USBFS_STD                                                             03/06/2019 16:03:59 PAGE 12  
+
+                                  #if (defined(USBFS_ENABLE_MIDI_STREAMING) && (USBFS_MIDI_OUT_BUFF_SIZE > 0))
+                                      if ((pEP->bMisc == USBFS_CLASS_AUDIO) && (epType == USBFS_EP_TYPE_BULK))
+                                      {
+                                          USBFS_midi_out_ep = curEp;
+                                      }
+                                  #endif  /* (USBFS_ENABLE_MIDI_STREAMING) */
+                                  }
+              
+                              #if(defined (USBFS_ENABLE_CDC_CLASS))
+                                  if((pEP->bMisc == USBFS_CLASS_CDC_DATA) ||(pEP->bMisc == USBFS_CLASS_CDC))
+                                  {
+                                      cdcComNums = USBFS_Cdc_EpInit(pEP, curEp, cdcComNums);
+                                  }
+                              #endif  /* (USBFS_ENABLE_CDC_CLASS) */
+                              }
+                              
+                              pEP = &pEP[1u];
+                          }
+                          
+                      #else
+ 687   2                  for (i = USBFS_EP1; i < USBFS_MAX_EP; ++i)
+ 688   2                  {
+ 689   3                      /* p_list points the endpoint setting table. */
+ 690   3                      pEP = (const T_USBFS_EP_SETTINGS_BLOCK CYCODE *) pTmp->p_list;
+ 691   3                      /* Find max length for each EP and select it (length could be different in different Alt s
+             -ettings) */
+ 692   3                      /* but other settings should be correct with regards to Interface alt Setting */
+ 693   3                      
+ 694   3                      for (curEp = 0u; curEp < ep; ++curEp)
+ 695   3                      {
+ 696   4                          if (i == (pEP->addr & USBFS_DIR_UNUSED))
+ 697   4                          {
+ 698   5                              /* Compare endpoint buffers size with current size to find greater. */
+ 699   5                              if (USBFS_EP[i].bufferSize < pEP->bufferSize)
+ 700   5                              {
+ 701   6                                  USBFS_EP[i].bufferSize = pEP->bufferSize;
+ 702   6                              }
+ 703   5                              
+ 704   5                              /* Compare current Alternate setting with EP Alt */
+ 705   5                              if (USBFS_interfaceSetting[pEP->interface] == pEP->altSetting)
+ 706   5                              {                            
+ 707   6                                  USBFS_EP[i].addr = pEP->addr;
+ 708   6                                  USBFS_EP[i].attrib = pEP->attributes;
+ 709   6                                  
+ 710   6                                  epType = pEP->attributes & USBFS_EP_TYPE_MASK;
+ 711   6                                  
+ 712   6                                  if (0u != (pEP->addr & USBFS_DIR_IN))
+ 713   6                                  {
+ 714   7                                      /* IN Endpoint */
+ 715   7                                      USBFS_EP[i].epMode     = USBFS_GET_ACTIVE_IN_EP_CR0_MODE(epType);
+ 716   7                                      USBFS_EP[i].apiEpState = USBFS_EVENT_PENDING;
+ 717   7                                      
+ 718   7                                  #if (defined(USBFS_ENABLE_MIDI_STREAMING) && (USBFS_MIDI_IN_BUFF_SIZE > 0))
+                                              if ((pEP->bMisc == USBFS_CLASS_AUDIO) && (epType == USBFS_EP_TYPE_BULK))
+                                              {
+                                                  USBFS_midi_in_ep = i;
+                                              }
+                                          #endif  /* (USBFS_ENABLE_MIDI_STREAMING) */
+ 724   7                                  }
+ 725   6                                  else
+ 726   6                                  {
+ 727   7                                      /* OUT Endpoint */
+C51 COMPILER V9.51   USBFS_STD                                                             03/06/2019 16:03:59 PAGE 13  
+
+ 728   7                                      USBFS_EP[i].epMode     = USBFS_GET_ACTIVE_OUT_EP_CR0_MODE(epType);
+ 729   7                                      USBFS_EP[i].apiEpState = USBFS_NO_EVENT_PENDING;
+ 730   7                                      
+ 731   7                                  #if (defined(USBFS_ENABLE_MIDI_STREAMING) && (USBFS_MIDI_OUT_BUFF_SIZE > 0))
+                                              if ((pEP->bMisc == USBFS_CLASS_AUDIO) && (epType == USBFS_EP_TYPE_BULK))
+                                              {
+                                                  USBFS_midi_out_ep = i;
+                                              }
+                                          #endif  /* (USBFS_ENABLE_MIDI_STREAMING) */
+ 737   7                                  }
+ 738   6      
+ 739   6                              #if (defined(USBFS_ENABLE_CDC_CLASS))
+                                          if((pEP->bMisc == USBFS_CLASS_CDC_DATA) ||(pEP->bMisc == USBFS_CLASS_CDC))
+                                          {
+                                              cdcComNums = USBFS_Cdc_EpInit(pEP, i, cdcComNums);
+                                          }
+                                      #endif  /* (USBFS_ENABLE_CDC_CLASS) */
+ 745   6      
+ 746   6                                  #if (USBFS_EP_MANAGEMENT_DMA_AUTO)
+                                              break;  /* Use first EP setting in Auto memory management */
+                                          #endif /* (USBFS_EP_MANAGEMENT_DMA_AUTO) */
+ 749   6                              }
+ 750   5                          }
+ 751   4                          
+ 752   4                          pEP = &pEP[1u];
+ 753   4                      }
+ 754   3                  }
+ 755   2              #endif /*  (USBFS_EP_MANAGEMENT_MANUAL && USBFS_EP_ALLOC_DYNAMIC) */
+ 756   2      
+ 757   2              /* Init class array for each interface and interface number for each EP.
+ 758   2              *  It is used for handling Class specific requests directed to either an
+ 759   2              *  interface or the endpoint.
+ 760   2              */
+ 761   2              /* p_list points the endpoint setting table. */
+ 762   2              pEP = (const T_USBFS_EP_SETTINGS_BLOCK CYCODE *) pTmp->p_list;
+ 763   2              for (i = 0u; i < ep; i++)
+ 764   2              {
+ 765   3                  /* Configure interface number for each EP */
+ 766   3                  USBFS_EP[pEP->addr & USBFS_DIR_UNUSED].interface = pEP->interface;
+ 767   3                  pEP = &pEP[1u];
+ 768   3              }
+ 769   2              
+ 770   2              /* Init pointer on interface class table */
+ 771   2              USBFS_interfaceClass = USBFS_GetInterfaceClassTablePtr();
+ 772   2              
+ 773   2          /* Set the endpoint buffer addresses */
+ 774   2          #if (!USBFS_EP_MANAGEMENT_DMA_AUTO)
+ 775   2              buffCount = 0u;
+ 776   2              for (ep = USBFS_EP1; ep < USBFS_MAX_EP; ++ep)
+ 777   2              {
+ 778   3                  USBFS_EP[ep].buffOffset = buffCount;        
+ 779   3                  buffCount += USBFS_EP[ep].bufferSize;
+ 780   3                  
+ 781   3              #if (USBFS_GEN_16BITS_EP_ACCESS)
+                          /* Align EP buffers to be event size to access 16-bits DR register. */
+                          buffCount += (0u != (buffCount & 0x01u)) ? 1u : 0u;
+                      #endif /* (USBFS_GEN_16BITS_EP_ACCESS) */            
+ 785   3              }
+ 786   2          #endif /* (!USBFS_EP_MANAGEMENT_DMA_AUTO) */
+ 787   2      
+ 788   2              /* Configure hardware registers */
+ 789   2              USBFS_ConfigReg();
+C51 COMPILER V9.51   USBFS_STD                                                             03/06/2019 16:03:59 PAGE 14  
+
+ 790   2          }
+ 791   1      }
+ 792          
+ 793          
+ 794          /*******************************************************************************
+ 795          * Function Name: USBFS_ConfigAltChanged
+ 796          ****************************************************************************//**
+ 797          *
+ 798          *  This routine update configuration for the required endpoints only.
+ 799          *  It is called after SET_INTERFACE request when Static memory allocation used.
+ 800          *
+ 801          * \reentrant
+ 802          *  No.
+ 803          *
+ 804          *******************************************************************************/
+ 805          void USBFS_ConfigAltChanged(void) 
+ 806          {
+ 807   1          uint8 ep;
+ 808   1          uint8 curEp;
+ 809   1          uint8 epType;
+ 810   1          uint8 i;
+ 811   1          uint8 interfaceNum;
+ 812   1      
+ 813   1          const T_USBFS_LUT CYCODE *pTmp;
+ 814   1          const T_USBFS_EP_SETTINGS_BLOCK CYCODE *pEP;
+ 815   1      
+ 816   1          /* Init Endpoints and Device Status if configured */
+ 817   1          if (USBFS_configuration > 0u)
+ 818   1          {
+ 819   2              /* Get number of endpoints configurations (ep). */
+ 820   2              pTmp = USBFS_GetConfigTablePtr(USBFS_configuration - 1u);
+ 821   2              pTmp = &pTmp[1u];
+ 822   2              ep = pTmp->c;
+ 823   2      
+ 824   2              /* Get pointer to endpoints setting table (pEP). */
+ 825   2              pEP = (const T_USBFS_EP_SETTINGS_BLOCK CYCODE *) pTmp->p_list;
+ 826   2              
+ 827   2              /* Look through all possible endpoint configurations. Find endpoints 
+ 828   2              * which belong to current interface and alternate settings for 
+ 829   2              * re-configuration.
+ 830   2              */
+ 831   2              interfaceNum = USBFS_interfaceNumber;
+ 832   2              for (i = 0u; i < ep; i++)
+ 833   2              {
+ 834   3                  /* Find endpoints which belong to current interface and alternate settings. */
+ 835   3                  if ((interfaceNum == pEP->interface) && 
+ 836   3                      (USBFS_interfaceSetting[interfaceNum] == pEP->altSetting))
+ 837   3                  {
+ 838   4                      curEp  = ((uint8) pEP->addr & USBFS_DIR_UNUSED);
+ 839   4                      epType = ((uint8) pEP->attributes & USBFS_EP_TYPE_MASK);
+ 840   4                      
+ 841   4                      /* Change the SIE mode for the selected EP to NAK ALL */
+ 842   4                      USBFS_EP[curEp].epToggle   = 0u;
+ 843   4                      USBFS_EP[curEp].addr       = pEP->addr;
+ 844   4                      USBFS_EP[curEp].attrib     = pEP->attributes;
+ 845   4                      USBFS_EP[curEp].bufferSize = pEP->bufferSize;
+ 846   4      
+ 847   4                      if (0u != (pEP->addr & USBFS_DIR_IN))
+ 848   4                      {
+ 849   5                          /* IN Endpoint */
+ 850   5                          USBFS_EP[curEp].epMode     = USBFS_GET_ACTIVE_IN_EP_CR0_MODE(epType);
+ 851   5                          USBFS_EP[curEp].apiEpState = USBFS_EVENT_PENDING;
+C51 COMPILER V9.51   USBFS_STD                                                             03/06/2019 16:03:59 PAGE 15  
+
+ 852   5                      }
+ 853   4                      else
+ 854   4                      {
+ 855   5                          /* OUT Endpoint */
+ 856   5                          USBFS_EP[curEp].epMode     = USBFS_GET_ACTIVE_OUT_EP_CR0_MODE(epType);
+ 857   5                          USBFS_EP[curEp].apiEpState = USBFS_NO_EVENT_PENDING;
+ 858   5                      }
+ 859   4                      
+ 860   4                      /* Make SIE to NAK any endpoint requests */
+ 861   4                      USBFS_SIE_EP_BASE.sieEp[curEp].epCr0 = USBFS_MODE_NAK_IN_OUT;
+ 862   4      
+ 863   4                  #if (USBFS_EP_MANAGEMENT_DMA_AUTO)
+                              /* Clear IN data ready. */
+                              USBFS_ARB_EP_BASE.arbEp[curEp].epCfg &= (uint8) ~USBFS_ARB_EPX_CFG_IN_DATA_RDY;
+              
+                              /* Select endpoint number of reconfiguration */
+                              USBFS_DYN_RECONFIG_REG = (uint8) ((curEp - 1u) << USBFS_DYN_RECONFIG_EP_SHIFT);
+                              
+                              /* Request for dynamic re-configuration of endpoint. */
+                              USBFS_DYN_RECONFIG_REG |= USBFS_DYN_RECONFIG_ENABLE;
+                              
+                              /* Wait until block is ready for re-configuration */
+                              while (0u == (USBFS_DYN_RECONFIG_REG & USBFS_DYN_RECONFIG_RDY_STS))
+                              {
+                              }
+                              
+                              /* Once DYN_RECONFIG_RDY_STS bit is set, FW can change the EP configuration. */
+                              /* Change EP Type with new direction */
+                              if (0u != (pEP->addr & USBFS_DIR_IN))
+                              {
+                                  /* Set endpoint type: 0 - IN and 1 - OUT. */
+                                  USBFS_EP_TYPE_REG &= (uint8) ~(uint8)((uint8) 0x01u << (curEp - 1u));
+                                  
+                              #if (CY_PSOC4)
+                                  /* Clear DMA_TERMIN for IN endpoint */
+                                  USBFS_ARB_EP_BASE.arbEp[curEp].epIntEn &= (uint32) ~USBFS_ARB_EPX_INT_DMA_TERMIN;
+                              #endif /* (CY_PSOC4) */
+                              }
+                              else
+                              {
+                                  /* Set endpoint type: 0 - IN and 1- OUT. */
+                                  USBFS_EP_TYPE_REG |= (uint8) ((uint8) 0x01u << (curEp - 1u));
+                                  
+                              #if (CY_PSOC4)
+                                  /* Set DMA_TERMIN for OUT endpoint */
+                                  USBFS_ARB_EP_BASE.arbEp[curEp].epIntEn |= (uint32) USBFS_ARB_EPX_INT_DMA_TERMIN;
+                              #endif /* (CY_PSOC4) */
+                              }
+                              
+                              /* Complete dynamic re-configuration: all endpoint related status and signals 
+                              * are set into the default state.
+                              */
+                              USBFS_DYN_RECONFIG_REG &= (uint8) ~USBFS_DYN_RECONFIG_ENABLE;
+              
+                          #else
+ 907   4                      USBFS_SIE_EP_BASE.sieEp[curEp].epCnt0 = HI8(USBFS_EP[curEp].bufferSize);
+ 908   4                      USBFS_SIE_EP_BASE.sieEp[curEp].epCnt1 = LO8(USBFS_EP[curEp].bufferSize);
+ 909   4                      
+ 910   4                      #if (CY_PSOC4)
+                                  USBFS_ARB_EP16_BASE.arbEp[curEp].rwRa16  = (uint32) USBFS_EP[curEp].buffOffset;
+                                  USBFS_ARB_EP16_BASE.arbEp[curEp].rwWa16  = (uint32) USBFS_EP[curEp].buffOffset;
+                              #else
+C51 COMPILER V9.51   USBFS_STD                                                             03/06/2019 16:03:59 PAGE 16  
+
+ 914   4                          USBFS_ARB_EP_BASE.arbEp[curEp].rwRa    = LO8(USBFS_EP[curEp].buffOffset);
+ 915   4                          USBFS_ARB_EP_BASE.arbEp[curEp].rwRaMsb = HI8(USBFS_EP[curEp].buffOffset);
+ 916   4                          USBFS_ARB_EP_BASE.arbEp[curEp].rwWa    = LO8(USBFS_EP[curEp].buffOffset);
+ 917   4                          USBFS_ARB_EP_BASE.arbEp[curEp].rwWaMsb = HI8(USBFS_EP[curEp].buffOffset);
+ 918   4                      #endif /* (CY_PSOC4) */                
+ 919   4                  #endif /* (USBFS_EP_MANAGEMENT_DMA_AUTO) */
+ 920   4                  }
+ 921   3                  
+ 922   3                  pEP = &pEP[1u]; /* Get next EP element */
+ 923   3              }
+ 924   2              
+ 925   2              /* The main loop has to re-enable DMA and OUT endpoint */
+ 926   2          }
+ 927   1      }
+ 928          
+ 929          
+ 930          /*******************************************************************************
+ 931          * Function Name: USBFS_GetConfigTablePtr
+ 932          ****************************************************************************//**
+ 933          *
+ 934          *  This routine returns a pointer a configuration table entry
+ 935          *
+ 936          *  \param confIndex:  Configuration Index
+ 937          *
+ 938          * \return
+ 939          *  Device Descriptor pointer or NULL when descriptor does not exist.
+ 940          *
+ 941          *******************************************************************************/
+ 942          const T_USBFS_LUT CYCODE *USBFS_GetConfigTablePtr(uint8 confIndex)
+ 943                                                                  
+ 944          {
+ 945   1          /* Device Table */
+ 946   1          const T_USBFS_LUT CYCODE *pTmp;
+ 947   1      
+ 948   1          pTmp = (const T_USBFS_LUT CYCODE *) USBFS_TABLE[USBFS_device].p_list;
+ 949   1      
+ 950   1          /* The first entry points to the Device Descriptor,
+ 951   1          *  the second entry point to the BOS Descriptor
+ 952   1          *  the rest configuration entries.
+ 953   1          *  Set pointer to the first Configuration Descriptor
+ 954   1          */
+ 955   1          pTmp = &pTmp[2u];
+ 956   1          /* For this table, c is the number of configuration descriptors  */
+ 957   1          if(confIndex >= pTmp->c)   /* Verify that required configuration descriptor exists */
+ 958   1          {
+ 959   2              pTmp = (const T_USBFS_LUT CYCODE *) NULL;
+ 960   2          }
+ 961   1          else
+ 962   1          {
+ 963   2              pTmp = (const T_USBFS_LUT CYCODE *) pTmp[confIndex].p_list;
+ 964   2          }
+ 965   1      
+ 966   1          return (pTmp);
+ 967   1      }
+ 968          
+ 969          
+ 970          #if (USBFS_BOS_ENABLE)
+                  /*******************************************************************************
+                  * Function Name: USBFS_GetBOSPtr
+                  ****************************************************************************//**
+                  *
+                  *  This routine returns a pointer a BOS table entry
+C51 COMPILER V9.51   USBFS_STD                                                             03/06/2019 16:03:59 PAGE 17  
+
+                  *
+                  *  
+                  *
+                  * \return
+                  *  BOS Descriptor pointer or NULL when descriptor does not exist.
+                  *
+                  *******************************************************************************/
+                  const T_USBFS_LUT CYCODE *USBFS_GetBOSPtr(void)
+                                                                          
+                  {
+                      /* Device Table */
+                      const T_USBFS_LUT CYCODE *pTmp;
+              
+                      pTmp = (const T_USBFS_LUT CYCODE *) USBFS_TABLE[USBFS_device].p_list;
+              
+                      /* The first entry points to the Device Descriptor,
+                      *  the second entry points to the BOS Descriptor
+                      */
+                      pTmp = &pTmp[1u];
+                      pTmp = (const T_USBFS_LUT CYCODE *) pTmp->p_list;
+                      return (pTmp);
+                  }
+              #endif /* (USBFS_BOS_ENABLE) */
+ 999          
+1000          
+1001          /*******************************************************************************
+1002          * Function Name: USBFS_GetDeviceTablePtr
+1003          ****************************************************************************//**
+1004          *
+1005          *  This routine returns a pointer to the Device table
+1006          *
+1007          * \return
+1008          *  Device Table pointer
+1009          *
+1010          *******************************************************************************/
+1011          const T_USBFS_LUT CYCODE *USBFS_GetDeviceTablePtr(void)
+1012                                                                      
+1013          {
+1014   1          /* Device Table */
+1015   1          return( (const T_USBFS_LUT CYCODE *) USBFS_TABLE[USBFS_device].p_list );
+1016   1      }
+1017          
+1018          
+1019          /*******************************************************************************
+1020          * Function Name: USB_GetInterfaceClassTablePtr
+1021          ****************************************************************************//**
+1022          *
+1023          *  This routine returns Interface Class table pointer, which contains
+1024          *  the relation between interface number and interface class.
+1025          *
+1026          * \return
+1027          *  Interface Class table pointer.
+1028          *
+1029          *******************************************************************************/
+1030          const uint8 CYCODE *USBFS_GetInterfaceClassTablePtr(void)
+1031                                                                  
+1032          {
+1033   1          const T_USBFS_LUT CYCODE *pTmp;
+1034   1          const uint8 CYCODE *pInterfaceClass;
+1035   1          uint8 currentInterfacesNum;
+1036   1      
+1037   1          pTmp = USBFS_GetConfigTablePtr(USBFS_configuration - 1u);
+C51 COMPILER V9.51   USBFS_STD                                                             03/06/2019 16:03:59 PAGE 18  
+
+1038   1          if (pTmp != NULL)
+1039   1          {
+1040   2              currentInterfacesNum  = ((const uint8 *) pTmp->p_list)[USBFS_CONFIG_DESCR_NUM_INTERFACES];
+1041   2              /* Third entry in the LUT starts the Interface Table pointers */
+1042   2              /* The INTERFACE_CLASS table is located after all interfaces */
+1043   2              pTmp = &pTmp[currentInterfacesNum + 2u];
+1044   2              pInterfaceClass = (const uint8 CYCODE *) pTmp->p_list;
+1045   2          }
+1046   1          else
+1047   1          {
+1048   2              pInterfaceClass = (const uint8 CYCODE *) NULL;
+1049   2          }
+1050   1      
+1051   1          return (pInterfaceClass);
+1052   1      }
+1053          
+1054          
+1055          /*******************************************************************************
+1056          * Function Name: USBFS_TerminateEP
+1057          ****************************************************************************//**
+1058          *
+1059          *  This function terminates the specified USBFS endpoint.
+1060          *  This function should be used before endpoint reconfiguration.
+1061          *
+1062          *  \param ep Contains the data endpoint number.
+1063          *
+1064          *  \reentrant
+1065          *  No.
+1066          *
+1067          * \sideeffect
+1068          * 
+1069          * The device responds with a NAK for any transactions on the selected endpoint.
+1070          *   
+1071          *******************************************************************************/
+1072          void USBFS_TerminateEP(uint8 epNumber) 
+1073          {
+1074   1          /* Get endpoint number */
+1075   1          epNumber &= USBFS_DIR_UNUSED;
+1076   1      
+1077   1          if ((epNumber > USBFS_EP0) && (epNumber < USBFS_MAX_EP))
+1078   1          {
+1079   2              /* Set the endpoint Halt */
+1080   2              USBFS_EP[epNumber].hwEpState |= USBFS_ENDPOINT_STATUS_HALT;
+1081   2      
+1082   2              /* Clear the data toggle */
+1083   2              USBFS_EP[epNumber].epToggle = 0u;
+1084   2              USBFS_EP[epNumber].apiEpState = USBFS_NO_EVENT_ALLOWED;
+1085   2      
+1086   2              if ((USBFS_EP[epNumber].addr & USBFS_DIR_IN) != 0u)
+1087   2              {   
+1088   3                  /* IN Endpoint */
+1089   3                  USBFS_SIE_EP_BASE.sieEp[epNumber].epCr0 = USBFS_MODE_NAK_IN;
+1090   3              }
+1091   2              else
+1092   2              {
+1093   3                  /* OUT Endpoint */
+1094   3                  USBFS_SIE_EP_BASE.sieEp[epNumber].epCr0 = USBFS_MODE_NAK_OUT;
+1095   3              }
+1096   2          }
+1097   1      }
+1098          
+1099          
+C51 COMPILER V9.51   USBFS_STD                                                             03/06/2019 16:03:59 PAGE 19  
+
+1100          /*******************************************************************************
+1101          * Function Name: USBFS_SetEndpointHalt
+1102          ****************************************************************************//**
+1103          *
+1104          *  This routine handles set endpoint halt.
+1105          *
+1106          * \return
+1107          *  requestHandled.
+1108          *
+1109          * \reentrant
+1110          *  No.
+1111          *
+1112          *******************************************************************************/
+1113          uint8 USBFS_SetEndpointHalt(void) 
+1114          {
+1115   1          uint8 requestHandled = USBFS_FALSE;
+1116   1          uint8 ep;
+1117   1          
+1118   1          /* Set endpoint halt */
+1119   1          ep = USBFS_wIndexLoReg & USBFS_DIR_UNUSED;
+1120   1      
+1121   1          if ((ep > USBFS_EP0) && (ep < USBFS_MAX_EP))
+1122   1          {
+1123   2              /* Set the endpoint Halt */
+1124   2              USBFS_EP[ep].hwEpState |= (USBFS_ENDPOINT_STATUS_HALT);
+1125   2      
+1126   2              /* Clear the data toggle */
+1127   2              USBFS_EP[ep].epToggle = 0u;
+1128   2              USBFS_EP[ep].apiEpState |= USBFS_NO_EVENT_ALLOWED;
+1129   2      
+1130   2              if ((USBFS_EP[ep].addr & USBFS_DIR_IN) != 0u)
+1131   2              {
+1132   3                  /* IN Endpoint */
+1133   3                  USBFS_SIE_EP_BASE.sieEp[ep].epCr0 = (USBFS_MODE_STALL_DATA_EP | 
+1134   3                                                                  USBFS_MODE_ACK_IN);
+1135   3              }
+1136   2              else
+1137   2              {
+1138   3                  /* OUT Endpoint */
+1139   3                  USBFS_SIE_EP_BASE.sieEp[ep].epCr0 = (USBFS_MODE_STALL_DATA_EP | 
+1140   3                                                                  USBFS_MODE_ACK_OUT);
+1141   3              }
+1142   2              requestHandled = USBFS_InitNoDataControlTransfer();
+1143   2          }
+1144   1      
+1145   1          return (requestHandled);
+1146   1      }
+1147          
+1148          
+1149          /*******************************************************************************
+1150          * Function Name: USBFS_ClearEndpointHalt
+1151          ****************************************************************************//**
+1152          *
+1153          *  This routine handles clear endpoint halt.
+1154          *
+1155          * \return
+1156          *  requestHandled.
+1157          *
+1158          * \reentrant
+1159          *  No.
+1160          *
+1161          *******************************************************************************/
+C51 COMPILER V9.51   USBFS_STD                                                             03/06/2019 16:03:59 PAGE 20  
+
+1162          uint8 USBFS_ClearEndpointHalt(void) 
+1163          {
+1164   1          uint8 requestHandled = USBFS_FALSE;
+1165   1          uint8 ep;
+1166   1      
+1167   1          /* Clear endpoint halt */
+1168   1          ep = USBFS_wIndexLoReg & USBFS_DIR_UNUSED;
+1169   1      
+1170   1          if ((ep > USBFS_EP0) && (ep < USBFS_MAX_EP))
+1171   1          {
+1172   2              /* Clear the endpoint Halt */
+1173   2              USBFS_EP[ep].hwEpState &= (uint8) ~USBFS_ENDPOINT_STATUS_HALT;
+1174   2      
+1175   2              /* Clear the data toggle */
+1176   2              USBFS_EP[ep].epToggle = 0u;
+1177   2              
+1178   2              /* Clear toggle bit for already armed packet */
+1179   2              USBFS_SIE_EP_BASE.sieEp[ep].epCnt0 &= (uint8) ~(uint8)USBFS_EPX_CNT_DATA_TOGGLE;
+1180   2              
+1181   2              /* Return API State as it was defined before */
+1182   2              USBFS_EP[ep].apiEpState &= (uint8) ~USBFS_NO_EVENT_ALLOWED;
+1183   2      
+1184   2              if ((USBFS_EP[ep].addr & USBFS_DIR_IN) != 0u)
+1185   2              {
+1186   3                  /* IN Endpoint */
+1187   3                  if(USBFS_EP[ep].apiEpState == USBFS_IN_BUFFER_EMPTY)
+1188   3                  {       
+1189   4                      /* Wait for next packet from application */
+1190   4                      USBFS_SIE_EP_BASE.sieEp[ep].epCr0 = USBFS_MODE_NAK_IN;
+1191   4                  }
+1192   3                  else    /* Continue armed transfer */
+1193   3                  {
+1194   4                      USBFS_SIE_EP_BASE.sieEp[ep].epCr0 = USBFS_MODE_ACK_IN;
+1195   4                  }
+1196   3              }
+1197   2              else
+1198   2              {
+1199   3                  /* OUT Endpoint */
+1200   3                  if (USBFS_EP[ep].apiEpState == USBFS_OUT_BUFFER_FULL)
+1201   3                  {       
+1202   4                      /* Allow application to read full buffer */
+1203   4                      USBFS_SIE_EP_BASE.sieEp[ep].epCr0 = USBFS_MODE_NAK_OUT;
+1204   4                  }
+1205   3                  else    /* Mark endpoint as empty, so it will be reloaded */
+1206   3                  {
+1207   4                      USBFS_SIE_EP_BASE.sieEp[ep].epCr0 = USBFS_MODE_ACK_OUT;
+1208   4                  }
+1209   3              }
+1210   2              
+1211   2              requestHandled = USBFS_InitNoDataControlTransfer();
+1212   2          }
+1213   1      
+1214   1          return(requestHandled);
+1215   1      }
+1216          
+1217          
+1218          /*******************************************************************************
+1219          * Function Name: USBFS_ValidateAlternateSetting
+1220          ****************************************************************************//**
+1221          *
+1222          *  Validates (and records) a SET INTERFACE request.
+1223          *
+C51 COMPILER V9.51   USBFS_STD                                                             03/06/2019 16:03:59 PAGE 21  
+
+1224          * \return
+1225          *  requestHandled.
+1226          *
+1227          * \reentrant
+1228          *  No.
+1229          *
+1230          *******************************************************************************/
+1231          uint8 USBFS_ValidateAlternateSetting(void) 
+1232          {
+1233   1          uint8 requestHandled = USBFS_FALSE;
+1234   1          
+1235   1          uint8 interfaceNum;
+1236   1          uint8 curInterfacesNum;
+1237   1          const T_USBFS_LUT CYCODE *pTmp;
+1238   1          
+1239   1          /* Get interface number from the request. */
+1240   1          interfaceNum = (uint8) USBFS_wIndexLoReg;
+1241   1          
+1242   1          /* Get number of interfaces for current configuration. */
+1243   1          pTmp = USBFS_GetConfigTablePtr(USBFS_configuration - 1u);
+1244   1          curInterfacesNum  = ((const uint8 *) pTmp->p_list)[USBFS_CONFIG_DESCR_NUM_INTERFACES];
+1245   1      
+1246   1          /* Validate that interface number is within range. */
+1247   1          if ((interfaceNum <= curInterfacesNum) || (interfaceNum <= USBFS_MAX_INTERFACES_NUMBER))
+1248   1          {
+1249   2              /* Save current and new alternate settings (come with request) to make 
+1250   2              * desicion about following endpoint re-configuration.
+1251   2              */
+1252   2              USBFS_interfaceSettingLast[interfaceNum] = USBFS_interfaceSetting[interfaceNum];
+1253   2              USBFS_interfaceSetting[interfaceNum]     = (uint8) USBFS_wValueLoReg;
+1254   2              
+1255   2              requestHandled = USBFS_TRUE;
+1256   2          }
+1257   1      
+1258   1          return (requestHandled);
+1259   1      }
+1260          
+1261          
+1262          /* [] END OF FILE */
+C51 COMPILER V9.51   USBFS_STD                                                             03/06/2019 16:03:59 PAGE 22  
+
+ASSEMBLY LISTING OF GENERATED OBJECT CODE
+
+
+             ; FUNCTION USBFS_HandleStandardRqst (BEGIN)
+                                           ; SOURCE LINE # 84
+                                           ; SOURCE LINE # 85
+                                           ; SOURCE LINE # 86
+                       CLR     A
+                 R     MOV     DPTR,#requestHandled
+                       MOVX    @DPTR,A
+                                           ; SOURCE LINE # 89
+                       MOV     DPTR,#06000H
+                       MOVX    A,@DPTR
+                 R     MOV     DPTR,#bmRequestType
+                       MOVX    @DPTR,A
+                                           ; SOURCE LINE # 92
+                       MOV     R3,#00H
+                       MOV     R2,#00H
+                       MOV     R1,#00H
+                       INC     DPTR
+                 E     CALL    ?C?PSTXDATA
+                                           ; SOURCE LINE # 102
+                       CLR     A
+                 E     MOV     DPTR,#USBFS_currentTD
+                       MOVX    @DPTR,A
+                       INC     DPTR
+                       MOVX    @DPTR,A
+                                           ; SOURCE LINE # 104
+                 R     MOV     DPTR,#bmRequestType
+                       MOVX    A,@DPTR
+                       ANL     A,#080H
+                       XRL     A,#080H
+                 R     xJNZ    ?C0001
+                                           ; SOURCE LINE # 105
+                                           ; SOURCE LINE # 107
+                       MOV     DPTR,#06001H
+                       MOVX    A,@DPTR
+                 R     xJZ     ?C0015
+                       ADD     A,#0F8H
+                 R     xJZ     ?C0020
+                       ADD     A,#0FEH
+                 R     xJZ     ?C0021
+                       ADD     A,#04H
+                 R     xJNZ    ?C0023
+                                           ; SOURCE LINE # 108
+                                           ; SOURCE LINE # 109
+             ?C0003:
+                                           ; SOURCE LINE # 110
+                       MOV     DPTR,#06003H
+                       MOVX    A,@DPTR
+                 R     xJNE    A,#01H,?C0004
+                                           ; SOURCE LINE # 111
+                                           ; SOURCE LINE # 112
+                 R     CALL    USBFS_GetDeviceTablePtr
+                 R     MOV     DPTR,#pTmp
+                       MOV     A,R6
+                       MOVX    @DPTR,A
+                       INC     DPTR
+                       MOV     A,R7
+                       MOVX    @DPTR,A
+                                           ; SOURCE LINE # 113
+                       MOV     DPL,A
+C51 COMPILER V9.51   USBFS_STD                                                             03/06/2019 16:03:59 PAGE 23  
+
+                       MOV     DPH,R6
+                       INC     DPTR
+                 E     CALL    ?C?PLDCODE
+                 E     MOV     DPTR,#USBFS_currentTD+02H
+                 E     CALL    ?C?PSTXDATA
+                                           ; SOURCE LINE # 114
+                 E     MOV     DPTR,#USBFS_currentTD
+                       CLR     A
+                       MOVX    @DPTR,A
+                       INC     DPTR
+                       MOV     A,#012H
+                       MOVX    @DPTR,A
+                                           ; SOURCE LINE # 116
+                 E     CALL    USBFS_InitControlRead
+                 R     MOV     DPTR,#requestHandled
+                       MOV     A,R7
+                       MOVX    @DPTR,A
+                                           ; SOURCE LINE # 117
+                 R     xJMP    ?C0023
+             ?C0004:
+                                           ; SOURCE LINE # 118
+                       MOV     DPTR,#06003H
+                       MOVX    A,@DPTR
+                       XRL     A,#02H
+                 R     xJNZ    ?C0006
+                                           ; SOURCE LINE # 119
+                                           ; SOURCE LINE # 120
+                       MOV     DPTR,#06002H
+                       MOVX    A,@DPTR
+                       MOV     R7,A
+                 R     CALL    _USBFS_GetConfigTablePtr
+                 R     MOV     DPTR,#pTmp
+                       MOV     A,R6
+                       MOVX    @DPTR,A
+                       INC     DPTR
+                       MOV     A,R7
+                       MOVX    @DPTR,A
+                                           ; SOURCE LINE # 123
+                       ORL     A,R6
+                 R     xJZ     ?C0023
+                                           ; SOURCE LINE # 124
+                                           ; SOURCE LINE # 125
+                 R     MOV     DPTR,#pTmp
+                       MOVX    A,@DPTR
+                       MOV     R6,A
+                       INC     DPTR
+                       MOVX    A,@DPTR
+                       MOV     DPL,A
+                       MOV     DPH,R6
+                       INC     DPTR
+                 E     CALL    ?C?PLDCODE
+                 E     MOV     DPTR,#USBFS_currentTD+02H
+                 E     CALL    ?C?PSTXDATA
+                                           ; SOURCE LINE # 126
+                 E     MOV     DPTR,#USBFS_currentTD+02H
+                 E     CALL    ?C?PLDXDATA
+                       MOV     A,R1
+                       ADD     A,#03H
+                       MOV     R1,A
+                       CLR     A
+                       ADDC    A,R2
+                       MOV     R2,A
+C51 COMPILER V9.51   USBFS_STD                                                             03/06/2019 16:03:59 PAGE 24  
+
+                 E     CALL    ?C?CLDPTR
+                       MOV     R6,A
+                 E     MOV     DPTR,#USBFS_currentTD+02H
+                 E     CALL    ?C?PLDXDATA
+                       MOV     A,R1
+                       ADD     A,#02H
+                       MOV     R1,A
+                       CLR     A
+                       ADDC    A,R2
+                       MOV     R2,A
+                 E     CALL    ?C?CLDPTR
+                       MOV     R5,A
+                       MOV     A,R6
+                       MOV     A,R5
+                       MOV     R7,A
+                 E     MOV     DPTR,#USBFS_currentTD
+                       MOV     A,R6
+                       MOVX    @DPTR,A
+                       INC     DPTR
+                       MOV     A,R7
+                       MOVX    @DPTR,A
+                                           ; SOURCE LINE # 128
+                 E     CALL    USBFS_InitControlRead
+                 R     MOV     DPTR,#requestHandled
+                       MOV     A,R7
+                       MOVX    @DPTR,A
+                                           ; SOURCE LINE # 129
+                                           ; SOURCE LINE # 130
+                 R     xJMP    ?C0023
+             ?C0006:
+                                           ; SOURCE LINE # 149
+                       MOV     DPTR,#06003H
+                       MOVX    A,@DPTR
+                       XRL     A,#03H
+                 R     xJNZ    ?C0009
+                                           ; SOURCE LINE # 150
+                                           ; SOURCE LINE # 153
+;---- Variable 'nStr' assigned to Register 'R7' ----
+                       MOV     R7,A
+                                           ; SOURCE LINE # 154
+                       MOV     R3,#0FFH
+                 E     MOV     R2,#HIGH USBFS_STRING_DESCRIPTORS
+                 E     MOV     R1,#LOW USBFS_STRING_DESCRIPTORS
+                 R     MOV     DPTR,#pStr
+                 E     CALL    ?C?PSTXDATA
+             ?C0010:
+                                           ; SOURCE LINE # 156
+                       MOV     DPTR,#06002H
+                       MOVX    A,@DPTR
+                       SETB    C
+                       SUBB    A,R7
+                 R     xJLT    ?C0011
+                 R     MOV     DPTR,#pStr
+                 E     CALL    ?C?PLDXDATA
+                 E     CALL    ?C?CLDPTR
+                 R     xJZ     ?C0011
+                                           ; SOURCE LINE # 157
+                                           ; SOURCE LINE # 159
+                 E     CALL    ?C?CLDPTR
+                       MOV     R6,A
+;---- Variable 'descrLength' assigned to Register 'R6' ----
+                                           ; SOURCE LINE # 161
+C51 COMPILER V9.51   USBFS_STD                                                             03/06/2019 16:03:59 PAGE 25  
+
+                       MOV     R4,#00H
+                       ADD     A,R1
+                       MOV     R1,A
+                       MOV     A,R4
+                       ADDC    A,R2
+                       MOV     R2,A
+                 R     MOV     DPTR,#pStr
+                 E     CALL    ?C?PSTXDATA
+                                           ; SOURCE LINE # 162
+                       INC     R7
+                                           ; SOURCE LINE # 163
+                 R     xJMP    ?C0010
+             ?C0011:
+                                           ; SOURCE LINE # 177
+                       MOV     DPTR,#06002H
+                       MOVX    A,@DPTR
+                       MOV     R7,A
+                 R     xJZ     ?C0012
+                 E     MOV     DPTR,#USBFS_DEVICE0_DESCR+010H
+                       CLR     A
+                       MOVC    A,@A+DPTR
+                       MOV     R6,A
+                       MOV     A,R7
+                 R     xJNE    A,AR6,?C0012
+                                           ; SOURCE LINE # 178
+                                           ; SOURCE LINE # 194
+                       MOV     R3,#0FFH
+                 E     MOV     R2,#HIGH USBFS_SN_STRING_DESCRIPTOR
+                 E     MOV     R1,#LOW USBFS_SN_STRING_DESCRIPTOR
+                 R     MOV     DPTR,#pStr
+                 E     CALL    ?C?PSTXDATA
+                                           ; SOURCE LINE # 196
+             ?C0012:
+                                           ; SOURCE LINE # 199
+                 R     MOV     DPTR,#pStr
+                 E     CALL    ?C?PLDXDATA
+                 E     CALL    ?C?CLDPTR
+                 R     xJZ     ?C0023
+                                           ; SOURCE LINE # 200
+                                           ; SOURCE LINE # 201
+                 E     CALL    ?C?CLDPTR
+                       MOV     R7,A
+                 E     MOV     DPTR,#USBFS_currentTD
+                       CLR     A
+                       MOVX    @DPTR,A
+                       INC     DPTR
+                       MOV     A,R7
+                       MOVX    @DPTR,A
+                                           ; SOURCE LINE # 202
+                 E     MOV     DPTR,#USBFS_currentTD+02H
+                 E     CALL    ?C?PSTXDATA
+                                           ; SOURCE LINE # 203
+                 E     CALL    USBFS_InitControlRead
+                 R     MOV     DPTR,#requestHandled
+                       MOV     A,R7
+                       MOVX    @DPTR,A
+                                           ; SOURCE LINE # 204
+                                           ; SOURCE LINE # 205
+                 R     xJMP    ?C0023
+             ?C0009:
+                                           ; SOURCE LINE # 208
+                                           ; SOURCE LINE # 209
+C51 COMPILER V9.51   USBFS_STD                                                             03/06/2019 16:03:59 PAGE 26  
+
+                 E     CALL    USBFS_DispatchClassRqst
+                 R     MOV     DPTR,#requestHandled
+                       MOV     A,R7
+                       MOVX    @DPTR,A
+                                           ; SOURCE LINE # 210
+                                           ; SOURCE LINE # 211
+                 R     xJMP    ?C0023
+                                           ; SOURCE LINE # 213
+             ?C0015:
+                                           ; SOURCE LINE # 214
+                 R     MOV     DPTR,#bmRequestType
+                       MOVX    A,@DPTR
+                       ANL     A,#03H
+                 R     xJZ     ?C0018
+                       ADD     A,#0FEH
+                 R     xJNZ    ?C0023
+                                           ; SOURCE LINE # 215
+                                           ; SOURCE LINE # 216
+             ?C0017:
+                                           ; SOURCE LINE # 217
+                 E     MOV     DPTR,#USBFS_currentTD
+                       CLR     A
+                       MOVX    @DPTR,A
+                       INC     DPTR
+                       MOV     A,#02H
+                       MOVX    @DPTR,A
+                                           ; SOURCE LINE # 218
+                       MOV     DPTR,#06004H
+                       MOVX    A,@DPTR
+                       ANL     A,#07FH
+                       MOV     B,#0BH
+                       MUL     AB
+                 E     ADD     A,#LOW USBFS_EP+02H
+                       MOV     DPL,A
+                       CLR     A
+                 E     ADDC    A,#HIGH USBFS_EP+02H
+                       MOV     DPH,A
+                       MOVX    A,@DPTR
+                 R     MOV     DPTR,#USBFS_tBuffer
+                       MOVX    @DPTR,A
+                                           ; SOURCE LINE # 219
+                       CLR     A
+                       INC     DPTR
+                       MOVX    @DPTR,A
+                                           ; SOURCE LINE # 220
+                       MOV     R3,#01H
+                 R     MOV     R2,#HIGH USBFS_tBuffer
+                 R     MOV     R1,#LOW USBFS_tBuffer
+                 E     MOV     DPTR,#USBFS_currentTD+02H
+                 E     CALL    ?C?PSTXDATA
+                                           ; SOURCE LINE # 222
+                 E     CALL    USBFS_InitControlRead
+                 R     MOV     DPTR,#requestHandled
+                       MOV     A,R7
+                       MOVX    @DPTR,A
+                                           ; SOURCE LINE # 223
+                 R     xJMP    ?C0023
+                                           ; SOURCE LINE # 224
+             ?C0018:
+                                           ; SOURCE LINE # 225
+                 E     MOV     DPTR,#USBFS_currentTD
+                       CLR     A
+C51 COMPILER V9.51   USBFS_STD                                                             03/06/2019 16:03:59 PAGE 27  
+
+                       MOVX    @DPTR,A
+                       INC     DPTR
+                       MOV     A,#02H
+                       MOVX    @DPTR,A
+                                           ; SOURCE LINE # 226
+                 E     MOV     DPTR,#USBFS_deviceStatus
+                       MOVX    A,@DPTR
+                 R     MOV     DPTR,#USBFS_tBuffer
+                       MOVX    @DPTR,A
+                                           ; SOURCE LINE # 227
+                       CLR     A
+                       INC     DPTR
+                       MOVX    @DPTR,A
+                                           ; SOURCE LINE # 228
+                       MOV     R3,#01H
+                 R     MOV     R2,#HIGH USBFS_tBuffer
+                 R     MOV     R1,#LOW USBFS_tBuffer
+                 E     MOV     DPTR,#USBFS_currentTD+02H
+                 E     CALL    ?C?PSTXDATA
+                                           ; SOURCE LINE # 230
+                 E     CALL    USBFS_InitControlRead
+                 R     MOV     DPTR,#requestHandled
+                       MOV     A,R7
+                       MOVX    @DPTR,A
+                                           ; SOURCE LINE # 231
+                 R     xJMP    ?C0023
+                                           ; SOURCE LINE # 232
+                                           ; SOURCE LINE # 233
+                                           ; SOURCE LINE # 234
+                                           ; SOURCE LINE # 235
+                 R     xJMP    ?C0023
+                                           ; SOURCE LINE # 237
+             ?C0020:
+                                           ; SOURCE LINE # 238
+                 E     MOV     DPTR,#USBFS_currentTD
+                       CLR     A
+                       MOVX    @DPTR,A
+                       INC     DPTR
+                       INC     A
+                       MOVX    @DPTR,A
+                                           ; SOURCE LINE # 239
+                       MOV     R3,A
+                 E     MOV     R2,#HIGH USBFS_configuration
+                 E     MOV     R1,#LOW USBFS_configuration
+                 E     MOV     DPTR,#USBFS_currentTD+02H
+                 E     CALL    ?C?PSTXDATA
+                                           ; SOURCE LINE # 240
+                 E     CALL    USBFS_InitControlRead
+                 R     MOV     DPTR,#requestHandled
+                       MOV     A,R7
+                       MOVX    @DPTR,A
+                                           ; SOURCE LINE # 241
+                 R     xJMP    ?C0023
+                                           ; SOURCE LINE # 243
+             ?C0021:
+                                           ; SOURCE LINE # 244
+                 E     MOV     DPTR,#USBFS_currentTD
+                       CLR     A
+                       MOVX    @DPTR,A
+                       INC     DPTR
+                       INC     A
+                       MOVX    @DPTR,A
+C51 COMPILER V9.51   USBFS_STD                                                             03/06/2019 16:03:59 PAGE 28  
+
+                                           ; SOURCE LINE # 245
+                       MOV     DPTR,#06004H
+                       MOVX    A,@DPTR
+                 E     ADD     A,#LOW USBFS_interfaceSetting
+                       MOV     R1,A
+                       CLR     A
+                 E     ADDC    A,#HIGH USBFS_interfaceSetting
+                       MOV     R2,A
+                       MOV     R3,#01H
+                 E     MOV     DPTR,#USBFS_currentTD+02H
+                 E     CALL    ?C?PSTXDATA
+                                           ; SOURCE LINE # 246
+                 E     CALL    USBFS_InitControlRead
+                 R     MOV     DPTR,#requestHandled
+                       MOV     A,R7
+                       MOVX    @DPTR,A
+                                           ; SOURCE LINE # 247
+                 R     xJMP    ?C0023
+                                           ; SOURCE LINE # 249
+                                           ; SOURCE LINE # 250
+                                           ; SOURCE LINE # 251
+                                           ; SOURCE LINE # 252
+                 R     xJMP    ?C0023
+             ?C0001:
+                                           ; SOURCE LINE # 254
+                                           ; SOURCE LINE # 256
+                       MOV     DPTR,#06001H
+                       MOVX    A,@DPTR
+                       DEC     A
+                 R     xJZ     ?C0035
+                       ADD     A,#0FEH
+                 R     xJZ     ?C0044
+                       ADD     A,#0FAH
+                 R     xJZ     ?C0026
+                       ADD     A,#0FEH
+                 R     xJZ     ?C0032
+                       ADD     A,#06H
+                 R     xJNZ    ?C0023
+                                           ; SOURCE LINE # 257
+                                           ; SOURCE LINE # 258
+             ?C0025:
+                                           ; SOURCE LINE # 260
+                       MOV     DPTR,#06002H
+                       MOVX    A,@DPTR
+                 E     MOV     DPTR,#USBFS_deviceAddress
+                       MOVX    @DPTR,A
+                                           ; SOURCE LINE # 261
+                 E     CALL    USBFS_InitNoDataControlTransfer
+                 R     MOV     DPTR,#requestHandled
+                       MOV     A,R7
+                       MOVX    @DPTR,A
+                                           ; SOURCE LINE # 262
+                 R     xJMP    ?C0023
+                                           ; SOURCE LINE # 264
+             ?C0026:
+                                           ; SOURCE LINE # 265
+                       MOV     DPTR,#06002H
+                       MOVX    A,@DPTR
+                 R     MOV     DPTR,#configurationN
+                       MOVX    @DPTR,A
+                                           ; SOURCE LINE # 268
+                       SETB    C
+C51 COMPILER V9.51   USBFS_STD                                                             03/06/2019 16:03:59 PAGE 29  
+
+                       SUBB    A,#00H
+                 R     xJLT    ?C0027
+                                           ; SOURCE LINE # 269
+                                           ; SOURCE LINE # 270
+                       MOVX    A,@DPTR
+                       DEC     A
+                       MOV     R7,A
+                 R     CALL    _USBFS_GetConfigTablePtr
+                 R     MOV     DPTR,#pTmp
+                       MOV     A,R6
+                       MOVX    @DPTR,A
+                       INC     DPTR
+                       MOV     A,R7
+                       MOVX    @DPTR,A
+                                           ; SOURCE LINE # 271
+             ?C0027:
+                                           ; SOURCE LINE # 274
+                 R     MOV     DPTR,#configurationN
+                       MOVX    A,@DPTR
+                       MOV     R7,A
+                       SETB    C
+                       SUBB    A,#00H
+                 R     xJLT    ?C0030
+                 R     MOV     DPTR,#pTmp
+                       MOVX    A,@DPTR
+                 R     JNZ     ?C0139
+                       INC     DPTR
+                       MOVX    A,@DPTR
+             ?C0139:
+                 R     xJNZ    ?C0029
+             ?C0030:
+                       MOV     A,R7
+                 R     xJNZ    ?C0023
+             ?C0029:
+                                           ; SOURCE LINE # 275
+                                           ; SOURCE LINE # 277
+                 E     MOV     DPTR,#USBFS_configuration
+                       MOVX    A,@DPTR
+                       MOV     R7,A
+                 R     MOV     DPTR,#configurationN
+                       MOVX    A,@DPTR
+                       MOV     R6,A
+                       XRL     A,R7
+                 R     xJZ     ?C0031
+                                           ; SOURCE LINE # 278
+                                           ; SOURCE LINE # 279
+                 E     MOV     DPTR,#USBFS_configuration
+                       MOV     A,R6
+                       MOVX    @DPTR,A
+                                           ; SOURCE LINE # 280
+                 E     MOV     DPTR,#USBFS_configurationChanged
+                       MOV     A,#01H
+                       MOVX    @DPTR,A
+                                           ; SOURCE LINE # 281
+                       MOV     R7,A
+                 R     CALL    _USBFS_Config
+                                           ; SOURCE LINE # 282
+             ?C0031:
+                                           ; SOURCE LINE # 283
+                 E     CALL    USBFS_InitNoDataControlTransfer
+                 R     MOV     DPTR,#requestHandled
+                       MOV     A,R7
+C51 COMPILER V9.51   USBFS_STD                                                             03/06/2019 16:03:59 PAGE 30  
+
+                       MOVX    @DPTR,A
+                                           ; SOURCE LINE # 284
+                                           ; SOURCE LINE # 285
+                 R     xJMP    ?C0023
+                                           ; SOURCE LINE # 287
+             ?C0032:
+                                           ; SOURCE LINE # 288
+                 R     CALL    USBFS_ValidateAlternateSetting
+                       MOV     A,R7
+                 R     xJZ     ?C0023
+                                           ; SOURCE LINE # 289
+                                           ; SOURCE LINE # 291
+                       MOV     DPTR,#06004H
+                       MOVX    A,@DPTR
+;---- Variable 'interfaceNumber' assigned to Register 'R6' ----
+                       MOV     R6,A
+                                           ; SOURCE LINE # 292
+                 E     MOV     DPTR,#USBFS_interfaceNumber
+                       MOVX    @DPTR,A
+                                           ; SOURCE LINE # 295
+                 E     MOV     A,#LOW USBFS_interfaceSetting
+                       ADD     A,R6
+                       MOV     DPL,A
+                       CLR     A
+                 E     ADDC    A,#HIGH USBFS_interfaceSetting
+                       MOV     DPH,A
+                       MOVX    A,@DPTR
+                       MOV     R7,A
+                 E     MOV     A,#LOW USBFS_interfaceSettingLast
+                       ADD     A,R6
+                       MOV     DPL,A
+                       CLR     A
+                 E     ADDC    A,#HIGH USBFS_interfaceSettingLast
+                       MOV     DPH,A
+                       MOVX    A,@DPTR
+                       XRL     A,R7
+                 R     xJZ     ?C0034
+                                           ; SOURCE LINE # 296
+                                           ; SOURCE LINE # 297
+                 E     MOV     DPTR,#USBFS_configurationChanged
+                       MOV     A,#01H
+                       MOVX    @DPTR,A
+                                           ; SOURCE LINE # 303
+                 R     CALL    USBFS_ConfigAltChanged
+                                           ; SOURCE LINE # 305
+             ?C0034:
+                                           ; SOURCE LINE # 307
+                 E     CALL    USBFS_InitNoDataControlTransfer
+                 R     MOV     DPTR,#requestHandled
+                       MOV     A,R7
+                       MOVX    @DPTR,A
+                                           ; SOURCE LINE # 308
+                                           ; SOURCE LINE # 309
+                 R     xJMP    ?C0023
+                                           ; SOURCE LINE # 311
+             ?C0035:
+                                           ; SOURCE LINE # 312
+                 R     MOV     DPTR,#bmRequestType
+                       MOVX    A,@DPTR
+                       ANL     A,#03H
+                 R     xJZ     ?C0039
+                       DEC     A
+C51 COMPILER V9.51   USBFS_STD                                                             03/06/2019 16:03:59 PAGE 31  
+
+                 R     xJZ     ?C0041
+                       DEC     A
+                 R     xJNZ    ?C0023
+                                           ; SOURCE LINE # 313
+                                           ; SOURCE LINE # 314
+             ?C0037:
+                                           ; SOURCE LINE # 315
+                       MOV     DPTR,#06002H
+                       MOVX    A,@DPTR
+                 R     xJNZ    ?C0023
+                                           ; SOURCE LINE # 316
+                                           ; SOURCE LINE # 317
+                 R     CALL    USBFS_ClearEndpointHalt
+                 R     MOV     DPTR,#requestHandled
+                       MOV     A,R7
+                       MOVX    @DPTR,A
+                                           ; SOURCE LINE # 318
+                                           ; SOURCE LINE # 319
+                 R     xJMP    ?C0023
+                                           ; SOURCE LINE # 320
+             ?C0039:
+                                           ; SOURCE LINE # 322
+                       MOV     DPTR,#06002H
+                       MOVX    A,@DPTR
+                       XRL     A,#01H
+                 R     xJNZ    ?C0023
+                                           ; SOURCE LINE # 323
+                                           ; SOURCE LINE # 324
+                 E     MOV     DPTR,#USBFS_deviceStatus
+                       MOVX    A,@DPTR
+                       ANL     A,#0FDH
+                       MOVX    @DPTR,A
+                                           ; SOURCE LINE # 325
+                 E     CALL    USBFS_InitNoDataControlTransfer
+                 R     MOV     DPTR,#requestHandled
+                       MOV     A,R7
+                       MOVX    @DPTR,A
+                                           ; SOURCE LINE # 326
+                                           ; SOURCE LINE # 327
+                 R     xJMP    ?C0023
+                                           ; SOURCE LINE # 328
+             ?C0041:
+                                           ; SOURCE LINE # 330
+                       MOV     DPTR,#06004H
+                       MOVX    A,@DPTR
+                       MOV     R7,A
+                       CLR     C
+                       SUBB    A,#01H
+                 R     xJGE    ?C0023
+                                           ; SOURCE LINE # 331
+                                           ; SOURCE LINE # 332
+                 E     MOV     A,#LOW USBFS_interfaceStatus
+                       ADD     A,R7
+                       MOV     DPL,A
+                       CLR     A
+                 E     ADDC    A,#HIGH USBFS_interfaceStatus
+                       MOV     DPH,A
+                       PUSH    DPH
+                       PUSH    DPL
+                       MOVX    A,@DPTR
+                       MOV     R7,A
+                       MOV     DPTR,#06002H
+C51 COMPILER V9.51   USBFS_STD                                                             03/06/2019 16:03:59 PAGE 32  
+
+                       MOVX    A,@DPTR
+                       CPL     A
+                       MOV     R6,A
+                       MOV     A,R7
+                       ANL     A,R6
+                       POP     DPL
+                       POP     DPH
+                       MOVX    @DPTR,A
+                                           ; SOURCE LINE # 333
+                 E     CALL    USBFS_InitNoDataControlTransfer
+                 R     MOV     DPTR,#requestHandled
+                       MOV     A,R7
+                       MOVX    @DPTR,A
+                                           ; SOURCE LINE # 334
+                                           ; SOURCE LINE # 335
+                 R     xJMP    ?C0023
+                                           ; SOURCE LINE # 336
+                                           ; SOURCE LINE # 337
+                                           ; SOURCE LINE # 338
+                                           ; SOURCE LINE # 339
+                 R     xJMP    ?C0023
+                                           ; SOURCE LINE # 341
+             ?C0044:
+                                           ; SOURCE LINE # 342
+                 R     MOV     DPTR,#bmRequestType
+                       MOVX    A,@DPTR
+                       ANL     A,#03H
+                 R     xJZ     ?C0048
+                       DEC     A
+                 R     xJZ     ?C0050
+                       DEC     A
+                 R     xJNZ    ?C0023
+                                           ; SOURCE LINE # 343
+                                           ; SOURCE LINE # 344
+             ?C0046:
+                                           ; SOURCE LINE # 345
+                       MOV     DPTR,#06002H
+                       MOVX    A,@DPTR
+                 R     xJNZ    ?C0023
+                                           ; SOURCE LINE # 346
+                                           ; SOURCE LINE # 347
+                 R     CALL    USBFS_SetEndpointHalt
+                 R     MOV     DPTR,#requestHandled
+                       MOV     A,R7
+                       MOVX    @DPTR,A
+                                           ; SOURCE LINE # 348
+                                           ; SOURCE LINE # 349
+                 R     xJMP    ?C0023
+                                           ; SOURCE LINE # 351
+             ?C0048:
+                                           ; SOURCE LINE # 353
+                       MOV     DPTR,#06002H
+                       MOVX    A,@DPTR
+                       XRL     A,#01H
+                 R     xJNZ    ?C0023
+                                           ; SOURCE LINE # 354
+                                           ; SOURCE LINE # 355
+                 E     MOV     DPTR,#USBFS_deviceStatus
+                       MOVX    A,@DPTR
+                       ORL     A,#02H
+                       MOVX    @DPTR,A
+                                           ; SOURCE LINE # 356
+C51 COMPILER V9.51   USBFS_STD                                                             03/06/2019 16:03:59 PAGE 33  
+
+                 E     CALL    USBFS_InitNoDataControlTransfer
+                 R     MOV     DPTR,#requestHandled
+                       MOV     A,R7
+                       MOVX    @DPTR,A
+                                           ; SOURCE LINE # 357
+                                           ; SOURCE LINE # 358
+                 R     xJMP    ?C0023
+                                           ; SOURCE LINE # 360
+             ?C0050:
+                                           ; SOURCE LINE # 362
+                       MOV     DPTR,#06004H
+                       MOVX    A,@DPTR
+                       MOV     R7,A
+                       CLR     C
+                       SUBB    A,#01H
+                 R     xJGE    ?C0023
+                                           ; SOURCE LINE # 363
+                                           ; SOURCE LINE # 364
+                 E     MOV     A,#LOW USBFS_interfaceStatus
+                       ADD     A,R7
+                       MOV     DPL,A
+                       CLR     A
+                 E     ADDC    A,#HIGH USBFS_interfaceStatus
+                       MOV     DPH,A
+                       PUSH    DPH
+                       PUSH    DPL
+                       MOVX    A,@DPTR
+                       MOV     R7,A
+                       MOV     DPTR,#06002H
+                       MOVX    A,@DPTR
+                       CPL     A
+                       MOV     R6,A
+                       MOV     A,R7
+                       ANL     A,R6
+                       POP     DPL
+                       POP     DPH
+                       MOVX    @DPTR,A
+                                           ; SOURCE LINE # 365
+                 E     CALL    USBFS_InitNoDataControlTransfer
+                 R     MOV     DPTR,#requestHandled
+                       MOV     A,R7
+                       MOVX    @DPTR,A
+                                           ; SOURCE LINE # 366
+                                           ; SOURCE LINE # 367
+                                           ; SOURCE LINE # 369
+                                           ; SOURCE LINE # 370
+                                           ; SOURCE LINE # 371
+                                           ; SOURCE LINE # 372
+                                           ; SOURCE LINE # 374
+                                           ; SOURCE LINE # 375
+                                           ; SOURCE LINE # 376
+                                           ; SOURCE LINE # 377
+             ?C0023:
+                                           ; SOURCE LINE # 379
+                 R     MOV     DPTR,#requestHandled
+                       MOVX    A,@DPTR
+                       MOV     R7,A
+                                           ; SOURCE LINE # 380
+             ?C0054:
+                       RET     
+             ; FUNCTION USBFS_HandleStandardRqst (END)
+
+C51 COMPILER V9.51   USBFS_STD                                                             03/06/2019 16:03:59 PAGE 34  
+
+             ; FUNCTION USBFS_ConfigReg (BEGIN)
+                                           ; SOURCE LINE # 437
+                                           ; SOURCE LINE # 438
+                                           ; SOURCE LINE # 446
+;---- Variable 'ep' assigned to Register 'R5' ----
+                       MOV     R5,#01H
+             ?C0055:
+                       MOV     A,R5
+                       CLR     C
+                       SUBB    A,#09H
+                 R     xJGE    ?C0056
+                                           ; SOURCE LINE # 447
+                                           ; SOURCE LINE # 448
+                       MOV     B,#010H
+                       MOV     A,R5
+                       MOV     DPTR,#06070H
+                 E     CALL    ?C?OFFXADD
+                       MOV     A,#0CH
+                       MOVX    @DPTR,A
+                                           ; SOURCE LINE # 455
+                       MOV     A,R5
+                       MOV     B,#0BH
+                       MUL     AB
+                 E     ADD     A,#LOW USBFS_EP+05H
+                       MOV     DPL,A
+                       CLR     A
+                 E     ADDC    A,#HIGH USBFS_EP+05H
+                       MOV     DPH,A
+                       MOVX    A,@DPTR
+                 R     xJZ     ?C0058
+                                           ; SOURCE LINE # 456
+                                           ; SOURCE LINE # 457
+                       MOV     A,R5
+                       MOV     B,#0BH
+                       MUL     AB
+                 E     ADD     A,#LOW USBFS_EP+04H
+                       MOV     DPL,A
+                       CLR     A
+                 E     ADDC    A,#HIGH USBFS_EP+04H
+                       MOV     DPH,A
+                       MOVX    A,@DPTR
+                       ANL     A,#080H
+                 R     xJZ     ?C0059
+                                           ; SOURCE LINE # 458
+                                           ; SOURCE LINE # 459
+                       MOV     B,#010H
+                       MOV     A,R5
+                       MOV     DPTR,#05FFEH
+                 E     CALL    ?C?OFFXADD
+                       MOV     A,#0CH
+                       MOVX    @DPTR,A
+                                           ; SOURCE LINE # 465
+                 R     xJMP    ?C0061
+             ?C0059:
+                                           ; SOURCE LINE # 467
+                                           ; SOURCE LINE # 468
+                       MOV     B,#010H
+                       MOV     A,R5
+                       MOV     DPTR,#05FFEH
+                 E     CALL    ?C?OFFXADD
+                       MOV     A,#08H
+                       MOVX    @DPTR,A
+C51 COMPILER V9.51   USBFS_STD                                                             03/06/2019 16:03:59 PAGE 35  
+
+                                           ; SOURCE LINE # 476
+                                           ; SOURCE LINE # 477
+                 R     xJMP    ?C0061
+             ?C0058:
+                                           ; SOURCE LINE # 479
+                                           ; SOURCE LINE # 480
+                       MOV     B,#010H
+                       MOV     A,R5
+                       MOV     DPTR,#05FFEH
+                 E     CALL    ?C?OFFXADD
+                       MOV     A,#080H
+                       MOVX    @DPTR,A
+                                           ; SOURCE LINE # 481
+             ?C0061:
+                                           ; SOURCE LINE # 488
+                       MOV     A,R5
+                       MOV     B,#0BH
+                       MUL     AB
+                 E     ADD     A,#LOW USBFS_EP+06H
+                       MOV     DPL,A
+                       CLR     A
+                 E     ADDC    A,#HIGH USBFS_EP+06H
+                       MOV     DPH,A
+                       MOVX    A,@DPTR
+                       INC     DPTR
+                       MOVX    A,@DPTR
+                       MOV     R7,A
+                       MOV     B,#010H
+                       MOV     A,R5
+                       MOV     DPTR,#06076H
+                 E     CALL    ?C?OFFXADD
+                       MOV     A,R7
+                       MOVX    @DPTR,A
+                                           ; SOURCE LINE # 489
+                       MOV     A,R5
+                       MOV     B,#0BH
+                       MUL     AB
+                 E     ADD     A,#LOW USBFS_EP+06H
+                       MOV     DPL,A
+                       CLR     A
+                 E     ADDC    A,#HIGH USBFS_EP+06H
+                       MOV     DPH,A
+                       MOVX    A,@DPTR
+                       MOV     R7,A
+                       MOV     B,#010H
+                       MOV     A,R5
+                       MOV     DPTR,#06077H
+                 E     CALL    ?C?OFFXADD
+                       MOV     A,R7
+                       MOVX    @DPTR,A
+                                           ; SOURCE LINE # 490
+                       MOV     A,R5
+                       MOV     B,#0BH
+                       MUL     AB
+                 E     ADD     A,#LOW USBFS_EP+06H
+                       MOV     DPL,A
+                       CLR     A
+                 E     ADDC    A,#HIGH USBFS_EP+06H
+                       MOV     DPH,A
+                       MOVX    A,@DPTR
+                       INC     DPTR
+                       MOVX    A,@DPTR
+C51 COMPILER V9.51   USBFS_STD                                                             03/06/2019 16:03:59 PAGE 36  
+
+                       MOV     R7,A
+                       MOV     B,#010H
+                       MOV     A,R5
+                       MOV     DPTR,#06074H
+                 E     CALL    ?C?OFFXADD
+                       MOV     A,R7
+                       MOVX    @DPTR,A
+                                           ; SOURCE LINE # 491
+                       MOV     A,R5
+                       MOV     B,#0BH
+                       MUL     AB
+                 E     ADD     A,#LOW USBFS_EP+06H
+                       MOV     DPL,A
+                       CLR     A
+                 E     ADDC    A,#HIGH USBFS_EP+06H
+                       MOV     DPH,A
+                       MOVX    A,@DPTR
+                       MOV     R7,A
+                       MOV     B,#010H
+                       MOV     A,R5
+                       MOV     DPTR,#06075H
+                 E     CALL    ?C?OFFXADD
+                       MOV     A,R7
+                       MOVX    @DPTR,A
+                                           ; SOURCE LINE # 494
+                       INC     R5
+                 R     xJMP    ?C0055
+             ?C0056:
+                                           ; SOURCE LINE # 519
+                       MOV     DPTR,#0600AH
+                       MOV     A,#0FFH
+                       MOVX    @DPTR,A
+                                           ; SOURCE LINE # 520
+                       RET     
+             ; FUNCTION USBFS_ConfigReg (END)
+
+             ; FUNCTION USBFS_EpStateInit (BEGIN)
+                                           ; SOURCE LINE # 532
+                                           ; SOURCE LINE # 533
+                                           ; SOURCE LINE # 536
+;---- Variable 'i' assigned to Register 'R7' ----
+                       MOV     R7,#01H
+             ?C0063:
+                       MOV     A,R7
+                       CLR     C
+                       SUBB    A,#09H
+                 R     xJGE    ?C0068
+                                           ; SOURCE LINE # 537
+                                           ; SOURCE LINE # 538
+                       MOV     A,R7
+                       MOV     B,#0BH
+                       MUL     AB
+                 E     ADD     A,#LOW USBFS_EP+04H
+                       MOV     DPL,A
+                       CLR     A
+                 E     ADDC    A,#HIGH USBFS_EP+04H
+                       MOV     DPH,A
+                       MOVX    A,@DPTR
+                       ANL     A,#080H
+                 R     xJZ     ?C0066
+                                           ; SOURCE LINE # 539
+                                           ; SOURCE LINE # 541
+C51 COMPILER V9.51   USBFS_STD                                                             03/06/2019 16:03:59 PAGE 37  
+
+                       MOV     A,R7
+                       MOV     B,#0BH
+                       MUL     AB
+                 E     ADD     A,#LOW USBFS_EP+01H
+                       MOV     DPL,A
+                       CLR     A
+                 E     ADDC    A,#HIGH USBFS_EP+01H
+                       MOV     DPH,A
+                       MOV     A,#01H
+                       MOVX    @DPTR,A
+                                           ; SOURCE LINE # 542
+                 R     xJMP    ?C0065
+             ?C0066:
+                                           ; SOURCE LINE # 544
+                                           ; SOURCE LINE # 546
+                       MOV     A,R7
+                       MOV     B,#0BH
+                       MUL     AB
+                 E     ADD     A,#LOW USBFS_EP+01H
+                       MOV     DPL,A
+                       CLR     A
+                 E     ADDC    A,#HIGH USBFS_EP+01H
+                       MOV     DPH,A
+                       CLR     A
+                       MOVX    @DPTR,A
+                                           ; SOURCE LINE # 547
+                                           ; SOURCE LINE # 548
+             ?C0065:
+                       INC     R7
+                 R     xJMP    ?C0063
+                                           ; SOURCE LINE # 550
+             ?C0068:
+                       RET     
+             ; FUNCTION USBFS_EpStateInit (END)
+
+             ; FUNCTION _USBFS_Config (BEGIN)
+                                           ; SOURCE LINE # 570
+;---- Variable 'clearAltSetting' assigned to Register 'R7' ----
+                                           ; SOURCE LINE # 571
+                                           ; SOURCE LINE # 579
+                       CLR     A
+                 R     MOV     DPTR,#buffCount
+                       MOVX    @DPTR,A
+                       INC     DPTR
+                       MOVX    @DPTR,A
+                                           ; SOURCE LINE # 586
+                 R     MOV     DPTR,#ep
+                       MOVX    @DPTR,A
+             ?C0069:
+                 R     MOV     DPTR,#ep
+                       MOVX    A,@DPTR
+                       MOV     R6,A
+                       CLR     C
+                       SUBB    A,#09H
+                 R     xJGE    ?C0070
+                                           ; SOURCE LINE # 587
+                                           ; SOURCE LINE # 588
+                       MOV     A,R6
+                       MOV     B,#0BH
+                       MUL     AB
+                 E     ADD     A,#LOW USBFS_EP
+                       MOV     DPL,A
+C51 COMPILER V9.51   USBFS_STD                                                             03/06/2019 16:03:59 PAGE 38  
+
+                       CLR     A
+                 E     ADDC    A,#HIGH USBFS_EP
+                       MOV     DPH,A
+                       CLR     A
+                       MOVX    @DPTR,A
+                                           ; SOURCE LINE # 589
+                       MOV     A,R6
+                       MOV     B,#0BH
+                       MUL     AB
+                 E     ADD     A,#LOW USBFS_EP+02H
+                       MOV     DPL,A
+                       CLR     A
+                 E     ADDC    A,#HIGH USBFS_EP+02H
+                       MOV     DPH,A
+                       CLR     A
+                       MOVX    @DPTR,A
+                                           ; SOURCE LINE # 590
+                       MOV     A,R6
+                       MOV     B,#0BH
+                       MUL     AB
+                 E     ADD     A,#LOW USBFS_EP+03H
+                       MOV     DPL,A
+                       CLR     A
+                 E     ADDC    A,#HIGH USBFS_EP+03H
+                       MOV     DPH,A
+                       CLR     A
+                       MOVX    @DPTR,A
+                                           ; SOURCE LINE # 591
+                       MOV     A,R6
+                       MOV     B,#0BH
+                       MUL     AB
+                 E     ADD     A,#LOW USBFS_EP+08H
+                       MOV     DPL,A
+                       CLR     A
+                 E     ADDC    A,#HIGH USBFS_EP+08H
+                       MOV     DPH,A
+                       CLR     A
+                       MOVX    @DPTR,A
+                       INC     DPTR
+                       MOVX    @DPTR,A
+                                           ; SOURCE LINE # 592
+                       MOV     A,R6
+                       MOV     B,#0BH
+                       MUL     AB
+                 E     ADD     A,#LOW USBFS_EP+0AH
+                       MOV     DPL,A
+                       CLR     A
+                 E     ADDC    A,#HIGH USBFS_EP+0AH
+                       MOV     DPH,A
+                       CLR     A
+                       MOVX    @DPTR,A
+                                           ; SOURCE LINE # 593
+                       MOV     A,R6
+                       MOV     B,#0BH
+                       MUL     AB
+                 E     ADD     A,#LOW USBFS_EP+01H
+                       MOV     DPL,A
+                       CLR     A
+                 E     ADDC    A,#HIGH USBFS_EP+01H
+                       MOV     DPH,A
+                       CLR     A
+                       MOVX    @DPTR,A
+C51 COMPILER V9.51   USBFS_STD                                                             03/06/2019 16:03:59 PAGE 39  
+
+                                           ; SOURCE LINE # 594
+                       MOV     A,R6
+                       MOV     B,#0BH
+                       MUL     AB
+                 E     ADD     A,#LOW USBFS_EP+05H
+                       MOV     DPL,A
+                       CLR     A
+                 E     ADDC    A,#HIGH USBFS_EP+05H
+                       MOV     DPH,A
+                       CLR     A
+                       MOVX    @DPTR,A
+                                           ; SOURCE LINE # 595
+                 R     MOV     DPTR,#ep
+                       MOVX    A,@DPTR
+                       INC     A
+                       MOVX    @DPTR,A
+                 R     xJMP    ?C0069
+             ?C0070:
+                                           ; SOURCE LINE # 598
+                       MOV     A,R7
+                 R     xJZ     ?C0072
+                                           ; SOURCE LINE # 599
+                                           ; SOURCE LINE # 600
+                       CLR     A
+                 R     MOV     DPTR,#i
+                       MOVX    @DPTR,A
+             ?C0073:
+                 R     MOV     DPTR,#i
+                       MOVX    A,@DPTR
+                       MOV     R7,A
+                       CLR     C
+                       SUBB    A,#01H
+                 R     xJGE    ?C0072
+                                           ; SOURCE LINE # 601
+                                           ; SOURCE LINE # 602
+                 E     MOV     A,#LOW USBFS_interfaceSetting
+                       ADD     A,R7
+                       MOV     DPL,A
+                       CLR     A
+                 E     ADDC    A,#HIGH USBFS_interfaceSetting
+                       MOV     DPH,A
+                       CLR     A
+                       MOVX    @DPTR,A
+                                           ; SOURCE LINE # 603
+                 E     MOV     A,#LOW USBFS_interfaceSettingLast
+                       ADD     A,R7
+                       MOV     DPL,A
+                       CLR     A
+                 E     ADDC    A,#HIGH USBFS_interfaceSettingLast
+                       MOV     DPH,A
+                       CLR     A
+                       MOVX    @DPTR,A
+                                           ; SOURCE LINE # 604
+                 R     MOV     DPTR,#i
+                       MOVX    A,@DPTR
+                       INC     A
+                       MOVX    @DPTR,A
+                 R     xJMP    ?C0073
+                                           ; SOURCE LINE # 605
+             ?C0072:
+                                           ; SOURCE LINE # 608
+                 E     MOV     DPTR,#USBFS_configuration
+C51 COMPILER V9.51   USBFS_STD                                                             03/06/2019 16:03:59 PAGE 40  
+
+                       MOVX    A,@DPTR
+                       SETB    C
+                       SUBB    A,#00H
+                 R     xJLT    ?C0100
+                                           ; SOURCE LINE # 609
+                                           ; SOURCE LINE # 614
+                       MOVX    A,@DPTR
+                       DEC     A
+                       MOV     R7,A
+                 R     CALL    _USBFS_GetConfigTablePtr
+                 R     MOV     DPTR,#pTmp
+                       MOV     A,R6
+                       MOVX    @DPTR,A
+                       INC     DPTR
+                       MOV     A,R7
+                       MOVX    @DPTR,A
+                                           ; SOURCE LINE # 617
+                 R     MOV     DPTR,#pTmp
+                       MOVX    A,@DPTR
+                       MOV     R4,A
+                       INC     DPTR
+                       MOVX    A,@DPTR
+                       MOV     R5,A
+                       MOV     DPL,A
+                       MOV     DPH,R4
+                       INC     DPTR
+                 E     CALL    ?C?PLDCODE
+;---- Variable 'pDescr' assigned to Register 'R1/R2/R3' ----
+                                           ; SOURCE LINE # 618
+                       MOV     A,R1
+                       ADD     A,#07H
+                       MOV     R1,A
+                       CLR     A
+                       ADDC    A,R2
+                       MOV     R2,A
+                 E     CALL    ?C?CLDPTR
+                       ANL     A,#040H
+                 R     xJZ     ?C0077
+                                           ; SOURCE LINE # 619
+                                           ; SOURCE LINE # 620
+                 E     MOV     DPTR,#USBFS_deviceStatus
+                       MOVX    A,@DPTR
+                       ORL     A,#01H
+                       MOVX    @DPTR,A
+                                           ; SOURCE LINE # 621
+                 R     xJMP    ?C0078
+             ?C0077:
+                                           ; SOURCE LINE # 623
+                                           ; SOURCE LINE # 624
+                 E     MOV     DPTR,#USBFS_deviceStatus
+                       MOVX    A,@DPTR
+                       ANL     A,#0FEH
+                       MOVX    @DPTR,A
+                                           ; SOURCE LINE # 625
+             ?C0078:
+                                           ; SOURCE LINE # 628
+                       MOV     A,R5
+                       ADD     A,#04H
+                       MOV     R7,A
+                       CLR     A
+                       ADDC    A,R4
+                       MOV     R6,A
+C51 COMPILER V9.51   USBFS_STD                                                             03/06/2019 16:03:59 PAGE 41  
+
+                 R     MOV     DPTR,#pTmp
+                       MOVX    @DPTR,A
+                       INC     DPTR
+                       MOV     A,R7
+                       MOVX    @DPTR,A
+                                           ; SOURCE LINE # 629
+                       MOV     DPL,A
+                       MOV     DPH,R6
+                       CLR     A
+                       MOVC    A,@A+DPTR
+                 R     MOV     DPTR,#ep
+                       MOVX    @DPTR,A
+                                           ; SOURCE LINE # 687
+                       INC     DPTR
+                       MOV     A,#01H
+                       MOVX    @DPTR,A
+             ?C0079:
+                 R     MOV     DPTR,#i
+                       MOVX    A,@DPTR
+                       CLR     C
+                       SUBB    A,#09H
+                 R     xJGE    ?C0080
+                                           ; SOURCE LINE # 688
+                                           ; SOURCE LINE # 690
+                 R     MOV     DPTR,#pTmp
+                       MOVX    A,@DPTR
+                       MOV     R6,A
+                       INC     DPTR
+                       MOVX    A,@DPTR
+                       MOV     DPL,A
+                       MOV     DPH,R6
+                       INC     DPTR
+                 E     CALL    ?C?PLDCODE
+                       MOV     R7,AR1
+                 R     MOV     DPTR,#pEP
+                       MOV     A,R2
+                       MOVX    @DPTR,A
+                       INC     DPTR
+                       MOV     A,R7
+                       MOVX    @DPTR,A
+                                           ; SOURCE LINE # 694
+;---- Variable 'curEp' assigned to Register 'R7' ----
+                       CLR     A
+                       MOV     R7,A
+             ?C0082:
+                 R     MOV     DPTR,#ep
+                       MOVX    A,@DPTR
+                       MOV     R6,A
+                       MOV     A,R7
+                       CLR     C
+                       SUBB    A,R6
+                 R     xJGE    ?C0081
+                                           ; SOURCE LINE # 695
+                                           ; SOURCE LINE # 696
+                 R     MOV     DPTR,#pEP
+                       MOVX    A,@DPTR
+                       MOV     R4,A
+                       INC     DPTR
+                       MOVX    A,@DPTR
+                       MOV     DPL,A
+                       MOV     DPH,R4
+                       MOV     A,#02H
+C51 COMPILER V9.51   USBFS_STD                                                             03/06/2019 16:03:59 PAGE 42  
+
+                       MOVC    A,@A+DPTR
+                       ANL     A,#07FH
+                       MOV     R5,A
+                 R     MOV     DPTR,#i
+                       MOVX    A,@DPTR
+                       MOV     R6,A
+                       XRL     A,R5
+                 R     JNZ     ?C0140
+                       CLR     A
+             ?C0140:
+                 R     xJNZ    ?C0085
+                                           ; SOURCE LINE # 697
+                                           ; SOURCE LINE # 699
+                 R     MOV     DPTR,#pEP
+                       MOVX    A,@DPTR
+                       INC     DPTR
+                       MOVX    A,@DPTR
+                       MOV     DPL,A
+                       MOV     DPH,R4
+                       MOV     A,#04H
+                       MOVC    A,@A+DPTR
+                       MOV     R4,A
+                       MOV     A,#05H
+                       MOVC    A,@A+DPTR
+                       MOV     R5,A
+                       MOV     A,R6
+                       MOV     B,#0BH
+                       MUL     AB
+                 E     ADD     A,#LOW USBFS_EP+08H
+                       MOV     DPL,A
+                       CLR     A
+                 E     ADDC    A,#HIGH USBFS_EP+08H
+                       MOV     DPH,A
+                       MOVX    A,@DPTR
+                       MOV     R2,A
+                       INC     DPTR
+                       MOVX    A,@DPTR
+                       CLR     C
+                       SUBB    A,R5
+                       MOV     A,R2
+                       SUBB    A,R4
+                 R     xJGE    ?C0086
+                                           ; SOURCE LINE # 700
+                                           ; SOURCE LINE # 701
+                 R     MOV     DPTR,#pEP
+                       MOVX    A,@DPTR
+                       MOV     R4,A
+                       INC     DPTR
+                       MOVX    A,@DPTR
+                       MOV     DPL,A
+                       MOV     DPH,R4
+                       MOV     A,#04H
+                       MOVC    A,@A+DPTR
+                       MOV     R4,A
+                       MOV     A,#05H
+                       MOVC    A,@A+DPTR
+                       MOV     R5,A
+                 R     MOV     DPTR,#i
+                       MOVX    A,@DPTR
+                       MOV     B,#0BH
+                       MUL     AB
+                 E     ADD     A,#LOW USBFS_EP+08H
+C51 COMPILER V9.51   USBFS_STD                                                             03/06/2019 16:03:59 PAGE 43  
+
+                       MOV     DPL,A
+                       CLR     A
+                 E     ADDC    A,#HIGH USBFS_EP+08H
+                       MOV     DPH,A
+                       MOV     A,R4
+                       MOVX    @DPTR,A
+                       INC     DPTR
+                       MOV     A,R5
+                       MOVX    @DPTR,A
+                                           ; SOURCE LINE # 702
+             ?C0086:
+                                           ; SOURCE LINE # 705
+                 R     MOV     DPTR,#pEP
+                       MOVX    A,@DPTR
+                       MOV     R4,A
+                       INC     DPTR
+                       MOVX    A,@DPTR
+                       MOV     R5,A
+                       MOV     DPL,A
+                       MOV     DPH,R4
+                       CLR     A
+                       MOVC    A,@A+DPTR
+                 E     ADD     A,#LOW USBFS_interfaceSetting
+                       MOV     DPL,A
+                       CLR     A
+                 E     ADDC    A,#HIGH USBFS_interfaceSetting
+                       MOV     DPH,A
+                       MOVX    A,@DPTR
+                       MOV     R6,A
+                       MOV     DPL,R5
+                       MOV     DPH,R4
+                       MOV     A,#01H
+                       MOVC    A,@A+DPTR
+                       MOV     R5,A
+                       MOV     A,R6
+                       XRL     A,R5
+                 R     xJNZ    ?C0085
+                                           ; SOURCE LINE # 706
+                                           ; SOURCE LINE # 707
+                 R     MOV     DPTR,#pEP
+                       MOVX    A,@DPTR
+                       INC     DPTR
+                       MOVX    A,@DPTR
+                       MOV     R5,A
+                       MOV     DPL,A
+                       MOV     DPH,R4
+                       MOV     A,#02H
+                       MOVC    A,@A+DPTR
+                       MOV     R6,A
+                 R     MOV     DPTR,#i
+                       MOVX    A,@DPTR
+                       MOV     R3,A
+                       MOV     B,#0BH
+                       MUL     AB
+                 E     ADD     A,#LOW USBFS_EP+04H
+                       MOV     DPL,A
+                       CLR     A
+                 E     ADDC    A,#HIGH USBFS_EP+04H
+                       MOV     DPH,A
+                       MOV     A,R6
+                       MOVX    @DPTR,A
+                                           ; SOURCE LINE # 708
+C51 COMPILER V9.51   USBFS_STD                                                             03/06/2019 16:03:59 PAGE 44  
+
+                       MOV     DPL,R5
+                       MOV     DPH,R4
+                       MOV     A,#03H
+                       MOVC    A,@A+DPTR
+                       MOV     R6,A
+                       MOV     A,R3
+                       MOV     B,#0BH
+                       MUL     AB
+                 E     ADD     A,#LOW USBFS_EP
+                       MOV     DPL,A
+                       CLR     A
+                 E     ADDC    A,#HIGH USBFS_EP
+                       MOV     DPH,A
+                       MOV     A,R6
+                       MOVX    @DPTR,A
+                                           ; SOURCE LINE # 710
+                 R     MOV     DPTR,#pEP
+                       MOVX    A,@DPTR
+                       MOV     R4,A
+                       INC     DPTR
+                       MOVX    A,@DPTR
+                       MOV     DPL,A
+                       MOV     DPH,R4
+                       MOV     A,#03H
+                       MOVC    A,@A+DPTR
+                       ANL     A,#03H
+                       MOV     R6,A
+;---- Variable 'epType' assigned to Register 'R6' ----
+                                           ; SOURCE LINE # 712
+                 R     MOV     DPTR,#pEP
+                       MOVX    A,@DPTR
+                       INC     DPTR
+                       MOVX    A,@DPTR
+                       MOV     DPL,A
+                       MOV     DPH,R4
+                       MOV     A,#02H
+                       MOVC    A,@A+DPTR
+                       ANL     A,#080H
+                 R     xJZ     ?C0088
+                                           ; SOURCE LINE # 713
+                                           ; SOURCE LINE # 715
+                       MOV     A,R6
+                 R     xJNE    A,#01H,?C0089
+                       MOV     R5,#07H
+                 R     xJMP    ?C0090
+             ?C0089:
+                       MOV     R5,#0DH
+             ?C0090:
+                 R     MOV     DPTR,#i
+                       MOVX    A,@DPTR
+                       MOV     R4,A
+                       MOV     B,#0BH
+                       MUL     AB
+                 E     ADD     A,#LOW USBFS_EP+05H
+                       MOV     DPL,A
+                       CLR     A
+                 E     ADDC    A,#HIGH USBFS_EP+05H
+                       MOV     DPH,A
+                       MOV     A,R5
+                       MOVX    @DPTR,A
+                                           ; SOURCE LINE # 716
+                       MOV     A,R4
+C51 COMPILER V9.51   USBFS_STD                                                             03/06/2019 16:03:59 PAGE 45  
+
+                       MOV     B,#0BH
+                       MUL     AB
+                 E     ADD     A,#LOW USBFS_EP+01H
+                       MOV     DPL,A
+                       CLR     A
+                 E     ADDC    A,#HIGH USBFS_EP+01H
+                       MOV     DPH,A
+                       MOV     A,#01H
+                       MOVX    @DPTR,A
+                                           ; SOURCE LINE # 724
+                 R     xJMP    ?C0085
+             ?C0088:
+                                           ; SOURCE LINE # 726
+                                           ; SOURCE LINE # 728
+                       MOV     A,R6
+                 R     xJNE    A,#01H,?C0092
+                       MOV     R6,#05H
+                 R     xJMP    ?C0093
+             ?C0092:
+                       MOV     R6,#09H
+             ?C0093:
+                 R     MOV     DPTR,#i
+                       MOVX    A,@DPTR
+                       MOV     R5,A
+                       MOV     B,#0BH
+                       MUL     AB
+                 E     ADD     A,#LOW USBFS_EP+05H
+                       MOV     DPL,A
+                       CLR     A
+                 E     ADDC    A,#HIGH USBFS_EP+05H
+                       MOV     DPH,A
+                       MOV     A,R6
+                       MOVX    @DPTR,A
+                                           ; SOURCE LINE # 729
+                       MOV     A,R5
+                       MOV     B,#0BH
+                       MUL     AB
+                 E     ADD     A,#LOW USBFS_EP+01H
+                       MOV     DPL,A
+                       CLR     A
+                 E     ADDC    A,#HIGH USBFS_EP+01H
+                       MOV     DPH,A
+                       CLR     A
+                       MOVX    @DPTR,A
+                                           ; SOURCE LINE # 737
+                                           ; SOURCE LINE # 749
+                                           ; SOURCE LINE # 750
+             ?C0085:
+                                           ; SOURCE LINE # 752
+                 R     MOV     DPTR,#pEP+01H
+                       MOVX    A,@DPTR
+                       ADD     A,#07H
+                       MOVX    @DPTR,A
+                 R     MOV     DPTR,#pEP
+                       MOVX    A,@DPTR
+                       ADDC    A,#00H
+                       MOVX    @DPTR,A
+                                           ; SOURCE LINE # 753
+                       INC     R7
+                 R     xJMP    ?C0082
+                                           ; SOURCE LINE # 754
+             ?C0081:
+C51 COMPILER V9.51   USBFS_STD                                                             03/06/2019 16:03:59 PAGE 46  
+
+                 R     MOV     DPTR,#i
+                       MOVX    A,@DPTR
+                       INC     A
+                       MOVX    @DPTR,A
+                 R     xJMP    ?C0079
+             ?C0080:
+                                           ; SOURCE LINE # 762
+                 R     MOV     DPTR,#pTmp
+                       MOVX    A,@DPTR
+                       MOV     R6,A
+                       INC     DPTR
+                       MOVX    A,@DPTR
+                       MOV     DPL,A
+                       MOV     DPH,R6
+                       INC     DPTR
+                 E     CALL    ?C?PLDCODE
+                       MOV     R7,AR1
+                 R     MOV     DPTR,#pEP
+                       MOV     A,R2
+                       MOVX    @DPTR,A
+                       INC     DPTR
+                       MOV     A,R7
+                       MOVX    @DPTR,A
+                                           ; SOURCE LINE # 763
+                       CLR     A
+                 R     MOV     DPTR,#i
+                       MOVX    @DPTR,A
+             ?C0094:
+                 R     MOV     DPTR,#ep
+                       MOVX    A,@DPTR
+                       MOV     R7,A
+                       INC     DPTR
+                       MOVX    A,@DPTR
+                       CLR     C
+                       SUBB    A,R7
+                 R     xJGE    ?C0095
+                                           ; SOURCE LINE # 764
+                                           ; SOURCE LINE # 766
+                 R     MOV     DPTR,#pEP
+                       MOVX    A,@DPTR
+                       MOV     R6,A
+                       INC     DPTR
+                       MOVX    A,@DPTR
+                       MOV     DPL,A
+                       MOV     DPH,R6
+                       CLR     A
+                       MOVC    A,@A+DPTR
+                       MOV     R5,A
+                       MOV     A,#02H
+                       MOVC    A,@A+DPTR
+                       ANL     A,#07FH
+                       MOV     B,#0BH
+                       MUL     AB
+                 E     ADD     A,#LOW USBFS_EP+0AH
+                       MOV     DPL,A
+                       CLR     A
+                 E     ADDC    A,#HIGH USBFS_EP+0AH
+                       MOV     DPH,A
+                       MOV     A,R5
+                       MOVX    @DPTR,A
+                                           ; SOURCE LINE # 767
+                 R     MOV     DPTR,#pEP+01H
+C51 COMPILER V9.51   USBFS_STD                                                             03/06/2019 16:03:59 PAGE 47  
+
+                       MOVX    A,@DPTR
+                       ADD     A,#07H
+                       MOVX    @DPTR,A
+                 R     MOV     DPTR,#pEP
+                       MOVX    A,@DPTR
+                       ADDC    A,#00H
+                       MOVX    @DPTR,A
+                                           ; SOURCE LINE # 768
+                 R     MOV     DPTR,#i
+                       MOVX    A,@DPTR
+                       INC     A
+                       MOVX    @DPTR,A
+                 R     xJMP    ?C0094
+             ?C0095:
+                                           ; SOURCE LINE # 771
+                 R     CALL    USBFS_GetInterfaceClassTablePtr
+                 E     MOV     DPTR,#USBFS_interfaceClass
+                       MOV     A,R6
+                       MOVX    @DPTR,A
+                       INC     DPTR
+                       MOV     A,R7
+                       MOVX    @DPTR,A
+                                           ; SOURCE LINE # 775
+                       CLR     A
+                 R     MOV     DPTR,#buffCount
+                       MOVX    @DPTR,A
+                       INC     DPTR
+                       MOVX    @DPTR,A
+                                           ; SOURCE LINE # 776
+                 R     MOV     DPTR,#ep
+                       INC     A
+                       MOVX    @DPTR,A
+             ?C0097:
+                 R     MOV     DPTR,#ep
+                       MOVX    A,@DPTR
+                       MOV     R7,A
+                       CLR     C
+                       SUBB    A,#09H
+                 R     xJGE    ?C0098
+                                           ; SOURCE LINE # 777
+                                           ; SOURCE LINE # 778
+                 R     MOV     DPTR,#buffCount
+                       MOVX    A,@DPTR
+                       MOV     R4,A
+                       INC     DPTR
+                       MOVX    A,@DPTR
+                       MOV     R5,A
+                       MOV     A,R7
+                       MOV     B,#0BH
+                       MUL     AB
+                 E     ADD     A,#LOW USBFS_EP+06H
+                       MOV     DPL,A
+                       CLR     A
+                 E     ADDC    A,#HIGH USBFS_EP+06H
+                       MOV     DPH,A
+                       MOV     A,R4
+                       MOVX    @DPTR,A
+                       INC     DPTR
+                       MOV     A,R5
+                       MOVX    @DPTR,A
+                                           ; SOURCE LINE # 779
+                       MOV     A,R7
+C51 COMPILER V9.51   USBFS_STD                                                             03/06/2019 16:03:59 PAGE 48  
+
+                       MOV     B,#0BH
+                       MUL     AB
+                 E     ADD     A,#LOW USBFS_EP+08H
+                       MOV     DPL,A
+                       CLR     A
+                 E     ADDC    A,#HIGH USBFS_EP+08H
+                       MOV     DPH,A
+                       MOVX    A,@DPTR
+                       MOV     R6,A
+                       INC     DPTR
+                       MOVX    A,@DPTR
+                       MOV     R7,A
+                 R     MOV     DPTR,#buffCount
+                       MOV     A,R6
+                       MOV     B,R7
+                 E     CALL    ?C?IILDX
+                                           ; SOURCE LINE # 785
+                 R     MOV     DPTR,#ep
+                       MOVX    A,@DPTR
+                       INC     A
+                       MOVX    @DPTR,A
+                 R     xJMP    ?C0097
+             ?C0098:
+                                           ; SOURCE LINE # 789
+                 R     CALL    USBFS_ConfigReg
+                                           ; SOURCE LINE # 790
+                                           ; SOURCE LINE # 791
+             ?C0100:
+                       RET     
+             ; FUNCTION _USBFS_Config (END)
+
+             ; FUNCTION USBFS_ConfigAltChanged (BEGIN)
+                                           ; SOURCE LINE # 805
+                                           ; SOURCE LINE # 806
+                                           ; SOURCE LINE # 817
+                 E     MOV     DPTR,#USBFS_configuration
+                       MOVX    A,@DPTR
+                       SETB    C
+                       SUBB    A,#00H
+                 R     xJLT    ?C0112
+                                           ; SOURCE LINE # 818
+                                           ; SOURCE LINE # 820
+                       MOVX    A,@DPTR
+                       DEC     A
+                       MOV     R7,A
+                 R     CALL    _USBFS_GetConfigTablePtr
+;---- Variable 'pTmp' assigned to Register 'R6/R7' ----
+                                           ; SOURCE LINE # 821
+                       MOV     A,R7
+                       ADD     A,#04H
+                       MOV     R7,A
+                       CLR     A
+                       ADDC    A,R6
+                       MOV     R6,A
+                                           ; SOURCE LINE # 822
+                       MOV     DPL,R7
+                       MOV     DPH,A
+                       CLR     A
+                       MOVC    A,@A+DPTR
+                 R     MOV     DPTR,#ep
+                       MOVX    @DPTR,A
+                                           ; SOURCE LINE # 825
+C51 COMPILER V9.51   USBFS_STD                                                             03/06/2019 16:03:59 PAGE 49  
+
+                       MOV     DPL,R7
+                       MOV     DPH,R6
+                       INC     DPTR
+                 E     CALL    ?C?PLDCODE
+;---- Variable 'pEP' assigned to Register 'R4/R5' ----
+                       MOV     R5,AR1
+                       MOV     R4,AR2
+                                           ; SOURCE LINE # 831
+                 E     MOV     DPTR,#USBFS_interfaceNumber
+                       MOVX    A,@DPTR
+                 R     MOV     DPTR,#interfaceNum
+                       MOVX    @DPTR,A
+                                           ; SOURCE LINE # 832
+;---- Variable 'i' assigned to Register 'R3' ----
+                       CLR     A
+                       MOV     R3,A
+             ?C0102:
+                 R     MOV     DPTR,#ep
+                       MOVX    A,@DPTR
+                       MOV     R7,A
+                       MOV     A,R3
+                       CLR     C
+                       SUBB    A,R7
+                 R     xJGE    ?C0112
+                                           ; SOURCE LINE # 833
+                                           ; SOURCE LINE # 835
+                       MOV     DPL,R5
+                       MOV     DPH,R4
+                       CLR     A
+                       MOVC    A,@A+DPTR
+                       MOV     R7,A
+                 R     MOV     DPTR,#interfaceNum
+                       MOVX    A,@DPTR
+                       MOV     R6,A
+                       XRL     A,R7
+                 R     xJNZ    ?C0105
+                       MOV     DPL,R5
+                       MOV     DPH,R4
+                       INC     A
+                       MOVC    A,@A+DPTR
+                       MOV     R7,A
+                 E     MOV     A,#LOW USBFS_interfaceSetting
+                       ADD     A,R6
+                       MOV     DPL,A
+                       CLR     A
+                 E     ADDC    A,#HIGH USBFS_interfaceSetting
+                       MOV     DPH,A
+                       MOVX    A,@DPTR
+                       XRL     A,R7
+                 R     xJNZ    ?C0105
+                                           ; SOURCE LINE # 837
+                                           ; SOURCE LINE # 838
+                       MOV     DPL,R5
+                       MOV     DPH,R4
+                       MOV     A,#02H
+                       MOVC    A,@A+DPTR
+                       ANL     A,#07FH
+;---- Variable 'curEp' assigned to Register 'R2' ----
+                       MOV     R2,A
+                                           ; SOURCE LINE # 839
+                       MOV     A,#03H
+                       MOVC    A,@A+DPTR
+C51 COMPILER V9.51   USBFS_STD                                                             03/06/2019 16:03:59 PAGE 50  
+
+                       ANL     A,#03H
+;---- Variable 'epType' assigned to Register 'R1' ----
+                       MOV     R1,A
+                                           ; SOURCE LINE # 842
+                       MOV     A,R2
+                       MOV     B,#0BH
+                       MUL     AB
+                 E     ADD     A,#LOW USBFS_EP+03H
+                       MOV     DPL,A
+                       CLR     A
+                 E     ADDC    A,#HIGH USBFS_EP+03H
+                       MOV     DPH,A
+                       CLR     A
+                       MOVX    @DPTR,A
+                                           ; SOURCE LINE # 843
+                       MOV     DPL,R5
+                       MOV     DPH,R4
+                       MOV     A,#02H
+                       MOVC    A,@A+DPTR
+                       MOV     R7,A
+                       MOV     A,R2
+                       MOV     B,#0BH
+                       MUL     AB
+                 E     ADD     A,#LOW USBFS_EP+04H
+                       MOV     DPL,A
+                       CLR     A
+                 E     ADDC    A,#HIGH USBFS_EP+04H
+                       MOV     DPH,A
+                       MOV     A,R7
+                       MOVX    @DPTR,A
+                                           ; SOURCE LINE # 844
+                       MOV     DPL,R5
+                       MOV     DPH,R4
+                       MOV     A,#03H
+                       MOVC    A,@A+DPTR
+                       MOV     R7,A
+                       MOV     A,R2
+                       MOV     B,#0BH
+                       MUL     AB
+                 E     ADD     A,#LOW USBFS_EP
+                       MOV     DPL,A
+                       CLR     A
+                 E     ADDC    A,#HIGH USBFS_EP
+                       MOV     DPH,A
+                       MOV     A,R7
+                       MOVX    @DPTR,A
+                                           ; SOURCE LINE # 845
+                       MOV     DPL,R5
+                       MOV     DPH,R4
+                       MOV     A,#04H
+                       MOVC    A,@A+DPTR
+                       MOV     R6,A
+                       MOV     A,#05H
+                       MOVC    A,@A+DPTR
+                       MOV     R7,A
+                       MOV     A,R2
+                       MOV     B,#0BH
+                       MUL     AB
+                 E     ADD     A,#LOW USBFS_EP+08H
+                       MOV     DPL,A
+                       CLR     A
+                 E     ADDC    A,#HIGH USBFS_EP+08H
+C51 COMPILER V9.51   USBFS_STD                                                             03/06/2019 16:03:59 PAGE 51  
+
+                       MOV     DPH,A
+                       MOV     A,R6
+                       MOVX    @DPTR,A
+                       INC     DPTR
+                       MOV     A,R7
+                       MOVX    @DPTR,A
+                                           ; SOURCE LINE # 847
+                       MOV     DPL,R5
+                       MOV     DPH,R4
+                       MOV     A,#02H
+                       MOVC    A,@A+DPTR
+                       ANL     A,#080H
+                 R     xJZ     ?C0106
+                                           ; SOURCE LINE # 848
+                                           ; SOURCE LINE # 850
+                       MOV     A,R1
+                 R     xJNE    A,#01H,?C0107
+                       MOV     R7,#07H
+                 R     xJMP    ?C0108
+             ?C0107:
+                       MOV     R7,#0DH
+             ?C0108:
+                       MOV     A,R2
+                       MOV     B,#0BH
+                       MUL     AB
+                 E     ADD     A,#LOW USBFS_EP+05H
+                       MOV     DPL,A
+                       CLR     A
+                 E     ADDC    A,#HIGH USBFS_EP+05H
+                       MOV     DPH,A
+                       MOV     A,R7
+                       MOVX    @DPTR,A
+                                           ; SOURCE LINE # 851
+                       MOV     A,R2
+                       MOV     B,#0BH
+                       MUL     AB
+                 E     ADD     A,#LOW USBFS_EP+01H
+                       MOV     DPL,A
+                       CLR     A
+                 E     ADDC    A,#HIGH USBFS_EP+01H
+                       MOV     DPH,A
+                       MOV     A,#01H
+                       MOVX    @DPTR,A
+                                           ; SOURCE LINE # 852
+                 R     xJMP    ?C0109
+             ?C0106:
+                                           ; SOURCE LINE # 854
+                                           ; SOURCE LINE # 856
+                       MOV     A,R1
+                 R     xJNE    A,#01H,?C0110
+                       MOV     R7,#05H
+                 R     xJMP    ?C0111
+             ?C0110:
+                       MOV     R7,#09H
+             ?C0111:
+                       MOV     A,R2
+                       MOV     B,#0BH
+                       MUL     AB
+                 E     ADD     A,#LOW USBFS_EP+05H
+                       MOV     DPL,A
+                       CLR     A
+                 E     ADDC    A,#HIGH USBFS_EP+05H
+C51 COMPILER V9.51   USBFS_STD                                                             03/06/2019 16:03:59 PAGE 52  
+
+                       MOV     DPH,A
+                       MOV     A,R7
+                       MOVX    @DPTR,A
+                                           ; SOURCE LINE # 857
+                       MOV     A,R2
+                       MOV     B,#0BH
+                       MUL     AB
+                 E     ADD     A,#LOW USBFS_EP+01H
+                       MOV     DPL,A
+                       CLR     A
+                 E     ADDC    A,#HIGH USBFS_EP+01H
+                       MOV     DPH,A
+                       CLR     A
+                       MOVX    @DPTR,A
+                                           ; SOURCE LINE # 858
+             ?C0109:
+                                           ; SOURCE LINE # 861
+                       MOV     B,#010H
+                       MOV     A,R2
+                       MOV     DPTR,#05FFEH
+                 E     CALL    ?C?OFFXADD
+                       MOV     A,#01H
+                       MOVX    @DPTR,A
+                                           ; SOURCE LINE # 907
+                       MOV     A,R2
+                       MOV     B,#0BH
+                       MUL     AB
+                 E     ADD     A,#LOW USBFS_EP+08H
+                       MOV     DPL,A
+                       CLR     A
+                 E     ADDC    A,#HIGH USBFS_EP+08H
+                       MOV     DPH,A
+                       MOVX    A,@DPTR
+                       MOV     R7,A
+                       MOV     B,#010H
+                       MOV     A,R2
+                       MOV     DPTR,#05FFCH
+                 E     CALL    ?C?OFFXADD
+                       MOV     A,R7
+                       MOVX    @DPTR,A
+                                           ; SOURCE LINE # 908
+                       MOV     A,R2
+                       MOV     B,#0BH
+                       MUL     AB
+                 E     ADD     A,#LOW USBFS_EP+08H
+                       MOV     DPL,A
+                       CLR     A
+                 E     ADDC    A,#HIGH USBFS_EP+08H
+                       MOV     DPH,A
+                       MOVX    A,@DPTR
+                       INC     DPTR
+                       MOVX    A,@DPTR
+                       MOV     R7,A
+                       MOV     B,#010H
+                       MOV     A,R2
+                       MOV     DPTR,#05FFDH
+                 E     CALL    ?C?OFFXADD
+                       MOV     A,R7
+                       MOVX    @DPTR,A
+                                           ; SOURCE LINE # 914
+                       MOV     A,R2
+                       MOV     B,#0BH
+C51 COMPILER V9.51   USBFS_STD                                                             03/06/2019 16:03:59 PAGE 53  
+
+                       MUL     AB
+                 E     ADD     A,#LOW USBFS_EP+06H
+                       MOV     DPL,A
+                       CLR     A
+                 E     ADDC    A,#HIGH USBFS_EP+06H
+                       MOV     DPH,A
+                       MOVX    A,@DPTR
+                       INC     DPTR
+                       MOVX    A,@DPTR
+                       MOV     R7,A
+                       MOV     B,#010H
+                       MOV     A,R2
+                       MOV     DPTR,#06076H
+                 E     CALL    ?C?OFFXADD
+                       MOV     A,R7
+                       MOVX    @DPTR,A
+                                           ; SOURCE LINE # 915
+                       MOV     A,R2
+                       MOV     B,#0BH
+                       MUL     AB
+                 E     ADD     A,#LOW USBFS_EP+06H
+                       MOV     DPL,A
+                       CLR     A
+                 E     ADDC    A,#HIGH USBFS_EP+06H
+                       MOV     DPH,A
+                       MOVX    A,@DPTR
+                       MOV     R7,A
+                       MOV     B,#010H
+                       MOV     A,R2
+                       MOV     DPTR,#06077H
+                 E     CALL    ?C?OFFXADD
+                       MOV     A,R7
+                       MOVX    @DPTR,A
+                                           ; SOURCE LINE # 916
+                       MOV     A,R2
+                       MOV     B,#0BH
+                       MUL     AB
+                 E     ADD     A,#LOW USBFS_EP+06H
+                       MOV     DPL,A
+                       CLR     A
+                 E     ADDC    A,#HIGH USBFS_EP+06H
+                       MOV     DPH,A
+                       MOVX    A,@DPTR
+                       INC     DPTR
+                       MOVX    A,@DPTR
+                       MOV     R7,A
+                       MOV     B,#010H
+                       MOV     A,R2
+                       MOV     DPTR,#06074H
+                 E     CALL    ?C?OFFXADD
+                       MOV     A,R7
+                       MOVX    @DPTR,A
+                                           ; SOURCE LINE # 917
+                       MOV     A,R2
+                       MOV     B,#0BH
+                       MUL     AB
+                 E     ADD     A,#LOW USBFS_EP+06H
+                       MOV     DPL,A
+                       CLR     A
+                 E     ADDC    A,#HIGH USBFS_EP+06H
+                       MOV     DPH,A
+                       MOVX    A,@DPTR
+C51 COMPILER V9.51   USBFS_STD                                                             03/06/2019 16:03:59 PAGE 54  
+
+                       MOV     R7,A
+                       MOV     B,#010H
+                       MOV     A,R2
+                       MOV     DPTR,#06075H
+                 E     CALL    ?C?OFFXADD
+                       MOV     A,R7
+                       MOVX    @DPTR,A
+                                           ; SOURCE LINE # 920
+             ?C0105:
+                                           ; SOURCE LINE # 922
+                       MOV     A,R5
+                       ADD     A,#07H
+                       MOV     R5,A
+                       CLR     A
+                       ADDC    A,R4
+                       MOV     R4,A
+                                           ; SOURCE LINE # 923
+                       INC     R3
+                 R     xJMP    ?C0102
+                                           ; SOURCE LINE # 926
+                                           ; SOURCE LINE # 927
+             ?C0112:
+                       RET     
+             ; FUNCTION USBFS_ConfigAltChanged (END)
+
+             ; FUNCTION _USBFS_GetConfigTablePtr (BEGIN)
+                                           ; SOURCE LINE # 942
+                 R     MOV     DPTR,#confIndex
+                       MOV     A,R7
+                       MOVX    @DPTR,A
+                                           ; SOURCE LINE # 944
+                                           ; SOURCE LINE # 948
+                 E     MOV     DPTR,#USBFS_device
+                       MOVX    A,@DPTR
+                       ADD     A,ACC
+                       ADD     A,ACC
+                 E     ADD     A,#LOW USBFS_TABLE+01H
+                       MOV     DPL,A
+                       CLR     A
+                 E     ADDC    A,#HIGH USBFS_TABLE+01H
+                       MOV     DPH,A
+                 E     CALL    ?C?PLDCODE
+                       MOV     R6,AR2
+                       MOV     R7,AR1
+;---- Variable 'pTmp' assigned to Register 'R6/R7' ----
+                                           ; SOURCE LINE # 955
+                       MOV     A,R7
+                       ADD     A,#08H
+                       MOV     R7,A
+                       CLR     A
+                       ADDC    A,R6
+                       MOV     R6,A
+                                           ; SOURCE LINE # 957
+                       MOV     DPL,R7
+                       MOV     DPH,A
+                       CLR     A
+                       MOVC    A,@A+DPTR
+                       MOV     R5,A
+                 R     MOV     DPTR,#confIndex
+                       MOVX    A,@DPTR
+                       MOV     R4,A
+                       CLR     C
+C51 COMPILER V9.51   USBFS_STD                                                             03/06/2019 16:03:59 PAGE 55  
+
+                       SUBB    A,R5
+                 R     xJLT    ?C0113
+                                           ; SOURCE LINE # 958
+                                           ; SOURCE LINE # 959
+                       CLR     A
+                       MOV     R6,A
+                       MOV     R7,A
+                                           ; SOURCE LINE # 960
+                 R     xJMP    ?C0114
+             ?C0113:
+                                           ; SOURCE LINE # 962
+                                           ; SOURCE LINE # 963
+                       MOV     DPL,R7
+                       MOV     DPH,R6
+                       MOV     B,#04H
+                       MOV     A,R4
+                 E     CALL    ?C?OFFXADD
+                       INC     DPTR
+                 E     CALL    ?C?PLDCODE
+                       MOV     R6,AR2
+                       MOV     R7,AR1
+                                           ; SOURCE LINE # 964
+             ?C0114:
+                                           ; SOURCE LINE # 966
+                                           ; SOURCE LINE # 967
+             ?C0115:
+                       RET     
+             ; FUNCTION _USBFS_GetConfigTablePtr (END)
+
+             ; FUNCTION USBFS_GetDeviceTablePtr (BEGIN)
+                                           ; SOURCE LINE # 1011
+                                           ; SOURCE LINE # 1013
+                                           ; SOURCE LINE # 1015
+                 E     MOV     DPTR,#USBFS_device
+                       MOVX    A,@DPTR
+                       ADD     A,ACC
+                       ADD     A,ACC
+                 E     ADD     A,#LOW USBFS_TABLE+01H
+                       MOV     DPL,A
+                       CLR     A
+                 E     ADDC    A,#HIGH USBFS_TABLE+01H
+                       MOV     DPH,A
+                 E     CALL    ?C?PLDCODE
+                       MOV     R6,AR2
+                       MOV     R7,AR1
+                                           ; SOURCE LINE # 1016
+             ?C0116:
+                       RET     
+             ; FUNCTION USBFS_GetDeviceTablePtr (END)
+
+             ; FUNCTION USBFS_GetInterfaceClassTablePtr (BEGIN)
+                                           ; SOURCE LINE # 1030
+                                           ; SOURCE LINE # 1032
+                                           ; SOURCE LINE # 1037
+                 E     MOV     DPTR,#USBFS_configuration
+                       MOVX    A,@DPTR
+                       DEC     A
+                       MOV     R7,A
+                 R     CALL    _USBFS_GetConfigTablePtr
+;---- Variable 'pTmp' assigned to Register 'R4/R5' ----
+                       MOV     R5,AR7
+                       MOV     R4,AR6
+C51 COMPILER V9.51   USBFS_STD                                                             03/06/2019 16:03:59 PAGE 56  
+
+                                           ; SOURCE LINE # 1038
+                       MOV     A,R5
+                       ORL     A,R4
+                 R     xJZ     ?C0117
+                                           ; SOURCE LINE # 1039
+                                           ; SOURCE LINE # 1040
+                       MOV     DPL,R5
+                       MOV     DPH,R4
+                       INC     DPTR
+                 E     CALL    ?C?PLDCODE
+                       MOV     A,R1
+                       ADD     A,#04H
+                       MOV     R1,A
+                       CLR     A
+                       ADDC    A,R2
+                       MOV     R2,A
+                 E     CALL    ?C?CLDPTR
+;---- Variable 'currentInterfacesNum' assigned to Register 'R7' ----
+                                           ; SOURCE LINE # 1043
+                       ADD     A,#02H
+                       MOV     R7,A
+                       CLR     A
+                       RLC     A
+                       MOV     R6,A
+                       MOV     A,R7
+                       MOV     R0,#02H
+             ?C0141:
+                       CLR     C
+                       RLC     A
+                       XCH     A,R6
+                       RLC     A
+                       XCH     A,R6
+                 R     DJNZ    R0,?C0141
+                       ADD     A,R5
+                       MOV     R5,A
+                       MOV     A,R6
+                       ADDC    A,R4
+                       MOV     R4,A
+                                           ; SOURCE LINE # 1044
+                       MOV     R7,AR5
+                       MOV     DPL,R5
+                       MOV     DPH,A
+                       INC     DPTR
+                 E     CALL    ?C?PLDCODE
+                       MOV     R7,AR1
+                 R     MOV     DPTR,#pInterfaceClass
+                       MOV     A,R2
+                       MOVX    @DPTR,A
+                       INC     DPTR
+                       MOV     A,R7
+                       MOVX    @DPTR,A
+                                           ; SOURCE LINE # 1045
+                 R     xJMP    ?C0118
+             ?C0117:
+                                           ; SOURCE LINE # 1047
+                                           ; SOURCE LINE # 1048
+                       CLR     A
+                 R     MOV     DPTR,#pInterfaceClass
+                       MOVX    @DPTR,A
+                       INC     DPTR
+                       MOVX    @DPTR,A
+                                           ; SOURCE LINE # 1049
+C51 COMPILER V9.51   USBFS_STD                                                             03/06/2019 16:03:59 PAGE 57  
+
+             ?C0118:
+                                           ; SOURCE LINE # 1051
+                 R     MOV     DPTR,#pInterfaceClass
+                       MOVX    A,@DPTR
+                       MOV     R6,A
+                       INC     DPTR
+                       MOVX    A,@DPTR
+                       MOV     R7,A
+                                           ; SOURCE LINE # 1052
+             ?C0119:
+                       RET     
+             ; FUNCTION USBFS_GetInterfaceClassTablePtr (END)
+
+             ; FUNCTION _USBFS_TerminateEP (BEGIN)
+                                           ; SOURCE LINE # 1072
+;---- Variable 'epNumber' assigned to Register 'R7' ----
+                                           ; SOURCE LINE # 1073
+                                           ; SOURCE LINE # 1075
+                       MOV     A,R7
+                       ANL     A,#07FH
+                       MOV     R7,A
+                                           ; SOURCE LINE # 1077
+                       SETB    C
+                       SUBB    A,#00H
+                 R     xJLT    ?C0123
+                       MOV     A,R7
+                       SUBB    A,#09H
+                 R     xJGE    ?C0123
+                                           ; SOURCE LINE # 1078
+                                           ; SOURCE LINE # 1080
+                       MOV     A,R7
+                       MOV     B,#0BH
+                       MUL     AB
+                 E     ADD     A,#LOW USBFS_EP+02H
+                       MOV     DPL,A
+                       CLR     A
+                 E     ADDC    A,#HIGH USBFS_EP+02H
+                       MOV     DPH,A
+                       MOVX    A,@DPTR
+                       ORL     A,#01H
+                       MOVX    @DPTR,A
+                                           ; SOURCE LINE # 1083
+                       MOV     A,R7
+                       MOV     B,#0BH
+                       MUL     AB
+                 E     ADD     A,#LOW USBFS_EP+03H
+                       MOV     DPL,A
+                       CLR     A
+                 E     ADDC    A,#HIGH USBFS_EP+03H
+                       MOV     DPH,A
+                       CLR     A
+                       MOVX    @DPTR,A
+                                           ; SOURCE LINE # 1084
+                       MOV     A,R7
+                       MOV     B,#0BH
+                       MUL     AB
+                 E     ADD     A,#LOW USBFS_EP+01H
+                       MOV     DPL,A
+                       CLR     A
+                 E     ADDC    A,#HIGH USBFS_EP+01H
+                       MOV     DPH,A
+                       MOV     A,#02H
+C51 COMPILER V9.51   USBFS_STD                                                             03/06/2019 16:03:59 PAGE 58  
+
+                       MOVX    @DPTR,A
+                                           ; SOURCE LINE # 1086
+                       MOV     A,R7
+                       MOV     B,#0BH
+                       MUL     AB
+                 E     ADD     A,#LOW USBFS_EP+04H
+                       MOV     DPL,A
+                       CLR     A
+                 E     ADDC    A,#HIGH USBFS_EP+04H
+                       MOV     DPH,A
+                       MOVX    A,@DPTR
+                       ANL     A,#080H
+                 R     xJZ     ?C0121
+                                           ; SOURCE LINE # 1087
+                                           ; SOURCE LINE # 1089
+                       MOV     B,#010H
+                       MOV     A,R7
+                       MOV     DPTR,#05FFEH
+                 E     CALL    ?C?OFFXADD
+                       MOV     A,#0CH
+                       MOVX    @DPTR,A
+                                           ; SOURCE LINE # 1090
+                       RET     
+             ?C0121:
+                                           ; SOURCE LINE # 1092
+                                           ; SOURCE LINE # 1094
+                       MOV     B,#010H
+                       MOV     A,R7
+                       MOV     DPTR,#05FFEH
+                 E     CALL    ?C?OFFXADD
+                       MOV     A,#08H
+                       MOVX    @DPTR,A
+                                           ; SOURCE LINE # 1095
+                                           ; SOURCE LINE # 1096
+                                           ; SOURCE LINE # 1097
+             ?C0123:
+                       RET     
+             ; FUNCTION _USBFS_TerminateEP (END)
+
+             ; FUNCTION USBFS_SetEndpointHalt (BEGIN)
+                                           ; SOURCE LINE # 1113
+                                           ; SOURCE LINE # 1114
+                                           ; SOURCE LINE # 1115
+                       CLR     A
+                 R     MOV     DPTR,#requestHandled
+                       MOVX    @DPTR,A
+                                           ; SOURCE LINE # 1119
+                       MOV     DPTR,#06004H
+                       MOVX    A,@DPTR
+                       ANL     A,#07FH
+                       MOV     R7,A
+;---- Variable 'ep' assigned to Register 'R7' ----
+                                           ; SOURCE LINE # 1121
+                       SETB    C
+                       SUBB    A,#00H
+                 R     xJLT    ?C0124
+                       MOV     A,R7
+                       SUBB    A,#09H
+                 R     xJGE    ?C0124
+                                           ; SOURCE LINE # 1122
+                                           ; SOURCE LINE # 1124
+                       MOV     A,R7
+C51 COMPILER V9.51   USBFS_STD                                                             03/06/2019 16:03:59 PAGE 59  
+
+                       MOV     B,#0BH
+                       MUL     AB
+                 E     ADD     A,#LOW USBFS_EP+02H
+                       MOV     DPL,A
+                       CLR     A
+                 E     ADDC    A,#HIGH USBFS_EP+02H
+                       MOV     DPH,A
+                       MOVX    A,@DPTR
+                       ORL     A,#01H
+                       MOVX    @DPTR,A
+                                           ; SOURCE LINE # 1127
+                       MOV     A,R7
+                       MOV     B,#0BH
+                       MUL     AB
+                 E     ADD     A,#LOW USBFS_EP+03H
+                       MOV     DPL,A
+                       CLR     A
+                 E     ADDC    A,#HIGH USBFS_EP+03H
+                       MOV     DPH,A
+                       CLR     A
+                       MOVX    @DPTR,A
+                                           ; SOURCE LINE # 1128
+                       MOV     A,R7
+                       MOV     B,#0BH
+                       MUL     AB
+                 E     ADD     A,#LOW USBFS_EP+01H
+                       MOV     DPL,A
+                       CLR     A
+                 E     ADDC    A,#HIGH USBFS_EP+01H
+                       MOV     DPH,A
+                       MOVX    A,@DPTR
+                       ORL     A,#02H
+                       MOVX    @DPTR,A
+                                           ; SOURCE LINE # 1130
+                       MOV     A,R7
+                       MOV     B,#0BH
+                       MUL     AB
+                 E     ADD     A,#LOW USBFS_EP+04H
+                       MOV     DPL,A
+                       CLR     A
+                 E     ADDC    A,#HIGH USBFS_EP+04H
+                       MOV     DPH,A
+                       MOVX    A,@DPTR
+                       ANL     A,#080H
+                 R     xJZ     ?C0125
+                                           ; SOURCE LINE # 1131
+                                           ; SOURCE LINE # 1133
+                       MOV     B,#010H
+                       MOV     A,R7
+                       MOV     DPTR,#05FFEH
+                 E     CALL    ?C?OFFXADD
+                       MOV     A,#08DH
+                       MOVX    @DPTR,A
+                                           ; SOURCE LINE # 1135
+                 R     xJMP    ?C0126
+             ?C0125:
+                                           ; SOURCE LINE # 1137
+                                           ; SOURCE LINE # 1139
+                       MOV     B,#010H
+                       MOV     A,R7
+                       MOV     DPTR,#05FFEH
+                 E     CALL    ?C?OFFXADD
+C51 COMPILER V9.51   USBFS_STD                                                             03/06/2019 16:03:59 PAGE 60  
+
+                       MOV     A,#089H
+                       MOVX    @DPTR,A
+                                           ; SOURCE LINE # 1141
+             ?C0126:
+                                           ; SOURCE LINE # 1142
+                 E     CALL    USBFS_InitNoDataControlTransfer
+                 R     MOV     DPTR,#requestHandled
+                       MOV     A,R7
+                       MOVX    @DPTR,A
+                                           ; SOURCE LINE # 1143
+             ?C0124:
+                                           ; SOURCE LINE # 1145
+                 R     MOV     DPTR,#requestHandled
+                       MOVX    A,@DPTR
+                       MOV     R7,A
+                                           ; SOURCE LINE # 1146
+             ?C0127:
+                       RET     
+             ; FUNCTION USBFS_SetEndpointHalt (END)
+
+             ; FUNCTION USBFS_ClearEndpointHalt (BEGIN)
+                                           ; SOURCE LINE # 1162
+                                           ; SOURCE LINE # 1163
+                                           ; SOURCE LINE # 1164
+                       CLR     A
+                 R     MOV     DPTR,#requestHandled
+                       MOVX    @DPTR,A
+                                           ; SOURCE LINE # 1168
+                       MOV     DPTR,#06004H
+                       MOVX    A,@DPTR
+                       ANL     A,#07FH
+                       MOV     R7,A
+;---- Variable 'ep' assigned to Register 'R7' ----
+                                           ; SOURCE LINE # 1170
+                       SETB    C
+                       SUBB    A,#00H
+                 R     xJLT    ?C0128
+                       MOV     A,R7
+                       SUBB    A,#09H
+                 R     xJGE    ?C0128
+                                           ; SOURCE LINE # 1171
+                                           ; SOURCE LINE # 1173
+                       MOV     A,R7
+                       MOV     B,#0BH
+                       MUL     AB
+                 E     ADD     A,#LOW USBFS_EP+02H
+                       MOV     DPL,A
+                       CLR     A
+                 E     ADDC    A,#HIGH USBFS_EP+02H
+                       MOV     DPH,A
+                       MOVX    A,@DPTR
+                       ANL     A,#0FEH
+                       MOVX    @DPTR,A
+                                           ; SOURCE LINE # 1176
+                       MOV     A,R7
+                       MOV     B,#0BH
+                       MUL     AB
+                 E     ADD     A,#LOW USBFS_EP+03H
+                       MOV     DPL,A
+                       CLR     A
+                 E     ADDC    A,#HIGH USBFS_EP+03H
+                       MOV     DPH,A
+C51 COMPILER V9.51   USBFS_STD                                                             03/06/2019 16:03:59 PAGE 61  
+
+                       CLR     A
+                       MOVX    @DPTR,A
+                                           ; SOURCE LINE # 1179
+                       MOV     B,#010H
+                       MOV     A,R7
+                       MOV     DPTR,#05FFCH
+                 E     CALL    ?C?OFFXADD
+                       MOVX    A,@DPTR
+                       ANL     A,#07FH
+                       MOVX    @DPTR,A
+                                           ; SOURCE LINE # 1182
+                       MOV     A,R7
+                       MOV     B,#0BH
+                       MUL     AB
+                 E     ADD     A,#LOW USBFS_EP+01H
+                       MOV     DPL,A
+                       CLR     A
+                 E     ADDC    A,#HIGH USBFS_EP+01H
+                       MOV     DPH,A
+                       MOVX    A,@DPTR
+                       ANL     A,#0FDH
+                       MOVX    @DPTR,A
+                                           ; SOURCE LINE # 1184
+                       MOV     A,R7
+                       MOV     B,#0BH
+                       MUL     AB
+                 E     ADD     A,#LOW USBFS_EP+04H
+                       MOV     DPL,A
+                       CLR     A
+                 E     ADDC    A,#HIGH USBFS_EP+04H
+                       MOV     DPH,A
+                       MOVX    A,@DPTR
+                       ANL     A,#080H
+                 R     xJZ     ?C0129
+                                           ; SOURCE LINE # 1185
+                                           ; SOURCE LINE # 1187
+                       MOV     A,R7
+                       MOV     B,#0BH
+                       MUL     AB
+                 E     ADD     A,#LOW USBFS_EP+01H
+                       MOV     DPL,A
+                       CLR     A
+                 E     ADDC    A,#HIGH USBFS_EP+01H
+                       MOV     DPH,A
+                       MOVX    A,@DPTR
+                 R     xJNE    A,#01H,?C0130
+                                           ; SOURCE LINE # 1188
+                                           ; SOURCE LINE # 1190
+                       MOV     B,#010H
+                       MOV     A,R7
+                       MOV     DPTR,#05FFEH
+                 E     CALL    ?C?OFFXADD
+                       MOV     A,#0CH
+                       MOVX    @DPTR,A
+                                           ; SOURCE LINE # 1191
+                 R     xJMP    ?C0132
+             ?C0130:
+                                           ; SOURCE LINE # 1193
+                                           ; SOURCE LINE # 1194
+                       MOV     B,#010H
+                       MOV     A,R7
+                       MOV     DPTR,#05FFEH
+C51 COMPILER V9.51   USBFS_STD                                                             03/06/2019 16:03:59 PAGE 62  
+
+                 E     CALL    ?C?OFFXADD
+                       MOV     A,#0DH
+                       MOVX    @DPTR,A
+                                           ; SOURCE LINE # 1195
+                                           ; SOURCE LINE # 1196
+                 R     xJMP    ?C0132
+             ?C0129:
+                                           ; SOURCE LINE # 1198
+                                           ; SOURCE LINE # 1200
+                       MOV     A,R7
+                       MOV     B,#0BH
+                       MUL     AB
+                 E     ADD     A,#LOW USBFS_EP+01H
+                       MOV     DPL,A
+                       CLR     A
+                 E     ADDC    A,#HIGH USBFS_EP+01H
+                       MOV     DPH,A
+                       MOVX    A,@DPTR
+                 R     xJNE    A,#01H,?C0133
+                                           ; SOURCE LINE # 1201
+                                           ; SOURCE LINE # 1203
+                       MOV     B,#010H
+                       MOV     A,R7
+                       MOV     DPTR,#05FFEH
+                 E     CALL    ?C?OFFXADD
+                       MOV     A,#08H
+                       MOVX    @DPTR,A
+                                           ; SOURCE LINE # 1204
+                 R     xJMP    ?C0132
+             ?C0133:
+                                           ; SOURCE LINE # 1206
+                                           ; SOURCE LINE # 1207
+                       MOV     B,#010H
+                       MOV     A,R7
+                       MOV     DPTR,#05FFEH
+                 E     CALL    ?C?OFFXADD
+                       MOV     A,#09H
+                       MOVX    @DPTR,A
+                                           ; SOURCE LINE # 1208
+                                           ; SOURCE LINE # 1209
+             ?C0132:
+                                           ; SOURCE LINE # 1211
+                 E     CALL    USBFS_InitNoDataControlTransfer
+                 R     MOV     DPTR,#requestHandled
+                       MOV     A,R7
+                       MOVX    @DPTR,A
+                                           ; SOURCE LINE # 1212
+             ?C0128:
+                                           ; SOURCE LINE # 1214
+                 R     MOV     DPTR,#requestHandled
+                       MOVX    A,@DPTR
+                       MOV     R7,A
+                                           ; SOURCE LINE # 1215
+             ?C0135:
+                       RET     
+             ; FUNCTION USBFS_ClearEndpointHalt (END)
+
+             ; FUNCTION USBFS_ValidateAlternateSetting (BEGIN)
+                                           ; SOURCE LINE # 1231
+                                           ; SOURCE LINE # 1232
+                                           ; SOURCE LINE # 1233
+                       CLR     A
+C51 COMPILER V9.51   USBFS_STD                                                             03/06/2019 16:03:59 PAGE 63  
+
+                 R     MOV     DPTR,#requestHandled
+                       MOVX    @DPTR,A
+                                           ; SOURCE LINE # 1240
+                       MOV     DPTR,#06004H
+                       MOVX    A,@DPTR
+                 R     MOV     DPTR,#interfaceNum
+                       MOVX    @DPTR,A
+                                           ; SOURCE LINE # 1243
+                 E     MOV     DPTR,#USBFS_configuration
+                       MOVX    A,@DPTR
+                       DEC     A
+                       MOV     R7,A
+                 R     CALL    _USBFS_GetConfigTablePtr
+;---- Variable 'pTmp' assigned to Register 'R6/R7' ----
+                                           ; SOURCE LINE # 1244
+                       MOV     DPL,R7
+                       MOV     DPH,R6
+                       INC     DPTR
+                 E     CALL    ?C?PLDCODE
+                       MOV     A,R1
+                       ADD     A,#04H
+                       MOV     R1,A
+                       CLR     A
+                       ADDC    A,R2
+                       MOV     R2,A
+                 E     CALL    ?C?CLDPTR
+                       MOV     R7,A
+;---- Variable 'curInterfacesNum' assigned to Register 'R7' ----
+                                           ; SOURCE LINE # 1247
+                 R     MOV     DPTR,#interfaceNum
+                       MOVX    A,@DPTR
+                       MOV     R6,A
+                       SETB    C
+                       SUBB    A,R7
+                 R     xJLT    ?C0137
+                       MOV     A,R6
+                       SETB    C
+                       SUBB    A,#01H
+                 R     xJGE    ?C0136
+             ?C0137:
+                                           ; SOURCE LINE # 1248
+                                           ; SOURCE LINE # 1252
+                 E     MOV     A,#LOW USBFS_interfaceSetting
+                       ADD     A,R6
+                       MOV     DPL,A
+                       CLR     A
+                 E     ADDC    A,#HIGH USBFS_interfaceSetting
+                       MOV     DPH,A
+                       MOVX    A,@DPTR
+                       MOV     R7,A
+                 E     MOV     A,#LOW USBFS_interfaceSettingLast
+                       ADD     A,R6
+                       MOV     DPL,A
+                       CLR     A
+                 E     ADDC    A,#HIGH USBFS_interfaceSettingLast
+                       MOV     DPH,A
+                       MOV     A,R7
+                       MOVX    @DPTR,A
+                                           ; SOURCE LINE # 1253
+                       MOV     DPTR,#06002H
+                       MOVX    A,@DPTR
+                       MOV     R7,A
+C51 COMPILER V9.51   USBFS_STD                                                             03/06/2019 16:03:59 PAGE 64  
+
+                 E     MOV     A,#LOW USBFS_interfaceSetting
+                       ADD     A,R6
+                       MOV     DPL,A
+                       CLR     A
+                 E     ADDC    A,#HIGH USBFS_interfaceSetting
+                       MOV     DPH,A
+                       MOV     A,R7
+                       MOVX    @DPTR,A
+                                           ; SOURCE LINE # 1255
+                 R     MOV     DPTR,#requestHandled
+                       MOV     A,#01H
+                       MOVX    @DPTR,A
+                                           ; SOURCE LINE # 1256
+             ?C0136:
+                                           ; SOURCE LINE # 1258
+                 R     MOV     DPTR,#requestHandled
+                       MOVX    A,@DPTR
+                       MOV     R7,A
+                                           ; SOURCE LINE # 1259
+             ?C0138:
+                       RET     
+             ; FUNCTION USBFS_ValidateAlternateSetting (END)
+
+
+
+MODULE INFORMATION:   STATIC OVERLAYABLE
+   CODE SIZE        =   3702    ----
+   CONSTANT SIZE    =   ----    ----
+   XDATA SIZE       =      2      25
+   PDATA SIZE       =   ----    ----
+   DATA SIZE        =   ----    ----
+   IDATA SIZE       =   ----    ----
+   BIT SIZE         =   ----    ----
+   EDATA SIZE       =   ----    ----
+   HDATA SIZE       =   ----    ----
+   XDATA CONST SIZE =   ----    ----
+   FAR CONST SIZE   =   ----    ----
+END OF MODULE INFORMATION.
+
+
+C51 COMPILATION COMPLETE.  0 WARNING(S),  0 ERROR(S)

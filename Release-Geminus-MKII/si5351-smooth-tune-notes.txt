@@ -1,0 +1,32 @@
+================================================================================
+Geminus Si5351 smooth-tune — ported from Proficio-MKII-ATU (2026-07-22)
+================================================================================
+Source: Release-Proficio-MKII-ATU validated changes (MS hold + VCO center +
+        CLK0 hard blank). Same LO architecture (LO×4 Softrock-style Si5351).
+
+Files modified under Geminus.cydsn:
+  si5351.c      — smooth_tuning ppm math + MIN_SMOOTH_HZ (backup gate only)
+  si5351a.c     — Multisynth hold soft path; VCO 750 MHz hard; CLK0 blank
+                  on hard only (SI5351_HARD_BLANK_HOLD = 6)
+  si5351a-cw.c  — same policy for CW helper (not always linked)
+
+Full cyprjmgr -build on Creator 4.4 fails: missing cy_boot_v5_82 component.
+Incremental Keil build used instead (existing Generated_Source + objs):
+  C51 si5351.c / si5351a.c
+  LX51 @keilLinkCmds.lnp (CyComponentLibrary path updated 4.2 → 4.4)
+  OHx51 + CyHexTool → .cyacd / .hex
+
+Flash (bootloadable):
+  Geminus.cydsn\DP8051\DP8051_Keil_951\Debug\Geminus.cyacd
+Full image:
+  Geminus.cydsn\DP8051\DP8051_Keil_951\Debug\Geminus.hex
+
+Built: 2026-07-22 ~12:45 local
+  code≈32185, xdata=3229 (link report)
+
+Expected behavior (same as Proficio):
+  - Full-band fine-tune without per-Hz / mid-band MS pops
+  - One hard retune on large band hop; short CLK0 blank (~tens of ms)
+  - Band-change spectrum bump reduced vs old; residual may need MSCC later
+
+================================================================================

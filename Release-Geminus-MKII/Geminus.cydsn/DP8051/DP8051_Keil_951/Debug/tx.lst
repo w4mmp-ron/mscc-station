@@ -1,0 +1,242 @@
+C51 COMPILER V9.51   TX                                                                    03/02/2025 11:30:30 PAGE 1   
+
+
+C51 COMPILER V9.51, COMPILATION OF MODULE TX
+OBJECT MODULE PLACED IN .\DP8051\DP8051_Keil_951\Debug\tx.obj
+COMPILER INVOKED BY: C:\Program Files (x86)\Cypress\PSoC Creator\4.2\PSoC Creator\import\keil\pk51\9.51\C51\BIN\c51.exe 
+                    -tx.c NOIV LARGE MODDP2 OMF2 VB(1) NOIP INCDIR(.,Generated_Source\PSoC3) FF(3) DB WL(2) PR(.\DP8051\DP8051_Keil_951\Debug
+                    -/tx.lst) CD OT(5,SPEED) OA OJ(.\DP8051\DP8051_Keil_951\Debug\tx.obj)
+
+line level    source
+
+   1          // Copyright 2013 David Turnbull AE9RB
+   2          //
+   3          // Licensed under the Apache License, Version 2.0 (the "License");
+   4          // you may not use this file except in compliance with the License.
+   5          // You may obtain a copy of the License at
+   6          //
+   7          //     http://www.apache.org/licenses/LICENSE-2.0
+   8          //
+   9          // Unless required by applicable law or agreed to in writing, software
+  10          // distributed under the License is distributed on an "AS IS" BASIS,
+  11          // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+  12          // See the License for the specific language governing permissions and
+  13          // limitations under the License.
+  14          // 10/01/2016 Added support for Proficio
+  15          // 02/18/2017 Added support for native CW
+  16          // Copyright © 2015-2017 Omnia SDR
+  17          
+  18          // Variable naming conventions:     E_<variable> -> Externally defined global
+  19          //                                  ff_<variable> -> Externally defined global stored in flash memory
+  20          //                                  ee_<variable> -> Externally defined global to be stored in EEPROM memo
+             -ry
+  21          //                                  l_<variable> -> locally defined variable
+  22          //                                  All UPPERCASE -> Define
+  23          
+  24          #include <basic-plus.h>
+  25          #include <si5351.h>
+  26          #include <si5351a.h>
+  27          
+  28          #define TX_LED_BLINK_ON_MS 40
+  29          #define TX_LED_BLINK_OFF_MS 50
+  30          
+  31          uint8 TX_Request = 0;
+  32          uint8 TX_Inhibit = 0;
+  33          
+  34          void TX_Main(void) {
+  35   1          static uint8 state = 0; 
+  36   1         
+  37   1          /*switch (state) {
+  38   1              case 0: // receiving
+  39   1                  if (TX_Request && !TX_Inhibit) {
+  40   1                      state = 2;
+  41   1                      Control_Write(Control_Read() & ~CONTROL_RX);
+  42   1                  }
+  43   1                  break;
+  44   1              case 2:
+  45   1                  Control_Write(Control_Read() & ~CONTROL_AMP);
+  46   1                  state = 10;
+  47   1                  break;
+  48   1              case 10: // transmitting
+  49   1                  if (!TX_Request && !TX_Inhibit) {
+  50   1                      Control_Write(Control_Read() & ~(CONTROL_LED) | CONTROL_AMP);
+  51   1                      state = 11;
+  52   1                   }
+C51 COMPILER V9.51   TX                                                                    03/02/2025 11:30:30 PAGE 2   
+
+  53   1                 break;
+  54   1              case 11:
+  55   1                  Control_Write(Control_Read() | CONTROL_RX);
+  56   1                  state = 0;
+  57   1                  break;
+  58   1          }*/
+  59   1           switch (state) {
+  60   2              case 0: // receiving to TX State
+  61   2                  if (TX_Request && !TX_Inhibit) {
+  62   3                      state = 1;
+  63   3                      Control_Write(Control_Read() & ~CONTROL_RX);
+  64   3                      Band_Control_Write(Band_Control_Read() | CONTROL_BAND_TX); //OR function
+  65   3                  }
+  66   2                  break;
+  67   2              case 1:
+  68   2                  state = 2;//
+  69   2                  break;
+  70   2              case 2:
+  71   2                  Control_Write(Control_Read() & ~CONTROL_AMP);
+  72   2                  state = 10;
+  73   2                  break;
+  74   2              case 10: // transmitting to RX State
+  75   2                  if (!TX_Request && !TX_Inhibit) {
+  76   3                      Control_Write(Control_Read() & ~(CONTROL_LED) | CONTROL_AMP);
+  77   3                      Band_Control_Write(Band_Control_Read() & ~ CONTROL_BAND_TX); //logical AND function to tur
+             -n off TX and flipping state of pin
+  78   3                      state = 11;
+  79   3                   }
+  80   2                 break;
+  81   2              case 11:
+  82   2                  Control_Write(Control_Read() | CONTROL_RX);
+  83   2                  state = 0;
+  84   2                  break;
+  85   2          }
+  86   1          
+  87   1      }
+C51 COMPILER V9.51   TX                                                                    03/02/2025 11:30:30 PAGE 3   
+
+ASSEMBLY LISTING OF GENERATED OBJECT CODE
+
+
+             ; FUNCTION TX_Main (BEGIN)
+                                           ; SOURCE LINE # 34
+                                           ; SOURCE LINE # 59
+                 R     MOV     DPTR,#state
+                       MOVX    A,@DPTR
+                       DEC     A
+                 R     xJZ     ?C0004
+                       DEC     A
+                 R     xJZ     ?C0005
+                       ADD     A,#0F8H
+                 R     xJZ     ?C0006
+                       DEC     A
+                 R     xJZ     ?C0008
+                       ADD     A,#0BH
+                 R     xJNZ    ?C0009
+                                           ; SOURCE LINE # 60
+             ?C0002:
+                                           ; SOURCE LINE # 61
+                 R     MOV     DPTR,#TX_Request
+                       MOVX    A,@DPTR
+                 R     xJZ     ?C0009
+                 R     MOV     DPTR,#TX_Inhibit
+                       MOVX    A,@DPTR
+                 R     xJNZ    ?C0009
+                                           ; SOURCE LINE # 62
+                 R     MOV     DPTR,#state
+                       INC     A
+                       MOVX    @DPTR,A
+                                           ; SOURCE LINE # 63
+                 E     CALL    Control_Read
+                       MOV     A,R7
+                       ANL     A,#0FDH
+                       MOV     R7,A
+                 E     CALL    _Control_Write
+                                           ; SOURCE LINE # 64
+                 E     CALL    Band_Control_Read
+                       MOV     A,R7
+                       ORL     A,#04H
+                       MOV     R7,A
+                 E     CALL    _Band_Control_Write
+                                           ; SOURCE LINE # 65
+                                           ; SOURCE LINE # 66
+                       RET     
+                                           ; SOURCE LINE # 67
+             ?C0004:
+                                           ; SOURCE LINE # 68
+                 R     MOV     DPTR,#state
+                       MOV     A,#02H
+                       MOVX    @DPTR,A
+                                           ; SOURCE LINE # 69
+                       RET     
+                                           ; SOURCE LINE # 70
+             ?C0005:
+                                           ; SOURCE LINE # 71
+                 E     CALL    Control_Read
+                       MOV     A,R7
+                       ANL     A,#0F7H
+                       MOV     R7,A
+                 E     CALL    _Control_Write
+C51 COMPILER V9.51   TX                                                                    03/02/2025 11:30:30 PAGE 4   
+
+                                           ; SOURCE LINE # 72
+                 R     MOV     DPTR,#state
+                       MOV     A,#0AH
+                       MOVX    @DPTR,A
+                                           ; SOURCE LINE # 73
+                       RET     
+                                           ; SOURCE LINE # 74
+             ?C0006:
+                                           ; SOURCE LINE # 75
+                 R     MOV     DPTR,#TX_Request
+                       MOVX    A,@DPTR
+                 R     xJNZ    ?C0009
+                 R     MOV     DPTR,#TX_Inhibit
+                       MOVX    A,@DPTR
+                 R     xJNZ    ?C0009
+                                           ; SOURCE LINE # 76
+                 E     CALL    Control_Read
+                       MOV     A,R7
+                       ANL     A,#0FEH
+                       ORL     A,#08H
+                       MOV     R7,A
+                 E     CALL    _Control_Write
+                                           ; SOURCE LINE # 77
+                 E     CALL    Band_Control_Read
+                       MOV     A,R7
+                       ANL     A,#0FBH
+                       MOV     R7,A
+                 E     CALL    _Band_Control_Write
+                                           ; SOURCE LINE # 78
+                 R     MOV     DPTR,#state
+                       MOV     A,#0BH
+                       MOVX    @DPTR,A
+                                           ; SOURCE LINE # 79
+                                           ; SOURCE LINE # 80
+                       RET     
+                                           ; SOURCE LINE # 81
+             ?C0008:
+                                           ; SOURCE LINE # 82
+                 E     CALL    Control_Read
+                       MOV     A,R7
+                       ORL     A,#02H
+                       MOV     R7,A
+                 E     CALL    _Control_Write
+                                           ; SOURCE LINE # 83
+                       CLR     A
+                 R     MOV     DPTR,#state
+                       MOVX    @DPTR,A
+                                           ; SOURCE LINE # 84
+                                           ; SOURCE LINE # 85
+                                           ; SOURCE LINE # 87
+             ?C0009:
+                       RET     
+             ; FUNCTION TX_Main (END)
+
+
+
+MODULE INFORMATION:   STATIC OVERLAYABLE
+   CODE SIZE        =    167    ----
+   CONSTANT SIZE    =   ----    ----
+   XDATA SIZE       =      3    ----
+   PDATA SIZE       =   ----    ----
+   DATA SIZE        =   ----    ----
+C51 COMPILER V9.51   TX                                                                    03/02/2025 11:30:30 PAGE 5   
+
+   IDATA SIZE       =   ----    ----
+   BIT SIZE         =   ----    ----
+   EDATA SIZE       =   ----    ----
+   HDATA SIZE       =   ----    ----
+   XDATA CONST SIZE =   ----    ----
+   FAR CONST SIZE   =   ----    ----
+END OF MODULE INFORMATION.
+
+
+C51 COMPILATION COMPLETE.  0 WARNING(S),  0 ERROR(S)

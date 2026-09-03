@@ -1,0 +1,8 @@
+C:\Users\n8vet\OneDrive\Documents\mscc-net9\Backup-Refs\References\Release-Geminus-MKII\Geminus.cydsn\Geminus.cyprj|c6e8db32-5c62-4a71-9b22-d6998f5be5a8
+C:\Program Files (x86)\Cypress\PSoC Creator\4.4\PSoC Creator\psoc\content\default\CyAnnotationLibrary\CyAnnotationLibrary.cylib\CyAnnotationLibrary.cyprj|cc8942ad-1f5e-4d1a-bec2-4c5af888a09b
+C:\Users\n8vet\OneDrive\Documents\PSoC Creator\4.4\Downloads ( 4.4).cylib\Downloads ( 4.4).cyprj|11068c13-79e8-4c63-9aee-9b503f57d532
+C:\Users\n8vet\OneDrive\Documents\PSoC Creator\4.2\Downloads ( 4.2).cylib\Downloads ( 4.2).cyprj|70107dfd-09a7-4e24-8b83-cf6e8898dfd7
+C:\Program Files (x86)\Cypress\PSoC Creator\4.4\PSoC Creator\psoc\content\cycomponentlibraryupdates\CyComponentLibraryUpdates.cylib\CyComponentLibraryUpdates.cyprj|51176d4b-42c7-4f8c-9b44-72943a919b7f
+C:\Program Files (x86)\Cypress\PSoC Creator\4.4\PSoC Creator\psoc\content\cycomponentlibrary\CyComponentLibrary.cylib\CyComponentLibrary.cyprj|15bf2c29-0abc-4d29-9227-5645f81add54
+C:\Program Files (x86)\Cypress\PSoC Creator\4.4\PSoC Creator\psoc\content\cyprimitives\CyPrimitives.cylib\CyPrimitives.cyprj|97933238-5934-414b-b537-0db4a64d635a
+C:\Program Files (x86)\Cypress\PSoC Creator\4.4\PSoC Creator\psoc\content\default\CyReferenceLibrary\CyReferenceLibrary.cylib\CyReferenceLibrary.cyprj|3c6a9b61-befd-46d9-9d9a-50486f0cff4c

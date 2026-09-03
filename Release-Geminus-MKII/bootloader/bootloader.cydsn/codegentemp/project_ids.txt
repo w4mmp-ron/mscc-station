@@ -1,0 +1,7 @@
+G:\Ham Radio\ominaSDR\Hardware\Proficio\firmware\bootloader\bootloader.cydsn\bootloader.cyprj|8141c3da-b550-4010-ad0d-a67268d0d15d
+C:\Program Files (x86)\Cypress\PSoC Creator\4.2\PSoC Creator\psoc\content\default\CyAnnotationLibrary\CyAnnotationLibrary.cylib\CyAnnotationLibrary.cyprj|fce56c34-0686-4b42-b110-ca869e62706c
+C:\Users\Ron\Documents\PSoC Creator\4.2\Downloads ( 4.2).cylib\Downloads ( 4.2).cyprj|eebed003-2eed-433d-addf-c8d164ac2a18
+C:\Program Files (x86)\Cypress\PSoC Creator\4.2\PSoC Creator\psoc\content\cycomponentlibraryupdates\CyComponentLibraryUpdates.cylib\CyComponentLibraryUpdates.cyprj|d8f129f0-1fad-4a31-aeef-6032442cfd08
+C:\Program Files (x86)\Cypress\PSoC Creator\4.2\PSoC Creator\psoc\content\cycomponentlibrary\CyComponentLibrary.cylib\CyComponentLibrary.cyprj|759e1ddb-5a4d-4de6-a1be-a7690f4620f4
+C:\Program Files (x86)\Cypress\PSoC Creator\4.2\PSoC Creator\psoc\content\cyprimitives\CyPrimitives.cylib\CyPrimitives.cyprj|e161e8f3-ae89-473b-810c-c018003f51d6
+C:\Program Files (x86)\Cypress\PSoC Creator\4.2\PSoC Creator\psoc\content\default\CyReferenceLibrary\CyReferenceLibrary.cylib\CyReferenceLibrary.cyprj|12fc6326-7d3c-40cf-8760-6318f2202ff0

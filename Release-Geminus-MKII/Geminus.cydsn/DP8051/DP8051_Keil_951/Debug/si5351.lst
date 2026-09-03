@@ -1,0 +1,3293 @@
+C51 COMPILER V9.51   SI5351                                                                07/22/2026 12:45:12 PAGE 1   
+
+
+C51 COMPILER V9.51, COMPILATION OF MODULE SI5351
+OBJECT MODULE PLACED IN .\DP8051\DP8051_Keil_951\Debug\si5351.obj
+COMPILER INVOKED BY: C:\Program Files (x86)\Cypress\PSoC Creator\4.4\PSoC Creator\import\keil\pk51\9.51\C51\BIN\C51.exe 
+                    -si5351.c NOIV LARGE MODDP2 OMF2 VB(1) NOIP INCDIR(.,Generated_Source\PSoC3) FF(3) DB WL(2) PR(.\DP8051\DP8051_Keil_951\D
+                    -ebug/si5351.lst) CD OT(5,SPEED) OA OJ(.\DP8051\DP8051_Keil_951\Debug\si5351.obj)
+
+line level    source
+
+   1          // Copyright 2013 David Turnbull AE9RB
+   2          //
+   3          // Licensed under the Apache License, Version 2.0 (the "License");
+   4          // you may not use this file except in compliance with the License.
+   5          // You may obtain a copy of the License at
+   6          //
+   7          //     http://www.apache.org/licenses/LICENSE-2.0
+   8          //
+   9          // Unless required by applicable law or agreed to in writing, software
+  10          // distributed under the License is distributed on an "AS IS" BASIS,
+  11          // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+  12          // See the License for the specific language governing permissions and
+  13          // limitations under the License.
+  14          // 10/01/2016 Added support for Proficio
+  15          // 02/18/2017 Added support for native CW
+  16          // Copyright © 2015-2017 Omnia SDR
+  17          
+  18          // Variable naming conventions:     E_<variable> -> Externally defined global
+  19          //                                  ff_<variable> -> Externally defined global stored in flash memory
+  20          //                                  ee_<variable> -> Externally defined global to be stored in EEPROM memo
+             -ry
+  21          //                                  l_<variable> -> locally defined variable
+  22          //                                  All UPPERCASE -> Define
+  23          
+  24          #include <STDLIB.H>
+  25          #include <STDIO.H>
+  26          #include<basic-plus.h>
+  27          #include <si5351.h>
+  28          #include <si5351a.h>
+  29          #include <usbvend.h>
+  30          
+  31          #define SI_5351_WRITE 0
+  32          #define SI_5351_WRITE_BULK 1
+  33          #define SI_5351_READ 2
+  34          
+  35          #define NO_CALIBRATION 127
+  36          /* Legacy ppm gate for host LO steps. Real glitch avoidance is MS-hold in si5351a.c;
+  37           * keep a generous window so smooth_tuning rarely forces hard when MS can stay fixed. */
+  38          #define TUNING_PPM 10000
+  39          #define MAX_FREQ_DELTA 2000000
+  40          /* Floor for soft-tune window (Hz). Whole-band soft on LF uses MS hold; this is backup. */
+  41          #define MIN_SMOOTH_HZ 500u
+  42          #define GET_TEMP_TIMER 43000
+  43          #define AM_OFFSET 11860
+  44          #define SSB_OFFSET 12000
+  45          
+  46          volatile uint32 Si570_Xtal, Si570_LO = STARTUP_LO;
+  47          uint32 Current_LO = STARTUP_LO;
+  48          // [0-1] for commands, [2-8] retain registers
+  49          uint8 Si570_Buf[8];
+  50          // A copy of the factory registers used for cfgsr calibration.
+  51          uint8 Si570_Factory[6];
+  52          // Emulate old technique of setting of frequency by reg writes
+C51 COMPILER V9.51   SI5351                                                                07/22/2026 12:45:12 PAGE 2   
+
+  53          uint8 Si570_OLD[6];
+  54          
+  55          struct Si5351Status dev_status;
+  56          struct Si5351IntStatus dev_int_status;
+  57          uint8_t queue_status = 0;
+  58          volatile uint32 E_freq_from_host;//Set by USB interrupt routine
+  59          volatile uint32 E_freq_to_host = 0;//Set by USB interrupt routine
+  60          volatile int8 E_calibration_int = 0;//Set by USB interrupt routine
+  61          volatile int8 E_calibration_dec = 0;//Set by USB interrupt routine
+  62          volatile uint32 E_current_LO_freq = 0;
+  63          volatile uint32 E_xtal_freq = SI5351_XTAL_FREQ;
+  64          //volatile uint8 E_Band = BAND_20M;
+  65          volatile int8 ee_ppm_int = 0;
+  66          volatile int8 ee_ppm_dec = 0;
+  67          int16 E_temperature_current = 42;
+  68          volatile int16 E_temp_at_calibration = 42;
+  69          volatile uint8 E_smooth;
+  70          volatile uint32 E_tune_freq = 0;
+  71          volatile uint32 E_CW_LO_freq;
+  72          volatile uint32 l_tune_freq;
+  73          volatile uint8 E_cw_pitch = 0;
+  74          volatile int8 E_ppm = 0;
+  75          int16 E_cw_pitch_freq = 0;
+  76          
+  77          /*void freq_queue_add(uint32 command){
+  78              uint8 l_interrupt_status;
+  79              
+  80              if(E_display_attached == TRUE){
+  81                  l_interrupt_status = CyEnterCriticalSection();
+  82                  if(E_freq_queue_front == (E_freq_queue_rear +1) %MAX_COMMAND_QUEUE) {
+  83                      ERROR ("6 ");
+  84                      }else{
+  85                          if(E_freq_queue_front == -1) {
+  86                              E_freq_queue_front = E_freq_queue_rear = 0;
+  87                          }else{
+  88                              E_freq_queue_rear = (E_freq_queue_rear + 1)%MAX_COMMAND_QUEUE;
+  89                          }
+  90                      E_freq_queue[E_freq_queue_rear] = command;
+  91                  }
+  92                  CyExitCriticalSection(l_interrupt_status);
+  93              }
+  94          }*/
+  95          
+  96          /*
+  97           * Host-side soft-tune hint for E_smooth.
+  98           *
+  99           * Primary pop elimination is Multisynth-hold in si5351aSetFrequency()
+ 100           * (si5351a.c), which overrides E_smooth when the VCO can stay legal.
+ 101           * This function only biases large LO hops; MS-hold is authoritative.
+ 102           *
+ 103           * Math: max_ppm = ((freq/1000)*TUNING_PPM)/1000 + MIN_SMOOTH_HZ floor.
+ 104           * First LO after boot returns hard.
+ 105           * (Ported from Proficio-MKII-ATU smooth-tune work 2026-07.)
+ 106           */
+ 107          uint8 smooth_tuning(uint32 freq){
+ 108   1          static uint32 previous_freq = 0;
+ 109   1          uint8 smooth = TRUE;
+ 110   1          uint32 abs_freq;
+ 111   1          int32 freq_diff;
+ 112   1          uint32 max_ppm_freq;
+ 113   1      
+ 114   1          /* First LO after boot / unknown previous: force hard retune */
+C51 COMPILER V9.51   SI5351                                                                07/22/2026 12:45:12 PAGE 3   
+
+ 115   1          if (previous_freq == 0) {
+ 116   2              previous_freq = freq;
+ 117   2              return FALSE;
+ 118   2          }
+ 119   1      
+ 120   1          freq_diff = (int32)(freq - previous_freq);
+ 121   1          abs_freq = labs(freq_diff);
+ 122   1          if (abs_freq >= MAX_FREQ_DELTA) {
+ 123   2              smooth = FALSE;
+ 124   2          } else {
+ 125   2              /* ppm window in Hz without uint64 (8051/Keil C51) */
+ 126   2              max_ppm_freq = ((freq / 1000u) * (uint32)TUNING_PPM) / 1000u;
+ 127   2              if (max_ppm_freq < MIN_SMOOTH_HZ) {
+ 128   3                  max_ppm_freq = MIN_SMOOTH_HZ;
+ 129   3              }
+ 130   2              if (abs_freq > max_ppm_freq) {
+ 131   3                  smooth = FALSE;
+ 132   3              }
+ 133   2          }
+ 134   1          previous_freq = freq;
+ 135   1          return smooth;
+ 136   1      }
+ 137          
+ 138          void si5351_main(){
+ 139   1          static uint8 state = 0;
+ 140   1          static uint32 l_Si570_LO = 0;
+ 141   1          volatile uint32 freq_in_hz;
+ 142   1          static uint32 previous_lo_freq = 0;
+ 143   1          uint8 critical;
+ 144   1          static uint8 previous_E_cw_pitch = 0;
+ 145   1             
+ 146   1          switch (state){
+ 147   2              case 0:
+ 148   2                  if(l_Si570_LO != Si570_LO){
+ 149   3                      critical = CyEnterCriticalSection();
+ 150   3                      l_Si570_LO = Si570_LO;
+ 151   3                      CyExitCriticalSection(critical);
+ 152   3                      switch(E_dll_version){
+ 153   4                          //This handles the ExtIO_Si570 version of the data sent by the host
+ 154   4                          case SI570_DLL:
+ 155   4                              freq_in_hz = convert_from_host(l_Si570_LO);
+ 156   4                              freq_in_hz = freq_in_hz / 4;
+ 157   4                              break;
+ 158   4                          //This handles the MSCC version of the data sent by the host
+ 159   4                          case SI5351_DLL:
+ 160   4                              freq_in_hz = swap32(l_Si570_LO);
+ 161   4                              break;
+ 162   4                      }
+ 163   3                      if(freq_in_hz > 100){
+ 164   4                          if(E_current_LO_freq != freq_in_hz){
+ 165   5                              E_current_LO_freq = freq_in_hz;
+ 166   5                              CW_LO_Freq = E_current_LO_freq;
+ 167   5                              E_smooth = smooth_tuning(E_current_LO_freq);
+ 168   5                          }
+ 169   4                      }
+ 170   3                  } 
+ 171   2                  state++;
+ 172   2                  break;
+ 173   2              case 1:
+ 174   2                  if(previous_E_cw_pitch != E_cw_pitch){
+ 175   3                      switch (E_cw_pitch){
+ 176   4                          case 0:
+C51 COMPILER V9.51   SI5351                                                                07/22/2026 12:45:12 PAGE 4   
+
+ 177   4                              E_cw_pitch_freq = 400;
+ 178   4                              break;
+ 179   4                          case 1:
+ 180   4                              E_cw_pitch_freq = 600;
+ 181   4                              break;
+ 182   4                          case 2:
+ 183   4                              E_cw_pitch_freq = 800;
+ 184   4                              break;
+ 185   4                          case 3:
+ 186   4                              E_cw_pitch_freq = 1000;
+ 187   4                              break;
+ 188   4                      }
+ 189   3                      previous_E_cw_pitch = E_cw_pitch;
+ 190   3                  }
+ 191   2                  state++;
+ 192   2              case 2:   //LO change and TX on to happen before the E_tune_freq is set.
+ 193   2                if(previous_lo_freq != E_current_LO_freq){
+ 194   3                      E_tune_freq = E_current_LO_freq;
+ 195   3                      //first_tx_pass = TRUE;
+ 196   3                      switch(E_host_mode){
+ 197   4                          case 'A':
+ 198   4                              E_tune_freq = E_tune_freq + AM_OFFSET - E_ppm;
+ 199   4                              break;
+ 200   4                          case 'U':
+ 201   4                              E_tune_freq = E_tune_freq + SSB_OFFSET - E_ppm;
+ 202   4                              break;
+ 203   4                          case 'L':
+ 204   4                              E_tune_freq = E_tune_freq + SSB_OFFSET - E_ppm;
+ 205   4                              break;
+ 206   4                          case 'C':
+ 207   4                              E_CW_LO_freq = E_tune_freq + SSB_OFFSET - E_cw_pitch_freq;
+ 208   4                              break;
+ 209   4                      }
+ 210   3                      previous_lo_freq = E_current_LO_freq;   
+ 211   3                  }
+ 212   2                  //state++;
+ 213   2                  state = 0;
+ 214   2                  break;
+ 215   2          }//End Switch (state)
+ 216   1      }
+ 217               
+ 218          
+ 219          /*
+ 220           * si5351_init(uint8_t xtal_load_c, uint32 ref_osc_freq)
+ 221           *
+ 222           * Setup communications to the Si5351 and set the crystal
+ 223           * load capacitance.
+ 224           *
+ 225           * xtal_load_c - Crystal load capacitance. Use the SI5351_CRYSTAL_LOAD_*PF
+ 226           * defines in the header file
+ 227           * ref_osc_freq - Crystal/reference oscillator frequency in 1 Hz increments.
+ 228           * Defaults to 25000000 if a 0 is used here.
+ 229           *
+ 230           */
+ 231          int si5351_init(uint8_t xtal_load_c, uint32 ref_osc_freq)
+ 232          {
+ 233   1              uint8_t ret = 0;
+ 234   1          
+ 235   1          //Fake Si570_Xtal so ExtIO_Si570 does not complain
+ 236   1          Si570_Xtal = swap32((uint32)(SI570_STARTUP_FREQ * 112 / (float)(56.0) * 0x01000000));               
+ 237   1              /* Set crystal load capacitance */
+ 238   1              ret = si5351_write_init(SI5351_CRYSTAL_LOAD, xtal_load_c);
+C51 COMPILER V9.51   SI5351                                                                07/22/2026 12:45:12 PAGE 5   
+
+ 239   1          
+ 240   1          
+ 241   1          
+ 242   1          if(ret){
+ 243   2                  // Change the ref osc freq if different from default
+ 244   2                  if (ref_osc_freq != 0)
+ 245   2                  {
+ 246   3                          E_xtal_freq = ref_osc_freq;
+ 247   3                  }
+ 248   2      
+ 249   2                  // Initialize the CLK outputs according to flowchart in datasheet
+ 250   2                  // First, turn them off
+ 251   2                  ret = si5351_write_init(16, 0x80);
+ 252   2              
+ 253   2                  ret = si5351_write_init(17, 0x80);
+ 254   2            
+ 255   2                  ret = si5351_write_init(18, 0x80);
+ 256   2             
+ 257   2                  // Turn the clocks back on...
+ 258   2                  ret = si5351_write_init(16, 0x0c);
+ 259   2              
+ 260   2                  ret = si5351_write_init(17, 0x0c);
+ 261   2              
+ 262   2                  ret = si5351_write_init(18, 0x0c);
+ 263   2              
+ 264   2              si5351_drive_strength(SI5351_CLK0,SI5351_DRIVE_2MA);
+ 265   2                      
+ 266   2                  // Then reset the PLLs
+ 267   2                  si5351_pll_reset(SI5351_PLLA);
+ 268   2              
+ 269   2                  si5351_pll_reset(SI5351_PLLB);
+ 270   2             
+ 271   2              //Shutdown clock 1 and clock 2 outputs
+ 272   2              si5351_set_clock_disable(SI5351_CLK1,0);
+ 273   2              
+ 274   2              si5351_set_clock_disable(SI5351_CLK2,0);
+ 275   2              
+ 276   2              si5351_set_clock_pwr(SI5351_CLK1,0);
+ 277   2              
+ 278   2              si5351_set_clock_pwr(SI5351_CLK2,0);
+ 279   2              
+ 280   2              si5351_output_enable(SI5351_CLK1,0);
+ 281   2              
+ 282   2              si5351_output_enable(SI5351_CLK2,0);
+ 283   2              
+ 284   2              
+ 285   2             
+ 286   2          }
+ 287   1              return ret;
+ 288   1      }
+ 289          
+ 290          /*
+ 291           * si5351_set_freq(uint64_t freq, enum si5351_clock clk)
+ 292           *
+ 293           * Uses SI5351_PLL_FIXED (900 MHz) for PLLA.
+ 294           * All multisynths are assigned to PLLA using this function.
+ 295           * PLLA is set to 900 MHz.
+ 296           * Restricted to outputs from 1 to 150 MHz.
+ 297           * If you need frequencies outside that range, use set_pll()
+ 298           * and set_ms() to set the synth dividers manually.
+ 299           *
+ 300           * freq - Output frequency in Hz
+C51 COMPILER V9.51   SI5351                                                                07/22/2026 12:45:12 PAGE 6   
+
+ 301           * clk - Clock output
+ 302           *   (use the si5351_clock enum)
+ 303           */
+ 304          /*void si5351_set_freq(uint32 freq, enum si5351_clock clk)
+ 305          {
+ 306                  struct Si5351Frac pll_frac, ms_frac;
+ 307              int32 ee_ref_correction = 0;
+ 308            
+ 309                  // Lower bounds check
+ 310                  if(freq < SI5351_MULTISYNTH_MIN_FREQ)
+ 311                  {
+ 312                          freq = SI5351_MULTISYNTH_MIN_FREQ;
+ 313                  }
+ 314          
+ 315                  // Upper bounds check
+ 316                  if(freq > SI5351_MULTISYNTH_DIVBY4_FREQ)
+ 317                  {
+ 318                          freq = SI5351_MULTISYNTH_DIVBY4_FREQ;
+ 319                  }
+ 320          
+ 321          
+ 322                  // Set the PLL
+ 323                  pll_frac.a = (uint16_t)(SI5351_PLL_FIXED / E_xtal_freq);
+ 324                  if(ee_ref_correction < 0)
+ 325                  {
+ 326                          pll_frac.b = (uint32)((pll_frac.a * (uint32)(ee_ref_correction * -1)) / 10);
+ 327                  }
+ 328                  else
+ 329                  {
+ 330                          pll_frac.b = 1000000UL - (uint32)((pll_frac.a * (uint32)(ee_ref_correction)) / 10);
+ 331                          pll_frac.a--;
+ 332                  }
+ 333                  pll_frac.c = 1000000UL;
+ 334                  si5351_set_pll(pll_frac, SI5351_PLLA);
+ 335          
+ 336                  // Set the MS
+ 337                  ms_frac.a = (uint16_t)(SI5351_PLL_FIXED / freq);
+ 338                  ms_frac.b = (uint32)(((SI5351_PLL_FIXED % freq) * 1000000UL) / freq);
+ 339                  ms_frac.c = 1000000UL;
+ 340                  si5351_set_ms(clk, ms_frac, 0, SI5351_OUTPUT_CLK_DIV_1, 0);
+ 341          }*/
+ 342          
+ 343          /*
+ 344           * si5351_set_pll(struct Si5351Frac frac, enum si5351_pll target_pll)
+ 345           *
+ 346           * Set the specified PLL to a specific oscillation frequency by
+ 347           * using the Si5351Frac struct to specify the synth divider ratio.
+ 348           *
+ 349           * frac - PLL fractional divider values
+ 350           * target_pll - Which PLL to set
+ 351           *     (use the si5351_pll enum)
+ 352           */
+ 353          /*void si5351_set_pll(struct Si5351Frac frac, enum si5351_pll target_pll)
+ 354          {
+ 355                  struct Si5351RegSet pll_reg;
+ 356              uint8_t params[20];
+ 357            uint8_t i = 0;
+ 358            uint8_t temp;
+ 359          
+ 360                  // Calculate parameters
+ 361            pll_reg.p1 = 128 * frac.a + ((128 * frac.b) / frac.c) - 512;
+ 362            pll_reg.p2 = 128 * frac.b - frac.c * ((128 * frac.b) / frac.c);
+C51 COMPILER V9.51   SI5351                                                                07/22/2026 12:45:12 PAGE 7   
+
+ 363            pll_reg.p3 = frac.c;
+ 364          
+ 365            // Derive the register values to write
+ 366            // Prepare an array for parameters to be written to
+ 367            
+ 368          
+ 369            // Registers 26-27 for PLLA
+ 370            temp = ((pll_reg.p3 >> 8) & 0xFF);
+ 371            params[i++] = temp;
+ 372          
+ 373            temp = (uint8_t)(pll_reg.p3 & 0xFF);
+ 374            params[i++] = temp;
+ 375          
+ 376            // Register 28 for PLLA
+ 377            temp = (uint8_t)((pll_reg.p1 >> 16) & 0x03);
+ 378            params[i++] = temp;
+ 379          
+ 380            // Registers 29-30 for PLLA
+ 381            temp = (uint8_t)((pll_reg.p1 >> 8) & 0xFF);
+ 382            params[i++] = temp;
+ 383          
+ 384            temp = (uint8_t)(pll_reg.p1 & 0xFF);
+ 385            params[i++] = temp;
+ 386          
+ 387            // Register 31 for PLLA
+ 388            temp = (uint8_t)((pll_reg.p3 >> 12) & 0xF0);
+ 389            temp += (uint8_t)((pll_reg.p2 >> 16) & 0x0F);
+ 390            params[i++] = temp;
+ 391          
+ 392            // Registers 32-33 for PLLA
+ 393            temp = (uint8_t)((pll_reg.p2 >> 8) & 0xFF);
+ 394            params[i++] = temp;
+ 395          
+ 396            temp = (uint8_t)(pll_reg.p2 & 0xFF);
+ 397            params[i++] = temp;
+ 398          
+ 399            // Write the parameters
+ 400            if(target_pll == SI5351_PLLA)
+ 401            {
+ 402              si5351_write_bulk(SI5351_PLLA_PARAMETERS, i, params);
+ 403            }
+ 404            else if(target_pll == SI5351_PLLB)
+ 405            {
+ 406              si5351_write_bulk(SI5351_PLLB_PARAMETERS, i, params);
+ 407            }
+ 408          }*/
+ 409          
+ 410          /*
+ 411           * si5351_set_ms(enum si5351_clock clk, struct Si5351Frac frac, uint8_t int_mode, uint8_t r_div, uint8_t d
+             -iv_by_4)
+ 412           *
+ 413           * Set the specified multisynth parameters.
+ 414           *
+ 415           * clk - Clock output
+ 416           *   (use the si5351_clock enum)
+ 417           * frac - Synth fractional divider values
+ 418           * int_mode - Set integer mode
+ 419           *  Set to 1 to enable, 0 to disable
+ 420           * r_div - Desired r_div ratio
+ 421           * div_by_4 - Set Divide By 4 mode
+ 422           *   Set to 1 to enable, 0 to disable
+ 423           */
+C51 COMPILER V9.51   SI5351                                                                07/22/2026 12:45:12 PAGE 8   
+
+ 424          /*void si5351_set_ms(enum si5351_clock clk, struct Si5351Frac frac, uint8_t int_mode, uint8_t r_div, uint8
+             -_t div_by_4)
+ 425          {
+ 426                  struct Si5351RegSet ms_reg;
+ 427                  uint8_t params[20];
+ 428                  uint8_t i = 0;
+ 429                  uint8_t temp;
+ 430                  uint8_t reg_val;
+ 431          
+ 432                  // Calculate parameters
+ 433                  if (div_by_4 == 1)
+ 434                  {
+ 435                          ms_reg.p3 = 1;
+ 436                          ms_reg.p2 = 0;
+ 437                          ms_reg.p1 = 0;
+ 438                  }
+ 439                  else
+ 440                  {
+ 441                          ms_reg.p1 = 128 * frac.a + ((128 * frac.b) / frac.c) - 512;
+ 442                          ms_reg.p2 = 128 * frac.b - frac.c * ((128 * frac.b) / frac.c);
+ 443                          ms_reg.p3 = frac.c;
+ 444                  }
+ 445          
+ 446                  // Registers 42-43 for CLK0
+ 447                  temp = (uint8_t)((ms_reg.p3 >> 8) & 0xFF);
+ 448                  params[i++] = temp;
+ 449          
+ 450                  temp = (uint8_t)(ms_reg.p3 & 0xFF);
+ 451                  params[i++] = temp;
+ 452          
+ 453                  // Register 44 for CLK0
+ 454                  si5351_read((SI5351_CLK0_PARAMETERS + 2) + (clk * 8), &reg_val);
+ 455                  reg_val &= ~(0x03);
+ 456                  temp = reg_val | ((uint8_t)((ms_reg.p1 >> 16) & 0x03));
+ 457                  params[i++] = temp;
+ 458          
+ 459                  // Registers 45-46 for CLK0
+ 460                  temp = (uint8_t)((ms_reg.p1 >> 8) & 0xFF);
+ 461                  params[i++] = temp;
+ 462          
+ 463                  temp = (uint8_t)(ms_reg.p1 & 0xFF);
+ 464                  params[i++] = temp;
+ 465          
+ 466                  // Register 47 for CLK0
+ 467                  temp = (uint8_t)((ms_reg.p3 >> 12) & 0xF0);
+ 468                  temp += (uint8_t)((ms_reg.p2 >> 16) & 0x0F);
+ 469                  params[i++] = temp;
+ 470          
+ 471                  // Registers 48-49 for CLK0
+ 472                  temp = (uint8_t)((ms_reg.p2 >> 8) & 0xFF);
+ 473                  params[i++] = temp;
+ 474          
+ 475                  temp = (uint8_t)(ms_reg.p2 & 0xFF);
+ 476                  params[i++] = temp;
+ 477          
+ 478                  // Write the parameters
+ 479                  switch(clk)
+ 480                  {
+ 481                          case SI5351_CLK0:
+ 482                                  si5351_write_bulk(SI5351_CLK0_PARAMETERS, i, params);
+ 483                                  break;
+ 484                          case SI5351_CLK1:
+C51 COMPILER V9.51   SI5351                                                                07/22/2026 12:45:12 PAGE 9   
+
+ 485                                  si5351_write_bulk(SI5351_CLK1_PARAMETERS, i, params);
+ 486                                  break;
+ 487                          case SI5351_CLK2:
+ 488                                  si5351_write_bulk(SI5351_CLK2_PARAMETERS, i, params);
+ 489                                  break;
+ 490                          case SI5351_CLK3:
+ 491                                  si5351_write_bulk(SI5351_CLK3_PARAMETERS, i, params);
+ 492                                  break;
+ 493                          case SI5351_CLK4:
+ 494                                  si5351_write_bulk(SI5351_CLK4_PARAMETERS, i, params);
+ 495                                  break;
+ 496                          case SI5351_CLK5:
+ 497                                  si5351_write_bulk(SI5351_CLK5_PARAMETERS, i, params);
+ 498                                  break;
+ 499                          case SI5351_CLK6:
+ 500                                  si5351_write_bulk(SI5351_CLK6_PARAMETERS, i, params);
+ 501                                  break;
+ 502                          case SI5351_CLK7:
+ 503                                  si5351_write_bulk(SI5351_CLK7_PARAMETERS, i, params);
+ 504                                  break;
+ 505                  }
+ 506          
+ 507                  si5351_set_int(clk, int_mode);
+ 508                  si5351_set_ms_div(clk, r_div, div_by_4);
+ 509          }*/
+ 510          
+ 511          /*
+ 512           * si5351_output_enable(enum si5351_clock clk, uint8_t enable)
+ 513           *
+ 514           * Enable or disable a chosen clock
+ 515           * clk - Clock output
+ 516           *   (use the si5351_clock enum)
+ 517           * enable - Set to 1 to enable, 0 to disable
+ 518           */
+ 519          void si5351_output_enable(enum si5351_clock clk, uint8_t enable)
+ 520          {
+ 521   1              uint8_t reg_val;
+ 522   1      
+ 523   1              if(si5351_read(SI5351_OUTPUT_ENABLE_CTRL, &reg_val) != 0)
+ 524   1              {
+ 525   2                      return;
+ 526   2              }
+ 527   1      
+ 528   1              if(enable == 1)
+ 529   1              {
+ 530   2                      reg_val &= ~(1<<(uint8_t)clk);
+ 531   2              }
+ 532   1              else
+ 533   1              {
+ 534   2                      reg_val |= (1<<(uint8_t)clk);
+ 535   2              }
+ 536   1      
+ 537   1              si5351_write_init(SI5351_OUTPUT_ENABLE_CTRL, reg_val);
+ 538   1          
+ 539   1      }
+ 540          
+ 541          /*
+ 542           * si5351_drive_strength(enum si5351_clock clk, enum si5351_drive drive)
+ 543           *
+ 544           * Sets the drive strength of the specified clock output
+ 545           *
+ 546           * clk - Clock output
+C51 COMPILER V9.51   SI5351                                                                07/22/2026 12:45:12 PAGE 10  
+
+ 547           *   (use the si5351_clock enum)
+ 548           * drive - Desired drive level
+ 549           *   (use the si5351_drive enum)
+ 550           */
+ 551          void si5351_drive_strength(enum si5351_clock clk, enum si5351_drive drive)
+ 552          {
+ 553   1              uint8_t reg_val;
+ 554   1              uint8_t mask = 0x03;
+ 555   1      
+ 556   1              if(si5351_read(SI5351_CLK0_CTRL + (uint8_t)clk, &reg_val) != 0)
+ 557   1              {
+ 558   2                      return;
+ 559   2              }
+ 560   1      
+ 561   1              switch(drive)
+ 562   1              {
+ 563   2              case SI5351_DRIVE_2MA:
+ 564   2                      reg_val &= ~(mask);
+ 565   2                      reg_val |= 0x00;
+ 566   2                      break;
+ 567   2              case SI5351_DRIVE_4MA:
+ 568   2                      reg_val &= ~(mask);
+ 569   2                      reg_val |= 0x01;
+ 570   2                      break;
+ 571   2              case SI5351_DRIVE_6MA:
+ 572   2                      reg_val &= ~(mask);
+ 573   2                      reg_val |= 0x02;
+ 574   2                      break;
+ 575   2              case SI5351_DRIVE_8MA:
+ 576   2                      reg_val &= ~(mask);
+ 577   2                      reg_val |= 0x03;
+ 578   2                      break;
+ 579   2              default:
+ 580   2                      break;
+ 581   2              }
+ 582   1      
+ 583   1              si5351_write_init(SI5351_CLK0_CTRL + (uint8_t)clk, reg_val);
+ 584   1         
+ 585   1      }
+ 586          
+ 587          /*
+ 588           * si5351_update_status(void)
+ 589           *
+ 590           * Call this to update the status structs, then access them
+ 591           * via the dev_status and dev_int_status global variables.
+ 592           *
+ 593           * See the header file for the struct definitions. These
+ 594           * correspond to the flag names for registers 0 and 1 in
+ 595           * the Si5351 datasheet.
+ 596           */
+ 597          /*void si5351_update_status(void)
+ 598          {
+ 599                  si5351_update_sys_status(&dev_status);
+ 600                  si5351_update_int_status(&dev_int_status);
+ 601          }*/
+ 602          
+ 603          /*
+ 604           * si5351_set_correction(int32_t corr)
+ 605           *
+ 606           * Use this to set the oscillator correction factor to
+ 607           * EEPROM. This value is a signed 32-bit integer of the
+ 608           * parts-per-10 million value that the actual oscillation
+C51 COMPILER V9.51   SI5351                                                                07/22/2026 12:45:12 PAGE 11  
+
+ 609           * frequency deviates from the specified frequency.
+ 610           *
+ 611           * The frequency calibration is done as a one-time procedure.
+ 612           * Any desired test frequency within the normal range of the
+ 613           * Si5351 should be set, then the actual output frequency
+ 614           * should be measured as accurately as possible. The
+ 615           * difference between the measured and specified frequencies
+ 616           * should be calculated in Hertz, then multiplied by 10 in
+ 617           * order to get the parts-per-10 million value.
+ 618           *
+ 619           * Since the Si5351 itself has an intrinsic 0 PPM error, this
+ 620           * correction factor is good across the entire tuning range of
+ 621           * the Si5351. Once this calibration is done accurately, it
+ 622           * should not have to be done again for the same Si5351 and
+ 623           * crystal.
+ 624           */
+ 625          /*void si5351_set_correction(int32 corr)
+ 626          {
+ 627                  //xtal_freq = (uint32)(xtal_freq + (corr * (xtal_freq / 10000000UL)));
+ 628                  ee_ppm_int = (int16)corr;
+ 629          }*/
+ 630          
+ 631          /*
+ 632           * si5351_set_phase(enum si5351_clock clk, uint8_t phase)
+ 633           *
+ 634           * clk - Clock output
+ 635           *   (use the si5351_clock enum)
+ 636           * phase - 7-bit phase word
+ 637           *   (in units of VCO/4 period)
+ 638           *
+ 639           * Write the 7-bit phase register. This must be used
+ 640           * with a user-set PLL frequency so that the user can
+ 641           * calculate the proper tuning word based on the PLL period.
+ 642           */
+ 643          /*void si5351_set_phase(enum si5351_clock clk, uint8_t phase)
+ 644          {
+ 645                  // Mask off the upper bit since it is reserved
+ 646                  phase = phase & 0xEF;
+ 647          
+ 648                  si5351_write_init(SI5351_CLK0_PHASE_OFFSET + (uint8_t)clk, phase);
+ 649             
+ 650          }*/
+ 651          
+ 652          /*
+ 653           * si5351_pll_reset(enum si5351_pll target_pll)
+ 654           *
+ 655           * target_pll - Which PLL to reset
+ 656           *     (use the si5351_pll enum)
+ 657           *
+ 658           * Apply a reset to the indicated PLL.
+ 659           */
+ 660          void si5351_pll_reset(enum si5351_pll target_pll)
+ 661          {
+ 662   1              if(target_pll == SI5351_PLLA)
+ 663   1              {
+ 664   2              si5351_write_init(SI5351_PLL_RESET, SI5351_PLL_RESET_A);
+ 665   2             
+ 666   2              }
+ 667   1              else if(target_pll == SI5351_PLLB)
+ 668   1              {
+ 669   2                  si5351_write_init(SI5351_PLL_RESET, SI5351_PLL_RESET_B);
+ 670   2              
+C51 COMPILER V9.51   SI5351                                                                07/22/2026 12:45:12 PAGE 12  
+
+ 671   2              }
+ 672   1      }
+ 673          
+ 674          /*
+ 675           * si5351_set_ms_source(enum si5351_clock clk, enum si5351_pll pll)
+ 676           *
+ 677           * clk - Clock output
+ 678           *   (use the si5351_clock enum)
+ 679           * pll - Which PLL to use as the source
+ 680           *     (use the si5351_pll enum)
+ 681           *
+ 682           * Set the desired PLL source for a multisynth.
+ 683           */
+ 684          /*void si5351_set_ms_source(enum si5351_clock clk, enum si5351_pll pll)
+ 685          {
+ 686                  uint8_t reg_val;
+ 687          
+ 688                  si5351_read(SI5351_CLK0_CTRL + (uint8_t)clk, &reg_val);
+ 689          
+ 690                  if(pll == SI5351_PLLA)
+ 691                  {
+ 692                          reg_val &= ~(SI5351_CLK_PLL_SELECT);
+ 693                  }
+ 694                  else if(pll == SI5351_PLLB)
+ 695                  {
+ 696                          reg_val |= SI5351_CLK_PLL_SELECT;
+ 697                  }
+ 698          
+ 699                  si5351_write_init(SI5351_CLK0_CTRL + (uint8_t)clk, reg_val);
+ 700              
+ 701          }*/
+ 702          
+ 703          /*
+ 704           * si5351_set_int(enum si5351_clock clk, uint8_t int_mode)
+ 705           *
+ 706           * clk - Clock output
+ 707           *   (use the si5351_clock enum)
+ 708           * enable - Set to 1 to enable, 0 to disable
+ 709           *
+ 710           * Set the indicated multisynth into integer mode.
+ 711           */
+ 712          /*void si5351_set_int(enum si5351_clock clk, uint8_t enable)
+ 713          {
+ 714                  uint8_t reg_val;
+ 715                  si5351_read(SI5351_CLK0_CTRL + (uint8_t)clk, &reg_val);
+ 716          
+ 717                  if(enable == 1)
+ 718                  {
+ 719                          reg_val |= (SI5351_CLK_INTEGER_MODE);
+ 720                  }
+ 721                  else
+ 722                  {
+ 723                          reg_val &= ~(SI5351_CLK_INTEGER_MODE);
+ 724                  }
+ 725          
+ 726                  si5351_write_init(SI5351_CLK0_CTRL + (uint8_t)clk, reg_val);
+ 727              
+ 728          }*/
+ 729          
+ 730          /*
+ 731           * si5351_set_clock_pwr(enum si5351_clock clk, uint8_t pwr)
+ 732           *
+C51 COMPILER V9.51   SI5351                                                                07/22/2026 12:45:12 PAGE 13  
+
+ 733           * clk - Clock output
+ 734           *   (use the si5351_clock enum)
+ 735           * pwr - Set to 1 to enable, 0 to disable
+ 736           *
+ 737           * Enable or disable power to a clock output (a power
+ 738           * saving feature).
+ 739           */
+ 740          void si5351_set_clock_pwr(enum si5351_clock clk, uint8_t pwr)
+ 741          {
+ 742   1              uint8_t reg_val;
+ 743   1              si5351_read(SI5351_CLK0_CTRL + (uint8_t)clk, &reg_val);
+ 744   1      
+ 745   1              if(pwr == 1)
+ 746   1              {
+ 747   2                      //reg_val &= 0b01111111;
+ 748   2              reg_val &= 0x7F;
+ 749   2              }
+ 750   1              else
+ 751   1              {
+ 752   2                      //reg_val |= 0b10000000;
+ 753   2              reg_val |= 0x40;
+ 754   2              }
+ 755   1      
+ 756   1              si5351_write_init(SI5351_CLK0_CTRL + (uint8_t)clk, reg_val);
+ 757   1       
+ 758   1      }
+ 759          
+ 760          /*
+ 761           * si5351_set_clock_invert(enum si5351_clock clk, uint8_t inv)
+ 762           *
+ 763           * clk - Clock output
+ 764           *   (use the si5351_clock enum)
+ 765           * inv - Set to 1 to enable, 0 to disable
+ 766           *
+ 767           * Enable to invert the clock output waveform.
+ 768           */
+ 769          /*void si5351_set_clock_invert(enum si5351_clock clk, uint8_t inv)
+ 770          {
+ 771                  uint8_t reg_val;
+ 772                  si5351_read(SI5351_CLK0_CTRL + (uint8_t)clk, &reg_val);
+ 773          
+ 774                  if(inv == 1)
+ 775                  {
+ 776                          reg_val |= (SI5351_CLK_INVERT);
+ 777                  }
+ 778                  else
+ 779                  {
+ 780                          reg_val &= ~(SI5351_CLK_INVERT);
+ 781                  }
+ 782          
+ 783                  si5351_write_init(SI5351_CLK0_CTRL + (uint8_t)clk, reg_val);
+ 784             
+ 785          }*/
+ 786          
+ 787          /*
+ 788           * si5351_set_clock_source(enum si5351_clock clk, enum si5351_clock_source src)
+ 789           *
+ 790           * clk - Clock output
+ 791           *   (use the si5351_clock enum)
+ 792           * src - Which clock source to use for the multisynth
+ 793           *   (use the si5351_clock_source enum)
+ 794           *
+C51 COMPILER V9.51   SI5351                                                                07/22/2026 12:45:12 PAGE 14  
+
+ 795           * Set the clock source for a multisynth (based on the options
+ 796           * presented for Registers 16-23 in the Silicon Labs AN619 document).
+ 797           * Choices are XTAL, CLKIN, MS0, or the multisynth associated with
+ 798           * the clock output.
+ 799           */
+ 800          /*void si5351_set_clock_source(enum si5351_clock clk, enum si5351_clock_source src)
+ 801          {
+ 802                  uint8_t reg_val;
+ 803                  si5351_read(SI5351_CLK0_CTRL + (uint8_t)clk, &reg_val);
+ 804          
+ 805                  // Clear the bits first
+ 806                  reg_val &= ~(SI5351_CLK_INPUT_MASK);
+ 807          
+ 808                  switch(src)
+ 809                  {
+ 810                  case SI5351_CLK_SRC_XTAL:
+ 811                          reg_val |= (SI5351_CLK_INPUT_XTAL);
+ 812                          break;
+ 813                  case SI5351_CLK_SRC_CLKIN:
+ 814                          reg_val |= (SI5351_CLK_INPUT_CLKIN);
+ 815                          break;
+ 816                  case SI5351_CLK_SRC_MS0:
+ 817                          if(clk == SI5351_CLK0)
+ 818                          {
+ 819                                  return;
+ 820                          }
+ 821          
+ 822                          reg_val |= (SI5351_CLK_INPUT_MULTISYNTH_0_4);
+ 823                          break;
+ 824                  case SI5351_CLK_SRC_MS:
+ 825                          reg_val |= (SI5351_CLK_INPUT_MULTISYNTH_N);
+ 826                          break;
+ 827                  default:
+ 828                          return;
+ 829                  }
+ 830          
+ 831                  si5351_write_init(SI5351_CLK0_CTRL + (uint8_t)clk, reg_val);
+ 832              
+ 833          }*/
+ 834          
+ 835          /*
+ 836           * si5351_set_clock_disable(enum si5351_clock clk, enum si5351_clock_disable dis_state)
+ 837           *
+ 838           * clk - Clock output
+ 839           *   (use the si5351_clock enum)
+ 840           * dis_state - Desired state of the output upon disable
+ 841           *   (use the si5351_clock_disable enum)
+ 842           *
+ 843           * Set the state of the clock output when it is disabled. Per page 27
+ 844           * of AN619 (Registers 24 and 25), there are four possible values: low,
+ 845           * high, high impedance, and never disabled.
+ 846           */
+ 847          void si5351_set_clock_disable(enum si5351_clock clk, enum si5351_clock_disable dis_state)
+ 848          {
+ 849   1              uint8_t reg_val, reg = 0;
+ 850   1      
+ 851   1              if (clk >= SI5351_CLK0 && clk <= SI5351_CLK3)
+ 852   1              {
+ 853   2                      reg = SI5351_CLK3_0_DISABLE_STATE;
+ 854   2              }
+ 855   1              else if (clk >= SI5351_CLK0 && clk <= SI5351_CLK3)
+ 856   1              {
+C51 COMPILER V9.51   SI5351                                                                07/22/2026 12:45:12 PAGE 15  
+
+ 857   2                      reg = SI5351_CLK7_4_DISABLE_STATE;
+ 858   2              }
+ 859   1      
+ 860   1              si5351_read(reg, &reg_val);
+ 861   1      
+ 862   1              if (clk >= SI5351_CLK0 && clk <= SI5351_CLK3)
+ 863   1              {
+ 864   2                      reg_val &= ~(0x03 << (clk * 2));
+ 865   2                      reg_val |= dis_state << (clk * 2);
+ 866   2              }
+ 867   1              else if (clk >= SI5351_CLK0 && clk <= SI5351_CLK3)
+ 868   1              {
+ 869   2                      reg_val &= ~(0x03 << ((clk - 4) * 2));
+ 870   2                      reg_val |= dis_state << ((clk - 4) * 2);
+ 871   2              }
+ 872   1      
+ 873   1              si5351_write_init(reg, reg_val);
+ 874   1          
+ 875   1      }
+ 876          
+ 877          /*
+ 878           * si5351_set_clock_fanout(enum si5351_clock_fanout fanout, uint8_t enable)
+ 879           *
+ 880           * fanout - Desired clock fanout
+ 881           *   (use the si5351_clock_fanout enum)
+ 882           * enable - Set to 1 to enable, 0 to disable
+ 883           *
+ 884           * Use this function to enable or disable the clock fanout options
+ 885           * for individual clock outputs. If you intend to output the XO or
+ 886           * CLKIN on the clock outputs, enable this first.
+ 887           *
+ 888           * By default, only the Multisynth fanout is enabled at startup.
+ 889           */
+ 890          /*void si5351_set_clock_fanout(enum si5351_clock_fanout fanout, uint8_t enable)
+ 891          {
+ 892                  uint8_t reg_val;
+ 893                  si5351_read(SI5351_FANOUT_ENABLE, &reg_val);
+ 894          
+ 895                  switch(fanout)
+ 896                  {
+ 897                  case SI5351_FANOUT_CLKIN:
+ 898                          if(enable)
+ 899                          {
+ 900                                  reg_val |= SI5351_CLKIN_ENABLE;
+ 901                          }
+ 902                          else
+ 903                          {
+ 904                                  reg_val &= ~(SI5351_CLKIN_ENABLE);
+ 905                          }
+ 906                          break;
+ 907                  case SI5351_FANOUT_XO:
+ 908                          if(enable)
+ 909                          {
+ 910                                  reg_val |= SI5351_XTAL_ENABLE;
+ 911                          }
+ 912                          else
+ 913                          {
+ 914                                  reg_val &= ~(SI5351_XTAL_ENABLE);
+ 915                          }
+ 916                          break;
+ 917                  case SI5351_FANOUT_MS:
+ 918                          if(enable)
+C51 COMPILER V9.51   SI5351                                                                07/22/2026 12:45:12 PAGE 16  
+
+ 919                          {
+ 920                                  reg_val |= SI5351_MULTISYNTH_ENABLE;
+ 921                          }
+ 922                          else
+ 923                          {
+ 924                                  reg_val &= ~(SI5351_MULTISYNTH_ENABLE);
+ 925                          }
+ 926                          break;
+ 927                  }
+ 928          
+ 929                  si5351_write_init(SI5351_FANOUT_ENABLE, reg_val);
+ 930              
+ 931          }*/
+ 932          
+ 933          void si5351_update_sys_status(struct Si5351Status *status)
+ 934          {
+ 935   1              uint8_t reg_val = 0;
+ 936   1      
+ 937   1              if(si5351_read(SI5351_DEVICE_STATUS, &reg_val) != 0)
+ 938   1              {
+ 939   2                      return;
+ 940   2              }
+ 941   1      
+ 942   1              /* Parse the register */
+ 943   1              status->SYS_INIT = (reg_val >> 7) & 0x01;
+ 944   1              status->LOL_B = (reg_val >> 6) & 0x01;
+ 945   1              status->LOL_A = (reg_val >> 5) & 0x01;
+ 946   1              status->LOS = (reg_val >> 4) & 0x01;
+ 947   1              status->REVID = reg_val & 0x03;
+ 948   1      }
+ 949          
+ 950          void si5351_update_int_status(struct Si5351IntStatus *int_status)
+ 951          {
+ 952   1              uint8_t reg_val = 0;
+ 953   1      
+ 954   1              if(si5351_read(SI5351_DEVICE_STATUS, &reg_val) != 0)
+ 955   1              {
+ 956   2                      return;
+ 957   2              }
+ 958   1      
+ 959   1              /* Parse the register */
+ 960   1              int_status->SYS_INIT_STKY = (reg_val >> 7) & 0x01;
+ 961   1              int_status->LOL_B_STKY = (reg_val >> 6) & 0x01;
+ 962   1              int_status->LOL_A_STKY = (reg_val >> 5) & 0x01;
+ 963   1              int_status->LOS_STKY = (reg_val >> 4) & 0x01;
+ 964   1      }
+ 965          
+ 966          /*void si5351_set_ms_div(enum si5351_clock clk, uint8_t r_div, uint8_t div_by_4)
+ 967          {
+ 968                  uint8_t reg_val, reg_addr = 0;
+ 969          
+ 970                  switch(clk)
+ 971                  {
+ 972                          case SI5351_CLK0:
+ 973                                  reg_addr = SI5351_CLK0_PARAMETERS + 2;
+ 974                                  break;
+ 975                          case SI5351_CLK1:
+ 976                                  reg_addr = SI5351_CLK1_PARAMETERS + 2;
+ 977                                  break;
+ 978                          case SI5351_CLK2:
+ 979                                  reg_addr = SI5351_CLK2_PARAMETERS + 2;
+ 980                                  break;
+C51 COMPILER V9.51   SI5351                                                                07/22/2026 12:45:12 PAGE 17  
+
+ 981                          case SI5351_CLK3:
+ 982                                  reg_addr = SI5351_CLK3_PARAMETERS + 2;
+ 983                                  break;
+ 984                          case SI5351_CLK4:
+ 985                                  reg_addr = SI5351_CLK4_PARAMETERS + 2;
+ 986                                  break;
+ 987                          case SI5351_CLK5:
+ 988                                  reg_addr = SI5351_CLK5_PARAMETERS + 2;
+ 989                                  break;
+ 990                          case SI5351_CLK6:
+ 991                                  return;
+ 992                          case SI5351_CLK7:
+ 993                                  return;
+ 994                  }
+ 995          
+ 996                  si5351_read(reg_addr, &reg_val);
+ 997          
+ 998                  // Clear the relevant bits
+ 999                  reg_val &= ~(0x7c);
+1000          
+1001                  if(div_by_4 == 0)
+1002                  {
+1003                          reg_val &= ~(SI5351_OUTPUT_CLK_DIVBY4);
+1004                  }
+1005                  else
+1006                  {
+1007                          reg_val |= (SI5351_OUTPUT_CLK_DIVBY4);
+1008                  }
+1009          
+1010                  reg_val |= (r_div << SI5351_OUTPUT_CLK_DIV_SHIFT);
+1011          
+1012                  si5351_write_init(reg_addr, reg_val);
+1013              
+1014          }*/
+1015          
+1016          
+1017          /*uint8_t si5351_write_bulk(uint8_t addr, uint8_t bytes, uint8_t *command_data)
+1018          {
+1019                  //uint8_t msg_buffer[bytes + 1];
+1020              uint8_t msg_buffer[50];
+1021                  uint8_t ret_status = 0;
+1022              uint8 write_status = 0;
+1023                  uint8 buffer_written;
+1024             
+1025              write_status = write_status;//Keep Compiler happy
+1026                  msg_buffer[0] = addr;
+1027                  memcpy(&msg_buffer[1],command_data,(size_t)bytes);
+1028              write_status = I2C_MasterWriteBuf(SI5351_SLAVE_ADDRESS,msg_buffer,(bytes + 1),I2C_MODE_COMPLETE_XFER);
+1029              while((I2C_MasterStatus() & I2C_MSTAT_WR_CMPLT) == 0u){};
+1030                  buffer_written = I2C_MasterGetWriteBufSize();
+1031              if(buffer_written != (bytes +1)){ret_status = 1;}
+1032                  return ret_status;
+1033          }*/
+1034          
+1035          
+1036          uint8_t si5351_write_init(uint8_t addr, uint8_t command_data)
+1037          {
+1038   1              uint8_t msg_buffer[2];
+1039   1              uint8_t ret_status = 1;
+1040   1              uint8_t write_status = 0;
+1041   1          uint8 buffer_written;
+1042   1              
+C51 COMPILER V9.51   SI5351                                                                07/22/2026 12:45:12 PAGE 18  
+
+1043   1          write_status = write_status;//Keep Compiler Happy
+1044   1              msg_buffer[0] = addr;
+1045   1              msg_buffer[1] = command_data;
+1046   1      
+1047   1          
+1048   1              write_status = I2C_DISPLAY_MasterWriteBuf(SI5351_SLAVE_ADDRESS,msg_buffer,2u,I2C_DISPLAY_MODE_COMPLETE_XF
+             -ER);
+1049   1          while((I2C_DISPLAY_MasterStatus() & I2C_DISPLAY_MSTAT_WR_CMPLT) == 0u){};
+1050   1          buffer_written = I2C_DISPLAY_MasterGetWriteBufSize();
+1051   1          if(buffer_written != (2u)){ret_status = 0;}
+1052   1          return ret_status;
+1053   1      }
+1054          
+1055          uint8_t si5351_read(uint8_t addr, uint8_t *command_data)
+1056          {
+1057   1              uint8_t ret_status = 0;
+1058   1              uint8_t status = 0;
+1059   1          uint8_t *l_addr;
+1060   1             
+1061   1          l_addr = &addr; //For debugging purposes.  Remove from production code
+1062   1          status = I2C_DISPLAY_MasterStatus();
+1063   1          if(status != I2C_DISPLAY_MSTAT_ERR_XFER){
+1064   2              status = I2C_DISPLAY_MasterWriteBuf(SI5351_SLAVE_ADDRESS,l_addr,1u,I2C_DISPLAY_MODE_COMPLETE_XFER)
+             -;
+1065   2              while((I2C_DISPLAY_MasterStatus() & I2C_DISPLAY_MSTAT_WR_CMPLT) == 0u){};
+1066   2              if(status == I2C_DISPLAY_MSTR_NO_ERROR){
+1067   3                  status = I2C_DISPLAY_MasterReadBuf(SI5351_SLAVE_ADDRESS,command_data,1u,I2C_DISPLAY_MODE_COMPL
+             -ETE_XFER);
+1068   3                  while((I2C_DISPLAY_MasterStatus() & I2C_DISPLAY_MSTAT_RD_CMPLT) == 0u){};
+1069   3                  if(status != I2C_DISPLAY_MSTR_NO_ERROR){ret_status = 1;}
+1070   3              }
+1071   2          }
+1072   1          return ret_status;
+1073   1      }
+1074          /*void si5351_reset_queue(void){
+1075              E_si5351_queue_front = -1;
+1076              E_si5351_queue_rear = -1;
+1077          }
+1078          
+1079          uint8 si5351_write_queue(uint8 addr,uint8 command_data){
+1080              uint8 ret_status = TRUE;
+1081              int8_t front;//For debugging 
+1082              int8_t rear;//For debugging 
+1083             
+1084              
+1085              front = E_si5351_queue_front;
+1086              rear = E_si5351_queue_rear;
+1087              if(E_si5351_queue_front == (E_si5351_queue_rear +1) %MAX_SI5351_QUEUE) {
+1088                  ERROR ("S I 5 3 5 1  Q U E U E   ");
+1089              }else{
+1090                  if(E_si5351_queue_front == -1) {
+1091                      E_si5351_queue_front = E_si5351_queue_rear = 0;
+1092                  }else{
+1093                      E_si5351_queue_rear = (E_si5351_queue_rear + 1)%MAX_SI5351_QUEUE;
+1094                  }
+1095                  E_si5351_queue[E_si5351_queue_rear][0] = addr;
+1096                  E_si5351_queue[E_si5351_queue_rear][1] = command_data;
+1097              }
+1098              return ret_status;                
+1099          }
+1100          
+1101          uint8_t si5351_get_command_from_queue(uint8 *addr,uint8 *my_data){
+C51 COMPILER V9.51   SI5351                                                                07/22/2026 12:45:12 PAGE 19  
+
+1102              uint8_t ret = TRUE;
+1103              uint8_t l_addr;//For debugging
+1104              uint8_t l_data;//For debugging
+1105              if(E_si5351_queue_front == -1){
+1106                  ret = 0;
+1107              }else{
+1108                  l_addr = E_si5351_queue[E_si5351_queue_front][0];
+1109                  l_data = E_si5351_queue[E_si5351_queue_front][1];
+1110                  *addr = E_si5351_queue[E_si5351_queue_front][0];
+1111                  *my_data = E_si5351_queue[E_si5351_queue_front][1];
+1112                  ret = 2;
+1113                  E_si5351_queue[E_si5351_queue_front][0] = 0;
+1114                  E_si5351_queue[E_si5351_queue_front][1] = 0;
+1115                  if(E_si5351_queue_front == E_si5351_queue_rear){
+1116                      E_si5351_queue_front = E_si5351_queue_rear = -1;
+1117                  }else{
+1118                      E_si5351_queue_front = (E_si5351_queue_front + 1)%MAX_SI5351_QUEUE;
+1119                  }
+1120              }
+1121              return ret;
+1122          }
+1123          
+1124          int8_t si5351_process_queue()
+1125          {
+1126              static uint8_t addr = 0,command_data = 0;
+1127                  //static uint8_t msg_buffer[2];
+1128                  static int8_t queue_status = 0;
+1129                  uint8_t i2c_write_status = 0;
+1130              //uint8_t i2c_completion_status;
+1131              static uint8 state = 0;
+1132              //static uint8 write_counter = 0;
+1133                 
+1134              switch(state){
+1135                  case 0:
+1136                      queue_status = si5351_get_command_from_queue(&addr,&command_data);
+1137                      if(queue_status != 0){
+1138                          //msg_buffer[0] = addr;
+1139                              //msg_buffer[1] = command_data;
+1140                          state = 1;
+1141                      }
+1142                      break;
+1143                  case 1:
+1144                      i2c_write_status = si5351_write_init(addr,command_data);
+1145                      if(i2c_write_status){
+1146                          state = 2;
+1147                      }else{
+1148                          si5351_reset_queue();
+1149                          state = 0;
+1150                      }
+1151                      break;
+1152                  case 2:
+1153                      state = 0;
+1154                      queue_status = 0;
+1155                      break;
+1156              }
+1157              return queue_status;
+1158          }*/
+1159          
+1160          /*int8_t si5351_process_queue()
+1161          {
+1162              static uint8_t addr = 0,command_data = 0;
+1163                  static uint8_t msg_buffer[2];
+C51 COMPILER V9.51   SI5351                                                                07/22/2026 12:45:12 PAGE 20  
+
+1164                  static int8_t queue_status = 0;
+1165                  uint8_t i2c_write_status = 0;
+1166              uint8_t i2c_completion_status;
+1167              static uint8 state = 0;
+1168              static uint8 write_counter = 0;
+1169                 
+1170              switch(state){
+1171                  case 0:
+1172                      queue_status = si5351_get_command_from_queue(&addr,&command_data);
+1173                      if(queue_status != 0){
+1174                          msg_buffer[0] = addr;
+1175                              msg_buffer[1] = command_data;
+1176                          state = 1;
+1177                      }
+1178                      break;
+1179                  case 1:
+1180                      i2c_write_status = I2C_MasterWriteBuf(SI5351_SLAVE_ADDRESS,msg_buffer,2u,I2C_MODE_COMPLETE_XFE
+             -R);
+1181                      if(i2c_write_status == I2C_MSTR_NO_ERROR){
+1182                          state = 2;
+1183                      }else {
+1184                          //Through away this iteration.  The I2C buss can't keep up
+1185                          I2C_Stop();
+1186                          I2C_Start();
+1187                          state = 0;
+1188                          queue_status = SI5351_RESET;
+1189                          si5351_reset_queue();
+1190                      }
+1191                  case 2:
+1192                      i2c_completion_status = I2C_MasterStatus();
+1193                      if (i2c_completion_status & I2C_MSTAT_WR_CMPLT) {
+1194                          state = 3;
+1195                      }
+1196                      else {
+1197                          if(i2c_completion_status & I2C_MSTAT_ERR_XFER){
+1198                              if(write_counter++ > 3){
+1199                                  //Allow the I2C buss to retry 3 times.  If not, through away this iteration.
+1200                                  I2C_Stop();
+1201                                  I2C_Start();
+1202                                  write_counter = 0;
+1203                                  state = 0;
+1204                                  queue_status = SI5351_RESET;
+1205                                  si5351_reset_queue();
+1206                              }
+1207                          }
+1208                      }
+1209                      break;
+1210                  case 3:
+1211                      state = 0;
+1212                      queue_status = 0;
+1213                      break;
+1214              }
+1215              return queue_status;
+1216          }*/
+1217          
+1218          
+1219          
+1220          /* [] END OF FILE */
+C51 COMPILER V9.51   SI5351                                                                07/22/2026 12:45:12 PAGE 21  
+
+ASSEMBLY LISTING OF GENERATED OBJECT CODE
+
+
+             ; FUNCTION _smooth_tuning (BEGIN)
+                                           ; SOURCE LINE # 107
+                 R     MOV     DPTR,#freq
+                 E     CALL    ?C?LSTXDATA
+                                           ; SOURCE LINE # 109
+                 R     MOV     DPTR,#smooth
+                       MOV     A,#01H
+                       MOVX    @DPTR,A
+                                           ; SOURCE LINE # 115
+                       CLR     A
+                       MOV     R7,A
+                       MOV     R6,A
+                       MOV     R5,A
+                       MOV     R4,A
+                 R     MOV     DPTR,#previous_freq
+                       MOVX    A,@DPTR
+                       MOV     R0,A
+                       INC     DPTR
+                       MOVX    A,@DPTR
+                       MOV     R1,A
+                       INC     DPTR
+                       MOVX    A,@DPTR
+                       MOV     R2,A
+                       INC     DPTR
+                       MOVX    A,@DPTR
+                       MOV     R3,A
+                       CLR     C
+                 E     CALL    ?C?ULCMP
+                 R     xJNZ    ?C0001
+                                           ; SOURCE LINE # 116
+                 R     MOV     DPTR,#freq
+                       MOVX    A,@DPTR
+                       MOV     R4,A
+                       INC     DPTR
+                       MOVX    A,@DPTR
+                       MOV     R5,A
+                       INC     DPTR
+                       MOVX    A,@DPTR
+                       MOV     R6,A
+                       INC     DPTR
+                       MOVX    A,@DPTR
+                       MOV     R7,A
+                 R     MOV     DPTR,#previous_freq
+                 E     CALL    ?C?LSTXDATA
+                                           ; SOURCE LINE # 117
+                       MOV     R7,#00H
+                       RET     
+                                           ; SOURCE LINE # 118
+             ?C0001:
+                                           ; SOURCE LINE # 120
+                 R     MOV     DPTR,#previous_freq
+                       MOVX    A,@DPTR
+                       MOV     R4,A
+                       INC     DPTR
+                       MOVX    A,@DPTR
+                       MOV     R5,A
+                       INC     DPTR
+                       MOVX    A,@DPTR
+                       MOV     R6,A
+C51 COMPILER V9.51   SI5351                                                                07/22/2026 12:45:12 PAGE 22  
+
+                       INC     DPTR
+                       MOVX    A,@DPTR
+                       MOV     R7,A
+                       MOV     R3,A
+                       MOV     R2,AR6
+                       MOV     R1,AR5
+                       MOV     R0,AR4
+                 R     MOV     DPTR,#freq
+                       MOVX    A,@DPTR
+                       MOV     R4,A
+                       INC     DPTR
+                       MOVX    A,@DPTR
+                       MOV     R5,A
+                       INC     DPTR
+                       MOVX    A,@DPTR
+                       MOV     R6,A
+                       INC     DPTR
+                       MOVX    A,@DPTR
+                       CLR     C
+                       SUBB    A,R3
+                       MOV     R7,A
+                       MOV     A,R6
+                       SUBB    A,R2
+                       MOV     R6,A
+                       MOV     A,R5
+                       SUBB    A,R1
+                       MOV     R5,A
+                       MOV     A,R4
+                       SUBB    A,R0
+                       MOV     R4,A
+;---- Variable 'freq_diff' assigned to Register 'R4/R5/R6/R7' ----
+                                           ; SOURCE LINE # 121
+                 E     CALL    _labs
+                 R     MOV     DPTR,#abs_freq
+                 E     CALL    ?C?LSTXDATA
+                                           ; SOURCE LINE # 122
+                       MOV     R7,#080H
+                       MOV     R6,#084H
+                       MOV     R5,#01EH
+                       MOV     R4,#00H
+                 R     MOV     DPTR,#abs_freq
+                       MOVX    A,@DPTR
+                       MOV     R0,A
+                       INC     DPTR
+                       MOVX    A,@DPTR
+                       MOV     R1,A
+                       INC     DPTR
+                       MOVX    A,@DPTR
+                       MOV     R2,A
+                       INC     DPTR
+                       MOVX    A,@DPTR
+                       MOV     R3,A
+                       CLR     C
+                 E     CALL    ?C?ULCMP
+                 R     xJLT    ?C0003
+                                           ; SOURCE LINE # 123
+                       CLR     A
+                 R     MOV     DPTR,#smooth
+                       MOVX    @DPTR,A
+                                           ; SOURCE LINE # 124
+                 R     xJMP    ?C0004
+             ?C0003:
+C51 COMPILER V9.51   SI5351                                                                07/22/2026 12:45:12 PAGE 23  
+
+                                           ; SOURCE LINE # 126
+                       CLR     A
+                       MOV     R3,#0E8H
+                       MOV     R2,#03H
+                       MOV     R1,A
+                       MOV     R0,A
+                 R     MOV     DPTR,#freq
+                       MOVX    A,@DPTR
+                       MOV     R4,A
+                       INC     DPTR
+                       MOVX    A,@DPTR
+                       MOV     R5,A
+                       INC     DPTR
+                       MOVX    A,@DPTR
+                       MOV     R6,A
+                       INC     DPTR
+                       MOVX    A,@DPTR
+                       MOV     R7,A
+                 E     CALL    ?C?ULDIV
+                       CLR     A
+                       MOV     R3,#010H
+                       MOV     R2,#027H
+                       MOV     R1,A
+                       MOV     R0,A
+                 E     CALL    ?C?LMUL
+                       CLR     A
+                       MOV     R3,#0E8H
+                       MOV     R2,#03H
+                       MOV     R1,A
+                       MOV     R0,A
+                 E     CALL    ?C?ULDIV
+                 R     MOV     DPTR,#max_ppm_freq
+                 E     CALL    ?C?LSTXDATA
+                                           ; SOURCE LINE # 127
+                 R     MOV     DPTR,#max_ppm_freq
+                       MOVX    A,@DPTR
+                       INC     DPTR
+                       MOVX    A,@DPTR
+                       INC     DPTR
+                       MOVX    A,@DPTR
+                       MOV     R6,A
+                       INC     DPTR
+                       MOVX    A,@DPTR
+                       CLR     C
+                       SUBB    A,#0F4H
+                       MOV     A,R6
+                       SUBB    A,#01H
+                 R     xJGE    ?C0005
+                                           ; SOURCE LINE # 128
+                       CLR     A
+                       MOV     R7,#0F4H
+                       MOV     R6,#01H
+                       MOV     R5,A
+                       MOV     R4,A
+                 R     MOV     DPTR,#max_ppm_freq
+                 E     CALL    ?C?LSTXDATA
+                                           ; SOURCE LINE # 129
+             ?C0005:
+                                           ; SOURCE LINE # 130
+                 R     MOV     DPTR,#max_ppm_freq
+                       MOVX    A,@DPTR
+                       MOV     R4,A
+C51 COMPILER V9.51   SI5351                                                                07/22/2026 12:45:12 PAGE 24  
+
+                       INC     DPTR
+                       MOVX    A,@DPTR
+                       MOV     R5,A
+                       INC     DPTR
+                       MOVX    A,@DPTR
+                       MOV     R6,A
+                       INC     DPTR
+                       MOVX    A,@DPTR
+                       MOV     R7,A
+                 R     MOV     DPTR,#abs_freq
+                       MOVX    A,@DPTR
+                       MOV     R0,A
+                       INC     DPTR
+                       MOVX    A,@DPTR
+                       MOV     R1,A
+                       INC     DPTR
+                       MOVX    A,@DPTR
+                       MOV     R2,A
+                       INC     DPTR
+                       MOVX    A,@DPTR
+                       MOV     R3,A
+                       SETB    C
+                 E     CALL    ?C?ULCMP
+                 R     xJLT    ?C0004
+                                           ; SOURCE LINE # 131
+                       CLR     A
+                 R     MOV     DPTR,#smooth
+                       MOVX    @DPTR,A
+                                           ; SOURCE LINE # 132
+                                           ; SOURCE LINE # 133
+             ?C0004:
+                                           ; SOURCE LINE # 134
+                 R     MOV     DPTR,#freq
+                       MOVX    A,@DPTR
+                       MOV     R4,A
+                       INC     DPTR
+                       MOVX    A,@DPTR
+                       MOV     R5,A
+                       INC     DPTR
+                       MOVX    A,@DPTR
+                       MOV     R6,A
+                       INC     DPTR
+                       MOVX    A,@DPTR
+                       MOV     R7,A
+                 R     MOV     DPTR,#previous_freq
+                 E     CALL    ?C?LSTXDATA
+                                           ; SOURCE LINE # 135
+                 R     MOV     DPTR,#smooth
+                       MOVX    A,@DPTR
+                       MOV     R7,A
+                                           ; SOURCE LINE # 136
+             ?C0002:
+                       RET     
+             ; FUNCTION _smooth_tuning (END)
+
+             ; FUNCTION si5351_main (BEGIN)
+                                           ; SOURCE LINE # 138
+                                           ; SOURCE LINE # 146
+                 R     MOV     DPTR,#state
+                       MOVX    A,@DPTR
+                       DEC     A
+                 R     xJZ     ?C0015
+C51 COMPILER V9.51   SI5351                                                                07/22/2026 12:45:12 PAGE 25  
+
+                       DEC     A
+                 R     xJZ     ?C0022
+                       ADD     A,#02H
+                 R     xJNZ    ?C0029
+                                           ; SOURCE LINE # 147
+             ?C0008:
+                                           ; SOURCE LINE # 148
+                 R     MOV     DPTR,#Si570_LO
+                       MOVX    A,@DPTR
+                       MOV     R4,A
+                       INC     DPTR
+                       MOVX    A,@DPTR
+                       MOV     R5,A
+                       INC     DPTR
+                       MOVX    A,@DPTR
+                       MOV     R6,A
+                       INC     DPTR
+                       MOVX    A,@DPTR
+                       MOV     R7,A
+                 R     MOV     DPTR,#l_Si570_LO
+                       MOVX    A,@DPTR
+                       MOV     R0,A
+                       INC     DPTR
+                       MOVX    A,@DPTR
+                       MOV     R1,A
+                       INC     DPTR
+                       MOVX    A,@DPTR
+                       MOV     R2,A
+                       INC     DPTR
+                       MOVX    A,@DPTR
+                       MOV     R3,A
+                       CLR     C
+                 E     CALL    ?C?ULCMP
+                 R     xJZ     ?C0009
+                                           ; SOURCE LINE # 149
+                 E     CALL    CyEnterCriticalSection
+;---- Variable 'critical' assigned to Register 'R3' ----
+                       MOV     R3,AR7
+                                           ; SOURCE LINE # 150
+                 R     MOV     DPTR,#Si570_LO
+                       MOVX    A,@DPTR
+                       MOV     R4,A
+                       INC     DPTR
+                       MOVX    A,@DPTR
+                       MOV     R5,A
+                       INC     DPTR
+                       MOVX    A,@DPTR
+                       MOV     R6,A
+                       INC     DPTR
+                       MOVX    A,@DPTR
+                       MOV     R7,A
+                 R     MOV     DPTR,#l_Si570_LO
+                 E     CALL    ?C?LSTXDATA
+                                           ; SOURCE LINE # 151
+                       MOV     R7,AR3
+                 E     CALL    _CyExitCriticalSection
+                                           ; SOURCE LINE # 152
+                 E     MOV     DPTR,#E_dll_version
+                       MOVX    A,@DPTR
+                       DEC     A
+                 R     xJZ     ?C0012
+                       INC     A
+C51 COMPILER V9.51   SI5351                                                                07/22/2026 12:45:12 PAGE 26  
+
+                 R     xJNZ    ?C0010
+                                           ; SOURCE LINE # 154
+             ?C0011:
+                                           ; SOURCE LINE # 155
+                 R     MOV     DPTR,#l_Si570_LO
+                       MOVX    A,@DPTR
+                       MOV     R4,A
+                       INC     DPTR
+                       MOVX    A,@DPTR
+                       MOV     R5,A
+                       INC     DPTR
+                       MOVX    A,@DPTR
+                       MOV     R6,A
+                       INC     DPTR
+                       MOVX    A,@DPTR
+                       MOV     R7,A
+                 E     CALL    _convert_from_host
+                 R     MOV     DPTR,#freq_in_hz
+                 E     CALL    ?C?LSTXDATA
+                                           ; SOURCE LINE # 156
+                 R     MOV     DPTR,#freq_in_hz
+                       MOVX    A,@DPTR
+                       MOV     R4,A
+                       INC     DPTR
+                       MOVX    A,@DPTR
+                       MOV     R5,A
+                       INC     DPTR
+                       MOVX    A,@DPTR
+                       MOV     R6,A
+                       INC     DPTR
+                       MOVX    A,@DPTR
+                       MOV     R7,A
+                       CLR     A
+                       MOV     R3,#04H
+                       MOV     R2,A
+                       MOV     R1,A
+                       MOV     R0,A
+                 E     CALL    ?C?ULDIV
+                 R     MOV     DPTR,#freq_in_hz
+                 E     CALL    ?C?LSTXDATA
+                                           ; SOURCE LINE # 157
+                 R     xJMP    ?C0010
+                                           ; SOURCE LINE # 159
+             ?C0012:
+                                           ; SOURCE LINE # 160
+                 R     MOV     DPTR,#l_Si570_LO
+                       MOVX    A,@DPTR
+                       MOV     R4,A
+                       INC     DPTR
+                       MOVX    A,@DPTR
+                       MOV     R5,A
+                       INC     DPTR
+                       MOVX    A,@DPTR
+                       MOV     R6,A
+                       INC     DPTR
+                       MOVX    A,@DPTR
+                       MOV     R7,A
+                 E     CALL    _?swap32
+                 R     MOV     DPTR,#freq_in_hz
+                 E     CALL    ?C?LSTXDATA
+                                           ; SOURCE LINE # 161
+                                           ; SOURCE LINE # 162
+C51 COMPILER V9.51   SI5351                                                                07/22/2026 12:45:12 PAGE 27  
+
+             ?C0010:
+                                           ; SOURCE LINE # 163
+                       CLR     A
+                       MOV     R7,#064H
+                       MOV     R6,A
+                       MOV     R5,A
+                       MOV     R4,A
+                 R     MOV     DPTR,#freq_in_hz
+                       MOVX    A,@DPTR
+                       MOV     R0,A
+                       INC     DPTR
+                       MOVX    A,@DPTR
+                       MOV     R1,A
+                       INC     DPTR
+                       MOVX    A,@DPTR
+                       MOV     R2,A
+                       INC     DPTR
+                       MOVX    A,@DPTR
+                       MOV     R3,A
+                       SETB    C
+                 E     CALL    ?C?ULCMP
+                 R     xJLT    ?C0009
+                                           ; SOURCE LINE # 164
+                 R     MOV     DPTR,#freq_in_hz
+                       MOVX    A,@DPTR
+                       MOV     R4,A
+                       INC     DPTR
+                       MOVX    A,@DPTR
+                       MOV     R5,A
+                       INC     DPTR
+                       MOVX    A,@DPTR
+                       MOV     R6,A
+                       INC     DPTR
+                       MOVX    A,@DPTR
+                       MOV     R7,A
+                 R     MOV     DPTR,#E_current_LO_freq
+                       MOVX    A,@DPTR
+                       MOV     R0,A
+                       INC     DPTR
+                       MOVX    A,@DPTR
+                       MOV     R1,A
+                       INC     DPTR
+                       MOVX    A,@DPTR
+                       MOV     R2,A
+                       INC     DPTR
+                       MOVX    A,@DPTR
+                       MOV     R3,A
+                 E     CALL    ?C?ULCMP
+                 R     xJZ     ?C0009
+                                           ; SOURCE LINE # 165
+                 R     MOV     DPTR,#freq_in_hz
+                       MOVX    A,@DPTR
+                       MOV     R4,A
+                       INC     DPTR
+                       MOVX    A,@DPTR
+                       MOV     R5,A
+                       INC     DPTR
+                       MOVX    A,@DPTR
+                       MOV     R6,A
+                       INC     DPTR
+                       MOVX    A,@DPTR
+                       MOV     R7,A
+C51 COMPILER V9.51   SI5351                                                                07/22/2026 12:45:12 PAGE 28  
+
+                 R     MOV     DPTR,#E_current_LO_freq
+                 E     CALL    ?C?LSTXDATA
+                                           ; SOURCE LINE # 166
+                 R     MOV     DPTR,#E_current_LO_freq
+                       MOVX    A,@DPTR
+                       MOV     R4,A
+                       INC     DPTR
+                       MOVX    A,@DPTR
+                       MOV     R5,A
+                       INC     DPTR
+                       MOVX    A,@DPTR
+                       MOV     R6,A
+                       INC     DPTR
+                       MOVX    A,@DPTR
+                       MOV     R7,A
+                 E     MOV     DPTR,#CW_LO_Freq
+                 E     CALL    ?C?LSTXDATA
+                                           ; SOURCE LINE # 167
+                 R     MOV     DPTR,#E_current_LO_freq
+                       MOVX    A,@DPTR
+                       MOV     R4,A
+                       INC     DPTR
+                       MOVX    A,@DPTR
+                       MOV     R5,A
+                       INC     DPTR
+                       MOVX    A,@DPTR
+                       MOV     R6,A
+                       INC     DPTR
+                       MOVX    A,@DPTR
+                       MOV     R7,A
+                 R     CALL    _smooth_tuning
+                 R     MOV     DPTR,#E_smooth
+                       MOV     A,R7
+                       MOVX    @DPTR,A
+                                           ; SOURCE LINE # 168
+                                           ; SOURCE LINE # 169
+                                           ; SOURCE LINE # 170
+             ?C0009:
+                                           ; SOURCE LINE # 171
+                 R     MOV     DPTR,#state
+                       MOVX    A,@DPTR
+                       INC     A
+                       MOVX    @DPTR,A
+                                           ; SOURCE LINE # 172
+                       RET     
+                                           ; SOURCE LINE # 173
+             ?C0015:
+                                           ; SOURCE LINE # 174
+                 R     MOV     DPTR,#E_cw_pitch
+                       MOVX    A,@DPTR
+                       MOV     R7,A
+                 R     MOV     DPTR,#previous_E_cw_pitch
+                       MOVX    A,@DPTR
+                       XRL     A,R7
+                 R     xJZ     ?C0016
+                                           ; SOURCE LINE # 175
+                 R     MOV     DPTR,#E_cw_pitch
+                       MOVX    A,@DPTR
+                       DEC     A
+                 R     xJZ     ?C0019
+                       DEC     A
+                 R     xJZ     ?C0020
+C51 COMPILER V9.51   SI5351                                                                07/22/2026 12:45:12 PAGE 29  
+
+                       DEC     A
+                 R     xJZ     ?C0021
+                       ADD     A,#03H
+                 R     xJNZ    ?C0017
+                                           ; SOURCE LINE # 176
+             ?C0018:
+                                           ; SOURCE LINE # 177
+                 R     MOV     DPTR,#E_cw_pitch_freq
+                       MOV     A,#01H
+                       MOVX    @DPTR,A
+                       INC     DPTR
+                       MOV     A,#090H
+                       MOVX    @DPTR,A
+                                           ; SOURCE LINE # 178
+                 R     xJMP    ?C0017
+                                           ; SOURCE LINE # 179
+             ?C0019:
+                                           ; SOURCE LINE # 180
+                 R     MOV     DPTR,#E_cw_pitch_freq
+                       MOV     A,#02H
+                       MOVX    @DPTR,A
+                       INC     DPTR
+                       MOV     A,#058H
+                       MOVX    @DPTR,A
+                                           ; SOURCE LINE # 181
+                 R     xJMP    ?C0017
+                                           ; SOURCE LINE # 182
+             ?C0020:
+                                           ; SOURCE LINE # 183
+                 R     MOV     DPTR,#E_cw_pitch_freq
+                       MOV     A,#03H
+                       MOVX    @DPTR,A
+                       INC     DPTR
+                       MOV     A,#020H
+                       MOVX    @DPTR,A
+                                           ; SOURCE LINE # 184
+                 R     xJMP    ?C0017
+                                           ; SOURCE LINE # 185
+             ?C0021:
+                                           ; SOURCE LINE # 186
+                 R     MOV     DPTR,#E_cw_pitch_freq
+                       MOV     A,#03H
+                       MOVX    @DPTR,A
+                       INC     DPTR
+                       MOV     A,#0E8H
+                       MOVX    @DPTR,A
+                                           ; SOURCE LINE # 187
+                                           ; SOURCE LINE # 188
+             ?C0017:
+                                           ; SOURCE LINE # 189
+                 R     MOV     DPTR,#E_cw_pitch
+                       MOVX    A,@DPTR
+                 R     MOV     DPTR,#previous_E_cw_pitch
+                       MOVX    @DPTR,A
+                                           ; SOURCE LINE # 190
+             ?C0016:
+                                           ; SOURCE LINE # 191
+                 R     MOV     DPTR,#state
+                       MOVX    A,@DPTR
+                       INC     A
+                       MOVX    @DPTR,A
+                                           ; SOURCE LINE # 192
+C51 COMPILER V9.51   SI5351                                                                07/22/2026 12:45:12 PAGE 30  
+
+             ?C0022:
+                                           ; SOURCE LINE # 193
+                 R     MOV     DPTR,#E_current_LO_freq
+                       MOVX    A,@DPTR
+                       MOV     R4,A
+                       INC     DPTR
+                       MOVX    A,@DPTR
+                       MOV     R5,A
+                       INC     DPTR
+                       MOVX    A,@DPTR
+                       MOV     R6,A
+                       INC     DPTR
+                       MOVX    A,@DPTR
+                       MOV     R7,A
+                 R     MOV     DPTR,#previous_lo_freq
+                       MOVX    A,@DPTR
+                       MOV     R0,A
+                       INC     DPTR
+                       MOVX    A,@DPTR
+                       MOV     R1,A
+                       INC     DPTR
+                       MOVX    A,@DPTR
+                       MOV     R2,A
+                       INC     DPTR
+                       MOVX    A,@DPTR
+                       MOV     R3,A
+                       CLR     C
+                 E     CALL    ?C?ULCMP
+                 R     xJZ     ?C0023
+                                           ; SOURCE LINE # 194
+                 R     MOV     DPTR,#E_current_LO_freq
+                       MOVX    A,@DPTR
+                       MOV     R4,A
+                       INC     DPTR
+                       MOVX    A,@DPTR
+                       MOV     R5,A
+                       INC     DPTR
+                       MOVX    A,@DPTR
+                       MOV     R6,A
+                       INC     DPTR
+                       MOVX    A,@DPTR
+                       MOV     R7,A
+                 R     MOV     DPTR,#E_tune_freq
+                 E     CALL    ?C?LSTXDATA
+                                           ; SOURCE LINE # 196
+                 E     MOV     DPTR,#E_host_mode
+                       MOVX    A,@DPTR
+                       ADD     A,#0BDH
+                 R     xJZ     ?C0028
+                       ADD     A,#0F7H
+                 R     xJZ     ?C0027
+                       ADD     A,#0F7H
+                 R     xJZ     ?C0026
+                       ADD     A,#014H
+                 R     xJNZ    ?C0024
+                                           ; SOURCE LINE # 197
+             ?C0025:
+                                           ; SOURCE LINE # 198
+                 R     MOV     DPTR,#E_tune_freq
+                       MOVX    A,@DPTR
+                       MOV     R4,A
+                       INC     DPTR
+C51 COMPILER V9.51   SI5351                                                                07/22/2026 12:45:12 PAGE 31  
+
+                       MOVX    A,@DPTR
+                       MOV     R5,A
+                       INC     DPTR
+                       MOVX    A,@DPTR
+                       MOV     R6,A
+                       INC     DPTR
+                       MOVX    A,@DPTR
+                       ADD     A,#054H
+                       MOV     R7,A
+                       MOV     A,R6
+                       ADDC    A,#02EH
+                       MOV     R6,A
+                       CLR     A
+                       ADDC    A,R5
+                       MOV     R5,A
+                       CLR     A
+                       ADDC    A,R4
+                       MOV     R4,A
+                       PUSH    AR7
+                 R     MOV     DPTR,#E_ppm
+                       MOVX    A,@DPTR
+                       MOV     R7,A
+                       MOV     R3,A
+                       RLC     A
+                       SUBB    A,ACC
+                       MOV     R2,A
+                       MOV     R1,A
+                       MOV     R0,A
+                       POP     AR7
+                       CLR     C
+                       MOV     A,R7
+                       SUBB    A,R3
+                       MOV     R7,A
+                       MOV     A,R6
+                       SUBB    A,R2
+                       MOV     R6,A
+                       MOV     A,R5
+                       SUBB    A,R1
+                       MOV     R5,A
+                       MOV     A,R4
+                       SUBB    A,R0
+                       MOV     R4,A
+                       INC     DPTR
+                 E     CALL    ?C?LSTXDATA
+                                           ; SOURCE LINE # 199
+                 R     xJMP    ?C0024
+                                           ; SOURCE LINE # 200
+             ?C0026:
+                                           ; SOURCE LINE # 201
+                 R     MOV     DPTR,#E_tune_freq
+                       MOVX    A,@DPTR
+                       MOV     R4,A
+                       INC     DPTR
+                       MOVX    A,@DPTR
+                       MOV     R5,A
+                       INC     DPTR
+                       MOVX    A,@DPTR
+                       MOV     R6,A
+                       INC     DPTR
+                       MOVX    A,@DPTR
+                       ADD     A,#0E0H
+                       MOV     R7,A
+C51 COMPILER V9.51   SI5351                                                                07/22/2026 12:45:12 PAGE 32  
+
+                       MOV     A,R6
+                       ADDC    A,#02EH
+                       MOV     R6,A
+                       CLR     A
+                       ADDC    A,R5
+                       MOV     R5,A
+                       CLR     A
+                       ADDC    A,R4
+                       MOV     R4,A
+                       PUSH    AR7
+                 R     MOV     DPTR,#E_ppm
+                       MOVX    A,@DPTR
+                       MOV     R7,A
+                       MOV     R3,A
+                       RLC     A
+                       SUBB    A,ACC
+                       MOV     R2,A
+                       MOV     R1,A
+                       MOV     R0,A
+                       POP     AR7
+                       CLR     C
+                       MOV     A,R7
+                       SUBB    A,R3
+                       MOV     R7,A
+                       MOV     A,R6
+                       SUBB    A,R2
+                       MOV     R6,A
+                       MOV     A,R5
+                       SUBB    A,R1
+                       MOV     R5,A
+                       MOV     A,R4
+                       SUBB    A,R0
+                       MOV     R4,A
+                       INC     DPTR
+                 E     CALL    ?C?LSTXDATA
+                                           ; SOURCE LINE # 202
+                 R     xJMP    ?C0024
+                                           ; SOURCE LINE # 203
+             ?C0027:
+                                           ; SOURCE LINE # 204
+                 R     MOV     DPTR,#E_tune_freq
+                       MOVX    A,@DPTR
+                       MOV     R4,A
+                       INC     DPTR
+                       MOVX    A,@DPTR
+                       MOV     R5,A
+                       INC     DPTR
+                       MOVX    A,@DPTR
+                       MOV     R6,A
+                       INC     DPTR
+                       MOVX    A,@DPTR
+                       ADD     A,#0E0H
+                       MOV     R7,A
+                       MOV     A,R6
+                       ADDC    A,#02EH
+                       MOV     R6,A
+                       CLR     A
+                       ADDC    A,R5
+                       MOV     R5,A
+                       CLR     A
+                       ADDC    A,R4
+                       MOV     R4,A
+C51 COMPILER V9.51   SI5351                                                                07/22/2026 12:45:12 PAGE 33  
+
+                       PUSH    AR7
+                 R     MOV     DPTR,#E_ppm
+                       MOVX    A,@DPTR
+                       MOV     R7,A
+                       MOV     R3,A
+                       RLC     A
+                       SUBB    A,ACC
+                       MOV     R2,A
+                       MOV     R1,A
+                       MOV     R0,A
+                       POP     AR7
+                       CLR     C
+                       MOV     A,R7
+                       SUBB    A,R3
+                       MOV     R7,A
+                       MOV     A,R6
+                       SUBB    A,R2
+                       MOV     R6,A
+                       MOV     A,R5
+                       SUBB    A,R1
+                       MOV     R5,A
+                       MOV     A,R4
+                       SUBB    A,R0
+                       MOV     R4,A
+                       INC     DPTR
+                 E     CALL    ?C?LSTXDATA
+                                           ; SOURCE LINE # 205
+                 R     xJMP    ?C0024
+                                           ; SOURCE LINE # 206
+             ?C0028:
+                                           ; SOURCE LINE # 207
+                 R     MOV     DPTR,#E_tune_freq
+                       MOVX    A,@DPTR
+                       MOV     R4,A
+                       INC     DPTR
+                       MOVX    A,@DPTR
+                       MOV     R5,A
+                       INC     DPTR
+                       MOVX    A,@DPTR
+                       MOV     R6,A
+                       INC     DPTR
+                       MOVX    A,@DPTR
+                       ADD     A,#0E0H
+                       MOV     R7,A
+                       MOV     A,R6
+                       ADDC    A,#02EH
+                       MOV     R6,A
+                       CLR     A
+                       ADDC    A,R5
+                       MOV     R5,A
+                       CLR     A
+                       ADDC    A,R4
+                       MOV     R4,A
+                       PUSH    AR6
+                       PUSH    AR7
+                 R     MOV     DPTR,#E_cw_pitch_freq
+                       MOVX    A,@DPTR
+                       MOV     R6,A
+                       INC     DPTR
+                       MOVX    A,@DPTR
+                       MOV     R7,A
+                       MOV     R3,A
+C51 COMPILER V9.51   SI5351                                                                07/22/2026 12:45:12 PAGE 34  
+
+                       MOV     R2,AR6
+                       MOV     A,R2
+                       RLC     A
+                       SUBB    A,ACC
+                       MOV     R1,A
+                       MOV     R0,A
+                       POP     AR7
+                       POP     AR6
+                       CLR     C
+                       MOV     A,R7
+                       SUBB    A,R3
+                       MOV     R7,A
+                       MOV     A,R6
+                       SUBB    A,R2
+                       MOV     R6,A
+                       MOV     A,R5
+                       SUBB    A,R1
+                       MOV     R5,A
+                       MOV     A,R4
+                       SUBB    A,R0
+                       MOV     R4,A
+                 R     MOV     DPTR,#E_CW_LO_freq
+                 E     CALL    ?C?LSTXDATA
+                                           ; SOURCE LINE # 208
+                                           ; SOURCE LINE # 209
+             ?C0024:
+                                           ; SOURCE LINE # 210
+                 R     MOV     DPTR,#E_current_LO_freq
+                       MOVX    A,@DPTR
+                       MOV     R4,A
+                       INC     DPTR
+                       MOVX    A,@DPTR
+                       MOV     R5,A
+                       INC     DPTR
+                       MOVX    A,@DPTR
+                       MOV     R6,A
+                       INC     DPTR
+                       MOVX    A,@DPTR
+                       MOV     R7,A
+                 R     MOV     DPTR,#previous_lo_freq
+                 E     CALL    ?C?LSTXDATA
+                                           ; SOURCE LINE # 211
+             ?C0023:
+                                           ; SOURCE LINE # 213
+                       CLR     A
+                 R     MOV     DPTR,#state
+                       MOVX    @DPTR,A
+                                           ; SOURCE LINE # 214
+                                           ; SOURCE LINE # 215
+                                           ; SOURCE LINE # 216
+             ?C0029:
+                       RET     
+             ; FUNCTION si5351_main (END)
+
+             ; FUNCTION _si5351_init (BEGIN)
+                                           ; SOURCE LINE # 231
+                 R     MOV     DPTR,#xtal_load_c
+                       MOV     A,R7
+                       MOVX    @DPTR,A
+                                           ; SOURCE LINE # 232
+                                           ; SOURCE LINE # 233
+                       CLR     A
+C51 COMPILER V9.51   SI5351                                                                07/22/2026 12:45:12 PAGE 35  
+
+                 R     MOV     DPTR,#ret
+                       MOVX    @DPTR,A
+                                           ; SOURCE LINE # 236
+                       MOV     R7,A
+                       MOV     R6,#0D7H
+                       MOV     R5,#0A3H
+                       MOV     R4,#070H
+                 E     CALL    _?swap32
+                 R     MOV     DPTR,#Si570_Xtal
+                 E     CALL    ?C?LSTXDATA
+                                           ; SOURCE LINE # 238
+                 R     MOV     DPTR,#xtal_load_c
+                       MOVX    A,@DPTR
+                       MOV     R5,A
+                       MOV     R7,#0B7H
+                 R     CALL    _si5351_write_init
+                 R     MOV     DPTR,#ret
+                       MOV     A,R7
+                       MOVX    @DPTR,A
+                                           ; SOURCE LINE # 242
+                 R     xJZ     ?C0030
+                                           ; SOURCE LINE # 244
+                       CLR     A
+                       MOV     R7,A
+                       MOV     R6,A
+                       MOV     R5,A
+                       MOV     R4,A
+                 R     MOV     DPTR,#ref_osc_freq
+                       MOVX    A,@DPTR
+                       MOV     R0,A
+                       INC     DPTR
+                       MOVX    A,@DPTR
+                       MOV     R1,A
+                       INC     DPTR
+                       MOVX    A,@DPTR
+                       MOV     R2,A
+                       INC     DPTR
+                       MOVX    A,@DPTR
+                       MOV     R3,A
+                       CLR     C
+                 E     CALL    ?C?ULCMP
+                 R     xJZ     ?C0031
+                                           ; SOURCE LINE # 245
+                                           ; SOURCE LINE # 246
+                 R     MOV     DPTR,#ref_osc_freq
+                       MOVX    A,@DPTR
+                       MOV     R4,A
+                       INC     DPTR
+                       MOVX    A,@DPTR
+                       MOV     R5,A
+                       INC     DPTR
+                       MOVX    A,@DPTR
+                       MOV     R6,A
+                       INC     DPTR
+                       MOVX    A,@DPTR
+                       MOV     R7,A
+                 R     MOV     DPTR,#E_xtal_freq
+                 E     CALL    ?C?LSTXDATA
+                                           ; SOURCE LINE # 247
+             ?C0031:
+                                           ; SOURCE LINE # 251
+                       MOV     R5,#080H
+C51 COMPILER V9.51   SI5351                                                                07/22/2026 12:45:12 PAGE 36  
+
+                       MOV     R7,#010H
+                 R     CALL    _si5351_write_init
+                 R     MOV     DPTR,#ret
+                       MOV     A,R7
+                       MOVX    @DPTR,A
+                                           ; SOURCE LINE # 253
+                       MOV     R5,#080H
+                       MOV     R7,#011H
+                 R     CALL    _si5351_write_init
+                 R     MOV     DPTR,#ret
+                       MOV     A,R7
+                       MOVX    @DPTR,A
+                                           ; SOURCE LINE # 255
+                       MOV     R5,#080H
+                       MOV     R7,#012H
+                 R     CALL    _si5351_write_init
+                 R     MOV     DPTR,#ret
+                       MOV     A,R7
+                       MOVX    @DPTR,A
+                                           ; SOURCE LINE # 258
+                       MOV     R5,#0CH
+                       MOV     R7,#010H
+                 R     CALL    _si5351_write_init
+                 R     MOV     DPTR,#ret
+                       MOV     A,R7
+                       MOVX    @DPTR,A
+                                           ; SOURCE LINE # 260
+                       MOV     R5,#0CH
+                       MOV     R7,#011H
+                 R     CALL    _si5351_write_init
+                 R     MOV     DPTR,#ret
+                       MOV     A,R7
+                       MOVX    @DPTR,A
+                                           ; SOURCE LINE # 262
+                       MOV     R5,#0CH
+                       MOV     R7,#012H
+                 R     CALL    _si5351_write_init
+                 R     MOV     DPTR,#ret
+                       MOV     A,R7
+                       MOVX    @DPTR,A
+                                           ; SOURCE LINE # 264
+                       CLR     A
+                       MOV     R5,A
+                       MOV     R7,A
+                 R     CALL    _si5351_drive_strength
+                                           ; SOURCE LINE # 267
+                       CLR     A
+                       MOV     R7,A
+                 R     CALL    _si5351_pll_reset
+                                           ; SOURCE LINE # 269
+                       MOV     R7,#01H
+                 R     CALL    _si5351_pll_reset
+                                           ; SOURCE LINE # 272
+                       CLR     A
+                       MOV     R5,A
+                       MOV     R7,#01H
+                 R     CALL    _si5351_set_clock_disable
+                                           ; SOURCE LINE # 274
+                       CLR     A
+                       MOV     R5,A
+                       MOV     R7,#02H
+                 R     CALL    _si5351_set_clock_disable
+C51 COMPILER V9.51   SI5351                                                                07/22/2026 12:45:12 PAGE 37  
+
+                                           ; SOURCE LINE # 276
+                       CLR     A
+                       MOV     R5,A
+                       MOV     R7,#01H
+                 R     CALL    _si5351_set_clock_pwr
+                                           ; SOURCE LINE # 278
+                       CLR     A
+                       MOV     R5,A
+                       MOV     R7,#02H
+                 R     CALL    _si5351_set_clock_pwr
+                                           ; SOURCE LINE # 280
+                       CLR     A
+                       MOV     R5,A
+                       MOV     R7,#01H
+                 R     CALL    _si5351_output_enable
+                                           ; SOURCE LINE # 282
+                       CLR     A
+                       MOV     R5,A
+                       MOV     R7,#02H
+                 R     CALL    _si5351_output_enable
+                                           ; SOURCE LINE # 286
+             ?C0030:
+                                           ; SOURCE LINE # 287
+                 R     MOV     DPTR,#ret
+                       MOVX    A,@DPTR
+                       MOV     R7,A
+                       MOV     R6,#00H
+                                           ; SOURCE LINE # 288
+             ?C0032:
+                       RET     
+             ; FUNCTION _si5351_init (END)
+
+             ; FUNCTION _si5351_output_enable (BEGIN)
+                                           ; SOURCE LINE # 519
+                 R     MOV     DPTR,#clk
+                       MOV     A,R7
+                       MOVX    @DPTR,A
+                       INC     DPTR
+                       MOV     A,R5
+                       MOVX    @DPTR,A
+                                           ; SOURCE LINE # 520
+                                           ; SOURCE LINE # 523
+                       MOV     R3,#01H
+                 R     MOV     R2,#HIGH reg_val
+                 R     MOV     R1,#LOW reg_val
+                       MOV     R7,#03H
+                 R     CALL    _si5351_read
+                       MOV     A,R7
+                 R     xJNZ    ?C0034
+                                           ; SOURCE LINE # 524
+                                           ; SOURCE LINE # 526
+             ?C0033:
+                                           ; SOURCE LINE # 528
+                 R     MOV     DPTR,#enable
+                       MOVX    A,@DPTR
+                 R     xJNE    A,#01H,?C0035
+                                           ; SOURCE LINE # 529
+                                           ; SOURCE LINE # 530
+                       INC     DPTR
+                       MOVX    A,@DPTR
+                       MOV     R7,A
+                 R     MOV     DPTR,#clk
+C51 COMPILER V9.51   SI5351                                                                07/22/2026 12:45:12 PAGE 38  
+
+                       MOVX    A,@DPTR
+                       MOV     R6,A
+                       MOV     A,#01H
+                       MOV     R0,AR6
+                       INC     R0
+                 R     xJMP    ?C0076
+             ?C0075:
+                       CLR     C
+                       RLC     A
+             ?C0076:
+                 R     DJNZ    R0,?C0075
+                       CPL     A
+                       ANL     A,R7
+                 R     MOV     DPTR,#reg_val
+                       MOVX    @DPTR,A
+                                           ; SOURCE LINE # 531
+                 R     xJMP    ?C0036
+             ?C0035:
+                                           ; SOURCE LINE # 533
+                                           ; SOURCE LINE # 534
+                 R     MOV     DPTR,#reg_val
+                       MOVX    A,@DPTR
+                       MOV     R7,A
+                 R     MOV     DPTR,#clk
+                       MOVX    A,@DPTR
+                       MOV     R6,A
+                       MOV     A,#01H
+                       MOV     R0,AR6
+                       INC     R0
+                 R     xJMP    ?C0078
+             ?C0077:
+                       CLR     C
+                       RLC     A
+             ?C0078:
+                 R     DJNZ    R0,?C0077
+                       ORL     A,R7
+                 R     MOV     DPTR,#reg_val
+                       MOVX    @DPTR,A
+                                           ; SOURCE LINE # 535
+             ?C0036:
+                                           ; SOURCE LINE # 537
+                 R     MOV     DPTR,#reg_val
+                       MOVX    A,@DPTR
+                       MOV     R5,A
+                       MOV     R7,#03H
+                 R     CALL    _si5351_write_init
+                                           ; SOURCE LINE # 539
+             ?C0034:
+                       RET     
+             ; FUNCTION _si5351_output_enable (END)
+
+             ; FUNCTION _si5351_drive_strength (BEGIN)
+                                           ; SOURCE LINE # 551
+                 R     MOV     DPTR,#drive
+                       MOV     A,R5
+                       MOVX    @DPTR,A
+                 R     MOV     DPTR,#clk
+                       MOV     A,R7
+                       MOVX    @DPTR,A
+                                           ; SOURCE LINE # 552
+                                           ; SOURCE LINE # 554
+                 R     MOV     DPTR,#mask
+C51 COMPILER V9.51   SI5351                                                                07/22/2026 12:45:12 PAGE 39  
+
+                       MOV     A,#03H
+                       MOVX    @DPTR,A
+                                           ; SOURCE LINE # 556
+                       MOV     A,R7
+                       ADD     A,#010H
+                       MOV     R7,A
+                       MOV     R3,#01H
+                 R     MOV     R2,#HIGH reg_val
+                 R     MOV     R1,#LOW reg_val
+                 R     CALL    _si5351_read
+                       MOV     A,R7
+                 R     xJNZ    ?C0038
+                                           ; SOURCE LINE # 557
+                                           ; SOURCE LINE # 559
+             ?C0037:
+                                           ; SOURCE LINE # 561
+                 R     MOV     DPTR,#drive
+                       MOVX    A,@DPTR
+                       DEC     A
+                 R     xJZ     ?C0041
+                       DEC     A
+                 R     xJZ     ?C0042
+                       DEC     A
+                 R     xJZ     ?C0043
+                       ADD     A,#03H
+                 R     xJNZ    ?C0039
+                                           ; SOURCE LINE # 562
+                                           ; SOURCE LINE # 563
+             ?C0040:
+                                           ; SOURCE LINE # 564
+                 R     MOV     DPTR,#reg_val
+                       MOVX    A,@DPTR
+                       MOV     R7,A
+                       INC     DPTR
+                       MOVX    A,@DPTR
+                       CPL     A
+                       MOV     R6,A
+                       MOV     A,R7
+                       ANL     A,R6
+                 R     MOV     DPTR,#reg_val
+                       MOVX    @DPTR,A
+                                           ; SOURCE LINE # 565
+                       MOVX    A,@DPTR
+                       MOVX    @DPTR,A
+                                           ; SOURCE LINE # 566
+                 R     xJMP    ?C0039
+                                           ; SOURCE LINE # 567
+             ?C0041:
+                                           ; SOURCE LINE # 568
+                 R     MOV     DPTR,#reg_val
+                       MOVX    A,@DPTR
+                       MOV     R7,A
+                       INC     DPTR
+                       MOVX    A,@DPTR
+                       CPL     A
+                       MOV     R6,A
+                       MOV     A,R7
+                       ANL     A,R6
+                 R     MOV     DPTR,#reg_val
+                       MOVX    @DPTR,A
+                                           ; SOURCE LINE # 569
+                       MOVX    A,@DPTR
+C51 COMPILER V9.51   SI5351                                                                07/22/2026 12:45:12 PAGE 40  
+
+                       ORL     A,#01H
+                       MOVX    @DPTR,A
+                                           ; SOURCE LINE # 570
+                 R     xJMP    ?C0039
+                                           ; SOURCE LINE # 571
+             ?C0042:
+                                           ; SOURCE LINE # 572
+                 R     MOV     DPTR,#reg_val
+                       MOVX    A,@DPTR
+                       MOV     R7,A
+                       INC     DPTR
+                       MOVX    A,@DPTR
+                       CPL     A
+                       MOV     R6,A
+                       MOV     A,R7
+                       ANL     A,R6
+                 R     MOV     DPTR,#reg_val
+                       MOVX    @DPTR,A
+                                           ; SOURCE LINE # 573
+                       MOVX    A,@DPTR
+                       ORL     A,#02H
+                       MOVX    @DPTR,A
+                                           ; SOURCE LINE # 574
+                 R     xJMP    ?C0039
+                                           ; SOURCE LINE # 575
+             ?C0043:
+                                           ; SOURCE LINE # 576
+                 R     MOV     DPTR,#reg_val
+                       MOVX    A,@DPTR
+                       MOV     R7,A
+                       INC     DPTR
+                       MOVX    A,@DPTR
+                       CPL     A
+                       MOV     R6,A
+                       MOV     A,R7
+                       ANL     A,R6
+                 R     MOV     DPTR,#reg_val
+                       MOVX    @DPTR,A
+                                           ; SOURCE LINE # 577
+                       MOVX    A,@DPTR
+                       ORL     A,#03H
+                       MOVX    @DPTR,A
+                                           ; SOURCE LINE # 578
+                                           ; SOURCE LINE # 579
+                                           ; SOURCE LINE # 580
+                                           ; SOURCE LINE # 581
+             ?C0039:
+                                           ; SOURCE LINE # 583
+                 R     MOV     DPTR,#clk
+                       MOVX    A,@DPTR
+                       ADD     A,#010H
+                       MOV     R7,A
+                 R     MOV     DPTR,#reg_val
+                       MOVX    A,@DPTR
+                       MOV     R5,A
+                 R     CALL    _si5351_write_init
+                                           ; SOURCE LINE # 585
+             ?C0038:
+                       RET     
+             ; FUNCTION _si5351_drive_strength (END)
+
+             ; FUNCTION _si5351_pll_reset (BEGIN)
+C51 COMPILER V9.51   SI5351                                                                07/22/2026 12:45:12 PAGE 41  
+
+                                           ; SOURCE LINE # 660
+                 R     MOV     DPTR,#target_pll
+                       MOV     A,R7
+                       MOVX    @DPTR,A
+                                           ; SOURCE LINE # 661
+                                           ; SOURCE LINE # 662
+                 R     xJNZ    ?C0045
+                                           ; SOURCE LINE # 663
+                                           ; SOURCE LINE # 664
+                       MOV     R5,#020H
+                       MOV     R7,#0B1H
+                 R     CALL    _si5351_write_init
+                                           ; SOURCE LINE # 666
+                       RET     
+             ?C0045:
+                                           ; SOURCE LINE # 667
+                 R     MOV     DPTR,#target_pll
+                       MOVX    A,@DPTR
+                 R     xJNE    A,#01H,?C0048
+                                           ; SOURCE LINE # 668
+                                           ; SOURCE LINE # 669
+                       MOV     R5,#080H
+                       MOV     R7,#0B1H
+                 R     CALL    _si5351_write_init
+                                           ; SOURCE LINE # 671
+                                           ; SOURCE LINE # 672
+             ?C0048:
+                       RET     
+             ; FUNCTION _si5351_pll_reset (END)
+
+             ; FUNCTION _si5351_set_clock_pwr (BEGIN)
+                                           ; SOURCE LINE # 740
+                 R     MOV     DPTR,#pwr
+                       MOV     A,R5
+                       MOVX    @DPTR,A
+                 R     MOV     DPTR,#clk
+                       MOV     A,R7
+                       MOVX    @DPTR,A
+                                           ; SOURCE LINE # 741
+                                           ; SOURCE LINE # 743
+                       ADD     A,#010H
+                       MOV     R7,A
+                       MOV     R3,#01H
+                 R     MOV     R2,#HIGH reg_val
+                 R     MOV     R1,#LOW reg_val
+                 R     CALL    _si5351_read
+                                           ; SOURCE LINE # 745
+                 R     MOV     DPTR,#pwr
+                       MOVX    A,@DPTR
+                 R     xJNE    A,#01H,?C0049
+                                           ; SOURCE LINE # 746
+                                           ; SOURCE LINE # 748
+                       INC     DPTR
+                       MOVX    A,@DPTR
+                       ANL     A,#07FH
+                       MOVX    @DPTR,A
+                                           ; SOURCE LINE # 749
+                 R     xJMP    ?C0050
+             ?C0049:
+                                           ; SOURCE LINE # 751
+                                           ; SOURCE LINE # 753
+                 R     MOV     DPTR,#reg_val
+C51 COMPILER V9.51   SI5351                                                                07/22/2026 12:45:12 PAGE 42  
+
+                       MOVX    A,@DPTR
+                       ORL     A,#040H
+                       MOVX    @DPTR,A
+                                           ; SOURCE LINE # 754
+             ?C0050:
+                                           ; SOURCE LINE # 756
+                 R     MOV     DPTR,#clk
+                       MOVX    A,@DPTR
+                       ADD     A,#010H
+                       MOV     R7,A
+                 R     MOV     DPTR,#reg_val
+                       MOVX    A,@DPTR
+                       MOV     R5,A
+                 R     CALL    _si5351_write_init
+                                           ; SOURCE LINE # 758
+                       RET     
+             ; FUNCTION _si5351_set_clock_pwr (END)
+
+             ; FUNCTION _si5351_set_clock_disable (BEGIN)
+                                           ; SOURCE LINE # 847
+                 R     MOV     DPTR,#dis_state
+                       MOV     A,R5
+                       MOVX    @DPTR,A
+                 R     MOV     DPTR,#clk
+                       MOV     A,R7
+                       MOVX    @DPTR,A
+                                           ; SOURCE LINE # 848
+                                           ; SOURCE LINE # 849
+                       CLR     A
+                 R     MOV     DPTR,#reg
+                       MOVX    @DPTR,A
+                                           ; SOURCE LINE # 851
+                       MOV     A,R7
+                       CLR     C
+                       SUBB    A,#00H
+                 R     xJLT    ?C0052
+                 R     MOV     DPTR,#clk
+                       MOVX    A,@DPTR
+                       SETB    C
+                       SUBB    A,#03H
+                 R     xJGE    ?C0052
+                                           ; SOURCE LINE # 852
+                                           ; SOURCE LINE # 853
+                 R     MOV     DPTR,#reg
+                       MOV     A,#018H
+                       MOVX    @DPTR,A
+                                           ; SOURCE LINE # 854
+                 R     xJMP    ?C0053
+             ?C0052:
+                                           ; SOURCE LINE # 855
+                 R     MOV     DPTR,#clk
+                       MOVX    A,@DPTR
+                       MOV     R7,A
+                       CLR     C
+                       SUBB    A,#00H
+                 R     xJLT    ?C0053
+                       MOV     A,R7
+                       SETB    C
+                       SUBB    A,#03H
+                 R     xJGE    ?C0053
+                                           ; SOURCE LINE # 856
+                                           ; SOURCE LINE # 857
+C51 COMPILER V9.51   SI5351                                                                07/22/2026 12:45:12 PAGE 43  
+
+                 R     MOV     DPTR,#reg
+                       MOV     A,#019H
+                       MOVX    @DPTR,A
+                                           ; SOURCE LINE # 858
+             ?C0053:
+                                           ; SOURCE LINE # 860
+                 R     MOV     DPTR,#reg
+                       MOVX    A,@DPTR
+                       MOV     R7,A
+                       MOV     R3,#01H
+                 R     MOV     R2,#HIGH reg_val
+                 R     MOV     R1,#LOW reg_val
+                 R     CALL    _si5351_read
+                                           ; SOURCE LINE # 862
+                 R     MOV     DPTR,#clk
+                       MOVX    A,@DPTR
+                       MOV     R7,A
+                       CLR     C
+                       SUBB    A,#00H
+                 R     xJLT    ?C0055
+                       MOV     A,R7
+                       SETB    C
+                       SUBB    A,#03H
+                 R     xJGE    ?C0055
+                                           ; SOURCE LINE # 863
+                                           ; SOURCE LINE # 864
+                 R     MOV     DPTR,#reg_val
+                       MOVX    A,@DPTR
+                       MOV     R7,A
+                 R     MOV     DPTR,#clk
+                       MOVX    A,@DPTR
+                       ADD     A,ACC
+                       MOV     R6,A
+                       MOV     A,#03H
+                       MOV     R0,AR6
+                       INC     R0
+                 R     xJMP    ?C0080
+             ?C0079:
+                       CLR     C
+                       RLC     A
+             ?C0080:
+                 R     DJNZ    R0,?C0079
+                       CPL     A
+                       ANL     A,R7
+                 R     MOV     DPTR,#reg_val
+                       MOVX    @DPTR,A
+                                           ; SOURCE LINE # 865
+                       MOVX    A,@DPTR
+                       MOV     R7,A
+                 R     MOV     DPTR,#dis_state
+                       MOVX    A,@DPTR
+                       MOV     R5,A
+                       MOV     R0,AR6
+                       INC     R0
+                 R     xJMP    ?C0082
+             ?C0081:
+                       CLR     C
+                       RLC     A
+             ?C0082:
+                 R     DJNZ    R0,?C0081
+                       ORL     A,R7
+                 R     MOV     DPTR,#reg_val
+C51 COMPILER V9.51   SI5351                                                                07/22/2026 12:45:12 PAGE 44  
+
+                       MOVX    @DPTR,A
+                                           ; SOURCE LINE # 866
+                 R     xJMP    ?C0056
+             ?C0055:
+                                           ; SOURCE LINE # 867
+                 R     MOV     DPTR,#clk
+                       MOVX    A,@DPTR
+                       MOV     R7,A
+                       CLR     C
+                       SUBB    A,#00H
+                 R     xJLT    ?C0056
+                       MOV     A,R7
+                       SETB    C
+                       SUBB    A,#03H
+                 R     xJGE    ?C0056
+                                           ; SOURCE LINE # 868
+                                           ; SOURCE LINE # 869
+                 R     MOV     DPTR,#reg_val
+                       MOVX    A,@DPTR
+                       MOV     R7,A
+                 R     MOV     DPTR,#clk
+                       MOVX    A,@DPTR
+                       ADD     A,#0FCH
+                       ADD     A,ACC
+                       MOV     R6,A
+                       MOV     A,#03H
+                       MOV     R0,AR6
+                       INC     R0
+                 R     xJMP    ?C0084
+             ?C0083:
+                       CLR     C
+                       RLC     A
+             ?C0084:
+                 R     DJNZ    R0,?C0083
+                       CPL     A
+                       ANL     A,R7
+                 R     MOV     DPTR,#reg_val
+                       MOVX    @DPTR,A
+                                           ; SOURCE LINE # 870
+                       MOVX    A,@DPTR
+                       MOV     R7,A
+                 R     MOV     DPTR,#dis_state
+                       MOVX    A,@DPTR
+                       MOV     R5,A
+                       MOV     R0,AR6
+                       INC     R0
+                 R     xJMP    ?C0086
+             ?C0085:
+                       CLR     C
+                       RLC     A
+             ?C0086:
+                 R     DJNZ    R0,?C0085
+                       ORL     A,R7
+                 R     MOV     DPTR,#reg_val
+                       MOVX    @DPTR,A
+                                           ; SOURCE LINE # 871
+             ?C0056:
+                                           ; SOURCE LINE # 873
+                 R     MOV     DPTR,#reg
+                       MOVX    A,@DPTR
+                       MOV     R7,A
+                 R     MOV     DPTR,#reg_val
+C51 COMPILER V9.51   SI5351                                                                07/22/2026 12:45:12 PAGE 45  
+
+                       MOVX    A,@DPTR
+                       MOV     R5,A
+                 R     CALL    _si5351_write_init
+                                           ; SOURCE LINE # 875
+                       RET     
+             ; FUNCTION _si5351_set_clock_disable (END)
+
+             ; FUNCTION _si5351_update_sys_status (BEGIN)
+                                           ; SOURCE LINE # 933
+                 R     MOV     DPTR,#status
+                       MOV     A,R3
+                       MOVX    @DPTR,A
+                       INC     DPTR
+                       MOV     A,R2
+                       MOVX    @DPTR,A
+                       INC     DPTR
+                       MOV     A,R1
+                       MOVX    @DPTR,A
+                                           ; SOURCE LINE # 934
+                                           ; SOURCE LINE # 935
+                       CLR     A
+                       INC     DPTR
+                       MOVX    @DPTR,A
+                                           ; SOURCE LINE # 937
+                       MOV     R3,#01H
+                 R     MOV     R2,#HIGH reg_val
+                 R     MOV     R1,#LOW reg_val
+                       MOV     R7,A
+                 R     CALL    _si5351_read
+                       MOV     A,R7
+                 R     xJNZ    ?C0060
+                                           ; SOURCE LINE # 938
+                                           ; SOURCE LINE # 940
+             ?C0059:
+                                           ; SOURCE LINE # 943
+                 R     MOV     DPTR,#reg_val
+                       MOVX    A,@DPTR
+                       MOV     R7,A
+                       SWAP    A
+                       RRC     A
+                       RRC     A
+                       RRC     A
+                       ANL     A,#01H
+                       MOV     R7,A
+                 R     MOV     DPTR,#status
+                       MOVX    A,@DPTR
+                       MOV     R3,A
+                       INC     DPTR
+                       MOVX    A,@DPTR
+                       MOV     R2,A
+                       INC     DPTR
+                       MOVX    A,@DPTR
+                       MOV     R1,A
+                       MOV     A,R7
+                 E     CALL    ?C?CSTPTR
+                                           ; SOURCE LINE # 944
+                 R     MOV     DPTR,#reg_val
+                       MOVX    A,@DPTR
+                       MOV     R7,A
+                       SWAP    A
+                       RRC     A
+                       RRC     A
+C51 COMPILER V9.51   SI5351                                                                07/22/2026 12:45:12 PAGE 46  
+
+                       ANL     A,#01H
+                       MOV     R6,A
+                 R     MOV     DPTR,#status
+                       MOVX    A,@DPTR
+                       MOV     R3,A
+                       INC     DPTR
+                       MOVX    A,@DPTR
+                       MOV     R2,A
+                       INC     DPTR
+                       MOVX    A,@DPTR
+                       ADD     A,#01H
+                       MOV     R1,A
+                       CLR     A
+                       ADDC    A,R2
+                       MOV     R2,A
+                       MOV     A,R6
+                 E     CALL    ?C?CSTPTR
+                                           ; SOURCE LINE # 945
+                       MOV     A,R7
+                       SWAP    A
+                       RRC     A
+                       ANL     A,#01H
+                       MOV     R7,A
+                 R     MOV     DPTR,#status
+                       MOVX    A,@DPTR
+                       MOV     R3,A
+                       INC     DPTR
+                       MOVX    A,@DPTR
+                       MOV     R2,A
+                       INC     DPTR
+                       MOVX    A,@DPTR
+                       ADD     A,#02H
+                       MOV     R1,A
+                       CLR     A
+                       ADDC    A,R2
+                       MOV     R2,A
+                       MOV     A,R7
+                 E     CALL    ?C?CSTPTR
+                                           ; SOURCE LINE # 946
+                 R     MOV     DPTR,#reg_val
+                       MOVX    A,@DPTR
+                       MOV     R7,A
+                       SWAP    A
+                       ANL     A,#01H
+                       MOV     R6,A
+                 R     MOV     DPTR,#status
+                       MOVX    A,@DPTR
+                       MOV     R3,A
+                       INC     DPTR
+                       MOVX    A,@DPTR
+                       MOV     R2,A
+                       INC     DPTR
+                       MOVX    A,@DPTR
+                       ADD     A,#03H
+                       MOV     R1,A
+                       CLR     A
+                       ADDC    A,R2
+                       MOV     R2,A
+                       MOV     A,R6
+                 E     CALL    ?C?CSTPTR
+                                           ; SOURCE LINE # 947
+                       MOV     A,R7
+C51 COMPILER V9.51   SI5351                                                                07/22/2026 12:45:12 PAGE 47  
+
+                       ANL     A,#03H
+                       MOV     R7,A
+                 R     MOV     DPTR,#status
+                       MOVX    A,@DPTR
+                       MOV     R3,A
+                       INC     DPTR
+                       MOVX    A,@DPTR
+                       MOV     R2,A
+                       INC     DPTR
+                       MOVX    A,@DPTR
+                       ADD     A,#04H
+                       MOV     R1,A
+                       CLR     A
+                       ADDC    A,R2
+                       MOV     R2,A
+                       MOV     A,R7
+                 E     CALL    ?C?CSTPTR
+                                           ; SOURCE LINE # 948
+             ?C0060:
+                       RET     
+             ; FUNCTION _si5351_update_sys_status (END)
+
+             ; FUNCTION _si5351_update_int_status (BEGIN)
+                                           ; SOURCE LINE # 950
+                 R     MOV     DPTR,#int_status
+                       MOV     A,R3
+                       MOVX    @DPTR,A
+                       INC     DPTR
+                       MOV     A,R2
+                       MOVX    @DPTR,A
+                       INC     DPTR
+                       MOV     A,R1
+                       MOVX    @DPTR,A
+                                           ; SOURCE LINE # 951
+                                           ; SOURCE LINE # 952
+                       CLR     A
+                       INC     DPTR
+                       MOVX    @DPTR,A
+                                           ; SOURCE LINE # 954
+                       MOV     R3,#01H
+                 R     MOV     R2,#HIGH reg_val
+                 R     MOV     R1,#LOW reg_val
+                       MOV     R7,A
+                 R     CALL    _si5351_read
+                       MOV     A,R7
+                 R     xJNZ    ?C0062
+                                           ; SOURCE LINE # 955
+                                           ; SOURCE LINE # 957
+             ?C0061:
+                                           ; SOURCE LINE # 960
+                 R     MOV     DPTR,#reg_val
+                       MOVX    A,@DPTR
+                       MOV     R7,A
+                       SWAP    A
+                       RRC     A
+                       RRC     A
+                       RRC     A
+                       ANL     A,#01H
+                       MOV     R7,A
+                 R     MOV     DPTR,#int_status
+                       MOVX    A,@DPTR
+                       MOV     R3,A
+C51 COMPILER V9.51   SI5351                                                                07/22/2026 12:45:12 PAGE 48  
+
+                       INC     DPTR
+                       MOVX    A,@DPTR
+                       MOV     R2,A
+                       INC     DPTR
+                       MOVX    A,@DPTR
+                       MOV     R1,A
+                       MOV     A,R7
+                 E     CALL    ?C?CSTPTR
+                                           ; SOURCE LINE # 961
+                 R     MOV     DPTR,#reg_val
+                       MOVX    A,@DPTR
+                       MOV     R7,A
+                       SWAP    A
+                       RRC     A
+                       RRC     A
+                       ANL     A,#01H
+                       MOV     R6,A
+                 R     MOV     DPTR,#int_status
+                       MOVX    A,@DPTR
+                       MOV     R3,A
+                       INC     DPTR
+                       MOVX    A,@DPTR
+                       MOV     R2,A
+                       INC     DPTR
+                       MOVX    A,@DPTR
+                       ADD     A,#01H
+                       MOV     R1,A
+                       CLR     A
+                       ADDC    A,R2
+                       MOV     R2,A
+                       MOV     A,R6
+                 E     CALL    ?C?CSTPTR
+                                           ; SOURCE LINE # 962
+                       MOV     A,R7
+                       SWAP    A
+                       RRC     A
+                       ANL     A,#01H
+                       MOV     R7,A
+                 R     MOV     DPTR,#int_status
+                       MOVX    A,@DPTR
+                       MOV     R3,A
+                       INC     DPTR
+                       MOVX    A,@DPTR
+                       MOV     R2,A
+                       INC     DPTR
+                       MOVX    A,@DPTR
+                       ADD     A,#02H
+                       MOV     R1,A
+                       CLR     A
+                       ADDC    A,R2
+                       MOV     R2,A
+                       MOV     A,R7
+                 E     CALL    ?C?CSTPTR
+                                           ; SOURCE LINE # 963
+                 R     MOV     DPTR,#reg_val
+                       MOVX    A,@DPTR
+                       MOV     R7,A
+                       SWAP    A
+                       ANL     A,#01H
+                       MOV     R7,A
+                 R     MOV     DPTR,#int_status
+                       MOVX    A,@DPTR
+C51 COMPILER V9.51   SI5351                                                                07/22/2026 12:45:12 PAGE 49  
+
+                       MOV     R3,A
+                       INC     DPTR
+                       MOVX    A,@DPTR
+                       MOV     R2,A
+                       INC     DPTR
+                       MOVX    A,@DPTR
+                       ADD     A,#03H
+                       MOV     R1,A
+                       CLR     A
+                       ADDC    A,R2
+                       MOV     R2,A
+                       MOV     A,R7
+                 E     CALL    ?C?CSTPTR
+                                           ; SOURCE LINE # 964
+             ?C0062:
+                       RET     
+             ; FUNCTION _si5351_update_int_status (END)
+
+             ; FUNCTION _si5351_write_init (BEGIN)
+                                           ; SOURCE LINE # 1036
+;---- Variable 'command_data' assigned to Register 'R5' ----
+;---- Variable 'addr' assigned to Register 'R7' ----
+                                           ; SOURCE LINE # 1037
+                                           ; SOURCE LINE # 1039
+                 R     MOV     DPTR,#ret_status
+                       MOV     A,#01H
+                       MOVX    @DPTR,A
+                                           ; SOURCE LINE # 1040
+                       CLR     A
+                       INC     DPTR
+                       MOVX    @DPTR,A
+                                           ; SOURCE LINE # 1043
+                                           ; SOURCE LINE # 1044
+                 R     MOV     DPTR,#msg_buffer
+                       MOV     A,R7
+                       MOVX    @DPTR,A
+                                           ; SOURCE LINE # 1045
+                       INC     DPTR
+                       MOV     A,R5
+                       MOVX    @DPTR,A
+                                           ; SOURCE LINE # 1048
+                       MOV     R3,#01H
+                 R     MOV     R2,#HIGH msg_buffer
+                 R     MOV     R1,#LOW msg_buffer
+                 E     MOV     DPTR,#?_I2C_DISPLAY_MasterWriteBuf?BYTE+04H
+                       MOV     A,#02H
+                       MOVX    @DPTR,A
+                       CLR     A
+                       INC     DPTR
+                       MOVX    @DPTR,A
+                       MOV     R7,#060H
+                 E     CALL    _I2C_DISPLAY_MasterWriteBuf
+                 R     MOV     DPTR,#write_status
+                       MOV     A,R7
+                       MOVX    @DPTR,A
+             ?C0063:
+                                           ; SOURCE LINE # 1049
+                 E     CALL    I2C_DISPLAY_MasterStatus
+                       MOV     A,R7
+                 R     xJNB    ACC.1,?C0063
+             ?C0064:
+                                           ; SOURCE LINE # 1050
+C51 COMPILER V9.51   SI5351                                                                07/22/2026 12:45:12 PAGE 50  
+
+                 E     CALL    I2C_DISPLAY_MasterGetWriteBufSize
+;---- Variable 'buffer_written' assigned to Register 'R7' ----
+                                           ; SOURCE LINE # 1051
+                       MOV     A,R7
+                       XRL     A,#02H
+                 R     xJZ     ?C0065
+                       CLR     A
+                 R     MOV     DPTR,#ret_status
+                       MOVX    @DPTR,A
+             ?C0065:
+                                           ; SOURCE LINE # 1052
+                 R     MOV     DPTR,#ret_status
+                       MOVX    A,@DPTR
+                       MOV     R7,A
+                                           ; SOURCE LINE # 1053
+             ?C0066:
+                       RET     
+             ; FUNCTION _si5351_write_init (END)
+
+             ; FUNCTION _si5351_read (BEGIN)
+                                           ; SOURCE LINE # 1055
+                 R     MOV     DPTR,#addr
+                       MOV     A,R7
+                       MOVX    @DPTR,A
+                       INC     DPTR
+                       MOV     A,R3
+                       MOVX    @DPTR,A
+                       INC     DPTR
+                       MOV     A,R2
+                       MOVX    @DPTR,A
+                       INC     DPTR
+                       MOV     A,R1
+                       MOVX    @DPTR,A
+                                           ; SOURCE LINE # 1056
+                                           ; SOURCE LINE # 1057
+                       CLR     A
+                       INC     DPTR
+                       MOVX    @DPTR,A
+                                           ; SOURCE LINE # 1058
+                       INC     DPTR
+                       MOVX    @DPTR,A
+                                           ; SOURCE LINE # 1061
+                       MOV     R3,#01H
+                       INC     DPTR
+                       INC     A
+                       MOVX    @DPTR,A
+                       INC     DPTR
+                 R     MOV     A,#HIGH addr
+                       MOVX    @DPTR,A
+                       INC     DPTR
+                 R     MOV     A,#LOW addr
+                       MOVX    @DPTR,A
+                                           ; SOURCE LINE # 1062
+                 E     CALL    I2C_DISPLAY_MasterStatus
+                 R     MOV     DPTR,#status
+                       MOV     A,R7
+                       MOVX    @DPTR,A
+                                           ; SOURCE LINE # 1063
+                       XRL     A,#080H
+                 R     xJZ     ?C0067
+                                           ; SOURCE LINE # 1064
+                       INC     DPTR
+C51 COMPILER V9.51   SI5351                                                                07/22/2026 12:45:12 PAGE 51  
+
+                       MOVX    A,@DPTR
+                       MOV     R3,A
+                       INC     DPTR
+                       MOVX    A,@DPTR
+                       MOV     R2,A
+                       INC     DPTR
+                       MOVX    A,@DPTR
+                       MOV     R1,A
+                 E     MOV     DPTR,#?_I2C_DISPLAY_MasterWriteBuf?BYTE+04H
+                       MOV     A,#01H
+                       MOVX    @DPTR,A
+                       CLR     A
+                       INC     DPTR
+                       MOVX    @DPTR,A
+                       MOV     R7,#060H
+                 E     CALL    _I2C_DISPLAY_MasterWriteBuf
+                 R     MOV     DPTR,#status
+                       MOV     A,R7
+                       MOVX    @DPTR,A
+             ?C0068:
+                                           ; SOURCE LINE # 1065
+                 E     CALL    I2C_DISPLAY_MasterStatus
+                       MOV     A,R7
+                 R     xJNB    ACC.1,?C0068
+             ?C0069:
+                                           ; SOURCE LINE # 1066
+                 R     MOV     DPTR,#status
+                       MOVX    A,@DPTR
+                 R     xJNZ    ?C0067
+                                           ; SOURCE LINE # 1067
+                 R     MOV     DPTR,#command_data
+                       MOVX    A,@DPTR
+                       MOV     R3,A
+                       INC     DPTR
+                       MOVX    A,@DPTR
+                       MOV     R2,A
+                       INC     DPTR
+                       MOVX    A,@DPTR
+                       MOV     R1,A
+                 E     MOV     DPTR,#?_I2C_DISPLAY_MasterReadBuf?BYTE+04H
+                       MOV     A,#01H
+                       MOVX    @DPTR,A
+                       CLR     A
+                       INC     DPTR
+                       MOVX    @DPTR,A
+                       MOV     R7,#060H
+                 E     CALL    _I2C_DISPLAY_MasterReadBuf
+                 R     MOV     DPTR,#status
+                       MOV     A,R7
+                       MOVX    @DPTR,A
+             ?C0071:
+                                           ; SOURCE LINE # 1068
+                 E     CALL    I2C_DISPLAY_MasterStatus
+                       MOV     A,R7
+                 R     xJNB    ACC.0,?C0071
+             ?C0072:
+                                           ; SOURCE LINE # 1069
+                 R     MOV     DPTR,#status
+                       MOVX    A,@DPTR
+                 R     xJZ     ?C0067
+                 R     MOV     DPTR,#ret_status
+                       MOV     A,#01H
+C51 COMPILER V9.51   SI5351                                                                07/22/2026 12:45:12 PAGE 52  
+
+                       MOVX    @DPTR,A
+                                           ; SOURCE LINE # 1070
+                                           ; SOURCE LINE # 1071
+             ?C0067:
+                                           ; SOURCE LINE # 1072
+                 R     MOV     DPTR,#ret_status
+                       MOVX    A,@DPTR
+                       MOV     R7,A
+                                           ; SOURCE LINE # 1073
+             ?C0074:
+                       RET     
+             ; FUNCTION _si5351_read (END)
+
+
+
+MODULE INFORMATION:   STATIC OVERLAYABLE
+   CODE SIZE        =   2503    ----
+   CONSTANT SIZE    =   ----    ----
+   XDATA SIZE       =     97      59
+   PDATA SIZE       =   ----    ----
+   DATA SIZE        =   ----    ----
+   IDATA SIZE       =   ----    ----
+   BIT SIZE         =   ----    ----
+   EDATA SIZE       =   ----    ----
+   HDATA SIZE       =   ----    ----
+   XDATA CONST SIZE =   ----    ----
+   FAR CONST SIZE   =   ----    ----
+END OF MODULE INFORMATION.
+
+
+C51 COMPILATION COMPLETE.  0 WARNING(S),  0 ERROR(S)

@@ -1,0 +1,734 @@
+C51 COMPILER V9.51   DIETEMP_1                                                             12/05/2024 09:17:07 PAGE 1   
+
+
+C51 COMPILER V9.51, COMPILATION OF MODULE DIETEMP_1
+OBJECT MODULE PLACED IN .\DP8051\DP8051_Keil_951\Debug\DieTemp_1.obj
+COMPILER INVOKED BY: C:\Program Files (x86)\Cypress\PSoC Creator\4.2\PSoC Creator\import\keil\pk51\9.51\C51\BIN\c51.exe 
+                    -Generated_Source\PSoC3\DieTemp_1.c NOIV LARGE MODDP2 OMF2 VB(1) NOIP INCDIR(.,Generated_Source\PSoC3) FF(3) DB WL(2) PR(
+                    -.\DP8051\DP8051_Keil_951\Debug/DieTemp_1.lst) CD OT(5,SPEED) OA OJ(.\DP8051\DP8051_Keil_951\Debug\DieTemp_1.obj)
+
+line level    source
+
+   1          /*******************************************************************************
+   2          * File Name: DieTemp_1_DieTemp.c
+   3          * Version 2.10
+   4          *
+   5          * Description:
+   6          *  Provides the API to acquire the die temperature.
+   7          *
+   8          ********************************************************************************
+   9          * Copyright 2008-2017, Cypress Semiconductor Corporation.  All rights reserved.
+  10          * You may use this file only in accordance with the license, terms, conditions,
+  11          * disclaimers, and limitations in the end user license agreement accompanying
+  12          * the software package with which this file was provided.
+  13          *******************************************************************************/
+  14          
+  15          
+  16          #include <cydevice_trm.H>
+  17          #include <DieTemp_1.h>
+  18          
+  19          
+  20          #define DieTemp_1_NUMBER_OF_SAMPLES      (0x1u)
+  21          #define DieTemp_1_TIMER_PERIOD           (0xFFFu)
+  22          #define DieTemp_1_CLK_DIV_SELECT         (0x4u)
+  23          #define DieTemp_1_SPC_CLK_PERIOD         (120u) /* In nano seconds. */
+  24          #define DieTemp_1_NANO_TO_MILLI_FACTOR   (1000000u)
+  25          #define DieTemp_1_FRM_EXEC_TIME          (1000u) /* In nano seconds. */
+  26          
+  27          #define DieTemp_1_GET_TEMPR_TIME     (uint32)(((((uint32)1u << (DieTemp_1_NUMBER_OF_SAMPLES + 1u))) * \
+  28                                                          ((uint32)(DieTemp_1_SPC_CLK_PERIOD * \
+  29                                                          DieTemp_1_CLK_DIV_SELECT)) * \
+  30                                                          ((uint32)DieTemp_1_TIMER_PERIOD)) + \
+  31                                                          (uint32)DieTemp_1_FRM_EXEC_TIME)
+  32          
+  33          #define DieTemp_1_MAX_WAIT           (uint16)(((DieTemp_1_GET_TEMPR_TIME + \
+  34                                                          DieTemp_1_NANO_TO_MILLI_FACTOR) - 1u) / \
+  35                                                          DieTemp_1_NANO_TO_MILLI_FACTOR)  /* In milli seconds */
+  36          #define DieTemp_1_MAX_WAIT_USEC          (DieTemp_1_MAX_WAIT * 1000u)    /* In usec */
+  37          #define DieTemp_1_USEC_STEP              (10u) /* Step in usec */
+  38          
+  39          static cystatus DieTemp_1_GetTempT(int16 * temperature);
+  40          
+  41          
+  42          /*******************************************************************************
+  43          * Function Name: DieTemp_1_Start
+  44          ********************************************************************************
+  45          *
+  46          * Summary:
+  47          *  Sends the command and parameters to the SPC to start a Die Temperature 
+  48          *  reading. This function returns before the SPC finishes. 
+  49          *  This function call must always be paired with a call to the DieTemp_Query()
+  50          *  API to complete the Die Temperature read
+  51          *
+  52          * Parameters:
+  53          *  void.
+C51 COMPILER V9.51   DIETEMP_1                                                             12/05/2024 09:17:07 PAGE 2   
+
+  54          *
+  55          * Return:
+  56          *  CYRET_STARTED if the spc command startes successfully.
+  57          *  CYRET_UNKNOWN if the spc command failes.
+  58          *  CYRET_LOCKED if the spc is busy.
+  59          *
+  60          *******************************************************************************/
+  61          cystatus DieTemp_1_Start(void) 
+  62          {
+  63   1          cystatus status;
+  64   1      
+  65   1          /* Plan for failure. */
+  66   1          status = CYRET_UNKNOWN;
+  67   1      
+  68   1          /* Power up the SPC. */
+  69   1          CySpcStart();
+  70   1      
+  71   1          if(CySpcLock() == CYRET_SUCCESS)
+  72   1          {
+  73   2              #if(CY_PSOC5A)
+                          if(CYRET_STARTED == CySpcGetTemp(DieTemp_1_NUMBER_OF_SAMPLES,
+                                                           DieTemp_1_TIMER_PERIOD,
+                                                           DieTemp_1_CLK_DIV_SELECT))
+                          {
+                              status = CYRET_STARTED;
+                          }
+                      #else
+  81   2                  if(CYRET_STARTED == CySpcGetTemp(DieTemp_1_NUMBER_OF_SAMPLES))
+  82   2                  {
+  83   3                      status = CYRET_STARTED;
+  84   3                  }
+  85   2              #endif  /* (CY_PSOC5A) */
+  86   2              CySpcUnlock();
+  87   2          }
+  88   1          else
+  89   1          {
+  90   2              status = CYRET_LOCKED;
+  91   2          }
+  92   1          return (status);
+  93   1      }
+  94          
+  95          
+  96          /*******************************************************************************
+  97          * FUNCTION NAME:   DieTemp_1_Stop
+  98          ********************************************************************************
+  99          *
+ 100          * Summary:
+ 101          *  There is no need to stop or disable this component. This component is
+ 102          *  naturally a slave that sends request to SPC through SPC API of cy_boot
+ 103          *  and waits for data to be ready or in the case of non-blocking operation it
+ 104          *  sends the request to SPC and the user can manually poll the result.
+ 105          *
+ 106          * Parameters:
+ 107          *  void
+ 108          *
+ 109          * Return:
+ 110          *  void
+ 111          *
+ 112          *******************************************************************************/
+ 113          void DieTemp_1_Stop(void) 
+ 114          {
+ 115   1          /* There aren't anything to stop */
+C51 COMPILER V9.51   DIETEMP_1                                                             12/05/2024 09:17:07 PAGE 3   
+
+ 116   1      }
+ 117          
+ 118          
+ 119          /*******************************************************************************
+ 120          * Function Name: DieTemp_1_Query
+ 121          ********************************************************************************
+ 122          *
+ 123          * Summary:
+ 124          *  Checks to see if the SPC command started by DieTemp_Start() has finished. 
+ 125          *  If the command has not finished, the temperature value is not read and
+ 126          *  returned. The caller will need to poll this function while the return status 
+ 127          *  remains CYRET_STARTED.
+ 128          *  This can be used only in conjunction with the DieTemp_Start() API to 
+ 129          *  successfully get the correct Die Temperature.
+ 130          *  The Die Temperature reading returned on the first sequence of DieTemp_Start() 
+ 131          *  followed by DieTemp_Query() can be unreliable, so you must do this sequence
+ 132          *  twice and use the value returned from the second sequence.
+ 133          *
+ 134          * Parameters:
+ 135          *  temperature: Address to store the two-byte temperature value.
+ 136          *
+ 137          * Return:
+ 138          *  CYRET_SUCCESS if the temperature command completes successfully.
+ 139          *  CYRET_UNKNOWN if the spc failures.
+ 140          *  CYRET_STARTED if the temperature command has not completed.
+ 141          *  CYRET_TIMEOUT if waites too long before reading data.
+ 142          *
+ 143          *******************************************************************************/
+ 144          cystatus DieTemp_1_Query(int16 * temperature) 
+ 145          {
+ 146   1          uint8 temp[2u];
+ 147   1          cystatus status;
+ 148   1      
+ 149   1          if(CY_SPC_BUSY)
+ 150   1          {
+ 151   2              if((CY_SPC_STATUS_REG>>2u) == CYRET_SUCCESS)
+ 152   2              {
+ 153   3                  /* See if any data is ready. */
+ 154   3                  if(CY_SPC_DATA_READY)
+ 155   3                  {
+ 156   4                      temp[0u] = CY_SPC_CPU_DATA_REG;
+ 157   4                      /* Wait for second byte to be ready */
+ 158   4                      while(!CY_SPC_DATA_READY)
+ 159   4                      {
+ 160   5                          CyDelayUs(1u);
+ 161   5                      }
+ 162   4                      temp[1u] = CY_SPC_CPU_DATA_REG;
+ 163   4                      status = CYRET_SUCCESS;
+ 164   4                  }
+ 165   3                  else
+ 166   3                  {
+ 167   4                      status = CYRET_STARTED;
+ 168   4                  }
+ 169   3      
+ 170   3                  if (status == CYRET_SUCCESS)
+ 171   3                  {
+ 172   4                      if(temp[0u] == 1u)
+ 173   4                      {
+ 174   5                          *temperature = (int16) ((uint16) temp[1]);
+ 175   5                      }
+ 176   4                      else
+ 177   4                      {
+C51 COMPILER V9.51   DIETEMP_1                                                             12/05/2024 09:17:07 PAGE 4   
+
+ 178   5                          *temperature = (int16) - ((int16) temp[1]);
+ 179   5                      }
+ 180   4                      status = CYRET_SUCCESS;
+ 181   4                  }
+ 182   3              }
+ 183   2              else
+ 184   2              {
+ 185   3                  status = CYRET_STARTED;
+ 186   3              }
+ 187   2          }
+ 188   1          else
+ 189   1          {
+ 190   2              status = CYRET_TIMEOUT;
+ 191   2          }
+ 192   1      
+ 193   1          if(status != CYRET_STARTED)
+ 194   1          {
+ 195   2              /* Unlock the SPC so someone else can use it. */
+ 196   2              CySpcUnlock();
+ 197   2          }
+ 198   1      
+ 199   1          return (status);
+ 200   1      }
+ 201          
+ 202          
+ 203          /*******************************************************************************
+ 204          * Function Name: DieTemp_1_GetTempT
+ 205          ********************************************************************************
+ 206          *
+ 207          * Summary:
+ 208          *  Sends the command and parameters to the SPC to start a Die Temperature 
+ 209          *  reading and waits until it fails or completes. This is a blocking function.
+ 210          *  This function starts the temperature reading and returns the temperature 
+ 211          *  value after the SPC temperature command completes successfully.
+ 212          *
+ 213          * Parameters:
+ 214          *  temperature: Address to store the two byte temperature value.
+ 215          *
+ 216          * Return:
+ 217          *  CYRET_SUCCESS if the command completes successfully.
+ 218          *  The Status code from DieTemp_1_Start or DieTemp_1_Query.
+ 219          *
+ 220          *******************************************************************************/
+ 221          static cystatus DieTemp_1_GetTempT(int16 * temperature) 
+ 222          {
+ 223   1          uint16 us;
+ 224   1          cystatus status;
+ 225   1      
+ 226   1          /* Start the temp reading */
+ 227   1          status = DieTemp_1_Start();
+ 228   1      
+ 229   1          if(status == CYRET_STARTED)
+ 230   1          {
+ 231   2              /**************************************************************************
+ 232   2              * Wait for SPC to finish temperature reading. If state changes and SPC
+ 233   2              * finishes - break cycle.
+ 234   2              * DieTemp_1_MAX_WAIT_USEC is maximum time in usec to wait for SPC.
+ 235   2              **************************************************************************/
+ 236   2              for (us=(DieTemp_1_MAX_WAIT_USEC); us>0u; us-=DieTemp_1_USEC_STEP)
+ 237   2              {
+ 238   3                  if((CYRET_STARTED != status)&&(CY_SPC_IDLE))
+ 239   3                  {
+C51 COMPILER V9.51   DIETEMP_1                                                             12/05/2024 09:17:07 PAGE 5   
+
+ 240   4                      break;
+ 241   4                  }
+ 242   3                  else if(CYRET_STARTED == status)
+ 243   3                  {
+ 244   4                      status = DieTemp_1_Query(temperature);
+ 245   4                  }
+ 246   3                  else
+ 247   3                  {
+ 248   4                      /* SPC has not finished reading or isn't idle */
+ 249   4                  }
+ 250   3                  CyDelayUs(DieTemp_1_USEC_STEP);
+ 251   3              }
+ 252   2          }
+ 253   1      
+ 254   1          return status;
+ 255   1      }
+ 256          
+ 257          
+ 258          /*******************************************************************************
+ 259          * Function Name: DieTemp_1_GetTemp
+ 260          ********************************************************************************
+ 261          *
+ 262          * Summary:
+ 263          *  Sends the command and parameters to the SPC to start a Die Temperature 
+ 264          *  reading and waits until it fails or completes. This is a blocking API.
+ 265          *  This function reads the Die Temperature twice and returns the second value
+ 266          *  to work around an issue in the silicon that causes the first value read 
+ 267          *  to be unreliable.
+ 268          *
+ 269          * Parameters:
+ 270          *  temperature: Address to store the two byte temperature value.
+ 271          *
+ 272          * Return:
+ 273          *  CYRET_SUCCESS if the command completes successfully.
+ 274          *  The Status code from DieTemp_1_Start or DieTemp_1_Query.
+ 275          *
+ 276          *******************************************************************************/
+ 277          cystatus DieTemp_1_GetTemp(int16 * temperature) 
+ 278          {
+ 279   1          cystatus status;
+ 280   1          uint8 count = 2u;
+ 281   1          while (count != 0u)
+ 282   1          {
+ 283   2              status = DieTemp_1_GetTempT(temperature);
+ 284   2              if (status != CYRET_SUCCESS)
+ 285   2              {
+ 286   3                  break;
+ 287   3              }
+ 288   2              count--;
+ 289   2          }
+ 290   1          return status;
+ 291   1      }
+ 292          
+ 293          
+ 294          /* [] END OF FILE */
+C51 COMPILER V9.51   DIETEMP_1                                                             12/05/2024 09:17:07 PAGE 6   
+
+ASSEMBLY LISTING OF GENERATED OBJECT CODE
+
+
+             ; FUNCTION DieTemp_1_Start (BEGIN)
+                                           ; SOURCE LINE # 61
+                                           ; SOURCE LINE # 62
+                                           ; SOURCE LINE # 66
+                 R     MOV     DPTR,#status
+                       MOV     A,#0FFH
+                       MOVX    @DPTR,A
+                                           ; SOURCE LINE # 69
+                 E     CALL    CySpcStart
+                                           ; SOURCE LINE # 71
+                 E     CALL    CySpcLock
+                       MOV     A,R7
+                 R     xJNZ    ?C0001
+                                           ; SOURCE LINE # 72
+                                           ; SOURCE LINE # 81
+                       MOV     R7,#01H
+                 E     CALL    _CySpcGetTemp
+                       MOV     A,R7
+                 R     xJNE    A,#07H,?C0002
+                                           ; SOURCE LINE # 82
+                                           ; SOURCE LINE # 83
+                 R     MOV     DPTR,#status
+                       MOV     A,#07H
+                       MOVX    @DPTR,A
+                                           ; SOURCE LINE # 84
+             ?C0002:
+                                           ; SOURCE LINE # 86
+                 E     CALL    CySpcUnlock
+                                           ; SOURCE LINE # 87
+                 R     xJMP    ?C0003
+             ?C0001:
+                                           ; SOURCE LINE # 89
+                                           ; SOURCE LINE # 90
+                 R     MOV     DPTR,#status
+                       MOV     A,#04H
+                       MOVX    @DPTR,A
+                                           ; SOURCE LINE # 91
+             ?C0003:
+                                           ; SOURCE LINE # 92
+                 R     MOV     DPTR,#status
+                       MOVX    A,@DPTR
+                       MOV     R7,A
+                                           ; SOURCE LINE # 93
+             ?C0004:
+                       RET     
+             ; FUNCTION DieTemp_1_Start (END)
+
+             ; FUNCTION DieTemp_1_Stop (BEGIN)
+                                           ; SOURCE LINE # 113
+                                           ; SOURCE LINE # 114
+                                           ; SOURCE LINE # 116
+                       RET     
+             ; FUNCTION DieTemp_1_Stop (END)
+
+             ; FUNCTION _DieTemp_1_Query (BEGIN)
+                                           ; SOURCE LINE # 144
+                 R     MOV     DPTR,#temperature
+                       MOV     A,R3
+                       MOVX    @DPTR,A
+C51 COMPILER V9.51   DIETEMP_1                                                             12/05/2024 09:17:07 PAGE 7   
+
+                       INC     DPTR
+                       MOV     A,R2
+                       MOVX    @DPTR,A
+                       INC     DPTR
+                       MOV     A,R1
+                       MOVX    @DPTR,A
+                                           ; SOURCE LINE # 145
+                                           ; SOURCE LINE # 149
+                       MOV     DPTR,#04722H
+                       MOVX    A,@DPTR
+                       ANL     A,#02H
+                 R     xJNZ    ?C0006
+                                           ; SOURCE LINE # 150
+                                           ; SOURCE LINE # 151
+                       MOVX    A,@DPTR
+                       MOV     R7,A
+                       RRC     A
+                       RRC     A
+                       ANL     A,#03FH
+                 R     xJNZ    ?C0007
+                                           ; SOURCE LINE # 152
+                                           ; SOURCE LINE # 154
+                       MOVX    A,@DPTR
+                       ANL     A,#01H
+                 R     xJZ     ?C0008
+                                           ; SOURCE LINE # 155
+                                           ; SOURCE LINE # 156
+                       MOV     DPTR,#04720H
+                       MOVX    A,@DPTR
+                 R     MOV     DPTR,#temp
+                       MOVX    @DPTR,A
+             ?C0009:
+                                           ; SOURCE LINE # 158
+                       MOV     DPTR,#04722H
+                       MOVX    A,@DPTR
+                       ANL     A,#01H
+                 R     xJZ     ?C0011
+                       SETB    C
+                 R     xJMP    ?C0012
+             ?C0011:
+                       CLR     C
+             ?C0012:
+                 R     xJC     ?C0010
+                                           ; SOURCE LINE # 159
+                                           ; SOURCE LINE # 160
+                       MOV     R7,#01H
+                       MOV     R6,#00H
+                 E     CALL    _CyDelayUs
+                                           ; SOURCE LINE # 161
+                 R     xJMP    ?C0009
+             ?C0010:
+                                           ; SOURCE LINE # 162
+                       MOV     DPTR,#04720H
+                       MOVX    A,@DPTR
+                 R     MOV     DPTR,#temp+01H
+                       MOVX    @DPTR,A
+                                           ; SOURCE LINE # 163
+                       CLR     A
+                       INC     DPTR
+                       MOVX    @DPTR,A
+                                           ; SOURCE LINE # 164
+                 R     xJMP    ?C0013
+C51 COMPILER V9.51   DIETEMP_1                                                             12/05/2024 09:17:07 PAGE 8   
+
+             ?C0008:
+                                           ; SOURCE LINE # 166
+                                           ; SOURCE LINE # 167
+                 R     MOV     DPTR,#status
+                       MOV     A,#07H
+                       MOVX    @DPTR,A
+                                           ; SOURCE LINE # 168
+             ?C0013:
+                                           ; SOURCE LINE # 170
+                 R     MOV     DPTR,#status
+                       MOVX    A,@DPTR
+                 R     xJNZ    ?C0018
+                                           ; SOURCE LINE # 171
+                                           ; SOURCE LINE # 172
+                 R     MOV     DPTR,#temp
+                       MOVX    A,@DPTR
+                 R     xJNE    A,#01H,?C0015
+                                           ; SOURCE LINE # 173
+                                           ; SOURCE LINE # 174
+                       INC     DPTR
+                       MOVX    A,@DPTR
+                       MOV     R7,A
+                 R     MOV     DPTR,#temperature
+                       MOVX    A,@DPTR
+                       MOV     R3,A
+                       INC     DPTR
+                       MOVX    A,@DPTR
+                       MOV     R2,A
+                       INC     DPTR
+                       MOVX    A,@DPTR
+                       MOV     R1,A
+                       CLR     A
+                       MOV     B,R7
+                 E     CALL    ?C?ISTPTR
+                                           ; SOURCE LINE # 175
+                 R     xJMP    ?C0016
+             ?C0015:
+                                           ; SOURCE LINE # 177
+                                           ; SOURCE LINE # 178
+                 R     MOV     DPTR,#temp+01H
+                       MOVX    A,@DPTR
+                       MOV     R7,A
+                       CLR     C
+                       CLR     A
+                       SUBB    A,R7
+                       MOV     R7,A
+                       CLR     A
+                       SUBB    A,#00H
+                       MOV     R1,A
+                 R     MOV     DPTR,#temperature
+                       MOVX    A,@DPTR
+                       MOV     R3,A
+                       INC     DPTR
+                       MOVX    A,@DPTR
+                       MOV     R2,A
+                       INC     DPTR
+                       MOVX    A,@DPTR
+                       XCH     A,R1
+                       MOV     B,R7
+                 E     CALL    ?C?ISTPTR
+                                           ; SOURCE LINE # 179
+             ?C0016:
+C51 COMPILER V9.51   DIETEMP_1                                                             12/05/2024 09:17:07 PAGE 9   
+
+                                           ; SOURCE LINE # 180
+                       CLR     A
+                 R     MOV     DPTR,#status
+                       MOVX    @DPTR,A
+                                           ; SOURCE LINE # 181
+                                           ; SOURCE LINE # 182
+                 R     xJMP    ?C0018
+             ?C0007:
+                                           ; SOURCE LINE # 184
+                                           ; SOURCE LINE # 185
+                 R     MOV     DPTR,#status
+                       MOV     A,#07H
+                       MOVX    @DPTR,A
+                                           ; SOURCE LINE # 186
+                                           ; SOURCE LINE # 187
+                 R     xJMP    ?C0018
+             ?C0006:
+                                           ; SOURCE LINE # 189
+                                           ; SOURCE LINE # 190
+                 R     MOV     DPTR,#status
+                       MOV     A,#010H
+                       MOVX    @DPTR,A
+                                           ; SOURCE LINE # 191
+             ?C0018:
+                                           ; SOURCE LINE # 193
+                 R     MOV     DPTR,#status
+                       MOVX    A,@DPTR
+                       XRL     A,#07H
+                 R     xJZ     ?C0019
+                                           ; SOURCE LINE # 194
+                                           ; SOURCE LINE # 196
+                 E     CALL    CySpcUnlock
+                                           ; SOURCE LINE # 197
+             ?C0019:
+                                           ; SOURCE LINE # 199
+                 R     MOV     DPTR,#status
+                       MOVX    A,@DPTR
+                       MOV     R7,A
+                                           ; SOURCE LINE # 200
+             ?C0020:
+                       RET     
+             ; FUNCTION _DieTemp_1_Query (END)
+
+             ; FUNCTION _DieTemp_1_GetTempT (BEGIN)
+                                           ; SOURCE LINE # 221
+                 R     MOV     DPTR,#temperature
+                       MOV     A,R3
+                       MOVX    @DPTR,A
+                       INC     DPTR
+                       MOV     A,R2
+                       MOVX    @DPTR,A
+                       INC     DPTR
+                       MOV     A,R1
+                       MOVX    @DPTR,A
+                                           ; SOURCE LINE # 222
+                                           ; SOURCE LINE # 227
+                 R     CALL    DieTemp_1_Start
+                 R     MOV     DPTR,#status
+                       MOV     A,R7
+                       MOVX    @DPTR,A
+                                           ; SOURCE LINE # 229
+                       XRL     A,#07H
+C51 COMPILER V9.51   DIETEMP_1                                                             12/05/2024 09:17:07 PAGE 10  
+
+                 R     xJNZ    ?C0021
+                                           ; SOURCE LINE # 230
+                                           ; SOURCE LINE # 236
+                 R     MOV     DPTR,#us
+                       MOV     A,#01FH
+                       MOVX    @DPTR,A
+                       INC     DPTR
+                       MOV     A,#040H
+                       MOVX    @DPTR,A
+             ?C0022:
+                       SETB    C
+                 R     MOV     DPTR,#us+01H
+                       MOVX    A,@DPTR
+                       SUBB    A,#00H
+                 R     MOV     DPTR,#us
+                       MOVX    A,@DPTR
+                       SUBB    A,#00H
+                 R     xJLT    ?C0021
+                                           ; SOURCE LINE # 237
+                                           ; SOURCE LINE # 238
+                 R     MOV     DPTR,#status
+                       MOVX    A,@DPTR
+                       MOV     R7,A
+                       XRL     A,#07H
+                 R     xJZ     ?C0025
+                       MOV     DPTR,#04722H
+                       MOVX    A,@DPTR
+                       ANL     A,#02H
+                 R     xJZ     ?C0025
+                                           ; SOURCE LINE # 239
+                                           ; SOURCE LINE # 240
+                 R     xJMP    ?C0021
+                                           ; SOURCE LINE # 241
+                 R     xJMP    ?C0026
+             ?C0025:
+                                           ; SOURCE LINE # 242
+                       MOV     A,R7
+                 R     xJNE    A,#07H,?C0026
+                                           ; SOURCE LINE # 243
+                                           ; SOURCE LINE # 244
+                 R     MOV     DPTR,#temperature
+                       MOVX    A,@DPTR
+                       MOV     R3,A
+                       INC     DPTR
+                       MOVX    A,@DPTR
+                       MOV     R2,A
+                       INC     DPTR
+                       MOVX    A,@DPTR
+                       MOV     R1,A
+                 R     CALL    _DieTemp_1_Query
+                 R     MOV     DPTR,#status
+                       MOV     A,R7
+                       MOVX    @DPTR,A
+                                           ; SOURCE LINE # 245
+                                           ; SOURCE LINE # 247
+                                           ; SOURCE LINE # 249
+             ?C0026:
+                                           ; SOURCE LINE # 250
+                       MOV     R7,#0AH
+                       MOV     R6,#00H
+                 E     CALL    _CyDelayUs
+                                           ; SOURCE LINE # 251
+C51 COMPILER V9.51   DIETEMP_1                                                             12/05/2024 09:17:07 PAGE 11  
+
+                 R     MOV     DPTR,#us+01H
+                       MOVX    A,@DPTR
+                       ADD     A,#0F6H
+                       MOVX    @DPTR,A
+                 R     MOV     DPTR,#us
+                       MOVX    A,@DPTR
+                       ADDC    A,#0FFH
+                       MOVX    @DPTR,A
+                 R     xJMP    ?C0022
+                                           ; SOURCE LINE # 252
+             ?C0021:
+                                           ; SOURCE LINE # 254
+                 R     MOV     DPTR,#status
+                       MOVX    A,@DPTR
+                       MOV     R7,A
+                                           ; SOURCE LINE # 255
+             ?C0029:
+                       RET     
+             ; FUNCTION _DieTemp_1_GetTempT (END)
+
+             ; FUNCTION _DieTemp_1_GetTemp (BEGIN)
+                                           ; SOURCE LINE # 277
+                 R     MOV     DPTR,#temperature
+                       MOV     A,R3
+                       MOVX    @DPTR,A
+                       INC     DPTR
+                       MOV     A,R2
+                       MOVX    @DPTR,A
+                       INC     DPTR
+                       MOV     A,R1
+                       MOVX    @DPTR,A
+                                           ; SOURCE LINE # 278
+                                           ; SOURCE LINE # 280
+                 R     MOV     DPTR,#count
+                       MOV     A,#02H
+                       MOVX    @DPTR,A
+             ?C0030:
+                                           ; SOURCE LINE # 281
+                 R     MOV     DPTR,#count
+                       MOVX    A,@DPTR
+                 R     xJZ     ?C0031
+                                           ; SOURCE LINE # 282
+                                           ; SOURCE LINE # 283
+                 R     MOV     DPTR,#temperature
+                       MOVX    A,@DPTR
+                       MOV     R3,A
+                       INC     DPTR
+                       MOVX    A,@DPTR
+                       MOV     R2,A
+                       INC     DPTR
+                       MOVX    A,@DPTR
+                       MOV     R1,A
+                 R     CALL    _DieTemp_1_GetTempT
+                 R     MOV     DPTR,#status
+                       MOV     A,R7
+                       MOVX    @DPTR,A
+                                           ; SOURCE LINE # 284
+                 R     xJNZ    ?C0031
+                                           ; SOURCE LINE # 285
+                                           ; SOURCE LINE # 286
+                                           ; SOURCE LINE # 287
+             ?C0032:
+C51 COMPILER V9.51   DIETEMP_1                                                             12/05/2024 09:17:07 PAGE 12  
+
+                                           ; SOURCE LINE # 288
+                 R     MOV     DPTR,#count
+                       MOVX    A,@DPTR
+                       DEC     A
+                       MOVX    @DPTR,A
+                                           ; SOURCE LINE # 289
+                 R     xJMP    ?C0030
+             ?C0031:
+                                           ; SOURCE LINE # 290
+                 R     MOV     DPTR,#status
+                       MOVX    A,@DPTR
+                       MOV     R7,A
+                                           ; SOURCE LINE # 291
+             ?C0033:
+                       RET     
+             ; FUNCTION _DieTemp_1_GetTemp (END)
+
+
+
+MODULE INFORMATION:   STATIC OVERLAYABLE
+   CODE SIZE        =    479    ----
+   CONSTANT SIZE    =   ----    ----
+   XDATA SIZE       =   ----      18
+   PDATA SIZE       =   ----    ----
+   DATA SIZE        =   ----    ----
+   IDATA SIZE       =   ----    ----
+   BIT SIZE         =   ----    ----
+   EDATA SIZE       =   ----    ----
+   HDATA SIZE       =   ----    ----
+   XDATA CONST SIZE =   ----    ----
+   FAR CONST SIZE   =   ----    ----
+END OF MODULE INFORMATION.
+
+
+C51 COMPILATION COMPLETE.  0 WARNING(S),  0 ERROR(S)

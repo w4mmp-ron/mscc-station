@@ -1,0 +1,391 @@
+<?xml version="1.0" encoding="utf-8"?>
+<CyXmlSerializer>
+<!--This file is machine generated and read. It is not intended to be edited by hand.-->
+<!--Due to this, there is no schema for this file.-->
+<CyGuid_843a90a4-0c4b-4e44-991d-05e7fb117a21 type_name="CyDesigner.Common.ProjMgmt.Model.CyPrjMgmtWrkspcCustomData" version="4">
+<CyGuid_fdba8dfd-b15b-4469-9bbb-9e40c3e70997 type_name="CyDesigner.Common.Base.CyCustomData" version="2">
+<userData>
+<dataGuid v="1b906a0f-a7b6-4e4d-a428-82f98b53cb35">
+<CyGuid_1b906a0f-a7b6-4e4d-a428-82f98b53cb35 type_name="CyDesigner.Common.ProjMgmt.GUI.CyExplorerWindow+CyExplorerWindowState" version="3" SelectedTab="Source">
+<TreeKeys>
+<v>Source</v>
+<v>Components</v>
+<v>Output</v>
+</TreeKeys>
+<TreeStates>
+<CyGuid_2a325b3b-c96a-4e9f-b7a0-2c44ecb5f237 type_name="CyDesigner.Common.Base.Controls.CyTreeViewState" version="1" SelectedNodeId="Bootloader\bootloader\bootloader.cydwr\Clocks">
+<ExpandedNodeIds>
+<v>Bootloader</v>
+<v>Bootloader\bootloader</v>
+<v>Bootloader\bootloader\TopDesign</v>
+<v>Bootloader\bootloader\bootloader.cydwr</v>
+<v>Bootloader\bootloader\Header Files</v>
+<v>Bootloader\bootloader\Header Files\device.h</v>
+<v>Bootloader\bootloader\Source Files</v>
+<v>Bootloader\bootloader\Source Files\main.c</v>
+<v>Bootloader\bootloader\Generated_Source\PSoC3</v>
+<v>Bootloader\bootloader\Generated_Source\PSoC3\BOOT</v>
+<v>Bootloader\bootloader\Generated_Source\PSoC3\BOOT\BOOT.c</v>
+<v>Bootloader\bootloader\Generated_Source\PSoC3\BOOT\BOOT.h</v>
+<v>Bootloader\bootloader\Generated_Source\PSoC3\BOOT\BOOT_aliases.h</v>
+<v>Bootloader\bootloader\Generated_Source\PSoC3\Bootloader</v>
+<v>Bootloader\bootloader\Generated_Source\PSoC3\Bootloader\Bootloader.c</v>
+<v>Bootloader\bootloader\Generated_Source\PSoC3\Bootloader\Bootloader.h</v>
+<v>Bootloader\bootloader\Generated_Source\PSoC3\Bootloader\Bootloader_psoc3.a51</v>
+<v>Bootloader\bootloader\Generated_Source\PSoC3\Bootloader\Bootloader_PVT.h</v>
+<v>Bootloader\bootloader\Generated_Source\PSoC3\BS0</v>
+<v>Bootloader\bootloader\Generated_Source\PSoC3\BS0\BS0.c</v>
+<v>Bootloader\bootloader\Generated_Source\PSoC3\BS0\BS0.h</v>
+<v>Bootloader\bootloader\Generated_Source\PSoC3\BS0\BS0_aliases.h</v>
+<v>Bootloader\bootloader\Generated_Source\PSoC3\BS1</v>
+<v>Bootloader\bootloader\Generated_Source\PSoC3\BS1\BS1.c</v>
+<v>Bootloader\bootloader\Generated_Source\PSoC3\BS1\BS1.h</v>
+<v>Bootloader\bootloader\Generated_Source\PSoC3\BS1\BS1_aliases.h</v>
+<v>Bootloader\bootloader\Generated_Source\PSoC3\BS2</v>
+<v>Bootloader\bootloader\Generated_Source\PSoC3\BS2\BS2.c</v>
+<v>Bootloader\bootloader\Generated_Source\PSoC3\BS2\BS2.h</v>
+<v>Bootloader\bootloader\Generated_Source\PSoC3\BS2\BS2_aliases.h</v>
+<v>Bootloader\bootloader\Generated_Source\PSoC3\Control</v>
+<v>Bootloader\bootloader\Generated_Source\PSoC3\Control\Control.c</v>
+<v>Bootloader\bootloader\Generated_Source\PSoC3\Control\Control.h</v>
+<v>Bootloader\bootloader\Generated_Source\PSoC3\Control\Control_PM.c</v>
+<v>Bootloader\bootloader\Generated_Source\PSoC3\cy_boot</v>
+<v>Bootloader\bootloader\Generated_Source\PSoC3\cy_boot\CyBootAsmKeil.a51</v>
+<v>Bootloader\bootloader\Generated_Source\PSoC3\cy_boot\CyDmac.c</v>
+<v>Bootloader\bootloader\Generated_Source\PSoC3\cy_boot\CyDmac.h</v>
+<v>Bootloader\bootloader\Generated_Source\PSoC3\cy_boot\CyFlash.c</v>
+<v>Bootloader\bootloader\Generated_Source\PSoC3\cy_boot\CyFlash.h</v>
+<v>Bootloader\bootloader\Generated_Source\PSoC3\cy_boot\CyLib.c</v>
+<v>Bootloader\bootloader\Generated_Source\PSoC3\cy_boot\CyLib.h</v>
+<v>Bootloader\bootloader\Generated_Source\PSoC3\cy_boot\cymem.a51</v>
+<v>Bootloader\bootloader\Generated_Source\PSoC3\cy_boot\cypins.h</v>
+<v>Bootloader\bootloader\Generated_Source\PSoC3\cy_boot\cyPm.c</v>
+<v>Bootloader\bootloader\Generated_Source\PSoC3\cy_boot\cyPm.h</v>
+<v>Bootloader\bootloader\Generated_Source\PSoC3\cy_boot\CySpc.c</v>
+<v>Bootloader\bootloader\Generated_Source\PSoC3\cy_boot\CySpc.h</v>
+<v>Bootloader\bootloader\Generated_Source\PSoC3\cy_boot\cytypes.h</v>
+<v>Bootloader\bootloader\Generated_Source\PSoC3\cy_boot\cyutils.c</v>
+<v>Bootloader\bootloader\Generated_Source\PSoC3\cy_boot\KeilStart.a51</v>
+<v>Bootloader\bootloader\Generated_Source\PSoC3\cy_boot\PSoC3_8051.h</v>
+<v>Bootloader\bootloader\Generated_Source\PSoC3\cy_boot\PSoC3_8051.inc</v>
+<v>Bootloader\bootloader\Generated_Source\PSoC3\Morse_Counter</v>
+<v>Bootloader\bootloader\Generated_Source\PSoC3\Morse_Counter\Morse_Counter.c</v>
+<v>Bootloader\bootloader\Generated_Source\PSoC3\Morse_Counter\Morse_Counter.h</v>
+<v>Bootloader\bootloader\Generated_Source\PSoC3\Morse_Counter\Morse_Counter_PM.c</v>
+<v>Bootloader\bootloader\Generated_Source\PSoC3\morse_isr</v>
+<v>Bootloader\bootloader\Generated_Source\PSoC3\morse_isr\morse_isr.c</v>
+<v>Bootloader\bootloader\Generated_Source\PSoC3\morse_isr\morse_isr.h</v>
+<v>Bootloader\bootloader\Generated_Source\PSoC3\RX</v>
+<v>Bootloader\bootloader\Generated_Source\PSoC3\RX\RX.c</v>
+<v>Bootloader\bootloader\Generated_Source\PSoC3\RX\RX.h</v>
+<v>Bootloader\bootloader\Generated_Source\PSoC3\RX\RX_aliases.h</v>
+<v>Bootloader\bootloader\Generated_Source\PSoC3\Status</v>
+<v>Bootloader\bootloader\Generated_Source\PSoC3\Status\Status.c</v>
+<v>Bootloader\bootloader\Generated_Source\PSoC3\Status\Status.h</v>
+<v>Bootloader\bootloader\Generated_Source\PSoC3\USBFS</v>
+<v>Bootloader\bootloader\Generated_Source\PSoC3\USBFS\USBFS.c</v>
+<v>Bootloader\bootloader\Generated_Source\PSoC3\USBFS\USBFS.h</v>
+<v>Bootloader\bootloader\Generated_Source\PSoC3\USBFS\USBFS_audio.c</v>
+<v>Bootloader\bootloader\Generated_Source\PSoC3\USBFS\USBFS_audio.h</v>
+<v>Bootloader\bootloader\Generated_Source\PSoC3\USBFS\USBFS_boot.c</v>
+<v>Bootloader\bootloader\Generated_Source\PSoC3\USBFS\USBFS_cdc.c</v>
+<v>Bootloader\bootloader\Generated_Source\PSoC3\USBFS\USBFS_cdc.h</v>
+<v>Bootloader\bootloader\Generated_Source\PSoC3\USBFS\USBFS_cdc.inf</v>
+<v>Bootloader\bootloader\Generated_Source\PSoC3\USBFS\USBFS_cls.c</v>
+<v>Bootloader\bootloader\Generated_Source\PSoC3\USBFS\USBFS_cydmac.h</v>
+<v>Bootloader\bootloader\Generated_Source\PSoC3\USBFS\USBFS_descr.c</v>
+<v>Bootloader\bootloader\Generated_Source\PSoC3\USBFS\USBFS_drv.c</v>
+<v>Bootloader\bootloader\Generated_Source\PSoC3\USBFS\USBFS_episr.c</v>
+<v>Bootloader\bootloader\Generated_Source\PSoC3\USBFS\USBFS_hid.c</v>
+<v>Bootloader\bootloader\Generated_Source\PSoC3\USBFS\USBFS_hid.h</v>
+<v>Bootloader\bootloader\Generated_Source\PSoC3\USBFS\USBFS_midi.c</v>
+<v>Bootloader\bootloader\Generated_Source\PSoC3\USBFS\USBFS_midi.h</v>
+<v>Bootloader\bootloader\Generated_Source\PSoC3\USBFS\USBFS_msc.c</v>
+<v>Bootloader\bootloader\Generated_Source\PSoC3\USBFS\USBFS_msc.h</v>
+<v>Bootloader\bootloader\Generated_Source\PSoC3\USBFS\USBFS_pm.c</v>
+<v>Bootloader\bootloader\Generated_Source\PSoC3\USBFS\USBFS_pvt.h</v>
+<v>Bootloader\bootloader\Generated_Source\PSoC3\USBFS\USBFS_std.c</v>
+<v>Bootloader\bootloader\Generated_Source\PSoC3\USBFS\USBFS_vnd.c</v>
+<v>Bootloader\bootloader\Generated_Source\PSoC3\USBFS_Dm</v>
+<v>Bootloader\bootloader\Generated_Source\PSoC3\USBFS_Dm\USBFS_Dm.c</v>
+<v>Bootloader\bootloader\Generated_Source\PSoC3\USBFS_Dm\USBFS_Dm.h</v>
+<v>Bootloader\bootloader\Generated_Source\PSoC3\USBFS_Dm\USBFS_Dm_aliases.h</v>
+<v>Bootloader\bootloader\Generated_Source\PSoC3\USBFS_Dp</v>
+<v>Bootloader\bootloader\Generated_Source\PSoC3\USBFS_Dp\USBFS_Dp.c</v>
+<v>Bootloader\bootloader\Generated_Source\PSoC3\USBFS_Dp\USBFS_Dp.h</v>
+<v>Bootloader\bootloader\Generated_Source\PSoC3\USBFS_Dp\USBFS_Dp_aliases.h</v>
+<v>Bootloader\bootloader\Generated_Source\PSoC3\cycodeshareexport.ld</v>
+<v>Bootloader\bootloader\Generated_Source\PSoC3\cycodeshareimport.ld</v>
+<v>Bootloader\bootloader\Generated_Source\PSoC3\cycodeshareimport.scat</v>
+<v>Bootloader\bootloader\Generated_Source\PSoC3\cydevice.h</v>
+<v>Bootloader\bootloader\Generated_Source\PSoC3\cydevice_trm.h</v>
+<v>Bootloader\bootloader\Generated_Source\PSoC3\cydevicekeil.inc</v>
+<v>Bootloader\bootloader\Generated_Source\PSoC3\cydevicekeil_trm.inc</v>
+<v>Bootloader\bootloader\Generated_Source\PSoC3\cydisabledsheets.h</v>
+<v>Bootloader\bootloader\Generated_Source\PSoC3\cyfitter.h</v>
+<v>Bootloader\bootloader\Generated_Source\PSoC3\cyfitter_cfg.c</v>
+<v>Bootloader\bootloader\Generated_Source\PSoC3\cyfitter_cfg.h</v>
+<v>Bootloader\bootloader\Generated_Source\PSoC3\cyfitterkeil.inc</v>
+<v>Bootloader\bootloader\Generated_Source\PSoC3\project.h</v>
+</ExpandedNodeIds>
+<VisibleNodeIds>
+<v>Bootloader</v>
+<v>Bootloader\bootloader</v>
+<v>Bootloader\bootloader\TopDesign</v>
+<v>Bootloader\bootloader\bootloader.cydwr</v>
+<v>Bootloader\bootloader\bootloader.cydwr\Pins</v>
+<v>Bootloader\bootloader\bootloader.cydwr\Analog</v>
+<v>Bootloader\bootloader\bootloader.cydwr\Clocks</v>
+<v>Bootloader\bootloader\bootloader.cydwr\Interrupts</v>
+<v>Bootloader\bootloader\bootloader.cydwr\DMA</v>
+<v>Bootloader\bootloader\bootloader.cydwr\System</v>
+<v>Bootloader\bootloader\bootloader.cydwr\Directives</v>
+<v>Bootloader\bootloader\bootloader.cydwr\Flash Security</v>
+<v>Bootloader\bootloader\bootloader.cydwr\EEPROM</v>
+<v>Bootloader\bootloader\Header Files</v>
+<v>Bootloader\bootloader\Header Files\device.h</v>
+<v>Bootloader\bootloader\Source Files</v>
+<v>Bootloader\bootloader\Source Files\main.c</v>
+<v>Bootloader\bootloader\Generated_Source</v>
+</VisibleNodeIds>
+</CyGuid_2a325b3b-c96a-4e9f-b7a0-2c44ecb5f237>
+<CyGuid_2a325b3b-c96a-4e9f-b7a0-2c44ecb5f237 type_name="CyDesigner.Common.Base.Controls.CyTreeViewState" version="1" SelectedNodeId="">
+<ExpandedNodeIds>
+<v>Bootloader</v>
+<v>Bootloader\bootloader</v>
+<v>Bootloader\bootloader\TopDesign</v>
+<v>Bootloader\bootloader\TopDesign\TopDesign.cysch</v>
+</ExpandedNodeIds>
+<VisibleNodeIds>
+<v>Bootloader</v>
+<v>Bootloader\bootloader</v>
+<v>Bootloader\bootloader\TopDesign</v>
+<v>Bootloader\bootloader\TopDesign\TopDesign.cysch</v>
+</VisibleNodeIds>
+</CyGuid_2a325b3b-c96a-4e9f-b7a0-2c44ecb5f237>
+<CyGuid_2a325b3b-c96a-4e9f-b7a0-2c44ecb5f237 type_name="CyDesigner.Common.Base.Controls.CyTreeViewState" version="1" SelectedNodeId="">
+<ExpandedNodeIds>
+<v>Bootloader</v>
+<v>Bootloader\bootloader</v>
+<v>Bootloader\bootloader\DP8051</v>
+<v>Bootloader\bootloader\DP8051\DP8051_Keil_951</v>
+<v>Bootloader\bootloader\DP8051\DP8051_Keil_951\Debug</v>
+<v>Bootloader\bootloader\DP8051\DP8051_Keil_951\Debug\Listing Files</v>
+<v>Bootloader\bootloader\DP8051\DP8051_Keil_951\Debug\Listing Files\BOOT.lst</v>
+<v>Bootloader\bootloader\DP8051\DP8051_Keil_951\Debug\Listing Files\Bootloader.lst</v>
+<v>Bootloader\bootloader\DP8051\DP8051_Keil_951\Debug\Listing Files\Bootloader_psoc3.lst</v>
+<v>Bootloader\bootloader\DP8051\DP8051_Keil_951\Debug\Listing Files\BS0.lst</v>
+<v>Bootloader\bootloader\DP8051\DP8051_Keil_951\Debug\Listing Files\BS1.lst</v>
+<v>Bootloader\bootloader\DP8051\DP8051_Keil_951\Debug\Listing Files\BS2.lst</v>
+<v>Bootloader\bootloader\DP8051\DP8051_Keil_951\Debug\Listing Files\Control.lst</v>
+<v>Bootloader\bootloader\DP8051\DP8051_Keil_951\Debug\Listing Files\Control_PM.lst</v>
+<v>Bootloader\bootloader\DP8051\DP8051_Keil_951\Debug\Listing Files\CyBootAsmKeil.lst</v>
+<v>Bootloader\bootloader\DP8051\DP8051_Keil_951\Debug\Listing Files\CyDmac.lst</v>
+<v>Bootloader\bootloader\DP8051\DP8051_Keil_951\Debug\Listing Files\cyfitter_cfg.lst</v>
+<v>Bootloader\bootloader\DP8051\DP8051_Keil_951\Debug\Listing Files\CyFlash.lst</v>
+<v>Bootloader\bootloader\DP8051\DP8051_Keil_951\Debug\Listing Files\CyLib.lst</v>
+<v>Bootloader\bootloader\DP8051\DP8051_Keil_951\Debug\Listing Files\cymem.lst</v>
+<v>Bootloader\bootloader\DP8051\DP8051_Keil_951\Debug\Listing Files\cyPm.lst</v>
+<v>Bootloader\bootloader\DP8051\DP8051_Keil_951\Debug\Listing Files\CySpc.lst</v>
+<v>Bootloader\bootloader\DP8051\DP8051_Keil_951\Debug\Listing Files\cyutils.lst</v>
+<v>Bootloader\bootloader\DP8051\DP8051_Keil_951\Debug\Listing Files\KeilStart.lst</v>
+<v>Bootloader\bootloader\DP8051\DP8051_Keil_951\Debug\Listing Files\main.lst</v>
+<v>Bootloader\bootloader\DP8051\DP8051_Keil_951\Debug\Listing Files\Morse_Counter.lst</v>
+<v>Bootloader\bootloader\DP8051\DP8051_Keil_951\Debug\Listing Files\Morse_Counter_PM.lst</v>
+<v>Bootloader\bootloader\DP8051\DP8051_Keil_951\Debug\Listing Files\morse_isr.lst</v>
+<v>Bootloader\bootloader\DP8051\DP8051_Keil_951\Debug\Listing Files\RX.lst</v>
+<v>Bootloader\bootloader\DP8051\DP8051_Keil_951\Debug\Listing Files\Status.lst</v>
+<v>Bootloader\bootloader\DP8051\DP8051_Keil_951\Debug\Listing Files\USBFS.lst</v>
+<v>Bootloader\bootloader\DP8051\DP8051_Keil_951\Debug\Listing Files\USBFS_audio.lst</v>
+<v>Bootloader\bootloader\DP8051\DP8051_Keil_951\Debug\Listing Files\USBFS_boot.lst</v>
+<v>Bootloader\bootloader\DP8051\DP8051_Keil_951\Debug\Listing Files\USBFS_cdc.lst</v>
+<v>Bootloader\bootloader\DP8051\DP8051_Keil_951\Debug\Listing Files\USBFS_cls.lst</v>
+<v>Bootloader\bootloader\DP8051\DP8051_Keil_951\Debug\Listing Files\USBFS_descr.lst</v>
+<v>Bootloader\bootloader\DP8051\DP8051_Keil_951\Debug\Listing Files\USBFS_Dm.lst</v>
+<v>Bootloader\bootloader\DP8051\DP8051_Keil_951\Debug\Listing Files\USBFS_Dp.lst</v>
+<v>Bootloader\bootloader\DP8051\DP8051_Keil_951\Debug\Listing Files\USBFS_drv.lst</v>
+<v>Bootloader\bootloader\DP8051\DP8051_Keil_951\Debug\Listing Files\USBFS_episr.lst</v>
+<v>Bootloader\bootloader\DP8051\DP8051_Keil_951\Debug\Listing Files\USBFS_hid.lst</v>
+<v>Bootloader\bootloader\DP8051\DP8051_Keil_951\Debug\Listing Files\USBFS_midi.lst</v>
+<v>Bootloader\bootloader\DP8051\DP8051_Keil_951\Debug\Listing Files\USBFS_msc.lst</v>
+<v>Bootloader\bootloader\DP8051\DP8051_Keil_951\Debug\Listing Files\USBFS_pm.lst</v>
+<v>Bootloader\bootloader\DP8051\DP8051_Keil_951\Debug\Listing Files\USBFS_std.lst</v>
+<v>Bootloader\bootloader\DP8051\DP8051_Keil_951\Debug\Listing Files\USBFS_vnd.lst</v>
+<v>Bootloader\bootloader\DP8051\DP8051_Keil_951\Debug\bootloader.elf</v>
+<v>Bootloader\bootloader\DP8051\DP8051_Keil_951\Debug\bootloader.hex</v>
+<v>Bootloader\bootloader\DP8051\DP8051_Keil_951\Debug\bootloader.map</v>
+<v>Bootloader\bootloader\DP8051\DP8051_Keil_951\Release</v>
+<v>Bootloader\bootloader\DP8051\DP8051_Keil_951\Release\Listing Files</v>
+<v>Bootloader\bootloader\DP8051\DP8051_Keil_951\Release\Listing Files\BOOT.lst</v>
+<v>Bootloader\bootloader\DP8051\DP8051_Keil_951\Release\Listing Files\Bootloader.lst</v>
+<v>Bootloader\bootloader\DP8051\DP8051_Keil_951\Release\Listing Files\Bootloader_psoc3.lst</v>
+<v>Bootloader\bootloader\DP8051\DP8051_Keil_951\Release\Listing Files\BS0.lst</v>
+<v>Bootloader\bootloader\DP8051\DP8051_Keil_951\Release\Listing Files\BS1.lst</v>
+<v>Bootloader\bootloader\DP8051\DP8051_Keil_951\Release\Listing Files\BS2.lst</v>
+<v>Bootloader\bootloader\DP8051\DP8051_Keil_951\Release\Listing Files\Control.lst</v>
+<v>Bootloader\bootloader\DP8051\DP8051_Keil_951\Release\Listing Files\Control_PM.lst</v>
+<v>Bootloader\bootloader\DP8051\DP8051_Keil_951\Release\Listing Files\cy_em_eeprom.lst</v>
+<v>Bootloader\bootloader\DP8051\DP8051_Keil_951\Release\Listing Files\CyBootAsmKeil.lst</v>
+<v>Bootloader\bootloader\DP8051\DP8051_Keil_951\Release\Listing Files\CyDmac.lst</v>
+<v>Bootloader\bootloader\DP8051\DP8051_Keil_951\Release\Listing Files\cyfitter_cfg.lst</v>
+<v>Bootloader\bootloader\DP8051\DP8051_Keil_951\Release\Listing Files\CyFlash.lst</v>
+<v>Bootloader\bootloader\DP8051\DP8051_Keil_951\Release\Listing Files\CyLib.lst</v>
+<v>Bootloader\bootloader\DP8051\DP8051_Keil_951\Release\Listing Files\cymem.lst</v>
+<v>Bootloader\bootloader\DP8051\DP8051_Keil_951\Release\Listing Files\cyPm.lst</v>
+<v>Bootloader\bootloader\DP8051\DP8051_Keil_951\Release\Listing Files\CySpc.lst</v>
+<v>Bootloader\bootloader\DP8051\DP8051_Keil_951\Release\Listing Files\cyutils.lst</v>
+<v>Bootloader\bootloader\DP8051\DP8051_Keil_951\Release\Listing Files\KeilStart.lst</v>
+<v>Bootloader\bootloader\DP8051\DP8051_Keil_951\Release\Listing Files\main.lst</v>
+<v>Bootloader\bootloader\DP8051\DP8051_Keil_951\Release\Listing Files\Morse_Counter.lst</v>
+<v>Bootloader\bootloader\DP8051\DP8051_Keil_951\Release\Listing Files\Morse_Counter_PM.lst</v>
+<v>Bootloader\bootloader\DP8051\DP8051_Keil_951\Release\Listing Files\morse_isr.lst</v>
+<v>Bootloader\bootloader\DP8051\DP8051_Keil_951\Release\Listing Files\RX.lst</v>
+<v>Bootloader\bootloader\DP8051\DP8051_Keil_951\Release\Listing Files\Status.lst</v>
+<v>Bootloader\bootloader\DP8051\DP8051_Keil_951\Release\Listing Files\USBFS.lst</v>
+<v>Bootloader\bootloader\DP8051\DP8051_Keil_951\Release\Listing Files\USBFS_audio.lst</v>
+<v>Bootloader\bootloader\DP8051\DP8051_Keil_951\Release\Listing Files\USBFS_boot.lst</v>
+<v>Bootloader\bootloader\DP8051\DP8051_Keil_951\Release\Listing Files\USBFS_cdc.lst</v>
+<v>Bootloader\bootloader\DP8051\DP8051_Keil_951\Release\Listing Files\USBFS_cls.lst</v>
+<v>Bootloader\bootloader\DP8051\DP8051_Keil_951\Release\Listing Files\USBFS_descr.lst</v>
+<v>Bootloader\bootloader\DP8051\DP8051_Keil_951\Release\Listing Files\USBFS_Dm.lst</v>
+<v>Bootloader\bootloader\DP8051\DP8051_Keil_951\Release\Listing Files\USBFS_Dp.lst</v>
+<v>Bootloader\bootloader\DP8051\DP8051_Keil_951\Release\Listing Files\USBFS_drv.lst</v>
+<v>Bootloader\bootloader\DP8051\DP8051_Keil_951\Release\Listing Files\USBFS_episr.lst</v>
+<v>Bootloader\bootloader\DP8051\DP8051_Keil_951\Release\Listing Files\USBFS_hid.lst</v>
+<v>Bootloader\bootloader\DP8051\DP8051_Keil_951\Release\Listing Files\USBFS_midi.lst</v>
+<v>Bootloader\bootloader\DP8051\DP8051_Keil_951\Release\Listing Files\USBFS_msc.lst</v>
+<v>Bootloader\bootloader\DP8051\DP8051_Keil_951\Release\Listing Files\USBFS_pm.lst</v>
+<v>Bootloader\bootloader\DP8051\DP8051_Keil_951\Release\Listing Files\USBFS_std.lst</v>
+<v>Bootloader\bootloader\DP8051\DP8051_Keil_951\Release\Listing Files\USBFS_vnd.lst</v>
+<v>Bootloader\bootloader\DP8051\DP8051_Keil_951\Release\bootloader.elf</v>
+<v>Bootloader\bootloader\DP8051\DP8051_Keil_951\Release\bootloader.hex</v>
+<v>Bootloader\bootloader\DP8051\DP8051_Keil_951\Release\bootloader.map</v>
+<v>Bootloader\bootloader\bootloader.gpdsc</v>
+<v>Bootloader\bootloader\bootloader.rpt</v>
+<v>Bootloader\bootloader\bootloader_timing.html</v>
+</ExpandedNodeIds>
+<VisibleNodeIds>
+<v>Bootloader</v>
+<v>Bootloader\bootloader</v>
+<v>Bootloader\bootloader\DP8051</v>
+<v>Bootloader\bootloader\DP8051\DP8051_Keil_951</v>
+<v>Bootloader\bootloader\DP8051\DP8051_Keil_951\Debug</v>
+<v>Bootloader\bootloader\DP8051\DP8051_Keil_951\Debug\Listing Files</v>
+<v>Bootloader\bootloader\DP8051\DP8051_Keil_951\Debug\Listing Files\BOOT.lst</v>
+<v>Bootloader\bootloader\DP8051\DP8051_Keil_951\Debug\Listing Files\Bootloader.lst</v>
+<v>Bootloader\bootloader\DP8051\DP8051_Keil_951\Debug\Listing Files\Bootloader_psoc3.lst</v>
+<v>Bootloader\bootloader\DP8051\DP8051_Keil_951\Debug\Listing Files\BS0.lst</v>
+<v>Bootloader\bootloader\DP8051\DP8051_Keil_951\Debug\Listing Files\BS1.lst</v>
+<v>Bootloader\bootloader\DP8051\DP8051_Keil_951\Debug\Listing Files\BS2.lst</v>
+<v>Bootloader\bootloader\DP8051\DP8051_Keil_951\Debug\Listing Files\Control.lst</v>
+<v>Bootloader\bootloader\DP8051\DP8051_Keil_951\Debug\Listing Files\Control_PM.lst</v>
+<v>Bootloader\bootloader\DP8051\DP8051_Keil_951\Debug\Listing Files\CyBootAsmKeil.lst</v>
+<v>Bootloader\bootloader\DP8051\DP8051_Keil_951\Debug\Listing Files\CyDmac.lst</v>
+<v>Bootloader\bootloader\DP8051\DP8051_Keil_951\Debug\Listing Files\cyfitter_cfg.lst</v>
+<v>Bootloader\bootloader\DP8051\DP8051_Keil_951\Debug\Listing Files\CyFlash.lst</v>
+<v>Bootloader\bootloader\DP8051\DP8051_Keil_951\Debug\Listing Files\CyLib.lst</v>
+<v>Bootloader\bootloader\DP8051\DP8051_Keil_951\Debug\Listing Files\cymem.lst</v>
+<v>Bootloader\bootloader\DP8051\DP8051_Keil_951\Debug\Listing Files\cyPm.lst</v>
+<v>Bootloader\bootloader\DP8051\DP8051_Keil_951\Debug\Listing Files\CySpc.lst</v>
+<v>Bootloader\bootloader\DP8051\DP8051_Keil_951\Debug\Listing Files\cyutils.lst</v>
+<v>Bootloader\bootloader\DP8051\DP8051_Keil_951\Debug\Listing Files\KeilStart.lst</v>
+<v>Bootloader\bootloader\DP8051\DP8051_Keil_951\Debug\Listing Files\main.lst</v>
+<v>Bootloader\bootloader\DP8051\DP8051_Keil_951\Debug\Listing Files\Morse_Counter.lst</v>
+<v>Bootloader\bootloader\DP8051\DP8051_Keil_951\Debug\Listing Files\Morse_Counter_PM.lst</v>
+<v>Bootloader\bootloader\DP8051\DP8051_Keil_951\Debug\Listing Files\morse_isr.lst</v>
+<v>Bootloader\bootloader\DP8051\DP8051_Keil_951\Debug\Listing Files\RX.lst</v>
+<v>Bootloader\bootloader\DP8051\DP8051_Keil_951\Debug\Listing Files\Status.lst</v>
+<v>Bootloader\bootloader\DP8051\DP8051_Keil_951\Debug\Listing Files\USBFS.lst</v>
+<v>Bootloader\bootloader\DP8051\DP8051_Keil_951\Debug\Listing Files\USBFS_audio.lst</v>
+<v>Bootloader\bootloader\DP8051\DP8051_Keil_951\Debug\Listing Files\USBFS_boot.lst</v>
+<v>Bootloader\bootloader\DP8051\DP8051_Keil_951\Debug\Listing Files\USBFS_cdc.lst</v>
+<v>Bootloader\bootloader\DP8051\DP8051_Keil_951\Debug\Listing Files\USBFS_cls.lst</v>
+<v>Bootloader\bootloader\DP8051\DP8051_Keil_951\Debug\Listing Files\USBFS_descr.lst</v>
+<v>Bootloader\bootloader\DP8051\DP8051_Keil_951\Debug\Listing Files\USBFS_Dm.lst</v>
+<v>Bootloader\bootloader\DP8051\DP8051_Keil_951\Debug\Listing Files\USBFS_Dp.lst</v>
+<v>Bootloader\bootloader\DP8051\DP8051_Keil_951\Debug\Listing Files\USBFS_drv.lst</v>
+<v>Bootloader\bootloader\DP8051\DP8051_Keil_951\Debug\Listing Files\USBFS_episr.lst</v>
+<v>Bootloader\bootloader\DP8051\DP8051_Keil_951\Debug\Listing Files\USBFS_hid.lst</v>
+<v>Bootloader\bootloader\DP8051\DP8051_Keil_951\Debug\Listing Files\USBFS_midi.lst</v>
+<v>Bootloader\bootloader\DP8051\DP8051_Keil_951\Debug\Listing Files\USBFS_msc.lst</v>
+<v>Bootloader\bootloader\DP8051\DP8051_Keil_951\Debug\Listing Files\USBFS_pm.lst</v>
+<v>Bootloader\bootloader\DP8051\DP8051_Keil_951\Debug\Listing Files\USBFS_std.lst</v>
+<v>Bootloader\bootloader\DP8051\DP8051_Keil_951\Debug\Listing Files\USBFS_vnd.lst</v>
+<v>Bootloader\bootloader\DP8051\DP8051_Keil_951\Debug\bootloader.elf</v>
+<v>Bootloader\bootloader\DP8051\DP8051_Keil_951\Debug\bootloader.hex</v>
+</VisibleNodeIds>
+</CyGuid_2a325b3b-c96a-4e9f-b7a0-2c44ecb5f237>
+</TreeStates>
+<TreeKeysV2>
+<v>Datasheet</v>
+</TreeKeysV2>
+<TreeStatesV2>
+<CyGuid_2a325b3b-c96a-4e9f-b7a0-2c44ecb5f237 type_name="CyDesigner.Common.Base.Controls.CyTreeViewState" version="1" SelectedNodeId="Bootloader">
+<ExpandedNodeIds>
+<v>Bootloader</v>
+<v>Bootloader\bootloader</v>
+<v>Bootloader\bootloader\PSoC 3 Architecture TRM</v>
+<v>Bootloader\bootloader\CY8C32 Family Datasheet</v>
+<v>Bootloader\bootloader\System Reference Guides</v>
+<v>Bootloader\bootloader\System Reference Guides\cy_boot_v5_60</v>
+<v>Bootloader\bootloader\Bootloader_v1_60.pdf</v>
+<v>Bootloader\bootloader\Counter_v3_0.pdf</v>
+<v>Bootloader\bootloader\cy_clock_v2_20</v>
+<v>Bootloader\bootloader\cy_clock_v2_20\cy_clock_v2_20.pdf</v>
+<v>Bootloader\bootloader\cy_constant_v1_0</v>
+<v>Bootloader\bootloader\cy_constant_v1_0\cy_constant_v1_0.pdf</v>
+<v>Bootloader\bootloader\cy_isr_v1_70.pdf</v>
+<v>Bootloader\bootloader\cy_pins_v2_20</v>
+<v>Bootloader\bootloader\cy_pins_v2_20\cy_pins_v2_20.pdf</v>
+<v>Bootloader\bootloader\CyControlReg_v1_80.pdf</v>
+<v>Bootloader\bootloader\CyStatusReg_v1_90.pdf</v>
+<v>Bootloader\bootloader\USBFS_v3_20.pdf</v>
+</ExpandedNodeIds>
+<VisibleNodeIds>
+<v>Bootloader</v>
+<v>Bootloader\bootloader</v>
+<v>Bootloader\bootloader\PSoC 3 Architecture TRM</v>
+<v>Bootloader\bootloader\CY8C32 Family Datasheet</v>
+<v>Bootloader\bootloader\System Reference Guides</v>
+<v>Bootloader\bootloader\System Reference Guides\cy_boot_v5_60</v>
+<v>Bootloader\bootloader\Bootloader_v1_60.pdf</v>
+<v>Bootloader\bootloader\Counter_v3_0.pdf</v>
+<v>Bootloader\bootloader\cy_clock_v2_20</v>
+<v>Bootloader\bootloader\cy_clock_v2_20\cy_clock_v2_20.pdf</v>
+<v>Bootloader\bootloader\cy_constant_v1_0</v>
+<v>Bootloader\bootloader\cy_constant_v1_0\cy_constant_v1_0.pdf</v>
+<v>Bootloader\bootloader\cy_isr_v1_70.pdf</v>
+<v>Bootloader\bootloader\cy_pins_v2_20</v>
+<v>Bootloader\bootloader\cy_pins_v2_20\cy_pins_v2_20.pdf</v>
+<v>Bootloader\bootloader\CyControlReg_v1_80.pdf</v>
+<v>Bootloader\bootloader\CyStatusReg_v1_90.pdf</v>
+<v>Bootloader\bootloader\USBFS_v3_20.pdf</v>
+</VisibleNodeIds>
+</CyGuid_2a325b3b-c96a-4e9f-b7a0-2c44ecb5f237>
+</TreeStatesV2>
+</CyGuid_1b906a0f-a7b6-4e4d-a428-82f98b53cb35>
+</dataGuid>
+<dataGuid v="5f2be1a5-0687-4501-bb8c-cf21cb8211bf">
+<CyGuid_5f2be1a5-0687-4501-bb8c-cf21cb8211bf type_name="CyDesigner.Common.ProjMgmt.GUI.CyBookmarkData" version="1">
+<indicators />
+</CyGuid_5f2be1a5-0687-4501-bb8c-cf21cb8211bf>
+</dataGuid>
+</userData>
+</CyGuid_fdba8dfd-b15b-4469-9bbb-9e40c3e70997>
+<Unloaded />
+<OpenDocs>
+<name v=".\bootloader.cydsn\main.c" />
+<name v=".\bootloader.cydsn\TopDesign\TopDesign.cysch" />
+<name v=".\bootloader.cydsn\bootloader.cydwr" />
+</OpenDocs>
+<OpenDocsLayout><![CDATA[<?xml version="1.0"?><!--
+
+  Actipro Docking/MDI for WinForms
+  Copyright (c) 2001-2016 Actipro Software LLC.  All rights reserved.
+  http://www.actiprosoftware.com
+
+--><DocumentLayout Version="1.0"><LayoutData><TabbedMdiRootContainer Orientation="Horizontal"><TabbedMdiContainer Size="1161, 742" SelectedTabbedMdiWindow="617b37b4-fb65-4b72-8d79-961283b4a7f6"><ToolWindow Key="Start Page:bd4649ab-da6b-4d04-a663-c722b8bf99db:Start Page" Guid="770f7706-c4f0-4acf-af4e-90b76f37ce13" /><DocumentWindow Key="G:\Ham Radio\ominaSDR\Hardware\Proficio\firmware\bootloader\bootloader.cydsn\main.c" Guid="122ccb4c-4bbd-4f5f-a6c6-908204cefb38" /><DocumentWindow Key="G:\Ham Radio\ominaSDR\Hardware\Proficio\firmware\bootloader\bootloader.cydsn\TopDesign\TopDesign.cysch" Guid="617b37b4-fb65-4b72-8d79-961283b4a7f6" /><DocumentWindow Key="G:\Ham Radio\ominaSDR\Hardware\Proficio\firmware\bootloader\bootloader.cydsn\bootloader.cydwr" Guid="80bc5979-6df9-4337-a30b-9eede73358b7" /></TabbedMdiContainer></TabbedMdiRootContainer><FloatingContainers /></LayoutData></DocumentLayout>]]></OpenDocsLayout>
+<config v="Release" />
+<AutoUpdate v="true" />
+</CyGuid_843a90a4-0c4b-4e44-991d-05e7fb117a21>
+</CyXmlSerializer>
