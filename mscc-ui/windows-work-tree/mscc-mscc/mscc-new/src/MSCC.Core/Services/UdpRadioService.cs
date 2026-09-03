@@ -1226,7 +1226,13 @@ public class UdpRadioService : IRadioService, IDisposable
     {
         if (!_started) return;
         await _transport.SendAsync(Opcodes.CMD_SET_AUDIO_DEVICE, new byte[] { device }, cancellationToken);
-        DebugMonitor.MonitorTextBoxText($" Send audio device: {device} ({(device == Opcodes.DIGITAL_SOUND_DEVICE ? "D" : "P")})");
+        string label = device switch
+        {
+            Opcodes.DIGITAL_SOUND_DEVICE => "D (digital)",
+            Opcodes.REMOTE_SOUND_DEVICE => "R (remote)",
+            _ => "P (phones)",
+        };
+        DebugMonitor.MonitorTextBoxText($" Send audio device: {device} ({label})");
     }
 
     public async Task SetTransverterAsync(bool on, CancellationToken cancellationToken = default)

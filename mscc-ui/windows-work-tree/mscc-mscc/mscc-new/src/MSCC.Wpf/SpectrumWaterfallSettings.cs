@@ -72,6 +72,12 @@ public static class SpectrumWaterfallSettings
     /// </summary>
     public static bool ExternalElectronicKeyer { get; set; }
 
+    /// <summary>
+    /// When Phones audio path is selected: use remote operator mic (CMD_SET_AUDIO_DEVICE=2).
+    /// Ignored while Digital is selected (always sends 0). Sticky client pref.
+    /// </summary>
+    public static bool RemoteAudio { get; set; }
+
     // HF (Proficio) bank — field-tuned defaults (FT8 contrast on 20m)
     public static float WaterfallHfHighDb { get; set; } = -44f;
     public static float WaterfallHfLowDb { get; set; } = -106f;
@@ -665,6 +671,8 @@ public static class SpectrumWaterfallSettings
                     if (LineMatchesKey(line, "KEYER_MEM3")) KeyerMem3 = ClampKeyerMemText(ParseIniString(line, KeyerMem3));
                     if (LineMatchesKey(line, "EXTERNAL_ELECTRONIC_KEYER"))
                         ExternalElectronicKeyer = ParseIniBool(line, ExternalElectronicKeyer);
+                    if (LineMatchesKey(line, "REMOTE_AUDIO"))
+                        RemoteAudio = ParseIniBool(line, RemoteAudio);
                 }
 
                 // Migrate legacy single TUNE_POWER → dual AMP stores when new keys were missing.
@@ -857,6 +865,7 @@ public static class SpectrumWaterfallSettings
         UpdateOrAdd(lines, "KEYER_MEM2", EscapeKeyerMemForIni(KeyerMem2));
         UpdateOrAdd(lines, "KEYER_MEM3", EscapeKeyerMemForIni(KeyerMem3));
         UpdateOrAdd(lines, "EXTERNAL_ELECTRONIC_KEYER", ExternalElectronicKeyer ? "1" : "0");
+        UpdateOrAdd(lines, "REMOTE_AUDIO", RemoteAudio ? "1" : "0");
 
         File.WriteAllLines(_iniPath, lines);
     }

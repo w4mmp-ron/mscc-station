@@ -308,7 +308,7 @@ public interface IRadioService : IDisposable
     Task SetPhonesMicGainLevelAsync(int level, CancellationToken cancellationToken = default); // 0-100 phones
     Task SetDigitalVolumeLevelAsync(int level, CancellationToken cancellationToken = default); // 0-100 digital
     Task SetDigitalMicGainLevelAsync(int level, CancellationToken cancellationToken = default); // 0-100 digital
-    Task SetAudioDeviceAsync(byte device, CancellationToken cancellationToken = default); // 0 = DIGITAL_SOUND_DEVICE, 1 = PHONES_SOUND_DEVICE
+    Task SetAudioDeviceAsync(byte device, CancellationToken cancellationToken = default); // 0=Digital, 1=Phones, 2=Remote
 
     event Action<int> SpeakerVolumeReported;
     event Action<int> MicVolumeReported;

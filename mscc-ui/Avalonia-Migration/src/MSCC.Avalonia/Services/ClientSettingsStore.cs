@@ -44,6 +44,11 @@ public sealed class ClientSettings
     public int DMicGain { get; set; } = 40;
     public bool IsDigitalAudio { get; set; }
 
+    /// <summary>
+    /// With Phones path: CMD_SET_AUDIO_DEVICE=2 (remote mic). Ignored while Digital.
+    /// </summary>
+    public bool RemoteAudio { get; set; }
+
     // RIT (offset only; On restored off for safety unless user re-enables)
     public int RitOffset { get; set; }
     public bool RitOn { get; set; }
@@ -229,6 +234,7 @@ public static class ClientSettingsStore
             sb.AppendLine($"D_VOLUME={s.DVolume}");
             sb.AppendLine($"D_MIC={s.DMicGain}");
             sb.AppendLine($"DIGITAL_AUDIO={(s.IsDigitalAudio ? "1" : "0")}");
+            sb.AppendLine($"REMOTE_AUDIO={(s.RemoteAudio ? "1" : "0")}");
             sb.AppendLine();
             sb.AppendLine("# RIT");
             sb.AppendLine($"RIT_ON={(s.RitOn ? "1" : "0")}");
@@ -407,6 +413,9 @@ public static class ClientSettingsStore
                 break;
             case "DIGITAL_AUDIO":
                 s.IsDigitalAudio = IsTruthy(val);
+                break;
+            case "REMOTE_AUDIO":
+                s.RemoteAudio = IsTruthy(val);
                 break;
 
             case "RIT_ON":

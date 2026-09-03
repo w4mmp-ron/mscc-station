@@ -95,6 +95,11 @@
                     Classes.mscc-selected="{Binding IsDigitalAudio}"
                     ToolTip.Tip="Phones = operator speaker/mic (P)&#x0a;Digital = VAC / digi apps (D)"/>
           </StackPanel>
+          <CheckBox Content="Remote Audio"
+                    IsChecked="{Binding RemoteAudio}"
+                    IsEnabled="{Binding RemoteAudioCheckboxEnabled}"
+                    FontSize="10" Foreground="#CCC" Margin="0,0,0,2"
+                    ToolTip.Tip="Phones + checked → mic from remote PC (MsccRemotePhones UDP 9101). Digital always stays on the radio host."/>
 
           <!-- Filters / Step (live when connected) -->
           <TextBlock Classes="mscc-section" Text="FILTERS / STEP"/>

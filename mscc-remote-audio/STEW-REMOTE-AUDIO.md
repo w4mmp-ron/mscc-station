@@ -104,8 +104,10 @@ Pi log (trans): `CMD_SET_AUDIO_DEVICE REMOTE done` and, with MsccRemotePhones TX
 
 ## Checklist for Stew
 
-1. [ ] Constant `REMOTE_SOUND_DEVICE = 2` (or equivalent) next to `DIGITAL` / `PHONES`  
-2. [ ] **Remote Audio** checkbox on UI  
-3. [ ] Phones + checked → send **2**; Phones + unchecked → **1**; Digital → always **0**  
-4. [ ] Optional: disable/grey checkbox while Digital is selected  
-5. [ ] Confirm Phones mic gain still applies when mode is **2** (server uses Phones levels)  
+1. [x] Constant `REMOTE_SOUND_DEVICE = 2` (or equivalent) next to `DIGITAL` / `PHONES`  
+2. [x] **Remote Audio** checkbox on UI (WPF left rail + Avalonia left rail)  
+3. [x] Phones + checked → send **2**; Phones + unchecked → **1**; Digital → always **0**  
+4. [x] Optional: disable/grey checkbox while Digital is selected  
+5. [ ] Confirm Phones mic gain still applies when mode is **2** (server uses Phones levels) — field test  
+
+Sticky: WPF `REMOTE_AUDIO` in `MSCC_Client.ini`; Avalonia `REMOTE_AUDIO` in `mscc-avalonia.ini`.

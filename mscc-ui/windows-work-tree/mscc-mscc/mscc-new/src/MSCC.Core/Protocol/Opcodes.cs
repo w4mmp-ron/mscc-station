@@ -108,6 +108,8 @@ public static class Opcodes
     public const byte CMD_SET_AUDIO_DEVICE = 0x9B;
     public const byte DIGITAL_SOUND_DEVICE = 0;
     public const byte PHONES_SOUND_DEVICE = 1;
+    /// <summary>Operator mic via MSA1 UDP (MsccRemotePhones → sdrcore-trans). Phones levels apply.</summary>
+    public const byte REMOTE_SOUND_DEVICE = 2;
 
     // Status & Control
     public const byte CMD_SET_HDSDR_STATUS         = 0xF0;

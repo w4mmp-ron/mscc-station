@@ -266,6 +266,8 @@ public partial class MainViewModel : ViewModelBase, IDisposable
     [ObservableProperty] private int _dMicGain = 40;
     /// <summary>false = Phones/operator (P), true = Digital/VAC (D).</summary>
     [ObservableProperty] private bool _isDigitalAudio;
+    /// <summary>With Phones: CMD_SET_AUDIO_DEVICE=2 (remote mic). Sticky; ignored on Digital.</summary>
+    [ObservableProperty] private bool _remoteAudio;
     [ObservableProperty] private int _ritOffset;
     [ObservableProperty] private bool _ritOn;
     [ObservableProperty] private double _spectrumZoom = 1;
@@ -517,6 +519,9 @@ public partial class MainViewModel : ViewModelBase, IDisposable
     public string StubTip => "Layout placeholder — not wired yet";
     /// <summary>Left-rail Audio path button: Phones or Digital.</summary>
     public string AudioPathButtonText => IsDigitalAudio ? "Digital" : "Phones";
+
+    /// <summary>Remote Audio checkbox enabled only on Phones path.</summary>
+    public bool RemoteAudioCheckboxEnabled => !IsDigitalAudio;
 
     /// <summary>User may press PTT/TUN only when connected and server is not locking TX.</summary>
     public bool CanUserControlTransmit => IsConnected && !IsBusy && !TxSetByServer && _radio != null;
@@ -1499,23 +1504,40 @@ public partial class MainViewModel : ViewModelBase, IDisposable
             $"Digital Mic {value}");
     }
 
+    private byte ResolveAudioDeviceOpcode()
+    {
+        if (IsDigitalAudio)
+            return Opcodes.DIGITAL_SOUND_DEVICE;
+        if (RemoteAudio)
+            return Opcodes.REMOTE_SOUND_DEVICE;
+        return Opcodes.PHONES_SOUND_DEVICE;
+    }
+
     partial void OnIsDigitalAudioChanged(bool value)
     {
         OnPropertyChanged(nameof(AudioPathButtonText));
+        OnPropertyChanged(nameof(RemoteAudioCheckboxEnabled));
         ScheduleSaveClientSettings();
 
         if (_suppressAudioSend) return;
 
+        byte device = ResolveAudioDeviceOpcode();
+        string label = device switch
+        {
+            Opcodes.DIGITAL_SOUND_DEVICE => "Digital (0)",
+            Opcodes.REMOTE_SOUND_DEVICE => "Remote (2)",
+            _ => "Phones (1)",
+        };
+
         if (CanOperate() && _radio != null)
         {
-            byte device = value ? Opcodes.DIGITAL_SOUND_DEVICE : Opcodes.PHONES_SOUND_DEVICE;
             _ = SendAudioAsync(
                 () => _radio.SetAudioDeviceAsync(device),
-                $"Audio path → {(value ? "Digital (D)" : "Phones (P)")}");
+                $"Audio device → {label}");
         }
         else
         {
-            AppendLog($"Audio path → {(value ? "Digital" : "Phones")} (not connected)");
+            AppendLog($"Audio device → {label} (not connected)");
         }
 
         // Match WPF: P→D forces CMP off; D→P restores session preferred CMP.
@@ -1534,6 +1556,31 @@ public partial class MainViewModel : ViewModelBase, IDisposable
             else if (!_suppressCompressionCommand)
                 _ = SendCompressionStateAsync(_sessionCompressionOn);
             AppendLog($"CMP restored for phones (P): {_sessionCompressionOn}");
+        }
+    }
+
+    partial void OnRemoteAudioChanged(bool value)
+    {
+        ScheduleSaveClientSettings();
+        if (_suppressAudioSend) return;
+
+        if (IsDigitalAudio)
+        {
+            AppendLog("Remote Audio sticky saved (inactive while Audio=Digital)");
+            return;
+        }
+
+        byte device = ResolveAudioDeviceOpcode();
+        string label = device == Opcodes.REMOTE_SOUND_DEVICE ? "Remote (2)" : "Phones (1)";
+        if (CanOperate() && _radio != null)
+        {
+            _ = SendAudioAsync(
+                () => _radio.SetAudioDeviceAsync(device),
+                $"Audio device → {label}");
+        }
+        else
+        {
+            AppendLog($"Audio device → {label} (not connected)");
         }
     }
 
@@ -4751,7 +4798,9 @@ public partial class MainViewModel : ViewModelBase, IDisposable
             DVolume = Math.Clamp(s.DVolume, 0, 100);
             DMicGain = Math.Clamp(s.DMicGain, 0, 100);
             IsDigitalAudio = s.IsDigitalAudio;
+            RemoteAudio = s.RemoteAudio;
             _suppressAudioSend = false;
+            OnPropertyChanged(nameof(RemoteAudioCheckboxEnabled));
 
             _suppressRitSend = true;
             RitOffset = s.RitOffset;
@@ -4908,6 +4957,7 @@ public partial class MainViewModel : ViewModelBase, IDisposable
             DVolume = DVolume,
             DMicGain = DMicGain,
             IsDigitalAudio = IsDigitalAudio,
+            RemoteAudio = RemoteAudio,
             RitOn = RitOn,
             RitOffset = RitOffset,
             CwKeyerMode = CwKeyerMode,
@@ -4989,7 +5039,7 @@ public partial class MainViewModel : ViewModelBase, IDisposable
             // Audio path + levels
             try
             {
-                byte device = IsDigitalAudio ? Opcodes.DIGITAL_SOUND_DEVICE : Opcodes.PHONES_SOUND_DEVICE;
+                byte device = ResolveAudioDeviceOpcode();
                 await _radio.SetAudioDeviceAsync(device).ConfigureAwait(true);
                 await _radio.SetPhonesVolumeLevelAsync(Math.Clamp(PVolume, 0, 100)).ConfigureAwait(true);
                 await _radio.SetPhonesMicGainLevelAsync(Math.Clamp(PMicGain, 0, 100)).ConfigureAwait(true);
@@ -5446,8 +5496,22 @@ public partial class MainViewModel : ViewModelBase, IDisposable
         radio.AudioDeviceReported += dev =>
             PostToUi(() => ApplyReportedAudio(() =>
             {
-                IsDigitalAudio = dev == Opcodes.DIGITAL_SOUND_DEVICE;
-                AppendLog($"Audio device reported: {(IsDigitalAudio ? "D" : "P")}");
+                if (dev == Opcodes.DIGITAL_SOUND_DEVICE)
+                {
+                    IsDigitalAudio = true;
+                }
+                else
+                {
+                    IsDigitalAudio = false;
+                    RemoteAudio = (dev == Opcodes.REMOTE_SOUND_DEVICE);
+                }
+                string label = dev switch
+                {
+                    Opcodes.DIGITAL_SOUND_DEVICE => "D",
+                    Opcodes.REMOTE_SOUND_DEVICE => "R",
+                    _ => "P",
+                };
+                AppendLog($"Audio device reported: {dev} ({label})");
             }));
 
         // CW tab bidirectional reports

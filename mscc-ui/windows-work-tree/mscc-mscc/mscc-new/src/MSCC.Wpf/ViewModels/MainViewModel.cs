@@ -525,11 +525,49 @@ public partial class MainViewModel : ObservableObject, IDisposable
     /// </summary>
     [ObservableProperty]
     private bool _isDigitalAudio;
+
+    /// <summary>
+    /// With Phones selected: send CMD_SET_AUDIO_DEVICE=2 (remote mic via MsccRemotePhones).
+    /// Ignored while Digital is selected (always 0). Sticky REMOTE_AUDIO in MSCC_Client.ini.
+    /// </summary>
+    [ObservableProperty]
+    private bool _remoteAudio;
+
+    /// <summary>Remote Audio checkbox enabled only on Phones path.</summary>
+    public bool RemoteAudioCheckboxEnabled => !IsDigitalAudio;
+
+    private bool _suppressAudioDeviceSend;
+
+    /// <summary>0=Digital, 1=Phones local, 2=Remote (Phones + Remote Audio).</summary>
+    private byte ResolveAudioDeviceOpcode()
+    {
+        if (IsDigitalAudio)
+            return Opcodes.DIGITAL_SOUND_DEVICE;
+        if (RemoteAudio)
+            return Opcodes.REMOTE_SOUND_DEVICE;
+        return Opcodes.PHONES_SOUND_DEVICE;
+    }
+
+    private void SendResolvedAudioDevice(string reason)
+    {
+        if (_suppressAudioDeviceSend) return;
+        byte device = ResolveAudioDeviceOpcode();
+        _ = _radioService.SetAudioDeviceAsync(device);
+        string label = device switch
+        {
+            Opcodes.DIGITAL_SOUND_DEVICE => "Digital (0)",
+            Opcodes.REMOTE_SOUND_DEVICE => "Remote (2)",
+            _ => "Phones (1)",
+        };
+        MonitorTextBoxText($" Audio device → {label} ({reason})");
+    }
+
     partial void OnIsDigitalAudioChanged(bool value)
     {
-        byte device = value ? Opcodes.DIGITAL_SOUND_DEVICE : Opcodes.PHONES_SOUND_DEVICE;
-        _ = _radioService.SetAudioDeviceAsync(device);
-        MonitorTextBoxText($" IsDigitalAudio set: {(value ? "D" : "P")}");
+        OnPropertyChanged(nameof(RemoteAudioCheckboxEnabled));
+        SendResolvedAudioDevice(value ? "path→D" : "path→P");
+
+        if (_suppressAudioDeviceSend) return;
 
         if (value)
         {
@@ -554,6 +592,22 @@ public partial class MainViewModel : ObservableObject, IDisposable
             }
             MonitorTextBoxText($" CMP restored for phones (P): {_sessionCompressionOn} → sent to server");
         }
+    }
+
+    partial void OnRemoteAudioChanged(bool value)
+    {
+        if (!_suppressAudioDeviceSend)
+        {
+            SpectrumWaterfallSettings.RemoteAudio = value;
+            SpectrumWaterfallSettings.Save();
+        }
+        if (IsDigitalAudio)
+        {
+            if (!_suppressAudioDeviceSend)
+                MonitorTextBoxText(" Remote Audio sticky saved (inactive while Audio=Digital)");
+            return;
+        }
+        SendResolvedAudioDevice(value ? "Remote Audio ON" : "Remote Audio OFF");
     }
 
     /// <summary>
@@ -1113,6 +1167,7 @@ public partial class MainViewModel : ObservableObject, IDisposable
 
         // External electronic keyer / legacy (sticky client + mscc.ini PROFICIO-MKII)
         _externalElectronicKeyer = SpectrumWaterfallSettings.ExternalElectronicKeyer;
+        _remoteAudio = SpectrumWaterfallSettings.RemoteAudio;
         // Keep mscc.ini aligned so next ms-sdr Start sees the sticky choice.
         try
         {
@@ -4615,8 +4670,27 @@ public partial class MainViewModel : ObservableObject, IDisposable
         svc.DigitalMicGainLevelReported += v => { RadioState.DMicGain = v; MonitorTextBoxText($" DigitalMicGainLevel reported: {v}"); };
         svc.AudioDeviceReported += dev =>
         {
-            IsDigitalAudio = (dev == Opcodes.DIGITAL_SOUND_DEVICE);
-            MonitorTextBoxText($" AudioDevice reported: {dev} ({(IsDigitalAudio ? "D" : "P")})");
+            _suppressAudioDeviceSend = true;
+            try
+            {
+                if (dev == Opcodes.DIGITAL_SOUND_DEVICE)
+                {
+                    IsDigitalAudio = true;
+                }
+                else
+                {
+                    IsDigitalAudio = false;
+                    RemoteAudio = (dev == Opcodes.REMOTE_SOUND_DEVICE);
+                }
+            }
+            finally { _suppressAudioDeviceSend = false; }
+            string label = dev switch
+            {
+                Opcodes.DIGITAL_SOUND_DEVICE => "D",
+                Opcodes.REMOTE_SOUND_DEVICE => "R",
+                _ => "P",
+            };
+            MonitorTextBoxText($" AudioDevice reported: {dev} ({label})");
         };
 
         svc.TxSetByServerReported += v =>
