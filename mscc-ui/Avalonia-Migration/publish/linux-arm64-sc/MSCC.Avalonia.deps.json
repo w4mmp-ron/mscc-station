@@ -7,7 +7,7 @@
   "targets": {
     ".NETCoreApp,Version=v9.0": {},
     ".NETCoreApp,Version=v9.0/linux-arm64": {
-      "MSCC.Avalonia/0.6.36": {
+      "MSCC.Avalonia/0.6.39": {
         "dependencies": {
           "Avalonia": "12.1.1",
           "Avalonia.Desktop": "12.1.1",
@@ -1044,7 +1044,7 @@
     }
   },
   "libraries": {
-    "MSCC.Avalonia/0.6.36": {
+    "MSCC.Avalonia/0.6.39": {
       "type": "project",
       "serviceable": false,
       "sha512": ""

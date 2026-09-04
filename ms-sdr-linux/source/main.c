@@ -491,7 +491,10 @@ void* Flusher_thread(void* t) {
                 SDRcore_trans_send_param(CMD_SET_KEEP_ALIVE, KEEP_ALIVE_FROM_CLIENT);
             }
             if (G_MSCC_Initialized == 1 || G_client_session_active) {
-                if (gui_count++ >= 15) {
+                /* Was 15 (~15s). Under pan flood, client 0xF4 can be delayed on the
+                 * shared UDP socket; releasing the session stops server→client KA and
+                 * the UI reports keep-alive lost even though the radio is fine. */
+                if (gui_count++ >= 45) {
 #if defined(MS_SDR_NO_USB)
                     previous_heart_beat = G_Heart_beat;
 #else

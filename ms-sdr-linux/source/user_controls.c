@@ -401,6 +401,8 @@ int User_Controls_Init() {
                 strcpy(field, "PANADAPTER_REFRESH");
                 status = Parse_User_Controls_record(init_record, field);
                 if (status != -1) {
+                    /* 0 kills spectrum (panReady never set); heal sticky poison from old clients. */
+                    if (status < 1) status = 6;
                     User_Controls.Panadapter_Refresh = status;
                     print_time(0);
                     fprintf(G_fp_logfile, "[%d] User_Controls_Init . PANADAPTER_REFRESH: %d\n", line_number++, status);
@@ -1436,6 +1438,14 @@ int User_Controls_Process(uint8_t command, char *buf, byte extened) {
                 break;
 
             case CMD_GET_SET_PANADAPTER_REFRESH:
+                /* Blocks between panReady. 0 never equals panblocks++ → silent no spectrum. */
+                if (t_opcode_data < 1) {
+                    print_time(0);
+                    fprintf(G_fp_logfile,
+                        "[%d] User_Controls_Process . CMD_GET_SET_PANADAPTER_REFRESH: %d invalid — using 6\n",
+                        line_number++, t_opcode_data);
+                    t_opcode_data = 6;
+                }
                 SDRcore_recv_send_param(CMD_GET_SET_PANADAPTER_REFRESH, t_opcode_data);
                 User_Controls.Panadapter_Refresh = t_opcode_data;
                 print_time(0);

@@ -797,7 +797,8 @@ void *UDP_Thread(void *my_param) {
                 break;
 
             case CMD_GET_SET_PANADAPTER_REFRESH:
-                G_Panadapter_Blocks = t_opcode_data;
+                /* 0 never matches panblocks++ → panReady stuck → no spectrum. */
+                G_Panadapter_Blocks = (t_opcode_data < 1) ? 6 : t_opcode_data;
                 print_time();
                 fprintf(G_fp_logfile, "[%d] UDP Thread -> CMD_GET_SET_PANADAPTER_REFRESH: %d\n", line_number++,
                         G_Panadapter_Blocks);

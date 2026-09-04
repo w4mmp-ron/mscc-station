@@ -36,6 +36,19 @@ public sealed class UdpRadioTransport : IDisposable
         {
             _udpClient = new UdpClient();           // ephemeral port
         }
+
+        // Panadapter (0xD5) shares this socket with keep-alives. Default OS UDP buffers
+        // are small; once spectrum flows, KA packets get dropped → server Session_Release
+        // → client "keep-alive lost". Enlarge before Start.
+        try
+        {
+            _udpClient.Client.ReceiveBufferSize = 4 * 1024 * 1024;
+            _udpClient.Client.SendBufferSize = 256 * 1024;
+        }
+        catch
+        {
+            /* best-effort — some platforms clamp */
+        }
     }
 
     private static IPAddress ResolveHostOrIp(string hostOrIp)

@@ -67,9 +67,10 @@ public class UdpRadioService : IRadioService, IDisposable
 
     /// <summary>
     /// No server I'm-Alive for this long → ServerKeepAliveLost.
-    /// Client sends every 1s; 10s ≈ several missed replies without being too twitchy.
+    /// Client sends ~4×/s; 20s tolerates brief pan floods on the shared UDP path
+    /// without being so long that a real disconnect is invisible.
     /// </summary>
-    private const int KeepAliveReceiveTimeoutMs = 10000;
+    private const int KeepAliveReceiveTimeoutMs = 20000;
 
     /// <summary>After Process.Start of backends, wait before opening UDP / sending 0xFE (was 600ms — racey).</summary>
     private const int SubsystemLaunchSettleMs = 2000;
@@ -196,15 +197,16 @@ public class UdpRadioService : IRadioService, IDisposable
     {
         SetPanResolutionLocal(bins);
         if (!_started) return;
-        // Index 0/1/2 → SDRcore G_Panadapter_Pixels 800/1600/3200
-        short index = bins switch
-        {
-            1600 => 1,
-            3200 => 2,
-            _ => 0
-        };
-        await _transport.SendAsync(Opcodes.CMD_GET_SET_PANADAPTER_REFRESH, index, cancellationToken);
-        DebugMonitor.MonitorTextBoxText($" Send pan resolution: {bins} bins (index {index})");
+
+        // Linux sdrcore: CMD_GET_SET_PANADAPTER_REFRESH (0x5F) sets G_Panadapter_Blocks
+        // (FFT frames between panReady), NOT pixel width. Sending index 0/1/2 as we used
+        // to do sets Blocks=0 and panReady never fires → silent no-spectrum.
+        // Client assembly for 800/1600/3200 is local-only until the server grows a real
+        // pan-pixel opcode. Heal refresh to a safe default so spectrum keeps flowing.
+        const short safeRefreshBlocks = 6;
+        await _transport.SendAsync(Opcodes.CMD_GET_SET_PANADAPTER_REFRESH, safeRefreshBlocks, cancellationToken);
+        DebugMonitor.MonitorTextBoxText(
+            $" Pan resolution local={bins} bins; sent pan refresh blocks={safeRefreshBlocks} (0x5F)");
     }
 
     private UdpRadioTransport CreateTransport()
@@ -393,7 +395,9 @@ public class UdpRadioService : IRadioService, IDisposable
     {
         StopKeepAliveTimer();
 
-        _keepAliveTimer = new System.Timers.Timer(1000); // ~1s interval (original state machine + counter >=8 produced similar cadence)
+        // 250ms: more client heartbeats through the shared UDP queue when pan floods 8888.
+        // Server Session_Release fires if G_Heart_beat stalls (~15s); denser KA reduces drops.
+        _keepAliveTimer = new System.Timers.Timer(250);
         _keepAliveTimer.Elapsed += async (s, e) =>
         {
             if (!_started || !(_transport?.IsConnected ?? false))
@@ -402,7 +406,7 @@ public class UdpRadioService : IRadioService, IDisposable
             try
             {
                 await _transport.SendAsync(Opcodes.CMD_SET_KEEP_ALIVE, (short)1);
-                // "I'm Alive" logging removed per user request (too noisy at 1 Hz)
+                // "I'm Alive" logging removed per user request (too noisy)
             }
             catch (Exception ex)
             {

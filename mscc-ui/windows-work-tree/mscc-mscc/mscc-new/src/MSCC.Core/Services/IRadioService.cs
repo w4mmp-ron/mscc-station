@@ -147,8 +147,9 @@ public interface IRadioService : IDisposable
     Task SetModeAsync(string mode, CancellationToken cancellationToken = default);
 
     /// <summary>
-    /// Panadapter resolution: 800, 1600, or 3200 bins across 72 kHz (Normal / High / Max).
-    /// Sent as CMD_GET_SET_PANADAPTER_REFRESH (0x5F) index 0/1/2.
+    /// Panadapter resolution for client assembly: 800, 1600, or 3200 bins (Normal / High / Max).
+    /// Also sends a safe pan refresh rate (0x5F) so Linux G_Panadapter_Blocks stays ≥1
+    /// (legacy clients that sent index 0 killed spectrum silently).
     /// </summary>
     Task SetPanResolutionAsync(int bins, CancellationToken cancellationToken = default);
 
