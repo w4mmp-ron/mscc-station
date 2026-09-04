@@ -54,6 +54,14 @@ More detail (older layout notes may still appear under `mscc-ui/README.md`) — 
 
 ---
 
+## Pi install kit (start here for RPi)
+
+| Path | Notes |
+|------|--------|
+| **`pi-install/`** | **Current `.deb` packages + one how-to** — servers, Avalonia UI, remote audio, firmware upload, upgrades |
+| **`pi-install/INSTALL.md`** | End-to-end install flow |
+| **`pi-install/packages/`** | Latest: portaudio, `mscc`, init-gui, `mscc-ui` |
+
 ## Linux backends & packaging
 
 | Path | Notes |
@@ -61,7 +69,7 @@ More detail (older layout notes may still appear under `mscc-ui/README.md`) — 
 | `ms-sdr-linux/` | Linux command hub |
 | `SDRcore-recv-linux/` | RX DSP (+ remote phones stream) |
 | `SDRcore-trans-linux/` | TX DSP (+ remote mic UDP) |
-| `mscc-deb/` | Pi `.deb` packaging / install docs |
+| `mscc-deb/` | Pi `.deb` packaging / longer install prose |
 | `mscc-binaries/` | Built server binaries |
 | `mscc-init-linux/` / `mscc-init-gui/` / `mscc-init-files-linux/` | Init tools & seed INIs |
 | `mscc-portaudio/` / `portaudio*` / `oboe-main/` | Audio stack / packaging |
