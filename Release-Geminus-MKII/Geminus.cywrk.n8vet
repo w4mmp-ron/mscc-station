@@ -245,6 +245,52 @@
 <VisibleNodeIds>
 <v>Geminus</v>
 <v>Geminus\Geminus</v>
+<v>Geminus\Geminus\DP8051</v>
+<v>Geminus\Geminus\DP8051\DP8051_Keil_951</v>
+<v>Geminus\Geminus\DP8051\DP8051_Keil_951\Debug</v>
+<v>Geminus\Geminus\DP8051\DP8051_Keil_951\Debug\Listing Files</v>
+<v>Geminus\Geminus\DP8051\DP8051_Keil_951\Debug\Listing Files\audio.lst</v>
+<v>Geminus\Geminus\DP8051\DP8051_Keil_951\Debug\Listing Files\band.lst</v>
+<v>Geminus\Geminus\DP8051\DP8051_Keil_951\Debug\Listing Files\Band_Control.lst</v>
+<v>Geminus\Geminus\DP8051\DP8051_Keil_951\Debug\Listing Files\Band_Control_PM.lst</v>
+<v>Geminus\Geminus\DP8051\DP8051_Keil_951\Debug\Listing Files\Bootloadable.lst</v>
+<v>Geminus\Geminus\DP8051\DP8051_Keil_951\Debug\Listing Files\BS0.lst</v>
+<v>Geminus\Geminus\DP8051\DP8051_Keil_951\Debug\Listing Files\BS1.lst</v>
+<v>Geminus\Geminus\DP8051\DP8051_Keil_951\Debug\Listing Files\BS2.lst</v>
+<v>Geminus\Geminus\DP8051\DP8051_Keil_951\Debug\Listing Files\Control.lst</v>
+<v>Geminus\Geminus\DP8051\DP8051_Keil_951\Debug\Listing Files\Control_PM.lst</v>
+<v>Geminus\Geminus\DP8051\DP8051_Keil_951\Debug\Listing Files\convert.lst</v>
+<v>Geminus\Geminus\DP8051\DP8051_Keil_951\Debug\Listing Files\cw.lst</v>
+<v>Geminus\Geminus\DP8051\DP8051_Keil_951\Debug\Listing Files\CW_Clock.lst</v>
+<v>Geminus\Geminus\DP8051\DP8051_Keil_951\Debug\Listing Files\CW_Hold_Control.lst</v>
+<v>Geminus\Geminus\DP8051\DP8051_Keil_951\Debug\Listing Files\CW_Hold_Control_PM.lst</v>
+<v>Geminus\Geminus\DP8051\DP8051_Keil_951\Debug\Listing Files\CW_Hold_Timer.lst</v>
+<v>Geminus\Geminus\DP8051\DP8051_Keil_951\Debug\Listing Files\CW_Hold_Timer_PM.lst</v>
+<v>Geminus\Geminus\DP8051\DP8051_Keil_951\Debug\Listing Files\CW_isr.lst</v>
+<v>Geminus\Geminus\DP8051\DP8051_Keil_951\Debug\Listing Files\cy_em_eeprom.lst</v>
+<v>Geminus\Geminus\DP8051\DP8051_Keil_951\Debug\Listing Files\CyBootAsmKeil.lst</v>
+<v>Geminus\Geminus\DP8051\DP8051_Keil_951\Debug\Listing Files\CyDmac.lst</v>
+<v>Geminus\Geminus\DP8051\DP8051_Keil_951\Debug\Listing Files\cyfitter_cfg.lst</v>
+<v>Geminus\Geminus\DP8051\DP8051_Keil_951\Debug\Listing Files\CyFlash.lst</v>
+<v>Geminus\Geminus\DP8051\DP8051_Keil_951\Debug\Listing Files\CyLib.lst</v>
+<v>Geminus\Geminus\DP8051\DP8051_Keil_951\Debug\Listing Files\cymem.lst</v>
+<v>Geminus\Geminus\DP8051\DP8051_Keil_951\Debug\Listing Files\cyPm.lst</v>
+<v>Geminus\Geminus\DP8051\DP8051_Keil_951\Debug\Listing Files\CySpc.lst</v>
+<v>Geminus\Geminus\DP8051\DP8051_Keil_951\Debug\Listing Files\cyutils.lst</v>
+<v>Geminus\Geminus\DP8051\DP8051_Keil_951\Debug\Listing Files\DieTemp_1.lst</v>
+<v>Geminus\Geminus\DP8051\DP8051_Keil_951\Debug\Listing Files\EEPROM.lst</v>
+<v>Geminus\Geminus\DP8051\DP8051_Keil_951\Debug\Listing Files\FRAC_CLK.lst</v>
+<v>Geminus\Geminus\DP8051\DP8051_Keil_951\Debug\Listing Files\FracN_api.lst</v>
+<v>Geminus\Geminus\DP8051\DP8051_Keil_951\Debug\Listing Files\I2C_DISPLAY.lst</v>
+<v>Geminus\Geminus\DP8051\DP8051_Keil_951\Debug\Listing Files\I2C_DISPLAY_BOOT.lst</v>
+<v>Geminus\Geminus\DP8051\DP8051_Keil_951\Debug\Listing Files\I2C_DISPLAY_INT.lst</v>
+<v>Geminus\Geminus\DP8051\DP8051_Keil_951\Debug\Listing Files\I2C_DISPLAY_MASTER.lst</v>
+<v>Geminus\Geminus\DP8051\DP8051_Keil_951\Debug\Listing Files\I2C_DISPLAY_PM.lst</v>
+<v>Geminus\Geminus\DP8051\DP8051_Keil_951\Debug\Listing Files\I2C_DISPLAY_SLAVE.lst</v>
+<v>Geminus\Geminus\DP8051\DP8051_Keil_951\Debug\Listing Files\I2S.lst</v>
+<v>Geminus\Geminus\DP8051\DP8051_Keil_951\Debug\Listing Files\I2S_PM.lst</v>
+<v>Geminus\Geminus\DP8051\DP8051_Keil_951\Debug\Listing Files\KeilStart.lst</v>
+<v>Geminus\Geminus\DP8051\DP8051_Keil_951\Debug\Listing Files\main.lst</v>
 </VisibleNodeIds>
 </CyGuid_2a325b3b-c96a-4e9f-b7a0-2c44ecb5f237>
 </TreeStates>
@@ -329,7 +375,7 @@
   Copyright (c) 2001-2016 Actipro Software LLC.  All rights reserved.
   http://www.actiprosoftware.com
 
---><DocumentLayout Version="1.0"><LayoutData><TabbedMdiRootContainer Orientation="Horizontal"><TabbedMdiContainer Size="1897, 703" SelectedTabbedMdiWindow="b7375005-e0d1-4212-b377-8be5202026a7"><ToolWindow Key="Start Page:bd4649ab-da6b-4d04-a663-c722b8bf99db:Start Page" Guid="b7375005-e0d1-4212-b377-8be5202026a7" /></TabbedMdiContainer></TabbedMdiRootContainer><FloatingContainers /></LayoutData></DocumentLayout>]]></OpenDocsLayout>
+--><DocumentLayout Version="1.0"><LayoutData><TabbedMdiRootContainer Orientation="Horizontal" /><FloatingContainers /></LayoutData></DocumentLayout>]]></OpenDocsLayout>
 <config v="" />
 <AutoUpdate v="true" />
 </CyGuid_843a90a4-0c4b-4e44-991d-05e7fb117a21>
