@@ -354,6 +354,8 @@ public interface IRadioService : IDisposable
     event Action<int> CwWeightReported;
     event Action<int> CwWpmReported;
     event Action<int> CwTxHoldReported;
+    /// <summary>ms-sdr reports SET_MEM_TEXT_WPM (0x76) from cw.ini / init.</summary>
+    event Action<int> CwMemTextWpmReported;
 
     event Action<double> ProficioTempReported; // °C
     event Action<double> AmpTempReported;

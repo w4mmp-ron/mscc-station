@@ -590,126 +590,156 @@
                                 </Style>
                             </TextBlock.Style>
                         </TextBlock>
-                        <!-- Lists row: Mode, Spacing, Paddle, Weight, Pitch -->
-                        <StackPanel Orientation="Horizontal" Margin="0,0,0,10">
-                            <StackPanel Margin="5,0" IsEnabled="{Binding PicKeyerControlsEnabled}">
-                                <TextBlock Text="KEYER MODE" Foreground="White" FontSize="10" HorizontalAlignment="Center"/>
-                                <ListBox Height="75" ItemsSource="{Binding CwKeyerModeOptions}" SelectedIndex="{Binding CwKeyerMode, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" Background="#FF222222" Foreground="White" ScrollViewer.VerticalScrollBarVisibility="Disabled" VirtualizingStackPanel.IsVirtualizing="False">
-                                    <ListBox.ItemContainerStyle>
-                                        <Style TargetType="ListBoxItem">
-                                            <Setter Property="Padding" Value="2,1"/>
-                                            <Setter Property="Margin" Value="0"/>
-                                            <Setter Property="Background" Value="Transparent"/>
-                                            <Setter Property="Foreground" Value="White"/>
-                                        </Style>
-                                    </ListBox.ItemContainerStyle>
-                                </ListBox>
+                        <!-- Left: listboxes. Right: SPEED / FARNSWORTH / HOLD stacked, then PHONES / QSK (Auto+Auto so right sits tight) -->
+                        <Grid Margin="0,0,0,10" HorizontalAlignment="Left">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="Auto"/>
+                                <ColumnDefinition Width="Auto"/>
+                            </Grid.ColumnDefinitions>
+                            <StackPanel Grid.Column="0" Orientation="Horizontal" VerticalAlignment="Top">
+                                <StackPanel Margin="5,0" IsEnabled="{Binding PicKeyerControlsEnabled}">
+                                    <TextBlock Text="KEYER MODE" Foreground="White" FontSize="10" HorizontalAlignment="Center"/>
+                                    <ListBox Height="75" ItemsSource="{Binding CwKeyerModeOptions}" SelectedIndex="{Binding CwKeyerMode, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" Background="#FF222222" Foreground="White" ScrollViewer.VerticalScrollBarVisibility="Disabled" VirtualizingStackPanel.IsVirtualizing="False">
+                                        <ListBox.ItemContainerStyle>
+                                            <Style TargetType="ListBoxItem">
+                                                <Setter Property="Padding" Value="2,1"/>
+                                                <Setter Property="Margin" Value="0"/>
+                                                <Setter Property="Background" Value="Transparent"/>
+                                                <Setter Property="Foreground" Value="White"/>
+                                            </Style>
+                                        </ListBox.ItemContainerStyle>
+                                    </ListBox>
+                                </StackPanel>
+                                <StackPanel Margin="5,0" IsEnabled="{Binding PicKeyerControlsEnabled}">
+                                    <TextBlock Text="SPACING" Foreground="White" FontSize="10" HorizontalAlignment="Center"/>
+                                    <ListBox Height="60" ItemsSource="{Binding CwSpacingOptions}" SelectedIndex="{Binding CwSpacing, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" Background="#FF222222" Foreground="White" ScrollViewer.VerticalScrollBarVisibility="Disabled" VirtualizingStackPanel.IsVirtualizing="False">
+                                        <ListBox.ItemContainerStyle>
+                                            <Style TargetType="ListBoxItem">
+                                                <Setter Property="Padding" Value="2,1"/>
+                                                <Setter Property="Margin" Value="0"/>
+                                                <Setter Property="Background" Value="Transparent"/>
+                                                <Setter Property="Foreground" Value="White"/>
+                                            </Style>
+                                        </ListBox.ItemContainerStyle>
+                                    </ListBox>
+                                </StackPanel>
+                                <StackPanel Margin="5,0" IsEnabled="{Binding PicKeyerControlsEnabled}">
+                                    <TextBlock Text="PADDLE" Foreground="White" FontSize="10" HorizontalAlignment="Center"/>
+                                    <ListBox Height="60" ItemsSource="{Binding CwPaddleOptions}" SelectedIndex="{Binding CwPaddle, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" Background="#FF222222" Foreground="White" ScrollViewer.VerticalScrollBarVisibility="Disabled" VirtualizingStackPanel.IsVirtualizing="False">
+                                        <ListBox.ItemContainerStyle>
+                                            <Style TargetType="ListBoxItem">
+                                                <Setter Property="Padding" Value="2,1"/>
+                                                <Setter Property="Margin" Value="0"/>
+                                                <Setter Property="Background" Value="Transparent"/>
+                                                <Setter Property="Foreground" Value="White"/>
+                                            </Style>
+                                        </ListBox.ItemContainerStyle>
+                                    </ListBox>
+                                </StackPanel>
+                                <StackPanel Margin="5,0" IsEnabled="{Binding PicKeyerControlsEnabled}">
+                                    <TextBlock Text="WEIGHT" Foreground="White" FontSize="10" HorizontalAlignment="Center"/>
+                                    <ListBox Height="75" ItemsSource="{Binding CwWeightOptions}" SelectedIndex="{Binding CwWeightIndex, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" Background="#FF222222" Foreground="White" ScrollViewer.VerticalScrollBarVisibility="Disabled" VirtualizingStackPanel.IsVirtualizing="False">
+                                        <ListBox.ItemContainerStyle>
+                                            <Style TargetType="ListBoxItem">
+                                                <Setter Property="Padding" Value="2,1"/>
+                                                <Setter Property="Margin" Value="0"/>
+                                                <Setter Property="Background" Value="Transparent"/>
+                                                <Setter Property="Foreground" Value="White"/>
+                                            </Style>
+                                        </ListBox.ItemContainerStyle>
+                                    </ListBox>
+                                </StackPanel>
+                                <StackPanel Margin="5,0">
+                                    <TextBlock Text="PITCH" Foreground="White" FontSize="10" HorizontalAlignment="Center"/>
+                                    <ListBox Height="100" ItemsSource="{Binding CwPitchOptions}" SelectedIndex="{Binding CwPitchIndex, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" Background="#FF222222" Foreground="White" ScrollViewer.VerticalScrollBarVisibility="Disabled" VirtualizingStackPanel.IsVirtualizing="False">
+                                        <ListBox.ItemContainerStyle>
+                                            <Style TargetType="ListBoxItem">
+                                                <Setter Property="Padding" Value="2,1"/>
+                                                <Setter Property="Margin" Value="0"/>
+                                                <Setter Property="Background" Value="Transparent"/>
+                                                <Setter Property="Foreground" Value="White"/>
+                                            </Style>
+                                        </ListBox.ItemContainerStyle>
+                                    </ListBox>
+                                </StackPanel>
                             </StackPanel>
-                            <StackPanel Margin="5,0" IsEnabled="{Binding PicKeyerControlsEnabled}">
-                                <TextBlock Text="SPACING" Foreground="White" FontSize="10" HorizontalAlignment="Center"/>
-                                <ListBox Height="60" ItemsSource="{Binding CwSpacingOptions}" SelectedIndex="{Binding CwSpacing, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" Background="#FF222222" Foreground="White" ScrollViewer.VerticalScrollBarVisibility="Disabled" VirtualizingStackPanel.IsVirtualizing="False">
-                                    <ListBox.ItemContainerStyle>
-                                        <Style TargetType="ListBoxItem">
-                                            <Setter Property="Padding" Value="2,1"/>
-                                            <Setter Property="Margin" Value="0"/>
-                                            <Setter Property="Background" Value="Transparent"/>
-                                            <Setter Property="Foreground" Value="White"/>
-                                        </Style>
-                                    </ListBox.ItemContainerStyle>
-                                </ListBox>
+                            <StackPanel Grid.Column="1" Margin="8,0,0,0" VerticalAlignment="Top">
+                                <StackPanel Orientation="Horizontal" Margin="0,0,0,8"
+                                            IsEnabled="{Binding PicKeyerControlsEnabled}">
+                                    <TextBlock Text="SPEED" Width="78" Foreground="White" VerticalAlignment="Center" FontSize="10"/>
+                                    <Border Background="#FF444444" BorderThickness="1" BorderBrush="#FF888888" Padding="3,1" MinWidth="35">
+                                        <TextBlock Text="{Binding CwSpeed}" FontSize="11" FontWeight="Bold" Foreground="#00FFAA" HorizontalAlignment="Center"/>
+                                    </Border>
+                                    <Button Content="-" Width="18" Height="18" Margin="2,0" Command="{Binding DecCwSpeedCommand}" Foreground="White" FontSize="9">
+                                        <Button.Style>
+                                            <Style TargetType="Button" BasedOn="{StaticResource {x:Type Button}}">
+                                                <Setter Property="Background" Value="#FF333333"/>
+                                                <Setter Property="BorderBrush" Value="#FF666666"/>
+                                            </Style>
+                                        </Button.Style>
+                                    </Button>
+                                    <Button Content="+" Width="18" Height="18" Margin="0,0,2,0" Command="{Binding IncCwSpeedCommand}" Foreground="White" FontSize="9">
+                                        <Button.Style>
+                                            <Style TargetType="Button" BasedOn="{StaticResource {x:Type Button}}">
+                                                <Setter Property="Background" Value="#FF333333"/>
+                                                <Setter Property="BorderBrush" Value="#FF666666"/>
+                                            </Style>
+                                        </Button.Style>
+                                    </Button>
+                                    <TextBlock Text="WPM" Foreground="#D0D0D0" FontSize="9" VerticalAlignment="Center" Margin="4,0"/>
+                                </StackPanel>
+                                <StackPanel Orientation="Horizontal" Margin="0,0,0,8"
+                                            IsEnabled="{Binding PicKeyerControlsEnabled}"
+                                            ToolTip="Farnsworth for CQ memory play only. SPEED = letter speed; this opens gaps between letters/words (Off or 5–60). No effect on paddle.">
+                                    <TextBlock Text="FARNSWORTH" Width="78" Foreground="White" VerticalAlignment="Center" FontSize="10"/>
+                                    <Border Background="#FF444444" BorderThickness="1" BorderBrush="#FF888888" Padding="3,1" MinWidth="35">
+                                        <TextBlock Text="{Binding CwMemTextWpmLabel}" FontSize="11" FontWeight="Bold" Foreground="#00FFAA" HorizontalAlignment="Center"/>
+                                    </Border>
+                                    <Button Content="-" Width="18" Height="18" Margin="2,0" Command="{Binding DecCwMemTextWpmCommand}" Foreground="White" FontSize="9">
+                                        <Button.Style>
+                                            <Style TargetType="Button" BasedOn="{StaticResource {x:Type Button}}">
+                                                <Setter Property="Background" Value="#FF333333"/>
+                                                <Setter Property="BorderBrush" Value="#FF666666"/>
+                                            </Style>
+                                        </Button.Style>
+                                    </Button>
+                                    <Button Content="+" Width="18" Height="18" Margin="0,0,2,0" Command="{Binding IncCwMemTextWpmCommand}" Foreground="White" FontSize="9">
+                                        <Button.Style>
+                                            <Style TargetType="Button" BasedOn="{StaticResource {x:Type Button}}">
+                                                <Setter Property="Background" Value="#FF333333"/>
+                                                <Setter Property="BorderBrush" Value="#FF666666"/>
+                                            </Style>
+                                        </Button.Style>
+                                    </Button>
+                                    <TextBlock Text="WPM" Foreground="#D0D0D0" FontSize="9" VerticalAlignment="Center" Margin="4,0"/>
+                                </StackPanel>
+                                <StackPanel Orientation="Horizontal" Margin="0,0,0,10">
+                                    <TextBlock Text="HOLD" Width="78" Foreground="White" VerticalAlignment="Center" FontSize="10"/>
+                                    <Border Background="#FF444444" BorderThickness="1" BorderBrush="#FF888888" Padding="3,1" MinWidth="35">
+                                        <TextBlock Text="{Binding CwHold}" FontSize="11" FontWeight="Bold" Foreground="#00FFAA" HorizontalAlignment="Center"/>
+                                    </Border>
+                                    <Button Content="-" Width="18" Height="18" Margin="2,0" Command="{Binding DecCwHoldCommand}" Foreground="White" FontSize="9">
+                                        <Button.Style>
+                                            <Style TargetType="Button" BasedOn="{StaticResource {x:Type Button}}">
+                                                <Setter Property="Background" Value="#FF333333"/>
+                                                <Setter Property="BorderBrush" Value="#FF666666"/>
+                                            </Style>
+                                        </Button.Style>
+                                    </Button>
+                                    <Button Content="+" Width="18" Height="18" Margin="0,0,2,0" Command="{Binding IncCwHoldCommand}" Foreground="White" FontSize="9">
+                                        <Button.Style>
+                                            <Style TargetType="Button" BasedOn="{StaticResource {x:Type Button}}">
+                                                <Setter Property="Background" Value="#FF333333"/>
+                                                <Setter Property="BorderBrush" Value="#FF666666"/>
+                                            </Style>
+                                        </Button.Style>
+                                    </Button>
+                                    <TextBlock Text="ms" Foreground="#D0D0D0" FontSize="11" VerticalAlignment="Center" Margin="4,0"/>
+                                </StackPanel>
+                                <CheckBox Content="PHONES" IsChecked="{Binding CwPhones, Mode=TwoWay}" Foreground="White" Margin="0,0,0,6" FontSize="10"/>
+                                <CheckBox Content="POTENTIA / QSK" IsChecked="{Binding CwQsk, Mode=TwoWay}" Foreground="White" FontSize="10"/>
                             </StackPanel>
-                            <StackPanel Margin="5,0" IsEnabled="{Binding PicKeyerControlsEnabled}">
-                                <TextBlock Text="PADDLE" Foreground="White" FontSize="10" HorizontalAlignment="Center"/>
-                                <ListBox Height="60" ItemsSource="{Binding CwPaddleOptions}" SelectedIndex="{Binding CwPaddle, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" Background="#FF222222" Foreground="White" ScrollViewer.VerticalScrollBarVisibility="Disabled" VirtualizingStackPanel.IsVirtualizing="False">
-                                    <ListBox.ItemContainerStyle>
-                                        <Style TargetType="ListBoxItem">
-                                            <Setter Property="Padding" Value="2,1"/>
-                                            <Setter Property="Margin" Value="0"/>
-                                            <Setter Property="Background" Value="Transparent"/>
-                                            <Setter Property="Foreground" Value="White"/>
-                                        </Style>
-                                    </ListBox.ItemContainerStyle>
-                                </ListBox>
-                            </StackPanel>
-                            <StackPanel Margin="5,0" IsEnabled="{Binding PicKeyerControlsEnabled}">
-                                <TextBlock Text="WEIGHT" Foreground="White" FontSize="10" HorizontalAlignment="Center"/>
-                                <ListBox Height="75" ItemsSource="{Binding CwWeightOptions}" SelectedIndex="{Binding CwWeightIndex, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" Background="#FF222222" Foreground="White" ScrollViewer.VerticalScrollBarVisibility="Disabled" VirtualizingStackPanel.IsVirtualizing="False">
-                                    <ListBox.ItemContainerStyle>
-                                        <Style TargetType="ListBoxItem">
-                                            <Setter Property="Padding" Value="2,1"/>
-                                            <Setter Property="Margin" Value="0"/>
-                                            <Setter Property="Background" Value="Transparent"/>
-                                            <Setter Property="Foreground" Value="White"/>
-                                        </Style>
-                                    </ListBox.ItemContainerStyle>
-                                </ListBox>
-                            </StackPanel>
-                            <StackPanel Margin="5,0">
-                                <TextBlock Text="PITCH" Foreground="White" FontSize="10" HorizontalAlignment="Center"/>
-                                <ListBox Height="100" ItemsSource="{Binding CwPitchOptions}" SelectedIndex="{Binding CwPitchIndex, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" Background="#FF222222" Foreground="White" ScrollViewer.VerticalScrollBarVisibility="Disabled" VirtualizingStackPanel.IsVirtualizing="False">
-                                    <ListBox.ItemContainerStyle>
-                                        <Style TargetType="ListBoxItem">
-                                            <Setter Property="Padding" Value="2,1"/>
-                                            <Setter Property="Margin" Value="0"/>
-                                            <Setter Property="Background" Value="Transparent"/>
-                                            <Setter Property="Foreground" Value="White"/>
-                                        </Style>
-                                    </ListBox.ItemContainerStyle>
-                                </ListBox>
-                            </StackPanel>
-                        </StackPanel>
-                        <!-- Speed, Hold, toggles -->
-                        <StackPanel Orientation="Horizontal">
-                            <StackPanel Orientation="Horizontal" Margin="0,0,15,0" VerticalAlignment="Center"
-                                        IsEnabled="{Binding PicKeyerControlsEnabled}">
-                                <TextBlock Text="SPEED" Width="55" Foreground="White" VerticalAlignment="Center" FontSize="10"/>
-                                <Border Background="#FF444444" BorderThickness="1" BorderBrush="#FF888888" Padding="3,1" MinWidth="35">
-                                    <TextBlock Text="{Binding CwSpeed}" FontSize="11" FontWeight="Bold" Foreground="#00FFAA" HorizontalAlignment="Center"/>
-                                </Border>
-                                <Button Content="-" Width="18" Height="18" Margin="2,0" Command="{Binding DecCwSpeedCommand}" Foreground="White" FontSize="9">
-                                    <Button.Style>
-                                        <Style TargetType="Button" BasedOn="{StaticResource {x:Type Button}}">
-                                            <Setter Property="Background" Value="#FF333333"/>
-                                            <Setter Property="BorderBrush" Value="#FF666666"/>
-                                        </Style>
-                                    </Button.Style>
-                                </Button>
-                                <Button Content="+" Width="18" Height="18" Margin="0,0,2,0" Command="{Binding IncCwSpeedCommand}" Foreground="White" FontSize="9">
-                                    <Button.Style>
-                                        <Style TargetType="Button" BasedOn="{StaticResource {x:Type Button}}">
-                                            <Setter Property="Background" Value="#FF333333"/>
-                                            <Setter Property="BorderBrush" Value="#FF666666"/>
-                                        </Style>
-                                    </Button.Style>
-                                </Button>
-                                <TextBlock Text="WPM" Foreground="#D0D0D0" FontSize="9" VerticalAlignment="Center" Margin="4,0"/>
-                            </StackPanel>
-                            <StackPanel Orientation="Horizontal" Margin="0,0,15,0" VerticalAlignment="Center">
-                                <TextBlock Text="HOLD" Width="40" Foreground="White" VerticalAlignment="Center" FontSize="10"/>
-                                <Border Background="#FF444444" BorderThickness="1" BorderBrush="#FF888888" Padding="3,1" MinWidth="35">
-                                    <TextBlock Text="{Binding CwHold}" FontSize="11" FontWeight="Bold" Foreground="#00FFAA" HorizontalAlignment="Center"/>
-                                </Border>
-                                <Button Content="-" Width="18" Height="18" Margin="2,0" Command="{Binding DecCwHoldCommand}" Foreground="White" FontSize="9">
-                                    <Button.Style>
-                                        <Style TargetType="Button" BasedOn="{StaticResource {x:Type Button}}">
-                                            <Setter Property="Background" Value="#FF333333"/>
-                                            <Setter Property="BorderBrush" Value="#FF666666"/>
-                                        </Style>
-                                    </Button.Style>
-                                </Button>
-                                <Button Content="+" Width="18" Height="18" Margin="0,0,2,0" Command="{Binding IncCwHoldCommand}" Foreground="White" FontSize="9">
-                                    <Button.Style>
-                                        <Style TargetType="Button" BasedOn="{StaticResource {x:Type Button}}">
-                                            <Setter Property="Background" Value="#FF333333"/>
-                                            <Setter Property="BorderBrush" Value="#FF666666"/>
-                                        </Style>
-                                    </Button.Style>
-                                </Button>
-                                <TextBlock Text="ms" Foreground="#D0D0D0" FontSize="11" VerticalAlignment="Center" Margin="4,0"/>
-                            </StackPanel>
-                            <CheckBox Content="PHONES" IsChecked="{Binding CwPhones, Mode=TwoWay}" Foreground="White" Margin="10,0" VerticalAlignment="Center" FontSize="10"/>
-                            <CheckBox Content="POTENTIA / QSK" IsChecked="{Binding CwQsk, Mode=TwoWay}" Foreground="White" Margin="10,0" VerticalAlignment="Center" FontSize="10"/>
-                        </StackPanel>
+                        </Grid>
 
                         <!-- CQ / keyer memory: 4×48; R=store 0x9C, P=play 0x9C (see KEYER-MEMORY-GUI-UDP-BEHAVIOR.md) -->
                         <TextBlock Text="CQ MEMORY" FontWeight="SemiBold" Foreground="#00FFAA" Margin="0,14,0,4"/>

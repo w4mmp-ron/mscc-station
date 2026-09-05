@@ -449,6 +449,10 @@ public partial class MainViewModel : ObservableObject, IDisposable
 
     // CW tab properties (keyer, speed, pitch, hold, qsk, phones)
     [ObservableProperty] private int _cwSpeed = 20;
+    /// <summary>Farnsworth memory-play text WPM (0x76). 0=Off; 5–60.</summary>
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(CwMemTextWpmLabel))]
+    private int _cwMemTextWpm;
     [ObservableProperty] private int _cwKeyerMode = 1; // IAMBIC-A
     [ObservableProperty] private int _cwSpacing = 0;
     [ObservableProperty] private int _cwPaddle = 0;
@@ -457,6 +461,10 @@ public partial class MainViewModel : ObservableObject, IDisposable
     [ObservableProperty] private int _cwHold = 100;
     [ObservableProperty] private bool _cwQsk = false;
     [ObservableProperty] private bool _cwPhones = false;
+
+    /// <summary>CW tab display: "Off" or numeric text WPM.</summary>
+    public string CwMemTextWpmLabel =>
+        CwMemTextWpm <= 0 ? "Off" : CwMemTextWpm.ToString();
 
     /// <summary>
     /// Settings: external electronic keyer / legacy radio.
@@ -1147,6 +1155,7 @@ public partial class MainViewModel : ObservableObject, IDisposable
 
         // CW tab defaults (from original CW tab)
         CwSpeed = 20;
+        CwMemTextWpm = SpectrumWaterfallSettings.ClampCwMemTextWpm(SpectrumWaterfallSettings.CwMemTextWpm);
         CwKeyerMode = 1; // IAMBIC-A
         CwSpacing = 0;
         CwPaddle = 0;
@@ -3207,6 +3216,28 @@ public partial class MainViewModel : ObservableObject, IDisposable
     // CW tab inc/dec for speed and hold (numeric like original)
     [RelayCommand] private void IncCwSpeed() => CwSpeed = Math.Clamp(CwSpeed + 1, 5, 60);
     [RelayCommand] private void DecCwSpeed() => CwSpeed = Math.Clamp(CwSpeed - 1, 5, 60);
+
+    /// <summary>Farnsworth text WPM: Off→5→…→60.</summary>
+    [RelayCommand]
+    private void IncCwMemTextWpm()
+    {
+        if (CwMemTextWpm <= 0)
+            CwMemTextWpm = 5;
+        else
+            CwMemTextWpm = Math.Clamp(CwMemTextWpm + 1, 5, 60);
+    }
+
+    /// <summary>Farnsworth text WPM: …→5→Off.</summary>
+    [RelayCommand]
+    private void DecCwMemTextWpm()
+    {
+        if (CwMemTextWpm <= 0)
+            CwMemTextWpm = 0;
+        else if (CwMemTextWpm <= 5)
+            CwMemTextWpm = 0;
+        else
+            CwMemTextWpm = Math.Clamp(CwMemTextWpm - 1, 5, 60);
+    }
     [RelayCommand] private void IncCwHold() => CwHold = Math.Clamp(CwHold + 10, 1, 500);
     [RelayCommand] private void DecCwHold() => CwHold = Math.Clamp(CwHold - 10, 1, 500);
 
@@ -4018,6 +4049,24 @@ public partial class MainViewModel : ObservableObject, IDisposable
         MonitorTextBoxText($" CW Speed set: {value} WPM");
     }
 
+    partial void OnCwMemTextWpmChanged(int value)
+    {
+        int clamped = SpectrumWaterfallSettings.ClampCwMemTextWpm(value);
+        if (clamped != value)
+        {
+            CwMemTextWpm = clamped;
+            return;
+        }
+        SpectrumWaterfallSettings.CwMemTextWpm = clamped;
+        try { SpectrumWaterfallSettings.Save(); } catch { /* best-effort sticky */ }
+        if (ExternalElectronicKeyer) return;
+        _ = _radioService.SetKeyerMemTextWpmAsync(clamped);
+        MonitorTextBoxText(
+            clamped <= 0
+                ? " CW Farnsworth (memory text WPM): Off"
+                : $" CW Farnsworth (memory text WPM): {clamped}");
+    }
+
     partial void OnCwKeyerModeChanged(int value)
     {
         if (ExternalElectronicKeyer) return;
@@ -4791,6 +4840,11 @@ public partial class MainViewModel : ObservableObject, IDisposable
         };
         svc.CwWpmReported += v => { CwSpeed = v; MonitorTextBoxText($" CwWpm reported: {v}"); };
         svc.CwTxHoldReported += v => { CwHold = v; MonitorTextBoxText($" CwTxHold reported: {v}"); };
+        svc.CwMemTextWpmReported += v =>
+        {
+            CwMemTextWpm = SpectrumWaterfallSettings.ClampCwMemTextWpm(v);
+            MonitorTextBoxText($" CwMemTextWpm (Farnsworth) reported: {(CwMemTextWpm <= 0 ? "Off" : CwMemTextWpm.ToString())}");
+        };
 
         svc.ProficioTempReported += t => { ProficioTempC = t; };
         svc.AmpTempReported += t => { AmpTempC = t; };

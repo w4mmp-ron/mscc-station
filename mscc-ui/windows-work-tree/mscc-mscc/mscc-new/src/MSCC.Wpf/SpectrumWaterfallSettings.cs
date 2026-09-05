@@ -66,6 +66,12 @@ public static class SpectrumWaterfallSettings
     public static string KeyerMem3 { get; set; } = "";
 
     /// <summary>
+    /// Farnsworth memory-play text WPM (0x76). 0=off; 5–60. Sticky client hint;
+    /// ms-sdr cw.ini / radio report is authoritative after Start.
+    /// </summary>
+    public static int CwMemTextWpm { get; set; }
+
+    /// <summary>
     /// True = external electronic keyer / legacy radio (mscc.ini PROFICIO-MKII=0).
     /// False (default) = Proficio MKII internal keyer (PROFICIO-MKII=1).
     /// Applied by ms-sdr at process start only — flip mid-session needs Stop/Start.
@@ -669,6 +675,8 @@ public static class SpectrumWaterfallSettings
                     if (LineMatchesKey(line, "KEYER_MEM1")) KeyerMem1 = ClampKeyerMemText(ParseIniString(line, KeyerMem1));
                     if (LineMatchesKey(line, "KEYER_MEM2")) KeyerMem2 = ClampKeyerMemText(ParseIniString(line, KeyerMem2));
                     if (LineMatchesKey(line, "KEYER_MEM3")) KeyerMem3 = ClampKeyerMemText(ParseIniString(line, KeyerMem3));
+                    if (LineMatchesKey(line, "CW_MEM_TEXT_WPM"))
+                        CwMemTextWpm = ClampCwMemTextWpm(ParseIniInt(line, CwMemTextWpm));
                     if (LineMatchesKey(line, "EXTERNAL_ELECTRONIC_KEYER"))
                         ExternalElectronicKeyer = ParseIniBool(line, ExternalElectronicKeyer);
                     if (LineMatchesKey(line, "REMOTE_AUDIO"))
@@ -864,10 +872,19 @@ public static class SpectrumWaterfallSettings
         UpdateOrAdd(lines, "KEYER_MEM1", EscapeKeyerMemForIni(KeyerMem1));
         UpdateOrAdd(lines, "KEYER_MEM2", EscapeKeyerMemForIni(KeyerMem2));
         UpdateOrAdd(lines, "KEYER_MEM3", EscapeKeyerMemForIni(KeyerMem3));
+        UpdateOrAdd(lines, "CW_MEM_TEXT_WPM", ClampCwMemTextWpm(CwMemTextWpm).ToString());
         UpdateOrAdd(lines, "EXTERNAL_ELECTRONIC_KEYER", ExternalElectronicKeyer ? "1" : "0");
         UpdateOrAdd(lines, "REMOTE_AUDIO", RemoteAudio ? "1" : "0");
 
         File.WriteAllLines(_iniPath, lines);
+    }
+
+    /// <summary>0=off; 1–4→0; else clamp 5–60 (matches host/PIC Farnsworth rules).</summary>
+    public static int ClampCwMemTextWpm(int wpm)
+    {
+        if (wpm <= 0) return 0;
+        if (wpm <= 4) return 0;
+        return Math.Clamp(wpm, 5, 60);
     }
 
     /// <summary>Printable ASCII only, max 48 — matches PIC / Core sanitize rules.</summary>

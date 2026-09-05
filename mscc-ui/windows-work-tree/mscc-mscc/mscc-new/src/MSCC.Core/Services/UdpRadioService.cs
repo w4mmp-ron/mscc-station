@@ -134,6 +134,7 @@ public class UdpRadioService : IRadioService, IDisposable
     public event Action<int>? CwWeightReported;
     public event Action<int>? CwWpmReported;
     public event Action<int>? CwTxHoldReported;
+    public event Action<int>? CwMemTextWpmReported;
 
     public event Action<double>? ProficioTempReported;
     public event Action<double>? AmpTempReported;
@@ -1973,6 +1974,18 @@ public class UdpRadioService : IRadioService, IDisposable
                 {
                     int wpm = BitConverter.ToInt16(e.Payload, 0);
                     CwWpmReported?.Invoke(wpm);
+                }
+                break;
+
+            case Opcodes.SET_MEM_TEXT_WPM:
+                if (e.Payload.Length >= 1)
+                {
+                    int textWpm = e.Payload.Length >= 2
+                        ? BitConverter.ToInt16(e.Payload, 0)
+                        : e.Payload[0];
+                    if (textWpm is >= 1 and <= 4) textWpm = 0;
+                    textWpm = Math.Clamp(textWpm, 0, 60);
+                    CwMemTextWpmReported?.Invoke(textWpm);
                 }
                 break;
 
