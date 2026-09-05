@@ -656,10 +656,27 @@ void Gui_get_param(uint8_t op_code, char *buffer) {
                     t_opcode_data);
             }
             if (G_spectrum_cycle_count <= 0) {
-                if (sendto(gui_s, buffer, recv_len, 0, (struct sockaddr*)&si_gui, slen) == SOCKET_ERROR) {
-                    print_time(0);
-                    fprintf(G_fp_logfile, "[%d] Gui_get_parm. CMD_GET_SET_PANADAPTER. Sendto spectrum_s . FAILED with error code : %s\n",
-                        line_number++, strerror(errno));
+                /* Same egress as Gui_send_param: bound dll_s (port 8888) + live session peer.
+                 * Unbound gui_s used an ephemeral source port — firewalls often allow
+                 * replies from 8888 (keepalives/meters) but drop spectrum from ephemeral,
+                 * which looks like "connected, no errors, no spectrum". */
+                {
+                    struct sockaddr_in *pan_dest = NULL;
+                    int pan_slen = 0;
+                    int pan_sock = (dll_s != INVALID_SOCKET && dll_s > 0) ? dll_s : gui_s;
+
+                    if (G_session_client_valid) {
+                        pan_dest = &G_session_client;
+                        pan_slen = sizeof(G_session_client);
+                    } else {
+                        pan_dest = &si_gui;
+                        pan_slen = sizeof(si_gui);
+                    }
+                    if (sendto(pan_sock, buffer, recv_len, 0, (struct sockaddr *)pan_dest, pan_slen) == SOCKET_ERROR) {
+                        print_time(0);
+                        fprintf(G_fp_logfile, "[%d] Gui_get_parm. CMD_GET_SET_PANADAPTER. Sendto failed: %s\n",
+                            line_number++, strerror(errno));
+                    }
                 }
             }
             else {
@@ -1228,6 +1245,20 @@ void * Command_Processor(void *my_param) {
         print_time(0);
         fprintf(G_fp_logfile, "[%d] Command_Interface. Server Bind Failed. Error Code : %s\n", line_number++, strerror(errno));
         Stop_all(0, STOP_NETWORK_FAILED);
+    }
+    /* Panadapter + GUI KA share dll_s. Default rcvbuf drops client 0xF4 under spectrum
+     * load → Session_Release → client keep-alive lost. Ask for 4 MiB (kernel may clamp). */
+    {
+        int rcv = 4 * 1024 * 1024;
+        if (setsockopt(dll_s, SOL_SOCKET, SO_RCVBUF, (const char *)&rcv, sizeof(rcv)) != 0) {
+            print_time(0);
+            fprintf(G_fp_logfile, "[%d] Command_Interface. SO_RCVBUF 4MiB failed: %s\n",
+                line_number++, strerror(errno));
+        } else {
+            print_time(0);
+            fprintf(G_fp_logfile, "[%d] Command_Interface. SO_RCVBUF requested 4MiB for pan+KA\n",
+                line_number++);
+        }
     }
 
     ///////////////////////////////////////////////////////////////////////////////////

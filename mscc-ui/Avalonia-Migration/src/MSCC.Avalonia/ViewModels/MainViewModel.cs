@@ -33,6 +33,7 @@ public partial class MainViewModel : ViewModelBase, IDisposable
     private UdpRadioService? _radio;
     private bool _disposed;
     private int _packetsReceived;
+    private int _panPacketsReceived;
     private int _keepAlivesReceived;
     private int _spectrumFrames;
     private int _spectrumFrameCounter;
@@ -151,7 +152,7 @@ public partial class MainViewModel : ViewModelBase, IDisposable
         HighCutLabel = HighCutLabels[_highCutIndex];
         CwFilterLabel = CwFilterLabels[_cwFilterIndex];
         ModeText = "USB";
-        AppendLog("MSCC Avalonia 0.6.36 — PTT notes: in CW mode PA is keyed by keyer, not host PTT.");
+        AppendLog("MSCC Avalonia 0.6.39 — spectrum + keep-alive hardening; CQ memory, Remote Audio, legacy keyer.");
         AppendLog("PTT = TX (voice modes); TUN = TUNE + carrier. S/W opens pan settings.");
         AppendLog($"Log: {LogFilePath}");
         CwPitchLabel = CwPitchOptions[Math.Clamp(CwPitchIndex, 0, CwPitchOptions.Count - 1)];
@@ -331,7 +332,7 @@ public partial class MainViewModel : ViewModelBase, IDisposable
     [ObservableProperty] private string _proficioTempText = "— °C";
     [ObservableProperty] private string _paTempText = "— °C";
     [ObservableProperty] private string _paCurrentText = "— mA";
-    [ObservableProperty] private string _clientVersionText = "0.6.36";
+    [ObservableProperty] private string _clientVersionText = "0.6.39";
     [ObservableProperty] private bool _qrpMode = true;
     [ObservableProperty] private bool _fullPower;
     [ObservableProperty] private bool _alcOn;
@@ -952,6 +953,7 @@ public partial class MainViewModel : ViewModelBase, IDisposable
             DisposeRadio();
             _packetsReceived = 0;
             _keepAlivesReceived = 0;
+            _panPacketsReceived = 0;
             _spectrumFrames = 0;
             _spectrumFrameCounter = 0;
             CurrentSpectrum = null;
@@ -965,6 +967,17 @@ public partial class MainViewModel : ViewModelBase, IDisposable
             IsConnected = true;
             StatusText = $"Connected {Host}:{remotePort}";
             AppendLog("Connected (connect-only).");
+            // Ensure pan assembly + heal Linux pan refresh (Blocks≥1). Without this,
+            // a prior client that sent 0x5F=0 leaves the Pi with silent no-spectrum.
+            try
+            {
+                await _radio.SetPanResolutionAsync(800).ConfigureAwait(true);
+                AppendLog("Pan resolution: 800 bins (refresh healed).");
+            }
+            catch (Exception ex)
+            {
+                AppendLog($"Pan resolution apply warning: {ex.Message}");
+            }
             // Push selected VFO + freq/mode so dual-VFO state matches UI
             await PushActiveVfoToRadioAsync(force: true).ConfigureAwait(true);
             // Restore sticky operate settings to the radio (server-backed)
@@ -5260,10 +5273,18 @@ public partial class MainViewModel : ViewModelBase, IDisposable
     {
         radio.PacketReceived += e =>
         {
-            Interlocked.Increment(ref _packetsReceived);
+            int pkts = Interlocked.Increment(ref _packetsReceived);
             if (e.Opcode == Opcodes.CMD_SET_KEEP_ALIVE)
                 Interlocked.Increment(ref _keepAlivesReceived);
-            PostToUi(UpdatePacketStats);
+            else if (e.Opcode == Opcodes.CMD_GET_SET_PANADAPTER)
+            {
+                int d5 = Interlocked.Increment(ref _panPacketsReceived);
+                if (d5 == 1)
+                    PostToUi(() => AppendLog("Panadapter packets arriving (0xD5)…"));
+            }
+            // Throttle stats UI — every packet under pan flood saturates the dispatcher.
+            if (pkts == 1 || (pkts % 25) == 0)
+                PostToUi(UpdatePacketStats);
         };
 
         radio.FrequencyReported += hz =>
@@ -5725,7 +5746,7 @@ public partial class MainViewModel : ViewModelBase, IDisposable
 
     private void UpdatePacketStats()
     {
-        PacketStatsText = $"Pkts {_packetsReceived} | KA {_keepAlivesReceived} | Spec {_spectrumFrames}";
+        PacketStatsText = $"Pkts {_packetsReceived} | KA {_keepAlivesReceived} | D5 {_panPacketsReceived} | Spec {_spectrumFrames}";
     }
 
     private void OnDebugLogMessage(string message) =>

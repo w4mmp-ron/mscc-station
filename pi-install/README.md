@@ -16,7 +16,7 @@
 |-------|---------|----------------|
 | 1 | PortAudio | `mscc-portaudio_19.8.2_arm64.deb` |
 | 2 | Servers + bootloader | `mscc_1.0.40_arm64.deb` |
-| 3 | Setup wizard | `mscc-init-gui_1.0.12_all.deb` |
-| 4 | Avalonia UI (optional on Pi) | `mscc-ui_0.6.36_arm64.deb` |
+| 3 | Setup wizard | `mscc-init-gui_1.0.13_all.deb` |
+| 4 | Avalonia UI (optional on Pi) | `mscc-ui_0.6.39_arm64.deb` |
 
 Open **[INSTALL.md](INSTALL.md)** and follow it top to bottom.

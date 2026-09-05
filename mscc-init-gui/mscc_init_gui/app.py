@@ -335,7 +335,7 @@ class MsccInitApp(tk.Tk):
             text=(
                 "Select operator speaker and microphone (any sample rate is OK;\n"
                 "sdrcore resamples when the device is not 96 kHz).\n"
-                "Do not pick Proficio/Multus I/Q for headphones/mic.\n"
+                "Proficio/Multus radio I/Q devices are hidden here (not phones/mic).\n"
                 f"Digi is fixed: {MSCC_DIGI_SPEAKER} / {MSCC_DIGI_MIC}"
             ),
             wraplength=640,

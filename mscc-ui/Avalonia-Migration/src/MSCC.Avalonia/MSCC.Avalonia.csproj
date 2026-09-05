@@ -5,8 +5,8 @@
     <ImplicitUsings>enable</ImplicitUsings>
     <RootNamespace>MSCC.Avalonia</RootNamespace>
     <AssemblyName>MSCC.Avalonia</AssemblyName>
-    <Version>0.6.36</Version>
-    <Description>MSCC Avalonia — UI chrome, spectrum background, dual S/W banks</Description>
+    <Version>0.6.39</Version>
+    <Description>MSCC Avalonia — CQ memory, Remote Audio, legacy external keyer</Description>
     <Nullable>enable</Nullable>
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
     <ApplicationManifest>app.manifest</ApplicationManifest>

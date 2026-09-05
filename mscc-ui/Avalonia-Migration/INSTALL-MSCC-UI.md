@@ -4,7 +4,7 @@
 > **[`pi-install/INSTALL.md`](../../pi-install/INSTALL.md)** — start there.  
 > Current UI package also lives in **`pi-install/packages/`**.
 
-**Package:** `mscc-ui_0.6.36_arm64.deb` (use the filename in `pi-install/packages/` if newer)  
+**Package:** `mscc-ui_0.6.39_arm64.deb` (use the filename in `pi-install/packages/` if newer)  
 **Menu name:** **MSCC UI** (same **MSCC** menu group as Start / Stop / Init)
 
 ---
@@ -37,13 +37,13 @@ Servers should already be installed (`pi-install/INSTALL.md` sections A). Then:
 
 ```bash
 cd ~/Downloads   # or packages folder
-sudo apt install -y ./mscc-ui_0.6.36_arm64.deb
+sudo apt install -y ./mscc-ui_0.6.39_arm64.deb
 ```
 
 Or:
 
 ```bash
-sudo dpkg -i ./mscc-ui_0.6.36_arm64.deb
+sudo dpkg -i ./mscc-ui_0.6.39_arm64.deb
 sudo apt-get install -f -y
 ```
 

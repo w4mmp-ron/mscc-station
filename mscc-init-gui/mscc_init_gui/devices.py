@@ -66,11 +66,30 @@ def is_digi_only_device(name: str) -> bool:
     return False
 
 
+def is_radio_iq_device(name: str) -> bool:
+    """
+    Proficio/Multus USB audio is the radio I/Q path (sdrcore capture), not
+    operator phones/mic. Hide from MSCC Init pickers so it cannot be chosen
+    by mistake (that path breaks recv init / spectrum / keep-alive).
+    """
+    if not name:
+        return False
+    n = name.lower()
+    if "proficio" in n or "multus" in n:
+        return True
+    return False
+
+
+def is_operator_picker_excluded(name: str) -> bool:
+    """Devices that must not appear in operator speaker/mic lists."""
+    return is_digi_only_device(name) or is_radio_iq_device(name)
+
+
 def device_hint(name: str) -> str:
     if not name:
         return ""
-    if "Multus" in name or "Proficio" in name:
-        return "radio I/Q — usually NOT operator phones"
+    if is_radio_iq_device(name):
+        return "radio I/Q — not shown in picker"
     if re.search(r"audioinjector|AudioInjector|wm8731", name, re.I):
         return "typical operator sound card"
     if "hdmi" in name.lower() or "HDMI" in name:
@@ -158,7 +177,8 @@ def list_audio_devices(
                 except Exception:
                     continue
                 name = str(info.get("name") or "")
-                if is_digi_only_device(name):
+                # Digi VirtualA/B + radio I/Q (Proficio/Multus) are not operator devices
+                if is_operator_picker_excluded(name):
                     continue
                 max_in = int(info.get("maxInputChannels") or 0)
                 max_out = int(info.get("maxOutputChannels") or 0)

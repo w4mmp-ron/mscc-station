@@ -4,6 +4,7 @@ Graphical wizard that writes the same config as CLI **`mscc-init`** under
 **`$HOME/.local/mscc/`**.
 
 - **Operator** speaker / mic — user picks from PortAudio (**any rate**; sdrcore resamples if not 96 kHz)
+- **Hidden from picker:** digi VirtualA/B **and** Proficio/Multus radio I/Q (not operator phones/mic)
 - **Digi** fixed: **VirtualA** / **VirtualB.monitor** (not selectable)
 - CAT port + PTT pin, keyer, Proficio MKII vs legacy (PROFICIO-MKII), optional USB serial
 - After write: **Yes/No** dialog to start MSCC servers (`mscc start`)

@@ -2,7 +2,7 @@
 
 **Pi:** 4 or 5, **64-bit Raspberry Pi OS** (desktop recommended).  
 **Packages:** use files in **`pi-install/packages/`** (this folder).  
-**Updated:** 2026-09 — servers **1.0.40**, init-gui **1.0.12**, portaudio **19.8.2**, UI **0.6.36**.
+**Updated:** 2026-09 — servers **1.0.40**, init-gui **1.0.13** (hides Proficio/Multus I/Q from speaker/mic pickers), portaudio **19.8.2**, UI **0.6.39**.
 
 If a filename in `packages/` differs, **use the real name on disk**.
 
@@ -86,7 +86,7 @@ This installs:
 ### 3) Setup wizard
 
 ```bash
-sudo apt install -y ./mscc-init-gui_1.0.12_all.deb
+sudo apt install -y ./mscc-init-gui_1.0.13_all.deb
 ```
 
 ### 4) Log out / log in once (first install)
@@ -136,7 +136,7 @@ mscc stop
 Use when you want the operate GUI **on the Pi** (or a second Linux box).
 
 ```bash
-sudo apt install -y ./mscc-ui_0.6.36_arm64.deb
+sudo apt install -y ./mscc-ui_0.6.39_arm64.deb
 ```
 
 | Item | Detail |
@@ -146,12 +146,14 @@ sudo apt install -y ./mscc-ui_0.6.36_arm64.deb
 | Settings | `~/.config/MSCC/mscc-avalonia.ini` (survive reinstall) |
 | Uninstall | `sudo apt remove mscc-ui` (does not remove servers) |
 
-### UI features to know
+### UI features to know (0.6.39+)
 
 | Feature | Where / notes |
 |---------|----------------|
+| **CQ / keyer memory** | CW tab — 4 slots, R store / P play (MKII + keyer). |
 | **Remote Audio** | Left rail checkbox — with **Phones** selected, sends audio device **2** (remote mic). Greyed on **Digital**. Sticky in ini. |
-| **External electronic keyer (legacy)** | CW tab — sets `PROFICIO-MKII=0` in host `mscc.ini`; restart servers to apply. |
+| **External electronic keyer (legacy)** | CW tab — sets `PROFICIO-MKII=0` in host `mscc.ini`; restart servers to apply. HOLD stays live. |
+| **Spectrum / waterfall** | MAIN tab. Heals pan refresh on connect. Packet line shows `D5` / `Spec`. **0.6.39** denser keep-alives + larger UDP buffers so pan flood does not trip “keep-alive lost”. |
 | Connect | Host / ports for remote Pi if UI is not on the radio machine |
 
 **Note:** Rebuild the UI `.deb` after client code changes (`Avalonia-Migration/build-mscc-ui-deb.ps1`), then refresh `pi-install/packages/` with `collect-packages.ps1`.
