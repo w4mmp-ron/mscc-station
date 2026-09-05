@@ -38,7 +38,8 @@ enum {
 uint8_t const desc_configuration[] = {
     TUD_CONFIG_DESCRIPTOR(1, ITF_NUM_TOTAL, 0, CONFIG_TOTAL_LEN,
                           TUSB_DESC_CONFIG_ATT_SELF_POWERED, 100),
-    TUD_VENDOR_DESCRIPTOR(ITF_NUM_VENDOR, 6, EPNUM_VENDOR_OUT, EPNUM_VENDOR_IN, 64),
+    /* stridx 7 = "Multus Control" (was wrongly 6 = Capture — Zadig/Device Manager name) */
+    TUD_VENDOR_DESCRIPTOR(ITF_NUM_VENDOR, 7, EPNUM_VENDOR_OUT, EPNUM_VENDOR_IN, 64),
     TUD_AUDIO_PROFICIO_DESCRIPTOR(4, EPNUM_AUDIO_OUT, EPNUM_AUDIO_IN)
 };
 
@@ -51,13 +52,13 @@ uint8_t const *tud_descriptor_configuration_cb(uint8_t index)
 static char const *string_desc_arr[] = {
     (const char[]){0x09, 0x04},
     "Multus",
-    "Multus Sound",
+    "Multus Control",        /* iProduct — Device Manager / Zadig composite name */
     /* iSerial = build/release stamp (updated every PIO build) */
     PROFICIO_FW_RELEASE_DATETIME,
-    "Multus Sound",          /* Audio Control — Windows uses this for Speakers/Mic name */
+    "Multus Sound",          /* Audio Control — Windows Speakers/Mic parent name */
     "Multus Sound Playback", /* TX IQ (host → radio) */
     "Multus Sound Capture",  /* RX IQ (radio → host) */
-    "Multus Vendor"
+    "Multus Control"         /* Vendor/control interface (stridx 7) */
 };
 
 static uint16_t _desc_str[32];
