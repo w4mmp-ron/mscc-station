@@ -143,6 +143,12 @@ public class UdpRadioService : IRadioService, IDisposable
     public event Action<string>? CoreVersionReported;
     public event Action? ServerKeepAliveLost;
     public event Action<int>? AlcReported;
+    public event Action<SwrMeterReading>? RadioSwrMeterReported;
+
+    // Last extended F/R/SWR from ms-sdr (three separate 0x0B packets)
+    private float _radioSwrFwd;
+    private float _radioSwrRef;
+    private float _radioSwr = 1f;
 
     // Frequency Calibration reports (progress 0-100, status 1=success/0=fail, delta Hz from check)
     public event Action<int>? CalProgressReported;
@@ -199,15 +205,22 @@ public class UdpRadioService : IRadioService, IDisposable
         SetPanResolutionLocal(bins);
         if (!_started) return;
 
-        // Linux sdrcore: CMD_GET_SET_PANADAPTER_REFRESH (0x5F) sets G_Panadapter_Blocks
-        // (FFT frames between panReady), NOT pixel width. Sending index 0/1/2 as we used
-        // to do sets Blocks=0 and panReady never fires → silent no-spectrum.
-        // Client assembly for 800/1600/3200 is local-only until the server grows a real
-        // pan-pixel opcode. Heal refresh to a safe default so spectrum keeps flowing.
-        const short safeRefreshBlocks = 6;
-        await _transport.SendAsync(Opcodes.CMD_GET_SET_PANADAPTER_REFRESH, safeRefreshBlocks, cancellationToken);
+        // Dual-use 0x5F on sdrcore-recv:
+        //   0/1/2 → G_Panadapter_Pixels 800/1600/3200 (bins)
+        //   3..10 → G_Panadapter_Blocks (refresh rate)
+        // Send both: resolution first, then fastest valid block rate (3).
+        short index = bins switch
+        {
+            1600 => 1,
+            3200 => 2,
+            _ => 0
+        };
+        const short fastRefreshBlocks = 3;
+
+        await _transport.SendAsync(Opcodes.CMD_GET_SET_PANADAPTER_REFRESH, index, cancellationToken);
+        await _transport.SendAsync(Opcodes.CMD_GET_SET_PANADAPTER_REFRESH, fastRefreshBlocks, cancellationToken);
         DebugMonitor.MonitorTextBoxText(
-            $" Pan resolution local={bins} bins; sent pan refresh blocks={safeRefreshBlocks} (0x5F)");
+            $" Pan resolution: {bins} bins (0x5F index {index}) + refresh blocks={fastRefreshBlocks}");
     }
 
     private UdpRadioTransport CreateTransport()
@@ -1458,13 +1471,20 @@ public class UdpRadioService : IRadioService, IDisposable
         PacketReceived?.Invoke(e);
 
         // Log raw packet only for non-high-volume continuous updates. These flood the log unless VerboseSpectrumLogging:
-        // spectrum D5, smeter D4, keep-alive 0xF4, transceiver temp 0xBF, ALC meter 0x4F.
+        // spectrum D5, smeter D4, keep-alive 0xF4, transceiver temp 0xBF, ALC meter 0x4F,
+        // extended 0x0B SWR/FWD/REV (ms-sdr SWR_METER_TO_GUI).
+        bool quietExtendedSwr = e.Opcode == Opcodes.CMD_SET_EXTENDED_COMMAND
+            && e.Payload.Length >= 1
+            && e.Payload[0] is Opcodes.EXT_CMD_SET_FORWARD_POWER
+                or Opcodes.EXT_CMD_SET_REVERSE_POWER
+                or Opcodes.EXT_CMD_SET_SWR;
         if (VerboseSpectrumLogging ||
             (e.Opcode != Opcodes.CMD_GET_SET_PANADAPTER &&
              e.Opcode != Opcodes.CMD_GET_SET_SMETER &&
              e.Opcode != Opcodes.CMD_SET_KEEP_ALIVE &&
              e.Opcode != Opcodes.CMD_GET_TRANSCEIVER_TEMP &&
-             e.Opcode != Opcodes.CMD_SET_ALC))
+             e.Opcode != Opcodes.CMD_SET_ALC &&
+             !quietExtendedSwr))
         {
             string payloadHex = e.Payload.Length > 0 ? BitConverter.ToString(e.Payload, 0, Math.Min(16, e.Payload.Length)) + (e.Payload.Length > 16 ? "..." : "") : "";
             string opcodeName = Opcodes.GetName(e.Opcode);
@@ -2020,6 +2040,8 @@ public class UdpRadioService : IRadioService, IDisposable
                 if (e.Payload.Length >= 1)
                 {
                     byte sub = e.Payload[0];
+                    if (TryHandleExtendedSwrMeter(sub, e.Payload))
+                        break;
                     string subName = GetExtendedSubName(sub);
                     if (VerboseSpectrumLogging)
                     {
@@ -2050,12 +2072,65 @@ public class UdpRadioService : IRadioService, IDisposable
             0x06 => "WATERFALL_PALETTE",
             0x09 => "IQBD_MONITOR",
             0x0A => "IQBD_DATA",
-            0x0B => "FORWARD_POWER",
-            0x0C => "REVERSE_POWER",
-            0x0D => "SWR",
+            Opcodes.EXT_CMD_SET_FORWARD_POWER => "FORWARD_POWER",
+            Opcodes.EXT_CMD_SET_REVERSE_POWER => "REVERSE_POWER",
+            Opcodes.EXT_CMD_SET_SWR => "SWR",
             0x0E => "SOLIDUS_STATUS",
             _ => "UNKNOWN_SUB"
         };
+    }
+
+    /// <summary>
+    /// ms-sdr SWR_METER_TO_GUI: wire [0x0B][sub][data…].
+    /// SWR = 1 byte ×10; FWD/REV = u32 milli-watt packing (watts = n/1000).
+    /// </summary>
+    private bool TryHandleExtendedSwrMeter(byte sub, byte[] payload)
+    {
+        bool handled = false;
+        switch (sub)
+        {
+            case Opcodes.EXT_CMD_SET_SWR:
+                if (payload.Length >= 2)
+                {
+                    _radioSwr = payload[1] / 10f;
+                    if (_radioSwr < 1f) _radioSwr = 1f;
+                    handled = true;
+                }
+                break;
+            case Opcodes.EXT_CMD_SET_FORWARD_POWER:
+                if (payload.Length >= 5)
+                {
+                    uint milli = BitConverter.ToUInt32(payload, 1);
+                    _radioSwrFwd = milli / 1000f;
+                    handled = true;
+                }
+                break;
+            case Opcodes.EXT_CMD_SET_REVERSE_POWER:
+                if (payload.Length >= 5)
+                {
+                    uint milli = BitConverter.ToUInt32(payload, 1);
+                    _radioSwrRef = milli / 1000f;
+                    handled = true;
+                }
+                break;
+        }
+
+        if (!handled)
+            return false;
+
+        RadioSwrMeterReported?.Invoke(new SwrMeterReading
+        {
+            ForwardWatts = _radioSwrFwd,
+            ReflectedWatts = _radioSwrRef,
+            PeakWatts = _radioSwrFwd,
+            Swr = _radioSwr,
+            Fault = false,
+            Tx = _radioSwrFwd > 0.05f,
+            SwrThreshold = 2f,
+            SourceIp = null,
+            Utc = DateTime.UtcNow
+        });
+        return true;
     }
 
     private int _panIncompleteStreak;

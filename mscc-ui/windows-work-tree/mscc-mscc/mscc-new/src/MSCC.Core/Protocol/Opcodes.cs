@@ -272,6 +272,12 @@ public static class Opcodes
     public const byte EXT_CMD_SET_IQBD_MONITOR = 0x09;
     /// <summary>Extended sub: IQBD residual/image sample (Int16 at payload offset 1 after sub).</summary>
     public const byte EXT_CMD_SET_IQBD_DATA = 0x0A;
+    /// <summary>Extended sub: forward power (u32 milli-watts packing at payload offset 1).</summary>
+    public const byte EXT_CMD_SET_FORWARD_POWER = 0x0B;
+    /// <summary>Extended sub: reverse power (u32 milli-watts packing at payload offset 1).</summary>
+    public const byte EXT_CMD_SET_REVERSE_POWER = 0x0C;
+    /// <summary>Extended sub: SWR ×10 as one byte at payload offset 1.</summary>
+    public const byte EXT_CMD_SET_SWR = 0x0D;
 
     // TODO: add more as reverse-engineered (status, extended power, temps, drift, antenna, etc.)
 }

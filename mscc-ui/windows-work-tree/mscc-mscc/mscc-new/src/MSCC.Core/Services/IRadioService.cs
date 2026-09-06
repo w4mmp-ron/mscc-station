@@ -147,9 +147,8 @@ public interface IRadioService : IDisposable
     Task SetModeAsync(string mode, CancellationToken cancellationToken = default);
 
     /// <summary>
-    /// Panadapter resolution for client assembly: 800, 1600, or 3200 bins (Normal / High / Max).
-    /// Also sends a safe pan refresh rate (0x5F) so Linux G_Panadapter_Blocks stays ≥1
-    /// (legacy clients that sent index 0 killed spectrum silently).
+    /// Panadapter resolution: 800 / 1600 / 3200 bins (Normal / High / Max).
+    /// Sends 0x5F index 0/1/2 (server G_Panadapter_Pixels), then 0x5F=3 (fast refresh blocks).
     /// </summary>
     Task SetPanResolutionAsync(int bins, CancellationToken cancellationToken = default);
 
@@ -365,6 +364,12 @@ public interface IRadioService : IDisposable
     /// <summary>ms-sdr core version (CMD_GET_SET_MSSDR_VERSION 0xB3) → UI Core:</summary>
     event Action<string> CoreVersionReported;
     event Action<int> AlcReported;  // ALC meter value
+
+    /// <summary>
+    /// WiFi SWR meter via ms-sdr (SWR_METER_TO_GUI=1): extended 0x0B subs FWD/REV/SWR.
+    /// Same shape as <see cref="SwrMeterService.ReadingReceived"/> (direct UDP path).
+    /// </summary>
+    event Action<SwrMeterReading> RadioSwrMeterReported;
 
     // ----- TX I/Q balance calibration (original IQ_Controls; manual only) -----
     /// <summary>Select IQ cal band path (CMD_SET_IQ_BAND 0x58). Band meters: 2200, 630, 160…10.</summary>

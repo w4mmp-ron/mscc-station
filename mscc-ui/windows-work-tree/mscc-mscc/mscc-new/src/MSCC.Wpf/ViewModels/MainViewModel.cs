@@ -30,6 +30,8 @@ public partial class MainViewModel : ObservableObject, IDisposable
     private readonly SwrMeterService _swrMeter = new();
     private bool _swrFaultLatched;
     private bool _swrTxInhibited;
+    /// <summary>True after first SWR/FWD/REV extended packet from ms-sdr (SWR_METER_TO_GUI).</summary>
+    private bool _swrFromMsSdr;
 
     /// <summary>True when UI radio model is Geminus (LF SWR profile). Set from MainWindow.</summary>
     public bool IsGeminusRadioModel { get; set; }
@@ -528,25 +530,36 @@ public partial class MainViewModel : ObservableObject, IDisposable
     partial void OnMonitorOnChanged(bool value) { _ = _radioService.SetMonitorAsync(value); MonitorTextBoxText($" MonitorOn set: {value}"); }
 
     /// <summary>
-    /// Audio digital mode (P=phones/operator false, D=digital true). Toggles Audio_Digital_button on Main tab.
-    /// P→D: if CMP on, force OFF and send. D→P: restore session CMP and send.
+    /// Audio path: false = Phones or Remote; true = Digital (VAC).
+    /// Prefer <see cref="ApplyAudioDeviceMode"/> / cycle button for full Digital/Phones/Remote.
     /// </summary>
     [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(AudioDeviceButtonText))]
+    [NotifyPropertyChangedFor(nameof(IsRemoteAudioActive))]
     private bool _isDigitalAudio;
 
     /// <summary>
-    /// With Phones selected: send CMD_SET_AUDIO_DEVICE=2 (remote mic via MsccRemotePhones).
-    /// Ignored while Digital is selected (always 0). Sticky REMOTE_AUDIO in MSCC_Client.ini.
+    /// True when audio mode is Remote (CMD_SET_AUDIO_DEVICE=2). Companion MSCC-Remote must run.
     /// </summary>
     [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(AudioDeviceButtonText))]
+    [NotifyPropertyChangedFor(nameof(IsRemoteAudioActive))]
     private bool _remoteAudio;
 
-    /// <summary>Remote Audio checkbox enabled only on Phones path.</summary>
-    public bool RemoteAudioCheckboxEnabled => !IsDigitalAudio;
+    /// <summary>True when button mode is Remote (not Digital).</summary>
+    public bool IsRemoteAudioActive => !IsDigitalAudio && RemoteAudio;
+
+    /// <summary>Main-tab Audio button label: Digital / Phones / Remote.</summary>
+    public string AudioDeviceButtonText => ResolveAudioDeviceOpcode() switch
+    {
+        Opcodes.DIGITAL_SOUND_DEVICE => "Digital",
+        Opcodes.REMOTE_SOUND_DEVICE => "Remote",
+        _ => "Phones",
+    };
 
     private bool _suppressAudioDeviceSend;
 
-    /// <summary>0=Digital, 1=Phones local, 2=Remote (Phones + Remote Audio).</summary>
+    /// <summary>0=Digital, 1=Phones local, 2=Remote.</summary>
     private byte ResolveAudioDeviceOpcode()
     {
         if (IsDigitalAudio)
@@ -570,52 +583,98 @@ public partial class MainViewModel : ObservableObject, IDisposable
         MonitorTextBoxText($" Audio device → {label} ({reason})");
     }
 
+    private void PersistAudioDeviceMode(byte mode)
+    {
+        SpectrumWaterfallSettings.AudioDeviceMode = mode;
+        SpectrumWaterfallSettings.RemoteAudio = mode == Opcodes.REMOTE_SOUND_DEVICE;
+        try { SpectrumWaterfallSettings.Save(); } catch { /* best-effort */ }
+    }
+
+    /// <summary>
+    /// Apply Digital (0) / Phones (1) / Remote (2): opcode, CMP rules, sticky, start/stop MSCC-Remote.
+    /// </summary>
+    private void ApplyAudioDeviceMode(byte mode, string reason, bool fromReport = false)
+    {
+        mode = mode switch
+        {
+            Opcodes.DIGITAL_SOUND_DEVICE => Opcodes.DIGITAL_SOUND_DEVICE,
+            Opcodes.REMOTE_SOUND_DEVICE => Opcodes.REMOTE_SOUND_DEVICE,
+            _ => Opcodes.PHONES_SOUND_DEVICE,
+        };
+
+        byte previous = ResolveAudioDeviceOpcode();
+        bool enteringDigital = mode == Opcodes.DIGITAL_SOUND_DEVICE;
+        bool leavingDigital = previous == Opcodes.DIGITAL_SOUND_DEVICE && !enteringDigital;
+
+        _suppressAudioDeviceSend = true;
+        try
+        {
+            IsDigitalAudio = enteringDigital;
+            RemoteAudio = mode == Opcodes.REMOTE_SOUND_DEVICE;
+        }
+        finally
+        {
+            _suppressAudioDeviceSend = false;
+        }
+
+        OnPropertyChanged(nameof(AudioDeviceButtonText));
+        OnPropertyChanged(nameof(IsRemoteAudioActive));
+
+        if (!fromReport)
+            PersistAudioDeviceMode(mode);
+
+        // Compression: Digital forces OFF; leaving Digital restores session preferred
+        if (!fromReport)
+        {
+            if (enteringDigital)
+            {
+                if (CompressionOn)
+                {
+                    CompressionOn = false;
+                    MonitorTextBoxText(" CMP forced OFF for digital audio (D); session preferred preserved");
+                }
+            }
+            else if (leavingDigital)
+            {
+                if (CompressionOn != _sessionCompressionOn)
+                    CompressionOn = _sessionCompressionOn;
+                else
+                    _ = _radioService.SetCompressionStateAsync(_sessionCompressionOn);
+                MonitorTextBoxText($" CMP restored for phones/remote: {_sessionCompressionOn} → sent to server");
+            }
+        }
+
+        SendResolvedAudioDevice(reason);
+
+        // Companion: only while Remote is active — kill otherwise so AF cannot play in background
+        if (mode == Opcodes.REMOTE_SOUND_DEVICE)
+            RemotePhonesLauncher.StartOrShow();
+        else if (previous == Opcodes.REMOTE_SOUND_DEVICE || RemotePhonesLauncher.IsRunning())
+            RemotePhonesLauncher.StopAll();
+    }
+
     partial void OnIsDigitalAudioChanged(bool value)
     {
-        OnPropertyChanged(nameof(RemoteAudioCheckboxEnabled));
-        SendResolvedAudioDevice(value ? "path→D" : "path→P");
-
         if (_suppressAudioDeviceSend) return;
-
-        if (value)
-        {
-            // P → D: force compression off and notify server (session preferred kept in _sessionCompressionOn)
-            if (CompressionOn)
-            {
-                CompressionOn = false; // OnCompressionOnChanged sends OFF; session not cleared (IsDigitalAudio already D)
-                MonitorTextBoxText(" CMP forced OFF for digital audio (D); session preferred preserved");
-            }
-        }
-        else
-        {
-            // D → P: restore session CMP state and send to server
-            if (CompressionOn != _sessionCompressionOn)
-            {
-                CompressionOn = _sessionCompressionOn; // sends restore value
-            }
-            else
-            {
-                // UI already matches; still push so server is in sync
-                _ = _radioService.SetCompressionStateAsync(_sessionCompressionOn);
-            }
-            MonitorTextBoxText($" CMP restored for phones (P): {_sessionCompressionOn} → sent to server");
-        }
+        // Legacy setters (DIG-U, reports): map to full mode apply
+        byte mode = value
+            ? Opcodes.DIGITAL_SOUND_DEVICE
+            : (RemoteAudio ? Opcodes.REMOTE_SOUND_DEVICE : Opcodes.PHONES_SOUND_DEVICE);
+        ApplyAudioDeviceMode(mode, value ? "path→D" : "path→P");
     }
 
     partial void OnRemoteAudioChanged(bool value)
     {
-        if (!_suppressAudioDeviceSend)
-        {
-            SpectrumWaterfallSettings.RemoteAudio = value;
-            SpectrumWaterfallSettings.Save();
-        }
+        if (_suppressAudioDeviceSend) return;
         if (IsDigitalAudio)
         {
-            if (!_suppressAudioDeviceSend)
-                MonitorTextBoxText(" Remote Audio sticky saved (inactive while Audio=Digital)");
+            PersistAudioDeviceMode(Opcodes.DIGITAL_SOUND_DEVICE);
+            MonitorTextBoxText(" Remote sticky ignored while Audio=Digital");
             return;
         }
-        SendResolvedAudioDevice(value ? "Remote Audio ON" : "Remote Audio OFF");
+        ApplyAudioDeviceMode(
+            value ? Opcodes.REMOTE_SOUND_DEVICE : Opcodes.PHONES_SOUND_DEVICE,
+            value ? "Remote ON" : "Remote OFF");
     }
 
     /// <summary>
@@ -1176,7 +1235,9 @@ public partial class MainViewModel : ObservableObject, IDisposable
 
         // External electronic keyer / legacy (sticky client + mscc.ini PROFICIO-MKII)
         _externalElectronicKeyer = SpectrumWaterfallSettings.ExternalElectronicKeyer;
-        _remoteAudio = SpectrumWaterfallSettings.RemoteAudio;
+        // Sticky audio path 0/1/2 — if Remote, start MSCC-Remote on client startup
+        byte stickyAudio = (byte)Math.Clamp(SpectrumWaterfallSettings.AudioDeviceMode, 0, 2);
+        ApplyAudioDeviceMode(stickyAudio, "startup sticky", fromReport: false);
         // Keep mscc.ini aligned so next ms-sdr Start sees the sticky choice.
         try
         {
@@ -2794,7 +2855,19 @@ public partial class MainViewModel : ObservableObject, IDisposable
     public IRelayCommand ToggleAnCommand { get; }
     public IRelayCommand ToggleFullPowerCommand { get; }
 
-    [RelayCommand] private void ToggleAudioDigital() => IsDigitalAudio = !IsDigitalAudio;
+    /// <summary>Cycle Audio button: Digital → Phones → Remote → Digital.</summary>
+    [RelayCommand]
+    private void ToggleAudioDigital()
+    {
+        byte cur = ResolveAudioDeviceOpcode();
+        byte next = cur switch
+        {
+            Opcodes.DIGITAL_SOUND_DEVICE => Opcodes.PHONES_SOUND_DEVICE,
+            Opcodes.PHONES_SOUND_DEVICE => Opcodes.REMOTE_SOUND_DEVICE,
+            _ => Opcodes.DIGITAL_SOUND_DEVICE,
+        };
+        ApplyAudioDeviceMode(next, "cycle");
+    }
 
     [RelayCommand(CanExecute = nameof(CanToggleTune))]
     private void ToggleTune() => TuneMode = !TuneMode;
@@ -4384,7 +4457,13 @@ public partial class MainViewModel : ObservableObject, IDisposable
             await _radioService.StartAsync(launchSubsystems: launch);
             IsRadioRunning = _radioService.IsConnected;
             if (IsRadioRunning)
+            {
                 ApplyPanResolution("start");
+                // Re-push sticky Digital/Phones/Remote now that UDP is up; ensure companion if Remote
+                SendResolvedAudioDevice("start");
+                if (ResolveAudioDeviceOpcode() == Opcodes.REMOTE_SOUND_DEVICE)
+                    RemotePhonesLauncher.StartOrShow();
+            }
             RefreshSetupStatus();
             MonitorTextBoxText(
                 IsRadioRunning
@@ -4719,20 +4798,7 @@ public partial class MainViewModel : ObservableObject, IDisposable
         svc.DigitalMicGainLevelReported += v => { RadioState.DMicGain = v; MonitorTextBoxText($" DigitalMicGainLevel reported: {v}"); };
         svc.AudioDeviceReported += dev =>
         {
-            _suppressAudioDeviceSend = true;
-            try
-            {
-                if (dev == Opcodes.DIGITAL_SOUND_DEVICE)
-                {
-                    IsDigitalAudio = true;
-                }
-                else
-                {
-                    IsDigitalAudio = false;
-                    RemoteAudio = (dev == Opcodes.REMOTE_SOUND_DEVICE);
-                }
-            }
-            finally { _suppressAudioDeviceSend = false; }
+            ApplyAudioDeviceMode(dev, "server report", fromReport: true);
             string label = dev switch
             {
                 Opcodes.DIGITAL_SOUND_DEVICE => "D",
@@ -4740,6 +4806,13 @@ public partial class MainViewModel : ObservableObject, IDisposable
                 _ => "P",
             };
             MonitorTextBoxText($" AudioDevice reported: {dev} ({label})");
+        };
+
+        // ms-sdr WiFi SWR → GUI (SWR_METER_TO_GUI=1): extended 0x0B FWD/REV/SWR
+        svc.RadioSwrMeterReported += r =>
+        {
+            _swrFromMsSdr = true;
+            OnSwrReading(r);
         };
 
         svc.TxSetByServerReported += v =>
@@ -5193,7 +5266,8 @@ public partial class MainViewModel : ObservableObject, IDisposable
 
     private void UpdateShowExternalSwrFace()
     {
-        if (!SwrMeterSettings.Enabled)
+        // Direct WiFi listen (client UDP) and/or ms-sdr extended SWR path
+        if (!SwrMeterSettings.Enabled && !_swrFromMsSdr)
         {
             ShowExternalSwrFace = false;
             return;
@@ -5233,6 +5307,7 @@ public partial class MainViewModel : ObservableObject, IDisposable
             _alcIdleTimer = null;
         }
         try { _swrMeter.Dispose(); } catch { /* ignore */ }
+        try { RemotePhonesLauncher.StopAll(); } catch { /* ignore */ }
         _radioService.Stop();
     }
 }
