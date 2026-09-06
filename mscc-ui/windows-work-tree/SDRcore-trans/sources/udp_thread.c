@@ -475,6 +475,19 @@ void *UDP_Thread(void *my_param) {
                 stream_status = manage_stream(1, G_input_devices[G_input_device_index].device_index,
                     G_input_devices[G_input_device_index].num_channels);
                 break;
+            case REMOTE_AUDIO:
+                /* Opcode parity with Linux: open Phones streams; MSA1 remote_mic is Linux-first.
+                 * Until MSA1 is ported to Windows, behave like Operator mic path so device=2 is not a no-op. */
+                G_audio_mode = REMOTE_AUDIO;
+                stream_status = manage_stream(0, G_digital_input_devices[G_digital_input_device_index].device_index,
+                    G_digital_input_devices[G_digital_input_device_index].num_channels);
+                stream_status = manage_stream(1, G_input_devices[G_input_device_index].device_index,
+                    G_input_devices[G_input_device_index].num_channels);
+                print_time();
+                fprintf(G_fp_logfile,
+                    "[%d] UDP Thread. CMD_SET_AUDIO_DEVICE REMOTE done (Operator stream; MSA1 TBD on Windows). status=%d\n",
+                    line_number++, stream_status);
+                break;
             }
             break;
 
@@ -933,6 +946,7 @@ void *UDP_Thread(void *my_param) {
                 current_mic_volume = t_opcode_data;
                 switch (G_audio_mode) {
                 case OPERATOR_AUDIO:
+                case REMOTE_AUDIO:
                     print_time();
                     fprintf(G_fp_logfile, "[%d] UDP Thread. CMD_SET_MIC_VOLUME.  volume: %d, Calling Set_Mic_Volume\n",
                         line_number++, current_mic_volume);

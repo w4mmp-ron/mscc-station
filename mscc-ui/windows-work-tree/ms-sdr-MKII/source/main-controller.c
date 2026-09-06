@@ -746,6 +746,8 @@ int Radio_send_parameters(int command, int cmd_value, int print) {
     int retry_count = 4;
     int size = 0;
     int failed = FALSE;
+    static int keyer_mem_seq = 0;
+    unsigned char keyer_mem_pkt[4];
 
     G_Transceiver_Busy = TRUE;
     size = sizeof (cmd_value);
@@ -755,34 +757,130 @@ int Radio_send_parameters(int command, int cmd_value, int print) {
             command, cmd_value, size);
     print_time(0);
     fprintf(G_fp_logfile, "[%d] Radio_send_parameters. Calling usbControlMsgOUT\n", LINE_COUNT);
-    while (retry_count-- > 0 && status != size) {
-        status = usbControlMsgOUT(command, 0x0700 + 27, 0, (char*) (&cmd_value), size);
+
+    while (retry_count-- > 0) {
+        if (command == CMD_SET_KEYER_MEMORY) {
+            /* 2-byte payload: param + rolling seq (Proficio E_keyer_mem_pkt[2]) */
+            keyer_mem_seq++;
+            if (keyer_mem_seq <= 0 || keyer_mem_seq > 255)
+                keyer_mem_seq = 1;
+            keyer_mem_pkt[0] = (unsigned char)(cmd_value & 0xFF);
+            keyer_mem_pkt[1] = (unsigned char)keyer_mem_seq;
+            keyer_mem_pkt[2] = 0;
+            keyer_mem_pkt[3] = 0;
+            status = usbControlMsgOUT(command, 0x0700 + 27, 0, (char *)keyer_mem_pkt, 2);
+            if (status == 2)
+                break;
+        } else {
+            status = usbControlMsgOUT(command, 0x0700 + 27, 0, (char *)(&cmd_value), size);
+            if (status == size)
+                break;
+        }
         Sleep(50);
     }
-    if (retry_count == 0) {
-        print_time(0);
-        fprintf(G_fp_logfile, "[%d] Radio_send_parameters. retry_count EXCEEDED: %d, status: %d \n",
-                line_number++, retry_count, status);
-        failed = TRUE;
-    } else {
-        if (status != size) {
+    if (command == CMD_SET_KEYER_MEMORY) {
+        if (status != 2) {
             print_time(0);
-            fprintf(G_fp_logfile, "[%d] Radio_send_parameters. usbControlMsgOUT FAILED. Status: %d \n",
+            fprintf(G_fp_logfile, "[%d] Radio_send_parameters. KEYER_MEMORY FAILED status: %d\n",
                     line_number++, status);
             failed = TRUE;
+        } else {
+            /* Pace USB → Proficio so I2C can drain (one 0x9C pair at a time) */
+            Sleep(KEYER_MEM_USB_GAP_MS);
+            if ((cmd_value & 0xFF) == KEYER_MEM_STORE_END)
+                Sleep(KEYER_MEM_END_SETTLE_MS);
         }
+    } else if (status != size) {
+        print_time(0);
+        fprintf(G_fp_logfile, "[%d] Radio_send_parameters. usbControlMsgOUT FAILED. Status: %d \n",
+                line_number++, status);
+        failed = TRUE;
     }
     if (failed) {
-        Stop_all(0, STOP_PROFICIO_COMMS);
-    } else {
-        if (print == 0) {
-            print_time(0);
-            fprintf(G_fp_logfile, "[%d] Radio_send_parameters. Status: %d, Size: %d FINISHED\n",
-                    LINE_COUNT, status, size);
-        }
+        if (command != CMD_SET_KEYER_MEMORY)
+            Stop_all(0, STOP_PROFICIO_COMMS);
+    } else if (print == 0) {
+        print_time(0);
+        fprintf(G_fp_logfile, "[%d] Radio_send_parameters. Status: %d, Size: %d FINISHED\n",
+                LINE_COUNT, status, size);
     }
     G_Transceiver_Busy = FALSE;
     return status;
+}
+
+/*
+ * Keyer CQ memory helpers (CMD_SET_KEYER_MEMORY 0x9C).
+ * Each call → one USB vendor OUT [param,seq]; pacing is in Radio_send_parameters.
+ * Returns 0 on success, -1 on failure / keyer not installed.
+ */
+int Keyer_Memory_Param(int param)
+{
+    int status;
+
+    if (!G_proficio_mkii || cw_record.keyer_Installed != 1)
+        return -1;
+    status = Radio_send_parameters(CMD_SET_KEYER_MEMORY, param & 0xFF, 1);
+    return (status == 2) ? 0 : -1;
+}
+
+int Keyer_Memory_Select(int slot)
+{
+    if (slot < 0)
+        slot = 0;
+    if (slot > 3)
+        slot = 3;
+    print_time(0);
+    fprintf(G_fp_logfile, "[%d] Keyer_Memory_Select slot=%d\n", line_number++, slot);
+    if (Keyer_Memory_Param(KEYER_MEM_SELECT) != 0)
+        return -1;
+    return Keyer_Memory_Param(slot);
+}
+
+int Keyer_Memory_Play(void)
+{
+    print_time(0);
+    fprintf(G_fp_logfile, "[%d] Keyer_Memory_Play\n", line_number++);
+    return Keyer_Memory_Param(KEYER_MEM_PLAY);
+}
+
+/*
+ * Select slot, store begin, append printable ASCII (max 48), store end.
+ */
+int Keyer_Memory_Store(int slot, const char *text)
+{
+    int n = 0;
+    int i;
+    unsigned char c;
+
+    if (cw_record.keyer_Installed != 1)
+        return -1;
+    if (text == NULL)
+        text = "";
+
+    print_time(0);
+    fprintf(G_fp_logfile, "[%d] Keyer_Memory_Store slot=%d text=\"%.48s\"\n",
+            line_number++, slot, text);
+
+    if (Keyer_Memory_Select(slot) != 0)
+        return -1;
+    if (Keyer_Memory_Param(KEYER_MEM_STORE_BEGIN) != 0)
+        return -1;
+
+    for (i = 0; text[i] != '\0' && n < KEYER_MEM_MAX_CHARS; i++) {
+        c = (unsigned char)text[i];
+        if (c < 0x20 || c > 0x7E)
+            continue;
+        if (Keyer_Memory_Param((int)c) != 0)
+            return -1;
+        n++;
+    }
+
+    if (Keyer_Memory_Param(KEYER_MEM_STORE_END) != 0)
+        return -1;
+
+    print_time(0);
+    fprintf(G_fp_logfile, "[%d] Keyer_Memory_Store done chars=%d\n", line_number++, n);
+    return 0;
 }
 
 void Get_Version_Month() {
@@ -2137,8 +2235,58 @@ void * Command_Processor(void *my_param) {
             Update_CW_ini();
             break;
 
+        /*
+         * Memory-play Farnsworth text WPM (SET_MEM_TEXT_WPM 0x76).
+         * MKII + keyer only; legacy does not get this USB op.
+         */
+        case SET_MEM_TEXT_WPM:
+            cw_record.text_wpm = t_opcode_data;
+            print_time(0);
+            fprintf(G_fp_logfile, "[%d] SET_MEM_TEXT_WPM text_wpm=%d\n",
+                line_number++, (int)t_opcode_data);
+            if (G_proficio_mkii && cw_record.keyer_Installed == 1)
+                Radio_send_parameters(SET_MEM_TEXT_WPM, (int)t_opcode_data, 1);
+            Update_CW_ini();
+            break;
+
         case SET_QSK:
             Radio_send_parameters(opcode, t_opcode_data, 1);
+            break;
+
+        /*
+         * PIC keyer CQ memory (CMD_SET_KEYER_MEMORY 0x9C) — MKII + keyer only.
+         */
+        case CMD_SET_KEYER_MEMORY:
+            if (!G_proficio_mkii) {
+                print_time(0);
+                fprintf(G_fp_logfile,
+                    "[%d] CMD_SET_KEYER_MEMORY ignored — legacy (PROFICIO-MKII=0)\n",
+                    line_number++);
+            } else if (cw_record.keyer_Installed == 1) {
+                int p = (int)t_opcode_data & 0xFF;
+
+                print_time(0);
+                if (p == KEYER_MEM_PLAY)
+                    fprintf(G_fp_logfile, "[%d] CMD_SET_KEYER_MEMORY PLAY\n", line_number++);
+                else if (p == KEYER_MEM_STORE_BEGIN)
+                    fprintf(G_fp_logfile, "[%d] CMD_SET_KEYER_MEMORY STORE_BEGIN\n", line_number++);
+                else if (p == KEYER_MEM_STORE_END)
+                    fprintf(G_fp_logfile, "[%d] CMD_SET_KEYER_MEMORY STORE_END\n", line_number++);
+                else if (p == KEYER_MEM_SELECT)
+                    fprintf(G_fp_logfile, "[%d] CMD_SET_KEYER_MEMORY SELECT (next=slot)\n",
+                        line_number++);
+                else if (p >= 0x20 && p <= 0x7E)
+                    fprintf(G_fp_logfile, "[%d] CMD_SET_KEYER_MEMORY CHAR '%c'\n",
+                        line_number++, (char)p);
+                else
+                    fprintf(G_fp_logfile, "[%d] CMD_SET_KEYER_MEMORY param=%d\n",
+                        line_number++, p);
+                Keyer_Memory_Param(p);
+            } else {
+                print_time(0);
+                fprintf(G_fp_logfile, "[%d] CMD_SET_KEYER_MEMORY ignored — keyer not installed\n",
+                    line_number++);
+            }
             break;
 
         default:
@@ -2181,6 +2329,7 @@ int Update_CW_ini() {
             fprintf(fp_cw_ini, "CW_Weight=%d;\n", cw_record.weight);
             fprintf(fp_cw_ini, "CW_Tx_Hold=%d;\n", cw_record.tx_hold);
             fprintf(fp_cw_ini, "CW_Speed=%d;\n", cw_record.speed);
+            fprintf(fp_cw_ini, "CW_Mem_Text_WPM=%d;\n", cw_record.text_wpm);
             fprintf(fp_cw_ini, "CW_Semi_Break_In=%d;\n", 0);
             fprintf(fp_cw_ini, "CW_Semi_Control=%d;\n", 0);
             fprintf(fp_cw_ini, "CW_Side_Tone_Volume=%d;\n", 0);
@@ -2222,6 +2371,7 @@ void Send_CW_params_to_gui(void) {
     Gui_send_param(SET_WEIGHT, cw_record.weight);
     Gui_send_param(SET_TX_HOLD, cw_record.tx_hold);
     Gui_send_param(SET_WPM, cw_record.speed);
+    Gui_send_param(SET_MEM_TEXT_WPM, cw_record.text_wpm);
     Gui_send_param(SET_KEYER_MODE, cw_record.keyer_mode);
 
     print_time(0);
@@ -2303,6 +2453,14 @@ int initialize_keyer() {
         print_time(0);
         fprintf(G_fp_logfile, "[%d] initialize_keyer. Radio_send_parameters returned with status: %d\n", line_number++, status);
 
+        cmd_value = cw_record.text_wpm;
+        print_time(0);
+        fprintf(G_fp_logfile, "[%d] initialize_keyer. calling Radio_send_parameters.  SET_MEM_TEXT_WPM. data: %d\n",
+                line_number++, cmd_value);
+        status = Radio_send_parameters(SET_MEM_TEXT_WPM, cmd_value, 1);
+        print_time(0);
+        fprintf(G_fp_logfile, "[%d] initialize_keyer. Radio_send_parameters returned with status: %d\n", line_number++, status);
+
         cmd_value = cw_record.keyer_mode;
         print_time(0);
         fprintf(G_fp_logfile, "[%d] initialize_keyer. calling Radio_send_parameters.  SET_KEYER_MODE. data: %d\n", line_number++,
@@ -2310,6 +2468,13 @@ int initialize_keyer() {
         status = Radio_send_parameters(SET_KEYER_MODE, cmd_value, 1);
         print_time(0);
         fprintf(G_fp_logfile, "[%d] initialize_keyer. Radio_send_parameters returned with status: %d\n", line_number++, status);
+    } else {
+        /* No PIC keyer: still push hang time for Proficio CW */
+        cmd_value = cw_record.tx_hold;
+        print_time(0);
+        fprintf(G_fp_logfile, "[%d] initialize_keyer. keyer not installed — SET_TX_HOLD only data=%d\n",
+            line_number++, cmd_value);
+        status = Radio_send_parameters(SET_TX_HOLD, cmd_value, 1);
     }
     /* GUI push is on client session claim (Send_CW_params_to_gui) — not here. */
     print_time(0);
@@ -2407,6 +2572,20 @@ int parse_cw_init_record(char *record) {
         }
         cw_record.speed = cmd_value;
         cfg.speed_wpm = (float) cmd_value;
+    }
+    parameter = strstr(record, "CW_Mem_Text_WPM=");
+    if (parameter != NULL) {
+        length = strlen("CW_Mem_Text_WPM=");
+        cmd_value = atoi(&parameter[length]);
+        print_time(0);
+        fprintf(G_fp_logfile, "[%d] Parse_cw_init . CW_Mem_Text_WPM: %d\n", line_number++, cmd_value);
+        if (cmd_value < 0)
+            cmd_value = 0;
+        if (cmd_value > 60)
+            cmd_value = 60;
+        if (cmd_value != 0 && cmd_value < 5)
+            cmd_value = 0;
+        cw_record.text_wpm = (uint8_t)cmd_value;
     }
     /*parameter = strstr(record, "CW_Semi_Break_In=");
     if (parameter != NULL) {

@@ -28,16 +28,18 @@
 // 
 //Unused
 
-//#define GET_IAMBIC_TUNING 0x9C
 //#define GET_CW_DEFAULTS 0x9D
 //#define GET_CW_INTERFACE_METHOD 0x9E
 //#define GET_SIDE_TONE 0x9F
 //#define SET_IAMBIC_TYPE 0x74
-//#define SET_MEMORY_TYPE 0x76
 //#define SET_SEMI_BREAKIN 0x78
 //#define SET_SEMI_CONTROL 0x79
 //#define SET_IAMBIC_TUNING 0x7C
 //#define SET_CW_INTERFACE_METHOD 0x7E
+/* Retired names (still reserved opcodes — see live defines below):
+ * GET_IAMBIC_TUNING 0x9C → CMD_SET_KEYER_MEMORY
+ * SET_MEMORY_TYPE 0x76 → SET_MEM_TEXT_WPM
+ */
 
 
 //#define CMD_ECHO_WORD			0x00	// V1.4: Function changed to get version.
@@ -258,10 +260,26 @@
 #define SET_QSK 0x72
 #define SET_CW_PADDLE 0x73
 #define SET_SPACING 0x75
+/* Memory-play Farnsworth text WPM (was SET_MEMORY_TYPE).
+ * Param: 0=off; 5–60=overall/text WPM for inter-char/word gaps on CQ memory play.
+ * Character elements stay on SET_WPM. If text >= char WPM, treat as off. */
+#define SET_MEM_TEXT_WPM 0x76
 #define SET_WEIGHT 0x77
 #define SET_TX_HOLD 0x7A
 #define SET_WPM 0x7B
 #define SET_KEYER_INSTALLED 0x7D
+/* PIC keyer CQ/memory (was unused GET_IAMBIC_TUNING).
+ * Param: 0=play, 1=store begin, 2=store end, 3=select slot (next=0..3),
+ *        0x20-0x7E=append ASCII. Sticky slot; 4 slots × 48 chars.
+ * USB: vendor OUT 2 bytes [param,seq] per transfer; paced in Radio_send_parameters. */
+#define CMD_SET_KEYER_MEMORY 0x9C
+#define KEYER_MEM_PLAY          0
+#define KEYER_MEM_STORE_BEGIN   1
+#define KEYER_MEM_STORE_END     2
+#define KEYER_MEM_SELECT        3
+#define KEYER_MEM_MAX_CHARS     48
+#define KEYER_MEM_USB_GAP_MS    40
+#define KEYER_MEM_END_SETTLE_MS 400
 #define SET_SIDE_TONE 0x7F
 #define CMD_SET_TRANSCEIVER_CW_PITCH 0x90
 

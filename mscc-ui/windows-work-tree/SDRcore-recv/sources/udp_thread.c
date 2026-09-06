@@ -728,10 +728,15 @@ void *UDP_Thread(void *my_param) {
                         G_digital_output_devices[G_digital_output_device_index].num_channels);
                     break;
                 case OPERATOR_AUDIO:
+                case REMOTE_AUDIO:
+                    /* Remote AF RX is MsccRemotePhones; local speaker path same as Phones. */
                     stream_status = manage_stream(0, G_digital_output_devices[G_digital_output_device_index].device_index,
                         G_digital_output_devices[G_digital_output_device_index].num_channels);
                     stream_status = manage_stream(1, G_output_devices[G_output_device_index].device_index,
                         G_output_devices[G_output_device_index].num_channels);
+                    print_time();
+                    fprintf(G_fp_logfile, "[%d] UDP Thread. CMD_SET_AUDIO_DEVICE %s done\n",
+                        line_number++, t_opcode_data == REMOTE_AUDIO ? "REMOTE" : "OPERATOR");
                     break;
                 }
                 break;

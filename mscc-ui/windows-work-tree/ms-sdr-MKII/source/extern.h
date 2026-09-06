@@ -223,6 +223,7 @@ struct cw_parameters_record {
     uint8_t weight;
     uint8_t tx_hold;
     uint8_t speed;
+    uint8_t text_wpm; /* SET_MEM_TEXT_WPM 0x76: 0=off, else memory-play text WPM */
     uint8_t tone_index;
 };
 extern struct cw_parameters_record cw_record;
@@ -316,6 +317,11 @@ extern void *Gui_send_message(void *t);
 extern int Get_random_time(void);
 extern int initialize_keyer();
 extern int Update_CW_ini();
+/* Keyer CQ memory (0x9C): one USB OUT per param; paced in Radio_send_parameters */
+extern int Keyer_Memory_Param(int param);
+extern int Keyer_Memory_Select(int slot);
+extern int Keyer_Memory_Play(void);
+extern int Keyer_Memory_Store(int slot, const char *text);
 extern void *Manage_MKII_PTT_Switch(void *param);
 
 extern int G_transceiver_initialization_status;
