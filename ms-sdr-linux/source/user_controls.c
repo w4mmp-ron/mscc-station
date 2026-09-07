@@ -1328,6 +1328,8 @@ int User_Controls_Process(uint8_t command, char *buf, byte extened) {
                 fprintf(G_fp_logfile, "[%d] User_Controls_Process . CMD_SET_COMPRESSION_STATE . Compression State: %d \n", line_number++, opcode_data_8_bit);
                 SDRcore_trans_send_param(CMD_SET_COMPRESSION_STATE, opcode_data_8_bit);
                 User_Controls.Compression = opcode_data_8_bit;
+                /* Echo to session GUI so MSCC stays in sync (e.g. remote-phones inject). */
+                Gui_send_param(CMD_SET_COMPRESSION_STATE, User_Controls.Compression);
                 print_time(0);
                 fprintf(G_fp_logfile, "[%d] User_Controls_Process . CMD_SET_COMPRESSION_STATE . Finished \n", line_number++);
                 break;
@@ -1337,6 +1339,8 @@ int User_Controls_Process(uint8_t command, char *buf, byte extened) {
                 fprintf(G_fp_logfile, "[%d] User_Controls_Process . CMD_SET_COMPRESSION_LEVEL . Compression Level: %d \n", line_number++, opcode_data_8_bit);
                 SDRcore_trans_send_param(CMD_SET_COMPRESSION_LEVEL, opcode_data_8_bit);
                 User_Controls.Compression_Level = opcode_data_8_bit;
+                /* Echo to session GUI so MSCC stays in sync (e.g. remote-phones inject). */
+                Gui_send_param(CMD_SET_COMPRESSION_LEVEL, User_Controls.Compression_Level);
                 print_time(0);
                 fprintf(G_fp_logfile, "[%d] User_Controls_Process . CMD_SET_COMPRESSION_LEVEL . Finished \n", line_number++);
                 break;

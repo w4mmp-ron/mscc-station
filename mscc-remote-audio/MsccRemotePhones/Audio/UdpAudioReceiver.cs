@@ -1,3 +1,4 @@
+using System.Net;
 using System.Net.Sockets;
 using MsccRemotePhones.Protocol;
 
@@ -25,8 +26,11 @@ public sealed class UdpAudioReceiver : IDisposable
         Stop();
         ListenPort = port;
         BadPackets = 0;
-        _udp = new UdpClient(port);
+        /* ReuseAddress: MSCC kill→relaunch can leave the port briefly busy. */
+        _udp = new UdpClient();
+        _udp.Client.SetSocketOption(SocketOptionLevel.Socket, SocketOptionName.ReuseAddress, true);
         _udp.Client.ReceiveBufferSize = 1 << 20;
+        _udp.Client.Bind(new IPEndPoint(IPAddress.Any, port));
         _cts = new CancellationTokenSource();
         IsRunning = true;
         var token = _cts.Token;

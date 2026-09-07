@@ -43,28 +43,41 @@ public sealed class RemoteMicSender : IDisposable
     public static IReadOnlyList<(int Index, string Name)> ListCaptureDevices()
     {
         var list = new List<(int, string)> { (-1, "Default Windows recording device") };
+        List<string> wasapiNames = new();
+        try
+        {
+            var enumr = new MMDeviceEnumerator();
+            foreach (var d in enumr.EnumerateAudioEndPoints(DataFlow.Capture, DeviceState.Active))
+                wasapiNames.Add(d.FriendlyName);
+        }
+        catch { /* WaveIn names only */ }
+
         try
         {
             for (int i = 0; i < WaveIn.DeviceCount; i++)
             {
-                var caps = WaveIn.GetCapabilities(i);
-                list.Add((i, caps.ProductName));
+                // WaveIn ProductName is fixed 32 chars, often null-padded — trim or sticky restore breaks.
+                string waveName = (WaveIn.GetCapabilities(i).ProductName ?? "").TrimEnd('\0').Trim();
+                string display = waveName;
+                foreach (string friendly in wasapiNames)
+                {
+                    if (friendly.StartsWith(waveName, StringComparison.OrdinalIgnoreCase) ||
+                        waveName.StartsWith(friendly, StringComparison.OrdinalIgnoreCase) ||
+                        friendly.Contains(waveName, StringComparison.OrdinalIgnoreCase))
+                    {
+                        display = friendly; // full sticky name
+                        break;
+                    }
+                }
+                if (string.IsNullOrWhiteSpace(display))
+                    display = $"WaveIn #{i}";
+                list.Add((i, display));
             }
         }
         catch
         {
-            try
-            {
-                var enumr = new MMDeviceEnumerator();
-                var devices = enumr.EnumerateAudioEndPoints(DataFlow.Capture, DeviceState.Active);
-                int i = 0;
-                foreach (var d in devices)
-                {
-                    list.Add((i, d.FriendlyName));
-                    i++;
-                }
-            }
-            catch { /* empty list beyond default */ }
+            for (int i = 0; i < wasapiNames.Count; i++)
+                list.Add((i, wasapiNames[i]));
         }
         return list;
     }
@@ -115,7 +128,8 @@ public sealed class RemoteMicSender : IDisposable
                 };
                 wi.StartRecording();
                 _waveIn = wi;
-                DeviceName = WaveIn.GetCapabilities(waveDev).ProductName + (ch == 1 ? " (mono)" : " (stereo→mono)");
+                string capName = (WaveIn.GetCapabilities(waveDev).ProductName ?? "").TrimEnd('\0').Trim();
+                DeviceName = capName + (ch == 1 ? " (mono)" : " (stereo→mono)");
                 last = null;
                 break;
             }

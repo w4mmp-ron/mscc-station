@@ -5,6 +5,7 @@
 #include "audio.h"
 #include "pcm3060.h"
 #include "usb_device.h"
+#include "control.h"
 #include <string.h>
 
 uint8_t Audio_IQ_Channels = 0;
@@ -87,6 +88,15 @@ uint16_t audio_usb_in_packet(uint8_t *data, uint16_t max_len)
     }
     if (n > max_len) {
         n = max_len;
+    }
+
+    /*
+     * PSoC CONTROL_DOUT fabric gate: clear bit = mute PCM3060 RX → host.
+     * CW clears DOUT on key-down, sets it when hang ends (cw.c).
+     */
+    if ((Control_Read() & CONTROL_DOUT) == 0u) {
+        memset(data, 0, n);
+        return n;
     }
 
     if (Audio_IQ_Channels & 0x01u) {

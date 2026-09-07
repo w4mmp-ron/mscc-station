@@ -1,6 +1,8 @@
 using System;
 using System.Diagnostics;
 using System.IO;
+using System.Linq;
+using System.Threading;
 using MSCC.Core.Logging;
 
 namespace MSCC.Wpf;
@@ -52,7 +54,11 @@ internal static class RemotePhonesLauncher
     {
         try
         {
-            return Process.GetProcessesByName(ProcessName).Length > 0;
+            return Process.GetProcessesByName(ProcessName).Any(p =>
+            {
+                try { return !p.HasExited; }
+                catch { return false; }
+            });
         }
         catch
         {
@@ -65,18 +71,28 @@ internal static class RemotePhonesLauncher
     {
         try
         {
-            var existing = Process.GetProcessesByName(ProcessName);
-            if (existing.Length > 0)
+            /* After StopAll, a dying process can still be listed — wait, then start fresh. */
+            if (!WaitUntilGone(ProcessName, 1500))
             {
-                try
+                var live = Process.GetProcessesByName(ProcessName)
+                    .Where(p => { try { return !p.HasExited; } catch { return false; } })
+                    .ToArray();
+                if (live.Length > 0)
                 {
-                    var p = existing[0];
-                    if (p.MainWindowHandle != IntPtr.Zero)
-                        NativeShowWindow(p.MainWindowHandle);
+                    try
+                    {
+                        var p = live[0];
+                        if (p.MainWindowHandle != IntPtr.Zero)
+                            NativeShowWindow(p.MainWindowHandle);
+                    }
+                    catch { /* ignore activate failures */ }
+                    finally
+                    {
+                        foreach (var p in live) { try { p.Dispose(); } catch { /* ignore */ } }
+                    }
+                    DebugMonitor.MonitorTextBoxText(" MsccRemotePhones already running (shown)");
+                    return;
                 }
-                catch { /* ignore activate failures */ }
-                DebugMonitor.MonitorTextBoxText(" MsccRemotePhones already running (shown)");
-                return;
             }
 
             string? exe = ResolveExePath();
@@ -108,14 +124,44 @@ internal static class RemotePhonesLauncher
     {
         try
         {
-            // Also kill mistaken prior launches of the servers UI if still around from the bug
             KillByName(ProcessName);
             KillByName("MSCC-Remote"); // old wrong target — ensure it is not left running
+            WaitUntilGone(ProcessName, 2000);
         }
         catch (Exception ex)
         {
             DebugMonitor.MonitorTextBoxText($" Failed to stop remote phones: {ex.Message}");
         }
+    }
+
+    /// <returns>True if no live processes remain.</returns>
+    private static bool WaitUntilGone(string name, int timeoutMs)
+    {
+        var sw = Stopwatch.StartNew();
+        while (sw.ElapsedMilliseconds < timeoutMs)
+        {
+            Process[] procs;
+            try { procs = Process.GetProcessesByName(name); }
+            catch { return true; }
+            bool anyLive = false;
+            foreach (var p in procs)
+            {
+                try
+                {
+                    if (!p.HasExited)
+                        anyLive = true;
+                }
+                catch { /* ignore */ }
+                finally
+                {
+                    try { p.Dispose(); } catch { /* ignore */ }
+                }
+            }
+            if (!anyLive)
+                return true;
+            Thread.Sleep(50);
+        }
+        return false;
     }
 
     private static void KillByName(string name)
@@ -132,6 +178,7 @@ internal static class RemotePhonesLauncher
                     p.CloseMainWindow();
                     if (!p.WaitForExit(1500))
                         p.Kill(entireProcessTree: true);
+                    p.WaitForExit(1000);
                 }
             }
             catch

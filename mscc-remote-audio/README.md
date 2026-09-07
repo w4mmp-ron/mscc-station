@@ -11,23 +11,15 @@ Standalone **Windows** app for **operator remote audio**:
 
 ## Test: select audio device (0 / 1 / 2)
 
-Injects `CMD_SET_AUDIO_DEVICE` into a **live** ms-sdr session (no GUI handshake,
-so the MSCC client stays connected). From this folder:
+Prefer **MSCC → Phones + Remote Audio** (sends `0x9B` = 2 and launches MsccRemotePhones).
+
+Or inject into a live ms-sdr session from this folder:
 
 ```powershell
-.\Set-AudioDevice.ps1 -HostName proficio -Mode remote   # 2
-.\Set-AudioDevice.ps1 -HostName proficio -Mode phones   # 1
-.\Set-AudioDevice.ps1 -HostName proficio -Mode digital  # 0
+.\Set-AudioDevice.ps1 -HostName 192.168.12.199 -Mode remote   # 2
 ```
 
-Or Python:
-
-```text
-python set-audio-device.py --host proficio --mode remote
-```
-
-Default: **ms-sdr UDP 8888** (forwards to both cores).  
-`-DirectTrans` / `--direct` → **sdrcore-trans:9200** only.
+Default control port: **ms-sdr UDP 8888**.
 
 ## Layout
 

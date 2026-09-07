@@ -22,7 +22,17 @@ public sealed class AppSettings
     public string TxHost { get; set; } = "127.0.0.1";
     public int TxPort { get; set; } = MsccAudioProtocol.DefaultTxPort;
     public string MicDevice { get; set; } = "";
+    /// <summary>WaveIn device index; -1 = default. Backup when name match fails.</summary>
+    public int MicDeviceIndex { get; set; } = -1;
     public int MicVolumePct { get; set; } = 80;
+    /// <summary>If true, start RX automatically on launch (sticky Start RX).</summary>
+    public bool AutoStartRx { get; set; }
+    /// <summary>If true, start Mic TX automatically on launch (sticky Start Mic TX).</summary>
+    public bool AutoStartMic { get; set; }
+    /// <summary>ms-sdr control UDP port (CMP / audio device inject).</summary>
+    public int MsSdrPort { get; set; } = MsccControlClient.DefaultMsSdrPort;
+    public bool CompressionOn { get; set; }
+    public int CompressionLevel { get; set; } = 12;
 }
 
 public static class AppSettingsStore
@@ -98,8 +108,26 @@ public static class AppSettingsStore
                     case "MIC_DEVICE":
                         s.MicDevice = v;
                         break;
+                    case "MIC_DEVICE_INDEX":
+                        if (int.TryParse(v, out int mdi)) s.MicDeviceIndex = mdi;
+                        break;
                     case "MIC_VOLUME":
                         if (int.TryParse(v, out int mv)) s.MicVolumePct = mv;
+                        break;
+                    case "RX_AUTO_START":
+                        s.AutoStartRx = IsTruthy(v);
+                        break;
+                    case "MIC_AUTO_START":
+                        s.AutoStartMic = IsTruthy(v);
+                        break;
+                    case "MSSDR_PORT":
+                        if (int.TryParse(v, out int mp)) s.MsSdrPort = mp;
+                        break;
+                    case "COMPRESSION_ON":
+                        s.CompressionOn = IsTruthy(v);
+                        break;
+                    case "COMPRESSION_LEVEL":
+                        if (int.TryParse(v, out int cl)) s.CompressionLevel = cl;
                         break;
                 }
             }
@@ -109,6 +137,11 @@ public static class AppSettingsStore
             s.JitterMs = Clamp(s.JitterMs, 20, 300);
             s.VolumePct = Clamp(s.VolumePct, 0, 100);
             s.MicVolumePct = Clamp(s.MicVolumePct, 0, 100);
+            s.MsSdrPort = Clamp(s.MsSdrPort, 1024, 65535);
+            s.CompressionLevel = Clamp(
+                s.CompressionLevel,
+                MsccControlClient.CompressionLevelMin,
+                MsccControlClient.CompressionLevelMax);
             s.EqLowDb = Math.Clamp(s.EqLowDb, -PlaybackEq.MaxGainDb, PlaybackEq.MaxGainDb);
             s.EqMidDb = Math.Clamp(s.EqMidDb, -PlaybackEq.MaxGainDb, PlaybackEq.MaxGainDb);
             s.EqHighDb = Math.Clamp(s.EqHighDb, -PlaybackEq.MaxGainDb, PlaybackEq.MaxGainDb);
@@ -142,7 +175,13 @@ public static class AppSettingsStore
                 $"TX_HOST={s.TxHost}\n" +
                 $"TX_PORT={s.TxPort}\n" +
                 $"MIC_DEVICE={s.MicDevice}\n" +
-                $"MIC_VOLUME={s.MicVolumePct}\n");
+                $"MIC_DEVICE_INDEX={s.MicDeviceIndex}\n" +
+                $"MIC_VOLUME={s.MicVolumePct}\n" +
+                $"RX_AUTO_START={(s.AutoStartRx ? 1 : 0)}\n" +
+                $"MIC_AUTO_START={(s.AutoStartMic ? 1 : 0)}\n" +
+                $"MSSDR_PORT={s.MsSdrPort}\n" +
+                $"COMPRESSION_ON={(s.CompressionOn ? 1 : 0)}\n" +
+                $"COMPRESSION_LEVEL={s.CompressionLevel}\n");
         }
         catch
         {

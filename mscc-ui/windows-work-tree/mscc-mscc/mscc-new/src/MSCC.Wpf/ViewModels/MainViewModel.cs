@@ -524,7 +524,14 @@ public partial class MainViewModel : ObservableObject, IDisposable
     }
 
     [ObservableProperty] private int _compressionLevel; // 0-24 db
-    partial void OnCompressionLevelChanged(int value) { _ = _radioService.SetCompressionLevelAsync(value); MonitorTextBoxText($" CompressionLevel set: {value}"); }
+    partial void OnCompressionLevelChanged(int value)
+    {
+        /* Skip send when adopting a server/remote-phones report (same as CompressionOn). */
+        if (!_suppressCompressionCommand)
+            _ = _radioService.SetCompressionLevelAsync(value);
+        MonitorTextBoxText(
+            $" CompressionLevel set: {value}{(_suppressCompressionCommand ? " (from server)" : "")}");
+    }
 
     [ObservableProperty] private bool _monitorOn;
     partial void OnMonitorOnChanged(bool value) { _ = _radioService.SetMonitorAsync(value); MonitorTextBoxText($" MonitorOn set: {value}"); }
@@ -4787,7 +4794,13 @@ public partial class MainViewModel : ObservableObject, IDisposable
             MonitorTextBoxText(
                 $" CompressionState reported: {b} (sessionPreferred={_sessionCompressionOn}, audio={(IsDigitalAudio ? "D" : "P")})");
         };
-        svc.CompressionLevelReported += v => { CompressionLevel = v; MonitorTextBoxText($" CompressionLevel reported: {v}"); };
+        svc.CompressionLevelReported += v =>
+        {
+            _suppressCompressionCommand = true;
+            try { CompressionLevel = v; }
+            finally { _suppressCompressionCommand = false; }
+            MonitorTextBoxText($" CompressionLevel reported: {v}");
+        };
         svc.MonitorReported += b => { MonitorOn = b; MonitorTextBoxText($" Monitor reported: {b}"); };
         svc.TransverterReported += b => { TransverterOn = b; MonitorTextBoxText($" Transverter reported: {b}"); };
         svc.AudioDigitalModeReported += b => { IsDigitalAudio = b; MonitorTextBoxText($" AudioDigitalMode reported: {(b ? "D" : "P")}"); };

@@ -7,8 +7,8 @@
  *   I2C: SDA, SCL
  *   I2S data in: DOUT from PCM3060
  *
- * CONTROL_DIN / CONTROL_DOUT bits: software shadow (fabric gates on PSoC;
- * not separate I2S DIN/DOUT mother-board pins).
+ * CONTROL_DIN: software shadow (PSoC fabric TX gate; no mother-board pin).
+ * CONTROL_DOUT: gates USB audio IN (PCM3060 RX → host); see audio_usb_in_packet.
  */
 #include "control.h"
 #include "board_pins.h"
@@ -29,9 +29,8 @@ static void apply_control_gpio(uint8_t v)
     HAL_GPIO_WritePin(BOARD_AMP_GPIO, BOARD_AMP_PIN,
                       (v & CONTROL_AMP) ? GPIO_PIN_SET : GPIO_PIN_RESET);
 
-    /* CONTROL_DIN / CONTROL_DOUT: shadow only (no mother-board pins) */
+    /* CONTROL_DIN: shadow only. CONTROL_DOUT enforced in audio_usb_in_packet. */
     (void)CONTROL_DIN;
-    (void)CONTROL_DOUT;
 
     /* LED1: Control bit0 → on-module PC13 active-low */
     if (v & CONTROL_LED) {
