@@ -1,5 +1,5 @@
 Package: mscc
-Version: 1.0.40
+Version: 1.0.41
 Section: hamradio
 Priority: optional
 Architecture: arm64
