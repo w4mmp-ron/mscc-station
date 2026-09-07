@@ -63,6 +63,8 @@ public sealed class ClientSettings
     public bool CwQsk { get; set; }
     public bool CwPhones { get; set; }
     public int CwSpeed { get; set; } = 20;
+    /// <summary>Farnsworth memory-play text WPM (0x76). 0=off; 5–60.</summary>
+    public int CwMemTextWpm { get; set; }
     /// <summary>Keyer CQ memory slot 0..3 text (client-side only; no radio read-back).</summary>
     public string KeyerMem0 { get; set; } = "";
     public string KeyerMem1 { get; set; } = "";
@@ -250,6 +252,7 @@ public static class ClientSettingsStore
             sb.AppendLine($"CW_QSK={(s.CwQsk ? "1" : "0")}");
             sb.AppendLine($"CW_PHONES={(s.CwPhones ? "1" : "0")}");
             sb.AppendLine($"CW_SPEED={s.CwSpeed}");
+            sb.AppendLine($"CW_MEM_TEXT_WPM={ClampCwMemTextWpm(s.CwMemTextWpm)}");
             sb.AppendLine($"KEYER_MEM0={EscapeIni(s.KeyerMem0)}");
             sb.AppendLine($"KEYER_MEM1={EscapeIni(s.KeyerMem1)}");
             sb.AppendLine($"KEYER_MEM2={EscapeIni(s.KeyerMem2)}");
@@ -459,6 +462,10 @@ public static class ClientSettingsStore
             case "CW_SPEED":
                 if (int.TryParse(val, NumberStyles.Integer, CultureInfo.InvariantCulture, out int csp))
                     s.CwSpeed = Math.Clamp(csp, 5, 60);
+                break;
+            case "CW_MEM_TEXT_WPM":
+                if (int.TryParse(val, NumberStyles.Integer, CultureInfo.InvariantCulture, out int cmt))
+                    s.CwMemTextWpm = ClampCwMemTextWpm(cmt);
                 break;
             case "KEYER_MEM0":
                 s.KeyerMem0 = ClampKeyerMem(UnescapeIni(val));
@@ -710,6 +717,14 @@ public static class ClientSettingsStore
                 sb.Append(c);
         }
         return sb.ToString();
+    }
+
+    /// <summary>0=off; 1–4→0; else clamp 5–60 (matches host/PIC Farnsworth rules).</summary>
+    public static int ClampCwMemTextWpm(int wpm)
+    {
+        if (wpm <= 0) return 0;
+        if (wpm < 5) return 0;
+        return Math.Clamp(wpm, 5, 60);
     }
 
     /// <summary>

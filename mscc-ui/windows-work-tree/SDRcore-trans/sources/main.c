@@ -6,6 +6,7 @@
  *********************************************************/
 #define RON
 #include "extern.h"
+#include "remote_mic.h"
 //#include "sdrcoretx.h"
 //#include "dsputils.h"
 //#include "commands.h"
@@ -96,62 +97,78 @@ static int sdrAudioCallback(const void *inputBuffer, void *outputBuffer,
         void *userData) {
     SAMPLE *out = (SAMPLE*) outputBuffer;
     const SAMPLE *in = (const SAMPLE*) inputBuffer;
+    static SAMPLE remote_buf[4096 * 2];
+    int mic_channels;
     unsigned int i;
     (void) timeInfo; /* Prevent unused variable warnings. */
     (void) statusFlags;
     (void) userData;
+    (void) in;
 
     G_DSP_Busy = TRUE;
-    if (inputBuffer == NULL) {
+    /*
+     * REMOTE_AUDIO (CMD_SET_AUDIO_DEVICE=2) → MSA1 UDP mic.
+     * Digital (0) always uses PortAudio digi capture; Phones (1) local mic.
+     */
+    if (G_audio_mode == REMOTE_AUDIO && remote_mic_ready() &&
+        framesPerBuffer <= 4096u) {
+        remote_mic_fill_stereo_96k(remote_buf, (unsigned)framesPerBuffer);
+        inbuffer = remote_buf;
+        outbuffer = (sp_float*) outputBuffer;
+        mic_channels = 2;
+    } else if (inputBuffer == NULL) {
         for (i = 0; i < framesPerBuffer; i++) {
             *out++ = 0; /* left - silent */
             *out++ = 0; /* right - silent */
         }
         gNumNoInputs += 1;
+        G_DSP_Busy = FALSE;
+        return paContinue;
     } else {
         inbuffer = (sp_float*) inputBuffer;
         outbuffer = (sp_float*) outputBuffer;
-        /*
-                Mux samples into complex struct array. The "custom" typedef is to avoid consistency issues
-                across compilers with COMPLEX. 
-         */
-        framesToComplex(inbuffer, incplx, outcplx, framesPerBuffer, inputchannels);
-        if ((mystate.opmode == MODE_AM) || (mystate.opmode == MODE_LSB) || (mystate.opmode == MODE_USB))
-            doMicProc(incplx, framesPerBuffer);
-        //if ((G_tx_mode == 1) || G_QSK) {
-        if (G_mode != 'T' && G_null_count++ < MAX_NULL) {
-            null_modulate(incplx); // no mode, zero out IQ stream for no output
-            //print_time();
-            //fprintf(G_fp_logfile, "[%d] Main Thread. sdrAudioCallback. G_null_count %d\n",
-            //        line_number++, G_null_count);
-        } else { /**************************** Two-tone test *****************************************/
-            if (mystate.twoToneFlag) {
-                ssb_modulate(incplx);
-                twoTone(incplx); // overwrites any mic audio data in buffer
-            } else {
-                /**************************** AM and SSB modulators *********************************/
-                if (mystate.opmode == MODE_AM) am_modulate(incplx);
-                if (mystate.opmode == MODE_LSB) ssb_modulate(incplx);
-                if (mystate.opmode == MODE_USB) ssb_modulate(incplx);
-                if (mystate.opmode == MODE_TUNE) tune_modulate(incplx);
-                if (mystate.opmode == MODE_CW) tune_modulate(incplx);
-                if (mystate.opmode == MODE_TUNE)tune_modulate(incplx);
-            }
+        mic_channels = inputchannels;
+    }
+    /*
+            Mux samples into complex struct array. The "custom" typedef is to avoid consistency issues
+            across compilers with COMPLEX.
+     */
+    framesToComplex(inbuffer, incplx, outcplx, framesPerBuffer, mic_channels);
+    if ((mystate.opmode == MODE_AM) || (mystate.opmode == MODE_LSB) || (mystate.opmode == MODE_USB))
+        doMicProc(incplx, framesPerBuffer);
+    //if ((G_tx_mode == 1) || G_QSK) {
+    if (G_mode != 'T' && G_null_count++ < MAX_NULL) {
+        null_modulate(incplx); // no mode, zero out IQ stream for no output
+        //print_time();
+        //fprintf(G_fp_logfile, "[%d] Main Thread. sdrAudioCallback. G_null_count %d\n",
+        //        line_number++, G_null_count);
+    } else { /**************************** Two-tone test *****************************************/
+        if (mystate.twoToneFlag) {
+            ssb_modulate(incplx);
+            twoTone(incplx); // overwrites any mic audio data in buffer
+        } else {
+            /**************************** AM and SSB modulators *********************************/
+            if (mystate.opmode == MODE_AM) am_modulate(incplx);
+            if (mystate.opmode == MODE_LSB) ssb_modulate(incplx);
+            if (mystate.opmode == MODE_USB) ssb_modulate(incplx);
+            if (mystate.opmode == MODE_TUNE) tune_modulate(incplx);
+            if (mystate.opmode == MODE_CW) tune_modulate(incplx);
+            if (mystate.opmode == MODE_TUNE)tune_modulate(incplx);
         }
+    }
 
-        /**************************** DO THE RADIO THING *********************************/
-        fastconv(incplx, outcplx, (int) framesPerBuffer);
+    /**************************** DO THE RADIO THING *********************************/
+    fastconv(incplx, outcplx, (int) framesPerBuffer);
 
-        /*
-                De-mux samples back into packed I-Q-I-Q-I-Q format. In case there's any question,
-                Q should lead I by 90 degrees.
-         */
-        for (i = 0; i < framesPerBuffer; i++) {
-            *outbuffer = outcplx[i].real * iMult;
-            outbuffer++;
-            *outbuffer = outcplx[i].imag * qMult;
-            outbuffer++;
-        }
+    /*
+            De-mux samples back into packed I-Q-I-Q-I-Q format. In case there's any question,
+            Q should lead I by 90 degrees.
+     */
+    for (i = 0; i < framesPerBuffer; i++) {
+        *outbuffer = outcplx[i].real * iMult;
+        outbuffer++;
+        *outbuffer = outcplx[i].imag * qMult;
+        outbuffer++;
     }
     G_DSP_Busy = FALSE;
     return paContinue;
@@ -480,9 +497,11 @@ int main(int argc, char **argv) {
         }
     }
     Init_Power_All();
+    remote_mic_init();
     while (G_all_threads_run) {
         Sleep(100);
     }
+    remote_mic_shutdown();
     err = Pa_CloseStream(stream);
     if (err != paNoError) goto error;
     Sleep(100);
@@ -490,6 +509,7 @@ int main(int argc, char **argv) {
     exit(0);
 
 error:
+    remote_mic_shutdown();
     Pa_Terminate();
     print_time();
     fprintf(G_fp_logfile, "[%d] An error occured while using the portaudio stream\n", line_number++);

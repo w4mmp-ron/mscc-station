@@ -60,9 +60,15 @@
     <ClCompile Include="sources\main.c">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="sources\remote_mic.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="sources\commands.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="sources\remote_mic.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="sources\dsputils.h">

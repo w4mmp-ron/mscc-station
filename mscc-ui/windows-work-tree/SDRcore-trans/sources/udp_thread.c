@@ -1,5 +1,6 @@
 #include "extern.h"
 #include "iq.h"
+#include "remote_mic.h"
 
 #define BUFLEN 512  //Max length of buffer
 
@@ -476,8 +477,7 @@ void *UDP_Thread(void *my_param) {
                     G_input_devices[G_input_device_index].num_channels);
                 break;
             case REMOTE_AUDIO:
-                /* Opcode parity with Linux: open Phones streams; MSA1 remote_mic is Linux-first.
-                 * Until MSA1 is ported to Windows, behave like Operator mic path so device=2 is not a no-op. */
+                /* Same stream open as Phones; callback pulls MSA1 instead of local mic. */
                 G_audio_mode = REMOTE_AUDIO;
                 stream_status = manage_stream(0, G_digital_input_devices[G_digital_input_device_index].device_index,
                     G_digital_input_devices[G_digital_input_device_index].num_channels);
@@ -485,8 +485,8 @@ void *UDP_Thread(void *my_param) {
                     G_input_devices[G_input_device_index].num_channels);
                 print_time();
                 fprintf(G_fp_logfile,
-                    "[%d] UDP Thread. CMD_SET_AUDIO_DEVICE REMOTE done (Operator stream; MSA1 TBD on Windows). status=%d\n",
-                    line_number++, stream_status);
+                    "[%d] UDP Thread. CMD_SET_AUDIO_DEVICE REMOTE done. stream_status=%d ready=%d\n",
+                    line_number++, stream_status, remote_mic_ready());
                 break;
             }
             break;

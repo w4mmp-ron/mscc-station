@@ -152,7 +152,7 @@ public partial class MainViewModel : ViewModelBase, IDisposable
         HighCutLabel = HighCutLabels[_highCutIndex];
         CwFilterLabel = CwFilterLabels[_cwFilterIndex];
         ModeText = "USB";
-        AppendLog("MSCC Avalonia 0.6.39 — spectrum + keep-alive hardening; CQ memory, Remote Audio, legacy keyer.");
+        AppendLog("MSCC Avalonia 0.6.40 — Farnsworth on CW tab; RemotePhones launcher; CQ memory / Remote Audio.");
         AppendLog("PTT = TX (voice modes); TUN = TUNE + carrier. S/W opens pan settings.");
         AppendLog($"Log: {LogFilePath}");
         CwPitchLabel = CwPitchOptions[Math.Clamp(CwPitchIndex, 0, CwPitchOptions.Count - 1)];
@@ -328,11 +328,15 @@ public partial class MainViewModel : ViewModelBase, IDisposable
     [ObservableProperty] private bool _anOn;
     [ObservableProperty] private bool _monitorOn;
     [ObservableProperty] private int _cwSpeed = 20;
+    /// <summary>Farnsworth memory-play text WPM (0x76). 0=Off; 5–60.</summary>
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(CwMemTextWpmLabel))]
+    private int _cwMemTextWpm;
     [ObservableProperty] private string _cwPitchLabel = "600Hz";
     [ObservableProperty] private string _proficioTempText = "— °C";
     [ObservableProperty] private string _paTempText = "— °C";
     [ObservableProperty] private string _paCurrentText = "— mA";
-    [ObservableProperty] private string _clientVersionText = "0.6.39";
+    [ObservableProperty] private string _clientVersionText = "0.6.40";
     [ObservableProperty] private bool _qrpMode = true;
     [ObservableProperty] private bool _fullPower;
     [ObservableProperty] private bool _alcOn;
@@ -982,6 +986,9 @@ public partial class MainViewModel : ViewModelBase, IDisposable
             await PushActiveVfoToRadioAsync(force: true).ConfigureAwait(true);
             // Restore sticky operate settings to the radio (server-backed)
             await PushStickyOperateToRadioAsync().ConfigureAwait(true);
+
+            if (RemoteAudio && !IsDigitalAudio)
+                RemotePhonesLauncher.StartOrShow(msg => AppendLog(msg));
         }
         catch (Exception ex)
         {
@@ -1583,6 +1590,11 @@ public partial class MainViewModel : ViewModelBase, IDisposable
             return;
         }
 
+        if (value)
+            RemotePhonesLauncher.StartOrShow(msg => AppendLog(msg));
+        else
+            RemotePhonesLauncher.StopAll(msg => AppendLog(msg));
+
         byte device = ResolveAudioDeviceOpcode();
         string label = device == Opcodes.REMOTE_SOUND_DEVICE ? "Remote (2)" : "Phones (1)";
         if (CanOperate() && _radio != null)
@@ -1684,6 +1696,31 @@ public partial class MainViewModel : ViewModelBase, IDisposable
     [RelayCommand]
     private void DecCwSpeed() => CwSpeed = Math.Clamp(CwSpeed - 1, 5, 60);
 
+    public string CwMemTextWpmLabel =>
+        CwMemTextWpm <= 0 ? "Off" : CwMemTextWpm.ToString(CultureInfo.InvariantCulture);
+
+    /// <summary>Farnsworth text WPM: Off→5→…→60.</summary>
+    [RelayCommand]
+    private void IncCwMemTextWpm()
+    {
+        if (CwMemTextWpm <= 0)
+            CwMemTextWpm = 5;
+        else
+            CwMemTextWpm = Math.Clamp(CwMemTextWpm + 1, 5, 60);
+    }
+
+    /// <summary>Farnsworth text WPM: …→5→Off.</summary>
+    [RelayCommand]
+    private void DecCwMemTextWpm()
+    {
+        if (CwMemTextWpm <= 0)
+            CwMemTextWpm = 0;
+        else if (CwMemTextWpm <= 5)
+            CwMemTextWpm = 0;
+        else
+            CwMemTextWpm = Math.Clamp(CwMemTextWpm - 1, 5, 60);
+    }
+
     [RelayCommand]
     private void IncCwHold() => CwHold = Math.Clamp(CwHold + 10, 1, 500);
 
@@ -1778,6 +1815,26 @@ public partial class MainViewModel : ViewModelBase, IDisposable
         if (ExternalElectronicKeyer) return;
         if (_suppressCwSend || !CanOperate() || _radio == null) return;
         _ = SendCwAsync(() => _radio.SetCwWpmAsync(wpm), $"CW speed {wpm} WPM");
+    }
+
+    partial void OnCwMemTextWpmChanged(int value)
+    {
+        int clamped = ClientSettingsStore.ClampCwMemTextWpm(value);
+        if (clamped != value)
+        {
+            _suppressCwSend = true;
+            CwMemTextWpm = clamped;
+            _suppressCwSend = false;
+            return;
+        }
+
+        OnPropertyChanged(nameof(CwMemTextWpmLabel));
+        ScheduleSaveClientSettings();
+        if (ExternalElectronicKeyer) return;
+        if (_suppressCwSend || !CanOperate() || _radio == null) return;
+        string label = clamped <= 0 ? "Off" : clamped.ToString(CultureInfo.InvariantCulture);
+        _ = SendCwAsync(() => _radio.SetKeyerMemTextWpmAsync(clamped),
+            $"CW Farnsworth (memory text WPM) {label}");
     }
 
     partial void OnCwKeyerModeChanged(int value)
@@ -4823,6 +4880,8 @@ public partial class MainViewModel : ViewModelBase, IDisposable
             _suppressCwSend = true;
             CwKeyerMode = Math.Clamp(s.CwKeyerMode, 0, Math.Max(0, CwKeyerModeOptions.Count - 1));
             CwSpacing = Math.Clamp(s.CwSpacing, 0, Math.Max(0, CwSpacingOptions.Count - 1));
+            // Farnsworth sticky — applied before other CW fields that may send
+            CwMemTextWpm = ClientSettingsStore.ClampCwMemTextWpm(s.CwMemTextWpm);
             CwPaddle = Math.Clamp(s.CwPaddle, 0, Math.Max(0, CwPaddleOptions.Count - 1));
             CwWeightIndex = Math.Clamp(s.CwWeightIndex, 0, CwWeightValues.Length - 1);
             CwPitchIndex = Math.Clamp(s.CwPitchIndex, 0, Math.Max(0, CwPitchOptions.Count - 1));
@@ -4982,6 +5041,7 @@ public partial class MainViewModel : ViewModelBase, IDisposable
             CwQsk = CwQsk,
             CwPhones = CwPhones,
             CwSpeed = CwSpeed,
+            CwMemTextWpm = ClientSettingsStore.ClampCwMemTextWpm(CwMemTextWpm),
             KeyerMem0 = SanitizeKeyerMem(KeyerMem0),
             KeyerMem1 = SanitizeKeyerMem(KeyerMem1),
             KeyerMem2 = SanitizeKeyerMem(KeyerMem2),
@@ -5075,11 +5135,16 @@ public partial class MainViewModel : ViewModelBase, IDisposable
             try
             {
                 await _radio.SetCwWpmAsync(Math.Clamp(CwSpeed, 5, 60)).ConfigureAwait(true);
-                await _radio.SetCwKeyerModeAsync(Math.Clamp(CwKeyerMode, 0, 3)).ConfigureAwait(true);
-                await _radio.SetCwSpacingAsync(Math.Clamp(CwSpacing, 0, 2)).ConfigureAwait(true);
-                await _radio.SetCwPaddleAsync(Math.Clamp(CwPaddle, 0, 1)).ConfigureAwait(true);
-                int weight = CwWeightValues[Math.Clamp(CwWeightIndex, 0, CwWeightValues.Length - 1)];
-                await _radio.SetCwWeightAsync(weight).ConfigureAwait(true);
+                if (!ExternalElectronicKeyer)
+                {
+                    await _radio.SetCwKeyerModeAsync(Math.Clamp(CwKeyerMode, 0, 3)).ConfigureAwait(true);
+                    await _radio.SetCwSpacingAsync(Math.Clamp(CwSpacing, 0, 2)).ConfigureAwait(true);
+                    await _radio.SetCwPaddleAsync(Math.Clamp(CwPaddle, 0, 1)).ConfigureAwait(true);
+                    int weight = CwWeightValues[Math.Clamp(CwWeightIndex, 0, CwWeightValues.Length - 1)];
+                    await _radio.SetCwWeightAsync(weight).ConfigureAwait(true);
+                    await _radio.SetKeyerMemTextWpmAsync(
+                        ClientSettingsStore.ClampCwMemTextWpm(CwMemTextWpm)).ConfigureAwait(true);
+                }
                 await _radio.SetCwPitchAsync(Math.Clamp(CwPitchIndex, 0, 3)).ConfigureAwait(true);
                 await _radio.SetCwTxHoldAsync(Math.Clamp(CwHold, 1, 500)).ConfigureAwait(true);
                 await _radio.SetCwQskAsync(CwQsk).ConfigureAwait(true);
@@ -5542,6 +5607,13 @@ public partial class MainViewModel : ViewModelBase, IDisposable
                 CwKeyerMode = Math.Clamp(v, 0, CwKeyerModeOptions.Count - 1);
             }));
 
+        radio.CwMemTextWpmReported += v =>
+            PostToUi(() => ApplyReportedCw(() =>
+            {
+                CwMemTextWpm = ClientSettingsStore.ClampCwMemTextWpm(v);
+                AppendLog($"CwMemTextWpm (Farnsworth) reported: {(CwMemTextWpm <= 0 ? "Off" : CwMemTextWpm.ToString(CultureInfo.InvariantCulture))}");
+            }));
+
         radio.CwSpacingReported += v =>
             PostToUi(() => ApplyReportedCw(() =>
             {
@@ -5863,6 +5935,7 @@ public partial class MainViewModel : ViewModelBase, IDisposable
         _disposed = true;
         CancelKeyerPlayPttRelease(releasePtt: false);
         _keyerPlayOwnsPtt = false;
+        try { RemotePhonesLauncher.StopAll(); } catch { /* ignore */ }
         DebugMonitor.LogMessage -= OnDebugLogMessage;
         SpectrumDisplaySettings.Instance.Changed -= OnSpectrumSettingsChanged;
         AppearanceSettings.Instance.Changed -= OnAppearanceSettingsChanged;

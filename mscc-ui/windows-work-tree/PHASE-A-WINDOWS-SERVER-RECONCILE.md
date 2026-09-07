@@ -189,7 +189,7 @@ Then **Phase B** smoke (Avalonia + Windows servers), then **Phase C** Avaloniaâ†
 | **A1** `0x9C` on Windows ms-sdr | **Done** | 2-byte USB pack, pacing, helpers, UDP case |
 | **A2** `0x76` on Windows ms-sdr | **Done** | ini / UDP / GUI push / init USB (mirrors Linux) |
 | **A3** GUI egress / KA / SO_RCVBUF | Deferred | Not in this drop |
-| **A4** `REMOTE_AUDIO=2` on Win recv+trans | **Partial** | Opcode accepted; aliases Operator streams (MSA1 modules not ported yet) |
+| **A4** `REMOTE_AUDIO=2` + MSA1 on Win recv+trans | **Done** | Opcode 2 + Winsock `remote_mic` / `remote_phones`; binaries in `C:\mscc-net9` |
 | **A5** Trans digi/TUNE NULL-input | Deferred | |
 | **Build â†’ `C:\mscc-net9`** | **Done** | `ms-sdr-MKII.exe`, `mscc-recv.exe`, `Mscc-trans.exe` (+ pdb/dlls) |
 

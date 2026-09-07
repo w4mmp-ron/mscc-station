@@ -1,4 +1,5 @@
 #include "extern.h"
+#include "remote_phones.h"
 
 
 #define _CRT_SECURE_NO_WARNINGS 1
@@ -154,6 +155,21 @@ static int sdrAudioCallback(const void *inputBuffer, void *outputBuffer,
 
         /********************** Run auto-notch *****************************************/
         if (anstate.enabled) anotch(outcplx, (int) framesPerBuffer);
+
+        /*
+         * Remote phones: post-DSP AF before local volume (Windows controls gain).
+         * Build interleaved float stereo for the feeder (L=R from real).
+         */
+        if (remote_phones_enabled()) {
+            static float rp_tmp[4096 * 2];
+            if (framesPerBuffer <= 4096u) {
+                for (i = 0; i < framesPerBuffer; i++) {
+                    rp_tmp[i * 2u] = outcplx[i].real;
+                    rp_tmp[i * 2u + 1u] = outcplx[i].real;
+                }
+                remote_phones_feed(rp_tmp, framesPerBuffer);
+            }
+        }
 
         /*
                 De-mux samples back into packed I-Q-I-Q-I-Q format. In case there's any question,
@@ -420,6 +436,9 @@ int main(int argc, char **argv) {
                 line_number++, Panadapter_thread_rc);
     }
 
+    /* Optional: post-DSP AF → MsccRemotePhones (MSA1 UDP) */
+    remote_phones_init();
+
     /*delete_ini_file();
     ini_status = check_for_sound_ini_file();
     if (ini_status == 1) {
@@ -531,6 +550,7 @@ int main(int argc, char **argv) {
     while (G_all_threads_run) {
         Sleep(100);
     }
+    remote_phones_shutdown();
     err = Pa_CloseStream(stream);
     if (err != paNoError) {
         Audio_Device_Error(err);

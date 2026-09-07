@@ -86,7 +86,7 @@
     <LibraryPath>.\libs;$(VC_LibraryPath_x86);$(WindowsSDK_LibraryPath_x86);$(NETFXKitsDir)Lib\um\x86</LibraryPath>
     <SourcePath>$(VC_SourcePath);..\sources</SourcePath>
     <TargetName>Mscc-trans</TargetName>
-    <OutDir>..\..\Release\</OutDir>
+    <OutDir>..\..\Release\windows-wpf\</OutDir>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='MFC|x64'">
     <LinkIncremental>false</LinkIncremental>
@@ -177,6 +177,7 @@ xcopy /y /f "$(ProjectDir)LIBS\portaudio_x86.dll"  "$(OutDir)"</Command>
     <ClCompile Include="sources\main.c" />
     <ClCompile Include="sources\overdriven.c" />
     <ClCompile Include="sources\print-utils.c" />
+    <ClCompile Include="sources\remote_mic.c" />
     <ClCompile Include="sources\sdrcoretx.c" />
     <ClCompile Include="sources\power.c" />
     <ClCompile Include="sources\udp_thread.c" />
@@ -192,6 +193,7 @@ xcopy /y /f "$(ProjectDir)LIBS\portaudio_x86.dll"  "$(OutDir)"</Command>
     <ClInclude Include="sources\portaudio.h" />
     <ClInclude Include="sources\port_defines.h" />
     <ClInclude Include="sources\pthread.h" />
+    <ClInclude Include="sources\remote_mic.h" />
     <ClInclude Include="sources\sched.h" />
     <ClInclude Include="sources\sdrcoretx.h" />
     <ClInclude Include="sources\version.h" />

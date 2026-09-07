@@ -35,7 +35,7 @@
     <LinkIncremental>false</LinkIncremental>
     <LibraryPath>.\LIBS;$(LibraryPath)</LibraryPath>
     <TargetName>ms-sdr-MKII</TargetName>
-    <OutDir>..\..\Release\</OutDir>
+    <OutDir>..\..\Release\windows-wpf\</OutDir>
     <IntDir>.\Release\</IntDir>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='MFC|Win32'">

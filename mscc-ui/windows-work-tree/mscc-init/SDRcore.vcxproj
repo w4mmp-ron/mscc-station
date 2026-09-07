@@ -37,7 +37,7 @@
     <LibraryPath>.\libs;$(VC_LibraryPath_x86);$(WindowsSDK_LibraryPath_x86);$(NETFXKitsDir)Lib\um\x86</LibraryPath>
     <SourcePath>$(VC_SourcePath);..\sources</SourcePath>
     <TargetName>mscc-init</TargetName>
-    <OutDir>..\..\Release\</OutDir>
+    <OutDir>..\..\Release\windows-wpf\</OutDir>
     <IntDir>.\Release\</IntDir>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='MFC|Win32'">
