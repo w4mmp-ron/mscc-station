@@ -443,7 +443,8 @@ void* Flusher_thread(void* t) {
             }
             if (G_MSCC_Initialized == 1 || G_client_session_active) {
                 Gui_send_param(CMD_SET_KEEP_ALIVE, KEEP_ALIVE_FROM_CLIENT);
-                if (gui_count++ >= 6) {
+                /* Was 6 (~18s with 3s Sleep). Match Linux grace under pan flood (~45s). */
+                if (gui_count++ >= 15) {
                     if (G_Heart_beat > previous_heart_beat) {
                         previous_heart_beat = G_Heart_beat;
                     }

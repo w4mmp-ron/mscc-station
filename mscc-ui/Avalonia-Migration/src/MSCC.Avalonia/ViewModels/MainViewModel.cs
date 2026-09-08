@@ -152,7 +152,7 @@ public partial class MainViewModel : ViewModelBase, IDisposable
         HighCutLabel = HighCutLabels[_highCutIndex];
         CwFilterLabel = CwFilterLabels[_cwFilterIndex];
         ModeText = "USB";
-        AppendLog("MSCC Avalonia 0.6.40 — Farnsworth on CW tab; RemotePhones launcher; CQ memory / Remote Audio.");
+        AppendLog("MSCC Avalonia 0.6.41 — RemotePhones lifecycle parity; CQ memory / Remote Audio / Farnsworth.");
         AppendLog("PTT = TX (voice modes); TUN = TUNE + carrier. S/W opens pan settings.");
         AppendLog($"Log: {LogFilePath}");
         CwPitchLabel = CwPitchOptions[Math.Clamp(CwPitchIndex, 0, CwPitchOptions.Count - 1)];
@@ -336,7 +336,7 @@ public partial class MainViewModel : ViewModelBase, IDisposable
     [ObservableProperty] private string _proficioTempText = "— °C";
     [ObservableProperty] private string _paTempText = "— °C";
     [ObservableProperty] private string _paCurrentText = "— mA";
-    [ObservableProperty] private string _clientVersionText = "0.6.40";
+    [ObservableProperty] private string _clientVersionText = "0.6.41";
     [ObservableProperty] private bool _qrpMode = true;
     [ObservableProperty] private bool _fullPower;
     [ObservableProperty] private bool _alcOn;
@@ -1533,11 +1533,26 @@ public partial class MainViewModel : ViewModelBase, IDisposable
         return Opcodes.PHONES_SOUND_DEVICE;
     }
 
+    /// <summary>
+    /// WPF parity: companion runs only for Remote (not Digital). Sticky RemoteAudio
+    /// may stay true while Digital is selected — still stop MsccRemotePhones.
+    /// </summary>
+    private void SyncRemotePhonesCompanion()
+    {
+        if (!IsDigitalAudio && RemoteAudio)
+            RemotePhonesLauncher.StartOrShow(msg => AppendLog(msg));
+        else
+            RemotePhonesLauncher.StopAll(msg => AppendLog(msg));
+    }
+
     partial void OnIsDigitalAudioChanged(bool value)
     {
         OnPropertyChanged(nameof(AudioPathButtonText));
         OnPropertyChanged(nameof(RemoteAudioCheckboxEnabled));
         ScheduleSaveClientSettings();
+
+        // Always sync companion (including server-report path) — Digital must stop AF.
+        SyncRemotePhonesCompanion();
 
         if (_suppressAudioSend) return;
 
@@ -1582,18 +1597,19 @@ public partial class MainViewModel : ViewModelBase, IDisposable
     partial void OnRemoteAudioChanged(bool value)
     {
         ScheduleSaveClientSettings();
-        if (_suppressAudioSend) return;
 
+        // Companion follows sticky Remote + path even when suppressing opcode sends.
         if (IsDigitalAudio)
         {
-            AppendLog("Remote Audio sticky saved (inactive while Audio=Digital)");
+            if (!_suppressAudioSend)
+                AppendLog("Remote Audio sticky saved (inactive while Audio=Digital)");
+            SyncRemotePhonesCompanion();
             return;
         }
 
-        if (value)
-            RemotePhonesLauncher.StartOrShow(msg => AppendLog(msg));
-        else
-            RemotePhonesLauncher.StopAll(msg => AppendLog(msg));
+        SyncRemotePhonesCompanion();
+
+        if (_suppressAudioSend) return;
 
         byte device = ResolveAudioDeviceOpcode();
         string label = device == Opcodes.REMOTE_SOUND_DEVICE ? "Remote (2)" : "Phones (1)";

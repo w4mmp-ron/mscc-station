@@ -170,6 +170,9 @@ static void Session_Claim(const struct sockaddr_in *peer) {
     if (peer != NULL) {
         G_session_client = *peer;
         G_session_client_valid = TRUE;
+        /* Prefer live peer for all GUI replies (MSCC_IP may differ). */
+        si_gui = *peer;
+        G_Remote_GUI_Attached = TRUE;
     } else {
         G_session_client_valid = FALSE;
     }
@@ -181,6 +184,9 @@ static void Session_Claim(const struct sockaddr_in *peer) {
         line_number++,
         peer ? inet_ntoa(peer->sin_addr) : "(none)",
         peer ? (unsigned)ntohs(peer->sin_port) : 0);
+    /* Immediate I'm-Alive so client watchdog does not fire during long handshake. */
+    Gui_send_param(CMD_SET_KEEP_ALIVE, 1);
+    Gui_send_param(CMD_SET_KEEP_ALIVE, 1);
 }
 
 void Session_Release(void) {
@@ -415,46 +421,68 @@ void print_opcode(uint8_t opcode, int opcode_data) {
 
 int Gui_send_param(uint8_t op_code, int op_data) {
     char buf[50] = { 0 };
-    int slen = sizeof (si_gui);
+    int slen;
+    struct sockaddr_in *dest = NULL;
+    /* Prefer bound server socket (dll_s / port 8888) + live session peer. */
+    int out_sock = (dll_s != INVALID_SOCKET && dll_s > 0) ? dll_s : gui_s;
 
-    //print_time(0);
-    //        fprintf(G_fp_logfile, "[%d] Gui_send_param . op_code: %d, op_data: %d \n",
-    //               line_number++,op_code,op_data );
     buf[0] = op_code;
     memcpy(&buf[1], &op_data, 4);
-    if (G_Remote_GUI_Attached == TRUE) {
-        if (sendto(gui_s, buf, 5, 0, (struct sockaddr *) &si_gui, slen) == SOCKET_ERROR) {
-            print_time(0);
-            fprintf(G_fp_logfile, "[%d] Gui_send_param . sentto FAILED with error code : %s\n",
-                    line_number++, strerror(errno));
-        }
+
+    if (G_session_client_valid) {
+        dest = &G_session_client;
+        slen = sizeof(G_session_client);
+    } else if (G_Remote_GUI_Attached == TRUE) {
+        dest = &si_gui;
+        slen = sizeof(si_gui);
+    } else {
+        return 0;
     }
-    Sleep(10);
+
+    if (sendto(out_sock, buf, 5, 0, (struct sockaddr *) dest, slen) == SOCKET_ERROR) {
+        print_time(0);
+        fprintf(G_fp_logfile, "[%d] Gui_send_param . sentto FAILED with error code : %s (op 0x%X)\n",
+                line_number++, strerror(errno), op_code);
+        return 0;
+    }
+    /* Keep-alive must be cheap — no Sleep (was 10ms every GUI packet). */
+    if (op_code != CMD_SET_KEEP_ALIVE) {
+        Sleep(10);
+    }
     return 1;
 }
 
 int Gui_send_param_extended(byte command, byte *op_data, int size) {
     char buf[PATH_MAX] = { 0 };
-    int slen = sizeof (si_gui);
+    int slen;
+    struct sockaddr_in *dest = NULL;
+    int out_sock = (dll_s != INVALID_SOCKET && dll_s > 0) ? dll_s : gui_s;
 
+    if (size < 0 || size > (int)(sizeof(buf) - 2))
+        return 0;
 
     buf[0] = CMD_SET_EXTENDED_COMMAND;
     buf[1] = command;
-    memcpy(&buf[2], op_data, size);
-    //print_time(0);
-    //fprintf(G_fp_logfile, "[%d] Gui_send_param_extended . NEW MESSAGE: %s\n", line_number++, (char *) buf);
-    if (G_Remote_GUI_Attached == TRUE && G_MSCC_Initialized == TRUE) {
-        if (sendto(gui_s, buf, (size + 2), 0, (struct sockaddr *) &si_gui, slen) == SOCKET_ERROR) {
-            print_time(0);
-            fprintf(G_fp_logfile, "[%d] Gui_send_param_extended . sentto gui_s FAILED with error code : %s\n",
-                    line_number++, strerror(errno));
-        }
-    } else {
-        print_time(0);
-        fprintf(G_fp_logfile, "[%d] Gui_send_param_extended . GUI NOT READY\n", line_number++);
-    }
-    Sleep(10);
+    memcpy(&buf[2], op_data, (size_t)size);
 
+    if (!(G_Remote_GUI_Attached == TRUE && G_MSCC_Initialized == TRUE))
+        return 0;
+
+    if (G_session_client_valid) {
+        dest = &G_session_client;
+        slen = sizeof(G_session_client);
+    } else {
+        dest = &si_gui;
+        slen = sizeof(si_gui);
+    }
+
+    if (sendto(out_sock, buf, size + 2, 0, (struct sockaddr *)dest, slen) == SOCKET_ERROR) {
+        print_time(0);
+        fprintf(G_fp_logfile, "[%d] Gui_send_param_extended . sentto FAILED with error code : %s (sub 0x%X)\n",
+                line_number++, strerror(errno), command);
+        return 0;
+    }
+    /* No Sleep — high-rate meter/SWR must not stall KA pacing. */
     return 1;
 }
 
@@ -632,10 +660,24 @@ void Gui_get_param(uint8_t op_code, char *buffer) {
                     t_opcode_data);
             }
             if (G_spectrum_cycle_count <= 0) {
-                if (sendto(gui_s, buffer, recv_len, 0, (struct sockaddr*)&si_gui, slen) == SOCKET_ERROR) {
-                    print_time(0);
-                    fprintf(G_fp_logfile, "[%d] Gui_get_parm. CMD_GET_SET_PANADAPTER. Sendto spectrum_s . FAILED with error code : %s\n",
-                        line_number++, strerror(errno));
+                /* Same egress as Gui_send_param: bound dll_s + live session peer. */
+                {
+                    struct sockaddr_in *pan_dest = NULL;
+                    int pan_slen = 0;
+                    int pan_sock = (dll_s != INVALID_SOCKET && dll_s > 0) ? dll_s : gui_s;
+
+                    if (G_session_client_valid) {
+                        pan_dest = &G_session_client;
+                        pan_slen = sizeof(G_session_client);
+                    } else {
+                        pan_dest = &si_gui;
+                        pan_slen = sizeof(si_gui);
+                    }
+                    if (sendto(pan_sock, buffer, recv_len, 0, (struct sockaddr *)pan_dest, pan_slen) == SOCKET_ERROR) {
+                        print_time(0);
+                        fprintf(G_fp_logfile, "[%d] Gui_get_parm. CMD_GET_SET_PANADAPTER. Sendto failed: %s\n",
+                            line_number++, strerror(errno));
+                    }
                 }
             }
             else {
@@ -1202,6 +1244,19 @@ void * Command_Processor(void *my_param) {
         print_time(0);
         fprintf(G_fp_logfile, "[%d] Command_Interface. Server Bind Failed. Error Code : %s\n", line_number++, strerror(errno));
         Stop_all(0, STOP_NETWORK_FAILED);
+    }
+    /* Panadapter + GUI KA share dll_s. Enlarge rcvbuf so spectrum does not drop KA. */
+    {
+        int rcv = 4 * 1024 * 1024;
+        if (setsockopt(dll_s, SOL_SOCKET, SO_RCVBUF, (const char *)&rcv, sizeof(rcv)) != 0) {
+            print_time(0);
+            fprintf(G_fp_logfile, "[%d] Command_Interface. SO_RCVBUF 4MiB failed: %s\n",
+                line_number++, strerror(errno));
+        } else {
+            print_time(0);
+            fprintf(G_fp_logfile, "[%d] Command_Interface. SO_RCVBUF requested 4MiB for pan+KA\n",
+                line_number++);
+        }
     }
 
     ///////////////////////////////////////////////////////////////////////////////////

@@ -2,7 +2,7 @@
 
 **Pi:** 4 or 5, **64-bit Raspberry Pi OS** (desktop recommended).  
 **Packages:** use files in **`pi-install/packages/`** (this folder).  
-**Updated:** 2026-09 — servers **1.0.40**, init-gui **1.0.13** (hides Proficio/Multus I/Q from speaker/mic pickers), portaudio **19.8.2**, UI **0.6.39**.
+**Updated:** 2026-09 — servers **1.0.41** (CMP GUI echo), init-gui **1.0.13**, portaudio **19.8.2**, UI **0.6.41** (RemotePhones lifecycle parity).
 
 If a filename in `packages/` differs, **use the real name on disk**.
 
@@ -63,7 +63,7 @@ ldconfig -p | grep portaudio
 
 ```bash
 sudo apt update
-sudo apt install -y ./mscc_1.0.40_arm64.deb
+sudo apt install -y ./mscc_1.0.41_arm64.deb
 ```
 
 Optional helper (if present):
@@ -136,7 +136,7 @@ mscc stop
 Use when you want the operate GUI **on the Pi** (or a second Linux box).
 
 ```bash
-sudo apt install -y ./mscc-ui_0.6.39_arm64.deb
+sudo apt install -y ./mscc-ui_0.6.41_arm64.deb
 ```
 
 | Item | Detail |

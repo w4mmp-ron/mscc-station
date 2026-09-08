@@ -182,22 +182,24 @@ Then **Phase B** smoke (Avalonia + Windows servers), then **Phase C** Avalonia�
 
 ---
 
-## Implementation status (2026-09-06)
+## Implementation status (2026-09-06 → 2026-09-07)
 
 | Step | Status | Notes |
 |------|--------|--------|
 | **A1** `0x9C` on Windows ms-sdr | **Done** | 2-byte USB pack, pacing, helpers, UDP case |
 | **A2** `0x76` on Windows ms-sdr | **Done** | ini / UDP / GUI push / init USB (mirrors Linux) |
-| **A3** GUI egress / KA / SO_RCVBUF | Deferred | Not in this drop |
-| **A4** `REMOTE_AUDIO=2` + MSA1 on Win recv+trans | **Done** | Opcode 2 + Winsock `remote_mic` / `remote_phones`; binaries in `C:\mscc-net9` |
+| **A3** GUI egress / KA / SO_RCVBUF | **Done** | `dll_s` + `G_session_client`; KA no-Sleep; 4 MiB rcvbuf; pan same egress; Session_Claim dual KA; client-heartbeat grace ~45s |
+| **A3b** CMP GUI echo + device-2 Phones gains | **Done** | `Gui_send_param` after `0xEE`/`0xEF`; `REMOTE_SOUND_DEVICE` gates Phones vol/mic (mirrors Linux / Ron remote-phones) |
+| **A4** `REMOTE_AUDIO=2` + MSA1 on Win recv+trans | **Done** | Opcode 2 + Winsock `remote_mic` / `remote_phones` |
 | **A5** Trans digi/TUNE NULL-input | Deferred | |
-| **Build → `C:\mscc-net9`** | **Done** | `ms-sdr-MKII.exe`, `mscc-recv.exe`, `Mscc-trans.exe` (+ pdb/dlls) |
+| **Avalonia RemotePhones lifecycle** | **Done** (0.6.41) | WaitUntilGone launcher; Digital stops companion; report path syncs companion |
+| **Build → Release/windows-wpf** | **Done** | Rebuilt `ms-sdr-MKII.exe` (VERSION_MINOR 160). Copy to `C:\mscc-net9` before smoke. |
 
-Restart Launch Servers after copy. Smoke with Avalonia local against Windows servers (CQ R/P, Farnsworth if UI sends `0x76`, Remote Audio checkbox).
+Restart Launch Servers after copy. Smoke: WPF/Avalonia ↔ Windows ms-sdr (Remote Audio + CMP from MsccRemotePhones); WPF/Avalonia ↔ Pi mscc **1.0.41**.
 
 ---
 
 ## Next action
 
-**Stew:** Restart Windows servers from `C:\mscc-net9`, smoke Avalonia + local servers.  
-**Later:** Phase C Avalonia ← WPF UI parity; optional MSA1 on Windows cores; A3/A5.
+**Stew:** Copy new `ms-sdr-MKII.exe` to `C:\mscc-net9`, restart servers, smoke Remote Audio + CMP echo + spectrum/KA. Install Avalonia **0.6.41** on Pi if using Avalonia.  
+**Later:** A5 digi/TUNE; WiFi SWR (P3); optional Avalonia Digital→Phones→Remote single-button UX.
