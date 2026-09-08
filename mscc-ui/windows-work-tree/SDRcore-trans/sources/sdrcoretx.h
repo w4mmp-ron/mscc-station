@@ -15,6 +15,7 @@
 #define MODE_AM 3
 #define MODE_TUNE 4
 #define MODE_CW 5
+#define MODE_FM 6   /* DSP opmode; wire CMD_SET_MAIN_MODE uses 5 */
 
 #define MAXDELAY		1000		// 20.833 mS @ Fs = 48K
 

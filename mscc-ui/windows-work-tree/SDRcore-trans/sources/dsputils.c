@@ -411,6 +411,37 @@ void ssb_modulate(sp_cplx *samps) {
     }
 }
 
+/* NFM modulator: phase NCO with 5 kHz peak deviation (ham NFM). */
+#ifndef FM_PEAK_DEV_HZ
+#define FM_PEAK_DEV_HZ 5000.0f
+#endif
+
+void fm_modulate(sp_cplx *samps) {
+    int i;
+    sp_float gain = 0.85f;
+    sp_float dev_inc = (sp_float)(TPI * (double)FM_PEAK_DEV_HZ / (double)mystate.samplerate);
+    static sp_float fm_audio_phase = 0.0f;
+
+    for (i = 0; i < mystate.nfft - mystate.filtertaps; i++) {
+        sp_float audio = samps[i].real;
+        if (audio > 1.0f) audio = 1.0f;
+        if (audio < -1.0f) audio = -1.0f;
+
+        fm_audio_phase += dev_inc * audio;
+        if (fm_audio_phase > TPI) fm_audio_phase -= TPI;
+        if (fm_audio_phase < -TPI) fm_audio_phase += TPI;
+
+        {
+            sp_float phase = mystate.lo1_phaseacc + fm_audio_phase;
+            samps[i].real = gain * (sp_float)sin(phase);
+            samps[i].imag = gain * (sp_float)cos(phase);
+        }
+
+        mystate.lo1_phaseacc += mystate.lo1_phaseinc;
+        mystate.lo1_phaseacc = atan2(sin(mystate.lo1_phaseacc), cos(mystate.lo1_phaseacc));
+    }
+}
+
 // AM modulator - generate I and Q carriers, then feed them to the balanced modulator
 // with a DC offset, which unbalances them and generates the carrier. Modulate that 
 // carrier with mic audio.

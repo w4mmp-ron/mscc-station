@@ -115,5 +115,7 @@ public enum RadioMode
     /// <summary>
     /// Digital upper sideband — client profile (filters/audio). Radio LO still USB.
     /// </summary>
-    DigU
+    DigU,
+    /// <summary>Narrow FM (wire CMD_SET_MAIN_MODE = 5, DSP MODE_FM = 6).</summary>
+    FM
 }

@@ -49,6 +49,9 @@ public sealed class ClientSettings
     /// </summary>
     public bool RemoteAudio { get; set; }
 
+    /// <summary>FM Simplex (no TX offset). Unchecked → VFO-B = A−100 kHz split.</summary>
+    public bool FmSimplex { get; set; }
+
     // RIT (offset only; On restored off for safety unless user re-enables)
     public int RitOffset { get; set; }
     public bool RitOn { get; set; }
@@ -237,6 +240,7 @@ public static class ClientSettingsStore
             sb.AppendLine($"D_MIC={s.DMicGain}");
             sb.AppendLine($"DIGITAL_AUDIO={(s.IsDigitalAudio ? "1" : "0")}");
             sb.AppendLine($"REMOTE_AUDIO={(s.RemoteAudio ? "1" : "0")}");
+            sb.AppendLine($"FM_SIMPLEX={(s.FmSimplex ? "1" : "0")}");
             sb.AppendLine();
             sb.AppendLine("# RIT");
             sb.AppendLine($"RIT_ON={(s.RitOn ? "1" : "0")}");
@@ -419,6 +423,9 @@ public static class ClientSettingsStore
                 break;
             case "REMOTE_AUDIO":
                 s.RemoteAudio = IsTruthy(val);
+                break;
+            case "FM_SIMPLEX":
+                s.FmSimplex = IsTruthy(val);
                 break;
 
             case "RIT_ON":

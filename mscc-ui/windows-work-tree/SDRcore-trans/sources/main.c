@@ -134,7 +134,8 @@ static int sdrAudioCallback(const void *inputBuffer, void *outputBuffer,
             across compilers with COMPLEX.
      */
     framesToComplex(inbuffer, incplx, outcplx, framesPerBuffer, mic_channels);
-    if ((mystate.opmode == MODE_AM) || (mystate.opmode == MODE_LSB) || (mystate.opmode == MODE_USB))
+    if ((mystate.opmode == MODE_AM) || (mystate.opmode == MODE_LSB) ||
+        (mystate.opmode == MODE_USB) || (mystate.opmode == MODE_FM))
         doMicProc(incplx, framesPerBuffer);
     //if ((G_tx_mode == 1) || G_QSK) {
     if (G_mode != 'T' && G_null_count++ < MAX_NULL) {
@@ -151,6 +152,7 @@ static int sdrAudioCallback(const void *inputBuffer, void *outputBuffer,
             if (mystate.opmode == MODE_AM) am_modulate(incplx);
             if (mystate.opmode == MODE_LSB) ssb_modulate(incplx);
             if (mystate.opmode == MODE_USB) ssb_modulate(incplx);
+            if (mystate.opmode == MODE_FM) fm_modulate(incplx);
             if (mystate.opmode == MODE_TUNE) tune_modulate(incplx);
             if (mystate.opmode == MODE_CW) tune_modulate(incplx);
             if (mystate.opmode == MODE_TUNE)tune_modulate(incplx);

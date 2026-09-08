@@ -15,6 +15,7 @@
 #define MODE_LSB 1
 #define MODE_USB 2
 #define MODE_AM 3
+#define MODE_FM 6   /* DSP opmode; wire CMD_SET_MAIN_MODE uses 5 */
 //#define PAN_REFRESH		8		// send a new panadapter buffer every PAN_REFRESH FFT's
 #define PAN_REFRESH		4		// send a new panadapter buffer every PAN_REFRESH FFT's
 

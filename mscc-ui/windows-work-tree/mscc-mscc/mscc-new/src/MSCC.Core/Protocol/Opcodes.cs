@@ -47,6 +47,13 @@ public static class Opcodes
     // Frequency & Mode
     public const byte CMD_SET_MAIN_FREQ            = 0xB6;
     public const byte CMD_SET_MAIN_MODE            = 0xB7;
+
+    /// <summary>Enable/disable TX/RX split (ms-sdr G_Split). Payload 0/1.</summary>
+    public const byte CMD_SET_SPLIT                = 0x31;
+    /// <summary>Split RX frequency (Hz, int32 LE) — listen freq when split on.</summary>
+    public const byte CMD_SET_SPLIT_RX_FREQ        = 0x34;
+    /// <summary>Split TX frequency (Hz, int32 LE) — PTT freq when split on.</summary>
+    public const byte CMD_SET_SPLIT_TX_FREQ        = 0x39;
     public const byte CMD_GET_FREQ_INIT            = 0xB0;
     public const byte CMD_GET_MODE_INIT            = 0xB8;
     public const byte CMD_GET_BAND_INIT            = 0xB9;

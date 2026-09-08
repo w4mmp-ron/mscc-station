@@ -264,8 +264,8 @@ char mode_to_letter(int number) {
         case MODE_TUNE:
             mode = 'T';
             break;
-        case 5:
-            mode = 'E';
+        case MODE_FM:
+            mode = 'F';
             break;
         case 6:
             mode = 'D';
@@ -292,6 +292,9 @@ int mode_to_number(char mode) {
             break;
         case MODE_TUNE_LETTER:
             mode_number = MODE_TUNE;
+            break;
+        case MODE_FM_LETTER:
+            mode_number = MODE_FM;
             break;
     }
     return mode_number;

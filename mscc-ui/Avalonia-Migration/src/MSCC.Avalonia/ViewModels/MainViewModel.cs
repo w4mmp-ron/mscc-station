@@ -152,7 +152,7 @@ public partial class MainViewModel : ViewModelBase, IDisposable
         HighCutLabel = HighCutLabels[_highCutIndex];
         CwFilterLabel = CwFilterLabels[_cwFilterIndex];
         ModeText = "USB";
-        AppendLog("MSCC Avalonia 0.6.41 — RemotePhones lifecycle parity; CQ memory / Remote Audio / Farnsworth.");
+        AppendLog("MSCC Avalonia 0.6.42 — FM mode + Simplex/−100 kHz split; Remote Audio / CQ / Farnsworth.");
         AppendLog("PTT = TX (voice modes); TUN = TUNE + carrier. S/W opens pan settings.");
         AppendLog($"Log: {LogFilePath}");
         CwPitchLabel = CwPitchOptions[Math.Clamp(CwPitchIndex, 0, CwPitchOptions.Count - 1)];
@@ -336,7 +336,7 @@ public partial class MainViewModel : ViewModelBase, IDisposable
     [ObservableProperty] private string _proficioTempText = "— °C";
     [ObservableProperty] private string _paTempText = "— °C";
     [ObservableProperty] private string _paCurrentText = "— mA";
-    [ObservableProperty] private string _clientVersionText = "0.6.41";
+    [ObservableProperty] private string _clientVersionText = "0.6.42";
     [ObservableProperty] private bool _qrpMode = true;
     [ObservableProperty] private bool _fullPower;
     [ObservableProperty] private bool _alcOn;
@@ -358,6 +358,13 @@ public partial class MainViewModel : ViewModelBase, IDisposable
     [ObservableProperty] private bool _modeIsCw;
     [ObservableProperty] private bool _modeIsAm;
     [ObservableProperty] private bool _modeIsDigU;
+    [ObservableProperty] private bool _modeIsFm;
+    /// <summary>FM: checked = no TX offset (simplex). Unchecked = VFO-B = A−100 kHz + split.</summary>
+    [ObservableProperty] private bool _fmSimplex;
+    private long _fmSavedVfoBHz;
+    private string _fmSavedVfoBMode = "USB";
+    private bool _fmOffsetSnapshotValid;
+    private const long FmTxOffsetHz = 100_000;
 
     // Main band-bar latch (selected under pointer stays highlighted)
     [ObservableProperty] private bool _bandIs2200;
@@ -581,6 +588,18 @@ public partial class MainViewModel : ViewModelBase, IDisposable
         ModeIsCw = m is "CW";
         ModeIsAm = m is "AM";
         ModeIsDigU = m is "DIG-U" or "DIGU" or "DIG";
+        ModeIsFm = m is "FM";
+        OnPropertyChanged(nameof(FmSimplexEnabled));
+    }
+
+    /// <summary>Simplex checkbox only meaningful in FM.</summary>
+    public bool FmSimplexEnabled => ModeIsFm;
+
+    partial void OnFmSimplexChanged(bool value)
+    {
+        ScheduleSaveClientSettings();
+        if (!ModeIsFm || _radio == null || !IsConnected) return;
+        _ = ApplyFmOffsetPolicyAsync();
     }
 
     partial void OnBandTextChanged(string value) => NotifyBandFlags();
@@ -4495,6 +4514,8 @@ public partial class MainViewModel : ViewModelBase, IDisposable
             SyncFavoriteBandFilterFromRadio();
             StatusText = $"Freq {(UseVfoA ? "A" : "B")} {FormatMhz(hz)}";
             AppendLog($"Sent VFO{(UseVfoA ? "A" : "B")} freq {hz} [{reason}]");
+            if (ModeIsFm && !FmSimplex && UseVfoA)
+                await ApplyFmOffsetPolicyAsync().ConfigureAwait(true);
             ScheduleSaveClientSettings();
         }
         catch (Exception ex)
@@ -4589,6 +4610,9 @@ public partial class MainViewModel : ViewModelBase, IDisposable
     {
         if (_radio == null || string.IsNullOrWhiteSpace(mode)) return;
         string m = mode.Trim();
+        string prevMode = UseVfoA ? (ModeText ?? "") : (VfoBModeText ?? "");
+        bool wasFm = string.Equals(prevMode, "FM", StringComparison.OrdinalIgnoreCase);
+        bool nowFm = string.Equals(m, "FM", StringComparison.OrdinalIgnoreCase);
 
         // If TUN is latched, exit tune without restoring old mode — apply the user's choice.
         if (TuneMode && !string.Equals(m, "TUNE", StringComparison.OrdinalIgnoreCase))
@@ -4610,6 +4634,13 @@ public partial class MainViewModel : ViewModelBase, IDisposable
 
         try
         {
+            if (nowFm && !wasFm && !_fmOffsetSnapshotValid)
+            {
+                _fmSavedVfoBHz = _vfoBFrequencyHz;
+                _fmSavedVfoBMode = VfoBModeText ?? "USB";
+                _fmOffsetSnapshotValid = true;
+            }
+
             await _radio.SetModeAsync(m).ConfigureAwait(true);
             if (UseVfoA)
             {
@@ -4621,6 +4652,11 @@ public partial class MainViewModel : ViewModelBase, IDisposable
                 VfoBModeText = m;
             }
 
+            if (nowFm)
+                await ApplyFmOffsetPolicyAsync().ConfigureAwait(true);
+            else if (wasFm)
+                await ClearFmSplitAsync().ConfigureAwait(true);
+
             RefreshSpectrumFilterOverlay();
             SyncRfPowerFromMode();
             StatusText = $"Mode {m} (VFO {(UseVfoA ? "A" : "B")})";
@@ -4631,6 +4667,68 @@ public partial class MainViewModel : ViewModelBase, IDisposable
         {
             StatusText = $"Mode failed: {ex.Message}";
             AppendLog($"ERROR: {ex.Message}");
+        }
+    }
+
+    /// <summary>
+    /// FM offset policy: Simplex → split off. Else VFO-B = A−100 kHz and split RX=A / TX=B.
+    /// </summary>
+    private async Task ApplyFmOffsetPolicyAsync()
+    {
+        if (_radio == null || !IsConnected) return;
+        try
+        {
+            if (FmSimplex)
+            {
+                await _radio.SetSplitAsync(false).ConfigureAwait(true);
+                AppendLog("FM Simplex — split off (TX=RX on VFO-A)");
+                return;
+            }
+
+            long rx = UseVfoA ? _frequencyHz : _vfoBFrequencyHz;
+            // Policy uses VFO-A as RX even if B was active — switch listen to A.
+            if (!UseVfoA)
+            {
+                UseVfoA = true;
+                await PushActiveVfoToRadioAsync(force: true).ConfigureAwait(true);
+                rx = _frequencyHz;
+            }
+
+            long tx = rx - FmTxOffsetHz;
+            if (tx < 0) tx = 0;
+            _vfoBFrequencyHz = tx;
+            VfoBDisplayMhz = FormatMhz(tx);
+            VfoBModeText = "FM";
+
+            await _radio.SetSplitRxFreqAsync(rx).ConfigureAwait(true);
+            await _radio.SetSplitTxFreqAsync(tx).ConfigureAwait(true);
+            await _radio.SetSplitAsync(true).ConfigureAwait(true);
+            AppendLog($"FM offset — RX A={FormatMhz(rx)}  TX B={FormatMhz(tx)} (−100 kHz split)");
+        }
+        catch (Exception ex)
+        {
+            AppendLog($"FM offset error: {ex.Message}");
+        }
+    }
+
+    private async Task ClearFmSplitAsync()
+    {
+        if (_radio == null) return;
+        try
+        {
+            await _radio.SetSplitAsync(false).ConfigureAwait(true);
+            if (_fmOffsetSnapshotValid)
+            {
+                _vfoBFrequencyHz = _fmSavedVfoBHz;
+                VfoBDisplayMhz = FormatMhz(_fmSavedVfoBHz);
+                VfoBModeText = _fmSavedVfoBMode;
+                _fmOffsetSnapshotValid = false;
+            }
+            AppendLog("FM left — split off");
+        }
+        catch (Exception ex)
+        {
+            AppendLog($"FM split clear error: {ex.Message}");
         }
     }
 
@@ -4885,6 +4983,7 @@ public partial class MainViewModel : ViewModelBase, IDisposable
             DMicGain = Math.Clamp(s.DMicGain, 0, 100);
             IsDigitalAudio = s.IsDigitalAudio;
             RemoteAudio = s.RemoteAudio;
+            FmSimplex = s.FmSimplex;
             _suppressAudioSend = false;
             OnPropertyChanged(nameof(RemoteAudioCheckboxEnabled));
 
@@ -5046,6 +5145,7 @@ public partial class MainViewModel : ViewModelBase, IDisposable
             DMicGain = DMicGain,
             IsDigitalAudio = IsDigitalAudio,
             RemoteAudio = RemoteAudio,
+            FmSimplex = FmSimplex,
             RitOn = RitOn,
             RitOffset = RitOffset,
             CwKeyerMode = CwKeyerMode,
@@ -5810,6 +5910,7 @@ public partial class MainViewModel : ViewModelBase, IDisposable
                 highHz = +cw / 2;
                 break;
             case "AM":
+            case "FM":
                 lowHz = -hi;
                 highHz = +hi;
                 break;

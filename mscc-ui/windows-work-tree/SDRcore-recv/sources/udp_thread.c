@@ -1313,8 +1313,12 @@ void *UDP_Thread(void *my_param) {
                         mystate.lastHRFiltLow = previous_low_cut;
                         mystate.lastHRFiltHigh = previous_high_cut;
                         break;
-                    case 5:
+                    case 5: /* wire FM → DSP MODE_FM */
                         G_mode = 'F';
+                        mystate.opmode = MODE_FM;
+                        /* Default FMN-ish ~6.6 kHz (±3.3 kHz) */
+                        mystate.lastHRFiltLow = -3300;
+                        mystate.lastHRFiltHigh = 3300;
                         break;
                     case 6:
                         G_mode = 'D';

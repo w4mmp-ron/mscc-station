@@ -1209,8 +1209,13 @@ void *UDP_Thread(void *my_param) {
                         fprintf(G_fp_logfile, "[%d] UDP Thread. CMD_SET_MAIN_MODE: New Mode: %c,\n", line_number++,
                                 G_mode);
                         break;
-                    case 5:
+                    case 5: /* wire FM → DSP MODE_FM */
                         G_mode = 'F';
+                        mystate.opmode = MODE_FM;
+                        G_Allow_ALC_Send = TRUE;
+                        print_time();
+                        fprintf(G_fp_logfile, "[%d] UDP Thread. CMD_SET_MAIN_MODE: New Mode: %c,\n",
+                                line_number++, G_mode);
                         break;
                     case 6:
                         G_mode = 'D';

@@ -20,6 +20,7 @@ void polar2rect(sp_cplx *samps, int nsamps);
 void tune_modulate(sp_cplx *samps);
 void ssb_modulate(sp_cplx *samps);
 void am_modulate(sp_cplx *samps);
+void fm_modulate(sp_cplx *samps);
 void null_modulate(sp_cplx *samps);
 void rotateArray(sp_cplx a[], int n, int d);
 void rotateByOneRight(sp_cplx a[], int n);

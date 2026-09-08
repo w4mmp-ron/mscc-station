@@ -24,6 +24,11 @@ static int firstentry = 0;
 static sp_float hfilt[32768];
 static sp_cplx filt[32768];
 static sp_cplx samp[32768];
+/* NFM discriminator + de-emphasis (~750 µs US amateur) */
+static sp_float fm_prev_i = 0.0f;
+static sp_float fm_prev_q = 0.0f;
+static sp_float fm_deemp = 0.0f;
+static int fm_demod_inited = 0;
 
 /******* External C&C structs, defined in sdrcore-recv.c *******/
 extern state mystate;
@@ -153,6 +158,38 @@ void fastconv(sp_cplx *in, sp_cplx *out, int frames)
                 if (mystate.opmode == MODE_AM) {
                         samp[i].real = mag;
                         samp[i].imag = mag;
+                }
+
+                /* NFM: quadrature discriminator then 750 µs de-emphasis */
+                if (mystate.opmode == MODE_FM) {
+                        sp_float ii = samp[i].real;
+                        sp_float qq = samp[i].imag;
+                        sp_float disc;
+                        sp_float alpha;
+                        if (!fm_demod_inited) {
+                                fm_prev_i = ii;
+                                fm_prev_q = qq;
+                                fm_deemp = 0.0f;
+                                fm_demod_inited = 1;
+                        }
+                        /* disc ≈ d(phase)/dt via cross product / |z|^2 */
+                        disc = (fm_prev_i * qq - fm_prev_q * ii);
+                        {
+                                sp_float den = (ii * ii + qq * qq);
+                                if (den > 1.0e-20f)
+                                        disc /= den;
+                                else
+                                        disc = 0.0f;
+                        }
+                        fm_prev_i = ii;
+                        fm_prev_q = qq;
+                        /* First-order de-emphasis: y += alpha*(x-y), tau=750e-6 */
+                        alpha = 1.0f / (1.0f + (mystate.samplerate * 750.0e-6f));
+                        fm_deemp += alpha * (disc - fm_deemp);
+                        samp[i].real = fm_deemp;
+                        samp[i].imag = fm_deemp;
+                } else {
+                        fm_demod_inited = 0;
                 }
 
                 out[osamps].real = samp[i].real;

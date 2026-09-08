@@ -308,8 +308,8 @@ void setFilterOffsets(sp_float filterSetLow, sp_float filterSetHigh)
         mystate.lastHRFiltHigh = filterSetHigh;
         mystate.lastHRFiltLow = filterSetLow;
 
-        // As above, RX doesn't need translation except on AM.
-        if (mystate.opmode == MODE_AM) {
+        // As above, RX doesn't need translation except on AM/FM (both sidebands).
+        if (mystate.opmode == MODE_AM || mystate.opmode == MODE_FM) {
                 mystate.filtLowHz = filterSetLow;
                 mystate.filtHighHz = filterSetHigh * 2.0f; // TWO sidebands.
         } else {

@@ -111,11 +111,13 @@
 #define MODE_USB 2
 #define MODE_CW 3
 #define MODE_TUNE 4
+#define MODE_FM 5   /* wire byte; DSP cores use MODE_FM=6 internally */
 #define MODE_AM_LETTER ('A')
 #define MODE_LSB_LETTER ('L')
 #define MODE_USB_LETTER ('U')
 #define MODE_CW_LETTER ('C')
 #define MODE_TUNE_LETTER ('T')
+#define MODE_FM_LETTER ('F')
 
 #define HDSDR_STATUS_TRANSMIT_ON 1
 #define HDSDR_STATUS_STOP_MODE 2

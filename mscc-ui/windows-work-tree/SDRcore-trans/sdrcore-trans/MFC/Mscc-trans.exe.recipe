@@ -2,7 +2,7 @@
 <Project>
   <ProjectOutputs>
     <ProjectOutput>
-      <FullPath>C:\Users\n8vet\OneDrive\Documents\GitHub\mscc-station\mscc-ui\Release\Mscc-trans.exe</FullPath>
+      <FullPath>C:\Users\n8vet\OneDrive\Documents\GitHub\mscc-station\mscc-ui\Release\windows-wpf\Mscc-trans.exe</FullPath>
     </ProjectOutput>
   </ProjectOutputs>
   <ContentFiles />

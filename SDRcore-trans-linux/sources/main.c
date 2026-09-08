@@ -221,7 +221,8 @@ static void process_mic_to_iq(const SAMPLE *in, SAMPLE *out, unsigned long frame
     } else {
         inbuffer = (sp_float *)in;
         framesToComplex(inbuffer, incplx, outcplx, framesPerBuffer, in_ch);
-        if ((mystate.opmode == MODE_AM) || (mystate.opmode == MODE_LSB) || (mystate.opmode == MODE_USB))
+        if ((mystate.opmode == MODE_AM) || (mystate.opmode == MODE_LSB) ||
+            (mystate.opmode == MODE_USB) || (mystate.opmode == MODE_FM))
             doMicProc(incplx, framesPerBuffer);
     }
 
@@ -235,6 +236,7 @@ static void process_mic_to_iq(const SAMPLE *in, SAMPLE *out, unsigned long frame
             if (mystate.opmode == MODE_AM) am_modulate(incplx);
             if (mystate.opmode == MODE_LSB) ssb_modulate(incplx);
             if (mystate.opmode == MODE_USB) ssb_modulate(incplx);
+            if (mystate.opmode == MODE_FM) fm_modulate(incplx);
             if (mystate.opmode == MODE_TUNE) tune_modulate(incplx);
             if (mystate.opmode == MODE_CW) tune_modulate(incplx);
         }

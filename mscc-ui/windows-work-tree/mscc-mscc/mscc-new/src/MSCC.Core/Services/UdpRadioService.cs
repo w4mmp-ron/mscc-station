@@ -612,8 +612,7 @@ public class UdpRadioService : IRadioService, IDisposable
     {
         if (!_started) return;
 
-        // Numeric mode value per original mainmodebutton2_Click / Power_Controls.Mode and ms-sdr Command_Interface switch(t_opcode_data)
-        // 0=AM, 1=LSB, 2=USB, 3=CW, 4=TUNE. DIG-U is a client profile — radio LO is USB (2).
+        // Wire: 0=AM, 1=LSB, 2=USB, 3=CW, 4=TUNE, 5=FM. DIG-U is client profile — LO is USB (2).
         string m = (mode ?? "").Trim().ToUpperInvariant().Replace('_', '-');
         short modeNum = m switch
         {
@@ -623,11 +622,34 @@ public class UdpRadioService : IRadioService, IDisposable
             "DIG-U" or "DIGU" or "DIG" => 2, // same RF as USB
             "CW" => 3,
             "TUNE" => 4,
+            "FM" => 5,
             _ => 2
         };
 
         await _transport.SendAsync(Opcodes.CMD_SET_MAIN_MODE, modeNum, cancellationToken);
         DebugMonitor.MonitorTextBoxText($" Send set mode: {mode} (as numeric {modeNum})");
+    }
+
+    public async Task SetSplitAsync(bool on, CancellationToken cancellationToken = default)
+    {
+        if (!_started) return;
+        short v = (short)(on ? 1 : 0);
+        await _transport.SendAsync(Opcodes.CMD_SET_SPLIT, v, cancellationToken);
+        DebugMonitor.MonitorTextBoxText($" Send CMD_SET_SPLIT: {(on ? "on" : "off")}");
+    }
+
+    public async Task SetSplitRxFreqAsync(long frequencyHz, CancellationToken cancellationToken = default)
+    {
+        if (!_started) return;
+        await _transport.SendAsync(Opcodes.CMD_SET_SPLIT_RX_FREQ, (int)frequencyHz, cancellationToken);
+        DebugMonitor.MonitorTextBoxText($" Send CMD_SET_SPLIT_RX_FREQ: {frequencyHz}");
+    }
+
+    public async Task SetSplitTxFreqAsync(long frequencyHz, CancellationToken cancellationToken = default)
+    {
+        if (!_started) return;
+        await _transport.SendAsync(Opcodes.CMD_SET_SPLIT_TX_FREQ, (int)frequencyHz, cancellationToken);
+        DebugMonitor.MonitorTextBoxText($" Send CMD_SET_SPLIT_TX_FREQ: {frequencyHz}");
     }
 
     public async Task SetFilterLowAsync(int lowHz, CancellationToken cancellationToken = default)
@@ -688,7 +710,7 @@ public class UdpRadioService : IRadioService, IDisposable
                 2 => "USB",
                 3 => "CW",
                 4 => "TUNE",
-                5 => "E",
+                5 => "FM",
                 6 => "D",
                 _ => "USB"
             };
@@ -701,6 +723,7 @@ public class UdpRadioService : IRadioService, IDisposable
             'A' => "AM",
             'C' => "CW",
             'T' => "TUNE",
+            'F' => "FM",
             'E' => "E",
             'D' => "D",
             _ => c.ToString()

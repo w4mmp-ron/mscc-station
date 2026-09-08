@@ -146,6 +146,15 @@ public interface IRadioService : IDisposable
     /// </summary>
     Task SetModeAsync(string mode, CancellationToken cancellationToken = default);
 
+    /// <summary>Enable/disable ms-sdr TX/RX split (CMD_SET_SPLIT 0x31).</summary>
+    Task SetSplitAsync(bool on, CancellationToken cancellationToken = default);
+
+    /// <summary>Split RX frequency Hz (CMD_SET_SPLIT_RX_FREQ 0x34).</summary>
+    Task SetSplitRxFreqAsync(long frequencyHz, CancellationToken cancellationToken = default);
+
+    /// <summary>Split TX frequency Hz (CMD_SET_SPLIT_TX_FREQ 0x39).</summary>
+    Task SetSplitTxFreqAsync(long frequencyHz, CancellationToken cancellationToken = default);
+
     /// <summary>
     /// Panadapter resolution: 800 / 1600 / 3200 bins (Normal / High / Max).
     /// Sends 0x5F index 0/1/2 (server G_Panadapter_Pixels), then 0x5F=3 (fast refresh blocks).

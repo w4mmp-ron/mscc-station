@@ -12,6 +12,7 @@
 #define MODE_LSB 1
 #define MODE_USB 2
 #define MODE_AM 3
+#define MODE_FM 6
 
 #ifdef WIN32
 #ifndef TRUE

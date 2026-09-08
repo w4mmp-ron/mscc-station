@@ -1055,6 +1055,13 @@ public partial class MainViewModel : ObservableObject, IDisposable
                 if (!_suppressModeProfileSwap)
                     SaveModeFilterProfile(oldMode);
 
+                if (newMode == RadioMode.FM && oldMode != RadioMode.FM && !_fmOffsetSnapshotValid)
+                {
+                    _fmSavedVfoBHz = RadioState.VfoB.FrequencyHz;
+                    _fmSavedVfoBMode = RadioState.VfoB.Mode;
+                    _fmOffsetSnapshotValid = true;
+                }
+
                 RadioState.ActiveVfo.Mode = newMode;
 
                 if (!_suppressModeProfileSwap)
@@ -1068,8 +1075,88 @@ public partial class MainViewModel : ObservableObject, IDisposable
             _ = _radioService.SetModeAsync(FormatModeDisplay(newMode));
             MonitorTextBoxText($" ActiveMode set to {FormatModeDisplay(newMode)}");
             OnPropertyChanged();
+            OnPropertyChanged(nameof(IsFmMode));
             NotifyMainOperatePower();
             SaveLastUsedForCurrentBand();
+
+            if (newMode == RadioMode.FM)
+                _ = ApplyFmOffsetPolicyAsync();
+            else if (oldMode == RadioMode.FM && newMode != RadioMode.FM)
+                _ = ClearFmSplitAsync();
+        }
+    }
+
+    /// <summary>FM Simplex (no TX offset). Default false → −100 kHz split via VFO-B.</summary>
+    public bool FmSimplex
+    {
+        get => _fmSimplex;
+        set
+        {
+            if (_fmSimplex == value) return;
+            _fmSimplex = value;
+            OnPropertyChanged();
+            if (IsFmMode)
+                _ = ApplyFmOffsetPolicyAsync();
+        }
+    }
+    private bool _fmSimplex;
+
+    public bool IsFmMode => RadioState.ActiveVfo.Mode == RadioMode.FM;
+
+    private const long FmTxOffsetHz = 100_000;
+    private long _fmSavedVfoBHz;
+    private RadioMode _fmSavedVfoBMode = RadioMode.USB;
+    private bool _fmOffsetSnapshotValid;
+
+    private async Task ApplyFmOffsetPolicyAsync()
+    {
+        try
+        {
+            if (FmSimplex)
+            {
+                await _radioService.SetSplitAsync(false).ConfigureAwait(false);
+                MonitorTextBoxText(" FM Simplex — split off (TX=RX on VFO-A)");
+                return;
+            }
+
+            // RX on A
+            if (RadioState.ActiveVfo != RadioState.VfoA)
+                SelectVfo(useVfoB: false);
+
+            long rx = RadioState.VfoA.FrequencyHz;
+            long tx = rx - FmTxOffsetHz;
+            if (tx < 0) tx = 0;
+            RadioState.VfoB.FrequencyHz = tx;
+            RadioState.VfoB.Mode = RadioMode.FM;
+
+            await _radioService.SetSplitRxFreqAsync(rx).ConfigureAwait(false);
+            await _radioService.SetSplitTxFreqAsync(tx).ConfigureAwait(false);
+            await _radioService.SetSplitAsync(true).ConfigureAwait(false);
+            MonitorTextBoxText($" FM offset — RX A={rx}  TX B={tx} (−100 kHz split)");
+            OnPropertyChanged(nameof(IsVfoBActive));
+        }
+        catch (Exception ex)
+        {
+            MonitorTextBoxText($" FM offset error: {ex.Message}");
+        }
+    }
+
+    private async Task ClearFmSplitAsync()
+    {
+        try
+        {
+            await _radioService.SetSplitAsync(false).ConfigureAwait(false);
+            if (_fmOffsetSnapshotValid)
+            {
+                RadioState.VfoB.FrequencyHz = _fmSavedVfoBHz;
+                RadioState.VfoB.Mode = _fmSavedVfoBMode;
+                _fmOffsetSnapshotValid = false;
+            }
+            MonitorTextBoxText(" FM left — split off");
+        }
+        catch (Exception ex)
+        {
+            MonitorTextBoxText($" FM split clear error: {ex.Message}");
         }
     }
 
@@ -1135,7 +1222,7 @@ public partial class MainViewModel : ObservableObject, IDisposable
         {
             RadioMode.CW => OperatePowerBank.Cw,
             RadioMode.AM => OperatePowerBank.Am,
-            _ => OperatePowerBank.Ssb // USB, LSB, DigU
+            _ => OperatePowerBank.Ssb // USB, LSB, DigU, FM
         };
     }
 
@@ -3326,7 +3413,7 @@ public partial class MainViewModel : ObservableObject, IDisposable
     [RelayCommand]
     private void CycleMode()
     {
-        var modes = new[] { "LSB", "USB", "DIG-U", "CW", "AM" };
+        var modes = new[] { "LSB", "USB", "DIG-U", "CW", "AM", "FM" };
         string current = ActiveMode ?? "LSB";
         int idx = Array.FindIndex(modes, m => string.Equals(m, current, StringComparison.OrdinalIgnoreCase));
         if (idx < 0) idx = 0;
@@ -3335,18 +3422,13 @@ public partial class MainViewModel : ObservableObject, IDisposable
     }
 
     /// <summary>
-    /// Direct mode select from operate-panel buttons (LSB/USB/DIG-U/CW/AM). FM is UI-disabled for now.
+    /// Direct mode select from operate-panel buttons (LSB/USB/DIG-U/CW/AM/FM).
     /// </summary>
     [RelayCommand]
     private void SelectMode(string? mode)
     {
         if (string.IsNullOrWhiteSpace(mode))
             return;
-        if (string.Equals(mode, "FM", StringComparison.OrdinalIgnoreCase))
-        {
-            MonitorTextBoxText(" FM mode not available yet");
-            return;
-        }
         ActiveMode = mode.Trim();
     }
 
@@ -3382,6 +3464,8 @@ public partial class MainViewModel : ObservableObject, IDisposable
         RadioState.ActiveVfo.FrequencyHz = freq;
         MonitorTextBoxText($" TuneToFrequency: {freq}");
         _ = _radioService.SetFrequencyAsync(freq);
+        if (IsFmMode && !FmSimplex && RadioState.ActiveVfo == RadioState.VfoA)
+            _ = ApplyFmOffsetPolicyAsync();
         SaveLastUsedForCurrentBand();
     }
 
@@ -3525,6 +3609,7 @@ public partial class MainViewModel : ObservableObject, IDisposable
             "CW" or "C" or "3" => RadioMode.CW,
             "TUNE" or "T" or "4" => RadioMode.TUNE,
             "DIG-U" or "DIGU" or "DIG" => RadioMode.DigU,
+            "FM" or "F" or "5" => RadioMode.FM,
             _ => RadioMode.USB
         };
     }

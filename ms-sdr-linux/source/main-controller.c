@@ -2150,8 +2150,8 @@ void * Command_Processor(void *my_param) {
             case MODE_TUNE:
                 mode = 'T';
                 break;
-            case 5:
-                mode = 'E';
+            case MODE_FM:
+                mode = 'F';
                 break;
             case 6:
                 mode = 'D';

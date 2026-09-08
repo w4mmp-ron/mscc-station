@@ -118,3 +118,16 @@ RX: quadrature discriminator, then de-emphasis (~750 µs US amateur) and CTCSS h
 | UI | WPF under `windows-work-tree/mscc-mscc/`, then Avalonia |
 
 Do not copy GSDR `audio.cs` FMN branches or DttSP `EnableCTCSS` / `SetCTCSSOscFreq`.
+
+---
+
+## v1 implementation checklist (MSCC)
+
+| Item | Status |
+|------|--------|
+| Wire mode **5** / letter **F** / DSP **MODE_FM=6** | Done (Core, ms-sdr Win+Linux, recv/trans) |
+| RX discriminator + 750 µs de-emphasis | Done (sdrcore.c) |
+| TX `fm_modulate` @ 5 kHz peak | Done (dsputils.c) |
+| UI FM button + **Simplex** checkbox | Avalonia + WPF |
+| Offset: VFO-A RX, VFO-B = A−100 kHz, `CMD_SET_SPLIT*` | Avalonia + WPF |
+| CTCSS / configurable offset / WFM | Phase 2+ |

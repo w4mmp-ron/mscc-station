@@ -2045,9 +2045,26 @@
                         </Button.Style>
                     </Button>
                     <Button Grid.Row="1" Grid.Column="2" Content="FM" Height="22" Margin="1" HorizontalAlignment="Stretch"
-                            FontSize="9" IsEnabled="False" Opacity="0.45"
-                            ToolTip="FM — not implemented yet"/>
+                            FontSize="9"
+                            Command="{Binding SelectModeCommand}" CommandParameter="FM"
+                            ToolTip="Narrow FM. Uncheck Simplex → VFO-B = A−100 kHz TX (split).">
+                        <Button.Style>
+                            <Style TargetType="Button" BasedOn="{StaticResource {x:Type Button}}">
+                                <Style.Triggers>
+                                    <DataTrigger Binding="{Binding ActiveMode}" Value="FM">
+                                        <Setter Property="Background" Value="{DynamicResource UiButtonSelectedBackgroundBrush}"/>
+                                        <Setter Property="BorderBrush" Value="{DynamicResource UiButtonSelectedBorderBrush}"/>
+                                        <Setter Property="Foreground" Value="White"/>
+                                    </DataTrigger>
+                                </Style.Triggers>
+                            </Style>
+                        </Button.Style>
+                    </Button>
                 </Grid>
+                <CheckBox Content="Simplex (no offset)" IsChecked="{Binding FmSimplex}"
+                          IsEnabled="{Binding IsFmMode}"
+                          Foreground="#CCC" FontSize="10" Margin="0,2,0,4"
+                          ToolTip="Checked: TX=RX on VFO-A. Unchecked: TX on VFO-B (A−100 kHz) via split."/>
 
                 <!-- First-wave operate controls (full NB controls live here; NR/MON/TX BW also) -->
                 <TextBlock Text="RX / TX" FontWeight="Bold" Foreground="#00FFAA" FontSize="10"

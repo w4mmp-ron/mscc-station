@@ -1426,10 +1426,16 @@
             <Button Content="DIG-U" Classes="mscc-gold" Command="{Binding SetModeCommand}" CommandParameter="DIG-U"
                     Margin="2" MinHeight="28" HorizontalAlignment="Stretch" FontSize="9"
                     Classes.mscc-selected="{Binding ModeIsDigU}"/>
-            <Button Content="FM" Classes="mscc-stub" IsEnabled="False"
+            <Button Content="FM" Classes="mscc-gold" Command="{Binding SetModeCommand}" CommandParameter="FM"
                     Margin="2" MinHeight="28" HorizontalAlignment="Stretch"
-                    ToolTip.Tip="FM not supported yet (placeholder)"/>
+                    Classes.mscc-selected="{Binding ModeIsFm}"
+                    ToolTip.Tip="Narrow FM. Uncheck Simplex → VFO-B = A−100 kHz TX (split)."/>
           </UniformGrid>
+          <CheckBox Content="Simplex (no offset)"
+                    IsChecked="{Binding FmSimplex}"
+                    IsEnabled="{Binding FmSimplexEnabled}"
+                    Foreground="#CCC" FontSize="10" Margin="2,2,2,4"
+                    ToolTip.Tip="Checked: TX=RX on VFO-A. Unchecked: TX on VFO-B (A−100 kHz) via split."/>
 
           <TextBlock Classes="mscc-section" Text="RX / TX"/>
           <!-- Equal-width cells so MON is not clipped on narrow right rail -->
