@@ -85,6 +85,7 @@ public sealed class ClientSettings
     public int CwPowerPercent { get; set; } = 40;
     public int SsbPowerPercent { get; set; } = 50;
     public int AmCarrierPercent { get; set; } = 30;
+    public int FmPowerPercent { get; set; } = 50;
 
     // DSP / process
     public int Compression { get; set; }
@@ -268,6 +269,7 @@ public static class ClientSettingsStore
             sb.AppendLine($"CW_POWER={s.CwPowerPercent}");
             sb.AppendLine($"SSB_POWER={s.SsbPowerPercent}");
             sb.AppendLine($"AM_CARRIER={s.AmCarrierPercent}");
+            sb.AppendLine($"FM_POWER={s.FmPowerPercent}");
             sb.AppendLine();
             sb.AppendLine("# DSP / process (server-backed on connect)");
             sb.AppendLine($"COMPRESSION={s.Compression}");
@@ -505,6 +507,10 @@ public static class ClientSettingsStore
             case "AM_CARRIER":
                 if (int.TryParse(val, NumberStyles.Integer, CultureInfo.InvariantCulture, out int am))
                     s.AmCarrierPercent = Math.Clamp(am, 0, 100);
+                break;
+            case "FM_POWER":
+                if (int.TryParse(val, NumberStyles.Integer, CultureInfo.InvariantCulture, out int fmp))
+                    s.FmPowerPercent = Math.Clamp(fmp, 0, 100);
                 break;
 
             case "COMPRESSION":

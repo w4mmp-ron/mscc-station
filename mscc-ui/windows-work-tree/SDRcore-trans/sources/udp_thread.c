@@ -62,7 +62,7 @@ struct {
     struct {
         int user_power_value; //Populated from power.ini
         int calibration_value; //Populated from power_cal.ini
-    } mode[5];
+    } mode[6]; /* USB LSB AM CW TUNE FM */
 } proficio_table[12]; //This table is for the Proficio 
 
 struct {
@@ -144,7 +144,7 @@ void Init_Proficio_table() {
     int mode = 0;
 
     for (band = 0; band < 12; band++) {
-        for (mode = 0; mode < 5; mode++) {
+        for (mode = 0; mode < 6; mode++) {
             proficio_table[band].mode[mode].calibration_value = G_Proficio_Calibration_Levels[band].power_level;
             switch (mode) {
                 case AM_POWER:
@@ -161,6 +161,10 @@ void Init_Proficio_table() {
                     break;
                 case TUNE_POWER:
                     proficio_table[band].mode[mode].user_power_value = G_power_levels.tune_power;
+                    break;
+                case FM_POWER:
+                    /* Same band cal curve as AM; independent user %. */
+                    proficio_table[band].mode[mode].user_power_value = G_power_levels.fm_power;
                     break;
             }
         }
@@ -1045,6 +1049,19 @@ void *UDP_Thread(void *my_param) {
                         line_number++);
                 break;
 
+            case CMD_SET_FM_POWER:
+                print_time();
+                fprintf(G_fp_logfile, "[%d] UDP Thread. CMD_SET_FM_POWER. power: %d \n",
+                        line_number++, t_opcode_data);
+                set_selected_power(FM_POWER, t_opcode_data);
+                set_QRO_power_level(G_calibration_index, FM_POWER, t_opcode_data);
+                set_QRP_power_level(G_calibration_index, FM_POWER, t_opcode_data);
+                G_power_file_needs_updated = 1;
+                print_time();
+                fprintf(G_fp_logfile, "[%d] UDP Thread. CMD_SET_FM_POWER. Finished.\n",
+                        line_number++);
+                break;
+
             case CMD_SET_MAIN_MODE:
                 print_time();
                 fprintf(G_fp_logfile, "[%d] UDP Thread. CMD_SET_MAIN_MODE. Called\n", line_number++);
@@ -1093,6 +1110,9 @@ void *UDP_Thread(void *my_param) {
                         G_mode = 'F';
                         mystate.opmode = MODE_FM;
                         G_Allow_ALC_Send = TRUE;
+                        /* AF limits for mic; IF width is forced inside setFilterOffsets(MODE_FM). */
+                        low_cut = 300.0f;
+                        high_cut = 3000.0f;
                         print_time();
                         fprintf(G_fp_logfile, "[%d] UDP Thread. CMD_SET_MAIN_MODE: New Mode: %c,\n",
                                 line_number++, G_mode);
@@ -1105,7 +1125,9 @@ void *UDP_Thread(void *my_param) {
                 mystate.initDSPflag = 1;
                 G_mode_change = 1;
                 print_time();
-                fprintf(G_fp_logfile, "[%d] UDP Thread. CMD_SET_MAIN_MODE. Finished\n", line_number++);
+                fprintf(G_fp_logfile,
+                        "[%d] UDP Thread. CMD_SET_MAIN_MODE. Finished. opmode=%d IF=[%.0f,%.0f] Hz\n",
+                        line_number++, mystate.opmode, mystate.filtLowHz, mystate.filtHighHz);
                 break;
 
             case CMD_SET_TX_HICUT:

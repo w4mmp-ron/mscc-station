@@ -308,10 +308,32 @@ void setFilterOffsets(sp_float filterSetLow, sp_float filterSetHigh)
         mystate.lastHRFiltHigh = filterSetHigh;
         mystate.lastHRFiltLow = filterSetLow;
 
-        // As above, RX doesn't need translation except on AM/FM (both sidebands).
-        if (mystate.opmode == MODE_AM || mystate.opmode == MODE_FM) {
+        if (mystate.opmode == MODE_FM) {
+                /*
+                 * NFM around DC after the LO shift. Real wsfirBP() needs 0<fc1<fc2
+                 * (negative fc1 breaks genSinc). A real FIR has even |H(f)|, so
+                 * bandpass (Flo…Fhi) already passes both ± sidebands — same trick AM uses.
+                 * Do NOT store negative lastHRFiltLow.
+                 */
+                sp_float half;
+                if (filterSetLow < 0.0f) {
+                        half = (sp_float)fabs(filterSetLow);
+                        if (filterSetHigh > half) half = filterSetHigh;
+                } else if (filterSetHigh > 0.0f) {
+                        half = filterSetHigh;
+                } else {
+                        half = 5500.0f;
+                }
+                if (half < 3000.0f) half = 3000.0f;
+                if (half > 8000.0f) half = 8000.0f;
+                mystate.lastHRFiltLow = 50.0f;   /* keep near-carrier; real FIR → ± */
+                mystate.lastHRFiltHigh = half;
+                mystate.filtLowHz = -half;
+                mystate.filtHighHz = half;
+        } else if (mystate.opmode == MODE_AM) {
+                /* AM: both sidebands — keep legacy mapping. */
                 mystate.filtLowHz = filterSetLow;
-                mystate.filtHighHz = filterSetHigh * 2.0f; // TWO sidebands.
+                mystate.filtHighHz = filterSetHigh * 2.0f;
         } else {
                 mystate.filtHighHz = filterSetHigh;
                 mystate.filtLowHz = filterSetLow;

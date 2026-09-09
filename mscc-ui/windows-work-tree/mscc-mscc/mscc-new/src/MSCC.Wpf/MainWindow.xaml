@@ -874,11 +874,21 @@
                                     </Border>
                                 </StackPanel>
 
-                                <StackPanel Orientation="Horizontal" Margin="0,0,0,12" VerticalAlignment="Center">
+                                <StackPanel Orientation="Horizontal" Margin="0,0,0,5" VerticalAlignment="Center">
                                     <TextBlock Text="AM Carrier" Width="90" VerticalAlignment="Center" Foreground="White"/>
                                     <Slider Width="140" Minimum="0" Maximum="100" SmallChange="1" Value="{Binding AmCarrierPercent, Mode=TwoWay}" PreviewMouseWheel="Slider_PreviewMouseWheel"/>
                                     <Border Background="#FF444444" BorderThickness="1" BorderBrush="#FF888888" Margin="5,0,0,0" Padding="3,1" MinWidth="40">
                                         <TextBlock Text="{Binding AmCarrierPercent, StringFormat={}{0}%}" FontSize="11" FontWeight="Bold" Foreground="#00FFAA" HorizontalAlignment="Center"/>
+                                    </Border>
+                                </StackPanel>
+
+                                <StackPanel Orientation="Horizontal" Margin="0,0,0,12" VerticalAlignment="Center">
+                                    <TextBlock Text="FM Power" Width="90" VerticalAlignment="Center" Foreground="White"
+                                               ToolTip="NFM TX drive level (independent of AM carrier)."/>
+                                    <Slider Width="140" Minimum="0" Maximum="100" SmallChange="1" Value="{Binding FmPowerPercent, Mode=TwoWay}" PreviewMouseWheel="Slider_PreviewMouseWheel"
+                                            ToolTip="NFM TX drive level (independent of AM carrier)."/>
+                                    <Border Background="#FF444444" BorderThickness="1" BorderBrush="#FF888888" Margin="5,0,0,0" Padding="3,1" MinWidth="40">
+                                        <TextBlock Text="{Binding FmPowerPercent, StringFormat={}{0}%}" FontSize="11" FontWeight="Bold" Foreground="#00FFAA" HorizontalAlignment="Center"/>
                                     </Border>
                                 </StackPanel>
 
@@ -1909,9 +1919,9 @@
                 <!-- MAIN operate power: same stores as RX/TX tab; bank follows TUN / mode -->
                 <TextBlock Text="{Binding MainOperatePowerLabel}" FontWeight="Bold" Foreground="#00FFAA" FontSize="9"
                            Margin="0,4,0,1" HorizontalAlignment="Left"
-                           ToolTip="Drive power for the current context: TUN→Tune, CW→CW, AM→AM carrier, USB/LSB→SSB. Same values as RX/TX Power Levels."/>
+                           ToolTip="Drive power for the current context: TUN→Tune, CW→CW, AM→AM carrier, FM→FM, USB/LSB→SSB. Same values as RX/TX Power Levels."/>
                 <StackPanel Orientation="Horizontal" Margin="0,0,0,1" VerticalAlignment="Center"
-                            ToolTip="Drive power for the current context: TUN→Tune, CW→CW, AM→AM carrier, USB/LSB→SSB. Same values as RX/TX Power Levels.">
+                            ToolTip="Drive power for the current context: TUN→Tune, CW→CW, AM→AM carrier, FM→FM, USB/LSB→SSB. Same values as RX/TX Power Levels.">
                     <Slider Width="108" Minimum="0" Maximum="100" SmallChange="1"
                             Value="{Binding MainOperatePowerPercent, Mode=TwoWay}"
                             PreviewMouseWheel="Slider_PreviewMouseWheel" VerticalAlignment="Center"/>
@@ -2045,14 +2055,13 @@
                         </Button.Style>
                     </Button>
                     <Button Grid.Row="1" Grid.Column="2" Content="FM" Height="22" Margin="1" HorizontalAlignment="Stretch"
-                            FontSize="9"
                             Command="{Binding SelectModeCommand}" CommandParameter="FM"
-                            ToolTip="Narrow FM. Uncheck Simplex → VFO-B = A−100 kHz TX (split).">
+                            FontSize="9" ToolTip="Narrow FM. Uncheck Simplex → VFO-B = A−100 kHz TX (split).">
                         <Button.Style>
-                            <Style TargetType="Button" BasedOn="{StaticResource {x:Type Button}}">
+                            <Style TargetType="Button" BasedOn="{StaticResource MsccGoldButtonStyle}">
                                 <Style.Triggers>
                                     <DataTrigger Binding="{Binding ActiveMode}" Value="FM">
-                                        <Setter Property="Background" Value="{DynamicResource UiButtonSelectedBackgroundBrush}"/>
+                                        <Setter Property="Background" Value="{DynamicResource UiButtonSelectedBrush}"/>
                                         <Setter Property="BorderBrush" Value="{DynamicResource UiButtonSelectedBorderBrush}"/>
                                         <Setter Property="Foreground" Value="White"/>
                                     </DataTrigger>

@@ -223,16 +223,20 @@ public partial class MainViewModel : ObservableObject, IDisposable
     [ObservableProperty]
     private int _amCarrierPercent = 30;
 
+    [ObservableProperty]
+    private int _fmPowerPercent = 50;
+
     /// <summary>
     /// MAIN operate panel: which power bank the quick slider targets.
-    /// TUN (or mode TUNE) → tune; CW → CW; AM → AM carrier; else → SSB (USB/LSB / future DIG).
+    /// TUN → tune; CW → CW; AM → AM carrier; FM → FM drive; else → SSB.
     /// </summary>
     private enum OperatePowerBank
     {
         Tune,
         Cw,
         Ssb,
-        Am
+        Am,
+        Fm
     }
 
     [ObservableProperty]
@@ -1080,7 +1084,10 @@ public partial class MainViewModel : ObservableObject, IDisposable
             SaveLastUsedForCurrentBand();
 
             if (newMode == RadioMode.FM)
+            {
+                _ = _radioService.SetFmPowerAsync(FmPowerPercent);
                 _ = ApplyFmOffsetPolicyAsync();
+            }
             else if (oldMode == RadioMode.FM && newMode != RadioMode.FM)
                 _ = ClearFmSplitAsync();
         }
@@ -1126,14 +1133,15 @@ public partial class MainViewModel : ObservableObject, IDisposable
             long rx = RadioState.VfoA.FrequencyHz;
             long tx = rx - FmTxOffsetHz;
             if (tx < 0) tx = 0;
+            /* Always update local VFO-B first so the faceplate tracks while tuning A. */
             RadioState.VfoB.FrequencyHz = tx;
             RadioState.VfoB.Mode = RadioMode.FM;
+            OnPropertyChanged(nameof(IsVfoBActive));
 
             await _radioService.SetSplitRxFreqAsync(rx).ConfigureAwait(false);
             await _radioService.SetSplitTxFreqAsync(tx).ConfigureAwait(false);
             await _radioService.SetSplitAsync(true).ConfigureAwait(false);
             MonitorTextBoxText($" FM offset — RX A={rx}  TX B={tx} (−100 kHz split)");
-            OnPropertyChanged(nameof(IsVfoBActive));
         }
         catch (Exception ex)
         {
@@ -1174,6 +1182,7 @@ public partial class MainViewModel : ObservableObject, IDisposable
         OperatePowerBank.Tune => "TUNE POWER",
         OperatePowerBank.Cw => "CW POWER",
         OperatePowerBank.Am => "AM CARRIER",
+        OperatePowerBank.Fm => "FM POWER",
         _ => "SSB POWER"
     };
 
@@ -1187,6 +1196,7 @@ public partial class MainViewModel : ObservableObject, IDisposable
             OperatePowerBank.Tune => TunePowerPercent,
             OperatePowerBank.Cw => CwPowerPercent,
             OperatePowerBank.Am => AmCarrierPercent,
+            OperatePowerBank.Fm => FmPowerPercent,
             _ => SsbPowerPercent
         };
         set
@@ -1202,6 +1212,9 @@ public partial class MainViewModel : ObservableObject, IDisposable
                     break;
                 case OperatePowerBank.Am:
                     if (AmCarrierPercent != v) AmCarrierPercent = v;
+                    break;
+                case OperatePowerBank.Fm:
+                    if (FmPowerPercent != v) FmPowerPercent = v;
                     break;
                 default:
                     if (SsbPowerPercent != v) SsbPowerPercent = v;
@@ -1222,7 +1235,8 @@ public partial class MainViewModel : ObservableObject, IDisposable
         {
             RadioMode.CW => OperatePowerBank.Cw,
             RadioMode.AM => OperatePowerBank.Am,
-            _ => OperatePowerBank.Ssb // USB, LSB, DigU, FM
+            RadioMode.FM => OperatePowerBank.Fm,
+            _ => OperatePowerBank.Ssb // USB, LSB, DigU
         };
     }
 
@@ -1628,8 +1642,7 @@ public partial class MainViewModel : ObservableObject, IDisposable
     }
 
     /// <summary>
-    /// Amp cal / TX IQ band frequencies from original IQ_Controls.iq_calibration_freqs
-    /// (B10…B160, then B630=475000, B2200=135750).
+    /// Amp / QRP power-cal band frequencies (client drive tables).
     /// </summary>
     private static long GetAmpCalFrequencyHz(int bandNumber) => bandNumber switch
     {
@@ -1648,7 +1661,27 @@ public partial class MainViewModel : ObservableObject, IDisposable
         _ => 0
     };
 
-    private static long GetTxIqFrequencyHz(int bandNumber) => GetAmpCalFrequencyHz(bandNumber);
+    /// <summary>
+    /// TX IQ cal frequencies — must match ms-sdr <c>iq_calibration_freqs[]</c>
+    /// (IQ_Band_to_Record). Mismatch left the faceplate/SA on e.g. 28.010 while
+    /// the server keyed 28.350 → "no carrier" on TX IQ.
+    /// </summary>
+    private static long GetTxIqFrequencyHz(int bandNumber) => bandNumber switch
+    {
+        2200 => 136_000,
+        630 => 475_000,
+        160 => 1_900_000,
+        80 => 3_750_000,
+        60 => 5_330_500,
+        40 => 7_150_000,
+        30 => 10_125_000,
+        20 => 14_175_000,
+        17 => 18_110_000,
+        15 => 21_225_000,
+        12 => 24_930_000,
+        10 => 28_350_000,
+        _ => 0
+    };
 
     private void EnsureTxIqBandItems()
     {
@@ -1738,7 +1771,7 @@ public partial class MainViewModel : ObservableObject, IDisposable
     }
 
     [RelayCommand]
-    private void SelectTxIqBand(object? param)
+    private async Task SelectTxIqBand(object? param)
     {
         if (AmpOn)
         {
@@ -1767,17 +1800,17 @@ public partial class MainViewModel : ObservableObject, IDisposable
         if (freq > 0)
         {
             RadioState.ActiveVfo.FrequencyHz = freq;
-            _ = _radioService.SetFrequencyAsync(freq);
+            await _radioService.SetFrequencyAsync(freq).ConfigureAwait(true);
         }
-        // Original band cycle only sets freq; IQ_BAND is sent when TX turns on via IQBD_Set_Band.
-        // Also pre-send IQ band so path is selected early.
-        _ = _radioService.SetIqBandAsync(band);
+        /* Must be TX IQ path before 0x58, else ms-sdr routes band to RX IQ only. */
+        await _radioService.SetIqCalibrationRxTxAsync(true).ConfigureAwait(true);
+        await _radioService.SetIqBandAsync(band).ConfigureAwait(true);
 
         _suppressTxIqOffset = true;
         try { TxIqOffset = 0; }
         finally { _suppressTxIqOffset = false; }
-        TxIqStatus = $"{band}M selected. Set power, then TX ON.";
-        MonitorTextBoxText($" TX IQ band select: {band}m freq={freq}");
+        TxIqStatus = $"{band}M @ {freq / 1_000_000.0:F3} MHz — set power, then TX ON.";
+        MonitorTextBoxText($" TX IQ band select: {band}m freq={freq} (ms-sdr iq_calibration_freqs)");
     }
 
     partial void OnTxIqOffsetChanged(int value)
@@ -1805,7 +1838,7 @@ public partial class MainViewModel : ObservableObject, IDisposable
     }
 
     [RelayCommand]
-    private void ToggleTxIqTx()
+    private async Task ToggleTxIqTx()
     {
         if (AmpOn)
         {
@@ -1822,45 +1855,74 @@ public partial class MainViewModel : ObservableObject, IDisposable
 
         if (!TxIqTxOn)
         {
-            // Original IQBD_TX_Tune(true):
-            // IQ_CALIBRATION_RX_TX TX, Set_Band, mute, TUNE mode, RIG_TUNE 1
-            _ = _radioService.SetIqCalibrationRxTxAsync(true);
-            _ = _radioService.SetIqBandAsync(TxIqSelectedBand);
-            _ = _radioService.SetTunePowerAsync(TxIqPower);
-            RadioState.ActiveVfo.Mode = RadioMode.TUNE;
-            OnPropertyChanged(nameof(ActiveMode));
-            _ = _radioService.SetModeAsync("TUNE");
-            _ = _radioService.SetAutoTuneAsync(true);
-            TxIqTxOn = true;
-            RadioState.IsTransmitting = true;
-            TxIqStatus = "TX ON — adjust OFFSET (external RX), then APPLY or TX OFF.";
-            MonitorTextBoxText(
-                $" TX IQ TX ON band={TxIqSelectedBand} power={TxIqPower} → 0x55 TX, 0x58, TUNE, RIG_TUNE");
+            try
+            {
+                long freq = GetTxIqFrequencyHz(TxIqSelectedBand);
+                if (freq > 0)
+                    RadioState.ActiveVfo.FrequencyHz = freq;
+
+                // Ordered like Avalonia / original IQBD_TX_Tune — must await (no race).
+                await _radioService.SetIqCalibrationRxTxAsync(true).ConfigureAwait(true);
+                await _radioService.SetIqBandAsync(TxIqSelectedBand).ConfigureAwait(true);
+                await _radioService.SetTunePowerAsync(TxIqPower).ConfigureAwait(true);
+                RadioState.ActiveVfo.Mode = RadioMode.TUNE;
+                OnPropertyChanged(nameof(ActiveMode));
+                await _radioService.SetModeAsync("TUNE").ConfigureAwait(true);
+                await _radioService.SetAutoTuneAsync(true).ConfigureAwait(true);
+                /* Also 0x54 ON — keys via IQ_tune_button (same as RIG_TUNE path). */
+                await _radioService.SetIqCalibrationTuneAsync(true).ConfigureAwait(true);
+
+                TxIqTxOn = true;
+                RadioState.IsTransmitting = true;
+                TxIqStatus =
+                    $"TX ON @ {freq / 1_000_000.0:F3} MHz — null image with OFFSET, then APPLY or TX OFF.";
+                MonitorTextBoxText(
+                    $" TX IQ TX ON band={TxIqSelectedBand} freq={freq} power={TxIqPower} → 0x55/0x58/TUNE/RIG_TUNE/0x54");
+            }
+            catch (Exception ex)
+            {
+                TxIqTxOn = false;
+                RadioState.IsTransmitting = false;
+                TxIqStatus = $"TX ON failed: {ex.Message}";
+                MonitorTextBoxText($" TX IQ TX ON error: {ex.Message}");
+            }
         }
         else
         {
-            // TX OFF only — commit is explicit via APPLY button (no dialog here)
-            StopTxIqCarrier();
+            await StopTxIqCarrierAsync().ConfigureAwait(true);
             TxIqStatus = "TX OFF. Use APPLY to commit the current I/Q value if desired.";
         }
     }
 
-    private void StopTxIqCarrier()
+    private async Task StopTxIqCarrierAsync()
     {
-        _ = _radioService.SetAutoTuneAsync(false);
-        _ = _radioService.SetIqCalibrationTuneAsync(false);
+        try
+        {
+            await _radioService.SetAutoTuneAsync(false).ConfigureAwait(true);
+            await _radioService.SetIqCalibrationTuneAsync(false).ConfigureAwait(true);
+        }
+        catch (Exception ex)
+        {
+            MonitorTextBoxText($" TX IQ TX OFF error: {ex.Message}");
+        }
         TxIqTxOn = false;
         RadioState.IsTransmitting = false;
-        // Restore mode from enter snapshot if available
         if (_preTxIqState != null)
         {
             RadioMode mode = _preTxIqState.IsVfoB ? _preTxIqState.VfoBMode : _preTxIqState.VfoAMode;
+            if (mode == RadioMode.TUNE) mode = RadioMode.USB;
             RadioState.ActiveVfo.Mode = mode;
             OnPropertyChanged(nameof(ActiveMode));
-            _ = _radioService.SetModeAsync(FormatModeDisplay(mode));
+            try
+            {
+                await _radioService.SetModeAsync(FormatModeDisplay(mode)).ConfigureAwait(true);
+            }
+            catch { /* best effort */ }
         }
-        MonitorTextBoxText(" TX IQ TX OFF → RIG_TUNE 0");
+        MonitorTextBoxText(" TX IQ TX OFF → RIG_TUNE 0 / 0x54 OFF");
     }
+
+    private void StopTxIqCarrier() => _ = StopTxIqCarrierAsync();
 
     [RelayCommand]
     private void ApplyTxIq()
@@ -3482,6 +3544,9 @@ public partial class MainViewModel : ObservableObject, IDisposable
             _ = _radioService.SetFrequencyAsync(frequencyHz);
             SaveLastUsedForCurrentBand();
         }
+        /* FM offset: keep VFO-B = A−100 kHz whenever A is tuned (digit wheel uses this path). */
+        if (IsFmMode && !FmSimplex && vfo == RadioState.VfoA)
+            _ = ApplyFmOffsetPolicyAsync();
     }
 
     /// <summary>
@@ -3751,11 +3816,11 @@ public partial class MainViewModel : ObservableObject, IDisposable
         // Unhook to avoid sending filter changes to backend (we are only remapping for display based on current indices + mode)
         filter.PropertyChanged -= OnActiveFilterPropertyChanged;
 
-        if (mode == RadioMode.AM)
+        if (mode == RadioMode.AM || mode == RadioMode.FM)
         {
-            // Original AM markers: both sidebands, center ± high-cut (Filter_size from band_marker_high).
-            // Low cut does not set the RF edges — DSB is always symmetric about the carrier.
+            // AM/FM: both sidebands, centered on carrier (± high-cut). Not USB-style.
             int highHz = HighCutHzValues[(HighCutIndex % HighCutHzValues.Length + HighCutHzValues.Length) % HighCutHzValues.Length];
+            if (mode == RadioMode.FM && highHz < 4000) highHz = 5500;
             filter.LowHz = -highHz;
             filter.HighHz = +highHz;
         }
@@ -3888,6 +3953,14 @@ public partial class MainViewModel : ObservableObject, IDisposable
         SpectrumWaterfallSettings.AmCarrier = value;
         SpectrumWaterfallSettings.Save();
         MonitorTextBoxText($" AM carrier % set: {value}");
+        NotifyMainOperatePower();
+    }
+    partial void OnFmPowerPercentChanged(int value)
+    {
+        _ = _radioService.SetFmPowerAsync(value);
+        SpectrumWaterfallSettings.FmPower = value;
+        SpectrumWaterfallSettings.Save();
+        MonitorTextBoxText($" FM power % set: {value}");
         NotifyMainOperatePower();
     }
     partial void OnFullPowerChanged(bool value) { _ = _radioService.SetFullPowerAsync(value); MonitorTextBoxText($" FullPower set: {value}"); }

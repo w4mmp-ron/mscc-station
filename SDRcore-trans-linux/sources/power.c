@@ -112,7 +112,7 @@ void Init_Proficio_User_power() {
         char *am_power;
         char *cw_power;
         char *tune_power;
-
+        char *fm_power;
     } device_record;
 
     print_time();
@@ -133,6 +133,7 @@ void Init_Proficio_User_power() {
                 device_record.am_power = strstr(init_record, "AM_POWER");
                 device_record.cw_power = strstr(init_record, "CW_POWER");
                 device_record.tune_power = strstr(init_record, "TUNE_POWER");
+                device_record.fm_power = strstr(init_record, "FM_POWER");
                 mynumber = atoi((device_record.usb_power + sizeof ("USB_POWER")));
                 G_power_levels.usb_power = mynumber;
                 if (device_record.lsb_power != NULL) {
@@ -145,6 +146,12 @@ void Init_Proficio_User_power() {
                 G_power_levels.cw_power = mynumber;
                 mynumber = atoi((device_record.tune_power + sizeof ("TUNE_POWER")));
                 G_power_levels.tune_power = mynumber;
+                if (device_record.fm_power != NULL) {
+                    mynumber = atoi((device_record.fm_power + sizeof ("FM_POWER")));
+                    G_power_levels.fm_power = mynumber;
+                } else {
+                    G_power_levels.fm_power = 50;
+                }
                 //print_time();
                 //fprintf(G_fp_logfile, "[%d] init_power_ini. USB_POWER=%d,LSB_POWER=%d,AM_POWER=%d,CW_POWER=%d,TUNE_POWER=%d\n", line_number++,
                 //G_power_levels.usb_power, G_power_levels.lsb_power, G_power_levels.am_power, G_power_levels.cw_power,
@@ -175,8 +182,10 @@ int Update_Proficio_User_Power_ini() {
         fprintf(G_fp_logfile, "[%d] Update_Proficio_User_Power_ini.  Path: %s\n", line_number++, l_path);
         fp_Power_ini = fopen(l_path, "w");
         if (fp_Power_ini != NULL) {
-            fprintf(fp_Power_ini, "USB_POWER=%d,LSB_POWER=%d,AM_POWER=%d,CW_POWER=%d,TUNE_POWER=%d;\n", G_power_levels.usb_power,
-                    G_power_levels.lsb_power, G_power_levels.am_power, G_power_levels.cw_power, G_power_levels.tune_power);
+            fprintf(fp_Power_ini,
+                    "USB_POWER=%d,LSB_POWER=%d,AM_POWER=%d,CW_POWER=%d,TUNE_POWER=%d,FM_POWER=%d;\n",
+                    G_power_levels.usb_power, G_power_levels.lsb_power, G_power_levels.am_power,
+                    G_power_levels.cw_power, G_power_levels.tune_power, G_power_levels.fm_power);
             fclose(fp_Power_ini);
         } else {
             print_time();
@@ -209,6 +218,9 @@ void set_selected_power(int power_field, int power_value) {
         case TUNE_POWER:
             G_power_levels.tune_power = power_value;
             break;
+        case FM_POWER:
+            G_power_levels.fm_power = power_value;
+            break;
     }
     print_time();
     fprintf(G_fp_logfile, "[%d] set_selected_power. Finished\n", line_number++);
@@ -222,6 +234,7 @@ void build_power_levels(void) {
     G_power_levels.tune_power = 50;
     G_power_levels.usb_power = 50;
     G_power_levels.lsb_power = 50;
+    G_power_levels.fm_power = 50;
     print_time();
     fprintf(G_fp_logfile, "[%d] build_power_levels. Finished.\n", line_number++);
 }

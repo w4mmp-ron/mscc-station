@@ -62,6 +62,7 @@ void initDSP(int firstrunflag) {
 
     // This FFT uses only memory allocated off the stack
     jimfft(filt, mystate.nfft);
+    mystate.initDSPflag = FALSE;
 }
 
 /******************* IF shift, opposite sideband suppression, demo etc ****************/

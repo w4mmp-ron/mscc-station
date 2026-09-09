@@ -140,27 +140,31 @@ static int sdrAudioCallback(const void *inputBuffer, void *outputBuffer,
     //if ((G_tx_mode == 1) || G_QSK) {
     if (G_mode != 'T' && G_null_count++ < MAX_NULL) {
         null_modulate(incplx); // no mode, zero out IQ stream for no output
-        //print_time();
-        //fprintf(G_fp_logfile, "[%d] Main Thread. sdrAudioCallback. G_null_count %d\n",
-        //        line_number++, G_null_count);
-    } else { /**************************** Two-tone test *****************************************/
-        if (mystate.twoToneFlag) {
-            ssb_modulate(incplx);
-            twoTone(incplx); // overwrites any mic audio data in buffer
-        } else {
-            /**************************** AM and SSB modulators *********************************/
-            if (mystate.opmode == MODE_AM) am_modulate(incplx);
-            if (mystate.opmode == MODE_LSB) ssb_modulate(incplx);
-            if (mystate.opmode == MODE_USB) ssb_modulate(incplx);
-            if (mystate.opmode == MODE_FM) fm_modulate(incplx);
-            if (mystate.opmode == MODE_TUNE) tune_modulate(incplx);
-            if (mystate.opmode == MODE_CW) tune_modulate(incplx);
-            if (mystate.opmode == MODE_TUNE)tune_modulate(incplx);
+        fastconv(incplx, outcplx, (int) framesPerBuffer);
+    } else if (mystate.twoToneFlag) {
+        ssb_modulate(incplx);
+        twoTone(incplx); // overwrites any mic audio data in buffer
+        fastconv(incplx, outcplx, (int) framesPerBuffer);
+    } else if (mystate.opmode == MODE_FM) {
+        /*
+         * NFM: modulate then send I/Q directly. The SSB overlap-save FIR
+         * (fastconv) amplitude-modulates/phase-scrambles FM and made the
+         * SA look like a carrier/SSB instead of Bessel FM.
+         */
+        fm_modulate(incplx);
+        for (i = 0; i < framesPerBuffer; i++) {
+            outcplx[i].real = incplx[i].real * mystate.txPower;
+            outcplx[i].imag = incplx[i].imag * mystate.txPower;
         }
+    } else {
+        /**************************** AM and SSB modulators *********************************/
+        if (mystate.opmode == MODE_AM) am_modulate(incplx);
+        if (mystate.opmode == MODE_LSB) ssb_modulate(incplx);
+        if (mystate.opmode == MODE_USB) ssb_modulate(incplx);
+        if (mystate.opmode == MODE_TUNE) tune_modulate(incplx);
+        if (mystate.opmode == MODE_CW) tune_modulate(incplx);
+        fastconv(incplx, outcplx, (int) framesPerBuffer);
     }
-
-    /**************************** DO THE RADIO THING *********************************/
-    fastconv(incplx, outcplx, (int) framesPerBuffer);
 
     /*
             De-mux samples back into packed I-Q-I-Q-I-Q format. In case there's any question,

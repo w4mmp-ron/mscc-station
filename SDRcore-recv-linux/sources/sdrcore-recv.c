@@ -142,7 +142,9 @@ static int sdrAudioCallback(const void *inputBuffer, void *outputBuffer,
 		fastconv(incplx, outcplx, (int)framesPerBuffer);
 
 		/********************** Run AGC *************************************************/
-		if(!AGC_Initializing) doAGC(outcplx, (int)framesPerBuffer);
+		/* FM discr is amplitude-independent; SSB AGC on quiet FM → gain=max → surges. */
+		if (!AGC_Initializing && mystate.opmode != MODE_FM)
+			doAGC(outcplx, (int)framesPerBuffer);
 
 		/********************** Run auto-notch *****************************************/
 		if (anstate.enabled) anotch(outcplx, (int)framesPerBuffer);

@@ -328,6 +328,7 @@ public static class SpectrumWaterfallSettings
     public static int CwPower { get; set; } = 50;
     public static int SsbPower { get; set; } = 50;
     public static int AmCarrier { get; set; } = 30;
+    public static int FmPower { get; set; } = 50;
 
     /// <summary>
     /// Panadapter resolution index: 0=Normal 800, 1=High 1600, 2=Max 3200 bins across 72 kHz.
@@ -657,6 +658,7 @@ public static class SpectrumWaterfallSettings
                     if (LineMatchesKey(line, "CW_POWER")) CwPower = ParseIniInt(line, CwPower);
                     if (LineMatchesKey(line, "SSB_POWER")) SsbPower = ParseIniInt(line, SsbPower);
                     if (LineMatchesKey(line, "AM_CARRIER")) AmCarrier = ParseIniInt(line, AmCarrier);
+                    if (LineMatchesKey(line, "FM_POWER")) FmPower = ParseIniInt(line, FmPower);
                     if (LineMatchesKey(line, "STEP_INDEX")) StepIndex = ParseIniInt(line, StepIndex);
                     if (LineMatchesKey(line, "PAN_RESOLUTION"))
                     {
@@ -865,6 +867,7 @@ public static class SpectrumWaterfallSettings
         UpdateOrAdd(lines, "CW_POWER", CwPower.ToString());
         UpdateOrAdd(lines, "SSB_POWER", SsbPower.ToString());
         UpdateOrAdd(lines, "AM_CARRIER", AmCarrier.ToString());
+        UpdateOrAdd(lines, "FM_POWER", FmPower.ToString());
         UpdateOrAdd(lines, "STEP_INDEX", StepIndex.ToString());
         UpdateOrAdd(lines, "PAN_RESOLUTION", Math.Clamp(PanResolutionIndex, 0, 2).ToString());
 

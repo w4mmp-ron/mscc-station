@@ -198,6 +198,8 @@ public static class Opcodes
     public const byte CMD_SET_AM_POWER = 0xE3;
     public const byte CMD_SET_CW_POWER = 0xE4;
     public const byte CMD_SET_TUNE_POWER = 0xE9;
+    /// <summary>NFM drive power percent (sdrcore-trans / ms-sdr).</summary>
+    public const byte CMD_SET_FM_POWER = 0x9E;
 
     // Noise blanker (bidirectional — original NB_Controls)
     public const byte CMD_GET_SET_NB_ENABLE = 0x80;

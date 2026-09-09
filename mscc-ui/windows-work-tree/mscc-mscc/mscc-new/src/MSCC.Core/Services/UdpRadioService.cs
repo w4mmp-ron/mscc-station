@@ -1008,6 +1008,13 @@ public class UdpRadioService : IRadioService, IDisposable
         await _transport.SendAsync(Opcodes.CMD_SET_AM_POWER, (short)percent, cancellationToken);
     }
 
+    public async Task SetFmPowerAsync(int percent, CancellationToken cancellationToken = default)
+    {
+        if (!_started) return;
+        await _transport.SendAsync(Opcodes.CMD_SET_FM_POWER, (short)percent, cancellationToken);
+        DebugMonitor.MonitorTextBoxText($" Send CMD_SET_FM_POWER: {percent}%");
+    }
+
     public async Task SetFullPowerAsync(bool full, CancellationToken cancellationToken = default)
     {
         if (!_started) return;

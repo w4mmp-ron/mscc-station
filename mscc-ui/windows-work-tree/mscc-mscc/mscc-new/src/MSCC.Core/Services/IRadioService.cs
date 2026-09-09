@@ -217,6 +217,7 @@ public interface IRadioService : IDisposable
     Task SetCwPowerAsync(int percent, CancellationToken cancellationToken = default);
     Task SetSsbPowerAsync(int percent, CancellationToken cancellationToken = default);
     Task SetAmCarrierAsync(int percent, CancellationToken cancellationToken = default);
+    Task SetFmPowerAsync(int percent, CancellationToken cancellationToken = default);
     Task SetFullPowerAsync(bool full, CancellationToken cancellationToken = default);
 
     // Bidirectional reports for Rx/Tx power sliders (Tune, CW, SSB, AM)

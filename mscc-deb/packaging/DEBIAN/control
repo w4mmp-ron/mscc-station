@@ -1,5 +1,5 @@
 Package: mscc
-Version: 1.0.41
+Version: 1.0.42
 Section: hamradio
 Priority: optional
 Architecture: arm64
@@ -13,6 +13,8 @@ Description: MSCC stack for Multus/Proficio on Raspberry Pi OS (64-bit)
  Proficio firmware upload (bootloader CLI + GUI), start/stop script,
  Pulse/PipeWire virtual digi sinks (VirtualA/B), desktop menu
  Start/Stop/Status/Firmware Upload, and tty0tty null-modem module.
+ Includes NFM (MODE_FM) RX/TX and CMD_SET_FM_POWER (0x9E) when binaries
+ are rebuilt from SDRcore-*-linux / ms-sdr-linux with FM sources.
  .
  Supported platform: Raspberry Pi OS 64-bit on Pi 4 / Pi 5 only.
  Not intended for other Linux distributions.

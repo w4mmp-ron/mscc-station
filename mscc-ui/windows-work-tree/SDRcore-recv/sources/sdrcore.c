@@ -24,10 +24,12 @@ static int firstentry = 0;
 static sp_float hfilt[32768];
 static sp_cplx filt[32768];
 static sp_cplx samp[32768];
-/* NFM discriminator + de-emphasis (~750 µs US amateur) */
+/* NFM discriminator + de-emphasis (~750 µs US amateur) + DC block */
 static sp_float fm_prev_i = 0.0f;
 static sp_float fm_prev_q = 0.0f;
 static sp_float fm_deemp = 0.0f;
+static sp_float fm_dc_x1 = 0.0f;
+static sp_float fm_dc_y1 = 0.0f;
 static int fm_demod_inited = 0;
 
 /******* External C&C structs, defined in sdrcore-recv.c *******/
@@ -160,40 +162,49 @@ void fastconv(sp_cplx *in, sp_cplx *out, int frames)
                         samp[i].imag = mag;
                 }
 
-                /* NFM: quadrature discriminator then 750 µs de-emphasis */
+                /* NFM: atan2 discr + 750 µs de-emphasis + DC block.
+                 * Amplitude-independent (no AGC needed after). Fixed AF scale ~SSB loudness. */
                 if (mystate.opmode == MODE_FM) {
                         sp_float ii = samp[i].real;
                         sp_float qq = samp[i].imag;
                         sp_float disc;
                         sp_float alpha;
+                        sp_float af;
                         if (!fm_demod_inited) {
                                 fm_prev_i = ii;
                                 fm_prev_q = qq;
                                 fm_deemp = 0.0f;
+                                fm_dc_x1 = 0.0f;
+                                fm_dc_y1 = 0.0f;
                                 fm_demod_inited = 1;
                         }
-                        disc = (fm_prev_i * qq - fm_prev_q * ii);
-                        {
-                                sp_float den = (ii * ii + qq * qq);
-                                if (den > 1.0e-20f)
-                                        disc /= den;
-                                else
-                                        disc = 0.0f;
-                        }
+                        disc = atan2f(fm_prev_i * qq - fm_prev_q * ii,
+                                      fm_prev_i * ii + fm_prev_q * qq);
                         fm_prev_i = ii;
                         fm_prev_q = qq;
+                        /* ~5 kHz NFM at 48 kHz → |disc|~0.65 peak; scale for speaker level. */
+                        disc *= 0.85f;
+                        if (disc > 1.0f) disc = 1.0f;
+                        if (disc < -1.0f) disc = -1.0f;
                         alpha = 1.0f / (1.0f + (mystate.samplerate * 750.0e-6f));
                         fm_deemp += alpha * (disc - fm_deemp);
-                        samp[i].real = fm_deemp;
-                        samp[i].imag = fm_deemp;
-                } else {
-                        fm_demod_inited = 0;
+                        /* DC block (R≈0.995) — stops slow bias that AGC used to chase. */
+                        af = fm_deemp - fm_dc_x1 + 0.995f * fm_dc_y1;
+                        fm_dc_x1 = fm_deemp;
+                        fm_dc_y1 = af;
+                        if (af > 1.0f) af = 1.0f;
+                        if (af < -1.0f) af = -1.0f;
+                        samp[i].real = af;
+                        samp[i].imag = af;
                 }
 
                 out[osamps].real = samp[i].real;
                 out[osamps].imag = samp[i].real;
                 osamps++;
         }
+
+        if (mystate.opmode != MODE_FM)
+                fm_demod_inited = 0;
 
         meterblocks++;
         if (meterblocks >= 2) {

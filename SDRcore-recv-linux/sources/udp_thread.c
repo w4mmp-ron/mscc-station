@@ -1439,9 +1439,9 @@ void *UDP_Thread(void *my_param) {
                     case 5: /* wire FM → DSP MODE_FM */
                         G_mode = 'F';
                         mystate.opmode = MODE_FM;
-                        /* Default FMN-ish ~6.6 kHz (±3.3 kHz) */
-                        mystate.lastHRFiltLow = -3300;
-                        mystate.lastHRFiltHigh = 3300;
+                        /* Real FIR 50…5500 → both ± sidebands (wsfirBP cannot take fc1<0). */
+                        mystate.lastHRFiltLow = 50;
+                        mystate.lastHRFiltHigh = 5500;
                         break;
                     case 6:
                         G_mode = 'D';
@@ -1450,7 +1450,9 @@ void *UDP_Thread(void *my_param) {
                 setFilterOffsets(mystate.lastHRFiltLow, mystate.lastHRFiltHigh);
                 mystate.initDSPflag = TRUE;
                 print_time();
-                fprintf(G_fp_logfile, "[%d] UDP Thread . CMD_SET_MAIN_MODE: New Mode %c\n", line_number++, G_mode);
+                fprintf(G_fp_logfile,
+                        "[%d] UDP Thread . CMD_SET_MAIN_MODE: New Mode %c  FIR=[%.0f,%.0f] Hz\n",
+                        line_number++, G_mode, mystate.lastHRFiltLow, mystate.lastHRFiltHigh);
                 break;
 
             case CMD_SET_CW_BW:
@@ -1507,8 +1509,13 @@ void *UDP_Thread(void *my_param) {
                         break;
                 }
                 if (!cw_mode) {
-                    mystate.lastHRFiltHigh = high_cut;
-                    mystate.lastHRFiltLow = previous_low_cut;
+                    if (mystate.opmode == MODE_FM) {
+                        mystate.lastHRFiltLow = 50.0f;
+                        mystate.lastHRFiltHigh = high_cut;
+                    } else {
+                        mystate.lastHRFiltHigh = high_cut;
+                        mystate.lastHRFiltLow = previous_low_cut;
+                    }
                     setFilterOffsets(mystate.lastHRFiltLow, mystate.lastHRFiltHigh);
                     mystate.initDSPflag = TRUE;
                 }
@@ -1541,6 +1548,13 @@ void *UDP_Thread(void *my_param) {
                         break;
                 }
                 if (!cw_mode) {
+                    if (mystate.opmode == MODE_FM) {
+                        print_time();
+                        fprintf(G_fp_logfile,
+                                "[%d] UDP Thread . CMD_SET_BW_LOCUT ignored in FM (keep FIR=[%.0f,%.0f])\n",
+                                line_number++, mystate.lastHRFiltLow, mystate.lastHRFiltHigh);
+                        break;
+                    }
                     mystate.lastHRFiltLow = low_cut;
                     mystate.lastHRFiltHigh = previous_high_cut;
                     setFilterOffsets(mystate.lastHRFiltLow, mystate.lastHRFiltHigh);

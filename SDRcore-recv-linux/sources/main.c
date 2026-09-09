@@ -256,7 +256,8 @@ static void process_iq_to_stereo(const SAMPLE *in, SAMPLE *out, unsigned long fr
     if (mycalstate.calStart == TRUE)
         doRxCalibrate(incplx, framesPerBuffer);
     fastconv(incplx, outcplx, (int)framesPerBuffer);
-    if (!AGC_Initializing)
+    /* FM discr is amplitude-independent; SSB AGC on quiet FM → gain=max → surges. */
+    if (!AGC_Initializing && mystate.opmode != MODE_FM)
         doAGC(outcplx, (int)framesPerBuffer);
     if (nrstate.enabled)
         denoise(outcplx, (int)framesPerBuffer);

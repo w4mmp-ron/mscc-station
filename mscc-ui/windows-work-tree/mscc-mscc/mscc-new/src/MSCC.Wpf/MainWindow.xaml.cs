@@ -77,6 +77,7 @@ public partial class MainWindow : Window
                 vm.CwPowerPercent = SpectrumWaterfallSettings.CwPower;
                 vm.SsbPowerPercent = SpectrumWaterfallSettings.SsbPower;
                 vm.AmCarrierPercent = SpectrumWaterfallSettings.AmCarrier;
+                vm.FmPowerPercent = SpectrumWaterfallSettings.FmPower;
                 vm.StepIndex = SpectrumWaterfallSettings.StepIndex;
                 vm.MonitorTextBoxText(" MainWindow ctor complete (single VM, XAML DC removed)");
 

@@ -151,6 +151,16 @@ void setFilterOffsets(sp_float filterSetLow, sp_float filterSetHigh) {
             mystate.lo1_freq = 12000.0f;
             break;
 
+        case MODE_FM:
+            /* NFM: carrier at LO; IF must be wide and *centered* (like AM).
+             * Previous bug: FM fell through to default and kept the USB
+             * passband (LO+300…LO+2700), which carved FM into a USB-sounding signal.
+             * Carson BW ≈ 2*(5 kHz dev + ~3 kHz AF) → use ±8 kHz. */
+            mystate.lo1_freq = 12000.0f;
+            mystate.filtLowHz = mystate.lo1_freq - 8000.0f;
+            mystate.filtHighHz = mystate.lo1_freq + 8000.0f;
+            break;
+
         default:
             break;
     }
@@ -421,10 +431,13 @@ void fm_modulate(sp_cplx *samps) {
     sp_float gain = 0.85f;
     sp_float dev_inc = (sp_float)(TPI * (double)FM_PEAK_DEV_HZ / (double)mystate.samplerate);
     static sp_float fm_audio_phase = 0.0f;
+    static sp_float fm_dc = 0.0f;
 
     for (i = 0; i < mystate.nfft - mystate.filtertaps; i++) {
         sp_float audio = samps[i].real;
-        /* soft clip */
+        fm_dc += 0.001f * (audio - fm_dc);
+        audio -= fm_dc;
+        audio *= 2.0f;
         if (audio > 1.0f) audio = 1.0f;
         if (audio < -1.0f) audio = -1.0f;
 
@@ -439,7 +452,8 @@ void fm_modulate(sp_cplx *samps) {
         }
 
         mystate.lo1_phaseacc += mystate.lo1_phaseinc;
-        mystate.lo1_phaseacc = atan2(sin(mystate.lo1_phaseacc), cos(mystate.lo1_phaseacc));
+        if (mystate.lo1_phaseacc > TPI) mystate.lo1_phaseacc -= TPI;
+        if (mystate.lo1_phaseacc < -TPI) mystate.lo1_phaseacc += TPI;
     }
 }
 

@@ -30,6 +30,7 @@
 
 //#define GET_IAMBIC_TUNING 0x9C  /* retired — see CMD_SET_KEYER_MEMORY */
 //#define GET_CW_DEFAULTS 0x9D
+#define CMD_SET_FM_POWER 0x9E
 //#define GET_CW_INTERFACE_METHOD 0x9E
 //#define GET_SIDE_TONE 0x9F
 //#define SET_IAMBIC_TYPE 0x74

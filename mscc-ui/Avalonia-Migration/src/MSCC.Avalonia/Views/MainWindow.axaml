@@ -571,13 +571,23 @@
                       <TextBlock Grid.Column="2" Classes="mscc-readout"
                                  Text="{Binding SsbPowerPercent, StringFormat={}{0}%}"/>
                     </Grid>
-                    <Grid ColumnDefinitions="88,*,40" Height="26" Margin="0,0,0,10">
+                    <Grid ColumnDefinitions="88,*,40" Height="26">
                       <TextBlock Classes="mscc-label" Text="AM Carrier" FontSize="11" VerticalAlignment="Center"/>
                       <Slider Grid.Column="1" Classes="mscc-slider" Minimum="0" Maximum="100"
                               Value="{Binding AmCarrierPercent}"
                               IsEnabled="{Binding IsConnected}"/>
                       <TextBlock Grid.Column="2" Classes="mscc-readout"
                                  Text="{Binding AmCarrierPercent, StringFormat={}{0}%}"/>
+                    </Grid>
+                    <Grid ColumnDefinitions="88,*,40" Height="26" Margin="0,0,0,10">
+                      <TextBlock Classes="mscc-label" Text="FM Power" FontSize="11" VerticalAlignment="Center"
+                                 ToolTip.Tip="NFM TX drive (independent of AM carrier)."/>
+                      <Slider Grid.Column="1" Classes="mscc-slider" Minimum="0" Maximum="100"
+                              Value="{Binding FmPowerPercent}"
+                              IsEnabled="{Binding IsConnected}"
+                              ToolTip.Tip="NFM TX drive (independent of AM carrier)."/>
+                      <TextBlock Grid.Column="2" Classes="mscc-readout"
+                                 Text="{Binding FmPowerPercent, StringFormat={}{0}%}"/>
                     </Grid>
 
                     <TextBlock Text="DEFAULT FILTERS" FontWeight="SemiBold" Foreground="#00FFAA" Margin="0,4,0,4"/>
@@ -1391,7 +1401,7 @@
             <TextBlock Classes="mscc-label" Text="RF"/>
             <Slider Grid.Column="1" Classes="mscc-slider" Minimum="0" Maximum="100" Value="{Binding RfPower}"
                     IsEnabled="{Binding IsConnected}"
-                    ToolTip.Tip="Mirrors active mode power (Tune/CW/SSB/AM). Full banks on RX/TX tab."/>
+                    ToolTip.Tip="Mirrors active mode power (Tune/CW/SSB/AM/FM). Full banks on RX/TX tab."/>
             <TextBlock Grid.Column="2" Classes="mscc-readout" Text="{Binding RfPower}"/>
           </Grid>
           <Grid ColumnDefinitions="40,*,28" Height="22" Margin="0,0,0,1">

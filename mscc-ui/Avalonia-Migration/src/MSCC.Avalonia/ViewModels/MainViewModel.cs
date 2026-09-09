@@ -152,7 +152,7 @@ public partial class MainViewModel : ViewModelBase, IDisposable
         HighCutLabel = HighCutLabels[_highCutIndex];
         CwFilterLabel = CwFilterLabels[_cwFilterIndex];
         ModeText = "USB";
-        AppendLog("MSCC Avalonia 0.6.42 — FM mode + Simplex/−100 kHz split; Remote Audio / CQ / Farnsworth.");
+        AppendLog("MSCC Avalonia 0.6.44 — FM power slider; TX IQ freqs; Remote Audio / CQ.");
         AppendLog("PTT = TX (voice modes); TUN = TUNE + carrier. S/W opens pan settings.");
         AppendLog($"Log: {LogFilePath}");
         CwPitchLabel = CwPitchOptions[Math.Clamp(CwPitchIndex, 0, CwPitchOptions.Count - 1)];
@@ -309,6 +309,7 @@ public partial class MainViewModel : ViewModelBase, IDisposable
     [ObservableProperty] private int _cwPowerPercent = 40;
     [ObservableProperty] private int _ssbPowerPercent = 50;
     [ObservableProperty] private int _amCarrierPercent = 30;
+    [ObservableProperty] private int _fmPowerPercent = 50;
     /// <summary>Right-rail mirror of the active mode's power bank.</summary>
     [ObservableProperty] private int _rfPower = 50;
 
@@ -336,7 +337,7 @@ public partial class MainViewModel : ViewModelBase, IDisposable
     [ObservableProperty] private string _proficioTempText = "— °C";
     [ObservableProperty] private string _paTempText = "— °C";
     [ObservableProperty] private string _paCurrentText = "— mA";
-    [ObservableProperty] private string _clientVersionText = "0.6.42";
+    [ObservableProperty] private string _clientVersionText = "0.6.44";
     [ObservableProperty] private bool _qrpMode = true;
     [ObservableProperty] private bool _fullPower;
     [ObservableProperty] private bool _alcOn;
@@ -654,6 +655,14 @@ public partial class MainViewModel : ViewModelBase, IDisposable
         _ = SendAmCarrierAsync(Math.Clamp(value, 0, 100));
     }
 
+    partial void OnFmPowerPercentChanged(int value)
+    {
+        if (IsFmBankActive()) SyncRfPowerFromMode(force: true);
+        ScheduleSaveClientSettings();
+        if (_suppressPowerSend || !CanOperate()) return;
+        _ = SendFmPowerAsync(Math.Clamp(value, 0, 100));
+    }
+
     /// <summary>Right-rail RF slider writes into the active mode's power bank.</summary>
     partial void OnRfPowerChanged(int value)
     {
@@ -670,6 +679,9 @@ public partial class MainViewModel : ViewModelBase, IDisposable
                 break;
             case "AM":
                 if (AmCarrierPercent != value) AmCarrierPercent = value;
+                break;
+            case "FM":
+                if (FmPowerPercent != value) FmPowerPercent = value;
                 break;
             default:
                 // USB / LSB / DIG-U / other → SSB bank
@@ -854,14 +866,18 @@ public partial class MainViewModel : ViewModelBase, IDisposable
     private bool IsAmBankActive() =>
         string.Equals(ActiveModeString, "AM", StringComparison.OrdinalIgnoreCase);
 
+    private bool IsFmBankActive() =>
+        string.Equals(ActiveModeString, "FM", StringComparison.OrdinalIgnoreCase);
+
     private bool IsSsbBankActive() =>
-        !IsTuneBankActive() && !IsCwBankActive() && !IsAmBankActive();
+        !IsTuneBankActive() && !IsCwBankActive() && !IsAmBankActive() && !IsFmBankActive();
 
     private void SyncRfPowerFromMode(bool force = false)
     {
         int target = IsTuneBankActive() ? TunePowerPercent
             : IsCwBankActive() ? CwPowerPercent
             : IsAmBankActive() ? AmCarrierPercent
+            : IsFmBankActive() ? FmPowerPercent
             : SsbPowerPercent;
 
         if (!force && RfPower == target) return;
@@ -912,6 +928,17 @@ public partial class MainViewModel : ViewModelBase, IDisposable
             AppendLog($"Sent AM Carrier {percent}%");
         }
         catch (Exception ex) { AppendLog($"AM carrier error: {ex.Message}"); }
+    }
+
+    private async Task SendFmPowerAsync(int percent)
+    {
+        if (_radio == null) return;
+        try
+        {
+            await _radio.SetFmPowerAsync(percent).ConfigureAwait(true);
+            AppendLog($"Sent FM Power {percent}%");
+        }
+        catch (Exception ex) { AppendLog($"FM power error: {ex.Message}"); }
     }
 
     private void ApplyReportedPower(Action apply)
@@ -2524,6 +2551,24 @@ public partial class MainViewModel : ViewModelBase, IDisposable
         _ => 0
     };
 
+    /// <summary>TX IQ freqs — must match ms-sdr iq_calibration_freqs[].</summary>
+    private static long GetTxIqFrequencyHz(int bandNumber) => bandNumber switch
+    {
+        2200 => 136_000,
+        630 => 475_000,
+        160 => 1_900_000,
+        80 => 3_750_000,
+        60 => 5_330_500,
+        40 => 7_150_000,
+        30 => 10_125_000,
+        20 => 14_175_000,
+        17 => 18_110_000,
+        15 => 21_225_000,
+        12 => 24_930_000,
+        10 => 28_350_000,
+        _ => 0
+    };
+
     private static int AmpCalStepFromSlider(int sliderValue) => 100 + Math.Clamp(sliderValue, -99, 0);
 
     partial void OnPowerCalTxOnChanged(bool value)
@@ -3502,7 +3547,7 @@ public partial class MainViewModel : ViewModelBase, IDisposable
             item.IsSelected = item.BandNumber == band;
         TxIqSelectedBand = band;
 
-        long freq = GetCalFrequencyHz(band);
+        long freq = GetTxIqFrequencyHz(band);
         _suppressTxIqOffset = true;
         try { TxIqOffset = 0; }
         finally { _suppressTxIqOffset = false; }
@@ -3513,9 +3558,10 @@ public partial class MainViewModel : ViewModelBase, IDisposable
             {
                 if (freq > 0)
                     await ApplyFrequencyAsync(freq, $"tx-iq {band}m").ConfigureAwait(true);
+                await _radio.SetIqCalibrationRxTxAsync(true).ConfigureAwait(true);
                 await _radio.SetIqBandAsync(band).ConfigureAwait(true);
-                TxIqStatus = $"{band}M selected. Set power, then TX ON.";
-                AppendLog($"TX IQ band {band}m freq={freq}");
+                TxIqStatus = $"{band}M @ {freq / 1_000_000.0:F3} MHz — set power, then TX ON.";
+                AppendLog($"TX IQ band {band}m freq={freq} (ms-sdr iq_calibration_freqs)");
             }
             catch (Exception ex)
             {
@@ -3584,15 +3630,23 @@ public partial class MainViewModel : ViewModelBase, IDisposable
             try
             {
                 _modeBeforeTxIq = string.IsNullOrWhiteSpace(ModeText) ? "USB" : ModeText;
+                long freq = GetTxIqFrequencyHz(TxIqSelectedBand);
+                if (freq > 0)
+                {
+                    _frequencyHz = freq;
+                    UpdateFrequencyUi(freq);
+                }
                 await _radio.SetIqCalibrationRxTxAsync(true).ConfigureAwait(true);
                 await _radio.SetIqBandAsync(TxIqSelectedBand).ConfigureAwait(true);
                 await _radio.SetTunePowerAsync(TxIqPower).ConfigureAwait(true);
                 await _radio.SetModeAsync("TUNE").ConfigureAwait(true);
                 ModeText = "TUNE";
                 await _radio.SetAutoTuneAsync(true).ConfigureAwait(true);
+                await _radio.SetIqCalibrationTuneAsync(true).ConfigureAwait(true);
                 TxIqTxOn = true;
-                TxIqStatus = "TX ON — adjust OFFSET (external RX), then APPLY or TX OFF.";
-                AppendLog($"TX IQ TX ON band={TxIqSelectedBand} power={TxIqPower}");
+                TxIqStatus =
+                    $"TX ON @ {freq / 1_000_000.0:F3} MHz — null image with OFFSET, then APPLY or TX OFF.";
+                AppendLog($"TX IQ TX ON band={TxIqSelectedBand} freq={freq} power={TxIqPower}");
             }
             catch (Exception ex)
             {
@@ -4486,6 +4540,9 @@ public partial class MainViewModel : ViewModelBase, IDisposable
         {
             _frequencyHz = hz;
             UpdateFrequencyUi(hz);
+            /* Keep VFO-B display in sync for FM offset (even offline / before radio send). */
+            if (IsFmOffsetActive())
+                UpdateLocalFmVfoBFromA(hz);
         }
         else
         {
@@ -4514,7 +4571,7 @@ public partial class MainViewModel : ViewModelBase, IDisposable
             SyncFavoriteBandFilterFromRadio();
             StatusText = $"Freq {(UseVfoA ? "A" : "B")} {FormatMhz(hz)}";
             AppendLog($"Sent VFO{(UseVfoA ? "A" : "B")} freq {hz} [{reason}]");
-            if (ModeIsFm && !FmSimplex && UseVfoA)
+            if (IsFmOffsetActive() && UseVfoA)
                 await ApplyFmOffsetPolicyAsync().ConfigureAwait(true);
             ScheduleSaveClientSettings();
         }
@@ -4523,6 +4580,19 @@ public partial class MainViewModel : ViewModelBase, IDisposable
             StatusText = $"Freq failed: {ex.Message}";
             AppendLog($"ERROR: {ex.Message}");
         }
+    }
+
+    private bool IsFmOffsetActive() =>
+        !FmSimplex &&
+        (ModeIsFm || string.Equals(ModeText, "FM", StringComparison.OrdinalIgnoreCase));
+
+    private void UpdateLocalFmVfoBFromA(long rxHz)
+    {
+        long tx = rxHz - FmTxOffsetHz;
+        if (tx < 0) tx = 0;
+        _vfoBFrequencyHz = tx;
+        VfoBDisplayMhz = FormatMhz(tx);
+        VfoBModeText = "FM";
     }
 
     /// <summary>
@@ -4653,7 +4723,10 @@ public partial class MainViewModel : ViewModelBase, IDisposable
             }
 
             if (nowFm)
+            {
+                await SendFmPowerAsync(Math.Clamp(FmPowerPercent, 0, 100)).ConfigureAwait(true);
                 await ApplyFmOffsetPolicyAsync().ConfigureAwait(true);
+            }
             else if (wasFm)
                 await ClearFmSplitAsync().ConfigureAwait(true);
 
@@ -4675,30 +4748,32 @@ public partial class MainViewModel : ViewModelBase, IDisposable
     /// </summary>
     private async Task ApplyFmOffsetPolicyAsync()
     {
-        if (_radio == null || !IsConnected) return;
         try
         {
             if (FmSimplex)
             {
-                await _radio.SetSplitAsync(false).ConfigureAwait(true);
-                AppendLog("FM Simplex — split off (TX=RX on VFO-A)");
+                if (_radio != null && IsConnected)
+                {
+                    await _radio.SetSplitAsync(false).ConfigureAwait(true);
+                    AppendLog("FM Simplex — split off (TX=RX on VFO-A)");
+                }
                 return;
             }
 
-            long rx = UseVfoA ? _frequencyHz : _vfoBFrequencyHz;
             // Policy uses VFO-A as RX even if B was active — switch listen to A.
             if (!UseVfoA)
             {
                 UseVfoA = true;
-                await PushActiveVfoToRadioAsync(force: true).ConfigureAwait(true);
-                rx = _frequencyHz;
+                if (_radio != null && IsConnected)
+                    await PushActiveVfoToRadioAsync(force: true).ConfigureAwait(true);
             }
 
-            long tx = rx - FmTxOffsetHz;
-            if (tx < 0) tx = 0;
-            _vfoBFrequencyHz = tx;
-            VfoBDisplayMhz = FormatMhz(tx);
-            VfoBModeText = "FM";
+            long rx = _frequencyHz;
+            UpdateLocalFmVfoBFromA(rx);
+            long tx = _vfoBFrequencyHz;
+
+            if (_radio == null || !IsConnected)
+                return;
 
             await _radio.SetSplitRxFreqAsync(rx).ConfigureAwait(true);
             await _radio.SetSplitTxFreqAsync(tx).ConfigureAwait(true);
@@ -5024,6 +5099,7 @@ public partial class MainViewModel : ViewModelBase, IDisposable
             CwPowerPercent = Math.Clamp(s.CwPowerPercent, 0, 100);
             SsbPowerPercent = Math.Clamp(s.SsbPowerPercent, 0, 100);
             AmCarrierPercent = Math.Clamp(s.AmCarrierPercent, 0, 100);
+            FmPowerPercent = Math.Clamp(s.FmPowerPercent, 0, 100);
             _suppressPowerSend = false;
             SyncRfPowerFromMode();
 
@@ -5167,6 +5243,7 @@ public partial class MainViewModel : ViewModelBase, IDisposable
             CwPowerPercent = CwPowerPercent,
             SsbPowerPercent = SsbPowerPercent,
             AmCarrierPercent = AmCarrierPercent,
+            FmPowerPercent = FmPowerPercent,
             Compression = Compression,
             CompressionOn = _sessionCompressionOn || CompressionOn,
             AgcLevel = AgcLevel,
@@ -5244,6 +5321,7 @@ public partial class MainViewModel : ViewModelBase, IDisposable
                 await _radio.SetCwPowerAsync(Math.Clamp(CwPowerPercent, 0, 100)).ConfigureAwait(true);
                 await _radio.SetSsbPowerAsync(Math.Clamp(SsbPowerPercent, 0, 100)).ConfigureAwait(true);
                 await _radio.SetAmCarrierAsync(Math.Clamp(AmCarrierPercent, 0, 100)).ConfigureAwait(true);
+                await _radio.SetFmPowerAsync(Math.Clamp(FmPowerPercent, 0, 100)).ConfigureAwait(true);
             }
             catch (Exception ex) { AppendLog($"Power restore: {ex.Message}"); }
 

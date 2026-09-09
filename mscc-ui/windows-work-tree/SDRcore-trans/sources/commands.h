@@ -156,6 +156,7 @@
 #define CMD_SET_SPEAKER_MUTE 0xE7
 #define CMD_SET_MIC_MUTE 0xE8
 #define CMD_SET_TUNE_POWER 0xE9
+#define CMD_SET_FM_POWER 0x9E   /* NFM drive % (user power); distinct from AM carrier 0xE3 */
 #define CMD_SET_OVERDRIVEN 0xED
 #define CMD_SET_COMPRESSION_STATE 0xEE
 #define CMD_SET_COMPRESSION_LEVEL 0xEF

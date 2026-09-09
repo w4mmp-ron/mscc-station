@@ -151,6 +151,16 @@ void setFilterOffsets(sp_float filterSetLow, sp_float filterSetHigh) {
             mystate.lo1_freq = 12000.0f;
             break;
 
+        case MODE_FM:
+            /* NFM: carrier at LO; IF must be wide and *centered* (like AM).
+             * Previous bug: FM fell through to default and kept the USB
+             * passband (LO+300…LO+2700), which carved FM into a USB-sounding signal.
+             * Carson BW ≈ 2*(5 kHz dev + ~3 kHz AF) → use ±8 kHz. */
+            mystate.lo1_freq = 12000.0f;
+            mystate.filtLowHz = mystate.lo1_freq - 8000.0f;
+            mystate.filtHighHz = mystate.lo1_freq + 8000.0f;
+            break;
+
         default:
             break;
     }
@@ -421,24 +431,44 @@ void fm_modulate(sp_cplx *samps) {
     sp_float gain = 0.85f;
     sp_float dev_inc = (sp_float)(TPI * (double)FM_PEAK_DEV_HZ / (double)mystate.samplerate);
     static sp_float fm_audio_phase = 0.0f;
+    static sp_float fm_dc = 0.0f;
+    static int fm_peak_log_skip = 0;
+    sp_float peak = 0.0f;
 
     for (i = 0; i < mystate.nfft - mystate.filtertaps; i++) {
         sp_float audio = samps[i].real;
+        /* Slow DC remove so mic bias does not park the carrier off-frequency. */
+        fm_dc += 0.001f * (audio - fm_dc);
+        audio -= fm_dc;
+        /* Modest pre-gain so typical mic levels approach ~5 kHz peak. */
+        audio *= 2.0f;
         if (audio > 1.0f) audio = 1.0f;
         if (audio < -1.0f) audio = -1.0f;
+        if (fabs(audio) > peak) peak = (sp_float)fabs(audio);
 
         fm_audio_phase += dev_inc * audio;
         if (fm_audio_phase > TPI) fm_audio_phase -= TPI;
         if (fm_audio_phase < -TPI) fm_audio_phase += TPI;
 
         {
+            /* Same I/Q convention as tune/ssb: I=sin, Q=cos of LO+FM phase. */
             sp_float phase = mystate.lo1_phaseacc + fm_audio_phase;
             samps[i].real = gain * (sp_float)sin(phase);
             samps[i].imag = gain * (sp_float)cos(phase);
         }
 
         mystate.lo1_phaseacc += mystate.lo1_phaseinc;
-        mystate.lo1_phaseacc = atan2(sin(mystate.lo1_phaseacc), cos(mystate.lo1_phaseacc));
+        if (mystate.lo1_phaseacc > TPI) mystate.lo1_phaseacc -= TPI;
+        if (mystate.lo1_phaseacc < -TPI) mystate.lo1_phaseacc += TPI;
+    }
+
+    if (fm_peak_log_skip == 0 && G_fp_logfile) {
+        print_time();
+        fprintf(G_fp_logfile, "[%d] fm_modulate. peak|audio|=%.3f (1.0 => ~%.0f Hz dev)\n",
+                line_number++, peak, (double)FM_PEAK_DEV_HZ);
+        fm_peak_log_skip = 100;
+    } else if (fm_peak_log_skip > 0) {
+        fm_peak_log_skip--;
     }
 }
 

@@ -42,6 +42,7 @@
 #define AM_POWER 2
 #define CW_POWER 3
 #define TUNE_POWER 4
+#define FM_POWER 5
 #if !defined(TRUE)
 #define TRUE 1
 #endif
@@ -132,6 +133,7 @@ typedef struct  {
 	int am_power;
 	int cw_power;
 	int tune_power;
+	int fm_power;
 } power_levels;
 
 typedef struct {

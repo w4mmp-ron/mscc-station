@@ -2066,6 +2066,14 @@ void * Command_Processor(void *my_param) {
             fprintf(G_fp_logfile, "[%d] CMD_SET_TUNE_POWER . Finished \n", line_number++);
             break;
 
+        case CMD_SET_FM_POWER:
+            print_time(0);
+            fprintf(G_fp_logfile, "[%d] CMD_SET_FM_POWER . FM POWER: %d \n", line_number++, t_opcode_data);
+            SDRcore_trans_send_param(CMD_SET_FM_POWER, t_opcode_data);
+            print_time(0);
+            fprintf(G_fp_logfile, "[%d] CMD_SET_FM_POWER . Finished \n", line_number++);
+            break;
+
         case CMD_SET_STOP:
             print_time(0);
             fprintf(G_fp_logfile, "[%d] CMD_SET_STOP . calling Stop_all. t_opcode_data: %d \n",

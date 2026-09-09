@@ -108,8 +108,21 @@ static int sdrAudioCallback(const void *inputBuffer, void *outputBuffer,
 	const SAMPLE *in = (const SAMPLE*)inputBuffer;
 	unsigned int i;
 	(void)timeInfo; /* Prevent unused variable warnings. */
-	(void)statusFlags;
 	(void)userData;
+
+	/* Rate-limited PortAudio glitch log — helps diagnose "buffer reset" audio. */
+	if (statusFlags & (paInputOverflow | paOutputUnderflow | paOutputOverflow | paInputUnderflow)) {
+		static unsigned long pa_glitch_log_skip = 0;
+		if (pa_glitch_log_skip == 0 && G_fp_logfile) {
+			print_time();
+			fprintf(G_fp_logfile,
+				"[%d] PortAudio statusFlags=0x%lx (overflow/underflow) mode=%d\n",
+				line_number++, (unsigned long)statusFlags, mystate.opmode);
+			pa_glitch_log_skip = 50; /* ~1 s at 48k/3072 hop */
+		} else if (pa_glitch_log_skip > 0) {
+			pa_glitch_log_skip--;
+		}
+	}
 
 	if (inputBuffer == NULL)
 	{
@@ -142,7 +155,9 @@ static int sdrAudioCallback(const void *inputBuffer, void *outputBuffer,
 		fastconv(incplx, outcplx, (int)framesPerBuffer);
 
 		/********************** Run AGC *************************************************/
-		if(!AGC_Initializing) doAGC(outcplx, (int)framesPerBuffer);
+		/* FM discr is amplitude-independent; SSB AGC on quiet FM → gain=max → surges. */
+		if (!AGC_Initializing && mystate.opmode != MODE_FM)
+			doAGC(outcplx, (int)framesPerBuffer);
 
 		/********************** Run auto-notch *****************************************/
 		if (anstate.enabled) anotch(outcplx, (int)framesPerBuffer);

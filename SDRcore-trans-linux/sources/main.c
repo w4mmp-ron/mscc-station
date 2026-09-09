@@ -228,21 +228,26 @@ static void process_mic_to_iq(const SAMPLE *in, SAMPLE *out, unsigned long frame
 
     if (G_mode != 'T' && G_null_count++ < MAX_NULL) {
         null_modulate(incplx);
-    } else {
-        if (mystate.twoToneFlag) {
-            ssb_modulate(incplx);
-            twoTone(incplx);
-        } else {
-            if (mystate.opmode == MODE_AM) am_modulate(incplx);
-            if (mystate.opmode == MODE_LSB) ssb_modulate(incplx);
-            if (mystate.opmode == MODE_USB) ssb_modulate(incplx);
-            if (mystate.opmode == MODE_FM) fm_modulate(incplx);
-            if (mystate.opmode == MODE_TUNE) tune_modulate(incplx);
-            if (mystate.opmode == MODE_CW) tune_modulate(incplx);
+        fastconv(incplx, outcplx, (int)framesPerBuffer);
+    } else if (mystate.twoToneFlag) {
+        ssb_modulate(incplx);
+        twoTone(incplx);
+        fastconv(incplx, outcplx, (int)framesPerBuffer);
+    } else if (mystate.opmode == MODE_FM) {
+        /* NFM: direct I/Q — SSB overlap-save FIR destroys constant-envelope FM. */
+        fm_modulate(incplx);
+        for (i = 0; i < framesPerBuffer; i++) {
+            outcplx[i].real = incplx[i].real * mystate.txPower;
+            outcplx[i].imag = incplx[i].imag * mystate.txPower;
         }
+    } else {
+        if (mystate.opmode == MODE_AM) am_modulate(incplx);
+        if (mystate.opmode == MODE_LSB) ssb_modulate(incplx);
+        if (mystate.opmode == MODE_USB) ssb_modulate(incplx);
+        if (mystate.opmode == MODE_TUNE) tune_modulate(incplx);
+        if (mystate.opmode == MODE_CW) tune_modulate(incplx);
+        fastconv(incplx, outcplx, (int)framesPerBuffer);
     }
-
-    fastconv(incplx, outcplx, (int)framesPerBuffer);
 
     for (i = 0; i < framesPerBuffer; i++) {
         *outbuffer = outcplx[i].real * iMult;

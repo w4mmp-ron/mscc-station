@@ -115,6 +115,9 @@ float Driver_Get_QRO_Power() {
         case 'A':
             configured_drive = get_QRO_power_level(G_band, LSB_POWER);
             break;
+        case 'F':
+            configured_drive = get_QRO_power_level(G_band, FM_POWER);
+            break;
         default:
             print_time();
             fprintf(G_fp_logfile, "[%d] Drive_Manager. Driver_Get_QRO_Power. INVALID MODE\n",line_number++);
@@ -146,6 +149,9 @@ float Driver_Get_QRP_Power() {
         case 'A':
             configured_drive = get_QRP_power_level(G_band, LSB_POWER);
             break;
+        case 'F':
+            configured_drive = get_QRP_power_level(G_band, FM_POWER);
+            break;
         default:
             print_time();
             fprintf(G_fp_logfile, "[%d] Drive_Manager. Driver_Get_QRP_Power. INVALID MODE\n",line_number++);
@@ -175,6 +181,9 @@ float Driver_Get_ALC_Limit() {
             break;
         case 'A':
             alc_limit = get_QRP_power_level(G_band, LSB_POWER);
+            break;
+        case 'F':
+            alc_limit = get_QRP_power_level(G_band, FM_POWER);
             break;
         default:
             print_time();
