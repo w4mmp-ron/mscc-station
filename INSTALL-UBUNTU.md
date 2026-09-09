@@ -1,40 +1,23 @@
-# MSCC on Ubuntu (amd64 laptop)
+# MSCC on Ubuntu Desktop (x86_64)
 
-**Audience:** Ubuntu Desktop **x86_64 / amd64** (this is not the Raspberry Pi kit).  
-**Pi operators:** use [`pi-install/INSTALL.md`](pi-install/INSTALL.md) instead.
+**This is not the Raspberry Pi kit.** Pi operators: [`pi-install/INSTALL.md`](pi-install/INSTALL.md).
 
-Verified on **Ubuntu 26.04.1** (`resolute`), kernel `7.0.0-31-generic`, 2026-09-09.
+Verified on **Ubuntu 26.04.1**, kernel `7.0.0-31-generic` (`stew-HP-Notebook`).
 
-This file is the working install guide. Prerequisites below are done on `stew-HP-Notebook`. Later steps (build servers, init, UI) will be filled in as we do them.
+Same Linux **source** as the Pi. Ubuntu is the special case: distro PortAudio (Pulse), user desktop icons, **amd64** UI `.deb`. Ron on the Pi still uses plain `make` and `*_arm64.deb`.
 
----
+Release drop: [`mscc-ui/Release/avalonia/`](mscc-ui/Release/avalonia/)
 
-## Architecture (read this first)
+| Folder | Use |
+|--------|-----|
+| `mscc-ui/Release/avalonia/arm64/` | Pi packages only |
+| `mscc-ui/Release/avalonia/x86_64/` | Ubuntu UI + init-gui |
 
-| | Pi | This Ubuntu laptop |
-|--|----|-------------------|
-| CPU | **arm64** (AArch64) | **amd64** (x86_64) |
-| Shipping server/UI `.deb` in `pi-install/packages/` | Yes | **Will not install** (`Wrong architecture`) |
-| Init GUI `mscc-init-gui_*_all.deb` | Yes | Yes (`Architecture: all`) |
-
-**One Linux source tree** (`ms-sdr-linux`, `SDRcore-*-linux`, …).  
-**Two package artifacts** when you want both machines: `*_arm64.deb` (build on the Pi) and `*_amd64.deb` (build here).
-
-Do **not** fork Linux sources into amd64 vs arm64 branches.
-
-Do **not** install `pulseaudio` on modern Ubuntu Desktop — **PipeWire** + `pipewire-pulse` is the audio server. Install `pulseaudio-utils` only (for `pactl`).
+Do **not** `apt install` an `*_arm64.deb` on this PC except you may use **`mscc-init-gui_*_all.deb`**. Do **not** install `pulseaudio` (PipeWire is already the audio server). Do **not** copy `$HOME/mscc` binaries into `mscc-binaries/` (that folder is AArch64 for the Pi `.deb`).
 
 ---
 
-## 1. Prerequisites (done)
-
-### Typical Ubuntu Desktop already has
-
-`python3`, `git`, `alsa-utils`, `usbutils`, `udev`, `kmod`, PipeWire, `pipewire-pulse`, X11/GL libraries, group `plugdev`.
-
-This machine also already had `build-essential`, `g++`, `make`, `dpkg-dev`, and kernel headers for the running kernel.
-
-### Install
+## 1. Prerequisites
 
 ```bash
 sudo apt update
@@ -51,63 +34,151 @@ sudo apt install -y \
   python3-pyaudio \
   python3-usb \
   linux-headers-generic
-```
 
-`build-essential`, `g++`, `git`, and `dpkg-dev` are listed so a truly fresh Ubuntu gets them; skip is fine if they are already installed.
-
-| Package | Why |
-|---------|-----|
-| `libusb-1.0-0-dev` | Compile `ms-sdr`, `mscc-init`, firmware `bootloader` |
-| `libhidapi-dev`, `libhidapi-libusb0` | Firmware upload (`-lhidapi-libusb`) |
-| `pkg-config` | Build helper |
-| `libportaudio2`, `portaudio19-dev` | Recv/trans/init audio. Ubuntu’s PortAudio **includes Pulse**, so the Pi `mscc-portaudio_*_arm64.deb` is not used here |
-| `pulseaudio-utils` | `pactl` (VirtualA/B and `mscc status`) |
-| `python3-tk`, `python3-pyaudio` | MSCC Init GUI |
-| `python3-usb` | USB serial in the init wizard |
-| `linux-headers-generic` | tty0tty follows kernel upgrades |
-
-Apt will pull extras (`libasound2-dev`, `libhidapi-hidraw0`, `python3.14-tk`, `pkgconf`, …). That is expected.
-
-### Groups (CAT / tty0tty / audio)
-
-```bash
 sudo usermod -aG dialout,audio "$USER"
 ```
 
-**Log out and back in** (or reboot) before using `/dev/tnt*` or radio serial. New groups do not apply to an already-open session.
+Log out and back in. `id -nG` must include `dialout`, `audio`, and `plugdev`.
 
-`plugdev` is usually already assigned (Proficio USB).
+Check: `pactl info` should say **PulseAudio (on PipeWire …)**.
 
-### Check
-
-```bash
-pkg-config --modversion libusb-1.0
-pkg-config --modversion portaudio-2.0
-python3 -c 'import tkinter, pyaudio, usb; print("python OK")'
-pactl info | head
-id -nG    # after re-login should include: dialout audio plugdev
-```
-
-Expect `pactl` to show **PulseAudio (on PipeWire …)**.
-
-### Recorded on this laptop (2026-09-09)
-
-Newly installed (requested + apt extras):  
-`libusb-1.0-0-dev`, `libhidapi-dev`, `libhidapi-libusb0`, `libhidapi-hidraw0`, `pkg-config`, `libportaudio2`, `portaudio19-dev`, `pulseaudio-utils`, `python3-tk`, `python3-pyaudio`, `python3-usb`, `linux-headers-generic`, plus `libasound2-dev`, `libjack-jackd2-dev`, `libportaudiocpp0`, `libpulsedsp`, `libtk8.6`, `python3.14-tk`, `pkgconf`.
-
-User `stew` added to **`dialout`** and **`audio`**. Current Grok/terminal session still needs a **re-login** before those groups appear in `id`.
+Ubuntu’s `libportaudio2` already includes Pulse — do not install `mscc-portaudio_*_arm64.deb` here.
 
 ---
 
-## 2. Next (not done yet)
+## 2. Build servers (x86_64)
 
-- [ ] Log out / in so `dialout` and `audio` apply
-- [ ] Build Linux servers into `~/mscc` (`SDRcore-recv-linux`, `SDRcore-trans-linux`, `ms-sdr-linux`, `mscc-init-linux`, `psoc-usb-bootload-linux`)
-- [ ] Seed `~/.local/mscc` and install init GUI (`mscc-init-gui_*_all.deb` is OK on amd64)
-- [ ] VirtualA / VirtualB (PipeWire / `mscc-virtual-audio`)
-- [ ] tty0tty module
-- [ ] Proficio udev rule
-- [ ] Avalonia UI as **linux-x64** (.NET — Ubuntu 26.04 repos have SDK **10**, project is **net9.0**; decide at UI step)
-- [ ] Optional later: amd64 `.deb` packaging parallel to the Pi arm64 debs
+From the repo root:
 
-Pi arm64 server/UI packages stay built **on the Pi** (or an arm64 host). This laptop builds **amd64** for itself.
+```bash
+./linux-build/mscc-linux.sh all
+```
+
+That compiles `ms-sdr`, `sdrcore-recv`, `sdrcore-trans`, `mscc-init`, and `bootloader` into **`$HOME/mscc`**, copies start/stop helpers, and installs user menu entries (Start / Stop / Status / Firmware). Audio link is `PORTAUDIO=distro`.
+
+Details: [`linux-build/README.md`](linux-build/README.md).
+
+Seed config only if `~/.local/mscc` is missing or empty:
+
+```bash
+mkdir -p "$HOME/.local/mscc"
+cp -a mscc-init-files-linux/. "$HOME/.local/mscc/"
+```
+
+Enable digi sinks:
+
+```bash
+mkdir -p "$HOME/.config/systemd/user"
+cat > "$HOME/.config/systemd/user/mscc-virtual-audio.service" << 'EOF'
+[Unit]
+Description=MSCC virtual digi audio (Pulse/PipeWire VirtualA/B)
+After=pipewire.service pipewire-pulse.service sound.target
+Wants=pipewire.service
+
+[Service]
+Type=oneshot
+ExecStart=%h/mscc/mscc-virtual-audio.sh
+RemainAfterExit=yes
+
+[Install]
+WantedBy=default.target
+EOF
+systemctl --user daemon-reload
+systemctl --user enable --now mscc-virtual-audio.service
+pactl list short sinks | grep Virtual
+```
+
+---
+
+## 3. tty0tty, udev, PATH, Init GUI (root)
+
+Skip the Pi AudioInjector `dtoverlay`. Build tty0tty in `/tmp` so the repo stays clean.
+
+```bash
+sudo bash -s << 'EOF'
+set -euo pipefail
+MSCC="$(pwd)"                    # run from the mscc-station clone
+USER_MSCC="/home/${SUDO_USER:-$USER}/mscc"
+
+STAGE=/tmp/tty0tty-mscc-$$
+cp -a "$MSCC/tty0tty-master/module" "$STAGE"
+make -C "$STAGE"
+make -C "$STAGE" install
+rm -rf "$STAGE"
+
+install -m 644 "$MSCC/mscc-deb/packaging/usr/share/mscc/udev/99-proficio.rules" \
+  /etc/udev/rules.d/99-proficio.rules
+udevadm control --reload-rules
+udevadm trigger
+
+mkdir -p /usr/local/bin
+ln -sfn "$USER_MSCC/mscc.sh"                /usr/local/bin/mscc
+ln -sfn "$USER_MSCC/mscc-init"              /usr/local/bin/mscc-init
+ln -sfn "$USER_MSCC/bootloader"             /usr/local/bin/bootloader
+ln -sfn "$USER_MSCC/bootloader-gui"         /usr/local/bin/bootloader-gui
+ln -sfn "$USER_MSCC/mscc-virtual-audio.sh"  /usr/local/bin/mscc-virtual-audio
+
+apt-get install -y "$MSCC/mscc-ui/Release/avalonia/x86_64/mscc-init-gui_1.0.13_all.deb"
+EOF
+```
+
+`/dev/tnt0` should be `crw-rw---- root dialout`.
+
+---
+
+## 4. Install Avalonia UI (amd64 `.deb`)
+
+```bash
+sudo apt install -y ./mscc-ui/Release/avalonia/x86_64/mscc-ui_0.6.44_amd64.deb
+```
+
+Menu **MSCC UI**, or `mscc-ui`. Default host **127.0.0.1** port **8888**.
+
+Rebuild later (does not touch the Pi arm64 UI):
+
+```bash
+./linux-build/mscc-ui-x64.sh
+./linux-build/build-mscc-ui-deb-amd64.sh
+sudo apt install -y ./mscc-ui/Release/avalonia/x86_64/mscc-ui_0.6.44_amd64.deb
+```
+
+Needs a user-local **.NET 9** SDK at `$HOME/.dotnet` (Ubuntu 26.04 apt has SDK 10; the project stays net9.0).
+
+---
+
+## 5. First run
+
+1. **MSCC Init** (`mscc-init-gui`) — pick **this PC’s** speaker and mic. Digi stays VirtualA / VirtualB.monitor. Pulse or ALSA operator devices both work; Proficio I/Q stays on the radio USB device.
+2. **MSCC Start**
+3. **MSCC UI** — Connect `127.0.0.1:8888`
+4. **MSCC Status** if something fails — logs: `~/.local/mscc/*.log`
+
+Everyday:
+
+```bash
+mscc start
+mscc status
+mscc stop
+```
+
+---
+
+## Pi path (unchanged)
+
+On the Pi, still:
+
+```bash
+cd SDRcore-recv-linux && make clean && make
+# … trans, ms-sdr
+```
+
+Optional: build Pi binaries **on this laptop** without replacing `$HOME/mscc`:
+
+```bash
+./linux-build/cross-arm64.sh prereqs --install
+./linux-build/cross-arm64.sh build
+./linux-build/cross-arm64.sh stage
+./linux-build/cross-arm64.sh deb
+```
+
+`mscc-deb/build-deb.sh` refuses non-AArch64 server ELFs.

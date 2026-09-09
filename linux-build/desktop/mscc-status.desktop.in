@@ -1,0 +1,11 @@
+[Desktop Entry]
+Type=Application
+Name=MSCC Status
+GenericName=MSCC status and install check
+Comment=Show MSCC servers, config, PortAudio device match, CAT port
+Exec=@BINDIR@/mscc-status-window.sh
+Icon=dialog-information
+Terminal=true
+Categories=X-MSCC;Utility;
+Keywords=MSCC;SDR;Proficio;Multus;status;check;
+StartupNotify=false

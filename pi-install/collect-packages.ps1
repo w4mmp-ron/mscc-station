@@ -26,7 +26,8 @@ $jobs = @(
     @{ Dir = "mscc-portaudio"; Pattern = "mscc-portaudio_*_arm64.deb" },
     @{ Dir = "mscc-deb"; Pattern = "mscc_*_arm64.deb" },
     @{ Dir = "mscc-init-gui"; Pattern = "mscc-init-gui_*_all.deb" },
-    @{ Dir = "mscc-ui\Avalonia-Migration"; Pattern = "mscc-ui_*_arm64.deb" }
+    @{ Dir = "mscc-ui\Avalonia-Migration"; Pattern = "mscc-ui_*_arm64.deb" },
+    @{ Dir = "mscc-ui\Release\avalonia\arm64"; Pattern = "mscc-ui_*_arm64.deb" }
 )
 
 Write-Host "Collecting into $dest"

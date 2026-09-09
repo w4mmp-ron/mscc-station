@@ -1,0 +1,11 @@
+[Desktop Entry]
+Type=Application
+Name=MSCC Stop
+GenericName=Stop MSCC servers
+Comment=Stop recv, trans, and ms-sdr
+Exec=@BINDIR@/mscc-desktop-ctl.sh stop
+Icon=media-playback-stop
+Terminal=false
+Categories=X-MSCC;Utility;
+Keywords=MSCC;SDR;Proficio;Multus;stop;
+StartupNotify=false

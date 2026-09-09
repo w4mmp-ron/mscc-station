@@ -51,6 +51,11 @@ Desktop.ini
 !bootloader/**/*.cywrk.*
 !bootloader/**/*.cyprj.*
 
+# Ubuntu laptop x86 UI publish (Pi arm64 publish stays tracked)
+mscc-ui/Avalonia-Migration/publish/linux-x64-sc/
+mscc-ui/Avalonia-Migration/mscc-ui_*_amd64.deb
+linux-build/.pa-arm64/
+
 # Large local logs
 **/*.log
 !**/POST-BUILD.txt

@@ -10,7 +10,8 @@ CC      ?= gcc
 CFLAGS  ?= -O2 -g -Wall -Wno-unused-variable -Wno-unused-but-set-variable
 # -iquote so "extern.h" resolves under source/, but <pthread.h> stays system
 # (plain -I source shadows system pthread with vendored Win32 pthread.h)
-CFLAGS  += -iquote source -D__linux__
+# gnu17: Ubuntu 26.04 gcc 15 defaults to C23, where foo() means foo(void).
+CFLAGS  += -std=gnu17 -iquote source -D__linux__
 LDFLAGS ?=
 LIBS    := -lpthread -lm -lusb-1.0 -lutil
 

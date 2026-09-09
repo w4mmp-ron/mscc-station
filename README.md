@@ -54,6 +54,10 @@ More detail (older layout notes may still appear under `mscc-ui/README.md`) — 
 
 ---
 
+## Ubuntu Desktop (x86_64)
+
+How-to: **[`INSTALL-UBUNTU.md`](INSTALL-UBUNTU.md)**. UI + init-gui debs: `mscc-ui/Release/avalonia/x86_64/`. Servers are built on the laptop (`linux-build/mscc-linux.sh`). Do not install `*_arm64.deb` there.
+
 ## Pi install kit (start here for RPi)
 
 | Path | Notes |

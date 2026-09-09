@@ -132,6 +132,33 @@ def check_binaries(R: Report) -> None:
             R.fail(f"missing or not executable: {p}")
 
 
+def _ldd(path: str) -> str:
+    r = subprocess.run(
+        ["ldd", path],
+        capture_output=True,
+        text=True,
+        timeout=10,
+    )
+    return r.stdout + r.stderr
+
+
+def _pa_so_from_ldd(text: str) -> Optional[str]:
+    for ln in text.splitlines():
+        if "libportaudio" not in ln.lower() or "=>" not in ln:
+            continue
+        rhs = ln.split("=>", 1)[1].strip().split()
+        if rhs and rhs[0].startswith("/"):
+            return rhs[0]
+    return None
+
+
+def _so_links_pulse(so: str) -> bool:
+    try:
+        return "libpulse" in _ldd(so).lower()
+    except (OSError, subprocess.TimeoutExpired):
+        return False
+
+
 def check_portaudio_link(R: Report) -> None:
     R.section("PortAudio (library used by cores)")
     recv = mscc_dir() / "sdrcore-recv"
@@ -139,13 +166,7 @@ def check_portaudio_link(R: Report) -> None:
         R.warn("sdrcore-recv not present — skip ldd")
         return
     try:
-        r = subprocess.run(
-            ["ldd", str(recv)],
-            capture_output=True,
-            text=True,
-            timeout=10,
-        )
-        text = r.stdout + r.stderr
+        text = _ldd(str(recv))
     except (OSError, subprocess.TimeoutExpired) as e:
         R.warn(f"ldd failed: {e}")
         return
@@ -156,12 +177,22 @@ def check_portaudio_link(R: Report) -> None:
     for ln in pa_lines:
         R.info(ln)
     joined = "\n".join(pa_lines)
+    if "not found" in joined.lower():
+        R.fail("libportaudio not found at runtime")
+        return
     if "/usr/local/lib" in joined:
         R.ok("linked against /usr/local (mscc-portaudio)")
-    elif "not found" in joined.lower():
-        R.fail("libportaudio not found at runtime")
+        return
+    # Ubuntu (and other distros): system PortAudio is OK if it has Pulse
+    # (VirtualA/B). Pi Trixie distro PA is often ALSA-only — still warn there.
+    so = _pa_so_from_ldd(joined)
+    if so and _so_links_pulse(so):
+        R.ok(f"distro PortAudio (Pulse-capable) at {so}")
     else:
-        R.warn("not using /usr/local — digi VirtualA/B may be missing; install mscc-portaudio")
+        R.warn(
+            "PortAudio has no Pulse — digi VirtualA/B may be missing; "
+            "on Pi install mscc-portaudio"
+        )
 
 
 def list_pa_devices() -> Tuple[List[dict], Optional[str]]:

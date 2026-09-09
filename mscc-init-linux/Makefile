@@ -14,24 +14,33 @@
 
 CC      ?= gcc
 CFLAGS  ?= -O2 -g -Wall -Wno-unused-variable
-CFLAGS  += -iquote sources -D__linux__
+# gnu17: Ubuntu 26.04 gcc 15 defaults to C23, where foo() means foo(void).
+CFLAGS  += -std=gnu17 -iquote sources -D__linux__
 LDFLAGS ?=
 LIBS    := -lusb-1.0 -lpthread -lm
 
-# MSCC custom PortAudio (Pulse+ALSA). Override: make PORTAUDIO_PREFIX=/opt/...
+# Audio link (same sources, different host):
+#   PORTAUDIO=mscc   (default)  rpath /usr/local — Pi mscc-portaudio
+#   PORTAUDIO=distro            system -lportaudio — Ubuntu libportaudio2
+PORTAUDIO ?= mscc
 PORTAUDIO_PREFIX ?= /usr/local
 
-ifneq ($(wildcard $(PORTAUDIO_PREFIX)/lib/libportaudio.so),)
+ifeq ($(PORTAUDIO),distro)
+  LIBS := -lportaudio $(LIBS)
+  PA_NOTE := PortAudio: distro (-lportaudio, no rpath)
+else ifneq ($(wildcard $(PORTAUDIO_PREFIX)/lib/libportaudio.so),)
   CFLAGS  += -I$(PORTAUDIO_PREFIX)/include
-  LDFLAGS += -L$(PORTAUDIO_PREFIX)/lib -Wl,-rpath,$(PORTAUDIO_PREFIX)/lib
+  PA_RPATH := $(if $(PORTAUDIO_RPATH),$(PORTAUDIO_RPATH),$(PORTAUDIO_PREFIX)/lib)
+  LDFLAGS += -L$(PORTAUDIO_PREFIX)/lib -Wl,-rpath,$(PA_RPATH)
   LIBS    := -lportaudio $(LIBS)
-  PA_NOTE := PortAudio at $(PORTAUDIO_PREFIX) (rpath set)
+  PA_NOTE := PortAudio at $(PORTAUDIO_PREFIX) (rpath $(PA_RPATH))
 else ifneq ($(wildcard $(PORTAUDIO_PREFIX)/lib/aarch64-linux-gnu/libportaudio.so),)
   PALIB := $(PORTAUDIO_PREFIX)/lib/aarch64-linux-gnu
   CFLAGS  += -I$(PORTAUDIO_PREFIX)/include
-  LDFLAGS += -L$(PALIB) -Wl,-rpath,$(PALIB)
+  PA_RPATH := $(if $(PORTAUDIO_RPATH),$(PORTAUDIO_RPATH),$(PALIB))
+  LDFLAGS += -L$(PALIB) -Wl,-rpath,$(PA_RPATH)
   LIBS    := -lportaudio $(LIBS)
-  PA_NOTE := PortAudio at $(PALIB) (rpath set)
+  PA_NOTE := PortAudio at $(PALIB) (rpath $(PA_RPATH))
 else ifneq ($(wildcard $(PORTAUDIO_PREFIX)/lib/libportaudio.a),)
   CFLAGS  += -I$(PORTAUDIO_PREFIX)/include
   LDFLAGS += -L$(PORTAUDIO_PREFIX)/lib

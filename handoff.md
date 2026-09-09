@@ -45,7 +45,7 @@ grok
 - **Ron rebuilt Linux servers** (night of 2026-09-08/09) — **works on the Pi**.
 - Package built: **`mscc-deb/mscc_1.0.42_arm64.deb`** (present locally; packaging `Version:` is **1.0.42**).
 - Avalonia UI with FM + FM Power + TX IQ table: **`mscc-ui_0.6.44_arm64.deb`** in `pi-install/packages/` and under `mscc-ui/Release/avalonia/`.
-- **Ubuntu amd64 laptop** (`stew-HP-Notebook`, Ubuntu 26.04): install notes in **`INSTALL-UBUNTU.md`**. Prerequisites installed 2026-09-09. Log out/in still needed for `dialout`/`audio`. Pi `*_arm64.deb` will not install here.
+- **Ubuntu amd64 laptop** (`stew-HP-Notebook`, Ubuntu 26.04): **`INSTALL-UBUNTU.md`**. Servers from `linux-build/mscc-linux.sh`; UI deb `mscc-ui/Release/avalonia/x86_64/`. Pi drop is `Release/avalonia/arm64/`.
 
 ### Follow-ups / keep in mind
 
@@ -61,7 +61,10 @@ grok
 mscc-station/
   handoff.md                 ← this file
   README.md
-  INSTALL-UBUNTU.md          ← Ubuntu amd64 laptop install (in progress)
+  INSTALL-UBUNTU.md          ← Ubuntu x86_64 install
+  linux-build/               ← Ubuntu x86 scripts; Pi stays plain make
+  mscc-ui/Release/avalonia/arm64/   ← Pi debs
+  mscc-ui/Release/avalonia/x86_64/  ← Ubuntu UI + init-gui
 
   # Linux servers (Ron) — at repo ROOT
   ms-sdr-linux/

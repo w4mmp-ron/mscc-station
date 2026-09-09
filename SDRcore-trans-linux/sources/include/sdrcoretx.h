@@ -89,8 +89,7 @@ typedef struct {
 
 
 /* real-time DSP C code include file */
-//void initDSP(int firstRunFlag);
-void initDSP();
+void initDSP(int firstRunFlag);
 void fastconv(sp_cplx *in, sp_cplx *out, int frames);
 
 #endif	// SDRCORE_HEADER

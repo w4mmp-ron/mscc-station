@@ -26,6 +26,8 @@ As of FM work: control is **1.0.42**, but you still need a **Pi rebuild** of rec
 
 `mscc_*.deb` ships **prebuilt AArch64** binaries. Compile on a **64-bit Raspberry Pi OS** Pi 4/5.
 
+`build-deb.sh` checks that `mscc-binaries/{ms-sdr,sdrcore-recv,sdrcore-trans,mscc-init,bootloader}` are **AArch64** and aborts if they are not (so an Ubuntu laptop amd64 build cannot be packaged as `*_arm64.deb`).
+
 ---
 
 ## Before you start (once)
@@ -64,6 +66,8 @@ As of FM work: control is **1.0.42**, but you still need a **Pi rebuild** of rec
 ---
 
 ## Path A — Fast test (no new `.deb`)
+
+Plain `make` (no extra script):
 
 ```bash
 export MSCC="$HOME/OneDrive/Documents/GitHub/mscc-station"   # ← your real Pi path
@@ -198,3 +202,5 @@ mscc start && mscc status
 ```
 
 Operator install of finished packages: **[../pi-install/INSTALL.md](../pi-install/INSTALL.md)** and **[INSTALL-FOR-PI.md](INSTALL-FOR-PI.md)**.
+
+Optional: an Ubuntu **x86 laptop** can cross-compile these same trees to AArch64 (`linux-build/cross-arm64.sh`) without changing this Pi `make` path. That output must never replace `$HOME/mscc` on the laptop (that dir is the x86 station).

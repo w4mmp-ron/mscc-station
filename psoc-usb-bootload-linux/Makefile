@@ -4,7 +4,8 @@
 
 CC      ?= gcc
 CFLAGS  ?= -O2 -g -Wall -Wextra
-CFLAGS  += -Icybootloaderutils -Isrc
+# gnu17: Ubuntu 26.04 gcc 15 defaults to C23, where foo() means foo(void).
+CFLAGS  += -std=gnu17 -Icybootloaderutils -Isrc
 LDFLAGS ?=
 LIBS    := -lhidapi-libusb -lusb-1.0
 

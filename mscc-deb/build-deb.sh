@@ -84,6 +84,22 @@ echo "  sdrcore-recv:$(wc -c < "$PKG/usr/share/mscc/binaries/sdrcore-recv") byte
 echo "  sdrcore-trans:$(wc -c < "$PKG/usr/share/mscc/binaries/sdrcore-trans") bytes"
 echo "  bootloader:  $(wc -c < "$PKG/usr/share/mscc/binaries/bootloader") bytes"
 
+# This .deb is Architecture: arm64. Refuse Ubuntu-laptop (amd64) binaries.
+if command -v readelf >/dev/null 2>&1; then
+  for b in ms-sdr sdrcore-recv sdrcore-trans mscc-init bootloader; do
+    f="$PKG/usr/share/mscc/binaries/$b"
+    [[ -f "$f" ]] || { echo "ERROR: missing $f" >&2; exit 1; }
+    if ! readelf -h "$f" 2>/dev/null | grep -qi 'AArch64\|ARM aarch64'; then
+      echo "ERROR: $b is not AArch64 — refuse to build arm64 .deb" >&2
+      file "$f" >&2
+      echo "Do not copy this laptop's \$HOME/mscc binaries into mscc-binaries/." >&2
+      echo "Build servers on the Pi, then copy those ELFs into mscc-binaries/." >&2
+      exit 1
+    fi
+  done
+  echo "  arch:    AArch64 OK"
+fi
+
 # Re-copy virtual-audio assets from packaging source (stage wiped partial trees carefully)
 if [[ -f "$ROOT/packaging/usr/share/mscc/bin/mscc-virtual-audio.sh" ]]; then
   cp -a "$ROOT/packaging/usr/share/mscc/bin/mscc-virtual-audio.sh" "$PKG/usr/share/mscc/bin/"

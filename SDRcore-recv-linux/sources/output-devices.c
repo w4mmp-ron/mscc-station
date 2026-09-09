@@ -1,4 +1,6 @@
 #include "extern.h"
+#include <ctype.h>
+#include <string.h>
 
 extern struct output_devices G_output_devices[MAX_OUTPUT_DEVICES];
 extern struct output_devices G_digital_output_devices[MAX_OUTPUT_DEVICES];
@@ -251,17 +253,86 @@ void build_digital_output_devices(int device_index) {
     }
 }
 
+static void fold_alnum_out(const char *s, char *out, size_t n)
+{
+    size_t j = 0;
+    for (; s && *s && j + 1 < n; s++) {
+        unsigned char c = (unsigned char)*s;
+        if (isalnum(c))
+            out[j++] = (char)tolower(c);
+    }
+    out[j] = '\0';
+}
+
+static int folded_hit_out(const char *name_f, const char *want_f)
+{
+    size_t n;
+    char tmp[48];
+    if (!name_f[0] || !want_f[0])
+        return 0;
+    if (strstr(name_f, want_f) || strstr(want_f, name_f))
+        return 8;
+    n = strlen(want_f);
+    if (n > 20)
+        n = 20;
+    while (n >= 10) {
+        memcpy(tmp, want_f, n);
+        tmp[n] = '\0';
+        if (strstr(name_f, tmp))
+            return (int)n;
+        n--;
+    }
+    return 0;
+}
+
+/* Operator phones: prefer Pulse so we do not exclusive-open the USB
+ * Sound Blaster via ALSA (blocks trans mic on the same card). */
+static int score_operator_output(const PaDeviceInfo *info, const char *want)
+{
+    char nf[128], wf[128];
+    int score = 0;
+    int hit;
+    const PaHostApiInfo *hai;
+
+    if (!info || !info->name || !want || !want[0] || info->maxOutputChannels < 1)
+        return -1;
+    if (strstr(info->name, "Proficio") || strstr(info->name, "Multus"))
+        return -1;
+    if (strstr(info->name, "Virtual"))
+        return -1;
+    if (strcmp(info->name, want) == 0)
+        score = 8000;
+    else if (strstr(info->name, want))
+        score = 4000;
+    fold_alnum_out(info->name, nf, sizeof nf);
+    fold_alnum_out(want, wf, sizeof wf);
+    hit = folded_hit_out(nf, wf);
+    if (hit)
+        score += 2000 + hit * 10;
+    if (score <= 0)
+        return -1;
+    hai = Pa_GetHostApiInfo(info->hostApi);
+    if (hai && hai->name && strstr(hai->name, "Pulse"))
+        score += 4000;
+    else if (strstr(info->name, "hw:"))
+        score -= 2500;
+    return score;
+}
+
 void build_output_devices(int device_index) {
     static int index = 0;
-    char *output_device;
+    static int best_op_score = -1;
 
     if (index < MAX_OUTPUT_DEVICES) {
-        if (G_audio_device[0] != '\0') {
-            output_device = strstr(lpInfo->name, G_audio_device);
-            if (output_device != NULL) {
+        if (G_audio_device[0] != '\0' && lpInfo != NULL) {
+            int sc = score_operator_output(lpInfo, G_audio_device);
+            if (sc > best_op_score) {
+                best_op_score = sc;
                 G_output_device_index = index;
                 print_time();
-                fprintf(G_fp_logfile, "[%d] build_output_devices -> %s FOUND\n", line_number++, G_audio_device);
+                fprintf(G_fp_logfile,
+                    "[%d] build_output_devices. '%s' BEST score=%d name='%s' pa=%d\n",
+                    line_number++, G_audio_device, sc, lpInfo->name, device_index);
             }
         }
         strcpy(G_output_devices[index].name, lpInfo->name);

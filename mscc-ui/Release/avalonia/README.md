@@ -1,42 +1,44 @@
-# Avalonia / Raspberry Pi Linux install set
+# MSCC Linux release drop (Avalonia + Pi packages)
 
-| Package | Version | Notes |
-|---------|---------|--------|
-| PortAudio | 19.8.2 | Unchanged (contents built 2026-07-31) |
-| Servers `mscc_*` | **1.0.41** in this folder until Pi rebuild | See below for **1.0.42** FM |
-| Init GUI | 1.0.13 | |
-| Avalonia UI | **0.6.44** | FM power slider + TX IQ freqs + FM UI |
+Split by CPU. **Do not install an `arm64` `.deb` on an x86_64 Ubuntu PC** (and vice versa).  
+`mscc-init-gui_*_all.deb` is architecture-independent and is in **both** folders.
 
-## Install (current folder contents)
+| Folder | For | Packages |
+|--------|-----|----------|
+| **`arm64/`** | Raspberry Pi OS 64-bit | PortAudio, servers `mscc_1.0.42`, init-gui, Avalonia UI |
+| **`x86_64/`** | Ubuntu Desktop amd64 | Avalonia UI `mscc-ui_*_amd64.deb`, init-gui |
+
+Pi operator how-to: [`pi-install/INSTALL.md`](../../../pi-install/INSTALL.md).  
+Ubuntu laptop how-to: [`INSTALL-UBUNTU.md`](../../../INSTALL-UBUNTU.md).
+
+## Raspberry Pi (`arm64/`)
 
 ```bash
+cd arm64
 sudo apt install -y ./mscc-portaudio_19.8.2_arm64.deb
 sudo apt update
-sudo apt install -y ./mscc_1.0.41_arm64.deb
+sudo apt install -y ./mscc_1.0.42_arm64.deb
 sudo apt install -y ./mscc-init-gui_1.0.13_all.deb
-chmod 644 ./mscc-ui_0.6.44_arm64.deb
 sudo apt install -y ./mscc-ui_0.6.44_arm64.deb
 ```
 
-UI **0.6.44** has FM mode + FM Power (RX/TX tab and RF mirror on Main).  
-Server **1.0.41** does **not** yet include FM DSP — rebuild on the Pi for on-air FM.
+Servers **1.0.42** include FM (NFM). UI **0.6.44** has FM + FM Power.
 
-## Building server **1.0.42** with FM (on the Pi)
+## Ubuntu x86_64 (`x86_64/`)
 
-Sources are ready in the monorepo (`SDRcore-recv-linux`, `SDRcore-trans-linux`, `ms-sdr-linux`).  
-`mscc-deb` version is bumped to **1.0.42**; the `.deb` needs **AArch64** binaries in `mscc-binaries/`.
-
-On the Pi (typical):
+Servers are **built from source** on the laptop (`linux-build/mscc-linux.sh`) — there is no `mscc_*_amd64.deb` yet.
 
 ```bash
-# 1) Build arm64: ms-sdr, sdrcore-recv, sdrcore-trans from *-linux trees
-# 2) Copy into mscc-binaries/
-# 3) On a machine with dpkg-deb (usually the Pi):
-cd mscc-deb
-./build-deb.sh
-# → mscc_1.0.42_arm64.deb
+cd x86_64
+sudo apt install -y ./mscc-init-gui_1.0.13_all.deb
+sudo apt install -y ./mscc-ui_0.6.44_amd64.deb
 ```
 
-Then replace `mscc_1.0.41` with `mscc_1.0.42` in this folder / `pi-install/packages`.
+Then follow [`INSTALL-UBUNTU.md`](../../../INSTALL-UBUNTU.md) for compilers, PortAudio, tty0tty, and `./linux-build/mscc-linux.sh all`.
 
-See also `pi-install/INSTALL.md`.
+Rebuild the amd64 UI package (does not touch arm64):
+
+```bash
+./linux-build/mscc-ui-x64.sh
+./linux-build/build-mscc-ui-deb-amd64.sh
+```

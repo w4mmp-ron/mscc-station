@@ -181,8 +181,24 @@ static double pick_mic_sample_rate(const PaStreamParameters *in_params,
     PaError chk;
 
     chk = Pa_IsFormatSupported(&probe, NULL, iq_rate);
-    if (chk == paFormatIsSupported)
-        return iq_rate;
+    if (chk == paFormatIsSupported) {
+        /*
+         * ALSA often reports 96 kHz capture as supported, then OpenStream
+         * fails (USB headsets whose default is 44.1/48 k). If the device
+         * default is not the I/Q rate, prefer default + dual/resample.
+         */
+        if (idi == NULL || idi->defaultSampleRate <= 0.0 ||
+            (idi->defaultSampleRate > iq_rate - 1.0 &&
+             idi->defaultSampleRate < iq_rate + 1.0))
+            return iq_rate;
+        if (G_fp_logfile) {
+            print_time();
+            fprintf(G_fp_logfile,
+                "[%d] pick_mic_sample_rate. distrust 96k probe "
+                "(default=%.0f) — will dual/resample\n",
+                line_number++, idi->defaultSampleRate);
+        }
+    }
 
     if (idi != NULL && idi->defaultSampleRate > 0.0) {
         chk = Pa_IsFormatSupported(&probe, NULL, idi->defaultSampleRate);
@@ -486,8 +502,11 @@ static PaError open_start_stream_once(int device, int channels) {
             inInfo->defaultSampleRate);
 
     if (need_dual) {
-        PaStreamParameters in_only = inputParameters;
-        PaStreamParameters out_only = outputParameters;
+        PaStreamParameters in_only;
+        PaStreamParameters out_only;
+dual_open:
+        in_only = inputParameters;
+        out_only = outputParameters;
 
         print_time();
         if (G_fp_logfile)
@@ -532,6 +551,8 @@ static PaError open_start_stream_once(int device, int channels) {
         err = Pa_OpenStream(&stream_mic, &in_only, NULL, mic_rate, mic_frames, 0,
             sdrMicOnlyCallback, NULL);
         if (err != paNoError) {
+            static const double alt_rates[] = { 48000.0, 44100.0, 32000.0, 16000.0 };
+            size_t ar;
             print_time();
             if (G_fp_logfile)
                 fprintf(G_fp_logfile,
@@ -539,8 +560,37 @@ static PaError open_start_stream_once(int device, int channels) {
                     "rate=%.0f frames=%lu\n",
                     line_number++, err, Pa_GetErrorText(err),
                     mic_rate, (unsigned long)mic_frames);
-            manage_stream_close_all();
-            return err;
+            for (ar = 0; ar < sizeof(alt_rates) / sizeof(alt_rates[0]); ar++) {
+                if (alt_rates[ar] == mic_rate)
+                    continue;
+                mic_rate = alt_rates[ar];
+                need_resample = (mic_rate != iq_rate) ? 1 : 0;
+                mic_frames = (unsigned long)(0.5 + (double)mystate.frames * mic_rate / iq_rate);
+                if (mic_frames < 64ul)
+                    mic_frames = 64ul;
+                mic_resampler_destroy();
+                if (need_resample) {
+                    g_mic_resampler = mscc_resampler_create(
+                        (int)(mic_rate + 0.5), (int)(iq_rate + 0.5));
+                    if (g_mic_resampler == NULL)
+                        continue;
+                }
+                g_mic_rate = mic_rate;
+                err = Pa_OpenStream(&stream_mic, &in_only, NULL, mic_rate,
+                    mic_frames, 0, sdrMicOnlyCallback, NULL);
+                if (err == paNoError) {
+                    print_time();
+                    if (G_fp_logfile)
+                        fprintf(G_fp_logfile,
+                            "[%d] manage_stream. dual: mic retry OK rate=%.0f\n",
+                            line_number++, mic_rate);
+                    break;
+                }
+            }
+            if (err != paNoError) {
+                manage_stream_close_all();
+                return err;
+            }
         }
         err = Pa_OpenStream(&stream, NULL, &out_only, iq_rate, mystate.frames, 0,
             sdrIqPlayOnlyCallback, NULL);
@@ -596,6 +646,25 @@ static PaError open_start_stream_once(int device, int channels) {
                 "[%d] manage_stream. full-duplex OpenStream FAILED PA %d '%s'\n",
                 line_number++, err, Pa_GetErrorText(err));
         stream = NULL;
+        /* USB mic: probe said 96k, OpenStream disagreed. Dual + upsample. */
+        if (inInfo != NULL && inInfo->defaultSampleRate > 0.0 &&
+            (inInfo->defaultSampleRate < iq_rate - 1.0 ||
+             inInfo->defaultSampleRate > iq_rate + 1.0)) {
+            mic_rate = inInfo->defaultSampleRate;
+            need_resample = 1;
+            need_dual = 1;
+            mic_frames = (unsigned long)(0.5 + (double)mystate.frames * mic_rate / iq_rate);
+            if (mic_frames < 64ul)
+                mic_frames = 64ul;
+            if (mic_frames > 4096ul)
+                mic_frames = 4096ul;
+            print_time();
+            if (G_fp_logfile)
+                fprintf(G_fp_logfile,
+                    "[%d] manage_stream. fallback dual/resample mic=%.0f after full-duplex fail\n",
+                    line_number++, mic_rate);
+            goto dual_open;
+        }
         return err;
     }
     err = Pa_StartStream(stream);
@@ -1035,8 +1104,15 @@ int main(int argc, char **argv) {
         status = manage_stream(1, G_input_devices[G_input_device_index].device_index,
                 G_input_devices[G_input_device_index].num_channels);
         if (status) {
-            err = status;
-            goto error;
+            print_time();
+            fprintf(G_fp_logfile,
+                "[%d] main. operator mic open failed (%d) — I/Q TX only so keep-alive lives\n",
+                line_number++, status);
+            status = manage_stream(1, -1, 2);
+            if (status) {
+                err = status;
+                goto error;
+            }
         }
     }
 

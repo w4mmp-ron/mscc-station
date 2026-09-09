@@ -10,32 +10,41 @@
 CC      ?= gcc
 CXX     ?= g++
 CFLAGS  ?= -O2 -g -Wall -Wno-unused-variable -Wno-unused-but-set-variable -Wno-unused-function
-CFLAGS  += -iquote sources -D__linux__ -DRON
+# gnu17: Ubuntu 26.04 gcc 15 defaults to C23, where foo() means foo(void).
+CFLAGS  += -std=gnu17 -iquote sources -D__linux__ -DRON
 CXXFLAGS ?= -O2 -g -Wall -std=c++17
 # -iquote only: sources/pthread.h must not shadow system pthread for libstdc++
 CXXFLAGS += -iquote sources -iquote sources/resampler -DRESAMPLER_OUTER_NAMESPACE=mscc
 LDFLAGS ?=
 LIBS    := -lpthread -lm -lstdc++
 
-# MSCC custom PortAudio. Deb may install only libportaudio.so.2 — accept either.
+# Audio link (same sources, different host):
+#   PORTAUDIO=mscc   (default)  rpath /usr/local — Pi mscc-portaudio
+#   PORTAUDIO=distro            system -lportaudio — Ubuntu libportaudio2
+PORTAUDIO ?= mscc
 PORTAUDIO_PREFIX ?= /usr/local
 
-PA_LIBDIR :=
-ifneq ($(wildcard $(PORTAUDIO_PREFIX)/lib/libportaudio.so*),)
-  PA_LIBDIR := $(PORTAUDIO_PREFIX)/lib
-else ifneq ($(wildcard $(PORTAUDIO_PREFIX)/lib/aarch64-linux-gnu/libportaudio.so*),)
-  PA_LIBDIR := $(PORTAUDIO_PREFIX)/lib/aarch64-linux-gnu
-endif
-
-ifneq ($(PA_LIBDIR),)
-  CFLAGS  += -I$(PORTAUDIO_PREFIX)/include
-  CXXFLAGS += -I$(PORTAUDIO_PREFIX)/include
-  LDFLAGS += -L$(PA_LIBDIR) -Wl,-rpath,$(PA_LIBDIR)
-  LIBS    := -lportaudio $(LIBS)
-  PA_NOTE := PortAudio at $(PA_LIBDIR) (rpath set)
+ifeq ($(PORTAUDIO),distro)
+  LIBS := -lportaudio $(LIBS)
+  PA_NOTE := PortAudio: distro (-lportaudio, no rpath)
 else
-  LIBS    := -lportaudio $(LIBS)
-  PA_NOTE := WARNING: no libportaudio at $(PORTAUDIO_PREFIX)/lib — using default -lportaudio (often distro)
+  PA_LIBDIR :=
+  ifneq ($(wildcard $(PORTAUDIO_PREFIX)/lib/libportaudio.so*),)
+    PA_LIBDIR := $(PORTAUDIO_PREFIX)/lib
+  else ifneq ($(wildcard $(PORTAUDIO_PREFIX)/lib/aarch64-linux-gnu/libportaudio.so*),)
+    PA_LIBDIR := $(PORTAUDIO_PREFIX)/lib/aarch64-linux-gnu
+  endif
+  ifneq ($(PA_LIBDIR),)
+    CFLAGS  += -I$(PORTAUDIO_PREFIX)/include
+    CXXFLAGS += -I$(PORTAUDIO_PREFIX)/include
+    PA_RPATH := $(if $(PORTAUDIO_RPATH),$(PORTAUDIO_RPATH),$(PA_LIBDIR))
+    LDFLAGS += -L$(PA_LIBDIR) -Wl,-rpath,$(PA_RPATH)
+    LIBS    := -lportaudio $(LIBS)
+    PA_NOTE := PortAudio at $(PA_LIBDIR) (rpath $(PA_RPATH))
+  else
+    LIBS    := -lportaudio $(LIBS)
+    PA_NOTE := WARNING: no libportaudio at $(PORTAUDIO_PREFIX)/lib — using default -lportaudio (often distro)
+  endif
 endif
 
 BINDIR  ?= $(HOME)/mscc
