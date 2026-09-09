@@ -12,7 +12,7 @@
 | Package | Example filename | Order |
 |---------|------------------|--------|
 | PortAudio | `mscc-portaudio_19.8.2_arm64.deb` | **1st** |
-| Main stack | `mscc_1.0.41_arm64.deb` | **2nd** |
+| Main stack | `mscc_1.0.42_arm64.deb` | **2nd** |
 | Setup wizard | `mscc-init-gui_1.0.12_all.deb` | **3rd** (recommended) |
 | Avalonia UI (optional) | `mscc-ui_0.6.37_arm64.deb` | **4th** — see `pi-install/` |
 
