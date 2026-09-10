@@ -29,15 +29,23 @@ internal static class RemotePhonesLauncher
         if (File.Exists(deploy))
             return deploy;
 
-        // 3) Dev build output
+        // 3) Dev build / repo drop (GitHub tree first; old grok worktree last)
+        string user = Environment.GetFolderPath(Environment.SpecialFolder.UserProfile);
         string[] devHints =
         {
-            Path.Combine(
-                Environment.GetFolderPath(Environment.SpecialFolder.UserProfile),
+            Path.Combine(user,
+                @"OneDrive\Documents\GitHub\mscc-station\mscc-remote-audio\MsccRemotePhones\bin\Release\net8.0-windows",
+                ExeFileName),
+            Path.Combine(user,
+                @"OneDrive\Documents\GitHub\mscc-station\mscc-remote-audio\MsccRemotePhones\bin\Debug\net8.0-windows",
+                ExeFileName),
+            Path.Combine(user,
+                @"OneDrive\Documents\GitHub\mscc-station\mscc-ui\Release\windows-wpf",
+                ExeFileName),
+            Path.Combine(user,
                 @".grok\worktrees\mscc-remote-audio\MsccRemotePhones\bin\Release\net8.0-windows",
                 ExeFileName),
-            Path.Combine(
-                Environment.GetFolderPath(Environment.SpecialFolder.UserProfile),
+            Path.Combine(user,
                 @".grok\worktrees\mscc-remote-audio\MsccRemotePhones\bin\Debug\net8.0-windows",
                 ExeFileName),
         };
