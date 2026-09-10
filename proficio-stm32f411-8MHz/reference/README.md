@@ -3,7 +3,7 @@
 Do **not** duplicate the full PSoC tree here. Port from:
 
 ```text
-../Release-Proficio-MKII-PTT/Proficio-MKII-PTT.cydsn/
+../../Proficio-firmware/Release-Proficio-MKII-PTT/Proficio-MKII-PTT.cydsn/
 ```
 
 ## Primary application files

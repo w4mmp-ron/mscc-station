@@ -1,10 +1,11 @@
 # MSCC on Ubuntu Desktop (x86_64)
 
-**This is not the Raspberry Pi kit.** Pi operators: [`pi-install/INSTALL.md`](pi-install/INSTALL.md).
+**This is not the Raspberry Pi kit.** Pi operators: [`rpi/pi-install/INSTALL.md`](rpi/pi-install/INSTALL.md).
 
 Verified on **Ubuntu 26.04.1**, kernel `7.0.0-31-generic` (`stew-HP-Notebook`).
 
-Same Linux **source** as the Pi. Ubuntu is the special case: distro PortAudio (Pulse), user desktop icons, **amd64** UI `.deb`. Ron on the Pi still uses plain `make` and `*_arm64.deb`.
+Ron’s Pi trees are under **`rpi/`** (guide only — do not edit those for this laptop).  
+Ubuntu working copy is **`linux/`**. Scripts: [`linux-build/`](linux-build/).
 
 Release drop: [`mscc-ui/Release/avalonia/`](mscc-ui/Release/avalonia/)
 
@@ -13,7 +14,7 @@ Release drop: [`mscc-ui/Release/avalonia/`](mscc-ui/Release/avalonia/)
 | `mscc-ui/Release/avalonia/arm64/` | Pi packages only |
 | `mscc-ui/Release/avalonia/x86_64/` | Ubuntu UI + init-gui |
 
-Do **not** `apt install` an `*_arm64.deb` on this PC except you may use **`mscc-init-gui_*_all.deb`**. Do **not** install `pulseaudio` (PipeWire is already the audio server). Do **not** copy `$HOME/mscc` binaries into `mscc-binaries/` (that folder is AArch64 for the Pi `.deb`).
+Do **not** `apt install` an `*_arm64.deb` on this PC except you may use **`mscc-init-gui_*_all.deb`**. Do **not** install `pulseaudio` (PipeWire is already the audio server). Do **not** copy `$HOME/mscc` binaries into `rpi/mscc-binaries/` (that folder is AArch64 for the Pi `.deb`).
 
 ---
 
@@ -62,7 +63,7 @@ Seed config only if `~/.local/mscc` is missing or empty:
 
 ```bash
 mkdir -p "$HOME/.local/mscc"
-cp -a mscc-init-files-linux/. "$HOME/.local/mscc/"
+cp -a linux/mscc-init-files-linux/. "$HOME/.local/mscc/"
 ```
 
 Enable digi sinks:
@@ -101,12 +102,12 @@ MSCC="$(pwd)"                    # run from the mscc-station clone
 USER_MSCC="/home/${SUDO_USER:-$USER}/mscc"
 
 STAGE=/tmp/tty0tty-mscc-$$
-cp -a "$MSCC/tty0tty-master/module" "$STAGE"
+cp -a "$MSCC/linux/tty0tty-master/module" "$STAGE"
 make -C "$STAGE"
 make -C "$STAGE" install
 rm -rf "$STAGE"
 
-install -m 644 "$MSCC/mscc-deb/packaging/usr/share/mscc/udev/99-proficio.rules" \
+install -m 644 "$MSCC/linux/udev/99-proficio.rules" \
   /etc/udev/rules.d/99-proficio.rules
 udevadm control --reload-rules
 udevadm trigger
@@ -165,10 +166,10 @@ mscc stop
 
 ## Pi path (unchanged)
 
-On the Pi, still:
+On the Pi, still (Ron's `rpi/` tree):
 
 ```bash
-cd SDRcore-recv-linux && make clean && make
+cd rpi/SDRcore-recv-linux && make clean && make
 # … trans, ms-sdr
 ```
 
@@ -181,4 +182,4 @@ Optional: build Pi binaries **on this laptop** without replacing `$HOME/mscc`:
 ./linux-build/cross-arm64.sh deb
 ```
 
-`mscc-deb/build-deb.sh` refuses non-AArch64 server ELFs.
+`rpi/mscc-deb/build-deb.sh` refuses non-AArch64 server ELFs.

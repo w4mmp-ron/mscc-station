@@ -1,5 +1,8 @@
 # MSCC for Raspberry Pi OS — Debian package
 
+This tree lives under **`rpi/`** (repo reorg 2026-09). Sibling folders below are also under `rpi/`.  
+Ubuntu x86_64 sources are **`linux/`** — do not mix; do not copy laptop ELFs into `mscc-binaries/`.
+
 **Package:** `mscc_*_arm64.deb` (current: **1.0.27**)  
 **Platform:** Raspberry Pi **4 / 5**, **64-bit Raspberry Pi OS** only  
 **Radio:** Multus / Proficio (USB I/Q + control)
@@ -194,22 +197,24 @@ grep -E "PAN RESOLUTION|DUAL STREAM|ALSA card|resample" ~/sdrcore-recv.log | tai
 **Sibling trees:**
 
 ```text
-worktrees/
+rpi/
   mscc-deb/                 ← this folder
   mscc-binaries/            ← prebuilt arm64 binaries + mscc.sh
   mscc-init-files-linux/    ← seed .ini files
   tty0tty-master/module/    ← tty0tty sources
   mscc-portaudio/           ← separate PortAudio .deb
   mscc-init-gui/            ← separate GUI init .deb
-  portaudio/                ← PortAudio source + build/ for PA deb
   SDRcore-recv-linux/       ← rebuild sdrcore-recv on Pi
   SDRcore-trans-linux/      ← rebuild sdrcore-trans on Pi
   ms-sdr-linux/
   mscc-init-linux/
+  pi-install/               ← operator kit
 ```
 
+PortAudio **source** used to build the Pi PortAudio `.deb` is still at repo-root `portaudio/`.
+
 ```bash
-cd /path/to/worktrees/mscc-deb
+cd rpi/mscc-deb    # from the mscc-station repo root
 ./build-deb.sh
 # → mscc_<Version>_arm64.deb
 ```

@@ -4,8 +4,8 @@
 
 | | Path |
 |--|------|
-| **This tree** | `worktrees/proficio-stm32f411-8MHz` |
-| **PSoC reference (read-only source of truth)** | `worktrees/Release-Proficio-MKII-PTT/Proficio-MKII-PTT.cydsn` |
+| **This tree** | `proficio-stm32f411-8MHz/` |
+| **PSoC reference (read-only source of truth)** | `Proficio-firmware/Release-Proficio-MKII-PTT/Proficio-MKII-PTT.cydsn` |
 | **Host (unchanged goal)** | ms-sdr USB vendor protocol + audio path |
 
 **Start here:** [`RESUME.md`](RESUME.md) → [`docs/MIGRATION.md`](docs/MIGRATION.md) → [`docs/PHASES.md`](docs/PHASES.md)
@@ -71,4 +71,4 @@ The PIC owns paddle feel, element timing, NCO sidetone, CQ memory (`0x9C`), Farn
 
 **One-spin option:** make the PIC footprint **optional (DNP)** on the first daughter — populate for phase 1; leave off and run onboard keyer for phase 2. Same PCB, two BOMs.
 
-Detail: [`RESUME.md`](RESUME.md) (section *PIC keyer vs STM*). PIC source: `worktrees/keyer`.
+Detail: [`RESUME.md`](RESUME.md) (section *PIC keyer vs STM*). PIC source: `keyer/`.

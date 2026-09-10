@@ -1,10 +1,10 @@
 # Install MSCC UI on Raspberry Pi (64-bit)
 
 > **Full Pi how-to (servers + UI + remote audio + firmware):**  
-> **[`pi-install/INSTALL.md`](../../pi-install/INSTALL.md)** — start there.  
-> Current UI package also lives in **`pi-install/packages/`**.
+> **[`rpi/pi-install/INSTALL.md`](../../rpi/pi-install/INSTALL.md)** — start there.  
+> Current UI package also lives in **`rpi/pi-install/packages/`** and `mscc-ui/Release/avalonia/arm64/`.
 
-**Package:** `mscc-ui_0.6.41_arm64.deb` (use the filename in `pi-install/packages/` if newer)  
+**Package:** `mscc-ui_0.6.44_arm64.deb` (use the filename in `rpi/pi-install/packages/` if newer)  
 **Menu name:** **MSCC UI** (same **MSCC** menu group as Start / Stop / Init)
 
 ---
@@ -20,30 +20,32 @@ Refresh the install kit:
 
 ```powershell
 cd "...\mscc-station"
-powershell -NoProfile -ExecutionPolicy Bypass -File .\pi-install\collect-packages.ps1
+powershell -NoProfile -ExecutionPolicy Bypass -File .\rpi\pi-install\collect-packages.ps1
 ```
 
 Copy to the Pi:
 
 ```powershell
-scp ".\pi-install\packages\mscc-ui_*_arm64.deb" pi@PI_IP:~/Downloads/
+scp ".\rpi\pi-install\packages\mscc-ui_*_arm64.deb" pi@PI_IP:~/Downloads/
 ```
+
+Ubuntu amd64 UI package is separate: `mscc-ui/Release/avalonia/x86_64/` — see [`INSTALL-UBUNTU.md`](../../INSTALL-UBUNTU.md).
 
 ---
 
 ## On the Pi
 
-Servers should already be installed (`pi-install/INSTALL.md` sections A). Then:
+Servers should already be installed (`rpi/pi-install/INSTALL.md` sections A). Then:
 
 ```bash
 cd ~/Downloads   # or packages folder
-sudo apt install -y ./mscc-ui_0.6.41_arm64.deb
+sudo apt install -y ./mscc-ui_0.6.44_arm64.deb
 ```
 
 Or:
 
 ```bash
-sudo dpkg -i ./mscc-ui_0.6.41_arm64.deb
+sudo dpkg -i ./mscc-ui_0.6.44_arm64.deb
 sudo apt-get install -f -y
 ```
 
@@ -87,4 +89,4 @@ Does **not** remove servers package `mscc` or your sticky settings.
 
 ## Firmware upload
 
-Not part of this UI package — use **MSCC → Firmware Upload** from the **`mscc`** server package (`bootloader-gui`). See `pi-install/INSTALL.md` section E.
+Not part of this UI package — use **MSCC → Firmware Upload** from the **`mscc`** server package (`bootloader-gui`). See `rpi/pi-install/INSTALL.md` section E.

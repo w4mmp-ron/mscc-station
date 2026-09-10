@@ -10,11 +10,13 @@
 #
 # Audio:  PORTAUDIO=distro  (Ubuntu libportaudio2, Pulse)
 # Icons:  ~/.local/share/applications
-# Output: $HOME/mscc   (x86_64 — never copy these into mscc-binaries/)
+# Output: $HOME/mscc   (x86_64 — never copy these into rpi/mscc-binaries/)
 set -euo pipefail
 
 HERE="$(cd "$(dirname "$0")" && pwd)"
 ROOT="$(cd "$HERE/.." && pwd)"
+# Ubuntu x86 sources — do not edit rpi/ for laptop changes.
+LINUX="$ROOT/linux"
 PORTAUDIO="distro"
 ICONS="user"
 BINDIR="${MSCC_DIR:-$HOME/mscc}"
@@ -40,9 +42,9 @@ Options:
   --bindir DIR              default: $HOME/mscc
   --no-clean
 
-Pi / arm64:
-  Ron:     cd SDRcore-recv-linux && make   (no script)
-  Here:    ./linux-build/cross-arm64.sh    (does not touch $HOME/mscc)
+Pi / arm64 (Ron's tree, guide only — do not edit for Ubuntu):
+  Ron:     cd rpi/SDRcore-recv-linux && make
+  Cross:   ./linux-build/cross-arm64.sh
 EOF
 }
 
@@ -96,6 +98,7 @@ cmd_show() {
   echo "audio:      PORTAUDIO=$PORTAUDIO"
   echo "icons:      $ICONS"
   echo "repo:       $ROOT"
+  echo "sources:    $LINUX"
 }
 
 cmd_build() {
@@ -103,17 +106,17 @@ cmd_build() {
   local t
   for t in SDRcore-recv-linux SDRcore-trans-linux ms-sdr-linux mscc-init-linux psoc-usb-bootload-linux; do
     log "build $t"
-    [[ "$CLEAN" -eq 1 ]] && make -C "$ROOT/$t" clean
+    [[ "$CLEAN" -eq 1 ]] && make -C "$LINUX/$t" clean
     case "$t" in
       psoc-usb-bootload-linux)
-        make -C "$ROOT/$t"
-        install -m 755 "$ROOT/$t/bootloader" "$BINDIR/bootloader"
+        make -C "$LINUX/$t"
+        install -m 755 "$LINUX/$t/bootloader" "$BINDIR/bootloader"
         ;;
       ms-sdr-linux)
-        make -C "$ROOT/$t" BINDIR="$BINDIR"
+        make -C "$LINUX/$t" BINDIR="$BINDIR"
         ;;
       *)
-        make -C "$ROOT/$t" "${MAKE_PA[@]}"
+        make -C "$LINUX/$t" "${MAKE_PA[@]}"
         ;;
     esac
   done
@@ -124,8 +127,8 @@ cmd_build() {
 
 cmd_helpers() {
   mkdir -p "$BINDIR"
-  local src="$ROOT/mscc-deb/packaging/usr/share/mscc/bin"
-  install -m 755 "$ROOT/mscc-binaries/mscc.sh" "$BINDIR/mscc.sh"
+  local src="$LINUX/helpers"
+  install -m 755 "$src/mscc.sh" "$BINDIR/mscc.sh"
   install -m 755 "$src/mscc-status-report" "$BINDIR/mscc-status-report"
   install -m 755 "$src/mscc-virtual-audio.sh" "$BINDIR/mscc-virtual-audio.sh"
   install -m 755 "$src/mscc-desktop-ctl.sh" "$BINDIR/mscc-desktop-ctl.sh"

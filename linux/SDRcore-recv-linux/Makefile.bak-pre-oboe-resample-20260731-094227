@@ -1,0 +1,77 @@
+# sdrcore-recv Linux / Pi / WSL — full PortAudio audio path (no stubs)
+#
+# Prefer system MSCC PortAudio (/usr/local) or $PORTAUDIO_PREFIX.
+# Without -L/-rpath, -lportaudio often binds Trixie /lib/aarch64-linux-gnu.
+#
+#   sudo apt-get install -y build-essential
+#   # PortAudio+Pulse already installed to /usr/local (see portaudio/BUILD-MSCC.txt)
+#   cd /path/to/SDRcore-recv-linux
+#   make clean && make
+#   ldd $(BINDIR)/sdrcore-recv | grep portaudio   # expect /usr/local/lib
+#
+# Expects Multus/Proficio PortAudio I/Q capture + speaker via operator-speaker.ini
+
+CC      ?= gcc
+CFLAGS  ?= -O2 -g -Wall -Wno-unused-variable -Wno-unused-but-set-variable -Wno-unused-function
+CFLAGS  += -iquote sources -D__linux__ -DRON
+LDFLAGS ?=
+LIBS    := -lpthread -lm
+
+# MSCC custom PortAudio (Pulse+ALSA). Override: make PORTAUDIO_PREFIX=/opt/...
+PORTAUDIO_PREFIX ?= /usr/local
+
+ifneq ($(wildcard $(PORTAUDIO_PREFIX)/lib/libportaudio.so),)
+  CFLAGS  += -I$(PORTAUDIO_PREFIX)/include
+  LDFLAGS += -L$(PORTAUDIO_PREFIX)/lib -Wl,-rpath,$(PORTAUDIO_PREFIX)/lib
+  LIBS    := -lportaudio $(LIBS)
+  PA_NOTE := PortAudio at $(PORTAUDIO_PREFIX) (rpath set)
+else ifneq ($(wildcard $(PORTAUDIO_PREFIX)/lib/aarch64-linux-gnu/libportaudio.so),)
+  PALIB := $(PORTAUDIO_PREFIX)/lib/aarch64-linux-gnu
+  CFLAGS  += -I$(PORTAUDIO_PREFIX)/include
+  LDFLAGS += -L$(PALIB) -Wl,-rpath,$(PALIB)
+  LIBS    := -lportaudio $(LIBS)
+  PA_NOTE := PortAudio at $(PALIB) (rpath set)
+else
+  LIBS    := -lportaudio $(LIBS)
+  PA_NOTE := WARNING: no lib at $(PORTAUDIO_PREFIX)/lib — using default -lportaudio (often distro)
+endif
+
+BINDIR  ?= $(HOME)/mscc
+
+SRCS = \
+	sources/platform_linux.c \
+	sources/blanker.c \
+	sources/dsputils.c \
+	sources/filter.c \
+	sources/flusher.c \
+	sources/iq.c \
+	sources/main.c \
+	sources/panadapter.c \
+	sources/print-utils.c \
+	sources/sdrcore.c \
+	sources/output-devices.c \
+	sources/tonegen.c \
+	sources/udp_thread.c \
+	sources/wsfirgen.c
+
+OBJS = $(SRCS:.c=.o)
+TARGET = $(BINDIR)/sdrcore-recv
+
+.PHONY: all clean
+
+all: $(TARGET)
+	@echo "  $(PA_NOTE)"
+	@echo "  built: $(TARGET)"
+	@ldd $(TARGET) 2>/dev/null | grep -i portaudio || true
+
+$(BINDIR):
+	mkdir -p $(BINDIR)
+
+$(TARGET): $(OBJS) | $(BINDIR)
+	$(CC) $(LDFLAGS) -o $@ $(OBJS) $(LIBS)
+
+sources/%.o: sources/%.c
+	$(CC) $(CFLAGS) -c -o $@ $<
+
+clean:
+	rm -f $(OBJS) $(TARGET)

@@ -1,20 +1,21 @@
-# Linux builds (one source)
+# Linux builds (two trees)
 
-Same C trees. **Ron’s Pi path is unchanged.** Extra scripts are only for this Ubuntu laptop.
+**`rpi/`** = Ron’s Raspberry Pi trees (guide only).  
+**`linux/`** = Ubuntu x86_64 working copy. Do not edit `rpi/` for laptop fixes.
 
 ## Ron / Pi — no special script
 
 ```bash
 mscc stop
-cd SDRcore-recv-linux  && make clean && make
+cd rpi/SDRcore-recv-linux  && make clean && make
 cd ../SDRcore-trans-linux && make clean && make
 cd ../ms-sdr-linux        && make clean && make
 # default: PORTAUDIO=mscc → rpath /usr/local (mscc-portaudio)
 ldd $HOME/mscc/sdrcore-recv | grep portaudio   # /usr/local/lib
 ```
 
-Then copy ELFs into `mscc-binaries/` and `mscc-deb/build-deb.sh`.  
-Full notes: [`BUILD-SERVERS-ON-PI.md`](../mscc-deb/BUILD-SERVERS-ON-PI.md).
+Then copy ELFs into `rpi/mscc-binaries/` and run `rpi/mscc-deb/build-deb.sh`.  
+Full notes: [`rpi/mscc-deb/BUILD-SERVERS-ON-PI.md`](../rpi/mscc-deb/BUILD-SERVERS-ON-PI.md).
 
 `make` default is still the Pi link. Do not pass `PORTAUDIO=distro` on the Pi.
 
@@ -26,7 +27,7 @@ Ubuntu needs distro PortAudio and user-session icons:
 ./linux-build/mscc-linux.sh all
 ```
 
-Writes **`$HOME/mscc`** as **x86_64**. Never copy those into `mscc-binaries/`.
+Writes **`$HOME/mscc`** as **x86_64**. Never copy those into `rpi/mscc-binaries/`.
 
 Operate UI (Avalonia, linux-x64, self-contained). Does **not** rebuild the Pi `linux-arm64` publish or `mscc-ui_*_arm64.deb`:
 
@@ -51,9 +52,9 @@ Cross-compile Pi binaries here, then stage/upload. Output is **`$HOME/mscc-arm64
 ```bash
 ./linux-build/cross-arm64.sh prereqs --install
 ./linux-build/cross-arm64.sh build
-./linux-build/cross-arm64.sh stage    # → mscc-binaries/ (AArch64 only)
-./linux-build/cross-arm64.sh deb      # stage + build-deb.sh
+./linux-build/cross-arm64.sh stage    # → rpi/mscc-binaries/ (AArch64 only)
+./linux-build/cross-arm64.sh deb      # stage + rpi/mscc-deb/build-deb.sh
 ```
 
 Link is the same as Ron’s: `PORTAUDIO=mscc`, rpath `/usr/local` (uses the repo’s `mscc-portaudio_*_arm64.deb` at link time).  
-`build-deb.sh` still refuses non-AArch64 ELFs.
+`rpi/mscc-deb/build-deb.sh` still refuses non-AArch64 ELFs. Cross-build compiles **`rpi/`** sources, not `linux/`.

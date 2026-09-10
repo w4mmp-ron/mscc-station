@@ -1,7 +1,7 @@
 # Avalonia-Migration — Linux MSCC UI
 
-**Linux GUI only** (Avalonia `mscc-ui` for Raspberry Pi).  
-Does **not** own servers — backends live under **`../Linux-work-tree/`**.  
+**Linux GUI** (Avalonia `mscc-ui` for Raspberry Pi **and** Ubuntu).  
+Does **not** own servers — Pi backends **`../../rpi/`**, Ubuntu backends **`../../linux/`**.  
 Windows GUI lives under **`../windows-work-tree/mscc-mscc/mscc-new/`** (WPF).
 
 Workspace map: [`../README.md`](../README.md).
@@ -15,7 +15,8 @@ Workspace map: [`../README.md`](../README.md).
 | This UI (Avalonia / Pi) | **here** |
 | Windows UI (WPF) | `../windows-work-tree/mscc-mscc/mscc-new/` |
 | Shared UDP / opcodes | `../windows-work-tree/mscc-mscc/mscc-new/src/MSCC.Core/` (**project reference**) |
-| Linux servers | `../Linux-work-tree/` (ms-sdr, recv, trans, debs) |
+| Linux servers (Pi) | `../../rpi/` |
+| Linux servers (Ubuntu) | `../../linux/` |
 
 **Keep Avalonia in sync with WPF** for operator features (tabs, NB/NR/AN, CQ memory, etc.).  
 **Protocol changes** go into **MSCC.Core** under the Windows tree first when possible, then rebuild Avalonia.
@@ -40,11 +41,13 @@ Ron often runs **Linux servers only** and uses **Windows WPF** as the client (no
 ## Quick start (Windows host, build Avalonia)
 
 ```powershell
-cd "…\MSCC-Grok-Build\Avalonia-Migration"
+cd "…\mscc-station\mscc-ui\Avalonia-Migration"
 dotnet build MSCC.Avalonia.sln -c Release
 dotnet run --project src\MSCC.Avalonia\MSCC.Avalonia.csproj -c Release
 ```
 
 Pi install / test: **`TEST-ON-PI.md`**, **`INSTALL-MSCC-UI.md`**.
 
-Connect-only to backends (local or remote). Server start is packaging / `mscc` deb / scripts under **Linux-work-tree**, not this UI.
+Connect-only to backends (local or remote). Server start is `mscc` (Pi package or Ubuntu `linux-build/mscc-linux.sh`), not this UI.
+
+Debs: `../Release/avalonia/arm64/` (Pi) and `../Release/avalonia/x86_64/` (Ubuntu).

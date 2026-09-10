@@ -3,16 +3,18 @@
 **Working repo (all changes):** `mscc-station`  
 Windows path example: `C:\Users\n8vet\OneDrive\Documents\GitHub\mscc-station`
 
-This tree is **flat** (servers sit next to `mscc-deb`, not under a `Linux-work-tree/` folder).
+Pi sources live under **`rpi/`** (servers sit next to `mscc-deb`). Ubuntu x86_64 work is **`linux/`** — do not mix.
 
 ```text
 mscc-station/
-  SDRcore-recv-linux/     → sdrcore-recv
-  SDRcore-trans-linux/    → sdrcore-trans
-  ms-sdr-linux/           → ms-sdr
-  mscc-binaries/          ← copy built binaries here before packaging
-  mscc-deb/               ← ./build-deb.sh → mscc_<Version>_arm64.deb
-  pi-install/packages/    ← drop finished debs here for install kits
+  rpi/
+    SDRcore-recv-linux/     → sdrcore-recv
+    SDRcore-trans-linux/    → sdrcore-trans
+    ms-sdr-linux/           → ms-sdr
+    mscc-binaries/          ← copy built binaries here before packaging
+    mscc-deb/               ← ./build-deb.sh → mscc_<Version>_arm64.deb
+    pi-install/packages/    ← drop finished debs here for install kits
+  linux/                    ← Ubuntu laptop copy (not used on the Pi)
 ```
 
 **Current packaging version:** see `packaging/DEBIAN/control` (`Version:`).  
@@ -37,10 +39,10 @@ As of FM work: control is **1.0.42**, but you still need a **Pi rebuild** of rec
 2. Set the tree root (adjust if your Pi path differs):
 
    ```bash
-   export MSCC="$HOME/OneDrive/Documents/GitHub/mscc-station"
+   export MSCC="$HOME/OneDrive/Documents/GitHub/mscc-station/rpi"
    # other common layouts:
-   # export MSCC="$HOME/Documents/GitHub/mscc-station"
-   # export MSCC="$HOME/mscc-station"
+   # export MSCC="$HOME/Documents/GitHub/mscc-station/rpi"
+   # export MSCC="$HOME/mscc-station/rpi"
    ls "$MSCC/ms-sdr-linux/Makefile"
    ls "$MSCC/SDRcore-recv-linux/Makefile"
    ls "$MSCC/SDRcore-trans-linux/Makefile"
@@ -50,7 +52,7 @@ As of FM work: control is **1.0.42**, but you still need a **Pi rebuild** of rec
 
    ```bash
    # if not already installed:
-   sudo apt install -y ./mscc-portaudio_19.8.2_arm64.deb   # from pi-install/packages
+   sudo apt install -y ./mscc-portaudio_19.8.2_arm64.deb   # from rpi/pi-install/packages
    sudo apt update
    sudo apt install -y build-essential g++ libusb-1.0-0-dev libhidapi-libusb0
    ldconfig -p | grep portaudio
@@ -70,7 +72,7 @@ As of FM work: control is **1.0.42**, but you still need a **Pi rebuild** of rec
 Plain `make` (no extra script):
 
 ```bash
-export MSCC="$HOME/OneDrive/Documents/GitHub/mscc-station"   # ← your real Pi path
+export MSCC="$HOME/OneDrive/Documents/GitHub/mscc-station/rpi"   # ← your real Pi path (…/mscc-station/rpi)
 mscc stop
 
 cd "$MSCC/SDRcore-recv-linux"
@@ -184,7 +186,7 @@ Logs if needed: `~/sdrcore-recv.log`, `~/sdrcore-trans.log`, `~/ms-sdr.log`, or 
 ## One-page cheat sheet
 
 ```bash
-export MSCC="$HOME/OneDrive/Documents/GitHub/mscc-station"  # ← fix path
+export MSCC="$HOME/OneDrive/Documents/GitHub/mscc-station/rpi"  # ← …/mscc-station/rpi
 mscc stop
 
 cd "$MSCC/SDRcore-recv-linux"  && make clean && make

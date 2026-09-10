@@ -1,4 +1,8 @@
-# psoc-usb-bootload-linux
+# psoc-usb-bootload-linux (Raspberry Pi)
+
+Ubuntu laptop copy (edit there, not here): [`../../linux/psoc-usb-bootload-linux/`](../../linux/psoc-usb-bootload-linux/).
+
+**`bootloader-gui.py`** is the Python GUI. **`bootloader`** is the compiled C CLI (`make`; gitignored). They are not the same file. Pi binary: `../mscc-binaries/bootloader` (AArch64).
 
 Upload Proficio / Omnia **application** firmware (`.cyacd`) from a Pi over USB HID.
 
@@ -14,7 +18,7 @@ Same job as Windows `bootloader.exe`, simplified: **BOOT jumper + one command**.
 
 ```bash
 sudo apt-get install -y build-essential libhidapi-dev libusb-1.0-0-dev
-cd ~/psoc-usb-bootload-linux   # or clone path
+cd rpi/psoc-usb-bootload-linux   # from the mscc-station repo root
 make clean && make
 ```
 

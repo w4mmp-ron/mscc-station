@@ -1,0 +1,155 @@
+#define _CRT_SECURE_NO_WARNINGS 1
+#pragma once
+
+#include "platform.h"
+
+#if !defined(__linux__) && !defined(__APPLE__)
+#pragma comment(lib, "Ws2_32.lib")
+#include <malloc.h>
+/* Vendored Win32 pthreads / local PortAudio header (Windows build) */
+#include "pthread.h"
+#include "semaphore.h"
+#include "sched.h"
+#else
+/* system pthread/semaphore already from platform.h; no vendored Win32 copies */
+#endif
+
+#include <stdio.h>
+#include <stdlib.h>
+#include <stdint.h>
+#include <sys/types.h>
+#include <string.h>
+#include <errno.h>
+#include <math.h>
+#include <limits.h>
+#include <fcntl.h>
+
+#include "port_defines.h"
+#include "version.h"
+#include "sdrcore.h"
+#include "iq.h"
+#include "wsfirgen.h"
+#include "dsputils.h"
+#include "blanker.h"
+#include "commands.h"
+
+/* {Model}.{[M]M}{Release Number}  (the bytes are reversed)
+ * Model 0-OSB, 1-Proficio, 2-Geminus,3-MKII-PTT,4-MKII-ATU,5-Proficio-PTT,6-Proficio-ATU
+ * Month is months from 09/24. Release number 0-9.
+ */
+#define VERSION_MAJOR 3
+#define VERSION_MINOR 140
+#define VERSION_MS_SDRCORE_RECV ((((VERSION_MINOR) << 8) & 0xff00) | ((VERSION_MAJOR) & 0x00ff))
+
+#define MAX_OUTPUT_DEVICES 50
+/* Must match main.c — invalid slot for operator/digital speaker tables */
+#ifndef NO_OUTPUT_DEVICE
+#define NO_OUTPUT_DEVICE 100
+#endif
+#define MAX_PIXELS 800
+#define DISPLAY_CENTER 399
+#define DISPLAY_BANDWIDTH 72000
+#define MAX_X 400
+#define MAX_MARKER_SIZE 4000
+#define MARKER_OUT_OF_RANGE 1000;
+
+#if !defined(TRUE)
+#define TRUE 1
+#endif
+#if !defined(FALSE)
+#define FALSE 0
+#endif
+
+/* PATH_MAX / MAX_PATH: platform.h sets MAX_PATH on Linux; Windows has MAX_PATH */
+#if !defined(PATH_MAX)
+#define PATH_MAX MAX_PATH
+#endif
+
+extern PaStream *stream;
+extern PaStreamParameters inputParameters, outputParameters;
+extern const PaDeviceInfo* lpInfo;
+extern const PaDeviceInfo* lpInfo_Pulse;
+extern state mystate;
+extern PaDeviceIndex G_Pulse_Proficio_Device;
+extern PaDeviceIndex G_Pulse_Output_Device;
+extern int G_output_device_index;
+extern int G_digital_output_device_index;
+extern char G_digital_audio_device[];
+extern char G_audio_device[];
+extern int G_num_pulse_output_devices_found;
+extern uint8_t G_Image_Check;
+
+extern float G_volumeLevel;
+extern int G_band_marker_low;
+extern int G_band_marker_high;
+extern int G_iq_file_needs_updated;
+extern int G_Smoothing;
+extern int G_all_threads_run;
+extern long long G_keep_alive;
+extern uint8_t G_Panadapter_Blocks;
+extern uint8_t G_PCB_Version;
+extern uint8_t G_tx_mode;
+extern FILE *G_fp_logfile;
+extern char G_mode;
+extern int line_number;
+extern uint8_t G_Monitor;
+extern uint8_t G_tx_band_pass;
+extern float t_volumeLevel;
+extern uint8_t G_Pause_Panadapter;
+extern uint8_t G_Pause_Panadapter_Reload;
+extern int G_Pause_Panadapter_Cycles;
+extern uint8_t G_Pan_Flush_History;
+
+struct output_devices {
+	int record_number;
+	int device_index;
+	char name[120];
+	int num_channels;
+	int default_output_device;
+	int selected_output_device;
+};
+
+extern struct sockaddr_in si_me, si_ms_sdr;
+extern int sdrcore_s, ms_sdr_s, recv_len;
+#if defined(__linux__) || defined(__APPLE__)
+extern socklen_t slen;
+#else
+extern int slen;
+#endif
+
+extern int num_output_devices_found;
+extern int num_digital_output_devices_found;
+extern state mystate;
+extern calstate mycalstate;
+extern void *UDP_Thread(void *my_param);
+extern void *Flusher_thread(void *t);
+extern void *Send_smeter_thread(void *param);
+extern void *Panadapter_thread(void *t);
+extern void *Check_Image_Level_thread(void *param);
+/* Call as print_time() or print_time(0) — both OK */
+void print_time_impl(void);
+#define print_time(...) print_time_impl()
+extern int Open_log_file(void);
+extern void setFilterOffsets(sp_float filterSetLow, sp_float filterSetHigh);
+
+extern int manage_stream(int start_stop, int device,int channels);
+extern void build_output_devices(int device_index);
+extern void build_digital_output_devices(int device_index);
+extern void Build_pulse_output_devices(int device_index);
+extern int Get_Sound_Device(void);
+extern int Get_Digital_Sound_Device(void);
+extern int Get_IQ_Capture_Device(void);
+extern char G_iq_capture_device[PATH_MAX];
+extern int IQ_Set_All_Band(int iq_value);
+extern void IQ_calc(int iq_int);
+extern int update_iq_ini_file(void);
+extern int Init_IQ_structure(void);
+extern int Load_IQ_Defaults(void); /* no-op on Linux; kept for link compatibility */
+extern int create_iq_ini_file(int force);
+extern int Check_Image_Level(int start);
+extern char* My_getenv(char* myenv);
+
+extern int manage_sidetone_stream(int start_stop, int device, int channels);
+extern float G_side_tone_pitch;
+extern float G_t_volumeLevel;
+extern uint8_t G_Pitch_changed;

@@ -54,29 +54,35 @@ More detail (older layout notes may still appear under `mscc-ui/README.md`) — 
 
 ---
 
-## Ubuntu Desktop (x86_64)
+## Two Linux trees (do not mix)
 
-How-to: **[`INSTALL-UBUNTU.md`](INSTALL-UBUNTU.md)**. UI + init-gui debs: `mscc-ui/Release/avalonia/x86_64/`. Servers are built on the laptop (`linux-build/mscc-linux.sh`). Do not install `*_arm64.deb` there.
+Ron moved Pi work under **`rpi/`**. Ubuntu laptop work lives under **`linux/`**. Treat `rpi/` as a **guide** when changing Ubuntu; do **not** edit `rpi/` for x86_64 fixes.
 
-## Pi install kit (start here for RPi)
+| Tree | Who / host | How-to |
+|------|------------|--------|
+| **`rpi/`** | Ron / Raspberry Pi OS **arm64** | [`rpi/README.md`](rpi/README.md), [`rpi/pi-install/INSTALL.md`](rpi/pi-install/INSTALL.md) |
+| **`linux/`** | Stew / Ubuntu Desktop **x86_64** | [`linux/README.md`](linux/README.md), [`INSTALL-UBUNTU.md`](INSTALL-UBUNTU.md) |
+| **`linux-build/`** | Scripts | Ubuntu: `mscc-linux.sh`. Pi cross (optional): `cross-arm64.sh` uses **`rpi/`** |
+
+Release UI/server debs: [`mscc-ui/Release/avalonia/`](mscc-ui/Release/avalonia/) — **`arm64/`** vs **`x86_64/`**. Do not install `*_arm64.deb` on Ubuntu.
+
+## Pi install kit (RPi)
 
 | Path | Notes |
 |------|--------|
-| **`pi-install/`** | **Current `.deb` packages + one how-to** — servers, Avalonia UI, remote audio, firmware upload, upgrades |
-| **`pi-install/INSTALL.md`** | End-to-end install flow |
-| **`pi-install/packages/`** | Latest: portaudio, `mscc`, init-gui, `mscc-ui` |
+| **`rpi/pi-install/`** | Current `.deb` packages + how-to |
+| **`rpi/pi-install/INSTALL.md`** | End-to-end Pi install |
+| **`rpi/mscc-deb/`**, **`rpi/mscc-binaries/`** | Server packaging (AArch64) |
 
-## Linux backends & packaging
+## Linux backends
 
 | Path | Notes |
 |------|--------|
-| `ms-sdr-linux/` | Linux command hub |
-| `SDRcore-recv-linux/` | RX DSP (+ remote phones stream) |
-| `SDRcore-trans-linux/` | TX DSP (+ remote mic UDP) |
-| `mscc-deb/` | Pi `.deb` packaging / longer install prose |
-| `mscc-binaries/` | Built server binaries |
-| `mscc-init-linux/` / `mscc-init-gui/` / `mscc-init-files-linux/` | Init tools & seed INIs |
-| `mscc-portaudio/` / `portaudio*` / `oboe-main/` | Audio stack / packaging |
+| `rpi/ms-sdr-linux/` / `linux/ms-sdr-linux/` | Command hub (Pi / Ubuntu) |
+| `rpi/SDRcore-recv-linux/` / `linux/SDRcore-recv-linux/` | RX DSP |
+| `rpi/SDRcore-trans-linux/` / `linux/SDRcore-trans-linux/` | TX DSP |
+| `rpi/psoc-usb-bootload-linux/` / `linux/psoc-usb-bootload-linux/` | Firmware **CLI** (`make` → `bootloader`) + **GUI** (`bootloader-gui.py`) — not the same file |
+| `rpi/mscc-init-gui/` | Init wizard (Architecture: all `.deb`) |
 
 ---
 
@@ -98,10 +104,13 @@ Client UI still needs the **Remote Audio** checkbox (Phones + checked → send *
 
 | Path | Notes |
 |------|--------|
-| `Release-Proficio-MKII-PTT/` | MKII PTT |
-| `Release-Proficio-MKII-ATU/` | MKII ATU |
-| `Release-Proficio-Legacy/` | Legacy Proficio |
-| `bootloader/` / `psoc-usb-bootload-linux/` | Bootload tools |
+| [`Proficio-firmware/`](Proficio-firmware/README.md) | PSoC Creator trees (moved from repo root) |
+| `Proficio-firmware/Release-Proficio-MKII-PTT/` | MKII PTT |
+| `Proficio-firmware/Release-Proficio-MKII-ATU/` | MKII ATU |
+| `Proficio-firmware/Release-Proficio-Legacy/` | Legacy Proficio |
+| `Proficio-firmware/bootloader/` | PSoC Creator bootloader project |
+| `linux/psoc-usb-bootload-linux/` | Ubuntu firmware **upload** tools (CLI + GUI) |
+| `rpi/psoc-usb-bootload-linux/` | Pi firmware upload tools (guide for Ubuntu) |
 
 ### PIC keyer
 
@@ -133,7 +142,8 @@ Start: `docs/STEW-DAUGHTER-BOARD-PINOUT.md` in either STM32 folder. Firmware pin
 | Path | Notes |
 |------|--------|
 | `swr-meter/` | External SWR helper |
-| `tty0tty-master/` | Virtual serial (Linux) |
+| `linux/tty0tty-master/` | Virtual serial (Ubuntu) |
+| `rpi/tty0tty-master/` | Virtual serial (Pi) |
 
 ---
 
@@ -144,4 +154,4 @@ Start: `docs/STEW-DAUGHTER-BOARD-PINOUT.md` in either STM32 folder. Firmware pin
 | Linux servers, packaging, remote AF path, STM32 FW | Ron |
 | Windows WPF, Avalonia parity, MSCC.Core client, daughter PCB / pinout | Stew |
 
-When one side changes opcodes or host behavior, note it for the other tree (Linux ↔ Windows servers, WPF ↔ Avalonia).
+When one side changes opcodes or host behavior, note it for the other trees (`linux/` ↔ `rpi/` ↔ Windows servers, WPF ↔ Avalonia).

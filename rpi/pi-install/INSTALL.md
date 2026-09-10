@@ -1,7 +1,9 @@
 # MSCC on Raspberry Pi — one how-to
 
+This kit is **`rpi/pi-install/`**. Ubuntu Desktop (x86_64) is a different path: [`../../INSTALL-UBUNTU.md`](../../INSTALL-UBUNTU.md).
+
 **Pi:** 4 or 5, **64-bit Raspberry Pi OS** (desktop recommended).  
-**Packages:** use files in **`pi-install/packages/`** (this folder).  
+**Packages:** use files in **`packages/`** (this folder).  
 **Updated:** 2026-09 — servers **1.0.41** (CMP GUI echo), init-gui **1.0.13**, portaudio **19.8.2**, UI **0.6.41** (RemotePhones lifecycle parity).
 
 If a filename in `packages/` differs, **use the real name on disk**.
@@ -225,24 +227,24 @@ Included in the **`mscc`** package — no separate `.deb`.
 1. Power off radio → install **BOOT** jumper → power on → Morse **LOADER** / USB `04b4:b71d`.  
 2. **Stop** MSCC servers.  
 3. Pi menu **MSCC → Firmware Upload** (`bootloader-gui`) or CLI `bootloader /path/to/file.cyacd`.  
-4. Use the correct tree’s `.cyacd` (Proficio/Geminus MKII or Legacy under `Release-*`).  
+4. Use the correct tree’s `.cyacd` (Proficio under `Proficio-firmware/Release-*`, Geminus under `Release-Geminus-*`).  
 5. Power off → **remove BOOT jumper** → power on → Proficio `16c0:05dc`.
 
-Details: `Release-Proficio-Legacy/STEW-FIRMWARE-UPDATE.md` (same procedure for MKII trees).
+Details: `Proficio-firmware/Release-Proficio-Legacy/STEW-FIRMWARE-UPDATE.md` (same procedure for MKII trees).
 
 ---
 
 ## F. Updating packages later
 
-1. On the Windows/dev PC, put new builds in the usual trees (`mscc-deb/`, `mscc-ui/Avalonia-Migration/`, etc.).  
+1. On the Windows/dev PC, put new builds in the usual trees (`rpi/mscc-deb/`, `mscc-ui/Avalonia-Migration/`, etc.).  
 2. Refresh the kit:
 
 ```powershell
 cd C:\Users\n8vet\OneDrive\Documents\GitHub\mscc-station
-powershell -NoProfile -ExecutionPolicy Bypass -File .\pi-install\collect-packages.ps1
+powershell -NoProfile -ExecutionPolicy Bypass -File .\rpi\pi-install\collect-packages.ps1
 ```
 
-3. Copy new files from `pi-install/packages/` to the Pi.  
+3. Copy new files from `rpi/pi-install/packages/` to the Pi.  
 4. On the Pi:
 
 ```bash
@@ -267,13 +269,14 @@ Update the version table at the top of this file when you change the kit.
 
 | Need | Path |
 |------|------|
-| **This kit + how-to** | `pi-install/` |
-| Server packaging / older install prose | `mscc-deb/` |
-| Init GUI sources | `mscc-init-gui/` |
+| **This kit + how-to** | `rpi/pi-install/` |
+| Server packaging / older install prose | `rpi/mscc-deb/` |
+| Init GUI sources | `rpi/mscc-init-gui/` |
 | Avalonia UI + build script | `mscc-ui/Avalonia-Migration/` |
 | Windows WPF | `mscc-ui/windows-work-tree/` |
 | Remote phones app | `mscc-remote-audio/` |
-| Radio `.cyacd` | `Release-Proficio-*`, `Release-Geminus-*` |
+| Radio `.cyacd` | `Proficio-firmware/Release-*`, `Release-Geminus-*` |
+| Ubuntu laptop (not this kit) | `linux/`, `INSTALL-UBUNTU.md` |
 
 ---
 

@@ -2,7 +2,7 @@
 # Cross-compile Pi (AArch64) servers on an amd64 Ubuntu laptop.
 #
 # Ron on the Pi does not use this. On the Pi he still runs:
-#   cd SDRcore-recv-linux && make clean && make
+#   cd rpi/SDRcore-recv-linux && make clean && make
 #   (same for trans / ms-sdr)
 #
 # This writes $HOME/mscc-arm64  — it does NOT replace $HOME/mscc (x86 station).
@@ -10,12 +10,14 @@
 #
 #   ./linux-build/cross-arm64.sh prereqs   # print/install cross packages
 #   ./linux-build/cross-arm64.sh build
-#   ./linux-build/cross-arm64.sh stage     # copy AArch64 ELFs → mscc-binaries/
-#   ./linux-build/cross-arm64.sh deb       # stage + mscc-deb/build-deb.sh
+#   ./linux-build/cross-arm64.sh stage     # copy AArch64 ELFs → rpi/mscc-binaries/
+#   ./linux-build/cross-arm64.sh deb       # stage + rpi/mscc-deb/build-deb.sh
 set -euo pipefail
 
 HERE="$(cd "$(dirname "$0")" && pwd)"
 ROOT="$(cd "$HERE/.." && pwd)"
+# Pi sources live under rpi/ (Ron's tree). Do not compile linux/ for arm64 debs.
+RPI="$ROOT/rpi"
 BINDIR="${MSCC_ARM64_DIR:-$HOME/mscc-arm64}"
 PA_STAGE="$HERE/.pa-arm64"
 CLEAN=1
@@ -36,10 +38,10 @@ Commands:
   prereqs   show (and with --install, apt) cross-compiler + arm64 libs
   show      print tool/output paths
   build     compile AArch64 into $HOME/mscc-arm64
-  stage     copy those ELFs into mscc-binaries/ (AArch64 check)
-  deb       stage + ./mscc-deb/build-deb.sh
+  stage     copy those ELFs into rpi/mscc-binaries/ (AArch64 check)
+  deb       stage + ./rpi/mscc-deb/build-deb.sh
 
-Then commit/push or copy the .deb to the Pi / pi-install/packages/.
+Then commit/push or copy the .deb to the Pi / rpi/pi-install/packages/.
 EOF
 }
 
@@ -61,8 +63,9 @@ log() { echo "cross-arm64: $*"; }
 find_pa_deb() {
   local f
   for f in \
-    "$ROOT/pi-install/packages/mscc-portaudio_19.8.2_arm64.deb" \
-    "$ROOT/mscc-portaudio/mscc-portaudio_19.8.2_arm64.deb"
+    "$RPI/pi-install/packages/mscc-portaudio_19.8.2_arm64.deb" \
+    "$RPI/mscc-portaudio/mscc-portaudio_19.8.2_arm64.deb" \
+    "$ROOT/mscc-ui/Release/avalonia/arm64/mscc-portaudio_19.8.2_arm64.deb"
   do
     [[ -f "$f" ]] && { echo "$f"; return 0; }
   done
@@ -157,17 +160,17 @@ cmd_build() {
   local t
   for t in SDRcore-recv-linux SDRcore-trans-linux ms-sdr-linux mscc-init-linux psoc-usb-bootload-linux; do
     log "build $t (aarch64)"
-    [[ "$CLEAN" -eq 1 ]] && make -C "$ROOT/$t" clean
+    [[ "$CLEAN" -eq 1 ]] && make -C "$RPI/$t" clean
     case "$t" in
       psoc-usb-bootload-linux)
-        make -C "$ROOT/$t" CC="$CC_X" LDFLAGS="-L$AARCH_LIB"
-        install -m 755 "$ROOT/$t/bootloader" "$BINDIR/bootloader"
+        make -C "$RPI/$t" CC="$CC_X" LDFLAGS="-L$AARCH_LIB"
+        install -m 755 "$RPI/$t/bootloader" "$BINDIR/bootloader"
         ;;
       ms-sdr-linux)
-        make -C "$ROOT/$t" CC="$CC_X" BINDIR="$BINDIR" LDFLAGS="-L$AARCH_LIB"
+        make -C "$RPI/$t" CC="$CC_X" BINDIR="$BINDIR" LDFLAGS="-L$AARCH_LIB"
         ;;
       *)
-        make -C "$ROOT/$t" "${extra[@]}"
+        make -C "$RPI/$t" "${extra[@]}"
         ;;
     esac
   done
@@ -189,7 +192,7 @@ assert_aarch64() {
 }
 
 cmd_stage() {
-  local dest="$ROOT/mscc-binaries"
+  local dest="$RPI/mscc-binaries"
   mkdir -p "$dest"
   local b
   for b in ms-sdr sdrcore-recv sdrcore-trans mscc-init bootloader; do
@@ -198,12 +201,12 @@ cmd_stage() {
     cp -a "$BINDIR/$b" "$dest/$b"
     log "staged $b → $dest/"
   done
-  echo "Ready for:  cd $ROOT/mscc-deb && ./build-deb.sh"
+  echo "Ready for:  cd $RPI/mscc-deb && ./build-deb.sh"
 }
 
 cmd_deb() {
   cmd_stage
-  ( cd "$ROOT/mscc-deb" && ./build-deb.sh )
+  ( cd "$RPI/mscc-deb" && ./build-deb.sh )
 }
 
 for c in "${CMD[@]}"; do

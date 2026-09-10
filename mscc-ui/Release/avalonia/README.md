@@ -8,8 +8,8 @@ Split by CPU. **Do not install an `arm64` `.deb` on an x86_64 Ubuntu PC** (and v
 | **`arm64/`** | Raspberry Pi OS 64-bit | PortAudio, servers `mscc_1.0.42`, init-gui, Avalonia UI |
 | **`x86_64/`** | Ubuntu Desktop amd64 | Avalonia UI `mscc-ui_*_amd64.deb`, init-gui |
 
-Pi operator how-to: [`pi-install/INSTALL.md`](../../../pi-install/INSTALL.md).  
-Ubuntu laptop how-to: [`INSTALL-UBUNTU.md`](../../../INSTALL-UBUNTU.md).
+Pi operator how-to: [`rpi/pi-install/INSTALL.md`](../../../rpi/pi-install/INSTALL.md).  
+Ubuntu laptop how-to: [`INSTALL-UBUNTU.md`](../../../INSTALL-UBUNTU.md). Pi sources: [`rpi/`](../../../rpi/). Ubuntu sources: [`linux/`](../../../linux/).
 
 ## Raspberry Pi (`arm64/`)
 

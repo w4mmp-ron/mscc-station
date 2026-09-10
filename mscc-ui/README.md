@@ -1,4 +1,4 @@
-# MSCC-Grok-Build — workspace map
+# MSCC UI — workspace map
 
 Multus MSCC multi-platform workspace: **Windows WPF** (Stew), **Linux servers** (Ron / Pi), **Linux Avalonia UI**, **PIC keyer**, **PSoC radio firmware**.
 
@@ -11,11 +11,10 @@ Use this map when working across Linux and Windows so the right tree is edited a
 | Folder | Role | Primary owner |
 |--------|------|----------------|
 | **`windows-work-tree/`** | Windows **UI + servers** (WPF, ms-sdr-MKII, recv, trans, init) | Stew |
-| **`Linux-work-tree/`** | Linux **backend servers + packaging** (ms-sdr, recv, trans, debs, init-files) | Ron (Pi / terminal) |
-| **`Avalonia-Migration/`** | Linux **GUI only** (Avalonia `mscc-ui` for Pi) | Stew (UI parity with WPF) |
-| **`keyer-firmware/`** | PIC keyer work tree, bootloader, released hex | Stew / Ron (keyer) |
-| **`PSoC-Firmware/`** | Proficio / Geminus / legacy PSoC work trees + release hex/cyacd | Stew / Ron (radio FW) |
-| **`Backup-Refs/`** | Historical client builds and firmware references | Archive |
+| **`../rpi/`** | Raspberry Pi **servers + packaging** (guide for Ubuntu) | Ron |
+| **`../linux/`** | Ubuntu x86_64 **servers** (edit here, not `rpi/`) | Stew (laptop) |
+| **`Avalonia-Migration/`** | Linux **GUI** (Avalonia `mscc-ui` — Pi arm64 and Ubuntu amd64 debs) | Stew |
+| **`Release/avalonia/`** | UI/server `.deb` drop: `arm64/` (Pi) and `x86_64/` (Ubuntu) | |
 
 Root also holds **release installers** (e.g. `mscc-net9-R*-install.exe`), group docs, and punch lists.
 
@@ -37,7 +36,7 @@ Root also holds **release installers** (e.g. `mscc-net9-R*-install.exe`), group 
               ┌────────────────┼────────────────┐
               ▼                ▼                ▼
         PSoC radio        PIC keyer         (optional CAT)
-     (PSoC-Firmware)   (keyer-firmware)
+     (Proficio-firmware)   (keyer/)
 ```
 
 Ron prefers **RPi for all terminal / server work** and **does not** use Avalonia day-to-day. Typical Ron path: **Linux servers** + optional **Windows WPF** remote client.  
@@ -53,9 +52,9 @@ Two independent parity tracks:
 
 | Concern | Windows path | Linux path |
 |---------|--------------|------------|
-| Command hub | `windows-work-tree/ms-sdr-MKII/` | `Linux-work-tree/ms-sdr-linux/` |
-| Receive DSP | `windows-work-tree/SDRcore-recv/` | `Linux-work-tree/SDRcore-recv-linux/` |
-| Transmit DSP | `windows-work-tree/SDRcore-trans/` | `Linux-work-tree/SDRcore-trans-linux/` |
+| Command hub | `windows-work-tree/ms-sdr-MKII/` | `../rpi/ms-sdr-linux/` (Pi) and `../linux/ms-sdr-linux/` (Ubuntu) |
+| Receive DSP | `windows-work-tree/SDRcore-recv/` | `../rpi/SDRcore-recv-linux/` / `../linux/SDRcore-recv-linux/` |
+| Transmit DSP | `windows-work-tree/SDRcore-trans/` | `../rpi/SDRcore-trans-linux/` / `../linux/SDRcore-trans-linux/` |
 
 **When one side gets a protocol or headless change, the other needs a deliberate port** (or a punch list for the other owner).  
 Examples: appliance startup, NR/AN bi-dir, keep-alive tags, keyer `0x9C` USB packing/pacing.
@@ -72,9 +71,9 @@ Examples: appliance startup, NR/AN bi-dir, keep-alive tags, keyer `0x9C` USB pac
 
 Cross-cutting features (e.g. keyer CQ memory) touch:
 
-1. **keyer-firmware** (PIC)  
-2. **PSoC-Firmware** (USB → I²C)  
-3. **Servers** (Linux and/or Windows ms-sdr)  
+1. **`keyer/`** (PIC)  
+2. **`Proficio-firmware/`** (USB → I²C)  
+3. **Servers** (`rpi/` and/or `linux/` and/or Windows)  
 4. **UI** (WPF and/or Avalonia via Core)
 
 ---
@@ -92,52 +91,36 @@ Cross-cutting features (e.g. keyer CQ memory) touch:
 
 Deploy target for client/servers is typically **`C:\mscc-net9`**.
 
-### `Linux-work-tree/` — Pi servers & packaging
+### Linux servers (repo root, not under `mscc-ui/`)
 
-| Subfolder | Contents |
-|-----------|----------|
-| `ms-sdr-linux/` | Linux ms-sdr sources + README/RESUME |
-| `SDRcore-recv-linux/`, `SDRcore-trans-linux/` | Linux DSP cores |
-| `mscc-deb/` | Server package (`.deb`) + install docs |
-| `mscc-binaries/` | Built server binaries for Pi |
-| `mscc-init-files-linux/`, `mscc-init-gui/`, `mscc-portaudio/` | Config seed, init UI, audio package |
-| `mscc-client/` | **Likely a stale/old WPF+Core snapshot** (see below) — not the active Linux UI |
+| Tree | Contents |
+|------|----------|
+| **`../rpi/`** | Ron’s Pi arm64 sources, `mscc-deb`, `pi-install` — **guide only** for Ubuntu work |
+| **`../linux/`** | Ubuntu x86_64 copy — **edit here** for the laptop |
 
-### `Avalonia-Migration/` — Linux UI only
+See [`../rpi/README.md`](../rpi/README.md) and [`../linux/README.md`](../linux/README.md).
 
-Avalonia client for RPi. Packages as `mscc-ui_*.deb`.  
+### `Avalonia-Migration/` — Linux UI
+
+Avalonia client. Pi package: `mscc-ui_*_arm64.deb`. Ubuntu package: `mscc-ui_*_amd64.deb` in `Release/avalonia/x86_64/`.  
 Project reference: **MSCC.Core** in `windows-work-tree/mscc-mscc/mscc-new/src/MSCC.Core/`.
 
-### `keyer-firmware/` — PIC keyer
+### PIC keyer / PSoC (repo root)
 
-| Subfolder | Contents |
-|-----------|----------|
-| `keyer-work-tree/` | PIC sources, KEYER-MEMORY docs, test scripts |
-| `bootloader/` | Keyer-related bootloader (moved here from mixed trees) |
-| `Release/` | Released keyer hex |
-
-### `PSoC-Firmware/` — radio MCU
-
-| Subfolder | Contents |
-|-----------|----------|
-| `PSoC-work-trees/` | Active trees (e.g. Proficio MKII-PTT, Geminus MKII, legacy) |
-| `Releases/` | Shipped `.hex` / `.cyacd` by product line |
+| Path | Contents |
+|------|----------|
+| `../keyer/` | PIC16F18326 sources, KEYER-MEMORY docs, hex |
+| `../Proficio-firmware/` | Proficio MKII/Legacy PSoC + Creator bootloader |
 
 ---
 
-## About `Linux-work-tree/mscc-client`
-
-This tree still looks like an older **WPF conversion (`mscc-new`)** copy (README still describes Windows WPF). It is **not** the Avalonia UI and **not** a server package.
-
-**Working assumption:** leftover reference or an old drop for Ron — **not** the source of truth for either UI.
+## Active UI paths
 
 | Active | Path |
 |--------|------|
 | Windows UI | `windows-work-tree/mscc-mscc/mscc-new/` |
 | Linux UI | `Avalonia-Migration/` |
-| Shared Core (preferred) | `windows-work-tree/mscc-mscc/mscc-new/src/MSCC.Core/` |
-
-If `mscc-client` is only historical, rename to e.g. `mscc-client-ARCHIVE` or move under `Backup-Refs/` when convenient.
+| Shared Core | `windows-work-tree/mscc-mscc/mscc-new/src/MSCC.Core/` |
 
 ---
 
@@ -159,8 +142,8 @@ If `mscc-client` is only historical, rename to e.g. `mscc-client-ARCHIVE` or mov
 
 ### Keyer / PSoC change
 
-1. Edit under `keyer-firmware/` or `PSoC-Firmware/`.  
-2. Note server dependencies (e.g. `0x9C` packing) for **both** ms-sdr trees.  
+1. Edit under `../keyer/` or `../Proficio-firmware/`.  
+2. Note server dependencies (e.g. `0x9C` packing) for **both** ms-sdr trees (`rpi/` and `linux/`).  
 3. Note UI dependencies for **both** UIs via Core.
 
 ---
@@ -172,21 +155,20 @@ If `mscc-client` is only historical, rename to e.g. `mscc-client-ARCHIVE` or mov
 | WPF buttons / tabs / CW memory UI | `windows-work-tree/mscc-mscc/mscc-new/` |
 | Opcodes / UDP send-receive | `windows-work-tree/mscc-mscc/mscc-new/src/MSCC.Core/` |
 | Windows ms-sdr / appliance | `windows-work-tree/ms-sdr-MKII/` |
-| Linux ms-sdr / headless | `Linux-work-tree/ms-sdr-linux/` |
-| Avalonia / Pi GUI | `Avalonia-Migration/` |
-| PIC CQ memory | `keyer-firmware/keyer-work-tree/` |
-| Proficio / Geminus firmware | `PSoC-Firmware/PSoC-work-trees/` |
-| Pi `.deb` packaging | `Linux-work-tree/mscc-deb/` |
+| Linux ms-sdr (Pi) | `../rpi/ms-sdr-linux/` |
+| Linux ms-sdr (Ubuntu) | `../linux/ms-sdr-linux/` |
+| Avalonia / Linux GUI | `Avalonia-Migration/` |
+| PIC CQ memory | `../keyer/` |
+| Proficio firmware | `../Proficio-firmware/` |
+| Pi `.deb` packaging | `../rpi/mscc-deb/` |
 
 ---
 
 ## Optional hygiene (not required to work)
 
-1. Archive or clearly label `Linux-work-tree/mscc-client` if obsolete.  
-2. One **canonical** keyer protocol doc: prefer `keyer-firmware/keyer-work-tree/KEYER-MEMORY.md`; other copies link to it.  
-3. Root `releases/` folder for installers if root gets crowded.  
-4. After server ports, keep a one-line log in each side’s `RESUME.md` / punch list (“ported NR push from Linux on date”).
+1. One **canonical** keyer protocol doc: prefer `../keyer/KEYER-MEMORY.md`.  
+2. After server ports, note Pi (`rpi/`) vs Ubuntu (`linux/`) separately.
 
 ---
 
-*Updated for folder reorg (Avalonia / windows-work-tree / Linux-work-tree / keyer-firmware / PSoC-Firmware).*
+*Updated for `rpi/` vs `linux/` split (2026-09).*

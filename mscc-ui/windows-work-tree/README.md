@@ -24,9 +24,9 @@ Typical deploy: build client → `C:\mscc-net9\` (post-build copy). Servers also
 
 | This tree (Windows) | Linux counterpart |
 |---------------------|-------------------|
-| `ms-sdr-MKII/` | `../Linux-work-tree/ms-sdr-linux/` |
-| `SDRcore-recv/` | `../Linux-work-tree/SDRcore-recv-linux/` |
-| `SDRcore-trans/` | `../Linux-work-tree/SDRcore-trans-linux/` |
+| `ms-sdr-MKII/` | `../../rpi/ms-sdr-linux/` (Pi) and `../../linux/ms-sdr-linux/` (Ubuntu) |
+| `SDRcore-recv/` | `../../rpi/SDRcore-recv-linux/` / `../../linux/SDRcore-recv-linux/` |
+| `SDRcore-trans/` | `../../rpi/SDRcore-trans-linux/` / `../../linux/SDRcore-trans-linux/` |
 
 Protocol or behavior changes here should be ported to Linux (or listed for Ron) so Pi and Windows appliances stay compatible with the same UI.
 

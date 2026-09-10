@@ -1,0 +1,11 @@
+debian/.debhelper
+debian/files
+debian/*.log
+debian/*.debhelper
+debian/*.substvars
+debian/tty0tty-dkms/
+
+# Built on this host (or copied from Pi). Ubuntu install builds tty0tty in /tmp.
+module/*.ko
+module/*.o
+ssniffer/ssniffer

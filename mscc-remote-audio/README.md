@@ -115,7 +115,7 @@ PORT=9100
 ```
 
 `HOST` = Windows PC running **MsccRemotePhones**.  
-Rebuild/install `sdrcore-recv` from `SDRcore-recv-linux` (includes `remote_phones.c`).
+Rebuild/install `sdrcore-recv` from `rpi/SDRcore-recv-linux` (Pi) or `linux/SDRcore-recv-linux` (Ubuntu). Includes `remote_phones.c`.
 
 Log line when active:
 ```text

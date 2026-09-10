@@ -1,5 +1,7 @@
 # Pi install kit (start here)
 
+This kit lives under **`rpi/pi-install/`**. Ubuntu Desktop (x86_64) is a separate tree: [`../../linux/`](../../linux/) and [`../../INSTALL-UBUNTU.md`](../../INSTALL-UBUNTU.md).
+
 **One place** for current Raspberry Pi `.deb` packages and install instructions.
 
 | File / folder | Purpose |
@@ -7,8 +9,8 @@
 | **[INSTALL.md](INSTALL.md)** | **Full how-to** — servers, init, UI, remote audio, firmware upload, upgrades |
 | **[INSTALL.pdf](INSTALL.pdf)** | **Printable** copy of the how-to (regenerate with `python md_to_pdf.py`) |
 | **`packages/`** | Latest release `.deb` files (copy this folder to a USB stick or `scp` to the Pi) |
-| **`collect-packages.ps1`** | Refresh `packages/` from the build trees in this repo |
-| **`install-mscc.sh`** | Optional helper (same as `mscc-deb/install-mscc.sh`) |
+| **`collect-packages.ps1`** | Refresh `packages/` from the build trees (`.\rpi\pi-install\collect-packages.ps1` from repo root) |
+| **`install-mscc.sh`** | Optional helper (same as `rpi/mscc-deb/install-mscc.sh`) |
 
 ### Current package set (see `packages/`)
 
