@@ -26,7 +26,7 @@ Servers **1.0.42** include FM (NFM). UI **0.6.44** has FM + FM Power.
 
 ## Ubuntu x86_64 (`x86_64/`)
 
-Servers are **built from source** on the laptop (`linux-build/mscc-linux.sh`) — there is no `mscc_*_amd64.deb` yet.
+Servers: `mscc-portaudio_*_amd64.deb` then `mscc_*_amd64.deb` (current copies: [`installers/linux/`](../../../installers/linux/)).
 
 ```bash
 cd x86_64

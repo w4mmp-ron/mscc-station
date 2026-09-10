@@ -8,7 +8,7 @@
 #
 #   ./linux-build/mscc-linux.sh all
 #
-# Audio:  PORTAUDIO=distro  (Ubuntu libportaudio2, Pulse)
+# Audio:  PORTAUDIO=mscc  (rpath /usr/local — Ubuntu mscc-portaudio amd64)
 # Icons:  ~/.local/share/applications
 # Output: $HOME/mscc   (x86_64 — never copy these into rpi/mscc-binaries/)
 set -euo pipefail
@@ -17,7 +17,9 @@ HERE="$(cd "$(dirname "$0")" && pwd)"
 ROOT="$(cd "$HERE/.." && pwd)"
 # Ubuntu x86 sources — do not edit rpi/ for laptop changes.
 LINUX="$ROOT/linux"
-PORTAUDIO="distro"
+PORTAUDIO="mscc"
+PA_PREFIX="/usr/local"
+PA_RPATH="/usr/local/lib"
 ICONS="user"
 BINDIR="${MSCC_DIR:-$HOME/mscc}"
 CLEAN=1
@@ -35,9 +37,12 @@ Commands:
   helpers   copy mscc.sh, status-report, virtual-audio, desktop-ctl, bootloader-gui
   icons     user desktop Start / Stop / Status / Firmware
   all       build + helpers + icons
+  package   build mscc_*_amd64.deb (also copies into installers/linux/)
 
 Options:
-  --portaudio distro|mscc   default: distro
+  --portaudio distro|mscc   default: mscc (rpath /usr/local)
+  --pa-prefix DIR           PortAudio prefix (default /usr/local)
+  --pa-rpath DIR            rpath (default /usr/local/lib)
   --icons user|system       default: user
   --bindir DIR              default: $HOME/mscc
   --no-clean
@@ -63,15 +68,16 @@ while [[ $# -gt 0 ]]; do
       esac
       ;;
     --portaudio) PORTAUDIO="${2:-}"; shift 2 ;;
+    --pa-prefix) PA_PREFIX="${2:-}"; shift 2 ;;
+    --pa-rpath) PA_RPATH="${2:-}"; shift 2 ;;
     --icons) ICONS="${2:-}"; shift 2 ;;
     --bindir) BINDIR="${2:-}"; shift 2 ;;
     --no-clean) CLEAN=0; shift ;;
     -h|--help) usage; exit 0 ;;
     show|build|helpers|icons|all) CMD+=("$1"); shift ;;
     package)
-      echo "ERROR: x86 binaries must not go in mscc-binaries/." >&2
-      echo "  For Pi ELFs on this laptop:  ./linux-build/cross-arm64.sh stage" >&2
-      exit 2
+      echo "Packaging Ubuntu amd64 .deb (not rpi/mscc-binaries)." >&2
+      exec "$HERE/build-mscc-deb-amd64.sh"
       ;;
     *) echo "Unknown argument: $1" >&2; usage >&2; exit 2 ;;
   esac
@@ -88,14 +94,14 @@ if [[ "$HOST" != "x86_64" ]]; then
   exit 1
 fi
 
-MAKE_PA=(PORTAUDIO="$PORTAUDIO" BINDIR="$BINDIR")
+MAKE_PA=(PORTAUDIO="$PORTAUDIO" PORTAUDIO_PREFIX="$PA_PREFIX" PORTAUDIO_RPATH="$PA_RPATH" BINDIR="$BINDIR")
 log() { echo "mscc-linux: $*"; }
 
 cmd_show() {
   echo "host:       Ubuntu x86_64 (special path)"
   echo "cpu:        $HOST"
   echo "bindir:     $BINDIR"
-  echo "audio:      PORTAUDIO=$PORTAUDIO"
+  echo "audio:      PORTAUDIO=$PORTAUDIO  prefix=$PA_PREFIX  rpath=$PA_RPATH"
   echo "icons:      $ICONS"
   echo "repo:       $ROOT"
   echo "sources:    $LINUX"

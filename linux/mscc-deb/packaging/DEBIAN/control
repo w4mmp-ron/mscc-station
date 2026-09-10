@@ -1,0 +1,28 @@
+Package: mscc
+Version: 1.0.42
+Section: hamradio
+Priority: optional
+Architecture: amd64
+Maintainer: Multus SDR / MSCC Linux <local@localhost>
+Installed-Size: 1400
+Depends: libc6, mscc-portaudio, libusb-1.0-0, libhidapi-libusb0, build-essential, kmod, udev, passwd, python3, python3-tk
+Recommends: linux-headers-generic, pipewire-pulse | pulseaudio, pipewire, libnotify-bin, python3-pyaudio, pulseaudio-utils, alsa-utils
+Homepage: https://local/mscc
+Description: MSCC stack for Multus/Proficio on Ubuntu Desktop (amd64)
+ Prebuilt MSCC servers (ms-sdr, sdrcore-recv, sdrcore-trans), mscc-init,
+ Proficio firmware upload (bootloader CLI + GUI), start/stop script,
+ Pulse/PipeWire virtual digi sinks (VirtualA/B), desktop menu
+ Start/Stop/Status/Firmware Upload, and tty0tty null-modem module.
+ Linked with rpath /usr/local against mscc-portaudio (Pulse+ALSA).
+ Install mscc-portaudio_*_amd64.deb first. Do not use the Pi arm64 PortAudio .deb.
+ .
+ Supported platform: Ubuntu Desktop x86_64 (amd64) only.
+ Raspberry Pi uses the arm64 mscc package instead.
+ .
+ Installs binaries into the installing user's $HOME/mscc, seeds
+ $HOME/.local/mscc only when missing/empty, creates /usr/local/bin
+ links, enables user service mscc-virtual-audio, and builds/loads tty0tty.
+ .
+ Desktop menu: MSCC Start / MSCC Stop / MSCC Status / Firmware Upload.
+ Digi path: VirtualA (recv out) / VirtualB.monitor (trans digi mic).
+ Kernel headers (linux-headers-generic) needed for tty0tty.

@@ -17,6 +17,7 @@ This folder is the Ubuntu Desktop (amd64) working copy: same product, different 
 | `udev/` | Proficio USB rules |
 | `mscc-init-files-linux/` | config seed |
 
+Share kit (GitHub web): [`../installers/linux/`](../installers/linux/).  
 Build/install: [`../linux-build/README.md`](../linux-build/README.md) and [`../INSTALL-UBUNTU.md`](../INSTALL-UBUNTU.md).  
 Output is **`$HOME/mscc`** (x86-64). Never copy those ELFs into [`../rpi/mscc-binaries/`](../rpi/mscc-binaries/).
 

@@ -78,5 +78,8 @@ cp -a "$OUT" "$RELEASE/"
 echo "OK: $OUT"
 echo "    $RELEASE/mscc-ui_${VERSION}_amd64.deb"
 ls -lh "$OUT"
+if [[ -x "$HERE/drop-installers.sh" ]]; then
+  "$HERE/drop-installers.sh" linux
+fi
 file "$OUT"
 dpkg-deb -f "$OUT" Package Version Architecture

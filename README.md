@@ -64,7 +64,7 @@ Ron moved Pi work under **`rpi/`**. Ubuntu laptop work lives under **`linux/`**.
 | **`linux/`** | Stew / Ubuntu Desktop **x86_64** | [`linux/README.md`](linux/README.md), [`INSTALL-UBUNTU.md`](INSTALL-UBUNTU.md) |
 | **`linux-build/`** | Scripts | Ubuntu: `mscc-linux.sh`. Pi cross (optional): `cross-arm64.sh` uses **`rpi/`** |
 
-Release UI/server debs: [`mscc-ui/Release/avalonia/`](mscc-ui/Release/avalonia/) — **`arm64/`** vs **`x86_64/`**. Do not install `*_arm64.deb` on Ubuntu.
+**Current kits (GitHub web):** [`installers/`](installers/) — `linux/` (Ubuntu amd64), `rpi/` (Pi arm64), `windows/`. When a package is rebuilt, copy the newest file there (`./linux-build/drop-installers.sh`). Do not install `*_arm64.deb` on Ubuntu.
 
 ## Pi install kit (RPi)
 

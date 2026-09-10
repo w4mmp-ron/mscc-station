@@ -213,10 +213,15 @@ rm -rf "$STAGE"
 echo
 echo "OK: $OUT"
 ls -la "$OUT"
+DROP="$(cd "$ROOT/../.." && pwd)/linux-build/drop-installers.sh"
+if [[ -x "$DROP" ]]; then
+  "$DROP" rpi
+fi
 echo
 echo "Install on Raspberry Pi OS (64-bit, Pi 4/5):"
 echo "  ./install-mscc.sh ./mscc_${VERSION}_arm64.deb"
 echo "  # or: sudo apt install -y ./mscc_${VERSION}_arm64.deb"
+echo "Current kit copy: installers/rpi/"
 echo
 echo "Then as normal user:"
 echo "  systemctl --user enable --now mscc-virtual-audio   # if sinks missing"

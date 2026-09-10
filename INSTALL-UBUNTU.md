@@ -7,7 +7,8 @@ Verified on **Ubuntu 26.04.1**, kernel `7.0.0-31-generic` (`stew-HP-Notebook`).
 Ron’s Pi trees are under **`rpi/`** (guide only — do not edit those for this laptop).  
 Ubuntu working copy is **`linux/`**. Scripts: [`linux-build/`](linux-build/).
 
-Release drop: [`mscc-ui/Release/avalonia/`](mscc-ui/Release/avalonia/)
+**Share kit (GitHub web):** [`installers/linux/`](installers/linux/) — `mscc_*_amd64.deb`, init-gui, UI.  
+Builder drop: [`mscc-ui/Release/avalonia/`](mscc-ui/Release/avalonia/)
 
 | Folder | Use |
 |--------|-----|
@@ -43,7 +44,7 @@ Log out and back in. `id -nG` must include `dialout`, `audio`, and `plugdev`.
 
 Check: `pactl info` should say **PulseAudio (on PipeWire …)**.
 
-Ubuntu’s `libportaudio2` already includes Pulse — do not install `mscc-portaudio_*_arm64.deb` here.
+Use **`mscc-portaudio_*_amd64.deb`** from [`installers/linux/`](installers/linux/) (Pulse+ALSA at `/usr/local`). Do **not** install the Pi `*_arm64` PortAudio package.
 
 ---
 
@@ -55,7 +56,7 @@ From the repo root:
 ./linux-build/mscc-linux.sh all
 ```
 
-That compiles `ms-sdr`, `sdrcore-recv`, `sdrcore-trans`, `mscc-init`, and `bootloader` into **`$HOME/mscc`**, copies start/stop helpers, and installs user menu entries (Start / Stop / Status / Firmware). Audio link is `PORTAUDIO=distro`.
+That compiles `ms-sdr`, `sdrcore-recv`, `sdrcore-trans`, `mscc-init`, and `bootloader` into **`$HOME/mscc`**, copies start/stop helpers, and installs user menu entries (Start / Stop / Status / Firmware). Audio link is `PORTAUDIO=mscc` (rpath `/usr/local` — install `mscc-portaudio_*_amd64.deb` first).
 
 Details: [`linux-build/README.md`](linux-build/README.md).
 

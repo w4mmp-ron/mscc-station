@@ -21,9 +21,11 @@ Full notes: [`rpi/mscc-deb/BUILD-SERVERS-ON-PI.md`](../rpi/mscc-deb/BUILD-SERVER
 
 ## This laptop — x86_64 (special)
 
-Ubuntu needs distro PortAudio and user-session icons:
+Ubuntu uses the same MSCC PortAudio layout as the Pi (`/usr/local`, Pulse+ALSA), plus user-session icons:
 
 ```bash
+./linux-build/build-mscc-portaudio-amd64.sh
+sudo apt install -y ./linux/mscc-portaudio/mscc-portaudio_*_amd64.deb
 ./linux-build/mscc-linux.sh all
 ```
 
@@ -39,11 +41,20 @@ Operate UI (Avalonia, linux-x64, self-contained). Does **not** rebuild the Pi `l
 
 Needs a user-local **.NET 9** SDK (`$HOME/.dotnet`). Ubuntu 26.04’s distro SDK is 10; the project stays **net9.0**.
 
-Pack the UI as `mscc-ui_*_amd64.deb` (drop folder `mscc-ui/Release/avalonia/x86_64/`):
+Pack the UI as `mscc-ui_*_amd64.deb` (also copies into `installers/linux/`):
 
 ```bash
 ./linux-build/build-mscc-ui-deb-amd64.sh
 ```
+
+Servers as `mscc_*_amd64.deb` (history in `linux/mscc-deb/`, current kit `installers/linux/`):
+
+```bash
+./linux-build/mscc-linux.sh build
+./linux-build/build-mscc-deb-amd64.sh
+```
+
+After any kit update: `./linux-build/drop-installers.sh`. GitHub web grab folder: [`installers/`](../installers/).
 
 ## This laptop — arm64 for the Pi (optional)
 

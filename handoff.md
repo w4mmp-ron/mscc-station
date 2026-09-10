@@ -52,6 +52,7 @@ grok
 - Confirm **`mscc_1.0.42_arm64.deb`** is copied into **`rpi/pi-install/packages/`** (kit still listed **1.0.41** there last check — refresh kit if needed).
 - Update **`rpi/pi-install/INSTALL.md`** package version lines when the kit is refreshed.
 - Ubuntu laptop: edit **`linux/`** only. Treat **`rpi/`** as a guide; do not change it for x86_64. Pi packages still from Ron’s `rpi/` + Pi rebuild.
+- **Current installers** for GitHub web: **`installers/{linux,rpi,windows}/`**. After a kit build, run **`./linux-build/drop-installers.sh`** (or the build script that already calls it). History stays in builder folders (`rpi/mscc-deb/`, `linux/mscc-deb/`, `rpi/mscc-init-gui/`, …).
 
 ---
 
@@ -62,8 +63,9 @@ mscc-station/
   handoff.md
   README.md
   INSTALL-UBUNTU.md          ← Ubuntu x86_64 install
-  linux-build/               ← Ubuntu scripts (mscc-linux.sh, cross-arm64.sh)
+  linux-build/               ← Ubuntu scripts (mscc-linux.sh, cross-arm64.sh, drop-installers.sh)
   linux/                     ← Ubuntu x86_64 sources (edit here, not rpi/)
+  installers/{linux,rpi,windows}/  ← current kits for GitHub web
   rpi/                       ← Ron’s Pi trees (guide only for Ubuntu work)
     ms-sdr-linux/ SDRcore-*-linux/ mscc-deb/ mscc-binaries/ pi-install/
   Proficio-firmware/         ← PSoC Creator trees (was repo-root Release-Proficio-*)
@@ -205,6 +207,7 @@ How-to: **`rpi/pi-install/INSTALL.md`**. Ubuntu: **`INSTALL-UBUNTU.md`**.
 | This handoff | `handoff.md` |
 | Repo map | `README.md` |
 | Ubuntu laptop install | `INSTALL-UBUNTU.md` |
+| Current kits (web) | `installers/` |
 | Ubuntu sources | `linux/` |
 | Pi operator install | `rpi/pi-install/INSTALL.md` |
 | Rebuild servers on Pi | `rpi/mscc-deb/BUILD-SERVERS-ON-PI.md` |
