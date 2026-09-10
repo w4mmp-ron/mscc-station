@@ -96,9 +96,9 @@ Pi log (trans): `CMD_SET_AUDIO_DEVICE REMOTE done` and, with MsccRemotePhones TX
 
 ## Out of scope (later)
 
+See **[REMOTE-AUDIO-PUNCHLIST.md](REMOTE-AUDIO-PUNCHLIST.md)** for the current plan (mute local phones, client-driven RX, in-UI panel). Still later:
+
 - Remote Digital / digi over MSA1  
-- Driving recv remote-phones on/off from opcode **2**  
-- Embedding MsccRemotePhones inside the WPF client  
 
 ---
 
