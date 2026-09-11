@@ -1,4 +1,5 @@
 #include "extern.h"
+#include "remote_phones.h"
 #define _CRT_SECURE_NO_WARNINGS 1
 
 #define _WINSOCK_DEPRECATED_NO_WARNINGS 1
@@ -808,6 +809,27 @@ void *UDP_Thread(void *my_param) {
                 }
                 }
                 break;
+
+            case CMD_SET_REMOTE_RX_HOST:
+                op_code_data_32 = (int *)&buf[1];
+                memcpy(&i_opcode_data, op_code_data_32, 4);
+                print_time();
+                fprintf(G_fp_logfile,
+                    "[%d] UDP Thread. CMD_SET_REMOTE_RX_HOST 0x%08x\n",
+                    line_number++, (unsigned)i_opcode_data);
+                remote_phones_set_host((unsigned)i_opcode_data);
+                break;
+
+            case CMD_SET_REMOTE_RX_CTRL:
+                op_code_data_32 = (int *)&buf[1];
+                memcpy(&i_opcode_data, op_code_data_32, 4);
+                print_time();
+                fprintf(G_fp_logfile,
+                    "[%d] UDP Thread. CMD_SET_REMOTE_RX_CTRL 0x%08x\n",
+                    line_number++, (unsigned)i_opcode_data);
+                remote_phones_set_ctrl((unsigned)i_opcode_data);
+                break;
+
             case CMD_START_STOP_IMAGE_VALUE:
                 G_Image_Check = t_opcode_data;
                 print_time();

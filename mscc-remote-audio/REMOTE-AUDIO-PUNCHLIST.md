@@ -66,13 +66,17 @@ The checkbox is which seat is live — not “WSJT settings never change across 
 - Keep **`0x9B`** as mode 0 / 1 / 2 / 3 (small integer; cannot carry an IP).
 - Add **two 4-byte opcodes** on the existing `SDRcore_recv_send_param` hop (client → ms-sdr → recv). Assign unused bytes at implement time (must be free on ms-sdr, recv, and trans).
 
-| New opcode (name) | Payload | Recv does |
-|-------------------|---------|-----------|
-| **CMD_SET_REMOTE_RX_HOST** | IPv4 as `uint32` | MSA1 destination |
-| **CMD_SET_REMOTE_RX_CTRL** | port + flags | **enable**, **monitor-at-radio**, phones vs digital |
+| New opcode (name) | Byte | Payload | Recv does |
+|-------------------|------|---------|-----------|
+| **CMD_SET_REMOTE_RX_HOST** | **`0x25`** | IPv4, 4 bytes **network order** | MSA1 destination |
+| **CMD_SET_REMOTE_RX_CTRL** | **`0x28`** | uint32 LE: port[15:0] \| enable<<16 \| monitor<<17 | start/stop stream + mute |
 
-Remote **on:** host = client’s own IPv4 (local address of the 8888 socket — correct NIC if multi-homed), port **9100**, enable=1, monitor=0 unless checked, then `0x9B` = 2 or 3.  
+Do **not** put phones vs digital in CTRL (`0x9B` 2 vs 3 is the AF class). Send **HOST then CTRL**. Smoke: `mscc-remote-audio/set-remote-rx.py`. Not `0x0E` (Solidus).
+
+Remote **on:** host = client’s own IPv4 (route to Connect host, not `0.0.0.0` from an unconnected socket), port **9100**, enable=1, monitor=0 unless checked, then `0x9B` = 2 or 3.  
 Remote **off:** enable=0, then `0x9B` = 0 or 1. Recv stops UDP and restores local phones (unless monitor).
+
+**`linux/` live opcodes (this pass):** recv + ms-sdr forward `0x25`/`0x28` without restart. INI still used if the client never sent a host. Trans does not handle these.
 
 Trans does **not** need HOST. Mic TX is already “whoever sends to **9101**.” Opcode 2/3 only selects that ring vs local/VAC.
 
@@ -100,6 +104,7 @@ Trans does **not** need HOST. Mic TX is already “whoever sends to **9101**.”
 | Remote RX off | Restore previous local phones behavior |
 | Confirm trans I/Q and digi sinks unchanged | Regression check |
 | Can ship with INI RX still | Then hang the same mute on enable=1 from (2) |
+| **`linux/` INI mute (this pass)** | Recv zeros operator phones when `ENABLED=1` and `MONITOR=0`. VirtualA not muted. `MONITOR=1` keeps shack speaker. Restart recv after INI change. |
 
 ### 2. Client drives RX enable + destination
 

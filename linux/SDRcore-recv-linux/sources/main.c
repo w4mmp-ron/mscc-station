@@ -29,6 +29,8 @@ nr_state nrstate = { 0, 0 };
 /**************************************************************************/
 
 PaStream *stream;
+/* 1 when manage_stream opened the digital (VirtualA) device — never mute that. */
+static int g_play_is_digital;
 const PaDeviceInfo* lpInfo;
 const PaDeviceInfo* lpInfo_Pulse;
 PaStreamParameters inputParameters, outputParameters;
@@ -289,6 +291,19 @@ static void process_iq_to_stereo(const SAMPLE *in, SAMPLE *out, unsigned long fr
     }
 }
 
+/* Zero operator phones only. Digital (VirtualA) play path is left alone. */
+static void maybe_mute_local_phones(float *out, unsigned long frames)
+{
+    unsigned long n;
+    if (!out || frames == 0)
+        return;
+    if (!remote_phones_mute_local() || g_play_is_digital)
+        return;
+    n = frames * 2u;
+    while (n--)
+        *out++ = 0.f;
+}
+
 /* Full-duplex: ALSA in + ALSA out (operator), one stream. */
 static int sdrAudioCallback(const void *inputBuffer, void *outputBuffer,
         unsigned long framesPerBuffer,
@@ -309,6 +324,7 @@ static int sdrAudioCallback(const void *inputBuffer, void *outputBuffer,
         gNumNoInputs += 1;
     } else {
         process_iq_to_stereo((const SAMPLE *)inputBuffer, out, framesPerBuffer);
+        maybe_mute_local_phones(out, framesPerBuffer);
     }
     return paContinue;
 }
@@ -351,6 +367,7 @@ static int sdrPlayOnlyCallback(const void *inputBuffer, void *outputBuffer,
     } else {
         digi_ring_read((SAMPLE *)outputBuffer, framesPerBuffer);
     }
+    maybe_mute_local_phones((float *)outputBuffer, framesPerBuffer);
     return paContinue;
 }
 
@@ -612,6 +629,14 @@ int manage_stream(int start_stop, int device, int channels) {
         }
         if (err == paNoError) {
             started = TRUE;
+            g_play_is_digital = 0;
+            if (G_digital_output_device_index != NO_OUTPUT_DEVICE &&
+                device == G_digital_output_devices[G_digital_output_device_index].device_index)
+                g_play_is_digital = 1;
+            print_time();
+            fprintf(G_fp_logfile,
+                "[%d] manage_stream. play_is_digital=%d (mute local phones only if remote RX and not digital)\n",
+                line_number++, g_play_is_digital);
         }
     } else {
         if (started == TRUE) {

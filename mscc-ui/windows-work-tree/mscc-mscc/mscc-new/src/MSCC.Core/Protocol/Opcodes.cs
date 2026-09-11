@@ -113,6 +113,12 @@ public static class Opcodes
     public const byte CMD_SET_DIGITAL_VOLUME_LEVEL = 0x99;
     public const byte CMD_SET_DIGITAL_MIC_GAIN_LEVEL = 0x9A;
     public const byte CMD_SET_AUDIO_DEVICE = 0x9B;
+    /// <summary>IPv4 destination for phones MSA1 (4 bytes network order). Recv only.</summary>
+    public const byte CMD_SET_REMOTE_RX_HOST = 0x25;
+    /// <summary>uint32 LE: port[15:0] | enable&lt;&lt;16 | monitor-at-radio&lt;&lt;17. Recv only.</summary>
+    public const byte CMD_SET_REMOTE_RX_CTRL = 0x28;
+    public const uint RemoteRxCtrlEnable = 1u << 16;
+    public const uint RemoteRxCtrlMonitor = 1u << 17;
     public const byte DIGITAL_SOUND_DEVICE = 0;
     public const byte PHONES_SOUND_DEVICE = 1;
     /// <summary>Operator mic via MSA1 UDP (MsccRemotePhones → sdrcore-trans). Phones levels apply.</summary>

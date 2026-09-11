@@ -407,6 +407,10 @@
 #define CMD_SET_DIGITAL_VOLUME_LEVEL 0x99
 #define CMD_SET_DIGITAL_MIC_GAIN_LEVEL 0x9A
 #define CMD_SET_AUDIO_DEVICE 0x9B
+#define CMD_SET_REMOTE_RX_HOST 0x25  /* IPv4, 4 bytes network order → recv */
+#define CMD_SET_REMOTE_RX_CTRL 0x28  /* uint32 LE: port | enable<<16 | monitor<<17 → recv */
+#define REMOTE_RX_CTRL_ENABLE  (1u << 16)
+#define REMOTE_RX_CTRL_MONITOR (1u << 17)
 //End Sound Device Management
 
 #define CMD_SET_HDSDR_STATUS 0xF0

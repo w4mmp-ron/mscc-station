@@ -117,6 +117,9 @@
 #define CMD_GET_SET_MIC_DEVICE 0xEB
 #define CMD_DELETE_SDRCORE_INIT 0xEC
 #define CMD_SET_AUDIO_DEVICE 0x9B
+/* Live remote phones RX (4-byte payload). Unused on trans. Not 0x0E (Solidus). */
+#define CMD_SET_REMOTE_RX_HOST 0x25  /* IPv4, 4 bytes network order */
+#define CMD_SET_REMOTE_RX_CTRL 0x28  /* uint32 LE: port[15:0] | enable<<16 | monitor<<17 */
 
 
 #define CMD_SET_HDSDR_STATUS 0xF0
