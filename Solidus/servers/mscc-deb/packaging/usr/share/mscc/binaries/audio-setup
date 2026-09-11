@@ -1,0 +1,436 @@
+#!/bin/bash
+# MSCC virtual audio cable — ALSA snd-aloop for PortAudio / mscc-init / digi apps
+#
+# Matches Multus/Proficio I/Q: 2 channels, S16_LE, 96 kHz
+#
+# IMPORTANT (Raspberry Pi):
+#   ~/.asoundrc is NOT reliable — Pi OS / desktop tools often remove or ignore it
+#   across reboot. Digi cables MUST live in /etc (written with sudo once).
+#
+# Card "MSCCLoop":
+#   PLAY  -> subdevice 0  → MSCC_Cable_Out
+#   CAPTURE <- subdevice 1 → MSCC_Cable_In
+#
+# Usage:  mscc-audio-setup | audio-setup  [start|stop|status|restart]
+#   start needs sudo once (password prompt OK) to write /etc and load module.
+#
+set -e
+
+STATE="${HOME}/.mscc-virtual-audio.state"
+# User copies are optional backup only — not required for digi after reboot
+ASOUND_SNIPPET="${HOME}/.asoundrc.mscc-virtual"
+ASOUND_MAIN="${HOME}/.asoundrc"
+# Durable system paths (survive reboot; do not depend on ~/.asoundrc)
+SYSTEM_ASOUND_DIR="/etc/alsa/conf.d"
+SYSTEM_ASOUND_FILE="${SYSTEM_ASOUND_DIR}/99-mscc-virtual.conf"
+SYSTEM_ASOUND_CONF="/etc/asound.conf"
+MODPROBE_CONF="/etc/modprobe.d/mscc-aloop.conf"
+MODULES_LOAD="/etc/modules-load.d/mscc-aloop.conf"
+CARD_ID="MSCCLoop"
+CARD_INDEX="${MSCC_ALOOP_INDEX:-10}"
+
+need_cmds() {
+  for c in aplay arecord; do
+    if ! command -v "$c" >/dev/null 2>&1; then
+      echo "ERROR: $c not found. Install: sudo apt install -y alsa-utils" >&2
+      exit 1
+    fi
+  done
+}
+
+# Refuse to write digi config into root's home by mistake
+check_home() {
+  if [[ -z "${HOME:-}" || "$HOME" == "/" ]]; then
+    echo "ERROR: HOME is unset or invalid ($HOME)" >&2
+    exit 1
+  fi
+  if [[ "$(id -u)" -eq 0 ]]; then
+    echo "ERROR: do not run audio-setup as root." >&2
+    echo "  Run as your normal user:  mscc-audio-setup start" >&2
+    echo "  (it will ask for your sudo password to write /etc)" >&2
+    exit 1
+  fi
+  if [[ "$HOME" == "/root" ]]; then
+    echo "ERROR: HOME=/root — digi config would not land in your user account." >&2
+    exit 1
+  fi
+}
+
+card_present() {
+  aplay -l 2>/dev/null | grep -q "\[${CARD_ID}\]" && return 0
+  aplay -l 2>/dev/null | grep -q "^card ${CARD_INDEX}:" && return 0
+  aplay -l 2>/dev/null | grep -qiE 'Loopback|loopback' && return 0
+  return 1
+}
+
+find_card_num() {
+  local n
+  n=$(aplay -l 2>/dev/null | sed -n "s/^card \([0-9]*\): ${CARD_ID} .*/\1/p" | head -1)
+  if [[ -z "$n" ]]; then
+    n=$(aplay -l 2>/dev/null | sed -n "s/^card \([0-9]*\): .*\[${CARD_ID}\].*/\1/p" | head -1)
+  fi
+  if [[ -z "$n" ]]; then
+    n=$(aplay -l 2>/dev/null | sed -n "s/^card \([0-9]*\): Loopback .*/\1/p" | head -1)
+  fi
+  if [[ -z "$n" ]]; then
+    n=$(aplay -l 2>/dev/null | sed -n "s/^card \([0-9]*\): .*\[Loopback\].*/\1/p" | head -1)
+  fi
+  if [[ -z "$n" ]]; then
+    n=$(aplay -l 2>/dev/null | sed -n "s/^card ${CARD_INDEX}:.*/${CARD_INDEX}/p" | head -1)
+  fi
+  echo "$n"
+}
+
+# Write stdin to dest as root. Prompts for sudo password if needed (NOT -n only).
+write_as_root() {
+  local dest="$1"
+  local tmp
+  tmp="$(mktemp)"
+  cat >"$tmp"
+  if [[ "$(id -u)" -eq 0 ]]; then
+    mkdir -p "$(dirname "$dest")"
+    cp -f "$tmp" "$dest"
+    chmod 644 "$dest"
+    rm -f "$tmp"
+    return 0
+  fi
+  if ! command -v sudo >/dev/null 2>&1; then
+    rm -f "$tmp"
+    echo "ERROR: sudo not found; cannot write $dest" >&2
+    return 1
+  fi
+  # Interactive sudo — password OK. Do not require passwordless sudo.
+  if sudo mkdir -p "$(dirname "$dest")" && sudo cp -f "$tmp" "$dest" && sudo chmod 644 "$dest"; then
+    rm -f "$tmp"
+    return 0
+  fi
+  rm -f "$tmp"
+  echo "ERROR: failed to write $dest (sudo?)" >&2
+  return 1
+}
+
+run_root() {
+  if [[ "$(id -u)" -eq 0 ]]; then
+    "$@"
+  else
+    sudo "$@"
+  fi
+}
+
+install_module_autoload() {
+  echo "  installing module autoload (needs sudo)…"
+  printf '%s\n' \
+    "# MSCC virtual digi cable — stable card id across reboots" \
+    "options snd-aloop enable=1,1 index=${CARD_INDEX} id=${CARD_ID}" \
+    | write_as_root "$MODPROBE_CONF" || return 1
+  printf '%s\n' "snd-aloop" | write_as_root "$MODULES_LOAD" || return 1
+  echo "  wrote $MODPROBE_CONF"
+  echo "  wrote $MODULES_LOAD"
+}
+
+load_aloop() {
+  install_module_autoload || return 1
+
+  if lsmod | grep -q '^snd_aloop'; then
+    if aplay -l 2>/dev/null | grep -q "\[${CARD_ID}\]"; then
+      echo "  snd-aloop already loaded (id=${CARD_ID})"
+      return 0
+    fi
+    echo "  snd-aloop loaded without id=${CARD_ID} — reloading (needs sudo)…"
+    run_root modprobe -r snd-aloop 2>/dev/null || true
+    sleep 0.3
+  fi
+
+  echo "  loading snd-aloop id=${CARD_ID} index=${CARD_INDEX} (needs sudo)…"
+  if run_root modprobe snd-aloop enable=1,1 index="${CARD_INDEX}" id="${CARD_ID}"; then
+    return 0
+  fi
+  if run_root modprobe snd-aloop enable=1,1; then
+    echo "  warning: loaded without preferred id — using numeric card if present"
+    return 0
+  fi
+  echo "ERROR: could not load snd-aloop" >&2
+  return 1
+}
+
+wait_for_card() {
+  local i
+  for i in $(seq 1 20); do
+    if card_present; then
+      return 0
+    fi
+    sleep 0.2
+  done
+  return 1
+}
+
+pcm_block() {
+  local card_ref="$1"
+  cat <<EOF
+# MSCC digi virtual cable — managed by mscc audio-setup (do not edit by hand)
+# 2ch S16_LE 96kHz — matches Multus/Proficio I/Q
+# Card ref: ${card_ref}
+
+pcm.MSCC_Cable_Out {
+    type plug
+    slave {
+        pcm "hw:${card_ref},0,0"
+        format S16_LE
+        rate 96000
+        channels 2
+    }
+    hint {
+        show on
+        description "MSCC Virtual Cable Out (2ch 16bit 96k)"
+    }
+}
+ctl.MSCC_Cable_Out {
+    type hw
+    card ${card_ref}
+}
+
+pcm.MSCC_Cable_In {
+    type plug
+    slave {
+        pcm "hw:${card_ref},1,0"
+        format S16_LE
+        rate 96000
+        channels 2
+    }
+    hint {
+        show on
+        description "MSCC Virtual Cable In (2ch 16bit 96k)"
+    }
+}
+ctl.MSCC_Cable_In {
+    type hw
+    card ${card_ref}
+}
+
+pcm.mscc_out {
+    type plug
+    slave.pcm "MSCC_Cable_Out"
+    hint { show on description "MSCC Virtual Cable Out (2ch 16bit 96k)" }
+}
+pcm.mscc_in {
+    type plug
+    slave.pcm "MSCC_Cable_In"
+    hint { show on description "MSCC Virtual Cable In (2ch 16bit 96k)" }
+}
+EOF
+}
+
+# Install durable system ALSA config. This is the only reboot-safe path.
+write_system_asound() {
+  local card_ref="$1"
+  local block
+  block="$(pcm_block "$card_ref")"
+
+  echo "  writing durable system ALSA config (needs sudo)…"
+  if ! printf '%s\n' "$block" | write_as_root "$SYSTEM_ASOUND_FILE"; then
+    return 1
+  fi
+  echo "  wrote $SYSTEM_ASOUND_FILE"
+
+  # Also put a full copy in /etc/asound.conf so digi works even if conf.d is not loaded.
+  # Preserve any non-MSCC content outside our markers.
+  local existing="" tmp_merge
+  tmp_merge="$(mktemp)"
+  if [[ -f "$SYSTEM_ASOUND_CONF" ]] && ! sudo test -f "$SYSTEM_ASOUND_CONF" 2>/dev/null; then
+    :
+  fi
+  if [[ -r "$SYSTEM_ASOUND_CONF" ]]; then
+    existing="$(cat "$SYSTEM_ASOUND_CONF" 2>/dev/null || true)"
+  elif sudo test -r "$SYSTEM_ASOUND_CONF" 2>/dev/null; then
+    existing="$(sudo cat "$SYSTEM_ASOUND_CONF" 2>/dev/null || true)"
+  fi
+
+  # Strip previous MSCC marker block if present
+  if [[ -n "$existing" ]]; then
+    printf '%s\n' "$existing" | awk '
+      /# BEGIN MSCC virtual digi cable/ {skip=1; next}
+      /# END MSCC virtual digi cable/ {skip=0; next}
+      !skip {print}
+    ' >"$tmp_merge"
+  else
+    : >"$tmp_merge"
+  fi
+  {
+    echo ""
+    echo "# BEGIN MSCC virtual digi cable"
+    printf '%s\n' "$block"
+    echo "# END MSCC virtual digi cable"
+  } >>"$tmp_merge"
+
+  if ! write_as_root "$SYSTEM_ASOUND_CONF" <"$tmp_merge"; then
+    rm -f "$tmp_merge"
+    return 1
+  fi
+  rm -f "$tmp_merge"
+  echo "  wrote $SYSTEM_ASOUND_CONF (MSCC block)"
+
+  # Force disk commit so reboot cannot lose unflushed writes
+  run_root sync 2>/dev/null || sync || true
+
+  if ! sudo test -f "$SYSTEM_ASOUND_FILE" || ! sudo test -f "$SYSTEM_ASOUND_CONF"; then
+    echo "ERROR: system ALSA files missing after write" >&2
+    return 1
+  fi
+  return 0
+}
+
+# Optional home backup — may disappear on Pi; digi must not depend on this.
+write_home_backup() {
+  local card_ref="$1"
+  pcm_block "$card_ref" >"$ASOUND_SNIPPET" || true
+  {
+    echo "# MSCC digi cable backup (optional; system config is authoritative)"
+    echo "# If this file disappears after reboot, digi still works via /etc/asound.conf"
+    echo "<${ASOUND_SNIPPET}>"
+  } >"$ASOUND_MAIN" || true
+  sync 2>/dev/null || true
+  echo "  home backup: $ASOUND_MAIN + $ASOUND_SNIPPET (optional; may vanish on Pi)"
+}
+
+smoke_test_cable() {
+  local card="$1"
+  local errf="/tmp/mscc-aloop-arecord.err"
+  if arecord -D "MSCC_Cable_In" -f S16_LE -r 96000 -c 2 -d 1 /dev/null 2>"$errf"; then
+    echo "  smoke: MSCC_Cable_In @ 2ch S16_LE 96k OK"
+    return 0
+  fi
+  echo "WARNING: arecord MSCC_Cable_In failed:"
+  cat "$errf" 2>/dev/null || true
+  if [[ -n "$card" ]] && arecord -D "hw:${card},1,0" -f S16_LE -r 96000 -c 2 -d 1 /dev/null 2>"$errf"; then
+    echo "  smoke: raw hw:${card},1,0 OK (named PCM still broken — check /etc/asound.conf)"
+    return 0
+  fi
+  return 1
+}
+
+do_stop() {
+  echo "stop does not remove digi config (by design)."
+  echo "  System files kept:"
+  echo "    $SYSTEM_ASOUND_FILE"
+  echo "    $SYSTEM_ASOUND_CONF"
+  echo "    $MODPROBE_CONF  $MODULES_LOAD"
+  echo "  Optional unload:  sudo modprobe -r snd-aloop"
+  rm -f "$STATE" 2>/dev/null || true
+  echo "Stopped (config retained)."
+}
+
+do_start() {
+  check_home
+  need_cmds
+
+  echo "Starting MSCC virtual digi cable…"
+  echo "  user=$(id -un) HOME=$HOME"
+  echo "  (will use sudo to write /etc — password prompt is normal)"
+
+  load_aloop || exit 1
+
+  local card="" card_ref="$CARD_ID"
+  if wait_for_card; then
+    card=$(find_card_num)
+    echo "  ALSA card number: ${card:-unknown}"
+    if aplay -l 2>/dev/null | grep -q "\[${CARD_ID}\]"; then
+      card_ref="$CARD_ID"
+    elif [[ -n "$card" ]]; then
+      card_ref="$card"
+      echo "  using numeric card $card_ref (id ${CARD_ID} not shown)"
+    fi
+  else
+    echo "WARNING: loopback not in aplay -l yet — writing conf with id=${CARD_ID}"
+    aplay -l 2>/dev/null || true
+    card_ref="$CARD_ID"
+  fi
+
+  # System config is required. Home backup is optional.
+  write_system_asound "$card_ref" || exit 1
+  write_home_backup "$card_ref"
+
+  echo "card=${card}" >"$STATE"
+  echo "id=$CARD_ID" >>"$STATE"
+  echo "index=$CARD_INDEX" >>"$STATE"
+  echo "system=$SYSTEM_ASOUND_CONF" >>"$STATE"
+
+  smoke_test_cable "$card" || true
+
+  echo
+  echo "Done. Digi cables: 2ch S16_LE 96 kHz"
+  echo "  PLAY:    MSCC_Cable_Out"
+  echo "  RECORD:  MSCC_Cable_In"
+  echo
+  echo "Durable config (must still exist after reboot):"
+  echo "  $SYSTEM_ASOUND_CONF"
+  echo "  $SYSTEM_ASOUND_FILE"
+  echo "  $MODPROBE_CONF"
+  echo "  $MODULES_LOAD"
+  echo
+  echo "Optional home backup (may disappear on Raspberry Pi OS — ignore if gone):"
+  echo "  $ASOUND_MAIN"
+  echo
+  echo "Verify now:"
+  echo "  aplay -L | grep MSCC"
+  echo "  sudo ls -la $SYSTEM_ASOUND_CONF $SYSTEM_ASOUND_FILE"
+  echo
+  do_status
+}
+
+do_restart() {
+  do_start
+}
+
+do_status() {
+  need_cmds
+  echo "=== durable system config (this is what matters after reboot) ==="
+  for f in "$SYSTEM_ASOUND_CONF" "$SYSTEM_ASOUND_FILE" "$MODPROBE_CONF" "$MODULES_LOAD"; do
+    if [[ -r "$f" ]] || sudo test -r "$f" 2>/dev/null; then
+      echo "  PRESENT: $f"
+    else
+      echo "  MISSING: $f  ← run: mscc-audio-setup start"
+    fi
+  done
+  echo
+  echo "=== optional home backup (may be missing on Pi — OK if system files present) ==="
+  if [[ -f "$ASOUND_MAIN" ]]; then
+    echo "  $ASOUND_MAIN: present"
+  else
+    echo "  $ASOUND_MAIN: missing (common on Pi after reboot — digi uses /etc instead)"
+  fi
+  if [[ -f "$ASOUND_SNIPPET" ]]; then
+    echo "  $ASOUND_SNIPPET: present"
+  else
+    echo "  $ASOUND_SNIPPET: missing"
+  fi
+  echo
+  echo "=== aplay -l ==="
+  aplay -l 2>/dev/null || true
+  echo
+  echo "=== aplay -L | MSCC ==="
+  aplay -L 2>/dev/null | grep -i MSCC || echo "(no MSCC names — run: mscc-audio-setup start)"
+  echo
+  lsmod | grep -q '^snd_aloop' && echo "snd_aloop: loaded" || echo "snd_aloop: not loaded"
+  [[ -f "$STATE" ]] && echo "State: $(tr '\n' ' ' <"$STATE")" || echo "State: none"
+}
+
+cmd="${1:-start}"
+case "$cmd" in
+  start)   do_start ;;
+  stop)    do_stop ;;
+  status)  do_status ;;
+  restart) do_restart ;;
+  -h|--help|help)
+    echo "Usage: $0 [start|stop|status|restart]"
+    echo "  start   load snd-aloop + write /etc ALSA digi cables (sudo once)"
+    echo "  stop    leave config in place"
+    echo "  status  show system + MSCC_Cable_* names"
+    echo
+    echo "Digi cables live in /etc (not ~/.asoundrc). On Raspberry Pi OS,"
+    echo "~/.asoundrc often disappears after reboot — that is OK if /etc files remain."
+    ;;
+  *)
+    echo "Unknown: $cmd" >&2
+    exit 1
+    ;;
+esac

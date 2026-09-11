@@ -1,0 +1,355 @@
+C51 COMPILER V9.51   USBFS_MSC                                                             08/22/2026 16:59:24 PAGE 1   
+
+
+C51 COMPILER V9.51, COMPILATION OF MODULE USBFS_MSC
+OBJECT MODULE PLACED IN .\DP8051\DP8051_Keil_951\Release\USBFS_msc.obj
+COMPILER INVOKED BY: C:\Program Files (x86)\Cypress\PSoC Creator\4.4\PSoC Creator\import\keil\pk51\9.51\C51\BIN\c51.exe 
+                    -Generated_Source\PSoC3\USBFS_msc.c NOIV LARGE MODDP2 OMF2 VB(1) NOIP INCDIR(.,Generated_Source\PSoC3) FF(3) DB DF(NDEBUG
+                    -) WL(2) PR(.\DP8051\DP8051_Keil_951\Release/USBFS_msc.lst) CD OT(5,SIZE) OA OJ(.\DP8051\DP8051_Keil_951\Release\USBFS_ms
+                    -c.obj)
+
+line level    source
+
+   1          /***************************************************************************//**
+   2          * \file USBFS_cdc.c
+   3          * \version 3.20
+   4          *
+   5          * \brief
+   6          *  This file contains the USB MSC Class request handler and global API for MSC 
+   7          *  class.
+   8          *
+   9          * Related Document:
+  10          *  Universal Serial Bus Class Definitions for Communication Devices Version 1.1
+  11          *
+  12          ********************************************************************************
+  13          * \copyright
+  14          * Copyright 2012-2016, Cypress Semiconductor Corporation.  All rights reserved.
+  15          * You may use this file only in accordance with the license, terms, conditions,
+  16          * disclaimers, and limitations in the end user license agreement accompanying
+  17          * the software package with which this file was provided.
+  18          *******************************************************************************/
+  19          
+  20          #include "USBFS_msc.h"
+  21          #include "USBFS_pvt.h"
+  22          
+  23          
+  24          #if (USBFS_HANDLE_MSC_REQUESTS)
+  25          
+  26          /***************************************
+  27          *          Internal variables
+  28          ***************************************/
+  29          
+  30          static uint8 USBFS_lunCount = USBFS_MSC_LUN_NUMBER;
+  31          
+  32          
+  33          /*******************************************************************************
+  34          * Function Name: USBFS_DispatchMSCClassRqst
+  35          ****************************************************************************//**
+  36          *   
+  37          *  \internal 
+  38          *  This routine dispatches MSC class requests.
+  39          *
+  40          * \return
+  41          *  Status of request processing: handled or not handled.
+  42          *
+  43          * \globalvars
+  44          *  USBFS_lunCount - stores number of LUN (logical units).
+  45          *
+  46          * \reentrant
+  47          *  No.
+  48          *
+  49          *******************************************************************************/
+  50          uint8 USBFS_DispatchMSCClassRqst(void) 
+  51          {
+  52   1          uint8 requestHandled = USBFS_FALSE;
+C51 COMPILER V9.51   USBFS_MSC                                                             08/22/2026 16:59:24 PAGE 2   
+
+  53   1          
+  54   1          /* Get request data. */
+  55   1          uint16 value  = USBFS_GET_UINT16(USBFS_wValueHiReg,  USBFS_wValueLoReg);
+  56   1          uint16 dataLength = USBFS_GET_UINT16(USBFS_wLengthHiReg, USBFS_wLengthLoReg);
+  57   1             
+  58   1          /* Check request direction: D2H or H2D. */
+  59   1          if (0u != (USBFS_bmRequestTypeReg & USBFS_RQST_DIR_D2H))
+  60   1          {
+  61   2              /* Handle direction from device to host. */
+  62   2              
+  63   2              if (USBFS_MSC_GET_MAX_LUN == USBFS_bRequestReg)
+  64   2              {
+  65   3                  /* Check request fields. */
+  66   3                  if ((value  == USBFS_MSC_GET_MAX_LUN_WVALUE) &&
+  67   3                      (dataLength == USBFS_MSC_GET_MAX_LUN_WLENGTH))
+  68   3                  {
+  69   4                      /* Reply to Get Max LUN request: setup control read. */
+  70   4                      USBFS_currentTD.pData = &USBFS_lunCount;
+  71   4                      USBFS_currentTD.count =  USBFS_MSC_GET_MAX_LUN_WLENGTH;
+  72   4                      
+  73   4                      requestHandled  = USBFS_InitControlRead();
+  74   4                  }
+  75   3              }
+  76   2          }
+  77   1          else
+  78   1          {
+  79   2              /* Handle direction from host to device. */
+  80   2              
+  81   2              if (USBFS_MSC_RESET == USBFS_bRequestReg)
+  82   2              {
+  83   3                  /* Check request fields. */
+  84   3                  if ((value  == USBFS_MSC_RESET_WVALUE) &&
+  85   3                      (dataLength == USBFS_MSC_RESET_WLENGTH))
+  86   3                  {
+  87   4                      /* Handle to Bulk-Only Reset request: no data control transfer. */
+  88   4                      USBFS_currentTD.count = USBFS_MSC_RESET_WLENGTH;
+  89   4                      
+  90   4                  #ifdef USBFS_DISPATCH_MSC_CLASS_MSC_RESET_RQST_CALLBACK
+                              USBFS_DispatchMSCClass_MSC_RESET_RQST_Callback();
+                          #endif /* (USBFS_DISPATCH_MSC_CLASS_MSC_RESET_RQST_CALLBACK) */
+  93   4                      
+  94   4                      requestHandled = USBFS_InitNoDataControlTransfer();
+  95   4                  }
+  96   3              }
+  97   2          }
+  98   1          
+  99   1          return (requestHandled);
+ 100   1      }
+ 101          
+ 102          
+ 103          /*******************************************************************************
+ 104          * Function Name: USBFS_MSC_SetLunCount
+ 105          ****************************************************************************//**
+ 106          *
+ 107          *  This function sets the number of logical units supported in the application. 
+ 108          *  The default number of logical units is set in the component customizer.
+ 109          *
+ 110          *  \param lunCount: Count of the logical units. Valid range is between 1 and 16.
+ 111          *
+ 112          *
+ 113          * \globalvars
+ 114          *  USBFS_lunCount - stores number of LUN (logical units).
+C51 COMPILER V9.51   USBFS_MSC                                                             08/22/2026 16:59:24 PAGE 3   
+
+ 115          *
+ 116          * \reentrant
+ 117          *  No.
+ 118          *
+ 119          *******************************************************************************/
+ 120          void USBFS_MSC_SetLunCount(uint8 lunCount) 
+ 121          {
+ 122   1          USBFS_lunCount = (lunCount - 1u);
+ 123   1      }
+ 124          
+ 125          
+ 126          /*******************************************************************************
+ 127          * Function Name: USBFS_MSC_GetLunCount
+ 128          ****************************************************************************//**
+ 129          *
+ 130          *  This function returns the number of logical units.
+ 131          *
+ 132          * \return
+ 133          *   Number of the logical units.
+ 134          *
+ 135          * \globalvars
+ 136          *  USBFS_lunCount - stores number of LUN (logical units).
+ 137          *
+ 138          * \reentrant
+ 139          *  No.
+ 140          *
+ 141          *******************************************************************************/
+ 142          uint8 USBFS_MSC_GetLunCount(void) 
+ 143          {
+ 144   1          return (USBFS_lunCount + 1u);
+ 145   1      }   
+ 146          
+ 147          #endif /* (USBFS_HANDLE_MSC_REQUESTS) */
+ 148          
+ 149          
+ 150          /* [] END OF FILE */
+C51 COMPILER V9.51   USBFS_MSC                                                             08/22/2026 16:59:24 PAGE 4   
+
+ASSEMBLY LISTING OF GENERATED OBJECT CODE
+
+
+             ; FUNCTION USBFS_DispatchMSCClassRqst (BEGIN)
+                                           ; SOURCE LINE # 50
+                                           ; SOURCE LINE # 51
+                                           ; SOURCE LINE # 52
+                       CLR     A
+                 R     MOV     DPTR,#requestHandled
+                       MOVX    @DPTR,A
+                                           ; SOURCE LINE # 55
+                       MOV     DPTR,#06003H
+                       MOVX    A,@DPTR
+                       MOV     R6,A
+                       MOV     DPTR,#06002H
+                       MOVX    A,@DPTR
+                       MOV     R5,A
+                       MOV     A,R6
+                       MOV     A,R5
+                       MOV     R7,A
+                 R     MOV     DPTR,#value
+                       MOV     A,R6
+                       MOVX    @DPTR,A
+                       INC     DPTR
+                       MOV     A,R7
+                       MOVX    @DPTR,A
+                                           ; SOURCE LINE # 56
+                       MOV     DPTR,#06007H
+                       MOVX    A,@DPTR
+                       MOV     R6,A
+                       MOV     DPTR,#06006H
+                       MOVX    A,@DPTR
+                       MOV     R5,A
+                       MOV     A,R6
+                       MOV     A,R5
+                       MOV     R7,A
+                 R     MOV     DPTR,#dataLength
+                       MOV     A,R6
+                       MOVX    @DPTR,A
+                       INC     DPTR
+                       MOV     A,R7
+                       MOVX    @DPTR,A
+                                           ; SOURCE LINE # 59
+                       MOV     DPTR,#06000H
+                       MOVX    A,@DPTR
+                       ANL     A,#080H
+                 R     xJZ     ?C0001
+                                           ; SOURCE LINE # 60
+                                           ; SOURCE LINE # 63
+                       INC     DPTR
+                       MOVX    A,@DPTR
+                       XRL     A,#0FEH
+                 R     xJNZ    ?C0004
+                                           ; SOURCE LINE # 64
+                                           ; SOURCE LINE # 66
+                 R     MOV     DPTR,#value
+                       MOVX    A,@DPTR
+                 R     JNZ     ?C0010
+                       INC     DPTR
+                       MOVX    A,@DPTR
+             ?C0010:
+                 R     xJNZ    ?C0004
+C51 COMPILER V9.51   USBFS_MSC                                                             08/22/2026 16:59:24 PAGE 5   
+
+                 R     MOV     DPTR,#dataLength
+                       MOVX    A,@DPTR
+                 R     JNZ     ?C0011
+                       INC     DPTR
+                       MOVX    A,@DPTR
+                       XRL     A,#01H
+             ?C0011:
+                 R     xJNZ    ?C0004
+                                           ; SOURCE LINE # 68
+                                           ; SOURCE LINE # 70
+                       MOV     R3,#01H
+                 R     MOV     R2,#HIGH USBFS_lunCount
+                 R     MOV     R1,#LOW USBFS_lunCount
+                 E     MOV     DPTR,#USBFS_currentTD+02H
+                 E     CALL    ?C?PSTXDATA
+                                           ; SOURCE LINE # 71
+                 E     MOV     DPTR,#USBFS_currentTD
+                       CLR     A
+                       MOVX    @DPTR,A
+                       INC     DPTR
+                       INC     A
+                       MOVX    @DPTR,A
+                                           ; SOURCE LINE # 73
+                 E     CALL    USBFS_InitControlRead
+                 R     MOV     DPTR,#requestHandled
+                       MOV     A,R7
+                       MOVX    @DPTR,A
+                                           ; SOURCE LINE # 74
+                                           ; SOURCE LINE # 75
+                                           ; SOURCE LINE # 76
+                 R     xJMP    ?C0004
+             ?C0001:
+                                           ; SOURCE LINE # 78
+                                           ; SOURCE LINE # 81
+                       MOV     DPTR,#06001H
+                       MOVX    A,@DPTR
+                 R     xJNE    A,#0FFH,?C0004
+                                           ; SOURCE LINE # 82
+                                           ; SOURCE LINE # 84
+                 R     MOV     DPTR,#value
+                       MOVX    A,@DPTR
+                 R     JNZ     ?C0012
+                       INC     DPTR
+                       MOVX    A,@DPTR
+             ?C0012:
+                 R     xJNZ    ?C0004
+                 R     MOV     DPTR,#dataLength
+                       MOVX    A,@DPTR
+                 R     JNZ     ?C0013
+                       INC     DPTR
+                       MOVX    A,@DPTR
+             ?C0013:
+                 R     xJNZ    ?C0004
+                                           ; SOURCE LINE # 86
+                                           ; SOURCE LINE # 88
+                 E     MOV     DPTR,#USBFS_currentTD
+                       MOVX    @DPTR,A
+                       INC     DPTR
+                       MOVX    @DPTR,A
+                                           ; SOURCE LINE # 94
+                 E     CALL    USBFS_InitNoDataControlTransfer
+                 R     MOV     DPTR,#requestHandled
+C51 COMPILER V9.51   USBFS_MSC                                                             08/22/2026 16:59:24 PAGE 6   
+
+                       MOV     A,R7
+                       MOVX    @DPTR,A
+                                           ; SOURCE LINE # 95
+                                           ; SOURCE LINE # 96
+                                           ; SOURCE LINE # 97
+             ?C0004:
+                                           ; SOURCE LINE # 99
+                 R     MOV     DPTR,#requestHandled
+                       MOVX    A,@DPTR
+                       MOV     R7,A
+                                           ; SOURCE LINE # 100
+             ?C0007:
+                       RET     
+             ; FUNCTION USBFS_DispatchMSCClassRqst (END)
+
+             ; FUNCTION _USBFS_MSC_SetLunCount (BEGIN)
+                                           ; SOURCE LINE # 120
+;---- Variable 'lunCount' assigned to Register 'R7' ----
+                                           ; SOURCE LINE # 121
+                                           ; SOURCE LINE # 122
+                       MOV     A,R7
+                       DEC     A
+                 R     MOV     DPTR,#USBFS_lunCount
+                       MOVX    @DPTR,A
+                                           ; SOURCE LINE # 123
+                       RET     
+             ; FUNCTION _USBFS_MSC_SetLunCount (END)
+
+             ; FUNCTION USBFS_MSC_GetLunCount (BEGIN)
+                                           ; SOURCE LINE # 142
+                                           ; SOURCE LINE # 143
+                                           ; SOURCE LINE # 144
+                 R     MOV     DPTR,#USBFS_lunCount
+                       MOVX    A,@DPTR
+                       INC     A
+                       MOV     R7,A
+                                           ; SOURCE LINE # 145
+             ?C0009:
+                       RET     
+             ; FUNCTION USBFS_MSC_GetLunCount (END)
+
+
+
+MODULE INFORMATION:   STATIC OVERLAYABLE
+   CODE SIZE        =    198    ----
+   CONSTANT SIZE    =   ----    ----
+   XDATA SIZE       =      1       5
+   PDATA SIZE       =   ----    ----
+   DATA SIZE        =   ----    ----
+   IDATA SIZE       =   ----    ----
+   BIT SIZE         =   ----    ----
+   EDATA SIZE       =   ----    ----
+   HDATA SIZE       =   ----    ----
+   XDATA CONST SIZE =   ----    ----
+   FAR CONST SIZE   =   ----    ----
+END OF MODULE INFORMATION.
+
+
+C51 COMPILATION COMPLETE.  0 WARNING(S),  0 ERROR(S)

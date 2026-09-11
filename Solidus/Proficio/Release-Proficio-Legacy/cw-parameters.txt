@@ -1,0 +1,80 @@
+The first line of each group below is the entry in the INI file created by Create_Proficio_Ini.exe.  This what the user sees.  
+The second line is the Opcode to be sent to the Proficio with the associated Opcode data parameter.
+
+//Restores the Proficio CW parameters to a default condition. Do not implement this in the GUI. I don't think there is a need for default reset.
+CW_Restore_Defaults=0; 		//0=CFG_CW_DEFAULTS_OFF,1=CFG_CW_DEFAULTS_ON
+#define SET_CW_DEFAULTS 0x7D
+#define CFG_CW_DEFAULTS_OFF 0
+#define CFG_CW_DEFAULTS_ON 1
+
+//Turn Iambic Keying On/Off
+CW_Iambic_Mode_On_Off=1;	//0=CFG_IAMBIC_OFF, 1=CFG_IAMBIC_ON
+#define SET_IAMBIC_MODE 0x71
+#define CFG_IAMBIC_OFF 0
+#define	CFG_IAMBIC_ON 1
+
+//The types of Iambic Keying supported. Most operators will set this to CFG_MODE_IAMBIC
+CW_Iambic_Type=0;			//0=CFG_MODE_IAMBIC, 1=CFG_MODE_ULTIMATIC, 2=CFG_MODE_BUG, 3=CFG_MODE_STRAIGHT
+#define SET_IAMBIC_TYPE 0x74
+#define CFG_MODE_IAMBIC 0
+#define CFG_MODE_ULTIMATIC 1
+#define CFG_MODE_BUG 2
+#define CFG_MODE_STRAIGHT 3
+
+//This allows the operator to fine tune the Iambic WPM speed to allow for variations in the speed of the PSoC
+CW_Iambic_Calibrate=120;	//Fine Tune Iambic Keying Speed Value 1 to 255 in increaments of 20. Default: 120
+#define SET_IAMBIC_TUNING 0x7C
+#define CFG_IAMBIC_CALIBRATION_DEFAULT 120
+
+//This determines how the paddle is mananged. http://wb9kzy.com/modeab.pdf
+CW_Memory=0; 				//0=CFG_MEMORY_TYPEA, 1=CFG_MEMORY_TYPE_DAH, 2=CFG_MEMORY_TYPE_DIT, 3=CFG_MEMORY_TYPE_B
+#define SET_MEMORY_TYPE 0x76
+#define CFG_MEMORY_TYPE_A 0
+#define CFG_MEMORY_TYPE_DAH 1
+#define CFG_MEMORY_TYPE_DIT 2
+#define CFG_MEMORY_TYPE_B 3
+
+//This determines the space between dits and dahs. Most operators will use CFG_SPACING_EL (element)
+CW_Spacing=0; 				//0=CFG_SPACING_NONE 0, 1=CFG_SPACING_EL, 2=CFG_SPACING_CHAR, 3=CFG_SPACING_WORD
+#define SET_SPACING 0x75
+#define CFG_SPACING_NONE 0
+#define CFG_SPACING_EL 1
+#define CFG_SPACING_CHAR 2
+#define CFG_SPACING_WORD 3
+
+//Which side of the paddle send the dit and which side sends the dah
+CW_Paddle=0; 				//0=CFG_PADDLE_NORMAL,1=CFG_PADDLE_REVERSE 1
+#define SET_CW_PADDLE 0x73
+#define CFG_PADDLE_NORMAL 0
+#define CFG_PADDLE_REVERSE 1
+
+CW_Weight=50;				//DIT to DAH Ratio Value 1 to 100 in increaments of 10. Default: 50
+#define SET_WEIGHT 0x77
+#define CFG_WEIGHT_DIST 50
+
+//When in semi break-in mode, this holds the rig in TX mode for the hold period. The hold period is reset and started with every key press
+CW_Tx_Hold=127;				//TX Turn Off Delay in milliseconds when Proficio in semi break-in. Value 1 to 255 in increaments of 10. Default: 127
+#define SET_TX_HOLD 0x7A
+
+CW_Speed=18;				//Iambic Keying Speed Value 5 to 50 in increaments of 1. A slider as with RIT would be good. Default: 18
+#define SET_WPM 0x7B
+
+//This configures the Proficio to use the ATU port to control an external side tone generator. 
+CW_Side_Tone=1;				//0=CFG_EXTERNAL_SOUND_OFF, 1=CFG_EXTERNAL_SOUND_ON
+#define SET_SIDE_TONE 0x7F
+#define CFG_EXTERNAL_SOUND_OFF 0
+#define CFG_EXTERNAL_SOUND_ON 1
+
+//This sets the Proficio into or out of Semi Break-in mode. When in Semi Break-in mode, the rig will stay in TX mode until the operator stops keying AND //CW_Tx_Hold expires.
+CW_Semi_Break_In=0; 		//0=CFG_SEMI_BREAKIN_OFF,1=CFG_SEMI_BREAKIN_ON 1
+#define SET_SEMI_BREAKIN 0x78
+#define CFG_SEMI_BREAKIN_OFF 0
+#define CFG_SEMI_BREAKIN_ON 1
+
+//Receive Increamental Tuning
+//No INI entry
+//RIT Opcode. The parameter value between -1000 and +1000.  If this is not sufficient, we can visit this later.  It will depend on what the operators want.
+#define SET_RIT 0x72
+
+
+

@@ -1,0 +1,21 @@
+#!/bin/bash
+set -e
+case "$1" in
+configure)
+  if command -v update-desktop-database >/dev/null 2>&1; then
+    update-desktop-database -q /usr/share/applications 2>/dev/null || true
+  fi
+  echo
+  echo "================================================================"
+  echo "  mscc-init-gui installed"
+  echo "================================================================"
+  echo "  Run as your normal desktop user (not root):"
+  echo "    • Menu:  MSCC Init"
+  echo "    • or:    mscc-init-gui"
+  echo "  Config:  \$HOME/.local/mscc"
+  echo "  Digi:    VirtualA / VirtualB.monitor (mscc-virtual-audio)"
+  echo "================================================================"
+  echo
+  ;;
+esac
+exit 0

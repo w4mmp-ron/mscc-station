@@ -1,0 +1,42 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:vm="using:MSCC.Avalonia.ViewModels"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        mc:Ignorable="d"
+        x:Class="MSCC.Avalonia.Views.DebugLogWindow"
+        x:DataType="vm:MainViewModel"
+        Title="Debug Log"
+        Width="720" Height="420"
+        MinWidth="400" MinHeight="240"
+        WindowStartupLocation="CenterOwner"
+        Background="#FF1C1C1C"
+        Foreground="White"
+        Icon="/Assets/avalonia-logo.ico">
+
+  <Grid Margin="10" RowDefinitions="Auto,Auto,*">
+    <TextBlock Text="DEBUG LOG" FontWeight="SemiBold" FontSize="14" Foreground="#00FFAA" Margin="0,0,0,8"/>
+
+    <StackPanel Grid.Row="1" Orientation="Horizontal" Spacing="12" Margin="0,0,0,8">
+      <Button Content="RESET LOGS" Classes="mscc-gold" Width="110"
+              Command="{Binding ClearLogCommand}"
+              ToolTip.Tip="Clear on-screen log and start fresh"/>
+      <CheckBox Content="Pause"
+                IsChecked="{Binding LogUiPaused}"
+                FontSize="13" VerticalAlignment="Center"
+                ToolTip.Tip="Pause updating the list (file logging continues)"/>
+      <Button Content="CLOSE" Classes="mscc-gold" Width="80"
+              Click="Close_Click"
+              ToolTip.Tip="Close debug log window"/>
+    </StackPanel>
+
+    <Border Grid.Row="2" Background="#FF1E1E1E" BorderBrush="#FF444444" BorderThickness="1"
+            CornerRadius="2" Padding="4">
+      <ListBox ItemsSource="{Binding LogLines}"
+               FontFamily="Consolas, Courier New, monospace"
+               FontSize="12"
+               Background="Transparent"
+               BorderThickness="0"/>
+    </Border>
+  </Grid>
+</Window>

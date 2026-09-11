@@ -1,0 +1,33 @@
+#!/bin/bash
+set -e
+
+case "$1" in
+remove|purge)
+  if [[ "$1" == "purge" ]]; then
+    modprobe -r tty0tty 2>/dev/null || true
+    rm -f /etc/modules-load.d/tty0tty.conf
+    rm -f /etc/udev/rules.d/99-tty0tty.rules
+    rm -f /etc/udev/rules.d/99-proficio.rules
+    # Leftovers from older packages
+    rm -f /etc/modules-load.d/mscc-aloop.conf
+    rm -f /etc/modprobe.d/mscc-aloop.conf
+    rm -f /etc/alsa/conf.d/99-mscc-virtual.conf
+    systemctl disable 'mscc-audio-setup@*.service' 2>/dev/null || true
+    rm -f /etc/systemd/system/mscc-audio-setup@.service
+    # Virtual digi audio (user unit installed system-wide under /usr/lib)
+    rm -f /usr/lib/systemd/user/mscc-virtual-audio.service
+    rm -f /usr/local/bin/mscc-virtual-audio
+    systemctl daemon-reload 2>/dev/null || true
+    udevadm control --reload-rules 2>/dev/null || true
+    # Leave dtoverlay and user ~/.local/mscc config
+  fi
+  ;;
+upgrade|failed-upgrade|abort-install|abort-upgrade|disappear)
+  ;;
+*)
+  echo "postrm called with unknown argument \`$1'" >&2
+  exit 1
+  ;;
+esac
+
+exit 0

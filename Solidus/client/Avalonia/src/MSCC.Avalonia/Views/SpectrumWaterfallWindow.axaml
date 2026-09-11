@@ -1,0 +1,211 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:vm="using:MSCC.Avalonia.ViewModels"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        mc:Ignorable="d"
+        x:Class="MSCC.Avalonia.Views.SpectrumWaterfallWindow"
+        x:DataType="vm:SpectrumWaterfallViewModel"
+        Title="Spectrum / Waterfall Controls (S/W)"
+        Width="500" Height="560"
+        MinWidth="460" MinHeight="420"
+        WindowStartupLocation="CenterOwner"
+        Background="{DynamicResource UiWindowBackgroundBrush}"
+        Foreground="White"
+        Icon="/Assets/avalonia-logo.ico">
+
+  <Design.DataContext>
+    <vm:SpectrumWaterfallViewModel />
+  </Design.DataContext>
+
+  <!-- Styles for compact WPF-like color columns (no scroll when height fits items) -->
+  <Window.Styles>
+    <Style Selector="ListBox.sw-color">
+      <Setter Property="Width" Value="58"/>
+      <Setter Property="Height" Value="124"/>
+      <Setter Property="FontSize" Value="9"/>
+      <Setter Property="Background" Value="#111111"/>
+      <Setter Property="BorderBrush" Value="#555555"/>
+      <Setter Property="BorderThickness" Value="1"/>
+      <Setter Property="Padding" Value="0"/>
+      <Setter Property="ScrollViewer.VerticalScrollBarVisibility" Value="Disabled"/>
+      <Setter Property="ScrollViewer.HorizontalScrollBarVisibility" Value="Disabled"/>
+    </Style>
+    <Style Selector="ListBox.sw-color ListBoxItem">
+      <Setter Property="Padding" Value="4,1"/>
+      <Setter Property="MinHeight" Value="16"/>
+      <Setter Property="FontSize" Value="9"/>
+    </Style>
+    <Style Selector="ListBox.sw-palette">
+      <Setter Property="Width" Value="100"/>
+      <Setter Property="Height" Value="80"/>
+      <Setter Property="FontSize" Value="10"/>
+      <Setter Property="Background" Value="#111111"/>
+      <Setter Property="BorderBrush" Value="#555555"/>
+      <Setter Property="BorderThickness" Value="1"/>
+      <Setter Property="ScrollViewer.VerticalScrollBarVisibility" Value="Disabled"/>
+    </Style>
+    <Style Selector="ListBox.sw-palette ListBoxItem">
+      <Setter Property="Padding" Value="4,2"/>
+      <Setter Property="MinHeight" Value="18"/>
+    </Style>
+  </Window.Styles>
+
+  <Grid Margin="8" RowDefinitions="Auto,*,Auto">
+    <TextBlock Text="SPECTRUM / WATERFALL CONTROLS"
+               FontWeight="SemiBold" FontSize="14" Foreground="#00FFAA" Margin="0,0,0,8"/>
+
+    <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto">
+      <StackPanel Spacing="6">
+
+        <!-- ========== SPECTRUM (upper block — WPF layout) ========== -->
+        <Border Background="#FF222222" BorderBrush="#FF444444" BorderThickness="1" CornerRadius="3" Padding="6">
+          <StackPanel Spacing="6">
+            <TextBlock Text="Spectrum" FontWeight="SemiBold" Foreground="White"/>
+
+            <!-- FILL | BACKGROUND | LINE — compact WPF columns -->
+            <StackPanel Orientation="Horizontal" Spacing="8">
+              <StackPanel>
+                <TextBlock Text="FILL" FontSize="10" Foreground="#D0D0D0" Margin="0,0,0,2"
+                           ToolTip.Tip="Under-curve fill. SCOPE = line only (oscilloscope)."/>
+                <ListBox Classes="sw-color"
+                         ItemsSource="{Binding SpectrumFillNames}"
+                         SelectedItem="{Binding SelectedSpectrumFill}"/>
+              </StackPanel>
+              <StackPanel>
+                <TextBlock Text="BACKGROUND" FontSize="10" Foreground="#D0D0D0" Margin="0,0,0,2"
+                           ToolTip.Tip="Spectrum pane background. CUSTOM shows RGB sliders."/>
+                <ListBox Classes="sw-color"
+                         ItemsSource="{Binding SpectrumBackgroundNames}"
+                         SelectedItem="{Binding SelectedSpectrumBackground}"/>
+                <TextBlock Text="{Binding SpectrumBackgroundRgbText}" FontSize="9" Foreground="#00FFAA"
+                           FontFamily="Consolas" Margin="0,3,0,0"/>
+              </StackPanel>
+              <StackPanel>
+                <TextBlock Text="LINE" FontSize="10" Foreground="#D0D0D0" Margin="0,0,0,2"
+                           ToolTip.Tip="Spectrum trace line color (named only)."/>
+                <ListBox Classes="sw-color"
+                         Height="108"
+                         ItemsSource="{Binding SpectrumLineNames}"
+                         SelectedItem="{Binding SelectedSpectrumLine}"/>
+              </StackPanel>
+              <!-- CUSTOM RGB only when BACKGROUND is CUSTOM -->
+              <StackPanel IsVisible="{Binding ShowSpectrumBackgroundRgb}"
+                          VerticalAlignment="Top" Width="160" Margin="4,16,0,0" Spacing="2">
+                <TextBlock Text="CUSTOM RGB" FontSize="9" Foreground="#D0D0D0"/>
+                <Grid ColumnDefinitions="14,*,28">
+                  <TextBlock Text="R" FontSize="9" VerticalAlignment="Center"/>
+                  <Slider Grid.Column="1" Minimum="0" Maximum="255" Value="{Binding SpecBgR}" Height="18"/>
+                  <TextBlock Grid.Column="2" Text="{Binding SpecBgR}" FontSize="9" Foreground="#0FA" HorizontalAlignment="Right"/>
+                </Grid>
+                <Grid ColumnDefinitions="14,*,28">
+                  <TextBlock Text="G" FontSize="9" VerticalAlignment="Center"/>
+                  <Slider Grid.Column="1" Minimum="0" Maximum="255" Value="{Binding SpecBgG}" Height="18"/>
+                  <TextBlock Grid.Column="2" Text="{Binding SpecBgG}" FontSize="9" Foreground="#0FA" HorizontalAlignment="Right"/>
+                </Grid>
+                <Grid ColumnDefinitions="14,*,28">
+                  <TextBlock Text="B" FontSize="9" VerticalAlignment="Center"/>
+                  <Slider Grid.Column="1" Minimum="0" Maximum="255" Value="{Binding SpecBgB}" Height="18"/>
+                  <TextBlock Grid.Column="2" Text="{Binding SpecBgB}" FontSize="9" Foreground="#0FA" HorizontalAlignment="Right"/>
+                </Grid>
+              </StackPanel>
+            </StackPanel>
+
+            <!-- dB CAL + GRID -->
+            <Grid ColumnDefinitions="60,*,40,Auto" Margin="0,2,0,0">
+              <TextBlock Text="dB CAL" FontSize="10" Foreground="#D0D0D0" VerticalAlignment="Center"
+                         ToolTip.Tip="Relative trim ±20 dB around −91.3 absolute"/>
+              <Slider Grid.Column="1" Minimum="-20" Maximum="20" SmallChange="0.5"
+                      Value="{Binding DbCalRelative}" VerticalAlignment="Center"/>
+              <TextBlock Grid.Column="2" Text="{Binding DbCalRelative, StringFormat={}{0:0.0}}"
+                         Foreground="#00FFAA" FontWeight="Bold" FontSize="10"
+                         VerticalAlignment="Center" HorizontalAlignment="Right" Margin="4,0"/>
+              <Button Grid.Column="3" Content="RST" Classes="mscc-gold" Width="32" Height="20" FontSize="9"
+                      Command="{Binding ResetDbCalCommand}"
+                      ToolTip.Tip="Reset dB cal trim to 0"/>
+            </Grid>
+
+            <Grid ColumnDefinitions="60,*,36,28,*,40">
+              <TextBlock Text="GRID MAX" FontSize="10" Foreground="#D0D0D0" VerticalAlignment="Center"/>
+              <Slider Grid.Column="1" Minimum="-80" Maximum="0" Value="{Binding GridMaxDb}" VerticalAlignment="Center"/>
+              <TextBlock Grid.Column="2" Text="{Binding GridMaxDb, StringFormat={}{0:0}}"
+                         Foreground="#00FFAA" FontWeight="Bold" FontSize="10"
+                         VerticalAlignment="Center" HorizontalAlignment="Right" Margin="2,0"/>
+              <TextBlock Grid.Column="3" Text="MIN" FontSize="10" Foreground="#D0D0D0"
+                         VerticalAlignment="Center" HorizontalAlignment="Right" Margin="4,0,2,0"/>
+              <Slider Grid.Column="4" Minimum="-180" Maximum="-40" Value="{Binding GridMinDb}" VerticalAlignment="Center"/>
+              <TextBlock Grid.Column="5" Text="{Binding GridMinDb, StringFormat={}{0:0}}"
+                         Foreground="#00FFAA" FontWeight="Bold" FontSize="10"
+                         VerticalAlignment="Center" HorizontalAlignment="Right"/>
+            </Grid>
+
+            <Grid ColumnDefinitions="60,*,40">
+              <TextBlock Text="ZOOM" FontSize="10" Foreground="#D0D0D0" VerticalAlignment="Center"/>
+              <Slider Grid.Column="1" Minimum="1" Maximum="4" TickFrequency="1" IsSnapToTickEnabled="True"
+                      Value="{Binding ZoomFactor}" VerticalAlignment="Center"/>
+              <TextBlock Grid.Column="2" Text="{Binding ZoomFactor, StringFormat={}{0:0}×}"
+                         Foreground="#00FFAA" FontWeight="Bold" FontSize="10"
+                         VerticalAlignment="Center" HorizontalAlignment="Right"/>
+            </Grid>
+
+            <StackPanel Orientation="Horizontal" Spacing="16" Margin="0,2,0,0">
+              <CheckBox Content="VIEW GRID" IsChecked="{Binding ViewGrid}"
+                        FontSize="11" FontWeight="Bold"
+                        ToolTip.Tip="Show horizontal dB grid lines on the spectrum"/>
+            </StackPanel>
+          </StackPanel>
+        </Border>
+
+        <!-- ========== WATERFALL (lower block — WPF layout) ========== -->
+        <Border Background="#FF222222" BorderBrush="#FF444444" BorderThickness="1" CornerRadius="3" Padding="6">
+          <StackPanel Spacing="4">
+            <TextBlock Text="Waterfall" FontWeight="SemiBold" Foreground="White"/>
+
+            <StackPanel Orientation="Horizontal" Spacing="12">
+              <!-- Palette compact column -->
+              <StackPanel>
+                <TextBlock Text="PALETTE COLOR" FontSize="10" Foreground="#D0D0D0" Margin="0,0,0,2"
+                           HorizontalAlignment="Center"
+                           ToolTip.Tip="Per radio type (Proficio HF / Geminus LF)"/>
+                <ListBox Classes="sw-palette"
+                         ItemsSource="{Binding WaterfallPaletteNames}"
+                         SelectedItem="{Binding SelectedWaterfallPalette}"/>
+              </StackPanel>
+
+              <!-- WF high/low + direction -->
+              <StackPanel Width="280" Spacing="4">
+                <TextBlock Text="WF HIGH (hot)" FontSize="10" Foreground="#D0D0D0"
+                           ToolTip.Tip="Top of waterfall palette in dBm (after dB CAL)"/>
+                <Grid ColumnDefinitions="*,40">
+                  <Slider Minimum="-100" Maximum="-20" Value="{Binding WaterfallHighDb}"/>
+                  <TextBlock Grid.Column="1" Text="{Binding WaterfallHighDb, StringFormat={}{0:0}}"
+                             Foreground="#00FFAA" FontWeight="Bold" FontSize="10"
+                             VerticalAlignment="Center" HorizontalAlignment="Right"/>
+                </Grid>
+                <TextBlock Text="WF LOW (cold)" FontSize="10" Foreground="#D0D0D0"
+                           ToolTip.Tip="Bottom of waterfall palette in dBm"/>
+                <Grid ColumnDefinitions="*,40">
+                  <Slider Minimum="-160" Maximum="-40" Value="{Binding WaterfallLowDb}"/>
+                  <TextBlock Grid.Column="1" Text="{Binding WaterfallLowDb, StringFormat={}{0:0}}"
+                             Foreground="#00FFAA" FontWeight="Bold" FontSize="10"
+                             VerticalAlignment="Center" HorizontalAlignment="Right"/>
+                </Grid>
+                <TextBlock Text="Independent of spectrum GRID" FontSize="9" Foreground="#888"/>
+
+                <CheckBox Content="Show waterfall" IsChecked="{Binding ShowWaterfall}"
+                          FontSize="11" FontWeight="Bold" Margin="0,6,0,0"/>
+                <CheckBox Content="Direction Normal" IsChecked="{Binding WaterfallDirectionNormal}"
+                          FontSize="11" FontWeight="Bold"
+                          ToolTip.Tip="ON = oldest at top, newest scrolls down. OFF = reverse."/>
+              </StackPanel>
+            </StackPanel>
+          </StackPanel>
+        </Border>
+
+      </StackPanel>
+    </ScrollViewer>
+
+    <Button Grid.Row="2" Content="Close" Classes="mscc-gold" HorizontalAlignment="Right"
+            Width="80" Height="26" Margin="0,8,0,0" Click="Close_Click"/>
+  </Grid>
+</Window>

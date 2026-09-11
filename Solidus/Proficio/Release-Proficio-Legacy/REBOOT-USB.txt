@@ -1,0 +1,17 @@
+Proficio — USB reboot notes (PSoC app)
+======================================
+
+Field firmware update does NOT use these opcodes.
+Use the BOOT jumper + bootloader host (.cyacd). See STEW-FIRMWARE-UPDATE.md.
+
+Opcodes present in app firmware (usbvend / main):
+-----------------------------------------------
+CMD_REBOOT_APP         0x0F    Soft-reset application (CySoftwareReset)
+CMD_ENTER_BOOTLOADER   0x0E    Schedules Bootloadable_Load()
+
+Notes
+-----
+- USB ISR sets a flag; main loop acts after ~300 ms (avoids host PIPE mid-STATUS).
+- 0x0F: soft reboot of the running app only — no LOADER, no .cyacd.
+- 0x0E: not used for field updates; BOOT jumper is the supported enter-LOADER path.
+- Stop ms-sdr before any direct USB vendor test traffic.

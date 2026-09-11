@@ -1,0 +1,21 @@
+Package: mscc-portaudio
+Version: 19.8.2
+Section: libs
+Priority: optional
+Architecture: arm64
+Maintainer: Multus SDR / MSCC Linux <local@localhost>
+Depends: libc6, libasound2 | libasound2t64, libpulse0
+Recommends: pulseaudio-utils, pipewire-pulse | pulseaudio
+Homepage: https://www.portaudio.com/
+Description: PortAudio with Pulse+ALSA for MSCC (Raspberry Pi OS arm64)
+ Prebuilt PortAudio 19.x shared library with PulseAudio and ALSA host
+ APIs, installed under /usr/local for Multus MSCC servers.
+ .
+ Use this instead of (or alongside) Debian libportaudio2 when you need
+ Pulse devices such as VirtualA / VirtualB for digi modes.
+ .
+ After install, ldconfig registers /usr/local/lib. Rebuild or install
+ MSCC binaries linked with rpath to /usr/local (mscc 1.0.23+).
+ .
+ Does not remove Debian libportaudio2; MSCC binaries should use rpath
+ so they load this library.

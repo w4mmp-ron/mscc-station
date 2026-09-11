@@ -1,0 +1,18 @@
+#!/bin/bash
+set -e
+case "$1" in
+configure)
+  echo "/usr/local/lib" > /etc/ld.so.conf.d/mscc-portaudio.conf
+  ldconfig
+  echo
+  echo "================================================================"
+  echo "  mscc-portaudio installed (/usr/local)"
+  echo "================================================================"
+  echo "  lib:  /usr/local/lib/libportaudio.so.2"
+  echo "  Check:  ldconfig -p | grep portaudio"
+  echo "  MSCC binaries should show /usr/local/lib via: ldd sdrcore-recv"
+  echo "================================================================"
+  echo
+  ;;
+esac
+exit 0

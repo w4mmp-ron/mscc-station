@@ -1,0 +1,11 @@
+[Desktop Entry]
+Type=Application
+Name=MSCC Firmware Upload
+GenericName=Proficio firmware (.cyacd) upload
+Comment=Upload Proficio application firmware (BOOT jumper + .cyacd)
+Exec=bootloader-gui
+Icon=application-x-firmware
+Terminal=false
+Categories=X-MSCC;
+Keywords=MSCC;SDR;Proficio;Multus;firmware;bootloader;cyacd;
+StartupNotify=true

@@ -1,0 +1,4 @@
+# Track full PSoC Creator tree, but not local archives
+.DS_Store
+Archive/
+Backup/

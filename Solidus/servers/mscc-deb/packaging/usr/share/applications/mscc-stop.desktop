@@ -1,0 +1,11 @@
+[Desktop Entry]
+Type=Application
+Name=MSCC Stop
+GenericName=Stop MSCC servers
+Comment=Stop MSCC servers on this Pi
+Exec=mscc-desktop-ctl stop
+Icon=media-playback-stop
+Terminal=false
+Categories=X-MSCC;
+Keywords=MSCC;SDR;Proficio;Multus;stop;
+StartupNotify=false

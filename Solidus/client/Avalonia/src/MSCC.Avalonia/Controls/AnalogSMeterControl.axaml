@@ -1,0 +1,55 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             x:Class="MSCC.Avalonia.Controls.AnalogSMeterControl"
+             Width="180" Height="120"
+             MinWidth="164" MinHeight="110">
+  <Border Background="#FF0C0C0C"
+          BorderBrush="#FF666666"
+          BorderThickness="1"
+          CornerRadius="4"
+          Padding="3,2">
+    <Grid RowDefinitions="*,Auto">
+      <Canvas x:Name="FaceCanvas"
+              Grid.Row="0"
+              ClipToBounds="True"
+              Background="#FF141414"
+              HorizontalAlignment="Stretch"
+              VerticalAlignment="Stretch"/>
+
+      <StackPanel Grid.Row="1"
+                  Orientation="Horizontal"
+                  HorizontalAlignment="Center"
+                  Spacing="4"
+                  Margin="0,2,0,0">
+        <CheckBox Content="HOLD"
+                  FontSize="8"
+                  FontWeight="Bold"
+                  Foreground="White"
+                  IsEnabled="False"
+                  Opacity="0.55"
+                  ToolTip.Tip="Slow needle fall — later"/>
+        <Border Background="#FF444444"
+                BorderBrush="#FF888888"
+                BorderThickness="1"
+                CornerRadius="2"
+                Padding="4,1"
+                MinWidth="48">
+          <TextBlock x:Name="ReadingText"
+                     Text="S0"
+                     FontSize="11"
+                     FontWeight="Bold"
+                     Foreground="#00FFAA"
+                     FontFamily="Consolas, Courier New, monospace"
+                     HorizontalAlignment="Center"/>
+        </Border>
+        <CheckBox Content="Peak"
+                  FontSize="8"
+                  FontWeight="Bold"
+                  Foreground="White"
+                  IsEnabled="False"
+                  Opacity="0.55"
+                  ToolTip.Tip="Peak needle — later"/>
+      </StackPanel>
+    </Grid>
+  </Border>
+</UserControl>
