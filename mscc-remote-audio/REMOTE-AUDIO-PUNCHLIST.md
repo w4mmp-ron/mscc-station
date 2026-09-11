@@ -1,7 +1,8 @@
 # Remote audio — punch list
 
 **Date:** 2026-09-10  
-**Status:** field-proven Windows client ↔ Linux/Pi servers (INI RX + opcode 2 mic). Next: mute + client-driven RX on **Linux servers**, then in-UI AF.
+**Status:** field-proven Windows client ↔ Ubuntu servers (INI RX + opcode 2 mic).  
+**Working rule:** implement and prove everything on **`linux/`** (this Ubuntu box). Do **not** edit **`rpi/`** until that is working; then reconcile Pi from the proven `linux/` bits.
 
 Related: [STEW-REMOTE-AUDIO.md](STEW-REMOTE-AUDIO.md), [README.md](README.md).
 
@@ -25,7 +26,7 @@ Opcode **2** does **not** start/stop the RX stream and does **not** mute the rad
 
 ## Direction (agreed)
 
-Radio host stays the appliance. Operator AF + CAT live on the **operate PC** when Remote is on.
+Radio host stays the appliance. Operator AF + CAT live on the **operate PC** **only when Remote is on**. With Remote **off** (or no UI at all), AF + CAT stay **on the radio host** — that is Ron’s Pi + WSJT-X path and it must keep working.
 
 **UI (operate rail)**
 
@@ -42,7 +43,23 @@ Radio host stays the appliance. Operator AF + CAT live on the **operate PC** whe
 | on | R-Phones | 2 | MSA1 voice to this PC | This PC proxies CAT → Connect host |
 | on | R-Digital | **3** (new) | Same VAC as local Digital, UDP to Connect host | Same CAT proxy |
 
-WSJT-X devices and CAT port **do not change**. The checkbox is the map. Connect host is *which radio*.
+**Two seats for WSJT-X / CAT — keep both:**
+
+| Seat | How | Typical |
+|------|-----|---------|
+| **Radio host** (Pi/Ubuntu) | Remote **off**, Audio **Digital** (`0x9B` = 0). VirtualA/B + CAT (`$HOME/ms-sdr-cat` or tty0tty). **No UI required.** | Ron: small monitor, only WSJT-X; servers already running |
+| **Operate PC** | Remote **on**, Audio **R-Digital** (`0x9B` = 3). VAC + CAT **proxy** on this PC. | Stew: WSJT on the laptop, radio in the other room |
+
+The checkbox is which seat is live — not “WSJT settings never change across machines.” Each seat keeps **its own** WSJT device/CAT config. Connect host is *which radio*.
+
+**Headless (keep):** ms-sdr already does `User_Controls_Apply_To_Cores()` — pushes `AUDIO_DEVICE` from `user_controls.ini` to recv/trans with **no client**. CAT (PTY / `/dev/tnt0`) is independent of the GUI. Workflow: open UI (or Init), set **Digital**, close UI; next `mscc start` still comes up Digital. Do **not** require the operate UI to stay open for local digi.
+
+**Must not break that:**
+
+- Closing the UI, or Connect with Remote **off**, must **not** switch AF off Digital, mute VirtualA/B, or move CAT onto a proxy.
+- Do **not** persist `0x9B` = 2 or 3 as the radio’s boot mode. `user_controls.ini` `AUDIO_DEVICE` stays **0 or 1** (local Digital/Phones). Remote is a **client** sticky.
+- If a Remote client **disconnects** (or Remote goes off), recv enable=0 and restore last **local** 0/1 so the Pi can keep WSJT without a GUI.
+- A spectrum-only Connect (Remote off) is a spectator; it must not steal the shack’s Digital/CAT.
 
 **Push live settings over 8888** — do not write `remote-phones.ini` for the normal path.
 
@@ -63,7 +80,7 @@ Trans does **not** need HOST. Mic TX is already “whoever sends to **9101**.”
 
 **AF UI** is an owned popup (same pattern as LOG and S/W): session position, reopen activates. Bind `Ui*` chrome (LOG/S/W still hardcode dark — Remote should follow the user scheme). Closing the popup does **not** turn Remote off; the checkbox does. TX host = Connect host (no second IP box).
 
-**Trees:** `rpi/` is the Pi source of truth (do not edit for Ubuntu). Ubuntu work is **`linux/`**. Same opcodes later in Windows `ms-sdr-MKII` / `SDRcore-recv` / `SDRcore-trans` if a Windows box is the radio host.
+**Trees:** all server work for this plan is **`linux/`** (`SDRcore-recv-linux`, `SDRcore-trans-linux`, `ms-sdr-linux`). Treat **`rpi/`** as read-only until Ubuntu remote AF is proven, then port/reconcile. Windows server trees later only if a Windows box is the radio host. Clients (WPF / Avalonia) talk to this Ubuntu radio; they are not `rpi/` work.
 
 ---
 
@@ -131,8 +148,34 @@ Trans does **not** need HOST. Mic TX is already “whoever sends to **9101**.”
 | Trans digital mic from MSA1, not VirtualB | Mute radio VirtualA/B while R-Digital is on (same idea as item 1) |
 | Client plays/captures **the same** `digital-speaker.ini` / `digital-microphone.ini` VAC | WSJT-X devices never change |
 | Fixed jitter buffer (~80–150 ms) | Do not let the buffer hunt (FT8) |
-| **CAT proxy** on the operator PC | Local Kenwood COM/TCP → Connected ms-sdr. Same WSJT-X CAT settings local or remote |
-| Local Digital + Remote **off** + Connect to Ubuntu | Digi app still on the radio (today). R-Digital is the “app on this PC” choice |
+| **CAT proxy** on the operator PC | Only while Remote is **on**. Local Kenwood COM/TCP → Connected ms-sdr |
+| Local Digital + Remote **off** (UI closed or never opened) | **Keep:** WSJT-X + CAT on the radio host. This is Ron’s Pi desktop. Not deprecated by R-Digital |
+| Disconnect / Remote off | Drop proxy; CAT and VirtualA/B stay on the radio as last local Digital/Phones |
+
+---
+
+## Solidus (later — do not paint into a corner)
+
+Resurrected standalone rig: **RPi in the radio**, front **~5″ display**, early MSCC. Local appliance **and** optional remote computer. Tree: [`Solidus/`](../Solidus/) (`client/Avalonia`, `servers/`, `Proficio/`). Avalonia is heading there. **Not this sprint.**
+
+That is the same two-seat model as Ron’s Pi + WSJT:
+
+| On the box | Remote computer |
+|------------|-----------------|
+| Servers + CAT + Digital/Phones | Connect 8888; Remote on = operator AF/CAT here |
+| Small screen: WSJT-X only, or Avalonia as the front panel | WPF or Avalonia as a client |
+
+ms-sdr already has **appliance** hooks: `Apply_Appliance_Startup()`, `G_Transceiver_type == SOLIDUS`, temp/GPIO/fan, **`CMD_SET_SOLIDUS_STATUS` (`0x0E`)**. Headless cores without a GUI is the Solidus boot path.
+
+**Do not break / extra work later:**
+
+- Keep **headless Digital + CAT** with UI closed (5″ can show only WSJT-X).
+- **Do not reuse opcode `0x0E`** (or other Solidus/extended I2C bytes) for remote RX. New RX opcodes must be unused on ms-sdr, recv, **and** trans.
+- Client Connect must **not** steal AF/CAT unless Remote is on (front panel or shack WSJT still owns the seat).
+- Boot/`user_controls.ini` stays local **0/1**, never 2/3 — the radio comes up as an appliance.
+- Disconnect Remote → restore local 0/1 (someone can walk up to the box).
+- Avalonia on the 5″ is the **front panel**, not MsccRemotePhones. In-UI AF belongs in Avalonia; keep the Remote popup **optional** (owned window) so a dense 800×480 face is still possible. Today’s shell is `MinWidth="1024"` — Solidus will need a compact layout later; do not assume a large AF window.
+- Solidus hardware (MCP23017, TX relay, fan, temp) stays independent of MSA1 remote AF.
 
 ---
 
@@ -149,19 +192,22 @@ Trans does **not** need HOST. Mic TX is already “whoever sends to **9101**.”
 ## Out of scope (still later)
 
 - Remote Digital over WAN / multi-operator mix
+- Requiring the operate UI to stay open for shack WSJT-X (headless Digital must remain)
 - Embedding into firmware / STM32
 - Init GUI as the operator workflow (debug display only)
+- Solidus 5″ compact Avalonia layout / kiosk (use the same opcodes; different chrome later)
 
 ---
 
 ## Suggested order
 
-1. **Linux servers (`linux/`)** — item 1 mute + monitor (INI RX still OK). Ubuntu laptop build. Do not edit `rpi/` for this.  
-2. **Linux servers (`linux/`)** — item 2 host/enable opcodes + ms-sdr forward. Smoke with existing MsccRemotePhones or a tiny UDP listener.  
-3. **WPF** — Remote checkbox as master (stop 3-way Audio cycle); popup; stop requiring the exe.  
-4. **Avalonia** on the Ubuntu laptop — same checkbox + popup (Linux GUI).  
-5. **Item 4** — opcode 3, digital tap, VAC, CAT proxy.  
-6. Port proven `linux/` recv/ms-sdr bits to **`rpi/`** when shipping a Pi `.deb`. Same opcodes in Windows servers if needed.  
-7. Retire MsccRemotePhones from daily use.
+Prove on **this Ubuntu radio (`linux/`)** first. **`rpi/` is last**, after it works here.
+
+1. **`linux/` recv** — item 1 mute + monitor (INI RX still OK).  
+2. **`linux/` recv + ms-sdr** — item 2 host/enable opcodes + 32-bit forward. Smoke with current WPF + MsccRemotePhones.  
+3. **WPF and/or Avalonia** against this Ubuntu host — Remote checkbox as master; AF popup; Linux GUI = Avalonia.  
+4. **Item 4 on `linux/`** — opcode 3, digital tap, VAC, CAT proxy. Keep Ron’s headless Pi-style Digital (UI closed) on this box too.  
+5. **Reconcile `rpi/`** — copy proven recv/ms-sdr/trans bits, same opcodes, Pi `.deb`. Not before step 2 (at least) is solid.  
+6. Retire MsccRemotePhones from daily use.
 
 Field note (2026-09-10): Windows WPF + Ubuntu `192.168.1.234` worked with `HOST=` Windows client IP, MsccRemotePhones on 9100/9101, opcode 2 for mic.

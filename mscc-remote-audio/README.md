@@ -8,7 +8,7 @@ Standalone **Windows** app for **operator remote audio**:
 **Digital stays on the Pi** — this path is operator phones/mic only.
 
 **Stew (MSCC client):** see **[STEW-REMOTE-AUDIO.md](STEW-REMOTE-AUDIO.md)** — Remote Audio checkbox + `CMD_SET_AUDIO_DEVICE=2`.  
-**Next work:** **[REMOTE-AUDIO-PUNCHLIST.md](REMOTE-AUDIO-PUNCHLIST.md)** — mute local phones, client-driven RX, AF panel in WPF + Avalonia (no extra exe).
+**Next work:** **[REMOTE-AUDIO-PUNCHLIST.md](REMOTE-AUDIO-PUNCHLIST.md)** — prove on **`linux/`** first, then reconcile **`rpi/`**. Mute local phones, client-driven RX, AF panel in WPF + Avalonia.
 
 ## Test: select audio device (0 / 1 / 2)
 
