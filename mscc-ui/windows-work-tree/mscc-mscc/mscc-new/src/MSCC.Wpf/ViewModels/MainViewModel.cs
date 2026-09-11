@@ -18,6 +18,7 @@ using MSCC.Wpf;
 using MSCC.Wpf.Controls;
 using MSCC.Wpf.Favorites;
 using MSCC.Wpf.PowerCal;
+using MSCC.Wpf.RemoteAudio;
 
 namespace MSCC.Wpf.ViewModels;
 
@@ -540,152 +541,301 @@ public partial class MainViewModel : ObservableObject, IDisposable
     [ObservableProperty] private bool _monitorOn;
     partial void OnMonitorOnChanged(bool value) { _ = _radioService.SetMonitorAsync(value); MonitorTextBoxText($" MonitorOn set: {value}"); }
 
-    /// <summary>
-    /// Audio path: false = Phones or Remote; true = Digital (VAC).
-    /// Prefer <see cref="ApplyAudioDeviceMode"/> / cycle button for full Digital/Phones/Remote.
-    /// </summary>
+    /// <summary>Local path: Digital (VAC) vs Phones. Remote checkbox is independent.</summary>
     [ObservableProperty]
     [NotifyPropertyChangedFor(nameof(AudioDeviceButtonText))]
     [NotifyPropertyChangedFor(nameof(IsRemoteAudioActive))]
     private bool _isDigitalAudio;
 
-    /// <summary>
-    /// True when audio mode is Remote (CMD_SET_AUDIO_DEVICE=2). Companion MSCC-Remote must run.
-    /// </summary>
+    /// <summary>Master: this PC is the operator seat. Do not grey on Digital.</summary>
     [ObservableProperty]
     [NotifyPropertyChangedFor(nameof(AudioDeviceButtonText))]
     [NotifyPropertyChangedFor(nameof(IsRemoteAudioActive))]
     private bool _remoteAudio;
 
-    /// <summary>True when button mode is Remote (not Digital).</summary>
-    public bool IsRemoteAudioActive => !IsDigitalAudio && RemoteAudio;
+    public bool IsRemoteAudioActive => RemoteAudio;
 
-    /// <summary>Main-tab Audio button label: Digital / Phones / Remote.</summary>
-    public string AudioDeviceButtonText => ResolveAudioDeviceOpcode() switch
-    {
-        Opcodes.DIGITAL_SOUND_DEVICE => "Digital",
-        Opcodes.REMOTE_SOUND_DEVICE => "Remote",
-        _ => "Phones",
-    };
+    public string AudioDeviceButtonText => RemoteAudio
+        ? (IsDigitalAudio ? "R-Digital" : "R-Phones")
+        : (IsDigitalAudio ? "Digital" : "Phones");
 
+    /// <summary>Keep shack speaker while remote RX is on (0x28 monitor bit). Default off.</summary>
+    [ObservableProperty]
+    private bool _remoteMonitorAtRadio;
+
+    internal RemoteAfEngine? RemoteAf { get; private set; }
+    internal event Action<string>? RemoteAfLog;
+
+    private RemoteAfWindow? _remoteAfWindow;
     private bool _suppressAudioDeviceSend;
+    private bool _remoteRxSent;
+    private System.Net.IPAddress? _lastRemoteRxHost;
 
-    /// <summary>0=Digital, 1=Phones local, 2=Remote.</summary>
-    private byte ResolveAudioDeviceOpcode()
-    {
-        if (IsDigitalAudio)
-            return Opcodes.DIGITAL_SOUND_DEVICE;
-        if (RemoteAudio)
-            return Opcodes.REMOTE_SOUND_DEVICE;
-        return Opcodes.PHONES_SOUND_DEVICE;
-    }
+    private byte LocalAudioOpcode() =>
+        IsDigitalAudio ? Opcodes.DIGITAL_SOUND_DEVICE : Opcodes.PHONES_SOUND_DEVICE;
 
-    private void SendResolvedAudioDevice(string reason)
+    private void PersistLocalAndRemote()
     {
-        if (_suppressAudioDeviceSend) return;
-        byte device = ResolveAudioDeviceOpcode();
-        _ = _radioService.SetAudioDeviceAsync(device);
-        string label = device switch
-        {
-            Opcodes.DIGITAL_SOUND_DEVICE => "Digital (0)",
-            Opcodes.REMOTE_SOUND_DEVICE => "Remote (2)",
-            _ => "Phones (1)",
-        };
-        MonitorTextBoxText($" Audio device → {label} ({reason})");
-    }
-
-    private void PersistAudioDeviceMode(byte mode)
-    {
-        SpectrumWaterfallSettings.AudioDeviceMode = mode;
-        SpectrumWaterfallSettings.RemoteAudio = mode == Opcodes.REMOTE_SOUND_DEVICE;
+        SpectrumWaterfallSettings.AudioDeviceMode = IsDigitalAudio ? 0 : 1;
+        SpectrumWaterfallSettings.RemoteAudio = RemoteAudio;
+        SpectrumWaterfallSettings.RemoteMonitorAtRadio = RemoteMonitorAtRadio;
         try { SpectrumWaterfallSettings.Save(); } catch { /* best-effort */ }
     }
 
     /// <summary>
-    /// Apply Digital (0) / Phones (1) / Remote (2): opcode, CMP rules, sticky, start/stop MSCC-Remote.
+    /// Push Remote HOST/CTRL + 0x9B, or restore local 0/1. Does not persist 2/3 as boot mode.
+    /// R-Digital (opcode 3) is not on the wire yet — Remote always sends 2 this pass.
     /// </summary>
-    private void ApplyAudioDeviceMode(byte mode, string reason, bool fromReport = false)
+    private void PushAudioToRadio(string reason)
     {
-        mode = mode switch
+        if (_suppressAudioDeviceSend) return;
+        if (!_radioService.IsConnected)
         {
-            Opcodes.DIGITAL_SOUND_DEVICE => Opcodes.DIGITAL_SOUND_DEVICE,
-            Opcodes.REMOTE_SOUND_DEVICE => Opcodes.REMOTE_SOUND_DEVICE,
-            _ => Opcodes.PHONES_SOUND_DEVICE,
-        };
+            MonitorTextBoxText($" Audio not sent (not connected) ({reason})");
+            return;
+        }
 
-        byte previous = ResolveAudioDeviceOpcode();
-        bool enteringDigital = mode == Opcodes.DIGITAL_SOUND_DEVICE;
-        bool leavingDigital = previous == Opcodes.DIGITAL_SOUND_DEVICE && !enteringDigital;
+        if (RemoteAudio)
+        {
+            var ip = _radioService.GetLocalIPv4ToRemote();
+            if (ip is null)
+            {
+                MonitorTextBoxText($" Remote RX HOST failed — no IPv4 route to {BackendIp} ({reason})");
+                return;
+            }
+            _lastRemoteRxHost = ip;
+            _ = PushRemoteRxAndModeAsync(ip, enable: true, reason);
+        }
+        else
+        {
+            _ = PushRemoteOffAndLocalAsync(reason);
+        }
+    }
 
-        _suppressAudioDeviceSend = true;
+    private async Task PushRemoteRxAndModeAsync(System.Net.IPAddress ip, bool enable, string reason)
+    {
         try
         {
-            IsDigitalAudio = enteringDigital;
-            RemoteAudio = mode == Opcodes.REMOTE_SOUND_DEVICE;
-        }
-        finally
-        {
-            _suppressAudioDeviceSend = false;
-        }
-
-        OnPropertyChanged(nameof(AudioDeviceButtonText));
-        OnPropertyChanged(nameof(IsRemoteAudioActive));
-
-        if (!fromReport)
-            PersistAudioDeviceMode(mode);
-
-        // Compression: Digital forces OFF; leaving Digital restores session preferred
-        if (!fromReport)
-        {
-            if (enteringDigital)
+            await _radioService.SetRemoteRxAsync(
+                ip, MsccAudioProtocol.DefaultPort, enable, RemoteMonitorAtRadio).ConfigureAwait(true);
+            _remoteRxSent = enable;
+            if (enable)
             {
-                if (CompressionOn)
-                {
-                    CompressionOn = false;
-                    MonitorTextBoxText(" CMP forced OFF for digital audio (D); session preferred preserved");
-                }
-            }
-            else if (leavingDigital)
-            {
-                if (CompressionOn != _sessionCompressionOn)
-                    CompressionOn = _sessionCompressionOn;
-                else
-                    _ = _radioService.SetCompressionStateAsync(_sessionCompressionOn);
-                MonitorTextBoxText($" CMP restored for phones/remote: {_sessionCompressionOn} → sent to server");
+                await _radioService.SetAudioDeviceAsync(Opcodes.REMOTE_SOUND_DEVICE).ConfigureAwait(true);
+                string label = IsDigitalAudio ? "R-Digital (wire 2 until item 4)" : "R-Phones (2)";
+                MonitorTextBoxText($" Remote RX HOST={ip}:9100 enable=1 monitor={(RemoteMonitorAtRadio ? 1 : 0)} → {label} ({reason})");
             }
         }
+        catch (Exception ex)
+        {
+            MonitorTextBoxText($" Remote RX send failed: {ex.Message}");
+        }
+    }
 
-        SendResolvedAudioDevice(reason);
+    private async Task PushRemoteOffAndLocalAsync(string reason)
+    {
+        try
+        {
+            if (_remoteRxSent)
+            {
+                var ip = _lastRemoteRxHost ?? _radioService.GetLocalIPv4ToRemote()
+                         ?? System.Net.IPAddress.Loopback;
+                await _radioService.SetRemoteRxAsync(
+                    ip, MsccAudioProtocol.DefaultPort, enable: false, RemoteMonitorAtRadio)
+                    .ConfigureAwait(true);
+                _remoteRxSent = false;
+            }
+            byte local = LocalAudioOpcode();
+            await _radioService.SetAudioDeviceAsync(local).ConfigureAwait(true);
+            MonitorTextBoxText(
+                $" Remote RX off → {(local == 0 ? "Digital (0)" : "Phones (1)")} ({reason})");
+        }
+        catch (Exception ex)
+        {
+            MonitorTextBoxText($" Remote RX off failed: {ex.Message}");
+        }
+    }
 
-        // Companion: only while Remote is active — kill otherwise so AF cannot play in background
-        if (mode == Opcodes.REMOTE_SOUND_DEVICE)
-            RemotePhonesLauncher.StartOrShow();
-        else if (previous == Opcodes.REMOTE_SOUND_DEVICE || RemotePhonesLauncher.IsRunning())
-            RemotePhonesLauncher.StopAll();
+    private void ApplyDigitalCmpRules(bool enteringDigital, bool leavingDigital)
+    {
+        if (enteringDigital)
+        {
+            if (CompressionOn)
+            {
+                CompressionOn = false;
+                MonitorTextBoxText(" CMP forced OFF for digital audio (D); session preferred preserved");
+            }
+        }
+        else if (leavingDigital)
+        {
+            if (CompressionOn != _sessionCompressionOn)
+                CompressionOn = _sessionCompressionOn;
+            else
+                _ = _radioService.SetCompressionStateAsync(_sessionCompressionOn);
+            MonitorTextBoxText($" CMP restored for phones/remote: {_sessionCompressionOn} → sent to server");
+        }
     }
 
     partial void OnIsDigitalAudioChanged(bool value)
     {
         if (_suppressAudioDeviceSend) return;
-        // Legacy setters (DIG-U, reports): map to full mode apply
-        byte mode = value
-            ? Opcodes.DIGITAL_SOUND_DEVICE
-            : (RemoteAudio ? Opcodes.REMOTE_SOUND_DEVICE : Opcodes.PHONES_SOUND_DEVICE);
-        ApplyAudioDeviceMode(mode, value ? "path→D" : "path→P");
+        ApplyDigitalCmpRules(enteringDigital: value, leavingDigital: !value);
+        PersistLocalAndRemote();
+        PushAudioToRadio(value ? "path→D" : "path→P");
+        OnPropertyChanged(nameof(AudioDeviceButtonText));
     }
 
     partial void OnRemoteAudioChanged(bool value)
     {
         if (_suppressAudioDeviceSend) return;
-        if (IsDigitalAudio)
+        PersistLocalAndRemote();
+        if (value)
         {
-            PersistAudioDeviceMode(Opcodes.DIGITAL_SOUND_DEVICE);
-            MonitorTextBoxText(" Remote sticky ignored while Audio=Digital");
+            PushAudioToRadio("Remote ON");
+            StartRemoteAf("Remote ON");
+        }
+        else
+        {
+            PushAudioToRadio("Remote OFF");
+            StopRemoteAf(closeWindow: true);
+        }
+    }
+
+    partial void OnRemoteMonitorAtRadioChanged(bool value)
+    {
+        SpectrumWaterfallSettings.RemoteMonitorAtRadio = value;
+        try { SpectrumWaterfallSettings.Save(); } catch { /* best-effort */ }
+        if (_suppressAudioDeviceSend) return;
+        if (RemoteAudio && _radioService.IsConnected)
+            PushAudioToRadio("monitor");
+    }
+
+    private void StartRemoteAf(string reason)
+    {
+        try { RemotePhonesLauncher.StopAll(); } catch { /* in-UI AF replaces exe */ }
+        RemoteAf ??= new RemoteAfEngine();
+        RemoteAf.Log -= OnRemoteAfEngineLog;
+        RemoteAf.Log += OnRemoteAfEngineLog;
+        RemoteAf.PlayDeviceIndex = SpectrumWaterfallSettings.RemotePlayDeviceIndex;
+        RemoteAf.MicDeviceIndex = SpectrumWaterfallSettings.RemoteMicDeviceIndex;
+        RemoteAf.PlayVolume = SpectrumWaterfallSettings.RemotePlayVolume / 100f;
+        RemoteAf.MicVolume = SpectrumWaterfallSettings.RemoteMicVolume / 100f;
+        RemoteAf.PlayMuted = SpectrumWaterfallSettings.RemotePlayMute;
+        RemoteAf.ApplyEq(
+            SpectrumWaterfallSettings.RemoteEqEnabled,
+            SpectrumWaterfallSettings.RemoteEqLowDb,
+            SpectrumWaterfallSettings.RemoteEqMidDb,
+            SpectrumWaterfallSettings.RemoteEqHighDb);
+        try
+        {
+            RemoteAf.StartRx();
+            string host = (BackendIp ?? "").Trim();
+            if (string.IsNullOrEmpty(host))
+                host = "127.0.0.1";
+            RemoteAf.StartMic(host);
+            MonitorTextBoxText($" Remote AF started ({reason}) TX host={host}:9101");
+        }
+        catch (Exception ex)
+        {
+            MonitorTextBoxText($" Remote AF start failed: {ex.Message}");
+        }
+        ShowRemoteAfWindow();
+    }
+
+    private void StopRemoteAf(bool closeWindow)
+    {
+        try { RemoteAf?.Stop(); } catch { /* ignore */ }
+        if (closeWindow)
+            CloseRemoteAfWindow();
+    }
+
+    internal void RestartRemoteAfRx()
+    {
+        if (!RemoteAudio || RemoteAf == null) return;
+        RemoteAf.PlayDeviceIndex = SpectrumWaterfallSettings.RemotePlayDeviceIndex;
+        try { RemoteAf.StartRx(); } catch (Exception ex) { MonitorTextBoxText($" RX restart: {ex.Message}"); }
+    }
+
+    internal void RestartRemoteAfMic()
+    {
+        if (!RemoteAudio || RemoteAf == null) return;
+        RemoteAf.MicDeviceIndex = SpectrumWaterfallSettings.RemoteMicDeviceIndex;
+        string host = (BackendIp ?? "").Trim();
+        if (string.IsNullOrEmpty(host))
+            host = "127.0.0.1";
+        try { RemoteAf.StartMic(host); } catch (Exception ex) { MonitorTextBoxText($" Mic restart: {ex.Message}"); }
+    }
+
+    private void OnRemoteAfEngineLog(string msg)
+    {
+        MonitorTextBoxText(" Remote AF: " + msg);
+        RemoteAfLog?.Invoke(msg);
+    }
+
+    private void ShowRemoteAfWindow()
+    {
+        var disp = Application.Current?.Dispatcher;
+        if (disp == null)
+        {
+            MonitorTextBoxText(" Remote AF window: no dispatcher");
             return;
         }
-        ApplyAudioDeviceMode(
-            value ? Opcodes.REMOTE_SOUND_DEVICE : Opcodes.PHONES_SOUND_DEVICE,
-            value ? "Remote ON" : "Remote OFF");
+        if (!disp.CheckAccess())
+        {
+            disp.BeginInvoke(ShowRemoteAfWindow);
+            return;
+        }
+        // Checkbox click is a bad time to Show() a Window — defer until idle.
+        disp.BeginInvoke(new Action(ShowRemoteAfWindowCore), DispatcherPriority.ApplicationIdle);
+    }
+
+    private void ShowRemoteAfWindowCore()
+    {
+        try
+        {
+            if (_remoteAfWindow != null)
+            {
+                if (!_remoteAfWindow.IsLoaded)
+                {
+                    try { _remoteAfWindow.Close(); } catch { /* ignore */ }
+                    _remoteAfWindow = null;
+                }
+                else
+                {
+                    if (_remoteAfWindow.WindowState == WindowState.Minimized)
+                        _remoteAfWindow.WindowState = WindowState.Normal;
+                    _remoteAfWindow.Show();
+                    _remoteAfWindow.Activate();
+                    MonitorTextBoxText(" Remote AF window activated");
+                    return;
+                }
+            }
+
+            var window = new RemoteAfWindow { DataContext = this };
+            window.Closed += (_, _) =>
+            {
+                if (ReferenceEquals(_remoteAfWindow, window))
+                    _remoteAfWindow = null;
+                MonitorTextBoxText(" Remote AF window closed (Remote checkbox still on)");
+            };
+            _remoteAfWindow = window;
+            window.Show();
+            window.Activate();
+            MonitorTextBoxText(" Remote AF window opened");
+        }
+        catch (Exception ex)
+        {
+            MonitorTextBoxText($" Remote AF window FAILED: {ex.GetType().Name}: {ex.Message}");
+            MonitorTextBoxText(" " + ex.StackTrace);
+            try { _remoteAfWindow?.Close(); } catch { /* ignore */ }
+            _remoteAfWindow = null;
+        }
+    }
+
+    private void CloseRemoteAfWindow()
+    {
+        try { _remoteAfWindow?.Close(); } catch { /* ignore */ }
+        _remoteAfWindow = null;
     }
 
     /// <summary>
@@ -1343,9 +1493,30 @@ public partial class MainViewModel : ObservableObject, IDisposable
 
         // External electronic keyer / legacy (sticky client + mscc.ini PROFICIO-MKII)
         _externalElectronicKeyer = SpectrumWaterfallSettings.ExternalElectronicKeyer;
-        // Sticky audio path 0/1/2 — if Remote, start MSCC-Remote on client startup
-        byte stickyAudio = (byte)Math.Clamp(SpectrumWaterfallSettings.AudioDeviceMode, 0, 2);
-        ApplyAudioDeviceMode(stickyAudio, "startup sticky", fromReport: false);
+        // Local 0/1 + Remote checkbox (never persist 2/3 as radio boot mode)
+        _suppressAudioDeviceSend = true;
+        try
+        {
+            int mode = Math.Clamp(SpectrumWaterfallSettings.AudioDeviceMode, 0, 2);
+            if (mode == 2)
+            {
+                IsDigitalAudio = false;
+                RemoteAudio = true;
+            }
+            else
+            {
+                IsDigitalAudio = mode == 0;
+                RemoteAudio = SpectrumWaterfallSettings.RemoteAudio;
+            }
+            RemoteMonitorAtRadio = SpectrumWaterfallSettings.RemoteMonitorAtRadio;
+        }
+        finally
+        {
+            _suppressAudioDeviceSend = false;
+        }
+        OnPropertyChanged(nameof(AudioDeviceButtonText));
+        OnPropertyChanged(nameof(IsRemoteAudioActive));
+        PersistLocalAndRemote();
         // Keep mscc.ini aligned so next ms-sdr Start sees the sticky choice.
         try
         {
@@ -3011,18 +3182,11 @@ public partial class MainViewModel : ObservableObject, IDisposable
     public IRelayCommand ToggleAnCommand { get; }
     public IRelayCommand ToggleFullPowerCommand { get; }
 
-    /// <summary>Cycle Audio button: Digital → Phones → Remote → Digital.</summary>
+    /// <summary>Cycle Audio button: Digital ↔ Phones only (Remote is the checkbox).</summary>
     [RelayCommand]
     private void ToggleAudioDigital()
     {
-        byte cur = ResolveAudioDeviceOpcode();
-        byte next = cur switch
-        {
-            Opcodes.DIGITAL_SOUND_DEVICE => Opcodes.PHONES_SOUND_DEVICE,
-            Opcodes.PHONES_SOUND_DEVICE => Opcodes.REMOTE_SOUND_DEVICE,
-            _ => Opcodes.DIGITAL_SOUND_DEVICE,
-        };
-        ApplyAudioDeviceMode(next, "cycle");
+        IsDigitalAudio = !IsDigitalAudio;
     }
 
     [RelayCommand(CanExecute = nameof(CanToggleTune))]
@@ -4624,10 +4788,9 @@ public partial class MainViewModel : ObservableObject, IDisposable
             if (IsRadioRunning)
             {
                 ApplyPanResolution("start");
-                // Re-push sticky Digital/Phones/Remote now that UDP is up; ensure companion if Remote
-                SendResolvedAudioDevice("start");
-                if (ResolveAudioDeviceOpcode() == Opcodes.REMOTE_SOUND_DEVICE)
-                    RemotePhonesLauncher.StartOrShow();
+                PushAudioToRadio("start");
+                if (RemoteAudio)
+                    StartRemoteAf("start");
             }
             RefreshSetupStatus();
             MonitorTextBoxText(
@@ -4689,6 +4852,27 @@ public partial class MainViewModel : ObservableObject, IDisposable
         MonitorTextBoxText($" Stop ({reason}): ending radio session...");
         try
         {
+            if (RemoteAudio && _radioService.IsConnected)
+            {
+                try
+                {
+                    var ip = _lastRemoteRxHost
+                             ?? _radioService.GetLocalIPv4ToRemote()
+                             ?? System.Net.IPAddress.Loopback;
+                    _radioService.SetRemoteRxAsync(
+                            ip, MsccAudioProtocol.DefaultPort, enable: false, RemoteMonitorAtRadio)
+                        .GetAwaiter().GetResult();
+                    _radioService.SetAudioDeviceAsync(LocalAudioOpcode()).GetAwaiter().GetResult();
+                    _remoteRxSent = false;
+                    MonitorTextBoxText(
+                        $" Remote RX off on Stop → {(IsDigitalAudio ? "Digital (0)" : "Phones (1)")}");
+                }
+                catch (Exception ex)
+                {
+                    MonitorTextBoxText($" Remote RX off on Stop: {ex.Message}");
+                }
+                StopRemoteAf(closeWindow: true);
+            }
             _radioService.Stop();
         }
         catch (Exception ex)
@@ -4969,14 +5153,17 @@ public partial class MainViewModel : ObservableObject, IDisposable
         svc.DigitalMicGainLevelReported += v => { RadioState.DMicGain = v; MonitorTextBoxText($" DigitalMicGainLevel reported: {v}"); };
         svc.AudioDeviceReported += dev =>
         {
-            ApplyAudioDeviceMode(dev, "server report", fromReport: true);
-            string label = dev switch
+            // Remote (2) is a client overlay — do not adopt it as local Digital/Phones sticky.
+            if (dev == Opcodes.REMOTE_SOUND_DEVICE || RemoteAudio)
             {
-                Opcodes.DIGITAL_SOUND_DEVICE => "D",
-                Opcodes.REMOTE_SOUND_DEVICE => "R",
-                _ => "P",
-            };
-            MonitorTextBoxText($" AudioDevice reported: {dev} ({label})");
+                MonitorTextBoxText($" AudioDevice reported: {dev} (ignored for local sticky; Remote={RemoteAudio})");
+                return;
+            }
+            _suppressAudioDeviceSend = true;
+            try { IsDigitalAudio = dev == Opcodes.DIGITAL_SOUND_DEVICE; }
+            finally { _suppressAudioDeviceSend = false; }
+            OnPropertyChanged(nameof(AudioDeviceButtonText));
+            MonitorTextBoxText($" AudioDevice reported: {dev} ({(dev == 0 ? "D" : "P")})");
         };
 
         // ms-sdr WiFi SWR → GUI (SWR_METER_TO_GUI=1): extended 0x0B FWD/REV/SWR
@@ -5478,7 +5665,10 @@ public partial class MainViewModel : ObservableObject, IDisposable
             _alcIdleTimer = null;
         }
         try { _swrMeter.Dispose(); } catch { /* ignore */ }
+        try { StopRemoteAf(closeWindow: true); } catch { /* ignore */ }
         try { RemotePhonesLauncher.StopAll(); } catch { /* ignore */ }
+        try { RemoteAf?.Dispose(); } catch { /* ignore */ }
+        RemoteAf = null;
         _radioService.Stop();
     }
 }

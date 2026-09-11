@@ -79,15 +79,25 @@ public static class SpectrumWaterfallSettings
     public static bool ExternalElectronicKeyer { get; set; }
 
     /// <summary>
-    /// Legacy sticky: when Phones selected, prefer remote mic. Migrated to <see cref="AudioDeviceMode"/>.
+    /// Client sticky: this PC is the operator seat (Remote checkbox). Never written to radio boot INI.
     /// </summary>
     public static bool RemoteAudio { get; set; }
 
     /// <summary>
-    /// Sticky audio path: 0=Digital, 1=Phones, 2=Remote (CMD_SET_AUDIO_DEVICE).
-    /// If last mode is Remote, MSCC starts MSCC-Remote.exe on startup.
+    /// Local audio path only: 0=Digital, 1=Phones. Never persist 2/3 (radio boot must stay 0/1).
     /// </summary>
     public static int AudioDeviceMode { get; set; } = 1;
+
+    public static bool RemoteMonitorAtRadio { get; set; }
+    public static int RemotePlayDeviceIndex { get; set; } = -1;
+    public static int RemoteMicDeviceIndex { get; set; } = -1;
+    public static int RemotePlayVolume { get; set; } = 80;
+    public static int RemoteMicVolume { get; set; } = 80;
+    public static bool RemotePlayMute { get; set; }
+    public static bool RemoteEqEnabled { get; set; }
+    public static float RemoteEqLowDb { get; set; }
+    public static float RemoteEqMidDb { get; set; }
+    public static float RemoteEqHighDb { get; set; }
 
     // HF (Proficio) bank — field-tuned defaults (FT8 contrast on 20m)
     public static float WaterfallHfHighDb { get; set; } = -44f;
@@ -690,12 +700,37 @@ public static class SpectrumWaterfallSettings
                         RemoteAudio = ParseIniBool(line, RemoteAudio);
                     if (LineMatchesKey(line, "AUDIO_DEVICE_MODE"))
                         AudioDeviceMode = Math.Clamp(ParseIniInt(line, AudioDeviceMode), 0, 2);
+                    if (LineMatchesKey(line, "REMOTE_MONITOR_RADIO"))
+                        RemoteMonitorAtRadio = ParseIniBool(line, RemoteMonitorAtRadio);
+                    if (LineMatchesKey(line, "REMOTE_PLAY_DEV"))
+                        RemotePlayDeviceIndex = ParseIniInt(line, RemotePlayDeviceIndex);
+                    if (LineMatchesKey(line, "REMOTE_MIC_DEV"))
+                        RemoteMicDeviceIndex = ParseIniInt(line, RemoteMicDeviceIndex);
+                    if (LineMatchesKey(line, "REMOTE_PLAY_VOL"))
+                        RemotePlayVolume = Math.Clamp(ParseIniInt(line, RemotePlayVolume), 0, 100);
+                    if (LineMatchesKey(line, "REMOTE_MIC_VOL"))
+                        RemoteMicVolume = Math.Clamp(ParseIniInt(line, RemoteMicVolume), 0, 100);
+                    if (LineMatchesKey(line, "REMOTE_PLAY_MUTE"))
+                        RemotePlayMute = ParseIniBool(line, RemotePlayMute);
+                    if (LineMatchesKey(line, "REMOTE_EQ"))
+                        RemoteEqEnabled = ParseIniBool(line, RemoteEqEnabled);
+                    if (LineMatchesKey(line, "REMOTE_EQ_LOW"))
+                        RemoteEqLowDb = ParseIniFloat(line, RemoteEqLowDb);
+                    if (LineMatchesKey(line, "REMOTE_EQ_MID"))
+                        RemoteEqMidDb = ParseIniFloat(line, RemoteEqMidDb);
+                    if (LineMatchesKey(line, "REMOTE_EQ_HIGH"))
+                        RemoteEqHighDb = ParseIniFloat(line, RemoteEqHighDb);
                 }
 
-                // Migrate legacy REMOTE_AUDIO bool → AUDIO_DEVICE_MODE when mode key absent.
+                // Legacy AUDIO_DEVICE_MODE=2 (old 3-way cycle) → Phones + Remote checkbox.
                 bool hasAudioMode = fileLines.Any(l => LineMatchesKey(l, "AUDIO_DEVICE_MODE"));
-                if (!hasAudioMode && RemoteAudio)
-                    AudioDeviceMode = 2;
+                if (AudioDeviceMode == 2)
+                {
+                    AudioDeviceMode = 1;
+                    RemoteAudio = true;
+                }
+                if (!hasAudioMode && RemoteAudio && AudioDeviceMode != 0)
+                    AudioDeviceMode = 1;
 
                 // Migrate legacy single TUNE_POWER → dual AMP stores when new keys were missing.
                 bool hasAmpOff = fileLines.Any(l => LineMatchesKey(l, "TUNE_POWER_AMP_OFF"));
@@ -890,7 +925,17 @@ public static class SpectrumWaterfallSettings
         UpdateOrAdd(lines, "CW_MEM_TEXT_WPM", ClampCwMemTextWpm(CwMemTextWpm).ToString());
         UpdateOrAdd(lines, "EXTERNAL_ELECTRONIC_KEYER", ExternalElectronicKeyer ? "1" : "0");
         UpdateOrAdd(lines, "REMOTE_AUDIO", RemoteAudio ? "1" : "0");
-        UpdateOrAdd(lines, "AUDIO_DEVICE_MODE", Math.Clamp(AudioDeviceMode, 0, 2).ToString());
+        UpdateOrAdd(lines, "AUDIO_DEVICE_MODE", Math.Clamp(AudioDeviceMode, 0, 1).ToString());
+        UpdateOrAdd(lines, "REMOTE_MONITOR_RADIO", RemoteMonitorAtRadio ? "1" : "0");
+        UpdateOrAdd(lines, "REMOTE_PLAY_DEV", RemotePlayDeviceIndex.ToString());
+        UpdateOrAdd(lines, "REMOTE_MIC_DEV", RemoteMicDeviceIndex.ToString());
+        UpdateOrAdd(lines, "REMOTE_PLAY_VOL", Math.Clamp(RemotePlayVolume, 0, 100).ToString());
+        UpdateOrAdd(lines, "REMOTE_MIC_VOL", Math.Clamp(RemoteMicVolume, 0, 100).ToString());
+        UpdateOrAdd(lines, "REMOTE_PLAY_MUTE", RemotePlayMute ? "1" : "0");
+        UpdateOrAdd(lines, "REMOTE_EQ", RemoteEqEnabled ? "1" : "0");
+        UpdateOrAdd(lines, "REMOTE_EQ_LOW", RemoteEqLowDb.ToString("0.0"));
+        UpdateOrAdd(lines, "REMOTE_EQ_MID", RemoteEqMidDb.ToString("0.0"));
+        UpdateOrAdd(lines, "REMOTE_EQ_HIGH", RemoteEqHighDb.ToString("0.0"));
 
         File.WriteAllLines(_iniPath, lines);
     }

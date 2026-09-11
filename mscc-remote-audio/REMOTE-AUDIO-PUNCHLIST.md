@@ -1,10 +1,42 @@
 # Remote audio — punch list
 
-**Date:** 2026-09-10  
-**Status:** field-proven Windows client ↔ Ubuntu servers (INI RX + opcode 2 mic).  
-**Working rule:** implement and prove everything on **`linux/`** (this Ubuntu box). Do **not** edit **`rpi/`** until that is working; then reconcile Pi from the proven `linux/` bits.
+**Date:** 2026-09-11  
+**Status:** Ubuntu `linux/` servers (items 1–2) + WPF in-UI Remote Phones (item 3, Windows) field-proven tonight. Stopped here.  
+**Working rule:** implement and prove everything on **`linux/`** (Ubuntu radio). Do **not** edit **`rpi/`** until that is working; then reconcile Pi from the proven `linux/` bits.
 
 Related: [STEW-REMOTE-AUDIO.md](STEW-REMOTE-AUDIO.md), [README.md](README.md).
+
+---
+
+## Left off (2026-09-11, end of day)
+
+Resume here. Radio: Ubuntu laptop **`linux/`** servers (`10.42.0.1`). Client: Windows WPF **9.11.2** in `C:\mscc-net9` (Connect-only, Launch Servers off).
+
+### Done tonight
+
+| Piece | State |
+|-------|--------|
+| **`linux/` recv + ms-sdr** | Live `0x25` HOST + `0x28` CTRL (enable/monitor/port). Mute local phones when remote RX on and monitor=0. INI still fallback. Trans still opcode **2** mic on **9101**. |
+| **WPF rail** | Audio button **Phones ↔ Digital** only. **Remote** checkbox is the operator-seat master (not greyed on Digital). Sticky: `REMOTE_AUDIO` + local `AUDIO_DEVICE_MODE` 0/1 only — never persist 2/3 as radio boot. |
+| **WPF wire** | Remote on → HOST (client IPv4 on route to Connect) then CTRL enable=1 port 9100 then `0x9B`=**2**. Remote off / Stop → enable=0 then local 0/1. |
+| **WPF popup** | `RemoteAfWindow` — devices, phones volume, mute, EQ, mic, **Monitor at radio**. TX host = Connect IP (no extra IP box). Volume works. Does **not** launch `MsccRemotePhones.exe`. |
+| **Process exit** | Close main window shuts down leftover AF windows (`ShutdownMode=OnMainWindowClose`). Task Manager leftover **fixed**. |
+
+Field log (Windows `10.42.0.157` ↔ Ubuntu `10.42.0.1`): `0x25` payload `0A-2A-00-9D`, `0x28` enable=1 port 9100, `0x9B`=2, MSA1 play 48 kHz, mic TX `10.42.0.1:9101`. Popup first failed (`NullReferenceException` on slider `ValueChanged` during XAML init — volume label not created yet); fixed in **9.11.2**.
+
+### Not done (next session)
+
+1. **Avalonia** same checkbox + popup (Linux operator GUI).  
+2. **Item 4** — `0x9B`=**3** R-Digital (recv digital AF tap, trans digital mic, client VAC, CAT proxy). Tonight **R-Digital is label only**; wire is still opcode **2**.  
+3. **`rpi/`** — do not copy until Ubuntu path stays solid.  
+4. Retire `MsccRemotePhones.exe` from the tree when Avalonia is in; WPF no longer needs it day-to-day.  
+5. Popup chrome: copies owner brushes on open; not live-synced if Settings theme changes while open.
+
+### Files touched (this WPF pass)
+
+- `mscc-ui/windows-work-tree/.../MSCC.Core` — `MsccAudioProtocol.cs`, opcodes `0x25`/`0x28`/`REMOTE_DIGITAL=3`, `SetRemoteRxAsync` / `GetLocalIPv4ToRemote`  
+- `mscc-ui/windows-work-tree/.../MSCC.Wpf` — `RemoteAudio/*`, `RemoteAfWindow.xaml`, rail checkbox, shutdown  
+- `mscc-remote-audio/REMOTE-AUDIO-PUNCHLIST.md` (this file)
 
 ---
 
@@ -12,15 +44,14 @@ Related: [STEW-REMOTE-AUDIO.md](STEW-REMOTE-AUDIO.md), [README.md](README.md).
 
 | Path | How |
 |------|-----|
-| Control | WPF (or Avalonia) Connect → radio host UDP **8888** |
-| Operator **mic TX** | Phones + **Remote Audio** → `CMD_SET_AUDIO_DEVICE` **2** (`0x9B`). MsccRemotePhones TX host = radio IP, port **9101** |
-| Operator **phones RX** | Radio `~/.local/mscc/remote-phones.ini`: `ENABLED=1`, `HOST=` **client IPv4**, `PORT=9100`. Recv streams MSA1. Restart servers after INI change. MsccRemotePhones listen **9100** |
-| Digital | Stays on the radio host (VirtualA/B). Not on this path yet |
+| Control | WPF Connect → Ubuntu radio UDP **8888** |
+| Operator **mic TX** | Remote on → `0x9B` **2**. WPF popup captures mic → MSA1 **9101** (Connect host). |
+| Operator **phones RX** | Remote on → client sends `0x25`/`0x28`; recv streams MSA1 **9100** to this PC. Popup plays it. INI `remote-phones.ini` still works if the client never sent a host. |
+| Local Digital / Phones | Remote **off** → `0x9B` 0 or 1 on the radio. Headless WSJT on Ubuntu unchanged. |
+| Mute shack phones | Recv mutes operator speaker while remote RX is on unless **Monitor at radio**. |
 
-**Windows companion:** `MsccRemotePhones.exe` beside WPF (`C:\mscc-net9`). Operator-side player, **not** a server GUI.  
-**Linux operator:** no player yet. Avalonia skips the WinForms exe.
-
-Opcode **2** does **not** start/stop the RX stream and does **not** mute the radio’s local phones.
+**Windows:** in-UI popup in MSCC.Wpf (9.11.2). `MsccRemotePhones.exe` is leftover / fallback only.  
+**Linux operator:** still no Avalonia player.
 
 ---
 
@@ -98,7 +129,7 @@ Trans does **not** need HOST. Mic TX is already “whoever sends to **9101**.”
 
 | Item | Notes |
 |------|--------|
-| Recv: when remote RX stream is active, do not play operator AF locally | Today `REMOTE_AUDIO` uses `manage_stream` like Phones |
+| Recv: when remote RX stream is active, do not play operator AF locally | **Done on `linux/`** (live CTRL + INI) |
 | Default: mute local phones | Unattended radio / remote op |
 | **Monitor at radio** (in the Remote popup) | Default **off**. On = keep local phones for a second person in the shack |
 | Remote RX off | Restore previous local phones behavior |
@@ -118,7 +149,7 @@ Trans does **not** need HOST. Mic TX is already “whoever sends to **9101**.”
 
 | Item | Notes |
 |------|--------|
-| Recv starts/stops MSA1 live — no process restart | |
+| Recv starts/stops MSA1 live — no process restart | **Done on `linux/` + WPF sends HOST/CTRL** |
 | Client fills HOST from the 8888 socket’s local IPv4 | No typing IP on the radio |
 | Init GUI may **show** current HOST/ENABLED | Fallback / debug, not the operator workflow |
 | Recv still honors INI if the client never sent a destination | Backward compatible |
@@ -137,7 +168,7 @@ Trans does **not** need HOST. Mic TX is already “whoever sends to **9101**.”
 | Linux playback/capture | Pulse/PipeWire (or PortAudio) — this **is** the Linux remote-audio GUI |
 | Popup: devices, volume, mute, EQ (phones only), monitor-at-radio, status | LOG/S/W owned-window pattern; `Ui*` brushes |
 | TX host = Connect host | No second IP box |
-| Open when Remote checks on; close AF when Remote checks off | X on the window leaves Remote on |
+| Open when Remote checks on; close AF when Remote checks off | **WPF done (9.11.2).** X leaves Remote on. Avalonia not started. |
 | Stop launching `MsccRemotePhones.exe` once in-UI AF works | See companion note below |
 | Linux-to-Linux smoke | Avalonia operator ↔ Ubuntu or Pi radio host |
 
@@ -188,9 +219,8 @@ ms-sdr already has **appliance** hooks: `Apply_Appliance_Startup()`, `G_Transcei
 
 `MsccRemotePhones.exe` is operator-side, not required because the radio host is Windows.
 
-- Keep until the **WPF** popup ships; restyle to client chrome if we touch it.
-- After in-UI AF works, drop it from the day-to-day path.
-- Linux never uses it (Avalonia popup).
+- WPF day-to-day path no longer launches it (in-UI popup). Keep the project as a reference / fallback until Avalonia ships.
+- Linux never uses it (Avalonia popup, not started).
 
 ---
 
@@ -208,11 +238,13 @@ ms-sdr already has **appliance** hooks: `Apply_Appliance_Startup()`, `G_Transcei
 
 Prove on **this Ubuntu radio (`linux/`)** first. **`rpi/` is last**, after it works here.
 
-1. **`linux/` recv** — item 1 mute + monitor (INI RX still OK).  
-2. **`linux/` recv + ms-sdr** — item 2 host/enable opcodes + 32-bit forward. Smoke with current WPF + MsccRemotePhones.  
-3. **WPF and/or Avalonia** against this Ubuntu host — Remote checkbox as master; AF popup; Linux GUI = Avalonia.  
-4. **Item 4 on `linux/`** — opcode 3, digital tap, VAC, CAT proxy. Keep Ron’s headless Pi-style Digital (UI closed) on this box too.  
-5. **Reconcile `rpi/`** — copy proven recv/ms-sdr/trans bits, same opcodes, Pi `.deb`. Not before step 2 (at least) is solid.  
-6. Retire MsccRemotePhones from daily use.
+1. ~~**`linux/` recv** — item 1 mute + monitor.~~ **Done.**  
+2. ~~**`linux/` recv + ms-sdr** — item 2 `0x25`/`0x28`.~~ **Done.**  
+3. ~~**WPF Remote Phones popup + checkbox.**~~ **Done (9.11.2).** Next: **Avalonia** same UI. R-Digital label still sends opcode **2**.  
+4. **Item 4 on `linux/`** — opcode 3, digital tap, VAC, CAT proxy. Keep Ron’s headless Digital (UI closed).  
+5. **Reconcile `rpi/`** — copy proven `linux/` bits, Pi `.deb`. Not before this Ubuntu path stays solid.  
+6. Retire `MsccRemotePhones.exe` from the tree after Avalonia.
 
-Field note (2026-09-10): Windows WPF + Ubuntu `192.168.1.234` worked with `HOST=` Windows client IP, MsccRemotePhones on 9100/9101, opcode 2 for mic.
+Field notes:  
+- 2026-09-10: WPF + Ubuntu with INI `HOST=` + MsccRemotePhones, opcode 2 mic.  
+- 2026-09-11: WPF 9.11.2 in-UI popup + live `0x25`/`0x28`; Windows `10.42.0.157` ↔ Ubuntu `10.42.0.1`.

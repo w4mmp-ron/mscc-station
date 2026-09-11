@@ -1,6 +1,7 @@
 using System;
 using System.Diagnostics;
 using System.IO;
+using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Timers;
@@ -1281,6 +1282,59 @@ public class UdpRadioService : IRadioService, IDisposable
             _ => "P (phones)",
         };
         DebugMonitor.MonitorTextBoxText($" Send audio device: {device} ({label})");
+    }
+
+    public System.Net.IPAddress? GetLocalIPv4ToRemote()
+    {
+        try
+        {
+            var remote = System.Net.IPAddress.TryParse(_remoteIp, out var parsed)
+                ? parsed
+                : System.Net.Dns.GetHostAddresses(_remoteIp)
+                    .FirstOrDefault(a => a.AddressFamily == System.Net.Sockets.AddressFamily.InterNetwork);
+            if (remote is null || remote.AddressFamily != System.Net.Sockets.AddressFamily.InterNetwork)
+                return null;
+            using var probe = new System.Net.Sockets.Socket(
+                System.Net.Sockets.AddressFamily.InterNetwork,
+                System.Net.Sockets.SocketType.Dgram,
+                System.Net.Sockets.ProtocolType.Udp);
+            probe.Connect(new System.Net.IPEndPoint(remote, Math.Max(1, _remotePort)));
+            if (probe.LocalEndPoint is not System.Net.IPEndPoint local)
+                return null;
+            if (local.Address.Equals(System.Net.IPAddress.Any) ||
+                local.Address.Equals(System.Net.IPAddress.None))
+                return null;
+            return local.Address;
+        }
+        catch (Exception ex)
+        {
+            DebugMonitor.MonitorTextBoxText($" GetLocalIPv4ToRemote failed: {ex.Message}");
+            return null;
+        }
+    }
+
+    public async Task SetRemoteRxAsync(System.Net.IPAddress dest, int port, bool enable, bool monitorAtRadio,
+        CancellationToken cancellationToken = default)
+    {
+        if (!_started) return;
+        if (dest is null || dest.AddressFamily != System.Net.Sockets.AddressFamily.InterNetwork)
+            throw new ArgumentException("Remote RX host must be IPv4.", nameof(dest));
+        if (port is < 1 or > 65535)
+            throw new ArgumentOutOfRangeException(nameof(port));
+
+        byte[] hostBytes = dest.GetAddressBytes();
+        await _transport.SendAsync(Opcodes.CMD_SET_REMOTE_RX_HOST, hostBytes, cancellationToken);
+
+        uint packed = (uint)(port & 0xFFFF);
+        if (enable)
+            packed |= Opcodes.RemoteRxCtrlEnable;
+        if (monitorAtRadio)
+            packed |= Opcodes.RemoteRxCtrlMonitor;
+        byte[] ctrl = new byte[4];
+        System.Buffers.Binary.BinaryPrimitives.WriteUInt32LittleEndian(ctrl, packed);
+        await _transport.SendAsync(Opcodes.CMD_SET_REMOTE_RX_CTRL, ctrl, cancellationToken);
+        DebugMonitor.MonitorTextBoxText(
+            $" Send remote RX HOST={dest} CTRL enable={(enable ? 1 : 0)} monitor={(monitorAtRadio ? 1 : 0)} port={port}");
     }
 
     public async Task SetTransverterAsync(bool on, CancellationToken cancellationToken = default)

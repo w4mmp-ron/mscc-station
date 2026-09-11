@@ -2,6 +2,7 @@ using System;
 using System.ComponentModel;
 using System.Globalization;
 using System.IO;
+using System.Linq;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Data;
@@ -21,6 +22,7 @@ public partial class MainWindow : Window
     private bool _ampCalTabActive;
     private bool _txIqTabActive;
     private bool _rxIqTabActive;
+    private bool _exiting;
 
     public MainWindow()
     {
@@ -903,6 +905,9 @@ public partial class MainWindow : Window
 
     private void MainWindow_Closing(object? sender, CancelEventArgs e)
     {
+        if (_exiting)
+            return;
+        _exiting = true;
         try
         {
             MSCC.Core.Logging.DebugMonitor.MonitorTextBoxText(" === MainWindow_Closing (X button / Alt+F4 / system close) ===");
@@ -935,6 +940,19 @@ public partial class MainWindow : Window
             catch { }
         }
         // Do not set e.Cancel. Allow normal close after our cleanup.
+        // Owned/hidden Remote AF windows must not keep the process in Task Manager.
+        try
+        {
+            foreach (Window w in Application.Current.Windows.Cast<Window>().ToArray())
+            {
+                if (!ReferenceEquals(w, this))
+                {
+                    try { w.Close(); } catch { /* ignore */ }
+                }
+            }
+        }
+        catch { /* ignore */ }
+        try { Application.Current.Shutdown(); } catch { /* ignore */ }
     }
 
     private void RestoreWindowPlacement()

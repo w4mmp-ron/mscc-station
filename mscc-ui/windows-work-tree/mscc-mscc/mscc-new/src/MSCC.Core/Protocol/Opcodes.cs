@@ -121,8 +121,10 @@ public static class Opcodes
     public const uint RemoteRxCtrlMonitor = 1u << 17;
     public const byte DIGITAL_SOUND_DEVICE = 0;
     public const byte PHONES_SOUND_DEVICE = 1;
-    /// <summary>Operator mic via MSA1 UDP (MsccRemotePhones → sdrcore-trans). Phones levels apply.</summary>
+    /// <summary>Operator mic via MSA1 UDP (client → sdrcore-trans). Phones levels apply.</summary>
     public const byte REMOTE_SOUND_DEVICE = 2;
+    /// <summary>Remote Digital (item 4) — not sent until linux recv/trans tap exists.</summary>
+    public const byte REMOTE_DIGITAL_SOUND_DEVICE = 3;
 
     // Status & Control
     public const byte CMD_SET_HDSDR_STATUS         = 0xF0;

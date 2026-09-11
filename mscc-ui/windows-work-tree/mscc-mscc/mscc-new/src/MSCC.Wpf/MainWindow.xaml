@@ -223,13 +223,13 @@
         </Border>
     </StackPanel>
 
-    <!-- Audio path: Digital (0) → Phones (1) → Remote (2). Remote starts/stops MSCC-Remote.exe. -->
-    <StackPanel Orientation="Horizontal" Margin="0,0,0,5" VerticalAlignment="Center">
+    <!-- Audio: Phones ↔ Digital. Remote checkbox is the operator-seat master. -->
+    <StackPanel Orientation="Horizontal" Margin="0,0,0,3" VerticalAlignment="Center">
         <TextBlock Text="Audio" Width="40" VerticalAlignment="Center" Foreground="{DynamicResource UiPrimaryTextBrush}"/>
-        <Button Width="72" Height="24" Margin="2,0,0,0" FontSize="10"
+        <Button Width="88" Height="24" Margin="2,0,0,0" FontSize="10"
                 Content="{Binding AudioDeviceButtonText}"
                 Command="{Binding ToggleAudioDigitalCommand}"
-                ToolTip="Press to cycle:&#x0a;Digital = VAC / digi (0)&#x0a;Phones = local operator mic (1)&#x0a;Remote = MSCC-Remote companion (2) — app starts; leaving Remote stops it">
+                ToolTip="Press to cycle Phones ↔ Digital.&#x0a;With Remote checked: R-Phones / R-Digital (this PC is the operator seat).">
             <Button.Style>
                 <Style TargetType="Button" BasedOn="{StaticResource MsccGoldButtonStyle}">
                     <Style.Triggers>
@@ -248,6 +248,10 @@
             </Button.Style>
         </Button>
     </StackPanel>
+    <CheckBox Content="Remote" IsChecked="{Binding RemoteAudio, Mode=TwoWay}"
+              Margin="0,0,0,8" FontSize="11"
+              Foreground="{DynamicResource UiPrimaryTextBrush}"
+              ToolTip="This PC is the operator seat: MSA1 phones/mic + popup. Uncheck to leave AF/CAT on the radio host."/>
 
     <!-- Main tab filter/step buttons (replacing Lo/Hi sliders; cycle presets like original) -->
     <TextBlock Text="FILTERS / STEP" FontWeight="SemiBold" Margin="0,5,0,3" Foreground="#00FFAA" FontSize="10"/>

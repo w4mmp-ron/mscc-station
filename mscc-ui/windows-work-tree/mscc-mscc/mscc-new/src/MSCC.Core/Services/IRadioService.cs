@@ -320,6 +320,16 @@ public interface IRadioService : IDisposable
     Task SetDigitalMicGainLevelAsync(int level, CancellationToken cancellationToken = default); // 0-100 digital
     Task SetAudioDeviceAsync(byte device, CancellationToken cancellationToken = default); // 0=Digital, 1=Phones, 2=Remote
 
+    /// <summary>
+    /// Recv live remote phones: HOST (0x25, IPv4 network order) then CTRL (0x28).
+    /// <paramref name="dest"/> is this client's IPv4. enable=0 stops the stream.
+    /// </summary>
+    Task SetRemoteRxAsync(System.Net.IPAddress dest, int port, bool enable, bool monitorAtRadio,
+        CancellationToken cancellationToken = default);
+
+    /// <summary>IPv4 of the NIC that routes to the Connected radio (not 0.0.0.0).</summary>
+    System.Net.IPAddress? GetLocalIPv4ToRemote();
+
     event Action<int> SpeakerVolumeReported;
     event Action<int> MicVolumeReported;
 
