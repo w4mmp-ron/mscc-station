@@ -123,7 +123,7 @@ public static class Opcodes
     public const byte PHONES_SOUND_DEVICE = 1;
     /// <summary>Operator mic via MSA1 UDP (client → sdrcore-trans). Phones levels apply.</summary>
     public const byte REMOTE_SOUND_DEVICE = 2;
-    /// <summary>Remote Digital (item 4) — not sent until linux recv/trans tap exists.</summary>
+    /// <summary>R-Digital: recv taps VirtualA path + MSA1; trans uses MSA1 as digital mic.</summary>
     public const byte REMOTE_DIGITAL_SOUND_DEVICE = 3;
 
     // Status & Control

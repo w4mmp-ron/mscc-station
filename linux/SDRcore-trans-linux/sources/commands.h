@@ -19,6 +19,7 @@
 #define DIGITAL_AUDIO 0
 #define OPERATOR_AUDIO 1
 #define REMOTE_AUDIO 2   /* Phones + client REMOTE AUDIO → MSA1 UDP mic */
+#define REMOTE_DIGITAL_AUDIO 3  /* MSA1 as digital mic; do not open VirtualB */
 
 #define CMD_SET_TWO_TONE 0x88
 #define CMD_SET_IQ_OFFSET 0x52

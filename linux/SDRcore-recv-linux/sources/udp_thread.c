@@ -744,7 +744,8 @@ void *UDP_Thread(void *my_param) {
                 fprintf(G_fp_logfile, "[%d] UDP Thread. CMD_SET_AUDIO_DEVICE. t_opcode_data: %d\n",
                     line_number++, t_opcode_data);
                 switch (t_opcode_data) {
-                case DIGITAL_AUDIO: {
+                case DIGITAL_AUDIO:
+                case REMOTE_DIGITAL_AUDIO: {
                     int dig = G_digital_output_device_index;
                     int op = G_output_device_index;
                     if (op < 0 || op >= MAX_OUTPUT_DEVICES || op == NO_OUTPUT_DEVICE) {
@@ -773,12 +774,19 @@ void *UDP_Thread(void *my_param) {
                         G_digital_output_devices[dig].device_index,
                         G_digital_output_devices[dig].name);
                     stream_status = manage_stream(1, G_digital_output_devices[dig].device_index, 2);
+                    G_recv_audio_mode = t_opcode_data;
                     if (stream_status != 0) {
                         print_time();
                         fprintf(G_fp_logfile,
                             "[%d] UDP Thread. DIGITAL open FAILED status=%d (no operator fallback)\n",
                             line_number++, stream_status);
                     }
+                    print_time();
+                    fprintf(G_fp_logfile,
+                        "[%d] UDP Thread. CMD_SET_AUDIO_DEVICE %s (mode=%d) VirtualA open status=%d\n",
+                        line_number++,
+                        t_opcode_data == REMOTE_DIGITAL_AUDIO ? "REMOTE_DIGITAL" : "DIGITAL",
+                        (int)t_opcode_data, stream_status);
                     break;
                 }
                 case OPERATOR_AUDIO:
@@ -799,6 +807,7 @@ void *UDP_Thread(void *my_param) {
                         manage_stream(0, 0, 2);
                     stream_status = manage_stream(1, G_output_devices[op].device_index,
                         G_output_devices[op].num_channels);
+                    G_recv_audio_mode = t_opcode_data;
                     print_time();
                     fprintf(G_fp_logfile,
                         "[%d] UDP Thread. CMD_SET_AUDIO_DEVICE %s done. op=%d stream_status=%d\n",

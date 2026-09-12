@@ -1,7 +1,7 @@
 # Remote audio — punch list
 
 **Date:** 2026-09-12  
-**Status:** R-Phones proven (WPF 9.11.2 ↔ Ubuntu `linux/`). **Next: opcode 3 on the Ubuntu radio** (`linux/` recv + trans + ms-sdr). WPF VAC / CAT wait until 3 is on the wire.  
+**Status:** R-Phones proven. **`linux/` `0x9B`=3 is on the wire** (recv/trans/ms-sdr). Next: WPF send 3 + VAC. CAT later. `rpi/` still read-only.  
 **Working rule:** implement and prove everything on **`linux/`** (Ubuntu radio). Do **not** edit **`rpi/`** until that is working; then reconcile Pi from the proven `linux/` bits.
 
 Related: [STEW-REMOTE-AUDIO.md](STEW-REMOTE-AUDIO.md), [README.md](README.md).
@@ -10,7 +10,7 @@ Related: [STEW-REMOTE-AUDIO.md](STEW-REMOTE-AUDIO.md), [README.md](README.md).
 
 ## Left off (2026-09-12)
 
-**You (Ubuntu laptop):** add **`0x9B` = 3** in **`linux/`** recv + trans + ms-sdr. Do **not** edit `rpi/`. WPF still sends **2** until 3 is proven in the logs.
+**Ubuntu `linux/` opcode 3 is implemented.** WPF still sends **2** until it is switched to 3. Smoke: `set-remote-rx.py --enable --dest <client> --audio 3`. Do **not** edit `rpi/`.
 
 Radio: Ubuntu **`linux/`** (`10.42.0.1`). Client: Windows WPF **9.11.2** (Connect-only). R-Phones is good.
 
@@ -264,7 +264,7 @@ Prove on **this Ubuntu radio (`linux/`)** first. **`rpi/` is last**, after it wo
 1. ~~**`linux/` recv** — item 1 mute + monitor.~~ **Done.**  
 2. ~~**`linux/` recv + ms-sdr** — item 2 `0x25`/`0x28`.~~ **Done.**  
 3. ~~**WPF Remote Phones popup + checkbox.**~~ **Done (9.11.2).**  
-4. **`linux/` opcode 3** — recv/trans/ms-sdr (this Ubuntu pass). Then WPF send 3 + VAC. CAT later.  
+4. ~~**`linux/` opcode 3**~~ **Done** (recv VirtualA tap + mute, trans MSA1 digital mic, ms-sdr digital levels, no persist 2/3). Next: WPF send 3 + VAC. CAT later.  
 5. **Windows servers** same 3 when swapping client/server. **Avalonia** popup.  
 6. **Reconcile `rpi/`** after Ubuntu 2 **and** 3 are solid.  
 7. Retire `MsccRemotePhones.exe` from the tree after Avalonia.

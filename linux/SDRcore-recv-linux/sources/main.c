@@ -16,6 +16,7 @@ sp_float wold = 0;
 sp_cplx incplx[4097];
 sp_cplx outcplx[4096];
 float G_volumeLevel = 0.0f; //Start with the volume muted.
+uint8_t G_recv_audio_mode = OPERATOR_AUDIO;
 
 /****** NOTE: Declared external in other modules and used as globals ******/
 state mystate;
@@ -291,14 +292,25 @@ static void process_iq_to_stereo(const SAMPLE *in, SAMPLE *out, unsigned long fr
     }
 }
 
-/* Zero operator phones only. Digital (VirtualA) play path is left alone. */
+/*
+ * Mute local play while remote RX is on and MONITOR=0.
+ * R-Phones: operator speaker only (never VirtualA — headless WSJT).
+ * R-Digital: mute VirtualA. Local Digital (0) is never muted.
+ */
 static void maybe_mute_local_phones(float *out, unsigned long frames)
 {
     unsigned long n;
     if (!out || frames == 0)
         return;
-    if (!remote_phones_mute_local() || g_play_is_digital)
+    if (!remote_phones_mute_local())
         return;
+    if (G_recv_audio_mode == DIGITAL_AUDIO)
+        return;
+    if (G_recv_audio_mode == REMOTE_DIGITAL_AUDIO) {
+        /* mute VirtualA */
+    } else if (g_play_is_digital) {
+        return;
+    }
     n = frames * 2u;
     while (n--)
         *out++ = 0.f;

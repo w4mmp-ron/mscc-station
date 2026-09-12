@@ -576,7 +576,8 @@ void *UDP_Thread(void *my_param) {
                 fflush(G_fp_logfile);
                 break;
             }
-            case REMOTE_AUDIO: {
+            case REMOTE_AUDIO:
+            case REMOTE_DIGITAL_AUDIO: {
                 int dig_idx = G_digital_input_device_index;
                 int op_idx = G_input_device_index;
                 if (op_idx < 0 || op_idx >= MAX_INPUT_DEVICES) {
@@ -588,16 +589,18 @@ void *UDP_Thread(void *my_param) {
                 }
                 if (dig_idx < 0 || dig_idx >= MAX_INPUT_DEVICES || dig_idx == NO_INPUT_DEVICE)
                     dig_idx = op_idx;
-                G_audio_mode = REMOTE_AUDIO;
-                /* Same stream open as Phones; callbacks pull MSA1 instead of local mic. */
+                G_audio_mode = t_opcode_data;
+                /* I/Q + MSA1. Do not open VirtualB (R-Digital) or local phones mic. */
                 stream_status = manage_stream(0, G_digital_input_devices[dig_idx].device_index,
                     G_digital_input_devices[dig_idx].num_channels);
                 stream_status = manage_stream(1, G_input_devices[op_idx].device_index,
                     G_input_devices[op_idx].num_channels);
                 print_time();
                 fprintf(G_fp_logfile,
-                    "[%d] UDP Thread. CMD_SET_AUDIO_DEVICE REMOTE done. op_idx=%d stream_status=%d ready=%d\n",
-                    line_number++, op_idx, stream_status, remote_mic_ready());
+                    "[%d] UDP Thread. CMD_SET_AUDIO_DEVICE %s done. op_idx=%d stream_status=%d ready=%d\n",
+                    line_number++,
+                    t_opcode_data == REMOTE_DIGITAL_AUDIO ? "REMOTE_DIGITAL" : "REMOTE",
+                    op_idx, stream_status, remote_mic_ready());
                 fflush(G_fp_logfile);
                 break;
             }
@@ -1076,6 +1079,7 @@ void *UDP_Thread(void *my_param) {
                     Set_Mic_Volume();
                     break;
                 case DIGITAL_AUDIO:
+                case REMOTE_DIGITAL_AUDIO:
                     print_time();
                     fprintf(G_fp_logfile, "[%d] UDP Thread. CMD_SET_MIC_VOLUME.  volume: %d, Calling Set_Digital_Mic_Volume\n",
                         line_number++, current_mic_volume);
@@ -1248,7 +1252,8 @@ void *UDP_Thread(void *my_param) {
                  * Entering TUNE on D → output-only I/Q (idle aloop stalls full duplex).
                  * Leaving TUNE on D → full duplex digi mic again.
                  */
-                if (G_audio_mode == DIGITAL_AUDIO) {
+                if (G_audio_mode == DIGITAL_AUDIO ||
+                    G_audio_mode == REMOTE_DIGITAL_AUDIO) {
                     int dig_idx = G_digital_input_device_index;
                     int op_idx = G_input_device_index;
                     int dig_dev;
@@ -1258,9 +1263,17 @@ void *UDP_Thread(void *my_param) {
                     if (mystate.opmode == MODE_TUNE || mystate.opmode == MODE_CW) {
                         print_time();
                         fprintf(G_fp_logfile,
-                            "[%d] UDP Thread. MODE T/C + DIGITAL: reopen OUTPUT-ONLY I/Q\n",
-                            line_number++);
+                            "[%d] UDP Thread. MODE T/C + %s: reopen OUTPUT-ONLY I/Q\n",
+                            line_number++,
+                            G_audio_mode == REMOTE_DIGITAL_AUDIO ? "R-DIGITAL" : "DIGITAL");
                         manage_stream(1, -1, 2);
+                    } else if (G_audio_mode == REMOTE_DIGITAL_AUDIO) {
+                        print_time();
+                        fprintf(G_fp_logfile,
+                            "[%d] UDP Thread. MODE voice + R-DIGITAL: I/Q + MSA1 (no VirtualB)\n",
+                            line_number++);
+                        manage_stream(1, G_input_devices[op_idx].device_index,
+                            G_input_devices[op_idx].num_channels);
                     } else if (dig_idx >= 0 && dig_idx < MAX_INPUT_DEVICES &&
                                dig_idx != NO_INPUT_DEVICE) {
                         dig_dev = G_digital_input_devices[dig_idx].device_index;

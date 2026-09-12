@@ -16,6 +16,7 @@ import time
 
 CMD_HOST = 0x25
 CMD_CTRL = 0x28
+CMD_AUDIO = 0x9B
 CTRL_ENABLE = 1 << 16
 CTRL_MONITOR = 1 << 17
 
@@ -81,6 +82,13 @@ def main() -> int:
     p.add_argument("--monitor", action="store_true", help="keep shack speaker")
     p.add_argument("--listen", action="store_true", help="count MSA1 on --rx-port")
     p.add_argument("--seconds", type=float, default=3.0)
+    p.add_argument(
+        "--audio",
+        type=int,
+        choices=(0, 1, 2, 3),
+        default=None,
+        help="also send CMD_SET_AUDIO_DEVICE 0x9B (2=R-Phones, 3=R-Digital)",
+    )
     args = p.parse_args()
 
     if args.listen:
@@ -100,6 +108,10 @@ def main() -> int:
         enable=bool(args.enable),
         monitor=bool(args.monitor),
     )
+    if args.audio is not None:
+        pkt = bytes([CMD_AUDIO, args.audio & 0xFF, 0])
+        sock.sendto(pkt, (args.ms_sdr, args.ms_port))
+        print(f"AUDIO 0x9B  mode={args.audio} → {args.ms_sdr}:{args.ms_port}")
     sock.close()
     return 0
 

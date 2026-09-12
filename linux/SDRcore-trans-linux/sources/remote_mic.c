@@ -2,7 +2,7 @@
  * MSCC remote operator mic — Pi receiver (MSA1 UDP).
  * Protocol matches Windows MsccRemotePhones TX (default port 9101).
  *
- * Client CMD_SET_AUDIO_DEVICE=2 (REMOTE_AUDIO) selects this mic path.
+ * Client CMD_SET_AUDIO_DEVICE=2 or 3 selects this mic path.
  * INI supplies PORT only (ENABLED is ignored; kept for old files).
  * Digital (D) ignores this module.
  */
@@ -278,7 +278,7 @@ void remote_mic_init(void)
     if (G_fp_logfile) {
         print_time();
         fprintf(G_fp_logfile,
-            "[%d] remote_mic: listen UDP :%d (use when CMD_SET_AUDIO_DEVICE=2)\n",
+            "[%d] remote_mic: listen UDP :%d (use when CMD_SET_AUDIO_DEVICE=2 or 3)\n",
             line_number++, g_port);
         fflush(G_fp_logfile);
     }

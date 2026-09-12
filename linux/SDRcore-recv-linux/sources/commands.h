@@ -10,6 +10,7 @@
 #define DIGITAL_AUDIO 0
 #define OPERATOR_AUDIO 1
 #define REMOTE_AUDIO 2   /* same speaker path as Phones; digi stays 0 */
+#define REMOTE_DIGITAL_AUDIO 3  /* VirtualA DSP path + MSA1 RX; mute VirtualA unless MONITOR */
 
 #define CMD_SET_CONFIGURATION 0x24
 

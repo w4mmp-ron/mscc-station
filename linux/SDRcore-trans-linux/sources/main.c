@@ -288,11 +288,11 @@ static int sdrAudioCallback(const void *inputBuffer, void *outputBuffer,
 
     G_DSP_Busy = TRUE;
     /*
-     * REMOTE_AUDIO (CMD_SET_AUDIO_DEVICE=2) → MSA1 UDP mic.
-     * Digital (0) always uses PortAudio digi capture; Phones (1) local mic.
+     * REMOTE_AUDIO (2) / REMOTE_DIGITAL_AUDIO (3) → MSA1 UDP mic.
+     * Digital (0) uses PortAudio VirtualB; Phones (1) local mic.
      */
-    if (G_audio_mode == REMOTE_AUDIO && remote_mic_ready() &&
-        framesPerBuffer <= 4096u) {
+    if ((G_audio_mode == REMOTE_AUDIO || G_audio_mode == REMOTE_DIGITAL_AUDIO) &&
+        remote_mic_ready() && framesPerBuffer <= 4096u) {
         remote_mic_fill_stereo_96k(remote_buf, (unsigned)framesPerBuffer);
         process_mic_to_iq(remote_buf, out, framesPerBuffer, 2);
         G_DSP_Busy = FALSE;
@@ -330,8 +330,8 @@ static int sdrMicOnlyCallback(const void *inputBuffer, void *outputBuffer,
     (void)timeInfo;
     (void)statusFlags;
     (void)userData;
-    /* Remote: I/Q callback pulls MSA1; do not mix local mic into the ring. */
-    if (G_audio_mode == REMOTE_AUDIO)
+    /* Remote / R-Digital: I/Q callback pulls MSA1; do not mix local/VirtualB mic. */
+    if (G_audio_mode == REMOTE_AUDIO || G_audio_mode == REMOTE_DIGITAL_AUDIO)
         return paContinue;
     if (inputBuffer == NULL || framesPerBuffer > 4096u)
         return paContinue;
@@ -363,7 +363,8 @@ static int sdrIqPlayOnlyCallback(const void *inputBuffer, void *outputBuffer,
     G_DSP_Busy = TRUE;
     if (mystate.opmode == MODE_TUNE || mystate.opmode == MODE_CW) {
         process_mic_to_iq(NULL, (SAMPLE *)outputBuffer, framesPerBuffer, 0);
-    } else if (G_audio_mode == REMOTE_AUDIO && remote_mic_ready()) {
+    } else if ((G_audio_mode == REMOTE_AUDIO || G_audio_mode == REMOTE_DIGITAL_AUDIO) &&
+               remote_mic_ready()) {
         remote_mic_fill_stereo_96k(micbuf, (unsigned)framesPerBuffer);
         process_mic_to_iq(micbuf, (SAMPLE *)outputBuffer, framesPerBuffer, 2);
     } else {
