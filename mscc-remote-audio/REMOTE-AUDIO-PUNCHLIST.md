@@ -1,18 +1,44 @@
 # Remote audio — punch list
 
 **Date:** 2026-09-12  
-**Status:** R-Phones proven. **`linux/` `0x9B`=3 is on the wire** (recv/trans/ms-sdr). Next: WPF send 3 + VAC. CAT later. `rpi/` still read-only.  
+**Status:** Remote operate **field-proven** (WPF 9.12.3 ↔ Ubuntu `linux/`). R-Phones, R-Digital+WSJT-X, TS-2000 CAT/PTT. **Ubuntu next:** QRP/IQ/freq **cal on that host** (power lives in `$HOME/power_cal.ini` etc.). `rpi/` still read-only.  
 **Working rule:** implement and prove everything on **`linux/`** (Ubuntu radio). Do **not** edit **`rpi/`** until that is working; then reconcile Pi from the proven `linux/` bits.
 
 Related: [STEW-REMOTE-AUDIO.md](STEW-REMOTE-AUDIO.md), [README.md](README.md).
 
 ---
 
-## Left off (2026-09-12)
+## Left off (2026-09-12, end of day)
 
-**Ubuntu `linux/` opcode 3 is implemented.** WPF still sends **2** until it is switched to 3. Smoke: `set-remote-rx.py --enable --dest <client> --audio 3`. Do **not** edit `rpi/`.
+**Remote desktop operate works.** Radio anywhere (Ubuntu `linux/` servers), Windows WPF + WSJT-X as the seat. Operator: Connect-only → Digital → **Remote**.
 
-Radio: Ubuntu **`linux/`** (`10.42.0.1`). Client: Windows WPF **9.11.2** (Connect-only). R-Phones is good.
+| Piece | State |
+|-------|--------|
+| **`linux/` recv + ms-sdr** | `0x25` HOST + `0x28` CTRL (enable/monitor/port 9100). Mute local phones (R-Phones) / VirtualA (R-Digital) unless monitor. INI fallback still. |
+| **`linux/` trans** | Opcode **2** operator mic UDP 9101; opcode **3** digital mic UDP 9101; no VirtualB on 3. |
+| **`linux/` ms-sdr** | Forwards `0x9B` 0–3. Digital **levels** for 0 and 3; Phones for 1 and 2. Never persist 2/3 in `user_controls.ini`. |
+| **WPF 9.12.3** | Audio Phones↔Digital; **Remote** checkbox. `0x9B`=2 or **3**. Popup: phones devices / VAC from `digital-speaker.ini`+`digital-microphone.ini`, EQ phones-only, monitor-at-radio. No `MsccRemotePhones.exe`. |
+| **CAT** | Remote on → client opens Settings COM (`comm-port.ini`, ms-sdr end of the pair), Kenwood **TS-2000** (`MSCC.Core` `KenwoodTs2000` → 8888 FA/MD/TX). WSJT-X settings **unchanged**. Hamlib sends `VX0;TX;` and does not read a reply — do **not** answer `TX0;`/`RX0;` (leftovers made WSJT unkey). Latch TX before `IF;`. |
+| **Cal** | Tables live on the **radio host**. Windows cal does not apply to Ubuntu. Run QRP/AMP/IQ/freq cal **on Ubuntu** (client Connected to that host, meter at the radio). Remote QRP power follows `$HOME/power_cal.ini` after that. |
+
+Field: Windows `10.42.0.157` ↔ Ubuntu `10.42.0.1`. WSJT-X decode/levels good. TUNE/PTT holds with 9.12.3.
+
+### Ubuntu build — bring this host up to speed
+
+Servers already have items **1–3** in **`linux/`**. Rebuild/install current `linux/` recv, trans, ms-sdr on the laptop if binaries are stale, then:
+
+1. **QRP CAL** (AMP off, dummy load / wattmeter at the Proficio). Same for TX IQ / freq if those INIs are still factory.  
+2. Confirm `$HOME/power_cal.ini` (and IQ) exist after cal.  
+3. Do **not** copy Windows `%LocalAppData%\MSCC-NET9` cal files onto Ubuntu.  
+4. Do **not** edit **`rpi/`** yet.
+
+WPF client stays 9.12.3 in `C:\mscc-net9` (Connect-only, Launch Servers off).
+
+### Next (not blocking Ubuntu cal)
+
+- Avalonia: same Remote popup + `KenwoodTs2000` on `$HOME/ms-sdr-cat` PTY.  
+- Windows servers: same `0x9B`=3 when swapping client/server.  
+- Copy proven `linux/` → `rpi/` for a Pi `.deb`.
 
 ### Linux opcode 3 — implementer spec
 
@@ -54,11 +80,7 @@ Same UDP ports as R-Phones. Client will later play/capture VAC; **do not** requi
 - Recv log: HOST/CTRL still start MSA1; VirtualA not playing.
 - Trans log: REMOTE DIGITAL, `remote_mic` ready, no VirtualB open.
 
-**After linux 3 is in the logs:** WPF sends 3 when Remote+Digital, popup uses `digital-speaker.ini` / `digital-microphone.ini`, no EQ. **CAT proxy later.** Then Windows servers get the same 3 when swapping client/server.
-
-### Already done (keep)
-
-WPF 9.11.2 popup, checkbox, `0x25`/`0x28`, opcode 2, process exit. Field: Windows `10.42.0.157` ↔ Ubuntu `10.42.0.1`.
+**Linux opcode 3 is in `linux/`** (recv/trans/ms-sdr). Spec above is the implemented contract, not remaining work.
 
 ---
 
@@ -67,13 +89,15 @@ WPF 9.11.2 popup, checkbox, `0x25`/`0x28`, opcode 2, process exit. Field: Window
 | Path | How |
 |------|-----|
 | Control | WPF Connect → Ubuntu radio UDP **8888** |
-| Operator **mic TX** | Remote on → `0x9B` **2**. WPF popup captures mic → MSA1 **9101** (Connect host). |
-| Operator **phones RX** | Remote on → client sends `0x25`/`0x28`; recv streams MSA1 **9100** to this PC. Popup plays it. INI `remote-phones.ini` still works if the client never sent a host. |
-| Local Digital / Phones | Remote **off** → `0x9B` 0 or 1 on the radio. Headless WSJT on Ubuntu unchanged. |
-| Mute shack phones | Recv mutes operator speaker while remote RX is on unless **Monitor at radio**. |
+| Operator **mic TX** | Remote + Phones → `0x9B` **2**, MSA1 **9101**. Remote + Digital → **3**, same port, VAC Digital Mic. |
+| Operator **phones RX** | `0x25`/`0x28` → MSA1 **9100**. Popup plays operator device (phones) or Digital Speaker VAC. |
+| CAT | Remote on: TS-2000 on Settings COM → FA/MD/TX on 8888. Remote off: COM free for local ms-sdr. |
+| Local Digital / Phones | Remote **off** → `0x9B` 0 or 1. Headless WSJT on Ubuntu unchanged. |
+| Mute shack AF | Recv mutes phones (2) or VirtualA (3) unless **Monitor at radio**. |
+| Cal | On the radio host only (`power_cal.ini`, IQ). Not in the WPF client folder. |
 
-**Windows:** in-UI popup in MSCC.Wpf (9.11.2). `MsccRemotePhones.exe` is leftover / fallback only.  
-**Linux operator:** still no Avalonia player.
+**Windows:** MSCC.Wpf **9.12.3**. `MsccRemotePhones.exe` leftover only.  
+**Linux operator:** Avalonia popup/CAT PTY not started.
 
 ---
 
@@ -202,12 +226,12 @@ Trans does **not** need HOST. Mic TX is already “whoever sends to **9101**.”
 
 | Item | Notes |
 |------|--------|
-| Recv + trans + ms-sdr handle **`0x9B` = 3** | **Next (Ubuntu `linux/`).** Spec in “Left off”. `rpi/` later. |
-| Recv: Digital seat + MSA1; mute VirtualA | Do not play shack VirtualA. Operator phones not the mute target. |
-| Trans: MSA1 9101 into digital TX path | No VirtualB capture while 3. `remote_mic_fill` for mode 2 **and** 3. |
-| ms-sdr: Digital **levels** for 3 | Phones levels stay on 1/2. Never persist 3 in `user_controls.ini`. |
-| WPF: send 3 + VAC devices | **After** linux 3 is in recv/trans logs. No EQ. |
-| **CAT proxy** on the operator PC | Later. Audio 3 first. |
+| Recv + trans + ms-sdr handle **`0x9B` = 3** | **Done on `linux/`.** `rpi/` later. |
+| Recv: Digital seat + MSA1; mute VirtualA | Done. |
+| Trans: MSA1 9101 into digital TX path | Done. `remote_mic_fill` for 2 and 3. |
+| ms-sdr: Digital **levels** for 3 | Done. Never persist 3. |
+| WPF: send 3 + VAC devices | **Done (9.12.x).** EQ off. Digital Speaker/Mic in Settings. |
+| **CAT** on the operator PC | **WPF done (9.12.3).** `KenwoodTs2000` in Core; COM when Remote on; no TX0;/RX0; replies; TX latch for `IF;`. Avalonia = same engine + PTY later. |
 | Local Digital + Remote **off** | **Keep:** WSJT + CAT on the radio host. |
 | Disconnect / Remote off | enable=0, `0x9B` = last local 0/1. |
 
@@ -264,11 +288,14 @@ Prove on **this Ubuntu radio (`linux/`)** first. **`rpi/` is last**, after it wo
 1. ~~**`linux/` recv** — item 1 mute + monitor.~~ **Done.**  
 2. ~~**`linux/` recv + ms-sdr** — item 2 `0x25`/`0x28`.~~ **Done.**  
 3. ~~**WPF Remote Phones popup + checkbox.**~~ **Done (9.11.2).**  
-4. ~~**`linux/` opcode 3**~~ **Done** (recv VirtualA tap + mute, trans MSA1 digital mic, ms-sdr digital levels, no persist 2/3). Next: WPF send 3 + VAC. CAT later.  
-5. **Windows servers** same 3 when swapping client/server. **Avalonia** popup.  
-6. **Reconcile `rpi/`** after Ubuntu 2 **and** 3 are solid.  
-7. Retire `MsccRemotePhones.exe` from the tree after Avalonia.
+4. ~~**`linux/` opcode 3**~~ **Done.**  
+5. ~~**WPF send 3 + VAC + CAT/PTT**~~ **Done (9.12.3).**  
+6. **Ubuntu host:** QRP (and IQ/freq) **cal on that computer** so remote power matches. Rebuild `linux/` debs if binaries lag sources.  
+7. **Avalonia** popup + CAT PTY. **Windows servers** same opcode 3 when swapping.  
+8. **Reconcile `rpi/`** after Ubuntu stays solid.  
+9. Retire `MsccRemotePhones.exe` from the tree after Avalonia.
 
 Field notes:  
-- 2026-09-10: WPF + Ubuntu with INI `HOST=` + MsccRemotePhones, opcode 2 mic.  
-- 2026-09-11: WPF 9.11.2 in-UI popup + live `0x25`/`0x28`; Windows `10.42.0.157` ↔ Ubuntu `10.42.0.1`.
+- 2026-09-10: WPF + Ubuntu INI `HOST=` + MsccRemotePhones, opcode 2 mic.  
+- 2026-09-11: WPF 9.11.2 in-UI popup + live `0x25`/`0x28`.  
+- 2026-09-12: WPF 9.12.3 R-Digital VAC + TS-2000 CAT (no TX0;/RX0; replies); WSJT-X decode/TUNE; Windows `10.42.0.157` ↔ Ubuntu `10.42.0.1`. Cal still to do **on Ubuntu**.

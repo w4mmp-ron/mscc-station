@@ -39,13 +39,17 @@
             <RowDefinition Height="Auto"/>
         </Grid.RowDefinitions>
 
-        <TextBlock Text="REMOTE AUDIO" FontWeight="SemiBold" FontSize="14"
+        <TextBlock x:Name="TitleBlock" Text="REMOTE AUDIO" FontWeight="SemiBold" FontSize="14"
                    Foreground="#00FFAA" Margin="0,0,0,8"/>
 
         <Border Grid.Row="1" Background="{DynamicResource UiPanelBackgroundBrush}"
                 BorderBrush="#444" BorderThickness="1" Padding="8" Margin="0,0,0,8">
             <StackPanel>
-                <TextBlock Text="PHONES RX" FontWeight="SemiBold" Foreground="#00FFAA" Margin="0,0,0,6"/>
+                <TextBlock x:Name="RxHeading" Text="PHONES RX" FontWeight="SemiBold" Foreground="#00FFAA" Margin="0,0,0,6"/>
+                <TextBlock x:Name="VacHint" Text="" TextWrapping="Wrap" FontSize="11"
+                           Foreground="{DynamicResource UiMutedTextBrush}" Margin="0,0,0,4"/>
+                <TextBlock x:Name="CatHint" Text="" TextWrapping="Wrap" FontSize="11"
+                           Foreground="#00FFAA" Margin="0,0,0,6"/>
                 <Grid Margin="0,0,0,4">
                     <Grid.ColumnDefinitions>
                         <ColumnDefinition Width="72"/>
@@ -80,7 +84,8 @@
         <Border Grid.Row="2" Background="{DynamicResource UiPanelBackgroundBrush}"
                 BorderBrush="#444" BorderThickness="1" Padding="8" Margin="0,0,0,8">
             <StackPanel>
-                <TextBlock Text="EQ / MIC TX" FontWeight="SemiBold" Foreground="#00FFAA" Margin="0,0,0,6"/>
+                <TextBlock x:Name="MicHeading" Text="EQ / MIC TX" FontWeight="SemiBold" Foreground="#00FFAA" Margin="0,0,0,6"/>
+                <StackPanel x:Name="EqPanel">
                 <CheckBox x:Name="EqEnableCheck" Content="Playback EQ" Foreground="{DynamicResource UiPrimaryTextBrush}"
                           Margin="0,0,0,4" Checked="Eq_Changed" Unchecked="Eq_Changed"/>
                 <Grid Margin="0,0,0,2">
@@ -110,6 +115,7 @@
                     <Slider x:Name="EqHighSlider" Grid.Column="1" Minimum="-12" Maximum="12" Value="0"
                             ValueChanged="EqSlider_Changed"/>
                 </Grid>
+                </StackPanel>
                 <Grid Margin="0,0,0,4">
                     <Grid.ColumnDefinitions>
                         <ColumnDefinition Width="72"/>

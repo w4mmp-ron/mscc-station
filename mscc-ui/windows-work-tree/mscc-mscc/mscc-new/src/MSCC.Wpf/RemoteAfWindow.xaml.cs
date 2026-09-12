@@ -72,9 +72,6 @@ public partial class RemoteAfWindow : Window
             foreach (var d in RemoteAudio.RemoteAfEngine.MicDevices)
                 MicDeviceCombo.Items.Add(new ComboBoxItem { Content = d.Name, Tag = d.Index });
 
-            SelectByTag(PlayDeviceCombo, SpectrumWaterfallSettings.RemotePlayDeviceIndex);
-            SelectByTag(MicDeviceCombo, SpectrumWaterfallSettings.RemoteMicDeviceIndex);
-
             PlayVolumeSlider.Value = SpectrumWaterfallSettings.RemotePlayVolume;
             MicVolumeSlider.Value = SpectrumWaterfallSettings.RemoteMicVolume;
             MuteCheck.IsChecked = SpectrumWaterfallSettings.RemotePlayMute;
@@ -84,6 +81,7 @@ public partial class RemoteAfWindow : Window
             EqHighSlider.Value = SpectrumWaterfallSettings.RemoteEqHighDb;
 
             _vm.RemoteAfLog += AppendLog;
+            RefreshPath();
             _ready = true;
             ApplyEq();
             StatusText.Text = _vm.RemoteAf?.Status ?? "—";
@@ -107,6 +105,45 @@ public partial class RemoteAfWindow : Window
         if (_vm != null)
             _vm.RemoteAfLog -= AppendLog;
         _vm = null;
+    }
+
+    /// <summary>R-Phones vs R-Digital chrome: VAC devices, hide EQ.</summary>
+    public void RefreshPath()
+    {
+        if (_vm == null) return;
+        bool digi = _vm.IsDigitalAudio;
+        Title = digi ? "Remote Digital" : "Remote Phones";
+        TitleBlock.Text = digi ? "REMOTE DIGITAL" : "REMOTE PHONES";
+        RxHeading.Text = digi ? "DIGITAL RX (VAC)" : "PHONES RX";
+        MicHeading.Text = digi ? "DIGITAL MIC TX (VAC)" : "EQ / MIC TX";
+        VacHint.Text = digi
+            ? "WSJT-X should use the same Digital Speaker / Digital Mic as Settings (CABLE / VB-Audio)."
+            : "";
+        VacHint.Visibility = digi ? Visibility.Visible : Visibility.Collapsed;
+        string catPort = _vm.RemoteCat?.PortName ?? CommPortConfig.Load().PortName;
+        bool catOpen = _vm.RemoteCat?.IsOpen == true;
+        CatHint.Text = catOpen
+            ? $"CAT: TS-2000 on {catPort} (same WSJT-X serial as local). Freq/mode/PTT → radio via 8888."
+            : $"CAT: not open ({catPort}). Check Settings COM (ms-sdr side of the pair) and that local ms-sdr is not holding it.";
+        EqPanel.Visibility = digi ? Visibility.Collapsed : Visibility.Visible;
+        MuteCheck.Content = digi ? "Mute VAC play" : "Mute phones";
+
+        bool wasReady = _ready;
+        _ready = false;
+        if (digi)
+        {
+            var s = AudioDeviceConfig.Load();
+            int play = MainViewModel.FindNamedAfDevice(RemoteAudio.RemoteAfEngine.PlayDevices, s.DigitalSpeaker);
+            int mic = MainViewModel.FindNamedAfDevice(RemoteAudio.RemoteAfEngine.MicDevices, s.DigitalMic);
+            SelectByTag(PlayDeviceCombo, play);
+            SelectByTag(MicDeviceCombo, mic);
+        }
+        else
+        {
+            SelectByTag(PlayDeviceCombo, SpectrumWaterfallSettings.RemotePlayDeviceIndex);
+            SelectByTag(MicDeviceCombo, SpectrumWaterfallSettings.RemoteMicDeviceIndex);
+        }
+        _ready = wasReady;
     }
 
     private static void SelectByTag(ComboBox box, int tag)
@@ -139,9 +176,14 @@ public partial class RemoteAfWindow : Window
         if (!_ready || _vm == null) return;
         if (PlayDeviceCombo.SelectedItem is ComboBoxItem it && it.Tag is int idx)
         {
-            SpectrumWaterfallSettings.RemotePlayDeviceIndex = idx;
+            if (_vm.RemoteAf != null)
+                _vm.RemoteAf.PlayDeviceIndex = idx;
+            if (!_vm.IsDigitalAudio)
+            {
+                SpectrumWaterfallSettings.RemotePlayDeviceIndex = idx;
+                SaveSettings();
+            }
             _vm.RestartRemoteAfRx();
-            SaveSettings();
         }
     }
 
@@ -150,9 +192,14 @@ public partial class RemoteAfWindow : Window
         if (!_ready || _vm == null) return;
         if (MicDeviceCombo.SelectedItem is ComboBoxItem it && it.Tag is int idx)
         {
-            SpectrumWaterfallSettings.RemoteMicDeviceIndex = idx;
+            if (_vm.RemoteAf != null)
+                _vm.RemoteAf.MicDeviceIndex = idx;
+            if (!_vm.IsDigitalAudio)
+            {
+                SpectrumWaterfallSettings.RemoteMicDeviceIndex = idx;
+                SaveSettings();
+            }
             _vm.RestartRemoteAfMic();
-            SaveSettings();
         }
     }
 

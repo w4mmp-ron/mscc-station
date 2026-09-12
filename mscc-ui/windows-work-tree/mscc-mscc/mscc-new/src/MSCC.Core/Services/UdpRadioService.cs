@@ -1278,7 +1278,8 @@ public class UdpRadioService : IRadioService, IDisposable
         string label = device switch
         {
             Opcodes.DIGITAL_SOUND_DEVICE => "D (digital)",
-            Opcodes.REMOTE_SOUND_DEVICE => "R (remote)",
+            Opcodes.REMOTE_SOUND_DEVICE => "R-Phones (2)",
+            Opcodes.REMOTE_DIGITAL_SOUND_DEVICE => "R-Digital (3)",
             _ => "P (phones)",
         };
         DebugMonitor.MonitorTextBoxText($" Send audio device: {device} ({label})");

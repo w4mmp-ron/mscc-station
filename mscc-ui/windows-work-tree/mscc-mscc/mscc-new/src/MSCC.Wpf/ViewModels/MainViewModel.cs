@@ -564,6 +564,7 @@ public partial class MainViewModel : ObservableObject, IDisposable
     private bool _remoteMonitorAtRadio;
 
     internal RemoteAfEngine? RemoteAf { get; private set; }
+    internal KenwoodCatPort? RemoteCat { get; private set; }
     internal event Action<string>? RemoteAfLog;
 
     private RemoteAfWindow? _remoteAfWindow;
@@ -582,9 +583,12 @@ public partial class MainViewModel : ObservableObject, IDisposable
         try { SpectrumWaterfallSettings.Save(); } catch { /* best-effort */ }
     }
 
+    /// <summary>Live remote seat: 2 = R-Phones, 3 = R-Digital. Never persisted as radio boot.</summary>
+    private byte RemoteWireOpcode() =>
+        IsDigitalAudio ? Opcodes.REMOTE_DIGITAL_SOUND_DEVICE : Opcodes.REMOTE_SOUND_DEVICE;
+
     /// <summary>
-    /// Push Remote HOST/CTRL + 0x9B, or restore local 0/1. Does not persist 2/3 as boot mode.
-    /// R-Digital (opcode 3) is not on the wire yet — Remote always sends 2 this pass.
+    /// Push Remote HOST/CTRL + 0x9B 2/3, or restore local 0/1. Does not persist 2/3 as boot mode.
     /// </summary>
     private void PushAudioToRadio(string reason)
     {
@@ -621,8 +625,9 @@ public partial class MainViewModel : ObservableObject, IDisposable
             _remoteRxSent = enable;
             if (enable)
             {
-                await _radioService.SetAudioDeviceAsync(Opcodes.REMOTE_SOUND_DEVICE).ConfigureAwait(true);
-                string label = IsDigitalAudio ? "R-Digital (wire 2 until item 4)" : "R-Phones (2)";
+                byte mode = RemoteWireOpcode();
+                await _radioService.SetAudioDeviceAsync(mode).ConfigureAwait(true);
+                string label = mode == Opcodes.REMOTE_DIGITAL_SOUND_DEVICE ? "R-Digital (3)" : "R-Phones (2)";
                 MonitorTextBoxText($" Remote RX HOST={ip}:9100 enable=1 monitor={(RemoteMonitorAtRadio ? 1 : 0)} → {label} ({reason})");
             }
         }
@@ -683,6 +688,11 @@ public partial class MainViewModel : ObservableObject, IDisposable
         PersistLocalAndRemote();
         PushAudioToRadio(value ? "path→D" : "path→P");
         OnPropertyChanged(nameof(AudioDeviceButtonText));
+        if (RemoteAudio)
+        {
+            ApplyRemoteAfDevicesAndRestart(value ? "path→D" : "path→P");
+            _remoteAfWindow?.RefreshPath();
+        }
     }
 
     partial void OnRemoteAudioChanged(bool value)
@@ -716,16 +726,10 @@ public partial class MainViewModel : ObservableObject, IDisposable
         RemoteAf ??= new RemoteAfEngine();
         RemoteAf.Log -= OnRemoteAfEngineLog;
         RemoteAf.Log += OnRemoteAfEngineLog;
-        RemoteAf.PlayDeviceIndex = SpectrumWaterfallSettings.RemotePlayDeviceIndex;
-        RemoteAf.MicDeviceIndex = SpectrumWaterfallSettings.RemoteMicDeviceIndex;
         RemoteAf.PlayVolume = SpectrumWaterfallSettings.RemotePlayVolume / 100f;
         RemoteAf.MicVolume = SpectrumWaterfallSettings.RemoteMicVolume / 100f;
         RemoteAf.PlayMuted = SpectrumWaterfallSettings.RemotePlayMute;
-        RemoteAf.ApplyEq(
-            SpectrumWaterfallSettings.RemoteEqEnabled,
-            SpectrumWaterfallSettings.RemoteEqLowDb,
-            SpectrumWaterfallSettings.RemoteEqMidDb,
-            SpectrumWaterfallSettings.RemoteEqHighDb);
+        ApplyRemoteAfDevices();
         try
         {
             RemoteAf.StartRx();
@@ -733,33 +737,134 @@ public partial class MainViewModel : ObservableObject, IDisposable
             if (string.IsNullOrEmpty(host))
                 host = "127.0.0.1";
             RemoteAf.StartMic(host);
-            MonitorTextBoxText($" Remote AF started ({reason}) TX host={host}:9101");
+            string seat = IsDigitalAudio ? "R-Digital VAC" : "R-Phones";
+            MonitorTextBoxText($" Remote AF started ({reason}) {seat} TX host={host}:9101 play={RemoteAf.PlayDeviceIndex} mic={RemoteAf.MicDeviceIndex}");
         }
         catch (Exception ex)
         {
             MonitorTextBoxText($" Remote AF start failed: {ex.Message}");
         }
+        StartRemoteCat();
         ShowRemoteAfWindow();
     }
 
     private void StopRemoteAf(bool closeWindow)
     {
+        StopRemoteCat();
         try { RemoteAf?.Stop(); } catch { /* ignore */ }
         if (closeWindow)
             CloseRemoteAfWindow();
     }
 
+    private void StartRemoteCat()
+    {
+        try
+        {
+            RemoteCat?.Stop();
+            RemoteCat = new KenwoodCatPort();
+            RemoteCat.Log += OnRemoteAfEngineLog;
+            var cat = RemoteCat.Engine;
+            cat.GetFrequencyHz = () => RadioState.ActiveVfo.FrequencyHz;
+            cat.GetTransmitting = () => PttOn || RadioState.IsTransmitting;
+            cat.GetModeDigit = () => KenwoodTs2000.ModeDigitFromName(FormatModeDisplay(RadioState.ActiveVfo.Mode));
+            cat.SetFrequencyHz = hz => RunOnUi(() => TuneToFrequency(hz));
+            cat.SetModeDigit = d => RunOnUi(() =>
+            {
+                ActiveMode = KenwoodTs2000.ModeNameFromDigit(d, preferDigU: IsDigitalAudio);
+            });
+            cat.SetPtt = tx => RunOnUi(() => { PttOn = tx; });
+            RemoteCat.Start(CommPortConfig.Load());
+        }
+        catch (Exception ex)
+        {
+            MonitorTextBoxText($" CAT start failed: {ex.Message}");
+        }
+    }
+
+    private void StopRemoteCat()
+    {
+        try
+        {
+            if (RemoteCat != null)
+            {
+                RemoteCat.Log -= OnRemoteAfEngineLog;
+                RemoteCat.Stop();
+                MonitorTextBoxText(" CAT closed (Remote off — COM free for local ms-sdr)");
+            }
+        }
+        catch { /* ignore */ }
+        RemoteCat = null;
+    }
+
+    internal void ApplyRemoteAfDevices()
+    {
+        if (RemoteAf == null) return;
+        if (IsDigitalAudio)
+        {
+            var s = AudioDeviceConfig.Load();
+            int play = FindNamedAfDevice(RemoteAfEngine.PlayDevices, s.DigitalSpeaker);
+            int mic = FindNamedAfDevice(RemoteAfEngine.MicDevices, s.DigitalMic);
+            RemoteAf.PlayDeviceIndex = play;
+            RemoteAf.MicDeviceIndex = mic;
+            RemoteAf.ApplyEq(false, 0, 0, 0);
+            MonitorTextBoxText(
+                $" R-Digital VAC play='{s.DigitalSpeaker.Trim()}' idx={play} mic='{s.DigitalMic.Trim()}' idx={mic}");
+            if (play < 0 || mic < 0)
+                MonitorTextBoxText(" R-Digital: set Digital Speaker/Mic in Settings (VAC / CABLE) if WSJT is silent");
+        }
+        else
+        {
+            RemoteAf.PlayDeviceIndex = SpectrumWaterfallSettings.RemotePlayDeviceIndex;
+            RemoteAf.MicDeviceIndex = SpectrumWaterfallSettings.RemoteMicDeviceIndex;
+            RemoteAf.ApplyEq(
+                SpectrumWaterfallSettings.RemoteEqEnabled,
+                SpectrumWaterfallSettings.RemoteEqLowDb,
+                SpectrumWaterfallSettings.RemoteEqMidDb,
+                SpectrumWaterfallSettings.RemoteEqHighDb);
+        }
+    }
+
+    internal void ApplyRemoteAfDevicesAndRestart(string reason)
+    {
+        if (!RemoteAudio || RemoteAf == null) return;
+        ApplyRemoteAfDevices();
+        RestartRemoteAfRx();
+        RestartRemoteAfMic();
+        MonitorTextBoxText($" Remote AF devices restarted ({reason})");
+    }
+
+    /// <summary>Match digital-speaker.ini / digital-microphone.ini against WASAPI/WaveIn names.</summary>
+    internal static int FindNamedAfDevice(IReadOnlyList<(int Index, string Name)> devices, string savedKey)
+    {
+        string want = (savedKey ?? "").Trim();
+        if (string.IsNullOrEmpty(want) || devices == null)
+            return -1;
+        foreach (var d in devices)
+        {
+            if (d.Index < 0)
+                continue;
+            string key = AudioDeviceConfig.ToMatchKey(d.Name);
+            if (string.Equals(key, want, StringComparison.OrdinalIgnoreCase) ||
+                (!string.IsNullOrEmpty(d.Name) && d.Name.Contains(want, StringComparison.OrdinalIgnoreCase)) ||
+                (!string.IsNullOrEmpty(key) && want.StartsWith(key, StringComparison.OrdinalIgnoreCase)))
+                return d.Index;
+        }
+        return -1;
+    }
+
     internal void RestartRemoteAfRx()
     {
         if (!RemoteAudio || RemoteAf == null) return;
-        RemoteAf.PlayDeviceIndex = SpectrumWaterfallSettings.RemotePlayDeviceIndex;
+        if (!IsDigitalAudio)
+            RemoteAf.PlayDeviceIndex = SpectrumWaterfallSettings.RemotePlayDeviceIndex;
         try { RemoteAf.StartRx(); } catch (Exception ex) { MonitorTextBoxText($" RX restart: {ex.Message}"); }
     }
 
     internal void RestartRemoteAfMic()
     {
         if (!RemoteAudio || RemoteAf == null) return;
-        RemoteAf.MicDeviceIndex = SpectrumWaterfallSettings.RemoteMicDeviceIndex;
+        if (!IsDigitalAudio)
+            RemoteAf.MicDeviceIndex = SpectrumWaterfallSettings.RemoteMicDeviceIndex;
         string host = (BackendIp ?? "").Trim();
         if (string.IsNullOrEmpty(host))
             host = "127.0.0.1";
@@ -5154,7 +5259,9 @@ public partial class MainViewModel : ObservableObject, IDisposable
         svc.AudioDeviceReported += dev =>
         {
             // Remote (2) is a client overlay — do not adopt it as local Digital/Phones sticky.
-            if (dev == Opcodes.REMOTE_SOUND_DEVICE || RemoteAudio)
+            if (dev == Opcodes.REMOTE_SOUND_DEVICE ||
+                dev == Opcodes.REMOTE_DIGITAL_SOUND_DEVICE ||
+                RemoteAudio)
             {
                 MonitorTextBoxText($" AudioDevice reported: {dev} (ignored for local sticky; Remote={RemoteAudio})");
                 return;
@@ -5668,7 +5775,9 @@ public partial class MainViewModel : ObservableObject, IDisposable
         try { StopRemoteAf(closeWindow: true); } catch { /* ignore */ }
         try { RemotePhonesLauncher.StopAll(); } catch { /* ignore */ }
         try { RemoteAf?.Dispose(); } catch { /* ignore */ }
+        try { RemoteCat?.Dispose(); } catch { /* ignore */ }
         RemoteAf = null;
+        RemoteCat = null;
         _radioService.Stop();
     }
 }
