@@ -48,6 +48,16 @@ public sealed class ClientSettings
     /// With Phones path: CMD_SET_AUDIO_DEVICE=2 (remote mic). Ignored while Digital.
     /// </summary>
     public bool RemoteAudio { get; set; }
+    public bool RemoteMonitorAtRadio { get; set; }
+    public int RemotePlayVolume { get; set; } = 80;
+    public int RemoteMicVolume { get; set; } = 80;
+    public bool RemotePlayMute { get; set; }
+    public bool RemoteEqEnabled { get; set; }
+    public float RemoteEqLowDb { get; set; }
+    public float RemoteEqMidDb { get; set; }
+    public float RemoteEqHighDb { get; set; }
+    public int RemotePlayDeviceIndex { get; set; } = -1;
+    public int RemoteMicDeviceIndex { get; set; } = -1;
 
     /// <summary>FM Simplex (no TX offset). Unchecked → VFO-B = A−100 kHz split.</summary>
     public bool FmSimplex { get; set; }
@@ -241,6 +251,16 @@ public static class ClientSettingsStore
             sb.AppendLine($"D_MIC={s.DMicGain}");
             sb.AppendLine($"DIGITAL_AUDIO={(s.IsDigitalAudio ? "1" : "0")}");
             sb.AppendLine($"REMOTE_AUDIO={(s.RemoteAudio ? "1" : "0")}");
+            sb.AppendLine($"REMOTE_MONITOR={(s.RemoteMonitorAtRadio ? "1" : "0")}");
+            sb.AppendLine($"REMOTE_PLAY_VOL={s.RemotePlayVolume}");
+            sb.AppendLine($"REMOTE_MIC_VOL={s.RemoteMicVolume}");
+            sb.AppendLine($"REMOTE_PLAY_MUTE={(s.RemotePlayMute ? "1" : "0")}");
+            sb.AppendLine($"REMOTE_EQ={(s.RemoteEqEnabled ? "1" : "0")}");
+            sb.AppendLine($"REMOTE_EQ_LOW={s.RemoteEqLowDb.ToString(CultureInfo.InvariantCulture)}");
+            sb.AppendLine($"REMOTE_EQ_MID={s.RemoteEqMidDb.ToString(CultureInfo.InvariantCulture)}");
+            sb.AppendLine($"REMOTE_EQ_HIGH={s.RemoteEqHighDb.ToString(CultureInfo.InvariantCulture)}");
+            sb.AppendLine($"REMOTE_PLAY_DEV={s.RemotePlayDeviceIndex}");
+            sb.AppendLine($"REMOTE_MIC_DEV={s.RemoteMicDeviceIndex}");
             sb.AppendLine($"FM_SIMPLEX={(s.FmSimplex ? "1" : "0")}");
             sb.AppendLine();
             sb.AppendLine("# RIT");
@@ -425,6 +445,43 @@ public static class ClientSettingsStore
                 break;
             case "REMOTE_AUDIO":
                 s.RemoteAudio = IsTruthy(val);
+                break;
+            case "REMOTE_MONITOR":
+                s.RemoteMonitorAtRadio = IsTruthy(val);
+                break;
+            case "REMOTE_PLAY_VOL":
+                if (int.TryParse(val, NumberStyles.Integer, CultureInfo.InvariantCulture, out int rpv))
+                    s.RemotePlayVolume = Math.Clamp(rpv, 0, 100);
+                break;
+            case "REMOTE_MIC_VOL":
+                if (int.TryParse(val, NumberStyles.Integer, CultureInfo.InvariantCulture, out int rmv))
+                    s.RemoteMicVolume = Math.Clamp(rmv, 0, 100);
+                break;
+            case "REMOTE_PLAY_MUTE":
+                s.RemotePlayMute = IsTruthy(val);
+                break;
+            case "REMOTE_EQ":
+                s.RemoteEqEnabled = IsTruthy(val);
+                break;
+            case "REMOTE_EQ_LOW":
+                if (float.TryParse(val, NumberStyles.Float, CultureInfo.InvariantCulture, out float el))
+                    s.RemoteEqLowDb = el;
+                break;
+            case "REMOTE_EQ_MID":
+                if (float.TryParse(val, NumberStyles.Float, CultureInfo.InvariantCulture, out float em))
+                    s.RemoteEqMidDb = em;
+                break;
+            case "REMOTE_EQ_HIGH":
+                if (float.TryParse(val, NumberStyles.Float, CultureInfo.InvariantCulture, out float eh))
+                    s.RemoteEqHighDb = eh;
+                break;
+            case "REMOTE_PLAY_DEV":
+                if (int.TryParse(val, NumberStyles.Integer, CultureInfo.InvariantCulture, out int rpd))
+                    s.RemotePlayDeviceIndex = rpd;
+                break;
+            case "REMOTE_MIC_DEV":
+                if (int.TryParse(val, NumberStyles.Integer, CultureInfo.InvariantCulture, out int rmd))
+                    s.RemoteMicDeviceIndex = rmd;
                 break;
             case "FM_SIMPLEX":
                 s.FmSimplex = IsTruthy(val);

@@ -95,7 +95,7 @@ public partial class RemoteAfWindow : Window
 
     private static void SelectByTag(ComboBox box, int tag)
     {
-        for (int i = 0; i < box.ItemCount; i++)
+        for (int i = 0; i < box.Items.Count; i++)
         {
             if (box.Items[i] is ComboBoxItem it && it.Tag is int t && t == tag)
             {
@@ -103,13 +103,13 @@ public partial class RemoteAfWindow : Window
                 return;
             }
         }
-        if (box.ItemCount > 0)
+        if (box.Items.Count > 0)
             box.SelectedIndex = 0;
     }
 
     private void AppendLog(string msg)
     {
-        Avalonia.Threading.Dispatcher.UIThread.Post(() =>
+        global::Avalonia.Threading.Dispatcher.UIThread.Post(() =>
         {
             LogBox.Text += msg + "\n";
             if (LogBox.Text.Length > 8000)

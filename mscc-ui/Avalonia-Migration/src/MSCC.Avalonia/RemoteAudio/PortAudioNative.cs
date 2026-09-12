@@ -5,6 +5,19 @@ namespace MSCC.Avalonia.RemoteAudio;
 /// <summary>Minimal PortAudio C API for Linux (libportaudio.so.2 / Pulse).</summary>
 internal static class PortAudioNative
 {
+    static PortAudioNative()
+    {
+        NativeLibrary.SetDllImportResolver(typeof(PortAudioNative).Assembly, (name, assembly, path) =>
+        {
+            if (name != Lib) return IntPtr.Zero;
+            if (NativeLibrary.TryLoad("libportaudio.so.2", assembly, path, out var h))
+                return h;
+            if (NativeLibrary.TryLoad("libportaudio.so", assembly, path, out h))
+                return h;
+            return IntPtr.Zero;
+        });
+    }
+
     public const uint Float32 = 0x00000001;
     public const uint FramesUnspecified = 0;
     public const int NoDevice = -1;

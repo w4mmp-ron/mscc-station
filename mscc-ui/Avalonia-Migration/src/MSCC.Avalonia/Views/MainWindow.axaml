@@ -99,7 +99,7 @@
                     IsChecked="{Binding RemoteAudio}"
                     IsEnabled="{Binding RemoteAudioCheckboxEnabled}"
                     FontSize="10" Foreground="#CCC" Margin="0,0,0,2"
-                    ToolTip.Tip="Phones + checked → mic from remote PC (MsccRemotePhones UDP 9101). Digital always stays on the radio host."/>
+                    ToolTip.Tip="This PC is the operator seat. Phones → R-Phones (0x9B=2). Digital → R-Digital (0x9B=3). Opens Remote AF + CAT."/>
 
           <!-- Filters / Step (live when connected) -->
           <TextBlock Classes="mscc-section" Text="FILTERS / STEP"/>

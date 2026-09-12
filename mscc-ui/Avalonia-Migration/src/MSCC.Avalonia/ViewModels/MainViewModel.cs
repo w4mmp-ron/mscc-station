@@ -357,7 +357,7 @@ public partial class MainViewModel : ViewModelBase, IDisposable
     [ObservableProperty] private string _proficioTempText = "— °C";
     [ObservableProperty] private string _paTempText = "— °C";
     [ObservableProperty] private string _paCurrentText = "— mA";
-    [ObservableProperty] private string _clientVersionText = "0.6.46";
+    [ObservableProperty] private string _clientVersionText = "0.6.47";
     [ObservableProperty] private bool _qrpMode = true;
     [ObservableProperty] private bool _fullPower;
     [ObservableProperty] private bool _alcOn;
@@ -5351,6 +5351,16 @@ public partial class MainViewModel : ViewModelBase, IDisposable
             DMicGain = Math.Clamp(s.DMicGain, 0, 100);
             IsDigitalAudio = s.IsDigitalAudio;
             RemoteAudio = s.RemoteAudio;
+            RemoteMonitorAtRadio = s.RemoteMonitorAtRadio;
+            RemotePlayVolume = Math.Clamp(s.RemotePlayVolume, 0, 100);
+            RemoteMicVolume = Math.Clamp(s.RemoteMicVolume, 0, 100);
+            RemotePlayMute = s.RemotePlayMute;
+            RemoteEqEnabled = s.RemoteEqEnabled;
+            RemoteEqLowDb = s.RemoteEqLowDb;
+            RemoteEqMidDb = s.RemoteEqMidDb;
+            RemoteEqHighDb = s.RemoteEqHighDb;
+            RemotePlayDeviceIndex = s.RemotePlayDeviceIndex;
+            RemoteMicDeviceIndex = s.RemoteMicDeviceIndex;
             FmSimplex = s.FmSimplex;
             _suppressAudioSend = false;
             OnPropertyChanged(nameof(RemoteAudioCheckboxEnabled));
@@ -5514,6 +5524,16 @@ public partial class MainViewModel : ViewModelBase, IDisposable
             DMicGain = DMicGain,
             IsDigitalAudio = IsDigitalAudio,
             RemoteAudio = RemoteAudio,
+            RemoteMonitorAtRadio = RemoteMonitorAtRadio,
+            RemotePlayVolume = RemotePlayVolume,
+            RemoteMicVolume = RemoteMicVolume,
+            RemotePlayMute = RemotePlayMute,
+            RemoteEqEnabled = RemoteEqEnabled,
+            RemoteEqLowDb = RemoteEqLowDb,
+            RemoteEqMidDb = RemoteEqMidDb,
+            RemoteEqHighDb = RemoteEqHighDb,
+            RemotePlayDeviceIndex = RemotePlayDeviceIndex,
+            RemoteMicDeviceIndex = RemoteMicDeviceIndex,
             FmSimplex = FmSimplex,
             RitOn = RitOn,
             RitOffset = RitOffset,

@@ -1,6 +1,8 @@
 <Window xmlns="https://github.com/avaloniaui"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:vm="using:MSCC.Avalonia.ViewModels"
         x:Class="MSCC.Avalonia.Views.RemoteAfWindow"
+        x:DataType="vm:MainViewModel"
         Title="Remote Audio"
         Width="440" Height="520" MinWidth="360" MinHeight="360"
         WindowStartupLocation="CenterOwner"
