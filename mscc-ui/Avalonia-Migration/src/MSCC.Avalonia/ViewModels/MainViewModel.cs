@@ -5,7 +5,10 @@ using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using MSCC.Avalonia.Controls;
 using MSCC.Avalonia.Models;
+using MSCC.Avalonia.RemoteAudio;
 using MSCC.Avalonia.Services;
+using MSCC.Avalonia.Views;
+using MsccDialog = MSCC.Avalonia.MsccDialog;
 using MSCC.Core.Display;
 using MSCC.Core.Logging;
 using MSCC.Core.Protocol;
@@ -152,7 +155,7 @@ public partial class MainViewModel : ViewModelBase, IDisposable
         HighCutLabel = HighCutLabels[_highCutIndex];
         CwFilterLabel = CwFilterLabels[_cwFilterIndex];
         ModeText = "USB";
-        AppendLog("MSCC Avalonia 0.6.44 — FM power slider; TX IQ freqs; Remote Audio / CQ.");
+        AppendLog("MSCC Avalonia 0.6.46 — QRP CAL live slider; dummy-load dialog.");
         AppendLog("PTT = TX (voice modes); TUN = TUNE + carrier. S/W opens pan settings.");
         AppendLog($"Log: {LogFilePath}");
         CwPitchLabel = CwPitchOptions[Math.Clamp(CwPitchIndex, 0, CwPitchOptions.Count - 1)];
@@ -269,6 +272,23 @@ public partial class MainViewModel : ViewModelBase, IDisposable
     [ObservableProperty] private bool _isDigitalAudio;
     /// <summary>With Phones: CMD_SET_AUDIO_DEVICE=2 (remote mic). Sticky; ignored on Digital.</summary>
     [ObservableProperty] private bool _remoteAudio;
+    [ObservableProperty] private bool _remoteMonitorAtRadio;
+    [ObservableProperty] private int _remotePlayVolume = 80;
+    [ObservableProperty] private int _remoteMicVolume = 80;
+    [ObservableProperty] private bool _remotePlayMute;
+    [ObservableProperty] private bool _remoteEqEnabled;
+    [ObservableProperty] private float _remoteEqLowDb;
+    [ObservableProperty] private float _remoteEqMidDb;
+    [ObservableProperty] private float _remoteEqHighDb;
+    [ObservableProperty] private int _remotePlayDeviceIndex = -1;
+    [ObservableProperty] private int _remoteMicDeviceIndex = -1;
+
+    internal RemoteAfEngine? RemoteAf { get; private set; }
+    internal KenwoodCatPort? RemoteCat { get; private set; }
+    public event Action<string>? RemoteAfLog;
+    private Views.RemoteAfWindow? _remoteAfWindow;
+    private System.Net.IPAddress? _lastRemoteRxHost;
+    private bool _remoteRxSent;
     [ObservableProperty] private int _ritOffset;
     [ObservableProperty] private bool _ritOn;
     [ObservableProperty] private double _spectrumZoom = 1;
@@ -337,7 +357,7 @@ public partial class MainViewModel : ViewModelBase, IDisposable
     [ObservableProperty] private string _proficioTempText = "— °C";
     [ObservableProperty] private string _paTempText = "— °C";
     [ObservableProperty] private string _paCurrentText = "— mA";
-    [ObservableProperty] private string _clientVersionText = "0.6.44";
+    [ObservableProperty] private string _clientVersionText = "0.6.46";
     [ObservableProperty] private bool _qrpMode = true;
     [ObservableProperty] private bool _fullPower;
     [ObservableProperty] private bool _alcOn;
@@ -531,10 +551,13 @@ public partial class MainViewModel : ViewModelBase, IDisposable
     public string ConnectButtonText => IsConnected ? "Disconnect" : "Connect";
     public string StubTip => "Layout placeholder — not wired yet";
     /// <summary>Left-rail Audio path button: Phones or Digital.</summary>
-    public string AudioPathButtonText => IsDigitalAudio ? "Digital" : "Phones";
+    public string AudioPathButtonText =>
+        RemoteAudio
+            ? (IsDigitalAudio ? "R-Digital" : "R-Phones")
+            : (IsDigitalAudio ? "Digital" : "Phones");
 
-    /// <summary>Remote Audio checkbox enabled only on Phones path.</summary>
-    public bool RemoteAudioCheckboxEnabled => !IsDigitalAudio;
+    /// <summary>Remote is the operator seat — stays enabled on Digital (R-Digital).</summary>
+    public bool RemoteAudioCheckboxEnabled => true;
 
     /// <summary>User may press PTT/TUN only when connected and server is not locking TX.</summary>
     public bool CanUserControlTransmit => IsConnected && !IsBusy && !TxSetByServer && _radio != null;
@@ -1033,8 +1056,9 @@ public partial class MainViewModel : ViewModelBase, IDisposable
             // Restore sticky operate settings to the radio (server-backed)
             await PushStickyOperateToRadioAsync().ConfigureAwait(true);
 
-            if (RemoteAudio && !IsDigitalAudio)
-                RemotePhonesLauncher.StartOrShow(msg => AppendLog(msg));
+            PushAudioToRadio("connect");
+            if (RemoteAudio)
+                StartRemoteAf("connect");
         }
         catch (Exception ex)
         {
@@ -1061,6 +1085,15 @@ public partial class MainViewModel : ViewModelBase, IDisposable
         try
         {
             AppendLog("Disconnect (servers left running).");
+            if (RemoteAudio && _radio != null)
+            {
+                try
+                {
+                    PushRemoteOffAndLocalAsync("disconnect").GetAwaiter().GetResult();
+                }
+                catch { /* ignore */ }
+                StopRemoteAf(closeWindow: true);
+            }
             // Best-effort clear TX before dropping UDP session
             try
             {
@@ -1570,25 +1603,79 @@ public partial class MainViewModel : ViewModelBase, IDisposable
             $"Digital Mic {value}");
     }
 
-    private byte ResolveAudioDeviceOpcode()
+    private byte LocalAudioOpcode() =>
+        IsDigitalAudio ? Opcodes.DIGITAL_SOUND_DEVICE : Opcodes.PHONES_SOUND_DEVICE;
+
+    private byte RemoteWireOpcode() =>
+        IsDigitalAudio ? Opcodes.REMOTE_DIGITAL_SOUND_DEVICE : Opcodes.REMOTE_SOUND_DEVICE;
+
+    private void PushAudioToRadio(string reason)
     {
-        if (IsDigitalAudio)
-            return Opcodes.DIGITAL_SOUND_DEVICE;
+        if (_suppressAudioSend) return;
+        if (_radio == null || !IsConnected)
+        {
+            AppendLog($"Audio not sent (not connected) ({reason})");
+            return;
+        }
+
         if (RemoteAudio)
-            return Opcodes.REMOTE_SOUND_DEVICE;
-        return Opcodes.PHONES_SOUND_DEVICE;
+        {
+            var ip = _radio.GetLocalIPv4ToRemote();
+            if (ip is null)
+            {
+                AppendLog($"Remote RX HOST failed — no IPv4 route to {Host} ({reason})");
+                return;
+            }
+            _lastRemoteRxHost = ip;
+            _ = PushRemoteRxAndModeAsync(ip, enable: true, reason);
+        }
+        else
+            _ = PushRemoteOffAndLocalAsync(reason);
     }
 
-    /// <summary>
-    /// WPF parity: companion runs only for Remote (not Digital). Sticky RemoteAudio
-    /// may stay true while Digital is selected — still stop MsccRemotePhones.
-    /// </summary>
-    private void SyncRemotePhonesCompanion()
+    private async Task PushRemoteRxAndModeAsync(System.Net.IPAddress ip, bool enable, string reason)
     {
-        if (!IsDigitalAudio && RemoteAudio)
-            RemotePhonesLauncher.StartOrShow(msg => AppendLog(msg));
-        else
-            RemotePhonesLauncher.StopAll(msg => AppendLog(msg));
+        if (_radio == null) return;
+        try
+        {
+            await _radio.SetRemoteRxAsync(ip, MsccAudioProtocol.DefaultPort, enable, RemoteMonitorAtRadio)
+                .ConfigureAwait(true);
+            _remoteRxSent = enable;
+            if (enable)
+            {
+                byte mode = RemoteWireOpcode();
+                await _radio.SetAudioDeviceAsync(mode).ConfigureAwait(true);
+                string label = mode == Opcodes.REMOTE_DIGITAL_SOUND_DEVICE ? "R-Digital (3)" : "R-Phones (2)";
+                AppendLog($"Remote RX HOST={ip}:9100 enable=1 monitor={(RemoteMonitorAtRadio ? 1 : 0)} → {label} ({reason})");
+            }
+        }
+        catch (Exception ex)
+        {
+            AppendLog($"Remote RX send failed: {ex.Message}");
+        }
+    }
+
+    private async Task PushRemoteOffAndLocalAsync(string reason)
+    {
+        if (_radio == null) return;
+        try
+        {
+            if (_remoteRxSent)
+            {
+                var ip = _lastRemoteRxHost ?? _radio.GetLocalIPv4ToRemote()
+                         ?? System.Net.IPAddress.Loopback;
+                await _radio.SetRemoteRxAsync(ip, MsccAudioProtocol.DefaultPort, enable: false, RemoteMonitorAtRadio)
+                    .ConfigureAwait(true);
+                _remoteRxSent = false;
+            }
+            byte local = LocalAudioOpcode();
+            await _radio.SetAudioDeviceAsync(local).ConfigureAwait(true);
+            AppendLog($"Remote RX off → {(local == 0 ? "Digital (0)" : "Phones (1)")} ({reason})");
+        }
+        catch (Exception ex)
+        {
+            AppendLog($"Remote RX off failed: {ex.Message}");
+        }
     }
 
     partial void OnIsDigitalAudioChanged(bool value)
@@ -1597,31 +1684,8 @@ public partial class MainViewModel : ViewModelBase, IDisposable
         OnPropertyChanged(nameof(RemoteAudioCheckboxEnabled));
         ScheduleSaveClientSettings();
 
-        // Always sync companion (including server-report path) — Digital must stop AF.
-        SyncRemotePhonesCompanion();
-
         if (_suppressAudioSend) return;
 
-        byte device = ResolveAudioDeviceOpcode();
-        string label = device switch
-        {
-            Opcodes.DIGITAL_SOUND_DEVICE => "Digital (0)",
-            Opcodes.REMOTE_SOUND_DEVICE => "Remote (2)",
-            _ => "Phones (1)",
-        };
-
-        if (CanOperate() && _radio != null)
-        {
-            _ = SendAudioAsync(
-                () => _radio.SetAudioDeviceAsync(device),
-                $"Audio device → {label}");
-        }
-        else
-        {
-            AppendLog($"Audio device → {label} (not connected)");
-        }
-
-        // Match WPF: P→D forces CMP off; D→P restores session preferred CMP.
         if (value)
         {
             if (CompressionOn)
@@ -1638,37 +1702,201 @@ public partial class MainViewModel : ViewModelBase, IDisposable
                 _ = SendCompressionStateAsync(_sessionCompressionOn);
             AppendLog($"CMP restored for phones (P): {_sessionCompressionOn}");
         }
+
+        PushAudioToRadio(value ? "path→D" : "path→P");
+        if (RemoteAudio)
+        {
+            ApplyRemoteAfDevicesAndRestart(value ? "path→D" : "path→P");
+            _remoteAfWindow?.RefreshPath();
+        }
     }
 
     partial void OnRemoteAudioChanged(bool value)
     {
+        OnPropertyChanged(nameof(AudioPathButtonText));
         ScheduleSaveClientSettings();
-
-        // Companion follows sticky Remote + path even when suppressing opcode sends.
-        if (IsDigitalAudio)
-        {
-            if (!_suppressAudioSend)
-                AppendLog("Remote Audio sticky saved (inactive while Audio=Digital)");
-            SyncRemotePhonesCompanion();
-            return;
-        }
-
-        SyncRemotePhonesCompanion();
-
         if (_suppressAudioSend) return;
-
-        byte device = ResolveAudioDeviceOpcode();
-        string label = device == Opcodes.REMOTE_SOUND_DEVICE ? "Remote (2)" : "Phones (1)";
-        if (CanOperate() && _radio != null)
+        if (value)
         {
-            _ = SendAudioAsync(
-                () => _radio.SetAudioDeviceAsync(device),
-                $"Audio device → {label}");
+            PushAudioToRadio("Remote ON");
+            StartRemoteAf("Remote ON");
         }
         else
         {
-            AppendLog($"Audio device → {label} (not connected)");
+            PushAudioToRadio("Remote OFF");
+            StopRemoteAf(closeWindow: true);
         }
+    }
+
+    partial void OnRemoteMonitorAtRadioChanged(bool value)
+    {
+        ScheduleSaveClientSettings();
+        if (_suppressAudioSend) return;
+        if (RemoteAudio && IsConnected)
+            PushAudioToRadio("monitor");
+    }
+
+    internal void StartRemoteAf(string reason)
+    {
+        try { Services.RemotePhonesLauncher.StopAll(); } catch { /* in-UI AF */ }
+        RemoteAf ??= new RemoteAfEngine();
+        RemoteAf.Log -= OnRemoteAfEngineLog;
+        RemoteAf.Log += OnRemoteAfEngineLog;
+        RemoteAf.PlayVolume = RemotePlayVolume / 100f;
+        RemoteAf.MicVolume = RemoteMicVolume / 100f;
+        RemoteAf.PlayMuted = RemotePlayMute;
+        ApplyRemoteAfDevices();
+        try
+        {
+            RemoteAf.StartRx();
+            string host = (Host ?? "").Trim();
+            if (string.IsNullOrEmpty(host))
+                host = "127.0.0.1";
+            RemoteAf.StartMic(host);
+            AppendLog($"Remote AF started ({reason}) TX host={host}:9101");
+        }
+        catch (Exception ex)
+        {
+            AppendLog($"Remote AF start failed: {ex.Message}");
+        }
+        StartRemoteCat();
+        ShowRemoteAfWindow();
+    }
+
+    internal void StopRemoteAf(bool closeWindow)
+    {
+        StopRemoteCat();
+        try { RemoteAf?.Stop(); } catch { /* ignore */ }
+        if (closeWindow)
+            CloseRemoteAfWindow();
+    }
+
+    private void StartRemoteCat()
+    {
+        try
+        {
+            RemoteCat?.Stop();
+            RemoteCat = new KenwoodCatPort();
+            RemoteCat.Log += OnRemoteAfEngineLog;
+            var cat = RemoteCat.Engine;
+            cat.GetFrequencyHz = () => _frequencyHz;
+            cat.GetTransmitting = () => PttOn;
+            cat.GetModeDigit = () => KenwoodTs2000.ModeDigitFromName(ModeText);
+            cat.SetFrequencyHz = hz => Dispatcher.UIThread.Post(() => _ = ApplyFrequencyAsync(hz, "CAT FA"));
+            cat.SetModeDigit = d => Dispatcher.UIThread.Post(() =>
+            {
+                ModeText = KenwoodTs2000.ModeNameFromDigit(d, preferDigU: IsDigitalAudio);
+            });
+            cat.SetPtt = tx => Dispatcher.UIThread.Post(() => { PttOn = tx; });
+            RemoteCat.Start();
+        }
+        catch (Exception ex)
+        {
+            AppendLog($"CAT start failed: {ex.Message}");
+        }
+    }
+
+    private void StopRemoteCat()
+    {
+        try
+        {
+            if (RemoteCat != null)
+            {
+                RemoteCat.Log -= OnRemoteAfEngineLog;
+                RemoteCat.Stop();
+                AppendLog("CAT closed (Remote off)");
+            }
+        }
+        catch { /* ignore */ }
+        RemoteCat = null;
+    }
+
+    internal void ApplyRemoteAfDevices()
+    {
+        if (RemoteAf == null) return;
+        if (IsDigitalAudio)
+        {
+            int play = FindNamedAfDevice(RemoteAfEngine.PlayDevices, LinuxDigitalIni.DigitalSpeaker);
+            int mic = FindNamedAfDevice(RemoteAfEngine.MicDevices, LinuxDigitalIni.DigitalMic);
+            RemoteAf.PlayDeviceIndex = play;
+            RemoteAf.MicDeviceIndex = mic;
+            RemoteAf.ApplyEq(false, 0, 0, 0);
+            AppendLog($"R-Digital VAC play='{LinuxDigitalIni.DigitalSpeaker}' idx={play} mic='{LinuxDigitalIni.DigitalMic}' idx={mic}");
+        }
+        else
+        {
+            RemoteAf.PlayDeviceIndex = RemotePlayDeviceIndex;
+            RemoteAf.MicDeviceIndex = RemoteMicDeviceIndex;
+            RemoteAf.ApplyEq(RemoteEqEnabled, RemoteEqLowDb, RemoteEqMidDb, RemoteEqHighDb);
+        }
+    }
+
+    internal void ApplyRemoteAfDevicesAndRestart(string reason)
+    {
+        if (!RemoteAudio || RemoteAf == null) return;
+        ApplyRemoteAfDevices();
+        try { RemoteAf.StartRx(); } catch (Exception ex) { AppendLog("RX restart: " + ex.Message); }
+        string host = string.IsNullOrWhiteSpace(Host) ? "127.0.0.1" : Host.Trim();
+        try { RemoteAf.StartMic(host); } catch (Exception ex) { AppendLog("Mic restart: " + ex.Message); }
+        AppendLog($"Remote AF devices restarted ({reason})");
+    }
+
+    internal static int FindNamedAfDevice(IReadOnlyList<(int Index, string Name)> devices, string savedKey)
+    {
+        string want = (savedKey ?? "").Trim();
+        if (string.IsNullOrEmpty(want) || devices == null)
+            return -1;
+        foreach (var d in devices)
+        {
+            if (d.Index < 0) continue;
+            string key = LinuxDigitalIni.ToMatchKey(d.Name);
+            if (string.Equals(key, want, StringComparison.OrdinalIgnoreCase) ||
+                d.Name.Contains(want, StringComparison.OrdinalIgnoreCase) ||
+                (!string.IsNullOrEmpty(key) && want.StartsWith(key, StringComparison.OrdinalIgnoreCase)))
+                return d.Index;
+        }
+        return -1;
+    }
+
+    private void OnRemoteAfEngineLog(string msg)
+    {
+        AppendLog("Remote AF: " + msg);
+        RemoteAfLog?.Invoke(msg);
+    }
+
+    private void ShowRemoteAfWindow()
+    {
+        Dispatcher.UIThread.Post(() =>
+        {
+            try
+            {
+                if (_remoteAfWindow != null)
+                {
+                    _remoteAfWindow.Show();
+                    _remoteAfWindow.Activate();
+                    return;
+                }
+                var w = new RemoteAfWindow { DataContext = this };
+                w.Closed += (_, _) =>
+                {
+                    if (ReferenceEquals(_remoteAfWindow, w))
+                        _remoteAfWindow = null;
+                    AppendLog("Remote AF window closed (Remote still on)");
+                };
+                _remoteAfWindow = w;
+                w.Show();
+            }
+            catch (Exception ex)
+            {
+                AppendLog($"Remote AF window FAILED: {ex.Message}");
+            }
+        });
+    }
+
+    private void CloseRemoteAfWindow()
+    {
+        try { _remoteAfWindow?.Close(); } catch { /* ignore */ }
+        _remoteAfWindow = null;
     }
 
     [RelayCommand]
@@ -2617,6 +2845,7 @@ public partial class MainViewModel : ViewModelBase, IDisposable
         if (band <= 0) return;
         if (PowerCalTxOn || PowerCalCalibrating)
         {
+            await MsccDialog.AlertAsync("Turn TX OFF before changing band.").ConfigureAwait(true);
             StatusText = "TX ON — set TX off before band change";
             AppendLog("QRP cal: band change blocked (TX on)");
             return;
@@ -2654,12 +2883,26 @@ public partial class MainViewModel : ViewModelBase, IDisposable
             AppendLog($"QRP cal band {band}m selected (not connected)");
     }
 
+    /// <summary>Called from the slider ValueChanged so 0xA2 goes out while dragging (not only on release).</summary>
+    public void ApplyPowerCalSliderLive(double raw)
+    {
+        int value = (int)Math.Round(Math.Clamp(raw, 0, 100));
+        if (PowerCalSliderValue != value)
+            PowerCalSliderValue = value;
+        else
+            SendPowerCalDrive(value);
+    }
+
     partial void OnPowerCalSliderValueChanged(int value)
     {
         value = Math.Clamp(value, 0, 100);
         if (!_suppressPowerCalSlider)
             PowerCalStepLabel = $"CALIBRATION STEP: {value}";
+        SendPowerCalDrive(value);
+    }
 
+    private void SendPowerCalDrive(int value)
+    {
         if (_suppressPowerCalSlider || !PowerCalCalibrating || !CanOperate() || _radio == null)
             return;
 
@@ -2692,29 +2935,43 @@ public partial class MainViewModel : ViewModelBase, IDisposable
         AppendLog($"QRP cal step from server 0xB4={step}");
     }
 
+    /// <summary>WPF MessageBox: dummy load / matched antenna, once per session.</summary>
+    private async Task<bool> EnsureCalLoadWarningAsync()
+    {
+        if (PowerCalLoadConfirmed)
+            return true;
+        bool yes = await MsccDialog.ConfirmAsync(
+            "IS A WELL MATCHED ANTENNA OR DUMMY LOAD ATTACHED?\n\n" +
+            "A 50Ω 5W OR BETTER DUMMY LOAD IS PREFERRED",
+            "MSCC").ConfigureAwait(true);
+        if (yes)
+            PowerCalLoadConfirmed = true;
+        return yes;
+    }
+
     [RelayCommand]
     private async Task TogglePowerCalTxAsync()
     {
         if (PowerCalCalibrating)
         {
+            await MsccDialog.AlertAsync("Finish or cancel CALIBRATE first.").ConfigureAwait(true);
             StatusText = "Finish CALIBRATE first";
             return;
         }
 
         if (PowerCalSelectedBand <= 0)
         {
+            await MsccDialog.AlertAsync("Select a Band").ConfigureAwait(true);
             StatusText = "Select a band for QRP CAL";
             return;
         }
 
-        if (!PowerCalTxOn && !PowerCalLoadConfirmed)
-        {
-            StatusText = "Confirm dummy load / antenna first";
+        if (!PowerCalTxOn && !await EnsureCalLoadWarningAsync().ConfigureAwait(true))
             return;
-        }
 
         if (!CanOperate() || _radio == null)
         {
+            await MsccDialog.AlertAsync("Connect first").ConfigureAwait(true);
             StatusText = "Connect first";
             return;
         }
@@ -2737,29 +2994,29 @@ public partial class MainViewModel : ViewModelBase, IDisposable
     {
         if (PowerCalSelectedBand <= 0)
         {
+            await MsccDialog.AlertAsync("Select a Band").ConfigureAwait(true);
             StatusText = "Select a band for QRP CAL";
             return;
         }
 
         if (PowerCalTxOn && !PowerCalCalibrating)
         {
+            await MsccDialog.AlertAsync("TX ON. SET TX OFF BEFORE CALIBRATE").ConfigureAwait(true);
             StatusText = "TX ON — set TX off before CALIBRATE";
             return;
         }
 
         if (!CanOperate() || _radio == null)
         {
+            await MsccDialog.AlertAsync("Connect first").ConfigureAwait(true);
             StatusText = "Connect first";
             return;
         }
 
         if (!PowerCalCalibrating)
         {
-            if (!PowerCalLoadConfirmed)
-            {
-                StatusText = "Confirm dummy load / antenna first";
+            if (!await EnsureCalLoadWarningAsync().ConfigureAwait(true))
                 return;
-            }
 
             PowerCalAcceptPrompt = false;
             PowerCalCalibrating = true;
@@ -2895,6 +3152,7 @@ public partial class MainViewModel : ViewModelBase, IDisposable
         if (band <= 0) return;
         if (AmpCalTxOn || AmpCalCalibrating)
         {
+            await MsccDialog.AlertAsync("Turn TX OFF before changing band.").ConfigureAwait(true);
             StatusText = "TX ON — set TX off before band change";
             AppendLog("AMP cal: band change blocked (TX on)");
             return;
@@ -2947,16 +3205,29 @@ public partial class MainViewModel : ViewModelBase, IDisposable
         }
     }
 
+    public void ApplyAmpCalSliderLive(double raw)
+    {
+        int value = (int)Math.Round(Math.Clamp(raw, -99, 0));
+        if (AmpCalSliderValue != value)
+            AmpCalSliderValue = value;
+        else
+            SendAmpCalDrive(value);
+    }
+
     partial void OnAmpCalSliderValueChanged(int value)
     {
         value = Math.Clamp(value, -99, 0);
         int step = AmpCalStepFromSlider(value);
         if (!_suppressAmpCalSlider)
             AmpCalStepLabel = $"STEP: {step}";
+        SendAmpCalDrive(value);
+    }
 
+    private void SendAmpCalDrive(int value)
+    {
         if (_suppressAmpCalSlider || !AmpCalCalibrating || !CanOperate() || _radio == null)
             return;
-
+        int step = AmpCalStepFromSlider(value);
         _ = SendCalAsync(
             () => _radio.SetPotentiaCalibrationAsync(value),
             $"AMP cal 0x08={value} (STEP {step})");
@@ -2967,24 +3238,29 @@ public partial class MainViewModel : ViewModelBase, IDisposable
     {
         if (AmpCalCalibrating)
         {
+            await MsccDialog.AlertAsync("Finish or cancel CALIBRATE first.").ConfigureAwait(true);
             StatusText = "Finish CALIBRATE first";
             return;
         }
 
         if (AmpCalSelectedBand <= 0)
         {
+            await MsccDialog.AlertAsync("Select a Band").ConfigureAwait(true);
             StatusText = "Select a band for AMP CAL";
             return;
         }
 
         if (!CanOperate() || _radio == null)
         {
+            await MsccDialog.AlertAsync("Connect first").ConfigureAwait(true);
             StatusText = "Connect first";
             return;
         }
 
         if (!AmpCalTxOn)
         {
+            if (!await EnsureCalLoadWarningAsync().ConfigureAwait(true))
+                return;
             try
             {
                 _modeBeforeAmpCal = string.IsNullOrWhiteSpace(ModeText) ? "USB" : ModeText;
@@ -3011,12 +3287,14 @@ public partial class MainViewModel : ViewModelBase, IDisposable
     {
         if (AmpCalSelectedBand <= 0)
         {
+            await MsccDialog.AlertAsync("Select a Band").ConfigureAwait(true);
             StatusText = "Select a band for AMP CAL";
             return;
         }
 
         if (!CanOperate() || _radio == null)
         {
+            await MsccDialog.AlertAsync("Connect first").ConfigureAwait(true);
             StatusText = "Connect first";
             return;
         }
@@ -3052,10 +3330,14 @@ public partial class MainViewModel : ViewModelBase, IDisposable
         var xcvCal = PowerCalBandStatuses.FirstOrDefault(b => b.BandNumber == AmpCalSelectedBand);
         if (xcvCal == null || !xcvCal.IsCalibrated)
         {
+            await MsccDialog.AlertAsync("QRP CAL not done for this band (green lamp required).").ConfigureAwait(true);
             StatusText = "QRP CAL not done for this band";
             AppendLog("AMP cal blocked: QRP cal lamp not green for band");
             return;
         }
+
+        if (!await EnsureCalLoadWarningAsync().ConfigureAwait(true))
+            return;
 
         try
         {
@@ -3609,24 +3891,29 @@ public partial class MainViewModel : ViewModelBase, IDisposable
     {
         if (AmpOn)
         {
+            await MsccDialog.AlertAsync("TX IQ balance requires QRP mode (AMP off).").ConfigureAwait(true);
             StatusText = "TX IQ requires QRP (AMP off)";
             return;
         }
 
         if (TxIqSelectedBand <= 0)
         {
+            await MsccDialog.AlertAsync("SELECT A BAND").ConfigureAwait(true);
             StatusText = "Select a band for TX IQ";
             return;
         }
 
         if (!CanOperate() || _radio == null)
         {
+            await MsccDialog.AlertAsync("Connect first").ConfigureAwait(true);
             StatusText = "Connect first";
             return;
         }
 
         if (!TxIqTxOn)
         {
+            if (!await EnsureCalLoadWarningAsync().ConfigureAwait(true))
+                return;
             try
             {
                 _modeBeforeTxIq = string.IsNullOrWhiteSpace(ModeText) ? "USB" : ModeText;
@@ -3690,21 +3977,27 @@ public partial class MainViewModel : ViewModelBase, IDisposable
     {
         if (AmpOn)
         {
+            await MsccDialog.AlertAsync("TX IQ balance requires QRP mode (AMP off).").ConfigureAwait(true);
             StatusText = "TX IQ requires QRP (AMP off)";
             return;
         }
 
         if (TxIqSelectedBand <= 0)
         {
+            await MsccDialog.AlertAsync("Select a Band").ConfigureAwait(true);
             StatusText = "Select a band for TX IQ";
             return;
         }
 
         if (!CanOperate() || _radio == null)
         {
+            await MsccDialog.AlertAsync("Connect first").ConfigureAwait(true);
             StatusText = "Connect first";
             return;
         }
+
+        if (!await MsccDialog.ConfirmAsync("APPLY THE CURRENT I/Q VALUE?", "MSCC").ConfigureAwait(true))
+            return;
 
         try
         {
@@ -5305,8 +5598,7 @@ public partial class MainViewModel : ViewModelBase, IDisposable
             // Audio path + levels
             try
             {
-                byte device = ResolveAudioDeviceOpcode();
-                await _radio.SetAudioDeviceAsync(device).ConfigureAwait(true);
+                PushAudioToRadio("sticky restore");
                 await _radio.SetPhonesVolumeLevelAsync(Math.Clamp(PVolume, 0, 100)).ConfigureAwait(true);
                 await _radio.SetPhonesMicGainLevelAsync(Math.Clamp(PMicGain, 0, 100)).ConfigureAwait(true);
                 await _radio.SetDigitalVolumeLevelAsync(Math.Clamp(DVolume, 0, 100)).ConfigureAwait(true);
@@ -5776,19 +6068,19 @@ public partial class MainViewModel : ViewModelBase, IDisposable
         radio.AudioDeviceReported += dev =>
             PostToUi(() => ApplyReportedAudio(() =>
             {
-                if (dev == Opcodes.DIGITAL_SOUND_DEVICE)
-                {
+                if (dev == Opcodes.DIGITAL_SOUND_DEVICE ||
+                    dev == Opcodes.REMOTE_DIGITAL_SOUND_DEVICE)
                     IsDigitalAudio = true;
-                }
                 else
-                {
                     IsDigitalAudio = false;
-                    RemoteAudio = (dev == Opcodes.REMOTE_SOUND_DEVICE);
-                }
+                if (dev == Opcodes.REMOTE_SOUND_DEVICE ||
+                    dev == Opcodes.REMOTE_DIGITAL_SOUND_DEVICE)
+                    RemoteAudio = true;
                 string label = dev switch
                 {
                     Opcodes.DIGITAL_SOUND_DEVICE => "D",
-                    Opcodes.REMOTE_SOUND_DEVICE => "R",
+                    Opcodes.REMOTE_SOUND_DEVICE => "R-Phones",
+                    Opcodes.REMOTE_DIGITAL_SOUND_DEVICE => "R-Digital",
                     _ => "P",
                 };
                 AppendLog($"Audio device reported: {dev} ({label})");

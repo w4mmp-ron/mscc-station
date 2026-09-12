@@ -27,7 +27,7 @@ Field: Windows `10.42.0.157` ↔ Ubuntu `10.42.0.1`. WSJT-X decode/levels good. 
 
 Servers already have items **1–3** in **`linux/`**. Rebuild/install current `linux/` recv, trans, ms-sdr on the laptop if binaries are stale, then:
 
-1. **QRP CAL** (AMP off, dummy load / wattmeter at the Proficio). Same for TX IQ / freq if those INIs are still factory.  
+1. **QRP CAL on Ubuntu Avalonia** (AMP off, dummy load / wattmeter at the Proficio). CALIBRATE now pops the dummy-load Yes/No like WPF; POWER slider enables after that. Same for TX IQ / freq if those INIs are still factory.  
 2. Confirm `$HOME/power_cal.ini` (and IQ) exist after cal.  
 3. Do **not** copy Windows `%LocalAppData%\MSCC-NET9` cal files onto Ubuntu.  
 4. Do **not** edit **`rpi/`** yet.

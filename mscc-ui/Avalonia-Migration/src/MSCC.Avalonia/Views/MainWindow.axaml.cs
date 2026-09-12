@@ -1,6 +1,7 @@
 using System.Globalization;
 using Avalonia;
 using Avalonia.Controls;
+using Avalonia.Controls.Primitives;
 using Avalonia.Input;
 using Avalonia.Interactivity;
 using Avalonia.Media;
@@ -23,6 +24,19 @@ public partial class MainWindow : Window
     private void OnOpened(object? sender, EventArgs e)
     {
         SpectrumDisplay.FrequencyClicked += OnSpectrumFrequencyClicked;
+    }
+
+    /// <summary>Avalonia int bindings often only commit on pointer-up; send 0xA2 while dragging.</summary>
+    private void PowerCalSlider_OnValueChanged(object? sender, RangeBaseValueChangedEventArgs e)
+    {
+        if (DataContext is MainViewModel vm)
+            vm.ApplyPowerCalSliderLive(e.NewValue);
+    }
+
+    private void AmpCalSlider_OnValueChanged(object? sender, RangeBaseValueChangedEventArgs e)
+    {
+        if (DataContext is MainViewModel vm)
+            vm.ApplyAmpCalSliderLive(e.NewValue);
     }
 
     private void OnSpectrumFrequencyClicked(object? sender, long frequencyHz)

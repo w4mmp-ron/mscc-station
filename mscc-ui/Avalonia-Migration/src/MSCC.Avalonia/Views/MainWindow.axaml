@@ -819,16 +819,19 @@
                   </StackPanel>
                 </Border>
 
-                <CheckBox Content="Dummy load / matched antenna confirmed"
+                <CheckBox Content="Dummy load / matched antenna confirmed (or Yes on the popup)"
                           IsChecked="{Binding PowerCalLoadConfirmed}"
                           Foreground="White" FontSize="11"
-                          ToolTip.Tip="Required before TX or CALIBRATE"/>
+                          ToolTip.Tip="CALIBRATE and TX prompt for this. Check here or Yes on the dialog."/>
 
                 <Grid ColumnDefinitions="56,*,Auto" Margin="0,4,0,0">
                   <TextBlock Text="POWER" Foreground="White" FontWeight="Bold" VerticalAlignment="Center"/>
                   <Slider Grid.Column="1" Classes="mscc-slider" Minimum="0" Maximum="100"
-                          Value="{Binding PowerCalSliderValue}"
+                          SmallChange="1" LargeChange="5"
+                          IsSnapToTickEnabled="True" TickFrequency="1"
+                          Value="{Binding PowerCalSliderValue, Mode=TwoWay}"
                           IsEnabled="{Binding PowerCalCalibrating}"
+                          ValueChanged="PowerCalSlider_OnValueChanged"
                           ToolTip.Tip="Calibration drive (0xA2) while CALIBRATE active"/>
                   <Border Grid.Column="2" Background="#444" BorderBrush="#888" BorderThickness="1"
                           Padding="8,4" Margin="8,0,0,0" MinWidth="150">
@@ -926,8 +929,11 @@
                 <Grid ColumnDefinitions="56,*,Auto,Auto" Margin="0,4,0,0">
                   <TextBlock Text="POWER" Foreground="White" FontWeight="Bold" VerticalAlignment="Center"/>
                   <Slider Grid.Column="1" Classes="mscc-slider" Minimum="-99" Maximum="0"
-                          Value="{Binding AmpCalSliderValue}"
+                          SmallChange="1" LargeChange="5"
+                          IsSnapToTickEnabled="True" TickFrequency="1"
+                          Value="{Binding AmpCalSliderValue, Mode=TwoWay}"
                           IsEnabled="{Binding AmpCalCalibrating}"
+                          ValueChanged="AmpCalSlider_OnValueChanged"
                           ToolTip.Tip="Amp cal step (0x08). STEP = 100 + value"/>
                   <Border Grid.Column="2" Background="#444" BorderBrush="#888" BorderThickness="1"
                           Padding="8,4" Margin="8,0,0,0" MinWidth="48">
