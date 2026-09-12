@@ -107,10 +107,11 @@ static int sdrAudioCallback(const void *inputBuffer, void *outputBuffer,
 
     G_DSP_Busy = TRUE;
     /*
-     * REMOTE_AUDIO (CMD_SET_AUDIO_DEVICE=2) → MSA1 UDP mic.
-     * Digital (0) always uses PortAudio digi capture; Phones (1) local mic.
+     * REMOTE_AUDIO (2) / REMOTE_DIGITAL_AUDIO (3) → MSA1 UDP mic.
+     * Digital (0) uses PortAudio digi capture; Phones (1) local mic.
      */
-    if (G_audio_mode == REMOTE_AUDIO && remote_mic_ready() &&
+    if ((G_audio_mode == REMOTE_AUDIO || G_audio_mode == REMOTE_DIGITAL_AUDIO) &&
+        remote_mic_ready() &&
         framesPerBuffer <= 4096u) {
         remote_mic_fill_stereo_96k(remote_buf, (unsigned)framesPerBuffer);
         inbuffer = remote_buf;

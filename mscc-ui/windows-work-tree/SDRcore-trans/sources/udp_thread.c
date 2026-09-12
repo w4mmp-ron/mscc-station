@@ -481,16 +481,19 @@ void *UDP_Thread(void *my_param) {
                     G_input_devices[G_input_device_index].num_channels);
                 break;
             case REMOTE_AUDIO:
-                /* Same stream open as Phones; callback pulls MSA1 instead of local mic. */
-                G_audio_mode = REMOTE_AUDIO;
+            case REMOTE_DIGITAL_AUDIO:
+                /* I/Q + MSA1. Do not open VirtualB (R-Digital) or require local phones mic. */
+                G_audio_mode = t_opcode_data;
                 stream_status = manage_stream(0, G_digital_input_devices[G_digital_input_device_index].device_index,
                     G_digital_input_devices[G_digital_input_device_index].num_channels);
                 stream_status = manage_stream(1, G_input_devices[G_input_device_index].device_index,
                     G_input_devices[G_input_device_index].num_channels);
                 print_time();
                 fprintf(G_fp_logfile,
-                    "[%d] UDP Thread. CMD_SET_AUDIO_DEVICE REMOTE done. stream_status=%d ready=%d\n",
-                    line_number++, stream_status, remote_mic_ready());
+                    "[%d] UDP Thread. CMD_SET_AUDIO_DEVICE %s done. stream_status=%d ready=%d\n",
+                    line_number++,
+                    t_opcode_data == REMOTE_DIGITAL_AUDIO ? "REMOTE_DIGITAL" : "REMOTE",
+                    stream_status, remote_mic_ready());
                 break;
             }
             break;

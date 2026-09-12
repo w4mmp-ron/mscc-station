@@ -2074,6 +2074,22 @@ void * Command_Processor(void *my_param) {
             fprintf(G_fp_logfile, "[%d] CMD_SET_FM_POWER . Finished \n", line_number++);
             break;
 
+        case CMD_SET_REMOTE_RX_HOST:
+            print_time(0);
+            fprintf(G_fp_logfile,
+                "[%d] Command_Interface. CMD_SET_REMOTE_RX_HOST → recv 0x%08x\n",
+                line_number++, (unsigned)i_opcode_data);
+            SDRcore_recv_send_param(CMD_SET_REMOTE_RX_HOST, i_opcode_data);
+            break;
+
+        case CMD_SET_REMOTE_RX_CTRL:
+            print_time(0);
+            fprintf(G_fp_logfile,
+                "[%d] Command_Interface. CMD_SET_REMOTE_RX_CTRL → recv 0x%08x\n",
+                line_number++, (unsigned)i_opcode_data);
+            SDRcore_recv_send_param(CMD_SET_REMOTE_RX_CTRL, i_opcode_data);
+            break;
+
         case CMD_SET_STOP:
             print_time(0);
             fprintf(G_fp_logfile, "[%d] CMD_SET_STOP . calling Stop_all. t_opcode_data: %d \n",
