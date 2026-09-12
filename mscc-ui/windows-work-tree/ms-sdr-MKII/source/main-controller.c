@@ -6,6 +6,11 @@
 //#include "SRDLL.h"
 #include "extern.h"
 #include "version.h"
+#ifdef _WIN32
+#ifndef SIO_UDP_CONNRESET
+#define SIO_UDP_CONNRESET _WSAIOW(IOC_VENDOR, 12)
+#endif
+#endif
 
 // VERSION_MAJOR / VERSION_MINOR / VERSION_MS_SDRCORE live in version.h
 // VERSION_MINOR is auto-incremented on every build (see increment-version.ps1)
@@ -1245,6 +1250,23 @@ void * Command_Processor(void *my_param) {
         fprintf(G_fp_logfile, "[%d] Command_Interface. Server Bind Failed. Error Code : %s\n", line_number++, strerror(errno));
         Stop_all(0, STOP_NETWORK_FAILED);
     }
+    /* Windows UDP: sendto a closed port (mscc.ini 127.0.0.1:8889 with no local GUI)
+     * makes the next recvfrom fail WSAECONNRESET and we used to Stop_all. */
+    {
+        BOOL off = FALSE;
+        DWORD n = 0;
+        if (WSAIoctl(dll_s, SIO_UDP_CONNRESET, &off, sizeof(off), NULL, 0, &n, NULL, NULL) == SOCKET_ERROR) {
+            print_time(0);
+            fprintf(G_fp_logfile,
+                "[%d] Command_Interface. SIO_UDP_CONNRESET failed WSA %d\n",
+                line_number++, WSAGetLastError());
+        } else {
+            print_time(0);
+            fprintf(G_fp_logfile,
+                "[%d] Command_Interface. SIO_UDP_CONNRESET disabled (headless ICMP)\n",
+                line_number++);
+        }
+    }
     /* Panadapter + GUI KA share dll_s. Enlarge rcvbuf so spectrum does not drop KA. */
     {
         int rcv = 4 * 1024 * 1024;
@@ -1412,9 +1434,21 @@ void * Command_Processor(void *my_param) {
     while (G_all_threads_run) {
         //try to receive some data, this is a blocking call
         memset(G_receive_buf, 0, sizeof (G_receive_buf));
+        slen = sizeof(si_other);
         if ((recv_len = recvfrom(dll_s, G_receive_buf, BUFLEN, 0, (struct sockaddr *) &si_other, &slen)) == SOCKET_ERROR) {
+            int wsa = WSAGetLastError();
+            /* ICMP port-unreachable from sendto(127.0.0.1:8889) with no local WPF. */
+            if (wsa == WSAECONNRESET || wsa == WSAEINTR || wsa == WSAEMSGSIZE || wsa == WSAEWOULDBLOCK) {
+                print_time(0);
+                fprintf(G_fp_logfile,
+                    "[%d] Command_Interface. recvfrom WSA %d (ignored, stay up)\n",
+                    line_number++, wsa);
+                fflush(G_fp_logfile);
+                continue;
+            }
             print_time(0);
-            fprintf(G_fp_logfile, "[%d] Command_Interface . recvfrom Failed. Error Code : %s\n", line_number++, strerror(errno));
+            fprintf(G_fp_logfile, "[%d] Command_Interface . recvfrom Failed. WSA %d errno %s\n",
+                line_number++, wsa, strerror(errno));
             fflush(G_fp_logfile);
             Stop_all(0, 0);
         }

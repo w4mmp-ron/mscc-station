@@ -6,5 +6,5 @@
 // VERSION_MINOR is auto-incremented on every build (PreBuildEvent).
 // Packed wire format: high byte = minor (0-255), low byte = major.
 #define VERSION_MAJOR 3
-#define VERSION_MINOR 165
+#define VERSION_MINOR 167
 #define VERSION_MS_SDRCORE ((((VERSION_MINOR) << 8) & 0xff00) | ((VERSION_MAJOR) & 0x00ff))

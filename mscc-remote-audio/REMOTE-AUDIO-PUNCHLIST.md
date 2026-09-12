@@ -1,7 +1,7 @@
 # Remote audio — punch list
 
 **Date:** 2026-09-12  
-**Status:** WPF ↔ Ubuntu `linux/` field-proven. **Windows servers now have the same remote-audio wire** (recv/trans/ms-sdr-MKII) for **Ubuntu Avalonia client → this PC as radio**. Rebuild those three Windows binaries. `rpi/` still read-only.  
+**Status:** **Both mixes field-proven.** WPF ↔ Ubuntu `linux/` servers, and **Ubuntu Avalonia ↔ Windows servers** (remote audio working). Windows ms-sdr stays up headless (`SIO_UDP_CONNRESET`). `rpi/` still read-only.  
 **Working rule:** implement and prove everything on **`linux/`** (Ubuntu radio). Do **not** edit **`rpi/`** until that is working; then reconcile Pi from the proven `linux/` bits.
 
 Related: [STEW-REMOTE-AUDIO.md](STEW-REMOTE-AUDIO.md), [README.md](README.md).
@@ -46,7 +46,7 @@ Same protocol as `linux/`. Rebuild **ms-sdr-MKII**, **SDRcore-recv**, **SDRcore-
 
 CAT to the radio is still **8888** (client Kenwood → freq/mode/PTT). Windows COM CAT stays for **local** WSJT when Remote is off.
 
-**Test:** Ubuntu Avalonia Connect to this PC’s IP → Digital → Remote. Recv log: `CMD_SET_REMOTE_RX_HOST`, `CTRL enable=1`, `REMOTE_DIGITAL`. Trans: `REMOTE_DIGITAL`.
+**Tested 2026-09-12:** Ubuntu Avalonia → Windows `10.42.0.157:8888`. Servers stay up (headless ICMP fix). Remote audio working. Use MSCC-Remote **Start servers**; keep local WPF closed so it does not steal the session.
 
 ### Next
 
@@ -305,11 +305,13 @@ Prove on **this Ubuntu radio (`linux/`)** first. **`rpi/` is last**, after it wo
 5. ~~**WPF send 3 + VAC + CAT/PTT**~~ **Done (9.12.3).**  
 6. ~~**Ubuntu host QRP cal**~~ **Done (2026-09-12)** — remote power correct. Rebuild `linux/` debs if binaries lag sources.  
 7. ~~**Windows servers opcode 2/3 + HOST/CTRL**~~ **Done in sources** (rebuild recv/trans/ms-sdr-MKII).  
-8. **Avalonia** popup + CAT PTY (Ubuntu client). Smoke vs this Windows radio.  
+8. ~~**Avalonia client ↔ Windows servers**~~ **Remote audio field-ok 2026-09-12.** CAT PTY polish if still needed.  
 9. **Reconcile `rpi/`** after Ubuntu stays solid.  
-9. Retire `MsccRemotePhones.exe` from the tree after Avalonia.
+10. Retire `MsccRemotePhones.exe` from the tree after Avalonia.
 
 Field notes:  
 - 2026-09-10: WPF + Ubuntu INI `HOST=` + MsccRemotePhones, opcode 2 mic.  
 - 2026-09-11: WPF 9.11.2 in-UI popup + live `0x25`/`0x28`.  
-- 2026-09-12: WPF 9.12.3 R-Digital VAC + TS-2000 CAT (no TX0;/RX0; replies); WSJT-X decode/TUNE; Ubuntu QRP CAL done — remote power correct. Windows `10.42.0.157` ↔ Ubuntu `10.42.0.1`.
+- 2026-09-12: WPF ↔ Ubuntu servers (R-Digital/CAT/QRP cal). Ubuntu Avalonia ↔ Windows servers remote audio; ms-sdr headless ICMP fix.  
+- 2026-09-12: WPF 9.12.3 R-Digital VAC + TS-2000 CAT; Ubuntu QRP CAL; Windows `10.42.0.157` ↔ Ubuntu `10.42.0.1`.  
+- 2026-09-12 later: Ubuntu Avalonia **client** → Windows servers; remote audio OK. ms-sdr headless stay-up (`SIO_UDP_CONNRESET` / ignore WSAECONNRESET).
