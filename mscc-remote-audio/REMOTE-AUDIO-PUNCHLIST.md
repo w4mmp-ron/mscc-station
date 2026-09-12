@@ -1,7 +1,7 @@
 # Remote audio — punch list
 
 **Date:** 2026-09-12  
-**Status:** Remote operate **field-proven** (WPF 9.12.3 ↔ Ubuntu `linux/`). R-Phones, R-Digital+WSJT-X, TS-2000 CAT/PTT. **Ubuntu next:** QRP/IQ/freq **cal on that host** (power lives in `$HOME/power_cal.ini` etc.). `rpi/` still read-only.  
+**Status:** Remote operate **field-proven** (WPF 9.12.3 ↔ Ubuntu `linux/`). R-Phones, R-Digital+WSJT-X, TS-2000 CAT/PTT, **QRP power after Ubuntu cal**. `rpi/` still read-only.  
 **Working rule:** implement and prove everything on **`linux/`** (Ubuntu radio). Do **not** edit **`rpi/`** until that is working; then reconcile Pi from the proven `linux/` bits.
 
 Related: [STEW-REMOTE-AUDIO.md](STEW-REMOTE-AUDIO.md), [README.md](README.md).
@@ -19,7 +19,7 @@ Related: [STEW-REMOTE-AUDIO.md](STEW-REMOTE-AUDIO.md), [README.md](README.md).
 | **`linux/` ms-sdr** | Forwards `0x9B` 0–3. Digital **levels** for 0 and 3; Phones for 1 and 2. Never persist 2/3 in `user_controls.ini`. |
 | **WPF 9.12.3** | Audio Phones↔Digital; **Remote** checkbox. `0x9B`=2 or **3**. Popup: phones devices / VAC from `digital-speaker.ini`+`digital-microphone.ini`, EQ phones-only, monitor-at-radio. No `MsccRemotePhones.exe`. |
 | **CAT** | Remote on → client opens Settings COM (`comm-port.ini`, ms-sdr end of the pair), Kenwood **TS-2000** (`MSCC.Core` `KenwoodTs2000` → 8888 FA/MD/TX). WSJT-X settings **unchanged**. Hamlib sends `VX0;TX;` and does not read a reply — do **not** answer `TX0;`/`RX0;` (leftovers made WSJT unkey). Latch TX before `IF;`. |
-| **Cal** | Tables live on the **radio host**. Windows cal does not apply to Ubuntu. Run QRP/AMP/IQ/freq cal **on Ubuntu** (client Connected to that host, meter at the radio). Remote QRP power follows `$HOME/power_cal.ini` after that. |
+| **Cal** | Tables live on the **radio host**. **Ubuntu QRP CAL done 2026-09-12** — remote power matches. Windows cal files are not used. |
 
 Field: Windows `10.42.0.157` ↔ Ubuntu `10.42.0.1`. WSJT-X decode/levels good. TUNE/PTT holds with 9.12.3.
 
@@ -290,7 +290,7 @@ Prove on **this Ubuntu radio (`linux/`)** first. **`rpi/` is last**, after it wo
 3. ~~**WPF Remote Phones popup + checkbox.**~~ **Done (9.11.2).**  
 4. ~~**`linux/` opcode 3**~~ **Done.**  
 5. ~~**WPF send 3 + VAC + CAT/PTT**~~ **Done (9.12.3).**  
-6. **Ubuntu host:** QRP (and IQ/freq) **cal on that computer** so remote power matches. Rebuild `linux/` debs if binaries lag sources.  
+6. ~~**Ubuntu host QRP cal**~~ **Done (2026-09-12)** — remote power correct. Rebuild `linux/` debs if binaries lag sources.  
 7. **Avalonia** popup + CAT PTY. **Windows servers** same opcode 3 when swapping.  
 8. **Reconcile `rpi/`** after Ubuntu stays solid.  
 9. Retire `MsccRemotePhones.exe` from the tree after Avalonia.
@@ -298,4 +298,4 @@ Prove on **this Ubuntu radio (`linux/`)** first. **`rpi/` is last**, after it wo
 Field notes:  
 - 2026-09-10: WPF + Ubuntu INI `HOST=` + MsccRemotePhones, opcode 2 mic.  
 - 2026-09-11: WPF 9.11.2 in-UI popup + live `0x25`/`0x28`.  
-- 2026-09-12: WPF 9.12.3 R-Digital VAC + TS-2000 CAT (no TX0;/RX0; replies); WSJT-X decode/TUNE; Windows `10.42.0.157` ↔ Ubuntu `10.42.0.1`. Cal still to do **on Ubuntu**.
+- 2026-09-12: WPF 9.12.3 R-Digital VAC + TS-2000 CAT (no TX0;/RX0; replies); WSJT-X decode/TUNE; Ubuntu QRP CAL done — remote power correct. Windows `10.42.0.157` ↔ Ubuntu `10.42.0.1`.
