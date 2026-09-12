@@ -249,9 +249,10 @@
         </Button>
     </StackPanel>
     <CheckBox Content="Remote" IsChecked="{Binding RemoteAudio, Mode=TwoWay}"
+              IsEnabled="{Binding IsRemoteAudioAllowed}"
               Margin="0,0,0,8" FontSize="11"
               Foreground="{DynamicResource UiPrimaryTextBrush}"
-              ToolTip="This PC is the operator seat: MSA1 phones/mic + popup. Uncheck to leave AF/CAT on the radio host."/>
+              ToolTip="Operator seat on this PC (MSA1 + CAT). Disabled when Launch Servers is on or Server is 127.0.0.1 — local ms-sdr owns the COM port."/>
 
     <!-- Main tab filter/step buttons (replacing Lo/Hi sliders; cycle presets like original) -->
     <TextBlock Text="FILTERS / STEP" FontWeight="SemiBold" Margin="0,5,0,3" Foreground="#00FFAA" FontSize="10"/>

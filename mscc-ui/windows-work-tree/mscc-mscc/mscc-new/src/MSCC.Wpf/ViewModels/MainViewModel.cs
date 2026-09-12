@@ -149,6 +149,7 @@ public partial class MainViewModel : ObservableObject, IDisposable
     private byte _lastReceivedOpcode;
 
     [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(IsRemoteAudioAllowed))]
     private string _backendIp = "127.0.0.1";
 
     [ObservableProperty]
@@ -163,6 +164,7 @@ public partial class MainViewModel : ObservableObject, IDisposable
     /// When false, Start only connects (use with external Start-MsccServers.bat). Persisted LAUNCH_SERVERS.
     /// </summary>
     [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(IsRemoteAudioAllowed))]
     private bool _launchServersOnStart = true;
 
     // Favorites tab (client-side only — never sent to ms-sdr).
@@ -555,6 +557,25 @@ public partial class MainViewModel : ObservableObject, IDisposable
 
     public bool IsRemoteAudioActive => RemoteAudio;
 
+    /// <summary>
+    /// Remote seat is only for Connect-only to another host.
+    /// Launch Servers (local backends) and loopback both own COM/CAT on this PC.
+    /// </summary>
+    public bool IsRemoteAudioAllowed
+    {
+        get
+        {
+            if (LaunchServersOnStart)
+                return false;
+            string ip = (BackendIp ?? "").Trim();
+            if (string.IsNullOrEmpty(ip))
+                return false;
+            return !ip.Equals("127.0.0.1", StringComparison.OrdinalIgnoreCase)
+                && !ip.Equals("localhost", StringComparison.OrdinalIgnoreCase)
+                && !ip.Equals("::1", StringComparison.OrdinalIgnoreCase);
+        }
+    }
+
     public string AudioDeviceButtonText => RemoteAudio
         ? (IsDigitalAudio ? "R-Digital" : "R-Phones")
         : (IsDigitalAudio ? "Digital" : "Phones");
@@ -698,6 +719,15 @@ public partial class MainViewModel : ObservableObject, IDisposable
     partial void OnRemoteAudioChanged(bool value)
     {
         if (_suppressAudioDeviceSend) return;
+        if (value && !IsRemoteAudioAllowed)
+        {
+            _suppressAudioDeviceSend = true;
+            try { RemoteAudio = false; }
+            finally { _suppressAudioDeviceSend = false; }
+            MonitorTextBoxText(" Remote Audio blocked: Launch Servers / local 127.0.0.1 owns CAT. Connect-only to a remote host to use Remote.");
+            PersistLocalAndRemote();
+            return;
+        }
         PersistLocalAndRemote();
         if (value)
         {
@@ -722,6 +752,11 @@ public partial class MainViewModel : ObservableObject, IDisposable
 
     private void StartRemoteAf(string reason)
     {
+        if (!IsRemoteAudioAllowed)
+        {
+            MonitorTextBoxText($" Remote AF not started ({reason}): local Launch Servers / loopback");
+            return;
+        }
         try { RemotePhonesLauncher.StopAll(); } catch { /* in-UI AF replaces exe */ }
         RemoteAf ??= new RemoteAfEngine();
         RemoteAf.Log -= OnRemoteAfEngineLog;
@@ -1603,16 +1638,9 @@ public partial class MainViewModel : ObservableObject, IDisposable
         try
         {
             int mode = Math.Clamp(SpectrumWaterfallSettings.AudioDeviceMode, 0, 2);
-            if (mode == 2)
-            {
-                IsDigitalAudio = false;
-                RemoteAudio = true;
-            }
-            else
-            {
-                IsDigitalAudio = mode == 0;
-                RemoteAudio = SpectrumWaterfallSettings.RemoteAudio;
-            }
+            // Never restore Remote on launch — local Start would grab CAT COM.
+            IsDigitalAudio = mode == 0;
+            RemoteAudio = false;
             RemoteMonitorAtRadio = SpectrumWaterfallSettings.RemoteMonitorAtRadio;
         }
         finally
@@ -4821,6 +4849,9 @@ public partial class MainViewModel : ObservableObject, IDisposable
         if (string.IsNullOrWhiteSpace(value)) return;
         SpectrumWaterfallSettings.UpdateServerAddress(value, BackendPort);
         ShowServerChangePopup();
+        OnPropertyChanged(nameof(IsRemoteAudioAllowed));
+        if (RemoteAudio && !IsRemoteAudioAllowed)
+            RemoteAudio = false;
     }
 
     partial void OnBackendPortChanged(int value)
@@ -4843,6 +4874,12 @@ public partial class MainViewModel : ObservableObject, IDisposable
         SpectrumWaterfallSettings.Save();
         MonitorTextBoxText(
             $" Launch servers on Start: {(value ? "ON (spawn backends)" : "OFF (connect only)")} (saved)");
+        if (value && RemoteAudio)
+        {
+            MonitorTextBoxText(" Launch Servers ON — Remote Audio off (local CAT/COM)");
+            RemoteAudio = false;
+        }
+        OnPropertyChanged(nameof(IsRemoteAudioAllowed));
     }
 
     /// <summary>

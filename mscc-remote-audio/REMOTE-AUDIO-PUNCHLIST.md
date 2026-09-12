@@ -1,23 +1,38 @@
 # Remote audio — punch list
 
-**Date:** 2026-09-12  
-**Status:** **Both mixes field-proven.** WPF ↔ Ubuntu `linux/` servers, and **Ubuntu Avalonia ↔ Windows servers** (remote audio working). Windows ms-sdr stays up headless (`SIO_UDP_CONNRESET`). `rpi/` still read-only.  
+**Date:** 2026-09-12 (end of day)  
+**Status:** **Both mixes field-proven.** WPF ↔ Ubuntu `linux/` servers; **Ubuntu Avalonia ↔ Windows servers** (remote audio). WPF **9.12.4** local-vs-remote safety. Windows ms-sdr stays up headless. `rpi/` still read-only.  
 **Working rule:** implement and prove everything on **`linux/`** (Ubuntu radio). Do **not** edit **`rpi/`** until that is working; then reconcile Pi from the proven `linux/` bits.
 
 Related: [STEW-REMOTE-AUDIO.md](STEW-REMOTE-AUDIO.md), [README.md](README.md).
 
 ---
 
-## Left off (2026-09-12, end of day)
+## Left off (2026-09-12, EOD)
 
-**Remote desktop operate works.** Radio anywhere (Ubuntu `linux/` servers), Windows WPF + WSJT-X as the seat. Operator: Connect-only → Digital → **Remote**.
+**Remote operate works both ways.** Stopped here.
+
+### Local vs Remote (WPF 9.12.4) — do not mix seats
+
+Remote CAT opens Settings COM (`comm-port.ini`, ms-sdr end of the pair). Local ms-sdr also opens that COM. Sticky Remote from yesterday + **Launch Servers** caused the COM-port popup.
+
+| Mode | UI | Remote checkbox | CAT |
+|------|----|-----------------|-----|
+| **Local** | Launch Servers **on**, Server **127.0.0.1** | **Disabled** (grey). Forced off. | Local ms-sdr owns COM. |
+| **Remote client** | Launch Servers **off**, Server = other host IP | Enabled. You check it. | Client Kenwood on that COM → 8888. |
+
+- **Every WPF launch:** Remote **off**. Audio is last **Phones/Digital** only (never restore R-Phones).  
+- Checking Launch Servers turns Remote off. Loopback IP same.  
+- `C:\mscc-net9` **9.12.4**.
+
+**Windows radio host for Ubuntu Avalonia:** MSCC-Remote is the **launcher**, not the servers. Click **Start servers** → Task Manager must show `ms-sdr-MKII`, `mscc-recv`, `Mscc-trans`. Keep **WPF closed** on that PC (session lock). Headless stay-up: `SIO_UDP_CONNRESET` / ignore `WSAECONNRESET` (ICMP to `127.0.0.1:8889` with no local GUI used to `Stop_all`).
 
 | Piece | State |
 |-------|--------|
 | **`linux/` recv + ms-sdr** | `0x25` HOST + `0x28` CTRL (enable/monitor/port 9100). Mute local phones (R-Phones) / VirtualA (R-Digital) unless monitor. INI fallback still. |
 | **`linux/` trans** | Opcode **2** operator mic UDP 9101; opcode **3** digital mic UDP 9101; no VirtualB on 3. |
 | **`linux/` ms-sdr** | Forwards `0x9B` 0–3. Digital **levels** for 0 and 3; Phones for 1 and 2. Never persist 2/3 in `user_controls.ini`. |
-| **WPF 9.12.3** | Audio Phones↔Digital; **Remote** checkbox. `0x9B`=2 or **3**. Popup: phones devices / VAC from `digital-speaker.ini`+`digital-microphone.ini`, EQ phones-only, monitor-at-radio. No `MsccRemotePhones.exe`. |
+| **WPF 9.12.4** | Phones↔Digital; Remote as above. Popup VAC/phones, EQ phones-only. **Remote disabled** if Launch Servers or 127.0.0.1. Startup never restores Remote. |
 | **CAT** | Remote on → client opens Settings COM (`comm-port.ini`, ms-sdr end of the pair), Kenwood **TS-2000** (`MSCC.Core` `KenwoodTs2000` → 8888 FA/MD/TX). WSJT-X settings **unchanged**. Hamlib sends `VX0;TX;` and does not read a reply — do **not** answer `TX0;`/`RX0;` (leftovers made WSJT unkey). Latch TX before `IF;`. |
 | **Cal** | Tables live on the **radio host**. **Ubuntu QRP CAL done 2026-09-12** — remote power matches. Windows cal files are not used. |
 
@@ -32,7 +47,7 @@ Servers already have items **1–3** in **`linux/`**. Rebuild/install current `l
 3. Do **not** copy Windows `%LocalAppData%\MSCC-NET9` cal files onto Ubuntu.  
 4. Do **not** edit **`rpi/`** yet.
 
-WPF client stays 9.12.3 in `C:\mscc-net9` (Connect-only, Launch Servers off).
+WPF client **9.12.4** in `C:\mscc-net9`.
 
 ### Windows servers (this pass) — Ubuntu Avalonia → radio here
 
@@ -302,7 +317,7 @@ Prove on **this Ubuntu radio (`linux/`)** first. **`rpi/` is last**, after it wo
 2. ~~**`linux/` recv + ms-sdr** — item 2 `0x25`/`0x28`.~~ **Done.**  
 3. ~~**WPF Remote Phones popup + checkbox.**~~ **Done (9.11.2).**  
 4. ~~**`linux/` opcode 3**~~ **Done.**  
-5. ~~**WPF send 3 + VAC + CAT/PTT**~~ **Done (9.12.3).**  
+5. ~~**WPF send 3 + VAC + CAT/PTT**~~ **Done (9.12.3).** Local/remote COM safety **9.12.4**.  
 6. ~~**Ubuntu host QRP cal**~~ **Done (2026-09-12)** — remote power correct. Rebuild `linux/` debs if binaries lag sources.  
 7. ~~**Windows servers opcode 2/3 + HOST/CTRL**~~ **Done in sources** (rebuild recv/trans/ms-sdr-MKII).  
 8. ~~**Avalonia client ↔ Windows servers**~~ **Remote audio field-ok 2026-09-12.** CAT PTY polish if still needed.  
@@ -312,6 +327,4 @@ Prove on **this Ubuntu radio (`linux/`)** first. **`rpi/` is last**, after it wo
 Field notes:  
 - 2026-09-10: WPF + Ubuntu INI `HOST=` + MsccRemotePhones, opcode 2 mic.  
 - 2026-09-11: WPF 9.11.2 in-UI popup + live `0x25`/`0x28`.  
-- 2026-09-12: WPF ↔ Ubuntu servers (R-Digital/CAT/QRP cal). Ubuntu Avalonia ↔ Windows servers remote audio; ms-sdr headless ICMP fix.  
-- 2026-09-12: WPF 9.12.3 R-Digital VAC + TS-2000 CAT; Ubuntu QRP CAL; Windows `10.42.0.157` ↔ Ubuntu `10.42.0.1`.  
-- 2026-09-12 later: Ubuntu Avalonia **client** → Windows servers; remote audio OK. ms-sdr headless stay-up (`SIO_UDP_CONNRESET` / ignore WSAECONNRESET).
+- 2026-09-12: WPF ↔ Ubuntu (R-Digital/CAT/QRP). Ubuntu Avalonia ↔ Windows servers remote audio. ms-sdr headless ICMP fix. WPF **9.12.4** Launch Servers / loopback disables Remote (no COM grab). Windows `10.42.0.157` ↔ Ubuntu `10.42.0.1`.
