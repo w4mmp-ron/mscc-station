@@ -1,4 +1,5 @@
 #include "extern.h"
+#include "remote_phones.h"
 #define _CRT_SECURE_NO_WARNINGS 1
 
 #define _WINSOCK_DEPRECATED_NO_WARNINGS 1
@@ -722,23 +723,49 @@ void *UDP_Thread(void *my_param) {
                     line_number++, t_opcode_data);
                 switch (t_opcode_data) {
                 case DIGITAL_AUDIO:
+                case REMOTE_DIGITAL_AUDIO:
                     stream_status = manage_stream(0, G_output_devices[G_output_device_index].device_index,
                         G_output_devices[G_output_device_index].num_channels);
                     stream_status = manage_stream(1, G_digital_output_devices[G_digital_output_device_index].device_index,
                         G_digital_output_devices[G_digital_output_device_index].num_channels);
+                    G_recv_audio_mode = t_opcode_data;
+                    print_time();
+                    fprintf(G_fp_logfile, "[%d] UDP Thread. CMD_SET_AUDIO_DEVICE %s (mode=%d)\n",
+                        line_number++,
+                        t_opcode_data == REMOTE_DIGITAL_AUDIO ? "REMOTE_DIGITAL" : "DIGITAL",
+                        (int)t_opcode_data);
                     break;
                 case OPERATOR_AUDIO:
                 case REMOTE_AUDIO:
-                    /* Remote AF RX is MsccRemotePhones; local speaker path same as Phones. */
+                    /* Remote AF RX is MSA1; local speaker path same as Phones. */
                     stream_status = manage_stream(0, G_digital_output_devices[G_digital_output_device_index].device_index,
                         G_digital_output_devices[G_digital_output_device_index].num_channels);
                     stream_status = manage_stream(1, G_output_devices[G_output_device_index].device_index,
                         G_output_devices[G_output_device_index].num_channels);
+                    G_recv_audio_mode = t_opcode_data;
                     print_time();
                     fprintf(G_fp_logfile, "[%d] UDP Thread. CMD_SET_AUDIO_DEVICE %s done\n",
                         line_number++, t_opcode_data == REMOTE_AUDIO ? "REMOTE" : "OPERATOR");
                     break;
                 }
+                break;
+            case CMD_SET_REMOTE_RX_HOST:
+                op_code_data_32 = (int *)&buf[1];
+                memcpy(&i_opcode_data, op_code_data_32, 4);
+                print_time();
+                fprintf(G_fp_logfile,
+                    "[%d] UDP Thread. CMD_SET_REMOTE_RX_HOST 0x%08x\n",
+                    line_number++, (unsigned)i_opcode_data);
+                remote_phones_set_host((unsigned)i_opcode_data);
+                break;
+            case CMD_SET_REMOTE_RX_CTRL:
+                op_code_data_32 = (int *)&buf[1];
+                memcpy(&i_opcode_data, op_code_data_32, 4);
+                print_time();
+                fprintf(G_fp_logfile,
+                    "[%d] UDP Thread. CMD_SET_REMOTE_RX_CTRL 0x%08x\n",
+                    line_number++, (unsigned)i_opcode_data);
+                remote_phones_set_ctrl((unsigned)i_opcode_data);
                 break;
             case CMD_START_STOP_IMAGE_VALUE:
                 G_Image_Check = t_opcode_data;

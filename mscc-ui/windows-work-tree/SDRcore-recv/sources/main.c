@@ -15,6 +15,7 @@ sp_float wold = 0;
 sp_cplx incplx[4097];
 sp_cplx outcplx[4096];
 float G_volumeLevel = 0.0f; //Start with the volume muted.
+uint8_t G_recv_audio_mode = OPERATOR_AUDIO;
 
 /****** NOTE: Declared external in other modules and used as globals ******/
 state mystate;
@@ -102,6 +103,7 @@ static int sdrAudioCallback(const void *inputBuffer, void *outputBuffer,
         const PaStreamCallbackTimeInfo* timeInfo,
         PaStreamCallbackFlags statusFlags,
         void *userData);
+static void maybe_mute_local_phones(float *out, unsigned long frames);
 
 static int gNumNoInputs = 0;
 
@@ -199,9 +201,28 @@ static int sdrAudioCallback(const void *inputBuffer, void *outputBuffer,
             *outbuffer = outcplx[i].imag;
             outbuffer++;
         }
+        maybe_mute_local_phones((SAMPLE *)outputBuffer, framesPerBuffer);
     }
 
     return paContinue;
+}
+
+/*
+ * Mute local play while remote RX is on and MONITOR=0.
+ * R-Phones: operator speaker. R-Digital: VirtualA. Local Digital (0) never muted.
+ */
+static void maybe_mute_local_phones(float *out, unsigned long frames)
+{
+    unsigned long n;
+    if (!out || frames == 0)
+        return;
+    if (!remote_phones_mute_local())
+        return;
+    if (G_recv_audio_mode == DIGITAL_AUDIO)
+        return;
+    n = frames * 2u;
+    while (n--)
+        *out++ = 0.f;
 }
 
 void Print_Message_Box(void *nothing, char *message, char * sender, int ok_button_and_symbol) {

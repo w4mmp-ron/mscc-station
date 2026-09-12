@@ -275,7 +275,7 @@ void remote_mic_init(void)
     if (G_fp_logfile) {
         print_time();
         fprintf(G_fp_logfile,
-            "[%d] remote_mic: listen UDP :%d (use when CMD_SET_AUDIO_DEVICE=2)\n",
+            "[%d] remote_mic: listen UDP :%d (use when CMD_SET_AUDIO_DEVICE=2 or 3)\n",
             line_number++, g_port);
         fflush(G_fp_logfile);
     }

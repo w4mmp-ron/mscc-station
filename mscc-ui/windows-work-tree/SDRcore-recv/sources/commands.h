@@ -10,6 +10,7 @@
 #define DIGITAL_AUDIO 0
 #define OPERATOR_AUDIO 1
 #define REMOTE_AUDIO 2   /* same speaker path as Phones; digi stays 0 */
+#define REMOTE_DIGITAL_AUDIO 3  /* VirtualA DSP path + MSA1 RX; mute VirtualA unless MONITOR */
 
 #define CMD_SET_CONFIGURATION 0x24
 
@@ -117,6 +118,8 @@
 #define CMD_GET_SET_MIC_DEVICE 0xEB
 #define CMD_DELETE_SDRCORE_INIT 0xEC
 #define CMD_SET_AUDIO_DEVICE 0x9B
+#define CMD_SET_REMOTE_RX_HOST 0x25  /* IPv4, 4 bytes network order */
+#define CMD_SET_REMOTE_RX_CTRL 0x28  /* uint32 LE: port[15:0] | enable<<16 | monitor<<17 */
 
 
 #define CMD_SET_HDSDR_STATUS 0xF0

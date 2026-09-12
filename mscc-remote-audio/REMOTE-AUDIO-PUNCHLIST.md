@@ -1,7 +1,7 @@
 # Remote audio — punch list
 
 **Date:** 2026-09-12  
-**Status:** Remote operate **field-proven** (WPF 9.12.3 ↔ Ubuntu `linux/`). R-Phones, R-Digital+WSJT-X, TS-2000 CAT/PTT, **QRP power after Ubuntu cal**. `rpi/` still read-only.  
+**Status:** WPF ↔ Ubuntu `linux/` field-proven. **Windows servers now have the same remote-audio wire** (recv/trans/ms-sdr-MKII) for **Ubuntu Avalonia client → this PC as radio**. Rebuild those three Windows binaries. `rpi/` still read-only.  
 **Working rule:** implement and prove everything on **`linux/`** (Ubuntu radio). Do **not** edit **`rpi/`** until that is working; then reconcile Pi from the proven `linux/` bits.
 
 Related: [STEW-REMOTE-AUDIO.md](STEW-REMOTE-AUDIO.md), [README.md](README.md).
@@ -34,10 +34,23 @@ Servers already have items **1–3** in **`linux/`**. Rebuild/install current `l
 
 WPF client stays 9.12.3 in `C:\mscc-net9` (Connect-only, Launch Servers off).
 
-### Next (not blocking Ubuntu cal)
+### Windows servers (this pass) — Ubuntu Avalonia → radio here
 
-- Avalonia: same Remote popup + `KenwoodTs2000` on `$HOME/ms-sdr-cat` PTY.  
-- Windows servers: same `0x9B`=3 when swapping client/server.  
+Same protocol as `linux/`. Rebuild **ms-sdr-MKII**, **SDRcore-recv**, **SDRcore-trans** (windows-work-tree) and drop into `C:\mscc-net9` (Launch Servers on this PC).
+
+| Binary | What landed |
+|--------|-------------|
+| **SDRcore-recv** | Live `0x25` HOST + `0x28` CTRL; mute local play unless monitor; `0x9B` **3** opens VirtualA path then mute; `G_recv_audio_mode` |
+| **SDRcore-trans** | `0x9B` **3** = MSA1 digital mic (no VirtualB); fill for mode 2 **or** 3 |
+| **ms-sdr-MKII** | Forwards `0x25`/`0x28` to recv; persist **0/1** only; Digital levels for 0 and 3 |
+
+CAT to the radio is still **8888** (client Kenwood → freq/mode/PTT). Windows COM CAT stays for **local** WSJT when Remote is off.
+
+**Test:** Ubuntu Avalonia Connect to this PC’s IP → Digital → Remote. Recv log: `CMD_SET_REMOTE_RX_HOST`, `CTRL enable=1`, `REMOTE_DIGITAL`. Trans: `REMOTE_DIGITAL`.
+
+### Next
+
+- Finish Avalonia Remote popup + `KenwoodTs2000` on `$HOME/ms-sdr-cat` (on Ubuntu).  
 - Copy proven `linux/` → `rpi/` for a Pi `.deb`.
 
 ### Linux opcode 3 — implementer spec
@@ -291,8 +304,9 @@ Prove on **this Ubuntu radio (`linux/`)** first. **`rpi/` is last**, after it wo
 4. ~~**`linux/` opcode 3**~~ **Done.**  
 5. ~~**WPF send 3 + VAC + CAT/PTT**~~ **Done (9.12.3).**  
 6. ~~**Ubuntu host QRP cal**~~ **Done (2026-09-12)** — remote power correct. Rebuild `linux/` debs if binaries lag sources.  
-7. **Avalonia** popup + CAT PTY. **Windows servers** same opcode 3 when swapping.  
-8. **Reconcile `rpi/`** after Ubuntu stays solid.  
+7. ~~**Windows servers opcode 2/3 + HOST/CTRL**~~ **Done in sources** (rebuild recv/trans/ms-sdr-MKII).  
+8. **Avalonia** popup + CAT PTY (Ubuntu client). Smoke vs this Windows radio.  
+9. **Reconcile `rpi/`** after Ubuntu stays solid.  
 9. Retire `MsccRemotePhones.exe` from the tree after Avalonia.
 
 Field notes:  

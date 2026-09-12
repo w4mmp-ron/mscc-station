@@ -80,6 +80,7 @@
 #define DIGITAL_AUDIO 0
 #define OPERATOR_AUDIO 1
 #define REMOTE_AUDIO 2   /* Phones + REMOTE AUDIO checkbox → MSA1 mic */
+#define REMOTE_DIGITAL_AUDIO 3  /* R-Digital: MSA1 digital AF/mic; not persisted */
 #define KEYBOARD_DISPLAY 2
 #define KEYBOARD_STOP 3
 #define KEYBOARD_DISPLAY_NUMPAD 4
@@ -404,6 +405,8 @@
 #define CMD_SET_DIGITAL_VOLUME_LEVEL 0x99
 #define CMD_SET_DIGITAL_MIC_GAIN_LEVEL 0x9A
 #define CMD_SET_AUDIO_DEVICE 0x9B
+#define CMD_SET_REMOTE_RX_HOST 0x25  /* IPv4, 4 bytes network order → recv */
+#define CMD_SET_REMOTE_RX_CTRL 0x28  /* uint32 LE: port | enable<<16 | monitor<<17 → recv */
 //End Sound Device Management
 
 #define CMD_SET_HDSDR_STATUS 0xF0
