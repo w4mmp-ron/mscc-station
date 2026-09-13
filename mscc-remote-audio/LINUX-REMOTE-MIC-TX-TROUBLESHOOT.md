@@ -128,3 +128,5 @@ Stale comment in `STEW-REMOTE-AUDIO.md`: Digital “never” uses remote mic —
 **Fix (`linux/` only):** remote mode 2/3 floors mic volume **0 → 50**. `pkt ok` log includes **peak**. `CMD_SET_TX_ON` logs `audio_mode`, `remote_ready`, `G_mic_volume`.
 
 **Next test:** Windows **servers** + Ubuntu **client** (Avalonia) + WSJT-X on this laptop. Same Tailscale IPs; Windows firewall / Private profile / servers must stay up without a local WPF session.
+
+**Also confirmed (same day):** Ubuntu **local** MSCC + WSJT-X — audio, CAT, and WSJT-X **TUNE** put out RF. **Remote also works** (operator seat + VAC/CAT). Both local-shack Digital and Remote Digital are live.
