@@ -105,7 +105,7 @@ Stale comment in `STEW-REMOTE-AUDIO.md`: Digital “never” uses remote mic —
 2. **`pkt bad` / parse fail** — magic/size. Client sends 976 bytes; parser must accept that. Log `pkt bad` vs `pkt ok`.
 3. **Wrong socket on 9101** — two binds, SO_REUSEADDR, leftover trans. `ss -ulnp | grep 9101` must be **this** trans PID.
 4. **Mode 3 but callback not using the ring** — `sdrIqPlayOnlyCallback` vs duplex `sdrAudioCallback`; split-stream Linux path must call `remote_mic_fill_stereo_96k` for 2 **and** 3. If it only does so in one callback, I/Q play-only would TX zeros.
-5. **Digital mic gain 0** — opcode 3 should get Digital mic volume from ms-sdr. If 0, SSB of zeros → no RF.
+5. **Digital mic gain 0** — opcode 3 should get Digital mic volume from ms-sdr. If 0, SSB of zeros → no RF. **This was it.**
 6. **Windows VAC silence** — only if `pkt ok` with near-zero samples. Client **9.13.4** logs `Mic TX … peak=`. Peak ~0 = WSJT Output not **CABLE Input**. That is **not** a Linux fix.
 
 ---
@@ -119,6 +119,12 @@ Stale comment in `STEW-REMOTE-AUDIO.md`: Digital “never” uses remote mic —
 
 ---
 
-## Success
+## Success (2026-09-13)
 
-WSJT-X TUNE on Windows → RF on the Proficio (same ballpark as MSCC TUN, via digital/VAC audio not the TUN synthesizer). Trans log: `REMOTE_DIGITAL` + `remote_mic: pkt ok` during TUNE.
+**Confirmed:** Windows WPF client (Tailscale `100.98.121.94`) + WSJT-X **Remote Digital** → Ubuntu radio (`100.76.242.96`) **transmits and puts out RF**. Tailscale login was required after a host lockup (`NeedsLogin`); daemon was already running.
+
+**Root cause (hypothesis 5):** `$HOME/.local/mscc/user_controls.ini` had `DIGITAL_MIC_GAIN=0`. Opcode 3 forwarded that to trans → `G_mic_volume=0` → `framesToComplex` zeroed the MSA1 mic. Packets were fine (`REMOTE_DIGITAL done`, `pkt ok` from Windows, one bind on 9101). MSCC **TUN** still had RF because `tune_modulate` does not use the mic.
+
+**Fix (`linux/` only):** remote mode 2/3 floors mic volume **0 → 50**. `pkt ok` log includes **peak**. `CMD_SET_TX_ON` logs `audio_mode`, `remote_ready`, `G_mic_volume`.
+
+**Next test:** Windows **servers** + Ubuntu **client** (Avalonia) + WSJT-X on this laptop. Same Tailscale IPs; Windows firewall / Private profile / servers must stay up without a local WPF session.

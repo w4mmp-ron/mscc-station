@@ -1024,7 +1024,10 @@ void *UDP_Thread(void *my_param) {
             case CMD_SET_TX_ON:
                 G_tx_mode = t_opcode_data;
                 print_time();
-                fprintf(G_fp_logfile, "[%d] UDP Thread. CMD_SET_TX_ON. G_tx_mode: %d\n", line_number++,G_tx_mode);
+                fprintf(G_fp_logfile,
+                    "[%d] UDP Thread. CMD_SET_TX_ON. G_tx_mode: %d  audio_mode=%d remote_ready=%d G_mic_volume=%f opmode=%d\n",
+                    line_number++, G_tx_mode, (int)G_audio_mode, remote_mic_ready(),
+                    G_mic_volume, (int)mystate.opmode);
                 if (previous_G_tx_mode != G_tx_mode) {
                     switch (G_tx_mode) {
                         case 0:
@@ -1068,6 +1071,19 @@ void *UDP_Thread(void *my_param) {
             case CMD_SET_MIC_VOLUME:
                 if (t_opcode_data > 100) {
                     t_opcode_data = 100;
+                }
+                /*
+                 * Remote MSA1 already has client volume. Radio DIGITAL_MIC_GAIN=0
+                 * (common if never set in Init) would zero SSB → TX with no RF.
+                 * Floor only for opcode 2/3; local Digital 0 still means mute.
+                 */
+                if ((G_audio_mode == REMOTE_AUDIO || G_audio_mode == REMOTE_DIGITAL_AUDIO) &&
+                    t_opcode_data == 0) {
+                    print_time();
+                    fprintf(G_fp_logfile,
+                        "[%d] UDP Thread. CMD_SET_MIC_VOLUME 0 in remote mode %d — floor 50 (else no RF)\n",
+                        line_number++, (int)G_audio_mode);
+                    t_opcode_data = 50;
                 }
                 current_mic_volume = t_opcode_data;
                 switch (G_audio_mode) {

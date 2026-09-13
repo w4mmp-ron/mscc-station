@@ -1005,12 +1005,18 @@ int User_Controls_Process(uint8_t command, char *buf, byte extened) {
                 SDRcore_trans_send_param(CMD_SET_AUDIO_DEVICE, opcode_data_8_bit);
                 if (opcode_data_8_bit == DIGITAL_SOUND_DEVICE ||
                     opcode_data_8_bit == REMOTE_DIGITAL_SOUND_DEVICE) {
-                    SDRcore_trans_send_param(CMD_SET_MIC_VOLUME, User_Controls.Digital_Mic_Gain);
+                    int g = User_Controls.Digital_Mic_Gain;
+                    /* Remote Digital: client MSA1 is the operator mic. Host gain 0 → no RF. */
+                    if (opcode_data_8_bit == REMOTE_DIGITAL_SOUND_DEVICE && g == 0)
+                        g = 50;
+                    SDRcore_trans_send_param(CMD_SET_MIC_VOLUME, g);
                     SDRcore_recv_send_param(CMD_SET_SPEAKER_VOLUME, User_Controls.Digital_Volume_Level);
                 }
                 else {
-                    /* Phones (1) or R-Phones (2) */
-                    SDRcore_trans_send_param(CMD_SET_MIC_VOLUME, User_Controls.Phones_Mic_Gain);
+                    int g = User_Controls.Phones_Mic_Gain;
+                    if (opcode_data_8_bit == REMOTE_SOUND_DEVICE && g == 0)
+                        g = 50;
+                    SDRcore_trans_send_param(CMD_SET_MIC_VOLUME, g);
                     SDRcore_recv_send_param(CMD_SET_SPEAKER_VOLUME, User_Controls.Phones_Volume_Level);
                 }
                 print_time(0);
