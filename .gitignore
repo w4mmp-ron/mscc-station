@@ -67,7 +67,12 @@ proficio-stm32f411-8MHz/firmware/pio/.pio/
 proficio-stm32f411-8MHz/**/*.code-workspace
 proficio-stm32f411-8MHz/*.bin
 proficio-stm32f411-8MHz/tools/*.bin
-proficio-stm32f411-25MHz/firmware/pio/release/
+# Ignore generated release images, but keep bootloader + flash scripts/docs
+proficio-stm32f411-25MHz/firmware/pio/release/*
+!proficio-stm32f411-25MHz/firmware/pio/release/bootloader.bin
+!proficio-stm32f411-25MHz/firmware/pio/release/bootloader.hex
+!proficio-stm32f411-25MHz/firmware/pio/release/*.sh
+!proficio-stm32f411-25MHz/firmware/pio/release/*.md
 proficio-stm32f411-25MHz/firmware/pio/.pio/
 proficio-stm32f411-25MHz/**/*.code-workspace
 proficio-stm32f411-25MHz/*.bin

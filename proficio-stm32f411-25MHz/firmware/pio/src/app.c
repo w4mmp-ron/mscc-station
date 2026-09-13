@@ -15,6 +15,7 @@
 #include "audio.h"
 #include "sync_sof.h"
 #include "die_temp.h"
+#include "pa_ntc.h"
 
 extern uint8_t g_status_beat;
 
@@ -45,6 +46,7 @@ void app_init(void)
     Band_Control_Write(CONTROL_BAND_20_30);
 #endif
     die_temp_init();
+    pa_ntc_init();
 
     s_prev_host = E_host_mode;
     s_prev_tx_hold = E_TX_Hold;
@@ -121,6 +123,7 @@ void app_poll(void)
         break;
     case 5:
         die_temp_poll();
+        pa_ntc_poll();
         break;
     case 6:
 #if PROFICIO_FEAT_SI5351

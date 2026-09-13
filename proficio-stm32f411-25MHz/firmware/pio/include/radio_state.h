@@ -66,7 +66,8 @@ extern uint8_t  E_PPM_needs_updated;
 extern uint8_t  E_PPM_needs_set;
 extern volatile uint8_t E_smooth;
 
-extern int32_t  E_transceiver_temp;
+extern int32_t  E_transceiver_temp; /* die °C — USB CMD_GET_TRANSCEIVER_TEMP (0xBF) */
+extern int32_t  E_pa_temp;          /* PA/board NTC °C — USB CMD_GET_POTENTIA_TEMPERATURE (0x06) */
 extern uint8_t  E_si5351_status;
 
 void radio_state_init(void);

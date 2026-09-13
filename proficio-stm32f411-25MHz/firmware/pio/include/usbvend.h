@@ -25,6 +25,7 @@
 #define CMD_GET_PPM_DEC     0x95
 
 #define CMD_GET_POTENTIA_POWER       0x05
+/* Legacy name: Solidus/Potentia amp is retired. On Black Pill this is PA/board NTC °C. */
 #define CMD_GET_POTENTIA_TEMPERATURE 0x06
 #define CMD_SET_SET_WIPER            0x09
 
