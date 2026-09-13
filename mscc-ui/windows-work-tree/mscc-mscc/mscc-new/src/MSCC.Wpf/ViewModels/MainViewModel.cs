@@ -152,6 +152,19 @@ public partial class MainViewModel : ObservableObject, IDisposable
     [NotifyPropertyChangedFor(nameof(IsRemoteAudioAllowed))]
     private string _backendIp = "127.0.0.1";
 
+    /// <summary>Newest first. Always includes 127.0.0.1. Max 4 (same as Avalonia).</summary>
+    public ObservableCollection<string> RecentHosts { get; } = new() { "127.0.0.1" };
+
+    private void RememberRecentHost(string? host)
+    {
+        var next = SpectrumWaterfallSettings.NormalizeHostRecent(host, RecentHosts);
+        RecentHosts.Clear();
+        foreach (string h in next)
+            RecentHosts.Add(h);
+        SpectrumWaterfallSettings.HostRecent = next.ToList();
+        try { SpectrumWaterfallSettings.Save(); } catch { /* best-effort */ }
+    }
+
     [ObservableProperty]
     private int _backendPort = 8888;
 
@@ -1555,6 +1568,9 @@ public partial class MainViewModel : ObservableObject, IDisposable
         // Set backing fields directly to avoid triggering OnBackend*Changed (and popup) on initial load from INI.
         _backendIp = settings.RemoteIp;
         _backendPort = settings.RemotePort;
+        RecentHosts.Clear();
+        foreach (string h in SpectrumWaterfallSettings.NormalizeHostRecent(_backendIp, SpectrumWaterfallSettings.HostRecent))
+            RecentHosts.Add(h);
         // Client pref may already be loaded via SpectrumWaterfallSettings static/init Load.
         _autoStartServers = SpectrumWaterfallSettings.AutoStartServers;
         _launchServersOnStart = SpectrumWaterfallSettings.LaunchServersOnStart;
@@ -4848,6 +4864,7 @@ public partial class MainViewModel : ObservableObject, IDisposable
     {
         if (string.IsNullOrWhiteSpace(value)) return;
         SpectrumWaterfallSettings.UpdateServerAddress(value, BackendPort);
+        RememberRecentHost(value);
         ShowServerChangePopup();
         OnPropertyChanged(nameof(IsRemoteAudioAllowed));
         if (RemoteAudio && !IsRemoteAudioAllowed)
@@ -4929,6 +4946,7 @@ public partial class MainViewModel : ObservableObject, IDisposable
             IsRadioRunning = _radioService.IsConnected;
             if (IsRadioRunning)
             {
+                RememberRecentHost(BackendIp);
                 ApplyPanResolution("start");
                 PushAudioToRadio("start");
                 if (RemoteAudio)

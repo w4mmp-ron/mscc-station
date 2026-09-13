@@ -78,6 +78,39 @@ public static class SpectrumWaterfallSettings
     /// </summary>
     public static bool ExternalElectronicKeyer { get; set; }
 
+    /// <summary>Newest first. Always includes 127.0.0.1. Max <see cref="MaxRecentHosts"/>.</summary>
+    public static List<string> HostRecent { get; set; } = new() { "127.0.0.1" };
+    public const int MaxRecentHosts = 4;
+
+    public static List<string> NormalizeHostRecent(string? newest, IEnumerable<string>? existing)
+    {
+        var ordered = new List<string>();
+        void Add(string? h)
+        {
+            h = (h ?? "").Trim();
+            if (h.Length == 0) return;
+            for (int i = 0; i < ordered.Count; i++)
+            {
+                if (string.Equals(ordered[i], h, StringComparison.OrdinalIgnoreCase))
+                    return;
+            }
+            ordered.Add(h);
+        }
+        Add(newest);
+        if (existing != null)
+        {
+            foreach (string h in existing)
+                Add(h);
+        }
+        Add("127.0.0.1");
+        for (int i = ordered.Count - 1; i >= 0 && ordered.Count > MaxRecentHosts; i--)
+        {
+            if (!string.Equals(ordered[i], "127.0.0.1", StringComparison.OrdinalIgnoreCase))
+                ordered.RemoveAt(i);
+        }
+        return ordered;
+    }
+
     /// <summary>
     /// Client sticky: this PC is the operator seat (Remote checkbox). Never written to radio boot INI.
     /// </summary>
@@ -720,6 +753,12 @@ public static class SpectrumWaterfallSettings
                         RemoteEqMidDb = ParseIniFloat(line, RemoteEqMidDb);
                     if (LineMatchesKey(line, "REMOTE_EQ_HIGH"))
                         RemoteEqHighDb = ParseIniFloat(line, RemoteEqHighDb);
+                    if (LineMatchesKey(line, "HOST_RECENT"))
+                    {
+                        string raw = ParseIniString(line, "");
+                        HostRecent = NormalizeHostRecent(null,
+                            raw.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries));
+                    }
                 }
 
                 // Legacy AUDIO_DEVICE_MODE=2 (old 3-way cycle) → Phones + Remote checkbox.
@@ -936,6 +975,8 @@ public static class SpectrumWaterfallSettings
         UpdateOrAdd(lines, "REMOTE_EQ_LOW", RemoteEqLowDb.ToString("0.0"));
         UpdateOrAdd(lines, "REMOTE_EQ_MID", RemoteEqMidDb.ToString("0.0"));
         UpdateOrAdd(lines, "REMOTE_EQ_HIGH", RemoteEqHighDb.ToString("0.0"));
+        HostRecent = NormalizeHostRecent(null, HostRecent);
+        UpdateOrAdd(lines, "HOST_RECENT", string.Join(",", HostRecent));
 
         File.WriteAllLines(_iniPath, lines);
     }

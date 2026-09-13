@@ -650,8 +650,12 @@ public partial class MainWindow : Window
         {
             if (sender is TextBox tb)
             {
-                // Commit the text to the binding source (triggers OnBackendIp/PortChanged and the popup)
                 var binding = BindingOperations.GetBindingExpression(tb, TextBox.TextProperty);
+                binding?.UpdateSource();
+            }
+            else if (sender is ComboBox cb)
+            {
+                var binding = BindingOperations.GetBindingExpression(cb, ComboBox.TextProperty);
                 binding?.UpdateSource();
             }
             e.Handled = true;

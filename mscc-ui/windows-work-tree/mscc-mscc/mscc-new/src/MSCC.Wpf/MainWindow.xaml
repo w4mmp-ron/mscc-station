@@ -122,6 +122,83 @@
                 </Setter.Value>
             </Setter>
         </Style>
+
+        <!-- Editable host ComboBox: default Windows chrome keeps a white inner TextBox. -->
+        <Style x:Key="MsccHostComboBoxStyle" TargetType="ComboBox">
+            <Setter Property="Background" Value="{DynamicResource UiPanelBackgroundBrush}"/>
+            <Setter Property="Foreground" Value="{DynamicResource UiPrimaryTextBrush}"/>
+            <Setter Property="BorderBrush" Value="#FF666666"/>
+            <Setter Property="BorderThickness" Value="1"/>
+            <Setter Property="FontSize" Value="12"/>
+            <Setter Property="FontWeight" Value="SemiBold"/>
+            <Setter Property="Height" Value="26"/>
+            <Setter Property="Padding" Value="4,2"/>
+            <Setter Property="SnapsToDevicePixels" Value="True"/>
+            <Setter Property="ScrollViewer.CanContentScroll" Value="True"/>
+            <Setter Property="ItemContainerStyle">
+                <Setter.Value>
+                    <Style TargetType="ComboBoxItem">
+                        <Setter Property="Background" Value="{DynamicResource UiPanelBackgroundBrush}"/>
+                        <Setter Property="Foreground" Value="{DynamicResource UiPrimaryTextBrush}"/>
+                        <Setter Property="Padding" Value="6,3"/>
+                    </Style>
+                </Setter.Value>
+            </Setter>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="ComboBox">
+                        <Grid SnapsToDevicePixels="True">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="18"/>
+                            </Grid.ColumnDefinitions>
+                            <Border x:Name="Bd" Grid.ColumnSpan="2"
+                                    Background="{DynamicResource UiPanelBackgroundBrush}"
+                                    BorderBrush="{TemplateBinding BorderBrush}"
+                                    BorderThickness="{TemplateBinding BorderThickness}"/>
+                            <TextBox x:Name="PART_EditableTextBox"
+                                     Grid.Column="0"
+                                     Margin="2,1,0,1"
+                                     Background="{DynamicResource UiPanelBackgroundBrush}"
+                                     Foreground="{DynamicResource UiPrimaryTextBrush}"
+                                     CaretBrush="{DynamicResource UiPrimaryTextBrush}"
+                                     BorderThickness="0"
+                                     Padding="2,0"
+                                     FontSize="{TemplateBinding FontSize}"
+                                     FontWeight="{TemplateBinding FontWeight}"
+                                     VerticalContentAlignment="Center"
+                                     IsReadOnly="{TemplateBinding IsReadOnly}"/>
+                            <ToggleButton Grid.Column="1" Focusable="False"
+                                          Background="Transparent" BorderThickness="0"
+                                          IsChecked="{Binding IsDropDownOpen, Mode=TwoWay, RelativeSource={RelativeSource TemplatedParent}}">
+                                <Path Data="M 0 0 L 4 4 L 8 0 Z"
+                                      Fill="{DynamicResource UiPrimaryTextBrush}"
+                                      HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                            </ToggleButton>
+                            <Popup Placement="Bottom"
+                                   AllowsTransparency="True"
+                                   Focusable="False"
+                                   IsOpen="{TemplateBinding IsDropDownOpen}"
+                                   PopupAnimation="Slide">
+                                <Border Background="{DynamicResource UiPanelBackgroundBrush}"
+                                        BorderBrush="#FF666666" BorderThickness="1"
+                                        MinWidth="{Binding ActualWidth, RelativeSource={RelativeSource TemplatedParent}}"
+                                        MaxHeight="{TemplateBinding MaxDropDownHeight}">
+                                    <ScrollViewer>
+                                        <ItemsPresenter KeyboardNavigation.DirectionalNavigation="Contained"/>
+                                    </ScrollViewer>
+                                </Border>
+                            </Popup>
+                        </Grid>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsEnabled" Value="False">
+                                <Setter Property="Opacity" Value="0.55"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
     </Window.Resources>
 
     <Grid Margin="8">
@@ -180,13 +257,32 @@
                   Margin="6,0,0,0" VerticalAlignment="Center"
                   ToolTip="When checked, Start also spawns ms-sdr / recv / trans. Uncheck if backends are already running (e.g. Start-MsccServers.bat). Saved as LAUNCH_SERVERS."/>
     </StackPanel>
-    <StackPanel Orientation="Horizontal" Margin="0,0,0,3" VerticalAlignment="Center">
-        <TextBlock Text="Server" Width="40" VerticalAlignment="Center" Foreground="{DynamicResource UiPrimaryTextBrush}" FontSize="9"/>
-        <TextBox Text="{Binding BackendIp, UpdateSourceTrigger=LostFocus}" Width="100" FontSize="9" Background="#FF333333" Foreground="{DynamicResource UiPrimaryTextBrush}" BorderBrush="#FF666666" BorderThickness="1" ToolTip="IP address or domain name (e.g. 127.0.0.1 or server.local)" PreviewKeyDown="ServerAddress_PreviewKeyDown"/>
-    </StackPanel>
+    <Grid Margin="0,0,0,3">
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="40"/>
+            <ColumnDefinition Width="*"/>
+        </Grid.ColumnDefinitions>
+        <TextBlock Text="Host" VerticalAlignment="Center" Foreground="{DynamicResource UiPrimaryTextBrush}"
+                   FontSize="11" FontWeight="SemiBold"/>
+        <ComboBox Grid.Column="1" IsEditable="True"
+                  Style="{StaticResource MsccHostComboBoxStyle}"
+                  ItemsSource="{Binding RecentHosts}"
+                  Text="{Binding BackendIp, UpdateSourceTrigger=LostFocus}"
+                  IsEnabled="{Binding IsRadioRunning, Converter={StaticResource InverseBoolConverter}}"
+                  ToolTip="Type an IP or pick a recent host. 127.0.0.1 stays in the list."
+                  PreviewKeyDown="ServerAddress_PreviewKeyDown"/>
+    </Grid>
     <StackPanel Orientation="Horizontal" Margin="0,0,0,12" VerticalAlignment="Center">
-        <TextBlock Text="Port" Width="40" VerticalAlignment="Center" Foreground="{DynamicResource UiPrimaryTextBrush}" FontSize="9"/>
-        <TextBox Text="{Binding BackendPort, UpdateSourceTrigger=LostFocus}" Width="50" FontSize="9" Background="#FF333333" Foreground="{DynamicResource UiPrimaryTextBrush}" BorderBrush="#FF666666" BorderThickness="1" PreviewKeyDown="ServerAddress_PreviewKeyDown"/>
+        <TextBlock Text="Port" Width="40" VerticalAlignment="Center" Foreground="{DynamicResource UiPrimaryTextBrush}"
+                   FontSize="11" FontWeight="SemiBold"/>
+        <TextBox Text="{Binding BackendPort, UpdateSourceTrigger=LostFocus}" Width="56"
+                 FontSize="12" FontWeight="SemiBold" Height="26" Padding="4,2"
+                 VerticalContentAlignment="Center"
+                 Background="{DynamicResource UiPanelBackgroundBrush}" Foreground="{DynamicResource UiPrimaryTextBrush}"
+                 BorderBrush="#FF666666" BorderThickness="1"
+                 IsEnabled="{Binding IsRadioRunning, Converter={StaticResource InverseBoolConverter}}"
+                 ToolTip="UDP remote port (default 8888)"
+                 PreviewKeyDown="ServerAddress_PreviewKeyDown"/>
     </StackPanel>
 
     <!-- P group (operator/phones) — tight label→slider→value for narrower rail -->
