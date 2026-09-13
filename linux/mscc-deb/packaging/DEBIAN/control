@@ -1,5 +1,5 @@
 Package: mscc
-Version: 1.0.42
+Version: 1.0.43
 Section: hamradio
 Priority: optional
 Architecture: amd64
@@ -14,6 +14,7 @@ Description: MSCC stack for Multus/Proficio on Ubuntu Desktop (amd64)
  Pulse/PipeWire virtual digi sinks (VirtualA/B), desktop menu
  Start/Stop/Status/Firmware Upload, and tty0tty null-modem module.
  Linked with rpath /usr/local against mscc-portaudio (Pulse+ALSA).
+ Remote AF: opcode 2/3, RX HOST/CTRL 0x25/0x28, mute local phones unless MONITOR.
  Install mscc-portaudio_*_amd64.deb first. Do not use the Pi arm64 PortAudio .deb.
  .
  Supported platform: Ubuntu Desktop x86_64 (amd64) only.
