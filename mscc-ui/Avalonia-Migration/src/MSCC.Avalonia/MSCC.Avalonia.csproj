@@ -1,11 +1,11 @@
-﻿<Project Sdk="Microsoft.NET.Sdk">
+<Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
     <OutputType>WinExe</OutputType>
     <TargetFramework>net9.0</TargetFramework>
     <ImplicitUsings>enable</ImplicitUsings>
     <RootNamespace>MSCC.Avalonia</RootNamespace>
     <AssemblyName>MSCC.Avalonia</AssemblyName>
-    <Version>0.6.47</Version>
+    <Version>0.6.48</Version>
     <Description>MSCC Avalonia — CQ memory, Remote Audio, legacy external keyer</Description>
     <Nullable>enable</Nullable>
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>

@@ -155,7 +155,7 @@ public partial class MainViewModel : ViewModelBase, IDisposable
         HighCutLabel = HighCutLabels[_highCutIndex];
         CwFilterLabel = CwFilterLabels[_cwFilterIndex];
         ModeText = "USB";
-        AppendLog("MSCC Avalonia 0.6.46 — QRP CAL live slider; dummy-load dialog.");
+        AppendLog("MSCC Avalonia 0.6.48 — Settings host devices; recent Host combo.");
         AppendLog("PTT = TX (voice modes); TUN = TUNE + carrier. S/W opens pan settings.");
         AppendLog($"Log: {LogFilePath}");
         CwPitchLabel = CwPitchOptions[Math.Clamp(CwPitchIndex, 0, CwPitchOptions.Count - 1)];
@@ -164,6 +164,7 @@ public partial class MainViewModel : ViewModelBase, IDisposable
         InitAmpCalBandStatuses();
         EnsureTxIqBandItems();
         LoadClientSettings();
+        RefreshHostAudio();
         LoadFavoritesFromStore();
         AppendLog($"Settings: {ClientSettingsStore.StorePath}");
         AppendLog($"Favorites: {FavoritesStore.StorePath}");
@@ -225,6 +226,21 @@ public partial class MainViewModel : ViewModelBase, IDisposable
     // ----- Connection -----
 
     [ObservableProperty] private string _host = "127.0.0.1";
+    public ObservableCollection<string> RecentHosts { get; } = new() { "127.0.0.1" };
+
+    private void RememberRecentHost(string? host)
+    {
+        ReplaceRecentHosts(ClientSettingsStore.NormalizeHostRecent(host, RecentHosts));
+        ScheduleSaveClientSettings();
+    }
+
+    private void ReplaceRecentHosts(IReadOnlyList<string> hosts)
+    {
+        RecentHosts.Clear();
+        foreach (string h in hosts)
+            RecentHosts.Add(h);
+    }
+
     /// <summary>Remote UDP port as plain text (no spinner).</summary>
     [ObservableProperty] private string _remotePortText = "8888";
     /// <summary>Local pan RX port as plain text.</summary>
@@ -357,7 +373,7 @@ public partial class MainViewModel : ViewModelBase, IDisposable
     [ObservableProperty] private string _proficioTempText = "— °C";
     [ObservableProperty] private string _paTempText = "— °C";
     [ObservableProperty] private string _paCurrentText = "— mA";
-    [ObservableProperty] private string _clientVersionText = "0.6.47";
+    [ObservableProperty] private string _clientVersionText = "0.6.48";
     [ObservableProperty] private bool _qrpMode = true;
     [ObservableProperty] private bool _fullPower;
     [ObservableProperty] private bool _alcOn;
@@ -532,6 +548,31 @@ public partial class MainViewModel : ViewModelBase, IDisposable
         : "GEN (Proficio): WWV / CHU / RWM / USER. Press again to rotate.";
 
     public string SettingsFilePath => ClientSettingsStore.StorePath;
+
+    [ObservableProperty] private string _hostCatRadio = "(not set)";
+    [ObservableProperty] private string _hostCatApp = "(not set)";
+    [ObservableProperty] private string _hostOperatorSpeaker = "(not set — run MSCC Init)";
+    [ObservableProperty] private string _hostOperatorMic = "(not set — run MSCC Init)";
+    [ObservableProperty] private string _hostDigitalSpeaker = "(not set)";
+    [ObservableProperty] private string _hostDigitalMic = "(not set)";
+    public string HostAudioIniDir => LinuxDigitalIni.ConfigDir;
+
+    [RelayCommand]
+    private void RefreshHostAudio()
+    {
+        string cat = LinuxDigitalIni.CommPortName();
+        HostCatRadio = string.IsNullOrWhiteSpace(cat) ? "(not set — run MSCC Init)" : cat;
+        HostCatApp = string.IsNullOrWhiteSpace(cat)
+            ? "(other tty0tty end, usually /dev/tnt1)"
+            : LinuxDigitalIni.CommPortAppEnd(cat);
+        HostOperatorSpeaker = BlankToMissing(LinuxDigitalIni.OperatorSpeaker);
+        HostOperatorMic = BlankToMissing(LinuxDigitalIni.OperatorMic);
+        HostDigitalSpeaker = BlankToMissing(LinuxDigitalIni.DigitalSpeaker);
+        HostDigitalMic = BlankToMissing(LinuxDigitalIni.DigitalMic);
+    }
+
+    private static string BlankToMissing(string s)
+        => string.IsNullOrWhiteSpace(s) ? "(not set — run MSCC Init)" : s.Trim();
 
     /// <summary>True when VFO B is the active radio VFO.</summary>
     public bool UseVfoB => !UseVfoA;
@@ -1040,6 +1081,7 @@ public partial class MainViewModel : ViewModelBase, IDisposable
             IsConnected = true;
             StatusText = $"Connected {Host}:{remotePort}";
             AppendLog("Connected (connect-only).");
+            RememberRecentHost(Host);
             // Ensure pan assembly + heal Linux pan refresh (Blocks≥1). Without this,
             // a prior client that sent 0x5F=0 leaves the Pi with silent no-spectrum.
             try
@@ -5308,6 +5350,7 @@ public partial class MainViewModel : ViewModelBase, IDisposable
         {
             var s = ClientSettingsStore.Load();
             Host = string.IsNullOrWhiteSpace(s.Host) ? Host : s.Host;
+            ReplaceRecentHosts(ClientSettingsStore.NormalizeHostRecent(Host, s.HostRecent));
             RemotePortText = string.IsNullOrWhiteSpace(s.RemotePortText) ? RemotePortText : s.RemotePortText;
             LocalPortText = string.IsNullOrWhiteSpace(s.LocalPortText) ? LocalPortText : s.LocalPortText;
             IsGeminusRadioModel = s.IsGeminusRadioModel;
@@ -5506,6 +5549,7 @@ public partial class MainViewModel : ViewModelBase, IDisposable
         var s = new ClientSettings
         {
             Host = Host ?? "127.0.0.1",
+            HostRecent = RecentHosts.ToList(),
             RemotePortText = RemotePortText ?? "8888",
             LocalPortText = LocalPortText ?? "8889",
             IsGeminusRadioModel = IsGeminusRadioModel,

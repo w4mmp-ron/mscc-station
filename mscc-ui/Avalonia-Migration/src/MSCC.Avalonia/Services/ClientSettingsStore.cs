@@ -18,6 +18,8 @@ public sealed class ClientSettings
 {
     // Connection
     public string Host { get; set; } = "127.0.0.1";
+    /// <summary>Last successful Connect hosts, newest first (max 4, always includes 127.0.0.1).</summary>
+    public List<string> HostRecent { get; set; } = new() { "127.0.0.1" };
     public string RemotePortText { get; set; } = "8888";
     public string LocalPortText { get; set; } = "8889";
 
@@ -225,6 +227,7 @@ public static class ClientSettingsStore
             sb.AppendLine("# MSCC Avalonia client settings");
             sb.AppendLine("# Connection");
             sb.AppendLine($"HOST={s.Host}");
+            sb.AppendLine($"HOST_RECENT={string.Join(",", s.HostRecent ?? new List<string>())}");
             sb.AppendLine($"REMOTE_PORT={s.RemotePortText}");
             sb.AppendLine($"LOCAL_PORT={s.LocalPortText}");
             sb.AppendLine();
@@ -371,12 +374,50 @@ public static class ClientSettingsStore
 
     private static string F(float v) => v.ToString(CultureInfo.InvariantCulture);
 
+    public const int MaxRecentHosts = 4;
+
+    public static List<string> ParseHostRecent(string val)
+        => NormalizeHostRecent(null, (val ?? "").Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries));
+
+    /// <summary>Newest first, unique, always includes 127.0.0.1, max <see cref="MaxRecentHosts"/>.</summary>
+    public static List<string> NormalizeHostRecent(string? newest, IEnumerable<string>? existing)
+    {
+        var ordered = new List<string>();
+        void Add(string? h)
+        {
+            h = (h ?? "").Trim();
+            if (h.Length == 0) return;
+            for (int i = 0; i < ordered.Count; i++)
+            {
+                if (string.Equals(ordered[i], h, StringComparison.OrdinalIgnoreCase))
+                    return;
+            }
+            ordered.Add(h);
+        }
+        Add(newest);
+        if (existing != null)
+        {
+            foreach (string h in existing)
+                Add(h);
+        }
+        Add("127.0.0.1");
+        for (int i = ordered.Count - 1; i >= 0 && ordered.Count > MaxRecentHosts; i--)
+        {
+            if (!string.Equals(ordered[i], "127.0.0.1", StringComparison.OrdinalIgnoreCase))
+                ordered.RemoveAt(i);
+        }
+        return ordered;
+    }
+
     private static void Apply(ClientSettings s, string key, string val)
     {
         switch (key.ToUpperInvariant())
         {
             case "HOST":
                 s.Host = val;
+                break;
+            case "HOST_RECENT":
+                s.HostRecent = ParseHostRecent(val);
                 break;
             case "REMOTE_PORT":
                 s.RemotePortText = val;

@@ -40,12 +40,15 @@
                       FontSize="8" IsEnabled="False" ToolTip.Tip="Pi: use MSCC Start; connect-only client"/>
           </StackPanel>
           <!-- Compact host/port: short boxes, larger centered text, no spinner -->
-          <Grid ColumnDefinitions="28,100" Margin="0,0,0,1">
+          <Grid ColumnDefinitions="28,*" Margin="0,0,0,1">
             <TextBlock Classes="mscc-label" Text="Host"/>
-            <TextBox Grid.Column="1" Text="{Binding Host}" Classes="mscc-hostport"
-                     Width="100" HorizontalAlignment="Left"
-                     IsEnabled="{Binding !IsConnected}"
-                     ToolTip.Tip="Server IP or hostname"/>
+            <ComboBox Grid.Column="1" Classes="mscc-hostport"
+                      ItemsSource="{Binding RecentHosts}"
+                      Text="{Binding Host}"
+                      IsEditable="True"
+                      IsEnabled="{Binding !IsConnected}"
+                      HorizontalAlignment="Stretch"
+                      ToolTip.Tip="Type an IP or pick a recent host. 127.0.0.1 stays in the list."/>
           </Grid>
           <Grid ColumnDefinitions="28,48" Margin="0,0,0,2">
             <TextBlock Classes="mscc-label" Text="Port"/>
@@ -1254,7 +1257,7 @@
             <ScrollViewer VerticalScrollBarVisibility="Auto">
               <StackPanel Margin="16" Spacing="10" MaxWidth="560">
                 <TextBlock Text="Settings" FontSize="18" FontWeight="Bold" Foreground="#00FFAA"/>
-                <TextBlock Text="Connection is on the left SERVER panel. COM / audio host settings stay on the Pi servers for now."
+                <TextBlock Text="Connection is on the left SERVER panel. COM / operator audio are set by MSCC Init on this PC (not this UI)."
                            Foreground="#AAA" TextWrapping="Wrap"/>
                 <TextBlock Text="Sticky client file:"
                            Foreground="#AAA" TextWrapping="Wrap" Margin="0,4,0,0"/>
@@ -1337,6 +1340,41 @@
                                 ToolTip.Tip="BACKGROUND BLACK, PANEL AUTO, BUTTON YELLOW"/>
                       </StackPanel>
                     </StackPanel>
+                  </StackPanel>
+                </Border>
+
+                <Border Background="#FF222222" BorderBrush="#FF444444" BorderThickness="1" CornerRadius="4" Padding="10" Margin="0,8,0,0">
+                  <StackPanel Spacing="6">
+                    <DockPanel>
+                      <Button Content="Refresh" Classes="mscc-gold" Width="72" Height="24"
+                              Command="{Binding RefreshHostAudioCommand}" DockPanel.Dock="Right"/>
+                      <TextBlock Text="Radio host (mscc-init)" FontWeight="SemiBold" Foreground="#00FFAA" FontSize="13"
+                                 VerticalAlignment="Center"/>
+                    </DockPanel>
+                    <TextBlock Text="What WSJT-X / flrig should use on this PC. Change with MSCC Init, then Refresh. Digital VirtualA/B are created at server start."
+                               FontSize="10" Foreground="#D0D0D0" TextWrapping="Wrap"/>
+                    <Grid ColumnDefinitions="140,*" RowDefinitions="Auto,Auto,Auto,Auto,Auto,Auto" Margin="0,4,0,0">
+                      <TextBlock Text="CAT (ms-sdr)" FontSize="11" Foreground="#AAA"/>
+                      <TextBlock Grid.Column="1" Text="{Binding HostCatRadio}" FontSize="11" Foreground="#00FFAA" TextWrapping="Wrap"/>
+                      <TextBlock Grid.Row="1" Text="CAT (WSJT-X)" FontSize="11" Foreground="#AAA" Margin="0,4,0,0"/>
+                      <TextBlock Grid.Row="1" Grid.Column="1" Text="{Binding HostCatApp}" FontSize="11" Foreground="#00FFAA"
+                                 TextWrapping="Wrap" Margin="0,4,0,0"/>
+                      <TextBlock Grid.Row="2" Text="Phones speaker" FontSize="11" Foreground="#AAA" Margin="0,4,0,0"/>
+                      <TextBlock Grid.Row="2" Grid.Column="1" Text="{Binding HostOperatorSpeaker}" FontSize="11" Foreground="#EEE"
+                                 TextWrapping="Wrap" Margin="0,4,0,0"/>
+                      <TextBlock Grid.Row="3" Text="Phones mic" FontSize="11" Foreground="#AAA" Margin="0,4,0,0"/>
+                      <TextBlock Grid.Row="3" Grid.Column="1" Text="{Binding HostOperatorMic}" FontSize="11" Foreground="#EEE"
+                                 TextWrapping="Wrap" Margin="0,4,0,0"/>
+                      <TextBlock Grid.Row="4" Text="Digital Output" FontSize="11" Foreground="#AAA" Margin="0,4,0,0"/>
+                      <TextBlock Grid.Row="4" Grid.Column="1" Text="{Binding HostDigitalSpeaker}" FontSize="11" Foreground="#00FFAA"
+                                 TextWrapping="Wrap" Margin="0,4,0,0"/>
+                      <TextBlock Grid.Row="5" Text="Digital Input" FontSize="11" Foreground="#AAA" Margin="0,4,0,0"/>
+                      <TextBlock Grid.Row="5" Grid.Column="1" Text="{Binding HostDigitalMic}" FontSize="11" Foreground="#00FFAA"
+                                 TextWrapping="Wrap" Margin="0,4,0,0"/>
+                    </Grid>
+                    <TextBlock Text="WSJT-X: Rig=Kenwood TS-2000, Serial port = CAT (WSJT-X). Audio Out = Digital Output (VirtualA). Audio In = Digital Input (VirtualB.monitor)."
+                               FontSize="10" Foreground="#FFCC66" TextWrapping="Wrap" Margin="0,4,0,0"/>
+                    <TextBlock Text="{Binding HostAudioIniDir}" FontSize="9" Foreground="#666" TextWrapping="Wrap"/>
                   </StackPanel>
                 </Border>
 

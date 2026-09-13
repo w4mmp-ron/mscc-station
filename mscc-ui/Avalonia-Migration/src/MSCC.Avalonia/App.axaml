@@ -207,6 +207,26 @@
     </Style>
 
     <!-- Host / port entry: short box, larger centered text -->
+    <Style Selector="ComboBox.mscc-hostport">
+      <Setter Property="FontSize" Value="12"/>
+      <Setter Property="FontWeight" Value="SemiBold"/>
+      <Setter Property="MinHeight" Value="28"/>
+      <Setter Property="Height" Value="28"/>
+      <Setter Property="Padding" Value="4,2"/>
+      <Setter Property="Background" Value="#FF333333"/>
+      <Setter Property="Foreground" Value="White"/>
+      <Setter Property="BorderBrush" Value="#FF666666"/>
+      <Setter Property="BorderThickness" Value="1"/>
+      <Setter Property="HorizontalContentAlignment" Value="Left"/>
+      <Setter Property="VerticalContentAlignment" Value="Center"/>
+    </Style>
+    <Style Selector="ComboBox.mscc-hostport /template/ TextBox#PART_EditableTextBox">
+      <Setter Property="Padding" Value="4,2"/>
+      <Setter Property="VerticalContentAlignment" Value="Center"/>
+      <Setter Property="HorizontalContentAlignment" Value="Left"/>
+      <Setter Property="FontSize" Value="12"/>
+    </Style>
+
     <Style Selector="TextBox.mscc-hostport">
       <Setter Property="FontSize" Value="12"/>
       <Setter Property="FontWeight" Value="SemiBold"/>
