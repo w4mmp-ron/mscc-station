@@ -1,4 +1,3 @@
-using System.IO.Ports;
 using System.Text;
 using MSCC.Core.Protocol;
 
@@ -10,14 +9,14 @@ namespace MSCC.Wpf.RemoteAudio;
 /// </summary>
 public sealed class KenwoodCatPort : IDisposable
 {
-    private SerialPort? _port;
+    private NativeComPort? _port;
     private Thread? _thread;
     private volatile bool _run;
     private readonly StringBuilder _buf = new();
 
     public KenwoodTs2000 Engine { get; } = new();
     public event Action<string>? Log;
-    public bool IsOpen => _port is { IsOpen: true };
+    public bool IsOpen => _port?.IsOpen == true;
     public string? PortName { get; private set; }
 
     public void Start(CommPortConfig.Settings cfg)
@@ -33,28 +32,17 @@ public sealed class KenwoodCatPort : IDisposable
         }
 
         int baud = CommPortConfig.BaudRates[Math.Clamp(cfg.BaudRateIndex, 0, CommPortConfig.BaudRates.Length - 1)];
-        var port = new SerialPort
-        {
-            PortName = name,
-            BaudRate = baud,
-            Parity = cfg.ParityIndex switch { 1 => Parity.Odd, 2 => Parity.Even, _ => Parity.None },
-            DataBits = cfg.DataBitsIndex == 0 ? 7 : 8,
-            StopBits = cfg.StopBitsIndex == 1 ? StopBits.Two : StopBits.One,
-            Handshake = Handshake.None,
-            DtrEnable = true,
-            RtsEnable = true,
-            ReadTimeout = 200,
-            WriteTimeout = 200,
-            Encoding = Encoding.ASCII,
-        };
+        var port = new NativeComPort();
         try
         {
-            port.Open();
+            port.Open(name, baud);
         }
         catch (Exception ex)
         {
             port.Dispose();
+            string listed = string.Join(", ", CommPortConfig.GetAvailablePorts());
             Log?.Invoke($"CAT open {name} failed: {ex.Message}");
+            Log?.Invoke($" CAT ports on this PC: {(string.IsNullOrEmpty(listed) ? "(none)" : listed)}. WSJT-X = other end of Eltima pair (COM5↔COM15).");
             return;
         }
 
@@ -68,7 +56,7 @@ public sealed class KenwoodCatPort : IDisposable
             Name = "KenwoodCAT",
         };
         _thread.Start();
-        Log?.Invoke($"CAT TS-2000 on {name} {baud} 8N1 (WSJT-X uses the other end of the pair)");
+        Log?.Invoke($"CAT TS-2000 on {name} {baud} 8N1 (CreateFile \\\\.\\{name}; WSJT-X uses the other end of the pair)");
     }
 
     public void Stop()
@@ -119,10 +107,6 @@ public sealed class KenwoodCatPort : IDisposable
                     }
                 }
             }
-            catch (TimeoutException)
-            {
-                /* ReadTimeout */
-            }
             catch (Exception ex)
             {
                 if (_run)
@@ -138,7 +122,7 @@ public sealed class KenwoodCatPort : IDisposable
         {
             var port = _port;
             if (port is { IsOpen: true })
-                port.Write(reply);
+                port.Write(Encoding.ASCII.GetBytes(reply));
         }
         catch (Exception ex)
         {

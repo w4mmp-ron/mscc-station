@@ -23,6 +23,7 @@ public sealed class RemoteMicSender : IDisposable
     private int _sampleRate = MsccAudioProtocol.DefaultSampleRate;
     private long _packetsSent;
     private long _samplesSent;
+    private int _peakAbs;
 
     public const int DefaultTxPort = 9101;
     public const int FramesPerPacket = 480; // 10 ms @ 48 kHz
@@ -237,6 +238,10 @@ public sealed class RemoteMicSender : IDisposable
                     }
                 }
 
+                int abs = mono < 0 ? -mono : (int)mono;
+                if (abs > _peakAbs)
+                    _peakAbs = abs;
+
                 int o = payloadOff + _packetSamples * 2;
                 _packet[o] = (byte)(mono & 0xFF);
                 _packet[o + 1] = (byte)((mono >> 8) & 0xFF);
@@ -258,7 +263,13 @@ public sealed class RemoteMicSender : IDisposable
                     try
                     {
                         _udp.Send(_packet, MsccAudioProtocol.HeaderSize + payloadCap, _ep);
-                        Interlocked.Increment(ref _packetsSent);
+                        long n = Interlocked.Increment(ref _packetsSent);
+                        if (n == 1 || n % 500 == 0)
+                        {
+                            int peak = _peakAbs;
+                            _peakAbs = 0;
+                            Log?.Invoke($"Mic TX {n} pkts → {_ep} peak={peak}");
+                        }
                     }
                     catch (Exception ex)
                     {
