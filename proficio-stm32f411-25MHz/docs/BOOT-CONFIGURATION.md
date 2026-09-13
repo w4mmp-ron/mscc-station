@@ -29,7 +29,7 @@ Do **not** confuse this with the Black Pill module **BOOT0** pad (dev-only hardw
 
 - Pin macros: `BOARD_BOOT_*` → **PA8** (`firmware/pio/include/board_pins.h`)
 - Early check: `system_boot_check_and_enter()` — if PA8 low, jump to ROM bootloader
-- Host command: vendor **`0xFE`** → deferred jump to same ROM bootloader
+- Host command: vendor **`0xFE`** → magic + `SystemReset` → early jump to same ROM bootloader (no live USB jump; no `HAL_RCC_DeInit`)
 
 ## PCB note for Stew
 

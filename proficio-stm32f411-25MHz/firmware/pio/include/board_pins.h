@@ -96,6 +96,11 @@
 #define BOARD_VBUS_SENSE_GPIO   GPIOA
 #define BOARD_VBUS_SENSE_PIN    GPIO_PIN_9   /* PA9 */
 
+/* PA / board NTC (external thermistor divider) — free header pin, ADC1_IN4 */
+#define BOARD_PA_NTC_GPIO       GPIOA
+#define BOARD_PA_NTC_PIN        GPIO_PIN_4   /* PA4 silk A4 */
+#define BOARD_PA_NTC_ADC_CHANNEL ADC_CHANNEL_4
+
 /* Debug UART — PA9 is USBV+ sense; PA3 is I2S MCLK — do not use default USART1 pins */
 #define BOARD_UART_TX_GPIO      GPIOA
 #define BOARD_UART_TX_PIN       GPIO_PIN_9   /* conflict: PA9 = USBV+ sense */

@@ -49,6 +49,7 @@ uint8_t  E_PPM_needs_set = 0;
 volatile uint8_t E_smooth = TRUE;
 
 int32_t  E_transceiver_temp = 0;
+int32_t  E_pa_temp = 0;
 uint8_t  E_si5351_status = 0;
 
 void radio_state_init(void)

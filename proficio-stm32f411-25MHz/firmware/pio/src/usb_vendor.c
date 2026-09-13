@@ -17,6 +17,7 @@ static uint32_t s_result;
 static int32_t  s_ppm_result;
 static int32_t  s_ppm_temp;
 static int32_t  s_proficio_temperature;
+static int32_t  s_pa_temperature;
 static int8_t   s_int_value;
 
 /* Pending OUT targets (pointer into radio_state) */
@@ -153,8 +154,14 @@ usb_vendor_xfer_t usb_vendor_setup(uint8_t bmRequestType, uint8_t bRequest,
             return xfer_in((uint8_t *)&E_PTT, 1, buf, buf_cap);
 
         case CMD_GET_TRANSCEIVER_TEMP:
+            /* Die / chip °C */
             s_proficio_temperature = swap32_int(E_transceiver_temp);
             return xfer_in((uint8_t *)&s_proficio_temperature, 4, buf, buf_cap);
+
+        case CMD_GET_POTENTIA_TEMPERATURE:
+            /* PA / board NTC °C (Solidus retired; opcode reused) */
+            s_pa_temperature = swap32_int(E_pa_temp);
+            return xfer_in((uint8_t *)&s_pa_temperature, 4, buf, buf_cap);
 
         case CMD_GET_PPM_INT:
             s_ppm_temp = ee_ppm_int;

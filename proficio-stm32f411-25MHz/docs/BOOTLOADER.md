@@ -19,8 +19,10 @@ Same **concept** as PSoC BOOT jumper + bootload tool.
 
 ### C — USB command (host-initiated)
 - Vendor request **`CMD_ENTER_BOOTLOADER` = `0xFE`** (host-to-device).  
-- Device re-enters ROM bootloader; host uses CubeProgrammer DFU.  
-- Requires app already running and USB enumerated.
+- App sets a backup-register magic and **`NVIC_SystemReset()`** (does **not** live-jump with USB up).  
+- On the next boot, before USB starts, firmware jumps to ROM DFU **with HSE still on**.  
+- On Pi: `dfu-util -l` should show ST DFU (`0483:df11`).  
+- Requires app already running and USB enumerated for the `0xFE` step.
 
 ### D — ST-Link SWD (development)
 - No BOOT needed: `pio run -t upload` or CubeProgrammer via ST-Link.
