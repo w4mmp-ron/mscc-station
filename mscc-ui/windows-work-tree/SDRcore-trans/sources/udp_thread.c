@@ -905,7 +905,9 @@ void *UDP_Thread(void *my_param) {
             case CMD_SET_TX_ON:
                 G_tx_mode = t_opcode_data;
                 print_time();
-                fprintf(G_fp_logfile, "[%d] UDP Thread. CMD_SET_TX_ON. G_tx_mode: %d\n", line_number++,G_tx_mode);
+                fprintf(G_fp_logfile,
+                    "[%d] UDP Thread. CMD_SET_TX_ON. G_tx_mode: %d  audio_mode=%d remote_ready=%d G_mic_volume=%f\n",
+                    line_number++, G_tx_mode, (int)G_audio_mode, remote_mic_ready(), G_mic_volume);
                 if (previous_G_tx_mode != G_tx_mode) {
                     switch (G_tx_mode) {
                         case 0:
@@ -950,16 +952,28 @@ void *UDP_Thread(void *my_param) {
                 if (t_opcode_data > 100) {
                     t_opcode_data = 100;
                 }
+                /* Remote MSA1 already has client volume. DIGITAL_MIC_GAIN=0 in
+                 * user_controls.ini would zero SSB → TX with no RF. Floor only
+                 * for opcode 2/3; local Digital 0 still means mute. */
+                if ((G_audio_mode == REMOTE_AUDIO || G_audio_mode == REMOTE_DIGITAL_AUDIO) &&
+                    t_opcode_data == 0) {
+                    print_time();
+                    fprintf(G_fp_logfile,
+                        "[%d] UDP Thread. CMD_SET_MIC_VOLUME 0 in remote mode %d — floor 50 (else no RF)\n",
+                        line_number++, (int)G_audio_mode);
+                    t_opcode_data = 50;
+                }
                 current_mic_volume = t_opcode_data;
                 switch (G_audio_mode) {
                 case OPERATOR_AUDIO:
                 case REMOTE_AUDIO:
                     print_time();
-                    fprintf(G_fp_logfile, "[%d] UDP Thread. CMD_SET_MIC_VOLUME.  volume: %d, Calling Set_Mic_Volume\n",
-                        line_number++, current_mic_volume);
+                    fprintf(G_fp_logfile, "[%d] UDP Thread. CMD_SET_MIC_VOLUME.  volume: %d, Calling Set_Mic_Volume (mode=%d)\n",
+                        line_number++, current_mic_volume, G_audio_mode);
                     Set_Mic_Volume();
                     break;
                 case DIGITAL_AUDIO:
+                case REMOTE_DIGITAL_AUDIO:
                     print_time();
                     fprintf(G_fp_logfile, "[%d] UDP Thread. CMD_SET_MIC_VOLUME.  volume: %d, Calling Set_Digital_Mic_Volume\n",
                         line_number++, current_mic_volume);

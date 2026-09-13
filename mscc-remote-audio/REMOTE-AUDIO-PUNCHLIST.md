@@ -1,16 +1,27 @@
 # Remote audio — punch list
 
-**Date:** 2026-09-12 (end of day)  
-**Status:** **Both mixes field-proven.** WPF ↔ Ubuntu `linux/` servers; **Ubuntu Avalonia ↔ Windows servers** (remote audio). WPF **9.12.4** local-vs-remote safety. Windows ms-sdr stays up headless. `rpi/` still read-only.  
+**Date:** 2026-09-13  
+**Status:** Remote operate **field-proven both ways, including WSJT-X TX RF.** Soak / new Windows installer next. `rpi/` still read-only.  
 **Working rule:** implement and prove everything on **`linux/`** (Ubuntu radio). Do **not** edit **`rpi/`** until that is working; then reconcile Pi from the proven `linux/` bits.
 
 Related: [STEW-REMOTE-AUDIO.md](STEW-REMOTE-AUDIO.md), [README.md](README.md).
 
 ---
 
-## Left off (2026-09-12, EOD)
+## Left off (2026-09-13)
 
-**Remote operate works both ways.** Stopped here.
+**Soak + new Windows Advanced Installer.** Operator will run this for a while.
+
+Proven:
+
+| Client | Servers | WSJT-X |
+|--------|---------|--------|
+| WPF (Windows) | Ubuntu `linux/` | CAT + TUNE RF (Tailscale) |
+| Avalonia (Ubuntu) | Windows `C:\mscc-net9` | CAT + TUNE RF |
+
+Linux trans: `DIGITAL_MIC_GAIN=0` zeroed SSB; floor **0→50** in remote 2/3. **Windows trans has the same floor** (rebuild 2026-09-13 14:49 `Mscc-trans.exe`). WPF **9.13.x**: CAT via `CreateFile` + Eltima COM5 DOS-name repair; Launch Servers / 127.0.0.1 disables Remote.
+
+**Installer should pick up from `C:\mscc-net9` / `mscc-ui/Release/windows-wpf/`:** `MSCC.Wpf.exe` (9.13+), `ms-sdr-MKII.exe` (headless ICMP), `mscc-recv.exe` (0x25/0x28 + opcode 3), `Mscc-trans.exe` (opcode 3 + mic floor). Do **not** require `MsccRemotePhones.exe`.
 
 ### Local vs Remote (WPF 9.12.4) — do not mix seats
 
