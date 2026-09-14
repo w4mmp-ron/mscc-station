@@ -13,7 +13,7 @@ mscc-station/
     ms-sdr-linux/           → ms-sdr
     mscc-binaries/          ← copy built binaries here before packaging
     mscc-deb/               ← ./build-deb.sh → mscc_<Version>_arm64.deb
-    pi-install/packages/    ← drop finished debs here for install kits
+    Rpi-installers/    ← drop finished debs here for install kits
   linux/                    ← Ubuntu laptop copy (not used on the Pi)
 ```
 
@@ -52,7 +52,7 @@ As of FM work: control is **1.0.42**, but you still need a **Pi rebuild** of rec
 
    ```bash
    # if not already installed:
-   sudo apt install -y ./mscc-portaudio_19.8.2_arm64.deb   # from rpi/pi-install/packages
+   sudo apt install -y ./mscc-portaudio_19.8.2_arm64.deb   # from rpi/Rpi-installers
    sudo apt update
    sudo apt install -y build-essential g++ libusb-1.0-0-dev libhidapi-libusb0
    ldconfig -p | grep portaudio
@@ -127,10 +127,10 @@ grep '^Version:' "$MSCC/mscc-deb/packaging/DEBIAN/control"
 cd "$MSCC/mscc-deb"
 chmod +x build-deb.sh install-mscc.sh
 ./build-deb.sh
-# → ./mscc_1.0.42_arm64.deb
+# → ./mscc_1.0.43_arm64.deb
 
-./install-mscc.sh ./mscc_1.0.42_arm64.deb
-# or: cp ./mscc_1.0.42_arm64.deb /tmp/ && sudo apt install -y /tmp/mscc_1.0.42_arm64.deb
+./install-mscc.sh ./mscc_1.0.43_arm64.deb
+# or: cp ./mscc_1.0.43_arm64.deb /tmp/ && sudo apt install -y /tmp/mscc_1.0.43_arm64.deb
 
 mscc start
 mscc status
@@ -139,7 +139,7 @@ mscc status
 ### 5) Optional: refresh the install kit
 
 ```bash
-cp -a "$MSCC/mscc-deb/mscc_1.0.42_arm64.deb" "$MSCC/pi-install/packages/"
+cp -a "$MSCC/mscc-deb/mscc_1.0.43_arm64.deb" "$MSCC/Rpi-installers/"
 ```
 
 ---
@@ -199,10 +199,10 @@ mscc start && mscc status
 # or package 1.0.42:
 cp -a $HOME/mscc/{sdrcore-recv,sdrcore-trans,ms-sdr} "$MSCC/mscc-binaries/"
 cd "$MSCC/mscc-deb" && ./build-deb.sh
-./install-mscc.sh ./mscc_1.0.42_arm64.deb
+./install-mscc.sh ./mscc_1.0.43_arm64.deb
 mscc start && mscc status
 ```
 
-Operator install of finished packages: **[../pi-install/INSTALL.md](../pi-install/INSTALL.md)** and **[INSTALL-FOR-PI.md](INSTALL-FOR-PI.md)**.
+Operator install of finished packages: **[../Rpi-installers/INSTALL.md](../Rpi-installers/INSTALL.md)** and **[INSTALL-FOR-PI.md](INSTALL-FOR-PI.md)**.
 
 Optional: an Ubuntu **x86 laptop** can cross-compile these same trees to AArch64 (`linux-build/cross-arm64.sh`) without changing this Pi `make` path. That output must never replace `$HOME/mscc` on the laptop (that dir is the x86 station).

@@ -208,7 +208,7 @@ rpi/
   SDRcore-trans-linux/      ← rebuild sdrcore-trans on Pi
   ms-sdr-linux/
   mscc-init-linux/
-  pi-install/               ← operator kit
+  Rpi-installers/               ← operator kit
 ```
 
 PortAudio **source** used to build the Pi PortAudio `.deb` is still at repo-root `portaudio/`.

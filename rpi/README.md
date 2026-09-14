@@ -9,7 +9,7 @@ Treat this folder as the **Pi source of truth**. For Ubuntu-only fixes, copy/ada
 | `ms-sdr-linux/` | Command hub |
 | `SDRcore-recv-linux/` / `SDRcore-trans-linux/` | RX / TX DSP |
 | `mscc-deb/` / `mscc-binaries/` | `mscc_*_arm64.deb` (AArch64 ELFs) |
-| `pi-install/` | Operator kit + [`INSTALL.md`](pi-install/INSTALL.md) |
+| `Rpi-installers/` | Operator kit + [`INSTALL.md`](Rpi-installers/INSTALL.md) |
 | Current share kit | [`../installers/rpi/`](../installers/rpi/) (copy newest here after a `.deb` build) |
 | `psoc-usb-bootload-linux/` | Firmware upload: **`bootloader-gui.py`** (GUI) + `make` → **`bootloader`** (C CLI, gitignored). Pi binary: `mscc-binaries/bootloader` |
 | `mscc-init-gui/` / `mscc-init-linux/` / `mscc-init-files-linux/` | Init |

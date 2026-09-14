@@ -1,7 +1,7 @@
 # MSCC on Raspberry Pi — install in plain English
 
 > **Preferred single guide + current `.deb` kit:**  
-> **[`../pi-install/INSTALL.md`](../pi-install/INSTALL.md)** and **`../pi-install/packages/`**.  
+> **[`../Rpi-installers/INSTALL.md`](../Rpi-installers/INSTALL.md)** and **`../Rpi-installers/`**.  
 > This file remains as the long-form servers install narrative.
 
 **For:** Raspberry Pi **4 or 5**, **64-bit Raspberry Pi OS** (desktop recommended).  
@@ -12,9 +12,9 @@
 | Package | Example filename | Order |
 |---------|------------------|--------|
 | PortAudio | `mscc-portaudio_19.8.2_arm64.deb` | **1st** |
-| Main stack | `mscc_1.0.42_arm64.deb` | **2nd** |
+| Main stack | `mscc_1.0.43_arm64.deb` | **2nd** |
 | Setup wizard | `mscc-init-gui_1.0.12_all.deb` | **3rd** (recommended) |
-| Avalonia UI (optional) | `mscc-ui_0.6.37_arm64.deb` | **4th** — see `pi-install/` |
+| Avalonia UI (optional) | `mscc-ui_0.6.37_arm64.deb` | **4th** — see `Rpi-installers/` |
 
 ---
 
