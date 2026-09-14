@@ -345,6 +345,10 @@ public static class SpectrumWaterfallSettings
     /// </summary>
     public static string UiPanel { get; set; } = "AUTO";
 
+    /// <summary>Operate accent (headers, readouts, VFO borders). AUTO / named / CUSTOM.</summary>
+    public static string UiAccent { get; set; } = "AUTO";
+    public static string UiAccentRgb { get; set; } = "#00FFAA";
+
     /// <summary>
     /// If true (default), Start also spawns ms-sdr / recv / trans from the app folder.
     /// If false, Start only connects over UDP (backends must already be running).
@@ -689,6 +693,8 @@ public static class SpectrumWaterfallSettings
                     if (LineMatchesKey(line, "UI_BUTTON")) UiButton = ParseIniString(line, UiButton);
                     if (LineMatchesKey(line, "UI_BUTTON_RGB")) UiButtonRgb = ParseIniString(line, UiButtonRgb);
                     if (LineMatchesKey(line, "UI_PANEL")) UiPanel = ParseIniString(line, UiPanel);
+                    if (LineMatchesKey(line, "UI_ACCENT")) UiAccent = ParseIniString(line, UiAccent);
+                    if (LineMatchesKey(line, "UI_ACCENT_RGB")) UiAccentRgb = ParseIniString(line, UiAccentRgb);
 
                     if (LineMatchesKey(line, "SMETER_HOLD")) SmeterHold = ParseIniBool(line, SmeterHold);
                     if (LineMatchesKey(line, "SMETER_PEAK")) SmeterPeak = ParseIniBool(line, SmeterPeak);
@@ -929,6 +935,8 @@ public static class SpectrumWaterfallSettings
         UpdateOrAdd(lines, "UI_BUTTON", UiButton);
         UpdateOrAdd(lines, "UI_BUTTON_RGB", UiButtonRgb);
         UpdateOrAdd(lines, "UI_PANEL", UiPanel);
+        UpdateOrAdd(lines, "UI_ACCENT", UiAccent);
+        UpdateOrAdd(lines, "UI_ACCENT_RGB", UiAccentRgb);
 
         UpdateOrAdd(lines, "SMETER_HOLD", SmeterHold ? "1" : "0");
         UpdateOrAdd(lines, "SMETER_PEAK", SmeterPeak ? "1" : "0");

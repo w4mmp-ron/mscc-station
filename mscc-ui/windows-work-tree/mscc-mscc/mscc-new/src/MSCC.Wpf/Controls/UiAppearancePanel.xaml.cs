@@ -41,6 +41,12 @@ public partial class UiAppearancePanel : UserControl
             SelectItemByContent(UiButtonList, SpectrumWaterfallSettings.UiButton);
             UiButtonList.SelectionChanged += OnUiButtonSelectionChanged;
         }
+        if (UiAccentList != null)
+        {
+            UiAccentList.SelectionChanged -= OnUiAccentSelectionChanged;
+            SelectItemByContent(UiAccentList, SpectrumWaterfallSettings.UiAccent);
+            UiAccentList.SelectionChanged += OnUiAccentSelectionChanged;
+        }
 
         UpdateUiChromeRgbLabels();
         UpdatePanelListEnabledState();
@@ -161,6 +167,54 @@ public partial class UiAppearancePanel : UserControl
         UpdateUiChromeRgbLabels();
     }
 
+    private void OnUiAccentSelectionChanged(object sender, SelectionChangedEventArgs e)
+    {
+        if (sender is not ListBox lb || lb.SelectedItem is not ListBoxItem item)
+            return;
+        string name = item.Content?.ToString() ?? "AUTO";
+        ApplyUiAccentChoice(name, reopenCustom: false);
+    }
+
+    private void OnUiAccentListPreviewMouseDown(object sender, MouseButtonEventArgs e)
+    {
+        if (!IsClickOnListItemContent(e, "CUSTOM")) return;
+        if (!UiChromeTheme.IsCustom(SpectrumWaterfallSettings.UiAccent)) return;
+        ApplyUiAccentChoice("CUSTOM", reopenCustom: true);
+        e.Handled = true;
+    }
+
+    private void ApplyUiAccentChoice(string name, bool reopenCustom)
+    {
+        string previous = SpectrumWaterfallSettings.UiAccent;
+
+        if (UiChromeTheme.IsCustom(name))
+        {
+            WpfColor bg = UiChromeTheme.ResolveBackground();
+            WpfColor start = UiChromeTheme.ResolveAccent(bg);
+            if (!TryPickColor(start, out WpfColor picked))
+            {
+                if (UiAccentList != null && !reopenCustom)
+                {
+                    UiAccentList.SelectionChanged -= OnUiAccentSelectionChanged;
+                    SelectItemByContent(UiAccentList, previous);
+                    UiAccentList.SelectionChanged += OnUiAccentSelectionChanged;
+                }
+                return;
+            }
+
+            SpectrumWaterfallSettings.UiAccent = "CUSTOM";
+            SpectrumWaterfallSettings.UiAccentRgb = UiChromeTheme.ToHex(picked);
+        }
+        else
+        {
+            SpectrumWaterfallSettings.UiAccent = name;
+        }
+
+        SpectrumWaterfallSettings.Save();
+        UiChromeTheme.ApplyToMainWindow();
+        UpdateUiChromeRgbLabels();
+    }
+
     private void OnUiPanelSelectionChanged(object sender, SelectionChangedEventArgs e)
     {
         if (UiChromeTheme.IsCustom(SpectrumWaterfallSettings.UiBackground))
@@ -181,6 +235,8 @@ public partial class UiAppearancePanel : UserControl
         SpectrumWaterfallSettings.UiPanel = "AUTO";
         SpectrumWaterfallSettings.UiButton = "YELLOW";
         SpectrumWaterfallSettings.UiButtonRgb = "#FFCC00";
+        SpectrumWaterfallSettings.UiAccent = "AUTO";
+        SpectrumWaterfallSettings.UiAccentRgb = "#00FFAA";
         SpectrumWaterfallSettings.Save();
 
         if (UiBackgroundList != null)
@@ -201,6 +257,12 @@ public partial class UiAppearancePanel : UserControl
             SelectItemByContent(UiButtonList, "YELLOW");
             UiButtonList.SelectionChanged += OnUiButtonSelectionChanged;
         }
+        if (UiAccentList != null)
+        {
+            UiAccentList.SelectionChanged -= OnUiAccentSelectionChanged;
+            SelectItemByContent(UiAccentList, "AUTO");
+            UiAccentList.SelectionChanged += OnUiAccentSelectionChanged;
+        }
 
         UiChromeTheme.ApplyToMainWindow();
         UpdatePanelListEnabledState();
@@ -219,18 +281,22 @@ public partial class UiAppearancePanel : UserControl
         WpfColor bg = UiChromeTheme.ResolveBackground();
         WpfColor panel = UiChromeTheme.ResolvePanel(bg);
         WpfColor btn = UiChromeTheme.ResolveButtonFace();
+        WpfColor accent = UiChromeTheme.ResolveAccent(bg);
 
         string bgHex = UiChromeTheme.ToHex(bg);
         string panelHex = UiChromeTheme.ToHex(panel);
         string btnHex = UiChromeTheme.ToHex(btn);
+        string accentHex = UiChromeTheme.ToHex(accent);
 
         if (UiBackgroundRgbText != null) UiBackgroundRgbText.Text = bgHex;
         if (UiPanelRgbText != null) UiPanelRgbText.Text = panelHex;
         if (UiButtonRgbText != null) UiButtonRgbText.Text = btnHex;
+        if (UiAccentRgbText != null) UiAccentRgbText.Text = accentHex;
 
         if (UiBackgroundSwatch != null) UiBackgroundSwatch.Background = new SolidColorBrush(bg);
         if (UiPanelSwatch != null) UiPanelSwatch.Background = new SolidColorBrush(panel);
         if (UiButtonSwatch != null) UiButtonSwatch.Background = new SolidColorBrush(btn);
+        if (UiAccentSwatch != null) UiAccentSwatch.Background = new SolidColorBrush(accent);
     }
 
     private bool TryPickColor(WpfColor start, out WpfColor result)

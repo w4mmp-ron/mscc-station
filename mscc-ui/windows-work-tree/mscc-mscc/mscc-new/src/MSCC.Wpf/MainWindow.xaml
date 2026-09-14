@@ -14,6 +14,8 @@
         <!-- Labels on panels (Volume, Temps, Versions, …) — flips black/white with panel luminance -->
         <SolidColorBrush x:Key="UiPrimaryTextBrush" Color="White"/>
         <SolidColorBrush x:Key="UiMutedTextBrush" Color="#FFD0D0D0"/>
+        <SolidColorBrush x:Key="UiAccentBrush" Color="#FF00FFAA"/>
+        <SolidColorBrush x:Key="UiAccentMutedBrush" Color="#FF006B5A"/>
         <SolidColorBrush x:Key="UiButtonFaceBrush" Color="#FFCC00"/>
         <SolidColorBrush x:Key="UiButtonBorderBrush" Color="#FFAA00"/>
         <SolidColorBrush x:Key="UiButtonHoverBrush" Color="#FFDD55"/>
@@ -216,7 +218,7 @@
             <StackPanel VerticalAlignment="Top">
 
     <!-- Start / connection — top of left panel (PowerSDR-style: start top-left) -->
-    <TextBlock Text="SERVER" FontWeight="Bold" Foreground="#00FFAA" FontSize="12" Margin="0,0,0,4"/>
+    <TextBlock Text="SERVER" FontWeight="Bold" Foreground="{DynamicResource UiAccentBrush}" FontSize="12" Margin="0,0,0,4"/>
     <Button x:Name="StartStopButton"
             Content="{Binding StartStopButtonText}"
             IsEnabled="{Binding CanStartLocalRadioSession}"
@@ -286,36 +288,36 @@
     </StackPanel>
 
     <!-- P group (operator/phones) — tight label→slider→value for narrower rail -->
-    <TextBlock Text="Phones" FontWeight="Bold" Foreground="#00FFAA" FontSize="12" Margin="0,0,0,2"/>
+    <TextBlock Text="Phones" FontWeight="Bold" Foreground="{DynamicResource UiAccentBrush}" FontSize="12" Margin="0,0,0,2"/>
     <StackPanel Orientation="Horizontal" Margin="0,0,0,3" VerticalAlignment="Center">
         <TextBlock Text="Volume" Width="52" VerticalAlignment="Center" Foreground="{DynamicResource UiPrimaryTextBrush}" FontSize="11"/>
         <Slider Width="68" Minimum="0" Maximum="100" SmallChange="1" Value="{Binding RadioState.PVolume, Mode=TwoWay}" PreviewMouseWheel="Slider_PreviewMouseWheel" Margin="2,0,0,0"/>
         <Border Background="#FF444444" BorderThickness="1" BorderBrush="#FF888888" Margin="2,0,0,0" Padding="2,1" MinWidth="32">
-            <TextBlock Text="{Binding RadioState.PVolume, StringFormat={}{0}}" FontSize="11" FontWeight="Bold" Foreground="#00FFAA" HorizontalAlignment="Center"/>
+            <TextBlock Text="{Binding RadioState.PVolume, StringFormat={}{0}}" FontSize="11" FontWeight="Bold" Foreground="{DynamicResource UiAccentBrush}" HorizontalAlignment="Center"/>
         </Border>
     </StackPanel>
     <StackPanel Orientation="Horizontal" Margin="0,0,0,5" VerticalAlignment="Center">
         <TextBlock Text="Mic Gain" Width="52" VerticalAlignment="Center" Foreground="{DynamicResource UiPrimaryTextBrush}" FontSize="11"/>
         <Slider Width="68" Minimum="0" Maximum="100" SmallChange="1" Value="{Binding RadioState.PMicGain, Mode=TwoWay}" PreviewMouseWheel="Slider_PreviewMouseWheel" Margin="2,0,0,0"/>
         <Border Background="#FF444444" BorderThickness="1" BorderBrush="#FF888888" Margin="2,0,0,0" Padding="2,1" MinWidth="32">
-            <TextBlock Text="{Binding RadioState.PMicGain, StringFormat={}{0}}" FontSize="11" FontWeight="Bold" Foreground="#00FFAA" HorizontalAlignment="Center"/>
+            <TextBlock Text="{Binding RadioState.PMicGain, StringFormat={}{0}}" FontSize="11" FontWeight="Bold" Foreground="{DynamicResource UiAccentBrush}" HorizontalAlignment="Center"/>
         </Border>
     </StackPanel>
 
     <!-- D group (digital) -->
-    <TextBlock Text="Digital" FontWeight="Bold" Foreground="#00FFAA" FontSize="12" Margin="0,0,0,2"/>
+    <TextBlock Text="Digital" FontWeight="Bold" Foreground="{DynamicResource UiAccentBrush}" FontSize="12" Margin="0,0,0,2"/>
     <StackPanel Orientation="Horizontal" Margin="0,0,0,3" VerticalAlignment="Center">
         <TextBlock Text="Volume" Width="52" VerticalAlignment="Center" Foreground="{DynamicResource UiPrimaryTextBrush}" FontSize="11"/>
         <Slider Width="68" Minimum="0" Maximum="100" SmallChange="1" Value="{Binding RadioState.DVolume, Mode=TwoWay}" PreviewMouseWheel="Slider_PreviewMouseWheel" Margin="2,0,0,0"/>
         <Border Background="#FF444444" BorderThickness="1" BorderBrush="#FF888888" Margin="2,0,0,0" Padding="2,1" MinWidth="32">
-            <TextBlock Text="{Binding RadioState.DVolume, StringFormat={}{0}}" FontSize="11" FontWeight="Bold" Foreground="#00FFAA" HorizontalAlignment="Center"/>
+            <TextBlock Text="{Binding RadioState.DVolume, StringFormat={}{0}}" FontSize="11" FontWeight="Bold" Foreground="{DynamicResource UiAccentBrush}" HorizontalAlignment="Center"/>
         </Border>
     </StackPanel>
     <StackPanel Orientation="Horizontal" Margin="0,0,0,10" VerticalAlignment="Center">
         <TextBlock Text="Mic Gain" Width="52" VerticalAlignment="Center" Foreground="{DynamicResource UiPrimaryTextBrush}" FontSize="11"/>
         <Slider Width="68" Minimum="0" Maximum="100" SmallChange="1" Value="{Binding RadioState.DMicGain, Mode=TwoWay}" PreviewMouseWheel="Slider_PreviewMouseWheel" Margin="2,0,0,0"/>
         <Border Background="#FF444444" BorderThickness="1" BorderBrush="#FF888888" Margin="2,0,0,0" Padding="2,1" MinWidth="32">
-            <TextBlock Text="{Binding RadioState.DMicGain, StringFormat={}{0}}" FontSize="11" FontWeight="Bold" Foreground="#00FFAA" HorizontalAlignment="Center"/>
+            <TextBlock Text="{Binding RadioState.DMicGain, StringFormat={}{0}}" FontSize="11" FontWeight="Bold" Foreground="{DynamicResource UiAccentBrush}" HorizontalAlignment="Center"/>
         </Border>
     </StackPanel>
 
@@ -351,7 +353,7 @@
               ToolTip="Operator seat on this PC (MSA1 + CAT). Disabled when Launch Servers is on or Server is 127.0.0.1 — local ms-sdr owns the COM port."/>
 
     <!-- Main tab filter/step buttons (replacing Lo/Hi sliders; cycle presets like original) -->
-    <TextBlock Text="FILTERS / STEP" FontWeight="SemiBold" Margin="0,5,0,3" Foreground="#00FFAA" FontSize="10"/>
+    <TextBlock Text="FILTERS / STEP" FontWeight="SemiBold" Margin="0,5,0,3" Foreground="{DynamicResource UiAccentBrush}" FontSize="10"/>
     <StackPanel Orientation="Horizontal" Margin="0,0,0,3" VerticalAlignment="Center">
         <TextBlock Text="Lo" Width="25" VerticalAlignment="Center" Foreground="{DynamicResource UiPrimaryTextBrush}" FontSize="9"/>
         <Button Content="{Binding LowCutLabel}" Width="55" Height="20" Command="{Binding CycleLowCutCommand}" FontSize="9" Style="{StaticResource MsccGoldButtonStyle}" ToolTip="LOW CUT FILTER"/>
@@ -370,7 +372,7 @@
     </StackPanel>
 
     <!-- Spectrum display zoom (client viewport; no mouse-wheel zoom on spectrum) -->
-    <TextBlock Text="SPECTRUM ZOOM" FontWeight="Bold" Foreground="#00FFAA" FontSize="9"
+    <TextBlock Text="SPECTRUM ZOOM" FontWeight="Bold" Foreground="{DynamicResource UiAccentBrush}" FontSize="9"
                Margin="0,0,0,2"
                ToolTip="Display zoom of the panadapter (1×–4×). Same RF data; magnifies center around VFO."/>
     <StackPanel Orientation="Horizontal" Margin="0,0,0,10" VerticalAlignment="Center"
@@ -381,7 +383,7 @@
                 PreviewMouseWheel="Slider_PreviewMouseWheel" VerticalAlignment="Center"/>
         <Border Background="#FF444444" BorderThickness="1" BorderBrush="#FF888888" Margin="2,0,0,0" Padding="2,1" MinWidth="32">
             <TextBlock Text="{Binding SpectrumZoom, StringFormat={}{0:0}×}" FontSize="11" FontWeight="Bold"
-                       Foreground="#00FFAA" HorizontalAlignment="Center"/>
+                       Foreground="{DynamicResource UiAccentBrush}" HorizontalAlignment="Center"/>
         </Border>
     </StackPanel>
 
@@ -390,7 +392,7 @@
         <TextBlock Text="RIT Offset" Width="52" VerticalAlignment="Center" Foreground="{DynamicResource UiPrimaryTextBrush}" FontSize="11"/>
         <Slider Width="68" Minimum="-500" Maximum="500" SmallChange="10" Value="{Binding RadioState.ActiveVfo.RitOffsetHz, Mode=TwoWay}" PreviewMouseWheel="Slider_PreviewMouseWheel" Margin="2,0,0,0"/>
         <Border Background="#FF444444" BorderThickness="1" BorderBrush="#FF888888" Margin="2,0,0,0" Padding="2,1" MinWidth="36">
-            <TextBlock Text="{Binding RadioState.ActiveVfo.RitOffsetHz, StringFormat={}{0}}" FontSize="11" FontWeight="Bold" Foreground="#00FFAA" HorizontalAlignment="Center"/>
+            <TextBlock Text="{Binding RadioState.ActiveVfo.RitOffsetHz, StringFormat={}{0}}" FontSize="11" FontWeight="Bold" Foreground="{DynamicResource UiAccentBrush}" HorizontalAlignment="Center"/>
         </Border>
     </StackPanel>
     <Button Content="Clear RIT" Width="80" Click="ClearRit_Click" Margin="0,0,0,5" FontSize="9" Style="{StaticResource MsccGoldButtonStyle}"/>
@@ -444,7 +446,7 @@
                                                   Fault="{Binding SwrFault}"
                                                   SwrThreshold="{Binding SwrThreshold}"
                                                   ResetRequested="SwrMeterFace_ResetRequested"/>
-                    <TextBlock FontSize="12" FontWeight="Bold" Foreground="#00FFAA"
+                    <TextBlock FontSize="12" FontWeight="Bold" Foreground="{DynamicResource UiAccentBrush}"
                                HorizontalAlignment="Center" Margin="0,3,0,0">
                         <TextBlock.Style>
                             <Style TargetType="TextBlock">
@@ -473,15 +475,25 @@
                 <!-- VFO A — compact padding so ALC Peak fits at MinWidth 1140 -->
                 <Border Grid.Column="3" Background="#FF1A1A1A" CornerRadius="4" Padding="6,3"
                         VerticalAlignment="Center" Cursor="Hand"
-                        BorderThickness="3" BorderBrush="{Binding IsVfoAActive, Converter={StaticResource BoolToActiveBrushConverter}}"
+                        BorderThickness="3"
                         ToolTip="Click to select VFO A (wheel tunes frequency when active)">
+                    <Border.Style>
+                        <Style TargetType="Border">
+                            <Setter Property="BorderBrush" Value="{DynamicResource UiAccentMutedBrush}"/>
+                            <Style.Triggers>
+                                <DataTrigger Binding="{Binding IsVfoAActive}" Value="True">
+                                    <Setter Property="BorderBrush" Value="{DynamicResource UiAccentBrush}"/>
+                                </DataTrigger>
+                            </Style.Triggers>
+                        </Style>
+                    </Border.Style>
                     <Border.InputBindings>
                         <MouseBinding MouseAction="LeftClick" Command="{Binding SelectVfoACommand}"/>
                     </Border.InputBindings>
                     <StackPanel HorizontalAlignment="Center">
                         <TextBlock Text="VFO A" FontSize="10" Foreground="{DynamicResource UiMutedTextBrush}" HorizontalAlignment="Center"/>
                         <TextBlock Text="{Binding RadioState.VfoA.FrequencyDisplay}"
-                                   FontSize="36" FontWeight="Bold" FontFamily="Consolas" Foreground="#00FFAA"
+                                   FontSize="36" FontWeight="Bold" FontFamily="Consolas" Foreground="#88CCFF"
                                    HorizontalAlignment="Center"
                                    PreviewMouseWheel="VfoFrequency_PreviewMouseWheel" Tag="A"/>
                         <TextBlock Text="{Binding RadioState.VfoA.RitDisplay}"
@@ -497,8 +509,18 @@
                 <!-- VFO B — click to select -->
                 <Border Grid.Column="5" Background="#FF1A1A1A" CornerRadius="4" Padding="6,2"
                         VerticalAlignment="Center" Cursor="Hand"
-                        BorderThickness="2" BorderBrush="{Binding IsVfoBActive, Converter={StaticResource BoolToActiveBrushConverter}}"
+                        BorderThickness="2"
                         ToolTip="Click to select VFO B (wheel tunes frequency when active)">
+                    <Border.Style>
+                        <Style TargetType="Border">
+                            <Setter Property="BorderBrush" Value="{DynamicResource UiAccentMutedBrush}"/>
+                            <Style.Triggers>
+                                <DataTrigger Binding="{Binding IsVfoBActive}" Value="True">
+                                    <Setter Property="BorderBrush" Value="{DynamicResource UiAccentBrush}"/>
+                                </DataTrigger>
+                            </Style.Triggers>
+                        </Style>
+                    </Border.Style>
                     <Border.InputBindings>
                         <MouseBinding MouseAction="LeftClick" Command="{Binding SelectVfoBCommand}"/>
                     </Border.InputBindings>
@@ -526,7 +548,7 @@
                                                     PeakEnabled="{Binding AlcPeakNeedleOn, Mode=TwoWay}"
                                                     PeakHoldSeconds="2"/>
                     <TextBlock Text="ALC"
-                               FontSize="12" FontWeight="Bold" Foreground="#00FFAA"
+                               FontSize="12" FontWeight="Bold" Foreground="{DynamicResource UiAccentBrush}"
                                HorizontalAlignment="Center" Margin="0,2,0,0"
                                ToolTip="ALC meter"/>
                 </StackPanel>
@@ -653,7 +675,7 @@
                                 <TextBlock Text="{Binding LocalTimeDisplay}" Foreground="{DynamicResource UiPrimaryTextBrush}" FontSize="13" FontWeight="Bold" FontFamily="Consolas" VerticalAlignment="Center"/>
                                 <TextBlock Text="{Binding LocalDateDisplay}" Foreground="{DynamicResource UiMutedTextBrush}" FontSize="9" VerticalAlignment="Center" Margin="4,0,16,0"/>
                                 <TextBlock Text="UTC " Foreground="{DynamicResource UiMutedTextBrush}" FontSize="9" VerticalAlignment="Center" Margin="0,0,4,0"/>
-                                <TextBlock Text="{Binding UtcTimeDisplay}" Foreground="#00FFAA" FontSize="13" FontWeight="Bold" FontFamily="Consolas" VerticalAlignment="Center"/>
+                                <TextBlock Text="{Binding UtcTimeDisplay}" Foreground="{DynamicResource UiAccentBrush}" FontSize="13" FontWeight="Bold" FontFamily="Consolas" VerticalAlignment="Center"/>
                                 <TextBlock Text="{Binding UtcDateDisplay}" Foreground="{DynamicResource UiMutedTextBrush}" FontSize="9" VerticalAlignment="Center" Margin="4,0,0,0"/>
                             </StackPanel>
                         </Border>
@@ -2018,7 +2040,7 @@
                 </Grid>
 
                 <!-- MAIN operate power: same stores as RX/TX tab; bank follows TUN / mode -->
-                <TextBlock Text="{Binding MainOperatePowerLabel}" FontWeight="Bold" Foreground="#00FFAA" FontSize="9"
+                <TextBlock Text="{Binding MainOperatePowerLabel}" FontWeight="Bold" Foreground="{DynamicResource UiAccentBrush}" FontSize="9"
                            Margin="0,4,0,1" HorizontalAlignment="Left"
                            ToolTip="Drive power for the current context: TUN→Tune, CW→CW, AM→AM carrier, FM→FM, USB/LSB→SSB. Same values as RX/TX Power Levels."/>
                 <StackPanel Orientation="Horizontal" Margin="0,0,0,1" VerticalAlignment="Center"
@@ -2028,12 +2050,12 @@
                             PreviewMouseWheel="Slider_PreviewMouseWheel" VerticalAlignment="Center"/>
                     <Border Background="#FF444444" BorderThickness="1" BorderBrush="#FF888888" Margin="3,0,0,0" Padding="2,1" MinWidth="36">
                         <TextBlock Text="{Binding MainOperatePowerPercent, StringFormat={}{0}%}" FontSize="10" FontWeight="Bold"
-                                   Foreground="#00FFAA" HorizontalAlignment="Center"/>
+                                   Foreground="{DynamicResource UiAccentBrush}" HorizontalAlignment="Center"/>
                     </Border>
                 </StackPanel>
 
                 <!-- Compression level (enable = CMP button above; phones/P only) -->
-                <TextBlock Text="COMPRESSION" FontWeight="Bold" Foreground="#00FFAA" FontSize="9"
+                <TextBlock Text="COMPRESSION" FontWeight="Bold" Foreground="{DynamicResource UiAccentBrush}" FontSize="9"
                            Margin="0,3,0,1" HorizontalAlignment="Left"
                            ToolTip="Compression level (dB). Phones (P) only — disabled while Audio is D."/>
                 <StackPanel Orientation="Horizontal" Margin="0,0,0,1" VerticalAlignment="Center"
@@ -2044,12 +2066,12 @@
                             PreviewMouseWheel="Slider_PreviewMouseWheel" VerticalAlignment="Center"/>
                     <Border Background="#FF444444" BorderThickness="1" BorderBrush="#FF888888" Margin="3,0,0,0" Padding="2,1" MinWidth="36">
                         <TextBlock Text="{Binding CompressionLevel, StringFormat={}{0}}" FontSize="10" FontWeight="Bold"
-                                   Foreground="#00FFAA" HorizontalAlignment="Center"/>
+                                   Foreground="{DynamicResource UiAccentBrush}" HorizontalAlignment="Center"/>
                     </Border>
                 </StackPanel>
 
                 <!-- AGC FAST RELEASE (under COMPRESSION; AGC mode cycle = SLO/MED/FAST button above) -->
-                <TextBlock Text="AGC FAST RELEASE" FontWeight="Bold" Foreground="#00FFAA" FontSize="9"
+                <TextBlock Text="AGC FAST RELEASE" FontWeight="Bold" Foreground="{DynamicResource UiAccentBrush}" FontSize="9"
                            Margin="0,3,0,1" HorizontalAlignment="Left"
                            ToolTip="AGC fast release time (ms)"/>
                 <StackPanel Orientation="Horizontal" Margin="0,0,0,1" VerticalAlignment="Center"
@@ -2059,12 +2081,12 @@
                             VerticalAlignment="Center"/>
                     <Border Background="#FF444444" BorderThickness="1" BorderBrush="#FF888888" Margin="3,0,0,0" Padding="2,1" MinWidth="48">
                         <TextBlock Text="{Binding AgcFastRelease, StringFormat={}{0} ms}" FontSize="10" FontWeight="Bold"
-                                   Foreground="#00FFAA" HorizontalAlignment="Center"/>
+                                   Foreground="{DynamicResource UiAccentBrush}" HorizontalAlignment="Center"/>
                     </Border>
                 </StackPanel>
 
                 <!-- MODE: 3×2, band-button size; active latched; FM reserved (grayed) -->
-                <TextBlock Text="MODE" FontWeight="Bold" Foreground="#00FFAA" FontSize="9"
+                <TextBlock Text="MODE" FontWeight="Bold" Foreground="{DynamicResource UiAccentBrush}" FontSize="9"
                            Margin="0,5,0,2" HorizontalAlignment="Left"
                            ToolTip="Operating mode for the active VFO. DIG-U uses its own Lo/Hi filters and Audio D."/>
                 <Grid HorizontalAlignment="Stretch" Margin="0,0,0,4">
@@ -2177,7 +2199,7 @@
                           ToolTip="Checked: TX=RX on VFO-A. Unchecked: TX on VFO-B (A−100 kHz) via split."/>
 
                 <!-- First-wave operate controls (full NB controls live here; NR/MON/TX BW also) -->
-                <TextBlock Text="RX / TX" FontWeight="Bold" Foreground="#00FFAA" FontSize="10"
+                <TextBlock Text="RX / TX" FontWeight="Bold" Foreground="{DynamicResource UiAccentBrush}" FontSize="10"
                            Margin="0,5,0,3" HorizontalAlignment="Left"/>
 
                 <!-- NB | NR | AN -->
@@ -2247,7 +2269,7 @@
                             VerticalAlignment="Center"/>
                     <Border Background="#FF444444" BorderThickness="1" BorderBrush="#FF888888" Margin="3,0,0,0" Padding="2,1" MinWidth="40">
                         <TextBlock Text="{Binding NbPulse, StringFormat={}{0}}" FontSize="10" FontWeight="Bold"
-                                   Foreground="#00FFAA" HorizontalAlignment="Center"/>
+                                   Foreground="{DynamicResource UiAccentBrush}" HorizontalAlignment="Center"/>
                     </Border>
                 </StackPanel>
                 <StackPanel Orientation="Horizontal" Margin="0,0,0,4" VerticalAlignment="Center"
@@ -2258,7 +2280,7 @@
                             VerticalAlignment="Center"/>
                     <Border Background="#FF444444" BorderThickness="1" BorderBrush="#FF888888" Margin="3,0,0,0" Padding="2,1" MinWidth="40">
                         <TextBlock Text="{Binding NbThreshold}" FontSize="10" FontWeight="Bold"
-                                   Foreground="#00FFAA" HorizontalAlignment="Center"/>
+                                   Foreground="{DynamicResource UiAccentBrush}" HorizontalAlignment="Center"/>
                     </Border>
                 </StackPanel>
 
@@ -2271,7 +2293,7 @@
                             VerticalAlignment="Center"/>
                     <Border Background="#FF444444" BorderThickness="1" BorderBrush="#FF888888" Margin="3,0,0,0" Padding="2,1" MinWidth="40">
                         <TextBlock Text="{Binding NrLevel}" FontSize="10" FontWeight="Bold"
-                                   Foreground="#00FFAA" HorizontalAlignment="Center"/>
+                                   Foreground="{DynamicResource UiAccentBrush}" HorizontalAlignment="Center"/>
                     </Border>
                 </StackPanel>
 
@@ -2304,13 +2326,13 @@
                 </Grid>
 
                 <!-- CW SPEED (WPM) — always available; most useful in CW -->
-                <TextBlock Text="CW SPEED" FontWeight="Bold" Foreground="#00FFAA" FontSize="10"
+                <TextBlock Text="CW SPEED" FontWeight="Bold" Foreground="{DynamicResource UiAccentBrush}" FontSize="10"
                            Margin="0,3,0,2" HorizontalAlignment="Left"/>
                 <StackPanel Orientation="Horizontal" HorizontalAlignment="Left" VerticalAlignment="Center" Margin="0,0,0,2">
                     <Border Background="#FF444444" BorderThickness="1" BorderBrush="#FF888888"
                             Padding="3,1" MinWidth="36" VerticalAlignment="Center">
                         <TextBlock Text="{Binding CwSpeed}" FontSize="12" FontWeight="Bold"
-                                   Foreground="#00FFAA" HorizontalAlignment="Center"/>
+                                   Foreground="{DynamicResource UiAccentBrush}" HorizontalAlignment="Center"/>
                     </Border>
                     <Button Content="-" Width="24" Height="22" Margin="4,0,2,0"
                             Command="{Binding DecCwSpeedCommand}"
@@ -2324,7 +2346,7 @@
                 </StackPanel>
 
                 <!-- CW PITCH — copy of CW tab control (cycle; same CwPitchIndex binding) -->
-                <TextBlock Text="CW PITCH" FontWeight="Bold" Foreground="#00FFAA" FontSize="10"
+                <TextBlock Text="CW PITCH" FontWeight="Bold" Foreground="{DynamicResource UiAccentBrush}" FontSize="10"
                            Margin="0,6,0,2" HorizontalAlignment="Left"/>
                 <Button Content="{Binding CwPitchButtonText}" Width="100" Height="22"
                         HorizontalAlignment="Left" Margin="0,0,0,6"

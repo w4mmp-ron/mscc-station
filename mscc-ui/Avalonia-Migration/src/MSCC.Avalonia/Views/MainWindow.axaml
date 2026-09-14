@@ -181,7 +181,7 @@
                   Height="92"
                   VerticalAlignment="Center"
                   Background="#FF0A1A0A"
-                  BorderBrush="#00FF88"
+                  BorderBrush="{DynamicResource UiAccentBrush}"
                   BorderThickness="2"
                   CornerRadius="4"
                   Padding="4,3"
@@ -194,16 +194,16 @@
                   PointerWheelChanged="VfoAPanel_OnPointerWheelChanged"
                   DoubleTapped="VfoAPanel_OnDoubleTapped">
             <StackPanel VerticalAlignment="Center" Spacing="0">
-              <TextBlock Text="VFO A · digit + wheel" FontSize="8" Foreground="#00FFAA" HorizontalAlignment="Center"/>
+              <TextBlock Text="VFO A · digit + wheel" FontSize="8" Foreground="#88AACC" HorizontalAlignment="Center"/>
               <TextBlock x:Name="VfoAFreqText"
                          Text="{Binding FrequencyDisplayMhz}" FontSize="26" FontWeight="Bold"
                          FontFamily="Consolas, Courier New, monospace"
-                         Foreground="#00FF88" HorizontalAlignment="Center"
+                         Foreground="#88DDFF" HorizontalAlignment="Center"
                          PointerMoved="VfoAFreqText_OnPointerMoved"
                          PointerExited="VfoFreqText_OnPointerExited"
                          PointerWheelChanged="VfoAFreqText_OnPointerWheelChanged"/>
               <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" Spacing="6" Margin="0,1,0,0">
-                <TextBlock Text="{Binding ModeText}" FontSize="11" FontWeight="Bold" Foreground="#00FFAA"/>
+                <TextBlock Text="{Binding ModeText}" FontSize="11" FontWeight="Bold" Foreground="{DynamicResource UiAccentBrush}"/>
                 <TextBlock Text="{Binding VfoTuneStepDisplay}" FontSize="9" Foreground="#88CCAA"/>
               </StackPanel>
             </StackPanel>
@@ -216,7 +216,7 @@
                   Height="92"
                   VerticalAlignment="Center"
                   Background="#FF0A0A12"
-                  BorderBrush="#FF555555"
+                  BorderBrush="{DynamicResource UiAccentMutedBrush}"
                   BorderThickness="1"
                   CornerRadius="4"
                   Padding="4,3"
@@ -322,7 +322,7 @@
                   HorizontalContentAlignment="Center" VerticalContentAlignment="Center"
                   ToolTip.Tip="{Binding GenButtonTip}"/>
           <TextBlock Grid.Column="14" Text="{Binding BandText, StringFormat=Band: {0}}"
-                     VerticalAlignment="Center" Margin="6,0,2,0" Foreground="#00FFAA" FontSize="11"/>
+                     VerticalAlignment="Center" Margin="6,0,2,0" Foreground="{DynamicResource UiAccentBrush}" FontSize="11"/>
         </Grid>
       </Border>
 
@@ -1267,7 +1267,7 @@
                 <Border Background="#FF222222" BorderBrush="#FF444444" BorderThickness="1" CornerRadius="4" Padding="10" Margin="0,8,0,0">
                   <StackPanel Spacing="8">
                     <TextBlock Text="UI Appearance" FontWeight="SemiBold" Foreground="#00FFAA" FontSize="13"/>
-                    <TextBlock Text="Live preview. CUSTOM enables RGB sliders. CUSTOM background forces panel AUTO (slightly lighter)."
+                    <TextBlock Text="Live preview. CUSTOM enables RGB sliders. CUSTOM background forces panel AUTO. ACCENT AUTO is mint on dark backgrounds. Tabs stay mint."
                                FontSize="10" Foreground="#D0D0D0" TextWrapping="Wrap"/>
                     <StackPanel Orientation="Horizontal" Spacing="12">
                       <StackPanel>
@@ -1332,12 +1332,38 @@
                           </Grid>
                         </StackPanel>
                       </StackPanel>
+                      <StackPanel>
+                        <TextBlock Text="UI ACCENT" FontSize="9" Foreground="#D0D0D0" Margin="0,0,0,2"/>
+                        <ListBox ItemsSource="{Binding UiAccentNames}"
+                                 SelectedItem="{Binding SelectedUiAccent}"
+                                 Width="90" Height="130" FontSize="10"
+                                 Background="#111" BorderBrush="#555"/>
+                        <TextBlock Text="{Binding UiAccentRgbText}" FontSize="10" Foreground="#00FFAA"
+                                   FontFamily="Consolas" Margin="0,4,0,0"/>
+                        <StackPanel IsVisible="{Binding ShowUiAccentRgb}" Spacing="2" Margin="0,4,0,0">
+                          <Grid ColumnDefinitions="16,*,28">
+                            <TextBlock Text="R" FontSize="9" VerticalAlignment="Center"/>
+                            <Slider Grid.Column="1" Minimum="0" Maximum="255" Value="{Binding UiAccR}"/>
+                            <TextBlock Grid.Column="2" Text="{Binding UiAccR}" FontSize="9" Foreground="#0FA" HorizontalAlignment="Right"/>
+                          </Grid>
+                          <Grid ColumnDefinitions="16,*,28">
+                            <TextBlock Text="G" FontSize="9" VerticalAlignment="Center"/>
+                            <Slider Grid.Column="1" Minimum="0" Maximum="255" Value="{Binding UiAccG}"/>
+                            <TextBlock Grid.Column="2" Text="{Binding UiAccG}" FontSize="9" Foreground="#0FA" HorizontalAlignment="Right"/>
+                          </Grid>
+                          <Grid ColumnDefinitions="16,*,28">
+                            <TextBlock Text="B" FontSize="9" VerticalAlignment="Center"/>
+                            <Slider Grid.Column="1" Minimum="0" Maximum="255" Value="{Binding UiAccB}"/>
+                            <TextBlock Grid.Column="2" Text="{Binding UiAccB}" FontSize="9" Foreground="#0FA" HorizontalAlignment="Right"/>
+                          </Grid>
+                        </StackPanel>
+                      </StackPanel>
                       <StackPanel VerticalAlignment="Top" Width="140" Spacing="8" Margin="4,16,0,0">
                         <TextBlock Text="RGB shows effective color. CUSTOM bg locks panel to AUTO lift."
                                    FontSize="9" Foreground="#D0D0D0" TextWrapping="Wrap"/>
                         <Button Content="Reset defaults" Classes="mscc-gold" Width="120" Height="26"
                                 Command="{Binding ResetUiChromeCommand}"
-                                ToolTip.Tip="BACKGROUND BLACK, PANEL AUTO, BUTTON YELLOW"/>
+                                ToolTip.Tip="BACKGROUND BLACK, PANEL AUTO, BUTTON YELLOW, ACCENT AUTO"/>
                       </StackPanel>
                     </StackPanel>
                   </StackPanel>

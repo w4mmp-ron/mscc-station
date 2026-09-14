@@ -146,6 +146,8 @@ public sealed class ClientSettings
     public string UiButton { get; set; } = "YELLOW";
     public string UiButtonRgb { get; set; } = "#FFCC00";
     public string UiPanel { get; set; } = "AUTO";
+    public string UiAccent { get; set; } = "AUTO";
+    public string UiAccentRgb { get; set; } = "#00FFAA";
 
     // GEN
     public int GenIndexProficio { get; set; } = 7; // USER
@@ -336,6 +338,8 @@ public static class ClientSettingsStore
             sb.AppendLine($"UI_BUTTON={s.UiButton}");
             sb.AppendLine($"UI_BUTTON_RGB={s.UiButtonRgb}");
             sb.AppendLine($"UI_PANEL={s.UiPanel}");
+            sb.AppendLine($"UI_ACCENT={s.UiAccent}");
+            sb.AppendLine($"UI_ACCENT_RGB={s.UiAccentRgb}");
             sb.AppendLine();
             sb.AppendLine("# GEN");
             sb.AppendLine($"GEN_INDEX_PROFICIO={s.GenIndexProficio}");
@@ -789,6 +793,14 @@ public static class ClientSettingsStore
             case "UI_PANEL":
                 if (!string.IsNullOrWhiteSpace(val))
                     s.UiPanel = val.Trim().ToUpperInvariant();
+                break;
+            case "UI_ACCENT":
+                if (!string.IsNullOrWhiteSpace(val))
+                    s.UiAccent = val.Trim().ToUpperInvariant();
+                break;
+            case "UI_ACCENT_RGB":
+                if (!string.IsNullOrWhiteSpace(val))
+                    s.UiAccentRgb = val.Trim();
                 break;
 
             case "GEN_INDEX_PROFICIO":

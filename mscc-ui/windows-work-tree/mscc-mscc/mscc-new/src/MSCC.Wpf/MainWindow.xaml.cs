@@ -252,6 +252,10 @@ public partial class MainWindow : Window
             SetResourceBrushColor("UiPanelBackgroundBrush", panel);
             SetResourceBrushColor("UiPrimaryTextBrush", primaryText);
             SetResourceBrushColor("UiMutedTextBrush", mutedText);
+            Color accent = UiChromeTheme.ResolveAccent(bg);
+            Color accentMuted = UiChromeTheme.Darken(accent, 0x66);
+            SetResourceBrushColor("UiAccentBrush", accent);
+            SetResourceBrushColor("UiAccentMutedBrush", accentMuted);
             SetResourceBrushColor("UiButtonFaceBrush", face);
             SetResourceBrushColor("UiButtonBorderBrush", border);
             SetResourceBrushColor("UiButtonHoverBrush", hover);

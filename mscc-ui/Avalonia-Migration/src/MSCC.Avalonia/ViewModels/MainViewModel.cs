@@ -201,9 +201,11 @@ public partial class MainViewModel : ViewModelBase, IDisposable
         SelectedUiBackground = a.UiBackground;
         SelectedUiPanel = a.UiPanel;
         SelectedUiButton = a.UiButton;
+        SelectedUiAccent = a.UiAccent;
         UiBackgroundRgbText = a.UiBackgroundRgb;
         UiButtonRgbText = a.UiButtonRgb;
         UiPanelRgbText = UiChromeTheme.ToHex(a.ResolvePanel());
+        UiAccentRgbText = UiChromeTheme.ToHex(a.ResolveAccent());
         if (UiChromeTheme.TryParseHex(a.UiBackgroundRgb, out byte br, out byte bg, out byte bb))
         {
             UiBgR = br; UiBgG = bg; UiBgB = bb;
@@ -212,9 +214,14 @@ public partial class MainViewModel : ViewModelBase, IDisposable
         {
             UiBtnR = fr; UiBtnG = fg; UiBtnB = fb;
         }
+        if (UiChromeTheme.TryParseHex(a.UiAccentRgb, out byte ar, out byte ag, out byte ab))
+        {
+            UiAccR = ar; UiAccG = ag; UiAccB = ab;
+        }
         UiPanelListEnabled = !UiChromeTheme.IsCustom(a.UiBackground);
         ShowUiBackgroundRgb = UiChromeTheme.IsCustom(a.UiBackground);
         ShowUiButtonRgb = UiChromeTheme.IsCustom(a.UiButton);
+        ShowUiAccentRgb = UiChromeTheme.IsCustom(a.UiAccent);
         _loadingAppearance = false;
     }
 
@@ -5508,7 +5515,9 @@ public partial class MainViewModel : ViewModelBase, IDisposable
                 s.UiBackgroundRgb,
                 s.UiButton,
                 s.UiButtonRgb,
-                s.UiPanel);
+                s.UiPanel,
+                s.UiAccent,
+                s.UiAccentRgb);
             SyncAppearanceUiFromSettings();
 
             FavoriteBandFilter = NormalizeFavoriteBand(BandText, activeHz);
@@ -5637,6 +5646,8 @@ public partial class MainViewModel : ViewModelBase, IDisposable
             UiButton = app.UiButton,
             UiButtonRgb = app.UiButtonRgb,
             UiPanel = app.UiPanel,
+            UiAccent = app.UiAccent,
+            UiAccentRgb = app.UiAccentRgb,
             GenIndexProficio = _genIndexProficio,
             GenIndexGeminus = _genIndexGeminus,
         };
@@ -5778,22 +5789,29 @@ public partial class MainViewModel : ViewModelBase, IDisposable
     public string[] UiBackgroundNames => UiChromeTheme.ColorNames;
     public string[] UiPanelNames => UiChromeTheme.PanelColorNames;
     public string[] UiButtonNames => UiChromeTheme.ColorNames;
+    public string[] UiAccentNames => UiChromeTheme.AccentColorNames;
 
     [ObservableProperty] private string _selectedUiBackground = "BLACK";
     [ObservableProperty] private string _selectedUiPanel = "AUTO";
     [ObservableProperty] private string _selectedUiButton = "YELLOW";
+    [ObservableProperty] private string _selectedUiAccent = "AUTO";
     [ObservableProperty] private string _uiBackgroundRgbText = "#1C1C1C";
     [ObservableProperty] private string _uiButtonRgbText = "#FFCC00";
     [ObservableProperty] private string _uiPanelRgbText = "#2A2A2A";
+    [ObservableProperty] private string _uiAccentRgbText = "#00FFAA";
     [ObservableProperty] private int _uiBgR = 0x1C;
     [ObservableProperty] private int _uiBgG = 0x1C;
     [ObservableProperty] private int _uiBgB = 0x1C;
     [ObservableProperty] private int _uiBtnR = 0xFF;
     [ObservableProperty] private int _uiBtnG = 0xCC;
     [ObservableProperty] private int _uiBtnB;
+    [ObservableProperty] private int _uiAccR;
+    [ObservableProperty] private int _uiAccG = 0xFF;
+    [ObservableProperty] private int _uiAccB = 0xAA;
     [ObservableProperty] private bool _uiPanelListEnabled = true;
     [ObservableProperty] private bool _showUiBackgroundRgb;
     [ObservableProperty] private bool _showUiButtonRgb;
+    [ObservableProperty] private bool _showUiAccentRgb;
 
     partial void OnSelectedUiBackgroundChanged(string value)
     {
@@ -5827,12 +5845,28 @@ public partial class MainViewModel : ViewModelBase, IDisposable
         }
     }
 
+    partial void OnSelectedUiAccentChanged(string value)
+    {
+        if (_loadingAppearance || string.IsNullOrWhiteSpace(value)) return;
+        if (UiChromeTheme.IsCustom(value))
+        {
+            AppearanceSettings.Instance.SetUiAccentRgb((byte)UiAccR, (byte)UiAccG, (byte)UiAccB);
+        }
+        else
+        {
+            AppearanceSettings.Instance.SetUiAccent(value);
+        }
+    }
+
     partial void OnUiBgRChanged(int value) => ApplyUiBackgroundRgbFromSliders();
     partial void OnUiBgGChanged(int value) => ApplyUiBackgroundRgbFromSliders();
     partial void OnUiBgBChanged(int value) => ApplyUiBackgroundRgbFromSliders();
     partial void OnUiBtnRChanged(int value) => ApplyUiButtonRgbFromSliders();
     partial void OnUiBtnGChanged(int value) => ApplyUiButtonRgbFromSliders();
     partial void OnUiBtnBChanged(int value) => ApplyUiButtonRgbFromSliders();
+    partial void OnUiAccRChanged(int value) => ApplyUiAccentRgbFromSliders();
+    partial void OnUiAccGChanged(int value) => ApplyUiAccentRgbFromSliders();
+    partial void OnUiAccBChanged(int value) => ApplyUiAccentRgbFromSliders();
 
     private void ApplyUiBackgroundRgbFromSliders()
     {
@@ -5852,6 +5886,16 @@ public partial class MainViewModel : ViewModelBase, IDisposable
             (byte)Math.Clamp(UiBtnR, 0, 255),
             (byte)Math.Clamp(UiBtnG, 0, 255),
             (byte)Math.Clamp(UiBtnB, 0, 255));
+    }
+
+    private void ApplyUiAccentRgbFromSliders()
+    {
+        if (_loadingAppearance) return;
+        if (!UiChromeTheme.IsCustom(SelectedUiAccent)) return;
+        AppearanceSettings.Instance.SetUiAccentRgb(
+            (byte)Math.Clamp(UiAccR, 0, 255),
+            (byte)Math.Clamp(UiAccG, 0, 255),
+            (byte)Math.Clamp(UiAccB, 0, 255));
     }
 
     [RelayCommand]
@@ -5915,6 +5959,9 @@ public partial class MainViewModel : ViewModelBase, IDisposable
                     _vfoBFrequencyHz = hz;
                     VfoBDisplayMhz = FormatMhz(hz);
                 }
+                string name = BandNameForFrequency(hz);
+                if (name is not "—" and not "?")
+                    BandText = name;
             });
 
         radio.ModeReported += mode =>

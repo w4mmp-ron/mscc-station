@@ -19,6 +19,8 @@
     <SolidColorBrush x:Key="UiButtonTextBrush" Color="Black"/>
     <SolidColorBrush x:Key="UiButtonSelectedBrush" Color="#FFAA00"/>
     <SolidColorBrush x:Key="UiButtonSelectedBorderBrush" Color="#FF8800"/>
+    <SolidColorBrush x:Key="UiAccentBrush" Color="#00FFAA"/>
+    <SolidColorBrush x:Key="UiAccentMutedBrush" Color="#006B5A"/>
   </Application.Resources>
 
   <Application.Styles>
@@ -158,7 +160,7 @@
     </Style>
 
     <Style Selector="TextBlock.mscc-section">
-      <Setter Property="Foreground" Value="#00FFAA"/>
+      <Setter Property="Foreground" Value="{DynamicResource UiAccentBrush}"/>
       <Setter Property="FontWeight" Value="Bold"/>
       <Setter Property="FontSize" Value="10"/>
       <Setter Property="Margin" Value="0,4,0,1"/>
@@ -178,7 +180,7 @@
     </Style>
 
     <Style Selector="TextBlock.mscc-readout">
-      <Setter Property="Foreground" Value="#00FFAA"/>
+      <Setter Property="Foreground" Value="{DynamicResource UiAccentBrush}"/>
       <Setter Property="FontSize" Value="10"/>
       <Setter Property="FontWeight" Value="Bold"/>
       <Setter Property="VerticalAlignment" Value="Center"/>
@@ -196,12 +198,12 @@
 
     <!-- Active VFO face (green highlight) -->
     <Style Selector="Border.mscc-vfo-active">
-      <Setter Property="BorderBrush" Value="#00FF88"/>
+      <Setter Property="BorderBrush" Value="{DynamicResource UiAccentBrush}"/>
       <Setter Property="BorderThickness" Value="2"/>
       <Setter Property="Opacity" Value="1"/>
     </Style>
     <Style Selector="Border.mscc-vfo-idle">
-      <Setter Property="BorderBrush" Value="#FF555555"/>
+      <Setter Property="BorderBrush" Value="{DynamicResource UiAccentMutedBrush}"/>
       <Setter Property="BorderThickness" Value="1"/>
       <Setter Property="Opacity" Value="0.78"/>
     </Style>

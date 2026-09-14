@@ -10,6 +10,7 @@ public enum UiChromeRole
     WindowBackground,
     ButtonFace,
     PanelBackground,
+    Accent,
 }
 
 /// <summary>
@@ -27,6 +28,13 @@ public static class UiChromeTheme
     {
         "AUTO", "RED", "BLUE", "GREEN", "YELLOW", "WHITE", "BLACK"
     };
+
+    public static readonly string[] AccentColorNames =
+    {
+        "AUTO", "RED", "BLUE", "GREEN", "YELLOW", "WHITE", "BLACK", "CUSTOM"
+    };
+
+    public static readonly Color DefaultMint = Color.FromRgb(0x00, 0xFF, 0xAA);
 
     public static readonly string[] SpectrumBackgroundNames =
     {
@@ -78,7 +86,9 @@ public static class UiChromeTheme
         {
             "RED" => Color.FromRgb(0xFF, 0x00, 0x00),
             "BLUE" => Color.FromRgb(0x00, 0x00, 0xFF),
-            "GREEN" => Color.FromRgb(0x00, 0xFF, 0x00),
+            "GREEN" => role == UiChromeRole.Accent
+                ? DefaultMint
+                : Color.FromRgb(0x00, 0xFF, 0x00),
             "YELLOW" => role == UiChromeRole.ButtonFace
                 ? Color.FromRgb(0xFF, 0xCC, 0x00)
                 : Color.FromRgb(0xFF, 0xFF, 0x00),
@@ -93,7 +103,9 @@ public static class UiChromeTheme
                 ? Color.FromRgb(0xFF, 0xCC, 0x00)
                 : role == UiChromeRole.PanelBackground
                     ? Color.FromRgb(0x25, 0x25, 0x25)
-                    : Color.FromRgb(0x1C, 0x1C, 0x1C),
+                    : role == UiChromeRole.Accent
+                        ? DefaultMint
+                        : Color.FromRgb(0x1C, 0x1C, 0x1C),
         };
     }
 
@@ -108,6 +120,70 @@ public static class UiChromeTheme
             (byte)Math.Max(0, c.R - amount),
             (byte)Math.Max(0, c.G - amount),
             (byte)Math.Max(0, c.B - amount));
+
+    public static Color ResolveAccent(Color windowBackground, string? name, string? rgbHex)
+    {
+        string n = (name ?? "AUTO").Trim().ToUpperInvariant();
+        if (n is "" or "AUTO")
+            return AutoAccentFromBackground(windowBackground);
+        if (IsCustom(n))
+            return TryParseHex(rgbHex) ?? DefaultMint;
+        return Resolve(n, UiChromeRole.Accent);
+    }
+
+    public static Color AutoAccentFromBackground(Color bg)
+    {
+        double lum = (0.299 * bg.R + 0.587 * bg.G + 0.114 * bg.B) / 255.0;
+        int max = Math.Max(bg.R, Math.Max(bg.G, bg.B));
+        int min = Math.Min(bg.R, Math.Min(bg.G, bg.B));
+        bool gray = (max - min) < 22;
+        if (gray)
+            return lum > 0.55 ? Color.FromRgb(0x00, 0x6B, 0x5A) : DefaultMint;
+
+        RgbToHsl(bg, out double h, out _, out _);
+        const double mintHue = 160.0;
+        double dist = Math.Abs(h - mintHue);
+        if (dist > 180) dist = 360 - dist;
+        double nh = dist < 35 ? (h + 180) % 360 : mintHue;
+        double nl = lum > 0.55 ? 0.36 : 0.56;
+        return HslToRgb(nh, 0.85, nl);
+    }
+
+    private static void RgbToHsl(Color c, out double h, out double s, out double l)
+    {
+        double r = c.R / 255.0, g = c.G / 255.0, b = c.B / 255.0;
+        double mx = Math.Max(r, Math.Max(g, b)), mn = Math.Min(r, Math.Min(g, b));
+        l = (mx + mn) / 2.0;
+        if (mx == mn)
+        {
+            h = s = 0;
+            return;
+        }
+        double d = mx - mn;
+        s = l > 0.5 ? d / (2.0 - mx - mn) : d / (mx + mn);
+        if (mx == r) h = ((g - b) / d + (g < b ? 6 : 0)) * 60.0;
+        else if (mx == g) h = ((b - r) / d + 2) * 60.0;
+        else h = ((r - g) / d + 4) * 60.0;
+    }
+
+    private static Color HslToRgb(double h, double s, double l)
+    {
+        h = ((h % 360) + 360) % 360;
+        double c = (1 - Math.Abs(2 * l - 1)) * s;
+        double x = c * (1 - Math.Abs((h / 60.0) % 2 - 1));
+        double m = l - c / 2;
+        double r, g, b;
+        if (h < 60) { r = c; g = x; b = 0; }
+        else if (h < 120) { r = x; g = c; b = 0; }
+        else if (h < 180) { r = 0; g = c; b = x; }
+        else if (h < 240) { r = 0; g = x; b = c; }
+        else if (h < 300) { r = x; g = 0; b = c; }
+        else { r = c; g = 0; b = x; }
+        return Color.FromRgb(
+            (byte)Math.Clamp((int)Math.Round((r + m) * 255), 0, 255),
+            (byte)Math.Clamp((int)Math.Round((g + m) * 255), 0, 255),
+            (byte)Math.Clamp((int)Math.Round((b + m) * 255), 0, 255));
+    }
 
     /// <summary>Named or CUSTOM spectrum pane background → BGR bytes for renderer.</summary>
     public static void ResolveSpectrumBackground(
@@ -210,6 +286,8 @@ public sealed class AppearanceSettings
     public string UiButton { get; private set; } = "YELLOW";
     public string UiButtonRgb { get; private set; } = "#FFCC00";
     public string UiPanel { get; private set; } = "AUTO";
+    public string UiAccent { get; private set; } = "AUTO";
+    public string UiAccentRgb { get; private set; } = "#00FFAA";
 
     public Color ResolveWindowBackground()
     {
@@ -237,6 +315,12 @@ public sealed class AppearanceSettings
         if (n is "" or "AUTO")
             return UiChromeTheme.Lighten(bg, UiChromeTheme.PanelAutoLift);
         return UiChromeTheme.Resolve(n, UiChromeRole.PanelBackground);
+    }
+
+    public Color ResolveAccent()
+    {
+        Color bg = ResolveWindowBackground();
+        return UiChromeTheme.ResolveAccent(bg, UiAccent, UiAccentRgb);
     }
 
     public void GetSpectrumBackgroundRgb(out byte r, out byte g, out byte b) =>
@@ -329,6 +413,24 @@ public sealed class AppearanceSettings
         Notify();
     }
 
+    public void SetUiAccent(string name, string? rgbHex = null)
+    {
+        name = (name ?? "AUTO").Trim().ToUpperInvariant();
+        if (name != "CUSTOM" && !UiChromeTheme.AccentColorNames.Contains(name, StringComparer.OrdinalIgnoreCase))
+            name = "AUTO";
+        UiAccent = name;
+        if (UiChromeTheme.IsCustom(name) && !string.IsNullOrWhiteSpace(rgbHex))
+            UiAccentRgb = NormalizeHex(rgbHex!);
+        Notify();
+    }
+
+    public void SetUiAccentRgb(byte r, byte g, byte b)
+    {
+        UiAccent = "CUSTOM";
+        UiAccentRgb = UiChromeTheme.ToHex(r, g, b);
+        Notify();
+    }
+
     public void SetUiPanel(string name)
     {
         if (UiChromeTheme.IsCustom(UiBackground))
@@ -352,6 +454,8 @@ public sealed class AppearanceSettings
         UiPanel = "AUTO";
         UiButton = "YELLOW";
         UiButtonRgb = "#FFCC00";
+        UiAccent = "AUTO";
+        UiAccentRgb = "#00FFAA";
         Notify();
     }
 
@@ -364,7 +468,9 @@ public sealed class AppearanceSettings
         string uiBackgroundRgb,
         string uiButton,
         string uiButtonRgb,
-        string uiPanel)
+        string uiPanel,
+        string uiAccent = "AUTO",
+        string uiAccentRgb = "#00FFAA")
     {
         SpectrumBackground = string.IsNullOrWhiteSpace(spectrumBackground) ? "BLACK" : spectrumBackground.Trim().ToUpperInvariant();
         SpectrumBackgroundRgb = NormalizeHex(string.IsNullOrWhiteSpace(spectrumBackgroundRgb) ? "#101018" : spectrumBackgroundRgb);
@@ -381,6 +487,10 @@ public sealed class AppearanceSettings
         UiPanel = string.IsNullOrWhiteSpace(uiPanel) ? "AUTO" : uiPanel.Trim().ToUpperInvariant();
         if (UiChromeTheme.IsCustom(UiBackground))
             UiPanel = "AUTO";
+        UiAccent = string.IsNullOrWhiteSpace(uiAccent) ? "AUTO" : uiAccent.Trim().ToUpperInvariant();
+        if (!UiChromeTheme.AccentColorNames.Contains(UiAccent, StringComparer.OrdinalIgnoreCase))
+            UiAccent = "AUTO";
+        UiAccentRgb = NormalizeHex(string.IsNullOrWhiteSpace(uiAccentRgb) ? "#00FFAA" : uiAccentRgb);
         Notify();
     }
 
@@ -415,6 +525,10 @@ public sealed class AppearanceSettings
         SetBrush(app, "UiButtonTextBrush", text);
         SetBrush(app, "UiButtonSelectedBrush", selected);
         SetBrush(app, "UiButtonSelectedBorderBrush", selectedBorder);
+        Color accent = ResolveAccent();
+        Color accentMuted = UiChromeTheme.Darken(accent, 0x66);
+        SetBrush(app, "UiAccentBrush", accent);
+        SetBrush(app, "UiAccentMutedBrush", accentMuted);
 
         // Update open windows (DynamicResource may lag on Window.Background)
         if (app.ApplicationLifetime is IClassicDesktopStyleApplicationLifetime desktop)
