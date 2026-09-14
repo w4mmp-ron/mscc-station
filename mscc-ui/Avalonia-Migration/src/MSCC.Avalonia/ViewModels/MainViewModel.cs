@@ -155,7 +155,7 @@ public partial class MainViewModel : ViewModelBase, IDisposable
         HighCutLabel = HighCutLabels[_highCutIndex];
         CwFilterLabel = CwFilterLabels[_cwFilterIndex];
         ModeText = "USB";
-        AppendLog("MSCC Avalonia 0.6.48 — Settings host devices; recent Host combo.");
+        AppendLog("MSCC Avalonia 0.6.49 — WPF-aligned UI (console text color, host combo, Settings devices).");
         AppendLog("PTT = TX (voice modes); TUN = TUNE + carrier. S/W opens pan settings.");
         AppendLog($"Log: {LogFilePath}");
         CwPitchLabel = CwPitchOptions[Math.Clamp(CwPitchIndex, 0, CwPitchOptions.Count - 1)];
@@ -380,7 +380,7 @@ public partial class MainViewModel : ViewModelBase, IDisposable
     [ObservableProperty] private string _proficioTempText = "— °C";
     [ObservableProperty] private string _paTempText = "— °C";
     [ObservableProperty] private string _paCurrentText = "— mA";
-    [ObservableProperty] private string _clientVersionText = "0.6.48";
+    [ObservableProperty] private string _clientVersionText = "0.6.49";
     [ObservableProperty] private bool _qrpMode = true;
     [ObservableProperty] private bool _fullPower;
     [ObservableProperty] private bool _alcOn;
