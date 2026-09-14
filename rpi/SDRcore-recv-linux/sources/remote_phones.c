@@ -26,6 +26,7 @@
 
 /* config */
 static int g_enabled;
+static int g_monitor; /* MONITOR=1 keep local phones; default mute */
 static char g_host[128];
 static int g_port = 9100;
 
@@ -75,6 +76,7 @@ static void load_config(void)
     char line[256];
 
     g_enabled = 0;
+    g_monitor = 0;
     g_host[0] = '\0';
     g_port = 9100;
 
@@ -114,6 +116,8 @@ static void load_config(void)
         }
         if (strcmp(k, "ENABLED") == 0 || strcmp(k, "enabled") == 0)
             g_enabled = (atoi(v) != 0);
+        else if (strcmp(k, "MONITOR") == 0 || strcmp(k, "monitor") == 0)
+            g_monitor = (atoi(v) != 0);
         else if (strcmp(k, "HOST") == 0 || strcmp(k, "host") == 0) {
             strncpy(g_host, v, sizeof(g_host) - 1);
             g_host[sizeof(g_host) - 1] = '\0';
@@ -187,6 +191,89 @@ static void *sender_thread(void *arg)
     return NULL;
 }
 
+static int dest_from_host(void)
+{
+    memset(&g_dest, 0, sizeof(g_dest));
+    g_dest.sin_family = AF_INET;
+    g_dest.sin_port = htons((uint16_t)g_port);
+    if (g_host[0] == '\0')
+        return -1;
+    if (inet_pton(AF_INET, g_host, &g_dest.sin_addr) != 1)
+        return -1;
+    return 0;
+}
+
+static void stop_sender(void)
+{
+    if (g_run) {
+        g_run = 0;
+        pthread_join(g_thread, NULL);
+    }
+    if (g_sock >= 0) {
+        close(g_sock);
+        g_sock = -1;
+    }
+    g_enabled = 0;
+}
+
+static int start_sender(void)
+{
+    if (dest_from_host() != 0) {
+        if (G_fp_logfile) {
+            print_time();
+            fprintf(G_fp_logfile,
+                "[%d] remote_phones: start skipped (HOST '%s' port %d)\n",
+                line_number++, g_host[0] ? g_host : "(empty)", g_port);
+        }
+        return -1;
+    }
+    if (g_run && g_sock >= 0) {
+        g_enabled = 1;
+        if (G_fp_logfile) {
+            print_time();
+            fprintf(G_fp_logfile,
+                "[%d] remote_phones: dest → %s:%d mute_local=%d MONITOR=%d\n",
+                line_number++, g_host, g_port, g_monitor ? 0 : 1, g_monitor);
+            fflush(G_fp_logfile);
+        }
+        return 0;
+    }
+    g_sock = socket(AF_INET, SOCK_DGRAM, 0);
+    if (g_sock < 0) {
+        if (G_fp_logfile) {
+            print_time();
+            fprintf(G_fp_logfile,
+                "[%d] remote_phones: socket failed: %s\n",
+                line_number++, strerror(errno));
+        }
+        return -1;
+    }
+    g_w = g_r = 0;
+    g_have_prev = 0;
+    g_seq = 0;
+    g_run = 1;
+    if (pthread_create(&g_thread, NULL, sender_thread, NULL) != 0) {
+        close(g_sock);
+        g_sock = -1;
+        g_run = 0;
+        if (G_fp_logfile) {
+            print_time();
+            fprintf(G_fp_logfile,
+                "[%d] remote_phones: thread create failed\n", line_number++);
+        }
+        return -1;
+    }
+    g_enabled = 1;
+    if (G_fp_logfile) {
+        print_time();
+        fprintf(G_fp_logfile,
+            "[%d] remote_phones: ENABLED → %s:%d (MSA1 48k mono) mute_local=%d MONITOR=%d\n",
+            line_number++, g_host, g_port, g_monitor ? 0 : 1, g_monitor);
+        fflush(G_fp_logfile);
+    }
+    return 0;
+}
+
 void remote_phones_init(void)
 {
     g_w = g_r = 0;
@@ -198,76 +285,80 @@ void remote_phones_init(void)
     load_config();
     if (!g_enabled)
         return;
-
-    memset(&g_dest, 0, sizeof(g_dest));
-    g_dest.sin_family = AF_INET;
-    g_dest.sin_port = htons((uint16_t)g_port);
-    if (inet_pton(AF_INET, g_host, &g_dest.sin_addr) != 1) {
-        if (G_fp_logfile) {
-            print_time();
-            fprintf(G_fp_logfile,
-                "[%d] remote_phones: bad HOST '%s'\n", line_number++, g_host);
-        }
+    if (start_sender() != 0)
         g_enabled = 0;
-        return;
-    }
-
-    g_sock = socket(AF_INET, SOCK_DGRAM, 0);
-    if (g_sock < 0) {
-        if (G_fp_logfile) {
-            print_time();
-            fprintf(G_fp_logfile,
-                "[%d] remote_phones: socket failed: %s\n",
-                line_number++, strerror(errno));
-        }
-        g_enabled = 0;
-        return;
-    }
-
-    g_run = 1;
-    if (pthread_create(&g_thread, NULL, sender_thread, NULL) != 0) {
-        close(g_sock);
-        g_sock = -1;
-        g_run = 0;
-        g_enabled = 0;
-        if (G_fp_logfile) {
-            print_time();
-            fprintf(G_fp_logfile,
-                "[%d] remote_phones: thread create failed\n", line_number++);
-        }
-        return;
-    }
-
-    if (G_fp_logfile) {
-        print_time();
-        fprintf(G_fp_logfile,
-            "[%d] remote_phones: ENABLED → %s:%d (MSA1 48k mono)\n",
-            line_number++, g_host, g_port);
-        fflush(G_fp_logfile);
-    }
 }
 
 void remote_phones_shutdown(void)
 {
-    if (!g_run && g_sock < 0)
+    stop_sender();
+}
+
+void remote_phones_set_host(unsigned int ip_nbo)
+{
+    struct in_addr a;
+
+    a.s_addr = ip_nbo;
+    if (a.s_addr == 0 || a.s_addr == 0xFFFFFFFFu) {
+        if (G_fp_logfile) {
+            print_time();
+            fprintf(G_fp_logfile,
+                "[%d] remote_phones: CMD_SET_REMOTE_RX_HOST rejected (0/broadcast)\n",
+                line_number++);
+        }
         return;
-    g_run = 0;
-    if (g_sock >= 0) {
-        /* wake thread blocked in short usleep; join */
     }
-    if (g_enabled) {
-        pthread_join(g_thread, NULL);
-        g_enabled = 0;
+    if (!inet_ntop(AF_INET, &a, g_host, sizeof(g_host))) {
+        g_host[0] = '\0';
+        return;
     }
-    if (g_sock >= 0) {
-        close(g_sock);
-        g_sock = -1;
+    g_dest.sin_family = AF_INET;
+    g_dest.sin_addr = a;
+    g_dest.sin_port = htons((uint16_t)g_port);
+    if (G_fp_logfile) {
+        print_time();
+        fprintf(G_fp_logfile,
+            "[%d] remote_phones: HOST → %s (live)\n", line_number++, g_host);
+        fflush(G_fp_logfile);
     }
+}
+
+void remote_phones_set_ctrl(unsigned int packed)
+{
+    unsigned port = packed & 0xFFFFu;
+    int en = (packed & (1u << 16)) ? 1 : 0;
+    int mon = (packed & (1u << 17)) ? 1 : 0;
+
+    g_monitor = mon;
+    if (port != 0)
+        g_port = (int)port;
+    g_dest.sin_port = htons((uint16_t)g_port);
+    if (G_fp_logfile) {
+        print_time();
+        fprintf(G_fp_logfile,
+            "[%d] remote_phones: CTRL enable=%d monitor=%d port=%d packed=0x%08x\n",
+            line_number++, en, mon, g_port, packed);
+        fflush(G_fp_logfile);
+    }
+    if (en)
+        start_sender();
+    else
+        stop_sender();
 }
 
 int remote_phones_enabled(void)
 {
     return g_enabled && g_run;
+}
+
+int remote_phones_monitor(void)
+{
+    return g_monitor;
+}
+
+int remote_phones_mute_local(void)
+{
+    return g_enabled && g_run && !g_monitor;
 }
 
 void remote_phones_feed(const float *stereo_interleaved, unsigned frames)

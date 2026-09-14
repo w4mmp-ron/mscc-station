@@ -1,4 +1,6 @@
-# Remote Audio (opcode 2) — notes for Stew
+# Remote Audio (opcode 2 / 3) — notes for Stew
+
+**TX mic no RF (WSJT-X TUNE):** see `mscc-remote-audio/LINUX-REMOTE-MIC-TX-TROUBLESHOOT.md` — Linux Build starts there.
 
 **From:** Ron  
 **Full client handoff:** `mscc-remote-audio/STEW-REMOTE-AUDIO.md` ← start there  

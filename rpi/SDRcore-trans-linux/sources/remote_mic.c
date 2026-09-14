@@ -2,7 +2,7 @@
  * MSCC remote operator mic — Pi receiver (MSA1 UDP).
  * Protocol matches Windows MsccRemotePhones TX (default port 9101).
  *
- * Client CMD_SET_AUDIO_DEVICE=2 (REMOTE_AUDIO) selects this mic path.
+ * Client CMD_SET_AUDIO_DEVICE=2 or 3 selects this mic path.
  * INI supplies PORT only (ENABLED is ignored; kept for old files).
  * Digital (D) ignores this module.
  */
@@ -208,10 +208,18 @@ static void *receiver_thread(void *arg)
         g_last_pkt_ms = now_ms();
         g_pkt_ok++;
         if (G_fp_logfile && (g_pkt_ok == 1u || (g_pkt_ok % 500u) == 0u)) {
+            float peak = 0.f;
+            unsigned j;
+            const int16_t *pcm = (const int16_t *)(buf + MSA1_HEADER_SIZE);
+            for (j = 0; j < frames; j++) {
+                int16_t s = (ch >= 2) ? pcm[j * 2u] : pcm[j];
+                float a = (s < 0) ? -(float)s : (float)s;
+                if (a > peak) peak = a;
+            }
             print_time();
             fprintf(G_fp_logfile,
-                "[%d] remote_mic: pkt ok=%u bad=%u rate=%u ch=%u frames=%u from %s\n",
-                line_number++, g_pkt_ok, g_pkt_bad, rate, ch, frames,
+                "[%d] remote_mic: pkt ok=%u bad=%u rate=%u ch=%u frames=%u peak=%.0f from %s\n",
+                line_number++, g_pkt_ok, g_pkt_bad, rate, ch, frames, peak,
                 inet_ntoa(from.sin_addr));
             fflush(G_fp_logfile);
         }
@@ -278,7 +286,7 @@ void remote_mic_init(void)
     if (G_fp_logfile) {
         print_time();
         fprintf(G_fp_logfile,
-            "[%d] remote_mic: listen UDP :%d (use when CMD_SET_AUDIO_DEVICE=2)\n",
+            "[%d] remote_mic: listen UDP :%d (use when CMD_SET_AUDIO_DEVICE=2 or 3)\n",
             line_number++, g_port);
         fflush(G_fp_logfile);
     }

@@ -82,6 +82,7 @@ extern int G_num_pulse_output_devices_found;
 extern uint8_t G_Image_Check;
 
 extern float G_volumeLevel;
+extern uint8_t G_recv_audio_mode;
 extern int G_band_marker_low;
 extern int G_band_marker_high;
 extern int G_iq_file_needs_updated;
