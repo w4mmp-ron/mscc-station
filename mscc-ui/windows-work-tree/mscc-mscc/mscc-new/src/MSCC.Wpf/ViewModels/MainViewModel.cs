@@ -3837,6 +3837,7 @@ public partial class MainViewModel : ObservableObject, IDisposable
         }
 
         RadioState.ActiveVfo.FrequencyHz = freq;
+        SyncBandHighlightFromFrequency(freq);
         MonitorTextBoxText($" TuneToFrequency: {freq}");
         _ = _radioService.SetFrequencyAsync(freq);
         if (IsFmMode && !FmSimplex && RadioState.ActiveVfo == RadioState.VfoA)
@@ -5071,6 +5072,21 @@ public partial class MainViewModel : ObservableObject, IDisposable
     }
 
     /// <summary>
+    /// Highlight the matching band button when freq comes from CAT or a radio report
+    /// (clicks already set CurrentBand). Unknown / out-of-band freq leaves the button as-is.
+    /// </summary>
+    private void SyncBandHighlightFromFrequency(long freqHz)
+    {
+        string name = GetBandNameForFrequency(freqHz);
+        if (string.IsNullOrEmpty(name) || name == "?")
+            return;
+        if (string.Equals(RadioState.CurrentBand, name, StringComparison.OrdinalIgnoreCase))
+            return;
+        RadioState.CurrentBand = name;
+        StoreBandForActiveVfo(name);
+    }
+
+    /// <summary>
     /// Maps a frequency (Hz) to the band button name used by CurrentBand / last-used keys.
     /// Shared with GEN / WWV special frequencies treated as "gen".
     /// LF: 2200m (default 136.0 kHz), 630m (default 474.2 kHz digital).
@@ -5188,7 +5204,8 @@ public partial class MainViewModel : ObservableObject, IDisposable
         svc.FrequencyReported += freq =>
         {
             RadioState.ActiveVfo.FrequencyHz = freq;
-            // FrequencyDisplay will update via VfoState
+            // CAT / radio band change updates VFO but used to leave the gold band button stale.
+            SyncBandHighlightFromFrequency(freq);
             // Do NOT save last-used or send anything here: this is a server report (ms_sdr push).
             MonitorTextBoxText($" Frequency reported from backend: {freq}");
         };
