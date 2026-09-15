@@ -75,10 +75,66 @@ pactl load-module module-null-sink \
 
 sleep 1
 
+# Default Virtual* levels, then overlay sticky saves from MSCC Volume GUI
 pactl set-sink-volume VirtualA 60% 2>/dev/null || true
 pactl set-sink-volume VirtualB 60% 2>/dev/null || true
 pactl set-sink-volume VirtualA_TX 60% 2>/dev/null || true
 pactl set-sink-volume VirtualB_TX 60% 2>/dev/null || true
+
+_mscc_restore_volumes() {
+  local cfg="${HOME}/.local/mscc/volume-levels.conf"
+  local key kind name pct mute
+  # Prefer Python restore (handles operator devices + name rematch)
+  if command -v python3 >/dev/null 2>&1; then
+    local pyrest=""
+    for cand in \
+      /usr/bin/mscc-volume-restore \
+      /usr/share/mscc-init-gui/mscc-volume-restore \
+      "${HOME}/mscc/mscc-volume-gui/mscc-volume-restore"
+    do
+      if [[ -x "$cand" ]]; then
+        log "restoring sticky volumes via $cand"
+        "$cand" 2>/dev/null || true
+        return 0
+      fi
+      if [[ -f "$cand" ]]; then
+        pyrest="$cand"
+        break
+      fi
+    done
+    if [[ -n "$pyrest" ]]; then
+      log "restoring sticky volumes via $pyrest"
+      python3 "$pyrest" 2>/dev/null || true
+      return 0
+    fi
+  fi
+  # Shell fallback: apply lines that name Virtual* (or any present sink/source)
+  [[ -f "$cfg" ]] || return 0
+  log "restoring sticky volumes from $cfg"
+  while IFS='|' read -r key kind name pct mute || [[ -n "${key:-}" ]]; do
+    [[ -z "${key:-}" || "$key" =~ ^# ]] && continue
+    [[ "$kind" == "sink" || "$kind" == "source" ]] || continue
+    [[ -n "${name:-}" && -n "${pct:-}" ]] || continue
+    if [[ "$kind" == "sink" ]]; then
+      pactl list short sinks 2>/dev/null | awk '{print $2}' | grep -qx "$name" || continue
+      pactl set-sink-volume "$name" "${pct}%" 2>/dev/null || true
+      if [[ "${mute:-0}" == "1" ]]; then
+        pactl set-sink-mute "$name" 1 2>/dev/null || true
+      else
+        pactl set-sink-mute "$name" 0 2>/dev/null || true
+      fi
+    else
+      pactl list short sources 2>/dev/null | awk '{print $2}' | grep -qx "$name" || continue
+      pactl set-source-volume "$name" "${pct}%" 2>/dev/null || true
+      if [[ "${mute:-0}" == "1" ]]; then
+        pactl set-source-mute "$name" 1 2>/dev/null || true
+      else
+        pactl set-source-mute "$name" 0 2>/dev/null || true
+      fi
+    fi
+  done < "$cfg"
+}
+_mscc_restore_volumes
 
 # Force monitor *descriptions* so PortAudio / mscc-init show the seed names.
 # (Internal Pulse names are already VirtualA.monitor / VirtualB.monitor.)

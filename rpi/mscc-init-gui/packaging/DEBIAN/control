@@ -1,22 +1,21 @@
 Package: mscc-init-gui
-Version: 1.0.13
+Version: 1.0.14
 Section: hamradio
 Priority: optional
 Architecture: all
 Maintainer: Multus SDR / MSCC Linux <local@localhost>
-Depends: python3, python3-tk, python3-pyaudio
+Depends: python3, python3-tk, python3-pyaudio, pulseaudio-utils | pipewire-pulse
 Recommends: python3-usb, mscc, pipewire-pulse | pulseaudio, alsa-utils
 Homepage: https://local/mscc
-Description: Graphical MSCC configuration wizard for Raspberry Pi OS
- Wizard GUI that writes $HOME/.local/mscc config (same files as CLI
- mscc-init): CAT/PTT, keyer, PROFICIO-MKII (ms-sdr PTT sense), operator
- audio (any rate; servers resample), fixed digi VirtualA / VirtualB.monitor.
- Sets ALSA levels to 100% and records card ids; mscc start re-applies
- via amixer (not .asoundrc).
+Description: MSCC Init and Volume GUIs for Raspberry Pi OS
+ Includes:
+  • MSCC Init — configure CAT/PTT, keyer, PROFICIO-MKII, operator audio,
+    fixed digi VirtualA / VirtualB.monitor (writes $HOME/.local/mscc)
+  • MSCC Volume — Pulse/PipeWire levels for digi + operator devices;
+    sticky levels in volume-levels.conf (restored on mscc start)
  .
- Installs desktop menu entry "MSCC Init" under the MSCC category
- (same as Start/Stop/Status from the mscc package). Run as your
- normal user after package install (not during apt).
+ Desktop menus: "MSCC Init" and "MSCC Volume".
+ CLI: mscc-init-gui, mscc-volume-gui, mscc-volume-restore.
+ Also seeds $HOME/mscc/mscc-volume-gui for the installing user.
  .
- Requires a graphical session. For SSH-only use CLI mscc-init from
- the mscc package.
+ Run as your normal desktop user (not root / not during apt alone).

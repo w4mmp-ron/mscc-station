@@ -1,0 +1,18 @@
+Package: mscc-volume-gui
+Version: 1.0.3
+Section: hamradio
+Priority: optional
+Architecture: all
+Maintainer: Multus SDR / MSCC Linux <local@localhost>
+Depends: python3, python3-tk, pulseaudio-utils | pipewire-pulse
+Recommends: mscc, pipewire-pulse | pulseaudio
+Homepage: https://local/mscc
+Description: MSCC Pulse/PipeWire volume GUI for Raspberry Pi OS
+ Tk GUI to set levels for MSCC digi VirtualA/B and operator speaker/mic
+ devices from $HOME/.local/mscc ini files. Saves sticky levels to
+ volume-levels.conf (restored on mscc start / mscc-virtual-audio).
+ .
+ Menu: MSCC Volume. CLI: mscc-volume-gui / mscc-volume-restore.
+ Also installs under $HOME/mscc/mscc-volume-gui for the installing user.
+ .
+ Run as your normal desktop user (not root).

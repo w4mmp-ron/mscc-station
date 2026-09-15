@@ -1,6 +1,13 @@
-# MSCC Init GUI (Linux / Raspberry Pi OS)
+# MSCC Init GUI (+ Volume) — Linux / Raspberry Pi OS
 
-Graphical wizard that writes the same config as CLI **`mscc-init`** under  
+**v1.0.14** packages two desktop apps:
+
+| Menu / CLI | Role |
+|------------|------|
+| **MSCC Init** / `mscc-init-gui` | Configure Pi (`~/.local/mscc`) |
+| **MSCC Volume** / `mscc-volume-gui` | Pulse levels for digi + operator; sticky `volume-levels.conf` |
+
+Init wizard writes the same config as CLI **`mscc-init`** under  
 **`$HOME/.local/mscc/`**.
 
 - **Operator** speaker / mic — user picks from PortAudio (**any rate**; sdrcore resamples if not 96 kHz)

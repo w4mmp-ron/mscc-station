@@ -2,13 +2,11 @@
 
 Operator kit for **Raspberry Pi OS arm64**.
 
-| File | Role |
-|------|------|
-| `mscc_*_arm64.deb` | MSCC servers |
-| `mscc-portaudio_*_arm64.deb` | PortAudio (Pulse/ALSA) |
-| `mscc-init-gui_*_all.deb` | Init GUI |
-| `mscc-ui_*_arm64.deb` | Avalonia UI (optional) |
-| `install-mscc.sh` | apt-friendly local .deb install |
-| `INSTALL.md` / `INSTALL.pdf` | How-to |
+| Package | What you get |
+|---------|----------------|
+| `mscc_*_arm64.deb` | Servers → `~/mscc/` (ms-sdr, sdrcore-*, VirtualA/B, …) |
+| `mscc-portaudio_*_arm64.deb` | Pulse+ALSA PortAudio (`/usr/local`) |
+| `mscc-init-gui_*_all.deb` | **MSCC Init** + **MSCC Volume** desktop apps |
+| `mscc-ui_*_arm64.deb` | Avalonia UI on Pi (optional; many stations run UI on PC only) |
 
-Latest MSCC package: **mscc_1.0.43_arm64.deb**
+Helper: `install-mscc.sh` — apt-friendly local `.deb` install. See `INSTALL.md`.

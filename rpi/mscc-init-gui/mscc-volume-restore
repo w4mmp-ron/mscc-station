@@ -1,0 +1,13 @@
+#!/usr/bin/env python3
+"""Restore sticky MSCC Pulse volumes from ~/.local/mscc/volume-levels.conf"""
+import sys
+from pathlib import Path
+
+_ROOT = Path(__file__).resolve().parent
+if str(_ROOT) not in sys.path:
+    sys.path.insert(0, str(_ROOT))
+
+from mscc_volume_gui.restore import main
+
+if __name__ == "__main__":
+    main()
