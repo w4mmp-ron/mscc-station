@@ -566,9 +566,13 @@ public partial class MainViewModel : ObservableObject, IDisposable
     [ObservableProperty]
     [NotifyPropertyChangedFor(nameof(AudioDeviceButtonText))]
     [NotifyPropertyChangedFor(nameof(IsRemoteAudioActive))]
+    [NotifyPropertyChangedFor(nameof(DigitalControlsEnabled))]
     private bool _remoteAudio;
 
     public bool IsRemoteAudioActive => RemoteAudio;
+
+    /// <summary>Local Digital Vol/Mic — off while Remote; MSA1/VAC is the operator mic.</summary>
+    public bool DigitalControlsEnabled => !RemoteAudio;
 
     /// <summary>
     /// Remote seat is only for Connect-only to another host.
@@ -775,7 +779,8 @@ public partial class MainViewModel : ObservableObject, IDisposable
         RemoteAf.Log -= OnRemoteAfEngineLog;
         RemoteAf.Log += OnRemoteAfEngineLog;
         RemoteAf.PlayVolume = SpectrumWaterfallSettings.RemotePlayVolume / 100f;
-        RemoteAf.MicVolume = SpectrumWaterfallSettings.RemoteMicVolume / 100f;
+        /* R-Digital: WSJT/VAC already has Pwr. Don't apply the phones Mic slider (default 80). */
+        RemoteAf.MicVolume = IsDigitalAudio ? 1.0f : SpectrumWaterfallSettings.RemoteMicVolume / 100f;
         RemoteAf.PlayMuted = SpectrumWaterfallSettings.RemotePlayMute;
         ApplyRemoteAfDevices();
         try
@@ -786,7 +791,7 @@ public partial class MainViewModel : ObservableObject, IDisposable
                 host = "127.0.0.1";
             RemoteAf.StartMic(host);
             string seat = IsDigitalAudio ? "R-Digital VAC" : "R-Phones";
-            MonitorTextBoxText($" Remote AF started ({reason}) {seat} TX host={host}:9101 play={RemoteAf.PlayDeviceIndex} mic={RemoteAf.MicDeviceIndex}");
+            MonitorTextBoxText($" Remote AF started ({reason}) {seat} TX host={host}:9101 play={RemoteAf.PlayDeviceIndex} mic={RemoteAf.MicDeviceIndex} micVol={RemoteAf.MicVolume:0.00}");
         }
         catch (Exception ex)
         {
@@ -876,6 +881,7 @@ public partial class MainViewModel : ObservableObject, IDisposable
     {
         if (!RemoteAudio || RemoteAf == null) return;
         ApplyRemoteAfDevices();
+        RemoteAf.MicVolume = IsDigitalAudio ? 1.0f : SpectrumWaterfallSettings.RemoteMicVolume / 100f;
         RestartRemoteAfRx();
         RestartRemoteAfMic();
         MonitorTextBoxText($" Remote AF devices restarted ({reason})");
@@ -1728,8 +1734,13 @@ public partial class MainViewModel : ObservableObject, IDisposable
 
             if (e.PropertyName == nameof(RadioState.DVolume))
             {
-                _ = _radioService.SetDigitalVolumeLevelAsync(RadioState.DVolume);
-                MonitorTextBoxText($" DigitalVolumeLevel set: {RadioState.DVolume}");
+                if (RemoteAudio)
+                    MonitorTextBoxText($" DigitalVolumeLevel {RadioState.DVolume} skipped (Remote)");
+                else
+                {
+                    _ = _radioService.SetDigitalVolumeLevelAsync(RadioState.DVolume);
+                    MonitorTextBoxText($" DigitalVolumeLevel set: {RadioState.DVolume}");
+                }
             }
 
             if (e.PropertyName == nameof(RadioState.PMicGain))

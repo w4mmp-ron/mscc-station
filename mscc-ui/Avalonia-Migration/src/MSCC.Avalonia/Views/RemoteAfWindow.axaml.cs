@@ -75,6 +75,9 @@ public partial class RemoteAfWindow : Window
             : $"CAT: not open ({catPort}). tty0tty busy if local ms-sdr holds it.";
         EqPanel.IsVisible = !digi;
         MuteCheck.Content = digi ? "Mute VAC play" : "Mute phones";
+        MicVolumeSlider.IsEnabled = !digi;
+        if (digi)
+            MicVolumeSlider.Value = 100;
 
         bool was = _ready;
         _ready = false;
@@ -151,8 +154,14 @@ public partial class RemoteAfWindow : Window
     {
         if (!_ready || _vm == null) return;
         int v = (int)Math.Round(e.NewValue);
-        _vm.RemoteMicVolume = v;
         MicVolumeLabel.Text = v.ToString();
+        if (_vm.IsDigitalAudio)
+        {
+            if (_vm.RemoteAf != null)
+                _vm.RemoteAf.MicVolume = 1.0f;
+            return;
+        }
+        _vm.RemoteMicVolume = v;
         if (_vm.RemoteAf != null)
             _vm.RemoteAf.MicVolume = v / 100f;
     }

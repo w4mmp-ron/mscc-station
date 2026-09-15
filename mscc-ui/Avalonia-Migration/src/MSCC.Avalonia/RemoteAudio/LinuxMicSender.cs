@@ -14,7 +14,7 @@ public sealed class LinuxMicSender : IDisposable
     private volatile bool _run;
     private UdpClient? _udp;
     private IPEndPoint? _ep;
-    private float _volume = 0.8f;
+    private float _volume = 1.0f;
     private int _inCh = 1;
     private ushort _seq;
 
@@ -125,7 +125,15 @@ public sealed class LinuxMicSender : IDisposable
             int off = MsccAudioProtocol.HeaderSize;
             for (int i = 0; i < FramesPerPacket; i++)
             {
-                float s = ch == 1 ? f[i] : (f[i * 2] + f[i * 2 + 1]) * 0.5f;
+                float s;
+                if (ch == 1)
+                    s = f[i];
+                else
+                {
+                    float l = f[i * 2];
+                    float r = f[i * 2 + 1];
+                    s = Math.Abs(l) >= Math.Abs(r) ? l : r;
+                }
                 s *= vol;
                 int v = (int)(s * 32767f);
                 if (v > short.MaxValue) v = short.MaxValue;

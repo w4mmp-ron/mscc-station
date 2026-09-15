@@ -127,6 +127,9 @@ public partial class RemoteAfWindow : Window
             : $"CAT: not open ({catPort}). Check Settings COM (ms-sdr side of the pair) and that local ms-sdr is not holding it.";
         EqPanel.Visibility = digi ? Visibility.Collapsed : Visibility.Visible;
         MuteCheck.Content = digi ? "Mute VAC play" : "Mute phones";
+        MicVolumeSlider.IsEnabled = !digi;
+        if (digi)
+            MicVolumeSlider.Value = 100;
 
         bool wasReady = _ready;
         _ready = false;
@@ -221,9 +224,14 @@ public partial class RemoteAfWindow : Window
             MicVolumeLabel.Text = ((int)MicVolumeSlider.Value).ToString();
         if (!_ready || _vm?.RemoteAf == null) return;
         int v = (int)MicVolumeSlider.Value;
-        _vm.RemoteAf.MicVolume = v / 100f;
-        SpectrumWaterfallSettings.RemoteMicVolume = v;
-        SaveSettings();
+        if (_vm.IsDigitalAudio)
+            _vm.RemoteAf.MicVolume = 1.0f;
+        else
+        {
+            _vm.RemoteAf.MicVolume = v / 100f;
+            SpectrumWaterfallSettings.RemoteMicVolume = v;
+            SaveSettings();
+        }
     }
 
     private void Mute_Changed(object sender, RoutedEventArgs e)

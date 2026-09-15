@@ -204,12 +204,20 @@ static void *receiver_thread(void *arg)
         g_last_pkt_ms = now_ms();
         g_pkt_ok++;
         if (G_fp_logfile && (g_pkt_ok == 1u || (g_pkt_ok % 500u) == 0u)) {
+            float peak = 0.f;
+            unsigned j;
             char addrbuf[64];
+            const int16_t *pcm2 = (const int16_t *)(buf + MSA1_HEADER_SIZE);
+            for (j = 0; j < frames; j++) {
+                int16_t s = (ch >= 2) ? pcm2[j * 2u] : pcm2[j];
+                float a = (s < 0) ? -(float)s : (float)s;
+                if (a > peak) peak = a;
+            }
             inet_ntop(AF_INET, &from.sin_addr, addrbuf, sizeof(addrbuf));
             print_time();
             fprintf(G_fp_logfile,
-                "[%d] remote_mic: pkt ok=%u bad=%u rate=%u ch=%u frames=%u from %s\n",
-                line_number++, g_pkt_ok, g_pkt_bad, rate, ch, frames, addrbuf);
+                "[%d] remote_mic: pkt ok=%u bad=%u rate=%u ch=%u frames=%u peak=%.0f from %s\n",
+                line_number++, g_pkt_ok, g_pkt_bad, rate, ch, frames, peak, addrbuf);
             fflush(G_fp_logfile);
         }
     }

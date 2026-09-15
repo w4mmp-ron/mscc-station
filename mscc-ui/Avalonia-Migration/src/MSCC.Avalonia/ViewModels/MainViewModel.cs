@@ -295,6 +295,7 @@ public partial class MainViewModel : ViewModelBase, IDisposable
     [ObservableProperty] private bool _isDigitalAudio;
     /// <summary>With Phones: CMD_SET_AUDIO_DEVICE=2 (remote mic). Sticky; ignored on Digital.</summary>
     [ObservableProperty] private bool _remoteAudio;
+    public bool DigitalControlsEnabled => IsConnected && !RemoteAudio;
     [ObservableProperty] private bool _remoteMonitorAtRadio;
     [ObservableProperty] private int _remotePlayVolume = 80;
     [ObservableProperty] private int _remoteMicVolume = 80;
@@ -614,6 +615,7 @@ public partial class MainViewModel : ViewModelBase, IDisposable
     {
         OnPropertyChanged(nameof(ConnectButtonText));
         OnPropertyChanged(nameof(CanUserControlTransmit));
+        OnPropertyChanged(nameof(DigitalControlsEnabled));
         NotifyOperateCommands();
         if (!value)
         {
@@ -1638,6 +1640,11 @@ public partial class MainViewModel : ViewModelBase, IDisposable
     {
         ScheduleSaveClientSettings();
         if (_suppressAudioSend || !CanOperate()) return;
+        if (RemoteAudio)
+        {
+            AppendLog($"Digital Vol {value} skipped (Remote)");
+            return;
+        }
         _ = SendAudioAsync(
             () => _radio!.SetDigitalVolumeLevelAsync(Math.Clamp(value, 0, 100)),
             $"Digital Vol {value}");
@@ -1768,6 +1775,7 @@ public partial class MainViewModel : ViewModelBase, IDisposable
     partial void OnRemoteAudioChanged(bool value)
     {
         OnPropertyChanged(nameof(AudioPathButtonText));
+        OnPropertyChanged(nameof(DigitalControlsEnabled));
         ScheduleSaveClientSettings();
         if (_suppressAudioSend) return;
         if (value)
@@ -1797,7 +1805,7 @@ public partial class MainViewModel : ViewModelBase, IDisposable
         RemoteAf.Log -= OnRemoteAfEngineLog;
         RemoteAf.Log += OnRemoteAfEngineLog;
         RemoteAf.PlayVolume = RemotePlayVolume / 100f;
-        RemoteAf.MicVolume = RemoteMicVolume / 100f;
+        RemoteAf.MicVolume = IsDigitalAudio ? 1.0f : RemoteMicVolume / 100f;
         RemoteAf.PlayMuted = RemotePlayMute;
         ApplyRemoteAfDevices();
         try
@@ -1889,6 +1897,7 @@ public partial class MainViewModel : ViewModelBase, IDisposable
     {
         if (!RemoteAudio || RemoteAf == null) return;
         ApplyRemoteAfDevices();
+        RemoteAf.MicVolume = IsDigitalAudio ? 1.0f : RemoteMicVolume / 100f;
         try { RemoteAf.StartRx(); } catch (Exception ex) { AppendLog("RX restart: " + ex.Message); }
         string host = string.IsNullOrWhiteSpace(Host) ? "127.0.0.1" : Host.Trim();
         try { RemoteAf.StartMic(host); } catch (Exception ex) { AppendLog("Mic restart: " + ex.Message); }
@@ -5681,9 +5690,11 @@ public partial class MainViewModel : ViewModelBase, IDisposable
                 PushAudioToRadio("sticky restore");
                 await _radio.SetPhonesVolumeLevelAsync(Math.Clamp(PVolume, 0, 100)).ConfigureAwait(true);
                 await _radio.SetPhonesMicGainLevelAsync(Math.Clamp(PMicGain, 0, 100)).ConfigureAwait(true);
-                await _radio.SetDigitalVolumeLevelAsync(Math.Clamp(DVolume, 0, 100)).ConfigureAwait(true);
                 if (!RemoteAudio)
+                {
+                    await _radio.SetDigitalVolumeLevelAsync(Math.Clamp(DVolume, 0, 100)).ConfigureAwait(true);
                     await _radio.SetDigitalMicGainLevelAsync(Math.Clamp(DMicGain, 0, 100)).ConfigureAwait(true);
+                }
             }
             catch (Exception ex) { AppendLog($"Audio restore: {ex.Message}"); }
 

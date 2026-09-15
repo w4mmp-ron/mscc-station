@@ -19,7 +19,7 @@ public sealed class RemoteMicSender : IDisposable
     private byte[] _packet = Array.Empty<byte>();
     private int _packetSamples; // mono samples collected toward next packet
     private ushort _seq;
-    private float _volume = 0.8f;
+    private float _volume = 1.0f;
     private int _sampleRate = MsccAudioProtocol.DefaultSampleRate;
     private long _packetsSent;
     private long _samplesSent;
@@ -222,7 +222,11 @@ public sealed class RemoteMicSender : IDisposable
                     short l = (short)(e.Buffer[bi] | (e.Buffer[bi + 1] << 8));
                     short r = (short)(e.Buffer[bi + 2] | (e.Buffer[bi + 3] << 8));
                     bi += 4;
-                    mono = (short)((l + r) / 2);
+                    /* VAC/WSJT often drives only the left channel. Averaging with
+                     * silence halves amplitude (~6 dB, ~4× less RF). */
+                    int al = l < 0 ? -l : l;
+                    int ar = r < 0 ? -r : r;
+                    mono = al >= ar ? l : r;
                 }
 
                 if (vol < 0.999f)

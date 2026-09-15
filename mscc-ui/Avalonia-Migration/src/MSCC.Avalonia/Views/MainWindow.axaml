@@ -75,20 +75,20 @@
             <TextBlock Grid.Column="2" Classes="mscc-readout" Text="{Binding PMicGain}"/>
           </Grid>
 
-          <!-- Digital (VAC / digi apps) -->
+          <!-- Digital (VAC / digi apps) — inactive while Remote: MSA1/VAC is the mic -->
           <TextBlock Classes="mscc-section" Text="Digital"/>
           <Grid ColumnDefinitions="40,*,28" Height="20" Margin="0,0,0,1">
             <TextBlock Classes="mscc-label" Text="Vol"/>
             <Slider Grid.Column="1" Classes="mscc-slider" Minimum="0" Maximum="100"
-                    Value="{Binding DVolume}" IsEnabled="{Binding IsConnected}"
-                    ToolTip.Tip="Digital path volume"/>
+                    Value="{Binding DVolume}" IsEnabled="{Binding DigitalControlsEnabled}"
+                    ToolTip.Tip="Digital path volume. Inactive while Remote is checked."/>
             <TextBlock Grid.Column="2" Classes="mscc-readout" Text="{Binding DVolume}"/>
           </Grid>
           <Grid ColumnDefinitions="40,*,28" Height="20" Margin="0,0,0,1">
             <TextBlock Classes="mscc-label" Text="Mic"/>
             <Slider Grid.Column="1" Classes="mscc-slider" Minimum="0" Maximum="100"
-                    Value="{Binding DMicGain}" IsEnabled="{Binding IsConnected}"
-                    ToolTip.Tip="Digital path mic gain"/>
+                    Value="{Binding DMicGain}" IsEnabled="{Binding DigitalControlsEnabled}"
+                    ToolTip.Tip="Digital path mic gain. Inactive while Remote is checked."/>
             <TextBlock Grid.Column="2" Classes="mscc-readout" Text="{Binding DMicGain}"/>
           </Grid>
           <StackPanel Orientation="Horizontal" Margin="0,1,0,1" Spacing="4">

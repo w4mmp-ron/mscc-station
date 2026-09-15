@@ -221,7 +221,9 @@ public sealed class RemoteMicSender : IDisposable
                     short l = (short)(e.Buffer[bi] | (e.Buffer[bi + 1] << 8));
                     short r = (short)(e.Buffer[bi + 2] | (e.Buffer[bi + 3] << 8));
                     bi += 4;
-                    mono = (short)((l + r) / 2);
+                    int al = l < 0 ? -l : l;
+                    int ar = r < 0 ? -r : r;
+                    mono = al >= ar ? l : r;
                 }
 
                 if (vol < 0.999f)
