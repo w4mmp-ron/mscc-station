@@ -207,6 +207,29 @@ apply_alsa_levels_100() {
   done
 }
 
+restore_pulse_volumes() {
+  # Sticky Pulse levels from MSCC Volume GUI (~/.local/mscc/volume-levels.conf)
+  local cand
+  for cand in \
+    /usr/bin/mscc-volume-restore \
+    /usr/share/mscc-init-gui/mscc-volume-restore \
+    "${MSCC_DIR}/mscc-volume-gui/mscc-volume-restore" \
+    "${HOME}/mscc/mscc-volume-gui/mscc-volume-restore"
+  do
+    if [[ -x "$cand" ]]; then
+      echo "Restoring Pulse volumes ($cand) ..."
+      "$cand" 2>/dev/null || true
+      return 0
+    fi
+    if [[ -f "$cand" ]] && command -v python3 >/dev/null 2>&1; then
+      echo "Restoring Pulse volumes ($cand) ..."
+      python3 "$cand" 2>/dev/null || true
+      return 0
+    fi
+  done
+  return 0
+}
+
 do_start() {
   need sdrcore-recv
   need sdrcore-trans
@@ -214,6 +237,7 @@ do_start() {
 
   echo "MSCC start — $MSCC_DIR"
   apply_alsa_levels_100
+  restore_pulse_volumes
   local s
   for s in "${SERVERS_START[@]}"; do
     start_one "$s"
@@ -244,6 +268,7 @@ do_stop() {
 }
 
 # Full install/runtime report (config, PortAudio match, CAT, Virtual*, USB).
+# Lives in package: /usr/share/mscc/bin/mscc-status-report
 run_status_report() {
   local r
   for r in \
@@ -252,6 +277,7 @@ run_status_report() {
     "$(dirname "$0")/mscc-status-report"
   do
     if [[ -x "$r" ]]; then
+      # Do not let set -e abort status on FAIL (report exits 1 when issues found)
       "$r" || true
       return 0
     fi
