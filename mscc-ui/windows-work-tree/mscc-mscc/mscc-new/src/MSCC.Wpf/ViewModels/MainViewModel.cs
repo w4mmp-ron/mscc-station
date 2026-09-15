@@ -1740,8 +1740,15 @@ public partial class MainViewModel : ObservableObject, IDisposable
 
             if (e.PropertyName == nameof(RadioState.DMicGain))
             {
-                _ = _radioService.SetDigitalMicGainLevelAsync(RadioState.DMicGain);
-                MonitorTextBoxText($" DigitalMicGainLevel set: {RadioState.DMicGain}");
+                if (RemoteAudio)
+                {
+                    MonitorTextBoxText($" DigitalMicGainLevel {RadioState.DMicGain} skipped (Remote MSA1)");
+                }
+                else
+                {
+                    _ = _radioService.SetDigitalMicGainLevelAsync(RadioState.DMicGain);
+                    MonitorTextBoxText($" DigitalMicGainLevel set: {RadioState.DMicGain}");
+                }
             }
 
             // Wire filter changes (on active VFO) to service
@@ -5286,8 +5293,10 @@ public partial class MainViewModel : ObservableObject, IDisposable
         };
         svc.MicVolumeReported += v =>
         {
-            if (IsDigitalAudio) RadioState.DMicGain = v; else RadioState.PMicGain = v;
-            MonitorTextBoxText($" MicVolume reported: {v} (mode={(IsDigitalAudio ? "D" : "P")})");
+            /* Host CMD_SET_MIC_VOLUME is User_Controls.Mic_Volume (phones field,
+             * often 0). Do not write Digital MIC — that zeros remote WSJT TX. */
+            if (!IsDigitalAudio) RadioState.PMicGain = v;
+            MonitorTextBoxText($" MicVolume reported: {v} (phones; digital slider untouched)");
         };
         svc.BandReported += b => 
         { 
@@ -5327,7 +5336,16 @@ public partial class MainViewModel : ObservableObject, IDisposable
         svc.PhonesVolumeLevelReported += v => { RadioState.PVolume = v; MonitorTextBoxText($" PhonesVolumeLevel reported: {v}"); };
         svc.PhonesMicGainLevelReported += v => { RadioState.PMicGain = v; MonitorTextBoxText($" PhonesMicGainLevel reported: {v}"); };
         svc.DigitalVolumeLevelReported += v => { RadioState.DVolume = v; MonitorTextBoxText($" DigitalVolumeLevel reported: {v}"); };
-        svc.DigitalMicGainLevelReported += v => { RadioState.DMicGain = v; MonitorTextBoxText($" DigitalMicGainLevel reported: {v}"); };
+        svc.DigitalMicGainLevelReported += v =>
+        {
+            if (RemoteAudio && v <= 0)
+            {
+                MonitorTextBoxText($" DigitalMicGainLevel reported: {v} (ignored 0 while Remote)");
+                return;
+            }
+            RadioState.DMicGain = v;
+            MonitorTextBoxText($" DigitalMicGainLevel reported: {v}");
+        };
         svc.AudioDeviceReported += dev =>
         {
             // Remote (2) is a client overlay — do not adopt it as local Digital/Phones sticky.

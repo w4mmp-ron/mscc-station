@@ -1647,6 +1647,11 @@ public partial class MainViewModel : ViewModelBase, IDisposable
     {
         ScheduleSaveClientSettings();
         if (_suppressAudioSend || !CanOperate()) return;
+        if (RemoteAudio)
+        {
+            AppendLog($"Digital Mic {value} skipped (Remote MSA1)");
+            return;
+        }
         _ = SendAudioAsync(
             () => _radio!.SetDigitalMicGainLevelAsync(Math.Clamp(value, 0, 100)),
             $"Digital Mic {value}");
@@ -5677,7 +5682,8 @@ public partial class MainViewModel : ViewModelBase, IDisposable
                 await _radio.SetPhonesVolumeLevelAsync(Math.Clamp(PVolume, 0, 100)).ConfigureAwait(true);
                 await _radio.SetPhonesMicGainLevelAsync(Math.Clamp(PMicGain, 0, 100)).ConfigureAwait(true);
                 await _radio.SetDigitalVolumeLevelAsync(Math.Clamp(DVolume, 0, 100)).ConfigureAwait(true);
-                await _radio.SetDigitalMicGainLevelAsync(Math.Clamp(DMicGain, 0, 100)).ConfigureAwait(true);
+                if (!RemoteAudio)
+                    await _radio.SetDigitalMicGainLevelAsync(Math.Clamp(DMicGain, 0, 100)).ConfigureAwait(true);
             }
             catch (Exception ex) { AppendLog($"Audio restore: {ex.Message}"); }
 
@@ -6152,6 +6158,11 @@ public partial class MainViewModel : ViewModelBase, IDisposable
         radio.DigitalMicGainLevelReported += v =>
             PostToUi(() => ApplyReportedAudio(() =>
             {
+                if (RemoteAudio && v <= 0)
+                {
+                    AppendLog($"Digital Mic reported {v} (ignored 0 while Remote)");
+                    return;
+                }
                 DMicGain = Math.Clamp(v, 0, 100);
             }));
 
@@ -6165,8 +6176,9 @@ public partial class MainViewModel : ViewModelBase, IDisposable
         radio.MicVolumeReported += v =>
             PostToUi(() => ApplyReportedAudio(() =>
             {
-                if (IsDigitalAudio) DMicGain = Math.Clamp(v, 0, 100);
-                else PMicGain = Math.Clamp(v, 0, 100);
+                /* Host CMD_SET_MIC_VOLUME is phones Mic_Volume (often 0). Do not
+                 * write Digital MIC — that zeros remote WSJT TX. */
+                if (!IsDigitalAudio) PMicGain = Math.Clamp(v, 0, 100);
             }));
 
         radio.AudioDigitalModeReported += isDigital =>

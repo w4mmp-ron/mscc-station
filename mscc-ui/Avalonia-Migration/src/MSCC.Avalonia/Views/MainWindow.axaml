@@ -46,9 +46,9 @@
                       ItemsSource="{Binding RecentHosts}"
                       Text="{Binding Host}"
                       IsEditable="True"
-                      IsEnabled="{Binding !IsConnected}"
+                      IsReadOnly="{Binding IsConnected}"
                       HorizontalAlignment="Stretch"
-                      ToolTip.Tip="Type an IP or pick a recent host. 127.0.0.1 stays in the list."/>
+                      ToolTip.Tip="Type an IP or pick a recent host. 127.0.0.1 stays in the list. Stays visible after Start; read-only while running."/>
           </Grid>
           <Grid ColumnDefinitions="28,48" Margin="0,0,0,2">
             <TextBlock Classes="mscc-label" Text="Port"/>

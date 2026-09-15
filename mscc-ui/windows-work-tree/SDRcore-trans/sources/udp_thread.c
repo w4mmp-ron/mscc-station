@@ -952,16 +952,18 @@ void *UDP_Thread(void *my_param) {
                 if (t_opcode_data > 100) {
                     t_opcode_data = 100;
                 }
-                /* Remote MSA1 already has client volume. DIGITAL_MIC_GAIN=0 in
-                 * user_controls.ini would zero SSB → TX with no RF. Floor only
-                 * for opcode 2/3; local Digital 0 still means mute. */
-                if ((G_audio_mode == REMOTE_AUDIO || G_audio_mode == REMOTE_DIGITAL_AUDIO) &&
-                    t_opcode_data == 0) {
-                    print_time();
-                    fprintf(G_fp_logfile,
-                        "[%d] UDP Thread. CMD_SET_MIC_VOLUME 0 in remote mode %d — floor 50 (else no RF)\n",
-                        line_number++, (int)G_audio_mode);
-                    t_opcode_data = 50;
+                /* Remote MSA1 already carries client VAC/mic level. Radio
+                 * DIGITAL_MIC_GAIN (0 at boot, or a leftover local trim) must
+                 * not mute or cut WSJT TUNE. Force unity 100 for opcode 2/3;
+                 * local Digital 0 still means mute. */
+                if (G_audio_mode == REMOTE_AUDIO || G_audio_mode == REMOTE_DIGITAL_AUDIO) {
+                    if (t_opcode_data != 100) {
+                        print_time();
+                        fprintf(G_fp_logfile,
+                            "[%d] UDP Thread. CMD_SET_MIC_VOLUME %d in remote mode %d — force 100 (MSA1 has client level)\n",
+                            line_number++, t_opcode_data, (int)G_audio_mode);
+                    }
+                    t_opcode_data = 100;
                 }
                 current_mic_volume = t_opcode_data;
                 switch (G_audio_mode) {

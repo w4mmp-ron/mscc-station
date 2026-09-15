@@ -1000,12 +1000,20 @@ int User_Controls_Process(uint8_t command, char *buf, byte extened) {
                 SDRcore_trans_send_param(CMD_SET_AUDIO_DEVICE, opcode_data_8_bit);
                 if (opcode_data_8_bit == DIGITAL_SOUND_DEVICE ||
                     opcode_data_8_bit == REMOTE_DIGITAL_SOUND_DEVICE) {
-                    SDRcore_trans_send_param(CMD_SET_MIC_VOLUME, User_Controls.Digital_Mic_Gain);
+                    int g = User_Controls.Digital_Mic_Gain;
+                    /* Remote Digital: client MSA1 is the operator mic. Host gain
+                     * (0 at boot / leftover local trim) must not cut WSJT TUNE. */
+                    if (opcode_data_8_bit == REMOTE_DIGITAL_SOUND_DEVICE)
+                        g = 100;
+                    SDRcore_trans_send_param(CMD_SET_MIC_VOLUME, g);
                     SDRcore_recv_send_param(CMD_SET_SPEAKER_VOLUME, User_Controls.Digital_Volume_Level);
                 }
                 else {
                     /* Phones (1) or R-Phones (2) */
-                    SDRcore_trans_send_param(CMD_SET_MIC_VOLUME, User_Controls.Phones_Mic_Gain);
+                    int g = User_Controls.Phones_Mic_Gain;
+                    if (opcode_data_8_bit == REMOTE_SOUND_DEVICE)
+                        g = 100;
+                    SDRcore_trans_send_param(CMD_SET_MIC_VOLUME, g);
                     SDRcore_recv_send_param(CMD_SET_SPEAKER_VOLUME, User_Controls.Phones_Volume_Level);
                 }
                 print_time(0);
@@ -1029,9 +1037,10 @@ int User_Controls_Process(uint8_t command, char *buf, byte extened) {
 
             case CMD_SET_PHONES_MIC_GAIN_LEVEL:
                 User_Controls.Phones_Mic_Gain = opcode_data_8_bit;
-                if (G_Sound_Device == PHONES_SOUND_DEVICE ||
-                    G_Sound_Device == REMOTE_SOUND_DEVICE) {
+                if (G_Sound_Device == PHONES_SOUND_DEVICE) {
                     SDRcore_trans_send_param(CMD_SET_MIC_VOLUME, User_Controls.Phones_Mic_Gain);
+                } else if (G_Sound_Device == REMOTE_SOUND_DEVICE) {
+                    SDRcore_trans_send_param(CMD_SET_MIC_VOLUME, 100);
                 }
                 update_flag = FALSE;
                 print_time(0);
@@ -1053,9 +1062,11 @@ int User_Controls_Process(uint8_t command, char *buf, byte extened) {
 
             case CMD_SET_DIGITAL_MIC_GAIN_LEVEL:
                 User_Controls.Digital_Mic_Gain = opcode_data_8_bit;
-                if (G_Sound_Device == DIGITAL_SOUND_DEVICE ||
-                    G_Sound_Device == REMOTE_DIGITAL_SOUND_DEVICE) {
+                if (G_Sound_Device == DIGITAL_SOUND_DEVICE) {
                     SDRcore_trans_send_param(CMD_SET_MIC_VOLUME, User_Controls.Digital_Mic_Gain);
+                } else if (G_Sound_Device == REMOTE_DIGITAL_SOUND_DEVICE) {
+                    /* Keep sticky for local D; do not attenuate remote MSA1. */
+                    SDRcore_trans_send_param(CMD_SET_MIC_VOLUME, 100);
                 }
                 update_flag = FALSE;
                 print_time(0);

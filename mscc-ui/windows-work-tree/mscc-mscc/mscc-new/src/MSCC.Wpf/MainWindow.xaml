@@ -270,8 +270,8 @@
                   Style="{StaticResource MsccHostComboBoxStyle}"
                   ItemsSource="{Binding RecentHosts}"
                   Text="{Binding BackendIp, UpdateSourceTrigger=LostFocus}"
-                  IsEnabled="{Binding IsRadioRunning, Converter={StaticResource InverseBoolConverter}}"
-                  ToolTip="Type an IP or pick a recent host. 127.0.0.1 stays in the list."
+                  IsReadOnly="{Binding IsRadioRunning}"
+                  ToolTip="Type an IP or pick a recent host. 127.0.0.1 stays in the list. Stays visible after Start; read-only while running."
                   PreviewKeyDown="ServerAddress_PreviewKeyDown"/>
     </Grid>
     <StackPanel Orientation="Horizontal" Margin="0,0,0,12" VerticalAlignment="Center">
