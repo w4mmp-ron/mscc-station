@@ -476,6 +476,10 @@ void *UDP_Thread(void *my_param) {
                     G_input_devices[G_input_device_index].num_channels);
                 stream_status = manage_stream(1, G_digital_input_devices[G_digital_input_device_index].device_index,
                     G_digital_input_devices[G_digital_input_device_index].num_channels);
+                print_time();
+                fprintf(G_fp_logfile,
+                    "[%d] UDP Thread. CMD_SET_AUDIO_DEVICE DIGITAL (line gain 2.0, no analog 16dB)\n",
+                    line_number++);
                 break;
             case OPERATOR_AUDIO:
                 G_audio_mode = OPERATOR_AUDIO;

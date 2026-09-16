@@ -21,8 +21,8 @@ void remote_mic_shutdown(void);
 int remote_mic_ready(void);
 
 /*
- * Fill stereo float @ I/Q rate (96 kHz) from 48 kHz mono MSA ring.
- * Underrun → silence. Call when G_audio_mode == REMOTE_AUDIO.
+ * Fill stereo float @ I/Q rate (96 kHz) from 48 kHz mono MSA ring
+ * (linear interp + hold-last). Call when G_audio_mode == 2 or 3.
  */
 void remote_mic_fill_stereo_96k(float *stereo_interleaved, unsigned frames);
 

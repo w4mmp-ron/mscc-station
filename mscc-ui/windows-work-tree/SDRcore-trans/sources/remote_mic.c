@@ -35,6 +35,10 @@ static volatile unsigned g_r;
 static volatile uint64_t g_last_pkt_ms;
 static unsigned g_pkt_ok;
 static unsigned g_pkt_bad;
+static volatile unsigned g_under;
+
+/* 48 kHz ring → 96 kHz: linear interp. g_frac is 48 kHz phase (0..1). */
+static float g_hist0, g_hist1, g_frac;
 
 static uint64_t now_ms(void)
 {
@@ -64,6 +68,12 @@ static float ring_read_one(int *ok)
         *ok = 1;
         return s;
     }
+}
+
+static unsigned ring_level(void)
+{
+    unsigned w = g_w, r = g_r;
+    return (w + RING_FRAMES - r) % RING_FRAMES;
 }
 
 static void load_config(void)
@@ -216,8 +226,10 @@ static void *receiver_thread(void *arg)
             inet_ntop(AF_INET, &from.sin_addr, addrbuf, sizeof(addrbuf));
             print_time();
             fprintf(G_fp_logfile,
-                "[%d] remote_mic: pkt ok=%u bad=%u rate=%u ch=%u frames=%u peak=%.0f from %s\n",
-                line_number++, g_pkt_ok, g_pkt_bad, rate, ch, frames, peak, addrbuf);
+                "[%d] remote_mic: pkt ok=%u bad=%u rate=%u ch=%u frames=%u peak=%.0f occ=%u under=%u from %s\n",
+                line_number++, g_pkt_ok, g_pkt_bad, rate, ch, frames, peak,
+                ring_level(), g_under, addrbuf);
+            g_under = 0;
             fflush(G_fp_logfile);
         }
     }
@@ -235,6 +247,9 @@ void remote_mic_init(void)
     g_thread_started = 0;
     g_last_pkt_ms = 0;
     g_pkt_ok = g_pkt_bad = 0;
+    g_under = 0;
+    g_hist0 = g_hist1 = 0.0f;
+    g_frac = 0.0f;
 
     load_config();
 
@@ -312,23 +327,42 @@ int remote_mic_ready(void)
 
 void remote_mic_fill_stereo_96k(float *stereo_interleaved, unsigned frames)
 {
-    unsigned i = 0;
+    unsigned i;
     if (!stereo_interleaved || frames == 0)
         return;
 
-    /* Ring @ 48 kHz mono → 96 kHz stereo (each sample held for two frames). */
-    while (i < frames) {
-        int ok = 0;
-        float s = ring_read_one(&ok);
-        if (!ok)
-            s = 0.0f;
+    /*
+     * 48 kHz mono ring → 96 kHz stereo. Old path held each sample twice and
+     * wrote zeros on underrun — that AM/phase-hits a WSJT tone so the SA
+     * looks like FM even when drive is low. Linear interp + hold-last, and
+     * nudge consume rate so two PC clocks don't click.
+     */
+    for (i = 0; i < frames; i++) {
+        unsigned occ = ring_level();
+        float step = 0.5f;
+        float s;
+        if (occ > (RING_FRAMES * 3u) / 4u)
+            step = 0.512f;
+        else if (occ > (RING_FRAMES * 5u) / 8u)
+            step = 0.504f;
+        else if (occ < RING_FRAMES / 8u)
+            step = 0.488f;
+        else if (occ < RING_FRAMES / 4u)
+            step = 0.496f;
+
+        while (g_frac >= 1.0f) {
+            int ok = 0;
+            g_hist0 = g_hist1;
+            g_hist1 = ring_read_one(&ok);
+            if (!ok) {
+                g_hist1 = g_hist0;
+                g_under++;
+            }
+            g_frac -= 1.0f;
+        }
+        s = g_hist0 + (g_hist1 - g_hist0) * g_frac;
         stereo_interleaved[i * 2u] = s;
         stereo_interleaved[i * 2u + 1u] = s;
-        i++;
-        if (i < frames) {
-            stereo_interleaved[i * 2u] = s;
-            stereo_interleaved[i * 2u + 1u] = s;
-            i++;
-        }
+        g_frac += step;
     }
 }
