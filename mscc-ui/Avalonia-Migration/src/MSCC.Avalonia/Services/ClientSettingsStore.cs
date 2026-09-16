@@ -114,7 +114,7 @@ public sealed class ClientSettings
     public bool AmpOn { get; set; }
     public bool QrpMode { get; set; } = true;
     public bool FullPower { get; set; }
-    public bool AlcOn { get; set; }
+    public bool AlcOn { get; set; } = true;
 
     // Global S/W (not banked)
     public double SpectrumZoom { get; set; } = 1;

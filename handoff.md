@@ -33,9 +33,18 @@ grok
 
 ---
 
-## Current status (as of 2026-09-09)
+## Current status (as of 2026-09-16)
 
-### Done and working
+### Pi local WSJT-X (Ron, this week) — **working**
+
+Local CAT + digi audio + ALC on the Pi is clean (full TUNE power, no 375 Hz comb).  
+**Write-up for Ubuntu / Win11:** [`rpi/PI-LOCAL-WSJTX-2026-09-16.md`](rpi/PI-LOCAL-WSJTX-2026-09-16.md).
+
+Source is in this repo (`linux/` + `rpi/` + `mscc-ui/Avalonia-Migration`). **Not** a new `.deb` yet — rebuild recv + virtual-audio on the Pi; rebuild Avalonia for the ALC button.
+
+**Remote audio / CAT still intermittent.** Do not mix Pi-local tty0tty CAT with Remote AF on the same box. Team: Ron appliance logs, Stew client opcode 3 / VAC / 9101.
+
+### Earlier (still true)
 
 - **FM (NFM)** end-to-end on Windows (UI + Windows servers) verified earlier.
 - **Linux server sources** aligned with Windows for FM:
@@ -43,8 +52,8 @@ grok
   - **`CMD_SET_FM_POWER` `0x9E`** (dedicated FM power; not AM)
   - TX `fm_modulate`, RX FM / AGC-bypass path
 - **Ron rebuilt Linux servers** (night of 2026-09-08/09) — **works on the Pi**.
-- Package built: **`rpi/mscc-deb/mscc_1.0.42_arm64.deb`** (present locally; packaging `Version:` is **1.0.42**).
-- Avalonia UI with FM + FM Power + TX IQ table: **`mscc-ui_0.6.44_arm64.deb`** in `rpi/pi-install/packages/` and under `mscc-ui/Release/avalonia/arm64/`.
+- Package built: **`rpi/mscc-deb/mscc_1.0.43_arm64.deb`** (kit in `installers/rpi/`).
+- Avalonia UI: **`mscc-ui_0.6.49`** arm64 + amd64 in `installers/`.
 - **Ubuntu amd64 laptop** (`stew-HP-Notebook`, Ubuntu 26.04): **`INSTALL-UBUNTU.md`**. Servers from `linux-build/mscc-linux.sh` using **`linux/`** sources; UI deb `mscc-ui/Release/avalonia/x86_64/`. Pi drop is `Release/avalonia/arm64/`.
 
 ### Follow-ups / keep in mind
@@ -67,7 +76,8 @@ mscc-station/
   linux/                     ← Ubuntu x86_64 sources (edit here, not rpi/)
   installers/{linux,rpi,windows}/  ← current kits for GitHub web
   rpi/                       ← Ron’s Pi trees (guide only for Ubuntu work)
-    ms-sdr-linux/ SDRcore-*-linux/ mscc-deb/ mscc-binaries/ pi-install/
+    PI-LOCAL-WSJTX-2026-09-16.md  ← CAT / VirtualA-B / ALC (read this)
+    ms-sdr-linux/ SDRcore-*-linux/ mscc-deb/ mscc-binaries/ Rpi-installers/
   Proficio-firmware/         ← PSoC Creator trees (was repo-root Release-Proficio-*)
   mscc-ui/Release/avalonia/arm64/   ← Pi debs
   mscc-ui/Release/avalonia/x86_64/  ← Ubuntu UI + init-gui

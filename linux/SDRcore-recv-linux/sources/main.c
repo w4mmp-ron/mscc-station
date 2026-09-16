@@ -221,8 +221,24 @@ static double pick_play_sample_rate(const PaStreamParameters *out_params,
     PaError chk;
 
     chk = Pa_IsFormatSupported(NULL, &probe, iq_rate);
-    if (chk == paFormatIsSupported)
-        return iq_rate;
+    if (chk == paFormatIsSupported) {
+        /*
+         * Pulse/PipeWire often claims 96 kHz on a 48 kHz clock, then
+         * resamples every quantum 128 @ 48 kHz → 375 Hz comb on WSJT-X.
+         * If the device default is not the I/Q rate, prefer default + SRC.
+         */
+        if (odi == NULL || odi->defaultSampleRate <= 0.0 ||
+            (odi->defaultSampleRate > iq_rate - 1.0 &&
+             odi->defaultSampleRate < iq_rate + 1.0))
+            return iq_rate;
+        if (G_fp_logfile) {
+            print_time();
+            fprintf(G_fp_logfile,
+                "[%d] pick_play_sample_rate. distrust 96k probe "
+                "(default=%.0f) — will dual/resample\n",
+                line_number++, odi->defaultSampleRate);
+        }
+    }
 
     if (odi != NULL && odi->defaultSampleRate > 0.0) {
         chk = Pa_IsFormatSupported(NULL, &probe, odi->defaultSampleRate);

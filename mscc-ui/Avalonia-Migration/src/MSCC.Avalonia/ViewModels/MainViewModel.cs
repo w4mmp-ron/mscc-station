@@ -53,6 +53,7 @@ public partial class MainViewModel : ViewModelBase, IDisposable
     private bool _keyerPlayOwnsPtt;
     private CancellationTokenSource? _keyerPlayPttReleaseCts;
     private bool _suppressAmpCommand;
+    private bool _suppressAlcCommand;
     private bool _suppressNbCommand;
     private bool _suppressNrCommand;
     private bool _suppressAnCommand;
@@ -384,7 +385,7 @@ public partial class MainViewModel : ViewModelBase, IDisposable
     [ObservableProperty] private string _clientVersionText = "0.6.49";
     [ObservableProperty] private bool _qrpMode = true;
     [ObservableProperty] private bool _fullPower;
-    [ObservableProperty] private bool _alcOn;
+    [ObservableProperty] private bool _alcOn = true;
     /// <summary>AMP / QRO path (PA bypass). Red when on (WPF).</summary>
     [ObservableProperty] private bool _ampOn;
 
@@ -778,6 +779,7 @@ public partial class MainViewModel : ViewModelBase, IDisposable
         ToggleTuneCommand.NotifyCanExecuteChanged();
         CycleAgcCommand.NotifyCanExecuteChanged();
         ToggleAmpCommand.NotifyCanExecuteChanged();
+        ToggleAlcCommand.NotifyCanExecuteChanged();
         ToggleCompressionCommand.NotifyCanExecuteChanged();
         ToggleMonitorCommand.NotifyCanExecuteChanged();
         ToggleNbCommand.NotifyCanExecuteChanged();
@@ -1547,6 +1549,9 @@ public partial class MainViewModel : ViewModelBase, IDisposable
     private void ToggleAmp() => AmpOn = !AmpOn;
 
     [RelayCommand(CanExecute = nameof(CanOperate))]
+    private void ToggleAlc() => AlcOn = !AlcOn;
+
+    [RelayCommand(CanExecute = nameof(CanOperate))]
     private void ToggleCompression() => CompressionOn = !CompressionOn;
 
     [RelayCommand(CanExecute = nameof(CanOperate))]
@@ -1603,6 +1608,13 @@ public partial class MainViewModel : ViewModelBase, IDisposable
 
         if (_suppressAmpCommand || !CanOperate()) return;
         _ = SendAmpAsync(value);
+    }
+
+    partial void OnAlcOnChanged(bool value)
+    {
+        ScheduleSaveClientSettings();
+        if (_suppressAlcCommand || !CanOperate()) return;
+        _ = SendAlcOnAsync(value);
     }
 
     partial void OnCompressionOnChanged(bool value)
@@ -4790,6 +4802,17 @@ public partial class MainViewModel : ViewModelBase, IDisposable
         catch (Exception ex) { AppendLog($"AMP error: {ex.Message}"); }
     }
 
+    private async Task SendAlcOnAsync(bool on)
+    {
+        if (_radio == null) return;
+        try
+        {
+            await _radio.SetAlcOnAsync(on).ConfigureAwait(true);
+            AppendLog($"ALC {(on ? "ON (meter + limiter)" : "OFF")}");
+        }
+        catch (Exception ex) { AppendLog($"ALC error: {ex.Message}"); }
+    }
+
     private async Task SendCompressionStateAsync(bool on)
     {
         if (_radio == null) return;
@@ -5506,7 +5529,9 @@ public partial class MainViewModel : ViewModelBase, IDisposable
 
             QrpMode = s.QrpMode;
             FullPower = s.FullPower;
+            _suppressAlcCommand = true;
             AlcOn = s.AlcOn;
+            _suppressAlcCommand = false;
 
             long activeHz = UseVfoA ? _frequencyHz : _vfoBFrequencyHz;
             BandText = BandNameForFrequency(activeHz);

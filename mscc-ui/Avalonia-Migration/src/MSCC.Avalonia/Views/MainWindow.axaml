@@ -673,8 +673,10 @@
                               ToolTip.Tip="PA path — wire with AMP in next operate sessions"/>
                       <Button Content="Full Power" Classes="mscc-stub" IsEnabled="False" Margin="3" MinHeight="28"
                               ToolTip.Tip="Not wired yet"/>
-                      <Button Content="ALC" Classes="mscc-stub" IsEnabled="False" Margin="3" MinHeight="28"
-                              ToolTip.Tip="Not wired yet"/>
+                      <Button Content="ALC" Classes="mscc-gold" Margin="3" MinHeight="28"
+                              Command="{Binding ToggleAlcCommand}"
+                              Classes.mscc-selected="{Binding AlcOn}"
+                              ToolTip.Tip="ALC limiter + meter. On = needle moves on TX and overdrive is limited. Off = no ALC (easy to splatter)."/>
                       <Button Content="(reserved)" Classes="mscc-stub" IsEnabled="False" Margin="3" MinHeight="28" Opacity="0.4"/>
                     </UniformGrid>
 

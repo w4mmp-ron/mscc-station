@@ -17,6 +17,7 @@ remove|purge)
     # Virtual digi audio (user unit installed system-wide under /usr/lib)
     rm -f /usr/lib/systemd/user/mscc-virtual-audio.service
     rm -f /usr/local/bin/mscc-virtual-audio
+    rm -f /usr/local/share/applications/wsjtx.desktop
     systemctl daemon-reload 2>/dev/null || true
     udevadm control --reload-rules 2>/dev/null || true
     # Leave dtoverlay and user ~/.local/mscc config

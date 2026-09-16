@@ -2,8 +2,11 @@
 # MSCC Pulse/PipeWire virtual digi sinks (any user — no hard-coded home paths)
 #
 # Creates:
-#   VirtualA / VirtualA_TX  @ 96 kHz  (recv digi path)
-#   VirtualB / VirtualB_TX  @ default rate (often 48 kHz, digi apps)
+#   VirtualA / VirtualA_TX  @ 48 kHz  (recv digi; matches PipeWire + WSJT-X)
+#   VirtualB / VirtualB_TX  @ 48 kHz  (digi apps / trans mic)
+#
+# VirtualA must not be 96 kHz when PipeWire clock is 48 kHz only: a 96 kHz
+# sink is resampled every quantum 128 → 375 Hz comb on the waterfall.
 #
 # Each null-sink automatically gets a monitor *source*:
 #   VirtualA.monitor  → digi app RX (e.g. WSJT Input)
@@ -13,8 +16,8 @@
 # "Monitor of VirtualB". We force description=VirtualB.monitor so mscc-init
 # and digital-microphone.ini match what you see in the capture list.
 #
-# Optional bidirectional links (A↔B, A_TX↔B_TX) when pw-link is available.
-# Safe to re-run (unloads previous Virtual* modules first).
+# Do NOT cross-link A↔B (feedback loop). Recv plays VirtualA; WSJT-X/trans
+# use VirtualB. Safe to re-run (unloads previous Virtual*).
 #
 # Manual:  mscc-virtual-audio
 # Boot:    systemctl --user enable --now mscc-virtual-audio.service
@@ -61,14 +64,15 @@ log "loading null sinks VirtualA/B (+ _TX)…"
 pactl load-module module-null-sink \
   sink_name=VirtualA \
   sink_properties=device.description=VirtualA \
-  rate=96000
+  rate=48000
 pactl load-module module-null-sink \
   sink_name=VirtualB \
-  sink_properties=device.description=VirtualB
+  sink_properties=device.description=VirtualB \
+  rate=48000
 pactl load-module module-null-sink \
   sink_name=VirtualA_TX \
   sink_properties=device.description=VirtualA_TX \
-  rate=96000
+  rate=48000
 pactl load-module module-null-sink \
   sink_name=VirtualB_TX \
   sink_properties=device.description=VirtualB_TX
@@ -76,10 +80,10 @@ pactl load-module module-null-sink \
 sleep 1
 
 # Default Virtual* levels, then overlay sticky saves from MSCC Volume GUI
-pactl set-sink-volume VirtualA 60% 2>/dev/null || true
-pactl set-sink-volume VirtualB 60% 2>/dev/null || true
-pactl set-sink-volume VirtualA_TX 60% 2>/dev/null || true
-pactl set-sink-volume VirtualB_TX 60% 2>/dev/null || true
+pactl set-sink-volume VirtualA 100% 2>/dev/null || true
+pactl set-sink-volume VirtualB 100% 2>/dev/null || true
+pactl set-sink-volume VirtualA_TX 100% 2>/dev/null || true
+pactl set-sink-volume VirtualB_TX 100% 2>/dev/null || true
 
 _mscc_restore_volumes() {
   local cfg="${HOME}/.local/mscc/volume-levels.conf"
@@ -164,21 +168,7 @@ if pactl list short sources 2>/dev/null | awk '{print $2}' | grep -qx 'VirtualB.
   fi
 fi
 
-if command -v pw-link >/dev/null 2>&1; then
-  log "linking A↔B and A_TX↔B_TX (pw-link)…"
-  # Receive path
-  pw-link VirtualA:monitor_FL    VirtualB:playback_FL    2>/dev/null || true
-  pw-link VirtualA:monitor_FR    VirtualB:playback_FR    2>/dev/null || true
-  pw-link VirtualB:monitor_FL    VirtualA:playback_FL    2>/dev/null || true
-  pw-link VirtualB:monitor_FR    VirtualA:playback_FR    2>/dev/null || true
-  # Transmit path
-  pw-link VirtualB_TX:monitor_FL VirtualA_TX:playback_FL 2>/dev/null || true
-  pw-link VirtualB_TX:monitor_FR VirtualA_TX:playback_FR 2>/dev/null || true
-  pw-link VirtualA_TX:monitor_FL VirtualB_TX:playback_FL 2>/dev/null || true
-  pw-link VirtualA_TX:monitor_FR VirtualB_TX:playback_FR 2>/dev/null || true
-else
-  warn "pw-link not found — sinks created without cross-links (optional)"
-fi
+# Intentionally no A↔B pw-link. Recv owns VirtualA, WSJT-X/trans own VirtualB.
 
 log "done."
 log "sinks (playback — digi speaker = VirtualA):"
