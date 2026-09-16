@@ -53,6 +53,6 @@ Same local recipe. Kit: `installers/rpi/` (`mscc_1.0.43_arm64.deb`, `mscc-ui_0.6
 WPF already has host history + ALC. Local WSJT-X uses VAC + com0com, not tty0tty. Remote Digital / CAT is still the next team step; do not enable Remote on the radio host while local WSJT-X is using CAT.
 
 **Next (this laptop)**  
-Remote ops after local stays solid.
+Remote WSJT-X: [`../mscc-remote-audio/REMOTE-WSJTX-CHECKLIST.md`](../mscc-remote-audio/REMOTE-WSJTX-CHECKLIST.md).
 
 Rebuild UI: `./linux-build/mscc-ui-x64.sh` then `./linux-build/build-mscc-ui-deb-amd64.sh` (use `pwd -P` — `~/mscc-station` symlink vs `Documents/GitHub` breaks XAML publish).

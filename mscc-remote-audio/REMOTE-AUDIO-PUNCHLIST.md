@@ -4,7 +4,7 @@
 **Status:** Remote operate **field-proven both ways, including WSJT-X TX RF.** Soak / new Windows installer next. `rpi/` still read-only.  
 **Working rule:** implement and prove everything on **`linux/`** (Ubuntu radio). Do **not** edit **`rpi/`** until that is working; then reconcile Pi from the proven `linux/` bits.
 
-Related: [STEW-REMOTE-AUDIO.md](STEW-REMOTE-AUDIO.md), [README.md](README.md).
+Related: [STEW-REMOTE-AUDIO.md](STEW-REMOTE-AUDIO.md), [README.md](README.md), **[REMOTE-WSJTX-CHECKLIST.md](REMOTE-WSJTX-CHECKLIST.md)** (pick up tomorrow).
 
 ---
 

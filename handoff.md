@@ -46,7 +46,7 @@ Same recipe: 48 kHz VirtualA/B (no A↔B), recv distrust 96 kHz, `/dev/ttyUSB11`
 **Write-up:** [`linux/UBUNTU-LOCAL-WSJTX-2026-09-16.md`](linux/UBUNTU-LOCAL-WSJTX-2026-09-16.md).  
 UI: Avalonia **0.6.53** in `installers/linux/` (Host IP stays **white on black** after Connect).
 
-**Remote audio / CAT still next.** Do not mix local tty0tty CAT with Remote AF on the same box.
+**Remote WSJT-X next.** Checklist: [`mscc-remote-audio/REMOTE-WSJTX-CHECKLIST.md`](mscc-remote-audio/REMOTE-WSJTX-CHECKLIST.md). First path: Ubuntu client → Pi radio. Do not mix local tty0tty CAT with Remote AF on the same box.
 
 ### Earlier (still true)
 
