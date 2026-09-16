@@ -34,9 +34,9 @@ internal static class LinuxDigitalIni
     {
         string p = (radioEnd ?? "").Trim();
         if (p.EndsWith("tnt0", StringComparison.OrdinalIgnoreCase))
-            return p[..^1] + "1";
+            return "/dev/tnt1  (also /dev/ttyUSB11)";
         if (p.EndsWith("tnt1", StringComparison.OrdinalIgnoreCase))
-            return p[..^1] + "0";
+            return "/dev/tnt0  (also /dev/ttyUSB10)";
         return "(other end of the CAT pair)";
     }
 

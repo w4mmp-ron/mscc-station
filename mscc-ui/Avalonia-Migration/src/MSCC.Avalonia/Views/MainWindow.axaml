@@ -40,15 +40,16 @@
                       FontSize="8" IsEnabled="False" ToolTip.Tip="Pi: use MSCC Start; connect-only client"/>
           </StackPanel>
           <!-- Compact host/port: short boxes, larger centered text, no spinner -->
-          <Grid ColumnDefinitions="28,*" Margin="0,0,0,1">
+          <Grid ColumnDefinitions="28,*,22" Margin="0,0,0,1">
             <TextBlock Classes="mscc-label" Text="Host"/>
-            <ComboBox Grid.Column="1" Classes="mscc-hostport"
+            <TextBox Grid.Column="1" Text="{Binding Host}" Classes="mscc-host-ip"
+                     HorizontalAlignment="Stretch"
+                     ToolTip.Tip="Server IP. Always visible. Change applies on the next Connect."/>
+            <ComboBox Grid.Column="2" Classes="mscc-host-pick"
                       ItemsSource="{Binding RecentHosts}"
-                      Text="{Binding Host}"
-                      IsEditable="True"
-                      IsReadOnly="{Binding IsConnected}"
-                      HorizontalAlignment="Stretch"
-                      ToolTip.Tip="Type an IP or pick a recent host. 127.0.0.1 stays in the list. Stays visible after Start; read-only while running."/>
+                      SelectedItem="{Binding Host, Mode=OneWay}"
+                      SelectionChanged="HostPick_OnSelectionChanged"
+                      ToolTip.Tip="Recent hosts"/>
           </Grid>
           <Grid ColumnDefinitions="28,48" Margin="0,0,0,2">
             <TextBlock Classes="mscc-label" Text="Port"/>

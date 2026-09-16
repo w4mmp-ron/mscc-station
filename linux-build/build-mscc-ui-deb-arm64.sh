@@ -3,8 +3,8 @@
 # Cross-publishes on this x86_64 laptop. Does not overwrite linux-x64 publish.
 set -euo pipefail
 
-HERE="$(cd "$(dirname "$0")" && pwd)"
-ROOT="$(cd "$HERE/.." && pwd)"
+HERE="$(cd "$(dirname "$0")" && pwd -P)"
+ROOT="$(cd "$HERE/.." && pwd -P)"
 AVA="$ROOT/mscc-ui/Avalonia-Migration"
 PUBLISH="$AVA/publish/linux-arm64-sc"
 TEMPLATE="$AVA/packaging/mscc-ui"

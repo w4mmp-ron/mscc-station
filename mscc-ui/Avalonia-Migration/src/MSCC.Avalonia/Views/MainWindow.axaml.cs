@@ -39,6 +39,14 @@ public partial class MainWindow : Window
             vm.ApplyAmpCalSliderLive(e.NewValue);
     }
 
+    private void HostPick_OnSelectionChanged(object? sender, SelectionChangedEventArgs e)
+    {
+        if (DataContext is not MainViewModel vm) return;
+        if (e.AddedItems.Count == 0) return;
+        if (e.AddedItems[0] is string s && !string.IsNullOrWhiteSpace(s))
+            vm.Host = s;
+    }
+
     private void OnSpectrumFrequencyClicked(object? sender, long frequencyHz)
     {
         if (DataContext is MainViewModel vm)

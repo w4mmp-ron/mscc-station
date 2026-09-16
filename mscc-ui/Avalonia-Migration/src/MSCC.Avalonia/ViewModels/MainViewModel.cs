@@ -156,7 +156,7 @@ public partial class MainViewModel : ViewModelBase, IDisposable
         HighCutLabel = HighCutLabels[_highCutIndex];
         CwFilterLabel = CwFilterLabels[_cwFilterIndex];
         ModeText = "USB";
-        AppendLog("MSCC Avalonia 0.6.49 — WPF-aligned UI (console text color, host combo, Settings devices).");
+        AppendLog("MSCC Avalonia 0.6.53 — Host IP stays white on black after Connect.");
         AppendLog("PTT = TX (voice modes); TUN = TUNE + carrier. S/W opens pan settings.");
         AppendLog($"Log: {LogFilePath}");
         CwPitchLabel = CwPitchOptions[Math.Clamp(CwPitchIndex, 0, CwPitchOptions.Count - 1)];
@@ -244,9 +244,26 @@ public partial class MainViewModel : ViewModelBase, IDisposable
 
     private void ReplaceRecentHosts(IReadOnlyList<string> hosts)
     {
-        RecentHosts.Clear();
+        // Do not Clear() while ComboBox SelectedItem is TwoWay-bound to Host —
+        // that sets SelectedItem=null and wipes Host (black empty box after Connect).
+        string keep = Host;
+        for (int i = RecentHosts.Count - 1; i >= 0; i--)
+        {
+            if (!hosts.Contains(RecentHosts[i]))
+                RecentHosts.RemoveAt(i);
+        }
+        int insert = 0;
         foreach (string h in hosts)
-            RecentHosts.Add(h);
+        {
+            int at = RecentHosts.IndexOf(h);
+            if (at < 0)
+                RecentHosts.Insert(insert, h);
+            else if (at != insert)
+                RecentHosts.Move(at, insert);
+            insert++;
+        }
+        if (!string.IsNullOrWhiteSpace(keep) && Host != keep)
+            Host = keep;
     }
 
     /// <summary>Remote UDP port as plain text (no spinner).</summary>
@@ -382,7 +399,7 @@ public partial class MainViewModel : ViewModelBase, IDisposable
     [ObservableProperty] private string _proficioTempText = "— °C";
     [ObservableProperty] private string _paTempText = "— °C";
     [ObservableProperty] private string _paCurrentText = "— mA";
-    [ObservableProperty] private string _clientVersionText = "0.6.49";
+    [ObservableProperty] private string _clientVersionText = "0.6.53";
     [ObservableProperty] private bool _qrpMode = true;
     [ObservableProperty] private bool _fullPower;
     [ObservableProperty] private bool _alcOn = true;

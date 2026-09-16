@@ -2,7 +2,8 @@
 
 **Host:** Raspberry Pi 5 (`raspberrypi`, Pi OS 64-bit, kernel `6.18.50+rpt-rpi-2712`)  
 **Operator:** Ron  
-**Status:** Local WSJT-X TUNE is **full power and clean** on the SA. Remote audio/CAT is **still flaky** — team problem (Ron / Stew / next session).
+**Status:** Local WSJT-X TUNE is **full power and clean** on the SA (Pi).  
+**Ubuntu laptop (Stew, 2026-09-16):** same local path confirmed — good TUNE power, clean SA. 48 kHz VirtualA/B (no A↔B), recv distrust 96 kHz, `/dev/ttyUSB11`, ALC on, Avalonia **0.6.53**. Detail: [`../linux/UBUNTU-LOCAL-WSJTX-2026-09-16.md`](../linux/UBUNTU-LOCAL-WSJTX-2026-09-16.md). Remote still next.
 
 This note is for Ubuntu (`linux/`) and Win11 (`mscc-ui/windows-work-tree`) so nobody re-debugs a solved local path.
 

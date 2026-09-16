@@ -4,8 +4,8 @@
 #
 #   ./linux-build/mscc-ui-arm64.sh
 set -euo pipefail
-HERE="$(cd "$(dirname "$0")" && pwd)"
-ROOT="$(cd "$HERE/.." && pwd)"
+HERE="$(cd "$(dirname "$0")" && pwd -P)"
+ROOT="$(cd "$HERE/.." && pwd -P)"
 AVA="$ROOT/mscc-ui/Avalonia-Migration"
 PUBLISH="$AVA/publish/linux-arm64-sc"
 DOTNET_ROOT="${DOTNET_ROOT:-$HOME/.dotnet}"

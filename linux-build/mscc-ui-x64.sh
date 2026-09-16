@@ -7,8 +7,8 @@
 # Needs user-local .NET 9 SDK ($HOME/.dotnet). Project stays net9.0.
 set -euo pipefail
 
-HERE="$(cd "$(dirname "$0")" && pwd)"
-ROOT="$(cd "$HERE/.." && pwd)"
+HERE="$(cd "$(dirname "$0")" && pwd -P)"
+ROOT="$(cd "$HERE/.." && pwd -P)"
 AVA="$ROOT/mscc-ui/Avalonia-Migration"
 PUBLISH="$AVA/publish/linux-x64-sc"
 UIDIR="${MSCC_UI_DIR:-$HOME/mscc-ui}"

@@ -3,8 +3,8 @@
 # Does not touch linux-arm64 publish or mscc-ui_*_arm64.deb.
 set -euo pipefail
 
-HERE="$(cd "$(dirname "$0")" && pwd)"
-ROOT="$(cd "$HERE/.." && pwd)"
+HERE="$(cd "$(dirname "$0")" && pwd -P)"
+ROOT="$(cd "$HERE/.." && pwd -P)"
 AVA="$ROOT/mscc-ui/Avalonia-Migration"
 PUBLISH="$AVA/publish/linux-x64-sc"
 TEMPLATE="$AVA/packaging/mscc-ui"

@@ -3,8 +3,8 @@
 #
 #   ./linux-build/run-avalonia.sh
 set -euo pipefail
-HERE="$(cd "$(dirname "$0")" && pwd)"
-ROOT="$(cd "$HERE/.." && pwd)"
+HERE="$(cd "$(dirname "$0")" && pwd -P)"
+ROOT="$(cd "$HERE/.." && pwd -P)"
 PROJ="$ROOT/mscc-ui/Avalonia-Migration/src/MSCC.Avalonia/MSCC.Avalonia.csproj"
 BIN="$ROOT/mscc-ui/Avalonia-Migration/src/MSCC.Avalonia/bin/Release/net9.0/MSCC.Avalonia"
 export DOTNET_ROOT="${DOTNET_ROOT:-$HOME/.dotnet}"

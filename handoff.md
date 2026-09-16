@@ -35,14 +35,18 @@ grok
 
 ## Current status (as of 2026-09-16)
 
-### Pi local WSJT-X (Ron, this week) — **working**
+### Pi local WSJT-X (Ron) — **working**
 
 Local CAT + digi audio + ALC on the Pi is clean (full TUNE power, no 375 Hz comb).  
-**Write-up for Ubuntu / Win11:** [`rpi/PI-LOCAL-WSJTX-2026-09-16.md`](rpi/PI-LOCAL-WSJTX-2026-09-16.md).
+**Write-up:** [`rpi/PI-LOCAL-WSJTX-2026-09-16.md`](rpi/PI-LOCAL-WSJTX-2026-09-16.md).
 
-Source is in this repo (`linux/` + `rpi/` + `mscc-ui/Avalonia-Migration`). **Not** a new `.deb` yet — rebuild recv + virtual-audio on the Pi; rebuild Avalonia for the ALC button.
+### Ubuntu local WSJT-X (Stew laptop) — **working**
 
-**Remote audio / CAT still intermittent.** Do not mix Pi-local tty0tty CAT with Remote AF on the same box. Team: Ron appliance logs, Stew client opcode 3 / VAC / 9101.
+Same recipe: 48 kHz VirtualA/B (no A↔B), recv distrust 96 kHz, `/dev/ttyUSB11`, AMP on, ALC on. TUNE power and SA look good.  
+**Write-up:** [`linux/UBUNTU-LOCAL-WSJTX-2026-09-16.md`](linux/UBUNTU-LOCAL-WSJTX-2026-09-16.md).  
+UI: Avalonia **0.6.53** in `installers/linux/` (Host IP stays **white on black** after Connect).
+
+**Remote audio / CAT still next.** Do not mix local tty0tty CAT with Remote AF on the same box.
 
 ### Earlier (still true)
 
@@ -53,7 +57,7 @@ Source is in this repo (`linux/` + `rpi/` + `mscc-ui/Avalonia-Migration`). **Not
   - TX `fm_modulate`, RX FM / AGC-bypass path
 - **Ron rebuilt Linux servers** (night of 2026-09-08/09) — **works on the Pi**.
 - Package built: **`rpi/mscc-deb/mscc_1.0.43_arm64.deb`** (kit in `installers/rpi/`).
-- Avalonia UI: **`mscc-ui_0.6.49`** arm64 + amd64 in `installers/`.
+- Avalonia UI: **`mscc-ui_0.6.53_amd64.deb`** in `installers/linux/`. Pi UI kit still **0.6.49** arm64 until rebuilt.
 - **Ubuntu amd64 laptop** (`stew-HP-Notebook`, Ubuntu 26.04): **`INSTALL-UBUNTU.md`**. Servers from `linux-build/mscc-linux.sh` using **`linux/`** sources; UI deb `mscc-ui/Release/avalonia/x86_64/`. Pi drop is `Release/avalonia/arm64/`.
 
 ### Follow-ups / keep in mind
