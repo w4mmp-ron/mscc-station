@@ -95,6 +95,22 @@ int alc_float_to_meter(float alc)
     if (alc <= 0.0f)
         return 100;
 
+    /*
+     * Analog phones: (1-gain)*1000 → ~1 dB of ALC = full scale.
+     * Line-level VAC/WSJT runs doALC down toward 0.1, so that scale pegs
+     * red on a clean CAL tone. Digital: 0–20 dB of gain reduction → 0–100
+     * (green 0–20, yellow 20–50, red 50+ on the analog face).
+     */
+    if (G_audio_mode == DIGITAL_AUDIO || G_audio_mode == REMOTE_DIGITAL_AUDIO) {
+        float g = alc;
+        float db;
+        if (g < 0.1f)
+            g = 0.1f;
+        db = -20.0f * log10f(g); /* 1.0 → 0 dB, 0.1 → 20 dB */
+        meter = (int)(db / 20.0f * 100.0f + 0.5f);
+        return clamp_int(meter, 0, 100);
+    }
+
     /* Distance below 1.0, in thousandths → 0.999f => 1, 0.900f => 100 */
     deficit = 1.0f - alc;
     meter = (int)(deficit * 1000.0f + 0.5f);  /* round half up */

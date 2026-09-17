@@ -39,8 +39,21 @@
             <RowDefinition Height="Auto"/>
         </Grid.RowDefinitions>
 
-        <TextBlock x:Name="TitleBlock" Text="REMOTE AUDIO" FontWeight="SemiBold" FontSize="14"
-                   Foreground="#00FFAA" Margin="0,0,0,8"/>
+        <StackPanel Grid.Row="0" Margin="0,0,0,8">
+            <TextBlock x:Name="TitleBlock" Text="REMOTE AUDIO" FontWeight="SemiBold" FontSize="14"
+                       Foreground="#00FFAA" Margin="0,0,0,6"/>
+            <StackPanel Orientation="Horizontal">
+                <RadioButton x:Name="PathPhones" Content="Phones" GroupName="AfPath"
+                             Foreground="{DynamicResource UiPrimaryTextBrush}" FontWeight="SemiBold"
+                             Checked="Path_Changed"
+                             ToolTip="Headphones and operator mic on this PC."/>
+                <RadioButton x:Name="PathDigital" Content="Digital" GroupName="AfPath"
+                             Margin="16,0,0,0"
+                             Foreground="{DynamicResource UiPrimaryTextBrush}" FontWeight="SemiBold"
+                             Checked="Path_Changed"
+                             ToolTip="VAC for WSJT on this PC. CAT arms in the main client."/>
+            </StackPanel>
+        </StackPanel>
 
         <Border Grid.Row="1" Background="{DynamicResource UiPanelBackgroundBrush}"
                 BorderBrush="#444" BorderThickness="1" Padding="8" Margin="0,0,0,8">

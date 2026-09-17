@@ -263,16 +263,37 @@
         <Grid.ColumnDefinitions>
             <ColumnDefinition Width="40"/>
             <ColumnDefinition Width="*"/>
+            <ColumnDefinition Width="22"/>
         </Grid.ColumnDefinitions>
         <TextBlock Text="Host" VerticalAlignment="Center" Foreground="{DynamicResource UiPrimaryTextBrush}"
                    FontSize="11" FontWeight="SemiBold"/>
-        <ComboBox Grid.Column="1" IsEditable="True"
-                  Style="{StaticResource MsccHostComboBoxStyle}"
+        <TextBox Grid.Column="1"
+                 Text="{Binding BackendIp, UpdateSourceTrigger=LostFocus}"
+                 FontSize="12" FontWeight="SemiBold" Height="26" Padding="4,2"
+                 VerticalContentAlignment="Center"
+                 Background="{DynamicResource UiPanelBackgroundBrush}"
+                 Foreground="{DynamicResource UiPrimaryTextBrush}"
+                 CaretBrush="{DynamicResource UiPrimaryTextBrush}"
+                 BorderBrush="#FF666666" BorderThickness="1"
+                 ToolTip="Server IP. Always visible. Change applies on the next Start."
+                 PreviewKeyDown="ServerAddress_PreviewKeyDown"/>
+        <ComboBox Grid.Column="2"
                   ItemsSource="{Binding RecentHosts}"
-                  Text="{Binding BackendIp, UpdateSourceTrigger=LostFocus}"
-                  IsReadOnly="{Binding IsRadioRunning}"
-                  ToolTip="Type an IP or pick a recent host. 127.0.0.1 stays in the list. Stays visible after Start; read-only while running."
-                  PreviewKeyDown="ServerAddress_PreviewKeyDown"/>
+                  SelectedItem="{Binding BackendIp, Mode=OneWay}"
+                  Width="22" Height="26" Padding="0"
+                  Background="{DynamicResource UiPanelBackgroundBrush}"
+                  Foreground="{DynamicResource UiPrimaryTextBrush}"
+                  BorderBrush="#FF666666" BorderThickness="1"
+                  ToolTip="Recent hosts"
+                  SelectionChanged="HostPick_OnSelectionChanged">
+            <ComboBox.ItemContainerStyle>
+                <Style TargetType="ComboBoxItem">
+                    <Setter Property="Background" Value="{DynamicResource UiPanelBackgroundBrush}"/>
+                    <Setter Property="Foreground" Value="{DynamicResource UiPrimaryTextBrush}"/>
+                    <Setter Property="Padding" Value="6,3"/>
+                </Style>
+            </ComboBox.ItemContainerStyle>
+        </ComboBox>
     </Grid>
     <StackPanel Orientation="Horizontal" Margin="0,0,0,12" VerticalAlignment="Center">
         <TextBlock Text="Port" Width="40" VerticalAlignment="Center" Foreground="{DynamicResource UiPrimaryTextBrush}"
@@ -325,22 +346,31 @@
         </Border>
     </StackPanel>
 
-    <!-- Audio: Phones ↔ Digital. Remote checkbox is the operator-seat master. -->
+    <!-- Audio: Phones | Digital on one row, Remote underneath (Ron). -->
+    <TextBlock Text="AUDIO" FontWeight="SemiBold" Margin="0,2,0,3" Foreground="{DynamicResource UiAccentBrush}" FontSize="10"/>
     <StackPanel Orientation="Horizontal" Margin="0,0,0,3" VerticalAlignment="Center">
-        <TextBlock Text="Audio" Width="40" VerticalAlignment="Center" Foreground="{DynamicResource UiPrimaryTextBrush}"/>
-        <Button Width="88" Height="24" Margin="2,0,0,0" FontSize="10"
-                Content="{Binding AudioDeviceButtonText}"
-                Command="{Binding ToggleAudioDigitalCommand}"
-                ToolTip="Press to cycle Phones ↔ Digital.&#x0a;With Remote checked: R-Phones / R-Digital (this PC is the operator seat).">
+        <Button Content="Phones" Width="80" Height="24" FontSize="10"
+                Command="{Binding SelectPhonesAudioCommand}"
+                ToolTip="Local analog mic/speaker. With Remote: headphones and mic on this PC.">
             <Button.Style>
                 <Style TargetType="Button" BasedOn="{StaticResource MsccGoldButtonStyle}">
                     <Style.Triggers>
-                        <DataTrigger Binding="{Binding IsDigitalAudio}" Value="True">
+                        <DataTrigger Binding="{Binding IsDigitalAudio}" Value="False">
                             <Setter Property="Background" Value="{DynamicResource UiButtonSelectedBrush}"/>
                             <Setter Property="BorderBrush" Value="{DynamicResource UiButtonSelectedBorderBrush}"/>
                             <Setter Property="Foreground" Value="White"/>
                         </DataTrigger>
-                        <DataTrigger Binding="{Binding IsRemoteAudioActive}" Value="True">
+                    </Style.Triggers>
+                </Style>
+            </Button.Style>
+        </Button>
+        <Button Content="Digital" Width="80" Height="24" Margin="4,0,0,0" FontSize="10"
+                Command="{Binding SelectDigitalAudioCommand}"
+                ToolTip="Local VAC on the radio. With Remote: VAC on this PC and CAT for WSJT.">
+            <Button.Style>
+                <Style TargetType="Button" BasedOn="{StaticResource MsccGoldButtonStyle}">
+                    <Style.Triggers>
+                        <DataTrigger Binding="{Binding IsDigitalAudio}" Value="True">
                             <Setter Property="Background" Value="{DynamicResource UiButtonSelectedBrush}"/>
                             <Setter Property="BorderBrush" Value="{DynamicResource UiButtonSelectedBorderBrush}"/>
                             <Setter Property="Foreground" Value="White"/>
@@ -350,11 +380,26 @@
             </Button.Style>
         </Button>
     </StackPanel>
-    <CheckBox Content="Remote" IsChecked="{Binding RemoteAudio, Mode=TwoWay}"
-              IsEnabled="{Binding IsRemoteAudioAllowed}"
-              Margin="0,0,0,8" FontSize="11"
-              Foreground="{DynamicResource UiPrimaryTextBrush}"
-              ToolTip="Operator seat on this PC (MSA1 + CAT). Disabled when Launch Servers is on or Server is 127.0.0.1 — local ms-sdr owns the COM port."/>
+    <Button Content="Remote" Width="164" Height="24" FontSize="10" Margin="0,0,0,8"
+            HorizontalAlignment="Left"
+            Command="{Binding ToggleRemoteAudioCommand}"
+            IsEnabled="{Binding IsRemoteAudioAllowed}"
+            ToolTip="This PC is the operator. Opens the audio window. Disabled if Launch Servers or Server is 127.0.0.1.">
+        <Button.Style>
+            <Style TargetType="Button" BasedOn="{StaticResource MsccGoldButtonStyle}">
+                <Style.Triggers>
+                    <DataTrigger Binding="{Binding RemoteAudio}" Value="True">
+                        <Setter Property="Background" Value="{DynamicResource UiButtonSelectedBrush}"/>
+                        <Setter Property="BorderBrush" Value="{DynamicResource UiButtonSelectedBorderBrush}"/>
+                        <Setter Property="Foreground" Value="White"/>
+                    </DataTrigger>
+                    <Trigger Property="IsEnabled" Value="False">
+                        <Setter Property="Opacity" Value="0.45"/>
+                    </Trigger>
+                </Style.Triggers>
+            </Style>
+        </Button.Style>
+    </Button>
 
     <!-- Main tab filter/step buttons (replacing Lo/Hi sliders; cycle presets like original) -->
     <TextBlock Text="FILTERS / STEP" FontWeight="SemiBold" Margin="0,5,0,3" Foreground="{DynamicResource UiAccentBrush}" FontSize="10"/>

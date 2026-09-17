@@ -332,10 +332,6 @@ void Set_Digital_Mic_Volume() {
         G_mic_volume = (((float)(((float)current_mic_volume)) / 100.000000000000000f) * 1.300000f);
         break;
     }
-    /* Remote Digital: VAC/WSJT is already line level. Step-5 1.3× extra
-     * plus analog 16 dB in framesToComplex clips the PWR slider. */
-    if (G_audio_mode == REMOTE_DIGITAL_AUDIO)
-        G_mic_volume = 1.0f;
     previous_mic_volume = G_mic_volume;
     print_time();
     fprintf(G_fp_logfile, "[%d] Set_Digital_Mic_Volume. mic_gain_step: %d, current_mic_volume: %d, G_mic_volume: %f\n",

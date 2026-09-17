@@ -621,7 +621,10 @@ public partial class MainViewModel : ObservableObject, IDisposable
         try { SpectrumWaterfallSettings.Save(); } catch { /* best-effort */ }
     }
 
-    /// <summary>Live remote seat: 2 = R-Phones, 3 = R-Digital. Never persisted as radio boot.</summary>
+    /// <summary>
+    /// Same MSA1 9100/9101 either way. Opcode 2 = analog phones drive.
+    /// Opcode 3 = line-level + USB CAL drive (local digital recipe) so WSJT can reach ~5 W.
+    /// </summary>
     private byte RemoteWireOpcode() =>
         IsDigitalAudio ? Opcodes.REMOTE_DIGITAL_SOUND_DEVICE : Opcodes.REMOTE_SOUND_DEVICE;
 
@@ -665,8 +668,9 @@ public partial class MainViewModel : ObservableObject, IDisposable
             {
                 byte mode = RemoteWireOpcode();
                 await _radioService.SetAudioDeviceAsync(mode).ConfigureAwait(true);
-                string label = mode == Opcodes.REMOTE_DIGITAL_SOUND_DEVICE ? "R-Digital (3)" : "R-Phones (2)";
-                MonitorTextBoxText($" Remote RX HOST={ip}:9100 enable=1 monitor={(RemoteMonitorAtRadio ? 1 : 0)} → {label} ({reason})");
+                string seat = mode == Opcodes.REMOTE_DIGITAL_SOUND_DEVICE
+                    ? "Digital line-level (3)" : "Phones analog (2)";
+                MonitorTextBoxText($" Remote RX HOST={ip}:9100 enable=1 monitor={(RemoteMonitorAtRadio ? 1 : 0)} → {seat} ({reason})");
             }
         }
         catch (Exception ex)
@@ -729,6 +733,7 @@ public partial class MainViewModel : ObservableObject, IDisposable
         if (RemoteAudio)
         {
             ApplyRemoteAfDevicesAndRestart(value ? "path→D" : "path→P");
+            if (value) StartRemoteCat(); else StopRemoteCat();
             _remoteAfWindow?.RefreshPath();
         }
     }
@@ -790,14 +795,20 @@ public partial class MainViewModel : ObservableObject, IDisposable
             if (string.IsNullOrEmpty(host))
                 host = "127.0.0.1";
             RemoteAf.StartMic(host);
-            string seat = IsDigitalAudio ? "R-Digital VAC" : "R-Phones";
+            string seat = IsDigitalAudio ? "Digital VAC" : "Phones";
             MonitorTextBoxText($" Remote AF started ({reason}) {seat} TX host={host}:9101 play={RemoteAf.PlayDeviceIndex} mic={RemoteAf.MicDeviceIndex} micVol={RemoteAf.MicVolume:0.00}");
         }
         catch (Exception ex)
         {
             MonitorTextBoxText($" Remote AF start failed: {ex.Message}");
         }
-        StartRemoteCat();
+        if (IsDigitalAudio)
+            StartRemoteCat();
+        else
+        {
+            StopRemoteCat();
+            MonitorTextBoxText(" CAT idle (phones remote — PTT/tune in MSCC)");
+        }
         ShowRemoteAfWindow();
     }
 
@@ -811,6 +822,8 @@ public partial class MainViewModel : ObservableObject, IDisposable
 
     private void StartRemoteCat()
     {
+        if (!IsDigitalAudio)
+            return;
         try
         {
             RemoteCat?.Stop();
@@ -857,13 +870,17 @@ public partial class MainViewModel : ObservableObject, IDisposable
             var s = AudioDeviceConfig.Load();
             int play = FindNamedAfDevice(RemoteAfEngine.PlayDevices, s.DigitalSpeaker);
             int mic = FindNamedAfDevice(RemoteAfEngine.MicDevices, s.DigitalMic);
+            if (play < 0)
+                play = FindVacAfDevice(RemoteAfEngine.PlayDevices);
+            if (mic < 0)
+                mic = FindVacAfDevice(RemoteAfEngine.MicDevices);
             RemoteAf.PlayDeviceIndex = play;
             RemoteAf.MicDeviceIndex = mic;
             RemoteAf.ApplyEq(false, 0, 0, 0);
             MonitorTextBoxText(
-                $" R-Digital VAC play='{s.DigitalSpeaker.Trim()}' idx={play} mic='{s.DigitalMic.Trim()}' idx={mic}");
+                $" Digital VAC play='{s.DigitalSpeaker.Trim()}' idx={play} mic='{s.DigitalMic.Trim()}' idx={mic}");
             if (play < 0 || mic < 0)
-                MonitorTextBoxText(" R-Digital: set Digital Speaker/Mic in Settings (VAC / CABLE) if WSJT is silent");
+                MonitorTextBoxText(" Digital: set Speaker/Mic in Settings (CABLE Input / CABLE Output)");
         }
         else
         {
@@ -902,6 +919,23 @@ public partial class MainViewModel : ObservableObject, IDisposable
                 (!string.IsNullOrEmpty(d.Name) && d.Name.Contains(want, StringComparison.OrdinalIgnoreCase)) ||
                 (!string.IsNullOrEmpty(key) && want.StartsWith(key, StringComparison.OrdinalIgnoreCase)))
                 return d.Index;
+        }
+        return -1;
+    }
+
+    /// <summary>CABLE / VB-Audio / VirtualA-B if Settings names are empty.</summary>
+    internal static int FindVacAfDevice(IReadOnlyList<(int Index, string Name)> devices)
+    {
+        if (devices == null) return -1;
+        string[] hints = { "CABLE", "VB-Audio", "Virtual Cable", "VirtualA", "VirtualB" };
+        foreach (var d in devices)
+        {
+            if (d.Index < 0 || string.IsNullOrEmpty(d.Name)) continue;
+            foreach (string h in hints)
+            {
+                if (d.Name.IndexOf(h, StringComparison.OrdinalIgnoreCase) >= 0)
+                    return d.Index;
+            }
         }
         return -1;
     }
@@ -3354,6 +3388,28 @@ public partial class MainViewModel : ObservableObject, IDisposable
     private void ToggleAudioDigital()
     {
         IsDigitalAudio = !IsDigitalAudio;
+    }
+
+    [RelayCommand]
+    private void SelectPhonesAudio()
+    {
+        if (IsDigitalAudio)
+            IsDigitalAudio = false;
+    }
+
+    [RelayCommand]
+    private void SelectDigitalAudio()
+    {
+        if (!IsDigitalAudio)
+            IsDigitalAudio = true;
+    }
+
+    [RelayCommand]
+    private void ToggleRemoteAudio()
+    {
+        if (!RemoteAudio && !IsRemoteAudioAllowed)
+            return;
+        RemoteAudio = !RemoteAudio;
     }
 
     [RelayCommand(CanExecute = nameof(CanToggleTune))]

@@ -648,6 +648,14 @@ public partial class MainWindow : Window
         catch { /* ignore */ }
     }
 
+    private void HostPick_OnSelectionChanged(object sender, SelectionChangedEventArgs e)
+    {
+        if (DataContext is not ViewModels.MainViewModel vm) return;
+        if (e.AddedItems.Count == 0) return;
+        if (e.AddedItems[0] is string s && !string.IsNullOrWhiteSpace(s))
+            vm.BackendIp = s.Trim();
+    }
+
     private void ServerAddress_PreviewKeyDown(object sender, KeyEventArgs e)
     {
         if (e.Key == Key.Enter || e.Key == Key.Return)

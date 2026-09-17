@@ -334,7 +334,7 @@ int main(int argc, char **argv) {
     }
     G_all_threads_run = 1;
     print_time();
-    fprintf(G_fp_logfile, "[%d] Main Thread - sdrcore-trans. starting. Compile Date %s, Compile Time %s (digital line 2.0, USB=TUNE, remote lerp)\n", line_number++,
+    fprintf(G_fp_logfile, "[%d] Main Thread - sdrcore-trans. starting. Compile Date %s, Compile Time %s (digital line 2.5, mic 1.3, USB=TUNE, remote lerp, alc dB)\n", line_number++,
             COMPILE_DATE, COMPILE_TIME);
 
     power_ini_status = check_for_power_ini_file();
