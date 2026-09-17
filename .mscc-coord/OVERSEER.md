@@ -5,24 +5,25 @@
 
 ## Standing goal
 
-Coordinate Multus SDR **MSCC** client/server debugging across Windows, Ubuntu, and Raspberry Pi via this folder — not live chat between Grok Build instances.
+Coordinate Multus SDR **MSCC** client/server debugging across Windows, Ubuntu, and Raspberry Pi. Standing rules: root `AGENTS.md`. Optional bus: this folder.
 
-## Current focus
+## Current focus — Pi remote AF hot / noisy
 
-**Pi radio as remote-audio host**, same Win11 WPF client (`windows-new-hp`).
+**Working:** Win11 client → Win11 servers; Win11 client → Ubuntu servers (Phones + Digital).
 
-Already proven:
+**Broken:** Win11 client → **RPi** servers — RX noise floor ~10 dB high; Phone SSB TX much hotter. Likely RX AF overdriven + TX drive banks too high.
 
-- Win11 client ↔ Win11 host: Phones + Digital remote, clean RF, ~CAL power, ALC dB scale.
-- Win11 client ↔ Ubuntu host: same, both modes look good.
+**Finding (Build Commander):** `linux/` vs `rpi/` remote-audio **sources match** (no meaningful code delta). Pi **runtime config** differs from working Ubuntu:
 
-`rpi/` trans + ms-sdr now have the Ubuntu recipe (line gain 2.5, USB=TUNE for digital, 48→96 lerp, ALC dB, remote MIC 100). Recv already had 9100/9101 HOST/CTRL. **Do not copy Ubuntu ELFs into `rpi/`.**
+| Setting | Ubuntu (good) | Pi (bad) |
+|---------|---------------|----------|
+| `~/.local/mscc/power.ini` USB/LSB | 50 / 50 | 100 / 100 |
+| `user_controls.ini` ALC_VALUE | 0 | 50 |
+| `remote-phones.ini` | present ENABLED=1 | **missing** |
 
-Next: Pi Build pulls, rebuilds `rpi/` servers, starts them. Then human/WPF on `windows-new-hp` tests Phones+Remote then Digital+Remote.
+**This round:** `rpi` Build applies config steps only (see `COMMANDS.yaml` cmd-002 and `AGENTS.md` Current work). No source edits unless the experiment fails.
 
 ## Notes for Builds
 
-- Read `handoff.md` before editing or building.
-- Canonical repo: `https://github.com/w4mmp-ron/mscc-station`
-- Trees: Ubuntu → `linux/`; Pi → `rpi/`; this WPF client → `mscc-ui/`. Do not mix arch.
-- When blocked, set status `blocked` and a short reason.
+- One Build at a time. Sync: pull at session start; push only with real code (config-only OK to commit if Norman wants it in-repo — this task is **host `~/.local/mscc`**, not the git tree).
+- Do not copy Ubuntu ELFs into `rpi/`.

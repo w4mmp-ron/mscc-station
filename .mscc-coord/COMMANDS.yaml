@@ -1,35 +1,35 @@
 # Build Commander writes commands here.
-# Each Build ACKs in status/<host>.md only.
-#
-# schema:
-#   - id: string          # unique, e.g. cmd-001
-#     created: ISO-8601
-#     target: [host-id | all]
-#     role: client | server | both | any
-#     action: string      # short verb phrase
-#     detail: |           # what to do / how to verify done
-#     status_hint: pending
+# Each Build ACKs in status/<host>.md only (local OK until a code push).
 
 commands:
-  - id: cmd-001
-    created: "2026-09-17T15:30:00-04:00"
+  - id: cmd-002
+    created: "2026-09-17T14:15:00-04:00"
     target: [rpi]
     role: server
-    action: pull-rebuild-start-rpi-remote-audio-servers
+    action: align-pi-remote-af-config-to-ubuntu
     detail: |
-      Checkout: /home/pi/src/mscc-station  (export MSCC="$PWD/rpi")
-      1. git pull
-      2. mscc stop
-      3. Rebuild from rpi/ only (Path A in rpi/mscc-deb/BUILD-SERVERS-ON-PI.md):
-           make -C "$MSCC/SDRcore-recv-linux" clean && make -C "$MSCC/SDRcore-recv-linux"
-           make -C "$MSCC/SDRcore-trans-linux" clean && make -C "$MSCC/SDRcore-trans-linux"
-           make -C "$MSCC/ms-sdr-linux" clean && make -C "$MSCC/ms-sdr-linux"
-         make installs into $HOME/mscc. Confirm ldd $HOME/mscc/sdrcore-trans | grep portaudio shows /usr/local/lib.
-      4. Do NOT copy linux/ or $HOME/mscc x86 binaries into rpi/mscc-binaries.
-      5. mscc start && mscc status
-      6. In trans log (~/.local/mscc or $HOME/mscc logs): note compile line and that remote_mic listen UDP :9101 is up.
-      7. Open UDP 8888, 9100, 9101 if a firewall is on.
-      8. Write results only to status/rpi.md (accepted → running → done|blocked).
-         Include: git HEAD, make OK/fail, mscc status, last trans log compile string, any error.
-      Human will test from windows-new-hp WPF (Host=Pi IP, Launch Servers off): Phones+Remote then Digital+Remote.
+      Host: raspberrypi. Checkout: /home/pi/src/mscc-station.
+      Problem: Win11→Pi remote AF — RX ~+10 dB noise floor, Phone SSB TX much hotter than Win11→Ubuntu.
+      Hypothesis: Pi ~/.local/mscc config (drive/ALC/remote-phones), not linux/ vs rpi/ source.
+
+      Do NOT edit repo source trees for this command. Config files under ~/.local/mscc only.
+      Norman: no backup required.
+
+      Steps:
+      2) Edit ~/.local/mscc/power.ini so USB_POWER=50 and LSB_POWER=50
+         (match Ubuntu). Leave TUNE_POWER=100 and other modes unless clearly wrong.
+      3) Edit ~/.local/mscc/user_controls.ini so ALC_VALUE=0 (match Ubuntu).
+      4) Create ~/.local/mscc/remote-phones.ini (Pi was missing it; Ubuntu has it):
+            # MSCC remote operator phones
+            ENABLED=1
+            HOST=<Win11-client-LAN-IP>
+            PORT=9100
+            MONITOR=0
+         Use the Win11 PC LAN IP that runs the client / MsccRemotePhones.
+         If unknown, ask Norman — Ubuntu radio used HOST=192.168.1.228 earlier; confirm before writing.
+         Also create ~/.local/mscc/remote-mic.ini with PORT=9101 if missing (ENABLED ignored).
+      Then: restart MSCC servers (mscc stop && mscc start, or equivalent).
+      Report in status/rpi.md: before/after power.ini + ALC lines, whether remote-phones.ini exists,
+      restart OK, and that Norman should retest Win11→Pi Phones+Remote (SSB power + RX floor).
+      Do not push/pull for status ACKs. No git commit required for ~/.local/mscc changes.
     status_hint: pending

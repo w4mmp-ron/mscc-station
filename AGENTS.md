@@ -86,22 +86,31 @@ When a kit is built, copy the newest file into `installers/<platform>/`. History
 
 ## Current work (2026-09-17)
 
-**Local WSJT-X** (Pi + Ubuntu) is good. **Next:** remote WSJT-X.
+### Remote audio — Pi config experiment (cmd-002)
 
-Pickup: [`mscc-remote-audio/REMOTE-WSJTX-CHECKLIST.md`](mscc-remote-audio/REMOTE-WSJTX-CHECKLIST.md)
+**Working:** Win11 client → Win11 servers; Win11 client → Ubuntu servers (Phones + Digital).
 
-First path: **Ubuntu Avalonia + WSJT-X = operator**, **Pi = radio**. Ubuntu → Windows servers later.
+**Broken:** Win11 client → **RPi** servers — RX noise floor ~+10 dB; Phone SSB TX much hotter (RX AF likely overdriven; TX drive banks too hot).
 
-| Local (`127.0.0.1`, Remote **off**) | Remote (Pi IP, Remote **on**) |
-|--------------------------------------|-------------------------------|
-| Servers own CAT + VirtualA/B | Avalonia owns CAT + AF; **`mscc stop` on this PC** |
-| WSJT-X: `/dev/ttyUSB11`, `VirtualA.monitor`, `VirtualB` | **Same three names on the laptop** — not the Pi’s tty |
+**Do not chase `linux/` vs `rpi/` source first** — remote AF sources match. Align Pi **`~/.local/mscc`** to Ubuntu, then retest.
 
-SETTINGS = **this PC** (`~/.local/mscc/`). Not the radio host. Do not mix local tty0tty CAT with Remote on the same box.
+**`rpi` Build — cmd-002** (config only, no repo source edits):
+
+1. ~~Backup~~ (skipped — Norman OK)
+2. `~/.local/mscc/power.ini`: set `USB_POWER=50`, `LSB_POWER=50` (Ubuntu match; Pi was 100/100)
+3. `~/.local/mscc/user_controls.ini`: set `ALC_VALUE=0` (Pi was 50)
+4. Create `~/.local/mscc/remote-phones.ini` (was missing on Pi):
+   `ENABLED=1`, `HOST=<Win11 LAN IP>`, `PORT=9100`, `MONITOR=0`  
+   Confirm IP with Norman if needed (Ubuntu used `192.168.1.228`). Add `remote-mic.ini` with `PORT=9101` if missing.
+5. Restart MSCC on the Pi; Norman retests Win11 → Pi Phones+Remote.
+
+ACK only in `.mscc-coord/status/rpi.md`. Full command: `.mscc-coord/COMMANDS.yaml` id `cmd-002`.
+
+### Earlier context
+
+**Local WSJT-X** (Pi + Ubuntu) is good. Remote WSJT-X checklist: [`mscc-remote-audio/REMOTE-WSJTX-CHECKLIST.md`](mscc-remote-audio/REMOTE-WSJTX-CHECKLIST.md).
 
 Also: [`linux/UBUNTU-LOCAL-WSJTX-2026-09-16.md`](linux/UBUNTU-LOCAL-WSJTX-2026-09-16.md), [`rpi/PI-LOCAL-WSJTX-2026-09-16.md`](rpi/PI-LOCAL-WSJTX-2026-09-16.md), [`mscc-remote-audio/REMOTE-AUDIO-PUNCHLIST.md`](mscc-remote-audio/REMOTE-AUDIO-PUNCHLIST.md).
-
----
 
 ## Hard don’ts
 

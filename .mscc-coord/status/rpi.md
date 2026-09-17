@@ -4,17 +4,17 @@
 |--|--|
 | **Host** | raspberrypi |
 | **Checkout** | `/home/pi/src/mscc-station` |
-| **Build** | (idle — waiting for COMMANDS.yaml) |
-| **Last command id** | — |
-| **State** | idle |
-| **Updated** | 2026-09-17 (template) |
+| **Build** | awaiting cmd-002 |
+| **Last command id** | cmd-002 |
+| **State** | pending |
+| **Updated** | 2026-09-17 (overseer) |
 
 ## ACK log
 
 | command id | state | note |
 |------------|-------|------|
-| — | — | — |
+| cmd-002 | pending | Align ~/.local/mscc power/ALC/remote-phones to Ubuntu; restart; Norman retests |
 
 ## Notes
 
-(empty)
+(empty — Build fills after steps 2–4)
