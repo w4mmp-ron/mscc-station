@@ -233,7 +233,9 @@ public partial class MainViewModel : ViewModelBase, IDisposable
 
     // ----- Connection -----
 
-    [ObservableProperty] private string _host = "127.0.0.1";
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(IsRemoteAudioAllowed))]
+    private string _host = "127.0.0.1";
     public ObservableCollection<string> RecentHosts { get; } = new() { "127.0.0.1" };
 
     private void RememberRecentHost(string? host)
@@ -310,10 +312,31 @@ public partial class MainViewModel : ViewModelBase, IDisposable
     [ObservableProperty] private int _dVolume = 50;
     [ObservableProperty] private int _dMicGain = 40;
     /// <summary>false = Phones/operator (P), true = Digital/VAC (D).</summary>
-    [ObservableProperty] private bool _isDigitalAudio;
-    /// <summary>With Phones: CMD_SET_AUDIO_DEVICE=2 (remote mic). Sticky; ignored on Digital.</summary>
-    [ObservableProperty] private bool _remoteAudio;
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(AudioPathButtonText))]
+    [NotifyPropertyChangedFor(nameof(IsPhonesAudio))]
+    private bool _isDigitalAudio;
+    /// <summary>This PC is the operator seat. With Digital: R-Digital (0x9B=3). With Phones: R-Phones (2).</summary>
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(AudioPathButtonText))]
+    [NotifyPropertyChangedFor(nameof(DigitalControlsEnabled))]
+    private bool _remoteAudio;
+    public bool IsPhonesAudio => !IsDigitalAudio;
     public bool DigitalControlsEnabled => IsConnected && !RemoteAudio;
+
+    /// <summary>Remote seat only when Connect-only to another host (not 127.0.0.1 / localhost).</summary>
+    public bool IsRemoteAudioAllowed
+    {
+        get
+        {
+            string ip = (Host ?? "").Trim();
+            if (string.IsNullOrEmpty(ip))
+                return false;
+            return !ip.Equals("127.0.0.1", StringComparison.OrdinalIgnoreCase)
+                && !ip.Equals("localhost", StringComparison.OrdinalIgnoreCase)
+                && !ip.Equals("::1", StringComparison.OrdinalIgnoreCase);
+        }
+    }
     [ObservableProperty] private bool _remoteMonitorAtRadio;
     [ObservableProperty] private int _remotePlayVolume = 80;
     [ObservableProperty] private int _remoteMicVolume = 80;
@@ -623,8 +646,8 @@ public partial class MainViewModel : ViewModelBase, IDisposable
             ? (IsDigitalAudio ? "R-Digital" : "R-Phones")
             : (IsDigitalAudio ? "Digital" : "Phones");
 
-    /// <summary>Remote is the operator seat — stays enabled on Digital (R-Digital).</summary>
-    public bool RemoteAudioCheckboxEnabled => true;
+    /// <summary>Left-rail Audio path button: Phones or Digital (or R-Phones / R-Digital).</summary>
+    public bool RemoteAudioCheckboxEnabled => IsRemoteAudioAllowed;
 
     /// <summary>User may press PTT/TUN only when connected and server is not locking TX.</summary>
     public bool CanUserControlTransmit => IsConnected && !IsBusy && !TxSetByServer && _radio != null;
@@ -1771,6 +1794,7 @@ public partial class MainViewModel : ViewModelBase, IDisposable
     partial void OnIsDigitalAudioChanged(bool value)
     {
         OnPropertyChanged(nameof(AudioPathButtonText));
+        OnPropertyChanged(nameof(IsPhonesAudio));
         OnPropertyChanged(nameof(RemoteAudioCheckboxEnabled));
         ScheduleSaveClientSettings();
 
@@ -1807,6 +1831,14 @@ public partial class MainViewModel : ViewModelBase, IDisposable
         OnPropertyChanged(nameof(DigitalControlsEnabled));
         ScheduleSaveClientSettings();
         if (_suppressAudioSend) return;
+        if (value && !IsRemoteAudioAllowed)
+        {
+            _suppressAudioSend = true;
+            try { RemoteAudio = false; }
+            finally { _suppressAudioSend = false; }
+            AppendLog("Remote blocked: local 127.0.0.1 owns CAT. Connect-only to a remote host.");
+            return;
+        }
         if (value)
         {
             PushAudioToRadio("Remote ON");
@@ -1829,6 +1861,11 @@ public partial class MainViewModel : ViewModelBase, IDisposable
 
     internal void StartRemoteAf(string reason)
     {
+        if (!IsRemoteAudioAllowed)
+        {
+            AppendLog($"Remote AF not started ({reason}): loopback / local CAT");
+            return;
+        }
         try { Services.RemotePhonesLauncher.StopAll(); } catch { /* in-UI AF */ }
         RemoteAf ??= new RemoteAfEngine();
         RemoteAf.Log -= OnRemoteAfEngineLog;
@@ -1993,6 +2030,28 @@ public partial class MainViewModel : ViewModelBase, IDisposable
 
     [RelayCommand]
     private void ToggleAudioDigital() => IsDigitalAudio = !IsDigitalAudio;
+
+    [RelayCommand]
+    private void SelectPhonesAudio()
+    {
+        if (IsDigitalAudio)
+            IsDigitalAudio = false;
+    }
+
+    [RelayCommand]
+    private void SelectDigitalAudio()
+    {
+        if (!IsDigitalAudio)
+            IsDigitalAudio = true;
+    }
+
+    [RelayCommand]
+    private void ToggleRemoteAudio()
+    {
+        if (!RemoteAudio && !IsRemoteAudioAllowed)
+            return;
+        RemoteAudio = !RemoteAudio;
+    }
 
     private async Task SendAudioAsync(Func<Task> send, string okMsg)
     {
@@ -5467,6 +5526,7 @@ public partial class MainViewModel : ViewModelBase, IDisposable
             RemoteMicDeviceIndex = s.RemoteMicDeviceIndex;
             FmSimplex = s.FmSimplex;
             _suppressAudioSend = false;
+            OnPropertyChanged(nameof(IsRemoteAudioAllowed));
             OnPropertyChanged(nameof(RemoteAudioCheckboxEnabled));
 
             _suppressRitSend = true;
@@ -5840,7 +5900,14 @@ public partial class MainViewModel : ViewModelBase, IDisposable
         FavoritesStore.Save(Favorites);
     }
 
-    partial void OnHostChanged(string value) => ScheduleSaveClientSettings();
+    partial void OnHostChanged(string value)
+    {
+        OnPropertyChanged(nameof(IsRemoteAudioAllowed));
+        OnPropertyChanged(nameof(RemoteAudioCheckboxEnabled));
+        if (RemoteAudio && !IsRemoteAudioAllowed)
+            RemoteAudio = false;
+        ScheduleSaveClientSettings();
+    }
     partial void OnRemotePortTextChanged(string value) => ScheduleSaveClientSettings();
     partial void OnLocalPortTextChanged(string value) => ScheduleSaveClientSettings();
 

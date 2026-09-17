@@ -82,28 +82,34 @@
             <TextBlock Classes="mscc-label" Text="Vol"/>
             <Slider Grid.Column="1" Classes="mscc-slider" Minimum="0" Maximum="100"
                     Value="{Binding DVolume}" IsEnabled="{Binding DigitalControlsEnabled}"
-                    ToolTip.Tip="Digital path volume. Inactive while Remote is checked."/>
+                    ToolTip.Tip="Digital path volume. Inactive while Remote is on."/>
             <TextBlock Grid.Column="2" Classes="mscc-readout" Text="{Binding DVolume}"/>
           </Grid>
           <Grid ColumnDefinitions="40,*,28" Height="20" Margin="0,0,0,1">
             <TextBlock Classes="mscc-label" Text="Mic"/>
             <Slider Grid.Column="1" Classes="mscc-slider" Minimum="0" Maximum="100"
                     Value="{Binding DMicGain}" IsEnabled="{Binding DigitalControlsEnabled}"
-                    ToolTip.Tip="Digital path mic gain. Inactive while Remote is checked."/>
+                    ToolTip.Tip="Digital path mic gain. Inactive while Remote is on."/>
             <TextBlock Grid.Column="2" Classes="mscc-readout" Text="{Binding DMicGain}"/>
           </Grid>
-          <StackPanel Orientation="Horizontal" Margin="0,1,0,1" Spacing="4">
-            <TextBlock Classes="mscc-label" Text="Audio" Width="36"/>
-            <Button Content="{Binding AudioPathButtonText}" Classes="mscc-gold" Width="64"
-                    Command="{Binding ToggleAudioDigitalCommand}"
+          <!-- Audio: Phones | Digital on one row, Remote underneath (match WPF). -->
+          <TextBlock Classes="mscc-section" Text="AUDIO"/>
+          <StackPanel Orientation="Horizontal" Margin="0,0,0,3" Spacing="4">
+            <Button Content="Phones" Classes="mscc-gold" Width="80" Height="24" FontSize="10"
+                    Command="{Binding SelectPhonesAudioCommand}"
+                    Classes.mscc-selected="{Binding IsPhonesAudio}"
+                    ToolTip.Tip="Local analog mic/speaker. With Remote: headphones and mic on this PC."/>
+            <Button Content="Digital" Classes="mscc-gold" Width="80" Height="24" FontSize="10"
+                    Command="{Binding SelectDigitalAudioCommand}"
                     Classes.mscc-selected="{Binding IsDigitalAudio}"
-                    ToolTip.Tip="Phones = operator speaker/mic (P)&#x0a;Digital = VAC / digi apps (D)"/>
+                    ToolTip.Tip="Local VAC on the radio. With Remote: VAC on this PC and CAT for WSJT."/>
           </StackPanel>
-          <CheckBox Content="Remote Audio"
-                    IsChecked="{Binding RemoteAudio}"
-                    IsEnabled="{Binding RemoteAudioCheckboxEnabled}"
-                    FontSize="10" Foreground="#CCC" Margin="0,0,0,2"
-                    ToolTip.Tip="This PC is the operator seat. Phones → R-Phones (0x9B=2). Digital → R-Digital (0x9B=3). Opens Remote AF + CAT."/>
+          <Button Content="Remote" Classes="mscc-gold" Width="164" Height="24" FontSize="10"
+                  Margin="0,0,0,4" HorizontalAlignment="Left"
+                  Command="{Binding ToggleRemoteAudioCommand}"
+                  IsEnabled="{Binding IsRemoteAudioAllowed}"
+                  Classes.mscc-selected="{Binding RemoteAudio}"
+                  ToolTip.Tip="This PC is the operator. Opens the audio window. Disabled if Server is 127.0.0.1 (local CAT). Phones→2 R-Phones, Digital→3 R-Digital."/>
 
           <!-- Filters / Step (live when connected) -->
           <TextBlock Classes="mscc-section" Text="FILTERS / STEP"/>
