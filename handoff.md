@@ -2,6 +2,8 @@
 
 **Read this first** before editing or building anything in a new Grok / Cursor / Claude session.
 
+Grok auto-loads repo-root [`AGENTS.md`](AGENTS.md) (trees, installer drop, coord bus, current remote WSJT-X pickup). Keep **AGENTS.md** short and standing; put session narrative here.
+
 | | |
 |--|--|
 | **Canonical working folder** | `C:\Users\n8vet\OneDrive\Documents\GitHub\mscc-station` |
