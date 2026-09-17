@@ -86,23 +86,31 @@ When a kit is built, copy the newest file into `installers/<platform>/`. History
 
 ## Current work (2026-09-17)
 
-### Avalonia audio buttons — match WPF (cmd-003) — **ubuntu-stew Build**
+### Overseer review — Ubuntu Avalonia cmd-003 (**OK to push**)
 
-WPF now has **three** audio controls: **Phones | Digital** on one row, **Remote** as a button underneath (not a checkbox). Avalonia still has Phones/Digital toggle + Remote checkbox — bring Avalonia in line.
+Unpushed on stew-HP (`main` ahead of origin):
 
-- Reference: `mscc-ui/windows-work-tree/.../MainWindow.xaml` + `MainViewModel` audio commands
-- Edit: `mscc-ui/Avalonia-Migration/` (`MainWindow.axaml` + ViewModel)
-- Keep Remote AF / opcode 0x9B behavior intact
-- Full task: `.mscc-coord/COMMANDS.yaml` **cmd-003**
-- ACK: `.mscc-coord/status/ubuntu-stew.md`
+| Commit | What |
+|--------|------|
+| `0efc752` | Avalonia rail = WPF: **Phones \| Digital**, **Remote** button; checkbox gone |
+| `d1b0f44` | Coord ACK |
+| `77f2bb0` | Kit **mscc-ui 0.6.54 amd64** + version strings |
 
-### Pi remote AF (cmd-002) — done / hardware follow-up
+Review notes (Build Commander):
 
-Phone SSB power improved after Pi `~/.local/mscc` align. RX ~10 dB floor = **Pi RF/hardware noise** (Norman looking at hardware). Not an Avalonia issue.
+- Layout/commands match WPF intent; `0x9B` 0/1/2/3 + Remote AF kept.
+- Remote correctly blocked on `127.0.0.1` / localhost (local CAT), same idea as WPF.
+- Digital Vol/Mic disabled while Remote on; tooltips updated.
+- Minor nit (non-blocking): `RemoteAudioCheckboxEnabled` still named like a checkbox but now mirrors `IsRemoteAudioAllowed` — fine for now.
+- **Push when ready**, then other hosts `git pull`.
 
-### Earlier
+### Next — Pi Avalonia 0.6.54 arm64 (**cmd-004**, ubuntu-stew)
 
-Local WSJT-X OK. Remote WSJT-X: [`mscc-remote-audio/REMOTE-WSJTX-CHECKLIST.md`](mscc-remote-audio/REMOTE-WSJTX-CHECKLIST.md).
+Same UI source; cross-build arm64 kit on Ubuntu (`linux-build/mscc-ui-arm64.sh` + `build-mscc-ui-deb-arm64.sh` + drop to `installers/rpi/`). Then install on Pi. See `.mscc-coord/COMMANDS.yaml`.
+
+### Pi remote AF / SA
+
+Phone SSB improved after cmd-002 config. RX noise floor = **Pi hardware** into the radio (Signal Hound) — Norman investigating; not an Avalonia blocker.
 
 ## Hard don’ts
 
