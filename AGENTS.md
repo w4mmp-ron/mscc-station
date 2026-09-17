@@ -16,3 +16,16 @@ When a release package is built or refreshed, **copy the newest file into `insta
 ```
 
 Do **not** copy `$HOME/mscc` x86 ELFs into `rpi/mscc-binaries/`. Ubuntu work is `linux/`; treat `rpi/` as a guide.
+
+## MSCC coord (Grok Build)
+
+Overseer bot **Build Commander** drives multi-host work via `.mscc-coord/`.
+
+1. Work only in this repo checkout (`handoff.md` paths).
+2. On start: `git pull`, read `.mscc-coord/OVERSEER.md` + `COMMANDS.yaml`.
+3. If a command’s `target` includes this host (or `all`) and you have not finished that `id`:
+   - Update only `.mscc-coord/status/<your-host-id>.md` → `accepted` → `running` → `done` or `blocked`.
+   - Do not edit `COMMANDS.yaml`, `OVERSEER.md`, or another host’s status file.
+4. Host ids: `windows-new-hp`, `windows-shack`, `ubuntu-stew`, `rpi`.
+5. Norman prefers **one Build at a time**.
+6. Full protocol: `.mscc-coord/README.md`.

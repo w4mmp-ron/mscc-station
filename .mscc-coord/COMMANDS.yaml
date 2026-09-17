@@ -1,0 +1,25 @@
+# Build Commander writes commands here.
+# Each Build ACKs in status/<host>.md only.
+#
+# schema:
+#   - id: string          # unique, e.g. cmd-001
+#     created: ISO-8601
+#     target: [host-id | all]
+#     role: client | server | both | any
+#     action: string      # short verb phrase
+#     detail: |           # what to do / how to verify done
+#     status_hint: pending
+
+commands: []
+
+# Example (commented):
+# commands:
+#   - id: cmd-001
+#     created: "2026-09-17T13:40:00-04:00"
+#     target: [rpi]
+#     role: server
+#     action: report-git-and-server-state
+#     detail: |
+#       git status -sb; note dirty binaries; confirm mscc services if any.
+#       Write findings only to status/rpi.md.
+#     status_hint: pending
