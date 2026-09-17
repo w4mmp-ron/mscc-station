@@ -107,10 +107,14 @@ float Driver_Get_QRO_Power() {
             configured_drive = get_QRO_power_level(G_band, CW_POWER);
             break;
         case 'L':
-            configured_drive = get_QRO_power_level(G_band, LSB_POWER);
+            configured_drive = (G_audio_mode == DIGITAL_AUDIO || G_audio_mode == REMOTE_DIGITAL_AUDIO)
+                ? get_QRO_power_level(G_band, TUNE_POWER)
+                : get_QRO_power_level(G_band, LSB_POWER);
             break;
         case 'U':
-            configured_drive = get_QRO_power_level(G_band, USB_POWER);
+            configured_drive = (G_audio_mode == DIGITAL_AUDIO || G_audio_mode == REMOTE_DIGITAL_AUDIO)
+                ? get_QRO_power_level(G_band, TUNE_POWER)
+                : get_QRO_power_level(G_band, USB_POWER);
             break;
         case 'A':
             configured_drive = get_QRO_power_level(G_band, LSB_POWER);
@@ -141,10 +145,15 @@ float Driver_Get_QRP_Power() {
             configured_drive = get_QRP_power_level(G_band, CW_POWER);
             break;
         case 'L':
-            configured_drive = get_QRP_power_level(G_band, LSB_POWER);
+            configured_drive = (G_audio_mode == DIGITAL_AUDIO || G_audio_mode == REMOTE_DIGITAL_AUDIO)
+                ? get_QRP_power_level(G_band, TUNE_POWER)
+                : get_QRP_power_level(G_band, LSB_POWER);
             break;
         case 'U':
-            configured_drive = get_QRP_power_level(G_band, USB_POWER);
+            /* WSJT is USB. SSB bank is often 50%; TUNE is 100% / QRP CAL. */
+            configured_drive = (G_audio_mode == DIGITAL_AUDIO || G_audio_mode == REMOTE_DIGITAL_AUDIO)
+                ? get_QRP_power_level(G_band, TUNE_POWER)
+                : get_QRP_power_level(G_band, USB_POWER);
             break;
         case 'A':
             configured_drive = get_QRP_power_level(G_band, LSB_POWER);
@@ -201,6 +210,7 @@ void *Drive_Manager(void *t) {
     char mode = 10;
     uint8_t qrp_mode = 10;
     uint8_t band = 20;
+    uint8_t audio_mode = 255;
     float mic_volume = 0.0f;
     float drive = 0.0f;
 
@@ -217,7 +227,8 @@ void *Drive_Manager(void *t) {
                 mode = 'N';
                 G_power_file_needs_updated = FALSE;
             }
-            if (qrp_mode != G_QRP_mode || mode != G_mode || band != G_band || mic_volume != G_mic_volume) {
+            if (qrp_mode != G_QRP_mode || mode != G_mode || band != G_band ||
+                mic_volume != G_mic_volume || audio_mode != G_audio_mode) {
                 switch (G_QRP_mode) {
                     case 0:
                         print_time();
@@ -241,6 +252,7 @@ void *Drive_Manager(void *t) {
                 mode = G_mode;
                 band = (uint8_t) G_band;
                 mic_volume = G_mic_volume;
+                audio_mode = G_audio_mode;
             }
 
         }

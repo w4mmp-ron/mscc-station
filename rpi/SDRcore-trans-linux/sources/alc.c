@@ -84,31 +84,31 @@ static int clamp_int(int v, int lo, int hi)
 
 int alc_float_to_meter(float alc)
 {
-    /*
-     * Map ALC gain → meter 0..100 over the real doALC gain span.
-     * doALC clamps gain to [0.1, 1.0]. Old scale was (1-gain)*1000, so
-     * gain 0.99 → 10 and gain 0.90 already pegged at 100 — a tiny step
-     * past the ALC threshold looked like a huge meter jump.
-     * Linear over [min_gain, 1.0]: just engaged → small reading; hard
-     * limiting near 0.1 → full scale.
-     */
-    const float max_gain = 1.0f;
-    const float min_gain = 0.1f; /* matches doALC floor */
-    float span;
     float deficit;
     int meter;
 
     if (alc != alc) /* NaN */
         return 0;
-    if (alc >= max_gain)
+    if (alc >= 1.0f)
         return 0;
-    if (alc <= min_gain)
+    if (alc <= 0.0f)
         return 100;
 
-    span = max_gain - min_gain; /* 0.9 */
-    deficit = max_gain - alc;
-    meter = (int)(deficit / span * 100.0f + 0.5f);
+    /* VAC/WSJT: 0–20 dB of doALC reduction → 0–100. Analog keeps ~1 dB FS. */
+    if (G_audio_mode == DIGITAL_AUDIO || G_audio_mode == REMOTE_DIGITAL_AUDIO) {
+        float g = alc < 0.1f ? 0.1f : alc;
+        float db = -20.0f * log10f(g);
+        meter = (int)(db / 20.0f * 100.0f + 0.5f);
+        return clamp_int(meter, 0, 100);
+    }
 
+    const float max_gain = 1.0f;
+    const float min_gain = 0.1f;
+    float span = max_gain - min_gain;
+    deficit = max_gain - alc;
+    if (alc <= min_gain)
+        return 100;
+    meter = (int)(deficit / span * 100.0f + 0.5f);
     return clamp_int(meter, 0, 100);
 }
 
