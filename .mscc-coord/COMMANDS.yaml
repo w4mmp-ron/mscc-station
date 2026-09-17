@@ -1,35 +1,43 @@
-# Build Commander writes commands here.
-# Each Build ACKs in status/<host>.md only (local OK until a code push).
-
 commands:
+  - id: cmd-003
+    created: "2026-09-17T14:40:00-04:00"
+    target: [ubuntu-stew]
+    role: client
+    action: avalonia-match-wpf-three-audio-buttons
+    detail: |
+      Host: ubuntu-stew. Checkout: /home/stew/Documents/GitHub/mscc-station.
+      git pull first.
+
+      Goal: Avalonia Linux UI audio mode controls must look/behave like Windows WPF.
+
+      WPF reference (match this):
+        mscc-ui/windows-work-tree/mscc-mscc/mscc-new/src/MSCC.Wpf/MainWindow.xaml
+        ~ Audio: Phones | Digital on one row, Remote button underneath (ToggleRemoteAudioCommand).
+        ViewModel: SelectPhonesAudioCommand, SelectDigitalAudioCommand, ToggleRemoteAudioCommand,
+        RemoteAudio, IsDigitalAudio, IsRemoteAudioAllowed → CMD_SET_AUDIO_DEVICE / 0x9B
+        (local digital=0, phones=1, remote phones=2, remote digital=3).
+
+      Avalonia target:
+        mscc-ui/Avalonia-Migration/src/MSCC.Avalonia/Views/MainWindow.axaml
+        Currently: Phones/Digital toggle + CheckBox "Remote Audio".
+        Replace with three buttons like WPF; update ViewModel/commands; keep Remote AF window
+        and RemoteAudio/ helpers working. Fix tooltips that say "Remote is checked".
+
+      Constraints:
+        - UI + Avalonia VM only unless MSCC.Core truly required.
+        - Do not edit rpi/ servers or WPF unless shared Core is unavoidable.
+        - Build Avalonia solution; smoke: toggle Phones/Digital/Remote while connected.
+
+      When done: commit on a branch or main (ask Norman before force-push), summarize in
+      status/ubuntu-stew.md, tell Norman to push/pull other hosts and retest on Ubuntu + Pi UI debs if built.
+    status_hint: pending
+
   - id: cmd-002
     created: "2026-09-17T14:15:00-04:00"
     target: [rpi]
     role: server
     action: align-pi-remote-af-config-to-ubuntu
     detail: |
-      Host: raspberrypi. Checkout: /home/pi/src/mscc-station.
-      Problem: Win11→Pi remote AF — RX ~+10 dB noise floor, Phone SSB TX much hotter than Win11→Ubuntu.
-      Hypothesis: Pi ~/.local/mscc config (drive/ALC/remote-phones), not linux/ vs rpi/ source.
-
-      Do NOT edit repo source trees for this command. Config files under ~/.local/mscc only.
-      Norman: no backup required.
-
-      Steps:
-      2) Edit ~/.local/mscc/power.ini so USB_POWER=50 and LSB_POWER=50
-         (match Ubuntu). Leave TUNE_POWER=100 and other modes unless clearly wrong.
-      3) Edit ~/.local/mscc/user_controls.ini so ALC_VALUE=0 (match Ubuntu).
-      4) Create ~/.local/mscc/remote-phones.ini (Pi was missing it; Ubuntu has it):
-            # MSCC remote operator phones
-            ENABLED=1
-            HOST=<Win11-client-LAN-IP>
-            PORT=9100
-            MONITOR=0
-         Use the Win11 PC LAN IP that runs the client / MsccRemotePhones.
-         If unknown, ask Norman — Ubuntu radio used HOST=192.168.1.228 earlier; confirm before writing.
-         Also create ~/.local/mscc/remote-mic.ini with PORT=9101 if missing (ENABLED ignored).
-      Then: restart MSCC servers (mscc stop && mscc start, or equivalent).
-      Report in status/rpi.md: before/after power.ini + ALC lines, whether remote-phones.ini exists,
-      restart OK, and that Norman should retest Win11→Pi Phones+Remote (SSB power + RX floor).
-      Do not push/pull for status ACKs. No git commit required for ~/.local/mscc changes.
-    status_hint: pending
+      COMPLETED outcome (Norman): Phone SSB power more reasonable. RX floor = Pi hardware noise.
+      Left here for history. Do not re-run unless Norman asks.
+    status_hint: done

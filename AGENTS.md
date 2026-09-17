@@ -86,31 +86,23 @@ When a kit is built, copy the newest file into `installers/<platform>/`. History
 
 ## Current work (2026-09-17)
 
-### Remote audio — Pi config experiment (cmd-002)
+### Avalonia audio buttons — match WPF (cmd-003) — **ubuntu-stew Build**
 
-**Working:** Win11 client → Win11 servers; Win11 client → Ubuntu servers (Phones + Digital).
+WPF now has **three** audio controls: **Phones | Digital** on one row, **Remote** as a button underneath (not a checkbox). Avalonia still has Phones/Digital toggle + Remote checkbox — bring Avalonia in line.
 
-**Broken:** Win11 client → **RPi** servers — RX noise floor ~+10 dB; Phone SSB TX much hotter (RX AF likely overdriven; TX drive banks too hot).
+- Reference: `mscc-ui/windows-work-tree/.../MainWindow.xaml` + `MainViewModel` audio commands
+- Edit: `mscc-ui/Avalonia-Migration/` (`MainWindow.axaml` + ViewModel)
+- Keep Remote AF / opcode 0x9B behavior intact
+- Full task: `.mscc-coord/COMMANDS.yaml` **cmd-003**
+- ACK: `.mscc-coord/status/ubuntu-stew.md`
 
-**Do not chase `linux/` vs `rpi/` source first** — remote AF sources match. Align Pi **`~/.local/mscc`** to Ubuntu, then retest.
+### Pi remote AF (cmd-002) — done / hardware follow-up
 
-**`rpi` Build — cmd-002** (config only, no repo source edits):
+Phone SSB power improved after Pi `~/.local/mscc` align. RX ~10 dB floor = **Pi RF/hardware noise** (Norman looking at hardware). Not an Avalonia issue.
 
-1. ~~Backup~~ (skipped — Norman OK)
-2. `~/.local/mscc/power.ini`: set `USB_POWER=50`, `LSB_POWER=50` (Ubuntu match; Pi was 100/100)
-3. `~/.local/mscc/user_controls.ini`: set `ALC_VALUE=0` (Pi was 50)
-4. Create `~/.local/mscc/remote-phones.ini` (was missing on Pi):
-   `ENABLED=1`, `HOST=<Win11 LAN IP>`, `PORT=9100`, `MONITOR=0`  
-   Confirm IP with Norman if needed (Ubuntu used `192.168.1.228`). Add `remote-mic.ini` with `PORT=9101` if missing.
-5. Restart MSCC on the Pi; Norman retests Win11 → Pi Phones+Remote.
+### Earlier
 
-ACK only in `.mscc-coord/status/rpi.md`. Full command: `.mscc-coord/COMMANDS.yaml` id `cmd-002`.
-
-### Earlier context
-
-**Local WSJT-X** (Pi + Ubuntu) is good. Remote WSJT-X checklist: [`mscc-remote-audio/REMOTE-WSJTX-CHECKLIST.md`](mscc-remote-audio/REMOTE-WSJTX-CHECKLIST.md).
-
-Also: [`linux/UBUNTU-LOCAL-WSJTX-2026-09-16.md`](linux/UBUNTU-LOCAL-WSJTX-2026-09-16.md), [`rpi/PI-LOCAL-WSJTX-2026-09-16.md`](rpi/PI-LOCAL-WSJTX-2026-09-16.md), [`mscc-remote-audio/REMOTE-AUDIO-PUNCHLIST.md`](mscc-remote-audio/REMOTE-AUDIO-PUNCHLIST.md).
+Local WSJT-X OK. Remote WSJT-X: [`mscc-remote-audio/REMOTE-WSJTX-CHECKLIST.md`](mscc-remote-audio/REMOTE-WSJTX-CHECKLIST.md).
 
 ## Hard don’ts
 
