@@ -10,16 +10,26 @@
 #     detail: |           # what to do / how to verify done
 #     status_hint: pending
 
-commands: []
-
-# Example (commented):
-# commands:
-#   - id: cmd-001
-#     created: "2026-09-17T13:40:00-04:00"
-#     target: [rpi]
-#     role: server
-#     action: report-git-and-server-state
-#     detail: |
-#       git status -sb; note dirty binaries; confirm mscc services if any.
-#       Write findings only to status/rpi.md.
-#     status_hint: pending
+commands:
+  - id: cmd-001
+    created: "2026-09-17T15:30:00-04:00"
+    target: [rpi]
+    role: server
+    action: pull-rebuild-start-rpi-remote-audio-servers
+    detail: |
+      Checkout: /home/pi/src/mscc-station  (export MSCC="$PWD/rpi")
+      1. git pull
+      2. mscc stop
+      3. Rebuild from rpi/ only (Path A in rpi/mscc-deb/BUILD-SERVERS-ON-PI.md):
+           make -C "$MSCC/SDRcore-recv-linux" clean && make -C "$MSCC/SDRcore-recv-linux"
+           make -C "$MSCC/SDRcore-trans-linux" clean && make -C "$MSCC/SDRcore-trans-linux"
+           make -C "$MSCC/ms-sdr-linux" clean && make -C "$MSCC/ms-sdr-linux"
+         make installs into $HOME/mscc. Confirm ldd $HOME/mscc/sdrcore-trans | grep portaudio shows /usr/local/lib.
+      4. Do NOT copy linux/ or $HOME/mscc x86 binaries into rpi/mscc-binaries.
+      5. mscc start && mscc status
+      6. In trans log (~/.local/mscc or $HOME/mscc logs): note compile line and that remote_mic listen UDP :9101 is up.
+      7. Open UDP 8888, 9100, 9101 if a firewall is on.
+      8. Write results only to status/rpi.md (accepted → running → done|blocked).
+         Include: git HEAD, make OK/fail, mscc status, last trans log compile string, any error.
+      Human will test from windows-new-hp WPF (Host=Pi IP, Launch Servers off): Phones+Remote then Digital+Remote.
+    status_hint: pending
