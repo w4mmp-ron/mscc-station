@@ -62,9 +62,20 @@ When a kit is built, copy the newest file into `installers/<platform>/`. History
 
 ## MSCC coord (Build Commander)
 
-Overseer drives multi-host work via [`.mscc-coord/`](.mscc-coord/README.md).
+**Standing instructions for every host live in this `AGENTS.md`.** Overseer (Build Commander) updates this file and `.mscc-coord/` when goals change. You do **not** need a push/pull on every ACK.
 
-1. `git pull`. Read `.mscc-coord/OVERSEER.md` + `COMMANDS.yaml`.
+### Sync policy (important)
+
+| When | What to do |
+|------|------------|
+| **Start of a work session** | `git pull` once so you have current `AGENTS.md` / code. |
+| **During ACKs / status notes** | Update **local** `.mscc-coord/status/<your-host-id>.md` only. **Do not** commit, push, or pull just for status. |
+| **After real code / kit changes** | Commit the code (and any status worth keeping). Push (or ask Norman to push via GitHub GUI on stew-HP). Other hosts `git pull` before their next code session. |
+| **Overseer publishes new orders** | Orders land in `AGENTS.md` (**Current work**) and/or `.mscc-coord/COMMANDS.yaml` + `OVERSEER.md`. Pull when Norman says the bus was updated — not on a timer. |
+
+### Per-command loop
+
+1. Read this file (**Current work** + this section), then `.mscc-coord/OVERSEER.md` + `COMMANDS.yaml` if present.
 2. If a command `target` includes this host (or `all`) and you have not finished that `id`:
    - Update **only** `.mscc-coord/status/<your-host-id>.md`: `accepted` → `running` → `done` or `blocked`.
    - Do **not** edit `COMMANDS.yaml`, `OVERSEER.md`, or another host’s status file.
