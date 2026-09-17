@@ -5,9 +5,9 @@
 
 ## Status
 
-- **cmd-002 (Pi config):** Phone SSB more reasonable. RX floor ≈ Pi hardware noise (Signal Hound / SA — Norman).
-- **cmd-003 (Avalonia Ubuntu):** Done unpushed on stew-HP — `0efc752` UI + `77f2bb0` kit **0.6.54 amd64**. Ahead of origin until Norman GUI-pushes.
-- **Next:** Ship same UI as **arm64** for Pi (`cmd-004`), then install on Pi.
+- Spectrum pumping (clients → Shack): cleared after Shack servers redeployed from current sources (old WFP/exe revert).
+- **cmd-002–004:** done (Pi config; Avalonia 3-button audio; 0.6.54 arm64 on Pi).
+- **Active — cmd-005 (ubuntu-stew):** Avalonia Remote Digital missing VirtualA/B on Pi because client loads Debian ALSA-only PortAudio instead of `/usr/local/lib` mscc-portaudio (Pulse). Fix PortAudioNative absolute prefer + `mscc-ui` launcher `LD_LIBRARY_PATH` (like `mscc.sh`). Bump to **0.6.55**, ship kits.
 
 ## Notes
 

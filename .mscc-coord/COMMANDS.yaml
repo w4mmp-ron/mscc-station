@@ -1,26 +1,69 @@
 commands:
+  - id: cmd-005
+    created: "2026-09-17T17:00:00-04:00"
+    target: [ubuntu-stew]
+    role: client
+    action: avalonia-prefer-mscc-portaudio-pulse
+    detail: |
+      Host: ubuntu-stew. Checkout: /home/stew/Documents/GitHub/mscc-station. git pull first.
+
+      ## Problem (Pi Avalonia → Shack remote digital)
+      VirtualA / VirtualB Pulse null sinks exist on Pi; WSJT-X uses SoundIn=VirtualA.monitor /
+      SoundOut=VirtualB. Avalonia Remote Digital dropdown does NOT list them because the client
+      loads Debian ALSA-only libportaudio.so.2 (/lib/aarch64-linux-gnu/...) instead of
+      mscc-portaudio Pulse+ALSA at /usr/local/lib/libportaudio.so.2.
+      FindNamedAfDevice fails → REMOTE_*_DEV=-1 → default Sound Blaster mic → remote_mic peaks
+      ~30–60 (noise), PTT via CAT works, no digi RF / no WSJT waterfall from radio RX.
+      Servers already fix this via mscc.sh LD_LIBRARY_PATH=/usr/local/lib; UI launcher does not.
+
+      Quick repro (optional): without fix, PortAudio sees ~6 ALSA devices only. With
+      LD_LIBRARY_PATH=/usr/local/lib, Pulse API appears and VirtualA / VirtualB.monitor show.
+
+      ## Fix (do both belt + suspenders)
+
+      ### A) PortAudioNative.cs
+      File: mscc-ui/Avalonia-Migration/src/MSCC.Avalonia/RemoteAudio/PortAudioNative.cs
+      In SetDllImportResolver, BEFORE bare TryLoad("libportaudio.so.2"):
+        1) Try absolute: /usr/local/lib/libportaudio.so.2
+        2) Try absolute: /usr/local/lib/libportaudio.so
+        3) Optional: $HOME/portaudio-install/lib/libportaudio.so.2 (legacy layout)
+        4) Then existing bare TryLoad names
+      Log once (Debug or first successful load path) which path won — helpful on Pi.
+      Do not break Windows/macOS (resolver already Linux-oriented; keep non-Linux paths untouched).
+
+      ### B) Packaging launcher mscc-ui
+      File: mscc-ui/Avalonia-Migration/packaging/mscc-ui/usr/bin/mscc-ui
+      Mirror mscc.sh: if /usr/local/lib/libportaudio.so.2 (or .so) exists, prepend
+      /usr/local/lib to LD_LIBRARY_PATH BEFORE $APPDIR (or after APPDIR but ensure
+      /usr/local/lib is searched for libportaudio — APPDIR first is fine for Skia;
+      put /usr/local/lib second so app natives win, Pulse PortAudio still found).
+      Suggested order: APPDIR : /usr/local/lib : previous LD_LIBRARY_PATH
+      Keep Terminal=false desktop entry; Env not required if wrapper sets path.
+
+      ### C) Version + kits
+      Bump Avalonia patch version (0.6.54 → 0.6.55) in csproj + any packaging version strings.
+      Build amd64 kit (existing linux-build scripts) and drop to installers/ubuntu/ (or current amd64 drop path).
+      Cross-build OR note follow-on for arm64 Pi kit (installers/rpi/) — prefer shipping both if
+      scripts on stew already support arm64; else ship amd64 + ACK that Pi needs arm64 rebuild.
+
+      ### D) Verify
+      On stew (amd64 with mscc-portaudio): launch via mscc-ui; Remote Digital device lists must
+      include VirtualA (play) and VirtualB.monitor (mic) when those Pulse sinks exist.
+      Optional Pi smoke after arm64 install: same dropdown; WSJT VirtualA.monitor/VirtualB;
+      Tune → Shack remote_mic peaks rise with digi tone (not ~30–60 floor).
+
+      ACK status/ubuntu-stew.md. Commit code + kits; Norman pushes via GitHub GUI.
+      Do not touch server C trees or radio opcodes.
+    status_hint: pending
+
   - id: cmd-004
     created: "2026-09-17T15:20:00-04:00"
     target: [ubuntu-stew]
     role: client
     action: ship-avalonia-0.6.54-arm64-for-pi
     detail: |
-      Prerequisite: Norman has pushed stew-HP main (includes 0efc752 + 77f2bb0 amd64 0.6.54).
-      Host: ubuntu-stew. Checkout: /home/stew/Documents/GitHub/mscc-station. git pull first.
-
-      Goal: Same Avalonia audio rail as amd64 0.6.54 (Phones | Digital, Remote button) for Raspberry Pi.
-      Source already on main after pull — do not re-implement UI. Cross-build arm64 kit from Ubuntu.
-
-      Steps:
-      1) Confirm Version 0.6.54 in mscc-ui/Avalonia-Migration/src/MSCC.Avalonia/MSCC.Avalonia.csproj
-      2) ./linux-build/mscc-ui-arm64.sh
-      3) ./linux-build/build-mscc-ui-deb-arm64.sh
-      4) ./linux-build/drop-installers.sh rpi   (or copy newest mscc-ui_*_arm64.deb into installers/rpi/)
-      5) Commit kit drop; Norman pushes. Then Pi: git pull / installers/rpi/mscc-ui_0.6.54_arm64.deb (or tell Norman path).
-
-      Smoke: binary is arm64; deb Architecture arm64. ACK status/ubuntu-stew.md with deb path.
-      Do not edit rpi/ server trees. Do not regress amd64 kit.
-    status_hint: pending
+      DONE (133c50a on main — arm64 kit built on rpi). History only; do not re-run.
+    status_hint: done
 
   - id: cmd-003
     created: "2026-09-17T14:40:00-04:00"
@@ -28,8 +71,7 @@ commands:
     role: client
     action: avalonia-match-wpf-three-audio-buttons
     detail: |
-      DONE on stew-HP (unpushed until Norman pushes): 0efc752 UI, d1b0f44 ACK, 77f2bb0 amd64 0.6.54 kit.
-      Overseer review: OK to ship — see AGENTS.md. History only; do not re-run.
+      DONE. History only.
     status_hint: done
 
   - id: cmd-002
@@ -38,5 +80,5 @@ commands:
     role: server
     action: align-pi-remote-af-config-to-ubuntu
     detail: |
-      DONE. Phone SSB improved. RX floor = Pi hardware. History only.
+      DONE. History only.
     status_hint: done
