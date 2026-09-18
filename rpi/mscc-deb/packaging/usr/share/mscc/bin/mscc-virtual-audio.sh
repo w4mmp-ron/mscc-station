@@ -151,22 +151,7 @@ for mon in VirtualA.monitor VirtualB.monitor VirtualA_TX.monitor VirtualB_TX.mon
   fi
 done
 
-# If PortAudio still will not list auto-monitors (some PipeWire builds), add an
-# explicit remap source named for digi TX capture. Harmless if both exist.
-if pactl list short sources 2>/dev/null | awk '{print $2}' | grep -qx 'VirtualB.monitor'; then
-  if ! pactl list short sources 2>/dev/null | awk '{print $2}' | grep -qx 'MSCC_Digi_Mic'; then
-    if pactl load-module module-remap-source \
-        source_name=MSCC_Digi_Mic \
-        master=VirtualB.monitor \
-        channels=2 \
-        source_properties=device.description=VirtualB.monitor \
-        2>/dev/null; then
-      log "remap source MSCC_Digi_Mic → VirtualB.monitor (description=VirtualB.monitor)"
-    else
-      warn "module-remap-source failed (optional; auto-monitor may still work)"
-    fi
-  fi
-fi
+# Do not create MSCC_Digi_Mic. Match VirtualB.monitor by name.
 
 # Intentionally no A↔B pw-link. Recv owns VirtualA, WSJT-X/trans own VirtualB.
 
@@ -177,7 +162,7 @@ log "sources (capture — digi mic = VirtualB.monitor):"
 pactl list short sources 2>/dev/null | grep -E 'Virtual(A|B)|MSCC_Digi' || warn "no Virtual* sources — monitors missing"
 
 # Hard fail if digi TX capture path is absent
-if ! pactl list short sources 2>/dev/null | awk '{print $2}' | grep -Eqx 'VirtualB\.monitor|MSCC_Digi_Mic'; then
+if ! pactl list short sources 2>/dev/null | awk '{print $2}' | grep -Eqx 'VirtualB\.monitor'; then
   warn "VirtualB.monitor not present — digi TX will not work"
   exit 1
 fi

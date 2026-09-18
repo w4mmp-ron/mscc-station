@@ -5,23 +5,25 @@
 | **Host** | raspberrypi |
 | **Checkout** | `/home/pi/src/mscc-station` |
 | **Build** | Grok Build |
-| **Last command id** | cmd-004 |
+| **Last command id** | cmd-005 (user said cmd-006; yaml has cmd-005) |
 | **State** | done |
-| **Updated** | 2026-09-17 |
+| **Updated** | 2026-09-18 |
 
 ## ACK log
 
 | command id | state | note |
 |------------|-------|------|
-| cmd-004 | accepted | Yaml target is ubuntu-stew. This session is **rpi** (aarch64). User asked to run cmd-004 here. Native arm64 publish, not Ubuntu cross-build. Did **not** write `status/ubuntu-stew.md`. |
-| cmd-004 | running | .NET 9 SDK 9.0.318 installed; `mscc-ui-arm64.sh` + `build-mscc-ui-deb-arm64.sh` |
-| cmd-004 | done | `mscc-ui_0.6.54_arm64.deb` — Package mscc-ui, Version 0.6.54, Architecture arm64. ELF aarch64. Dropped `installers/rpi/`. |
+| cmd-005 | accepted | Yaml **cmd-005** (prefer Pulse PortAudio). User said cmd-006. This host is **rpi**, not ubuntu-stew. Did **not** write ubuntu-stew.md. |
+| cmd-005 | running | PortAudioNative `/usr/local/lib`; mscc-ui LD_LIBRARY_PATH; FindNamedAfDevice → VirtualB.monitor; drop MSCC_Digi_Mic |
+| cmd-005 | done | **mscc-ui 0.6.55 arm64** installed on this Pi. Remote Digital should list and keep **VirtualB.monitor**. |
 
 ## Notes
 
-- Deb: `installers/rpi/mscc-ui_0.6.54_arm64.deb` (also `mscc-ui/Release/avalonia/arm64/` and Avalonia-Migration/).
-- Binary: `publish/linux-arm64-sc/MSCC.Avalonia` ARM aarch64.
-- Did not touch amd64 kit or `rpi/` server trees in this commit.
-- Pi install: `sudo apt install ./installers/rpi/mscc-ui_0.6.54_arm64.deb`
+Pi client → Win11 host, Remote Digital: dropdown had no sticky VirtualB.monitor because Avalonia loaded Debian ALSA PortAudio and matcher fell through to item 0 / Digi_Mic remap.
 
-cmd-002 still listed by overseer as pending on this host; not run in this turn.
+- Prefer `/usr/local/lib/libportaudio.so.2` (Pulse+ALSA).
+- Match `VirtualB.monitor` (normalize `_`/`.`); skip `MSCC_Digi_Mic`.
+- Remote AF combo: do not default to first device if unmatched.
+- Unloaded live `MSCC_Digi_Mic` remap.
+
+Restart **mscc-ui**. Remote Digital mic combo should show and stay on **VirtualB.monitor**. Log line: `PortAudio: /usr/local/lib/libportaudio.so.2`.

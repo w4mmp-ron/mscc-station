@@ -156,7 +156,7 @@ public partial class MainViewModel : ViewModelBase, IDisposable
         HighCutLabel = HighCutLabels[_highCutIndex];
         CwFilterLabel = CwFilterLabels[_cwFilterIndex];
         ModeText = "USB";
-        AppendLog("MSCC Avalonia 0.6.54 — Phones | Digital, Remote button (WPF layout).");
+        AppendLog("MSCC Avalonia 0.6.55 — Pulse PortAudio; VirtualB.monitor match.");
         AppendLog("PTT = TX (voice modes); TUN = TUNE + carrier. S/W opens pan settings.");
         AppendLog($"Log: {LogFilePath}");
         CwPitchLabel = CwPitchOptions[Math.Clamp(CwPitchIndex, 0, CwPitchOptions.Count - 1)];
@@ -422,7 +422,7 @@ public partial class MainViewModel : ViewModelBase, IDisposable
     [ObservableProperty] private string _proficioTempText = "— °C";
     [ObservableProperty] private string _paTempText = "— °C";
     [ObservableProperty] private string _paCurrentText = "— mA";
-    [ObservableProperty] private string _clientVersionText = "0.6.54";
+    [ObservableProperty] private string _clientVersionText = "0.6.55";
     [ObservableProperty] private bool _qrpMode = true;
     [ObservableProperty] private bool _fullPower;
     [ObservableProperty] private bool _alcOn = true;
@@ -1944,11 +1944,19 @@ public partial class MainViewModel : ViewModelBase, IDisposable
         if (RemoteAf == null) return;
         if (IsDigitalAudio)
         {
-            int play = FindNamedAfDevice(RemoteAfEngine.PlayDevices, LinuxDigitalIni.DigitalSpeaker);
-            int mic = FindNamedAfDevice(RemoteAfEngine.MicDevices, LinuxDigitalIni.DigitalMic);
+            int play = RemotePlayDeviceIndex;
+            int mic = RemoteMicDeviceIndex;
+            if (play < 0)
+                play = FindNamedAfDevice(RemoteAfEngine.PlayDevices, LinuxDigitalIni.DigitalSpeaker);
+            if (mic < 0)
+                mic = FindNamedAfDevice(RemoteAfEngine.MicDevices, LinuxDigitalIni.DigitalMic);
+            RemotePlayDeviceIndex = play;
+            RemoteMicDeviceIndex = mic;
             RemoteAf.PlayDeviceIndex = play;
             RemoteAf.MicDeviceIndex = mic;
             RemoteAf.ApplyEq(false, 0, 0, 0);
+            if (!string.IsNullOrEmpty(PortAudioNative.LoadedLibraryPath))
+                AppendLog($"PortAudio: {PortAudioNative.LoadedLibraryPath}");
             AppendLog($"R-Digital VAC play='{LinuxDigitalIni.DigitalSpeaker}' idx={play} mic='{LinuxDigitalIni.DigitalMic}' idx={mic}");
         }
         else
@@ -1975,16 +1983,49 @@ public partial class MainViewModel : ViewModelBase, IDisposable
         string want = (savedKey ?? "").Trim();
         if (string.IsNullOrEmpty(want) || devices == null)
             return -1;
+        int bestIdx = -1;
+        int bestScore = 0;
+        string wantN = NormalizeAfName(want);
+        bool wantMonitor = wantN.Contains(".monitor", StringComparison.Ordinal);
         foreach (var d in devices)
         {
             if (d.Index < 0) continue;
-            string key = LinuxDigitalIni.ToMatchKey(d.Name);
-            if (string.Equals(key, want, StringComparison.OrdinalIgnoreCase) ||
-                d.Name.Contains(want, StringComparison.OrdinalIgnoreCase) ||
-                (!string.IsNullOrEmpty(key) && want.StartsWith(key, StringComparison.OrdinalIgnoreCase)))
-                return d.Index;
+            string raw = d.Name ?? "";
+            if (raw.Contains("MSCC_Digi_Mic", StringComparison.OrdinalIgnoreCase))
+                continue;
+            string key = LinuxDigitalIni.ToMatchKey(raw);
+            string haveN = NormalizeAfName(string.IsNullOrEmpty(key) ? raw : key);
+            int score = 0;
+            if (string.Equals(haveN, wantN, StringComparison.Ordinal))
+                score = 100;
+            else if (haveN.StartsWith(wantN + " ", StringComparison.Ordinal) ||
+                     haveN.StartsWith(wantN + "(", StringComparison.Ordinal))
+                score = 90;
+            else if (wantMonitor && haveN.Contains(wantN, StringComparison.Ordinal))
+                score = 80;
+            else if (!wantMonitor &&
+                     (string.Equals(key, want, StringComparison.OrdinalIgnoreCase) ||
+                      raw.Contains(want, StringComparison.OrdinalIgnoreCase)))
+                score = 40;
+            if (wantMonitor && !haveN.Contains(".monitor", StringComparison.Ordinal) &&
+                !haveN.Contains("monitor of", StringComparison.Ordinal))
+                score = 0;
+            if (score > bestScore)
+            {
+                bestScore = score;
+                bestIdx = d.Index;
+            }
         }
-        return -1;
+        return bestIdx;
+    }
+
+    private static string NormalizeAfName(string name)
+    {
+        string s = (name ?? "").Trim().ToLowerInvariant();
+        int paren = s.IndexOf('(');
+        if (paren > 0)
+            s = s[..paren].TrimEnd();
+        return s.Replace('_', '.');
     }
 
     private void OnRemoteAfEngineLog(string msg)

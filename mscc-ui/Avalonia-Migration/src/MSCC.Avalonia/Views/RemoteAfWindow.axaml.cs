@@ -83,8 +83,14 @@ public partial class RemoteAfWindow : Window
         _ready = false;
         if (digi)
         {
-            int play = MainViewModel.FindNamedAfDevice(RemoteAfEngine.PlayDevices, LinuxDigitalIni.DigitalSpeaker);
-            int mic = MainViewModel.FindNamedAfDevice(RemoteAfEngine.MicDevices, LinuxDigitalIni.DigitalMic);
+            int play = _vm.RemotePlayDeviceIndex;
+            int mic = _vm.RemoteMicDeviceIndex;
+            if (play < 0)
+                play = MainViewModel.FindNamedAfDevice(RemoteAfEngine.PlayDevices, LinuxDigitalIni.DigitalSpeaker);
+            if (mic < 0)
+                mic = MainViewModel.FindNamedAfDevice(RemoteAfEngine.MicDevices, LinuxDigitalIni.DigitalMic);
+            _vm.RemotePlayDeviceIndex = play;
+            _vm.RemoteMicDeviceIndex = mic;
             SelectByTag(PlayDeviceCombo, play);
             SelectByTag(MicDeviceCombo, mic);
         }
@@ -106,8 +112,7 @@ public partial class RemoteAfWindow : Window
                 return;
             }
         }
-        if (box.Items.Count > 0)
-            box.SelectedIndex = 0;
+        // Do not fall back to item 0 (often Sound Blaster) — leave unmatched.
     }
 
     private void AppendLog(string msg)

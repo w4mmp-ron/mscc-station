@@ -1,3 +1,4 @@
+using System.Diagnostics;
 using System.Runtime.InteropServices;
 
 namespace MSCC.Avalonia.RemoteAudio;
@@ -5,15 +6,46 @@ namespace MSCC.Avalonia.RemoteAudio;
 /// <summary>Minimal PortAudio C API for Linux (libportaudio.so.2 / Pulse).</summary>
 internal static class PortAudioNative
 {
+    /// <summary>Which libportaudio was loaded (Linux). Empty until first resolve.</summary>
+    internal static string LoadedLibraryPath { get; private set; } = "";
+
     static PortAudioNative()
     {
         NativeLibrary.SetDllImportResolver(typeof(PortAudioNative).Assembly, (name, assembly, path) =>
         {
             if (name != Lib) return IntPtr.Zero;
+            if (!OperatingSystem.IsLinux())
+                return IntPtr.Zero;
+
+            string home = Environment.GetFolderPath(Environment.SpecialFolder.UserProfile);
+            string[] candidates =
+            {
+                "/usr/local/lib/libportaudio.so.2",
+                "/usr/local/lib/libportaudio.so",
+                Path.Combine(home, "portaudio-install/lib/libportaudio.so.2"),
+                Path.Combine(home, "portaudio-install/lib/libportaudio.so"),
+            };
+            foreach (string p in candidates)
+            {
+                if (string.IsNullOrEmpty(p) || !File.Exists(p))
+                    continue;
+                if (NativeLibrary.TryLoad(p, out var abs))
+                {
+                    LoadedLibraryPath = p;
+                    Debug.WriteLine("PortAudio loaded: " + p);
+                    return abs;
+                }
+            }
             if (NativeLibrary.TryLoad("libportaudio.so.2", assembly, path, out var h))
+            {
+                LoadedLibraryPath = "libportaudio.so.2 (bare)";
                 return h;
+            }
             if (NativeLibrary.TryLoad("libportaudio.so", assembly, path, out h))
+            {
+                LoadedLibraryPath = "libportaudio.so (bare)";
                 return h;
+            }
             return IntPtr.Zero;
         });
     }
