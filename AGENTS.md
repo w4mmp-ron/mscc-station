@@ -87,19 +87,16 @@ When a kit is built, copy the newest file into `installers/<platform>/`. History
 
 ## Current work (2026-09-18)
 
-### Active — Prefer Pulse VAC (**cmd-007**, rpi)
+### Active — Avalonia 0.6.56 amd64 kit (**cmd-008**, ubuntu-stew)
 
-Sticky monitor (0.6.55) still no RF: MSCC opened **ALSA** `VirtualB_monitor` (silent) while WSJT
-plays **Pulse** `VirtualB`. Pulse `VirtualB.monitor` is the live capture end (peak 20000 vs ~70).
+Source is 0.6.56; `installers/linux/mscc-ui_*.deb` still **0.6.54**. Build amd64 UI deb, drop to
+`installers/linux/`, confirm rpi still has `mscc-ui_0.6.56_arm64.deb`, commit; Stew pushes.
 
-**Build:** cmd-007 — prefer Pulse host API for digi play/mic; ship **0.6.56**; ACK `status/rpi.md`.
+See `.mscc-coord/COMMANDS.yaml` cmd-008.
 
 ### Done recently
 
-| id | note |
-|----|------|
-| 0.6.55 / cmd-006 | FindNamed stick + PortAudio `/usr/local` (`e15697a`; Build ACK labeled cmd-005) |
-| cmd-002–004 | prior |
+Remote digi/phones/CAT matrix OK all combos. cmd-007 Pulse prefer → Pi 0.6.56.
 
 ## Hard don’ts
 

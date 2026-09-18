@@ -1,9 +1,43 @@
 commands:
+  - id: cmd-008
+    created: "2026-09-18T15:25:00-04:00"
+    target: [ubuntu-stew]
+    role: client
+    action: ship-avalonia-0.6.56-amd64-installers-linux
+    detail: |
+      Host: ubuntu-stew. Checkout: /home/stew/Documents/GitHub/mscc-station.
+      Orders on this host (no pull required to start). Source Version is already 0.6.56
+      (commit 471f603); installers/linux still has mscc-ui_0.6.54_amd64.deb only.
+
+      Goal: Build Avalonia **mscc-ui 0.6.56 amd64**, drop into installers/linux/, verify the
+      linux + rpi installer sets are complete and version-aligned for the UI, commit, Stew pushes.
+
+      Steps:
+      1) Confirm csproj <Version>0.6.56</Version>
+      2) ./linux-build/mscc-ui-x64.sh
+      3) ./linux-build/build-mscc-ui-deb-amd64.sh
+         (packaging DEBIAN/control may currently say arm64 from Pi build — amd64 script must
+          set Architecture: amd64 and Version: 0.6.56)
+      4) ./linux-build/drop-installers.sh linux
+      5) Verify installers/linux/ contains at least:
+           mscc-ui_0.6.56_amd64.deb   (NEW — replace 0.6.54)
+           mscc_1.0.43_amd64.deb
+           mscc-portaudio_19.8.2_amd64.deb
+           mscc-init-gui_1.0.13_all.deb
+         And installers/rpi/ still has mscc-ui_0.6.56_arm64.deb (do not delete/rebuild unless broken).
+      6) Optional: dpkg-deb -I installers/linux/mscc-ui_0.6.56_amd64.deb | grep -E Version|Architecture
+      7) Commit kits + any packaging fixes. ACK status/ubuntu-stew.md.
+         Stew pushes via GitHub GUI (or push if credentials work).
+
+      Do not change server C trees. Do not regress arm64 0.6.56 on Pi.
+    status_hint: pending
+
   - id: cmd-007
     created: "2026-09-18T14:25:00-04:00"
     target: [rpi]
     role: client
     action: avalonia-prefer-pulse-vac-devices
+    status_hint: done
     detail: |
       Host: rpi. Checkout: /home/pi/src/mscc-station. Orders on this host (no pull required).
 
