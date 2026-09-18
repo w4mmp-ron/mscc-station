@@ -1,11 +1,46 @@
 commands:
+  - id: cmd-007
+    created: "2026-09-18T14:25:00-04:00"
+    target: [rpi]
+    role: client
+    action: avalonia-prefer-pulse-vac-devices
+    detail: |
+      Host: rpi. Checkout: /home/pi/src/mscc-station. Orders on this host (no pull required).
+
+      ## Proven on this Pi (Build Commander 2026-09-18)
+      WSJT-X Sound Out = Pulse sink **VirtualB** (correct).
+      MSCC Remote Digital mic stuck on **VirtualB_monitor** but still no RF.
+      PortAudio device list has BOTH:
+        - api=ALSA index ~9  name VirtualB_monitor  (pipewire-alsa PCM) — capture peak ~70 with tone on VirtualB
+        - api=Pulse index ~25 name VirtualB.monitor — capture peak 20000 with same tone
+      Avalonia saved REMOTE_MIC_DEV=9 (ALSA) → remote_mic UDP peaks ~30–60 (noise) → PTT OK, no RF.
+      FindNamed after 0.6.55 correctly prefers *monitor* names but picks ALSA VirtualB_monitor first
+      (appears earlier than Pulse VirtualB.monitor). That ALSA PCM does **not** hear Pulse VirtualB.
+
+      Same risk for play: prefer Pulse **VirtualA** over ALSA VirtualA duplex ghost.
+
+      ## Fix
+      1) When resolving digi VAC (FindNamedAfDevice / device lists), **prefer PulseAudio host API**
+         devices over ALSA when both match the same logical name (normalize . ↔ _).
+         Mic: Pulse VirtualB.monitor beats ALSA VirtualB_monitor.
+         Play: Pulse VirtualA beats ALSA VirtualA.
+      2) Optionally de-prioritize ALSA Virtual* entries with absurd channel counts (in=64/out=64)
+         when a Pulse counterpart exists.
+      3) Log chosen device: hostApi + index + name on R-Digital start.
+      4) Bump 0.6.55 → 0.6.56, install arm64 on this Pi, ACK status/rpi.md.
+      5) Keep digital-microphone.ini = VirtualB.monitor. No MSCC_Digi_Mic requirement.
+
+      Verify: WSJT Out=VirtualB + Tune → Shack remote_mic peaks thousands, not ~50.
+    status_hint: pending
+
   - id: cmd-006
     created: "2026-09-18T14:05:00-04:00"
-    target: [ubuntu-stew]
+    target: [rpi]
     role: client
     action: avalonia-remote-digital-vac-match-fix
     detail: |
-      Host: ubuntu-stew. Checkout: /home/stew/Documents/GitHub/mscc-station. git pull first.
+      Host: rpi. Checkout: /home/pi/src/mscc-station.
+      (Retargeted 2026-09-18: orders live on the working host — no pull required to start.)
       Supersedes cmd-005 (include its PortAudio prefer work here — do not wait on a separate cmd-005 run).
 
       ## Symptoms (Pi Avalonia → Shack R-Digital)
@@ -71,7 +106,7 @@ commands:
 
       Verify on stew if Pulse VirtualA/B exist: Remote Digital mic resolves to monitor and sticks
       when user re-selects; log line R-Digital VAC ... mic=... idx= must not point at bare VirtualB.
-    status_hint: pending
+    status_hint: done
 
   - id: cmd-005
     created: "2026-09-17T17:00:00-04:00"

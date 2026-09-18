@@ -5,7 +5,7 @@
 | **Host** | raspberrypi |
 | **Checkout** | `/home/pi/src/mscc-station` |
 | **Build** | Grok Build |
-| **Last command id** | cmd-005 (user said cmd-006; yaml has cmd-005) |
+| **Last command id** | cmd-007 pending (was cmd-005 ACK) (user said cmd-006; yaml has cmd-005) |
 | **State** | done |
 | **Updated** | 2026-09-18 |
 
@@ -13,6 +13,7 @@
 
 | command id | state | note |
 |------------|-------|------|
+| cmd-007 | pending | Overseer: prefer Pulse VirtualB.monitor over ALSA VirtualB_monitor |
 | cmd-005 | accepted | Yaml **cmd-005** (prefer Pulse PortAudio). User said cmd-006. This host is **rpi**, not ubuntu-stew. Did **not** write ubuntu-stew.md. |
 | cmd-005 | running | PortAudioNative `/usr/local/lib`; mscc-ui LD_LIBRARY_PATH; FindNamedAfDevice → VirtualB.monitor; drop MSCC_Digi_Mic |
 | cmd-005 | done | **mscc-ui 0.6.55 arm64** installed on this Pi. Remote Digital should list and keep **VirtualB.monitor**. |

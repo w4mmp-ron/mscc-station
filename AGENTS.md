@@ -68,10 +68,11 @@ When a kit is built, copy the newest file into `installers/<platform>/`. History
 
 | When | What to do |
 |------|------------|
-| **Start of a work session** | `git pull` once so you have current `AGENTS.md` / code. |
+| **Overseer publishes orders for this host** | Orders are written **on this machine’s checkout first** (no pull required to start). ACK in local `status/<host>.md`. |
+| **After real code / kit changes** | Commit on this host. Push (or Norman pushes). **Then** other hosts `git pull` to catch up. |
+| **Start of a work session on a non-target host** | `git pull` once if you need the latest bus/code from a push. |
 | **During ACKs / status notes** | Update **local** `.mscc-coord/status/<your-host-id>.md` only. **Do not** commit, push, or pull just for status. |
-| **After real code / kit changes** | Commit the code (and any status worth keeping). Push (or ask Norman to push via GitHub GUI on stew-HP). Other hosts `git pull` before their next code session. |
-| **Overseer publishes new orders** | Orders land in `AGENTS.md` (**Current work**) and/or `.mscc-coord/COMMANDS.yaml` + `OVERSEER.md`. Pull when Norman says the bus was updated — not on a timer. |
+| **Do not edit** | `COMMANDS.yaml`, `OVERSEER.md`, or another host’s status (Overseer owns those). |
 
 ### Per-command loop
 
@@ -86,28 +87,19 @@ When a kit is built, copy the newest file into `installers/<platform>/`. History
 
 ## Current work (2026-09-18)
 
-### Active — Remote Digital VAC match (**cmd-006**, ubuntu-stew)
+### Active — Prefer Pulse VAC (**cmd-007**, rpi)
 
-Pi R-Digital: RX OK; TX keys but no RF. Remote AF mic snaps `VirtualB_monitor` → `VirtualB`
-because `FindNamedAfDevice` uses `want.StartsWith(key)`.
+Sticky monitor (0.6.55) still no RF: MSCC opened **ALSA** `VirtualB_monitor` (silent) while WSJT
+plays **Pulse** `VirtualB`. Pulse `VirtualB.monitor` is the live capture end (peak 20000 vs ~70).
 
-**Build:** See `.mscc-coord/COMMANDS.yaml` cmd-006 (supersedes cmd-005).
-1. Fix FindNamed — exact/longest match; `.` ≡ `_`; never prefer bare VirtualB over monitor.
-2. Digi combo must stick (don’t overwrite user pick with bad resolve).
-3. PortAudioNative prefer `/usr/local/lib/libportaudio.so.2` + `mscc-ui` LD_LIBRARY_PATH.
-4. Keep packaged `pcm.VirtualB_monitor` (no dotted ALSA PCM name).
-5. Bump **0.6.55**, ship kits; ACK `status/ubuntu-stew.md`.
-
-No MSCC_Digi_Mic workaround. WSJT Out stays **VirtualB** (sink).
+**Build:** cmd-007 — prefer Pulse host API for digi play/mic; ship **0.6.56**; ACK `status/rpi.md`.
 
 ### Done recently
 
 | id | note |
 |----|------|
-| cmd-002 | Pi power/ALC/remote-phones |
-| cmd-003 | Avalonia Phones \| Digital + Remote |
-| cmd-004 | Avalonia 0.6.54 arm64 |
-| cmd-005 | superseded → cmd-006 |
+| 0.6.55 / cmd-006 | FindNamed stick + PortAudio `/usr/local` (`e15697a`; Build ACK labeled cmd-005) |
+| cmd-002–004 | prior |
 
 ## Hard don’ts
 
