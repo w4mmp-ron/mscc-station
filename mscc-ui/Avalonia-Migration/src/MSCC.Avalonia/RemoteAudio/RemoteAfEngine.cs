@@ -65,8 +65,10 @@ public sealed class RemoteAfEngine : IDisposable
     public string Status =>
         $"RX: {(_rx.IsRunning ? "on" : "off")}  TX: {(_mic.IsRunning ? "on" : "off")}  buf={_player.BufferedMs} ms";
 
-    public static IReadOnlyList<(int Index, string Name)> PlayDevices => LinuxPhonePlayer.ListPlayDevices();
-    public static IReadOnlyList<(int Index, string Name)> MicDevices => LinuxMicSender.ListCaptureDevices();
+    public static IReadOnlyList<(int Index, string Name, string HostApi, int InCh, int OutCh)> PlayDevices =>
+        LinuxPhonePlayer.ListPlayDevices();
+    public static IReadOnlyList<(int Index, string Name, string HostApi, int InCh, int OutCh)> MicDevices =>
+        LinuxMicSender.ListCaptureDevices();
 
     public void StartRx()
     {

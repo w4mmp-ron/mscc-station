@@ -100,6 +100,20 @@ internal static class PortAudioNative
     [DllImport(Lib, CallingConvention = CallingConvention.Cdecl)]
     public static extern IntPtr Pa_GetDeviceInfo(int device);
 
+    [StructLayout(LayoutKind.Sequential)]
+    public struct HostApiInfo
+    {
+        public int structVersion;
+        public int type;
+        public IntPtr name;
+        public int deviceCount;
+        public int defaultInputDevice;
+        public int defaultOutputDevice;
+    }
+
+    [DllImport(Lib, CallingConvention = CallingConvention.Cdecl)]
+    public static extern IntPtr Pa_GetHostApiInfo(int hostApi);
+
     [DllImport(Lib, CallingConvention = CallingConvention.Cdecl)]
     public static extern IntPtr Pa_GetErrorText(int errorCode);
 
@@ -156,6 +170,27 @@ internal static class PortAudioNative
         if (p == IntPtr.Zero) return null;
         return Marshal.PtrToStructure<DeviceInfo>(p);
     }
+
+    public static string HostApiName(int hostApi)
+    {
+        try
+        {
+            var p = Pa_GetHostApiInfo(hostApi);
+            if (p == IntPtr.Zero) return "?";
+            var info = Marshal.PtrToStructure<HostApiInfo>(p);
+            return Marshal.PtrToStringAnsi(info.name) ?? "?";
+        }
+        catch
+        {
+            return "?";
+        }
+    }
+
+    public static bool IsPulseApi(string hostApiName) =>
+        (hostApiName ?? "").Contains("Pulse", StringComparison.OrdinalIgnoreCase);
+
+    public static bool IsAlsaApi(string hostApiName) =>
+        (hostApiName ?? "").Contains("ALSA", StringComparison.OrdinalIgnoreCase);
 
     private static int _ref;
 

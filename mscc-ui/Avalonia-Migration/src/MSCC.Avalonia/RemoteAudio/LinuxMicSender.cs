@@ -26,9 +26,9 @@ public sealed class LinuxMicSender : IDisposable
         set => _volume = Math.Clamp(value, 0f, 1f);
     }
 
-    public static IReadOnlyList<(int Index, string Name)> ListCaptureDevices()
+    public static IReadOnlyList<(int Index, string Name, string HostApi, int InCh, int OutCh)> ListCaptureDevices()
     {
-        var list = new List<(int, string)> { (-1, "Default capture") };
+        var list = new List<(int, string, string, int, int)> { (-1, "Default capture", "", 0, 0) };
         try
         {
             PortAudioNative.AddRef();
@@ -36,13 +36,14 @@ public sealed class LinuxMicSender : IDisposable
             for (int i = 0; i < n; i++)
             {
                 var info = PortAudioNative.Info(i);
-                if (info is { maxInputChannels: > 0 })
-                    list.Add((i, PortAudioNative.DeviceName(i)));
+                if (info is { maxInputChannels: > 0 } inf)
+                    list.Add((i, PortAudioNative.DeviceName(i), PortAudioNative.HostApiName(inf.hostApi),
+                        inf.maxInputChannels, inf.maxOutputChannels));
             }
         }
         catch (Exception ex)
         {
-            list.Add((-2, "PortAudio: " + ex.Message));
+            list.Add((-2, "PortAudio: " + ex.Message, "", 0, 0));
         }
         return list;
     }

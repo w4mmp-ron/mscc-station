@@ -27,9 +27,9 @@ public sealed class LinuxPhonePlayer : IDisposable
 
     public LinuxPhonePlayer(JitterBuffer jitter) => _jitter = jitter;
 
-    public static IReadOnlyList<(int Index, string Name)> ListPlayDevices()
+    public static IReadOnlyList<(int Index, string Name, string HostApi, int InCh, int OutCh)> ListPlayDevices()
     {
-        var list = new List<(int, string)> { (-1, "Default playback") };
+        var list = new List<(int, string, string, int, int)> { (-1, "Default playback", "", 0, 0) };
         try
         {
             PortAudioNative.AddRef();
@@ -37,13 +37,14 @@ public sealed class LinuxPhonePlayer : IDisposable
             for (int i = 0; i < n; i++)
             {
                 var info = PortAudioNative.Info(i);
-                if (info is { maxOutputChannels: > 0 })
-                    list.Add((i, PortAudioNative.DeviceName(i)));
+                if (info is { maxOutputChannels: > 0 } inf)
+                    list.Add((i, PortAudioNative.DeviceName(i), PortAudioNative.HostApiName(inf.hostApi),
+                        inf.maxInputChannels, inf.maxOutputChannels));
             }
         }
         catch (Exception ex)
         {
-            list.Add((-2, "PortAudio: " + ex.Message));
+            list.Add((-2, "PortAudio: " + ex.Message, "", 0, 0));
         }
         return list;
     }

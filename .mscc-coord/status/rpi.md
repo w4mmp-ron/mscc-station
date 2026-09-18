@@ -5,7 +5,7 @@
 | **Host** | raspberrypi |
 | **Checkout** | `/home/pi/src/mscc-station` |
 | **Build** | Grok Build |
-| **Last command id** | cmd-007 pending (was cmd-005 ACK) (user said cmd-006; yaml has cmd-005) |
+| **Last command id** | cmd-007 |
 | **State** | done |
 | **Updated** | 2026-09-18 |
 
@@ -13,18 +13,15 @@
 
 | command id | state | note |
 |------------|-------|------|
-| cmd-007 | pending | Overseer: prefer Pulse VirtualB.monitor over ALSA VirtualB_monitor |
-| cmd-005 | accepted | Yaml **cmd-005** (prefer Pulse PortAudio). User said cmd-006. This host is **rpi**, not ubuntu-stew. Did **not** write ubuntu-stew.md. |
-| cmd-005 | running | PortAudioNative `/usr/local/lib`; mscc-ui LD_LIBRARY_PATH; FindNamedAfDevice → VirtualB.monitor; drop MSCC_Digi_Mic |
-| cmd-005 | done | **mscc-ui 0.6.55 arm64** installed on this Pi. Remote Digital should list and keep **VirtualB.monitor**. |
+| cmd-007 | accepted | Prefer Pulse VirtualB.monitor over ALSA VirtualB_monitor |
+| cmd-007 | running | FindNamed +50 Pulse / −10 ALSA; 64ch penalty; always re-resolve digi; 0.6.56 |
+| cmd-007 | done | **mscc-ui 0.6.56** installed. Combo shows `[PulseAudio]` / `[ALSA]`. Log: `api=PulseAudio`. |
+| cmd-006 | done | 0.6.55 stick (`e15697a`) |
 
 ## Notes
 
-Pi client → Win11 host, Remote Digital: dropdown had no sticky VirtualB.monitor because Avalonia loaded Debian ALSA PortAudio and matcher fell through to item 0 / Digi_Mic remap.
+ALSA `VirtualB_monitor` capture peak ~70; Pulse `VirtualB.monitor` ~20000. Saved REMOTE_MIC_DEV=9 was ALSA.
 
-- Prefer `/usr/local/lib/libportaudio.so.2` (Pulse+ALSA).
-- Match `VirtualB.monitor` (normalize `_`/`.`); skip `MSCC_Digi_Mic`.
-- Remote AF combo: do not default to first device if unmatched.
-- Unloaded live `MSCC_Digi_Mic` remap.
+Restart **mscc-ui**. Remote Digital mic should be **VirtualB.monitor [PulseAudio]**. Log line must include `api=PulseAudio`, not ALSA.
 
-Restart **mscc-ui**. Remote Digital mic combo should show and stay on **VirtualB.monitor**. Log line: `PortAudio: /usr/local/lib/libportaudio.so.2`.
+WSJT Out remains Pulse **VirtualB**. digital-microphone.ini still `VirtualB.monitor`.

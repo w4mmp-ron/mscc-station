@@ -29,10 +29,18 @@ public partial class RemoteAfWindow : Window
 
         PlayDeviceCombo.Items.Clear();
         foreach (var d in RemoteAfEngine.PlayDevices)
-            PlayDeviceCombo.Items.Add(new ComboBoxItem { Content = d.Name, Tag = d.Index });
+            PlayDeviceCombo.Items.Add(new ComboBoxItem
+            {
+                Content = string.IsNullOrEmpty(d.HostApi) ? d.Name : $"{d.Name}  [{d.HostApi}]",
+                Tag = d.Index
+            });
         MicDeviceCombo.Items.Clear();
         foreach (var d in RemoteAfEngine.MicDevices)
-            MicDeviceCombo.Items.Add(new ComboBoxItem { Content = d.Name, Tag = d.Index });
+            MicDeviceCombo.Items.Add(new ComboBoxItem
+            {
+                Content = string.IsNullOrEmpty(d.HostApi) ? d.Name : $"{d.Name}  [{d.HostApi}]",
+                Tag = d.Index
+            });
 
         PlayVolumeSlider.Value = _vm.RemotePlayVolume;
         MicVolumeSlider.Value = _vm.RemoteMicVolume;
@@ -83,12 +91,8 @@ public partial class RemoteAfWindow : Window
         _ready = false;
         if (digi)
         {
-            int play = _vm.RemotePlayDeviceIndex;
-            int mic = _vm.RemoteMicDeviceIndex;
-            if (play < 0)
-                play = MainViewModel.FindNamedAfDevice(RemoteAfEngine.PlayDevices, LinuxDigitalIni.DigitalSpeaker);
-            if (mic < 0)
-                mic = MainViewModel.FindNamedAfDevice(RemoteAfEngine.MicDevices, LinuxDigitalIni.DigitalMic);
+            int play = MainViewModel.FindNamedAfDevice(RemoteAfEngine.PlayDevices, LinuxDigitalIni.DigitalSpeaker);
+            int mic = MainViewModel.FindNamedAfDevice(RemoteAfEngine.MicDevices, LinuxDigitalIni.DigitalMic);
             _vm.RemotePlayDeviceIndex = play;
             _vm.RemoteMicDeviceIndex = mic;
             SelectByTag(PlayDeviceCombo, play);

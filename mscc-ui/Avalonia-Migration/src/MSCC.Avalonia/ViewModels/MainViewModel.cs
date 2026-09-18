@@ -156,7 +156,7 @@ public partial class MainViewModel : ViewModelBase, IDisposable
         HighCutLabel = HighCutLabels[_highCutIndex];
         CwFilterLabel = CwFilterLabels[_cwFilterIndex];
         ModeText = "USB";
-        AppendLog("MSCC Avalonia 0.6.55 — Pulse PortAudio; VirtualB.monitor match.");
+        AppendLog("MSCC Avalonia 0.6.56 — prefer Pulse VirtualB.monitor over ALSA.");
         AppendLog("PTT = TX (voice modes); TUN = TUNE + carrier. S/W opens pan settings.");
         AppendLog($"Log: {LogFilePath}");
         CwPitchLabel = CwPitchOptions[Math.Clamp(CwPitchIndex, 0, CwPitchOptions.Count - 1)];
@@ -422,7 +422,7 @@ public partial class MainViewModel : ViewModelBase, IDisposable
     [ObservableProperty] private string _proficioTempText = "— °C";
     [ObservableProperty] private string _paTempText = "— °C";
     [ObservableProperty] private string _paCurrentText = "— mA";
-    [ObservableProperty] private string _clientVersionText = "0.6.55";
+    [ObservableProperty] private string _clientVersionText = "0.6.56";
     [ObservableProperty] private bool _qrpMode = true;
     [ObservableProperty] private bool _fullPower;
     [ObservableProperty] private bool _alcOn = true;
@@ -1944,12 +1944,9 @@ public partial class MainViewModel : ViewModelBase, IDisposable
         if (RemoteAf == null) return;
         if (IsDigitalAudio)
         {
-            int play = RemotePlayDeviceIndex;
-            int mic = RemoteMicDeviceIndex;
-            if (play < 0)
-                play = FindNamedAfDevice(RemoteAfEngine.PlayDevices, LinuxDigitalIni.DigitalSpeaker);
-            if (mic < 0)
-                mic = FindNamedAfDevice(RemoteAfEngine.MicDevices, LinuxDigitalIni.DigitalMic);
+            // Always re-resolve: saved REMOTE_MIC_DEV may be ALSA VirtualB_monitor (silent).
+            int play = FindNamedAfDevice(RemoteAfEngine.PlayDevices, LinuxDigitalIni.DigitalSpeaker);
+            int mic = FindNamedAfDevice(RemoteAfEngine.MicDevices, LinuxDigitalIni.DigitalMic);
             RemotePlayDeviceIndex = play;
             RemoteMicDeviceIndex = mic;
             RemoteAf.PlayDeviceIndex = play;
@@ -1957,7 +1954,7 @@ public partial class MainViewModel : ViewModelBase, IDisposable
             RemoteAf.ApplyEq(false, 0, 0, 0);
             if (!string.IsNullOrEmpty(PortAudioNative.LoadedLibraryPath))
                 AppendLog($"PortAudio: {PortAudioNative.LoadedLibraryPath}");
-            AppendLog($"R-Digital VAC play='{LinuxDigitalIni.DigitalSpeaker}' idx={play} mic='{LinuxDigitalIni.DigitalMic}' idx={mic}");
+            AppendLog($"R-Digital VAC {DescribeAf(RemoteAfEngine.PlayDevices, play, LinuxDigitalIni.DigitalSpeaker)} | {DescribeAf(RemoteAfEngine.MicDevices, mic, LinuxDigitalIni.DigitalMic)}");
         }
         else
         {
@@ -1978,7 +1975,9 @@ public partial class MainViewModel : ViewModelBase, IDisposable
         AppendLog($"Remote AF devices restarted ({reason})");
     }
 
-    internal static int FindNamedAfDevice(IReadOnlyList<(int Index, string Name)> devices, string savedKey)
+    internal static int FindNamedAfDevice(
+        IReadOnlyList<(int Index, string Name, string HostApi, int InCh, int OutCh)> devices,
+        string savedKey)
     {
         string want = (savedKey ?? "").Trim();
         if (string.IsNullOrEmpty(want) || devices == null)
@@ -2010,6 +2009,14 @@ public partial class MainViewModel : ViewModelBase, IDisposable
             if (wantMonitor && !haveN.Contains(".monitor", StringComparison.Ordinal) &&
                 !haveN.Contains("monitor of", StringComparison.Ordinal))
                 score = 0;
+            if (score <= 0)
+                continue;
+            if (PortAudioNative.IsPulseApi(d.HostApi))
+                score += 50;
+            else if (PortAudioNative.IsAlsaApi(d.HostApi))
+                score -= 10;
+            if (d.InCh >= 32 || d.OutCh >= 32)
+                score -= 30;
             if (score > bestScore)
             {
                 bestScore = score;
@@ -2017,6 +2024,18 @@ public partial class MainViewModel : ViewModelBase, IDisposable
             }
         }
         return bestIdx;
+    }
+
+    internal static string DescribeAf(
+        IReadOnlyList<(int Index, string Name, string HostApi, int InCh, int OutCh)> devices,
+        int index, string savedKey)
+    {
+        foreach (var d in devices)
+        {
+            if (d.Index == index)
+                return $"{savedKey} idx={index} name='{d.Name}' api={d.HostApi} in={d.InCh} out={d.OutCh}";
+        }
+        return $"{savedKey} idx={index}";
     }
 
     private static string NormalizeAfName(string name)
