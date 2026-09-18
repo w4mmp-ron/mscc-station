@@ -1,14 +1,21 @@
 # Overseer intent
 
-**Updated:** 2026-09-17  
+**Updated:** 2026-09-18  
 **Overseer:** Build Commander
 
 ## Status
 
-- Spectrum pumping (clients → Shack): cleared after Shack servers redeployed from current sources (old WFP/exe revert).
-- **cmd-002–004:** done (Pi config; Avalonia 3-button audio; 0.6.54 arm64 on Pi).
-- **Active — cmd-005 (ubuntu-stew):** Avalonia Remote Digital missing VirtualA/B on Pi because client loads Debian ALSA-only PortAudio instead of `/usr/local/lib` mscc-portaudio (Pulse). Fix PortAudioNative absolute prefer + `mscc-ui` launcher `LD_LIBRARY_PATH` (like `mscc.sh`). Bump to **0.6.55**, ship kits.
+- **Active — cmd-006 (ubuntu-stew):** Fix Avalonia Remote Digital VAC matching.
+  - FindNamedAfDevice snaps `VirtualB.monitor` → bare `VirtualB` (StartsWith bug) — mic combo won’t stick.
+  - Prefer `/usr/local/lib` mscc-portaudio (Pulse); mscc-ui launcher LD_LIBRARY_PATH.
+  - Keep ALSA PCM name `VirtualB_monitor` (no dots). Ship 0.6.55.
+- cmd-005 superseded (folded into 006). cmd-002–004 done.
+- Spectrum pumping (→ Shack) cleared earlier by redeploying current Shack servers.
+
+## Digi cable (Pi)
+
+MSCC play → VirtualA · WSJT In → VirtualA.monitor · WSJT Out → VirtualB · MSCC mic → VirtualB.monitor
 
 ## Notes
 
-Overseer writes instructions; Builds code/pack. One Build at a time. Push/pull around real kits/code.
+Overseer writes instructions; Builds code/pack. One Build at a time. No ini workarounds (no MSCC_Digi_Mic as required UI name).

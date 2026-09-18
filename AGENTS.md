@@ -84,29 +84,30 @@ When a kit is built, copy the newest file into `installers/<platform>/`. History
 
 ---
 
-## Current work (2026-09-17)
+## Current work (2026-09-18)
 
-### Active — Avalonia prefer mscc-portaudio (**cmd-005**, ubuntu-stew)
+### Active — Remote Digital VAC match (**cmd-006**, ubuntu-stew)
 
-**Symptom (Pi client → Shack remote digital):** Remote AF device dropdown has no VirtualA / VirtualB.
-WSJT-X is fine on Pulse VAC; Avalonia loads Debian ALSA-only `libportaudio` → digi TX is Sound Blaster
-noise (remote_mic peaks ~30–60), PTT works, no RF / no WSJT RX waterfall from radio.
+Pi R-Digital: RX OK; TX keys but no RF. Remote AF mic snaps `VirtualB_monitor` → `VirtualB`
+because `FindNamedAfDevice` uses `want.StartsWith(key)`.
 
-**Fix:** See `.mscc-coord/COMMANDS.yaml` cmd-005.
-1. `PortAudioNative.cs` — try `/usr/local/lib/libportaudio.so.2` before bare name.
-2. `packaging/.../usr/bin/mscc-ui` — prepend `/usr/local/lib` on `LD_LIBRARY_PATH` (same idea as `mscc.sh`).
-3. Bump **0.6.55**, ship amd64 (+ arm64 for Pi if scripts allow).
-4. ACK `status/ubuntu-stew.md`; commit; Norman pushes.
+**Build:** See `.mscc-coord/COMMANDS.yaml` cmd-006 (supersedes cmd-005).
+1. Fix FindNamed — exact/longest match; `.` ≡ `_`; never prefer bare VirtualB over monitor.
+2. Digi combo must stick (don’t overwrite user pick with bad resolve).
+3. PortAudioNative prefer `/usr/local/lib/libportaudio.so.2` + `mscc-ui` LD_LIBRARY_PATH.
+4. Keep packaged `pcm.VirtualB_monitor` (no dotted ALSA PCM name).
+5. Bump **0.6.55**, ship kits; ACK `status/ubuntu-stew.md`.
+
+No MSCC_Digi_Mic workaround. WSJT Out stays **VirtualB** (sink).
 
 ### Done recently
 
 | id | note |
 |----|------|
-| cmd-002 | Pi power/ALC/remote-phones aligned to Ubuntu |
-| cmd-003 | Avalonia Phones \| Digital + Remote button |
-| cmd-004 | Avalonia 0.6.54 arm64 kit on Pi (`133c50a`) |
-
-Spectrum pumping cleared after Shack server redeploy (old build revert).
+| cmd-002 | Pi power/ALC/remote-phones |
+| cmd-003 | Avalonia Phones \| Digital + Remote |
+| cmd-004 | Avalonia 0.6.54 arm64 |
+| cmd-005 | superseded → cmd-006 |
 
 ## Hard don’ts
 

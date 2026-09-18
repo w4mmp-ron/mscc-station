@@ -1,60 +1,86 @@
 commands:
+  - id: cmd-006
+    created: "2026-09-18T14:05:00-04:00"
+    target: [ubuntu-stew]
+    role: client
+    action: avalonia-remote-digital-vac-match-fix
+    detail: |
+      Host: ubuntu-stew. Checkout: /home/stew/Documents/GitHub/mscc-station. git pull first.
+      Supersedes cmd-005 (include its PortAudio prefer work here — do not wait on a separate cmd-005 run).
+
+      ## Symptoms (Pi Avalonia → Shack R-Digital)
+      - RX OK (VirtualA → WSJT VirtualA.monitor).
+      - TX: radio keys (CAT PTT) but Shack remote_mic peaks stay ~20–70 (no digi tone / no RF).
+      - Remote AF mic combo: user can pick VirtualB_monitor but it **snaps back to VirtualB**.
+      - Root cause in FindNamedAfDevice (MainViewModel.cs):
+          want.StartsWith(key)  with want="VirtualB.monitor" and key="VirtualB"
+          → first hit is the **sink** VirtualB, not VirtualB.monitor / VirtualB_monitor.
+      - MicDevice_Changed then calls ApplyRemoteAfDevicesAndRestart → re-resolves from
+        digital-microphone.ini via broken FindNamed → overwrites user selection.
+      - Also: client often loads Debian ALSA-only libportaudio instead of mscc-portaudio
+        at /usr/local/lib (Pulse). ALSA PCM for B capture must be VirtualB_monitor (underscore);
+        dots are illegal in ALSA PCM names (see linux/helpers/99-mscc-virtual.conf).
+
+      Canonical digi cable (do not invent MSCC_Digi_Mic as the required UI name):
+        MSCC play → VirtualA
+        WSJT In  → VirtualA.monitor
+        WSJT Out → VirtualB          (sink — not VirtualB_monitor)
+        MSCC mic → VirtualB.monitor  (Pulse) / VirtualB_monitor (ALSA name)
+
+      ## Required fixes
+
+      ### A) FindNamedAfDevice — exact / longest match (CRITICAL)
+      File: mscc-ui/Avalonia-Migration/src/MSCC.Avalonia/ViewModels/MainViewModel.cs
+      Replace the StartsWith-short-key logic. Prefer:
+        1) Exact case-insensitive match on device name (and ToMatchKey)
+        2) Normalize '.' ↔ '_' so VirtualB.monitor ≡ VirtualB_monitor
+        3) Among partial matches, pick the **longest** matching name (so monitor wins over VirtualB)
+        4) For mic lists: prefer names containing ".monitor" or "_monitor" when the saved key
+           asks for a monitor; never return a 0-input sink when a monitor candidate exists
+        5) Remove `want.StartsWith(key)` as written — it is what selects VirtualB first
+      Unit-style smoke: want=VirtualB.monitor must resolve to VirtualB.monitor or VirtualB_monitor,
+      never bare VirtualB, when both exist in the list.
+
+      ### B) Remote Digital combo must stick
+      RemoteAfWindow digi path: after user changes mic/play combo, either
+        - apply the selected device index directly (do not re-FindNamed over the user’s pick), or
+        - FindNamed with the fixed matcher and SelectByTag must land on the monitor
+      RefreshPath / ApplyRemoteAfDevices must show VirtualB.monitor (or VirtualB_monitor) when
+      digital-microphone.ini is VirtualB.monitor — no snap-back to VirtualB.
+
+      ### C) PortAudioNative prefer mscc-portaudio (from cmd-005)
+      File: RemoteAudio/PortAudioNative.cs
+      Before bare TryLoad("libportaudio.so.2"), try absolute:
+        /usr/local/lib/libportaudio.so.2, /usr/local/lib/libportaudio.so,
+        then optional $HOME/portaudio-install/lib/..., then bare names.
+      Log once which path loaded.
+
+      ### D) mscc-ui launcher LD_LIBRARY_PATH (from cmd-005)
+      File: packaging/mscc-ui/usr/bin/mscc-ui
+      Order: APPDIR : /usr/local/lib : prior LD_LIBRARY_PATH (same idea as mscc.sh).
+
+      ### E) ALSA conf packaging sanity
+      Ensure packaged/installed 99-mscc-virtual.conf uses pcm.VirtualB_monitor (underscore),
+      NOT pcm."VirtualB.monitor". Repo helpers/99-mscc-virtual.conf is the reference.
+      Pi live /etc was wrong once; packaging must not reintroduce the dotted PCM name.
+
+      ### F) Version + kits
+      Bump Avalonia 0.6.54 → 0.6.55 (or next patch). Ship amd64 kit; arm64 for Pi if scripts allow.
+      ACK status/ubuntu-stew.md. Commit; Norman pushes via GitHub GUI.
+      Do not require MSCC_Digi_Mic in the UI. Do not touch server C / radio opcodes.
+
+      Verify on stew if Pulse VirtualA/B exist: Remote Digital mic resolves to monitor and sticks
+      when user re-selects; log line R-Digital VAC ... mic=... idx= must not point at bare VirtualB.
+    status_hint: pending
+
   - id: cmd-005
     created: "2026-09-17T17:00:00-04:00"
     target: [ubuntu-stew]
     role: client
     action: avalonia-prefer-mscc-portaudio-pulse
     detail: |
-      Host: ubuntu-stew. Checkout: /home/stew/Documents/GitHub/mscc-station. git pull first.
-
-      ## Problem (Pi Avalonia → Shack remote digital)
-      VirtualA / VirtualB Pulse null sinks exist on Pi; WSJT-X uses SoundIn=VirtualA.monitor /
-      SoundOut=VirtualB. Avalonia Remote Digital dropdown does NOT list them because the client
-      loads Debian ALSA-only libportaudio.so.2 (/lib/aarch64-linux-gnu/...) instead of
-      mscc-portaudio Pulse+ALSA at /usr/local/lib/libportaudio.so.2.
-      FindNamedAfDevice fails → REMOTE_*_DEV=-1 → default Sound Blaster mic → remote_mic peaks
-      ~30–60 (noise), PTT via CAT works, no digi RF / no WSJT waterfall from radio RX.
-      Servers already fix this via mscc.sh LD_LIBRARY_PATH=/usr/local/lib; UI launcher does not.
-
-      Quick repro (optional): without fix, PortAudio sees ~6 ALSA devices only. With
-      LD_LIBRARY_PATH=/usr/local/lib, Pulse API appears and VirtualA / VirtualB.monitor show.
-
-      ## Fix (do both belt + suspenders)
-
-      ### A) PortAudioNative.cs
-      File: mscc-ui/Avalonia-Migration/src/MSCC.Avalonia/RemoteAudio/PortAudioNative.cs
-      In SetDllImportResolver, BEFORE bare TryLoad("libportaudio.so.2"):
-        1) Try absolute: /usr/local/lib/libportaudio.so.2
-        2) Try absolute: /usr/local/lib/libportaudio.so
-        3) Optional: $HOME/portaudio-install/lib/libportaudio.so.2 (legacy layout)
-        4) Then existing bare TryLoad names
-      Log once (Debug or first successful load path) which path won — helpful on Pi.
-      Do not break Windows/macOS (resolver already Linux-oriented; keep non-Linux paths untouched).
-
-      ### B) Packaging launcher mscc-ui
-      File: mscc-ui/Avalonia-Migration/packaging/mscc-ui/usr/bin/mscc-ui
-      Mirror mscc.sh: if /usr/local/lib/libportaudio.so.2 (or .so) exists, prepend
-      /usr/local/lib to LD_LIBRARY_PATH BEFORE $APPDIR (or after APPDIR but ensure
-      /usr/local/lib is searched for libportaudio — APPDIR first is fine for Skia;
-      put /usr/local/lib second so app natives win, Pulse PortAudio still found).
-      Suggested order: APPDIR : /usr/local/lib : previous LD_LIBRARY_PATH
-      Keep Terminal=false desktop entry; Env not required if wrapper sets path.
-
-      ### C) Version + kits
-      Bump Avalonia patch version (0.6.54 → 0.6.55) in csproj + any packaging version strings.
-      Build amd64 kit (existing linux-build scripts) and drop to installers/ubuntu/ (or current amd64 drop path).
-      Cross-build OR note follow-on for arm64 Pi kit (installers/rpi/) — prefer shipping both if
-      scripts on stew already support arm64; else ship amd64 + ACK that Pi needs arm64 rebuild.
-
-      ### D) Verify
-      On stew (amd64 with mscc-portaudio): launch via mscc-ui; Remote Digital device lists must
-      include VirtualA (play) and VirtualB.monitor (mic) when those Pulse sinks exist.
-      Optional Pi smoke after arm64 install: same dropdown; WSJT VirtualA.monitor/VirtualB;
-      Tune → Shack remote_mic peaks rise with digi tone (not ~30–60 floor).
-
-      ACK status/ubuntu-stew.md. Commit code + kits; Norman pushes via GitHub GUI.
-      Do not touch server C trees or radio opcodes.
-    status_hint: pending
+      SUPERSEDED by cmd-006 (PortAudio prefer folded in). Do not run separately.
+    status_hint: superseded
 
   - id: cmd-004
     created: "2026-09-17T15:20:00-04:00"
@@ -62,7 +88,7 @@ commands:
     role: client
     action: ship-avalonia-0.6.54-arm64-for-pi
     detail: |
-      DONE (133c50a on main — arm64 kit built on rpi). History only; do not re-run.
+      DONE (133c50a). History only.
     status_hint: done
 
   - id: cmd-003
