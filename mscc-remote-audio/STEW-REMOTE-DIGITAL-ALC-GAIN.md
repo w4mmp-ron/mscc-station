@@ -124,11 +124,10 @@ build_rules:
     - Investigate and report evidence for that one only.
     - Do not mix fixes or conclusions across hypotheses in the same pass.
     - After one hypothesis is confirmed or ruled out, stop and ask before the next.
-  no_changes_until_asked: true
 ```
 
 ---
 
 ## Build instruction (short)
 
-**Examine only one possibility at a time** (H1 → then H2 → then H3, or as directed). Finish and report that one before touching the next. No code changes unless Ron asks.
+**Examine only one possibility at a time** (H1 → then H2 → then H3, or as directed). Finish and report that one before touching the next.
