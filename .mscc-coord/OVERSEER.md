@@ -5,9 +5,9 @@
 
 ## Status
 
-- **Active — cmd-014 (windows-new-hp):** Windows ms-sdr owner re-ack re-sends packed FW (`0xB2`) + Core (`0xB3`) — mirror Pi/Ubuntu.
-- **Done — cmd-013 (ubuntu-stew)** / **cmd-012 (rpi):** same fix verified.
-- Client “ask if missing” deferred to next UI block.
+- **Active — cmd-015 (windows-new-hp):** WPF band gray-out from **FW major** (prove UI follows radio type). Manual RadioModelButton remains override.
+- **Done — cmd-012/013/014:** ms-sdr owner re-ack resends FW/Core on Pi / Ubuntu / Windows.
+- Next UI pieces after this proof: Option A S/W-follows-band, user settings, client ask-if-missing, factory seed.
 
 ## Coord workflow
 
