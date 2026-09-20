@@ -1,10 +1,48 @@
 commands:
-  - id: cmd-010
+  - id: cmd-011
+    created: "2026-09-20T13:20:00-04:00"
+    target: [rpi]
+    role: client
+    action: avalonia-0.6.57-arm64-kit
+    status_hint: pending
+    detail: |
+      Host: rpi (raspberrypi). Checkout: /home/pi/src/mscc-station
+      Orders on this host. Source already has Avalonia 0.6.57 + FirmwareBlockSuffix
+      (cmd-010 on ubuntu-stew). installers/rpi still has mscc-ui_0.6.56_arm64.deb.
+
+      ## Goal
+      Build/ship **mscc-ui 0.6.57 arm64** into installers/rpi/. Smoke title ATU/PTT
+      if a radio is available (e.g. Proficio MKII PTT → FW:… PTT).
+
+      ## Steps
+      1) Confirm csproj and packaging/mscc-ui/DEBIAN/control Version 0.6.57
+         (Architecture arm64 for this package — build-mscc-ui-deb-arm64.sh forces arm64).
+      2) Native on Pi (dotnet is present):
+           ./linux-build/mscc-ui-arm64.sh
+           ./linux-build/build-mscc-ui-deb-arm64.sh
+           ./linux-build/drop-installers.sh rpi
+         (Scripts say "Ubuntu laptop" but RID linux-arm64 works natively on this Pi.)
+      3) Verify installers/rpi/mscc-ui_0.6.57_arm64.deb (replace 0.6.56).
+         Optional: dpkg-deb -I … | grep -E 'Version|Architecture'
+      4) Optional install/smoke: sudo dpkg -i installers/rpi/mscc-ui_0.6.57_arm64.deb
+         Connect; title shows ATU/PTT for majors 3/4/7/8.
+      5) ACK .mscc-coord/status/rpi.md. Commit **only** UI kit + status/coord
+         (installers/rpi mscc-ui deb, Release/avalonia/arm64 if produced, status).
+         Stew pushes.
+
+      ## Do NOT include in this commit
+      Unrelated dirty trees already on this Pi (leave unstaged):
+        linux|rpi SDRcore remote_phones.c / dsputils.c
+        rpi/ms-sdr-linux/source/version.h
+        rpi/mscc-binaries/{ms-sdr,sdrcore-recv,sdrcore-trans}
+      No Windows / no amd64 rebuild. No PSoC / factory cal.
+
+- id: cmd-010
     created: "2026-09-20T12:15:00-04:00"
     target: [ubuntu-stew]
     role: client
     action: avalonia-windowtitle-atu-ptt-identity
-    status_hint: pending
+    status_hint: done
     detail: |
       Host: ubuntu-stew (stew-HP-Notebook).
       Checkout: /home/stew/Documents/GitHub/mscc-station
