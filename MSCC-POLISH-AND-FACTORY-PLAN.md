@@ -259,7 +259,7 @@ Wire client capture gain (`RemoteAf.MicVolume`) from that slider in digi mode in
 ### Firmware / identity (Shack Keil where noted)
 - [ ] Geminus Legacy major `224` → `5`
 - [ ] Ultimus Legacy / MKII PSoC trees + majors (PTT/ATU); shared cal per line
-- [ ] `radio-psoc-firmware/` repo move
+- [x] `radio-psoc-firmware/` repo move (Shack 2026-09-20: trees under `radio-psoc-firmware/`; Ultimus seeded from Proficio; majors Build doc in folder)
 - [ ] Windows ms-sdr packed `0xB2`
 - [ ] Log: Multus radio found
 

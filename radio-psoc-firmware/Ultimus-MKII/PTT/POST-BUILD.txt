@@ -1,0 +1,25 @@
+# PSoC Creator post-build: copy hex + cyacd to Release\
+
+Creator does **not** run Post Build through cmd.exe.
+Do **not** use:  call ...
+Do **not** use a bare:  copy-release.bat
+
+## Correct Post Build line (MKII)
+
+Project → Build Settings → User Commands → Post Build:
+
+    cmd /c "${ProjDir}\post-build-release.bat"
+
+If that still fails, use the full path (no macros):
+
+    cmd /c "C:\Users\Ron\.grok\worktrees\Release-Proficio-MKII-PTT\copy-release.bat"
+
+## What gets written
+
+    Release-Proficio-MKII-PTT\Release\
+      Proficio-MKII-PTT.hex / .cyacd
+      Proficio-MKII-PTT-YYYYMMDD.*
+
+## Manual
+
+Double-click:  Release-Proficio-MKII-PTT\copy-release.bat

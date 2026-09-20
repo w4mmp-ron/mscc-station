@@ -1,0 +1,61 @@
+Smooth tune results
+
+Prior to PSoC update
+
+Band	Popping frequency
+2200M   every 1hz
+630M	every 1hz
+160M	10khz
+20M	100khz
+10M	100khz
+
+After firmware update (v1: ppm math + divider-change hard gate)
+
+2200M	<100hz
+630M	1khz
+160M	28khz
+20M	only at 14.080mhz, rest of the band OK
+10M	only at 28.140, rest of the band OK
+
+---------------------------------------------------------------------------
+Analysis (2026-07-22) — why residual pops remain
+---------------------------------------------------------------------------
+v1 still recomputed Multisynth every step as even(900 MHz / fout). That
+creates hard MS boundaries inside bands:
+
+  Classic ceiling method: fout_clk = LO*4, divider = even(900e6/fout)
+  LO-class edge near 900e6/(16)/4 = 14.0625 MHz  (~your 14.080 with offsets)
+  LO-class edge near 900e6/(8)/4  = 28.125 MHz   (~your 28.140 with offsets)
+
+On LF the *same* even-divider steps are dense:
+  ~80–170 Hz LO spacing on 2200 m  → matches "<100 Hz"
+  ~1–2 kHz LO spacing on 630 m     → matches "1 kHz"
+
+So LF residual was NOT primarily ppm-window size — it was Multisynth
+changing every few hundred Hz and forcing PLL_RESET.
+
+---------------------------------------------------------------------------
+v2 firmware (2026-07-22) — Multisynth hold + VCO-centered hard retune
+---------------------------------------------------------------------------
+Built successfully 10:50:37. Flash:
+
+  Proficio-MKII-ATU.cydsn\DP8051\DP8051_Keil_951\Debug\Proficio-MKII-ATU.cyacd
+
+Strategy:
+  SOFT: hold Multisynth fixed; only update PLL fractional; no PLL_RESET
+        while VCO stays in 600–900 MHz (mult 15..90).
+  HARD: pick even MS for VCO ~750 MHz (band center), write MS+PLL, reset once.
+
+Expected after flash:
+  20 m / 10 m: no mid-band pop at 14.080 / 28.140 (whole band one MS)
+  2200 m / 630 m: fine-tune across the band without periodic pops
+  One pop still OK on large band jumps or first entry after boot
+
+Please re-measure and fill in:
+
+Band	Popping after v2
+2200M	
+630M	
+160M	
+20M	
+10M	

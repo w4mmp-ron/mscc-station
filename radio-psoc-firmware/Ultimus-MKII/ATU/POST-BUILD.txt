@@ -1,0 +1,25 @@
+# PSoC Creator post-build: copy hex + cyacd to Release\
+
+Creator does **not** run Post Build through cmd.exe by default.
+Do **not** use:  call ...
+Do **not** use a bare:  copy-release.bat
+
+## Correct Post Build line (MKII-ATU)
+
+Project → Build Settings → User Commands → Post Build
+(use full path — ${ProjDir}\... often breaks because of trailing backslash):
+
+    cmd /c "C:\Users\Ron\.grok\worktrees\Release-Proficio-MKII-ATU\copy-release.bat"
+
+This is already set in the .cyprj for Debug / DP8051.
+If Creator UI still shows the old line, paste the above and save.
+
+## What gets written
+
+    Release-Proficio-MKII-ATU\Release\
+      Proficio-MKII-ATU.hex / .cyacd
+      Proficio-MKII-ATU-YYYYMMDD.*
+
+## Manual
+
+Double-click:  Release-Proficio-MKII-ATU\copy-release.bat
