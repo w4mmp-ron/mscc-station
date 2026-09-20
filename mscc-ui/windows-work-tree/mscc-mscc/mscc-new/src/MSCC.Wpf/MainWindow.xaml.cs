@@ -91,7 +91,11 @@ public partial class MainWindow : Window
                 {
                     if (e.PropertyName == nameof(RadioState.CurrentBand))
                     {
-                        Dispatcher.BeginInvoke(UpdateBandButtonVisuals);
+                        Dispatcher.BeginInvoke(() =>
+                        {
+                            UpdateBandButtonVisuals();
+                            ApplyWaterfallBankForActiveBand();
+                        });
                     }
                 };
 
@@ -219,6 +223,7 @@ public partial class MainWindow : Window
             return;
         }
         ApplyRadioModelSelection(geminus, fromFirmware: true);
+        ApplyWaterfallBankForActiveBand();
     }
 
     private void ApplyRadioModelSelection(bool nowGeminus, bool fromFirmware)
@@ -347,6 +352,20 @@ public partial class MainWindow : Window
     /// Geminus → LF on, HF grayed.
     /// GEN stays enabled for both (LF GEN presets later).
     /// </summary>
+    /// <summary>
+    /// S/W bank follows CurrentBand (LF 2200/630 vs HF including GEN).
+    /// Does not change RadioModelButton or band gray-out (FW major / cmd-015 owns gating).
+    /// </summary>
+    private void ApplyWaterfallBankForActiveBand()
+    {
+        if (ViewModel == null) return;
+        string band = ViewModel.RadioState.CurrentBand ?? "";
+        bool lf = SpectrumWaterfallSettings.IsLfWaterfallBand(band);
+        SpectrumWaterfallSettings.ApplyWaterfallBankForActiveBand(band);
+        ViewModel.MonitorTextBoxText(
+            lf ? $" S/W follow band {band} → LF bank" : $" S/W follow band {band} → HF bank");
+    }
+
     private void ApplyRadioModelBandGating()
     {
         var panel = this.FindName("BandButtonsPanel") as StackPanel;

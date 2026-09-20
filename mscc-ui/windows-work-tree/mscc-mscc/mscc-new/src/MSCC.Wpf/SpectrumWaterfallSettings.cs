@@ -198,6 +198,21 @@ public static class SpectrumWaterfallSettings
     /// Switch radio model bank: save current live waterfall to the leaving bank,
     /// load the other bank into live + renderer.
     /// </summary>
+    /// <summary>
+    /// Live S/W bank follows the active band: 2200m/630m → LF bank; 160–10 and GEN → HF bank.
+    /// Updates RADIO_MODEL sticky so Save() banks stay coherent. Does not gray band buttons.
+    /// </summary>
+    public static void ApplyWaterfallBankForActiveBand(string? band)
+    {
+        SwitchRadioModelWaterfall(nowGeminus: IsLfWaterfallBand(band));
+    }
+
+    public static bool IsLfWaterfallBand(string? band)
+    {
+        string b = NormalizeBandKey(band ?? "");
+        return b == "2200M" || b == "630M";
+    }
+
     public static void SwitchRadioModelWaterfall(bool nowGeminus)
     {
         if (nowGeminus == RadioModelIsGeminus)
@@ -1234,7 +1249,13 @@ public static class SpectrumWaterfallSettings
 
     private static List<string> GetValidBandPrefixes()
     {
-        return new List<string> { "160M", "80M", "60M", "40M", "30M", "20M", "17M", "15M", "12M", "10M", "GEN" };
+        // Always include LF keys so SaveLastUsed does not refuse/wipe 2200M/630M
+        // when an HF band is saved (not model-gated).
+        return new List<string>
+        {
+            "2200M", "630M",
+            "160M", "80M", "60M", "40M", "30M", "20M", "17M", "15M", "12M", "10M", "GEN"
+        };
     }
 
     private static double ParseIniDouble(string line, double defaultValue)
