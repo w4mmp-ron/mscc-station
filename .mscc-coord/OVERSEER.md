@@ -5,10 +5,9 @@
 
 ## Status
 
-- **Active — cmd-017b (windows-new-hp):** Connect safety also on FrequencyReported (race after cmd-017).
-- **Done — cmd-017:** Full HF/LF S/W banks + LF ship defaults + LAST_HF/LF (retune on FW only — incomplete).
-- **Done — cmd-016:** S/W follows band + LF last-used keys.
-- Next after 017b verify: Remote Digital mic slider.
+- **Verified — cmd-017 / cmd-017b (Stew 2026-09-20):** HF↔LF/MF swap uses 14.000 / 475 kHz defaults; same-radio restart keeps last freq; S/W banks per category. Connect-safety race fixed.
+- **Next:** Remote Digital mic slider (Ron cleared) — WPF first, Avalonia in later block.
+- Factory IQ/freq/power seed: still held unless Stew expands.
 
 ## Coord workflow
 

@@ -4,21 +4,20 @@
 |--|--|
 | **Host** | NEW-HP-LAPTOP (Windows) |
 | **Checkout** | `C:\Users\n8vet\OneDrive\Documents\GitHub\mscc-station` |
-| **Build** | **cmd-017b** |
+| **Build** | idle |
 | **Last command id** | cmd-017b |
-| **State** | done |
+| **State** | done (Stew verified) |
 | **Updated** | 2026-09-20 |
 
 ## ACK log
 
 | command id | state | note |
 |------------|-------|------|
-| cmd-017b | done | WPF 9.20.4 FrequencyReported → same RetuneIfIllegal; no RememberLast on report |
-| cmd-017 | done | Full HF/LF S/W banks + LAST_HF/LF; FW-only retune |
-| cmd-016 | done | S/W follows band; 2200M/630M last-used kept |
+| cmd-017b | done | FrequencyReported connect-safety; Stew verified |
+| cmd-017 | done | HF/LF S/W banks + LAST_HF/LF; Stew verified |
+| cmd-016 | done | S/W follows band; LF last-used keys |
+| cmd-015 | done | Band gate from FW major |
 
 ## Notes
 
-FrequencyReportedForConnectSafety → MainWindow. Skips if FirmwareVersion "--". Same RetuneIfIllegalForRadioPersonality (1.8 MHz / LAST_*). No RememberLast on server freq report.
-
-WPF **9.20.4** in `C:\mscc-net9`.
+Stew: category swap defaults 14.000/475k fine; same-radio restart remembers; S/W saved by category. Next candidate: Remote Digital mic slider.
