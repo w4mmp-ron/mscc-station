@@ -262,8 +262,8 @@ Wire client capture gain (`RemoteAf.MicVolume`) from that slider in digi mode in
 - [x] Geminus Legacy major `224` → `5`, minor → `120` (rebuild + release drop)
 - [x] Ultimus Legacy major `6` (USB product string Ultimus; Creator project name still Proficio-Legacy — rename deferred)
 - [x] Ultimus MKII ATU major `7` + Ultimus MKII PTT major `8` (USB Ultimus; Creator names still Proficio-MKII-* — rename deferred)
-- [ ] Windows ms-sdr packed `0xB2`
-- [ ] Log: Multus radio found
+- [ ] Windows ms-sdr packed `0xB2` (**cmd-009** on NEW-HP)
+- [ ] Log: Multus radio found (**cmd-009**)
 ### Factory cal (server + factory trees)
 - [ ] FW major → product line map
 - [ ] Seed/Reset live `iq.ini` from factory/iq/&lt;line&gt;
@@ -272,7 +272,7 @@ Wire client capture gain (`RemoteAf.MicVolume`) from that slider in digi mode in
 - [ ] Fill factory tables from 2026-09-19 batch (IQ first)
 
 ### Client UX
-- [ ] WindowTitle ATU/PTT block from FW major (3/8=PTT, 4/7=ATU; WPF + Avalonia)
+- [ ] WindowTitle ATU/PTT block from FW major (3/8=PTT, 4/7=ATU; **WPF in cmd-009**; Avalonia later)
 - [ ] Gray bands from major / last-used; S/W follows band; HF/LF-MF button fallback
 - [ ] S/W ship HF + LF/MF defaults (+ Reset); lock LF numbers when Stew confirms
 - [ ] Last-used/favs/stack: keep MF/LF; stop LF wipe on non-Geminus
