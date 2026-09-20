@@ -1,4 +1,4 @@
-﻿# Radio PSoC firmware
+# Radio PSoC firmware
 
 PSoC Creator / Keil trees for Multus radio application firmware. Moved here so the repo root stays cleaner.
 
@@ -12,11 +12,11 @@ PSoC Creator / Keil trees for Multus radio application firmware. Moved here so t
 | `Proficio-MKII-PTT/` | Proficio MKII PTT | **3** |
 | `Proficio-MKII-ATU/` | Proficio MKII ATU | **4** |
 | `Proficio-bootloader/` | Shared Proficio Creator bootloader project | (LOADER; MiniProg3 only) |
-| `Geminus-Legacy/` | Geminus Legacy | **224** (planned → **5**) |
+| `Geminus-Legacy/` | Geminus Legacy | **5** |
 | `Geminus-MKII/` | Geminus MKII | **2** |
-| `Ultimus-Legacy/` | Ultimus Legacy — **clone of Proficio-Legacy**; still Proficio project names inside | still **1** until Build retargets → **6** |
-| `Ultimus-MKII-PTT/` | Ultimus MKII PTT — clone of Proficio-MKII-PTT | still **3** until retarget → **8** |
-| `Ultimus-MKII-ATU/` | Ultimus MKII ATU — clone of Proficio-MKII-ATU | still **4** until retarget → **7** |
+| `Ultimus-Legacy/` | Ultimus Legacy — clone of Proficio-Legacy; Creator project still named Proficio-Legacy | **6** |
+| `Ultimus-MKII-PTT/` | Ultimus MKII PTT — clone of Proficio-MKII-PTT; Creator project still named Proficio-MKII-PTT | **8** |
+| `Ultimus-MKII-ATU/` | Ultimus MKII ATU — clone of Proficio-MKII-ATU; Creator project still named Proficio-MKII-ATU | **7** |
 | `release/<RadioName>/` | Post-build drop for shipping `.cyacd` / `.hex` (see `release/README.md`) | — |
 
 Planned major map (client header / factory cal key): **1** Proficio Legacy · **2** Geminus MKII · **3/4** Proficio MKII PTT/ATU · **5** Geminus Legacy · **6** Ultimus Legacy · **7** Ultimus MKII ATU · **8** Ultimus MKII PTT.
@@ -36,7 +36,19 @@ Field flash notes: each Proficio tree still has `STEW-FIRMWARE-UPDATE.md`.
 
 `proficio-stm32f411-*`, Solidus, etc. stay at **repo root** — not PSoC Creator radio apps.
 
-## Next for Grok Build
+## Status (2026-09-20)
 
-See **`GROK-BUILD-FIRMWARE-MAJORS.md`** in this folder. Do **not** change majors until Stew / Build Commander says go after this layout lands.
+Majors applied and rebuilt on Shack; shipping artifacts under `release/`:
 
+| Radio | Major.Minor |
+|-------|------------:|
+| Proficio Legacy | 1.231 |
+| Geminus MKII | 2.151 |
+| Proficio MKII PTT | 3.232 |
+| Proficio MKII ATU | 4.151 |
+| Geminus Legacy | 5.120 |
+| Ultimus Legacy | 6.231 |
+| Ultimus MKII ATU | 7.151 |
+| Ultimus MKII PTT | 8.232 |
+
+Creator project folders under Ultimus trees are still named `Proficio-*` (rename deferred). See `GROK-BUILD-FIRMWARE-MAJORS.md` for history / related client work.

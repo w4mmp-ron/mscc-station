@@ -31,13 +31,14 @@
 #define FALSE 0   
 #define MAX_COMMAND_QUEUE 50
 
-// Example: Version 117.31 - {Model}{YY}.{[M]M}{Release Number}  (the bytes are reversed)  
-// Model 0-OSB, 1-Proficio 2-Geminus
+// Packed USB version: (MINOR << 8) | MAJOR  (bytes reversed on the wire)
+// Major is the radio identity for MSCC / factory cal:
+//   1 Proficio Legacy · 2 Geminus MKII · 3 Proficio MKII PTT · 4 Proficio MKII ATU
+//   5 Geminus Legacy · 6 Ultimus Legacy · 7 Ultimus MKII ATU · 8 Ultimus MKII PTT
+// Minor is the build/release number (0–255).
 
-
-
-#define FIRMWARE_VERSION_MAJOR 224
-#define FIRMWARE_VERSION_MINOR 12
+#define FIRMWARE_VERSION_MAJOR 5
+#define FIRMWARE_VERSION_MINOR 120
 #define FIRMWARE_VERSION ((((FIRMWARE_VERSION_MINOR) << 8) & 0xff00) | ((FIRMWARE_VERSION_MAJOR) & 0x00ff))
 #define EEPROM_PCB_VERSION_LOCATION 11
         

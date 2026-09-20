@@ -31,14 +31,13 @@
 #define FALSE 0   
 #define MAX_COMMAND_QUEUE 50
 
-// {Model}.{[M]M}{Release Number}  (the bytes are reversed)  
-// Model 0-OSB, 1-Proficio, 2-Geminus,3-MKII-PTT,4-MKII-ATU,5-Proficio-PTT,6-Proficio-ATU
-// Month is the number of months from the starting point of 09/24. 01/25 is 13, 02/25 is 14, etc.
-// Release number is in the range of 0 to 9
+// Packed USB version: (MINOR << 8) | MAJOR  (bytes reversed on the wire)
+// Major is the radio identity for MSCC / factory cal:
+//   1 Proficio Legacy · 2 Geminus MKII · 3 Proficio MKII PTT · 4 Proficio MKII ATU
+//   5 Geminus Legacy · 6 Ultimus Legacy · 7 Ultimus MKII ATU · 8 Ultimus MKII PTT
+// Minor is the build/release number (0–255).
 
-
-
-#define FIRMWARE_VERSION_MAJOR 1
+#define FIRMWARE_VERSION_MAJOR 6
 #define FIRMWARE_VERSION_MINOR 231
 #define FIRMWARE_VERSION ((((FIRMWARE_VERSION_MINOR) << 8) & 0xff00) | ((FIRMWARE_VERSION_MAJOR) & 0x00ff))
 #define EEPROM_PCB_VERSION_LOCATION 11

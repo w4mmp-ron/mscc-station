@@ -1,4 +1,4 @@
-﻿# MSCC — Polish & Factory Calibration Plan
+# MSCC — Polish & Factory Calibration Plan
 
 **Status:** Design / backlog capture (2026-09-19…20). **No implementation until Stew clears** (Ron remote-digital ALC work first, then this list).  
 **Audience:** Build Commander + Grok Build agents.  
@@ -31,22 +31,23 @@ This document freezes decisions from the 2026-09-19 cal / settings discussion an
 
 Shared USB VID/PID (`16C0:05DC`). **Product ID is firmware major** after `srGetVersion` (not the stale “Proficio found” string).
 
-| Major | Product (planned) | Notes |
-|------:|-------------------|--------|
-| 1 | Proficio Legacy | |
-| 2 | Geminus MKII | |
+| Major | Product | Notes |
+|------:|---------|--------|
+| 1 | Proficio Legacy | Shipping |
+| 2 | Geminus MKII | Shipping |
 | 3 | Proficio MKII PTT | Same IQ/freq/QRP factory tables as major 4 |
 | 4 | Proficio MKII ATU | Shared tables with 3 |
-| 5 | Geminus Legacy | Change from current `224` |
-| 6 | 
-| 7 | Ultimus MKII (PTT/ATU) | Shared cal tables per product line |
+| 5 | Geminus Legacy | Done 2026-09-20 (`224` → `5`, minor `120`) |
+| 6 | Ultimus Legacy | Done 2026-09-20 (seed from Proficio Legacy) |
+| 7 | Ultimus MKII ATU | Done 2026-09-20; shared cal tables with major 8 |
+| 8 | Ultimus MKII PTT | Done 2026-09-20; shared cal tables with major 7 |
 | TBD | Maximus | HF+LF in one radio — later |
 
 **PTT vs ATU:** distinct majors for client header; **same** factory `iq.ini` / `freq_cal` / `power_cal` per product line.
 
 **Keil / PSoC builds:** Shack only (sole license).
 
-**Repo layout (later):** `radio-psoc-firmware/` holding Proficio / Geminus / Ultimus trees (ATU|PTT inside).
+**Repo layout:** `radio-psoc-firmware/` on Shack — Proficio / Geminus / Ultimus trees (flat `*-MKII-PTT` / `*-MKII-ATU`), plus `release/<radio>/` for shipping `.cyacd` / `.hex`.
 
 ---
 
@@ -257,12 +258,12 @@ Wire client capture gain (`RemoteAf.MicVolume`) from that slider in digi mode in
 ## 13. Backlog checklist (implement after Ron clear)
 
 ### Firmware / identity (Shack Keil where noted)
-- [ ] Geminus Legacy major `224` → `5`
-- [ ] 
-- [x] `radio-psoc-firmware/` repo move (Shack 2026-09-20: trees under `radio-psoc-firmware/`; 
+- [x] `radio-psoc-firmware/` repo layout (Proficio / Geminus / Ultimus; flat MKII PTT/ATU; `release/` drops) — Shack 2026-09-20
+- [x] Geminus Legacy major `224` → `5`, minor → `120` (rebuild + release drop)
+- [x] Ultimus Legacy major `6` (USB product string Ultimus; Creator project name still Proficio-Legacy — rename deferred)
+- [x] Ultimus MKII ATU major `7` + Ultimus MKII PTT major `8` (USB Ultimus; Creator names still Proficio-MKII-* — rename deferred)
 - [ ] Windows ms-sdr packed `0xB2`
 - [ ] Log: Multus radio found
-
 ### Factory cal (server + factory trees)
 - [ ] FW major → product line map
 - [ ] Seed/Reset live `iq.ini` from factory/iq/&lt;line&gt;
@@ -271,6 +272,7 @@ Wire client capture gain (`RemoteAf.MicVolume`) from that slider in digi mode in
 - [ ] Fill factory tables from 2026-09-19 batch (IQ first)
 
 ### Client UX
+- [ ] WindowTitle ATU/PTT block from FW major (3/8=PTT, 4/7=ATU; WPF + Avalonia)
 - [ ] Gray bands from major / last-used; S/W follows band; HF/LF-MF button fallback
 - [ ] S/W ship HF + LF/MF defaults (+ Reset); lock LF numbers when Stew confirms
 - [ ] Last-used/favs/stack: keep MF/LF; stop LF wipe on non-Geminus
@@ -309,7 +311,8 @@ Wire client capture gain (`RemoteAf.MicVolume`) from that slider in digi mode in
 
 ## Locked 2026-09-20 — Ultimus majors + header ATU/PTT
 
-- **Ultimus Legacy** major **6**
-- **Ultimus MKII ATU** major **7**
-- **Ultimus MKII PTT** major **8** (not the same as ATU — client header must differ)
-- MSCC client title: add an **ATU** or **PTT** block next to `FW: major.minor`, derived from major (also map Proficio **3→PTT**, **4→ATU**). WPF + Avalonia.
+- **Ultimus Legacy** major **6** — done (source + `release/Ultimus-Legacy/`)
+- **Ultimus MKII ATU** major **7** — done
+- **Ultimus MKII PTT** major **8** — done (distinct from ATU for client header)
+- **Geminus Legacy** major **5**, minor **120** — done
+- MSCC client title: add an **ATU** or **PTT** block next to `FW: major.minor`, derived from major (also map Proficio **3→PTT**, **4→ATU**). WPF + Avalonia — still open (UI list).

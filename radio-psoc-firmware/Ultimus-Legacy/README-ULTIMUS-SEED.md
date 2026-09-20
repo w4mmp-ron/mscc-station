@@ -6,7 +6,7 @@ These folders were copied from Proficio so Ultimus can diverge without touching 
 - `Ultimus-MKII-PTT/` ← `Proficio-MKII-PTT/`
 - `Ultimus-MKII-ATU/` ← `Proficio-MKII-ATU/`
 
-Inside you will still see `Proficio-*.cydsn` / `.cywrk` names until Grok Build renames projects and bumps majors (see `../GROK-BUILD-FIRMWARE-MAJORS.md`).
+Creator project is still `Proficio-Legacy.cydsn` / `.cywrk` (rename deferred). Firmware major is **6**; USB product string in generated `USBFS_descr.c` is **Ultimus**. A Creator USB regenerate can restore “Proficio” until the USBFS component catalog string is edited.
 
 After build, copy shipping `.cyacd` / `.hex` to `../release/<this-folder-name>/`.
 

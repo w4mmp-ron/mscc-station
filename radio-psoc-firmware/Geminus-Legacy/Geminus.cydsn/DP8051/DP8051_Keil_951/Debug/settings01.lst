@@ -1,4 +1,4 @@
-C51 COMPILER V9.51   SETTINGS01                                                            09/03/2026 15:23:29 PAGE 1   
+C51 COMPILER V9.51   SETTINGS01                                                            09/20/2026 11:03:12 PAGE 1   
 
 
 C51 COMPILER V9.51, COMPILATION OF MODULE SETTINGS01
@@ -62,7 +62,7 @@ line level    source
   50   1          CyDelay(100);
   51   1          RegPointer = (reg8 *) (CYDEV_EE_BASE + 0u);
   52   1          ee_ppm_int = RegPointer[PPM_INT];
-C51 COMPILER V9.51   SETTINGS01                                                            09/03/2026 15:23:29 PAGE 2   
+C51 COMPILER V9.51   SETTINGS01                                                            09/20/2026 11:03:12 PAGE 2   
 
   53   1          ee_ppm_dec = RegPointer[PPM_DEC];
   54   1          /*if(ee_ppm_int == 0){
@@ -126,7 +126,7 @@ line level    source
  112   1          if(l_audio_channels != Audio_IQ_Channels){
  113   1              critical_section = CyEnterCriticalSection();
  114   1              error = EEPROM_ByteWritePos(Audio_IQ_Channels,0u,AUDIO_CHANNELS);
-C51 COMPILER V9.51   SETTINGS01                                                            09/03/2026 15:23:29 PAGE 3   
+C51 COMPILER V9.51   SETTINGS01                                                            09/20/2026 11:03:12 PAGE 3   
 
  115   1              CyExitCriticalSection(critical_section);
  116   1          }*/
@@ -170,7 +170,7 @@ line level    source
  154              }
  155          
  156          }*/
-C51 COMPILER V9.51   SETTINGS01                                                            09/03/2026 15:23:29 PAGE 4   
+C51 COMPILER V9.51   SETTINGS01                                                            09/20/2026 11:03:12 PAGE 4   
 
 ASSEMBLY LISTING OF GENERATED OBJECT CODE
 
@@ -234,7 +234,7 @@ ASSEMBLY LISTING OF GENERATED OBJECT CODE
                  R     MOV     DPTR,#RegPointer
                        MOV     A,#080H
                        MOVX    @DPTR,A
-C51 COMPILER V9.51   SETTINGS01                                                            09/03/2026 15:23:29 PAGE 5   
+C51 COMPILER V9.51   SETTINGS01                                                            09/20/2026 11:03:12 PAGE 5   
 
                        INC     DPTR
                        CLR     A
@@ -298,7 +298,7 @@ ASSEMBLY LISTING OF GENERATED OBJECT CODE
                        MOV     R5,A
                  E     CALL    _EEPROM_StartWrite
                                            ; SOURCE LINE # 83
-C51 COMPILER V9.51   SETTINGS01                                                            09/03/2026 15:23:29 PAGE 6   
+C51 COMPILER V9.51   SETTINGS01                                                            09/20/2026 11:03:12 PAGE 6   
 
                        CLR     A
                  E     MOV     DPTR,#E_PPM_needs_updated
@@ -362,7 +362,7 @@ ASSEMBLY LISTING OF GENERATED OBJECT CODE
                        MOVX    A,@DPTR
                  R     MOV     DPTR,#l_calibration_dec
                        MOVX    @DPTR,A
-C51 COMPILER V9.51   SETTINGS01                                                            09/03/2026 15:23:29 PAGE 7   
+C51 COMPILER V9.51   SETTINGS01                                                            09/20/2026 11:03:12 PAGE 7   
 
                                            ; SOURCE LINE # 106
                  R     MOV     DPTR,#l_calibration_int

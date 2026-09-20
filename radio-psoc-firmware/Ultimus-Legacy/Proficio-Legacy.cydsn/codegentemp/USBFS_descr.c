@@ -392,12 +392,12 @@ const uint8 CYCODE USBFS_STRING_DESCRIPTORS[453u] = {
  (uint8)'s', 0u,(uint8)' ', 0u,(uint8)'S', 0u,(uint8)'D', 0u,(uint8)'R', 0u,
  (uint8)',', 0u,(uint8)'L', 0u,(uint8)'L', 0u,(uint8)'C', 0u,(uint8)'.', 0u,
 /*********************************************************************
-* String Descriptor: "Proficio"
+* String Descriptor: "Ultimus"
 *********************************************************************/
-/* Descriptor Length                       */ 0x12u,
+/* Descriptor Length                       */ 0x10u,
 /* DescriptorType: STRING                  */ 0x03u,
- (uint8)'P', 0u,(uint8)'r', 0u,(uint8)'o', 0u,(uint8)'f', 0u,(uint8)'i', 0u,
- (uint8)'c', 0u,(uint8)'i', 0u,(uint8)'o', 0u,
+ (uint8)'U', 0u,(uint8)'l', 0u,(uint8)'t', 0u,(uint8)'i', 0u,(uint8)'m', 0u,
+ (uint8)'u', 0u,(uint8)'s', 0u
 /*********************************************************************
 * String Descriptor: "www.multus-sdr.com"
 *********************************************************************/

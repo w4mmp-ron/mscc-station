@@ -1,4 +1,4 @@
-C51 COMPILER V9.51   TX                                                                    09/03/2026 15:23:26 PAGE 1   
+C51 COMPILER V9.51   TX                                                                    09/20/2026 11:03:09 PAGE 1   
 
 
 C51 COMPILER V9.51, COMPILATION OF MODULE TX
@@ -62,7 +62,7 @@ line level    source
   50   1                      Control_Write(Control_Read() & ~(CONTROL_LED) | CONTROL_AMP);
   51   1                      state = 11;
   52   1                   }
-C51 COMPILER V9.51   TX                                                                    09/03/2026 15:23:26 PAGE 2   
+C51 COMPILER V9.51   TX                                                                    09/20/2026 11:03:09 PAGE 2   
 
   53   1                 break;
   54   1              case 11:
@@ -100,7 +100,7 @@ line level    source
   85   2          }
   86   1          
   87   1      }
-C51 COMPILER V9.51   TX                                                                    09/03/2026 15:23:26 PAGE 3   
+C51 COMPILER V9.51   TX                                                                    09/20/2026 11:03:09 PAGE 3   
 
 ASSEMBLY LISTING OF GENERATED OBJECT CODE
 
@@ -164,7 +164,7 @@ ASSEMBLY LISTING OF GENERATED OBJECT CODE
                        ANL     A,#0F7H
                        MOV     R7,A
                  E     CALL    _Control_Write
-C51 COMPILER V9.51   TX                                                                    09/03/2026 15:23:26 PAGE 4   
+C51 COMPILER V9.51   TX                                                                    09/20/2026 11:03:09 PAGE 4   
 
                                            ; SOURCE LINE # 72
                  R     MOV     DPTR,#state
@@ -228,7 +228,7 @@ MODULE INFORMATION:   STATIC OVERLAYABLE
    XDATA SIZE       =      3    ----
    PDATA SIZE       =   ----    ----
    DATA SIZE        =   ----    ----
-C51 COMPILER V9.51   TX                                                                    09/03/2026 15:23:26 PAGE 5   
+C51 COMPILER V9.51   TX                                                                    09/20/2026 11:03:09 PAGE 5   
 
    IDATA SIZE       =   ----    ----
    BIT SIZE         =   ----    ----
