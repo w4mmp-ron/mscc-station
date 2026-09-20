@@ -38,7 +38,7 @@ Shared USB VID/PID (`16C0:05DC`). **Product ID is firmware major** after `srGetV
 | 3 | Proficio MKII PTT | Same IQ/freq/QRP factory tables as major 4 |
 | 4 | Proficio MKII ATU | Shared tables with 3 |
 | 5 | Geminus Legacy | Change from current `224` |
-| 6 | Ultimus Legacy (PTT/ATU variants may split majors for UI) | Shared cal tables per product line |
+| 6 | 
 | 7 | Ultimus MKII (PTT/ATU) | Shared cal tables per product line |
 | TBD | Maximus | HF+LF in one radio — later |
 
@@ -97,8 +97,8 @@ factory/
     proficio-mkii/       ← majors 3,4 (shared)
     geminus-legacy/      ← major 5 (provisional: from Geminus MKII + pad)
     geminus-mkii/        ← major 2
-    ultimus-legacy/      ← major 6 line
-    ultimus-mkii/        ← major 7 line
+    
+    
 ```
 
 (Exact folder names flexible; could also extend existing `rev-*` with a major→rev map.)
@@ -258,8 +258,8 @@ Wire client capture gain (`RemoteAf.MicVolume`) from that slider in digi mode in
 
 ### Firmware / identity (Shack Keil where noted)
 - [ ] Geminus Legacy major `224` → `5`
-- [ ] Ultimus Legacy / MKII PSoC trees + majors (PTT/ATU); shared cal per line
-- [x] `radio-psoc-firmware/` repo move (Shack 2026-09-20: trees under `radio-psoc-firmware/`; Ultimus seeded from Proficio; majors Build doc in folder)
+- [ ] 
+- [x] `radio-psoc-firmware/` repo move (Shack 2026-09-20: trees under `radio-psoc-firmware/`; 
 - [ ] Windows ms-sdr packed `0xB2`
 - [ ] Log: Multus radio found
 
@@ -307,3 +307,9 @@ Wire client capture gain (`RemoteAf.MicVolume`) from that slider in digi mode in
 
 *End of plan capture. Update this file when decisions change; keep numeric tables out of git until factory trees are filled intentionally.*
 
+## Locked 2026-09-20 — Ultimus majors + header ATU/PTT
+
+- **Ultimus Legacy** major **6**
+- **Ultimus MKII ATU** major **7**
+- **Ultimus MKII PTT** major **8** (not the same as ATU — client header must differ)
+- MSCC client title: add an **ATU** or **PTT** block next to `FW: major.minor`, derived from major (also map Proficio **3→PTT**, **4→ATU**). WPF + Avalonia.
