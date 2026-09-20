@@ -1,10 +1,45 @@
 commands:
-  - id: cmd-012
+  - id: cmd-013
+    created: "2026-09-20T14:16:00-04:00"
+    target: [ubuntu-stew]
+    role: server
+    action: linux-ms-sdr-reack-resend-fw-core
+    status_hint: pending
+    detail: |
+      Host: ubuntu-stew (stew-HP). Checkout: /home/stew/Documents/GitHub/mscc-station
+      Orders on this host after pull (already pulled).
+
+      ## Goal
+      Same as proven Pi cmd-012: on CMD_CHECK_GUI_STATUS "Session owner re-ack",
+      re-send packed FW (0xB2) + Core (0xB3) + status. Do not Session_Claim again.
+
+      Reference (already on main): rpi/ms-sdr-linux/source/main-controller.c owner re-ack block.
+      Apply the same change to: linux/ms-sdr-linux/source/main-controller.c
+      (Ubuntu tree still has ack-only re-ack.)
+
+      ## Steps
+      1) Port the Pi re-ack block into linux/ms-sdr-linux/source/main-controller.c
+         (packed fallback, Gui_send 0xB2, Gui_send 0xB3, status 1, log line).
+      2) Rebuild Ubuntu ms-sdr into $HOME/mscc:
+           ./linux-build/mscc-linux.sh build
+         or: cd linux/ms-sdr-linux && make clean && make (and install as Stew normally does).
+         VERSION_MINOR may auto-bump.
+      3) Restart local servers; verify:
+         - Cold Connect → header OK
+         - Disconnect client only, reconnect (servers up) → FW + ATU/PTT still show
+         - Log: owner re-ack + FW packed
+      4) ACK .mscc-coord/status/ubuntu-stew.md. Commit linux/ms-sdr change (+ binary
+         only if this host tracks it in-repo — usually $HOME/mscc is outside git).
+         Stew pushes.
+
+      Out of scope: rpi/ (done), Windows ms-sdr (next), client UI ask-if-missing.
+
+- id: cmd-012
     created: "2026-09-20T14:05:00-04:00"
     target: [rpi]
     role: server
     action: ms-sdr-reack-resend-fw-core
-    status_hint: pending
+    status_hint: done
     detail: |
       Host: rpi. Checkout: /home/pi/src/mscc-station
       Orders on this host (no pull required).

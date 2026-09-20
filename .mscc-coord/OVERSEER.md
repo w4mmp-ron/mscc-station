@@ -5,9 +5,9 @@
 
 ## Status
 
-- **Active — cmd-012 (rpi):** ms-sdr owner re-ack re-sends packed FW (`0xB2`) + Core (`0xB3`) so client reconnect keeps header radio identity.
-- Follow-on: same fix on Ubuntu `linux/ms-sdr-linux`, then Windows ms-sdr. Client “ask if missing” in next UI block.
-- **Done — cmd-011:** Avalonia 0.6.57 arm64 kit.
+- **Active — cmd-013 (ubuntu-stew):** Port Pi cmd-012 — `linux/ms-sdr-linux` owner re-ack re-sends packed FW (`0xB2`) + Core (`0xB3`).
+- **Done — cmd-012 (rpi):** same fix; Core 3.167; Stew verified multi-reconnect Shack→Pi.
+- Next after Ubuntu: Windows ms-sdr. Client “ask if missing” later UI block.
 
 ## Coord workflow
 
