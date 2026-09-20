@@ -1,4 +1,4 @@
-﻿# MSCC — Factory Calibration Numbers (on-hand batch)
+# MSCC — Factory Calibration Numbers (on-hand batch)
 
 **Date captured:** 2026-09-19 (Shack, live `%LocalAppData%\MSCC-NET9\`)  
 **Companion plan:** `MSCC-POLISH-AND-FACTORY-PLAN.md` (load trees / decisions)  
@@ -139,6 +139,23 @@ Copy Geminus MKII `power_cal` with a small pad down per band (TX path ≈ MKII).
 
 ---
 
+
+## 3b. Ship `power_cal` (Stew 2026-09-20) — measured **minus 3**
+
+Clamp at 0. **No PIN** branch. User fine-tunes up from these.
+
+| Line | POWER_LEVEL (10…160[,630,2200]) |
+|------|----------------------------------|
+| geminus-mkii / geminus-legacy | 29,18,18,18,22,16,15,16,16,30,37,44 |
+| proficio-mkii | 55,34,29,35,29,48,28,31,32,46,0,0 |
+| ultimus-legacy | 32,24,21,25,20,21,24,22,49,51,0,0 |
+| ultimus-mkii | 27,18,18,17,21,15,14,17,16,39,0,0 |
+| proficio-legacy (stock only) | 36,29,25,34,20,33,33,31,31,45,0,0 |
+
+PIN-mod tables remain in §3.5 for historical reference only — **do not ship**.
+
+---
+
 ## 4. Which ini → which factory branch
 
 ```
@@ -151,7 +168,7 @@ power_cal.ini            ←  factory/power/<line>/power_cal.ini
 
 | Product line | FW majors (planned) | IQ source row | Freq source | Power source |
 |--------------|---------------------|---------------|-------------|--------------|
-| proficio-legacy | 1 | §2.6 stock (PIN §2.5 IQ-only backup) | §1 stock +22 (PIN −21 ref) | §3.6 stock only |
+| proficio-legacy | 1 | §2.6 stock only (**no PIN**) | §1 stock +22 | §3b ship (−3 from §3.6) |
 | proficio-mkii | 3, 4 | §2.2 | ~0 | §3.2 |
 | geminus-mkii | 2 | §2.1 | ~0 / +2 | §3.1 |
 | geminus-legacy | 5 | §2.1 + pad | +22…+23 provisional | §3.1 + pad |
