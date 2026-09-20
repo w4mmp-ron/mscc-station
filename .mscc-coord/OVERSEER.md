@@ -5,10 +5,10 @@
 
 ## Status
 
-- **Active — cmd-017 (windows-new-hp):** Complete HF/LF S/W banks (baseline+grid+waterfall), LF ship defaults not washed, LAST_HF/LAST_LF connect defaults (14.000 / 475 kHz).
-- **Done — cmd-016:** S/W follows band + keep 2200/630 last-used keys.
-- **Unlocked:** Remote Digital mic slider — after 017.
-- Factory IQ/freq/power seed: still held unless Stew expands.
+- **Active — cmd-017b (windows-new-hp):** Connect safety also on FrequencyReported (race after cmd-017).
+- **Done — cmd-017:** Full HF/LF S/W banks + LF ship defaults + LAST_HF/LF (retune on FW only — incomplete).
+- **Done — cmd-016:** S/W follows band + LF last-used keys.
+- Next after 017b verify: Remote Digital mic slider.
 
 ## Coord workflow
 
