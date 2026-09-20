@@ -47,7 +47,10 @@ public partial class MainWindow : Window
             // All client settings (including connection) now load from MSCC_Client.ini.
             DataContext = new MainViewModel();
             if (ViewModel != null)
+            {
                 ViewModel.FirmwarePersonalityFromRadio += OnFirmwarePersonalityFromRadio;
+                ViewModel.FrequencyReportedForConnectSafety += OnFrequencyReportedForConnectSafety;
+            }
 
             // Load client settings (MSCC_Client.ini) at startup (spectrum, window, time display, etc.).
             SpectrumWaterfallSettings.Load();
@@ -198,6 +201,19 @@ public partial class MainWindow : Window
         string current = btn.Content?.ToString() ?? "Proficio";
         bool nowGeminus = !current.Equals("Geminus", StringComparison.OrdinalIgnoreCase);
         ApplyRadioModelSelection(nowGeminus, fromFirmware: false);
+    }
+
+    private void OnFrequencyReportedForConnectSafety()
+    {
+        if (!Dispatcher.CheckAccess())
+        {
+            Dispatcher.BeginInvoke(OnFrequencyReportedForConnectSafety);
+            return;
+        }
+        if (ViewModel == null) return;
+        if (!MainViewModel.TryParseFirmwareMajor(ViewModel.FirmwareVersion, out _))
+            return;
+        RetuneIfIllegalForRadioPersonality(IsGeminusModelSelected());
     }
 
     private void OnFirmwarePersonalityFromRadio(string firmwareVersion)
@@ -1018,6 +1034,7 @@ public partial class MainWindow : Window
                 vm.RadioService.CalDeltaReported -= OnCalDeltaReported;
 
                 vm.FirmwarePersonalityFromRadio -= OnFirmwarePersonalityFromRadio;
+                vm.FrequencyReportedForConnectSafety -= OnFrequencyReportedForConnectSafety;
                 vm.MonitorTextBoxText(
                     " MainWindow_Closing: Dispose VM (STOP only if this client launched backends; connect-only leaves servers running)");
                 vm.Dispose();

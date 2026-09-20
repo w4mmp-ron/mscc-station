@@ -1314,6 +1314,9 @@ public partial class MainViewModel : ObservableObject, IDisposable
     /// <summary>Fired on UI when 0xB2 firmware string updates (major.minor).</summary>
     public event Action<string>? FirmwarePersonalityFromRadio;
 
+    /// <summary>Fired after FrequencyReported paints VFO (connect-safety race if FW already known).</summary>
+    public event Action? FrequencyReportedForConnectSafety;
+
     /// <summary>ATU for FW majors 4/7, PTT for 3/8; otherwise omit.</summary>
     internal static string FirmwareBlockSuffix(string firmwareVersion)
     {
@@ -5341,8 +5344,9 @@ public partial class MainViewModel : ObservableObject, IDisposable
             RadioState.ActiveVfo.FrequencyHz = freq;
             // CAT / radio band change updates VFO but used to leave the gold band button stale.
             SyncBandHighlightFromFrequency(freq);
-            // Do NOT save last-used or send anything here: this is a server report (ms_sdr push).
+            // Do NOT save last-used or RememberLast on this path (would sticky illegal host freq).
             MonitorTextBoxText($" Frequency reported from backend: {freq}");
+            FrequencyReportedForConnectSafety?.Invoke();
         };
 
         svc.ModeReported += mode =>
