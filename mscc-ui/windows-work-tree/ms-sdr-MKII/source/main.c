@@ -1209,6 +1209,7 @@ int main(int argc, char **argv) {
             print_time(0);
             fprintf(G_fp_logfile, "[%d] main . srGetVersion returned Transceiver Firmware Version: %d.%d \n",
                     line_number++, G_major_version, G_minor_version);
+            Factory_seed_live_inis();
             if (G_major_version >= MULTUS_MAJOR_VERSION_119 && G_minor_version >= MULTUS_MINOR_VERSION_81) {
                 print_time(0);
                 fprintf(G_fp_logfile, "[%d] main . Firmware OK. \n", line_number++);

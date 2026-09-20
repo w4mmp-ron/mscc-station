@@ -527,6 +527,8 @@ extern BOOL G_process_user_control_status;
 extern int Init_PPM();
 extern int Freq_Set_Transceiver_Calibration(int int_part,int dec_part);
 extern int Create_PPM_ini();
+extern void Factory_seed_live_inis(void);
+extern const char *Factory_line_from_major(int major);
 extern INT8 G_int;
 extern INT8 G_dec;
 extern INT16 G_current_int;

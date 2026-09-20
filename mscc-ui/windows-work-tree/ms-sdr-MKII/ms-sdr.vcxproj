@@ -63,13 +63,15 @@
     </PreBuildEvent>
     <PostBuildEvent>
       <Command>
-xcopy /y /f "$(ProjectDir)LIBS\pthreadVC2.dll"  "$(OutDir)"</Command>
+xcopy /y /f "$(ProjectDir)LIBS\pthreadVC2.dll"  "$(OutDir)"
+xcopy /e /i /y "$(ProjectDir)..\..\..\factory" "$(OutDir)factory"</Command>
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClInclude Include="source\cw.h" />
     <ClInclude Include="source\display-driver.h" />
     <ClInclude Include="source\extern.h" />
+    <ClInclude Include="source\factory_seed.h" />
     <ClInclude Include="source\hr50.h" />
     <ClInclude Include="source\iambino.h" />
     <ClInclude Include="source\iq.h" />
@@ -91,6 +93,7 @@ xcopy /y /f "$(ProjectDir)LIBS\pthreadVC2.dll"  "$(OutDir)"</Command>
     <ClCompile Include="source\calibrate.c" />
     <ClCompile Include="source\comm-port.c" />
     <ClCompile Include="source\crc.c" />
+    <ClCompile Include="source\factory_seed.c" />
     <ClCompile Include="source\cw-snap.c" />
     <ClCompile Include="source\freq_queue.c" />
     <ClCompile Include="source\iq.c" />

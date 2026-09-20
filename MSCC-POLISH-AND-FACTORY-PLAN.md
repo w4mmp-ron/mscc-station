@@ -265,11 +265,11 @@ Wire client capture gain (`RemoteAf.MicVolume`) from that slider in digi mode in
 - [x] Windows ms-sdr packed `0xB2` (cmd-009 / `9e03bb1` — NEW-HP; live OK Ultimus MKII ATU FW 7.151)
 - [x] Log: Multus radio found (cmd-009)
 ### Factory cal (server + factory trees)
-- [ ] FW major → product line map
-- [ ] Seed/Reset live `iq.ini` from factory/iq/&lt;line&gt;
-- [ ] Seed/Reset live `freq_cal.ini` from factory/freq/&lt;line&gt;
-- [ ] Seed/Reset live `power_cal.ini` from factory/power/&lt;line&gt; (per-band, below measured)
-- [ ] Fill factory tables from 2026-09-19 batch (IQ first)
+- [x] FW major → product line map (cmd-018)
+- [x] Seed/Reset live `iq.ini` from factory/iq/&lt;line&gt; (Windows ms-sdr; Linux/Pi later)
+- [x] Seed/Reset live `freq_cal.ini` from factory/freq/&lt;line&gt;
+- [x] Seed/Reset live `power_cal.ini` from factory/power/&lt;line&gt; (QRP measured−3; no PIN)
+- [x] Fill factory tables from 2026-09-19 batch + §3b ship QRP (cmd-018)
 
 ### Client UX
 - [x] WindowTitle ATU/PTT block from FW major (3/8=PTT, 4/7=ATU; **WPF done cmd-009**; Avalonia **cmd-010** on ubuntu-stew)

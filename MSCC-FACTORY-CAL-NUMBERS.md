@@ -152,7 +152,11 @@ Clamp at 0. **No PIN** branch. User fine-tunes up from these.
 | ultimus-mkii | 27,18,18,17,21,15,14,17,16,39,0,0 |
 | proficio-legacy (stock only) | 36,29,25,34,20,33,33,31,31,45,0,0 |
 
-PIN-mod tables remain in §3.5 for historical reference only — **do not ship**.
+These values are in `factory/power/<line>/power_cal.ini` (cmd-018). PIN-mod tables remain in §3.5 for historical reference only — **do not ship**.
+
+**PIN is not in `factory/`.** `proficio-legacy` is stock no-PIN only.
+
+HF-only lines use LF IQ_OFFSET=0 and POWER_LEVEL=0 (no Geminus leftover −31/−34).
 
 ---
 
