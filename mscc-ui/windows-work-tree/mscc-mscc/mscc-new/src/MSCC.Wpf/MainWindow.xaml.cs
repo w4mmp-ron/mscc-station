@@ -46,6 +46,8 @@ public partial class MainWindow : Window
             // (the folder containing this exe, typically C:\mscc-net9 after build copy).
             // All client settings (including connection) now load from MSCC_Client.ini.
             DataContext = new MainViewModel();
+            if (ViewModel != null)
+                ViewModel.FirmwarePersonalityFromRadio += OnFirmwarePersonalityFromRadio;
 
             // Load client settings (MSCC_Client.ini) at startup (spectrum, window, time display, etc.).
             SpectrumWaterfallSettings.Load();
@@ -191,19 +193,50 @@ public partial class MainWindow : Window
         if (sender is not Button btn) return;
         string current = btn.Content?.ToString() ?? "Proficio";
         bool nowGeminus = !current.Equals("Geminus", StringComparison.OrdinalIgnoreCase);
-        btn.Content = nowGeminus ? "Geminus" : "Proficio";
-        // Swap HF/LF waterfall banks (High/Low/Gain/Zero/Palette) before gating
+        ApplyRadioModelSelection(nowGeminus, fromFirmware: false);
+    }
+
+    private void OnFirmwarePersonalityFromRadio(string firmwareVersion)
+    {
+        if (!Dispatcher.CheckAccess())
+        {
+            Dispatcher.BeginInvoke(() => OnFirmwarePersonalityFromRadio(firmwareVersion));
+            return;
+        }
+        ApplyRadioModelFromFirmware(firmwareVersion);
+    }
+
+    /// <summary>
+    /// Map 0xB2 major to Geminus/Proficio band gating. Unknown / "--" leaves INI last-used.
+    /// </summary>
+    private void ApplyRadioModelFromFirmware(string firmwareVersion)
+    {
+        if (!MainViewModel.TryParseFirmwareMajor(firmwareVersion, out int major))
+            return;
+        if (!MainViewModel.TryFirmwareMajorToGeminus(major, out bool geminus))
+        {
+            ViewModel?.MonitorTextBoxText($" Radio model: FW {firmwareVersion} major {major} unknown — keep last-used gating");
+            return;
+        }
+        ApplyRadioModelSelection(geminus, fromFirmware: true);
+    }
+
+    private void ApplyRadioModelSelection(bool nowGeminus, bool fromFirmware)
+    {
+        var btn = this.FindName("RadioModelButton") as Button;
+        if (btn != null)
+            btn.Content = nowGeminus ? "Geminus" : "Proficio";
         SpectrumWaterfallSettings.SwitchRadioModelWaterfall(nowGeminus);
         ApplyRadioModelBandGating();
-        // GEN/USER list is model-specific (HF beacons vs LF freq-cal carriers)
-        SyncGenButtonForRadioModel(retuneIfOnGen: true);
+        SyncGenButtonForRadioModel(retuneIfOnGen: !fromFirmware);
         if (ViewModel != null)
         {
             ViewModel.IsGeminusRadioModel = nowGeminus;
+            string how = fromFirmware ? "from FW" : "manual";
             ViewModel.MonitorTextBoxText(
                 nowGeminus
-                    ? " Radio model: Geminus — LF waterfall bank; HF grayed; 2200/630 on"
-                    : " Radio model: Proficio — HF waterfall bank; LF grayed; GEN=WWV/CHU/RWM/USER");
+                    ? $" Radio model: Geminus ({how}) — LF waterfall bank; HF grayed; 2200/630 on"
+                    : $" Radio model: Proficio ({how}) — HF waterfall bank; LF grayed; GEN=WWV/CHU/RWM/USER");
         }
     }
 
@@ -934,6 +967,7 @@ public partial class MainWindow : Window
                 vm.RadioService.CalStatusReported -= OnCalStatusReported;
                 vm.RadioService.CalDeltaReported -= OnCalDeltaReported;
 
+                vm.FirmwarePersonalityFromRadio -= OnFirmwarePersonalityFromRadio;
                 vm.MonitorTextBoxText(
                     " MainWindow_Closing: Dispose VM (STOP only if this client launched backends; connect-only leaves servers running)");
                 vm.Dispose();

@@ -1311,14 +1311,13 @@ public partial class MainViewModel : ObservableObject, IDisposable
         }
     }
 
+    /// <summary>Fired on UI when 0xB2 firmware string updates (major.minor).</summary>
+    public event Action<string>? FirmwarePersonalityFromRadio;
+
     /// <summary>ATU for FW majors 4/7, PTT for 3/8; otherwise omit.</summary>
     internal static string FirmwareBlockSuffix(string firmwareVersion)
     {
-        if (string.IsNullOrWhiteSpace(firmwareVersion) || firmwareVersion == "--")
-            return "";
-        int dot = firmwareVersion.IndexOf('.');
-        string majs = dot >= 0 ? firmwareVersion.Substring(0, dot) : firmwareVersion;
-        if (!int.TryParse(majs, out int major))
+        if (!TryParseFirmwareMajor(firmwareVersion, out int major))
             return "";
         return major switch
         {
@@ -1326,6 +1325,42 @@ public partial class MainViewModel : ObservableObject, IDisposable
             4 or 7 => "ATU",
             _ => ""
         };
+    }
+
+    internal static bool TryParseFirmwareMajor(string firmwareVersion, out int major)
+    {
+        major = 0;
+        if (string.IsNullOrWhiteSpace(firmwareVersion) || firmwareVersion == "--")
+            return false;
+        int dot = firmwareVersion.IndexOf('.');
+        string majs = dot >= 0 ? firmwareVersion.Substring(0, dot) : firmwareVersion;
+        return int.TryParse(majs, out major);
+    }
+
+    /// <summary>
+    /// Band personality from FW major. 2/5 Geminus (LF); 1/3/4/6/7/8 Proficio-family (HF).
+    /// Unknown major: false and returns false (keep last-used INI).
+    /// </summary>
+    internal static bool TryFirmwareMajorToGeminus(int major, out bool geminus)
+    {
+        switch (major)
+        {
+            case 2:
+            case 5:
+                geminus = true;
+                return true;
+            case 1:
+            case 3:
+            case 4:
+            case 6:
+            case 7:
+            case 8:
+                geminus = false;
+                return true;
+            default:
+                geminus = false;
+                return false;
+        }
     }
 
     partial void OnDisplayVersionChanged(string value) => OnPropertyChanged(nameof(WindowTitle));
@@ -5579,6 +5614,7 @@ public partial class MainViewModel : ObservableObject, IDisposable
         {
             FirmwareVersion = v;
             MonitorTextBoxText($" FW (firmware) version: {v}");
+            FirmwarePersonalityFromRadio?.Invoke(v);
         };
 
         svc.ServerKeepAliveLost += () =>
