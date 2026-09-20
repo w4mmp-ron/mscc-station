@@ -15,12 +15,13 @@ PSoC Creator / Keil trees for Multus radio application firmware. Moved here so t
 | `Geminus-Legacy/` | Geminus Legacy | **224** (planned → **5**) |
 | `Geminus-MKII/` | Geminus MKII | **2** |
 | `Ultimus-Legacy/` | Ultimus Legacy — **clone of Proficio-Legacy**; still Proficio project names inside | still **1** until Build retargets → **6** |
-| `Ultimus-MKII/PTT/` | Ultimus MKII PTT — clone of Proficio-MKII-PTT | still **3** until → **6** or product plan |
-| `Ultimus-MKII/ATU/` | Ultimus MKII ATU — clone of Proficio-MKII-ATU | still **4** until → **7** |
+| `Ultimus-MKII-PTT/` | Ultimus MKII PTT — clone of Proficio-MKII-PTT | still **3** until retarget |
+| `Ultimus-MKII-ATU/` | Ultimus MKII ATU — clone of Proficio-MKII-ATU | still **4** until retarget → **7** (confirm with Stew) |
+| `release/<RadioName>/` | Post-build drop for shipping `.cyacd` / `.hex` (see `release/README.md`) | — |
 
 Planned major map (client header / factory cal key): **1** Proficio Legacy · **2** Geminus MKII · **3/4** Proficio MKII PTT/ATU · **5** Geminus Legacy · **6** Ultimus Legacy · **7** Ultimus MKII (exact PTT vs ATU split for Ultimus majors — see `GROK-BUILD-FIRMWARE-MAJORS.md`).
 
-Application `.cyacd` for USB HID upload lives under each tree’s `Release/` after Creator build + `copy-release`.
+Application `.cyacd` for USB HID upload is produced under each source tree’s `Release/` after Creator build + `copy-release`. **Build then copies** the shipping `.cyacd` and `.hex` into `release/<RadioName>/`.
 
 ## Upload tools (not this folder)
 
