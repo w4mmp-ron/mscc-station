@@ -1444,11 +1444,23 @@ void * Command_Processor(void *my_param) {
                 /* Single-session lock: only one client may complete the handshake. */
                 if (G_client_session_active) {
                     if (Session_Is_Owner(&si_other)) {
-                        /* Owner re-poll (e.g. reconnect while session still held): ack only. */
+                        /* Owner re-poll (reconnect while session still held):
+                         * re-send packed FW (0xB2) + Core (0xB3) + status.
+                         * Do not Session_Claim again. */
                         print_time(0);
                         fprintf(G_fp_logfile,
                             "[%d] Command_Interface. CMD_CHECK_GUI_STATUS. Session owner re-ack\n",
                             line_number++);
+                        if (G_firmware_version_packed == 0 && (G_major_version || G_minor_version)) {
+                            G_firmware_version_packed =
+                                ((G_minor_version << 8) & 0xff00) | (G_major_version & 0x00ff);
+                        }
+                        fprintf(G_fp_logfile,
+                            "[%d] Command_Interface. owner re-ack FW packed 0x%04X Core %d.%d\n",
+                            line_number++, (unsigned)G_firmware_version_packed,
+                            VERSION_MAJOR, VERSION_MINOR);
+                        Gui_send_param(CMD_GET_SET_FIRMWARE_VERSION, G_firmware_version_packed);
+                        Gui_send_param(CMD_GET_SET_MSSDR_VERSION, VERSION_MS_SDRCORE);
                         Gui_send_param(CMD_GET_SET_MSSDR_STATUS, 1);
                     } else {
                         Session_Reject(&si_other);
