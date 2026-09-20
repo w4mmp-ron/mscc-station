@@ -1481,10 +1481,16 @@ void * Command_Processor(void *my_param) {
                 fprintf(G_fp_logfile, "[%d] Command_Interface. CMD_CHECK_GUI_STATUS. Session claimed. data: %d\n",
                     line_number++, t_opcode_data);
                 print_time(0);
-                fprintf(G_fp_logfile, "[%d] Command_Interface. CMD_SET_FIRMWARE_VERSION: Major: %d, Minor: %d\n",
-                    line_number++, G_major_version, G_minor_version);
-                Gui_send_param(CMD_GET_SET_FIRMWARE_VERSION, G_major_version);
-                Gui_send_param(CMD_GET_SET_FIRMWARE_VERSION, G_minor_version);
+                /* One packed word for client 0xB2 — set in srGetVersion (see G_firmware_version_packed) */
+                if (G_firmware_version_packed == 0 && (G_major_version || G_minor_version)) {
+                    G_firmware_version_packed =
+                        ((G_minor_version << 8) & 0xff00) | (G_major_version & 0x00ff);
+                }
+                fprintf(G_fp_logfile,
+                    "[%d] Command_Interface. CMD_GET_SET_FIRMWARE_VERSION: Major: %d, Minor: %d (packed 0x%04X)\n",
+                    line_number++, G_major_version, G_minor_version,
+                    (unsigned)G_firmware_version_packed);
+                Gui_send_param(CMD_GET_SET_FIRMWARE_VERSION, G_firmware_version_packed);
                 print_time(0);
                 fprintf(G_fp_logfile, "[%d] Command_Interface . CMD_GET_SET_MSSDR_VERSION: Major: %d, Minor: %d\n",
                     line_number++, VERSION_MAJOR, VERSION_MINOR);
@@ -2221,13 +2227,16 @@ void * Command_Processor(void *my_param) {
         //End Frequency Calibration
 
         case CMD_GET_SET_FIRMWARE_VERSION:
-            //ret_status = srGetVersion(&major_version, &minor_version);
             print_time(1);
-            fprintf(G_fp_logfile, "[%d] Command_Interface . CMD_GET_FIRMWARE_VERSION: Major: %d, Minor: %d\n",
-                line_number++, G_major_version, G_minor_version);
-            Gui_send_param(CMD_GET_SET_FIRMWARE_VERSION, G_major_version);
-            Sleep(20);
-            Gui_send_param(CMD_GET_SET_FIRMWARE_VERSION, G_minor_version);
+            if (G_firmware_version_packed == 0 && (G_major_version || G_minor_version)) {
+                G_firmware_version_packed =
+                    ((G_minor_version << 8) & 0xff00) | (G_major_version & 0x00ff);
+            }
+            fprintf(G_fp_logfile,
+                "[%d] Command_Interface . CMD_GET_FIRMWARE_VERSION: Major: %d, Minor: %d (packed 0x%04X)\n",
+                line_number++, G_major_version, G_minor_version,
+                (unsigned)G_firmware_version_packed);
+            Gui_send_param(CMD_GET_SET_FIRMWARE_VERSION, G_firmware_version_packed);
             break;
 
             //Power Calibration 

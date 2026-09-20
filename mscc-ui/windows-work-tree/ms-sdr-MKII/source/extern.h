@@ -405,6 +405,7 @@ extern pthread_mutex_t Display_Queue_Token_available;
 extern pid_t G_main_pid;
 extern int G_major_version;
 extern int G_minor_version;
+extern int G_firmware_version_packed;
 extern const char *homedir;
 extern uint8_t G_Sound_Device; 
 extern int16_t G_spectrum_cycle_count;

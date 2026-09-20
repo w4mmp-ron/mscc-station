@@ -133,15 +133,37 @@ BOOL srGetVersion(int* major, int* minor) {
     r = usbControlMsgIN(CMD_GET_VERSION, 0xA55A, 0, (char*) &iVersion, sizeof (iVersion));
     if (r == 2) {
         if (iVersion != 0xA55A) {
-            *major = (iVersion >> 8) & 0xFF;
-            *minor = iVersion & 0xFF;
+            /*
+             * Target client/Proficio layout (FIRMWARE_VERSION / mscc-client 0xB2):
+             *   packed = (minor << 8) | major   e.g. 3.150 → 0x9603
+             *
+             * Some paths still present pe0fko order on the wire (major high, minor low),
+             * e.g. 0x0397 for 3.151. Detect: model/major is small (≤15), build/minor often large.
+             */
+            unsigned lo = iVersion & 0xFF;
+            unsigned hi = (iVersion >> 8) & 0xFF;
+            if (lo > 15 && hi <= 15) {
+                /* Wire looks like pe0fko: high=major, low=minor */
+                *major = (int)hi;
+                *minor = (int)lo;
+            } else {
+                /* Wire matches Proficio #define: low=major, high=minor */
+                *major = (int)lo;
+                *minor = (int)hi;
+            }
+            G_firmware_version_packed =
+                ((*minor << 8) & 0xff00) | (*major & 0x00ff);
         } else {
             // Echo the number, must be old SAQ firmware?
             *major = 1; //vDG8SAQ
             *minor = 4;
+            G_firmware_version_packed = ((*minor << 8) & 0xff00) | (*major & 0x00ff);
         }
         print_time(0);
-        fprintf(G_fp_logfile, "[%d] srGetVersion - 0xA55A. major: %d, minor: %d\n", line_number++,*major,*minor);
+        fprintf(G_fp_logfile,
+            "[%d] srGetVersion. usb_raw=0x%04X -> major: %d, minor: %d, client_pack=0x%04X\n",
+            line_number++, (unsigned)iVersion, *major, *minor,
+            (unsigned)G_firmware_version_packed);
         return TRUE;
     }
 
@@ -150,6 +172,7 @@ BOOL srGetVersion(int* major, int* minor) {
     if (r == 1 && bVersion != 0xFF) {
         *major = (bVersion >> 4) & 0x0F;
         *minor = bVersion & 0x0F;
+        G_firmware_version_packed = ((*minor << 8) & 0xff00) | (*major & 0x00ff);
         print_time(0);
         fprintf(G_fp_logfile, "[%d] srGetVersion - 0xA55A. major: %d, minor: %d\n", line_number++, *major, *minor);
         return TRUE;
@@ -532,7 +555,7 @@ void* srOpen(int vid, int pid, const TCHAR* pManufacturer, const TCHAR* pProduct
         for (dev = bus->devices; dev; dev = dev->next) {
             if (dev->descriptor.idVendor == vid && dev->descriptor.idProduct == pid) {
                 print_time(0);
-                fprintf(G_fp_logfile, "[%d] srOpen . Proficio found\n", line_number++);
+                fprintf(G_fp_logfile, "[%d] srOpen . Multus radio found\n", line_number++);
                 if ((srUsbHandle = usb_open(dev)) != NULL) {
                     if (iDevNum == -1 || iDevNum == dev->devnum) {
                         if (testUsbString(dev->descriptor.iManufacturer, srUsbInfo.Manufacturer, sizeof (srUsbInfo.Manufacturer), pManufacturer)

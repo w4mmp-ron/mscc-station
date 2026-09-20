@@ -1300,8 +1300,33 @@ public partial class MainViewModel : ObservableObject, IDisposable
     [ObservableProperty] private string _firmwareVersion = "--";
 
     /// <summary>Window title bar: product name + live version trio (was bottom-right VERSIONS panel).</summary>
-    public string WindowTitle =>
-        $"MSCC WPF   ·   MSCC: {DisplayVersion}   Core: {CoreVersion}   FW: {FirmwareVersion}";
+    public string WindowTitle
+    {
+        get
+        {
+            string fw = FirmwareVersion ?? "--";
+            string block = FirmwareBlockSuffix(fw);
+            string title = $"MSCC WPF   ·   MSCC: {DisplayVersion}   Core: {CoreVersion}   FW: {fw}";
+            return string.IsNullOrEmpty(block) ? title : $"{title}   {block}";
+        }
+    }
+
+    /// <summary>ATU for FW majors 4/7, PTT for 3/8; otherwise omit.</summary>
+    internal static string FirmwareBlockSuffix(string firmwareVersion)
+    {
+        if (string.IsNullOrWhiteSpace(firmwareVersion) || firmwareVersion == "--")
+            return "";
+        int dot = firmwareVersion.IndexOf('.');
+        string majs = dot >= 0 ? firmwareVersion.Substring(0, dot) : firmwareVersion;
+        if (!int.TryParse(majs, out int major))
+            return "";
+        return major switch
+        {
+            3 or 8 => "PTT",
+            4 or 7 => "ATU",
+            _ => ""
+        };
+    }
 
     partial void OnDisplayVersionChanged(string value) => OnPropertyChanged(nameof(WindowTitle));
     partial void OnCoreVersionChanged(string value) => OnPropertyChanged(nameof(WindowTitle));

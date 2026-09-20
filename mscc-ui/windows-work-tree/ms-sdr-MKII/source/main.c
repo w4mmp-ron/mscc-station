@@ -112,6 +112,7 @@ uint8_t G_Allow_Log_Write = TRUE;
 uint8_t G_Threads_Started = FALSE;
 int G_major_version = 0;
 int G_minor_version = 0;
+int G_firmware_version_packed = 0;
 char G_l_path[MAX_PATH] = { 0 };
 long t = 0;
 uint8_t G_Sound_Device = 0;
