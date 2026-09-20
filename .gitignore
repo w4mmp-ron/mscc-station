@@ -77,3 +77,7 @@ proficio-stm32f411-25MHz/firmware/pio/.pio/
 proficio-stm32f411-25MHz/**/*.code-workspace
 proficio-stm32f411-25MHz/*.bin
 proficio-stm32f411-25MHz/tools/*.bin
+
+# Separate Black Pill repo (sibling clone under worktrees/)
+psoc-replacement-stm32/
+

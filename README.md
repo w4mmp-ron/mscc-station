@@ -118,22 +118,14 @@ Client UI still needs the **Remote Audio** checkbox (Phones + checked → send *
 |------|--------|
 | `keyer/` | PIC16F18326 sources, memory docs, hex |
 
-### STM32F411 Black Pill (PSoC replacement — in progress)
+### STM32F411 Black Pill (PSoC replacement)
 
-| Path | Notes |
-|------|--------|
-| `proficio-stm32f411-25MHz/` | HSE **25 MHz** tree (recent bring-up commits) |
-| `proficio-stm32f411-8MHz/` | HSE **8 MHz** twin — keep docs in sync until one crystal is chosen |
+Moved to a dedicated repo (not in this tree):
 
-**Pinout (locked on PCB — docs in each tree’s `docs/`):**
+**https://github.com/w4mmp-ron/psoc-replacement-stm32**
 
-| Net | STM32 |
-|-----|--------|
-| **RESET** (PCM3060) | **PA2** |
-| **BOOT** | **PA8** |
-| **USBV+** (sense, ÷ → 3.3 V) | **PA9** |
-
-Start: `docs/STEW-DAUGHTER-BOARD-PINOUT.md` in either STM32 folder. Firmware pin macros are Ron’s follow-up to match that lock.
+Local clone (Ron): `~/.grok/worktrees/psoc-replacement-stm32`  
+Contains `proficio-stm32f411-25MHz/` (production) and `proficio-stm32f411-8MHz/` (lab).
 
 ---
 
