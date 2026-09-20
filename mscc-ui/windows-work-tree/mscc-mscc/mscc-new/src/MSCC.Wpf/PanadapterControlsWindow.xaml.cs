@@ -441,7 +441,7 @@ public partial class PanadapterControlsWindow : Window
         int val = SpectrumColorSettings.SpectrumBaseline - 5;
         SpectrumColorSettings.SetBaseline(val);
         SpectrumWaterfallSettings.SpectrumBaseline = val;
-        SpectrumWaterfallSettings.Save();
+        SpectrumWaterfallSettings.SaveLiveWaterfallAndActiveBank();
         if (BaselineSlider != null) BaselineSlider.Value = val;
     }
 
@@ -450,7 +450,7 @@ public partial class PanadapterControlsWindow : Window
         int val = SpectrumColorSettings.SpectrumBaseline + 5;
         SpectrumColorSettings.SetBaseline(val);
         SpectrumWaterfallSettings.SpectrumBaseline = val;
-        SpectrumWaterfallSettings.Save();
+        SpectrumWaterfallSettings.SaveLiveWaterfallAndActiveBank();
         if (BaselineSlider != null) BaselineSlider.Value = val;
     }
 
@@ -459,7 +459,7 @@ public partial class PanadapterControlsWindow : Window
         int val = (int)e.NewValue;
         SpectrumColorSettings.SetBaseline(val);
         SpectrumWaterfallSettings.SpectrumBaseline = val;
-        SpectrumWaterfallSettings.Save();
+        SpectrumWaterfallSettings.SaveLiveWaterfallAndActiveBank();
     }
 
     private void DbCalLeft_Click(object sender, RoutedEventArgs e) =>
@@ -479,7 +479,7 @@ public partial class PanadapterControlsWindow : Window
     {
         SpectrumColorSettings.SetSpectrumDbCalRelative(relativeDb);
         SpectrumWaterfallSettings.SpectrumDbOffset = SpectrumColorSettings.SpectrumDbOffset;
-        SpectrumWaterfallSettings.Save();
+        SpectrumWaterfallSettings.SaveLiveWaterfallAndActiveBank();
         float rel = SpectrumColorSettings.GetSpectrumDbCalRelative();
         if (DbCalSlider != null && Math.Abs(DbCalSlider.Value - rel) > 0.01)
         {
@@ -514,7 +514,7 @@ public partial class PanadapterControlsWindow : Window
         SpectrumColorSettings.SetSpectrumGrid(maxDb, minDb);
         SpectrumWaterfallSettings.SpectrumGridMax = SpectrumColorSettings.SpectrumGridMax;
         SpectrumWaterfallSettings.SpectrumGridMin = SpectrumColorSettings.SpectrumGridMin;
-        SpectrumWaterfallSettings.Save();
+        SpectrumWaterfallSettings.SaveLiveWaterfallAndActiveBank();
 
         if (GridMaxSlider != null && Math.Abs(GridMaxSlider.Value - SpectrumColorSettings.SpectrumGridMax) > 0.1)
         {
@@ -601,11 +601,14 @@ public partial class PanadapterControlsWindow : Window
     private void OnWaterfallLowChanged(object sender, RoutedPropertyChangedEventArgs<double> e) =>
         ApplyWaterfallRange(SpectrumColorSettings.WaterfallHighDb, (float)e.NewValue, highIsPrimary: false);
 
-    private void WaterfallRangeReset_Click(object sender, RoutedEventArgs e) =>
+    private void WaterfallRangeReset_Click(object sender, RoutedEventArgs e)
+    {
+        bool lf = SpectrumWaterfallSettings.RadioModelIsGeminus;
         ApplyWaterfallRange(
-            SpectrumColorSettings.WaterfallHighDefault,
-            SpectrumColorSettings.WaterfallLowDefault,
+            lf ? SpectrumWaterfallSettings.ShipLfHighDb : SpectrumWaterfallSettings.ShipHfHighDb,
+            lf ? SpectrumWaterfallSettings.ShipLfLowDb : SpectrumWaterfallSettings.ShipHfLowDb,
             highIsPrimary: true);
+    }
 
     private void ApplyWaterfallRange(float highDb, float lowDb, bool highIsPrimary)
     {

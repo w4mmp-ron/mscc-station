@@ -224,6 +224,37 @@ public partial class MainWindow : Window
         }
         ApplyRadioModelSelection(geminus, fromFirmware: true);
         ApplyWaterfallBankForActiveBand();
+        RetuneIfIllegalForRadioPersonality(geminus);
+    }
+
+    /// <summary>
+    /// If reported freq is illegal for this FW personality, retune LAST_HF / LAST_LF (or ship default).
+    /// Same-radio reconnect with a legal freq is left alone.
+    /// </summary>
+    private void RetuneIfIllegalForRadioPersonality(bool geminus)
+    {
+        if (ViewModel == null) return;
+        long freq = ViewModel.RadioState.ActiveVfo.FrequencyHz;
+        bool illegal = geminus
+            ? freq >= 1_800_000
+            : freq > 0 && freq < 1_800_000;
+        if (!illegal) return;
+
+        long target = geminus
+            ? (SpectrumWaterfallSettings.LastLfFreq > 0
+                ? SpectrumWaterfallSettings.LastLfFreq
+                : SpectrumWaterfallSettings.DefaultLastLfFreq)
+            : (SpectrumWaterfallSettings.LastHfFreq > 0
+                ? SpectrumWaterfallSettings.LastHfFreq
+                : SpectrumWaterfallSettings.DefaultLastHfFreq);
+        string mode = geminus
+            ? SpectrumWaterfallSettings.LastLfMode
+            : SpectrumWaterfallSettings.LastHfMode;
+        ViewModel.MonitorTextBoxText(
+            $" Connect safety: {freq} Hz illegal for {(geminus ? "Geminus" : "Proficio")} → {target}");
+        ViewModel.TuneToFrequency(target);
+        if (!string.IsNullOrWhiteSpace(mode))
+            ViewModel.ActiveMode = mode;
     }
 
     private void ApplyRadioModelSelection(bool nowGeminus, bool fromFirmware)

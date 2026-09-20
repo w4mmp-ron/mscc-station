@@ -23,7 +23,7 @@ public static class SpectrumWaterfallSettings
     public static string SpectrumBackgroundRgb { get; set; } = "#101018";
     public static string SpectrumCursor { get; set; } = "WHITE";
     public static string SpectrumLine { get; set; } = "WHITE";
-    public static int SpectrumBaseline { get; set; } = 50;
+    public static int SpectrumBaseline { get; set; } = ShipHfBaseline;
     /// <summary>
     /// Global spectrum/waterfall dB cal (absolute). displayDb = mapped + offset.
     /// Default = SpectrumDbCalCenter (−91.3). UI shows relative trim ±20 around that center.
@@ -132,23 +132,58 @@ public static class SpectrumWaterfallSettings
     public static float RemoteEqMidDb { get; set; }
     public static float RemoteEqHighDb { get; set; }
 
+    // Ship / Reset defaults (cmd-017). HF: field-tuned 20m. LF: not-washed first boot.
+    public const float ShipHfHighDb = -44f;
+    public const float ShipHfLowDb = -106f;
+    public const int ShipHfGain = 65;
+    public const int ShipHfZero = 0;
+    public const int ShipHfBaseline = 50;
+    public const float ShipHfGridMax = -20f;
+    public const float ShipHfGridMin = -125f;
+
+    public const float ShipLfHighDb = -40f;
+    public const float ShipLfLowDb = -100f;
+    public const int ShipLfGain = 40;
+    public const int ShipLfZero = 0;
+    public const int ShipLfBaseline = 80; // 0–100 slider, near right
+    public const float ShipLfGridMax = -20f;
+    public const float ShipLfGridMin = -125f;
+
+    public const long DefaultLastHfFreq = 14_000_000;
+    public const long DefaultLastLfFreq = 475_000;
+
     // HF (Proficio) bank — field-tuned defaults (FT8 contrast on 20m)
-    public static float WaterfallHfHighDb { get; set; } = -44f;
-    public static float WaterfallHfLowDb { get; set; } = -106f;
-    public static int WaterfallHfGain { get; set; } = 65;
-    public static int WaterfallHfZero { get; set; }
+    public static float WaterfallHfHighDb { get; set; } = ShipHfHighDb;
+    public static float WaterfallHfLowDb { get; set; } = ShipHfLowDb;
+    public static int WaterfallHfGain { get; set; } = ShipHfGain;
+    public static int WaterfallHfZero { get; set; } = ShipHfZero;
     public static string WaterfallHfPalette { get; set; } = "Enhanced";
     public static bool WaterfallHfDirectionNormal { get; set; } = true;
+    public static int SpectrumHfBaseline { get; set; } = ShipHfBaseline;
+    public static float SpectrumHfGridMax { get; set; } = ShipHfGridMax;
+    public static float SpectrumHfGridMin { get; set; } = ShipHfGridMin;
+    public static float SpectrumHfDbOffset { get; set; } = SpectrumColorSettings.SpectrumDbCalCenter;
 
-    // LF (Geminus) bank — conservative defaults until tuned on 630/2200
-    public static float WaterfallLfHighDb { get; set; } = SpectrumColorSettings.WaterfallHighDefault;
-    public static float WaterfallLfLowDb { get; set; } = SpectrumColorSettings.WaterfallLowDefault;
-    public static int WaterfallLfGain { get; set; } = 50;
-    public static int WaterfallLfZero { get; set; }
+    // LF (Geminus) bank — ship defaults (not a copy of HF)
+    public static float WaterfallLfHighDb { get; set; } = ShipLfHighDb;
+    public static float WaterfallLfLowDb { get; set; } = ShipLfLowDb;
+    public static int WaterfallLfGain { get; set; } = ShipLfGain;
+    public static int WaterfallLfZero { get; set; } = ShipLfZero;
     public static string WaterfallLfPalette { get; set; } = "Enhanced";
     public static bool WaterfallLfDirectionNormal { get; set; } = true;
+    public static int SpectrumLfBaseline { get; set; } = ShipLfBaseline;
+    public static float SpectrumLfGridMax { get; set; } = ShipLfGridMax;
+    public static float SpectrumLfGridMin { get; set; } = ShipLfGridMin;
+    public static float SpectrumLfDbOffset { get; set; } = SpectrumColorSettings.SpectrumDbCalCenter;
 
-    /// <summary>Copy live waterfall controls into the HF or LF bank.</summary>
+    /// <summary>Last in-range HF tune (Hz). Connect safety if host reports LF on a Proficio-family radio.</summary>
+    public static long LastHfFreq { get; set; } = DefaultLastHfFreq;
+    public static string LastHfMode { get; set; } = "USB";
+    /// <summary>Last in-range LF tune (Hz). Default 475 kHz (630m).</summary>
+    public static long LastLfFreq { get; set; } = DefaultLastLfFreq;
+    public static string LastLfMode { get; set; } = "USB";
+
+    /// <summary>Copy live S/W (waterfall + baseline + grid + dB offset) into the HF or LF bank.</summary>
     public static void CaptureLiveWaterfallToBank(bool geminus)
     {
         if (geminus)
@@ -159,6 +194,10 @@ public static class SpectrumWaterfallSettings
             WaterfallLfZero = WaterfallZero;
             WaterfallLfPalette = WaterfallPalette ?? "Enhanced";
             WaterfallLfDirectionNormal = WaterfallDirectionNormal;
+            SpectrumLfBaseline = SpectrumBaseline;
+            SpectrumLfGridMax = SpectrumGridMax;
+            SpectrumLfGridMin = SpectrumGridMin;
+            SpectrumLfDbOffset = SpectrumDbOffset;
         }
         else
         {
@@ -168,10 +207,14 @@ public static class SpectrumWaterfallSettings
             WaterfallHfZero = WaterfallZero;
             WaterfallHfPalette = WaterfallPalette ?? "Enhanced";
             WaterfallHfDirectionNormal = WaterfallDirectionNormal;
+            SpectrumHfBaseline = SpectrumBaseline;
+            SpectrumHfGridMax = SpectrumGridMax;
+            SpectrumHfGridMin = SpectrumGridMin;
+            SpectrumHfDbOffset = SpectrumDbOffset;
         }
     }
 
-    /// <summary>Load HF or LF bank into live waterfall fields (not ColorSettings — call Apply after).</summary>
+    /// <summary>Load HF or LF bank into live S/W fields (not ColorSettings — call Apply after).</summary>
     public static void LoadWaterfallBankToLive(bool geminus)
     {
         if (geminus)
@@ -182,6 +225,10 @@ public static class SpectrumWaterfallSettings
             WaterfallZero = WaterfallLfZero;
             WaterfallPalette = WaterfallLfPalette ?? "Enhanced";
             WaterfallDirectionNormal = WaterfallLfDirectionNormal;
+            SpectrumBaseline = SpectrumLfBaseline;
+            SpectrumGridMax = SpectrumLfGridMax;
+            SpectrumGridMin = SpectrumLfGridMin;
+            SpectrumDbOffset = SpectrumLfDbOffset;
         }
         else
         {
@@ -191,6 +238,10 @@ public static class SpectrumWaterfallSettings
             WaterfallZero = WaterfallHfZero;
             WaterfallPalette = WaterfallHfPalette ?? "Enhanced";
             WaterfallDirectionNormal = WaterfallHfDirectionNormal;
+            SpectrumBaseline = SpectrumHfBaseline;
+            SpectrumGridMax = SpectrumHfGridMax;
+            SpectrumGridMin = SpectrumHfGridMin;
+            SpectrumDbOffset = SpectrumHfDbOffset;
         }
     }
 
@@ -205,6 +256,27 @@ public static class SpectrumWaterfallSettings
     public static void ApplyWaterfallBankForActiveBand(string? band)
     {
         SwitchRadioModelWaterfall(nowGeminus: IsLfWaterfallBand(band));
+    }
+
+    /// <summary>HF amateur / beacons vs LF/MF (&lt; 1.8 MHz, below 160m).</summary>
+    public static bool IsLfPersonalityFreq(long frequencyHz) =>
+        frequencyHz > 0 && frequencyHz < 1_800_000;
+
+    public static void RememberLastPersonalityFreq(long frequencyHz, string? mode)
+    {
+        if (frequencyHz <= 0) return;
+        string m = string.IsNullOrWhiteSpace(mode) ? "" : mode.Trim();
+        if (IsLfPersonalityFreq(frequencyHz))
+        {
+            LastLfFreq = frequencyHz;
+            if (m.Length > 0) LastLfMode = m;
+        }
+        else
+        {
+            LastHfFreq = frequencyHz;
+            if (m.Length > 0) LastHfMode = m;
+        }
+        Save();
     }
 
     public static bool IsLfWaterfallBand(string? band)
@@ -243,12 +315,17 @@ public static class SpectrumWaterfallSettings
         WaterfallZero = SpectrumColorSettings.WaterfallZero;
         SpectrumColorSettings.SetWaterfallTimeMarker(WaterfallTimeMarker);
         SpectrumColorSettings.SetWaterfallDirectionNormal(WaterfallDirectionNormal);
+        SpectrumColorSettings.SetBaseline(SpectrumBaseline);
+        SpectrumColorSettings.SetSpectrumDbOffset(SpectrumDbOffset);
+        SpectrumDbOffset = SpectrumColorSettings.SpectrumDbOffset;
+        SpectrumColorSettings.SetSpectrumGrid(SpectrumGridMax, SpectrumGridMin);
+        SpectrumGridMax = SpectrumColorSettings.SpectrumGridMax;
+        SpectrumGridMin = SpectrumColorSettings.SpectrumGridMin;
         SpectrumColorSettings.SetGeminusBaselineRange(RadioModelIsGeminus);
     }
 
     /// <summary>
-    /// After any live waterfall UI change: update active bank + INI.
-    /// Call instead of plain Save() when waterfall high/low/gain/zero/palette/direction change.
+    /// After any live S/W UI change (waterfall, baseline, grid, dB offset): update active bank + INI.
     /// </summary>
     public static void SaveLiveWaterfallAndActiveBank()
     {
@@ -609,7 +686,8 @@ public static class SpectrumWaterfallSettings
                     if (LineMatchesKey(line, "SPECTRUM_BACKGROUND_RGB")) SpectrumBackgroundRgb = ParseIniString(line, SpectrumBackgroundRgb);
                     if (line.Contains("SPECTRUM_CURSOR")) SpectrumCursor = ParseIniString(line, SpectrumCursor);
                     if (line.Contains("SPECTRUM_LINE")) SpectrumLine = ParseIniString(line, SpectrumLine);
-                    if (line.Contains("SPECTRUM_BASELINE")) SpectrumBaseline = ParseIniInt(line, SpectrumBaseline);
+                    if (LineMatchesKey(line, "SPECTRUM_BASELINE"))
+                        SpectrumBaseline = Math.Clamp(ParseIniInt(line, SpectrumBaseline), 0, 100);
                     if (LineMatchesKey(line, "SPECTRUM_DB_OFFSET"))
                         SpectrumDbOffset = Math.Clamp(ParseIniFloat(line, SpectrumDbOffset),
                             SpectrumColorSettings.SpectrumDbOffsetMin,
@@ -681,6 +759,33 @@ public static class SpectrumWaterfallSettings
                         WaterfallLfPalette = ParseIniString(line, WaterfallLfPalette);
                     if (LineMatchesKey(line, "WATERFALL_LF_DIRECTION_NORMAL"))
                         WaterfallLfDirectionNormal = ParseIniBool(line, WaterfallLfDirectionNormal);
+
+                    if (LineMatchesKey(line, "SPECTRUM_BASELINE_HF"))
+                        SpectrumHfBaseline = Math.Clamp(ParseIniInt(line, SpectrumHfBaseline), 0, 100);
+                    if (LineMatchesKey(line, "SPECTRUM_GRID_MAX_HF"))
+                        SpectrumHfGridMax = Math.Clamp(ParseIniFloat(line, SpectrumHfGridMax), -80f, 0f);
+                    if (LineMatchesKey(line, "SPECTRUM_GRID_MIN_HF"))
+                        SpectrumHfGridMin = Math.Clamp(ParseIniFloat(line, SpectrumHfGridMin), -180f, -90f);
+                    if (LineMatchesKey(line, "SPECTRUM_DB_OFFSET_HF"))
+                        SpectrumHfDbOffset = ParseIniFloat(line, SpectrumHfDbOffset);
+
+                    if (LineMatchesKey(line, "SPECTRUM_BASELINE_LF"))
+                        SpectrumLfBaseline = Math.Clamp(ParseIniInt(line, SpectrumLfBaseline), 0, 100);
+                    if (LineMatchesKey(line, "SPECTRUM_GRID_MAX_LF"))
+                        SpectrumLfGridMax = Math.Clamp(ParseIniFloat(line, SpectrumLfGridMax), -80f, 0f);
+                    if (LineMatchesKey(line, "SPECTRUM_GRID_MIN_LF"))
+                        SpectrumLfGridMin = Math.Clamp(ParseIniFloat(line, SpectrumLfGridMin), -180f, -90f);
+                    if (LineMatchesKey(line, "SPECTRUM_DB_OFFSET_LF"))
+                        SpectrumLfDbOffset = ParseIniFloat(line, SpectrumLfDbOffset);
+
+                    if (LineMatchesKey(line, "LAST_HF_FREQ"))
+                        LastHfFreq = Math.Max(0, ParseIniLong(line, LastHfFreq));
+                    if (LineMatchesKey(line, "LAST_LF_FREQ"))
+                        LastLfFreq = Math.Max(0, ParseIniLong(line, LastLfFreq));
+                    if (LineMatchesKey(line, "LAST_HF_MODE"))
+                        LastHfMode = ParseIniString(line, LastHfMode);
+                    if (LineMatchesKey(line, "LAST_LF_MODE"))
+                        LastLfMode = ParseIniString(line, LastLfMode);
 
                     if (LineMatchesKey(line, "RADIO_MODEL"))
                     {
@@ -813,8 +918,7 @@ public static class SpectrumWaterfallSettings
                 }
                 if (!hasLfBank)
                 {
-                    // First run of dual banks: LF starts from defaults (not a copy of HF).
-                    // Leave WaterfallLf* as property defaults unless live was already Geminus.
+                    // First run of dual banks: LF starts from ship defaults (not a copy of HF).
                     if (RadioModelIsGeminus)
                     {
                         WaterfallLfHighDb = WaterfallHighDb;
@@ -825,6 +929,25 @@ public static class SpectrumWaterfallSettings
                         WaterfallLfDirectionNormal = WaterfallDirectionNormal;
                     }
                 }
+
+                bool hasHfSw = fileLines.Any(l => LineMatchesKey(l, "SPECTRUM_BASELINE_HF"));
+                bool hasLfSw = fileLines.Any(l => LineMatchesKey(l, "SPECTRUM_BASELINE_LF"));
+                if (!hasHfSw)
+                {
+                    SpectrumHfBaseline = SpectrumBaseline;
+                    SpectrumHfGridMax = SpectrumGridMax;
+                    SpectrumHfGridMin = SpectrumGridMin;
+                    SpectrumHfDbOffset = SpectrumDbOffset;
+                }
+                if (!hasLfSw && RadioModelIsGeminus)
+                {
+                    SpectrumLfBaseline = SpectrumBaseline;
+                    SpectrumLfGridMax = SpectrumGridMax;
+                    SpectrumLfGridMin = SpectrumGridMin;
+                    SpectrumLfDbOffset = SpectrumDbOffset;
+                }
+                if (LastHfFreq <= 0) LastHfFreq = DefaultLastHfFreq;
+                if (LastLfFreq <= 0) LastLfFreq = DefaultLastLfFreq;
 
                 // Active bank → live (so Proficio vs Geminus restores correctly)
                 LoadWaterfallBankToLive(RadioModelIsGeminus);
@@ -930,6 +1053,24 @@ public static class SpectrumWaterfallSettings
         UpdateOrAdd(lines, "WATERFALL_LF_ZERO", WaterfallLfZero.ToString());
         UpdateOrAdd(lines, "WATERFALL_LF_PALETTE", WaterfallLfPalette);
         UpdateOrAdd(lines, "WATERFALL_LF_DIRECTION_NORMAL", WaterfallLfDirectionNormal ? "1" : "0");
+        UpdateOrAdd(lines, "SPECTRUM_BASELINE_HF", SpectrumHfBaseline.ToString());
+        UpdateOrAdd(lines, "SPECTRUM_GRID_MAX_HF",
+            SpectrumHfGridMax.ToString("0.##", System.Globalization.CultureInfo.InvariantCulture));
+        UpdateOrAdd(lines, "SPECTRUM_GRID_MIN_HF",
+            SpectrumHfGridMin.ToString("0.##", System.Globalization.CultureInfo.InvariantCulture));
+        UpdateOrAdd(lines, "SPECTRUM_DB_OFFSET_HF",
+            SpectrumHfDbOffset.ToString("0.##", System.Globalization.CultureInfo.InvariantCulture));
+        UpdateOrAdd(lines, "SPECTRUM_BASELINE_LF", SpectrumLfBaseline.ToString());
+        UpdateOrAdd(lines, "SPECTRUM_GRID_MAX_LF",
+            SpectrumLfGridMax.ToString("0.##", System.Globalization.CultureInfo.InvariantCulture));
+        UpdateOrAdd(lines, "SPECTRUM_GRID_MIN_LF",
+            SpectrumLfGridMin.ToString("0.##", System.Globalization.CultureInfo.InvariantCulture));
+        UpdateOrAdd(lines, "SPECTRUM_DB_OFFSET_LF",
+            SpectrumLfDbOffset.ToString("0.##", System.Globalization.CultureInfo.InvariantCulture));
+        UpdateOrAdd(lines, "LAST_HF_FREQ", LastHfFreq.ToString());
+        UpdateOrAdd(lines, "LAST_LF_FREQ", LastLfFreq.ToString());
+        UpdateOrAdd(lines, "LAST_HF_MODE", LastHfMode ?? "USB");
+        UpdateOrAdd(lines, "LAST_LF_MODE", LastLfMode ?? "USB");
 
         UpdateOrAdd(lines, "SPECTRUM_REFRESH", SpectrumRefresh.ToString());
         UpdateOrAdd(lines, "SPECTRUM_AVERAGE", SpectrumAverage);

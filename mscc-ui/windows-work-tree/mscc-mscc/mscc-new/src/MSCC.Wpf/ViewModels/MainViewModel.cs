@@ -3972,6 +3972,7 @@ public partial class MainViewModel : ObservableObject, IDisposable
 
         RadioState.ActiveVfo.FrequencyHz = freq;
         SyncBandHighlightFromFrequency(freq);
+        SpectrumWaterfallSettings.RememberLastPersonalityFreq(freq, ActiveMode);
         MonitorTextBoxText($" TuneToFrequency: {freq}");
         _ = _radioService.SetFrequencyAsync(freq);
         if (IsFmMode && !FmSimplex && RadioState.ActiveVfo == RadioState.VfoA)
