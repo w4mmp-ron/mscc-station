@@ -156,7 +156,7 @@ public partial class MainViewModel : ViewModelBase, IDisposable
         HighCutLabel = HighCutLabels[_highCutIndex];
         CwFilterLabel = CwFilterLabels[_cwFilterIndex];
         ModeText = "USB";
-        AppendLog("MSCC Avalonia 0.6.56 — prefer Pulse VirtualB.monitor over ALSA.");
+        AppendLog("MSCC Avalonia 0.6.57 — title FW ATU/PTT (majors 4/7 ATU, 3/8 PTT).");
         AppendLog("PTT = TX (voice modes); TUN = TUNE + carrier. S/W opens pan settings.");
         AppendLog($"Log: {LogFilePath}");
         CwPitchLabel = CwPitchOptions[Math.Clamp(CwPitchIndex, 0, CwPitchOptions.Count - 1)];
@@ -422,7 +422,7 @@ public partial class MainViewModel : ViewModelBase, IDisposable
     [ObservableProperty] private string _proficioTempText = "— °C";
     [ObservableProperty] private string _paTempText = "— °C";
     [ObservableProperty] private string _paCurrentText = "— mA";
-    [ObservableProperty] private string _clientVersionText = "0.6.56";
+    [ObservableProperty] private string _clientVersionText = "0.6.57";
     [ObservableProperty] private bool _qrpMode = true;
     [ObservableProperty] private bool _fullPower;
     [ObservableProperty] private bool _alcOn = true;
@@ -635,8 +635,33 @@ public partial class MainViewModel : ViewModelBase, IDisposable
     [ObservableProperty] private int _txBandwidthIndex;
 
     /// <summary>Title bar like WPF: product + MSCC / Core / FW versions.</summary>
-    public string WindowTitle =>
-        $"MSCC Avalonia   ·   MSCC: {ClientVersionText}   Core: {CoreVersionText}   FW: {FirmwareText}";
+    public string WindowTitle
+    {
+        get
+        {
+            string fw = FirmwareText ?? "—";
+            string block = FirmwareBlockSuffix(fw);
+            string title = $"MSCC Avalonia   ·   MSCC: {ClientVersionText}   Core: {CoreVersionText}   FW: {fw}";
+            return string.IsNullOrEmpty(block) ? title : $"{title}   {block}";
+        }
+    }
+
+    /// <summary>ATU for FW majors 4/7, PTT for 3/8; otherwise omit. Same as WPF.</summary>
+    internal static string FirmwareBlockSuffix(string firmwareVersion)
+    {
+        if (string.IsNullOrWhiteSpace(firmwareVersion) || firmwareVersion is "—" or "--")
+            return "";
+        int dot = firmwareVersion.IndexOf('.');
+        string majs = dot >= 0 ? firmwareVersion[..dot] : firmwareVersion;
+        if (!int.TryParse(majs, out int major))
+            return "";
+        return major switch
+        {
+            3 or 8 => "PTT",
+            4 or 7 => "ATU",
+            _ => ""
+        };
+    }
 
     public string ConnectButtonText => IsConnected ? "Disconnect" : "Connect";
     public string StubTip => "Layout placeholder — not wired yet";
