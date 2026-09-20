@@ -5,9 +5,9 @@
 
 ## Status
 
-- **Done — cmd-015 (windows-new-hp):** WPF band gray-out from FW major verified. RadioModelButton *label* rename deferred (Stew 2026-09-20).
-- **Done — cmd-012/013/014:** ms-sdr owner re-ack resends FW/Core on Pi / Ubuntu / Windows.
-- Next candidates: Option A S/W-follows-band, user settings MF/LF, client ask-if-missing, Avalonia band-gate port, factory seed (Ron hold).
+- **Active — cmd-016 (windows-new-hp):** Option A (S/W follows active band) + C (keep 2200/630 last-used; stop wipe). One WPF pass; C is tiny.
+- **Done — cmd-015:** band gray from FW major; button label rename deferred.
+- **Done — cmd-012/013/014:** ms-sdr owner re-ack FW/Core.
 
 ## Coord workflow
 
