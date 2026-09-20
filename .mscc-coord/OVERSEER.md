@@ -5,9 +5,9 @@
 
 ## Status
 
-- **Active — cmd-011 (rpi):** Ship Avalonia **mscc-ui 0.6.57 arm64** into `installers/rpi/` (title/identity block complete on WPF + Ubuntu amd64).
-- **Done — cmd-010 (ubuntu-stew):** Avalonia 0.6.57 ATU/PTT title + amd64 kit.
-- **Done — cmd-009 (windows-new-hp):** packed 0xB2, Multus log, WPF ATU/PTT; installer 9.20.0.
+- **Active — cmd-012 (rpi):** ms-sdr owner re-ack re-sends packed FW (`0xB2`) + Core (`0xB3`) so client reconnect keeps header radio identity.
+- Follow-on: same fix on Ubuntu `linux/ms-sdr-linux`, then Windows ms-sdr. Client “ask if missing” in next UI block.
+- **Done — cmd-011:** Avalonia 0.6.57 arm64 kit.
 
 ## Coord workflow
 

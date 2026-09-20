@@ -1,10 +1,61 @@
 commands:
-  - id: cmd-011
+  - id: cmd-012
+    created: "2026-09-20T14:05:00-04:00"
+    target: [rpi]
+    role: server
+    action: ms-sdr-reack-resend-fw-core
+    status_hint: pending
+    detail: |
+      Host: rpi. Checkout: /home/pi/src/mscc-station
+      Orders on this host (no pull required).
+
+      ## Problem
+      On client reconnect while session still owned, CMD_CHECK_GUI_STATUS takes the
+      "Session owner re-ack" path and only sends CMD_GET_SET_MSSDR_STATUS (1).
+      It does NOT re-send packed FW (0xB2) or Core (0xB3). Client header drops radio
+      info (FW / ATU|PTT). First Session_Claim path already sends both.
+
+      ## Fix (server only — no client change this cmd)
+      File: rpi/ms-sdr-linux/source/main-controller.c
+      In case CMD_CHECK_GUI_STATUS, when G_client_session_active && Session_Is_Owner
+      ("Session owner re-ack" branch ~1448–1455):
+
+      After (or instead of ack-only), also re-send identity like the claim path:
+        1) Ensure G_firmware_version_packed (same fallback as claim if packed==0)
+        2) Gui_send_param(CMD_GET_SET_FIRMWARE_VERSION, G_firmware_version_packed);
+        3) Gui_send_param(CMD_GET_SET_MSSDR_VERSION, VERSION_MS_SDRCORE);
+        4) Keep existing Gui_send_param(CMD_GET_SET_MSSDR_STATUS, 1);
+      Log clearly: owner re-ack + packed FW hex + core versions.
+
+      Do NOT Session_Claim again. Do NOT reject owner. Leave reject path for non-owners.
+
+      Optional: bump rpi/ms-sdr-linux/source/version.h VERSION_MINOR for the rebuild.
+
+      ## Build / install
+        cd rpi/ms-sdr-linux && make clean && make
+        # install binary the way this Pi normally runs ms-sdr (copy to
+        # rpi/mscc-binaries/ms-sdr and/or $HOME/mscc / packaged path Stew uses)
+      Restart ms-sdr (full server stack if that is how Stew runs it).
+
+      ## Verify
+      1) Cold start servers + client Connect → header shows FW + ATU/PTT as today.
+      2) Disconnect client only, reconnect (servers stay up) → header must again show
+         FW major.minor and ATU|PTT (not blank). Log should show owner re-ack AND
+         CMD_GET_SET_FIRMWARE_VERSION packed send.
+      3) ACK .mscc-coord/status/rpi.md. Commit **only** this ms-sdr fix + binary if
+         that is how kits are tracked + status.
+         Do NOT commit unrelated dirty SDRcore-recv/trans / other binary edits unless
+         Stew explicitly asks.
+
+      Out of scope: linux/ (Ubuntu) and Windows ms-sdr (follow-on cmds). No UI client
+      "ask if missing" yet (next UI block).
+
+- id: cmd-011
     created: "2026-09-20T13:20:00-04:00"
     target: [rpi]
     role: client
     action: avalonia-0.6.57-arm64-kit
-    status_hint: pending
+    status_hint: done
     detail: |
       Host: rpi (raspberrypi). Checkout: /home/pi/src/mscc-station
       Orders on this host. Source already has Avalonia 0.6.57 + FirmwareBlockSuffix
