@@ -5,9 +5,9 @@
 
 ## Status
 
-- **Active — cmd-013 (ubuntu-stew):** Port Pi cmd-012 — `linux/ms-sdr-linux` owner re-ack re-sends packed FW (`0xB2`) + Core (`0xB3`).
-- **Done — cmd-012 (rpi):** same fix; Core 3.167; Stew verified multi-reconnect Shack→Pi.
-- Next after Ubuntu: Windows ms-sdr. Client “ask if missing” later UI block.
+- **Active — cmd-014 (windows-new-hp):** Windows ms-sdr owner re-ack re-sends packed FW (`0xB2`) + Core (`0xB3`) — mirror Pi/Ubuntu.
+- **Done — cmd-013 (ubuntu-stew)** / **cmd-012 (rpi):** same fix verified.
+- Client “ask if missing” deferred to next UI block.
 
 ## Coord workflow
 
