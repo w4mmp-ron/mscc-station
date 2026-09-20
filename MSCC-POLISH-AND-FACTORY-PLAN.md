@@ -255,7 +255,7 @@ Wire client capture gain (`RemoteAf.MicVolume`) from that slider in digi mode in
 
 ---
 
-## 13. Backlog checklist (implement after Ron clear)
+## 13. Backlog checklist (Ron remote-audio clear 2026-09-20)
 
 ### Firmware / identity (Shack Keil where noted)
 - [x] `radio-psoc-firmware/` repo layout (Proficio / Geminus / Ultimus; flat MKII PTT/ATU; `release/` drops) — Shack 2026-09-20
@@ -278,7 +278,7 @@ Wire client capture gain (`RemoteAf.MicVolume`) from that slider in digi mode in
 - [ ] Last-used/favs/stack: keep MF/LF; stop LF wipe (**cmd-016** with A)
 - [ ] USB-on-load / digi mode restore fix
 - [ ] Auto FREQ CAL progress bar reset
-- [ ] Enable Remote Digital mic slider (default 100%)
+- [ ] Enable Remote Digital mic slider (default 100%) — **unlocked; queue after cmd-016**
 
 ### Back-burner
 - [ ] TX IQ phase per band
