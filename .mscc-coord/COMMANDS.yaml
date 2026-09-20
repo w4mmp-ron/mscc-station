@@ -1,10 +1,65 @@
 commands:
-  - id: cmd-009
+  - id: cmd-010
+    created: "2026-09-20T12:15:00-04:00"
+    target: [ubuntu-stew]
+    role: client
+    action: avalonia-windowtitle-atu-ptt-identity
+    status_hint: pending
+    detail: |
+      Host: ubuntu-stew (stew-HP-Notebook).
+      Checkout: /home/stew/Documents/GitHub/mscc-station
+      After Stew pushes from NEW-HP: git pull, then run this cmd.
+      Orders also in repo (written on NEW-HP so pull brings them).
+
+      ## Goal — Avalonia title/identity block (match WPF cmd-009)
+
+      WPF already shows:
+        MSCC WPF · MSCC: 9.20.0 · Core: 3.169 · FW: 7.151 · ATU
+      (ATU for majors 4/7, PTT for 3/8, omit otherwise.)
+
+      Port the same ATU/PTT suffix to Avalonia WindowTitle. Linux ms-sdr already
+      sends one packed 0xB2 — no server C change on Ubuntu for this cmd.
+
+      ## A) WindowTitle
+
+      File: mscc-ui/Avalonia-Migration/src/MSCC.Avalonia/ViewModels/MainViewModel.cs
+
+      Today roughly:
+        $"MSCC Avalonia   ·   MSCC: {ClientVersionText}   Core: {CoreVersionText}   FW: {FirmwareText}"
+
+      Match WPF behavior from:
+        mscc-ui/windows-work-tree/mscc-mscc/mscc-new/src/MSCC.Wpf/ViewModels/MainViewModel.cs
+        (FirmwareBlockSuffix — majors 3/8 → PTT, 4/7 → ATU, else "")
+
+      Prefer copying that helper (or a tiny shared helper in MSCC.Core if both UIs can
+      call it without a big refactor). Keep FirmwareText as "major.minor" only; append
+      ATU/PTT in the title string.
+
+      Example: `…   FW: 7.151   ATU` / `…   FW: 8.232   PTT` / `…   FW: 2.151` (no suffix).
+
+      ## B) Version + amd64 kit
+
+      Bump Avalonia patch (0.6.56 → 0.6.57 or next). Build/drop amd64:
+        ./linux-build/mscc-ui-x64.sh
+        ./linux-build/build-mscc-ui-deb-amd64.sh
+        ./linux-build/drop-installers.sh linux
+      Verify installers/linux/mscc-ui_*_amd64.deb is the new version.
+      Do not rebuild arm64/Pi in this cmd (rpi kit follows after Ubuntu smoke).
+
+      ## C) Verify
+
+      Remote client to a Windows or Linux server with Ultimus MKII ATU (or any major
+      3/4/7/8 radio): title shows FW major.minor + ATU|PTT. Other majors: no suffix.
+      ACK .mscc-coord/status/ubuntu-stew.md. Commit. Stew pushes.
+
+      Out of scope: Windows ms-sdr, PSoC trees, factory cal, Pi arm64 kit.
+
+- id: cmd-009
     created: "2026-09-20T11:25:00-04:00"
     target: [windows-new-hp]
     role: server+client
     action: win-ms-sdr-0xb2-packed-multus-log-wpf-atu-ptt
-    status_hint: pending
+    status_hint: done
     detail: |
       Host: windows-new-hp (NEW-HP-LAPTOP).
       Checkout: C:\Users\n8vet\OneDrive\Documents\GitHub\mscc-station
@@ -17,11 +72,11 @@ commands:
 
       Stew scope for THIS laptop:
         1) Windows ms-sdr: one packed 0xB2 to client (like Linux)
-        2) Log: "Proficio found" → "Multus radio found"
+        2) Log: "Proficio found" â†’ "Multus radio found"
         3) WPF WindowTitle: show correct FW (follows from #1) AND add ATU/PTT block when major maps
       Out of scope here: Avalonia / Ubuntu amd64 / RPi arm64 (follow-on after this lands).
 
-      ## A) Windows ms-sdr — pack 0xB2 (required)
+      ## A) Windows ms-sdr â€” pack 0xB2 (required)
 
       Tree: mscc-ui/windows-work-tree/ms-sdr-MKII/source/
 
@@ -30,11 +85,11 @@ commands:
       1. Add `int G_firmware_version_packed` (extern.h + main.c init 0).
       2. In usbcmd.c `srGetVersion`:
          - Port Linux unpack of the 16-bit USB word (detect pe0fko vs Proficio byte order;
-           see linux usbcmd.c ~298–329). Do NOT keep Windows-only `major=hi, minor=lo` blindly.
+           see linux usbcmd.c ~298â€“329). Do NOT keep Windows-only `major=hi, minor=lo` blindly.
          - Set `G_firmware_version_packed = ((minor << 8) & 0xff00) | (major & 0x00ff)`.
          - Log raw + major.minor + packed like Linux.
-      3. In main-controller.c BOTH places that send FW to GUI (~1486–1487 and case
-         CMD_GET_SET_FIRMWARE_VERSION ~2228–2230):
+      3. In main-controller.c BOTH places that send FW to GUI (~1486â€“1487 and case
+         CMD_GET_SET_FIRMWARE_VERSION ~2228â€“2230):
          - DELETE the second Gui_send_param.
          - Send ONCE: Gui_send_param(CMD_GET_SET_FIRMWARE_VERSION, G_firmware_version_packed);
          - Fallback if packed==0 && (major||minor): rebuild packed from G_major/G_minor.
@@ -45,18 +100,18 @@ commands:
       ## B) Log string (required)
 
       File: mscc-ui/windows-work-tree/ms-sdr-MKII/source/usbcmd.c (~srOpen)
-      Change: `Proficio found` → `Multus radio found`
+      Change: `Proficio found` â†’ `Multus radio found`
       Only this ms-sdr USB-open line for this cmd (not Pulse "Proficio Found" in mscc-init
-      unless you see the same string in the active Windows server path — prefer the usbcmd.c
+      unless you see the same string in the active Windows server path â€” prefer the usbcmd.c
       line Stew cares about).
 
-      ## C) WPF WindowTitle ATU/PTT (include — Stew wants it with this pass)
+      ## C) WPF WindowTitle ATU/PTT (include â€” Stew wants it with this pass)
 
       Files:
         mscc-ui/windows-work-tree/mscc-mscc/mscc-new/src/MSCC.Wpf/ViewModels/MainViewModel.cs
-        (decode already in MSCC.Core UdpRadioService 0xB2 → "major.minor")
+        (decode already in MSCC.Core UdpRadioService 0xB2 â†’ "major.minor")
 
-      Today: `MSCC WPF — MSCC: …   Core: …   FW: {FirmwareVersion}`
+      Today: `MSCC WPF â€” MSCC: â€¦   Core: â€¦   FW: {FirmwareVersion}`
 
       Add variant suffix from FW major when applicable:
         | Major | Suffix |
@@ -64,14 +119,14 @@ commands:
         | 4 or 7 | ATU |
         | else | omit (no extra token) |
 
-      Example: `…   FW: 7.151   ATU` or `…   FW: 8.232   PTT` or `…   FW: 2.151` (no suffix).
+      Example: `â€¦   FW: 7.151   ATU` or `â€¦   FW: 8.232   PTT` or `â€¦   FW: 2.151` (no suffix).
 
       Implementation hint: parse major from FirmwareVersion string (or keep int when
-      FirmwareVersionReported fires — optional small Core event enhancement OK if cleaner).
+      FirmwareVersionReported fires â€” optional small Core event enhancement OK if cleaner).
       Keep FirmwareVersion property as "major.minor" only; append ATU/PTT in WindowTitle.
 
       Avalonia: leave for later host (ubuntu-stew / rpi) unless a one-line shared helper in
-      MSCC.Core is trivial and both UIs can call it — prefer WPF-only this cmd if shared
+      MSCC.Core is trivial and both UIs can call it â€” prefer WPF-only this cmd if shared
       would drag Avalonia.
 
       ## D) Verify
@@ -101,11 +156,11 @@ commands:
       1) Confirm csproj <Version>0.6.56</Version>
       2) ./linux-build/mscc-ui-x64.sh
       3) ./linux-build/build-mscc-ui-deb-amd64.sh
-         (packaging DEBIAN/control may currently say arm64 from Pi build â€” amd64 script must
+         (packaging DEBIAN/control may currently say arm64 from Pi build Ã¢â‚¬â€ amd64 script must
           set Architecture: amd64 and Version: 0.6.56)
       4) ./linux-build/drop-installers.sh linux
       5) Verify installers/linux/ contains at least:
-           mscc-ui_0.6.56_amd64.deb   (NEW â€” replace 0.6.54)
+           mscc-ui_0.6.56_amd64.deb   (NEW Ã¢â‚¬â€ replace 0.6.54)
            mscc_1.0.43_amd64.deb
            mscc-portaudio_19.8.2_amd64.deb
            mscc-init-gui_1.0.13_all.deb
@@ -130,9 +185,9 @@ commands:
       WSJT-X Sound Out = Pulse sink **VirtualB** (correct).
       MSCC Remote Digital mic stuck on **VirtualB_monitor** but still no RF.
       PortAudio device list has BOTH:
-        - api=ALSA index ~9  name VirtualB_monitor  (pipewire-alsa PCM) â€” capture peak ~70 with tone on VirtualB
-        - api=Pulse index ~25 name VirtualB.monitor â€” capture peak 20000 with same tone
-      Avalonia saved REMOTE_MIC_DEV=9 (ALSA) â†’ remote_mic UDP peaks ~30â€“60 (noise) â†’ PTT OK, no RF.
+        - api=ALSA index ~9  name VirtualB_monitor  (pipewire-alsa PCM) Ã¢â‚¬â€ capture peak ~70 with tone on VirtualB
+        - api=Pulse index ~25 name VirtualB.monitor Ã¢â‚¬â€ capture peak 20000 with same tone
+      Avalonia saved REMOTE_MIC_DEV=9 (ALSA) Ã¢â€ â€™ remote_mic UDP peaks ~30Ã¢â‚¬â€œ60 (noise) Ã¢â€ â€™ PTT OK, no RF.
       FindNamed after 0.6.55 correctly prefers *monitor* names but picks ALSA VirtualB_monitor first
       (appears earlier than Pulse VirtualB.monitor). That ALSA PCM does **not** hear Pulse VirtualB.
 
@@ -140,16 +195,16 @@ commands:
 
       ## Fix
       1) When resolving digi VAC (FindNamedAfDevice / device lists), **prefer PulseAudio host API**
-         devices over ALSA when both match the same logical name (normalize . â†” _).
+         devices over ALSA when both match the same logical name (normalize . Ã¢â€ â€ _).
          Mic: Pulse VirtualB.monitor beats ALSA VirtualB_monitor.
          Play: Pulse VirtualA beats ALSA VirtualA.
       2) Optionally de-prioritize ALSA Virtual* entries with absurd channel counts (in=64/out=64)
          when a Pulse counterpart exists.
       3) Log chosen device: hostApi + index + name on R-Digital start.
-      4) Bump 0.6.55 â†’ 0.6.56, install arm64 on this Pi, ACK status/rpi.md.
+      4) Bump 0.6.55 Ã¢â€ â€™ 0.6.56, install arm64 on this Pi, ACK status/rpi.md.
       5) Keep digital-microphone.ini = VirtualB.monitor. No MSCC_Digi_Mic requirement.
 
-      Verify: WSJT Out=VirtualB + Tune â†’ Shack remote_mic peaks thousands, not ~50.
+      Verify: WSJT Out=VirtualB + Tune Ã¢â€ â€™ Shack remote_mic peaks thousands, not ~50.
     status_hint: pending
 
   - id: cmd-006
@@ -159,48 +214,48 @@ commands:
     action: avalonia-remote-digital-vac-match-fix
     detail: |
       Host: rpi. Checkout: /home/pi/src/mscc-station.
-      (Retargeted 2026-09-18: orders live on the working host â€” no pull required to start.)
-      Supersedes cmd-005 (include its PortAudio prefer work here â€” do not wait on a separate cmd-005 run).
+      (Retargeted 2026-09-18: orders live on the working host Ã¢â‚¬â€ no pull required to start.)
+      Supersedes cmd-005 (include its PortAudio prefer work here Ã¢â‚¬â€ do not wait on a separate cmd-005 run).
 
-      ## Symptoms (Pi Avalonia â†’ Shack R-Digital)
-      - RX OK (VirtualA â†’ WSJT VirtualA.monitor).
-      - TX: radio keys (CAT PTT) but Shack remote_mic peaks stay ~20â€“70 (no digi tone / no RF).
+      ## Symptoms (Pi Avalonia Ã¢â€ â€™ Shack R-Digital)
+      - RX OK (VirtualA Ã¢â€ â€™ WSJT VirtualA.monitor).
+      - TX: radio keys (CAT PTT) but Shack remote_mic peaks stay ~20Ã¢â‚¬â€œ70 (no digi tone / no RF).
       - Remote AF mic combo: user can pick VirtualB_monitor but it **snaps back to VirtualB**.
       - Root cause in FindNamedAfDevice (MainViewModel.cs):
           want.StartsWith(key)  with want="VirtualB.monitor" and key="VirtualB"
-          â†’ first hit is the **sink** VirtualB, not VirtualB.monitor / VirtualB_monitor.
-      - MicDevice_Changed then calls ApplyRemoteAfDevicesAndRestart â†’ re-resolves from
-        digital-microphone.ini via broken FindNamed â†’ overwrites user selection.
+          Ã¢â€ â€™ first hit is the **sink** VirtualB, not VirtualB.monitor / VirtualB_monitor.
+      - MicDevice_Changed then calls ApplyRemoteAfDevicesAndRestart Ã¢â€ â€™ re-resolves from
+        digital-microphone.ini via broken FindNamed Ã¢â€ â€™ overwrites user selection.
       - Also: client often loads Debian ALSA-only libportaudio instead of mscc-portaudio
         at /usr/local/lib (Pulse). ALSA PCM for B capture must be VirtualB_monitor (underscore);
         dots are illegal in ALSA PCM names (see linux/helpers/99-mscc-virtual.conf).
 
       Canonical digi cable (do not invent MSCC_Digi_Mic as the required UI name):
-        MSCC play â†’ VirtualA
-        WSJT In  â†’ VirtualA.monitor
-        WSJT Out â†’ VirtualB          (sink â€” not VirtualB_monitor)
-        MSCC mic â†’ VirtualB.monitor  (Pulse) / VirtualB_monitor (ALSA name)
+        MSCC play Ã¢â€ â€™ VirtualA
+        WSJT In  Ã¢â€ â€™ VirtualA.monitor
+        WSJT Out Ã¢â€ â€™ VirtualB          (sink Ã¢â‚¬â€ not VirtualB_monitor)
+        MSCC mic Ã¢â€ â€™ VirtualB.monitor  (Pulse) / VirtualB_monitor (ALSA name)
 
       ## Required fixes
 
-      ### A) FindNamedAfDevice â€” exact / longest match (CRITICAL)
+      ### A) FindNamedAfDevice Ã¢â‚¬â€ exact / longest match (CRITICAL)
       File: mscc-ui/Avalonia-Migration/src/MSCC.Avalonia/ViewModels/MainViewModel.cs
       Replace the StartsWith-short-key logic. Prefer:
         1) Exact case-insensitive match on device name (and ToMatchKey)
-        2) Normalize '.' â†” '_' so VirtualB.monitor â‰¡ VirtualB_monitor
+        2) Normalize '.' Ã¢â€ â€ '_' so VirtualB.monitor Ã¢â€°Â¡ VirtualB_monitor
         3) Among partial matches, pick the **longest** matching name (so monitor wins over VirtualB)
         4) For mic lists: prefer names containing ".monitor" or "_monitor" when the saved key
            asks for a monitor; never return a 0-input sink when a monitor candidate exists
-        5) Remove `want.StartsWith(key)` as written â€” it is what selects VirtualB first
+        5) Remove `want.StartsWith(key)` as written Ã¢â‚¬â€ it is what selects VirtualB first
       Unit-style smoke: want=VirtualB.monitor must resolve to VirtualB.monitor or VirtualB_monitor,
       never bare VirtualB, when both exist in the list.
 
       ### B) Remote Digital combo must stick
       RemoteAfWindow digi path: after user changes mic/play combo, either
-        - apply the selected device index directly (do not re-FindNamed over the userâ€™s pick), or
+        - apply the selected device index directly (do not re-FindNamed over the userÃ¢â‚¬â„¢s pick), or
         - FindNamed with the fixed matcher and SelectByTag must land on the monitor
       RefreshPath / ApplyRemoteAfDevices must show VirtualB.monitor (or VirtualB_monitor) when
-      digital-microphone.ini is VirtualB.monitor â€” no snap-back to VirtualB.
+      digital-microphone.ini is VirtualB.monitor Ã¢â‚¬â€ no snap-back to VirtualB.
 
       ### C) PortAudioNative prefer mscc-portaudio (from cmd-005)
       File: RemoteAudio/PortAudioNative.cs
@@ -219,7 +274,7 @@ commands:
       Pi live /etc was wrong once; packaging must not reintroduce the dotted PCM name.
 
       ### F) Version + kits
-      Bump Avalonia 0.6.54 â†’ 0.6.55 (or next patch). Ship amd64 kit; arm64 for Pi if scripts allow.
+      Bump Avalonia 0.6.54 Ã¢â€ â€™ 0.6.55 (or next patch). Ship amd64 kit; arm64 for Pi if scripts allow.
       ACK status/ubuntu-stew.md. Commit; Norman pushes via GitHub GUI.
       Do not require MSCC_Digi_Mic in the UI. Do not touch server C / radio opcodes.
 

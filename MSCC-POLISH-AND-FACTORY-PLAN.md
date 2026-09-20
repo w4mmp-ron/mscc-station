@@ -272,7 +272,7 @@ Wire client capture gain (`RemoteAf.MicVolume`) from that slider in digi mode in
 - [ ] Fill factory tables from 2026-09-19 batch (IQ first)
 
 ### Client UX
-- [x] WindowTitle ATU/PTT block from FW major (3/8=PTT, 4/7=ATU; **WPF done cmd-009**; Avalonia later)
+- [x] WindowTitle ATU/PTT block from FW major (3/8=PTT, 4/7=ATU; **WPF done cmd-009**; Avalonia **cmd-010** on ubuntu-stew)
 - [ ] Gray bands from major / last-used; S/W follows band; HF/LF-MF button fallback
 - [ ] S/W ship HF + LF/MF defaults (+ Reset); lock LF numbers when Stew confirms
 - [ ] Last-used/favs/stack: keep MF/LF; stop LF wipe on non-Geminus
