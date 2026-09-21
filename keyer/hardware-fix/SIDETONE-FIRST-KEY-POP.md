@@ -2,7 +2,7 @@
 
 **From:** Ron  
 **To:** Stew  
-**Date:** 2026-09-20  
+**Date:** 2026-09-20 (updated)  
 **About:** Side Tone Generator sheet (Rev 6.0) — LM386 + VO1400 switching  
 **Schematic file name may say “LPF & Amp”; the sheet title is Side Tone Generator.**
 
@@ -10,9 +10,11 @@
 
 ## The problem
 
-After the keyer has been **idle for a while** — on the order of **minutes** (sometimes many minutes), not just half a minute — the **first** paddle press makes a slight **pop** in the audio. After that, keying sounds fine until it sits idle again long enough for the pop to come back. Short gaps between characters do **not** bring it back; only a long rest does.
+After the keyer has been **idle for a while** — on the order of **minutes** (sometimes **many** minutes) — the **first** paddle press makes a slight **pop** in the audio. After that, keying sounds fine until it sits idle again long enough for the pop to come back.
 
-So this is not bad sidetone tone or bad paddles. It is a **first-key-after-rest** click.
+Short gaps between characters do **not** bring it back. Only a **long rest** does. While discussing this, several minutes of idle often were not enough for the pop to return — wait long enough when testing.
+
+This is not bad sidetone tone or bad paddles. It is a **first-key-after-long-rest** click.
 
 ---
 
@@ -21,68 +23,74 @@ So this is not bad sidetone tone or bad paddles. It is a **first-key-after-rest*
 1. The PIC keyer makes **sidetone** with its NCO on the **`SIDE_TONE`** line.  
 2. That goes through a small filter / level pot into an **LM386** (`U5`).  
 3. **VO1400** chips (`U6`, `U7`) act as audio switches, steered by **`RX_CW`** / **`TX_CW`**, so sidetone (and RX audio) get into the phones/jacks at the right time.  
-4. The LM386 output uses a large coupling cap (**220 µF** on pin 5) into the listen path.
+4. The LM386 output uses a large coupling cap (**C19, 220 µF** on **U5 pin 5**) into the listen path.
 
 ---
 
 ## Why a long idle causes a pop
 
-While everything sits quiet, DC voltages on high‑impedance audio nodes can **slowly drift**, or the big **220 µF** coupling cap can **slowly discharge**.
+While everything sits quiet for **minutes**, something in the analog path **slowly loses its settled DC**:
 
-The **first** paddle after that rest often does two things at once:
+- The big **220 µF (C19)** can lose charge / the far side can float so the cap is no longer properly biased, and/or  
+- The two sides of an open **VO1400** switch can drift to different DC.
 
-- Turns **sidetone** on (NCO), and  
-- Flips the **CW opto switches** when TX becomes active (`RX_CW` / `TX_CW`).
+The **first** paddle after that rest turns sidetone on and often flips the CW optos when TX becomes active. That first event dumps a little charge — **pop**. Then the path is settled for the rest of the session.
 
-If two sides of a switch were at different DC, or the 220 µF was “empty,” that first connection dumps a little charge — you hear a **pop**. A moment later the circuit has settled, so the rest of the QSO is clean.
-
-That “needs **minutes** of idle to come back” timing points strongly to **slow analog drift / large-capacitor discharge**, not a one-shot firmware glitch. A quick bench check: after keying, wait several minutes before the next first paddle when testing a fix.
+**Many minutes** of idle points strongly at a **large capacitor / slow drift**, not a quick firmware glitch.
 
 ---
 
-## What to try (best chance first)
+## What is most likely (current ranking)
 
-### 1) Highest chance — bleed across the VO1400 FET switches (try first)
+| Rank | Suspect | Why |
+|------|---------|-----|
+| **1 (top)** | **C19 220 µF** on LM386 out | Minutes-long idle matches a large coupling cap losing bias |
+| **2** | **U6 / U7** FET first close | First paddle after rest also switches `RX_CW`/`TX_CW` once |
+| **3** | PIC **`SIDE_TONE`** start | Still possible; weaker match for “many minutes” |
 
-On **U6** and **U7**, the switch is between **pin 3** and **pin 4** (not the LED pins 1 and 2).
+---
 
-**Add one resistor across pins 3–4 on U6, and one across pins 3–4 on U7.**
+## Fixes to try
 
-- **Start with 1 MΩ** each.  
-- If the pop is still there, try **470 kΩ**.  
-- If you hear a faint sidetone when not keying, go back toward **1 MΩ** or a bit higher.
+### 1) Top suspect — keep C19 biased (do this carefully)
 
-**Why this might work:** With the FET open, the two sides can sit at different DC. The resistor keeps them nearly equal while idle, so the first close does not thump.
+**C19** stays in the circuit. Do **not** remove it.
 
-**Do not** put these resistors on pins **1–2** (LED / `RX_CW` / `TX_CW` drive). The **1.8 V zeners** on the LED side are for protecting the LED drive; they are separate from this fix.
+**Wrong:** a resistor **across** C19 (both ends of the cap). That would **discharge** the cap faster and could make the pop come back **sooner**.
 
-### 2) Next — PIC firmware / `SIDE_TONE` idle (if #1 is not enough)
+**Right:** hold the **jack / audio side** of C19 at a known DC (ground) so the cap **stays charged** while idle:
 
-Sidetone comes from the PIC (**NCO on RC2 / `SIDE_TONE`**). Today the code turns the NCO **on** for key-down and **off** for key-up, and sets `RX_CW` / `TX_CW` when a keying session starts and ends.
+- One end of a new resistor → **far side of C19** (toward **`AUDIO_OUT` / phones / `SIDE_TONE_OUT`**, not U5 pin 5)  
+- Other end → **GND**  
+- Value: try about **100 kΩ–470 kΩ** (start near **220 kΩ**)
 
-Firmware ideas:
+Optional if a little pop remains: a few ohms (**4.7–10 Ω**) in series with the jack.
 
-- When sidetone is off, make sure **`SIDE_TONE` is firmly quiet** (known off level), not in a odd state.  
-- Optionally change **order**: start/stop tone vs flipping the optos so the first edge is gentler.  
-- Optionally soften only the **first** element after a long idle.
+### 2) Next — equalize the VO1400 switches
 
-This is a good second bet; the long idle time still makes the **hardware bleed (#1)** the better first experiment.
+On **U6** and **U7**, the audio FET is between **pin 3** and **pin 4** (not LED pins 1 and 2).
 
-### 3) Also possible — the 220 µF on the LM386 output
+Add **1 MΩ** from **pin 3 to pin 4** on U6, and the same on U7.  
+If needed, try **470 kΩ**. If you hear faint sidetone when idle, go back toward **1 MΩ** or higher.
 
-There is already a **220 µF** on **U5 pin 5**. That cap can discharge over tens of seconds and thump on the first audio. If #1 helps only partly, add a **high-value bleed across that 220 µF** (e.g. **100 kΩ–470 kΩ**), or a few ohms in series with the jack. Do **not** remove the 220 µF.
+**Do not** put these on pins **1–2** (LED / `RX_CW` / `TX_CW`). The **1.8 V zeners** on the LED side are only LED protection.
+
+### 3) If still needed — PIC firmware / `SIDE_TONE` idle
+
+Sidetone is PIC NCO on **RC2 / `SIDE_TONE`**. Key down enables NCO; key up disables it. `RX_CW` / `TX_CW` flip when a keying session starts/ends.
+
+Ideas: force **`SIDE_TONE` firmly quiet** when off; tweak order of tone vs optos; soften only the first element after a long idle.
 
 ---
 
 ## Suggested order for Stew
 
-1. **1 MΩ across U6 pins 3–4 and U7 pins 3–4.**  
-2. Idle **several minutes** (long enough that the pop used to return), first paddle — listen for the pop.  
-3. If still there → PIC sidetone idle / ordering (**#2**).  
-4. If still there → bleed across the **220 µF** (**#3**).
+1. **C19 bias resistor:** far side of **C19 → GND** (~220 kΩ). Wait **many minutes**, first paddle — listen.  
+2. If still popping → **1 MΩ on U6 and U7, pins 3–4**.  
+3. If still popping → PIC **`SIDE_TONE`** idle / ordering.
 
 ---
 
 ## Note
 
-Ron has **not** confirmed a fix on the bench yet; this is the working theory and the preferred trial order.
+Ron has **not** confirmed a fix on the bench yet. This is the working theory after clarifying that idle is **minutes**, and that bleeding **across** C19 would be the wrong move.
