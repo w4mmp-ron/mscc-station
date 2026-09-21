@@ -4,8 +4,8 @@
 |--|--|
 | **Host** | stew-HP-Notebook (Ubuntu) |
 | **Checkout** | `/home/stew/Documents/GitHub/mscc-station` |
-| **Build** | **cmd-027** |
-| **Last command id** | cmd-027 |
+| **Build** | **cmd-028** |
+| **Last command id** | cmd-028 |
 | **State** | pending |
 | **Updated** | 2026-09-21 |
 
@@ -13,9 +13,9 @@
 
 | command id | state | note |
 |------------|-------|------|
-| cmd-027 | pending | Avalonia parity: idle + DIG-U band-wins + FW title (amd64) |
-| cmd-026 | done | WPF 9.21.6 on windows-new-hp (reference) |
+| cmd-028 | pending | Avalonia FW major → band gate + S/W bank (cmd-015 parity) |
+| cmd-027 | done | Avalonia 0.6.58 idle + DIG-U band-wins + FW title; band gate still INI/manual |
 
 ## Notes
 
-Stew: mic slider parked. Ubuntu Avalonia first, then RPi kit. Orders written on this host.
+Stew: Geminus header OK, bands stayed Proficio. Mic slider parked. Ubuntu first.

@@ -1,4 +1,6 @@
 
+**Current:** cmd-028 — Avalonia FW major → band gate + S/W bank (Ubuntu).
+
 **Current:** cmd-027 — Avalonia Ubuntu parity (idle + DIG-U band-wins + FW title). Mic slider parked.
 ﻿# Overseer intent
 

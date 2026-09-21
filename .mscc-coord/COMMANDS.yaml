@@ -1,10 +1,65 @@
 commands:
+  - id: cmd-028
+    created: "2026-09-21T14:12:00-04:00"
+    target: [ubuntu-stew]
+    role: client
+    action: avalonia-fw-major-band-gate
+    status_hint: pending
+    detail: |
+      Host: ubuntu-stew (stew-HP). Checkout: /home/stew/Documents/GitHub/mscc-station
+      Orders on this host. Avalonia (mscc-ui/Avalonia-Migration). Builds on cmd-027.
+      Port WPF cmd-015: FW major → band gating + S/W bank. Mic slider still OUT OF SCOPE.
+
+      ## Problem (Stew 2026-09-21 after cmd-027 smoke)
+      Geminus MKII FW 2.151 shows correctly in WindowTitle (cmd-027 product line), but
+      HF/LF band buttons stay Proficio-gated. Log: 0xB2 → FW 2.151; no "Radio model:
+      Geminus (from FW)". mscc-avalonia.ini still RADIO_MODEL=Proficio.
+      FirmwareVersionReported only sets FirmwareText — never IsGeminusRadioModel.
+      HfBandsEnabled/LfBandsEnabled still follow manual / INI toggle only.
+
+      ## WPF reference (copy policy, adapt to Avalonia)
+      MainViewModel.TryFirmwareMajorToGeminus:
+        Geminus: majors 2, 5
+        Proficio family (HF): majors 1, 3, 4, 6, 7, 8
+        Unknown major: leave last-used gating (do not flip)
+      MainWindow.ApplyRadioModelFromFirmware / ApplyRadioModelSelection:
+        set IsGeminusRadioModel, SwitchRadioModel / S/W bank, band gray, GEN list,
+        log "Radio model: Geminus|Proficio (from FW)".
+        Optional: RetuneIfIllegalForRadioPersonality (HF freq on Geminus → LAST_LF /
+        default; LF on Proficio → LAST_HF) — include if Avalonia already has LAST_HF/LF
+        from cmd-027 BandLastUsedStore personality helpers.
+
+      ## Avalonia implementation
+      On FirmwareVersionReported (after FirmwareText = v):
+        Parse major (already have TryParseFirmwareMajor from cmd-027).
+        Map via TryFirmwareMajorToGeminus (add same helper if missing).
+        If mapped: set IsGeminusRadioModel, SwitchRadioModel S/W bank, SyncGenButton,
+        notify HfBandsEnabled/LfBandsEnabled, persist RADIO_MODEL in client settings,
+        AppendLog "Radio model: Geminus|Proficio (from FW) — …".
+        If unmapped/unknown: keep INI model; log unknown major.
+      Keep manual RadioModel toggle as override (user click still works; next FW report
+        may re-apply from FW — match WPF: FW wins on each 0xB2; manual until next FW).
+      Do not break cmd-027 idle / DIG-U / title.
+
+      ## Out of scope
+      Mic slider; RPi arm64 kit (follow-on after Ubuntu smoke); WPF edits; Ultimus
+      three-way band UI (still Proficio-family HF gate like WPF).
+
+      ## Verify (Ubuntu amd64)
+      1) Connect Geminus (FW major 2 or 5): title Geminus…; LF 2200/630 enabled; HF grayed;
+         log "Radio model: Geminus (from FW)"; S/W LF bank; RADIO_MODEL saves Geminus.
+      2) Connect Proficio/Ultimus (HF majors): HF on; LF grayed; log Proficio (from FW).
+      3) Manual toggle still works; DIG-U/idle from cmd-027 still OK.
+
+      Bump Avalonia 0.6.58 → 0.6.59 (or project convention).
+      Commit hint: cmd-028: Avalonia FW major drives band gate + S/W bank
+
   - id: cmd-027
     created: "2026-09-21T13:40:00-04:00"
     target: [ubuntu-stew]
     role: client
     action: avalonia-parity-idle-digu-title
-    status_hint: pending
+    status_hint: done
     detail: |
       Host: ubuntu-stew (stew-HP). Checkout: /home/stew/Documents/GitHub/mscc-station
       Orders on this host. Avalonia client (mscc-ui/Avalonia-Migration) + shared MSCC.Core as needed.

@@ -12,7 +12,7 @@ On start: `git pull`, then read [`handoff.md`](handoff.md). If `.mscc-coord/COMM
 
 ## Current work
 
-**cmd-027** (ubuntu-stew): Avalonia parity with WPF — idle UI, DIG-U overlay (band last-used wins), WindowTitle product line from FW major. Mic slider parked. See `.mscc-coord/COMMANDS.yaml`.
+**cmd-028** (ubuntu-stew): Avalonia FW major → band gate + S/W bank (WPF cmd-015 parity). See `.mscc-coord/COMMANDS.yaml`.
 
 
 ## Who / where
