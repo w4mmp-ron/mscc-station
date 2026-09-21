@@ -270,6 +270,7 @@ Wire client capture gain (`RemoteAf.MicVolume`) from that slider in digi mode in
 - [x] Seed/Reset live `freq_cal.ini` from factory/freq/&lt;line&gt;
 - [x] Seed/Reset live `power_cal.ini` from factory/power/&lt;line&gt; (QRP measured−3; no PIN)
 - [x] Fill factory tables from 2026-09-19 batch + §3b ship QRP (cmd-018)
+- [x] Per-line user IQ/QRP cache AppData `cal/<line>/` (cmd-020); freq remains factory Reset only
 
 ### Client UX
 - [x] WindowTitle ATU/PTT block from FW major (3/8=PTT, 4/7=ATU; **WPF done cmd-009**; Avalonia **cmd-010** on ubuntu-stew)
@@ -317,4 +318,4 @@ Wire client capture gain (`RemoteAf.MicVolume`) from that slider in digi mode in
 - **Geminus Legacy** major **5**, minor **120** — done
 - MSCC client title: add an **ATU** or **PTT** block next to `FW: major.minor`, derived from major (also map Proficio **3→PTT**, **4→ATU**). WPF + Avalonia — still open (UI list).
 
-- [ ] Per-line user IQ/QRP cache under AppData `cal/<line>/`; swap on FW major (**cmd-020**). Freq: factory Reset only.
+- [x] Per-line user IQ/QRP cache under AppData `cal/<line>/`; swap on FW major (**cmd-020**). Freq: factory Reset only.

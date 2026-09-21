@@ -201,6 +201,8 @@ int IQ_calibration(uint8_t command, char *buffer) {
                 SDRcore_trans_send_param(CMD_SET_COMMIT_IQ, iq_band);
             }
             Sleep(1000);
+            if (rx_tx != IQ_RX)
+                Factory_mirror_live_to_cal("iq.ini");
             Gui_send_param(IQ_OPERATION_COMPLETE, 1);
             print_time(0);
             fprintf(G_fp_logfile, "[%d] IQ_calibration . CMD_SET_COMMIT_IQ . Finished . iq_offset: %d\n", line_number++, iq_offset);

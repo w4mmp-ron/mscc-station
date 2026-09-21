@@ -8,12 +8,14 @@ extern "C" {
 /* Map FW major → factory product-line folder name. Unknown → proficio-mkii. */
 const char *Factory_line_from_major(int major);
 
-/* If live iq.ini / freq_cal.ini / power_cal.ini are missing, copy from
- * factory/<kind>/<line>/ next to the exe. Does not overwrite existing live files. */
+/* Swap/load per-line IQ+QRP user cache (AppData cal/<line>/). Freq: factory if live missing. */
 void Factory_seed_live_inis(void);
 
-/* Overwrite live file from factory/<kind>/<line>/<leaf>. Returns 1 on success. */
+/* Overwrite live file from factory/<kind>/<line>/<leaf>. IQ/QRP also overwrite cal/<line>/. Returns 1 on success. */
 int Factory_reseed_live_file(const char *kind, const char *leaf);
+
+/* Copy live iq.ini or power_cal.ini into cal/<current line>/. */
+void Factory_mirror_live_to_cal(const char *leaf);
 
 #ifdef __cplusplus
 }

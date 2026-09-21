@@ -1424,6 +1424,10 @@ void * Command_Processor(void *my_param) {
     Sleep(50);
     SDRcore_trans_send_param(CMD_SET_PCB_VERSION, G_pcb_version);
     Sleep(50);
+    /* PCB_VERSION reloads trans iq.ini; TRANS_INITIALIZE reloads power_cal.ini
+     * after Factory_seed swapped per-line cache (trans starts before ms-sdr). */
+    SDRcore_trans_send_param(CMD_SET_SDRCORE_TRANS_INITIALIZE, 1);
+    Sleep(50);
     SDRcore_recv_send_param(CMD_SET_PCB_VERSION, G_pcb_version);
     Sleep(50);
     //SDRcore_recv_send_param(CMD_SET_SPEAKER_VOLUME, 0);

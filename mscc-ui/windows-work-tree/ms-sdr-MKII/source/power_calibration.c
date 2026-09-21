@@ -202,6 +202,7 @@ int Update_power_ini_file() {
             }
             fflush(Power_ini_update);
             fclose(Power_ini_update);
+            Factory_mirror_live_to_cal("power_cal.ini");
             status = 1;
             SDRcore_trans_send_param(CMD_SET_SDRCORE_TRANS_INITIALIZE, 1);
             print_time(0);
@@ -479,13 +480,16 @@ int Power_calibration(uint32_t command, char *buf) {
         case CMD_SET_BAND_VOLUME_DEFAULTS:
             print_time(1);
             fprintf(G_fp_logfile, "[%d] CMD_SET_BAND_VOLUME_DEFAULTS . Called\n", line_number++);
-            status = Delete_power_ini_file();
-            if (status == 1) {
-                Create_power_ini_file();
+            /* QRP Reset: factory/power/<line>/ → live + cal/<line>/ (not PCB tables). */
+            if (!Factory_reseed_live_file("power", "power_cal.ini")) {
+                status = Delete_power_ini_file();
+                if (status == 1)
+                    Create_power_ini_file();
             }
             Initialize_power_calibration();
             Gui_send_param(CMD_GET_BAND_POWER, G_power_stack[record].power_level);
             Sleep(50);
+            SDRcore_trans_send_param(CMD_SET_SDRCORE_TRANS_INITIALIZE, 1);
             SDRcore_trans_send_param(CMD_SET_SDR_CORE_BAND, Tranceiver_band);
             print_time(0);
             fprintf(G_fp_logfile, "[%d] CMD_SET_BAND_VOLUME_DEFAULTS . Finished \n", line_number++);

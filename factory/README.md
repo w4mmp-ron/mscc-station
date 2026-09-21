@@ -2,7 +2,7 @@
 
 Canonical ship tables for TX IQ, freq (PPM), and QRP `power_cal`.
 Live runtime files stay `iq.ini` / `freq_cal.ini` / `power_cal.ini` under `%LocalAppData%\MSCC-NET9\`.
-ms-sdr **copies** from here **only when the live file is missing** (first boot / Reset wipe). Ordinary restart does not overwrite user cal.
+Factory is **ship + Reset only**. Freq: copy when live `freq_cal.ini` is missing. IQ/QRP: user cache is `cal\<line>\` (see below); factory is used when that cache is missing (new line / Settings Reset).
 
 ```
 factory/
@@ -24,4 +24,6 @@ QRP `POWER_LEVEL` is **measured − 3** (clamp ≥ 0). No PIN-mod tables.
 
 Windows ms-sdr looks for this tree next to `ms-sdr-MKII.exe` (`C:\mscc-net9\factory\…`).
 
-**Reset paths (cmd-019):** FREQ CAL Reset and TX IQ Reset All force-copy from this tree for the **connected** FW major, then push/reload. Settings Reset does **not** copy `iq.ini` / `freq_cal.ini` / `power_cal.ini` / `recv-iq.ini` from generic `init-files`; those stay missing until the next ms-sdr start seeds them. Ordinary restart still does not overwrite existing live files.
+**Reset paths (cmd-019):** FREQ CAL Reset and TX IQ Reset All force-copy from this tree for the **connected** FW major, then push/reload. Settings Reset does **not** copy `iq.ini` / `freq_cal.ini` / `power_cal.ini` / `recv-iq.ini` from generic `init-files`; those stay missing until the next ms-sdr start seeds them.
+
+**Per-line user cache (cmd-020):** `%LocalAppData%\MSCC-NET9\cal\<line>\iq.ini` and `power_cal.ini` hold last user IQ/QRP for that product line (`cal\LAST_LINE.txt` remembers the last FW line). Switching radios stashes active → previous line, then loads that line’s cache (or factory if none). First upgrade with existing live files bootstraps them into `cal\<line>\` (does not wipe a tuned HF radio). **No freq user cache.** TX IQ Reset All and QRP Reset overwrite live **and** `cal\<line>\` from factory. Settings Reset deletes `cal\` so the next start seeds factory. Ordinary same-radio restart keeps QRP/IQ tweaks via write-through.

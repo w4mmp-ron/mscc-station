@@ -1160,7 +1160,8 @@ public partial class MainWindow : Window
             $"  {ConfigBootstrap.ConfigDirectory}\n\n" +
             "Logs are kept. Client UI / audio / COM templates come from init-files next to MSCC.Wpf.exe.\n\n" +
             "Radio IQ, freq cal, and QRP (iq.ini, freq_cal.ini, power_cal.ini) are NOT copied from those templates.\n" +
-            "They reseed from factory tables for the radio that is connected when servers start.\n\n" +
+            "The per-line IQ/QRP cache (cal\\<line>\\) is deleted too. They reseed from factory tables\n" +
+            "for the radio that is connected when servers start.\n\n" +
             "MSCC will close and you should start it again.\n\nContinue?",
             "Reset configuration to defaults",
             MessageBoxButton.YesNo,
