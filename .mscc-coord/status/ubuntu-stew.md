@@ -6,17 +6,19 @@
 | **Checkout** | `/home/stew/Documents/GitHub/mscc-station` |
 | **Build** | cmd-032 |
 | **Last command id** | cmd-032 |
-| **State** | pending |
+| **State** | done |
 | **Updated** | 2026-09-21 |
 
 ## ACK log
 
 | command id | state | note |
 |------------|-------|------|
-| cmd-032 | pending | Rebuild amd64 sdrcore-trans with reset; ship mscc_1.0.44_amd64.deb; UI 0.6.59 keep |
+| cmd-032 | done | mscc_1.0.44_amd64.deb with remote_mic stream reset; UI 0.6.59 kept |
 | cmd-028 | done | Avalonia 0.6.59 FW band gate |
 | cmd-027 | done | Avalonia idle + DIG-U + FW title |
 
 ## Notes
 
-Live `/home/stew/mscc/sdrcore-trans` is Sep 17 — needs rebuild. installers/linux/mscc_1.0.43 is stale vs cmd-031.
+Deb: `installers/linux/mscc_1.0.44_amd64.deb` (also `linux/mscc-deb/`).
+Live `$HOME/mscc/sdrcore-trans` rebuilt; strings has `stream reset (REMOTE path)`.
+Stack was not running — no restart. UI left `mscc-ui_0.6.59_amd64.deb`. No Pi arm64 this host.
