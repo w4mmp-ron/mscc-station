@@ -40,8 +40,10 @@ public partial class MainViewModel : ViewModelBase, IDisposable
     private int _keepAlivesReceived;
     private int _spectrumFrames;
     private int _spectrumFrameCounter;
-    private long _frequencyHz = 7_000_000;
-    private long _vfoBFrequencyHz = 14_200_000;
+    private long _frequencyHz;
+    private long _vfoBFrequencyHz;
+    private bool _deferUsbModeReport;
+    private bool? _audioBeforeDigU;
     private int _stepIndex = 2;
     private int _lowCutIndex;
     private int _highCutIndex = 2;
@@ -155,8 +157,10 @@ public partial class MainViewModel : ViewModelBase, IDisposable
         LowCutLabel = LowCutLabels[_lowCutIndex];
         HighCutLabel = HighCutLabels[_highCutIndex];
         CwFilterLabel = CwFilterLabels[_cwFilterIndex];
-        ModeText = "USB";
-        AppendLog("MSCC Avalonia 0.6.57 — title FW ATU/PTT (majors 4/7 ATU, 3/8 PTT).");
+        ModeText = "";
+        NotifyModeFlags();
+        NotifyBandFlags();
+        AppendLog("MSCC Avalonia 0.6.58 — idle clean; DIG-U band-wins; FW product title.");
         AppendLog("PTT = TX (voice modes); TUN = TUNE + carrier. S/W opens pan settings.");
         AppendLog($"Log: {LogFilePath}");
         CwPitchLabel = CwPitchOptions[Math.Clamp(CwPitchIndex, 0, CwPitchOptions.Count - 1)];
@@ -281,9 +285,9 @@ public partial class MainViewModel : ViewModelBase, IDisposable
     // ----- Live radio display -----
 
     [ObservableProperty] private string _frequencyText = "—";
-    [ObservableProperty] private string _frequencyMhzEdit = "7.000000";
-    [ObservableProperty] private string _frequencyDisplayMhz = "7.000000";
-    [ObservableProperty] private string _modeText = "USB";
+    [ObservableProperty] private string _frequencyMhzEdit = "0.000000";
+    [ObservableProperty] private string _frequencyDisplayMhz = "0.000000";
+    [ObservableProperty] private string _modeText = "";
     [ObservableProperty] private string _smeterText = "—";
     /// <summary>S-meter units 0–15 (WPF Db_to_Smeter). Drives analog face.</summary>
     [ObservableProperty] private double _sMeter;
@@ -301,8 +305,8 @@ public partial class MainViewModel : ViewModelBase, IDisposable
     [ObservableProperty] private string _logDirectory = "";
     [ObservableProperty] private string _logFilePath = "";
     [ObservableProperty] private SpectrumUpdate? _currentSpectrum;
-    [ObservableProperty] private string _vfoBDisplayMhz = "14.200000";
-    [ObservableProperty] private string _vfoBModeText = "USB";
+    [ObservableProperty] private string _vfoBDisplayMhz = "0.000000";
+    [ObservableProperty] private string _vfoBModeText = "";
     [ObservableProperty] private bool _useVfoA = true;
 
     // ----- Audio (phones / digital paths) -----
@@ -422,7 +426,7 @@ public partial class MainViewModel : ViewModelBase, IDisposable
     [ObservableProperty] private string _proficioTempText = "— °C";
     [ObservableProperty] private string _paTempText = "— °C";
     [ObservableProperty] private string _paCurrentText = "— mA";
-    [ObservableProperty] private string _clientVersionText = "0.6.57";
+    [ObservableProperty] private string _clientVersionText = "0.6.58";
     [ObservableProperty] private bool _qrpMode = true;
     [ObservableProperty] private bool _fullPower;
     [ObservableProperty] private bool _alcOn = true;
@@ -646,21 +650,36 @@ public partial class MainViewModel : ViewModelBase, IDisposable
         }
     }
 
-    /// <summary>ATU for FW majors 4/7, PTT for 3/8; otherwise omit. Same as WPF.</summary>
+    /// <summary>Product line from FW major (cmd-022). Empty if unknown.</summary>
+    internal static string FirmwareProductLabel(int major) => major switch
+    {
+        1 => "Proficio Legacy",
+        2 => "Geminus MKII",
+        3 => "Proficio MKII PTT",
+        4 => "Proficio MKII ATU",
+        5 => "Geminus Legacy",
+        6 => "Ultimus Legacy",
+        7 => "Ultimus MKII ATU",
+        8 => "Ultimus MKII PTT",
+        _ => ""
+    };
+
+    /// <summary>WindowTitle suffix: product line from FW major (includes ATU/PTT in the name).</summary>
     internal static string FirmwareBlockSuffix(string firmwareVersion)
     {
-        if (string.IsNullOrWhiteSpace(firmwareVersion) || firmwareVersion is "—" or "--")
+        if (!TryParseFirmwareMajor(firmwareVersion, out int major))
             return "";
+        return FirmwareProductLabel(major);
+    }
+
+    internal static bool TryParseFirmwareMajor(string firmwareVersion, out int major)
+    {
+        major = 0;
+        if (string.IsNullOrWhiteSpace(firmwareVersion) || firmwareVersion is "—" or "--")
+            return false;
         int dot = firmwareVersion.IndexOf('.');
         string majs = dot >= 0 ? firmwareVersion[..dot] : firmwareVersion;
-        if (!int.TryParse(majs, out int major))
-            return "";
-        return major switch
-        {
-            3 or 8 => "PTT",
-            4 or 7 => "ATU",
-            _ => ""
-        };
+        return int.TryParse(majs, out major);
     }
 
     public string ConnectButtonText => IsConnected ? "Disconnect" : "Connect";
@@ -5095,6 +5114,12 @@ public partial class MainViewModel : ViewModelBase, IDisposable
             !reason.StartsWith("gen ", StringComparison.OrdinalIgnoreCase))
             _onGenBand = false;
 
+        if (IsConnected && hz > 0)
+        {
+            string personalityMode = UseVfoA ? ModeText : VfoBModeText;
+            BandLastUsedStore.RememberLastPersonalityFreq(hz, personalityMode);
+        }
+
         // Debounced last-used for on-air tuning only (not band switch / cal / IQ sessions)
         if (ShouldUpdateLastUsed(reason))
             ScheduleSaveLastUsed();
@@ -5141,6 +5166,7 @@ public partial class MainViewModel : ViewModelBase, IDisposable
     private bool ShouldUpdateLastUsed(string reason)
     {
         if (_suppressLastUsedSave) return false;
+        if (!IsConnected) return false;
         if (IsCalibrationOrIqSessionActive()) return false;
         if (reason.StartsWith("band ", StringComparison.OrdinalIgnoreCase)) return false;
         if (reason.StartsWith("qrp-cal", StringComparison.OrdinalIgnoreCase)) return false;
@@ -5184,11 +5210,10 @@ public partial class MainViewModel : ViewModelBase, IDisposable
     private async Task PushActiveVfoToRadioAsync(bool force)
     {
         long hz = UseVfoA ? _frequencyHz : _vfoBFrequencyHz;
-        string mode = UseVfoA
-            ? (string.IsNullOrWhiteSpace(ModeText) ? "USB" : ModeText)
-            : (string.IsNullOrWhiteSpace(VfoBModeText) ? "USB" : VfoBModeText);
+        string mode = UseVfoA ? (ModeText ?? "") : (VfoBModeText ?? "");
 
-        BandText = BandNameForFrequency(hz);
+        if (hz > 0)
+            BandText = BandNameForFrequency(hz);
         RefreshSpectrumFilterOverlay();
         SyncRfPowerFromMode(force: true);
         if (UseVfoA)
@@ -5202,10 +5227,14 @@ public partial class MainViewModel : ViewModelBase, IDisposable
             byte vfo = UseVfoA ? Opcodes.VFO_A : Opcodes.VFO_B;
             await _radio.SetActiveVfoAsync(vfo).ConfigureAwait(true);
             await Task.Delay(10).ConfigureAwait(true);
-            await _radio.SetFrequencyAsync(hz).ConfigureAwait(true);
-            await _radio.SetModeAsync(mode).ConfigureAwait(true);
+            // Idle Connect: freq 0 / empty mode — wait for radio reports (do not send USB).
+            if (hz > 0)
+                await _radio.SetFrequencyAsync(hz).ConfigureAwait(true);
+            if (!string.IsNullOrWhiteSpace(mode))
+                await _radio.SetModeAsync(mode).ConfigureAwait(true);
             StatusText = $"VFO {(UseVfoA ? "A" : "B")} active";
-            AppendLog($"VFO {(UseVfoA ? "A" : "B")} → {FormatMhz(hz)} {mode}{(force ? " (connect)" : "")}");
+            string modeLabel = string.IsNullOrWhiteSpace(mode) ? "(mode pending)" : mode;
+            AppendLog($"VFO {(UseVfoA ? "A" : "B")} → {FormatMhz(hz)} {modeLabel}{(force ? " (connect)" : "")}");
         }
         catch (Exception ex)
         {
@@ -5262,6 +5291,8 @@ public partial class MainViewModel : ViewModelBase, IDisposable
                 VfoBModeText = m;
             }
 
+            ApplyDigUAudioPolicy(prevMode, m);
+
             if (nowFm)
             {
                 await SendFmPowerAsync(Math.Clamp(FmPowerPercent, 0, 100)).ConfigureAwait(true);
@@ -5272,6 +5303,11 @@ public partial class MainViewModel : ViewModelBase, IDisposable
 
             RefreshSpectrumFilterOverlay();
             SyncRfPowerFromMode();
+            long hz = UseVfoA ? _frequencyHz : _vfoBFrequencyHz;
+            if (IsConnected && hz > 0)
+                BandLastUsedStore.RememberLastPersonalityFreq(hz, m);
+            if (!IsCalibrationOrIqSessionActive())
+                SaveLastUsedForCurrentBand();
             StatusText = $"Mode {m} (VFO {(UseVfoA ? "A" : "B")})";
             AppendLog($"Sent mode {m} VFO{(UseVfoA ? "A" : "B")}");
             ScheduleSaveClientSettings();
@@ -5416,25 +5452,35 @@ public partial class MainViewModel : ViewModelBase, IDisposable
     {
         if (_suppressLastUsedSave) return;
         if (IsCalibrationOrIqSessionActive()) return;
+        // Idle ctor/UI must not write 40m@7.100/USB over DIG-U last-used.
+        if (!IsConnected) return;
+        long hz = UseVfoA ? _frequencyHz : _vfoBFrequencyHz;
+        if (hz <= 0) return;
+
         string band = BandText ?? "";
+        if (string.IsNullOrWhiteSpace(band) || band is "—" or "?" or "-")
+            band = BandNameForFrequency(hz);
         if (string.IsNullOrWhiteSpace(band) || band is "—" or "?" or "-")
             return;
         // GEN beacons: do not overwrite ham-band last-used
         if (string.Equals(band, "gen", StringComparison.OrdinalIgnoreCase))
             return;
 
-        long hz = UseVfoA ? _frequencyHz : _vfoBFrequencyHz;
-        string mode = UseVfoA
-            ? (string.IsNullOrWhiteSpace(ModeText) ? "USB" : ModeText)
-            : (string.IsNullOrWhiteSpace(VfoBModeText) ? "USB" : VfoBModeText);
+        string freqBand = BandNameForFrequency(hz);
+        if (!string.IsNullOrWhiteSpace(freqBand) && freqBand is not "—" and not "?" &&
+            !string.Equals(NormalizeBandLabel(freqBand), NormalizeBandLabel(band), StringComparison.OrdinalIgnoreCase))
+        {
+            AppendLog($"SaveLastUsed: BandText={band} but f={hz} is {freqBand} — saving under {freqBand}");
+            band = freqBand;
+            BandText = freqBand;
+        }
 
-        string bandCopy = band;
-        string modeCopy = mode;
-        int low = _lowCutIndex, high = _highCutIndex, cw = _cwFilterIndex;
-        bool vfoB = !UseVfoA;
-        // Disk I/O off UI thread
-        _ = Task.Run(() =>
-            BandLastUsedStore.Save(bandCopy, hz, modeCopy, low, high, cw, forVfoB: vfoB));
+        string mode = UseVfoA ? (ModeText ?? "") : (VfoBModeText ?? "");
+        if (string.IsNullOrWhiteSpace(mode))
+            return;
+
+        BandLastUsedStore.Save(band, hz, mode, _lowCutIndex, _highCutIndex, _cwFilterIndex, forVfoB: !UseVfoA);
+        AppendLog($"SaveLastUsed: {(UseVfoA ? "VFOA" : "VFOB")} band={band} f={hz} mode={mode}");
     }
 
     private void ScheduleSaveLastUsed()
@@ -5452,6 +5498,135 @@ public partial class MainViewModel : ViewModelBase, IDisposable
 
         _lastUsedSaveTimer.Stop();
         _lastUsedSaveTimer.Start();
+    }
+
+    private static string CanonicalMode(string? mode)
+    {
+        string u = (mode ?? "").Trim().ToUpperInvariant().Replace('_', '-');
+        return u switch
+        {
+            "" => "",
+            "USB" or "U" or "2" => "USB",
+            "LSB" or "L" or "1" => "LSB",
+            "AM" or "A" or "0" => "AM",
+            "CW" or "C" or "3" => "CW",
+            "TUNE" or "T" or "4" => "TUNE",
+            "DIG-U" or "DIGU" or "DIG" => "DIG-U",
+            "FM" or "F" or "5" => "FM",
+            _ => u
+        };
+    }
+
+    private static bool IsDigUMode(string? mode) => CanonicalMode(mode) == "DIG-U";
+    private static bool IsUsbMode(string? mode) => CanonicalMode(mode) == "USB";
+    private static bool IsModeUnset(string? mode) => string.IsNullOrWhiteSpace(mode);
+
+    /// <summary>
+    /// DIG-U overlay on USB RF. Per-band last-used MODE (if present) decides alone.
+    /// LAST_HF/LF DIG-U is only used when band is unknown or that band's mode is empty.
+    /// Already-DIG-U keeps the overlay on a USB echo.
+    /// </summary>
+    private bool ShouldKeepDigUOnUsbReport()
+    {
+        string current = UseVfoA ? (ModeText ?? "") : (VfoBModeText ?? "");
+        if (IsDigUMode(current))
+            return true;
+        long freq = UseVfoA ? _frequencyHz : _vfoBFrequencyHz;
+        string band = BandText ?? "";
+        if (string.IsNullOrWhiteSpace(band) || band is "—" or "?" or "-")
+            band = BandNameForFrequency(freq);
+        bool bandKnown = !string.IsNullOrWhiteSpace(band) && band is not "—" and not "?" and not "-";
+        if (bandKnown)
+        {
+            var (_, m, _, _, _) = BandLastUsedStore.Load(band, forVfoB: !UseVfoA);
+            if (!string.IsNullOrWhiteSpace(m))
+                return IsDigUMode(m);
+        }
+        if (freq <= 0)
+            return false;
+        string personality = BandLastUsedStore.IsLfPersonalityFreq(freq)
+            ? BandLastUsedStore.LastLfMode
+            : BandLastUsedStore.LastHfMode;
+        return IsDigUMode(personality);
+    }
+
+    /// <summary>DIG-U: force Audio D. Leaving DIG-U restores prior P/D.</summary>
+    private void ApplyDigUAudioPolicy(string oldMode, string newMode)
+    {
+        bool oldDig = IsDigUMode(oldMode);
+        bool newDig = IsDigUMode(newMode);
+        if (newDig && !oldDig)
+        {
+            _audioBeforeDigU = IsDigitalAudio;
+            if (!IsDigitalAudio)
+            {
+                IsDigitalAudio = true;
+                AppendLog("DIG-U: Audio → D (digital); CMP forced off if it was on");
+            }
+        }
+        else if (oldDig && !newDig)
+        {
+            if (_audioBeforeDigU is bool prev && IsDigitalAudio != prev)
+            {
+                IsDigitalAudio = prev;
+                AppendLog($"Left DIG-U: Audio restored to {(prev ? "D" : "P")}");
+            }
+            _audioBeforeDigU = null;
+        }
+    }
+
+    /// <summary>Apply DIG-U overlay without sending USB to the radio or writing last-used.</summary>
+    private void ApplyDigUOverlay(string reason)
+    {
+        string prev = UseVfoA ? (ModeText ?? "") : (VfoBModeText ?? "");
+        if (!IsDigUMode(prev))
+            ApplyDigUAudioPolicy(prev, "DIG-U");
+        if (UseVfoA)
+        {
+            ModeText = "DIG-U";
+            NotifyModeFlags();
+        }
+        else
+            VfoBModeText = "DIG-U";
+        RefreshSpectrumFilterOverlay();
+        SyncRfPowerFromMode();
+        AppendLog($"DIG-U overlay restore ({reason})");
+    }
+
+    /// <summary>
+    /// After FrequencyReported (band gold synced). Restore DIG-U from per-band last-used
+    /// (LAST_HF/LF only if band mode empty). Does not LoadLastUsed (no outgoing tune).
+    /// </summary>
+    private void TryRestoreDigUAfterFreqKnown()
+    {
+        string mode = UseVfoA ? (ModeText ?? "") : (VfoBModeText ?? "");
+        if (!IsUsbMode(mode) && !IsModeUnset(mode))
+        {
+            _deferUsbModeReport = false;
+            return;
+        }
+        if (ShouldKeepDigUOnUsbReport())
+        {
+            _deferUsbModeReport = false;
+            ApplyDigUOverlay("FrequencyReported");
+            return;
+        }
+        if (_deferUsbModeReport && IsModeUnset(mode))
+        {
+            _deferUsbModeReport = false;
+            if (UseVfoA)
+            {
+                ModeText = "USB";
+                NotifyModeFlags();
+            }
+            else
+                VfoBModeText = "USB";
+            RefreshSpectrumFilterOverlay();
+            SyncRfPowerFromMode();
+            AppendLog("ModeReported USB: applied after freq known");
+        }
+        else
+            _deferUsbModeReport = false;
     }
 
     private static string NormalizeBandLabel(string? band)
@@ -5563,26 +5738,8 @@ public partial class MainViewModel : ViewModelBase, IDisposable
             _genIndexGeminus = Math.Clamp(s.GenIndexGeminus, 0, GenOptionsGeminus.Length - 1);
             SyncGenButtonForRadioModel();
 
-            if (s.LastFrequencyHz is >= 10_000 and <= 60_000_000)
-            {
-                _frequencyHz = s.LastFrequencyHz;
-                UpdateFrequencyUi(_frequencyHz);
-            }
-
-            if (!string.IsNullOrWhiteSpace(s.LastMode))
-            {
-                ModeText = s.LastMode.Trim();
-                NotifyModeFlags();
-            }
-
-            if (s.LastVfoBFrequencyHz is >= 10_000 and <= 60_000_000)
-            {
-                _vfoBFrequencyHz = s.LastVfoBFrequencyHz;
-                VfoBDisplayMhz = FormatMhz(_vfoBFrequencyHz);
-            }
-
-            if (!string.IsNullOrWhiteSpace(s.LastVfoBMode))
-                VfoBModeText = s.LastVfoBMode.Trim();
+            // Idle until Connect: do not paint last freq/mode/band (WPF cmd-024).
+            // Reports + DIG-U overlay restore after FrequencyReported.
 
             UseVfoA = s.UseVfoA;
             OnPropertyChanged(nameof(UseVfoB));
@@ -5764,9 +5921,9 @@ public partial class MainViewModel : ViewModelBase, IDisposable
             LocalPortText = LocalPortText ?? "8889",
             IsGeminusRadioModel = IsGeminusRadioModel,
             LastFrequencyHz = _frequencyHz,
-            LastMode = string.IsNullOrWhiteSpace(ModeText) ? "USB" : ModeText,
+            LastMode = ModeText ?? "",
             LastVfoBFrequencyHz = _vfoBFrequencyHz,
-            LastVfoBMode = string.IsNullOrWhiteSpace(VfoBModeText) ? "USB" : VfoBModeText,
+            LastVfoBMode = VfoBModeText ?? "",
             UseVfoA = UseVfoA,
             StepIndex = _stepIndex,
             LowCutIndex = _lowCutIndex,
@@ -6173,22 +6330,44 @@ public partial class MainViewModel : ViewModelBase, IDisposable
                 string name = BandNameForFrequency(hz);
                 if (name is not "—" and not "?")
                     BandText = name;
+                // Do NOT save last-used or RememberLast on this path.
+                // Do NOT LoadLastUsed (would send tune). DIG-U overlay only.
+                AppendLog($"Frequency reported from backend: {hz}");
+                TryRestoreDigUAfterFreqKnown();
             });
 
         radio.ModeReported += mode =>
             PostToUi(() =>
             {
+                string reported = (mode ?? "").Trim();
+                // Radio RF is USB for DIG-U (0xB7). Startup USB often arrives before band/freq.
+                if (IsUsbMode(reported))
+                {
+                    long hz = UseVfoA ? _frequencyHz : _vfoBFrequencyHz;
+                    if (hz <= 0)
+                    {
+                        _deferUsbModeReport = true;
+                        AppendLog("ModeReported USB: deferred until freq known");
+                        return;
+                    }
+                    if (ShouldKeepDigUOnUsbReport())
+                    {
+                        ApplyDigUOverlay("ModeReported USB");
+                        return;
+                    }
+                }
+                _deferUsbModeReport = false;
                 if (UseVfoA)
                 {
-                    ModeText = mode;
+                    ModeText = reported;
                     NotifyModeFlags();
                 }
                 else
                 {
-                    VfoBModeText = mode;
+                    VfoBModeText = reported;
                 }
                 RefreshSpectrumFilterOverlay();
-                AppendLog($"Mode reported: {mode} (VFO {(UseVfoA ? "A" : "B")})");
+                AppendLog($"Mode reported: {reported} (VFO {(UseVfoA ? "A" : "B")})");
             });
 
         radio.DefaultLowCutIndexReported += idx =>

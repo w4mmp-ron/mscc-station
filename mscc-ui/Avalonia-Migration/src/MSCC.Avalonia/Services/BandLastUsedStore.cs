@@ -146,13 +146,19 @@ public static class BandLastUsedStore
             if (eq <= 0) continue;
             string key = line[..eq].Trim();
             string val = line[(eq + 1)..].Trim();
+            string ukey = key.ToUpperInvariant();
+            if (ukey is "LAST_HF_FREQ" or "LAST_HF_MODE" or "LAST_LF_FREQ" or "LAST_LF_MODE")
+            {
+                map[ukey] = val;
+                continue;
+            }
             // Only keep valid band-prefixed keys
             int us = key.IndexOf('_');
             if (us <= 0) continue;
             string prefix = key[..us].ToUpperInvariant();
             if (!ValidBands.Contains(prefix))
                 continue;
-            map[key.ToUpperInvariant()] = val;
+            map[ukey] = val;
         }
         return map;
     }
@@ -165,5 +171,53 @@ public static class BandLastUsedStore
         foreach (var kv in map.OrderBy(k => k.Key, StringComparer.OrdinalIgnoreCase))
             sb.AppendLine($"{kv.Key}={kv.Value}");
         File.WriteAllText(path, sb.ToString());
+    }
+
+    public static bool IsLfPersonalityFreq(long frequencyHz) =>
+        frequencyHz > 0 && frequencyHz < 1_800_000;
+
+    public static string LastHfMode => ReadPersonality("LAST_HF_MODE");
+    public static string LastLfMode => ReadPersonality("LAST_LF_MODE");
+
+    /// <summary>HF vs LF personality last mode/freq. Does not overwrite per-band keys.</summary>
+    public static void RememberLastPersonalityFreq(long frequencyHz, string? mode)
+    {
+        if (frequencyHz <= 0) return;
+        string m = string.IsNullOrWhiteSpace(mode) ? "" : mode.Trim();
+        if (string.Equals(m, "TUNE", StringComparison.OrdinalIgnoreCase))
+            return;
+        try
+        {
+            string path = StorePathA;
+            string? dir = Path.GetDirectoryName(path);
+            if (!string.IsNullOrEmpty(dir))
+                Directory.CreateDirectory(dir);
+            var map = LoadMap(path);
+            bool lf = IsLfPersonalityFreq(frequencyHz);
+            map[lf ? "LAST_LF_FREQ" : "LAST_HF_FREQ"] =
+                frequencyHz.ToString(CultureInfo.InvariantCulture);
+            if (m.Length > 0)
+                map[lf ? "LAST_LF_MODE" : "LAST_HF_MODE"] = m;
+            WriteMap(path, map);
+        }
+        catch
+        {
+            // best-effort
+        }
+    }
+
+    private static string ReadPersonality(string key)
+    {
+        try
+        {
+            var map = LoadMap(StorePathA);
+            return map.TryGetValue(key, out string? v) && !string.IsNullOrWhiteSpace(v)
+                ? v.Trim()
+                : "";
+        }
+        catch
+        {
+            return "";
+        }
     }
 }
