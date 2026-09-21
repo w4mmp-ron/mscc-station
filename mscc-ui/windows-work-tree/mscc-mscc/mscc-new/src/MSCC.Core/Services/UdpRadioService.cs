@@ -2354,7 +2354,7 @@ public class UdpRadioService : IRadioService, IDisposable
         var update = new SpectrumUpdate
         {
             Data = data,
-            CenterFrequencyHz = 7_100_000,
+            CenterFrequencyHz = 0,
             SpanHz = SpectrumUpdate.DefaultPanadapterSpanHz,
             FilterLowHz = -2400,
             FilterHighHz = 200,

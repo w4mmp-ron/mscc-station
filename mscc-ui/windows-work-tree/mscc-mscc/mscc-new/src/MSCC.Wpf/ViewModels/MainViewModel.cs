@@ -1564,7 +1564,8 @@ public partial class MainViewModel : ObservableObject, IDisposable
                 // Recompute also via Vfo.Mode PropertyChanged when cuts unchanged
             }
 
-            _ = _radioService.SetModeAsync(FormatModeDisplay(newMode));
+            if (newMode != RadioMode.None)
+                _ = _radioService.SetModeAsync(FormatModeDisplay(newMode));
             MonitorTextBoxText($" ActiveMode set to {FormatModeDisplay(newMode)}");
             OnPropertyChanged();
             OnPropertyChanged(nameof(IsFmMode));
@@ -1858,11 +1859,11 @@ public partial class MainViewModel : ObservableObject, IDisposable
         }
         catch { /* best-effort */ }
 
-        // Seed per-VFO band memory from defaults (VFO A 7.1 → 40m, VFO B 7.2 → 40m)
+        // Idle: freq 0 / no band. Do not seed 40m — that poisoned last-used before Start.
         _bandForVfoA = GetBandNameForFrequency(RadioState.VfoA.FrequencyHz);
         _bandForVfoB = GetBandNameForFrequency(RadioState.VfoB.FrequencyHz);
-        if (_bandForVfoA == "?") _bandForVfoA = RadioState.CurrentBand ?? "40m";
-        if (_bandForVfoB == "?") _bandForVfoB = "40m";
+        if (_bandForVfoA == "?") _bandForVfoA = "";
+        if (_bandForVfoB == "?") _bandForVfoB = "";
 
         RadioState.PropertyChanged += (s, e) =>
         {
@@ -3049,7 +3050,7 @@ public partial class MainViewModel : ObservableObject, IDisposable
         public long VfoBFrequencyHz;
         public RadioMode VfoAMode;
         public RadioMode VfoBMode;
-        public string CurrentBand = "40m";
+        public string CurrentBand = "";
         public int LowCutIndex;
         public int HighCutIndex;
         public int CwFilterIndex;
@@ -4057,7 +4058,8 @@ public partial class MainViewModel : ObservableObject, IDisposable
 
         RadioState.ActiveVfo.FrequencyHz = freq;
         SyncBandHighlightFromFrequency(freq);
-        SpectrumWaterfallSettings.RememberLastPersonalityFreq(freq, ActiveMode);
+        if (IsRadioRunning && freq > 0)
+            SpectrumWaterfallSettings.RememberLastPersonalityFreq(freq, ActiveMode);
         MonitorTextBoxText($" TuneToFrequency: {freq}");
         _ = _radioService.SetFrequencyAsync(freq);
         if (IsFmMode && !FmSimplex && RadioState.ActiveVfo == RadioState.VfoA)
@@ -4230,16 +4232,17 @@ public partial class MainViewModel : ObservableObject, IDisposable
         };
     }
 
-    /// <summary>UI / last-used / favorites display name (DIG-U, not DigU).</summary>
+    /// <summary>UI / last-used / favorites display name (DIG-U, not DigU). Empty when idle.</summary>
     public static string FormatModeDisplay(RadioMode mode) => mode switch
     {
+        RadioMode.None => "",
         RadioMode.DigU => "DIG-U",
         _ => mode.ToString().ToUpperInvariant()
     };
 
     private void SaveModeFilterProfile(RadioMode mode)
     {
-        if (mode is RadioMode.TUNE) return;
+        if (mode is RadioMode.TUNE or RadioMode.None) return;
         SpectrumWaterfallSettings.SaveModeFilterProfile(
             FormatModeDisplay(mode), LowCutIndex, HighCutIndex, CwFilterIndex);
         SpectrumWaterfallSettings.Save();
@@ -4247,7 +4250,7 @@ public partial class MainViewModel : ObservableObject, IDisposable
 
     private void ApplyModeFilterProfile(RadioMode mode)
     {
-        if (mode is RadioMode.TUNE) return;
+        if (mode is RadioMode.TUNE or RadioMode.None) return;
         var (l, h, c) = SpectrumWaterfallSettings.LoadModeFilterProfile(FormatModeDisplay(mode));
         if (l < 0 && h < 0) return;
 
@@ -5290,8 +5293,8 @@ public partial class MainViewModel : ObservableObject, IDisposable
 
     // Each VFO remembers its own last band so Toggle VFO restores the correct band button highlight
     // (shared RadioState.CurrentBand alone would stick on the last band selected on either VFO).
-    private string _bandForVfoA = "40m";
-    private string _bandForVfoB = "40m";
+    private string _bandForVfoA = "";
+    private string _bandForVfoB = "";
 
     /// <summary>
     /// True when ActiveVfo is VFO B — last-used load/save use MSCC_LastUsed_VFOB.ini.
@@ -5369,8 +5372,10 @@ public partial class MainViewModel : ObservableObject, IDisposable
     public void SaveLastUsedForCurrentBand()
     {
         if (SuppressLastUsedSave) return;
+        // Idle ctor/UI storms must not write 40m@7.100/USB over DIG-U last-used.
+        if (!IsRadioRunning || RadioState.ActiveVfo.FrequencyHz <= 0) return;
         string band = RadioState.CurrentBand;
-        if (string.IsNullOrEmpty(band)) return;
+        if (string.IsNullOrEmpty(band) || band == "?") return;
         if (band == "gen" && CurrentGenSub != "USER") return;
         long f = RadioState.ActiveVfo.FrequencyHz;
         string freqBand = GetBandNameForFrequency(f);

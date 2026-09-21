@@ -9,15 +9,15 @@ namespace MSCC.Core.Domain;
 /// </summary>
 public class RadioState : INotifyPropertyChanged
 {
-    private VfoState _vfoA = new() { FrequencyHz = 7_100_000 };
-    private VfoState _vfoB = new() { FrequencyHz = 7_200_000 };
+    private VfoState _vfoA = new();
+    private VfoState _vfoB = new();
     private VfoState _activeVfo;
     private bool _isTransmitting;
     private int _rfPowerPercent = 80;
     private int _volume = 60;
     private int _micGain = 45;
     private int _compression = 30;
-    private string _currentBand = "40m";
+    private string _currentBand = "";
 
     // Separate for P (operator/phones) and D (digital) audio paths
     private int _pVolume = 60;

@@ -4,8 +4,8 @@
 |--|--|
 | **Host** | NEW-HP-LAPTOP (Windows) |
 | **Checkout** | `C:\Users\n8vet\OneDrive\Documents\GitHub\mscc-station` |
-| **Build** | **cmd-023** |
-| **Last command id** | cmd-023 |
+| **Build** | **cmd-024** |
+| **Last command id** | cmd-024 |
 | **State** | done |
 | **Updated** | 2026-09-21 |
 
@@ -13,15 +13,13 @@
 
 | command id | state | note |
 |------------|-------|------|
-| cmd-023 | done | LAST 14.074/474.2; DIG-U stick; FW ask; FreqCal reset; WPF 9.21.3 |
-| cmd-022 | done | WindowTitle product line; verified |
-| cmd-021 | done | last-used sanity + geminus IQ 1/4 |
-| cmd-020 | done | cal/<line>/ cache |
+| cmd-024 | done | idle VFO 0 / no band-mode; last-used gated; WPF 9.21.4 |
+| cmd-023 | reviewed | 9.21.3; DIG-U stick blocked by idle 40m/USB default |
+| cmd-022 | done | WindowTitle product line |
 
 ## Notes
 
-A) DefaultLastHfFreq=14074000 DefaultLastLfFreq=474200 (existing INI keys kept).
-B) ModeReported USB keeps DIG-U if UI or last-used is DIG-U (radio RF is USB). LoadLastUsed still applies DIG-U audio D.
-C) After Connect, 2.5s: if FW or Core still "--", prompt once; Yes=0xB2/0xB3/0xFE; No=keep last session.
-D) Freq Cal Auto/Check/Reset zeros progress + status before a new run.
+Idle: VfoA/B FrequencyHz=0, Mode=None, CurrentBand="". No gold band, no mode button.
+SaveLastUsed + RememberLastPersonalityFreq require IsRadioRunning and freq>0.
+Poisoned 40M_* in INI not auto-wiped — re-set 40m DIG-U once after this build.
 Stew pushes.

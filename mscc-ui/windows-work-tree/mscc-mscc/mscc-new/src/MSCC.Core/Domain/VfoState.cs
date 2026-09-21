@@ -9,8 +9,8 @@ namespace MSCC.Core.Domain;
 /// </summary>
 public class VfoState : INotifyPropertyChanged
 {
-    private long _frequencyHz = 7_100_000;
-    private RadioMode _mode = RadioMode.USB;
+    private long _frequencyHz;
+    private RadioMode _mode = RadioMode.None;
     private FilterSettings _filter = new();
     private bool _ritOn;
     private long _ritOffsetHz;
@@ -37,9 +37,10 @@ public class VfoState : INotifyPropertyChanged
         }
     }
 
-    /// <summary>UI label (DIG-U rather than DigU).</summary>
+    /// <summary>UI label (DIG-U rather than DigU). Empty while idle (no mode button lit).</summary>
     public string ModeDisplay => Mode switch
     {
+        RadioMode.None => "",
         RadioMode.DigU => "DIG-U",
         _ => Mode.ToString()
     };
@@ -117,5 +118,7 @@ public enum RadioMode
     /// </summary>
     DigU,
     /// <summary>Narrow FM (wire CMD_SET_MAIN_MODE = 5, DSP MODE_FM = 6).</summary>
-    FM
+    FM,
+    /// <summary>Idle / unset — no mode button selected (before Start).</summary>
+    None
 }
