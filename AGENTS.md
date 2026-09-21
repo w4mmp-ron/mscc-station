@@ -12,7 +12,7 @@ On start: `git pull`, then read [`handoff.md`](handoff.md). If `.mscc-coord/COMM
 
 ## Current work
 
-**cmd-032 done** (rpi): **mscc 1.0.44** arm64 in `installers/rpi/` + `rpi/Rpi-installers/` (remote_mic stream reset). UI **0.6.59**. amd64 kit is ubuntu-stew.
+**cmd-032 done** (ubuntu-stew + rpi): **mscc 1.0.44** amd64 + arm64 installers ship with remote_mic stream reset. UI **0.6.59**. See `.mscc-coord/COMMANDS.yaml`.
 
 ## Who / where
 

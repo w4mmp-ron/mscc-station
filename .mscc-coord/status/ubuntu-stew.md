@@ -4,8 +4,8 @@
 |--|--|
 | **Host** | stew-HP-Notebook |
 | **Checkout** | `/home/stew/Documents/GitHub/mscc-station` |
-| **Build** | cmd-028 |
-| **Last command id** | cmd-028 |
+| **Build** | cmd-032 |
+| **Last command id** | cmd-032 |
 | **State** | done |
 | **Updated** | 2026-09-21 |
 
@@ -13,11 +13,12 @@
 
 | command id | state | note |
 |------------|-------|------|
-| cmd-028 | done | Avalonia 0.6.59 FW major → band gate + S/W bank (amd64) |
-| cmd-027 | done | Avalonia 0.6.58 idle + DIG-U band-wins + FW title |
+| cmd-032 | done | mscc_1.0.44_amd64.deb with remote_mic stream reset; UI 0.6.59 kept |
+| cmd-028 | done | Avalonia 0.6.59 FW band gate |
+| cmd-027 | done | Avalonia idle + DIG-U + FW title |
 
 ## Notes
 
-0xB2 major 2/5 Geminus LF; 1/3/4/6/7/8 Proficio-family HF. Unknown keeps INI.
-Kit: `installers/linux/mscc-ui_0.6.59_amd64.deb`
-cmd-027 idle/DIG-U/title kept. Mic slider parked. No Pi arm64.
+Deb: `installers/linux/mscc_1.0.44_amd64.deb` (also `linux/mscc-deb/`).
+Live `$HOME/mscc/sdrcore-trans` rebuilt; strings has `stream reset (REMOTE path)`.
+Stack was not running — no restart. UI left `mscc-ui_0.6.59_amd64.deb`. No Pi arm64 this host.
