@@ -7,7 +7,7 @@
   "targets": {
     ".NETCoreApp,Version=v9.0": {},
     ".NETCoreApp,Version=v9.0/linux-arm64": {
-      "MSCC.Avalonia/0.6.49": {
+      "MSCC.Avalonia/0.6.59": {
         "dependencies": {
           "Avalonia": "12.1.1",
           "Avalonia.Desktop": "12.1.1",
@@ -15,8 +15,8 @@
           "Avalonia.Themes.Fluent": "12.1.1",
           "AvaloniaUI.DiagnosticsSupport": "2.2.3",
           "CommunityToolkit.Mvvm": "8.4.2",
+          "MSCC.Core": "1.0.0",
           "System.IO.Ports": "9.0.0",
-          "MSCC.Core": "1.0.0.0",
           "runtimepack.Microsoft.NETCore.App.Runtime.linux-arm64": "9.0.20"
         },
         "runtime": {
@@ -1084,7 +1084,10 @@
           }
         }
       },
-      "MSCC.Core/1.0.0.0": {
+      "MSCC.Core/1.0.0": {
+        "dependencies": {
+          "CommunityToolkit.Mvvm": "8.4.2"
+        },
         "runtime": {
           "MSCC.Core.dll": {
             "assemblyVersion": "1.0.0.0",
@@ -1095,7 +1098,7 @@
     }
   },
   "libraries": {
-    "MSCC.Avalonia/0.6.49": {
+    "MSCC.Avalonia/0.6.59": {
       "type": "project",
       "serviceable": false,
       "sha512": ""
@@ -1455,8 +1458,8 @@
       "path": "tmds.dbus.protocol/0.94.1",
       "hashPath": "tmds.dbus.protocol.0.94.1.nupkg.sha512"
     },
-    "MSCC.Core/1.0.0.0": {
-      "type": "reference",
+    "MSCC.Core/1.0.0": {
+      "type": "project",
       "serviceable": false,
       "sha512": ""
     }

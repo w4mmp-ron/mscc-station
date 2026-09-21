@@ -12,7 +12,7 @@ On start: `git pull`, then read [`handoff.md`](handoff.md). If `.mscc-coord/COMM
 
 ## Current work
 
-**cmd-029** (rpi): Avalonia 0.6.59 arm64 kit + remote phones headroom (12000) + REMOTE_AUDIO line gain 2.5×; rebuild sdrcore-recv/trans. See `.mscc-coord/COMMANDS.yaml`.
+**cmd-029 done** (rpi): Avalonia **0.6.59** arm64 in `installers/rpi/`; recv AF `*12000`; REMOTE_AUDIO line gain 2.5×. Mic slider still out of scope.
 
 
 ## Who / where
