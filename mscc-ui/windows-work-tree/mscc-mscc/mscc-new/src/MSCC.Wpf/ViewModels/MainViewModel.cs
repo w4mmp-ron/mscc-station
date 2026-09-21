@@ -1297,6 +1297,9 @@ public partial class MainViewModel : ObservableObject, IDisposable
     private bool _identityAskPromptedThisConnect;
     private const double IdentityAskDelaySeconds = 2.5;
 
+    /// <summary>USB 0xB7 arrived before freq/band; apply USB or DIG-U overlay after FrequencyReported.</summary>
+    private bool _deferUsbModeReport;
+
     /// <summary>ms-sdr (CMD_GET_SET_MSSDR_VERSION 0xB3). UI: Core:</summary>
     [ObservableProperty] private string _coreVersion = "--";
     /// <summary>This client build stamp. UI: MSCC:</summary>
@@ -4199,20 +4202,76 @@ public partial class MainViewModel : ObservableObject, IDisposable
     }
 
     /// <summary>
-    /// DIG-U is a client overlay on USB RF. Keep it when the radio reports USB if the
-    /// UI is already DIG-U or last-used for this band is DIG-U (startup used to collapse to USB).
+    /// DIG-U is a client overlay on USB RF. True if UI is already DIG-U, per-band last-used
+    /// is DIG-U, or LAST_HF/LF personality mode is DIG-U (freq maps HF vs LF).
     /// </summary>
     private bool ShouldKeepDigUOnUsbReport()
     {
         if (RadioState.ActiveVfo.Mode == RadioMode.DigU)
             return true;
+        long freq = RadioState.ActiveVfo.FrequencyHz;
         string band = RadioState.CurrentBand;
         if (string.IsNullOrWhiteSpace(band) || band == "?")
-            band = GetBandNameForFrequency(RadioState.ActiveVfo.FrequencyHz);
-        if (string.IsNullOrWhiteSpace(band) || band == "?")
-            return false;
-        var (_, m, _, _, _) = SpectrumWaterfallSettings.LoadLastUsedForBand(band, UseVfoBLastUsedFile);
-        return ParseMode(m) == RadioMode.DigU;
+            band = GetBandNameForFrequency(freq);
+        if (!string.IsNullOrWhiteSpace(band) && band != "?")
+        {
+            var (_, m, _, _, _) = SpectrumWaterfallSettings.LoadLastUsedForBand(band, UseVfoBLastUsedFile);
+            if (ParseMode(m) == RadioMode.DigU)
+                return true;
+        }
+        if (freq > 0)
+        {
+            string personality = SpectrumWaterfallSettings.IsLfPersonalityFreq(freq)
+                ? SpectrumWaterfallSettings.LastLfMode
+                : SpectrumWaterfallSettings.LastHfMode;
+            if (ParseMode(personality) == RadioMode.DigU)
+                return true;
+        }
+        return false;
+    }
+
+    /// <summary>Apply DIG-U overlay without sending USB to the radio or writing last-used.</summary>
+    private void ApplyDigUOverlay(string reason)
+    {
+        if (RadioState.ActiveVfo.Mode != RadioMode.DigU)
+        {
+            var old = RadioState.ActiveVfo.Mode;
+            RadioState.ActiveVfo.Mode = RadioMode.DigU;
+            ApplyDigUAudioPolicy(old, RadioMode.DigU);
+        }
+        OnPropertyChanged(nameof(ActiveMode));
+        NotifyMainOperatePower();
+        MonitorTextBoxText($" DIG-U overlay restore ({reason})");
+    }
+
+    /// <summary>
+    /// After FrequencyReported (band gold synced). Restore DIG-U from last-used / LAST_HF/LF
+    /// if the UI is still USB or idle. Does not LoadLastUsed (no outgoing tune).
+    /// </summary>
+    private void TryRestoreDigUAfterFreqKnown()
+    {
+        var mode = RadioState.ActiveVfo.Mode;
+        if (mode != RadioMode.USB && mode != RadioMode.None)
+        {
+            _deferUsbModeReport = false;
+            return;
+        }
+        if (ShouldKeepDigUOnUsbReport())
+        {
+            _deferUsbModeReport = false;
+            ApplyDigUOverlay("FrequencyReported");
+            return;
+        }
+        if (_deferUsbModeReport && mode == RadioMode.None)
+        {
+            _deferUsbModeReport = false;
+            RadioState.ActiveVfo.Mode = RadioMode.USB;
+            OnPropertyChanged(nameof(ActiveMode));
+            NotifyMainOperatePower();
+            MonitorTextBoxText(" ModeReported USB: applied after freq known");
+        }
+        else
+            _deferUsbModeReport = false;
     }
 
     private static RadioMode ParseMode(string mode)
@@ -5255,6 +5314,7 @@ public partial class MainViewModel : ObservableObject, IDisposable
         try
         {
             CancelIdentityAsk();
+            _deferUsbModeReport = false;
             if (RemoteAudio && _radioService.IsConnected)
             {
                 try
@@ -5475,27 +5535,31 @@ public partial class MainViewModel : ObservableObject, IDisposable
             // CAT / radio band change updates VFO but used to leave the gold band button stale.
             SyncBandHighlightFromFrequency(freq);
             // Do NOT save last-used or RememberLast on this path (would sticky illegal host freq).
+            // Do NOT LoadLastUsed (would send tune). DIG-U overlay only.
             MonitorTextBoxText($" Frequency reported from backend: {freq}");
+            TryRestoreDigUAfterFreqKnown();
             FrequencyReportedForConnectSafety?.Invoke();
         };
 
         svc.ModeReported += mode =>
         {
             var parsed = ParseMode(mode);
-            // Radio RF is USB for DIG-U. Startup / echo reports USB and used to wipe last-used DIG-U.
-            if (parsed == RadioMode.USB && ShouldKeepDigUOnUsbReport())
+            // Radio RF is USB for DIG-U (0xB7). Startup USB often arrives before band/freq.
+            if (parsed == RadioMode.USB)
             {
-                if (RadioState.ActiveVfo.Mode != RadioMode.DigU)
+                if (RadioState.ActiveVfo.FrequencyHz <= 0)
                 {
-                    var old = RadioState.ActiveVfo.Mode;
-                    RadioState.ActiveVfo.Mode = RadioMode.DigU;
-                    ApplyDigUAudioPolicy(old, RadioMode.DigU);
-                    MonitorTextBoxText(" ModeReported USB: keep DIG-U (last-used / overlay)");
+                    _deferUsbModeReport = true;
+                    MonitorTextBoxText(" ModeReported USB: deferred until freq known");
+                    return;
                 }
-                OnPropertyChanged(nameof(ActiveMode));
-                NotifyMainOperatePower();
-                return;
+                if (ShouldKeepDigUOnUsbReport())
+                {
+                    ApplyDigUOverlay("ModeReported USB");
+                    return;
+                }
             }
+            _deferUsbModeReport = false;
             RadioState.ActiveVfo.Mode = parsed;
             OnPropertyChanged(nameof(ActiveMode));
             NotifyMainOperatePower();
