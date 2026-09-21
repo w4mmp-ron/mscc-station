@@ -1,20 +1,21 @@
-# Overseer intent
+﻿# Overseer intent
+
+**Current:** cmd-026 — DIG-U overlay: band last-used wins over LAST_HF (stop USB↔DIG-U ping-pong).
 
 **Updated:** 2026-09-21  
 **Overseer:** Build Commander
 
 ## Status
 
-- **Active — cmd-020 (windows-new-hp):** Per product-line user cache `cal/<line>/` for TX IQ + QRP under AppData; swap on FW major; factory = ship/Reset only. Freq stays factory-reset only (no per-line freq cache).
-- **Done — cmd-019:** Reset paths use FW-major factory.
-- **Done — cmd-018:** factory trees + first-boot seed (QRP−3, no PIN).
+- **Active - cmd-024 (windows-new-hp):** Idle UI = freq 0, no band/mode highlight; suppress SaveLastUsed until live (stops 7.100/40m/USB poisoning DIG-U last-used).
+- **Reviewed - cmd-023:** OK to test / in progress on Shack (DIG-U stick partially blocked by idle poison).
 
-## Short list (after 020)
+## Short list (after 024)
 
-- LAST defaults 14.074 / 474.2
 - Remote Digital mic slider
-- Linux/Pi factory + cal-cache port
-- Avalonia block
+- Avalonia ports
+- Linux/Pi factory + cal-cache
+- Button rename (parked)
 
 ## Coord workflow
 

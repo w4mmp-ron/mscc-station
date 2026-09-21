@@ -1,4 +1,4 @@
-# AGENTS.md — Grok instructions (this repo)
+﻿# AGENTS.md — Grok instructions (this repo)
 
 Grok loads this file at the repo root. Follow it on **every** host. Details live in the linked docs; do not invent a second protocol.
 
@@ -9,6 +9,10 @@ On start: `git pull`, then read [`handoff.md`](handoff.md). If `.mscc-coord/COMM
 
 ---
 
+
+## Current work
+
+**cmd-026** (windows-new-hp): DIG-U overlay uses per-band last-used mode over stale LAST_HF/LF; Client 9.21.6. See `.mscc-coord/COMMANDS.yaml`.
 ## Who / where
 
 | Person | Focus |
@@ -85,18 +89,18 @@ When a kit is built, copy the newest file into `installers/<platform>/`. History
 
 ---
 
-## Current work (2026-09-18)
+## Current work (2026-09-21)
 
-### Active — Avalonia 0.6.56 amd64 kit (**cmd-008**, ubuntu-stew)
+### Active - cmd-024 (windows-new-hp)
 
-Source is 0.6.56; `installers/linux/mscc-ui_*.deb` still **0.6.54**. Build amd64 UI deb, drop to
-`installers/linux/`, confirm rpi still has `mscc-ui_0.6.56_arm64.deb`, commit; Stew pushes.
-
-See `.mscc-coord/COMMANDS.yaml` cmd-008.
+Idle UI before Start: frequency 0, no band or mode button pressed; do not
+SaveLastUsed / LAST_HF until session live (stops 7.100/40m/USB poisoning DIG-U).
+See `.mscc-coord/COMMANDS.yaml` cmd-024.
 
 ### Done recently
 
-Remote digi/phones/CAT matrix OK all combos. cmd-007 Pulse prefer → Pi 0.6.56.
+cmd-023 digi LAST defaults + USB/DIG-U stick + FW ask + FreqCal reset (9.21.3).
+cmd-022 WindowTitle radio name.
 
 ## Hard don’ts
 
@@ -105,3 +109,4 @@ Remote digi/phones/CAT matrix OK all combos. cmd-007 Pulse prefer → Pi 0.6.56.
 - Don’t persist opcode 2/3 as radio boot mode.
 - Don’t reuse opcode `0x0E` (Solidus).
 - Ask before destructive git / force-push.
+
