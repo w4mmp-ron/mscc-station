@@ -1,4 +1,64 @@
 commands:
+  - id: cmd-032
+    created: "2026-09-21T18:16:00-04:00"
+    target: [ubuntu-stew, rpi]
+    role: server
+    action: ship-mscc-1.0.44-with-remote-mic-reset
+    status_hint: pending
+    detail: |
+      Dual host. Stew 2026-09-21: amd64 live sdrcore-trans still Sep 17 (no reset);
+      shippable mscc_1.0.43_*.deb (linux + rpi) still bundles pre-cmd-031 binaries.
+      mscc-ui 0.6.59 amd64/arm64 already current — do NOT rebuild UI unless missing
+      from installers/. Windows WPF installer out of scope unless Stew asks.
+
+      ## Goal
+      1) Rebuild/install sdrcore-trans (and recv if house style rebuilds both) with
+         cmd-031 `remote_mic_reset_stream`.
+      2) Bump **mscc** server package **1.0.43 → 1.0.44** and refresh installers/
+         so Ron/Stew kits ship the new binary.
+
+      ## Shared
+      - Confirm source has remote_mic_reset_stream (linux/ and rpi/ already on main).
+      - Bump Version in:
+          linux/mscc-deb/packaging/DEBIAN/control
+          rpi/mscc-deb/packaging/DEBIAN/control
+        to **1.0.44** (same release on both arches).
+      - Verify binary: `strings …/sdrcore-trans | grep 'stream reset (REMOTE path)'`
+      - Copy new .deb into installers/linux/ or installers/rpi/ (and rpi/Rpi-installers/
+        if that folder is still the Ron drop). Leave mscc-ui_0.6.59_* in place.
+      - Update status/<host>.md → done with deb paths. Commit. Push if Stew asks.
+
+      ## ubuntu-stew (amd64)
+      Checkout: /home/stew/Documents/GitHub/mscc-station
+      1) ACK status/ubuntu-stew.md.
+      2) Rebuild servers into $HOME/mscc (preferred):
+           ./linux-build/mscc-linux.sh build
+         or equivalent make in linux/SDRcore-trans-linux (+ recv/ms-sdr if that script does).
+      3) Confirm /home/stew/mscc/sdrcore-trans has the stream-reset string; restart
+         sdrcore-trans if stack is running.
+      4) Bump linux/mscc-deb control to 1.0.44.
+      5) ./linux-build/build-mscc-deb-amd64.sh
+         → linux/mscc-deb/mscc_1.0.44_amd64.deb (+ drop-installers into installers/linux/).
+      6) Confirm installers/linux/ has mscc_1.0.44_amd64.deb and mscc-ui_0.6.59_amd64.deb.
+
+      ## rpi (arm64)
+      Checkout: /home/pi/src/mscc-station
+      1) ACK status/rpi.md.
+      2) Live $HOME/mscc/sdrcore-trans should already be cmd-031 (17:56). If strings
+         missing, rebuild: cd rpi/SDRcore-trans-linux && make clean && make; install to
+         rpi/mscc-binaries/ + $HOME/mscc/.
+      3) Sync rpi/mscc-binaries/sdrcore-trans (and recv if rebuilt) from live bits.
+      4) Bump rpi/mscc-deb/packaging/DEBIAN/control to 1.0.44.
+      5) cd rpi/mscc-deb && ./build-deb.sh
+         → mscc_1.0.44_arm64.deb; copy to installers/rpi/ and Rpi-installers/.
+      6) Confirm installers/rpi/ has mscc_1.0.44_arm64.deb and mscc-ui_0.6.59_arm64.deb.
+
+      ## Out of scope
+      Avalonia rebuild (0.6.59 done). WPF/Windows installer. PortAudio / init-gui bumps
+      unless a dependency forces it (it should not).
+
+      Commit hint: cmd-032: mscc 1.0.44 with remote_mic stream reset (amd64|arm64)
+
   - id: cmd-031
     created: "2026-09-21T17:41:00-04:00"
     target: [rpi]
