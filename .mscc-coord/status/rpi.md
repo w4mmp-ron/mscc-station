@@ -4,31 +4,26 @@
 |--|--|
 | **Host** | raspberrypi |
 | **Checkout** | `/home/pi/src/mscc-station` |
-| **Build** | **cmd-031** |
+| **Build** | Grok Build |
 | **Last command id** | cmd-031 |
-| **State** | pending |
+| **State** | done |
 | **Updated** | 2026-09-21 |
 
 ## ACK log
 
 | command id | state | note |
 |------------|-------|------|
-| cmd-031 | pending | Source merged from NEW-HP `d0cb6b9`. Rebuild/install on Pi only — do NOT re-implement. |
-| cmd-029 | done | Avalonia 0.6.59 arm64 + phones/gain |
-| cmd-012 | done | Owner re-ack 0xB2/0xB3 |
-| cmd-011 | done | 0.6.57 arm64 kit |
+| cmd-031 | accepted | Source already merged — rebuild only |
+| cmd-031 | running | `make clean && make` sdrcore-trans |
+| cmd-031 | done | Binary in `$HOME/mscc` + `rpi/mscc-binaries/`. String `remote_mic: stream reset (REMOTE path)` present. |
+| cmd-029 | done | 0.6.59 kit + phones/gain |
 
 ## Notes
 
-`remote_mic_reset_stream()` is in rpi/ + linux/ sources (clears ring/g_frac/hist; UDP stays up).
-Called from udp_thread REMOTE / REMOTE_DIGITAL case. Log: `remote_mic: stream reset (REMOTE path)`.
+Confirmed in tree (no re-edit):
+- `rpi/.../remote_mic.c:240` `remote_mic_reset_stream`
+- `rpi/.../udp_thread.c:593` call on REMOTE_AUDIO / REMOTE_DIGITAL shared case
+- linux/ mirrored
 
-Finish:
-
-```
-cd /home/pi/src/mscc-station/rpi/SDRcore-trans-linux
-make clean && make
-# install to $HOME/mscc/ + rpi/mscc-binaries/; restart sdrcore-trans
-```
-
-Confirm log on Remote Digital enable.
+Rebuilt 17:56 local, PortAudio `/usr/local/lib`. Listen `:9101`.
+Reset log line fires when client **enables** Remote Digital/Phones (not on trans boot). Enable Remote on Win11 to confirm; TUNE after Stop/Start without recycling trans.
