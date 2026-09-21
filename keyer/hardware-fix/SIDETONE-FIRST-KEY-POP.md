@@ -10,7 +10,7 @@
 
 ## The problem
 
-After the keyer has been **idle for a while** (about **30 seconds or more**, maybe longer), the **first** paddle press makes a slight **pop** in the audio. After that, keying sounds fine until it sits idle again long enough for the pop to come back.
+After the keyer has been **idle for a while** — on the order of **minutes** (sometimes many minutes), not just half a minute — the **first** paddle press makes a slight **pop** in the audio. After that, keying sounds fine until it sits idle again long enough for the pop to come back. Short gaps between characters do **not** bring it back; only a long rest does.
 
 So this is not bad sidetone tone or bad paddles. It is a **first-key-after-rest** click.
 
@@ -36,7 +36,7 @@ The **first** paddle after that rest often does two things at once:
 
 If two sides of a switch were at different DC, or the 220 µF was “empty,” that first connection dumps a little charge — you hear a **pop**. A moment later the circuit has settled, so the rest of the QSO is clean.
 
-That “needs ~30+ seconds to come back” timing points to **slow analog drift / capacitor discharge**, not a one-shot firmware glitch.
+That “needs **minutes** of idle to come back” timing points strongly to **slow analog drift / large-capacitor discharge**, not a one-shot firmware glitch. A quick bench check: after keying, wait several minutes before the next first paddle when testing a fix.
 
 ---
 
@@ -77,7 +77,7 @@ There is already a **220 µF** on **U5 pin 5**. That cap can discharge over tens
 ## Suggested order for Stew
 
 1. **1 MΩ across U6 pins 3–4 and U7 pins 3–4.**  
-2. Idle **a minute or more**, first paddle — listen for the pop.  
+2. Idle **several minutes** (long enough that the pop used to return), first paddle — listen for the pop.  
 3. If still there → PIC sidetone idle / ordering (**#2**).  
 4. If still there → bleed across the **220 µF** (**#3**).
 
