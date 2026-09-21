@@ -1317,17 +1317,26 @@ public partial class MainViewModel : ObservableObject, IDisposable
     /// <summary>Fired after FrequencyReported paints VFO (connect-safety race if FW already known).</summary>
     public event Action? FrequencyReportedForConnectSafety;
 
-    /// <summary>ATU for FW majors 4/7, PTT for 3/8; otherwise omit.</summary>
+    /// <summary>Product-line name from FW major (matches factory/cal line). Empty if unknown.</summary>
+    internal static string FirmwareProductLabel(int major) => major switch
+    {
+        1 => "Proficio Legacy",
+        2 => "Geminus MKII",
+        3 => "Proficio MKII PTT",
+        4 => "Proficio MKII ATU",
+        5 => "Geminus Legacy",
+        6 => "Ultimus Legacy",
+        7 => "Ultimus MKII ATU",
+        8 => "Ultimus MKII PTT",
+        _ => ""
+    };
+
+    /// <summary>WindowTitle suffix: product line from FW major; empty if unparsed/unknown.</summary>
     internal static string FirmwareBlockSuffix(string firmwareVersion)
     {
         if (!TryParseFirmwareMajor(firmwareVersion, out int major))
             return "";
-        return major switch
-        {
-            3 or 8 => "PTT",
-            4 or 7 => "ATU",
-            _ => ""
-        };
+        return FirmwareProductLabel(major);
     }
 
     internal static bool TryParseFirmwareMajor(string firmwareVersion, out int major)
