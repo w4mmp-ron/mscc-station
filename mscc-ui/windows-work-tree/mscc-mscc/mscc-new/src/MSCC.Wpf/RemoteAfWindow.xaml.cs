@@ -129,9 +129,15 @@ public partial class RemoteAfWindow : Window
                 : $"CAT: not open ({catPort}). Check Settings COM.";
         EqPanel.Visibility = digi ? Visibility.Collapsed : Visibility.Visible;
         MuteCheck.Content = digi ? "Mute VAC play" : "Mute phones";
-        MicVolumeSlider.IsEnabled = !digi;
-        if (digi)
-            MicVolumeSlider.Value = 100;
+        MicVolumeSlider.IsEnabled = true;
+        int micPct = digi
+            ? SpectrumWaterfallSettings.RemoteDigitalMicVolume
+            : SpectrumWaterfallSettings.RemoteMicVolume;
+        MicVolumeSlider.Value = micPct;
+        if (MicVolumeLabel != null)
+            MicVolumeLabel.Text = micPct.ToString();
+        if (_vm.RemoteAf != null)
+            _vm.RemoteAf.MicVolume = micPct / 100f;
 
         bool wasReady = _ready;
         _ready = false;
@@ -240,14 +246,12 @@ public partial class RemoteAfWindow : Window
             MicVolumeLabel.Text = ((int)MicVolumeSlider.Value).ToString();
         if (!_ready || _vm?.RemoteAf == null) return;
         int v = (int)MicVolumeSlider.Value;
+        _vm.RemoteAf.MicVolume = v / 100f;
         if (_vm.IsDigitalAudio)
-            _vm.RemoteAf.MicVolume = 1.0f;
+            SpectrumWaterfallSettings.RemoteDigitalMicVolume = v;
         else
-        {
-            _vm.RemoteAf.MicVolume = v / 100f;
             SpectrumWaterfallSettings.RemoteMicVolume = v;
-            SaveSettings();
-        }
+        SaveSettings();
     }
 
     private void Mute_Changed(object sender, RoutedEventArgs e)

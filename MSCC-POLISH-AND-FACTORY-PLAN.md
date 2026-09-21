@@ -280,7 +280,7 @@ Wire client capture gain (`RemoteAf.MicVolume`) from that slider in digi mode in
 - [ ] Last-used/favs/stack: keep MF/LF; stop LF wipe (**cmd-016** with A)
 - [x] USB-on-load / digi mode restore fix (**cmd-023**)
 - [x] Auto FREQ CAL progress bar reset (**cmd-023**)
-- [ ] Enable Remote Digital mic slider (default 100%) — **unlocked; queue after cmd-016**
+- [x] Enable Remote Digital mic slider (default 100%) — **cmd-030 WPF 9.21.7** (Avalonia later)
 
 ### Back-burner
 - [ ] TX IQ phase per band

@@ -126,6 +126,16 @@ public static class SpectrumWaterfallSettings
     public static int RemoteMicDeviceIndex { get; set; } = -1;
     public static int RemotePlayVolume { get; set; } = 80;
     public static int RemoteMicVolume { get; set; } = 80;
+    /// <summary>Remote Digital MSA1 TX drive (0–100). Separate from phones REMOTE_MIC_VOL.</summary>
+    public static int RemoteDigitalMicVolume { get; set; } = 100;
+
+    public static float RemoteMicVolumeLinear(bool digitalAudio)
+    {
+        int pct = digitalAudio
+            ? Math.Clamp(RemoteDigitalMicVolume, 0, 100)
+            : Math.Clamp(RemoteMicVolume, 0, 100);
+        return pct / 100f;
+    }
     public static bool RemotePlayMute { get; set; }
     public static bool RemoteEqEnabled { get; set; }
     public static float RemoteEqLowDb { get; set; }
@@ -869,6 +879,8 @@ public static class SpectrumWaterfallSettings
                         RemotePlayVolume = Math.Clamp(ParseIniInt(line, RemotePlayVolume), 0, 100);
                     if (LineMatchesKey(line, "REMOTE_MIC_VOL"))
                         RemoteMicVolume = Math.Clamp(ParseIniInt(line, RemoteMicVolume), 0, 100);
+                    if (LineMatchesKey(line, "REMOTE_DIGI_MIC_VOL"))
+                        RemoteDigitalMicVolume = Math.Clamp(ParseIniInt(line, RemoteDigitalMicVolume), 0, 100);
                     if (LineMatchesKey(line, "REMOTE_PLAY_MUTE"))
                         RemotePlayMute = ParseIniBool(line, RemotePlayMute);
                     if (LineMatchesKey(line, "REMOTE_EQ"))
@@ -1134,6 +1146,7 @@ public static class SpectrumWaterfallSettings
         UpdateOrAdd(lines, "REMOTE_MIC_DEV", RemoteMicDeviceIndex.ToString());
         UpdateOrAdd(lines, "REMOTE_PLAY_VOL", Math.Clamp(RemotePlayVolume, 0, 100).ToString());
         UpdateOrAdd(lines, "REMOTE_MIC_VOL", Math.Clamp(RemoteMicVolume, 0, 100).ToString());
+        UpdateOrAdd(lines, "REMOTE_DIGI_MIC_VOL", Math.Clamp(RemoteDigitalMicVolume, 0, 100).ToString());
         UpdateOrAdd(lines, "REMOTE_PLAY_MUTE", RemotePlayMute ? "1" : "0");
         UpdateOrAdd(lines, "REMOTE_EQ", RemoteEqEnabled ? "1" : "0");
         UpdateOrAdd(lines, "REMOTE_EQ_LOW", RemoteEqLowDb.ToString("0.0"));
