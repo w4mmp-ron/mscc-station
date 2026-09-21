@@ -963,6 +963,15 @@ public class UdpRadioService : IRadioService, IDisposable
         await _transport.SendAsync(Opcodes.CMD_START_CALIBRATE, frequencyHz, cancellationToken);
     }
 
+    public async Task RequestIdentityAsync(CancellationToken cancellationToken = default)
+    {
+        if (!_started) return;
+        DebugMonitor.MonitorTextBoxText(" Request identity: 0xB2 FW, 0xB3 Core, 0xFE GUI ready");
+        await _transport.SendAsync(Opcodes.CMD_GET_SET_FIRMWARE_VERSION, (short)0, cancellationToken);
+        await _transport.SendAsync(Opcodes.CMD_GET_SET_MSSDR_VERSION, (short)0, cancellationToken);
+        await _transport.SendAsync(Opcodes.CMD_CHECK_GUI_STATUS, (short)1, cancellationToken);
+    }
+
     public async Task SetCalibrationFinishedAsync(bool accept, CancellationToken cancellationToken = default)
     {
         if (!_started) return;

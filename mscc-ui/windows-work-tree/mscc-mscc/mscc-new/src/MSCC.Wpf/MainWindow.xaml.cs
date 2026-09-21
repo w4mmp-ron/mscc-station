@@ -1569,6 +1569,9 @@ public partial class MainWindow : Window
             return;
         }
 
+        // Clear prior AUTO/CHECK completed UI before the coarse/fine dialog (green must not linger).
+        ResetFreqCalVisuals("");
+
         // Same wording pattern as original: Yes = COARSE, No = FINE, Cancel = abort
         var calibrationType = MessageBox.Show(
             "COARSE OR FINE CALIBRATION?\r\n\r\n" +
@@ -1607,16 +1610,11 @@ public partial class MainWindow : Window
         catch { /* ignore */ }
 
         SetFreqCalControlsEnabled(false);
-        if (FreqCalProgress != null)
-            FreqCalProgress.Value = 0;
-
         _freqCalInProgress = true;
         _freqCalIsAuto = true;
-        _lastCalDelta = 0;
-        FreqCalStatusLabel.Text = coarse
+        ResetFreqCalVisuals(coarse
             ? "RUNNING COARSE\r\n!WAIT!"
-            : "RUNNING FINE\r\n!WAIT!";
-        FreqCalStatusLabel.Foreground = Brushes.Black;
+            : "RUNNING FINE\r\n!WAIT!");
 
         ViewModel.MonitorTextBoxText(
             $" Freq Cal: AUTO starting ({(coarse ? "COARSE" : "FINE")}, loose={loose}, f={freqHz})");
@@ -1672,18 +1670,28 @@ public partial class MainWindow : Window
         }
 
         SetFreqCalControlsEnabled(false);
-        if (FreqCalProgress != null)
-            FreqCalProgress.Value = 0;
-
         _ = ViewModel.RadioService.SetCalCheckAsync(true);
 
         _freqCalInProgress = true;
         _freqCalIsAuto = false;
-        _lastCalDelta = 0;
-        FreqCalStatusLabel.Text = "CHECKING\r\n!WAIT!";
-        FreqCalStatusLabel.Foreground = Brushes.Black;
+        ResetFreqCalVisuals("CHECKING\r\n!WAIT!");
 
         ViewModel?.MonitorTextBoxText(" Freq Cal: CHECK started");
+    }
+
+    /// <summary>
+    /// Zero progress, delta, and status/CHECK appearance so a prior all-green run does not linger.
+    /// </summary>
+    private void ResetFreqCalVisuals(string statusText)
+    {
+        if (FreqCalProgress != null)
+            FreqCalProgress.Value = 0;
+        _lastCalDelta = 0;
+        if (FreqCalStatusLabel != null)
+        {
+            FreqCalStatusLabel.Text = statusText;
+            FreqCalStatusLabel.Foreground = Brushes.Black;
+        }
     }
 
     /// <summary>Disable/enable FREQ CAL action buttons during a running sweep.</summary>
@@ -1706,7 +1714,7 @@ public partial class MainWindow : Window
             if (res == MessageBoxResult.Yes)
             {
                 _ = ViewModel.RadioService.SetCalResetAsync(true);
-                FreqCalStatusLabel.Text = "RESET";
+                ResetFreqCalVisuals("RESET");
                 ViewModel?.MonitorTextBoxText(" Freq Cal: RESET clicked");
             }
         }

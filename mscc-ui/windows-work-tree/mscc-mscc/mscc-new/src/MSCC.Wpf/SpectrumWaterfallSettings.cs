@@ -149,8 +149,8 @@ public static class SpectrumWaterfallSettings
     public const float ShipLfGridMax = -20f;
     public const float ShipLfGridMin = -125f;
 
-    public const long DefaultLastHfFreq = 14_000_000;
-    public const long DefaultLastLfFreq = 475_000;
+    public const long DefaultLastHfFreq = 14_074_000;
+    public const long DefaultLastLfFreq = 474_200;
 
     // HF (Proficio) bank — field-tuned defaults (FT8 contrast on 20m)
     public static float WaterfallHfHighDb { get; set; } = ShipHfHighDb;
@@ -176,10 +176,10 @@ public static class SpectrumWaterfallSettings
     public static float SpectrumLfGridMin { get; set; } = ShipLfGridMin;
     public static float SpectrumLfDbOffset { get; set; } = SpectrumColorSettings.SpectrumDbCalCenter;
 
-    /// <summary>Last in-range HF tune (Hz). Connect safety if host reports LF on a Proficio-family radio.</summary>
+    /// <summary>Last in-range HF tune (Hz). Connect safety if host reports LF on a Proficio-family radio. Ship default 14.074 MHz (digi).</summary>
     public static long LastHfFreq { get; set; } = DefaultLastHfFreq;
     public static string LastHfMode { get; set; } = "USB";
-    /// <summary>Last in-range LF tune (Hz). Default 475 kHz (630m).</summary>
+    /// <summary>Last in-range LF tune (Hz). Ship default 474.2 kHz (630m digi).</summary>
     public static long LastLfFreq { get; set; } = DefaultLastLfFreq;
     public static string LastLfMode { get; set; } = "USB";
 

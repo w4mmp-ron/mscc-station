@@ -1292,6 +1292,11 @@ public partial class MainViewModel : ObservableObject, IDisposable
     private DispatcherTimer? _alcIdleTimer;
     private const int AlcIdleTimeoutSeconds = 3;
 
+    /// <summary>One-shot after Connect: ask if FW/Core still "--".</summary>
+    private DispatcherTimer? _identityAskTimer;
+    private bool _identityAskPromptedThisConnect;
+    private const double IdentityAskDelaySeconds = 2.5;
+
     /// <summary>ms-sdr (CMD_GET_SET_MSSDR_VERSION 0xB3). UI: Core:</summary>
     [ObservableProperty] private string _coreVersion = "--";
     /// <summary>This client build stamp. UI: MSCC:</summary>
@@ -1378,6 +1383,74 @@ public partial class MainViewModel : ObservableObject, IDisposable
     partial void OnDisplayVersionChanged(string value) => OnPropertyChanged(nameof(WindowTitle));
     partial void OnCoreVersionChanged(string value) => OnPropertyChanged(nameof(WindowTitle));
     partial void OnFirmwareVersionChanged(string value) => OnPropertyChanged(nameof(WindowTitle));
+
+    private static bool IsUnsetVersion(string? v) =>
+        string.IsNullOrWhiteSpace(v) || v.Trim() == "--";
+
+    private void ScheduleIdentityAskIfMissing()
+    {
+        CancelIdentityAsk();
+        _identityAskPromptedThisConnect = false;
+        if (!IsUnsetVersion(FirmwareVersion) && !IsUnsetVersion(CoreVersion))
+        {
+            MonitorTextBoxText(" Identity: FW and Core already set — no prompt");
+            return;
+        }
+        _identityAskTimer = new DispatcherTimer { Interval = TimeSpan.FromSeconds(IdentityAskDelaySeconds) };
+        _identityAskTimer.Tick += OnIdentityAskTimerTick;
+        _identityAskTimer.Start();
+        MonitorTextBoxText($" Identity: waiting {IdentityAskDelaySeconds:0.#}s for FW/Core");
+    }
+
+    private void CancelIdentityAsk()
+    {
+        if (_identityAskTimer == null) return;
+        _identityAskTimer.Stop();
+        _identityAskTimer.Tick -= OnIdentityAskTimerTick;
+        _identityAskTimer = null;
+    }
+
+    private void OnIdentityAskTimerTick(object? sender, EventArgs e)
+    {
+        CancelIdentityAsk();
+        if (_identityAskPromptedThisConnect) return;
+        if (!IsRadioRunning && !_radioService.IsConnected) return;
+        bool fwMissing = IsUnsetVersion(FirmwareVersion);
+        bool coreMissing = IsUnsetVersion(CoreVersion);
+        if (!fwMissing && !coreMissing)
+        {
+            MonitorTextBoxText(" Identity: FW and Core arrived — no prompt");
+            return;
+        }
+        _identityAskPromptedThisConnect = true;
+        var result = MessageBox.Show(
+            "Radio firmware / core version not received. Request identity now?",
+            "MSCC",
+            MessageBoxButton.YesNo,
+            MessageBoxImage.Question,
+            MessageBoxResult.Yes);
+        if (result == MessageBoxResult.Yes)
+        {
+            MonitorTextBoxText(" Identity ask: Yes — requesting 0xB2 / 0xB3 / 0xFE");
+            _ = RequestIdentityNowAsync();
+        }
+        else
+        {
+            MonitorTextBoxText(" Identity ask: No — keep last-session gating/title");
+        }
+    }
+
+    private async Task RequestIdentityNowAsync()
+    {
+        try
+        {
+            await _radioService.RequestIdentityAsync().ConfigureAwait(true);
+        }
+        catch (Exception ex)
+        {
+            MonitorTextBoxText($" Identity request failed: {ex.Message}");
+        }
+    }
 
     [ObservableProperty] private string _preferredMeter = "P";
 
@@ -4123,6 +4196,23 @@ public partial class MainViewModel : ObservableObject, IDisposable
         }
     }
 
+    /// <summary>
+    /// DIG-U is a client overlay on USB RF. Keep it when the radio reports USB if the
+    /// UI is already DIG-U or last-used for this band is DIG-U (startup used to collapse to USB).
+    /// </summary>
+    private bool ShouldKeepDigUOnUsbReport()
+    {
+        if (RadioState.ActiveVfo.Mode == RadioMode.DigU)
+            return true;
+        string band = RadioState.CurrentBand;
+        if (string.IsNullOrWhiteSpace(band) || band == "?")
+            band = GetBandNameForFrequency(RadioState.ActiveVfo.FrequencyHz);
+        if (string.IsNullOrWhiteSpace(band) || band == "?")
+            return false;
+        var (_, m, _, _, _) = SpectrumWaterfallSettings.LoadLastUsedForBand(band, UseVfoBLastUsedFile);
+        return ParseMode(m) == RadioMode.DigU;
+    }
+
     private static RadioMode ParseMode(string mode)
     {
         // Accept canonical names, single char, or numeric strings (defensive for wire reports)
@@ -5099,6 +5189,7 @@ public partial class MainViewModel : ObservableObject, IDisposable
                 PushAudioToRadio("start");
                 if (RemoteAudio)
                     StartRemoteAf("start");
+                ScheduleIdentityAskIfMissing();
             }
             RefreshSetupStatus();
             MonitorTextBoxText(
@@ -5160,6 +5251,7 @@ public partial class MainViewModel : ObservableObject, IDisposable
         MonitorTextBoxText($" Stop ({reason}): ending radio session...");
         try
         {
+            CancelIdentityAsk();
             if (RemoteAudio && _radioService.IsConnected)
             {
                 try
@@ -5342,7 +5434,11 @@ public partial class MainViewModel : ObservableObject, IDisposable
             _suppressModeProfileSwap = prevProfile;
         }
 
-        MonitorTextBoxText($" LoadLastUsed: {(forVfoB ? "VFOB" : "VFOA")} band={band} f={useF}");
+        // Profile swap was suppressed so last-used cuts win; still apply DIG-U audio D.
+        if (ParseMode(useM) == RadioMode.DigU)
+            ApplyDigUAudioPolicy(RadioMode.USB, RadioMode.DigU);
+
+        MonitorTextBoxText($" LoadLastUsed: {(forVfoB ? "VFOB" : "VFOA")} band={band} f={useF} mode={useM}");
     }
 
     private void ShowServerChangePopup()
@@ -5381,10 +5477,18 @@ public partial class MainViewModel : ObservableObject, IDisposable
         svc.ModeReported += mode =>
         {
             var parsed = ParseMode(mode);
-            // Radio only has USB; if client is on DIG-U and server echoes USB, keep DIG-U.
-            if (RadioState.ActiveVfo.Mode == RadioMode.DigU && parsed == RadioMode.USB)
+            // Radio RF is USB for DIG-U. Startup / echo reports USB and used to wipe last-used DIG-U.
+            if (parsed == RadioMode.USB && ShouldKeepDigUOnUsbReport())
             {
+                if (RadioState.ActiveVfo.Mode != RadioMode.DigU)
+                {
+                    var old = RadioState.ActiveVfo.Mode;
+                    RadioState.ActiveVfo.Mode = RadioMode.DigU;
+                    ApplyDigUAudioPolicy(old, RadioMode.DigU);
+                    MonitorTextBoxText(" ModeReported USB: keep DIG-U (last-used / overlay)");
+                }
                 OnPropertyChanged(nameof(ActiveMode));
+                NotifyMainOperatePower();
                 return;
             }
             RadioState.ActiveVfo.Mode = parsed;

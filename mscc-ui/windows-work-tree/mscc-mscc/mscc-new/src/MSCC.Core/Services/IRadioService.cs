@@ -413,6 +413,12 @@ public interface IRadioService : IDisposable
     /// </summary>
     Task ResetAllIqBandsAsync(bool rxIq = false, CancellationToken cancellationToken = default);
 
+    /// <summary>
+    /// Re-request radio firmware (0xB2) and ms-sdr core (0xB3), plus GUI-ready (0xFE)
+    /// so an already-running host re-acks identity (remote reconnect).
+    /// </summary>
+    Task RequestIdentityAsync(CancellationToken cancellationToken = default);
+
     /// <summary>IQ operation complete (0x56): 1=success, 0=fail.</summary>
     event Action<int> IqOperationCompleteReported;
 

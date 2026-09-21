@@ -275,11 +275,11 @@ Wire client capture gain (`RemoteAf.MicVolume`) from that slider in digi mode in
 ### Client UX
 - [x] WindowTitle ATU/PTT block from FW major (3/8=PTT, 4/7=ATU; **WPF done cmd-009**; Avalonia **cmd-010** on ubuntu-stew)
 - [x] WindowTitle radio product-line name from FW major 1–8 (**cmd-022** WPF; Avalonia later)
-- [x] Gray bands from major (**cmd-015** done; button label rename later)`r`n- [x] S/W follows band + HF/LF-MF button fallback (**cmd-016**)`r`n- [ ] Complete HF/LF banks (baseline+grid+waterfall) + LF ship defaults + LAST_HF/LF (**cmd-017**)`r`n- [ ] Next spin: LAST_HF/LF defaults **14.074 MHz** / **474.2 kHz** (popular digi; Stew 2026-09-20)
+- [x] Gray bands from major (**cmd-015** done; button label rename later)`r`n- [x] S/W follows band + HF/LF-MF button fallback (**cmd-016**)`r`n- [ ] Complete HF/LF banks (baseline+grid+waterfall) + LF ship defaults + LAST_HF/LF (**cmd-017**)`r`n- [x] Next spin: LAST_HF/LF defaults **14.074 MHz** / **474.2 kHz** (popular digi; **cmd-023**)
 - [ ] S/W ship HF + LF/MF defaults (+ Reset); lock LF numbers when Stew confirms
 - [ ] Last-used/favs/stack: keep MF/LF; stop LF wipe (**cmd-016** with A)
-- [ ] USB-on-load / digi mode restore fix
-- [ ] Auto FREQ CAL progress bar reset
+- [x] USB-on-load / digi mode restore fix (**cmd-023**)
+- [x] Auto FREQ CAL progress bar reset (**cmd-023**)
 - [ ] Enable Remote Digital mic slider (default 100%) — **unlocked; queue after cmd-016**
 
 ### Back-burner
