@@ -1,121 +1,165 @@
-# Upgrade guide — R9-17-4 → R9-21-7 (Ron)
+# Upgrade — R9-17-4 → R9-21-7: config / INI notes for Ron
 
-**Typical station:** Windows 11 **WPF client** → **Raspberry Pi** servers (radio on the Pi).  
-**From:** Windows `mscc-net9-R9-17-4-install.exe`  
-**To:** Windows **`mscc-net9-R9--21-7-install.exe`** + Pi **`mscc_1.0.44_arm64.deb`** (+ optional Avalonia **`mscc-ui_0.6.59_arm64.deb`**)
+**Station assumed:** Windows 11 **WPF client** → **Pi servers** (radio on the Pi).  
+**Installers:** `mscc-net9-R9--21-7-install.exe` + Pi `mscc_1.0.44_arm64.deb`  
+**UI change list:** [`RON-2026-09-21-UI-CHANGES.md`](RON-2026-09-21-UI-CHANGES.md)
 
-UI change summary: [`RON-2026-09-21-UI-CHANGES.md`](RON-2026-09-21-UI-CHANGES.md).
-
-Kit folders in the repo:
-- Windows: `installers/windows/`
-- Pi drop: `installers/rpi/` **or** `rpi/Rpi-installers/` (same debs; use whichever folder Stew sends you)
-
-> Note the Windows filename: **`R9--21-7`** (two dashes after `R9`). That is the current ship EXE.
+This sheet is about **what to delete (or not)** so radio cal and client last-used behave correctly. Ordinary install steps are short at the end.
 
 ---
 
-## Before you start
+## Where the files live (important)
 
-1. Note your Pi IP and that WPF still Connects on UDP **8888**.
-2. Optional backup (only if you care about rolling back):
-   - Windows: copy `C:\mscc-net9` (or your install folder).
-   - Pi: `cp -a ~/mscc ~/mscc.bak-$(date +%Y%m%d)` if you have custom files there.
-3. Close **WSJT-X / digi apps**, **WPF**, and any Avalonia UI.
-4. On the Pi: stop the stack (`mscc stop` or your usual Start/Stop desktop action).
+| Kind | Machine | Path |
+|------|---------|------|
+| **Client** UI / last-used / Remote Digital mic | **Windows PC** | `%LocalAppData%\MSCC-NET9\` |
+| **Radio cal** (IQ, QRP, freq PPM) | **Host that runs ms-sdr** | Same idea, different OS |
 
-You do **not** need to reinstall PortAudio or init-gui for this jump unless Stew includes new versions in the kit.
+For your usual remote setup the **host is the Pi**, so live radio cal is:
+
+```text
+~/.local/mscc/iq.ini
+~/.local/mscc/power_cal.ini
+~/.local/mscc/freq_cal.ini
+(+ other ms-sdr inis in that folder)
+```
+
+On a PC that runs **Windows servers locally**, radio cal is:
+
+```text
+%LocalAppData%\MSCC-NET9\iq.ini
+%LocalAppData%\MSCC-NET9\power_cal.ini
+%LocalAppData%\MSCC-NET9\freq_cal.ini
+%LocalAppData%\MSCC-NET9\cal\<product-line>\   ← per-radio IQ/QRP cache (new in this release)
+C:\mscc-net9\factory\…                         ← ship tables next to ms-sdr (new)
+```
+
+**WPF client settings (always on the PC you operate from):**
+
+```text
+%LocalAppData%\MSCC-NET9\MSCC_Client.ini
+%LocalAppData%\MSCC-NET9\MSCC_LastUsed.ini
+%LocalAppData%\MSCC-NET9\MSCC_LastUsed_VFOB.ini
+```
+
+`REMOTE_DIGI_MIC_VOL` lives in `MSCC_Client.ini`.
 
 ---
 
-## A. Upgrade the Windows client (required)
+## Default answer: do **not** wipe INIs
 
-1. Copy **`mscc-net9-R9--21-7-install.exe`** to the PC.
-2. Run it (Advanced Installer). Keep the usual deploy folder (**`C:\mscc-net9`** unless you customized).
-3. Let it finish; reboot only if the installer asks.
-4. Confirm: start WPF → title / About shows **Client 9.21.7** (or build R9-21-7).
+For R9-17-4 → R9-21-7 you **normally delete nothing**.
 
-**Remote-only PC:** you only need the WPF client; you do **not** have to run Windows `ms-sdr` / recv / trans when the radio lives on the Pi.
-
----
-
-## B. Upgrade Pi servers to **1.0.44** (required for today’s remote-audio fixes)
-
-On the Pi, `cd` to the folder that has the new `.deb` files:
-
-```bash
-cd ~/Downloads/Rpi-installers    # or wherever you put the kit
-# expect: mscc_1.0.44_arm64.deb  (and optionally mscc-ui_0.6.59_arm64.deb)
-```
-
-### 1) Install / reinstall the server package
-
-Prefer the helper (avoids the apt `_apt` sandbox warning):
-
-```bash
-chmod +x install-mscc.sh
-./install-mscc.sh --reinstall ./mscc_1.0.44_arm64.deb
-```
-
-Or plain apt:
-
-```bash
-sudo apt install -y --reinstall ./mscc_1.0.44_arm64.deb
-```
-
-### 2) Optional — Avalonia UI on the Pi
-
-Only if you operate from the Pi screen:
-
-```bash
-sudo apt install -y ./mscc-ui_0.6.59_arm64.deb
-```
-
-If you **only** use Windows WPF, you can skip the UI `.deb`.
-
-### 3) Restart servers
-
-```bash
-mscc start
-# or use the MSCC Start desktop action
-mscc status
-```
-
-### 4) Quick binary check (optional)
-
-```bash
-strings ~/mscc/sdrcore-trans | grep 'stream reset (REMOTE path)'
-# expect a hit — confirms the cmd-031 reset is in the live binary
-```
+| Keep | Why |
+|------|-----|
+| Pi `~/.local/mscc/*.ini` | Your tuned IQ / QRP / PPM on the radio host. Installer does **not** replace these. |
+| Windows `%LocalAppData%\MSCC-NET9\MSCC_Client.ini` | Spectrum, window, Remote Audio prefs, digi mic slider default. |
+| Windows `MSCC_LastUsed*.ini` | Per-band last freq/mode. New client **stops writing junk while Stopped**; one Start with DIG-U selected cleans bad rows better than a wipe. |
+| Windows live `iq.ini` / `power_cal.ini` / `freq_cal.ini` (if you ever run local servers) | First start of the new ms-sdr **bootstraps** existing live IQ/QRP into `cal\<line>\` — it does **not** overwrite a tuned radio with factory. |
 
 ---
 
-## C. First connect after upgrade
+## When factory / ship cal actually pulls in
 
-1. On Windows: start **MSCC WPF** only → **Connect** to the Pi IP, port **8888**.
-2. Confirm FW / Core populate. If the “FW missing?” prompt appears, choose **Yes** once.
-3. Start the radio; confirm band gate / title look right for that radio.
-4. Digi: select **Remote Digital**, leave mic slider at **100%** unless the chain is hot, then TUNE / CQ as usual.
-5. If audio sounds “mushy” after a **SESSION IN USE** fight with another PC: **Stop WPF fully**, on Pi run **`mscc stop` then `mscc start`**, reconnect from one client only.
+### A) Your normal case — **Pi is the host**
+
+New **factory IQ / QRP / PPM tables** in this Windows release live under `C:\mscc-net9\factory\` and are applied by **Windows ms-sdr**.  
+**Pi ms-sdr does not yet run that factory seed path.**
+
+So for Ron’s Win→Pi station:
+
+- Installing R9-21-7 on Windows **does not** by itself rewrite Pi `~/.local/mscc` cal.
+- Deleting Pi INIs **will not** magically install the new factory trees (they are not in the Pi `.deb` the same way).
+- **Leave Pi cal alone** unless Stew gives you a deliberate Pi cal refresh.
+
+Pi `mscc_1.0.44` still matters for **remote audio** (phones headroom + mic stream reset), not for factory IQ tables.
+
+### B) Windows is the host (local Launch Servers)
+
+Then the new rules apply:
+
+1. Installer drops `C:\mscc-net9\factory\…` next to `ms-sdr-MKII.exe`.
+2. On start, after FW major is known:
+   - If `cal\<line>\iq.ini` (or power) **exists** → that cache wins.
+   - Else if live `iq.ini` / `power_cal.ini` **exists** (upgrade from R9-17-4) → **keep live**, copy into `cal\<line>\` (bootstrap).
+   - Else → copy from `factory\…` into live **and** `cal\<line>\`.
+   - `freq_cal.ini`: factory copy **only if live file is missing**. Existing PPM is kept.
+
+**To force ship factory IQ/QRP/PPM on a Windows host** (destructive — loses user fine-tune):
+
+1. Stop MSCC / servers.
+2. Either:
+   - **Settings → Reset configuration** (wipes AppData config except `logs\`, deletes `cal\`, leaves radio cal missing so next start seeds factory), **or**
+   - Manually delete:
+     - `%LocalAppData%\MSCC-NET9\iq.ini`
+     - `%LocalAppData%\MSCC-NET9\power_cal.ini`
+     - `%LocalAppData%\MSCC-NET9\freq_cal.ini` *(only if you also want factory PPM)*
+     - entire `%LocalAppData%\MSCC-NET9\cal\` folder
+3. Start servers with the radio connected so FW major is known.
+
+**Non-destructive factory pull (preferred when you only want one concern):**
+
+| Want | Do this (radio connected) |
+|------|---------------------------|
+| Factory TX IQ | **TX IQ → Reset All** |
+| Factory QRP / power_cal | **QRP / power Reset** (if present) |
+| Factory freq PPM | **FREQ CAL → Reset** |
+| Full client + cal reseed | **Settings → Reset configuration** |
+
+Those Reset buttons overwrite live **and** `cal\<line>\` from `C:\mscc-net9\factory\` for the **connected** FW major.
 
 ---
 
-## D. If something goes wrong
+## Client last-used / DIG-U (Windows AppData)
 
-| Symptom | Try |
-|---------|-----|
-| Can’t Connect | Pi `mscc status`; firewall; same LAN; port 8888 |
-| SESSION IN USE | Fully quit the other PC’s MSCC; Pi `mscc stop` / `mscc start`; one owner only |
-| Digi TUNE mush, wire looks fine | Recycle Pi servers once; confirm `strings` reset line above; then re-enable Remote Digital |
-| Want R9-17-4 back | Re-run `mscc-net9-R9-17-4-install.exe`; Pi reinstall previous `mscc_1.0.43_arm64.deb` if you kept it |
+**Do not delete `MSCC_LastUsed.ini` just for this upgrade.**
 
-Ping Stew if FW major / band gray looks wrong for a specific radio — that is usually a **firmware identity** issue, not the client install.
+Old builds could write a “poison” last-used (e.g. 40m / USB) while the radio was **Stopped**. New client only saves last-used while **running** with a real frequency.
+
+**One-time operator fix (no delete):**
+
+1. Install R9-21-7, Connect, **Start**.
+2. Pick the band you care about → set **DIG-U** (or your preferred mode).
+3. Leave it running a moment (or Stop cleanly after). That rewrites the band’s last-used row.
+
+Only wipe last-used if bands still behave crazy after that:
+
+```text
+%LocalAppData%\MSCC-NET9\MSCC_LastUsed.ini
+%LocalAppData%\MSCC-NET9\MSCC_LastUsed_VFOB.ini
+```
+
+(Close WPF first.) Next Start rebuilds defaults / digi LAST HF·LF (14.074 / 474.2 when empty).
 
 ---
 
-## Version checklist (done when all true)
+## Remote Digital mic slider
 
-- [ ] Windows installer **R9-21-7** / Client **9.21.7**
-- [ ] Pi package **mscc 1.0.44**
-- [ ] (Optional) Pi UI **0.6.59**
-- [ ] Remote Digital TUNE clean; mic slider usable
-- [ ] Idle → Start restores DIG-U when that was last-used
+No INI delete. After upgrade, open Remote Digital — slider defaults to **100%** and saves as `REMOTE_DIGI_MIC_VOL` in `MSCC_Client.ini`. Turn down only if the VAC chain is hot.
+
+---
+
+## Short checklist for Ron
+
+1. **Close** WPF / digi apps; on Pi `mscc stop`.
+2. Install Windows **`mscc-net9-R9--21-7-install.exe`** (note the double dash).
+3. On Pi: `./install-mscc.sh --reinstall ./mscc_1.0.44_arm64.deb` then `mscc start`.
+4. **Do not** delete Pi `~/.local/mscc` or Windows AppData cal “to pick up factory” — that does not apply to Win→Pi the way it does for local Windows servers.
+5. Connect from WPF → Start → set **DIG-U** once on your digi band if mode looks wrong.
+6. Smoke Remote Digital TUNE; if mush after a SESSION IN USE fight, recycle Pi servers once (software fix is in 1.0.44, recycle still helps).
+
+### Only if Stew asks you to load **new factory IQ** on a **Windows** host
+
+Use **TX IQ Reset All** / **FREQ CAL Reset** / **Settings → Reset configuration** as above — not a blind delete on the Pi.
+
+---
+
+## Quick reference — delete map
+
+| Action | Win→Pi (your station) | Windows local servers |
+|--------|------------------------|------------------------|
+| Delete Pi `~/.local/mscc` cal | **No** (unless Stew says) | n/a |
+| Delete Win `MSCC_Client.ini` | **No** | **No** |
+| Delete Win `MSCC_LastUsed*.ini` | **Only if** DIG-U still broken after one Start+set | Same |
+| Delete Win `iq.ini` + `cal\` | **No effect** on Pi radio cal | Only to force factory seed |
+| Settings → Reset configuration | Resets **client PC** AppData; does **not** reseed Pi host cal | Full client + factory reseed on next server start |

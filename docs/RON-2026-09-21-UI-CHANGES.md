@@ -7,6 +7,8 @@
 
 This is what changed in the **UI** (and closely related remote-audio host bits) since the **R9-17-4** baseline you have. Upgrade steps: [`RON-UPGRADE-R9-17-4-to-R9-21-7.md`](RON-UPGRADE-R9-17-4-to-R9-21-7.md).
 
+**Config note:** for which INIs to clear vs keep (factory / last-used), see that upgrade doc — default is **delete nothing** on a Win→Pi station.
+
 ---
 
 ## What you’ll notice in WPF (Client 9.21.x)
