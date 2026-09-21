@@ -14,9 +14,9 @@ factory/
 | Product line | FW majors | Notes |
 |--------------|-----------|--------|
 | proficio-legacy | 1 | Stock no-PIN only. PPM +22.00. LF IQ/QRP = 0 |
-| geminus-mkii | 2 | PPM ~0. LF IQ −31/−34 |
+| geminus-mkii | 2 | PPM ~0. LF IQ 1 / 4 |
 | proficio-mkii | 3, 4 | PTT/ATU share tables. PPM ~0. LF = 0 |
-| geminus-legacy | 5 | IQ same as Geminus MKII. PPM +22.50 provisional |
+| geminus-legacy | 5 | IQ same as Geminus MKII (LF 1 / 4). PPM +22.50 provisional |
 | ultimus-legacy | 6 | PPM +27.66. LF = 0 |
 | ultimus-mkii | 7, 8 | ATU/PTT share tables. PPM ~0. LF = 0 |
 

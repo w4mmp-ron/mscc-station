@@ -49,7 +49,9 @@ Format: `PPM_INT`, `PPM_DEC` → PPM = INT + DEC/100; plus `DELTA`, `CALIBRATION
 
 | Band | 10 | 12 | 15 | 17 | 20 | 30 | 40 | 60 | 80 | 160 | 630 | 2200 |
 |------|---:|---:|---:|---:|---:|---:|---:|---:|---:|----:|----:|-----:|
-| IQ_OFFSET | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | −31 | −34 |
+| IQ_OFFSET | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 1 | 4 |
+
+LF (BAND 10 / 11) midpoint **1 / 4** — between prior factory −31/−34 and the other unit ~+37/+43. Verified ≤ −43 dBc on both Geminus MKII units 2026-09-21. HF bands 0..9 stay 0. Same table for `geminus-legacy`.
 
 ### 2.2 Proficio MKII → factory `proficio-mkii` (majors 3 & 4 shared)
 

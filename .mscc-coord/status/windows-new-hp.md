@@ -1,11 +1,11 @@
-# Status — windows-new-hp
+# Status - windows-new-hp
 
 | | |
 |--|--|
 | **Host** | NEW-HP-LAPTOP (Windows) |
 | **Checkout** | `C:\Users\n8vet\OneDrive\Documents\GitHub\mscc-station` |
-| **Build** | **cmd-020** |
-| **Last command id** | cmd-020 |
+| **Build** | **cmd-021** |
+| **Last command id** | cmd-021 |
 | **State** | done |
 | **Updated** | 2026-09-21 |
 
@@ -13,15 +13,12 @@
 
 | command id | state | note |
 |------------|-------|------|
+| cmd-021 | done | last-used band/freq sanity; geminus IQ factory 1/4; WPF 9.21.1 |
 | cmd-020 | done | cal/<line>/ IQ+QRP user cache; ms-sdr 173 at C:\mscc-net9 |
 | cmd-019 | done | Reset paths → FW-major factory |
 | cmd-018 | done | factory trees + first-boot seed |
 
 ## Notes
 
-Per-line IQ/QRP cache under `%LocalAppData%\MSCC-NET9\cal\<line>\`. Factory stays `C:\mscc-net9\factory` (ship/Reset). No freq user cache.
-On FW major: stash active → cal/<prev>/; load cal/<line>/ else factory → active+cal. First upgrade bootstraps live → cal (keeps tuned HF).
-Write-through on IQ commit / QRP save. TX IQ Reset All and QRP Reset: factory → live + cal/<line>/ then trans reload.
-Freq Reset unchanged (cmd-019). Settings Reset still wipes cal/ so next start seeds factory.
-Verify: HF IQ/QRP survives a Geminus session and restores; TX IQ Reset restores factory. Logs: `cal stash`, `cal load`, `cal seed factory`, `cal bootstrap`, `cal write-through`.
-Stew pushes.
+WPF LoadLastUsed ignores stored f when GetBandNameForFrequency(f) ≠ requested band (poisoned 2200M_FREQ=475000 → default 136 kHz). SaveLastUsed writes under freq's band when CurrentBand is stale.
+Factory geminus-mkii + geminus-legacy LF IQ_OFFSET BAND10=1 BAND11=4; copied to C:\mscc-net9\factory. TX IQ Reset reseeds 1/4. Stew pushes.

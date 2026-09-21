@@ -5272,6 +5272,15 @@ public partial class MainViewModel : ObservableObject, IDisposable
         if (string.IsNullOrEmpty(band)) return;
         if (band == "gen" && CurrentGenSub != "USER") return;
         long f = RadioState.ActiveVfo.FrequencyHz;
+        string freqBand = GetBandNameForFrequency(f);
+        if (!string.IsNullOrEmpty(freqBand) && freqBand != "?" &&
+            !string.Equals(freqBand, band, StringComparison.OrdinalIgnoreCase))
+        {
+            MonitorTextBoxText($" SaveLastUsed: CurrentBand={band} but f={f} is {freqBand} — saving under {freqBand}");
+            band = freqBand;
+            RadioState.CurrentBand = freqBand;
+            StoreBandForActiveVfo(freqBand);
+        }
         string m = ActiveMode ?? "USB";
         int l = LowCutIndex;
         int h = HighCutIndex;
@@ -5286,6 +5295,17 @@ public partial class MainViewModel : ObservableObject, IDisposable
         if (string.IsNullOrEmpty(band)) return;
         bool forVfoB = UseVfoBLastUsedFile;
         var (f, m, l, h, c) = SpectrumWaterfallSettings.LoadLastUsedForBand(band, forVfoB);
+        if (f > 0)
+        {
+            string freqBand = GetBandNameForFrequency(f);
+            if (!string.IsNullOrEmpty(freqBand) && freqBand != "?" &&
+                !string.Equals(freqBand, band, StringComparison.OrdinalIgnoreCase))
+            {
+                MonitorTextBoxText($" LoadLastUsed: ignore f={f} (band {freqBand} != {band}) -> default {defaultFreq}");
+                f = 0;
+                m = "";
+            }
+        }
         long useF = f > 0 ? f : defaultFreq;
         string useM = !string.IsNullOrEmpty(m) ? m : DefaultModeForFrequency(useF);
 
