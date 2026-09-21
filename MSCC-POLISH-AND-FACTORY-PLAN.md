@@ -316,3 +316,5 @@ Wire client capture gain (`RemoteAf.MicVolume`) from that slider in digi mode in
 - **Ultimus MKII PTT** major **8** — done (distinct from ATU for client header)
 - **Geminus Legacy** major **5**, minor **120** — done
 - MSCC client title: add an **ATU** or **PTT** block next to `FW: major.minor`, derived from major (also map Proficio **3→PTT**, **4→ATU**). WPF + Avalonia — still open (UI list).
+
+- [ ] Per-line user IQ/QRP cache under AppData `cal/<line>/`; swap on FW major (**cmd-020**). Freq: factory Reset only.
