@@ -43,6 +43,7 @@ public partial class MainViewModel : ViewModelBase, IDisposable
     private long _frequencyHz;
     private long _vfoBFrequencyHz;
     private bool _deferUsbModeReport;
+    private bool _fwRadioModelApplied;
     private bool? _audioBeforeDigU;
     private int _stepIndex = 2;
     private int _lowCutIndex;
@@ -160,7 +161,7 @@ public partial class MainViewModel : ViewModelBase, IDisposable
         ModeText = "";
         NotifyModeFlags();
         NotifyBandFlags();
-        AppendLog("MSCC Avalonia 0.6.58 — idle clean; DIG-U band-wins; FW product title.");
+        AppendLog("MSCC Avalonia 0.6.59 — FW major drives band gate + S/W bank.");
         AppendLog("PTT = TX (voice modes); TUN = TUNE + carrier. S/W opens pan settings.");
         AppendLog($"Log: {LogFilePath}");
         CwPitchLabel = CwPitchOptions[Math.Clamp(CwPitchIndex, 0, CwPitchOptions.Count - 1)];
@@ -426,7 +427,7 @@ public partial class MainViewModel : ViewModelBase, IDisposable
     [ObservableProperty] private string _proficioTempText = "— °C";
     [ObservableProperty] private string _paTempText = "— °C";
     [ObservableProperty] private string _paCurrentText = "— mA";
-    [ObservableProperty] private string _clientVersionText = "0.6.58";
+    [ObservableProperty] private string _clientVersionText = "0.6.59";
     [ObservableProperty] private bool _qrpMode = true;
     [ObservableProperty] private bool _fullPower;
     [ObservableProperty] private bool _alcOn = true;
@@ -680,6 +681,32 @@ public partial class MainViewModel : ViewModelBase, IDisposable
         int dot = firmwareVersion.IndexOf('.');
         string majs = dot >= 0 ? firmwareVersion[..dot] : firmwareVersion;
         return int.TryParse(majs, out major);
+    }
+
+    /// <summary>
+    /// Band personality from FW major. 2/5 Geminus (LF); 1/3/4/6/7/8 Proficio-family (HF).
+    /// Unknown major: false (keep last-used INI).
+    /// </summary>
+    internal static bool TryFirmwareMajorToGeminus(int major, out bool geminus)
+    {
+        switch (major)
+        {
+            case 2:
+            case 5:
+                geminus = true;
+                return true;
+            case 1:
+            case 3:
+            case 4:
+            case 6:
+            case 7:
+            case 8:
+                geminus = false;
+                return true;
+            default:
+                geminus = false;
+                return false;
+        }
     }
 
     public string ConnectButtonText => IsConnected ? "Disconnect" : "Connect";
@@ -1253,6 +1280,7 @@ public partial class MainViewModel : ViewModelBase, IDisposable
             ForceStopTxIqSession("disconnect");
             ForceStopFreqCal("disconnect");
             DisposeRadio();
+            _fwRadioModelApplied = false;
             IsConnected = false;
             StatusText = "Disconnected";
             FrequencyText = "—";
@@ -5649,18 +5677,84 @@ public partial class MainViewModel : ViewModelBase, IDisposable
     [RelayCommand]
     private async Task ToggleRadioModelAsync()
     {
-        IsGeminusRadioModel = !IsGeminusRadioModel;
-        // Swap S/W bank with radio type (capture leaving bank, load entering bank)
-        SpectrumDisplaySettings.Instance.SwitchRadioModel(IsGeminusRadioModel);
-        AppendLog(IsGeminusRadioModel
-            ? "Radio model: Geminus — LF bands on; HF grayed; GEN=198/660/880; S/W→LF bank"
-            : "Radio model: Proficio — HF bands on; LF grayed; GEN=WWV/CHU/RWM/USER; S/W→HF bank");
-
-        SyncGenButtonForRadioModel();
+        ApplyRadioModelSelection(!IsGeminusRadioModel, fromFirmware: false);
         if (_onGenBand)
             await ApplyGenAsync(rotate: false).ConfigureAwait(true);
+    }
 
+    /// <summary>
+    /// Map 0xB2 major to Geminus/Proficio band gating. Unknown / "--" leaves INI last-used.
+    /// </summary>
+    private void ApplyRadioModelFromFirmware(string firmwareVersion)
+    {
+        if (!TryParseFirmwareMajor(firmwareVersion, out int major))
+            return;
+        if (!TryFirmwareMajorToGeminus(major, out bool geminus))
+        {
+            AppendLog($"Radio model: FW {firmwareVersion} major {major} unknown — keep last-used gating");
+            return;
+        }
+
+        ApplyRadioModelSelection(geminus, fromFirmware: true);
+        _fwRadioModelApplied = true;
+        _ = RetuneIfIllegalForRadioPersonalityAsync(geminus);
+    }
+
+    /// <summary>
+    /// Set model, S/W bank, GEN list, band gray. Persist RADIO_MODEL.
+    /// Manual toggle stays until the next 0xB2 (FW wins on each report).
+    /// </summary>
+    private void ApplyRadioModelSelection(bool nowGeminus, bool fromFirmware)
+    {
+        if (IsGeminusRadioModel != nowGeminus)
+            IsGeminusRadioModel = nowGeminus;
+        else
+        {
+            OnPropertyChanged(nameof(RadioModelButtonText));
+            OnPropertyChanged(nameof(HfBandsEnabled));
+            OnPropertyChanged(nameof(LfBandsEnabled));
+            OnPropertyChanged(nameof(GenButtonTip));
+        }
+
+        SpectrumDisplaySettings.Instance.SwitchRadioModel(nowGeminus);
+        SyncGenButtonForRadioModel();
         ScheduleSaveClientSettings();
+        string how = fromFirmware ? "from FW" : "manual";
+        AppendLog(nowGeminus
+            ? $"Radio model: Geminus ({how}) — LF waterfall bank; HF grayed; 2200/630 on"
+            : $"Radio model: Proficio ({how}) — HF waterfall bank; LF grayed; GEN=WWV/CHU/RWM/USER");
+    }
+
+    /// <summary>
+    /// If reported freq is illegal for this FW personality, retune LAST_HF / LAST_LF (or ship default).
+    /// Idle freq 0 is legal (cmd-027) — no retune until a real VFO report.
+    /// </summary>
+    private async Task RetuneIfIllegalForRadioPersonalityAsync(bool geminus)
+    {
+        long freq = UseVfoA ? _frequencyHz : _vfoBFrequencyHz;
+        bool illegal = geminus
+            ? freq >= 1_800_000
+            : freq > 0 && freq < 1_800_000;
+        if (!illegal)
+            return;
+
+        long stored = geminus ? BandLastUsedStore.LastLfFreq : BandLastUsedStore.LastHfFreq;
+        long target = stored > 0
+            ? stored
+            : (geminus ? BandLastUsedStore.DefaultLastLfFreq : BandLastUsedStore.DefaultLastHfFreq);
+        string mode = geminus ? BandLastUsedStore.LastLfMode : BandLastUsedStore.LastHfMode;
+        AppendLog(
+            $"Connect safety: {freq} Hz illegal for {(geminus ? "Geminus" : "Proficio")} → {target}");
+        await ApplyFrequencyAsync(target, "fw-personality").ConfigureAwait(true);
+        if (string.IsNullOrWhiteSpace(mode))
+            return;
+        if (CanOperate())
+            await SetModeAsync(mode).ConfigureAwait(true);
+        else
+        {
+            ModeText = mode;
+            NotifyModeFlags();
+        }
     }
 
     [RelayCommand]
@@ -6334,6 +6428,8 @@ public partial class MainViewModel : ViewModelBase, IDisposable
                 // Do NOT LoadLastUsed (would send tune). DIG-U overlay only.
                 AppendLog($"Frequency reported from backend: {hz}");
                 TryRestoreDigUAfterFreqKnown();
+                if (_fwRadioModelApplied)
+                    _ = RetuneIfIllegalForRadioPersonalityAsync(IsGeminusRadioModel);
             });
 
         radio.ModeReported += mode =>
@@ -6442,6 +6538,7 @@ public partial class MainViewModel : ViewModelBase, IDisposable
             {
                 FirmwareText = v;
                 AppendLog($"FW: {v}");
+                ApplyRadioModelFromFirmware(v);
             });
 
         radio.TunePowerReported += v =>

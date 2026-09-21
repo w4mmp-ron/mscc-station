@@ -173,11 +173,16 @@ public static class BandLastUsedStore
         File.WriteAllText(path, sb.ToString());
     }
 
+    public const long DefaultLastHfFreq = 14_074_000;
+    public const long DefaultLastLfFreq = 474_200;
+
     public static bool IsLfPersonalityFreq(long frequencyHz) =>
         frequencyHz > 0 && frequencyHz < 1_800_000;
 
     public static string LastHfMode => ReadPersonality("LAST_HF_MODE");
     public static string LastLfMode => ReadPersonality("LAST_LF_MODE");
+    public static long LastHfFreq => ReadPersonalityLong("LAST_HF_FREQ");
+    public static long LastLfFreq => ReadPersonalityLong("LAST_LF_FREQ");
 
     /// <summary>HF vs LF personality last mode/freq. Does not overwrite per-band keys.</summary>
     public static void RememberLastPersonalityFreq(long frequencyHz, string? mode)
@@ -219,5 +224,13 @@ public static class BandLastUsedStore
         {
             return "";
         }
+    }
+
+    private static long ReadPersonalityLong(string key)
+    {
+        string s = ReadPersonality(key);
+        return long.TryParse(s, NumberStyles.Integer, CultureInfo.InvariantCulture, out long v) && v > 0
+            ? v
+            : 0;
     }
 }
