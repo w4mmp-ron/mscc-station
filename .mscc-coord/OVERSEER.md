@@ -1,3 +1,5 @@
+
+**Current:** cmd-027 — Avalonia Ubuntu parity (idle + DIG-U band-wins + FW title). Mic slider parked.
 ﻿# Overseer intent
 
 **Current:** cmd-026 — DIG-U overlay: band last-used wins over LAST_HF (stop USB↔DIG-U ping-pong).

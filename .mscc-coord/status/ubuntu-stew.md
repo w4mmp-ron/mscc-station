@@ -1,28 +1,21 @@
-# Status — ubuntu-stew
+# Status - ubuntu-stew
 
 | | |
 |--|--|
-| **Host** | stew-HP-Notebook |
+| **Host** | stew-HP-Notebook (Ubuntu) |
 | **Checkout** | `/home/stew/Documents/GitHub/mscc-station` |
-| **Build** | cmd-013 |
-| **Last command id** | cmd-013 |
-| **State** | done |
-| **Updated** | 2026-09-20 |
+| **Build** | **cmd-027** |
+| **Last command id** | cmd-027 |
+| **State** | pending |
+| **Updated** | 2026-09-21 |
 
 ## ACK log
 
 | command id | state | note |
 |------------|-------|------|
-| cmd-013 | done | linux/ms-sdr owner re-ack resends packed 0xB2+0xB3+status. Built `$HOME/mscc/ms-sdr` (Core 3.167). |
-| cmd-010 | done | Avalonia 0.6.57 ATU/PTT + amd64 kit |
+| cmd-027 | pending | Avalonia parity: idle + DIG-U band-wins + FW title (amd64) |
+| cmd-026 | done | WPF 9.21.6 on windows-new-hp (reference) |
 
 ## Notes
 
-- Mirrored Pi cmd-012 block in `linux/ms-sdr-linux/source/main-controller.c`. No Session_Claim on re-ack.
-- Binary in `$HOME/mscc/ms-sdr` (not git). Servers were not running at rebuild (no radio).
-- Stew: `mscc start`, Connect, Disconnect UI only, Connect again — title should keep FW + ATU/PTT; log `owner re-ack FW packed`.
-- Stew pushes.
-
-## Blocked
-
-(none)
+Stew: mic slider parked. Ubuntu Avalonia first, then RPi kit. Orders written on this host.

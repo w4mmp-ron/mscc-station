@@ -12,7 +12,9 @@ On start: `git pull`, then read [`handoff.md`](handoff.md). If `.mscc-coord/COMM
 
 ## Current work
 
-**cmd-026** (windows-new-hp): DIG-U overlay uses per-band last-used mode over stale LAST_HF/LF; Client 9.21.6. See `.mscc-coord/COMMANDS.yaml`.
+**cmd-027** (ubuntu-stew): Avalonia parity with WPF — idle UI, DIG-U overlay (band last-used wins), WindowTitle product line from FW major. Mic slider parked. See `.mscc-coord/COMMANDS.yaml`.
+
+
 ## Who / where
 
 | Person | Focus |

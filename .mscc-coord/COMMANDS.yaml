@@ -1,4 +1,63 @@
 commands:
+  - id: cmd-027
+    created: "2026-09-21T13:40:00-04:00"
+    target: [ubuntu-stew]
+    role: client
+    action: avalonia-parity-idle-digu-title
+    status_hint: pending
+    detail: |
+      Host: ubuntu-stew (stew-HP). Checkout: /home/stew/Documents/GitHub/mscc-station
+      Orders on this host. Avalonia client (mscc-ui/Avalonia-Migration) + shared MSCC.Core as needed.
+      Bring Avalonia up to speed with settled WPF rules (cmd-022 / 024 / 025 / 026).
+      Mic slider / remote audio: OUT OF SCOPE (parked).
+
+      ## Context
+      WPF Client 9.21.6 verified: idle no-poison, DIG-U overlay with band last-used
+      winning over stale LAST_HF, AM/USB/DIG-U restart OK. Avalonia shares MSCC.Core
+      but MainViewModel is a parallel fork — ModeReported still assigns ModeText = mode
+      (USB crushes DIG-U); defaults ModeText=USB; title has ATU/PTT but not product-line name.
+
+      Mirror WPF behavior; do not invent a second policy. Reference WPF:
+        MSCC.Wpf/ViewModels/MainViewModel.cs — ShouldKeepDigUOnUsbReport,
+        TryRestoreDigUAfterFreqKnown, _deferUsbModeReport, ApplyDigUOverlay,
+        SaveLastUsed idle gate, RememberLastPersonalityFreq on mode change,
+        WindowTitle product line from FW major (cmd-022).
+
+      ## 1) Idle before Connect/Start (cmd-024 parity)
+      - Frequency display 0 (or blank zeros); no band button gold; no mode button pressed.
+      - Do not write BandLastUsedStore / personality last-freq while idle
+        (not connected / freq<=0 / session not live).
+      - Avoid ctor defaults that paint USB + a HF freq/band before the user connects.
+
+      ## 2) DIG-U overlay (cmd-025 + cmd-026 parity)
+      - DIG-U is client overlay; wire/mode reports are USB (numeric 2).
+      - ModeReported USB with freq unknown: defer applying USB (leave unset or hold).
+      - After FrequencyReported (band known): if mode still USB/unset and band last-used
+        MODE is DIG-U → restore DIG-U overlay (digital audio policy if Avalonia has it).
+      - Precedence: if band last-used MODE string is present, that alone decides DIG-U
+        keep/restore. LAST_HF/LF (or Avalonia equivalent) only if band unknown OR
+        band mode empty. Never let stale personality DIG-U override band USB/AM.
+      - Live mode change should update personality last mode when freq known.
+      - Do NOT call full LoadLastUsed from server report handlers (no tune storms).
+
+      ## 3) WindowTitle product line (cmd-022 parity)
+      - From FW major 1–8 show Proficio/Geminus/Ultimus Legacy|MKII (+ existing ATU/PTT).
+      - Match WPF naming map; keep ATU/PTT suffix already present.
+
+      ## Out of scope
+      Remote Digital mic slider; FreqCal progress reset; Connect FW/Core ask (unless
+      trivial to include); RPi arm64 kit (follow-on after Ubuntu smoke); WPF changes.
+
+      ## Verify (Ubuntu amd64)
+      1) Cold open before Connect: freq 0, no band/mode lit; no last-used poison in log/store.
+      2) DIG-U on a band → disconnect/restart app → Connect → DIG-U restored.
+      3) USB on that band (with stale personality DIG-U if possible) → restart → USB.
+      4) AM still loads from wire.
+      5) Title shows product line + ATU/PTT from FW major.
+
+      Bump Avalonia client version per project convention (note in commit).
+      Commit hint: cmd-027: Avalonia idle + DIG-U band-wins + FW title (Ubuntu)
+
   - id: cmd-026
     created: "2026-09-21T13:10:00-04:00"
     target: [windows-new-hp]
