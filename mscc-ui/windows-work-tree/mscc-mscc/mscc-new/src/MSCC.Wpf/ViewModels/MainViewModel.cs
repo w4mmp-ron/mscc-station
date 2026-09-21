@@ -1574,6 +1574,9 @@ public partial class MainViewModel : ObservableObject, IDisposable
             OnPropertyChanged(nameof(IsFmMode));
             NotifyMainOperatePower();
             SaveLastUsedForCurrentBand();
+            if (IsRadioRunning && RadioState.ActiveVfo.FrequencyHz > 0 && newMode != RadioMode.None)
+                SpectrumWaterfallSettings.RememberLastPersonalityFreq(
+                    RadioState.ActiveVfo.FrequencyHz, FormatModeDisplay(newMode));
 
             if (newMode == RadioMode.FM)
             {
@@ -4202,8 +4205,9 @@ public partial class MainViewModel : ObservableObject, IDisposable
     }
 
     /// <summary>
-    /// DIG-U is a client overlay on USB RF. True if UI is already DIG-U, per-band last-used
-    /// is DIG-U, or LAST_HF/LF personality mode is DIG-U (freq maps HF vs LF).
+    /// DIG-U overlay on USB RF. Per-band last-used MODE (if present) decides alone.
+    /// LAST_HF/LF DIG-U is only used when band is unknown or that band's mode is empty.
+    /// Already-DIG-U keeps the overlay on a USB echo.
     /// </summary>
     private bool ShouldKeepDigUOnUsbReport()
     {
@@ -4213,21 +4217,19 @@ public partial class MainViewModel : ObservableObject, IDisposable
         string band = RadioState.CurrentBand;
         if (string.IsNullOrWhiteSpace(band) || band == "?")
             band = GetBandNameForFrequency(freq);
-        if (!string.IsNullOrWhiteSpace(band) && band != "?")
+        bool bandKnown = !string.IsNullOrWhiteSpace(band) && band != "?";
+        if (bandKnown)
         {
             var (_, m, _, _, _) = SpectrumWaterfallSettings.LoadLastUsedForBand(band, UseVfoBLastUsedFile);
-            if (ParseMode(m) == RadioMode.DigU)
-                return true;
+            if (!string.IsNullOrWhiteSpace(m))
+                return ParseMode(m) == RadioMode.DigU;
         }
-        if (freq > 0)
-        {
-            string personality = SpectrumWaterfallSettings.IsLfPersonalityFreq(freq)
-                ? SpectrumWaterfallSettings.LastLfMode
-                : SpectrumWaterfallSettings.LastHfMode;
-            if (ParseMode(personality) == RadioMode.DigU)
-                return true;
-        }
-        return false;
+        if (freq <= 0)
+            return false;
+        string personality = SpectrumWaterfallSettings.IsLfPersonalityFreq(freq)
+            ? SpectrumWaterfallSettings.LastLfMode
+            : SpectrumWaterfallSettings.LastHfMode;
+        return !string.IsNullOrWhiteSpace(personality) && ParseMode(personality) == RadioMode.DigU;
     }
 
     /// <summary>Apply DIG-U overlay without sending USB to the radio or writing last-used.</summary>
@@ -4245,8 +4247,8 @@ public partial class MainViewModel : ObservableObject, IDisposable
     }
 
     /// <summary>
-    /// After FrequencyReported (band gold synced). Restore DIG-U from last-used / LAST_HF/LF
-    /// if the UI is still USB or idle. Does not LoadLastUsed (no outgoing tune).
+    /// After FrequencyReported (band gold synced). Restore DIG-U from per-band last-used
+    /// (LAST_HF/LF only if band mode empty). Does not LoadLastUsed (no outgoing tune).
     /// </summary>
     private void TryRestoreDigUAfterFreqKnown()
     {
