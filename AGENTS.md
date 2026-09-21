@@ -1,4 +1,4 @@
-﻿# AGENTS.md — Grok instructions (this repo)
+# AGENTS.md — Grok instructions (this repo)
 
 Grok loads this file at the repo root. Follow it on **every** host. Details live in the linked docs; do not invent a second protocol.
 
@@ -12,7 +12,7 @@ On start: `git pull`, then read [`handoff.md`](handoff.md). If `.mscc-coord/COMM
 
 ## Current work
 
-**cmd-028** (ubuntu-stew): Avalonia FW major → band gate + S/W bank (WPF cmd-015 parity). See `.mscc-coord/COMMANDS.yaml`.
+**cmd-029** (rpi): Avalonia 0.6.59 arm64 kit + remote phones headroom (12000) + REMOTE_AUDIO line gain 2.5×; rebuild sdrcore-recv/trans. See `.mscc-coord/COMMANDS.yaml`.
 
 
 ## Who / where

@@ -1,4 +1,66 @@
 commands:
+  - id: cmd-029
+    created: "2026-09-21T16:47:00-04:00"
+    target: [rpi]
+    role: client
+    action: rpi-sync-avalonia-0659-and-remote-gain
+    status_hint: pending
+    detail: |
+      Host: rpi (raspberrypi). Checkout: /home/pi/src/mscc-station
+      Orders on this host (already pulled to bffc94e / Avalonia 0.6.59 source).
+      Ron's kit path: Win11 client → RPi servers. Mic slider OUT OF SCOPE.
+
+      ## Why
+      Ubuntu smoke done for cmd-027/028 (Avalonia 0.6.59). Pi still on arm64 **0.6.57**
+      publish + installers/rpi/mscc-ui_0.6.57_arm64.deb. Also uncommitted (keep) Pi
+      server fixes already proven in working tree:
+        1) rpi/SDRcore-recv-linux/sources/remote_phones.c — AF scale 30000 → **12000**
+           (~8 dB headroom; client play slider owns the rest).
+        2) rpi/SDRcore-trans-linux/sources/dsputils.c — REMOTE_AUDIO uses line-level
+           **2.5×** with DIGITAL/REMOTE_DIGITAL (not analog 6.324) so remote phones
+           mic=100 does not overdrive the PA.
+      Mirror the same two edits under linux/ (already dirty the same way) so trees match.
+
+      ## Do NOT
+      - Invent new Avalonia policy (027/028 already in tree).
+      - Touch WPF / mic slider / remote_mic g_frac reset.
+      - Force-push. Do not discard the phones/gain diffs (stash only if you must
+        rebase; then re-apply — they are intentional).
+
+      ## Steps
+      1) ACK status/rpi.md → accepted → running.
+      2) Confirm source Version is 0.6.59 in
+         mscc-ui/Avalonia-Migration/src/MSCC.Avalonia/MSCC.Avalonia.csproj.
+      3) Commit the phones/gain **source** fixes (rpi/ + linux/ copies of
+         remote_phones.c + dsputils.c). Do not commit stale publish/*.dll or old
+         binaries yet — rebuild first.
+         Commit hint: cmd-029: remote phones headroom + REMOTE_AUDIO line gain (Pi)
+      4) Rebuild servers (native arm64):
+           cd rpi/SDRcore-trans-linux && make clean && make
+           cd rpi/SDRcore-recv-linux && make clean && make
+         Copy/install into rpi/mscc-binaries/ and the live runtime Stew uses
+         (typically $HOME/mscc/ or existing mscc.sh path — match prior Pi installs).
+         Restart ms-sdr / sdrcore-recv / sdrcore-trans after install.
+      5) Rebuild Avalonia **linux-arm64** self-contained publish for 0.6.59, pack
+         **mscc-ui_0.6.59_arm64.deb**, place in installers/rpi/ (and copy beside
+         Avalonia-Migration/ if that is the house style from cmd-011).
+         Follow the same recipe used for cmd-011 / publish-for-pi (dotnet publish
+         -r linux-arm64, then existing deb packer). Version string must read 0.6.59.
+      6) Commit kit + rebuilt binaries (publish linux-arm64-sc, deb, rpi/mscc-binaries).
+         Commit hint: Ship Avalonia 0.6.59 arm64 kit + sdrcore phones/gain (cmd-029)
+      7) Smoke (Stew/Ron path):
+         a) Local Avalonia 0.6.59 on Pi: idle zeros / no band-mode lit; Geminus →
+            LF 2200/630 enabled + title Geminus + log "Radio model: Geminus (from FW)";
+            Proficio-family → HF on / LF gray.
+         b) DIG-U band-wins still OK after restart (cmd-027).
+         c) Win11 (Shack or NEW-HP) remote → this Pi host: Remote Digital WSJT TUNE
+            looks clean; remote phones not slammed into the roof at play ~30%.
+      8) status/rpi.md → done with kit path + binary notes. Update AGENTS.md Current work.
+
+      ## Out of scope
+      Ubuntu amd64 kit (already 0.6.59). WPF. Mic slider. Push unless Stew asks
+      (orders-on-host-first; push after Build finishes so other hosts can pull).
+
   - id: cmd-028
     created: "2026-09-21T14:12:00-04:00"
     target: [ubuntu-stew]
