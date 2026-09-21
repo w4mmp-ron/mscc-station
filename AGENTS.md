@@ -1,4 +1,4 @@
-﻿# AGENTS.md — Grok instructions (this repo)
+# AGENTS.md — Grok instructions (this repo)
 
 Grok loads this file at the repo root. Follow it on **every** host. Details live in the linked docs; do not invent a second protocol.
 
@@ -12,8 +12,7 @@ On start: `git pull`, then read [`handoff.md`](handoff.md). If `.mscc-coord/COMM
 
 ## Current work
 
-**cmd-028** (ubuntu-stew): Avalonia FW major → band gate + S/W bank (WPF cmd-015 parity). See `.mscc-coord/COMMANDS.yaml`.
-
+**cmd-030** (windows-new-hp): Enable Remote Digital mic drive slider (default 100%, persist REMOTE_DIGI_MIC_VOL); Client 9.21.7. See `.mscc-coord/COMMANDS.yaml`.
 
 ## Who / where
 
