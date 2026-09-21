@@ -380,9 +380,11 @@ void remote_phones_feed(const float *stereo_interleaved, unsigned frames)
             float avg = 0.5f * (g_prev_l + l);
             float s = avg;
             int v;
+            /* AGC AF is often near FS. 30000 pinned client headphones even
+             * with play vol ~30%. Leave ~8 dB headroom; Windows/Avalonia slider owns the rest. */
             if (s > 1.0f) s = 1.0f;
             if (s < -1.0f) s = -1.0f;
-            v = (int)(s * 30000.0f);
+            v = (int)(s * 12000.0f);
             if (v > 32767) v = 32767;
             if (v < -32768) v = -32768;
             ring_write_one((int16_t)v);

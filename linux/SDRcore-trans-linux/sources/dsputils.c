@@ -176,10 +176,11 @@ void framesToComplex(sp_float *inframes, sp_cplx *incomplex, sp_cplx *outcomplex
 
 
     if ((mystate.opmode == MODE_CW) || (mystate.opmode == MODE_TUNE)) gain = 0.0f;
-    else if (G_audio_mode == DIGITAL_AUDIO || G_audio_mode == REMOTE_DIGITAL_AUDIO)
-        /* VAC/WSJT line-level. Analog 16 dB flattened the PWR slider.
-         * 2.5× plus digital mic 1.3 at 100 lets WSJT 0 dB go a bit past
-         * QRP CAL so you can ride ALC then back off. TUN unchanged. */
+    else if (G_audio_mode == DIGITAL_AUDIO || G_audio_mode == REMOTE_DIGITAL_AUDIO
+             || G_audio_mode == REMOTE_AUDIO)
+        /* Line-level: local VAC, remote MSA1 phones, remote MSA1 digital.
+         * Analog 16 dB (6.324) is only for a real operator mic (opcode 1).
+         * Remote phones forced mic=100 * 6.324 overdrove the PA. */
         gain = 2.5f;
     else {
         if (inputchannels == 1) gain = 3.16228f;
