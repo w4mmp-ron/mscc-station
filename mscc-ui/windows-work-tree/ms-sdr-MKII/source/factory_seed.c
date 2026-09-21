@@ -98,6 +98,44 @@ static void seed_one(const char *factory_root, const char *kind, const char *lea
     }
 }
 
+int Factory_reseed_live_file(const char *kind, const char *leaf)
+{
+    char factory_root[MAX_PATH];
+    char src[MAX_PATH];
+    char dst[MAX_PATH];
+    const char *line;
+    char *live;
+
+    if (!kind || !leaf)
+        return 0;
+    line = Factory_line_from_major(G_major_version);
+    if (!find_factory_root(factory_root, sizeof factory_root)) {
+        print_time(0);
+        fprintf(G_fp_logfile, "[%d] Factory_reseed. factory tree missing (kind=%s)\n",
+                line_number++, kind);
+        return 0;
+    }
+    live = My_getenv("HOME");
+    if (live == NULL || live[0] == 0)
+        return 0;
+    snprintf(src, sizeof src, "%s\\%s\\%s\\%s", factory_root, kind, line, leaf);
+    snprintf(dst, sizeof dst, "%s\\%s", live, leaf);
+    if (!file_exists(src)) {
+        print_time(0);
+        fprintf(G_fp_logfile, "[%d] Factory_reseed. missing %s\n", line_number++, src);
+        return 0;
+    }
+    if (copy_file(src, dst)) {
+        print_time(0);
+        fprintf(G_fp_logfile, "[%d] Factory_reseed. %s -> %s (line=%s major=%d)\n",
+                line_number++, src, dst, line, G_major_version);
+        return 1;
+    }
+    print_time(0);
+    fprintf(G_fp_logfile, "[%d] Factory_reseed. copy FAILED %s\n", line_number++, dst);
+    return 0;
+}
+
 void Factory_seed_live_inis(void)
 {
     char factory_root[MAX_PATH];

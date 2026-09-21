@@ -23,3 +23,5 @@ factory/
 QRP `POWER_LEVEL` is **measured − 3** (clamp ≥ 0). No PIN-mod tables.
 
 Windows ms-sdr looks for this tree next to `ms-sdr-MKII.exe` (`C:\mscc-net9\factory\…`).
+
+**Reset paths (cmd-019):** FREQ CAL Reset and TX IQ Reset All force-copy from this tree for the **connected** FW major, then push/reload. Settings Reset does **not** copy `iq.ini` / `freq_cal.ini` / `power_cal.ini` / `recv-iq.ini` from generic `init-files`; those stay missing until the next ms-sdr start seeds them. Ordinary restart still does not overwrite existing live files.

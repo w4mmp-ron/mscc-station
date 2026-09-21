@@ -28,6 +28,29 @@ public static class ConfigBootstrap
     public static string InstallInitFilesDirectory =>
         Path.Combine(AppContext.BaseDirectory, "init-files");
 
+    /// <summary>
+    /// Radio cal files seeded by ms-sdr Factory_seed from factory/&lt;line&gt;/ (FW major).
+    /// Never copy these from generic init-files (would block factory seed).
+    /// </summary>
+    public static readonly string[] RadioCalIniFiles =
+    {
+        "iq.ini",
+        "recv-iq.ini",
+        "freq_cal.ini",
+        "power_cal.ini",
+    };
+
+    public static bool IsRadioCalIniFile(string fileName)
+    {
+        if (string.IsNullOrEmpty(fileName)) return false;
+        foreach (string n in RadioCalIniFiles)
+        {
+            if (string.Equals(n, fileName, StringComparison.OrdinalIgnoreCase))
+                return true;
+        }
+        return false;
+    }
+
     /// <summary>Backend host ini files that carry MSCC_IP / PROFICIO_DLL_IP.</summary>
     private static readonly string[] BackendHostIniFiles =
     {
@@ -75,8 +98,12 @@ public static class ConfigBootstrap
                 foreach (string srcFile in Directory.GetFiles(srcRoot, "*", SearchOption.AllDirectories))
                 {
                     string rel = Path.GetRelativePath(srcRoot, srcFile);
+                    string fname = Path.GetFileName(srcFile);
                     // Never seed a flag that would re-block Initialize.bat semantics incorrectly
-                    if (string.Equals(Path.GetFileName(srcFile), "MSCC_INIT_COMPLETE.flag", StringComparison.OrdinalIgnoreCase))
+                    if (string.Equals(fname, "MSCC_INIT_COMPLETE.flag", StringComparison.OrdinalIgnoreCase))
+                        continue;
+                    // Radio IQ/freq/QRP come from factory/<line>/ via ms-sdr, not generic init-files.
+                    if (IsRadioCalIniFile(fname))
                         continue;
 
                     string dstFile = Path.Combine(ConfigDirectory, rel);

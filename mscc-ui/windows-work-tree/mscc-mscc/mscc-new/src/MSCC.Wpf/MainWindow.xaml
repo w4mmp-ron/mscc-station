@@ -1969,14 +1969,14 @@
                             <Border Background="#FF1A1A1A" BorderBrush="#664444" BorderThickness="1" CornerRadius="4" Padding="10" Margin="0,0,0,8">
                                 <StackPanel>
                                     <TextBlock Text="Configuration" FontWeight="Bold" Foreground="#FFAA66" FontSize="13" Margin="0,0,0,4"/>
-                                    <TextBlock Text="Reset restores default config files under %LocalAppData%\MSCC-NET9\ (keeps logs). Requires MSCC restart. First launch also seeds missing files automatically — Initialize.bat / mscc-init are not required."
+                                    <TextBlock Text="Reset restores UI/audio/COM templates under %LocalAppData%\MSCC-NET9\ (keeps logs). Radio IQ, freq cal, and QRP are not copied from generic init-files — they reseed from factory tables for the radio connected when servers start. Requires MSCC restart."
                                                Foreground="#D0D0D0" FontSize="11" TextWrapping="Wrap" Margin="0,0,0,8"/>
                                     <Button Content="Reset configuration to defaults…"
                                             Width="240" Height="28" HorizontalAlignment="Left"
                                             FontSize="12" FontWeight="Bold"
                                             Click="SettingsConfigReset_Click"
                                             Background="#553333" Foreground="White" BorderBrush="#884444"
-                                            ToolTip="Delete MSCC-NET9 config files (not logs), reseed from install init-files if present, then restart MSCC"/>
+                                            ToolTip="Wipe AppData config (keep logs). UI templates from init-files; radio IQ/freq/QRP from factory for the connected radio on next server start."/>
                                 </StackPanel>
                             </Border>
                         </StackPanel>

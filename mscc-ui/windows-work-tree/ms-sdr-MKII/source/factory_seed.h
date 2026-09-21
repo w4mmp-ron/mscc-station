@@ -12,6 +12,9 @@ const char *Factory_line_from_major(int major);
  * factory/<kind>/<line>/ next to the exe. Does not overwrite existing live files. */
 void Factory_seed_live_inis(void);
 
+/* Overwrite live file from factory/<kind>/<line>/<leaf>. Returns 1 on success. */
+int Factory_reseed_live_file(const char *kind, const char *leaf);
+
 #ifdef __cplusplus
 }
 #endif

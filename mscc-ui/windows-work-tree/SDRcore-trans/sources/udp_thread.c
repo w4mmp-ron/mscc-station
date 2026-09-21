@@ -889,19 +889,18 @@ void *UDP_Thread(void *my_param) {
 
             case CMD_SET_IQ_DEFAULTS:
                 print_time();
-                fprintf(G_fp_logfile, "[%d] UDP Thread. CMD_SET_IQ_DEFAULTS. Called\n", line_number++);
-                status = delete_iq_ini_file();
+                fprintf(G_fp_logfile, "[%d] UDP Thread. CMD_SET_IQ_DEFAULTS. Called (reload live iq.ini)\n", line_number++);
+                /* Do not delete live iq.ini — ms-sdr may have just factory-reseeded it.
+                 * Create built-in only if the file is still missing. */
+                status = Check_iq_ini_file();
                 if (status == 1) {
-                    status = Check_iq_ini_file();
+                    status = init_IQ_structure();
                     if (status == 1) {
-                        status = init_IQ_structure();
-                        if (status == 1) {
-                            print_time();
-                            fprintf(G_fp_logfile, "[%d] UDP_Thread. init_IQ_structure . Successful \n", line_number++);
-                        } else {
-                            print_time();
-                            fprintf(G_fp_logfile, "[%d] UDP_Thread. init_IQ_structure. Failed\n", line_number++);
-                        }
+                        print_time();
+                        fprintf(G_fp_logfile, "[%d] UDP_Thread. init_IQ_structure . Successful \n", line_number++);
+                    } else {
+                        print_time();
+                        fprintf(G_fp_logfile, "[%d] UDP_Thread. init_IQ_structure. Failed\n", line_number++);
                     }
                 }
                 break;

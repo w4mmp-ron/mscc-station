@@ -1158,7 +1158,9 @@ public partial class MainWindow : Window
         var result = MessageBox.Show(
             "This will delete MSCC configuration files under:\n\n" +
             $"  {ConfigBootstrap.ConfigDirectory}\n\n" +
-            "Logs are kept. Defaults will be restored if an init-files folder is next to MSCC.Wpf.exe.\n\n" +
+            "Logs are kept. Client UI / audio / COM templates come from init-files next to MSCC.Wpf.exe.\n\n" +
+            "Radio IQ, freq cal, and QRP (iq.ini, freq_cal.ini, power_cal.ini) are NOT copied from those templates.\n" +
+            "They reseed from factory tables for the radio that is connected when servers start.\n\n" +
             "MSCC will close and you should start it again.\n\nContinue?",
             "Reset configuration to defaults",
             MessageBoxButton.YesNo,
@@ -1192,12 +1194,20 @@ public partial class MainWindow : Window
             {
                 foreach (string srcFile in Directory.GetFiles(initSrc, "*", SearchOption.AllDirectories))
                 {
+                    string fname = Path.GetFileName(srcFile);
+                    if (ConfigBootstrap.IsRadioCalIniFile(fname))
+                        continue;
                     string rel = Path.GetRelativePath(initSrc, srcFile);
                     string dstFile = Path.Combine(dest, rel);
                     string? dstDir = Path.GetDirectoryName(dstFile);
                     if (!string.IsNullOrEmpty(dstDir))
                         Directory.CreateDirectory(dstDir);
                     File.Copy(srcFile, dstFile, overwrite: true);
+                }
+                foreach (string cal in ConfigBootstrap.RadioCalIniFiles)
+                {
+                    string leftover = Path.Combine(dest, cal);
+                    try { if (File.Exists(leftover)) File.Delete(leftover); } catch { /* best effort */ }
                 }
             }
 

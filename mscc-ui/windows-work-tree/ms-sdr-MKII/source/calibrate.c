@@ -787,7 +787,14 @@ int Process_Frequency_Calibration(uint8_t command, char *buf) {
             fprintf(G_fp_logfile, "[%d] Process_Frequency_Calibration. CMD_SET_CAL_RESET. reset_type %d \n",
                     line_number++, reset_type);
             Delete_PPM_ini();
-            Create_PPM_ini();
+            /* Connected radio: factory/freq/<line>/ — not PCB Create_PPM_ini tables. */
+            if (!Factory_reseed_live_file("freq", "freq_cal.ini")) {
+                print_time(0);
+                fprintf(G_fp_logfile,
+                    "[%d] CMD_SET_CAL_RESET. factory freq missing — last-resort Create_PPM_ini (PCB)\n",
+                    line_number++);
+                Create_PPM_ini();
+            }
             Init_PPM();
             switch (reset_type) {
                 case 1:

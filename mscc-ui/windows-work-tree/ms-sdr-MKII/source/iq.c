@@ -129,6 +129,13 @@ int IQ_calibration(uint8_t command, char *buffer) {
             print_time(0);
             fprintf(G_fp_logfile, "[%d] IQ_calibration . CMD_SET_IQ_DEFAULTS . RX/TX Mode %d\n", line_number++, rx_tx);
             if (rx_tx == IQ_TX) {
+                /* TX Reset All: live iq.ini from factory/iq/<line>/ then trans reloads file. */
+                if (!Factory_reseed_live_file("iq", "iq.ini")) {
+                    print_time(0);
+                    fprintf(G_fp_logfile,
+                        "[%d] IQ_calibration . CMD_SET_IQ_DEFAULTS . factory iq missing — trans built-in fallback\n",
+                        line_number++);
+                }
                 SDRcore_trans_send_param(CMD_SET_IQ_DEFAULTS, 1);
             } else {
                 SDRcore_recv_send_param(CMD_SET_IQ_DEFAULTS, 1);
