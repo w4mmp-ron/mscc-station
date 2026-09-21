@@ -590,6 +590,7 @@ void *UDP_Thread(void *my_param) {
                 if (dig_idx < 0 || dig_idx >= MAX_INPUT_DEVICES || dig_idx == NO_INPUT_DEVICE)
                     dig_idx = op_idx;
                 G_audio_mode = t_opcode_data;
+                remote_mic_reset_stream();
                 /* I/Q + MSA1. Do not open VirtualB (R-Digital) or local phones mic. */
                 stream_status = manage_stream(0, G_digital_input_devices[dig_idx].device_index,
                     G_digital_input_devices[dig_idx].num_channels);

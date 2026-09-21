@@ -12,7 +12,7 @@ On start: `git pull`, then read [`handoff.md`](handoff.md). If `.mscc-coord/COMM
 
 ## Current work
 
-**cmd-031** (rpi): `remote_mic_reset_stream` on REMOTE / REMOTE_DIGITAL open (ring + g_frac + hist); mirror linux/. See `.mscc-coord/COMMANDS.yaml`.
+**cmd-031** (rpi): pull merged — rebuild/install `sdrcore-trans` only (`remote_mic_reset_stream` already in tree). See `.mscc-coord/COMMANDS.yaml`.
 
 ## Who / where
 

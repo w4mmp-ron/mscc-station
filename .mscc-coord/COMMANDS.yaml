@@ -57,12 +57,72 @@ commands:
 
       Commit hint: cmd-031: reset remote_mic ring/g_frac on REMOTE path open
 
-  - id: cmd-029
+  - id: cmd-030
+    created: "2026-09-21T17:25:00-04:00"
+    target: [windows-new-hp]
+    role: client
+    action: remote-digital-mic-slider
+    status_hint: done
+    detail: |
+      Host: windows-new-hp. Checkout: C:\Users\n8vet\OneDrive\Documents\GitHub\mscc-station
+      Orders on this host. WPF first (Stew preference). Avalonia follow-on later.
+      Ron cleared 2026-09-20. Mic boost checkbox OUT OF SCOPE.
+
+      ## Problem
+      Remote AF window already has MicVolumeSlider, but RefreshPath() for Digital:
+        MicVolumeSlider.IsEnabled = !digi;
+        if (digi) MicVolumeSlider.Value = 100;
+      MicVolume_Changed for digi forces RemoteAf.MicVolume = 1.0f and does not persist.
+      Hot VAC/WSJT chains cannot turn TX drive down from the client.
+
+      ## Desired (Stew / polish plan)
+      Enable Remote Digital mic drive slider. Default **100%**. Allow turn-down for hot
+      chains (attenuate MSA1 TX samples). Phones path unchanged (still uses REMOTE_MIC_VOL).
+      No global mic boost. No host sdrcore changes in this cmd.
+
+      ## Implementation (WPF)
+      Files (under mscc-ui/windows-work-tree/mscc-mscc/mscc-new/src/MSCC.Wpf/):
+        RemoteAfWindow.xaml.cs — RefreshPath + MicVolume_Changed (+ OnLoaded value)
+        SpectrumWaterfallSettings.cs — new persisted setting
+        ClientVersion.txt — bump 9.21.6 → 9.21.7
+
+      1) Add SpectrumWaterfallSettings.RemoteDigitalMicVolume (int, default **100**,
+         clamp 0–100). Load/save INI key **REMOTE_DIGI_MIC_VOL** (do not overload
+         REMOTE_MIC_VOL which is phones).
+      2) RefreshPath when digi:
+         - Keep MicVolumeSlider.IsEnabled = **true** (remove !digi disable).
+         - Set Value from RemoteDigitalMicVolume (not hard-coded 100).
+         - Apply to engine: RemoteAf.MicVolume = RemoteDigitalMicVolume / 100f.
+      3) MicVolume_Changed when digi:
+         - RemoteAf.MicVolume = v / 100f (same as phones math).
+         - Persist RemoteDigitalMicVolume = v; SaveSettings().
+         - Remove the digi branch that forces 1.0f.
+      4) OnLoaded: after loading phones RemoteMicVolume, still call RefreshPath which
+         will set digi vs phones values; or if digi already, load digi vol before RefreshPath.
+      5) Log line on Remote AF start should show micVol= reflecting slider (already does).
+
+      Confirm RemoteMicSender actually multiplies by MicVolume (if not, wire it — hypothesis
+      only; verify). Do not change play/mute/VAC device logic.
+
+      ## Out of scope
+      Avalonia Remote AF (next Avalonia block). Host remote_mic ring/g_frac reset (separate).
+      Mic boost checkbox. Shack-only audio quirks.
+
+      ## Verify
+      1) Remote Digital: mic slider enabled; default 100; moves and persists across restart
+         (REMOTE_DIGI_MIC_VOL in client ini).
+      2) Set ~50, WSJT TUNE: host/client peaks roughly half vs 100 (or clearly quieter RF).
+      3) Remote Phones: slider still uses REMOTE_MIC_VOL / prior behavior; EQ still phones-only.
+      4) Digi mute VAC play still works; CAT/WSJT path unchanged.
+
+      Commit hint: cmd-030: enable Remote Digital mic drive slider (WPF 9.21.7)
+
+- id: cmd-029
     created: "2026-09-21T16:47:00-04:00"
     target: [rpi]
     role: client
     action: rpi-sync-avalonia-0659-and-remote-gain
-    status_hint: pending
+    status_hint: done
     detail: |
       Host: rpi (raspberrypi). Checkout: /home/pi/src/mscc-station
       Orders on this host (already pulled to bffc94e / Avalonia 0.6.59 source).
@@ -118,8 +178,7 @@ commands:
       ## Out of scope
       Ubuntu amd64 kit (already 0.6.59). WPF. Mic slider. Push unless Stew asks
       (orders-on-host-first; push after Build finishes so other hosts can pull).
-
-  - id: cmd-028
+- id: cmd-028
     created: "2026-09-21T14:12:00-04:00"
     target: [ubuntu-stew]
     role: client

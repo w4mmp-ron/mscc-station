@@ -785,7 +785,7 @@ public partial class MainViewModel : ObservableObject, IDisposable
         RemoteAf.Log += OnRemoteAfEngineLog;
         RemoteAf.PlayVolume = SpectrumWaterfallSettings.RemotePlayVolume / 100f;
         /* R-Digital: WSJT/VAC already has Pwr. Don't apply the phones Mic slider (default 80). */
-        RemoteAf.MicVolume = IsDigitalAudio ? 1.0f : SpectrumWaterfallSettings.RemoteMicVolume / 100f;
+        RemoteAf.MicVolume = SpectrumWaterfallSettings.RemoteMicVolumeLinear(IsDigitalAudio);
         RemoteAf.PlayMuted = SpectrumWaterfallSettings.RemotePlayMute;
         ApplyRemoteAfDevices();
         try
@@ -898,7 +898,7 @@ public partial class MainViewModel : ObservableObject, IDisposable
     {
         if (!RemoteAudio || RemoteAf == null) return;
         ApplyRemoteAfDevices();
-        RemoteAf.MicVolume = IsDigitalAudio ? 1.0f : SpectrumWaterfallSettings.RemoteMicVolume / 100f;
+        RemoteAf.MicVolume = SpectrumWaterfallSettings.RemoteMicVolumeLinear(IsDigitalAudio);
         RestartRemoteAfRx();
         RestartRemoteAfMic();
         MonitorTextBoxText($" Remote AF devices restarted ({reason})");

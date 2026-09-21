@@ -19,6 +19,9 @@ void remote_mic_shutdown(void);
 /* 1 if UDP listener is running (packets may fill the ring). */
 int remote_mic_ready(void);
 
+/* Clear ring + interpolator (g_w/g_r, hist, g_frac, g_under). Socket/thread stay up. */
+void remote_mic_reset_stream(void);
+
 /*
  * Fill stereo float @ I/Q rate (96 kHz) from 48 kHz mono MSA ring.
  * Underrun → silence. Call when G_audio_mode == REMOTE_AUDIO or REMOTE_DIGITAL_AUDIO.
