@@ -5,9 +5,9 @@
 
 ## Status
 
-- **Active — cmd-018 (windows-new-hp):** Factory cal trees + FW-major seed. Ship QRP = measured−3. **No Proficio Legacy PIN** (Stew-only mod).
-- **Verified — cmd-017/017b:** category swap + S/W banks.
-- **Short list:** LAST defaults → 14.074 / 474.2; Remote Digital mic slider; Avalonia port; Linux/Pi factory seed follow-on.
+- **Active — cmd-019 (windows-new-hp):** FREQ CAL Reset + Settings Reset + TX IQ Reset must reseed from FW-major `factory/` for the connected radio (cmd-018 trees are correct; reset paths still wrong).
+- **Done — cmd-018:** factory trees + first-boot seed (QRP−3, no PIN).
+- Short list: LAST defaults 14.074/474.2; mic slider; Linux/Pi factory seed.
 
 ## Coord workflow
 
