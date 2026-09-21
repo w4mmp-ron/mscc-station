@@ -1,4 +1,62 @@
 commands:
+  - id: cmd-031
+    created: "2026-09-21T17:41:00-04:00"
+    target: [rpi]
+    role: server
+    action: remote-mic-reset-on-remote-digital
+    status_hint: pending
+    detail: |
+      Host: rpi (raspberrypi). Checkout: /home/pi/src/mscc-station
+      Orders on this host. Mirror the same edits under linux/ so Ubuntu stays in sync.
+      Stew 2026-09-21: cheap insurance after Shack remote digi mush that cleared only
+      after host-server recycle (stale resampler state). Ron may hit the same on Pi.
+
+      ## Problem
+      remote_mic_init() zeros ring / g_hist / g_frac once at process start (main.c).
+      Switching to REMOTE_AUDIO / REMOTE_DIGITAL (CMD_SET_AUDIO_DEVICE) only calls
+      manage_stream — it does **not** clear the MSA1 ring or lerp state. After client
+      swaps / SESSION IN USE / many reopen cycles, g_frac + hist + ring can be sticky
+      while logs still show peak≈32k and under=0. Full sdrcore-trans restart cures it;
+      we want the same reset without killing the process.
+
+      ## Desired
+      On every enter of REMOTE_AUDIO or REMOTE_DIGITAL_AUDIO, soft-reset the remote_mic
+      stream state (keep UDP socket + receiver thread running).
+
+      ## Implementation
+      Files (edit **rpi/** then mirror **linux/**):
+        SDRcore-trans-linux/sources/remote_mic.h
+        SDRcore-trans-linux/sources/remote_mic.c
+        SDRcore-trans-linux/sources/udp_thread.c
+
+      1) Add `void remote_mic_reset_stream(void);` declared in remote_mic.h.
+      2) Implement in remote_mic.c (thread-safe enough for UDP thread + audio callback;
+         same volatility style as existing ring accessors):
+           - g_w = g_r = 0  (empty ring)
+           - g_hist0 = g_hist1 = 0.0f
+           - g_frac = 0.0f
+           - g_under = 0
+           - Do **not** close socket, stop thread, or zero g_pkt_ok (keep listen alive).
+           - Optional one log line: `remote_mic: stream reset (REMOTE path)` when logfile open.
+      3) In udp_thread.c CMD_SET_AUDIO_DEVICE cases REMOTE_AUDIO and REMOTE_DIGITAL_AUDIO:
+         after G_audio_mode = t_opcode_data (or just before/after manage_stream pair),
+         call remote_mic_reset_stream(). Both opcodes share the case block — one call covers both.
+      4) Rebuild: cd rpi/SDRcore-trans-linux && make clean && make
+         Install to rpi/mscc-binaries/ + $HOME/mscc/; restart sdrcore-trans (or full stack).
+         Mirror source to linux/SDRcore-trans-linux (same three files) in the same commit(s).
+
+      ## Out of scope
+      Client mic slider (cmd-030 done). Avalonia. Changing lerp step table. WPF.
+      Do not require ms-sdr restart beyond sdrcore-trans if that is how Pi usually reloads.
+
+      ## Verify
+      1) Log shows stream reset when client enables Remote Digital / Remote Phones.
+      2) Win11→Pi remote digi TUNE still clean after a client Stop/Start without recycling
+         whole host stack (ideal: swap NEW-HP then Shack without killing sdrcore-trans).
+      3) under= warm-up still settles; no new underrun storm after reset.
+
+      Commit hint: cmd-031: reset remote_mic ring/g_frac on REMOTE path open
+
   - id: cmd-029
     created: "2026-09-21T16:47:00-04:00"
     target: [rpi]
