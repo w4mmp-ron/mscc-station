@@ -237,6 +237,21 @@ static void *receiver_thread(void *arg)
     return NULL;
 }
 
+void remote_mic_reset_stream(void)
+{
+    g_w = g_r = 0;
+    g_hist0 = g_hist1 = 0.0f;
+    g_frac = 0.0f;
+    g_under = 0;
+    if (G_fp_logfile) {
+        print_time();
+        fprintf(G_fp_logfile,
+            "[%d] remote_mic: stream reset (REMOTE path)\n",
+            line_number++);
+        fflush(G_fp_logfile);
+    }
+}
+
 void remote_mic_init(void)
 {
     struct sockaddr_in addr;
