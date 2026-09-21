@@ -13,11 +13,12 @@
 
 | command id | state | note |
 |------------|-------|------|
-| cmd-031 | pending | remote_mic_reset_stream on REMOTE/REMOTE_DIGITAL open; mirror linux/ |
+| cmd-031 | pending | Code already done on NEW-HP (`d0cb6b9`). Pi: pull after Stew pushes, then rebuild/install only — do NOT re-implement. |
 | cmd-029 | done | Avalonia 0.6.59 arm64 + phones/gain |
 | cmd-012 | done | ms-sdr owner re-ack 0xB2/0xB3 |
 | cmd-011 | done | 0.6.57 arm64 kit |
 
 ## Notes
 
-Stew: soft-reset ring/g_frac/hist without tearing UDP — insurance for sticky mush after client swaps (Ron path). Mic slider N/A here.
+Source commit lives on NEW-HP (not origin yet): `remote_mic_reset_stream` + udp_thread call in linux/ + rpi/.
+After `git pull` (merge with local cmd-029 commits if needed): rebuild sdrcore-trans only, install, verify log line.
