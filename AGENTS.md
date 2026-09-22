@@ -1,4 +1,4 @@
-# AGENTS.md — Grok instructions (this repo)
+﻿# AGENTS.md â€” Grok instructions (this repo)
 
 Grok loads this file at the repo root. Follow it on **every** host. Details live in the linked docs; do not invent a second protocol.
 
@@ -12,7 +12,7 @@ On start: `git pull`, then read [`handoff.md`](handoff.md). If `.mscc-coord/COMM
 
 ## Current work
 
-**cmd-032 done** (ubuntu-stew + rpi): **mscc 1.0.44** amd64 + arm64 installers ship with remote_mic stream reset. UI **0.6.59**. See `.mscc-coord/COMMANDS.yaml`.
+**cmd-033** (windows-new-hp): 0xBC ownership only (no PttOn/TuneMode mirror); Remote vs local Phones/Digital independence. Client **9.21.8**. See `.mscc-coord/COMMANDS.yaml`.
 
 ## Who / where
 
@@ -37,12 +37,12 @@ Prefer **one Grok Build at a time**.
 | Tree | Role |
 |------|------|
 | `linux/` | Ubuntu x86_64 servers / helpers. **Edit here** for this laptop. |
-| `rpi/` | Pi arm64 source of truth. Guide only on Ubuntu — do not patch Pi trees for laptop fixes. |
+| `rpi/` | Pi arm64 source of truth. Guide only on Ubuntu â€” do not patch Pi trees for laptop fixes. |
 | `mscc-ui/` | WPF + Avalonia + `MSCC.Core` |
 | `installers/{linux,rpi,windows}/` | Current kits for GitHub web |
 | `linux-build/` | Ubuntu scripts (`mscc-linux.sh`, UI publish/deb, `drop-installers.sh`) |
 
-- Ubuntu ELFs → `$HOME/mscc`. **Never** copy x86 binaries into `rpi/mscc-binaries/`.
+- Ubuntu ELFs â†’ `$HOME/mscc`. **Never** copy x86 binaries into `rpi/mscc-binaries/`.
 - Cross-arm64 UI/servers on this laptop: `linux-build/mscc-ui-arm64.sh`, `linux-build/cross-arm64.sh`. Use `pwd -P` (symlink `~/mscc-station` vs `Documents/GitHub` breaks Avalonia XAML publish).
 - Persist radio `AUDIO_DEVICE` **0/1** only (never boot 2/3).
 
@@ -73,19 +73,19 @@ When a kit is built, copy the newest file into `installers/<platform>/`. History
 
 | When | What to do |
 |------|------------|
-| **Overseer publishes orders for this host** | Orders are written **on this machine’s checkout first** (no pull required to start). ACK in local `status/<host>.md`. |
+| **Overseer publishes orders for this host** | Orders are written **on this machineâ€™s checkout first** (no pull required to start). ACK in local `status/<host>.md`. |
 | **After real code / kit changes** | Commit on this host. Push (or Norman pushes). **Then** other hosts `git pull` to catch up. |
 | **Start of a work session on a non-target host** | `git pull` once if you need the latest bus/code from a push. |
 | **During ACKs / status notes** | Update **local** `.mscc-coord/status/<your-host-id>.md` only. **Do not** commit, push, or pull just for status. |
-| **Do not edit** | `COMMANDS.yaml`, `OVERSEER.md`, or another host’s status (Overseer owns those). |
+| **Do not edit** | `COMMANDS.yaml`, `OVERSEER.md`, or another hostâ€™s status (Overseer owns those). |
 
 ### Per-command loop
 
 1. Read this file (**Current work** + this section), then `.mscc-coord/OVERSEER.md` + `COMMANDS.yaml` if present.
 2. If a command `target` includes this host (or `all`) and you have not finished that `id`:
-   - Update **only** `.mscc-coord/status/<your-host-id>.md`: `accepted` → `running` → `done` or `blocked`.
-   - Do **not** edit `COMMANDS.yaml`, `OVERSEER.md`, or another host’s status file.
-3. Blocked = hardware, credentials, or a human decision — write a short reason. Do not change radio/UDP protocol without an overseer command.
+   - Update **only** `.mscc-coord/status/<your-host-id>.md`: `accepted` â†’ `running` â†’ `done` or `blocked`.
+   - Do **not** edit `COMMANDS.yaml`, `OVERSEER.md`, or another hostâ€™s status file.
+3. Blocked = hardware, credentials, or a human decision â€” write a short reason. Do not change radio/UDP protocol without an overseer command.
 4. Full protocol: `.mscc-coord/README.md`.
 
 ---
@@ -103,11 +103,12 @@ See `.mscc-coord/COMMANDS.yaml` cmd-024.
 cmd-023 digi LAST defaults + USB/DIG-U stick + FW ask + FreqCal reset (9.21.3).
 cmd-022 WindowTitle radio name.
 
-## Hard don’ts
+## Hard donâ€™ts
 
-- Don’t `apt install` `*_arm64.deb` on Ubuntu (except `mscc-init-gui_*_all.deb`).
-- Don’t copy Ubuntu `$HOME/mscc` into `rpi/mscc-binaries/`.
-- Don’t persist opcode 2/3 as radio boot mode.
-- Don’t reuse opcode `0x0E` (Solidus).
+- Donâ€™t `apt install` `*_arm64.deb` on Ubuntu (except `mscc-init-gui_*_all.deb`).
+- Donâ€™t copy Ubuntu `$HOME/mscc` into `rpi/mscc-binaries/`.
+- Donâ€™t persist opcode 2/3 as radio boot mode.
+- Donâ€™t reuse opcode `0x0E` (Solidus).
 - Ask before destructive git / force-push.
+
 
