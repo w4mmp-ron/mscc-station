@@ -111,7 +111,7 @@ public partial class RemoteAfWindow : Window
     public void RefreshPath()
     {
         if (_vm == null) return;
-        bool digi = _vm.IsDigitalAudio;
+        bool digi = _vm.RemoteDigitalAudio;
         Title = digi ? "Remote Digital" : "Remote Phones";
         TitleBlock.Text = digi ? "REMOTE DIGITAL" : "REMOTE PHONES";
         RxHeading.Text = digi ? "DIGITAL RX (VAC)" : "PHONES RX";
@@ -192,8 +192,8 @@ public partial class RemoteAfWindow : Window
     {
         if (!_ready || _vm == null) return;
         bool digi = PathDigital.IsChecked == true;
-        if (_vm.IsDigitalAudio == digi) return;
-        _vm.IsDigitalAudio = digi;
+        if (_vm.RemoteDigitalAudio == digi) return;
+        _vm.RemoteDigitalAudio = digi;
     }
 
     private void PlayDevice_Changed(object sender, SelectionChangedEventArgs e)
@@ -203,7 +203,7 @@ public partial class RemoteAfWindow : Window
         {
             if (_vm.RemoteAf != null)
                 _vm.RemoteAf.PlayDeviceIndex = idx;
-            if (!_vm.IsDigitalAudio)
+            if (!_vm.RemoteDigitalAudio)
             {
                 SpectrumWaterfallSettings.RemotePlayDeviceIndex = idx;
                 SaveSettings();
@@ -219,7 +219,7 @@ public partial class RemoteAfWindow : Window
         {
             if (_vm.RemoteAf != null)
                 _vm.RemoteAf.MicDeviceIndex = idx;
-            if (!_vm.IsDigitalAudio)
+            if (!_vm.RemoteDigitalAudio)
             {
                 SpectrumWaterfallSettings.RemoteMicDeviceIndex = idx;
                 SaveSettings();
@@ -247,7 +247,7 @@ public partial class RemoteAfWindow : Window
         if (!_ready || _vm?.RemoteAf == null) return;
         int v = (int)MicVolumeSlider.Value;
         _vm.RemoteAf.MicVolume = v / 100f;
-        if (_vm.IsDigitalAudio)
+        if (_vm.RemoteDigitalAudio)
             SpectrumWaterfallSettings.RemoteDigitalMicVolume = v;
         else
             SpectrumWaterfallSettings.RemoteMicVolume = v;

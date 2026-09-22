@@ -556,20 +556,35 @@ public partial class MainViewModel : ObservableObject, IDisposable
     [ObservableProperty] private bool _monitorOn;
     partial void OnMonitorOnChanged(bool value) { _ = _radioService.SetMonitorAsync(value); MonitorTextBoxText($" MonitorOn set: {value}"); }
 
-    /// <summary>Local path: Digital (VAC) vs Phones. Remote checkbox is independent.</summary>
+    /// <summary>Local radio path: Digital (VAC on radio PC) vs Phones. Independent of Remote window.</summary>
     [ObservableProperty]
     [NotifyPropertyChangedFor(nameof(AudioDeviceButtonText))]
     [NotifyPropertyChangedFor(nameof(IsRemoteAudioActive))]
+    [NotifyPropertyChangedFor(nameof(IsLocalPhonesSelected))]
+    [NotifyPropertyChangedFor(nameof(IsLocalDigitalSelected))]
     private bool _isDigitalAudio;
+
+    /// <summary>Remote-window Phones vs Digital (this PC). Independent of local IsDigitalAudio.</summary>
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(AudioDeviceButtonText))]
+    private bool _remoteDigitalAudio;
 
     /// <summary>Master: this PC is the operator seat. Do not grey on Digital.</summary>
     [ObservableProperty]
     [NotifyPropertyChangedFor(nameof(AudioDeviceButtonText))]
     [NotifyPropertyChangedFor(nameof(IsRemoteAudioActive))]
     [NotifyPropertyChangedFor(nameof(DigitalControlsEnabled))]
+    [NotifyPropertyChangedFor(nameof(IsLocalPhonesSelected))]
+    [NotifyPropertyChangedFor(nameof(IsLocalDigitalSelected))]
     private bool _remoteAudio;
 
     public bool IsRemoteAudioActive => RemoteAudio;
+
+    /// <summary>Main Phones gold only when Remote is off and local path is phones.</summary>
+    public bool IsLocalPhonesSelected => !RemoteAudio && !IsDigitalAudio;
+
+    /// <summary>Main Digital gold only when Remote is off and local path is digital.</summary>
+    public bool IsLocalDigitalSelected => !RemoteAudio && IsDigitalAudio;
 
     /// <summary>Local Digital Vol/Mic — off while Remote; MSA1/VAC is the operator mic.</summary>
     public bool DigitalControlsEnabled => !RemoteAudio;
@@ -594,7 +609,7 @@ public partial class MainViewModel : ObservableObject, IDisposable
     }
 
     public string AudioDeviceButtonText => RemoteAudio
-        ? (IsDigitalAudio ? "R-Digital" : "R-Phones")
+        ? (RemoteDigitalAudio ? "R-Digital" : "R-Phones")
         : (IsDigitalAudio ? "Digital" : "Phones");
 
     /// <summary>Keep shack speaker while remote RX is on (0x28 monitor bit). Default off.</summary>
@@ -626,7 +641,7 @@ public partial class MainViewModel : ObservableObject, IDisposable
     /// Opcode 3 = line-level + USB CAL drive (local digital recipe) so WSJT can reach ~5 W.
     /// </summary>
     private byte RemoteWireOpcode() =>
-        IsDigitalAudio ? Opcodes.REMOTE_DIGITAL_SOUND_DEVICE : Opcodes.REMOTE_SOUND_DEVICE;
+        RemoteDigitalAudio ? Opcodes.REMOTE_DIGITAL_SOUND_DEVICE : Opcodes.REMOTE_SOUND_DEVICE;
 
     /// <summary>
     /// Push Remote HOST/CTRL + 0x9B 2/3, or restore local 0/1. Does not persist 2/3 as boot mode.
@@ -728,14 +743,23 @@ public partial class MainViewModel : ObservableObject, IDisposable
         if (_suppressAudioDeviceSend) return;
         ApplyDigitalCmpRules(enteringDigital: value, leavingDigital: !value);
         PersistLocalAndRemote();
-        PushAudioToRadio(value ? "path→D" : "path→P");
         OnPropertyChanged(nameof(AudioDeviceButtonText));
+        OnPropertyChanged(nameof(IsLocalPhonesSelected));
+        OnPropertyChanged(nameof(IsLocalDigitalSelected));
+        // Local path must not poke Remote window / MSA1 seat.
         if (RemoteAudio)
-        {
-            ApplyRemoteAfDevicesAndRestart(value ? "path→D" : "path→P");
-            if (value) StartRemoteCat(); else StopRemoteCat();
-            _remoteAfWindow?.RefreshPath();
-        }
+            return;
+        PushAudioToRadio(value ? "path→D" : "path→P");
+    }
+
+    partial void OnRemoteDigitalAudioChanged(bool value)
+    {
+        if (_suppressAudioDeviceSend || !RemoteAudio) return;
+        PushAudioToRadio(value ? "R-path→D" : "R-path→P");
+        ApplyRemoteAfDevicesAndRestart(value ? "R-path→D" : "R-path→P");
+        if (value) StartRemoteCat(); else StopRemoteCat();
+        _remoteAfWindow?.RefreshPath();
+        OnPropertyChanged(nameof(AudioDeviceButtonText));
     }
 
     partial void OnRemoteAudioChanged(bool value)
@@ -785,7 +809,7 @@ public partial class MainViewModel : ObservableObject, IDisposable
         RemoteAf.Log += OnRemoteAfEngineLog;
         RemoteAf.PlayVolume = SpectrumWaterfallSettings.RemotePlayVolume / 100f;
         /* R-Digital: WSJT/VAC already has Pwr. Don't apply the phones Mic slider (default 80). */
-        RemoteAf.MicVolume = SpectrumWaterfallSettings.RemoteMicVolumeLinear(IsDigitalAudio);
+        RemoteAf.MicVolume = SpectrumWaterfallSettings.RemoteMicVolumeLinear(RemoteDigitalAudio);
         RemoteAf.PlayMuted = SpectrumWaterfallSettings.RemotePlayMute;
         ApplyRemoteAfDevices();
         try
@@ -795,14 +819,14 @@ public partial class MainViewModel : ObservableObject, IDisposable
             if (string.IsNullOrEmpty(host))
                 host = "127.0.0.1";
             RemoteAf.StartMic(host);
-            string seat = IsDigitalAudio ? "Digital VAC" : "Phones";
+            string seat = RemoteDigitalAudio ? "Digital VAC" : "Phones";
             MonitorTextBoxText($" Remote AF started ({reason}) {seat} TX host={host}:9101 play={RemoteAf.PlayDeviceIndex} mic={RemoteAf.MicDeviceIndex} micVol={RemoteAf.MicVolume:0.00}");
         }
         catch (Exception ex)
         {
             MonitorTextBoxText($" Remote AF start failed: {ex.Message}");
         }
-        if (IsDigitalAudio)
+        if (RemoteDigitalAudio)
             StartRemoteCat();
         else
         {
@@ -822,7 +846,7 @@ public partial class MainViewModel : ObservableObject, IDisposable
 
     private void StartRemoteCat()
     {
-        if (!IsDigitalAudio)
+        if (!RemoteDigitalAudio)
             return;
         try
         {
@@ -836,7 +860,7 @@ public partial class MainViewModel : ObservableObject, IDisposable
             cat.SetFrequencyHz = hz => RunOnUi(() => TuneToFrequency(hz));
             cat.SetModeDigit = d => RunOnUi(() =>
             {
-                ActiveMode = KenwoodTs2000.ModeNameFromDigit(d, preferDigU: IsDigitalAudio);
+                ActiveMode = KenwoodTs2000.ModeNameFromDigit(d, preferDigU: RemoteDigitalAudio);
             });
             cat.SetPtt = tx => RunOnUi(() => { PttOn = tx; });
             RemoteCat.Start(CommPortConfig.Load());
@@ -865,7 +889,7 @@ public partial class MainViewModel : ObservableObject, IDisposable
     internal void ApplyRemoteAfDevices()
     {
         if (RemoteAf == null) return;
-        if (IsDigitalAudio)
+        if (RemoteDigitalAudio)
         {
             var s = AudioDeviceConfig.Load();
             int play = FindNamedAfDevice(RemoteAfEngine.PlayDevices, s.DigitalSpeaker);
@@ -898,7 +922,7 @@ public partial class MainViewModel : ObservableObject, IDisposable
     {
         if (!RemoteAudio || RemoteAf == null) return;
         ApplyRemoteAfDevices();
-        RemoteAf.MicVolume = SpectrumWaterfallSettings.RemoteMicVolumeLinear(IsDigitalAudio);
+        RemoteAf.MicVolume = SpectrumWaterfallSettings.RemoteMicVolumeLinear(RemoteDigitalAudio);
         RestartRemoteAfRx();
         RestartRemoteAfMic();
         MonitorTextBoxText($" Remote AF devices restarted ({reason})");
@@ -943,7 +967,7 @@ public partial class MainViewModel : ObservableObject, IDisposable
     internal void RestartRemoteAfRx()
     {
         if (!RemoteAudio || RemoteAf == null) return;
-        if (!IsDigitalAudio)
+        if (!RemoteDigitalAudio)
             RemoteAf.PlayDeviceIndex = SpectrumWaterfallSettings.RemotePlayDeviceIndex;
         try { RemoteAf.StartRx(); } catch (Exception ex) { MonitorTextBoxText($" RX restart: {ex.Message}"); }
     }
@@ -951,7 +975,7 @@ public partial class MainViewModel : ObservableObject, IDisposable
     internal void RestartRemoteAfMic()
     {
         if (!RemoteAudio || RemoteAf == null) return;
-        if (!IsDigitalAudio)
+        if (!RemoteDigitalAudio)
             RemoteAf.MicDeviceIndex = SpectrumWaterfallSettings.RemoteMicDeviceIndex;
         string host = (BackendIp ?? "").Trim();
         if (string.IsNullOrEmpty(host))
@@ -1100,6 +1124,8 @@ public partial class MainViewModel : ObservableObject, IDisposable
     partial void OnTxSetByServerChanged(bool value)
     {
         CanUserControlTransmit = !value;
+        ToggleTuneCommand.NotifyCanExecuteChanged();
+        TogglePttCommand.NotifyCanExecuteChanged();
     }
 
     [ObservableProperty] private bool _ampOn;
@@ -3545,6 +3571,8 @@ public partial class MainViewModel : ObservableObject, IDisposable
     [RelayCommand]
     private void SelectPhonesAudio()
     {
+        if (RemoteAudio)
+            RemoteAudio = false;
         if (IsDigitalAudio)
             IsDigitalAudio = false;
     }
@@ -3552,6 +3580,8 @@ public partial class MainViewModel : ObservableObject, IDisposable
     [RelayCommand]
     private void SelectDigitalAudio()
     {
+        if (RemoteAudio)
+            RemoteAudio = false;
         if (!IsDigitalAudio)
             IsDigitalAudio = true;
     }
@@ -5667,7 +5697,16 @@ public partial class MainViewModel : ObservableObject, IDisposable
         };
         svc.MonitorReported += b => { MonitorOn = b; MonitorTextBoxText($" Monitor reported: {b}"); };
         svc.TransverterReported += b => { TransverterOn = b; MonitorTextBoxText($" Transverter reported: {b}"); };
-        svc.AudioDigitalModeReported += b => { IsDigitalAudio = b; MonitorTextBoxText($" AudioDigitalMode reported: {(b ? "D" : "P")}"); };
+        svc.AudioDigitalModeReported += b =>
+        {
+            if (RemoteAudio)
+            {
+                MonitorTextBoxText($" AudioDigitalMode reported: {(b ? "D" : "P")} (ignored while Remote)");
+                return;
+            }
+            IsDigitalAudio = b;
+            MonitorTextBoxText($" AudioDigitalMode reported: {(b ? "D" : "P")}");
+        };
 
         svc.PhonesVolumeLevelReported += v => { RadioState.PVolume = v; MonitorTextBoxText($" PhonesVolumeLevel reported: {v}"); };
         svc.PhonesMicGainLevelReported += v => { RadioState.PMicGain = v; MonitorTextBoxText($" PhonesMicGainLevel reported: {v}"); };
@@ -5708,12 +5747,9 @@ public partial class MainViewModel : ObservableObject, IDisposable
 
         svc.TxSetByServerReported += v =>
         {
-            _suppressTransmitCommands = true;
+            // Ownership only. Do not light PTT/TUN or enter TuneMode (host digi TX is not client TUNE).
             TxSetByServer = v;
-            PttOn = v;
-            TuneMode = v;
-            _suppressTransmitCommands = false;
-            MonitorTextBoxText($" TxSetByServer reported: {v} (server controls transmit)");
+            MonitorTextBoxText($" TxSetByServer reported: {v} (server owns TX; PTT/TUN not mirrored)");
         };
 
         // AMP button bidirectional: ms-sdr pushes CMD_SET_PA_BYPASS (0xF7) at start / on change.
