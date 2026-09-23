@@ -1,4 +1,65 @@
-﻿commands:
+commands:
+  - id: cmd-035
+    created: "2026-09-23T10:54:00-04:00"
+    target: [windows-new-hp]
+    role: server
+    action: local-win-tx-clear-mute-on-keyup
+    status_hint: pending
+    detail: |
+      Host: windows-new-hp (NEW-HP-LAPTOP).
+      Checkout: C:\Users\n8vet\OneDrive\Documents\GitHub\mscc-station
+      Orders on this host. Stew 2026-09-23 / Build Commander survey.
+
+      ## Why
+      Win11 local host+client: brief wide SA hash bump right as WSJT keys TUNE/TX,
+      then clean tone. Pi local has no bump. Suspect dirty PortAudio / VAC mic capture
+      buffer (or timing) when TX takes over and mic unmutes.
+
+      Larger issue (later, observation only this cmd): Win11 client -> RPi host remote
+      digi CQ has huge skirts; RPi client -> Win11 host is clean. Stew wants local
+      clear/mute first, then see if remote improves.
+
+      cmd-034 (Pi remote_mic clear-on-TX + fixed 2:1) is ON HOLD - do not touch Pi
+      or cmd-034. Use Linux remote_mic_reset_stream / clear+short mute only as the
+      *idea* reference for a LOCAL Windows mic-path analog.
+
+      ## Goal (LOCAL Windows host servers only)
+      In Windows `sdrcore-trans` (tree: mscc-ui/windows-work-tree/SDRcore-trans/):
+      On CMD_SET_TX_ON 0->1 when audio mode is LOCAL phones/digital only
+      (OPERATOR_AUDIO / DIGITAL_AUDIO - NOT remote-only REMOTE_AUDIO /
+      REMOTE_DIGITAL_AUDIO):
+        1) Clear/discard stale local mic capture into the TX path (PortAudio callback
+           input / equivalent - there is no local ring like remote_mic; prefer silence
+           into TX / do-not-modulate stale samples, NOT hold-last).
+        2) Short mute gate ~30-40 ms (silence into modulator), then unmute as today
+           (Set_Mic_Mute(FALSE) / restore previous_mic_volume).
+      Rebuild/install the Windows host binaries Stew uses for local
+      (typically C:\mscc-net9\). Bump a server version only if that is existing house
+      style for Windows server builds (usually none - just rebuild/copy).
+
+      ## Survey anchors (do not re-litigate; implement against these)
+      - CMD_SET_TX_ON handler: sources/udp_thread.c ~908 (0xBA)
+      - Set_Mic_Mute: udp_thread.c ~333 - mute sets G_mic_volume=0; unmute restores
+        previous_mic_volume. Today: TX off -> mute + G_null_count=0; TX on -> unmute
+        immediately (no clear, no gate).
+      - Local capture: PortAudio callback sdrAudioCallback in sources/main.c; digi/
+        phones via manage_stream + framesToComplex * G_mic_volume (dsputils.c).
+      - Remote path (out of scope): remote_mic_* MSA1 ring - do NOT change fill/lerp.
+      - No existing Pa flush/discard helper in this tree; commented manage_stream
+        stop/start on TX was abandoned - prefer soft gate, not stream restart.
+
+      ## Out of scope
+      remote_mic fill/lerp/reset. WPF. Avalonia. Pi / linux/ / rpi/ trees. cmd-034.
+      Changing ALC/gain tables. ms-sdr / sdrcore-recv unless required to link.
+
+      ## Smoke
+      1) Local WSJT TUNE on NEW-HP host+client Digital: key-up SA hash bump
+         gone or clearly smaller; steady tone clean.
+      2) Optional observation only: Win client -> Pi host remote digi CQ skirts
+         (note only; no Pi code this cmd).
+
+      Commit hint: cmd-035: local Win TX clear/mute on key-up (sdrcore-trans)
+      Brief: .mscc-coord/briefs/cmd-035.md
   - id: cmd-033
     created: "2026-09-22T18:57:00-04:00"
     target: [windows-new-hp]

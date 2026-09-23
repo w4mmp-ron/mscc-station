@@ -1,4 +1,4 @@
-﻿# AGENTS.md â€” Grok instructions (this repo)
+# AGENTS.md â€” Grok instructions (this repo)
 
 Grok loads this file at the repo root. Follow it on **every** host. Details live in the linked docs; do not invent a second protocol.
 
@@ -12,7 +12,7 @@ On start: `git pull`, then read [`handoff.md`](handoff.md). If `.mscc-coord/COMM
 
 ## Current work
 
-**cmd-033** (windows-new-hp): 0xBC ownership only (no PttOn/TuneMode mirror); Remote vs local Phones/Digital independence. Client **9.21.8**. See `.mscc-coord/COMMANDS.yaml`.
+**cmd-035** (windows-new-hp, **server**): Local Win `sdrcore-trans` clear/mute on `CMD_SET_TX_ON` 0->1 (phones/digital only; ~30-40 ms silence gate). Not WPF/Avalonia. Not Pi/cmd-034. See `.mscc-coord/COMMANDS.yaml` + `.mscc-coord/briefs/cmd-035.md`.
 
 ## Who / where
 
@@ -90,18 +90,17 @@ When a kit is built, copy the newest file into `installers/<platform>/`. History
 
 ---
 
-## Current work (2026-09-21)
+## Current work (2026-09-23)
 
-### Active - cmd-024 (windows-new-hp)
+### Active - cmd-035 (windows-new-hp, server)
 
-Idle UI before Start: frequency 0, no band or mode button pressed; do not
-SaveLastUsed / LAST_HF until session live (stops 7.100/40m/USB poisoning DIG-U).
-See `.mscc-coord/COMMANDS.yaml` cmd-024.
+Local Win `sdrcore-trans`: on `CMD_SET_TX_ON` 0->1 for DIGITAL/OPERATOR only, clear stale mic into TX + ~30-40 ms mute gate, then unmute. Brief: `.mscc-coord/briefs/cmd-035.md`. cmd-034 Pi on hold.
 
 ### Done recently
 
-cmd-023 digi LAST defaults + USB/DIG-U stick + FW ask + FreqCal reset (9.21.3).
-cmd-022 WindowTitle radio name.
+cmd-033 0xBC ownership + Remote vs local audio (WPF 9.22.0).
+cmd-030 Remote Digital mic slider (9.21.7).
+cmd-024..026 DIG-U / idle / band-last-used family.
 
 ## Hard donâ€™ts
 
@@ -110,5 +109,6 @@ cmd-022 WindowTitle radio name.
 - Donâ€™t persist opcode 2/3 as radio boot mode.
 - Donâ€™t reuse opcode `0x0E` (Solidus).
 - Ask before destructive git / force-push.
+
 
 
