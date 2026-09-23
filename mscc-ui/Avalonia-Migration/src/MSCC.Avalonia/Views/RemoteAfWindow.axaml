@@ -8,8 +8,21 @@
         WindowStartupLocation="CenterOwner"
         Background="#FF1C1C1C" Foreground="White">
   <Grid Margin="10" RowDefinitions="Auto,Auto,Auto,*,Auto">
-    <TextBlock x:Name="TitleBlock" Text="REMOTE AUDIO" FontWeight="SemiBold" FontSize="14"
-               Foreground="#00FFAA" Margin="0,0,0,8"/>
+    <StackPanel Grid.Row="0" Margin="0,0,0,8">
+      <TextBlock x:Name="TitleBlock" Text="REMOTE AUDIO" FontWeight="SemiBold" FontSize="14"
+                 Foreground="#00FFAA" Margin="0,0,0,6"/>
+      <StackPanel Orientation="Horizontal">
+        <RadioButton x:Name="PathPhones" Content="Phones" GroupName="AfPath"
+                     Foreground="White" FontWeight="SemiBold"
+                     IsCheckedChanged="Path_Changed"
+                     ToolTip.Tip="Headphones and operator mic on this PC."/>
+        <RadioButton x:Name="PathDigital" Content="Digital" GroupName="AfPath"
+                     Margin="16,0,0,0"
+                     Foreground="White" FontWeight="SemiBold"
+                     IsCheckedChanged="Path_Changed"
+                     ToolTip.Tip="VAC for WSJT on this PC. CAT arms in the main client."/>
+      </StackPanel>
+    </StackPanel>
 
     <Border Grid.Row="1" Background="#FF252525" BorderBrush="#444" BorderThickness="1" Padding="8" Margin="0,0,0,8">
       <StackPanel>

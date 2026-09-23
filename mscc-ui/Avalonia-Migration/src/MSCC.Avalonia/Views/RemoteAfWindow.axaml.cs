@@ -43,7 +43,6 @@ public partial class RemoteAfWindow : Window
             });
 
         PlayVolumeSlider.Value = _vm.RemotePlayVolume;
-        MicVolumeSlider.Value = _vm.RemoteMicVolume;
         MuteCheck.IsChecked = _vm.RemotePlayMute;
         EqEnableCheck.IsChecked = _vm.RemoteEqEnabled;
         EqLowSlider.Value = _vm.RemoteEqLowDb;
@@ -67,7 +66,7 @@ public partial class RemoteAfWindow : Window
     public void RefreshPath()
     {
         if (_vm == null) return;
-        bool digi = _vm.IsDigitalAudio;
+        bool digi = _vm.RemoteDigitalAudio;
         Title = digi ? "Remote Digital" : "Remote Phones";
         TitleBlock.Text = digi ? "REMOTE DIGITAL" : "REMOTE PHONES";
         RxHeading.Text = digi ? "DIGITAL RX (VAC)" : "PHONES RX";
@@ -78,23 +77,28 @@ public partial class RemoteAfWindow : Window
         VacHint.IsVisible = digi;
         string catPort = _vm.RemoteCat?.PortName ?? KenwoodCatPort.ResolveLinuxCatPath() ?? "(none)";
         bool catOpen = _vm.RemoteCat?.IsOpen == true;
-        CatHint.Text = catOpen
-            ? $"CAT: TS-2000 on {catPort}. Freq/mode/PTT → radio via 8888."
-            : $"CAT: not open ({catPort}). tty0tty busy if local ms-sdr holds it.";
+        CatHint.Text = !digi
+            ? "CAT idle — tune and PTT in MSCC."
+            : catOpen
+                ? $"CAT: TS-2000 on {catPort}. Freq/mode/PTT → radio via 8888."
+                : $"CAT: not open ({catPort}). tty0tty busy if local ms-sdr holds it.";
         EqPanel.IsVisible = !digi;
         MuteCheck.Content = digi ? "Mute VAC play" : "Mute phones";
-        MicVolumeSlider.IsEnabled = !digi;
-        if (digi)
-            MicVolumeSlider.Value = 100;
+        MicVolumeSlider.IsEnabled = true;
+        int micPct = digi ? _vm.RemoteDigitalMicVolume : _vm.RemoteMicVolume;
+        MicVolumeSlider.Value = micPct;
+        MicVolumeLabel.Text = micPct.ToString();
+        if (_vm.RemoteAf != null)
+            _vm.RemoteAf.MicVolume = micPct / 100f;
 
         bool was = _ready;
         _ready = false;
+        PathPhones.IsChecked = !digi;
+        PathDigital.IsChecked = digi;
         if (digi)
         {
             int play = MainViewModel.FindNamedAfDevice(RemoteAfEngine.PlayDevices, LinuxDigitalIni.DigitalSpeaker);
             int mic = MainViewModel.FindNamedAfDevice(RemoteAfEngine.MicDevices, LinuxDigitalIni.DigitalMic);
-            _vm.RemotePlayDeviceIndex = play;
-            _vm.RemoteMicDeviceIndex = mic;
             SelectByTag(PlayDeviceCombo, play);
             SelectByTag(MicDeviceCombo, mic);
         }
@@ -129,12 +133,23 @@ public partial class RemoteAfWindow : Window
         });
     }
 
+    private void Path_Changed(object? sender, RoutedEventArgs e)
+    {
+        if (!_ready || _vm == null) return;
+        bool digi = PathDigital.IsChecked == true;
+        if (_vm.RemoteDigitalAudio == digi) return;
+        _vm.RemoteDigitalAudio = digi;
+    }
+
     private void PlayDevice_Changed(object? sender, SelectionChangedEventArgs e)
     {
         if (!_ready || _vm == null) return;
         if (PlayDeviceCombo.SelectedItem is ComboBoxItem { Tag: int idx })
         {
-            _vm.RemotePlayDeviceIndex = idx;
+            if (_vm.RemoteAf != null)
+                _vm.RemoteAf.PlayDeviceIndex = idx;
+            if (!_vm.RemoteDigitalAudio)
+                _vm.RemotePlayDeviceIndex = idx;
             _vm.ApplyRemoteAfDevicesAndRestart("play device");
         }
     }
@@ -144,7 +159,10 @@ public partial class RemoteAfWindow : Window
         if (!_ready || _vm == null) return;
         if (MicDeviceCombo.SelectedItem is ComboBoxItem { Tag: int idx })
         {
-            _vm.RemoteMicDeviceIndex = idx;
+            if (_vm.RemoteAf != null)
+                _vm.RemoteAf.MicDeviceIndex = idx;
+            if (!_vm.RemoteDigitalAudio)
+                _vm.RemoteMicDeviceIndex = idx;
             _vm.ApplyRemoteAfDevicesAndRestart("mic device");
         }
     }
@@ -164,15 +182,12 @@ public partial class RemoteAfWindow : Window
         if (!_ready || _vm == null) return;
         int v = (int)Math.Round(e.NewValue);
         MicVolumeLabel.Text = v.ToString();
-        if (_vm.IsDigitalAudio)
-        {
-            if (_vm.RemoteAf != null)
-                _vm.RemoteAf.MicVolume = 1.0f;
-            return;
-        }
-        _vm.RemoteMicVolume = v;
         if (_vm.RemoteAf != null)
             _vm.RemoteAf.MicVolume = v / 100f;
+        if (_vm.RemoteDigitalAudio)
+            _vm.RemoteDigitalMicVolume = v;
+        else
+            _vm.RemoteMicVolume = v;
     }
 
     private void Mute_Changed(object? sender, RoutedEventArgs e)

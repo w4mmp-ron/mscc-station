@@ -53,6 +53,8 @@ public sealed class ClientSettings
     public bool RemoteMonitorAtRadio { get; set; }
     public int RemotePlayVolume { get; set; } = 80;
     public int RemoteMicVolume { get; set; } = 80;
+    /// <summary>Remote Digital MSA1 TX drive (0–100). Separate from phones REMOTE_MIC_VOL.</summary>
+    public int RemoteDigitalMicVolume { get; set; } = 100;
     public bool RemotePlayMute { get; set; }
     public bool RemoteEqEnabled { get; set; }
     public float RemoteEqLowDb { get; set; }
@@ -259,6 +261,7 @@ public static class ClientSettingsStore
             sb.AppendLine($"REMOTE_MONITOR={(s.RemoteMonitorAtRadio ? "1" : "0")}");
             sb.AppendLine($"REMOTE_PLAY_VOL={s.RemotePlayVolume}");
             sb.AppendLine($"REMOTE_MIC_VOL={s.RemoteMicVolume}");
+            sb.AppendLine($"REMOTE_DIGI_MIC_VOL={s.RemoteDigitalMicVolume}");
             sb.AppendLine($"REMOTE_PLAY_MUTE={(s.RemotePlayMute ? "1" : "0")}");
             sb.AppendLine($"REMOTE_EQ={(s.RemoteEqEnabled ? "1" : "0")}");
             sb.AppendLine($"REMOTE_EQ_LOW={s.RemoteEqLowDb.ToString(CultureInfo.InvariantCulture)}");
@@ -501,6 +504,10 @@ public static class ClientSettingsStore
             case "REMOTE_MIC_VOL":
                 if (int.TryParse(val, NumberStyles.Integer, CultureInfo.InvariantCulture, out int rmv))
                     s.RemoteMicVolume = Math.Clamp(rmv, 0, 100);
+                break;
+            case "REMOTE_DIGI_MIC_VOL":
+                if (int.TryParse(val, NumberStyles.Integer, CultureInfo.InvariantCulture, out int rdmv))
+                    s.RemoteDigitalMicVolume = Math.Clamp(rdmv, 0, 100);
                 break;
             case "REMOTE_PLAY_MUTE":
                 s.RemotePlayMute = IsTruthy(val);

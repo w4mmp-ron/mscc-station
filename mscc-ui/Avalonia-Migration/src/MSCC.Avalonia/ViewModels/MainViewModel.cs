@@ -161,7 +161,7 @@ public partial class MainViewModel : ViewModelBase, IDisposable
         ModeText = "";
         NotifyModeFlags();
         NotifyBandFlags();
-        AppendLog("MSCC Avalonia 0.6.59 — FW major drives band gate + S/W bank.");
+        AppendLog("MSCC Avalonia 0.6.60 — remote Path Phones/Digital; digi mic slider; 0xBC ownership.");
         AppendLog("PTT = TX (voice modes); TUN = TUNE + carrier. S/W opens pan settings.");
         AppendLog($"Log: {LogFilePath}");
         CwPitchLabel = CwPitchOptions[Math.Clamp(CwPitchIndex, 0, CwPitchOptions.Count - 1)];
@@ -321,13 +321,20 @@ public partial class MainViewModel : ViewModelBase, IDisposable
     [NotifyPropertyChangedFor(nameof(AudioPathButtonText))]
     [NotifyPropertyChangedFor(nameof(IsPhonesAudio))]
     private bool _isDigitalAudio;
-    /// <summary>This PC is the operator seat. With Digital: R-Digital (0x9B=3). With Phones: R-Phones (2).</summary>
+    /// <summary>This PC is the operator seat. Remote window Path selects R-Phones (2) vs R-Digital (3).</summary>
     [ObservableProperty]
     [NotifyPropertyChangedFor(nameof(AudioPathButtonText))]
     [NotifyPropertyChangedFor(nameof(DigitalControlsEnabled))]
+    [NotifyPropertyChangedFor(nameof(LocalAudioPathEnabled))]
     private bool _remoteAudio;
+    /// <summary>Remote AF Path Digital (independent of local IsDigitalAudio).</summary>
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(AudioPathButtonText))]
+    private bool _remoteDigitalAudio;
     public bool IsPhonesAudio => !IsDigitalAudio;
     public bool DigitalControlsEnabled => IsConnected && !RemoteAudio;
+    /// <summary>Main Phones/Digital are not selectable while Remote (exit via Remote only).</summary>
+    public bool LocalAudioPathEnabled => !RemoteAudio;
 
     /// <summary>Remote seat only when Connect-only to another host (not 127.0.0.1 / localhost).</summary>
     public bool IsRemoteAudioAllowed
@@ -345,6 +352,8 @@ public partial class MainViewModel : ViewModelBase, IDisposable
     [ObservableProperty] private bool _remoteMonitorAtRadio;
     [ObservableProperty] private int _remotePlayVolume = 80;
     [ObservableProperty] private int _remoteMicVolume = 80;
+    /// <summary>Remote Digital MSA1 TX drive (0–100). Separate from phones REMOTE_MIC_VOL.</summary>
+    [ObservableProperty] private int _remoteDigitalMicVolume = 100;
     [ObservableProperty] private bool _remotePlayMute;
     [ObservableProperty] private bool _remoteEqEnabled;
     [ObservableProperty] private float _remoteEqLowDb;
@@ -427,7 +436,7 @@ public partial class MainViewModel : ViewModelBase, IDisposable
     [ObservableProperty] private string _proficioTempText = "— °C";
     [ObservableProperty] private string _paTempText = "— °C";
     [ObservableProperty] private string _paCurrentText = "— mA";
-    [ObservableProperty] private string _clientVersionText = "0.6.59";
+    [ObservableProperty] private string _clientVersionText = "0.6.60";
     [ObservableProperty] private bool _qrpMode = true;
     [ObservableProperty] private bool _fullPower;
     [ObservableProperty] private bool _alcOn = true;
@@ -714,7 +723,7 @@ public partial class MainViewModel : ViewModelBase, IDisposable
     /// <summary>Left-rail Audio path button: Phones or Digital.</summary>
     public string AudioPathButtonText =>
         RemoteAudio
-            ? (IsDigitalAudio ? "R-Digital" : "R-Phones")
+            ? (RemoteDigitalAudio ? "R-Digital" : "R-Phones")
             : (IsDigitalAudio ? "Digital" : "Phones");
 
     /// <summary>Left-rail Audio path button: Phones or Digital (or R-Phones / R-Digital).</summary>
@@ -1792,7 +1801,13 @@ public partial class MainViewModel : ViewModelBase, IDisposable
         IsDigitalAudio ? Opcodes.DIGITAL_SOUND_DEVICE : Opcodes.PHONES_SOUND_DEVICE;
 
     private byte RemoteWireOpcode() =>
-        IsDigitalAudio ? Opcodes.REMOTE_DIGITAL_SOUND_DEVICE : Opcodes.REMOTE_SOUND_DEVICE;
+        RemoteDigitalAudio ? Opcodes.REMOTE_DIGITAL_SOUND_DEVICE : Opcodes.REMOTE_SOUND_DEVICE;
+
+    internal float RemoteMicVolumeLinear() =>
+        (RemoteDigitalAudio ? RemoteDigitalMicVolume : RemoteMicVolume) / 100f;
+
+    partial void OnRemoteMicVolumeChanged(int value) => ScheduleSaveClientSettings();
+    partial void OnRemoteDigitalMicVolumeChanged(int value) => ScheduleSaveClientSettings();
 
     private void PushAudioToRadio(string reason)
     {
@@ -1889,18 +1904,29 @@ public partial class MainViewModel : ViewModelBase, IDisposable
             AppendLog($"CMP restored for phones (P): {_sessionCompressionOn}");
         }
 
-        PushAudioToRadio(value ? "path→D" : "path→P");
+        // Local path must not poke Remote window / MSA1 seat.
         if (RemoteAudio)
-        {
-            ApplyRemoteAfDevicesAndRestart(value ? "path→D" : "path→P");
-            _remoteAfWindow?.RefreshPath();
-        }
+            return;
+        PushAudioToRadio(value ? "path→D" : "path→P");
+    }
+
+    partial void OnRemoteDigitalAudioChanged(bool value)
+    {
+        OnPropertyChanged(nameof(AudioPathButtonText));
+        if (_suppressAudioSend || !RemoteAudio) return;
+        PushAudioToRadio(value ? "R-path→D" : "R-path→P");
+        ApplyRemoteAfDevicesAndRestart(value ? "R-path→D" : "R-path→P");
+        if (value) StartRemoteCat(); else StopRemoteCat();
+        _remoteAfWindow?.RefreshPath();
     }
 
     partial void OnRemoteAudioChanged(bool value)
     {
         OnPropertyChanged(nameof(AudioPathButtonText));
         OnPropertyChanged(nameof(DigitalControlsEnabled));
+        OnPropertyChanged(nameof(LocalAudioPathEnabled));
+        SelectPhonesAudioCommand.NotifyCanExecuteChanged();
+        SelectDigitalAudioCommand.NotifyCanExecuteChanged();
         ScheduleSaveClientSettings();
         if (_suppressAudioSend) return;
         if (value && !IsRemoteAudioAllowed)
@@ -1943,7 +1969,7 @@ public partial class MainViewModel : ViewModelBase, IDisposable
         RemoteAf.Log -= OnRemoteAfEngineLog;
         RemoteAf.Log += OnRemoteAfEngineLog;
         RemoteAf.PlayVolume = RemotePlayVolume / 100f;
-        RemoteAf.MicVolume = IsDigitalAudio ? 1.0f : RemoteMicVolume / 100f;
+        RemoteAf.MicVolume = RemoteMicVolumeLinear();
         RemoteAf.PlayMuted = RemotePlayMute;
         ApplyRemoteAfDevices();
         try
@@ -1953,13 +1979,20 @@ public partial class MainViewModel : ViewModelBase, IDisposable
             if (string.IsNullOrEmpty(host))
                 host = "127.0.0.1";
             RemoteAf.StartMic(host);
-            AppendLog($"Remote AF started ({reason}) TX host={host}:9101");
+            string seat = RemoteDigitalAudio ? "Digital VAC" : "Phones";
+            AppendLog($"Remote AF started ({reason}) {seat} TX host={host}:9101 micVol={RemoteAf.MicVolume:0.00}");
         }
         catch (Exception ex)
         {
             AppendLog($"Remote AF start failed: {ex.Message}");
         }
-        StartRemoteCat();
+        if (RemoteDigitalAudio)
+            StartRemoteCat();
+        else
+        {
+            StopRemoteCat();
+            AppendLog("CAT idle (phones remote — PTT/tune in MSCC)");
+        }
         ShowRemoteAfWindow();
     }
 
@@ -1985,7 +2018,7 @@ public partial class MainViewModel : ViewModelBase, IDisposable
             cat.SetFrequencyHz = hz => Dispatcher.UIThread.Post(() => _ = ApplyFrequencyAsync(hz, "CAT FA"));
             cat.SetModeDigit = d => Dispatcher.UIThread.Post(() =>
             {
-                ModeText = KenwoodTs2000.ModeNameFromDigit(d, preferDigU: IsDigitalAudio);
+                ModeText = KenwoodTs2000.ModeNameFromDigit(d, preferDigU: RemoteDigitalAudio);
             });
             cat.SetPtt = tx => Dispatcher.UIThread.Post(() => { PttOn = tx; });
             RemoteCat.Start();
@@ -2014,13 +2047,11 @@ public partial class MainViewModel : ViewModelBase, IDisposable
     internal void ApplyRemoteAfDevices()
     {
         if (RemoteAf == null) return;
-        if (IsDigitalAudio)
+        if (RemoteDigitalAudio)
         {
             // Always re-resolve: saved REMOTE_MIC_DEV may be ALSA VirtualB_monitor (silent).
             int play = FindNamedAfDevice(RemoteAfEngine.PlayDevices, LinuxDigitalIni.DigitalSpeaker);
             int mic = FindNamedAfDevice(RemoteAfEngine.MicDevices, LinuxDigitalIni.DigitalMic);
-            RemotePlayDeviceIndex = play;
-            RemoteMicDeviceIndex = mic;
             RemoteAf.PlayDeviceIndex = play;
             RemoteAf.MicDeviceIndex = mic;
             RemoteAf.ApplyEq(false, 0, 0, 0);
@@ -2040,7 +2071,7 @@ public partial class MainViewModel : ViewModelBase, IDisposable
     {
         if (!RemoteAudio || RemoteAf == null) return;
         ApplyRemoteAfDevices();
-        RemoteAf.MicVolume = IsDigitalAudio ? 1.0f : RemoteMicVolume / 100f;
+        RemoteAf.MicVolume = RemoteMicVolumeLinear();
         try { RemoteAf.StartRx(); } catch (Exception ex) { AppendLog("RX restart: " + ex.Message); }
         string host = string.IsNullOrWhiteSpace(Host) ? "127.0.0.1" : Host.Trim();
         try { RemoteAf.StartMic(host); } catch (Exception ex) { AppendLog("Mic restart: " + ex.Message); }
@@ -2160,19 +2191,27 @@ public partial class MainViewModel : ViewModelBase, IDisposable
         _remoteAfWindow = null;
     }
 
-    [RelayCommand]
-    private void ToggleAudioDigital() => IsDigitalAudio = !IsDigitalAudio;
+    private bool CanSelectLocalAudioPath() => !RemoteAudio;
 
     [RelayCommand]
+    private void ToggleAudioDigital()
+    {
+        if (RemoteAudio) return;
+        IsDigitalAudio = !IsDigitalAudio;
+    }
+
+    [RelayCommand(CanExecute = nameof(CanSelectLocalAudioPath))]
     private void SelectPhonesAudio()
     {
+        if (RemoteAudio) return;
         if (IsDigitalAudio)
             IsDigitalAudio = false;
     }
 
-    [RelayCommand]
+    [RelayCommand(CanExecute = nameof(CanSelectLocalAudioPath))]
     private void SelectDigitalAudio()
     {
+        if (RemoteAudio) return;
         if (!IsDigitalAudio)
             IsDigitalAudio = true;
     }
@@ -5853,6 +5892,7 @@ public partial class MainViewModel : ViewModelBase, IDisposable
             RemoteMonitorAtRadio = s.RemoteMonitorAtRadio;
             RemotePlayVolume = Math.Clamp(s.RemotePlayVolume, 0, 100);
             RemoteMicVolume = Math.Clamp(s.RemoteMicVolume, 0, 100);
+            RemoteDigitalMicVolume = Math.Clamp(s.RemoteDigitalMicVolume, 0, 100);
             RemotePlayMute = s.RemotePlayMute;
             RemoteEqEnabled = s.RemoteEqEnabled;
             RemoteEqLowDb = s.RemoteEqLowDb;
@@ -6032,6 +6072,7 @@ public partial class MainViewModel : ViewModelBase, IDisposable
             RemoteMonitorAtRadio = RemoteMonitorAtRadio,
             RemotePlayVolume = RemotePlayVolume,
             RemoteMicVolume = RemoteMicVolume,
+            RemoteDigitalMicVolume = RemoteDigitalMicVolume,
             RemotePlayMute = RemotePlayMute,
             RemoteEqEnabled = RemoteEqEnabled,
             RemoteEqLowDb = RemoteEqLowDb,
@@ -6572,14 +6613,11 @@ public partial class MainViewModel : ViewModelBase, IDisposable
         radio.TxSetByServerReported += v =>
             PostToUi(() =>
             {
-                _suppressTransmitCommands = true;
+                // Ownership only. Do not light PTT/TUN or enter TuneMode (host digi TX is not client TUNE).
                 TxSetByServer = v;
-                PttOn = v;
-                TuneMode = v;
-                _suppressTransmitCommands = false;
-                AppendLog($"TxSetByServer: {v} (user PTT/TUN {(v ? "locked" : "unlocked")})");
+                AppendLog($"TxSetByServer reported: {v} (server owns TX; PTT/TUN not mirrored)");
                 if (v)
-                    StatusText = "Server controls TX — PTT/TUN locked";
+                    StatusText = "Server owns TX — PTT/TUN locked";
             });
 
         radio.PaBypassReported += ampOn =>
@@ -6665,6 +6703,11 @@ public partial class MainViewModel : ViewModelBase, IDisposable
         radio.AudioDigitalModeReported += isDigital =>
             PostToUi(() => ApplyReportedAudio(() =>
             {
+                if (RemoteAudio)
+                {
+                    AppendLog($"Audio mode reported: {(isDigital ? "D" : "P")} (ignored while Remote)");
+                    return;
+                }
                 IsDigitalAudio = isDigital;
                 AppendLog($"Audio mode reported: {(isDigital ? "D" : "P")}");
             }));
@@ -6672,21 +6715,16 @@ public partial class MainViewModel : ViewModelBase, IDisposable
         radio.AudioDeviceReported += dev =>
             PostToUi(() => ApplyReportedAudio(() =>
             {
-                if (dev == Opcodes.DIGITAL_SOUND_DEVICE ||
-                    dev == Opcodes.REMOTE_DIGITAL_SOUND_DEVICE)
-                    IsDigitalAudio = true;
-                else
-                    IsDigitalAudio = false;
+                // Remote (2/3) is a client overlay — do not adopt it as local Digital/Phones sticky.
                 if (dev == Opcodes.REMOTE_SOUND_DEVICE ||
-                    dev == Opcodes.REMOTE_DIGITAL_SOUND_DEVICE)
-                    RemoteAudio = true;
-                string label = dev switch
+                    dev == Opcodes.REMOTE_DIGITAL_SOUND_DEVICE ||
+                    RemoteAudio)
                 {
-                    Opcodes.DIGITAL_SOUND_DEVICE => "D",
-                    Opcodes.REMOTE_SOUND_DEVICE => "R-Phones",
-                    Opcodes.REMOTE_DIGITAL_SOUND_DEVICE => "R-Digital",
-                    _ => "P",
-                };
+                    AppendLog($"Audio device reported: {dev} (ignored for local sticky; Remote={RemoteAudio})");
+                    return;
+                }
+                IsDigitalAudio = dev == Opcodes.DIGITAL_SOUND_DEVICE;
+                string label = dev == Opcodes.DIGITAL_SOUND_DEVICE ? "D" : "P";
                 AppendLog($"Audio device reported: {dev} ({label})");
             }));
 

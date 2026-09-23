@@ -97,19 +97,21 @@
           <StackPanel Orientation="Horizontal" Margin="0,0,0,3" Spacing="4">
             <Button Content="Phones" Classes="mscc-gold" Width="80" Height="24" FontSize="10"
                     Command="{Binding SelectPhonesAudioCommand}"
+                    IsEnabled="{Binding LocalAudioPathEnabled}"
                     Classes.mscc-selected="{Binding IsPhonesAudio}"
-                    ToolTip.Tip="Local analog mic/speaker. With Remote: headphones and mic on this PC."/>
+                    ToolTip.Tip="Local analog mic/speaker. Disabled while Remote — Path lives in the Remote window."/>
             <Button Content="Digital" Classes="mscc-gold" Width="80" Height="24" FontSize="10"
                     Command="{Binding SelectDigitalAudioCommand}"
+                    IsEnabled="{Binding LocalAudioPathEnabled}"
                     Classes.mscc-selected="{Binding IsDigitalAudio}"
-                    ToolTip.Tip="Local VAC on the radio. With Remote: VAC on this PC and CAT for WSJT."/>
+                    ToolTip.Tip="Local VAC on the radio. Disabled while Remote — Path lives in the Remote window."/>
           </StackPanel>
           <Button Content="Remote" Classes="mscc-gold" Width="164" Height="24" FontSize="10"
                   Margin="0,0,0,4" HorizontalAlignment="Left"
                   Command="{Binding ToggleRemoteAudioCommand}"
                   IsEnabled="{Binding IsRemoteAudioAllowed}"
                   Classes.mscc-selected="{Binding RemoteAudio}"
-                  ToolTip.Tip="This PC is the operator. Opens the audio window. Disabled if Server is 127.0.0.1 (local CAT). Phones→2 R-Phones, Digital→3 R-Digital."/>
+                  ToolTip.Tip="This PC is the operator. Opens the audio window (Path Phones/Digital there). Disabled if Server is 127.0.0.1 (local CAT). Exit Remote here — main Phones/Digital stay locked until then."/>
 
           <!-- Filters / Step (live when connected) -->
           <TextBlock Classes="mscc-section" Text="FILTERS / STEP"/>
