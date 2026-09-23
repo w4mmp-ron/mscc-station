@@ -12,7 +12,7 @@ On start: `git pull`, then read [`handoff.md`](handoff.md). If `.mscc-coord/COMM
 
 ## Current work
 
-**cmd-037** (windows-new-hp, **client**): WPF `RemoteMicSender` — **60 ms** send pre-fill / cushion before first UDP (and after send-path restart); then 10 ms paced sends; underrun → silence or skip (no client hold-last); count underruns/overflows in log cadence. Not Pi/cmd-034. Not sdrcore-trans/cmd-035. See `.mscc-coord/COMMANDS.yaml` + `.mscc-coord/briefs/cmd-037.md`.
+**cmd-038** (windows-new-hp, **client**): WPF `RemoteMicSender` - **diagnostic-only** finer Mic TX EVENT logging (every underrun / drop / low-cushion; optional WaveIn gap); keep periodic summary; ms stamps in EVENT lines; Client **9.23.2**. No audio/cushion/Pi change. See `.mscc-coord/COMMANDS.yaml` + `.mscc-coord/briefs/cmd-038.md`.
 
 ## Who / where
 
@@ -92,13 +92,14 @@ When a kit is built, copy the newest file into `installers/<platform>/`. History
 
 ## Current work (2026-09-23)
 
-### Active - cmd-037 (windows-new-hp, client)
+### Active - cmd-038 (windows-new-hp, client)
 
-WPF `RemoteMicSender`: **60 ms** send pre-fill / cushion (>= ~2880 mono samples / 6x480 frames) before first UDP after Start (and after intentional send-path restart); then continue 10 ms paced MSA1 sends. On underrun: silence packet or skip send — no client smear/hold-last; count underruns/overflows in existing log cadence. Brief: `.mscc-coord/briefs/cmd-037.md`. cmd-034 Pi on hold. cmd-035 local gate done (`47e336c`) — do not reopen. cmd-036 paced send done (`d26c7a7`, 9.23.0).
+WPF `RemoteMicSender`: diagnostic EVENT logging only - immediate/rate-limited `Mic TX EVENT underrun=` / `drop=` / `low_cushion=` (under half cushion / ~30 ms); optional WaveIn gap; keep first+every-500 summary with counters; embed ms in message body (file header is second-only). Bump **9.23.1 -> 9.23.2**. Brief: `.mscc-coord/briefs/cmd-038.md`. No cushion/audio change. cmd-034 Pi on hold. cmd-035 local gate done (`47e336c`). cmd-037 cushion done (`5f39a16`, 9.23.1).
 
 ### Done recently
 
-cmd-036 WPF paced mic send (`d26c7a7`, 9.23.0) — residual FT8/JT9/JT65 pulses → cmd-037.
+cmd-037 WPF 60 ms mic cushion (`5f39a16`, 9.23.1) - residual rare JT65 bump + summary-only logging -> cmd-038.
+cmd-036 WPF paced mic send (`d26c7a7`, 9.23.0).
 cmd-035 local Win TX 35 ms gate (`47e336c`).
 cmd-033 0xBC ownership + Remote vs local audio (WPF 9.22.0).
 cmd-030 Remote Digital mic slider (9.21.7).

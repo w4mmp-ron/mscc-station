@@ -1,4 +1,56 @@
 commands:
+  - id: cmd-038
+    created: "2026-09-23T13:55:00-04:00"
+    target: [windows-new-hp]
+    role: client
+    action: wpf-remotemic-finer-event-logging
+    status_hint: pending
+    detail: |
+      Host: windows-new-hp (NEW-HP-LAPTOP).
+      Checkout: C:\Users\n8vet\OneDrive\Documents\GitHub\mscc-station
+      Orders on this host. Stew 2026-09-23 / Build Commander survey.
+
+      ## Why
+      cmd-037 done (5f39a16, Client 9.23.1): 60 ms prefill cushion; Mic TX
+      summary every ~500 packets (~5 s) with peak=/drops=/underruns=.
+      Stew: looks great. Residual rare SA skirt bump ~35 s into recording /
+      ~8 s before end of 60 s JT65 TX. Wired Shack same as WiFi. Counters
+      often drops=0 underruns=0 so summary logging misses the event.
+      Stew wants finer event logging next; A/B Win client -> Ubuntu host
+      meanwhile.
+
+      ## Goal (WPF RemoteMicSender diagnostic logging ONLY)
+      No audio behavior change. No cushion / ring / WaveIn / MSA1 / port change.
+
+      Log immediately (or rate-limited to avoid flood) on:
+      - every underrun (TryTake fail / _underruns++)
+      - every overflow drop (callback discarded / _ringDrops++)
+      - ring occupancy falling below clear threshold (under half cushion /
+        under ~30 ms / ~1440 frames) - rising-edge or ~50-100 ms rate-limit
+      - optional: large WaveIn enqueue gaps if easy
+
+      Keep periodic summary (first + every 500). EVENT + summary lines must
+      carry ms-precision stamps in the message body (DebugMonitor file header
+      is second-only via ToLongTimeString). Tag: "Mic TX EVENT underrun=" etc.
+
+      Bump Client 9.23.1 -> 9.23.2.
+
+      ## Survey anchors (post cmd-037)
+      - Class: mscc-ui/windows-work-tree/mscc-mscc/mscc-new/src/MSCC.Wpf/RemoteAudio/RemoteMicSender.cs
+      - CushionMilliseconds=60; ring 500 ms; WaveIn 10ms x8
+      - Log today: first+every 500 only - no per-event lines
+      - Sibling out of scope: mscc-remote-audio/.../RemoteMicSender.cs
+
+      ## Out of scope
+      Pi host / remote_mic.c. cmd-034. sdrcore-trans (cmd-035). Avalonia.
+      MsccRemotePhones. Protocol/port. Cushion size. "Fixing" the JT65 bump.
+
+      ## Version / smoke
+      ClientVersion 9.23.2. Smoke: JT65/long TX still summary-logs; EVENT
+      lines greppable with ms; audio unchanged vs 9.23.1.
+
+      Commit hint: cmd-038: WPF RemoteMicSender finer Mic TX EVENT logging
+      Brief: .mscc-coord/briefs/cmd-038.md
   - id: cmd-037
     created: "2026-09-23T12:50:00-04:00"
     target: [windows-new-hp]
