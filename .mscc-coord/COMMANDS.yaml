@@ -1,4 +1,52 @@
 commands:
+  - id: cmd-036
+    created: "2026-09-23T11:54:00-04:00"
+    target: [windows-new-hp]
+    role: client
+    action: wpf-remotemic-blocking-10ms-paced-send
+    status_hint: pending
+    detail: |
+      Host: windows-new-hp (NEW-HP-LAPTOP).
+      Checkout: C:\Users\n8vet\OneDrive\Documents\GitHub\mscc-station
+      Orders on this host. Stew 2026-09-23 / Build Commander survey.
+
+      ## Why
+      Win11 client -> Pi host Remote Digital CQ: wide skirts, intermittently clean
+      within ~15 s CQ. Pi client -> Win host is clean.
+
+      Hypothesis (Build; Stew endorsed by forwarding): WPF WaveIn DataAvailable
+      callback both captures and UDP-sends. Callback hiccups + capture buffering
+      -> drop/burst. Pi hold-last stretches last sample -> wide skirt; fresh burst
+      -> clean; cycle repeats.
+
+      cmd-035 local Win 35 ms TX gate done (47e336c) - do not reopen.
+      cmd-034 Pi fixed fill stays PARKED - do not touch Pi/linux/rpi.
+
+      ## Goal (WPF client RemoteMicSender only)
+      Dedicated capture thread; fixed 10 ms blocks (480 frames @ 48 kHz);
+      block until samples ready; one MSA1 UDP packet per block; pace from
+      sound-card clock (not callback timing). Keep MSA1 48 kHz mono s16 / :9101.
+      Pi receiver unchanged. Prefer WPF-only (Avalonia LinuxMicSender is
+      reference pattern only).
+
+      ## Survey anchors
+      - Class: mscc-ui/windows-work-tree/mscc-mscc/mscc-new/src/MSCC.Wpf/RemoteAudio/RemoteMicSender.cs
+      - Caller: RemoteAfEngine.cs
+      - Today: WaveInEvent OnDataAvailable sends UDP under lock; BufferMilliseconds=10, NumberOfBuffers=3; FramesPerPacket=480
+      - Protocol: MSCC.Core MsccAudioProtocol (48000, s16le, header 16, port 9101)
+      - Reference (do not change unless shared helper forced): Avalonia LinuxMicSender.cs - thread + blocking Pa_ReadStream(FramesPerPacket) + one send
+      - Out of scope sibling: mscc-remote-audio/MsccRemotePhones/.../RemoteMicSender.cs
+
+      ## Out of scope
+      Pi host fill/hold-last/remote_mic.c. cmd-034. Windows sdrcore-trans remote_mic
+      and local TX gate (cmd-035). Avalonia unless tiny shared helper required.
+
+      ## Version / smoke
+      Bump WPF ClientVersion (expect 9.23.0 calendar). Smoke: Win->Pi Remote Digital
+      CQ skirts gone/reduced; quick local Digital regress that cmd-035 bump still OK.
+
+      Commit hint: cmd-036: WPF RemoteMicSender blocking 10ms paced send
+      Brief: .mscc-coord/briefs/cmd-036.md
   - id: cmd-035
     created: "2026-09-23T10:54:00-04:00"
     target: [windows-new-hp]

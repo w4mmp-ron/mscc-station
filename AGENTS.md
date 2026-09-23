@@ -12,7 +12,8 @@ On start: `git pull`, then read [`handoff.md`](handoff.md). If `.mscc-coord/COMM
 
 ## Current work
 
-**cmd-035** (windows-new-hp, **server**): Local Win `sdrcore-trans` clear/mute on `CMD_SET_TX_ON` 0->1 (phones/digital only; ~30-40 ms silence gate). Not WPF/Avalonia. Not Pi/cmd-034. See `.mscc-coord/COMMANDS.yaml` + `.mscc-coord/briefs/cmd-035.md`.
+**cmd-036** (windows-new-hp, **client**): WPF `RemoteMicSender` — dedicated capture thread; blocking 10 ms (480-frame) paced MSA1 UDP send. Not Pi/cmd-034. Not sdrcore-trans/cmd-035. See `.mscc-coord/COMMANDS.yaml` + `.mscc-coord/briefs/cmd-036.md`.
+
 
 ## Who / where
 
@@ -92,12 +93,13 @@ When a kit is built, copy the newest file into `installers/<platform>/`. History
 
 ## Current work (2026-09-23)
 
-### Active - cmd-035 (windows-new-hp, server)
+### Active - cmd-036 (windows-new-hp, client)
 
-Local Win `sdrcore-trans`: on `CMD_SET_TX_ON` 0->1 for DIGITAL/OPERATOR only, clear stale mic into TX + ~30-40 ms mute gate, then unmute. Brief: `.mscc-coord/briefs/cmd-035.md`. cmd-034 Pi on hold.
+WPF `RemoteMicSender`: dedicated capture thread; fixed 10 ms blocks; block until samples ready; one MSA1 UDP packet per block; pace from device clock. Brief: `.mscc-coord/briefs/cmd-036.md`. cmd-034 Pi on hold. cmd-035 local gate done (`47e336c`) — do not reopen.
 
 ### Done recently
 
+cmd-035 local Win TX 35 ms gate (`47e336c`).
 cmd-033 0xBC ownership + Remote vs local audio (WPF 9.22.0).
 cmd-030 Remote Digital mic slider (9.21.7).
 cmd-024..026 DIG-U / idle / band-last-used family.
