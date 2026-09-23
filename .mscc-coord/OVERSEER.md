@@ -1,25 +1,18 @@
+# Overseer intent
 
-**Current:** cmd-028 — Avalonia FW major → band gate + S/W bank (Ubuntu).
-
-**Current:** cmd-027 — Avalonia Ubuntu parity (idle + DIG-U band-wins + FW title). Mic slider parked.
-﻿# Overseer intent
-
-**Current:** cmd-026 — DIG-U overlay: band last-used wins over LAST_HF (stop USB↔DIG-U ping-pong).
-
-**Updated:** 2026-09-21  
+**Updated:** 2026-09-23  
 **Overseer:** Build Commander
 
 ## Status
 
-- **Active - cmd-024 (windows-new-hp):** Idle UI = freq 0, no band/mode highlight; suppress SaveLastUsed until live (stops 7.100/40m/USB poisoning DIG-U last-used).
-- **Reviewed - cmd-023:** OK to test / in progress on Shack (DIG-U stick partially blocked by idle poison).
+- **Active - cmd-034 (rpi):** Remote mic digi-safe bridge — clear bucket + short mute on TX ON; fixed 0.5 (2:1) fill; silence on underrun (no hold-last / no adaptive nudge). Mirror under linux/. Stew SA smoke NEW-HP→Pi Remote Digital CQ.
+- **Reviewed - cmd-033 (windows-new-hp):** OK — 0xBC ownership only; Remote vs local audio independence (WPF 9.22.0).
 
-## Short list (after 024)
+## Short list (after 034)
 
-- Remote Digital mic slider
-- Avalonia ports
-- Linux/Pi factory + cal-cache
-- Button rename (parked)
+- If SA still mushy: MSA1 wire / client WaveIn proof (optional WAV tap)
+- Avalonia ports / backlog UI items
+- Mode USB-on-load / digi LAST defaults (pending)
 
 ## Coord workflow
 

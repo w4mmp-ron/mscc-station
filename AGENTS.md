@@ -12,7 +12,9 @@ On start: `git pull`, then read [`handoff.md`](handoff.md). If `.mscc-coord/COMM
 
 ## Current work
 
-**cmd-032 done** (ubuntu-stew + rpi): **mscc 1.0.44** amd64 + arm64 installers ship with remote_mic stream reset. UI **0.6.59**. See `.mscc-coord/COMMANDS.yaml`.
+**Active - cmd-034 (rpi):** remote_mic clear-on-TX + short mute + fixed 2:1 fill (no adaptive nudge / no hold-last). Mirror `linux/`. See `.mscc-coord/COMMANDS.yaml`.
+
+**Recently done:** cmd-033 WPF 9.22.0 (0xBC ownership; Remote vs local audio). cmd-032 mscc 1.0.44 + stream reset.
 
 ## Who / where
 
@@ -90,18 +92,17 @@ When a kit is built, copy the newest file into `installers/<platform>/`. History
 
 ---
 
-## Current work (2026-09-21)
+## Current work (2026-09-23)
 
-### Active - cmd-024 (windows-new-hp)
+### Active - cmd-034 (rpi)
 
-Idle UI before Start: frequency 0, no band or mode button pressed; do not
-SaveLastUsed / LAST_HF until session live (stops 7.100/40m/USB poisoning DIG-U).
-See `.mscc-coord/COMMANDS.yaml` cmd-024.
+Remote Digital CQ mush: clear MSA1 ring on TX ON + ~40 ms mute gate; lock
+`remote_mic_fill_stereo_96k` step at 0.5; underrun → silence. Mirror linux/.
+Stew smokes NEW-HP → Pi on SA after install to `$HOME/mscc`.
 
 ### Done recently
 
-cmd-023 digi LAST defaults + USB/DIG-U stick + FW ask + FreqCal reset (9.21.3).
-cmd-022 WindowTitle radio name.
+cmd-033 WPF 9.22.0; cmd-032 mscc 1.0.44; cmd-031 remote_mic stream reset on REMOTE open.
 
 ## Hard don’ts
 

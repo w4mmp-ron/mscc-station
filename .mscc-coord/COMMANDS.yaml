@@ -1,4 +1,78 @@
 commands:
+  - id: cmd-034
+    created: "2026-09-23T10:17:00-04:00"
+    target: [rpi]
+    role: server
+    action: remote-mic-tx-clear-fixed-fill
+    status_hint: pending
+    detail: |
+      Host: rpi (raspberrypi). Checkout: /home/pi/src/mscc-station
+      Orders on this host. Mirror the same edits under linux/SDRcore-trans-linux
+      so Ubuntu stays in sync (no ubuntu Build required for Stew smoke).
+
+      ## Problem (Stew 2026-09-22/23)
+      NEW-HP → Pi Remote Digital + WSJT CQ looks filthy on SA (skirts / hash).
+      Same radio local digi on Pi is needle-clean. NEW-HP local (VB) also clean.
+      Remote Digital mic slider only changes power; skirts stay → not simple clip.
+      Ron: remote voice heard RX fine but his calls got no replies (suspect TX path).
+      Stew: Windows local TUNE shows a brief wide bump at key-up before clean tone;
+      Pi local does not — PTT can open before clean audio. Remote mush looks like
+      that junk "stuck on" for the whole TX.
+
+      Root class: remote TX handoff (MSA1 48k mono → host 96k I/Q mic path), not
+      radio DSP. Especially (1) stale ring / hold-last / adaptive 48→96 nudge and
+      (2) no clear-on-TX edge for remote.
+
+      ## Goal
+      Digi-safe remote mic bridge + clear-on-TX:
+      1) On CMD_SET_TX_ON rising edge (G_tx_mode 0→1), if audio_mode is REMOTE_AUDIO
+         or REMOTE_DIGITAL_AUDIO: remote_mic_reset_stream() then arm a short TX mute
+         gate (~40 ms) so fill outputs silence while the ring refills.
+      2) remote_mic_fill_stereo_96k: lock step at **0.5** (exact 2:1). Remove
+         occupancy-based 0.488–0.512 nudge. On underrun write **0** (silence), do
+         **not** hold-last. Keep linear interp between hist samples when data exists.
+      3) Log clearly: reset-on-TX and mute arm (one line each is enough).
+      4) Rebuild/install sdrcore-trans to $HOME/mscc; restart; Stew SA smoke.
+
+      ## Files (edit both trees the same way)
+      - rpi/SDRcore-trans-linux/sources/remote_mic.c
+      - rpi/SDRcore-trans-linux/sources/remote_mic.h
+      - rpi/SDRcore-trans-linux/sources/udp_thread.c  (CMD_SET_TX_ON edge)
+      - linux/SDRcore-trans-linux/sources/… (mirror)
+
+      ## Implementation notes (non-binding — verify in tree)
+      - remote_mic_reset_stream() already clears ring + g_hist + g_frac + g_under.
+      - Add something like remote_mic_arm_tx_mute_ms(40) / check inside fill:
+        if now_ms() < mute_until → write stereo zeros for those frames (still
+        advance time; do not consume ring while muted, OR consume-and-discard —
+        prefer **do not consume** so first real audio remains after mute).
+      - Hook in CMD_SET_TX_ON when previous_G_tx_mode != G_tx_mode && G_tx_mode==1
+        && remote mode, **before** Set_Mic_Mute(FALSE).
+      - MODE_TUNE/CW still use host tone (gain 0 in framesToComplex); this path
+        matters for digi/phones SSB audio TX. Still call reset on TX for remote
+        so phones benefit too.
+      - Do **not** change MSA1 protocol, ports, digi gain 2.5, or WPF client.
+      - Package bump / .deb optional after Stew SA OK — live $HOME/mscc is enough
+        for smoke. If you ship a kit, bump mscc 1.0.44 → 1.0.45.
+
+      ## Build / verify (rpi)
+      1) ACK status/rpi.md accepted → running.
+      2) Implement + mirror linux/.
+      3) cd rpi/SDRcore-trans-linux && make clean && make
+         Install to rpi/mscc-binaries/ and $HOME/mscc/ (house style).
+      4) strings $HOME/mscc/sdrcore-trans | grep -E 'stream reset|tx mute|fixed 0.5|step=0.5'
+         (add a unique log/string so we can prove the binary).
+      5) Restart sdrcore-trans (and stack if needed).
+      6) Stew smoke: NEW-HP Remote Digital → Pi, WSJT CQ on SA vs local-Pi CQ.
+         Also glance key-up bump. Report in status/rpi.md.
+      7) Commit on this host. Push only if Stew asks.
+
+      ## Out of scope
+      WPF/Avalonia. WAV dump tap (unless smoke still fails and Stew asks).
+      Changing SAMPLERATE 96000 / lo1 12 kHz. Sending a clock over UDP.
+
+      Commit hint: cmd-034: remote_mic clear-on-TX + fixed 2:1 fill (no nudge)
+
   - id: cmd-032
     created: "2026-09-21T18:16:00-04:00"
     target: [ubuntu-stew, rpi]
