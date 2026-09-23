@@ -72,6 +72,7 @@ sp_float iMult = 1.0f;
 sp_float qMult = 1.0f;
 uint8_t G_DSP_Busy = FALSE;
 int G_null_count = 0;
+volatile int G_tx_mic_gate_samples = 0;
 uint8_t transmit = TRUE;
 #endif
 
@@ -135,6 +136,24 @@ static int sdrAudioCallback(const void *inputBuffer, void *outputBuffer,
             across compilers with COMPLEX.
      */
     framesToComplex(inbuffer, incplx, outcplx, framesPerBuffer, mic_channels);
+    /*
+     * Local key-up gate. Unmute is immediate, but the VAC buffer still holds
+     * pre-tone samples. Drop whole callbacks until the sample budget is spent.
+     * Remote audio is filled above and is not gated.
+     */
+    if (G_tx_mic_gate_samples > 0 &&
+        (G_audio_mode == DIGITAL_AUDIO || G_audio_mode == OPERATOR_AUDIO)) {
+        int gate = G_tx_mic_gate_samples;
+        int left = gate - (int) framesPerBuffer;
+        if (left < 0)
+            left = 0;
+        for (i = 0; i < framesPerBuffer; i++) {
+            incplx[i].real = 0.0f;
+            incplx[i].imag = 0.0f;
+        }
+        if (G_tx_mic_gate_samples == gate)
+            G_tx_mic_gate_samples = left;
+    }
     if ((mystate.opmode == MODE_AM) || (mystate.opmode == MODE_LSB) ||
         (mystate.opmode == MODE_USB) || (mystate.opmode == MODE_FM))
         doMicProc(incplx, framesPerBuffer);

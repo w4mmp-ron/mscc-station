@@ -12,11 +12,11 @@ On start: `git pull`, then read [`handoff.md`](handoff.md). If `.mscc-coord/COMM
 
 ## Current work
 
-**Active - cmd-039 (rpi):** `remote_mic` diagnostic-only finer EVENT logging (under/hold-last, overflow, adaptive step, low occ, optional UDP gap); keep periodic summary; ms in body; tag `remote_mic EVENT`. **Do not** implement cmd-034 fill. See `.mscc-coord/COMMANDS.yaml` + `briefs/cmd-039.md`.
+**Active - cmd-039 (rpi):** `remote_mic` diagnostic-only finer EVENT logging (under/hold-last, overflow/drop, adaptive step, low occupancy, optional UDP gap); keep periodic summary; milliseconds in the body; tag `remote_mic EVENT`. **Do not** implement cmd-034 fill. See `.mscc-coord/COMMANDS.yaml` + `briefs/cmd-039.md`.
 
 **On hold:** cmd-034 clear-on-TX + fixed 2:1 fill.
 
-**Peer (other host):** cmd-038 WPF Mic TX EVENT logging on NEW-HP — not this checkout.
+**Peers on NEW-HP:** cmd-038 pending/orders for WPF Mic TX EVENT logging; cmd-037, cmd-036, and cmd-035 done.
 
 ## Who / where
 
@@ -99,13 +99,20 @@ When a kit is built, copy the newest file into `installers/<platform>/`. History
 ### Active - cmd-039 (rpi)
 
 Finer `remote_mic` EVENT logging only (under/hold-last, overflow/drop, adaptive
-48→96 step, low occ, optional UDP gap). Greppable `remote_mic EVENT` with ms in
+48→96 step, low occupancy, optional UDP gap). Greppable `remote_mic EVENT` with ms in
 body. Keep first+every-500 summary. Edit `rpi/SDRcore-trans-linux/sources/remote_mic.c`.
 Install `$HOME/mscc`. Optional package 1.0.44 → 1.0.45. **No fill algorithm change.**
 
 ### On hold - cmd-034 (rpi)
 
 Clear-on-TX + fixed 2:1 + silence on underrun — do not implement while 039 ships.
+
+### Peer work on NEW-HP
+
+cmd-038: WPF `RemoteMicSender` diagnostic EVENT logging, pending/orders.
+cmd-037: WPF 60 ms mic cushion, done (`5f39a16`, 9.23.1).
+cmd-036: WPF paced mic send, done (`d26c7a7`, 9.23.0).
+cmd-035: local Win TX 35 ms gate, done (`47e336c`).
 
 ### Done recently
 

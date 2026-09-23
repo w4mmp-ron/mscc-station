@@ -34,8 +34,13 @@
 // Release number is in the range of 0 to 9
 
 #define VERSION_MAJOR 3
-#define VERSION_MINOR 140
+#define VERSION_MINOR 141
 #define VERSION_MS_SDRCORE_TRANS ((((VERSION_MINOR) << 8) & 0xff00) | ((VERSION_MAJOR) & 0x00ff))
+
+/* Local DIGITAL/OPERATOR only. Discard this much mic audio after TX 0->1
+ * so VAC/PortAudio samples queued across key-up do not reach the modulator.
+ * At 96 kHz this is about 3-4 callbacks. Remote modes 2/3 leave it at 0. */
+#define TX_MIC_GATE_MS 35
 
 #define MAX_KEEP_ALIVE_COUNT 15
 #define MAX_INPUT_DEVICES 50
@@ -80,6 +85,7 @@ extern uint8_t G_Mia_Status;
 extern uint8_t G_tx_mode;
 extern uint8_t G_QSK;
 extern int G_null_count;
+extern volatile int G_tx_mic_gate_samples;
 extern int line_number;
 extern void print_time(void);
 //extern void Sleep(long sleep_time);

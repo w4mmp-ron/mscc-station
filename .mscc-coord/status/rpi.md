@@ -18,6 +18,6 @@
 
 ## Notes
 
-- Next: **cmd-039** in COMMANDS.yaml + briefs/cmd-039.md (finer remote_mic EVENT logging, diagnostic-only). ACK when Build starts.
+- Current work: merge brought cmd-035..038 briefs in; **cmd-039** still awaits ACK; **cmd-034** remains ON HOLD.
 - **cmd-034** remains ordered but **ON HOLD** — do not implement fill/clear-on-TX in 039.
 - Live `$HOME/mscc/sdrcore-trans` still has cmd-031 reset string; periodic `remote_mic: pkt ok=` only (no EVENT yet). Log often shows `occ=16383` with silent overflow.

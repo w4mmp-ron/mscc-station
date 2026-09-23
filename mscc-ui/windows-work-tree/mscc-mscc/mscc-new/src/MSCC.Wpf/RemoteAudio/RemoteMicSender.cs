@@ -1,3 +1,4 @@
+using System.Diagnostics;
 using System.Net;
 using System.Net.Sockets;
 using NAudio.CoreAudioApi;
@@ -9,6 +10,8 @@ namespace MSCC.Wpf.RemoteAudio;
 /// <summary>
 /// Captures local microphone and sends MSA1 UDP packets to the Pi (sdrcore-trans remote-mic).
 /// TX host may be an IPv4 address or a DNS hostname (IPv4 A record).
+/// WaveIn only enqueues. The send thread waits until ~60 ms is queued, then ships
+/// one 10 ms MSA1 packet on that cadence and keeps the cushion for a late callback.
 /// </summary>
 public sealed class RemoteMicSender : IDisposable
 {
@@ -16,8 +19,14 @@ public sealed class RemoteMicSender : IDisposable
     private UdpClient? _udp;
     private IPEndPoint? _ep;
     private readonly object _gate = new();
-    private byte[] _packet = Array.Empty<byte>();
-    private int _packetSamples; // mono samples collected toward next packet
+    private readonly short[] _ring = new short[FramesPerPacket * 50]; // 500 ms @ 48 kHz
+    private int _ringRead;
+    private int _ringWrite;
+    private int _ringCount;
+    private int _ringDrops;
+    private int _underruns;
+    private Thread? _sendThread;
+    private volatile bool _sendRun;
     private ushort _seq;
     private float _volume = 1.0f;
     private int _sampleRate = MsccAudioProtocol.DefaultSampleRate;
@@ -27,6 +36,9 @@ public sealed class RemoteMicSender : IDisposable
 
     public const int DefaultTxPort = 9101;
     public const int FramesPerPacket = 480; // 10 ms @ 48 kHz
+    public const int CaptureBufferMilliseconds = 10;
+    public const int CaptureBufferCount = 8; // 80 ms in the driver so a short stall cannot drop
+    public const int CushionMilliseconds = 60;
 
     public event Action<string>? Log;
 
@@ -95,9 +107,15 @@ public sealed class RemoteMicSender : IDisposable
         _seq = 0;
         Interlocked.Exchange(ref _packetsSent, 0);
         Interlocked.Exchange(ref _samplesSent, 0);
-        _packetSamples = 0;
-        int payloadBytes = FramesPerPacket * sizeof(short); // mono
-        _packet = new byte[MsccAudioProtocol.HeaderSize + payloadBytes];
+        lock (_gate)
+        {
+            _ringRead = 0;
+            _ringWrite = 0;
+            _ringCount = 0;
+            _ringDrops = 0;
+            _underruns = 0;
+            _peakAbs = 0;
+        }
 
         _udp = new UdpClient();
         var addr = ResolveHost(host.Trim());
@@ -112,14 +130,15 @@ public sealed class RemoteMicSender : IDisposable
         // Prefer mono 48 kHz; fall back to stereo then downmix
         foreach (var ch in new[] { 1, 2 })
         {
+            WaveInEvent? wi = null;
             try
             {
-                var wi = new WaveInEvent
+                wi = new WaveInEvent
                 {
                     DeviceNumber = waveDev,
                     WaveFormat = new WaveFormat(_sampleRate, 16, ch),
-                    BufferMilliseconds = 10,
-                    NumberOfBuffers = 3,
+                    BufferMilliseconds = CaptureBufferMilliseconds,
+                    NumberOfBuffers = CaptureBufferCount,
                 };
                 wi.DataAvailable += OnDataAvailable;
                 wi.RecordingStopped += (_, e) =>
@@ -127,6 +146,7 @@ public sealed class RemoteMicSender : IDisposable
                     if (e.Exception is not null)
                         Log?.Invoke("Mic stopped: " + e.Exception.Message);
                 };
+                IsRunning = true;
                 wi.StartRecording();
                 _waveIn = wi;
                 string capName = (WaveIn.GetCapabilities(waveDev).ProductName ?? "").TrimEnd('\0').Trim();
@@ -137,7 +157,8 @@ public sealed class RemoteMicSender : IDisposable
             catch (Exception ex)
             {
                 last = ex;
-                _waveIn?.Dispose();
+                IsRunning = false;
+                try { wi?.Dispose(); } catch { /* ignore */ }
                 _waveIn = null;
             }
         }
@@ -149,7 +170,14 @@ public sealed class RemoteMicSender : IDisposable
             throw last ?? new InvalidOperationException("Could not open microphone.");
         }
 
-        IsRunning = true;
+        _sendRun = true;
+        _sendThread = new Thread(SendLoop)
+        {
+            IsBackground = true,
+            Name = "MsccMicTx",
+            Priority = ThreadPriority.AboveNormal,
+        };
+        _sendThread.Start();
         var resolved = _ep.Address.ToString();
         var hostNote = string.Equals(host.Trim(), resolved, StringComparison.OrdinalIgnoreCase)
             ? resolved
@@ -193,21 +221,27 @@ public sealed class RemoteMicSender : IDisposable
 
     private void OnDataAvailable(object? sender, WaveInEventArgs e)
     {
-        if (!IsRunning || _udp is null || _ep is null || e.BytesRecorded <= 0)
+        if (!IsRunning || e.BytesRecorded <= 0 || _waveIn is null)
             return;
 
-        int bytesPerFrame = _waveIn!.WaveFormat.Channels * 2;
+        int bytesPerFrame = _waveIn.WaveFormat.Channels * 2;
         int frames = e.BytesRecorded / bytesPerFrame;
         if (frames <= 0)
             return;
 
         float vol = _volume;
         int srcCh = _waveIn.WaveFormat.Channels;
-        int payloadOff = MsccAudioProtocol.HeaderSize;
-        int payloadCap = FramesPerPacket * 2;
 
         lock (_gate)
         {
+            /* A full ring means the send thread is stuck. Drop this callback
+             * as one gap instead of blocking WaveIn and losing the driver buffers. */
+            if (_ringCount + frames > _ring.Length)
+            {
+                _ringDrops += frames;
+                return;
+            }
+
             int bi = 0;
             for (int f = 0; f < frames; f++)
             {
@@ -246,48 +280,185 @@ public sealed class RemoteMicSender : IDisposable
                 if (abs > _peakAbs)
                     _peakAbs = abs;
 
-                int o = payloadOff + _packetSamples * 2;
-                _packet[o] = (byte)(mono & 0xFF);
-                _packet[o + 1] = (byte)((mono >> 8) & 0xFF);
-                _packetSamples++;
+                _ring[_ringWrite] = mono;
+                _ringWrite++;
+                if (_ringWrite >= _ring.Length)
+                    _ringWrite = 0;
+                _ringCount++;
                 Interlocked.Increment(ref _samplesSent);
+            }
 
-                if (_packetSamples >= FramesPerPacket)
+            if (_ringCount >= FramesPerPacket)
+                Monitor.Pulse(_gate);
+        }
+    }
+
+    /// <summary>
+    /// Samples to queue before the first packet, and the level the cadence
+    /// refills to. About 60 ms at the capture rate. A late WaveIn callback
+    /// spends this instead of opening a hole on the wire.
+    /// </summary>
+    private int CushionFrames()
+    {
+        int rate = _sampleRate > 0 ? _sampleRate : MsccAudioProtocol.DefaultSampleRate;
+        int frames = rate * CushionMilliseconds / 1000;
+        int packets = Math.Max(1, (frames + FramesPerPacket - 1) / FramesPerPacket);
+        return packets * FramesPerPacket;
+    }
+
+    private void SendLoop()
+    {
+        var packet = new byte[MsccAudioProtocol.HeaderSize + FramesPerPacket * 2];
+        var block = new short[FramesPerPacket];
+        int cushion = CushionFrames();
+        int highWater = cushion + (2 * FramesPerPacket);
+
+        lock (_gate)
+        {
+            while (_sendRun && _ringCount < cushion)
+                Monitor.Wait(_gate);
+            if (!_sendRun)
+                return;
+        }
+
+        long interval = (long)(Stopwatch.Frequency * (FramesPerPacket / (double)_sampleRate));
+        if (interval < 1)
+            interval = Stopwatch.Frequency / 100;
+        var clock = Stopwatch.StartNew();
+        long next = clock.ElapsedTicks;
+
+        while (_sendRun)
+        {
+            WaitForTick(clock, next);
+            if (!_sendRun)
+                return;
+
+            int queued;
+            lock (_gate)
+                queued = _ringCount;
+            int nSend = queued > highWater ? 2 : 1;
+
+            for (int s = 0; s < nSend; s++)
+            {
+                if (!TryTake(block))
                 {
-                    var hdr = new AudioPacketHeader
-                    {
-                        Sequence = _seq++,
-                        FrameCount = (ushort)FramesPerPacket,
-                        Channels = 1,
-                        Format = MsccAudioProtocol.FormatS16Le,
-                        SampleRate = (uint)_sampleRate,
-                        Reserved = 0,
-                    };
-                    MsccAudioProtocol.WriteHeader(_packet.AsSpan(0, MsccAudioProtocol.HeaderSize), hdr);
-                    try
-                    {
-                        _udp.Send(_packet, MsccAudioProtocol.HeaderSize + payloadCap, _ep);
-                        long n = Interlocked.Increment(ref _packetsSent);
-                        if (n == 1 || n % 500 == 0)
-                        {
-                            int peak = _peakAbs;
-                            _peakAbs = 0;
-                            Log?.Invoke($"Mic TX {n} pkts → {_ep} peak={peak}");
-                        }
-                    }
-                    catch (Exception ex)
-                    {
-                        Log?.Invoke("Mic send error: " + ex.Message);
-                    }
-                    _packetSamples = 0;
+                    lock (_gate)
+                        _underruns++;
+                    break;
+                }
+                if (!SendPacket(packet, block))
+                    return;
+            }
+
+            next += interval;
+            long now = clock.ElapsedTicks;
+            if (next < now)
+                next = now + interval;
+        }
+    }
+
+    private void WaitForTick(Stopwatch clock, long deadlineTicks)
+    {
+        while (_sendRun && clock.ElapsedTicks < deadlineTicks)
+        {
+            long remainTicks = deadlineTicks - clock.ElapsedTicks;
+            int remainMs = (int)(remainTicks * 1000 / Stopwatch.Frequency);
+            if (remainMs > 2)
+            {
+                lock (_gate)
+                {
+                    if (!_sendRun)
+                        return;
+                    Monitor.Wait(_gate, remainMs - 1);
                 }
             }
+            else
+            {
+                Thread.SpinWait(40);
+            }
         }
+    }
+
+    private bool TryTake(short[] block)
+    {
+        lock (_gate)
+        {
+            if (_ringCount < FramesPerPacket)
+                return false;
+            for (int i = 0; i < FramesPerPacket; i++)
+            {
+                block[i] = _ring[_ringRead];
+                _ringRead++;
+                if (_ringRead >= _ring.Length)
+                    _ringRead = 0;
+            }
+            _ringCount -= FramesPerPacket;
+            return true;
+        }
+    }
+
+    private bool SendPacket(byte[] packet, short[] block)
+    {
+        int payloadOff = MsccAudioProtocol.HeaderSize;
+        for (int i = 0; i < FramesPerPacket; i++)
+        {
+            short mono = block[i];
+            packet[payloadOff + i * 2] = (byte)(mono & 0xFF);
+            packet[payloadOff + i * 2 + 1] = (byte)((mono >> 8) & 0xFF);
+        }
+
+        var udp = _udp;
+        var ep = _ep;
+        if (udp is null || ep is null)
+            return false;
+
+        var hdr = new AudioPacketHeader
+        {
+            Sequence = _seq++,
+            FrameCount = (ushort)FramesPerPacket,
+            Channels = 1,
+            Format = MsccAudioProtocol.FormatS16Le,
+            SampleRate = (uint)_sampleRate,
+            Reserved = 0,
+        };
+        MsccAudioProtocol.WriteHeader(packet.AsSpan(0, MsccAudioProtocol.HeaderSize), hdr);
+        try
+        {
+            udp.Send(packet, packet.Length, ep);
+            long n = Interlocked.Increment(ref _packetsSent);
+            if (n == 1 || n % 500 == 0)
+            {
+                int peak;
+                int drops;
+                int unders;
+                lock (_gate)
+                {
+                    peak = _peakAbs;
+                    _peakAbs = 0;
+                    drops = _ringDrops;
+                    _ringDrops = 0;
+                    unders = _underruns;
+                    _underruns = 0;
+                }
+                Log?.Invoke($"Mic TX {n} pkts → {ep} peak={peak} drops={drops} underruns={unders}");
+            }
+        }
+        catch (Exception ex)
+        {
+            if (_sendRun)
+                Log?.Invoke("Mic send error: " + ex.Message);
+        }
+        return true;
     }
 
     public void Stop()
     {
         IsRunning = false;
+        _sendRun = false;
+        lock (_gate)
+            Monitor.PulseAll(_gate);
+        try { _sendThread?.Join(TimeSpan.FromSeconds(2)); } catch { /* ignore */ }
+        _sendThread = null;
         try
         {
             if (_waveIn is not null)
@@ -303,7 +474,12 @@ public sealed class RemoteMicSender : IDisposable
         _udp = null;
         _ep = null;
         DeviceName = null;
-        _packetSamples = 0;
+        lock (_gate)
+        {
+            _ringRead = 0;
+            _ringWrite = 0;
+            _ringCount = 0;
+        }
         Log?.Invoke("Mic TX stopped");
     }
 

@@ -47,6 +47,230 @@ commands:
 
       Commit hint: cmd-039: remote_mic finer EVENT logging (diagnostic)
 
+  - id: cmd-038
+    created: "2026-09-23T13:55:00-04:00"
+    target: [windows-new-hp]
+    role: client
+    action: wpf-remotemic-finer-event-logging
+    status_hint: pending
+    detail: |
+      Host: windows-new-hp (NEW-HP-LAPTOP).
+      Checkout: C:\Users\n8vet\OneDrive\Documents\GitHub\mscc-station
+      Orders on this host. Stew 2026-09-23 / Build Commander survey.
+
+      ## Why
+      cmd-037 done (5f39a16, Client 9.23.1): 60 ms prefill cushion; Mic TX
+      summary every ~500 packets (~5 s) with peak=/drops=/underruns=.
+      Stew: looks great. Residual rare SA skirt bump ~35 s into recording /
+      ~8 s before end of 60 s JT65 TX. Wired Shack same as WiFi. Counters
+      often drops=0 underruns=0 so summary logging misses the event.
+      Stew wants finer event logging next; A/B Win client -> Ubuntu host
+      meanwhile.
+
+      ## Goal (WPF RemoteMicSender diagnostic logging ONLY)
+      No audio behavior change. No cushion / ring / WaveIn / MSA1 / port change.
+
+      Log immediately (or rate-limited to avoid flood) on:
+      - every underrun (TryTake fail / _underruns++)
+      - every overflow drop (callback discarded / _ringDrops++)
+      - ring occupancy falling below clear threshold (under half cushion /
+        under ~30 ms / ~1440 frames) - rising-edge or ~50-100 ms rate-limit
+      - optional: large WaveIn enqueue gaps if easy
+
+      Keep periodic summary (first + every 500). EVENT + summary lines must
+      carry ms-precision stamps in the message body (DebugMonitor file header
+      is second-only via ToLongTimeString). Tag: "Mic TX EVENT underrun=" etc.
+
+      Bump Client 9.23.1 -> 9.23.2.
+
+      ## Survey anchors (post cmd-037)
+      - Class: mscc-ui/windows-work-tree/mscc-mscc/mscc-new/src/MSCC.Wpf/RemoteAudio/RemoteMicSender.cs
+      - CushionMilliseconds=60; ring 500 ms; WaveIn 10ms x8
+      - Log today: first+every 500 only - no per-event lines
+      - Sibling out of scope: mscc-remote-audio/.../RemoteMicSender.cs
+
+      ## Out of scope
+      Pi host / remote_mic.c. cmd-034. sdrcore-trans (cmd-035). Avalonia.
+      MsccRemotePhones. Protocol/port. Cushion size. "Fixing" the JT65 bump.
+
+      ## Version / smoke
+      ClientVersion 9.23.2. Smoke: JT65/long TX still summary-logs; EVENT
+      lines greppable with ms; audio unchanged vs 9.23.1.
+
+      Commit hint: cmd-038: WPF RemoteMicSender finer Mic TX EVENT logging
+      Brief: .mscc-coord/briefs/cmd-038.md
+  - id: cmd-037
+    created: "2026-09-23T12:50:00-04:00"
+    target: [windows-new-hp]
+    role: client
+    action: wpf-remotemic-60ms-prefill-cushion
+    status_hint: pending
+    detail: |
+      Host: windows-new-hp (NEW-HP-LAPTOP).
+      Checkout: C:\Users\n8vet\OneDrive\Documents\GitHub\mscc-station
+      Orders on this host. Stew 2026-09-23 / Build Commander survey.
+
+      ## Why
+      cmd-036 done (d26c7a7, Client 9.23.0): WaveIn enqueues; MsccMicTx
+      blocks for 480 frames then UDP; 500 ms ring; eight 10 ms WaveIn buffers.
+      Huge SA improvement. WSPR full TX clean. FT8/JT9/JT65 still intermittent
+      skirt pulses (every few seconds to much longer in a 1 min TX).
+
+      Build memory / Build note: 500 ms ring is drained to the next packet —
+      not a standing cushion. A late WaveIn callback still opens a hole on
+      the wire; Pi hold-last paints the remaining bump. Recommended harden:
+      keep ~60 ms queued and ship from that cushion across a late callback,
+      still on the capture clock (~60 ms extra delay). Stew left cushion
+      choice to Overseer — LOCKED: 60 ms (not halfway).
+
+      cmd-035 local Win gate stays done. cmd-034 Pi / sdrcore-trans remote
+      stay out of scope.
+
+      ## Goal (WPF client RemoteMicSender only)
+      60 ms send pre-fill / start cushion before first UDP after Start
+      (and after any intentional restart of the send path): wait until the
+      ring holds >= ~60 ms of mono PCM (~2880 samples @ 48 kHz, or 6x480
+      frames) before sending the first packet; then continue 10 ms paced
+      sends as today (block for 480, one MSA1 UDP, capture-clock paced).
+
+      On underrun (sender waiting, not enough samples for the next 480):
+      prefer silence packet or skip send — do NOT invent smear/hold-last
+      on the client. Count underruns and overflows in the existing log
+      cadence (peak=/drops= style) so Stew/Build can correlate with SA pulses.
+
+      Keep MSA1 framing, port 9101, Pi host unchanged.
+
+      ## Survey anchors (post cmd-036 — implement against these)
+      - Class: mscc-ui/windows-work-tree/mscc-mscc/mscc-new/src/MSCC.Wpf/RemoteAudio/RemoteMicSender.cs
+      - Ring: short[FramesPerPacket * 50] = 500 ms @ 48 kHz
+      - WaveIn: BufferMilliseconds=10, NumberOfBuffers=8 (80 ms driver)
+      - SendLoop: Monitor.Wait until _ringCount >= FramesPerPacket (480), then send
+      - Overflow: full ring drops whole callback (+_ringDrops); no underrun counter yet
+      - Log: first pkt and every 500 pkts — "Mic TX N pkts → ep peak= drops="
+      - Sibling out of scope: mscc-remote-audio/.../RemoteMicSender.cs
+
+      ## Out of scope
+      Pi host fill/hold-last/remote_mic.c. cmd-034. Windows sdrcore-trans
+      (cmd-035). Avalonia LinuxMicSender. MsccRemotePhones. Protocol/port/host.
+
+      ## Version / smoke
+      Bump WPF ClientVersion (calendar M.D.I; today still 9.23 — expect
+      9.23.1 next iteration, or next calendar increment if house script says so).
+      Smoke: Win→Pi Remote Digital FT8 CQ + longer JT65/JT9 — pulses
+      gone/reduced; WSPR still clean; quick local Digital TUNE regress
+      (cmd-035 gate still OK).
+
+      Commit hint: cmd-037: WPF RemoteMicSender 60ms prefill cushion
+      Brief: .mscc-coord/briefs/cmd-037.md
+  - id: cmd-036
+    created: "2026-09-23T11:54:00-04:00"
+    target: [windows-new-hp]
+    role: client
+    action: wpf-remotemic-blocking-10ms-paced-send
+    status_hint: pending
+    detail: |
+      Host: windows-new-hp (NEW-HP-LAPTOP).
+      Checkout: C:\Users\n8vet\OneDrive\Documents\GitHub\mscc-station
+      Orders on this host. Stew 2026-09-23 / Build Commander survey.
+
+      ## Why
+      Win11 client -> Pi host Remote Digital CQ: wide skirts, intermittently clean
+      within ~15 s CQ. Pi client -> Win host is clean.
+
+      Hypothesis (Build; Stew endorsed by forwarding): WPF WaveIn DataAvailable
+      callback both captures and UDP-sends. Callback hiccups + capture buffering
+      -> drop/burst. Pi hold-last stretches last sample -> wide skirt; fresh burst
+      -> clean; cycle repeats.
+
+      cmd-035 local Win 35 ms TX gate done (47e336c) - do not reopen.
+      cmd-034 Pi fixed fill stays PARKED - do not touch Pi/linux/rpi.
+
+      ## Goal (WPF client RemoteMicSender only)
+      Dedicated capture thread; fixed 10 ms blocks (480 frames @ 48 kHz);
+      block until samples ready; one MSA1 UDP packet per block; pace from
+      sound-card clock (not callback timing). Keep MSA1 48 kHz mono s16 / :9101.
+      Pi receiver unchanged. Prefer WPF-only (Avalonia LinuxMicSender is
+      reference pattern only).
+
+      ## Survey anchors
+      - Class: mscc-ui/windows-work-tree/mscc-mscc/mscc-new/src/MSCC.Wpf/RemoteAudio/RemoteMicSender.cs
+      - Caller: RemoteAfEngine.cs
+      - Today: WaveInEvent OnDataAvailable sends UDP under lock; BufferMilliseconds=10, NumberOfBuffers=3; FramesPerPacket=480
+      - Protocol: MSCC.Core MsccAudioProtocol (48000, s16le, header 16, port 9101)
+      - Reference (do not change unless shared helper forced): Avalonia LinuxMicSender.cs - thread + blocking Pa_ReadStream(FramesPerPacket) + one send
+      - Out of scope sibling: mscc-remote-audio/MsccRemotePhones/.../RemoteMicSender.cs
+
+      ## Out of scope
+      Pi host fill/hold-last/remote_mic.c. cmd-034. Windows sdrcore-trans remote_mic
+      and local TX gate (cmd-035). Avalonia unless tiny shared helper required.
+
+      ## Version / smoke
+      Bump WPF ClientVersion (expect 9.23.0 calendar). Smoke: Win->Pi Remote Digital
+      CQ skirts gone/reduced; quick local Digital regress that cmd-035 bump still OK.
+
+      Commit hint: cmd-036: WPF RemoteMicSender blocking 10ms paced send
+      Brief: .mscc-coord/briefs/cmd-036.md
+  - id: cmd-035
+    created: "2026-09-23T10:54:00-04:00"
+    target: [windows-new-hp]
+    role: server
+    action: local-win-tx-clear-mute-on-keyup
+    status_hint: pending
+    detail: |
+      Host: windows-new-hp (NEW-HP-LAPTOP).
+      Checkout: C:\Users\n8vet\OneDrive\Documents\GitHub\mscc-station
+      Orders on this host. Stew 2026-09-23 / Build Commander survey.
+
+      ## Why
+      Win11 local host+client: brief wide SA hash bump right as WSJT keys TUNE/TX,
+      then clean tone. Pi local has no bump. Suspect dirty PortAudio / VAC mic capture
+      buffer (or timing) when TX takes over and mic unmutes.
+
+      Larger issue (later, observation only this cmd): Win11 client -> RPi host remote
+      digi CQ has huge skirts; RPi client -> Win11 host is clean. Stew wants local
+      clear/mute first, then see if remote improves.
+
+      cmd-034 (Pi remote_mic clear-on-TX + fixed 2:1) is ON HOLD - do not touch Pi
+      or cmd-034. Use Linux remote_mic_reset_stream / clear+short mute only as the
+      *idea* reference for a LOCAL Windows mic-path analog.
+
+      ## Goal (LOCAL Windows host servers only)
+      In Windows `sdrcore-trans` (tree: mscc-ui/windows-work-tree/SDRcore-trans/):
+      On CMD_SET_TX_ON 0->1 when audio mode is LOCAL phones/digital only
+      (OPERATOR_AUDIO / DIGITAL_AUDIO - NOT remote-only REMOTE_AUDIO /
+      REMOTE_DIGITAL_AUDIO):
+        1) Clear/discard stale local mic capture into the TX path (PortAudio callback
+           input / equivalent - there is no local ring like remote_mic; prefer silence
+           into TX / do-not-modulate stale samples, NOT hold-last).
+        2) Short mute gate ~30-40 ms (silence into modulator), then unmute as today
+           (Set_Mic_Mute(FALSE) / restore previous_mic_volume).
+      Rebuild/install the Windows host binaries Stew uses for local
+      (typically C:\mscc-net9\). Bump a server version only if that is existing house
+      style for Windows server builds (usually none - just rebuild/copy).
+
+      ## Survey anchors (do not re-litigate; implement against these)
+      - CMD_SET_TX_ON handler: sources/udp_thread.c ~908 (0xBA)
+      - Set_Mic_Mute: udp_thread.c ~333 - mute sets G_mic_volume=0; unmute restores
+        previous_mic_volume. Today: TX off -> mute + G_null_count=0; TX on -> unmute
+        immediately (no clear, no gate).
+      - Local capture: PortAudio callback sdrAudioCallback in sources/main.c; digi/
+        phones via manage_stream + framesToComplex * G_mic_volume (dsputils.c).
+      - Remote path (out of scope): remote_mic_* MSA1 ring - do NOT change fill/lerp.
+      - No existing Pa flush/discard helper in this tree; commented manage_stream
+        stop/start on TX was abandoned - prefer soft gate, not stream restart.
+
+      ## Out of scope
+      remote_mic fill/lerp/reset. WPF. Avalonia. Pi / linux/ / rpi/ trees. cmd-034.
+      Changing ALC/gain tables. ms-sdr / sdrcore-recv unless required to link.
+
+      ## Smoke
+      1) Local WSJT TUNE on NEW-HP host+client Digital: key-up SA hash bump
+         gone or clearly smaller; steady tone clean.
+      2) Optional observation only: Win client -> Pi host remote digi CQ skirts
+         (note only; no Pi code this cmd).
+
+      Commit hint: cmd-035: local Win TX clear/mute on key-up (sdrcore-trans)
+      Brief: .mscc-coord/briefs/cmd-035.md
   - id: cmd-034
     created: "2026-09-23T10:17:00-04:00"
     target: [rpi]
@@ -364,7 +588,7 @@ commands:
 
       Commit hint: cmd-030: enable Remote Digital mic drive slider (WPF 9.21.7)
 
-- id: cmd-029
+  - id: cmd-029
     created: "2026-09-21T16:47:00-04:00"
     target: [rpi]
     role: client
@@ -425,7 +649,7 @@ commands:
       ## Out of scope
       Ubuntu amd64 kit (already 0.6.59). WPF. Mic slider. Push unless Stew asks
       (orders-on-host-first; push after Build finishes so other hosts can pull).
-- id: cmd-028
+  - id: cmd-028
     created: "2026-09-21T14:12:00-04:00"
     target: [ubuntu-stew]
     role: client
@@ -661,7 +885,7 @@ commands:
 
       Bump ClientVersion (9.21.3 -> 9.21.4).
       Commit hint: cmd-024: idle UI freq 0 no band/mode; stop last-used poison
-- id: cmd-020
+  - id: cmd-020
     created: "2026-09-21T08:35:00-04:00"
     target: [windows-new-hp]
     role: server
@@ -753,7 +977,7 @@ commands:
 
       Bump ms-sdr version. ACK status. Commit. Stew pushes. Linux/Pi follow-on later.
 
-- id: cmd-019
+  - id: cmd-019
     created: "2026-09-20T20:35:00-04:00"
     target: [windows-new-hp]
     role: server+client
@@ -834,7 +1058,7 @@ commands:
 
       Bump ms-sdr / ClientVersion as appropriate. ACK status. Commit. Stew pushes.
 
-- id: cmd-018
+  - id: cmd-018
     created: "2026-09-20T16:35:00-04:00"
     target: [windows-new-hp]
     role: server+docs
@@ -927,7 +1151,7 @@ commands:
 
       Commit. Stew pushes. Then ubuntu/Pi follow-on for same seed.
 
-- id: cmd-017b
+  - id: cmd-017b
     created: "2026-09-20T16:10:00-04:00"
     target: [windows-new-hp]
     role: client
@@ -979,7 +1203,7 @@ commands:
 
       Bump ClientVersion patch (9.20.3 ├â╞Æ├åΓÇÖ├âΓÇÜ├é┬ó├â╞Æ├é┬ó├â┬ó├óΓé¼┼í├é┬¼├âΓÇÜ├é┬á├â╞Æ├é┬ó├â┬ó├óΓé¼┼í├é┬¼├â┬ó├óΓé¼┼╛├é┬ó 9.20.4). ACK status. Commit. Stew pushes.
 
-- id: cmd-017
+  - id: cmd-017
     created: "2026-09-20T16:00:00-04:00"
     target: [windows-new-hp]
     role: client
@@ -1051,7 +1275,7 @@ commands:
 
       Bump ClientVersion patch. ACK status/windows-new-hp.md. Commit. Stew pushes.
 
-- id: cmd-016
+  - id: cmd-016
     created: "2026-09-20T15:05:00-04:00"
     target: [windows-new-hp]
     role: client
@@ -1113,7 +1337,7 @@ commands:
 
       Bump WPF ClientVersion patch. ACK status/windows-new-hp.md. Commit. Stew pushes.
 
-- id: cmd-015
+  - id: cmd-015
     created: "2026-09-20T14:45:00-04:00"
     target: [windows-new-hp]
     role: client
@@ -1167,7 +1391,7 @@ commands:
 
       ACK status/windows-new-hp.md. Commit. Stew pushes.
 
-- id: cmd-014
+  - id: cmd-014
     created: "2026-09-20T14:25:00-04:00"
     target: [windows-new-hp]
     role: server
@@ -1212,7 +1436,7 @@ commands:
 
       Out of scope: client ask-if-missing (next UI block). No linux/rpi edits.
 
-- id: cmd-013
+  - id: cmd-013
     created: "2026-09-20T14:16:00-04:00"
     target: [ubuntu-stew]
     role: server
@@ -1247,7 +1471,7 @@ commands:
 
       Out of scope: rpi/ (done), Windows ms-sdr (next), client UI ask-if-missing.
 
-- id: cmd-012
+  - id: cmd-012
     created: "2026-09-20T14:05:00-04:00"
     target: [rpi]
     role: server
@@ -1298,7 +1522,7 @@ commands:
       Out of scope: linux/ (Ubuntu) and Windows ms-sdr (follow-on cmds). No UI client
       "ask if missing" yet (next UI block).
 
-- id: cmd-011
+  - id: cmd-011
     created: "2026-09-20T13:20:00-04:00"
     target: [rpi]
     role: client
@@ -1336,7 +1560,7 @@ commands:
         rpi/mscc-binaries/{ms-sdr,sdrcore-recv,sdrcore-trans}
       No Windows / no amd64 rebuild. No PSoC / factory cal.
 
-- id: cmd-010
+  - id: cmd-010
     created: "2026-09-20T12:15:00-04:00"
     target: [ubuntu-stew]
     role: client
@@ -1391,7 +1615,7 @@ commands:
 
       Out of scope: Windows ms-sdr, PSoC trees, factory cal, Pi arm64 kit.
 
-- id: cmd-009
+  - id: cmd-009
     created: "2026-09-20T11:25:00-04:00"
     target: [windows-new-hp]
     role: server+client
@@ -1476,7 +1700,7 @@ commands:
 
       Do not touch linux/ or rpi/ trees in this cmd. Do not change PSoC firmware.
 
-- id: cmd-008
+  - id: cmd-008
     created: "2026-09-18T15:25:00-04:00"
     target: [ubuntu-stew]
     role: client
