@@ -5,19 +5,23 @@
 | **Host** | raspberrypi |
 | **Checkout** | `/home/pi/src/mscc-station` |
 | **Build** | Grok Build |
-| **Last command id** | cmd-032 |
-| **State** | idle (await cmd-039 ACK) |
+| **Last command id** | cmd-039 |
+| **State** | done |
 | **Updated** | 2026-09-23 |
 
 ## ACK log
 
 | command id | state | note |
 |------------|-------|------|
+| cmd-039 | done | Diagnostic EVENT logging in live `$HOME/mscc/sdrcore-trans` (2026-09-23 14:21). Fill unchanged. cmd-034 on hold. Kit stays 1.0.44. |
 | cmd-032 | done | Debs in `installers/rpi/` and `rpi/Rpi-installers/` |
 | cmd-031 | done | trans 17:56 stream reset |
 
 ## Notes
 
-- Current work: merge brought cmd-035..038 briefs in; **cmd-039** still awaits ACK; **cmd-034** remains ON HOLD.
-- **cmd-034** remains ordered but **ON HOLD** — do not implement fill/clear-on-TX in 039.
-- Live `$HOME/mscc/sdrcore-trans` still has cmd-031 reset string; periodic `remote_mic: pkt ok=` only (no EVENT yet). Log often shows `occ=16383` with silent overflow.
+- Edit: `rpi/SDRcore-trans-linux/sources/remote_mic.c` only. `linux/` not touched.
+- `strings $HOME/mscc/sdrcore-trans | grep 'remote_mic EVENT'` matches.
+- EVENT body has `mono_ms=` (CLOCK_MONOTONIC) and `t=HH:MM:SS.mmmZ` (UTC). Repeat lines rate-limited ~100 ms. UDP gap threshold 50 ms (5× a 480-frame pack).
+- Kinds: `hold_last`, `overflow dropped=`, `adaptive step=`, `low_occ` (occ < RING/8), `udp_gap`.
+- Periodic `remote_mic: pkt ok=` kept; line also has `overflow=`, `step=`, `mono_ms=`.
+- Restart of `sdrcore-trans` exited: no Multus I/Q USB device (`lsusb` shows Sound Blaster only). `ms-sdr` and `sdrcore-recv` still running. Power the transceiver and start `sdrcore-trans` before the JT65 smoke.
