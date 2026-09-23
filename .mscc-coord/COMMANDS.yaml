@@ -1,4 +1,73 @@
 commands:
+  - id: cmd-040
+    created: "2026-09-23T15:00:00-04:00"
+    target: [ubuntu-stew, rpi]
+    role: client
+    action: avalonia-remote-audio-parity-0660
+    status_hint: pending
+    detail: |
+      Host prefer: ubuntu-stew (amd64 Build + smoke), then rpi arm64 kit.
+      Orders authored on NEW-HP (canonical COMMANDS.yaml). Avalonia source is shared.
+      Checkout ubuntu: /home/stew/Documents/GitHub/mscc-station
+      Checkout rpi: /home/pi/src/mscc-station
+      Call the user Stew. Do not git push (Stew pushes). Do not update RPi Grok Build app.
+
+      Bump Avalonia 0.6.59 → 0.6.60 in MSCC.Avalonia.csproj and MainViewModel.ClientVersionText.
+
+      ## Why
+      WPF already has remote-path independence (RemoteDigitalAudio + PathPhones/PathDigital),
+      Remote Digital mic slider (cmd-030, REMOTE_DIGI_MIC_VOL default 100), and 0xBC
+      ownership-only (cmd-033: TxSetByServer sets CanUserControlTransmit, does not light
+      PTT/TUN). Avalonia 0.6.59 still: RemoteWireOpcode follows local IsDigitalAudio;
+      Remote AF RefreshPath forces digi mic=100 + disables slider; TxSetByServerReported
+      still sets PttOn=v and TuneMode=v (lights TUN on WSJT digi); main Phones/Digital
+      stay clickable while Remote.
+
+      ## Goals (all in one cmd — Avalonia only)
+      A) Remote AF Phones/Digital radios — PathPhones/PathDigital like WPF RemoteAfWindow.
+         Introduce independent RemoteDigitalAudio (do NOT use local IsDigitalAudio as the
+         remote path). RefreshPath selects volume source from remote path.
+      B) Remote Digital mic slider — enable for Digital; default 100; persist
+         REMOTE_DIGI_MIC_VOL / RemoteDigitalMicVolume (phones keep REMOTE_MIC_VOL).
+         Wire through RemoteAfEngine → LinuxMicSender.Volume. Remove force-100 /
+         disabled-on-digital behavior.
+      C) Main Phones/Digital not selectable while Remote — while RemoteAudio true,
+         main Phones/Digital buttons IsEnabled=false (or equivalent). Exit Remote only
+         via the Remote control. Stew asked not selectable — stricter than WPF
+         (WPF dim-but-clickable / pressing Phones|Digital can exit Remote). Document
+         that difference in the brief.
+      D) 0xBC / TxSetByServer = WPF cmd-033 ownership — on TxSetByServerReported:
+         set TxSetByServer = v; CanUserControlTransmit = !value (already derived);
+         do NOT set PttOn or TuneMode from 0xBC. PTT and TUN unavailable while server
+         owns TX. No lighting TUNE for WSJT digi.
+
+      ## Key files (Avalonia)
+      mscc-ui/Avalonia-Migration/src/MSCC.Avalonia/
+        MSCC.Avalonia.csproj (Version 0.6.59 → 0.6.60)
+        ViewModels/MainViewModel.cs (ClientVersionText; RemoteDigitalAudio; 0xBC handler;
+          main Phones/Digital enable; RemoteWireOpcode)
+        Views/RemoteAfWindow.axaml (+ .axaml.cs) — PathPhones/PathDigital, RefreshPath,
+          MicVolume_Changed
+        Views/MainWindow.axaml — Phones/Digital IsEnabled while Remote
+        Services/ClientSettingsStore.cs — REMOTE_DIGI_MIC_VOL
+        RemoteAudio/RemoteAfEngine.cs, LinuxMicSender.cs — MicVolume already wired
+
+      ## WPF reference (parity, do not edit WPF)
+        RemoteAfWindow.xaml/.cs — PathPhones/PathDigital, MicVolumeSlider, RemoteDigitalMicVolume
+        SpectrumWaterfallSettings — REMOTE_DIGI_MIC_VOL
+        MainViewModel — TxSetByServer / CanUserControlTransmit (cmd-033)
+
+      ## Out of scope
+      Host remote_mic / linux/rpi sdrcore (cmd-031/032 shipped). cmd-034 fill. WPF edits.
+      Push to GitHub. RPi Grok Build app update. cmd-038/039 EVENT logging.
+
+      ## Build / smoke
+      ubuntu-stew first: rebuild Avalonia amd64 (0.6.60), smoke Remote Phones/Digital,
+      digi mic slider persist, main Phones/Digital disabled in Remote, 0xBC no TUN light.
+      Then rpi: linux-arm64 publish + mscc-ui_0.6.60_arm64.deb kit if house style.
+
+      Commit hint: cmd-040: Avalonia remote-audio parity (0.6.60)
+      Brief: .mscc-coord/briefs/cmd-040.md
   - id: cmd-039
     created: "2026-09-23T14:03:51-04:00"
     target: [rpi]
