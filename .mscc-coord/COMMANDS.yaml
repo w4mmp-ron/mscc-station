@@ -121,6 +121,71 @@ commands:
 
       Commit hint: cmd-034: remote_mic clear-on-TX + fixed 2:1 fill (no nudge)
 
+  - id: cmd-033
+    created: "2026-09-22T18:57:00-04:00"
+    target: [windows-new-hp]
+    role: client
+    action: tx-set-by-server-no-tune-and-remote-audio-independence
+    status_hint: pending
+    detail: |
+      Host: windows-new-hp (NEW-HP-LAPTOP).
+      Checkout: C:\Users\n8vet\OneDrive\Documents\GitHub\mscc-station
+      Orders on this host. Stew 2026-09-22 from Ron testing (docs/Ron testing bugs.docx items 2+5).
+
+      ## Why
+      When Pi local Digital + WSJT-X TX, ms-sdr sends 0xBC CMD_SET_TX_SET_BY_SERVER.
+      WPF today does:
+        TxSetByServer = v; PttOn = v; TuneMode = v;
+      with suppress around it. Faceplate lights PTT+TUN; mode goes TUNE; BW thrash;
+      power UI follows Tune Power. Real RF is digi TX on the host — dual personality.
+      Same family as Remote overloading local Phones/Digital (Ron item 2).
+
+      Hypothesis (non-binding): Shack remote "noise/mush" may have been worsened by
+      client asserting TUN-ish state while digi TX was live — fix ownership mirroring
+      regardless.
+
+      ## Goal A — 0xBC / TxSetByServer (HIGH)
+      In MainViewModel TxSetByServerReported handler:
+      1) Set TxSetByServer = v only (keeps CanUserControlTransmit / disable user PTT+TUN).
+      2) Do NOT set TuneMode from 0xBC.
+      3) Do NOT set PttOn from 0xBC (no lit PTT / no OnPttOnChanged side effects).
+      4) Audit OnPttOnChanged / OnTuneModeChanged / filter BW paths: when TxSetByServer
+         is true, never send TUN / TX_ON / tune-power / needless BW as a reaction to 0xBC.
+      5) Bump ClientVersion (expect 9.21.8).
+
+      Smoke A (Pi host + Win client, local Digital on Pi):
+      - WSJT-X TX → client: PTT+TUN stay OFF (disabled), no TuneMode, power not forced
+        to Tune Power slider; digi TX power behaves normally on host.
+      - WSJT-X RX → 0xBC=0 restores user PTT/TUN.
+      - Manual TUN/PTT still work when TxSetByServer is false.
+
+      ## Goal B — Remote vs local Phones/Digital (same cmd)
+      Ron contract:
+      A) Phones → local phones path; other two inactive (not disabled) when choosing among
+         the three top-level modes — EXCEPT when Remote is active, local Phones/Digital
+         must be disabled and must NOT show a changed/selected state from Remote.
+      B) Digital → local digi path (same independence rule).
+      C) Remote → opens Remote window; local Phones/Digital disabled, no forced radial
+         change inside Remote from main Phones/Digital.
+      D) Pressing Phones or Digital while Remote → closes/hides Remote window and
+         selects that local path (only then).
+
+      Keep the three functions separate. Remote must not overload/write local Phones/
+      Digital radials; main Phones/Digital must not poke Remote window radials.
+      DigitalControlsEnabled already ties to !RemoteAudio — harden so Remote does not
+      leave stale selected chrome on Phones/Digital, and Remote window Phones/Digital
+      are independent of main console buttons.
+
+      Smoke B: enter Remote → main Phones/Digital disabled, no false selected state;
+      Remote window Phones/Digital work alone; exit via main Phones or Digital → Remote
+      hides and that local path is selected.
+
+      ## Out of scope
+      Avalonia port (ticket follow-on unless trivial mirror). Server/ms-sdr 0xBC payload
+      changes. Item 3 Proficio/Geminus-on-PTT question (Stew answer later). Aesthetics.
+      New Windows installer unless Stew asks after smoke.
+
+      Commit hint: cmd-033: 0xBC ownership only; Remote vs local audio independence (WPF 9.21.8)
   - id: cmd-032
     created: "2026-09-21T18:16:00-04:00"
     target: [ubuntu-stew, rpi]
