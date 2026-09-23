@@ -1,4 +1,67 @@
 commands:
+  - id: cmd-037
+    created: "2026-09-23T12:50:00-04:00"
+    target: [windows-new-hp]
+    role: client
+    action: wpf-remotemic-60ms-prefill-cushion
+    status_hint: pending
+    detail: |
+      Host: windows-new-hp (NEW-HP-LAPTOP).
+      Checkout: C:\Users\n8vet\OneDrive\Documents\GitHub\mscc-station
+      Orders on this host. Stew 2026-09-23 / Build Commander survey.
+
+      ## Why
+      cmd-036 done (d26c7a7, Client 9.23.0): WaveIn enqueues; MsccMicTx
+      blocks for 480 frames then UDP; 500 ms ring; eight 10 ms WaveIn buffers.
+      Huge SA improvement. WSPR full TX clean. FT8/JT9/JT65 still intermittent
+      skirt pulses (every few seconds to much longer in a 1 min TX).
+
+      Build memory / Build note: 500 ms ring is drained to the next packet —
+      not a standing cushion. A late WaveIn callback still opens a hole on
+      the wire; Pi hold-last paints the remaining bump. Recommended harden:
+      keep ~60 ms queued and ship from that cushion across a late callback,
+      still on the capture clock (~60 ms extra delay). Stew left cushion
+      choice to Overseer — LOCKED: 60 ms (not halfway).
+
+      cmd-035 local Win gate stays done. cmd-034 Pi / sdrcore-trans remote
+      stay out of scope.
+
+      ## Goal (WPF client RemoteMicSender only)
+      60 ms send pre-fill / start cushion before first UDP after Start
+      (and after any intentional restart of the send path): wait until the
+      ring holds >= ~60 ms of mono PCM (~2880 samples @ 48 kHz, or 6x480
+      frames) before sending the first packet; then continue 10 ms paced
+      sends as today (block for 480, one MSA1 UDP, capture-clock paced).
+
+      On underrun (sender waiting, not enough samples for the next 480):
+      prefer silence packet or skip send — do NOT invent smear/hold-last
+      on the client. Count underruns and overflows in the existing log
+      cadence (peak=/drops= style) so Stew/Build can correlate with SA pulses.
+
+      Keep MSA1 framing, port 9101, Pi host unchanged.
+
+      ## Survey anchors (post cmd-036 — implement against these)
+      - Class: mscc-ui/windows-work-tree/mscc-mscc/mscc-new/src/MSCC.Wpf/RemoteAudio/RemoteMicSender.cs
+      - Ring: short[FramesPerPacket * 50] = 500 ms @ 48 kHz
+      - WaveIn: BufferMilliseconds=10, NumberOfBuffers=8 (80 ms driver)
+      - SendLoop: Monitor.Wait until _ringCount >= FramesPerPacket (480), then send
+      - Overflow: full ring drops whole callback (+_ringDrops); no underrun counter yet
+      - Log: first pkt and every 500 pkts — "Mic TX N pkts → ep peak= drops="
+      - Sibling out of scope: mscc-remote-audio/.../RemoteMicSender.cs
+
+      ## Out of scope
+      Pi host fill/hold-last/remote_mic.c. cmd-034. Windows sdrcore-trans
+      (cmd-035). Avalonia LinuxMicSender. MsccRemotePhones. Protocol/port/host.
+
+      ## Version / smoke
+      Bump WPF ClientVersion (calendar M.D.I; today still 9.23 — expect
+      9.23.1 next iteration, or next calendar increment if house script says so).
+      Smoke: Win→Pi Remote Digital FT8 CQ + longer JT65/JT9 — pulses
+      gone/reduced; WSPR still clean; quick local Digital TUNE regress
+      (cmd-035 gate still OK).
+
+      Commit hint: cmd-037: WPF RemoteMicSender 60ms prefill cushion
+      Brief: .mscc-coord/briefs/cmd-037.md
   - id: cmd-036
     created: "2026-09-23T11:54:00-04:00"
     target: [windows-new-hp]
