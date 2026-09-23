@@ -12,9 +12,11 @@ On start: `git pull`, then read [`handoff.md`](handoff.md). If `.mscc-coord/COMM
 
 ## Current work
 
-**Active - cmd-034 (rpi):** remote_mic clear-on-TX + short mute + fixed 2:1 fill (no adaptive nudge / no hold-last). Mirror `linux/`. See `.mscc-coord/COMMANDS.yaml`.
+**Active - cmd-039 (rpi):** `remote_mic` diagnostic-only finer EVENT logging (under/hold-last, overflow, adaptive step, low occ, optional UDP gap); keep periodic summary; ms in body; tag `remote_mic EVENT`. **Do not** implement cmd-034 fill. See `.mscc-coord/COMMANDS.yaml` + `briefs/cmd-039.md`.
 
-**Recently done:** cmd-033 WPF 9.22.0 (0xBC ownership; Remote vs local audio). cmd-032 mscc 1.0.44 + stream reset.
+**On hold:** cmd-034 clear-on-TX + fixed 2:1 fill.
+
+**Peer (other host):** cmd-038 WPF Mic TX EVENT logging on NEW-HP — not this checkout.
 
 ## Who / where
 
@@ -94,15 +96,21 @@ When a kit is built, copy the newest file into `installers/<platform>/`. History
 
 ## Current work (2026-09-23)
 
-### Active - cmd-034 (rpi)
+### Active - cmd-039 (rpi)
 
-Remote Digital CQ mush: clear MSA1 ring on TX ON + ~40 ms mute gate; lock
-`remote_mic_fill_stereo_96k` step at 0.5; underrun → silence. Mirror linux/.
-Stew smokes NEW-HP → Pi on SA after install to `$HOME/mscc`.
+Finer `remote_mic` EVENT logging only (under/hold-last, overflow/drop, adaptive
+48→96 step, low occ, optional UDP gap). Greppable `remote_mic EVENT` with ms in
+body. Keep first+every-500 summary. Edit `rpi/SDRcore-trans-linux/sources/remote_mic.c`.
+Install `$HOME/mscc`. Optional package 1.0.44 → 1.0.45. **No fill algorithm change.**
+
+### On hold - cmd-034 (rpi)
+
+Clear-on-TX + fixed 2:1 + silence on underrun — do not implement while 039 ships.
 
 ### Done recently
 
-cmd-033 WPF 9.22.0; cmd-032 mscc 1.0.44; cmd-031 remote_mic stream reset on REMOTE open.
+cmd-033 WPF 9.22.0; cmd-032 mscc 1.0.44; cmd-031 remote_mic stream reset.
+
 
 ## Hard don’ts
 

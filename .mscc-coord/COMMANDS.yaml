@@ -1,4 +1,52 @@
 commands:
+  - id: cmd-039
+    created: "2026-09-23T14:03:51-04:00"
+    target: [rpi]
+    role: server
+    action: remote-mic-finer-event-logging
+    status_hint: pending
+    detail: |
+      Host: rpi (raspberrypi). Checkout: /home/pi/src/mscc-station
+      Orders on this host. Stew 2026-09-23 / Build Commander survey.
+      Pi-side only (rpi/ live tree). Do NOT implement cmd-034 fill changes.
+      Do NOT mirror linux/ unless a shared file forces it (it does not).
+
+      ## Why
+      Win→Ubuntu Remote Digital clean; Win→Pi residual SA skirt bump ~35s into
+      recording / ~8s before end of 60s JT65. Client Mic TX often drops=0
+      underruns=0 (cmd-038 WPF EVENT logging ordered on NEW-HP). Pi host today
+      only logs remote_mic summary every 500 pkts (~5s); overflow in
+      ring_write_one is silent; hold-last + adaptive 0.488–0.512 step leave no
+      greppable EVENT. print_time() is UTC second-only — need ms in message body.
+      Live log already shows occ=16383 (full ring) with under=0 for long stretches.
+
+      ## Goal (diagnostic logging ONLY)
+      No fill / hold-last / clear-on-TX / mute / rate / port / MSA1 change.
+      cmd-034 stays ON HOLD.
+
+      Log immediate or tightly rate-limited greppable lines tagged
+      "remote_mic EVENT …" with ms in body (mono_ms= and/or t=HH:MM:SS.mmm):
+      - underrun / hold-last path in remote_mic_fill_stereo_96k
+      - overflow/drop in ring_write_one (batch/rate-limit; not per-sample)
+      - adaptive step != 0.5 (or step changes) — rate-limit
+      - low occ / cushion (e.g. < RING/8) — rising-edge or ~50–100 ms limit
+      - large UDP arrival gaps if easy (g_last_pkt_ms / now_ms)
+
+      Keep existing first+every-500 pkt summary (ok/bad/occ/under/peak).
+
+      ## Files
+      - rpi/SDRcore-trans-linux/sources/remote_mic.c
+      - rpi/SDRcore-trans-linux/sources/remote_mic.h  (only if needed)
+      Do NOT edit linux/ remote_mic this cmd.
+      Do NOT implement cmd-034 hooks in udp_thread.c.
+
+      ## Version / verify
+      Live install $HOME/mscc/sdrcore-trans. Optional kit bump 1.0.44 → 1.0.45.
+      strings $HOME/mscc/sdrcore-trans | grep 'remote_mic EVENT'
+      Smoke: JT65 Remote Digital; grep EVENT in ~/.local/mscc/sdrcore-trans.log
+
+      Commit hint: cmd-039: remote_mic finer EVENT logging (diagnostic)
+
   - id: cmd-034
     created: "2026-09-23T10:17:00-04:00"
     target: [rpi]
