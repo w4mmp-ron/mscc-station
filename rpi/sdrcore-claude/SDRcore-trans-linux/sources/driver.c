@@ -107,14 +107,10 @@ float Driver_Get_QRO_Power() {
             configured_drive = get_QRO_power_level(G_band, CW_POWER);
             break;
         case 'L':
-            configured_drive = (G_audio_mode == DIGITAL_AUDIO || G_audio_mode == REMOTE_DIGITAL_AUDIO)
-                ? get_QRO_power_level(G_band, TUNE_POWER)
-                : get_QRO_power_level(G_band, LSB_POWER);
+            configured_drive = get_QRO_power_level(G_band, LSB_POWER);
             break;
         case 'U':
-            configured_drive = (G_audio_mode == DIGITAL_AUDIO || G_audio_mode == REMOTE_DIGITAL_AUDIO)
-                ? get_QRO_power_level(G_band, TUNE_POWER)
-                : get_QRO_power_level(G_band, USB_POWER);
+            configured_drive = get_QRO_power_level(G_band, USB_POWER);
             break;
         case 'A':
             configured_drive = get_QRO_power_level(G_band, LSB_POWER);
@@ -145,15 +141,10 @@ float Driver_Get_QRP_Power() {
             configured_drive = get_QRP_power_level(G_band, CW_POWER);
             break;
         case 'L':
-            configured_drive = (G_audio_mode == DIGITAL_AUDIO || G_audio_mode == REMOTE_DIGITAL_AUDIO)
-                ? get_QRP_power_level(G_band, TUNE_POWER)
-                : get_QRP_power_level(G_band, LSB_POWER);
+            configured_drive = get_QRP_power_level(G_band, LSB_POWER);
             break;
         case 'U':
-            /* WSJT is USB. SSB bank is often 50%; TUNE is 100% / QRP CAL. */
-            configured_drive = (G_audio_mode == DIGITAL_AUDIO || G_audio_mode == REMOTE_DIGITAL_AUDIO)
-                ? get_QRP_power_level(G_band, TUNE_POWER)
-                : get_QRP_power_level(G_band, USB_POWER);
+            configured_drive = get_QRP_power_level(G_band, USB_POWER);
             break;
         case 'A':
             configured_drive = get_QRP_power_level(G_band, LSB_POWER);
