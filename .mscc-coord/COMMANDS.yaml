@@ -1,29 +1,97 @@
 commands:
+  - id: cmd-042
+    created: "2026-09-25T16:20:00-04:00"
+    target: [windows-new-hp, ubuntu-stew, rpi]
+    role: server
+    action: sdrcore-recv-hicut-idx5-6-mscc-1045
+    status_hint: pending
+    detail: |
+      Server half of cmd-041 (Stew chose option A 2026-09-25). Call the user Stew.
+      Each host commits locally and does NOT push; Stew pushes between hosts.
+      Order: NEW-HP (cmd-041 + cmd-042 Windows) -> Stew pushes -> ubuntu-stew ->
+      Stew pushes -> rpi. Do NOT update the RPi Grok Build app.
+
+      ## Change (additive only; 0..4 untouched)
+      In CMD_SET_BW_HICUT (0xD1) switch add:
+          case 5: high_cut = 1400.0f; previous_high_cut = high_cut; break;
+          case 6: high_cut = 1000.0f; previous_high_cut = high_cut; break;
+      Files (pre-change lines):
+        mscc-ui/windows-work-tree/SDRcore-recv/sources/udp_thread.c  :1394
+        linux/SDRcore-recv-linux/sources/udp_thread.c                :1519
+        rpi/SDRcore-recv-linux/sources/udp_thread.c                  :1519
+      Recv version: extern.h VERSION_MINOR 140 -> 141 in each tree (all are 3.140).
+      Log line after the switch already prints Low/High; no other change.
+
+      ## Survey: other consumers (no change needed)
+      - ms-sdr (Win MKII + linux/rpi ms-sdr-linux) user_controls.c: NO clamp.
+        0xD1 -> SDRcore_recv_send_param + Filter_High_index = value (uint8_t)
+        (Win :1264-1267, linux :1309-1312, rpi :1307-1310). Persisted as
+        FILTER_HIGH_INDEX (load :255-258; save :775 Win / :780 linux).
+        On connect re-sent to recv 0xD1 (:574 Win / :576 linux) and to the GUI as
+        0xDD default (:651 / :657). 5/6 store and replay fine once recv knows them.
+      - The GUI 0xDD echo is guarded WPF-side in cmd-041 (5-item default listbox).
+        Avalonia clamps reported default to 0..4 (MainViewModel.cs:6520); out of
+        scope, note only.
+      - SDRcore-trans: no 0xD1 handler (TX hicut is 0xD3). No change.
+      - mscc-init copies (standalone init/cal tool) have the same switch: out of scope.
+      - Solidus/ tree: not live; do not edit.
+
+      ## windows-new-hp (with cmd-041)
+      Build SDRcore-recv/SDRcore.vcxproj (config MFC|Win32, v143) -> OutDir
+      mscc-ui/Release/windows-wpf/mscc-recv.exe (tracked in git, same as the
+      Mscc-trans.exe in cmd-035). Stop MSCC, copy mscc-recv.exe to C:\mscc-net9\,
+      restart. Commit source + Release exe. Optional installers/windows kit if
+      house style rebuilds it with the WPF client.
+
+      ## ubuntu-stew (amd64)
+      Checkout /home/stew/Documents/GitHub/mscc-station. git pull first.
+      Edit linux/ only. mscc stop; ./linux-build/mscc-linux.sh build (-> $HOME/mscc).
+      Bump linux/mscc-deb/packaging/DEBIAN/control 1.0.44 -> 1.0.45.
+      ./linux-build/build-mscc-deb-amd64.sh -> mscc_1.0.45_amd64.deb; drop into
+      installers/linux/ (drop-installers.sh). Install/restart the stack for smoke.
+
+      ## rpi (arm64)
+      Checkout /home/pi/src/mscc-station. git pull first.
+      Edit rpi/ only. mscc stop; cd rpi/SDRcore-recv-linux && make clean && make.
+      Copy ONLY $HOME/mscc/sdrcore-recv into rpi/mscc-binaries/ (leave trans/ms-sdr).
+      Bump rpi/mscc-deb/packaging/DEBIAN/control 1.0.44 -> 1.0.45.
+      cd rpi/mscc-deb && ./build-deb.sh -> mscc_1.0.45_arm64.deb; copy to
+      installers/rpi/ (+ rpi/Rpi-installers/ if still the Ron drop). mscc start.
+
+      ## Smoke
+      - Local Windows: DIG-U Hi 1.0k/1.4k audibly narrows (noise/adjacent drop);
+        recv log "CMD_SET_BW_HICUT ... High: 1000.000000" / 1400.
+      - Remote Win client -> Ubuntu host, then -> Pi host after kits: same.
+      - Index 0..4 unchanged (5.5/4.0/3.0/2.7/2.4 as before).
+      - Restart with 5/6 last stored (FILTER_HIGH_INDEX=6): recv comes back at 1000 Hz.
+
+      ## Out of scope
+      WPF (cmd-041), Avalonia, ms-sdr, SDRcore-trans, mscc-init, CAT, cmd-034, UI kits.
+
+      Commit hints:
+        cmd-042: SDRcore-recv hicut idx 5/6 (Windows mscc-recv 3.141)
+        cmd-042: mscc 1.0.45 amd64 (recv hicut 1.4k/1.0k)
+        cmd-042: mscc 1.0.45 arm64 (recv hicut 1.4k/1.0k)
+      Brief: .mscc-coord/briefs/cmd-042.md
   - id: cmd-041
     created: "2026-09-25T16:10:00-04:00"
     target: [windows-new-hp]
     role: client
     action: wpf-digu-narrow-hicut-1k0-1k4
-    status_hint: pending-gated
+    status_hint: pending
     detail: |
       Host: windows-new-hp (NEW-HP-LAPTOP).
       Checkout: C:\Users\n8vet\OneDrive\Documents\GitHub\mscc-station
       Orders on this host. Stew 2026-09-25 / Build Commander survey.
       Call the user Stew. Commit on NEW-HP when done. Do NOT git push (Stew pushes).
 
-      ## GATE (read first)
-      The RX passband is applied by the SERVER (SDRcore-recv), not by WPF.
-      WPF sends CMD_SET_BW_HICUT (0xD1) as an INDEX; SDRcore-recv maps
-      0=5500 1=4000 2=3000 3=2700 4=2400 and has NO case for 5/6
-      (windows-work-tree/SDRcore-recv/sources/udp_thread.c:1394,
-      linux/ + rpi/ SDRcore-recv-linux/sources/udp_thread.c:1519).
-      Unknown index -> high_cut keeps its last value (0.0f if none since start),
-      so a WPF-only change narrows only the display, not fldigi audio, and a
-      persisted idx 5/6 re-sent at startup could zero the high edge.
-      Build: implement + commit only after Stew confirms either
-        (A) companion server cmd adds 0xD1 idx 5=1400, 6=1000 (Win/linux/rpi), or
-        (B) he accepts WPF-side only for now (display-only; do not ship to the user).
-      Index contract for this cmd: 5 = 1.4 kHz, 6 = 1.0 kHz.
+      ## Decision (Stew 2026-09-25): option A, paired with cmd-042
+      The RX passband is applied by SDRcore-recv, which maps the 0xD1 INDEX to Hz
+      (0=5500 1=4000 2=3000 3=2700 4=2400). cmd-042 adds 5=1400 and 6=1000 in all
+      three SDRcore-recv trees. Build cmd-041 together with cmd-042 (Windows part) on
+      NEW-HP. Audio narrowing is expected to pass once the cmd-042 Windows mscc-recv.exe
+      is deployed (Remote: once the cmd-042 Ubuntu/Pi kits are installed).
+      Index contract: 5 = 1.4 kHz, 6 = 1.0 kHz.
 
       ## Why
       fldigi CW user on DIG-U finds the narrowest Hi (2.4 kHz) too wide.
@@ -59,8 +127,17 @@ commands:
         (shared with Avalonia - additive only; Avalonia never sends those Hz)
 
       ## Out of scope
-      Avalonia UI, Linux/Pi, any server (SDRcore-recv/ms-sdr), CAT/Kenwood,
-      Lo list, CW filter, Tx hicut, default filter listboxes, cmd-038.
+      Avalonia UI, Linux/Pi, CAT/Kenwood, Lo list, CW filter, Tx hicut,
+      default filter listbox contents, cmd-038. Server edits live in cmd-042.
+
+      ## Guard: 0xDD default echo (found in cmd-042 survey)
+      ms-sdr stores the last 0xD1 in Filter_High_index (persisted as FILTER_HIGH_INDEX)
+      and on connect sends it to the GUI as CMD_SET_BW_HICUT_DEFAULT (0xDD).
+      WPF DefaultHighCutIndexReported (MainViewModel.cs:5630) puts it straight into
+      HighCutDefaultIndex, which drives the 5-item default listbox (:1082) and echoes
+      0xDD (:4749). A reported 5/6 would be out of range there: WPF can coerce to -1,
+      echo -1, and ms-sdr would store 255. Fix: ignore reported idx > 4 (log only,
+      no echo), and never send a default index < 0 or > 4.
 
       ## Version / smoke
       Client version auto-bumps on build (bump-client-version.ps1, M.D.I).
@@ -68,7 +145,9 @@ commands:
       Smoke: DIG-U cycle shows 1.4KHz and 1.0KHz; waterfall passband Lo..1400/1000;
       log "Send high cut index: 5/6"; restart keeps DIG-U Hi; USB/LSB/AM/CW never
       show 5/6 and USB after DIG-U 1.0k shows its own profile; favorites/last-used ok.
-      Audio narrowing only with option (A) server.
+      Audio: with cmd-042 Windows mscc-recv.exe deployed, 1.0k/1.4k audibly narrower
+      (noise/adjacent drop); recv log "CMD_SET_BW_HICUT ... High: 1000.000000".
+      Default HIGH listbox still 5 items and not blanked after connect with 6 stored.
 
       Commit hint: cmd-041: WPF DIG-U Hi 1.4k/1.0k filter options
       Brief: .mscc-coord/briefs/cmd-041.md

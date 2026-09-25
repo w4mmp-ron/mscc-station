@@ -16,7 +16,7 @@ On start: `git pull`, then read [`handoff.md`](handoff.md). If `.mscc-coord/COMM
 
 **On hold:** cmd-034 clear-on-TX + fixed 2:1 fill.
 
-**New on NEW-HP - cmd-041 (WPF, gated):** DIG-U Hi filter adds 1.4 kHz / 1.0 kHz (idx 5/6). Server SDRcore-recv 0xD1 lacks idx 5/6, so wait for Stew's gate decision (A server companion / B display-only). See `.mscc-coord/COMMANDS.yaml` + `briefs/cmd-041.md`.
+**Active - cmd-041 + cmd-042 (DIG-U Hi 1.4k/1.0k):** NEW-HP first: cmd-041 WPF + cmd-042 Windows `mscc-recv.exe` (0xD1 idx 5=1400, 6=1000; recv 3.141). Then, after Stew pushes: **ubuntu-stew** cmd-042 `linux/` -> `mscc_1.0.45_amd64.deb`; then **rpi** cmd-042 `rpi/` -> `mscc_1.0.45_arm64.deb`. Commit locally, do not push. Do not update the RPi Grok Build app. See `.mscc-coord/briefs/cmd-041.md` + `briefs/cmd-042.md`.
 
 **Peers on NEW-HP:** cmd-038 pending/orders for WPF Mic TX EVENT logging; cmd-037, cmd-036, and cmd-035 done.
 
@@ -111,7 +111,7 @@ Clear-on-TX + fixed 2:1 + silence on underrun — do not implement while 039 shi
 
 ### Peer work on NEW-HP
 
-cmd-041: WPF DIG-U Hi 1.4k/1.0k options, orders (gated on server idx 5/6 decision).
+cmd-041: WPF DIG-U Hi 1.4k/1.0k options, orders (paired with cmd-042 Windows recv; build together).
 cmd-038: WPF `RemoteMicSender` diagnostic EVENT logging, pending/orders.
 cmd-037: WPF 60 ms mic cushion, done (`5f39a16`, 9.23.1).
 cmd-036: WPF paced mic send, done (`d26c7a7`, 9.23.0).
