@@ -393,6 +393,20 @@ int Get_IQ_Record(int band) {
     return record;
 }
 
+/* CMD_SET_MAIN_MODE wire value (0 AM, 1 LSB, 2 USB, 3 CW, 4 TUNE, 5 FM) -> proficio_table mode slot.
+ * Returns -1 if the mode has no power slot (e.g. 6 = 'D'). */
+int Get_Power_Mode_Index(uint8_t wire_mode) {
+    switch (wire_mode) {
+        case 0: return AM_POWER;
+        case 1: return LSB_POWER;
+        case 2: return USB_POWER;
+        case 3: return CW_POWER;
+        case 4: return TUNE_POWER;
+        case 5: return FM_POWER;
+    }
+    return -1;
+}
+
 void *UDP_Thread(void *my_param) {
     int status = 0;
     float freq = 0.0f;
@@ -800,15 +814,23 @@ void *UDP_Thread(void *my_param) {
                         line_number++, transceiver_calibration_band, transceiver_calibration_index);
                 break;
 
-            case CMD_SET_BAND_POWER_POWER:
+            case CMD_SET_BAND_POWER_POWER: {
+                int power_index = Get_Power_Mode_Index(mode);
                 print_time();
                 fprintf(G_fp_logfile, "[%d] UDP Thread. CMD_SET_BAND_POWER_POWER. Called\n", line_number++);
-                proficio_table[transceiver_calibration_index].mode[mode].calibration_value = t_opcode_data;
+                if (power_index < 0) {
+                    print_time();
+                    fprintf(G_fp_logfile, "[%d] UDP Thread. CMD_SET_BAND_POWER_POWER. No power slot for mode %d. Ignored\n",
+                            line_number++, mode);
+                    break;
+                }
+                proficio_table[transceiver_calibration_index].mode[power_index].calibration_value = t_opcode_data;
                 G_power_file_needs_updated = 1;
                 print_time();
-                fprintf(G_fp_logfile, "[%d] UDP Thread. CMD_SET_BAND_POWER_POWER. Finished. Calibration Band: %d, Mode: %d, Power: %d\n",
-                        line_number++, transceiver_calibration_band, mode, t_opcode_data);
+                fprintf(G_fp_logfile, "[%d] UDP Thread. CMD_SET_BAND_POWER_POWER. Finished. Calibration Band: %d, Mode: %d, Slot: %d, Power: %d\n",
+                        line_number++, transceiver_calibration_band, mode, power_index, t_opcode_data);
                 break;
+            }
                 //End of commands for calibrating the Proficio
 
             case CMD_SET_PCB_VERSION:
@@ -957,6 +979,14 @@ void *UDP_Thread(void *my_param) {
 
             case CMD_SET_IQ_BAND:
                 iq_band = Get_IQ_Record(s_opcode_data);
+                if (iq_band < 0 || iq_band >= 12) {
+                    /* Unknown band: Get_IQ_Record returns NO_IQ_BAND (200); G_iq_stack has 12 entries. */
+                    print_time();
+                    fprintf(G_fp_logfile, "[%d] UDP Thread. CMD_SET_IQ_BAND. Unknown band %d. Ignored\n",
+                            line_number++, s_opcode_data);
+                    iq_band = NO_IQ_BAND;
+                    break;
+                }
                 G_iq_stack[iq_band].band = iq_band;
                 G_iq_stack[iq_band].record = iq_band;
                 iq_offset = G_iq_stack[iq_band].iq_offset;
