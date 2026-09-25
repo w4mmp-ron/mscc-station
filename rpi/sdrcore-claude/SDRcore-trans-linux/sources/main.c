@@ -361,12 +361,16 @@ static int sdrIqPlayOnlyCallback(const void *inputBuffer, void *outputBuffer,
         return paContinue;
 
     G_DSP_Busy = TRUE;
-    if (mystate.opmode == MODE_TUNE || mystate.opmode == MODE_CW) {
-        process_mic_to_iq(NULL, (SAMPLE *)outputBuffer, framesPerBuffer, 0);
-    } else if ((G_audio_mode == REMOTE_AUDIO || G_audio_mode == REMOTE_DIGITAL_AUDIO) &&
-               remote_mic_ready()) {
+    if ((G_audio_mode == REMOTE_AUDIO || G_audio_mode == REMOTE_DIGITAL_AUDIO) &&
+        remote_mic_ready()) {
+        /* Drain the remote ring in TUNE too, or it fills and the next TX starts stale. */
         remote_mic_fill_stereo_96k(micbuf, (unsigned)framesPerBuffer);
-        process_mic_to_iq(micbuf, (SAMPLE *)outputBuffer, framesPerBuffer, 2);
+        if (mystate.opmode == MODE_TUNE || mystate.opmode == MODE_CW)
+            process_mic_to_iq(NULL, (SAMPLE *)outputBuffer, framesPerBuffer, 0);
+        else
+            process_mic_to_iq(micbuf, (SAMPLE *)outputBuffer, framesPerBuffer, 2);
+    } else if (mystate.opmode == MODE_TUNE || mystate.opmode == MODE_CW) {
+        process_mic_to_iq(NULL, (SAMPLE *)outputBuffer, framesPerBuffer, 0);
     } else {
         mic_ring_read(micbuf, framesPerBuffer);
         process_mic_to_iq(micbuf, (SAMPLE *)outputBuffer, framesPerBuffer, 2);

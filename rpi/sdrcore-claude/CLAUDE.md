@@ -55,8 +55,18 @@ See also `rpi/mscc-deb/BUILD-SERVERS-ON-PI.md`.
 - 2026-09-25 fix "low power in digital" (regression from Stew's remote-audio commit
   3ec263a, 2026-09-16; copied to rpi in c36fbf0). Compiled x86 in WSL, no warnings;
   NOT yet built on the Pi or tested:
-  3. `driver.c`: USB/LSB always use USB_POWER/LSB_POWER (digital had switched to TUNE_POWER).
+  3. `driver.c` (VERIFIED on air 2026-09-25: full power, follows SSB slider; digital mic gain needs turning down): USB/LSB always use USB_POWER/LSB_POWER (digital had switched to TUNE_POWER).
   4. `dsputils.c` `framesToComplex`: local DIGITAL_AUDIO (0) back on the analog gain
      (6.324 stereo / 3.162 mono); REMOTE_AUDIO (2) and REMOTE_DIGITAL_AUDIO (3) stay 2.5.
+- 2026-09-25 remote mic (Pi host FT8 "skirt bump", cmd-039 context). Compiled x86,
+  10-min simulation at -250..+250 ppm drift: no skips/underruns, trim tracks drift.
+  NOT yet built on the Pi or tested on air. Not committed.
+  5. `remote_mic.c` fill: old 0.8 %/2.4 % rate steps (pitch shift, toggled ~10 ms near
+     thresholds) replaced by smooth trim (max +/-300 ppm) toward 100 ms level.
+     Start / underrun: hold and prime to 100 ms. >250 ms queued: skip oldest once.
+  6. `remote_mic.c`: no file I/O in the audio callback; callback counts events, receiver
+     thread logs them (100 ms recv timeout). EVENTs now: hold_last reprime, resync,
+     primed, overflow, udp_gap (removed: adaptive step, low_occ).
+  7. `main.c` `sdrIqPlayOnlyCallback`: remote ring drained during TUNE (split streams).
 - Syntax check trick: WSL `Debian` has gcc. Use `-iquote sources -idirafter sources`
   (plain `-I sources` pulls in the Windows `pthread.h` and fails).
