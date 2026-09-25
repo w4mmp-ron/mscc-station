@@ -150,10 +150,93 @@ static PaStream *stream_out = NULL; /* play-only when split */
 static MsccResampler *g_play_resampler = NULL; /* NULL = identity (same rate) */
 static double g_play_rate = 0.0; /* actual play stream rate; 0 until open */
 
+/*
+ * Ring reader: the I/Q (radio) clock writes, the play device clock reads.
+ * Prime to DIGI_RING_TARGET before reading, trim the read rate by at most
+ * +/-300 ppm (linear interpolation) to follow clock drift, skip back to the
+ * target if too much builds up, re-prime on underrun. Without this the ring
+ * ran empty or full every few minutes (~21 ms dropout).
+ */
+#define DIGI_RING_TARGET      6144u   /* 64 ms @ 96 kHz: 3 I/Q blocks */
+#define DIGI_RING_RESYNC_HIGH 13000u
+#define DIGI_TRIM_MAX         300e-6f
+#define DIGI_TRIM_GAIN        1500e-6f
+#define DIGI_LEVEL_ALPHA      0.005f
+
+static int g_digi_priming = 1;
+static float g_digi_level_f;
+static float g_digi_step = 1.0f;
+static float g_digi_frac;
+static float g_digi_h0[2], g_digi_h1[2];
+
 static void digi_ring_reset(void)
 {
     g_digi_w = 0;
     g_digi_r = 0;
+    g_digi_priming = 1;
+    g_digi_level_f = 0.0f;
+    g_digi_step = 1.0f;
+    g_digi_frac = 0.0f;
+    g_digi_h0[0] = g_digi_h0[1] = 0.0f;
+    g_digi_h1[0] = g_digi_h1[1] = 0.0f;
+}
+
+static unsigned digi_ring_level(void)
+{
+    unsigned w = g_digi_w, r = g_digi_r;
+    return (w + DIGI_RING_FRAMES - r) % DIGI_RING_FRAMES;
+}
+
+/* Once per play callback: prime / resync / rate trim. */
+static void digi_ring_begin_block(void)
+{
+    unsigned occ = digi_ring_level();
+    float trim;
+
+    if (g_digi_priming && occ >= DIGI_RING_TARGET) {
+        g_digi_priming = 0;
+        g_digi_level_f = (float)occ;
+    }
+    if (!g_digi_priming && occ > DIGI_RING_RESYNC_HIGH) {
+        g_digi_r = (g_digi_r + (occ - DIGI_RING_TARGET)) % DIGI_RING_FRAMES;
+        occ = DIGI_RING_TARGET;
+        g_digi_level_f = (float)occ;
+    }
+    g_digi_level_f += DIGI_LEVEL_ALPHA * ((float)occ - g_digi_level_f);
+    trim = DIGI_TRIM_GAIN * (g_digi_level_f - (float)DIGI_RING_TARGET) / (float)DIGI_RING_TARGET;
+    if (trim > DIGI_TRIM_MAX)
+        trim = DIGI_TRIM_MAX;
+    if (trim < -DIGI_TRIM_MAX)
+        trim = -DIGI_TRIM_MAX;
+    g_digi_step = 1.0f + trim;
+}
+
+/* One stereo frame at the ring rate (x step). Silence while priming. */
+static void digi_ring_next_frame(float frame[2])
+{
+    if (!g_digi_priming) {
+        while (g_digi_frac >= 1.0f) {
+            unsigned r = g_digi_r;
+            g_digi_h0[0] = g_digi_h1[0];
+            g_digi_h0[1] = g_digi_h1[1];
+            if (r == g_digi_w) {
+                /* Underrun (or I/Q stopped for TX): silence and re-prime. */
+                g_digi_h0[0] = g_digi_h0[1] = 0.0f;
+                g_digi_h1[0] = g_digi_h1[1] = 0.0f;
+                g_digi_frac = 0.0f;
+                g_digi_priming = 1;
+                break;
+            }
+            g_digi_h1[0] = g_digi_ring[r * 2u];
+            g_digi_h1[1] = g_digi_ring[r * 2u + 1u];
+            g_digi_r = (r + 1u) % DIGI_RING_FRAMES;
+            g_digi_frac -= 1.0f;
+        }
+    }
+    frame[0] = g_digi_h0[0] + (g_digi_h1[0] - g_digi_h0[0]) * g_digi_frac;
+    frame[1] = g_digi_h0[1] + (g_digi_h1[1] - g_digi_h0[1]) * g_digi_frac;
+    if (!g_digi_priming)
+        g_digi_frac += g_digi_step;
 }
 
 static void digi_ring_write(const SAMPLE *stereo, unsigned long frames)
@@ -172,30 +255,15 @@ static void digi_ring_write(const SAMPLE *stereo, unsigned long frames)
 static void digi_ring_read(SAMPLE *stereo, unsigned long frames)
 {
     unsigned long i;
-    for (i = 0; i < frames; i++) {
-        if (g_digi_r == g_digi_w) {
-            stereo[i * 2u] = 0.0f;
-            stereo[i * 2u + 1u] = 0.0f;
-        } else {
-            stereo[i * 2u] = g_digi_ring[g_digi_r * 2u];
-            stereo[i * 2u + 1u] = g_digi_ring[g_digi_r * 2u + 1u];
-            g_digi_r = (g_digi_r + 1u) % DIGI_RING_FRAMES;
-        }
-    }
+    for (i = 0; i < frames; i++)
+        digi_ring_next_frame(&stereo[i * 2u]);
 }
 
-/* One stereo frame for resampler pull (silence if ring empty). */
+/* One stereo frame for resampler pull. */
 static void digi_ring_get_frame(float frame[2], void *userdata)
 {
     (void)userdata;
-    if (g_digi_r == g_digi_w) {
-        frame[0] = 0.0f;
-        frame[1] = 0.0f;
-    } else {
-        frame[0] = g_digi_ring[g_digi_r * 2u];
-        frame[1] = g_digi_ring[g_digi_r * 2u + 1u];
-        g_digi_r = (g_digi_r + 1u) % DIGI_RING_FRAMES;
-    }
+    digi_ring_next_frame(frame);
 }
 
 static void play_resampler_destroy(void)
@@ -388,6 +456,7 @@ static int sdrPlayOnlyCallback(const void *inputBuffer, void *outputBuffer,
     (void)userData;
     if (outputBuffer == NULL)
         return paContinue;
+    digi_ring_begin_block();
     if (g_play_resampler != NULL) {
         mscc_resampler_fill_out(g_play_resampler,
             (float *)outputBuffer, (int)framesPerBuffer,

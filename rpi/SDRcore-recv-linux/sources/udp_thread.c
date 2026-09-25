@@ -557,6 +557,23 @@ float Get_Volume_Attn(int index) {
     return attenuation;
 }
 
+/* Phones (1/2) and digital (0/3) keep separate attenuation; use the one for the current mode. */
+static uint8_t Active_Volume_ATTN(void) {
+    if (G_recv_audio_mode == DIGITAL_AUDIO || G_recv_audio_mode == REMOTE_DIGITAL_AUDIO)
+        return G_Digital_Volume_ATTN;
+    return G_Volume_ATTN;
+}
+
+/* After a CW transmission, reopen the output for the current audio mode (not always phones). */
+static int Reopen_Current_Output(void) {
+    int dig = G_digital_output_device_index;
+    int op = G_output_device_index;
+    if ((G_recv_audio_mode == DIGITAL_AUDIO || G_recv_audio_mode == REMOTE_DIGITAL_AUDIO) &&
+        dig >= 0 && dig < MAX_OUTPUT_DEVICES && dig != NO_OUTPUT_DEVICE)
+        return manage_stream(1, G_digital_output_devices[dig].device_index, 2);
+    return manage_stream(1, G_output_devices[op].device_index, G_output_devices[op].num_channels);
+}
+
 int Get_IQ_Record(int band) {
     int record = 200;
     switch (band) {
@@ -817,6 +834,10 @@ void *UDP_Thread(void *my_param) {
                     break;
                 }
                 }
+                /* Mode may have switched phones <-> digital: apply that mode's attenuation. */
+                volume_attn = Get_Volume_Attn(Active_Volume_ATTN());
+                if (speaker_muted == FALSE)
+                    G_volumeLevel = master_volume * volume_attn;
                 break;
 
             case CMD_SET_REMOTE_RX_HOST:
@@ -872,7 +893,7 @@ void *UDP_Thread(void *my_param) {
 
             case CMD_SET_VOLUME_ATTN:
                 G_Volume_ATTN = t_opcode_data;
-                volume_attn = Get_Volume_Attn(t_opcode_data);
+                volume_attn = Get_Volume_Attn(Active_Volume_ATTN());
                 if (speaker_muted == FALSE) {
                     G_volumeLevel = master_volume * volume_attn;
                 }
@@ -884,7 +905,7 @@ void *UDP_Thread(void *my_param) {
 
             case CMD_SET_DIGITAL_VOLUME_ATTN:
                 G_Digital_Volume_ATTN = t_opcode_data;
-                volume_attn = Get_Volume_Attn(t_opcode_data);
+                volume_attn = Get_Volume_Attn(Active_Volume_ATTN());
                 if (speaker_muted == FALSE) {
                     G_volumeLevel = master_volume * volume_attn;
                 }
@@ -958,8 +979,7 @@ void *UDP_Thread(void *my_param) {
                                     G_output_devices[G_output_device_index].num_channels);*/
                             stream_status = manage_stream(0, G_output_devices[G_output_device_index].device_index,
                                     G_output_devices[G_output_device_index].num_channels);
-                            stream_status = manage_stream(1, G_output_devices[G_output_device_index].device_index,
-                                    G_output_devices[G_output_device_index].num_channels);
+                            stream_status = Reopen_Current_Output();
                         }
                     }
                     previous_G_tx_mode = G_tx_mode;
@@ -1294,6 +1314,14 @@ void *UDP_Thread(void *my_param) {
                 fprintf(G_fp_logfile, "[%d] UDP Thread. CMD_SET_IQ_BAND. s_opcode_data: %d \n",
                         line_number++, s_opcode_data);
                 iq_band = Get_IQ_Record(s_opcode_data);
+                if (iq_band < 0 || iq_band >= 12) {
+                    /* Unknown band: Get_IQ_Record returns NO_IQ_BAND (200); G_iq_stack has 12 entries. */
+                    print_time();
+                    fprintf(G_fp_logfile, "[%d] UDP Thread. CMD_SET_IQ_BAND. Unknown band %d. Ignored\n",
+                            line_number++, s_opcode_data);
+                    iq_band = NO_IQ_BAND;
+                    break;
+                }
                 G_iq_stack[iq_band].band = iq_band;
                 G_iq_stack[iq_band].record = iq_band;
                 iq_offset = G_iq_stack[iq_band].iq_offset;
