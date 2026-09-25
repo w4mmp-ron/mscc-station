@@ -1,4 +1,77 @@
 commands:
+  - id: cmd-041
+    created: "2026-09-25T16:10:00-04:00"
+    target: [windows-new-hp]
+    role: client
+    action: wpf-digu-narrow-hicut-1k0-1k4
+    status_hint: pending-gated
+    detail: |
+      Host: windows-new-hp (NEW-HP-LAPTOP).
+      Checkout: C:\Users\n8vet\OneDrive\Documents\GitHub\mscc-station
+      Orders on this host. Stew 2026-09-25 / Build Commander survey.
+      Call the user Stew. Commit on NEW-HP when done. Do NOT git push (Stew pushes).
+
+      ## GATE (read first)
+      The RX passband is applied by the SERVER (SDRcore-recv), not by WPF.
+      WPF sends CMD_SET_BW_HICUT (0xD1) as an INDEX; SDRcore-recv maps
+      0=5500 1=4000 2=3000 3=2700 4=2400 and has NO case for 5/6
+      (windows-work-tree/SDRcore-recv/sources/udp_thread.c:1394,
+      linux/ + rpi/ SDRcore-recv-linux/sources/udp_thread.c:1519).
+      Unknown index -> high_cut keeps its last value (0.0f if none since start),
+      so a WPF-only change narrows only the display, not fldigi audio, and a
+      persisted idx 5/6 re-sent at startup could zero the high edge.
+      Build: implement + commit only after Stew confirms either
+        (A) companion server cmd adds 0xD1 idx 5=1400, 6=1000 (Win/linux/rpi), or
+        (B) he accepts WPF-side only for now (display-only; do not ship to the user).
+      Index contract for this cmd: 5 = 1.4 kHz, 6 = 1.0 kHz.
+
+      ## Why
+      fldigi CW user on DIG-U finds the narrowest Hi (2.4 kHz) too wide.
+      KISS: add Hi 1.4 kHz and 1.0 kHz for DIG-U only; he will operate and report.
+
+      ## Goal (WPF only)
+      - DIG-U Hi cycle gains 1.4KHz and 1.0KHz after 2.4KHz (list order
+        5.5, 4.0, 3.0, 2.7, 2.4, 1.4, 1.0; idx 5 and 6).
+      - Cycle keeps the current decrement direction; in DIG-U it wraps mod 7:
+        1.0 -> 1.4 -> 2.4 -> 2.7 -> 3.0 -> 4.0 -> 5.5 -> 1.0.
+        All other modes stay mod 5 and never show idx 5/6.
+      - Lo cut unchanged (DIG-U own Lo profile; code default 300 Hz, NEW-HP ini
+        currently MODE_DIGU_LOWCUT=4 = 75 Hz). All Lo values < 1000 Hz.
+      - Existing 5 Hi choices unchanged. Rx/Tx tab default HIGH listbox stays 5
+        items (it sends 0xDD default index; Height=115, no scroll).
+
+      ## Files / anchors (pre-change line numbers)
+      MSCC.Wpf/ViewModels/MainViewModel.cs
+        :317  HighCutOptions (5; also bound to default listbox) - leave as is
+        :502  HighCutHzValues {5500,4000,3000,2700,2400}
+        :4010 CycleHighCut mod 5 -> mode-aware (7 in DIG-U)
+        :4366 ApplyModeFilterProfile label (h % 5)
+        :4454-4517 RecomputeFilterHzForCurrentCutsAndMode (HighCutHzValues[idx])
+        :4786-4819 OnHighCutIndexChanged (value % 5; label; Hz; Save profile/last-used)
+        :3318-3330 ApplyFavoriteLabels / IndexLabel (clamps to list count)
+        :5491-5539 LoadLastUsedForBand (ActiveMode then HighCutIndex)
+      MSCC.Wpf/SpectrumWaterfallSettings.cs
+        :515  ModeDigUHighCut default 4
+        :521  SaveModeFilterProfile Clamp(highCut,0,4) -> allow 0..6 for DIG-U only
+      MSCC.Wpf/MainWindow.xaml :418 Hi button (no layout change); :1082 default list
+      MSCC.Wpf/MainWindow.xaml.cs :520-533 band preset restore
+      MSCC.Core/Services/UdpRadioService.cs :686 HighCutHzToIndex add 1400->5, 1000->6
+        (shared with Avalonia - additive only; Avalonia never sends those Hz)
+
+      ## Out of scope
+      Avalonia UI, Linux/Pi, any server (SDRcore-recv/ms-sdr), CAT/Kenwood,
+      Lo list, CW filter, Tx hicut, default filter listboxes, cmd-038.
+
+      ## Version / smoke
+      Client version auto-bumps on build (bump-client-version.ps1, M.D.I).
+      From 9.23.1 expect 9.25.0 if built 2026-09-25 (unless cmd-038 builds first).
+      Smoke: DIG-U cycle shows 1.4KHz and 1.0KHz; waterfall passband Lo..1400/1000;
+      log "Send high cut index: 5/6"; restart keeps DIG-U Hi; USB/LSB/AM/CW never
+      show 5/6 and USB after DIG-U 1.0k shows its own profile; favorites/last-used ok.
+      Audio narrowing only with option (A) server.
+
+      Commit hint: cmd-041: WPF DIG-U Hi 1.4k/1.0k filter options
+      Brief: .mscc-coord/briefs/cmd-041.md
   - id: cmd-040
     created: "2026-09-23T15:00:00-04:00"
     target: [ubuntu-stew, rpi]

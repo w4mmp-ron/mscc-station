@@ -4,15 +4,16 @@
 |--|--|
 | **Host** | NEW-HP-LAPTOP (Windows) |
 | **Checkout** | `C:\Users\n8vet\OneDrive\Documents\GitHub\mscc-station` |
-| **Build** | **cmd-038** (WPF) / orders author for **cmd-040** |
-| **Last command id** | cmd-040 (orders) / cmd-038 (WPF pending) |
+| **Build** | **cmd-041** (WPF, gated) / **cmd-038** (WPF) / orders author for **cmd-040** |
+| **Last command id** | cmd-041 (orders) / cmd-038 (WPF pending) |
 | **State** | pending |
-| **Updated** | 2026-09-23 |
+| **Updated** | 2026-09-25 |
 
 ## ACK log
 
 | command id | state | note |
 |------------|-------|------|
+| cmd-041 | orders | WPF DIG-U Hi adds 1.4k/1.0k (idx 5/6). GATED: SDRcore-recv 0xD1 has no idx 5/6. Stew picks A (server companion) or B (display-only) before Build starts. |
 | cmd-040 | orders | Avalonia remote-audio parity orders + brief authored here (canonical yaml). Build target: ubuntu-stew then rpi. No Avalonia code on this host for 040. |
 | cmd-038 | pending | Orders + brief: finer Mic TX EVENT logging (diagnostic only). Awaiting Build ACK. |
 | cmd-037 | done | WPF 9.23.1, 60 ms mic cushion. Commit 5f39a16. Stew: looks great. One JT65 bump in 60 s. WPF drops=0 underruns=0. Not pushed. |
