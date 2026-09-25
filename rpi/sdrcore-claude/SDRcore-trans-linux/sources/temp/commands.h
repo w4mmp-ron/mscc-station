@@ -1,0 +1,278 @@
+#pragma once
+
+#define CMD_SET_ALC_MULTIPLIER 0x23
+#define CMD_SET_FOWARD_POWER_VALUE 0x38
+#define CMD_GET_AMP_POWER 0x05
+
+#define CMD_GET_POTENTIA_TEMPERATURE 0x06
+#define CMD_GET_POTENTIA_BIAS 0x07
+#define CMD_SET_POTENTIA_CALIBRATION 0x08
+#define CMD_SET_SDRCORE_TRANS_INITIALIZE 0x09
+#define CMD_SET_TRANS_SMETER 0x0C
+#define CMD_SET_ALC 0x4F
+
+//Special Commands
+#define SET_DLL_VERSION 0xA0
+#define SI570_DLL 0
+#define SI5351_DLL 1
+
+#define CMD_SET_TWO_TONE 0x88
+#define CMD_SET_IQ_OFFSET 0x52
+#define CMD_SET_SDR_CORE_BAND 0x53
+#define IQ_CALIBRATION_TUNE 0x54
+#define IQ_CALIBRATION_RX_TX 0x55
+#define IQ_OPERATION_COMPLETE 0x56
+#define CMD_SET_COMMIT_IQ 0x57
+#define CMD_SET_IQ_BAND  0x58
+#define CMD_GET_IQ_VALUE 0x8B
+#define CMD_SET_IQ_DEFAULTS 0x8D
+#define CMD_SET_MICROPHONE_STATUS 0x8F
+#define IQ_B2200 11
+#define IQ_B630 10
+#define IQ_B160  9
+#define IQ_B80 8 
+#define IQ_B60 7
+#define IQ_B40 6
+#define IQ_B30 5
+#define IQ_B20 4
+#define IQ_B17 3
+#define IQ_B15 2
+#define IQ_B12 1
+#define IQ_B10 0
+
+#define POWER_B160  0
+#define POWER_B80 1
+#define POWER_B60 2
+#define POWER_B40 3
+#define POWER_B30 4
+#define POWER_B20 5
+#define POWER_B17 6
+#define POWER_B15 7
+#define POWER_B12 8
+#define POWER_B10 9
+#define POWER_B630 10
+#define POWER_B2200 11
+#define NO_IQ_BAND 200
+#define POWER_CALIBRATION_VALUE 50
+
+#define COLD_TABLE 0
+#define LOW_TABLE 1
+#define MID_TABLE 2
+#define HIGH_TABLE 3
+
+#define CMD_SET_CALIBRATION_START 0x60
+#define CMD_SET_CALIBRATION_DATA 0x61
+#define CMD_SET_CALIBRATION_FINISHED 0x62
+#define CMD_SET_CAL_LOW_VALUE 0x63
+#define CMD_SET_CAL_MID_VALUE 0x64
+#define CMD_SET_CAL_HIGH_VALUE 0x65
+#define CMD_SET_CAL_DATA_PROCESSED 0x66
+#define CMD_SET_CAL_FREQUENCY 0x67
+#define CMD_SET_CAL_COURSE 0x68
+#define CMD_SET_CAL_FINE 0x69
+#define CMD_SET_CALIBRATIION_PROGRESS 0x6A
+
+
+
+#define CMD_GET_KEY_DOWN 0xA4
+#define CMD_SET_RELOAD_FILE 0xA5
+#define CMD_SET_RIG_TUNE 0xA6
+#define CMD_SET_TRANSVERTER 0xA9
+
+
+#define CMD_SET_STANDARD_CARRIER 0xAF
+#define CMD_SET_CALIBRATE 0xA7
+
+//Power Calibration
+#define CMD_SET_BAND_POWER_BAND 0xA1
+#define CMD_SET_BAND_POWER_POWER 0xA2
+#define CMD_SET_BAND_VOLUME_DEFAULTS 0xAA
+#define CMD_GET_BAND_POWER 0xB4 
+#define CMD_GET_MIA_STATUS 0xBE
+#define CMD_SET_AMPLIFIER_CALIBRATION_RESET 0x10
+
+//Band Stacking defines
+#define CMD_SET_UPDATE_BAND_STACK  0xC1
+#define CMD_GET_BAND_STACK 0xC2
+#define CMD_SET_BAND_STACK 0xC3
+#define CMD_GET_STACK_MODE 0xC4
+#define CMD_GET_STACK_FREQ 0xC5
+#define CMD_SET_BAND_STACK_INDEX 0xC6
+#define CMD_GET_BAND_STACK_BAND 0xC7
+
+#define CMD_SET_TUNE 0x90 // Used for displaying the TUNE frequency
+
+#define CMD_GET_FREQ_INIT 0xB0
+#define CMD_GET_FIRMWARE_VERSION 0xB2
+#define CMD_GET_SET_MSSDR_VERSION 0xB3
+#define CMD_GET_SET_SDRCORE_RECV_VERSION 0xB5
+#define CMD_GET_SET_SDRCORE_TRANS_VERSION 0xBD
+
+#define CMD_GET_BAND_POWER 0xB4 
+#define CMD_SET_MAIN_FREQ 0xB6
+#define CMD_SET_MAIN_MODE 0xB7
+#define CMD_GET_MODE_INIT 0xB8
+#define CMD_GET_BAND_INIT 0xB9
+#define CMD_SET_TX_ON 0xBA
+#define CMD_SET_DISPLAY_FREQ 0xBB
+#define CMD_SET_TX_SET_BY_SERVER 0xBC
+
+//last used frequency
+/*#define CMD_SET_UPDATE_LAST_USED_BAND_STACK  0xD1
+#define CMD_GET_LAST_USED_STACK 0xD2
+#define CMD_SET_LAST_USED_STACK 0xD3
+#define CMD_GET_LAST_USED_STACK_MODE 0xD4
+#define CMD_GET_LAST_USED_STACK_FREQ 0xD5
+#define CMD_SET_LAST_USED_BAND_STACK_INDEX 0xD6
+#define CMD_GET_LAST_USED_BAND_STACK_BAND 0xD7
+ */
+
+//AF Filter Bandwidth
+#define CMD_SET_BW_LOCUT 0xD0
+#define CMD_SET_BW_HICUT 0xD1
+#define CMD_SET_CW_PITCH 0xD2
+#define CMD_SET_TX_HICUT 0xD3
+#define CMD_GET_SET_SMETER 0xD4
+
+//Last Used
+#define CMD_GET_LAST_USED_FREQ 0xD7
+#define CMD_GET_LAST_USED_MODE 0xD8
+#define CMD_GET_LAST_USED_BAND 0xD9
+
+//Volume Management
+#define CMD_SET_MIC_GAIN 0xE0
+//#define CMD_SET_RIGHT_VOLUME 0xE1
+#define CMD_SET_SSB_POWER 0xE2
+#define CMD_SET_AM_CARRIER 0xE3
+#define CMD_SET_CW_POWER 0xE4
+#define CMD_SET_SPEAKER_VOLUME 0xE5
+#define CMD_SET_MIC_VOLUME 0xE6
+#define CMD_SET_SPEAKER_MUTE 0xE7
+#define CMD_SET_MIC_MUTE 0xE8
+#define CMD_SET_TUNE_POWER 0xE9
+#define CMD_SET_OVERDRIVEN 0xED
+#define CMD_SET_COMPRESSION_STATE 0xEE
+#define CMD_SET_COMPRESSION_LEVEL 0xEF
+
+
+//Audio Device Selection
+#define CMD_GET_SET_SPEAKER_DEVICE 0xEA
+#define CMD_GET_SET_MIC_DEVICE 0xEB
+#define CMD_DELETE_SDRCORE_INIT 0xEC
+
+#define CMD_SET_HDSDR_STATUS 0xF0
+#define CMD_GET_HDSDR_STATUS 0xF1
+#define CMD_SET_POWER_MODE_STATE 0xF2
+#define CMD_SET_PCB_VERSION 0xF3
+#define CMD_SET_KEEP_ALIVE 0xF4
+#define CMD_SET_PA_BYPASS 0xF7
+#define CMD_SET_AMPLIFIER_BAND 0xF9  
+#define CMD_SET_AMPLIFIER_POWER 0xFA
+#define CMD_GET_AMPLIFIER_POWER 0xFB
+#define CMD_AMPLIFIER_TUNE 0xFC
+#define CMD_SET_AMPLIFIER_DEFAULTS 0xFD
+#define CMD_GUI_RUNNING 0xFE
+#define CMD_SET_STOP 0xFF
+
+
+#define HDSDR_STATUS_TRANSMIT_ON 1
+#define HDSDR_STATUS_STOP_MODE 2
+#define HDSDR_STATUS_START_MODE 3
+#define HDSDR_STATUS_WRONG_MODULATION_MODE 4
+#define HDSDR_STATUS_TX_MODE 5
+#define HDSDR_STATUS_RX_MODE 6
+#define HDSDR_STATUS_NO_BAND 7
+#define HDSDR_STATUS_NO_POWER 8
+
+//#define	CMD_SET_TUNE 0xA6
+
+
+#define SET_CW_MODE 0x70
+#define SET_IAMBIC_MODE 0x71
+#define SET_RIT 0x72
+#define SET_CW_PADDLE 0x73
+#define SET_IAMBIC_TYPE 0x74
+#define SET_SPACING 0x75
+#define SET_MEMORY_TYPE 0x76
+#define SET_WEIGHT 0x77
+#define SET_SEMI_BREAKIN 0x78
+#define SET_SEMI_CONTROL 0x79
+#define SET_TX_HOLD 0x7A
+#define SET_WPM 0x7B
+#define SET_IAMBIC_TUNING 0x7C
+#define SET_CW_DEFAULTS 0x7D
+#define SET_CW_INTERFACE_METHOD 0x7E
+#define SET_SIDE_TONE 0x7F
+
+#define GET_IAMBIC_MODE 0x91
+#define GET_RIT 0x72 // The GUI will not call this.  Here for consistancy. 
+#define GET_CW_PADDLE 0x93
+#define GET_IAMBIC_TYPE 0x94
+#define GET_SPACING 0x95
+#define GET_MEMORY_TYPE 0x96
+#define GET_WEIGHT 0x97
+#define GET_SEMI_BREAKIN 0x98
+#define GET_SEMI_CONTROL 0x99
+#define GET_TX_HOLD 0x9A
+#define GET_WPM 0x9B
+#define GET_IAMBIC_TUNING 0x9C
+#define GET_CW_DEFAULTS 0x9D
+#define GET_CW_INTERFACE_METHOD 0x9E
+#define GET_SIDE_TONE 0x9F
+
+// CW Message Management
+#define CW_MESSAGE_SIZE 17
+#define SET_CW_RECORD_MESSAGE 0x80
+#define SET_CW_PLAY_MSG 0x81
+#define SET_CW_STOP_MSG 0x82
+
+//Iambic key type
+#define CFG_MODE_IAMBIC 0
+#define CFG_MODE_ULTIMATIC 1
+#define CFG_MODE_BUG 2
+#define CFG_MODE_STRAIGHT 3
+
+//Set Iambic mode on or off
+#define CFG_IAMBIC_OFF 0
+#define CFG_IAMBIC_ON 1
+
+// Keying memory
+#define CFG_MEMORY_TYPE_A 0
+#define CFG_MEMORY_TYPE_DAH 1
+#define CFG_MEMORY_TYPE_DIT 2
+#define CFG_MEMORY_TYPE_B 3
+
+// Keying spacing
+#define CFG_SPACING_NONE 0
+#define CFG_SPACING_EL 1
+#define CFG_SPACING_CHAR 2
+#define CFG_SPACING_WORD 3
+
+// Paddle reversal
+#define CFG_PADDLE_NORMAL 0
+#define CFG_PADDLE_REVERSE 1
+
+// Side Tone Frequency 
+#define CFG_SIDE_TONE_FREQ_600 0
+#define CFG_SIDE_TONE_FREQ_800 1
+
+
+// Character dit/dah weight - Use with SET_WEIGHT - increment or decrement by 10 to change weight
+#define CFG_WEIGHT_DIST 50
+
+//Iambic speed tuning - allows fine tuning of the Iambic keying speed
+#define CFG_IAMBIC_CALIBRATION_DEFAULT 120
+
+//Amount of time the radio is held in TX mode - Use with SET_TX_HOLD. Set this to zero(0) for full QSK keying
+#define CFG_TX_HOLD_DEFAULT 127
+
+//Semi Break In on or off - Use with SET_SEMI_BREAKIN
+#define CFG_SEMI_BREAKIN_OFF 0
+#define CFG_SEMI_BREAKIN_ON 1
+
+//Set all CW parameters to default (CW Mode is set to Off)   - Use with SET_CW_DEFAULTS
+#define CFG_CW_DEFAULTS_OFF 0
+#define CFG_CW_DEFAULTS_ON 1
+
+
+

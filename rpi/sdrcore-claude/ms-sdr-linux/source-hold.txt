@@ -1,0 +1,368 @@
+print_time(0);
+    fprintf(G_fp_logfile, "[%d] main . Calling Init_PPM \n", line_number++);
+    status = Init_PPM();
+    if (status == 1) {
+        print_time(0);
+        fprintf(G_fp_logfile, "[%d] main. Calling Freq_Set_Transceiver_Calibration \n", line_number++);
+        status = Freq_Set_Transceiver_Calibration(G_int, G_dec);
+        if (status < 0) {
+            G_transceiver_initialization_status = FALSE;
+            print_time(0);
+            fprintf(G_fp_logfile, "[%d] main. Calling Freq_Set_Transceiver_Calibration. status: %d. FAILED\n",
+                    line_number++, status);
+        }
+    } else {
+        print_time(0);
+        fprintf(G_fp_logfile, "[%d] main. Calling Init_PPM . File Not Found . Creating freq_cal.ini status: %d\n",
+                line_number++, status);
+        Create_PPM_ini();
+        status = Freq_Set_Transceiver_Calibration(G_int, G_dec);
+        if (status < 0) {
+            G_transceiver_initialization_status = FALSE;
+            print_time(0);
+            fprintf(G_fp_logfile, "[%d] main. Calling Freq_Set_Transceiver_Calibration. status: %d. FAILED\n",
+                    line_number++, status);
+        }
+    }
+	
+	//print_time(0);
+    //fprintf(G_fp_logfile, "[%d] main. Calling Init_Master_Comm_Port_File \n", line_number++);
+    //status = Init_Master_Comm_Port_File();
+	
+	/*int Start_master_controller_thread() {
+    int status = TRUE;
+    long last_used_t = 0;
+
+    print_time(0);
+    fprintf(G_fp_logfile, "[%d] main . Starting Master_Controller thread \n", line_number++);
+    G_Master_controller_rc = pthread_create(&G_Master_controller_thread, NULL, Master_controller, (void *) last_used_t);
+    if (G_Master_controller_rc) {
+        print_time(0);
+        fprintf(G_fp_logfile, "[%d] main . Start Master_controller thread failed, return code from pthread_create() is %d\n",
+                line_number++, G_Master_controller_rc);
+        status = -1;
+    } else {
+        print_time(0);
+        fprintf(G_fp_logfile, "[%d] main . Start Master_controller thread Started, return code from pthread_create() is %d\n",
+                line_number++, G_Master_controller_rc);
+    }
+    return status;
+}*/
+
+/*int Start_meter_thread() {
+    int status = TRUE;
+    long last_used_t = 0;
+
+    print_time(0);
+    fprintf(G_fp_logfile, "[%d] main . Starting Meter_main thread \n", line_number++);
+    G_Meter_main_rc = pthread_create(&G_Meter_main_thread, NULL, Meter_main, (void *) last_used_t);
+    if (G_Meter_main_rc) {
+        print_time(0);
+        fprintf(G_fp_logfile, "[%d] main . Start Meter_main thread failed, return code from pthread_create() is %d\n",
+                line_number++, G_Meter_main_rc);
+        status = -1;
+    } else {
+        print_time(0);
+        fprintf(G_fp_logfile, "[%d] main . Start Meter_main thread Started, return code from pthread_create() is %d\n",
+                line_number++, G_Meter_main_rc);
+    }
+    return status;
+}*/
+
+/*int Start_iqbd_thread() {
+    long t;
+    int status = 1;
+
+    print_time(0);
+    fprintf(G_fp_logfile, "[%d] main . Starting iqbd thread \n", line_number++);
+    G_IQBD_rc = pthread_create(&G_IQBD_thread, NULL, iqbd, (void *) t);
+    if (G_IQBD_rc) {
+        print_time(0);
+        fprintf(G_fp_logfile, "[%d] main . Start iqbd thread failed, return code from pthread_create() is %d\n",
+                line_number++, G_IQBD_rc);
+        status = -1;
+    } else {
+        print_time(0);
+        fprintf(G_fp_logfile, "[%d] main . Start iqbd thread Started, return code from pthread_create() is %d\n",
+                line_number++, G_IQBD_rc);
+    }
+    return status;
+}*/
+
+/*int Start_Solidus_Temperature_thread() {
+    long t;
+    int status = 1;
+
+    print_time(0);
+    fprintf(G_fp_logfile, "[%d] main . Starting Check_Potentia_Temperature thread \n", line_number++);
+    G_Check_Power_rc = pthread_create(&G_Power_thread, NULL, Check_Potentia_Temperature, (void *) t);
+    if (G_Check_Power_rc) {
+        print_time(0);
+        fprintf(G_fp_logfile, "[%d] main . Start Check_Potentia_Temperature thread failed, return code from pthread_create() is %d\n",
+                line_number++, G_Check_Power_rc);
+        status = -1;
+    } else {
+        print_time(0);
+        fprintf(G_fp_logfile, "[%d] main . Start Check_Potentia_Temperature thread Started, return code from pthread_create() is %d\n",
+                line_number++, G_Check_Power_rc);
+    }
+    return status;
+}*/
+
+/*int Start_PWM_thread() {
+    long t;
+    int status = 1;
+
+    print_time(0);
+    fprintf(G_fp_logfile, "[%d] main . Starting Start_PWM_thread thread \n", line_number++);
+    G_PWM_rc = pthread_create(&G_PWM_thread, NULL, Fan_PWM, (void *) t);
+    if (G_PWM_rc) {
+        print_time(0);
+        fprintf(G_fp_logfile, "[%d] main . Start Start_PWM_thread thread failed, return code from pthread_create() is %d\n",
+                line_number++, G_PWM_rc);
+        status = -1;
+    } else {
+        print_time(0);
+        fprintf(G_fp_logfile, "[%d] main . Start Start_PWM_thread thread Started, return code from pthread_create() is %d\n",
+                line_number++, G_PWM_rc);
+    }
+    return status;
+}*/
+
+/*int Start_MFC_thread() {
+    long t;
+    int status = 1;
+
+    print_time(0);
+    fprintf(G_fp_logfile, "[%d] main . Starting Start_MFC_thread thread \n", line_number++);
+    G_MFC_rc = pthread_create(&G_MFC_thread, NULL, MFC_Thread, (void *) t);
+    if (G_MFC_rc) {
+        print_time(0);
+        fprintf(G_fp_logfile, "[%d] main . Start Start_MFC_thread thread failed, return code from pthread_create() is %d\n",
+                line_number++, G_MFC_rc);
+        status = -1;
+    } else {
+        print_time(0);
+        fprintf(G_fp_logfile, "[%d] main . Start Start_MFC_thread thread Started, return code from pthread_create() is %d\n",
+                line_number++, G_MFC_rc);
+    }
+    return status;
+}*/
+/*int Start_Display_thread() {
+    long t;
+    int status = 1;
+
+    print_time(0);
+    fprintf(G_fp_logfile, "[%d] main . Starting Start_Display_thread thread \n", line_number++);
+    G_Display_rc = pthread_create(&G_Display_thread, NULL, Process_Display_thread, (void *) t);
+    if (G_Display_rc) {
+        print_time(0);
+        fprintf(G_fp_logfile, "[%d] main . Start Process_Display_thread thread failed, return code: %d\n",
+                line_number++, G_Display_rc);
+        status = -1;
+    } else {
+        print_time(0);
+        fprintf(G_fp_logfile, "[%d] main . Start Process_Display_thread thread Started, return code: %d\n",
+                line_number++, G_Display_rc);
+    }
+    return status;
+}*/
+
+/*int Start_Bias_thread() {
+    int status = TRUE;
+    long last_used_t = 0;
+
+    print_time(0);
+    fprintf(G_fp_logfile, "[%d] main . Starting Start_Bias_thread thread \n", line_number++);
+    G_Bias_rc = pthread_create(&G_Bias_thread, NULL, Check_Potentia_Bias, (void *) last_used_t);
+    if (G_Bias_rc) {
+        print_time(0);
+        fprintf(G_fp_logfile, "[%d] main . Start Start_Bias_thread thread failed, return code from pthread_create() is %d\n",
+                line_number++, G_Bias_rc);
+        status = -1;
+    } else {
+        print_time(0);
+        fprintf(G_fp_logfile, "[%d] main . Start_Bias_thread thread Started, return code from pthread_create() is %d\n",
+                line_number++, G_Bias_rc);
+    }
+    return status;
+}*/
+/*struct {
+    uint8_t opcode;
+    uint8_t opcode_data;
+} proficio_ini[30];
+ * */
+/*int write_to_comm_port(uint8_t* buffer, int size) {
+    int status = 0;
+    BOOL error = 0;
+    int bytes_to_write = 0;
+    char print_buffer[256] = {0};
+
+    bytes_to_write = size;
+    //Sleep(size * 5);
+    memcpy(print_buffer, buffer, bytes_to_write);
+    error = write(hSerial, buffer, bytes_to_write);
+    if (error < 0) {
+        print_time(0);
+        fprintf(G_fp_logfile, "[%d] write_to_comm_port -> writing to comm port FAILED: %s \n", line_number++, strerror(errno));
+        //MessageBoxA(NULL, " write_to_comm_port FAILED., Please forward log files to Multus SDR, LLC ", "ms-sdr",
+        //	MB_OK | MB_TASKMODAL | MB_ICONEXCLAMATION);
+        Serial_port_open = 0;
+        if (hSerial > 0) {
+            close(hSerial);
+        }
+        //delete_comm_port_ini();
+        Gui_send_param(CMD_GET_SET_COMM_NAME_INDEX, 200);
+    } //else {
+    //      print_time(0);
+    //     fprintf(G_fp_logfile, "[%d] parse_record -> write_to_comm_port -> Record Written: %s \n", line_number++, print_buffer);
+    //}
+    //print_time(0);
+    //fprintf(G_fp_logfile, "[%d] write_to_comm_port-> bytes written: %d\n", line_number++, error);
+    return status;
+}*/
+/*void* Comms_port_thread(void* myparam) {
+    //int n = 8192;
+    int n = 132;
+    char szBuff[8196] = {0};
+
+    static BOOL com_read_status = TRUE;
+    int status = FALSE;
+    int parse_status = TRUE;
+    int error_loop_count = 0;
+
+    int count = 0;
+
+    Sleep(1000);
+    print_time(1);
+    fprintf(G_fp_logfile, "[%d] Comms_port_thread -> Started \n", line_number++);
+    while (G_comms_process_running == 1) {//Main loop
+        memset(szBuff, 0, sizeof (szBuff));
+        com_read_status = ReadFile(hSerial, szBuff, n, &dwBytesRead, NULL);
+        if (com_read_status < 0) {
+            print_time(0);
+            fprintf(G_fp_logfile, "[%d] Comms_port_thread -> Reading Com Port FAILED: %s \n", line_number++, strerror(errno));
+            error_loop_count++;
+            if (error_loop_count > 100) {
+                print_time(0);
+                fprintf(G_fp_logfile, "[%d] Comms_port_thread -> Comm Port Read FAILED. Closing Comm Port %d \n", line_number++, com_read_status);
+                //MessageBoxA(NULL, "MS-SDR -> Comm Port Read FAILED. Closing Comm Port. Please forward log files to Multus SDR, LLC ", "MS-SDR",
+                //	MB_OK | MB_TASKMODAL | MB_ICONEXCLAMATION);
+                G_comms_process_running = 0;
+            }
+        } else {
+            if (com_read_status >= 3) {
+                if (szBuff[(com_read_status - 1)] == 10 || szBuff[(com_read_status - 1)] == 13) {
+                    com_read_status--;
+                }
+                parse_status = parse_record(szBuff, (int) com_read_status);
+                error_loop_count = 0;
+            }
+
+        }
+    }//End main loop
+    close(hSerial);
+    hSerial = 0;
+    comm_port_open = 0;
+    print_time(0);
+    G_comms_process_running = 0;
+    fprintf(G_fp_logfile, "[%d] Comms_port_thread -> Finished. \n", line_number++);
+    pthread_exit(0);
+    return (NULL);
+}*/
+
+/*int set_interface_attribs(int fd, int speed, int parity, int data_bits, int stop_bits) {
+    struct termios tty, oldtio;
+    int status = TRUE;
+
+    tcgetattr(fd, &oldtio); 
+    if (tcgetattr(fd, &tty) != 0) {
+        print_time(0);
+        fprintf(G_fp_logfile, "error %d from tcgetattr \n", errno);
+        status = -1;
+    }
+    bzero(&tty, sizeof (tty));
+
+    tty.c_cflag |= CLOCAL | CREAD | data_bits;
+    tty.c_cflag &= ~CSIZE;
+    tty.c_cflag |= CS8; 
+    tty.c_cflag &= ~PARENB; 
+    tty.c_cflag &= ~CSTOPB; 
+    tty.c_cflag &= ~CRTSCTS; 
+    tty.c_lflag |= ICANON | ISIG; 
+    tty.c_lflag &= ~(ECHO | ECHOE | ECHONL | IEXTEN);
+
+    tty.c_iflag &= ~IGNCR; 
+    tty.c_iflag &= ~INPCK;
+    tty.c_iflag &= ~(INLCR | ICRNL | IUCLC | IMAXBEL);
+    tty.c_iflag &= ~(IXON | IXOFF | IXANY); 
+
+    tty.c_oflag &= ~OPOST;
+
+    tty.c_cc[VINTR] = 0; 
+    tty.c_cc[VQUIT] = 0; 
+    tty.c_cc[VERASE] = 0; 
+    tty.c_cc[VKILL] = 0; 
+    tty.c_cc[VEOF] = 4; 
+    tty.c_cc[VTIME] = 200;
+    tty.c_cc[VMIN] = 0;
+    tty.c_cc[VSWTC] = 0; 
+    tty.c_cc[VSTART] = 0; 
+    tty.c_cc[VSTOP] = 0; 
+    tty.c_cc[VSUSP] = 0; 
+    tty.c_cc[VEOL] = 59; 
+    tty.c_cc[VREPRINT] = 0; 
+    tty.c_cc[VDISCARD] = 0; 
+    tty.c_cc[VWERASE] = 0; 
+    tty.c_cc[VLNEXT] = 0; 
+    tty.c_cc[VEOL2] = 0; 
+
+    //tcflush(fd, TCIFLUSH);
+    cfsetospeed(&tty, speed);
+    cfsetispeed(&tty, speed);
+    if (tcsetattr(fd, TCSANOW, &tty) != 0) {
+        print_time(0);
+        fprintf(G_fp_logfile, "error %d from tcsetattr \n", errno);
+        status = -1;
+    }
+    return status;
+}*/
+
+/*int open_comm_port() {
+    int status = TRUE;
+    int attribs_status = 0;
+    char windows_comm_port[MAX_PATH] = {0};
+    //char error_message[80] = {0};
+    //int speed = 0;
+    int parity = 0;
+
+    strcpy(windows_comm_port, "/dev/");
+    strcat(windows_comm_port, G_comm_port);
+    hSerial = open(windows_comm_port, O_RDWR | O_NOCTTY); //O_SYNC
+    if (hSerial < 0) {
+        print_time(0);
+        fprintf(G_fp_logfile, "[%d] open_comm_port -> Opening Com Port FAILED: %s %d, error: %s\n",
+                line_number++, windows_comm_port, hSerial, strerror(errno));
+        //MessageBoxA(NULL, "MS-SDR -> Comm Port OPEN FAILED. Please forward log files to Multus SDR, LLC ", "MS-SDR",
+        //								MB_OK | MB_TASKMODAL | MB_ICONEXCLAMATION);
+        status = FALSE;
+    }
+    if (status == TRUE) {
+        attribs_status = set_interface_attribs(hSerial, baud_rate, parity, data_bits, stop_bits);
+        if (attribs_status == -1) {
+            status = FALSE;
+            print_time(0);
+            fprintf(G_fp_logfile, "[%d] open_comm_port -> Error Retrieving serial port state: %s %s\n", line_number++, G_comm_port, lastError);
+            //MessageBoxA(NULL, "MS-SDR -> ERROR Retrieving Comm Port State.  Please forward log files to Multus SDR, LLC ",
+            //		"MS-SDR", MB_OK | MB_TASKMODAL | MB_ICONEXCLAMATION);
+        }
+    }
+    if (status == TRUE) {
+        Serial_port_open = TRUE;
+    }
+    print_time(0);
+    fprintf(G_fp_logfile, "[%d] open_comm_port -> Finished\n", line_number++);
+    return status;
+}*/
+
+
