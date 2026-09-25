@@ -37,7 +37,7 @@
 // Release number is in the range of 0 to 9
 
 #define VERSION_MAJOR 3
-#define VERSION_MINOR 140
+#define VERSION_MINOR 141
 #define VERSION_MS_SDRCORE_RECV ((((VERSION_MINOR) << 8) & 0xff00) | ((VERSION_MAJOR) & 0x00ff))
 
 #define MAX_OUTPUT_DEVICES 50

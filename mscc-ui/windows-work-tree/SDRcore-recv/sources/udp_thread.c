@@ -1393,6 +1393,14 @@ void *UDP_Thread(void *my_param) {
 
             case CMD_SET_BW_HICUT:
                 switch (t_opcode_data) {
+                    case 5:
+                        high_cut = 1400.0f;
+                        previous_high_cut = high_cut;
+                        break;
+                    case 6:
+                        high_cut = 1000.0f;
+                        previous_high_cut = high_cut;
+                        break;
                     case 4:
                         high_cut = 2400.0f;
                         previous_high_cut = high_cut;

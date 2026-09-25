@@ -5,16 +5,16 @@
 | **Host** | NEW-HP-LAPTOP (Windows) |
 | **Checkout** | `C:\Users\n8vet\OneDrive\Documents\GitHub\mscc-station` |
 | **Build** | **cmd-041** (WPF) + **cmd-042** (Windows recv) / **cmd-038** (WPF) |
-| **Last command id** | cmd-042 (orders) / cmd-041 (orders) / cmd-038 (WPF pending) |
-| **State** | pending |
+| **Last command id** | cmd-042 (Windows done) / cmd-041 (done) / cmd-038 (WPF pending) |
+| **State** | done |
 | **Updated** | 2026-09-25 |
 
 ## ACK log
 
 | command id | state | note |
 |------------|-------|------|
-| cmd-042 | orders | Windows part: SDRcore-recv 0xD1 case 5=1400 / 6=1000, recv 3.141, mscc-recv.exe -> Release/windows-wpf + C:\mscc-net9. Build with cmd-041. Ubuntu/Pi parts follow after Stew pushes. |
-| cmd-041 | orders | WPF DIG-U Hi adds 1.4k/1.0k (idx 5/6) + 0xDD default-echo guard. Stew chose A (paired with cmd-042). |
+| cmd-042 | done | Windows only. SDRcore-recv 0xD1 case 5=1400 / case 6=1000, recv 3.141. mscc-recv.exe in Release/windows-wpf and C:\mscc-net9. New exe has the 1400 Hz constant (previous exe had none). Live listen not run: MSCC was not running, radio not started. Ubuntu/Pi parts wait until Stew pushes. |
+| cmd-041 | done | WPF 9.25.0. DIG-U Hi idx 5=1.4k / 6=1.0k. Other modes stay 0..4. 0xDD idx>4 ignored. Deployed to C:\mscc-net9. Not pushed. |
 | cmd-040 | orders | Avalonia remote-audio parity orders + brief authored here (canonical yaml). Build target: ubuntu-stew then rpi. No Avalonia code on this host for 040. |
 | cmd-038 | pending | Orders + brief: finer Mic TX EVENT logging (diagnostic only). Awaiting Build ACK. |
 | cmd-037 | done | WPF 9.23.1, 60 ms mic cushion. Commit 5f39a16. Stew: looks great. One JT65 bump in 60 s. WPF drops=0 underruns=0. Not pushed. |
@@ -29,4 +29,4 @@
 
 ## Notes
 
-cmd-040 orders: `.mscc-coord/COMMANDS.yaml` + `briefs/cmd-040.md` + OVERSEER. Build on ubuntu-stew (then rpi kit). cmd-038 still pending WPF logging. cmd-034 Pi on hold.
+cmd-041 + Windows cmd-042 built together on NEW-HP. WPF 9.25.0 and mscc-recv 3.141 are in C:\mscc-net9. Stew: on DIG-U, Hi should cycle 1.0k and 1.4k and the receiver log should show High: 1000 / 1400. USB/LSB/AM/CW stay on the original five Hi cuts. Ubuntu and Pi cmd-042 wait until this is pushed. cmd-038 still pending. cmd-034 Pi on hold.
