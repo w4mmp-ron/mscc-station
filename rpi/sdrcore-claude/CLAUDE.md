@@ -68,5 +68,15 @@ See also `rpi/mscc-deb/BUILD-SERVERS-ON-PI.md`.
      thread logs them (100 ms recv timeout). EVENTs now: hold_last reprime, resync,
      primed, overflow, udp_gap (removed: adaptive step, low_occ).
   7. `main.c` `sdrIqPlayOnlyCallback`: remote ring drained during TUNE (split streams).
+- 2026-09-25 sdrcore-recv review fixes (+ same ring fix in trans). Compiled x86, ring
+  simulation +/-250 ppm OK. NOT yet built on the Pi or tested. Not committed.
+  8. recv `main.c` dual-stream digi ring and trans `main.c` mic ring: prime to 64 ms,
+     +/-300 ppm trim, resync, re-prime (silence) on underrun. Was: no cushion, no drift
+     control -> ~21 ms dropout every few minutes.
+  9. recv `panadapter.c`: smoothing averages current + (n-1) history in 32 bits
+     (was n+1 frames / n in uint16 -> overflow at smoothing 4; display was 1.5x at n=2).
+     Smoothing clamped 1..4. EXPECT pan levels to shift; client dB CAL may need redoing.
+  10. recv `udp_thread.c`: CMD_SET_IQ_BAND bounds; phones/digital volume ATTN kept
+      separate and applied per audio mode; after CW TX reopen output for current mode.
 - Syntax check trick: WSL `Debian` has gcc. Use `-iquote sources -idirafter sources`
   (plain `-I sources` pulls in the Windows `pthread.h` and fails).

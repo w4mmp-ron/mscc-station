@@ -110,10 +110,92 @@ static PaStream *stream_mic = NULL; /* capture-only when split; stream = I/Q pla
 static MsccResampler *g_mic_resampler = NULL; /* NULL = identity (mic @ 96k) */
 static double g_mic_rate = 0.0;
 
+/*
+ * Ring reader: the mic clock writes, the radio I/Q clock reads.
+ * Prime to MIC_RING_TARGET before reading, trim the read rate by at most
+ * +/-300 ppm (linear interpolation) to follow clock drift, skip back to the
+ * target if too much builds up (e.g. after TUNE), re-prime on underrun.
+ * Without this the ring ran empty or full every few minutes (TX audio gap).
+ */
+#define MIC_RING_TARGET      6144u   /* 64 ms @ 96 kHz */
+#define MIC_RING_RESYNC_HIGH 13000u
+#define MIC_TRIM_MAX         300e-6f
+#define MIC_TRIM_GAIN        1500e-6f
+#define MIC_LEVEL_ALPHA      0.005f
+
+static int g_mic_priming = 1;
+static float g_mic_level_f;
+static float g_mic_step = 1.0f;
+static float g_mic_frac;
+static float g_mic_h0[2], g_mic_h1[2];
+
 static void mic_ring_reset(void)
 {
     g_mic_w = 0;
     g_mic_r = 0;
+    g_mic_priming = 1;
+    g_mic_level_f = 0.0f;
+    g_mic_step = 1.0f;
+    g_mic_frac = 0.0f;
+    g_mic_h0[0] = g_mic_h0[1] = 0.0f;
+    g_mic_h1[0] = g_mic_h1[1] = 0.0f;
+}
+
+static unsigned mic_ring_level(void)
+{
+    unsigned w = g_mic_w, r = g_mic_r;
+    return (w + MIC_RING_FRAMES - r) % MIC_RING_FRAMES;
+}
+
+/* Once per I/Q callback: prime / resync / rate trim. */
+static void mic_ring_begin_block(void)
+{
+    unsigned occ = mic_ring_level();
+    float trim;
+
+    if (g_mic_priming && occ >= MIC_RING_TARGET) {
+        g_mic_priming = 0;
+        g_mic_level_f = (float)occ;
+    }
+    if (!g_mic_priming && occ > MIC_RING_RESYNC_HIGH) {
+        g_mic_r = (g_mic_r + (occ - MIC_RING_TARGET)) % MIC_RING_FRAMES;
+        occ = MIC_RING_TARGET;
+        g_mic_level_f = (float)occ;
+    }
+    g_mic_level_f += MIC_LEVEL_ALPHA * ((float)occ - g_mic_level_f);
+    trim = MIC_TRIM_GAIN * (g_mic_level_f - (float)MIC_RING_TARGET) / (float)MIC_RING_TARGET;
+    if (trim > MIC_TRIM_MAX)
+        trim = MIC_TRIM_MAX;
+    if (trim < -MIC_TRIM_MAX)
+        trim = -MIC_TRIM_MAX;
+    g_mic_step = 1.0f + trim;
+}
+
+/* One stereo frame at the ring rate (x step). Silence while priming. */
+static void mic_ring_next_frame(float frame[2])
+{
+    if (!g_mic_priming) {
+        while (g_mic_frac >= 1.0f) {
+            unsigned r = g_mic_r;
+            g_mic_h0[0] = g_mic_h1[0];
+            g_mic_h0[1] = g_mic_h1[1];
+            if (r == g_mic_w) {
+                g_mic_h0[0] = g_mic_h0[1] = 0.0f;
+                g_mic_h1[0] = g_mic_h1[1] = 0.0f;
+                g_mic_frac = 0.0f;
+                g_mic_priming = 1; /* underrun: silence and re-prime */
+                break;
+            }
+            g_mic_h1[0] = g_mic_ring[r * 2u];
+            g_mic_h1[1] = g_mic_ring[r * 2u + 1u];
+            g_mic_r = (r + 1u) % MIC_RING_FRAMES;
+            g_mic_frac -= 1.0f;
+        }
+    }
+    frame[0] = g_mic_h0[0] + (g_mic_h1[0] - g_mic_h0[0]) * g_mic_frac;
+    frame[1] = g_mic_h0[1] + (g_mic_h1[1] - g_mic_h0[1]) * g_mic_frac;
+    if (!g_mic_priming)
+        g_mic_frac += g_mic_step;
 }
 
 static void mic_ring_write(const SAMPLE *stereo, unsigned long frames, int ch)
@@ -148,16 +230,9 @@ static void mic_ring_put_frame(const float frame[2], void *userdata)
 static void mic_ring_read(SAMPLE *stereo, unsigned long frames)
 {
     unsigned long i;
-    for (i = 0; i < frames; i++) {
-        if (g_mic_r == g_mic_w) {
-            stereo[i * 2u] = 0.0f;
-            stereo[i * 2u + 1u] = 0.0f;
-        } else {
-            stereo[i * 2u] = g_mic_ring[g_mic_r * 2u];
-            stereo[i * 2u + 1u] = g_mic_ring[g_mic_r * 2u + 1u];
-            g_mic_r = (g_mic_r + 1u) % MIC_RING_FRAMES;
-        }
-    }
+    mic_ring_begin_block();
+    for (i = 0; i < frames; i++)
+        mic_ring_next_frame(&stereo[i * 2u]);
 }
 
 static void mic_resampler_destroy(void)
