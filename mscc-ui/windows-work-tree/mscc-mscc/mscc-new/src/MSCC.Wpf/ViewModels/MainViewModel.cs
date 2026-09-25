@@ -499,7 +499,35 @@ public partial class MainViewModel : ObservableObject, IDisposable
     public bool PicKeyerControlsEnabled => !ExternalElectronicKeyer;
 
     private static readonly int[] LowCutHzValues = { 500, 300, 200, 100, 75 };
-    private static readonly int[] HighCutHzValues = { 5500, 4000, 3000, 2700, 2400 };
+    /// <summary>Hi button labels. Indexes 5 and 6 are DIG-U only. HighCutOptions stays at five for the 0xDD list.</summary>
+    private static readonly string[] HighCutButtonOptions =
+        { "5.5KHz", "4.0KHz", "3.0KHz", "2.7KHz", "2.4KHz", "1.4KHz", "1.0KHz" };
+    private static readonly int[] HighCutHzValues = { 5500, 4000, 3000, 2700, 2400, 1400, 1000 };
+
+    /// <summary>Skip mode-profile and last-used writes while coercing a DIG-U-only Hi index.</summary>
+    private bool _suppressHighCutPersist;
+
+    private static int HighCutCount(RadioMode mode) => mode == RadioMode.DigU ? 7 : 5;
+
+    /// <summary>
+    /// DIG-U keeps 0..6. Other modes stay on 0..4; an index above 4 clamps to 4 (2.4 kHz).
+    /// Negatives wrap the same way the Hi button always has.
+    /// </summary>
+    private static int NormalizeHighCut(int idx, RadioMode mode)
+    {
+        if (mode == RadioMode.DigU)
+            return ((idx % 7) + 7) % 7;
+        if (idx > 4)
+            return 4;
+        return ((idx % 5) + 5) % 5;
+    }
+
+    private static string HighCutButtonLabel(int index)
+    {
+        if (HighCutButtonOptions.Length == 0) return index.ToString();
+        int i = Math.Clamp(index, 0, HighCutButtonOptions.Length - 1);
+        return HighCutButtonOptions[i];
+    }
     private static readonly int[] CwFilterHzValues = { 1800, 400, 200 };
     private static readonly int[] CwWeightValues = { 25, 50, 75 };
     private static readonly int[] CwPitchValues = { 400, 600, 800, 1000 };
@@ -3318,7 +3346,7 @@ public partial class MainViewModel : ObservableObject, IDisposable
     private void ApplyFavoriteLabels(FavoriteEntry e)
     {
         e.LowCutLabel = IndexLabel(LowCutOptions, e.LowCutIndex);
-        e.HighCutLabel = IndexLabel(HighCutOptions, e.HighCutIndex);
+        e.HighCutLabel = HighCutButtonLabel(e.HighCutIndex);
         e.CwFilterLabel = IndexLabel(CwFilterOptions, e.CwFilterIndex);
     }
 
@@ -4007,7 +4035,14 @@ public partial class MainViewModel : ObservableObject, IDisposable
 
     // Cycle commands for main tab filter/step buttons (decrement to match original)
     [RelayCommand] private void CycleLowCut() => LowCutIndex = (LowCutIndex - 1 + 5) % 5;
-    [RelayCommand] private void CycleHighCut() => HighCutIndex = (HighCutIndex - 1 + 5) % 5;
+    [RelayCommand]
+    private void CycleHighCut()
+    {
+        var mode = RadioState.ActiveVfo.Mode;
+        int cur = NormalizeHighCut(HighCutIndex, mode);
+        int n = HighCutCount(mode);
+        HighCutIndex = (cur - 1 + n) % n;
+    }
     [RelayCommand] private void CycleCwFilter() => CwFilterIndex = (CwFilterIndex - 1 + 3) % 3;
     [RelayCommand] private void CycleStep() => StepIndex = (StepIndex - 1 + 6) % 6;
 
@@ -4362,10 +4397,11 @@ public partial class MainViewModel : ObservableObject, IDisposable
             }
             if (h >= 0)
             {
-                if (HighCutIndex == h)
-                    HighCutLabel = HighCutOptions[(h % 5 + 5) % 5];
+                int hn = NormalizeHighCut(h, mode);
+                if (HighCutIndex == hn)
+                    HighCutLabel = HighCutButtonLabel(hn);
                 else
-                    HighCutIndex = h;
+                    HighCutIndex = hn;
             }
             if (mode == RadioMode.CW && c >= 0)
             {
@@ -4464,7 +4500,8 @@ public partial class MainViewModel : ObservableObject, IDisposable
         if (mode == RadioMode.AM || mode == RadioMode.FM)
         {
             // AM/FM: both sidebands, centered on carrier (± high-cut). Not USB-style.
-            int highHz = HighCutHzValues[(HighCutIndex % HighCutHzValues.Length + HighCutHzValues.Length) % HighCutHzValues.Length];
+            int highIdxAm = NormalizeHighCut(HighCutIndex, mode);
+            int highHz = HighCutHzValues[highIdxAm];
             if (mode == RadioMode.FM && highHz < 4000) highHz = 5500;
             filter.LowHz = -highHz;
             filter.HighHz = +highHz;
@@ -4499,7 +4536,7 @@ public partial class MainViewModel : ObservableObject, IDisposable
                 filter.LowHz = +lowHz;    // low audio cut → inner edge for USB
             }
 
-            int highIdx = HighCutIndex;
+            int highIdx = NormalizeHighCut(HighCutIndex, mode);
             int highHz = HighCutHzValues[highIdx];
             if (mode == RadioMode.LSB)
             {
@@ -4552,6 +4589,18 @@ public partial class MainViewModel : ObservableObject, IDisposable
             // Mode changed on the VFO (e.g. via report from backend, dropdown, or band button).
             // Recompute the filter Hz offsets from the *current* cut indices using the correct signs for the new mode.
             // This preserves the user's selected Lo/Hi cut values in the UI boxes while updating the spectrum shading correctly.
+            // 1.4k/1.0k exist only on DIG-U. Parked TUNE keeps the index so DIG-U can return to it.
+            var mode = RadioState.ActiveVfo.Mode;
+            if (mode is not (RadioMode.TUNE or RadioMode.None))
+            {
+                int n = NormalizeHighCut(HighCutIndex, mode);
+                if (n != HighCutIndex)
+                {
+                    _suppressHighCutPersist = true;
+                    try { HighCutIndex = n; }
+                    finally { _suppressHighCutPersist = false; }
+                }
+            }
             RecomputeFilterHzForCurrentCutsAndMode();
             NotifyMainOperatePower();
         }
@@ -4746,7 +4795,17 @@ public partial class MainViewModel : ObservableObject, IDisposable
 
     partial void OnLowCutDefaultIndexChanged(int value) { _ = _radioService.SetDefaultLowCutAsync(value); MonitorTextBoxText($" LowCutDefaultIndex set: {value}"); }
     partial void OnTxDefaultIndexChanged(int value) { _ = _radioService.SetDefaultTxAsync(value); MonitorTextBoxText($" TxDefaultIndex set: {value}"); }
-    partial void OnHighCutDefaultIndexChanged(int value) { _ = _radioService.SetDefaultHighCutAsync(value); MonitorTextBoxText($" HighCutDefaultIndex set: {value}"); }
+    partial void OnHighCutDefaultIndexChanged(int value)
+    {
+        // 0xDD default list is five entries. Never echo a DIG-U live index (5/6) or a blanked -1.
+        if (value < 0 || value > 4)
+        {
+            MonitorTextBoxText($" HighCutDefaultIndex ignored: {value}");
+            return;
+        }
+        _ = _radioService.SetDefaultHighCutAsync(value);
+        MonitorTextBoxText($" HighCutDefaultIndex set: {value}");
+    }
     partial void OnCwFilterDefaultIndexChanged(int value) { _ = _radioService.SetDefaultCwFilterAsync(value); MonitorTextBoxText($" CwFilterDefaultIndex set: {value}"); }
 
     // Main tab button partials (decrement like original, wrap, set label + Hz + send index)
@@ -4785,10 +4844,16 @@ public partial class MainViewModel : ObservableObject, IDisposable
     }
     partial void OnHighCutIndexChanged(int value)
     {
-        value = (value % 5 + 5) % 5;
-        HighCutLabel = HighCutOptions[value];
-        int hz = HighCutHzValues[value];
         var mode = RadioState.ActiveVfo.Mode;
+        int n = NormalizeHighCut(value, mode);
+        if (n != value)
+        {
+            HighCutIndex = n;
+            return;
+        }
+        value = n;
+        HighCutLabel = HighCutButtonLabel(value);
+        int hz = HighCutHzValues[value];
         if (mode == RadioMode.LSB)
         {
             // LSB: high audio cut maps to outer edge (more negative LowHz)
@@ -4814,6 +4879,7 @@ public partial class MainViewModel : ObservableObject, IDisposable
         // Filter Hz mutation above triggers OnActiveFilterPropertyChanged which sends the correct index via service.
         // (Do not call SetFilterHighAsync here with index value -- it expects Hz.)
         MonitorTextBoxText($" HighCutIndex set: {value} ({HighCutLabel})");
+        if (_suppressHighCutPersist) return;
         SaveModeFilterProfile(mode);
         SaveLastUsedForCurrentBand();
     }
@@ -5629,6 +5695,12 @@ public partial class MainViewModel : ObservableObject, IDisposable
 
         svc.DefaultHighCutIndexReported += idx =>
         {
+            // ms-sdr echoes the last live 0xD1 as 0xDD. Indexes 5/6 must not land on the 5-item list.
+            if (idx < 0 || idx > 4)
+            {
+                MonitorTextBoxText($" HighCutDefaultIndex reported: {idx} ignored");
+                return;
+            }
             HighCutDefaultIndex = idx;
             MonitorTextBoxText($" HighCutDefaultIndex reported: {idx}");
         };

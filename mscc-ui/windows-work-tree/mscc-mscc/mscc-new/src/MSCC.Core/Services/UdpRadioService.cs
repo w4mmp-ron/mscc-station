@@ -692,6 +692,8 @@ public class UdpRadioService : IRadioService, IDisposable
             3000 => 2,
             2700 => 3,
             2400 => 4,
+            1400 => 5,
+            1000 => 6,
             _ => 0
         };
     }

@@ -518,9 +518,11 @@ public static class SpectrumWaterfallSettings
     public static void SaveModeFilterProfile(string modeKey, int lowCut, int highCut, int cwFilter)
     {
         lowCut = Math.Clamp(lowCut, 0, 4);
-        highCut = Math.Clamp(highCut, 0, 4);
+        string key = NormalizeModeProfileKey(modeKey);
+        // DIG-U Hi indexes 5 (1.4 kHz) and 6 (1.0 kHz). Other modes stay 0..4.
+        highCut = Math.Clamp(highCut, 0, key == "DIG-U" ? 6 : 4);
         cwFilter = Math.Clamp(cwFilter, 0, 2);
-        switch (NormalizeModeProfileKey(modeKey))
+        switch (key)
         {
             case "USB":
                 ModeUsbLowCut = lowCut; ModeUsbHighCut = highCut; break;
@@ -548,6 +550,9 @@ public static class SpectrumWaterfallSettings
             _ => (-1, -1, -1)
         };
     }
+
+    private static int ClampModeHighCut(int value, bool digU) =>
+        Math.Clamp(value, 0, digU ? 6 : 4);
 
     private static string NormalizeModeProfileKey(string modeKey)
     {
@@ -846,16 +851,16 @@ public static class SpectrumWaterfallSettings
                     }
 
                     if (LineMatchesKey(line, "MODE_USB_LOWCUT")) ModeUsbLowCut = ParseIniInt(line, ModeUsbLowCut);
-                    if (LineMatchesKey(line, "MODE_USB_HIGHCUT")) ModeUsbHighCut = ParseIniInt(line, ModeUsbHighCut);
+                    if (LineMatchesKey(line, "MODE_USB_HIGHCUT")) ModeUsbHighCut = ClampModeHighCut(ParseIniInt(line, ModeUsbHighCut), digU: false);
                     if (LineMatchesKey(line, "MODE_LSB_LOWCUT")) ModeLsbLowCut = ParseIniInt(line, ModeLsbLowCut);
-                    if (LineMatchesKey(line, "MODE_LSB_HIGHCUT")) ModeLsbHighCut = ParseIniInt(line, ModeLsbHighCut);
+                    if (LineMatchesKey(line, "MODE_LSB_HIGHCUT")) ModeLsbHighCut = ClampModeHighCut(ParseIniInt(line, ModeLsbHighCut), digU: false);
                     if (LineMatchesKey(line, "MODE_AM_LOWCUT")) ModeAmLowCut = ParseIniInt(line, ModeAmLowCut);
-                    if (LineMatchesKey(line, "MODE_AM_HIGHCUT")) ModeAmHighCut = ParseIniInt(line, ModeAmHighCut);
+                    if (LineMatchesKey(line, "MODE_AM_HIGHCUT")) ModeAmHighCut = ClampModeHighCut(ParseIniInt(line, ModeAmHighCut), digU: false);
                     if (LineMatchesKey(line, "MODE_CW_LOWCUT")) ModeCwLowCut = ParseIniInt(line, ModeCwLowCut);
-                    if (LineMatchesKey(line, "MODE_CW_HIGHCUT")) ModeCwHighCut = ParseIniInt(line, ModeCwHighCut);
+                    if (LineMatchesKey(line, "MODE_CW_HIGHCUT")) ModeCwHighCut = ClampModeHighCut(ParseIniInt(line, ModeCwHighCut), digU: false);
                     if (LineMatchesKey(line, "MODE_CW_FILTER")) ModeCwFilter = ParseIniInt(line, ModeCwFilter);
                     if (LineMatchesKey(line, "MODE_DIGU_LOWCUT")) ModeDigULowCut = ParseIniInt(line, ModeDigULowCut);
-                    if (LineMatchesKey(line, "MODE_DIGU_HIGHCUT")) ModeDigUHighCut = ParseIniInt(line, ModeDigUHighCut);
+                    if (LineMatchesKey(line, "MODE_DIGU_HIGHCUT")) ModeDigUHighCut = ClampModeHighCut(ParseIniInt(line, ModeDigUHighCut), digU: true);
 
                     if (LineMatchesKey(line, "KEYER_MEM0")) KeyerMem0 = ClampKeyerMemText(ParseIniString(line, KeyerMem0));
                     if (LineMatchesKey(line, "KEYER_MEM1")) KeyerMem1 = ClampKeyerMemText(ParseIniString(line, KeyerMem1));
