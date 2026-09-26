@@ -1486,6 +1486,7 @@ public partial class MainWindow : Window
             _ = ViewModel.RadioService.SetForceCalibrationAsync(true);
 
             _freqCalManualMode = true;
+            ShowFreqCalRunningHint();
             ViewModel?.MonitorTextBoxText(" Freq Cal: Entered MANUAL mode");
         }
         else
@@ -1518,6 +1519,7 @@ public partial class MainWindow : Window
             }
 
             _freqCalManualMode = false;
+            ClearFreqCalRunningHint();
             ResetFreqCalManualPpmUi(sendToRadio: false);
             ViewModel?.MonitorTextBoxText(" Freq Cal: Exited MANUAL mode");
         }
@@ -1685,6 +1687,7 @@ public partial class MainWindow : Window
         ResetFreqCalVisuals(coarse
             ? "RUNNING COARSE\r\n!WAIT!"
             : "RUNNING FINE\r\n!WAIT!");
+        ShowFreqCalRunningHint();
 
         ViewModel.MonitorTextBoxText(
             $" Freq Cal: AUTO starting ({(coarse ? "COARSE" : "FINE")}, loose={loose}, f={freqHz})");
@@ -1715,6 +1718,7 @@ public partial class MainWindow : Window
                 FreqCalStatusLabel.Text = "AUTO FAILED";
                 FreqCalStatusLabel.Foreground = FreqCalFailBrush;
             }
+            ClearFreqCalRunningHint();
             ViewModel.MonitorTextBoxText($" Freq Cal: AUTO start error: {ex.Message}");
             CompleteFreqCalRestoreIfPending();
         }
@@ -1744,6 +1748,7 @@ public partial class MainWindow : Window
         _freqCalInProgress = true;
         _freqCalIsAuto = false;
         ResetFreqCalVisuals("CHECKING\r\n!WAIT!");
+        ShowFreqCalRunningHint();
         ViewModel.MonitorTextBoxText(" Freq Cal: CHECK started");
         _ = StartFreqCalCheckAsync();
     }
@@ -1768,6 +1773,7 @@ public partial class MainWindow : Window
                 FreqCalStatusLabel.Text = "CHECK FAILED";
                 FreqCalStatusLabel.Foreground = FreqCalFailBrush;
             }
+            ClearFreqCalRunningHint();
             ViewModel.MonitorTextBoxText($" Freq Cal: CHECK start error: {ex.Message}");
             CompleteFreqCalRestoreIfPending();
         }
@@ -1789,6 +1795,23 @@ public partial class MainWindow : Window
                         statusText.Equals("RESET", StringComparison.OrdinalIgnoreCase);
             FreqCalStatusLabel.Foreground = idle ? FreqCalIdleBrush : FreqCalBusyBrush;
         }
+    }
+
+    private const string FreqCalRunningHintText =
+        "Calibration running — don't change tabs or settings until it finishes.";
+
+    private void ShowFreqCalRunningHint()
+    {
+        if (FreqCalRunningHint == null) return;
+        FreqCalRunningHint.Text = FreqCalRunningHintText;
+        FreqCalRunningHint.Visibility = Visibility.Visible;
+    }
+
+    private void ClearFreqCalRunningHint()
+    {
+        if (FreqCalRunningHint == null) return;
+        FreqCalRunningHint.Text = "";
+        FreqCalRunningHint.Visibility = Visibility.Collapsed;
     }
 
     /// <summary>A CHECK/AUTO that outlived the tab restores the entry mode when it ends.</summary>
@@ -1884,6 +1907,7 @@ public partial class MainWindow : Window
             }
             ViewModel?.MonitorTextBoxText(
                 $" Freq Cal: {(wasAuto ? "AUTO" : "CHECK")} status received: {value} (1=COMPLETED)");
+            ClearFreqCalRunningHint();
             CompleteFreqCalRestoreIfPending();
         }
         else
