@@ -85,6 +85,9 @@ mscc-init-linux (2026-09-26):
 11. `mscc-init-gui/mscc_init_gui/config.py` `write_mscc_ini`: same keep + SWR defaults.
     Tested with Windows Python (existing and new file). Shared `_all.deb` with Ubuntu (Ron OK'd).
     File is `~/.local/mscc/mscc.ini` (not `~/mscc.ini`).
+12. `mscc-init-gui` 1.0.15: volume GUI dropped (Ron: didn't work out); postinst removes
+    old `~/mscc/mscc-volume-gui`. Build with `build-deb.sh` in WSL from an LF copy (repo
+    files are CRLF); the `.ps1` builder is stale. `mscc.sh` skips volume restore if absent.
 
 ## Pending: cmd-042 (from pull f9efa00, 2026-09-25)
 

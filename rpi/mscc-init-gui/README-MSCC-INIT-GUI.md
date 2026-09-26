@@ -1,11 +1,7 @@
-# MSCC Init GUI (+ Volume) — Linux / Raspberry Pi OS
+# MSCC Init GUI — Linux / Raspberry Pi OS
 
-**v1.0.14** packages two desktop apps:
-
-| Menu / CLI | Role |
-|------------|------|
-| **MSCC Init** / `mscc-init-gui` | Configure Pi (`~/.local/mscc`) |
-| **MSCC Volume** / `mscc-volume-gui` | Pulse levels for digi + operator; sticky `volume-levels.conf` |
+**v1.0.15**: **MSCC Init** / `mscc-init-gui` configures the Pi (`~/.local/mscc`).
+The MSCC Volume GUI was dropped in 1.0.15 (installing removes it).
 
 Init wizard writes the same config as CLI **`mscc-init`** under  
 **`$HOME/.local/mscc/`**.
