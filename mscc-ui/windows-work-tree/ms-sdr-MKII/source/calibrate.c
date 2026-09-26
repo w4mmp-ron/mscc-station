@@ -15,7 +15,6 @@
 int G_Calibration_temperature = 0;
 int previous_temperature = 0;
 uint8_t G_Calibration_reset = FALSE;
-uint8_t Cal_Reset = FALSE;
 INT32 delta = 0;
 
 static INT32 manual_integer_part = 0;
@@ -354,7 +353,6 @@ int Calibrate_Si5351_Set_PPM(uint32_t frequency) {//This is called by Process_Fr
     SDRcore_trans_send_param(CMD_SET_MAIN_MODE, previous_mode_number);
     Gui_send_param(CMD_SET_CALIBRATION_FINISHED, CALIBRATION_SUCCESS);
     Gui_send_param(CMD_GET_SET_CAL_FREQ_DELTA, delta);
-    //Cal_Reset = FALSE;
     print_time(0);
     fprintf(G_fp_logfile, "[%d] Calibrate_Si5351_Set_PPM. FINISHED\n", line_number++);
     return status;
@@ -381,21 +379,10 @@ int Freq_Set_Transceiver_Calibration(int int_part, int dec_part) {
 }
 
 void Report_Calibration(int calibration_increment) {
-    static int increment = 0;
-
-    if (Cal_Reset == FALSE) {
-        increment = 0;
-        Gui_send_param(CMD_SET_CALIBRATIION_PROGRESS, calibration_increment);
-        print_time(1);
-        fprintf(G_fp_logfile, "[%d] Report_Calibration. calibration_increment %d \n",
-                line_number++, calibration_increment);
-    } else {
-        print_time(1);
-        fprintf(G_fp_logfile, "[%d] Report_Calibration. increment %d \n",
-                line_number++, increment);
-        Gui_send_param(CMD_SET_CALIBRATIION_PROGRESS, increment++);
-
-    }
+    Gui_send_param(CMD_SET_CALIBRATIION_PROGRESS, calibration_increment);
+    print_time(1);
+    fprintf(G_fp_logfile, "[%d] Report_Calibration. calibration_increment %d \n",
+            line_number++, calibration_increment);
 }
 
 int Calibrate_Si5351_Initialize() //This is called by Process_Frequency_Calibration()
@@ -407,6 +394,7 @@ int Calibrate_Si5351_Initialize() //This is called by Process_Frequency_Calibrat
     previous_mode = G_mode;
     previous_freq = G_tune_freq;
     previous_mode_number = mode_to_number(G_mode);
+    /* Do not echo CMD_SET_MAIN_MODE to the GUI: wire 2 is both USB and DIG-U. */
     ModeChanged('C');
     Sleep(50);
     G_delta_drift_int = 0;
@@ -463,7 +451,7 @@ int Calibrate_Si5351_Failed(uint32_t frequency) {//This is called by Process_Fre
     G_check_calibration = 0;
     G_mode = previous_mode;
     G_tune_freq = previous_freq;
-    ModeChanged('A');
+    ModeChanged(previous_mode);
     freq_queue_add(G_tune_freq);
     SDRcore_recv_send_param(CMD_SET_MAIN_MODE, previous_mode_number);
     SDRcore_trans_send_param(CMD_SET_MAIN_MODE, previous_mode_number);
@@ -473,7 +461,6 @@ int Calibrate_Si5351_Failed(uint32_t frequency) {//This is called by Process_Fre
     Gui_send_param(CMD_SET_CALIBRATION_FINISHED, CALIBRAITON_FAIL);
     Gui_send_param(CMD_GET_SET_CAL_FREQ_DELTA, 10000);
     G_Calibration_temperature = previous_temperature;
-    Cal_Reset = FALSE;
     print_time(0);
     fprintf(G_fp_logfile, "[%d] Calibrate_Si5351_Failed. FINISHED\n", line_number++);
     return status;
@@ -724,7 +711,6 @@ int Process_Frequency_Calibration(uint8_t command, char *buf) {
                 calibration_count = 0;
                 calibration_increament = 0;
                 G_Proficio_Allow_Temp_Check = TRUE;
-                Cal_Reset = FALSE;
 
             } else {
                 Process_Check_Calibration(command, buf, CMD_SET_CALIBRATION_DATA);
@@ -810,7 +796,6 @@ int Process_Frequency_Calibration(uint8_t command, char *buf) {
                     break;
             }
             freq_queue_add(G_tune_freq);
-            Cal_Reset = TRUE;
             break;
 
         case CMD_SET_CAL_LOOSE:

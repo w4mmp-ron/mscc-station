@@ -4,15 +4,16 @@
 |--|--|
 | **Host** | NEW-HP-LAPTOP (Windows) |
 | **Checkout** | `C:\Users\n8vet\OneDrive\Documents\GitHub\mscc-station` |
-| **Build** | **cmd-041** (WPF) + **cmd-042** (Windows recv) / **cmd-038** (WPF) |
-| **Last command id** | cmd-042 (Windows done) / cmd-041 (done) / cmd-038 (WPF pending) |
+| **Build** | **cmd-044** (WPF + ms-sdr) / **cmd-038** (WPF pending) |
+| **Last command id** | cmd-044 (done) / cmd-038 (WPF pending) |
 | **State** | done |
-| **Updated** | 2026-09-25 |
+| **Updated** | 2026-09-26 |
 
 ## ACK log
 
 | command id | state | note |
 |------------|-------|------|
+| cmd-044 | done | WPF 9.26.0 + ms-sdr 3.174 in C:\mscc-net9. Host/Port applies on next Start. FREQ CAL: leave during CHECK/AUTO defers restore until the result; MANUAL blocks. CHECK sends LOOSE then check. Failed CHECK no longer forces AM. Cal_Reset removed (progress always sends the per-run count). Live radio smoke not run (MSCC was not running). Not pushed. |
 | cmd-042 | done | Windows only. SDRcore-recv 0xD1 case 5=1400 / case 6=1000, recv 3.141. mscc-recv.exe in Release/windows-wpf and C:\mscc-net9. New exe has the 1400 Hz constant (previous exe had none). Live listen not run: MSCC was not running, radio not started. Ubuntu/Pi parts wait until Stew pushes. |
 | cmd-041 | done | WPF 9.25.0. DIG-U Hi idx 5=1.4k / 6=1.0k. Other modes stay 0..4. 0xDD idx>4 ignored. Deployed to C:\mscc-net9. Not pushed. |
 | cmd-040 | orders | Avalonia remote-audio parity orders + brief authored here (canonical yaml). Build target: ubuntu-stew then rpi. No Avalonia code on this host for 040. |
@@ -29,4 +30,4 @@
 
 ## Notes
 
-cmd-041 + Windows cmd-042 built together on NEW-HP. WPF 9.25.0 and mscc-recv 3.141 are in C:\mscc-net9. Stew: on DIG-U, Hi should cycle 1.0k and 1.4k and the receiver log should show High: 1000 / 1400. USB/LSB/AM/CW stay on the original five Hi cuts. Ubuntu and Pi cmd-042 wait until this is pushed. cmd-038 still pending. cmd-034 Pi on hold.
+cmd-044 done on NEW-HP: WPF 9.26.0 and ms-sdr 3.174. Leaving FREQ CAL during CHECK/AUTO waits for the result, then restores the mode. MANUAL must be exited first. Installer kit was not rebuilt. Ubuntu/Pi cmd-042 and Avalonia cmd-043 still wait. cmd-038 still pending. cmd-034 Pi on hold.
