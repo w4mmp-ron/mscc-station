@@ -89,7 +89,7 @@ mscc-init-linux (2026-09-26):
     old `~/mscc/mscc-volume-gui`. Build with `build-deb.sh` in WSL from an LF copy (repo
     files are CRLF); the `.ps1` builder is stale. `mscc.sh` skips volume restore if absent.
 
-## Pending: cmd-042 (from pull f9efa00, 2026-09-25)
+## On hold (Ron, 2026-09-26): cmd-042 (from pull f9efa00, 2026-09-25)
 
 Windows `mscc-recv` 3.141 added 0xD1 CMD_SET_BW_HICUT index 5 = 1400 Hz, 6 = 1000 Hz
 (DIG-U Hi, WPF cmd-041). Pi to match in `SDRcore-recv-linux/sources/udp_thread.c`
