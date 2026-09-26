@@ -77,18 +77,18 @@
                         </StackPanel>
                         <StackPanel Orientation="Horizontal" Margin="0,4,0,0">
                             <TextBlock Text="BASELINE" FontSize="10" Foreground="#D0D0D0" Width="60" VerticalAlignment="Center"
-                                       ToolTip="Fine-tunes GRID MIN only (dB). GRID MAX stays at top of pane — no blank strip above −20. Center 50 = use GRID MIN as set. Raise to drop grass; lower to lift it."/>
+                                       ToolTip="Raises or lowers the noise floor on the display. 50 = neutral."/>
                             <Button Content="&lt;" Width="20" Height="18" Click="BaselineLeft_Click" FontSize="8"/>
                             <!-- ValueChanged attached in code AFTER Value restore (XAML wire clobberes INI on open). -->
                             <Slider x:Name="BaselineSlider" Width="100" Minimum="0" Maximum="100" Margin="2,0"
                                     SmallChange="1" LargeChange="5" Value="50"
                                     PreviewMouseWheel="OnSliderPreviewMouseWheel"
-                                    ToolTip="Floor fine-tune only. 50 = neutral. Raise to sit grass lower (higher effective MIN). Does not shift GRID MAX off the top."/>
+                                    ToolTip="Raises or lowers the noise floor on the display. 50 = neutral."/>
                             <Button Content="&gt;" Width="20" Height="18" Click="BaselineRight_Click" FontSize="8"/>
                         </StackPanel>
                         <!-- Phase-1 spectrum dB cal: one global offset for HF+LF (inject known level, align label) -->
                         <StackPanel Orientation="Horizontal" Margin="0,4,0,0"
-                                    ToolTip="Spectrum / waterfall dB cal trim. 0 = field center (−91.3 absolute after pan bias 40). ±20 dB fine adjust. Saved as SPECTRUM_DB_OFFSET in %LocalAppData%\MSCC-NET9\MSCC_Client.ini.">
+                                    ToolTip="Trims the spectrum dB scale (±20 dB). 0 = factory center.">
                             <TextBlock Text="dB CAL" FontSize="10" Foreground="#D0D0D0" Width="60" VerticalAlignment="Center"
                                        ToolTip="Relative trim around center cal. 0 = spot-on center; − lowers display; + raises. Same for Proficio and Geminus."/>
                             <Button Content="&lt;" Width="20" Height="18" Click="DbCalLeft_Click" FontSize="8"

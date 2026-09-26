@@ -17,8 +17,8 @@ namespace MSCC.Core.Services;
 public class UdpRadioService : IRadioService, IDisposable
 {
     private UdpRadioTransport _transport;
-    private readonly string _remoteIp;
-    private readonly int _remotePort;
+    private string _remoteIp;
+    private int _remotePort;
     private readonly int _localPort;
     private bool _started;
 
@@ -165,6 +165,22 @@ public class UdpRadioService : IRadioService, IDisposable
     public event Action<int>? IqValueReported;
 
     public bool IsConnected => _started || (_transport?.IsConnected ?? false);
+
+    /// <summary>
+    /// Store the host and port used by the next Start. Does nothing while a session is running.
+    /// Returns true when the stored endpoint changed.
+    /// </summary>
+    public bool SetRemoteEndpoint(string ip, int port)
+    {
+        if (_started) return false;
+        ip = (ip ?? "").Trim();
+        if (string.Equals(_remoteIp, ip, StringComparison.OrdinalIgnoreCase) && _remotePort == port)
+            return false;
+        _remoteIp = ip;
+        _remotePort = port;
+        DebugMonitor.MonitorTextBoxText($" Remote endpoint → {ip}:{port}");
+        return true;
+    }
 
     public UdpRadioService(string remoteIp, int remotePort, int localPort = 0)
     {

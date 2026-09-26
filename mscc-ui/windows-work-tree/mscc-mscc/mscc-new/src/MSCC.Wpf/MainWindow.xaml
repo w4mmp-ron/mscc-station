@@ -257,7 +257,7 @@
                   IsChecked="{Binding LaunchServersOnStart}"
                   Foreground="{DynamicResource UiPrimaryTextBrush}" FontSize="9" FontWeight="Bold"
                   Margin="6,0,0,0" VerticalAlignment="Center"
-                  ToolTip="When checked, Start also spawns ms-sdr / recv / trans. Uncheck if backends are already running (e.g. Start-MsccServers.bat). Saved as LAUNCH_SERVERS."/>
+                  ToolTip="Checked: Start also runs the radio servers on this PC. Uncheck if the servers already run here or on another computer."/>
     </StackPanel>
     <Grid Margin="0,0,0,3">
         <Grid.ColumnDefinitions>
@@ -275,7 +275,7 @@
                  Foreground="{DynamicResource UiPrimaryTextBrush}"
                  CaretBrush="{DynamicResource UiPrimaryTextBrush}"
                  BorderBrush="#FF666666" BorderThickness="1"
-                 ToolTip="Server IP. Always visible. Change applies on the next Start."
+                 ToolTip="Server IP address or name. Change applies on the next Start."
                  PreviewKeyDown="ServerAddress_PreviewKeyDown"/>
         <ComboBox Grid.Column="2"
                   ItemsSource="{Binding RecentHosts}"
@@ -411,11 +411,11 @@
     <TextBlock Text="FILTERS / STEP" FontWeight="SemiBold" Margin="0,5,0,3" Foreground="{DynamicResource UiAccentBrush}" FontSize="10"/>
     <StackPanel Orientation="Horizontal" Margin="0,0,0,3" VerticalAlignment="Center">
         <TextBlock Text="Lo" Width="25" VerticalAlignment="Center" Foreground="{DynamicResource UiPrimaryTextBrush}" FontSize="9"/>
-        <Button Content="{Binding LowCutLabel}" Width="55" Height="20" Command="{Binding CycleLowCutCommand}" FontSize="9" Style="{StaticResource MsccGoldButtonStyle}" ToolTip="LOW CUT FILTER"/>
+        <Button Content="{Binding LowCutLabel}" Width="55" Height="20" Command="{Binding CycleLowCutCommand}" FontSize="9" Style="{StaticResource MsccGoldButtonStyle}" ToolTip="Low cut filter: 75, 100, 200, 300, 500 Hz."/>
     </StackPanel>
     <StackPanel Orientation="Horizontal" Margin="0,0,0,3" VerticalAlignment="Center">
         <TextBlock Text="Hi" Width="25" VerticalAlignment="Center" Foreground="{DynamicResource UiPrimaryTextBrush}" FontSize="9"/>
-        <Button Content="{Binding HighCutLabel}" Width="55" Height="20" Command="{Binding CycleHighCutCommand}" FontSize="9" Style="{StaticResource MsccGoldButtonStyle}" ToolTip="HIGH CUT FILTER"/>
+        <Button Content="{Binding HighCutLabel}" Width="55" Height="20" Command="{Binding CycleHighCutCommand}" FontSize="9" Style="{StaticResource MsccGoldButtonStyle}" ToolTip="High cut filter. DIG-U: 1.0k–5.5k (7 steps). Other modes: 2.4k–5.5k."/>
     </StackPanel>
     <StackPanel Orientation="Horizontal" Margin="0,0,0,3" VerticalAlignment="Center">
         <TextBlock Text="CW" Width="25" VerticalAlignment="Center" Foreground="{DynamicResource UiPrimaryTextBrush}" FontSize="9"/>
@@ -423,7 +423,7 @@
     </StackPanel>
     <StackPanel Orientation="Horizontal" Margin="0,0,0,10" VerticalAlignment="Center">
         <TextBlock Text="Step" Width="25" VerticalAlignment="Center" Foreground="{DynamicResource UiPrimaryTextBrush}" FontSize="9"/>
-        <Button Content="{Binding StepLabel}" Width="55" Height="20" Command="{Binding CycleStepCommand}" FontSize="9" Style="{StaticResource MsccGoldButtonStyle}"/>
+        <Button Content="{Binding StepLabel}" Width="55" Height="20" Command="{Binding CycleStepCommand}" FontSize="9" Style="{StaticResource MsccGoldButtonStyle}" ToolTip="Mouse-wheel tuning step on the MAIN tab."/>
     </StackPanel>
 
     <!-- Spectrum display zoom (client viewport; no mouse-wheel zoom on spectrum) -->
@@ -531,7 +531,7 @@
                 <Border Grid.Column="3" Background="#FF1A1A1A" CornerRadius="4" Padding="6,3"
                         VerticalAlignment="Center" Cursor="Hand"
                         BorderThickness="3"
-                        ToolTip="Click to select VFO A (wheel tunes frequency when active)">
+                        ToolTip="Click to select VFO A. Point at a digit and roll the wheel to tune that digit (digits to the right go to 0).">
                     <Border.Style>
                         <Style TargetType="Border">
                             <Setter Property="BorderBrush" Value="{DynamicResource UiAccentMutedBrush}"/>
@@ -565,7 +565,7 @@
                 <Border Grid.Column="5" Background="#FF1A1A1A" CornerRadius="4" Padding="6,2"
                         VerticalAlignment="Center" Cursor="Hand"
                         BorderThickness="2"
-                        ToolTip="Click to select VFO B (wheel tunes frequency when active)">
+                        ToolTip="Click to select VFO B. Point at a digit and roll the wheel to tune that digit (digits to the right go to 0).">
                     <Border.Style>
                         <Style TargetType="Border">
                             <Setter Property="BorderBrush" Value="{DynamicResource UiAccentMutedBrush}"/>
@@ -620,7 +620,7 @@
                         Margin="1,1,6,1"
                         Click="RadioModelButton_Click"
                         Style="{StaticResource MsccGoldButtonStyle}"
-                        ToolTip="Select radio family: grays out bands that cannot TX on that model. (Model not sent to hardware yet.)"/>
+                        ToolTip="Radio family (set automatically from firmware). Grays out bands this radio cannot use."/>
                 <Rectangle Width="1" Height="18" Fill="#FF666666" Margin="0,0,6,0" VerticalAlignment="Center"/>
 
                 <StackPanel x:Name="BandButtonsPanel" Orientation="Horizontal">
@@ -642,16 +642,16 @@
                             Style="{StaticResource MsccGoldButtonStyle}"
                             ToolTip="630m — default 474.200 kHz (digital); Geminus only"/>
                     <!-- HF (Proficio) bands — same gold style; active band via UpdateBandButtonVisuals. -->
-                    <Button Content="160" Width="40" Margin="1" Click="BandButton_Click" Tag="1800000" Style="{StaticResource MsccGoldButtonStyle}"/>
-                    <Button Content="80" Width="40" Margin="1" Click="BandButton_Click" Tag="3500000" Style="{StaticResource MsccGoldButtonStyle}"/>
-                    <Button Content="60" Width="40" Margin="1" Click="BandButton_Click" Tag="5350000" Style="{StaticResource MsccGoldButtonStyle}"/>
-                    <Button Content="40" Width="40" Margin="1" Click="BandButton_Click" Tag="7000000" Style="{StaticResource MsccGoldButtonStyle}"/>
-                    <Button Content="30" Width="40" Margin="1" Click="BandButton_Click" Tag="10100000" Style="{StaticResource MsccGoldButtonStyle}"/>
-                    <Button Content="20" Width="40" Margin="1" Click="BandButton_Click" Tag="14000000" Style="{StaticResource MsccGoldButtonStyle}"/>
-                    <Button Content="17" Width="40" Margin="1" Click="BandButton_Click" Tag="18100000" Style="{StaticResource MsccGoldButtonStyle}"/>
-                    <Button Content="15" Width="40" Margin="1" Click="BandButton_Click" Tag="21000000" Style="{StaticResource MsccGoldButtonStyle}"/>
-                    <Button Content="12" Width="40" Margin="1" Click="BandButton_Click" Tag="24900000" Style="{StaticResource MsccGoldButtonStyle}"/>
-                    <Button Content="10" Width="40" Margin="1" Click="BandButton_Click" Tag="28000000" Style="{StaticResource MsccGoldButtonStyle}"/>
+                    <Button Content="160" Width="40" Margin="1" Click="BandButton_Click" Tag="1800000" Style="{StaticResource MsccGoldButtonStyle}" ToolTip="160m. Returns to your last frequency, mode and filters on this band."/>
+                    <Button Content="80" Width="40" Margin="1" Click="BandButton_Click" Tag="3500000" Style="{StaticResource MsccGoldButtonStyle}" ToolTip="80m. Returns to your last frequency, mode and filters on this band."/>
+                    <Button Content="60" Width="40" Margin="1" Click="BandButton_Click" Tag="5350000" Style="{StaticResource MsccGoldButtonStyle}" ToolTip="60m. Returns to your last frequency, mode and filters on this band."/>
+                    <Button Content="40" Width="40" Margin="1" Click="BandButton_Click" Tag="7000000" Style="{StaticResource MsccGoldButtonStyle}" ToolTip="40m. Returns to your last frequency, mode and filters on this band."/>
+                    <Button Content="30" Width="40" Margin="1" Click="BandButton_Click" Tag="10100000" Style="{StaticResource MsccGoldButtonStyle}" ToolTip="30m. Returns to your last frequency, mode and filters on this band."/>
+                    <Button Content="20" Width="40" Margin="1" Click="BandButton_Click" Tag="14000000" Style="{StaticResource MsccGoldButtonStyle}" ToolTip="20m. Returns to your last frequency, mode and filters on this band."/>
+                    <Button Content="17" Width="40" Margin="1" Click="BandButton_Click" Tag="18100000" Style="{StaticResource MsccGoldButtonStyle}" ToolTip="17m. Returns to your last frequency, mode and filters on this band."/>
+                    <Button Content="15" Width="40" Margin="1" Click="BandButton_Click" Tag="21000000" Style="{StaticResource MsccGoldButtonStyle}" ToolTip="15m. Returns to your last frequency, mode and filters on this band."/>
+                    <Button Content="12" Width="40" Margin="1" Click="BandButton_Click" Tag="24900000" Style="{StaticResource MsccGoldButtonStyle}" ToolTip="12m. Returns to your last frequency, mode and filters on this band."/>
+                    <Button Content="10" Width="40" Margin="1" Click="BandButton_Click" Tag="28000000" Style="{StaticResource MsccGoldButtonStyle}" ToolTip="10m. Returns to your last frequency, mode and filters on this band."/>
                     <Button x:Name="GenBandButton" Content="USER" Width="48" Margin="1" Click="GenBandButton_Click" Tag="10000000" Style="{StaticResource MsccGoldButtonStyle}"
                             ToolTip="GEN: Proficio = WWV/CHU/RWM/USER; Geminus = 198 / 660 / 880 kHz (freq cal). Click again to rotate."/>
                 </StackPanel>
@@ -752,7 +752,7 @@
                         <CheckBox Content="Use external electronic keyer (legacy)"
                                   FontSize="12" Foreground="#CCC" Margin="0,0,0,4"
                                   IsChecked="{Binding ExternalElectronicKeyer, Mode=TwoWay}"
-                                  ToolTip="Checked = PROFICIO-MKII=0 (legacy / external keyer). Unchecked (default) = MKII internal keyer. Sticky; written to mscc.ini. Flip while running offers Stop/Start. Grays PIC keyer controls; HOLD stays live."/>
+                                  ToolTip="Check if you use an external keyer or a Legacy radio. Grays the built-in keyer controls (HOLD still works). Servers must restart to apply."/>
                         <TextBlock Text="Legacy mode: PIC keyer controls grayed — HOLD stays live. Change applies after Stop/Start (prompted when session is running)."
                                    FontSize="10" Foreground="#FFAA66" TextWrapping="Wrap" Margin="0,0,0,8">
                             <TextBlock.Style>
@@ -946,12 +946,12 @@
                                     FontWeight="Bold" FontSize="11" Style="{StaticResource MsccGoldButtonStyle}"
                                     Command="{Binding RecordKeyerMemCommand}" CommandParameter="0"
                                     IsEnabled="{Binding IsRadioRunning}"
-                                    ToolTip="Store slot 0 to keyer (0x9C SELECT+BEGIN+chars+END)"/>
+                                    ToolTip="Store this message in the radio's keyer."/>
                             <Button Grid.Row="0" Grid.Column="3" Content="P" Width="32" Height="26" Margin="0,2,0,2"
                                     FontWeight="Bold" FontSize="11" Style="{StaticResource MsccGoldButtonStyle}"
                                     Command="{Binding PlayKeyerMemCommand}" CommandParameter="0"
                                     IsEnabled="{Binding IsRadioRunning}"
-                                    ToolTip="Play slot 0 once (0x9C SELECT+PLAY). Paddle aborts."/>
+                                    ToolTip="Send this message once. Touch the paddle to stop."/>
                             <!-- Slot 1 -->
                             <TextBox Grid.Row="1" Grid.Column="0" Margin="0,2,6,2" MaxLength="48"
                                      Text="{Binding KeyerMem1, UpdateSourceTrigger=PropertyChanged}"
@@ -964,12 +964,12 @@
                                     FontWeight="Bold" FontSize="11" Style="{StaticResource MsccGoldButtonStyle}"
                                     Command="{Binding RecordKeyerMemCommand}" CommandParameter="1"
                                     IsEnabled="{Binding IsRadioRunning}"
-                                    ToolTip="Store slot 1 to keyer"/>
+                                    ToolTip="Store this message in the radio's keyer."/>
                             <Button Grid.Row="1" Grid.Column="3" Content="P" Width="32" Height="26" Margin="0,2,0,2"
                                     FontWeight="Bold" FontSize="11" Style="{StaticResource MsccGoldButtonStyle}"
                                     Command="{Binding PlayKeyerMemCommand}" CommandParameter="1"
                                     IsEnabled="{Binding IsRadioRunning}"
-                                    ToolTip="Play slot 1 once"/>
+                                    ToolTip="Send this message once. Touch the paddle to stop."/>
                             <!-- Slot 2 -->
                             <TextBox Grid.Row="2" Grid.Column="0" Margin="0,2,6,2" MaxLength="48"
                                      Text="{Binding KeyerMem2, UpdateSourceTrigger=PropertyChanged}"
@@ -982,12 +982,12 @@
                                     FontWeight="Bold" FontSize="11" Style="{StaticResource MsccGoldButtonStyle}"
                                     Command="{Binding RecordKeyerMemCommand}" CommandParameter="2"
                                     IsEnabled="{Binding IsRadioRunning}"
-                                    ToolTip="Store slot 2 to keyer"/>
+                                    ToolTip="Store this message in the radio's keyer."/>
                             <Button Grid.Row="2" Grid.Column="3" Content="P" Width="32" Height="26" Margin="0,2,0,2"
                                     FontWeight="Bold" FontSize="11" Style="{StaticResource MsccGoldButtonStyle}"
                                     Command="{Binding PlayKeyerMemCommand}" CommandParameter="2"
                                     IsEnabled="{Binding IsRadioRunning}"
-                                    ToolTip="Play slot 2 once"/>
+                                    ToolTip="Send this message once. Touch the paddle to stop."/>
                             <!-- Slot 3 -->
                             <TextBox Grid.Row="3" Grid.Column="0" Margin="0,2,6,2" MaxLength="48"
                                      Text="{Binding KeyerMem3, UpdateSourceTrigger=PropertyChanged}"
@@ -1000,12 +1000,12 @@
                                     FontWeight="Bold" FontSize="11" Style="{StaticResource MsccGoldButtonStyle}"
                                     Command="{Binding RecordKeyerMemCommand}" CommandParameter="3"
                                     IsEnabled="{Binding IsRadioRunning}"
-                                    ToolTip="Store slot 3 to keyer"/>
+                                    ToolTip="Store this message in the radio's keyer."/>
                             <Button Grid.Row="3" Grid.Column="3" Content="P" Width="32" Height="26" Margin="0,2,0,2"
                                     FontWeight="Bold" FontSize="11" Style="{StaticResource MsccGoldButtonStyle}"
                                     Command="{Binding PlayKeyerMemCommand}" CommandParameter="3"
                                     IsEnabled="{Binding IsRadioRunning}"
-                                    ToolTip="Play slot 3 once"/>
+                                    ToolTip="Send this message once. Touch the paddle to stop."/>
                         </Grid>
                         <TextBlock Text="{Binding KeyerMemStatus}" FontSize="10" Foreground="#AAAAAA"
                                    TextWrapping="Wrap" Margin="0,6,0,0" MinHeight="16"/>
@@ -1413,7 +1413,7 @@
                                                 IsSnapToTickEnabled="True" TickFrequency="1"
                                                 IsEnabled="{Binding PowerCalCalibrating}"
                                                 PreviewMouseWheel="Slider_PreviewMouseWheel"
-                                                ToolTip="Adjust calibration drive (0xA2) while CALIBRATE is active"/>
+                                                ToolTip="Adjust output power while CALIBRATE is on (max 5 W)."/>
                                         <Border Background="#444" BorderBrush="#888" BorderThickness="1" Padding="8,4" Margin="12,0,0,0" MinWidth="160">
                                             <TextBlock Text="{Binding PowerCalStepLabel}" Foreground="#00FFAA" FontWeight="Bold" FontSize="12"/>
                                         </Border>
@@ -1443,7 +1443,7 @@
                                         <Button Content="CALIBRATE" Width="120" Height="28"
                                                 Command="{Binding TogglePowerCalCalibrateCommand}"
                                                 FontSize="12" FontWeight="Bold" Foreground="Black"
-                                                ToolTip="Start/stop manual power calibration (0xA2 + 0xAC)">
+                                                ToolTip="Start/stop power calibration. Click again to accept or reject.">
                                             <Button.Style>
                                                 <Style TargetType="Button" BasedOn="{StaticResource MsccGoldButtonStyle}">
                                                     <Style.Triggers>
@@ -1461,8 +1461,7 @@
                                 </StackPanel>
                             </Border>
 
-                            <TextBlock Text="Bands: 2200/630 + 160–10. Band select: 0xA1 → step 0xB4. CALIBRATE: 0xA2 + TX 0xAC. Status: client-settings.ini (PROFICIO_B* / GEMINUS_B*)."
-                                       Foreground="#D0D0D0" FontSize="11" TextWrapping="Wrap" Margin="0,4,0,0"/>
+
                         </StackPanel>
                     </ScrollViewer>
                 </Border>
@@ -1563,7 +1562,7 @@
                                                 IsSnapToTickEnabled="True" TickFrequency="1"
                                                 IsEnabled="{Binding AmpCalCalibrating}"
                                                 PreviewMouseWheel="Slider_PreviewMouseWheel"
-                                                ToolTip="Adjust amp cal step (0x08). Enabled during CALIBRATE. STEP = 100 + value."/>
+                                                ToolTip="Adjust amplifier drive while CALIBRATE is on."/>
                                         <StackPanel Grid.Row="0" Grid.Column="2" Orientation="Horizontal" VerticalAlignment="Center">
                                             <Border Background="#444" BorderBrush="#888" BorderThickness="1" Padding="8,4" Margin="12,0,0,0" MinWidth="72">
                                                 <TextBlock Text="{Binding AmpCalSliderValue}" Foreground="#00FFAA" FontWeight="Bold"
@@ -1581,7 +1580,7 @@
                                             <Button Content="TX" Width="120" Height="28" Margin="0,0,16,0"
                                                     Command="{Binding ToggleAmpCalTxCommand}"
                                                     FontSize="12" FontWeight="Bold" Foreground="Black"
-                                                    ToolTip="Amp cal TX: TUNE mode + RIG_TUNE (original PA_TX_button8)">
+                                                    ToolTip="Send a tune carrier through the amplifier path.">
                                                 <Button.Style>
                                                     <Style TargetType="Button" BasedOn="{StaticResource MsccGoldButtonStyle}">
                                                         <Style.Triggers>
@@ -1601,7 +1600,7 @@
                                             <Button Content="CALIBRATE" Width="120" Height="28"
                                                     Command="{Binding ToggleAmpCalCalibrateCommand}"
                                                     FontSize="12" FontWeight="Bold" Foreground="Black"
-                                                    ToolTip="Manual amp cal: TUNE + RIG_TUNE + potentiia slider (0x08)">
+                                                    ToolTip="Start/stop amplifier power calibration. Adjust POWER, then click again to accept. QRP CAL must be done for this band first.">
                                                 <Button.Style>
                                                     <Style TargetType="Button" BasedOn="{StaticResource MsccGoldButtonStyle}">
                                                         <Style.Triggers>
@@ -1620,8 +1619,7 @@
                                 </StackPanel>
                             </Border>
 
-                            <TextBlock Text="Status lamps: amp-cal-status.ini. Band: 0xF9+0xFA. TX: RIG_TUNE. CALIBRATE: 0x08 slider (−99…0). Needs QRP CAL lamp green for that band."
-                                       Foreground="#D0D0D0" FontSize="11" TextWrapping="Wrap" Margin="0,4,0,0"/>
+
                         </StackPanel>
                     </ScrollViewer>
                 </Border>
@@ -1655,7 +1653,7 @@
                                     <Button Content="START" Width="88" Height="26" Margin="0,0,10,0"
                                             Command="{Binding StartRxIqCommand}"
                                             FontSize="11" FontWeight="Bold" Foreground="Black"
-                                            ToolTip="START: 0x58 band + 0x55 RX_IQBD + LO (last-used). Click again to end session.">
+                                            ToolTip="Start or end receive image balancing on this band.">
                                         <Button.Style>
                                             <Style TargetType="Button" BasedOn="{StaticResource MsccGoldButtonStyle}">
                                                 <Setter Property="Height" Value="26"/>
@@ -1681,13 +1679,13 @@
                                             Style="{StaticResource MsccGoldButtonStyle}"
                                             FontSize="10" FontWeight="Bold" Foreground="Black"
                                             IsEnabled="{Binding RxIqSessionActive}"
-                                            ToolTip="Commit I/Q value (0x57 → wait 0x56)"/>
+                                            ToolTip="Save this balance value for this band."/>
                                     <Button Content="RESET ALL" Width="72" Height="26"
                                             Command="{Binding ResetAllRxIqCommand}"
                                             Style="{StaticResource MsccGoldButtonStyle}"
                                             FontSize="10" FontWeight="Bold" Foreground="Black"
                                             IsEnabled="{Binding RxIqSessionActive}"
-                                            ToolTip="Apply current I/Q offset to all bands (0x55 RX + 0x8D)"/>
+                                            ToolTip="Copy the current value to all bands."/>
                                 </StackPanel>
 
                                 <!-- I/Q OFFSET row -->
@@ -1700,7 +1698,7 @@
                                             IsEnabled="{Binding RxIqSessionActive}"
                                             VerticalAlignment="Center"
                                             PreviewMouseWheel="Slider_PreviewMouseWheel"
-                                            ToolTip="I/Q balance offset (CMD_SET_IQ_OFFSET 0x52)"/>
+                                            ToolTip="Adjust for the weakest image signal."/>
                                     <Border Background="#444" BorderBrush="#888" BorderThickness="1" Padding="6,2" Margin="8,0,0,0" MinWidth="48">
                                         <TextBlock Text="{Binding RxIqOffset}" Foreground="#00FFAA" FontWeight="Bold" FontSize="11" HorizontalAlignment="Center"/>
                                     </Border>
@@ -1709,7 +1707,7 @@
                                             Style="{StaticResource MsccGoldButtonStyle}"
                                             FontSize="10" FontWeight="Bold" Foreground="Black"
                                             IsEnabled="{Binding RxIqSessionActive}"
-                                            ToolTip="Offset 0 + COMMIT (0x52, 0x57)"/>
+                                            ToolTip="Set the balance to 0 and save."/>
                                 </StackPanel>
 
                                 <!-- LO FINE row -->
@@ -1722,7 +1720,7 @@
                                             IsEnabled="{Binding RxIqSessionActive}"
                                             VerticalAlignment="Center"
                                             PreviewMouseWheel="Slider_PreviewMouseWheel"
-                                            ToolTip="Fine LO offset (Hz) — retunes SET_MAIN_FREQ"/>
+                                            ToolTip="Fine-tune the receiver during balancing (Hz)."/>
                                     <Border Background="#444" BorderBrush="#888" BorderThickness="1" Padding="6,2" Margin="8,0,0,0" MinWidth="56">
                                         <TextBlock Text="{Binding RxIqFreqOffsetHz}" Foreground="#00FFAA" FontWeight="Bold" FontSize="11" HorizontalAlignment="Center"/>
                                     </Border>
@@ -1811,7 +1809,7 @@
                                                 Value="{Binding TxIqPower, Mode=TwoWay}"
                                                 VerticalAlignment="Center"
                                                 PreviewMouseWheel="Slider_PreviewMouseWheel"
-                                                ToolTip="Tune power for TX IQ cal (CMD_SET_TUNE_POWER)"/>
+                                                ToolTip="Test carrier power."/>
                                         <Border Grid.Column="2" Background="#444" BorderBrush="#888" BorderThickness="1" Padding="8,4" Margin="12,0,0,0" MinWidth="48">
                                             <TextBlock Text="{Binding TxIqPower}" Foreground="#00FFAA" FontWeight="Bold" FontSize="12" HorizontalAlignment="Center"/>
                                         </Border>
@@ -1831,7 +1829,7 @@
                                                 IsEnabled="{Binding TxIqTxOn}"
                                                 VerticalAlignment="Center"
                                                 PreviewMouseWheel="Slider_PreviewMouseWheel"
-                                                ToolTip="TX IQ offset (0x52). Enabled while TX ON. −200…+200."/>
+                                                ToolTip="Adjust for the weakest transmit image (while TX is on)."/>
                                         <Border Grid.Column="2" Background="#444" BorderBrush="#888" BorderThickness="1" Padding="8,4" Margin="12,0,0,0" MinWidth="56">
                                             <TextBlock Text="{Binding TxIqOffset}" Foreground="#00FFAA" FontWeight="Bold" FontSize="12" HorizontalAlignment="Center"/>
                                         </Border>
@@ -1842,7 +1840,7 @@
                                         <Button Content="TX" Width="110" Height="28" Margin="0,0,12,0"
                                                 Command="{Binding ToggleTxIqTxCommand}"
                                                 FontSize="12" FontWeight="Bold" Foreground="Black"
-                                                ToolTip="Start/stop TX IQ tune carrier (TUNE + RIG_TUNE). Use APPLY separately to commit.">
+                                                ToolTip="Start/stop the test carrier. Use APPLY to save.">
                                             <Button.Style>
                                                 <Style TargetType="Button" BasedOn="{StaticResource MsccGoldButtonStyle}">
                                                     <Style.Triggers>
@@ -1860,20 +1858,19 @@
                                                 Command="{Binding ApplyTxIqCommand}"
                                                 Style="{StaticResource MsccGoldButtonStyle}"
                                                 FontSize="12" FontWeight="Bold" Foreground="Black"
-                                                ToolTip="Commit current I/Q value (0x57). Wait for IQ_OPERATION_COMPLETE."/>
+                                                ToolTip="Save this balance value for this band."/>
                                         <Button Content="RESET ALL" Width="110" Height="28"
                                                 Command="{Binding ResetAllTxIqCommand}"
                                                 Style="{StaticResource MsccGoldButtonStyle}"
                                                 FontSize="12" FontWeight="Bold" Foreground="Black"
-                                                ToolTip="Factory reset all I/Q band values (0x8D). Confirmation required."/>
+                                                ToolTip="Return all bands to factory values (asks first)."/>
                                     </StackPanel>
 
                                     <TextBlock Text="{Binding TxIqStatus}" Foreground="#00FFAA" FontSize="12" Margin="0,12,0,0" TextWrapping="Wrap"/>
                                 </StackPanel>
                             </Border>
 
-                            <TextBlock Text="Bands: 2200/630 + 160–10 (same as QRP/AMP CAL). Band: 0x58 + cal freq. TX: 0x55 TX_IQBD, TUNE, RIG_TUNE. Offset: 0x52. Apply: 0x57 → 0x56. QRP only. External RX to null the image."
-                                       Foreground="#D0D0D0" FontSize="11" TextWrapping="Wrap" Margin="0,4,0,0"/>
+
                         </StackPanel>
                     </ScrollViewer>
                 </Border>
@@ -1881,7 +1878,7 @@
 
 
             <!-- Freq Cal Tab (recreated from original for Frequency Calibration) -->
-            <TabItem Header="FREQ CAL" ToolTip="FREQUENCY CALIBRATION">
+            <TabItem x:Name="FreqCalTabItem" Header="FREQ CAL" ToolTip="FREQUENCY CALIBRATION">
                 <Border Background="#FF222222" CornerRadius="4" Padding="8">
                     <Grid>
                         <Grid.RowDefinitions>
@@ -1914,7 +1911,7 @@
                                         IsEnabled="False" Click="FreqCalPPMPlus_Click"
                                         ToolTip="Increase PPM by 1 (rate-limited to protect radio)"/>
                                 <TextBlock Text="ST:" FontSize="12" VerticalAlignment="Center" Margin="8,0,0,0"/>
-                                <TextBlock x:Name="FreqCalStatusLabel" Text="OK" Width="130" FontSize="12" Foreground="#00FFAA" VerticalAlignment="Center" TextWrapping="Wrap"/>
+                                <TextBlock x:Name="FreqCalStatusLabel" Text="OK" Width="240" FontSize="12" Foreground="#00FFAA" VerticalAlignment="Center" TextWrapping="Wrap"/>
                                 <ProgressBar x:Name="FreqCalProgress" Width="80" Height="18" Minimum="0" Maximum="100" Value="0" Margin="4,0"/>
                             </StackPanel>
                         </StackPanel>
@@ -1956,18 +1953,18 @@
                                                Foreground="#D0D0D0" FontSize="11" TextWrapping="Wrap" Margin="0,0,0,8"/>
                                     <TextBlock Text="{Binding ProficioTempC, StringFormat=Proficio: {0:F1} °C}"
                                                Foreground="{DynamicResource UiPrimaryTextBrush}" FontSize="12"
-                                               ToolTip="Radio/board temperature report (legacy XO compensation path)"/>
+                                               ToolTip="Transceiver board temperature (°C)."/>
                                     <!-- Future amp monitoring (front-and-center when used) — keep bindings ready:
                                     <TextBlock Text="{Binding AmpTempC, StringFormat=PA temp: {0:F1} °C}"
                                                Foreground="{DynamicResource UiPrimaryTextBrush}" FontSize="12" Margin="0,4,0,0"
-                                               ToolTip="Amplifier temperature (future amp status face)"/>
+                                               ToolTip="Reserved for a future amplifier."/>
                                     <TextBlock Text="{Binding AmpCurrentMa, StringFormat=PA current: {0} mA}"
                                                Foreground="{DynamicResource UiPrimaryTextBrush}" FontSize="12" Margin="0,2,0,0"
-                                               ToolTip="Amplifier current (future amp status face)"/>
+                                               ToolTip="Reserved for a future amplifier."/>
                                     -->
-                                    <TextBlock Text="PA temp / PA current — reserved (not shown)"
+                                    <TextBlock Text="Amplifier temperature and current: reserved for a future amplifier."
                                                Foreground="#888" FontSize="10" Margin="0,6,0,0"
-                                               ToolTip="Uncomment PA bindings above when amp monitoring is productized"/>
+                                               ToolTip="Amplifier temperature and current: reserved for a future amplifier."/>
                                 </StackPanel>
                             </Border>
 
@@ -1982,7 +1979,7 @@
                                             FontSize="12" FontWeight="Bold"
                                             Click="SettingsConfigReset_Click"
                                             Background="#553333" Foreground="White" BorderBrush="#884444"
-                                            ToolTip="Wipe AppData config (keep logs). UI templates from init-files; radio IQ/freq/QRP from factory for the connected radio on next server start."/>
+                                            ToolTip="Erase MSCC settings on this PC (logs kept) and close MSCC. Radio calibration reloads from factory values for your radio at the next server start."/>
                                 </StackPanel>
                             </Border>
                         </StackPanel>
@@ -2043,7 +2040,7 @@
                     <Button Grid.Row="1" Grid.Column="0" Content="{Binding AgcButtonText}" Height="20" HorizontalAlignment="Stretch" Command="{Binding CycleAgcCommand}" Margin="0,2,2,0" FontSize="9" Style="{StaticResource MsccGoldButtonStyle}" VerticalAlignment="Center" ToolTip="AGC"/>
 
                     <!-- Row 1, Col 1: AMP — alert red when on -->
-                    <Button Grid.Row="1" Grid.Column="1" Content="AMP" Height="20" HorizontalAlignment="Stretch" Command="{Binding ToggleAmpCommand}" Margin="2,2,0,0" FontSize="9" VerticalAlignment="Center" ToolTip="EXTERNAL AMP">
+                    <Button Grid.Row="1" Grid.Column="1" Content="AMP" Height="20" HorizontalAlignment="Stretch" Command="{Binding ToggleAmpCommand}" Margin="2,2,0,0" FontSize="9" VerticalAlignment="Center" ToolTip="AMP on: use the AMP CAL power table to drive an external amplifier (Multus amps need ~75% drive; full 5 W overdrives them). AMP off: normal QRP, up to 5 W.">
                         <Button.Style>
                             <Style TargetType="Button" BasedOn="{StaticResource MsccGoldButtonStyle}">
                                 <Style.Triggers>
@@ -2097,9 +2094,9 @@
                 <!-- MAIN operate power: same stores as RX/TX tab; bank follows TUN / mode -->
                 <TextBlock Text="{Binding MainOperatePowerLabel}" FontWeight="Bold" Foreground="{DynamicResource UiAccentBrush}" FontSize="9"
                            Margin="0,4,0,1" HorizontalAlignment="Left"
-                           ToolTip="Drive power for the current context: TUN→Tune, CW→CW, AM→AM carrier, FM→FM, USB/LSB→SSB. Same values as RX/TX Power Levels."/>
+                           ToolTip="Drive power for what you're doing: TUN→Tune, CW→CW, AM→AM carrier, FM→FM, LSB/USB/DIG-U→SSB. Same values as the RX/TX tab."/>
                 <StackPanel Orientation="Horizontal" Margin="0,0,0,1" VerticalAlignment="Center"
-                            ToolTip="Drive power for the current context: TUN→Tune, CW→CW, AM→AM carrier, FM→FM, USB/LSB→SSB. Same values as RX/TX Power Levels.">
+                            ToolTip="Drive power for what you're doing: TUN→Tune, CW→CW, AM→AM carrier, FM→FM, LSB/USB/DIG-U→SSB. Same values as the RX/TX tab.">
                     <Slider Width="108" Minimum="0" Maximum="100" SmallChange="1"
                             Value="{Binding MainOperatePowerPercent, Mode=TwoWay}"
                             PreviewMouseWheel="Slider_PreviewMouseWheel" VerticalAlignment="Center"/>
@@ -2112,10 +2109,10 @@
                 <!-- Compression level (enable = CMP button above; phones/P only) -->
                 <TextBlock Text="COMPRESSION" FontWeight="Bold" Foreground="{DynamicResource UiAccentBrush}" FontSize="9"
                            Margin="0,3,0,1" HorizontalAlignment="Left"
-                           ToolTip="Compression level (dB). Phones (P) only — disabled while Audio is D."/>
+                           ToolTip="Speech compression amount (0–24 dB). Phones path only; grayed on Digital."/>
                 <StackPanel Orientation="Horizontal" Margin="0,0,0,1" VerticalAlignment="Center"
                             IsEnabled="{Binding IsDigitalAudio, Converter={StaticResource InverseBoolConverter}}"
-                            ToolTip="Compression level (dB). Phones (P) only — disabled while Audio is D.">
+                            ToolTip="Speech compression amount (0–24 dB). Phones path only; grayed on Digital.">
                     <Slider Width="108" Minimum="0" Maximum="24" SmallChange="1"
                             Value="{Binding CompressionLevel, Mode=TwoWay}"
                             PreviewMouseWheel="Slider_PreviewMouseWheel" VerticalAlignment="Center"/>
@@ -2143,7 +2140,7 @@
                 <!-- MODE: 3×2, band-button size; active latched; FM reserved (grayed) -->
                 <TextBlock Text="MODE" FontWeight="Bold" Foreground="{DynamicResource UiAccentBrush}" FontSize="9"
                            Margin="0,5,0,2" HorizontalAlignment="Left"
-                           ToolTip="Operating mode for the active VFO. DIG-U uses its own Lo/Hi filters and Audio D."/>
+                           ToolTip="Mode for the active VFO. DIG-U has its own Lo/Hi filters (including 1.0k/1.4k) and switches audio to Digital."/>
                 <Grid HorizontalAlignment="Stretch" Margin="0,0,0,4">
                     <Grid.ColumnDefinitions>
                         <ColumnDefinition Width="*"/>
@@ -2188,7 +2185,7 @@
                     </Button>
                     <Button Grid.Row="0" Grid.Column="2" Content="DIG-U" Height="22" Margin="1" HorizontalAlignment="Stretch"
                             Command="{Binding SelectModeCommand}" CommandParameter="DIG-U"
-                            FontSize="8" ToolTip="DIG-U — digital upper; own Lo/Hi filters; Audio D">
+                            FontSize="8" ToolTip="DIG-U: upper sideband for digital modes. Own filters (Hi down to 1.0k); switches audio to Digital.">
                         <Button.Style>
                             <Style TargetType="Button" BasedOn="{StaticResource MsccGoldButtonStyle}">
                                 <Style.Triggers>
@@ -2267,7 +2264,7 @@
                     <Button Grid.Column="0" Content="NB" Height="20" HorizontalAlignment="Stretch"
                             Command="{Binding ToggleNbCommand}" Margin="0,0,2,0"
                             Foreground="Black" FontSize="9" FontWeight="Bold"
-                            ToolTip="Noise Blanker enable (0x80)">
+                            ToolTip="Noise blanker on/off">
                         <Button.Style>
                             <Style TargetType="Button" BasedOn="{StaticResource MsccGoldButtonStyle}">
                                 <Style.Triggers>
@@ -2283,7 +2280,7 @@
                     <Button Grid.Column="1" Content="NR" Height="20" HorizontalAlignment="Stretch"
                             Command="{Binding ToggleNrCommand}" Margin="2,0,2,0"
                             Foreground="Black" FontSize="9" FontWeight="Bold"
-                            ToolTip="Noise Reduction enable (0xA3)">
+                            ToolTip="Noise reduction on/off">
                         <Button.Style>
                             <Style TargetType="Button" BasedOn="{StaticResource MsccGoldButtonStyle}">
                                 <Style.Triggers>
@@ -2299,7 +2296,7 @@
                     <Button Grid.Column="2" Content="AN" Height="20" HorizontalAlignment="Stretch"
                             Command="{Binding ToggleAnCommand}" Margin="2,0,0,0"
                             Foreground="Black" FontSize="9" FontWeight="Bold"
-                            ToolTip="Auto Notch enable (0x8E) — same select style as NB/NR">
+                            ToolTip="Automatic notch on/off">
                         <Button.Style>
                             <Style TargetType="Button" BasedOn="{StaticResource MsccGoldButtonStyle}">
                                 <Style.Triggers>
@@ -2317,7 +2314,7 @@
 
                 <!-- NB pulse + threshold (moved from RX/TX) -->
                 <StackPanel Orientation="Horizontal" Margin="0,0,0,3" VerticalAlignment="Center"
-                            ToolTip="NB pulse width (µs). CMD_GET_SET_NB_PULSE_WIDTH 0x81">
+                            ToolTip="Noise blanker pulse width (µs)">
                     <TextBlock Text="Pulse" Width="36" VerticalAlignment="Center" Foreground="{DynamicResource UiPrimaryTextBrush}" FontSize="9"/>
                     <Slider Width="72" Minimum="10" Maximum="510" SmallChange="1" LargeChange="10"
                             Value="{Binding NbPulse, Mode=TwoWay}" PreviewMouseWheel="Slider_PreviewMouseWheel"
@@ -2328,7 +2325,7 @@
                     </Border>
                 </StackPanel>
                 <StackPanel Orientation="Horizontal" Margin="0,0,0,4" VerticalAlignment="Center"
-                            ToolTip="NB threshold. CMD_GET_SET_NB_THRESHOLD 0x82">
+                            ToolTip="Noise blanker threshold">
                     <TextBlock Text="Thr" Width="36" VerticalAlignment="Center" Foreground="{DynamicResource UiPrimaryTextBrush}" FontSize="9"/>
                     <Slider Width="72" Minimum="1" Maximum="1009" SmallChange="5" LargeChange="20"
                             Value="{Binding NbThreshold, Mode=TwoWay}" PreviewMouseWheel="Slider_PreviewMouseWheel"
@@ -2361,7 +2358,7 @@
                     <Button Grid.Column="0" Content="MON" Height="20" HorizontalAlignment="Stretch"
                             Command="{Binding ToggleMonitorCommand}" Margin="0,0,3,0"
                             Foreground="Black" FontSize="9" FontWeight="Bold"
-                            ToolTip="Mic monitor (same as AUD/SYS)">
+                            ToolTip="Monitor: hear your own transmit audio.">
                         <Button.Style>
                             <Style TargetType="Button" BasedOn="{StaticResource MsccGoldButtonStyle}">
                                 <Style.Triggers>

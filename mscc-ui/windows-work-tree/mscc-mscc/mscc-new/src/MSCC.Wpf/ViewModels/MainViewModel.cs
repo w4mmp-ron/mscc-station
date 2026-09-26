@@ -1628,7 +1628,8 @@ public partial class MainViewModel : ObservableObject, IDisposable
             OnPropertyChanged(nameof(IsFmMode));
             NotifyMainOperatePower();
             SaveLastUsedForCurrentBand();
-            if (IsRadioRunning && RadioState.ActiveVfo.FrequencyHz > 0 && newMode != RadioMode.None)
+            if (!_suppressPersonalityRemember &&
+                IsRadioRunning && RadioState.ActiveVfo.FrequencyHz > 0 && newMode != RadioMode.None)
                 SpectrumWaterfallSettings.RememberLastPersonalityFreq(
                     RadioState.ActiveVfo.FrequencyHz, FormatModeDisplay(newMode));
 
@@ -1719,6 +1720,13 @@ public partial class MainViewModel : ObservableObject, IDisposable
 
     /// <summary>When true, skip save/load of per-mode filter profiles (band last-used load applies its own cuts).</summary>
     private bool _suppressModeProfileSwap;
+
+    /// <summary>FREQ CAL tab swaps to CW without writing that mode into last-used or LAST_HF/LF.</summary>
+    private bool _suppressPersonalityRemember;
+    private bool _freqCalEntryHeld;
+    private RadioMode _freqCalSavedMode;
+    private int _freqCalSavedFilter;
+    private int _freqCalSavedPitch;
 
     /// <summary>Audio P/D state before entering DIG-U (restored when leaving).</summary>
     private bool? _audioBeforeDigU;
@@ -3744,6 +3752,79 @@ public partial class MainViewModel : ObservableObject, IDisposable
         MonitorTextBoxText($" RX IQ offset → {v} (0x52)");
     }
 
+    /// <summary>FREQ CAL tab: CW, 200 Hz filter, 600 Hz pitch. Last-used mode is left alone.</summary>
+    public void EnterFreqCalTab()
+    {
+        if (_freqCalEntryHeld)
+        {
+            MonitorTextBoxText(" Freq Cal ENTER: session already open");
+            return;
+        }
+
+        var mode = RadioState.ActiveVfo.Mode;
+        _freqCalSavedMode = mode;
+        _freqCalSavedFilter = CwFilterIndex;
+        _freqCalSavedPitch = CwPitchIndex;
+        _freqCalEntryHeld = true;
+
+        bool prevSave = SuppressLastUsedSave;
+        bool prevPersonality = _suppressPersonalityRemember;
+        SuppressLastUsedSave = true;
+        _suppressPersonalityRemember = true;
+        try
+        {
+            if (mode != RadioMode.CW)
+                ActiveMode = "CW";
+            CwFilterIndex = 2;
+            CwPitchIndex = 1;
+        }
+        finally
+        {
+            SuppressLastUsedSave = prevSave;
+            _suppressPersonalityRemember = prevPersonality;
+        }
+
+        string shown = mode == RadioMode.None ? "none" : FormatModeDisplay(mode);
+        MonitorTextBoxText($" Freq Cal ENTER: mode {shown} → CW, filter/pitch saved");
+    }
+
+    /// <summary>Leave FREQ CAL: restore the mode, CW filter, and pitch from entry.</summary>
+    public void LeaveFreqCalTab()
+    {
+        if (!_freqCalEntryHeld) return;
+
+        var mode = _freqCalSavedMode;
+        int filter = _freqCalSavedFilter;
+        int pitch = _freqCalSavedPitch;
+        _freqCalEntryHeld = false;
+
+        bool prevSave = SuppressLastUsedSave;
+        bool prevPersonality = _suppressPersonalityRemember;
+        SuppressLastUsedSave = true;
+        _suppressPersonalityRemember = true;
+        try
+        {
+            if (mode == RadioMode.None)
+            {
+                RadioState.ActiveVfo.Mode = RadioMode.None;
+                OnPropertyChanged(nameof(ActiveMode));
+            }
+            else if (RadioState.ActiveVfo.Mode != mode)
+                ActiveMode = FormatModeDisplay(mode);
+
+            CwFilterIndex = filter;
+            CwPitchIndex = pitch;
+        }
+        finally
+        {
+            SuppressLastUsedSave = prevSave;
+            _suppressPersonalityRemember = prevPersonality;
+        }
+
+        string shown = mode == RadioMode.None ? "none" : FormatModeDisplay(mode);
+        MonitorTextBoxText($" Freq Cal LEAVE: restored mode {shown}, filter {filter}, pitch {pitch}");
+    }
+
     /// <summary>Enter RX IQ tab (spectrum already in XAML; status hint only).</summary>
     public void EnterRxIqTab()
     {
@@ -5256,8 +5337,8 @@ public partial class MainViewModel : ObservableObject, IDisposable
         MonitorTextBoxText($" StepIndex set: {value} ({StepLabel})");
     }
 
-    // Server address (IP or domain) on Main tab. Changes are persisted to MSCC_Client.ini.
-    // NO re-initialization or service restart here. User must stop and restart MSCC.
+    // Server address on the Main tab is saved immediately. The live UDP endpoint
+    // updates on the next Start (SetRemoteEndpoint), so Stop then Start is enough.
     partial void OnBackendIpChanged(string value)
     {
         if (string.IsNullOrWhiteSpace(value)) return;
@@ -5340,6 +5421,11 @@ public partial class MainViewModel : ObservableObject, IDisposable
             $" Start ({reason}): {(launch ? "connect + launch backends" : "connect only (no backend spawn)")}");
         try
         {
+            if (_radioService is UdpRadioService udp &&
+                udp.SetRemoteEndpoint(BackendIp, BackendPort))
+            {
+                MonitorTextBoxText($" Start ({reason}): remote endpoint {BackendIp}:{BackendPort}");
+            }
             await _radioService.StartAsync(launchSubsystems: launch);
             IsRadioRunning = _radioService.IsConnected;
             if (IsRadioRunning)
@@ -5408,6 +5494,8 @@ public partial class MainViewModel : ObservableObject, IDisposable
     /// </summary>
     public void StopRadioService(string reason = "manual")
     {
+        if (_freqCalEntryHeld)
+            LeaveFreqCalTab();
         MonitorTextBoxText($" Stop ({reason}): ending radio session...");
         try
         {
@@ -5608,13 +5696,13 @@ public partial class MainViewModel : ObservableObject, IDisposable
     {
         try
         {
-            var msg = "You have entered a new server address (IP address or domain name).\n\n" +
-                      "You must stop MSCC and then start MSCC for the change to take effect.";
+            var msg = "You have entered a new server address.\n\n" +
+                      "Press Stop, then Start, to connect to it.";
             System.Windows.MessageBox.Show(msg, "MSCC Server Address",
                 System.Windows.MessageBoxButton.OK, System.Windows.MessageBoxImage.Information);
         }
         catch { }
-        MonitorTextBoxText(" Server address changed in UI - popup shown (restart MSCC required)");
+        MonitorTextBoxText(" Server address changed in UI - applies on next Start");
     }
 
     private void WireService(IRadioService svc)

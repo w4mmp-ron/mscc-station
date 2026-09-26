@@ -22,7 +22,22 @@ public partial class MainWindow : Window
     private bool _ampCalTabActive;
     private bool _txIqTabActive;
     private bool _rxIqTabActive;
+    private bool _freqCalTabActive;
+    private bool _freqCalRestorePending;
+    private int _freqCalProgressSteps;
     private bool _exiting;
+
+    private static readonly SolidColorBrush FreqCalBusyBrush = CreateFreqCalBrush(0xFF, 0xC0, 0x00);
+    private static readonly SolidColorBrush FreqCalOkBrush = CreateFreqCalBrush(0x00, 0xFF, 0xAA);
+    private static readonly SolidColorBrush FreqCalFailBrush = CreateFreqCalBrush(0xFF, 0x55, 0x55);
+    private static readonly SolidColorBrush FreqCalIdleBrush = CreateFreqCalBrush(0x00, 0xFF, 0xAA);
+
+    private static SolidColorBrush CreateFreqCalBrush(byte r, byte g, byte b)
+    {
+        var brush = new SolidColorBrush(Color.FromRgb(r, g, b));
+        brush.Freeze();
+        return brush;
+    }
 
     public MainWindow()
     {
@@ -693,6 +708,48 @@ public partial class MainWindow : Window
             ViewModel.LeaveRxIqTab();
             Dispatcher.BeginInvoke(UpdateBandButtonVisuals);
         }
+
+        bool nowFreqCal = selected != null &&
+                          (ReferenceEquals(selected, FreqCalTabItem) ||
+                           string.Equals(selected.Header?.ToString(), "FREQ CAL", StringComparison.Ordinal));
+        if (nowFreqCal && !_freqCalTabActive)
+        {
+            if (_freqCalRestorePending)
+            {
+                // Returned before the run finished. Keep the CW session already snapshotted.
+                _freqCalRestorePending = false;
+                _freqCalTabActive = true;
+            }
+            else
+            {
+                _freqCalTabActive = true;
+                ViewModel.EnterFreqCalTab();
+            }
+        }
+        else if (!nowFreqCal && _freqCalTabActive)
+        {
+            if (_freqCalManualMode)
+            {
+                Dispatcher.BeginInvoke(() =>
+                {
+                    if (!ReferenceEquals(MainTabControl.SelectedItem, FreqCalTabItem))
+                        MainTabControl.SelectedItem = FreqCalTabItem;
+                });
+                MessageBox.Show("EXIT MANUAL CALIBRATION FIRST.", "MSCC",
+                    MessageBoxButton.OK, MessageBoxImage.Asterisk);
+            }
+            else if (_freqCalInProgress)
+            {
+                // Leave the tab. Restore the previous mode when the run reports a result.
+                _freqCalTabActive = false;
+                _freqCalRestorePending = true;
+            }
+            else
+            {
+                _freqCalTabActive = false;
+                ViewModel.LeaveFreqCalTab();
+            }
+        }
     }
 
     private void StartStop_Click(object sender, RoutedEventArgs e)
@@ -702,6 +759,12 @@ public partial class MainWindow : Window
         // Toggle: Start when idle, Stop when running (Stop+Start = restart after COM change).
         if (ViewModel.IsRadioRunning)
         {
+            _freqCalRestorePending = false;
+            if (_freqCalTabActive)
+            {
+                _freqCalTabActive = false;
+                ViewModel.LeaveFreqCalTab();
+            }
             ViewModel.StopRadioService("manual");
             ViewModel.RefreshSetupStatus();
             return;
@@ -1643,9 +1706,10 @@ public partial class MainWindow : Window
             if (FreqCalStatusLabel != null)
             {
                 FreqCalStatusLabel.Text = "AUTO FAILED";
-                FreqCalStatusLabel.Foreground = Brushes.Red;
+                FreqCalStatusLabel.Foreground = FreqCalFailBrush;
             }
             ViewModel.MonitorTextBoxText($" Freq Cal: AUTO start error: {ex.Message}");
+            CompleteFreqCalRestoreIfPending();
         }
     }
 
@@ -1670,13 +1734,36 @@ public partial class MainWindow : Window
         }
 
         SetFreqCalControlsEnabled(false);
-        _ = ViewModel.RadioService.SetCalCheckAsync(true);
-
         _freqCalInProgress = true;
         _freqCalIsAuto = false;
         ResetFreqCalVisuals("CHECKING\r\n!WAIT!");
+        ViewModel.MonitorTextBoxText(" Freq Cal: CHECK started");
+        _ = StartFreqCalCheckAsync();
+    }
 
-        ViewModel?.MonitorTextBoxText(" Freq Cal: CHECK started");
+    private async System.Threading.Tasks.Task StartFreqCalCheckAsync()
+    {
+        if (ViewModel == null) return;
+        try
+        {
+            bool loose = FreqCalLooseButton?.Content?.ToString() == "LOOSE";
+            await ViewModel.RadioService.SetCalLooseAsync(loose).ConfigureAwait(true);
+            await ViewModel.RadioService.SetCalCheckAsync(true).ConfigureAwait(true);
+            ViewModel.MonitorTextBoxText(" Freq Cal: CHECK start commands sent");
+        }
+        catch (Exception ex)
+        {
+            _freqCalInProgress = false;
+            _freqCalIsAuto = false;
+            SetFreqCalControlsEnabled(true);
+            if (FreqCalStatusLabel != null)
+            {
+                FreqCalStatusLabel.Text = "CHECK FAILED";
+                FreqCalStatusLabel.Foreground = FreqCalFailBrush;
+            }
+            ViewModel.MonitorTextBoxText($" Freq Cal: CHECK start error: {ex.Message}");
+            CompleteFreqCalRestoreIfPending();
+        }
     }
 
     /// <summary>
@@ -1684,14 +1771,25 @@ public partial class MainWindow : Window
     /// </summary>
     private void ResetFreqCalVisuals(string statusText)
     {
+        _freqCalProgressSteps = 0;
         if (FreqCalProgress != null)
             FreqCalProgress.Value = 0;
         _lastCalDelta = 0;
         if (FreqCalStatusLabel != null)
         {
             FreqCalStatusLabel.Text = statusText;
-            FreqCalStatusLabel.Foreground = Brushes.Black;
+            bool idle = string.IsNullOrEmpty(statusText) ||
+                        statusText.Equals("RESET", StringComparison.OrdinalIgnoreCase);
+            FreqCalStatusLabel.Foreground = idle ? FreqCalIdleBrush : FreqCalBusyBrush;
         }
+    }
+
+    /// <summary>A CHECK/AUTO that outlived the tab restores the entry mode when it ends.</summary>
+    private void CompleteFreqCalRestoreIfPending()
+    {
+        if (!_freqCalRestorePending || _freqCalTabActive) return;
+        _freqCalRestorePending = false;
+        ViewModel?.LeaveFreqCalTab();
     }
 
     /// <summary>Disable/enable FREQ CAL action buttons during a running sweep.</summary>
@@ -1729,10 +1827,14 @@ public partial class MainWindow : Window
             Dispatcher.BeginInvoke(() => OnCalProgressReported(value));
             return;
         }
-        if (FreqCalProgress != null)
+        if (!_freqCalInProgress)
         {
-            FreqCalProgress.Value = Math.Clamp(value, 0, 100);
+            ViewModel?.MonitorTextBoxText($" Freq Cal: progress {value} ignored (not running)");
+            return;
         }
+        _freqCalProgressSteps++;
+        if (FreqCalProgress != null)
+            FreqCalProgress.Value = Math.Min(_freqCalProgressSteps, 100);
     }
 
     private void OnCalStatusReported(int value)
@@ -1752,27 +1854,30 @@ public partial class MainWindow : Window
 
         if (wasInProgress)
         {
+            bool ok = value == 1;
             string statusText;
             if (wasAuto)
-                statusText = (value == 1) ? "AUTO COMPLETED" : "AUTO FAILED";
+                statusText = ok ? "AUTO COMPLETED" : "AUTO FAILED";
             else
-                statusText = (value == 1) ? "CHECK COMPLETED" : "CHECK FAILED";
+                statusText = ok ? "CHECK COMPLETED" : "CHECK FAILED";
 
-            var statusColor = (value == 1) ? Brushes.Green : Brushes.Red;
+            if (ok && FreqCalProgress != null)
+                FreqCalProgress.Value = 100;
 
-            if (_lastCalDelta != 0 && Math.Abs(_lastCalDelta) < 10000)
-            {
+            if (ok && _lastCalDelta != 0 && Math.Abs(_lastCalDelta) < 10000)
                 statusText += $"\r\n{_lastCalDelta} Hz";
-                _lastCalDelta = 0;
-            }
+            else if (!ok && !wasAuto)
+                statusText += "\r\nOff by more than 50 Hz? Run AUTO (COARSE).";
+            _lastCalDelta = 0;
 
             if (FreqCalStatusLabel != null)
             {
                 FreqCalStatusLabel.Text = statusText;
-                FreqCalStatusLabel.Foreground = statusColor;
+                FreqCalStatusLabel.Foreground = ok ? FreqCalOkBrush : FreqCalFailBrush;
             }
             ViewModel?.MonitorTextBoxText(
                 $" Freq Cal: {(wasAuto ? "AUTO" : "CHECK")} status received: {value} (1=COMPLETED)");
+            CompleteFreqCalRestoreIfPending();
         }
         else
         {

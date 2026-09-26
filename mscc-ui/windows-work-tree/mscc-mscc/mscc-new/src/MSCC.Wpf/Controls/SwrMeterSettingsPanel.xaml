@@ -37,7 +37,7 @@
                         <TextBox x:Name="HfIpBox" Width="140" Height="24" FontSize="11"
                                  Background="#111" Foreground="#EEE" BorderBrush="#666"
                                  LostFocus="OnIpLostFocus"
-                                 ToolTip="Optional. Auto-filled from UDP. Used for HTTP RESET."/>
+                                 ToolTip="Filled in automatically. Used to reset the meter after an SWR fault."/>
                     </StackPanel>
                 </StackPanel>
                 <StackPanel Grid.Column="2">
@@ -47,7 +47,7 @@
                         <TextBox x:Name="LfIpBox" Width="140" Height="24" FontSize="11"
                                  Background="#111" Foreground="#EEE" BorderBrush="#666"
                                  LostFocus="OnIpLostFocus"
-                                 ToolTip="Optional. Auto-filled from UDP. Used for HTTP RESET."/>
+                                 ToolTip="Filled in automatically. Used to reset the meter after an SWR fault."/>
                     </StackPanel>
                 </StackPanel>
             </Grid>

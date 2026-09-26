@@ -26,14 +26,14 @@
                         <ComboBox x:Name="OpSpeakerCombo" Width="220" Height="26" FontSize="11"
                                   Background="#111" Foreground="Black"
                                   SelectionChanged="OnSelectionChanged"
-                                  ToolTip="operator-speaker.ini"/>
+                                  ToolTip="Your speaker/headphones"/>
                     </StackPanel>
                     <StackPanel Orientation="Horizontal">
                         <TextBlock Text="Mic:" Width="36" VerticalAlignment="Center" FontSize="11" Foreground="#CCC"/>
                         <ComboBox x:Name="OpMicCombo" Width="220" Height="26" FontSize="11"
                                   Background="#111" Foreground="Black"
                                   SelectionChanged="OnSelectionChanged"
-                                  ToolTip="operator-microphone.ini — required by TX path even for some digi setups"/>
+                                  ToolTip="Your microphone"/>
                     </StackPanel>
                 </StackPanel>
 
@@ -45,24 +45,24 @@
                         <ComboBox x:Name="DigSpeakerCombo" Width="220" Height="26" FontSize="11"
                                   Background="#111" Foreground="Black"
                                   SelectionChanged="OnSelectionChanged"
-                                  ToolTip="digital-speaker.ini (e.g. VB-Cable Input)"/>
+                                  ToolTip="Digital program audio out (e.g. CABLE Input)"/>
                     </StackPanel>
                     <StackPanel Orientation="Horizontal">
                         <TextBlock Text="Mic:" Width="36" VerticalAlignment="Center" FontSize="11" Foreground="#CCC"/>
                         <ComboBox x:Name="DigMicCombo" Width="220" Height="26" FontSize="11"
                                   Background="#111" Foreground="Black"
                                   SelectionChanged="OnSelectionChanged"
-                                  ToolTip="digital-microphone.ini (e.g. VB-Cable Output)"/>
+                                  ToolTip="Digital program audio in (e.g. CABLE Output)"/>
                     </StackPanel>
                 </StackPanel>
             </Grid>
 
             <StackPanel Orientation="Horizontal" Margin="0,4,0,0">
                 <Button Content="Refresh" Width="80" Height="26" FontSize="11" Click="OnRefreshClick"
-                        ToolTip="Re-scan MME audio devices"/>
+                        ToolTip="Look for audio devices again"/>
                 <Button Content="Apply" Width="80" Height="26" Margin="8,0,0,0" FontSize="11" FontWeight="Bold"
                         Click="OnApplyClick"
-                        ToolTip="Save all four audio INI files now"/>
+                        ToolTip="Save these audio choices"/>
             </StackPanel>
             <TextBlock x:Name="StatusText" Text="" FontSize="11" Foreground="#00FFAA" Margin="0,8,0,0" TextWrapping="Wrap"/>
         </StackPanel>

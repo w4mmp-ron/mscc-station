@@ -51,7 +51,7 @@
                              Margin="16,0,0,0"
                              Foreground="{DynamicResource UiPrimaryTextBrush}" FontWeight="SemiBold"
                              Checked="Path_Changed"
-                             ToolTip="VAC for WSJT on this PC. CAT arms in the main client."/>
+                             ToolTip="Digital: WSJT-X / fldigi on this PC through the virtual audio cable. MSCC provides TS-2000 CAT."/>
             </StackPanel>
         </StackPanel>
 
