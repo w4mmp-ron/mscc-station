@@ -78,6 +78,22 @@ sdrcore-recv:
 
 Status: recv + ring fixes built on the Pi and working in Ron's first tests.
 
+sdrcore-recv (2026-09-26):
+13. `main.c` `manage_stream`: digital play stream (VirtualA) opens with >= 40 ms latency
+    (`DIGI_PLAY_LATENCY`; was defaultLowOutputLatency). Cause: WSJT-X decode CPU bursts
+    made the stream miss PipeWire cycles -> 128-sample silence gaps (clicks), `pw-top` ERR
+    climbing only during decode (Ron confirmed). Phones stream unchanged. Log line
+    "rate plan ... play_latency=N ms". Pi test: ERR still climbs during decode, but less.
+    Next test (either): `sudo renice -n -10 -p $(ps -L -o tid= -p $(pgrep -x sdrcore-recv))`
+    (Ron prefers raising sdrcore-recv) or `sudo renice 19 -p $(pgrep jt9)`. If it fixes it,
+    make sdrcore-recv raise its audio thread priority in code. Get pw-top QUANT/RATE.
+    Ron: commit only after it tests OK.
+
+ms-sdr (2026-09-26, cmd-044 port from Windows 93302b4):
+14. `calibrate.c`: `Report_Calibration` always sends the per-run count (Cal_Reset removed);
+    failed freq cal restores the previous mode (was `ModeChanged('A')`). Same hunks as
+    Windows ms-sdr 3.174. Syntax-checked; not built/tested on the Pi yet.
+
 mscc-init-linux (2026-09-26):
 10. `main.c` `init_mscc`: rewrites only its own keys, keeps other `mscc.ini` lines, and adds
     `SWR_METER=1`, `SWR_METER_PORT=6999`, `SWR_METER_TO_GUI=1` if missing (calibration had
