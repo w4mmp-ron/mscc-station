@@ -770,6 +770,8 @@ public partial class MainWindow : Window
         // Toggle: Start when idle, Stop when running (Stop+Start = restart after COM change).
         if (ViewModel.IsRadioRunning)
         {
+            if (_freqCalInProgress)
+                _ = AbortFreqCalRunBestEffort();
             ResetFreqCalSessionOnStop();
             if (_freqCalTabActive)
             {
@@ -1110,7 +1112,11 @@ public partial class MainWindow : Window
                 vm.PropertyChanged -= OnViewModelPropertyChanged;
 
                 if (_freqCalInProgress)
-                    vm.MonitorTextBoxText(" Freq Cal: close during AUTO/CHECK — restoring mode, not aborting the cal");
+                {
+                    vm.MonitorTextBoxText(" Freq Cal: close during AUTO/CHECK — run is aborted");
+                    try { vm.RadioService.AbortCalibrationAsync().GetAwaiter().GetResult(); }
+                    catch (Exception abortEx) { vm.MonitorTextBoxText($" Freq Cal: abort on close: {abortEx.Message}"); }
+                }
                 if (_freqCalTabActive || _freqCalRestorePending)
                     vm.LeaveFreqCalForShutdown();
                 vm.SaveCurrentVfoBRecord();
@@ -1693,7 +1699,7 @@ public partial class MainWindow : Window
         catch { /* ignore */ }
 
         SetFreqCalControlsEnabled(false);
-        _freqCalInProgress = true;
+        SetFreqCalRunActive(true);
         _freqCalIsAuto = true;
         ResetFreqCalVisuals(coarse
             ? "RUNNING COARSE\r\n!WAIT!"
@@ -1721,7 +1727,7 @@ public partial class MainWindow : Window
         }
         catch (Exception ex)
         {
-            _freqCalInProgress = false;
+            SetFreqCalRunActive(false);
             _freqCalIsAuto = false;
             SetFreqCalControlsEnabled(true);
             if (FreqCalStatusLabel != null)
@@ -1766,7 +1772,7 @@ public partial class MainWindow : Window
         }
 
         SetFreqCalControlsEnabled(false);
-        _freqCalInProgress = true;
+        SetFreqCalRunActive(true);
         _freqCalIsAuto = false;
         ResetFreqCalVisuals("CHECKING\r\n!WAIT!");
         ShowFreqCalRunningHint();
@@ -1786,7 +1792,7 @@ public partial class MainWindow : Window
         }
         catch (Exception ex)
         {
-            _freqCalInProgress = false;
+            SetFreqCalRunActive(false);
             _freqCalIsAuto = false;
             SetFreqCalControlsEnabled(true);
             if (FreqCalStatusLabel != null)
@@ -1814,7 +1820,8 @@ public partial class MainWindow : Window
         {
             FreqCalStatusLabel.Text = statusText;
             bool idle = string.IsNullOrEmpty(statusText) ||
-                        statusText.Equals("RESET", StringComparison.OrdinalIgnoreCase);
+                        statusText.Equals("RESET", StringComparison.OrdinalIgnoreCase) ||
+                        statusText.Equals("STOPPED", StringComparison.OrdinalIgnoreCase);
             FreqCalStatusLabel.Foreground = idle ? FreqCalIdleBrush : FreqCalBusyBrush;
         }
     }
@@ -1857,9 +1864,38 @@ public partial class MainWindow : Window
     }
 
     /// <summary>Stop ends a FREQ CAL run in the UI. Mode restore is LeaveFreqCalTab.</summary>
+    private void SetFreqCalRunActive(bool active)
+    {
+        _freqCalInProgress = active;
+        if (FreqCalStopButton != null)
+            FreqCalStopButton.IsEnabled = active;
+    }
+
+    private async System.Threading.Tasks.Task AbortFreqCalRunBestEffort()
+    {
+        if (ViewModel == null) return;
+        try
+        {
+            await ViewModel.RadioService.AbortCalibrationAsync();
+        }
+        catch (Exception ex)
+        {
+            ViewModel.MonitorTextBoxText($" Freq Cal: abort failed: {ex.Message}");
+        }
+    }
+
+    private async void FreqCalStopButton_Click(object sender, RoutedEventArgs e)
+    {
+        if (ViewModel == null || !_freqCalInProgress) return;
+        ViewModel.MonitorTextBoxText(
+            _freqCalIsAuto ? " Freq Cal: STOP pressed during AUTO" : " Freq Cal: STOP pressed during CHECK");
+        await AbortFreqCalRunBestEffort();
+        ResetFreqCalSessionOnStop();
+    }
+
     private void ResetFreqCalSessionOnStop()
     {
-        _freqCalInProgress = false;
+        SetFreqCalRunActive(false);
         _freqCalIsAuto = false;
         _freqCalRestorePending = false;
         if (_freqCalManualMode)
@@ -1870,11 +1906,7 @@ public partial class MainWindow : Window
         }
         SetFreqCalControlsEnabled(true);
         ClearFreqCalRunningHint();
-        if (FreqCalStatusLabel != null)
-        {
-            FreqCalStatusLabel.Text = "STOPPED";
-            FreqCalStatusLabel.Foreground = FreqCalIdleBrush;
-        }
+        ResetFreqCalVisuals("STOPPED");
     }
 
     private void FreqCalResetButton_Click(object sender, RoutedEventArgs e)
@@ -1921,7 +1953,7 @@ public partial class MainWindow : Window
 
         bool wasInProgress = _freqCalInProgress;
         bool wasAuto = _freqCalIsAuto;
-        _freqCalInProgress = false;
+        SetFreqCalRunActive(false);
         _freqCalIsAuto = false;
 
         SetFreqCalControlsEnabled(true);

@@ -101,6 +101,8 @@ public static class Opcodes
     public const byte CMD_SET_CAL_MODE             = 0x69; // 0 = coarse (±250 Hz), 1 = fine (±50 Hz)
     public const byte CMD_SET_FREQ_CAL_CHECK       = 0x8C;
     public const byte CMD_START_CALIBRATE          = 0xA7;
+    /// <summary>Stop an AUTO or CHECK sweep. Does not change the stored PPM. 0x1F is free.</summary>
+    public const byte CMD_SET_CAL_ABORT            = 0x1F;
     public const byte CMD_SET_STANDARD_CARRIER     = 0xAF;
     public const byte CMD_SET_CALIBRATIION_PROGRESS = 0x6A; // as in original (note spelling)
     public const byte CMD_GET_SET_CAL_FREQ_DELTA   = 0x6B;

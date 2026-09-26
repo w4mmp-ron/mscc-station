@@ -4,8 +4,8 @@
 |--|--|
 | **Host** | NEW-HP-LAPTOP (Windows) |
 | **Checkout** | `C:\Users\n8vet\OneDrive\Documents\GitHub\mscc-station` |
-| **Build** | **cmd-045** (WPF) / **cmd-038** (WPF pending) |
-| **Last command id** | cmd-045a (orders) / cmd-045 (done) / cmd-038 (WPF pending) |
+| **Build** | **cmd-045a** (WPF + ms-sdr) / **cmd-038** (WPF pending) |
+| **Last command id** | cmd-045a (done) / cmd-038 (WPF pending) |
 | **State** | done |
 | **Updated** | 2026-09-26 |
 
@@ -13,7 +13,7 @@
 
 | command id | state | note |
 |------------|-------|------|
-| cmd-045a | orders | Orders + brief: FREQ CAL STOP button (enabled only during AUTO/CHECK) + ms-sdr CMD_SET_CAL_ABORT (no PPM change on stop). WPF 9.26.5 + ms-sdr 3.175 expected. Awaiting Build ACK. |
+| cmd-045a | done | WPF 9.26.5 and ms-sdr 3.175 in C:\mscc-net9. FREQ CAL STOP uses CMD_SET_CAL_ABORT 0x1F. Late sweep replies are dropped so PPM is not written. Live radio smoke not run. Not pushed. |
 | cmd-045 | done | WPF 9.26.4 in C:\mscc-net9. VFO B stored in MSCC_LastUsed_VFOB.ini (VFOB_FREQ, VFOB_MODE, VFOB_BAND). Close during AUTO or CHECK restores mode and does not abort the cal. QRP, Full Power, and AMP share AmpOn. Radio-model button removed. DIG-U slider uses Tune power. ms-sdr unchanged at 3.174. Not pushed. |
 | cmd-044 | done | WPF 9.26.3 + ms-sdr 3.174 in C:\mscc-net9. FREQ CAL success text: AUTO "Was N Hz off, now corrected. Run CHECK."; CHECK "Error now N Hz" plus " (good)" when abs(N) <= 5. Client only. Not pushed. |
 | cmd-042 | done | Windows only. SDRcore-recv 0xD1 case 5=1400 / case 6=1000, recv 3.141. mscc-recv.exe in Release/windows-wpf and C:\mscc-net9. New exe has the 1400 Hz constant (previous exe had none). Live listen not run: MSCC was not running, radio not started. Ubuntu/Pi parts wait until Stew pushes. |
@@ -32,4 +32,4 @@
 
 ## Notes
 
-cmd-045: WPF 9.26.4. VFO B frequency and mode survive a restart. FREQ CAL Stop clears the running notice and Start on that tab returns to CW. Closing during a run restores the previous mode without a cal abort. cmd-038 still pending.
+cmd-045a: WPF 9.26.5 and ms-sdr 3.175. FREQ CAL STOP sends 0x1F. The server drops late sweep replies so the stored calibration stays put. Closing during AUTO or CHECK aborts the run, then restores the mode. cmd-038 still pending.

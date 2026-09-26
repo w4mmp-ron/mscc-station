@@ -981,6 +981,13 @@ public class UdpRadioService : IRadioService, IDisposable
         await _transport.SendAsync(Opcodes.CMD_START_CALIBRATE, frequencyHz, cancellationToken);
     }
 
+    public async Task AbortCalibrationAsync(CancellationToken cancellationToken = default)
+    {
+        if (!_started) return;
+        DebugMonitor.MonitorTextBoxText(" Send CMD_SET_CAL_ABORT");
+        await _transport.SendAsync(Opcodes.CMD_SET_CAL_ABORT, (short)1, cancellationToken);
+    }
+
     public async Task RequestIdentityAsync(CancellationToken cancellationToken = default)
     {
         if (!_started) return;

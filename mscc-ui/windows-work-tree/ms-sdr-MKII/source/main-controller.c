@@ -2238,6 +2238,7 @@ void * Command_Processor(void *my_param) {
         case CMD_SET_FREQ_CAL_CHECK:
         case CMD_GET_SET_CAL_FREQ_DELTA:
         case CMD_SET_FORCE_CALIBRATION:
+        case CMD_SET_CAL_ABORT:
             Process_Frequency_Calibration(opcode, G_receive_buf);
             break;
         //End Frequency Calibration

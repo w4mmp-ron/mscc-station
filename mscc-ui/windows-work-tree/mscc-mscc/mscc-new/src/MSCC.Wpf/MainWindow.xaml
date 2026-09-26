@@ -1881,13 +1881,28 @@
                         <StackPanel Grid.Row="0" Margin="0,0,0,4">
                             <TextBlock Text="FREQUENCY CALIBRATION" FontWeight="SemiBold" Foreground="#00FFAA" Margin="0,0,0,3" FontSize="14"/>
 
-                            <!-- Larger buttons: LOOSE, AUTO, MANUAL, CHECK, RESET -->
+                            <!-- Larger buttons: LOOSE, AUTO, MANUAL, CHECK, RESET, STOP -->
                             <StackPanel Orientation="Horizontal" Margin="0,0,0,3">
                                 <Button x:Name="FreqCalLooseButton" Content="LOOSE" Width="80" Height="28" Margin="2" FontSize="12" FontWeight="Bold" Click="FreqCalLooseButton_Click"/>
                                 <Button x:Name="FreqCalAutoButton" Content="AUTO" Width="70" Height="28" Margin="2" FontSize="12" FontWeight="Bold" Click="FreqCalAutoButton_Click"/>
                                 <Button x:Name="FreqCalManualButton" Content="MANUAL" Width="85" Height="28" Margin="2" FontSize="12" FontWeight="Bold" Click="FreqCalManualButton_Click"/>
                                 <Button x:Name="FreqCalCheckButton" Content="CHECK" Width="70" Height="28" Margin="2" FontSize="12" FontWeight="Bold" Click="FreqCalCheckButton_Click"/>
                                 <Button x:Name="FreqCalResetButton" Content="RESET" Width="70" Height="28" Margin="2" FontSize="12" FontWeight="Bold" Click="FreqCalResetButton_Click"/>
+                                <Button x:Name="FreqCalStopButton" Content="STOP" Width="70" Height="28" Margin="2" FontSize="12" FontWeight="Bold"
+                                        IsEnabled="False" Click="FreqCalStopButton_Click"
+                                        ToolTip="Stop the AUTO or CHECK run. The calibration is not changed."
+                                        Foreground="#FFC000">
+                                    <Button.Style>
+                                        <Style TargetType="Button" BasedOn="{StaticResource MsccGoldButtonStyle}">
+                                            <Style.Triggers>
+                                                <Trigger Property="IsEnabled" Value="False">
+                                                    <Setter Property="Opacity" Value="0.45"/>
+                                                    <Setter Property="Foreground" Value="#888888"/>
+                                                </Trigger>
+                                            </Style.Triggers>
+                                        </Style>
+                                    </Button.Style>
+                                </Button>
                             </StackPanel>
 
                             <!-- Manual PPM: ± buttons (rate-limited) — slider flooded USB/LO and could freeze -->

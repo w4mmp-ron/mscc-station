@@ -30,6 +30,27 @@ uint8_t G_Standard_Carrier_number = 0;
 //int PPM_file_exists = 0;
 uint32_t G_cycle_count = 65536;
 uint8_t G_check_calibration = FALSE;
+static uint8_t cal_abort_pending = FALSE;
+static int auto_calibration_state = 0;
+static int auto_calibration_initialized = 0;
+static int auto_calibration_count = 0;
+static int auto_calibration_increament = 0;
+static int check_calibration_state = 0;
+static int check_calibration_initialized = 0;
+static int check_calibration_count = 0;
+static int check_calibration_increament = 0;
+
+static void Reset_Calibration_Run_State(void) {
+    auto_calibration_state = 0;
+    auto_calibration_initialized = 0;
+    auto_calibration_count = 0;
+    auto_calibration_increament = 0;
+    check_calibration_state = 0;
+    check_calibration_initialized = 0;
+    check_calibration_count = 0;
+    check_calibration_increament = 0;
+    G_check_calibration = 0;
+}
 uint8_t mode_number;
 uint8_t previous_mode_number;
 char previous_mode = 'N';
@@ -523,10 +544,6 @@ int Check_Calibration_PPM(uint32_t frequency) {//This is called by Process_Frequ
 }
 
 void Process_Check_Calibration(uint8_t command, char *buf, uint8_t state) {
-    static int calibration_state = 0;
-    static int calibration_initialized = 0;
-    static int calibration_count = 0;
-    static int calibration_increament = 0;
     static uint8_t t_opcode_data = 0;
     static short int *opcode_data = 0;
     static short int s_opcode_data = 0;
@@ -549,10 +566,10 @@ void Process_Check_Calibration(uint8_t command, char *buf, uint8_t state) {
                     line_number++, G_int, G_dec);
             G_max_element = 100;
             G_element_increament = 1;
-            calibration_initialized = Calibrate_Si5351_Initialize();
-            if (calibration_initialized == CALIBRATION_INITIALIZED) {
+            check_calibration_initialized = Calibrate_Si5351_Initialize();
+            if (check_calibration_initialized == CALIBRATION_INITIALIZED) {
                 SDRcore_recv_send_param(CDM_SET_CALIBRATE_CYCLE_COUNT, G_cycle_count);
-                calibration_state = Check_Calibration_Continue(i_opcode_data);
+                check_calibration_state = Check_Calibration_Continue(i_opcode_data);
             }
             break;
         case CMD_SET_CALIBRATION_DATA: //The SDRcore-recv calibration routine has finished
@@ -563,28 +580,28 @@ void Process_Check_Calibration(uint8_t command, char *buf, uint8_t state) {
             } else {
                 Check_Calibration_PPM(i_opcode_data);
             }
-            calibration_state = 0;
-            calibration_initialized = 0;
-            calibration_count = 0;
-            calibration_increament = 0;
+            check_calibration_state = 0;
+            check_calibration_initialized = 0;
+            check_calibration_count = 0;
+            check_calibration_increament = 0;
             G_Proficio_Allow_Temp_Check = TRUE;
             break;
         case CMD_SET_CAL_DATA_PROCESSED: //The SDRcore-recv calibration routine is running 
             print_time(1);
             fprintf(G_fp_logfile, "[%d] Check_Calibration. CMD_SET_CAL_DATA_PROCESSED \n", line_number++);
             if (opcode_data_8_bit == CALIBRATION_SUCCESS) { // and returned the current frequency under test
-                if (calibration_state == CALIBRATION_RUNNING) {
-                    calibration_state = Check_Calibration_Continue(i_opcode_data);
-                    Report_Calibration(calibration_increament);
-                    calibration_count++;
-                    calibration_increament++;
+                if (check_calibration_state == CALIBRATION_RUNNING) {
+                    check_calibration_state = Check_Calibration_Continue(i_opcode_data);
+                    Report_Calibration(check_calibration_increament);
+                    check_calibration_count++;
+                    check_calibration_increament++;
                 }
             } else {
                 Calibrate_Si5351_Failed(i_opcode_data);
-                calibration_state = 0;
-                calibration_initialized = 0;
-                calibration_count = 0;
-                calibration_increament = 0;
+                check_calibration_state = 0;
+                check_calibration_initialized = 0;
+                check_calibration_count = 0;
+                check_calibration_increament = 0;
                 Sleep(100);
                 G_check_calibration = FALSE;
             }
@@ -628,10 +645,6 @@ int Manual_Calibration_Set(uint8_t status) {
 
 int Process_Frequency_Calibration(uint8_t command, char *buf) {
     int status = 0;
-    static int calibration_state = 0;
-    static int calibration_initialized = 0;
-    static int calibration_count = 0;
-    static int calibration_increament = 0;
     int reset_type = 0;
     uint8_t t_opcode_data = 0;
     static short int *opcode_data = 0;
@@ -664,6 +677,7 @@ int Process_Frequency_Calibration(uint8_t command, char *buf) {
         case CMD_SET_FREQ_CAL_CHECK: //This is called by the client 
             G_check_calibration = opcode_data_8_bit;
             if (G_check_calibration == 1) {
+                cal_abort_pending = FALSE;
                 print_time(1);
                 fprintf(G_fp_logfile, "[%d] Process_Frequency_Calibration. CMD_SET_FREQ_CAL_CHECK. Calling Check_Calibration. G_check_only: %d\n",
                         line_number++, G_check_calibration);
@@ -684,32 +698,62 @@ int Process_Frequency_Calibration(uint8_t command, char *buf) {
             break;
 
         case CMD_START_CALIBRATE: //This is called by the client
+            cal_abort_pending = FALSE;
             print_time(1);
             fprintf(G_fp_logfile, "[%d] Process_Frequency_Calibration. CMD_START_CALIBRATE. \n", line_number++);
             freq_queue_add(G_tune_freq);
             G_Proficio_Allow_Temp_Check = FALSE;
             G_delta_drift_int = 0;
             previous_temperature = G_Calibration_temperature;
-            calibration_initialized = Calibrate_Si5351_Initialize();
-            if (calibration_initialized == CALIBRATION_INITIALIZED) {
+            auto_calibration_initialized = Calibrate_Si5351_Initialize();
+            if (auto_calibration_initialized == CALIBRATION_INITIALIZED) {
                 SDRcore_recv_send_param(CDM_SET_CALIBRATE_CYCLE_COUNT, G_cycle_count);
-                calibration_state = Calibrate_Si5351_Continue();
+                auto_calibration_state = Calibrate_Si5351_Continue();
+            }
+            break;
+
+        case CMD_SET_CAL_ABORT:
+            print_time(1);
+            if (auto_calibration_state == CALIBRATION_RUNNING ||
+                check_calibration_state == CALIBRATION_RUNNING ||
+                auto_calibration_initialized == CALIBRATION_INITIALIZED ||
+                check_calibration_initialized == CALIBRATION_INITIALIZED ||
+                G_check_calibration) {
+                cal_abort_pending = TRUE;
+                Reset_Calibration_Run_State();
+                G_mode = previous_mode;
+                G_tune_freq = previous_freq;
+                ModeChanged(previous_mode);
+                freq_queue_add(G_tune_freq);
+                SDRcore_recv_send_param(CMD_SET_MAIN_MODE, previous_mode_number);
+                SDRcore_trans_send_param(CMD_SET_MAIN_MODE, previous_mode_number);
+                G_Calibration_temperature = previous_temperature;
+                G_Proficio_Allow_Temp_Check = TRUE;
+                SDRcore_recv_send_param(CMD_SET_CALIBRATION_FINISHED, 1);
+                fprintf(G_fp_logfile, "[%d] CMD_SET_CAL_ABORT: run stopped, PPM unchanged\n", line_number++);
+            } else {
+                fprintf(G_fp_logfile, "[%d] CMD_SET_CAL_ABORT: nothing running, PPM unchanged\n", line_number++);
             }
             break;
 
         case CMD_SET_CALIBRATION_DATA: //This is called by SDRcore_recv and ends the calibration with success for fail
+            if (cal_abort_pending) {
+                cal_abort_pending = FALSE;
+                fprintf(G_fp_logfile, "[%d] CMD_SET_CAL_ABORT: dropped CMD_SET_CALIBRATION_DATA\n", line_number++);
+                break;
+            }
             if (!G_check_calibration) {
                 print_time(1);
                 fprintf(G_fp_logfile, "[%d] Process_Frequency_Calibration. CMD_SET_CALIBRATION_DATA \n", line_number++);
                 if (i_opcode_data == 0) {//The SDRcore-recv calibration routine failed
                     Calibrate_Si5351_Failed(i_opcode_data);
                 } else {//The SDRcore-recv calibration routine finished successfully
-                    calibration_state = Calibrate_Si5351_Set_PPM(i_opcode_data);
+                    auto_calibration_state = Calibrate_Si5351_Set_PPM(i_opcode_data);
                 }
-                calibration_state = 0;
-                calibration_initialized = 0;
-                calibration_count = 0;
-                calibration_increament = 0;
+                auto_calibration_state = 0;
+                auto_calibration_initialized = 0;
+                auto_calibration_count = 0;
+                auto_calibration_increament = 0;
                 G_Proficio_Allow_Temp_Check = TRUE;
 
             } else {
@@ -720,23 +764,27 @@ int Process_Frequency_Calibration(uint8_t command, char *buf) {
             break;
 
         case CMD_SET_CAL_DATA_PROCESSED: //This is called by SDRcore_recv. Calibration will continue or fail
+            if (cal_abort_pending) {
+                fprintf(G_fp_logfile, "[%d] CMD_SET_CAL_ABORT: dropped CMD_SET_CAL_DATA_PROCESSED\n", line_number++);
+                break;
+            }
             if (!G_check_calibration) {
                 print_time(1);
                 fprintf(G_fp_logfile, "[%d] Process_Frequency_Calibration. CMD_SET_CAL_DATA_PROCESSED \n", line_number++);
                 if (opcode_data_8_bit == CALIBRATION_SUCCESS) {
-                    if (calibration_state == CALIBRATION_RUNNING) {
-                        calibration_state = Calibrate_Si5351_Continue();
-                        Report_Calibration(calibration_increament);
-                        calibration_count++;
-                        calibration_increament++;
+                    if (auto_calibration_state == CALIBRATION_RUNNING) {
+                        auto_calibration_state = Calibrate_Si5351_Continue();
+                        Report_Calibration(auto_calibration_increament);
+                        auto_calibration_count++;
+                        auto_calibration_increament++;
 
                     }
                 } else {
                     Calibrate_Si5351_Failed(i_opcode_data);
-                    calibration_state = 0;
-                    calibration_initialized = 0;
-                    calibration_count = 0;
-                    calibration_increament = 0;
+                    auto_calibration_state = 0;
+                    auto_calibration_initialized = 0;
+                    auto_calibration_count = 0;
+                    auto_calibration_increament = 0;
                     Sleep(100);
                 }
             } else {
