@@ -659,6 +659,55 @@ public partial class MainWindow : Window
         bool nowRxIq = selected != null &&
                        (ReferenceEquals(selected, RxIqTabItem) ||
                         string.Equals(selected.Header?.ToString(), "RX IQ", StringComparison.Ordinal));
+        bool nowFreqCal = selected != null &&
+                          (ReferenceEquals(selected, FreqCalTabItem) ||
+                           string.Equals(selected.Header?.ToString(), "FREQ CAL", StringComparison.Ordinal));
+
+        // FREQ CAL leave/block runs before any other cal tab can enter.
+        if (nowFreqCal && !_freqCalTabActive)
+        {
+            if (_freqCalRestorePending)
+            {
+                // Returned before the run finished. Keep the CW session already snapshotted.
+                _freqCalRestorePending = false;
+                _freqCalTabActive = true;
+            }
+            else
+            {
+                _freqCalTabActive = true;
+                ViewModel.EnterFreqCalTab();
+            }
+        }
+        else if (!nowFreqCal && _freqCalTabActive)
+        {
+            bool blockForOtherCal = _freqCalInProgress && (nowPwrCal || nowAmpCal || nowTxIq);
+            if (_freqCalManualMode || blockForOtherCal)
+            {
+                Dispatcher.BeginInvoke(() =>
+                {
+                    if (!ReferenceEquals(MainTabControl.SelectedItem, FreqCalTabItem))
+                        MainTabControl.SelectedItem = FreqCalTabItem;
+                });
+                MessageBox.Show(
+                    _freqCalManualMode
+                        ? "EXIT MANUAL CALIBRATION FIRST."
+                        : "FREQUENCY CALIBRATION IN PROGRESS.",
+                    "MSCC",
+                    MessageBoxButton.OK, MessageBoxImage.Asterisk);
+                return;
+            }
+            if (_freqCalInProgress)
+            {
+                // MAIN and the other non-cal tabs: restore when the run reports a result.
+                _freqCalTabActive = false;
+                _freqCalRestorePending = true;
+            }
+            else
+            {
+                _freqCalTabActive = false;
+                ViewModel.LeaveFreqCalTab();
+            }
+        }
 
         if (nowPwrCal && !_pwrCalTabActive)
         {
@@ -707,48 +756,6 @@ public partial class MainWindow : Window
             _rxIqTabActive = false;
             ViewModel.LeaveRxIqTab();
             Dispatcher.BeginInvoke(UpdateBandButtonVisuals);
-        }
-
-        bool nowFreqCal = selected != null &&
-                          (ReferenceEquals(selected, FreqCalTabItem) ||
-                           string.Equals(selected.Header?.ToString(), "FREQ CAL", StringComparison.Ordinal));
-        if (nowFreqCal && !_freqCalTabActive)
-        {
-            if (_freqCalRestorePending)
-            {
-                // Returned before the run finished. Keep the CW session already snapshotted.
-                _freqCalRestorePending = false;
-                _freqCalTabActive = true;
-            }
-            else
-            {
-                _freqCalTabActive = true;
-                ViewModel.EnterFreqCalTab();
-            }
-        }
-        else if (!nowFreqCal && _freqCalTabActive)
-        {
-            if (_freqCalManualMode)
-            {
-                Dispatcher.BeginInvoke(() =>
-                {
-                    if (!ReferenceEquals(MainTabControl.SelectedItem, FreqCalTabItem))
-                        MainTabControl.SelectedItem = FreqCalTabItem;
-                });
-                MessageBox.Show("EXIT MANUAL CALIBRATION FIRST.", "MSCC",
-                    MessageBoxButton.OK, MessageBoxImage.Asterisk);
-            }
-            else if (_freqCalInProgress)
-            {
-                // Leave the tab. Restore the previous mode when the run reports a result.
-                _freqCalTabActive = false;
-                _freqCalRestorePending = true;
-            }
-            else
-            {
-                _freqCalTabActive = false;
-                ViewModel.LeaveFreqCalTab();
-            }
         }
     }
 

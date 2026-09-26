@@ -3804,6 +3804,11 @@ public partial class MainViewModel : ObservableObject, IDisposable
         _suppressPersonalityRemember = true;
         try
         {
+            // Restore while still in CW so the CW profile keeps the filter from before the tab,
+            // not the 200 Hz filter this tab forced.
+            CwFilterIndex = filter;
+            CwPitchIndex = pitch;
+
             if (mode == RadioMode.None)
             {
                 RadioState.ActiveVfo.Mode = RadioMode.None;
@@ -3811,9 +3816,6 @@ public partial class MainViewModel : ObservableObject, IDisposable
             }
             else if (RadioState.ActiveVfo.Mode != mode)
                 ActiveMode = FormatModeDisplay(mode);
-
-            CwFilterIndex = filter;
-            CwPitchIndex = pitch;
         }
         finally
         {
