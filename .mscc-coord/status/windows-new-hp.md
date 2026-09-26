@@ -13,7 +13,7 @@
 
 | command id | state | note |
 |------------|-------|------|
-| cmd-044 | done | WPF 9.26.2 + ms-sdr 3.174 in C:\mscc-net9. FREQ CAL shows "Calibration running — don't change tabs or settings until it finishes." during AUTO, CHECK, and MANUAL, and clears it when the run ends. Cal tabs stay blocked during a run. Not pushed. |
+| cmd-044 | done | WPF 9.26.3 + ms-sdr 3.174 in C:\mscc-net9. FREQ CAL success text: AUTO "Was N Hz off, now corrected. Run CHECK."; CHECK "Error now N Hz" plus " (good)" when |N| <= 5. Client only. Not pushed. |
 | cmd-042 | done | Windows only. SDRcore-recv 0xD1 case 5=1400 / case 6=1000, recv 3.141. mscc-recv.exe in Release/windows-wpf and C:\mscc-net9. New exe has the 1400 Hz constant (previous exe had none). Live listen not run: MSCC was not running, radio not started. Ubuntu/Pi parts wait until Stew pushes. |
 | cmd-041 | done | WPF 9.25.0. DIG-U Hi idx 5=1.4k / 6=1.0k. Other modes stay 0..4. 0xDD idx>4 ignored. Deployed to C:\mscc-net9. Not pushed. |
 | cmd-040 | orders | Avalonia remote-audio parity orders + brief authored here (canonical yaml). Build target: ubuntu-stew then rpi. No Avalonia code on this host for 040. |
@@ -30,4 +30,4 @@
 
 ## Notes
 
-cmd-044 follow-up 2: WPF 9.26.2. The FREQ CAL tab shows a running notice during AUTO, CHECK, and MANUAL and clears it when the run ends. No new popup. Cal-tab blocking is unchanged. Not pushed. cmd-038 still pending.
+cmd-044 follow-up 3: WPF 9.26.3. AUTO and CHECK completion lines use the E5 wording. A CHECK within 5 Hz adds " (good)". No server change. Not pushed. cmd-038 still pending.

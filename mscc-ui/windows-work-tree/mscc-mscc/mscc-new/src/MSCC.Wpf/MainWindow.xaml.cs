@@ -1428,6 +1428,7 @@ public partial class MainWindow : Window
     /// <summary>True while AUTO sweep is running (vs CHECK-only).</summary>
     private bool _freqCalIsAuto = false;
     private int _lastCalDelta = 0;
+    private bool _freqCalHaveDelta;
 
     // Manual PPM: each step does USB EEPROM-style cal + dual LO retune — must rate-limit.
     private const int FreqCalManualPpmMin = -100;
@@ -1788,6 +1789,7 @@ public partial class MainWindow : Window
         if (FreqCalProgress != null)
             FreqCalProgress.Value = 0;
         _lastCalDelta = 0;
+        _freqCalHaveDelta = false;
         if (FreqCalStatusLabel != null)
         {
             FreqCalStatusLabel.Text = statusText;
@@ -1894,11 +1896,12 @@ public partial class MainWindow : Window
             if (ok && FreqCalProgress != null)
                 FreqCalProgress.Value = 100;
 
-            if (ok && _lastCalDelta != 0 && Math.Abs(_lastCalDelta) < 10000)
-                statusText += $"\r\n{_lastCalDelta} Hz";
+            if (ok && _freqCalHaveDelta && Math.Abs(_lastCalDelta) < 10000)
+                statusText += "\r\n" + FreqCalSuccessDetail(wasAuto, _lastCalDelta);
             else if (!ok && !wasAuto)
                 statusText += "\r\nOff by more than 50 Hz? Run AUTO (COARSE).";
             _lastCalDelta = 0;
+            _freqCalHaveDelta = false;
 
             if (FreqCalStatusLabel != null)
             {
@@ -1919,6 +1922,7 @@ public partial class MainWindow : Window
     private void OnCalDeltaReported(int value)
     {
         _lastCalDelta = value;
+        _freqCalHaveDelta = true;
 
         if (!Dispatcher.CheckAccess())
         {
@@ -1926,17 +1930,29 @@ public partial class MainWindow : Window
             return;
         }
 
-        // If status is already shown, append the delta (handles report ordering)
+        // Status can arrive before the delta. Match the title line and fill the detail.
         if (FreqCalStatusLabel != null &&
-            (FreqCalStatusLabel.Text == "CHECK COMPLETED" || FreqCalStatusLabel.Text == "CHECK FAILED" ||
-             FreqCalStatusLabel.Text == "AUTO COMPLETED" || FreqCalStatusLabel.Text == "AUTO FAILED") &&
             Math.Abs(value) < 10000 &&
-            !FreqCalStatusLabel.Text.Contains("Hz"))
+            !FreqCalStatusLabel.Text.Contains("Hz") &&
+            (FreqCalStatusLabel.Text == "AUTO COMPLETED" || FreqCalStatusLabel.Text == "CHECK COMPLETED"))
         {
-            FreqCalStatusLabel.Text += $"\r\n{value} Hz";
+            bool auto = FreqCalStatusLabel.Text == "AUTO COMPLETED";
+            FreqCalStatusLabel.Text += "\r\n" + FreqCalSuccessDetail(auto, value);
             _lastCalDelta = 0;
+            _freqCalHaveDelta = false;
         }
 
         ViewModel?.MonitorTextBoxText($" Freq Cal: Delta received: {value} Hz");
+    }
+
+    /// <summary>Second line under AUTO COMPLETED / CHECK COMPLETED. |delta| &lt;= 5 on CHECK adds " (good)".</summary>
+    private static string FreqCalSuccessDetail(bool auto, int delta)
+    {
+        if (auto)
+            return $"Was {delta} Hz off, now corrected. Run CHECK.";
+        string line = $"Error now {delta} Hz";
+        if (Math.Abs(delta) <= 5)
+            line += " (good)";
+        return line;
     }
 }
