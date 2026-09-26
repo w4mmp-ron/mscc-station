@@ -1,4 +1,51 @@
 commands:
+  - id: cmd-045a
+    created: "2026-09-26T18:20:00-04:00"
+    target: [windows-new-hp]
+    role: client+server
+    action: wpf-freqcal-stop-button-mssdr-cal-abort
+    status_hint: open
+    detail: |
+      Host: windows-new-hp (NEW-HP-LAPTOP).
+      Checkout: C:\Users\n8vet\OneDrive\Documents\GitHub\mscc-station
+      Follow-up to cmd-045 (2227a67, WPF 9.26.4). Stew: "there is no STOP for FREQ CAL".
+      Call the user Stew. Commit on NEW-HP when done. Do NOT git push (Stew pushes). Do not pull.
+
+      ## Findings
+      FREQ CAL tab has LOOSE/AUTO/MANUAL/CHECK/RESET only (MainWindow.xaml :1885-1891).
+      cmd-045 3b "Stop" was the main Start/Stop (StartStop_Click :766 ->
+      ResetFreqCalSessionOnStop :1860); no Stop on the tab. AUTO/CHECK run server-side
+      (ms-sdr calibrate.c steps + SDRcore-recv measures); client only sends start
+      opcodes and listens (0x62/0x6A/0x6B). No abort opcode exists. PPM is written only
+      at the end (Calibrate_Si5351_Set_PPM :323); a stopped run changes nothing.
+
+      ## Scope
+      1. Version: client 9.26.4 -> 9.26.5 (auto); ms-sdr 3.174 -> 3.175 (auto).
+      2. ms-sdr-MKII: new CMD_SET_CAL_ABORT (0x1F if free, verify). Routed via the
+         main-controller.c freq-cal case list. Resets AUTO and CHECK run state (both
+         static sets), restores previous mode/freq/temperature like
+         Calibrate_Si5351_Failed but no PPM change, sends recv CMD_SET_CALIBRATION_FINISHED
+         to flush its step counter, drops late DATA_PROCESSED/CALIBRATION_DATA while
+         abort-pending. No GUI message.
+      3. Core: Opcodes + IRadioService/UdpRadioService AbortCalibrationAsync.
+      4. WPF: separate STOP button after RESET on the FREQ CAL tab (not a toggling
+         Start: runs start from two buttons, AUTO and CHECK). Enabled only while
+         AUTO/CHECK runs (one helper sets _freqCalInProgress + STOP enabled). Click:
+         send abort, then item-2 Stop: controls on, amber hint cleared, progress 0,
+         status STOPPED; QRP CAL/AMP CAL/TX IQ usable again; tab stays CW/600/200,
+         leaving restores mode. Main Stop and Close also send the abort if a run is active.
+
+      ## Out of scope
+      Avalonia, linux/rpi/Solidus, SDRcore-recv/trans, mscc-init, firmware, CAT.
+
+      ## Build / smoke
+      Build ms-sdr-MKII.sln (Release exe -> C:\mscc-net9) and MSCC.Wpf Release
+      (auto-copies to C:\mscc-net9). Smoke: STOP during AUTO (STOPPED, no correction);
+      STOP during CHECK (other cal tabs open, CHECK reruns); leave tab after STOP
+      restores USB. ACK in .mscc-coord/status/windows-new-hp.md (no bare pipe in cells).
+
+      Commit hint: cmd-045a: FREQ CAL STOP button + ms-sdr CMD_SET_CAL_ABORT
+      Brief: .mscc-coord/briefs/cmd-045a.md
   - id: cmd-045
     created: "2026-09-26T17:50:00-04:00"
     target: [windows-new-hp]
