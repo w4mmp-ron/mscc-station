@@ -1,4 +1,62 @@
 commands:
+  - id: cmd-044
+    created: "2026-09-26T12:30:00-04:00"
+    target: [windows-new-hp]
+    role: client+server
+    action: wpf-tooltips-hostport-freqcal-mssdr-cal-fixes
+    status_hint: open
+    detail: |
+      Host: windows-new-hp (NEW-HP-LAPTOP).
+      Checkout: C:\Users\n8vet\OneDrive\Documents\GitHub\mscc-station
+      Orders on this host. Stew approved 2026-09-26 (Build Commander fix list).
+      Call the user Stew. Commit on NEW-HP when done. Do NOT git push (Stew pushes).
+      cmd-043 is reserved (Ron's Linux port plan); this is cmd-044.
+
+      ## Scope (WPF client + Windows ms-sdr-MKII only)
+      1. Version: auto-bump on build (9.25.0 -> expect 9.26.0); ms-sdr VERSION_MINOR auto.
+      2. Tooltips/text (MSCC.Wpf XAML): A1-A12 wrong/misleading, B1-B31 jargon,
+         C band buttons/Lo/Step, D delete dev-notes TextBlocks
+         (MainWindow.xaml :1464 QRP CAL, :1623 AMP CAL, :1875 TX IQ).
+         A12 Host tooltip (:278) + popup (MainViewModel.cs :5611-5612) become
+         "Change applies on the next Start" ONLY after item 3 works.
+      3. Bug: new Host/Port ignored until app restart. UdpRadioService keeps
+         readonly _remoteIp/_remotePort (Core UdpRadioService.cs :20-21, :171-172;
+         transport built per Start :229/:238/:252). Add SetRemoteEndpoint(ip,port)
+         (only when stopped), call it in StartRadioService (MainViewModel.cs :5304,
+         before StartAsync :5343). Keep the same service instance (MainWindow
+         subscribes to its events, MainWindow.xaml.cs :128-129).
+      4. FREQ CAL (MainWindow.xaml.cs):
+         - colors: ResetFreqCalVisuals :1693 Black -> amber #FFC000 while running;
+           :1761 Green/Red -> #00FFAA / #FF5555; :1646 -> #FF5555.
+         - progress: ignore when idle, count reports locally (OnCalProgressReported :1725-1736).
+         - CHECK sends LOOSE/TIGHT before SetCalCheckAsync (:1652-1680); fail hint
+           "Off by more than 50 Hz? Run AUTO (COARSE)."
+         - tab entry: CW + 200 Hz filter + 600 Hz pitch (snapshot mode/filter/pitch,
+           no last-used save); leaving restores; running AUTO/CHECK -> defer restore
+           to status (or block); MANUAL on -> block. Name the tab (MainWindow.xaml :1884),
+           hook MainTabControl_SelectionChanged :626-696 like RX IQ (:685-695).
+      5. ms-sdr-MKII/source/calibrate.c:
+         - Report_Calibration :383-399 always sends calibration_increment (drop static
+           increment); Cal_Reset = FALSE at start of Calibrate_Si5351_Initialize :401.
+         - Calibrate_Si5351_Failed :466 ModeChanged('A') -> ModeChanged(previous_mode).
+         - Do NOT echo mode to the GUI (WPF ModeReported would turn DIG-U into USB).
+         Build ms-sdr-MKII.sln (MFC|Win32, v143) -> mscc-ui/Release/windows-wpf/ms-sdr-MKII.exe;
+         copy to C:\mscc-net9\.
+
+      ## Out of scope
+      Avalonia (both trees) and linux/rpi/Solidus ms-sdr copies: they ride with cmd-043.
+      Firmware, SDRcore-recv/trans, mscc-init, CAT, radio-model button removal.
+
+      ## Build / smoke
+      WPF Release build (auto-copies to C:\mscc-net9, bumps version); ms-sdr exe deployed.
+      Smoke: Host/Port change + Stop/Start reconnects to the new host without an app restart;
+      FREQ CAL entry -> CW, leaving -> USB (and DIG-U stays DIG-U); progress bar empty
+      and climbing on every run after RESET (ms-sdr log calibration_increment 0..100);
+      failed CHECK leaves the mode unchanged (no "ModeChanged. mode: A"); CHECK sends
+      LOOSE; status text readable; tooltip spot check; dev-notes lines gone.
+
+      Commit hint: cmd-044: WPF tooltips + Host/Port on Start + FREQ CAL CW/progress/colors; ms-sdr cal progress + fail mode
+      Brief: .mscc-coord/briefs/cmd-044.md
   - id: cmd-042
     created: "2026-09-25T16:20:00-04:00"
     target: [windows-new-hp, ubuntu-stew, rpi]

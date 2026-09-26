@@ -18,6 +18,8 @@ On start: `git pull`, then read [`handoff.md`](handoff.md). If `.mscc-coord/COMM
 
 **Active - cmd-041 + cmd-042 (DIG-U Hi 1.4k/1.0k):** NEW-HP first: cmd-041 WPF + cmd-042 Windows `mscc-recv.exe` (0xD1 idx 5=1400, 6=1000; recv 3.141). Then, after Stew pushes: **ubuntu-stew** cmd-042 `linux/` -> `mscc_1.0.45_amd64.deb`; then **rpi** cmd-042 `rpi/` -> `mscc_1.0.45_arm64.deb`. Commit locally, do not push. Do not update the RPi Grok Build app. See `.mscc-coord/briefs/cmd-041.md` + `briefs/cmd-042.md`.
 
+**Active - cmd-044 (NEW-HP):** WPF tooltip/text fixes + dev-notes removal, Host/Port change applies on next Start, FREQ CAL fixes (colors, progress, CHECK LOOSE, CW on tab entry + restore on leave) and Windows `ms-sdr-MKII` calibrate.c fixes (progress counter reset, failed cal restores previous mode). Commit locally, do not push. Avalonia + Linux/Pi go with cmd-043 (reserved). See `.mscc-coord/briefs/cmd-044.md`.
+
 **Peers on NEW-HP:** cmd-038 pending/orders for WPF Mic TX EVENT logging; cmd-037, cmd-036, and cmd-035 done.
 
 ## Who / where
@@ -111,6 +113,7 @@ Clear-on-TX + fixed 2:1 + silence on underrun — do not implement while 039 shi
 
 ### Peer work on NEW-HP
 
+cmd-044: WPF tooltips + Host/Port on Start + FREQ CAL fixes; ms-sdr-MKII cal progress/fail mode, orders.
 cmd-041: WPF DIG-U Hi 1.4k/1.0k options, orders (paired with cmd-042 Windows recv; build together).
 cmd-038: WPF `RemoteMicSender` diagnostic EVENT logging, pending/orders.
 cmd-037: WPF 60 ms mic cushion, done (`5f39a16`, 9.23.1).
