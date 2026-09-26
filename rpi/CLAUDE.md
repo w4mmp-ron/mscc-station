@@ -85,3 +85,13 @@ Windows `mscc-recv` 3.141 added 0xD1 CMD_SET_BW_HICUT index 5 = 1400 Hz, 6 = 100
 (hi-cut switch ~line 1547) + version bump -> `mscc_1.0.45_arm64.deb`. Brief:
 `.mscc-coord/briefs/cmd-042.md`. Order: after ubuntu-stew is done and Stew pushes.
 Reviewed: 0-4 unchanged, low-cut max 500 < 1000, ms-sdr passes index through. Not done yet.
+
+## To do: RF check of remote TX audio (Stew, spectrum analyzer)
+
+FT8 QSOs don't prove a clean signal (FT8 tolerates dropouts/pitch steps). Check:
+- Single tone (FT8 or steady whistle): one clean line; sidebands/spurs = ring stepping or dropouts.
+- Two-tone: IMD (3rd/5th) for overdrive; digital mic gain slider still high (see 4).
+- TX on/off edges: no key-up/key-down splatter.
+- Full 13 s FT8 over: no frequency jumps or wobble.
+- Same test local vs remote audio; a difference points at the remote path.
+If bad: `grep "remote_mic EVENT" ~/sdrcore-trans.log` for the same time.
