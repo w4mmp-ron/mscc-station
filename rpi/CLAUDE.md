@@ -116,13 +116,12 @@ on dummy load and in LSB. Not seen in remote: the two back-to-back USB audio ada
 (analog) add a noise floor that hides it. Very weak; phones/on-air likely unaffected.
 Not from our changes (`sdrcore.c` untouched).
 
-Likely cause (analysis, not proven): `sdrcore.c` `fastconv` uses a real (two-sided)
-`wsfirBP` filter plus hard FFT-bin zeroing for opposite-sideband removal. The hard cut
-at 0 Hz makes the effective filter longer than FILTERTAPS (2048), so overlap-save
-wraps around between blocks; the error lands at the lowest passed frequencies, width
-set by block length (~21 ms), not by the filter.
-
-Possible fix (USB/LSB only; AM/FM keep the real filter): one-sided complex filter.
-Lowpass of half-width (high-low)/2, multiplied by e^(j*2*pi*fc*n/fs), fc = (low+high)/2
-(negative for LSB); load complex taps into `filt` (hfilt must become complex) in
-`initDSP`; drop the bin zeroing. Verify before/after on a dummy load.
+Earlier guess (overlap-save wrap from FFT-bin zeroing in `fastconv`) is **disproved**.
+Simulation 2026-09-26 (real `sdrcore.c` + `wsfirgen.c` + `jimfft` + `doAGC`, white
+noise, USB 500-3000, 96 kHz, 2048/4096): passband flat +/-0.1 dB from 600 Hz up, no
+bump at 500-800, no block-rate ripple. `wsfirBP` = LP(fc2) - LP(fc1) (center deltas
+cancel), clean linear phase. AGC (per-sample gain on noise) lifts the stopband below
+low-cut from -90 to about -45 dB: smear *below* the edge, not above it.
+NR and auto-notch were OFF when seen (Ron). Not yet tested: digital output path (ring /
+resample to VirtualA), WSJT-X Wide Graph "Flatten" (can draw artifacts at steep edges).
+Harness was in the session scratchpad (not kept); rebuild from these notes if needed.
