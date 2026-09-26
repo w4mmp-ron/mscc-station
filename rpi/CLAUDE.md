@@ -78,6 +78,14 @@ sdrcore-recv:
 
 Status: recv + ring fixes built on the Pi and working in Ron's first tests.
 
+mscc-init-linux (2026-09-26):
+10. `main.c` `init_mscc`: rewrites only its own keys, keeps other `mscc.ini` lines, and adds
+    `SWR_METER=1`, `SWR_METER_PORT=6999`, `SWR_METER_TO_GUI=1` if missing (calibration had
+    wiped them). Syntax-checked in WSL; not built/run on the Pi yet.
+11. `mscc-init-gui/mscc_init_gui/config.py` `write_mscc_ini`: same keep + SWR defaults.
+    Tested with Windows Python (existing and new file). Shared `_all.deb` with Ubuntu (Ron OK'd).
+    File is `~/.local/mscc/mscc.ini` (not `~/mscc.ini`).
+
 ## Pending: cmd-042 (from pull f9efa00, 2026-09-25)
 
 Windows `mscc-recv` 3.141 added 0xD1 CMD_SET_BW_HICUT index 5 = 1400 Hz, 6 = 1000 Hz
