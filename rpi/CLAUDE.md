@@ -64,7 +64,8 @@ sdrcore-trans:
 5. `remote_mic.c`: smooth +/-300 ppm fill trim toward 100 ms (was 0.8 %/2.4 % pitch
    steps); prime/resync/re-prime. No file I/O in the audio callback; receiver thread
    logs EVENTs (hold_last reprime, resync, primed, overflow, udp_gap). **Remote audio
-   not yet tested** (Ron: low priority).
+   verified on air** 2026-09-26: 30 m FT8 QSO, bad/under/overflow 0, no EVENTs,
+   occ ~5020 (~105 ms), step 0.500020, peak ~14250 TX.
 6. `main.c`: remote ring drained during TUNE (split streams); mic ring drift-safe (see 8).
 
 sdrcore-recv:
