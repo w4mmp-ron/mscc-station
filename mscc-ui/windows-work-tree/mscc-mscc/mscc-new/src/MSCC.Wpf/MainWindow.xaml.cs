@@ -144,6 +144,7 @@ public partial class MainWindow : Window
                 // Wire calibration progress/status reports (for Freq Cal tab CHECK implementation)
                 vm.RadioService.CalProgressReported += OnCalProgressReported;
                 vm.RadioService.CalStatusReported += OnCalStatusReported;
+                vm.RadioService.CalAbortStateReported += OnCalAbortStateReported;
                 vm.RadioService.CalDeltaReported += OnCalDeltaReported;
             }
 
@@ -773,6 +774,7 @@ public partial class MainWindow : Window
             if (_freqCalInProgress)
                 _ = AbortFreqCalRunBestEffort();
             ResetFreqCalSessionOnStop();
+            EndFreqCalAbortDrain("main stop");
             if (_freqCalTabActive)
             {
                 _freqCalTabActive = false;
@@ -1105,6 +1107,7 @@ public partial class MainWindow : Window
                 // Unsubscribe cal handlers
                 vm.RadioService.CalProgressReported -= OnCalProgressReported;
                 vm.RadioService.CalStatusReported -= OnCalStatusReported;
+                vm.RadioService.CalAbortStateReported -= OnCalAbortStateReported;
                 vm.RadioService.CalDeltaReported -= OnCalDeltaReported;
 
                 vm.FirmwarePersonalityFromRadio -= OnFirmwarePersonalityFromRadio;
@@ -1443,6 +1446,9 @@ public partial class MainWindow : Window
     private bool _freqCalInProgress = false;
     /// <summary>True while AUTO sweep is running (vs CHECK-only).</summary>
     private bool _freqCalIsAuto = false;
+    private bool _freqCalAbortDrainPending;
+    private DispatcherTimer? _freqCalAbortDrainTimer;
+    private const string FreqCalStoppedWaitText = "STOPPED — wait…";
     private int _lastCalDelta = 0;
     private bool _freqCalHaveDelta;
 
@@ -1512,8 +1518,8 @@ public partial class MainWindow : Window
 
             // Exit manual, ask to accept like original
             FreqCalLooseButton.IsEnabled = true;
-            FreqCalAutoButton.IsEnabled = true;
-            FreqCalCheckButton.IsEnabled = true;
+            FreqCalAutoButton.IsEnabled = !_freqCalAbortDrainPending;
+            FreqCalCheckButton.IsEnabled = !_freqCalAbortDrainPending;
             FreqCalResetButton.IsEnabled = true;
             SetFreqCalManualPpmButtonsEnabled(false);
 
@@ -1645,6 +1651,11 @@ public partial class MainWindow : Window
     private void FreqCalAutoButton_Click(object sender, RoutedEventArgs e)
     {
         if (ViewModel == null) return;
+        if (_freqCalAbortDrainPending)
+        {
+            ViewModel.MonitorTextBoxText(" Freq Cal: AUTO ignored, abort drain pending");
+            return;
+        }
         if (_freqCalManualMode)
         {
             MessageBox.Show("EXIT MANUAL CALIBRATION BEFORE RUNNING AUTO.", "MSCC",
@@ -1744,6 +1755,11 @@ public partial class MainWindow : Window
     private void FreqCalCheckButton_Click(object sender, RoutedEventArgs e)
     {
         if (ViewModel == null) return;
+        if (_freqCalAbortDrainPending)
+        {
+            ViewModel.MonitorTextBoxText(" Freq Cal: CHECK ignored, abort drain pending");
+            return;
+        }
         if (_freqCalResetPendingAuto)
         {
             var warn = MessageBox.Show(
@@ -1821,7 +1837,7 @@ public partial class MainWindow : Window
             FreqCalStatusLabel.Text = statusText;
             bool idle = string.IsNullOrEmpty(statusText) ||
                         statusText.Equals("RESET", StringComparison.OrdinalIgnoreCase) ||
-                        statusText.Equals("STOPPED", StringComparison.OrdinalIgnoreCase);
+                        statusText.StartsWith("STOPPED", StringComparison.OrdinalIgnoreCase);
             FreqCalStatusLabel.Foreground = idle ? FreqCalIdleBrush : FreqCalBusyBrush;
         }
     }
@@ -1854,16 +1870,17 @@ public partial class MainWindow : Window
     /// <summary>Disable/enable FREQ CAL action buttons during a running sweep.</summary>
     private void SetFreqCalControlsEnabled(bool enabled)
     {
+        bool sweep = enabled && !_freqCalAbortDrainPending;
         if (FreqCalResetButton != null) FreqCalResetButton.IsEnabled = enabled;
         if (FreqCalLooseButton != null) FreqCalLooseButton.IsEnabled = enabled;
-        if (FreqCalAutoButton != null) FreqCalAutoButton.IsEnabled = enabled;
-        if (FreqCalCheckButton != null) FreqCalCheckButton.IsEnabled = enabled;
+        if (FreqCalAutoButton != null) FreqCalAutoButton.IsEnabled = sweep;
+        if (FreqCalCheckButton != null) FreqCalCheckButton.IsEnabled = sweep;
         if (FreqCalManualButton != null) FreqCalManualButton.IsEnabled = enabled;
         // PPM ± only when manual mode and not in an auto/check sweep
         SetFreqCalManualPpmButtonsEnabled(enabled && _freqCalManualMode);
     }
 
-    /// <summary>Stop ends a FREQ CAL run in the UI. Mode restore is LeaveFreqCalTab.</summary>
+    /// <summary>Sets _freqCalInProgress and STOP enabled together.</summary>
     private void SetFreqCalRunActive(bool active)
     {
         _freqCalInProgress = active;
@@ -1886,13 +1903,56 @@ public partial class MainWindow : Window
 
     private async void FreqCalStopButton_Click(object sender, RoutedEventArgs e)
     {
-        if (ViewModel == null || !_freqCalInProgress) return;
+        if (ViewModel == null || !_freqCalInProgress || _freqCalAbortDrainPending) return;
         ViewModel.MonitorTextBoxText(
             _freqCalIsAuto ? " Freq Cal: STOP pressed during AUTO" : " Freq Cal: STOP pressed during CHECK");
+        // Arm before the abort send. A localhost drain-done can arrive before this method continues.
+        _freqCalAbortDrainPending = true;
         await AbortFreqCalRunBestEffort();
+        bool stillWaiting = _freqCalAbortDrainPending;
         ResetFreqCalSessionOnStop();
+        if (stillWaiting)
+            BeginFreqCalAbortDrain();
     }
 
+    private void BeginFreqCalAbortDrain()
+    {
+        _freqCalAbortDrainPending = true;
+        ResetFreqCalVisuals(FreqCalStoppedWaitText);
+        SetFreqCalControlsEnabled(true);
+        if (_freqCalAbortDrainTimer == null)
+        {
+            _freqCalAbortDrainTimer = new DispatcherTimer { Interval = TimeSpan.FromSeconds(36) };
+            _freqCalAbortDrainTimer.Tick += (_, _) =>
+            {
+                _freqCalAbortDrainTimer?.Stop();
+                EndFreqCalAbortDrain("client timeout");
+            };
+        }
+        _freqCalAbortDrainTimer.Stop();
+        _freqCalAbortDrainTimer.Start();
+        ViewModel?.MonitorTextBoxText(" Freq Cal: STOP - waiting for server drain");
+    }
+
+    private void EndFreqCalAbortDrain(string why)
+    {
+        if (!_freqCalAbortDrainPending) return;
+        _freqCalAbortDrainPending = false;
+        _freqCalAbortDrainTimer?.Stop();
+        if (!_freqCalInProgress && !_freqCalManualMode)
+        {
+            if (FreqCalAutoButton != null) FreqCalAutoButton.IsEnabled = true;
+            if (FreqCalCheckButton != null) FreqCalCheckButton.IsEnabled = true;
+        }
+        if (FreqCalStatusLabel != null && FreqCalStatusLabel.Text == FreqCalStoppedWaitText)
+        {
+            FreqCalStatusLabel.Text = "STOPPED";
+            FreqCalStatusLabel.Foreground = FreqCalIdleBrush;
+        }
+        ViewModel?.MonitorTextBoxText($" Freq Cal: drain done ({why})");
+    }
+
+    /// <summary>Stop ends a FREQ CAL run in the UI. Mode restore is LeaveFreqCalTab.</summary>
     private void ResetFreqCalSessionOnStop()
     {
         SetFreqCalRunActive(false);
@@ -1941,6 +2001,32 @@ public partial class MainWindow : Window
         _freqCalProgressSteps++;
         if (FreqCalProgress != null)
             FreqCalProgress.Value = Math.Min(_freqCalProgressSteps, 100);
+    }
+
+    private void OnCalAbortStateReported(int value)
+    {
+        if (!Dispatcher.CheckAccess())
+        {
+            Dispatcher.BeginInvoke(() => OnCalAbortStateReported(value));
+            return;
+        }
+
+        if (value == 1)
+        {
+            EndFreqCalAbortDrain("server");
+            return;
+        }
+
+        if (value == 2)
+        {
+            ViewModel?.MonitorTextBoxText(" Freq Cal: start refused by server (drain pending)");
+            if (_freqCalInProgress)
+            {
+                _freqCalAbortDrainPending = true;
+                ResetFreqCalSessionOnStop();
+                BeginFreqCalAbortDrain();
+            }
+        }
     }
 
     private void OnCalStatusReported(int value)

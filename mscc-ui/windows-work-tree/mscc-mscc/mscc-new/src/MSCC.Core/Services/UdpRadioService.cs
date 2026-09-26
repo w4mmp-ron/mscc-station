@@ -154,6 +154,7 @@ public class UdpRadioService : IRadioService, IDisposable
     // Frequency Calibration reports (progress 0-100, status 1=success/0=fail, delta Hz from check)
     public event Action<int>? CalProgressReported;
     public event Action<int>? CalStatusReported;
+    public event Action<int>? CalAbortStateReported;
     public event Action<int>? CalDeltaReported;
 
     public event Action<bool>? TxSetByServerReported;
@@ -1730,6 +1731,15 @@ public class UdpRadioService : IRadioService, IDisposable
                     int val = BitConverter.ToInt16(e.Payload, 0);
                     CalStatusReported?.Invoke(val);
                     DebugMonitor.MonitorTextBoxText($" Processed cal finished status: {val}");
+                }
+                break;
+
+            case Opcodes.CMD_SET_CAL_ABORT:
+                if (e.Payload.Length >= 2)
+                {
+                    int val = BitConverter.ToInt16(e.Payload, 0);
+                    CalAbortStateReported?.Invoke(val);
+                    DebugMonitor.MonitorTextBoxText($" Processed cal abort state: {val} (1=drain done, 2=start refused)");
                 }
                 break;
 

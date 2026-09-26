@@ -1890,19 +1890,7 @@
                                 <Button x:Name="FreqCalResetButton" Content="RESET" Width="70" Height="28" Margin="2" FontSize="12" FontWeight="Bold" Click="FreqCalResetButton_Click"/>
                                 <Button x:Name="FreqCalStopButton" Content="STOP" Width="70" Height="28" Margin="2" FontSize="12" FontWeight="Bold"
                                         IsEnabled="False" Click="FreqCalStopButton_Click"
-                                        ToolTip="Stop the AUTO or CHECK run. The calibration is not changed."
-                                        Foreground="#FFC000">
-                                    <Button.Style>
-                                        <Style TargetType="Button" BasedOn="{StaticResource MsccGoldButtonStyle}">
-                                            <Style.Triggers>
-                                                <Trigger Property="IsEnabled" Value="False">
-                                                    <Setter Property="Opacity" Value="0.45"/>
-                                                    <Setter Property="Foreground" Value="#888888"/>
-                                                </Trigger>
-                                            </Style.Triggers>
-                                        </Style>
-                                    </Button.Style>
-                                </Button>
+                                        ToolTip="Stop the AUTO or CHECK run. The calibration is not changed."/>
                             </StackPanel>
 
                             <!-- Manual PPM: ± buttons (rate-limited) — slider flooded USB/LO and could freeze -->

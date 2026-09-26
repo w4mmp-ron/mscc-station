@@ -313,6 +313,7 @@ public interface IRadioService : IDisposable
 
     event Action<int> CalProgressReported;
     event Action<int> CalStatusReported; // 1 = success, 0 = fail for check etc.
+    event Action<int> CalAbortStateReported; // 1 = drain done, 2 = start refused
     event Action<int> CalDeltaReported; // frequency offset in Hz reported after check/cal
     Task SetMicVolumeAsync(int value, CancellationToken cancellationToken = default); // 0-100 main mic volume
 

@@ -51,6 +51,33 @@ static void Reset_Calibration_Run_State(void) {
     check_calibration_increament = 0;
     G_check_calibration = 0;
 }
+
+static ULONGLONG cal_abort_since = 0;
+#define CAL_ABORT_DRAIN_MS 35000
+
+static void Cal_Abort_Drain_Done(const char *why) {
+    cal_abort_pending = FALSE;
+    cal_abort_since = 0;
+    Gui_send_param(CMD_SET_CAL_ABORT, 1);
+    print_time(1);
+    fprintf(G_fp_logfile, "[%d] CMD_SET_CAL_ABORT: drain done (%s)\n", line_number++, why);
+}
+
+static int Cal_Abort_Drain_Blocks_Start(void) {
+    ULONGLONG elapsed;
+    if (!cal_abort_pending)
+        return 0;
+    elapsed = GetTickCount64() - cal_abort_since;
+    if (elapsed >= CAL_ABORT_DRAIN_MS) {
+        Cal_Abort_Drain_Done("timeout");
+        return 0;
+    }
+    print_time(1);
+    fprintf(G_fp_logfile, "[%d] CMD_SET_CAL_ABORT: start refused, drain pending (%lu ms)\n",
+            line_number++, (unsigned long)elapsed);
+    Gui_send_param(CMD_SET_CAL_ABORT, 2);
+    return 1;
+}
 uint8_t mode_number;
 uint8_t previous_mode_number;
 char previous_mode = 'N';
@@ -675,9 +702,10 @@ int Process_Frequency_Calibration(uint8_t command, char *buf) {
             break;
 
         case CMD_SET_FREQ_CAL_CHECK: //This is called by the client 
+            if (opcode_data_8_bit == 1 && Cal_Abort_Drain_Blocks_Start())
+                break;
             G_check_calibration = opcode_data_8_bit;
             if (G_check_calibration == 1) {
-                cal_abort_pending = FALSE;
                 print_time(1);
                 fprintf(G_fp_logfile, "[%d] Process_Frequency_Calibration. CMD_SET_FREQ_CAL_CHECK. Calling Check_Calibration. G_check_only: %d\n",
                         line_number++, G_check_calibration);
@@ -698,7 +726,8 @@ int Process_Frequency_Calibration(uint8_t command, char *buf) {
             break;
 
         case CMD_START_CALIBRATE: //This is called by the client
-            cal_abort_pending = FALSE;
+            if (Cal_Abort_Drain_Blocks_Start())
+                break;
             print_time(1);
             fprintf(G_fp_logfile, "[%d] Process_Frequency_Calibration. CMD_START_CALIBRATE. \n", line_number++);
             freq_queue_add(G_tune_freq);
@@ -712,14 +741,22 @@ int Process_Frequency_Calibration(uint8_t command, char *buf) {
             }
             break;
 
-        case CMD_SET_CAL_ABORT:
+        case CMD_SET_CAL_ABORT: {
+            int stepping = (auto_calibration_state == CALIBRATION_RUNNING ||
+                            check_calibration_state == CALIBRATION_RUNNING);
+            int finishing = (auto_calibration_state == CALIBRATION_COMPLETE ||
+                             check_calibration_state == CALIBRATION_COMPLETE);
+            int owed = stepping || finishing;
+            int old_match = (auto_calibration_initialized == CALIBRATION_INITIALIZED ||
+                             check_calibration_initialized == CALIBRATION_INITIALIZED ||
+                             G_check_calibration ||
+                             stepping);
             print_time(1);
-            if (auto_calibration_state == CALIBRATION_RUNNING ||
-                check_calibration_state == CALIBRATION_RUNNING ||
-                auto_calibration_initialized == CALIBRATION_INITIALIZED ||
-                check_calibration_initialized == CALIBRATION_INITIALIZED ||
-                G_check_calibration) {
+            if (owed) {
                 cal_abort_pending = TRUE;
+                cal_abort_since = GetTickCount64();
+            }
+            if (owed || old_match) {
                 Reset_Calibration_Run_State();
                 G_mode = previous_mode;
                 G_tune_freq = previous_freq;
@@ -729,17 +766,24 @@ int Process_Frequency_Calibration(uint8_t command, char *buf) {
                 SDRcore_trans_send_param(CMD_SET_MAIN_MODE, previous_mode_number);
                 G_Calibration_temperature = previous_temperature;
                 G_Proficio_Allow_Temp_Check = TRUE;
-                SDRcore_recv_send_param(CMD_SET_CALIBRATION_FINISHED, 1);
-                fprintf(G_fp_logfile, "[%d] CMD_SET_CAL_ABORT: run stopped, PPM unchanged\n", line_number++);
-            } else {
-                fprintf(G_fp_logfile, "[%d] CMD_SET_CAL_ABORT: nothing running, PPM unchanged\n", line_number++);
+                if (stepping)
+                    SDRcore_recv_send_param(CMD_SET_CALIBRATION_FINISHED, 1);
+            }
+            if (stepping)
+                fprintf(G_fp_logfile, "[%d] CMD_SET_CAL_ABORT: stepping, finish sent\n", line_number++);
+            else if (finishing)
+                fprintf(G_fp_logfile, "[%d] CMD_SET_CAL_ABORT: finishing, finish already sent\n", line_number++);
+            else {
+                fprintf(G_fp_logfile, "[%d] CMD_SET_CAL_ABORT: nothing owed\n", line_number++);
+                Cal_Abort_Drain_Done("nothing owed");
             }
             break;
+        }
 
         case CMD_SET_CALIBRATION_DATA: //This is called by SDRcore_recv and ends the calibration with success for fail
             if (cal_abort_pending) {
-                cal_abort_pending = FALSE;
                 fprintf(G_fp_logfile, "[%d] CMD_SET_CAL_ABORT: dropped CMD_SET_CALIBRATION_DATA\n", line_number++);
+                Cal_Abort_Drain_Done("recv finish reply");
                 break;
             }
             if (!G_check_calibration) {
@@ -766,6 +810,8 @@ int Process_Frequency_Calibration(uint8_t command, char *buf) {
         case CMD_SET_CAL_DATA_PROCESSED: //This is called by SDRcore_recv. Calibration will continue or fail
             if (cal_abort_pending) {
                 fprintf(G_fp_logfile, "[%d] CMD_SET_CAL_ABORT: dropped CMD_SET_CAL_DATA_PROCESSED\n", line_number++);
+                if (GetTickCount64() - cal_abort_since >= CAL_ABORT_DRAIN_MS)
+                    Cal_Abort_Drain_Done("timeout");
                 break;
             }
             if (!G_check_calibration) {
