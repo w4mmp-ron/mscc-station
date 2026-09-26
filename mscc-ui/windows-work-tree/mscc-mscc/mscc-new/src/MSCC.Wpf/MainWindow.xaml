@@ -610,19 +610,9 @@
             </Grid>
         </Border>
 
-        <!-- Radio model + band buttons — centered on spectrum column. -->
+        <!-- Band buttons — centered on spectrum column. Family comes from firmware, not a button. -->
         <Border Grid.Row="1" Grid.Column="0" Background="{DynamicResource UiPanelBackgroundBrush}" CornerRadius="4" Padding="8" Margin="0,0,0,6">
             <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
-                <!-- Left of band bar: radio family (Proficio ↔ Geminus). Outside BandButtonsPanel so band highlight logic ignores it. -->
-                <Button x:Name="RadioModelButton"
-                        Content="Proficio"
-                        Width="72"
-                        Margin="1,1,6,1"
-                        Click="RadioModelButton_Click"
-                        Style="{StaticResource MsccGoldButtonStyle}"
-                        ToolTip="Radio family (set automatically from firmware). Grays out bands this radio cannot use."/>
-                <Rectangle Width="1" Height="18" Fill="#FF666666" Margin="0,0,6,0" VerticalAlignment="Center"/>
-
                 <StackPanel x:Name="BandButtonsPanel" Orientation="Horizontal">
                     <!-- LF (Geminus): defaults = digital-mode freqs 136.0 kHz / 474.2 kHz -->
                     <Button x:Name="Band2200Button"
@@ -1151,6 +1141,7 @@
 
                                     <Button Grid.Row="0" Grid.Column="0" Content="QRP"
                                             Command="{Binding ToggleQrpCommand}"
+                                            ToolTip="Barefoot power (same as AMP off). 100 % = your QRP CAL level (5 W)."
                                             Margin="0,0,6,6" Width="100" HorizontalAlignment="Left"
                                             Foreground="Black" FontWeight="Bold">
                                         <Button.Style>
@@ -1168,6 +1159,7 @@
                                     </Button>
                                     <Button Grid.Row="0" Grid.Column="1" Content="Full Power"
                                             Command="{Binding ToggleFullPowerCommand}"
+                                            ToolTip="Amplifier setting (same as AMP on). Uses the AMP CAL table; never drives above your QRP CAL level."
                                             Margin="0,0,0,6" Width="100" HorizontalAlignment="Left"
                                             Foreground="Black" FontWeight="Bold">
                                         <Button.Style>
@@ -1900,8 +1892,8 @@
 
                             <!-- Manual PPM: ± buttons (rate-limited) — slider flooded USB/LO and could freeze -->
                             <StackPanel Orientation="Horizontal" Margin="0,0,0,3">
-                                <TextBlock Text="PPM:" Width="35" FontSize="12" VerticalAlignment="Center"
-                                           ToolTip="Manual coarse PPM offset (relative to current cal). Use − / + one step at a time."/>
+                                <TextBlock Text="MANUAL steps:" Width="90" FontSize="12" VerticalAlignment="Center"
+                                           ToolTip="Steps taken in MANUAL calibration (not the stored PPM). Use − / + one step at a time."/>
                                 <Button x:Name="FreqCalPPMMinus" Content="−" Width="32" Height="26" Margin="2,0" FontSize="14" FontWeight="Bold"
                                         IsEnabled="False" Click="FreqCalPPMMinus_Click"
                                         ToolTip="Decrease PPM by 1 (rate-limited to protect radio)"/>
@@ -2096,9 +2088,9 @@
                 <!-- MAIN operate power: same stores as RX/TX tab; bank follows TUN / mode -->
                 <TextBlock Text="{Binding MainOperatePowerLabel}" FontWeight="Bold" Foreground="{DynamicResource UiAccentBrush}" FontSize="9"
                            Margin="0,4,0,1" HorizontalAlignment="Left"
-                           ToolTip="Drive power for what you're doing: TUN→Tune, CW→CW, AM→AM carrier, FM→FM, LSB/USB/DIG-U→SSB. Same values as the RX/TX tab."/>
+                           ToolTip="Drive power for what you're doing: TUN→Tune, CW→CW, AM→AM carrier, FM→FM, LSB/USB→SSB, DIG-U (or Digital audio)→Tune. Same values as the RX/TX tab."/>
                 <StackPanel Orientation="Horizontal" Margin="0,0,0,1" VerticalAlignment="Center"
-                            ToolTip="Drive power for what you're doing: TUN→Tune, CW→CW, AM→AM carrier, FM→FM, LSB/USB/DIG-U→SSB. Same values as the RX/TX tab.">
+                            ToolTip="Drive power for what you're doing: TUN→Tune, CW→CW, AM→AM carrier, FM→FM, LSB/USB→SSB, DIG-U (or Digital audio)→Tune. Same values as the RX/TX tab.">
                     <Slider Width="108" Minimum="0" Maximum="100" SmallChange="1"
                             Value="{Binding MainOperatePowerPercent, Mode=TwoWay}"
                             PreviewMouseWheel="Slider_PreviewMouseWheel" VerticalAlignment="Center"/>

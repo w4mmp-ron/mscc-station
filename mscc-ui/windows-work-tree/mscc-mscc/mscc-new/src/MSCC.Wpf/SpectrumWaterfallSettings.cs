@@ -1274,6 +1274,8 @@ public static class SpectrumWaterfallSettings
             if (string.IsNullOrWhiteSpace(l)) return false;
             string? lineKey = GetIniKey(l);
             if (lineKey == null) return false;
+            if (lineKey.StartsWith("VFOB_", StringComparison.OrdinalIgnoreCase))
+                return true;
             int us = lineKey.IndexOf('_');
             if (us <= 0) return false;
             string prefix = lineKey.Substring(0, us).ToUpperInvariant();
@@ -1324,6 +1326,39 @@ public static class SpectrumWaterfallSettings
             else if (LineMatchesKey(line, kCw)) cwFilter = ParseIniInt(line, cwFilter);
         }
         return (freq, mode, lowCut, highCut, cwFilter);
+    }
+
+    /// <summary>
+    /// Current VFO B (not per-band) in MSCC_LastUsed_VFOB.ini: VFOB_FREQ, VFOB_MODE, VFOB_BAND.
+    /// </summary>
+    public static void SaveCurrentVfoB(long frequencyHz, string mode, string band)
+    {
+        if (frequencyHz <= 0) return;
+        string path = GetLastUsedPath(forVfoB: true);
+        if (string.IsNullOrEmpty(path)) return;
+        var lines = File.Exists(path) ? File.ReadAllLines(path).ToList() : new List<string>();
+        UpdateOrAdd(lines, "VFOB_FREQ", frequencyHz.ToString());
+        UpdateOrAdd(lines, "VFOB_MODE", string.IsNullOrWhiteSpace(mode) ? "USB" : mode.Trim());
+        UpdateOrAdd(lines, "VFOB_BAND", NormalizeBandKey(band ?? ""));
+        EnsureLastUsedFileExists(path);
+        File.WriteAllLines(path, lines);
+    }
+
+    public static (long freq, string mode, string band) LoadCurrentVfoB()
+    {
+        string path = GetLastUsedPath(forVfoB: true);
+        long freq = 0;
+        string mode = "";
+        string band = "";
+        if (string.IsNullOrEmpty(path) || !File.Exists(path))
+            return (freq, mode, band);
+        foreach (string line in File.ReadAllLines(path))
+        {
+            if (LineMatchesKey(line, "VFOB_FREQ")) freq = ParseIniLong(line, freq);
+            else if (LineMatchesKey(line, "VFOB_MODE")) mode = ParseIniString(line, mode);
+            else if (LineMatchesKey(line, "VFOB_BAND")) band = ParseIniString(line, band);
+        }
+        return (freq, mode, band);
     }
 
     private static string NormalizeBandKey(string band)

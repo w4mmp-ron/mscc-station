@@ -24,6 +24,7 @@ public partial class MainWindow : Window
     private bool _rxIqTabActive;
     private bool _freqCalTabActive;
     private bool _freqCalRestorePending;
+    private bool _freqCalResetPendingAuto;
     private int _freqCalProgressSteps;
     private bool _exiting;
 
@@ -65,6 +66,7 @@ public partial class MainWindow : Window
             {
                 ViewModel.FirmwarePersonalityFromRadio += OnFirmwarePersonalityFromRadio;
                 ViewModel.FrequencyReportedForConnectSafety += OnFrequencyReportedForConnectSafety;
+                ViewModel.PropertyChanged += OnViewModelPropertyChanged;
             }
 
             // Load client settings (MSCC_Client.ini) at startup (spectrum, window, time display, etc.).
@@ -206,16 +208,26 @@ public partial class MainWindow : Window
         }
     }
 
-    /// <summary>
-    /// Toggles Proficio ↔ Geminus label and grays out the other radio's band buttons.
-    /// Does not yet change frequency or talk to the hardware about model type.
-    /// </summary>
-    private void RadioModelButton_Click(object sender, RoutedEventArgs e)
+    private void OnViewModelPropertyChanged(object? sender, System.ComponentModel.PropertyChangedEventArgs e)
     {
-        if (sender is not Button btn) return;
-        string current = btn.Content?.ToString() ?? "Proficio";
-        bool nowGeminus = !current.Equals("Geminus", StringComparison.OrdinalIgnoreCase);
-        ApplyRadioModelSelection(nowGeminus, fromFirmware: false);
+        if (e.PropertyName == nameof(MainViewModel.IsRadioRunning))
+            ReenterFreqCalIfTabStillOpen();
+    }
+
+    /// <summary>Start with FREQ CAL still selected: snapshot again and return to CW / 600 / 200.</summary>
+    private void ReenterFreqCalIfTabStillOpen()
+    {
+        if (ViewModel == null || !ViewModel.IsRadioRunning) return;
+        if (!Dispatcher.CheckAccess())
+        {
+            Dispatcher.BeginInvoke(ReenterFreqCalIfTabStillOpen);
+            return;
+        }
+        if (!ReferenceEquals(MainTabControl.SelectedItem, FreqCalTabItem)) return;
+        if (_freqCalTabActive) return;
+        _freqCalTabActive = true;
+        ViewModel.EnterFreqCalTab();
+        ViewModel.MonitorTextBoxText(" Freq Cal: Start with tab open, re-applied CW/600/200");
     }
 
     private void OnFrequencyReportedForConnectSafety()
@@ -290,9 +302,7 @@ public partial class MainWindow : Window
 
     private void ApplyRadioModelSelection(bool nowGeminus, bool fromFirmware)
     {
-        var btn = this.FindName("RadioModelButton") as Button;
-        if (btn != null)
-            btn.Content = nowGeminus ? "Geminus" : "Proficio";
+        _isGeminus = nowGeminus;
         SpectrumWaterfallSettings.SwitchRadioModelWaterfall(nowGeminus);
         ApplyRadioModelBandGating();
         SyncGenButtonForRadioModel(retuneIfOnGen: !fromFirmware);
@@ -398,15 +408,9 @@ public partial class MainWindow : Window
         }
     }
 
-    /// <summary>
-    /// True when the UI radio-model control is set to Geminus (label text).
-    /// </summary>
-    private bool IsGeminusModelSelected()
-    {
-        var btn = this.FindName("RadioModelButton") as Button;
-        string label = btn?.Content?.ToString() ?? "Proficio";
-        return label.Equals("Geminus", StringComparison.OrdinalIgnoreCase);
-    }
+    /// <summary>True when firmware (or the sticky RADIO_MODEL ini) selected Geminus band gating.</summary>
+    private bool _isGeminus;
+    private bool IsGeminusModelSelected() => _isGeminus;
 
     /// <summary>
     /// Enable/disable band buttons by selected radio model:
@@ -416,7 +420,7 @@ public partial class MainWindow : Window
     /// </summary>
     /// <summary>
     /// S/W bank follows CurrentBand (LF 2200/630 vs HF including GEN).
-    /// Does not change RadioModelButton or band gray-out (FW major / cmd-015 owns gating).
+    /// Does not change band gray-out (firmware major owns gating).
     /// </summary>
     private void ApplyWaterfallBankForActiveBand()
     {
@@ -766,7 +770,7 @@ public partial class MainWindow : Window
         // Toggle: Start when idle, Stop when running (Stop+Start = restart after COM change).
         if (ViewModel.IsRadioRunning)
         {
-            _freqCalRestorePending = false;
+            ResetFreqCalSessionOnStop();
             if (_freqCalTabActive)
             {
                 _freqCalTabActive = false;
@@ -1069,19 +1073,17 @@ public partial class MainWindow : Window
         // Restore Proficio/Geminus from INI (RADIO_MODEL) so HF/LF waterfall banks match.
         Dispatcher.BeginInvoke(() =>
         {
-            RestoreRadioModelButtonFromSettings();
+            RestoreRadioModelFromSettings();
             ApplyRadioModelBandGating();
             SyncGenButtonForRadioModel(retuneIfOnGen: false);
         });
     }
 
-    /// <summary>Set RadioModelButton label from sticky RADIO_MODEL (Proficio / Geminus).</summary>
-    private void RestoreRadioModelButtonFromSettings()
+    /// <summary>Apply sticky RADIO_MODEL (Proficio / Geminus) to band gating and the waterfall bank.</summary>
+    private void RestoreRadioModelFromSettings()
     {
-        var btn = this.FindName("RadioModelButton") as Button;
-        if (btn == null) return;
         bool geminus = SpectrumWaterfallSettings.RadioModelIsGeminus;
-        btn.Content = geminus ? "Geminus" : "Proficio";
+        _isGeminus = geminus;
         if (ViewModel != null)
             ViewModel.IsGeminusRadioModel = geminus;
         // Live waterfall already loaded from the matching bank in SpectrumWaterfallSettings.Load()
@@ -1105,6 +1107,14 @@ public partial class MainWindow : Window
 
                 vm.FirmwarePersonalityFromRadio -= OnFirmwarePersonalityFromRadio;
                 vm.FrequencyReportedForConnectSafety -= OnFrequencyReportedForConnectSafety;
+                vm.PropertyChanged -= OnViewModelPropertyChanged;
+
+                if (_freqCalInProgress)
+                    vm.MonitorTextBoxText(" Freq Cal: close during AUTO/CHECK — restoring mode, not aborting the cal");
+                if (_freqCalTabActive || _freqCalRestorePending)
+                    vm.LeaveFreqCalForShutdown();
+                vm.SaveCurrentVfoBRecord();
+
                 vm.MonitorTextBoxText(
                     " MainWindow_Closing: Dispose VM (STOP only if this client launched backends; connect-only leaves servers running)");
                 vm.Dispose();
@@ -1487,7 +1497,6 @@ public partial class MainWindow : Window
             _ = ViewModel.RadioService.SetForceCalibrationAsync(true);
 
             _freqCalManualMode = true;
-            ShowFreqCalRunningHint();
             ViewModel?.MonitorTextBoxText(" Freq Cal: Entered MANUAL mode");
         }
         else
@@ -1512,6 +1521,7 @@ public partial class MainWindow : Window
             {
                 _ = ViewModel.RadioService.SetCalibrationFinishedAsync(true);
                 FreqCalStatusLabel.Text = "MANUAL CALIBRATED";
+                _freqCalResetPendingAuto = false;
             }
             else
             {
@@ -1728,6 +1738,16 @@ public partial class MainWindow : Window
     private void FreqCalCheckButton_Click(object sender, RoutedEventArgs e)
     {
         if (ViewModel == null) return;
+        if (_freqCalResetPendingAuto)
+        {
+            var warn = MessageBox.Show(
+                "Calibration was reset. Run AUTO first.\n\nClick OK to run CHECK anyway, or Cancel.",
+                "MSCC",
+                MessageBoxButton.OKCancel,
+                MessageBoxImage.Warning);
+            if (warn != MessageBoxResult.OK)
+                return;
+        }
         if (_freqCalInProgress)
         {
             MessageBox.Show("FREQUENCY CALIBRATION IN PROGRESS.", "MSCC",
@@ -1836,6 +1856,27 @@ public partial class MainWindow : Window
         SetFreqCalManualPpmButtonsEnabled(enabled && _freqCalManualMode);
     }
 
+    /// <summary>Stop ends a FREQ CAL run in the UI. Mode restore is LeaveFreqCalTab.</summary>
+    private void ResetFreqCalSessionOnStop()
+    {
+        _freqCalInProgress = false;
+        _freqCalIsAuto = false;
+        _freqCalRestorePending = false;
+        if (_freqCalManualMode)
+        {
+            _freqCalManualMode = false;
+            SetFreqCalManualPpmButtonsEnabled(false);
+            ViewModel?.MonitorTextBoxText(" Freq Cal: Stop during MANUAL — no accept");
+        }
+        SetFreqCalControlsEnabled(true);
+        ClearFreqCalRunningHint();
+        if (FreqCalStatusLabel != null)
+        {
+            FreqCalStatusLabel.Text = "STOPPED";
+            FreqCalStatusLabel.Foreground = FreqCalIdleBrush;
+        }
+    }
+
     private void FreqCalResetButton_Click(object sender, RoutedEventArgs e)
     {
         if (ViewModel != null)
@@ -1844,6 +1885,7 @@ public partial class MainWindow : Window
             if (res == MessageBoxResult.Yes)
             {
                 _ = ViewModel.RadioService.SetCalResetAsync(true);
+                _freqCalResetPendingAuto = true;
                 ResetFreqCalVisuals("RESET");
                 ViewModel?.MonitorTextBoxText(" Freq Cal: RESET clicked");
             }
@@ -1899,7 +1941,9 @@ public partial class MainWindow : Window
             if (ok && _freqCalHaveDelta && Math.Abs(_lastCalDelta) < 10000)
                 statusText += "\r\n" + FreqCalSuccessDetail(wasAuto, _lastCalDelta);
             else if (!ok && !wasAuto)
-                statusText += "\r\nOff by more than 50 Hz? Run AUTO (COARSE).";
+                statusText += "\r\nError may be more than 50 Hz. Run AUTO (COARSE).";
+            if (wasAuto && ok)
+                _freqCalResetPendingAuto = false;
             _lastCalDelta = 0;
             _freqCalHaveDelta = false;
 
