@@ -1,4 +1,58 @@
 commands:
+  - id: cmd-045
+    created: "2026-09-26T17:50:00-04:00"
+    target: [windows-new-hp]
+    role: client
+    action: wpf-vfob-restore-freqcal-stop-close-msgs-pa-sync-remove-model-button
+    status_hint: open
+    detail: |
+      Host: windows-new-hp (NEW-HP-LAPTOP).
+      Checkout: C:\Users\n8vet\OneDrive\Documents\GitHub\mscc-station
+      Orders on this host. Stew's round-2 manual answers + tooltip-fixes F1/G1/G3/E (2026-09-26).
+      Call the user Stew. Commit on NEW-HP when done. Do NOT git push (Stew pushes). Do not pull.
+      Local main is ahead of origin with cmd-044 (86a0f56, d7a6480); that is expected.
+
+      ## Scope (WPF client; ms-sdr-MKII only if needed - none expected)
+      1. Version: auto-bump on build (9.26.3 -> expect 9.26.4).
+      2. F1 VFO B freq+mode lost on restart: nothing loads VfoB at startup
+         (MainViewModel.cs :1932; MSCC_LastUsed_VFOB.ini is per-band only, written
+         while B active :5620-5645). Persist VFOB_FREQ/MODE/BAND, restore into
+         RadioState.VfoB at startup without selecting/sending; A stays active.
+      3. FREQ CAL (MainWindow.xaml.cs): amber running hint only for AUTO/CHECK
+         (drop MANUAL show :1490); Stop (StartStop_Click :762-778) resets the cal
+         session (in-progress/manual flags, controls, hint, STOPPED); Start with the
+         tab open re-applies CW/600/200 (EnterFreqCalTab); Closing (:1091) and
+         VM Dispose (MainViewModel.cs :6391) restore mode/filter/pitch first.
+         ACK-table pipe row (status/windows-new-hp.md cmd-044) fixed in these orders.
+      4. FREQ CAL text: CHECK FAILED -> "Error may be more than 50 Hz. Run AUTO (COARSE)."
+         (:1902); after RESET, CHECK warns "Calibration was reset. Run AUTO first."
+         (OK/Cancel, not a lockout); "PPM:" label -> "MANUAL steps:" (MainWindow.xaml :1903).
+      5. G1: QRP / Full Power / AMP all send CMD_SET_PA_BYPASS 0xF7. One source of truth
+         = AmpOn (:1159): QrpMode => !AmpOn, FullPower => AmpOn; drop OnQrpModeChanged
+         :4751 / OnFullPowerChanged :4743 sends; QRP click -> AMP off, Full Power click
+         -> AMP on, AMP toggles. No rename/removal (pending Ron).
+      6. Remove RadioModelButton (MainWindow.xaml :616-624). Its label is state:
+         replace IsGeminusModelSelected (MainWindow.xaml.cs :404) with a field; fix
+         ApplyRadioModelSelection :291, RestoreRadioModelButtonFromSettings :1079
+         (no early return). Band graying stays from FW major (:234-259).
+      7. Text: A8 power slider tooltip (:2099/:2101) LSB/USB->SSB, DIG-U (or Digital
+         audio)->Tune; ResolveOperatePowerBank (MainViewModel.cs :1785-1798) maps DigU
+         and USB/LSB+Digital audio to Tune (matches SDRcore-trans driver.c). A1 AMP
+         tooltip kept (doesn't claim Full Power raises drive).
+
+      ## Out of scope
+      Avalonia (both trees), linux/rpi/Solidus, SDRcore-recv/trans, mscc-init, firmware, CAT.
+
+      ## Build / smoke
+      WPF Release build, clean (auto-copies to C:\mscc-net9, bumps version).
+      Smoke (plain-language list in the brief): VFO B survives restart; running hint
+      AUTO/CHECK only; Stop clears it; Start on tab -> CW/600/200; close on tab ->
+      next start in the old mode; new CHECK/RESET messages; MANUAL steps label;
+      QRP/Full Power/AMP never disagree; no model button, bands still gated by FW;
+      DIG-U slider says TUNE POWER.
+
+      Commit hint: cmd-045: VFO B restore, FREQ CAL stop/close/messages, QRP/Full Power/AMP in sync, remove radio-model button, DIG-U slider on Tune power
+      Brief: .mscc-coord/briefs/cmd-045.md
   - id: cmd-044
     created: "2026-09-26T12:30:00-04:00"
     target: [windows-new-hp]

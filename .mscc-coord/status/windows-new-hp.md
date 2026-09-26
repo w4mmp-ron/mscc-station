@@ -5,7 +5,7 @@
 | **Host** | NEW-HP-LAPTOP (Windows) |
 | **Checkout** | `C:\Users\n8vet\OneDrive\Documents\GitHub\mscc-station` |
 | **Build** | **cmd-044** (WPF + ms-sdr) / **cmd-038** (WPF pending) |
-| **Last command id** | cmd-044 (done) / cmd-038 (WPF pending) |
+| **Last command id** | cmd-045 (orders) / cmd-044 (done) / cmd-038 (WPF pending) |
 | **State** | done |
 | **Updated** | 2026-09-26 |
 
@@ -13,7 +13,8 @@
 
 | command id | state | note |
 |------------|-------|------|
-| cmd-044 | done | WPF 9.26.3 + ms-sdr 3.174 in C:\mscc-net9. FREQ CAL success text: AUTO "Was N Hz off, now corrected. Run CHECK."; CHECK "Error now N Hz" plus " (good)" when |N| <= 5. Client only. Not pushed. |
+| cmd-045 | orders | Orders + brief: VFO B restore, FREQ CAL stop/close/messages, QRP/Full Power/AMP sync, remove radio-model button, DIG-U slider on Tune power. WPF 9.26.4 expected. Awaiting Build ACK. |
+| cmd-044 | done | WPF 9.26.3 + ms-sdr 3.174 in C:\mscc-net9. FREQ CAL success text: AUTO "Was N Hz off, now corrected. Run CHECK."; CHECK "Error now N Hz" plus " (good)" when abs(N) <= 5. Client only. Not pushed. |
 | cmd-042 | done | Windows only. SDRcore-recv 0xD1 case 5=1400 / case 6=1000, recv 3.141. mscc-recv.exe in Release/windows-wpf and C:\mscc-net9. New exe has the 1400 Hz constant (previous exe had none). Live listen not run: MSCC was not running, radio not started. Ubuntu/Pi parts wait until Stew pushes. |
 | cmd-041 | done | WPF 9.25.0. DIG-U Hi idx 5=1.4k / 6=1.0k. Other modes stay 0..4. 0xDD idx>4 ignored. Deployed to C:\mscc-net9. Not pushed. |
 | cmd-040 | orders | Avalonia remote-audio parity orders + brief authored here (canonical yaml). Build target: ubuntu-stew then rpi. No Avalonia code on this host for 040. |
