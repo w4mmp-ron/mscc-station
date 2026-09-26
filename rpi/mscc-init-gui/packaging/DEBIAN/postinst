@@ -19,52 +19,30 @@ resolve_user() {
 
 case "$1" in
 configure)
-  chmod 755 /usr/bin/mscc-init-gui \
-            /usr/bin/mscc-volume-gui \
-            /usr/bin/mscc-volume-restore 2>/dev/null || true
-  chmod 755 /usr/share/mscc-init-gui/mscc-volume-restore 2>/dev/null || true
+  chmod 755 /usr/bin/mscc-init-gui 2>/dev/null || true
   find /usr/share/mscc-init-gui -type d -exec chmod 755 {} \; 2>/dev/null || true
 
   if command -v update-desktop-database >/dev/null 2>&1; then
     update-desktop-database -q /usr/share/applications 2>/dev/null || true
   fi
 
-  # Seed ~/mscc/mscc-volume-gui for sticky restore / local runs
+  # Volume GUI dropped in 1.0.15: remove the copy older versions seeded in $HOME
   if REAL_USER="$(resolve_user)"; then
     HOME_DIR="$(getent passwd "$REAL_USER" | cut -d: -f6)"
-    if [[ -n "$HOME_DIR" && -d "$HOME_DIR" ]]; then
-      DEST="$HOME_DIR/mscc/mscc-volume-gui"
-      mkdir -p "$HOME_DIR/mscc"
-      rm -rf "$DEST"
-      mkdir -p "$DEST"
-      cp -a /usr/share/mscc-init-gui/mscc_volume_gui "$DEST/"
-      cp -a /usr/share/mscc-init-gui/mscc-volume-restore "$DEST/mscc-volume-restore"
-      # thin launcher in the home tree
-      cat >"$DEST/mscc-volume-gui" <<'EOF'
-#!/usr/bin/env python3
-import sys
-from pathlib import Path
-sys.path.insert(0, str(Path(__file__).resolve().parent))
-from mscc_volume_gui.app import main
-if __name__ == "__main__":
-    main()
-EOF
-      chmod 755 "$DEST/mscc-volume-gui" "$DEST/mscc-volume-restore"
-      chown -R "$REAL_USER:$REAL_USER" "$DEST"
-      echo "mscc-init-gui: volume GUI → $DEST"
+    if [[ -n "$HOME_DIR" && -d "$HOME_DIR/mscc/mscc-volume-gui" ]]; then
+      rm -rf "$HOME_DIR/mscc/mscc-volume-gui"
+      echo "mscc-init-gui: removed old $HOME_DIR/mscc/mscc-volume-gui"
     fi
   fi
 
   echo
   echo "================================================================"
-  echo "  mscc-init-gui $1 — Init + Volume GUIs"
+  echo "  mscc-init-gui $1"
   echo "================================================================"
   echo "  Desktop user (not root):"
   echo "    • Menu:  MSCC Init"
-  echo "    • Menu:  MSCC Volume"
-  echo "    • CLI:   mscc-init-gui | mscc-volume-gui"
+  echo "    • CLI:   mscc-init-gui"
   echo "  Config:  \$HOME/.local/mscc"
-  echo "  Volume:  \$HOME/mscc/mscc-volume-gui/ + volume-levels.conf"
   echo "================================================================"
   echo
   ;;

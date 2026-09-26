@@ -304,16 +304,65 @@ static int write_fail(const char *path, const char *what)
     return -1;
 }
 
+/* Keys init_mscc() owns; any other line in an existing mscc.ini is kept. */
+static const char *const mscc_own_keys[] = {
+    "PROFICIO_SERIAL_NUMBER=", "MSCC_PORT=", "MSCC_IP=", "PROFICIO_DLL_PORT=",
+    "PROFICIO_DLL_IP=", "PCB_VERSION=", "PROFICIO-MKII=", NULL
+};
+
+static int mscc_line_has_key(const char *line, const char *key)
+{
+    while (*line == ' ' || *line == '\t')
+        line++;
+    return strncmp(line, key, strlen(key)) == 0;
+}
+
 static int init_mscc(void)
 {
     FILE *fp;
     char path[PATH_MAX];
     const char *home = My_getenv("HOME");
+    char *kept = NULL;
+    size_t kept_len = 0;
+    char line[LINE_MAX_LEN];
+    int i, own;
+    int have_swr = 0, have_swr_port = 0, have_swr_gui = 0;
 
     snprintf(path, sizeof(path), "%s/mscc.ini", home);
+
+    /* Keep lines we don't write (SWR_METER*, etc.) so a re-run doesn't drop them. */
+    fp = fopen(path, "r");
+    if (fp) {
+        while (fgets(line, sizeof(line), fp)) {
+            own = 0;
+            for (i = 0; mscc_own_keys[i]; i++)
+                if (mscc_line_has_key(line, mscc_own_keys[i]))
+                    own = 1;
+            if (own || line[0] == '\n' || line[0] == '\r' || line[0] == '\0')
+                continue;
+            if (mscc_line_has_key(line, "SWR_METER="))
+                have_swr = 1;
+            if (mscc_line_has_key(line, "SWR_METER_PORT="))
+                have_swr_port = 1;
+            if (mscc_line_has_key(line, "SWR_METER_TO_GUI="))
+                have_swr_gui = 1;
+            char *p = realloc(kept, kept_len + strlen(line) + 2);
+            if (!p)
+                break;
+            kept = p;
+            memcpy(kept + kept_len, line, strlen(line) + 1);
+            kept_len += strlen(line);
+            if (kept[kept_len - 1] != '\n')
+                kept[kept_len++] = '\n', kept[kept_len] = '\0';
+        }
+        fclose(fp);
+    }
+
     fp = fopen(path, "w");
-    if (!fp)
+    if (!fp) {
+        free(kept);
         return write_fail(path, "mscc.ini");
+    }
     fprintf(fp, "PROFICIO_SERIAL_NUMBER=%s;\n", G_Usb_serial_number);
     fprintf(fp, "MSCC_PORT=%d;\n", G_mscc_port);
     fprintf(fp, "MSCC_IP=%s;\n", G_string_host_name);
@@ -321,7 +370,17 @@ static int init_mscc(void)
     fprintf(fp, "PROFICIO_DLL_IP=%s;\n", G_string_server_IP);
     fprintf(fp, "PCB_VERSION=%d;\n", G_PCB_Version);
     fprintf(fp, "PROFICIO-MKII=%d;\n", (int)G_Proficio_Mkii);
+    if (kept)
+        fputs(kept, fp);
+    /* WiFi SWR meter defaults (ms-sdr swr_wifi_meter.c) when not already set. */
+    if (!have_swr)
+        fprintf(fp, "SWR_METER=1;\n");
+    if (!have_swr_port)
+        fprintf(fp, "SWR_METER_PORT=6999;\n");
+    if (!have_swr_gui)
+        fprintf(fp, "SWR_METER_TO_GUI=1;\n");
     fclose(fp);
+    free(kept);
     summary_add("mscc.ini          serial=%s  client→%s:%d  ms-sdr port %d  MKII=%d",
         G_Usb_serial_number, G_string_host_name, G_mscc_port, G_server_port,
         (int)G_Proficio_Mkii);

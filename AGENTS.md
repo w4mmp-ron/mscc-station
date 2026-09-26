@@ -45,7 +45,7 @@ Prefer **one Grok Build at a time**.
 | Tree | Role |
 |------|------|
 | `linux/` | Ubuntu x86_64 servers / helpers. **Edit here** for this laptop. |
-| `rpi/` | Pi arm64 source of truth. Guide only on Ubuntu — do not patch Pi trees for laptop fixes. |
+| `rpi/` | Pi arm64 source of truth. **`rpi` host only** — read-only on every other host (see Hard don’ts). |
 | `mscc-ui/` | WPF + Avalonia + `MSCC.Core` |
 | `installers/{linux,rpi,windows}/` | Current kits for GitHub web |
 | `linux-build/` | Ubuntu scripts (`mscc-linux.sh`, UI publish/deb, `drop-installers.sh`) |
@@ -126,6 +126,12 @@ cmd-033 WPF 9.22.0; cmd-032 mscc 1.0.44; cmd-031 remote_mic stream reset.
 
 
 ## Hard don’ts
+
+- **Don’t touch `rpi/`.** No edits, builds into, commits, merges, or conflict
+  resolution in `rpi/` from `windows-new-hp`, `ubuntu-stew`, `windows-shack` or any
+  other non-Pi session. Only the `rpi` host changes `rpi/`. Pi work needed for a
+  Windows/Ubuntu change → write it up as a note for the `rpi` host; don't patch it.
+  A merge that touches `rpi/` → stop and ask.
 
 - Don’t `apt install` `*_arm64.deb` on Ubuntu (except `mscc-init-gui_*_all.deb`).
 - Don’t copy Ubuntu `$HOME/mscc` into `rpi/mscc-binaries/`.

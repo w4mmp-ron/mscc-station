@@ -1,6 +1,6 @@
 #!/bin/bash
 # Build mscc-init-gui_*.deb (Architecture: all — Python)
-# Includes MSCC Init + MSCC Volume GUIs.
+# MSCC Init GUI only (volume GUI dropped in 1.0.15).
 set -euo pipefail
 
 ROOT="$(cd "$(dirname "$0")" && pwd)"
@@ -15,7 +15,7 @@ command -v dpkg-deb >/dev/null || {
 }
 
 STAGE="${TMPDIR:-/tmp}/mscc-init-gui-build-$$"
-echo "=== mscc-init-gui deb builder (Init + Volume) ==="
+echo "=== mscc-init-gui deb builder ==="
 echo "  version: $VERSION"
 echo "  out:     $OUT"
 echo "  stage:   $STAGE"
@@ -27,8 +27,6 @@ PKG="$STAGE/packaging"
 
 mkdir -p "$PKG/usr/share/mscc-init-gui"
 cp -a "$ROOT/mscc_init_gui" "$PKG/usr/share/mscc-init-gui/"
-cp -a "$ROOT/mscc_volume_gui" "$PKG/usr/share/mscc-init-gui/"
-cp -a "$ROOT/mscc-volume-restore" "$PKG/usr/share/mscc-init-gui/mscc-volume-restore"
 
 mkdir -p "$PKG/usr/bin"
 
@@ -41,28 +39,7 @@ if __name__ == "__main__":
     main()
 EOF
 
-cat >"$PKG/usr/bin/mscc-volume-gui" <<'EOF'
-#!/usr/bin/env python3
-import sys
-sys.path.insert(0, "/usr/share/mscc-init-gui")
-from mscc_volume_gui.app import main
-if __name__ == "__main__":
-    main()
-EOF
-
-cat >"$PKG/usr/bin/mscc-volume-restore" <<'EOF'
-#!/usr/bin/env python3
-import sys
-sys.path.insert(0, "/usr/share/mscc-init-gui")
-from mscc_volume_gui.restore import main
-if __name__ == "__main__":
-    main()
-EOF
-
 chmod 755 "$PKG/usr/bin/mscc-init-gui"
-chmod 755 "$PKG/usr/bin/mscc-volume-gui"
-chmod 755 "$PKG/usr/bin/mscc-volume-restore"
-chmod 755 "$PKG/usr/share/mscc-init-gui/mscc-volume-restore"
 chmod 755 "$PKG/DEBIAN/postinst"
 chmod 644 "$PKG/DEBIAN/control"
 chmod 644 "$PKG/usr/share/applications/"*.desktop
@@ -89,4 +66,4 @@ ls -la "$OUT"
 echo
 echo "Install on Pi:"
 echo "  sudo apt install -y ./mscc-init-gui_${VERSION}_all.deb"
-echo "  Menus: MSCC Init | MSCC Volume"
+echo "  Menu: MSCC Init"
