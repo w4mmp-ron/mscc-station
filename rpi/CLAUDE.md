@@ -108,7 +108,7 @@ FT8 QSOs don't prove a clean signal (FT8 tolerates dropouts/pitch steps). Check:
 - Same test local vs remote audio; a difference points at the remote path.
 If bad: `grep "remote_mic EVENT" ~/sdrcore-trans.log` for the same time.
 
-## Open: RX low-edge hash (sdrcore-recv, not fixed)
+## Closed: RX low-edge hash = WSJT-X display, not in the audio (2026-09-26)
 
 Seen 2026-09-26 in local digital audio (WSJT-X Wide Graph): ~300 Hz band of hash just
 above the RX low-cut. Moves with low-cut (500 -> hash at 500-800), same width. Present
@@ -125,3 +125,10 @@ low-cut from -90 to about -45 dB: smear *below* the edge, not above it.
 NR and auto-notch were OFF when seen (Ron). Not yet tested: digital output path (ring /
 resample to VirtualA), WSJT-X Wide Graph "Flatten" (can draw artifacts at steep edges).
 Harness was in the session scratchpad (not kept); rebuild from these notes if needed.
+Recorded `parec -d VirtualA.monitor` (48 kHz, 28 s, dummy load, USB, low-cut 500) while
+the hash showed on the Wide Graph (Flatten off): 540-900 Hz flat within +/-0.5 dB and
+noise-like over time, same as the rest of the passband. Edge falls ~40 dB from 540 to
+420 Hz. So the hash is how WSJT-X draws the steep edge; nothing to fix in sdrcore.
+Seen in the same recording: weak steady tones at 1000, 2000, 3000, 1359 Hz (3-8 dB
+above noise in a 1.5 Hz bin), likely birdies. Note: RX digi audio is VirtualA
+(VirtualB = TX).
