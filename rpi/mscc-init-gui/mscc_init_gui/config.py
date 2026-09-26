@@ -14,6 +14,12 @@ MSCC_PORT = 8889
 MS_SDR_PORT = 8888
 PCB_VERSION = 10
 
+# Keys write_mscc_ini() owns; any other line in an existing mscc.ini is kept.
+_MSCC_OWN_KEYS = (
+    "PROFICIO_SERIAL_NUMBER=", "MSCC_PORT=", "MSCC_IP=", "PROFICIO_DLL_PORT=",
+    "PROFICIO_DLL_IP=", "PCB_VERSION=", "PROFICIO-MKII=",
+)
+
 
 def config_dir() -> Path:
     home = os.environ.get("HOME") or str(Path.home())
@@ -43,6 +49,18 @@ def write_mscc_ini(
     serial = serial.strip() or "UNKNOWN"
     mkii = 1 if proficio_mkii else 0
     path = d / "mscc.ini"
+    # Keep lines we don't own (SWR_METER*, etc.) so a re-run doesn't drop them.
+    kept: List[str] = []
+    if path.exists():
+        for line in path.read_text(encoding="utf-8", errors="replace").splitlines():
+            key = line.strip()
+            if key and not key.startswith(_MSCC_OWN_KEYS):
+                kept.append(line)
+    # WiFi SWR meter defaults (ms-sdr swr_wifi_meter.c) when not already set.
+    for key, value in (("SWR_METER=", "1"), ("SWR_METER_PORT=", "6999"),
+                       ("SWR_METER_TO_GUI=", "1")):
+        if not any(k.strip().startswith(key) for k in kept):
+            kept.append(f"{key}{value};")
     _write(
         path,
         (
@@ -53,7 +71,8 @@ def write_mscc_ini(
             f"PROFICIO_DLL_IP={host};\n"
             f"PCB_VERSION={PCB_VERSION};\n"
             f"PROFICIO-MKII={mkii};\n"
-        ),
+        )
+        + "".join(f"{k}\n" for k in kept),
     )
     return path
 
