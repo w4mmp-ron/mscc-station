@@ -95,3 +95,22 @@ FT8 QSOs don't prove a clean signal (FT8 tolerates dropouts/pitch steps). Check:
 - Full 13 s FT8 over: no frequency jumps or wobble.
 - Same test local vs remote audio; a difference points at the remote path.
 If bad: `grep "remote_mic EVENT" ~/sdrcore-trans.log` for the same time.
+
+## Open: RX low-edge hash (sdrcore-recv, not fixed)
+
+Seen 2026-09-26 in local digital audio (WSJT-X Wide Graph): ~300 Hz band of hash just
+above the RX low-cut. Moves with low-cut (500 -> hash at 500-800), same width. Present
+on dummy load and in LSB. Not seen in remote: the two back-to-back USB audio adapters
+(analog) add a noise floor that hides it. Very weak; phones/on-air likely unaffected.
+Not from our changes (`sdrcore.c` untouched).
+
+Likely cause (analysis, not proven): `sdrcore.c` `fastconv` uses a real (two-sided)
+`wsfirBP` filter plus hard FFT-bin zeroing for opposite-sideband removal. The hard cut
+at 0 Hz makes the effective filter longer than FILTERTAPS (2048), so overlap-save
+wraps around between blocks; the error lands at the lowest passed frequencies, width
+set by block length (~21 ms), not by the filter.
+
+Possible fix (USB/LSB only; AM/FM keep the real filter): one-sided complex filter.
+Lowpass of half-width (high-low)/2, multiplied by e^(j*2*pi*fc*n/fs), fc = (low+high)/2
+(negative for LSB); load complex taps into `filt` (hfilt must become complex) in
+`initDSP`; drop the bin zeroing. Verify before/after on a dummy load.
