@@ -5,7 +5,7 @@
 | **Host** | NEW-HP-LAPTOP (Windows) |
 | **Checkout** | `C:\Users\n8vet\OneDrive\Documents\GitHub\mscc-station` |
 | **Build** | **cmd-045a** (WPF + ms-sdr) / **cmd-038** (WPF pending) |
-| **Last command id** | cmd-045a (done) / cmd-038 (WPF pending) |
+| **Last command id** | cmd-045b (orders) / cmd-045a (done) / cmd-038 (WPF pending) |
 | **State** | done |
 | **Updated** | 2026-09-26 |
 
@@ -13,6 +13,7 @@
 
 | command id | state | note |
 |------------|-------|------|
+| cmd-045b | orders | Orders + brief: FREQ CAL STOP uses the same look as the other FREQ CAL buttons. ms-sdr abort drain (late recv replies dropped, new AUTO or CHECK refused until the finish reply or 35 s, client told via 0x1F). Client greys AUTO and CHECK with STOPPED — wait… until then. No second finish to recv on abort. WPF 9.26.6 + ms-sdr 3.176 expected. Awaiting Build ACK. |
 | cmd-045a | done | WPF 9.26.5 and ms-sdr 3.175 in C:\mscc-net9. FREQ CAL STOP uses CMD_SET_CAL_ABORT 0x1F. Late sweep replies are dropped so PPM is not written. Live radio smoke not run. Not pushed. |
 | cmd-045 | done | WPF 9.26.4 in C:\mscc-net9. VFO B stored in MSCC_LastUsed_VFOB.ini (VFOB_FREQ, VFOB_MODE, VFOB_BAND). Close during AUTO or CHECK restores mode and does not abort the cal. QRP, Full Power, and AMP share AmpOn. Radio-model button removed. DIG-U slider uses Tune power. ms-sdr unchanged at 3.174. Not pushed. |
 | cmd-044 | done | WPF 9.26.3 + ms-sdr 3.174 in C:\mscc-net9. FREQ CAL success text: AUTO "Was N Hz off, now corrected. Run CHECK."; CHECK "Error now N Hz" plus " (good)" when abs(N) <= 5. Client only. Not pushed. |

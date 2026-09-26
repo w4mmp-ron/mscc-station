@@ -18,6 +18,8 @@ On start: `git pull`, then read [`handoff.md`](handoff.md). If `.mscc-coord/COMM
 
 **Active - cmd-041 + cmd-042 (DIG-U Hi 1.4k/1.0k):** NEW-HP first: cmd-041 WPF + cmd-042 Windows `mscc-recv.exe` (0xD1 idx 5=1400, 6=1000; recv 3.141). Then, after Stew pushes: **ubuntu-stew** cmd-042 `linux/` -> `mscc_1.0.45_amd64.deb`; then **rpi** cmd-042 `rpi/` -> `mscc_1.0.45_arm64.deb`. Commit locally, do not push. Do not update the RPi Grok Build app. See `.mscc-coord/briefs/cmd-041.md` + `briefs/cmd-042.md`.
 
+**Active - cmd-045b (NEW-HP):** FREQ CAL STOP gets the same look as the other FREQ CAL buttons (no amber override). After STOP, ms-sdr-MKII drains the aborted run (drops late recv replies, refuses a new AUTO/CHECK until recv's finish reply or 35 s) and tells the client; the client keeps AUTO/CHECK grey with `STOPPED — wait…` until then. The abort no longer sends recv a second finish. WPF 9.26.6, ms-sdr 3.176. Commit locally, do not push. See `.mscc-coord/briefs/cmd-045b.md`.
+
 **Active - cmd-045a (NEW-HP):** FREQ CAL tab gets a STOP button (enabled only while AUTO/CHECK runs) that aborts the run cleanly via a new ms-sdr-MKII `CMD_SET_CAL_ABORT` (no PPM change), then resets the tab (STOPPED). WPF 9.26.5. Commit locally, do not push. See `.mscc-coord/briefs/cmd-045a.md`.
 
 **Active - cmd-045 (NEW-HP):** WPF: VFO B frequency/mode restored after restart; FREQ CAL Stop/Start/close cleanup, running notice for AUTO/CHECK only, new CHECK/RESET messages, "MANUAL steps" label; QRP / Full Power / AMP always in sync (one state, AmpOn); remove the Proficio/Geminus button; DIG-U power slider on Tune power. Commit locally, do not push. See `.mscc-coord/briefs/cmd-045.md`.
@@ -117,6 +119,7 @@ Clear-on-TX + fixed 2:1 + silence on underrun — do not implement while 039 shi
 
 ### Peer work on NEW-HP
 
+cmd-045b: WPF FREQ CAL STOP colour + ms-sdr-MKII abort drain / no double finish, orders.
 cmd-045a: WPF FREQ CAL STOP button + ms-sdr-MKII CMD_SET_CAL_ABORT, orders.
 cmd-045: WPF VFO B restore, FREQ CAL stop/close/messages, QRP/Full Power/AMP sync, remove radio-model button, DIG-U slider on Tune power, orders.
 cmd-044: WPF tooltips + Host/Port on Start + FREQ CAL fixes; ms-sdr-MKII cal progress/fail mode, orders.

@@ -1,4 +1,61 @@
 commands:
+  - id: cmd-045b
+    created: "2026-09-26T18:25:00-04:00"
+    target: [windows-new-hp]
+    role: client+server
+    action: wpf-freqcal-stop-color-mssdr-abort-drain
+    status_hint: open
+    detail: |
+      Host: windows-new-hp (NEW-HP-LAPTOP).
+      Checkout: C:\Users\n8vet\OneDrive\Documents\GitHub\mscc-station
+      Follow-up to cmd-045a (5588f71, WPF 9.26.5, ms-sdr 3.175).
+      Call the user Stew. Commit on NEW-HP when done. Do NOT git push (Stew pushes). Do not pull.
+
+      ## Findings
+      STOP (MainWindow.xaml :1891-1905) has Foreground="#FFC000" plus a local
+      MsccGoldButtonStyle-based style; LOOSE/AUTO/MANUAL/CHECK/RESET (:1886-1890) have
+      no Style and no Foreground (default WPF Button). After STOP, recv can still finish
+      the aborted step (up to 30 s); cal_abort_pending is cleared at the next start
+      (calibrate.c :680/:701), so late replies can land in a new run and reach
+      Calibrate_Si5351_Set_PPM (:751). The abort (:715-737) also sends recv a second
+      CMD_SET_CALIBRATION_FINISHED when the last step already sent one (state
+      COMPLETE), and the second reply is processed as a real (AUTO-branch) result.
+
+      ## Scope
+      1. Version: client 9.26.5 -> 9.26.6 (auto); ms-sdr 3.175 -> 3.176 (auto).
+      2. WPF STOP colour: delete Foreground="#FFC000" and the local Button.Style so STOP
+         looks exactly like the other five FREQ CAL buttons, enabled and disabled, in
+         any colour scheme. Do not restyle the other five.
+      3. ms-sdr abort drain: after an abort exactly one CMD_SET_CALIBRATION_DATA is owed.
+         Drain stays open until it arrives or 35 s (GetTickCount64). While open: drop
+         late DATA_PROCESSED/CALIBRATION_DATA and refuse CMD_START_CALIBRATE and
+         CMD_SET_FREQ_CAL_CHECK=1. Remove the flag clears at :680/:701. Server -> GUI
+         0x1F CMD_SET_CAL_ABORT value 1 = drain done, 2 = start refused (verify it
+         passes through; else pick a free byte). Nothing owed = drain done at once.
+      4. Core: UdpRadioService receive case 0x1F -> event CalAbortStateReported
+         (IRadioService too; stubs compile).
+      5. WPF drain: after STOP, AUTO/CHECK grey, status "STOPPED — wait…"; re-enable
+         and "STOPPED" on value 1, on a 36 s client timer (35 s + 1 s margin) or on main
+         Stop. Value 2 undoes a client start and re-enters the wait. SetFreqCalControlsEnabled
+         keeps AUTO/CHECK off while the drain is pending.
+      6. Risk B: in the abort, send recv CMD_SET_CALIBRATION_FINISHED only if a state is
+         CALIBRATION_RUNNING; open the drain if RUNNING or COMPLETE. Read states before
+         Reset_Calibration_Run_State.
+      7. Cosmetic: move the "Stop ends a FREQ CAL run" summary (xaml.cs :1866) to
+         ResetFreqCalSessionOnStop (:1896).
+
+      ## Out of scope
+      Avalonia, linux/rpi/Solidus, SDRcore-recv/trans, mscc-init, firmware, CAT.
+
+      ## Build / smoke
+      Build ms-sdr-MKII.sln (Release exe -> C:\mscc-net9) and MSCC.Wpf Release
+      (auto-copies to C:\mscc-net9). Smoke: STOP colour matches the other buttons in
+      default and a changed colour scheme; STOP then AUTO/CHECK grey with wait text,
+      then re-enabled; STOP near the end of CHECK gives no FAIL. ACK in
+      .mscc-coord/status/windows-new-hp.md (no bare pipe in cells).
+
+      Commit hint: cmd-045b: FREQ CAL STOP colour + abort drain + no double finish
+      Brief: .mscc-coord/briefs/cmd-045b.md
   - id: cmd-045a
     created: "2026-09-26T18:20:00-04:00"
     target: [windows-new-hp]
