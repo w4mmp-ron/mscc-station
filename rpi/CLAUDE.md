@@ -93,7 +93,7 @@ mscc-init-linux (2026-09-26):
 
 Windows `mscc-recv` 3.141 added 0xD1 CMD_SET_BW_HICUT index 5 = 1400 Hz, 6 = 1000 Hz
 (DIG-U Hi, WPF cmd-041). Pi to match in `SDRcore-recv-linux/sources/udp_thread.c`
-(hi-cut switch ~line 1547) + version bump -> `mscc_1.0.45_arm64.deb`. Brief:
+(hi-cut switch ~line 1547) + version bump -> `mscc_1.0.46_arm64.deb` (1.0.45 used 2026-09-26 for the recv/trans fixes). Brief:
 `.mscc-coord/briefs/cmd-042.md`. Order: after ubuntu-stew is done and Stew pushes.
 Reviewed: 0-4 unchanged, low-cut max 500 < 1000, ms-sdr passes index through. Not done yet.
 
