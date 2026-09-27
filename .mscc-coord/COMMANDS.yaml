@@ -1,4 +1,58 @@
 commands:
+  - id: cmd-047a
+    created: "2026-09-27T16:55:00-04:00"
+    target: [ubuntu-stew]
+    role: client
+    action: avalonia-0.6.64-band-bar-nits-freqcal-fixes-status-history
+    status_hint: open
+    detail: |
+      Host: ubuntu-stew (stew-HP-Notebook). Checkout: /home/stew/Documents/GitHub/mscc-station
+      HEAD gate: top = "coord: cmd-047a Avalonia UI nits + FREQ CAL fixes", parent 8999f9a
+      (cmd-047 0.6.63), then 80297ff, 05b6725, f89a1bd (all local, not pushed). Only allowed dirt:
+      linux/tty0tty-master/module build leftovers (leave unstaged, never commit/clean/revert).
+      The close-X / Auto server-stop fix is already committed (05b6725 + 80297ff); keep it.
+      Call the user Stew (plain copy-paste commands). Commit locally. Do NOT git push, do NOT pull.
+      Never run sudo yourself. Edit only mscc-ui/Avalonia-Migration (src + packaging control), kit
+      outputs and status/ubuntu-stew.md. Do not touch rpi/, linux/, MSCC.Wpf or MSCC.Core.
+      Testing is LOCAL ONLY.
+
+      ## Scope (Avalonia 0.6.63 -> 0.6.64; 0.6.62/0.6.63 already used)
+      1. 10m button narrow: band-bar grid (MainWindow.axaml:266) has 9 star columns, so 10m
+         (Grid.Column 11) sits in an Auto column. cmd-047 dropped one * with the radio-model Auto.
+         Fix: ColumnDefinitions="Auto,Auto,*,*,*,*,*,*,*,*,*,*,Auto" (2 LF + 10 HF + GEN).
+      2. Green "Band: 20m" over USER: the BandText TextBlock at Grid.Column 13 (no such column any
+         more, clamps onto GEN/USER in column 12). WPF has no band label. Delete the TextBlock,
+         keep the BandText property (used by band logic / last-used saves).
+      3. FREQ CAL bug 1: Disconnect -> LeaveFreqCalTab clears _freqCalTabActive, so Connect with
+         the tab open never re-applies CW. LeaveFreqCalTab(sendToRadio, tabStillOpen); Disconnect
+         passes tabStillOpen=true (not Close). Log "Freq Cal: Start with tab open, re-applied ...".
+      4. FREQ CAL bug 2: ForceCwForFreqCalAsync reads/writes ModeText (VFO A). Use ActiveModeString
+         and set ModeText or VfoBModeText by UseVfoA.
+      5. FREQ CAL bug 3: EnterFreqCalTab clears _freqCalRestorePending (re-entry mid-run).
+      6. Minor: delete stale _modeBeforeFreqCal + dead RestoreModeAfterFreqCalAsync (every
+         Disconnect showed STOPPED); mark servers ours only if a start command ran; idle text by
+         Launch && IsLocalHost(Host) (startup, Disconnect, Host/Launch change); "server alive" only
+         when this Connect started the servers; VFO B save guard (FREQ CAL CW / cal session) + log
+         "VFO B saved: f=... mode=..." on change (same guard for LastMode on A); tooltips NR
+         "Noise reduction on/off", MANUAL -/+ "Decrease/Increase PPM by 1 (rate-limited to protect
+         radio)" (WPF text).
+      7. Restore the status history f89a1bd deleted from status/ubuntu-stew.md (cmd-032 row, full
+         cmd-043 row + notes from git show 231d521 / 519c682). ACK only what Stew actually ran.
+      8. Version 0.6.64: csproj, ClientVersionText, startup log, DEBIAN/control.
+
+      ## Out of scope
+      rpi/, linux/ (and the tty0tty leftovers), WPF, Core, mscc-init, firmware, Pi kit, remote tests.
+
+      ## Build / smoke
+      ~/.dotnet/dotnet build (no new warnings); ./linux-build/mscc-ui-x64.sh BEFORE
+      ./linux-build/build-mscc-ui-deb-amd64.sh -> installers/linux/mscc-ui_0.6.64_amd64.deb. Stew
+      installs with sudo apt install. Short LOCAL smoke (11 steps in the brief: 10m width, no text
+      on USER, reconnect with tab open, VFO B, deferred restore, no false STOPPED, idle text,
+      server alive once, VFO B saved, tooltips, close-X stop). ACK in status/ubuntu-stew.md
+      (no bare pipe characters in table cells).
+
+      Commit hint: cmd-047a: Avalonia 0.6.64 (10m button width, stray Band label, FREQ CAL fixes, status history)
+      Brief: .mscc-coord/briefs/cmd-047a.md
   - id: cmd-047
     created: "2026-09-27T11:30:00-04:00"
     target: [ubuntu-stew]
