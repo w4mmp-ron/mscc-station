@@ -23,6 +23,15 @@ History: Claude worked in a copy `rpi/sdrcore-claude/` (commits fe0c9a1, 0443c21
 (originals unchanged since 8dee14a) and the copy deleted.
 Git repo root: `C:\Users\Ron\.grok\worktrees`.
 
+## Open list (Ron, 2026-09-26) - read first on resume
+
+1. Install mscc 1.0.46 + mscc-init-gui 1.0.15 on the Pi; check SWR in client, digi 40 ms.
+2. Test FREQ CAL STOP on the Pi (Ron "later"; needs WPF 9.26.5+).
+3. cmd-042: hi-cut 1400/1000 Hz in sdrcore-recv -> 1.0.47. On hold until Stew pushes.
+4. cmd-046: TUNE power separate (Windows/Ubuntu trans + WPF). With Stew; no Pi change.
+5. RF check of remote TX audio (Stew, spectrum analyzer).
+Optional: drop mscc-init from the .deb entirely.
+
 ## Architecture (per Ron)
 
 WPF client (Windows) <-> **ms-sdr** (controller, UDP :8888) <-> **sdrcore-recv** (:9000)
