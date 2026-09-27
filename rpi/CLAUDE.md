@@ -83,7 +83,12 @@ sdrcore-recv (2026-09-26):
     (`DIGI_PLAY_LATENCY`; was defaultLowOutputLatency). Cause: WSJT-X decode CPU bursts
     made the stream miss PipeWire cycles -> 128-sample silence gaps (clicks), `pw-top` ERR
     climbing only during decode (Ron confirmed). Phones stream unchanged. Log line
-    "rate plan ... play_latency=N ms". Pi test: ERR still climbs during decode, but less.
+    "rate plan ... play_latency=N ms". First Pi test ran the OLD binary (not restarted;
+    `mscc.sh start` skips running servers) - ignore it. 2026-09-26 after rebuild + restart:
+    VirtualA play=48000 resample=1 dual=1 play_frames=1024 play_latency=40 ms (confirmed).
+    Cold start (no client): phones 10 ms first, ms-sdr sends digital mode ~6 s later ->
+    VirtualA 40 ms. With WSJT-X: ERR 0 -> 6 over several decodes (was climbing every
+    decode). **Ron OK with this (tested OK 2026-09-26).** Renice not needed.
     Next test (either): `sudo renice -n -10 -p $(ps -L -o tid= -p $(pgrep -x sdrcore-recv))`
     (Ron prefers raising sdrcore-recv) or `sudo renice 19 -p $(pgrep jt9)`. If it fixes it,
     make sdrcore-recv raise its audio thread priority in code. Get pw-top QUANT/RATE.

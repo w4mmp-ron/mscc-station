@@ -162,6 +162,7 @@ static double g_play_rate = 0.0; /* actual play stream rate; 0 until open */
 #define DIGI_TRIM_MAX         300e-6f
 #define DIGI_TRIM_GAIN        1500e-6f
 #define DIGI_LEVEL_ALPHA      0.005f
+#define DIGI_PLAY_LATENCY     0.040   /* s; digital play stream (see manage_stream) */
 
 static int g_digi_priming = 1;
 static float g_digi_level_f;
@@ -543,6 +544,7 @@ int manage_stream(int start_stop, int device, int channels) {
             int need_resample = 0;
             double play_rate = iq_rate;
             unsigned long play_frames;
+            double play_latency;
 
             print_time();
             fprintf(G_fp_logfile, "[%d] Main Thread. manage_stream. STARTED.  Device: %d, Channels %d\n",
@@ -569,7 +571,17 @@ int manage_stream(int start_stop, int device, int channels) {
                     line_number++, (int)inputParameters.device);
                 return paInvalidDevice;
             }
-            outputParameters.suggestedLatency = odi->defaultLowOutputLatency;
+            /*
+             * Digital (VirtualA) play: at the low default latency, WSJT-X decode
+             * CPU bursts made the stream miss PipeWire cycles (128-sample silence
+             * gaps, ERR in pw-top). Delay doesn't matter for digi; give it a cushion.
+             */
+            play_latency = odi->defaultLowOutputLatency;
+            if (G_digital_output_device_index != NO_OUTPUT_DEVICE &&
+                device == G_digital_output_devices[G_digital_output_device_index].device_index &&
+                play_latency < DIGI_PLAY_LATENCY)
+                play_latency = DIGI_PLAY_LATENCY;
+            outputParameters.suggestedLatency = play_latency;
             outputParameters.hostApiSpecificStreamInfo = NULL;
             inputParameters.hostApiSpecificStreamInfo = NULL;
 
@@ -594,10 +606,10 @@ int manage_stream(int start_stop, int device, int channels) {
             print_time();
             fprintf(G_fp_logfile,
                 "[%d] manage_stream. rate plan: iq=%.0f play=%.0f dual=%d resample=%d "
-                "play_frames=%lu host_mix=%d out_default=%.0f\n",
+                "play_frames=%lu host_mix=%d out_default=%.0f play_latency=%.0f ms\n",
                 line_number++, iq_rate, play_rate, need_dual, need_resample,
                 (unsigned long)play_frames, different_host,
-                odi->defaultSampleRate);
+                odi->defaultSampleRate, play_latency * 1000.0);
 
             if (need_dual) {
                 PaStreamParameters in_only = inputParameters;
@@ -625,7 +637,7 @@ int manage_stream(int start_stop, int device, int channels) {
                 in_only.hostApiSpecificStreamInfo = NULL;
                 out_only.hostApiSpecificStreamInfo = NULL;
                 in_only.suggestedLatency = idi->defaultLowInputLatency;
-                out_only.suggestedLatency = odi->defaultLowOutputLatency;
+                out_only.suggestedLatency = play_latency;
 
                 if (need_resample) {
                     g_play_resampler = mscc_resampler_create(
