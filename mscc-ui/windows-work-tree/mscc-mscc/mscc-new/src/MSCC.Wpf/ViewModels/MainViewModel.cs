@@ -1804,11 +1804,6 @@ public partial class MainViewModel : ObservableObject, IDisposable
             return OperatePowerBank.Tune;
 
         var mode = RadioState.ActiveVfo.Mode;
-        // DIG-U is USB with digital audio. The transmitter uses the Tune power bank for that path.
-        if (mode == RadioMode.DigU ||
-            (mode is RadioMode.USB or RadioMode.LSB && (IsDigitalAudio || RemoteDigitalAudio)))
-            return OperatePowerBank.Tune;
-
         return mode switch
         {
             RadioMode.CW => OperatePowerBank.Cw,

@@ -7,6 +7,8 @@ Grok loads this file at the repo root. Follow it on **every** host. Details live
 
 On start: `git pull`, then read [`handoff.md`](handoff.md). If `.mscc-coord/COMMANDS.yaml` has work for this host, follow **MSCC coord** below.
 
+**Note:** Ron pushes to `main`; always pull first (unless your orders say not to pull for that task).
+
 ---
 
 
@@ -19,6 +21,8 @@ On start: `git pull`, then read [`handoff.md`](handoff.md). If `.mscc-coord/COMM
 **On hold:** cmd-034 clear-on-TX + fixed 2:1 fill.
 
 **Active - cmd-041 + cmd-042 (DIG-U Hi 1.4k/1.0k):** NEW-HP first: cmd-041 WPF + cmd-042 Windows `mscc-recv.exe` (0xD1 idx 5=1400, 6=1000; recv 3.141). Then, after Stew pushes: **ubuntu-stew** cmd-042 `linux/` -> `mscc_1.0.45_amd64.deb`; then **rpi** cmd-042 `rpi/` -> `mscc_1.0.45_arm64.deb`. Commit locally, do not push. Do not update the RPi Grok Build app. See `.mscc-coord/briefs/cmd-041.md` + `briefs/cmd-042.md`.
+
+**Active - cmd-046 (NEW-HP, follow Ron):** TUNE power drives TUNE only. Windows SDRcore-trans `driver.c` LSB/USB use LSB_POWER/USB_POWER in every audio mode (digital no longer uses TUNE_POWER); WPF DIG-U main slider back on SSB POWER (reverts cmd-045 item 7.2 + A8 tooltip). WPF 9.26.7, SDRcore-trans 3.142. `linux/` part rides in cmd-043; `rpi/` unchanged. Commit locally, do not push. See `.mscc-coord/briefs/cmd-046.md` + `briefs/cmd-046-windows-notes.md`.
 
 **Active - cmd-045b (NEW-HP):** FREQ CAL STOP gets the same look as the other FREQ CAL buttons (no amber override). After STOP, ms-sdr-MKII drains the aborted run (drops late recv replies, refuses a new AUTO/CHECK until recv's finish reply or 35 s) and tells the client; the client keeps AUTO/CHECK grey with `STOPPED — wait…` until then. The abort no longer sends recv a second finish. WPF 9.26.6, ms-sdr 3.176. Commit locally, do not push. See `.mscc-coord/briefs/cmd-045b.md`.
 
@@ -121,6 +125,7 @@ Clear-on-TX + fixed 2:1 + silence on underrun — do not implement while 039 shi
 
 ### Peer work on NEW-HP
 
+cmd-046: TUNE power drives TUNE only (Windows SDRcore-trans + WPF DIG-U slider back to SSB), orders (Ron's brief).
 cmd-045b: WPF FREQ CAL STOP colour + ms-sdr-MKII abort drain / no double finish, orders.
 cmd-045a: WPF FREQ CAL STOP button + ms-sdr-MKII CMD_SET_CAL_ABORT, orders.
 cmd-045: WPF VFO B restore, FREQ CAL stop/close/messages, QRP/Full Power/AMP sync, remove radio-model button, DIG-U slider on Tune power, orders.
