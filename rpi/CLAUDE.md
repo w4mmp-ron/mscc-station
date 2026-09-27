@@ -12,6 +12,8 @@ file is for Claude only.
   `git add` specific paths only (Grok and other tools work in this repo too).
 - Ron does **not** `git pull` on the Pi. He copies the changed source files from
   Windows to the Pi and builds there. Give him the file list, not git steps.
+- Ubuntu (`linux/`) work is Stew's; don't track or report it. After a pull, report
+  only Stew's **Windows** changes and whether the Pi needs a matching port.
 
 ## Folder rules
 
