@@ -1,4 +1,88 @@
 commands:
+  - id: cmd-047
+    created: "2026-09-27T11:30:00-04:00"
+    target: [ubuntu-stew]
+    role: client
+    action: avalonia-0.6.61-wpf-parity-freqcal-vfob-pa-sync-digu-hicut-local-launch-tty0tty-dkms
+    status_hint: open
+    detail: |
+      Host: ubuntu-stew (stew-HP-Notebook). Checkout: /home/stew/Documents/GitHub/mscc-station
+      HEAD gate: top = "coord: cmd-047 Avalonia parity orders (local smoke)", parent 519c682
+      (cmd-043 Build commit, not pushed), then d22e438. mscc 1.0.47 installed; servers and local
+      WSJT-X CAT work. Only allowed dirt: linux/tty0tty-master/module build leftovers (leave
+      unstaged, never commit/clean/revert).
+      Call the user Stew (plain copy-paste commands). Commit locally. Do NOT git push, do NOT pull.
+      Never run sudo yourself; give Stew one paste-ready line.
+      Edit only mscc-ui/Avalonia-Migration (src + packaging control) plus kit outputs and
+      status/ubuntu-stew.md. Do not touch rpi/, linux/, MSCC.Wpf or MSCC.Core (Core already has
+      AbortCalibrationAsync, CalAbortStateReported 0x1F, ResetKeepAliveWatch, HighCutHzToIndex
+      1400->5 / 1000->6). Never use Core LaunchSubsystems on Linux; StartAsync(launchSubsystems:false) only.
+      Testing is LOCAL ONLY (Stew at work, radio on this laptop); remote checks deferred.
+
+      ## Scope (Avalonia 0.6.60 -> 0.6.61)
+      1. cmd-044: plain tooltips (no opcodes), delete dev-note lines (axaml :878 :986 :1164),
+         FREQ CAL progress from a client step counter, status colours (amber/green/red), amber
+         "Calibration running — don't change tabs or settings until it finishes." for AUTO/CHECK,
+         CHECK sends LOOSE then CHECK, QRP CAL/AMP CAL/TX IQ blocked during a run.
+         Host/Port on next Connect already works (new UdpRadioService per Connect).
+      2. cmd-045: FREQ CAL tab entry -> CW/200 Hz/600 Hz, leaving restores (deferred if a run is
+         active, blocked in MANUAL); Connect with tab open re-applies; Disconnect/Close restore
+         with a bounded wait (Closing cancel-and-retry). CHECK FAILED hint "Error may be more than
+         50 Hz. Run AUTO (COARSE)."; after RESET, CHECK asks OK/Cancel; "MANUAL steps:" label.
+         VFO B loaded at startup (display only); VFO A ALWAYS starts active (WPF rule, ignore
+         USE_VFO_A at load); guard against saving 0/"".
+         QRP/Full Power computed from AmpOn, stub buttons wired; delete the SetQrpMode/SetFullPower
+         sends on Connect (same 0xF7, last one wins, leaves radio in QRP with AMP shown on).
+         Remove the radio-model button (FW gating already there).
+      3. cmd-045a/b: FREQ CAL STOP (same mscc-gold style as neighbours, enabled only during
+         AUTO/CHECK) -> AbortCalibrationAsync; "STOPPED — wait…" with AUTO/CHECK grey until 0x1F=1
+         or 36 s; 0x1F=2 undoes a client start; Disconnect/Close abort a running cal.
+      4. cmd-046: DIG-U/USB/LSB already on SSB bank, TUN on Tune. Fix OnRfPowerChanged to use the
+         active VFO like SyncRfPowerFromMode; show the bank name on the right-rail slider.
+      5. cmd-041: DIG-U Hi 1.4k (idx 5) and 1.0k (idx 6), like WPF 3f52fc1. 7-entry Hi labels/Hz
+         (DIG-U only; other modes 0..4, >4 clamps to 2.4k; empty/TUNE mode keeps the index).
+         Client sends Hz via Core SetFilterHighAsync -> 0xD1 idx 5/6 (recv 3.141 cases 5=1400,
+         6=1000 in mscc 1.0.47). DIG-U cycle 5.5k..2.4k,1.4k,1.0k (keep Avalonia's upward order).
+         Coerce to 2.4k when the active mode leaves DIG-U (SetMode, VFO switch, ModeReported after
+         the DIG-U overlay check); normalize in ApplyFilterIndices (band recall, favorites, load,
+         Connect) and the spectrum overlay. Default HIGH list stays 5 items; ignore 0xDD > 4 and
+         never send 0xDD < 0 or > 4. Tooltips: Hi "High cut filter. DIG-U: 1.0k–5.5k (7 steps).
+         Other modes: 2.4k–5.5k."; DIG-U mentions 1.4k / 1.0k.
+      6. NEW Launch/Auto (Stew-approved): Launch enabled only for Host 127.0.0.1/localhost/::1;
+         Auto works for ANY Host (just presses Connect on start). Persist LAUNCH_SERVERS (default 1)
+         and AUTO_START_SERVERS (default 0) in ~/.config/MSCC/mscc-avalonia.ini. Connect with
+         Launch: if ms-sdr, sdrcore-recv, sdrcore-trans all run -> connect only (not ours); else
+         warn (not block) if ~/mscc/ms-sdr or ~/.local/mscc setup is missing (run MSCC Init), run
+         mscc-desktop-ctl start (else mscc-virtual-audio + mscc start; /usr/local/bin/mscc,
+         fallback ~/mscc/mscc.sh), log output, mark ours, wait for all three + 3 s, connect.
+         Disconnect/Close run mscc stop only if ours (detached with a log file on Close). Strip the
+         app dir from LD_LIBRARY_PATH for the child. One-time keep-alive grace after our own start
+         (ResetKeepAliveWatch). Works on the Pi too.
+      7. Version 0.6.61: csproj, MainViewModel ClientVersionText + startup log, DEBIAN/control
+         (also update the "does not launch servers" description).
+      8. Small extra: register tty0tty with DKMS so CAT survives kernel updates. No repo edit.
+         Check (no sudo): headers, dkms (not installed at order time), /usr/share/mscc/tty0tty/
+         module/dkms.conf (ships, version 1.4), Secure Boot (off). Give Stew ONE paste-ready sudo
+         line (brief 9a): install dkms if missing, copy tty0tty.c + Makefile + dkms.conf to
+         /usr/src/tty0tty-1.4, dkms add, dkms install --force, dkms status. Then verify
+         dkms status + /dev/tnt0/1 + WSJT-X CAT. Kernel-update proof deferred.
+
+      ## Out of scope
+      rpi/ (any edit), linux/ servers and linux/tty0tty-master files, WPF, Core, mscc-init,
+      firmware, mscc postinst DKMS (later order), remote testing (deferred).
+
+      ## Build / smoke
+      Bump mscc-ui to 0.6.61 first. ~/.dotnet/dotnet build (no new warnings);
+      ./linux-build/mscc-ui-x64.sh BEFORE ./linux-build/build-mscc-ui-deb-amd64.sh (the deb script
+      reuses an old publish) -> installers/linux/mscc-ui_0.6.61_amd64.deb. Stew installs with
+      sudo apt install. Plain LOCAL-ONLY smoke list in the brief (25 steps: Launch/Auto, FREQ CAL
+      tab/STOP/drain/reset warning, VFO B, PA sync, power banks, DIG-U Hi 1.4k/1.0k, tooltips,
+      DKMS + WSJT-X CAT); remote items listed as deferred. Later, on Stew's word: arm64 kit via
+      mscc-ui-arm64.sh + build-mscc-ui-deb-arm64.sh -> installers/rpi/ (not rpi/).
+      ACK in .mscc-coord/status/ubuntu-stew.md (no bare pipe characters in table cells).
+
+      Commit hint: cmd-047: Avalonia 0.6.61 WPF parity + DIG-U Hi 1.4k/1.0k + local Launch/Auto
+      Brief: .mscc-coord/briefs/cmd-047.md
   - id: cmd-046
     created: "2026-09-27T10:30:00-04:00"
     target: [windows-new-hp]
