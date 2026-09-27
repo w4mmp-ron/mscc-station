@@ -67,6 +67,7 @@ void *Panadapter_thread(void *t) {
     int pixels = 800;
     int segments = 2;
     int mp_bin = 266;
+    int smoothing = 2;
 
     send_size = sizeof (panadaper_average->avg_buffer_output);
     print_time();
@@ -178,6 +179,11 @@ void *Panadapter_thread(void *t) {
             segments = pixels / MAX_X;
             if (segments > MAX_PAN_SEGMENTS) segments = MAX_PAN_SEGMENTS;
 
+            /* History holds 4 frames per segment: keep smoothing in 1..4. */
+            smoothing = G_Smoothing;
+            if (smoothing < 1) smoothing = 1;
+            if (smoothing > 4) smoothing = 4;
+
             /* -12 kHz mixing-product notch scales with bin count (was bin ~266 of 800). */
             mp_bin = pixels / 3;
             if (mp_bin < 2) mp_bin = 2;
@@ -198,19 +204,19 @@ void *Panadapter_thread(void *t) {
                         }
                     }
                 }
+                /*
+                 * Average the current frame with the (smoothing - 1) newest history frames.
+                 * History [smoothing-1] is the newest. Sum in 32 bits: up to 4 x MAX_Y
+                 * overflowed the uint16 output and the old sum used one frame too many.
+                 */
                 for (i = 0; i < MAX_X; i++) {
-                    panadaper_average[sequence].avg_buffer_output.output_buffer[i] = 0;
-                }
-                for (average_count = 0; average_count < G_Smoothing; average_count++) {
-                    for (i = 0; i < MAX_X; i++) {
-                        panadaper_average[sequence].avg_buffer_output.output_buffer[i] +=
-                            panadaper_average[sequence].buffer_input[average_count].avg_buffer_input[i];
-                    }
-                }
-                for (i = 0; i < MAX_X; i++) {
-                    panadaper_average[sequence].avg_buffer_output.output_buffer[i] =
-                        (panadaper_average[sequence].avg_buffer_output.output_buffer[i] +
-                            panbuffer_temp.Y[i]) / G_Smoothing;
+                    uint32_t sum = panbuffer_temp.Y[i];
+                    for (average_count = 1; average_count < smoothing; average_count++)
+                        sum += panadaper_average[sequence].buffer_input[average_count].avg_buffer_input[i];
+                    sum /= (uint32_t)smoothing;
+                    if (sum > MAX_Y)
+                        sum = MAX_Y;
+                    panadaper_average[sequence].avg_buffer_output.output_buffer[i] = (uint16_t)sum;
                 }
 
                 /* Monitor TX blanking: scale original 400-wide half cuts */
@@ -258,7 +264,7 @@ void *Panadapter_thread(void *t) {
                         line_number++, sequence, strerror(errno));
                 }
 
-                for (average_count = 0; average_count < (G_Smoothing - 1); average_count++) {
+                for (average_count = 0; average_count < (smoothing - 1); average_count++) {
                     memcpy(panadaper_average[sequence].buffer_input[average_count].avg_buffer_input,
                         panadaper_average[sequence].buffer_input[(average_count + 1)].avg_buffer_input, (MAX_X * 2));
                 }

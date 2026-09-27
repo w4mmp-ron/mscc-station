@@ -4,25 +4,24 @@
 |--|--|
 | **Host** | stew-HP-Notebook |
 | **Checkout** | `/home/stew/Documents/GitHub/mscc-station` |
-| **Build** | cmd-040 |
-| **Last command id** | cmd-040 |
+| **Build** | cmd-043 |
+| **Last command id** | cmd-043 |
 | **State** | done |
-| **Updated** | 2026-09-23 |
+| **Updated** | 2026-09-27 |
 
 ## ACK log
 
 | command id | state | note |
 |------------|-------|------|
-| cmd-043 | pending | Ubuntu mscc_1.0.47_amd64.deb: Ron Pi fixes copied rpi/ -> linux/, cmd-042 hi-cut, cmd-046 SSB power, ms-sdr FREQ CAL STOP. recv/trans 3.141. Orders on this host (briefs/cmd-043.md). No pull, no push. |
+| cmd-043 | done | mscc_1.0.47_amd64.deb; recv/trans 3.141; ms-sdr 3.171. Radio USB not attached so live smoke 1-8 not run. No rpi edits. No pull, no push. |
 | cmd-042 | folded | Ubuntu part rides in cmd-043 (no 1.0.45 amd64). |
-| cmd-040 | done | Avalonia 0.6.60 remote-audio parity; amd64 + arm64 kits |
+| cmd-040 | done | Avalonia 0.6.60 remote-audio parity |
 | cmd-032 | done | mscc_1.0.44_amd64.deb with remote_mic stream reset |
-| cmd-028 | done | Avalonia 0.6.59 FW band gate |
-| cmd-027 | done | Avalonia idle + DIG-U + FW title |
 
 ## Notes
 
-Kits: `installers/linux/mscc-ui_0.6.60_amd64.deb` and `installers/rpi/mscc-ui_0.6.60_arm64.deb`.
-Path Phones/Digital independent (`RemoteDigitalAudio`); REMOTE_DIGI_MIC_VOL default 100;
-main Phones/Digital disabled while Remote; 0xBC ownership only (no PttOn/TuneMode).
-Live Remote/WSJT 0xBC smoke still for Stew after install. Do not push.
+Deb: `installers/linux/mscc_1.0.47_amd64.deb` (also `linux/mscc-deb/`).
+recv 3.141, trans 3.141, ms-sdr 3.171 (make bumped twice: build then pack).
+x86-64 only. `rpi/` untouched.
+apt install needs Stew sudo (no TTY for sudo here). `$HOME/mscc` already has the new binaries.
+Smoke: radio Proficio USB not seen, `/dev/tnt1` missing. recv/trans exited "No Proficio/Multus I/Q". 1-8 not run (radio not available).

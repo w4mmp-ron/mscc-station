@@ -176,11 +176,10 @@ void framesToComplex(sp_float *inframes, sp_cplx *incomplex, sp_cplx *outcomplex
 
 
     if ((mystate.opmode == MODE_CW) || (mystate.opmode == MODE_TUNE)) gain = 0.0f;
-    else if (G_audio_mode == DIGITAL_AUDIO || G_audio_mode == REMOTE_DIGITAL_AUDIO
-             || G_audio_mode == REMOTE_AUDIO)
-        /* Line-level: local VAC, remote MSA1 phones, remote MSA1 digital.
-         * Analog 16 dB (6.324) is only for a real operator mic (opcode 1).
-         * Remote phones forced mic=100 * 6.324 overdrove the PA. */
+    else if (G_audio_mode == REMOTE_DIGITAL_AUDIO || G_audio_mode == REMOTE_AUDIO)
+        /* Line-level: remote MSA1 phones, remote MSA1 digital.
+         * Remote phones forced mic=100 * 6.324 overdrove the PA.
+         * Local digital (opcode 0) keeps the original analog gain below. */
         gain = 2.5f;
     else {
         if (inputchannels == 1) gain = 3.16228f;
