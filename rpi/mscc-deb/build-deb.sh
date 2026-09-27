@@ -40,7 +40,6 @@ need_file "$BIN_SRC/ms-sdr"
 need_file "$BIN_SRC/mscc.sh"
 need_file "$BIN_SRC/sdrcore-trans"
 need_file "$BIN_SRC/sdrcore-recv"
-need_file "$BIN_SRC/mscc-init"
 need_file "$BIN_SRC/bootloader"
 need_file "$TTY_SRC/tty0tty.c"
 need_file "$TTY_SRC/Makefile"
@@ -71,8 +70,9 @@ mkdir -p "$PKG/usr/share/mscc/systemd/user"
 mkdir -p "$PKG/usr/share/applications"
 
 cp -a "$BIN_SRC/." "$PKG/usr/share/mscc/binaries/"
-# Drop legacy ALSA digi helper and editor backups — digi is Pulse VirtualA/B only
+# Drop legacy ALSA digi helper, old mscc-init CLI (use mscc-init-gui) and editor backups
 rm -f "$PKG/usr/share/mscc/binaries/audio-setup" \
+      "$PKG/usr/share/mscc/binaries/mscc-init" \
       "$PKG/usr/share/mscc/binaries/"*.bak* 2>/dev/null || true
 chmod 755 "$PKG/usr/share/mscc/binaries/"* || true
 if [[ -f "$PKG/usr/share/mscc/binaries/audio-setup" ]]; then
@@ -86,7 +86,7 @@ echo "  bootloader:  $(wc -c < "$PKG/usr/share/mscc/binaries/bootloader") bytes"
 
 # This .deb is Architecture: arm64. Refuse Ubuntu-laptop (amd64) binaries.
 if command -v readelf >/dev/null 2>&1; then
-  for b in ms-sdr sdrcore-recv sdrcore-trans mscc-init bootloader; do
+  for b in ms-sdr sdrcore-recv sdrcore-trans bootloader; do
     f="$PKG/usr/share/mscc/binaries/$b"
     [[ -f "$f" ]] || { echo "ERROR: missing $f" >&2; exit 1; }
     if ! readelf -h "$f" 2>/dev/null | grep -qi 'AArch64\|ARM aarch64'; then
@@ -225,6 +225,6 @@ echo "Current kit copy: installers/rpi/"
 echo
 echo "Then as normal user:"
 echo "  systemctl --user enable --now mscc-virtual-audio   # if sinks missing"
-echo "  mscc-init     # digi: VirtualA / VirtualB.monitor"
+echo "  mscc-init-gui # operator audio (package mscc-init-gui)"
 echo "  mscc start    # or desktop menu: MSCC Start / MSCC Stop"
 echo "  # optional PortAudio+Pulse: \$HOME/portaudio-install (see mscc.sh)"

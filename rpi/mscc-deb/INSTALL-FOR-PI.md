@@ -231,12 +231,6 @@ The wizard:
 - After save: **Yes/No** to **start the MSCC servers**.  
 - Sets operator hardware mixer levels toward **full open (100%)** so the **MSCC client Volume** can control loudness.
 
-**CLI alternative** (SSH or no desktop):
-
-```bash
-mscc-init
-```
-
 Config files live under:
 
 ```text

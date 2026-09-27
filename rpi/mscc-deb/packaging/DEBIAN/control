@@ -1,5 +1,5 @@
 Package: mscc
-Version: 1.0.46
+Version: 1.0.47
 Section: hamradio
 Priority: optional
 Architecture: arm64
@@ -9,7 +9,7 @@ Depends: libc6, libportaudio2, libusb-1.0-0, libhidapi-libusb0, build-essential,
 Recommends: linux-headers-rpi-v8 | linux-headers-rpi-2712, pipewire-pulse | pulseaudio, pipewire, libnotify-bin, python3-pyaudio
 Homepage: https://local/mscc
 Description: MSCC stack for Multus/Proficio on Raspberry Pi OS (64-bit)
- Prebuilt MSCC servers (ms-sdr, sdrcore-recv, sdrcore-trans), mscc-init,
+ Prebuilt MSCC servers (ms-sdr, sdrcore-recv, sdrcore-trans),
  Proficio firmware upload (bootloader CLI + GUI), start/stop script,
  Pulse/PipeWire virtual digi sinks (VirtualA/B), desktop menu
  Start/Stop/Status/Firmware Upload, and tty0tty null-modem module.
@@ -26,7 +26,7 @@ Description: MSCC stack for Multus/Proficio on Raspberry Pi OS (64-bit)
  Desktop menu: MSCC Start / MSCC Stop / MSCC Status (mscc-desktop-ctl).
  mscc status: servers plus config, PortAudio device match, CAT, digi sinks.
  Digi path: VirtualA (recv out) / VirtualB.monitor (trans digi mic).
- mscc-init/servers need Pulse-capable PortAudio from
+ Servers need Pulse-capable PortAudio from
  mscc-portaudio at /usr/local (rpath + ldconfig) to list Virtual*.
  .
  Kernel headers (linux-headers-rpi-v8 or rpi-2712) needed for tty0tty.

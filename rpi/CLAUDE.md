@@ -27,10 +27,10 @@ Git repo root: `C:\Users\Ron\.grok\worktrees`.
 
 Done 2026-09-26: mscc 1.0.46 + mscc-init-gui 1.0.15 installed and tested on the Pi (Ron).
 1. Test FREQ CAL STOP on the Pi (Ron "later"; needs WPF 9.26.5+).
-2. cmd-042: hi-cut 1400/1000 Hz in sdrcore-recv -> 1.0.47. On hold until Stew pushes.
+2. cmd-042: hi-cut 1400/1000 Hz in sdrcore-recv -> 1.0.48. On hold until Stew pushes.
 3. cmd-046: TUNE power separate (Windows/Ubuntu trans + WPF). With Stew; no Pi change.
 4. RF check of remote TX audio (Stew, spectrum analyzer).
-Optional: drop mscc-init from the .deb entirely.
+Done 2026-09-27 (committed): mscc-init dropped from the .deb (build-deb strips it, postinst removes old ~/mscc/mscc-init + link, docs point to mscc-init-gui). Source + mscc-binaries/mscc-init kept. Built into mscc 1.0.47 (2026-09-27, WSL; servers identical to 1.0.46), copied to installers/rpi (1.0.46 removed). Not installed on the Pi yet. cmd-042 now -> 1.0.48.
 
 ## Architecture (per Ron)
 
@@ -137,7 +137,7 @@ now says run `mscc-init-gui`. Copied to installers/rpi (1.0.45 removed). Install
 
 Windows `mscc-recv` 3.141 added 0xD1 CMD_SET_BW_HICUT index 5 = 1400 Hz, 6 = 1000 Hz
 (DIG-U Hi, WPF cmd-041). Pi to match in `SDRcore-recv-linux/sources/udp_thread.c`
-(hi-cut switch ~line 1547) + version bump -> `mscc_1.0.47_arm64.deb` (1.0.46 used 2026-09-26). Brief:
+(hi-cut switch ~line 1547) + version bump -> `mscc_1.0.48_arm64.deb` (1.0.47 used 2026-09-27). Brief:
 `.mscc-coord/briefs/cmd-042.md`. Order: after ubuntu-stew is done and Stew pushes.
 Reviewed: 0-4 unchanged, low-cut max 500 < 1000, ms-sdr passes index through. Not done yet.
 
