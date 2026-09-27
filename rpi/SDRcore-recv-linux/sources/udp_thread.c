@@ -63,9 +63,9 @@ static void Trigger_Panadapter_Pause(int frames) {
 
 struct {
     uint32_t freq;
-    uint32_t magnitude_low;
-    uint32_t magnitude;
-    uint32_t magnitude_high;
+    float magnitude_low;    /* unscaled Goertzel mags (no int overflow on strong signals) */
+    float magnitude;
+    float magnitude_high;
     float low_cut;
     float center;
     float high_cut;
@@ -214,14 +214,17 @@ int update_calibrate_data(uint32_t value) {
     char send_buf[20] = { 0 };
 
     print_time(0);
-    fprintf(G_fp_logfile, "[%d] update_calibrate_data . Called . Data: %ld\n", line_number++, value);
+    fprintf(G_fp_logfile, "[%d] update_calibrate_data . Called . Data: %u\n", line_number++, value);
     while (calibration_state == 0 && count < 30000) {
         Sleep(1);
         if (mycalstate.calReady == 1) {
-            cal_data[G_calibration_element].magnitude_low = mycalstate.calMagLow;
+            if (G_calibration_element >= MAX_CALIBRATION_ELEMENT) {  /* table full: reuse the last slot (ms-sdr sends <= 1201) */
+                G_calibration_element = MAX_CALIBRATION_ELEMENT - 1;
+            }
+            cal_data[G_calibration_element].magnitude_low = mycalstate.calMagLowF;
             cal_data[G_calibration_element].freq = value;
-            cal_data[G_calibration_element].magnitude = mycalstate.calMag;
-            cal_data[G_calibration_element].magnitude_high = mycalstate.calMagHigh;
+            cal_data[G_calibration_element].magnitude = mycalstate.calMagF;
+            cal_data[G_calibration_element].magnitude_high = mycalstate.calMagHighF;
             cal_data[G_calibration_element].low_cut = calibration_limits.low_cut;
             cal_data[G_calibration_element].center = calibration_limits.center;
             cal_data[G_calibration_element].high_cut = calibration_limits.high_cut;
@@ -256,10 +259,10 @@ uint32_t Send_calibration_data() {
     //int calibration_state = 0;
     //int error = 0;
     uint32_t freq;
-    uint32_t magnitude_low_max = 0;
-    uint32_t magnitude_mid_max = 0;
-    uint32_t magnitude_high_max = 0;
-    uint32_t average_magnitude_max = 0;
+    float magnitude_low_max = 0.0f;
+    float magnitude_mid_max = 0.0f;
+    float magnitude_high_max = 0.0f;
+    double average_magnitude_max = 0.0;  /* in the old mag * 1e6 units, like Calibration_Low_Limit */
     int low_max = 0;
     int mid_max = 0;
     int high_max = 0;
@@ -282,7 +285,7 @@ uint32_t Send_calibration_data() {
             high_max = count;
         }
     }
-    average_magnitude_max = (uint32_t) ((float) ((magnitude_high_max + magnitude_low_max + magnitude_mid_max)) / 3.0f);
+    average_magnitude_max = ((double) magnitude_high_max + magnitude_low_max + magnitude_mid_max) / 3.0 * 1000000.0;
     if (average_magnitude_max > Calibration_Low_Limit) {
         freq = (cal_data[low_max].freq + cal_data[mid_max].freq + cal_data[high_max].freq) / 3;
     } else {
@@ -293,10 +296,10 @@ uint32_t Send_calibration_data() {
     sendto(ms_sdr_s, send_buf, 5, 0, (struct sockaddr *) &si_ms_sdr, slen);
     G_calibration_element = 0;
     print_time();
-    fprintf(G_fp_logfile, "[%d] Send_calibration_data . average_magnitude_max %ld\n", line_number,
-            average_magnitude_max);
+    fprintf(G_fp_logfile, "[%d] Send_calibration_data . average_magnitude_max %.0f (limit %u)\n", line_number,
+            average_magnitude_max, Calibration_Low_Limit);
     print_time(0);
-    fprintf(G_fp_logfile, "[%d] Send_calibration_data . calculate_offset_freq . Finished. calculate_offset_freq: %ld\n",
+    fprintf(G_fp_logfile, "[%d] Send_calibration_data . calculate_offset_freq . Finished. calculate_offset_freq: %u\n",
             line_number++, freq);
     return freq;
 }
@@ -312,9 +315,12 @@ int CW_snap_update_calibrate_data() {
     while (calibration_state == 0 && count < 30000) {
         Sleep(1);
         if (mycalstate.calReady == 1) {
-            cal_data[G_calibration_element].magnitude_low = mycalstate.calMagLow;
-            cal_data[G_calibration_element].magnitude = mycalstate.calMag;
-            cal_data[G_calibration_element].magnitude_high = mycalstate.calMagHigh;
+            if (G_calibration_element >= MAX_CALIBRATION_ELEMENT) {  /* table full: reuse the last slot (ms-sdr sends <= 1201) */
+                G_calibration_element = MAX_CALIBRATION_ELEMENT - 1;
+            }
+            cal_data[G_calibration_element].magnitude_low = mycalstate.calMagLowF;
+            cal_data[G_calibration_element].magnitude = mycalstate.calMagF;
+            cal_data[G_calibration_element].magnitude_high = mycalstate.calMagHighF;
             cal_data[G_calibration_element].low_cut = calibration_limits.low_cut;
             cal_data[G_calibration_element].center = calibration_limits.center;
             cal_data[G_calibration_element].high_cut = calibration_limits.high_cut;
@@ -357,9 +363,9 @@ uint16_t CW_snap_Send_calibration_data() {
     char send_buf[20] = { 0 };
     //int calibration_state = 0;
     //int error = 0;
-    uint32_t magnitude_low_max = 0;
-    uint32_t magnitude_mid_max = 0;
-    uint32_t magnitude_high_max = 0;
+    float magnitude_low_max = 0.0f;
+    float magnitude_mid_max = 0.0f;
+    float magnitude_high_max = 0.0f;
     int low_max_count = 0;
     int mid_max_count = 0;
     int high_max_count = 0;
@@ -752,7 +758,7 @@ void *UDP_Thread(void *my_param) {
             }
             previous_freq = i_opcode_data;
             print_time();
-            fprintf(G_fp_logfile, "[%d] UDP Thread. CMD_SET_MAIN_FREQ. freq: %ld, delta: %ld, pause_frames: %d\n",
+            fprintf(G_fp_logfile, "[%d] UDP Thread. CMD_SET_MAIN_FREQ. freq: %d, delta: %ld, pause_frames: %d\n",
                 line_number++, i_opcode_data, delta_freq, G_Pause_Panadapter_Cycles);
             break;
 
@@ -1392,7 +1398,7 @@ void *UDP_Thread(void *my_param) {
                 mycalstate.calReady = FALSE;
                 mycalstate.calStart = 1;
                 print_time();
-                fprintf(G_fp_logfile, "[%d] UDP Thread . CMD_SET_CALIBRATION_START . Called. Frequency: %ld\n", line_number++, i_opcode_data);
+                fprintf(G_fp_logfile, "[%d] UDP Thread . CMD_SET_CALIBRATION_START . Called. Frequency: %d\n", line_number++, i_opcode_data);
                 update_calibrate_data(i_opcode_data);
                 break;
 
@@ -1401,7 +1407,7 @@ void *UDP_Thread(void *my_param) {
                 memcpy(&i_opcode_data, op_code_data_32, 4);
                 mycalstate.Cycle_Count = (uint32_t) i_opcode_data;
                 print_time();
-                fprintf(G_fp_logfile, "[%d] UDP Thread . CDM_SET_CALIBRATE_CYCLE_COUNT . Called. Cycle Count: %ld\n", line_number++, mycalstate.Cycle_Count);
+                fprintf(G_fp_logfile, "[%d] UDP Thread . CDM_SET_CALIBRATE_CYCLE_COUNT . Called. Cycle Count: %u\n", line_number++, mycalstate.Cycle_Count);
                 break;
 
             case CMD_SET_CALIBRATION_FINISHED:

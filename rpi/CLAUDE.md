@@ -63,6 +63,19 @@ Syntax check on Windows: WSL `Debian` has gcc. Use `-iquote sources -idirafter s
 
 Overdrive code is legacy, ignore it. CW carrier is generated continuously (keyed
 elsewhere). No thread locking is fine (works for years).
+CW snap (ms-sdr `cw-snap.c`, recv `CMD_CW_SNAP_*`) is not in the client yet and never
+runs during FREQ CAL (Ron 2026-09-27). Image check can't overlap FREQ CAL either (client
+blocks it). So the `doRxCalibrate` static-index overrun (count change mid-fill) can't happen.
+FREQ CAL saturation fix (2026-09-27; built on Pi, in mscc 1.0.49): Goertzel mags were stored as int(mag*1e6),
+capped at INT_MAX (~-24 dBFS raw IQ) -> ties, first (low) step won, 3-sum wrapped. Now
+`calMag*F` floats in `sdrcore.h`, `cal_data` floats, average in double (same 1e6 units vs
+Calibration_Low_Limit). Image check keeps the scaled ints (`cal_mag_scaled`, clamped).
+WSL syntax OK. Windows recv has the same issue (not touched).
+#5 fixes (same batch, in 1.0.49): main.c freq_low init typo; cal log %ld -> %u/%d (udp_thread
+217, 299, 755, 1395, 1404); cal_data index clamped to MAX_CALIBRATION_ELEMENT-1.
+Future idea (Ron: keep in mind, not now): `goertzel_mag` uses only I (`data[i].real`) -> no
++600/-600 side check, ~3 dB SNR loss. Complex Goertzel (~10 lines) fixes both; level numbers
+change, so recheck CALIBRATION_LOW_LIMIT / LOOSE. Mirror is 1200 Hz away, outside the sweep.
 
 ## Changes (2026-09-25)
 

@@ -116,6 +116,9 @@ typedef struct {
 	unsigned int calMagLow;		// signal magnitude at 600 Hz minus NN Hz (We'll try 2 Hz first)
 	unsigned int calMag;		// signal magnitude at 600 Hz
 	unsigned int calMagHigh;	// signal magnitude at 600 Hz plus NN Hz
+	sp_float calMagLowF;		// same three, unscaled float (FREQ CAL / CW snap: no int overflow)
+	sp_float calMagF;
+	sp_float calMagHighF;
 	sp_cplx *calbuffer;			// pointer to cal buffer (allocated off heap before audio threads start)
 } calstate;
 

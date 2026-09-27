@@ -221,6 +221,15 @@ void doPanadapter(sp_cplx *fftbuf, int nframes)
         }
 }
 
+/* mag * 1e6 as int, clamped (a plain cast overflows above mag ~2147). */
+static unsigned int cal_mag_scaled(sp_float mag)
+{
+        double v = (double) mag * 1000000.0;
+        if (v >= 2147483647.0) return 2147483647u;
+        if (v <= 0.0) return 0u;
+        return (unsigned int) (int) v;
+}
+
 /***** 3-freq Goertzel detector - used in Si5351 calibration *****/
 void doRxCalibrate(sp_cplx *incomplex, int nframes)
 {
@@ -246,9 +255,13 @@ void doRxCalibrate(sp_cplx *incomplex, int nframes)
         mag = goertzel_mag(mycalstate.Cycle_Count, mycalstate.freq_center, mycalstate.calbuffer);
         magp = goertzel_mag(mycalstate.Cycle_Count, mycalstate.freq_high, mycalstate.calbuffer);
 
-        mycalstate.calMagLow = (int) (magm * 1000000.0f);
-        mycalstate.calMag = (int) (mag * 1000000.0f);
-        mycalstate.calMagHigh = (int) (magp * 1000000.0f);
+        mycalstate.calMagLowF = magm;
+        mycalstate.calMagF = mag;
+        mycalstate.calMagHighF = magp;
+        // Scaled ints (image check) saturate at INT_MAX, as the old cast did on arm64.
+        mycalstate.calMagLow = cal_mag_scaled(magm);
+        mycalstate.calMag = cal_mag_scaled(mag);
+        mycalstate.calMagHigh = cal_mag_scaled(magp);
 
         mycalstate.calReady = TRUE;
 
