@@ -2091,9 +2091,9 @@
                 <!-- MAIN operate power: same stores as RX/TX tab; bank follows TUN / mode -->
                 <TextBlock Text="{Binding MainOperatePowerLabel}" FontWeight="Bold" Foreground="{DynamicResource UiAccentBrush}" FontSize="9"
                            Margin="0,4,0,1" HorizontalAlignment="Left"
-                           ToolTip="Drive power for what you're doing: TUN→Tune, CW→CW, AM→AM carrier, FM→FM, LSB/USB→SSB, DIG-U (or Digital audio)→Tune. Same values as the RX/TX tab."/>
+                           ToolTip="Drive power for what you're doing: TUN→Tune, CW→CW, AM→AM carrier, FM→FM, LSB/USB/DIG-U→SSB (any audio). Same values as the RX/TX tab."/>
                 <StackPanel Orientation="Horizontal" Margin="0,0,0,1" VerticalAlignment="Center"
-                            ToolTip="Drive power for what you're doing: TUN→Tune, CW→CW, AM→AM carrier, FM→FM, LSB/USB→SSB, DIG-U (or Digital audio)→Tune. Same values as the RX/TX tab.">
+                            ToolTip="Drive power for what you're doing: TUN→Tune, CW→CW, AM→AM carrier, FM→FM, LSB/USB/DIG-U→SSB (any audio). Same values as the RX/TX tab.">
                     <Slider Width="108" Minimum="0" Maximum="100" SmallChange="1"
                             Value="{Binding MainOperatePowerPercent, Mode=TwoWay}"
                             PreviewMouseWheel="Slider_PreviewMouseWheel" VerticalAlignment="Center"/>

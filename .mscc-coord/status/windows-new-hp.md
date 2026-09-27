@@ -4,16 +4,16 @@
 |--|--|
 | **Host** | NEW-HP-LAPTOP (Windows) |
 | **Checkout** | `C:\Users\n8vet\OneDrive\Documents\GitHub\mscc-station` |
-| **Build** | **cmd-045b** (WPF + ms-sdr done) / **cmd-038** (WPF pending) |
-| **Last command id** | cmd-045b (done) / cmd-038 (WPF pending) |
+| **Build** | **cmd-046** (WPF + SDRcore-trans done) / **cmd-038** (WPF pending) |
+| **Last command id** | cmd-046 (done) / cmd-038 (WPF pending) |
 | **State** | done |
-| **Updated** | 2026-09-26 |
+| **Updated** | 2026-09-27 |
 
 ## ACK log
 
 | command id | state | note |
 |------------|-------|------|
-| cmd-046 | orders | Ron's brief (TUNE power drives TUNE only). Windows part here: SDRcore-trans driver.c + WPF DIG-U slider/tooltip back to SSB. Target WPF 9.26.7, SDRcore-trans 3.142. Awaiting Build ACK. |
+| cmd-046 | done | WPF 9.27.0 and SDRcore-trans 3.142 in C:\mscc-net9. TUNE power drives TUNE only. USB and LSB, including DIG-U and digital audio, use the SSB bank. Client version is 9.27.0 because the auto-bump is month.day.iteration and this build is on the 27th. Live radio smoke not run. Not pushed. |
 | cmd-045b | done | WPF 9.26.6 and ms-sdr 3.176 in C:\mscc-net9. STOP matches the other FREQ CAL buttons. Abort drain uses opcode 0x1F: 1 = drain done, 2 = start refused. A second finish is sent only while the sweep is still stepping. Live radio smoke not run. Not pushed. |
 | cmd-045a | done | WPF 9.26.5 and ms-sdr 3.175 in C:\mscc-net9. FREQ CAL STOP uses CMD_SET_CAL_ABORT 0x1F. Late sweep replies are dropped so PPM is not written. Live radio smoke not run. Not pushed. |
 | cmd-045 | done | WPF 9.26.4 in C:\mscc-net9. VFO B stored in MSCC_LastUsed_VFOB.ini (VFOB_FREQ, VFOB_MODE, VFOB_BAND). Close during AUTO or CHECK restores mode and does not abort the cal. QRP, Full Power, and AMP share AmpOn. Radio-model button removed. DIG-U slider uses Tune power. ms-sdr unchanged at 3.174. Not pushed. |
@@ -34,4 +34,4 @@
 
 ## Notes
 
-cmd-045b: WPF 9.26.6 and ms-sdr 3.176. FREQ CAL STOP uses the same button face as LOOSE, AUTO, MANUAL, CHECK, and RESET. Those buttons stay on the default face across Setup colour schemes. After STOP the server drops late sweep replies and refuses a new AUTO or CHECK until the finish reply or 35 s, then sends 0x1F value 1. Value 2 means the start was refused. A finish command goes to recv only while the sweep is still stepping. Closing during AUTO or CHECK aborts the run, then restores the mode. cmd-038 still pending.
+cmd-046: WPF 9.27.0 and Windows SDRcore-trans 3.142. TUNE power drives TUNE only. DIG-U and USB or LSB with digital audio use SSB power on the main slider and in driver.c. The linux tree waits for cmd-043. The Pi servers stay as they are. cmd-038 still pending.
