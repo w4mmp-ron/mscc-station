@@ -30,7 +30,7 @@ Git repo root: `C:\Users\Ron\.grok\worktrees`.
 ## Open list (Ron, 2026-09-26) - read first on resume
 
 Done 2026-09-26: mscc 1.0.46 + mscc-init-gui 1.0.15 installed and tested on the Pi (Ron).
-1. Test FREQ CAL STOP on the Pi (Ron "later"; needs WPF 9.26.5+).
+1. Test FREQ CAL STOP on the Pi (needs WPF 9.26.5+). Back burner (Ron 2026-09-27).
 2. cmd-042: hi-cut 1400/1000 Hz in sdrcore-recv -> 1.0.48. Source done 2026-09-27 (Ron: do it now, not waiting for Ubuntu): udp_thread.c case 5/6, recv 3.141, WSL syntax OK. Ron built it on the Pi; sdrcore-recv copied to mscc-binaries. mscc 1.0.48 built 2026-09-27 (only sdrcore-recv differs from 1.0.47), in installers/rpi (1.0.47 removed). **Installed on the Pi 2026-09-27, filters work (Ron). Done.**
 3. cmd-046: TUNE power separate (Windows/Ubuntu trans + WPF). With Stew; no Pi change.
 4. RF check of remote TX audio (Stew, spectrum analyzer).
@@ -66,7 +66,7 @@ elsewhere). No thread locking is fine (works for years).
 CW snap (ms-sdr `cw-snap.c`, recv `CMD_CW_SNAP_*`) is not in the client yet and never
 runs during FREQ CAL (Ron 2026-09-27). Image check can't overlap FREQ CAL either (client
 blocks it). So the `doRxCalibrate` static-index overrun (count change mid-fill) can't happen.
-FREQ CAL saturation fix (2026-09-27; built on Pi, in mscc 1.0.49): Goertzel mags were stored as int(mag*1e6),
+FREQ CAL saturation fix (2026-09-27; mscc 1.0.49 installed on the Pi, FREQ CAL works - Ron): Goertzel mags were stored as int(mag*1e6),
 capped at INT_MAX (~-24 dBFS raw IQ) -> ties, first (low) step won, 3-sum wrapped. Now
 `calMag*F` floats in `sdrcore.h`, `cal_data` floats, average in double (same 1e6 units vs
 Calibration_Low_Limit). Image check keeps the scaled ints (`cal_mag_scaled`, clamped).
