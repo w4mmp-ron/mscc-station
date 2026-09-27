@@ -1,5 +1,5 @@
 Package: mscc-ui
-Version: 0.6.60
+Version: 0.6.61
 Section: hamradio
 Priority: optional
 Architecture: arm64
@@ -9,7 +9,7 @@ Recommends: mscc
 Homepage: https://local/mscc
 Description: MSCC UI (Avalonia) connect-only client for Multus / Proficio
  Graphical MSCC client for Raspberry Pi OS 64-bit (linux-arm64).
- Connects to ms-sdr already running (use MSCC Start); does not launch servers.
+ Connects to ms-sdr; with Launch checked (Host 127.0.0.1) it starts and stops the local MSCC servers.
  Includes CQ keyer memory, Remote Audio, QRP/AMP/TX IQ cal dialogs, legacy external keyer,
  and TX IQ cal frequencies matching ms-sdr iq_calibration_freqs.
  .

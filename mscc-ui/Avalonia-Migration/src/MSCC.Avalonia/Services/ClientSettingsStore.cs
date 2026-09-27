@@ -22,6 +22,10 @@ public sealed class ClientSettings
     public List<string> HostRecent { get; set; } = new() { "127.0.0.1" };
     public string RemotePortText { get; set; } = "8888";
     public string LocalPortText { get; set; } = "8889";
+    /// <summary>Connect also starts local servers (127.0.0.1 only). Default on when the key is missing.</summary>
+    public bool LaunchServers { get; set; } = true;
+    /// <summary>Press Connect when the window opens. Default off.</summary>
+    public bool AutoStart { get; set; }
 
     // Radio model
     public bool IsGeminusRadioModel { get; set; }
@@ -234,6 +238,8 @@ public static class ClientSettingsStore
             sb.AppendLine($"HOST_RECENT={string.Join(",", s.HostRecent ?? new List<string>())}");
             sb.AppendLine($"REMOTE_PORT={s.RemotePortText}");
             sb.AppendLine($"LOCAL_PORT={s.LocalPortText}");
+            sb.AppendLine($"LAUNCH_SERVERS={(s.LaunchServers ? "1" : "0")}");
+            sb.AppendLine($"AUTO_START_SERVERS={(s.AutoStart ? "1" : "0")}");
             sb.AppendLine();
             sb.AppendLine("# Radio model");
             sb.AppendLine($"RADIO_MODEL={(s.IsGeminusRadioModel ? "Geminus" : "Proficio")}");
@@ -312,8 +318,6 @@ public static class ClientSettingsStore
             sb.AppendLine($"AN_ON={(s.AnOn ? "1" : "0")}");
             sb.AppendLine($"MONITOR_ON={(s.MonitorOn ? "1" : "0")}");
             sb.AppendLine($"AMP_ON={(s.AmpOn ? "1" : "0")}");
-            sb.AppendLine($"QRP_MODE={(s.QrpMode ? "1" : "0")}");
-            sb.AppendLine($"FULL_POWER={(s.FullPower ? "1" : "0")}");
             sb.AppendLine($"ALC_ON={(s.AlcOn ? "1" : "0")}");
             sb.AppendLine();
             sb.AppendLine("# Global S/W");
@@ -432,6 +436,12 @@ public static class ClientSettingsStore
             case "LOCAL_PORT":
                 s.LocalPortText = val;
                 break;
+            case "LAUNCH_SERVERS":
+                s.LaunchServers = IsTruthy(val);
+                break;
+            case "AUTO_START_SERVERS":
+                s.AutoStart = IsTruthy(val);
+                break;
             case "RADIO_MODEL":
                 s.IsGeminusRadioModel = val.Equals("Geminus", StringComparison.OrdinalIgnoreCase);
                 break;
@@ -465,7 +475,7 @@ public static class ClientSettingsStore
                 break;
             case "HIGH_CUT_INDEX":
                 if (int.TryParse(val, NumberStyles.Integer, CultureInfo.InvariantCulture, out int hci))
-                    s.HighCutIndex = hci;
+                    s.HighCutIndex = Math.Clamp(hci, 0, 6);
                 break;
             case "CW_FILTER_INDEX":
                 if (int.TryParse(val, NumberStyles.Integer, CultureInfo.InvariantCulture, out int cfi))

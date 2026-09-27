@@ -26,12 +26,16 @@ internal static class MsccDialog
     public static Task<Result> YesNoCancelAsync(string message, string title = "MSCC")
         => ShowAsync(title, message, yesNoCancel: true);
 
+    public static async Task<bool> OkCancelAsync(string message, string title = "MSCC")
+        => await ShowAsync(title, message, okCancel: true) == Result.Ok;
+
     private static async Task<Result> ShowAsync(
         string title,
         string message,
         bool ok = false,
         bool yesNo = false,
-        bool yesNoCancel = false)
+        bool yesNoCancel = false,
+        bool okCancel = false)
     {
         var owner = Owner();
         var chosen = Result.Cancel;
@@ -85,6 +89,11 @@ internal static class MsccDialog
 
         if (ok)
             Add("OK", Result.Ok, isDefault: true, isCancel: true);
+        else if (okCancel)
+        {
+            Add("OK", Result.Ok, isDefault: true);
+            Add("Cancel", Result.Cancel, isCancel: true);
+        }
         else if (yesNoCancel)
         {
             Add("Yes", Result.Yes, isDefault: true);

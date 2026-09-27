@@ -5,7 +5,9 @@ using Avalonia.Controls.Primitives;
 using Avalonia.Input;
 using Avalonia.Interactivity;
 using Avalonia.Media;
+using Avalonia.Threading;
 using MSCC.Avalonia.ViewModels;
+using MsccDialog = MSCC.Avalonia.MsccDialog;
 
 namespace MSCC.Avalonia.Views;
 
@@ -13,17 +15,84 @@ public partial class MainWindow : Window
 {
     private DebugLogWindow? _logWindow;
     private SpectrumWaterfallWindow? _swWindow;
+    private bool _closeReady;
+    private bool _tabChangeGuard;
 
     public MainWindow()
     {
         InitializeComponent();
         Closed += OnClosed;
+        Closing += OnClosing;
         Opened += OnOpened;
     }
 
-    private void OnOpened(object? sender, EventArgs e)
+    private async void OnOpened(object? sender, EventArgs e)
     {
         SpectrumDisplay.FrequencyClicked += OnSpectrumFrequencyClicked;
+        if (DataContext is MainViewModel vm && vm.AutoStart)
+        {
+            await Task.Delay(500);
+            vm.AppendLog($"Auto: Connect on start (Host {vm.Host})");
+            if (vm.ConnectCommand.CanExecute(null))
+                await vm.ConnectCommand.ExecuteAsync(null);
+        }
+    }
+
+    private async void OnClosing(object? sender, WindowClosingEventArgs e)
+    {
+        if (_closeReady) return;
+        e.Cancel = true;
+        if (DataContext is MainViewModel vm)
+        {
+            try { await vm.PrepareForCloseAsync(); }
+            catch { /* ignore */ }
+        }
+        _closeReady = true;
+        Close();
+    }
+
+    private async void MainTabs_OnSelectionChanged(object? sender, SelectionChangedEventArgs e)
+    {
+        if (_tabChangeGuard) return;
+        if (DataContext is not MainViewModel vm) return;
+        var added = e.AddedItems.Count > 0 ? e.AddedItems[0] as TabItem : null;
+        var removed = e.RemovedItems.Count > 0 ? e.RemovedItems[0] as TabItem : null;
+        if (added == FreqCalTab)
+        {
+            await vm.EnterFreqCalTab();
+            return;
+        }
+        if (removed != FreqCalTab)
+            return;
+        if (vm.FreqCalManualMode)
+        {
+            _tabChangeGuard = true;
+            Dispatcher.UIThread.Post(() =>
+            {
+                MainTabs.SelectedItem = FreqCalTab;
+                _tabChangeGuard = false;
+            });
+            await MsccDialog.AlertAsync("EXIT MANUAL CALIBRATION FIRST.");
+            return;
+        }
+        if (vm.FreqCalInProgress &&
+            (added == QrpCalTab || added == AmpCalTab || added == TxIqTab))
+        {
+            _tabChangeGuard = true;
+            Dispatcher.UIThread.Post(() =>
+            {
+                MainTabs.SelectedItem = FreqCalTab;
+                _tabChangeGuard = false;
+            });
+            await MsccDialog.AlertAsync("FREQUENCY CALIBRATION IN PROGRESS.");
+            return;
+        }
+        if (vm.FreqCalInProgress)
+        {
+            vm.DeferFreqCalRestore();
+            return;
+        }
+        await vm.LeaveFreqCalTab();
     }
 
     /// <summary>Avalonia int bindings often only commit on pointer-up; send 0xA2 while dragging.</summary>
