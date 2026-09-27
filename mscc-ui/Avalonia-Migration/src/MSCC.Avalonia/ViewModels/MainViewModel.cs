@@ -1498,10 +1498,28 @@ public partial class MainViewModel : ViewModelBase, IDisposable
         }
     }
 
+    /// <summary>
+    /// Fire mscc stop before any await on window close. An async Closing handler can
+    /// exit the process before PrepareForCloseAsync reaches the stop.
+    /// </summary>
+    public void KickOwnedServerStop()
+    {
+        if (!_serversOurs)
+            return;
+        string log = Path.Combine(
+            Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
+            "MSCC-Avalonia", "logs", "mscc-launch.log");
+        try { LocalServerLauncher.StartDetachedStop(log); }
+        catch { /* still mark not-ours so we don't double-stop */ }
+        AppendLog("Launch: close - mscc stop started (log: " + log + ")");
+        _serversOurs = false;
+    }
+
     public async Task PrepareForCloseAsync()
     {
         try
         {
+            KickOwnedServerStop();
             await PrepareDisconnectAsync(closeWindow: true).ConfigureAwait(true);
             if (IsConnected)
             {
@@ -1514,15 +1532,7 @@ public partial class MainViewModel : ViewModelBase, IDisposable
                 DisposeRadio();
                 IsConnected = false;
             }
-            if (_serversOurs)
-            {
-                string log = Path.Combine(LogDirectory, "mscc-launch.log");
-                LocalServerLauncher.StartDetachedStop(log);
-                AppendLog("Launch: close - mscc stop started (log: " + log + ")");
-                _serversOurs = false;
-            }
-            else
-                AppendLog("Launch: servers not started by this client - left running");
+            KickOwnedServerStop();
         }
         catch (Exception ex)
         {

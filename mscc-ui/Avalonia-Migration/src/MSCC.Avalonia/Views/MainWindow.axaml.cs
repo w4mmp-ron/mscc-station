@@ -43,12 +43,15 @@ public partial class MainWindow : Window
         if (_closeReady) return;
         e.Cancel = true;
         if (DataContext is MainViewModel vm)
+            vm.KickOwnedServerStop();
+        try
         {
-            try { await vm.PrepareForCloseAsync(); }
-            catch { /* ignore */ }
+            if (DataContext is MainViewModel vm2)
+                await vm2.PrepareForCloseAsync();
         }
+        catch { /* ignore */ }
         _closeReady = true;
-        Close();
+        Dispatcher.UIThread.Post(() => Close());
     }
 
     private async void MainTabs_OnSelectionChanged(object? sender, SelectionChangedEventArgs e)

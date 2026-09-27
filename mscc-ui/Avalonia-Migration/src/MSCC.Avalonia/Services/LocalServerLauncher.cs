@@ -125,23 +125,22 @@ internal static class LocalServerLauncher
     {
         string? ctl = ResolveDesktopCtl();
         string? mscc = ResolveMscc();
-        string inner;
-        if (ctl != null)
-            inner = $"\"{ctl}\" stop";
-        else if (mscc != null)
-            inner = $"\"{mscc}\" stop";
-        else
+        string? file = ctl ?? mscc;
+        if (file == null)
             return;
         string? dir = Path.GetDirectoryName(logFile);
         if (!string.IsNullOrEmpty(dir))
             Directory.CreateDirectory(dir);
+        // ArgumentList: one -c token. Do not put the script in ProcessStartInfo.Arguments
+        // (Unix parser splits on spaces and drops the stop).
         var psi = new ProcessStartInfo
         {
             FileName = "/bin/sh",
-            Arguments = $"-c '{inner} >> \"{logFile}\" 2>&1'",
             UseShellExecute = false,
             CreateNoWindow = true,
         };
+        psi.ArgumentList.Add("-c");
+        psi.ArgumentList.Add($"exec '{file}' stop >> '{logFile}' 2>&1");
         StripLdLibraryPath(psi);
         Process.Start(psi);
     }
