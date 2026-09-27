@@ -1,4 +1,52 @@
 commands:
+  - id: cmd-046
+    created: "2026-09-27T10:30:00-04:00"
+    target: [windows-new-hp]
+    role: client+server
+    action: tune-power-tune-only-revert-digital-tune-bank
+    status_hint: open
+    detail: |
+      Host: windows-new-hp (NEW-HP-LAPTOP).
+      Checkout: C:\Users\n8vet\OneDrive\Documents\GitHub\mscc-station
+      Brief by Ron (W4MMP): .mscc-coord/briefs/cmd-046.md. Stew decided to follow it.
+      Windows notes: .mscc-coord/briefs/cmd-046-windows-notes.md
+      Call the user Stew. Commit on NEW-HP when done. Do NOT git push (Stew pushes). Do not pull.
+
+      ## Rule (Ron)
+      TUNE power drives TUNE only. No other mode (USB, LSB, DIG-U, digital or remote
+      digital audio) uses TUNE power. Reverses SDRcore-trans 3ec263a and cmd-045 item 7.2
+      (DIG-U slider on Tune power) plus its A8 tooltip text (7.1).
+
+      ## Scope (this host: Windows part only)
+      1. SDRcore-trans mscc-ui/windows-work-tree/SDRcore-trans/sources/driver.c:
+         Driver_Get_QRO_Power :99 case 'L' :109-113 / case 'U' :114-118 and
+         Driver_Get_QRP_Power :137 case 'L' :147-151 / case 'U' :152-158: drop the
+         DIGITAL_AUDIO / REMOTE_DIGITAL_AUDIO ternary; L uses LSB_POWER, U uses USB_POWER.
+         Delete the "WSJT is USB ... must use TUNE drive" comment (:153-154).
+         case 'T' stays TUNE_POWER. Driver_Get_ALC_Limit unchanged.
+         Reference: rpi/SDRcore-trans-linux/sources/driver.c.
+      2. WPF MainViewModel.cs ResolveOperatePowerBank :1800: delete the DIG-U block
+         :1807-1810. Keep the TuneMode / RadioMode.TUNE line (:1803-1804). DIG-U, USB, LSB
+         fall through to Ssb.
+      3. WPF MainWindow.xaml :2094 and :2096 tooltip: "LSB/USB->SSB, DIG-U (or Digital
+         audio)->Tune" becomes "LSB/USB/DIG-U->SSB (any audio)" (keep the arrow glyph used).
+      4. Versions: client 9.26.6 -> 9.26.7 (auto); SDRcore-trans 3.141 -> 3.142
+         (extern.h VERSION_MINOR).
+
+      ## Out of scope
+      linux/ driver.c (rides in cmd-043 on ubuntu-stew), rpi/ (Ron: Pi unchanged),
+      Avalonia, Solidus, firmware, ms-sdr-MKII, SDRcore-recv.
+
+      ## Build / smoke
+      Build SDRcore-trans Release and copy Mscc-trans.exe (mscc-ui/Release/windows-wpf) to C:\mscc-net9. Build MSCC.Wpf
+      Release (auto-copies to C:\mscc-net9). Stop MSCC first. ACK in
+      .mscc-coord/status/windows-new-hp.md (no bare pipe in cells). Smoke (plain):
+      1. DIG-U: main slider label says SSB POWER.
+      2. Change SSB power: DIG-U output on the SA changes with it.
+      3. TUN: still uses Tune power (Tune Power value unchanged by steps 1-2).
+
+      Commit hint: cmd-046: TUNE power drives TUNE only (Windows SDRcore-trans + WPF)
+      Brief: .mscc-coord/briefs/cmd-046.md
   - id: cmd-045b
     created: "2026-09-26T18:25:00-04:00"
     target: [windows-new-hp]

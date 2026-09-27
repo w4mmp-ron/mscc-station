@@ -13,6 +13,7 @@
 
 | command id | state | note |
 |------------|-------|------|
+| cmd-046 | orders | Ron's brief (TUNE power drives TUNE only). Windows part here: SDRcore-trans driver.c + WPF DIG-U slider/tooltip back to SSB. Target WPF 9.26.7, SDRcore-trans 3.142. Awaiting Build ACK. |
 | cmd-045b | done | WPF 9.26.6 and ms-sdr 3.176 in C:\mscc-net9. STOP matches the other FREQ CAL buttons. Abort drain uses opcode 0x1F: 1 = drain done, 2 = start refused. A second finish is sent only while the sweep is still stepping. Live radio smoke not run. Not pushed. |
 | cmd-045a | done | WPF 9.26.5 and ms-sdr 3.175 in C:\mscc-net9. FREQ CAL STOP uses CMD_SET_CAL_ABORT 0x1F. Late sweep replies are dropped so PPM is not written. Live radio smoke not run. Not pushed. |
 | cmd-045 | done | WPF 9.26.4 in C:\mscc-net9. VFO B stored in MSCC_LastUsed_VFOB.ini (VFOB_FREQ, VFOB_MODE, VFOB_BAND). Close during AUTO or CHECK restores mode and does not abort the cal. QRP, Full Power, and AMP share AmpOn. Radio-model button removed. DIG-U slider uses Tune power. ms-sdr unchanged at 3.174. Not pushed. |
