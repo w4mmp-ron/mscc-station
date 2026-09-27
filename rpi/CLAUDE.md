@@ -91,15 +91,19 @@ sdrcore-recv (2026-09-26):
     Cold start (no client): phones 10 ms first, ms-sdr sends digital mode ~6 s later ->
     VirtualA 40 ms. With WSJT-X: ERR 0 -> 6 over several decodes (was climbing every
     decode). **Ron OK with this (tested OK 2026-09-26).** Renice not needed.
-    Next test (either): `sudo renice -n -10 -p $(ps -L -o tid= -p $(pgrep -x sdrcore-recv))`
-    (Ron prefers raising sdrcore-recv) or `sudo renice 19 -p $(pgrep jt9)`. If it fixes it,
-    make sdrcore-recv raise its audio thread priority in code. Get pw-top QUANT/RATE.
-    Ron: commit only after it tests OK.
+    Committed 658ae76.
 
 ms-sdr (2026-09-26, cmd-044 port from Windows 93302b4):
 14. `calibrate.c`: `Report_Calibration` always sends the per-run count (Cal_Reset removed);
     failed freq cal restores the previous mode (was `ModeChanged('A')`). Same hunks as
-    Windows ms-sdr 3.174. Syntax-checked; not built/tested on the Pi yet.
+    Windows ms-sdr 3.174. Built on the Pi 2026-09-26 (see 15); done per Ron.
+15. cmd-045a/b FREQ CAL STOP port (2026-09-26): `CMD_SET_CAL_ABORT 0x1F` (`usbavrcmd.h`,
+    `main-controller.c` cal case list), `calibrate.c` = Windows 3.176 file (split auto/check
+    run state, abort + 35 s drain, start refused while draining, GUI 0x1F 1=done 2=refused),
+    `GetTickCount64` -> `Cal_Now_Ms()` (CLOCK_MONOTONIC). Pi CAL_RESET kept (`Create_PPM_ini`,
+    not Windows' `Factory_reseed_live_file`). sdrcore-recv unchanged. Syntax-checked in WSL;
+    Pi recv step wait ~30-33 s < 35 s drain. **Built on the Pi 2026-09-26 (with 14).
+    Ron: treat as done; he will test later.** Not committed yet.
 
 mscc-init-linux (2026-09-26):
 10. `main.c` `init_mscc`: rewrites only its own keys, keeps other `mscc.ini` lines, and adds
