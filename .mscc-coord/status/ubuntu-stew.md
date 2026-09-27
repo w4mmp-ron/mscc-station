@@ -13,7 +13,7 @@
 
 | command id | state | note |
 |------------|-------|------|
-| cmd-047a | done | Avalonia 0.6.66 follow-up. Disconnect+MAIN mid-AUTO stays MAIN mode. Smoke 3, 5, and corner re-run pass. tty0tty leftovers unstaged. No rpi. No pull, no push. |
+| cmd-047a | done | Avalonia 0.6.66 follow-up eb08e5e. Disconnect+MAIN mid-AUTO stays MAIN mode. Smoke 3, 5, and corner re-run pass. tty0tty leftovers unstaged. No rpi. No pull, no push. |
 | cmd-047 | done | Avalonia 0.6.63 local smoke pass. Launch uses mscc-desktop-ctl. Drain about 30s. Hi-cut recv High: 1000.000000. DKMS tty0tty/1.4 installed. CAT works. E deferred (local only). tty0tty leftovers unstaged. No rpi. No pull, no push. |
 | cmd-043 | done | mscc_1.0.47_amd64.deb; recv/trans 3.141; ms-sdr 3.171. Smoke 1 pass (servers running). 2-8 waiting on Stew. Commit 519c682. No pull, no push. CAT works after 1.0.47 install (see Notes). |
 | cmd-042 | folded | Ubuntu part rides in cmd-043 (no 1.0.45 amd64). |
@@ -24,7 +24,7 @@
 
 ### cmd-047a
 
-Deb: `installers/linux/mscc-ui_0.6.66_amd64.deb`. Client **0.6.66**.
+Deb: `installers/linux/mscc-ui_0.6.66_amd64.deb`. Client **0.6.66**. Commit **eb08e5e**.
 Launch resolve: `/usr/local/bin/mscc-desktop-ctl`.
 0.6.64 nits; 0.6.65 DIG-U overlay re-enter CW; 0.6.66 Disconnect keepOpen: MAIN mid-AUTO then Disconnect/Connect stays MAIN (not CW). Re-apply CW log only when CW is applied.
 Smoke 1-11 (0.6.65): pass.
