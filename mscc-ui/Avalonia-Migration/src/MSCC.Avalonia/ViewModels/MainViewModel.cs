@@ -179,7 +179,7 @@ public partial class MainViewModel : ViewModelBase, IDisposable
         ModeText = "";
         NotifyModeFlags();
         NotifyBandFlags();
-        AppendLog("MSCC Avalonia 0.6.65 — 10m button + band label fix, FREQ CAL VFO B / reconnect / deferred-restore fixes.");
+        AppendLog("MSCC Avalonia 0.6.66 — FREQ CAL Disconnect keeps MAIN mode when restore was deferred.");
         AppendLog("PTT = TX (voice modes); TUN = TUNE + carrier. S/W opens pan settings.");
         AppendLog($"Log: {LogFilePath}");
         CwPitchLabel = CwPitchOptions[Math.Clamp(CwPitchIndex, 0, CwPitchOptions.Count - 1)];
@@ -481,7 +481,7 @@ public partial class MainViewModel : ViewModelBase, IDisposable
     [ObservableProperty] private string _proficioTempText = "— °C";
     [ObservableProperty] private string _paTempText = "— °C";
     [ObservableProperty] private string _paCurrentText = "— mA";
-    [ObservableProperty] private string _clientVersionText = "0.6.65";
+    [ObservableProperty] private string _clientVersionText = "0.6.66";
     [ObservableProperty] private bool _alcOn = true;
     /// <summary>AMP / QRO path (PA bypass). Red when on (WPF).</summary>
     [ObservableProperty] private bool _ampOn;
@@ -1495,6 +1495,8 @@ public partial class MainViewModel : ViewModelBase, IDisposable
 
     internal async Task PrepareDisconnectAsync(bool closeWindow)
     {
+        // Before abort: abort clears _freqCalRestorePending, which would look like the tab is still open.
+        bool keepOpen = !closeWindow && _freqCalTabActive && !_freqCalRestorePending;
         if (FreqCalInProgress && _radio != null)
         {
             try { await _radio.AbortCalibrationAsync().ConfigureAwait(true); }
@@ -1510,7 +1512,7 @@ public partial class MainViewModel : ViewModelBase, IDisposable
             try
             {
                 using var cts = new CancellationTokenSource(TimeSpan.FromMilliseconds(300));
-                await LeaveFreqCalTab(sendToRadio: IsConnected, tabStillOpen: !closeWindow)
+                await LeaveFreqCalTab(sendToRadio: IsConnected, tabStillOpen: keepOpen)
                     .WaitAsync(cts.Token).ConfigureAwait(true);
             }
             catch { /* bounded */ }
@@ -5322,7 +5324,7 @@ public partial class MainViewModel : ViewModelBase, IDisposable
         OnPropertyChanged(nameof(FreqCalStatusBrush));
     }
 
-    public async Task EnterFreqCalTab()
+    public async Task<bool> EnterFreqCalTab()
     {
         if (_freqCalRestorePending)
         {
@@ -5333,10 +5335,10 @@ public partial class MainViewModel : ViewModelBase, IDisposable
         if (!IsConnected || string.IsNullOrWhiteSpace(ActiveModeString))
         {
             AppendLog("Freq Cal ENTER: idle / mode unknown — hold later");
-            return;
+            return false;
         }
         if (_freqCalHoldingCw)
-            return;
+            return false;
 
         _freqCalModeSaved = UseVfoA ? (ModeText ?? "") : (VfoBModeText ?? "");
         _freqCalFilterSaved = _cwFilterIndex;
@@ -5354,6 +5356,7 @@ public partial class MainViewModel : ViewModelBase, IDisposable
             _suppressLastUsedSave = false;
         }
         AppendLog($"Freq Cal ENTER: mode {_freqCalModeSaved} → CW, filter/pitch saved");
+        return true;
     }
 
     public void DeferFreqCalRestore() => _freqCalRestorePending = true;
@@ -5365,8 +5368,14 @@ public partial class MainViewModel : ViewModelBase, IDisposable
     {
         if (!_freqCalTabActive || _freqCalHoldingCw || !IsConnected)
             return;
-        AppendLog("Freq Cal: Start with tab open, re-applied CW/600/200");
-        _ = EnterFreqCalTab();
+        _ = ReenterFreqCalTabAfterConnectAsync();
+    }
+
+    private async Task ReenterFreqCalTabAfterConnectAsync()
+    {
+        bool applied = await EnterFreqCalTab().ConfigureAwait(true);
+        if (applied)
+            AppendLog("Freq Cal: Start with tab open, re-applied CW/600/200");
     }
 
     public async Task LeaveFreqCalTab(bool sendToRadio = true, bool tabStillOpen = false)

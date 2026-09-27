@@ -13,7 +13,7 @@
 
 | command id | state | note |
 |------------|-------|------|
-| cmd-047a | done | Avalonia 0.6.65 (0.6.64 + FREQ CAL reconnect after DIG-U overlay). Local smoke 1-11 pass. Drain n/a this cmd. Launch mscc-desktop-ctl. tty0tty leftovers unstaged. No rpi. No pull, no push. |
+| cmd-047a | done | Avalonia 0.6.66 follow-up. Disconnect+MAIN mid-AUTO stays MAIN mode. Smoke 3, 5, and corner re-run pass. tty0tty leftovers unstaged. No rpi. No pull, no push. |
 | cmd-047 | done | Avalonia 0.6.63 local smoke pass. Launch uses mscc-desktop-ctl. Drain about 30s. Hi-cut recv High: 1000.000000. DKMS tty0tty/1.4 installed. CAT works. E deferred (local only). tty0tty leftovers unstaged. No rpi. No pull, no push. |
 | cmd-043 | done | mscc_1.0.47_amd64.deb; recv/trans 3.141; ms-sdr 3.171. Smoke 1 pass (servers running). 2-8 waiting on Stew. Commit 519c682. No pull, no push. CAT works after 1.0.47 install (see Notes). |
 | cmd-042 | folded | Ubuntu part rides in cmd-043 (no 1.0.45 amd64). |
@@ -24,10 +24,11 @@
 
 ### cmd-047a
 
-Deb: `installers/linux/mscc-ui_0.6.65_amd64.deb`. Client **0.6.65**.
-0.6.64 had 10m width, Band label gone, FREQ CAL VFO B / deferred-restore / idle text. Smoke 3 failed: DIG-U overlay skipped re-apply CW. 0.6.65 re-enters FREQ CAL after overlay.
+Deb: `installers/linux/mscc-ui_0.6.66_amd64.deb`. Client **0.6.66**.
 Launch resolve: `/usr/local/bin/mscc-desktop-ctl`.
-Smoke 1-11 local pass: 10m width, USER label gone, reconnect CW, VFO B A stays LSB, deferred restore, no false STOPPED, idle text, no server-alive when not ours, VFO B saved not CW, NR/MANUAL tips, close-X stop.
+0.6.64 nits; 0.6.65 DIG-U overlay re-enter CW; 0.6.66 Disconnect keepOpen: MAIN mid-AUTO then Disconnect/Connect stays MAIN (not CW). Re-apply CW log only when CW is applied.
+Smoke 1-11 (0.6.65): pass.
+Re-run on 0.6.66: step 3 pass, step 5 pass, corner (FREQ CAL AUTO, MAIN mid-run, Disconnect, Connect: MAIN mode, not CW) pass.
 Smoke 9 note: VFO A can show 0.000000 after X+Connect until the radio reports (cmd-027 idle). Not a 047a fail.
 E: not this command (local only).
 
