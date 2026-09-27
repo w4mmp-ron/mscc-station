@@ -117,11 +117,18 @@ mscc-init-linux (2026-09-26):
     old `~/mscc/mscc-volume-gui`. Build with `build-deb.sh` in WSL from an LF copy (repo
     files are CRLF); the `.ps1` builder is stale. `mscc.sh` skips volume restore if absent.
 
+## mscc 1.0.46 (2026-09-26)
+
+Built in WSL from an LF copy of mscc-deb + mscc-binaries (Pi ELFs). Contents: ms-sdr (cal
+STOP + cmd-044), sdrcore-recv (#13 40 ms digi), sdrcore-trans 09-25, mscc-init OLD
+(09-16, no SWR keep fix; Ron: CLI not used, nothing runs it; source kept). postinst hint
+now says run `mscc-init-gui`. Copied to installers/rpi (1.0.45 removed). Not installed yet.
+
 ## On hold (Ron, 2026-09-26): cmd-042 (from pull f9efa00, 2026-09-25)
 
 Windows `mscc-recv` 3.141 added 0xD1 CMD_SET_BW_HICUT index 5 = 1400 Hz, 6 = 1000 Hz
 (DIG-U Hi, WPF cmd-041). Pi to match in `SDRcore-recv-linux/sources/udp_thread.c`
-(hi-cut switch ~line 1547) + version bump -> `mscc_1.0.46_arm64.deb` (1.0.45 used 2026-09-26 for the recv/trans fixes). Brief:
+(hi-cut switch ~line 1547) + version bump -> `mscc_1.0.47_arm64.deb` (1.0.46 used 2026-09-26). Brief:
 `.mscc-coord/briefs/cmd-042.md`. Order: after ubuntu-stew is done and Stew pushes.
 Reviewed: 0-4 unchanged, low-cut max 500 < 1000, ms-sdr passes index through. Not done yet.
 

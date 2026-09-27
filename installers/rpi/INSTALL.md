@@ -21,4 +21,4 @@ Then: log out/in → **MSCC Init** → **MSCC Start** → UI at `127.0.0.1:8888`
 
 Firmware: BOOT jumper → Morse LOADER → **Firmware Upload**.
 
-Full how-to: [`../../rpi/pi-install/INSTALL.md`](../../rpi/pi-install/INSTALL.md).
+Full how-to: [`../../rpi/mscc-deb/INSTALL-FOR-PI.md`](../../rpi/mscc-deb/INSTALL-FOR-PI.md).
