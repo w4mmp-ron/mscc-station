@@ -12,6 +12,8 @@ On start: `git pull`, then read [`handoff.md`](handoff.md). If `.mscc-coord/COMM
 
 ## Current work
 
+**Active - cmd-043 (ubuntu-stew): Ubuntu mscc 1.0.47 amd64.** Port Ron's Pi fixes from `rpi/` into `linux/` (recv/trans ring + 40 ms digi latency, panadapter, IQ_BAND bounds, remote_mic, power-cal slot, local digital gain, ms-sdr FREQ CAL STOP), plus cmd-042 hi-cut 1.4k/1.0k and cmd-046 (USB/LSB/DIG-U use SSB power; TUNE power is TUNE only). recv/trans 3.141. Replaces the ubuntu-stew part of cmd-042 (no 1.0.45 amd64). Copy FROM `rpi/`, never write to it. Commit locally; do not push or pull. Note: Ron's Claude edits `rpi/` and pushes straight to main. See `.mscc-coord/briefs/cmd-043.md`.
+
 **Active - cmd-039 (rpi):** `remote_mic` diagnostic-only finer EVENT logging (under/hold-last, overflow/drop, adaptive step, low occupancy, optional UDP gap); keep periodic summary; milliseconds in the body; tag `remote_mic EVENT`. **Do not** implement cmd-034 fill. See `.mscc-coord/COMMANDS.yaml` + `briefs/cmd-039.md`.
 
 **On hold:** cmd-034 clear-on-TX + fixed 2:1 fill.

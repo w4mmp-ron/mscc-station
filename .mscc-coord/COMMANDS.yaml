@@ -215,6 +215,65 @@ commands:
 
       Commit hint: cmd-044: WPF tooltips + Host/Port on Start + FREQ CAL CW/progress/colors; ms-sdr cal progress + fail mode
       Brief: .mscc-coord/briefs/cmd-044.md
+  - id: cmd-043
+    created: "2026-09-27T10:50:00-04:00"
+    target: [ubuntu-stew]
+    role: server
+    action: linux-port-ron-pi-fixes-mscc-1047-amd64
+    status_hint: open
+    detail: |
+      Host: ubuntu-stew (stew-HP-Notebook).
+      Checkout: /home/stew/Documents/GitHub/mscc-station
+      Orders written on this host at d49f939 (Ron's latest). Call the user Stew.
+      Commit locally when done. Do NOT git push and do NOT git pull (Stew syncs).
+      Edit linux/ only; rpi/ is read-only here (copy FROM it, never write to it).
+      Ubuntu 1.0.47 = cmd-042 linux part + cmd-043 + cmd-046 linux part.
+      Replaces the ubuntu-stew part of cmd-042 (no 1.0.45 amd64 kit).
+
+      ## Findings (rpi vs linux at d49f939, checked on this host)
+      Every differing file is only Ron's change plus a few linux comments.
+      No GPIO, Pi device path or arm64 code. Overlay syntax-checks clean (gcc).
+      Must NOT copy: ms-sdr version.h (linux 3.169, rpi 3.167), user_controls.c
+      (comments only), rpi docs (CLAUDE.md, STEW-REMOTE-MIC-FILL.md), rpi binaries/core.
+      Intentional linux behaviour removed: driver.c digital->TUNE_POWER (= cmd-046);
+      dsputils.c local digital line-level 2.5 (now 6.324/3.162, about +8 dB, Stew approved).
+
+      ## Scope
+      1. Copy whole from rpi/ to linux/: recv main.c (ring + 658ae76
+         DIGI_PLAY_LATENCY 0.040), panadapter.c, udp_thread.c; trans main.c,
+         udp_thread.c, remote_mic.c, remote_mic.h, driver.c (cmd-046), dsputils.c;
+         ms-sdr source/calibrate.c (cc2fbad FREQ CAL STOP + cmd-044).
+      2. By hand: usbavrcmd.h CMD_SET_CAL_ABORT 0x1F; main-controller.c
+         case CMD_SET_CAL_ABORT in the freq-cal case list (~:2219).
+      3. cmd-042 hi-cut in linux recv udp_thread.c CMD_SET_BW_HICUT (~:1547 after
+         the copy): case 5 = 1400.0f, case 6 = 1000.0f (+ previous_high_cut).
+      4. calibrate.c abort, 'nothing owed' branch: if cal_abort_pending is already
+         set, log 'drain still pending' and do NOT call Cal_Abort_Drain_Done
+         (a second abort during the drain must not end protection). Linux only;
+         Overseer tells Ron for rpi.
+      5. Versions: recv + trans extern.h VERSION_MINOR 140 -> 141; ms-sdr auto
+         bump (expect 3.170); linux/mscc-deb/packaging/DEBIAN/control 1.0.47.
+
+      ## Build / install
+      mscc stop; ./linux-build/mscc-linux.sh build; ./linux-build/build-mscc-deb-amd64.sh
+      (-> mscc_1.0.47_amd64.deb, drop-installers.sh linux); installers/linux/install-mscc.sh
+      ./mscc_1.0.47_amd64.deb; mscc start. Never copy x86 binaries into rpi/mscc-binaries/.
+
+      ## Smoke (Win WPF 9.27.0 client in Remote to Ubuntu; plain commands for Stew)
+      Servers start (mscc status); client connects; RX audio to WSJT-X no clicks
+      (play_latency >= 40 ms in recv log); DIG-U uses SSB power, TUNE uses Tune power,
+      neither changes the other; FREQ CAL STOP shows 'STOPPED — wait…' then STOPPED;
+      DIG-U Hi 1.4k/1.0k narrow (recv log High: 1400/1000); remote digital TX clean
+      (remote_mic EVENT lines). Logs: ~/.local/mscc/*.log.
+      ACK in .mscc-coord/status/ubuntu-stew.md (no bare pipe in cells).
+
+      ## Out of scope
+      rpi/ (any edit), Pi 1.0.47 kit (with Ron), Windows, WPF, Avalonia, mscc-init,
+      firmware, CAT, cmd-034. Windows SDRcore-recv has the same panadapter and
+      IQ_BAND bugs: note only.
+
+      Commit hint: cmd-043: mscc 1.0.47 amd64 (Ron Pi fixes, cmd-042 hicut, cmd-046 SSB power; recv/trans 3.141)
+      Brief: .mscc-coord/briefs/cmd-043.md
   - id: cmd-042
     created: "2026-09-25T16:20:00-04:00"
     target: [windows-new-hp, ubuntu-stew, rpi]

@@ -13,7 +13,8 @@
 
 | command id | state | note |
 |------------|-------|------|
-| cmd-042 | pending | SDRcore-recv 0xD1 case 5=1400 / 6=1000 (recv 3.141) -> mscc_1.0.45_amd64.deb. Start after NEW-HP is done and Stew pushes (git pull first). Orders on NEW-HP. |
+| cmd-043 | pending | Ubuntu mscc_1.0.47_amd64.deb: Ron Pi fixes copied rpi/ -> linux/, cmd-042 hi-cut, cmd-046 SSB power, ms-sdr FREQ CAL STOP. recv/trans 3.141. Orders on this host (briefs/cmd-043.md). No pull, no push. |
+| cmd-042 | folded | Ubuntu part rides in cmd-043 (no 1.0.45 amd64). |
 | cmd-040 | done | Avalonia 0.6.60 remote-audio parity; amd64 + arm64 kits |
 | cmd-032 | done | mscc_1.0.44_amd64.deb with remote_mic stream reset |
 | cmd-028 | done | Avalonia 0.6.59 FW band gate |
