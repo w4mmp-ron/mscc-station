@@ -255,14 +255,22 @@ public partial class MainViewModel : ObservableObject, IDisposable
         Fm
     }
 
-    [ObservableProperty]
-    private bool _fullPower;
+    /// <summary>Same as AMP on. Clicking it sets AmpOn; clicking it again does nothing.</summary>
+    public bool FullPower
+    {
+        get => AmpOn;
+        set { if (AmpOn != value) AmpOn = value; }
+    }
 
     [ObservableProperty]
     private bool _alcOn = true;
 
-    [ObservableProperty]
-    private bool _qrpMode;
+    /// <summary>Same as AMP off. Clicking it clears AmpOn; clicking it again does nothing.</summary>
+    public bool QrpMode
+    {
+        get => !AmpOn;
+        set { if (AmpOn == value) AmpOn = !value; }
+    }
 
     [ObservableProperty]
     private bool _autoTune;
@@ -778,6 +786,7 @@ public partial class MainViewModel : ObservableObject, IDisposable
         if (RemoteAudio)
             return;
         PushAudioToRadio(value ? "path→D" : "path→P");
+        NotifyMainOperatePower();
     }
 
     partial void OnRemoteDigitalAudioChanged(bool value)
@@ -787,6 +796,7 @@ public partial class MainViewModel : ObservableObject, IDisposable
         ApplyRemoteAfDevicesAndRestart(value ? "R-path→D" : "R-path→P");
         if (value) StartRemoteCat(); else StopRemoteCat();
         _remoteAfWindow?.RefreshPath();
+        NotifyMainOperatePower();
         OnPropertyChanged(nameof(AudioDeviceButtonText));
     }
 
@@ -813,6 +823,7 @@ public partial class MainViewModel : ObservableObject, IDisposable
             PushAudioToRadio("Remote OFF");
             StopRemoteAf(closeWindow: true);
         }
+        NotifyMainOperatePower();
     }
 
     partial void OnRemoteMonitorAtRadioChanged(bool value)
@@ -1261,11 +1272,15 @@ public partial class MainViewModel : ObservableObject, IDisposable
         OnPropertyChanged(nameof(IsPowerCalTabEnabled));
         OnPropertyChanged(nameof(IsAmpCalTabEnabled));
         OnPropertyChanged(nameof(IsTxIqTabEnabled));
+        OnPropertyChanged(nameof(QrpMode));
+        OnPropertyChanged(nameof(FullPower));
         // If AMP turns on while TX IQ was active, force leave path is handled by tab IsEnabled;
         // also stop TX IQ carrier if user somehow still on tab.
         if (value && _txIqTabActive)
             ForceStopTxIqSession("AMP on — TX IQ requires QRP");
-        MonitorTextBoxText($" AmpOn set: {value}{( _suppressAmpCommand ? " (from server)" : "")}");
+        MonitorTextBoxText(
+            $" PA path: AMP/Full Power={(value ? "on" : "off")} (QRP={(value ? "off" : "on")})" +
+            (_suppressAmpCommand ? " (from server)" : ""));
     }
 
     /// <summary>
@@ -1788,12 +1803,18 @@ public partial class MainViewModel : ObservableObject, IDisposable
         if (TuneMode || RadioState.ActiveVfo.Mode == RadioMode.TUNE)
             return OperatePowerBank.Tune;
 
-        return RadioState.ActiveVfo.Mode switch
+        var mode = RadioState.ActiveVfo.Mode;
+        // DIG-U is USB with digital audio. The transmitter uses the Tune power bank for that path.
+        if (mode == RadioMode.DigU ||
+            (mode is RadioMode.USB or RadioMode.LSB && (IsDigitalAudio || RemoteDigitalAudio)))
+            return OperatePowerBank.Tune;
+
+        return mode switch
         {
             RadioMode.CW => OperatePowerBank.Cw,
             RadioMode.AM => OperatePowerBank.Am,
             RadioMode.FM => OperatePowerBank.Fm,
-            _ => OperatePowerBank.Ssb // USB, LSB, DigU
+            _ => OperatePowerBank.Ssb
         };
     }
 
@@ -1863,14 +1884,14 @@ public partial class MainViewModel : ObservableObject, IDisposable
         SelectVfoBCommand = new RelayCommand(() => SelectVfo(useVfoB: true));
         TuneToFrequencyCommand = new RelayCommand<long>(f => TuneToFrequency(f));
 
-        ToggleQrpCommand = new RelayCommand(() => QrpMode = !QrpMode);
+        ToggleQrpCommand = new RelayCommand(() => { if (AmpOn) AmpOn = false; });
         ToggleAutoTuneCommand = new RelayCommand(() => AutoTune = !AutoTune);
         ToggleAlcCommand = new RelayCommand(() => AlcOn = !AlcOn);
         ToggleNbCommand = new RelayCommand(() => NbOn = !NbOn);
         ToggleNrCommand = new RelayCommand(() => NrOn = !NrOn);
         // Match legacy Freqbutton3: send 0x8E payload 1 when turning ON, 0 when OFF
         ToggleAnCommand = new RelayCommand(ToggleAn);
-        ToggleFullPowerCommand = new RelayCommand(() => FullPower = !FullPower);
+        ToggleFullPowerCommand = new RelayCommand(() => { if (!AmpOn) AmpOn = true; });
 
         // init main tab filter/step buttons to first preset
         LowCutIndex = 4;   // 75Hz
@@ -1928,10 +1949,10 @@ public partial class MainViewModel : ObservableObject, IDisposable
         catch { /* best-effort */ }
 
         // Idle: freq 0 / no band. Do not seed 40m — that poisoned last-used before Start.
+        // VFO B's last frequency and mode are restored into the inactive VFO only (not sent).
         _bandForVfoA = GetBandNameForFrequency(RadioState.VfoA.FrequencyHz);
-        _bandForVfoB = GetBandNameForFrequency(RadioState.VfoB.FrequencyHz);
         if (_bandForVfoA == "?") _bandForVfoA = "";
-        if (_bandForVfoB == "?") _bandForVfoB = "";
+        RestoreInactiveVfoB();
 
         RadioState.PropertyChanged += (s, e) =>
         {
@@ -4308,6 +4329,8 @@ public partial class MainViewModel : ObservableObject, IDisposable
         StoreBandForActiveVfo(RadioState.CurrentBand);
 
         string leaving = UseVfoBLastUsedFile ? "B" : "A";
+        if (leaving == "B")
+            SaveCurrentVfoBRecord();
         RadioState.ToggleActiveVfo();
         // ActiveVfo PropertyChanged → ApplyActiveVfoToRadioAsync:
         //   1) CMD_SET_VFO 0xF2 (0=A / 1=B)  2) frequency  3) mode
@@ -4740,7 +4763,6 @@ public partial class MainViewModel : ObservableObject, IDisposable
         MonitorTextBoxText($" FM power % set: {value}");
         NotifyMainOperatePower();
     }
-    partial void OnFullPowerChanged(bool value) { _ = _radioService.SetFullPowerAsync(value); MonitorTextBoxText($" FullPower set: {value}"); }
     partial void OnAlcOnChanged(bool value) { _ = _radioService.SetAlcOnAsync(value); MonitorTextBoxText($" AlcOn set: {value}"); }
     partial void OnAutoTuneChanged(bool value)
     {
@@ -4748,7 +4770,6 @@ public partial class MainViewModel : ObservableObject, IDisposable
         MonitorTextBoxText($" AutoTune set: {value}");
         UpdateShowExternalSwrFace();
     }
-    partial void OnQrpModeChanged(bool value) { _ = _radioService.SetQrpModeAsync(value); MonitorTextBoxText($" QrpMode set: {value}"); }
     partial void OnTxBandwidthIndexChanged(int value)
     {
         // No caution dialog: one-button cycle must pass through wide TX BW options freely.
@@ -5642,6 +5663,43 @@ public partial class MainViewModel : ObservableObject, IDisposable
         bool forVfoB = UseVfoBLastUsedFile;
         SpectrumWaterfallSettings.SaveLastUsedForBand(band, f, m, l, h, c, forVfoB);
         MonitorTextBoxText($" SaveLastUsed: {(forVfoB ? "VFOB" : "VFOA")} band={band} f={f}");
+        if (forVfoB)
+            SaveCurrentVfoBRecord();
+    }
+
+    /// <summary>Write VFO B's current frequency, mode, and band. Does not send to the radio.</summary>
+    public void SaveCurrentVfoBRecord()
+    {
+        if (SuppressLastUsedSave) return;
+        var b = RadioState.VfoB;
+        if (b.FrequencyHz <= 0) return;
+        string band = _bandForVfoB;
+        if (string.IsNullOrWhiteSpace(band) || band == "?")
+            band = GetBandNameForFrequency(b.FrequencyHz);
+        string mode = FormatModeDisplay(b.Mode);
+        if (string.IsNullOrEmpty(mode)) mode = "USB";
+        SpectrumWaterfallSettings.SaveCurrentVfoB(b.FrequencyHz, mode, band);
+        MonitorTextBoxText($" VFO B saved: f={b.FrequencyHz} mode={mode} band={band}");
+    }
+
+    /// <summary>Load the last VFO B into the inactive VFO. VFO A stays active and nothing is sent.</summary>
+    private void RestoreInactiveVfoB()
+    {
+        var (f, modeName, band) = SpectrumWaterfallSettings.LoadCurrentVfoB();
+        if (f <= 0)
+        {
+            _bandForVfoB = "";
+            return;
+        }
+        RadioState.VfoB.FrequencyHz = f;
+        if (!string.IsNullOrWhiteSpace(modeName))
+            RadioState.VfoB.Mode = ParseMode(modeName);
+        string useBand = (band ?? "").Trim();
+        if (string.IsNullOrEmpty(useBand) || useBand == "?")
+            useBand = GetBandNameForFrequency(f);
+        _bandForVfoB = useBand == "?" ? "" : useBand;
+        MonitorTextBoxText(
+            $" VFO B restored: f={f} mode={FormatModeDisplay(RadioState.VfoB.Mode)} band={_bandForVfoB}");
     }
 
     public void LoadLastUsedForBand(string band, long defaultFreq)
@@ -6388,8 +6446,20 @@ public partial class MainViewModel : ObservableObject, IDisposable
             d.BeginInvoke(a);
     }
 
+    /// <summary>
+    /// Restore the pre-FREQ-CAL mode before the client stops. A running AUTO/CHECK is not
+    /// aborted; Stop tears the servers down. The mode sends get a short wait so they leave first.
+    /// </summary>
+    public void LeaveFreqCalForShutdown()
+    {
+        if (!_freqCalEntryHeld) return;
+        LeaveFreqCalTab();
+        System.Threading.Thread.Sleep(250);
+    }
+
     public void Dispose()
     {
+        try { LeaveFreqCalForShutdown(); } catch { /* ignore */ }
         StopClockTimer();
         if (_alcIdleTimer != null)
         {

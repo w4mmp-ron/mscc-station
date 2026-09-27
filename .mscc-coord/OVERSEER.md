@@ -5,6 +5,7 @@
 
 ## Status
 
+- **Active - cmd-045 (NEW-HP WPF):** Stew round-2 fixes: VFO B saved/restored across restart; FREQ CAL Stop clears the running notice (AUTO/CHECK only), Start with tab open re-applies CW/600/200, closing on the tab restores mode/filter/pitch; CHECK FAILED / after-RESET warning text; "MANUAL steps" label; QRP / Full Power / AMP synced from AmpOn (no rename, pending Ron); Proficio/Geminus button removed (FW gating stays); A8 tooltip + DIG-U slider uses Tune power. See `briefs/cmd-045.md`.
 - **Active - cmd-044 (NEW-HP WPF + Windows ms-sdr):** Stew-approved fix list: WPF tooltip/text fixes (A/B/C) + remove dev-notes lines (QRP CAL/AMP CAL/TX IQ); Host/Port change applies on next Start (UdpRadioService.SetRemoteEndpoint); FREQ CAL readable colors, local progress count, CHECK sends LOOSE, tab entry -> CW/600/200 and restore on leave; ms-sdr-MKII calibrate.c progress counter reset + failed cal restores previous mode (not AM). Avalonia + Linux/Pi ms-sdr ride with cmd-043 (reserved, Ron's Linux port). See `briefs/cmd-044.md`.
 - **Active - cmd-041 + cmd-042 (DIG-U narrow Hi 1.4k/1.0k; Stew chose A):** cmd-041 WPF adds Hi idx 5=1.4k / 6=1.0k in DIG-U (+ 0xDD default-echo guard). cmd-042 SDRcore-recv 0xD1 cases 5/6 (recv 3.141). Order: NEW-HP (041 + 042 Windows mscc-recv.exe) -> Stew push -> ubuntu-stew mscc 1.0.45 amd64 -> Stew push -> rpi mscc 1.0.45 arm64. ms-sdr: no clamp, no edit. See `briefs/cmd-041.md` + `briefs/cmd-042.md`.
 - **Active - cmd-040 (Avalonia, ubuntu-stew then rpi):** remote-audio parity 0.6.60 — independent RemoteDigitalAudio / PathPhones|PathDigital; Remote Digital mic slider (REMOTE_DIGI_MIC_VOL default 100); main Phones/Digital disabled while Remote (stricter than WPF); 0xBC ownership only (no PttOn/TuneMode from TxSetByServer). Orders on NEW-HP. See `COMMANDS.yaml` + `briefs/cmd-040.md`.
@@ -14,6 +15,7 @@
 
 ## Short list
 
+- **cmd-045 NEW-HP** (WPF 9.26.4), commit locally, Stew pushes
 - **cmd-044 NEW-HP** (WPF 9.26.x + ms-sdr-MKII), commit locally, Stew pushes
 - **cmd-041 + cmd-042 NEW-HP first** (WPF + Windows recv), then Ubuntu 1.0.45, then Pi 1.0.45
 - **cmd-040 Avalonia next** (ubuntu-stew amd64 smoke, then rpi arm64 kit)

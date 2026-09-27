@@ -1,4 +1,162 @@
 commands:
+  - id: cmd-045b
+    created: "2026-09-26T18:25:00-04:00"
+    target: [windows-new-hp]
+    role: client+server
+    action: wpf-freqcal-stop-color-mssdr-abort-drain
+    status_hint: open
+    detail: |
+      Host: windows-new-hp (NEW-HP-LAPTOP).
+      Checkout: C:\Users\n8vet\OneDrive\Documents\GitHub\mscc-station
+      Follow-up to cmd-045a (5588f71, WPF 9.26.5, ms-sdr 3.175).
+      Call the user Stew. Commit on NEW-HP when done. Do NOT git push (Stew pushes). Do not pull.
+
+      ## Findings
+      STOP (MainWindow.xaml :1891-1905) has Foreground="#FFC000" plus a local
+      MsccGoldButtonStyle-based style; LOOSE/AUTO/MANUAL/CHECK/RESET (:1886-1890) have
+      no Style and no Foreground (default WPF Button). After STOP, recv can still finish
+      the aborted step (up to 30 s); cal_abort_pending is cleared at the next start
+      (calibrate.c :680/:701), so late replies can land in a new run and reach
+      Calibrate_Si5351_Set_PPM (:751). The abort (:715-737) also sends recv a second
+      CMD_SET_CALIBRATION_FINISHED when the last step already sent one (state
+      COMPLETE), and the second reply is processed as a real (AUTO-branch) result.
+
+      ## Scope
+      1. Version: client 9.26.5 -> 9.26.6 (auto); ms-sdr 3.175 -> 3.176 (auto).
+      2. WPF STOP colour: delete Foreground="#FFC000" and the local Button.Style so STOP
+         looks exactly like the other five FREQ CAL buttons, enabled and disabled, in
+         any colour scheme. Do not restyle the other five.
+      3. ms-sdr abort drain: after an abort exactly one CMD_SET_CALIBRATION_DATA is owed.
+         Drain stays open until it arrives or 35 s (GetTickCount64). While open: drop
+         late DATA_PROCESSED/CALIBRATION_DATA and refuse CMD_START_CALIBRATE and
+         CMD_SET_FREQ_CAL_CHECK=1. Remove the flag clears at :680/:701. Server -> GUI
+         0x1F CMD_SET_CAL_ABORT value 1 = drain done, 2 = start refused (verify it
+         passes through; else pick a free byte). Nothing owed = drain done at once.
+      4. Core: UdpRadioService receive case 0x1F -> event CalAbortStateReported
+         (IRadioService too; stubs compile).
+      5. WPF drain: after STOP, AUTO/CHECK grey, status "STOPPED — wait…"; re-enable
+         and "STOPPED" on value 1, on a 36 s client timer (35 s + 1 s margin) or on main
+         Stop. Value 2 undoes a client start and re-enters the wait. SetFreqCalControlsEnabled
+         keeps AUTO/CHECK off while the drain is pending.
+      6. Risk B: in the abort, send recv CMD_SET_CALIBRATION_FINISHED only if a state is
+         CALIBRATION_RUNNING; open the drain if RUNNING or COMPLETE. Read states before
+         Reset_Calibration_Run_State.
+      7. Cosmetic: move the "Stop ends a FREQ CAL run" summary (xaml.cs :1866) to
+         ResetFreqCalSessionOnStop (:1896).
+
+      ## Out of scope
+      Avalonia, linux/rpi/Solidus, SDRcore-recv/trans, mscc-init, firmware, CAT.
+
+      ## Build / smoke
+      Build ms-sdr-MKII.sln (Release exe -> C:\mscc-net9) and MSCC.Wpf Release
+      (auto-copies to C:\mscc-net9). Smoke: STOP colour matches the other buttons in
+      default and a changed colour scheme; STOP then AUTO/CHECK grey with wait text,
+      then re-enabled; STOP near the end of CHECK gives no FAIL. ACK in
+      .mscc-coord/status/windows-new-hp.md (no bare pipe in cells).
+
+      Commit hint: cmd-045b: FREQ CAL STOP colour + abort drain + no double finish
+      Brief: .mscc-coord/briefs/cmd-045b.md
+  - id: cmd-045a
+    created: "2026-09-26T18:20:00-04:00"
+    target: [windows-new-hp]
+    role: client+server
+    action: wpf-freqcal-stop-button-mssdr-cal-abort
+    status_hint: open
+    detail: |
+      Host: windows-new-hp (NEW-HP-LAPTOP).
+      Checkout: C:\Users\n8vet\OneDrive\Documents\GitHub\mscc-station
+      Follow-up to cmd-045 (2227a67, WPF 9.26.4). Stew: "there is no STOP for FREQ CAL".
+      Call the user Stew. Commit on NEW-HP when done. Do NOT git push (Stew pushes). Do not pull.
+
+      ## Findings
+      FREQ CAL tab has LOOSE/AUTO/MANUAL/CHECK/RESET only (MainWindow.xaml :1885-1891).
+      cmd-045 3b "Stop" was the main Start/Stop (StartStop_Click :766 ->
+      ResetFreqCalSessionOnStop :1860); no Stop on the tab. AUTO/CHECK run server-side
+      (ms-sdr calibrate.c steps + SDRcore-recv measures); client only sends start
+      opcodes and listens (0x62/0x6A/0x6B). No abort opcode exists. PPM is written only
+      at the end (Calibrate_Si5351_Set_PPM :323); a stopped run changes nothing.
+
+      ## Scope
+      1. Version: client 9.26.4 -> 9.26.5 (auto); ms-sdr 3.174 -> 3.175 (auto).
+      2. ms-sdr-MKII: new CMD_SET_CAL_ABORT (0x1F if free, verify). Routed via the
+         main-controller.c freq-cal case list. Resets AUTO and CHECK run state (both
+         static sets), restores previous mode/freq/temperature like
+         Calibrate_Si5351_Failed but no PPM change, sends recv CMD_SET_CALIBRATION_FINISHED
+         to flush its step counter, drops late DATA_PROCESSED/CALIBRATION_DATA while
+         abort-pending. No GUI message.
+      3. Core: Opcodes + IRadioService/UdpRadioService AbortCalibrationAsync.
+      4. WPF: separate STOP button after RESET on the FREQ CAL tab (not a toggling
+         Start: runs start from two buttons, AUTO and CHECK). Enabled only while
+         AUTO/CHECK runs (one helper sets _freqCalInProgress + STOP enabled). Click:
+         send abort, then item-2 Stop: controls on, amber hint cleared, progress 0,
+         status STOPPED; QRP CAL/AMP CAL/TX IQ usable again; tab stays CW/600/200,
+         leaving restores mode. Main Stop and Close also send the abort if a run is active.
+
+      ## Out of scope
+      Avalonia, linux/rpi/Solidus, SDRcore-recv/trans, mscc-init, firmware, CAT.
+
+      ## Build / smoke
+      Build ms-sdr-MKII.sln (Release exe -> C:\mscc-net9) and MSCC.Wpf Release
+      (auto-copies to C:\mscc-net9). Smoke: STOP during AUTO (STOPPED, no correction);
+      STOP during CHECK (other cal tabs open, CHECK reruns); leave tab after STOP
+      restores USB. ACK in .mscc-coord/status/windows-new-hp.md (no bare pipe in cells).
+
+      Commit hint: cmd-045a: FREQ CAL STOP button + ms-sdr CMD_SET_CAL_ABORT
+      Brief: .mscc-coord/briefs/cmd-045a.md
+  - id: cmd-045
+    created: "2026-09-26T17:50:00-04:00"
+    target: [windows-new-hp]
+    role: client
+    action: wpf-vfob-restore-freqcal-stop-close-msgs-pa-sync-remove-model-button
+    status_hint: open
+    detail: |
+      Host: windows-new-hp (NEW-HP-LAPTOP).
+      Checkout: C:\Users\n8vet\OneDrive\Documents\GitHub\mscc-station
+      Orders on this host. Stew's round-2 manual answers + tooltip-fixes F1/G1/G3/E (2026-09-26).
+      Call the user Stew. Commit on NEW-HP when done. Do NOT git push (Stew pushes). Do not pull.
+      Local main is ahead of origin with cmd-044 (86a0f56, d7a6480); that is expected.
+
+      ## Scope (WPF client; ms-sdr-MKII only if needed - none expected)
+      1. Version: auto-bump on build (9.26.3 -> expect 9.26.4).
+      2. F1 VFO B freq+mode lost on restart: nothing loads VfoB at startup
+         (MainViewModel.cs :1932; MSCC_LastUsed_VFOB.ini is per-band only, written
+         while B active :5620-5645). Persist VFOB_FREQ/MODE/BAND, restore into
+         RadioState.VfoB at startup without selecting/sending; A stays active.
+      3. FREQ CAL (MainWindow.xaml.cs): amber running hint only for AUTO/CHECK
+         (drop MANUAL show :1490); Stop (StartStop_Click :762-778) resets the cal
+         session (in-progress/manual flags, controls, hint, STOPPED); Start with the
+         tab open re-applies CW/600/200 (EnterFreqCalTab); Closing (:1091) and
+         VM Dispose (MainViewModel.cs :6391) restore mode/filter/pitch first.
+         ACK-table pipe row (status/windows-new-hp.md cmd-044) fixed in these orders.
+      4. FREQ CAL text: CHECK FAILED -> "Error may be more than 50 Hz. Run AUTO (COARSE)."
+         (:1902); after RESET, CHECK warns "Calibration was reset. Run AUTO first."
+         (OK/Cancel, not a lockout); "PPM:" label -> "MANUAL steps:" (MainWindow.xaml :1903).
+      5. G1: QRP / Full Power / AMP all send CMD_SET_PA_BYPASS 0xF7. One source of truth
+         = AmpOn (:1159): QrpMode => !AmpOn, FullPower => AmpOn; drop OnQrpModeChanged
+         :4751 / OnFullPowerChanged :4743 sends; QRP click -> AMP off, Full Power click
+         -> AMP on, AMP toggles. No rename/removal (pending Ron).
+      6. Remove RadioModelButton (MainWindow.xaml :616-624). Its label is state:
+         replace IsGeminusModelSelected (MainWindow.xaml.cs :404) with a field; fix
+         ApplyRadioModelSelection :291, RestoreRadioModelButtonFromSettings :1079
+         (no early return). Band graying stays from FW major (:234-259).
+      7. Text: A8 power slider tooltip (:2099/:2101) LSB/USB->SSB, DIG-U (or Digital
+         audio)->Tune; ResolveOperatePowerBank (MainViewModel.cs :1785-1798) maps DigU
+         and USB/LSB+Digital audio to Tune (matches SDRcore-trans driver.c). A1 AMP
+         tooltip kept (doesn't claim Full Power raises drive).
+
+      ## Out of scope
+      Avalonia (both trees), linux/rpi/Solidus, SDRcore-recv/trans, mscc-init, firmware, CAT.
+
+      ## Build / smoke
+      WPF Release build, clean (auto-copies to C:\mscc-net9, bumps version).
+      Smoke (plain-language list in the brief): VFO B survives restart; running hint
+      AUTO/CHECK only; Stop clears it; Start on tab -> CW/600/200; close on tab ->
+      next start in the old mode; new CHECK/RESET messages; MANUAL steps label;
+      QRP/Full Power/AMP never disagree; no model button, bands still gated by FW;
+      DIG-U slider says TUNE POWER.
+
+      Commit hint: cmd-045: VFO B restore, FREQ CAL stop/close/messages, QRP/Full Power/AMP in sync, remove radio-model button, DIG-U slider on Tune power
+      Brief: .mscc-coord/briefs/cmd-045.md
   - id: cmd-044
     created: "2026-09-26T12:30:00-04:00"
     target: [windows-new-hp]

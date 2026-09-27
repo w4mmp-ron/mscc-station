@@ -24,6 +24,7 @@ public partial class MainWindow : Window
     private bool _rxIqTabActive;
     private bool _freqCalTabActive;
     private bool _freqCalRestorePending;
+    private bool _freqCalResetPendingAuto;
     private int _freqCalProgressSteps;
     private bool _exiting;
 
@@ -65,6 +66,7 @@ public partial class MainWindow : Window
             {
                 ViewModel.FirmwarePersonalityFromRadio += OnFirmwarePersonalityFromRadio;
                 ViewModel.FrequencyReportedForConnectSafety += OnFrequencyReportedForConnectSafety;
+                ViewModel.PropertyChanged += OnViewModelPropertyChanged;
             }
 
             // Load client settings (MSCC_Client.ini) at startup (spectrum, window, time display, etc.).
@@ -142,6 +144,7 @@ public partial class MainWindow : Window
                 // Wire calibration progress/status reports (for Freq Cal tab CHECK implementation)
                 vm.RadioService.CalProgressReported += OnCalProgressReported;
                 vm.RadioService.CalStatusReported += OnCalStatusReported;
+                vm.RadioService.CalAbortStateReported += OnCalAbortStateReported;
                 vm.RadioService.CalDeltaReported += OnCalDeltaReported;
             }
 
@@ -206,16 +209,26 @@ public partial class MainWindow : Window
         }
     }
 
-    /// <summary>
-    /// Toggles Proficio ↔ Geminus label and grays out the other radio's band buttons.
-    /// Does not yet change frequency or talk to the hardware about model type.
-    /// </summary>
-    private void RadioModelButton_Click(object sender, RoutedEventArgs e)
+    private void OnViewModelPropertyChanged(object? sender, System.ComponentModel.PropertyChangedEventArgs e)
     {
-        if (sender is not Button btn) return;
-        string current = btn.Content?.ToString() ?? "Proficio";
-        bool nowGeminus = !current.Equals("Geminus", StringComparison.OrdinalIgnoreCase);
-        ApplyRadioModelSelection(nowGeminus, fromFirmware: false);
+        if (e.PropertyName == nameof(MainViewModel.IsRadioRunning))
+            ReenterFreqCalIfTabStillOpen();
+    }
+
+    /// <summary>Start with FREQ CAL still selected: snapshot again and return to CW / 600 / 200.</summary>
+    private void ReenterFreqCalIfTabStillOpen()
+    {
+        if (ViewModel == null || !ViewModel.IsRadioRunning) return;
+        if (!Dispatcher.CheckAccess())
+        {
+            Dispatcher.BeginInvoke(ReenterFreqCalIfTabStillOpen);
+            return;
+        }
+        if (!ReferenceEquals(MainTabControl.SelectedItem, FreqCalTabItem)) return;
+        if (_freqCalTabActive) return;
+        _freqCalTabActive = true;
+        ViewModel.EnterFreqCalTab();
+        ViewModel.MonitorTextBoxText(" Freq Cal: Start with tab open, re-applied CW/600/200");
     }
 
     private void OnFrequencyReportedForConnectSafety()
@@ -290,9 +303,7 @@ public partial class MainWindow : Window
 
     private void ApplyRadioModelSelection(bool nowGeminus, bool fromFirmware)
     {
-        var btn = this.FindName("RadioModelButton") as Button;
-        if (btn != null)
-            btn.Content = nowGeminus ? "Geminus" : "Proficio";
+        _isGeminus = nowGeminus;
         SpectrumWaterfallSettings.SwitchRadioModelWaterfall(nowGeminus);
         ApplyRadioModelBandGating();
         SyncGenButtonForRadioModel(retuneIfOnGen: !fromFirmware);
@@ -398,15 +409,9 @@ public partial class MainWindow : Window
         }
     }
 
-    /// <summary>
-    /// True when the UI radio-model control is set to Geminus (label text).
-    /// </summary>
-    private bool IsGeminusModelSelected()
-    {
-        var btn = this.FindName("RadioModelButton") as Button;
-        string label = btn?.Content?.ToString() ?? "Proficio";
-        return label.Equals("Geminus", StringComparison.OrdinalIgnoreCase);
-    }
+    /// <summary>True when firmware (or the sticky RADIO_MODEL ini) selected Geminus band gating.</summary>
+    private bool _isGeminus;
+    private bool IsGeminusModelSelected() => _isGeminus;
 
     /// <summary>
     /// Enable/disable band buttons by selected radio model:
@@ -416,7 +421,7 @@ public partial class MainWindow : Window
     /// </summary>
     /// <summary>
     /// S/W bank follows CurrentBand (LF 2200/630 vs HF including GEN).
-    /// Does not change RadioModelButton or band gray-out (FW major / cmd-015 owns gating).
+    /// Does not change band gray-out (firmware major owns gating).
     /// </summary>
     private void ApplyWaterfallBankForActiveBand()
     {
@@ -766,7 +771,10 @@ public partial class MainWindow : Window
         // Toggle: Start when idle, Stop when running (Stop+Start = restart after COM change).
         if (ViewModel.IsRadioRunning)
         {
-            _freqCalRestorePending = false;
+            if (_freqCalInProgress)
+                _ = AbortFreqCalRunBestEffort();
+            ResetFreqCalSessionOnStop();
+            EndFreqCalAbortDrain("main stop");
             if (_freqCalTabActive)
             {
                 _freqCalTabActive = false;
@@ -1069,19 +1077,17 @@ public partial class MainWindow : Window
         // Restore Proficio/Geminus from INI (RADIO_MODEL) so HF/LF waterfall banks match.
         Dispatcher.BeginInvoke(() =>
         {
-            RestoreRadioModelButtonFromSettings();
+            RestoreRadioModelFromSettings();
             ApplyRadioModelBandGating();
             SyncGenButtonForRadioModel(retuneIfOnGen: false);
         });
     }
 
-    /// <summary>Set RadioModelButton label from sticky RADIO_MODEL (Proficio / Geminus).</summary>
-    private void RestoreRadioModelButtonFromSettings()
+    /// <summary>Apply sticky RADIO_MODEL (Proficio / Geminus) to band gating and the waterfall bank.</summary>
+    private void RestoreRadioModelFromSettings()
     {
-        var btn = this.FindName("RadioModelButton") as Button;
-        if (btn == null) return;
         bool geminus = SpectrumWaterfallSettings.RadioModelIsGeminus;
-        btn.Content = geminus ? "Geminus" : "Proficio";
+        _isGeminus = geminus;
         if (ViewModel != null)
             ViewModel.IsGeminusRadioModel = geminus;
         // Live waterfall already loaded from the matching bank in SpectrumWaterfallSettings.Load()
@@ -1101,10 +1107,23 @@ public partial class MainWindow : Window
                 // Unsubscribe cal handlers
                 vm.RadioService.CalProgressReported -= OnCalProgressReported;
                 vm.RadioService.CalStatusReported -= OnCalStatusReported;
+                vm.RadioService.CalAbortStateReported -= OnCalAbortStateReported;
                 vm.RadioService.CalDeltaReported -= OnCalDeltaReported;
 
                 vm.FirmwarePersonalityFromRadio -= OnFirmwarePersonalityFromRadio;
                 vm.FrequencyReportedForConnectSafety -= OnFrequencyReportedForConnectSafety;
+                vm.PropertyChanged -= OnViewModelPropertyChanged;
+
+                if (_freqCalInProgress)
+                {
+                    vm.MonitorTextBoxText(" Freq Cal: close during AUTO/CHECK — run is aborted");
+                    try { vm.RadioService.AbortCalibrationAsync().GetAwaiter().GetResult(); }
+                    catch (Exception abortEx) { vm.MonitorTextBoxText($" Freq Cal: abort on close: {abortEx.Message}"); }
+                }
+                if (_freqCalTabActive || _freqCalRestorePending)
+                    vm.LeaveFreqCalForShutdown();
+                vm.SaveCurrentVfoBRecord();
+
                 vm.MonitorTextBoxText(
                     " MainWindow_Closing: Dispose VM (STOP only if this client launched backends; connect-only leaves servers running)");
                 vm.Dispose();
@@ -1427,7 +1446,11 @@ public partial class MainWindow : Window
     private bool _freqCalInProgress = false;
     /// <summary>True while AUTO sweep is running (vs CHECK-only).</summary>
     private bool _freqCalIsAuto = false;
+    private bool _freqCalAbortDrainPending;
+    private DispatcherTimer? _freqCalAbortDrainTimer;
+    private const string FreqCalStoppedWaitText = "STOPPED — wait…";
     private int _lastCalDelta = 0;
+    private bool _freqCalHaveDelta;
 
     // Manual PPM: each step does USB EEPROM-style cal + dual LO retune — must rate-limit.
     private const int FreqCalManualPpmMin = -100;
@@ -1495,8 +1518,8 @@ public partial class MainWindow : Window
 
             // Exit manual, ask to accept like original
             FreqCalLooseButton.IsEnabled = true;
-            FreqCalAutoButton.IsEnabled = true;
-            FreqCalCheckButton.IsEnabled = true;
+            FreqCalAutoButton.IsEnabled = !_freqCalAbortDrainPending;
+            FreqCalCheckButton.IsEnabled = !_freqCalAbortDrainPending;
             FreqCalResetButton.IsEnabled = true;
             SetFreqCalManualPpmButtonsEnabled(false);
 
@@ -1510,6 +1533,7 @@ public partial class MainWindow : Window
             {
                 _ = ViewModel.RadioService.SetCalibrationFinishedAsync(true);
                 FreqCalStatusLabel.Text = "MANUAL CALIBRATED";
+                _freqCalResetPendingAuto = false;
             }
             else
             {
@@ -1518,6 +1542,7 @@ public partial class MainWindow : Window
             }
 
             _freqCalManualMode = false;
+            ClearFreqCalRunningHint();
             ResetFreqCalManualPpmUi(sendToRadio: false);
             ViewModel?.MonitorTextBoxText(" Freq Cal: Exited MANUAL mode");
         }
@@ -1626,6 +1651,11 @@ public partial class MainWindow : Window
     private void FreqCalAutoButton_Click(object sender, RoutedEventArgs e)
     {
         if (ViewModel == null) return;
+        if (_freqCalAbortDrainPending)
+        {
+            ViewModel.MonitorTextBoxText(" Freq Cal: AUTO ignored, abort drain pending");
+            return;
+        }
         if (_freqCalManualMode)
         {
             MessageBox.Show("EXIT MANUAL CALIBRATION BEFORE RUNNING AUTO.", "MSCC",
@@ -1680,11 +1710,12 @@ public partial class MainWindow : Window
         catch { /* ignore */ }
 
         SetFreqCalControlsEnabled(false);
-        _freqCalInProgress = true;
+        SetFreqCalRunActive(true);
         _freqCalIsAuto = true;
         ResetFreqCalVisuals(coarse
             ? "RUNNING COARSE\r\n!WAIT!"
             : "RUNNING FINE\r\n!WAIT!");
+        ShowFreqCalRunningHint();
 
         ViewModel.MonitorTextBoxText(
             $" Freq Cal: AUTO starting ({(coarse ? "COARSE" : "FINE")}, loose={loose}, f={freqHz})");
@@ -1707,7 +1738,7 @@ public partial class MainWindow : Window
         }
         catch (Exception ex)
         {
-            _freqCalInProgress = false;
+            SetFreqCalRunActive(false);
             _freqCalIsAuto = false;
             SetFreqCalControlsEnabled(true);
             if (FreqCalStatusLabel != null)
@@ -1715,6 +1746,7 @@ public partial class MainWindow : Window
                 FreqCalStatusLabel.Text = "AUTO FAILED";
                 FreqCalStatusLabel.Foreground = FreqCalFailBrush;
             }
+            ClearFreqCalRunningHint();
             ViewModel.MonitorTextBoxText($" Freq Cal: AUTO start error: {ex.Message}");
             CompleteFreqCalRestoreIfPending();
         }
@@ -1723,6 +1755,21 @@ public partial class MainWindow : Window
     private void FreqCalCheckButton_Click(object sender, RoutedEventArgs e)
     {
         if (ViewModel == null) return;
+        if (_freqCalAbortDrainPending)
+        {
+            ViewModel.MonitorTextBoxText(" Freq Cal: CHECK ignored, abort drain pending");
+            return;
+        }
+        if (_freqCalResetPendingAuto)
+        {
+            var warn = MessageBox.Show(
+                "Calibration was reset. Run AUTO first.\n\nClick OK to run CHECK anyway, or Cancel.",
+                "MSCC",
+                MessageBoxButton.OKCancel,
+                MessageBoxImage.Warning);
+            if (warn != MessageBoxResult.OK)
+                return;
+        }
         if (_freqCalInProgress)
         {
             MessageBox.Show("FREQUENCY CALIBRATION IN PROGRESS.", "MSCC",
@@ -1741,9 +1788,10 @@ public partial class MainWindow : Window
         }
 
         SetFreqCalControlsEnabled(false);
-        _freqCalInProgress = true;
+        SetFreqCalRunActive(true);
         _freqCalIsAuto = false;
         ResetFreqCalVisuals("CHECKING\r\n!WAIT!");
+        ShowFreqCalRunningHint();
         ViewModel.MonitorTextBoxText(" Freq Cal: CHECK started");
         _ = StartFreqCalCheckAsync();
     }
@@ -1760,7 +1808,7 @@ public partial class MainWindow : Window
         }
         catch (Exception ex)
         {
-            _freqCalInProgress = false;
+            SetFreqCalRunActive(false);
             _freqCalIsAuto = false;
             SetFreqCalControlsEnabled(true);
             if (FreqCalStatusLabel != null)
@@ -1768,6 +1816,7 @@ public partial class MainWindow : Window
                 FreqCalStatusLabel.Text = "CHECK FAILED";
                 FreqCalStatusLabel.Foreground = FreqCalFailBrush;
             }
+            ClearFreqCalRunningHint();
             ViewModel.MonitorTextBoxText($" Freq Cal: CHECK start error: {ex.Message}");
             CompleteFreqCalRestoreIfPending();
         }
@@ -1782,13 +1831,32 @@ public partial class MainWindow : Window
         if (FreqCalProgress != null)
             FreqCalProgress.Value = 0;
         _lastCalDelta = 0;
+        _freqCalHaveDelta = false;
         if (FreqCalStatusLabel != null)
         {
             FreqCalStatusLabel.Text = statusText;
             bool idle = string.IsNullOrEmpty(statusText) ||
-                        statusText.Equals("RESET", StringComparison.OrdinalIgnoreCase);
+                        statusText.Equals("RESET", StringComparison.OrdinalIgnoreCase) ||
+                        statusText.StartsWith("STOPPED", StringComparison.OrdinalIgnoreCase);
             FreqCalStatusLabel.Foreground = idle ? FreqCalIdleBrush : FreqCalBusyBrush;
         }
+    }
+
+    private const string FreqCalRunningHintText =
+        "Calibration running — don't change tabs or settings until it finishes.";
+
+    private void ShowFreqCalRunningHint()
+    {
+        if (FreqCalRunningHint == null) return;
+        FreqCalRunningHint.Text = FreqCalRunningHintText;
+        FreqCalRunningHint.Visibility = Visibility.Visible;
+    }
+
+    private void ClearFreqCalRunningHint()
+    {
+        if (FreqCalRunningHint == null) return;
+        FreqCalRunningHint.Text = "";
+        FreqCalRunningHint.Visibility = Visibility.Collapsed;
     }
 
     /// <summary>A CHECK/AUTO that outlived the tab restores the entry mode when it ends.</summary>
@@ -1802,13 +1870,103 @@ public partial class MainWindow : Window
     /// <summary>Disable/enable FREQ CAL action buttons during a running sweep.</summary>
     private void SetFreqCalControlsEnabled(bool enabled)
     {
+        bool sweep = enabled && !_freqCalAbortDrainPending;
         if (FreqCalResetButton != null) FreqCalResetButton.IsEnabled = enabled;
         if (FreqCalLooseButton != null) FreqCalLooseButton.IsEnabled = enabled;
-        if (FreqCalAutoButton != null) FreqCalAutoButton.IsEnabled = enabled;
-        if (FreqCalCheckButton != null) FreqCalCheckButton.IsEnabled = enabled;
+        if (FreqCalAutoButton != null) FreqCalAutoButton.IsEnabled = sweep;
+        if (FreqCalCheckButton != null) FreqCalCheckButton.IsEnabled = sweep;
         if (FreqCalManualButton != null) FreqCalManualButton.IsEnabled = enabled;
         // PPM ± only when manual mode and not in an auto/check sweep
         SetFreqCalManualPpmButtonsEnabled(enabled && _freqCalManualMode);
+    }
+
+    /// <summary>Sets _freqCalInProgress and STOP enabled together.</summary>
+    private void SetFreqCalRunActive(bool active)
+    {
+        _freqCalInProgress = active;
+        if (FreqCalStopButton != null)
+            FreqCalStopButton.IsEnabled = active;
+    }
+
+    private async System.Threading.Tasks.Task AbortFreqCalRunBestEffort()
+    {
+        if (ViewModel == null) return;
+        try
+        {
+            await ViewModel.RadioService.AbortCalibrationAsync();
+        }
+        catch (Exception ex)
+        {
+            ViewModel.MonitorTextBoxText($" Freq Cal: abort failed: {ex.Message}");
+        }
+    }
+
+    private async void FreqCalStopButton_Click(object sender, RoutedEventArgs e)
+    {
+        if (ViewModel == null || !_freqCalInProgress || _freqCalAbortDrainPending) return;
+        ViewModel.MonitorTextBoxText(
+            _freqCalIsAuto ? " Freq Cal: STOP pressed during AUTO" : " Freq Cal: STOP pressed during CHECK");
+        // Arm before the abort send. A localhost drain-done can arrive before this method continues.
+        _freqCalAbortDrainPending = true;
+        await AbortFreqCalRunBestEffort();
+        bool stillWaiting = _freqCalAbortDrainPending;
+        ResetFreqCalSessionOnStop();
+        if (stillWaiting)
+            BeginFreqCalAbortDrain();
+    }
+
+    private void BeginFreqCalAbortDrain()
+    {
+        _freqCalAbortDrainPending = true;
+        ResetFreqCalVisuals(FreqCalStoppedWaitText);
+        SetFreqCalControlsEnabled(true);
+        if (_freqCalAbortDrainTimer == null)
+        {
+            _freqCalAbortDrainTimer = new DispatcherTimer { Interval = TimeSpan.FromSeconds(36) };
+            _freqCalAbortDrainTimer.Tick += (_, _) =>
+            {
+                _freqCalAbortDrainTimer?.Stop();
+                EndFreqCalAbortDrain("client timeout");
+            };
+        }
+        _freqCalAbortDrainTimer.Stop();
+        _freqCalAbortDrainTimer.Start();
+        ViewModel?.MonitorTextBoxText(" Freq Cal: STOP - waiting for server drain");
+    }
+
+    private void EndFreqCalAbortDrain(string why)
+    {
+        if (!_freqCalAbortDrainPending) return;
+        _freqCalAbortDrainPending = false;
+        _freqCalAbortDrainTimer?.Stop();
+        if (!_freqCalInProgress && !_freqCalManualMode)
+        {
+            if (FreqCalAutoButton != null) FreqCalAutoButton.IsEnabled = true;
+            if (FreqCalCheckButton != null) FreqCalCheckButton.IsEnabled = true;
+        }
+        if (FreqCalStatusLabel != null && FreqCalStatusLabel.Text == FreqCalStoppedWaitText)
+        {
+            FreqCalStatusLabel.Text = "STOPPED";
+            FreqCalStatusLabel.Foreground = FreqCalIdleBrush;
+        }
+        ViewModel?.MonitorTextBoxText($" Freq Cal: drain done ({why})");
+    }
+
+    /// <summary>Stop ends a FREQ CAL run in the UI. Mode restore is LeaveFreqCalTab.</summary>
+    private void ResetFreqCalSessionOnStop()
+    {
+        SetFreqCalRunActive(false);
+        _freqCalIsAuto = false;
+        _freqCalRestorePending = false;
+        if (_freqCalManualMode)
+        {
+            _freqCalManualMode = false;
+            SetFreqCalManualPpmButtonsEnabled(false);
+            ViewModel?.MonitorTextBoxText(" Freq Cal: Stop during MANUAL — no accept");
+        }
+        SetFreqCalControlsEnabled(true);
+        ClearFreqCalRunningHint();
+        ResetFreqCalVisuals("STOPPED");
     }
 
     private void FreqCalResetButton_Click(object sender, RoutedEventArgs e)
@@ -1819,6 +1977,7 @@ public partial class MainWindow : Window
             if (res == MessageBoxResult.Yes)
             {
                 _ = ViewModel.RadioService.SetCalResetAsync(true);
+                _freqCalResetPendingAuto = true;
                 ResetFreqCalVisuals("RESET");
                 ViewModel?.MonitorTextBoxText(" Freq Cal: RESET clicked");
             }
@@ -1844,6 +2003,32 @@ public partial class MainWindow : Window
             FreqCalProgress.Value = Math.Min(_freqCalProgressSteps, 100);
     }
 
+    private void OnCalAbortStateReported(int value)
+    {
+        if (!Dispatcher.CheckAccess())
+        {
+            Dispatcher.BeginInvoke(() => OnCalAbortStateReported(value));
+            return;
+        }
+
+        if (value == 1)
+        {
+            EndFreqCalAbortDrain("server");
+            return;
+        }
+
+        if (value == 2)
+        {
+            ViewModel?.MonitorTextBoxText(" Freq Cal: start refused by server (drain pending)");
+            if (_freqCalInProgress)
+            {
+                _freqCalAbortDrainPending = true;
+                ResetFreqCalSessionOnStop();
+                BeginFreqCalAbortDrain();
+            }
+        }
+    }
+
     private void OnCalStatusReported(int value)
     {
         if (!Dispatcher.CheckAccess())
@@ -1854,7 +2039,7 @@ public partial class MainWindow : Window
 
         bool wasInProgress = _freqCalInProgress;
         bool wasAuto = _freqCalIsAuto;
-        _freqCalInProgress = false;
+        SetFreqCalRunActive(false);
         _freqCalIsAuto = false;
 
         SetFreqCalControlsEnabled(true);
@@ -1871,11 +2056,14 @@ public partial class MainWindow : Window
             if (ok && FreqCalProgress != null)
                 FreqCalProgress.Value = 100;
 
-            if (ok && _lastCalDelta != 0 && Math.Abs(_lastCalDelta) < 10000)
-                statusText += $"\r\n{_lastCalDelta} Hz";
+            if (ok && _freqCalHaveDelta && Math.Abs(_lastCalDelta) < 10000)
+                statusText += "\r\n" + FreqCalSuccessDetail(wasAuto, _lastCalDelta);
             else if (!ok && !wasAuto)
-                statusText += "\r\nOff by more than 50 Hz? Run AUTO (COARSE).";
+                statusText += "\r\nError may be more than 50 Hz. Run AUTO (COARSE).";
+            if (wasAuto && ok)
+                _freqCalResetPendingAuto = false;
             _lastCalDelta = 0;
+            _freqCalHaveDelta = false;
 
             if (FreqCalStatusLabel != null)
             {
@@ -1884,6 +2072,7 @@ public partial class MainWindow : Window
             }
             ViewModel?.MonitorTextBoxText(
                 $" Freq Cal: {(wasAuto ? "AUTO" : "CHECK")} status received: {value} (1=COMPLETED)");
+            ClearFreqCalRunningHint();
             CompleteFreqCalRestoreIfPending();
         }
         else
@@ -1895,6 +2084,7 @@ public partial class MainWindow : Window
     private void OnCalDeltaReported(int value)
     {
         _lastCalDelta = value;
+        _freqCalHaveDelta = true;
 
         if (!Dispatcher.CheckAccess())
         {
@@ -1902,17 +2092,29 @@ public partial class MainWindow : Window
             return;
         }
 
-        // If status is already shown, append the delta (handles report ordering)
+        // Status can arrive before the delta. Match the title line and fill the detail.
         if (FreqCalStatusLabel != null &&
-            (FreqCalStatusLabel.Text == "CHECK COMPLETED" || FreqCalStatusLabel.Text == "CHECK FAILED" ||
-             FreqCalStatusLabel.Text == "AUTO COMPLETED" || FreqCalStatusLabel.Text == "AUTO FAILED") &&
             Math.Abs(value) < 10000 &&
-            !FreqCalStatusLabel.Text.Contains("Hz"))
+            !FreqCalStatusLabel.Text.Contains("Hz") &&
+            (FreqCalStatusLabel.Text == "AUTO COMPLETED" || FreqCalStatusLabel.Text == "CHECK COMPLETED"))
         {
-            FreqCalStatusLabel.Text += $"\r\n{value} Hz";
+            bool auto = FreqCalStatusLabel.Text == "AUTO COMPLETED";
+            FreqCalStatusLabel.Text += "\r\n" + FreqCalSuccessDetail(auto, value);
             _lastCalDelta = 0;
+            _freqCalHaveDelta = false;
         }
 
         ViewModel?.MonitorTextBoxText($" Freq Cal: Delta received: {value} Hz");
+    }
+
+    /// <summary>Second line under AUTO COMPLETED / CHECK COMPLETED. |delta| &lt;= 5 on CHECK adds " (good)".</summary>
+    private static string FreqCalSuccessDetail(bool auto, int delta)
+    {
+        if (auto)
+            return $"Was {delta} Hz off, now corrected. Run CHECK.";
+        string line = $"Error now {delta} Hz";
+        if (Math.Abs(delta) <= 5)
+            line += " (good)";
+        return line;
     }
 }

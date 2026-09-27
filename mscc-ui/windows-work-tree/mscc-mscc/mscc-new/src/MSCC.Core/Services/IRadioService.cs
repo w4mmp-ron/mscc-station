@@ -307,10 +307,13 @@ public interface IRadioService : IDisposable
     Task SetCalModeAsync(int mode, CancellationToken cancellationToken = default);
     /// <summary>Start auto Si5351 calibration sweep (server uses current tune frequency).</summary>
     Task StartCalibrateAsync(int frequencyHz = 0, CancellationToken cancellationToken = default);
+    /// <summary>Stop an AUTO or CHECK sweep. The stored calibration is left as it was.</summary>
+    Task AbortCalibrationAsync(CancellationToken cancellationToken = default);
     Task SetCalibrationFinishedAsync(bool accept, CancellationToken cancellationToken = default);
 
     event Action<int> CalProgressReported;
     event Action<int> CalStatusReported; // 1 = success, 0 = fail for check etc.
+    event Action<int> CalAbortStateReported; // 1 = drain done, 2 = start refused
     event Action<int> CalDeltaReported; // frequency offset in Hz reported after check/cal
     Task SetMicVolumeAsync(int value, CancellationToken cancellationToken = default); // 0-100 main mic volume
 
