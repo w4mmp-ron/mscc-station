@@ -1,1 +1,1 @@
-savedcmd_tty0tty.ko := aarch64-linux-gnu-ld -r -EL  -maarch64elf -z noexecstack --no-warn-rwx-segments --build-id=sha1  -T /usr/src/linux-headers-6.18.34+rpt-rpi-2712/arch/arm64/module.lds -o tty0tty.ko tty0tty.o tty0tty.mod.o .module-common.o
+savedcmd_tty0tty.ko := ld -r -m elf_x86_64 -z noexecstack --no-warn-rwx-segments --build-id=sha1  -T /usr/src/linux-headers-7.0.0-34-generic/scripts/module.lds -o tty0tty.ko tty0tty.o tty0tty.mod.o .module-common.o
