@@ -180,7 +180,7 @@ public partial class MainViewModel : ViewModelBase, IDisposable
         ModeText = "";
         NotifyModeFlags();
         NotifyBandFlags();
-        AppendLog("MSCC Avalonia 0.6.62 — FREQ CAL STOP/tab CW, VFO B restore, QRP/AMP sync, DIG-U Hi 1.4k/1.0k, local Launch/Auto.");
+        AppendLog("MSCC Avalonia 0.6.63 — FREQ CAL STOP/tab CW, VFO B restore, QRP/AMP sync, DIG-U Hi 1.4k/1.0k, local Launch/Auto.");
         AppendLog("PTT = TX (voice modes); TUN = TUNE + carrier. S/W opens pan settings.");
         AppendLog($"Log: {LogFilePath}");
         CwPitchLabel = CwPitchOptions[Math.Clamp(CwPitchIndex, 0, CwPitchOptions.Count - 1)];
@@ -466,7 +466,7 @@ public partial class MainViewModel : ViewModelBase, IDisposable
     [ObservableProperty] private string _proficioTempText = "— °C";
     [ObservableProperty] private string _paTempText = "— °C";
     [ObservableProperty] private string _paCurrentText = "— mA";
-    [ObservableProperty] private string _clientVersionText = "0.6.62";
+    [ObservableProperty] private string _clientVersionText = "0.6.63";
     [ObservableProperty] private bool _alcOn = true;
     /// <summary>AMP / QRO path (PA bypass). Red when on (WPF).</summary>
     [ObservableProperty] private bool _ampOn;
@@ -603,11 +603,11 @@ public partial class MainViewModel : ViewModelBase, IDisposable
     public bool FreqCalPpmEnabled => FreqCalManualMode && !FreqCalInProgress && !FreqCalManualAcceptPrompt;
 
     /// <summary>QRP CAL tab enabled when AMP path is off.</summary>
-    public bool IsPowerCalTabEnabled => !AmpOn && !FreqCalInProgress;
+    public bool IsPowerCalTabEnabled => !AmpOn;
     /// <summary>AMP CAL tab enabled when AMP path is on.</summary>
-    public bool IsAmpCalTabEnabled => AmpOn && !FreqCalInProgress;
+    public bool IsAmpCalTabEnabled => AmpOn;
     /// <summary>TX IQ only when AMP is off (QRP).</summary>
-    public bool IsTxIqTabEnabled => !AmpOn && !FreqCalInProgress;
+    public bool IsTxIqTabEnabled => !AmpOn;
     public string PowerCalTabHint => FreqCalInProgress
         ? "Finish or STOP frequency calibration first."
         : AmpOn
