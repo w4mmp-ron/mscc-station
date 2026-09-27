@@ -25,11 +25,11 @@ Git repo root: `C:\Users\Ron\.grok\worktrees`.
 
 ## Open list (Ron, 2026-09-26) - read first on resume
 
-1. Install mscc 1.0.46 + mscc-init-gui 1.0.15 on the Pi; check SWR in client, digi 40 ms.
-2. Test FREQ CAL STOP on the Pi (Ron "later"; needs WPF 9.26.5+).
-3. cmd-042: hi-cut 1400/1000 Hz in sdrcore-recv -> 1.0.47. On hold until Stew pushes.
-4. cmd-046: TUNE power separate (Windows/Ubuntu trans + WPF). With Stew; no Pi change.
-5. RF check of remote TX audio (Stew, spectrum analyzer).
+Done 2026-09-26: mscc 1.0.46 + mscc-init-gui 1.0.15 installed and tested on the Pi (Ron).
+1. Test FREQ CAL STOP on the Pi (Ron "later"; needs WPF 9.26.5+).
+2. cmd-042: hi-cut 1400/1000 Hz in sdrcore-recv -> 1.0.47. On hold until Stew pushes.
+3. cmd-046: TUNE power separate (Windows/Ubuntu trans + WPF). With Stew; no Pi change.
+4. RF check of remote TX audio (Stew, spectrum analyzer).
 Optional: drop mscc-init from the .deb entirely.
 
 ## Architecture (per Ron)
@@ -131,7 +131,7 @@ mscc-init-linux (2026-09-26):
 Built in WSL from an LF copy of mscc-deb + mscc-binaries (Pi ELFs). Contents: ms-sdr (cal
 STOP + cmd-044), sdrcore-recv (#13 40 ms digi), sdrcore-trans 09-25, mscc-init OLD
 (09-16, no SWR keep fix; Ron: CLI not used, nothing runs it; source kept). postinst hint
-now says run `mscc-init-gui`. Copied to installers/rpi (1.0.45 removed). Not installed yet.
+now says run `mscc-init-gui`. Copied to installers/rpi (1.0.45 removed). Installed + tested OK (Ron).
 
 ## On hold (Ron, 2026-09-26): cmd-042 (from pull f9efa00, 2026-09-25)
 
