@@ -261,9 +261,9 @@
         </Grid>
       </Border>
 
-      <!-- Band bar: LF | HF | GEN | band label (FW major gates HF/LF) -->
+      <!-- Band bar: LF | HF | GEN (FW major gates HF/LF) -->
       <Border Grid.Row="1" Classes="mscc-panel" Margin="0,0,0,2" Padding="3,3">
-        <Grid ColumnDefinitions="Auto,Auto,*,*,*,*,*,*,*,*,*,Auto,Auto"
+        <Grid ColumnDefinitions="Auto,Auto,*,*,*,*,*,*,*,*,*,*,Auto"
               ColumnSpacing="2">
           <!-- LF — Geminus only -->
           <Button Grid.Column="0" Content="2200" Classes="mscc-gold"
@@ -337,8 +337,6 @@
                   MinWidth="52" MinHeight="26" FontSize="10" FontWeight="Bold"
                   HorizontalContentAlignment="Center" VerticalContentAlignment="Center"
                   ToolTip.Tip="{Binding GenButtonTip}"/>
-          <TextBlock Grid.Column="13" Text="{Binding BandText, StringFormat=Band: {0}}"
-                     VerticalAlignment="Center" Margin="6,0,2,0" Foreground="{DynamicResource UiAccentBrush}" FontSize="11"/>
         </Grid>
       </Border>
 
@@ -1223,7 +1221,7 @@
                   <Button Content="−" Classes="mscc-gold" Width="32" Height="26"
                           Command="{Binding FreqCalPpmMinusCommand}"
                           IsEnabled="{Binding FreqCalPpmEnabled}"
-                          ToolTip.Tip="PPM −1 (rate-limited)"/>
+                          ToolTip.Tip="Decrease PPM by 1 (rate-limited to protect radio)"/>
                   <Border Background="#444" BorderBrush="#888" BorderThickness="1" Padding="6,2" MinWidth="40">
                     <TextBlock Text="{Binding FreqCalManualPpm}" Foreground="#00FFAA" FontWeight="Bold"
                                FontSize="13" HorizontalAlignment="Center"/>
@@ -1231,7 +1229,7 @@
                   <Button Content="+" Classes="mscc-gold" Width="32" Height="26"
                           Command="{Binding FreqCalPpmPlusCommand}"
                           IsEnabled="{Binding FreqCalPpmEnabled}"
-                          ToolTip.Tip="PPM +1 (rate-limited)"/>
+                          ToolTip.Tip="Increase PPM by 1 (rate-limited to protect radio)"/>
                   <TextBlock Text="ST:" Foreground="#AAA" FontSize="12" VerticalAlignment="Center" Margin="8,0,0,0"/>
                   <TextBlock Text="{Binding FreqCalStatus}" Foreground="{Binding FreqCalStatusBrush}" FontSize="12"
                              VerticalAlignment="Center" TextWrapping="Wrap" MaxWidth="220"/>
@@ -1556,7 +1554,7 @@
             <Button Content="NR" Classes="mscc-gold" Command="{Binding ToggleNrCommand}"
                     Margin="1" MinHeight="26" HorizontalAlignment="Stretch" FontSize="10" Padding="2,1"
                     Classes.mscc-selected="{Binding NrOn}"
-                    ToolTip.Tip="Noise reduction on/off (level = NR slider)"/>
+                    ToolTip.Tip="Noise reduction on/off"/>
             <Button Content="AN" Classes="mscc-gold" Command="{Binding ToggleAnCommand}"
                     Margin="1" MinHeight="26" HorizontalAlignment="Stretch" FontSize="10" Padding="2,1"
                     Classes.mscc-selected="{Binding AnOn}"

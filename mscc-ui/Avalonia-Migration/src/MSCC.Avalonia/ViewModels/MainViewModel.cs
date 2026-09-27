@@ -82,8 +82,6 @@ public partial class MainViewModel : ViewModelBase, IDisposable
     private string _modeBeforeTxIq = "USB";
     private bool _sessionCompressionOn;
     private string _modeBeforeTune = "USB";
-    /// <summary>Mode before FREQ CAL forced CW (restored when cal ends).</summary>
-    private string? _modeBeforeFreqCal;
     private bool _freqCalTabActive;
     private bool _freqCalHoldingCw;
     private bool _freqCalEntryHeld;
@@ -100,6 +98,7 @@ public partial class MainViewModel : ViewModelBase, IDisposable
     private DateTime _serversLaunchedUtc;
     private Task? _serverStopTask;
     private bool _keepAliveGraceUsed;
+    private bool _launchStartedThisConnect;
     private long _lastSavedVfoBHz = -1;
     private string _lastSavedVfoBMode = "";
     private bool _onGenBand;
@@ -169,7 +168,7 @@ public partial class MainViewModel : ViewModelBase, IDisposable
         Host = "127.0.0.1";
         RemotePortText = "8888";
         LocalPortText = "8889";
-        StatusText = "Disconnected — press Connect (servers start automatically).";
+        StatusText = IdleStatusText();
         FrequencyMhzEdit = FormatMhz(_frequencyHz);
         FrequencyDisplayMhz = FormatMhz(_frequencyHz);
         VfoBDisplayMhz = FormatMhz(_vfoBFrequencyHz);
@@ -180,7 +179,7 @@ public partial class MainViewModel : ViewModelBase, IDisposable
         ModeText = "";
         NotifyModeFlags();
         NotifyBandFlags();
-        AppendLog("MSCC Avalonia 0.6.63 — FREQ CAL STOP/tab CW, VFO B restore, QRP/AMP sync, DIG-U Hi 1.4k/1.0k, local Launch/Auto.");
+        AppendLog("MSCC Avalonia 0.6.65 — 10m button + band label fix, FREQ CAL VFO B / reconnect / deferred-restore fixes.");
         AppendLog("PTT = TX (voice modes); TUN = TUNE + carrier. S/W opens pan settings.");
         AppendLog($"Log: {LogFilePath}");
         CwPitchLabel = CwPitchOptions[Math.Clamp(CwPitchIndex, 0, CwPitchOptions.Count - 1)];
@@ -189,6 +188,7 @@ public partial class MainViewModel : ViewModelBase, IDisposable
         InitAmpCalBandStatuses();
         EnsureTxIqBandItems();
         LoadClientSettings();
+        StatusText = IdleStatusText();
         RefreshHostAudio();
         LoadFavoritesFromStore();
         AppendLog($"Settings: {ClientSettingsStore.StorePath}");
@@ -379,6 +379,21 @@ public partial class MainViewModel : ViewModelBase, IDisposable
 
     public bool LaunchOptionEnabled => IsLocalHost(Host) && !IsConnected && !IsBusy;
     public bool AutoOptionEnabled => !IsBusy;
+
+    private string IdleStatusText() =>
+        LaunchServers && IsLocalHost(Host)
+            ? "Disconnected — press Connect (servers start automatically)."
+            : "Disconnected — MSCC Start, then Connect.";
+
+    private void RefreshIdleStatusText()
+    {
+        if (IsConnected || IsBusy)
+            return;
+        string t = StatusText ?? "";
+        if (t == "Disconnected — press Connect (servers start automatically)." ||
+            t == "Disconnected — MSCC Start, then Connect.")
+            StatusText = IdleStatusText();
+    }
     [ObservableProperty] private bool _remoteMonitorAtRadio;
     [ObservableProperty] private int _remotePlayVolume = 80;
     [ObservableProperty] private int _remoteMicVolume = 80;
@@ -466,7 +481,7 @@ public partial class MainViewModel : ViewModelBase, IDisposable
     [ObservableProperty] private string _proficioTempText = "— °C";
     [ObservableProperty] private string _paTempText = "— °C";
     [ObservableProperty] private string _paCurrentText = "— mA";
-    [ObservableProperty] private string _clientVersionText = "0.6.63";
+    [ObservableProperty] private string _clientVersionText = "0.6.65";
     [ObservableProperty] private bool _alcOn = true;
     /// <summary>AMP / QRO path (PA bypass). Red when on (WPF).</summary>
     [ObservableProperty] private bool _ampOn;
@@ -1263,6 +1278,7 @@ public partial class MainViewModel : ViewModelBase, IDisposable
             DisposeRadio();
             _packetsReceived = 0;
             _keepAlivesReceived = 0;
+            _launchStartedThisConnect = false;
             _panPacketsReceived = 0;
             _spectrumFrames = 0;
             _spectrumFrameCounter = 0;
@@ -1368,9 +1384,7 @@ public partial class MainViewModel : ViewModelBase, IDisposable
             }
             _fwRadioModelApplied = false;
             IsConnected = false;
-            StatusText = LaunchServers && IsLocalHost(Host)
-                ? "Disconnected — press Connect (servers start automatically)."
-                : "Disconnected — MSCC Start, then Connect.";
+            StatusText = IdleStatusText();
             FrequencyText = "—";
             SmeterText = "—";
             SMeter = 0;
@@ -1443,17 +1457,21 @@ public partial class MainViewModel : ViewModelBase, IDisposable
         {
             StatusText = "mscc not installed - start the servers with MSCC Start";
             AppendLog("Launch: mscc not installed - start the servers with MSCC Start");
+            AppendLog("Launch: no start command - not ours");
         }
 
-        int after = LocalServerLauncher.RunningCount();
-        if (before < 3)
+        bool startRan = ctl != null || mscc != null;
+        if (startRan && before < 3)
         {
             _serversOurs = true;
+            _launchStartedThisConnect = true;
             _serversLaunchedUtc = DateTime.UtcNow;
             _keepAliveGraceUsed = false;
             if (before > 0)
                 AppendLog($"Launch: partial ({before} of 3 running) - mscc start fills in, marked ours");
         }
+        else if (!startRan)
+            _serversOurs = false;
 
         StatusText = "Waiting for servers...";
         var deadline = DateTime.UtcNow + TimeSpan.FromSeconds(10);
@@ -1492,7 +1510,8 @@ public partial class MainViewModel : ViewModelBase, IDisposable
             try
             {
                 using var cts = new CancellationTokenSource(TimeSpan.FromMilliseconds(300));
-                await LeaveFreqCalTab(sendToRadio: IsConnected).WaitAsync(cts.Token).ConfigureAwait(true);
+                await LeaveFreqCalTab(sendToRadio: IsConnected, tabStillOpen: !closeWindow)
+                    .WaitAsync(cts.Token).ConfigureAwait(true);
             }
             catch { /* bounded */ }
         }
@@ -5129,16 +5148,21 @@ public partial class MainViewModel : ViewModelBase, IDisposable
         if (_radio == null || !IsConnected)
             return;
 
-        string currentMode = (ModeText ?? "").Trim();
+        string currentMode = (ActiveModeString ?? "").Trim();
         if (!string.Equals(currentMode, "CW", StringComparison.OrdinalIgnoreCase))
         {
-            _modeBeforeFreqCal ??= string.IsNullOrWhiteSpace(currentMode) ? "USB" : currentMode;
             try
             {
                 await _radio.SetModeAsync("CW").ConfigureAwait(true);
-                ModeText = "CW";
-                NotifyModeFlags();
+                if (UseVfoA)
+                {
+                    ModeText = "CW";
+                    NotifyModeFlags();
+                }
+                else
+                    VfoBModeText = "CW";
                 RefreshSpectrumFilterOverlay();
+                SyncRfPowerFromMode();
                 AppendLog("Freq Cal: mode → CW (for Goertzel / 600 Hz pitch path)");
             }
             catch (Exception ex)
@@ -5175,13 +5199,13 @@ public partial class MainViewModel : ViewModelBase, IDisposable
             }
         }
 
-        // Re-assert frequency after CW mode so LO/pitch path and G_tune_freq agree
-        if (_frequencyHz > 0)
+        long hz = UseVfoA ? _frequencyHz : _vfoBFrequencyHz;
+        if (hz > 0)
         {
             try
             {
-                await _radio.SetFrequencyAsync(_frequencyHz).ConfigureAwait(true);
-                AppendLog($"Freq Cal: re-sent freq {_frequencyHz} after CW setup");
+                await _radio.SetFrequencyAsync(hz).ConfigureAwait(true);
+                AppendLog($"Freq Cal: re-sent freq {hz} after CW setup");
             }
             catch (Exception ex)
             {
@@ -5190,36 +5214,6 @@ public partial class MainViewModel : ViewModelBase, IDisposable
         }
 
         RefreshSpectrumFilterOverlay();
-    }
-
-    private async Task RestoreModeAfterFreqCalAsync()
-    {
-        if (_modeBeforeFreqCal == null || _radio == null || !IsConnected)
-        {
-            _modeBeforeFreqCal = null;
-            return;
-        }
-
-        string restore = _modeBeforeFreqCal;
-        _modeBeforeFreqCal = null;
-        if (string.Equals(restore, "CW", StringComparison.OrdinalIgnoreCase))
-            return;
-
-        try
-        {
-            await _radio.SetModeAsync(restore).ConfigureAwait(true);
-            ModeText = restore;
-            NotifyModeFlags();
-            RefreshSpectrumFilterOverlay();
-            // Keep VFO where user left it (carrier); re-send after mode change
-            if (_frequencyHz > 0)
-                await _radio.SetFrequencyAsync(_frequencyHz).ConfigureAwait(true);
-            AppendLog($"Freq Cal: restored mode {restore}");
-        }
-        catch (Exception ex)
-        {
-            AppendLog($"Freq Cal restore mode error: {ex.Message}");
-        }
     }
 
     private void OnFreqCalStatusReported(int value)
@@ -5287,7 +5281,7 @@ public partial class MainViewModel : ViewModelBase, IDisposable
     private void ForceStopFreqCal(string reason)
     {
         if (!FreqCalInProgress && !FreqCalManualMode && !FreqCalAutoModePrompt &&
-            !FreqCalManualAcceptPrompt && !FreqCalResetPrompt && _modeBeforeFreqCal == null)
+            !FreqCalManualAcceptPrompt && !FreqCalResetPrompt)
             return;
 
         StopFreqCalManualPpmTimer();
@@ -5330,6 +5324,11 @@ public partial class MainViewModel : ViewModelBase, IDisposable
 
     public async Task EnterFreqCalTab()
     {
+        if (_freqCalRestorePending)
+        {
+            _freqCalRestorePending = false;
+            AppendLog("Freq Cal: deferred restore cancelled (tab re-entered)");
+        }
         _freqCalTabActive = true;
         if (!IsConnected || string.IsNullOrWhiteSpace(ActiveModeString))
         {
@@ -5359,9 +5358,20 @@ public partial class MainViewModel : ViewModelBase, IDisposable
 
     public void DeferFreqCalRestore() => _freqCalRestorePending = true;
 
-    public async Task LeaveFreqCalTab(bool sendToRadio = true)
+    /// <summary>
+    /// FREQ CAL tab still selected after Connect: re-apply CW even if DIG-U overlay ate the USB report.
+    /// </summary>
+    private void MaybeReenterFreqCalTab()
     {
-        _freqCalTabActive = false;
+        if (!_freqCalTabActive || _freqCalHoldingCw || !IsConnected)
+            return;
+        AppendLog("Freq Cal: Start with tab open, re-applied CW/600/200");
+        _ = EnterFreqCalTab();
+    }
+
+    public async Task LeaveFreqCalTab(bool sendToRadio = true, bool tabStillOpen = false)
+    {
+        _freqCalTabActive = tabStillOpen;
         if (!_freqCalHoldingCw)
         {
             _freqCalEntryHeld = false;
@@ -6599,13 +6609,11 @@ public partial class MainViewModel : ViewModelBase, IDisposable
             AutoStart = AutoStart,
             IsGeminusRadioModel = IsGeminusRadioModel,
             LastFrequencyHz = _frequencyHz,
-            LastMode = ModeText ?? "",
-            LastVfoBFrequencyHz = (_vfoBFrequencyHz > 0 && !string.IsNullOrWhiteSpace(VfoBModeText))
-                ? _vfoBFrequencyHz
-                : _lastSavedVfoBHz > 0 ? _lastSavedVfoBHz : _vfoBFrequencyHz,
-            LastVfoBMode = (_vfoBFrequencyHz > 0 && !string.IsNullOrWhiteSpace(VfoBModeText))
-                ? (VfoBModeText ?? "")
-                : (!string.IsNullOrEmpty(_lastSavedVfoBMode) ? _lastSavedVfoBMode : (VfoBModeText ?? "")),
+            LastMode = (_freqCalHoldingCw && _freqCalSavedVfoA)
+                ? _freqCalModeSaved
+                : (ModeText ?? ""),
+            LastVfoBFrequencyHz = VfoBHzToPersist(),
+            LastVfoBMode = VfoBModeToPersist(),
             UseVfoA = true,
             StepIndex = _stepIndex,
             LowCutIndex = _lowCutIndex,
@@ -6690,7 +6698,36 @@ public partial class MainViewModel : ViewModelBase, IDisposable
             GenIndexProficio = _genIndexProficio,
             GenIndexGeminus = _genIndexGeminus,
         };
+        if (s.LastVfoBFrequencyHz != _lastSavedVfoBHz ||
+            !string.Equals(s.LastVfoBMode ?? "", _lastSavedVfoBMode, StringComparison.Ordinal))
+        {
+            AppendLog($"VFO B saved: f={s.LastVfoBFrequencyHz} mode={s.LastVfoBMode}");
+            _lastSavedVfoBHz = s.LastVfoBFrequencyHz;
+            _lastSavedVfoBMode = s.LastVfoBMode ?? "";
+        }
         _ = Task.Run(() => ClientSettingsStore.Save(s));
+    }
+
+    private long VfoBHzToPersist()
+    {
+        if (_freqCalHoldingCw && !_freqCalSavedVfoA)
+            return _vfoBFrequencyHz > 0 ? _vfoBFrequencyHz : (_lastSavedVfoBHz > 0 ? _lastSavedVfoBHz : _vfoBFrequencyHz);
+        if (!UseVfoA && IsCalibrationOrIqSessionActive())
+            return _lastSavedVfoBHz > 0 ? _lastSavedVfoBHz : _vfoBFrequencyHz;
+        return (_vfoBFrequencyHz > 0 && !string.IsNullOrWhiteSpace(VfoBModeText))
+            ? _vfoBFrequencyHz
+            : _lastSavedVfoBHz > 0 ? _lastSavedVfoBHz : _vfoBFrequencyHz;
+    }
+
+    private string VfoBModeToPersist()
+    {
+        if (_freqCalHoldingCw && !_freqCalSavedVfoA)
+            return _freqCalModeSaved;
+        if (!UseVfoA && IsCalibrationOrIqSessionActive())
+            return !string.IsNullOrEmpty(_lastSavedVfoBMode) ? _lastSavedVfoBMode : (VfoBModeText ?? "");
+        return (_vfoBFrequencyHz > 0 && !string.IsNullOrWhiteSpace(VfoBModeText))
+            ? (VfoBModeText ?? "")
+            : (!string.IsNullOrEmpty(_lastSavedVfoBMode) ? _lastSavedVfoBMode : (VfoBModeText ?? ""));
     }
 
     /// <summary>
@@ -6825,11 +6862,16 @@ public partial class MainViewModel : ViewModelBase, IDisposable
         OnPropertyChanged(nameof(IsRemoteAudioAllowed));
         OnPropertyChanged(nameof(RemoteAudioCheckboxEnabled));
         OnPropertyChanged(nameof(LaunchOptionEnabled));
+        RefreshIdleStatusText();
         if (RemoteAudio && !IsRemoteAudioAllowed)
             RemoteAudio = false;
         ScheduleSaveClientSettings();
     }
-    partial void OnLaunchServersChanged(bool value) => ScheduleSaveClientSettings();
+    partial void OnLaunchServersChanged(bool value)
+    {
+        RefreshIdleStatusText();
+        ScheduleSaveClientSettings();
+    }
     partial void OnAutoStartChanged(bool value) => ScheduleSaveClientSettings();
     partial void OnRemotePortTextChanged(string value) => ScheduleSaveClientSettings();
     partial void OnLocalPortTextChanged(string value) => ScheduleSaveClientSettings();
@@ -6985,7 +7027,7 @@ public partial class MainViewModel : ViewModelBase, IDisposable
             if (e.Opcode == Opcodes.CMD_SET_KEEP_ALIVE)
             {
                 int n = Interlocked.Increment(ref _keepAlivesReceived);
-                if (n == 1)
+                if (n == 1 && _launchStartedThisConnect)
                     PostToUi(() => AppendLog("Launch: server alive (first keep-alive)"));
             }
             else if (e.Opcode == Opcodes.CMD_GET_SET_PANADAPTER)
@@ -7019,6 +7061,7 @@ public partial class MainViewModel : ViewModelBase, IDisposable
                 // Do NOT LoadLastUsed (would send tune). DIG-U overlay only.
                 AppendLog($"Frequency reported from backend: {hz}");
                 TryRestoreDigUAfterFreqKnown();
+                MaybeReenterFreqCalTab();
                 if (_fwRadioModelApplied)
                     _ = RetuneIfIllegalForRadioPersonalityAsync(IsGeminusRadioModel);
             });
@@ -7040,6 +7083,7 @@ public partial class MainViewModel : ViewModelBase, IDisposable
                     if (ShouldKeepDigUOnUsbReport())
                     {
                         ApplyDigUOverlay("ModeReported USB");
+                        MaybeReenterFreqCalTab();
                         return;
                     }
                 }
@@ -7056,8 +7100,7 @@ public partial class MainViewModel : ViewModelBase, IDisposable
                 RefreshSpectrumFilterOverlay();
                 if (!IsDigUMode(UseVfoA ? ModeText : VfoBModeText))
                     CoerceHighCutForMode("ModeReported");
-                if (_freqCalTabActive && !_freqCalHoldingCw && IsConnected)
-                    _ = EnterFreqCalTab();
+                MaybeReenterFreqCalTab();
                 AppendLog($"Mode reported: {reported} (VFO {(UseVfoA ? "A" : "B")})");
             });
 
