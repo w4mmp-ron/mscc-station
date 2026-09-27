@@ -10,6 +10,10 @@ file is for Claude only.
 - **"stop" means stop immediately.**
 - Ask before large or risky changes. Commit / push **only when asked**,
   `git add` specific paths only (Grok and other tools work in this repo too).
+- Ron does **not** `git pull` on the Pi. He copies the changed source files from
+  Windows to the Pi and builds there. Give him the file list, not git steps.
+- Ubuntu (`linux/`) work is Stew's; don't track or report it. After a pull, report
+  only Stew's **Windows** changes and whether the Pi needs a matching port.
 
 ## Folder rules
 
@@ -26,11 +30,11 @@ Git repo root: `C:\Users\Ron\.grok\worktrees`.
 ## Open list (Ron, 2026-09-26) - read first on resume
 
 Done 2026-09-26: mscc 1.0.46 + mscc-init-gui 1.0.15 installed and tested on the Pi (Ron).
-1. Test FREQ CAL STOP on the Pi (Ron "later"; needs WPF 9.26.5+).
-2. cmd-042: hi-cut 1400/1000 Hz in sdrcore-recv -> 1.0.47. On hold until Stew pushes.
+1. Test FREQ CAL STOP on the Pi (needs WPF 9.26.5+). Back burner (Ron 2026-09-27).
+2. cmd-042: hi-cut 1400/1000 Hz in sdrcore-recv -> 1.0.48. Source done 2026-09-27 (Ron: do it now, not waiting for Ubuntu): udp_thread.c case 5/6, recv 3.141, WSL syntax OK. Ron built it on the Pi; sdrcore-recv copied to mscc-binaries. mscc 1.0.48 built 2026-09-27 (only sdrcore-recv differs from 1.0.47), in installers/rpi (1.0.47 removed). **Installed on the Pi 2026-09-27, filters work (Ron). Done.**
 3. cmd-046: TUNE power separate (Windows/Ubuntu trans + WPF). With Stew; no Pi change.
 4. RF check of remote TX audio (Stew, spectrum analyzer).
-Optional: drop mscc-init from the .deb entirely.
+Done 2026-09-27 (committed): mscc-init dropped from the .deb (build-deb strips it, postinst removes old ~/mscc/mscc-init + link, docs point to mscc-init-gui). Source + mscc-binaries/mscc-init kept. Built into mscc 1.0.47 (2026-09-27, WSL; servers identical to 1.0.46), copied to installers/rpi (1.0.46 removed). Not installed on the Pi yet. cmd-042 now -> 1.0.48.
 
 ## Architecture (per Ron)
 
@@ -59,6 +63,19 @@ Syntax check on Windows: WSL `Debian` has gcc. Use `-iquote sources -idirafter s
 
 Overdrive code is legacy, ignore it. CW carrier is generated continuously (keyed
 elsewhere). No thread locking is fine (works for years).
+CW snap (ms-sdr `cw-snap.c`, recv `CMD_CW_SNAP_*`) is not in the client yet and never
+runs during FREQ CAL (Ron 2026-09-27). Image check can't overlap FREQ CAL either (client
+blocks it). So the `doRxCalibrate` static-index overrun (count change mid-fill) can't happen.
+FREQ CAL saturation fix (2026-09-27; mscc 1.0.49 installed on the Pi, FREQ CAL works - Ron): Goertzel mags were stored as int(mag*1e6),
+capped at INT_MAX (~-24 dBFS raw IQ) -> ties, first (low) step won, 3-sum wrapped. Now
+`calMag*F` floats in `sdrcore.h`, `cal_data` floats, average in double (same 1e6 units vs
+Calibration_Low_Limit). Image check keeps the scaled ints (`cal_mag_scaled`, clamped).
+WSL syntax OK. Windows recv has the same issue (not touched).
+#5 fixes (same batch, in 1.0.49): main.c freq_low init typo; cal log %ld -> %u/%d (udp_thread
+217, 299, 755, 1395, 1404); cal_data index clamped to MAX_CALIBRATION_ELEMENT-1.
+Future idea (Ron: keep in mind, not now): `goertzel_mag` uses only I (`data[i].real`) -> no
++600/-600 side check, ~3 dB SNR loss. Complex Goertzel (~10 lines) fixes both; level numbers
+change, so recheck CALIBRATION_LOW_LIMIT / LOOSE. Mirror is 1200 Hz away, outside the sweep.
 
 ## Changes (2026-09-25)
 
@@ -137,7 +154,7 @@ now says run `mscc-init-gui`. Copied to installers/rpi (1.0.45 removed). Install
 
 Windows `mscc-recv` 3.141 added 0xD1 CMD_SET_BW_HICUT index 5 = 1400 Hz, 6 = 1000 Hz
 (DIG-U Hi, WPF cmd-041). Pi to match in `SDRcore-recv-linux/sources/udp_thread.c`
-(hi-cut switch ~line 1547) + version bump -> `mscc_1.0.47_arm64.deb` (1.0.46 used 2026-09-26). Brief:
+(hi-cut switch ~line 1547) + version bump -> `mscc_1.0.48_arm64.deb` (1.0.47 used 2026-09-27). Brief:
 `.mscc-coord/briefs/cmd-042.md`. Order: after ubuntu-stew is done and Stew pushes.
 Reviewed: 0-4 unchanged, low-cut max 500 < 1000, ms-sdr passes index through. Not done yet.
 

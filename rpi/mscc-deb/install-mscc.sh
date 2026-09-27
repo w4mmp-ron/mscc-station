@@ -93,6 +93,6 @@ echo
 echo "Install finished. Next steps (in order):"
 echo "  1. Log out/in (or reboot) — enables groups + virtual digi audio service"
 echo "  2. pactl list short sinks | grep Virtual   # if empty: mscc-virtual-audio"
-echo "  3. mscc-init     # digi speaker=VirtualA  digi mic=VirtualB.monitor"
+echo "  3. mscc-init-gui # operator audio (package mscc-init-gui)"
 echo "  4. mscc start"
 echo "Pulse PortAudio: install to \$HOME/portaudio-install (mscc.sh uses it)"

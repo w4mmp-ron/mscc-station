@@ -844,7 +844,7 @@ int main(int argc, char **argv) {
     mystate.iqReversed = 1; // Yes Virginia, we're reversed...
     mystate.iMult = 1.0f; // I and Q mag adjustments = preset to "no action"
     mystate.qMult = 1.0f;
-    mycalstate.freq_high = 598.0f;
+    mycalstate.freq_low = 598.0f;
     mycalstate.freq_center = 600.0f;
     mycalstate.freq_high = 602.f;
 

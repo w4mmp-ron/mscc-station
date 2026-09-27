@@ -28,7 +28,7 @@ As of FM work: control is **1.0.42**, but you still need a **Pi rebuild** of rec
 
 `mscc_*.deb` ships **prebuilt AArch64** binaries. Compile on a **64-bit Raspberry Pi OS** Pi 4/5.
 
-`build-deb.sh` checks that `mscc-binaries/{ms-sdr,sdrcore-recv,sdrcore-trans,mscc-init,bootloader}` are **AArch64** and aborts if they are not (so an Ubuntu laptop amd64 build cannot be packaged as `*_arm64.deb`).
+`build-deb.sh` checks that `mscc-binaries/{ms-sdr,sdrcore-recv,sdrcore-trans,bootloader}` are **AArch64** and aborts if they are not (so an Ubuntu laptop amd64 build cannot be packaged as `*_arm64.deb`).
 
 ---
 
@@ -151,7 +151,6 @@ cp -a "$MSCC/mscc-deb/mscc_1.0.43_arm64.deb" "$MSCC/../installers/rpi/"
 | Rebuild Avalonia / `mscc-ui` | Already updated (e.g. 0.6.44) |
 | Rebuild `mscc-portaudio` | Unchanged |
 | Rebuild `mscc-init-gui` | Unchanged |
-| Rebuild `mscc-init` | Only if you changed `mscc-init-linux` |
 
 ---
 

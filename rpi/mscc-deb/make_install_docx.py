@@ -377,11 +377,6 @@ for t in [
 ]:
     doc.add_paragraph(t, style="List Bullet")
 
-p = doc.add_paragraph()
-bold_run(p, "CLI alternative")
-p.add_run(" (SSH or no desktop):")
-add_code("mscc-init")
-
 doc.add_paragraph("Config files live under:")
 add_code("$HOME/.local/mscc/")
 doc.add_paragraph("Upgrades do not overwrite existing config.")
