@@ -1,4 +1,17 @@
 commands:
+  - id: cmd-048
+    created: "2026-09-28T12:00:00-04:00"
+    target: [ubuntu-stew, windows-new-hp]
+    role: server
+    action: port-pi-qrp-qro-power-cal-to-sdrcore-trans
+    status_hint: open
+    detail: |
+      Port Pi commits 5e06637 + 1b03de5 (mscc 1.0.50, tested by Ron): SDRcore-trans owns
+      power_cal.ini / amplifier_cal.ini, cal sliders RAM-only + delayed save, ms-sdr read-only,
+      amplifier.ini removed. No protocol or client change. Ubuntu files match the old Pi (copy);
+      Windows hunk by hunk. Ask Ron about Windows factory_seed mirror/reseed before choosing.
+      Commit locally, do not push.
+      Brief: .mscc-coord/briefs/cmd-048.md
   - id: cmd-047a
     created: "2026-09-27T16:55:00-04:00"
     target: [ubuntu-stew]
