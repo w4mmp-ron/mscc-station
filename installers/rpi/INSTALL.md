@@ -13,6 +13,7 @@ sudo apt install -y ./mscc-portaudio_*_arm64.deb    # first
 ./install-mscc.sh                                    # mscc_*_arm64.deb
 sudo apt install -y ./mscc-init-gui_*_all.deb
 sudo apt install -y ./mscc-ui_*_arm64.deb           # optional if you use Windows WPF
+sudo apt install -y ./proficio-flash-tools_*_all.deb # optional: Black Pill flash tools (ST-Link / USB DFU)
 ```
 
 Order: **PortAudio → servers → init-gui → UI**.
