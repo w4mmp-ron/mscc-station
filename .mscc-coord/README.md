@@ -21,6 +21,7 @@ Do **not** push/pull on every status ACK.
 | `COMMANDS.yaml` | Build Commander | Optional ordered commands |
 | `status/<host>.md` | That host’s Build only | ACK + progress (often local until a code push) |
 | `RESULTS/` (optional) | Builds | Logs, notes, artifact pointers |
+| `QUESTIONS-FOR-RON.md` | Build Commander / Stew (Ron fills in answers) | Open questions for Ron, each with an **Answer:** line |
 
 ## Host ids
 
