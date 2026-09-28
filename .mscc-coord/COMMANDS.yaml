@@ -1,4 +1,51 @@
 commands:
+  - id: cmd-049
+    created: "2026-09-28T15:30:00-04:00"
+    target: [ubuntu-stew]
+    role: client
+    action: avalonia-0.6.67-smeter-alc-hold-peak
+    status_hint: open
+    detail: |
+      Host: ubuntu-stew (stew-HP-Notebook). Checkout: /home/stew/Documents/GitHub/mscc-station
+      HEAD gate: top = "coord: cmd-049 Avalonia S/ALC meter Hold+Peak", then "docs: draft Linux +
+      Windows operation manuals for Ron review", then 2287276 (none pushed; origin has one extra
+      installers/rpi commit, do not pull). cmd-048 Build commits on top are OK.
+      Call the user Stew (plain copy-paste commands). Commit locally. Do NOT git push, do NOT pull.
+      Never run sudo yourself. Edit only mscc-ui/Avalonia-Migration (src + packaging control), kit
+      outputs and status/ubuntu-stew.md. Do not touch rpi/, linux/, docs/, MSCC.Wpf or MSCC.Core.
+      Testing is LOCAL ONLY (radio on this laptop).
+
+      ## Scope (Avalonia 0.6.66 -> 0.6.67): HOLD + Peak only
+      1. AnalogSMeterControl + AnalogAlcMeterControl (AVA/Controls): enable the placeholder HOLD /
+         Peak checkboxes (S axaml :24-30 / :45-51, ALC :26-32 / :47-53; drop IsEnabled=False and
+         Opacity 0.55, add x:Name, WPF tooltips). StyledProperties HoldEnabled (default true),
+         PeakEnabled (default false), PeakHoldSeconds (2), TwoWay by default.
+      2. WPF ballistics (MSCC.Wpf/Controls/AnalogSMeterControl.xaml.cs :235-292 wiring, :425-450
+         samples, :481-538 BallisticsTick, :615-624 peak needle, :806-850 UpdateNeedles; ALC
+         AnalogAlcMeterControl.xaml.cs :106-159, :176-244, :372-381, :442-470): 30 ms
+         DispatcherTimer; Hold = rise instantly, fall 0.12/tick (S) or 0.80/tick (ALC); Hold off
+         = track instantly; Peak = orange #FFB020 needle under the main one, holds 2 s then falls
+         0.20/tick (S) or 1.3/tick (ALC), never below the main needle; Peak off hides it.
+      3. Persist like WPF (SMETER_HOLD / SMETER_PEAK / ALC_HOLD / ALC_PEAK, 1/0, defaults 1/0/1/0)
+         in ~/.config/MSCC/mscc-avalonia.ini via ClientSettings / ClientSettingsStore; VM
+         properties with ScheduleSaveClientSettings; load in LoadClientSettings; bind TwoWay in
+         MainWindow.axaml (:182-186, :256-260) and drop the "HOLD/Peak later/next" tooltip text.
+      4. Version 0.6.67: csproj, _clientVersionText, startup log, DEBIAN/control.
+
+      ## Out of scope
+      S-meter fractional units / smoothing, ALC averaging, WPF TX power/SWR face on the S-meter,
+      meter geometry, other nits; rpi/, linux/, docs/, WPF, Core, Pi kit, remote tests.
+
+      ## Build / smoke
+      ~/.dotnet/dotnet build (no new warnings); ./linux-build/mscc-ui-x64.sh BEFORE
+      ./linux-build/build-mscc-ui-deb-amd64.sh -> installers/linux/mscc-ui_0.6.67_amd64.deb. Stew
+      installs with sudo apt install. LOCAL smoke on the radio (9 steps in the brief: boxes enabled
+      with defaults HOLD on / Peak off, HOLD slow fall, HOLD off releases, Peak orange needle holds
+      ~2 s, Peak off hides it, same on ALC in TX into a dummy load, meters independent, settings
+      survive restart + ini keys). ACK in status/ubuntu-stew.md (no bare pipe characters in cells).
+
+      Commit hint: cmd-049: Avalonia 0.6.67 S-meter + ALC HOLD/Peak (WPF ballistics, settings saved)
+      Brief: .mscc-coord/briefs/cmd-049.md
   - id: cmd-048
     created: "2026-09-28T12:00:00-04:00"
     target: [ubuntu-stew, windows-new-hp]
