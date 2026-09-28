@@ -193,7 +193,7 @@ Seen in the same recording: weak steady tones at 1000, 2000, 3000, 1359 Hz (3-8 
 above noise in a 1.5 Hz bin), likely birdies. Note: RX digi audio is VirtualA
 (VirtualB = TX).
 
-## QRP power cal moved to sdrcore-trans (2026-09-28; built + tested on the Pi by Ron: 2 bands calibrated, power response very good. Not committed, no .deb yet)
+## QRP power cal moved to sdrcore-trans (2026-09-28; built + tested on the Pi by Ron: 2 bands calibrated, power response very good. Committed 5e06637; in mscc 1.0.50)
 
 trans owns `~/power_cal.ini`: `power.c` Create_power_cal_file (startup, factory table
 47,30,24,29,53,72,28,30,45,40,40,40 = old ms-sdr PCB 2/4/5/6), bounds/NULL-safe
@@ -214,7 +214,7 @@ power_cal.ini saved after ~500 idle Drive_Manager loops (G_power_cal_save_countd
 right away before any G_power_file_needs_updated reload. No power.ini/amplifier rewrite,
 no Init_Power_All per step; 1 log line per step (was ~70 + 7 file ops).
 
-## Amp cal slider like QRP (2026-09-28; built + tested on the Pi by Ron with amplifier.ini removal: QRP + QRO cal smoother. Not committed)
+## Amp cal slider like QRP (2026-09-28; built + tested on the Pi by Ron with amplifier.ini removal: QRP + QRO cal smoother. Committed 1b03de5; in mscc 1.0.50)
 trans 0x08 (CMD_SET_POTENTIA_CALIBRATION, -99..0): RAM stack + table (1 + v/100) + G_drive_recalc;
 amplifier_cal.ini saved after ~500 idle loops (G_amp_cal_save_countdown) or before any reload.
 Flush_pending_cal_saves() before INITIALIZE's Init_Power_All. Update_amplifier_calibration:
