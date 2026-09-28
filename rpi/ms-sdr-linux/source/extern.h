@@ -477,10 +477,7 @@ extern int Check_Power_Cal_Version();
 
 //For Amplifier Power Output
 extern int16_t G_Amplifier_band;
-extern int Check_Amplifier_Version();
-extern int Initialize_amplifier_power();
 extern int Amplifier_Set_Power_Level(uint8_t command, char *buf);
-extern int Create_amplifier_ini_file();
 
 // For User Controls processing
 

@@ -23,7 +23,6 @@ extern struct input_devices G_digital_input_devices[MAX_INPUT_DEVICES];
 extern power_levels G_power_levels;
 extern power_stack G_Proficio_Calibration_Levels[];
 extern amplifier_stack G_amp_calibration_stack[];
-extern amplifier_stack G_amplifier_stack[];
 uint8_t G_PCB_Version = 10;
 uint8_t opcode;
 uint8_t t_opcode_data;
@@ -68,7 +67,6 @@ struct {
 struct {
 
     struct {
-        float user_power_value; //Populated from amplifier.ini
         float calibration_value; //Populated from amplifier_cal.ini
     };
 } amplifier_table[12]; //This table is for the Potentia
@@ -190,12 +188,11 @@ void Init_amplifier_table() {
     print_time();
     fprintf(G_fp_logfile, "[%d] Init_amplifier_table. STARTED\n",line_number++);
     for (band = 0; band < 12; band++) {
-        amplifier_table[band].user_power_value = (float) (G_amplifier_stack[band].power_level) * 0.01f;
         power_level = G_amp_calibration_stack[band].power_level;
         amplifier_table[band].calibration_value = 1.0f + ((float) power_level / 100.0f);
         print_time();
-        fprintf(G_fp_logfile, "[%d] Init_amplifier_table. Band: %d, user_power_level: %f, calibration_value: %f\n",
-                line_number++, band, amplifier_table[band].user_power_value, amplifier_table[band].calibration_value);
+        fprintf(G_fp_logfile, "[%d] Init_amplifier_table. Band: %d, calibration_value: %f\n",
+                line_number++, band, amplifier_table[band].calibration_value);
     }
     print_time();
     fprintf(G_fp_logfile, "[%d] Init_amplifier_table. FINISHED\n", line_number++);
@@ -207,7 +204,6 @@ void Init_Power_All(void) {
     Init_Proficio_User_power();
     Init_Proficio_calibration(0);
     Init_Proficio_table();
-    Init_amplifier_user_values();
     Init_amplifier_calibration();
     Init_amplifier_table();
     print_time();
@@ -674,6 +670,7 @@ void *UDP_Thread(void *my_param) {
                 print_time();
                 fprintf(G_fp_logfile, "[%d] UDP Thread. CMD_SET_SDRCORE_TRANS_INITIALIZE. STARTED State: %d \n", line_number++,
                         t_opcode_data);
+                Flush_pending_cal_saves(); /* don't reload over unsaved slider values */
                 Init_Power_All();
                 break;
 
@@ -747,9 +744,17 @@ void *UDP_Thread(void *my_param) {
                 op_code_data_32 = (int*) &buf[1];
                 memcpy(&i_opcode_data, op_code_data_32, 4);
                 amplifier_fine = i_opcode_data;
+                if (amp_calibration_band < 0 || amp_calibration_band >= 12) {
+                    break;
+                }
+                /* Sent on every slider step (-99..0). Same path as QRP 0xA2: RAM + drive recompute now,
+                 * amplifier_cal.ini saved by Drive_Manager once the slider is still (no full reload). */
+                G_amp_calibration_stack[amp_calibration_band].record = amp_calibration_band;
+                G_amp_calibration_stack[amp_calibration_band].band = amp_calibration_band;
                 G_amp_calibration_stack[amp_calibration_band].power_level = amplifier_fine;
-                amplifier_table[amp_calibration_band].calibration_value = amplifier_fine;
-                G_power_file_needs_updated = TRUE;
+                amplifier_table[amp_calibration_band].calibration_value = 1.0f + ((float) amplifier_fine / 100.0f);
+                G_amp_cal_save_countdown = POWER_CAL_SAVE_DELAY;
+                G_drive_recalc = 1;
                 print_time();
                 fprintf(G_fp_logfile, "[%d] UDP Thread. CMD_SET_POTENTIA_CALIBRATION Band: %d, Calibration Value: %d\n",
                         line_number++, amp_calibration_band, amplifier_fine);
@@ -757,12 +762,8 @@ void *UDP_Thread(void *my_param) {
 
             case CMD_SET_AMPLIFIER_POWER:
                 print_time();
-                fprintf(G_fp_logfile, "[%d] UDP Thread. CMD_SET_AMPLIFIER_POWER. STARTED. Power: %d\n", line_number++,t_opcode_data);
-                amplifier_table[amp_calibration_band].user_power_value = (float) (t_opcode_data) * 0.01f;
-                G_power_file_needs_updated = TRUE;
-                print_time();
-                fprintf(G_fp_logfile, "[%d] UDP Thread. CMD_SET_AMPLIFIER_POWER. Finished. Amplifier Band: %d, Mode: %d, Power: %d\n",
-                        line_number++, amp_calibration_band, mode, t_opcode_data);
+                fprintf(G_fp_logfile, "[%d] UDP Thread. CMD_SET_AMPLIFIER_POWER. Power: %d. NOOP (amplifier.ini removed)\n",
+                        line_number++, t_opcode_data);
                 break;
                 //End of Amplifier Routines
 

@@ -213,3 +213,18 @@ Slider speed-up (same day): 0xA2 now RAM only + G_drive_recalc (Drive_Manager re
 power_cal.ini saved after ~500 idle Drive_Manager loops (G_power_cal_save_countdown), or
 right away before any G_power_file_needs_updated reload. No power.ini/amplifier rewrite,
 no Init_Power_All per step; 1 log line per step (was ~70 + 7 file ops).
+
+## Amp cal slider like QRP (2026-09-28; built + tested on the Pi by Ron with amplifier.ini removal: QRP + QRO cal smoother. Not committed)
+trans 0x08 (CMD_SET_POTENTIA_CALIBRATION, -99..0): RAM stack + table (1 + v/100) + G_drive_recalc;
+amplifier_cal.ini saved after ~500 idle loops (G_amp_cal_save_countdown) or before any reload.
+Flush_pending_cal_saves() before INITIALIZE's Init_Power_All. Update_amplifier_calibration:
+RECORD/BAND = index (missing file made every line RECORD=0), tmp + rename, 1 log line.
+Found (not changed): amplifier.ini "user power" is unused (client always sends 0xFA=100);
+ms-sdr Delete_amplifier_ini_file has remove(homedir) bug; deb amplifier_cal.ini has
+calibrated values (-37..-50), not 0.
+amplifier.ini removed (same day, Ron): ms-sdr amplifier.c no longer creates/reads/writes it
+(Check_Amplifier_Version, Create/Update/Delete/Initialize gone, incl. remove(homedir) bug);
+0xF9 replies 0xFB = 100 (constant, what the file held after band select; client shows it on
+PowerOut) + 0x08 cal from amplifier_cal.ini (read-only, bounds-checked). 0xFA ignored in
+ms-sdr and trans (no INITIALIZE / full reload). trans: Init_amplifier_user_values +
+amplifier_table.user_power_value removed. Old ~/amplifier.ini left on disk, harmless.

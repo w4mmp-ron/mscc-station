@@ -9,7 +9,20 @@ extern struct input_devices G_input_devices[MAX_INPUT_DEVICES];
 //const char *homedir;
 
 volatile int G_power_cal_save_countdown = 0; /* >0: power_cal.ini save pending (see Drive_Manager) */
+volatile int G_amp_cal_save_countdown = 0;   /* >0: amplifier_cal.ini save pending */
 volatile int G_drive_recalc = 0;             /* 1: Drive_Manager recomputes the drive */
+
+/* Save any pending QRP / amp cal slider value now (before a reload reads the files). */
+void Flush_pending_cal_saves(void) {
+    if (G_power_cal_save_countdown > 0) {
+        G_power_cal_save_countdown = 0;
+        Update_power_cal_file();
+    }
+    if (G_amp_cal_save_countdown > 0) {
+        G_amp_cal_save_countdown = 0;
+        Update_amplifier_calibration();
+    }
+}
 
 #define POWER_CAL_VERSION 3
 #define POWER_CAL_RECORDS 12

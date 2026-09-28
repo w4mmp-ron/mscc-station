@@ -216,6 +216,12 @@ void *Drive_Manager(void *t) {
                 G_power_cal_save_countdown = 0;
                 Update_power_cal_file(); /* before any reload below reads the file */
             }
+            /* Amp cal slider: same for amplifier_cal.ini */
+            if (G_amp_cal_save_countdown > 0 &&
+                (--G_amp_cal_save_countdown == 0 || G_power_file_needs_updated == TRUE)) {
+                G_amp_cal_save_countdown = 0;
+                Update_amplifier_calibration();
+            }
             if (G_drive_recalc) {
                 G_drive_recalc = 0;
                 qrp_mode = 10; /* force the drive recompute below */
