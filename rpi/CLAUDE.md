@@ -205,7 +205,7 @@ forwarded (no file write, no INITIALIZE, no 100 ms sleep); 0xB4 from copy; defau
 ignored (client never sends it); Create/Update/Delete + defaults tables removed; main.c no
 longer creates the file. No protocol change. Client already forces TUNE power 100 on the
 Pwr Cal tab, so no TUNE override in trans. Client never sends 0xAB master reset.
-Windows ms-sdr/trans still old way (same file format) - brief Stew if wanted.
+Windows ms-sdr/trans still old way (same file format). Stew briefed: cmd-048 (95601bb; Ubuntu + Windows port, Windows factory-seed choice goes to Ron).
 Client flow (Ron 2026-09-28, for reference only - no change wanted): CALIBRATE -> 0xA2 0,
 slider moves -> 0xA2 each (saved each time), CALIBRATE again -> "Accept?" YES (nothing sent),
 NO (nothing sent; value stays saved), CANCEL (0xA2 previous value).
