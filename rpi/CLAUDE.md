@@ -228,3 +228,6 @@ amplifier.ini removed (same day, Ron): ms-sdr amplifier.c no longer creates/read
 PowerOut) + 0x08 cal from amplifier_cal.ini (read-only, bounds-checked). 0xFA ignored in
 ms-sdr and trans (no INITIALIZE / full reload). trans: Init_amplifier_user_values +
 amplifier_table.user_power_value removed. Old ~/amplifier.ini left on disk, harmless.
+mscc 1.0.50 built 2026-09-28 (WSL, LF copy): ms-sdr + sdrcore-trans from the Pi (QRP/QRO cal
+changes, amplifier.ini removed); sdrcore-recv same as 1.0.49. In installers/rpi (1.0.49 removed).
+Not installed yet. Deb still ships init-files/amplifier.ini (unused now).
