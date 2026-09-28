@@ -1363,7 +1363,7 @@ int main(int argc, char **argv) {
     initialize_mscc();
     
     if (G_transceiver_initialization_status == TRUE) {
-        status = Create_power_ini_file();
+        /* power_cal.ini is created by sdrcore-trans */
         Check_Amplifier_Version();
         status = Create_amplifier_ini_file();
     }

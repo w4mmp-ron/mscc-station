@@ -210,6 +210,16 @@ void *Drive_Manager(void *t) {
     Sleep(6000);
     while (G_all_threads_run) {
         if (G_Power_Values_initialized == TRUE) {
+            /* QRP cal slider: save power_cal.ini once it has been still for POWER_CAL_SAVE_DELAY loops */
+            if (G_power_cal_save_countdown > 0 &&
+                (--G_power_cal_save_countdown == 0 || G_power_file_needs_updated == TRUE)) {
+                G_power_cal_save_countdown = 0;
+                Update_power_cal_file(); /* before any reload below reads the file */
+            }
+            if (G_drive_recalc) {
+                G_drive_recalc = 0;
+                qrp_mode = 10; /* force the drive recompute below */
+            }
             if (G_power_file_needs_updated == TRUE) {
                 Update_Proficio_User_Power_ini();
                 Update_amplifier_calibration();

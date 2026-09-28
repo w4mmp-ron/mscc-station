@@ -472,7 +472,6 @@ extern uint8_t G_in_IQ_calibration_mode;
 //For Power Calibration
 extern int Power_calibration(uint32_t command, char *buffer);
 //extern uint8_t G_calibration_mode;
-extern int Create_power_ini_file();
 extern int Initialize_power_calibration();
 extern int Check_Power_Cal_Version();
 

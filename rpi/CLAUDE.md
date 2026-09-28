@@ -192,3 +192,24 @@ noise-like over time, same as the rest of the passband. Edge falls ~40 dB from 5
 Seen in the same recording: weak steady tones at 1000, 2000, 3000, 1359 Hz (3-8 dB
 above noise in a 1.5 Hz bin), likely birdies. Note: RX digi audio is VirtualA
 (VirtualB = TX).
+
+## QRP power cal moved to sdrcore-trans (2026-09-28; built + tested on the Pi by Ron: 2 bands calibrated, power response very good. Not committed, no .deb yet)
+
+trans owns `~/power_cal.ini`: `power.c` Create_power_cal_file (startup, factory table
+47,30,24,29,53,72,28,30,45,40,40,40 = old ms-sdr PCB 2/4/5/6), bounds/NULL-safe
+Init_Proficio_calibration (defaults then RECORD=n overrides), Update_power_cal_file
+(tmp + rename). `udp_thread.c` 0xA1 unknown band -> index -1; 0xA2 -> Set_QRP_calibration
+(all modes, write file, Drive_Manager reload). Get_Power_Mode_Index removed.
+ms-sdr `power_calibration.c`: read-only file load on 0xA1 -> GUI 0xB4; 0xA2 kept as copy +
+forwarded (no file write, no INITIALIZE, no 100 ms sleep); 0xB4 from copy; defaults (0xAA)
+ignored (client never sends it); Create/Update/Delete + defaults tables removed; main.c no
+longer creates the file. No protocol change. Client already forces TUNE power 100 on the
+Pwr Cal tab, so no TUNE override in trans. Client never sends 0xAB master reset.
+Windows ms-sdr/trans still old way (same file format) - brief Stew if wanted.
+Client flow (Ron 2026-09-28, for reference only - no change wanted): CALIBRATE -> 0xA2 0,
+slider moves -> 0xA2 each (saved each time), CALIBRATE again -> "Accept?" YES (nothing sent),
+NO (nothing sent; value stays saved), CANCEL (0xA2 previous value).
+Slider speed-up (same day): 0xA2 now RAM only + G_drive_recalc (Drive_Manager recomputes);
+power_cal.ini saved after ~500 idle Drive_Manager loops (G_power_cal_save_countdown), or
+right away before any G_power_file_needs_updated reload. No power.ini/amplifier rewrite,
+no Init_Power_All per step; 1 log line per step (was ~70 + 7 file ops).

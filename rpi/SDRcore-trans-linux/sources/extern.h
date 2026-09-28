@@ -162,6 +162,11 @@ extern void build_power_levels(void);
 extern int delete_iq_ini_file(void);
 extern void Init_Proficio_User_power(void);
 extern int Init_Proficio_calibration(uint8_t send_to_transceiver);
+extern int Create_power_cal_file(void);
+extern int Update_power_cal_file(void);
+#define POWER_CAL_SAVE_DELAY 500 /* Drive_Manager loops (~1 ms each) before power_cal.ini is saved */
+extern volatile int G_power_cal_save_countdown;
+extern volatile int G_drive_recalc;
 extern int Init_amplifier_user_values(void);
 extern int Init_amplifier_calibration(void);
 extern int Update_amplifier_calibration(void);

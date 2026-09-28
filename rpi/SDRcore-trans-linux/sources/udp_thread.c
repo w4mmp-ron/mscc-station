@@ -393,18 +393,18 @@ int Get_IQ_Record(int band) {
     return record;
 }
 
-/* CMD_SET_MAIN_MODE wire value (0 AM, 1 LSB, 2 USB, 3 CW, 4 TUNE, 5 FM) -> proficio_table mode slot.
- * Returns -1 if the mode has no power slot (e.g. 6 = 'D'). */
-int Get_Power_Mode_Index(uint8_t wire_mode) {
-    switch (wire_mode) {
-        case 0: return AM_POWER;
-        case 1: return LSB_POWER;
-        case 2: return USB_POWER;
-        case 3: return CW_POWER;
-        case 4: return TUNE_POWER;
-        case 5: return FM_POWER;
+/* QRP calibration value for one band (0xA2), sent on every slider step. One value per band,
+ * used by every mode. RAM only here; Drive_Manager recomputes the drive now and saves
+ * power_cal.ini once the slider has been still for ~0.5 s (no full reload, no other files). */
+void Set_QRP_calibration(int band_index, int value) {
+    int mode = 0;
+
+    G_Proficio_Calibration_Levels[band_index].power_level = value;
+    for (mode = 0; mode < 6; mode++) {
+        proficio_table[band_index].mode[mode].calibration_value = value;
     }
-    return -1;
+    G_power_cal_save_countdown = POWER_CAL_SAVE_DELAY;
+    G_drive_recalc = 1;
 }
 
 void *UDP_Thread(void *my_param) {
@@ -419,7 +419,7 @@ void *UDP_Thread(void *my_param) {
     uint8_t mic_muted = 0;
     int device_input_record_index = 0;
     uint8_t UDP_status = 0;
-    int transceiver_calibration_index = 0;
+    int transceiver_calibration_index = -1;
     int transceiver_calibration_band = 0;
     int amp_calibration_band = 0;
     uint8_t mode = 0;
@@ -771,6 +771,7 @@ void *UDP_Thread(void *my_param) {
                 print_time();
                 fprintf(G_fp_logfile, "[%d] UDP Thread. CMD_SET_BAND_POWER_BAND. Called\n", line_number++);
                 transceiver_calibration_band = s_opcode_data;
+                transceiver_calibration_index = -1; /* unknown band -> 0xA2 ignored */
                 switch (transceiver_calibration_band) {
                     case 2200:
                         transceiver_calibration_index = POWER_B2200;
@@ -814,23 +815,18 @@ void *UDP_Thread(void *my_param) {
                         line_number++, transceiver_calibration_band, transceiver_calibration_index);
                 break;
 
-            case CMD_SET_BAND_POWER_POWER: {
-                int power_index = Get_Power_Mode_Index(mode);
-                print_time();
-                fprintf(G_fp_logfile, "[%d] UDP Thread. CMD_SET_BAND_POWER_POWER. Called\n", line_number++);
-                if (power_index < 0) {
+            case CMD_SET_BAND_POWER_POWER:
+                if (transceiver_calibration_index < 0 || transceiver_calibration_index >= 12) {
                     print_time();
-                    fprintf(G_fp_logfile, "[%d] UDP Thread. CMD_SET_BAND_POWER_POWER. No power slot for mode %d. Ignored\n",
-                            line_number++, mode);
+                    fprintf(G_fp_logfile, "[%d] UDP Thread. CMD_SET_BAND_POWER_POWER. No valid band (%d). Ignored\n",
+                            line_number++, transceiver_calibration_band);
                     break;
                 }
-                proficio_table[transceiver_calibration_index].mode[power_index].calibration_value = t_opcode_data;
-                G_power_file_needs_updated = 1;
+                Set_QRP_calibration(transceiver_calibration_index, t_opcode_data);
                 print_time();
-                fprintf(G_fp_logfile, "[%d] UDP Thread. CMD_SET_BAND_POWER_POWER. Finished. Calibration Band: %d, Mode: %d, Slot: %d, Power: %d\n",
-                        line_number++, transceiver_calibration_band, mode, power_index, t_opcode_data);
+                fprintf(G_fp_logfile, "[%d] UDP Thread. CMD_SET_BAND_POWER_POWER. Band: %d, Index: %d, Power: %d\n",
+                        line_number++, transceiver_calibration_band, transceiver_calibration_index, t_opcode_data);
                 break;
-            }
                 //End of commands for calibrating the Proficio
 
             case CMD_SET_PCB_VERSION:
