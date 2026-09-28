@@ -1,5 +1,7 @@
 using Avalonia;
 using Avalonia.Controls;
+using Avalonia.Data;
+using Avalonia.Interactivity;
 using Avalonia.Media;
 using Avalonia.Threading;
 using AvLine = Avalonia.Controls.Shapes.Line;
@@ -9,13 +11,11 @@ using AvPath = Avalonia.Controls.Shapes.Path;
 namespace MSCC.Avalonia.Controls;
 
 /// <summary>
-/// Analog ALC meter face (WPF AnalogAlcMeterControl geometry).
-/// Step 1: draw face + needle. Value property ready for live wiring next.
+/// Analog ALC meter face (WPF AnalogAlcMeterControl geometry, ±75° sweep).
+/// HOLD slow fall, Peak orange needle. Value 0–100.
 /// </summary>
 public partial class AnalogAlcMeterControl : UserControl
 {
-    // Wider than WPF’s ±58° so the scale is more open (helps ALC now and S-meter later).
-    // 0 = further CCW, 100 = further CW. Radius auto-fits the 180×120 slot.
     private const double StartAngleDeg = -75;
     private const double EndAngleDeg = 75;
     private const double SweepDeg = EndAngleDeg - StartAngleDeg;
@@ -24,40 +24,223 @@ public partial class AnalogAlcMeterControl : UserControl
     public static readonly StyledProperty<double> ValueProperty =
         AvaloniaProperty.Register<AnalogAlcMeterControl, double>(nameof(Value), 0.0);
 
-    /// <summary>ALC 0–100. Needle follows when set (demo/live).</summary>
+    public static readonly StyledProperty<bool> HoldEnabledProperty =
+        AvaloniaProperty.Register<AnalogAlcMeterControl, bool>(
+            nameof(HoldEnabled), true, defaultBindingMode: BindingMode.TwoWay);
+
+    public static readonly StyledProperty<bool> PeakEnabledProperty =
+        AvaloniaProperty.Register<AnalogAlcMeterControl, bool>(
+            nameof(PeakEnabled), false, defaultBindingMode: BindingMode.TwoWay);
+
+    public static readonly StyledProperty<double> PeakHoldSecondsProperty =
+        AvaloniaProperty.Register<AnalogAlcMeterControl, double>(nameof(PeakHoldSeconds), 2.0);
+
     public double Value
     {
         get => GetValue(ValueProperty);
         set => SetValue(ValueProperty, value);
     }
 
+    public bool HoldEnabled
+    {
+        get => GetValue(HoldEnabledProperty);
+        set => SetValue(HoldEnabledProperty, value);
+    }
+
+    public bool PeakEnabled
+    {
+        get => GetValue(PeakEnabledProperty);
+        set => SetValue(PeakEnabledProperty, value);
+    }
+
+    public double PeakHoldSeconds
+    {
+        get => GetValue(PeakHoldSecondsProperty);
+        set => SetValue(PeakHoldSecondsProperty, value);
+    }
+
     private AvLine? _needle;
+    private AvLine? _peakNeedle;
     private AvEllipse? _hub;
     private bool _faceBuilt;
     private double _cx;
     private double _cy;
     private double _radius;
 
+    private double _displayLevel;
+    private double _peakLevel;
+    private DateTime _peakLastRiseUtc = DateTime.MinValue;
+    private DispatcherTimer? _ballisticsTimer;
+    private bool _firstSample = true;
+
     public AnalogAlcMeterControl()
     {
         InitializeComponent();
-        AttachedToVisualTree += (_, _) => QueueBuildFace();
-        SizeChanged += (_, _) => QueueBuildFace();
+        AttachedToVisualTree += OnAttached;
+        DetachedFromVisualTree += OnDetached;
+        SizeChanged += (_, _) => QueueBuildFace(forceSample: false);
         PropertyChanged += OnPropChanged;
     }
+
+    private void OnAttached(object? sender, VisualTreeAttachmentEventArgs e)
+    {
+        WireCheckBoxes();
+        EnsureBallisticsTimer();
+        _firstSample = true;
+        QueueBuildFace(forceSample: true);
+    }
+
+    private void OnDetached(object? sender, VisualTreeAttachmentEventArgs e) =>
+        StopBallisticsTimer();
 
     private void OnPropChanged(object? sender, AvaloniaPropertyChangedEventArgs e)
     {
         if (e.Property == ValueProperty)
-            UpdateNeedle();
+            ApplyRawSample(Value, force: false);
+        else if (e.Property == HoldEnabledProperty || e.Property == PeakEnabledProperty)
+            OnHoldPeakChanged();
     }
 
-    private void QueueBuildFace()
+    private void WireCheckBoxes()
+    {
+        if (HoldCheckBox != null)
+        {
+            HoldCheckBox.IsCheckedChanged -= OnHoldCheckChanged;
+            if (HoldCheckBox.IsChecked != HoldEnabled)
+                HoldCheckBox.IsChecked = HoldEnabled;
+            HoldCheckBox.IsCheckedChanged += OnHoldCheckChanged;
+        }
+        if (PeakCheckBox != null)
+        {
+            PeakCheckBox.IsCheckedChanged -= OnPeakCheckChanged;
+            if (PeakCheckBox.IsChecked != PeakEnabled)
+                PeakCheckBox.IsChecked = PeakEnabled;
+            PeakCheckBox.IsCheckedChanged += OnPeakCheckChanged;
+        }
+    }
+
+    private void OnHoldCheckChanged(object? sender, RoutedEventArgs e)
+    {
+        bool on = HoldCheckBox?.IsChecked == true;
+        if (HoldEnabled != on)
+            HoldEnabled = on;
+    }
+
+    private void OnPeakCheckChanged(object? sender, RoutedEventArgs e)
+    {
+        bool on = PeakCheckBox?.IsChecked == true;
+        if (PeakEnabled != on)
+            PeakEnabled = on;
+    }
+
+    private void OnHoldPeakChanged()
+    {
+        EnsureBallisticsTimer();
+        if (!HoldEnabled)
+            _displayLevel = Math.Clamp(Value, 0, MaxValue);
+        if (!PeakEnabled)
+            _peakLevel = 0;
+        if (HoldCheckBox != null && HoldCheckBox.IsChecked != HoldEnabled)
+            HoldCheckBox.IsChecked = HoldEnabled;
+        if (PeakCheckBox != null && PeakCheckBox.IsChecked != PeakEnabled)
+            PeakCheckBox.IsChecked = PeakEnabled;
+        UpdateNeedles();
+    }
+
+    private void EnsureBallisticsTimer()
+    {
+        if (_ballisticsTimer != null) return;
+        _ballisticsTimer = new DispatcherTimer { Interval = TimeSpan.FromMilliseconds(30) };
+        _ballisticsTimer.Tick += (_, _) => BallisticsTick();
+        _ballisticsTimer.Start();
+    }
+
+    private void StopBallisticsTimer()
+    {
+        if (_ballisticsTimer == null) return;
+        _ballisticsTimer.Stop();
+        _ballisticsTimer = null;
+    }
+
+    private void ApplyRawSample(double raw, bool force)
+    {
+        double r = Math.Clamp(raw, 0, MaxValue);
+
+        if (force || !HoldEnabled)
+            _displayLevel = r;
+        else if (r >= _displayLevel)
+            _displayLevel = r;
+
+        if (PeakEnabled)
+        {
+            if (r >= _peakLevel)
+            {
+                _peakLevel = r;
+                _peakLastRiseUtc = DateTime.UtcNow;
+            }
+        }
+        else
+            _peakLevel = 0;
+
+        UpdateNeedles();
+    }
+
+    private void BallisticsTick()
+    {
+        bool changed = false;
+        double raw = Math.Clamp(Value, 0, MaxValue);
+
+        if (HoldEnabled && _displayLevel > raw + 0.01)
+        {
+            _displayLevel = Math.Max(raw, _displayLevel - 0.80);
+            changed = true;
+        }
+        else if (!HoldEnabled && Math.Abs(_displayLevel - raw) > 0.01)
+        {
+            _displayLevel = raw;
+            changed = true;
+        }
+
+        if (PeakEnabled)
+        {
+            double hang = Math.Clamp(PeakHoldSeconds, 0.5, 5.0);
+            if ((DateTime.UtcNow - _peakLastRiseUtc).TotalSeconds >= hang)
+            {
+                double floor = Math.Max(raw, _displayLevel);
+                if (_peakLevel > floor + 0.01)
+                {
+                    _peakLevel = Math.Max(floor, _peakLevel - 1.3);
+                    changed = true;
+                }
+            }
+            if (_peakLevel < _displayLevel)
+            {
+                _peakLevel = _displayLevel;
+                changed = true;
+            }
+        }
+        else if (_peakLevel > 0)
+        {
+            _peakLevel = 0;
+            changed = true;
+        }
+
+        if (changed)
+            UpdateNeedles();
+    }
+
+    private void QueueBuildFace(bool forceSample)
     {
         Dispatcher.UIThread.Post(() =>
         {
             BuildFace();
-            UpdateNeedle();
+            if (forceSample || _firstSample)
+            {
+                _firstSample = false;
+                ApplyRawSample(Value, force: true);
+            }
+            else
+                UpdateNeedles();
         }, DispatcherPriority.Loaded);
     }
 
@@ -75,6 +258,7 @@ public partial class AnalogAlcMeterControl : UserControl
 
         FaceCanvas.Children.Clear();
         _needle = null;
+        _peakNeedle = null;
         _hub = null;
         _faceBuilt = false;
 
@@ -93,7 +277,6 @@ public partial class AnalogAlcMeterControl : UserControl
         double maxRHeight = (h - edgePad) / Math.Max(0.01, cosA);
         double maxRHeight2 = h - edgePad;
 
-        // Fill more of the slot — user prefers larger face; room outside scale is fine
         _radius = Math.Min(Math.Min(maxRWidth, maxRLabel), Math.Min(maxRHeight, maxRHeight2)) * 0.98;
         _radius = Math.Max(32, _radius);
 
@@ -119,7 +302,6 @@ public partial class AnalogAlcMeterControl : UserControl
         Canvas.SetTop(face, _cy - face.Height / 2);
         FaceCanvas.Children.Add(face);
 
-        // Color zones (green / yellow / red) like WPF
         DrawArcZone(0, 20, Color.FromRgb(0, 150, 85), 4.0);
         DrawArcZone(20, 50, Color.FromRgb(190, 150, 20), 4.0);
         DrawArcZone(50, 100, Color.FromRgb(190, 65, 48), 4.0);
@@ -176,7 +358,6 @@ public partial class AnalogAlcMeterControl : UserControl
                 Foreground = unit == 50 ? Brushes.White : new SolidColorBrush(Color.FromRgb(0xD0, 0xD0, 0xD0)),
                 FontWeight = unit == 50 ? FontWeight.Bold : FontWeight.Normal
             };
-            // Approximate text size for centering
             double tw = label.Length * (unit == 100 ? 4.2 : 4.8);
             double th = 10;
             Canvas.SetLeft(tb, lx - tw / 2);
@@ -195,6 +376,16 @@ public partial class AnalogAlcMeterControl : UserControl
         Canvas.SetLeft(legend, _cx - 10);
         Canvas.SetTop(legend, _cy - _radius * 0.42);
         FaceCanvas.Children.Add(legend);
+
+        _peakNeedle = new AvLine
+        {
+            Stroke = new SolidColorBrush(Color.FromRgb(0xFF, 0xB0, 0x20)),
+            StrokeThickness = 1.2,
+            StrokeLineCap = PenLineCap.Round,
+            Opacity = 0.95,
+            IsVisible = false
+        };
+        FaceCanvas.Children.Add(_peakNeedle);
 
         _needle = new AvLine
         {
@@ -263,7 +454,7 @@ public partial class AnalogAlcMeterControl : UserControl
         });
     }
 
-    private void UpdateNeedle()
+    private void UpdateNeedles()
     {
         if (!_faceBuilt || _needle == null)
         {
@@ -272,13 +463,30 @@ public partial class AnalogAlcMeterControl : UserControl
         }
 
         double tipR = _radius - 11;
-        double main = Math.Clamp(Value, 0, MaxValue);
+        double main = Math.Clamp(_displayLevel, 0, MaxValue);
         double mainRad = DegToRad(UnitToAngle(main));
 
         _needle.StartPoint = new Point(_cx, _cy);
         _needle.EndPoint = new Point(
             _cx + tipR * Math.Sin(mainRad),
             _cy - tipR * Math.Cos(mainRad));
+
+        if (_peakNeedle != null)
+        {
+            if (PeakEnabled && _peakLevel > 0.3)
+            {
+                double peak = Math.Clamp(_peakLevel, 0, MaxValue);
+                double peakRad = DegToRad(UnitToAngle(peak));
+                double peakTip = tipR - 2;
+                _peakNeedle.IsVisible = true;
+                _peakNeedle.StartPoint = new Point(_cx, _cy);
+                _peakNeedle.EndPoint = new Point(
+                    _cx + peakTip * Math.Sin(peakRad),
+                    _cy - peakTip * Math.Cos(peakRad));
+            }
+            else
+                _peakNeedle.IsVisible = false;
+        }
 
         if (ReadingText != null)
             ReadingText.Text = ((int)Math.Round(main)).ToString();

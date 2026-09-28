@@ -17,19 +17,18 @@
               HorizontalAlignment="Stretch"
               VerticalAlignment="Stretch"/>
 
-      <!-- HOLD | reading | Peak (HOLD/Peak not wired yet) -->
+      <!-- HOLD | reading | Peak -->
       <StackPanel Grid.Row="1"
                   Orientation="Horizontal"
                   HorizontalAlignment="Center"
                   Spacing="4"
                   Margin="0,2,0,0">
-        <CheckBox Content="HOLD"
+        <CheckBox x:Name="HoldCheckBox"
+                  Content="HOLD"
                   FontSize="8"
                   FontWeight="Bold"
                   Foreground="White"
-                  IsEnabled="False"
-                  Opacity="0.55"
-                  ToolTip.Tip="Slow needle fall — next step"/>
+                  ToolTip.Tip="Slow fall of the main ALC needle when level drops (client-side). Off = needle tracks instantly."/>
         <Border Background="#FF444444"
                 BorderBrush="#FF888888"
                 BorderThickness="1"
@@ -44,13 +43,12 @@
                      FontFamily="Consolas, Courier New, monospace"
                      HorizontalAlignment="Center"/>
         </Border>
-        <CheckBox Content="Peak"
+        <CheckBox x:Name="PeakCheckBox"
+                  Content="Peak"
                   FontSize="8"
                   FontWeight="Bold"
                   Foreground="White"
-                  IsEnabled="False"
-                  Opacity="0.55"
-                  ToolTip.Tip="Peak needle — next step"/>
+                  ToolTip.Tip="Orange peak needle: holds the highest ALC reading ~2 seconds, then falls (client-side)."/>
       </StackPanel>
     </Grid>
   </Border>

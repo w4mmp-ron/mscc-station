@@ -121,6 +121,10 @@ public sealed class ClientSettings
     public bool QrpMode { get; set; } = true;
     public bool FullPower { get; set; }
     public bool AlcOn { get; set; } = true;
+    public bool SmeterHold { get; set; } = true;
+    public bool SmeterPeak { get; set; }
+    public bool AlcHold { get; set; } = true;
+    public bool AlcPeak { get; set; }
 
     // Global S/W (not banked)
     public double SpectrumZoom { get; set; } = 1;
@@ -319,6 +323,12 @@ public static class ClientSettingsStore
             sb.AppendLine($"MONITOR_ON={(s.MonitorOn ? "1" : "0")}");
             sb.AppendLine($"AMP_ON={(s.AmpOn ? "1" : "0")}");
             sb.AppendLine($"ALC_ON={(s.AlcOn ? "1" : "0")}");
+            sb.AppendLine();
+            sb.AppendLine("# Meters");
+            sb.AppendLine($"SMETER_HOLD={(s.SmeterHold ? "1" : "0")}");
+            sb.AppendLine($"SMETER_PEAK={(s.SmeterPeak ? "1" : "0")}");
+            sb.AppendLine($"ALC_HOLD={(s.AlcHold ? "1" : "0")}");
+            sb.AppendLine($"ALC_PEAK={(s.AlcPeak ? "1" : "0")}");
             sb.AppendLine();
             sb.AppendLine("# Global S/W");
             sb.AppendLine($"SPECTRUM_ZOOM={s.SpectrumZoom.ToString(CultureInfo.InvariantCulture)}");
@@ -682,6 +692,18 @@ public static class ClientSettingsStore
                 break;
             case "ALC_ON":
                 s.AlcOn = IsTruthy(val);
+                break;
+            case "SMETER_HOLD":
+                s.SmeterHold = IsTruthy(val);
+                break;
+            case "SMETER_PEAK":
+                s.SmeterPeak = IsTruthy(val);
+                break;
+            case "ALC_HOLD":
+                s.AlcHold = IsTruthy(val);
+                break;
+            case "ALC_PEAK":
+                s.AlcPeak = IsTruthy(val);
                 break;
 
             case "SPECTRUM_ZOOM":

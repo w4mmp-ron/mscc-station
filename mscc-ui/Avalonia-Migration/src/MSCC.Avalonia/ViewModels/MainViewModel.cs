@@ -179,7 +179,7 @@ public partial class MainViewModel : ViewModelBase, IDisposable
         ModeText = "";
         NotifyModeFlags();
         NotifyBandFlags();
-        AppendLog("MSCC Avalonia 0.6.66 — FREQ CAL Disconnect keeps MAIN mode when restore was deferred.");
+        AppendLog("MSCC Avalonia 0.6.67 — S-meter and ALC HOLD / Peak (WPF behaviour, saved in settings).");
         AppendLog("PTT = TX (voice modes); TUN = TUNE + carrier. S/W opens pan settings.");
         AppendLog($"Log: {LogFilePath}");
         CwPitchLabel = CwPitchOptions[Math.Clamp(CwPitchIndex, 0, CwPitchOptions.Count - 1)];
@@ -311,9 +311,13 @@ public partial class MainViewModel : ViewModelBase, IDisposable
     [ObservableProperty] private string _smeterText = "—";
     /// <summary>S-meter units 0–15 (WPF Db_to_Smeter). Drives analog face.</summary>
     [ObservableProperty] private double _sMeter;
+    [ObservableProperty] private bool _smeterHold = true;
+    [ObservableProperty] private bool _smeterPeak;
     [ObservableProperty] private string _alcText = "—";
     /// <summary>ALC meter 0–100 (smoothed). Drives analog face.</summary>
     [ObservableProperty] private double _alcValue;
+    [ObservableProperty] private bool _alcHold = true;
+    [ObservableProperty] private bool _alcPeak;
     [ObservableProperty] private string _coreVersionText = "—";
     [ObservableProperty] private string _firmwareText = "—";
     [ObservableProperty] private string _bandText = "—";
@@ -481,7 +485,7 @@ public partial class MainViewModel : ViewModelBase, IDisposable
     [ObservableProperty] private string _proficioTempText = "— °C";
     [ObservableProperty] private string _paTempText = "— °C";
     [ObservableProperty] private string _paCurrentText = "— mA";
-    [ObservableProperty] private string _clientVersionText = "0.6.66";
+    [ObservableProperty] private string _clientVersionText = "0.6.67";
     [ObservableProperty] private bool _alcOn = true;
     /// <summary>AMP / QRO path (PA bypass). Red when on (WPF).</summary>
     [ObservableProperty] private bool _ampOn;
@@ -2035,6 +2039,34 @@ public partial class MainViewModel : ViewModelBase, IDisposable
         ScheduleSaveClientSettings();
         if (_suppressAlcCommand || !CanOperate()) return;
         _ = SendAlcOnAsync(value);
+    }
+
+    partial void OnSmeterHoldChanged(bool value)
+    {
+        if (!_suppressSettingsSave)
+            AppendLog($"Meter: S HOLD={(value ? "on" : "off")} Peak={(SmeterPeak ? "on" : "off")}");
+        ScheduleSaveClientSettings();
+    }
+
+    partial void OnSmeterPeakChanged(bool value)
+    {
+        if (!_suppressSettingsSave)
+            AppendLog($"Meter: S HOLD={(SmeterHold ? "on" : "off")} Peak={(value ? "on" : "off")}");
+        ScheduleSaveClientSettings();
+    }
+
+    partial void OnAlcHoldChanged(bool value)
+    {
+        if (!_suppressSettingsSave)
+            AppendLog($"Meter: ALC HOLD={(value ? "on" : "off")} Peak={(AlcPeak ? "on" : "off")}");
+        ScheduleSaveClientSettings();
+    }
+
+    partial void OnAlcPeakChanged(bool value)
+    {
+        if (!_suppressSettingsSave)
+            AppendLog($"Meter: ALC HOLD={(AlcHold ? "on" : "off")} Peak={(value ? "on" : "off")}");
+        ScheduleSaveClientSettings();
     }
 
     partial void OnCompressionOnChanged(bool value)
@@ -6547,6 +6579,11 @@ public partial class MainViewModel : ViewModelBase, IDisposable
             AlcOn = s.AlcOn;
             _suppressAlcCommand = false;
 
+            SmeterHold = s.SmeterHold;
+            SmeterPeak = s.SmeterPeak;
+            AlcHold = s.AlcHold;
+            AlcPeak = s.AlcPeak;
+
             long activeHz = UseVfoA ? _frequencyHz : _vfoBFrequencyHz;
             BandText = BandNameForFrequency(activeHz);
 
@@ -6681,6 +6718,10 @@ public partial class MainViewModel : ViewModelBase, IDisposable
             MonitorOn = MonitorOn,
             AmpOn = AmpOn,
             AlcOn = AlcOn,
+            SmeterHold = SmeterHold,
+            SmeterPeak = SmeterPeak,
+            AlcHold = AlcHold,
+            AlcPeak = AlcPeak,
             SpectrumZoom = sw.ZoomFactor,
             DbCalRelative = sw.DbCalRelative,
             GridMaxDb = sw.GridMaxDb,

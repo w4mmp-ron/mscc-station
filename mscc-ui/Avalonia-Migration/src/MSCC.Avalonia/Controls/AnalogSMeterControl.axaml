@@ -21,13 +21,12 @@
                   HorizontalAlignment="Center"
                   Spacing="4"
                   Margin="0,2,0,0">
-        <CheckBox Content="HOLD"
+        <CheckBox x:Name="HoldCheckBox"
+                  Content="HOLD"
                   FontSize="8"
                   FontWeight="Bold"
                   Foreground="White"
-                  IsEnabled="False"
-                  Opacity="0.55"
-                  ToolTip.Tip="Slow needle fall — later"/>
+                  ToolTip.Tip="Slow fall of the main S-meter needle when signal drops (client-side). Off = needle tracks instantly."/>
         <Border Background="#FF444444"
                 BorderBrush="#FF888888"
                 BorderThickness="1"
@@ -42,13 +41,12 @@
                      FontFamily="Consolas, Courier New, monospace"
                      HorizontalAlignment="Center"/>
         </Border>
-        <CheckBox Content="Peak"
+        <CheckBox x:Name="PeakCheckBox"
+                  Content="Peak"
                   FontSize="8"
                   FontWeight="Bold"
                   Foreground="White"
-                  IsEnabled="False"
-                  Opacity="0.55"
-                  ToolTip.Tip="Peak needle — later"/>
+                  ToolTip.Tip="Orange peak needle: holds the highest reading ~2 seconds, then falls (client-side)."/>
       </StackPanel>
     </Grid>
   </Border>

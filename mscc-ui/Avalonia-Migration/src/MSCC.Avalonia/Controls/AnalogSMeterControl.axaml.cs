@@ -1,5 +1,7 @@
 using Avalonia;
 using Avalonia.Controls;
+using Avalonia.Data;
+using Avalonia.Interactivity;
 using Avalonia.Media;
 using Avalonia.Threading;
 using AvLine = Avalonia.Controls.Shapes.Line;
@@ -10,7 +12,7 @@ namespace MSCC.Avalonia.Controls;
 
 /// <summary>
 /// Analog S-meter face (RX). WPF AnalogSMeterControl geometry, wider sweep (±75°).
-/// Value space 0–15: S1…S9, then +10…+60 (units 10–15). Live via MainViewModel.SMeter.
+/// Value space 0–15: S1…S9, then +10…+60 (units 10–15). HOLD slow fall, Peak orange needle.
 /// </summary>
 public partial class AnalogSMeterControl : UserControl
 {
@@ -22,40 +24,223 @@ public partial class AnalogSMeterControl : UserControl
     public static readonly StyledProperty<double> ValueProperty =
         AvaloniaProperty.Register<AnalogSMeterControl, double>(nameof(Value), 0.0);
 
-    /// <summary>S-meter units 0–15 (WPF). Needle follows when set.</summary>
+    public static readonly StyledProperty<bool> HoldEnabledProperty =
+        AvaloniaProperty.Register<AnalogSMeterControl, bool>(
+            nameof(HoldEnabled), true, defaultBindingMode: BindingMode.TwoWay);
+
+    public static readonly StyledProperty<bool> PeakEnabledProperty =
+        AvaloniaProperty.Register<AnalogSMeterControl, bool>(
+            nameof(PeakEnabled), false, defaultBindingMode: BindingMode.TwoWay);
+
+    public static readonly StyledProperty<double> PeakHoldSecondsProperty =
+        AvaloniaProperty.Register<AnalogSMeterControl, double>(nameof(PeakHoldSeconds), 2.0);
+
     public double Value
     {
         get => GetValue(ValueProperty);
         set => SetValue(ValueProperty, value);
     }
 
+    public bool HoldEnabled
+    {
+        get => GetValue(HoldEnabledProperty);
+        set => SetValue(HoldEnabledProperty, value);
+    }
+
+    public bool PeakEnabled
+    {
+        get => GetValue(PeakEnabledProperty);
+        set => SetValue(PeakEnabledProperty, value);
+    }
+
+    public double PeakHoldSeconds
+    {
+        get => GetValue(PeakHoldSecondsProperty);
+        set => SetValue(PeakHoldSecondsProperty, value);
+    }
+
     private AvLine? _needle;
+    private AvLine? _peakNeedle;
     private AvEllipse? _hub;
     private bool _faceBuilt;
     private double _cx;
     private double _cy;
     private double _radius;
 
+    private double _displayLevel;
+    private double _peakLevel;
+    private DateTime _peakLastRiseUtc = DateTime.MinValue;
+    private DispatcherTimer? _ballisticsTimer;
+    private bool _firstSample = true;
+
     public AnalogSMeterControl()
     {
         InitializeComponent();
-        AttachedToVisualTree += (_, _) => QueueBuildFace();
-        SizeChanged += (_, _) => QueueBuildFace();
+        AttachedToVisualTree += OnAttached;
+        DetachedFromVisualTree += OnDetached;
+        SizeChanged += (_, _) => QueueBuildFace(forceSample: false);
         PropertyChanged += OnPropChanged;
     }
+
+    private void OnAttached(object? sender, VisualTreeAttachmentEventArgs e)
+    {
+        WireCheckBoxes();
+        EnsureBallisticsTimer();
+        _firstSample = true;
+        QueueBuildFace(forceSample: true);
+    }
+
+    private void OnDetached(object? sender, VisualTreeAttachmentEventArgs e) =>
+        StopBallisticsTimer();
 
     private void OnPropChanged(object? sender, AvaloniaPropertyChangedEventArgs e)
     {
         if (e.Property == ValueProperty)
-            UpdateNeedle();
+            ApplyRawSample(Value, force: false);
+        else if (e.Property == HoldEnabledProperty || e.Property == PeakEnabledProperty)
+            OnHoldPeakChanged();
     }
 
-    private void QueueBuildFace()
+    private void WireCheckBoxes()
+    {
+        if (HoldCheckBox != null)
+        {
+            HoldCheckBox.IsCheckedChanged -= OnHoldCheckChanged;
+            if (HoldCheckBox.IsChecked != HoldEnabled)
+                HoldCheckBox.IsChecked = HoldEnabled;
+            HoldCheckBox.IsCheckedChanged += OnHoldCheckChanged;
+        }
+        if (PeakCheckBox != null)
+        {
+            PeakCheckBox.IsCheckedChanged -= OnPeakCheckChanged;
+            if (PeakCheckBox.IsChecked != PeakEnabled)
+                PeakCheckBox.IsChecked = PeakEnabled;
+            PeakCheckBox.IsCheckedChanged += OnPeakCheckChanged;
+        }
+    }
+
+    private void OnHoldCheckChanged(object? sender, RoutedEventArgs e)
+    {
+        bool on = HoldCheckBox?.IsChecked == true;
+        if (HoldEnabled != on)
+            HoldEnabled = on;
+    }
+
+    private void OnPeakCheckChanged(object? sender, RoutedEventArgs e)
+    {
+        bool on = PeakCheckBox?.IsChecked == true;
+        if (PeakEnabled != on)
+            PeakEnabled = on;
+    }
+
+    private void OnHoldPeakChanged()
+    {
+        EnsureBallisticsTimer();
+        if (!HoldEnabled)
+            _displayLevel = Math.Clamp(Value, 0, MaxSUnit);
+        if (!PeakEnabled)
+            _peakLevel = 0;
+        if (HoldCheckBox != null && HoldCheckBox.IsChecked != HoldEnabled)
+            HoldCheckBox.IsChecked = HoldEnabled;
+        if (PeakCheckBox != null && PeakCheckBox.IsChecked != PeakEnabled)
+            PeakCheckBox.IsChecked = PeakEnabled;
+        UpdateNeedles();
+    }
+
+    private void EnsureBallisticsTimer()
+    {
+        if (_ballisticsTimer != null) return;
+        _ballisticsTimer = new DispatcherTimer { Interval = TimeSpan.FromMilliseconds(30) };
+        _ballisticsTimer.Tick += (_, _) => BallisticsTick();
+        _ballisticsTimer.Start();
+    }
+
+    private void StopBallisticsTimer()
+    {
+        if (_ballisticsTimer == null) return;
+        _ballisticsTimer.Stop();
+        _ballisticsTimer = null;
+    }
+
+    private void ApplyRawSample(double raw, bool force)
+    {
+        double r = Math.Clamp(raw, 0, MaxSUnit);
+
+        if (force || !HoldEnabled)
+            _displayLevel = r;
+        else if (r >= _displayLevel)
+            _displayLevel = r;
+
+        if (PeakEnabled)
+        {
+            if (r >= _peakLevel)
+            {
+                _peakLevel = r;
+                _peakLastRiseUtc = DateTime.UtcNow;
+            }
+        }
+        else
+            _peakLevel = 0;
+
+        UpdateNeedles();
+    }
+
+    private void BallisticsTick()
+    {
+        bool changed = false;
+        double raw = Math.Clamp(Value, 0, MaxSUnit);
+
+        if (HoldEnabled && _displayLevel > raw + 0.001)
+        {
+            _displayLevel = Math.Max(raw, _displayLevel - 0.12);
+            changed = true;
+        }
+        else if (!HoldEnabled && Math.Abs(_displayLevel - raw) > 0.001)
+        {
+            _displayLevel = raw;
+            changed = true;
+        }
+
+        if (PeakEnabled)
+        {
+            double hang = Math.Clamp(PeakHoldSeconds, 0.5, 5.0);
+            if ((DateTime.UtcNow - _peakLastRiseUtc).TotalSeconds >= hang)
+            {
+                double floor = Math.Max(raw, _displayLevel);
+                if (_peakLevel > floor + 0.001)
+                {
+                    _peakLevel = Math.Max(floor, _peakLevel - 0.20);
+                    changed = true;
+                }
+            }
+            if (_peakLevel < _displayLevel)
+            {
+                _peakLevel = _displayLevel;
+                changed = true;
+            }
+        }
+        else if (_peakLevel > 0)
+        {
+            _peakLevel = 0;
+            changed = true;
+        }
+
+        if (changed)
+            UpdateNeedles();
+    }
+
+    private void QueueBuildFace(bool forceSample)
     {
         Dispatcher.UIThread.Post(() =>
         {
             BuildFace();
-            UpdateNeedle();
+            if (forceSample || _firstSample)
+            {
+                _firstSample = false;
+                ApplyRawSample(Value, force: true);
+            }
+            else
+                UpdateNeedles();
         }, DispatcherPriority.Loaded);
     }
 
@@ -73,6 +258,7 @@ public partial class AnalogSMeterControl : UserControl
 
         FaceCanvas.Children.Clear();
         _needle = null;
+        _peakNeedle = null;
         _hub = null;
         _faceBuilt = false;
 
@@ -116,7 +302,6 @@ public partial class AnalogSMeterControl : UserControl
         Canvas.SetTop(face, _cy - face.Height / 2);
         FaceCanvas.Children.Add(face);
 
-        // S0–S9 green, +10…+30 yellow, +40…+60 red (WPF zones on 0–15 scale)
         DrawArcZone(0, 9, Color.FromRgb(0, 150, 85), 4.0);
         DrawArcZone(9, 12, Color.FromRgb(190, 150, 20), 4.0);
         DrawArcZone(12, 15, Color.FromRgb(190, 65, 48), 4.0);
@@ -152,6 +337,16 @@ public partial class AnalogSMeterControl : UserControl
         Canvas.SetLeft(legend, _cx - 4);
         Canvas.SetTop(legend, _cy - _radius * 0.42);
         FaceCanvas.Children.Add(legend);
+
+        _peakNeedle = new AvLine
+        {
+            Stroke = new SolidColorBrush(Color.FromRgb(0xFF, 0xB0, 0x20)),
+            StrokeThickness = 1.2,
+            StrokeLineCap = PenLineCap.Round,
+            Opacity = 0.95,
+            IsVisible = false
+        };
+        FaceCanvas.Children.Add(_peakNeedle);
 
         _needle = new AvLine
         {
@@ -260,7 +455,7 @@ public partial class AnalogSMeterControl : UserControl
         });
     }
 
-    private void UpdateNeedle()
+    private void UpdateNeedles()
     {
         if (!_faceBuilt || _needle == null)
         {
@@ -269,13 +464,30 @@ public partial class AnalogSMeterControl : UserControl
         }
 
         double tipR = _radius - 11;
-        double main = Math.Clamp(Value, 0, MaxSUnit);
+        double main = Math.Clamp(_displayLevel, 0, MaxSUnit);
         double mainRad = DegToRad(UnitToAngle(main));
 
         _needle.StartPoint = new Point(_cx, _cy);
         _needle.EndPoint = new Point(
             _cx + tipR * Math.Sin(mainRad),
             _cy - tipR * Math.Cos(mainRad));
+
+        if (_peakNeedle != null)
+        {
+            if (PeakEnabled && _peakLevel > 0.05)
+            {
+                double peak = Math.Clamp(_peakLevel, 0, MaxSUnit);
+                double peakRad = DegToRad(UnitToAngle(peak));
+                double peakTip = tipR - 2;
+                _peakNeedle.IsVisible = true;
+                _peakNeedle.StartPoint = new Point(_cx, _cy);
+                _peakNeedle.EndPoint = new Point(
+                    _cx + peakTip * Math.Sin(peakRad),
+                    _cy - peakTip * Math.Cos(peakRad));
+            }
+            else
+                _peakNeedle.IsVisible = false;
+        }
 
         if (ReadingText != null)
             ReadingText.Text = FormatSmeterReading((int)Math.Round(main));

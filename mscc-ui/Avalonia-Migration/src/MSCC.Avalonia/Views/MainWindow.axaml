@@ -183,7 +183,10 @@
                                     Width="180" Height="120"
                                     VerticalAlignment="Center"
                                     Value="{Binding SMeter}"
-                                    ToolTip.Tip="S-meter (live). S1–S9 / +10…+60 units. HOLD/Peak later."/>
+                                    HoldEnabled="{Binding SmeterHold, Mode=TwoWay}"
+                                    PeakEnabled="{Binding SmeterPeak, Mode=TwoWay}"
+                                    PeakHoldSeconds="2"
+                                    ToolTip.Tip="S-meter (live). S1–S9 / +10…+60 units."/>
 
           <!-- VFO A — click to select; digit-hover wheel. Larger digits for easier hit-test. -->
           <Border x:Name="VfoAPanel"
@@ -252,12 +255,15 @@
             </StackPanel>
           </Border>
 
-          <!-- ALC analog face (draw step; Value ready for live wire next) -->
+          <!-- ALC analog face (live 0–100, HOLD/Peak like WPF) -->
           <ctrl:AnalogAlcMeterControl Grid.Column="7"
                                       Width="180" Height="120"
                                       VerticalAlignment="Center"
                                       Value="{Binding AlcValue}"
-                                      ToolTip.Tip="ALC meter (live 0–100, smoothed). HOLD/Peak next."/>
+                                      HoldEnabled="{Binding AlcHold, Mode=TwoWay}"
+                                      PeakEnabled="{Binding AlcPeak, Mode=TwoWay}"
+                                      PeakHoldSeconds="2"
+                                      ToolTip.Tip="ALC meter (live 0–100, smoothed)."/>
         </Grid>
       </Border>
 
