@@ -230,4 +230,4 @@ ms-sdr and trans (no INITIALIZE / full reload). trans: Init_amplifier_user_value
 amplifier_table.user_power_value removed. Old ~/amplifier.ini left on disk, harmless.
 mscc 1.0.50 built 2026-09-28 (WSL, LF copy): ms-sdr + sdrcore-trans from the Pi (QRP/QRO cal
 changes, amplifier.ini removed); sdrcore-recv same as 1.0.49. In installers/rpi (1.0.49 removed).
-Not installed yet. Deb still ships init-files/amplifier.ini (unused now).
+**Installed on the Pi 2026-09-28, works (Ron).** Deb still ships init-files/amplifier.ini (unused; Ron: keep for now).
