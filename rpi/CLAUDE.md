@@ -27,30 +27,35 @@ History: Claude worked in a copy `rpi/sdrcore-claude/` (commits fe0c9a1, 0443c21
 (originals unchanged since 8dee14a) and the copy deleted.
 Git repo root: `C:\Users\Ron\.grok\worktrees`.
 
-## Open list (Ron, 2026-09-26) - read first on resume
+## Open list (Ron, updated 2026-09-29) - read first on resume
 
-Done 2026-09-26: mscc 1.0.46 + mscc-init-gui 1.0.15 installed and tested on the Pi (Ron).
 1. Test FREQ CAL STOP on the Pi (needs WPF 9.26.5+). Back burner (Ron 2026-09-27).
-2. cmd-042: hi-cut 1400/1000 Hz in sdrcore-recv -> 1.0.48. Source done 2026-09-27 (Ron: do it now, not waiting for Ubuntu): udp_thread.c case 5/6, recv 3.141, WSL syntax OK. Ron built it on the Pi; sdrcore-recv copied to mscc-binaries. mscc 1.0.48 built 2026-09-27 (only sdrcore-recv differs from 1.0.47), in installers/rpi (1.0.47 removed). **Installed on the Pi 2026-09-27, filters work (Ron). Done.**
-3. cmd-046: TUNE power separate (Windows/Ubuntu trans + WPF). With Stew; no Pi change.
-4. RF check of remote TX audio (Stew, spectrum analyzer).
-Done 2026-09-27 (committed): mscc-init dropped from the .deb (build-deb strips it, postinst removes old ~/mscc/mscc-init + link, docs point to mscc-init-gui). Source + mscc-binaries/mscc-init kept. Built into mscc 1.0.47 (2026-09-27, WSL; servers identical to 1.0.46), copied to installers/rpi (1.0.46 removed). Not installed on the Pi yet. cmd-042 now -> 1.0.48.
+2. cmd-046: TUNE power separate (Windows/Ubuntu trans + WPF). With Stew; no Pi change.
+3. RF check of remote TX audio (Stew, spectrum analyzer).
+4. cmd-048 (Stew): port Pi QRP/QRO power cal to Ubuntu/Windows; Windows factory-seed choice -> Ron.
+5. cmd-050 (Stew): Ubuntu kit/docs/drop-installers.sh for the mscc-init rename (below).
+6. Install mscc-init 1.0.18 on the Pi (Ron tested 1.0.17; 1.0.18 = rename only). Not confirmed yet.
+7. Next mscc .deb build picks up the "(package mscc-init)" hint text in mscc-deb postinst /
+   build-deb.sh / install-mscc.sh (source only, committed 82b819b). No rebuild just for that.
 
-mscc-init CLI back as Python (Ron 2026-09-28): `mscc-init-gui/mscc_init_gui/cli.py` = port of
-C `mscc-init-linux/sources/main.c` (same 4 steps/prompts), reuses config.py/devices.py (SWR keep
-fix included; radio I/Q devices hidden like the GUI; warns if servers run). Shipped as
-`/usr/bin/mscc-init` in mscc-init-gui 1.0.16 (built WSL, LF copy; in installers/rpi, 1.0.15
-removed). mscc .deb unchanged (still drops the C binary). Tested on Windows Python with a fake
-HOME (files OK); device pick needs PyAudio -> test on the Pi. Not committed.
-Pi test 1.0.16: CLI works (Ron). GUI blank window = old bug: "servers running" askyesno ran
-before the root was mapped and stayed hidden (traceback). 1.0.17: check runs via after(200)
-once the window is up, dialogs parent=self. GUI works on the Pi (Ron).
-Package renamed (Ron): `mscc-init` 1.0.18 -> `mscc-init_1.0.18_all.deb` (Provides/Conflicts/
-Replaces mscc-init-gui; upgrade from 1.0.17 checked in WSL dpkg: old one removed). Commands and
-folder rpi/mscc-init-gui/, /usr/share/mscc-init-gui unchanged. installers/rpi INSTALL.md +
-install-mscc.sh updated; mscc-deb postinst/build-deb/install-mscc.sh hint text "(package
-mscc-init)" edited in source only (goes in next mscc build). Stew's Ubuntu docs/drop script
-still say mscc-init-gui_*.deb - briefed as cmd-050.
+Done: cmd-042 hi-cut (mscc 1.0.48), FREQ CAL fixes (1.0.49), QRP/QRO cal + amplifier.ini
+removed (1.0.50, installed + works). mscc-init C CLI dropped from the mscc .deb in 1.0.47.
+
+## mscc-init package (2026-09-28, committed 82b819b; Stew brief cmd-050 = 443d7a4)
+
+Ron missed the CLI after 1.0.47 and wanted it in Python, kept in the init-gui package.
+- `rpi/mscc-init-gui/mscc_init_gui/cli.py`: port of C `mscc-init-linux/sources/main.c` (same 4
+  steps/prompts), reuses config.py/devices.py (SWR keep fix; radio I/Q devices hidden like the
+  GUI; warns if servers run). `/usr/bin/mscc-init`. **Works on the Pi (Ron).**
+- GUI blank window (old bug, also in 1.0.15): "servers running" askyesno ran before the root
+  was mapped and stayed hidden. Now `after(200, _startup_server_check)`, dialogs `parent=self`.
+  **Works on the Pi (Ron, 1.0.17).**
+- Package renamed (Ron: old name misleading): `mscc-init` 1.0.18, `mscc-init_1.0.18_all.deb`,
+  Provides/Conflicts/Replaces mscc-init-gui (dpkg upgrade from 1.0.17 checked in WSL). Commands
+  `mscc-init` / `mscc-init-gui`, folder `rpi/mscc-init-gui/`, `/usr/share/mscc-init-gui` unchanged.
+  In installers/rpi (INSTALL.md + install-mscc.sh updated).
+- Build: `build-deb.sh` in WSL Debian from an LF copy (strip CR with sed), repo files are CRLF.
+- The C source `mscc-init-linux/` and `mscc-binaries/mscc-init` are kept but unused.
 
 ## Architecture (per Ron)
 
@@ -166,13 +171,13 @@ STOP + cmd-044), sdrcore-recv (#13 40 ms digi), sdrcore-trans 09-25, mscc-init O
 (09-16, no SWR keep fix; Ron: CLI not used, nothing runs it; source kept). postinst hint
 now says run `mscc-init-gui`. Copied to installers/rpi (1.0.45 removed). Installed + tested OK (Ron).
 
-## On hold (Ron, 2026-09-26): cmd-042 (from pull f9efa00, 2026-09-25)
+## Done (mscc 1.0.48): cmd-042 (from pull f9efa00, 2026-09-25)
 
 Windows `mscc-recv` 3.141 added 0xD1 CMD_SET_BW_HICUT index 5 = 1400 Hz, 6 = 1000 Hz
 (DIG-U Hi, WPF cmd-041). Pi to match in `SDRcore-recv-linux/sources/udp_thread.c`
 (hi-cut switch ~line 1547) + version bump -> `mscc_1.0.48_arm64.deb` (1.0.47 used 2026-09-27). Brief:
 `.mscc-coord/briefs/cmd-042.md`. Order: after ubuntu-stew is done and Stew pushes.
-Reviewed: 0-4 unchanged, low-cut max 500 < 1000, ms-sdr passes index through. Not done yet.
+Reviewed: 0-4 unchanged, low-cut max 500 < 1000, ms-sdr passes index through. Done, see Open list.
 
 ## To do: RF check of remote TX audio (Stew, spectrum analyzer)
 
