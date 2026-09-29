@@ -35,6 +35,10 @@ Git repo root: `C:\Users\Ron\.grok\worktrees`.
 4. cmd-048 (Stew): port Pi QRP/QRO power cal to Ubuntu/Windows; Windows factory-seed choice -> Ron.
 5. cmd-050 (Stew): Ubuntu kit/docs/drop-installers.sh for the mscc-init rename (below).
 6. Done 2026-09-29: mscc-init 1.0.18 installed on the Pi, works (Ron).
+8. Spectrum -12 kHz DC-spur notch sized in FFT bins (2026-09-29, `SDRcore-recv-linux/sources/panadapter.c`,
+   MP_HALF_BINS 3; was fixed 2 px, spur showed at PAN RESOLUTION 1600/3200). WSL syntax OK. Ron to build
+   + test on the Pi; if a trace remains at 3200 raise MP_HALF_BINS to 4-5. Not committed. Windows recv has
+   the same 2-px notch -> brief Stew if it works, plus rename PAN -> SPECTRUM in the client.
 7. Next mscc .deb build picks up the "(package mscc-init)" hint text in mscc-deb postinst /
    build-deb.sh / install-mscc.sh (source only, committed 82b819b). No rebuild just for that.
 
