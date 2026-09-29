@@ -1,16 +1,20 @@
-Package: mscc-init-gui
-Version: 1.0.15
+Package: mscc-init
+Version: 1.0.18
 Section: hamradio
 Priority: optional
 Architecture: all
+Provides: mscc-init-gui
+Conflicts: mscc-init-gui
+Replaces: mscc-init-gui
 Maintainer: Multus SDR / MSCC Linux <local@localhost>
 Depends: python3, python3-tk, python3-pyaudio, pulseaudio-utils | pipewire-pulse
 Recommends: python3-usb, mscc, pipewire-pulse | pulseaudio, alsa-utils
 Homepage: https://local/mscc
-Description: MSCC Init GUI for Raspberry Pi OS
+Description: MSCC Init (GUI + text wizard) for Raspberry Pi OS
  MSCC Init — configure CAT/PTT, keyer, PROFICIO-MKII, operator audio,
  fixed digi VirtualA / VirtualB.monitor (writes $HOME/.local/mscc)
  .
- Desktop menu: "MSCC Init". CLI: mscc-init-gui.
+ Desktop menu: "MSCC Init" (mscc-init-gui).
+ Text wizard for SSH / headless: mscc-init (same files).
  .
  Run as your normal desktop user (not root / not during apt alone).

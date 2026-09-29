@@ -89,16 +89,9 @@ class MsccInitApp(tk.Tk):
         self.speaker_index = tk.IntVar(value=0)
         self.mic_index = tk.IntVar(value=0)
         self.audio_error: Optional[str] = None
-        self._abort = False
 
         self._step = 0
         self._frames: List[ttk.Frame] = []
-
-        # Servers hold PortAudio/CAT — stop before reconfiguring
-        if not self._check_servers_before_init():
-            self._abort = True
-            self.destroy()
-            return
 
         outer = ttk.Frame(self, padding=12)
         outer.pack(fill=tk.BOTH, expand=True)
@@ -132,6 +125,15 @@ class MsccInitApp(tk.Tk):
         self._build_steps()
         self._show_step(0)
 
+        # Servers hold PortAudio/CAT — stop before reconfiguring. Ask once the
+        # window is on screen: a dialog opened before the root is mapped can
+        # stay hidden (Pi desktop), leaving only a blank window.
+        self.after(200, self._startup_server_check)
+
+    def _startup_server_check(self) -> None:
+        if not self._check_servers_before_init():
+            self.destroy()
+
     def _check_servers_before_init(self) -> bool:
         """
         If MSCC servers are running, offer to stop them.
@@ -152,12 +154,14 @@ class MsccInitApp(tk.Tk):
             "No  = exit without changing configuration",
             icon=messagebox.WARNING,
             default=messagebox.YES,
+            parent=self,
         )
         if not yes:
             messagebox.showinfo(
                 "MSCC Init",
                 "Initialization cancelled.\n"
                 "Stop servers first (menu: MSCC Stop, or: mscc stop), then run MSCC Init again.",
+                parent=self,
             )
             return False
 
@@ -168,6 +172,7 @@ class MsccInitApp(tk.Tk):
                 "Failed to stop MSCC servers:\n\n"
                 f"{detail}\n\n"
                 "Stop them manually (mscc stop), then run MSCC Init again.",
+                parent=self,
             )
             return False
 
@@ -178,12 +183,14 @@ class MsccInitApp(tk.Tk):
                 "These processes are still running after stop:\n\n"
                 f"  {', '.join(still)}\n\n"
                 "Stop them manually, then run MSCC Init again.",
+                parent=self,
             )
             return False
 
         messagebox.showinfo(
             "MSCC Init",
             "Servers stopped. Continuing with configuration.",
+            parent=self,
         )
         return True
 
@@ -651,10 +658,7 @@ class MsccInitApp(tk.Tk):
 
 
 def main() -> None:
-    app = MsccInitApp()
-    if getattr(app, "_abort", False):
-        return
-    app.mainloop()
+    MsccInitApp().mainloop()
 
 
 if __name__ == "__main__":

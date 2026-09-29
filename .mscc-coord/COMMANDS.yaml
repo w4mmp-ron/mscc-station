@@ -1,4 +1,17 @@
 commands:
+  - id: cmd-050
+    created: "2026-09-28T20:00:00-04:00"
+    target: [ubuntu-stew]
+    role: packaging
+    action: rename-mscc-init-gui-deb-to-mscc-init
+    status_hint: open
+    detail: |
+      Pi package mscc-init-gui renamed mscc-init 1.0.18 (mscc-init_1.0.18_all.deb; Provides/
+      Conflicts/Replaces mscc-init-gui). Adds Python text wizard mscc-init + GUI blank-window fix.
+      Update drop-installers.sh patterns (line 68 would copy the old name back into
+      installers/rpi), installers/linux kit and docs; smoke test on Ubuntu.
+      After cmd-049. Commit locally, do not push.
+      Brief: .mscc-coord/briefs/cmd-050.md
   - id: cmd-049
     created: "2026-09-28T15:30:00-04:00"
     target: [ubuntu-stew]

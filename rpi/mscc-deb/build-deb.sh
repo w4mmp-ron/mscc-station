@@ -225,6 +225,6 @@ echo "Current kit copy: installers/rpi/"
 echo
 echo "Then as normal user:"
 echo "  systemctl --user enable --now mscc-virtual-audio   # if sinks missing"
-echo "  mscc-init-gui # operator audio (package mscc-init-gui)"
+echo "  mscc-init-gui # operator audio (package mscc-init)"
 echo "  mscc start    # or desktop menu: MSCC Start / MSCC Stop"
 echo "  # optional PortAudio+Pulse: \$HOME/portaudio-install (see mscc.sh)"

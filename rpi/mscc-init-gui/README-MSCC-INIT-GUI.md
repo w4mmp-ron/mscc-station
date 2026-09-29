@@ -1,6 +1,6 @@
 # MSCC Init GUI — Linux / Raspberry Pi OS
 
-**v1.0.15**: **MSCC Init** / `mscc-init-gui` configures the Pi (`~/.local/mscc`).
+**v1.0.18** (package `mscc-init`, was `mscc-init-gui`): **MSCC Init** / `mscc-init-gui` configures the Pi (`~/.local/mscc`).
 The MSCC Volume GUI was dropped in 1.0.15 (installing removes it).
 
 Init wizard writes the same config as CLI **`mscc-init`** under  
@@ -42,7 +42,7 @@ chmod +x mscc-init-gui
 ## Install .deb (when built)
 
 ```bash
-sudo apt install -y ./mscc-init-gui_*.deb
+sudo apt install -y ./mscc-init_*.deb
 ```
 
 Then open the menu: **MSCC Init** (or run `mscc-init-gui`).
@@ -57,7 +57,7 @@ On Linux / WSL with `dpkg-deb`:
 ./build-deb.sh
 ```
 
-Produces `mscc-init-gui_<version>_all.deb`.
+Produces `mscc-init_<version>_all.deb`.
 
 ## Files written
 
@@ -76,4 +76,5 @@ Produces `mscc-init-gui_<version>_all.deb`.
 
 - Optional 96 kHz filter remains in code (`require_96k=True`) but GUI default is off.
 - Virtual* digi devices are hidden from operator lists.
-- CLI `mscc-init` remains available from the main `mscc` package for SSH/headless.
+- CLI `mscc-init` (1.0.16+): Python text wizard in this package (`mscc_init_gui/cli.py`),
+  same files as the GUI, for SSH/headless. Replaces the old C `mscc-init` from the `mscc` package.

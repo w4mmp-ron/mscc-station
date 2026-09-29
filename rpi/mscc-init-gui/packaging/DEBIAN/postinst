@@ -19,7 +19,7 @@ resolve_user() {
 
 case "$1" in
 configure)
-  chmod 755 /usr/bin/mscc-init-gui 2>/dev/null || true
+  chmod 755 /usr/bin/mscc-init-gui /usr/bin/mscc-init 2>/dev/null || true
   find /usr/share/mscc-init-gui -type d -exec chmod 755 {} \; 2>/dev/null || true
 
   if command -v update-desktop-database >/dev/null 2>&1; then
@@ -31,17 +31,18 @@ configure)
     HOME_DIR="$(getent passwd "$REAL_USER" | cut -d: -f6)"
     if [[ -n "$HOME_DIR" && -d "$HOME_DIR/mscc/mscc-volume-gui" ]]; then
       rm -rf "$HOME_DIR/mscc/mscc-volume-gui"
-      echo "mscc-init-gui: removed old $HOME_DIR/mscc/mscc-volume-gui"
+      echo "mscc-init: removed old $HOME_DIR/mscc/mscc-volume-gui"
     fi
   fi
 
   echo
   echo "================================================================"
-  echo "  mscc-init-gui $1"
+  echo "  mscc-init $1"
   echo "================================================================"
   echo "  Desktop user (not root):"
   echo "    • Menu:  MSCC Init"
-  echo "    • CLI:   mscc-init-gui"
+  echo "    • GUI:   mscc-init-gui"
+  echo "    • Text:  mscc-init   (SSH / no desktop)"
   echo "  Config:  \$HOME/.local/mscc"
   echo "================================================================"
   echo
