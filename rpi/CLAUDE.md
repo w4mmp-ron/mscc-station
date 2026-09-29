@@ -29,9 +29,6 @@ Git repo root: `C:\Users\Ron\.grok\worktrees`.
 
 ## Open list (Ron, updated 2026-09-29) - read first on resume
 
-**ON RESUME, ASK RON FIRST:** "Did you test the spectrum -12 kHz notch on the Pi (PAN RESOLUTION
-800 / 1600 / 3200)?" (item 8). Remove this line once answered.
-
 1. Test FREQ CAL STOP on the Pi (needs WPF 9.26.5+). Back burner (Ron 2026-09-27).
 2. cmd-046: TUNE power separate (Windows/Ubuntu trans + WPF). With Stew; no Pi change.
 3. RF check of remote TX audio (Stew, spectrum analyzer).
@@ -39,8 +36,9 @@ Git repo root: `C:\Users\Ron\.grok\worktrees`.
 5. cmd-050 (Stew): Ubuntu kit/docs/drop-installers.sh for the mscc-init rename (below).
 6. Done 2026-09-29: mscc-init 1.0.18 installed on the Pi, works (Ron).
 8. Spectrum -12 kHz DC-spur notch sized in FFT bins (2026-09-29, `SDRcore-recv-linux/sources/panadapter.c`,
-   MP_HALF_BINS 3; was fixed 2 px, spur showed at PAN RESOLUTION 1600/3200). WSL syntax OK. Ron to build
-   + test on the Pi; if a trace remains at 3200 raise MP_HALF_BINS to 4-5. Not committed. Windows recv has
+   was fixed 2 px, spur showed at PAN RESOLUTION 1600/3200). MP_HALF_BINS 3 tested on the Pi: better, a
+   trace remained -> 4: still a ~5 dB skirt bump + faint waterfall line (screenshot) -> 6 (2026-09-29):
+   **tested on the Pi, OK (Ron; "a bit blotchy but OK").** Not committed. Windows recv has
    the same 2-px notch -> brief Stew if it works, plus rename PAN -> SPECTRUM in the client.
 7. Next mscc .deb build picks up the "(package mscc-init)" hint text in mscc-deb postinst /
    build-deb.sh / install-mscc.sh (source only, committed 82b819b). No rebuild just for that.
