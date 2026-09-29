@@ -34,7 +34,7 @@ Git repo root: `C:\Users\Ron\.grok\worktrees`.
 3. RF check of remote TX audio (Stew, spectrum analyzer).
 4. cmd-048 (Stew): port Pi QRP/QRO power cal to Ubuntu/Windows; Windows factory-seed choice -> Ron.
 5. cmd-050 (Stew): Ubuntu kit/docs/drop-installers.sh for the mscc-init rename (below).
-6. Install mscc-init 1.0.18 on the Pi (Ron tested 1.0.17; 1.0.18 = rename only). Not confirmed yet.
+6. Done 2026-09-29: mscc-init 1.0.18 installed on the Pi, works (Ron).
 7. Next mscc .deb build picks up the "(package mscc-init)" hint text in mscc-deb postinst /
    build-deb.sh / install-mscc.sh (source only, committed 82b819b). No rebuild just for that.
 
