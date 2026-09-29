@@ -29,6 +29,9 @@ Git repo root: `C:\Users\Ron\.grok\worktrees`.
 
 ## Open list (Ron, updated 2026-09-29) - read first on resume
 
+**ON RESUME, ASK RON FIRST:** "Did you test the spectrum -12 kHz notch on the Pi (PAN RESOLUTION
+800 / 1600 / 3200)?" (item 8). Remove this line once answered.
+
 1. Test FREQ CAL STOP on the Pi (needs WPF 9.26.5+). Back burner (Ron 2026-09-27).
 2. cmd-046: TUNE power separate (Windows/Ubuntu trans + WPF). With Stew; no Pi change.
 3. RF check of remote TX audio (Stew, spectrum analyzer).
