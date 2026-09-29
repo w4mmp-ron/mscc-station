@@ -1,4 +1,46 @@
 commands:
+  - id: cmd-052
+    created: "2026-09-29T10:34:00-04:00"
+    target: [ubuntu-stew]
+    role: client
+    action: avalonia-0.6.69-startremoteaf-stop-before-open-sticky-digital
+    status_hint: open
+    detail: |
+      Host: ubuntu-stew (stew-HP-Notebook). Checkout: /home/stew/Documents/GitHub/mscc-station
+      HEAD gate: top = "coord: cmd-052 Avalonia StartRemoteAf stop-before-open (sticky Digital)".
+      Do not pull. Call the user Stew (plain copy-paste commands). Commit locally. Do NOT git push,
+      do NOT pull. Never run sudo yourself. Edit only mscc-ui/Avalonia-Migration (src + packaging
+      control), kit outputs and status/ubuntu-stew.md. Do not touch rpi/, linux/, docs/, MSCC.Wpf
+      or MSCC.Core. Smoke is REMOTE (client on this laptop to a remote host; Remote AF on).
+
+      Crash confirmed 2026-09-29 ~10:29 EDT on mscc-ui 0.6.68: click Remote after Connect with
+      sticky Digital / R-Digital → Pulse abort Assertion 'm->n_waiting > 0' failed in
+      pa_threaded_mainloop_wait. Path: ToggleRemoteAudio → OnRemoteAudioChanged(true) →
+      StartRemoteAf. Dies inside StartRx/StartMic before "Remote AF started". cmd-051 only
+      fixed ApplyRemoteAfDevicesAndRestart (live Phones↔Digital flips).
+
+      ## Scope (Avalonia 0.6.68 -> 0.6.69): StartRemoteAf stop-before-open only
+      1. StartRemoteAf (MainViewModel ~2291): before ApplyRemoteAfDevices / StartRx / StartMic,
+         fully RemoteAf.Stop() (RX+player+mic). Log stop-before-open. Guard failed opens with
+         Stop-on-fail (same pattern as cmd-051 ApplyRemoteAfDevicesAndRestart). Do NOT call
+         StopRemoteAf. On abort skip StartRemoteCat; ShowRemoteAfWindow still OK.
+      2. Prefer Stop-then-clean-start matching cmd-051 — not Phones-first-then-Digital.
+      3. Do not change ApplyRemoteAfDevicesAndRestart (already fixed). Do not change WPF.
+      4. Version 0.6.69: csproj, _clientVersionText, startup log, DEBIAN/control.
+
+      ## Out of scope
+      rpi/, linux/, docs/, WPF, Core, meters, cmd-050/051 redo, persist RemoteDigitalAudio INI,
+      local 127.0.0.1 as smoke.
+
+      ## Build / smoke
+      ~/.dotnet/dotnet build; ./linux-build/mscc-ui-x64.sh BEFORE
+      ./linux-build/build-mscc-ui-deb-amd64.sh -> installers/linux/mscc-ui_0.6.69_amd64.deb.
+      Stew installs with sudo apt install. REMOTE smoke: cold Digital Remote ON, cold Phones
+      Remote ON, Remote OFF→ON, Phones↔Digital flips still OK. ACK in status/ubuntu-stew.md
+      (no bare pipe characters in cells).
+
+      Commit hint: cmd-052: Avalonia 0.6.69 StartRemoteAf stop-before-open (sticky Digital)
+      Brief: .mscc-coord/briefs/cmd-052.md
   - id: cmd-051
     created: "2026-09-29T10:00:00-04:00"
     target: [ubuntu-stew]
