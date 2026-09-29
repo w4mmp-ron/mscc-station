@@ -13,7 +13,7 @@
 
 | command id | state | note |
 |------------|-------|------|
-| cmd-051 | done | Avalonia 0.6.68 Remote AF stop-before-restart. Smoke 1 Phones to Digital pass. Smoke 2-5 not run. Deb mscc-ui_0.6.68_amd64.deb. No rpi. No pull, no push. |
+| cmd-051 | done | Avalonia 0.6.68 Remote AF stop-before-restart. Commit 0d61d13. Smoke 1 Phones to Digital pass. Smoke 2-5 not run. Deb mscc-ui_0.6.68_amd64.deb. No rpi. No pull, no push. |
 | cmd-049 | done | Avalonia 0.6.67 S-meter + ALC HOLD/Peak. Smoke 1-5, 7-9 pass. Smoke 6 ALC needles not run (boxes work). No rpi. No pull, no push. |
 | cmd-047a | done | Avalonia 0.6.66 follow-up eb08e5e. Disconnect+MAIN mid-AUTO stays MAIN mode. Smoke 3, 5, and corner re-run pass. tty0tty leftovers unstaged. No rpi. No pull, no push. |
 | cmd-047 | done | Avalonia 0.6.63 local smoke pass. Launch uses mscc-desktop-ctl. Drain about 30s. Hi-cut recv High: 1000.000000. DKMS tty0tty/1.4 installed. CAT works. E deferred (local only). tty0tty leftovers unstaged. No rpi. No pull, no push. |
@@ -26,7 +26,7 @@
 
 ### cmd-051
 
-Deb: `installers/linux/mscc-ui_0.6.68_amd64.deb`. Client **0.6.68**.
+Commit **0d61d13**. Deb: `installers/linux/mscc-ui_0.6.68_amd64.deb`. Client **0.6.68**.
 Stop RemoteAf (RX+player+mic) before restart on Phones↔Digital. Do not call StopRemoteAf.
 Smoke 1: Remote on Phones, switch to Digital, app survived. Pass (Stew: fixed, good job).
 Smoke 2: Digital to Phones not run.
