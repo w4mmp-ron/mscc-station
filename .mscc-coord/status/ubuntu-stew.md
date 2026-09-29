@@ -4,15 +4,16 @@
 |--|--|
 | **Host** | stew-HP-Notebook |
 | **Checkout** | `/home/stew/Documents/GitHub/mscc-station` |
-| **Build** | cmd-049 |
-| **Last command id** | cmd-049 |
-| **State** | done |
-| **Updated** | 2026-09-28 |
+| **Build** | cmd-051 |
+| **Last command id** | cmd-051 |
+| **State** | pending |
+| **Updated** | 2026-09-29 |
 
 ## ACK log
 
 | command id | state | note |
 |------------|-------|------|
+| cmd-051 | pending | Orders written. Crash confirm same Pulse pa_threaded_mainloop_wait abort at 09:57:44 EDT (Digital→Phones). Fix: stop-before-restart; bump 0.6.68. No rpi. No push. |
 | cmd-049 | done | Avalonia 0.6.67 S-meter + ALC HOLD/Peak. Smoke 1-5, 7-9 pass. Smoke 6 ALC needles not run (boxes work). No rpi. No pull, no push. |
 | cmd-047a | done | Avalonia 0.6.66 follow-up eb08e5e. Disconnect+MAIN mid-AUTO stays MAIN mode. Smoke 3, 5, and corner re-run pass. tty0tty leftovers unstaged. No rpi. No pull, no push. |
 | cmd-047 | done | Avalonia 0.6.63 local smoke pass. Launch uses mscc-desktop-ctl. Drain about 30s. Hi-cut recv High: 1000.000000. DKMS tty0tty/1.4 installed. CAT works. E deferred (local only). tty0tty leftovers unstaged. No rpi. No pull, no push. |
@@ -22,6 +23,11 @@
 | cmd-032 | done | mscc_1.0.44_amd64.deb with remote_mic stream reset |
 
 ## Notes
+
+### cmd-051
+
+Orders only (Build not started). Bug: Avalonia Remote AF Phones↔Digital while Remote on aborts Pulse (`Assertion 'm->n_waiting > 0' failed` in `pa_threaded_mainloop_wait`). Confirmed stew-HP journal **09:57:44 EDT** 2026-09-29 (same as 09:51:55); mscc.log ends with R-Digital→R-Phones device sends then process gone. Intent: `ApplyRemoteAfDevicesAndRestart` fully `RemoteAf.Stop()` before re-resolve + StartRx/StartMic; half-armed guard; mscc-ui **0.6.68**. Do not touch WPF/rpi.
+
 
 ### cmd-049
 

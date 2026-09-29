@@ -1,4 +1,44 @@
 commands:
+  - id: cmd-051
+    created: "2026-09-29T10:00:00-04:00"
+    target: [ubuntu-stew]
+    role: client
+    action: avalonia-0.6.68-remote-af-stop-before-restart-path-switch
+    status_hint: open
+    detail: |
+      Host: ubuntu-stew (stew-HP-Notebook). Checkout: /home/stew/Documents/GitHub/mscc-station
+      HEAD gate: top = "coord: cmd-051 Avalonia Remote AF stop-before-restart on path switch".
+      Do not pull. Call the user Stew (plain copy-paste commands). Commit locally. Do NOT git push,
+      do NOT pull. Never run sudo yourself. Edit only mscc-ui/Avalonia-Migration (src + packaging
+      control), kit outputs and status/ubuntu-stew.md. Do not touch rpi/, linux/, docs/, MSCC.Wpf
+      or MSCC.Core. Smoke is REMOTE (client on this laptop to a remote host; Remote AF on).
+
+      Crash confirmed 2026-09-29 09:57:44 EDT Digital→Phones while Remote on: same Pulse abort
+      Assertion 'm->n_waiting > 0' failed in pa_threaded_mainloop_wait (also 09:51:55). mscc.log
+      ends with Send audio device R-Phones (2) after R-Digital (3).
+
+      ## Scope (Avalonia 0.6.67 -> 0.6.68): stop-before-restart only
+      1. ApplyRemoteAfDevicesAndRestart (MainViewModel ~2401): before ApplyRemoteAfDevices /
+         StartRx / StartMic, fully RemoteAf.Stop() (RX+player+mic). Log before/after. Do NOT call
+         StopRemoteAf (would tear CAT / close window). Same path covers RemoteAfWindow play/mic
+         device changes.
+      2. Guard: if StartRx or StartMic fails after Stop, RemoteAf.Stop() again and log aborted —
+         no half-armed streams.
+      3. Do not change WPF (WASAPI; Stew hit Avalonia/Linux Pulse only).
+      4. Version 0.6.68: csproj, _clientVersionText, startup log, DEBIAN/control.
+
+      ## Out of scope
+      rpi/, linux/, docs/, WPF, Core, meters (cmd-049), cmd-050 packaging, local 127.0.0.1 as smoke.
+
+      ## Build / smoke
+      ~/.dotnet/dotnet build; ./linux-build/mscc-ui-x64.sh BEFORE
+      ./linux-build/build-mscc-ui-deb-amd64.sh -> installers/linux/mscc-ui_0.6.68_amd64.deb.
+      Stew installs with sudo apt install. REMOTE smoke: Phones→Digital, Digital→Phones, start on
+      Digital then flip to Phones; all survive; Mic TX drops=0. ACK in status/ubuntu-stew.md
+      (no bare pipe characters in cells).
+
+      Commit hint: cmd-051: Avalonia 0.6.68 Remote AF stop-before-restart on Phones↔Digital path switch
+      Brief: .mscc-coord/briefs/cmd-051.md
   - id: cmd-050
     created: "2026-09-28T20:00:00-04:00"
     target: [ubuntu-stew]
