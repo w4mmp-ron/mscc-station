@@ -2,6 +2,8 @@
 
 Draft manuals for Ron's review, 2026-09-28.
 
+Linux draft refreshed 2026-09-29 with Pi menu + USB Bootloader screenshots.
+
 | File | What it covers |
 |------|----------------|
 | [`MSCC-Linux-Local-Operation-DRAFT.pdf`](MSCC-Linux-Local-Operation-DRAFT.pdf) | MSCC Operator's Guide: Linux and Raspberry Pi, local operation (preliminary) |
