@@ -3,7 +3,7 @@
 Draft manuals for Ron's review, 2026-09-28.
 
 Linux draft refreshed 2026-09-29 with Pi menu + USB Bootloader screenshots.
-Remote draft added 2026-09-29; Stew review pass 2026-09-29 (ports from code, versions note, no remote-start).
+Remote draft added 2026-09-29; Stew review pass 2026-09-29 (ports, versions note, no remote-start); COM/VAC policy 2026-09-29 (operator supplies COM/VAC; forum for setup help; §5.3/§6.1 yellows cleared).
 
 | File | What it covers |
 |------|----------------|
