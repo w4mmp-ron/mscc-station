@@ -3,13 +3,15 @@
 Draft manuals for Ron's review, 2026-09-28.
 
 Linux draft refreshed 2026-09-29 with Pi menu + USB Bootloader screenshots.
+Remote draft added 2026-09-29.
 
 | File | What it covers |
 |------|----------------|
 | [`MSCC-Linux-Local-Operation-DRAFT.pdf`](MSCC-Linux-Local-Operation-DRAFT.pdf) | MSCC Operator's Guide: Linux and Raspberry Pi, local operation (preliminary) |
 | [`MSCC-Windows-Operation-DRAFT.pdf`](MSCC-Windows-Operation-DRAFT.pdf) | MSCC Operator's Guide: Windows (preliminary) |
+| [`MSCC-Remote-Operation-DRAFT.pdf`](MSCC-Remote-Operation-DRAFT.pdf) | MSCC Operator's Guide: Remote Operation (preliminary) |
 
-Both are preliminary drafts. Open questions are marked in **yellow boxes** inside each PDF.
+All are preliminary drafts. Open questions are marked in **yellow boxes** inside each PDF.
 
 Open questions for Ron are collected in
 [`.mscc-coord/QUESTIONS-FOR-RON.md`](../../.mscc-coord/QUESTIONS-FOR-RON.md) (each with an
