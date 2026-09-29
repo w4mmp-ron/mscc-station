@@ -179,7 +179,7 @@ public partial class MainViewModel : ViewModelBase, IDisposable
         ModeText = "";
         NotifyModeFlags();
         NotifyBandFlags();
-        AppendLog("MSCC Avalonia 0.6.68 — Remote AF stop-before-restart on Phones↔Digital path switch.");
+        AppendLog("MSCC Avalonia 0.6.69 — Remote AF StartRemoteAf stop-before-open (sticky Digital).");
         AppendLog("PTT = TX (voice modes); TUN = TUNE + carrier. S/W opens pan settings.");
         AppendLog($"Log: {LogFilePath}");
         CwPitchLabel = CwPitchOptions[Math.Clamp(CwPitchIndex, 0, CwPitchOptions.Count - 1)];
@@ -485,7 +485,7 @@ public partial class MainViewModel : ViewModelBase, IDisposable
     [ObservableProperty] private string _proficioTempText = "— °C";
     [ObservableProperty] private string _paTempText = "— °C";
     [ObservableProperty] private string _paCurrentText = "— mA";
-    [ObservableProperty] private string _clientVersionText = "0.6.68";
+    [ObservableProperty] private string _clientVersionText = "0.6.69";
     [ObservableProperty] private bool _alcOn = true;
     /// <summary>AMP / QRO path (PA bypass). Red when on (WPF).</summary>
     [ObservableProperty] private bool _ampOn;
@@ -2302,21 +2302,39 @@ public partial class MainViewModel : ViewModelBase, IDisposable
         RemoteAf.PlayVolume = RemotePlayVolume / 100f;
         RemoteAf.MicVolume = RemoteMicVolumeLinear();
         RemoteAf.PlayMuted = RemotePlayMute;
+        AppendLog($"Remote AF stop-before-open ({reason})");
+        try { RemoteAf.Stop(); } catch { /* ignore */ }
         ApplyRemoteAfDevices();
+        RemoteAf.MicVolume = RemoteMicVolumeLinear();
+        bool rxOk = false, micOk = false;
+        string host = string.IsNullOrWhiteSpace(Host) ? "127.0.0.1" : Host.Trim();
         try
         {
             RemoteAf.StartRx();
-            string host = (Host ?? "").Trim();
-            if (string.IsNullOrEmpty(host))
-                host = "127.0.0.1";
-            RemoteAf.StartMic(host);
-            string seat = RemoteDigitalAudio ? "Digital VAC" : "Phones";
-            AppendLog($"Remote AF started ({reason}) {seat} TX host={host}:9101 micVol={RemoteAf.MicVolume:0.00}");
+            rxOk = true;
         }
         catch (Exception ex)
         {
-            AppendLog($"Remote AF start failed: {ex.Message}");
+            AppendLog("RX start: " + ex.Message);
         }
+        try
+        {
+            RemoteAf.StartMic(host);
+            micOk = true;
+        }
+        catch (Exception ex)
+        {
+            AppendLog("Mic start: " + ex.Message);
+        }
+        if (!rxOk || !micOk)
+        {
+            try { RemoteAf.Stop(); } catch { /* ignore */ }
+            AppendLog($"Remote AF start aborted ({reason}) rxOk={rxOk} micOk={micOk} — stopped clean");
+            ShowRemoteAfWindow();
+            return;
+        }
+        string seat = RemoteDigitalAudio ? "Digital VAC" : "Phones";
+        AppendLog($"Remote AF started ({reason}) {seat} TX host={host}:9101 micVol={RemoteAf.MicVolume:0.00}");
         if (RemoteDigitalAudio)
             StartRemoteCat();
         else

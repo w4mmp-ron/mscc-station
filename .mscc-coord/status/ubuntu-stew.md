@@ -6,14 +6,14 @@
 | **Checkout** | `/home/stew/Documents/GitHub/mscc-station` |
 | **Build** | cmd-052 |
 | **Last command id** | cmd-052 |
-| **State** | pending |
+| **State** | running |
 | **Updated** | 2026-09-29 |
 
 ## ACK log
 
 | command id | state | note |
 |------------|-------|------|
-| cmd-052 | pending | Orders written. Avalonia 0.6.69 StartRemoteAf stop-before-open (sticky Digital). Waiting for Build. |
+| cmd-052 | running | Avalonia 0.6.69 StartRemoteAf stop-before-open. HEAD 825781a. REMOTE smoke. No rpi. No pull, no push. |
 | cmd-051 | done | Avalonia 0.6.68 Remote AF stop-before-restart. Commit 0d61d13. Smoke 1 Phones to Digital pass. Smoke 2-5 not run. Deb mscc-ui_0.6.68_amd64.deb. No rpi. No pull, no push. |
 | cmd-049 | done | Avalonia 0.6.67 S-meter + ALC HOLD/Peak. Smoke 1-5, 7-9 pass. Smoke 6 ALC needles not run (boxes work). No rpi. No pull, no push. |
 | cmd-047a | done | Avalonia 0.6.66 follow-up eb08e5e. Disconnect+MAIN mid-AUTO stays MAIN mode. Smoke 3, 5, and corner re-run pass. tty0tty leftovers unstaged. No rpi. No pull, no push. |
@@ -27,7 +27,7 @@
 
 ### cmd-052
 
-Orders only. Brief: `.mscc-coord/briefs/cmd-052.md`. Bump client to **0.6.69**. Fix `StartRemoteAf` stop-before-open + fail-safe (cmd-051 covered live path flips only). Confirmed crash 2026-09-29 ~10:29 ET Pulse `n_waiting` on Remote ON / sticky Digital. Do not touch `rpi/`. No pull, no push.
+Accepted then running. StartRemoteAf Stop before ApplyRemoteAfDevices / StartRx / StartMic. Do not call StopRemoteAf. Leave ApplyRemoteAfDevicesAndRestart alone. Bump 0.6.69.
 
 ### cmd-051
 
