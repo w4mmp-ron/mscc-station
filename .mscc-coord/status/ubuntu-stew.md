@@ -6,14 +6,14 @@
 | **Checkout** | `/home/stew/Documents/GitHub/mscc-station` |
 | **Build** | cmd-051 |
 | **Last command id** | cmd-051 |
-| **State** | pending |
+| **State** | done |
 | **Updated** | 2026-09-29 |
 
 ## ACK log
 
 | command id | state | note |
 |------------|-------|------|
-| cmd-051 | pending | Orders written. Crash confirm same Pulse pa_threaded_mainloop_wait abort at 09:57:44 EDT (Digital→Phones). Fix: stop-before-restart; bump 0.6.68. No rpi. No push. |
+| cmd-051 | done | Avalonia 0.6.68 Remote AF stop-before-restart. Smoke 1 Phones to Digital pass. Smoke 2-5 not run. Deb mscc-ui_0.6.68_amd64.deb. No rpi. No pull, no push. |
 | cmd-049 | done | Avalonia 0.6.67 S-meter + ALC HOLD/Peak. Smoke 1-5, 7-9 pass. Smoke 6 ALC needles not run (boxes work). No rpi. No pull, no push. |
 | cmd-047a | done | Avalonia 0.6.66 follow-up eb08e5e. Disconnect+MAIN mid-AUTO stays MAIN mode. Smoke 3, 5, and corner re-run pass. tty0tty leftovers unstaged. No rpi. No pull, no push. |
 | cmd-047 | done | Avalonia 0.6.63 local smoke pass. Launch uses mscc-desktop-ctl. Drain about 30s. Hi-cut recv High: 1000.000000. DKMS tty0tty/1.4 installed. CAT works. E deferred (local only). tty0tty leftovers unstaged. No rpi. No pull, no push. |
@@ -26,8 +26,13 @@
 
 ### cmd-051
 
-Orders only (Build not started). Bug: Avalonia Remote AF Phones↔Digital while Remote on aborts Pulse (`Assertion 'm->n_waiting > 0' failed` in `pa_threaded_mainloop_wait`). Confirmed stew-HP journal **09:57:44 EDT** 2026-09-29 (same as 09:51:55); mscc.log ends with R-Digital→R-Phones device sends then process gone. Intent: `ApplyRemoteAfDevicesAndRestart` fully `RemoteAf.Stop()` before re-resolve + StartRx/StartMic; half-armed guard; mscc-ui **0.6.68**. Do not touch WPF/rpi.
-
+Deb: `installers/linux/mscc-ui_0.6.68_amd64.deb`. Client **0.6.68**.
+Stop RemoteAf (RX+player+mic) before restart on Phones↔Digital. Do not call StopRemoteAf.
+Smoke 1: Remote on Phones, switch to Digital, app survived. Pass (Stew: fixed, good job).
+Smoke 2: Digital to Phones not run.
+Smoke 3: start Digital then flip to Phones not run.
+Smoke 4: play/mic device change not run.
+Smoke 5: Mic TX drops=0 not run.
 
 ### cmd-049
 
@@ -42,13 +47,3 @@ Smoke 6: ALC needle tests not run (no TX today). ALC checkboxes work.
 Smoke 7: independent mix sticks. Pass.
 Smoke 8: restart mix + INI SMETER_HOLD=0 SMETER_PEAK=1 ALC_HOLD=1 ALC_PEAK=0. Pass.
 Smoke 9: HOLD on Peak off both meters, INI all HOLD=1 PEAK=0. Pass.
-
-### cmd-047a
-
-Deb: `installers/linux/mscc-ui_0.6.66_amd64.deb`. Client **0.6.66**. Commit **eb08e5e**.
-Launch resolve: `/usr/local/bin/mscc-desktop-ctl`.
-0.6.64 nits; 0.6.65 DIG-U overlay re-enter CW; 0.6.66 Disconnect keepOpen: MAIN mid-AUTO then Disconnect/Connect stays MAIN (not CW). Re-apply CW log only when CW is applied.
-Smoke 1-11 (0.6.65): pass.
-Re-run on 0.6.66: step 3 pass, step 5 pass, corner (FREQ CAL AUTO, MAIN mid-run, Disconnect, Connect: MAIN mode, not CW) pass.
-Smoke 9 note: VFO A can show 0.000000 after X+Connect until the radio reports (cmd-027 idle). Not a 047a fail.
-E: not this command (local only).

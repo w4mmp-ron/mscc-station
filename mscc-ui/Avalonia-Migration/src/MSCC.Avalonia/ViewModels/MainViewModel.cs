@@ -179,7 +179,7 @@ public partial class MainViewModel : ViewModelBase, IDisposable
         ModeText = "";
         NotifyModeFlags();
         NotifyBandFlags();
-        AppendLog("MSCC Avalonia 0.6.67 — S-meter and ALC HOLD / Peak (WPF behaviour, saved in settings).");
+        AppendLog("MSCC Avalonia 0.6.68 — Remote AF stop-before-restart on Phones↔Digital path switch.");
         AppendLog("PTT = TX (voice modes); TUN = TUNE + carrier. S/W opens pan settings.");
         AppendLog($"Log: {LogFilePath}");
         CwPitchLabel = CwPitchOptions[Math.Clamp(CwPitchIndex, 0, CwPitchOptions.Count - 1)];
@@ -485,7 +485,7 @@ public partial class MainViewModel : ViewModelBase, IDisposable
     [ObservableProperty] private string _proficioTempText = "— °C";
     [ObservableProperty] private string _paTempText = "— °C";
     [ObservableProperty] private string _paCurrentText = "— mA";
-    [ObservableProperty] private string _clientVersionText = "0.6.67";
+    [ObservableProperty] private string _clientVersionText = "0.6.68";
     [ObservableProperty] private bool _alcOn = true;
     /// <summary>AMP / QRO path (PA bypass). Red when on (WPF).</summary>
     [ObservableProperty] private bool _ampOn;
@@ -2401,11 +2401,36 @@ public partial class MainViewModel : ViewModelBase, IDisposable
     internal void ApplyRemoteAfDevicesAndRestart(string reason)
     {
         if (!RemoteAudio || RemoteAf == null) return;
+        AppendLog($"Remote AF stop-before-restart ({reason})");
+        try { RemoteAf.Stop(); } catch { /* ignore */ }
         ApplyRemoteAfDevices();
         RemoteAf.MicVolume = RemoteMicVolumeLinear();
-        try { RemoteAf.StartRx(); } catch (Exception ex) { AppendLog("RX restart: " + ex.Message); }
+        bool rxOk = false, micOk = false;
+        try
+        {
+            RemoteAf.StartRx();
+            rxOk = true;
+        }
+        catch (Exception ex)
+        {
+            AppendLog("RX restart: " + ex.Message);
+        }
         string host = string.IsNullOrWhiteSpace(Host) ? "127.0.0.1" : Host.Trim();
-        try { RemoteAf.StartMic(host); } catch (Exception ex) { AppendLog("Mic restart: " + ex.Message); }
+        try
+        {
+            RemoteAf.StartMic(host);
+            micOk = true;
+        }
+        catch (Exception ex)
+        {
+            AppendLog("Mic restart: " + ex.Message);
+        }
+        if (!rxOk || !micOk)
+        {
+            try { RemoteAf.Stop(); } catch { /* ignore */ }
+            AppendLog($"Remote AF restart aborted ({reason}) rxOk={rxOk} micOk={micOk} — stopped clean");
+            return;
+        }
         AppendLog($"Remote AF devices restarted ({reason})");
     }
 
