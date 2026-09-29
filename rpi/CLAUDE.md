@@ -36,6 +36,22 @@ Done 2026-09-26: mscc 1.0.46 + mscc-init-gui 1.0.15 installed and tested on the 
 4. RF check of remote TX audio (Stew, spectrum analyzer).
 Done 2026-09-27 (committed): mscc-init dropped from the .deb (build-deb strips it, postinst removes old ~/mscc/mscc-init + link, docs point to mscc-init-gui). Source + mscc-binaries/mscc-init kept. Built into mscc 1.0.47 (2026-09-27, WSL; servers identical to 1.0.46), copied to installers/rpi (1.0.46 removed). Not installed on the Pi yet. cmd-042 now -> 1.0.48.
 
+mscc-init CLI back as Python (Ron 2026-09-28): `mscc-init-gui/mscc_init_gui/cli.py` = port of
+C `mscc-init-linux/sources/main.c` (same 4 steps/prompts), reuses config.py/devices.py (SWR keep
+fix included; radio I/Q devices hidden like the GUI; warns if servers run). Shipped as
+`/usr/bin/mscc-init` in mscc-init-gui 1.0.16 (built WSL, LF copy; in installers/rpi, 1.0.15
+removed). mscc .deb unchanged (still drops the C binary). Tested on Windows Python with a fake
+HOME (files OK); device pick needs PyAudio -> test on the Pi. Not committed.
+Pi test 1.0.16: CLI works (Ron). GUI blank window = old bug: "servers running" askyesno ran
+before the root was mapped and stayed hidden (traceback). 1.0.17: check runs via after(200)
+once the window is up, dialogs parent=self. GUI works on the Pi (Ron).
+Package renamed (Ron): `mscc-init` 1.0.18 -> `mscc-init_1.0.18_all.deb` (Provides/Conflicts/
+Replaces mscc-init-gui; upgrade from 1.0.17 checked in WSL dpkg: old one removed). Commands and
+folder rpi/mscc-init-gui/, /usr/share/mscc-init-gui unchanged. installers/rpi INSTALL.md +
+install-mscc.sh updated; mscc-deb postinst/build-deb/install-mscc.sh hint text "(package
+mscc-init)" edited in source only (goes in next mscc build). Stew's Ubuntu docs/drop script
+still say mscc-init-gui_*.deb - briefed as cmd-050.
+
 ## Architecture (per Ron)
 
 WPF client (Windows) <-> **ms-sdr** (controller, UDP :8888) <-> **sdrcore-recv** (:9000)

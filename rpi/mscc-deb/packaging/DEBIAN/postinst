@@ -349,7 +349,7 @@ configure)
   echo "    1. Log out/in (or reboot) if groups or AudioInjector overlay changed."
   echo "    2. Verify digi:  pactl list short sinks | grep Virtual"
   echo "       If missing:   mscc-virtual-audio"
-  echo "    3. Run:          mscc-init-gui   (package mscc-init-gui)"
+  echo "    3. Run:          mscc-init-gui   (package mscc-init)"
   echo "       (operator audio only; digi is fixed VirtualA / VirtualB.monitor)"
   echo "    4. Then:         mscc start"
   echo

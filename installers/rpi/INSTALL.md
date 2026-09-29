@@ -11,12 +11,12 @@ cd /path/to/this/folder
 chmod +x install-mscc.sh
 sudo apt install -y ./mscc-portaudio_*_arm64.deb    # first
 ./install-mscc.sh                                    # mscc_*_arm64.deb
-sudo apt install -y ./mscc-init-gui_*_all.deb
+sudo apt install -y ./mscc-init_*_all.deb        # MSCC Init: GUI + text wizard
 sudo apt install -y ./mscc-ui_*_arm64.deb           # optional if you use Windows WPF
 sudo apt install -y ./proficio-flash-tools_*_all.deb # optional: Black Pill flash tools (ST-Link / USB DFU)
 ```
 
-Order: **PortAudio → servers → init-gui → UI**.
+Order: **PortAudio → servers → mscc-init → UI**.
 
 Then: log out/in → **MSCC Init** → **MSCC Start** → UI at `127.0.0.1:8888` (or Windows WPF to the Pi’s IP).
 
