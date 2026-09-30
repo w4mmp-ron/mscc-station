@@ -902,7 +902,8 @@
                                     </Button>
                                     <TextBlock Text="ms" Foreground="#D0D0D0" FontSize="11" VerticalAlignment="Center" Margin="4,0"/>
                                 </StackPanel>
-                                <CheckBox Content="POTENTIA / QSK" IsChecked="{Binding CwQsk, Mode=TwoWay}" Foreground="White" FontSize="10"/>
+                                <CheckBox Content="POTENTIA / QSK" IsChecked="{Binding CwQsk, Mode=TwoWay}" Foreground="White" FontSize="10"
+                                          ToolTip="Amplifier PIN diode T/R switching"/>
                             </StackPanel>
                         </Grid>
 
