@@ -14,7 +14,7 @@ On start: `git pull`, then read [`handoff.md`](handoff.md). If `.mscc-coord/COMM
 
 ## Current work
 
-**Active - cmd-055 (windows-new-hp): Windows factory_seed drop mirror + live wins (Ron Q4).** After / with cmd-048 Windows: change `load_iq_or_power` so when not switching lines and live exists, copy live → `cal\<line>\` and return; use cal stash only on line switch or missing live; then factory. Drop `Factory_mirror_live_to_cal` write-through on power/IQ save. Covers `power_cal.ini` and `iq.ini`. `0xAA` leave ignored. Commit locally; do not push. See `.mscc-coord/briefs/cmd-055.md`.
+**Active - cmd-055 (windows-new-hp): REWRITTEN - drop ms-sdr per-model cal swap, add switch-radio tool (Ron Q4 final).** Remove `Factory_seed_live_inis` startup swap, all `Factory_mirror_live_to_cal` calls, `cal\<line>\` + `LAST_LINE.txt` handling; trans owns `power_cal.ini`. Keep seed-if-missing (iq/freq) and `Factory_reseed_live_file` for reset buttons. New manual switch-radio tool (script or small GUI): `save\CURRENT.txt`, `save\<model>\`, `power_cal.ini` + `iq.ini`, factory fallback. With / after cmd-048 Windows. Commit locally; do not push. See `.mscc-coord/briefs/cmd-055.md`.
 
 **Coord (manuals, not a Build cmd):** Ron answered `.mscc-coord/QUESTIONS-FOR-RON.md`. Paste-ready Linux/Windows manual replacements in `.mscc-coord/MANUAL-UPDATES-FROM-RON.md` (Pi groups, upgrade keeps cal, CW POTENTIA/QSK, PHONES not used). PDFs not regenerated yet — Stew applies to draft source.
 
