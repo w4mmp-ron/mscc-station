@@ -1,10 +1,11 @@
 # Overseer intent
 
-**Updated:** 2026-09-29
+**Updated:** 2026-09-30
 **Overseer:** Build Commander
 
 ## Status
 
+- **Active - cmd-058 (ubuntu-stew):** Avalonia 0.6.70 SPECTRUM RESOLUTION (800/1600/3200) parity with WPF. Brief `briefs/cmd-058.md`. Do not touch Core/WPF/rpi/bling.
 - **Active - cmd-056 (NEW-HP):** Windows FREQ CAL second-STOP - port Linux `else if (cal_abort_pending)` into `ms-sdr-MKII/source/calibrate.c`. Do not touch `rpi/`. Brief `briefs/cmd-056.md`. After Stew pushes, Ron ports Pi.
 - **Active - cmd-057 (NEW-HP):** Remove CW-tab PHONES checkbox (WPF only, BL-001). Keep POTENTIA/QSK. Avalonia later. Brief `briefs/cmd-057.md`.
 - **Active - cmd-055 (NEW-HP):** Windows factory_seed drop mirror + live-wins load_iq_or_power (Ron Q4). Brief `briefs/cmd-055.md`. With/after cmd-048 Windows.
@@ -21,6 +22,7 @@
 
 ## Short list
 
+- **cmd-058 ubuntu-stew** (Avalonia spectrum/pan resolution 0.6.70), commit locally, Stew pushes
 - **cmd-056 NEW-HP** (ms-sdr second-STOP), commit locally, Stew pushes then Ron Pi
 - **cmd-057 NEW-HP** (WPF remove CW PHONES / BL-001), commit locally, Stew pushes
 - **cmd-055 NEW-HP** (factory_seed), with/after cmd-048 Windows

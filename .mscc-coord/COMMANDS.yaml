@@ -1,4 +1,18 @@
 commands:
+  - id: cmd-058
+    created: "2026-09-30T11:35:00-04:00"
+    target: [ubuntu-stew]
+    role: client
+    action: avalonia-0.6.70-spectrum-pan-resolution-parity
+    status_hint: open
+    detail: |
+      Host: ubuntu-stew (stew-HP-Notebook). Checkout: /home/stew/Documents/GitHub/mscc-station
+      Avalonia 0.6.70: add SPECTRUM RESOLUTION (800/1600/3200) to S/W window — WPF pan
+      resolution parity. Sticky PAN_RESOLUTION in mscc-avalonia.ini; ApplyPanResolution on
+      Connect (replace hardcoded SetPanResolutionAsync(800)) and on S/W change; clear
+      waterfall on bin change. Core 0x5F already shared — do not edit MSCC.Core / WPF /
+      rpi / linux / bling / cmd-054. Commit locally, do not push.
+      Brief: .mscc-coord/briefs/cmd-058.md
   - id: cmd-057
     created: "2026-09-29T23:05:00-04:00"
     target: [windows-new-hp]

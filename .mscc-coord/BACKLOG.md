@@ -43,3 +43,17 @@ still lacks the branch; Ron ports **after** Stew ships+pushes Windows.
 2. Tell Ron the Windows commit hash.
 3. Only then Ron ports `rpi/ms-sdr-linux/source/calibrate.c`. Do **not** open a Pi
    brief from NEW-HP / do not edit `rpi/` here.
+
+---
+
+## NOTE - Avalonia SPECTRUM / PAN RESOLUTION (cmd-058)
+
+**Stew chose:** port WPF PAN RESOLUTION (800/1600/3200) to Avalonia UI on ubuntu-stew.
+WPF already has `PanResolutionList` + INI `PAN_RESOLUTION` + Core `SetPanResolutionAsync`
+(`0x5F` index 0/1/2). Avalonia Connect hardcodes 800 and S/W has no control — briefed as
+**cmd-058** (`briefs/cmd-058.md`). Visible Avalonia label: **SPECTRUM RESOLUTION** (aligns
+with cmd-054 rename intent). Out of scope: WPF rename cmd-054, Pi, bling shell, Core edits.
+
+cmd-053 Ubuntu recv spur-notch (FFT-bin width) is separate; smoke optionally verifies spur
+blanking at all three resolutions after both land.
+
