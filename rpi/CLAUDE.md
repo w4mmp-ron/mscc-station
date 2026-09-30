@@ -107,6 +107,13 @@ WSL syntax OK. Windows recv has the same issue (not touched).
 Future idea (Ron: keep in mind, not now): `goertzel_mag` uses only I (`data[i].real`) -> no
 +600/-600 side check, ~3 dB SNR loss. Complex Goertzel (~10 lines) fixes both; level numbers
 change, so recheck CALIBRATION_LOW_LIMIT / LOOSE. Mirror is 1200 Hz away, outside the sweep.
+Future idea (Ron 2026-09-29: keep in mind, not now): real fix for the -12 kHz spectrum spur =
+DC blocker on raw I/Q. Spur is I/Q DC (ADC offset + LO leakage); `complex_shift` runs
+`doPanadapter` on raw I/Q, then shifts by fixed 12 kHz (`loFreq`), so DC sits at VFO-12k,
+display only (audio never hears it). Add `y = x - x_prev + a*y_prev`, a ~0.9999, on I and Q
+right after `framesToComplex` (main.c:342), before `complex_shift`. Caveat: notch needed
++/-6 bins (pure DC would be ~+/-2), so part may be non-steady skirt; test with notch kept,
+then `MP_HALF_BINS` 0 to see what's left. Windows/Ubuntu recv same path.
 
 ## Changes (2026-09-25)
 
