@@ -39,7 +39,7 @@ Git repo root: `C:\Users\Ron\.grok\worktrees`.
    was fixed 2 px, spur showed at PAN RESOLUTION 1600/3200). MP_HALF_BINS 3 tested on the Pi: better, a
    trace remained -> 4: still a ~5 dB skirt bump + faint waterfall line (screenshot) -> 6 (2026-09-29):
    **tested on the Pi, OK (Ron; "a bit blotchy but OK").** Committed b08af65. Stew brief cmd-053 (Windows + Ubuntu recv) pushed fe5cabb. PAN -> SPECTRUM label rename: cmd-054 (WPF only, label text).
-   Optional: blotchy patch could average ~4 px each side instead of 1. Windows recv has
+   Blotchy fix (2026-09-29, not committed): 4 px avg each side tested = better, not enough -> A+B: fill level smoothed over frames (MP_LEVEL_ALPHA 0.2) + noise texture mirrored from neighbours; tested on the Pi 2026-09-29, Ron OK. Not committed yet; cmd-053 (Stew) still describes the old 1-px fill. Windows recv has
    the same 2-px notch -> brief Stew if it works, plus rename PAN -> SPECTRUM in the client.
 9. Stew's `.mscc-coord/QUESTIONS-FOR-RON.md` answered (ce731ee, 522ea21). Ron's position (#4): trans
    owns power_cal.ini; Windows ms-sdr per-model auto-swap (factory_seed.c) to be dropped for a
