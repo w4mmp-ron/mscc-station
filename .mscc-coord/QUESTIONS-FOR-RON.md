@@ -50,3 +50,13 @@ Stew
 
 Paste-ready summary for Stew: .mscc-coord/NOTE-FOR-STEW-RON-FOLLOWUP.md
 
+
+## 6. cmd-055 calibration switching behavior (new question, 2026-09-30)
+
+Stew switches between **Ultimus MKII** and **Geminus MKII** regularly at his shack (HF ↔ LF/MF); this is not a rare operation. Switch speed is not important, and he does **not** want a manual switch-radio tool as the primary path.
+
+MSCC already detects the radio type. When the detected model changes, can cmd-055 keep detection-driven automatic calibration restore: automatically park the prior radio's calibration and load the newly detected radio's calibration, including IQ and power calibration as appropriate? The clean design should leave `power_cal.ini` owned by `sdrcore-trans`; `ms-sdr` should not take ownership of it or steal/overwrite it.
+
+In short: can Ron approve a detection-driven auto-restore design for cmd-055 (with trans still owning `power_cal.ini`) instead of dropping auto-switching and requiring a manual switch-radio tool?
+
+**Answer:** [pending Ron]

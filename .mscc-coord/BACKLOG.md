@@ -57,3 +57,7 @@ with cmd-054 rename intent). Out of scope: WPF rename cmd-054, Pi, bling shell, 
 cmd-053 Ubuntu recv spur-notch (FFT-bin width) is separate; smoke optionally verifies spur
 blanking at all three resolutions after both land.
 
+
+## cmd-055 — ON HOLD pending Ron clarification (2026-09-30)
+
+Do not start the rewritten cmd-055 build until Ron answers the new calibration-switching question in `QUESTIONS-FOR-RON.md`; the manual switch-radio tool is not the primary path unless Ron confirms it.
