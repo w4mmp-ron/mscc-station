@@ -41,6 +41,10 @@ Git repo root: `C:\Users\Ron\.grok\worktrees`.
    **tested on the Pi, OK (Ron; "a bit blotchy but OK").** Committed b08af65. Stew brief cmd-053 (Windows + Ubuntu recv) pushed fe5cabb. PAN -> SPECTRUM label rename: cmd-054 (WPF only, label text).
    Optional: blotchy patch could average ~4 px each side instead of 1. Windows recv has
    the same 2-px notch -> brief Stew if it works, plus rename PAN -> SPECTRUM in the client.
+9. Stew's `.mscc-coord/QUESTIONS-FOR-RON.md` answered (ce731ee, 522ea21). Ron's position (#4): trans
+   owns power_cal.ini; Windows ms-sdr per-model auto-swap (factory_seed.c) to be dropped for a
+   manual switch-radio script (save\CURRENT.txt, power_cal.ini + iq.ini). #5 second-STOP: not in
+   the repo, waiting for Stew to push; then port to rpi/ms-sdr-linux calibrate.c.
 7. Next mscc .deb build picks up the "(package mscc-init)" hint text in mscc-deb postinst /
    build-deb.sh / install-mscc.sh (source only, committed 82b819b). No rebuild just for that.
 
