@@ -773,6 +773,8 @@ int Process_Frequency_Calibration(uint8_t command, char *buf) {
                 fprintf(G_fp_logfile, "[%d] CMD_SET_CAL_ABORT: stepping, finish sent\n", line_number++);
             else if (finishing)
                 fprintf(G_fp_logfile, "[%d] CMD_SET_CAL_ABORT: finishing, finish already sent\n", line_number++);
+            else if (cal_abort_pending)
+                fprintf(G_fp_logfile, "[%d] CMD_SET_CAL_ABORT: nothing new owed, drain still pending\n", line_number++);
             else {
                 fprintf(G_fp_logfile, "[%d] CMD_SET_CAL_ABORT: nothing owed\n", line_number++);
                 Cal_Abort_Drain_Done("nothing owed");

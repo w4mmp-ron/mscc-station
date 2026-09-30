@@ -4,15 +4,16 @@
 |--|--|
 | **Host** | NEW-HP-LAPTOP (Windows) |
 | **Checkout** | `C:\Users\n8vet\OneDrive\Documents\GitHub\mscc-station` |
-| **Build** | **cmd-046** (WPF + SDRcore-trans done) / **cmd-038** (WPF pending) |
-| **Last command id** | cmd-046 (done) / cmd-038 (WPF pending) |
+| **Build** | **cmd-056** (ms-sdr done) / **cmd-038** (WPF pending) |
+| **Last command id** | cmd-056 (done) / cmd-038 (WPF pending) |
 | **State** | done |
-| **Updated** | 2026-09-27 |
+| **Updated** | 2026-09-30 |
 
 ## ACK log
 
 | command id | state | note |
 |------------|-------|------|
+| cmd-056 | done | Windows ms-sdr 3.177 in C:\mscc-net9. A second STOP while the abort drain is pending logs "nothing new owed, drain still pending" and does not finish the drain. Idle STOP still sends drain done. Live radio smoke not run. Not pushed. |
 | cmd-046 | done | WPF 9.27.0 and SDRcore-trans 3.142 in C:\mscc-net9. TUNE power drives TUNE only. USB and LSB, including DIG-U and digital audio, use the SSB bank. Client version is 9.27.0 because the auto-bump is month.day.iteration and this build is on the 27th. Live radio smoke not run. Not pushed. |
 | cmd-045b | done | WPF 9.26.6 and ms-sdr 3.176 in C:\mscc-net9. STOP matches the other FREQ CAL buttons. Abort drain uses opcode 0x1F: 1 = drain done, 2 = start refused. A second finish is sent only while the sweep is still stepping. Live radio smoke not run. Not pushed. |
 | cmd-045a | done | WPF 9.26.5 and ms-sdr 3.175 in C:\mscc-net9. FREQ CAL STOP uses CMD_SET_CAL_ABORT 0x1F. Late sweep replies are dropped so PPM is not written. Live radio smoke not run. Not pushed. |
@@ -34,4 +35,4 @@
 
 ## Notes
 
-cmd-046: WPF 9.27.0 and Windows SDRcore-trans 3.142. TUNE power drives TUNE only. DIG-U and USB or LSB with digital audio use SSB power on the main slider and in driver.c. The linux tree waits for cmd-043. The Pi servers stay as they are. cmd-038 still pending.
+cmd-056: Windows ms-sdr 3.177. A second FREQ CAL STOP during the abort drain logs "nothing new owed, drain still pending" and leaves the drain open. After Stew pushes, Ron ports the same branch to the Pi. cmd-038 still pending.
