@@ -1,4 +1,17 @@
 commands:
+  - id: cmd-053
+    created: "2026-09-29T19:30:00-04:00"
+    target: [windows-new-hp, ubuntu-stew]
+    role: server
+    action: recv-spectrum-12khz-notch-sized-in-fft-bins
+    status_hint: open
+    detail: |
+      Port Pi b08af65 (rpi recv panadapter.c): -12 kHz spur notch sized in FFT bins
+      (MP_HALF_BINS 6, mp_lo..mp_hi) instead of the fixed 3-pixel patch; spur showed at
+      PAN RESOLUTION 1600/3200. Windows SDRcore-recv: port hunks by hand, recv 3.142.
+      Ubuntu linux/: copy the Pi file (identical before b08af65), bump version.
+      recv only, no protocol change. Commit locally, do not push.
+      Brief: .mscc-coord/briefs/cmd-053.md
   - id: cmd-052
     created: "2026-09-29T10:34:00-04:00"
     target: [ubuntu-stew]
