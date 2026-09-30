@@ -38,8 +38,7 @@ Git repo root: `C:\Users\Ron\.grok\worktrees`.
 8. Spectrum -12 kHz DC-spur notch sized in FFT bins (2026-09-29, `SDRcore-recv-linux/sources/panadapter.c`,
    was fixed 2 px, spur showed at PAN RESOLUTION 1600/3200). MP_HALF_BINS 3 tested on the Pi: better, a
    trace remained -> 4: still a ~5 dB skirt bump + faint waterfall line (screenshot) -> 6 (2026-09-29):
-   **tested on the Pi, OK (Ron; "a bit blotchy but OK").** Committed b08af65. Stew brief cmd-053
-   (Windows + Ubuntu recv) written 2026-09-29, not committed yet. PAN -> SPECTRUM client rename not briefed.
+   **tested on the Pi, OK (Ron; "a bit blotchy but OK").** Committed b08af65. Stew brief cmd-053 (Windows + Ubuntu recv) pushed fe5cabb. PAN -> SPECTRUM label rename: cmd-054 (WPF only, label text).
    Optional: blotchy patch could average ~4 px each side instead of 1. Windows recv has
    the same 2-px notch -> brief Stew if it works, plus rename PAN -> SPECTRUM in the client.
 7. Next mscc .deb build picks up the "(package mscc-init)" hint text in mscc-deb postinst /

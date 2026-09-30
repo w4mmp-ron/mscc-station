@@ -1,4 +1,16 @@
 commands:
+  - id: cmd-054
+    created: "2026-09-29T20:00:00-04:00"
+    target: [windows-new-hp]
+    role: ui
+    action: wpf-rename-pan-resolution-label-to-spectrum
+    status_hint: open
+    detail: |
+      WPF PanadapterControlsWindow.xaml: label "PAN RESOLUTION" -> "SPECTRUM RESOLUTION",
+      tooltip "remote pan stutters" -> "the remote spectrum stutters". Visible text only;
+      no identifier/ini/protocol change. Avalonia has no resolution control (not touched).
+      Commit locally, do not push.
+      Brief: .mscc-coord/briefs/cmd-054.md
   - id: cmd-053
     created: "2026-09-29T19:30:00-04:00"
     target: [windows-new-hp, ubuntu-stew]
