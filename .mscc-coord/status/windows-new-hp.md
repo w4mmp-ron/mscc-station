@@ -4,8 +4,8 @@
 |--|--|
 | **Host** | NEW-HP-LAPTOP (Windows) |
 | **Checkout** | `C:\Users\n8vet\OneDrive\Documents\GitHub\mscc-station` |
-| **Build** | **cmd-057** (WPF 9.30.2) / **cmd-038** (WPF pending) |
-| **Last command id** | cmd-057 follow-up (done) / cmd-038 (WPF pending) |
+| **Build** | **cmd-053** (Windows recv done) / **cmd-038** (WPF pending) |
+| **Last command id** | cmd-053 (Windows done) / cmd-038 (WPF pending) |
 | **State** | done |
 | **Updated** | 2026-09-30 |
 
@@ -13,6 +13,7 @@
 
 | command id | state | note |
 |------------|-------|------|
+| cmd-053 | done | Windows SDRcore-recv 3.142 in C:\mscc-net9. The -12 kHz spur notch is 6 FFT bins each side and the fill is the smoothed neighbour texture from the Pi. Ubuntu linux/ waits for the next pass. Live spectrum smoke not run. Not pushed. |
 | cmd-057 | done | WPF 9.30.2 (R9-30-2) in C:\mscc-net9. CW tab PHONES checkbox removed. POTENTIA / QSK remains, still sends, tooltip "Amplifier PIN diode T/R switching". WPF no longer sends 0x70. Opcode constant kept. SetCwPhonesAsync stays in Core because Avalonia still calls it. Live hover and QSK toggle not run. Not pushed. |
 | cmd-056 | done | Windows ms-sdr 3.177 in C:\mscc-net9. A second STOP while the abort drain is pending logs "nothing new owed, drain still pending" and does not finish the drain. Idle STOP still sends drain done. Live radio smoke not run. Not pushed. |
 | cmd-046 | done | WPF 9.27.0 and SDRcore-trans 3.142 in C:\mscc-net9. TUNE power drives TUNE only. USB and LSB, including DIG-U and digital audio, use the SSB bank. Client version is 9.27.0 because the auto-bump is month.day.iteration and this build is on the 27th. Live radio smoke not run. Not pushed. |
@@ -36,4 +37,4 @@
 
 ## Notes
 
-cmd-057 follow-up: WPF 9.30.2 (R9-30-2). POTENTIA / QSK tooltip is "Amplifier PIN diode T/R switching". PHONES checkbox stays gone. cmd-038 still pending.
+cmd-053: Windows recv 3.142. The -12 kHz notch width follows FFT bins (about +/-1.5 px at 800, +/-3 at 1600, +/-6 at 3200) and the gap is filled from the neighbouring noise. Ubuntu is the next pass. cmd-038 still pending.
