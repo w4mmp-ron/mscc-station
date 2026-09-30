@@ -144,8 +144,8 @@
                             </ListBox>
                             <!-- Pan resolution: bins across 72 kHz (UDP segments of 400). Display zoom is separate. -->
                             <StackPanel Margin="12,0,0,0" VerticalAlignment="Top">
-                                <TextBlock Text="PAN RESOLUTION" FontSize="10" Foreground="#D0D0D0"
-                                           ToolTip="Bins across 72 kHz. Higher = sharper spectrum/zoom, more network traffic. Use Normal if remote pan stutters."/>
+                                <TextBlock Text="SPECTRUM RESOLUTION" FontSize="10" Foreground="#D0D0D0"
+                                           ToolTip="Bins across 72 kHz. Higher = sharper spectrum/zoom, more network traffic. Use Normal if the remote spectrum stutters."/>
                                 <ListBox x:Name="PanResolutionList" Width="100" Height="55" FontSize="9" Margin="0,2,0,0"
                                          Background="#111" Foreground="White"
                                          SelectionChanged="OnPanResolutionSelectionChanged"
