@@ -39,7 +39,7 @@ Git repo root: `C:\Users\Ron\.grok\worktrees`.
    was fixed 2 px, spur showed at PAN RESOLUTION 1600/3200). MP_HALF_BINS 3 tested on the Pi: better, a
    trace remained -> 4: still a ~5 dB skirt bump + faint waterfall line (screenshot) -> 6 (2026-09-29):
    **tested on the Pi, OK (Ron; "a bit blotchy but OK").** Committed b08af65. Stew brief cmd-053 (Windows + Ubuntu recv) pushed fe5cabb. PAN -> SPECTRUM label rename: cmd-054 (WPF only, label text).
-   Optional: blotchy patch could average ~4 px each side instead of 1. Windows recv has
+   Blotchy fix (2026-09-29, not committed): 4 px avg each side tested = better, not enough -> A+B: fill level smoothed over frames (MP_LEVEL_ALPHA 0.2) + noise texture mirrored from neighbours; tested on the Pi 2026-09-29, Ron OK. Not committed yet; cmd-053 (Stew) still describes the old 1-px fill. Windows recv has
    the same 2-px notch -> brief Stew if it works, plus rename PAN -> SPECTRUM in the client.
 9. Stew's `.mscc-coord/QUESTIONS-FOR-RON.md` answered (ce731ee, 522ea21). Ron's position (#4): trans
    owns power_cal.ini; Windows ms-sdr per-model auto-swap (factory_seed.c) to be dropped for a
@@ -107,6 +107,35 @@ WSL syntax OK. Windows recv has the same issue (not touched).
 Future idea (Ron: keep in mind, not now): `goertzel_mag` uses only I (`data[i].real`) -> no
 +600/-600 side check, ~3 dB SNR loss. Complex Goertzel (~10 lines) fixes both; level numbers
 change, so recheck CALIBRATION_LOW_LIMIT / LOOSE. Mirror is 1200 Hz away, outside the sweep.
+  Limit explained (Ron OK'd this wording 2026-09-29): the limit is a bar - FREQ CAL measures how
+  loud the tone is (average of low/center/high peaks, udp_thread.c:289); above the bar = found,
+  below = fail (freq 0). Normal 5,000,000, LOOSE 1,000,000. Complex Goertzel = a better ear: tone
+  reads louder (x2, +6 dB), noise also louder but less (x1.41, +3 dB), so the tone stands out
+  more (the 3 dB gain). Everything reads louder, so the bar must go UP: x2 (10,000,000 / 2,000,000)
+  = same as today; x1.41 (~7,070,000 / ~1,414,000) = a 3 dB weaker tone passes, noise still
+  doesn't (the benefit). Left at 5,000,000 -> noise could pass as a tone.
+Future item (Ron 2026-09-29): FM transmit. trans already has it: wire mode 5 -> MODE_FM
+(`udp_thread.c:1277`), `main.c:327` path (skips fastconv), `fm_modulate` (`dsputils.c:434`),
+fixed `FM_PEAK_DEV_HZ` 5000. Never tested on air (as far as known). Plan:
+1. trans: deviation becomes a setting via a new opcode (CMD_SET_FM_DEVIATION, 3000/5000),
+   default 3000 (safe). US rule: below 29.0 MHz modulation index <= 1 -> 3 kHz; 29.0-29.7 -> 5 kHz.
+2. trans: mic audio is x2 then hard-clipped -> harmonics above 3 kHz break index <= 1. Add a
+   limiter + 3 kHz low-pass AFTER the clip. Optional pre-emphasis.
+3. ms-sdr: forward the new opcode to trans. Mode letter: 'F' goes to the rig unchanged and
+   that is fine - firmware only cares 'C' vs not-'C'; si5351.c A/U/L/C switch only sets
+   E_tune_freq, which nothing reads (dead); LO = E_current_LO_freq for all non-C modes; TUNE
+   already goes as 'T' and works. display.c is legacy, not in the build (Ron). No 'U' mapping,
+   no firmware change.
+4. Client: picks 3 or 5 kHz from TX freq vs 29.000 MHz, sends on FM select and on crossing 29.0.
+5. Test (Stew, spectrum analyzer): deviation (Bessel null) at 3 and 5 kHz, occupied BW.
+6. Windows / Ubuntu trans + ms-sdr same. Ron: comment the code heavily.
+Future idea (Ron 2026-09-29: keep in mind, not now): real fix for the -12 kHz spectrum spur =
+DC blocker on raw I/Q. Spur is I/Q DC (ADC offset + LO leakage); `complex_shift` runs
+`doPanadapter` on raw I/Q, then shifts by fixed 12 kHz (`loFreq`), so DC sits at VFO-12k,
+display only (audio never hears it). Add `y = x - x_prev + a*y_prev`, a ~0.9999, on I and Q
+right after `framesToComplex` (main.c:342), before `complex_shift`. Caveat: notch needed
++/-6 bins (pure DC would be ~+/-2), so part may be non-steady skirt; test with notch kept,
+then `MP_HALF_BINS` 0 to see what's left. Windows/Ubuntu recv same path.
 
 ## Changes (2026-09-25)
 

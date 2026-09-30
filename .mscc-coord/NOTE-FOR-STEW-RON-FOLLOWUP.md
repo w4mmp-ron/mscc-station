@@ -7,7 +7,7 @@ Paste-ready summary. Files are on NEW-HP at
 
 | Path | What |
 |------|------|
-| `.mscc-coord/briefs/cmd-055.md` | Windows `factory_seed`: drop mirror; `load_iq_or_power` live-wins (Ron Q4) |
+| `.mscc-coord/briefs/cmd-055.md` | REWRITTEN: drop ms-sdr per-model cal swap; manual switch-radio tool (Ron Q4 final) |
 | `.mscc-coord/COMMANDS.yaml` | cmd-055 entry added |
 | `.mscc-coord/MANUAL-UPDATES-FROM-RON.md` | Paste-ready Linux + Windows manual replacements (Ron Q1–Q3) |
 | `.mscc-coord/BACKLOG.md` | BL-001 remove CW PHONES (WPF+Avalonia); second-STOP push note |

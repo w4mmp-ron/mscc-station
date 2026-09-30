@@ -27,15 +27,15 @@ commands:
     created: "2026-09-29T22:40:00-04:00"
     target: [windows-new-hp]
     role: server
-    action: windows-factory-seed-drop-mirror-live-wins
+    action: windows-drop-per-model-cal-swap-add-switch-radio-tool
     status_hint: open
     detail: |
-      Ron answer 4 (QUESTIONS-FOR-RON.md): (c) drop Factory_mirror write-through on
-      save; change load_iq_or_power so when not switching lines and live exists,
-      copy live -> cal\<line>\ and return (live wins). Use cal\<line>\ only when
-      switching lines or live missing, then factory. Covers power_cal.ini and iq.ini.
-      QRP Reset 0xAA: leave ignored (WPF never sends). Rides with / after cmd-048
-      Windows. Commit locally, do not push.
+      REWRITTEN (Ron final answer 4): remove ms-sdr automatic per-model cal swap
+      (Factory_seed_live_inis swap, Factory_mirror_live_to_cal, cal\<line>\, LAST_LINE.txt);
+      trans owns power_cal.ini; keep seed-if-missing (iq/freq) and Factory_reseed for reset
+      buttons. Add a manual switch-radio tool (script, or small GUI) using save\CURRENT.txt
+      and save\<model>\ for power_cal.ini + iq.ini. Rides with / after cmd-048 Windows.
+      Commit locally, do not push.
       Brief: .mscc-coord/briefs/cmd-055.md
   - id: cmd-054
     created: "2026-09-29T20:00:00-04:00"

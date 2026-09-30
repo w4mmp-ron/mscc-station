@@ -11,6 +11,8 @@ int G_band_marker_high = 0;
  * Tuned iteratively: 16 bump / 24 delay / 18–20 sweet spot → settle on 20. */
 #define PAUSE_CYCLE_COUNT_LIMIT 20
 #define MP_HALF_BINS 6.0f   /* -12 kHz spur half-width in FFT bins (Hamming main lobe + margin) */
+#define MP_EDGE_PX   4      /* pixels averaged on each side of the notch for the fill level */
+#define MP_LEVEL_ALPHA 0.2f /* fill level smoothing per frame (1 = none) */
 extern panadapter_buffer panbuffer;
 extern int G_Panadapter_Pixels;
 #pragma pack(1)
@@ -61,7 +63,6 @@ void *Panadapter_thread(void *t) {
     int i = 0;
     int average_count = 0;
     int sequence = 0;
-    uint16_t mixing_product = 0;
     int sleep_time = 1;
     int pause_cycle_count = 0;
     int pausing = 0;
@@ -69,6 +70,8 @@ void *Panadapter_thread(void *t) {
     int segments = 2;
     int mp_lo = 266;
     int mp_hi = 267;
+    float mp_level = 0.0f;   /* notch fill level, smoothed over frames */
+    int mp_level_lo = -1;    /* mp_lo the level belongs to (-1 = restart) */
     int smoothing = 2;
 
     send_size = sizeof (panadaper_average->avg_buffer_output);
@@ -253,11 +256,37 @@ void *Panadapter_thread(void *t) {
                         if (lo < 0) lo = 0;
                         if (hi > MAX_X - 1) hi = MAX_X - 1;
                         if (hi > lo + 1) {
-                            mixing_product =
-                                (panadaper_average[sequence].avg_buffer_output.output_buffer[lo] +
-                                 panadaper_average[sequence].avg_buffer_output.output_buffer[hi]) / 2;
+                            /*
+                             * Fill = smoothed level + noise texture mirrored from the neighbours.
+                             * Level: average of MP_EDGE_PX pixels each side, smoothed over frames
+                             * (MP_LEVEL_ALPHA) so the waterfall doesn't blotch. Texture: each gap
+                             * pixel copies the pixel mirrored across the nearer edge, minus the
+                             * edge average, so the patch looks like the noise around it.
+                             */
+                            uint16_t *ob = panadaper_average[sequence].avg_buffer_output.output_buffer;
+                            uint32_t s = 0;
+                            int n = 0, k;
+                            float edge_avg;
+                            for (k = 0; k < MP_EDGE_PX; k++) {
+                                if (lo - k >= 0)         { s += ob[lo - k]; n++; }
+                                if (hi + k <= MAX_X - 1) { s += ob[hi + k]; n++; }
+                            }
+                            edge_avg = n ? (float)s / (float)n : 0.0f;
+                            if (mp_level_lo != mp_lo) {          /* first frame or resolution change */
+                                mp_level = edge_avg;
+                                mp_level_lo = mp_lo;
+                            } else {
+                                mp_level += MP_LEVEL_ALPHA * (edge_avg - mp_level);
+                            }
                             for (i = lo + 1; i < hi; i++) {
-                                panadaper_average[sequence].avg_buffer_output.output_buffer[i] = mixing_product;
+                                int src = (i - lo <= hi - i) ? (2 * lo + 1 - i) : (2 * hi - 1 - i);
+                                int v;
+                                if (src < 0) src = 0;
+                                if (src > MAX_X - 1) src = MAX_X - 1;
+                                v = (int)(mp_level + (float)ob[src] - edge_avg + 0.5f);
+                                if (v < 0) v = 0;
+                                if (v > MAX_Y) v = MAX_Y;
+                                ob[i] = (uint16_t)v;
                             }
                         }
                     }
