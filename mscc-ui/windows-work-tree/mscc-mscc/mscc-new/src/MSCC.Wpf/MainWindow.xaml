@@ -733,8 +733,8 @@
                     </Grid>
             </TabItem>
 
-            <!-- CW Tab - implements the original mscc CW tab functions (keyer mode, speed, spacing, paddle, weight, pitch, hold, QSK/Potentia, phones) -->
-            <TabItem Header="CW" ToolTip="CW KEYER, SPEED, PITCH, HOLD, QSK, PHONES, CQ MEMORY">
+            <!-- CW Tab - implements the original mscc CW tab functions (keyer mode, speed, spacing, paddle, weight, pitch, hold, QSK/Potentia) -->
+            <TabItem Header="CW" ToolTip="CW KEYER, SPEED, PITCH, HOLD, QSK, CQ MEMORY">
                 <Border Background="#FF1A1A1A" Padding="10">
                     <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
                     <StackPanel>
@@ -756,7 +756,7 @@
                                 </Style>
                             </TextBlock.Style>
                         </TextBlock>
-                        <!-- Left: listboxes. Right: SPEED / FARNSWORTH / HOLD stacked, then PHONES / QSK (Auto+Auto so right sits tight) -->
+                        <!-- Left: listboxes. Right: SPEED / FARNSWORTH / HOLD stacked, then QSK (Auto+Auto so right sits tight) -->
                         <Grid Margin="0,0,0,10" HorizontalAlignment="Left">
                             <Grid.ColumnDefinitions>
                                 <ColumnDefinition Width="Auto"/>
@@ -902,7 +902,6 @@
                                     </Button>
                                     <TextBlock Text="ms" Foreground="#D0D0D0" FontSize="11" VerticalAlignment="Center" Margin="4,0"/>
                                 </StackPanel>
-                                <CheckBox Content="PHONES" IsChecked="{Binding CwPhones, Mode=TwoWay}" Foreground="White" Margin="0,0,0,6" FontSize="10"/>
                                 <CheckBox Content="POTENTIA / QSK" IsChecked="{Binding CwQsk, Mode=TwoWay}" Foreground="White" FontSize="10"/>
                             </StackPanel>
                         </Grid>

@@ -4,8 +4,8 @@
 |--|--|
 | **Host** | NEW-HP-LAPTOP (Windows) |
 | **Checkout** | `C:\Users\n8vet\OneDrive\Documents\GitHub\mscc-station` |
-| **Build** | **cmd-056** (ms-sdr done) / **cmd-038** (WPF pending) |
-| **Last command id** | cmd-056 (done) / cmd-038 (WPF pending) |
+| **Build** | **cmd-057** (WPF done) / **cmd-038** (WPF pending) |
+| **Last command id** | cmd-057 (done) / cmd-038 (WPF pending) |
 | **State** | done |
 | **Updated** | 2026-09-30 |
 
@@ -13,6 +13,7 @@
 
 | command id | state | note |
 |------------|-------|------|
+| cmd-057 | done | WPF 9.30.1 (R9-30-1) in C:\mscc-net9. CW tab PHONES checkbox removed. POTENTIA / QSK remains and still sends. WPF no longer sends 0x70. Opcode constant kept. SetCwPhonesAsync stays in Core because Avalonia still calls it. Live QSK toggle not run. Not pushed. |
 | cmd-056 | done | Windows ms-sdr 3.177 in C:\mscc-net9. A second STOP while the abort drain is pending logs "nothing new owed, drain still pending" and does not finish the drain. Idle STOP still sends drain done. Live radio smoke not run. Not pushed. |
 | cmd-046 | done | WPF 9.27.0 and SDRcore-trans 3.142 in C:\mscc-net9. TUNE power drives TUNE only. USB and LSB, including DIG-U and digital audio, use the SSB bank. Client version is 9.27.0 because the auto-bump is month.day.iteration and this build is on the 27th. Live radio smoke not run. Not pushed. |
 | cmd-045b | done | WPF 9.26.6 and ms-sdr 3.176 in C:\mscc-net9. STOP matches the other FREQ CAL buttons. Abort drain uses opcode 0x1F: 1 = drain done, 2 = start refused. A second finish is sent only while the sweep is still stepping. Live radio smoke not run. Not pushed. |
@@ -35,4 +36,4 @@
 
 ## Notes
 
-cmd-056: Windows ms-sdr 3.177. A second FREQ CAL STOP during the abort drain logs "nothing new owed, drain still pending" and leaves the drain open. After Stew pushes, Ron ports the same branch to the Pi. cmd-038 still pending.
+cmd-057: WPF 9.30.1 (R9-30-1). CW-tab PHONES is gone. POTENTIA / QSK stays. The client does not send 0x70 from that tab. Operator Phones audio is unchanged. Avalonia still calls SetCwPhonesAsync, so that Core method remains until the Avalonia pass. cmd-038 still pending.

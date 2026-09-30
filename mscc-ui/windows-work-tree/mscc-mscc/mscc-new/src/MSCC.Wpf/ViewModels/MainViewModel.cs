@@ -477,7 +477,7 @@ public partial class MainViewModel : ObservableObject, IDisposable
         return 0;
     }*/
 
-    // CW tab properties (keyer, speed, pitch, hold, qsk, phones)
+    // CW tab properties (keyer, speed, pitch, hold, qsk)
     [ObservableProperty] private int _cwSpeed = 20;
     /// <summary>Farnsworth memory-play text WPM (0x76). 0=Off; 5–60.</summary>
     [ObservableProperty]
@@ -490,7 +490,6 @@ public partial class MainViewModel : ObservableObject, IDisposable
     [ObservableProperty] private int _cwPitchIndex = 1; // 600Hz
     [ObservableProperty] private int _cwHold = 100;
     [ObservableProperty] private bool _cwQsk = false;
-    [ObservableProperty] private bool _cwPhones = false;
 
     /// <summary>CW tab display: "Off" or numeric text WPM.</summary>
     public string CwMemTextWpmLabel =>
@@ -1906,7 +1905,6 @@ public partial class MainViewModel : ObservableObject, IDisposable
         CwPitchIndex = 1; // 600Hz
         CwHold = 100;
         CwQsk = false;
-        CwPhones = false;
 
         // CQ / keyer memory (client sticky — KEYER_MEM0..3 in MSCC_Client.ini)
         _suppressKeyerMemSave = true;
@@ -5167,12 +5165,6 @@ public partial class MainViewModel : ObservableObject, IDisposable
     {
         _ = _radioService.SetCwQskAsync(value);
         MonitorTextBoxText($" CW QSK/Potentia set: {value}");
-    }
-
-    partial void OnCwPhonesChanged(bool value)
-    {
-        _ = _radioService.SetCwPhonesAsync(value);
-        MonitorTextBoxText($" CW Phones set: {value}");
     }
 
     // ── CQ / keyer memory (0x9C) — Avalonia-compatible; see KEYER-MEMORY-GUI-UDP-BEHAVIOR.md ──
