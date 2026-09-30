@@ -1,9 +1,14 @@
-﻿# Overseer intent
+# Overseer intent
 
 **Updated:** 2026-09-26  
 **Overseer:** Build Commander
 
 ## Status
+
+- **Active - cmd-055 (NEW-HP):** Windows factory_seed drop mirror + live-wins load_iq_or_power (Ron Q4). Brief riefs/cmd-055.md. With/after cmd-048 Windows.
+- **Manuals:** Ron answered QUESTIONS-FOR-RON; paste-ready in MANUAL-UPDATES-FROM-RON.md (PDFs not regenerated).
+- **Backlog BL-001:** remove CW PHONES (WPF+Avalonia). **Stew:** push FREQ CAL second-STOP before Ron Pi port.
+
 
 - **Active - cmd-045 (NEW-HP WPF):** Stew round-2 fixes: VFO B saved/restored across restart; FREQ CAL Stop clears the running notice (AUTO/CHECK only), Start with tab open re-applies CW/600/200, closing on the tab restores mode/filter/pitch; CHECK FAILED / after-RESET warning text; "MANUAL steps" label; QRP / Full Power / AMP synced from AmpOn (no rename, pending Ron); Proficio/Geminus button removed (FW gating stays); A8 tooltip + DIG-U slider uses Tune power. See `briefs/cmd-045.md`.
 - **Active - cmd-044 (NEW-HP WPF + Windows ms-sdr):** Stew-approved fix list: WPF tooltip/text fixes (A/B/C) + remove dev-notes lines (QRP CAL/AMP CAL/TX IQ); Host/Port change applies on next Start (UdpRadioService.SetRemoteEndpoint); FREQ CAL readable colors, local progress count, CHECK sends LOOSE, tab entry -> CW/600/200 and restore on leave; ms-sdr-MKII calibrate.c progress counter reset + failed cal restores previous mode (not AM). Avalonia + Linux/Pi ms-sdr ride with cmd-043 (reserved, Ron's Linux port). See `briefs/cmd-044.md`.

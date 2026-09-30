@@ -34,3 +34,17 @@ Hi Ron, a few things I need your help with. Three are from the new Linux / Raspb
 
 Thanks!
 Stew
+
+---
+
+## Follow-ups filed (Build Commander, 2026-09-29 ET) — do not re-ask Ron
+
+| Item | Filed as |
+|------|----------|
+| Q1–Q3 manuals | .mscc-coord/MANUAL-UPDATES-FROM-RON.md (Stew regenerates PDFs) |
+| Q4 factory_seed | **cmd-055** — .mscc-coord/briefs/cmd-055.md |
+| Q3 PHONES unused → remove UI | **BL-001** — .mscc-coord/BACKLOG.md |
+| Q5 second-STOP | Stew must push NEW-HP Windows change first — .mscc-coord/BACKLOG.md |
+
+Paste-ready summary for Stew: .mscc-coord/NOTE-FOR-STEW-RON-FOLLOWUP.md
+

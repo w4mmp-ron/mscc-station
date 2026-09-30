@@ -14,6 +14,14 @@ On start: `git pull`, then read [`handoff.md`](handoff.md). If `.mscc-coord/COMM
 
 ## Current work
 
+**Active - cmd-055 (windows-new-hp): Windows factory_seed drop mirror + live wins (Ron Q4).** After / with cmd-048 Windows: change `load_iq_or_power` so when not switching lines and live exists, copy live → `cal\<line>\` and return; use cal stash only on line switch or missing live; then factory. Drop `Factory_mirror_live_to_cal` write-through on power/IQ save. Covers `power_cal.ini` and `iq.ini`. `0xAA` leave ignored. Commit locally; do not push. See `.mscc-coord/briefs/cmd-055.md`.
+
+**Coord (manuals, not a Build cmd):** Ron answered `.mscc-coord/QUESTIONS-FOR-RON.md`. Paste-ready Linux/Windows manual replacements in `.mscc-coord/MANUAL-UPDATES-FROM-RON.md` (Pi groups, upgrade keeps cal, CW POTENTIA/QSK, PHONES not used). PDFs not regenerated yet — Stew applies to draft source.
+
+**Backlog BL-001:** Remove CW-tab **PHONES** control from WPF + Avalonia (Ron: unused; Stew: remove). See `.mscc-coord/BACKLOG.md`. Keep POTENTIA / QSK.
+
+**Note for Stew:** Pi FREQ CAL **second-STOP** still needs a **NEW-HP push** of the Windows `calibrate.c` change before Ron ports (Ron: not in pushed tree). See `.mscc-coord/BACKLOG.md`.
+
 **Active - cmd-052 (ubuntu-stew): Avalonia mscc-ui 0.6.69 StartRemoteAf stop-before-open (sticky Digital).** After Connect, clicking Remote (ToggleRemoteAudio → OnRemoteAudioChanged → StartRemoteAf) must fully `RemoteAf.Stop()` before ApplyRemoteAfDevices / StartRx / StartMic, with the same fail-safe Stop-on-fail as cmd-051. Fixes Pulse `Assertion 'm->n_waiting > 0' failed` on first open / Remote OFF→ON with Digital (cmd-051 only covered live Phones↔Digital flips). Do not change WPF or ApplyRemoteAfDevicesAndRestart. Bump to 0.6.69 (4 version places). REMOTE smoke: cold Digital Remote ON, cold Phones Remote ON, OFF→ON, Phones↔Digital still OK. Gate: HEAD = cmd-052 orders. Commit locally; do not push or pull. Do not touch `rpi/`, `linux/`, `docs/`, WPF or Core. See `.mscc-coord/briefs/cmd-052.md`.
 
 **Active - cmd-051 (ubuntu-stew): Avalonia mscc-ui 0.6.68 Remote AF stop-before-restart on Phones↔Digital path switch.** While Remote is on, path/device restart via `ApplyRemoteAfDevicesAndRestart` must fully `RemoteAf.Stop()` (RX+mic/player) before re-resolving devices and StartRx/StartMic; guard failed opens; log before/after. Fixes Pulse `Assertion 'm->n_waiting > 0' failed` in `pa_threaded_mainloop_wait`. Do not change WPF. Bump to 0.6.68 (4 version places). REMOTE smoke: Phones↔Digital both directions + start on Digital then flip; Mic TX drops=0. Gate: HEAD = cmd-051 orders. Commit locally; do not push or pull. Do not touch `rpi/`, `linux/`, `docs/`, WPF or Core. See `.mscc-coord/briefs/cmd-051.md`.
@@ -164,4 +172,5 @@ cmd-033 WPF 9.22.0; cmd-032 mscc 1.0.44; cmd-031 remote_mic stream reset.
 - Don’t persist opcode 2/3 as radio boot mode.
 - Don’t reuse opcode `0x0E` (Solidus).
 - Ask before destructive git / force-push.
+
 

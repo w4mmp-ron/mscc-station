@@ -1,9 +1,6 @@
 # MSCC operation manuals (drafts)
 
-Draft manuals for Ron's review, 2026-09-28.
-
-Linux draft refreshed 2026-09-29 with Pi menu + USB Bootloader screenshots.
-Remote draft added 2026-09-29; Stew review pass 2026-09-29 (ports, versions note, no remote-start); COM/VAC policy 2026-09-29 (operator supplies COM/VAC; forum for setup help; §5.3/§6.1 yellows cleared).
+Draft manuals for Ron's review.
 
 | File | What it covers |
 |------|----------------|
@@ -11,11 +8,22 @@ Remote draft added 2026-09-29; Stew review pass 2026-09-29 (ports, versions note
 | [`MSCC-Windows-Operation-DRAFT.pdf`](MSCC-Windows-Operation-DRAFT.pdf) | MSCC Operator's Guide: Windows (preliminary) |
 | [`MSCC-Remote-Operation-DRAFT.pdf`](MSCC-Remote-Operation-DRAFT.pdf) | MSCC Operator's Guide: Remote Operation (preliminary) |
 
-All are preliminary drafts. Open questions are marked in **yellow boxes** inside each PDF.
+All are preliminary drafts. Open questions were marked in **yellow boxes** inside each PDF.
 
-Open questions for Ron are collected in
-[`.mscc-coord/QUESTIONS-FOR-RON.md`](../../.mscc-coord/QUESTIONS-FOR-RON.md) (each with an
-**Answer:** line). That file has the Linux / Pi manual questions (Q3, CW tab PHONES and
-POTENTIA / QSK, covers both manuals) and the code items. The other Windows manual questions
-are only in the yellow boxes in the Windows PDF for now. Please answer in QUESTIONS-FOR-RON.md
-(or mark up the PDFs) and the manuals will be updated.
+## Ron answers applied (paste-ready — PDFs not regenerated yet)
+
+Ron filled [`.mscc-coord/QUESTIONS-FOR-RON.md`](../../.mscc-coord/QUESTIONS-FOR-RON.md)
+(2026-09-28/29). Paste-ready replacement text for the Linux and Windows guides:
+
+**[`.mscc-coord/MANUAL-UPDATES-FROM-RON.md`](../../.mscc-coord/MANUAL-UPDATES-FROM-RON.md)**
+
+Summary:
+
+| Topic | Ron | Manual action |
+|-------|-----|---------------|
+| Pi groups | postinst adds installer user; no manual `usermod` for that user; log out after first install; other users need `usermod` | Clear Pi yellow; replace Pi §2.2 text |
+| Upgrade / cal | kept on upgrade is correct; seed only if folder missing/empty | Clear yellow on §2.6 / p.16; keep keep-sentence; optional seed note |
+| CW POTENTIA / QSK | Potentia break-in timing; default off | Replace yellows in Linux CW + Windows CW |
+| CW PHONES | not used (`0x70` ignored) | Say "not used"; UI removal is `.mscc-coord/BACKLOG.md` BL-001 |
+
+Remote guide: no change from these answers. Remaining Windows-only yellows (if any) stay in the Windows PDF until answered separately.
