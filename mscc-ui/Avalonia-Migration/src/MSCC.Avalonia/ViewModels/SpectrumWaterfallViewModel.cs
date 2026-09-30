@@ -9,11 +9,18 @@ public partial class SpectrumWaterfallViewModel : ViewModelBase
 {
     private readonly SpectrumDisplaySettings _s = SpectrumDisplaySettings.Instance;
     private readonly AppearanceSettings _a = AppearanceSettings.Instance;
+    private readonly MainViewModel? _main;
     private bool _loading;
 
-    public SpectrumWaterfallViewModel()
+    public SpectrumWaterfallViewModel() : this(null)
     {
+    }
+
+    public SpectrumWaterfallViewModel(MainViewModel? main)
+    {
+        _main = main;
         _loading = true;
+        PanResolutionIndex = main?.PanResolutionIndex ?? 0;
         ZoomFactor = _s.ZoomFactor;
         DbCalRelative = _s.DbCalRelative;
         GridMaxDb = _s.GridMaxDb;
@@ -44,6 +51,7 @@ public partial class SpectrumWaterfallViewModel : ViewModelBase
     public string[] SpectrumFillNames => UiChromeTheme.SpectrumFillNames;
     public string[] SpectrumLineNames => UiChromeTheme.SpectrumLineNames;
 
+    [ObservableProperty] private int _panResolutionIndex;
     [ObservableProperty] private double _zoomFactor = 1;
     [ObservableProperty] private float _dbCalRelative;
     [ObservableProperty] private float _gridMaxDb = -20;
@@ -107,6 +115,13 @@ public partial class SpectrumWaterfallViewModel : ViewModelBase
         }
         ShowSpectrumBackgroundRgb = UiChromeTheme.IsCustom(_a.SpectrumBackground);
         _loading = false;
+    }
+
+    partial void OnPanResolutionIndexChanged(int value)
+    {
+        if (_loading) return;
+        if (value < 0 || value > 2) return;
+        _main?.SetPanResolutionIndexFromUi(value);
     }
 
     partial void OnZoomFactorChanged(double value)

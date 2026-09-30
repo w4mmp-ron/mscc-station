@@ -1,7 +1,11 @@
 using System.Collections.ObjectModel;
 using System.Globalization;
+using Avalonia;
+using Avalonia.Controls;
+using Avalonia.Controls.ApplicationLifetimes;
 using Avalonia.Media;
 using Avalonia.Threading;
+using Avalonia.VisualTree;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using MSCC.Avalonia.Controls;
@@ -47,6 +51,8 @@ public partial class MainViewModel : ViewModelBase, IDisposable
     private bool _fwRadioModelApplied;
     private bool? _audioBeforeDigU;
     private int _stepIndex = 2;
+    /// <summary>0=Normal 800, 1=High 1600, 2=Max 3200. Sticky PAN_RESOLUTION.</summary>
+    private int _panResolutionIndex;
     private int _lowCutIndex;
     private int _highCutIndex = 2;
     private int _cwFilterIndex;
@@ -179,7 +185,7 @@ public partial class MainViewModel : ViewModelBase, IDisposable
         ModeText = "";
         NotifyModeFlags();
         NotifyBandFlags();
-        AppendLog("MSCC Avalonia 0.6.69 — Remote AF StartRemoteAf stop-before-open (sticky Digital).");
+        AppendLog("MSCC Avalonia 0.6.70 — SPECTRUM RESOLUTION Normal/High/Max (800/1600/3200).");
         AppendLog("PTT = TX (voice modes); TUN = TUNE + carrier. S/W opens pan settings.");
         AppendLog($"Log: {LogFilePath}");
         CwPitchLabel = CwPitchOptions[Math.Clamp(CwPitchIndex, 0, CwPitchOptions.Count - 1)];
@@ -485,7 +491,7 @@ public partial class MainViewModel : ViewModelBase, IDisposable
     [ObservableProperty] private string _proficioTempText = "— °C";
     [ObservableProperty] private string _paTempText = "— °C";
     [ObservableProperty] private string _paCurrentText = "— mA";
-    [ObservableProperty] private string _clientVersionText = "0.6.69";
+    [ObservableProperty] private string _clientVersionText = "0.6.70";
     [ObservableProperty] private bool _alcOn = true;
     /// <summary>AMP / QRO path (PA bypass). Red when on (WPF).</summary>
     [ObservableProperty] private bool _ampOn;
@@ -1301,17 +1307,9 @@ public partial class MainViewModel : ViewModelBase, IDisposable
             StatusText = $"Connected {Host}:{remotePort}";
             AppendLog(_serversOurs ? "Connected (servers started by this client)." : "Connected.");
             RememberRecentHost(Host);
-            // Ensure pan assembly + heal Linux pan refresh (Blocks≥1). Without this,
-            // a prior client that sent 0x5F=0 leaves the Pi with silent no-spectrum.
-            try
-            {
-                await _radio.SetPanResolutionAsync(800).ConfigureAwait(true);
-                AppendLog("Pan resolution: 800 bins (refresh healed).");
-            }
-            catch (Exception ex)
-            {
-                AppendLog($"Pan resolution apply warning: {ex.Message}");
-            }
+            // Sticky SPECTRUM RESOLUTION (0x5F) also heals silent spectrum if a prior
+            // client left refresh blocks at 0.
+            await ApplyPanResolutionAsync("connect").ConfigureAwait(true);
             // Push selected VFO + freq/mode so dual-VFO state matches UI
             await PushActiveVfoToRadioAsync(force: true).ConfigureAwait(true);
             // Restore sticky operate settings to the radio (server-backed)
@@ -6479,6 +6477,62 @@ public partial class MainViewModel : ViewModelBase, IDisposable
         GenButtonText = opts[idx].Label;
     }
 
+    internal int PanResolutionIndex => _panResolutionIndex;
+
+    /// <summary>S/W ListBox changed the sticky index — persist and apply UDP.</summary>
+    internal void SetPanResolutionIndexFromUi(int index)
+    {
+        if (index < 0 || index > 2) return;
+        if (_panResolutionIndex == index) return;
+        _panResolutionIndex = index;
+        ScheduleSaveClientSettings();
+        ApplyPanResolution("S/W");
+    }
+
+    internal void ApplyPanResolution(string reason = "settings")
+    {
+        _ = ApplyPanResolutionAsync(reason);
+    }
+
+    private async Task ApplyPanResolutionAsync(string reason)
+    {
+        int idx = ClientSettingsStore.ClampPanResolutionIndex(_panResolutionIndex);
+        int bins = ClientSettingsStore.PanResolutionBins(idx);
+        string label = ClientSettingsStore.PanResolutionLabel(idx);
+        try
+        {
+            if (_radio != null)
+                await _radio.SetPanResolutionAsync(bins).ConfigureAwait(true);
+            PostToUi(ClearAllWaterfallHistories);
+            AppendLog($"Pan resolution ({reason}): {label} → {bins} bins");
+        }
+        catch (Exception ex)
+        {
+            AppendLog($"Pan resolution apply warning: {ex.Message}");
+        }
+    }
+
+    private static void ClearAllWaterfallHistories()
+    {
+        try
+        {
+            Window? w = null;
+            if (Application.Current?.ApplicationLifetime is IClassicDesktopStyleApplicationLifetime desk)
+                w = desk.MainWindow;
+            if (w == null) return;
+            ClearWaterfallsWalk(w);
+        }
+        catch { /* ignore */ }
+    }
+
+    private static void ClearWaterfallsWalk(Visual vis)
+    {
+        if (vis is SpectrumDisplayControl spec)
+            spec.ClearWaterfall();
+        foreach (var child in vis.GetVisualChildren())
+            ClearWaterfallsWalk(child);
+    }
+
     // ----- Sticky client settings -----
 
     private void LoadClientSettings()
@@ -6626,6 +6680,7 @@ public partial class MainViewModel : ViewModelBase, IDisposable
             SmeterPeak = s.SmeterPeak;
             AlcHold = s.AlcHold;
             AlcPeak = s.AlcPeak;
+            _panResolutionIndex = ClientSettingsStore.ClampPanResolutionIndex(s.PanResolutionIndex);
 
             long activeHz = UseVfoA ? _frequencyHz : _vfoBFrequencyHz;
             BandText = BandNameForFrequency(activeHz);
@@ -6767,6 +6822,7 @@ public partial class MainViewModel : ViewModelBase, IDisposable
             AlcPeak = AlcPeak,
             SpectrumZoom = sw.ZoomFactor,
             DbCalRelative = sw.DbCalRelative,
+            PanResolutionIndex = ClientSettingsStore.ClampPanResolutionIndex(_panResolutionIndex),
             GridMaxDb = sw.GridMaxDb,
             GridMinDb = sw.GridMinDb,
             WaterfallHighDb = sw.WaterfallHighDb,

@@ -378,7 +378,7 @@ public partial class MainWindow : Window
             return;
         }
 
-        _swWindow = new SpectrumWaterfallWindow();
+        _swWindow = new SpectrumWaterfallWindow(DataContext as MainViewModel);
         _swWindow.Closed += (_, _) => _swWindow = null;
 
         try { _swWindow.Show(this); }

@@ -129,6 +129,8 @@ public sealed class ClientSettings
     // Global S/W (not banked)
     public double SpectrumZoom { get; set; } = 1;
     public float DbCalRelative { get; set; }
+    /// <summary>0=Normal 800, 1=High 1600, 2=Max 3200 bins across 72 kHz.</summary>
+    public int PanResolutionIndex { get; set; }
 
     // Live snapshot (mirrored from active bank for backward-compatible keys)
     public float GridMaxDb { get; set; } = -20f;
@@ -333,6 +335,7 @@ public static class ClientSettingsStore
             sb.AppendLine("# Global S/W");
             sb.AppendLine($"SPECTRUM_ZOOM={s.SpectrumZoom.ToString(CultureInfo.InvariantCulture)}");
             sb.AppendLine($"DB_CAL_REL={s.DbCalRelative.ToString(CultureInfo.InvariantCulture)}");
+            sb.AppendLine($"PAN_RESOLUTION={ClampPanResolutionIndex(s.PanResolutionIndex)}");
             sb.AppendLine();
             sb.AppendLine("# Live S/W (active bank snapshot — for tools/compat)");
             WriteLiveSw(sb, s);
@@ -396,6 +399,22 @@ public static class ClientSettingsStore
     private static string F(float v) => v.ToString(CultureInfo.InvariantCulture);
 
     public const int MaxRecentHosts = 4;
+
+    public static int ClampPanResolutionIndex(int index) => Math.Clamp(index, 0, 2);
+
+    public static int PanResolutionBins(int index) => ClampPanResolutionIndex(index) switch
+    {
+        1 => 1600,
+        2 => 3200,
+        _ => 800
+    };
+
+    public static string PanResolutionLabel(int index) => ClampPanResolutionIndex(index) switch
+    {
+        1 => "High (1600)",
+        2 => "Max (3200)",
+        _ => "Normal (800)"
+    };
 
     public static List<string> ParseHostRecent(string val)
         => NormalizeHostRecent(null, (val ?? "").Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries));
@@ -713,6 +732,10 @@ public static class ClientSettingsStore
             case "DB_CAL_REL":
                 if (float.TryParse(val, NumberStyles.Float, CultureInfo.InvariantCulture, out float db))
                     s.DbCalRelative = Math.Clamp(db, -20f, 20f);
+                break;
+            case "PAN_RESOLUTION":
+                if (int.TryParse(val, NumberStyles.Integer, CultureInfo.InvariantCulture, out int pri))
+                    s.PanResolutionIndex = ClampPanResolutionIndex(pri);
                 break;
             // Legacy NULL_LO_* keys ignored — LO null is server-side (sdrcore-recv)
 

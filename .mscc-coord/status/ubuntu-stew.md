@@ -4,15 +4,17 @@
 |--|--|
 | **Host** | stew-HP-Notebook |
 | **Checkout** | `/home/stew/Documents/GitHub/mscc-station` |
-| **Build** | cmd-052 |
-| **Last command id** | cmd-052 |
+| **Build** | cmd-058 |
+| **Last command id** | cmd-058 |
 | **State** | running |
-| **Updated** | 2026-09-29 |
+| **Updated** | 2026-09-30 |
 
 ## ACK log
 
 | command id | state | note |
 |------------|-------|------|
+| cmd-058 | running | Avalonia 0.6.70 SPECTRUM RESOLUTION 800/1600/3200. HEAD b6f4505. Leave cmd-053 linux dirty unstaged. No Core. No rpi. No pull, no push. |
+| cmd-053 | running | Ubuntu recv panadapter -12 kHz notch width + fill. Copy Pi panadapter.c, VERSION_MINOR 142. No rpi write. No pull, no push. |
 | cmd-052 | running | Avalonia 0.6.69 StartRemoteAf stop-before-open. HEAD 825781a. REMOTE smoke. No rpi. No pull, no push. |
 | cmd-051 | done | Avalonia 0.6.68 Remote AF stop-before-restart. Commit 0d61d13. Smoke 1 Phones to Digital pass. Smoke 2-5 not run. Deb mscc-ui_0.6.68_amd64.deb. No rpi. No pull, no push. |
 | cmd-049 | done | Avalonia 0.6.67 S-meter + ALC HOLD/Peak. Smoke 1-5, 7-9 pass. Smoke 6 ALC needles not run (boxes work). No rpi. No pull, no push. |
@@ -24,6 +26,14 @@
 | cmd-032 | done | mscc_1.0.44_amd64.deb with remote_mic stream reset |
 
 ## Notes
+
+### cmd-058
+
+Accepted then running. S/W SPECTRUM RESOLUTION Normal/High/Max, sticky PAN_RESOLUTION, ApplyPanResolution on Connect and S/W change. Bump 0.6.70. Do not edit Core. Leave cmd-053 linux files unstaged.
+
+### cmd-053
+
+Accepted then running. Copy `rpi/SDRcore-recv-linux/sources/panadapter.c` onto `linux/` as-is (b08af65 + ef1d612). Bump recv VERSION_MINOR 141 to 142. make clean && make. No deb.
 
 ### cmd-052
 

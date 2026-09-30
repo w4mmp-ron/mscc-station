@@ -152,6 +152,18 @@
               <CheckBox Content="VIEW GRID" IsChecked="{Binding ViewGrid}"
                         FontSize="11" FontWeight="Bold"
                         ToolTip.Tip="Show horizontal dB grid lines on the spectrum"/>
+              <StackPanel>
+                <TextBlock Text="SPECTRUM RESOLUTION" FontSize="10" Foreground="#D0D0D0" Margin="0,0,0,2"
+                           ToolTip.Tip="Bins across 72 kHz. Higher = sharper spectrum, more UDP traffic. Use Normal if remote spectrum stutters."/>
+                <ListBox Width="120" Height="58" FontSize="9"
+                         Background="#111111" Foreground="White"
+                         SelectedIndex="{Binding PanResolutionIndex}"
+                         ToolTip.Tip="Normal=800, High=1600, Max=3200 bins across 72 kHz. Display zoom is separate.">
+                  <ListBoxItem Content="Normal (800)"/>
+                  <ListBoxItem Content="High (1600)"/>
+                  <ListBoxItem Content="Max (3200)"/>
+                </ListBox>
+              </StackPanel>
             </StackPanel>
           </StackPanel>
         </Border>
