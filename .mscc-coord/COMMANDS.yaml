@@ -1,4 +1,28 @@
 commands:
+  - id: cmd-057
+    created: "2026-09-29T23:05:00-04:00"
+    target: [windows-new-hp]
+    role: ui
+    action: wpf-remove-cw-tab-phones-bl001
+    status_hint: open
+    detail: |
+      BL-001 WPF only: remove CW-tab PHONES CheckBox (CwPhones / 0x70). Keep
+      POTENTIA / QSK. Stop SetCwPhonesAsync. Do not touch Avalonia, manuals, or
+      operator Phones audio path. Commit locally, do not push.
+      Brief: .mscc-coord/briefs/cmd-057.md
+  - id: cmd-056
+    created: "2026-09-29T23:05:00-04:00"
+    target: [windows-new-hp]
+    role: server
+    action: windows-cal-second-stop-port-linux
+    status_hint: open
+    detail: |
+      Port Linux CMD_SET_CAL_ABORT else-if (cal_abort_pending) from
+      linux/ms-sdr-linux/source/calibrate.c (519c682) into Windows
+      ms-sdr-MKII/source/calibrate.c. Second STOP while drain pending must log
+      "nothing new owed, drain still pending" and must NOT Cal_Abort_Drain_Done.
+      Do not edit rpi/ (Ron after Stew pushes). Commit locally, do not push.
+      Brief: .mscc-coord/briefs/cmd-056.md
   - id: cmd-055
     created: "2026-09-29T22:40:00-04:00"
     target: [windows-new-hp]
