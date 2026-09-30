@@ -107,6 +107,13 @@ WSL syntax OK. Windows recv has the same issue (not touched).
 Future idea (Ron: keep in mind, not now): `goertzel_mag` uses only I (`data[i].real`) -> no
 +600/-600 side check, ~3 dB SNR loss. Complex Goertzel (~10 lines) fixes both; level numbers
 change, so recheck CALIBRATION_LOW_LIMIT / LOOSE. Mirror is 1200 Hz away, outside the sweep.
+  Limit explained (Ron OK'd this wording 2026-09-29): the limit is a bar - FREQ CAL measures how
+  loud the tone is (average of low/center/high peaks, udp_thread.c:289); above the bar = found,
+  below = fail (freq 0). Normal 5,000,000, LOOSE 1,000,000. Complex Goertzel = a better ear: tone
+  reads louder (x2, +6 dB), noise also louder but less (x1.41, +3 dB), so the tone stands out
+  more (the 3 dB gain). Everything reads louder, so the bar must go UP: x2 (10,000,000 / 2,000,000)
+  = same as today; x1.41 (~7,070,000 / ~1,414,000) = a 3 dB weaker tone passes, noise still
+  doesn't (the benefit). Left at 5,000,000 -> noise could pass as a tone.
 Future idea (Ron 2026-09-29: keep in mind, not now): real fix for the -12 kHz spectrum spur =
 DC blocker on raw I/Q. Spur is I/Q DC (ADC offset + LO leakage); `complex_shift` runs
 `doPanadapter` on raw I/Q, then shifts by fixed 12 kHz (`loFreq`), so DC sits at VFO-12k,
