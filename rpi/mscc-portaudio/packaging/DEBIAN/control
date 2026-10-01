@@ -1,5 +1,5 @@
 Package: mscc-portaudio
-Version: 19.8.2
+Version: 19.8.3
 Section: libs
 Priority: optional
 Architecture: arm64

@@ -5,7 +5,7 @@ Debian package of **PortAudio with Pulse + ALSA** for Multus MSCC on **Raspberry
 ## Install
 
 ```bash
-sudo apt install -y ./mscc-portaudio_19.8.2_arm64.deb
+sudo apt install -y ./mscc-portaudio_19.8.3_arm64.deb
 ldconfig -p | grep portaudio
 # expect: /usr/local/lib/libportaudio.so.2
 ```
@@ -23,7 +23,7 @@ Uses sibling tree **`portaudio/`** (not portaudio-install):
 ```bash
 cd mscc-portaudio
 ./build-deb.sh
-# → mscc-portaudio_19.8.2_arm64.deb
+# → mscc-portaudio_19.8.3_arm64.deb
 ```
 
 Override: `PORTAUDIO_ROOT=/path/to/portaudio ./build-deb.sh`

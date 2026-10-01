@@ -52,7 +52,7 @@ As of FM work: control is **1.0.42**, but you still need a **Pi rebuild** of rec
 
    ```bash
    # if not already installed:
-   sudo apt install -y ./mscc-portaudio_19.8.2_arm64.deb   # from installers/rpi
+   sudo apt install -y ./mscc-portaudio_19.8.3_arm64.deb   # from installers/rpi
    sudo apt update
    sudo apt install -y build-essential g++ libusb-1.0-0-dev libhidapi-libusb0
    ldconfig -p | grep portaudio

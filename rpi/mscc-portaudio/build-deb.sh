@@ -81,8 +81,14 @@ PKG="$STAGE/packaging"
 mkdir -p "$PKG/usr/local/lib" "$PKG/usr/local/include" "$PKG/usr/local/lib/pkgconfig" \
          "$PKG/etc/ld.so.conf.d" "$PKG/usr/share/doc/mscc-portaudio"
 
-# Shared library + soname links
-cp -a "$LIB_SRC"/libportaudio.so* "$PKG/usr/local/lib/"
+# Shared library: one real file + soname links made here. The tree copies pass
+# through Windows, which turns the links into full copies; shipping those made
+# ldconfig say "libportaudio.so.2 is not a symbolic link".
+REAL="$(basename "$(ls "$LIB_SRC"/libportaudio.so.*.* 2>/dev/null | head -1)")"
+[[ -n "$REAL" ]] || { echo "ERROR: no libportaudio.so.X.Y in $LIB_SRC" >&2; exit 1; }
+cp "$LIB_SRC/$REAL" "$PKG/usr/local/lib/$REAL"
+ln -s "$REAL" "$PKG/usr/local/lib/libportaudio.so.2"
+ln -s libportaudio.so.2 "$PKG/usr/local/lib/libportaudio.so"
 # Headers (PortAudio public set)
 cp -a "$INC_SRC"/*.h "$PKG/usr/local/include/"
 

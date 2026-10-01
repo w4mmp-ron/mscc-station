@@ -11,7 +11,7 @@
 
 | Package | Example filename | Order |
 |---------|------------------|--------|
-| PortAudio | `mscc-portaudio_19.8.2_arm64.deb` | **1st** |
+| PortAudio | `mscc-portaudio_19.8.3_arm64.deb` | **1st** |
 | Main stack | `mscc_1.0.43_arm64.deb` | **2nd** |
 | Setup wizard | `mscc-init-gui_1.0.12_all.deb` | **3rd** (recommended) |
 | Avalonia UI (optional) | `mscc-ui_0.6.37_arm64.deb` | **4th** — see `installers/rpi/` |
@@ -99,7 +99,7 @@ MSCC digi (**VirtualA** / **VirtualB**) needs a special PortAudio build (Pulse +
 The stock Raspberry Pi OS library alone is often **not** enough.
 
 ```bash
-sudo apt install -y ./mscc-portaudio_19.8.2_arm64.deb
+sudo apt install -y ./mscc-portaudio_19.8.3_arm64.deb
 ```
 
 (Use the real filename if the version number differs.)

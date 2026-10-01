@@ -6,7 +6,7 @@
 | Package | Current file |
 |---------|----------------|
 | Main stack | **`mscc_1.0.34_arm64.deb`** (includes updated `mscc-binaries` as of 2026-08-14) |
-| PortAudio | **`mscc-portaudio_19.8.2_arm64.deb`** |
+| PortAudio | **`mscc-portaudio_19.8.3_arm64.deb`** |
 | Init GUI | **`mscc-init-gui_1.0.11_all.deb`** |
 
 Operator install: **INSTALL-FOR-PI.md**. Package overview: **README.md**.
@@ -24,7 +24,7 @@ Ship a new **ms-sdr** binary in the next `mscc` deb when ready. Seed `cw.ini` ma
 | Item | State |
 |------|--------|
 | Main package | **1.0.27** — arm64 servers + CLI + Virtual* + desktop Start/Stop + updated `sdrcore-recv` |
-| PortAudio | **`mscc-portaudio` 19.8.2** from `portaudio/build` → `/usr/local` |
+| PortAudio | **`mscc-portaudio` 19.8.3** from `portaudio/build` → `/usr/local` |
 | Digi RX/TX | VirtualA / VirtualB.monitor; dual stream when host APIs differ; WSJT verified |
 | Operator phones | **Any sample rate**; Oboe resampler in recv/trans when not 96 kHz |
 | ALSA levels | Init sets 100%; **`mscc start` re-applies** via `amixer` (not `.asoundrc`) |
@@ -39,7 +39,7 @@ Ship a new **ms-sdr** binary in the next `mscc` deb when ready. Seed `cw.ini` ma
 ## Install order
 
 ```text
-1. mscc-portaudio_19.8.2_arm64.deb
+1. mscc-portaudio_19.8.3_arm64.deb
 2. mscc_1.0.27_arm64.deb
 3. mscc-init-gui_1.0.10_all.deb
 ```
@@ -147,7 +147,7 @@ Visual difference at High/Max may be small if the UI downsamples to fixed screen
 
 ### mscc-portaudio
 1. AArch64 libs in `portaudio/build/libportaudio.so*` + `portaudio/include/`.  
-2. `cd mscc-portaudio && ./build-deb.sh` → `mscc-portaudio_19.8.2_arm64.deb` (or bump Version).
+2. `cd mscc-portaudio && ./build-deb.sh` → `mscc-portaudio_19.8.3_arm64.deb` (or bump Version).
 
 ### mscc
 1. Pi-build arm64 binaries → `mscc-binaries/` (`sdrcore-recv`, `sdrcore-trans`, `ms-sdr`, `mscc-init`, `mscc.sh`).  
@@ -201,7 +201,7 @@ grep -E "PAN RESOLUTION|PAN SMOOTHING|DUAL STREAM|Oboe|resample|ALSA card" \
 | **1.0.23** | PortAudio rpath `/usr/local`; mscc.sh prefers /usr/local |
 | **1.0.24–1.0.26** | ALSA levels on start; packaging polish |
 | **1.0.27** | Updated **sdrcore-recv** (pan resolution + bias 40 + Oboe path as built) |
-| **mscc-portaudio 19.8.2** | Libs from `portaudio/build` (not portaudio-install) |
+| **mscc-portaudio 19.8.3** | Libs from `portaudio/build` (not portaudio-install) |
 | **mscc-init-gui 1.0.10** | Any-rate devices; ALSA card remember + 100% set |
 
 ---

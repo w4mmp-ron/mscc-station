@@ -47,6 +47,11 @@ Git repo root: `C:\Users\Ron\.grok\worktrees`.
    still owns power_cal.ini, ms-sdr must not overwrite it. #5 second-STOP: Stew pushed
    cmd-056 (ms-sdr 3.177); ported 2026-09-30 to rpi/ms-sdr-linux calibrate.c (abort while
    cal_abort_pending = log only, drain kept). **Built on the Pi, works (Ron 2026-09-30).** Committed 8889d77.
+10. mscc-portaudio 19.8.3 (2026-10-01): `apt full-upgrade` showed "ldconfig: /usr/local/lib/libportaudio.so.2
+   is not a symbolic link". 19.8.2 shipped 3 full copies (links lost via Windows). `build-deb.sh` now ships
+   `libportaudio.so.19.8` + makes the `.so.2` / `.so` links; same binary (sha c4f6c2b9...). Build needs
+   `PORTAUDIO_ROOT=<worktrees>/portaudio` (default `rpi/portaudio` doesn't exist). In installers/rpi
+   (19.8.2 removed). **Installed on the Pi 2026-10-01, `sudo ldconfig` silent (Ron).** Not committed.
 7. Next mscc .deb build picks up the "(package mscc-init)" hint text in mscc-deb postinst /
    build-deb.sh / install-mscc.sh (source only, committed 82b819b). No rebuild just for that.
 

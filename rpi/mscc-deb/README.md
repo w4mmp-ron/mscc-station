@@ -11,7 +11,7 @@ This repository builds and documents the **arm64 `.deb`** that installs the MSCC
 
 | Related packages (sibling trees) | Current example | Purpose |
 |----------------------------------|-----------------|----------|
-| **`mscc-portaudio_*_arm64.deb`** | **19.8.2** | Pulse+ALSA PortAudio → `/usr/local` (**install first**) |
+| **`mscc-portaudio_*_arm64.deb`** | **19.8.3** | Pulse+ALSA PortAudio → `/usr/local` (**install first**) |
 | **`mscc-init-gui_*_all.deb`** | **1.0.10** | Graphical setup wizard (menu: **MSCC Init**) |
 
 End-user install: **[INSTALL-FOR-PI.md](INSTALL-FOR-PI.md)** (also `.docx`; PDF may lag).  
@@ -28,7 +28,7 @@ Developer handoff / status: **[resume.md](resume.md)**.
 ```
 
 ```bash
-sudo apt install -y ./mscc-portaudio_19.8.2_arm64.deb
+sudo apt install -y ./mscc-portaudio_19.8.3_arm64.deb
 sudo apt install -y ./mscc_1.0.27_arm64.deb
 sudo apt install -y ./mscc-init-gui_1.0.10_all.deb
 ldd $HOME/mscc/sdrcore-recv | grep portaudio
