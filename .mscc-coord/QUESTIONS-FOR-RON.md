@@ -62,3 +62,24 @@ In short: can Ron approve a detection-driven auto-restore design for cmd-055 (wi
 **Answer (Ron, 2026-09-30):** Yes. Approved: detection-driven auto-restore for cmd-055 (park the prior radio's calibration, load the detected radio's IQ + power calibration), with `sdrcore-trans` still owning `power_cal.ini`; `ms-sdr` must not take ownership of it or overwrite it. The manual switch-radio tool is not the primary path.
 
 **Stew v1 shape (locked, Ron go + Stew's call on implementation):** Servers manage LIVE cal only while running (trans owns `power_cal.ini`; ms-sdr IQ/freq live); no live→parked mirrors during normal cal; QRP/IQ popup saves stay → LIVE; new always-visible WPF left-panel **Save settings** copies live → `AppData\MSCC-NET9\cal\<line>\`; on load/detect use `LAST_LINE` + model (same leave live; different stash then parked→live; brand-new factory→parked→live); UI/S/W/mode save-on-the-fly out of scope; **no** auto-park on exit for v1. Full brief: `.mscc-coord/briefs/cmd-055.md`. cmd-055 is **active** (not on hold).
+
+---
+
+## 7. Pi / Linux multi-radio cal + remote Save settings (new, 2026-10-01)
+
+**Context (Stew):** Windows cmd-055/059 shipped: live cal under `%LocalAppData%\MSCC-NET9\`, parked under `cal\<line>\` + `LAST_LINE.txt`, WPF **Save settings** copies live → parked on the **Windows client**. Detection-driven park/restore on Windows ms-sdr load. No continuous live→parked mirrors; no auto-park on exit.
+
+**Pi today (Stew checked, Build Commander confirmed):**
+- Live cal: `~/.local/mscc/` only.
+- Seed templates: `/usr/share/mscc/init-files/` (no `factory/` next to `/home/pi/mscc/` binaries).
+- No `~/.local/mscc/cal/<line>/` and no `LAST_LINE` — Pi cannot interchange Ultimus MKII ↔ Geminus MKII cal the way Windows now can.
+- Remote Win client → Pi: QRP/IQ edits write the **Pi host** live files. WPF **Save settings** still only copies **Windows AppData** live → `cal\<line>\` (client-local `CalPark`); it does **not** park the Pi live set. That makes remote + multi-radio confusing.
+
+**Ask Ron:**
+1. Please add **cmd-055-equivalent** park/restore on **Pi/Linux** (detection-driven: same leave live; swap stash then parked→live; brand-new seed→parked→live), with `sdrcore-trans` still owning `power_cal.ini` create/load/save. Parked set at least `iq.ini` + `power_cal.ini` (+ `amplifier_cal.ini` if that matches Windows). Seed source on Pi can stay `init-files` (or a real `factory/` — your call), as long as behavior matches Windows.
+2. For **remote**: when the WPF client is connected to a Pi/Linux host, should **Save settings** (and load park/restore) act on the **host** cal, not Windows AppData? Or should Save settings be disabled/hidden in remote mode with a clear message until host park exists?
+3. Until Pi park exists, is Stew correct that Pi remains **single live set** (swapping radios on a Pi host will fight over one live cal)?
+
+Stew: this is getting messy; we want one clear story for local Windows vs Pi host vs remote Win→Pi.
+
+**Answer:**
