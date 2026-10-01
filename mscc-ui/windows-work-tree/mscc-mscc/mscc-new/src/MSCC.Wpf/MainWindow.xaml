@@ -295,7 +295,7 @@
             </ComboBox.ItemContainerStyle>
         </ComboBox>
     </Grid>
-    <StackPanel Orientation="Horizontal" Margin="0,0,0,4" VerticalAlignment="Center">
+    <StackPanel Orientation="Horizontal" Margin="0,0,0,12" VerticalAlignment="Center">
         <TextBlock Text="Port" Width="40" VerticalAlignment="Center" Foreground="{DynamicResource UiPrimaryTextBrush}"
                    FontSize="11" FontWeight="SemiBold"/>
         <TextBox Text="{Binding BackendPort, UpdateSourceTrigger=LostFocus}" Width="56"
@@ -307,13 +307,6 @@
                  ToolTip="UDP remote port (default 8888)"
                  PreviewKeyDown="ServerAddress_PreviewKeyDown"/>
     </StackPanel>
-    <Button x:Name="SaveSettingsButton"
-            Content="Save settings"
-            Width="164" Height="24" FontSize="10"
-            HorizontalAlignment="Left" Margin="0,0,0,8"
-            Click="SaveSettings_Click"
-            Style="{StaticResource MsccGoldButtonStyle}"
-            ToolTip="Copies TX IQ, QRP cal, and amplifier cal for this radio into the saved folder. Use this for the next session or a radio swap. Wait a second after a cal slider stops. Frequency cal and receive IQ stay with Reset and the live file."/>
 
     <!-- P group (operator/phones) — tight label→slider→value for narrower rail -->
     <TextBlock Text="Phones" FontWeight="Bold" Foreground="{DynamicResource UiAccentBrush}" FontSize="12" Margin="0,0,0,2"/>
@@ -2427,6 +2420,13 @@
                         </Style>
                     </Button.Style>
                 </Button>
+                <Button x:Name="SaveSettingsButton"
+                        Content="Save settings"
+                        Height="22" HorizontalAlignment="Stretch" Margin="0,4,0,0"
+                        Click="SaveSettings_Click"
+                        FontSize="9" FontWeight="Bold"
+                        Style="{StaticResource MsccGoldButtonStyle}"
+                        ToolTip="Copies TX IQ, QRP cal, and amplifier cal for this radio into the saved folder. Use this for the next session or a radio swap. Wait a second after a cal slider stops. Frequency cal and receive IQ stay with Reset and the live file."/>
             </StackPanel>
         </Border>
         </Grid>
