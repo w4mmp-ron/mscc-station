@@ -59,4 +59,4 @@ MSCC already detects the radio type. When the detected model changes, can cmd-05
 
 In short: can Ron approve a detection-driven auto-restore design for cmd-055 (with trans still owning `power_cal.ini`) instead of dropping auto-switching and requiring a manual switch-radio tool?
 
-**Answer:** [pending Ron]
+**Answer (Ron, 2026-09-30):** Yes. Approved: detection-driven auto-restore for cmd-055 (park the prior radio's calibration, load the detected radio's IQ + power calibration), with `sdrcore-trans` still owning `power_cal.ini`; `ms-sdr` must not take ownership of it or overwrite it. The manual switch-radio tool is not the primary path.
