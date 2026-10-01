@@ -51,7 +51,7 @@ Git repo root: `C:\Users\Ron\.grok\worktrees`.
    is not a symbolic link". 19.8.2 shipped 3 full copies (links lost via Windows). `build-deb.sh` now ships
    `libportaudio.so.19.8` + makes the `.so.2` / `.so` links; same binary (sha c4f6c2b9...). Build needs
    `PORTAUDIO_ROOT=<worktrees>/portaudio` (default `rpi/portaudio` doesn't exist). In installers/rpi
-   (19.8.2 removed). **Installed on the Pi 2026-10-01, `sudo ldconfig` silent (Ron).** Not committed.
+   (19.8.2 removed). **Installed on the Pi 2026-10-01, `sudo ldconfig` silent (Ron).** Committed 316d005, pushed.
 7. Next mscc .deb build picks up the "(package mscc-init)" hint text in mscc-deb postinst /
    build-deb.sh / install-mscc.sh (source only, committed 82b819b). No rebuild just for that.
 
