@@ -82,4 +82,4 @@ In short: can Ron approve a detection-driven auto-restore design for cmd-055 (wi
 
 Stew: this is getting messy; we want one clear story for local Windows vs Pi host vs remote Win→Pi.
 
-**Answer:**
+**Answer:** Planning is captured in `.mscc-coord/plans/linux-cal-parity-with-windows.md`. Implement Linux parity before further Windows park work: package per-line factory data, add detection-driven Linux park/restore with `sdrcore-trans` owning `power_cal.ini`, then make remote Save settings operate on the Linux host (or stay disabled with a clear message until host park exists).

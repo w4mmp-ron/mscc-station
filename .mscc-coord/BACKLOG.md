@@ -73,3 +73,12 @@ blanking at all three resolutions after both land.
 **Brief:** `.mscc-coord/briefs/cmd-059.md`
 
 **Summary:** Verify-uncalled then remove `Factory_mirror_live_to_cal` and `Create_power_cal_file`; visible `When done, press Save settings.` on QRP CAL / AMP CAL / TX IQ; shorten Save settings + tab ToolTips. No park/restore behavior change. Commit locally; do not push.
+
+
+## PLANNING - Linux calibration parity + remote Save settings
+
+**Status:** Planning only; not an ACTIVE Build brief. Do not activate until the ordered phase gates are ready.
+
+**Plan:** `.mscc-coord/plans/linux-cal-parity-with-windows.md`
+
+**Stew ask (2026-10-01):** Bring Pi and Ubuntu to Windows cmd-055/059 multi-radio calibration behavior: package per-line `factory/` data, add Linux live/`cal/<line>`/`LAST_LINE` detection-driven park/restore with `sdrcore-trans` owning `power_cal.ini`, and provide Avalonia Save settings on the host. Then make remote WPF Save settings target the Linux host; before host park exists, disable/hide it with a clear message. Optional Linux PSoC firmware packaging is separate. Stop further Windows park work until Linux catches up.
