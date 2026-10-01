@@ -58,6 +58,10 @@ cmd-053 Ubuntu recv spur-notch (FFT-bin width) is separate; smoke optionally ver
 blanking at all three resolutions after both land.
 
 
-## cmd-055 — ON HOLD pending Ron clarification (2026-09-30)
+## cmd-055 — ACTIVE (windows-new-hp) — Stew v1, Ron approved (2026-10-01)
 
-Do not start the rewritten cmd-055 build until Ron answers the new calibration-switching question in `QUESTIONS-FOR-RON.md`; the manual switch-radio tool is not the primary path unless Ron confirms it.
+**Status:** Active — not on hold. Ron Q6 approved detection-driven auto-restore; Stew locked v1 shape.
+
+**Brief:** `.mscc-coord/briefs/cmd-055.md`
+
+**Summary:** LIVE-only while running (trans owns `power_cal.ini`); WPF **Save settings** → parked `cal\<line>\`; on load/detect LAST_LINE + model (same / swap / brand-new); no primary manual switch-radio tool; no auto-park on exit for v1. Commit locally; do not push. One cmd at a time.

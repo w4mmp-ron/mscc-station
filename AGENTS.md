@@ -11,16 +11,13 @@ On start: `git pull`, then read [`handoff.md`](handoff.md). If `.mscc-coord/COMM
 
 ---
 
-
 ## Current work
 
 **Active - cmd-056 (windows-new-hp): Windows FREQ CAL second-STOP.** Port Linux `else if (cal_abort_pending)` (`519c682` / `linux/.../calibrate.c`) into `mscc-ui/windows-work-tree/ms-sdr-MKII/source/calibrate.c` so a second STOP while drain is pending logs `nothing new owed, drain still pending` and does **not** call `Cal_Abort_Drain_Done("nothing owed")`. Do **not** edit `rpi/` - Ron ports Pi after Stew pushes. Commit locally; do not push. See `.mscc-coord/briefs/cmd-056.md`.
 
-**Active - cmd-055 (windows-new-hp): REWRITTEN - drop ms-sdr per-model cal swap, add switch-radio tool (Ron Q4 final).** Remove `Factory_seed_live_inis` startup swap, all `Factory_mirror_live_to_cal` calls, `cal\<line>\` + `LAST_LINE.txt` handling; trans owns `power_cal.ini`. Keep seed-if-missing (iq/freq) and `Factory_reseed_live_file` for reset buttons. New manual switch-radio tool (script or small GUI): `save\CURRENT.txt`, `save\<model>\`, `power_cal.ini` + `iq.ini`, factory fallback. With / after cmd-048 Windows. Commit locally; do not push. See `.mscc-coord/briefs/cmd-055.md`.
+**Active - cmd-055 (windows-new-hp): Stew v1 cal park/restore + Save settings (Ron Q6 approved).** Servers manage LIVE cal only while running (trans owns `power_cal.ini`; ms-sdr IQ/freq live); no live→parked mirrors during normal cal; QRP/IQ popup saves stay → LIVE; new always-visible WPF left-panel **Save settings** copies live → `%LocalAppData%\MSCC-NET9\cal\<line>\`; on load/detect use LAST_LINE + model (same leave live; different stash then parked→live; brand-new factory→parked→live); no primary manual switch-radio tool; no auto-park on exit for v1; UI/S/W/mode save-on-the-fly out of scope. Host windows-new-hp; one cmd at a time; commit locally; do not push. See `.mscc-coord/briefs/cmd-055.md`.
 
 **Active - cmd-057 (windows-new-hp): Remove CW-tab PHONES (WPF only, BL-001).** Ron: unused `0x70`. Remove checkbox + `CwPhones` wire-up; keep POTENTIA/QSK. Avalonia later on stew-HP. Manuals/screenshots later. Do not touch operator Phones audio path. Commit locally; do not push. See `.mscc-coord/briefs/cmd-057.md`.
-
-**Active - cmd-055 (windows-new-hp): Windows factory_seed drop mirror + live wins (Ron Q4).** After / with cmd-048 Windows: change `load_iq_or_power` so when not switching lines and live exists, copy live -> `cal\<line>\` and return; use cal stash only on line switch or missing live; then factory. Drop `Factory_mirror_live_to_cal` write-through on power/IQ save. Covers `power_cal.ini` and `iq.ini`. `0xAA` leave ignored. Commit locally; do not push. See `.mscc-coord/briefs/cmd-055.md`.
 
 **Coord (manuals, not a Build cmd):** Ron answered `.mscc-coord/QUESTIONS-FOR-RON.md`. Paste-ready Linux/Windows manual replacements in `.mscc-coord/MANUAL-UPDATES-FROM-RON.md` (Pi groups, upgrade keeps cal, CW POTENTIA/QSK, PHONES not used). PDFs not regenerated yet - Stew applies to draft source.
 
@@ -164,7 +161,6 @@ cmd-035: local Win TX 35 ms gate, done (`47e336c`).
 
 cmd-033 WPF 9.22.0; cmd-032 mscc 1.0.44; cmd-031 remote_mic stream reset.
 
-
 ## Hard don’ts
 
 - **Don’t touch `rpi/`.** No edits, builds into, commits, merges, or conflict
@@ -178,5 +174,4 @@ cmd-033 WPF 9.22.0; cmd-032 mscc 1.0.44; cmd-031 remote_mic stream reset.
 - Don’t persist opcode 2/3 as radio boot mode.
 - Don’t reuse opcode `0x0E` (Solidus).
 - Ask before destructive git / force-push.
-
 
