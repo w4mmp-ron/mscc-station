@@ -1,4 +1,18 @@
 commands:
+  - id: cmd-059
+    created: "2026-10-01T14:10:00-04:00"
+    target: [windows-new-hp]
+    role: ui
+    action: cmd055-followup-dead-helpers-short-save-settings-tips
+    status_hint: open
+    detail: |
+      Host: windows-new-hp. Follow-up to cmd-055. Verify-uncalled then remove
+      Factory_mirror_live_to_cal (ms-sdr factory_seed) and Create_power_cal_file
+      (SDRcore-trans power.c) if still uncalled. WPF: visible on-tab text on
+      QRP CAL / AMP CAL / TX IQ "When done, press Save settings."; shorten Save
+      settings + those tab ToolTips. No park/restore behavior change. No Avalonia/
+      rpi/linux. Commit locally, do not push.
+      Brief: .mscc-coord/briefs/cmd-059.md
   - id: cmd-058
     created: "2026-09-30T11:35:00-04:00"
     target: [ubuntu-stew]

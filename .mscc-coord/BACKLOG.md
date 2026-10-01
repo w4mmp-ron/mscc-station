@@ -60,8 +60,16 @@ blanking at all three resolutions after both land.
 
 ## cmd-055 — ACTIVE (windows-new-hp) — Stew v1, Ron approved (2026-10-01)
 
-**Status:** Active — not on hold. Ron Q6 approved detection-driven auto-restore; Stew locked v1 shape.
+**Status:** Implementation shipped locally (cmd-055). UI tip / dead-code follow-up is **cmd-059**. Ron Q6 approved detection-driven auto-restore; Stew locked v1 shape.
 
 **Brief:** `.mscc-coord/briefs/cmd-055.md`
 
 **Summary:** LIVE-only while running (trans owns `power_cal.ini`); WPF **Save settings** → parked `cal\<line>\`; on load/detect LAST_LINE + model (same / swap / brand-new); no primary manual switch-radio tool; no auto-park on exit for v1. Commit locally; do not push. One cmd at a time.
+
+## cmd-059 — ACTIVE (windows-new-hp) — cmd-055 follow-up tips + dead helpers
+
+**Status:** Active. Stew: Save settings tip too long; want brief visible on-tab text; drop leftover unused helpers.
+
+**Brief:** `.mscc-coord/briefs/cmd-059.md`
+
+**Summary:** Verify-uncalled then remove `Factory_mirror_live_to_cal` and `Create_power_cal_file`; visible `When done, press Save settings.` on QRP CAL / AMP CAL / TX IQ; shorten Save settings + tab ToolTips. No park/restore behavior change. Commit locally; do not push.
