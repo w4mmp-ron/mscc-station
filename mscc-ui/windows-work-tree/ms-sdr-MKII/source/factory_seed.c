@@ -236,28 +236,6 @@ static void seed_freq_if_missing(const char *factory_root, const char *line, con
     }
 }
 
-void Factory_mirror_live_to_cal(const char *leaf)
-{
-    char *live;
-    const char *line;
-    char src[MAX_PATH], dst[MAX_PATH];
-    if (!leaf)
-        return;
-    live = My_getenv("HOME");
-    if (live == NULL || live[0] == 0)
-        return;
-    line = Factory_line_from_major(G_major_version);
-    ensure_cal_line_dir(live, line);
-    snprintf(src, sizeof src, "%s\\%s", live, leaf);
-    snprintf(dst, sizeof dst, "%s\\cal\\%s\\%s", live, line, leaf);
-    if (!file_exists(src))
-        return;
-    if (copy_file(src, dst)) {
-        print_time(0);
-        fprintf(G_fp_logfile, "[%d] cal write-through line=%s %s\n", line_number++, line, leaf);
-    }
-}
-
 int Factory_reseed_live_file(const char *kind, const char *leaf)
 {
     char factory_root[MAX_PATH];

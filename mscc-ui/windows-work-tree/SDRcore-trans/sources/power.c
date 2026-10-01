@@ -43,36 +43,6 @@ static int Power_cal_path(char *path, size_t size) {
     return 1;
 }
 
-/* Create power_cal.ini with the factory values if it does not exist. Returns 1 if created. */
-int Create_power_cal_file(void) {
-    FILE *fp;
-    char l_path[PATH_MAX] = {0};
-    int record = 0;
-
-    if (!Power_cal_path(l_path, sizeof (l_path))) {
-        return 0;
-    }
-    fp = fopen(l_path, "r");
-    if (fp != NULL) {
-        fclose(fp);
-        return 0;
-    }
-    fp = fopen(l_path, "w");
-    if (fp == NULL) {
-        print_time();
-        fprintf(G_fp_logfile, "[%d] Create_power_cal_file. Create failed: %s\n", line_number++, l_path);
-        return 0;
-    }
-    fprintf(fp, "VERSION=%d\n", POWER_CAL_VERSION);
-    for (record = 0; record < POWER_CAL_RECORDS; record++) {
-        fprintf(fp, "RECORD=%d,BAND=%d,POWER_LEVEL=%d\n", record, record, power_cal_defaults[record]);
-    }
-    fclose(fp);
-    print_time();
-    fprintf(G_fp_logfile, "[%d] Create_power_cal_file. Created %s with factory values\n", line_number++, l_path);
-    return 1;
-}
-
 /* Write G_Proficio_Calibration_Levels to power_cal.ini.
  * Temp file + MoveFileEx so a reader never sees half a file.
  * Windows rename() fails when the destination already exists. */

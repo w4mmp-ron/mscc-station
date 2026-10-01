@@ -21,9 +21,6 @@ void Factory_seed_reload_servers(void);
 /* Overwrite the live file from factory/<kind>/<line>/<leaf>. Does not touch cal/<line>/. */
 int Factory_reseed_live_file(const char *kind, const char *leaf);
 
-/* Copy one live leaf into cal/<current line>/. Not used on slider or IQ save. */
-void Factory_mirror_live_to_cal(const char *leaf);
-
 #ifdef __cplusplus
 }
 #endif
