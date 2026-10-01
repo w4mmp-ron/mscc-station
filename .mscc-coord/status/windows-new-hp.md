@@ -4,15 +4,16 @@
 |--|--|
 | **Host** | NEW-HP-LAPTOP (Windows) |
 | **Checkout** | `C:\Users\n8vet\OneDrive\Documents\GitHub\mscc-station` |
-| **Build** | **cmd-054** (WPF 9.30.4) / **cmd-038** (WPF pending) |
-| **Last command id** | cmd-054 (done) / cmd-038 (WPF pending) |
+| **Build** | **cmd-048** (trans 3.143, ms-sdr 3.178) / **cmd-038** (WPF pending) |
+| **Last command id** | cmd-048 (done) / cmd-038 (WPF pending) |
 | **State** | done |
-| **Updated** | 2026-09-30 |
+| **Updated** | 2026-10-01 |
 
 ## ACK log
 
 | command id | state | note |
 |------------|-------|------|
+| cmd-048 | done | Windows SDRcore-trans 3.143 and ms-sdr 3.178 in C:\mscc-net9. Trans owns power_cal.ini and amplifier_cal.ini. Slider steps update RAM and the file is written about 0.5 s later. ms-sdr only reads and forwards. amplifier.ini is no longer created. QRP reset 0xAA is ignored. The live-to-park mirror on QRP save is gone. Park and Save settings stay in cmd-055. Live tests 1-7 not run. Not pushed. |
 | cmd-054 | done | WPF 9.30.4 (R9-30-4) in C:\mscc-net9. S/W label is SPECTRUM RESOLUTION. Tooltip says remote spectrum stutters. Resolution list and PAN_RESOLUTION ini unchanged. Live window not opened. Not pushed. |
 | cmd-053 | done | Windows SDRcore-recv 3.142 in C:\mscc-net9. The -12 kHz spur notch is 6 FFT bins each side and the fill is the smoothed neighbour texture from the Pi. Ubuntu linux/ waits for the next pass. Live spectrum smoke not run. Not pushed. |
 | cmd-057 | done | WPF 9.30.2 (R9-30-2) in C:\mscc-net9. CW tab PHONES checkbox removed. POTENTIA / QSK remains, still sends, tooltip "Amplifier PIN diode T/R switching". WPF no longer sends 0x70. Opcode constant kept. SetCwPhonesAsync stays in Core because Avalonia still calls it. Live hover and QSK toggle not run. Not pushed. |
@@ -38,4 +39,4 @@
 
 ## Notes
 
-cmd-054: WPF 9.30.4 (R9-30-4). The S/W window label is SPECTRUM RESOLUTION. The resolution choices and the saved setting are unchanged. cmd-038 still pending.
+cmd-048: trans 3.143 and ms-sdr 3.178. Servers own the live QRP and QRO cal files. cmd-055 park and Save settings are not in this build. cmd-038 still pending.

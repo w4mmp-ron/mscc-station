@@ -522,6 +522,7 @@ int main(int argc, char **argv) {
             goto error;
         }
     }
+    Create_power_cal_file(); /* sdrcore-trans owns power_cal.ini; factory values if missing */
     Init_Power_All();
     remote_mic_init();
     while (G_all_threads_run) {

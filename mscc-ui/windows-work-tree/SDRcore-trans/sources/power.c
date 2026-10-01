@@ -2,65 +2,159 @@
 
 
 //These routines manage the Transceiver User and Calibration values (power.ini and power_cal.ini)
+//sdrcore-trans owns power_cal.ini (QRP calibration). ms-sdr only reads it to report the value to the client.
 power_stack G_Proficio_Calibration_Levels[12];
 power_levels G_power_levels;
 extern struct input_devices G_input_devices[MAX_INPUT_DEVICES];
 //const char *homedir;
 
+volatile int G_power_cal_save_countdown = 0; /* >0: power_cal.ini save pending (see Drive_Manager) */
+volatile int G_amp_cal_save_countdown = 0;   /* >0: amplifier_cal.ini save pending */
+volatile int G_drive_recalc = 0;             /* 1: Drive_Manager recomputes the drive */
+
+/* Save any pending QRP / amp cal slider value now (before a reload reads the files). */
+void Flush_pending_cal_saves(void) {
+    if (G_power_cal_save_countdown > 0) {
+        G_power_cal_save_countdown = 0;
+        Update_power_cal_file();
+    }
+    if (G_amp_cal_save_countdown > 0) {
+        G_amp_cal_save_countdown = 0;
+        Update_amplifier_calibration();
+    }
+}
+
+#define POWER_CAL_VERSION 3
+#define POWER_CAL_RECORDS 12
+
+/* Factory QRP calibration, record order POWER_B160 .. POWER_B2200.
+ * Same values ms-sdr used for PCB 2/4/5/6 (and any other version). */
+static const int power_cal_defaults[POWER_CAL_RECORDS] = {47, 30, 24, 29, 53, 72, 28, 30, 45, 40, 40, 40};
+
+static int Power_cal_path(char *path, size_t size) {
+    const char* homedir;
+
+    if ((homedir = My_getenv("HOME")) == NULL) {
+        print_time();
+        fprintf(G_fp_logfile, "[%d] Power_cal_path. getenv failed\n", line_number++);
+        return 0;
+    }
+    snprintf(path, size, "%s/power_cal.ini", homedir);
+    return 1;
+}
+
+/* Create power_cal.ini with the factory values if it does not exist. Returns 1 if created. */
+int Create_power_cal_file(void) {
+    FILE *fp;
+    char l_path[PATH_MAX] = {0};
+    int record = 0;
+
+    if (!Power_cal_path(l_path, sizeof (l_path))) {
+        return 0;
+    }
+    fp = fopen(l_path, "r");
+    if (fp != NULL) {
+        fclose(fp);
+        return 0;
+    }
+    fp = fopen(l_path, "w");
+    if (fp == NULL) {
+        print_time();
+        fprintf(G_fp_logfile, "[%d] Create_power_cal_file. Create failed: %s\n", line_number++, l_path);
+        return 0;
+    }
+    fprintf(fp, "VERSION=%d\n", POWER_CAL_VERSION);
+    for (record = 0; record < POWER_CAL_RECORDS; record++) {
+        fprintf(fp, "RECORD=%d,BAND=%d,POWER_LEVEL=%d\n", record, record, power_cal_defaults[record]);
+    }
+    fclose(fp);
+    print_time();
+    fprintf(G_fp_logfile, "[%d] Create_power_cal_file. Created %s with factory values\n", line_number++, l_path);
+    return 1;
+}
+
+/* Write G_Proficio_Calibration_Levels to power_cal.ini.
+ * Temp file + MoveFileEx so a reader never sees half a file.
+ * Windows rename() fails when the destination already exists. */
+int Update_power_cal_file(void) {
+    FILE *fp;
+    char l_path[PATH_MAX] = {0};
+    char tmp_path[PATH_MAX + 8] = {0};
+    int record = 0;
+
+    if (!Power_cal_path(l_path, sizeof (l_path))) {
+        return 0;
+    }
+    snprintf(tmp_path, sizeof (tmp_path), "%s.tmp", l_path);
+    fp = fopen(tmp_path, "w");
+    if (fp == NULL) {
+        print_time();
+        fprintf(G_fp_logfile, "[%d] Update_power_cal_file. Open failed: %s\n", line_number++, tmp_path);
+        return 0;
+    }
+    fprintf(fp, "VERSION=%d\n", POWER_CAL_VERSION);
+    for (record = 0; record < POWER_CAL_RECORDS; record++) {
+        fprintf(fp, "RECORD=%d,BAND=%d,POWER_LEVEL=%d\n", record, record,
+                G_Proficio_Calibration_Levels[record].power_level);
+    }
+    if (fclose(fp) != 0 || !MoveFileExA(tmp_path, l_path, MOVEFILE_REPLACE_EXISTING)) {
+        print_time();
+        fprintf(G_fp_logfile, "[%d] Update_power_cal_file. Write/rename failed: %lu\n",
+                line_number++, GetLastError());
+        remove(tmp_path);
+        return 0;
+    }
+    print_time();
+    fprintf(G_fp_logfile, "[%d] Update_power_cal_file. Written\n", line_number++);
+    return 1;
+}
+
+/* Load power_cal.ini. Starts from the factory values; each "RECORD=n,...,POWER_LEVEL=v" line
+ * (n 0..11) overrides record n. Bad or out-of-range lines are skipped. Returns 1 if the file was read. */
 int Init_Proficio_calibration(uint8_t send_to_transceiver) {
     int status = 0;
     FILE *Power_initialize;
     char l_path[PATH_MAX] = {0};
     char iq_init_record[132];
-    int mynumber;
     int record = 0;
-    int power = 0;
-    const char* homedir;
+    int loaded = 0;
+    char *record_number;
+    char *power_value;
 
-    struct {
-        char *record_number;
-        char *band;
-        char *power_value;
-    } power_record;
-
-    if ((homedir = My_getenv("HOME")) != NULL) {
-        strcpy(l_path, homedir);
-        //strcat(l_path, "/.local/share/mscc");
-        strcat(l_path, "/power_cal.ini");
-        Power_initialize = fopen(l_path, "r");
-        if (Power_initialize != NULL) {
-            fgets(iq_init_record, sizeof (iq_init_record), Power_initialize); //Skip the VERSION line
-            while (fgets(iq_init_record, sizeof (iq_init_record), Power_initialize) != NULL) {
-                power_record.record_number = strstr(iq_init_record, "RECORD=");
-                power_record.band = strstr(iq_init_record, "BAND=");
-                power_record.power_value = strstr(iq_init_record, "POWER_LEVEL=");
-                mynumber = atoi((power_record.record_number + 7));
-                G_Proficio_Calibration_Levels[record].record = mynumber;
-                mynumber = atoi((power_record.band + 5));
-                G_Proficio_Calibration_Levels[record].band = mynumber;
-                mynumber = atoi((power_record.power_value + 12));
-                G_Proficio_Calibration_Levels[record].power_level = mynumber;
-                power = mynumber;
-                //print_time();
-                //fprintf(G_fp_logfile, "[%d] Init_Proficio_calibration. Record: %d, Band: %d,"
-                //        "Power Level: %d\n",
-                 //       line_number++, G_Proficio_Calibration_Levels[record].record, G_Proficio_Calibration_Levels[record].band,
-                 //       G_Proficio_Calibration_Levels[record].power_level);
-                record++;
-            }
-            fclose(Power_initialize);
-        } else {
-            print_time();
-            fprintf(G_fp_logfile, "[%d] Initialize_power_calibration. Open file failed\n", line_number++);
-            status = 0;
-        }
-    } else {
-        status = 0;
-        print_time();
-        fprintf(G_fp_logfile, "[%d] Initialize_power_calibration.  getenv failed\n", line_number++);
+    (void) send_to_transceiver;
+    for (record = 0; record < POWER_CAL_RECORDS; record++) {
+        G_Proficio_Calibration_Levels[record].record = record;
+        G_Proficio_Calibration_Levels[record].band = record;
+        G_Proficio_Calibration_Levels[record].power_level = power_cal_defaults[record];
     }
+    if (!Power_cal_path(l_path, sizeof (l_path))) {
+        return 0;
+    }
+    Power_initialize = fopen(l_path, "r");
+    if (Power_initialize == NULL) {
+        print_time();
+        fprintf(G_fp_logfile, "[%d] Initialize_power_calibration. Open file failed. Using factory values\n", line_number++);
+        return 0;
+    }
+    while (fgets(iq_init_record, sizeof (iq_init_record), Power_initialize) != NULL) {
+        record_number = strstr(iq_init_record, "RECORD=");
+        power_value = strstr(iq_init_record, "POWER_LEVEL=");
+        if (record_number == NULL || power_value == NULL) {
+            continue; /* VERSION line or junk */
+        }
+        record = atoi(record_number + 7);
+        if (record < 0 || record >= POWER_CAL_RECORDS) {
+            print_time();
+            fprintf(G_fp_logfile, "[%d] Initialize_power_calibration. Bad record %d skipped\n", line_number++, record);
+            continue;
+        }
+        G_Proficio_Calibration_Levels[record].power_level = atoi(power_value + 12);
+        loaded++;
+    }
+    fclose(Power_initialize);
+    status = 1;
     print_time();
-    fprintf(G_fp_logfile, "[%d] Initialize_power_calibration. Finished\n", line_number++);
+    fprintf(G_fp_logfile, "[%d] Initialize_power_calibration. Finished. %d records loaded\n", line_number++, loaded);
     return status;
 }
 

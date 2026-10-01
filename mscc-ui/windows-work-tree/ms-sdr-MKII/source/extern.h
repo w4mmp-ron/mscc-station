@@ -440,16 +440,11 @@ extern uint8_t G_in_IQ_calibration_mode;
 //For Power Calibration
 extern int Power_calibration(uint32_t command, char *buffer);
 //extern uint8_t G_calibration_mode;
-extern int Create_power_ini_file();
 extern int Initialize_power_calibration();
-extern int Check_Power_Cal_Version();
 
 //For Amplifier Power Output
 extern int16_t G_Amplifier_band;
-extern int Check_Amplifier_Version();
-extern int Initialize_amplifier_power();
 extern int Amplifier_Set_Power_Level(uint8_t command, char *buf);
-extern int Create_amplifier_ini_file();
 
 // For User Controls processing
 

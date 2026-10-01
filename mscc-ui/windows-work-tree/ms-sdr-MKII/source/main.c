@@ -1247,11 +1247,8 @@ int main(int argc, char **argv) {
     fprintf(G_fp_logfile, "[%d] main . Calling initialize_msccs \n", line_number++);
     initialize_mscc();
     
-    if (G_transceiver_initialization_status == TRUE) {
-        status = Create_power_ini_file();
-        Check_Amplifier_Version();
-        status = Create_amplifier_ini_file();
-    }
+    /* power_cal.ini and amplifier_cal.ini are owned by sdrcore-trans.
+     * amplifier.ini is unused. */
     print_time(0);
     fprintf(G_fp_logfile, "[%d] main . Calling Init_last_used_VFO_A \n", line_number++);
     status = Init_last_used_VFO_A();

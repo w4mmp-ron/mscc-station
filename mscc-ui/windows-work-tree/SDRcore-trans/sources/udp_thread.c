@@ -23,7 +23,6 @@ extern struct input_devices G_digital_input_devices[MAX_INPUT_DEVICES];
 extern power_levels G_power_levels;
 extern power_stack G_Proficio_Calibration_Levels[];
 extern amplifier_stack G_amp_calibration_stack[];
-extern amplifier_stack G_amplifier_stack[];
 uint8_t G_PCB_Version = 10;
 uint8_t opcode;
 uint8_t t_opcode_data;
@@ -68,7 +67,6 @@ struct {
 struct {
 
     struct {
-        float user_power_value; //Populated from amplifier.ini
         float calibration_value; //Populated from amplifier_cal.ini
     };
 } amplifier_table[12]; //This table is for the Potentia
@@ -182,12 +180,11 @@ void Init_amplifier_table() {
     print_time();
     fprintf(G_fp_logfile, "[%d] Init_amplifier_table. STARTED\n",line_number++);
     for (band = 0; band < 12; band++) {
-        amplifier_table[band].user_power_value = (float) (G_amplifier_stack[band].power_level) * 0.01f;
         power_level = G_amp_calibration_stack[band].power_level;
         amplifier_table[band].calibration_value = 1.0f + ((float) power_level / 100.0f);
         print_time();
-        fprintf(G_fp_logfile, "[%d] Init_amplifier_table. Band: %d, user_power_level: %f, calibration_value: %f\n",
-                line_number++, band, amplifier_table[band].user_power_value, amplifier_table[band].calibration_value);
+        fprintf(G_fp_logfile, "[%d] Init_amplifier_table. Band: %d, calibration_value: %f\n",
+                line_number++, band, amplifier_table[band].calibration_value);
     }
     print_time();
     fprintf(G_fp_logfile, "[%d] Init_amplifier_table. FINISHED\n", line_number++);
@@ -199,7 +196,6 @@ void Init_Power_All(void) {
     Init_Proficio_User_power();
     Init_Proficio_calibration(0);
     Init_Proficio_table();
-    Init_amplifier_user_values();
     Init_amplifier_calibration();
     Init_amplifier_table();
     print_time();
@@ -385,6 +381,20 @@ int Get_IQ_Record(int band) {
     return record;
 }
 
+/* QRP calibration value for one band (0xA2), sent on every slider step. One value per band,
+ * used by every mode. RAM only here; Drive_Manager recomputes the drive now and saves
+ * power_cal.ini once the slider has been still for ~0.5 s (no full reload, no other files). */
+void Set_QRP_calibration(int band_index, int value) {
+    int mode = 0;
+
+    G_Proficio_Calibration_Levels[band_index].power_level = value;
+    for (mode = 0; mode < 6; mode++) {
+        proficio_table[band_index].mode[mode].calibration_value = value;
+    }
+    G_power_cal_save_countdown = POWER_CAL_SAVE_DELAY;
+    G_drive_recalc = 1;
+}
+
 void *UDP_Thread(void *my_param) {
     int status = 0;
     float freq = 0.0f;
@@ -397,7 +407,7 @@ void *UDP_Thread(void *my_param) {
     uint8_t mic_muted = 0;
     int device_input_record_index = 0;
     uint8_t UDP_status = 0;
-    int transceiver_calibration_index = 0;
+    int transceiver_calibration_index = -1;
     int transceiver_calibration_band = 0;
     int amp_calibration_band = 0;
     uint8_t mode = 0;
@@ -554,6 +564,7 @@ void *UDP_Thread(void *my_param) {
                 print_time();
                 fprintf(G_fp_logfile, "[%d] UDP Thread. CMD_SET_SDRCORE_TRANS_INITIALIZE. STARTED State: %d \n", line_number++,
                         t_opcode_data);
+                Flush_pending_cal_saves(); /* don't reload over unsaved slider values */
                 Init_Power_All();
                 break;
 
@@ -627,9 +638,17 @@ void *UDP_Thread(void *my_param) {
                 op_code_data_32 = (int*) &buf[1];
                 memcpy(&i_opcode_data, op_code_data_32, 4);
                 amplifier_fine = i_opcode_data;
+                if (amp_calibration_band < 0 || amp_calibration_band >= 12) {
+                    break;
+                }
+                /* Sent on every slider step (-99..0). Same path as QRP 0xA2: RAM + drive recompute now,
+                 * amplifier_cal.ini saved by Drive_Manager once the slider is still (no full reload). */
+                G_amp_calibration_stack[amp_calibration_band].record = amp_calibration_band;
+                G_amp_calibration_stack[amp_calibration_band].band = amp_calibration_band;
                 G_amp_calibration_stack[amp_calibration_band].power_level = amplifier_fine;
-                amplifier_table[amp_calibration_band].calibration_value = amplifier_fine;
-                G_power_file_needs_updated = TRUE;
+                amplifier_table[amp_calibration_band].calibration_value = 1.0f + ((float) amplifier_fine / 100.0f);
+                G_amp_cal_save_countdown = POWER_CAL_SAVE_DELAY;
+                G_drive_recalc = 1;
                 print_time();
                 fprintf(G_fp_logfile, "[%d] UDP Thread. CMD_SET_POTENTIA_CALIBRATION Band: %d, Calibration Value: %d\n",
                         line_number++, amp_calibration_band, amplifier_fine);
@@ -637,12 +656,8 @@ void *UDP_Thread(void *my_param) {
 
             case CMD_SET_AMPLIFIER_POWER:
                 print_time();
-                fprintf(G_fp_logfile, "[%d] UDP Thread. CMD_SET_AMPLIFIER_POWER. STARTED. Power: %d\n", line_number++,t_opcode_data);
-                amplifier_table[amp_calibration_band].user_power_value = (float) (t_opcode_data) * 0.01f;
-                G_power_file_needs_updated = TRUE;
-                print_time();
-                fprintf(G_fp_logfile, "[%d] UDP Thread. CMD_SET_AMPLIFIER_POWER. Finished. Amplifier Band: %d, Mode: %d, Power: %d\n",
-                        line_number++, amp_calibration_band, mode, t_opcode_data);
+                fprintf(G_fp_logfile, "[%d] UDP Thread. CMD_SET_AMPLIFIER_POWER. Power: %d. NOOP (amplifier.ini removed)\n",
+                        line_number++, t_opcode_data);
                 break;
                 //End of Amplifier Routines
 
@@ -651,6 +666,7 @@ void *UDP_Thread(void *my_param) {
                 print_time();
                 fprintf(G_fp_logfile, "[%d] UDP Thread. CMD_SET_BAND_POWER_BAND. Called\n", line_number++);
                 transceiver_calibration_band = s_opcode_data;
+                transceiver_calibration_index = -1; /* unknown band -> 0xA2 ignored */
                 switch (transceiver_calibration_band) {
                     case 2200:
                         transceiver_calibration_index = POWER_B2200;
@@ -695,13 +711,16 @@ void *UDP_Thread(void *my_param) {
                 break;
 
             case CMD_SET_BAND_POWER_POWER:
+                if (transceiver_calibration_index < 0 || transceiver_calibration_index >= 12) {
+                    print_time();
+                    fprintf(G_fp_logfile, "[%d] UDP Thread. CMD_SET_BAND_POWER_POWER. No valid band (%d). Ignored\n",
+                            line_number++, transceiver_calibration_band);
+                    break;
+                }
+                Set_QRP_calibration(transceiver_calibration_index, t_opcode_data);
                 print_time();
-                fprintf(G_fp_logfile, "[%d] UDP Thread. CMD_SET_BAND_POWER_POWER. Called\n", line_number++);
-                proficio_table[transceiver_calibration_index].mode[mode].calibration_value = t_opcode_data;
-                G_power_file_needs_updated = 1;
-                print_time();
-                fprintf(G_fp_logfile, "[%d] UDP Thread. CMD_SET_BAND_POWER_POWER. Finished. Calibration Band: %d, Mode: %d, Power: %d\n",
-                        line_number++, transceiver_calibration_band, mode, t_opcode_data);
+                fprintf(G_fp_logfile, "[%d] UDP Thread. CMD_SET_BAND_POWER_POWER. Band: %d, Index: %d, Power: %d\n",
+                        line_number++, transceiver_calibration_band, transceiver_calibration_index, t_opcode_data);
                 break;
                 //End of commands for calibrating the Proficio
 

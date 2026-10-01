@@ -34,7 +34,7 @@
 // Release number is in the range of 0 to 9
 
 #define VERSION_MAJOR 3
-#define VERSION_MINOR 142
+#define VERSION_MINOR 143
 #define VERSION_MS_SDRCORE_TRANS ((((VERSION_MINOR) << 8) & 0xff00) | ((VERSION_MAJOR) & 0x00ff))
 
 /* Local DIGITAL/OPERATOR only. Discard this much mic audio after TX 0->1
@@ -167,7 +167,13 @@ extern void build_power_levels(void);
 extern int delete_iq_ini_file();
 extern void Init_Proficio_User_power();
 extern int Init_Proficio_calibration(uint8_t send_to_transceiver);
-extern int Init_amplifier_user_values();
+extern int Create_power_cal_file(void);
+extern int Update_power_cal_file(void);
+#define POWER_CAL_SAVE_DELAY 500 /* Drive_Manager loops (~1 ms each) before power_cal.ini is saved */
+extern volatile int G_power_cal_save_countdown;
+extern volatile int G_amp_cal_save_countdown;
+extern void Flush_pending_cal_saves(void);
+extern volatile int G_drive_recalc;
 extern int Init_amplifier_calibration();
 extern int Update_amplifier_calibration();
 extern void Init_Power_All(void);
