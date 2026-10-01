@@ -34,7 +34,7 @@
 // Release number is in the range of 0 to 9
 
 #define VERSION_MAJOR 3
-#define VERSION_MINOR 143
+#define VERSION_MINOR 144
 #define VERSION_MS_SDRCORE_TRANS ((((VERSION_MINOR) << 8) & 0xff00) | ((VERSION_MAJOR) & 0x00ff))
 
 /* Local DIGITAL/OPERATOR only. Discard this much mic audio after TX 0->1

@@ -17,6 +17,7 @@
 #include "band_stack.h"
 #include "last_used.h"
 #include "iq.h"
+#include "factory_seed.h"
 //Pthreads
 
 #ifdef _DEBUG
@@ -1292,8 +1293,9 @@ int main(int argc, char **argv) {
         if (G_network_initialized) {
             print_time(0);
             fprintf(G_fp_logfile,
-                "[%d] main. Network ready - Apply_Appliance_Startup (headless cores/rig)\n",
+                "[%d] main. Network ready - reload cal if a live file was replaced, then Apply_Appliance_Startup\n",
                 line_number++);
+            Factory_seed_reload_servers();
             Apply_Appliance_Startup();
         } else {
             print_time(0);

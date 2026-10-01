@@ -1,9 +1,14 @@
 #define _CRT_SECURE_NO_WARNINGS 1
 #include "extern.h"
 #include "factory_seed.h"
+#include "usbavrcmd.h"
 #include <stdio.h>
 #include <string.h>
 #include <windows.h>
+
+/* Set by Factory_seed_live_inis. Factory_seed_reload_servers consumes them. */
+static int g_cal_reload_power;
+static int g_cal_reload_iq;
 
 const char *Factory_line_from_major(int major)
 {
@@ -121,60 +126,97 @@ static void ensure_cal_line_dir(const char *live, const char *line)
     ensure_dir(p);
 }
 
-static void stash_active_to_cal(const char *live, const char *prev)
+static void stash_one(const char *live, const char *prev, const char *leaf)
 {
     char src[MAX_PATH], dst[MAX_PATH];
-    if (!prev || !prev[0])
-        return;
-    ensure_cal_line_dir(live, prev);
-    snprintf(src, sizeof src, "%s\\iq.ini", live);
-    snprintf(dst, sizeof dst, "%s\\cal\\%s\\iq.ini", live, prev);
+    snprintf(src, sizeof src, "%s\\%s", live, leaf);
+    snprintf(dst, sizeof dst, "%s\\cal\\%s\\%s", live, prev, leaf);
     if (file_exists(src) && copy_file(src, dst)) {
         print_time(0);
-        fprintf(G_fp_logfile, "[%d] cal stash line=%s iq.ini\n", line_number++, prev);
-    }
-    snprintf(src, sizeof src, "%s\\power_cal.ini", live);
-    snprintf(dst, sizeof dst, "%s\\cal\\%s\\power_cal.ini", live, prev);
-    if (file_exists(src) && copy_file(src, dst)) {
-        print_time(0);
-        fprintf(G_fp_logfile, "[%d] cal stash line=%s power_cal.ini\n", line_number++, prev);
+        fprintf(G_fp_logfile, "[%d] cal stash line=%s %s\n", line_number++, prev, leaf);
     }
 }
 
-static void load_iq_or_power(const char *live, const char *line, const char *kind, const char *leaf,
-                             const char *factory_root, int bootstrap_live)
+static void stash_active_to_cal(const char *live, const char *prev)
+{
+    if (!prev || !prev[0])
+        return;
+    ensure_cal_line_dir(live, prev);
+    stash_one(live, prev, "iq.ini");
+    stash_one(live, prev, "power_cal.ini");
+    stash_one(live, prev, "amplifier_cal.ini");
+}
+
+/* Twelve RECORD/BAND lines, POWER_LEVEL=-99. No factory amp-cal tree. */
+static int write_amp_default_file(const char *path)
+{
+    FILE *fp;
+    int band;
+    fp = fopen(path, "w");
+    if (!fp)
+        return 0;
+    for (band = 0; band < 12; band++)
+        fprintf(fp, "RECORD=%d,BAND=%d,POWER_LEVEL=-99\n", band, band);
+    fclose(fp);
+    return 1;
+}
+
+/* 1 = the live file was replaced. Caller reloads that server.
+ * Same line with a live file: leave it. Copy live → parked only when parked is missing. */
+static int place_cal_file(const char *live, const char *line, const char *kind,
+                          const char *leaf, const char *factory_root,
+                          int same_line, int amp_default)
 {
     char calp[MAX_PATH], livep[MAX_PATH], facp[MAX_PATH];
     snprintf(livep, sizeof livep, "%s\\%s", live, leaf);
     snprintf(calp, sizeof calp, "%s\\cal\\%s\\%s", live, line, leaf);
-    if (factory_root && factory_root[0])
+    facp[0] = 0;
+    if (factory_root && factory_root[0] && kind && kind[0])
         snprintf(facp, sizeof facp, "%s\\%s\\%s\\%s", factory_root, kind, line, leaf);
-    else
-        facp[0] = 0;
     ensure_cal_line_dir(live, line);
+
+    if (same_line && file_exists(livep)) {
+        if (!file_exists(calp)) {
+            if (copy_file(livep, calp)) {
+                print_time(0);
+                fprintf(G_fp_logfile, "[%d] cal bootstrap live→line=%s %s\n",
+                        line_number++, line, leaf);
+            }
+        } else {
+            print_time(0);
+            fprintf(G_fp_logfile, "[%d] cal keep live line=%s %s\n", line_number++, line, leaf);
+        }
+        return 0;
+    }
+
     if (file_exists(calp)) {
         if (copy_file(calp, livep)) {
             print_time(0);
             fprintf(G_fp_logfile, "[%d] cal load line=%s %s\n", line_number++, line, leaf);
+            return 1;
         }
-        return;
+        print_time(0);
+        fprintf(G_fp_logfile, "[%d] cal load FAILED line=%s %s\n", line_number++, line, leaf);
+        return 0;
     }
-    /* Same radio / first cmd-020 boot: keep existing user live, then cache it. */
-    if (bootstrap_live && file_exists(livep)) {
-        if (copy_file(livep, calp)) {
-            print_time(0);
-            fprintf(G_fp_logfile, "[%d] cal bootstrap live→line=%s %s\n", line_number++, line, leaf);
-        }
-        return;
-    }
+
     if (facp[0] && file_exists(facp) && copy_file(facp, livep)) {
         copy_file(facp, calp);
         print_time(0);
         fprintf(G_fp_logfile, "[%d] cal seed factory→line=%s %s\n", line_number++, line, leaf);
-        return;
+        return 1;
     }
+
+    if (amp_default && write_amp_default_file(livep)) {
+        write_amp_default_file(calp);
+        print_time(0);
+        fprintf(G_fp_logfile, "[%d] cal seed amp default line=%s %s\n", line_number++, line, leaf);
+        return 1;
+    }
+
     print_time(0);
     fprintf(G_fp_logfile, "[%d] cal seed FAILED line=%s %s\n", line_number++, line, leaf);
+    return 0;
 }
 
 static void seed_freq_if_missing(const char *factory_root, const char *line, const char *live)
@@ -251,9 +293,6 @@ int Factory_reseed_live_file(const char *kind, const char *leaf)
     print_time(0);
     fprintf(G_fp_logfile, "[%d] Factory_reseed. %s -> %s (line=%s major=%d)\n",
             line_number++, src, dst, line, G_major_version);
-    /* IQ/QRP Reset also overwrites user cache; freq has no cal\ cache. */
-    if (strcmp(leaf, "iq.ini") == 0 || strcmp(leaf, "power_cal.ini") == 0)
-        Factory_mirror_live_to_cal(leaf);
     return 1;
 }
 
@@ -265,7 +304,10 @@ void Factory_seed_live_inis(void)
     char prev[128];
     int have_factory;
     int switching;
+    int same_line;
 
+    g_cal_reload_power = 0;
+    g_cal_reload_iq = 0;
     line = Factory_line_from_major(G_major_version);
     print_time(0);
     fprintf(G_fp_logfile, "[%d] Factory_seed. major=%d line=%s\n",
@@ -294,9 +336,35 @@ void Factory_seed_live_inis(void)
         stash_active_to_cal(live, prev);
     }
 
-    load_iq_or_power(live, line, "iq", "iq.ini", factory_root, !switching);
-    load_iq_or_power(live, line, "power", "power_cal.ini", factory_root, !switching);
+    same_line = !switching;
+    if (place_cal_file(live, line, "iq", "iq.ini", factory_root, same_line, 0))
+        g_cal_reload_iq = 1;
+    if (place_cal_file(live, line, "power", "power_cal.ini", factory_root, same_line, 0))
+        g_cal_reload_power = 1;
+    if (place_cal_file(live, line, NULL, "amplifier_cal.ini", factory_root, same_line, 1))
+        g_cal_reload_power = 1;
     if (have_factory)
         seed_freq_if_missing(factory_root, line, live);
     write_last_line(live, line);
+}
+
+void Factory_seed_reload_servers(void)
+{
+    if (!G_network_initialized) {
+        print_time(0);
+        fprintf(G_fp_logfile, "[%d] Factory_seed. reload skipped, network not ready\n", line_number++);
+        return;
+    }
+    if (g_cal_reload_power) {
+        print_time(0);
+        fprintf(G_fp_logfile, "[%d] Factory_seed. reload trans power and amplifier cal\n", line_number++);
+        SDRcore_trans_send_param(CMD_SET_SDRCORE_TRANS_INITIALIZE, 1);
+        g_cal_reload_power = 0;
+    }
+    if (g_cal_reload_iq) {
+        print_time(0);
+        fprintf(G_fp_logfile, "[%d] Factory_seed. reload trans iq.ini\n", line_number++);
+        SDRcore_trans_send_param(CMD_SET_IQ_DEFAULTS, 1);
+        g_cal_reload_iq = 0;
+    }
 }

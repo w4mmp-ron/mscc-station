@@ -522,7 +522,9 @@ int main(int argc, char **argv) {
             goto error;
         }
     }
-    Create_power_cal_file(); /* sdrcore-trans owns power_cal.ini; factory values if missing */
+    /* A missing power_cal.ini stays missing. ms-sdr writes factory/power/<line>/
+     * and the network INITIALIZE reloads it. Init_Power_All uses the built-in
+     * table only until that reload. */
     Init_Power_All();
     remote_mic_init();
     while (G_all_threads_run) {

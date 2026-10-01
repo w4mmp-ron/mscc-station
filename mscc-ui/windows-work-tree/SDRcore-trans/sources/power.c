@@ -109,8 +109,9 @@ int Update_power_cal_file(void) {
     return 1;
 }
 
-/* Load power_cal.ini. Starts from the factory values; each "RECORD=n,...,POWER_LEVEL=v" line
- * (n 0..11) overrides record n. Bad or out-of-range lines are skipped. Returns 1 if the file was read. */
+/* Load power_cal.ini. Starts from the built-in table; each "RECORD=n,...,POWER_LEVEL=v" line
+ * (n 0..11) overrides record n. A missing file is left missing so ms-sdr can write the
+ * per-line factory file. Bad or out-of-range lines are skipped. Returns 1 if the file was read. */
 int Init_Proficio_calibration(uint8_t send_to_transceiver) {
     int status = 0;
     FILE *Power_initialize;
@@ -133,7 +134,7 @@ int Init_Proficio_calibration(uint8_t send_to_transceiver) {
     Power_initialize = fopen(l_path, "r");
     if (Power_initialize == NULL) {
         print_time();
-        fprintf(G_fp_logfile, "[%d] Initialize_power_calibration. Open file failed. Using factory values\n", line_number++);
+        fprintf(G_fp_logfile, "[%d] Initialize_power_calibration. Open file failed. Using built-in table\n", line_number++);
         return 0;
     }
     while (fgets(iq_init_record, sizeof (iq_init_record), Power_initialize) != NULL) {

@@ -1238,6 +1238,42 @@ public partial class MainWindow : Window
         SpectrumWaterfallSettings.Save();
     }
 
+    private void SaveSettings_Click(object sender, RoutedEventArgs e)
+    {
+        if (ViewModel == null)
+            return;
+        if (!MainViewModel.TryParseFirmwareMajor(ViewModel.FirmwareVersion, out int major)
+            || !CalPark.TryLineFromMajor(major, out string line))
+        {
+            MessageBox.Show(this,
+                "Connect the radio first so MSCC knows which radio these files belong to.",
+                "Save settings",
+                MessageBoxButton.OK,
+                MessageBoxImage.Information);
+            return;
+        }
+
+        string[]? copied = CalPark.SaveLiveToParked(line, out string error);
+        if (copied == null)
+        {
+            MessageBox.Show(this,
+                "Could not save the calibration files.\n\n" + error,
+                "Save settings",
+                MessageBoxButton.OK,
+                MessageBoxImage.Warning);
+            return;
+        }
+
+        string list = copied.Length == 0
+            ? "No live calibration files were present."
+            : "Saved " + string.Join(", ", copied) + ".";
+        MessageBox.Show(this,
+            list + "\n\nFolder: cal\\" + line + "\n\nThese are used the next time this radio is started, or when you swap radios.",
+            "Save settings",
+            MessageBoxButton.OK,
+            MessageBoxImage.Information);
+    }
+
     /// <summary>
     /// Settings → Reset configuration: wipe config files under %LocalAppData%\MSCC-NET9
     /// (keep logs\), reseed from install init-files, restart app.

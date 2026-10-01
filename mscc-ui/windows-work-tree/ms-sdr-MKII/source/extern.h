@@ -523,6 +523,7 @@ extern int Init_PPM();
 extern int Freq_Set_Transceiver_Calibration(int int_part,int dec_part);
 extern int Create_PPM_ini();
 extern void Factory_seed_live_inis(void);
+extern void Factory_seed_reload_servers(void);
 extern int Factory_reseed_live_file(const char *kind, const char *leaf);
 extern void Factory_mirror_live_to_cal(const char *leaf);
 extern const char *Factory_line_from_major(int major);
