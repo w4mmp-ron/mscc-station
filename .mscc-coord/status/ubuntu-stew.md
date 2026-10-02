@@ -13,7 +13,7 @@
 
 | command id | state | note |
 |------------|-------|------|
-| cmd-063 | done | Optional mscc-firmware 1.0.0 all + Load File default /usr/share/mscc/firmware. Eight radio dirs installed. Load File opened at firmware share. Remove-package warning not run. Skipped mscc Suggests (no 1.0.49 rebuild). No Keil. No Avalonia/WPF/Core. No Solidus. No pull, no push. |
+| cmd-063 | done | Optional mscc-firmware 1.0.0 all. Commit 54054c1. Load File default /usr/share/mscc/firmware. Eight radios installed. Load File opened at share. Remove-package warning not run. Skipped mscc Suggests. No Keil. No Avalonia/WPF/Core. No Solidus. No pull, no push. |
 | cmd-061 | done | Linux host park/restore + Avalonia Save settings 0x29. Commit 1327cd0. mscc 1.0.49, ui 0.6.71, ms-sdr 3.173. Smoke 1 Save settings park pass. Smoke 2 live unchanged pass. Smoke 3 detect/swap not run (one radio). Smoke 4 same-line restart keep-live pass. No rpi server source. No WPF. No pull, no push. |
 | cmd-060 | done | factory/ in mscc 1.0.48 amd64 and 1.0.51 arm64. Commit 0f92239. Smoke 1-4 pass. Live marker and iq.ini untouched. No postinst seed change. No pull, no push. |
 | cmd-058 | running | Avalonia 0.6.70 SPECTRUM RESOLUTION 800/1600/3200. HEAD b6f4505. Leave cmd-053 linux dirty unstaged. No Core. No rpi. No pull, no push. |
@@ -32,7 +32,7 @@
 
 ### cmd-063
 
-Debs: `installers/linux/mscc-firmware_1.0.0_all.deb`, `installers/rpi/mscc-firmware_1.0.0_all.deb`. Install path `/usr/share/mscc/firmware/<RadioName>/`. Eight radios, 16 cyacd + 16 hex. Load File patched in `linux/psoc-usb-bootload-linux/bootloader-gui.py`, `linux/helpers/bootloader-gui`, `rpi/psoc-usb-bootload-linux/bootloader-gui.py`. Skipped mscc Suggests so servers 1.0.49 was not rebuilt. Desktop Firmware Upload still uses the 1.0.49 helper until the next mscc kit.
+Commit **54054c1**. Debs: `installers/linux/mscc-firmware_1.0.0_all.deb`, `installers/rpi/mscc-firmware_1.0.0_all.deb`. Install path `/usr/share/mscc/firmware/<RadioName>/`. Eight radios, 16 cyacd + 16 hex. Load File patched in `linux/psoc-usb-bootload-linux/bootloader-gui.py`, `linux/helpers/bootloader-gui`, `rpi/psoc-usb-bootload-linux/bootloader-gui.py`. Skipped mscc Suggests so servers 1.0.49 was not rebuilt. Desktop Firmware Upload still uses the 1.0.49 helper until the next mscc kit.
 Smoke 1: dpkg mscc-firmware 1.0.0, eight radio dirs. Pass.
 Smoke 2: Load File opened at `/usr/share/mscc/firmware`. Pass. Did not Program.
 Smoke 3: remove-package warning path not run.
