@@ -1,6 +1,6 @@
 # Linux calibration parity with Windows and remote Save settings
 
-**Status:** PLANNING only (no Build brief activated)
+**Status:** Phase 1 activated as **cmd-060** (factory packaging only; park/Save = later)
 **Request:** Stew, 2026-10-01
 
 ## Goal

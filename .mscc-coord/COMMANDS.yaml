@@ -1,4 +1,17 @@
 commands:
+  - id: cmd-060
+    created: "2026-10-02T10:05:00-04:00"
+    target: [ubuntu-stew]
+    role: packaging
+    action: linux-phase1-ship-factory-into-mscc-deb
+    status_hint: open
+    detail: |
+      Host: ubuntu-stew. Phase 1 of linux-cal-parity-with-windows.md.
+      Stage repo factory/ into /usr/share/mscc/factory/ in Ubuntu mscc 1.0.48
+      amd64 and Pi mscc-deb packaging 1.0.51. Files-only; no postinst factory
+      seed; no park/Save/runtime. Live ~/.local/mscc untouched. Commit locally,
+      do not push.
+      Brief: .mscc-coord/briefs/cmd-060.md
   - id: cmd-059
     created: "2026-10-01T14:10:00-04:00"
     target: [windows-new-hp]

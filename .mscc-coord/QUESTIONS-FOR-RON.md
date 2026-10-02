@@ -85,3 +85,5 @@ Stew: this is getting messy; we want one clear story for local Windows vs Pi hos
 **Answer:** Planning is captured in `.mscc-coord/plans/linux-cal-parity-with-windows.md`. Implement Linux parity before further Windows park work: package per-line factory data, add detection-driven Linux park/restore with `sdrcore-trans` owning `power_cal.ini`, then make remote Save settings operate on the Linux host (or stay disabled with a clear message until host park exists).
 
 **Stew lock (2026-10-02):** Save settings = host command; factory in the `mscc` servers deb; firmware in a separate optional package.
+
+**Status (2026-10-02):** Phase 1 packaging started as **cmd-060** (ship `factory/` in `mscc` deb). Park/restore and host Save settings remain later phases.

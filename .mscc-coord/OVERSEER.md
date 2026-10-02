@@ -1,10 +1,11 @@
 # Overseer intent
 
-**Updated:** 2026-10-01
+**Updated:** 2026-10-02
 **Overseer:** Build Commander
 
 ## Status
 
+- **Active - cmd-060 (ubuntu-stew):** Linux cal parity phase 1 — ship repo `factory/` into `mscc` servers deb at `/usr/share/mscc/factory/...` (Ubuntu 1.0.48 + Pi packaging 1.0.51). Files-only; no park/Save/runtime seed. Brief `briefs/cmd-060.md`.
 - **Active - cmd-059 (NEW-HP):** cmd-055 follow-up — dead `Factory_mirror_live_to_cal` / `Create_power_cal_file` (verify uncalled) + brief visible Save-settings tip on QRP/AMP/TX IQ tabs; shorten ToolTips. No park/restore behavior change. Brief `briefs/cmd-059.md`.
 - **Active - cmd-058 (ubuntu-stew):** Avalonia 0.6.70 SPECTRUM RESOLUTION (800/1600/3200) parity with WPF. Brief `briefs/cmd-058.md`. Do not touch Core/WPF/rpi/bling.
 - **Active - cmd-056 (NEW-HP):** Windows FREQ CAL second-STOP - port Linux `else if (cal_abort_pending)` into `ms-sdr-MKII/source/calibrate.c`. Do not touch `rpi/`. Brief `briefs/cmd-056.md`. After Stew pushes, Ron ports Pi.
@@ -23,6 +24,7 @@
 
 ## Short list
 
+- **cmd-060 ubuntu-stew** (factory into mscc deb phase 1), commit locally, Stew pushes
 - **cmd-059 NEW-HP** (cmd-055 tip/dead-code follow-up), commit locally, Stew pushes
 - **cmd-058 ubuntu-stew** (Avalonia spectrum/pan resolution 0.6.70), commit locally, Stew pushes
 - **cmd-056 NEW-HP** (ms-sdr second-STOP), commit locally, Stew pushes then Ron Pi
