@@ -13,6 +13,7 @@ PKG_SRC="$LINUX/mscc-deb/packaging"
 OUT_DIR="$LINUX/mscc-deb"
 BIN_SRC="${MSCC_DIR:-$HOME/mscc}"
 INIT_SRC="$LINUX/mscc-init-files-linux"
+FACTORY_SRC="$ROOT/factory"
 TTY_SRC="$LINUX/tty0tty-master/module"
 HELPERS="$LINUX/helpers"
 UDEV_SRC="$LINUX/udev/99-proficio.rules"
@@ -30,6 +31,8 @@ need_file() { [[ -f "$1" ]] || { echo "ERROR: missing $1" >&2; exit 1; }; }
 need_dir() { [[ -d "$1" ]] || { echo "ERROR: missing $1" >&2; exit 1; }; }
 
 need_dir "$INIT_SRC"
+need_dir "$FACTORY_SRC"
+need_file "$FACTORY_SRC/iq/proficio-mkii/iq.ini"
 need_dir "$TTY_SRC"
 need_dir "$HELPERS"
 
@@ -74,9 +77,11 @@ mkdir -p "$STAGE"
 cp -a "$PKG_SRC" "$STAGE/packaging"
 PKG="$STAGE/packaging"
 
-rm -rf "$PKG/usr/share/mscc/binaries" "$PKG/usr/share/mscc/init-files" "$PKG/usr/share/mscc/tty0tty"
+rm -rf "$PKG/usr/share/mscc/binaries" "$PKG/usr/share/mscc/init-files" \
+       "$PKG/usr/share/mscc/factory" "$PKG/usr/share/mscc/tty0tty"
 mkdir -p "$PKG/usr/share/mscc/binaries" \
          "$PKG/usr/share/mscc/init-files" \
+         "$PKG/usr/share/mscc/factory" \
          "$PKG/usr/share/mscc/tty0tty/module" \
          "$PKG/usr/share/mscc/udev" \
          "$PKG/usr/share/mscc/bin"
@@ -118,6 +123,7 @@ cp -a "$HELPERS/mscc-virtual-audio.sh" "$PKG/usr/share/mscc/bin/"
 chmod 755 "$PKG/usr/share/mscc/bin/"*
 
 cp -a "$INIT_SRC/." "$PKG/usr/share/mscc/init-files/"
+cp -a "$FACTORY_SRC/." "$PKG/usr/share/mscc/factory/"
 cp -a "$UDEV_SRC" "$PKG/usr/share/mscc/udev/99-proficio.rules"
 cp -a "$TTY_SRC/Makefile" "$TTY_SRC/tty0tty.c" "$TTY_SRC/99-tty0tty.rules" \
   "$PKG/usr/share/mscc/tty0tty/module/"
