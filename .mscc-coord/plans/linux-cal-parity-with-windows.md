@@ -1,6 +1,6 @@
 # Linux calibration parity with Windows and remote Save settings
 
-**Status:** PLANNING only (no Build brief activated)
+**Status:** Phase 1-2 done on stew-HP (cmd-060/061, may be unpushed). Phase 4 activated as **cmd-062** (Windows ms-sdr 0x29 + WPF Save to host).
 **Request:** Stew, 2026-10-01
 
 ## Goal

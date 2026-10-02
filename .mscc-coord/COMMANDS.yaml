@@ -1,4 +1,18 @@
 commands:
+  - id: cmd-062
+    created: "2026-10-02T11:05:00-04:00"
+    target: [windows-new-hp]
+    role: server+client
+    action: windows-phase4-host-park-opcode-wpf-save-to-host
+    status_hint: open
+    detail: |
+      Host: windows-new-hp. Phase 4 of linux-cal-parity-with-windows.md.
+      Windows ms-sdr CMD_SET_PARK_CAL_SETTINGS 0x29 + Factory_park_live_settings;
+      WPF Save settings sends 0x29 to connected host (no client CalPark park).
+      Prefer implement from Windows factory_seed + opcode contract; Core 0x29
+      may be missing (stew cmd-061 unpushed) - add independently; no pull
+      unless Stew says. No Avalonia/linux/rpi server/Solidus. No push.
+      Brief: .mscc-coord/briefs/cmd-062.md
   - id: cmd-059
     created: "2026-10-01T14:10:00-04:00"
     target: [windows-new-hp]

@@ -1,9 +1,10 @@
 # Overseer intent
 
-**Updated:** 2026-10-01
+**Updated:** 2026-10-02 (cmd-062 activate)
 **Overseer:** Build Commander
 
 ## Status
+- **Active - cmd-062 (NEW-HP):** Linux cal parity phase 4 - Windows ms-sdr CMD_SET_PARK_CAL_SETTINGS (0x29) + WPF Save settings to host park (no client CalPark). Prefer Windows factory_seed + opcode contract; Core 0x29 may need independent add (stew cmd-061 ahead/unpushed). Brief briefs/cmd-062.md. No Avalonia/linux/rpi server edits. No pull unless Stew says. No push.
 
 - **Active - cmd-059 (NEW-HP):** cmd-055 follow-up — dead `Factory_mirror_live_to_cal` / `Create_power_cal_file` (verify uncalled) + brief visible Save-settings tip on QRP/AMP/TX IQ tabs; shorten ToolTips. No park/restore behavior change. Brief `briefs/cmd-059.md`.
 - **Active - cmd-058 (ubuntu-stew):** Avalonia 0.6.70 SPECTRUM RESOLUTION (800/1600/3200) parity with WPF. Brief `briefs/cmd-058.md`. Do not touch Core/WPF/rpi/bling.
@@ -22,6 +23,8 @@
 - **On hold - cmd-034 (rpi):** remote_mic clear-on-TX + fixed 2:1 + silence on underrun — do not implement while logging / Avalonia parity ship.
 
 ## Short list
+- **cmd-062 NEW-HP** (Windows host park 0x29 + WPF Save to host), commit locally, Stew pushes
+
 
 - **cmd-059 NEW-HP** (cmd-055 tip/dead-code follow-up), commit locally, Stew pushes
 - **cmd-058 ubuntu-stew** (Avalonia spectrum/pan resolution 0.6.70), commit locally, Stew pushes
