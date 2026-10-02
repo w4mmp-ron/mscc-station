@@ -6,14 +6,14 @@
 | **Checkout** | `/home/stew/Documents/GitHub/mscc-station` |
 | **Build** | cmd-061 |
 | **Last command id** | cmd-061 |
-| **State** | running |
+| **State** | done |
 | **Updated** | 2026-10-02 |
 
 ## ACK log
 
 | command id | state | note |
 |------------|-------|------|
-| cmd-061 | running | Linux host park/restore + Avalonia Save settings 0x29. mscc 1.0.49, ui 0.6.71. No rpi server source. No WPF. No pull, no push. |
+| cmd-061 | done | Linux host park/restore + Avalonia Save settings 0x29. Commit 1327cd0. mscc 1.0.49, ui 0.6.71, ms-sdr 3.173. Smoke 1 Save settings park pass. Smoke 2 live unchanged pass. Smoke 3 detect/swap not run (one radio). Smoke 4 same-line restart keep-live pass. No rpi server source. No WPF. No pull, no push. |
 | cmd-060 | done | factory/ in mscc 1.0.48 amd64 and 1.0.51 arm64. Commit 0f92239. Smoke 1-4 pass. Live marker and iq.ini untouched. No postinst seed change. No pull, no push. |
 | cmd-058 | running | Avalonia 0.6.70 SPECTRUM RESOLUTION 800/1600/3200. HEAD b6f4505. Leave cmd-053 linux dirty unstaged. No Core. No rpi. No pull, no push. |
 | cmd-053 | running | Ubuntu recv panadapter -12 kHz notch width + fill. Copy Pi panadapter.c, VERSION_MINOR 142. No rpi write. No pull, no push. |
@@ -31,8 +31,12 @@
 
 ### cmd-061
 
-Built locally. Debs: `installers/linux/mscc_1.0.49_amd64.deb`, `installers/linux/mscc-ui_0.6.71_amd64.deb`. ms-sdr VERSION_MINOR 173. Opcode 0x29 park. Avalonia Save settings under LOG. No rpi server source. No WPF. No Solidus.
-Smoke 1-4 not run: no radio USB on lsusb (no 16c0:05dc). Detect/swap needs a second radio. Live `~/.local/mscc/cal/` does not exist yet. Waiting on Stew to install then Connect + Save settings.
+Commit **1327cd0**. Debs: `installers/linux/mscc_1.0.49_amd64.deb`, `installers/linux/mscc-ui_0.6.71_amd64.deb`. ms-sdr VERSION_MINOR 173. Firmware 3.232 line proficio-mkii.
+Park: `~/.local/mscc/cal/proficio-mkii/` iq.ini, power_cal.ini, amplifier_cal.ini. LAST_LINE.txt = proficio-mkii. freq_cal.ini not parked.
+Smoke 1: Save settings 0x29 Factory_park files=3. Pass.
+Smoke 2: live iq/power/amp/freq bytes unchanged vs pre-start backup. Pass.
+Smoke 3: detect/swap not run. Only one radio on USB. First detect did bootstrap live to park for proficio-mkii.
+Smoke 4: same-line restart logged cal keep live for all three plus freq; live bytes unchanged. Pass.
 
 ### cmd-060
 
