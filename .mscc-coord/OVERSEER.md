@@ -1,11 +1,12 @@
 # Overseer intent
 
-**Updated:** 2026-10-02 (cmd-061 activate)
+**Updated:** 2026-10-02 (cmd-062 activate)
 **Overseer:** Build Commander
 
 ## Status
 
-- **Active - cmd-061 (ubuntu-stew):** Linux cal parity phase 2 — ms-sdr host park/restore (`~/.local/mscc/cal/<line>/`, `LAST_LINE.txt`) + Avalonia Save settings → host `CMD_SET_PARK_CAL_SETTINGS` (0x29). mscc 1.0.49 + mscc-ui 0.6.71. No WPF opcode (phase 4). No rpi server source. Brief `briefs/cmd-061.md`.
+- **Active - cmd-062 (ubuntu-stew):** Linux cal parity phase 3 — optional `mscc-firmware` package (`/usr/share/mscc/firmware/<RadioName>/` from `radio-psoc-firmware/release/`) + bootloader Load File default to that folder. Keil Shack-only. Brief `briefs/cmd-062.md`.
+- **Done - cmd-061 (ubuntu-stew):** host park/restore + Avalonia Save settings 0x29. Commit 1327cd0. mscc 1.0.49 + mscc-ui 0.6.71.
 - **Done - cmd-060 (ubuntu-stew):** factory/ in mscc 1.0.48 amd64 + 1.0.51 arm64 packaging. Commit 0f92239 / ACK 4c7a977.
 - **Active - cmd-059 (NEW-HP):** cmd-055 follow-up — dead `Factory_mirror_live_to_cal` / `Create_power_cal_file` (verify uncalled) + brief visible Save-settings tip on QRP/AMP/TX IQ tabs; shorten ToolTips. No park/restore behavior change. Brief `briefs/cmd-059.md`.
 - **Active - cmd-058 (ubuntu-stew):** Avalonia 0.6.70 SPECTRUM RESOLUTION (800/1600/3200) parity with WPF. Brief `briefs/cmd-058.md`. Do not touch Core/WPF/rpi/bling.
@@ -25,7 +26,8 @@
 
 ## Short list
 
-- **cmd-061 ubuntu-stew** (Linux park/restore + Avalonia host Save settings), commit locally, Stew pushes
+- **cmd-062 ubuntu-stew** (optional mscc-firmware + Load File default), commit locally, Stew pushes
+- **cmd-061 ubuntu-stew** DONE (park/restore 1327cd0)
 - **cmd-060 ubuntu-stew** DONE (factory packaging 0f92239)
 - **cmd-059 NEW-HP** (cmd-055 tip/dead-code follow-up), commit locally, Stew pushes
 - **cmd-058 ubuntu-stew** (Avalonia spectrum/pan resolution 0.6.70), commit locally, Stew pushes
