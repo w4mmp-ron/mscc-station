@@ -15,6 +15,7 @@ PKG="$ROOT/packaging"
 
 BIN_SRC="$TREE/mscc-binaries"
 INIT_SRC="$TREE/mscc-init-files-linux"
+FACTORY_SRC="$TREE/../factory"
 TTY_SRC="$TREE/tty0tty-master/module"
 
 VERSION="$(sed -n 's/^Version:[[:space:]]*//p' "$PKG/DEBIAN/control" | head -1 | tr -d '\r')"
@@ -35,6 +36,8 @@ need_file() {
 
 need_dir "$BIN_SRC"
 need_dir "$INIT_SRC"
+need_dir "$FACTORY_SRC"
+need_file "$FACTORY_SRC/iq/proficio-mkii/iq.ini"
 need_dir "$TTY_SRC"
 need_file "$BIN_SRC/ms-sdr"
 need_file "$BIN_SRC/mscc.sh"
@@ -60,9 +63,11 @@ mkdir -p "$STAGE"
 cp -a "$PKG" "$STAGE/packaging"
 PKG="$STAGE/packaging"
 
-rm -rf "$PKG/usr/share/mscc/binaries" "$PKG/usr/share/mscc/init-files" "$PKG/usr/share/mscc/tty0tty"
+rm -rf "$PKG/usr/share/mscc/binaries" "$PKG/usr/share/mscc/init-files" \
+       "$PKG/usr/share/mscc/factory" "$PKG/usr/share/mscc/tty0tty"
 mkdir -p "$PKG/usr/share/mscc/binaries"
 mkdir -p "$PKG/usr/share/mscc/init-files"
+mkdir -p "$PKG/usr/share/mscc/factory"
 mkdir -p "$PKG/usr/share/mscc/tty0tty/module"
 mkdir -p "$PKG/usr/share/mscc/udev"
 mkdir -p "$PKG/usr/share/mscc/bin"
@@ -180,6 +185,9 @@ grep -q 'mscc-virtual-audio' "$PKG/DEBIAN/postinst"
 
 echo "Staging init files…"
 cp -a "$INIT_SRC/." "$PKG/usr/share/mscc/init-files/"
+
+echo "Staging factory templates…"
+cp -a "$FACTORY_SRC/." "$PKG/usr/share/mscc/factory/"
 
 echo "Staging udev…"
 if [[ -d "$ROOT/packaging/usr/share/mscc/udev" ]]; then

@@ -185,7 +185,7 @@ public partial class MainViewModel : ViewModelBase, IDisposable
         ModeText = "";
         NotifyModeFlags();
         NotifyBandFlags();
-        AppendLog("MSCC Avalonia 0.6.70 — SPECTRUM RESOLUTION Normal/High/Max (800/1600/3200).");
+        AppendLog("MSCC Avalonia 0.6.71 — Save settings parks host cal (0x29).");
         AppendLog("PTT = TX (voice modes); TUN = TUNE + carrier. S/W opens pan settings.");
         AppendLog($"Log: {LogFilePath}");
         CwPitchLabel = CwPitchOptions[Math.Clamp(CwPitchIndex, 0, CwPitchOptions.Count - 1)];
@@ -491,7 +491,7 @@ public partial class MainViewModel : ViewModelBase, IDisposable
     [ObservableProperty] private string _proficioTempText = "— °C";
     [ObservableProperty] private string _paTempText = "— °C";
     [ObservableProperty] private string _paCurrentText = "— mA";
-    [ObservableProperty] private string _clientVersionText = "0.6.70";
+    [ObservableProperty] private string _clientVersionText = "0.6.71";
     [ObservableProperty] private bool _alcOn = true;
     /// <summary>AMP / QRO path (PA bypass). Red when on (WPF).</summary>
     [ObservableProperty] private bool _ampOn;
@@ -754,6 +754,45 @@ public partial class MainViewModel : ViewModelBase, IDisposable
         int dot = firmwareVersion.IndexOf('.');
         string majs = dot >= 0 ? firmwareVersion[..dot] : firmwareVersion;
         return int.TryParse(majs, out major);
+    }
+
+    /// <summary>Host cal park folder for FW major (match ms-sdr Factory_line_from_major).</summary>
+    internal static string CalParkLineFromMajor(int major) => major switch
+    {
+        1 => "proficio-legacy",
+        2 => "geminus-mkii",
+        3 or 4 => "proficio-mkii",
+        5 => "geminus-legacy",
+        6 => "ultimus-legacy",
+        7 or 8 => "ultimus-mkii",
+        _ => ""
+    };
+
+    [RelayCommand]
+    private async Task SaveSettingsAsync()
+    {
+        if (!IsConnected || _radio == null)
+        {
+            await MsccDialog.AlertAsync("Connect the radio first.").ConfigureAwait(true);
+            return;
+        }
+        if (!TryParseFirmwareMajor(FirmwareText ?? "", out int major) || major < 1 || major > 8)
+        {
+            await MsccDialog.AlertAsync("Firmware major unknown. Connect so the host can see the radio.").ConfigureAwait(true);
+            return;
+        }
+        string line = CalParkLineFromMajor(major);
+        try
+        {
+            await _radio.ParkCalSettingsAsync().ConfigureAwait(true);
+            AppendLog($"Save settings: asked host to park live cal for {line}");
+            await MsccDialog.AlertAsync($"Host was asked to park live cal for {line}.").ConfigureAwait(true);
+        }
+        catch (Exception ex)
+        {
+            AppendLog("Save settings: " + ex.Message);
+            await MsccDialog.AlertAsync("Save settings failed: " + ex.Message).ConfigureAwait(true);
+        }
     }
 
     /// <summary>

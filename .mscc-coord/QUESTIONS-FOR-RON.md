@@ -83,3 +83,7 @@ In short: can Ron approve a detection-driven auto-restore design for cmd-055 (wi
 Stew: this is getting messy; we want one clear story for local Windows vs Pi host vs remote Win→Pi.
 
 **Answer:** Planning is captured in `.mscc-coord/plans/linux-cal-parity-with-windows.md`. Implement Linux parity before further Windows park work: package per-line factory data, add detection-driven Linux park/restore with `sdrcore-trans` owning `power_cal.ini`, then make remote Save settings operate on the Linux host (or stay disabled with a clear message until host park exists).
+
+**Stew lock (2026-10-02):** Save settings = host command; factory in the `mscc` servers deb; firmware in a separate optional package.
+
+**Status (2026-10-02):** Phase 1 **cmd-060 done**. Phase 2 activated as **cmd-061** (Linux host park/restore + Avalonia Save→host `0x29`). WPF/Windows host opcode = phase 4.

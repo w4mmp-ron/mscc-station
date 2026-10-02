@@ -13,6 +13,32 @@ commands:
       may be missing (stew cmd-061 unpushed) - add independently; no pull
       unless Stew says. No Avalonia/linux/rpi server/Solidus. No push.
       Brief: .mscc-coord/briefs/cmd-062.md
+  - id: cmd-061
+    created: "2026-10-02T10:28:00-04:00"
+    target: [ubuntu-stew]
+    role: server+client
+    action: linux-phase2-host-park-restore-avalonia-save-settings
+    status_hint: open
+    detail: |
+      Host: ubuntu-stew. Phase 2 of linux-cal-parity-with-windows.md.
+      linux/ms-sdr-linux factory_seed park/restore (live ~/.local/mscc, park
+      cal/<line>/, LAST_LINE.txt); CMD_SET_PARK_CAL_SETTINGS 0x29; Avalonia
+      Save settings invokes host park (no client CalPark). Bump mscc 1.0.49
+      + mscc-ui 0.6.71. No WPF/Windows opcode (phase 4). No rpi server source.
+      No push. Brief: .mscc-coord/briefs/cmd-061.md
+  - id: cmd-060
+    created: "2026-10-02T10:05:00-04:00"
+    target: [ubuntu-stew]
+    role: packaging
+    action: linux-phase1-ship-factory-into-mscc-deb
+    status_hint: open
+    detail: |
+      Host: ubuntu-stew. Phase 1 of linux-cal-parity-with-windows.md.
+      Stage repo factory/ into /usr/share/mscc/factory/ in Ubuntu mscc 1.0.48
+      amd64 and Pi mscc-deb packaging 1.0.51. Files-only; no postinst factory
+      seed; no park/Save/runtime. Live ~/.local/mscc untouched. Commit locally,
+      do not push.
+      Brief: .mscc-coord/briefs/cmd-060.md
   - id: cmd-059
     created: "2026-10-01T14:10:00-04:00"
     target: [windows-new-hp]
