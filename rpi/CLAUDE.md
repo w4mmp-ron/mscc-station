@@ -52,11 +52,47 @@ Git repo root: `C:\Users\Ron\.grok\worktrees`.
    `libportaudio.so.19.8` + makes the `.so.2` / `.so` links; same binary (sha c4f6c2b9...). Build needs
    `PORTAUDIO_ROOT=<worktrees>/portaudio` (default `rpi/portaudio` doesn't exist). In installers/rpi
    (19.8.2 removed). **Installed on the Pi 2026-10-01, `sudo ldconfig` silent (Ron).** Committed 316d005, pushed.
+11. Pull 2026-10-02 (to 30e38f0, Stew): Windows cmd-048 done (trans owns QRP/QRO cal = Pi port, no Pi
+   change). Windows cmd-055/059 done: per-radio parked cal `cal\<line>\` + `LAST_LINE.txt`, detection-driven
+   restore, WPF "Save settings" (WPF R10-1-2). Pi has none of this. Stew asks (QUESTIONS-FOR-RON #7, plan
+   `.mscc-coord/plans/linux-cal-parity-with-windows.md`, planning only): Pi park/restore in
+   `~/.local/mscc/cal/<line>/`, per-line `factory/` in the mscc .deb, remote Save settings acting on the
+   host. The "Answer" under #7 was written by Stew's side, not Ron. **Waiting on Ron's decision**
+   (2026-10-02: Ron is thinking it over, NO changes). Draft: "Per-radio cal on the Pi" section below.
 7. Next mscc .deb build picks up the "(package mscc-init)" hint text in mscc-deb postinst /
    build-deb.sh / install-mscc.sh (source only, committed 82b819b). No rebuild just for that.
 
 Done: cmd-042 hi-cut (mscc 1.0.48), FREQ CAL fixes (1.0.49), QRP/QRO cal + amplifier.ini
 removed (1.0.50, installed + works). mscc-init C CLI dropped from the mscc .deb in 1.0.47.
+
+## Per-radio cal on the Pi - DRAFT only (2026-10-02, nothing implemented, Ron undecided)
+
+"Parked" (Stew's word) = saved copy of one radio model's cal files, kept in a folder per model
+while another radio is in use. Per model, not per individual radio.
+Windows as built (cmd-055/059, `ms-sdr-MKII/source/factory_seed.c`, WPF `CalPark.cs`): ms-sdr copies
+the files at startup (same line: keep live; other line: stash live -> old line, parked -> live; new
+line: factory -> parked -> live), then tells trans to reload. Save settings = the client copies files
+on the Windows PC. No new opcodes. Does nothing for a remote Pi.
+Claude's Pi draft (Stew has not seen it):
+- Live `~/.local/mscc/`; parked `~/.local/mscc/cal/<line>/` (`iq.ini`, `power_cal.ini`,
+  `amplifier_cal.ini`); `cal/LAST_LINE.txt`; factory `/usr/share/mscc/factory/{iq,power,freq}/<line>/`
+  in the mscc .deb (repo `factory/` tree). Line names from FW major: 1 proficio-legacy, 2 geminus-mkii,
+  3/4 proficio-mkii, 5 geminus-legacy, 6 ultimus-legacy, 7/8 ultimus-mkii.
+- **trans does the copying** (new file, e.g. `cal_park.c`), so trans stays the only writer of
+  `power_cal.ini`. Flush pending slider saves before any copy.
+- `0x29 CMD_SET_RADIO_LINE` ms-sdr -> trans, data = FW major (sent next to `CMD_SET_PCB_VERSION`,
+  main-controller.c:1417). trans compares with LAST_LINE, swaps if different, reloads its tables.
+- `0x2A CMD_SET_CAL_SAVE` client -> ms-sdr -> trans: live -> `cal/<line>/` (Save settings; works
+  remote; WPF change = Stew). 0x29-0x2F were the only free numbers (Pi + Windows headers, opcodes.txt,
+  WPF source checked). Names/numbers not approved.
+- ms-sdr never writes the cal files; re-reads power_cal/amplifier_cal after the swap for the client.
+- Do NOT use trans `CMD_SET_IQ_DEFAULTS` (0x8D) to reload after a swap: on the Pi it deletes
+  `iq.ini` and rebuilds defaults.
+- Same as Windows: `freq_cal.ini` seed-if-missing only, `recv-iq.ini` not parked, no auto-park on
+  exit, no mirror. Swap is detected only at ms-sdr start (restart needed).
+Ron (2026-10-02): two different methods make no sense; Windows should do it the trans way, but he
+does not want to fight that battle now. Open: trans vs ms-sdr copying; opcodes; park freq_cal /
+recv-iq too?; restart-to-detect OK? Alternative = Pi copies the Windows method + only 0x2A.
 
 ## mscc-init package (2026-09-28, committed 82b819b; Stew brief cmd-050 = 443d7a4)
 
