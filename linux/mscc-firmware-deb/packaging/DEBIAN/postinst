@@ -1,0 +1,6 @@
+#!/bin/bash
+# Files-only package. Do not seed or overwrite live ~/.local/mscc.
+set -e
+echo "mscc-firmware: application firmware is in /usr/share/mscc/firmware/<RadioName>/"
+echo "mscc-firmware: USB Bootloader Load File defaults to that folder."
+exit 0

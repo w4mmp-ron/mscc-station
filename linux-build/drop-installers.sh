@@ -58,6 +58,7 @@ drop_linux() {
   copy_latest "$ROOT/mscc-ui/Release/avalonia/x86_64" "mscc-init-gui_*_all.deb" "$DEST/linux" \
     || copy_latest "$ROOT/rpi/mscc-init-gui" "mscc-init-gui_*_all.deb" "$DEST/linux" || true
   copy_file "$ROOT/linux/mscc-deb/install-mscc.sh" "$DEST/linux" || true
+  copy_latest "$ROOT/linux/mscc-firmware-deb" "mscc-firmware_*_all.deb" "$DEST/linux" || true
 }
 
 drop_rpi() {
@@ -69,6 +70,7 @@ drop_rpi() {
   copy_latest "$ROOT/mscc-ui/Release/avalonia/arm64" "mscc-ui_*_arm64.deb" "$DEST/rpi" \
     || copy_latest "$ROOT/mscc-ui/Avalonia-Migration" "mscc-ui_*_arm64.deb" "$DEST/rpi" || true
   copy_file "$ROOT/rpi/mscc-deb/install-mscc.sh" "$DEST/rpi" || true
+  copy_latest "$ROOT/linux/mscc-firmware-deb" "mscc-firmware_*_all.deb" "$DEST/rpi" || true
 }
 
 drop_windows() {
