@@ -13,7 +13,7 @@
 
 | command id | state | note |
 |------------|-------|------|
-| cmd-060 | done | factory/ in mscc 1.0.48 amd64 and 1.0.51 arm64. Smoke 1-4 pass. Live marker and iq.ini untouched. No postinst seed change. No pull, no push. |
+| cmd-060 | done | factory/ in mscc 1.0.48 amd64 and 1.0.51 arm64. Commit 0f92239. Smoke 1-4 pass. Live marker and iq.ini untouched. No postinst seed change. No pull, no push. |
 | cmd-058 | running | Avalonia 0.6.70 SPECTRUM RESOLUTION 800/1600/3200. HEAD b6f4505. Leave cmd-053 linux dirty unstaged. No Core. No rpi. No pull, no push. |
 | cmd-053 | running | Ubuntu recv panadapter -12 kHz notch width + fill. Copy Pi panadapter.c, VERSION_MINOR 142. No rpi write. No pull, no push. |
 | cmd-052 | running | Avalonia 0.6.69 StartRemoteAf stop-before-open. HEAD 825781a. REMOTE smoke. No rpi. No pull, no push. |
@@ -30,7 +30,7 @@
 
 ### cmd-060
 
-Debs: `installers/linux/mscc_1.0.48_amd64.deb`, `installers/rpi/mscc_1.0.51_arm64.deb`.
+Commit **0f92239**. Debs: `installers/linux/mscc_1.0.48_amd64.deb`, `installers/rpi/mscc_1.0.51_arm64.deb`.
 Ships `/usr/share/mscc/factory/{iq,freq,power}/<line>/` for six lines. Files-only. postinst still seeds flat init-files only.
 Smoke 1: six iq.ini, six freq_cal.ini, six power_cal.ini installed. Pass.
 Smoke 2: live marker OK, iq.ini identical to pre-install backup. Pass.
