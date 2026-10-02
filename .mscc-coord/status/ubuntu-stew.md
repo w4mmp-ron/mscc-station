@@ -4,15 +4,16 @@
 |--|--|
 | **Host** | stew-HP-Notebook |
 | **Checkout** | `/home/stew/Documents/GitHub/mscc-station` |
-| **Build** | cmd-060 |
-| **Last command id** | cmd-060 |
-| **State** | done |
+| **Build** | cmd-061 |
+| **Last command id** | cmd-061 |
+| **State** | open |
 | **Updated** | 2026-10-02 |
 
 ## ACK log
 
 | command id | state | note |
 |------------|-------|------|
+| cmd-061 | open | Phase 2 brief activated. Host park/restore + Avalonia Save→0x29. Awaiting Grok Build ACK. No push. |
 | cmd-060 | done | factory/ in mscc 1.0.48 amd64 and 1.0.51 arm64. Commit 0f92239. Smoke 1-4 pass. Live marker and iq.ini untouched. No postinst seed change. No pull, no push. |
 | cmd-058 | running | Avalonia 0.6.70 SPECTRUM RESOLUTION 800/1600/3200. HEAD b6f4505. Leave cmd-053 linux dirty unstaged. No Core. No rpi. No pull, no push. |
 | cmd-053 | running | Ubuntu recv panadapter -12 kHz notch width + fill. Copy Pi panadapter.c, VERSION_MINOR 142. No rpi write. No pull, no push. |
@@ -27,6 +28,10 @@
 | cmd-032 | done | mscc_1.0.44_amd64.deb with remote_mic stream reset |
 
 ## Notes
+
+### cmd-061
+
+Activated. Brief `.mscc-coord/briefs/cmd-061.md`. Phase 2 Linux host park/restore + Avalonia Save settings → host `CMD_SET_PARK_CAL_SETTINGS` (0x29). Versions target mscc 1.0.49 / mscc-ui 0.6.71. No WPF opcode. No rpi server source. No pull, no push.
 
 ### cmd-060
 

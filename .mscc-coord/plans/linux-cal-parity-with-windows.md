@@ -1,6 +1,6 @@
 # Linux calibration parity with Windows and remote Save settings
 
-**Status:** Phase 1 activated as **cmd-060** (factory packaging only; park/Save = later)
+**Status:** Phase 1 **cmd-060 done**. Phase 2 activated as **cmd-061** (host park/restore + Avalonia Save→host park). Phase 4 = WPF/Windows opcode still later.
 **Request:** Stew, 2026-10-01
 
 ## Goal

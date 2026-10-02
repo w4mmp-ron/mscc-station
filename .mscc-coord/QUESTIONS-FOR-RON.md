@@ -86,4 +86,4 @@ Stew: this is getting messy; we want one clear story for local Windows vs Pi hos
 
 **Stew lock (2026-10-02):** Save settings = host command; factory in the `mscc` servers deb; firmware in a separate optional package.
 
-**Status (2026-10-02):** Phase 1 packaging started as **cmd-060** (ship `factory/` in `mscc` deb). Park/restore and host Save settings remain later phases.
+**Status (2026-10-02):** Phase 1 **cmd-060 done**. Phase 2 activated as **cmd-061** (Linux host park/restore + Avalonia Save→host `0x29`). WPF/Windows host opcode = phase 4.

@@ -1,11 +1,12 @@
 # Overseer intent
 
-**Updated:** 2026-10-02
+**Updated:** 2026-10-02 (cmd-061 activate)
 **Overseer:** Build Commander
 
 ## Status
 
-- **Active - cmd-060 (ubuntu-stew):** Linux cal parity phase 1 — ship repo `factory/` into `mscc` servers deb at `/usr/share/mscc/factory/...` (Ubuntu 1.0.48 + Pi packaging 1.0.51). Files-only; no park/Save/runtime seed. Brief `briefs/cmd-060.md`.
+- **Active - cmd-061 (ubuntu-stew):** Linux cal parity phase 2 — ms-sdr host park/restore (`~/.local/mscc/cal/<line>/`, `LAST_LINE.txt`) + Avalonia Save settings → host `CMD_SET_PARK_CAL_SETTINGS` (0x29). mscc 1.0.49 + mscc-ui 0.6.71. No WPF opcode (phase 4). No rpi server source. Brief `briefs/cmd-061.md`.
+- **Done - cmd-060 (ubuntu-stew):** factory/ in mscc 1.0.48 amd64 + 1.0.51 arm64 packaging. Commit 0f92239 / ACK 4c7a977.
 - **Active - cmd-059 (NEW-HP):** cmd-055 follow-up — dead `Factory_mirror_live_to_cal` / `Create_power_cal_file` (verify uncalled) + brief visible Save-settings tip on QRP/AMP/TX IQ tabs; shorten ToolTips. No park/restore behavior change. Brief `briefs/cmd-059.md`.
 - **Active - cmd-058 (ubuntu-stew):** Avalonia 0.6.70 SPECTRUM RESOLUTION (800/1600/3200) parity with WPF. Brief `briefs/cmd-058.md`. Do not touch Core/WPF/rpi/bling.
 - **Active - cmd-056 (NEW-HP):** Windows FREQ CAL second-STOP - port Linux `else if (cal_abort_pending)` into `ms-sdr-MKII/source/calibrate.c`. Do not touch `rpi/`. Brief `briefs/cmd-056.md`. After Stew pushes, Ron ports Pi.
@@ -24,7 +25,8 @@
 
 ## Short list
 
-- **cmd-060 ubuntu-stew** (factory into mscc deb phase 1), commit locally, Stew pushes
+- **cmd-061 ubuntu-stew** (Linux park/restore + Avalonia host Save settings), commit locally, Stew pushes
+- **cmd-060 ubuntu-stew** DONE (factory packaging 0f92239)
 - **cmd-059 NEW-HP** (cmd-055 tip/dead-code follow-up), commit locally, Stew pushes
 - **cmd-058 ubuntu-stew** (Avalonia spectrum/pan resolution 0.6.70), commit locally, Stew pushes
 - **cmd-056 NEW-HP** (ms-sdr second-STOP), commit locally, Stew pushes then Ron Pi
