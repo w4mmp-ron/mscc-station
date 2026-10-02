@@ -241,6 +241,13 @@ public class UdpRadioService : IRadioService, IDisposable
             $" Pan resolution: {bins} bins (0x5F index {index}) + refresh blocks={fastRefreshBlocks}");
     }
 
+    public async Task ParkCalSettingsAsync(CancellationToken cancellationToken = default)
+    {
+        if (!_started) return;
+        await _transport.SendAsync(Opcodes.CMD_SET_PARK_CAL_SETTINGS, (short)1, cancellationToken);
+        DebugMonitor.MonitorTextBoxText(" Park cal settings (0x29)");
+    }
+
     private UdpRadioTransport CreateTransport()
     {
         var t = new UdpRadioTransport(_remoteIp, _remotePort, _localPort);
