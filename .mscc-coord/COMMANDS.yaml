@@ -1,5 +1,5 @@
 commands:
-  - id: cmd-062
+  - id: cmd-063
     created: "2026-10-02T12:00:00-04:00"
     target: [ubuntu-stew]
     role: packaging+helper
@@ -12,7 +12,7 @@ commands:
       Keil Shack-only (prebuilt artifacts only). Load File initialdir defaults
       to that folder (linux + helpers + rpi bootloader-gui); browse elsewhere OK;
       warn if package missing. Prefer warnings over lockouts. No push.
-      Brief: .mscc-coord/briefs/cmd-062.md
+      Brief: .mscc-coord/briefs/cmd-063.md
   - id: cmd-061
     created: "2026-10-02T10:28:00-04:00"
     target: [ubuntu-stew]

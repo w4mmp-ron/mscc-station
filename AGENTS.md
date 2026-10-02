@@ -13,7 +13,7 @@ On start: `git pull`, then read [`handoff.md`](handoff.md). If `.mscc-coord/COMM
 
 ## Current work
 
-**Active - cmd-062 (ubuntu-stew): optional Linux PSoC firmware package + Load File default.** Separate `mscc-firmware` deb installs `radio-psoc-firmware/release/` → `/usr/share/mscc/firmware/<RadioName>/`. Not inside every `mscc` install. Keil Shack-only (prebuilt artifacts). bootloader-gui Load File `initialdir` defaults there; browse elsewhere OK; warn if package missing. Commit locally; do not push. See `.mscc-coord/briefs/cmd-062.md`.
+**Active - cmd-063 (ubuntu-stew): optional Linux PSoC firmware package + Load File default.** Separate `mscc-firmware` deb installs `radio-psoc-firmware/release/` → `/usr/share/mscc/firmware/<RadioName>/`. Not inside every `mscc` install. Keil Shack-only (prebuilt artifacts). bootloader-gui Load File `initialdir` defaults there; browse elsewhere OK; warn if package missing. Commit locally; do not push. See `.mscc-coord/briefs/cmd-063.md`.
 
 **Active - cmd-060 (ubuntu-stew): Linux cal parity phase 1 — package factory into mscc deb.** Ship repo-root `factory/` to `/usr/share/mscc/factory/{iq,freq,power}/<line>/` inside Ubuntu `mscc_1.0.48_amd64.deb` and Pi packaging `mscc_1.0.51_arm64.deb`. Files-only; do not change postinst live-seed, park/restore, Save settings, or firmware. May edit `rpi/mscc-deb` packaging scripts only. Commit locally; do not push. See `.mscc-coord/briefs/cmd-060.md`.
 
