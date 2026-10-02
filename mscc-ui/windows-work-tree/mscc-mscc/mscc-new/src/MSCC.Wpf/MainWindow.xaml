@@ -2429,7 +2429,7 @@
                         Click="SaveSettings_Click"
                         FontSize="9" FontWeight="Bold"
                         Style="{StaticResource MsccGoldButtonStyle}"
-                        ToolTip="Copy live cal to parked for this radio."/>
+                        ToolTip="Ask the host to park live cal for this radio."/>
             </StackPanel>
         </Border>
         </Grid>

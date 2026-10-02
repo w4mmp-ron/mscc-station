@@ -21,6 +21,10 @@ void Factory_seed_reload_servers(void);
 /* Overwrite the live file from factory/<kind>/<line>/<leaf>. Does not touch cal/<line>/. */
 int Factory_reseed_live_file(const char *kind, const char *leaf);
 
+/* Save settings: copy live iq.ini, power_cal.ini, and amplifier_cal.ini into cal/<line>/
+ * and write LAST_LINE.txt. Unknown major (not 1..8): warn and no-op. */
+void Factory_park_live_settings(void);
+
 #ifdef __cplusplus
 }
 #endif

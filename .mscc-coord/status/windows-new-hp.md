@@ -1,18 +1,19 @@
-﻿# Status - windows-new-hp
+# Status - windows-new-hp
 
 | | |
 |--|--|
 | **Host** | NEW-HP-LAPTOP (Windows) |
 | **Checkout** | `C:\Users\n8vet\OneDrive\Documents\GitHub\mscc-station` |
-| **Build** | **cmd-059** (WPF 10.1.2, trans 3.145, ms-sdr 3.180) / **cmd-038** (WPF pending) |
-| **Last command id** | cmd-059 (done) / cmd-038 (WPF pending) |
+| **Build** | **cmd-062** (done WPF 10.2.0, ms-sdr 3.181) / **cmd-059** (done WPF 10.1.2) / **cmd-038** (WPF pending) |
+| **Last command id** | cmd-062 (done) / cmd-059 (done) / cmd-038 (pending) |
 | **State** | done |
-| **Updated** | 2026-10-01 |
+| **Updated** | 2026-10-02 |
 
 ## ACK log
 
 | command id | state | note |
 |------------|-------|------|
+| cmd-062 | done | WPF 10.2.0 (R10-2-0) and ms-sdr 3.181 in C:\mscc-net9. Save settings sends CMD_SET_PARK_CAL_SETTINGS 0x29. Core 0x29 was already present. SaveLiveToParked is gone. Tooltip is "Ask the host to park live cal for this radio." Unknown major warns and does not park. Live Save and the warning dialog were not run (no radio). Trans stays 3.145. Not pushed. |
 | cmd-059 | done | WPF 10.1.2 (R10-1-2), SDRcore-trans 3.145, ms-sdr 3.180 in C:\mscc-net9. Removed uncalled Factory_mirror_live_to_cal and Create_power_cal_file. QRP CAL, AMP CAL, and TX IQ show "When done, press Save settings." Save settings tooltip is "Copy live cal to parked for this radio." Park and swap unchanged. Tabs not opened on the radio. Not pushed. |
 | cmd-055 | done | WPF 10.1.1 (R10-1-1), SDRcore-trans 3.144, ms-sdr 3.179 in C:\mscc-net9. Same radio leaves live iq.ini, power_cal.ini, and amplifier_cal.ini. Save settings is under LOG on the right panel and copies those three into cal\<line>\. A different radio stashes the old line, then loads parked or factory. A missing power file is the per-line factory table. No live-to-park mirror on IQ save. Freq and RX IQ stay unparked. Stew: cal behavior works, and Save settings under LOG looks good. Not pushed. |
 | cmd-048 | done | Windows SDRcore-trans 3.143 and ms-sdr 3.178 in C:\mscc-net9. Trans owns power_cal.ini and amplifier_cal.ini. Slider steps update RAM and the file is written about 0.5 s later. ms-sdr only reads and forwards. amplifier.ini is no longer created. QRP reset 0xAA is ignored. The live-to-park mirror on QRP save is gone. Park and Save settings stay in cmd-055. Stew: tests 1-5 work. Tests 6-7 not run. Not pushed. |
@@ -41,4 +42,5 @@
 
 ## Notes
 
-cmd-059: WPF 10.1.2, trans 3.145, ms-sdr 3.180. Short on-tab Save settings line. Dead cal helpers removed. cmd-038 still pending.
+cmd-062: done. WPF 10.2.0, ms-sdr 3.181. Host park is opcode 0x29. The client no longer copies cal files. cmd-038 still pending.
+cmd-059: WPF 10.1.2, trans 3.145, ms-sdr 3.180. Short on-tab Save settings line. Dead cal helpers removed.

@@ -1,6 +1,6 @@
 # Linux calibration parity with Windows and remote Save settings
 
-**Status:** Phase 1 **cmd-060 done**. Phase 2 **cmd-061 done**. Phase 3 activated as **cmd-063** (optional `mscc-firmware` + Load File default). Phase 4 = WPF/Windows opcode still later.
+**Status:** Phase 1 **cmd-060 done**. Phase 2 **cmd-061 done**. Phase 3 **cmd-063 done** (optional `mscc-firmware` + Load File default). Phase 4 **cmd-062 done** (Windows ms-sdr 0x29 + WPF Save to host).
 **Request:** Stew, 2026-10-01
 
 ## Goal
