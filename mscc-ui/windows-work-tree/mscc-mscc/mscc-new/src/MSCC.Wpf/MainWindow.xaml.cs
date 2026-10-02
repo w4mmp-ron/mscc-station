@@ -1238,37 +1238,38 @@ public partial class MainWindow : Window
         SpectrumWaterfallSettings.Save();
     }
 
-    private void SaveSettings_Click(object sender, RoutedEventArgs e)
+    private async void SaveSettings_Click(object sender, RoutedEventArgs e)
     {
         if (ViewModel == null)
             return;
-        if (!MainViewModel.TryParseFirmwareMajor(ViewModel.FirmwareVersion, out int major)
+        if (!ViewModel.IsRadioRunning || !ViewModel.IsConnected
+            || !MainViewModel.TryParseFirmwareMajor(ViewModel.FirmwareVersion, out int major)
             || !CalPark.TryLineFromMajor(major, out string line))
         {
             MessageBox.Show(this,
                 "Connect the radio first so MSCC knows which radio these files belong to.",
                 "Save settings",
                 MessageBoxButton.OK,
-                MessageBoxImage.Information);
+                MessageBoxImage.Warning);
             return;
         }
 
-        string[]? copied = CalPark.SaveLiveToParked(line, out string error);
-        if (copied == null)
+        try
+        {
+            await ViewModel.RadioService.ParkCalSettingsAsync();
+        }
+        catch (Exception ex)
         {
             MessageBox.Show(this,
-                "Could not save the calibration files.\n\n" + error,
+                "Could not ask the host to park the calibration files.\n\n" + ex.Message,
                 "Save settings",
                 MessageBoxButton.OK,
                 MessageBoxImage.Warning);
             return;
         }
 
-        string list = copied.Length == 0
-            ? "No live calibration files were present."
-            : "Saved " + string.Join(", ", copied) + ".";
         MessageBox.Show(this,
-            list + "\n\nFolder: cal\\" + line + "\n\nThese are used the next time this radio is started, or when you swap radios.",
+            "The host was asked to park live cal for " + line + ".\n\nThe parked files stay on the connected host.",
             "Save settings",
             MessageBoxButton.OK,
             MessageBoxImage.Information);

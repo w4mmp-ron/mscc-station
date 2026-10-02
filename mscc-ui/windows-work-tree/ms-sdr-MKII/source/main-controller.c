@@ -5,6 +5,7 @@
 #include "usbavrcmd.h"
 //#include "SRDLL.h"
 #include "extern.h"
+#include "factory_seed.h"
 #include "version.h"
 #ifdef _WIN32
 #ifndef SIO_UDP_CONNRESET
@@ -2128,6 +2129,13 @@ void * Command_Processor(void *my_param) {
             SDRcore_trans_send_param(CMD_SET_FM_POWER, t_opcode_data);
             print_time(0);
             fprintf(G_fp_logfile, "[%d] CMD_SET_FM_POWER . Finished \n", line_number++);
+            break;
+
+        case CMD_SET_PARK_CAL_SETTINGS:
+            print_time(0);
+            fprintf(G_fp_logfile, "[%d] Command_Interface. CMD_SET_PARK_CAL_SETTINGS\n",
+                    line_number++);
+            Factory_park_live_settings();
             break;
 
         case CMD_SET_REMOTE_RX_HOST:
