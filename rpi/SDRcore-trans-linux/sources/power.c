@@ -43,36 +43,6 @@ static int Power_cal_path(char *path, size_t size) {
     return 1;
 }
 
-/* Create power_cal.ini with the factory values if it does not exist. Returns 1 if created. */
-int Create_power_cal_file(void) {
-    FILE *fp;
-    char l_path[PATH_MAX] = {0};
-    int record = 0;
-
-    if (!Power_cal_path(l_path, sizeof (l_path))) {
-        return 0;
-    }
-    fp = fopen(l_path, "r");
-    if (fp != NULL) {
-        fclose(fp);
-        return 0;
-    }
-    fp = fopen(l_path, "w");
-    if (fp == NULL) {
-        print_time();
-        fprintf(G_fp_logfile, "[%d] Create_power_cal_file. Create failed: %s\n", line_number++, l_path);
-        return 0;
-    }
-    fprintf(fp, "VERSION=%d\n", POWER_CAL_VERSION);
-    for (record = 0; record < POWER_CAL_RECORDS; record++) {
-        fprintf(fp, "RECORD=%d,BAND=%d,POWER_LEVEL=%d\n", record, record, power_cal_defaults[record]);
-    }
-    fclose(fp);
-    print_time();
-    fprintf(G_fp_logfile, "[%d] Create_power_cal_file. Created %s with factory values\n", line_number++, l_path);
-    return 1;
-}
-
 /* Write G_Proficio_Calibration_Levels to power_cal.ini (temp file + rename, so a reader never sees half a file). */
 int Update_power_cal_file(void) {
     FILE *fp;
@@ -106,8 +76,9 @@ int Update_power_cal_file(void) {
     return 1;
 }
 
-/* Load power_cal.ini. Starts from the factory values; each "RECORD=n,...,POWER_LEVEL=v" line
- * (n 0..11) overrides record n. Bad or out-of-range lines are skipped. Returns 1 if the file was read. */
+/* Load power_cal.ini. Starts from the built-in table; each "RECORD=n,...,POWER_LEVEL=v" line
+ * (n 0..11) overrides record n. A missing file is left missing so ms-sdr can write the
+ * per-line factory file. Bad or out-of-range lines are skipped. Returns 1 if the file was read. */
 int Init_Proficio_calibration(uint8_t send_to_transceiver) {
     int status = 0;
     FILE *Power_initialize;
@@ -130,7 +101,7 @@ int Init_Proficio_calibration(uint8_t send_to_transceiver) {
     Power_initialize = fopen(l_path, "r");
     if (Power_initialize == NULL) {
         print_time();
-        fprintf(G_fp_logfile, "[%d] Initialize_power_calibration. Open file failed. Using factory values\n", line_number++);
+        fprintf(G_fp_logfile, "[%d] Initialize_power_calibration. Open file failed. Using built-in table\n", line_number++);
         return 0;
     }
     while (fgets(iq_init_record, sizeof (iq_init_record), Power_initialize) != NULL) {

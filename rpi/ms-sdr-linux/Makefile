@@ -26,6 +26,7 @@ SRCS = \
 	source/crc.c \
 	source/cw-snap.c \
 	source/freq_queue.c \
+	source/factory_seed.c \
 	source/iq.c \
 	source/last_used.c \
 	source/main-controller.c \
