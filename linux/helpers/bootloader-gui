@@ -27,6 +27,13 @@ DEFAULT_VID = "04B4"
 DEFAULT_PID = "B71D"
 DEFAULT_KEY = "000000000000"
 APP_TITLE = "USB Bootloader"
+FIRMWARE_SHARE = Path("/usr/share/mscc/firmware")
+
+
+def _default_load_dir() -> Optional[str]:
+    if FIRMWARE_SHARE.is_dir():
+        return str(FIRMWARE_SHARE)
+    return None
 
 
 def _which_bootloader() -> Optional[Path]:
@@ -192,10 +199,18 @@ class BootloaderApp(tk.Tk):
         self.destroy()
 
     def _load_file(self) -> None:
-        path = filedialog.askopenfilename(
+        kwargs = dict(
             title="Open CYACD File",
             filetypes=[("cyacd file", "*.cyacd"), ("All files", "*.*")],
         )
+        initial = _default_load_dir()
+        if initial:
+            kwargs["initialdir"] = initial
+        else:
+            self._log(
+                "Note: /usr/share/mscc/firmware missing — install mscc-firmware for packaged .cyacd files"
+            )
+        path = filedialog.askopenfilename(**kwargs)
         if not path:
             return
         self.cyacd_path = Path(path)

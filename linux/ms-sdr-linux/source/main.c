@@ -18,6 +18,7 @@
 #include "version.h"
 #include "band_stack.h"
 #include "last_used.h"
+#include "factory_seed.h"
 #include "iq.h"
 //Pthreads
 
@@ -1305,6 +1306,7 @@ int main(int argc, char **argv) {
     G_minor_version = MULTUS_MINOR_VERSION_MKII;
     G_firmware_version_packed =
         ((G_minor_version << 8) & 0xff00) | (G_major_version & 0x00ff);
+    Factory_seed_live_inis();
     status = 1;
     (void)mode;
 #else
@@ -1324,6 +1326,7 @@ int main(int argc, char **argv) {
             print_time(0);
             fprintf(G_fp_logfile, "[%d] main . srGetVersion returned Transceiver Firmware Version: %d.%d \n",
                     line_number++, G_major_version, G_minor_version);
+            Factory_seed_live_inis();
             if (G_major_version >= MULTUS_MAJOR_VERSION_119 && G_minor_version >= MULTUS_MINOR_VERSION_81) {
                 print_time(0);
                 fprintf(G_fp_logfile, "[%d] main . Firmware OK. \n", line_number++);
@@ -1410,8 +1413,9 @@ int main(int argc, char **argv) {
         if (G_network_initialized) {
             print_time(0);
             fprintf(G_fp_logfile,
-                "[%d] main. Network ready — Apply_Appliance_Startup (headless cores/rig)\n",
+                "[%d] main. Network ready — reload cal if a live file was replaced, then Apply_Appliance_Startup\n",
                 line_number++);
+            Factory_seed_reload_servers();
             Apply_Appliance_Startup();
         } else {
             print_time(0);

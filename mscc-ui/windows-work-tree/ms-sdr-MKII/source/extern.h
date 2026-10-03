@@ -525,6 +525,7 @@ extern int Create_PPM_ini();
 extern void Factory_seed_live_inis(void);
 extern void Factory_seed_reload_servers(void);
 extern int Factory_reseed_live_file(const char *kind, const char *leaf);
+extern void Factory_park_live_settings(void);
 extern const char *Factory_line_from_major(int major);
 extern INT8 G_int;
 extern INT8 G_dec;

@@ -10,6 +10,11 @@
 static int g_cal_reload_power;
 static int g_cal_reload_iq;
 
+static int known_park_major(int major)
+{
+    return major >= 1 && major <= 8;
+}
+
 const char *Factory_line_from_major(int major)
 {
     switch (major) {
@@ -345,4 +350,54 @@ void Factory_seed_reload_servers(void)
         SDRcore_trans_send_param(CMD_SET_IQ_DEFAULTS, 1);
         g_cal_reload_iq = 0;
     }
+}
+
+void Factory_park_live_settings(void)
+{
+    const char *line;
+    char *live;
+    char src[MAX_PATH], dst[MAX_PATH];
+    int i;
+    int copied = 0;
+    static const char *leaves[] = { "iq.ini", "power_cal.ini", "amplifier_cal.ini" };
+
+    if (!known_park_major(G_major_version)) {
+        print_time(0);
+        fprintf(G_fp_logfile,
+            "[%d] Factory_park. unknown major=%d - no-op\n",
+            line_number++, G_major_version);
+        return;
+    }
+    line = Factory_line_from_major(G_major_version);
+    live = My_getenv("HOME");
+    if (live == NULL || live[0] == 0) {
+        print_time(0);
+        fprintf(G_fp_logfile, "[%d] Factory_park. live HOME path missing\n", line_number++);
+        return;
+    }
+    ensure_cal_line_dir(live, line);
+    for (i = 0; i < 3; i++) {
+        snprintf(src, sizeof src, "%s\\%s", live, leaves[i]);
+        snprintf(dst, sizeof dst, "%s\\cal\\%s\\%s", live, line, leaves[i]);
+        if (!file_exists(src)) {
+            print_time(0);
+            fprintf(G_fp_logfile, "[%d] Factory_park. skip missing live %s\n",
+                    line_number++, leaves[i]);
+            continue;
+        }
+        if (copy_file(src, dst)) {
+            print_time(0);
+            fprintf(G_fp_logfile, "[%d] Factory_park. %s -> cal\\%s\\\n",
+                    line_number++, leaves[i], line);
+            copied++;
+        } else {
+            print_time(0);
+            fprintf(G_fp_logfile, "[%d] Factory_park. copy FAILED %s\n",
+                    line_number++, leaves[i]);
+        }
+    }
+    write_last_line(live, line);
+    print_time(0);
+    fprintf(G_fp_logfile, "[%d] Factory_park. done line=%s major=%d files=%d\n",
+            line_number++, line, G_major_version, copied);
 }

@@ -13,6 +13,10 @@ On start: `git pull`, then read [`handoff.md`](handoff.md). If `.mscc-coord/COMM
 
 ## Current work
 
+**Active - cmd-063 (ubuntu-stew): optional Linux PSoC firmware package + Load File default.** Separate `mscc-firmware` deb installs `radio-psoc-firmware/release/` → `/usr/share/mscc/firmware/<RadioName>/`. Not inside every `mscc` install. Keil Shack-only (prebuilt artifacts). bootloader-gui Load File `initialdir` defaults there; browse elsewhere OK; warn if package missing. Commit locally; do not push. See `.mscc-coord/briefs/cmd-063.md`.
+
+**Active - cmd-060 (ubuntu-stew): Linux cal parity phase 1 — package factory into mscc deb.** Ship repo-root `factory/` to `/usr/share/mscc/factory/{iq,freq,power}/<line>/` inside Ubuntu `mscc_1.0.48_amd64.deb` and Pi packaging `mscc_1.0.51_arm64.deb`. Files-only; do not change postinst live-seed, park/restore, Save settings, or firmware. May edit `rpi/mscc-deb` packaging scripts only. Commit locally; do not push. See `.mscc-coord/briefs/cmd-060.md`.
+
 **Active - cmd-059 (windows-new-hp): cmd-055 follow-up — dead cal helpers + short Save-settings tips.** Remove unused `Factory_mirror_live_to_cal` (def+decls) and unused `Create_power_cal_file` if still uncalled (verify search first). Add brief visible on-tab text on QRP CAL / AMP CAL / TX IQ: `When done, press Save settings.` Shorten Save settings + those tab ToolTips (keep ToolTips; on-tab is primary). No park/restore behavior change. Avalonia/rpi/linux out of scope. WPF version bump as usual. Commit locally; do not push. See `.mscc-coord/briefs/cmd-059.md`.
 
 **Active - cmd-056 (windows-new-hp): Windows FREQ CAL second-STOP.** Port Linux `else if (cal_abort_pending)` (`519c682` / `linux/.../calibrate.c`) into `mscc-ui/windows-work-tree/ms-sdr-MKII/source/calibrate.c` so a second STOP while drain is pending logs `nothing new owed, drain still pending` and does **not** call `Cal_Abort_Drain_Done("nothing owed")`. Do **not** edit `rpi/` - Ron ports Pi after Stew pushes. Commit locally; do not push. See `.mscc-coord/briefs/cmd-056.md`.

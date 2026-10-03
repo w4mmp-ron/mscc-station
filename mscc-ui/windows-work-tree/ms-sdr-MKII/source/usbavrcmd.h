@@ -407,6 +407,7 @@
 #define CMD_SET_AUDIO_DEVICE 0x9B
 #define CMD_SET_REMOTE_RX_HOST 0x25  /* IPv4, 4 bytes network order → recv */
 #define CMD_SET_REMOTE_RX_CTRL 0x28  /* uint32 LE: port | enable<<16 | monitor<<17 → recv */
+#define CMD_SET_PARK_CAL_SETTINGS 0x29  /* payload short 1: park live iq/power/amplifier for this line */
 //End Sound Device Management
 
 #define CMD_SET_HDSDR_STATUS 0xF0

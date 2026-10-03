@@ -1,0 +1,422 @@
+#include "extern.h"
+#include "factory_seed.h"
+#include "usbavrcmd.h"
+#include <errno.h>
+#include <stdio.h>
+#include <string.h>
+#include <sys/stat.h>
+#include <unistd.h>
+
+/* Set by Factory_seed_live_inis. Factory_seed_reload_servers consumes them. */
+static int g_cal_reload_power;
+static int g_cal_reload_iq;
+
+const char *Factory_line_from_major(int major)
+{
+    switch (major) {
+        case 1: return "proficio-legacy";
+        case 2: return "geminus-mkii";
+        case 3:
+        case 4: return "proficio-mkii";
+        case 5: return "geminus-legacy";
+        case 6: return "ultimus-legacy";
+        case 7:
+        case 8: return "ultimus-mkii";
+        default: return "proficio-mkii";
+    }
+}
+
+static int known_park_major(int major)
+{
+    return major >= 1 && major <= 8;
+}
+
+static int file_exists(const char *path)
+{
+    FILE *fp = fopen(path, "r");
+    if (fp) {
+        fclose(fp);
+        return 1;
+    }
+    return 0;
+}
+
+static int copy_file(const char *src, const char *dst)
+{
+    FILE *in = fopen(src, "rb");
+    FILE *out;
+    char buf[4096];
+    size_t n;
+    if (!in)
+        return 0;
+    out = fopen(dst, "wb");
+    if (!out) {
+        fclose(in);
+        return 0;
+    }
+    while ((n = fread(buf, 1, sizeof buf, in)) > 0)
+        fwrite(buf, 1, n, out);
+    fclose(in);
+    fclose(out);
+    return 1;
+}
+
+static void ensure_dir(const char *path)
+{
+    if (mkdir(path, 0755) != 0 && errno != EEXIST) {
+        print_time(0);
+        fprintf(G_fp_logfile, "[%d] cal mkdir FAILED %s errno=%d\n",
+                line_number++, path, errno);
+    }
+}
+
+static int find_factory_root(char *out, size_t n)
+{
+    char probe[MAX_PATH];
+    char exe[MAX_PATH];
+    char *slash;
+    ssize_t len;
+
+    snprintf(out, n, "/usr/share/mscc/factory");
+    snprintf(probe, sizeof probe, "%s/iq/proficio-mkii/iq.ini", out);
+    if (file_exists(probe))
+        return 1;
+
+    len = readlink("/proc/self/exe", exe, sizeof exe - 1);
+    if (len > 0 && (size_t)len < sizeof exe - 1) {
+        exe[len] = 0;
+        slash = strrchr(exe, '/');
+        if (slash) {
+            *slash = 0;
+            snprintf(out, n, "%s/factory", exe);
+            snprintf(probe, sizeof probe, "%s/iq/proficio-mkii/iq.ini", out);
+            if (file_exists(probe))
+                return 1;
+        }
+    }
+    return 0;
+}
+
+static void last_line_path(char *out, size_t n, const char *live)
+{
+    snprintf(out, n, "%s/cal/LAST_LINE.txt", live);
+}
+
+static void read_last_line(const char *live, char *out, size_t n)
+{
+    char path[MAX_PATH];
+    FILE *fp;
+    out[0] = 0;
+    last_line_path(path, sizeof path, live);
+    fp = fopen(path, "r");
+    if (!fp)
+        return;
+    if (fgets(out, (int)n, fp)) {
+        size_t L = strlen(out);
+        while (L > 0 && (out[L - 1] == '\n' || out[L - 1] == '\r' || out[L - 1] == ' '))
+            out[--L] = 0;
+    }
+    fclose(fp);
+}
+
+static void write_last_line(const char *live, const char *line)
+{
+    char caldir[MAX_PATH];
+    char path[MAX_PATH];
+    FILE *fp;
+    snprintf(caldir, sizeof caldir, "%s/cal", live);
+    ensure_dir(caldir);
+    last_line_path(path, sizeof path, live);
+    fp = fopen(path, "w");
+    if (!fp) {
+        print_time(0);
+        fprintf(G_fp_logfile, "[%d] cal LAST_LINE write FAILED\n", line_number++);
+        return;
+    }
+    fprintf(fp, "%s\n", line);
+    fclose(fp);
+}
+
+static void ensure_cal_line_dir(const char *live, const char *line)
+{
+    char p[MAX_PATH];
+    snprintf(p, sizeof p, "%s/cal", live);
+    ensure_dir(p);
+    snprintf(p, sizeof p, "%s/cal/%s", live, line);
+    ensure_dir(p);
+}
+
+static void stash_one(const char *live, const char *prev, const char *leaf)
+{
+    char src[MAX_PATH], dst[MAX_PATH];
+    snprintf(src, sizeof src, "%s/%s", live, leaf);
+    snprintf(dst, sizeof dst, "%s/cal/%s/%s", live, prev, leaf);
+    if (file_exists(src) && copy_file(src, dst)) {
+        print_time(0);
+        fprintf(G_fp_logfile, "[%d] cal stash line=%s %s\n", line_number++, prev, leaf);
+    }
+}
+
+static void stash_active_to_cal(const char *live, const char *prev)
+{
+    if (!prev || !prev[0])
+        return;
+    ensure_cal_line_dir(live, prev);
+    stash_one(live, prev, "iq.ini");
+    stash_one(live, prev, "power_cal.ini");
+    stash_one(live, prev, "amplifier_cal.ini");
+}
+
+/* Twelve RECORD/BAND lines, POWER_LEVEL=-99. No factory amp-cal tree. */
+static int write_amp_default_file(const char *path)
+{
+    FILE *fp;
+    int band;
+    fp = fopen(path, "w");
+    if (!fp)
+        return 0;
+    for (band = 0; band < 12; band++)
+        fprintf(fp, "RECORD=%d,BAND=%d,POWER_LEVEL=-99\n", band, band);
+    fclose(fp);
+    return 1;
+}
+
+/* 1 = the live file was replaced. Caller reloads that server.
+ * Same line with a live file: leave it. Copy live → parked only when parked is missing. */
+static int place_cal_file(const char *live, const char *line, const char *kind,
+                          const char *leaf, const char *factory_root,
+                          int same_line, int amp_default)
+{
+    char calp[MAX_PATH], livep[MAX_PATH], facp[MAX_PATH];
+    snprintf(livep, sizeof livep, "%s/%s", live, leaf);
+    snprintf(calp, sizeof calp, "%s/cal/%s/%s", live, line, leaf);
+    facp[0] = 0;
+    if (factory_root && factory_root[0] && kind && kind[0])
+        snprintf(facp, sizeof facp, "%s/%s/%s/%s", factory_root, kind, line, leaf);
+    ensure_cal_line_dir(live, line);
+
+    if (same_line && file_exists(livep)) {
+        if (!file_exists(calp)) {
+            if (copy_file(livep, calp)) {
+                print_time(0);
+                fprintf(G_fp_logfile, "[%d] cal bootstrap live→line=%s %s\n",
+                        line_number++, line, leaf);
+            }
+        } else {
+            print_time(0);
+            fprintf(G_fp_logfile, "[%d] cal keep live line=%s %s\n", line_number++, line, leaf);
+        }
+        return 0;
+    }
+
+    if (file_exists(calp)) {
+        if (copy_file(calp, livep)) {
+            print_time(0);
+            fprintf(G_fp_logfile, "[%d] cal load line=%s %s\n", line_number++, line, leaf);
+            return 1;
+        }
+        print_time(0);
+        fprintf(G_fp_logfile, "[%d] cal load FAILED line=%s %s\n", line_number++, line, leaf);
+        return 0;
+    }
+
+    if (facp[0] && file_exists(facp) && copy_file(facp, livep)) {
+        copy_file(facp, calp);
+        print_time(0);
+        fprintf(G_fp_logfile, "[%d] cal seed factory→line=%s %s\n", line_number++, line, leaf);
+        return 1;
+    }
+
+    if (amp_default && write_amp_default_file(livep)) {
+        write_amp_default_file(calp);
+        print_time(0);
+        fprintf(G_fp_logfile, "[%d] cal seed amp default line=%s %s\n", line_number++, line, leaf);
+        return 1;
+    }
+
+    print_time(0);
+    fprintf(G_fp_logfile, "[%d] cal seed FAILED line=%s %s\n", line_number++, line, leaf);
+    return 0;
+}
+
+static void seed_freq_if_missing(const char *factory_root, const char *line, const char *live)
+{
+    char src[MAX_PATH], dst[MAX_PATH];
+    snprintf(dst, sizeof dst, "%s/freq_cal.ini", live);
+    if (file_exists(dst)) {
+        print_time(0);
+        fprintf(G_fp_logfile, "[%d] Factory_seed. keep live freq_cal.ini\n", line_number++);
+        return;
+    }
+    snprintf(src, sizeof src, "%s/freq/%s/freq_cal.ini", factory_root, line);
+    if (file_exists(src) && copy_file(src, dst)) {
+        print_time(0);
+        fprintf(G_fp_logfile, "[%d] Factory_seed. copied %s -> %s (line=%s)\n",
+                line_number++, src, dst, line);
+    } else {
+        print_time(0);
+        fprintf(G_fp_logfile, "[%d] Factory_seed. freq seed skipped (no factory file)\n",
+                line_number++);
+    }
+}
+
+int Factory_reseed_live_file(const char *kind, const char *leaf)
+{
+    char factory_root[MAX_PATH];
+    char src[MAX_PATH];
+    char dst[MAX_PATH];
+    const char *line;
+    char *live;
+
+    if (!kind || !leaf)
+        return 0;
+    line = Factory_line_from_major(G_major_version);
+    if (!find_factory_root(factory_root, sizeof factory_root)) {
+        print_time(0);
+        fprintf(G_fp_logfile, "[%d] Factory_reseed. factory tree missing (kind=%s)\n",
+                line_number++, kind);
+        return 0;
+    }
+    live = My_getenv((char *)"HOME");
+    if (live == NULL || live[0] == 0)
+        return 0;
+    snprintf(src, sizeof src, "%s/%s/%s/%s", factory_root, kind, line, leaf);
+    snprintf(dst, sizeof dst, "%s/%s", live, leaf);
+    if (!file_exists(src)) {
+        print_time(0);
+        fprintf(G_fp_logfile, "[%d] Factory_reseed. missing %s\n", line_number++, src);
+        return 0;
+    }
+    if (!copy_file(src, dst)) {
+        print_time(0);
+        fprintf(G_fp_logfile, "[%d] Factory_reseed. copy FAILED %s\n", line_number++, dst);
+        return 0;
+    }
+    print_time(0);
+    fprintf(G_fp_logfile, "[%d] Factory_reseed. %s -> %s (line=%s major=%d)\n",
+            line_number++, src, dst, line, G_major_version);
+    return 1;
+}
+
+void Factory_seed_live_inis(void)
+{
+    char factory_root[MAX_PATH];
+    const char *line;
+    char *live;
+    char prev[128];
+    int have_factory;
+    int switching;
+    int same_line;
+
+    g_cal_reload_power = 0;
+    g_cal_reload_iq = 0;
+    line = Factory_line_from_major(G_major_version);
+    print_time(0);
+    fprintf(G_fp_logfile, "[%d] Factory_seed. major=%d line=%s\n",
+            line_number++, G_major_version, line);
+    live = My_getenv((char *)"HOME");
+    if (live == NULL || live[0] == 0) {
+        print_time(0);
+        fprintf(G_fp_logfile, "[%d] Factory_seed. live HOME path missing\n", line_number++);
+        return;
+    }
+    have_factory = find_factory_root(factory_root, sizeof factory_root);
+    if (!have_factory) {
+        print_time(0);
+        fprintf(G_fp_logfile,
+            "[%d] Factory_seed. factory tree missing (expected /usr/share/mscc/factory/iq/proficio-mkii/iq.ini)\n",
+            line_number++);
+        factory_root[0] = 0;
+    }
+
+    read_last_line(live, prev, sizeof prev);
+    switching = (prev[0] && strcmp(prev, line) != 0);
+    if (switching) {
+        print_time(0);
+        fprintf(G_fp_logfile, "[%d] cal stash line=%s (switching to %s)\n",
+                line_number++, prev, line);
+        stash_active_to_cal(live, prev);
+    }
+
+    same_line = !switching;
+    if (place_cal_file(live, line, "iq", "iq.ini", factory_root, same_line, 0))
+        g_cal_reload_iq = 1;
+    if (place_cal_file(live, line, "power", "power_cal.ini", factory_root, same_line, 0))
+        g_cal_reload_power = 1;
+    if (place_cal_file(live, line, NULL, "amplifier_cal.ini", factory_root, same_line, 1))
+        g_cal_reload_power = 1;
+    if (have_factory)
+        seed_freq_if_missing(factory_root, line, live);
+    write_last_line(live, line);
+}
+
+void Factory_seed_reload_servers(void)
+{
+    if (!G_network_initialized) {
+        print_time(0);
+        fprintf(G_fp_logfile, "[%d] Factory_seed. reload skipped, network not ready\n", line_number++);
+        return;
+    }
+    if (g_cal_reload_power) {
+        print_time(0);
+        fprintf(G_fp_logfile, "[%d] Factory_seed. reload trans power and amplifier cal\n", line_number++);
+        SDRcore_trans_send_param(CMD_SET_SDRCORE_TRANS_INITIALIZE, 1);
+        g_cal_reload_power = 0;
+    }
+    if (g_cal_reload_iq) {
+        print_time(0);
+        fprintf(G_fp_logfile, "[%d] Factory_seed. reload trans iq.ini\n", line_number++);
+        SDRcore_trans_send_param(CMD_SET_IQ_DEFAULTS, 1);
+        g_cal_reload_iq = 0;
+    }
+}
+
+void Factory_park_live_settings(void)
+{
+    const char *line;
+    char *live;
+    char src[MAX_PATH], dst[MAX_PATH];
+    int i;
+    int copied = 0;
+    static const char *leaves[] = { "iq.ini", "power_cal.ini", "amplifier_cal.ini" };
+
+    if (!known_park_major(G_major_version)) {
+        print_time(0);
+        fprintf(G_fp_logfile,
+            "[%d] Factory_park. unknown major=%d - no-op\n",
+            line_number++, G_major_version);
+        return;
+    }
+    line = Factory_line_from_major(G_major_version);
+    live = My_getenv((char *)"HOME");
+    if (live == NULL || live[0] == 0) {
+        print_time(0);
+        fprintf(G_fp_logfile, "[%d] Factory_park. live HOME path missing\n", line_number++);
+        return;
+    }
+    ensure_cal_line_dir(live, line);
+    for (i = 0; i < 3; i++) {
+        snprintf(src, sizeof src, "%s/%s", live, leaves[i]);
+        snprintf(dst, sizeof dst, "%s/cal/%s/%s", live, line, leaves[i]);
+        if (!file_exists(src)) {
+            print_time(0);
+            fprintf(G_fp_logfile, "[%d] Factory_park. skip missing live %s\n",
+                    line_number++, leaves[i]);
+            continue;
+        }
+        if (copy_file(src, dst)) {
+            print_time(0);
+            fprintf(G_fp_logfile, "[%d] Factory_park. %s -> cal/%s/\n",
+                    line_number++, leaves[i], line);
+            copied++;
+        } else {
+            print_time(0);
+            fprintf(G_fp_logfile, "[%d] Factory_park. copy FAILED %s\n",
+                    line_number++, leaves[i]);
+        }
+    }
+    write_last_line(live, line);
+    print_time(0);
+    fprintf(G_fp_logfile, "[%d] Factory_park. done line=%s major=%d files=%d\n",
+            line_number++, line, G_major_version, copied);
+}

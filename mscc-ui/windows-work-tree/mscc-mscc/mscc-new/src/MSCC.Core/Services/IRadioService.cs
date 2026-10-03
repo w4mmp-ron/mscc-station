@@ -162,6 +162,12 @@ public interface IRadioService : IDisposable
     Task SetPanResolutionAsync(int bins, CancellationToken cancellationToken = default);
 
     /// <summary>
+    /// Ask the host to park live cal (iq.ini, power_cal.ini, amplifier_cal.ini) for the current radio line.
+    /// Opcode 0x29. No-op if the session is not started.
+    /// </summary>
+    Task ParkCalSettingsAsync(CancellationToken cancellationToken = default);
+
+    /// <summary>
     /// Sets filter low cut (Hz).
     /// </summary>
     Task SetFilterLowAsync(int lowHz, CancellationToken cancellationToken = default);

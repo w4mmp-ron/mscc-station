@@ -82,6 +82,8 @@ public static class Opcodes
     public const byte QRO_MODE                     = 1; // PA path / full (non-QRP)
 
     // Power & Calibration
+    /// <summary>Park live iq.ini / power_cal.ini / amplifier_cal.ini for the current radio line (ms-sdr). Payload 1.</summary>
+    public const byte CMD_SET_PARK_CAL_SETTINGS    = 0x29;
     public const byte CMD_SET_BAND_POWER_BAND      = 0xA1;
     public const byte CMD_SET_BAND_POWER_POWER     = 0xA2;
     public const byte CMD_SET_BAND_POWER_DEFAULTS  = 0xAA;

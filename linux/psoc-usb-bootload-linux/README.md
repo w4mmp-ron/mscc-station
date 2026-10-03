@@ -46,6 +46,8 @@ If link fails: `make LIBS="-lhidapi-hidraw -lusb-1.0"`
 
 Load File → `.cyacd`, wait for **Connected** (`04b4:b71d`), Program.
 
+Optional package **`mscc-firmware`** installs shipping `.cyacd`/`.hex` under `/usr/share/mscc/firmware/<RadioName>/`. Load File opens there when that folder exists; otherwise the status log warns and the dialog still works. Browse anywhere. Do not Program unless the BOOT jumper is on (LOADER `04b4:b71d`).
+
 Optional udev (no sudo):
 
 ```text

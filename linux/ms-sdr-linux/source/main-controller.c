@@ -6,6 +6,7 @@
 //#include "SRDLL.h"
 #include "extern.h"
 #include "version.h"
+#include "factory_seed.h"
 
 // VERSION_MAJOR / VERSION_MINOR / VERSION_MS_SDRCORE live in version.h
 // VERSION_MINOR is auto-incremented on every build (Windows PreBuild / Linux bump-version.sh)
@@ -1972,6 +1973,13 @@ void * Command_Processor(void *my_param) {
                         line_number++);
                 }
             }
+            break;
+
+        case CMD_SET_PARK_CAL_SETTINGS:
+            print_time(0);
+            fprintf(G_fp_logfile, "[%d] Command_Interface. CMD_SET_PARK_CAL_SETTINGS\n",
+                    line_number++);
+            Factory_park_live_settings();
             break;
 
         case CMD_SET_IQ_DEFAULTS:

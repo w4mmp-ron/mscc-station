@@ -1,4 +1,58 @@
 commands:
+  - id: cmd-063
+    created: "2026-10-02T12:00:00-04:00"
+    target: [ubuntu-stew]
+    role: packaging+helper
+    action: optional-mscc-firmware-package-load-file-default
+    status_hint: open
+    detail: |
+      Host: ubuntu-stew. Phase 3 of linux-cal-parity-with-windows.md.
+      Optional mscc-firmware_1.0.0_all.deb ships radio-psoc-firmware/release/
+      .cyacd/.hex to /usr/share/mscc/firmware/<RadioName>/. Not inside mscc.
+      Keil Shack-only (prebuilt artifacts only). Load File initialdir defaults
+      to that folder (linux + helpers + rpi bootloader-gui); browse elsewhere OK;
+      warn if package missing. Prefer warnings over lockouts. No push.
+      Brief: .mscc-coord/briefs/cmd-063.md
+  - id: cmd-062
+    created: "2026-10-02T11:05:00-04:00"
+    target: [windows-new-hp]
+    role: server+client
+    action: windows-phase4-host-park-opcode-wpf-save-to-host
+    status_hint: open
+    detail: |
+      Host: windows-new-hp. Phase 4 of linux-cal-parity-with-windows.md.
+      Windows ms-sdr CMD_SET_PARK_CAL_SETTINGS 0x29 + Factory_park_live_settings;
+      WPF Save settings sends 0x29 to connected host (no client CalPark park).
+      Prefer implement from Windows factory_seed + opcode contract; Core 0x29
+      may be missing (stew cmd-061 unpushed) - add independently; no pull
+      unless Stew says. No Avalonia/linux/rpi server/Solidus. No push.
+      Brief: .mscc-coord/briefs/cmd-062.md
+  - id: cmd-061
+    created: "2026-10-02T10:28:00-04:00"
+    target: [ubuntu-stew]
+    role: server+client
+    action: linux-phase2-host-park-restore-avalonia-save-settings
+    status_hint: open
+    detail: |
+      Host: ubuntu-stew. Phase 2 of linux-cal-parity-with-windows.md.
+      linux/ms-sdr-linux factory_seed park/restore (live ~/.local/mscc, park
+      cal/<line>/, LAST_LINE.txt); CMD_SET_PARK_CAL_SETTINGS 0x29; Avalonia
+      Save settings invokes host park (no client CalPark). Bump mscc 1.0.49
+      + mscc-ui 0.6.71. No WPF/Windows opcode (phase 4). No rpi server source.
+      No push. Brief: .mscc-coord/briefs/cmd-061.md
+  - id: cmd-060
+    created: "2026-10-02T10:05:00-04:00"
+    target: [ubuntu-stew]
+    role: packaging
+    action: linux-phase1-ship-factory-into-mscc-deb
+    status_hint: open
+    detail: |
+      Host: ubuntu-stew. Phase 1 of linux-cal-parity-with-windows.md.
+      Stage repo factory/ into /usr/share/mscc/factory/ in Ubuntu mscc 1.0.48
+      amd64 and Pi mscc-deb packaging 1.0.51. Files-only; no postinst factory
+      seed; no park/Save/runtime. Live ~/.local/mscc untouched. Commit locally,
+      do not push.
+      Brief: .mscc-coord/briefs/cmd-060.md
   - id: cmd-059
     created: "2026-10-01T14:10:00-04:00"
     target: [windows-new-hp]
