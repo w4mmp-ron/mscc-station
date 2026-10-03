@@ -81,7 +81,7 @@ Git repo root: `C:\Users\Ron\.grok\worktrees`.
    while the live files belong to a different radio than the one connected, the live files are
    taken as the connected radio's, and at the next radio swap they overwrite that radio's parked
    copy.** On the Pi the `.bak` keeps the good copy; on Windows/Ubuntu it is gone. Not told to
-   Stew yet. Also: with no factory tree, a never-seen radio type keeps the previous radio's
+   Stew (Ron's choice). Also: with no factory tree, a never-seen radio type keeps the previous radio's
    iq/power files live (nothing lost, wrong cal until calibrated).
    Files: live `~/.local/mscc/`, parked `~/.local/mscc/cal/<line>/` (iq.ini, power_cal.ini,
    amplifier_cal.ini), `cal/LAST_LINE.txt`, factory `/usr/share/mscc/factory/` (in the mscc .deb
@@ -95,7 +95,18 @@ Git repo root: `C:\Users\Ron\.grok\worktrees`.
    sdrcore-trans; sdrcore-recv as 1.0.49+; same file list and modes as Stew's 1.0.51, incl.
    `factory/`). In `rpi/mscc-deb/` and `installers/rpi/` (1.0.51 removed there). **Installed on
    the Pi 2026-10-03 (Ron): log shows `cal keep live` x3 + `keep live freq_cal.ini`, no "factory
-   tree missing".** Resets not pressed (would reset Ron's cal). Build recipe that works: `git -c core.autocrlf=false checkout-index` of
+   tree missing".** Resets not pressed (would reset Ron's cal).
+   **mscc 1.0.53 (2026-10-03):** same servers as 1.0.52; only change = packaged
+   `usr/share/mscc/bin/bootloader-gui` now has Stew's cmd-063 "Load File opens in
+   /usr/share/mscc/firmware" (copied from `rpi/psoc-usb-bootload-linux/bootloader-gui.py`; the
+   package copy is separate and Stew had not updated it). In `rpi/mscc-deb/` and `installers/rpi/`
+   (1.0.52 removed there). Not installed on the Pi yet.
+   `installers/rpi`: `mscc-init-gui_1.0.17_all.deb` removed again (Stew re-added it);
+   `mscc-firmware_1.0.0_all.deb` (Stew, files only under /usr/share/mscc/firmware/<Radio>/, 8 radios)
+   kept, INSTALL.md lists it as optional; not installed on the Pi yet.
+   Note for Stew: `.mscc-coord/NOTE-FOR-STEW-UBUNTU-IQ-INI-2026-10-03.md` = ONLY the Ubuntu
+   iq.ini delete (Ron 2026-10-03). Ron chose NOT to tell Stew about the LAST_LINE overwrite
+   case or about his three commits in rpi/ + installers/rpi; don't raise them with Stew. Build recipe that works: `git -c core.autocrlf=false checkout-index` of
    mscc-deb/build-deb.sh + packaging, mscc-binaries, mscc-init-files-linux, tty0tty-master/module
    and factory into a temp dir, copy to WSL /tmp, files 644 / dirs 755 / index-755 files 755,
    run build-deb.sh. Not committed.
