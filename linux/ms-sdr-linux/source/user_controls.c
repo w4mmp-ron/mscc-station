@@ -1460,8 +1460,11 @@ int User_Controls_Process(uint8_t command, char *buf, byte extened) {
                 break;
 
             case CMD_GET_SET_PANADAPTER_REFRESH:
-                /* Blocks between panReady. 0 never equals panblocks++ → silent no spectrum. */
-                if (t_opcode_data < 1) {
+                /* 0/1/2 = pan bins 800/1600/3200. 3–10 = legacy refresh blocks.
+                 * Rewrite to 6 only when the value is none of those (not a
+                 * resolution index and not a real refresh rate). Index 0 must
+                 * reach recv or 800 bins never comes back. */
+                if (t_opcode_data > 10) {
                     print_time(0);
                     fprintf(G_fp_logfile,
                         "[%d] User_Controls_Process . CMD_GET_SET_PANADAPTER_REFRESH: %d invalid — using 6\n",
