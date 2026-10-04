@@ -205,6 +205,7 @@ void Initialize_band_data() {
 }
 
 void *Check_temperature(void *t) {
+    Set_Thread_Name("temperature");
     INT32 iTemperature = 0;
     int sleep_time = 3000;
     uint8_t transceiver_read = FALSE;

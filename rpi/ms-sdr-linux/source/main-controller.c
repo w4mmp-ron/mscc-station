@@ -352,6 +352,7 @@ void Stop_all(uint8_t up_date_transceiver, uint8_t shutdown_status) {
 }
 
 void *Gui_send_message(void *t) {
+    Set_Thread_Name("gui-send");
     char buf[PATH_MAX] = { 0 };
     int slen = sizeof (si_gui);
     char message[PATH_MAX];
@@ -1194,6 +1195,7 @@ int Intialize_GUI_Last_Used_VFO_A() {
 }
 
 void * Command_Processor(void *my_param) {
+    Set_Thread_Name("cmd-processor");
     int count = 0;
     uint8_t opcode;
     uint8_t t_opcode_data;

@@ -117,6 +117,16 @@ Git repo root: `C:\Users\Ron\.grok\worktrees`.
    psoc-usb-bootload-linux default folder) and put `mscc-init-gui_1.0.17_all.deb` back in
    installers/rpi (we replaced it with mscc-init 1.0.18) and added `mscc-firmware_1.0.0_all.deb`.
    Ron has not ruled on those.
+12. ms-sdr thread names (2026-10-03, Ron asked): `Set_Thread_Name()` in `platform_linux.c` /
+   `platform.h` (`pthread_setname_np`, max 15 chars), called first thing in each of the 11 thread
+   functions: cmd-processor, gui-send (main-controller.c); log-flusher, last-used, ptt-switch,
+   key-status (main.c); temperature; freq-queue; cat-port, cat-pin-check (comm-port.c); swr-meter.
+   **The main thread is NOT named on purpose:** its name is the process name that `mscc.sh`
+   finds with `pgrep -x ms-sdr` / `pkill -x`. See them with `top -H -p $(pidof ms-sdr)` or
+   `ps -T -p $(pidof ms-sdr)`. Syntax-checked + helper run in WSL (names show in `ps -T`).
+   **Built on the Pi 2026-10-03 (Ron): `ps -T` shows ms-sdr, libusb_event (libusb's own) and 10
+   named threads; `last-used` is not in the list because its `pthread_create` in main.c (~1228) is commented out: that thread is never started.** Not committed.
+   sdrcore-trans / recv threads not named (not asked).
 7. Next mscc .deb build picks up the "(package mscc-init)" hint text in mscc-deb postinst /
    build-deb.sh / install-mscc.sh (source only, committed 82b819b). No rebuild just for that.
 

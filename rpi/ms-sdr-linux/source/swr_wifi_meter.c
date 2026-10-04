@@ -298,6 +298,7 @@ static int swr_wifi_bind(uint16_t port)
 
 void *Swr_wifi_meter_main(void *param)
 {
+    Set_Thread_Name("swr-meter");
     char buf[SWR_WIFI_RECV_BUF];
     struct sockaddr_in src;
     socklen_t src_len;

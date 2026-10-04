@@ -450,6 +450,7 @@ void print_time(int print_new_line) {
 }
 
 void* Flusher_thread(void* t) {
+    Set_Thread_Name("log-flusher");
     int gui_count = 0;
     int servers_count = 0;
     int ka_log_count = 0;
@@ -606,6 +607,7 @@ void* Flusher_thread(void* t) {
 }
 
 void *Update_last_used_thread(void *last_used_tread) {
+    Set_Thread_Name("last-used");
     int status = 0;
     uint32_t previous_startup_freq = 0;
 
@@ -781,6 +783,7 @@ int static TX_Hold_Timer(int period, int reset) {
 }
 
 void *Manage_MKII_PTT_Switch(void *my_parm) {
+    Set_Thread_Name("ptt-switch");
     int r = 0;
     int tx_mode = FALSE;
     static int previous_tx_mode = 0;
@@ -815,6 +818,7 @@ void *Manage_MKII_PTT_Switch(void *my_parm) {
 }
 
 void *Get_Key_Status(void *my_parm) {
+    Set_Thread_Name("key-status");
     int r = 0;
     int key = FALSE;
     int sleep_time = 1;

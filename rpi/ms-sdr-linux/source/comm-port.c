@@ -86,6 +86,7 @@ extern const char *homedir;
     return 1;
 }*/
 void *Pin_Check_Thread(void *param) {
+    Set_Thread_Name("cat-pin-check");
     int status = 0;
     static int previous_tx_mode = 0;
     static int previous_G_pins = 0;
@@ -554,6 +555,7 @@ int parse_record(char *receive_buffer, int size) {
     return (status);
 }
 void* Comms_port_thread(void* myparam) {
+    Set_Thread_Name("cat-port");
     //int n = 8192;
     int n = 132;
     char szBuff[8196] = { 0 };
