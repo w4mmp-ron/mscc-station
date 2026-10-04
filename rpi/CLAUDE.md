@@ -109,7 +109,7 @@ Git repo root: `C:\Users\Ron\.grok\worktrees`.
    case or about his three commits in rpi/ + installers/rpi; don't raise them with Stew. Build recipe that works: `git -c core.autocrlf=false checkout-index` of
    mscc-deb/build-deb.sh + packaging, mscc-binaries, mscc-init-files-linux, tty0tty-master/module
    and factory into a temp dir, copy to WSL /tmp, files 644 / dirs 755 / index-755 files 755,
-   run build-deb.sh. Not committed.
+   run build-deb.sh. Committed c3c48a5 (port + 1.0.52), 0882e3f (1.0.53).
    To test: build ms-sdr AND sdrcore-trans on the Pi; log should show `Factory_seed. major=N line=...` and
    `cal bootstrap live→line=...` on first start; WPF Save settings -> `Factory_park. done ... files=3`.
    Then a new mscc .deb (1.0.52) with the new ms-sdr binary.
@@ -125,8 +125,47 @@ Git repo root: `C:\Users\Ron\.grok\worktrees`.
    finds with `pgrep -x ms-sdr` / `pkill -x`. See them with `top -H -p $(pidof ms-sdr)` or
    `ps -T -p $(pidof ms-sdr)`. Syntax-checked + helper run in WSL (names show in `ps -T`).
    **Built on the Pi 2026-10-03 (Ron): `ps -T` shows ms-sdr, libusb_event (libusb's own) and 10
-   named threads; `last-used` is not in the list because its `pthread_create` in main.c (~1228) is commented out: that thread is never started.** Not committed.
+   named threads; `last-used` is not in the list because its `pthread_create` in main.c (~1228) is commented out: that thread is never started.** Committed 67d4260.
    sdrcore-trans / recv threads not named (not asked).
+13. **-12 kHz spectrum spur removed in the DSP (2026-10-04).** `SDRcore-recv-linux/sources/dsputils.c`
+   `framesToComplex`: DC blocker on raw I and Q, `y = x - x_prev + DC_BLOCK_A * y_prev`,
+   `DC_BLOCK_A 0.98f` (-3 dB at ~300 Hz). `panadapter.c`: pixel notch + fill code REMOVED (Ron
+   2026-10-04; old code is in git, b08af65 / ef1d612). **Built on the Pi with the notch switched
+   off, Ron: FT8 on 21.074 OK, "no spike, no discernible dips"; still clean with the full FFT.**
+   The removal itself is syntax-checked only, not built on the Pi yet. Not committed.
+   Why 0.98: 0.9999 (1.5 Hz) was tested first, spur came back with the notch off. Raw I/Q recording
+   (servers stopped, `parec` from the Proficio source, dummy load, 8 s; `sdrcore-recv` holds the
+   device directly, so parec gives 0 bytes while it runs): signal ~1 count rms of 16 bit, DC -0.5
+   count, a comb at 16.08 Hz + harmonics (source unknown), noise rising toward DC, still above the
+   floor ~300 Hz out. Emulated display: hump +27 dB at DC, 0.9999 -> +23, 0.99 -> +5, 0.98 -> ~0.
+   Blanker (`blanker.c`, envelope-relative) not affected; audio / FREQ CAL 12 kHz away.
+   **Spectrum FFT was half empty, fixed 2026-10-04 (Ron OK'd).** Blocks are 2048 frames but
+   `doPanadapter` copied 4096 from `incplx`; the upper 2048 were never written (zeros), so the 4096
+   Hamming was cut off at its peak -> wide skirts on every strong signal (-21 dB at 6 bins vs -43 or
+   better). Now `pan_hist[4096]` in `doPanadapter` keeps the previous block (updated every call,
+   also on the early return). Display only; audio/S-meter/cal use `fastconv`. Expected: levels up
+   (~6 dB signals, ~3 dB noise) -> client dB CAL redo. **Built on the Pi, Ron: "signals look
+   narrower, audio OK".** Not committed. Windows/Ubuntu recv have the same code.
+   2026-10-04 "no signals on the spectrum" after an `mscc.sh stop` / start was a bad server start,
+   fixed by restarting again; not the blocker.
+   Notch removal built on the Pi 2026-10-04, Ron: "spectrum looks the same".
+   Open (Ron to decide): commit; brief for Stew; level shift / dB CAL not reported yet.
+14. **SDRcore-recv-linux cleanup (2026-10-04, Ron: .o files, anything Windows, clutter).** Tree is now
+   Linux only: Makefile, 2 .md, udp_smoke.sh, `sources/` = the 15 built .c + mscc_resampler +
+   `resampler/` + their headers + `portaudio.h` (kept: WSL syntax check falls back on it; the Pi
+   uses /usr/local/include). Deleted (54 tracked files, restorable from git, plus 24 untracked .o):
+   pthreads-win32 `pthread.h`/`sched.h`/`semaphore.h`, `sdrcore-recv.c` (old Windows main),
+   `tonegen-old.c`, `panadapter - Copy.c`, `getwav.c`, `sendwav.c`, `wavfmt.h`, `mfc.h`,
+   `portaudio_stub.c`, `log_msg.c/.h`, all `.bak-*` / `.copy`, `backup-nr/`, unused duplicate
+   `sources/include/`, root `tonegen.c`, empty `core`, x86-64 `sdrcore-recv` binary.
+   Windows branches stripped from built files: `extern.h`, `platform.h`, `platform_linux.c`,
+   `main.c` (My_getenv, host API pick, speaker list), `print-utils.c`, `udp_thread.c` (bad recv =
+   continue), `sdrcore.h` + `dsputils.c` (WIN32 / WINDBG), `_CRT_*` defines, Makefile comment.
+   Kept on purpose: the Linux versions of Windows names in `platform.h` (Sleep, MessageBoxA,
+   SOCKET, WSAStartup...), still used all over. All 15 .c + 9 .cpp syntax-check clean in WSL with
+   the Makefile flags. **Built on the Pi 2026-10-04, Ron: "spectrum and audio OK".** Not committed.
+   SDRcore-trans-linux has the same kind of leftovers (VS project files, `libs/` Windows libs,
+   pthreads-win32 headers, .bak files): only listed, nothing removed (Ron said stop; he meant recv).
 7. Next mscc .deb build picks up the "(package mscc-init)" hint text in mscc-deb postinst /
    build-deb.sh / install-mscc.sh (source only, committed 82b819b). No rebuild just for that.
 
@@ -240,7 +279,7 @@ fixed `FM_PEAK_DEV_HZ` 5000. Never tested on air (as far as known). Plan:
 4. Client: picks 3 or 5 kHz from TX freq vs 29.000 MHz, sends on FM select and on crossing 29.0.
 5. Test (Stew, spectrum analyzer): deviation (Bessel null) at 3 and 5 kHz, occupied BW.
 6. Windows / Ubuntu trans + ms-sdr same. Ron: comment the code heavily.
-Future idea (Ron 2026-09-29: keep in mind, not now): real fix for the -12 kHz spectrum spur =
+DONE 2026-10-04 with a wider blocker (0.98), see Open list 13. Old note: real fix for the -12 kHz spectrum spur =
 DC blocker on raw I/Q. Spur is I/Q DC (ADC offset + LO leakage); `complex_shift` runs
 `doPanadapter` on raw I/Q, then shifts by fixed 12 kHz (`loFreq`), so DC sits at VFO-12k,
 display only (audio never hears it). Add `y = x - x_prev + a*y_prev`, a ~0.9999, on I and Q

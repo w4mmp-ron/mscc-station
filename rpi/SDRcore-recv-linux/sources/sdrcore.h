@@ -19,15 +19,6 @@
 //#define PAN_REFRESH		8		// send a new panadapter buffer every PAN_REFRESH FFT's
 #define PAN_REFRESH		4		// send a new panadapter buffer every PAN_REFRESH FFT's
 
-#ifdef WIN32
-#ifndef TRUE
-#define TRUE			1
-#define FALSE			0
-#endif
-#endif
-
-#define WINDBG			0
-
 /************* Set PERFORMANCELEVEL here. (read below for implications) *******************/
 #define PERFORMANCELEVEL  4
 

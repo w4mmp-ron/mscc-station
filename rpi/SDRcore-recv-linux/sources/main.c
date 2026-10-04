@@ -3,7 +3,6 @@
 #include "remote_phones.h"
 
 
-#define _CRT_SECURE_NO_WARNINGS 1
 #define RON 1
 
 
@@ -83,7 +82,6 @@ char* My_getenv(char* myenv)
 {
     memset(G_l_path, 0, sizeof(G_l_path));
 
-#if defined(__linux__) || defined(__APPLE__)
     {
         const char *home = getenv("HOME");
         (void)myenv;
@@ -94,23 +92,6 @@ char* My_getenv(char* myenv)
 
         snprintf(G_l_path, sizeof(G_l_path), "%s/.local/mscc", home);
     }
-#else
-    // Windows
-    {
-        WCHAR path[MAX_PATH] = { 0 };
-        PWSTR lpPath = path;
-        HRESULT hr = SHGetKnownFolderPath(&FOLDERID_LocalAppData, 0, NULL, &lpPath);
-        (void)myenv;
-
-        if (SUCCEEDED(hr)) {
-            WideCharToMultiByte(CP_ACP, WC_COMPOSITECHECK, lpPath, -1, 
-                                G_l_path, sizeof(G_l_path), NULL, NULL);
-            strcat(G_l_path, "\\MSCC");
-        } else {
-            strcpy(G_l_path, "C:\\Temp\\MSCC");   // fallback
-        }
-    }
-#endif
 
     return G_l_path;
 }
@@ -951,15 +932,9 @@ int main(int argc, char **argv) {
         print_time();
         fprintf(G_fp_logfile, "[%d] main -> Host API %d: %s (devs=%d)\n",
             line_number++, j, lpApiInfo->name, lpApiInfo->deviceCount);
-#if defined(__linux__) || defined(__APPLE__)
         if (apiTypeId == 9999 && strstr(lpApiInfo->name, "ALSA"))
             apiTypeId = j;
-#else
-        if (!strncmp("MME", lpApiInfo->name, 3))
-            apiTypeId = j;
-#endif
     }
-#if defined(__linux__) || defined(__APPLE__)
     if (apiTypeId == 9999) {
         for (j = 0; j < hostApiCount; j++) {
             lpApiInfo = Pa_GetHostApiInfo(j);
@@ -973,7 +948,6 @@ int main(int argc, char **argv) {
     }
     if (apiTypeId == 9999 && hostApiCount > 0)
         apiTypeId = 0;
-#endif
     print_time();
     fprintf(G_fp_logfile, "[%d] main -> Selected hostApi index: %d\n", line_number++, apiTypeId);
 
@@ -1011,18 +985,11 @@ int main(int argc, char **argv) {
                 "[%d] main -> dev %d api=%d in=%d out=%d name='%s'\n",
                 line_number++, j, lpInfo->hostApi, in_ch, out_ch, n);
 
-            /* Speakers: list devices on preferred host API (and all on Linux for matching) */
-#if defined(__linux__) || defined(__APPLE__)
+            /* Speakers: list every output device (all host APIs) for name matching */
             if (out_ch > 0) {
                 build_output_devices((PaDeviceIndex)j);
                 build_digital_output_devices((PaDeviceIndex)j);
             }
-#else
-            if (lpInfo->hostApi == apiTypeId) {
-                build_output_devices((PaDeviceIndex)j);
-                build_digital_output_devices((PaDeviceIndex)j);
-            }
-#endif
             if (in_ch < 1)
                 continue;
 

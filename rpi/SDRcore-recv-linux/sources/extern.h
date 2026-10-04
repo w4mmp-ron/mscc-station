@@ -1,18 +1,6 @@
-#define _CRT_SECURE_NO_WARNINGS 1
 #pragma once
 
-#include "platform.h"
-
-#if !defined(__linux__) && !defined(__APPLE__)
-#pragma comment(lib, "Ws2_32.lib")
-#include <malloc.h>
-/* Vendored Win32 pthreads / local PortAudio header (Windows build) */
-#include "pthread.h"
-#include "semaphore.h"
-#include "sched.h"
-#else
-/* system pthread/semaphore already from platform.h; no vendored Win32 copies */
-#endif
+#include "platform.h" /* system pthread / semaphore / PortAudio come from here */
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -116,11 +104,7 @@ struct output_devices {
 
 extern struct sockaddr_in si_me, si_ms_sdr;
 extern int sdrcore_s, ms_sdr_s, recv_len;
-#if defined(__linux__) || defined(__APPLE__)
 extern socklen_t slen;
-#else
-extern int slen;
-#endif
 
 extern int num_output_devices_found;
 extern int num_digital_output_devices_found;

@@ -1,8 +1,5 @@
 #include "extern.h"
 #include "remote_phones.h"
-#define _CRT_SECURE_NO_WARNINGS 1
-
-#define _WINSOCK_DEPRECATED_NO_WARNINGS 1
 #define BUFLEN 512  //Max length of buffer
 
 #define SERVER "127.0.0.1"
@@ -707,14 +704,8 @@ void *UDP_Thread(void *my_param) {
             fprintf(G_fp_logfile, "[%d] UDP Thread. recvfrom. Error Code : %s (len=%d)\n",
                     line_number++, strerror(errno), recv_len);
             fflush(G_fp_logfile);
-            /* Do not kill whole process on a single bad recv under Linux/NO_USB */
-#if defined(SDRCORE_NO_USB) || defined(__linux__) || defined(__APPLE__)
+            /* Do not kill whole process on a single bad recv */
             continue;
-#else
-            UDP_status = 1;
-            G_all_threads_run = 0;
-            break;
-#endif
         }
         opcode = (uint8_t) buf[0];
         t_opcode_data = (uint8_t) (buf[1]);

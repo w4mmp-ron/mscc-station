@@ -1,8 +1,6 @@
 /*
  * Linux/WSL helpers for sdrcore-recv.
  */
-#if defined(__linux__) || defined(__APPLE__)
-
 #include "platform.h"
 #include <stdio.h>
 #include <string.h>
@@ -27,5 +25,3 @@ int MessageBoxA(void *hwnd, const char *text, const char *caption, unsigned int 
         caption ? caption : "", text ? text : "");
     return 1;
 }
-
-#endif /* __linux__ */
