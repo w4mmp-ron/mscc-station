@@ -132,7 +132,7 @@ Git repo root: `C:\Users\Ron\.grok\worktrees`.
    `DC_BLOCK_A 0.98f` (-3 dB at ~300 Hz). `panadapter.c`: pixel notch + fill code REMOVED (Ron
    2026-10-04; old code is in git, b08af65 / ef1d612). **Built on the Pi with the notch switched
    off, Ron: FT8 on 21.074 OK, "no spike, no discernible dips"; still clean with the full FFT.**
-   The removal itself is syntax-checked only, not built on the Pi yet. Not committed.
+   Committed 8f09661 (pushed), with the full FFT and the cleanup (14).
    Why 0.98: 0.9999 (1.5 Hz) was tested first, spur came back with the notch off. Raw I/Q recording
    (servers stopped, `parec` from the Proficio source, dummy load, 8 s; `sdrcore-recv` holds the
    device directly, so parec gives 0 bytes while it runs): signal ~1 count rms of 16 bit, DC -0.5
@@ -143,13 +143,25 @@ Git repo root: `C:\Users\Ron\.grok\worktrees`.
    `doPanadapter` copied 4096 from `incplx`; the upper 2048 were never written (zeros), so the 4096
    Hamming was cut off at its peak -> wide skirts on every strong signal (-21 dB at 6 bins vs -43 or
    better). Now `pan_hist[4096]` in `doPanadapter` keeps the previous block (updated every call,
-   also on the early return). Display only; audio/S-meter/cal use `fastconv`. Expected: levels up
-   (~6 dB signals, ~3 dB noise) -> client dB CAL redo. **Built on the Pi, Ron: "signals look
-   narrower, audio OK".** Not committed. Windows/Ubuntu recv have the same code.
+   also on the early return). Display only; audio/S-meter/cal use `fastconv`. Expected: FFT
+   magnitude x2 on carriers, x1.41 on noise = about +3 / +1.5 on the client scale (client dB is
+   `Y/150 - 40` = 10*log10(mag), `RawYToDb`), so NOT the 6 / 3 dB first told to Ron -> client dB
+   CAL redo. Not measured yet. **Built on the Pi, Ron: "signals look
+   narrower, audio OK".** In 8f09661. Windows/Ubuntu recv have the same code.
    2026-10-04 "no signals on the spectrum" after an `mscc.sh stop` / start was a bad server start,
    fixed by restarting again; not the blocker.
    Notch removal built on the Pi 2026-10-04, Ron: "spectrum looks the same".
-   Open (Ron to decide): commit; brief for Stew; level shift / dB CAL not reported yet.
+   Open: level shift / dB CAL not measured yet (Ron, or Stew per cmd-064).
+15. **mscc 1.0.54 + brief cmd-064 (2026-10-04).** `mscc_1.0.54_arm64.deb` built in WSL with the
+   usual recipe (LF export of the index): new `sdrcore-recv` (Ron's Pi build 2026-10-04: DC
+   blocker + full FFT, no notch; checked with nm / DWARF) and new `ms-sdr` (thread names, Ron's
+   Pi build 2026-10-03, he had forgotten to copy it for 1.0.52/53); `sdrcore-trans` unchanged.
+   Same 110 files / modes as 1.0.53, only those two binaries differ. In `rpi/mscc-deb/` and
+   `installers/rpi/` (1.0.53 removed there). Not installed on the Pi yet (the Pi runs the same
+   hand-built binaries). Pi recv is still `VERSION_MINOR 141` (Windows/Ubuntu 142, 143 after
+   cmd-064); not bumped, Ron not asked yet.
+   Brief `.mscc-coord/briefs/cmd-064.md` + COMMANDS.yaml entry: Stew ports the DC blocker, the
+   full FFT and the notch removal to Windows + Ubuntu recv (3.143), measures the level shift.
 14. **SDRcore-recv-linux cleanup (2026-10-04, Ron: .o files, anything Windows, clutter).** Tree is now
    Linux only: Makefile, 2 .md, udp_smoke.sh, `sources/` = the 15 built .c + mscc_resampler +
    `resampler/` + their headers + `portaudio.h` (kept: WSL syntax check falls back on it; the Pi
@@ -163,7 +175,7 @@ Git repo root: `C:\Users\Ron\.grok\worktrees`.
    continue), `sdrcore.h` + `dsputils.c` (WIN32 / WINDBG), `_CRT_*` defines, Makefile comment.
    Kept on purpose: the Linux versions of Windows names in `platform.h` (Sleep, MessageBoxA,
    SOCKET, WSAStartup...), still used all over. All 15 .c + 9 .cpp syntax-check clean in WSL with
-   the Makefile flags. **Built on the Pi 2026-10-04, Ron: "spectrum and audio OK".** Not committed.
+   the Makefile flags. **Built on the Pi 2026-10-04, Ron: "spectrum and audio OK".** In 8f09661.
    SDRcore-trans-linux has the same kind of leftovers (VS project files, `libs/` Windows libs,
    pthreads-win32 headers, .bak files): only listed, nothing removed (Ron said stop; he meant recv).
 7. Next mscc .deb build picks up the "(package mscc-init)" hint text in mscc-deb postinst /
