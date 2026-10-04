@@ -81,3 +81,5 @@ proficio-stm32f411-25MHz/tools/*.bin
 # Separate Black Pill repo (sibling clone under worktrees/)
 psoc-replacement-stm32/
 
+*.iobj
+*.ipdb
