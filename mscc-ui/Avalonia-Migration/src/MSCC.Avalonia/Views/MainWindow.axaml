@@ -460,10 +460,6 @@
                     <TextBlock Text="ms" Foreground="#AAA" FontSize="9" VerticalAlignment="Center"/>
                   </StackPanel>
 
-                  <CheckBox Content="PHONES" IsChecked="{Binding CwPhones}"
-                            IsEnabled="{Binding IsConnected}" Foreground="White" FontSize="10"
-                            VerticalAlignment="Center"
-                            ToolTip.Tip="CW sidetone / phones path"/>
                   <CheckBox Content="POTENTIA / QSK" IsChecked="{Binding CwQsk}"
                             IsEnabled="{Binding IsConnected}" Foreground="White" FontSize="10"
                             VerticalAlignment="Center"
