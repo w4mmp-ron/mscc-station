@@ -13,7 +13,7 @@
 
 | command id | state | note |
 |------------|-------|------|
-| cmd-064 | running | Ubuntu linux/SDRcore-recv-linux spectrum spur fix. Copy Pi panadapter.c, port dsputils A/B by hand, VERSION_MINOR 142 to 143. Rides with next kit. No rpi write. No Windows. No pull, no push. |
+| cmd-064 | running | Ubuntu linux/SDRcore-recv-linux spectrum spur fix. Commit ef67816. recv 3.143 in $HOME/mscc. Smoke 1-5 not run (no radio USB). Rides with next kit. No rpi write. No Windows. No pull, no push. |
 | cmd-063 | done | Optional mscc-firmware 1.0.0 all. Commit 54054c1. Load File default /usr/share/mscc/firmware. Eight radios installed. Load File opened at share. Remove-package warning not run. Skipped mscc Suggests. No Keil. No Avalonia/WPF/Core. No Solidus. No pull, no push. |
 | cmd-061 | done | Linux host park/restore + Avalonia Save settings 0x29. Commit 1327cd0. mscc 1.0.49, ui 0.6.71, ms-sdr 3.173. Smoke 1 Save settings park pass. Smoke 2 live unchanged pass. Smoke 3 detect/swap not run (one radio). Smoke 4 same-line restart keep-live pass. No rpi server source. No WPF. No pull, no push. |
 | cmd-060 | done | factory/ in mscc 1.0.48 amd64 and 1.0.51 arm64. Commit 0f92239. Smoke 1-4 pass. Live marker and iq.ini untouched. No postinst seed change. No pull, no push. |
@@ -33,7 +33,7 @@
 
 ### cmd-064
 
-Built locally into $HOME/mscc/sdrcore-recv. VERSION_MINOR 143. panadapter.c copied from Pi (pixel notch gone, TX-monitor blanking kept). dsputils.c DC_BLOCK_A 0.98 + pan_hist[4096]. Rides with next Ubuntu kit. No rpi write. No Windows.
+Commit **ef67816**. Built locally into $HOME/mscc/sdrcore-recv. VERSION_MINOR 143. panadapter.c copied from Pi (pixel notch gone, TX-monitor blanking kept). dsputils.c DC_BLOCK_A 0.98 + pan_hist[4096]. Rides with next Ubuntu kit. No rpi write. No Windows.
 Smoke 1-5 not run: no radio USB (16c0:05dc missing). Level numbers not measured.
 
 ### cmd-063
