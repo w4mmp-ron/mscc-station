@@ -133,6 +133,29 @@ void doPanadapter(sp_cplx *fftbuf, int nframes)
         sp_float mag;
         sp_float fstep = 0.0f;
         sp_float plotframes = 0.0f;
+        /*
+         * Last nfft raw I/Q samples, oldest first. A block is only nfft - filtertaps
+         * (2048) frames, so the FFT needs the previous block too. Before, the upper half
+         * of the FFT input was zeros: the Hamming window was cut off at its peak and every
+         * strong signal got a wide skirt. Updated on every call (also when we return
+         * early) so the two halves always join without a gap.
+         */
+        static sp_cplx pan_hist[4096];
+        int keep;
+
+        if (nframes > mystate.nfft) { // more than one FFT of data: use the newest nfft
+                fftbuf += nframes - mystate.nfft;
+                nframes = mystate.nfft;
+        }
+        keep = mystate.nfft - nframes;
+        for (j = 0; j < keep; j++) {
+                pan_hist[j].real = pan_hist[j + nframes].real;
+                pan_hist[j].imag = pan_hist[j + nframes].imag;
+        }
+        for (j = 0; j < nframes; j++) {
+                pan_hist[keep + j].real = fftbuf[j].real;
+                pan_hist[keep + j].imag = fftbuf[j].imag;
+        }
 
         if (panbuffer.panReady == 1 || G_tx_mode) {
                 return; // UDP code hasn't cleared the previous flag, get out
@@ -143,10 +166,10 @@ void doPanadapter(sp_cplx *fftbuf, int nframes)
                 }
         }
 
-        // Copy stream data into local FFT buffer
+        // Copy the last nfft samples (previous block + this one) into local FFT buffer
         for (j = 0; j < mystate.nfft; j++) {
-                fbuf[j].real = fftbuf[j].real;
-                fbuf[j].imag = fftbuf[j].imag;
+                fbuf[j].real = pan_hist[j].real;
+                fbuf[j].imag = pan_hist[j].imag;
         }
 
         // Window data to reduce spectral leakage in display
@@ -332,10 +355,24 @@ void setFilterOffsets(sp_float filterSetLow, sp_float filterSetHigh)
         mystate.initDSPflag = TRUE;
 }
 
+/*
+ * DC blocker on the raw I/Q: y = x - x_prev + DC_BLOCK_A * y_prev.
+ * I/Q DC plus the low-frequency noise around it (16 Hz comb, noise rising toward DC,
+ * still above the floor ~300 Hz out) shows on the spectrum as the spur at VFO -12 kHz
+ * (doPanadapter runs before the 12 kHz shift). 0.98 at 96 kHz = -3 dB at ~300 Hz
+ * (0.9999 = 1.5 Hz removed only the DC, the spur stayed). Replaces the old pixel
+ * notch + fill in panadapter.c.
+ * Display only: that slice is 12 kHz outside the audio passband.
+ */
+#define DC_BLOCK_A 0.98f
+
 /***** Convert incoming interleaved frames to complex form *****/
 void framesToComplex(sp_float *inframes, sp_cplx *incomplex, sp_cplx *outcomplex, int nframes)
 {
         int i;
+        static sp_float dc_xi = 0.0f, dc_yi = 0.0f; // DC blocker state, I
+        static sp_float dc_xq = 0.0f, dc_yq = 0.0f; // DC blocker state, Q
+        sp_float x;
 
         for (i = 0; i < nframes; i++) {
                 incomplex[i].real = *inframes * mystate.iMult;
@@ -343,6 +380,17 @@ void framesToComplex(sp_float *inframes, sp_cplx *incomplex, sp_cplx *outcomplex
 
                 incomplex[i].imag = *inframes * mystate.qMult;
                 inframes++;
+
+                // DC blocker (see DC_BLOCK_A)
+                x = incomplex[i].real;
+                dc_yi = x - dc_xi + DC_BLOCK_A * dc_yi;
+                dc_xi = x;
+                incomplex[i].real = dc_yi;
+
+                x = incomplex[i].imag;
+                dc_yq = x - dc_xq + DC_BLOCK_A * dc_yq;
+                dc_xq = x;
+                incomplex[i].imag = dc_yq;
 
                 incomplex[i].real += 1.0e-18f;
                 incomplex[i].real -= 1.0e-18f;
