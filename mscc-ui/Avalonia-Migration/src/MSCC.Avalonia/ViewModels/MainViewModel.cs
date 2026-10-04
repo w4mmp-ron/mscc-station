@@ -2936,9 +2936,10 @@ public partial class MainViewModel : ViewModelBase, IDisposable
 
     partial void OnCwPhonesChanged(bool value)
     {
+        // Local sticky only. Do not send CMD_SET_CW_MODE (0x70): on the Pi that
+        // opcode is the USB radio-mode parameter, not a CW phones flag.
+        _ = value;
         ScheduleSaveClientSettings();
-        if (_suppressCwSend || !CanOperate() || _radio == null) return;
-        _ = SendCwAsync(() => _radio.SetCwPhonesAsync(value), $"CW phones {(value ? "on" : "off")}");
     }
 
     // ----- Keyer CQ memory (R = store, P = play) -----
@@ -6976,7 +6977,6 @@ public partial class MainViewModel : ViewModelBase, IDisposable
                 await _radio.SetCwPitchAsync(Math.Clamp(CwPitchIndex, 0, 3)).ConfigureAwait(true);
                 await _radio.SetCwTxHoldAsync(Math.Clamp(CwHold, 1, 500)).ConfigureAwait(true);
                 await _radio.SetCwQskAsync(CwQsk).ConfigureAwait(true);
-                await _radio.SetCwPhonesAsync(CwPhones).ConfigureAwait(true);
             }
             catch (Exception ex) { AppendLog($"CW restore: {ex.Message}"); }
 
