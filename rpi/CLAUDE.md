@@ -182,7 +182,10 @@ Git repo root: `C:\Users\Ron\.grok\worktrees`.
    `ms-sdr-linux/source/user_controls.c` `CMD_GET_SET_PANADAPTER_REFRESH`: was `< 1` -> 6, so index 0
    (800 bins) never reached recv; now only `> 10` -> 6 (0/1/2 = 800/1600/3200, 3-10 = refresh blocks).
    Recv unchanged. Settings load (line ~406) still turns a saved 0 into 6, same as Ubuntu.
-   **Built on the Pi 2026-10-05, Ron: "800 works".** Not in a mscc .deb yet (next one).
+   **Built on the Pi 2026-10-05, Ron: "800 works".** Committed 10d90bf (pushed).
+   **mscc 1.0.55 built 2026-10-05** (WSL, usual recipe): same 110 files / modes as 1.0.54, only
+   `ms-sdr` (Ron's Pi build 2026-10-05) and the control version differ. In `rpi/mscc-deb/` and
+   `installers/rpi/` (1.0.54 removed there). Not installed on the Pi, not committed yet.
 7. Next mscc .deb build picks up the "(package mscc-init)" hint text in mscc-deb postinst /
    build-deb.sh / install-mscc.sh (source only, committed 82b819b). No rebuild just for that.
 
