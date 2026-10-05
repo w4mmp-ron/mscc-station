@@ -185,7 +185,7 @@ Git repo root: `C:\Users\Ron\.grok\worktrees`.
    **Built on the Pi 2026-10-05, Ron: "800 works".** Committed 10d90bf (pushed).
    **mscc 1.0.55 built 2026-10-05** (WSL, usual recipe): same 110 files / modes as 1.0.54, only
    `ms-sdr` (Ron's Pi build 2026-10-05) and the control version differ. In `rpi/mscc-deb/` and
-   `installers/rpi/` (1.0.54 removed there). Not installed on the Pi, not committed yet.
+   `installers/rpi/` (1.0.54 removed there). Committed accd904 (pushed). Not installed on the Pi yet.
 7. Next mscc .deb build picks up the "(package mscc-init)" hint text in mscc-deb postinst /
    build-deb.sh / install-mscc.sh (source only, committed 82b819b). No rebuild just for that.
 
