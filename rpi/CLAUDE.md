@@ -178,6 +178,11 @@ Git repo root: `C:\Users\Ron\.grok\worktrees`.
    the Makefile flags. **Built on the Pi 2026-10-04, Ron: "spectrum and audio OK".** In 8f09661.
    SDRcore-trans-linux has the same kind of leftovers (VS project files, `libs/` Windows libs,
    pthreads-win32 headers, .bak files): only listed, nothing removed (Ron said stop; he meant recv).
+16. **800-bin spectrum fix ported from Ubuntu (2026-10-05, Stew's `.mscc-coord/NOTE-FOR-RON-rpi-pan-800.md`).**
+   `ms-sdr-linux/source/user_controls.c` `CMD_GET_SET_PANADAPTER_REFRESH`: was `< 1` -> 6, so index 0
+   (800 bins) never reached recv; now only `> 10` -> 6 (0/1/2 = 800/1600/3200, 3-10 = refresh blocks).
+   Recv unchanged. Settings load (line ~406) still turns a saved 0 into 6, same as Ubuntu.
+   **Built on the Pi 2026-10-05, Ron: "800 works".** Not in a mscc .deb yet (next one).
 7. Next mscc .deb build picks up the "(package mscc-init)" hint text in mscc-deb postinst /
    build-deb.sh / install-mscc.sh (source only, committed 82b819b). No rebuild just for that.
 
