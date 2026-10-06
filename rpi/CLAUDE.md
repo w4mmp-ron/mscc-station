@@ -37,8 +37,10 @@ Git repo root: `C:\Users\Ron\.grok\worktrees`.
 (`SDRcore-recv-linux/sources/dsputils.c`) built on the Pi, works, committed with the note for
 Stew `.mscc-coord/NOTE-FOR-STEW-SPECTRUM-CARRIER-2026-10-05.md` (client fix WPF + Avalonia,
 server port to Windows / Ubuntu recv). Client cause confirmed by Ron's window-resize test.
-Not in a mscc .deb yet: the next one needs Ron's Pi-built `sdrcore-recv` copied into
-`rpi/mscc-binaries/`. The 14.074 / 14.075 spurs are a rig birdie (Si5351 vs 25 MHz crystal),
+**mscc 1.0.56 built 2026-10-05** (WSL, usual recipe): same 110 files / modes as 1.0.55, only
+`sdrcore-recv` (Ron's Pi build 2026-10-05 16:26, largest bin per display point) and the control
+version differ. In `rpi/mscc-deb/` and `installers/rpi/` (1.0.55 removed there). Not installed
+on the Pi yet (the Pi runs the same hand-built binary). The 14.074 / 14.075 spurs are a rig birdie (Si5351 vs 25 MHz crystal),
 not sdrcore. The rig is on the PSoC daughter board.
 
 1. Test FREQ CAL STOP on the Pi (needs WPF 9.26.5+). Back burner (Ron 2026-09-27).
