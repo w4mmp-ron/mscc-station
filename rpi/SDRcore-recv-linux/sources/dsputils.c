@@ -191,12 +191,26 @@ void doPanadapter(sp_cplx *fftbuf, int nframes)
         fstep = (float) plotframes / (float) pixels;
 
         for (j = 0; j < pixels; j++) {
+                int bend;
+                sp_float m2, best = 0.0f;
+
                 // Guard FFT index (fstep can nudge bpos to nfft)
                 if (bpos < 0) bpos = 0;
                 if (bpos >= mystate.nfft) bpos = mystate.nfft - 1;
 
-                // calculate magnitude of bin
-                mag = sqrt((dbuf[bpos].real * dbuf[bpos].real) + (dbuf[bpos].imag * dbuf[bpos].imag));
+                // Largest bin of ALL the FFT bins this display point covers
+                // (3.84 bins at 800 points, 1.92 at 1600, 1 at 3200). Taking only
+                // the first bin made a steady carrier vanish whenever it sat
+                // between two sampled bins (signal generator test, 2026-10-05).
+                fpos += fstep;
+                bend = (int) fpos;
+                if (bend <= bpos) bend = bpos + 1;
+                if (bend > mystate.nfft) bend = mystate.nfft;
+                for (k = bpos; k < bend; k++) {
+                        m2 = (dbuf[k].real * dbuf[k].real) + (dbuf[k].imag * dbuf[k].imag);
+                        if (m2 > best) best = m2;
+                }
+                mag = sqrt(best);
 
                 // Convert to log display units (avoid log10(0)).
                 // Y = max(0, (10*log10(|FFT|) + BIAS) * 150), then capped by panadapter MAX_Y.
@@ -219,7 +233,6 @@ void doPanadapter(sp_cplx *fftbuf, int nframes)
                         panbuffer.Y[j] = isamp;
                 } else if (panbuffer.Y[j] > 1) panbuffer.Y[j] *= 0.95f;
 
-                fpos += fstep;
                 bpos = (int) fpos;
         }
 

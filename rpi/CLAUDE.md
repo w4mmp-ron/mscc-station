@@ -29,6 +29,18 @@ Git repo root: `C:\Users\Ron\.grok\worktrees`.
 
 ## Open list (Ron, updated 2026-09-29) - read first on resume
 
+- **Commits (Ron, 2026-10-05): too many commits and pushes.** Finish everything that belongs
+  to a piece of work first (code, notes, note for Stew), then ONE commit and one push. No
+  follow-up "notes: committed xyz" commits.
+
+**Resume point 2026-10-05 (end):** item 17 (spectrum drops carriers). Server half
+(`SDRcore-recv-linux/sources/dsputils.c`) built on the Pi, works, committed with the note for
+Stew `.mscc-coord/NOTE-FOR-STEW-SPECTRUM-CARRIER-2026-10-05.md` (client fix WPF + Avalonia,
+server port to Windows / Ubuntu recv). Client cause confirmed by Ron's window-resize test.
+Not in a mscc .deb yet: the next one needs Ron's Pi-built `sdrcore-recv` copied into
+`rpi/mscc-binaries/`. The 14.074 / 14.075 spurs are a rig birdie (Si5351 vs 25 MHz crystal),
+not sdrcore. The rig is on the PSoC daughter board.
+
 1. Test FREQ CAL STOP on the Pi (needs WPF 9.26.5+). Back burner (Ron 2026-09-27).
 2. cmd-046: TUNE power separate (Windows/Ubuntu trans + WPF). With Stew; no Pi change.
 3. RF check of remote TX audio (Stew, spectrum analyzer).
@@ -186,6 +198,69 @@ Git repo root: `C:\Users\Ron\.grok\worktrees`.
    **mscc 1.0.55 built 2026-10-05** (WSL, usual recipe): same 110 files / modes as 1.0.54, only
    `ms-sdr` (Ron's Pi build 2026-10-05) and the control version differ. In `rpi/mscc-deb/` and
    `installers/rpi/` (1.0.54 removed there). Committed accd904 (pushed). Not installed on the Pi yet.
+17. **Spectrum: a steady carrier vanishes at some dial settings (Ron, 2026-10-05, video
+   `Video_2026-10-05_160243.wmv`, Pi host, 800 bins, generator carrier ~14.067212, dummy load).**
+   Seen: carrier strong at VFO 14.066 / .071 / .073 / .074 / .076, weak at .067 / .069, gone at
+   14.070 and 14.064 (only its noise pedestal left), steady for 20 s, so not a tuning transient.
+   **Cause found in the code, not yet proven by a test:** `doPanadapter` (`dsputils.c`) takes ONE
+   FFT bin per display point: `fstep = (nfft - 1024) / pixels` = 3.84 bins per point at 800,
+   `bpos = (int)fpos`, the bins in between are never looked at. A carrier is about 4 bins wide
+   (Hamming), so it can sit between two sampled bins. Python model of that loop: up to 49 dB
+   loss at 800, up to 7 dB at 1600, none at 3200; it gives "gone" at 14.070 but does not match
+   every setting (it is sensitive to about 10 Hz of carrier frequency). Visible only since the
+   full-FFT fix of 2026-10-04 (item 13): the half-empty FFT gave skirts wide enough to hide it.
+   **Second video (`Video_2026-10-05_161614.wmv`: pass 1 at 3200, pass 2 at 800): the carrier
+   also vanishes at 3200** (gone at 14.046, .049, .064, .070, weak at .054, .057, .059, .067),
+   so the 3200 prediction above was wrong as stated. What holds in both passes: every "gone"
+   setting puts the carrier at 212 Hz above a multiple of 3 kHz from the LO point (39.2, 33.2,
+   30.2, 15.2, 12.2, 9.2 kHz), and 3 kHz is exactly 128 FFT bins (96000 / 4096 = 23.4375 Hz),
+   so there the carrier sits dead centre on a bin = its narrowest (3 bins). Only the FFT grid
+   knows about 3 kHz, so it is still a sampling artifact, not the radio. Reading: at 800 the
+   server skips bins; at 3200 the server sends every bin, so the skipping must then be in the
+   CLIENT (2400 points drawn across about 676 pixels, apparently one point per pixel, no max).
+   **Confirmed in the WPF source** (`MSCC.Wpf/Controls/SpectrumDisplayControl.xaml.cs`, draw
+   loop about line 725): one data point per screen pixel, `idx = (int)(dataFrac * (data.Length
+   - 1))`, `data[idx]` only, no max over the points in between. Fix therefore has two halves: server (max over the bins of a
+   point) and WPF / Avalonia client (max over the points of a pixel; Stew).
+   **Server half made 2026-10-05, NOT built on the Pi yet, not committed:** `dsputils.c`
+   `doPanadapter` now takes the largest of all the bins a display point covers (3.84 at 800,
+   1.92 at 1600, 1 at 3200). WSL syntax check clean. Python model of old vs new loop, 350
+   random carriers in the displayed span: old at 800 = 132 of them down more than 10 dB (worst
+   -76), new = none down at all, at every resolution. Side effect to expect: at 800 / 1600 the
+   noise floor reads a little higher (largest of several noise bins), so the level differs
+   slightly between resolutions; not measured. Client half (Stew) not done, so 3200 still drops
+   carriers until the client is fixed.
+   **Built on the Pi 2026-10-05, Ron's video `signal.wmv` (800 bins): carrier now shows at
+   14.046, .049, .064, .067, .070 (all gone before). Still lost at 14.040.** Reason worked out,
+   not tested: the 800 points are the 72 kHz on screen (bins 1024-4095), and the client draws
+   them across about 676 pixels with one point per pixel, so about 124 of the 800 points are
+   never drawn (roughly every 6th). At 14.040 the carrier is at point 702, and for a 676 pixel
+   wide plot point 702 is one of the skipped ones (pixel 593 -> point 701, pixel 594 -> 703).
+   Which points are skipped depends on the window width, so resizing the window should bring it
+   back. **Tested by Ron 2026-10-05 (PSoC board, 800 bins, VFO 14.040): resizing the client
+   window makes the carrier come and go = the client cause is confirmed.** Client fix (Stew) is the real cure; a server-side workaround would be to spread each
+   point's maximum into its neighbours. Also: `doPanadapter`'s shuffle never uses FFT bin 0 (DC)
+   and uses bin nfft/2 twice; harmless, noted only.
+   Old test idea: PAN resolution 3200, carrier must show at 14.070 and 14.064. Proposed fix (not made):
+   per display point take the largest magnitude of all the bins it covers. Windows / Ubuntu recv
+   have the same loop (Stew). Still unexplained in the same video: two spurs 16 kHz either side
+   of the LO point at VFO 14.074 / 14.075 only (one just right of the passband).
+   **Spur pair explained, by fit, not yet proven (Ron's video `spurs-800.wmv`, 2026-10-05, rig
+   back on the PSoC board, FW 3.232, 800 bins, 1 kHz steps 14.040 -> 14.079).** So it is NOT the
+   pill. Measured from the LO point (VFO - 12 kHz): VFO 14.073 one spur at +47.25 kHz; 14.074 a
+   pair at -15.4 / +15.2; 14.075 a pair at -16.8 / +16.6; 14.076 one at +47.25; none at any
+   other setting. Level -105 to -108, about the same as the carrier (-104). All four fit one
+   line: spur = 32 x (VFO - 14.074478 MHz), shown only while under 48 kHz (above that the codec
+   filters it out), i.e. VFO within about 1.5 kHz of 14.0745. Zero beat is LO = 14.0625 MHz =
+   25 MHz x 9/16: the Si5351 output there (4 x LO, `si5351a.c`) is 56.25 MHz = 9/4 of its 25 MHz
+   crystal, and 8 x 56.25 = 18 x 25 = 450 MHz. So a synthesizer / crystal harmonic beat (birdie),
+   32 kHz of movement per 1 kHz of dial. The pair is symmetric about the LO point = a real
+   (not quadrature) signal in the I/Q, so it does not come in as RF through the mixer. The pill
+   video's 16.0 kHz at 14.074 fits too. **Ron, 2026-10-05: generator off at 14.074, the spurs
+   are still there = made in the rig, not a product of the test signal.** Not a display or
+   server fault; nothing to fix in sdrcore. Predictions to test: stays with the generator off; in
+   100 Hz steps it moves 3.2 kHz per step and crosses the LO point near 14.0745; same kind of
+   birdie on other bands where LO x 16 = 25 MHz x n.
 7. Next mscc .deb build picks up the "(package mscc-init)" hint text in mscc-deb postinst /
    build-deb.sh / install-mscc.sh (source only, committed 82b819b). No rebuild just for that.
 
