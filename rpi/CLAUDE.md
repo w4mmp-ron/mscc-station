@@ -263,6 +263,34 @@ not sdrcore. The rig is on the PSoC daughter board.
    server fault; nothing to fix in sdrcore. Predictions to test: stays with the generator off; in
    100 Hz steps it moves 3.2 kHz per step and crosses the LO point near 14.0745; same kind of
    birdie on other bands where LO x 16 = 25 MHz x n.
+   **Third video (`more-spurs.wmv`, 2026-10-05, PSoC board, 3200, CW mode, 100 Hz steps
+   14.060 -> 14.086, generator about 20 dB stronger, plot 745 pixels wide): "spurs coming and
+   going" = four different things, measured against the carrier's position in every frame.**
+   (a) Mirror image of the carrier about the LO point (carrier + image = constant in all 11
+   samples), about 22 dB under the carrier: receive I/Q balance, real. (b) A copy of the carrier
+   24.2 kHz above it (constant in 12 samples; 24.0 = a quarter of the 96 kHz sample rate, within
+   the scale error), about 25 dB under: cause NOT known (generator sideband or something with a
+   4-sample period in the I/Q stream). (c) The 14.0745 birdie racing across between VFO 14.0737
+   and 14.0756, 32 kHz per kHz as predicted; in CW its zero beat is at VFO 14.0751 (LO point is
+   VFO - 12.6 kHz in CW). (d) The coming and going itself: 2400 points on 745 pixels, the client
+   draws 1 point in 3, so every narrow line (and the carrier: it reads anywhere from -87 to
+   -109) flickers as it moves = the client fault in the note for Stew. Also two weak fixed lines
+   at 7.0 and 12.0 kHz below the LO point (-113), not looked into.
+18. **Rig spurs: separate line of investigation (Ron, 2026-10-05). Parked, nothing to fix in
+   sdrcore.** All real signals in the I/Q, seen on the PSoC board (FW 3.232); measurements and
+   videos are under item 17. Not the spectrum display fault (that one is item 17, client side).
+   - **Birdie at VFO 14.0745** (14.0751 in CW): Si5351 (4 x LO = 56.25 MHz) against its 25 MHz
+     crystal, 32 kHz per kHz of dial, stays with the generator off. Hardware (Stew). Open: how
+     it gets into the audio; the list of other bands / frequencies (16 x LO = 25 MHz x n).
+   - **Carrier image about the LO point, only about 22 dB down.** Open: is RX IQ calibrated on
+     this rig / band; level read off a flickering display, so re-measure once the client draws
+     every point.
+   - **Copy of the carrier 24 kHz above it, about 25 dB down.** Open: generator sideband or a
+     4-sample pattern in the I/Q stream. Test not run: strong on-air carrier (WWV), generator
+     off, look 24 kHz above it. Also not known: same on the pill?
+   - **Two weak fixed lines 7.0 and 12.0 kHz below the LO point** (-113). Not looked into.
+   - Pill-only, in the blackpill notes: the moving spur at VFO 14.048-14.061 (7 x LO against
+     4 x MCLK).
 7. Next mscc .deb build picks up the "(package mscc-init)" hint text in mscc-deb postinst /
    build-deb.sh / install-mscc.sh (source only, committed 82b819b). No rebuild just for that.
 
