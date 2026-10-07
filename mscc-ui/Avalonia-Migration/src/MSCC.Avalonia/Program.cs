@@ -16,6 +16,7 @@ sealed class Program
     public static AppBuilder BuildAvaloniaApp()
         => AppBuilder.Configure<App>()
             .UsePlatformDetect()
+            .With(new X11PlatformOptions { WmClass = "mscc-ui" })
 #if DEBUG
             .WithDeveloperTools()
 #endif

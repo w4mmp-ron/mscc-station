@@ -4,13 +4,23 @@ Currently shipped in this folder:
 
 | Package | Version |
 |---------|---------|
-| `mscc` (servers) | 1.0.49 |
-| `mscc-ui` (Avalonia client) | 0.6.71 |
+| `mscc` (servers) | 1.0.50 |
+| `mscc-ui` (Avalonia client) | 0.6.72 |
 | `mscc-firmware` (optional radio firmware files) | 1.0.0 |
 | `mscc-init-gui` | 1.0.13 (unchanged this period) |
 | `mscc-portaudio` | 19.8.2 (unchanged this period) |
 
-## mscc 1.0.49 / mscc-ui 0.6.71 — 2026-10-02
+## mscc 1.0.50 / mscc-ui 0.6.72 — 2026-10-07
+
+### Fixed
+- Receiver DC blocker (spur about 12 kHz below the VFO) and full-block spectrum FFT.
+- SPECTRUM RESOLUTION 800 now reaches the receiver.
+- MSCC UI dock icon shows as running on the pinned icon (no extra gear icon); the window shows the MSCC icon.
+
+### Removed
+- CW tab **PHONES** checkbox (amd64).
+
+## mscc 1.0.49 / mscc-ui 0.6.71 — 2026-10-02 (superseded)
 
 ### Added
 - **Save settings** in MSCC UI saves the live TX IQ, QRP and amplifier calibration for the connected radio on the server, filed per radio line (`~/.local/mscc/cal/<line>/`). Frequency (PPM) calibration is not part of this.
@@ -32,9 +42,6 @@ Currently shipped in this folder:
 - Remote audio: switching between Phones and Digital, or turning Remote on with Digital selected, no longer crashes the audio stream.
 
 ## Not yet in an installer / upcoming
-- Receiver DC blocker (removes the spur about 12 kHz below the VFO) and full-block spectrum FFT — built in the sources (recv 3.143), waits for the next `mscc` package.
-- 800-bin spectrum resolution fix (800 was not reaching the receiver) — in the sources after 1.0.49, waits for the next `mscc` package.
-- CW tab **PHONES** checkbox removal — done for the Pi build of mscc-ui; the amd64 `mscc-ui_0.6.71` in this folder was built before that change and still shows it.
 - Spectrum "strongest bin per display point" (done on the Pi, not yet ported).
 
 Earlier changes: see git history.

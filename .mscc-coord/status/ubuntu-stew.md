@@ -4,15 +4,16 @@
 |--|--|
 | **Host** | stew-HP-Notebook |
 | **Checkout** | `/home/stew/Documents/GitHub/mscc-station` |
-| **Build** | cmd-064 |
-| **Last command id** | cmd-064 |
-| **State** | running |
-| **Updated** | 2026-10-04 |
+| **Build** | cmd-065 |
+| **Last command id** | cmd-065 |
+| **State** | done |
+| **Updated** | 2026-10-07 |
 
 ## ACK log
 
 | command id | state | note |
 |------------|-------|------|
+| cmd-065 | done | Ubuntu mscc-ui 0.6.72 dock icon + mscc 1.0.50 (recv 3.143, ms-sdr 3.176). Stew: installed, dock icon works. No rpi. No Solidus. No pull, no push. |
 | cmd-064 | running | Ubuntu linux/SDRcore-recv-linux spectrum spur fix. Commit ef67816. recv 3.143 in $HOME/mscc. Smoke 1-5 not run (no radio USB). Rides with next kit. No rpi write. No Windows. No pull, no push. |
 | cmd-063 | done | Optional mscc-firmware 1.0.0 all. Commit 54054c1. Load File default /usr/share/mscc/firmware. Eight radios installed. Load File opened at share. Remove-package warning not run. Skipped mscc Suggests. No Keil. No Avalonia/WPF/Core. No Solidus. No pull, no push. |
 | cmd-061 | done | Linux host park/restore + Avalonia Save settings 0x29. Commit 1327cd0. mscc 1.0.49, ui 0.6.71, ms-sdr 3.173. Smoke 1 Save settings park pass. Smoke 2 live unchanged pass. Smoke 3 detect/swap not run (one radio). Smoke 4 same-line restart keep-live pass. No rpi server source. No WPF. No pull, no push. |
@@ -30,6 +31,10 @@
 | cmd-032 | done | mscc_1.0.44_amd64.deb with remote_mic stream reset |
 
 ## Notes
+
+### cmd-065
+
+Debs: `installers/linux/mscc_1.0.50_amd64.deb`, `installers/linux/mscc-ui_0.6.72_amd64.deb`. recv 3.143, ms-sdr 3.176. Dock StartupWMClass and WmClass mscc-ui. Stew: installed and dock icon works. No rpi. No Solidus.
 
 ### cmd-064
 

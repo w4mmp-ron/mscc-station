@@ -8,7 +8,7 @@
         d:DesignWidth="1280" d:DesignHeight="720"
         x:Class="MSCC.Avalonia.Views.MainWindow"
         x:DataType="vm:MainViewModel"
-        Icon="/Assets/avalonia-logo.ico"
+        Icon="/Assets/mscc-ui.png"
         Title="{Binding WindowTitle}"
         Width="1280" Height="720"
         MinWidth="1024" MinHeight="600"

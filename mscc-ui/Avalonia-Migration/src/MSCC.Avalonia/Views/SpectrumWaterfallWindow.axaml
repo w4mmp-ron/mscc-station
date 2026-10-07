@@ -12,7 +12,7 @@
         WindowStartupLocation="CenterOwner"
         Background="{DynamicResource UiWindowBackgroundBrush}"
         Foreground="White"
-        Icon="/Assets/avalonia-logo.ico">
+        Icon="/Assets/mscc-ui.png">
 
   <Design.DataContext>
     <vm:SpectrumWaterfallViewModel />

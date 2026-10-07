@@ -9,3 +9,4 @@ Terminal=false
 Categories=X-MSCC;
 Keywords=MSCC;SDR;Proficio;Multus;Avalonia;radio;
 StartupNotify=true
+StartupWMClass=mscc-ui
