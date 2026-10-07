@@ -227,10 +227,10 @@ Included in the **`mscc`** package — no separate `.deb`.
 1. Power off radio → install **BOOT** jumper → power on → Morse **LOADER** / USB `04b4:b71d`.  
 2. **Stop** MSCC servers.  
 3. Pi menu **MSCC → Firmware Upload** (`bootloader-gui`) or CLI `bootloader /path/to/file.cyacd`.  
-4. Use the correct radio’s `.cyacd` from `radio-psoc-firmware/release/<RadioName>/` (Proficio, Geminus, Ultimus).  
+4. Use the correct tree’s `.cyacd` (Proficio under `Proficio-firmware/Release-*`, Geminus under `Release-Geminus-*`).  
 5. Power off → **remove BOOT jumper** → power on → Proficio `16c0:05dc`.
 
-Details: `radio-psoc-firmware/Proficio-Legacy/STEW-FIRMWARE-UPDATE.md` (same procedure for MKII trees).
+Details: `Proficio-firmware/Release-Proficio-Legacy/STEW-FIRMWARE-UPDATE.md` (same procedure for MKII trees).
 
 ---
 
@@ -275,7 +275,7 @@ Update the version table at the top of this file when you change the kit.
 | Avalonia UI + build script | `mscc-ui/Avalonia-Migration/` |
 | Windows WPF | `mscc-ui/windows-work-tree/` |
 | Remote phones app | `mscc-remote-audio/` |
-| Radio `.cyacd` | `radio-psoc-firmware/release/<RadioName>/` |
+| Radio `.cyacd` | `Proficio-firmware/Release-*`, `Release-Geminus-*` |
 | Ubuntu laptop (not this kit) | `linux/`, `INSTALL-UBUNTU.md` |
 
 ---
