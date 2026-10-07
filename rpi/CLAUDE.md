@@ -43,6 +43,23 @@ version differ. In `rpi/mscc-deb/` and `installers/rpi/` (1.0.55 removed there).
 on the Pi yet (the Pi runs the same hand-built binary). The 14.074 / 14.075 spurs are a rig birdie (Si5351 vs 25 MHz crystal),
 not sdrcore. The rig is on the PSoC daughter board.
 
+**2026-10-07: the Pi crashed, Ron booted his backup SD card** and installed `mscc_1.0.56_arm64.deb`
++ `mscc-init_1.0.18_all.deb` on it; servers run (Ron). So the Pi now runs the packaged 1.0.56
+binaries, not hand-built ones. A restored backup can carry old packages: this one had
+`mscc-init-gui` older than 1.0.15, whose `/usr/bin/mscc-volume-restore` set VirtualA 82% /
+VirtualB 86% at every `mscc start` from `~/.local/mscc/volume-levels.conf`. mscc-init 1.0.18
+removed the tool, but `mscc-virtual-audio.sh` has a shell fallback that reads that file itself
+when the sinks are created, so the file had to go too (Ron deleted it). Without it: 100%.
+**Tailscale (2026-10-07):** Stew's client reached the Pi over Tailscale: control, CAT and
+spectrum work, receive audio does not (Remote Phones and R-Digital; transmit not reported).
+Pi side is right: recv log shows `HOST → 100.113.54.105`, `CTRL enable=1`, no sendto errors.
+Suspected, not proven: Windows Firewall on Stew's PC (inbound UDP 9100 on the Tailscale
+adapter). Stew is looking at his end; Ron wants no changes until he reports. Check on the Pi:
+`sudo tcpdump -ni tailscale0 udp port 9100 or udp port 9101`. Found while reading the code:
+recv keeps sending (and keeps the local phones muted) until it gets `CTRL enable=0` or a
+restart; nothing notices a client that vanished. Multi-client: ms-sdr is single-session by
+design (`Session_Reject`); Ron only asked about the effort, nothing planned.
+
 1. Test FREQ CAL STOP on the Pi (needs WPF 9.26.5+). Back burner (Ron 2026-09-27).
 2. cmd-046: TUNE power separate (Windows/Ubuntu trans + WPF). With Stew; no Pi change.
 3. RF check of remote TX audio (Stew, spectrum analyzer).
