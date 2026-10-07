@@ -62,6 +62,19 @@ design (`Session_Reject`); Ron only asked about the effort, nothing planned.
 Tailscale is not on the backup card image: Ron reinstalled it 2026-10-07 (`curl -fsSL
 https://tailscale.com/install.sh | sh`, `sudo tailscale up`) and sent Stew the new link, so
 the Pi is a new Tailscale device (address may differ from the one Stew used before).
+**SD cards that stop booting (2026-10-07, second or third card).** Proven on the Pi: the
+Raspberry Pi SD Card Copier leaves `/boot/firmware` (`mmcblk0p1`) UNMOUNTED when it finishes
+(`findmnt /boot/firmware` empty, folder looks empty); after a reboot it is mounted again.
+Suspected cause of the dead cards, not proven: `apt full-upgrade` run in that state puts the
+new kernel in the empty folder on the root partition, the real boot partition keeps the old
+one, next boot fails. Rule: after the copier, reboot (or `sudo mount /boot/firmware`) and
+check `findmnt /boot/firmware` before any `apt upgrade`. Also: the copy has the same
+PARTUUIDs (21382c14) as the SD card, so never boot with both plugged in. Power check
+`vcgencmd get_throttled` was 0x0 (short uptime). The failed card is kept, not examined yet.
+Same day on the backup card: a `full-upgrade` had stopped half way with the folder empty;
+after the reboot `sudo dpkg --configure -a` copied kernel 6.18.50+rpt to `/boot/firmware`,
+`full-upgrade` finished without errors, Ron: "back in business". The card copy made before
+that holds the half-finished upgrade; Ron was told to make a new one.
 
 1. Test FREQ CAL STOP on the Pi (needs WPF 9.26.5+). Back burner (Ron 2026-09-27).
 2. cmd-046: TUNE power separate (Windows/Ubuntu trans + WPF). With Stew; no Pi change.
