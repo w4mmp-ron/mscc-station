@@ -293,6 +293,9 @@ not sdrcore. The rig is on the PSoC daughter board.
      12 kHz LO offset by about 3 kHz inside the +/-1.5 kHz windows (ms-sdr, recv, trans, client
      scale, all platforms; not designed, nothing changed); hardware. Note for Stew written:
      `.mscc-coord/NOTE-FOR-STEW-SI5351-BIRDIE-2026-10-06.md`.
+     Ron's idea for new rigs: a different TCXO (part swap + crystal value in firmware). Table
+     of in-band birdie points per reference added to the note (calculated only): 26 MHz best
+     (21.137, 28.450, 29.262 only); 27 MHz bad (10.137 = 30 m FT8).
    - **Carrier image about the LO point, only about 22 dB down.** Open: is RX IQ calibrated on
      this rig / band; level read off a flickering display, so re-measure once the client draws
      every point.

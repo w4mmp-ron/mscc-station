@@ -63,6 +63,27 @@ Not known: how it gets into the audio, and whether your boards and the other rad
    / codec side, or a crystal frequency that puts the birdie points outside the ham bands.
    New or reworked boards only.
 
+## Option 3 in numbers — a different reference for new rigs (Ron's suggestion)
+
+Ron: a different TCXO is only a part swap plus the crystal value in the firmware, so it
+could go into new rigs. Where the same birdie (32 x LO = reference x k) would land, USB
+dial, inside the ham bands:
+
+| Reference | In-band birdie points (dial, MHz) |
+|---|---|
+| 25 MHz (now) | 3.918, 7.043, 14.0745, 21.106, 28.137, 28.918, 29.700 |
+| 26 MHz | 21.137, 28.450, 29.262 |
+| 27 MHz | 10.137, 21.106, 28.700, 29.543 |
+| 27.12 MHz | 21.200, 28.827, 29.675 |
+| 24 MHz | 3.762, 14.262, 21.012, 28.512, 29.262 |
+
+27 MHz puts one on 10.137, next to 30 m FT8 (10.136). 26 MHz looks best: nothing on 160 m
+through 17 m, and its 15 m and 10 m points are away from the FT8 frequencies.
+
+Limits: calculated, not measured. It covers only the one birdie family seen so far; other
+harmonic combinations may exist. It assumes the LO is 12 kHz below the dial (LSB and CW not
+checked). Whether the Si5351 on this board is happy at 26 MHz is your call.
+
 ## Asked of you
 
 - Do you see the pair on your radios at dial 14.074 USB (dummy load is fine)?
