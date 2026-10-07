@@ -296,6 +296,9 @@ not sdrcore. The rig is on the PSoC daughter board.
      Ron's idea for new rigs: a different TCXO (part swap + crystal value in firmware). Table
      of in-band birdie points per reference added to the note (calculated only): 26 MHz best
      (21.137, 28.450, 29.262 only); 27 MHz bad (10.137 = 30 m FT8).
+     Drive level: firmware runs CLK0 at 8 mA, the maximum (`si5351a.c:203` `0x4F`; the 2 mA in
+     `si5351.c:267` is overwritten at the first tune). Ron's idea: new opcode + `mscc.ini` key
+     to set it, no client change. **Plan only, nothing changed. Ron's name for the plan: "si5351-drive" = `rpi/si5351-drive.md`.**
    - **Carrier image about the LO point, only about 22 dB down.** Open: is RX IQ calibrated on
      this rig / band; level read off a flickering display, so re-measure once the client draws
      every point.
