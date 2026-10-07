@@ -1,0 +1,72 @@
+# For Stew — birdie pair on the spectrum (Si5351 against its 25 MHz crystal)
+
+From Ron, 2026-10-06. Seen on Ron's Proficio MKII PTT, PSoC board, FW 3.232, Pi host,
+WPF 10.4.0. It is made in the rig: it is there with the signal generator off and a dummy
+load on the antenna. It is not a display or server fault. Ron would like your view on what
+to do about it; three options are at the end.
+
+## What Ron sees
+
+On 20 m, with the dial within about 1.5 kHz of 14.0745 USB, two steady lines appear on the
+spectrum, the same distance either side of the LO point (dial - 12 kHz), about 10 dB above
+the noise floor (around -110 on the client scale). Nowhere else on 20 m.
+
+Measured from Ron's screen recordings (1 kHz and 100 Hz dial steps):
+
+| Dial (USB) | Lines, from the LO point |
+|---|---|
+| 14.073 | one, +47.25 kHz |
+| 14.074 | pair, -15.3 / +15.3 kHz |
+| 14.075 | pair, -16.8 / +16.6 kHz |
+| 14.076 | one, +47.25 kHz |
+
+All of them fit one line: **offset = 32 x (dial - 14.074478 MHz)**, shown only while it is
+under 48 kHz. So the lines move 32 kHz for every 1 kHz of dial. In CW the zero beat is at
+dial 14.0751 (the LO point is 12.6 kHz below the dial there).
+
+At dial 14.074 (20 m FT8) the upper line is at 14.0773. With Hi at 4.0 kHz that is inside
+the receive passband: a steady tone at about 3.3 kHz audio.
+
+## What it looks like (by fit, not measured on the board)
+
+- Zero beat is at LO = 14.0625 MHz = 25 MHz x 9/16. The Si5351 output there (4 x LO) is
+  56.25 MHz, and 8 x 56.25 = 18 x 25 = 450 MHz. So a harmonic of the Si5351 output meets a
+  harmonic of its 25 MHz crystal. The slope of 32 (8 x 4) agrees with that.
+- The pair is symmetric about the LO point. That means a real signal, the same in I and Q,
+  not a quadrature one. So it does not come in as RF through the mixer; it gets into the
+  audio / codec side after it.
+- The general rule would be 32 x LO = 25 MHz x k, LO = 0.78125 MHz x k. USB dial settings
+  inside ham bands (LO + 12 kHz):
+
+| Band | Dial (USB) | k |
+|---|---|---|
+| 40 m | 7.04325 | 9 |
+| 20 m | 14.0745 | 18 |
+| 15 m | 21.10575 | 27 |
+| 10 m | 28.137, 28.918, 29.6995 | 36, 37, 38 |
+
+- **Tested by Ron 2026-10-06: 40 m USB, dial 7.043, the pair is there too.** Position not
+  measured. The 15 m and 10 m settings are not tested.
+
+Not known: how it gets into the audio, and whether your boards and the other radios show it.
+
+## Options
+
+1. **Work around it, no changes.** On 20 m FT8 set Hi to 3.0 kHz; the 3.3 kHz tone is then
+   outside the filter. The line stays on the spectrum.
+2. **Software.** The lines only show while the LO is within about 1.5 kHz of a birdie
+   point. Today the LO is always dial - 12 kHz. If that offset were moved by about 3 kHz
+   whenever the LO would land in such a window, the beat would be above 48 kHz and the codec
+   would filter it out. It touches ms-sdr, sdrcore-recv, sdrcore-trans and the client's
+   spectrum scale, on the Pi, Windows and Ubuntu. Not worked out in detail, nothing changed.
+3. **Hardware.** Decoupling, layout or shielding between the Si5351 / crystal and the audio
+   / codec side, or a crystal frequency that puts the birdie points outside the ham bands.
+   New or reworked boards only.
+
+## Asked of you
+
+- Do you see the pair on your radios at dial 14.074 USB (dummy load is fine)?
+- Which of the three do you think is right, and do you know where it gets in?
+
+Also seen, weaker and not looked into: fixed lines about 7.0, 4.0 and 1 kHz below the LO
+point and one about 29.4 kHz above it (dial 14.074, same recording).

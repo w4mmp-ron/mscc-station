@@ -282,6 +282,17 @@ not sdrcore. The rig is on the PSoC daughter board.
    - **Birdie at VFO 14.0745** (14.0751 in CW): Si5351 (4 x LO = 56.25 MHz) against its 25 MHz
      crystal, 32 kHz per kHz of dial, stays with the generator off. Hardware (Stew). Open: how
      it gets into the audio; the list of other bands / frequencies (16 x LO = 25 MHz x n).
+     **2026-10-06 video `Video_2026-10-06_215238.wmv` (generator off, dummy load, PSoC board,
+     VFO 14.074 USB): pair at 15.27 kHz either side of the LO point, steady, about 10 dB over the
+     noise = not off air, not the generator.** The upper one (14.0773) is inside the passband
+     with Hi 4.0 kHz = a tone at about 3.3 kHz audio on 20 m FT8. Prediction not tested: the
+     slope of 32 means 32 x LO = 25 MHz x k, so LO = 0.78125 MHz x k; in-band USB dial settings
+     (LO + 12 kHz): 7.04325 (k 9), 21.10575 (k 27), 28.137 (k 36), 28.918 (k 37), 29.6995 (k 38).
+     **Ron 2026-10-06: 40 m USB dial 7.043, the pair is there too** (position not measured;
+     15 m / 10 m not tested). Options given to Ron: Hi 3.0 kHz workaround; software = move the
+     12 kHz LO offset by about 3 kHz inside the +/-1.5 kHz windows (ms-sdr, recv, trans, client
+     scale, all platforms; not designed, nothing changed); hardware. Note for Stew written:
+     `.mscc-coord/NOTE-FOR-STEW-SI5351-BIRDIE-2026-10-06.md`.
    - **Carrier image about the LO point, only about 22 dB down.** Open: is RX IQ calibrated on
      this rig / band; level read off a flickering display, so re-measure once the client draws
      every point.
