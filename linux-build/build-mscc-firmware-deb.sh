@@ -1,9 +1,11 @@
 #!/usr/bin/env bash
 # Package prebuilt PSoC application firmware as mscc-firmware_*_all.deb.
-# Source: radio-psoc-firmware/release/<RadioName>/*.cyacd and *.hex
+# Source: radio-psoc-firmware/release/<RadioName>/<Name>-YYYYMMDD.{cyacd,hex}
+#         (exactly one dated pair per radio; undated copies are not packed)
 # Dest:   /usr/share/mscc/firmware/<RadioName>/
-# Architecture: all (Ubuntu and Pi). Does not rebuild Keil. Does not
-# fold files into the mscc servers deb.
+# Architecture: all. Does not rebuild Keil. Does not fold files into the
+# mscc servers deb. Default drop is installers/linux only.
+# Set MSCC_FW_DROP_RPI=1 to also copy into installers/rpi.
 #
 #   ./linux-build/build-mscc-firmware-deb.sh
 set -euo pipefail
@@ -33,9 +35,9 @@ need_file() { [[ -f "$1" ]] || { echo "ERROR: missing $1" >&2; exit 1; }; }
 need_dir() { [[ -d "$1" ]] || { echo "ERROR: missing $1" >&2; exit 1; }; }
 
 need_dir "$SRC"
-need_file "$SRC/Proficio-MKII-PTT/Proficio-MKII-PTT.cyacd"
 need_file "$PKG_SRC/DEBIAN/control"
 need_file "$PKG_SRC/DEBIAN/postinst"
+need_file "$OUT_DIR/README.md"
 command -v dpkg-deb >/dev/null || { echo "ERROR: dpkg-deb missing (apt install dpkg-dev)" >&2; exit 1; }
 
 echo "=== mscc-firmware .deb builder ==="
@@ -54,29 +56,30 @@ chmod 644 "$PKG/DEBIAN/control"
 
 DEST="$PKG/usr/share/mscc/firmware"
 mkdir -p "$DEST"
-if [[ -f "$SRC/README.md" ]]; then
-  install -m 644 "$SRC/README.md" "$DEST/README.md"
-fi
+install -m 644 "$OUT_DIR/README.md" "$DEST/README.md"
 
 copied=0
 for radio in "${RADIOS[@]}"; do
   need_dir "$SRC/$radio"
   mkdir -p "$DEST/$radio"
   shopt -s nullglob
-  files=( "$SRC/$radio"/*.cyacd "$SRC/$radio"/*.hex )
+  cy=( "$SRC/$radio"/*-[0-9][0-9][0-9][0-9][0-9][0-9][0-9][0-9].cyacd )
+  hx=( "$SRC/$radio"/*-[0-9][0-9][0-9][0-9][0-9][0-9][0-9][0-9].hex )
   shopt -u nullglob
-  if [[ ${#files[@]} -eq 0 ]]; then
-    echo "ERROR: no .cyacd/.hex in $SRC/$radio" >&2
+  if [[ ${#cy[@]} -ne 1 || ${#hx[@]} -ne 1 ]]; then
+    echo "ERROR: $radio needs exactly one dated .cyacd and one dated .hex (got ${#cy[@]}/${#hx[@]})" >&2
     exit 1
   fi
-  for f in "${files[@]}"; do
-    install -m 644 "$f" "$DEST/$radio/"
-    copied=$((copied + 1))
-  done
+  [[ "$(basename "${cy[0]}" .cyacd)" == "$(basename "${hx[0]}" .hex)" ]] || {
+    echo "ERROR: $radio cyacd/hex date mismatch" >&2
+    exit 1
+  }
+  install -m 644 "${cy[0]}" "${hx[0]}" "$DEST/$radio/"
+  copied=$((copied + 2))
 done
 
-if [[ "$copied" -lt 32 ]]; then
-  echo "ERROR: expected 32 .cyacd+.hex files, copied $copied" >&2
+if [[ "$copied" -ne 16 ]]; then
+  echo "ERROR: expected 16 files, copied $copied" >&2
   exit 1
 fi
 
@@ -93,15 +96,22 @@ rm -f "$OUT"
 dpkg-deb --root-owner-group --build "$PKG" "$OUT"
 rm -rf "$STAGE"
 
-mkdir -p "$ROOT/installers/linux" "$ROOT/installers/rpi"
+mkdir -p "$ROOT/installers/linux"
 cp -a "$OUT" "$ROOT/installers/linux/"
-cp -a "$OUT" "$ROOT/installers/rpi/"
+if [[ "${MSCC_FW_DROP_RPI:-0}" == "1" ]]; then
+  mkdir -p "$ROOT/installers/rpi"
+  cp -a "$OUT" "$ROOT/installers/rpi/"
+fi
 
 echo
 echo "OK: $OUT"
 ls -lh "$OUT"
-echo "  copied $copied artifacts (8 radios)"
+echo "  copied $copied dated artifacts (8 radios, one cyacd+hex each)"
 echo "  drop: installers/linux/$(basename "$OUT")"
-echo "  drop: installers/rpi/$(basename "$OUT")"
+if [[ "${MSCC_FW_DROP_RPI:-0}" == "1" ]]; then
+  echo "  drop: installers/rpi/$(basename "$OUT")"
+else
+  echo "  drop: installers/rpi skipped (set MSCC_FW_DROP_RPI=1 to copy)"
+fi
 echo
 dpkg-deb -I "$OUT" | sed -n '1,20p'

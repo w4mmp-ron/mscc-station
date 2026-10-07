@@ -1,5 +1,5 @@
 Package: mscc-firmware
-Version: 1.0.0
+Version: 1.0.1
 Section: hamradio
 Priority: optional
 Architecture: all
@@ -12,10 +12,12 @@ Description: Multus/Proficio application firmware for USB bootloader upload
  Built on Shack (Keil / PSoC Creator); this package redistributes those
  artifacts only. Optional — not part of the mscc servers package.
  .
- Files: /usr/share/mscc/firmware/<RadioName>/*.cyacd and *.hex
+ Files: /usr/share/mscc/firmware/<RadioName>/<Name>-YYYYMMDD.cyacd and .hex
+ (one of each per radio).
  Radios: Proficio-Legacy, Proficio-MKII-PTT, Proficio-MKII-ATU,
  Geminus-Legacy, Geminus-MKII, Ultimus-Legacy, Ultimus-MKII-ATU,
  Ultimus-MKII-PTT.
  .
  USB Bootloader Load File defaults to this folder when installed.
- Install with: sudo apt install ./mscc-firmware_1.0.0_all.deb
+ Install with: sudo apt install ./mscc-firmware_1.0.1_all.deb
+ (or ./mscc-firmware_*_all.deb).

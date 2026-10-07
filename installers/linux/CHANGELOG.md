@@ -6,7 +6,7 @@ Currently shipped in this folder:
 |---------|---------|
 | `mscc` (servers) | 1.0.50 |
 | `mscc-ui` (Avalonia client) | 0.6.72 |
-| `mscc-firmware` (optional radio firmware files) | 1.0.0 |
+| `mscc-firmware` (optional radio firmware files) | 1.0.1 |
 | `mscc-init-gui` | 1.0.13 (unchanged this period) |
 | `mscc-portaudio` | 19.8.2 (unchanged this period) |
 
@@ -27,7 +27,11 @@ Currently shipped in this folder:
 - The servers detect which radio is connected: the same radio keeps its live calibration; a different radio gets its saved calibration, or the factory calibration if it has none.
 - Firmware Upload (bootloader GUI): **Load File** opens `/usr/share/mscc/firmware` when the `mscc-firmware` package is installed. If it is not installed you get a warning and can still browse anywhere.
 
-## mscc-firmware 1.0.0 — 2026-10-02 (new, optional)
+## mscc-firmware 1.0.1 — 2026-10-07
+### Changed
+- One firmware file of each type per radio: only the dated `<Name>-YYYYMMDD.cyacd` and `.hex`. The undated duplicates (byte-identical) are gone; upgrading from 1.0.0 removes them.
+
+## mscc-firmware 1.0.0 — 2026-10-02 (superseded by 1.0.1)
 ### Added
 - Radio (PSoC) firmware files for all eight supported radios, installed to `/usr/share/mscc/firmware/<radio>/` for use with Firmware Upload.
 

@@ -4,8 +4,8 @@
 |--|--|
 | **Host** | stew-HP-Notebook |
 | **Checkout** | `/home/stew/Documents/GitHub/mscc-station` |
-| **Build** | cmd-065 |
-| **Last command id** | cmd-065 |
+| **Build** | cmd-066 |
+| **Last command id** | cmd-066 |
 | **State** | done |
 | **Updated** | 2026-10-07 |
 
@@ -13,6 +13,7 @@
 
 | command id | state | note |
 |------------|-------|------|
+| cmd-066 | done | mscc-firmware 1.0.1 one dated cyacd+hex per radio. Stew: upgrade installed, Load File on the packaged folder. History 1.0.0 kept in linux/mscc-firmware-deb. installers/rpi still 1.0.0. No rpi source. No Solidus. No pull, no push. |
 | cmd-065 | done | Ubuntu mscc-ui 0.6.72 dock icon + mscc 1.0.50 (recv 3.143, ms-sdr 3.176). Commit 9814897. Stew: installed, dock icon works. No rpi. No Solidus. No pull, no push. |
 | cmd-064 | running | Ubuntu linux/SDRcore-recv-linux spectrum spur fix. Commit ef67816. recv 3.143 in $HOME/mscc. Smoke 1-5 not run (no radio USB). Rides with next kit. No rpi write. No Windows. No pull, no push. |
 | cmd-063 | done | Optional mscc-firmware 1.0.0 all. Commit 54054c1. Load File default /usr/share/mscc/firmware. Eight radios installed. Load File opened at share. Remove-package warning not run. Skipped mscc Suggests. No Keil. No Avalonia/WPF/Core. No Solidus. No pull, no push. |
@@ -31,6 +32,10 @@
 | cmd-032 | done | mscc_1.0.44_amd64.deb with remote_mic stream reset |
 
 ## Notes
+
+### cmd-066
+
+Deb: `installers/linux/mscc-firmware_1.0.1_all.deb`. 16 dated files. Payload README `linux/mscc-firmware-deb/README.md`. History 1.0.0 kept in linux/mscc-firmware-deb. installers/rpi still 1.0.0. Stew: installed, Load File on packaged folder.
 
 ### cmd-065
 
