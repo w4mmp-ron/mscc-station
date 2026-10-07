@@ -21,6 +21,31 @@ The Si5351 has four drive levels: 2, 4, 6 and 8 mA. The output runs at **8 mA**,
 - Same lines in `Proficio-MKII-PTT` (Ron's rig) and `Proficio-MKII-ATU`. The ATU, Geminus and
   Ultimus firmware also have `si5351a-cw.c` with the same `0x4F`.
 
+## What the schematic shows (read 2026-10-06)
+
+Source: `Schematic_Proficio-Mark-II-Rev-7_2026-10-06.pdf` and its netlist (title blocks say
+REV 6, 2024-02-10). The netlist was checked against the drawing for these parts and agrees.
+Read from the drawing only; nothing measured on a board.
+
+- X1 is a 25 MHz TCXO (ECS-TXO-3225 or I538), through C147 into XA; not a bare crystal.
+- CLK0 (U13 pin 10) goes straight to the two clock pins of the 74ACT74 (U12 pins 3 and 11)
+  and nowhere else. No series resistor. The load is about 10 pF of logic input plus trace, so
+  the drive setting only changes the edge speed.
+- 3.3 V rail (U3): Si5351 VDD and VDDO, the TCXO, the PCM3060 digital VDD and the PSoC
+  connector. One 0.1 uF (C24) at the Si5351 / TCXO, no bead.
+- 5 V rail (U2): the 74ACT74, the PCM3060 analog VCC, the receive op-amp U8, both mixers and
+  U16. A 0.1 uF each, no bead.
+
+Two leak paths exist on paper (the 3.3 V rail and the 5 V rail); the drawing cannot say which
+is real. A lower drive level also cuts the current pulses the Si5351 draws from the 3.3 V
+rail, so this test can help on that path too.
+
+**How much drive is needed (estimate, not measured):** the output is about 50 ohms at 8 mA
+and about 200 ohms at 2 mA. Into about 10 pF, 2 mA gives edges of about 4 ns. On 20 m the
+clock is 56 MHz (18 ns period): no problem. On 10 m it is about 115 MHz (9 ns period): 2 mA
+is doubtful, 4 mA should be fine. If 2 mA works on 20 m but not on 10 m, the opcode could be
+sent per band.
+
 ## Opcode
 
 `CMD_SET_SI5351_DRIVE 0x9D`, host to rig, one byte: 0 = 2 mA, 1 = 4 mA, 2 = 6 mA, 3 = 8 mA.

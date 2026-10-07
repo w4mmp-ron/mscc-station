@@ -84,6 +84,37 @@ Limits: calculated, not measured. It covers only the one birdie family seen so f
 harmonic combinations may exist. It assumes the LO is 12 kHz below the dial (LSB and CW not
 checked). Whether the Si5351 on this board is happy at 26 MHz is your call.
 
+## Read from the schematic and firmware (2026-10-06)
+
+Source: `Schematic_Proficio-Mark-II-Rev-7_2026-10-06.pdf` and its netlist (title blocks say
+REV 6, 2024-02-10). Read from the drawing only; nothing measured on a board.
+
+- **X1 is the 25 MHz TCXO** (ECS-TXO-3225 or I538), through C147 into XA. Where this note
+  says "crystal" above, read TCXO.
+- **CLK0 (U13 pin 10) goes straight to the two clock pins of the 74ACT74 (U12 pins 3 and 11)**
+  and nowhere else. No series resistor. So the load is logic input plus trace, and the drive
+  setting only changes the edge speed.
+- **The firmware runs CLK0 at 8 mA, the maximum.** `si5351.c:267` sets 2 mA at startup, but
+  every tune ends in `si5351a.c:408`, which writes `0x4F` to the CLK0 control register (low
+  bits 11 = 8 mA). Same in all the radios' firmware.
+- **3.3 V rail (U3):** feeds the Si5351 VDD and VDDO, the TCXO, the PCM3060 digital VDD and
+  the PSoC connector. One 0.1 uF (C24) at the Si5351 / TCXO, no bead between them and the
+  codec.
+- **5 V rail (U2):** feeds the 74ACT74, the PCM3060 analog VCC, the receive op-amp U8, both
+  mixers and U16. A 0.1 uF each, no bead.
+
+So on paper there are two ways the beat could reach the audio, the 3.3 V rail and the 5 V
+rail. Which one is real, the drawing cannot say.
+
+**Cheap test, planned, not built:** a new opcode so the drive level (2 / 4 / 6 / 8 mA) can be
+set from `mscc.ini` with no client change. One firmware flash, then try each level and watch
+the pair at dial 14.074. Plan: `rpi/si5351-drive.md`. Rough estimate for about 10 pF of load:
+4 mA should be enough on all bands; 2 mA is fine on the low bands and doubtful on 10 m (clock
+about 115 MHz). Your view on the lowest safe level is welcome.
+
+Candidates for new boards, for you to judge: a bead plus capacitor to isolate the Si5351 /
+TCXO supply, a series resistor at CLK0, a bead on the 74ACT74 supply.
+
 ## Asked of you
 
 - Do you see the pair on your radios at dial 14.074 USB (dummy load is fine)?

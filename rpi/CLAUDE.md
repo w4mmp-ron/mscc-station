@@ -299,6 +299,15 @@ not sdrcore. The rig is on the PSoC daughter board.
      Drive level: firmware runs CLK0 at 8 mA, the maximum (`si5351a.c:203` `0x4F`; the 2 mA in
      `si5351.c:267` is overwritten at the first tune). Ron's idea: new opcode + `mscc.ini` key
      to set it, no client change. **Plan only, nothing changed. Ron's name for the plan: "si5351-drive" = `rpi/si5351-drive.md`.**
+     Schematic read 2026-10-06 (`Downloads\Schematic_Proficio-Mark-II-Rev-7_2026-10-06.pdf` +
+     `Backend_2026-10-06.net`; title blocks say REV 6, 2024-02-10): CLK0 (U13-10) goes straight
+     to the two clock pins of U12 74ACT74 (pins 3, 11), no series resistor, nothing else on the
+     net = capacitive load only, drive level only sets edge speed. X1 is a 25 MHz TCXO
+     (ECS-TXO-3225 or I538), AC-coupled by C147 into XA, not a bare crystal. One 3.3 V rail
+     (U3) feeds Si5351 VDD + VDDO, the TCXO, the PCM3060 digital VDD and the PSoC connector;
+     only C24 0.1u at the Si5351 / TCXO, no bead. One 5 V rail (U2) feeds the 74ACT74, PCM3060
+     analog VCC, RX op-amp U8, both mixers, U16; 0.1u each, no bead. So two leak paths exist on
+     paper (3.3 V and 5 V rails); which one is real is not known.
    - **Carrier image about the LO point, only about 22 dB down.** Open: is RX IQ calibrated on
      this rig / band; level read off a flickering display, so re-measure once the client draws
      every point.
