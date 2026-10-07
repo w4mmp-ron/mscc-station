@@ -1,0 +1,7907 @@
+using System.Collections.ObjectModel;
+using System.Globalization;
+using Avalonia;
+using Avalonia.Controls;
+using Avalonia.Controls.ApplicationLifetimes;
+using Avalonia.Media;
+using Avalonia.Threading;
+using Avalonia.VisualTree;
+using CommunityToolkit.Mvvm.ComponentModel;
+using CommunityToolkit.Mvvm.Input;
+using MSCC.Avalonia.Controls;
+using MSCC.Avalonia.Models;
+using MSCC.Avalonia.RemoteAudio;
+using MSCC.Avalonia.Services;
+using MSCC.Avalonia.Views;
+using MsccDialog = MSCC.Avalonia.MsccDialog;
+using MSCC.Core.Display;
+using MSCC.Core.Logging;
+using MSCC.Core.Protocol;
+using MSCC.Core.Services;
+
+namespace MSCC.Avalonia.ViewModels;
+
+/// <summary>
+/// Avalonia MSCC client — Windows-like shell.
+/// Operate essentials: connect, spectrum, band/mode, power, PTT/TUN, AGC, AMP, CMP, MON, NB/NR/AN, filters.
+/// </summary>
+public partial class MainViewModel : ViewModelBase, IDisposable
+{
+    private static readonly long[] StepChoicesHz = { 10, 100, 1_000, 10_000, 100_000 };
+    // Match WPF / Core index tables (button labels are short; list options match WPF wording)
+    private static readonly string[] LowCutLabels = { "500", "300", "200", "100", "75" };
+    private static readonly int[] LowCutHzValues = { 500, 300, 200, 100, 75 };
+    private static readonly string[] HighCutLabels = { "5.5k", "4.0k", "3.0k", "2.7k", "2.4k", "1.4k", "1.0k" };
+    private static readonly int[] HighCutHzValues = { 5500, 4000, 3000, 2700, 2400, 1400, 1000 };
+    private static readonly string[] CwFilterLabels = { "1.8k", "400", "200" };
+    private static readonly int[] CwFilterHzValues = { 1800, 400, 200 };
+    private static readonly int[] CwWeightValues = { 25, 50, 75 };
+    private static readonly int[] CwPitchValues = { 400, 600, 800, 1000 };
+
+    private UdpRadioService? _radio;
+    private bool _disposed;
+    private int _packetsReceived;
+    private int _panPacketsReceived;
+    private int _keepAlivesReceived;
+    private int _spectrumFrames;
+    private int _spectrumFrameCounter;
+    private long _frequencyHz;
+    private long _vfoBFrequencyHz;
+    private bool _deferUsbModeReport;
+    private bool _fwRadioModelApplied;
+    private bool? _audioBeforeDigU;
+    private int _stepIndex = 2;
+    /// <summary>0=Normal 800, 1=High 1600, 2=Max 3200. Sticky PAN_RESOLUTION.</summary>
+    private int _panResolutionIndex;
+    private int _lowCutIndex;
+    private int _highCutIndex = 2;
+    private int _cwFilterIndex;
+    private bool _suppressPowerSend;
+    private bool _syncingRfMirror;
+    private bool _suppressTransmitCommands;
+    /// <summary>True when keyer memory Play asserted PTT and should auto-release it.</summary>
+    private bool _keyerPlayOwnsPtt;
+    private CancellationTokenSource? _keyerPlayPttReleaseCts;
+    private bool _suppressAmpCommand;
+    private bool _suppressAlcCommand;
+    private bool _suppressNbCommand;
+    private bool _suppressNrCommand;
+    private bool _suppressAnCommand;
+    private bool _suppressCompressionCommand;
+    private bool _suppressAgcCommand;
+    private bool _suppressMonitorCommand;
+    private bool _suppressDefaultFilterSend;
+    private bool _suppressAudioSend;
+    private bool _suppressCwSend;
+    private bool _suppressRitSend;
+    private bool _suppressPowerCalSlider;
+    private bool _suppressAmpCalSlider;
+    private bool _suppressTxIqOffset;
+    private bool _suppressRxIqOffset;
+    private bool _suppressRxIqFreqTune;
+    private int _powerCalPreviousReceivedStep;
+    private int _powerCalPendingBand;
+    private int _ampCalPendingBand;
+    private long _rxIqBaseFreqHz;
+    private int _rxIqBandMeters;
+    private string _modeBeforeAmpCal = "USB";
+    private string _modeBeforeTxIq = "USB";
+    private bool _sessionCompressionOn;
+    private string _modeBeforeTune = "USB";
+    private bool _freqCalTabActive;
+    private bool _freqCalHoldingCw;
+    private bool _freqCalEntryHeld;
+    private bool _freqCalRestorePending;
+    private bool _freqCalResetPendingAuto;
+    private bool _freqCalAbortDrainPending;
+    private int _freqCalProgressSteps;
+    private string _freqCalModeSaved = "";
+    private int _freqCalFilterSaved;
+    private int _freqCalPitchSaved;
+    private bool _freqCalSavedVfoA = true;
+    private DispatcherTimer? _freqCalAbortDrainTimer;
+    private bool _serversOurs;
+    private DateTime _serversLaunchedUtc;
+    private Task? _serverStopTask;
+    private bool _keepAliveGraceUsed;
+    private bool _launchStartedThisConnect;
+    private long _lastSavedVfoBHz = -1;
+    private string _lastSavedVfoBMode = "";
+    private bool _onGenBand;
+    private int _genIndexProficio = 7; // USER
+    private int _genIndexGeminus;
+    private bool _suppressSettingsSave;
+    private bool _suppressLastUsedSave;
+    private bool _loadingAppearance;
+    private DispatcherTimer? _settingsSaveTimer;
+    private DispatcherTimer? _lastUsedSaveTimer;
+
+    // FREQ CAL
+    private bool _freqCalIsAuto;
+    private int _lastCalDelta;
+    private int _freqCalManualPpmLastSent = int.MinValue;
+    private DateTime _freqCalManualPpmLastSendUtc = DateTime.MinValue;
+    private DispatcherTimer? _freqCalManualPpmTimer;
+    private const int FreqCalManualPpmMin = -100;
+    private const int FreqCalManualPpmMax = 100;
+    private const int FreqCalManualPpmMinIntervalMs = 300;
+
+    private static readonly int[] CalBandNumbers = { 2200, 630, 160, 80, 60, 40, 30, 20, 17, 15, 12, 10 };
+    // Same set/order as QRP CAL / AMP CAL (no radio-model filter).
+    private static readonly int[] TxIqBandNumbers = { 2200, 630, 160, 80, 60, 40, 30, 20, 17, 15, 12, 10 };
+
+    /// <summary>Proficio GEN: HF time/freq standards + USER.</summary>
+    private static readonly (string Label, long Freq)[] GenOptionsProficio =
+    {
+        ("WWV1", 5_000_000L),
+        ("WWV2", 10_000_000L),
+        ("WWV3", 15_000_000L),
+        ("WWV4", 20_000_000L),
+        ("CHU1", 3_330_000L),
+        ("CHU2", 7_850_000L),
+        ("RWM", 9_996_000L),
+        ("USER", 10_000_000L),
+    };
+
+    /// <summary>Geminus GEN: LF frequency-cal carriers.</summary>
+    private static readonly (string Label, long Freq)[] GenOptionsGeminus =
+    {
+        ("198", 198_000L),
+        ("660", 660_000L),
+        ("880", 880_000L),
+    };
+
+    // ALC meter smoothing (match WPF rolling mean + idle zero)
+    private readonly int[] _alcSampleRing = new int[8];
+    private int _alcSampleIndex;
+    private int _alcSampleCount;
+    private DispatcherTimer? _alcIdleTimer;
+    private const double AlcIdleTimeoutSeconds = 3.0;
+
+    private const int SpectrumRefreshDivisor = 3;
+
+    public MainViewModel()
+    {
+        string logDir = Path.Combine(
+            Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
+            "MSCC-Avalonia", "logs");
+        DebugMonitor.Initialize(logDir);
+        LogDirectory = logDir;
+        LogFilePath = Path.Combine(logDir, "mscc.log");
+
+        DebugMonitor.LogMessage += OnDebugLogMessage;
+
+        Host = "127.0.0.1";
+        RemotePortText = "8888";
+        LocalPortText = "8889";
+        StatusText = IdleStatusText();
+        FrequencyMhzEdit = FormatMhz(_frequencyHz);
+        FrequencyDisplayMhz = FormatMhz(_frequencyHz);
+        VfoBDisplayMhz = FormatMhz(_vfoBFrequencyHz);
+        StepLabel = FormatStep(StepChoicesHz[_stepIndex]);
+        LowCutLabel = LowCutLabels[_lowCutIndex];
+        HighCutLabel = HighCutLabels[_highCutIndex];
+        CwFilterLabel = CwFilterLabels[_cwFilterIndex];
+        ModeText = "";
+        NotifyModeFlags();
+        NotifyBandFlags();
+        AppendLog("MSCC Avalonia 0.6.71 — Save settings parks host cal (0x29).");
+        AppendLog("PTT = TX (voice modes); TUN = TUNE + carrier. S/W opens pan settings.");
+        AppendLog($"Log: {LogFilePath}");
+        CwPitchLabel = CwPitchOptions[Math.Clamp(CwPitchIndex, 0, CwPitchOptions.Count - 1)];
+        FavoriteBandFilter = "40m";
+        InitPowerCalBandStatuses();
+        InitAmpCalBandStatuses();
+        EnsureTxIqBandItems();
+        LoadClientSettings();
+        StatusText = IdleStatusText();
+        RefreshHostAudio();
+        LoadFavoritesFromStore();
+        AppendLog($"Settings: {ClientSettingsStore.StorePath}");
+        AppendLog($"Favorites: {FavoritesStore.StorePath}");
+        CoreVersionText = "—";
+        FirmwareText = "—";
+        AgcButtonText = "SLO";
+        SpectrumZoom = SpectrumDisplaySettings.Instance.ZoomFactor;
+        SpectrumDisplaySettings.Instance.Changed += OnSpectrumSettingsChanged;
+        AppearanceSettings.Instance.Changed += OnAppearanceSettingsChanged;
+        SyncAppearanceUiFromSettings();
+        SyncRfPowerFromMode();
+        NotifyModeFlags();
+    }
+
+    private void OnSpectrumSettingsChanged()
+    {
+        double z = SpectrumDisplaySettings.Instance.ZoomFactor;
+        if (Math.Abs(SpectrumZoom - z) > 0.01)
+            SpectrumZoom = z;
+        ScheduleSaveClientSettings();
+    }
+
+    private void OnAppearanceSettingsChanged()
+    {
+        if (_suppressSettingsSave) return;
+        SyncAppearanceUiFromSettings();
+        ScheduleSaveClientSettings();
+    }
+
+    private void SyncAppearanceUiFromSettings()
+    {
+        var a = AppearanceSettings.Instance;
+        _loadingAppearance = true;
+        SelectedUiBackground = a.UiBackground;
+        SelectedUiPanel = a.UiPanel;
+        SelectedUiButton = a.UiButton;
+        SelectedUiAccent = a.UiAccent;
+        UiBackgroundRgbText = a.UiBackgroundRgb;
+        UiButtonRgbText = a.UiButtonRgb;
+        UiPanelRgbText = UiChromeTheme.ToHex(a.ResolvePanel());
+        UiAccentRgbText = UiChromeTheme.ToHex(a.ResolveAccent());
+        if (UiChromeTheme.TryParseHex(a.UiBackgroundRgb, out byte br, out byte bg, out byte bb))
+        {
+            UiBgR = br; UiBgG = bg; UiBgB = bb;
+        }
+        if (UiChromeTheme.TryParseHex(a.UiButtonRgb, out byte fr, out byte fg, out byte fb))
+        {
+            UiBtnR = fr; UiBtnG = fg; UiBtnB = fb;
+        }
+        if (UiChromeTheme.TryParseHex(a.UiAccentRgb, out byte ar, out byte ag, out byte ab))
+        {
+            UiAccR = ar; UiAccG = ag; UiAccB = ab;
+        }
+        UiPanelListEnabled = !UiChromeTheme.IsCustom(a.UiBackground);
+        ShowUiBackgroundRgb = UiChromeTheme.IsCustom(a.UiBackground);
+        ShowUiButtonRgb = UiChromeTheme.IsCustom(a.UiButton);
+        ShowUiAccentRgb = UiChromeTheme.IsCustom(a.UiAccent);
+        _loadingAppearance = false;
+    }
+
+    partial void OnSpectrumZoomChanged(double value)
+    {
+        SpectrumDisplaySettings.Instance.SetZoomFactor(value);
+    }
+
+    // ----- Connection -----
+
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(IsRemoteAudioAllowed))]
+    private string _host = "127.0.0.1";
+    public ObservableCollection<string> RecentHosts { get; } = new() { "127.0.0.1" };
+
+    private void RememberRecentHost(string? host)
+    {
+        ReplaceRecentHosts(ClientSettingsStore.NormalizeHostRecent(host, RecentHosts));
+        ScheduleSaveClientSettings();
+    }
+
+    private void ReplaceRecentHosts(IReadOnlyList<string> hosts)
+    {
+        // Do not Clear() while ComboBox SelectedItem is TwoWay-bound to Host —
+        // that sets SelectedItem=null and wipes Host (black empty box after Connect).
+        string keep = Host;
+        for (int i = RecentHosts.Count - 1; i >= 0; i--)
+        {
+            if (!hosts.Contains(RecentHosts[i]))
+                RecentHosts.RemoveAt(i);
+        }
+        int insert = 0;
+        foreach (string h in hosts)
+        {
+            int at = RecentHosts.IndexOf(h);
+            if (at < 0)
+                RecentHosts.Insert(insert, h);
+            else if (at != insert)
+                RecentHosts.Move(at, insert);
+            insert++;
+        }
+        if (!string.IsNullOrWhiteSpace(keep) && Host != keep)
+            Host = keep;
+    }
+
+    /// <summary>Remote UDP port as plain text (no spinner).</summary>
+    [ObservableProperty] private string _remotePortText = "8888";
+    /// <summary>Local pan RX port as plain text.</summary>
+    [ObservableProperty] private string _localPortText = "8889";
+    [ObservableProperty] private string _statusText = "Disconnected";
+    [ObservableProperty] private bool _isConnected;
+    [ObservableProperty] private bool _isBusy;
+    [ObservableProperty] private bool _autoStart;
+    [ObservableProperty] private bool _launchServers = true;
+
+    // ----- Live radio display -----
+
+    [ObservableProperty] private string _frequencyText = "—";
+    [ObservableProperty] private string _frequencyMhzEdit = "0.000000";
+    [ObservableProperty] private string _frequencyDisplayMhz = "0.000000";
+    [ObservableProperty] private string _modeText = "";
+    [ObservableProperty] private string _smeterText = "—";
+    /// <summary>S-meter units 0–15 (WPF Db_to_Smeter). Drives analog face.</summary>
+    [ObservableProperty] private double _sMeter;
+    [ObservableProperty] private bool _smeterHold = true;
+    [ObservableProperty] private bool _smeterPeak;
+    [ObservableProperty] private string _alcText = "—";
+    /// <summary>ALC meter 0–100 (smoothed). Drives analog face.</summary>
+    [ObservableProperty] private double _alcValue;
+    [ObservableProperty] private bool _alcHold = true;
+    [ObservableProperty] private bool _alcPeak;
+    [ObservableProperty] private string _coreVersionText = "—";
+    [ObservableProperty] private string _firmwareText = "—";
+    [ObservableProperty] private string _bandText = "—";
+    [ObservableProperty] private string _stepLabel = "1 kHz";
+    [ObservableProperty] private string _lowCutLabel = "500";
+    [ObservableProperty] private string _highCutLabel = "2.7k";
+    [ObservableProperty] private string _cwFilterLabel = "1.8k";
+    [ObservableProperty] private string _packetStatsText = "Pkts 0 | KA 0 | Spec 0";
+    [ObservableProperty] private string _logDirectory = "";
+    [ObservableProperty] private string _logFilePath = "";
+    [ObservableProperty] private SpectrumUpdate? _currentSpectrum;
+    [ObservableProperty] private string _vfoBDisplayMhz = "0.000000";
+    [ObservableProperty] private string _vfoBModeText = "";
+    [ObservableProperty] private bool _useVfoA = true;
+
+    // ----- Audio (phones / digital paths) -----
+
+    [ObservableProperty] private int _pVolume = 50;
+    [ObservableProperty] private int _pMicGain = 40;
+    [ObservableProperty] private int _dVolume = 50;
+    [ObservableProperty] private int _dMicGain = 40;
+    /// <summary>false = Phones/operator (P), true = Digital/VAC (D).</summary>
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(AudioPathButtonText))]
+    [NotifyPropertyChangedFor(nameof(IsPhonesAudio))]
+    private bool _isDigitalAudio;
+    /// <summary>This PC is the operator seat. Remote window Path selects R-Phones (2) vs R-Digital (3).</summary>
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(AudioPathButtonText))]
+    [NotifyPropertyChangedFor(nameof(DigitalControlsEnabled))]
+    [NotifyPropertyChangedFor(nameof(LocalAudioPathEnabled))]
+    private bool _remoteAudio;
+    /// <summary>Remote AF Path Digital (independent of local IsDigitalAudio).</summary>
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(AudioPathButtonText))]
+    private bool _remoteDigitalAudio;
+    public bool IsPhonesAudio => !IsDigitalAudio;
+    public bool DigitalControlsEnabled => IsConnected && !RemoteAudio;
+    /// <summary>Main Phones/Digital are not selectable while Remote (exit via Remote only).</summary>
+    public bool LocalAudioPathEnabled => !RemoteAudio;
+
+    internal static bool IsLocalHost(string? host)
+    {
+        string ip = (host ?? "").Trim();
+        if (string.IsNullOrEmpty(ip))
+            return false;
+        return ip.Equals("127.0.0.1", StringComparison.OrdinalIgnoreCase)
+            || ip.Equals("localhost", StringComparison.OrdinalIgnoreCase)
+            || ip.Equals("::1", StringComparison.OrdinalIgnoreCase);
+    }
+
+    /// <summary>Remote seat only when Connect-only to another host (not 127.0.0.1 / localhost).</summary>
+    public bool IsRemoteAudioAllowed
+    {
+        get
+        {
+            string ip = (Host ?? "").Trim();
+            if (string.IsNullOrEmpty(ip))
+                return false;
+            return !IsLocalHost(ip);
+        }
+    }
+
+    public bool LaunchOptionEnabled => IsLocalHost(Host) && !IsConnected && !IsBusy;
+    public bool AutoOptionEnabled => !IsBusy;
+
+    private string IdleStatusText() =>
+        LaunchServers && IsLocalHost(Host)
+            ? "Disconnected — press Connect (servers start automatically)."
+            : "Disconnected — MSCC Start, then Connect.";
+
+    private void RefreshIdleStatusText()
+    {
+        if (IsConnected || IsBusy)
+            return;
+        string t = StatusText ?? "";
+        if (t == "Disconnected — press Connect (servers start automatically)." ||
+            t == "Disconnected — MSCC Start, then Connect.")
+            StatusText = IdleStatusText();
+    }
+    [ObservableProperty] private bool _remoteMonitorAtRadio;
+    [ObservableProperty] private int _remotePlayVolume = 80;
+    [ObservableProperty] private int _remoteMicVolume = 80;
+    /// <summary>Remote Digital MSA1 TX drive (0–100). Separate from phones REMOTE_MIC_VOL.</summary>
+    [ObservableProperty] private int _remoteDigitalMicVolume = 100;
+    [ObservableProperty] private bool _remotePlayMute;
+    [ObservableProperty] private bool _remoteEqEnabled;
+    [ObservableProperty] private float _remoteEqLowDb;
+    [ObservableProperty] private float _remoteEqMidDb;
+    [ObservableProperty] private float _remoteEqHighDb;
+    [ObservableProperty] private int _remotePlayDeviceIndex = -1;
+    [ObservableProperty] private int _remoteMicDeviceIndex = -1;
+
+    internal RemoteAfEngine? RemoteAf { get; private set; }
+    internal KenwoodCatPort? RemoteCat { get; private set; }
+    public event Action<string>? RemoteAfLog;
+    private Views.RemoteAfWindow? _remoteAfWindow;
+    private System.Net.IPAddress? _lastRemoteRxHost;
+    private bool _remoteRxSent;
+    [ObservableProperty] private int _ritOffset;
+    [ObservableProperty] private bool _ritOn;
+    [ObservableProperty] private double _spectrumZoom = 1;
+
+    // ----- CW tab -----
+    [ObservableProperty] private int _cwKeyerMode = 1; // IAMBIC-A
+    [ObservableProperty] private int _cwSpacing;
+    [ObservableProperty] private int _cwPaddle;
+    [ObservableProperty] private int _cwWeightIndex = 1; // 50
+    [ObservableProperty] private int _cwPitchIndex = 1; // 600Hz
+    [ObservableProperty] private int _cwHold = 100;
+    [ObservableProperty] private bool _cwQsk;
+    [ObservableProperty] private bool _cwPhones;
+    // Keyer CQ memory (4 slots × 48 chars) — text is client sticky; radio after R
+    [ObservableProperty] private string _keyerMem0 = "";
+    [ObservableProperty] private string _keyerMem1 = "";
+    [ObservableProperty] private string _keyerMem2 = "";
+    [ObservableProperty] private string _keyerMem3 = "";
+    [ObservableProperty] private bool _keyerMemBusy;
+    [ObservableProperty] private string _keyerMemStatus = "";
+
+    /// <summary>
+    /// External electronic keyer / legacy radio → mscc.ini PROFICIO-MKII=0.
+    /// Default false (MKII). Applied when ms-sdr starts; flip while connected needs reconnect/restart.
+    /// </summary>
+    [ObservableProperty] private bool _externalElectronicKeyer;
+
+    /// <summary>PIC keyer CW controls enabled when not in external/legacy mode.</summary>
+    public bool PicKeyerControlsEnabled => !ExternalElectronicKeyer;
+
+    /// <summary>CQ memory panel: not busy and not legacy external keyer.</summary>
+    public bool KeyerMemPanelEnabled => !KeyerMemBusy && !ExternalElectronicKeyer;
+
+    partial void OnKeyerMemBusyChanged(bool value) => OnPropertyChanged(nameof(KeyerMemPanelEnabled));
+
+    // ----- RX/TX power banks (wired to Core when connected) -----
+    [ObservableProperty] private int _tunePowerPercent = 25;
+    [ObservableProperty] private int _cwPowerPercent = 40;
+    [ObservableProperty] private int _ssbPowerPercent = 50;
+    [ObservableProperty] private int _amCarrierPercent = 30;
+    [ObservableProperty] private int _fmPowerPercent = 50;
+    /// <summary>Right-rail mirror of the active mode's power bank.</summary>
+    [ObservableProperty] private int _rfPower = 50;
+
+    [ObservableProperty] private int _compression;
+    [ObservableProperty] private bool _compressionOn;
+    [ObservableProperty] private int _agcFastRelease = 50;
+    /// <summary>0=SLOW, 1=MED, 2=FAST (WPF AgcLevel).</summary>
+    [ObservableProperty] private int _agcLevel;
+    [ObservableProperty] private string _agcButtonText = "SLO";
+    /// <summary>When true, new Core log lines are not added to the UI list (file still logs).</summary>
+    [ObservableProperty] private bool _logUiPaused;
+    [ObservableProperty] private bool _nbOn;
+    [ObservableProperty] private int _nbPulse = 10;
+    [ObservableProperty] private int _nbThreshold = 20;
+    [ObservableProperty] private bool _nrOn;
+    [ObservableProperty] private int _nrLevel = 40;
+    [ObservableProperty] private bool _anOn;
+    [ObservableProperty] private bool _monitorOn;
+    [ObservableProperty] private int _cwSpeed = 20;
+    /// <summary>Farnsworth memory-play text WPM (0x76). 0=Off; 5–60.</summary>
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(CwMemTextWpmLabel))]
+    private int _cwMemTextWpm;
+    [ObservableProperty] private string _cwPitchLabel = "600Hz";
+    [ObservableProperty] private string _proficioTempText = "— °C";
+    [ObservableProperty] private string _paTempText = "— °C";
+    [ObservableProperty] private string _paCurrentText = "— mA";
+    [ObservableProperty] private string _clientVersionText = "0.6.71";
+    [ObservableProperty] private bool _alcOn = true;
+    /// <summary>AMP / QRO path (PA bypass). Red when on (WPF).</summary>
+    [ObservableProperty] private bool _ampOn;
+
+    /// <summary>PTT latched (CMD_SET_TX_ON).</summary>
+    [ObservableProperty] private bool _pttOn;
+
+    /// <summary>TUN latched — TUNE mode + rig tune (antenna tune carrier).</summary>
+    [ObservableProperty] private bool _tuneMode;
+
+    /// <summary>Server owns TX via 0xBC — disables user PTT/TUN.</summary>
+    [ObservableProperty] private bool _txSetByServer;
+
+    // Mode latch flags for UI
+    [ObservableProperty] private bool _modeIsUsb;
+    [ObservableProperty] private bool _modeIsLsb;
+    [ObservableProperty] private bool _modeIsCw;
+    [ObservableProperty] private bool _modeIsAm;
+    [ObservableProperty] private bool _modeIsDigU;
+    [ObservableProperty] private bool _modeIsFm;
+    /// <summary>FM: checked = no TX offset (simplex). Unchecked = VFO-B = A−100 kHz + split.</summary>
+    [ObservableProperty] private bool _fmSimplex;
+    private long _fmSavedVfoBHz;
+    private string _fmSavedVfoBMode = "USB";
+    private bool _fmOffsetSnapshotValid;
+    private const long FmTxOffsetHz = 100_000;
+
+    // Main band-bar latch (selected under pointer stays highlighted)
+    [ObservableProperty] private bool _bandIs2200;
+    [ObservableProperty] private bool _bandIs630;
+    [ObservableProperty] private bool _bandIs160;
+    [ObservableProperty] private bool _bandIs80;
+    [ObservableProperty] private bool _bandIs60;
+    [ObservableProperty] private bool _bandIs40;
+    [ObservableProperty] private bool _bandIs30;
+    [ObservableProperty] private bool _bandIs20;
+    [ObservableProperty] private bool _bandIs17;
+    [ObservableProperty] private bool _bandIs15;
+    [ObservableProperty] private bool _bandIs12;
+    [ObservableProperty] private bool _bandIs10;
+    [ObservableProperty] private bool _bandIsGen;
+
+    public ObservableCollection<string> LogLines { get; } = new();
+
+    // RX/TX tab default filter lists (WPF wording)
+    public ObservableCollection<string> LowCutOptions { get; } = new()
+        { "500Hz", "300Hz", "200Hz", "100Hz", "75Hz" };
+    public ObservableCollection<string> HighCutOptions { get; } = new()
+        { "5.5KHz", "4.0KHz", "3.0KHz", "2.7KHz", "2.4KHz" };
+    public ObservableCollection<string> CwFilterOptions { get; } = new()
+        { "1.8KHz", "400Hz", "200Hz" };
+    public ObservableCollection<string> TxOptions { get; } = new()
+        { "2.4KHz", "2.7KHz", "3.0KHz", "5.5KHz" };
+
+    public ObservableCollection<string> CwKeyerModeOptions { get; } = new()
+        { "STRAIGHT", "IAMBIC-A", "IAMBIC-B" };
+    public ObservableCollection<string> CwSpacingOptions { get; } = new()
+        { "ELEMENT", "LETTER" };
+    public ObservableCollection<string> CwPaddleOptions { get; } = new()
+        { "NORMAL", "REVERSE" };
+    public ObservableCollection<string> CwWeightOptions { get; } = new()
+        { "25", "50", "75" };
+    public ObservableCollection<string> CwPitchOptions { get; } = new()
+        { "400Hz", "600Hz", "800Hz", "1000Hz" };
+
+    // ----- Favorites (disk: mscc-favorites.ini) -----
+    public ObservableCollection<FavoriteEntry> Favorites { get; } = new();
+    public ObservableCollection<FavoriteEntry> FavoritesForBand { get; } = new();
+    public ObservableCollection<string> FavoriteBandChoices { get; } = new()
+    {
+        "2200m", "630m", "160m", "80m", "60m", "40m", "30m", "20m", "17m", "15m", "12m", "10m", "gen"
+    };
+
+    [ObservableProperty] private string _favoriteBandFilter = "40m";
+    [ObservableProperty] private string _favoriteNameInput = "";
+    [ObservableProperty] private FavoriteEntry? _selectedFavorite;
+
+    // ----- QRP CAL -----
+    public ObservableCollection<PowerCalBandItem> PowerCalBandStatuses { get; } = new();
+    [ObservableProperty] private int _powerCalSelectedBand;
+    [ObservableProperty] private int _powerCalSliderValue;
+    [ObservableProperty] private string _powerCalStepLabel = "CALIBRATION STEP: —";
+    [ObservableProperty] private bool _powerCalTxOn;
+    [ObservableProperty] private bool _powerCalCalibrating;
+    [ObservableProperty] private bool _powerCalLoadConfirmed;
+    [ObservableProperty] private bool _powerCalAcceptPrompt;
+
+    // ----- AMP CAL -----
+    public ObservableCollection<PowerCalBandItem> AmpCalBandStatuses { get; } = new();
+    [ObservableProperty] private int _ampCalSelectedBand;
+    [ObservableProperty] private int _ampCalSliderValue = -99;
+    [ObservableProperty] private string _ampCalStepLabel = "STEP: 0";
+    [ObservableProperty] private bool _ampCalTxOn;
+    [ObservableProperty] private bool _ampCalCalibrating;
+    [ObservableProperty] private bool _ampCalAcceptPrompt;
+
+    // ----- RX IQ -----
+    [ObservableProperty] private bool _rxIqSessionActive;
+    [ObservableProperty] private int _rxIqOffset;
+    [ObservableProperty] private int _rxIqFreqOffsetHz;
+    [ObservableProperty] private bool _rxIqUp24k;
+    [ObservableProperty] private string _rxIqBandLabel = "—";
+    [ObservableProperty] private string _rxIqFreqDisplay = "—.—.—";
+    [ObservableProperty] private string _rxIqStatus =
+        "Select an amateur band (MAIN / band bar), then START.";
+    [ObservableProperty] private bool _rxIqCommitting;
+    [ObservableProperty] private bool _rxIqResetAllPrompt;
+
+    // ----- TX IQ (QRP only) -----
+    public ObservableCollection<PowerCalBandItem> TxIqBandItems { get; } = new();
+    [ObservableProperty] private int _txIqSelectedBand;
+    [ObservableProperty] private int _txIqOffset;
+    [ObservableProperty] private int _txIqPower = 100;
+    [ObservableProperty] private bool _txIqTxOn;
+    [ObservableProperty] private string _txIqStatus = "Select a band (QRP only).";
+    [ObservableProperty] private bool _txIqCommitting;
+    [ObservableProperty] private bool _txIqResetAllPrompt;
+
+    // ----- FREQ CAL -----
+    [ObservableProperty] private bool _freqCalLoose = true;
+    [ObservableProperty] private bool _freqCalManualMode;
+    [ObservableProperty] private bool _freqCalInProgress;
+    [ObservableProperty] private int _freqCalManualPpm;
+    [ObservableProperty] private int _freqCalProgress;
+    [ObservableProperty] private string _freqCalStatus = "OK";
+    [ObservableProperty] private bool _freqCalAutoModePrompt;
+    [ObservableProperty] private bool _freqCalManualAcceptPrompt;
+    [ObservableProperty] private bool _freqCalResetPrompt;
+
+    public string FreqCalLooseButtonText => FreqCalLoose ? "LOOSE" : "TIGHT";
+    public string FreqCalManualButtonText => FreqCalManualMode ? "MANUAL ON" : "MANUAL";
+    public bool FreqCalActionsEnabled => !FreqCalInProgress && !FreqCalManualMode && !FreqCalAutoModePrompt && !FreqCalManualAcceptPrompt;
+    public bool FreqCalManualButtonEnabled => !FreqCalInProgress && !FreqCalAutoModePrompt;
+    public bool FreqCalPpmEnabled => FreqCalManualMode && !FreqCalInProgress && !FreqCalManualAcceptPrompt;
+
+    /// <summary>QRP CAL tab enabled when AMP path is off.</summary>
+    public bool IsPowerCalTabEnabled => !AmpOn;
+    /// <summary>AMP CAL tab enabled when AMP path is on.</summary>
+    public bool IsAmpCalTabEnabled => AmpOn;
+    /// <summary>TX IQ only when AMP is off (QRP).</summary>
+    public bool IsTxIqTabEnabled => !AmpOn;
+    public string PowerCalTabHint => FreqCalInProgress
+        ? "Finish or STOP frequency calibration first."
+        : AmpOn
+            ? "Turn AMP off (right rail) to use QRP CAL."
+            : "Select band → confirm dummy load → CALIBRATE, adjust POWER, then stop and Accept.";
+    public string AmpCalTabHint => FreqCalInProgress
+        ? "Finish or STOP frequency calibration first."
+        : AmpOn
+            ? "Select band (needs green QRP lamp) → CALIBRATE, adjust POWER, then Accept."
+            : "Turn AMP on (right rail) to use AMP CAL.";
+    public string TxIqTabHint => FreqCalInProgress
+        ? "Finish or STOP frequency calibration first."
+        : AmpOn
+            ? "Turn AMP off to use TX IQ (QRP only)."
+            : "Select band → set power → TX ON → adjust OFFSET (external RX) → APPLY.";
+    public bool QrpMode => !AmpOn;
+    public bool FullPower => AmpOn;
+    public bool FreqCalAbortDrainPending => _freqCalAbortDrainPending;
+    public bool FreqCalAutoCheckEnabled => FreqCalActionsEnabled && !_freqCalAbortDrainPending;
+    public IBrush FreqCalStatusBrush { get; private set; } = new SolidColorBrush(Color.Parse("#00FFAA"));
+    public string RfPowerBankLabel => ResolveOperatePowerBank();
+    public string PowerCalTxButtonText => PowerCalTxOn ? "TX ON" : "TX";
+    public string PowerCalCalibrateButtonText => PowerCalCalibrating ? "CALIBRATING" : "CALIBRATE";
+    public string AmpCalTxButtonText => AmpCalTxOn ? "TX ON" : "TX";
+    public string AmpCalCalibrateButtonText => AmpCalCalibrating ? "CALIBRATING" : "CALIBRATE";
+    public string RxIqStartButtonText => RxIqSessionActive ? "ACTIVE" : "START";
+    public string TxIqTxButtonText => TxIqTxOn ? "TX ON" : "TX";
+    public bool PowerCalTxButtonEnabled => !PowerCalCalibrating;
+    public bool AmpCalTxButtonEnabled => !AmpCalCalibrating;
+    public bool TxIqBandSelectEnabled => !TxIqTxOn;
+
+    // ----- Radio model + GEN -----
+    [ObservableProperty] private bool _isGeminusRadioModel;
+    [ObservableProperty] private string _genButtonText = "USER";
+
+    public bool HfBandsEnabled => !IsGeminusRadioModel;
+    public bool LfBandsEnabled => IsGeminusRadioModel;
+    public string GenButtonTip => IsGeminusRadioModel
+        ? "GEN (Geminus LF): 198 / 660 / 880 kHz cal carriers. Press again to rotate."
+        : "GEN (Proficio): WWV / CHU / RWM / USER. Press again to rotate.";
+
+    public string SettingsFilePath => ClientSettingsStore.StorePath;
+
+    [ObservableProperty] private string _hostCatRadio = "(not set)";
+    [ObservableProperty] private string _hostCatApp = "(not set)";
+    [ObservableProperty] private string _hostOperatorSpeaker = "(not set — run MSCC Init)";
+    [ObservableProperty] private string _hostOperatorMic = "(not set — run MSCC Init)";
+    [ObservableProperty] private string _hostDigitalSpeaker = "(not set)";
+    [ObservableProperty] private string _hostDigitalMic = "(not set)";
+    public string HostAudioIniDir => LinuxDigitalIni.ConfigDir;
+
+    [RelayCommand]
+    private void RefreshHostAudio()
+    {
+        string cat = LinuxDigitalIni.CommPortName();
+        HostCatRadio = string.IsNullOrWhiteSpace(cat) ? "(not set — run MSCC Init)" : cat;
+        HostCatApp = string.IsNullOrWhiteSpace(cat)
+            ? "(other tty0tty end, usually /dev/tnt1)"
+            : LinuxDigitalIni.CommPortAppEnd(cat);
+        HostOperatorSpeaker = BlankToMissing(LinuxDigitalIni.OperatorSpeaker);
+        HostOperatorMic = BlankToMissing(LinuxDigitalIni.OperatorMic);
+        HostDigitalSpeaker = BlankToMissing(LinuxDigitalIni.DigitalSpeaker);
+        HostDigitalMic = BlankToMissing(LinuxDigitalIni.DigitalMic);
+    }
+
+    private static string BlankToMissing(string s)
+        => string.IsNullOrWhiteSpace(s) ? "(not set — run MSCC Init)" : s.Trim();
+
+    /// <summary>True when VFO B is the active radio VFO.</summary>
+    public bool UseVfoB => !UseVfoA;
+
+    /// <summary>Default low-cut index (RX/TX tab → radio).</summary>
+    [ObservableProperty] private int _lowCutDefaultIndex;
+    [ObservableProperty] private int _highCutDefaultIndex;
+    [ObservableProperty] private int _cwFilterDefaultIndex;
+    [ObservableProperty] private int _txDefaultIndex;
+    /// <summary>Active TX bandwidth index (RX/TX tab TX BW list).</summary>
+    [ObservableProperty] private int _txBandwidthIndex;
+
+    /// <summary>Title bar like WPF: product + MSCC / Core / FW versions.</summary>
+    public string WindowTitle
+    {
+        get
+        {
+            string fw = FirmwareText ?? "—";
+            string block = FirmwareBlockSuffix(fw);
+            string title = $"MSCC Avalonia   ·   MSCC: {ClientVersionText}   Core: {CoreVersionText}   FW: {fw}";
+            return string.IsNullOrEmpty(block) ? title : $"{title}   {block}";
+        }
+    }
+
+    /// <summary>Product line from FW major (cmd-022). Empty if unknown.</summary>
+    internal static string FirmwareProductLabel(int major) => major switch
+    {
+        1 => "Proficio Legacy",
+        2 => "Geminus MKII",
+        3 => "Proficio MKII PTT",
+        4 => "Proficio MKII ATU",
+        5 => "Geminus Legacy",
+        6 => "Ultimus Legacy",
+        7 => "Ultimus MKII ATU",
+        8 => "Ultimus MKII PTT",
+        _ => ""
+    };
+
+    /// <summary>WindowTitle suffix: product line from FW major (includes ATU/PTT in the name).</summary>
+    internal static string FirmwareBlockSuffix(string firmwareVersion)
+    {
+        if (!TryParseFirmwareMajor(firmwareVersion, out int major))
+            return "";
+        return FirmwareProductLabel(major);
+    }
+
+    internal static bool TryParseFirmwareMajor(string firmwareVersion, out int major)
+    {
+        major = 0;
+        if (string.IsNullOrWhiteSpace(firmwareVersion) || firmwareVersion is "—" or "--")
+            return false;
+        int dot = firmwareVersion.IndexOf('.');
+        string majs = dot >= 0 ? firmwareVersion[..dot] : firmwareVersion;
+        return int.TryParse(majs, out major);
+    }
+
+    /// <summary>Host cal park folder for FW major (match ms-sdr Factory_line_from_major).</summary>
+    internal static string CalParkLineFromMajor(int major) => major switch
+    {
+        1 => "proficio-legacy",
+        2 => "geminus-mkii",
+        3 or 4 => "proficio-mkii",
+        5 => "geminus-legacy",
+        6 => "ultimus-legacy",
+        7 or 8 => "ultimus-mkii",
+        _ => ""
+    };
+
+    [RelayCommand]
+    private async Task SaveSettingsAsync()
+    {
+        if (!IsConnected || _radio == null)
+        {
+            await MsccDialog.AlertAsync("Connect the radio first.").ConfigureAwait(true);
+            return;
+        }
+        if (!TryParseFirmwareMajor(FirmwareText ?? "", out int major) || major < 1 || major > 8)
+        {
+            await MsccDialog.AlertAsync("Firmware major unknown. Connect so the host can see the radio.").ConfigureAwait(true);
+            return;
+        }
+        string line = CalParkLineFromMajor(major);
+        try
+        {
+            await _radio.ParkCalSettingsAsync().ConfigureAwait(true);
+            AppendLog($"Save settings: asked host to park live cal for {line}");
+            await MsccDialog.AlertAsync($"Host was asked to park live cal for {line}.").ConfigureAwait(true);
+        }
+        catch (Exception ex)
+        {
+            AppendLog("Save settings: " + ex.Message);
+            await MsccDialog.AlertAsync("Save settings failed: " + ex.Message).ConfigureAwait(true);
+        }
+    }
+
+    /// <summary>
+    /// Band personality from FW major. 2/5 Geminus (LF); 1/3/4/6/7/8 Proficio-family (HF).
+    /// Unknown major: false (keep last-used INI).
+    /// </summary>
+    internal static bool TryFirmwareMajorToGeminus(int major, out bool geminus)
+    {
+        switch (major)
+        {
+            case 2:
+            case 5:
+                geminus = true;
+                return true;
+            case 1:
+            case 3:
+            case 4:
+            case 6:
+            case 7:
+            case 8:
+                geminus = false;
+                return true;
+            default:
+                geminus = false;
+                return false;
+        }
+    }
+
+    public string ConnectButtonText => IsConnected ? "Disconnect" : "Connect";
+    /// <summary>Left-rail Audio path button: Phones or Digital.</summary>
+    public string AudioPathButtonText =>
+        RemoteAudio
+            ? (RemoteDigitalAudio ? "R-Digital" : "R-Phones")
+            : (IsDigitalAudio ? "Digital" : "Phones");
+
+    /// <summary>Left-rail Audio path button: Phones or Digital (or R-Phones / R-Digital).</summary>
+    public bool RemoteAudioCheckboxEnabled => IsRemoteAudioAllowed;
+
+    /// <summary>User may press PTT/TUN only when connected and server is not locking TX.</summary>
+    public bool CanUserControlTransmit => IsConnected && !IsBusy && !TxSetByServer && _radio != null;
+
+    partial void OnIsConnectedChanged(bool value)
+    {
+        OnPropertyChanged(nameof(ConnectButtonText));
+        OnPropertyChanged(nameof(CanUserControlTransmit));
+        OnPropertyChanged(nameof(DigitalControlsEnabled));
+        OnPropertyChanged(nameof(LaunchOptionEnabled));
+        NotifyOperateCommands();
+        if (!value)
+        {
+            CancelKeyerPlayPttRelease(releasePtt: false);
+            _keyerPlayOwnsPtt = false;
+            // UI state only after radio disposed / about to dispose
+            _suppressTransmitCommands = true;
+            PttOn = false;
+            TuneMode = false;
+            _suppressTransmitCommands = false;
+            TxSetByServer = false;
+        }
+    }
+
+    partial void OnTxSetByServerChanged(bool value)
+    {
+        OnPropertyChanged(nameof(CanUserControlTransmit));
+        TogglePttCommand.NotifyCanExecuteChanged();
+        ToggleTuneCommand.NotifyCanExecuteChanged();
+    }
+
+    partial void OnIsBusyChanged(bool value)
+    {
+        OnPropertyChanged(nameof(CanUserControlTransmit));
+        OnPropertyChanged(nameof(LaunchOptionEnabled));
+        OnPropertyChanged(nameof(AutoOptionEnabled));
+        TogglePttCommand.NotifyCanExecuteChanged();
+        ToggleTuneCommand.NotifyCanExecuteChanged();
+    }
+
+    partial void OnClientVersionTextChanged(string value) => OnPropertyChanged(nameof(WindowTitle));
+    partial void OnCoreVersionTextChanged(string value) => OnPropertyChanged(nameof(WindowTitle));
+    partial void OnFirmwareTextChanged(string value) => OnPropertyChanged(nameof(WindowTitle));
+
+    partial void OnModeTextChanged(string value)
+    {
+        SyncRfPowerFromMode();
+        NotifyModeFlags();
+    }
+
+    private void NotifyModeFlags()
+    {
+        string m = (ModeText ?? "").Trim().ToUpperInvariant();
+        ModeIsUsb = m is "USB";
+        ModeIsLsb = m is "LSB";
+        ModeIsCw = m is "CW";
+        ModeIsAm = m is "AM";
+        ModeIsDigU = m is "DIG-U" or "DIGU" or "DIG";
+        ModeIsFm = m is "FM";
+        OnPropertyChanged(nameof(FmSimplexEnabled));
+    }
+
+    /// <summary>Simplex checkbox only meaningful in FM.</summary>
+    public bool FmSimplexEnabled => ModeIsFm;
+
+    partial void OnFmSimplexChanged(bool value)
+    {
+        ScheduleSaveClientSettings();
+        if (!ModeIsFm || _radio == null || !IsConnected) return;
+        _ = ApplyFmOffsetPolicyAsync();
+    }
+
+    partial void OnBandTextChanged(string value) => NotifyBandFlags();
+
+    private void NotifyBandFlags()
+    {
+        string b = NormalizeBandLabel(BandText);
+        BandIs2200 = b is "2200m";
+        BandIs630 = b is "630m";
+        BandIs160 = b is "160m";
+        BandIs80 = b is "80m";
+        BandIs60 = b is "60m";
+        BandIs40 = b is "40m";
+        BandIs30 = b is "30m";
+        BandIs20 = b is "20m";
+        BandIs17 = b is "17m";
+        BandIs15 = b is "15m";
+        BandIs12 = b is "12m";
+        BandIs10 = b is "10m";
+        BandIsGen = b is "gen";
+    }
+
+    partial void OnTunePowerPercentChanged(int value)
+    {
+        if (IsTuneBankActive()) SyncRfPowerFromMode(force: true);
+        ScheduleSaveClientSettings();
+        if (_suppressPowerSend || !CanOperate()) return;
+        _ = SendTunePowerAsync(Math.Clamp(value, 0, 100));
+    }
+
+    partial void OnCwPowerPercentChanged(int value)
+    {
+        if (IsCwBankActive()) SyncRfPowerFromMode(force: true);
+        ScheduleSaveClientSettings();
+        if (_suppressPowerSend || !CanOperate()) return;
+        _ = SendCwPowerAsync(Math.Clamp(value, 0, 100));
+    }
+
+    partial void OnSsbPowerPercentChanged(int value)
+    {
+        if (IsSsbBankActive()) SyncRfPowerFromMode(force: true);
+        ScheduleSaveClientSettings();
+        if (_suppressPowerSend || !CanOperate()) return;
+        _ = SendSsbPowerAsync(Math.Clamp(value, 0, 100));
+    }
+
+    partial void OnAmCarrierPercentChanged(int value)
+    {
+        if (IsAmBankActive()) SyncRfPowerFromMode(force: true);
+        ScheduleSaveClientSettings();
+        if (_suppressPowerSend || !CanOperate()) return;
+        _ = SendAmCarrierAsync(Math.Clamp(value, 0, 100));
+    }
+
+    partial void OnFmPowerPercentChanged(int value)
+    {
+        if (IsFmBankActive()) SyncRfPowerFromMode(force: true);
+        ScheduleSaveClientSettings();
+        if (_suppressPowerSend || !CanOperate()) return;
+        _ = SendFmPowerAsync(Math.Clamp(value, 0, 100));
+    }
+
+    /// <summary>Right-rail RF slider writes into the active mode's power bank.</summary>
+    partial void OnRfPowerChanged(int value)
+    {
+        if (_syncingRfMirror) return;
+        value = Math.Clamp(value, 0, 100);
+        switch (ResolveOperatePowerBank())
+        {
+            case "TUNE":
+                if (TunePowerPercent != value) TunePowerPercent = value;
+                break;
+            case "CW":
+                if (CwPowerPercent != value) CwPowerPercent = value;
+                break;
+            case "AM":
+                if (AmCarrierPercent != value) AmCarrierPercent = value;
+                break;
+            case "FM":
+                if (FmPowerPercent != value) FmPowerPercent = value;
+                break;
+            default:
+                if (SsbPowerPercent != value) SsbPowerPercent = value;
+                break;
+        }
+    }
+
+    private void NotifyOperateCommands()
+    {
+        ConnectCommand.NotifyCanExecuteChanged();
+        DisconnectCommand.NotifyCanExecuteChanged();
+        ToggleConnectCommand.NotifyCanExecuteChanged();
+        SetFrequencyCommand.NotifyCanExecuteChanged();
+        TuneUpCommand.NotifyCanExecuteChanged();
+        TuneDownCommand.NotifyCanExecuteChanged();
+        CycleStepCommand.NotifyCanExecuteChanged();
+        SetModeCommand.NotifyCanExecuteChanged();
+        SelectBandCommand.NotifyCanExecuteChanged();
+        TogglePttCommand.NotifyCanExecuteChanged();
+        ToggleTuneCommand.NotifyCanExecuteChanged();
+        SelectQrpCommand.NotifyCanExecuteChanged();
+        SelectFullPowerCommand.NotifyCanExecuteChanged();
+        CycleAgcCommand.NotifyCanExecuteChanged();
+        ToggleAmpCommand.NotifyCanExecuteChanged();
+        ToggleAlcCommand.NotifyCanExecuteChanged();
+        ToggleCompressionCommand.NotifyCanExecuteChanged();
+        ToggleMonitorCommand.NotifyCanExecuteChanged();
+        ToggleNbCommand.NotifyCanExecuteChanged();
+        ToggleNrCommand.NotifyCanExecuteChanged();
+        ToggleAnCommand.NotifyCanExecuteChanged();
+        OnPropertyChanged(nameof(CanUserControlTransmit));
+    }
+
+    private bool CanOperate() => IsConnected && !IsBusy && _radio != null;
+
+    private bool CanTogglePtt() => CanUserControlTransmit;
+    private bool CanToggleTune() => CanUserControlTransmit;
+
+    [RelayCommand(CanExecute = nameof(CanTogglePtt))]
+    private void TogglePtt() => PttOn = !PttOn;
+
+    [RelayCommand(CanExecute = nameof(CanToggleTune))]
+    private void ToggleTune() => TuneMode = !TuneMode;
+
+    partial void OnPttOnChanged(bool value)
+    {
+        TogglePttCommand.NotifyCanExecuteChanged();
+        // User (or forced) drop of PTT cancels auto-release ownership
+        if (!value && _keyerPlayOwnsPtt)
+        {
+            _keyerPlayOwnsPtt = false;
+            try { _keyerPlayPttReleaseCts?.Cancel(); } catch { /* ignore */ }
+        }
+        if (_suppressTransmitCommands) return;
+        if (!CanOperate() || TxSetByServer) return;
+
+        _ = SendPttAsync(value);
+        MaybeZeroAlcMeterOnRx();
+    }
+
+    partial void OnTuneModeChanged(bool value)
+    {
+        ToggleTuneCommand.NotifyCanExecuteChanged();
+        if (_suppressTransmitCommands)
+        {
+            if (value)
+                ModeText = "TUNE";
+            return;
+        }
+
+        if (value)
+        {
+            // Remember mode to restore when TUN released
+            string cur = (ModeText ?? "USB").Trim();
+            if (!string.Equals(cur, "TUNE", StringComparison.OrdinalIgnoreCase) && cur.Length > 0)
+                _modeBeforeTune = cur;
+            ModeText = "TUNE";
+            if (CanOperate() && !TxSetByServer)
+                _ = ApplyTuneOnAsync();
+        }
+        else
+        {
+            string restore = string.IsNullOrWhiteSpace(_modeBeforeTune) ? "USB" : _modeBeforeTune;
+            if (string.Equals(ModeText, "TUNE", StringComparison.OrdinalIgnoreCase))
+                ModeText = restore;
+            if (CanOperate() && !TxSetByServer)
+                _ = ApplyTuneOffAsync(restore);
+        }
+
+        MaybeZeroAlcMeterOnRx();
+    }
+
+    private async Task SendPttAsync(bool on)
+    {
+        if (_radio == null) return;
+        try
+        {
+            await _radio.SetTransmitAsync(on).ConfigureAwait(true);
+            bool cw = string.Equals((ModeText ?? "").Trim(), "CW", StringComparison.OrdinalIgnoreCase);
+            if (on && cw)
+            {
+                StatusText = "PTT latched (CW: PA still needs keyer/paddle)";
+                AppendLog("PTT ON sent (0xBA) — in CW mode Proficio keys PA from keyer line, not host PTT");
+            }
+            else
+            {
+                StatusText = on ? "PTT ON" : "PTT OFF";
+                AppendLog($"PTT {(on ? "ON" : "OFF")} (CMD_SET_TX_ON 0xBA)");
+            }
+        }
+        catch (Exception ex)
+        {
+            AppendLog($"PTT error: {ex.Message}");
+            _suppressTransmitCommands = true;
+            PttOn = false;
+            _suppressTransmitCommands = false;
+        }
+    }
+
+    private async Task ApplyTuneOnAsync()
+    {
+        if (_radio == null) return;
+        try
+        {
+            await _radio.SetModeAsync("TUNE").ConfigureAwait(true);
+            await _radio.SetTunePowerAsync(TunePowerPercent).ConfigureAwait(true);
+            await _radio.SetAutoTuneAsync(true).ConfigureAwait(true);
+            StatusText = $"TUN ON (Tune Power {TunePowerPercent}%)";
+            AppendLog($"TUN ON — mode TUNE, rig tune, power {TunePowerPercent}%");
+        }
+        catch (Exception ex)
+        {
+            AppendLog($"TUN on error: {ex.Message}");
+            _suppressTransmitCommands = true;
+            TuneMode = false;
+            _suppressTransmitCommands = false;
+        }
+    }
+
+    private async Task ApplyTuneOffAsync(string restoreMode)
+    {
+        if (_radio == null) return;
+        try
+        {
+            await _radio.SetAutoTuneAsync(false).ConfigureAwait(true);
+            await _radio.SetModeAsync(restoreMode).ConfigureAwait(true);
+            StatusText = $"TUN OFF → {restoreMode}";
+            AppendLog($"TUN OFF — restored mode {restoreMode}");
+        }
+        catch (Exception ex)
+        {
+            AppendLog($"TUN off error: {ex.Message}");
+        }
+    }
+
+    /// <summary>Force RX: PTT and TUN off (disconnect / safety).</summary>
+    private async Task ForceTxOffAsync()
+    {
+        if (_radio == null) return;
+        try
+        {
+            if (PttOn || TuneMode)
+                AppendLog("Forcing PTT/TUN off…");
+            await _radio.SetTransmitAsync(false).ConfigureAwait(true);
+            await _radio.SetAutoTuneAsync(false).ConfigureAwait(true);
+        }
+        catch (Exception ex)
+        {
+            AppendLog($"Force TX off: {ex.Message}");
+        }
+    }
+
+    private string ActiveModeString =>
+        UseVfoA
+            ? (ModeText ?? "USB")
+            : (VfoBModeText ?? "USB");
+
+    private bool IsTuneBankActive() =>
+        string.Equals(ActiveModeString, "TUNE", StringComparison.OrdinalIgnoreCase);
+
+    private bool IsCwBankActive() =>
+        string.Equals(ActiveModeString, "CW", StringComparison.OrdinalIgnoreCase);
+
+    private bool IsAmBankActive() =>
+        string.Equals(ActiveModeString, "AM", StringComparison.OrdinalIgnoreCase);
+
+    private bool IsFmBankActive() =>
+        string.Equals(ActiveModeString, "FM", StringComparison.OrdinalIgnoreCase);
+
+    private bool IsSsbBankActive() =>
+        !IsTuneBankActive() && !IsCwBankActive() && !IsAmBankActive() && !IsFmBankActive();
+
+    private string ResolveOperatePowerBank()
+    {
+        string m = (ActiveModeString ?? "").Trim().ToUpperInvariant();
+        return m switch
+        {
+            "TUNE" => "TUNE",
+            "CW" => "CW",
+            "AM" => "AM",
+            "FM" => "FM",
+            _ => "SSB"
+        };
+    }
+
+    private void SyncRfPowerFromMode(bool force = false)
+    {
+        OnPropertyChanged(nameof(RfPowerBankLabel));
+        int target = ResolveOperatePowerBank() switch
+        {
+            "TUNE" => TunePowerPercent,
+            "CW" => CwPowerPercent,
+            "AM" => AmCarrierPercent,
+            "FM" => FmPowerPercent,
+            _ => SsbPowerPercent
+        };
+
+        if (!force && RfPower == target) return;
+        _syncingRfMirror = true;
+        try { RfPower = target; }
+        finally { _syncingRfMirror = false; }
+    }
+
+    private async Task SendTunePowerAsync(int percent)
+    {
+        if (_radio == null) return;
+        try
+        {
+            await _radio.SetTunePowerAsync(percent).ConfigureAwait(true);
+            AppendLog($"Sent Tune Power {percent}%");
+        }
+        catch (Exception ex) { AppendLog($"Tune power error: {ex.Message}"); }
+    }
+
+    private async Task SendCwPowerAsync(int percent)
+    {
+        if (_radio == null) return;
+        try
+        {
+            await _radio.SetCwPowerAsync(percent).ConfigureAwait(true);
+            AppendLog($"Sent CW Power {percent}%");
+        }
+        catch (Exception ex) { AppendLog($"CW power error: {ex.Message}"); }
+    }
+
+    private async Task SendSsbPowerAsync(int percent)
+    {
+        if (_radio == null) return;
+        try
+        {
+            await _radio.SetSsbPowerAsync(percent).ConfigureAwait(true);
+            AppendLog($"Sent SSB Power {percent}%");
+        }
+        catch (Exception ex) { AppendLog($"SSB power error: {ex.Message}"); }
+    }
+
+    private async Task SendAmCarrierAsync(int percent)
+    {
+        if (_radio == null) return;
+        try
+        {
+            await _radio.SetAmCarrierAsync(percent).ConfigureAwait(true);
+            AppendLog($"Sent AM Carrier {percent}%");
+        }
+        catch (Exception ex) { AppendLog($"AM carrier error: {ex.Message}"); }
+    }
+
+    private async Task SendFmPowerAsync(int percent)
+    {
+        if (_radio == null) return;
+        try
+        {
+            await _radio.SetFmPowerAsync(percent).ConfigureAwait(true);
+            AppendLog($"Sent FM Power {percent}%");
+        }
+        catch (Exception ex) { AppendLog($"FM power error: {ex.Message}"); }
+    }
+
+    private void ApplyReportedPower(Action apply)
+    {
+        _suppressPowerSend = true;
+        try { apply(); }
+        finally { _suppressPowerSend = false; }
+        SyncRfPowerFromMode();
+    }
+
+    // ----- Connect -----
+
+    [RelayCommand]
+    private async Task ToggleConnectAsync()
+    {
+        if (IsConnected)
+            await Disconnect().ConfigureAwait(true);
+        else
+            await ConnectAsync().ConfigureAwait(true);
+    }
+
+    [RelayCommand(CanExecute = nameof(CanConnect))]
+    private async Task ConnectAsync()
+    {
+        if (IsConnected || IsBusy) return;
+
+        IsBusy = true;
+        StatusText = "Connecting…";
+        NotifyOperateCommands();
+
+        try
+        {
+            // Ensure PROFICIO-MKII is on disk before a local ms-sdr (re)start reads mscc.ini.
+            MsccIniProficio.WriteProficioMkii(mkii: !ExternalElectronicKeyer);
+            AppendLog(ExternalElectronicKeyer
+                ? "PROFICIO-MKII=0 (legacy / external electronic keyer)"
+                : "PROFICIO-MKII=1 (MKII internal keyer)");
+
+            Host = Host.Trim();
+            if (string.IsNullOrWhiteSpace(Host))
+            {
+                StatusText = "Host required.";
+                return;
+            }
+
+            if (!TryParsePort(RemotePortText, out int remotePort))
+            {
+                StatusText = "Port must be 1–65535.";
+                return;
+            }
+
+            if (!TryParsePort(LocalPortText, out int localPort))
+            {
+                StatusText = "Local RX port must be 1–65535.";
+                return;
+            }
+
+            // Normalize displayed text after parse
+            RemotePortText = remotePort.ToString(CultureInfo.InvariantCulture);
+            LocalPortText = localPort.ToString(CultureInfo.InvariantCulture);
+
+            if (_serverStopTask != null)
+            {
+                try { await _serverStopTask.WaitAsync(TimeSpan.FromSeconds(15)).ConfigureAwait(true); }
+                catch { /* continue */ }
+                _serverStopTask = null;
+            }
+
+            DisposeRadio();
+            _packetsReceived = 0;
+            _keepAlivesReceived = 0;
+            _launchStartedThisConnect = false;
+            _panPacketsReceived = 0;
+            _spectrumFrames = 0;
+            _spectrumFrameCounter = 0;
+            CurrentSpectrum = null;
+            UpdatePacketStats();
+
+            if (LaunchServers && IsLocalHost(Host))
+                await EnsureLocalServersAsync().ConfigureAwait(true);
+
+            AppendLog($"Connect → {Host}:{remotePort} (RX {localPort})");
+            _radio = new UdpRadioService(Host, remotePort, localPort);
+            WireRadioEvents(_radio);
+            await _radio.StartAsync(launchSubsystems: false).ConfigureAwait(true);
+
+            IsConnected = true;
+            StatusText = $"Connected {Host}:{remotePort}";
+            AppendLog(_serversOurs ? "Connected (servers started by this client)." : "Connected.");
+            RememberRecentHost(Host);
+            // Sticky SPECTRUM RESOLUTION (0x5F) also heals silent spectrum if a prior
+            // client left refresh blocks at 0.
+            await ApplyPanResolutionAsync("connect").ConfigureAwait(true);
+            // Push selected VFO + freq/mode so dual-VFO state matches UI
+            await PushActiveVfoToRadioAsync(force: true).ConfigureAwait(true);
+            // Restore sticky operate settings to the radio (server-backed)
+            await PushStickyOperateToRadioAsync().ConfigureAwait(true);
+
+            PushAudioToRadio("connect");
+            if (RemoteAudio)
+                StartRemoteAf("connect");
+        }
+        catch (Exception ex)
+        {
+            IsConnected = false;
+            StatusText = $"Connect failed: {ex.Message}";
+            AppendLog($"ERROR: {ex.Message}");
+            DisposeRadio();
+        }
+        finally
+        {
+            IsBusy = false;
+            NotifyOperateCommands();
+            OnPropertyChanged(nameof(ConnectButtonText));
+        }
+    }
+
+    private bool CanConnect() => !IsConnected && !IsBusy;
+
+    [RelayCommand(CanExecute = nameof(CanDisconnect))]
+    private async Task Disconnect()
+    {
+        if (IsBusy) return;
+        IsBusy = true;
+        try
+        {
+            await PrepareDisconnectAsync(closeWindow: false).ConfigureAwait(true);
+            AppendLog(_serversOurs
+                ? "Disconnect (stopping servers this client started)."
+                : "Disconnect (servers not started by this client - left running).");
+            if (RemoteAudio && _radio != null)
+            {
+                try
+                {
+                    PushRemoteOffAndLocalAsync("disconnect").GetAwaiter().GetResult();
+                }
+                catch { /* ignore */ }
+                StopRemoteAf(closeWindow: true);
+            }
+            // Best-effort clear TX before dropping UDP session
+            try
+            {
+                ForceTxOffAsync().GetAwaiter().GetResult();
+            }
+            catch
+            {
+                // ignore
+            }
+
+            _suppressTransmitCommands = true;
+            PttOn = false;
+            TuneMode = false;
+            _suppressTransmitCommands = false;
+            TxSetByServer = false;
+
+            ForceStopPowerCal("disconnect");
+            ForceStopAmpCal("disconnect");
+            LeaveRxIqSession("disconnect");
+            ForceStopTxIqSession("disconnect");
+            ForceStopFreqCal("disconnect");
+            DisposeRadio();
+            if (_serversOurs)
+            {
+                _serverStopTask = StopLocalServersAsync();
+                await _serverStopTask.ConfigureAwait(true);
+                _serverStopTask = null;
+            }
+            _fwRadioModelApplied = false;
+            IsConnected = false;
+            StatusText = IdleStatusText();
+            FrequencyText = "—";
+            SmeterText = "—";
+            SMeter = 0;
+            AlcText = "—";
+            ResetAlcMeter();
+            BandText = "—";
+            CurrentSpectrum = null;
+            _suppressRitSend = true;
+            RitOn = false;
+            RitOffset = 0;
+            _suppressRitSend = false;
+        }
+        finally
+        {
+            IsBusy = false;
+            NotifyOperateCommands();
+            OnPropertyChanged(nameof(ConnectButtonText));
+        }
+    }
+
+    private bool CanDisconnect() => IsConnected && !IsBusy;
+
+    private async Task EnsureLocalServersAsync()
+    {
+        if (OperatingSystem.IsWindows())
+        {
+            AppendLog("Launch: Linux only");
+            return;
+        }
+
+        if (LocalServerLauncher.AllRunning())
+        {
+            _serversOurs = false;
+            AppendLog("Launch: servers already running - connect only (not ours)");
+            return;
+        }
+
+        int before = LocalServerLauncher.RunningCount();
+        var missing = LocalServerLauncher.MissingSetupItems();
+        if (missing.Count > 0)
+        {
+            string msg = "MSCC is not set up on this computer yet. Run MSCC Init (menu: MSCC Init), then try again.";
+            AppendLog("Launch: " + msg + " missing=" + string.Join(",", missing));
+            await MsccDialog.AlertAsync(msg).ConfigureAwait(true);
+        }
+
+        StatusText = "Starting servers...";
+        string? ctl = LocalServerLauncher.ResolveDesktopCtl();
+        string? mscc = LocalServerLauncher.ResolveMscc();
+        string? vac = LocalServerLauncher.ResolveVirtualAudio();
+        if (ctl != null)
+        {
+            AppendLog("Launch: mscc-desktop-ctl start");
+            await LocalServerLauncher.RunAsync(ctl, "start", s => AppendLog(s), TimeSpan.FromSeconds(30)).ConfigureAwait(true);
+        }
+        else if (mscc != null)
+        {
+            if (vac != null)
+            {
+                try
+                {
+                    await LocalServerLauncher.RunAsync(vac, "", s => AppendLog(s), TimeSpan.FromSeconds(15)).ConfigureAwait(true);
+                }
+                catch (Exception ex) { AppendLog("Launch: virtual-audio " + ex.Message); }
+            }
+            AppendLog("Launch: mscc start");
+            await LocalServerLauncher.RunAsync(mscc, "start", s => AppendLog(s), TimeSpan.FromSeconds(30)).ConfigureAwait(true);
+        }
+        else
+        {
+            StatusText = "mscc not installed - start the servers with MSCC Start";
+            AppendLog("Launch: mscc not installed - start the servers with MSCC Start");
+            AppendLog("Launch: no start command - not ours");
+        }
+
+        bool startRan = ctl != null || mscc != null;
+        if (startRan && before < 3)
+        {
+            _serversOurs = true;
+            _launchStartedThisConnect = true;
+            _serversLaunchedUtc = DateTime.UtcNow;
+            _keepAliveGraceUsed = false;
+            if (before > 0)
+                AppendLog($"Launch: partial ({before} of 3 running) - mscc start fills in, marked ours");
+        }
+        else if (!startRan)
+            _serversOurs = false;
+
+        StatusText = "Waiting for servers...";
+        var deadline = DateTime.UtcNow + TimeSpan.FromSeconds(10);
+        while (!LocalServerLauncher.AllRunning() && DateTime.UtcNow < deadline)
+            await Task.Delay(250).ConfigureAwait(true);
+        await Task.Delay(3000).ConfigureAwait(true);
+    }
+
+    private async Task StopLocalServersAsync()
+    {
+        if (OperatingSystem.IsWindows())
+            return;
+        string? ctl = LocalServerLauncher.ResolveDesktopCtl();
+        string? mscc = LocalServerLauncher.ResolveMscc();
+        if (ctl != null)
+            await LocalServerLauncher.RunAsync(ctl, "stop", s => AppendLog(s), TimeSpan.FromSeconds(20)).ConfigureAwait(true);
+        else if (mscc != null)
+            await LocalServerLauncher.RunAsync(mscc, "stop", s => AppendLog(s), TimeSpan.FromSeconds(20)).ConfigureAwait(true);
+        _serversOurs = false;
+    }
+
+    internal async Task PrepareDisconnectAsync(bool closeWindow)
+    {
+        // Before abort: abort clears _freqCalRestorePending, which would look like the tab is still open.
+        bool keepOpen = !closeWindow && _freqCalTabActive && !_freqCalRestorePending;
+        if (FreqCalInProgress && _radio != null)
+        {
+            try { await _radio.AbortCalibrationAsync().ConfigureAwait(true); }
+            catch { /* best effort */ }
+            AppendLog(closeWindow ? "Freq Cal: run aborted (close)" : "Freq Cal: run aborted (disconnect)");
+            EndFreqCalAbortDrain(closeWindow ? "close" : "disconnect");
+            ResetFreqCalSessionOnStop();
+            FreqCalStatus = "STOPPED";
+            SetFreqCalStatusColor("idle");
+        }
+        if (_freqCalEntryHeld)
+        {
+            try
+            {
+                using var cts = new CancellationTokenSource(TimeSpan.FromMilliseconds(300));
+                await LeaveFreqCalTab(sendToRadio: IsConnected, tabStillOpen: keepOpen)
+                    .WaitAsync(cts.Token).ConfigureAwait(true);
+            }
+            catch { /* bounded */ }
+        }
+    }
+
+    /// <summary>
+    /// Fire mscc stop before any await on window close. An async Closing handler can
+    /// exit the process before PrepareForCloseAsync reaches the stop.
+    /// </summary>
+    public void KickOwnedServerStop()
+    {
+        if (!_serversOurs)
+            return;
+        string log = Path.Combine(
+            Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
+            "MSCC-Avalonia", "logs", "mscc-launch.log");
+        try { LocalServerLauncher.StartDetachedStop(log); }
+        catch { /* still mark not-ours so we don't double-stop */ }
+        AppendLog("Launch: close - mscc stop started (log: " + log + ")");
+        _serversOurs = false;
+    }
+
+    public async Task PrepareForCloseAsync()
+    {
+        try
+        {
+            KickOwnedServerStop();
+            await PrepareDisconnectAsync(closeWindow: true).ConfigureAwait(true);
+            if (IsConnected)
+            {
+                try { ForceTxOffAsync().GetAwaiter().GetResult(); } catch { /* ignore */ }
+                ForceStopPowerCal("close");
+                ForceStopAmpCal("close");
+                LeaveRxIqSession("close");
+                ForceStopTxIqSession("close");
+                ForceStopFreqCal("close");
+                DisposeRadio();
+                IsConnected = false;
+            }
+            KickOwnedServerStop();
+        }
+        catch (Exception ex)
+        {
+            AppendLog("PrepareForClose: " + ex.Message);
+        }
+    }
+
+    /// <summary>
+    /// Smooth ALC for the needle (WPF-style rolling mean). Maps 0–1000 legacy → 0–100.
+    /// </summary>
+    private void ApplyAlcMeterSample(int raw)
+    {
+        int sample = raw > 100 ? Math.Clamp(raw / 10, 0, 100) : Math.Clamp(raw, 0, 100);
+
+        _alcSampleRing[_alcSampleIndex] = sample;
+        _alcSampleIndex = (_alcSampleIndex + 1) % _alcSampleRing.Length;
+        if (_alcSampleCount < _alcSampleRing.Length)
+            _alcSampleCount++;
+
+        long sum = 0;
+        for (int i = 0; i < _alcSampleCount; i++)
+            sum += _alcSampleRing[i];
+
+        AlcValue = (sum + _alcSampleCount / 2.0) / _alcSampleCount;
+        AlcText = ((int)Math.Round(AlcValue)).ToString(CultureInfo.InvariantCulture);
+        KickAlcIdleTimer();
+    }
+
+    private void MaybeZeroAlcMeterOnRx()
+    {
+        if (PttOn || TuneMode)
+            return;
+        _alcIdleTimer?.Stop();
+        if (AlcValue != 0 || _alcSampleCount != 0)
+        {
+            ResetAlcMeter();
+            AppendLog("ALC meter zeroed (PTT/TUN off → RX)");
+        }
+    }
+
+    private void EnsureAlcIdleTimer()
+    {
+        if (_alcIdleTimer != null) return;
+        _alcIdleTimer = new DispatcherTimer
+        {
+            Interval = TimeSpan.FromSeconds(AlcIdleTimeoutSeconds)
+        };
+        _alcIdleTimer.Tick += (_, _) =>
+        {
+            _alcIdleTimer.Stop();
+            if (AlcValue != 0 || _alcSampleCount != 0)
+            {
+                ResetAlcMeter();
+                AppendLog($"ALC meter zeroed (no samples for {AlcIdleTimeoutSeconds}s)");
+            }
+        };
+    }
+
+    private void KickAlcIdleTimer()
+    {
+        EnsureAlcIdleTimer();
+        _alcIdleTimer!.Stop();
+        _alcIdleTimer.Start();
+    }
+
+    private void ResetAlcMeter()
+    {
+        Array.Clear(_alcSampleRing);
+        _alcSampleCount = 0;
+        _alcSampleIndex = 0;
+        AlcValue = 0;
+        AlcText = "0";
+    }
+
+    /// <summary>
+    /// Map radio dBm (CMD_GET_SET_SMETER) to analog units 0–15 (WPF Db_to_Smeter).
+    /// S9 = −73 dBm; S1–S9 at 6 dB/S-unit; above S9 in 10 dB steps (capped at 12 / S9+30).
+    /// </summary>
+    private static int DbToSmeter(int dbm)
+    {
+        if (dbm <= -130)
+            return 0;
+
+        if (dbm <= -73)
+        {
+            // S1 to S9: 6 dB per S-unit, S9 = -73 dBm
+            int smeterValue = 9 + (dbm + 73) / 6;
+            return smeterValue < 1 ? 1 : smeterValue;
+        }
+
+        // Above S9: 10 dB steps (S9+10, S9+20, S9+30)
+        int dbOverS9 = dbm + 73;
+        int overValue = (dbOverS9 + 5) / 10; // round nearest
+        if (overValue <= 0)
+            return 9;
+        if (overValue >= 3)
+            return 12; // firmware limit
+        return 9 + overValue;
+    }
+
+    private static string FormatSmeterReading(int units)
+    {
+        if (units <= 0) return "S0";
+        if (units <= 9) return $"S{units}";
+        return $"S9+{(units - 9) * 10}";
+    }
+
+    private void ApplySmeterSample(int dbm)
+    {
+        int units = DbToSmeter(dbm);
+        SMeter = units;
+        SmeterText = FormatSmeterReading(units);
+    }
+
+    public Task TuneFromSpectrumAsync(long frequencyHz) =>
+        ApplyFrequencyAsync(frequencyHz, "click-to-tune");
+
+    /// <summary>
+    /// VFO A mouse wheel with left-rail Step (fallback when not over a digit).
+    /// </summary>
+    public Task NudgeFrequencyAsync(int direction) =>
+        NudgeFrequencyByDigitAsync(direction, GetCurrentStepHz(), quantize: false, vfoA: UseVfoA);
+
+    public long GetCurrentStepHz() => StepChoicesHz[_stepIndex];
+
+    /// <summary>
+    /// Digit-position wheel: step = 10^n from hovered digit; quantize zeros lower digits (WPF style).
+    /// Tunes the VFO under the pointer and selects it if needed.
+    /// </summary>
+    public async Task NudgeFrequencyByDigitAsync(int direction, long stepHz, bool quantize, bool vfoA)
+    {
+        if (direction == 0 || stepHz <= 0)
+            return;
+
+        // Select the VFO being tuned
+        if (vfoA && !UseVfoA)
+            await SelectVfoAsync(useVfoA: true).ConfigureAwait(true);
+        else if (!vfoA && UseVfoA)
+            await SelectVfoAsync(useVfoA: false).ConfigureAwait(true);
+
+        long current = vfoA ? _frequencyHz : _vfoBFrequencyHz;
+        long baseFreq = quantize ? current - (current % stepHz) : current;
+        long hz = Math.Clamp(baseFreq + direction * stepHz, 10_000, 60_000_000);
+        await ApplyFrequencyAsync(hz, quantize ? $"digit±{stepHz}" : $"wheel±{stepHz}").ConfigureAwait(true);
+    }
+
+    /// <summary>Optional hover readout under VFO (e.g. "1 kHz").</summary>
+    public void SetHoverTuneStep(long stepHz)
+    {
+        HoverTuneStepLabel = stepHz > 0 ? FormatStep(stepHz) : "";
+        OnPropertyChanged(nameof(VfoTuneStepDisplay));
+    }
+
+    [ObservableProperty] private string _hoverTuneStepLabel = "";
+
+    /// <summary>Under VFO A: hovered digit step, or left-rail Step fallback.</summary>
+    public string VfoTuneStepDisplay =>
+        string.IsNullOrEmpty(HoverTuneStepLabel)
+            ? $"step {StepLabel}"
+            : HoverTuneStepLabel;
+
+    // ----- Frequency (live) -----
+
+    [RelayCommand(CanExecute = nameof(CanOperate))]
+    private async Task SetFrequencyAsync()
+    {
+        if (!TryParseMhz(FrequencyMhzEdit, out long hz))
+        {
+            StatusText = "Invalid MHz";
+            return;
+        }
+        await ApplyFrequencyAsync(hz, "Set").ConfigureAwait(true);
+    }
+
+    [RelayCommand(CanExecute = nameof(CanOperate))]
+    private async Task TuneUpAsync()
+    {
+        long step = StepChoicesHz[_stepIndex];
+        long hz = Math.Clamp(_frequencyHz + step, 10_000, 60_000_000);
+        await ApplyFrequencyAsync(hz, $"+{FormatStep(step)}").ConfigureAwait(true);
+    }
+
+    [RelayCommand(CanExecute = nameof(CanOperate))]
+    private async Task TuneDownAsync()
+    {
+        long step = StepChoicesHz[_stepIndex];
+        long hz = Math.Clamp(_frequencyHz - step, 10_000, 60_000_000);
+        await ApplyFrequencyAsync(hz, $"-{FormatStep(step)}").ConfigureAwait(true);
+    }
+
+    [RelayCommand(CanExecute = nameof(CanOperate))]
+    private void CycleStep()
+    {
+        _stepIndex = (_stepIndex + 1) % StepChoicesHz.Length;
+        StepLabel = FormatStep(StepChoicesHz[_stepIndex]);
+        OnPropertyChanged(nameof(VfoTuneStepDisplay));
+        AppendLog($"Step → {StepLabel}");
+        ScheduleSaveClientSettings();
+    }
+
+    partial void OnStepLabelChanged(string value) => OnPropertyChanged(nameof(VfoTuneStepDisplay));
+
+    /// <summary>Cycle active low cut; send when connected; refresh spectrum passband marker.</summary>
+    [RelayCommand]
+    private void CycleLowCut()
+    {
+        _lowCutIndex = (_lowCutIndex + 1) % LowCutLabels.Length;
+        LowCutLabel = LowCutLabels[_lowCutIndex];
+        int hz = LowCutHzValues[_lowCutIndex];
+        RefreshSpectrumFilterOverlay();
+        ScheduleSaveClientSettings();
+        if (CanOperate())
+            _ = SendFilterLowAsync(hz);
+        else
+            AppendLog($"Lo cut → {LowCutLabel} (not connected)");
+    }
+
+    private static int HighCutCount(string mode) => IsDigUMode(mode) ? 7 : 5;
+
+    private static int NormalizeHighCut(int idx, string mode)
+    {
+        string m = CanonicalMode(mode);
+        if (m == "DIG-U")
+            return ((idx % 7) + 7) % 7;
+        if (string.IsNullOrEmpty(m) || m == "TUNE")
+            return Math.Clamp(idx, 0, 6);
+        if (idx < 0)
+            return ((idx % 5) + 5) % 5;
+        return idx > 4 ? 4 : idx;
+    }
+
+    private void CoerceHighCutForMode(string reason)
+    {
+        int n = NormalizeHighCut(_highCutIndex, ActiveModeString);
+        if (n == _highCutIndex)
+            return;
+        int old = _highCutIndex;
+        _highCutIndex = n;
+        HighCutLabel = HighCutLabels[_highCutIndex];
+        RefreshSpectrumFilterOverlay();
+        if (CanOperate())
+            _ = SendFilterHighAsync(HighCutHzValues[_highCutIndex]);
+        AppendLog($"Hi cut {HighCutLabels[Math.Clamp(old, 0, HighCutLabels.Length - 1)]} is DIG-U only -> {HighCutLabel} ({reason})");
+        ScheduleSaveClientSettings();
+    }
+
+    [RelayCommand]
+    private void CycleHighCut()
+    {
+        string mode = ActiveModeString;
+        int n = HighCutCount(mode);
+        _highCutIndex = (NormalizeHighCut(_highCutIndex, mode) + 1) % n;
+        HighCutLabel = HighCutLabels[_highCutIndex];
+        int hz = HighCutHzValues[_highCutIndex];
+        RefreshSpectrumFilterOverlay();
+        ScheduleSaveClientSettings();
+        if (CanOperate())
+            _ = SendFilterHighAsync(hz);
+        else
+            AppendLog($"Hi cut → {HighCutLabel} (not connected)");
+    }
+
+    [RelayCommand]
+    private void CycleCwFilter()
+    {
+        _cwFilterIndex = (_cwFilterIndex + 1) % CwFilterLabels.Length;
+        CwFilterLabel = CwFilterLabels[_cwFilterIndex];
+        RefreshSpectrumFilterOverlay();
+        ScheduleSaveClientSettings();
+        if (CanOperate())
+            _ = SendCwFilterAsync(_cwFilterIndex);
+        else
+            AppendLog($"CW filter → {CwFilterLabel} (not connected)");
+    }
+
+    private async Task SendFilterLowAsync(int hz)
+    {
+        if (_radio == null) return;
+        try
+        {
+            await _radio.SetFilterLowAsync(hz).ConfigureAwait(true);
+            AppendLog($"Sent Lo cut {hz} Hz ({LowCutLabel})");
+        }
+        catch (Exception ex) { AppendLog($"Lo cut error: {ex.Message}"); }
+    }
+
+    private async Task SendFilterHighAsync(int hz)
+    {
+        if (_radio == null) return;
+        try
+        {
+            await _radio.SetFilterHighAsync(hz).ConfigureAwait(true);
+            AppendLog($"Sent Hi cut {hz} Hz ({HighCutLabel})");
+        }
+        catch (Exception ex) { AppendLog($"Hi cut error: {ex.Message}"); }
+    }
+
+    private async Task SendCwFilterAsync(int index)
+    {
+        if (_radio == null) return;
+        try
+        {
+            await _radio.SetCwFilterAsync(index).ConfigureAwait(true);
+            AppendLog($"Sent CW filter index {index} ({CwFilterLabel})");
+        }
+        catch (Exception ex) { AppendLog($"CW filter error: {ex.Message}"); }
+    }
+
+    // ----- RX/TX tab default filters + TX BW -----
+
+    partial void OnLowCutDefaultIndexChanged(int value)
+    {
+        if (_suppressDefaultFilterSend || !CanOperate() || _radio == null) return;
+        value = Math.Clamp(value, 0, LowCutOptions.Count - 1);
+        _ = SendDefaultFilterAsync(
+            () => _radio.SetDefaultLowCutAsync(value),
+            $"Default Lo cut index {value} ({LowCutOptions[value]})");
+    }
+
+    partial void OnHighCutDefaultIndexChanged(int value)
+    {
+        if (_suppressDefaultFilterSend || !CanOperate() || _radio == null) return;
+        if (value < 0 || value > 4)
+        {
+            AppendLog($"Default Hi cut send ignored: {value}");
+            return;
+        }
+        _ = SendDefaultFilterAsync(
+            () => _radio.SetDefaultHighCutAsync(value),
+            $"Default Hi cut index {value} ({HighCutOptions[value]})");
+    }
+
+    partial void OnCwFilterDefaultIndexChanged(int value)
+    {
+        if (_suppressDefaultFilterSend || !CanOperate() || _radio == null) return;
+        value = Math.Clamp(value, 0, CwFilterOptions.Count - 1);
+        _ = SendDefaultFilterAsync(
+            () => _radio.SetDefaultCwFilterAsync(value),
+            $"Default CW filter index {value} ({CwFilterOptions[value]})");
+    }
+
+    partial void OnTxDefaultIndexChanged(int value)
+    {
+        if (_suppressDefaultFilterSend || !CanOperate() || _radio == null) return;
+        value = Math.Clamp(value, 0, TxOptions.Count - 1);
+        _ = SendDefaultFilterAsync(
+            () => _radio.SetDefaultTxAsync(value),
+            $"Default TX index {value} ({TxOptions[value]})");
+    }
+
+    partial void OnTxBandwidthIndexChanged(int value)
+    {
+        if (!CanOperate() || _radio == null) return;
+        value = Math.Clamp(value, 0, TxOptions.Count - 1);
+        _ = SendDefaultFilterAsync(
+            () => _radio.SetTxBandwidthAsync(value),
+            $"TX BW index {value} ({TxOptions[value]})");
+    }
+
+    private async Task SendDefaultFilterAsync(Func<Task> send, string okMsg)
+    {
+        try
+        {
+            await send().ConfigureAwait(true);
+            AppendLog($"Sent {okMsg}");
+        }
+        catch (Exception ex)
+        {
+            AppendLog($"Filter default error: {ex.Message}");
+        }
+    }
+
+    private void ApplyReportedDefaultIndex(Action apply)
+    {
+        _suppressDefaultFilterSend = true;
+        try { apply(); }
+        finally { _suppressDefaultFilterSend = false; }
+    }
+
+    private static bool TryParsePort(string? text, out int port)
+    {
+        port = 0;
+        if (string.IsNullOrWhiteSpace(text))
+            return false;
+        if (!int.TryParse(text.Trim(), NumberStyles.Integer, CultureInfo.InvariantCulture, out port))
+            return false;
+        return port is >= 1 and <= 65535;
+    }
+
+    // ----- AGC / AMP / CMP / MON / NB / NR / AN -----
+
+    [RelayCommand(CanExecute = nameof(CanOperate))]
+    private void CycleAgc() => AgcLevel = (AgcLevel + 1) % 3;
+
+    [RelayCommand(CanExecute = nameof(CanOperate))]
+    private void ToggleAmp() => AmpOn = !AmpOn;
+
+    [RelayCommand(CanExecute = nameof(CanOperate))]
+    private void SelectQrp()
+    {
+        if (!AmpOn) return;
+        AmpOn = false;
+    }
+
+    [RelayCommand(CanExecute = nameof(CanOperate))]
+    private void SelectFullPower()
+    {
+        if (AmpOn) return;
+        AmpOn = true;
+    }
+
+    [RelayCommand(CanExecute = nameof(CanOperate))]
+    private void ToggleAlc() => AlcOn = !AlcOn;
+
+    [RelayCommand(CanExecute = nameof(CanOperate))]
+    private void ToggleCompression() => CompressionOn = !CompressionOn;
+
+    [RelayCommand(CanExecute = nameof(CanOperate))]
+    private void ToggleMonitor() => MonitorOn = !MonitorOn;
+
+    [RelayCommand(CanExecute = nameof(CanOperate))]
+    private void ToggleNb() => NbOn = !NbOn;
+
+    [RelayCommand(CanExecute = nameof(CanOperate))]
+    private void ToggleNr() => NrOn = !NrOn;
+
+    [RelayCommand(CanExecute = nameof(CanOperate))]
+    private void ToggleAn() => AnOn = !AnOn;
+
+    partial void OnAgcLevelChanged(int value)
+    {
+        value = Math.Clamp(value, 0, 2);
+        AgcButtonText = value switch
+        {
+            1 => "MED",
+            2 => "FST",
+            _ => "SLO"
+        };
+        ScheduleSaveClientSettings();
+        if (_suppressAgcCommand || !CanOperate()) return;
+        _ = SendAgcLevelAsync(value);
+    }
+
+    partial void OnAgcFastReleaseChanged(int value)
+    {
+        ScheduleSaveClientSettings();
+        if (_suppressAgcCommand || !CanOperate()) return;
+        _ = SendAgcFastReleaseAsync(Math.Clamp(value, 0, 1000));
+    }
+
+    partial void OnAmpOnChanged(bool value)
+    {
+        OnPropertyChanged(nameof(IsPowerCalTabEnabled));
+        OnPropertyChanged(nameof(IsAmpCalTabEnabled));
+        OnPropertyChanged(nameof(IsTxIqTabEnabled));
+        OnPropertyChanged(nameof(PowerCalTabHint));
+        OnPropertyChanged(nameof(AmpCalTabHint));
+        OnPropertyChanged(nameof(TxIqTabHint));
+        OnPropertyChanged(nameof(QrpMode));
+        OnPropertyChanged(nameof(FullPower));
+        ScheduleSaveClientSettings();
+        AppendLog($"PA path: AMP/Full Power={(value ? "on" : "off")} (QRP={!value})");
+
+        // Mutual exclusion with cal sessions
+        if (value)
+        {
+            ForceStopPowerCal("AMP on");
+            ForceStopTxIqSession("AMP on — TX IQ requires QRP");
+        }
+        else
+            ForceStopAmpCal("AMP off");
+
+        if (_suppressAmpCommand || !CanOperate()) return;
+        _ = SendAmpAsync(value);
+    }
+
+    partial void OnAlcOnChanged(bool value)
+    {
+        ScheduleSaveClientSettings();
+        if (_suppressAlcCommand || !CanOperate()) return;
+        _ = SendAlcOnAsync(value);
+    }
+
+    partial void OnSmeterHoldChanged(bool value)
+    {
+        if (!_suppressSettingsSave)
+            AppendLog($"Meter: S HOLD={(value ? "on" : "off")} Peak={(SmeterPeak ? "on" : "off")}");
+        ScheduleSaveClientSettings();
+    }
+
+    partial void OnSmeterPeakChanged(bool value)
+    {
+        if (!_suppressSettingsSave)
+            AppendLog($"Meter: S HOLD={(SmeterHold ? "on" : "off")} Peak={(value ? "on" : "off")}");
+        ScheduleSaveClientSettings();
+    }
+
+    partial void OnAlcHoldChanged(bool value)
+    {
+        if (!_suppressSettingsSave)
+            AppendLog($"Meter: ALC HOLD={(value ? "on" : "off")} Peak={(AlcPeak ? "on" : "off")}");
+        ScheduleSaveClientSettings();
+    }
+
+    partial void OnAlcPeakChanged(bool value)
+    {
+        if (!_suppressSettingsSave)
+            AppendLog($"Meter: ALC HOLD={(AlcHold ? "on" : "off")} Peak={(value ? "on" : "off")}");
+        ScheduleSaveClientSettings();
+    }
+
+    partial void OnCompressionOnChanged(bool value)
+    {
+        // Remember preferred CMP only while on phones (P); digital forces CMP off.
+        if (!_suppressCompressionCommand && !IsDigitalAudio)
+            _sessionCompressionOn = value;
+        ScheduleSaveClientSettings();
+
+        if (_suppressCompressionCommand || !CanOperate()) return;
+        _ = SendCompressionStateAsync(value);
+    }
+
+    // ----- Audio levels + path -----
+
+    partial void OnPVolumeChanged(int value)
+    {
+        ScheduleSaveClientSettings();
+        if (_suppressAudioSend || !CanOperate()) return;
+        _ = SendAudioAsync(
+            () => _radio!.SetPhonesVolumeLevelAsync(Math.Clamp(value, 0, 100)),
+            $"Phones Vol {value}");
+    }
+
+    partial void OnPMicGainChanged(int value)
+    {
+        ScheduleSaveClientSettings();
+        if (_suppressAudioSend || !CanOperate()) return;
+        _ = SendAudioAsync(
+            () => _radio!.SetPhonesMicGainLevelAsync(Math.Clamp(value, 0, 100)),
+            $"Phones Mic {value}");
+    }
+
+    partial void OnDVolumeChanged(int value)
+    {
+        ScheduleSaveClientSettings();
+        if (_suppressAudioSend || !CanOperate()) return;
+        if (RemoteAudio)
+        {
+            AppendLog($"Digital Vol {value} skipped (Remote)");
+            return;
+        }
+        _ = SendAudioAsync(
+            () => _radio!.SetDigitalVolumeLevelAsync(Math.Clamp(value, 0, 100)),
+            $"Digital Vol {value}");
+    }
+
+    partial void OnDMicGainChanged(int value)
+    {
+        ScheduleSaveClientSettings();
+        if (_suppressAudioSend || !CanOperate()) return;
+        if (RemoteAudio)
+        {
+            AppendLog($"Digital Mic {value} skipped (Remote MSA1)");
+            return;
+        }
+        _ = SendAudioAsync(
+            () => _radio!.SetDigitalMicGainLevelAsync(Math.Clamp(value, 0, 100)),
+            $"Digital Mic {value}");
+    }
+
+    private byte LocalAudioOpcode() =>
+        IsDigitalAudio ? Opcodes.DIGITAL_SOUND_DEVICE : Opcodes.PHONES_SOUND_DEVICE;
+
+    private byte RemoteWireOpcode() =>
+        RemoteDigitalAudio ? Opcodes.REMOTE_DIGITAL_SOUND_DEVICE : Opcodes.REMOTE_SOUND_DEVICE;
+
+    internal float RemoteMicVolumeLinear() =>
+        (RemoteDigitalAudio ? RemoteDigitalMicVolume : RemoteMicVolume) / 100f;
+
+    partial void OnRemoteMicVolumeChanged(int value) => ScheduleSaveClientSettings();
+    partial void OnRemoteDigitalMicVolumeChanged(int value) => ScheduleSaveClientSettings();
+
+    private void PushAudioToRadio(string reason)
+    {
+        if (_suppressAudioSend) return;
+        if (_radio == null || !IsConnected)
+        {
+            AppendLog($"Audio not sent (not connected) ({reason})");
+            return;
+        }
+
+        if (RemoteAudio)
+        {
+            var ip = _radio.GetLocalIPv4ToRemote();
+            if (ip is null)
+            {
+                AppendLog($"Remote RX HOST failed — no IPv4 route to {Host} ({reason})");
+                return;
+            }
+            _lastRemoteRxHost = ip;
+            _ = PushRemoteRxAndModeAsync(ip, enable: true, reason);
+        }
+        else
+            _ = PushRemoteOffAndLocalAsync(reason);
+    }
+
+    private async Task PushRemoteRxAndModeAsync(System.Net.IPAddress ip, bool enable, string reason)
+    {
+        if (_radio == null) return;
+        try
+        {
+            await _radio.SetRemoteRxAsync(ip, MsccAudioProtocol.DefaultPort, enable, RemoteMonitorAtRadio)
+                .ConfigureAwait(true);
+            _remoteRxSent = enable;
+            if (enable)
+            {
+                byte mode = RemoteWireOpcode();
+                await _radio.SetAudioDeviceAsync(mode).ConfigureAwait(true);
+                string label = mode == Opcodes.REMOTE_DIGITAL_SOUND_DEVICE ? "R-Digital (3)" : "R-Phones (2)";
+                AppendLog($"Remote RX HOST={ip}:9100 enable=1 monitor={(RemoteMonitorAtRadio ? 1 : 0)} → {label} ({reason})");
+            }
+        }
+        catch (Exception ex)
+        {
+            AppendLog($"Remote RX send failed: {ex.Message}");
+        }
+    }
+
+    private async Task PushRemoteOffAndLocalAsync(string reason)
+    {
+        if (_radio == null) return;
+        try
+        {
+            if (_remoteRxSent)
+            {
+                var ip = _lastRemoteRxHost ?? _radio.GetLocalIPv4ToRemote()
+                         ?? System.Net.IPAddress.Loopback;
+                await _radio.SetRemoteRxAsync(ip, MsccAudioProtocol.DefaultPort, enable: false, RemoteMonitorAtRadio)
+                    .ConfigureAwait(true);
+                _remoteRxSent = false;
+            }
+            byte local = LocalAudioOpcode();
+            await _radio.SetAudioDeviceAsync(local).ConfigureAwait(true);
+            AppendLog($"Remote RX off → {(local == 0 ? "Digital (0)" : "Phones (1)")} ({reason})");
+        }
+        catch (Exception ex)
+        {
+            AppendLog($"Remote RX off failed: {ex.Message}");
+        }
+    }
+
+    partial void OnIsDigitalAudioChanged(bool value)
+    {
+        OnPropertyChanged(nameof(AudioPathButtonText));
+        OnPropertyChanged(nameof(IsPhonesAudio));
+        OnPropertyChanged(nameof(RemoteAudioCheckboxEnabled));
+        ScheduleSaveClientSettings();
+
+        if (_suppressAudioSend) return;
+
+        if (value)
+        {
+            if (CompressionOn)
+            {
+                CompressionOn = false;
+                AppendLog("CMP forced OFF for digital audio (D)");
+            }
+        }
+        else if (CanOperate())
+        {
+            if (CompressionOn != _sessionCompressionOn)
+                CompressionOn = _sessionCompressionOn;
+            else if (!_suppressCompressionCommand)
+                _ = SendCompressionStateAsync(_sessionCompressionOn);
+            AppendLog($"CMP restored for phones (P): {_sessionCompressionOn}");
+        }
+
+        // Local path must not poke Remote window / MSA1 seat.
+        if (RemoteAudio)
+            return;
+        PushAudioToRadio(value ? "path→D" : "path→P");
+    }
+
+    partial void OnRemoteDigitalAudioChanged(bool value)
+    {
+        OnPropertyChanged(nameof(AudioPathButtonText));
+        if (_suppressAudioSend || !RemoteAudio) return;
+        PushAudioToRadio(value ? "R-path→D" : "R-path→P");
+        ApplyRemoteAfDevicesAndRestart(value ? "R-path→D" : "R-path→P");
+        if (value) StartRemoteCat(); else StopRemoteCat();
+        _remoteAfWindow?.RefreshPath();
+    }
+
+    partial void OnRemoteAudioChanged(bool value)
+    {
+        OnPropertyChanged(nameof(AudioPathButtonText));
+        OnPropertyChanged(nameof(DigitalControlsEnabled));
+        OnPropertyChanged(nameof(LocalAudioPathEnabled));
+        SelectPhonesAudioCommand.NotifyCanExecuteChanged();
+        SelectDigitalAudioCommand.NotifyCanExecuteChanged();
+        ScheduleSaveClientSettings();
+        if (_suppressAudioSend) return;
+        if (value && !IsRemoteAudioAllowed)
+        {
+            _suppressAudioSend = true;
+            try { RemoteAudio = false; }
+            finally { _suppressAudioSend = false; }
+            AppendLog("Remote blocked: local 127.0.0.1 owns CAT. Connect-only to a remote host.");
+            return;
+        }
+        if (value)
+        {
+            PushAudioToRadio("Remote ON");
+            StartRemoteAf("Remote ON");
+        }
+        else
+        {
+            PushAudioToRadio("Remote OFF");
+            StopRemoteAf(closeWindow: true);
+        }
+    }
+
+    partial void OnRemoteMonitorAtRadioChanged(bool value)
+    {
+        ScheduleSaveClientSettings();
+        if (_suppressAudioSend) return;
+        if (RemoteAudio && IsConnected)
+            PushAudioToRadio("monitor");
+    }
+
+    internal void StartRemoteAf(string reason)
+    {
+        if (!IsRemoteAudioAllowed)
+        {
+            AppendLog($"Remote AF not started ({reason}): loopback / local CAT");
+            return;
+        }
+        try { Services.RemotePhonesLauncher.StopAll(); } catch { /* in-UI AF */ }
+        RemoteAf ??= new RemoteAfEngine();
+        RemoteAf.Log -= OnRemoteAfEngineLog;
+        RemoteAf.Log += OnRemoteAfEngineLog;
+        RemoteAf.PlayVolume = RemotePlayVolume / 100f;
+        RemoteAf.MicVolume = RemoteMicVolumeLinear();
+        RemoteAf.PlayMuted = RemotePlayMute;
+        AppendLog($"Remote AF stop-before-open ({reason})");
+        try { RemoteAf.Stop(); } catch { /* ignore */ }
+        ApplyRemoteAfDevices();
+        RemoteAf.MicVolume = RemoteMicVolumeLinear();
+        bool rxOk = false, micOk = false;
+        string host = string.IsNullOrWhiteSpace(Host) ? "127.0.0.1" : Host.Trim();
+        try
+        {
+            RemoteAf.StartRx();
+            rxOk = true;
+        }
+        catch (Exception ex)
+        {
+            AppendLog("RX start: " + ex.Message);
+        }
+        try
+        {
+            RemoteAf.StartMic(host);
+            micOk = true;
+        }
+        catch (Exception ex)
+        {
+            AppendLog("Mic start: " + ex.Message);
+        }
+        if (!rxOk || !micOk)
+        {
+            try { RemoteAf.Stop(); } catch { /* ignore */ }
+            AppendLog($"Remote AF start aborted ({reason}) rxOk={rxOk} micOk={micOk} — stopped clean");
+            ShowRemoteAfWindow();
+            return;
+        }
+        string seat = RemoteDigitalAudio ? "Digital VAC" : "Phones";
+        AppendLog($"Remote AF started ({reason}) {seat} TX host={host}:9101 micVol={RemoteAf.MicVolume:0.00}");
+        if (RemoteDigitalAudio)
+            StartRemoteCat();
+        else
+        {
+            StopRemoteCat();
+            AppendLog("CAT idle (phones remote — PTT/tune in MSCC)");
+        }
+        ShowRemoteAfWindow();
+    }
+
+    internal void StopRemoteAf(bool closeWindow)
+    {
+        StopRemoteCat();
+        try { RemoteAf?.Stop(); } catch { /* ignore */ }
+        if (closeWindow)
+            CloseRemoteAfWindow();
+    }
+
+    private void StartRemoteCat()
+    {
+        try
+        {
+            RemoteCat?.Stop();
+            RemoteCat = new KenwoodCatPort();
+            RemoteCat.Log += OnRemoteAfEngineLog;
+            var cat = RemoteCat.Engine;
+            cat.GetFrequencyHz = () => _frequencyHz;
+            cat.GetTransmitting = () => PttOn;
+            cat.GetModeDigit = () => KenwoodTs2000.ModeDigitFromName(ModeText);
+            cat.SetFrequencyHz = hz => Dispatcher.UIThread.Post(() => _ = ApplyFrequencyAsync(hz, "CAT FA"));
+            cat.SetModeDigit = d => Dispatcher.UIThread.Post(() =>
+            {
+                ModeText = KenwoodTs2000.ModeNameFromDigit(d, preferDigU: RemoteDigitalAudio);
+            });
+            cat.SetPtt = tx => Dispatcher.UIThread.Post(() => { PttOn = tx; });
+            RemoteCat.Start();
+        }
+        catch (Exception ex)
+        {
+            AppendLog($"CAT start failed: {ex.Message}");
+        }
+    }
+
+    private void StopRemoteCat()
+    {
+        try
+        {
+            if (RemoteCat != null)
+            {
+                RemoteCat.Log -= OnRemoteAfEngineLog;
+                RemoteCat.Stop();
+                AppendLog("CAT closed (Remote off)");
+            }
+        }
+        catch { /* ignore */ }
+        RemoteCat = null;
+    }
+
+    internal void ApplyRemoteAfDevices()
+    {
+        if (RemoteAf == null) return;
+        if (RemoteDigitalAudio)
+        {
+            // Always re-resolve: saved REMOTE_MIC_DEV may be ALSA VirtualB_monitor (silent).
+            int play = FindNamedAfDevice(RemoteAfEngine.PlayDevices, LinuxDigitalIni.DigitalSpeaker);
+            int mic = FindNamedAfDevice(RemoteAfEngine.MicDevices, LinuxDigitalIni.DigitalMic);
+            RemoteAf.PlayDeviceIndex = play;
+            RemoteAf.MicDeviceIndex = mic;
+            RemoteAf.ApplyEq(false, 0, 0, 0);
+            if (!string.IsNullOrEmpty(PortAudioNative.LoadedLibraryPath))
+                AppendLog($"PortAudio: {PortAudioNative.LoadedLibraryPath}");
+            AppendLog($"R-Digital VAC {DescribeAf(RemoteAfEngine.PlayDevices, play, LinuxDigitalIni.DigitalSpeaker)} | {DescribeAf(RemoteAfEngine.MicDevices, mic, LinuxDigitalIni.DigitalMic)}");
+        }
+        else
+        {
+            RemoteAf.PlayDeviceIndex = RemotePlayDeviceIndex;
+            RemoteAf.MicDeviceIndex = RemoteMicDeviceIndex;
+            RemoteAf.ApplyEq(RemoteEqEnabled, RemoteEqLowDb, RemoteEqMidDb, RemoteEqHighDb);
+        }
+    }
+
+    internal void ApplyRemoteAfDevicesAndRestart(string reason)
+    {
+        if (!RemoteAudio || RemoteAf == null) return;
+        AppendLog($"Remote AF stop-before-restart ({reason})");
+        try { RemoteAf.Stop(); } catch { /* ignore */ }
+        ApplyRemoteAfDevices();
+        RemoteAf.MicVolume = RemoteMicVolumeLinear();
+        bool rxOk = false, micOk = false;
+        try
+        {
+            RemoteAf.StartRx();
+            rxOk = true;
+        }
+        catch (Exception ex)
+        {
+            AppendLog("RX restart: " + ex.Message);
+        }
+        string host = string.IsNullOrWhiteSpace(Host) ? "127.0.0.1" : Host.Trim();
+        try
+        {
+            RemoteAf.StartMic(host);
+            micOk = true;
+        }
+        catch (Exception ex)
+        {
+            AppendLog("Mic restart: " + ex.Message);
+        }
+        if (!rxOk || !micOk)
+        {
+            try { RemoteAf.Stop(); } catch { /* ignore */ }
+            AppendLog($"Remote AF restart aborted ({reason}) rxOk={rxOk} micOk={micOk} — stopped clean");
+            return;
+        }
+        AppendLog($"Remote AF devices restarted ({reason})");
+    }
+
+    internal static int FindNamedAfDevice(
+        IReadOnlyList<(int Index, string Name, string HostApi, int InCh, int OutCh)> devices,
+        string savedKey)
+    {
+        string want = (savedKey ?? "").Trim();
+        if (string.IsNullOrEmpty(want) || devices == null)
+            return -1;
+        int bestIdx = -1;
+        int bestScore = 0;
+        string wantN = NormalizeAfName(want);
+        bool wantMonitor = wantN.Contains(".monitor", StringComparison.Ordinal);
+        foreach (var d in devices)
+        {
+            if (d.Index < 0) continue;
+            string raw = d.Name ?? "";
+            if (raw.Contains("MSCC_Digi_Mic", StringComparison.OrdinalIgnoreCase))
+                continue;
+            string key = LinuxDigitalIni.ToMatchKey(raw);
+            string haveN = NormalizeAfName(string.IsNullOrEmpty(key) ? raw : key);
+            int score = 0;
+            if (string.Equals(haveN, wantN, StringComparison.Ordinal))
+                score = 100;
+            else if (haveN.StartsWith(wantN + " ", StringComparison.Ordinal) ||
+                     haveN.StartsWith(wantN + "(", StringComparison.Ordinal))
+                score = 90;
+            else if (wantMonitor && haveN.Contains(wantN, StringComparison.Ordinal))
+                score = 80;
+            else if (!wantMonitor &&
+                     (string.Equals(key, want, StringComparison.OrdinalIgnoreCase) ||
+                      raw.Contains(want, StringComparison.OrdinalIgnoreCase)))
+                score = 40;
+            if (wantMonitor && !haveN.Contains(".monitor", StringComparison.Ordinal) &&
+                !haveN.Contains("monitor of", StringComparison.Ordinal))
+                score = 0;
+            if (score <= 0)
+                continue;
+            if (PortAudioNative.IsPulseApi(d.HostApi))
+                score += 50;
+            else if (PortAudioNative.IsAlsaApi(d.HostApi))
+                score -= 10;
+            if (d.InCh >= 32 || d.OutCh >= 32)
+                score -= 30;
+            if (score > bestScore)
+            {
+                bestScore = score;
+                bestIdx = d.Index;
+            }
+        }
+        return bestIdx;
+    }
+
+    internal static string DescribeAf(
+        IReadOnlyList<(int Index, string Name, string HostApi, int InCh, int OutCh)> devices,
+        int index, string savedKey)
+    {
+        foreach (var d in devices)
+        {
+            if (d.Index == index)
+                return $"{savedKey} idx={index} name='{d.Name}' api={d.HostApi} in={d.InCh} out={d.OutCh}";
+        }
+        return $"{savedKey} idx={index}";
+    }
+
+    private static string NormalizeAfName(string name)
+    {
+        string s = (name ?? "").Trim().ToLowerInvariant();
+        int paren = s.IndexOf('(');
+        if (paren > 0)
+            s = s[..paren].TrimEnd();
+        return s.Replace('_', '.');
+    }
+
+    private void OnRemoteAfEngineLog(string msg)
+    {
+        AppendLog("Remote AF: " + msg);
+        RemoteAfLog?.Invoke(msg);
+    }
+
+    private void ShowRemoteAfWindow()
+    {
+        Dispatcher.UIThread.Post(() =>
+        {
+            try
+            {
+                if (_remoteAfWindow != null)
+                {
+                    _remoteAfWindow.Show();
+                    _remoteAfWindow.Activate();
+                    return;
+                }
+                var w = new RemoteAfWindow { DataContext = this };
+                w.Closed += (_, _) =>
+                {
+                    if (ReferenceEquals(_remoteAfWindow, w))
+                        _remoteAfWindow = null;
+                    AppendLog("Remote AF window closed (Remote still on)");
+                };
+                _remoteAfWindow = w;
+                w.Show();
+            }
+            catch (Exception ex)
+            {
+                AppendLog($"Remote AF window FAILED: {ex.Message}");
+            }
+        });
+    }
+
+    private void CloseRemoteAfWindow()
+    {
+        try { _remoteAfWindow?.Close(); } catch { /* ignore */ }
+        _remoteAfWindow = null;
+    }
+
+    private bool CanSelectLocalAudioPath() => !RemoteAudio;
+
+    [RelayCommand]
+    private void ToggleAudioDigital()
+    {
+        if (RemoteAudio) return;
+        IsDigitalAudio = !IsDigitalAudio;
+    }
+
+    [RelayCommand(CanExecute = nameof(CanSelectLocalAudioPath))]
+    private void SelectPhonesAudio()
+    {
+        if (RemoteAudio) return;
+        if (IsDigitalAudio)
+            IsDigitalAudio = false;
+    }
+
+    [RelayCommand(CanExecute = nameof(CanSelectLocalAudioPath))]
+    private void SelectDigitalAudio()
+    {
+        if (RemoteAudio) return;
+        if (!IsDigitalAudio)
+            IsDigitalAudio = true;
+    }
+
+    [RelayCommand]
+    private void ToggleRemoteAudio()
+    {
+        if (!RemoteAudio && !IsRemoteAudioAllowed)
+            return;
+        RemoteAudio = !RemoteAudio;
+    }
+
+    private async Task SendAudioAsync(Func<Task> send, string okMsg)
+    {
+        if (_radio == null) return;
+        try
+        {
+            await send().ConfigureAwait(true);
+            AppendLog($"Sent {okMsg}");
+        }
+        catch (Exception ex)
+        {
+            AppendLog($"Audio error: {ex.Message}");
+        }
+    }
+
+    private void ApplyReportedAudio(Action apply)
+    {
+        _suppressAudioSend = true;
+        try { apply(); }
+        finally { _suppressAudioSend = false; }
+    }
+
+    // ----- RIT (left rail) -----
+
+    partial void OnRitOnChanged(bool value)
+    {
+        ScheduleSaveClientSettings();
+        if (_suppressRitSend) return;
+        if (CanOperate())
+            _ = SendRitAsync();
+        else
+            AppendLog($"RIT {(value ? "on" : "off")} (not connected)");
+    }
+
+    partial void OnRitOffsetChanged(int value)
+    {
+        if (_suppressRitSend) return;
+        // Clamp to slider range used in UI
+        int clamped = Math.Clamp(value, -500, 500);
+        if (clamped != value)
+        {
+            _suppressRitSend = true;
+            RitOffset = clamped;
+            _suppressRitSend = false;
+        }
+
+        ScheduleSaveClientSettings();
+        if (CanOperate())
+            _ = SendRitAsync();
+    }
+
+    [RelayCommand]
+    private void ClearRit()
+    {
+        _suppressRitSend = true;
+        RitOn = false;
+        RitOffset = 0;
+        _suppressRitSend = false;
+        if (CanOperate())
+            _ = SendRitAsync();
+        AppendLog("RIT cleared");
+    }
+
+    private async Task SendRitAsync()
+    {
+        if (_radio == null) return;
+        try
+        {
+            await _radio.SetRitAsync(RitOn, RitOffset).ConfigureAwait(true);
+            AppendLog($"Sent RIT {(RitOn ? "on" : "off")} offset {RitOffset} Hz");
+        }
+        catch (Exception ex)
+        {
+            AppendLog($"RIT error: {ex.Message}");
+        }
+    }
+
+    // ----- CW tab + right-rail speed/pitch -----
+
+    [RelayCommand]
+    private void IncCwSpeed() => CwSpeed = Math.Clamp(CwSpeed + 1, 5, 60);
+
+    [RelayCommand]
+    private void DecCwSpeed() => CwSpeed = Math.Clamp(CwSpeed - 1, 5, 60);
+
+    public string CwMemTextWpmLabel =>
+        CwMemTextWpm <= 0 ? "Off" : CwMemTextWpm.ToString(CultureInfo.InvariantCulture);
+
+    /// <summary>Farnsworth text WPM: Off→5→…→60.</summary>
+    [RelayCommand]
+    private void IncCwMemTextWpm()
+    {
+        if (CwMemTextWpm <= 0)
+            CwMemTextWpm = 5;
+        else
+            CwMemTextWpm = Math.Clamp(CwMemTextWpm + 1, 5, 60);
+    }
+
+    /// <summary>Farnsworth text WPM: …→5→Off.</summary>
+    [RelayCommand]
+    private void DecCwMemTextWpm()
+    {
+        if (CwMemTextWpm <= 0)
+            CwMemTextWpm = 0;
+        else if (CwMemTextWpm <= 5)
+            CwMemTextWpm = 0;
+        else
+            CwMemTextWpm = Math.Clamp(CwMemTextWpm - 1, 5, 60);
+    }
+
+    [RelayCommand]
+    private void IncCwHold() => CwHold = Math.Clamp(CwHold + 10, 1, 500);
+
+    [RelayCommand]
+    private void DecCwHold() => CwHold = Math.Clamp(CwHold - 10, 1, 500);
+
+    [RelayCommand]
+    private void CycleCwPitch()
+    {
+        CwPitchIndex = (CwPitchIndex + 1) % CwPitchOptions.Count;
+    }
+
+    /// <summary>
+    /// Avalonia is connect-only (does not spawn backends). "Local host" means loopback —
+    /// we still write this machine's mscc.ini, but the operator must restart ms-sdr here.
+    /// </summary>
+    private bool IsLoopbackHost
+    {
+        get
+        {
+            string h = (Host ?? "").Trim();
+            if (string.IsNullOrEmpty(h)) return true;
+            return IsLocalHost(h);
+        }
+    }
+
+    partial void OnExternalElectronicKeyerChanged(bool value)
+    {
+        if (_suppressCwSend || _suppressSettingsSave) return;
+        ScheduleSaveClientSettings();
+        OnPropertyChanged(nameof(PicKeyerControlsEnabled));
+        OnPropertyChanged(nameof(KeyerMemPanelEnabled));
+
+        // Write mscc.ini on this machine when Host is loopback (UI + ms-sdr co-located).
+        bool wrote = false;
+        if (IsLoopbackHost)
+            wrote = MsccIniProficio.WriteProficioMkii(mkii: !value);
+
+        string mode = value ? "legacy / external (PROFICIO-MKII=0)" : "MKII internal (PROFICIO-MKII=1)";
+        AppendLog($"External electronic keyer: {(value ? "ON" : "OFF")} → {mode}" +
+                  (wrote ? " (local mscc.ini updated)" : " (client sticky; host mscc.ini when remote)"));
+
+        if (!IsConnected)
+        {
+            if (!IsLoopbackHost)
+            {
+                AppendLog(
+                    "Remote host: set PROFICIO-MKII on radio PC (Windows: Start-MsccServers.bat legacy|mkii; " +
+                    "Linux: mscc-init) before Connect.");
+            }
+            else
+            {
+                AppendLog("Local host: restart ms-sdr after this change so PROFICIO-MKII is re-read.");
+            }
+            return;
+        }
+
+        // Connect-only: disconnect; never auto-spawn backends.
+        string hostMode = value ? "legacy (PROFICIO-MKII=0)" : "MKII (PROFICIO-MKII=1)";
+        if (IsLoopbackHost)
+        {
+            AppendLog(
+                $"Session will disconnect. Restart local backends for {hostMode}, then Connect " +
+                "(Windows: Start-MsccServers.bat legacy|mkii or restart services).");
+            StatusText = "Disconnected — restart local ms-sdr, then Connect";
+        }
+        else
+        {
+            AppendLog(
+                $"Session will disconnect. On radio PC set {hostMode} and restart ms-sdr, then Connect. " +
+                "Windows: Start-MsccServers.bat legacy|mkii. Linux: mscc-init. " +
+                "If host already matches, just Connect again.");
+            StatusText = "Disconnected — restart host backends if needed, then Connect";
+        }
+        _ = Disconnect();
+    }
+
+    partial void OnCwSpeedChanged(int value)
+    {
+        int wpm = Math.Clamp(value, 5, 60);
+        if (wpm != value)
+        {
+            _suppressCwSend = true;
+            CwSpeed = wpm;
+            _suppressCwSend = false;
+            return;
+        }
+
+        ScheduleSaveClientSettings();
+        if (ExternalElectronicKeyer) return;
+        if (_suppressCwSend || !CanOperate() || _radio == null) return;
+        _ = SendCwAsync(() => _radio.SetCwWpmAsync(wpm), $"CW speed {wpm} WPM");
+    }
+
+    partial void OnCwMemTextWpmChanged(int value)
+    {
+        int clamped = ClientSettingsStore.ClampCwMemTextWpm(value);
+        if (clamped != value)
+        {
+            _suppressCwSend = true;
+            CwMemTextWpm = clamped;
+            _suppressCwSend = false;
+            return;
+        }
+
+        OnPropertyChanged(nameof(CwMemTextWpmLabel));
+        ScheduleSaveClientSettings();
+        if (ExternalElectronicKeyer) return;
+        if (_suppressCwSend || !CanOperate() || _radio == null) return;
+        string label = clamped <= 0 ? "Off" : clamped.ToString(CultureInfo.InvariantCulture);
+        _ = SendCwAsync(() => _radio.SetKeyerMemTextWpmAsync(clamped),
+            $"CW Farnsworth (memory text WPM) {label}");
+    }
+
+    partial void OnCwKeyerModeChanged(int value)
+    {
+        ScheduleSaveClientSettings();
+        if (ExternalElectronicKeyer) return;
+        if (_suppressCwSend || !CanOperate() || _radio == null) return;
+        value = Math.Clamp(value, 0, CwKeyerModeOptions.Count - 1);
+        _ = SendCwAsync(() => _radio.SetCwKeyerModeAsync(value),
+            $"CW keyer {CwKeyerModeOptions[value]}");
+    }
+
+    partial void OnCwSpacingChanged(int value)
+    {
+        ScheduleSaveClientSettings();
+        if (ExternalElectronicKeyer) return;
+        if (_suppressCwSend || !CanOperate() || _radio == null) return;
+        value = Math.Clamp(value, 0, CwSpacingOptions.Count - 1);
+        _ = SendCwAsync(() => _radio.SetCwSpacingAsync(value),
+            $"CW spacing {CwSpacingOptions[value]}");
+    }
+
+    partial void OnCwPaddleChanged(int value)
+    {
+        ScheduleSaveClientSettings();
+        if (ExternalElectronicKeyer) return;
+        if (_suppressCwSend || !CanOperate() || _radio == null) return;
+        value = Math.Clamp(value, 0, CwPaddleOptions.Count - 1);
+        _ = SendCwAsync(() => _radio.SetCwPaddleAsync(value),
+            $"CW paddle {CwPaddleOptions[value]}");
+    }
+
+    partial void OnCwWeightIndexChanged(int value)
+    {
+        ScheduleSaveClientSettings();
+        if (ExternalElectronicKeyer) return;
+        if (_suppressCwSend || !CanOperate() || _radio == null) return;
+        value = Math.Clamp(value, 0, CwWeightValues.Length - 1);
+        int weight = CwWeightValues[value];
+        _ = SendCwAsync(() => _radio.SetCwWeightAsync(weight), $"CW weight {weight}");
+    }
+
+    partial void OnCwPitchIndexChanged(int value)
+    {
+        value = Math.Clamp(value, 0, CwPitchOptions.Count - 1);
+        CwPitchLabel = CwPitchOptions[value];
+        RefreshSpectrumFilterOverlay();
+        if (!_freqCalHoldingCw)
+            ScheduleSaveClientSettings();
+
+        if (_suppressCwSend || !CanOperate() || _radio == null) return;
+        // WPF: send CW filter BW first, then pitch INDEX (0–3), not Hz
+        _ = SendCwPitchAsync(value);
+    }
+
+    partial void OnCwHoldChanged(int value)
+    {
+        int hold = Math.Clamp(value, 1, 500);
+        if (hold != value)
+        {
+            _suppressCwSend = true;
+            CwHold = hold;
+            _suppressCwSend = false;
+            return;
+        }
+
+        ScheduleSaveClientSettings();
+        if (_suppressCwSend || !CanOperate() || _radio == null) return;
+        _ = SendCwAsync(() => _radio.SetCwTxHoldAsync(hold), $"CW hold {hold} ms");
+    }
+
+    partial void OnCwQskChanged(bool value)
+    {
+        ScheduleSaveClientSettings();
+        if (_suppressCwSend || !CanOperate() || _radio == null) return;
+        _ = SendCwAsync(() => _radio.SetCwQskAsync(value), $"CW QSK {(value ? "on" : "off")}");
+    }
+
+    partial void OnCwPhonesChanged(bool value)
+    {
+        // Local sticky only. Do not send CMD_SET_CW_MODE (0x70): on the Pi that
+        // opcode is the USB radio-mode parameter, not a CW phones flag.
+        _ = value;
+        ScheduleSaveClientSettings();
+    }
+
+    // ----- Keyer CQ memory (R = store, P = play) -----
+
+    public string KeyerMem0Count => $"{SanitizeKeyerMem(KeyerMem0).Length}/48";
+    public string KeyerMem1Count => $"{SanitizeKeyerMem(KeyerMem1).Length}/48";
+    public string KeyerMem2Count => $"{SanitizeKeyerMem(KeyerMem2).Length}/48";
+    public string KeyerMem3Count => $"{SanitizeKeyerMem(KeyerMem3).Length}/48";
+
+    partial void OnKeyerMem0Changed(string value)
+    {
+        OnPropertyChanged(nameof(KeyerMem0Count));
+        if (!_suppressCwSend) ScheduleSaveClientSettings();
+    }
+
+    partial void OnKeyerMem1Changed(string value)
+    {
+        OnPropertyChanged(nameof(KeyerMem1Count));
+        if (!_suppressCwSend) ScheduleSaveClientSettings();
+    }
+
+    partial void OnKeyerMem2Changed(string value)
+    {
+        OnPropertyChanged(nameof(KeyerMem2Count));
+        if (!_suppressCwSend) ScheduleSaveClientSettings();
+    }
+
+    partial void OnKeyerMem3Changed(string value)
+    {
+        OnPropertyChanged(nameof(KeyerMem3Count));
+        if (!_suppressCwSend) ScheduleSaveClientSettings();
+    }
+
+    private static string SanitizeKeyerMem(string? text)
+    {
+        if (string.IsNullOrEmpty(text)) return "";
+        var sb = new System.Text.StringBuilder(Math.Min(text.Length, Opcodes.KEYER_MEM_MAX_CHARS));
+        foreach (char c in text)
+        {
+            if (c is < (char)0x20 or > (char)0x7E) continue;
+            sb.Append(c);
+            if (sb.Length >= Opcodes.KEYER_MEM_MAX_CHARS) break;
+        }
+        return sb.ToString();
+    }
+
+    private string GetKeyerMemText(int slot) => slot switch
+    {
+        0 => KeyerMem0,
+        1 => KeyerMem1,
+        2 => KeyerMem2,
+        3 => KeyerMem3,
+        _ => ""
+    };
+
+    /// <summary>R — store text box for slot 0..3 to keyer EEPROM (no auto-play).</summary>
+    [RelayCommand]
+    private async Task RecordKeyerMem(object? parameter)
+    {
+        if (!TryParseKeyerSlot(parameter, out int slot)) return;
+        if (ExternalElectronicKeyer)
+        {
+            KeyerMemStatus = "Disabled — external electronic keyer (legacy)";
+            return;
+        }
+        if (!CanOperate() || _radio == null)
+        {
+            KeyerMemStatus = "Not connected";
+            AppendLog("Keyer mem R: not connected");
+            return;
+        }
+        if (KeyerMemBusy) return;
+
+        string text = SanitizeKeyerMem(GetKeyerMemText(slot));
+        KeyerMemBusy = true;
+        KeyerMemStatus = $"Storing slot {slot}…";
+        AppendLog($"Keyer mem R slot {slot}: \"{text}\" ({text.Length} chars)");
+        try
+        {
+            await _radio.KeyerMemoryStoreAsync(slot, text).ConfigureAwait(true);
+            ScheduleSaveClientSettings();
+            KeyerMemStatus = $"Stored slot {slot} ({text.Length} chars)";
+            AppendLog($"Keyer mem R slot {slot}: store sequence sent OK");
+        }
+        catch (Exception ex)
+        {
+            KeyerMemStatus = $"Store slot {slot} failed";
+            AppendLog($"Keyer mem R error: {ex.Message}");
+        }
+        finally
+        {
+            KeyerMemBusy = false;
+        }
+    }
+
+    /// <summary>P — assert host PTT (if free), select slot, play once. Paddle aborts on radio.</summary>
+    [RelayCommand]
+    private async Task PlayKeyerMem(object? parameter)
+    {
+        if (!TryParseKeyerSlot(parameter, out int slot)) return;
+        if (ExternalElectronicKeyer)
+        {
+            KeyerMemStatus = "Disabled — external electronic keyer (legacy)";
+            return;
+        }
+        if (!CanOperate() || _radio == null)
+        {
+            KeyerMemStatus = "Not connected";
+            AppendLog("Keyer mem P: not connected");
+            return;
+        }
+        if (KeyerMemBusy) return;
+
+        // Cancel any previous auto-PTT release from an earlier play
+        CancelKeyerPlayPttRelease(releasePtt: false);
+
+        string text = SanitizeKeyerMem(GetKeyerMemText(slot));
+        bool assertedPtt = false;
+        // Proficio only runs TX_Main (host TX_Request / software PTT → PA) when mode is NOT CW.
+        // In CW, RF is keyed only by the PIC keyer line (paddle / memory play). Host PTT would
+        // only light the UI red and confuse operators — skip it when already in CW.
+        bool modeIsCw = string.Equals((ModeText ?? "").Trim(), "CW", StringComparison.OrdinalIgnoreCase);
+
+        if (TxSetByServer)
+        {
+            AppendLog("Keyer mem P: server owns TX — not asserting PTT");
+        }
+        else if (TuneMode)
+        {
+            AppendLog("Keyer mem P: releasing TUN before play");
+            TuneMode = false;
+        }
+
+        if (modeIsCw)
+        {
+            AppendLog("Keyer mem P: CW mode — host PTT does not key PA; play uses keyer line");
+            _keyerPlayOwnsPtt = false;
+        }
+        else if (!TxSetByServer && CanUserControlTransmit)
+        {
+            // Non-CW: assert host PTT so voice-path TX_Request is set (same as PTT button).
+            if (!PttOn)
+            {
+                try
+                {
+                    _suppressTransmitCommands = true;
+                    PttOn = true;
+                    _suppressTransmitCommands = false;
+                    await SendPttAsync(true).ConfigureAwait(true);
+                    assertedPtt = true;
+                    _keyerPlayOwnsPtt = true;
+                    AppendLog("Keyer mem P: PTT ON for memory play (non-CW mode)");
+                }
+                catch (Exception ex)
+                {
+                    AppendLog($"Keyer mem P: PTT on failed: {ex.Message}");
+                }
+            }
+            else
+            {
+                _keyerPlayOwnsPtt = false;
+                AppendLog("Keyer mem P: PTT already on (user latch)");
+            }
+        }
+
+        KeyerMemStatus = modeIsCw
+            ? $"Play slot {slot} (CW — keyer keys TX)…"
+            : assertedPtt
+                ? $"PTT on — play slot {slot}…"
+                : $"Play slot {slot}…";
+        AppendLog($"Keyer mem P slot {slot}: SELECT + PLAY (0x9C)");
+        try
+        {
+            await _radio.KeyerMemoryPlayAsync(slot).ConfigureAwait(true);
+            int playMs = EstimateKeyerPlayDurationMs(text, CwSpeed);
+            KeyerMemStatus = modeIsCw
+                ? $"Play sent slot {slot} — listen for keyer CW (paddle aborts)"
+                : assertedPtt
+                    ? $"Playing slot {slot} (~{playMs / 1000.0:0.0}s) — PTT auto-off"
+                    : $"Play sent for slot {slot}";
+            AppendLog($"Keyer mem P slot {slot}: play sequence sent OK (est. {playMs} ms)");
+
+            if (_keyerPlayOwnsPtt)
+                ScheduleKeyerPlayPttRelease(playMs);
+        }
+        catch (Exception ex)
+        {
+            KeyerMemStatus = $"Play slot {slot} failed";
+            AppendLog($"Keyer mem P error: {ex.Message}");
+            if (_keyerPlayOwnsPtt)
+                await ReleaseKeyerPlayPttAsync().ConfigureAwait(true);
+        }
+    }
+
+    /// <summary>
+    /// Rough PARIS-style duration so PTT can drop after memory play finishes.
+    /// ~12 element units per character, 7 for space; unit = 1200/WPM ms. +0.5s pad.
+    /// </summary>
+    private static int EstimateKeyerPlayDurationMs(string text, int wpm)
+    {
+        wpm = Math.Clamp(wpm, 5, 60);
+        int units = 0;
+        foreach (char c in text)
+            units += c is ' ' or '\t' ? 7 : 12;
+        if (units < 12) units = 12; // empty / short — still leave a second of TX
+        int ms = units * 1200 / wpm + 500;
+        return Math.Clamp(ms, 1000, 180_000);
+    }
+
+    private void CancelKeyerPlayPttRelease(bool releasePtt)
+    {
+        try { _keyerPlayPttReleaseCts?.Cancel(); } catch { /* ignore */ }
+        try { _keyerPlayPttReleaseCts?.Dispose(); } catch { /* ignore */ }
+        _keyerPlayPttReleaseCts = null;
+        if (releasePtt && _keyerPlayOwnsPtt)
+            _ = ReleaseKeyerPlayPttAsync();
+    }
+
+    private void ScheduleKeyerPlayPttRelease(int delayMs)
+    {
+        CancelKeyerPlayPttRelease(releasePtt: false);
+        var cts = new CancellationTokenSource();
+        _keyerPlayPttReleaseCts = cts;
+        _ = ReleaseKeyerPlayPttAfterDelayAsync(delayMs, cts.Token);
+    }
+
+    private async Task ReleaseKeyerPlayPttAfterDelayAsync(int delayMs, CancellationToken ct)
+    {
+        try
+        {
+            await Task.Delay(delayMs, ct).ConfigureAwait(true);
+        }
+        catch (OperationCanceledException)
+        {
+            return;
+        }
+
+        if (ct.IsCancellationRequested || !_keyerPlayOwnsPtt) return;
+        await ReleaseKeyerPlayPttAsync().ConfigureAwait(true);
+    }
+
+    private async Task ReleaseKeyerPlayPttAsync()
+    {
+        if (!_keyerPlayOwnsPtt) return;
+        _keyerPlayOwnsPtt = false;
+        if (!PttOn || TxSetByServer || _radio == null) return;
+        try
+        {
+            _suppressTransmitCommands = true;
+            PttOn = false;
+            _suppressTransmitCommands = false;
+            await SendPttAsync(false).ConfigureAwait(true);
+            AppendLog("Keyer mem P: PTT OFF (play complete estimate)");
+            if (KeyerMemStatus.StartsWith("Playing", StringComparison.OrdinalIgnoreCase)
+                || KeyerMemStatus.Contains("auto-off", StringComparison.OrdinalIgnoreCase))
+                KeyerMemStatus = "Play done — PTT released";
+        }
+        catch (Exception ex)
+        {
+            AppendLog($"Keyer mem P: PTT off failed: {ex.Message}");
+        }
+    }
+
+    private static bool TryParseKeyerSlot(object? parameter, out int slot)
+    {
+        slot = 0;
+        switch (parameter)
+        {
+            case int i:
+                slot = i;
+                break;
+            case string s when int.TryParse(s, NumberStyles.Integer, CultureInfo.InvariantCulture, out int parsed):
+                slot = parsed;
+                break;
+            default:
+                return false;
+        }
+        return slot is >= 0 and <= 3;
+    }
+
+    private async Task SendCwPitchAsync(int pitchIndex)
+    {
+        if (_radio == null) return;
+        try
+        {
+            await _radio.SetCwFilterAsync(_cwFilterIndex).ConfigureAwait(true);
+            await _radio.SetCwPitchAsync(pitchIndex).ConfigureAwait(true);
+            AppendLog($"Sent CW pitch {CwPitchLabel} (index {pitchIndex})");
+        }
+        catch (Exception ex)
+        {
+            AppendLog($"CW pitch error: {ex.Message}");
+        }
+    }
+
+    private async Task SendCwAsync(Func<Task> send, string okMsg)
+    {
+        if (_radio == null) return;
+        try
+        {
+            await send().ConfigureAwait(true);
+            AppendLog($"Sent {okMsg}");
+        }
+        catch (Exception ex)
+        {
+            AppendLog($"CW error: {ex.Message}");
+        }
+    }
+
+    private void ApplyReportedCw(Action apply)
+    {
+        _suppressCwSend = true;
+        try { apply(); }
+        finally { _suppressCwSend = false; }
+    }
+
+    // ----- Favorites tab (client-side session memory) -----
+
+    partial void OnFavoriteBandFilterChanged(string value) => RefreshFavoritesForBand();
+
+    partial void OnSelectedFavoriteChanged(FavoriteEntry? value)
+    {
+        if (value != null && !string.IsNullOrWhiteSpace(value.Name))
+            FavoriteNameInput = value.Name;
+    }
+
+    private void ApplyFavoriteLabels(FavoriteEntry e)
+    {
+        e.LowCutLabel = IndexLabel(LowCutLabels, e.LowCutIndex);
+        e.HighCutLabel = IndexLabel(HighCutLabels, e.HighCutIndex);
+        e.CwFilterLabel = IndexLabel(CwFilterLabels, e.CwFilterIndex);
+    }
+
+    private static string IndexLabel(string[] options, int index)
+    {
+        if (options.Length == 0) return index.ToString(CultureInfo.InvariantCulture);
+        return options[Math.Clamp(index, 0, options.Length - 1)];
+    }
+
+    private static string NormalizeFavoriteBand(string? band, long frequencyHz = 0)
+    {
+        string b = (band ?? "").Trim().ToLowerInvariant();
+        if (b is "gen" or "general") return "gen";
+        if (!string.IsNullOrEmpty(b) && b is not ("?" or "—" or "-"))
+            return b;
+        string fromFreq = BandNameForFrequency(frequencyHz);
+        return fromFreq is "?" or "—" ? "40m" : fromFreq;
+    }
+
+    private void RefreshFavoritesForBand()
+    {
+        string band = NormalizeFavoriteBand(FavoriteBandFilter);
+        var selected = SelectedFavorite;
+        var ordered = Favorites
+            .Where(f => string.Equals(NormalizeFavoriteBand(f.Band, f.FrequencyHz), band, StringComparison.OrdinalIgnoreCase))
+            .OrderBy(f => f.Name ?? "", StringComparer.OrdinalIgnoreCase)
+            .ThenBy(f => f.FrequencyHz)
+            .ToList();
+
+        FavoritesForBand.Clear();
+        foreach (var e in ordered)
+            FavoritesForBand.Add(e);
+
+        if (selected != null && FavoritesForBand.Contains(selected))
+            SelectedFavorite = selected;
+        else
+            SelectedFavorite = null;
+    }
+
+    private void SyncFavoriteBandFilterFromRadio()
+    {
+        string nb = NormalizeFavoriteBand(BandText, _frequencyHz);
+        if (FavoriteBandChoices.Any(b => string.Equals(b, nb, StringComparison.OrdinalIgnoreCase)) &&
+            !string.Equals(FavoriteBandFilter, nb, StringComparison.OrdinalIgnoreCase))
+        {
+            FavoriteBandFilter = nb;
+        }
+    }
+
+    /// <summary>Apply Lo/Hi/CW indices locally and send when connected.</summary>
+    private void ApplyFilterIndices(int lowIdx, int highIdx, int cwIdx, bool send, string? modeForHi = null)
+    {
+        _lowCutIndex = Math.Clamp(lowIdx, 0, LowCutLabels.Length - 1);
+        _highCutIndex = NormalizeHighCut(highIdx, modeForHi ?? ActiveModeString);
+        _cwFilterIndex = Math.Clamp(cwIdx, 0, CwFilterLabels.Length - 1);
+        LowCutLabel = LowCutLabels[_lowCutIndex];
+        HighCutLabel = HighCutLabels[_highCutIndex];
+        CwFilterLabel = CwFilterLabels[_cwFilterIndex];
+        RefreshSpectrumFilterOverlay();
+
+        if (!send || !CanOperate()) return;
+        _ = SendFilterLowAsync(LowCutHzValues[_lowCutIndex]);
+        _ = SendFilterHighAsync(HighCutHzValues[_highCutIndex]);
+        _ = SendCwFilterAsync(_cwFilterIndex);
+    }
+
+    [RelayCommand]
+    private void SaveFavorite()
+    {
+        string name = (FavoriteNameInput ?? "").Trim();
+        if (string.IsNullOrEmpty(name) ||
+            string.Equals(name, "NAME", StringComparison.OrdinalIgnoreCase))
+        {
+            StatusText = "Enter a favorite name.";
+            AppendLog("Favorite SAVE: name required");
+            return;
+        }
+
+        if (name.Length > 32)
+            name = name[..32];
+
+        string band = NormalizeFavoriteBand(BandText, _frequencyHz);
+        var entry = new FavoriteEntry
+        {
+            Name = name,
+            Band = band,
+            FrequencyHz = _frequencyHz,
+            Mode = string.IsNullOrWhiteSpace(ModeText) ? "USB" : ModeText,
+            LowCutIndex = _lowCutIndex,
+            HighCutIndex = _highCutIndex,
+            CwFilterIndex = _cwFilterIndex,
+            Vfo = UseVfoA ? "A" : "B"
+        };
+        ApplyFavoriteLabels(entry);
+
+        var existing = Favorites.FirstOrDefault(f =>
+            string.Equals(NormalizeFavoriteBand(f.Band, f.FrequencyHz), band, StringComparison.OrdinalIgnoreCase) &&
+            string.Equals(f.Name, name, StringComparison.OrdinalIgnoreCase));
+
+        if (existing != null)
+        {
+            int idx = Favorites.IndexOf(existing);
+            Favorites[idx] = entry;
+            AppendLog($"Favorite updated: [{band}] {name}");
+        }
+        else
+        {
+            Favorites.Add(entry);
+            AppendLog($"Favorite added: [{band}] {name} @ {entry.FrequencyDisplay} MHz {entry.Mode}");
+        }
+
+        FavoriteBandFilter = band;
+        RefreshFavoritesForBand();
+        SelectedFavorite = entry;
+        PersistFavorites();
+        StatusText = $"Saved favorite [{band}] {name}";
+    }
+
+    [RelayCommand]
+    private async Task RecallFavoriteAsync()
+    {
+        if (SelectedFavorite == null)
+        {
+            StatusText = "Select a favorite to recall.";
+            AppendLog("Favorite RECALL: nothing selected");
+            return;
+        }
+
+        var fav = SelectedFavorite;
+        string band = NormalizeFavoriteBand(fav.Band, fav.FrequencyHz);
+
+        // Local UI first
+        _frequencyHz = fav.FrequencyHz;
+        UpdateFrequencyUi(fav.FrequencyHz);
+        ModeText = fav.Mode;
+        NotifyModeFlags();
+        BandText = band is "—" or "?" ? BandNameForFrequency(fav.FrequencyHz) : band;
+        ApplyFilterIndices(fav.LowCutIndex, fav.HighCutIndex, fav.CwFilterIndex, send: CanOperate(), modeForHi: fav.Mode);
+        FavoriteNameInput = fav.Name;
+        FavoriteBandFilter = NormalizeFavoriteBand(BandText, fav.FrequencyHz);
+
+        if (string.Equals(fav.Vfo, "B", StringComparison.OrdinalIgnoreCase) && UseVfoA)
+            AppendLog("Favorite VFO B noted — dual-VFO switch not wired yet; applying on VFO A");
+
+        if (CanOperate())
+        {
+            await ApplyFrequencyAsync(fav.FrequencyHz, $"fav {fav.Name}").ConfigureAwait(true);
+            await SetModeAsync(fav.Mode).ConfigureAwait(true);
+            // Filters already sent by ApplyFilterIndices
+        }
+        else
+        {
+            AppendLog($"Favorite recalled locally (not connected): [{band}] {fav.Name}");
+        }
+
+        StatusText = $"Recalled [{band}] {fav.Name}";
+        AppendLog($"Favorite recalled: [{band}] {fav.Name} VFO{fav.Vfo} {fav.FrequencyDisplay} {fav.Mode}");
+    }
+
+    [RelayCommand]
+    private void DeleteFavorite()
+    {
+        if (SelectedFavorite == null)
+        {
+            StatusText = "Select a favorite to delete.";
+            AppendLog("Favorite DELETE: nothing selected");
+            return;
+        }
+
+        var fav = SelectedFavorite;
+        string band = NormalizeFavoriteBand(fav.Band, fav.FrequencyHz);
+        Favorites.Remove(fav);
+        SelectedFavorite = null;
+        RefreshFavoritesForBand();
+        PersistFavorites();
+        StatusText = $"Deleted [{band}] {fav.Name}";
+        AppendLog($"Favorite deleted: [{band}] {fav.Name}");
+    }
+
+    // ----- QRP CAL + AMP CAL -----
+
+    private void InitPowerCalBandStatuses()
+    {
+        PowerCalBandStatuses.Clear();
+        foreach (int n in CalBandNumbers)
+        {
+            PowerCalBandStatuses.Add(new PowerCalBandItem
+            {
+                BandNumber = n,
+                BandLabel = n.ToString(CultureInfo.InvariantCulture),
+                IsCalibrated = false,
+                IsSelected = false
+            });
+        }
+
+        PowerCalSelectedBand = 0;
+        PowerCalSliderValue = 0;
+        PowerCalStepLabel = "CALIBRATION STEP: —";
+        PowerCalTxOn = false;
+        PowerCalCalibrating = false;
+        PowerCalAcceptPrompt = false;
+    }
+
+    private void InitAmpCalBandStatuses()
+    {
+        AmpCalBandStatuses.Clear();
+        foreach (int n in CalBandNumbers)
+        {
+            AmpCalBandStatuses.Add(new PowerCalBandItem
+            {
+                BandNumber = n,
+                BandLabel = n.ToString(CultureInfo.InvariantCulture),
+                IsCalibrated = false,
+                IsSelected = false
+            });
+        }
+
+        AmpCalSelectedBand = 0;
+        AmpCalSliderValue = -99;
+        AmpCalStepLabel = "STEP: 0";
+        AmpCalTxOn = false;
+        AmpCalCalibrating = false;
+        AmpCalAcceptPrompt = false;
+    }
+
+    private static long GetCalFrequencyHz(int bandNumber) => bandNumber switch
+    {
+        2200 => 135_750,
+        630 => 475_000,
+        160 => 1_810_000,
+        80 => 3_510_000,
+        60 => 5_330_500,
+        40 => 7_010_000,
+        30 => 10_110_000,
+        20 => 14_150_000,
+        17 => 18_110_000,
+        15 => 21_200_000,
+        12 => 24_900_000,
+        10 => 28_010_000,
+        _ => 0
+    };
+
+    /// <summary>TX IQ freqs — must match ms-sdr iq_calibration_freqs[].</summary>
+    private static long GetTxIqFrequencyHz(int bandNumber) => bandNumber switch
+    {
+        2200 => 136_000,
+        630 => 475_000,
+        160 => 1_900_000,
+        80 => 3_750_000,
+        60 => 5_330_500,
+        40 => 7_150_000,
+        30 => 10_125_000,
+        20 => 14_175_000,
+        17 => 18_110_000,
+        15 => 21_225_000,
+        12 => 24_930_000,
+        10 => 28_350_000,
+        _ => 0
+    };
+
+    private static int AmpCalStepFromSlider(int sliderValue) => 100 + Math.Clamp(sliderValue, -99, 0);
+
+    partial void OnPowerCalTxOnChanged(bool value)
+    {
+        OnPropertyChanged(nameof(PowerCalTxButtonText));
+        OnPropertyChanged(nameof(PowerCalTxButtonEnabled));
+    }
+
+    partial void OnPowerCalCalibratingChanged(bool value)
+    {
+        OnPropertyChanged(nameof(PowerCalCalibrateButtonText));
+        OnPropertyChanged(nameof(PowerCalTxButtonEnabled));
+    }
+
+    partial void OnAmpCalTxOnChanged(bool value)
+    {
+        OnPropertyChanged(nameof(AmpCalTxButtonText));
+        OnPropertyChanged(nameof(AmpCalTxButtonEnabled));
+    }
+
+    partial void OnAmpCalCalibratingChanged(bool value)
+    {
+        OnPropertyChanged(nameof(AmpCalCalibrateButtonText));
+        OnPropertyChanged(nameof(AmpCalTxButtonEnabled));
+    }
+
+    private void SetPowerCalBandCalibrated(int bandNumber, bool calibrated)
+    {
+        var item = PowerCalBandStatuses.FirstOrDefault(b => b.BandNumber == bandNumber);
+        if (item == null) return;
+        item.IsCalibrated = calibrated;
+        AppendLog($"QRP cal status: {bandNumber}m → {(calibrated ? "calibrated" : "not calibrated")}");
+    }
+
+    private void SetAmpCalBandCalibrated(int bandNumber, bool calibrated)
+    {
+        var item = AmpCalBandStatuses.FirstOrDefault(b => b.BandNumber == bandNumber);
+        if (item == null) return;
+        item.IsCalibrated = calibrated;
+        AppendLog($"AMP cal status: {bandNumber}m → {(calibrated ? "calibrated" : "not calibrated")}");
+    }
+
+    [RelayCommand]
+    private async Task SelectPowerCalBandAsync(int band)
+    {
+        if (band <= 0) return;
+        if (PowerCalTxOn || PowerCalCalibrating)
+        {
+            await MsccDialog.AlertAsync("Turn TX OFF before changing band.").ConfigureAwait(true);
+            StatusText = "TX ON — set TX off before band change";
+            AppendLog("QRP cal: band change blocked (TX on)");
+            return;
+        }
+
+        if (PowerCalSelectedBand == band) return;
+
+        PowerCalSelectedBand = band;
+        foreach (var item in PowerCalBandStatuses)
+            item.IsSelected = item.BandNumber == band;
+
+        long calFreq = GetCalFrequencyHz(band);
+        if (calFreq > 0 && CanOperate())
+            await ApplyFrequencyAsync(calFreq, $"qrp-cal {band}m").ConfigureAwait(true);
+        else if (calFreq > 0)
+        {
+            _frequencyHz = calFreq;
+            UpdateFrequencyUi(calFreq);
+            BandText = band + "m";
+        }
+
+        if (CanOperate() && _radio != null)
+        {
+            try
+            {
+                await _radio.SetBandPowerBandAsync(band).ConfigureAwait(true);
+                AppendLog($"QRP cal band {band}m → 0xA1");
+            }
+            catch (Exception ex)
+            {
+                AppendLog($"QRP cal band error: {ex.Message}");
+            }
+        }
+        else
+            AppendLog($"QRP cal band {band}m selected (not connected)");
+    }
+
+    /// <summary>Called from the slider ValueChanged so 0xA2 goes out while dragging (not only on release).</summary>
+    public void ApplyPowerCalSliderLive(double raw)
+    {
+        int value = (int)Math.Round(Math.Clamp(raw, 0, 100));
+        if (PowerCalSliderValue != value)
+            PowerCalSliderValue = value;
+        else
+            SendPowerCalDrive(value);
+    }
+
+    partial void OnPowerCalSliderValueChanged(int value)
+    {
+        value = Math.Clamp(value, 0, 100);
+        if (!_suppressPowerCalSlider)
+            PowerCalStepLabel = $"CALIBRATION STEP: {value}";
+        SendPowerCalDrive(value);
+    }
+
+    private void SendPowerCalDrive(int value)
+    {
+        if (_suppressPowerCalSlider || !PowerCalCalibrating || !CanOperate() || _radio == null)
+            return;
+
+        _ = SendCalAsync(
+            () => _radio.SetBandPowerPowerAsync(value),
+            $"QRP cal power 0xA2={value}");
+    }
+
+    private void ApplyBandPowerReport(int step)
+    {
+        step = Math.Clamp(step, 0, 100);
+        _powerCalPreviousReceivedStep = step;
+        if (PowerCalCalibrating)
+        {
+            PowerCalStepLabel = $"CALIBRATION STEP: {PowerCalSliderValue}";
+            AppendLog($"QRP cal step 0xB4={step} (ignored while calibrating)");
+            return;
+        }
+
+        _suppressPowerCalSlider = true;
+        try
+        {
+            PowerCalSliderValue = step;
+            PowerCalStepLabel = $"CALIBRATION STEP: {step}";
+        }
+        finally
+        {
+            _suppressPowerCalSlider = false;
+        }
+        AppendLog($"QRP cal step from server 0xB4={step}");
+    }
+
+    /// <summary>WPF MessageBox: dummy load / matched antenna, once per session.</summary>
+    private async Task<bool> EnsureCalLoadWarningAsync()
+    {
+        if (PowerCalLoadConfirmed)
+            return true;
+        bool yes = await MsccDialog.ConfirmAsync(
+            "IS A WELL MATCHED ANTENNA OR DUMMY LOAD ATTACHED?\n\n" +
+            "A 50Ω 5W OR BETTER DUMMY LOAD IS PREFERRED",
+            "MSCC").ConfigureAwait(true);
+        if (yes)
+            PowerCalLoadConfirmed = true;
+        return yes;
+    }
+
+    [RelayCommand]
+    private async Task TogglePowerCalTxAsync()
+    {
+        if (FreqCalInProgress)
+        {
+            StatusText = "FREQUENCY CALIBRATION IN PROGRESS.";
+            return;
+        }
+        if (PowerCalCalibrating)
+        {
+            await MsccDialog.AlertAsync("Finish or cancel CALIBRATE first.").ConfigureAwait(true);
+            StatusText = "Finish CALIBRATE first";
+            return;
+        }
+
+        if (PowerCalSelectedBand <= 0)
+        {
+            await MsccDialog.AlertAsync("Select a Band").ConfigureAwait(true);
+            StatusText = "Select a band for QRP CAL";
+            return;
+        }
+
+        if (!PowerCalTxOn && !await EnsureCalLoadWarningAsync().ConfigureAwait(true))
+            return;
+
+        if (!CanOperate() || _radio == null)
+        {
+            await MsccDialog.AlertAsync("Connect first").ConfigureAwait(true);
+            StatusText = "Connect first";
+            return;
+        }
+
+        bool turnOn = !PowerCalTxOn;
+        try
+        {
+            await _radio.SetCalibrationTuneAsync(turnOn).ConfigureAwait(true);
+            PowerCalTxOn = turnOn;
+            AppendLog($"QRP cal TX {(turnOn ? "ON" : "OFF")} → 0xAC band={PowerCalSelectedBand}");
+        }
+        catch (Exception ex)
+        {
+            AppendLog($"QRP cal TX error: {ex.Message}");
+        }
+    }
+
+    [RelayCommand]
+    private async Task TogglePowerCalCalibrateAsync()
+    {
+        if (FreqCalInProgress)
+        {
+            StatusText = "FREQUENCY CALIBRATION IN PROGRESS.";
+            return;
+        }
+        if (PowerCalSelectedBand <= 0)
+        {
+            await MsccDialog.AlertAsync("Select a Band").ConfigureAwait(true);
+            StatusText = "Select a band for QRP CAL";
+            return;
+        }
+
+        if (PowerCalTxOn && !PowerCalCalibrating)
+        {
+            await MsccDialog.AlertAsync("TX ON. SET TX OFF BEFORE CALIBRATE").ConfigureAwait(true);
+            StatusText = "TX ON — set TX off before CALIBRATE";
+            return;
+        }
+
+        if (!CanOperate() || _radio == null)
+        {
+            await MsccDialog.AlertAsync("Connect first").ConfigureAwait(true);
+            StatusText = "Connect first";
+            return;
+        }
+
+        if (!PowerCalCalibrating)
+        {
+            if (!await EnsureCalLoadWarningAsync().ConfigureAwait(true))
+                return;
+
+            PowerCalAcceptPrompt = false;
+            PowerCalCalibrating = true;
+            PowerCalTxOn = true;
+
+            _suppressPowerCalSlider = true;
+            try
+            {
+                PowerCalSliderValue = 0;
+                PowerCalStepLabel = "CALIBRATION STEP: 0";
+            }
+            finally
+            {
+                _suppressPowerCalSlider = false;
+            }
+
+            try
+            {
+                await _radio.SetBandPowerPowerAsync(0).ConfigureAwait(true);
+                await _radio.SetCalibrationTuneAsync(true).ConfigureAwait(true);
+                AppendLog($"QRP cal CALIBRATE START band={PowerCalSelectedBand} → 0xA2 0, 0xAC 1");
+            }
+            catch (Exception ex)
+            {
+                AppendLog($"QRP cal start error: {ex.Message}");
+            }
+        }
+        else
+        {
+            try
+            {
+                await _radio.SetCalibrationTuneAsync(false).ConfigureAwait(true);
+            }
+            catch (Exception ex)
+            {
+                AppendLog($"QRP cal stop TX error: {ex.Message}");
+            }
+
+            PowerCalCalibrating = false;
+            PowerCalTxOn = false;
+            _powerCalPendingBand = PowerCalSelectedBand;
+
+            _suppressPowerCalSlider = true;
+            try
+            {
+                PowerCalSliderValue = 0;
+                PowerCalStepLabel = "CALIBRATION STEP: —";
+            }
+            finally
+            {
+                _suppressPowerCalSlider = false;
+            }
+
+            PowerCalAcceptPrompt = true;
+            StatusText = "Accept this QRP calibration?";
+            AppendLog($"QRP cal CALIBRATE STOP band={PowerCalSelectedBand} → 0xAC 0");
+        }
+    }
+
+    [RelayCommand]
+    private void AcceptPowerCal()
+    {
+        if (_powerCalPendingBand > 0)
+            SetPowerCalBandCalibrated(_powerCalPendingBand, true);
+        PowerCalAcceptPrompt = false;
+        StatusText = $"QRP cal accepted: {_powerCalPendingBand}m";
+        _powerCalPendingBand = 0;
+    }
+
+    [RelayCommand]
+    private void RejectPowerCal()
+    {
+        if (_powerCalPendingBand > 0)
+            SetPowerCalBandCalibrated(_powerCalPendingBand, false);
+        PowerCalAcceptPrompt = false;
+        StatusText = $"QRP cal rejected: {_powerCalPendingBand}m";
+        _powerCalPendingBand = 0;
+    }
+
+    [RelayCommand]
+    private async Task CancelPowerCalAsync()
+    {
+        int band = _powerCalPendingBand;
+        PowerCalAcceptPrompt = false;
+        _powerCalPendingBand = 0;
+        int restore = Math.Clamp(_powerCalPreviousReceivedStep, 0, 100);
+        if (CanOperate() && _radio != null)
+        {
+            try
+            {
+                await _radio.SetBandPowerPowerAsync(restore).ConfigureAwait(true);
+            }
+            catch (Exception ex)
+            {
+                AppendLog($"QRP cal cancel restore error: {ex.Message}");
+            }
+        }
+
+        _suppressPowerCalSlider = true;
+        try
+        {
+            PowerCalSliderValue = restore;
+            PowerCalStepLabel = $"CALIBRATION STEP: {restore}";
+        }
+        finally
+        {
+            _suppressPowerCalSlider = false;
+        }
+
+        StatusText = "QRP cal cancelled (restored step)";
+        AppendLog($"QRP cal CANCEL band={band}m restore 0xA2={restore}");
+    }
+
+    private void ForceStopPowerCal(string reason)
+    {
+        if (!PowerCalTxOn && !PowerCalCalibrating && !PowerCalAcceptPrompt) return;
+        if (_radio != null && IsConnected)
+        {
+            try { _ = _radio.SetCalibrationTuneAsync(false); }
+            catch { /* best effort */ }
+        }
+
+        PowerCalTxOn = false;
+        PowerCalCalibrating = false;
+        PowerCalAcceptPrompt = false;
+        _powerCalPendingBand = 0;
+        AppendLog($"QRP cal forced stop ({reason})");
+    }
+
+    [RelayCommand]
+    private async Task SelectAmpCalBandAsync(int band)
+    {
+        if (band <= 0) return;
+        if (AmpCalTxOn || AmpCalCalibrating)
+        {
+            await MsccDialog.AlertAsync("Turn TX OFF before changing band.").ConfigureAwait(true);
+            StatusText = "TX ON — set TX off before band change";
+            AppendLog("AMP cal: band change blocked (TX on)");
+            return;
+        }
+
+        if (AmpCalSelectedBand == band) return;
+
+        AmpCalSelectedBand = band;
+        foreach (var item in AmpCalBandStatuses)
+            item.IsSelected = item.BandNumber == band;
+
+        long freq = GetCalFrequencyHz(band);
+        if (freq <= 0)
+        {
+            AppendLog($"AMP cal band {band}: no cal frequency");
+            return;
+        }
+
+        if (CanOperate() && _radio != null)
+        {
+            try
+            {
+                await ApplyFrequencyAsync(freq, $"amp-cal {band}m").ConfigureAwait(true);
+                await _radio.SetAmplifierInitializeAsync(band).ConfigureAwait(true);
+                await _radio.SetAmplifierPowerAsync(100).ConfigureAwait(true);
+                AppendLog($"AMP cal band {band}m → 0xF9, 0xFA 100, f={freq}");
+            }
+            catch (Exception ex)
+            {
+                AppendLog($"AMP cal band error: {ex.Message}");
+            }
+        }
+        else
+        {
+            _frequencyHz = freq;
+            UpdateFrequencyUi(freq);
+            BandText = band + "m";
+            AppendLog($"AMP cal band {band}m selected (not connected)");
+        }
+
+        _suppressAmpCalSlider = true;
+        try
+        {
+            AmpCalSliderValue = -99;
+            AmpCalStepLabel = "STEP: 0";
+        }
+        finally
+        {
+            _suppressAmpCalSlider = false;
+        }
+    }
+
+    public void ApplyAmpCalSliderLive(double raw)
+    {
+        int value = (int)Math.Round(Math.Clamp(raw, -99, 0));
+        if (AmpCalSliderValue != value)
+            AmpCalSliderValue = value;
+        else
+            SendAmpCalDrive(value);
+    }
+
+    partial void OnAmpCalSliderValueChanged(int value)
+    {
+        value = Math.Clamp(value, -99, 0);
+        int step = AmpCalStepFromSlider(value);
+        if (!_suppressAmpCalSlider)
+            AmpCalStepLabel = $"STEP: {step}";
+        SendAmpCalDrive(value);
+    }
+
+    private void SendAmpCalDrive(int value)
+    {
+        if (_suppressAmpCalSlider || !AmpCalCalibrating || !CanOperate() || _radio == null)
+            return;
+        int step = AmpCalStepFromSlider(value);
+        _ = SendCalAsync(
+            () => _radio.SetPotentiaCalibrationAsync(value),
+            $"AMP cal 0x08={value} (STEP {step})");
+    }
+
+    [RelayCommand]
+    private async Task ToggleAmpCalTxAsync()
+    {
+        if (FreqCalInProgress)
+        {
+            StatusText = "FREQUENCY CALIBRATION IN PROGRESS.";
+            return;
+        }
+        if (AmpCalCalibrating)
+        {
+            await MsccDialog.AlertAsync("Finish or cancel CALIBRATE first.").ConfigureAwait(true);
+            StatusText = "Finish CALIBRATE first";
+            return;
+        }
+
+        if (AmpCalSelectedBand <= 0)
+        {
+            await MsccDialog.AlertAsync("Select a Band").ConfigureAwait(true);
+            StatusText = "Select a band for AMP CAL";
+            return;
+        }
+
+        if (!CanOperate() || _radio == null)
+        {
+            await MsccDialog.AlertAsync("Connect first").ConfigureAwait(true);
+            StatusText = "Connect first";
+            return;
+        }
+
+        if (!AmpCalTxOn)
+        {
+            if (!await EnsureCalLoadWarningAsync().ConfigureAwait(true))
+                return;
+            try
+            {
+                _modeBeforeAmpCal = string.IsNullOrWhiteSpace(ModeText) ? "USB" : ModeText;
+                await _radio.SetTunePowerAsync(100).ConfigureAwait(true);
+                await _radio.SetModeAsync("TUNE").ConfigureAwait(true);
+                ModeText = "TUNE";
+                await _radio.SetAutoTuneAsync(true).ConfigureAwait(true);
+                AmpCalTxOn = true;
+                AppendLog($"AMP cal TX ON band={AmpCalSelectedBand}");
+            }
+            catch (Exception ex)
+            {
+                AppendLog($"AMP cal TX error: {ex.Message}");
+            }
+        }
+        else
+        {
+            await StopAmpCalTuneCarrierAsync("TX button").ConfigureAwait(true);
+        }
+    }
+
+    [RelayCommand]
+    private async Task ToggleAmpCalCalibrateAsync()
+    {
+        if (FreqCalInProgress)
+        {
+            StatusText = "FREQUENCY CALIBRATION IN PROGRESS.";
+            return;
+        }
+        if (AmpCalSelectedBand <= 0)
+        {
+            await MsccDialog.AlertAsync("Select a Band").ConfigureAwait(true);
+            StatusText = "Select a band for AMP CAL";
+            return;
+        }
+
+        if (!CanOperate() || _radio == null)
+        {
+            await MsccDialog.AlertAsync("Connect first").ConfigureAwait(true);
+            StatusText = "Connect first";
+            return;
+        }
+
+        // Stop path
+        if (AmpCalCalibrating || AmpCalTxOn)
+        {
+            bool wasCal = AmpCalCalibrating;
+            int band = AmpCalSelectedBand;
+            await StopAmpCalTuneCarrierAsync(wasCal ? "CALIBRATE stop" : "CALIBRATE (was TX)").ConfigureAwait(true);
+
+            _suppressAmpCalSlider = true;
+            try
+            {
+                AmpCalSliderValue = -99;
+                AmpCalStepLabel = "STEP: 0";
+            }
+            finally
+            {
+                _suppressAmpCalSlider = false;
+            }
+
+            if (wasCal && band > 0)
+            {
+                _ampCalPendingBand = band;
+                AmpCalAcceptPrompt = true;
+                StatusText = "Accept this AMP calibration?";
+            }
+            return;
+        }
+
+        // Start requires QRP cal green for band
+        var xcvCal = PowerCalBandStatuses.FirstOrDefault(b => b.BandNumber == AmpCalSelectedBand);
+        if (xcvCal == null || !xcvCal.IsCalibrated)
+        {
+            await MsccDialog.AlertAsync("QRP CAL not done for this band (green lamp required).").ConfigureAwait(true);
+            StatusText = "QRP CAL not done for this band";
+            AppendLog("AMP cal blocked: QRP cal lamp not green for band");
+            return;
+        }
+
+        if (!await EnsureCalLoadWarningAsync().ConfigureAwait(true))
+            return;
+
+        try
+        {
+            _modeBeforeAmpCal = string.IsNullOrWhiteSpace(ModeText) ? "USB" : ModeText;
+            await _radio.SetTunePowerAsync(100).ConfigureAwait(true);
+            await _radio.SetModeAsync("TUNE").ConfigureAwait(true);
+            ModeText = "TUNE";
+            await _radio.SetAutoTuneAsync(true).ConfigureAwait(true);
+
+            AmpCalCalibrating = true;
+            AmpCalTxOn = true;
+            AmpCalAcceptPrompt = false;
+
+            _suppressAmpCalSlider = true;
+            try
+            {
+                AmpCalSliderValue = -99;
+                AmpCalStepLabel = $"STEP: {AmpCalStepFromSlider(-99)}";
+            }
+            finally
+            {
+                _suppressAmpCalSlider = false;
+            }
+
+            await _radio.SetPotentiaCalibrationAsync(-99).ConfigureAwait(true);
+            AppendLog($"AMP cal CALIBRATE START band={AmpCalSelectedBand}");
+        }
+        catch (Exception ex)
+        {
+            AppendLog($"AMP cal start error: {ex.Message}");
+        }
+    }
+
+    private async Task StopAmpCalTuneCarrierAsync(string reason)
+    {
+        if (_radio != null && IsConnected)
+        {
+            try
+            {
+                await _radio.SetAutoTuneAsync(false).ConfigureAwait(true);
+                string restore = string.IsNullOrWhiteSpace(_modeBeforeAmpCal) ||
+                                 string.Equals(_modeBeforeAmpCal, "TUNE", StringComparison.OrdinalIgnoreCase)
+                    ? "USB"
+                    : _modeBeforeAmpCal;
+                await _radio.SetModeAsync(restore).ConfigureAwait(true);
+                ModeText = restore;
+            }
+            catch (Exception ex)
+            {
+                AppendLog($"AMP cal stop error: {ex.Message}");
+            }
+        }
+
+        AmpCalTxOn = false;
+        AmpCalCalibrating = false;
+        AppendLog($"AMP cal tune/TX OFF ({reason})");
+    }
+
+    [RelayCommand]
+    private void AcceptAmpCal()
+    {
+        if (_ampCalPendingBand > 0)
+            SetAmpCalBandCalibrated(_ampCalPendingBand, true);
+        AmpCalAcceptPrompt = false;
+        StatusText = $"AMP cal accepted: {_ampCalPendingBand}m";
+        _ampCalPendingBand = 0;
+    }
+
+    [RelayCommand]
+    private void RejectAmpCal()
+    {
+        if (_ampCalPendingBand > 0)
+            SetAmpCalBandCalibrated(_ampCalPendingBand, false);
+        AmpCalAcceptPrompt = false;
+        StatusText = $"AMP cal rejected: {_ampCalPendingBand}m";
+        _ampCalPendingBand = 0;
+    }
+
+    [RelayCommand]
+    private void CancelAmpCal()
+    {
+        AmpCalAcceptPrompt = false;
+        StatusText = "AMP cal cancelled (lamp unchanged)";
+        AppendLog($"AMP cal CANCEL band={_ampCalPendingBand}m");
+        _ampCalPendingBand = 0;
+    }
+
+    private void ForceStopAmpCal(string reason)
+    {
+        if (!AmpCalTxOn && !AmpCalCalibrating && !AmpCalAcceptPrompt) return;
+        if (_radio != null && IsConnected)
+        {
+            try
+            {
+                _ = _radio.SetAutoTuneAsync(false);
+            }
+            catch { /* best effort */ }
+        }
+
+        AmpCalTxOn = false;
+        AmpCalCalibrating = false;
+        AmpCalAcceptPrompt = false;
+        _ampCalPendingBand = 0;
+        AppendLog($"AMP cal forced stop ({reason})");
+    }
+
+    private async Task SendCalAsync(Func<Task> send, string okMsg)
+    {
+        if (_radio == null) return;
+        try
+        {
+            await send().ConfigureAwait(true);
+            AppendLog($"Sent {okMsg}");
+        }
+        catch (Exception ex)
+        {
+            AppendLog($"Cal error: {ex.Message}");
+        }
+    }
+
+    // ----- RX IQ + TX IQ -----
+
+    partial void OnRxIqSessionActiveChanged(bool value) =>
+        OnPropertyChanged(nameof(RxIqStartButtonText));
+
+    partial void OnTxIqTxOnChanged(bool value)
+    {
+        OnPropertyChanged(nameof(TxIqTxButtonText));
+        OnPropertyChanged(nameof(TxIqBandSelectEnabled));
+    }
+
+    private static int? TryParseAmateurBandMeters(string? band)
+    {
+        if (string.IsNullOrWhiteSpace(band)) return null;
+        string b = band.Trim().ToLowerInvariant();
+        if (b is "gen" or "user" or "?" or "—") return null;
+        if (b.EndsWith('m'))
+            b = b[..^1];
+        if (!int.TryParse(b, NumberStyles.Integer, CultureInfo.InvariantCulture, out int meters))
+            return null;
+        return meters is 160 or 80 or 60 or 40 or 30 or 20 or 17 or 15 or 12 or 10
+            ? meters
+            : null;
+    }
+
+    private static string FormatIqFreqDisplay(long freqHz)
+    {
+        if (freqHz <= 0) return "—.—.—";
+        long mhz = freqHz / 1_000_000;
+        long khz = (freqHz - mhz * 1_000_000) / 1000;
+        long hz = freqHz - mhz * 1_000_000 - khz * 1000;
+        return $"{mhz}.{khz:000}.{hz:000}";
+    }
+
+    private long ComputeRxIqTuneFreqHz()
+    {
+        long f = _rxIqBaseFreqHz;
+        if (RxIqUp24k) f += 24_000;
+        f += RxIqFreqOffsetHz;
+        return f;
+    }
+
+    private void RefreshRxIqFreqDisplay() =>
+        RxIqFreqDisplay = FormatIqFreqDisplay(ComputeRxIqTuneFreqHz());
+
+    private async Task ApplyRxIqTuneFrequencyAsync()
+    {
+        if (!RxIqSessionActive || _suppressRxIqFreqTune) return;
+        long total = ComputeRxIqTuneFreqHz();
+        if (total <= 0) return;
+        RefreshRxIqFreqDisplay();
+        if (CanOperate() && _radio != null)
+        {
+            try
+            {
+                await _radio.SetFrequencyAsync(total).ConfigureAwait(true);
+                _frequencyHz = total;
+                UpdateFrequencyUi(total);
+                AppendLog($"RX IQ LO → {total}");
+            }
+            catch (Exception ex)
+            {
+                AppendLog($"RX IQ tune error: {ex.Message}");
+            }
+        }
+        else
+        {
+            _frequencyHz = total;
+            UpdateFrequencyUi(total);
+        }
+    }
+
+    partial void OnRxIqUp24kChanged(bool value)
+    {
+        if (!RxIqSessionActive || _suppressRxIqFreqTune) return;
+        _ = ApplyRxIqTuneFrequencyAsync();
+        RxIqStatus = value ? "UP 24 kHz ON — LO +24 000 Hz." : "UP 24 kHz OFF.";
+    }
+
+    partial void OnRxIqFreqOffsetHzChanged(int value)
+    {
+        int clamped = Math.Clamp(value, -1000, 2009);
+        if (clamped != value)
+        {
+            _suppressRxIqFreqTune = true;
+            RxIqFreqOffsetHz = clamped;
+            _suppressRxIqFreqTune = false;
+            return;
+        }
+
+        if (!RxIqSessionActive || _suppressRxIqFreqTune) return;
+        _ = ApplyRxIqTuneFrequencyAsync();
+    }
+
+    partial void OnRxIqOffsetChanged(int value)
+    {
+        if (_suppressRxIqOffset || !RxIqSessionActive) return;
+        int v = Math.Clamp(value, -200, 200);
+        if (v != value)
+        {
+            _suppressRxIqOffset = true;
+            RxIqOffset = v;
+            _suppressRxIqOffset = false;
+            return;
+        }
+
+        if (!CanOperate() || _radio == null) return;
+        _ = SendCalAsync(() => _radio.SetIqOffsetAsync(v), $"RX IQ offset 0x52={v}");
+    }
+
+    [RelayCommand]
+    private async Task StartRxIqAsync()
+    {
+        if (RxIqSessionActive)
+        {
+            LeaveRxIqSession("START off");
+            return;
+        }
+
+        if (!CanOperate() || _radio == null)
+        {
+            StatusText = "Connect first";
+            return;
+        }
+
+        string bandKey = NormalizeFavoriteBand(BandText, _frequencyHz);
+        int? meters = TryParseAmateurBandMeters(bandKey);
+        if (meters is null)
+        {
+            StatusText = "Invalid band — select amateur band first";
+            RxIqStatus = "INVALID BAND (general). Return to MAIN and select an amateur band.";
+            AppendLog($"RX IQ START blocked: band={bandKey}");
+            return;
+        }
+
+        long baseFreq = _frequencyHz > 0 ? _frequencyHz : GetCalFrequencyHz(meters.Value);
+        if (baseFreq <= 0)
+            baseFreq = GetCalFrequencyHz(meters.Value);
+        if (baseFreq <= 0)
+        {
+            StatusText = "No frequency for this band";
+            return;
+        }
+
+        _rxIqBandMeters = meters.Value;
+        _rxIqBaseFreqHz = baseFreq;
+
+        _suppressRxIqFreqTune = true;
+        _suppressRxIqOffset = true;
+        try
+        {
+            RxIqBandLabel = meters.Value + "m";
+            RxIqFreqOffsetHz = 0;
+            RxIqUp24k = false;
+            RxIqOffset = 0;
+            RefreshRxIqFreqDisplay();
+        }
+        finally
+        {
+            _suppressRxIqFreqTune = false;
+            _suppressRxIqOffset = false;
+        }
+
+        try
+        {
+            await _radio.SetIqBandAsync(meters.Value).ConfigureAwait(true);
+            await _radio.SetIqCalibrationRxTxAsync(txIq: false).ConfigureAwait(true);
+            await _radio.SetFrequencyAsync(_rxIqBaseFreqHz).ConfigureAwait(true);
+            _frequencyHz = _rxIqBaseFreqHz;
+            UpdateFrequencyUi(_rxIqBaseFreqHz);
+            BandText = RxIqBandLabel;
+
+            RxIqSessionActive = true;
+            RxIqResetAllPrompt = false;
+            RxIqStatus = $"ACTIVE — {RxIqBandLabel} {RxIqFreqDisplay}. Adjust I/Q OFFSET, then APPLY.";
+            AppendLog($"RX IQ START: band={meters.Value}m base={_rxIqBaseFreqHz} → 0x58 + 0x55 RX");
+        }
+        catch (Exception ex)
+        {
+            AppendLog($"RX IQ start error: {ex.Message}");
+            StatusText = $"RX IQ failed: {ex.Message}";
+        }
+    }
+
+    private void LeaveRxIqSession(string reason)
+    {
+        if (!RxIqSessionActive && !RxIqCommitting)
+            return;
+
+        RxIqCommitting = false;
+        RxIqSessionActive = false;
+        RxIqResetAllPrompt = false;
+        _suppressRxIqOffset = true;
+        _suppressRxIqFreqTune = true;
+        try
+        {
+            RxIqOffset = 0;
+        }
+        finally
+        {
+            _suppressRxIqOffset = false;
+            _suppressRxIqFreqTune = false;
+        }
+
+        RxIqStatus = $"Session ended ({reason}). Press START to re-enter.";
+        AppendLog($"RX IQ LEAVE ({reason})");
+    }
+
+    [RelayCommand]
+    private async Task ZeroRxIqOffsetAsync()
+    {
+        if (!RxIqSessionActive || _radio == null)
+        {
+            StatusText = "Start RX IQ first";
+            return;
+        }
+
+        _suppressRxIqOffset = true;
+        try { RxIqOffset = 0; }
+        finally { _suppressRxIqOffset = false; }
+
+        try
+        {
+            await _radio.SetIqOffsetAsync(0).ConfigureAwait(true);
+            await _radio.CommitIqAsync().ConfigureAwait(true);
+            RxIqCommitting = true;
+            RxIqStatus = "Offset ZERO + COMMIT sent (0x52, 0x57)…";
+            AppendLog("RX IQ ZERO + COMMIT");
+        }
+        catch (Exception ex)
+        {
+            AppendLog($"RX IQ zero error: {ex.Message}");
+        }
+    }
+
+    [RelayCommand]
+    private void ResetRxIqFreq()
+    {
+        _suppressRxIqFreqTune = true;
+        try { RxIqFreqOffsetHz = 0; }
+        finally { _suppressRxIqFreqTune = false; }
+
+        if (RxIqSessionActive)
+        {
+            _ = ApplyRxIqTuneFrequencyAsync();
+            RxIqStatus = $"LO fine cleared — freq {RxIqFreqDisplay}.";
+        }
+        else
+        {
+            RefreshRxIqFreqDisplay();
+            RxIqStatus = "LO fine offset cleared.";
+        }
+        AppendLog("RX IQ RESET FREQ");
+    }
+
+    [RelayCommand]
+    private async Task ApplyRxIqAsync()
+    {
+        if (!RxIqSessionActive || _radio == null)
+        {
+            StatusText = "Start RX IQ first";
+            return;
+        }
+
+        try
+        {
+            RxIqCommitting = true;
+            RxIqStatus = "APPLYING… (0x57)";
+            await _radio.CommitIqAsync().ConfigureAwait(true);
+            AppendLog($"RX IQ APPLY (0x57) band={_rxIqBandMeters} offset={RxIqOffset}");
+        }
+        catch (Exception ex)
+        {
+            RxIqCommitting = false;
+            AppendLog($"RX IQ apply error: {ex.Message}");
+        }
+    }
+
+    [RelayCommand]
+    private void ResetAllRxIq()
+    {
+        if (!RxIqSessionActive)
+        {
+            StatusText = "Start RX IQ first";
+            return;
+        }
+
+        RxIqResetAllPrompt = true;
+        RxIqStatus = "Confirm RESET ALL (applies current I/Q to every band)?";
+    }
+
+    [RelayCommand]
+    private async Task ConfirmResetAllRxIqAsync()
+    {
+        RxIqResetAllPrompt = false;
+        if (!RxIqSessionActive || _radio == null) return;
+        try
+        {
+            await _radio.SetIqOffsetAsync(RxIqOffset).ConfigureAwait(true);
+            await _radio.ResetAllIqBandsAsync(rxIq: true).ConfigureAwait(true);
+            RxIqStatus = "RESET ALL sent — all bands set to current I/Q offset (0x8D).";
+            AppendLog($"RX IQ RESET ALL offset={RxIqOffset}");
+        }
+        catch (Exception ex)
+        {
+            AppendLog($"RX IQ reset-all error: {ex.Message}");
+        }
+    }
+
+    [RelayCommand]
+    private void CancelResetAllRxIq()
+    {
+        RxIqResetAllPrompt = false;
+        RxIqStatus = "RESET ALL cancelled.";
+    }
+
+    private void EnsureTxIqBandItems()
+    {
+        if (TxIqBandItems.Count > 0) return;
+        foreach (int n in TxIqBandNumbers)
+        {
+            TxIqBandItems.Add(new PowerCalBandItem
+            {
+                BandNumber = n,
+                BandLabel = n.ToString(CultureInfo.InvariantCulture),
+                IsCalibrated = false,
+                IsSelected = false
+            });
+        }
+    }
+
+    private void ForceStopTxIqSession(string reason)
+    {
+        if (!TxIqTxOn && !TxIqCommitting && !TxIqResetAllPrompt) return;
+        if (_radio != null && IsConnected)
+        {
+            try
+            {
+                _ = _radio.SetAutoTuneAsync(false);
+                _ = _radio.SetIqCalibrationTuneAsync(false);
+            }
+            catch { /* best effort */ }
+        }
+
+        TxIqTxOn = false;
+        TxIqCommitting = false;
+        TxIqResetAllPrompt = false;
+        AppendLog($"TX IQ session stop ({reason})");
+    }
+
+    [RelayCommand]
+    private async Task SelectTxIqBandAsync(int band)
+    {
+        if (AmpOn)
+        {
+            StatusText = "TX IQ requires QRP (AMP off)";
+            return;
+        }
+
+        if (TxIqTxOn)
+        {
+            StatusText = "Turn TX OFF before band change";
+            return;
+        }
+
+        if (band <= 0) return;
+        EnsureTxIqBandItems();
+        foreach (var item in TxIqBandItems)
+            item.IsSelected = item.BandNumber == band;
+        TxIqSelectedBand = band;
+
+        long freq = GetTxIqFrequencyHz(band);
+        _suppressTxIqOffset = true;
+        try { TxIqOffset = 0; }
+        finally { _suppressTxIqOffset = false; }
+
+        if (CanOperate() && _radio != null)
+        {
+            try
+            {
+                if (freq > 0)
+                    await ApplyFrequencyAsync(freq, $"tx-iq {band}m").ConfigureAwait(true);
+                await _radio.SetIqCalibrationRxTxAsync(true).ConfigureAwait(true);
+                await _radio.SetIqBandAsync(band).ConfigureAwait(true);
+                TxIqStatus = $"{band}M @ {freq / 1_000_000.0:F3} MHz — set power, then TX ON.";
+                AppendLog($"TX IQ band {band}m freq={freq} (ms-sdr iq_calibration_freqs)");
+            }
+            catch (Exception ex)
+            {
+                AppendLog($"TX IQ band error: {ex.Message}");
+            }
+        }
+        else
+        {
+            if (freq > 0)
+            {
+                _frequencyHz = freq;
+                UpdateFrequencyUi(freq);
+                BandText = band + "m";
+            }
+            TxIqStatus = $"{band}M selected (not connected).";
+        }
+    }
+
+    partial void OnTxIqOffsetChanged(int value)
+    {
+        if (_suppressTxIqOffset || !TxIqTxOn || TxIqSelectedBand <= 0) return;
+        int v = Math.Clamp(value, -200, 200);
+        if (v != value)
+        {
+            _suppressTxIqOffset = true;
+            TxIqOffset = v;
+            _suppressTxIqOffset = false;
+            return;
+        }
+
+        if (!CanOperate() || _radio == null) return;
+        _ = SendCalAsync(() => _radio.SetIqOffsetAsync(v), $"TX IQ offset 0x52={v}");
+    }
+
+    partial void OnTxIqPowerChanged(int value)
+    {
+        if (TxIqSelectedBand <= 0) return;
+        if (!CanOperate() || _radio == null) return;
+        int p = Math.Clamp(value, 0, 100);
+        _ = SendCalAsync(() => _radio.SetTunePowerAsync(p), $"TX IQ power {p}%");
+    }
+
+    [RelayCommand]
+    private async Task ToggleTxIqTxAsync()
+    {
+        if (FreqCalInProgress)
+        {
+            StatusText = "FREQUENCY CALIBRATION IN PROGRESS.";
+            return;
+        }
+        if (AmpOn)
+        {
+            await MsccDialog.AlertAsync("TX IQ balance requires QRP mode (AMP off).").ConfigureAwait(true);
+            StatusText = "TX IQ requires QRP (AMP off)";
+            return;
+        }
+
+        if (TxIqSelectedBand <= 0)
+        {
+            await MsccDialog.AlertAsync("SELECT A BAND").ConfigureAwait(true);
+            StatusText = "Select a band for TX IQ";
+            return;
+        }
+
+        if (!CanOperate() || _radio == null)
+        {
+            await MsccDialog.AlertAsync("Connect first").ConfigureAwait(true);
+            StatusText = "Connect first";
+            return;
+        }
+
+        if (!TxIqTxOn)
+        {
+            if (!await EnsureCalLoadWarningAsync().ConfigureAwait(true))
+                return;
+            try
+            {
+                _modeBeforeTxIq = string.IsNullOrWhiteSpace(ModeText) ? "USB" : ModeText;
+                long freq = GetTxIqFrequencyHz(TxIqSelectedBand);
+                if (freq > 0)
+                {
+                    _frequencyHz = freq;
+                    UpdateFrequencyUi(freq);
+                }
+                await _radio.SetIqCalibrationRxTxAsync(true).ConfigureAwait(true);
+                await _radio.SetIqBandAsync(TxIqSelectedBand).ConfigureAwait(true);
+                await _radio.SetTunePowerAsync(TxIqPower).ConfigureAwait(true);
+                await _radio.SetModeAsync("TUNE").ConfigureAwait(true);
+                ModeText = "TUNE";
+                await _radio.SetAutoTuneAsync(true).ConfigureAwait(true);
+                await _radio.SetIqCalibrationTuneAsync(true).ConfigureAwait(true);
+                TxIqTxOn = true;
+                TxIqStatus =
+                    $"TX ON @ {freq / 1_000_000.0:F3} MHz — null image with OFFSET, then APPLY or TX OFF.";
+                AppendLog($"TX IQ TX ON band={TxIqSelectedBand} freq={freq} power={TxIqPower}");
+            }
+            catch (Exception ex)
+            {
+                AppendLog($"TX IQ TX error: {ex.Message}");
+            }
+        }
+        else
+        {
+            await StopTxIqCarrierAsync().ConfigureAwait(true);
+            TxIqStatus = "TX OFF. Use APPLY to commit if desired.";
+        }
+    }
+
+    private async Task StopTxIqCarrierAsync()
+    {
+        if (_radio != null && IsConnected)
+        {
+            try
+            {
+                await _radio.SetAutoTuneAsync(false).ConfigureAwait(true);
+                await _radio.SetIqCalibrationTuneAsync(false).ConfigureAwait(true);
+                string restore = string.IsNullOrWhiteSpace(_modeBeforeTxIq) ||
+                                 string.Equals(_modeBeforeTxIq, "TUNE", StringComparison.OrdinalIgnoreCase)
+                    ? "USB"
+                    : _modeBeforeTxIq;
+                await _radio.SetModeAsync(restore).ConfigureAwait(true);
+                ModeText = restore;
+            }
+            catch (Exception ex)
+            {
+                AppendLog($"TX IQ stop error: {ex.Message}");
+            }
+        }
+
+        TxIqTxOn = false;
+        AppendLog("TX IQ TX OFF");
+    }
+
+    [RelayCommand]
+    private async Task ApplyTxIqAsync()
+    {
+        if (AmpOn)
+        {
+            await MsccDialog.AlertAsync("TX IQ balance requires QRP mode (AMP off).").ConfigureAwait(true);
+            StatusText = "TX IQ requires QRP (AMP off)";
+            return;
+        }
+
+        if (TxIqSelectedBand <= 0)
+        {
+            await MsccDialog.AlertAsync("Select a Band").ConfigureAwait(true);
+            StatusText = "Select a band for TX IQ";
+            return;
+        }
+
+        if (!CanOperate() || _radio == null)
+        {
+            await MsccDialog.AlertAsync("Connect first").ConfigureAwait(true);
+            StatusText = "Connect first";
+            return;
+        }
+
+        if (!await MsccDialog.ConfirmAsync("APPLY THE CURRENT I/Q VALUE?", "MSCC").ConfigureAwait(true))
+            return;
+
+        try
+        {
+            TxIqCommitting = true;
+            TxIqStatus = "APPLYING…";
+            await _radio.CommitIqAsync().ConfigureAwait(true);
+            AppendLog($"TX IQ COMMIT (0x57) band={TxIqSelectedBand} offset={TxIqOffset}");
+        }
+        catch (Exception ex)
+        {
+            TxIqCommitting = false;
+            AppendLog($"TX IQ apply error: {ex.Message}");
+        }
+    }
+
+    [RelayCommand]
+    private void ResetAllTxIq()
+    {
+        if (AmpOn)
+        {
+            StatusText = "TX IQ requires QRP (AMP off)";
+            return;
+        }
+
+        if (TxIqTxOn)
+        {
+            StatusText = "Turn TX OFF before reset";
+            return;
+        }
+
+        TxIqResetAllPrompt = true;
+        TxIqStatus = "Confirm factory RESET ALL I/Q bands?";
+    }
+
+    [RelayCommand]
+    private async Task ConfirmResetAllTxIqAsync()
+    {
+        TxIqResetAllPrompt = false;
+        if (!CanOperate() || _radio == null) return;
+        try
+        {
+            await _radio.ResetAllIqBandsAsync(rxIq: false).ConfigureAwait(true);
+            _suppressTxIqOffset = true;
+            try { TxIqOffset = 0; }
+            finally { _suppressTxIqOffset = false; }
+            TxIqStatus = "Factory reset of all I/Q bands requested.";
+            AppendLog("TX IQ RESET ALL (0x8D)");
+        }
+        catch (Exception ex)
+        {
+            AppendLog($"TX IQ reset-all error: {ex.Message}");
+        }
+    }
+
+    [RelayCommand]
+    private void CancelResetAllTxIq()
+    {
+        TxIqResetAllPrompt = false;
+        TxIqStatus = "RESET ALL cancelled.";
+    }
+
+    private void OnIqOperationComplete(int op)
+    {
+        if (RxIqCommitting)
+        {
+            RxIqCommitting = false;
+            RxIqStatus = op switch
+            {
+                1 => "APPLY/ZERO succeeded (IQ_OPERATION_COMPLETE).",
+                0 => "APPLY/ZERO failed (IQ_OPERATION_COMPLETE).",
+                _ => $"APPLY complete (operand={op})."
+            };
+            AppendLog($"RX IQ 0x56 op={op}");
+            return;
+        }
+
+        if (!TxIqCommitting) return;
+        TxIqCommitting = false;
+        TxIqStatus = op switch
+        {
+            1 => "APPLY succeeded (IQ_OPERATION_COMPLETE).",
+            0 => "APPLY failed (IQ_OPERATION_COMPLETE).",
+            _ => $"APPLY complete (operand={op})."
+        };
+        AppendLog($"TX IQ 0x56 op={op}");
+    }
+
+    private void OnIqValueReported(int v)
+    {
+        int clamped = Math.Clamp(v, -200, 200);
+        if (RxIqSessionActive)
+        {
+            _suppressRxIqOffset = true;
+            try { RxIqOffset = clamped; }
+            finally { _suppressRxIqOffset = false; }
+            AppendLog($"RX IQ value from server: {v}");
+            return;
+        }
+
+        if (TxIqSelectedBand <= 0 && !TxIqTxOn) return;
+        _suppressTxIqOffset = true;
+        try { TxIqOffset = clamped; }
+        finally { _suppressTxIqOffset = false; }
+        AppendLog($"TX IQ value from server: {v}");
+    }
+
+    // ----- FREQ CAL -----
+
+    partial void OnFreqCalLooseChanged(bool value) =>
+        OnPropertyChanged(nameof(FreqCalLooseButtonText));
+
+    partial void OnFreqCalManualModeChanged(bool value)
+    {
+        OnPropertyChanged(nameof(FreqCalManualButtonText));
+        OnPropertyChanged(nameof(FreqCalActionsEnabled));
+        OnPropertyChanged(nameof(FreqCalManualButtonEnabled));
+        OnPropertyChanged(nameof(FreqCalPpmEnabled));
+    }
+
+    partial void OnFreqCalInProgressChanged(bool value)
+    {
+        OnPropertyChanged(nameof(FreqCalActionsEnabled));
+        OnPropertyChanged(nameof(FreqCalManualButtonEnabled));
+        OnPropertyChanged(nameof(FreqCalPpmEnabled));
+        OnPropertyChanged(nameof(FreqCalAutoCheckEnabled));
+        OnPropertyChanged(nameof(IsPowerCalTabEnabled));
+        OnPropertyChanged(nameof(IsAmpCalTabEnabled));
+        OnPropertyChanged(nameof(IsTxIqTabEnabled));
+        OnPropertyChanged(nameof(PowerCalTabHint));
+        OnPropertyChanged(nameof(AmpCalTabHint));
+        OnPropertyChanged(nameof(TxIqTabHint));
+    }
+
+    partial void OnFreqCalAutoModePromptChanged(bool value)
+    {
+        OnPropertyChanged(nameof(FreqCalActionsEnabled));
+        OnPropertyChanged(nameof(FreqCalManualButtonEnabled));
+    }
+
+    partial void OnFreqCalManualAcceptPromptChanged(bool value)
+    {
+        OnPropertyChanged(nameof(FreqCalActionsEnabled));
+        OnPropertyChanged(nameof(FreqCalPpmEnabled));
+    }
+
+    [RelayCommand]
+    private async Task ToggleFreqCalLooseAsync()
+    {
+        FreqCalLoose = !FreqCalLoose;
+        if (!CanOperate() || _radio == null) return;
+        try
+        {
+            await _radio.SetCalLooseAsync(FreqCalLoose).ConfigureAwait(true);
+            AppendLog($"Freq Cal: {(FreqCalLoose ? "LOOSE" : "TIGHT")}");
+        }
+        catch (Exception ex)
+        {
+            AppendLog($"Freq Cal loose error: {ex.Message}");
+        }
+    }
+
+    [RelayCommand]
+    private void FreqCalAuto()
+    {
+        if (_freqCalAbortDrainPending)
+        {
+            AppendLog("Freq Cal: AUTO ignored (drain pending)");
+            return;
+        }
+        if (FreqCalManualMode)
+        {
+            StatusText = "Exit MANUAL before AUTO";
+            return;
+        }
+
+        if (FreqCalInProgress)
+        {
+            StatusText = "Calibration already in progress";
+            return;
+        }
+
+        if (!CanOperate())
+        {
+            StatusText = "Connect first";
+            return;
+        }
+
+        FreqCalResetPrompt = false;
+        FreqCalAutoModePrompt = true;
+        FreqCalStatus = "Choose COARSE or FINE…";
+    }
+
+    [RelayCommand]
+    private Task FreqCalAutoCoarseAsync() => StartFreqCalAutoAsync(coarse: true);
+
+    [RelayCommand]
+    private Task FreqCalAutoFineAsync() => StartFreqCalAutoAsync(coarse: false);
+
+    [RelayCommand]
+    private void FreqCalAutoCancel()
+    {
+        FreqCalAutoModePrompt = false;
+        FreqCalStatus = "AUTO cancelled";
+        AppendLog("Freq Cal: AUTO cancelled");
+    }
+
+    private async Task StartFreqCalAutoAsync(bool coarse)
+    {
+        FreqCalAutoModePrompt = false;
+        if (!CanOperate() || _radio == null)
+        {
+            StatusText = "Connect first";
+            return;
+        }
+
+        await ForceCwForFreqCalAsync().ConfigureAwait(true);
+
+        _freqCalProgressSteps = 0;
+        int freqHz = 0;
+        if (_frequencyHz > 0 && _frequencyHz <= int.MaxValue)
+            freqHz = (int)_frequencyHz;
+
+        FreqCalProgress = 0;
+        FreqCalInProgress = true;
+        _freqCalIsAuto = true;
+        _lastCalDelta = 0;
+        FreqCalStatus = coarse ? "RUNNING COARSE — WAIT" : "RUNNING FINE — WAIT";
+        SetFreqCalStatusColor("busy");
+
+        try
+        {
+            await _radio.SetCalLooseAsync(FreqCalLoose).ConfigureAwait(true);
+            await _radio.SetCalCheckAsync(false).ConfigureAwait(true);
+            await _radio.SetCalModeAsync(coarse ? 0 : 1).ConfigureAwait(true);
+            await _radio.StartCalibrateAsync(freqHz).ConfigureAwait(true);
+            AppendLog($"Freq Cal: AUTO start ({(coarse ? "COARSE" : "FINE")}, loose={FreqCalLoose}, f={freqHz})");
+        }
+        catch (Exception ex)
+        {
+            FreqCalInProgress = false;
+            _freqCalIsAuto = false;
+            FreqCalStatus = "AUTO FAILED";
+            AppendLog($"Freq Cal: AUTO start error: {ex.Message}");
+        }
+    }
+
+    [RelayCommand]
+    private async Task ToggleFreqCalManualAsync()
+    {
+        if (FreqCalInProgress)
+        {
+            StatusText = "Calibration in progress";
+            return;
+        }
+
+        if (!CanOperate() || _radio == null)
+        {
+            StatusText = "Connect first";
+            return;
+        }
+
+        if (!FreqCalManualMode)
+        {
+            try
+            {
+                ResetFreqCalManualPpmUi(sendToRadio: false);
+                await _radio.SetForceCalibrationAsync(true).ConfigureAwait(true);
+                FreqCalManualMode = true;
+                FreqCalStatus = "MANUAL CALIBRATION";
+                AppendLog("Freq Cal: entered MANUAL");
+            }
+            catch (Exception ex)
+            {
+                AppendLog($"Freq Cal manual start error: {ex.Message}");
+            }
+        }
+        else
+        {
+            FlushFreqCalManualPpmPending(force: true);
+            FreqCalManualAcceptPrompt = true;
+            FreqCalStatus = "Accept this MANUAL calibration?";
+        }
+    }
+
+    [RelayCommand]
+    private async Task AcceptFreqCalManualAsync()
+    {
+        FreqCalManualAcceptPrompt = false;
+        if (_radio != null && IsConnected)
+        {
+            try
+            {
+                await _radio.SetForceCalibrationAsync(false).ConfigureAwait(true);
+                await _radio.SetCalibrationFinishedAsync(true).ConfigureAwait(true);
+                _freqCalResetPendingAuto = false;
+            }
+            catch (Exception ex)
+            {
+                AppendLog($"Freq Cal manual accept error: {ex.Message}");
+            }
+        }
+
+        FreqCalManualMode = false;
+        ResetFreqCalManualPpmUi(sendToRadio: false);
+        FreqCalStatus = "MANUAL CALIBRATED";
+        AppendLog("Freq Cal: MANUAL accepted");
+    }
+
+    [RelayCommand]
+    private async Task RejectFreqCalManualAsync()
+    {
+        FreqCalManualAcceptPrompt = false;
+        if (_radio != null && IsConnected)
+        {
+            try
+            {
+                await _radio.SetForceCalibrationAsync(false).ConfigureAwait(true);
+                await _radio.SetCalibrationFinishedAsync(false).ConfigureAwait(true);
+            }
+            catch (Exception ex)
+            {
+                AppendLog($"Freq Cal manual reject error: {ex.Message}");
+            }
+        }
+
+        FreqCalManualMode = false;
+        ResetFreqCalManualPpmUi(sendToRadio: false);
+        FreqCalStatus = "NOT CALIBRATED";
+        AppendLog("Freq Cal: MANUAL rejected");
+    }
+
+    [RelayCommand]
+    private void FreqCalPpmMinus() => StepFreqCalManualPpm(-1);
+
+    [RelayCommand]
+    private void FreqCalPpmPlus() => StepFreqCalManualPpm(+1);
+
+    private void StepFreqCalManualPpm(int delta)
+    {
+        if (!FreqCalManualMode) return;
+        int next = Math.Clamp(FreqCalManualPpm + delta, FreqCalManualPpmMin, FreqCalManualPpmMax);
+        if (next == FreqCalManualPpm) return;
+        FreqCalManualPpm = next;
+        ScheduleFreqCalManualPpmSend();
+    }
+
+    private void ResetFreqCalManualPpmUi(bool sendToRadio)
+    {
+        FreqCalManualPpm = 0;
+        _freqCalManualPpmLastSent = int.MinValue;
+        StopFreqCalManualPpmTimer();
+        if (sendToRadio && _radio != null && IsConnected)
+            _ = SendCalAsync(() => _radio.SetCalSetCoarseAsync(0), "Freq Cal PPM 0");
+    }
+
+    private void ScheduleFreqCalManualPpmSend()
+    {
+        var elapsed = (DateTime.UtcNow - _freqCalManualPpmLastSendUtc).TotalMilliseconds;
+        if (elapsed >= FreqCalManualPpmMinIntervalMs)
+        {
+            FlushFreqCalManualPpmPending(force: true);
+            return;
+        }
+
+        if (_freqCalManualPpmTimer == null)
+        {
+            _freqCalManualPpmTimer = new DispatcherTimer { Interval = TimeSpan.FromMilliseconds(50) };
+            _freqCalManualPpmTimer.Tick += (_, _) =>
+            {
+                var wait = (DateTime.UtcNow - _freqCalManualPpmLastSendUtc).TotalMilliseconds;
+                if (wait >= FreqCalManualPpmMinIntervalMs)
+                    FlushFreqCalManualPpmPending(force: true);
+            };
+        }
+
+        if (!_freqCalManualPpmTimer.IsEnabled)
+            _freqCalManualPpmTimer.Start();
+    }
+
+    private void FlushFreqCalManualPpmPending(bool force)
+    {
+        if (!force && (DateTime.UtcNow - _freqCalManualPpmLastSendUtc).TotalMilliseconds < FreqCalManualPpmMinIntervalMs)
+            return;
+
+        StopFreqCalManualPpmTimer();
+        if (!FreqCalManualMode || _radio == null || !IsConnected) return;
+        if (FreqCalManualPpm == _freqCalManualPpmLastSent) return;
+
+        int val = FreqCalManualPpm;
+        _freqCalManualPpmLastSent = val;
+        _freqCalManualPpmLastSendUtc = DateTime.UtcNow;
+        _ = SendCalAsync(() => _radio.SetCalSetCoarseAsync(val), $"Freq Cal PPM {val}");
+    }
+
+    private void StopFreqCalManualPpmTimer()
+    {
+        if (_freqCalManualPpmTimer is { IsEnabled: true })
+            _freqCalManualPpmTimer.Stop();
+    }
+
+    [RelayCommand]
+    private async Task FreqCalCheckAsync()
+    {
+        if (_freqCalAbortDrainPending)
+        {
+            AppendLog("Freq Cal: CHECK ignored (drain pending)");
+            return;
+        }
+        if (FreqCalInProgress)
+        {
+            StatusText = "Calibration already in progress";
+            return;
+        }
+
+        if (!CanOperate() || _radio == null)
+        {
+            StatusText = "Connect first";
+            return;
+        }
+
+        if (_freqCalResetPendingAuto)
+        {
+            bool ok = await MsccDialog.OkCancelAsync(
+                "Calibration was reset. Run AUTO first.\n\nClick OK to run CHECK anyway, or Cancel.",
+                "MSCC").ConfigureAwait(true);
+            if (!ok)
+                return;
+        }
+
+        await ForceCwForFreqCalAsync().ConfigureAwait(true);
+
+        _freqCalProgressSteps = 0;
+        FreqCalProgress = 0;
+        FreqCalInProgress = true;
+        _freqCalIsAuto = false;
+        _lastCalDelta = 0;
+        FreqCalStatus = "CHECKING — WAIT";
+        SetFreqCalStatusColor("busy");
+
+        try
+        {
+            await _radio.SetCalLooseAsync(FreqCalLoose).ConfigureAwait(true);
+            AppendLog($"Freq Cal: LOOSE={(FreqCalLoose ? "on" : "off")} before CHECK");
+            await _radio.SetCalCheckAsync(true).ConfigureAwait(true);
+            AppendLog("Freq Cal: CHECK started");
+        }
+        catch (Exception ex)
+        {
+            FreqCalInProgress = false;
+            FreqCalStatus = "CHECK FAILED";
+            AppendLog($"Freq Cal CHECK error: {ex.Message}");
+        }
+    }
+
+    [RelayCommand]
+    private void FreqCalReset()
+    {
+        if (FreqCalInProgress || FreqCalManualMode)
+        {
+            StatusText = "Finish cal session first";
+            return;
+        }
+
+        FreqCalResetPrompt = true;
+        FreqCalStatus = "Confirm RESET?";
+    }
+
+    [RelayCommand]
+    private async Task ConfirmFreqCalResetAsync()
+    {
+        FreqCalResetPrompt = false;
+        if (!CanOperate() || _radio == null)
+        {
+            StatusText = "Connect first";
+            return;
+        }
+
+        try
+        {
+            await _radio.SetCalResetAsync(true).ConfigureAwait(true);
+            _freqCalResetPendingAuto = true;
+            FreqCalStatus = "RESET";
+            SetFreqCalStatusColor("idle");
+            AppendLog("Freq Cal: RESET");
+        }
+        catch (Exception ex)
+        {
+            AppendLog($"Freq Cal reset error: {ex.Message}");
+        }
+    }
+
+    [RelayCommand]
+    private void CancelFreqCalReset()
+    {
+        FreqCalResetPrompt = false;
+        FreqCalStatus = "OK";
+    }
+
+    /// <summary>
+    /// AUTO/CHECK need CW demod + 200 Hz filter + 600 Hz pitch (Goertzel listens at ~600 Hz).
+    /// Also re-sends VFO so LO matches pitch-offset path after mode change.
+    /// </summary>
+    private async Task ForceCwForFreqCalAsync()
+    {
+        if (_radio == null || !IsConnected)
+            return;
+
+        string currentMode = (ActiveModeString ?? "").Trim();
+        if (!string.Equals(currentMode, "CW", StringComparison.OrdinalIgnoreCase))
+        {
+            try
+            {
+                await _radio.SetModeAsync("CW").ConfigureAwait(true);
+                if (UseVfoA)
+                {
+                    ModeText = "CW";
+                    NotifyModeFlags();
+                }
+                else
+                    VfoBModeText = "CW";
+                RefreshSpectrumFilterOverlay();
+                SyncRfPowerFromMode();
+                AppendLog("Freq Cal: mode → CW (for Goertzel / 600 Hz pitch path)");
+            }
+            catch (Exception ex)
+            {
+                AppendLog($"Freq Cal mode CW error: {ex.Message}");
+            }
+        }
+
+        // Labels: 1.8k=0, 400=1, 200=2
+        if (_cwFilterIndex != 2)
+        {
+            _cwFilterIndex = 2;
+            CwFilterLabel = CwFilterLabels[2];
+            RefreshSpectrumFilterOverlay();
+            await SendCwFilterAsync(2).ConfigureAwait(true);
+        }
+
+        // Pitch index 1 = 600 Hz (must be index, not Hz)
+        if (CwPitchIndex != 1)
+        {
+            // Set without double-send: property change sends pitch
+            CwPitchIndex = 1;
+        }
+        else
+        {
+            // Ensure radio has 600 Hz even if UI already showed it
+            try
+            {
+                await _radio.SetCwPitchAsync(1).ConfigureAwait(true);
+            }
+            catch (Exception ex)
+            {
+                AppendLog($"Freq Cal pitch error: {ex.Message}");
+            }
+        }
+
+        long hz = UseVfoA ? _frequencyHz : _vfoBFrequencyHz;
+        if (hz > 0)
+        {
+            try
+            {
+                await _radio.SetFrequencyAsync(hz).ConfigureAwait(true);
+                AppendLog($"Freq Cal: re-sent freq {hz} after CW setup");
+            }
+            catch (Exception ex)
+            {
+                AppendLog($"Freq Cal retune error: {ex.Message}");
+            }
+        }
+
+        RefreshSpectrumFilterOverlay();
+    }
+
+    private void OnFreqCalStatusReported(int value)
+    {
+        bool wasInProgress = FreqCalInProgress;
+        bool wasAuto = _freqCalIsAuto;
+        FreqCalInProgress = false;
+        _freqCalIsAuto = false;
+
+        if (!wasInProgress)
+        {
+            AppendLog($"Freq Cal: status {value}");
+            return;
+        }
+
+        string statusText = wasAuto
+            ? (value == 1 ? "AUTO COMPLETED" : "AUTO FAILED")
+            : (value == 1 ? "CHECK COMPLETED" : "CHECK FAILED");
+
+        if (_lastCalDelta != 0 && Math.Abs(_lastCalDelta) < 10_000)
+        {
+            statusText += $"  {_lastCalDelta} Hz";
+            _lastCalDelta = 0;
+        }
+
+        if (wasAuto && value == 1)
+            _freqCalResetPendingAuto = false;
+        if (value == 1)
+            FreqCalProgress = 100;
+        if (!wasAuto && value != 1)
+        {
+            statusText = "CHECK FAILED\nError may be more than 50 Hz. Run AUTO (COARSE).";
+            SetFreqCalStatusColor("fail");
+        }
+        else
+            SetFreqCalStatusColor(value == 1 ? "ok" : "fail");
+
+        FreqCalStatus = statusText;
+        AppendLog($"Freq Cal: {(wasAuto ? "AUTO" : "CHECK")} status={value}");
+        if (_freqCalRestorePending)
+        {
+            _freqCalRestorePending = false;
+            _ = LeaveFreqCalTab(sendToRadio: true);
+        }
+    }
+
+    private void OnFreqCalDeltaReported(int value)
+    {
+        _lastCalDelta = value;
+        string st = FreqCalStatus ?? "";
+        if ((st.StartsWith("CHECK COMPLETED", StringComparison.Ordinal) ||
+             st.StartsWith("CHECK FAILED", StringComparison.Ordinal) ||
+             st.StartsWith("AUTO COMPLETED", StringComparison.Ordinal) ||
+             st.StartsWith("AUTO FAILED", StringComparison.Ordinal)) &&
+            Math.Abs(value) < 10_000 &&
+            !st.Contains("Hz", StringComparison.Ordinal))
+        {
+            FreqCalStatus = st + $"  {value} Hz";
+            _lastCalDelta = 0;
+        }
+
+        AppendLog($"Freq Cal: Delta {value} Hz");
+    }
+
+    private void ForceStopFreqCal(string reason)
+    {
+        if (!FreqCalInProgress && !FreqCalManualMode && !FreqCalAutoModePrompt &&
+            !FreqCalManualAcceptPrompt && !FreqCalResetPrompt)
+            return;
+
+        StopFreqCalManualPpmTimer();
+        if (_radio != null && IsConnected && FreqCalManualMode)
+        {
+            try
+            {
+                _ = _radio.SetForceCalibrationAsync(false);
+                _ = _radio.SetCalibrationFinishedAsync(false);
+            }
+            catch { /* best effort */ }
+        }
+
+        FreqCalInProgress = false;
+        _freqCalIsAuto = false;
+        FreqCalManualMode = false;
+        FreqCalAutoModePrompt = false;
+        FreqCalManualAcceptPrompt = false;
+        FreqCalResetPrompt = false;
+        ResetFreqCalManualPpmUi(sendToRadio: false);
+        FreqCalStatus = "STOPPED";
+        SetFreqCalStatusColor("idle");
+        _freqCalProgressSteps = 0;
+        FreqCalProgress = 0;
+        EndFreqCalAbortDrain("disconnect");
+        AppendLog($"Freq Cal forced stop ({reason})");
+    }
+
+    private void SetFreqCalStatusColor(string kind)
+    {
+        string hex = kind switch
+        {
+            "busy" => "#FFC000",
+            "fail" => "#FF5555",
+            _ => "#00FFAA"
+        };
+        FreqCalStatusBrush = new SolidColorBrush(Color.Parse(hex));
+        OnPropertyChanged(nameof(FreqCalStatusBrush));
+    }
+
+    public async Task<bool> EnterFreqCalTab()
+    {
+        if (_freqCalRestorePending)
+        {
+            _freqCalRestorePending = false;
+            AppendLog("Freq Cal: deferred restore cancelled (tab re-entered)");
+        }
+        _freqCalTabActive = true;
+        if (!IsConnected || string.IsNullOrWhiteSpace(ActiveModeString))
+        {
+            AppendLog("Freq Cal ENTER: idle / mode unknown — hold later");
+            return false;
+        }
+        if (_freqCalHoldingCw)
+            return false;
+
+        _freqCalModeSaved = UseVfoA ? (ModeText ?? "") : (VfoBModeText ?? "");
+        _freqCalFilterSaved = _cwFilterIndex;
+        _freqCalPitchSaved = CwPitchIndex;
+        _freqCalSavedVfoA = UseVfoA;
+        _freqCalHoldingCw = true;
+        _freqCalEntryHeld = true;
+        _suppressLastUsedSave = true;
+        try
+        {
+            await ForceCwForFreqCalAsync().ConfigureAwait(true);
+        }
+        finally
+        {
+            _suppressLastUsedSave = false;
+        }
+        AppendLog($"Freq Cal ENTER: mode {_freqCalModeSaved} → CW, filter/pitch saved");
+        return true;
+    }
+
+    public void DeferFreqCalRestore() => _freqCalRestorePending = true;
+
+    /// <summary>
+    /// FREQ CAL tab still selected after Connect: re-apply CW even if DIG-U overlay ate the USB report.
+    /// </summary>
+    private void MaybeReenterFreqCalTab()
+    {
+        if (!_freqCalTabActive || _freqCalHoldingCw || !IsConnected)
+            return;
+        _ = ReenterFreqCalTabAfterConnectAsync();
+    }
+
+    private async Task ReenterFreqCalTabAfterConnectAsync()
+    {
+        bool applied = await EnterFreqCalTab().ConfigureAwait(true);
+        if (applied)
+            AppendLog("Freq Cal: Start with tab open, re-applied CW/600/200");
+    }
+
+    public async Task LeaveFreqCalTab(bool sendToRadio = true, bool tabStillOpen = false)
+    {
+        _freqCalTabActive = tabStillOpen;
+        if (!_freqCalHoldingCw)
+        {
+            _freqCalEntryHeld = false;
+            return;
+        }
+        string restore = _freqCalModeSaved;
+        int filt = _freqCalFilterSaved;
+        int pitch = _freqCalPitchSaved;
+        _freqCalHoldingCw = false;
+        _freqCalEntryHeld = false;
+        _suppressLastUsedSave = true;
+        try
+        {
+            if (sendToRadio && IsConnected && _radio != null)
+            {
+                _cwFilterIndex = Math.Clamp(filt, 0, CwFilterLabels.Length - 1);
+                CwFilterLabel = CwFilterLabels[_cwFilterIndex];
+                await SendCwFilterAsync(_cwFilterIndex).ConfigureAwait(true);
+                CwPitchIndex = Math.Clamp(pitch, 0, Math.Max(0, CwPitchOptions.Count - 1));
+                if (!string.Equals(restore, "CW", StringComparison.OrdinalIgnoreCase) &&
+                    !string.IsNullOrWhiteSpace(restore))
+                {
+                    await _radio.SetModeAsync(restore).ConfigureAwait(true);
+                    if (_freqCalSavedVfoA)
+                    {
+                        ModeText = restore;
+                        NotifyModeFlags();
+                    }
+                    else
+                        VfoBModeText = restore;
+                    RefreshSpectrumFilterOverlay();
+                    SyncRfPowerFromMode();
+                }
+            }
+            else
+            {
+                _cwFilterIndex = Math.Clamp(filt, 0, CwFilterLabels.Length - 1);
+                CwFilterLabel = CwFilterLabels[_cwFilterIndex];
+                CwPitchIndex = Math.Clamp(pitch, 0, Math.Max(0, CwPitchOptions.Count - 1));
+                if (!string.IsNullOrWhiteSpace(restore) &&
+                    !string.Equals(restore, "CW", StringComparison.OrdinalIgnoreCase))
+                {
+                    if (_freqCalSavedVfoA)
+                    {
+                        ModeText = restore;
+                        NotifyModeFlags();
+                    }
+                    else
+                        VfoBModeText = restore;
+                }
+            }
+        }
+        catch (Exception ex)
+        {
+            AppendLog($"Freq Cal LEAVE error: {ex.Message}");
+        }
+        finally
+        {
+            _suppressLastUsedSave = false;
+        }
+        AppendLog($"Freq Cal LEAVE: restored mode {restore}, filter {filt}, pitch {pitch}");
+    }
+
+    [RelayCommand]
+    private void FreqCalStop()
+    {
+        if (!FreqCalInProgress)
+            return;
+        AppendLog(_freqCalIsAuto ? "Freq Cal: STOP pressed during AUTO" : "Freq Cal: STOP pressed during CHECK");
+        if (_radio != null)
+        {
+            try { _ = _radio.AbortCalibrationAsync(); }
+            catch (Exception ex) { AppendLog("Freq Cal STOP: " + ex.Message); }
+        }
+        ResetFreqCalSessionOnStop();
+        BeginFreqCalAbortDrain();
+    }
+
+    private void ResetFreqCalSessionOnStop()
+    {
+        FreqCalInProgress = false;
+        _freqCalIsAuto = false;
+        _freqCalRestorePending = false;
+        FreqCalProgress = 0;
+        _freqCalProgressSteps = 0;
+        _lastCalDelta = 0;
+        FreqCalStatus = "STOPPED";
+        SetFreqCalStatusColor("idle");
+    }
+
+    private void BeginFreqCalAbortDrain()
+    {
+        _freqCalAbortDrainPending = true;
+        OnPropertyChanged(nameof(FreqCalAbortDrainPending));
+        OnPropertyChanged(nameof(FreqCalAutoCheckEnabled));
+        FreqCalStatus = "STOPPED — wait…";
+        SetFreqCalStatusColor("idle");
+        _freqCalAbortDrainTimer?.Stop();
+        _freqCalAbortDrainTimer = new DispatcherTimer { Interval = TimeSpan.FromSeconds(36) };
+        _freqCalAbortDrainTimer.Tick += (_, _) => EndFreqCalAbortDrain("client timeout");
+        _freqCalAbortDrainTimer.Start();
+        AppendLog("Freq Cal: STOP - waiting for server drain");
+    }
+
+    private void EndFreqCalAbortDrain(string why)
+    {
+        if (!_freqCalAbortDrainPending)
+            return;
+        _freqCalAbortDrainPending = false;
+        _freqCalAbortDrainTimer?.Stop();
+        _freqCalAbortDrainTimer = null;
+        OnPropertyChanged(nameof(FreqCalAbortDrainPending));
+        OnPropertyChanged(nameof(FreqCalAutoCheckEnabled));
+        if ((FreqCalStatus ?? "").StartsWith("STOPPED", StringComparison.Ordinal))
+        {
+            FreqCalStatus = "STOPPED";
+            SetFreqCalStatusColor("idle");
+        }
+        AppendLog($"Freq Cal: drain done ({why})");
+    }
+
+    private void OnCalAbortStateReported(int value)
+    {
+        if (value == 1)
+            EndFreqCalAbortDrain("server");
+        else if (value == 2)
+        {
+            if (FreqCalInProgress)
+            {
+                ResetFreqCalSessionOnStop();
+                BeginFreqCalAbortDrain();
+            }
+            AppendLog("Freq Cal: start refused by server (drain pending)");
+        }
+    }
+
+    partial void OnCompressionChanged(int value)
+    {
+        ScheduleSaveClientSettings();
+        if (_suppressCompressionCommand || !CanOperate()) return;
+        _ = SendCompressionLevelAsync(Math.Clamp(value, 0, 24));
+    }
+
+    partial void OnMonitorOnChanged(bool value)
+    {
+        ScheduleSaveClientSettings();
+        if (_suppressMonitorCommand || !CanOperate()) return;
+        _ = SendMonitorAsync(value);
+    }
+
+    partial void OnNbOnChanged(bool value)
+    {
+        ScheduleSaveClientSettings();
+        if (_suppressNbCommand || !CanOperate()) return;
+        _ = SendNbOnAsync(value);
+    }
+
+    partial void OnNbPulseChanged(int value)
+    {
+        ScheduleSaveClientSettings();
+        if (_suppressNbCommand || !CanOperate()) return;
+        _ = SendNbPulseAsync(Math.Clamp(value, 10, 510));
+    }
+
+    partial void OnNbThresholdChanged(int value)
+    {
+        ScheduleSaveClientSettings();
+        if (_suppressNbCommand || !CanOperate()) return;
+        _ = SendNbThresholdAsync(Math.Clamp(value, 1, 1009));
+    }
+
+    partial void OnNrOnChanged(bool value)
+    {
+        ScheduleSaveClientSettings();
+        if (_suppressNrCommand || !CanOperate()) return;
+        _ = SendNrOnAsync(value);
+    }
+
+    partial void OnNrLevelChanged(int value)
+    {
+        ScheduleSaveClientSettings();
+        if (_suppressNrCommand || !CanOperate() || !NrOn) return;
+        _ = SendNrLevelAsync(Math.Clamp(value, 0, 100));
+    }
+
+    partial void OnAnOnChanged(bool value)
+    {
+        ScheduleSaveClientSettings();
+        if (_suppressAnCommand || !CanOperate()) return;
+        _ = SendAnOnAsync(value);
+    }
+
+    private async Task SendAgcLevelAsync(int level)
+    {
+        if (_radio == null) return;
+        try
+        {
+            await _radio.SetAgcLevelAsync(level).ConfigureAwait(true);
+            AppendLog($"AGC → {AgcButtonText} ({level})");
+        }
+        catch (Exception ex) { AppendLog($"AGC error: {ex.Message}"); }
+    }
+
+    private async Task SendAgcFastReleaseAsync(int ms)
+    {
+        if (_radio == null) return;
+        try
+        {
+            await _radio.SetAgcFastReleaseAsync(ms).ConfigureAwait(true);
+            AppendLog($"AGC Fast Release {ms} ms");
+        }
+        catch (Exception ex) { AppendLog($"AGC fast error: {ex.Message}"); }
+    }
+
+    private async Task SendAmpAsync(bool on)
+    {
+        if (_radio == null) return;
+        try
+        {
+            await _radio.SetPaBypassAsync(on).ConfigureAwait(true);
+            AppendLog($"AMP {(on ? "ON (QRO)" : "OFF (QRP)")}");
+        }
+        catch (Exception ex) { AppendLog($"AMP error: {ex.Message}"); }
+    }
+
+    private async Task SendAlcOnAsync(bool on)
+    {
+        if (_radio == null) return;
+        try
+        {
+            await _radio.SetAlcOnAsync(on).ConfigureAwait(true);
+            AppendLog($"ALC {(on ? "ON (meter + limiter)" : "OFF")}");
+        }
+        catch (Exception ex) { AppendLog($"ALC error: {ex.Message}"); }
+    }
+
+    private async Task SendCompressionStateAsync(bool on)
+    {
+        if (_radio == null) return;
+        try
+        {
+            await _radio.SetCompressionStateAsync(on).ConfigureAwait(true);
+            AppendLog($"CMP {(on ? "ON" : "OFF")}");
+        }
+        catch (Exception ex) { AppendLog($"CMP error: {ex.Message}"); }
+    }
+
+    private async Task SendCompressionLevelAsync(int level)
+    {
+        if (_radio == null) return;
+        try
+        {
+            await _radio.SetCompressionLevelAsync(level).ConfigureAwait(true);
+            AppendLog($"CMP level {level}");
+        }
+        catch (Exception ex) { AppendLog($"CMP level error: {ex.Message}"); }
+    }
+
+    private async Task SendMonitorAsync(bool on)
+    {
+        if (_radio == null) return;
+        try
+        {
+            await _radio.SetMonitorAsync(on).ConfigureAwait(true);
+            AppendLog($"MON {(on ? "ON" : "OFF")}");
+        }
+        catch (Exception ex) { AppendLog($"MON error: {ex.Message}"); }
+    }
+
+    private async Task SendNbOnAsync(bool on)
+    {
+        if (_radio == null) return;
+        try
+        {
+            await _radio.SetNbOnAsync(on).ConfigureAwait(true);
+            AppendLog($"NB {(on ? "ON" : "OFF")}");
+        }
+        catch (Exception ex) { AppendLog($"NB error: {ex.Message}"); }
+    }
+
+    private async Task SendNbPulseAsync(int us)
+    {
+        if (_radio == null) return;
+        try
+        {
+            await _radio.SetNbPulseWidthAsync(us).ConfigureAwait(true);
+            AppendLog($"NB pulse {us} µs");
+        }
+        catch (Exception ex) { AppendLog($"NB pulse error: {ex.Message}"); }
+    }
+
+    private async Task SendNbThresholdAsync(int thr)
+    {
+        if (_radio == null) return;
+        try
+        {
+            await _radio.SetNbThresholdAsync(thr).ConfigureAwait(true);
+            AppendLog($"NB thr {thr}");
+        }
+        catch (Exception ex) { AppendLog($"NB thr error: {ex.Message}"); }
+    }
+
+    private async Task SendNrOnAsync(bool on)
+    {
+        if (_radio == null) return;
+        try
+        {
+            await _radio.SetNrOnAsync(on, NrLevel).ConfigureAwait(true);
+            AppendLog($"NR {(on ? $"ON level={NrLevel}" : "OFF")}");
+        }
+        catch (Exception ex) { AppendLog($"NR error: {ex.Message}"); }
+    }
+
+    private async Task SendNrLevelAsync(int level)
+    {
+        if (_radio == null) return;
+        try
+        {
+            await _radio.SetNrLevelAsync(level).ConfigureAwait(true);
+            AppendLog($"NR level {level}");
+        }
+        catch (Exception ex) { AppendLog($"NR level error: {ex.Message}"); }
+    }
+
+    private async Task SendAnOnAsync(bool on)
+    {
+        if (_radio == null) return;
+        try
+        {
+            await _radio.SetAutoNotchOnAsync(on).ConfigureAwait(true);
+            AppendLog($"AN {(on ? "ON" : "OFF")}");
+        }
+        catch (Exception ex) { AppendLog($"AN error: {ex.Message}"); }
+    }
+
+    private async Task ApplyFrequencyAsync(long hz, string reason)
+    {
+        // Update local VFO state even when offline
+        if (UseVfoA)
+        {
+            _frequencyHz = hz;
+            UpdateFrequencyUi(hz);
+            /* Keep VFO-B display in sync for FM offset (even offline / before radio send). */
+            if (IsFmOffsetActive())
+                UpdateLocalFmVfoBFromA(hz);
+        }
+        else
+        {
+            _vfoBFrequencyHz = hz;
+            VfoBDisplayMhz = FormatMhz(hz);
+        }
+
+        BandText = BandNameForFrequency(hz);
+        if (!string.Equals(BandText, "gen", StringComparison.OrdinalIgnoreCase) &&
+            !reason.StartsWith("gen ", StringComparison.OrdinalIgnoreCase))
+            _onGenBand = false;
+
+        if (IsConnected && hz > 0)
+        {
+            string personalityMode = UseVfoA ? ModeText : VfoBModeText;
+            BandLastUsedStore.RememberLastPersonalityFreq(hz, personalityMode);
+        }
+
+        // Debounced last-used for on-air tuning only (not band switch / cal / IQ sessions)
+        if (ShouldUpdateLastUsed(reason))
+            ScheduleSaveLastUsed();
+
+        if (_radio == null || !IsConnected)
+        {
+            ScheduleSaveClientSettings();
+            return;
+        }
+
+        try
+        {
+            await _radio.SetFrequencyAsync(hz).ConfigureAwait(true);
+            SyncFavoriteBandFilterFromRadio();
+            StatusText = $"Freq {(UseVfoA ? "A" : "B")} {FormatMhz(hz)}";
+            AppendLog($"Sent VFO{(UseVfoA ? "A" : "B")} freq {hz} [{reason}]");
+            if (IsFmOffsetActive() && UseVfoA)
+                await ApplyFmOffsetPolicyAsync().ConfigureAwait(true);
+            ScheduleSaveClientSettings();
+        }
+        catch (Exception ex)
+        {
+            StatusText = $"Freq failed: {ex.Message}";
+            AppendLog($"ERROR: {ex.Message}");
+        }
+    }
+
+    private bool IsFmOffsetActive() =>
+        !FmSimplex &&
+        (ModeIsFm || string.Equals(ModeText, "FM", StringComparison.OrdinalIgnoreCase));
+
+    private void UpdateLocalFmVfoBFromA(long rxHz)
+    {
+        long tx = rxHz - FmTxOffsetHz;
+        if (tx < 0) tx = 0;
+        _vfoBFrequencyHz = tx;
+        VfoBDisplayMhz = FormatMhz(tx);
+        VfoBModeText = "FM";
+    }
+
+    /// <summary>
+    /// Last-used band memory is for MAIN on-air use only — not QRP/AMP cal or RX/TX IQ.
+    /// </summary>
+    private bool ShouldUpdateLastUsed(string reason)
+    {
+        if (_suppressLastUsedSave) return false;
+        if (!IsConnected) return false;
+        if (IsCalibrationOrIqSessionActive()) return false;
+        if (reason.StartsWith("band ", StringComparison.OrdinalIgnoreCase)) return false;
+        if (reason.StartsWith("qrp-cal", StringComparison.OrdinalIgnoreCase)) return false;
+        if (reason.StartsWith("amp-cal", StringComparison.OrdinalIgnoreCase)) return false;
+        if (reason.StartsWith("tx-iq", StringComparison.OrdinalIgnoreCase)) return false;
+        if (reason.StartsWith("rx-iq", StringComparison.OrdinalIgnoreCase)) return false;
+        if (reason.StartsWith("gen ", StringComparison.OrdinalIgnoreCase)) return false;
+        return true;
+    }
+
+    private bool IsCalibrationOrIqSessionActive() =>
+        PowerCalCalibrating || PowerCalTxOn || PowerCalAcceptPrompt
+        || AmpCalCalibrating || AmpCalTxOn || AmpCalAcceptPrompt
+        || TxIqTxOn || RxIqSessionActive
+        || FreqCalInProgress || FreqCalManualMode;
+
+    [RelayCommand]
+    private Task SelectVfoA() => SelectVfoAsync(useVfoA: true);
+
+    [RelayCommand]
+    private Task SelectVfoB() => SelectVfoAsync(useVfoA: false);
+
+    /// <summary>Activate VFO A or B: CMD_SET_VFO then push that VFO's freq/mode.</summary>
+    public async Task SelectVfoAsync(bool useVfoA)
+    {
+        if (UseVfoA == useVfoA)
+            return;
+
+        // Remember last-used for the VFO we're leaving (not during cal/IQ)
+        if (!IsCalibrationOrIqSessionActive())
+            SaveLastUsedForCurrentBand();
+
+        UseVfoA = useVfoA;
+        OnPropertyChanged(nameof(UseVfoB));
+        CoerceHighCutForMode("SelectVfo");
+        AppendLog($"Select VFO {(useVfoA ? "A" : "B")}");
+        await PushActiveVfoToRadioAsync(force: false).ConfigureAwait(true);
+        ScheduleSaveClientSettings();
+    }
+
+    /// <summary>CMD_SET_VFO + freq + mode for the UI-selected VFO.</summary>
+    private async Task PushActiveVfoToRadioAsync(bool force)
+    {
+        long hz = UseVfoA ? _frequencyHz : _vfoBFrequencyHz;
+        string mode = UseVfoA ? (ModeText ?? "") : (VfoBModeText ?? "");
+
+        if (hz > 0)
+            BandText = BandNameForFrequency(hz);
+        CoerceHighCutForMode("PushVfo");
+        RefreshSpectrumFilterOverlay();
+        SyncRfPowerFromMode(force: true);
+        if (UseVfoA)
+            NotifyModeFlags();
+
+        if (!CanOperate() || _radio == null)
+            return;
+
+        try
+        {
+            byte vfo = UseVfoA ? Opcodes.VFO_A : Opcodes.VFO_B;
+            await _radio.SetActiveVfoAsync(vfo).ConfigureAwait(true);
+            await Task.Delay(10).ConfigureAwait(true);
+            // Idle Connect: freq 0 / empty mode — wait for radio reports (do not send USB).
+            if (hz > 0)
+                await _radio.SetFrequencyAsync(hz).ConfigureAwait(true);
+            if (!string.IsNullOrWhiteSpace(mode))
+                await _radio.SetModeAsync(mode).ConfigureAwait(true);
+            StatusText = $"VFO {(UseVfoA ? "A" : "B")} active";
+            string modeLabel = string.IsNullOrWhiteSpace(mode) ? "(mode pending)" : mode;
+            AppendLog($"VFO {(UseVfoA ? "A" : "B")} → {FormatMhz(hz)} {modeLabel}{(force ? " (connect)" : "")}");
+        }
+        catch (Exception ex)
+        {
+            AppendLog($"Push VFO error: {ex.Message}");
+        }
+    }
+
+    partial void OnUseVfoAChanged(bool value) => OnPropertyChanged(nameof(UseVfoB));
+
+    [RelayCommand(CanExecute = nameof(CanOperate))]
+    private async Task SetModeAsync(string? mode)
+    {
+        if (_radio == null || string.IsNullOrWhiteSpace(mode)) return;
+        string m = mode.Trim();
+        string prevMode = UseVfoA ? (ModeText ?? "") : (VfoBModeText ?? "");
+        bool wasFm = string.Equals(prevMode, "FM", StringComparison.OrdinalIgnoreCase);
+        bool nowFm = string.Equals(m, "FM", StringComparison.OrdinalIgnoreCase);
+
+        // If TUN is latched, exit tune without restoring old mode — apply the user's choice.
+        if (TuneMode && !string.Equals(m, "TUNE", StringComparison.OrdinalIgnoreCase))
+        {
+            try
+            {
+                await _radio.SetAutoTuneAsync(false).ConfigureAwait(true);
+            }
+            catch (Exception ex)
+            {
+                AppendLog($"TUN release error: {ex.Message}");
+            }
+
+            _suppressTransmitCommands = true;
+            TuneMode = false;
+            _suppressTransmitCommands = false;
+            _modeBeforeTune = m;
+        }
+
+        try
+        {
+            if (nowFm && !wasFm && !_fmOffsetSnapshotValid)
+            {
+                _fmSavedVfoBHz = _vfoBFrequencyHz;
+                _fmSavedVfoBMode = VfoBModeText ?? "USB";
+                _fmOffsetSnapshotValid = true;
+            }
+
+            await _radio.SetModeAsync(m).ConfigureAwait(true);
+            if (UseVfoA)
+            {
+                ModeText = m;
+                NotifyModeFlags();
+            }
+            else
+            {
+                VfoBModeText = m;
+            }
+
+            CoerceHighCutForMode("SetMode");
+            ApplyDigUAudioPolicy(prevMode, m);
+
+            if (nowFm)
+            {
+                await SendFmPowerAsync(Math.Clamp(FmPowerPercent, 0, 100)).ConfigureAwait(true);
+                await ApplyFmOffsetPolicyAsync().ConfigureAwait(true);
+            }
+            else if (wasFm)
+                await ClearFmSplitAsync().ConfigureAwait(true);
+
+            RefreshSpectrumFilterOverlay();
+            SyncRfPowerFromMode();
+            long hz = UseVfoA ? _frequencyHz : _vfoBFrequencyHz;
+            if (IsConnected && hz > 0)
+                BandLastUsedStore.RememberLastPersonalityFreq(hz, m);
+            if (!IsCalibrationOrIqSessionActive())
+                SaveLastUsedForCurrentBand();
+            StatusText = $"Mode {m} (VFO {(UseVfoA ? "A" : "B")})";
+            AppendLog($"Sent mode {m} VFO{(UseVfoA ? "A" : "B")}");
+            ScheduleSaveClientSettings();
+        }
+        catch (Exception ex)
+        {
+            StatusText = $"Mode failed: {ex.Message}";
+            AppendLog($"ERROR: {ex.Message}");
+        }
+    }
+
+    /// <summary>
+    /// FM offset policy: Simplex → split off. Else VFO-B = A−100 kHz and split RX=A / TX=B.
+    /// </summary>
+    private async Task ApplyFmOffsetPolicyAsync()
+    {
+        try
+        {
+            if (FmSimplex)
+            {
+                if (_radio != null && IsConnected)
+                {
+                    await _radio.SetSplitAsync(false).ConfigureAwait(true);
+                    AppendLog("FM Simplex — split off (TX=RX on VFO-A)");
+                }
+                return;
+            }
+
+            // Policy uses VFO-A as RX even if B was active — switch listen to A.
+            if (!UseVfoA)
+            {
+                UseVfoA = true;
+                if (_radio != null && IsConnected)
+                    await PushActiveVfoToRadioAsync(force: true).ConfigureAwait(true);
+            }
+
+            long rx = _frequencyHz;
+            UpdateLocalFmVfoBFromA(rx);
+            long tx = _vfoBFrequencyHz;
+
+            if (_radio == null || !IsConnected)
+                return;
+
+            await _radio.SetSplitRxFreqAsync(rx).ConfigureAwait(true);
+            await _radio.SetSplitTxFreqAsync(tx).ConfigureAwait(true);
+            await _radio.SetSplitAsync(true).ConfigureAwait(true);
+            AppendLog($"FM offset — RX A={FormatMhz(rx)}  TX B={FormatMhz(tx)} (−100 kHz split)");
+        }
+        catch (Exception ex)
+        {
+            AppendLog($"FM offset error: {ex.Message}");
+        }
+    }
+
+    private async Task ClearFmSplitAsync()
+    {
+        if (_radio == null) return;
+        try
+        {
+            await _radio.SetSplitAsync(false).ConfigureAwait(true);
+            if (_fmOffsetSnapshotValid)
+            {
+                _vfoBFrequencyHz = _fmSavedVfoBHz;
+                VfoBDisplayMhz = FormatMhz(_fmSavedVfoBHz);
+                VfoBModeText = _fmSavedVfoBMode;
+                _fmOffsetSnapshotValid = false;
+            }
+            AppendLog("FM left — split off");
+        }
+        catch (Exception ex)
+        {
+            AppendLog($"FM split clear error: {ex.Message}");
+        }
+    }
+
+    [RelayCommand]
+    private async Task SelectBandAsync(string? bandKey)
+    {
+        if (string.IsNullOrWhiteSpace(bandKey)) return;
+        if (!TryBandDefaultHz(bandKey, out long defaultHz, out string label)) return;
+
+        // Respect radio-model gating (disabled buttons should not fire)
+        string k = bandKey.Trim().ToLowerInvariant();
+        if ((k is "2200" or "630") && !LfBandsEnabled) return;
+        if (k is not ("2200" or "630") && !HfBandsEnabled) return;
+
+        // Remember where we were on the band we're leaving (e.g. 14.074 on 20m) — not during cal/IQ
+        if (!IsCalibrationOrIqSessionActive())
+            SaveLastUsedForCurrentBand();
+
+        bool forVfoB = !UseVfoA;
+        var (lastFreq, lastMode, lastLow, lastHigh, lastCw) =
+            BandLastUsedStore.Load(label, forVfoB);
+        long hz = defaultHz;
+        if (lastFreq is >= 10_000 and <= 60_000_000)
+        {
+            string recallBand = BandNameForFrequency(lastFreq);
+            // Accept if still maps to this band (or unknown edge — keep last freq)
+            if (string.Equals(NormalizeBandLabel(recallBand), NormalizeBandLabel(label), StringComparison.OrdinalIgnoreCase)
+                || recallBand is "?" or "—")
+                hz = lastFreq;
+        }
+
+        string mode = !string.IsNullOrWhiteSpace(lastMode)
+            ? lastMode
+            : DefaultModeForFrequency(hz);
+
+        _onGenBand = false;
+        _suppressLastUsedSave = true;
+        try
+        {
+            await ApplyFrequencyAsync(hz, $"band {label}").ConfigureAwait(true);
+            if (CanOperate())
+                await SetModeAsync(mode).ConfigureAwait(true);
+            else
+            {
+                ModeText = mode;
+                NotifyModeFlags();
+            }
+
+            if (lastLow >= 0 || lastHigh >= 0 || lastCw >= 0)
+            {
+                int lo = lastLow >= 0 ? lastLow : _lowCutIndex;
+                int hi = lastHigh >= 0 ? lastHigh : _highCutIndex;
+                int cw = lastCw >= 0 ? lastCw : _cwFilterIndex;
+                ApplyFilterIndices(lo, hi, cw, send: CanOperate());
+            }
+
+            BandText = label;
+        }
+        finally
+        {
+            _suppressLastUsedSave = false;
+        }
+
+        SaveLastUsedForCurrentBand();
+        ScheduleSaveClientSettings();
+    }
+
+    /// <summary>Persist last-used freq/mode/filters for the active VFO's current band.</summary>
+    private void SaveLastUsedForCurrentBand()
+    {
+        if (_suppressLastUsedSave) return;
+        if (IsCalibrationOrIqSessionActive()) return;
+        // Idle ctor/UI must not write 40m@7.100/USB over DIG-U last-used.
+        if (!IsConnected) return;
+        long hz = UseVfoA ? _frequencyHz : _vfoBFrequencyHz;
+        if (hz <= 0) return;
+
+        string band = BandText ?? "";
+        if (string.IsNullOrWhiteSpace(band) || band is "—" or "?" or "-")
+            band = BandNameForFrequency(hz);
+        if (string.IsNullOrWhiteSpace(band) || band is "—" or "?" or "-")
+            return;
+        // GEN beacons: do not overwrite ham-band last-used
+        if (string.Equals(band, "gen", StringComparison.OrdinalIgnoreCase))
+            return;
+
+        string freqBand = BandNameForFrequency(hz);
+        if (!string.IsNullOrWhiteSpace(freqBand) && freqBand is not "—" and not "?" &&
+            !string.Equals(NormalizeBandLabel(freqBand), NormalizeBandLabel(band), StringComparison.OrdinalIgnoreCase))
+        {
+            AppendLog($"SaveLastUsed: BandText={band} but f={hz} is {freqBand} — saving under {freqBand}");
+            band = freqBand;
+            BandText = freqBand;
+        }
+
+        string mode = UseVfoA ? (ModeText ?? "") : (VfoBModeText ?? "");
+        if (string.IsNullOrWhiteSpace(mode))
+            return;
+
+        BandLastUsedStore.Save(band, hz, mode, _lowCutIndex, _highCutIndex, _cwFilterIndex, forVfoB: !UseVfoA);
+        AppendLog($"SaveLastUsed: {(UseVfoA ? "VFOA" : "VFOB")} band={band} f={hz} mode={mode}");
+    }
+
+    private void ScheduleSaveLastUsed()
+    {
+        if (_suppressLastUsedSave || IsCalibrationOrIqSessionActive()) return;
+        if (_lastUsedSaveTimer == null)
+        {
+            _lastUsedSaveTimer = new DispatcherTimer { Interval = TimeSpan.FromMilliseconds(500) };
+            _lastUsedSaveTimer.Tick += (_, _) =>
+            {
+                _lastUsedSaveTimer.Stop();
+                SaveLastUsedForCurrentBand();
+            };
+        }
+
+        _lastUsedSaveTimer.Stop();
+        _lastUsedSaveTimer.Start();
+    }
+
+    private static string CanonicalMode(string? mode)
+    {
+        string u = (mode ?? "").Trim().ToUpperInvariant().Replace('_', '-');
+        return u switch
+        {
+            "" => "",
+            "USB" or "U" or "2" => "USB",
+            "LSB" or "L" or "1" => "LSB",
+            "AM" or "A" or "0" => "AM",
+            "CW" or "C" or "3" => "CW",
+            "TUNE" or "T" or "4" => "TUNE",
+            "DIG-U" or "DIGU" or "DIG" => "DIG-U",
+            "FM" or "F" or "5" => "FM",
+            _ => u
+        };
+    }
+
+    private static bool IsDigUMode(string? mode) => CanonicalMode(mode) == "DIG-U";
+    private static bool IsUsbMode(string? mode) => CanonicalMode(mode) == "USB";
+    private static bool IsModeUnset(string? mode) => string.IsNullOrWhiteSpace(mode);
+
+    /// <summary>
+    /// DIG-U overlay on USB RF. Per-band last-used MODE (if present) decides alone.
+    /// LAST_HF/LF DIG-U is only used when band is unknown or that band's mode is empty.
+    /// Already-DIG-U keeps the overlay on a USB echo.
+    /// </summary>
+    private bool ShouldKeepDigUOnUsbReport()
+    {
+        string current = UseVfoA ? (ModeText ?? "") : (VfoBModeText ?? "");
+        if (IsDigUMode(current))
+            return true;
+        long freq = UseVfoA ? _frequencyHz : _vfoBFrequencyHz;
+        string band = BandText ?? "";
+        if (string.IsNullOrWhiteSpace(band) || band is "—" or "?" or "-")
+            band = BandNameForFrequency(freq);
+        bool bandKnown = !string.IsNullOrWhiteSpace(band) && band is not "—" and not "?" and not "-";
+        if (bandKnown)
+        {
+            var (_, m, _, _, _) = BandLastUsedStore.Load(band, forVfoB: !UseVfoA);
+            if (!string.IsNullOrWhiteSpace(m))
+                return IsDigUMode(m);
+        }
+        if (freq <= 0)
+            return false;
+        string personality = BandLastUsedStore.IsLfPersonalityFreq(freq)
+            ? BandLastUsedStore.LastLfMode
+            : BandLastUsedStore.LastHfMode;
+        return IsDigUMode(personality);
+    }
+
+    /// <summary>DIG-U: force Audio D. Leaving DIG-U restores prior P/D.</summary>
+    private void ApplyDigUAudioPolicy(string oldMode, string newMode)
+    {
+        bool oldDig = IsDigUMode(oldMode);
+        bool newDig = IsDigUMode(newMode);
+        if (newDig && !oldDig)
+        {
+            _audioBeforeDigU = IsDigitalAudio;
+            if (!IsDigitalAudio)
+            {
+                IsDigitalAudio = true;
+                AppendLog("DIG-U: Audio → D (digital); CMP forced off if it was on");
+            }
+        }
+        else if (oldDig && !newDig)
+        {
+            if (_audioBeforeDigU is bool prev && IsDigitalAudio != prev)
+            {
+                IsDigitalAudio = prev;
+                AppendLog($"Left DIG-U: Audio restored to {(prev ? "D" : "P")}");
+            }
+            _audioBeforeDigU = null;
+        }
+    }
+
+    /// <summary>Apply DIG-U overlay without sending USB to the radio or writing last-used.</summary>
+    private void ApplyDigUOverlay(string reason)
+    {
+        string prev = UseVfoA ? (ModeText ?? "") : (VfoBModeText ?? "");
+        if (!IsDigUMode(prev))
+            ApplyDigUAudioPolicy(prev, "DIG-U");
+        if (UseVfoA)
+        {
+            ModeText = "DIG-U";
+            NotifyModeFlags();
+        }
+        else
+            VfoBModeText = "DIG-U";
+        RefreshSpectrumFilterOverlay();
+        SyncRfPowerFromMode();
+        AppendLog($"DIG-U overlay restore ({reason})");
+    }
+
+    /// <summary>
+    /// After FrequencyReported (band gold synced). Restore DIG-U from per-band last-used
+    /// (LAST_HF/LF only if band mode empty). Does not LoadLastUsed (no outgoing tune).
+    /// </summary>
+    private void TryRestoreDigUAfterFreqKnown()
+    {
+        string mode = UseVfoA ? (ModeText ?? "") : (VfoBModeText ?? "");
+        if (!IsUsbMode(mode) && !IsModeUnset(mode))
+        {
+            _deferUsbModeReport = false;
+            return;
+        }
+        if (ShouldKeepDigUOnUsbReport())
+        {
+            _deferUsbModeReport = false;
+            ApplyDigUOverlay("FrequencyReported");
+            return;
+        }
+        if (_deferUsbModeReport && IsModeUnset(mode))
+        {
+            _deferUsbModeReport = false;
+            if (UseVfoA)
+            {
+                ModeText = "USB";
+                NotifyModeFlags();
+            }
+            else
+                VfoBModeText = "USB";
+            RefreshSpectrumFilterOverlay();
+            SyncRfPowerFromMode();
+            AppendLog("ModeReported USB: applied after freq known");
+        }
+        else
+            _deferUsbModeReport = false;
+    }
+
+    private static string NormalizeBandLabel(string? band)
+    {
+        string b = (band ?? "").Trim().ToLowerInvariant();
+        if (b.EndsWith('m') && b.Length > 1) return b;
+        return b;
+    }
+
+    // ----- Radio model + GEN -----
+
+    partial void OnIsGeminusRadioModelChanged(bool value)
+    {
+        OnPropertyChanged(nameof(HfBandsEnabled));
+        OnPropertyChanged(nameof(LfBandsEnabled));
+        OnPropertyChanged(nameof(GenButtonTip));
+    }
+
+    /// <summary>
+    /// Map 0xB2 major to Geminus/Proficio band gating. Unknown / "--" leaves INI last-used.
+    /// </summary>
+    private void ApplyRadioModelFromFirmware(string firmwareVersion)
+    {
+        if (!TryParseFirmwareMajor(firmwareVersion, out int major))
+            return;
+        if (!TryFirmwareMajorToGeminus(major, out bool geminus))
+        {
+            AppendLog($"Radio model: FW {firmwareVersion} major {major} unknown — keep last-used gating");
+            return;
+        }
+
+        ApplyRadioModelSelection(geminus, fromFirmware: true);
+        _fwRadioModelApplied = true;
+        _ = RetuneIfIllegalForRadioPersonalityAsync(geminus);
+    }
+
+    /// <summary>
+    /// Set model, S/W bank, GEN list, band gray. Persist RADIO_MODEL.
+    /// Manual toggle stays until the next 0xB2 (FW wins on each report).
+    /// </summary>
+    private void ApplyRadioModelSelection(bool nowGeminus, bool fromFirmware)
+    {
+        if (IsGeminusRadioModel != nowGeminus)
+            IsGeminusRadioModel = nowGeminus;
+        else
+        {
+            OnPropertyChanged(nameof(HfBandsEnabled));
+            OnPropertyChanged(nameof(LfBandsEnabled));
+            OnPropertyChanged(nameof(GenButtonTip));
+        }
+
+        SpectrumDisplaySettings.Instance.SwitchRadioModel(nowGeminus);
+        SyncGenButtonForRadioModel();
+        ScheduleSaveClientSettings();
+        string how = fromFirmware ? "from FW" : "manual";
+        AppendLog(nowGeminus
+            ? $"Radio model: Geminus ({how}) — LF waterfall bank; HF grayed; 2200/630 on"
+            : $"Radio model: Proficio ({how}) — HF waterfall bank; LF grayed; GEN=WWV/CHU/RWM/USER");
+    }
+
+    /// <summary>
+    /// If reported freq is illegal for this FW personality, retune LAST_HF / LAST_LF (or ship default).
+    /// Idle freq 0 is legal (cmd-027) — no retune until a real VFO report.
+    /// </summary>
+    private async Task RetuneIfIllegalForRadioPersonalityAsync(bool geminus)
+    {
+        long freq = UseVfoA ? _frequencyHz : _vfoBFrequencyHz;
+        bool illegal = geminus
+            ? freq >= 1_800_000
+            : freq > 0 && freq < 1_800_000;
+        if (!illegal)
+            return;
+
+        long stored = geminus ? BandLastUsedStore.LastLfFreq : BandLastUsedStore.LastHfFreq;
+        long target = stored > 0
+            ? stored
+            : (geminus ? BandLastUsedStore.DefaultLastLfFreq : BandLastUsedStore.DefaultLastHfFreq);
+        string mode = geminus ? BandLastUsedStore.LastLfMode : BandLastUsedStore.LastHfMode;
+        AppendLog(
+            $"Connect safety: {freq} Hz illegal for {(geminus ? "Geminus" : "Proficio")} → {target}");
+        await ApplyFrequencyAsync(target, "fw-personality").ConfigureAwait(true);
+        if (string.IsNullOrWhiteSpace(mode))
+            return;
+        if (CanOperate())
+            await SetModeAsync(mode).ConfigureAwait(true);
+        else
+        {
+            ModeText = mode;
+            NotifyModeFlags();
+        }
+    }
+
+    [RelayCommand]
+    private Task SelectGen() => ApplyGenAsync(rotate: _onGenBand);
+
+    /// <summary>
+    /// GEN band: first press uses current slot; while on GEN, each press rotates presets.
+    /// </summary>
+    private async Task ApplyGenAsync(bool rotate)
+    {
+        var opts = IsGeminusRadioModel ? GenOptionsGeminus : GenOptionsProficio;
+        int idx = IsGeminusRadioModel ? _genIndexGeminus : _genIndexProficio;
+        idx = Math.Clamp(idx, 0, opts.Length - 1);
+
+        if (rotate)
+            idx = (idx + 1) % opts.Length;
+
+        if (IsGeminusRadioModel)
+            _genIndexGeminus = idx;
+        else
+            _genIndexProficio = idx;
+
+        var opt = opts[idx];
+        GenButtonText = opt.Label;
+        _onGenBand = true;
+
+        if (!CanOperate())
+        {
+            _frequencyHz = opt.Freq;
+            UpdateFrequencyUi(opt.Freq);
+            BandText = "gen";
+            ModeText = DefaultModeForFrequency(opt.Freq);
+            NotifyModeFlags();
+            AppendLog($"GEN {opt.Label} @ {opt.Freq} (not connected)");
+            ScheduleSaveClientSettings();
+            return;
+        }
+
+        await ApplyFrequencyAsync(opt.Freq, $"gen {opt.Label}").ConfigureAwait(true);
+        await SetModeAsync(DefaultModeForFrequency(opt.Freq)).ConfigureAwait(true);
+        BandText = "gen";
+        string model = IsGeminusRadioModel ? "Geminus" : "Proficio";
+        AppendLog(rotate
+            ? $"GEN ({model}) rotated → {opt.Label} @ {opt.Freq}"
+            : $"GEN ({model}) → {opt.Label} @ {opt.Freq}");
+        ScheduleSaveClientSettings();
+    }
+
+    private void SyncGenButtonForRadioModel()
+    {
+        var opts = IsGeminusRadioModel ? GenOptionsGeminus : GenOptionsProficio;
+        int idx = IsGeminusRadioModel ? _genIndexGeminus : _genIndexProficio;
+        idx = Math.Clamp(idx, 0, opts.Length - 1);
+        if (IsGeminusRadioModel)
+            _genIndexGeminus = idx;
+        else
+            _genIndexProficio = idx;
+        GenButtonText = opts[idx].Label;
+    }
+
+    internal int PanResolutionIndex => _panResolutionIndex;
+
+    /// <summary>S/W ListBox changed the sticky index — persist and apply UDP.</summary>
+    internal void SetPanResolutionIndexFromUi(int index)
+    {
+        if (index < 0 || index > 2) return;
+        if (_panResolutionIndex == index) return;
+        _panResolutionIndex = index;
+        ScheduleSaveClientSettings();
+        ApplyPanResolution("S/W");
+    }
+
+    internal void ApplyPanResolution(string reason = "settings")
+    {
+        _ = ApplyPanResolutionAsync(reason);
+    }
+
+    private async Task ApplyPanResolutionAsync(string reason)
+    {
+        int idx = ClientSettingsStore.ClampPanResolutionIndex(_panResolutionIndex);
+        int bins = ClientSettingsStore.PanResolutionBins(idx);
+        string label = ClientSettingsStore.PanResolutionLabel(idx);
+        try
+        {
+            if (_radio != null)
+                await _radio.SetPanResolutionAsync(bins).ConfigureAwait(true);
+            PostToUi(ClearAllWaterfallHistories);
+            AppendLog($"Pan resolution ({reason}): {label} → {bins} bins");
+        }
+        catch (Exception ex)
+        {
+            AppendLog($"Pan resolution apply warning: {ex.Message}");
+        }
+    }
+
+    private static void ClearAllWaterfallHistories()
+    {
+        try
+        {
+            Window? w = null;
+            if (Application.Current?.ApplicationLifetime is IClassicDesktopStyleApplicationLifetime desk)
+                w = desk.MainWindow;
+            if (w == null) return;
+            ClearWaterfallsWalk(w);
+        }
+        catch { /* ignore */ }
+    }
+
+    private static void ClearWaterfallsWalk(Visual vis)
+    {
+        if (vis is SpectrumDisplayControl spec)
+            spec.ClearWaterfall();
+        foreach (var child in vis.GetVisualChildren())
+            ClearWaterfallsWalk(child);
+    }
+
+    // ----- Sticky client settings -----
+
+    private void LoadClientSettings()
+    {
+        _suppressSettingsSave = true;
+        try
+        {
+            var s = ClientSettingsStore.Load();
+            Host = string.IsNullOrWhiteSpace(s.Host) ? Host : s.Host;
+            ReplaceRecentHosts(ClientSettingsStore.NormalizeHostRecent(Host, s.HostRecent));
+            RemotePortText = string.IsNullOrWhiteSpace(s.RemotePortText) ? RemotePortText : s.RemotePortText;
+            LocalPortText = string.IsNullOrWhiteSpace(s.LocalPortText) ? LocalPortText : s.LocalPortText;
+            LaunchServers = s.LaunchServers;
+            AutoStart = s.AutoStart;
+            IsGeminusRadioModel = s.IsGeminusRadioModel;
+            _genIndexProficio = Math.Clamp(s.GenIndexProficio, 0, GenOptionsProficio.Length - 1);
+            _genIndexGeminus = Math.Clamp(s.GenIndexGeminus, 0, GenOptionsGeminus.Length - 1);
+            SyncGenButtonForRadioModel();
+
+            // Idle until Connect: do not paint last freq/mode/band (WPF cmd-024).
+            // Reports + DIG-U overlay restore after FrequencyReported.
+
+            if (s.LastVfoBFrequencyHz > 0)
+            {
+                _vfoBFrequencyHz = s.LastVfoBFrequencyHz;
+                VfoBDisplayMhz = FormatMhz(_vfoBFrequencyHz);
+                if (!string.IsNullOrWhiteSpace(s.LastVfoBMode))
+                    VfoBModeText = s.LastVfoBMode.Trim();
+                _lastSavedVfoBHz = _vfoBFrequencyHz;
+                _lastSavedVfoBMode = VfoBModeText ?? "";
+                AppendLog($"VFO B restored: f={_vfoBFrequencyHz} mode={VfoBModeText}");
+            }
+            UseVfoA = true;
+            OnPropertyChanged(nameof(UseVfoB));
+            AppendLog("VFO A active at startup (VFO B kept for when you click it)");
+
+            // Operate UI state (pushed to radio on Connect)
+            _stepIndex = Math.Clamp(s.StepIndex, 0, StepChoicesHz.Length - 1);
+            StepLabel = FormatStep(StepChoicesHz[_stepIndex]);
+            ApplyFilterIndices(s.LowCutIndex, s.HighCutIndex, s.CwFilterIndex, send: false);
+
+            _suppressAudioSend = true;
+            PVolume = Math.Clamp(s.PVolume, 0, 100);
+            PMicGain = Math.Clamp(s.PMicGain, 0, 100);
+            DVolume = Math.Clamp(s.DVolume, 0, 100);
+            DMicGain = Math.Clamp(s.DMicGain, 0, 100);
+            IsDigitalAudio = s.IsDigitalAudio;
+            RemoteAudio = s.RemoteAudio;
+            RemoteMonitorAtRadio = s.RemoteMonitorAtRadio;
+            RemotePlayVolume = Math.Clamp(s.RemotePlayVolume, 0, 100);
+            RemoteMicVolume = Math.Clamp(s.RemoteMicVolume, 0, 100);
+            RemoteDigitalMicVolume = Math.Clamp(s.RemoteDigitalMicVolume, 0, 100);
+            RemotePlayMute = s.RemotePlayMute;
+            RemoteEqEnabled = s.RemoteEqEnabled;
+            RemoteEqLowDb = s.RemoteEqLowDb;
+            RemoteEqMidDb = s.RemoteEqMidDb;
+            RemoteEqHighDb = s.RemoteEqHighDb;
+            RemotePlayDeviceIndex = s.RemotePlayDeviceIndex;
+            RemoteMicDeviceIndex = s.RemoteMicDeviceIndex;
+            FmSimplex = s.FmSimplex;
+            _suppressAudioSend = false;
+            OnPropertyChanged(nameof(IsRemoteAudioAllowed));
+            OnPropertyChanged(nameof(RemoteAudioCheckboxEnabled));
+
+            _suppressRitSend = true;
+            RitOffset = s.RitOffset;
+            RitOn = s.RitOn;
+            _suppressRitSend = false;
+
+            _suppressCwSend = true;
+            CwKeyerMode = Math.Clamp(s.CwKeyerMode, 0, Math.Max(0, CwKeyerModeOptions.Count - 1));
+            CwSpacing = Math.Clamp(s.CwSpacing, 0, Math.Max(0, CwSpacingOptions.Count - 1));
+            // Farnsworth sticky — applied before other CW fields that may send
+            CwMemTextWpm = ClientSettingsStore.ClampCwMemTextWpm(s.CwMemTextWpm);
+            CwPaddle = Math.Clamp(s.CwPaddle, 0, Math.Max(0, CwPaddleOptions.Count - 1));
+            CwWeightIndex = Math.Clamp(s.CwWeightIndex, 0, CwWeightValues.Length - 1);
+            CwPitchIndex = Math.Clamp(s.CwPitchIndex, 0, Math.Max(0, CwPitchOptions.Count - 1));
+            CwPitchLabel = CwPitchOptions[CwPitchIndex];
+            CwHold = Math.Clamp(s.CwHold, 1, 500);
+            CwQsk = s.CwQsk;
+            CwPhones = s.CwPhones;
+            CwSpeed = Math.Clamp(s.CwSpeed, 5, 60);
+            KeyerMem0 = s.KeyerMem0 ?? "";
+            KeyerMem1 = s.KeyerMem1 ?? "";
+            KeyerMem2 = s.KeyerMem2 ?? "";
+            KeyerMem3 = s.KeyerMem3 ?? "";
+            ExternalElectronicKeyer = s.ExternalElectronicKeyer;
+            _suppressCwSend = false;
+            OnPropertyChanged(nameof(PicKeyerControlsEnabled));
+            OnPropertyChanged(nameof(KeyerMemPanelEnabled));
+            try
+            {
+                MsccIniProficio.WriteProficioMkii(mkii: !ExternalElectronicKeyer);
+            }
+            catch { /* best-effort */ }
+
+            _suppressPowerSend = true;
+            TunePowerPercent = Math.Clamp(s.TunePowerPercent, 0, 100);
+            CwPowerPercent = Math.Clamp(s.CwPowerPercent, 0, 100);
+            SsbPowerPercent = Math.Clamp(s.SsbPowerPercent, 0, 100);
+            AmCarrierPercent = Math.Clamp(s.AmCarrierPercent, 0, 100);
+            FmPowerPercent = Math.Clamp(s.FmPowerPercent, 0, 100);
+            _suppressPowerSend = false;
+            SyncRfPowerFromMode();
+
+            _suppressCompressionCommand = true;
+            Compression = Math.Clamp(s.Compression, 0, 24);
+            CompressionOn = s.CompressionOn && !s.IsDigitalAudio;
+            _sessionCompressionOn = s.CompressionOn;
+            _suppressCompressionCommand = false;
+
+            _suppressAgcCommand = true;
+            AgcLevel = Math.Clamp(s.AgcLevel, 0, 2);
+            AgcFastRelease = Math.Clamp(s.AgcFastRelease, 0, 1000);
+            _suppressAgcCommand = false;
+
+            _suppressNbCommand = true;
+            NbOn = s.NbOn;
+            NbPulse = Math.Clamp(s.NbPulse, 10, 510);
+            NbThreshold = Math.Clamp(s.NbThreshold, 1, 1009);
+            _suppressNbCommand = false;
+
+            _suppressNrCommand = true;
+            NrOn = s.NrOn;
+            NrLevel = Math.Clamp(s.NrLevel, 0, 100);
+            _suppressNrCommand = false;
+
+            _suppressAnCommand = true;
+            AnOn = s.AnOn;
+            _suppressAnCommand = false;
+
+            _suppressMonitorCommand = true;
+            MonitorOn = s.MonitorOn;
+            _suppressMonitorCommand = false;
+
+            _suppressAmpCommand = true;
+            AmpOn = s.AmpOn;
+            _suppressAmpCommand = false;
+
+            _suppressAlcCommand = true;
+            AlcOn = s.AlcOn;
+            _suppressAlcCommand = false;
+
+            SmeterHold = s.SmeterHold;
+            SmeterPeak = s.SmeterPeak;
+            AlcHold = s.AlcHold;
+            AlcPeak = s.AlcPeak;
+            _panResolutionIndex = ClientSettingsStore.ClampPanResolutionIndex(s.PanResolutionIndex);
+
+            long activeHz = UseVfoA ? _frequencyHz : _vfoBFrequencyHz;
+            BandText = BandNameForFrequency(activeHz);
+
+            // Dual HF/LF S/W banks + global zoom / dB CAL
+            SpectrumDisplaySettings.Instance.LoadBanks(
+                s.HfBank,
+                s.LfBank,
+                s.IsGeminusRadioModel,
+                s.DbCalRelative,
+                s.SpectrumZoom);
+            SpectrumZoom = SpectrumDisplaySettings.Instance.ZoomFactor;
+
+            AppearanceSettings.Instance.LoadFrom(
+                s.SpectrumBackground,
+                s.SpectrumBackgroundRgb,
+                s.SpectrumFill,
+                s.SpectrumLine,
+                s.UiBackground,
+                s.UiBackgroundRgb,
+                s.UiButton,
+                s.UiButtonRgb,
+                s.UiPanel,
+                s.UiAccent,
+                s.UiAccentRgb);
+            SyncAppearanceUiFromSettings();
+
+            FavoriteBandFilter = NormalizeFavoriteBand(BandText, activeHz);
+            AppendLog(
+                $"Loaded settings (model={(IsGeminusRadioModel ? "Geminus" : "Proficio")}, " +
+                $"VFO={(UseVfoA ? "A" : "B")}, S/W bank={(IsGeminusRadioModel ? "LF" : "HF")})");
+        }
+        finally
+        {
+            _suppressSettingsSave = false;
+        }
+    }
+
+    private void ScheduleSaveClientSettings()
+    {
+        if (_suppressSettingsSave) return;
+        if (_settingsSaveTimer == null)
+        {
+            _settingsSaveTimer = new DispatcherTimer { Interval = TimeSpan.FromMilliseconds(400) };
+            _settingsSaveTimer.Tick += (_, _) =>
+            {
+                _settingsSaveTimer.Stop();
+                SaveClientSettingsNow();
+            };
+        }
+
+        _settingsSaveTimer.Stop();
+        _settingsSaveTimer.Start();
+    }
+
+    private void SaveClientSettingsNow()
+    {
+        if (_suppressSettingsSave) return;
+        var sw = SpectrumDisplaySettings.Instance;
+        var app = AppearanceSettings.Instance;
+        sw.CaptureLiveToActiveBank();
+        // Snapshot on UI thread, write INI off UI thread
+        var s = new ClientSettings
+        {
+            Host = Host ?? "127.0.0.1",
+            HostRecent = RecentHosts.ToList(),
+            RemotePortText = RemotePortText ?? "8888",
+            LocalPortText = LocalPortText ?? "8889",
+            LaunchServers = LaunchServers,
+            AutoStart = AutoStart,
+            IsGeminusRadioModel = IsGeminusRadioModel,
+            LastFrequencyHz = _frequencyHz,
+            LastMode = (_freqCalHoldingCw && _freqCalSavedVfoA)
+                ? _freqCalModeSaved
+                : (ModeText ?? ""),
+            LastVfoBFrequencyHz = VfoBHzToPersist(),
+            LastVfoBMode = VfoBModeToPersist(),
+            UseVfoA = true,
+            StepIndex = _stepIndex,
+            LowCutIndex = _lowCutIndex,
+            HighCutIndex = _highCutIndex,
+            CwFilterIndex = _freqCalHoldingCw ? _freqCalFilterSaved : _cwFilterIndex,
+            PVolume = PVolume,
+            PMicGain = PMicGain,
+            DVolume = DVolume,
+            DMicGain = DMicGain,
+            IsDigitalAudio = IsDigitalAudio,
+            RemoteAudio = RemoteAudio,
+            RemoteMonitorAtRadio = RemoteMonitorAtRadio,
+            RemotePlayVolume = RemotePlayVolume,
+            RemoteMicVolume = RemoteMicVolume,
+            RemoteDigitalMicVolume = RemoteDigitalMicVolume,
+            RemotePlayMute = RemotePlayMute,
+            RemoteEqEnabled = RemoteEqEnabled,
+            RemoteEqLowDb = RemoteEqLowDb,
+            RemoteEqMidDb = RemoteEqMidDb,
+            RemoteEqHighDb = RemoteEqHighDb,
+            RemotePlayDeviceIndex = RemotePlayDeviceIndex,
+            RemoteMicDeviceIndex = RemoteMicDeviceIndex,
+            FmSimplex = FmSimplex,
+            RitOn = RitOn,
+            RitOffset = RitOffset,
+            CwKeyerMode = CwKeyerMode,
+            CwSpacing = CwSpacing,
+            CwPaddle = CwPaddle,
+            CwWeightIndex = CwWeightIndex,
+            CwPitchIndex = _freqCalHoldingCw ? _freqCalPitchSaved : CwPitchIndex,
+            CwHold = CwHold,
+            CwQsk = CwQsk,
+            CwPhones = CwPhones,
+            CwSpeed = CwSpeed,
+            CwMemTextWpm = ClientSettingsStore.ClampCwMemTextWpm(CwMemTextWpm),
+            KeyerMem0 = SanitizeKeyerMem(KeyerMem0),
+            KeyerMem1 = SanitizeKeyerMem(KeyerMem1),
+            KeyerMem2 = SanitizeKeyerMem(KeyerMem2),
+            KeyerMem3 = SanitizeKeyerMem(KeyerMem3),
+            ExternalElectronicKeyer = ExternalElectronicKeyer,
+            TunePowerPercent = TunePowerPercent,
+            CwPowerPercent = CwPowerPercent,
+            SsbPowerPercent = SsbPowerPercent,
+            AmCarrierPercent = AmCarrierPercent,
+            FmPowerPercent = FmPowerPercent,
+            Compression = Compression,
+            CompressionOn = _sessionCompressionOn || CompressionOn,
+            AgcLevel = AgcLevel,
+            AgcFastRelease = AgcFastRelease,
+            NbOn = NbOn,
+            NbPulse = NbPulse,
+            NbThreshold = NbThreshold,
+            NrOn = NrOn,
+            NrLevel = NrLevel,
+            AnOn = AnOn,
+            MonitorOn = MonitorOn,
+            AmpOn = AmpOn,
+            AlcOn = AlcOn,
+            SmeterHold = SmeterHold,
+            SmeterPeak = SmeterPeak,
+            AlcHold = AlcHold,
+            AlcPeak = AlcPeak,
+            SpectrumZoom = sw.ZoomFactor,
+            DbCalRelative = sw.DbCalRelative,
+            PanResolutionIndex = ClientSettingsStore.ClampPanResolutionIndex(_panResolutionIndex),
+            GridMaxDb = sw.GridMaxDb,
+            GridMinDb = sw.GridMinDb,
+            WaterfallHighDb = sw.WaterfallHighDb,
+            WaterfallLowDb = sw.WaterfallLowDb,
+            ViewGrid = sw.ViewGrid,
+            ShowWaterfall = sw.ShowWaterfall,
+            WaterfallDirectionNormal = sw.WaterfallDirectionNormal,
+            WaterfallPalette = sw.WaterfallPalette,
+            HfBank = sw.HfBank.Clone(),
+            LfBank = sw.LfBank.Clone(),
+            SpectrumBackground = app.SpectrumBackground,
+            SpectrumBackgroundRgb = app.SpectrumBackgroundRgb,
+            SpectrumFill = app.SpectrumFill,
+            SpectrumLine = app.SpectrumLine,
+            UiBackground = app.UiBackground,
+            UiBackgroundRgb = app.UiBackgroundRgb,
+            UiButton = app.UiButton,
+            UiButtonRgb = app.UiButtonRgb,
+            UiPanel = app.UiPanel,
+            UiAccent = app.UiAccent,
+            UiAccentRgb = app.UiAccentRgb,
+            GenIndexProficio = _genIndexProficio,
+            GenIndexGeminus = _genIndexGeminus,
+        };
+        if (s.LastVfoBFrequencyHz != _lastSavedVfoBHz ||
+            !string.Equals(s.LastVfoBMode ?? "", _lastSavedVfoBMode, StringComparison.Ordinal))
+        {
+            AppendLog($"VFO B saved: f={s.LastVfoBFrequencyHz} mode={s.LastVfoBMode}");
+            _lastSavedVfoBHz = s.LastVfoBFrequencyHz;
+            _lastSavedVfoBMode = s.LastVfoBMode ?? "";
+        }
+        _ = Task.Run(() => ClientSettingsStore.Save(s));
+    }
+
+    private long VfoBHzToPersist()
+    {
+        if (_freqCalHoldingCw && !_freqCalSavedVfoA)
+            return _vfoBFrequencyHz > 0 ? _vfoBFrequencyHz : (_lastSavedVfoBHz > 0 ? _lastSavedVfoBHz : _vfoBFrequencyHz);
+        if (!UseVfoA && IsCalibrationOrIqSessionActive())
+            return _lastSavedVfoBHz > 0 ? _lastSavedVfoBHz : _vfoBFrequencyHz;
+        return (_vfoBFrequencyHz > 0 && !string.IsNullOrWhiteSpace(VfoBModeText))
+            ? _vfoBFrequencyHz
+            : _lastSavedVfoBHz > 0 ? _lastSavedVfoBHz : _vfoBFrequencyHz;
+    }
+
+    private string VfoBModeToPersist()
+    {
+        if (_freqCalHoldingCw && !_freqCalSavedVfoA)
+            return _freqCalModeSaved;
+        if (!UseVfoA && IsCalibrationOrIqSessionActive())
+            return !string.IsNullOrEmpty(_lastSavedVfoBMode) ? _lastSavedVfoBMode : (VfoBModeText ?? "");
+        return (_vfoBFrequencyHz > 0 && !string.IsNullOrWhiteSpace(VfoBModeText))
+            ? (VfoBModeText ?? "")
+            : (!string.IsNullOrEmpty(_lastSavedVfoBMode) ? _lastSavedVfoBMode : (VfoBModeText ?? ""));
+    }
+
+    /// <summary>
+    /// After connect: push sticky operate controls to ms-sdr.
+    /// PTT/TUN never restored. Failures are logged but do not drop the session.
+    /// </summary>
+    private async Task PushStickyOperateToRadioAsync()
+    {
+        if (_radio == null || !IsConnected) return;
+        AppendLog("Restoring sticky operate settings to radio…");
+
+        try
+        {
+            // Filters + step
+            ApplyFilterIndices(_lowCutIndex, _highCutIndex, _cwFilterIndex, send: true);
+            try { await _radio.SetStepAsync(_stepIndex).ConfigureAwait(true); }
+            catch (Exception ex) { AppendLog($"Step restore: {ex.Message}"); }
+
+            // Audio path + levels
+            try
+            {
+                PushAudioToRadio("sticky restore");
+                await _radio.SetPhonesVolumeLevelAsync(Math.Clamp(PVolume, 0, 100)).ConfigureAwait(true);
+                await _radio.SetPhonesMicGainLevelAsync(Math.Clamp(PMicGain, 0, 100)).ConfigureAwait(true);
+                if (!RemoteAudio)
+                {
+                    await _radio.SetDigitalVolumeLevelAsync(Math.Clamp(DVolume, 0, 100)).ConfigureAwait(true);
+                    await _radio.SetDigitalMicGainLevelAsync(Math.Clamp(DMicGain, 0, 100)).ConfigureAwait(true);
+                }
+            }
+            catch (Exception ex) { AppendLog($"Audio restore: {ex.Message}"); }
+
+            // Power banks
+            try
+            {
+                await _radio.SetTunePowerAsync(Math.Clamp(TunePowerPercent, 0, 100)).ConfigureAwait(true);
+                await _radio.SetCwPowerAsync(Math.Clamp(CwPowerPercent, 0, 100)).ConfigureAwait(true);
+                await _radio.SetSsbPowerAsync(Math.Clamp(SsbPowerPercent, 0, 100)).ConfigureAwait(true);
+                await _radio.SetAmCarrierAsync(Math.Clamp(AmCarrierPercent, 0, 100)).ConfigureAwait(true);
+                await _radio.SetFmPowerAsync(Math.Clamp(FmPowerPercent, 0, 100)).ConfigureAwait(true);
+            }
+            catch (Exception ex) { AppendLog($"Power restore: {ex.Message}"); }
+
+            // CW
+            try
+            {
+                await _radio.SetCwWpmAsync(Math.Clamp(CwSpeed, 5, 60)).ConfigureAwait(true);
+                if (!ExternalElectronicKeyer)
+                {
+                    await _radio.SetCwKeyerModeAsync(Math.Clamp(CwKeyerMode, 0, 3)).ConfigureAwait(true);
+                    await _radio.SetCwSpacingAsync(Math.Clamp(CwSpacing, 0, 2)).ConfigureAwait(true);
+                    await _radio.SetCwPaddleAsync(Math.Clamp(CwPaddle, 0, 1)).ConfigureAwait(true);
+                    int weight = CwWeightValues[Math.Clamp(CwWeightIndex, 0, CwWeightValues.Length - 1)];
+                    await _radio.SetCwWeightAsync(weight).ConfigureAwait(true);
+                    await _radio.SetKeyerMemTextWpmAsync(
+                        ClientSettingsStore.ClampCwMemTextWpm(CwMemTextWpm)).ConfigureAwait(true);
+                }
+                await _radio.SetCwPitchAsync(Math.Clamp(CwPitchIndex, 0, 3)).ConfigureAwait(true);
+                await _radio.SetCwTxHoldAsync(Math.Clamp(CwHold, 1, 500)).ConfigureAwait(true);
+                await _radio.SetCwQskAsync(CwQsk).ConfigureAwait(true);
+            }
+            catch (Exception ex) { AppendLog($"CW restore: {ex.Message}"); }
+
+            // AGC / CMP / NB / NR / AN / MON
+            try
+            {
+                await _radio.SetAgcLevelAsync(Math.Clamp(AgcLevel, 0, 2)).ConfigureAwait(true);
+                await _radio.SetAgcFastReleaseAsync(Math.Clamp(AgcFastRelease, 0, 1000)).ConfigureAwait(true);
+                await _radio.SetCompressionLevelAsync(Math.Clamp(Compression, 0, 24)).ConfigureAwait(true);
+                bool cmp = CompressionOn && !IsDigitalAudio;
+                await _radio.SetCompressionStateAsync(cmp).ConfigureAwait(true);
+                await _radio.SetNbPulseWidthAsync(Math.Clamp(NbPulse, 10, 510)).ConfigureAwait(true);
+                await _radio.SetNbThresholdAsync(Math.Clamp(NbThreshold, 1, 1009)).ConfigureAwait(true);
+                await _radio.SetNbOnAsync(NbOn).ConfigureAwait(true);
+                await _radio.SetNrOnAsync(NrOn, Math.Clamp(NrLevel, 0, 100)).ConfigureAwait(true);
+                if (NrOn)
+                    await _radio.SetNrLevelAsync(Math.Clamp(NrLevel, 0, 100)).ConfigureAwait(true);
+                await _radio.SetAutoNotchOnAsync(AnOn).ConfigureAwait(true);
+                await _radio.SetMonitorAsync(MonitorOn).ConfigureAwait(true);
+            }
+            catch (Exception ex) { AppendLog($"DSP restore: {ex.Message}"); }
+
+            // AMP path (PA bypass) — after power banks
+            try
+            {
+                await _radio.SetPaBypassAsync(AmpOn).ConfigureAwait(true);
+            }
+            catch (Exception ex) { AppendLog($"AMP restore: {ex.Message}"); }
+
+            try
+            {
+                await _radio.SetAlcOnAsync(AlcOn).ConfigureAwait(true);
+            }
+            catch (Exception ex) { AppendLog($"ALC restore: {ex.Message}"); }
+
+            // RIT last
+            try
+            {
+                await _radio.SetRitAsync(RitOn, RitOffset).ConfigureAwait(true);
+            }
+            catch (Exception ex) { AppendLog($"RIT restore: {ex.Message}"); }
+
+            AppendLog("Sticky operate settings restored.");
+        }
+        catch (Exception ex)
+        {
+            AppendLog($"Operate restore incomplete: {ex.Message}");
+        }
+    }
+
+    private void LoadFavoritesFromStore()
+    {
+        Favorites.Clear();
+        foreach (var e in FavoritesStore.Load())
+        {
+            e.Band = NormalizeFavoriteBand(e.Band, e.FrequencyHz);
+            ApplyFavoriteLabels(e);
+            Favorites.Add(e);
+        }
+        RefreshFavoritesForBand();
+        AppendLog($"Favorites loaded: {Favorites.Count}");
+    }
+
+    private void PersistFavorites()
+    {
+        FavoritesStore.Save(Favorites);
+    }
+
+    partial void OnHostChanged(string value)
+    {
+        OnPropertyChanged(nameof(IsRemoteAudioAllowed));
+        OnPropertyChanged(nameof(RemoteAudioCheckboxEnabled));
+        OnPropertyChanged(nameof(LaunchOptionEnabled));
+        RefreshIdleStatusText();
+        if (RemoteAudio && !IsRemoteAudioAllowed)
+            RemoteAudio = false;
+        ScheduleSaveClientSettings();
+    }
+    partial void OnLaunchServersChanged(bool value)
+    {
+        RefreshIdleStatusText();
+        ScheduleSaveClientSettings();
+    }
+    partial void OnAutoStartChanged(bool value) => ScheduleSaveClientSettings();
+    partial void OnRemotePortTextChanged(string value) => ScheduleSaveClientSettings();
+    partial void OnLocalPortTextChanged(string value) => ScheduleSaveClientSettings();
+
+    // ----- UI appearance (SETTINGS tab) -----
+    public string[] UiBackgroundNames => UiChromeTheme.ColorNames;
+    public string[] UiPanelNames => UiChromeTheme.PanelColorNames;
+    public string[] UiButtonNames => UiChromeTheme.ColorNames;
+    public string[] UiAccentNames => UiChromeTheme.AccentColorNames;
+
+    [ObservableProperty] private string _selectedUiBackground = "BLACK";
+    [ObservableProperty] private string _selectedUiPanel = "AUTO";
+    [ObservableProperty] private string _selectedUiButton = "YELLOW";
+    [ObservableProperty] private string _selectedUiAccent = "AUTO";
+    [ObservableProperty] private string _uiBackgroundRgbText = "#1C1C1C";
+    [ObservableProperty] private string _uiButtonRgbText = "#FFCC00";
+    [ObservableProperty] private string _uiPanelRgbText = "#2A2A2A";
+    [ObservableProperty] private string _uiAccentRgbText = "#00FFAA";
+    [ObservableProperty] private int _uiBgR = 0x1C;
+    [ObservableProperty] private int _uiBgG = 0x1C;
+    [ObservableProperty] private int _uiBgB = 0x1C;
+    [ObservableProperty] private int _uiBtnR = 0xFF;
+    [ObservableProperty] private int _uiBtnG = 0xCC;
+    [ObservableProperty] private int _uiBtnB;
+    [ObservableProperty] private int _uiAccR;
+    [ObservableProperty] private int _uiAccG = 0xFF;
+    [ObservableProperty] private int _uiAccB = 0xAA;
+    [ObservableProperty] private bool _uiPanelListEnabled = true;
+    [ObservableProperty] private bool _showUiBackgroundRgb;
+    [ObservableProperty] private bool _showUiButtonRgb;
+    [ObservableProperty] private bool _showUiAccentRgb;
+
+    partial void OnSelectedUiBackgroundChanged(string value)
+    {
+        if (_loadingAppearance || string.IsNullOrWhiteSpace(value)) return;
+        if (UiChromeTheme.IsCustom(value))
+        {
+            AppearanceSettings.Instance.SetUiBackgroundRgb((byte)UiBgR, (byte)UiBgG, (byte)UiBgB);
+        }
+        else
+        {
+            AppearanceSettings.Instance.SetUiBackground(value);
+        }
+    }
+
+    partial void OnSelectedUiPanelChanged(string value)
+    {
+        if (_loadingAppearance || string.IsNullOrWhiteSpace(value)) return;
+        AppearanceSettings.Instance.SetUiPanel(value);
+    }
+
+    partial void OnSelectedUiButtonChanged(string value)
+    {
+        if (_loadingAppearance || string.IsNullOrWhiteSpace(value)) return;
+        if (UiChromeTheme.IsCustom(value))
+        {
+            AppearanceSettings.Instance.SetUiButtonRgb((byte)UiBtnR, (byte)UiBtnG, (byte)UiBtnB);
+        }
+        else
+        {
+            AppearanceSettings.Instance.SetUiButton(value);
+        }
+    }
+
+    partial void OnSelectedUiAccentChanged(string value)
+    {
+        if (_loadingAppearance || string.IsNullOrWhiteSpace(value)) return;
+        if (UiChromeTheme.IsCustom(value))
+        {
+            AppearanceSettings.Instance.SetUiAccentRgb((byte)UiAccR, (byte)UiAccG, (byte)UiAccB);
+        }
+        else
+        {
+            AppearanceSettings.Instance.SetUiAccent(value);
+        }
+    }
+
+    partial void OnUiBgRChanged(int value) => ApplyUiBackgroundRgbFromSliders();
+    partial void OnUiBgGChanged(int value) => ApplyUiBackgroundRgbFromSliders();
+    partial void OnUiBgBChanged(int value) => ApplyUiBackgroundRgbFromSliders();
+    partial void OnUiBtnRChanged(int value) => ApplyUiButtonRgbFromSliders();
+    partial void OnUiBtnGChanged(int value) => ApplyUiButtonRgbFromSliders();
+    partial void OnUiBtnBChanged(int value) => ApplyUiButtonRgbFromSliders();
+    partial void OnUiAccRChanged(int value) => ApplyUiAccentRgbFromSliders();
+    partial void OnUiAccGChanged(int value) => ApplyUiAccentRgbFromSliders();
+    partial void OnUiAccBChanged(int value) => ApplyUiAccentRgbFromSliders();
+
+    private void ApplyUiBackgroundRgbFromSliders()
+    {
+        if (_loadingAppearance) return;
+        if (!UiChromeTheme.IsCustom(SelectedUiBackground)) return;
+        AppearanceSettings.Instance.SetUiBackgroundRgb(
+            (byte)Math.Clamp(UiBgR, 0, 255),
+            (byte)Math.Clamp(UiBgG, 0, 255),
+            (byte)Math.Clamp(UiBgB, 0, 255));
+    }
+
+    private void ApplyUiButtonRgbFromSliders()
+    {
+        if (_loadingAppearance) return;
+        if (!UiChromeTheme.IsCustom(SelectedUiButton)) return;
+        AppearanceSettings.Instance.SetUiButtonRgb(
+            (byte)Math.Clamp(UiBtnR, 0, 255),
+            (byte)Math.Clamp(UiBtnG, 0, 255),
+            (byte)Math.Clamp(UiBtnB, 0, 255));
+    }
+
+    private void ApplyUiAccentRgbFromSliders()
+    {
+        if (_loadingAppearance) return;
+        if (!UiChromeTheme.IsCustom(SelectedUiAccent)) return;
+        AppearanceSettings.Instance.SetUiAccentRgb(
+            (byte)Math.Clamp(UiAccR, 0, 255),
+            (byte)Math.Clamp(UiAccG, 0, 255),
+            (byte)Math.Clamp(UiAccB, 0, 255));
+    }
+
+    [RelayCommand]
+    private void ResetUiChrome()
+    {
+        AppearanceSettings.Instance.ResetUiChromeDefaults();
+        SyncAppearanceUiFromSettings();
+        ScheduleSaveClientSettings();
+    }
+
+    [RelayCommand]
+    private void ClearLog()
+    {
+        LogLines.Clear();
+        try
+        {
+            DebugMonitor.ResetLogFile();
+        }
+        catch
+        {
+            // ignore
+        }
+
+        // Always show the clear marker even if pause is on
+        bool paused = LogUiPaused;
+        LogUiPaused = false;
+        AppendLog("Log cleared (RESET LOGS).");
+        LogUiPaused = paused;
+    }
+
+    // ----- Radio events -----
+
+    private void WireRadioEvents(UdpRadioService radio)
+    {
+        radio.PacketReceived += e =>
+        {
+            int pkts = Interlocked.Increment(ref _packetsReceived);
+            if (e.Opcode == Opcodes.CMD_SET_KEEP_ALIVE)
+            {
+                int n = Interlocked.Increment(ref _keepAlivesReceived);
+                if (n == 1 && _launchStartedThisConnect)
+                    PostToUi(() => AppendLog("Launch: server alive (first keep-alive)"));
+            }
+            else if (e.Opcode == Opcodes.CMD_GET_SET_PANADAPTER)
+            {
+                int d5 = Interlocked.Increment(ref _panPacketsReceived);
+                if (d5 == 1)
+                    PostToUi(() => AppendLog("Panadapter packets arriving (0xD5)…"));
+            }
+            // Throttle stats UI — every packet under pan flood saturates the dispatcher.
+            if (pkts == 1 || (pkts % 25) == 0)
+                PostToUi(UpdatePacketStats);
+        };
+
+        radio.FrequencyReported += hz =>
+            PostToUi(() =>
+            {
+                if (UseVfoA)
+                {
+                    _frequencyHz = hz;
+                    UpdateFrequencyUi(hz);
+                }
+                else
+                {
+                    _vfoBFrequencyHz = hz;
+                    VfoBDisplayMhz = FormatMhz(hz);
+                }
+                string name = BandNameForFrequency(hz);
+                if (name is not "—" and not "?")
+                    BandText = name;
+                // Do NOT save last-used or RememberLast on this path.
+                // Do NOT LoadLastUsed (would send tune). DIG-U overlay only.
+                AppendLog($"Frequency reported from backend: {hz}");
+                TryRestoreDigUAfterFreqKnown();
+                MaybeReenterFreqCalTab();
+                if (_fwRadioModelApplied)
+                    _ = RetuneIfIllegalForRadioPersonalityAsync(IsGeminusRadioModel);
+            });
+
+        radio.ModeReported += mode =>
+            PostToUi(() =>
+            {
+                string reported = (mode ?? "").Trim();
+                // Radio RF is USB for DIG-U (0xB7). Startup USB often arrives before band/freq.
+                if (IsUsbMode(reported))
+                {
+                    long hz = UseVfoA ? _frequencyHz : _vfoBFrequencyHz;
+                    if (hz <= 0)
+                    {
+                        _deferUsbModeReport = true;
+                        AppendLog("ModeReported USB: deferred until freq known");
+                        return;
+                    }
+                    if (ShouldKeepDigUOnUsbReport())
+                    {
+                        ApplyDigUOverlay("ModeReported USB");
+                        MaybeReenterFreqCalTab();
+                        return;
+                    }
+                }
+                _deferUsbModeReport = false;
+                if (UseVfoA)
+                {
+                    ModeText = reported;
+                    NotifyModeFlags();
+                }
+                else
+                {
+                    VfoBModeText = reported;
+                }
+                RefreshSpectrumFilterOverlay();
+                if (!IsDigUMode(UseVfoA ? ModeText : VfoBModeText))
+                    CoerceHighCutForMode("ModeReported");
+                MaybeReenterFreqCalTab();
+                AppendLog($"Mode reported: {reported} (VFO {(UseVfoA ? "A" : "B")})");
+            });
+
+        radio.DefaultLowCutIndexReported += idx =>
+            PostToUi(() => ApplyReportedDefaultIndex(() =>
+            {
+                LowCutDefaultIndex = Math.Clamp(idx, 0, LowCutOptions.Count - 1);
+                AppendLog($"Default Lo cut reported: {LowCutDefaultIndex}");
+            }));
+
+        radio.DefaultHighCutIndexReported += idx =>
+            PostToUi(() => ApplyReportedDefaultIndex(() =>
+            {
+                if (idx < 0 || idx > 4)
+                {
+                    AppendLog($"Default Hi cut reported: {idx} ignored (DIG-U live index)");
+                    return;
+                }
+                HighCutDefaultIndex = idx;
+                AppendLog($"Default Hi cut reported: {HighCutDefaultIndex}");
+            }));
+
+        radio.DefaultCwFilterIndexReported += idx =>
+            PostToUi(() => ApplyReportedDefaultIndex(() =>
+            {
+                CwFilterDefaultIndex = Math.Clamp(idx, 0, CwFilterOptions.Count - 1);
+                AppendLog($"Default CW filter reported: {CwFilterDefaultIndex}");
+            }));
+
+        radio.DefaultTxIndexReported += idx =>
+            PostToUi(() => ApplyReportedDefaultIndex(() =>
+            {
+                TxDefaultIndex = Math.Clamp(idx, 0, TxOptions.Count - 1);
+                AppendLog($"Default TX reported: {TxDefaultIndex}");
+            }));
+
+        radio.SmeterReported += dbm =>
+            PostToUi(() => ApplySmeterSample(dbm));
+
+        radio.AlcReported += a =>
+            PostToUi(() => ApplyAlcMeterSample(a));
+
+        radio.BandReported += band =>
+            PostToUi(() =>
+            {
+                BandText = band;
+                SyncFavoriteBandFilterFromRadio();
+                AppendLog($"Band reported: {band}");
+            });
+
+        radio.BandPowerReported += step =>
+            PostToUi(() => ApplyBandPowerReport(step));
+
+        radio.IqOperationCompleteReported += op =>
+            PostToUi(() => OnIqOperationComplete(op));
+
+        radio.IqValueReported += v =>
+            PostToUi(() => OnIqValueReported(v));
+
+        radio.CalProgressReported += v =>
+            PostToUi(() =>
+            {
+                if (!FreqCalInProgress)
+                {
+                    AppendLog($"Freq Cal progress {v} ignored (not running)");
+                    return;
+                }
+                FreqCalProgress = Math.Min(++_freqCalProgressSteps, 100);
+            });
+
+        radio.CalStatusReported += v =>
+            PostToUi(() => OnFreqCalStatusReported(v));
+
+        radio.CalDeltaReported += v =>
+            PostToUi(() => OnFreqCalDeltaReported(v));
+
+        radio.CalAbortStateReported += v =>
+            PostToUi(() => OnCalAbortStateReported(v));
+
+        radio.CoreVersionReported += v =>
+            PostToUi(() =>
+            {
+                CoreVersionText = v;
+                AppendLog($"Core: {v}");
+            });
+
+        radio.FirmwareVersionReported += v =>
+            PostToUi(() =>
+            {
+                FirmwareText = v;
+                AppendLog($"FW: {v}");
+                ApplyRadioModelFromFirmware(v);
+            });
+
+        radio.TunePowerReported += v =>
+            PostToUi(() => ApplyReportedPower(() =>
+            {
+                TunePowerPercent = Math.Clamp(v, 0, 100);
+                AppendLog($"Tune power reported: {v}%");
+            }));
+
+        radio.CwPowerReported += v =>
+            PostToUi(() => ApplyReportedPower(() =>
+            {
+                CwPowerPercent = Math.Clamp(v, 0, 100);
+                AppendLog($"CW power reported: {v}%");
+            }));
+
+        radio.SsbPowerReported += v =>
+            PostToUi(() => ApplyReportedPower(() =>
+            {
+                SsbPowerPercent = Math.Clamp(v, 0, 100);
+                AppendLog($"SSB power reported: {v}%");
+            }));
+
+        radio.AmCarrierReported += v =>
+            PostToUi(() => ApplyReportedPower(() =>
+            {
+                AmCarrierPercent = Math.Clamp(v, 0, 100);
+                AppendLog($"AM carrier reported: {v}%");
+            }));
+
+        radio.TxSetByServerReported += v =>
+            PostToUi(() =>
+            {
+                // Ownership only. Do not light PTT/TUN or enter TuneMode (host digi TX is not client TUNE).
+                TxSetByServer = v;
+                AppendLog($"TxSetByServer reported: {v} (server owns TX; PTT/TUN not mirrored)");
+                if (v)
+                    StatusText = "Server owns TX — PTT/TUN locked";
+            });
+
+        radio.PaBypassReported += ampOn =>
+            PostToUi(() =>
+            {
+                _suppressAmpCommand = true;
+                AmpOn = ampOn;
+                _suppressAmpCommand = false;
+                AppendLog($"AMP from server: {(ampOn ? "ON" : "OFF")}");
+            });
+
+        radio.AgcLevelReported += level =>
+            PostToUi(() =>
+            {
+                _suppressAgcCommand = true;
+                AgcLevel = Math.Clamp(level, 0, 2);
+                _suppressAgcCommand = false;
+                AppendLog($"AGC from server: {AgcButtonText}");
+            });
+
+        radio.AgcFastReleaseReported += ms =>
+            PostToUi(() =>
+            {
+                _suppressAgcCommand = true;
+                AgcFastRelease = ms;
+                _suppressAgcCommand = false;
+            });
+
+        radio.CompressionStateReported += on =>
+            PostToUi(() =>
+            {
+                _suppressCompressionCommand = true;
+                CompressionOn = on;
+                if (!IsDigitalAudio)
+                    _sessionCompressionOn = on;
+                _suppressCompressionCommand = false;
+            });
+
+        radio.PhonesVolumeLevelReported += v =>
+            PostToUi(() => ApplyReportedAudio(() =>
+            {
+                PVolume = Math.Clamp(v, 0, 100);
+            }));
+
+        radio.PhonesMicGainLevelReported += v =>
+            PostToUi(() => ApplyReportedAudio(() =>
+            {
+                PMicGain = Math.Clamp(v, 0, 100);
+            }));
+
+        radio.DigitalVolumeLevelReported += v =>
+            PostToUi(() => ApplyReportedAudio(() =>
+            {
+                DVolume = Math.Clamp(v, 0, 100);
+            }));
+
+        radio.DigitalMicGainLevelReported += v =>
+            PostToUi(() => ApplyReportedAudio(() =>
+            {
+                if (RemoteAudio && v <= 0)
+                {
+                    AppendLog($"Digital Mic reported {v} (ignored 0 while Remote)");
+                    return;
+                }
+                DMicGain = Math.Clamp(v, 0, 100);
+            }));
+
+        radio.SpeakerVolumeReported += v =>
+            PostToUi(() => ApplyReportedAudio(() =>
+            {
+                if (IsDigitalAudio) DVolume = Math.Clamp(v, 0, 100);
+                else PVolume = Math.Clamp(v, 0, 100);
+            }));
+
+        radio.MicVolumeReported += v =>
+            PostToUi(() => ApplyReportedAudio(() =>
+            {
+                /* Host CMD_SET_MIC_VOLUME is phones Mic_Volume (often 0). Do not
+                 * write Digital MIC — that zeros remote WSJT TX. */
+                if (!IsDigitalAudio) PMicGain = Math.Clamp(v, 0, 100);
+            }));
+
+        radio.AudioDigitalModeReported += isDigital =>
+            PostToUi(() => ApplyReportedAudio(() =>
+            {
+                if (RemoteAudio)
+                {
+                    AppendLog($"Audio mode reported: {(isDigital ? "D" : "P")} (ignored while Remote)");
+                    return;
+                }
+                IsDigitalAudio = isDigital;
+                AppendLog($"Audio mode reported: {(isDigital ? "D" : "P")}");
+            }));
+
+        radio.AudioDeviceReported += dev =>
+            PostToUi(() => ApplyReportedAudio(() =>
+            {
+                // Remote (2/3) is a client overlay — do not adopt it as local Digital/Phones sticky.
+                if (dev == Opcodes.REMOTE_SOUND_DEVICE ||
+                    dev == Opcodes.REMOTE_DIGITAL_SOUND_DEVICE ||
+                    RemoteAudio)
+                {
+                    AppendLog($"Audio device reported: {dev} (ignored for local sticky; Remote={RemoteAudio})");
+                    return;
+                }
+                IsDigitalAudio = dev == Opcodes.DIGITAL_SOUND_DEVICE;
+                string label = dev == Opcodes.DIGITAL_SOUND_DEVICE ? "D" : "P";
+                AppendLog($"Audio device reported: {dev} ({label})");
+            }));
+
+        // CW tab bidirectional reports
+        radio.CwKeyerModeReported += v =>
+            PostToUi(() => ApplyReportedCw(() =>
+            {
+                CwKeyerMode = Math.Clamp(v, 0, CwKeyerModeOptions.Count - 1);
+            }));
+
+        radio.CwMemTextWpmReported += v =>
+            PostToUi(() => ApplyReportedCw(() =>
+            {
+                CwMemTextWpm = ClientSettingsStore.ClampCwMemTextWpm(v);
+                AppendLog($"CwMemTextWpm (Farnsworth) reported: {(CwMemTextWpm <= 0 ? "Off" : CwMemTextWpm.ToString(CultureInfo.InvariantCulture))}");
+            }));
+
+        radio.CwSpacingReported += v =>
+            PostToUi(() => ApplyReportedCw(() =>
+            {
+                CwSpacing = Math.Clamp(v, 0, CwSpacingOptions.Count - 1);
+            }));
+
+        radio.CwPaddleReported += v =>
+            PostToUi(() => ApplyReportedCw(() =>
+            {
+                CwPaddle = Math.Clamp(v, 0, CwPaddleOptions.Count - 1);
+            }));
+
+        radio.CwWeightReported += v =>
+            PostToUi(() => ApplyReportedCw(() =>
+            {
+                int idx = Array.IndexOf(CwWeightValues, v);
+                if (idx >= 0) CwWeightIndex = idx;
+            }));
+
+        radio.CwWpmReported += v =>
+            PostToUi(() => ApplyReportedCw(() =>
+            {
+                CwSpeed = Math.Clamp(v, 5, 60);
+            }));
+
+        radio.CwTxHoldReported += v =>
+            PostToUi(() => ApplyReportedCw(() =>
+            {
+                CwHold = Math.Clamp(v, 1, 500);
+            }));
+
+        radio.CompressionLevelReported += level =>
+            PostToUi(() =>
+            {
+                _suppressCompressionCommand = true;
+                Compression = Math.Clamp(level, 0, 24);
+                _suppressCompressionCommand = false;
+            });
+
+        radio.MonitorReported += on =>
+            PostToUi(() =>
+            {
+                _suppressMonitorCommand = true;
+                MonitorOn = on;
+                _suppressMonitorCommand = false;
+            });
+
+        radio.NbEnableReported += on =>
+            PostToUi(() =>
+            {
+                _suppressNbCommand = true;
+                NbOn = on;
+                _suppressNbCommand = false;
+            });
+
+        radio.NbPulseWidthReported += us =>
+            PostToUi(() =>
+            {
+                _suppressNbCommand = true;
+                NbPulse = us;
+                _suppressNbCommand = false;
+            });
+
+        radio.NbThresholdReported += thr =>
+            PostToUi(() =>
+            {
+                _suppressNbCommand = true;
+                NbThreshold = thr;
+                _suppressNbCommand = false;
+            });
+
+        radio.NrValueReported += nrValue =>
+            PostToUi(() =>
+            {
+                _suppressNrCommand = true;
+                try
+                {
+                    if (nrValue == 0)
+                        NrOn = false;
+                    else
+                    {
+                        NrLevel = Math.Clamp(nrValue, 0, 100);
+                        NrOn = true;
+                    }
+                }
+                finally { _suppressNrCommand = false; }
+            });
+
+        radio.AutoNotchReported += on =>
+            PostToUi(() =>
+            {
+                _suppressAnCommand = true;
+                AnOn = on;
+                _suppressAnCommand = false;
+            });
+
+        radio.ProficioTempReported += t =>
+            PostToUi(() => ProficioTempText = $"{t:0.0} °C");
+
+        radio.AmpTempReported += t =>
+            PostToUi(() => PaTempText = $"{t:0.0} °C");
+
+        radio.AmpCurrentReported += ma =>
+            PostToUi(() => PaCurrentText = $"{ma} mA");
+
+        radio.ServerKeepAliveLost += () =>
+            PostToUi(() =>
+            {
+                if (_serversOurs && !_keepAliveGraceUsed && _keepAlivesReceived == 0 &&
+                    (DateTime.UtcNow - _serversLaunchedUtc).TotalSeconds < 45)
+                {
+                    _keepAliveGraceUsed = true;
+                    try { _radio?.ResetKeepAliveWatch(); } catch { /* ignore */ }
+                    AppendLog("Launch: cold start - keep-alive grace extended");
+                    return;
+                }
+                StatusText = "WARNING: keep-alive lost";
+                AppendLog("Server keep-alive lost.");
+            });
+
+        radio.SpectrumUpdated += update =>
+        {
+            _spectrumFrameCounter = (_spectrumFrameCounter + 1) % SpectrumRefreshDivisor;
+            if (_spectrumFrameCounter != 0) return;
+
+            var enriched = EnrichSpectrum(update);
+            int n = Interlocked.Increment(ref _spectrumFrames);
+            PostToUi(() =>
+            {
+                CurrentSpectrum = enriched;
+                if (n == 1)
+                {
+                    AppendLog($"Spectrum: {enriched.Data.Length} bins");
+                    StatusText = "Connected — spectrum OK";
+                }
+                if (n % 50 == 0) UpdatePacketStats();
+            });
+        };
+    }
+
+    private SpectrumUpdate EnrichSpectrum(SpectrumUpdate update)
+    {
+        string m = UseVfoA
+            ? (ModeText ?? "").Trim().ToUpperInvariant()
+            : (VfoBModeText ?? "").Trim().ToUpperInvariant();
+        GetFilterOffsets(m, out int low, out int high);
+        int pitchHz = m is "CW"
+            ? CwPitchValues[Math.Clamp(CwPitchIndex, 0, CwPitchValues.Length - 1)]
+            : 0;
+        long center = UseVfoA ? _frequencyHz : _vfoBFrequencyHz;
+        return update with
+        {
+            CenterFrequencyHz = center > 0 ? center : update.CenterFrequencyHz,
+            SpanHz = update.SpanHz > 0 ? update.SpanHz : SpectrumUpdate.DefaultPanadapterSpanHz,
+            FilterLowHz = low,
+            FilterHighHz = high,
+            CwPitchHz = pitchHz,
+            MinDb = -140f,
+            MaxDb = 0f
+        };
+    }
+
+    /// <summary>Push current Lo/Hi/CW into the spectrum passband marker (WPF sideband mapping).</summary>
+    private void RefreshSpectrumFilterOverlay()
+    {
+        if (CurrentSpectrum != null)
+            CurrentSpectrum = EnrichSpectrum(CurrentSpectrum);
+    }
+
+    private void GetFilterOffsets(string mode, out int lowHz, out int highHz)
+    {
+        int lo = LowCutHzValues[Math.Clamp(_lowCutIndex, 0, LowCutHzValues.Length - 1)];
+        int hi = HighCutHzValues[NormalizeHighCut(_highCutIndex, mode)];
+        int cw = CwFilterHzValues[Math.Clamp(_cwFilterIndex, 0, CwFilterHzValues.Length - 1)];
+        string m = (mode ?? "").Trim().ToUpperInvariant();
+
+        switch (m)
+        {
+            case "LSB":
+                // LSB: high audio cut → outer (more negative); low audio cut → inner
+                lowHz = -hi;
+                highHz = -lo;
+                break;
+            case "CW":
+                lowHz = -cw / 2;
+                highHz = +cw / 2;
+                break;
+            case "AM":
+            case "FM":
+                lowHz = -hi;
+                highHz = +hi;
+                break;
+            case "TUNE":
+                lowHz = -100;
+                highHz = 100;
+                break;
+            default:
+                // USB / DIG-U / other
+                lowHz = +lo;
+                highHz = +hi;
+                break;
+        }
+    }
+
+    private void UpdateFrequencyUi(long hz)
+    {
+        FrequencyText = FormatFrequency(hz);
+        FrequencyMhzEdit = FormatMhz(hz);
+        FrequencyDisplayMhz = FormatMhz(hz);
+    }
+
+    private void UpdatePacketStats()
+    {
+        PacketStatsText = $"Pkts {_packetsReceived} | KA {_keepAlivesReceived} | D5 {_panPacketsReceived} | Spec {_spectrumFrames}";
+    }
+
+    private void OnDebugLogMessage(string message) =>
+        PostToUi(() => AppendLog(message, fromCore: true));
+
+    private static void PostToUi(Action action)
+    {
+        if (Dispatcher.UIThread.CheckAccess()) action();
+        else Dispatcher.UIThread.Post(action);
+    }
+
+    internal void AppendLog(string line, bool fromCore = false)
+    {
+        if (LogUiPaused && fromCore)
+            return;
+
+        string stamp = DateTime.Now.ToString("HH:mm:ss", CultureInfo.InvariantCulture);
+        LogLines.Add($"[{stamp}] {line}");
+        while (LogLines.Count > 800)
+            LogLines.RemoveAt(0);
+    }
+
+    private static string FormatFrequency(long hz)
+    {
+        if (hz >= 1_000_000)
+            return (hz / 1_000_000.0).ToString("0.000000", CultureInfo.InvariantCulture) + " MHz";
+        if (hz >= 1_000)
+            return (hz / 1_000.0).ToString("0.000", CultureInfo.InvariantCulture) + " kHz";
+        return hz + " Hz";
+    }
+
+    private static string FormatMhz(long hz) =>
+        (hz / 1_000_000.0).ToString("0.000000", CultureInfo.InvariantCulture);
+
+    private static string FormatStep(long hz) => hz switch
+    {
+        10 => "10 Hz",
+        100 => "100 Hz",
+        1_000 => "1 kHz",
+        10_000 => "10 kHz",
+        100_000 => "100 kHz",
+        _ => hz + " Hz"
+    };
+
+    private static bool TryParseMhz(string text, out long hz)
+    {
+        hz = 0;
+        if (string.IsNullOrWhiteSpace(text)) return false;
+        string t = text.Trim().ToLowerInvariant().Replace("mhz", "").Replace(" ", "");
+        if (!double.TryParse(t, NumberStyles.Float, CultureInfo.InvariantCulture, out double mhz) &&
+            !double.TryParse(t, NumberStyles.Float, CultureInfo.CurrentCulture, out mhz))
+            return false;
+        if (mhz <= 0 || mhz > 60) return false;
+        hz = (long)Math.Round(mhz * 1_000_000.0);
+        return hz >= 10_000;
+    }
+
+    private static string BandNameForFrequency(long hz) => hz switch
+    {
+        >= 135_000 and < 138_000 => "2200m",
+        >= 470_000 and < 480_000 => "630m",
+        >= 1_800_000 and < 2_000_000 => "160m",
+        >= 3_500_000 and < 4_000_000 => "80m",
+        >= 5_000_000 and < 5_500_000 => "60m",
+        >= 7_000_000 and < 7_300_000 => "40m",
+        >= 10_100_000 and < 10_150_000 => "30m",
+        >= 14_000_000 and < 14_350_000 => "20m",
+        >= 18_068_000 and < 18_168_000 => "17m",
+        >= 21_000_000 and < 21_450_000 => "15m",
+        >= 24_890_000 and < 24_990_000 => "12m",
+        >= 28_000_000 and < 29_700_000 => "10m",
+        _ => "—"
+    };
+
+    /// <summary>Default mode for band defaults / GEN (WPF-style).</summary>
+    public static string DefaultModeForFrequency(long hz)
+    {
+        if (hz < 1_000_000) return "USB"; // LF cal carriers
+        if (hz < 10_000_000) return "LSB"; // 160–40 typically LSB
+        return "USB";
+    }
+
+    private static bool TryBandDefaultHz(string key, out long hz, out string label)
+    {
+        switch (key.Trim().ToLowerInvariant())
+        {
+            case "2200": hz = 136_000; label = "2200m"; return true;
+            case "630": hz = 474_200; label = "630m"; return true;
+            case "160": hz = 1_800_000; label = "160m"; return true;
+            case "80": hz = 3_500_000; label = "80m"; return true;
+            case "60": hz = 5_350_000; label = "60m"; return true;
+            case "40": hz = 7_000_000; label = "40m"; return true;
+            case "30": hz = 10_100_000; label = "30m"; return true;
+            case "20": hz = 14_000_000; label = "20m"; return true;
+            case "17": hz = 18_100_000; label = "17m"; return true;
+            case "15": hz = 21_000_000; label = "15m"; return true;
+            case "12": hz = 24_900_000; label = "12m"; return true;
+            case "10": hz = 28_000_000; label = "10m"; return true;
+            default: hz = 0; label = ""; return false;
+        }
+    }
+
+    private void DisposeRadio()
+    {
+        if (_radio == null) return;
+        try { _radio.Stop(); } catch (Exception ex) { AppendLog($"Stop: {ex.Message}"); }
+        try { _radio.Dispose(); } catch { /* ignore */ }
+        _radio = null;
+    }
+
+    public void Dispose()
+    {
+        if (_disposed) return;
+        _disposed = true;
+        if (_freqCalEntryHeld)
+            _ = LeaveFreqCalTab(sendToRadio: false);
+        CancelKeyerPlayPttRelease(releasePtt: false);
+        _keyerPlayOwnsPtt = false;
+        try { RemotePhonesLauncher.StopAll(); } catch { /* ignore */ }
+        DebugMonitor.LogMessage -= OnDebugLogMessage;
+        SpectrumDisplaySettings.Instance.Changed -= OnSpectrumSettingsChanged;
+        AppearanceSettings.Instance.Changed -= OnAppearanceSettingsChanged;
+        if (_alcIdleTimer != null)
+        {
+            _alcIdleTimer.Stop();
+            _alcIdleTimer = null;
+        }
+
+        StopFreqCalManualPpmTimer();
+        _freqCalManualPpmTimer = null;
+        if (_settingsSaveTimer != null)
+        {
+            _settingsSaveTimer.Stop();
+            _settingsSaveTimer = null;
+        }
+
+        if (_lastUsedSaveTimer != null)
+        {
+            _lastUsedSaveTimer.Stop();
+            _lastUsedSaveTimer = null;
+        }
+
+        if (!IsCalibrationOrIqSessionActive())
+            SaveLastUsedForCurrentBand();
+        SaveClientSettingsNow();
+        DisposeRadio();
+    }
+}

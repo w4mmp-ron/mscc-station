@@ -1,0 +1,23 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             x:Class="MSCC.Avalonia.Controls.SpectrumDisplayControl"
+             Background="#FF0A0A12"
+             MinHeight="180"
+             ClipToBounds="True">
+  <Grid>
+    <Image x:Name="SpectrumImage"
+           Stretch="Fill"
+           HorizontalAlignment="Stretch"
+           VerticalAlignment="Stretch" />
+    <Border HorizontalAlignment="Left" VerticalAlignment="Top"
+            Margin="6,4,0,0" Padding="6,2"
+            Background="#AA222222" CornerRadius="3"
+            IsHitTestVisible="False">
+      <TextBlock x:Name="HintText"
+                 Text="Spectrum / waterfall — click to tune"
+                 FontSize="11"
+                 Foreground="#FF88AACC"
+                 FontFamily="Consolas, Courier New, monospace" />
+    </Border>
+  </Grid>
+</UserControl>

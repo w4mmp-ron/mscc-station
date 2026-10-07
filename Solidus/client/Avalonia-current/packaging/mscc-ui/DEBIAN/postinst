@@ -1,0 +1,20 @@
+#!/bin/sh
+set -e
+# Ensure launcher + app binary are executable (tar from Windows may drop +x)
+chmod 755 /usr/bin/mscc-ui 2>/dev/null || true
+if [ -f /opt/mscc-ui/MSCC.Avalonia ]; then
+  chmod 755 /opt/mscc-ui/MSCC.Avalonia
+fi
+# Native libs need readable/exec for loader
+find /opt/mscc-ui -type f \( -name '*.so' -o -name 'MSCC.Avalonia' -o -name 'createdump' \) \
+  -exec chmod a+rX {} \; 2>/dev/null || true
+# Refresh icon / desktop caches when available
+if command -v update-desktop-database >/dev/null 2>&1; then
+  update-desktop-database -q /usr/share/applications 2>/dev/null || true
+fi
+if command -v gtk-update-icon-cache >/dev/null 2>&1; then
+  gtk-update-icon-cache -q /usr/share/icons/hicolor 2>/dev/null || true
+fi
+echo "mscc-ui installed. Menu: MSCC → MSCC UI  (or run: mscc-ui)"
+echo "Start servers first with MSCC Start, then open MSCC UI."
+exit 0

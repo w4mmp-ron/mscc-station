@@ -1,0 +1,406 @@
+using System.Globalization;
+using Avalonia;
+using Avalonia.Controls;
+using Avalonia.Controls.Primitives;
+using Avalonia.Input;
+using Avalonia.Interactivity;
+using Avalonia.Media;
+using Avalonia.Threading;
+using MSCC.Avalonia.ViewModels;
+using MsccDialog = MSCC.Avalonia.MsccDialog;
+
+namespace MSCC.Avalonia.Views;
+
+public partial class MainWindow : Window
+{
+    private DebugLogWindow? _logWindow;
+    private SpectrumWaterfallWindow? _swWindow;
+    private bool _closeReady;
+    private bool _tabChangeGuard;
+
+    public MainWindow()
+    {
+        InitializeComponent();
+        Closed += OnClosed;
+        Closing += OnClosing;
+        Opened += OnOpened;
+    }
+
+    private async void OnOpened(object? sender, EventArgs e)
+    {
+        SpectrumDisplay.FrequencyClicked += OnSpectrumFrequencyClicked;
+        if (DataContext is MainViewModel vm && vm.AutoStart)
+        {
+            await Task.Delay(500);
+            vm.AppendLog($"Auto: Connect on start (Host {vm.Host})");
+            if (vm.ConnectCommand.CanExecute(null))
+                await vm.ConnectCommand.ExecuteAsync(null);
+        }
+    }
+
+    private async void OnClosing(object? sender, WindowClosingEventArgs e)
+    {
+        if (_closeReady) return;
+        e.Cancel = true;
+        if (DataContext is MainViewModel vm)
+            vm.KickOwnedServerStop();
+        try
+        {
+            if (DataContext is MainViewModel vm2)
+                await vm2.PrepareForCloseAsync();
+        }
+        catch { /* ignore */ }
+        _closeReady = true;
+        Dispatcher.UIThread.Post(() => Close());
+    }
+
+    private async void MainTabs_OnSelectionChanged(object? sender, SelectionChangedEventArgs e)
+    {
+        if (_tabChangeGuard) return;
+        if (DataContext is not MainViewModel vm) return;
+        var added = e.AddedItems.Count > 0 ? e.AddedItems[0] as TabItem : null;
+        var removed = e.RemovedItems.Count > 0 ? e.RemovedItems[0] as TabItem : null;
+        if (added == FreqCalTab)
+        {
+            await vm.EnterFreqCalTab();
+            return;
+        }
+        if (removed != FreqCalTab)
+            return;
+        if (vm.FreqCalManualMode)
+        {
+            _tabChangeGuard = true;
+            Dispatcher.UIThread.Post(() =>
+            {
+                MainTabs.SelectedItem = FreqCalTab;
+                _tabChangeGuard = false;
+            });
+            await MsccDialog.AlertAsync("EXIT MANUAL CALIBRATION FIRST.");
+            return;
+        }
+        if (vm.FreqCalInProgress &&
+            (added == QrpCalTab || added == AmpCalTab || added == TxIqTab))
+        {
+            _tabChangeGuard = true;
+            Dispatcher.UIThread.Post(() =>
+            {
+                MainTabs.SelectedItem = FreqCalTab;
+                _tabChangeGuard = false;
+            });
+            await MsccDialog.AlertAsync("FREQUENCY CALIBRATION IN PROGRESS.");
+            return;
+        }
+        if (vm.FreqCalInProgress)
+        {
+            vm.DeferFreqCalRestore();
+            return;
+        }
+        await vm.LeaveFreqCalTab();
+    }
+
+    /// <summary>Avalonia int bindings often only commit on pointer-up; send 0xA2 while dragging.</summary>
+    private void PowerCalSlider_OnValueChanged(object? sender, RangeBaseValueChangedEventArgs e)
+    {
+        if (DataContext is MainViewModel vm)
+            vm.ApplyPowerCalSliderLive(e.NewValue);
+    }
+
+    private void AmpCalSlider_OnValueChanged(object? sender, RangeBaseValueChangedEventArgs e)
+    {
+        if (DataContext is MainViewModel vm)
+            vm.ApplyAmpCalSliderLive(e.NewValue);
+    }
+
+    private void HostPick_OnSelectionChanged(object? sender, SelectionChangedEventArgs e)
+    {
+        if (DataContext is not MainViewModel vm) return;
+        if (e.AddedItems.Count == 0) return;
+        if (e.AddedItems[0] is string s && !string.IsNullOrWhiteSpace(s))
+            vm.Host = s;
+    }
+
+    private void OnSpectrumFrequencyClicked(object? sender, long frequencyHz)
+    {
+        if (DataContext is MainViewModel vm)
+            _ = vm.TuneFromSpectrumAsync(frequencyHz);
+    }
+
+    private void VfoAPanel_OnPointerPressed(object? sender, PointerPressedEventArgs e)
+    {
+        if (DataContext is MainViewModel vm)
+            _ = vm.SelectVfoAsync(useVfoA: true);
+    }
+
+    private void VfoBPanel_OnPointerPressed(object? sender, PointerPressedEventArgs e)
+    {
+        if (DataContext is MainViewModel vm)
+            _ = vm.SelectVfoAsync(useVfoA: false);
+    }
+
+    /// <summary>Wheel over VFO A panel (not on digits) uses left-rail Step.</summary>
+    private void VfoAPanel_OnPointerWheelChanged(object? sender, PointerWheelEventArgs e)
+    {
+        if (e.Handled) return;
+        if (DataContext is not MainViewModel vm)
+            return;
+
+        int direction = WheelDirection(e);
+        if (direction == 0)
+            return;
+
+        _ = vm.NudgeFrequencyByDigitAsync(direction, GetLeftRailStepHz(vm), quantize: false, vfoA: true);
+        e.Handled = true;
+    }
+
+    private void VfoBPanel_OnPointerWheelChanged(object? sender, PointerWheelEventArgs e)
+    {
+        if (e.Handled) return;
+        if (DataContext is not MainViewModel vm)
+            return;
+
+        int direction = WheelDirection(e);
+        if (direction == 0)
+            return;
+
+        _ = vm.NudgeFrequencyByDigitAsync(direction, GetLeftRailStepHz(vm), quantize: false, vfoA: false);
+        e.Handled = true;
+    }
+
+    private static long GetLeftRailStepHz(MainViewModel vm)
+    {
+        // Mirror ViewModel StepChoices default when only label is public
+        return vm.GetCurrentStepHz();
+    }
+
+    private void VfoAFreqText_OnPointerWheelChanged(object? sender, PointerWheelEventArgs e)
+    {
+        HandleDigitWheel(sender, e, vfoA: true);
+    }
+
+    private void VfoBFreqText_OnPointerWheelChanged(object? sender, PointerWheelEventArgs e)
+    {
+        HandleDigitWheel(sender, e, vfoA: false);
+    }
+
+    private void VfoAFreqText_OnPointerMoved(object? sender, PointerEventArgs e)
+    {
+        UpdateHoverStep(sender, e);
+    }
+
+    private void VfoBFreqText_OnPointerMoved(object? sender, PointerEventArgs e)
+    {
+        UpdateHoverStep(sender, e);
+    }
+
+    private void VfoFreqText_OnPointerExited(object? sender, PointerEventArgs e)
+    {
+        if (DataContext is MainViewModel vm)
+            vm.SetHoverTuneStep(0);
+    }
+
+    private void HandleDigitWheel(object? sender, PointerWheelEventArgs e, bool vfoA)
+    {
+        if (sender is not TextBlock freqTb || DataContext is not MainViewModel vm)
+            return;
+
+        int direction = WheelDirection(e);
+        if (direction == 0)
+            return;
+
+        Point pos = e.GetPosition(freqTb);
+        if (!TryGetDigitStepHz(freqTb, pos, out long stepHz))
+        {
+            // Not over a digit — VFO A uses left-rail Step; VFO B no-op
+            if (vfoA)
+                _ = vm.NudgeFrequencyAsync(direction);
+            e.Handled = true;
+            return;
+        }
+
+        _ = vm.NudgeFrequencyByDigitAsync(direction, stepHz, quantize: true, vfoA: vfoA);
+        vm.SetHoverTuneStep(stepHz);
+        e.Handled = true;
+    }
+
+    private void UpdateHoverStep(object? sender, PointerEventArgs e)
+    {
+        if (sender is not TextBlock freqTb || DataContext is not MainViewModel vm)
+            return;
+
+        Point pos = e.GetPosition(freqTb);
+        if (TryGetDigitStepHz(freqTb, pos, out long stepHz))
+            vm.SetHoverTuneStep(stepHz);
+        else
+            vm.SetHoverTuneStep(0);
+    }
+
+    private static int WheelDirection(PointerWheelEventArgs e)
+    {
+        if (e.Delta.Y > 0) return 1;
+        if (e.Delta.Y < 0) return -1;
+        return 0;
+    }
+
+    /// <summary>
+    /// WPF-style digit hit-test: step = 10^(digits to the right of hovered digit).
+    /// Display is MHz F6 e.g. "7.000000" → over 1 kHz place → step 1000 Hz.
+    /// </summary>
+    private static bool TryGetDigitStepHz(TextBlock freqTb, Point pos, out long stepHz)
+    {
+        stepHz = 0;
+        string freqPart = freqTb.Text ?? "";
+        if (string.IsNullOrWhiteSpace(freqPart))
+            return false;
+
+        double w = freqTb.Bounds.Width;
+        double h = freqTb.Bounds.Height;
+        if (w < 2 || h < 2)
+            return false;
+        if (pos.X < 0 || pos.X > w || pos.Y < -2 || pos.Y > h + 2)
+            return false;
+
+        var typeface = new Typeface(
+            freqTb.FontFamily,
+            freqTb.FontStyle,
+            freqTb.FontWeight,
+            freqTb.FontStretch);
+
+        double fontSize = freqTb.FontSize > 0 ? freqTb.FontSize : 14;
+
+        // Measure full string and prefixes for hit testing
+        double fullWidth = MeasureTextWidth(freqPart, typeface, fontSize);
+        if (fullWidth < 1)
+            return false;
+
+        // Centered text: map X into text bounds
+        double textLeft = Math.Max(0, (w - fullWidth) / 2.0);
+        double xInText = pos.X - textLeft;
+        if (xInText < 0 || xInText > fullWidth)
+            return false;
+
+        int charIdx = 0;
+        for (int i = 0; i < freqPart.Length; i++)
+        {
+            string prefix = freqPart.Substring(0, i + 1);
+            double preW = MeasureTextWidth(prefix, typeface, fontSize);
+            if (xInText < preW)
+            {
+                charIdx = i;
+                break;
+            }
+            charIdx = i;
+        }
+
+        if (charIdx < 0 || charIdx >= freqPart.Length)
+            return false;
+
+        char c = freqPart[charIdx];
+        if (!char.IsDigit(c))
+        {
+            // Over '.' — use digit immediately to the left
+            int leftDigitIdx = -1;
+            for (int j = charIdx - 1; j >= 0; j--)
+            {
+                if (char.IsDigit(freqPart[j]))
+                {
+                    leftDigitIdx = j;
+                    break;
+                }
+            }
+            if (leftDigitIdx < 0)
+                return false;
+            charIdx = leftDigitIdx;
+        }
+
+        int digitsToRight = 0;
+        for (int j = charIdx + 1; j < freqPart.Length; j++)
+        {
+            if (char.IsDigit(freqPart[j]))
+                digitsToRight++;
+        }
+
+        stepHz = 1;
+        for (int k = 0; k < digitsToRight; k++)
+        {
+            if (stepHz > long.MaxValue / 10)
+                break;
+            stepHz *= 10;
+        }
+
+        return stepHz > 0;
+    }
+
+    private static double MeasureTextWidth(string text, Typeface typeface, double fontSize)
+    {
+        var ft = new FormattedText(
+            text,
+            CultureInfo.CurrentCulture,
+            FlowDirection.LeftToRight,
+            typeface,
+            fontSize,
+            Brushes.White);
+        return ft.Width;
+    }
+
+    /// <summary>Double-click VFO cycles tune step (same as left Step button).</summary>
+    private void VfoAPanel_OnDoubleTapped(object? sender, TappedEventArgs e)
+    {
+        if (DataContext is MainViewModel vm && vm.CycleStepCommand.CanExecute(null))
+            vm.CycleStepCommand.Execute(null);
+        e.Handled = true;
+    }
+
+    /// <summary>Open debug log popup (single instance), like WPF DebugLogWindow.</summary>
+    private void LogButton_OnClick(object? sender, RoutedEventArgs e)
+    {
+        if (_logWindow != null)
+        {
+            _logWindow.Activate();
+            return;
+        }
+
+        _logWindow = new DebugLogWindow
+        {
+            DataContext = DataContext,
+        };
+        _logWindow.Closed += (_, _) => _logWindow = null;
+
+        try { _logWindow.Show(this); }
+        catch { _logWindow.Show(); }
+    }
+
+    /// <summary>Open spectrum / waterfall (S/W) controls — single instance.</summary>
+    private void SwButton_OnClick(object? sender, RoutedEventArgs e)
+    {
+        if (_swWindow != null)
+        {
+            _swWindow.Activate();
+            return;
+        }
+
+        _swWindow = new SpectrumWaterfallWindow(DataContext as MainViewModel);
+        _swWindow.Closed += (_, _) => _swWindow = null;
+
+        try { _swWindow.Show(this); }
+        catch { _swWindow.Show(); }
+    }
+
+    private void OnClosed(object? sender, EventArgs e)
+    {
+        SpectrumDisplay.FrequencyClicked -= OnSpectrumFrequencyClicked;
+        if (_logWindow != null)
+        {
+            try { _logWindow.Close(); } catch { /* ignore */ }
+            _logWindow = null;
+        }
+
+        if (_swWindow != null)
+        {
+            try { _swWindow.Close(); } catch { /* ignore */ }
+            _swWindow = null;
+        }
+
+        if (DataContext is MainViewModel vm)
+            vm.Dispose();
+    }
+}

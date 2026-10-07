@@ -1,0 +1,18 @@
+#!/bin/sh
+# MSCC UI (Avalonia) launcher — self-contained app under /opt/mscc-ui
+set -e
+APPDIR="/opt/mscc-ui"
+BIN="$APPDIR/MSCC.Avalonia"
+if [ ! -x "$BIN" ]; then
+  echo "mscc-ui: missing $BIN — reinstall package mscc-ui" >&2
+  exit 1
+fi
+# App natives first (Skia). Then mscc-portaudio Pulse+ALSA (same idea as mscc.sh).
+# Debian ALSA-only libportaudio in /lib hides VirtualA / VirtualB.monitor.
+PA_LIB=""
+if [ -e /usr/local/lib/libportaudio.so.2 ] || [ -e /usr/local/lib/libportaudio.so ]; then
+  PA_LIB="/usr/local/lib"
+fi
+export LD_LIBRARY_PATH="$APPDIR${PA_LIB:+:$PA_LIB}${LD_LIBRARY_PATH:+:$LD_LIBRARY_PATH}"
+cd "$APPDIR" || exit 1
+exec "$BIN" "$@"
