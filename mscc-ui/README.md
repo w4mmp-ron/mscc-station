@@ -36,7 +36,7 @@ Root also holds **release installers** (e.g. `mscc-net9-R*-install.exe`), group 
               ┌────────────────┼────────────────┐
               ▼                ▼                ▼
         PSoC radio        PIC keyer         (optional CAT)
-     (Proficio-firmware)   (keyer/)
+     (radio-psoc-firmware) (keyer/)
 ```
 
 Ron prefers **RPi for all terminal / server work** and **does not** use Avalonia day-to-day. Typical Ron path: **Linux servers** + optional **Windows WPF** remote client.  
@@ -72,7 +72,7 @@ Examples: appliance startup, NR/AN bi-dir, keep-alive tags, keyer `0x9C` USB pac
 Cross-cutting features (e.g. keyer CQ memory) touch:
 
 1. **`keyer/`** (PIC)  
-2. **`Proficio-firmware/`** (USB → I²C)  
+2. **`radio-psoc-firmware/`** (USB → I²C)  
 3. **Servers** (`rpi/` and/or `linux/` and/or Windows)  
 4. **UI** (WPF and/or Avalonia via Core)
 
@@ -110,7 +110,7 @@ Project reference: **MSCC.Core** in `windows-work-tree/mscc-mscc/mscc-new/src/MS
 | Path | Contents |
 |------|----------|
 | `../keyer/` | PIC16F18326 sources, KEYER-MEMORY docs, hex |
-| `../Proficio-firmware/` | Proficio MKII/Legacy PSoC + Creator bootloader |
+| `../radio-psoc-firmware/` | PSoC firmware for all radios (Proficio, Geminus, Ultimus) + Creator bootloader |
 
 ---
 
@@ -142,7 +142,7 @@ Project reference: **MSCC.Core** in `windows-work-tree/mscc-mscc/mscc-new/src/MS
 
 ### Keyer / PSoC change
 
-1. Edit under `../keyer/` or `../Proficio-firmware/`.  
+1. Edit under `../keyer/` or `../radio-psoc-firmware/`.  
 2. Note server dependencies (e.g. `0x9C` packing) for **both** ms-sdr trees (`rpi/` and `linux/`).  
 3. Note UI dependencies for **both** UIs via Core.
 
@@ -159,7 +159,7 @@ Project reference: **MSCC.Core** in `windows-work-tree/mscc-mscc/mscc-new/src/MS
 | Linux ms-sdr (Ubuntu) | `../linux/ms-sdr-linux/` |
 | Avalonia / Linux GUI | `Avalonia-Migration/` |
 | PIC CQ memory | `../keyer/` |
-| Proficio firmware | `../Proficio-firmware/` |
+| Radio PSoC firmware | `../radio-psoc-firmware/` |
 | Pi `.deb` packaging | `../rpi/mscc-deb/` |
 
 ---

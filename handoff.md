@@ -84,7 +84,7 @@ mscc-station/
   rpi/                       ← Ron’s Pi trees (guide only for Ubuntu work)
     PI-LOCAL-WSJTX-2026-09-16.md  ← CAT / VirtualA-B / ALC (read this)
     ms-sdr-linux/ SDRcore-*-linux/ mscc-deb/ mscc-binaries/ Rpi-installers/
-  Proficio-firmware/         ← PSoC Creator trees (was repo-root Release-Proficio-*)
+  radio-psoc-firmware/       ← PSoC Creator trees, all radios (was Proficio-firmware/)
   mscc-ui/Release/avalonia/arm64/   ← Pi debs
   mscc-ui/Release/avalonia/x86_64/  ← Ubuntu UI + init-gui
 

@@ -104,11 +104,12 @@ Client UI still needs the **Remote Audio** checkbox (Phones + checked → send *
 
 | Path | Notes |
 |------|--------|
-| [`Proficio-firmware/`](Proficio-firmware/README.md) | PSoC Creator trees (moved from repo root) |
-| `Proficio-firmware/Release-Proficio-MKII-PTT/` | MKII PTT |
-| `Proficio-firmware/Release-Proficio-MKII-ATU/` | MKII ATU |
-| `Proficio-firmware/Release-Proficio-Legacy/` | Legacy Proficio |
-| `Proficio-firmware/bootloader/` | PSoC Creator bootloader project |
+| [`radio-psoc-firmware/`](radio-psoc-firmware/README.md) | PSoC Creator trees for all radios (Proficio, Geminus, Ultimus) |
+| `radio-psoc-firmware/Proficio-MKII-PTT/` | MKII PTT |
+| `radio-psoc-firmware/Proficio-MKII-ATU/` | MKII ATU |
+| `radio-psoc-firmware/Proficio-Legacy/` | Legacy Proficio |
+| `radio-psoc-firmware/Proficio-bootloader/` | PSoC Creator bootloader project |
+| `radio-psoc-firmware/release/<RadioName>/` | Shipping `.cyacd` / `.hex` |
 | `linux/psoc-usb-bootload-linux/` | Ubuntu firmware **upload** tools (CLI + GUI) |
 | `rpi/psoc-usb-bootload-linux/` | Pi firmware upload tools (guide for Ubuntu) |
 
