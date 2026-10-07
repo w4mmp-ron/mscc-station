@@ -3,10 +3,9 @@
 | File | What it covers |
 |------|----------------|
 | [`MSCC-Operators-Guide-Windows-Release-0.pdf`](MSCC-Operators-Guide-Windows-Release-0.pdf) | MSCC Operator's Guide: Windows — **Release Version 0** (2026-10-06): local operation, firmware (Appendix A), Appendices B–F |
-| [`MSCC-Linux-Local-Operation-DRAFT.pdf`](MSCC-Linux-Local-Operation-DRAFT.pdf) | MSCC Operator's Guide: Linux and Raspberry Pi, local operation — **preliminary** |
-| [`MSCC-Remote-Operation-DRAFT.pdf`](MSCC-Remote-Operation-DRAFT.pdf) | MSCC Operator's Guide: Remote Operation — **preliminary** |
+| [`MSCC-Operators-Guide-Linux-Release-0.pdf`](MSCC-Operators-Guide-Linux-Release-0.pdf) | MSCC Operator's Guide: Linux (Ubuntu / Raspberry Pi) — **Release Version 0** (2026-10-07): local operation on Ubuntu Desktop and Raspberry Pi (MSCC Avalonia, mscc 1.0.50 / mscc-ui 0.6.72), firmware (Appendix A), Appendices B–G (G = Raspberry Pi setup differences) |
+| [`MSCC-Operators-Guide-Remote-Release-0.pdf`](MSCC-Operators-Guide-Remote-Release-0.pdf) | MSCC Operator's Guide: Remote Operation — **Release Version 0** (2026-10-07): client and host on the same LAN (Windows or Linux client → Raspberry Pi or Ubuntu host) |
 
-The Linux/Raspberry Pi and Remote guides are preliminary and predate some recent changes (for example SPECTRUM RESOLUTION, Save settings, and removal of the CW tab PHONES checkbox). Where they differ from the program, the program and the Windows guide are current.
 
 What changed in each release: [`installers/windows/CHANGELOG.md`](../../installers/windows/CHANGELOG.md), [`installers/linux/CHANGELOG.md`](../../installers/linux/CHANGELOG.md).
 
