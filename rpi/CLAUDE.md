@@ -59,6 +59,9 @@ adapter). Stew is looking at his end; Ron wants no changes until he reports. Che
 recv keeps sending (and keeps the local phones muted) until it gets `CTRL enable=0` or a
 restart; nothing notices a client that vanished. Multi-client: ms-sdr is single-session by
 design (`Session_Reject`); Ron only asked about the effort, nothing planned.
+Tailscale is not on the backup card image: Ron reinstalled it 2026-10-07 (`curl -fsSL
+https://tailscale.com/install.sh | sh`, `sudo tailscale up`) and sent Stew the new link, so
+the Pi is a new Tailscale device (address may differ from the one Stew used before).
 
 1. Test FREQ CAL STOP on the Pi (needs WPF 9.26.5+). Back burner (Ron 2026-09-27).
 2. cmd-046: TUNE power separate (Windows/Ubuntu trans + WPF). With Stew; no Pi change.
