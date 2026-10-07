@@ -1,13 +1,13 @@
 # MSCC on Ubuntu Desktop (x86_64)
 
-**This is not the Raspberry Pi kit.** Pi operators: [`rpi/pi-install/INSTALL.md`](rpi/pi-install/INSTALL.md).
+**This is not the Raspberry Pi kit.** Pi operators: [`installers/rpi/INSTALL.md`](installers/rpi/INSTALL.md).
 
 Verified on **Ubuntu 26.04.1**, kernel `7.0.0-31-generic` (`stew-HP-Notebook`).
 
 Ron’s Pi trees are under **`rpi/`** (guide only — do not edit those for this laptop).  
 Ubuntu working copy is **`linux/`**. Scripts: [`linux-build/`](linux-build/).
 
-**Share kit (GitHub web):** [`installers/linux/`](installers/linux/) — `mscc_*_amd64.deb`, init-gui, UI.  
+**Share kit (GitHub web):** [`installers/linux/`](installers/linux/) — `mscc-portaudio_19.8.2_amd64.deb`, `mscc_1.0.49_amd64.deb` (servers, includes factory calibration in `/usr/share/mscc/factory/`), `mscc-init-gui_1.0.13_all.deb`, `mscc-ui_0.6.71_amd64.deb`, optional `mscc-firmware_1.0.0_all.deb` (radio firmware in `/usr/share/mscc/firmware/`). Operators who just want to run MSCC: use [`installers/linux/INSTALL.md`](installers/linux/INSTALL.md); this page is the build-from-source path. Changes: [`installers/linux/CHANGELOG.md`](installers/linux/CHANGELOG.md).  
 Builder drop: [`mscc-ui/Release/avalonia/`](mscc-ui/Release/avalonia/)
 
 | Folder | Use |
@@ -120,7 +120,7 @@ ln -sfn "$USER_MSCC/bootloader"             /usr/local/bin/bootloader
 ln -sfn "$USER_MSCC/bootloader-gui"         /usr/local/bin/bootloader-gui
 ln -sfn "$USER_MSCC/mscc-virtual-audio.sh"  /usr/local/bin/mscc-virtual-audio
 
-apt-get install -y "$MSCC/mscc-ui/Release/avalonia/x86_64/mscc-init-gui_1.0.13_all.deb"
+apt-get install -y "$MSCC/installers/linux/mscc-init-gui_1.0.13_all.deb"
 EOF
 ```
 
@@ -131,7 +131,7 @@ EOF
 ## 4. Install Avalonia UI (amd64 `.deb`)
 
 ```bash
-sudo apt install -y ./mscc-ui/Release/avalonia/x86_64/mscc-ui_0.6.44_amd64.deb
+sudo apt install -y ./installers/linux/mscc-ui_0.6.71_amd64.deb
 ```
 
 Menu **MSCC UI**, or `mscc-ui`. Default host **127.0.0.1** port **8888**.
@@ -141,7 +141,7 @@ Rebuild later (does not touch the Pi arm64 UI):
 ```bash
 ./linux-build/mscc-ui-x64.sh
 ./linux-build/build-mscc-ui-deb-amd64.sh
-sudo apt install -y ./mscc-ui/Release/avalonia/x86_64/mscc-ui_0.6.44_amd64.deb
+sudo apt install -y ./mscc-ui/Release/avalonia/x86_64/mscc-ui_<version>_amd64.deb
 ```
 
 Needs a user-local **.NET 9** SDK at `$HOME/.dotnet` (Ubuntu 26.04 apt has SDK 10; the project stays net9.0).

@@ -4,9 +4,13 @@
 
 ## Package (this folder)
 
-Run the newest **`mscc-net9-R*-install.exe`** (Advanced Installer). Typical deploy folder: **`C:\mscc-net9`**.
+Run the newest **`mscc-net9-R*-install.exe`** (Advanced Installer) — currently **`mscc-net9-R10-4-0-install.exe`** (title bar 10.4.0). Older installers here are for roll-back only. Typical deploy folder: **`C:\mscc-net9`**.
 
 That installer is the **WPF** client plus Windows servers (`ms-sdr`, recv, trans).
+
+Factory calibration tables are installed next to the servers (`C:\mscc-net9\factory\`). After calibrating, press **Save settings** (right panel, under LOG) to keep the calibration for that radio on the computer running the servers.
+
+What changed: [`CHANGELOG.md`](CHANGELOG.md). Problem reports: https://multussdr.groups.io/g/main/topics
 
 ## Use
 

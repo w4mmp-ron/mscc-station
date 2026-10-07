@@ -5,24 +5,20 @@ Split by CPU. **Do not install an `arm64` `.deb` on an x86_64 Ubuntu PC** (and v
 
 | Folder | For | Packages |
 |--------|-----|----------|
-| **`arm64/`** | Raspberry Pi OS 64-bit | PortAudio, servers `mscc_1.0.42`, init-gui, Avalonia UI |
+| **`arm64/`** | Raspberry Pi OS 64-bit | Avalonia UI `mscc-ui_*_arm64.deb` (history) |
 | **`x86_64/`** | Ubuntu Desktop amd64 | Avalonia UI `mscc-ui_*_amd64.deb`, init-gui |
 
-Pi operator how-to: [`rpi/pi-install/INSTALL.md`](../../../rpi/pi-install/INSTALL.md).  
+Current operator kits: [`installers/`](../../../installers/) — Pi how-to [`installers/rpi/INSTALL.md`](../../../installers/rpi/INSTALL.md), Ubuntu how-to [`installers/linux/INSTALL.md`](../../../installers/linux/INSTALL.md). This folder is the builder drop / history.  
 Ubuntu laptop how-to: [`INSTALL-UBUNTU.md`](../../../INSTALL-UBUNTU.md). Pi sources: [`rpi/`](../../../rpi/). Ubuntu sources: [`linux/`](../../../linux/).
 
 ## Raspberry Pi (`arm64/`)
 
 ```bash
 cd arm64
-sudo apt install -y ./mscc-portaudio_19.8.2_arm64.deb
-sudo apt update
-sudo apt install -y ./mscc_1.0.42_arm64.deb
-sudo apt install -y ./mscc-init-gui_1.0.13_all.deb
-sudo apt install -y ./mscc-ui_0.6.44_arm64.deb
+ls *.deb    # pick the newest of each
 ```
 
-Servers **1.0.42** include FM (NFM). UI **0.6.44** has FM + FM Power.
+For an operator install use [`installers/rpi/`](../../../installers/rpi/) (current servers, UI and `mscc-init`), not this folder.
 
 ## Ubuntu x86_64 (`x86_64/`)
 
@@ -31,7 +27,7 @@ Servers: `mscc-portaudio_*_amd64.deb` then `mscc_*_amd64.deb` (current copies: [
 ```bash
 cd x86_64
 sudo apt install -y ./mscc-init-gui_1.0.13_all.deb
-sudo apt install -y ./mscc-ui_0.6.44_amd64.deb
+sudo apt install -y ./mscc-ui_0.6.71_amd64.deb   # current; same file as installers/linux/
 ```
 
 Then follow [`INSTALL-UBUNTU.md`](../../../INSTALL-UBUNTU.md) for compilers, PortAudio, tty0tty, and `./linux-build/mscc-linux.sh all`.

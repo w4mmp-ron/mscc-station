@@ -1,16 +1,30 @@
 # MSCC / Proficio station monorepo
 
-Private workspace for Multus SDR / MSCC / Proficio: **Linux servers**, **Windows & Linux UIs**, **PIC keyer**, **PSoC firmware**, and **STM32F411** migration.
+Workspace for Multus SDR / MSCC (Multus SDR Control Console) / Proficio: **Linux servers**, **Windows & Linux UIs**, **PIC keyer**, **PSoC firmware**, and **STM32F411** migration.
 
 | | |
 |--|--|
 | **GitHub** | https://github.com/w4mmp-ron/mscc-station |
 | **Owner** | w4mmp-ron (Ron) |
-| **Collaborator** | Stew (UI + Windows client / PCB) |
+| **Collaborator** | n8vet (Stew) (UI + Windows client / PCB) |
+| **Problem reports** | https://multussdr.groups.io/g/main/topics |
 
 ```bash
 git clone https://github.com/w4mmp-ron/mscc-station.git
 ```
+
+---
+
+## Operators: start here
+
+| What | Where |
+|------|-------|
+| **Installers** (pick your computer) | [`installers/`](installers/) — [`windows/`](installers/windows/), [`linux/`](installers/linux/) (Ubuntu amd64), [`rpi/`](installers/rpi/) (Pi OS 64-bit) |
+| **What changed** | Windows: [`installers/windows/CHANGELOG.md`](installers/windows/CHANGELOG.md) · Ubuntu: [`installers/linux/CHANGELOG.md`](installers/linux/CHANGELOG.md) · Raspberry Pi: see git history for `installers/rpi/` |
+| **Operator's guides (PDF)** | [`docs/manuals/`](docs/manuals/README.md) — Windows Operator's Guide Release 0; Linux/Raspberry Pi and Remote (preliminary) |
+| **Problems / questions** | https://multussdr.groups.io/g/main/topics |
+
+Do not install `*_arm64.deb` on Ubuntu or `*_amd64.deb` on a Pi.
 
 ---
 
@@ -34,12 +48,10 @@ git clone https://github.com/w4mmp-ron/mscc-station.git
 
 ## UI — `mscc-ui/`
 
-Active **client** work for both platforms lives here:
-
 | Path | Role |
 |------|------|
 | **`mscc-ui/windows-work-tree/`** | **Windows WPF** client (`MSCC.Wpf`), shared **`MSCC.Core`**, Windows servers (`ms-sdr-MKII`, recv/trans), **`MSCC-Remote`** host helper |
-| **`mscc-ui/Avalonia-Migration/`** | **Linux Avalonia** UI (`mscc-ui` deb for Pi) — parity with WPF; references **MSCC.Core** from the Windows tree |
+| **`mscc-ui/Avalonia-Migration/`** | **Linux Avalonia** UI (`mscc-ui` deb, Pi and Ubuntu) — parity with WPF; references **MSCC.Core** from the Windows tree |
 
 | Concern | Edit |
 |---------|------|
@@ -50,28 +62,26 @@ Active **client** work for both platforms lives here:
 
 **Rule of thumb:** stabilize features on **WPF**, keep **Avalonia** in sync; protocol changes go in **MSCC.Core** once.
 
-More detail (older layout notes may still appear under `mscc-ui/README.md`) — prefer this root map when paths conflict.
-
 ---
 
 ## Two Linux trees (do not mix)
 
-Ron moved Pi work under **`rpi/`**. Ubuntu laptop work lives under **`linux/`**. Treat `rpi/` as a **guide** when changing Ubuntu; do **not** edit `rpi/` for x86_64 fixes.
+Pi work lives under **`rpi/`**. Ubuntu laptop work lives under **`linux/`**. Treat `rpi/` as a **guide** when changing Ubuntu; do **not** edit `rpi/` for x86_64 fixes.
 
 | Tree | Who / host | How-to |
 |------|------------|--------|
-| **`rpi/`** | Ron / Raspberry Pi OS **arm64** | [`rpi/README.md`](rpi/README.md), [`rpi/pi-install/INSTALL.md`](rpi/pi-install/INSTALL.md) |
-| **`linux/`** | Stew / Ubuntu Desktop **x86_64** | [`linux/README.md`](linux/README.md), [`INSTALL-UBUNTU.md`](INSTALL-UBUNTU.md) |
+| **`rpi/`** | Ron / Raspberry Pi OS **arm64** | [`rpi/README.md`](rpi/README.md), [`installers/rpi/INSTALL.md`](installers/rpi/INSTALL.md) |
+| **`linux/`** | n8vet (Stew) / Ubuntu Desktop **x86_64** | [`linux/README.md`](linux/README.md), [`installers/linux/INSTALL.md`](installers/linux/INSTALL.md), [`INSTALL-UBUNTU.md`](INSTALL-UBUNTU.md) (from source) |
 | **`linux-build/`** | Scripts | Ubuntu: `mscc-linux.sh`. Pi cross (optional): `cross-arm64.sh` uses **`rpi/`** |
 
-**Current kits (GitHub web):** [`installers/`](installers/) — `linux/` (Ubuntu amd64), `rpi/` (Pi arm64), `windows/`. When a package is rebuilt, copy the newest file there (`./linux-build/drop-installers.sh`). Do not install `*_arm64.deb` on Ubuntu.
+**Current kits:** [`installers/`](installers/). When a package is rebuilt, copy the newest file there (`./linux-build/drop-installers.sh`) and add an entry to that folder's `CHANGELOG.md` (Windows and Ubuntu).
 
 ## Pi install kit (RPi)
 
 | Path | Notes |
 |------|--------|
-| **`rpi/pi-install/`** | Current `.deb` packages + how-to |
-| **`rpi/pi-install/INSTALL.md`** | End-to-end Pi install |
+| **`installers/rpi/`** | Current `.deb` packages (mscc, mscc-ui, mscc-init, mscc-portaudio, optional mscc-firmware and proficio-flash-tools) |
+| **`installers/rpi/INSTALL.md`** | Pi install steps; full guide [`rpi/mscc-deb/INSTALL-FOR-PI.md`](rpi/mscc-deb/INSTALL-FOR-PI.md) |
 | **`rpi/mscc-deb/`**, **`rpi/mscc-binaries/`** | Server packaging (AArch64) |
 
 ## Linux backends
@@ -82,7 +92,8 @@ Ron moved Pi work under **`rpi/`**. Ubuntu laptop work lives under **`linux/`**.
 | `rpi/SDRcore-recv-linux/` / `linux/SDRcore-recv-linux/` | RX DSP |
 | `rpi/SDRcore-trans-linux/` / `linux/SDRcore-trans-linux/` | TX DSP |
 | `rpi/psoc-usb-bootload-linux/` / `linux/psoc-usb-bootload-linux/` | Firmware **CLI** (`make` → `bootloader`) + **GUI** (`bootloader-gui.py`) — not the same file |
-| `rpi/mscc-init-gui/` | Init wizard (Architecture: all `.deb`) |
+| `rpi/mscc-init-gui/` | Init wizard (`mscc-init`, Architecture: all `.deb`) |
+| `factory/` | Factory calibration tables per radio line (shipped in the `mscc` debs at `/usr/share/mscc/factory/` and next to the Windows servers) |
 
 ---
 
@@ -90,11 +101,11 @@ Ron moved Pi work under **`rpi/`**. Ubuntu laptop work lives under **`linux/`**.
 
 | Path | Notes |
 |------|--------|
-| `mscc-remote-audio/` | **MsccRemotePhones** (Windows), test tools, Stew handoff |
+| `mscc-remote-audio/` | **MsccRemotePhones** (Windows), test tools, notes |
 | Opcode | `CMD_SET_AUDIO_DEVICE` (`0x9B`): **0** Digital, **1** Phones local, **2** Remote |
 | Ports | RX phones **9100**, TX mic **9101** (MSA1) |
 
-Client UI still needs the **Remote Audio** checkbox (Phones + checked → send **2**). See `mscc-remote-audio/STEW-REMOTE-AUDIO.md`.
+See `docs/manuals/` (Remote Operation guide) and `mscc-remote-audio/STEW-REMOTE-AUDIO.md`.
 
 ---
 
@@ -109,7 +120,7 @@ Client UI still needs the **Remote Audio** checkbox (Phones + checked → send *
 | `radio-psoc-firmware/Proficio-MKII-ATU/` | MKII ATU |
 | `radio-psoc-firmware/Proficio-Legacy/` | Legacy Proficio |
 | `radio-psoc-firmware/Proficio-bootloader/` | PSoC Creator bootloader project |
-| `radio-psoc-firmware/release/<RadioName>/` | Shipping `.cyacd` / `.hex` |
+| `radio-psoc-firmware/release/<RadioName>/` | Shipping `.cyacd` / `.hex` (packaged as the optional `mscc-firmware` deb → `/usr/share/mscc/firmware/`) |
 | `linux/psoc-usb-bootload-linux/` | Ubuntu firmware **upload** tools (CLI + GUI) |
 | `rpi/psoc-usb-bootload-linux/` | Pi firmware upload tools (guide for Ubuntu) |
 
@@ -125,8 +136,7 @@ Moved to a dedicated repo (not in this tree):
 
 **https://github.com/w4mmp-ron/psoc-replacement-stm32**
 
-Local clone (Ron): `~/.grok/worktrees/psoc-replacement-stm32`  
-Contains `proficio-stm32f411-25MHz/` (production) and `proficio-stm32f411-8MHz/` (lab).
+Contains `proficio-stm32f411-25MHz/` (production) and `proficio-stm32f411-8MHz/` (lab). Pi flash tools: `proficio-flash-tools` deb in `installers/rpi/`.
 
 ---
 
@@ -134,6 +144,7 @@ Contains `proficio-stm32f411-25MHz/` (production) and `proficio-stm32f411-8MHz/`
 
 | Path | Notes |
 |------|--------|
+| `Solidus/` | Archived Solidus snapshot + current Solidus display work (Ron) |
 | `swr-meter/` | External SWR helper |
 | `linux/tty0tty-master/` | Virtual serial (Ubuntu) |
 | `rpi/tty0tty-master/` | Virtual serial (Pi) |
@@ -145,6 +156,6 @@ Contains `proficio-stm32f411-25MHz/` (production) and `proficio-stm32f411-8MHz/`
 | Area | Primary |
 |------|---------|
 | Linux servers, packaging, remote AF path, STM32 FW | Ron |
-| Windows WPF, Avalonia parity, MSCC.Core client, daughter PCB / pinout | Stew |
+| Windows WPF, Avalonia parity, MSCC.Core client, daughter PCB / pinout | n8vet (Stew) |
 
 When one side changes opcodes or host behavior, note it for the other trees (`linux/` ↔ `rpi/` ↔ Windows servers, WPF ↔ Avalonia).

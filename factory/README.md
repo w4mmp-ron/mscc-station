@@ -22,7 +22,15 @@ factory/
 
 QRP `POWER_LEVEL` is **measured − 3** (clamp ≥ 0). No PIN-mod tables.
 
-Windows ms-sdr looks for this tree next to `ms-sdr-MKII.exe` (`C:\mscc-net9\factory\…`).
+Where the tree is installed:
+
+| Platform | Factory tables | Per-radio saved cal (Save settings) |
+|----------|----------------|-------------------------------------|
+| Windows | next to `ms-sdr-MKII.exe` (`C:\mscc-net9\factory\…`) | `%LocalAppData%\MSCC-NET9\cal\<line>\` |
+| Ubuntu amd64 (`mscc` ≥ 1.0.48) | `/usr/share/mscc/factory/{iq,freq,power}/<line>/` | `~/.local/mscc/cal/<line>/` (`mscc` ≥ 1.0.49) |
+| Raspberry Pi arm64 (`mscc` ≥ 1.0.51) | `/usr/share/mscc/factory/{iq,freq,power}/<line>/` | `~/.local/mscc/cal/<line>/` (`mscc` ≥ 1.0.52) |
+
+**Save settings** (WPF and Avalonia) sends opcode `0x29` (`CMD_SET_PARK_CAL_SETTINGS`); the server copies live `iq.ini`, `power_cal.ini` and `amplifier_cal.ini` into `cal/<line>/`. `freq_cal.ini` is not parked.
 
 **Reset paths (cmd-019):** FREQ CAL Reset and TX IQ Reset All force-copy from this tree for the **connected** FW major, then push/reload. Settings Reset does **not** copy `iq.ini` / `freq_cal.ini` / `power_cal.ini` / `recv-iq.ini` from generic `init-files`; those stay missing until the next ms-sdr start seeds them.
 

@@ -1,5 +1,7 @@
 # MSCC — Polish & Factory Calibration Plan
 
+> **IMPLEMENTED (2026-10).** Factory tables ship in `factory/` (Windows installer, Ubuntu `mscc` 1.0.48+, Pi `mscc` 1.0.51+); per-radio cal park/restore and **Save settings** shipped in Windows R10.1.2–R10.2.0, Ubuntu `mscc` 1.0.49 / `mscc-ui` 0.6.71, Pi `mscc` 1.0.52. Kept for the design record; see [`factory/README.md`](factory/README.md) for current behaviour. Still open from this plan: TX IQ phase adjust (back-burner).
+
 **Status:** Design / backlog capture (2026-09-19…20). **No implementation until Stew clears** (Ron remote-digital ALC work first, then this list).  
 **Audience:** Build Commander + Grok Build agents.  
 **Repo:** `mscc-station`  

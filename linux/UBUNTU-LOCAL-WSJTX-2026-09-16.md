@@ -29,7 +29,7 @@ sdrcore-recv 96k I/Q --resample--> VirtualA @ 48 kHz → VirtualA.monitor → WS
 
 | Piece | Setting |
 |-------|---------|
-| UI | Avalonia **0.6.53** (`installers/linux/mscc-ui_0.6.53_amd64.deb`) |
+| UI | Avalonia **0.6.53** at the time of this note (current: `installers/linux/mscc-ui_0.6.71_amd64.deb`) |
 | Servers | `$HOME/mscc` from **`linux/`** (recv distrust 96 kHz) |
 | VirtualA/B | **48 kHz**, **no A↔B** (`linux/helpers/mscc-virtual-audio.sh`) |
 | CAT (ms-sdr) | `/dev/tnt0` |
@@ -47,7 +47,7 @@ Host IP: black box, **white** text, stays after Connect. Dropdown on the right i
 ## For the other builds
 
 **Raspberry Pi (Ron)**  
-Same local recipe. Kit: `installers/rpi/` (`mscc_1.0.43_arm64.deb`, `mscc-ui_0.6.49_arm64.deb` until you rebuild arm64 UI to 0.6.53). Do not merge Ubuntu `$HOME/mscc` ELFs into `rpi/mscc-binaries/`.
+Same local recipe. Kit: `installers/rpi/` (current packages listed there). Do not merge Ubuntu `$HOME/mscc` ELFs into `rpi/mscc-binaries/`.
 
 **Win11 (Build / WPF)**  
 WPF already has host history + ALC. Local WSJT-X uses VAC + com0com, not tty0tty. Remote Digital / CAT is still the next team step; do not enable Remote on the radio host while local WSJT-X is using CAT.
