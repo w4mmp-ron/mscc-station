@@ -96,7 +96,6 @@ mscc-station/
 
   # Firmware / other
   keyer/
-  Release-Geminus-*/
   mscc-remote-audio/
   …
 ```
