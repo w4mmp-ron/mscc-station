@@ -381,6 +381,9 @@ and pushed 2026-10-08 with these notes. Waiting for Stew's step test and client 
    rulers are off or a second cause exists, not found. Both added to the note for Stew with a
    request for a clean 20 dB step test (step attenuator) before and after his change.
    After the fix the S9 setting can set dB CAL (peak = -73).
+   Same day, all four SMSG bands (80, 40, 30, 20 m): S meter S9 and the peak about the same
+   low reading (around -87) on each = not band dependent, one correction covers all bands.
+   (In the note for Stew too.)
 7. Next mscc .deb build picks up the "(package mscc-init)" hint text in mscc-deb postinst /
    build-deb.sh / install-mscc.sh (source only, committed 82b819b). No rebuild just for that.
 

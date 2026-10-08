@@ -83,6 +83,10 @@ Multus SDR SMSG signal generator into the rig, 20 m, CW, 800 points, window wide
 | S1 | S3 | about -100 | almost -120 |
 | off | S2 | | |
 
+Ron also checked the generator's S9 setting on 80, 40, 30 and 20 m: S meter S9 and the peak
+about the same low reading (around -87) on every band. So it is not band dependent; one
+correction covers all bands.
+
 The squeeze is proven: the signal dropped 36 dB by the S meter (48 dB by the generator's
 settings) and the trace moved 13 dB.
 
