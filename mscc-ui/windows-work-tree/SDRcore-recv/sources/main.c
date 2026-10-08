@@ -267,17 +267,28 @@ int manage_stream(int start_stop, int device, int channels) {
             print_time();
             fprintf(G_fp_logfile, "[%d] Main Thread. manage_stream. starting stream.  Device: %d, Channels %d\n",
                 line_number++, device, channels);
-            outputParameters.device = device;
-            outputParameters.channelCount = channels;
-            outputParameters.sampleFormat = PA_SAMPLE_TYPE;
-            outputParameters.suggestedLatency = Pa_GetDeviceInfo(outputParameters.device)->defaultLowOutputLatency;
-            outputParameters.hostApiSpecificStreamInfo = NULL;
+            {
+                const PaDeviceInfo *outInfo = Pa_GetDeviceInfo(device);
+                if (outInfo == NULL) {
+                    print_time();
+                    fprintf(G_fp_logfile, "[%d] Main Thread. manage_stream. invalid output device %d\n",
+                        line_number++, device);
+                    return paInvalidDevice;
+                }
+                outputParameters.device = device;
+                /* Callback always writes two samples per frame. */
+                outputParameters.channelCount = 2;
+                outputParameters.sampleFormat = PA_SAMPLE_TYPE;
+                outputParameters.suggestedLatency = outInfo->defaultLowOutputLatency;
+                outputParameters.hostApiSpecificStreamInfo = NULL;
+            }
             err = Pa_IsFormatSupported(&inputParameters, &outputParameters, 96000);
             if (err != paNoError) {
                 const PaHostErrorInfo* format_error = Pa_GetLastHostErrorInfo();
                 print_time();
                 fprintf(G_fp_logfile, "[%d] Main Thread.  manage_stream.  Pa_IsFormatSupported FAILED. Device: %d, Channels %d, error: %s\n",
-                        line_number++, device, channels, format_error->errorText);
+                        line_number++, device, channels,
+                        (format_error && format_error->errorText) ? format_error->errorText : "");
             }
             else {
                 err = Pa_OpenStream(
@@ -293,7 +304,8 @@ int manage_stream(int start_stop, int device, int channels) {
                     const PaHostErrorInfo* lpError = Pa_GetLastHostErrorInfo();
                     print_time();
                     fprintf(G_fp_logfile, "[%d] Main Thread. manage_stream. Open Stream Failed: PA ERROR: %s\n",
-                        line_number++, lpError->errorText);
+                        line_number++, (lpError && lpError->errorText) ? lpError->errorText : "");
+                    return err;
                 }
                 else {
                     err = Pa_StartStream(stream);
@@ -301,7 +313,8 @@ int manage_stream(int start_stop, int device, int channels) {
                         const PaHostErrorInfo* lpError = Pa_GetLastHostErrorInfo();
                         print_time();
                         fprintf(G_fp_logfile, "[%d] Main Thread. manage_stream. Start Stream Failed: PA ERROR: %s\n",
-                            line_number++, lpError->errorText);
+                            line_number++, (lpError && lpError->errorText) ? lpError->errorText : "");
+                        Pa_CloseStream(stream);
                     }
                 }
             }
@@ -563,14 +576,32 @@ int main(int argc, char **argv) {
         fprintf(G_fp_logfile, "[%d] main. Error: FAILED. No digital output device found\n", line_number++);
     }
     if (G_output_device_index == NO_OUTPUT_DEVICE) {
+        PaDeviceIndex def_out = Pa_GetDefaultOutputDevice();
+        if (def_out != paNoDevice) {
+            for (j = 0; j < num_output_devices_found && j < MAX_OUTPUT_DEVICES; j++) {
+                if (G_output_devices[j].device_index == (int)def_out &&
+                    strstr(G_output_devices[j].name, "Multus") == NULL &&
+                    strstr(G_output_devices[j].name, "Proficio") == NULL) {
+                    G_output_device_index = j;
+                    break;
+                }
+            }
+        }
+    }
+    if (G_output_device_index == NO_OUTPUT_DEVICE) {
         print_time();
         fprintf(G_fp_logfile, "[%d] main. Error:  FAILED. No output device found\n", line_number++);
         Audio_Device_Error(err);
     } else {
-        status = manage_stream(1, G_output_devices[G_output_device_index].device_index,
-                G_output_devices[G_output_device_index].num_channels);
+        print_time();
+        fprintf(G_fp_logfile, "[%d] main. operator speaker slot %d name='%s'\n",
+            line_number++, G_output_device_index,
+            G_output_devices[G_output_device_index].name);
+        status = manage_stream(1, G_output_devices[G_output_device_index].device_index, 2);
         if (status) {
             err = status;
+            print_time();
+            fprintf(G_fp_logfile, "[%d] main. speaker open failed %d\n", line_number++, status);
             Audio_Device_Error(err);
         }
     }

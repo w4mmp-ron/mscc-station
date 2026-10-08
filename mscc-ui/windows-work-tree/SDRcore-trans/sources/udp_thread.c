@@ -476,32 +476,36 @@ void *UDP_Thread(void *my_param) {
             fprintf(G_fp_logfile, "[%d] UDP Thread. CMD_SET_AUDIO_DEVICE. t_opcode_data: %d\n",
                 line_number++, t_opcode_data);
             switch (t_opcode_data) {
-            case DIGITAL_AUDIO:
+            case DIGITAL_AUDIO: {
+                int ch = 0;
+                int dev = mic_dev(G_digital_input_devices, G_digital_input_device_index, &ch);
+                if (dev < 0)
+                    dev = mic_dev(G_input_devices, G_input_device_index, &ch);
                 G_audio_mode = DIGITAL_AUDIO;
-                stream_status = manage_stream(0, G_input_devices[G_input_device_index].device_index,
-                    G_input_devices[G_input_device_index].num_channels);
-                stream_status = manage_stream(1, G_digital_input_devices[G_digital_input_device_index].device_index,
-                    G_digital_input_devices[G_digital_input_device_index].num_channels);
+                stream_status = manage_stream(0, dev, ch);
+                stream_status = manage_stream(1, dev, ch);
                 print_time();
                 fprintf(G_fp_logfile,
                     "[%d] UDP Thread. CMD_SET_AUDIO_DEVICE DIGITAL (line gain 2.0, no analog 16dB)\n",
                     line_number++);
                 break;
-            case OPERATOR_AUDIO:
+            }
+            case OPERATOR_AUDIO: {
+                int ch = 0;
+                int dev = mic_dev(G_input_devices, G_input_device_index, &ch);
                 G_audio_mode = OPERATOR_AUDIO;
-                stream_status = manage_stream(0, G_digital_input_devices[G_digital_input_device_index].device_index,
-                    G_digital_input_devices[G_digital_input_device_index].num_channels);
-                stream_status = manage_stream(1, G_input_devices[G_input_device_index].device_index,
-                    G_input_devices[G_input_device_index].num_channels);
+                stream_status = manage_stream(0, dev, ch);
+                stream_status = manage_stream(1, dev, ch);
                 break;
+            }
             case REMOTE_AUDIO:
-            case REMOTE_DIGITAL_AUDIO:
-                /* I/Q + MSA1. Do not open VirtualB (R-Digital) or require local phones mic. */
+            case REMOTE_DIGITAL_AUDIO: {
+                /* I/Q + MSA1. No local mic → output-only. The callback fills from UDP. */
+                int ch = 0;
+                int dev = mic_dev(G_input_devices, G_input_device_index, &ch);
                 G_audio_mode = t_opcode_data;
-                stream_status = manage_stream(0, G_digital_input_devices[G_digital_input_device_index].device_index,
-                    G_digital_input_devices[G_digital_input_device_index].num_channels);
-                stream_status = manage_stream(1, G_input_devices[G_input_device_index].device_index,
-                    G_input_devices[G_input_device_index].num_channels);
+                stream_status = manage_stream(0, dev, ch);
+                stream_status = manage_stream(1, dev, ch);
                 print_time();
                 fprintf(G_fp_logfile,
                     "[%d] UDP Thread. CMD_SET_AUDIO_DEVICE %s done. stream_status=%d ready=%d\n",
@@ -509,6 +513,7 @@ void *UDP_Thread(void *my_param) {
                     t_opcode_data == REMOTE_DIGITAL_AUDIO ? "REMOTE_DIGITAL" : "REMOTE",
                     stream_status, remote_mic_ready());
                 break;
+            }
             }
             break;
 
@@ -971,10 +976,20 @@ void *UDP_Thread(void *my_param) {
                 device_input_record_index = t_opcode_data;
                 print_time();
                 fprintf(G_fp_logfile, "[%d] UDP Thread. CMD_GET_SET_MIC_DEVICE. Calling manage_stream with param: %d \n", line_number++, device_input_record_index);
-
-                manage_stream(0, G_input_devices[device_input_record_index].device_index, G_input_devices[device_input_record_index].num_channels);
-                Sleep(50);
-                manage_stream(1, G_input_devices[device_input_record_index].device_index, G_input_devices[device_input_record_index].num_channels);
+                {
+                    int ch = 0;
+                    int dev = -1;
+                    if (device_input_record_index >= 0 && device_input_record_index < MAX_INPUT_DEVICES)
+                        dev = mic_dev(G_input_devices, device_input_record_index, &ch);
+                    else {
+                        print_time();
+                        fprintf(G_fp_logfile, "[%d] UDP Thread. CMD_GET_SET_MIC_DEVICE. index %d out of range\n",
+                            line_number++, device_input_record_index);
+                    }
+                    manage_stream(0, dev, ch);
+                    Sleep(50);
+                    manage_stream(1, dev, ch);
+                }
                 print_time();
                 fprintf(G_fp_logfile, "[%d] UDP Thread. CMD_GET_SET_MIC_DEVICE. Calling set_selected_device with param: %d \n", line_number++, device_input_record_index);
                 print_time();

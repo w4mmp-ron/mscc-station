@@ -119,13 +119,20 @@ static int sdrAudioCallback(const void *inputBuffer, void *outputBuffer,
         outbuffer = (sp_float*) outputBuffer;
         mic_channels = 2;
     } else if (inputBuffer == NULL) {
-        for (i = 0; i < framesPerBuffer; i++) {
-            *out++ = 0; /* left - silent */
-            *out++ = 0; /* right - silent */
+        if (framesPerBuffer <= 4096u) {
+            static SAMPLE zero_in[4096 * 2]; /* zero-initialised: TUNE/CW still make I/Q */
+            inbuffer = zero_in;
+            outbuffer = (sp_float*) outputBuffer;
+            mic_channels = 1;
+        } else {
+            for (i = 0; i < framesPerBuffer; i++) {
+                *out++ = 0; /* left - silent */
+                *out++ = 0; /* right - silent */
+            }
+            gNumNoInputs += 1;
+            G_DSP_Busy = FALSE;
+            return paContinue;
         }
-        gNumNoInputs += 1;
-        G_DSP_Busy = FALSE;
-        return paContinue;
     } else {
         inbuffer = (sp_float*) inputBuffer;
         outbuffer = (sp_float*) outputBuffer;
@@ -200,6 +207,16 @@ static int sdrAudioCallback(const void *inputBuffer, void *outputBuffer,
     return paContinue;
 }
 
+/* Valid record → PortAudio device, else -1 (output-only I/Q). */
+int mic_dev(const struct input_devices *t, int idx, int *ch) {
+    if (idx < 0 || idx >= MAX_INPUT_DEVICES || t[idx].num_channels < 1) {
+        *ch = 0;
+        return -1;
+    }
+    *ch = t[idx].num_channels;
+    return t[idx].device_index;
+}
+
 int manage_stream(int start_stop, int device, int channels) {
     PaError err = 0;
     int status = 0;
@@ -219,6 +236,48 @@ int manage_stream(int start_stop, int device, int channels) {
             print_time();
             fprintf(G_fp_logfile, "[%d] Main Thread. manage_stream. starting stream.  Device: %d, Channels %d\n",
                 line_number++, device, channels);
+            if (device < 0 || channels < 1) {
+                inputchannels = 0;
+                print_time();
+                fprintf(G_fp_logfile, "[%d] Main Thread. manage_stream. OUTPUT-ONLY I/Q (no mic)\n",
+                    line_number++);
+                err = Pa_IsFormatSupported(NULL, &outputParameters, 96000);
+                if (err != paNoError) {
+                    const PaHostErrorInfo* format_error = Pa_GetLastHostErrorInfo();
+                    print_time();
+                    fprintf(G_fp_logfile, "[%d] Main Thread.  manage_stream.  Pa_IsFormatSupported FAILED. Device: %d, Channels %d, error: %s\n",
+                        line_number++, device, channels,
+                        (format_error && format_error->errorText) ? format_error->errorText : "");
+                }
+                else {
+                    err = Pa_OpenStream(
+                        &stream,
+                        NULL,
+                        &outputParameters,
+                        (int)mystate.samplerate,
+                        mystate.frames,
+                        0,
+                        sdrAudioCallback,
+                        NULL);
+                    if (err != paNoError) {
+                        const PaHostErrorInfo* lpError = Pa_GetLastHostErrorInfo();
+                        print_time();
+                        fprintf(G_fp_logfile, "[%d] Main Thread. manage_stream. Open Stream Failed: PA ERROR: %s\n",
+                            line_number++, (lpError && lpError->errorText) ? lpError->errorText : "");
+                    }
+                    else {
+                        err = Pa_StartStream(stream);
+                        if (err != paNoError) {
+                            const PaHostErrorInfo* lpError = Pa_GetLastHostErrorInfo();
+                            print_time();
+                            fprintf(G_fp_logfile, "[%d] Main Thread. manage_stream. Start Stream Failed: PA ERROR: %s\n",
+                                line_number++, (lpError && lpError->errorText) ? lpError->errorText : "");
+                            Pa_CloseStream(stream);
+                        }
+                    }
+                }
+            }
+            else {
             inputParameters.device = device;
             inputParameters.channelCount = channels;
             inputParameters.sampleFormat = PA_SAMPLE_TYPE;
@@ -230,7 +289,8 @@ int manage_stream(int start_stop, int device, int channels) {
                 const PaHostErrorInfo* format_error = Pa_GetLastHostErrorInfo();
                 print_time();
                 fprintf(G_fp_logfile, "[%d] Main Thread.  manage_stream.  Pa_IsFormatSupported FAILED. Device: %d, Channels %d, error: %s\n",
-                    line_number++, device, channels, format_error->errorText);
+                    line_number++, device, channels,
+                    (format_error && format_error->errorText) ? format_error->errorText : "");
             }
             else {
                 err = Pa_OpenStream(
@@ -246,7 +306,7 @@ int manage_stream(int start_stop, int device, int channels) {
                     const PaHostErrorInfo* lpError = Pa_GetLastHostErrorInfo();
                     print_time();
                     fprintf(G_fp_logfile, "[%d] Main Thread. manage_stream. Open Stream Failed: PA ERROR: %s\n",
-                        line_number++, lpError->errorText);
+                        line_number++, (lpError && lpError->errorText) ? lpError->errorText : "");
                 }
                 else {
                     err = Pa_StartStream(stream);
@@ -254,9 +314,11 @@ int manage_stream(int start_stop, int device, int channels) {
                         const PaHostErrorInfo* lpError = Pa_GetLastHostErrorInfo();
                         print_time();
                         fprintf(G_fp_logfile, "[%d] Main Thread. manage_stream. Start Stream Failed: PA ERROR: %s\n",
-                            line_number++, lpError->errorText);
+                            line_number++, (lpError && lpError->errorText) ? lpError->errorText : "");
+                        Pa_CloseStream(stream);
                     }
                 }
+            }
             }
         }
         if (err == paNoError) {
@@ -479,11 +541,6 @@ int main(int argc, char **argv) {
     if (inputParameters.device == paNoDevice) {
         print_time();
         fprintf(G_fp_logfile, "[%d] main. NO DEFAULT MICROPHONE DEVICE FOUND.\n", line_number++);
-        //MessageBoxA(NULL, "NO DEFAULT MICROPHONE DEVICE FOUND \
-		//					\r\nUNCHECK THE Microphone ON Check Box on the Audio Tab\
-		//					\r\nThen restart MSCC \r\n",
-        //					"SDRcore-trans", MB_OK | MB_ICONEXCLAMATION);
-        goto error;
     }
 
     inputParameters.channelCount = inputchannels;
@@ -508,18 +565,27 @@ int main(int argc, char **argv) {
     //Now Start the audio stream
     if (G_input_device_index == NO_INPUT_DEVICE) {
         print_time();
-        fprintf(G_fp_logfile, "[%d] main. No input device found\n", line_number++);
-        MessageBoxA(NULL, "NO MICROPHONE DEVICE FOUND \r\n",
-            "SDRcore-trans", MB_OK | MB_ICONEXCLAMATION);
-        goto error;
-    } else {
-        status = manage_stream(0, G_input_devices[G_input_device_index].device_index,
-                G_input_devices[G_input_device_index].num_channels);
-        status = manage_stream(1, G_input_devices[G_input_device_index].device_index,
-                G_input_devices[G_input_device_index].num_channels);
+        fprintf(G_fp_logfile, "[%d] main. No operator mic set: TX voice off\n", line_number++);
+        status = manage_stream(1, -1, 0);
         if (status) {
             err = status;
             goto error;
+        }
+    } else {
+        int mic_ch = 0;
+        int mic = mic_dev(G_input_devices, G_input_device_index, &mic_ch);
+        status = manage_stream(0, mic, mic_ch);
+        status = manage_stream(1, mic, mic_ch);
+        if (status) {
+            print_time();
+            fprintf(G_fp_logfile,
+                "[%d] main. operator mic open failed (%d) — OUTPUT-ONLY I/Q (no mic)\n",
+                line_number++, status);
+            status = manage_stream(1, -1, 0);
+            if (status) {
+                err = status;
+                goto error;
+            }
         }
     }
     /* A missing power_cal.ini stays missing. ms-sdr writes factory/power/<line>/

@@ -65,15 +65,15 @@ public partial class AudioSettingsPanel : UserControl
             var saved = AudioDeviceConfig.Load();
 
             FillCombo(OpSpeakerCombo, _outputs, saved.OperatorSpeaker);
-            FillCombo(OpMicCombo, _inputs, saved.OperatorMic);
-            FillCombo(DigSpeakerCombo, _outputs, saved.DigitalSpeaker);
-            FillCombo(DigMicCombo, _inputs, saved.DigitalMic);
+            FillCombo(OpMicCombo, _inputs, saved.OperatorMic, allowNone: true);
+            FillCombo(DigSpeakerCombo, _outputs, saved.DigitalSpeaker, allowNone: true);
+            FillCombo(DigMicCombo, _inputs, saved.DigitalMic, allowNone: true);
 
             int unset = CountUnsetRequired();
             if (unset > 0)
             {
                 SetStatus(
-                    $"Select operator Out/Mic (and digital if used), then Apply — {unset} required field(s) blank. " +
+                    $"Select operator Out (Mic and digital optional), then Apply — {unset} required field(s) blank. " +
                     $"({_outputs.Count} out / {_inputs.Count} in listed)");
             }
             else
@@ -90,22 +90,28 @@ public partial class AudioSettingsPanel : UserControl
     /// <summary>
     /// Fill devices; leave SelectedIndex = -1 when no saved match so first-run does not look "set".
     /// </summary>
-    private static void FillCombo(ComboBox? combo, IReadOnlyList<AudioDeviceConfig.DeviceChoice> devices, string savedKey)
+    private static void FillCombo(ComboBox? combo, IReadOnlyList<AudioDeviceConfig.DeviceChoice> devices, string savedKey, bool allowNone = false)
     {
         if (combo == null) return;
         combo.Items.Clear();
+        if (allowNone)
+        {
+            combo.Items.Add(new AudioDeviceConfig.DeviceChoice { DisplayName = "(none)", MatchKey = "" });
+        }
         foreach (var d in devices)
             combo.Items.Add(d);
 
         int idx = AudioDeviceConfig.FindBestIndex(devices, savedKey);
-        combo.SelectedIndex = (idx >= 0 && idx < combo.Items.Count) ? idx : -1;
+        if (allowNone)
+            combo.SelectedIndex = idx >= 0 ? idx + 1 : 0;
+        else
+            combo.SelectedIndex = (idx >= 0 && idx < combo.Items.Count) ? idx : -1;
     }
 
     private int CountUnsetRequired()
     {
         int n = 0;
         if (OpSpeakerCombo?.SelectedIndex < 0) n++;
-        if (OpMicCombo?.SelectedIndex < 0) n++;
         return n;
     }
 

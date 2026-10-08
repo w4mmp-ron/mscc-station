@@ -25,7 +25,7 @@ public static class CommPortConfig
 
     public sealed class Settings
     {
-        public string PortName { get; set; } = "COM1";
+        public string PortName { get; set; } = "";
         public int CommPortIndex { get; set; }
         public int BaudRateIndex { get; set; } = 3; // 9600
         public int ParityIndex { get; set; } // 0=none
@@ -98,6 +98,8 @@ public static class CommPortConfig
         {
             Directory.CreateDirectory(ConfigDirectory);
             string port = NormalizePortName(s.PortName);
+            if (string.IsNullOrEmpty(port))
+                port = "COM0";
             int baudIdx = Math.Clamp(s.BaudRateIndex, 0, BaudRates.Length - 1);
             int parityIdx = Math.Clamp(s.ParityIndex, 0, 2);
             int dataIdx = Math.Clamp(s.DataBitsIndex, 0, 2);

@@ -2,6 +2,17 @@
 
 Installer: `mscc-net9-R<version>-install.exe` (WPF client + Windows servers). Install the newest one; older installers in this folder are kept for roll-back only.
 
+## R10.8.1 — 2026-10-08  (`mscc-net9-R10-8-1-install.exe`, title bar 10.8.1)
+
+### Fixed
+- MSCC no longer stops with "Server Not Responding" (keep-alive) or "SDRcore-trans initialization FAILED" when an audio device is missing or wrong. The transmit and receive servers check the saved device before opening it.
+- RX IQ tab now works on 2200 m and 630 m (Geminus); it used to say "INVALID BAND (GENERAL)".
+
+### Changed
+- The radio's own **Multus IQ Sound** device is no longer offered in any audio list (it must never be used as a speaker or mic).
+- Only **Operator Out** (speaker) is required to Start. Operator Mic, Digital Out and Digital Mic have a **(none)** choice, and the COM port is optional (blank = CAT off, no pop-up). Anything missing shows as a short orange setup note under Start.
+- With no mic set, PTT in a voice mode shows "Set up audio (Mic) in the Settings tab to transmit voice." and does not key; DIG-U with no Digital Mic shows a similar message. TUNE and CW still key, and Remote audio is not affected.
+- Note: if an older install saved a shortened mic name (for example "Line "), pick the mic again in SETTINGS.
 ## R10.4.0 — 2026-10-04  (`mscc-net9-R10-4-0-install.exe`, title bar 10.4.0)
 
 ### Fixed

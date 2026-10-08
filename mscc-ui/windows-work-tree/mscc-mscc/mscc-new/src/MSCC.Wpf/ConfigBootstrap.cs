@@ -317,9 +317,10 @@ public static class ConfigBootstrap
         // --- COM port ---
         var comm = CommPortConfig.Load();
         string port = (comm.PortName ?? "").Trim();
-        if (string.IsNullOrEmpty(port))
+        if (string.IsNullOrEmpty(port) ||
+            string.Equals(port, "COM0", StringComparison.OrdinalIgnoreCase))
         {
-            status.Missing.Add("COM port");
+            status.Warnings.Add("No COM port: CAT disabled");
         }
         else
         {
@@ -350,20 +351,14 @@ public static class ConfigBootstrap
             status.Missing.Add("Operator speaker (select a device that exists on this PC)");
         }
 
-        // Operator mic: required by mscc-trans at startup (even digi-only often needs a valid mic name)
+        // Operator mic is optional. Voice PTT is blocked in the client when it is not set.
         string mic = AudioDeviceConfig.ReadIni(AudioDeviceConfig.OperatorMicFile).Trim();
         var ins = AudioDeviceConfig.GetInputDevices();
-        if (string.IsNullOrEmpty(mic))
+        if (string.IsNullOrEmpty(mic) ||
+            ins.Count == 0 ||
+            !AudioDeviceConfig.SavedKeyMatchesDevice(mic, ins))
         {
-            status.Missing.Add("Operator microphone (Settings → Audio)");
-        }
-        else if (ins.Count == 0)
-        {
-            status.Missing.Add("No audio input devices detected");
-        }
-        else if (!AudioDeviceConfig.SavedKeyMatchesDevice(mic, ins))
-        {
-            status.Missing.Add("Operator microphone (select a device that exists on this PC)");
+            status.Warnings.Add("Operator mic not set: TX voice off (CW/TUNE/remote still work)");
         }
 
         // Digital path: soft only (VAC optional)
@@ -384,7 +379,7 @@ public static class ConfigBootstrap
     {
         var lines = new List<string>
         {
-            "Local radio needs a serial port plus operator speaker and microphone before starting servers.",
+            "Local radio needs an operator speaker before starting servers.",
             "Open Settings → Audio, choose each device from the list (blank means not set), then Apply.",
             "",
             "Missing:"

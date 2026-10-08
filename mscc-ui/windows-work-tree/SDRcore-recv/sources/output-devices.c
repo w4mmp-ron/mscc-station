@@ -10,6 +10,21 @@ int sound_ini_file_exists = 0;
 char G_audio_device[PATH_MAX] = {0};
 char G_digital_audio_device[PATH_MAX] = { 0 };
 
+/* Strip CR/LF. A blank or spaces-only key must stay empty so strstr does not match every device. */
+static void trim_sound_key(char *s) {
+    char *p;
+    size_t n;
+    if (s == NULL)
+        return;
+    n = strlen(s);
+    while (n > 0 && (s[n - 1] == '\n' || s[n - 1] == '\r'))
+        s[--n] = '\0';
+    for (p = s; *p == ' ' || *p == '\t'; p++)
+        ;
+    if (*p == '\0')
+        s[0] = '\0';
+}
+
 int Get_Digital_Sound_Device() {
     FILE* fp_Sound_ini;
     char l_path[PATH_MAX] = { 0 };
@@ -34,6 +49,8 @@ int Get_Digital_Sound_Device() {
                 //strncpy(audio_device, init_record,(strlen(init_record) - 1));
                 record_length = strlen(init_record);
                 strncpy(G_digital_audio_device, init_record, (record_length));
+                G_digital_audio_device[PATH_MAX - 1] = '\0';
+                trim_sound_key(G_digital_audio_device);
                 print_time();
                 fprintf(G_fp_logfile, "[%d] Get_Digital_Sound_Device. input record: %s, audio_device: %s\n",
                     line_number++, init_record, G_digital_audio_device);
@@ -78,6 +95,8 @@ int Get_Sound_Device() {
                 //strncpy(audio_device, init_record,(strlen(init_record) - 1));
                 record_length = strlen(init_record);
                 strncpy(G_audio_device, init_record, (record_length));
+                G_audio_device[PATH_MAX - 1] = '\0';
+                trim_sound_key(G_audio_device);
                 print_time();
                 fprintf(G_fp_logfile, "[%d] Get_Sound_Device. input record: %s, audio_device: %s\n",
                         line_number++, init_record, G_audio_device);
@@ -103,7 +122,13 @@ void build_digital_output_devices(int device_index) {
     char* output_device;
 
     if (index < MAX_OUTPUT_DEVICES) {
-        output_device = strstr(lpInfo->name, G_digital_audio_device);
+        if (G_digital_audio_device[0] != '\0' &&
+            lpInfo->maxOutputChannels >= 1 &&
+            strstr(lpInfo->name, "Multus") == NULL &&
+            strstr(lpInfo->name, "Proficio") == NULL)
+            output_device = strstr(lpInfo->name, G_digital_audio_device);
+        else
+            output_device = NULL;
         if (output_device != NULL) {
             G_digital_output_device_index = index;
             print_time();
@@ -133,7 +158,13 @@ void build_output_devices(int device_index) {
     char *output_device;
 
     if (index < MAX_OUTPUT_DEVICES) {
-        output_device = strstr(lpInfo->name, G_audio_device);
+        if (G_audio_device[0] != '\0' &&
+            lpInfo->maxOutputChannels >= 1 &&
+            strstr(lpInfo->name, "Multus") == NULL &&
+            strstr(lpInfo->name, "Proficio") == NULL)
+            output_device = strstr(lpInfo->name, G_audio_device);
+        else
+            output_device = NULL;
         if (output_device != NULL) {
             G_output_device_index = index;
             print_time();

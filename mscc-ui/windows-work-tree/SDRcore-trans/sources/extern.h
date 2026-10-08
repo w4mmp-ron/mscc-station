@@ -34,7 +34,7 @@
 // Release number is in the range of 0 to 9
 
 #define VERSION_MAJOR 3
-#define VERSION_MINOR 145
+#define VERSION_MINOR 146
 #define VERSION_MS_SDRCORE_TRANS ((((VERSION_MINOR) << 8) & 0xff00) | ((VERSION_MAJOR) & 0x00ff))
 
 /* Local DIGITAL/OPERATOR only. Discard this much mic audio after TX 0->1
@@ -148,6 +148,8 @@ typedef struct {
 }amplifier_stack;
 
 extern int manage_stream(int start_stop, int device, int channels);
+/* Valid record → PortAudio device, else -1 (output-only I/Q). */
+extern int mic_dev(const struct input_devices *t, int idx, int *ch);
 extern void build_input_devices(int device_index);
 extern void build_digital_input_devices(int device_index);
 //extern int update_sound_ini();

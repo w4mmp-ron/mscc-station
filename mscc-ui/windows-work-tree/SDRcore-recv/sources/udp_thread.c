@@ -21,6 +21,10 @@ extern panadapter_buffer panbuffer;
 char buf[BUFLEN];
 int count = 0;
 
+static int speaker_slot_ok(int idx) {
+    return idx >= 0 && idx < MAX_OUTPUT_DEVICES;
+}
+
 uint16_t G_SDRcore_port = 0;
 uint16_t ms_sdr_port = 0;
 struct sockaddr_in si_me, si_ms_sdr;
@@ -723,11 +727,29 @@ void *UDP_Thread(void *my_param) {
                     line_number++, t_opcode_data);
                 switch (t_opcode_data) {
                 case DIGITAL_AUDIO:
-                case REMOTE_DIGITAL_AUDIO:
-                    stream_status = manage_stream(0, G_output_devices[G_output_device_index].device_index,
-                        G_output_devices[G_output_device_index].num_channels);
-                    stream_status = manage_stream(1, G_digital_output_devices[G_digital_output_device_index].device_index,
-                        G_digital_output_devices[G_digital_output_device_index].num_channels);
+                case REMOTE_DIGITAL_AUDIO: {
+                    int dig = G_digital_output_device_index;
+                    int op = G_output_device_index;
+                    if (!speaker_slot_ok(op)) {
+                        print_time();
+                        fprintf(G_fp_logfile,
+                            "[%d] UDP Thread. DIGITAL: invalid operator speaker index %d — abort\n",
+                            line_number++, op);
+                        break;
+                    }
+                    manage_stream(0, G_output_devices[op].device_index,
+                        G_output_devices[op].num_channels);
+                    if (!speaker_slot_ok(dig)) {
+                        print_time();
+                        fprintf(G_fp_logfile,
+                            "[%d] UDP Thread. DIGITAL: no matched digi speaker — reopen operator\n",
+                            line_number++);
+                        stream_status = manage_stream(1, G_output_devices[op].device_index,
+                            G_output_devices[op].num_channels);
+                        G_recv_audio_mode = t_opcode_data;
+                        break;
+                    }
+                    stream_status = manage_stream(1, G_digital_output_devices[dig].device_index, 2);
                     G_recv_audio_mode = t_opcode_data;
                     print_time();
                     fprintf(G_fp_logfile, "[%d] UDP Thread. CMD_SET_AUDIO_DEVICE %s (mode=%d)\n",
@@ -735,18 +757,31 @@ void *UDP_Thread(void *my_param) {
                         t_opcode_data == REMOTE_DIGITAL_AUDIO ? "REMOTE_DIGITAL" : "DIGITAL",
                         (int)t_opcode_data);
                     break;
+                }
                 case OPERATOR_AUDIO:
-                case REMOTE_AUDIO:
+                case REMOTE_AUDIO: {
                     /* Remote AF RX is MSA1; local speaker path same as Phones. */
-                    stream_status = manage_stream(0, G_digital_output_devices[G_digital_output_device_index].device_index,
-                        G_digital_output_devices[G_digital_output_device_index].num_channels);
-                    stream_status = manage_stream(1, G_output_devices[G_output_device_index].device_index,
-                        G_output_devices[G_output_device_index].num_channels);
+                    int dig = G_digital_output_device_index;
+                    int op = G_output_device_index;
+                    if (!speaker_slot_ok(op)) {
+                        print_time();
+                        fprintf(G_fp_logfile,
+                            "[%d] UDP Thread. OPERATOR/REMOTE: invalid operator index %d\n",
+                            line_number++, op);
+                        break;
+                    }
+                    if (speaker_slot_ok(dig))
+                        manage_stream(0, G_digital_output_devices[dig].device_index, 2);
+                    else
+                        manage_stream(0, G_output_devices[op].device_index, 2);
+                    stream_status = manage_stream(1, G_output_devices[op].device_index,
+                        G_output_devices[op].num_channels);
                     G_recv_audio_mode = t_opcode_data;
                     print_time();
                     fprintf(G_fp_logfile, "[%d] UDP Thread. CMD_SET_AUDIO_DEVICE %s done\n",
                         line_number++, t_opcode_data == REMOTE_AUDIO ? "REMOTE" : "OPERATOR");
                     break;
+                }
                 }
                 break;
             case CMD_SET_REMOTE_RX_HOST:
@@ -859,8 +894,9 @@ void *UDP_Thread(void *my_param) {
                             print_time();
                             fprintf(G_fp_logfile, "[%d] UDP Thread . CMD_SET_TX_ON . Starting Tone Stream stream: \n",
                                     line_number++);
-                            stream_status = manage_stream(0, G_output_devices[G_output_device_index].device_index,
-                                    G_output_devices[G_output_device_index].num_channels);
+                            if (speaker_slot_ok(G_output_device_index))
+                                stream_status = manage_stream(0, G_output_devices[G_output_device_index].device_index,
+                                        G_output_devices[G_output_device_index].num_channels);
                             /*stream_status = manage_sidetone_stream(0, G_output_devices[G_output_device_index].device_index,
                                     G_output_devices[G_output_device_index].num_channels);
                             stream_status = manage_sidetone_stream(1, G_output_devices[G_output_device_index].device_index,
@@ -884,10 +920,12 @@ void *UDP_Thread(void *my_param) {
                             /*stream_status = manage_sidetone_stream(0,
                                     G_output_devices[G_output_device_index].device_index,
                                     G_output_devices[G_output_device_index].num_channels);*/
-                            stream_status = manage_stream(0, G_output_devices[G_output_device_index].device_index,
-                                    G_output_devices[G_output_device_index].num_channels);
-                            stream_status = manage_stream(1, G_output_devices[G_output_device_index].device_index,
-                                    G_output_devices[G_output_device_index].num_channels);
+                            if (speaker_slot_ok(G_output_device_index)) {
+                                stream_status = manage_stream(0, G_output_devices[G_output_device_index].device_index,
+                                        G_output_devices[G_output_device_index].num_channels);
+                                stream_status = manage_stream(1, G_output_devices[G_output_device_index].device_index,
+                                        G_output_devices[G_output_device_index].num_channels);
+                            }
                         }
                     }
                     previous_G_tx_mode = G_tx_mode;
@@ -1259,9 +1297,11 @@ void *UDP_Thread(void *my_param) {
                         device_output_record_index = t_opcode_data;
                         print_time();
                         fprintf(G_fp_logfile, "[%d] UDP Thread . CMD_GET_SET_SPEAKER_DEVICE . Calling manage_stream with param: %d \n", line_number++, device_output_record_index);
+                        if (device_output_record_index >= 0 && device_output_record_index < MAX_OUTPUT_DEVICES) {
                         manage_stream(0, G_output_devices[device_output_record_index].device_index, G_output_devices[device_output_record_index].num_channels);
                         Sleep(50);
                         manage_stream(1, G_output_devices[device_output_record_index].device_index, G_output_devices[device_output_record_index].num_channels);
+                        }
                         print_time();
                         fprintf(G_fp_logfile, "[%d] UDP Thread . CMD_GET_SET_SPEAKER_DEVICE . Calling set_selected_device with param: %d \n", line_number++, device_output_record_index);
                         set_selected_device(device_output_record_index);

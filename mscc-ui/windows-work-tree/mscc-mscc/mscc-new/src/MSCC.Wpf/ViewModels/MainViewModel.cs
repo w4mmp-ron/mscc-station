@@ -1143,6 +1143,18 @@ public partial class MainViewModel : ObservableObject, IDisposable
             return;
         }
 
+        if (value && !TxSetByServer && !_suppressTransmitCommands && TxAudioNotSetReason() is string why)
+        {
+            MonitorTextBoxText(" PTT blocked: " + why);
+            Application.Current?.Dispatcher.BeginInvoke(() =>
+            {
+                if (PttOn)
+                    PttOn = false;
+                MessageBox.Show(why, "MSCC", MessageBoxButton.OK, MessageBoxImage.Information);
+            });
+            return;
+        }
+
         RadioState.IsTransmitting = value;
         if (!_suppressTransmitCommands && !TxSetByServer)
             _ = _radioService.SetTransmitAsync(value);
@@ -1150,6 +1162,23 @@ public partial class MainViewModel : ObservableObject, IDisposable
         // Returning to RX: clear ALC if neither PTT nor TUN is keyed
         MaybeZeroAlcMeterOnRx();
         UpdateShowExternalSwrFace();
+    }
+
+    /// <summary>Voice/digital TX needs a local mic for the current audio path. Null = OK to key.</summary>
+    private string? TxAudioNotSetReason()
+    {
+        // Host on another machine (no local servers) or Remote audio (mic is on the remote PC): not ours to judge.
+        if (!_launchServersOnStart || RemoteAudio) return null;
+        var mode = RadioState.ActiveVfo.Mode;
+        if (TuneMode || mode is RadioMode.CW or RadioMode.TUNE) return null;
+        var ins = AudioDeviceConfig.GetInputDevices();
+        bool digital = IsDigitalAudio || mode == RadioMode.DigU;
+        string file = digital ? AudioDeviceConfig.DigitalMicFile : AudioDeviceConfig.OperatorMicFile;
+        string key = AudioDeviceConfig.ReadIni(file).Trim();
+        if (key.Length > 0 && AudioDeviceConfig.SavedKeyMatchesDevice(key, ins)) return null;
+        return digital
+            ? "Set up digital audio (Digital Mic) in the Settings tab to transmit in digital modes."
+            : "Set up audio (Mic) in the Settings tab to transmit voice.";
     }
 
     /// <summary>
@@ -3680,7 +3709,7 @@ public partial class MainViewModel : ObservableObject, IDisposable
 
     // ----- RX IQ tab: BAND/FREQ wired like original Set_IQ_RX_Band / Display_IQ_freq -----
 
-    /// <summary>Amateur HF band meters from "40m" / "40M" / etc. Null if GEN or unknown.</summary>
+    /// <summary>Amateur band meters from "40m" / "630m" / "2200m". Null if GEN or unknown.</summary>
     private static int? TryParseAmateurBandMeters(string? band)
     {
         if (string.IsNullOrWhiteSpace(band)) return null;
@@ -3689,7 +3718,7 @@ public partial class MainViewModel : ObservableObject, IDisposable
         if (b.EndsWith("m", StringComparison.Ordinal))
             b = b[..^1];
         if (!int.TryParse(b, out int meters)) return null;
-        return meters is 160 or 80 or 60 or 40 or 30 or 20 or 17 or 15 or 12 or 10
+        return meters is 2200 or 630 or 160 or 80 or 60 or 40 or 30 or 20 or 17 or 15 or 12 or 10
             ? meters
             : null;
     }

@@ -8,7 +8,7 @@
     <Border Background="#FF1A1A1A" BorderBrush="#555" BorderThickness="1" CornerRadius="4" Padding="10">
         <StackPanel>
             <TextBlock Text="Audio" FontWeight="Bold" Foreground="#00FFAA" FontSize="13" Margin="0,0,0,4"/>
-            <TextBlock Text="Operator = phones path (P). Digital = digi path (D / VAC). Blank = not set — pick each device, then Apply (or change a dropdown to auto-save). Writes operator-*.ini / digital-*.ini under %LocalAppData%\MSCC-NET9\. After changes: Stop then Start. Operator Out + Mic are required before Start; digital is optional unless you use digi/VAC."
+            <TextBlock Text="Operator = phones path (P). Digital = digi path (D / VAC). (none) = not set — pick each device, then Apply (or change a dropdown to auto-save). Writes operator-*.ini / digital-*.ini under %LocalAppData%\MSCC-NET9\. After changes: Stop then Start. Only Operator Out (speaker) is required to Start. Mic and digital are optional; without them, voice or digital transmit stays off until you set them."
                        Foreground="#D0D0D0" FontSize="11" TextWrapping="Wrap" Margin="0,0,0,8"/>
 
             <Grid Margin="0,0,0,6">

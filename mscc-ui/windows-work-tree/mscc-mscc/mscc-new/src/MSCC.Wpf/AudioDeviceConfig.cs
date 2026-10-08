@@ -43,6 +43,11 @@ public static class AudioDeviceConfig
         public string DigitalMic { get; set; } = "";
     }
 
+    /// <summary>Radio I/Q device. Servers match "Multus"; Pulse names use "Proficio". Do not filter on "Line".</summary>
+    private static bool IsRadioIqDevice(string name) =>
+        name.Contains("Multus", StringComparison.OrdinalIgnoreCase) ||
+        name.Contains("Proficio", StringComparison.OrdinalIgnoreCase);
+
     public static IReadOnlyList<DeviceChoice> GetOutputDevices()
     {
         var list = new List<DeviceChoice>();
@@ -53,6 +58,8 @@ public static class AudioDeviceConfig
             {
                 var caps = WaveOut.GetCapabilities(i);
                 string name = caps.ProductName?.Trim() ?? $"Output {i}";
+                if (IsRadioIqDevice(name))
+                    continue;
                 list.Add(new DeviceChoice
                 {
                     DisplayName = name,
@@ -77,6 +84,8 @@ public static class AudioDeviceConfig
             {
                 var caps = WaveIn.GetCapabilities(i);
                 string name = caps.ProductName?.Trim() ?? $"Input {i}";
+                if (IsRadioIqDevice(name))
+                    continue;
                 list.Add(new DeviceChoice
                 {
                     DisplayName = name,

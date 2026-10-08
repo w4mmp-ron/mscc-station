@@ -661,8 +661,11 @@ int open_comm_port() {
             NULL);
         print_time(0);
         fprintf(G_fp_logfile, "[%d] open_comm_port. Error Opening Com Port: %s %s\n", line_number++, windows_comm_port, lastError);
-        MessageBoxA(NULL, "SERIAL PORT OPEN FAILED. \r\n", "MS-SDR",
-            MB_OK | MB_TASKMODAL | MB_ICONEXCLAMATION);
+        {
+            char cat_note[160];
+            snprintf(cat_note, sizeof(cat_note), "CAT PORT %s NOT AVAILABLE - CAT DISABLED\n", G_comm_port);
+            Gui_Add_Message(cat_note);
+        }
         status = FALSE;
     }
     if (status) {
@@ -751,7 +754,7 @@ int Start_Serial_Port() {
     int lenght = 0;
     int record = 0;
     int index = 0;
-    char comm_port_record[132];
+    char comm_port_record[132] = { 0 };
 
     struct {
         char* comm_port_name_start;
@@ -774,39 +777,73 @@ int Start_Serial_Port() {
         fprintf(G_fp_logfile, "[%d] Start_Serial_Port. serial port INI filename: %s\n", line_number++, file_name);
         fp_Comm_port_ini = fopen(file_name, "r");
         if (fp_Comm_port_ini != NULL) {
-            fgets(comm_port_record, sizeof(comm_port_record), fp_Comm_port_ini);
+            if (fgets(comm_port_record, sizeof(comm_port_record), fp_Comm_port_ini) == NULL)
+                comm_port_record[0] = '\0';
             //Get the name of the comm port
             //Find the starting point
             comm_port_fields.comm_port_name_start = strstr(comm_port_record, "COMM_PORT_NAME");
-            comm_port_fields.comm_port_name_start = comm_port_fields.comm_port_name_start + 15;
-            //Now find the ending point
-            comm_port_fields.comm_port_name_end = strstr(comm_port_fields.comm_port_name_start, ",");
-            //Get the size of the comm port name.
-            comm_port_fields.comm_port_name_size = (comm_port_fields.comm_port_name_end - (comm_port_fields.comm_port_name_start));
-            //Now copy to comm_port
-            strncpy(G_comm_port, comm_port_fields.comm_port_name_start, comm_port_fields.comm_port_name_size);
+            if (comm_port_fields.comm_port_name_start == NULL) {
+                strcpy(G_comm_port, "COM0");
+            }
+            else {
+                comm_port_fields.comm_port_name_start = comm_port_fields.comm_port_name_start + 15;
+                comm_port_fields.comm_port_name_end = strstr(comm_port_fields.comm_port_name_start, ",");
+                if (comm_port_fields.comm_port_name_end == NULL)
+                    strcpy(G_comm_port, "COM0");
+                else {
+                    int only_space = 1;
+                    char *scan;
+                    comm_port_fields.comm_port_name_size =
+                        (int)(comm_port_fields.comm_port_name_end - comm_port_fields.comm_port_name_start);
+                    if (comm_port_fields.comm_port_name_size <= 0 ||
+                        comm_port_fields.comm_port_name_size >= (int)sizeof(G_comm_port))
+                        strcpy(G_comm_port, "COM0");
+                    else {
+                        memset(G_comm_port, 0, sizeof(G_comm_port));
+                        strncpy(G_comm_port, comm_port_fields.comm_port_name_start,
+                            (size_t)comm_port_fields.comm_port_name_size);
+                        G_comm_port[comm_port_fields.comm_port_name_size] = '\0';
+                        for (scan = G_comm_port; *scan != '\0'; scan++) {
+                            if (*scan != ' ' && *scan != '\t') {
+                                only_space = 0;
+                                break;
+                            }
+                        }
+                        if (G_comm_port[0] == '\0' || only_space)
+                            strcpy(G_comm_port, "COM0");
+                    }
+                }
+            }
             comm_port_fields.comm_port_index = strstr(comm_port_record, "COMM_PORT_INDEX");
             comm_port_fields.baud_rate_index = strstr(comm_port_record, "BAUD_RATE_INDEX");
             comm_port_fields.parity_index = strstr(comm_port_record, "PARITY_INDEX");
             comm_port_fields.data_bits_index = strstr(comm_port_record, "DATA_BITS_INDEX");
             comm_port_fields.stop_bits_index = strstr(comm_port_record, "STOP_BITS_INDEX");
             comm_port_fields.pin = strstr(comm_port_record, "PIN");
-            mynumber = atoi((comm_port_fields.comm_port_index + 16));
-            comm_name_index = mynumber;
-            mynumber = atoi((comm_port_fields.baud_rate_index + 16));
-            baud_rate_index = mynumber;
+            if (comm_port_fields.comm_port_index != NULL) {
+                mynumber = atoi((comm_port_fields.comm_port_index + 16));
+                comm_name_index = mynumber;
+            }
+            if (comm_port_fields.baud_rate_index != NULL) {
+                mynumber = atoi((comm_port_fields.baud_rate_index + 16));
+                if (mynumber >= 0 && mynumber < 8)
+                    baud_rate_index = mynumber;
+            }
             if (comm_port_fields.parity_index != NULL) {
                 mynumber = atoi((comm_port_fields.parity_index + 13));
-                parity_index = mynumber;
+                if (mynumber >= 0 && mynumber < 3)
+                    parity_index = mynumber;
             }
 
             if (comm_port_fields.data_bits_index != NULL) {
                 mynumber = atoi((comm_port_fields.data_bits_index + 16));
-                data_bit_index = mynumber;
+                if (mynumber >= 0 && mynumber < 3)
+                    data_bit_index = mynumber;
             }
             if (comm_port_fields.stop_bits_index != NULL) {
                 mynumber = atoi((comm_port_fields.stop_bits_index + 16));
-                stop_bit_index = mynumber;
+                if (mynumber >= 0 && mynumber < 2)
+                    stop_bit_index = mynumber;
             }
             if (comm_port_fields.pin != NULL) {
                 mynumber = atoi((comm_port_fields.pin + 4));
@@ -827,7 +864,7 @@ int Start_Serial_Port() {
                 "[%d] Start_Serial_Port. COMM_PORT_NAME=%s,COMM_PORT_INDEX=%d,BAUD_RATE_INDEX=%d,PARITY_INDEX=%d,DATA_BITS_INDEX=%d,STOP_BITS_INDEX=%d,PIN=%d\n",
                 line_number++, G_comm_port, comm_name_index, baud_rate_index, parity_index, data_bit_index, stop_bit_index, G_pins);
             fclose(fp_Comm_port_ini);
-            if (G_comm_port[3] != '0') {
+            if (G_comm_port[0] != '\0' && G_comm_port[3] != '0') {
                 open_port_status = open_comm_port();
                 if (open_port_status == TRUE) {
                     print_time(0);
@@ -870,9 +907,14 @@ int Start_Serial_Port() {
         }
         else {
             print_time(0);
-            fprintf(G_fp_logfile, "[%d] Start_Serial_Port. Open Initialization file FAILED \n", line_number++);
-            MessageBoxA(NULL, "Start_Serial_Port. Open Initialization file FAILED", "MS-SDR",
-                MB_OK | MB_TASKMODAL | MB_ICONEXCLAMATION);
+            fprintf(G_fp_logfile, "[%d] Start_Serial_Port. comm-port.ini missing — CAT disabled\n", line_number++);
+            fp_Comm_port_ini = fopen(file_name, "w");
+            if (fp_Comm_port_ini != NULL) {
+                fprintf(fp_Comm_port_ini,
+                    "COMM_PORT_NAME=COM0,COMM_PORT_INDEX=0,BAUD_RATE_INDEX=3,PARITY_INDEX=0,DATA_BITS_INDEX=1,STOP_BITS_INDEX=0,PIN=0;\n");
+                fclose(fp_Comm_port_ini);
+            }
+            strcpy(G_comm_port, "COM0");
         }
     }
     print_time(0);
