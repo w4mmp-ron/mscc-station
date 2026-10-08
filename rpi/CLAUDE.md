@@ -75,6 +75,9 @@ Same day on the backup card: a `full-upgrade` had stopped half way with the fold
 after the reboot `sudo dpkg --configure -a` copied kernel 6.18.50+rpt to `/boot/firmware`,
 `full-upgrade` finished without errors, Ron: "back in business". The card copy made before
 that holds the half-finished upgrade; Ron was told to make a new one.
+**Resume point 2026-10-08: item 19 (spectrum dB labels squeezed 2:1).** Ron's S9 / S1 test
+done: squeeze proven, exact factor not. The note for Stew (with the readings) was committed
+and pushed 2026-10-08 with these notes. Waiting for Stew's step test and client fix.
 
 1. Test FREQ CAL STOP on the Pi (needs WPF 9.26.5+). Back burner (Ron 2026-09-27).
 2. cmd-046: TUNE power separate (Windows/Ubuntu trans + WPF). With Stew; no Pi change.
@@ -350,6 +353,34 @@ that holds the half-finished upgrade; Ron was told to make a new one.
    - **Two weak fixed lines 7.0 and 12.0 kHz below the LO point** (-113). Not looked into.
    - Pill-only, in the blackpill notes: the moving spur at VFO 14.048-14.061 (7 x LO against
      4 x MCLK).
+19. **Spectrum dB labels far too low on a strong signal (Ron, 2026-10-07: WWV 10 MHz, CW, S
+   meter about S9 = -73 dBm, spectrum peak "nowhere near -73").** Ron wants the peak much
+   higher WITHOUT raising the apparent noise floor.
+   **Cause found in the code, not yet proven by a test:** the S meter is true dB
+   (`sdrcore.c:253`, `20*log10(peakmag) - 20`); the spectrum is `10*log10` of the FFT
+   magnitude, a voltage (`dsputils.c:220`), = half of true dB. The client undoes the packing
+   exactly (`MSCC.Core/Services/UdpRadioService.cs` `RawYToDb`, `Y/150 - 40`) and adds one
+   offset (dB CAL, centre -91.3, trim +/-20). So a real 20 dB step shows as 10 dB and one
+   offset is right at one level only. Same line in the Ubuntu and Windows recv.
+   **Proposed fix, client only, nothing changed:** `RawYToDb` scale 150 -> 75, bias 40 -> 80
+   (same wire data: `(10log+40)*150` = `(20log+80)*75`), raise its upper clamp (80 -> about
+   140), then find the dB CAL centre again against a known level (estimate near -63, outside
+   today's -111.3..-71.3 range); saved ini offsets, grid max and waterfall contrast move too.
+   No server change on any platform.
+   Note for Stew: `.mscc-coord/NOTE-FOR-STEW-SPECTRUM-DB-SCALE-2026-10-07.md`, committed
+   and pushed 2026-10-08 (after Ron's test below).
+   **Ron's test 2026-10-08** (Multus SDR SMSG signal generator, settings S9 and S1 only, 20 m,
+   CW, 800 points, window wide): generator S9 -> S meter S9, spectrum peak about -87 (between
+   -85 and -89); generator S1 -> S meter S3, peak about -100, noise floor almost -120;
+   generator off -> S meter S2. **Squeeze proven** (signal down 36 dB by the meter / 48 by the
+   generator, trace moved 13 dB). **Exact 2:1 NOT proven:** 13 on screen = 26 dB by the code,
+   less than either ruler. The S meter's own floor is S2, so its S3 is not trustworthy; the
+   generator may leak at S1. Whole path rechecked (server max over bins, Y packing, frame
+   averaging in `panadapter.c`, client `RawYToDb`, offset, trace + label mapping in
+   `SpectrumDisplayControl.xaml.cs`, `Db_to_Smeter` 6 dB per unit): all linear. So either the
+   rulers are off or a second cause exists, not found. Both added to the note for Stew with a
+   request for a clean 20 dB step test (step attenuator) before and after his change.
+   After the fix the S9 setting can set dB CAL (peak = -73).
 7. Next mscc .deb build picks up the "(package mscc-init)" hint text in mscc-deb postinst /
    build-deb.sh / install-mscc.sh (source only, committed 82b819b). No rebuild just for that.
 
