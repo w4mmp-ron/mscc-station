@@ -4,15 +4,17 @@
 |--|--|
 | **Host** | stew-HP-Notebook |
 | **Checkout** | `/home/stew/Documents/GitHub/mscc-station` |
-| **Build** | cmd-066 |
-| **Last command id** | cmd-066 |
+| **Build** | cmd-067c |
+| **Last command id** | cmd-067c |
 | **State** | done |
-| **Updated** | 2026-10-07 |
+| **Updated** | 2026-10-08 |
 
 ## ACK log
 
 | command id | state | note |
 |------------|-------|------|
+| cmd-067c | done | DIGITAL opens digital mic when operator mic missing. Revert Avalonia PTT block and comm-port.ini drop. Rebuilt mscc 1.0.51 ui 0.6.73. trans 3.142 recv 3.143 ms-sdr 3.178. Smoke pass (Stew 2026-10-08). No rpi. No Solidus. No pull, no push. |
+| cmd-067 | done | Part B Linux plus 067c. trans no-mic start, DIGITAL with no op mic, Avalonia RX IQ 2200/630. PTT block and comm-port.ini drop reverted. mscc 1.0.51 ui 0.6.73 ms-sdr 3.178. Smoke pass (Stew 2026-10-08). No rpi. No Solidus. No pull, no push. |
 | cmd-066 | done | mscc-firmware 1.0.1 one dated cyacd+hex per radio. Commit 7dd42fc. Stew: upgrade installed, Load File on the packaged folder. History 1.0.0 kept in linux/mscc-firmware-deb. installers/rpi still 1.0.0. No rpi source. No Solidus. No pull, no push. |
 | cmd-065 | done | Ubuntu mscc-ui 0.6.72 dock icon + mscc 1.0.50 (recv 3.143, ms-sdr 3.176). Commit 9814897. Stew: installed, dock icon works. No rpi. No Solidus. No pull, no push. |
 | cmd-064 | running | Ubuntu linux/SDRcore-recv-linux spectrum spur fix. Commit ef67816. recv 3.143 in $HOME/mscc. Smoke 1-5 not run (no radio USB). Rides with next kit. No rpi write. No Windows. No pull, no push. |
@@ -32,6 +34,14 @@
 | cmd-032 | done | mscc_1.0.44_amd64.deb with remote_mic stream reset |
 
 ## Notes
+
+### cmd-067c
+
+Follow-up in the same uncommitted tree. DIGITAL opens the digital mic when the operator mic is missing. Avalonia PTT block and comm-port.ini MissingSetupItems drop reverted. Rebuilt mscc 1.0.51 and mscc-ui 0.6.73 amd64. trans 3.142, recv 3.143, ms-sdr auto-bump 177 to 178. Smoke not run (needs apt install). Stop before commit. No rpi. No Solidus.
+
+### cmd-067
+
+Part B plus 067c, stop before commit. Debs mscc 1.0.51, mscc-ui 0.6.73. trans 3.142, recv 3.143, ms-sdr 3.178. Avalonia RX IQ 2200/630 kept. PTT pop-up and comm-port.ini drop reverted. No rpi. No Solidus.
 
 ### cmd-066
 

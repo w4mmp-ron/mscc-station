@@ -185,7 +185,7 @@ public partial class MainViewModel : ViewModelBase, IDisposable
         ModeText = "";
         NotifyModeFlags();
         NotifyBandFlags();
-        AppendLog("MSCC Avalonia 0.6.72 — dock icon mscc-ui, Save settings parks host cal (0x29).");
+        AppendLog("MSCC Avalonia 0.6.73 — trans starts with no mic; RX IQ 2200/630.");
         AppendLog("PTT = TX (voice modes); TUN = TUNE + carrier. S/W opens pan settings.");
         AppendLog($"Log: {LogFilePath}");
         CwPitchLabel = CwPitchOptions[Math.Clamp(CwPitchIndex, 0, CwPitchOptions.Count - 1)];
@@ -491,7 +491,7 @@ public partial class MainViewModel : ViewModelBase, IDisposable
     [ObservableProperty] private string _proficioTempText = "— °C";
     [ObservableProperty] private string _paTempText = "— °C";
     [ObservableProperty] private string _paCurrentText = "— mA";
-    [ObservableProperty] private string _clientVersionText = "0.6.72";
+    [ObservableProperty] private string _clientVersionText = "0.6.73";
     [ObservableProperty] private bool _alcOn = true;
     /// <summary>AMP / QRO path (PA bypass). Red when on (WPF).</summary>
     [ObservableProperty] private bool _ampOn;
@@ -4231,7 +4231,7 @@ public partial class MainViewModel : ViewModelBase, IDisposable
             b = b[..^1];
         if (!int.TryParse(b, NumberStyles.Integer, CultureInfo.InvariantCulture, out int meters))
             return null;
-        return meters is 160 or 80 or 60 or 40 or 30 or 20 or 17 or 15 or 12 or 10
+        return meters is 2200 or 630 or 160 or 80 or 60 or 40 or 30 or 20 or 17 or 15 or 12 or 10
             ? meters
             : null;
     }

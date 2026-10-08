@@ -4,13 +4,22 @@ Currently shipped in this folder:
 
 | Package | Version |
 |---------|---------|
-| `mscc` (servers) | 1.0.50 |
-| `mscc-ui` (Avalonia client) | 0.6.72 |
+| `mscc` (servers) | 1.0.51 |
+| `mscc-ui` (Avalonia client) | 0.6.73 |
 | `mscc-firmware` (optional radio firmware files) | 1.0.1 |
 | `mscc-init-gui` | 1.0.13 (unchanged this period) |
 | `mscc-portaudio` | 19.8.2 (unchanged this period) |
 
-## mscc 1.0.50 / mscc-ui 0.6.72 — 2026-10-07
+## mscc 1.0.51 / mscc-ui 0.6.73 — 2026-10-08
+
+### Fixed
+- Transmit server starts when the operator mic is missing or not found (TX voice off; TUNE/CW still work, I/Q output-only).
+- Digital audio uses the digital mic even when the operator mic is missing.
+- RX IQ START works on 2200 m and 630 m (UI).
+
+If your mic changes, re-run MSCC Init, then Stop/Start MSCC.
+
+## mscc 1.0.50 / mscc-ui 0.6.72 — 2026-10-07 (superseded)
 
 ### Fixed
 - Receiver DC blocker (spur about 12 kHz below the VFO) and full-block spectrum FFT.
