@@ -70,7 +70,7 @@ new kernel in the empty folder on the root partition, the real boot partition ke
 one, next boot fails. Rule: after the copier, reboot (or `sudo mount /boot/firmware`) and
 check `findmnt /boot/firmware` before any `apt upgrade`. Also: the copy has the same
 PARTUUIDs (21382c14) as the SD card, so never boot with both plugged in. Power check
-`vcgencmd get_throttled` was 0x0 (short uptime). The failed card is kept, not examined yet.
+`vcgencmd get_throttled` was 0x0 (short uptime).
 Same day on the backup card: a `full-upgrade` had stopped half way with the folder empty;
 after the reboot `sudo dpkg --configure -a` copied kernel 6.18.50+rpt to `/boot/firmware`,
 `full-upgrade` finished without errors, Ron: "back in business". The card copy made before
@@ -81,9 +81,10 @@ and pushed 2026-10-08 with these notes. Waiting for Stew's step test and client 
 **Later 2026-10-08: item 20 (trans no-mic port of cmd-067) built on the Pi, works; mscc 1.0.57
 built, committed afc9af9 (pushed).**
 **Then item 22 (S meter average power) built on the Pi, kept; mscc 1.0.58 built; committed and
-pushed with these notes. Item 21 (rig receive drops, J5) is open.**
+pushed with these notes.**
+**2026-10-09: Ron removed from the list: FREQ CAL STOP test (old item 1), rig receive drops /
+J5 (old item 21), the failed SD card.**
 
-1. Test FREQ CAL STOP on the Pi (needs WPF 9.26.5+). Back burner (Ron 2026-09-27).
 2. cmd-046: TUNE power separate (Windows/Ubuntu trans + WPF). With Stew; no Pi change.
 3. RF check of remote TX audio (Stew, spectrum analyzer).
 4. cmd-048 (Stew): port Pi QRP/QRO power cal to Ubuntu/Windows; Windows factory-seed choice -> Ron.
@@ -409,13 +410,6 @@ pushed with these notes. Item 21 (rig receive drops, J5) is open.**
    Test on the Pi: empty `~/.local/mscc/operator-microphone.ini`, start: trans stays up, RX
    works, TUNE gives RF; restore the mic: SSB TX audio works.
    Note for Stew (for his records, nothing to do): `.mscc-coord/NOTE-FOR-STEW-PI-NO-MIC-2026-10-08.md`.
-21. **Rig fault, open (Ron, 2026-10-08, PSoC daughter board): receive drops to nothing, the
-   spectrum noise floor drops too. Ron suspects J5** (64-pin mother / daughter edge connector,
-   "too touchy"; pin list in psoc-replacement-stm32 `proficio-stm32f411-25MHz/docs/
-   J5-BLACK-PILL-PINMAP.md`, written for the pill). Not sdrcore. Next question, not answered
-   yet: when it drops, is the trace still a live noise trace at a lower level (RF / analog path:
-   RX line B32, band bits B26 / B28 / A30) or dead flat / frozen (I/Q stream stopped: clocks
-   A08 / A10, A12 / A14, A16 / A20, data A22)? One step at a time.
 22. **S meter: average power, not block peak (2026-10-08, Ron OK'd). Built on the Pi
    2026-10-08 (binary 22:51), Ron: SSB, dummy load, floor was "about 2.5" (flickering S2 / S3),
    now a steady S2; "don't see much difference"; he keeps it. Smaller than the model's 6.7 dB;
@@ -424,7 +418,12 @@ pushed with these notes. Item 21 (rig receive drops, J5) is open.**
    **mscc 1.0.58 built 2026-10-08** (WSL, usual recipe): same 110 files / modes as 1.0.57,
    only `sdrcore-recv` (Ron's Pi build 2026-10-08 22:51, has the `meter_db` symbol) and the
    control version differ. In `rpi/mscc-deb/` and `installers/rpi/` (1.0.57 removed there).
-   Not installed on the Pi yet. Pi recv `VERSION_MINOR` still 141 (not bumped, Ron not asked).
+   Pi recv `VERSION_MINOR` 141 -> 143 on 2026-10-09 (Ron; 143 = Ubuntu recv, Windows is 144):
+   built on the Pi 2026-10-09 (binary 11:59; byte compare with the old one: only the build id,
+   the build time and 141 -> 143 differ).
+   **mscc 1.0.60 built 2026-10-09** (WSL, usual recipe): same 110 entries / modes as 1.0.59,
+   only `sdrcore-recv` and the control version differ. In `rpi/mscc-deb/` and
+   `installers/rpi/` (1.0.59 removed there). **Installed on the Pi 2026-10-09 (Ron).** Committed and pushed 2026-10-09 with these notes.
    Was: `sdrcore.c` `fastconv` took the largest sample magnitude of one
    2048-sample block (21 ms), `20*log10(peak) - 20`; the send thread (`udp_thread.c`, every
    100 ms) sent the latest block only, cast toward zero; ms-sdr passes it through (its
@@ -446,7 +445,7 @@ pushed with these notes. Item 21 (rig receive drops, J5) is open.**
    2026-10-09 with these notes.**
    **mscc 1.0.59 built 2026-10-09** (WSL, usual recipe): same 110 entries / modes as 1.0.58,
    only `ms-sdr` (Ron's Pi build 2026-10-09 11:45) and the control version differ. In
-   `rpi/mscc-deb/` and `installers/rpi/` (1.0.58 removed there). Not installed on the Pi yet.
+   `rpi/mscc-deb/` and `installers/rpi/` (1.0.58 removed there). **Installed on the Pi 2026-10-09 (Ron).**
    Was: WPF button starts lit
    and sends nothing at connect, ms-sdr only forwarded `CMD_SET_ALC_MULTIPLIER` (0x23), trans
    starts with ALC on, so the button was wrong after a client restart with ALC off (Ron saw it).
