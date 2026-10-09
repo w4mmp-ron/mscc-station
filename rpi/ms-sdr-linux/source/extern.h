@@ -529,6 +529,7 @@ struct User_Record {
     int Waterfall_zero;
     int Waterfall_speed;
     uint8_t TX_hi_cut;
+    uint8_t Alc_Multiplier; //CMD_SET_ALC_MULTIPLIER: TX ALC button, 0 = off, 1 = on
 };
 struct Current_Filters_Record{
     uint8_t High_Cut;

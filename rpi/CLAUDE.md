@@ -441,6 +441,30 @@ pushed with these notes. Item 21 (rig receive drops, J5) is open.**
    SSB voice a few dB lower, steady carriers the same (generator S9 must still read S9).
    Possible link to item 19's test (generator off = S2, S1 setting = S3): the peak-raised
    floor, not proven. Windows / Ubuntu recv have the old code.
+23. **TX ALC button state stored in ms-sdr (2026-10-09, Ron: the client is the wrong place; ini key
+   named after the opcode). Built on the Pi 2026-10-09, Ron: "works". Committed and pushed
+   2026-10-09 with these notes.**
+   **mscc 1.0.59 built 2026-10-09** (WSL, usual recipe): same 110 entries / modes as 1.0.58,
+   only `ms-sdr` (Ron's Pi build 2026-10-09 11:45) and the control version differ. In
+   `rpi/mscc-deb/` and `installers/rpi/` (1.0.58 removed there). Not installed on the Pi yet.
+   Was: WPF button starts lit
+   and sends nothing at connect, ms-sdr only forwarded `CMD_SET_ALC_MULTIPLIER` (0x23), trans
+   starts with ALC on, so the button was wrong after a client restart with ALC off (Ron saw it).
+   Now ms-sdr: `extern.h` `User_Controls.Alc_Multiplier`; `user_controls.c` key
+   `CMD_SET_ALC_MULTIPLIER=0|1` in `user_controls.ini` (default 1, also when an older file has
+   no key), saved on change (`User_Controls_Process`), sent to trans in
+   `User_Controls_Apply_To_Cores` (start + client connect) and to the client in
+   `User_Controls_Send_To_Gui` (plain opcode 0x23, value 0/1); `main-controller.c` case now calls
+   `User_Controls_Process`. trans unchanged. WSL syntax check clean.
+   **Client half (Stew), not done:** WPF has no handler for an incoming 0x23, so the button stays
+   wrong until it sets `AlcOn` from that report (without sending it back). Windows / Ubuntu
+   ms-sdr have the old pass-through. Note for Stew:
+   `.mscc-coord/NOTE-FOR-STEW-ALC-BUTTON-STATE-2026-10-09.md` (also asks that the client stop
+   sending its own ALC state at connect, as Avalonia does).
+   ALC review (same day, code only): limiter in AM / LSB / USB after the filter, target =
+   drive x 1.1 = a fixed 1.1 before the drive; TUNE is 0.8 x sqrt(2) = 1.13 on that scale, so
+   SSB peaks are held to about 94% of TUNE power, which is rated power only after a QRP cal.
+   Ron: review only, nothing to fix.
 7. Next mscc .deb build picks up the "(package mscc-init)" hint text in mscc-deb postinst /
    build-deb.sh / install-mscc.sh (source only, committed 82b819b). No rebuild just for that.
 

@@ -1619,10 +1619,7 @@ void * Command_Processor(void *my_param) {
             break;
 
         case CMD_SET_ALC_MULTIPLIER:
-            SDRcore_trans_send_param(CMD_SET_ALC_MULTIPLIER, t_opcode_data);
-            print_time(0);
-            fprintf(G_fp_logfile, "[%d] Command_Interface . CMD_SET_ALC_MULTIPLIER: %d\n",
-                line_number++, t_opcode_data);
+            User_Controls_Process(opcode, G_receive_buf, FALSE);
             break;
 
         case CMD_SET_AMPLIFIER_CALIBRATION_RESET:
