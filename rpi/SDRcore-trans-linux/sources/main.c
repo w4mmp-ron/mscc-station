@@ -1102,10 +1102,8 @@ int main(int argc, char **argv) {
 
         if (G_input_device_index == NO_INPUT_DEVICE) {
             print_time();
-            fprintf(G_fp_logfile, "[%d] main. NO MICROPHONE DEVICE FOUND.\n", line_number++);
-            MessageBoxA(NULL, "NO MICROPHONE DEVICE FOUND \r\n",
-                "SDRcore-trans", MB_OK | MB_ICONEXCLAMATION);
-            goto error;
+            fprintf(G_fp_logfile,
+                "[%d] main. No operator mic set: TX voice off\n", line_number++);
         }
 
         /*
@@ -1114,18 +1112,27 @@ int main(int argc, char **argv) {
          * device, keep D mode usable: fall back to the operator mic record so
          * CMD_SET_AUDIO_DEVICE does not index past G_digital_input_devices[] and
          * leave the I/Q stream stopped (no TUNE power in D).
+         * Copy only when the operator index is a real table slot (not 100).
          */
         if (G_digital_input_device_index == NO_INPUT_DEVICE ||
             G_digital_input_device_index < 0 ||
             G_digital_input_device_index >= MAX_INPUT_DEVICES) {
-            G_digital_input_device_index = G_input_device_index;
-            G_digital_input_devices[G_digital_input_device_index] =
-                G_input_devices[G_input_device_index];
-            print_time();
-            fprintf(G_fp_logfile,
-                "[%d] main. Digital mic not found — fallback to operator mic index %d ('%s')\n",
-                line_number++, G_digital_input_device_index,
-                G_input_devices[G_input_device_index].name);
+            if (G_input_device_index >= 0 &&
+                G_input_device_index < MAX_INPUT_DEVICES) {
+                G_digital_input_device_index = G_input_device_index;
+                G_digital_input_devices[G_digital_input_device_index] =
+                    G_input_devices[G_input_device_index];
+                print_time();
+                fprintf(G_fp_logfile,
+                    "[%d] main. Digital mic not found — fallback to operator mic index %d ('%s')\n",
+                    line_number++, G_digital_input_device_index,
+                    G_input_devices[G_input_device_index].name);
+            } else {
+                print_time();
+                fprintf(G_fp_logfile,
+                    "[%d] main. Digital mic not found and no operator mic — leave unset\n",
+                    line_number++);
+            }
         } else {
             print_time();
             {
@@ -1141,25 +1148,6 @@ int main(int argc, char **argv) {
             }
         }
 
-        inputParameters.device = G_input_devices[G_input_device_index].device_index;
-        if (inputParameters.device == paNoDevice ||
-            Pa_GetDeviceInfo(inputParameters.device) == NULL) {
-            print_time();
-            fprintf(G_fp_logfile, "[%d] main. Microphone device invalid.\n", line_number++);
-            goto error;
-        }
-        if (inputParameters.device == playDevice) {
-            print_time();
-            fprintf(G_fp_logfile,
-                "[%d] main. Operator mic must not be the Multus/Proficio I/Q device.\n",
-                line_number++);
-            goto error;
-        }
-        inputParameters.channelCount = inputchannels;
-        inputParameters.sampleFormat = PA_SAMPLE_TYPE;
-        inputParameters.suggestedLatency = 0.025f;
-        inputParameters.hostApiSpecificStreamInfo = NULL;
-
         outputParameters.device = playDevice;
         if (outputParameters.device == paNoDevice ||
             Pa_GetDeviceInfo(outputParameters.device) == NULL) {
@@ -1172,26 +1160,57 @@ int main(int argc, char **argv) {
         outputParameters.suggestedLatency = 0.025f;
         outputParameters.hostApiSpecificStreamInfo = NULL;
 
-        print_time();
-        fprintf(G_fp_logfile,
-            "[%d] G_input_device_index: %d, device_index: %d, Multus TX: %d '%s'\n",
-            line_number++, G_input_device_index,
-            G_input_devices[G_input_device_index].device_index,
-            (int)playDevice, Pa_GetDeviceInfo(playDevice)->name);
-
-        status = manage_stream(0, G_input_devices[G_input_device_index].device_index,
-                G_input_devices[G_input_device_index].num_channels);
-        status = manage_stream(1, G_input_devices[G_input_device_index].device_index,
-                G_input_devices[G_input_device_index].num_channels);
-        if (status) {
+        if (G_input_device_index < 0 || G_input_device_index >= MAX_INPUT_DEVICES) {
             print_time();
             fprintf(G_fp_logfile,
-                "[%d] main. operator mic open failed (%d) — I/Q TX only so keep-alive lives\n",
-                line_number++, status);
+                "[%d] main. OUTPUT-ONLY I/Q (no mic) Multus TX: %d '%s'\n",
+                line_number++, (int)playDevice, Pa_GetDeviceInfo(playDevice)->name);
             status = manage_stream(1, -1, 2);
             if (status) {
                 err = status;
                 goto error;
+            }
+        } else {
+            inputParameters.device = G_input_devices[G_input_device_index].device_index;
+            if (inputParameters.device == paNoDevice ||
+                Pa_GetDeviceInfo(inputParameters.device) == NULL) {
+                print_time();
+                fprintf(G_fp_logfile, "[%d] main. Microphone device invalid.\n", line_number++);
+                goto error;
+            }
+            if (inputParameters.device == playDevice) {
+                print_time();
+                fprintf(G_fp_logfile,
+                    "[%d] main. Operator mic must not be the Multus/Proficio I/Q device.\n",
+                    line_number++);
+                goto error;
+            }
+            inputParameters.channelCount = inputchannels;
+            inputParameters.sampleFormat = PA_SAMPLE_TYPE;
+            inputParameters.suggestedLatency = 0.025f;
+            inputParameters.hostApiSpecificStreamInfo = NULL;
+
+            print_time();
+            fprintf(G_fp_logfile,
+                "[%d] G_input_device_index: %d, device_index: %d, Multus TX: %d '%s'\n",
+                line_number++, G_input_device_index,
+                G_input_devices[G_input_device_index].device_index,
+                (int)playDevice, Pa_GetDeviceInfo(playDevice)->name);
+
+            status = manage_stream(0, G_input_devices[G_input_device_index].device_index,
+                    G_input_devices[G_input_device_index].num_channels);
+            status = manage_stream(1, G_input_devices[G_input_device_index].device_index,
+                    G_input_devices[G_input_device_index].num_channels);
+            if (status) {
+                print_time();
+                fprintf(G_fp_logfile,
+                    "[%d] main. operator mic open failed (%d) — I/Q TX only so keep-alive lives\n",
+                    line_number++, status);
+                status = manage_stream(1, -1, 2);
+                if (status) {
+                    err = status;
+                    goto error;
+                }
             }
         }
     }

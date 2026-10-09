@@ -513,16 +513,26 @@ void *UDP_Thread(void *my_param) {
                         line_number++, dig_idx);
                     dig_idx = op_idx;
                 }
+                G_audio_mode = DIGITAL_AUDIO;
                 if (op_idx < 0 || op_idx >= MAX_INPUT_DEVICES) {
+                    /* Stop only: manage_stream(0, ...) ignores the device. */
+                    stream_status = manage_stream(0, 0, 2);
+                    if (dig_idx < 0 || dig_idx >= MAX_INPUT_DEVICES) {
+                        print_time();
+                        fprintf(G_fp_logfile,
+                            "[%d] UDP Thread. CMD_SET_AUDIO_DEVICE DIGITAL: no digital or operator mic — output-only I/Q\n",
+                            line_number++);
+                        stream_status = manage_stream(1, -1, 2);
+                        break;
+                    }
                     print_time();
                     fprintf(G_fp_logfile,
-                        "[%d] UDP Thread. CMD_SET_AUDIO_DEVICE DIGITAL: invalid operator index %d — abort switch\n",
-                        line_number++, op_idx);
-                    break;
+                        "[%d] UDP Thread. CMD_SET_AUDIO_DEVICE DIGITAL: no operator mic — opening digital mic idx %d\n",
+                        line_number++, dig_idx);
+                } else {
+                    stream_status = manage_stream(0, G_input_devices[op_idx].device_index,
+                        G_input_devices[op_idx].num_channels);
                 }
-                G_audio_mode = DIGITAL_AUDIO;
-                stream_status = manage_stream(0, G_input_devices[op_idx].device_index,
-                    G_input_devices[op_idx].num_channels);
                 /*
                  * TUNE/CW: carrier is synthesized — no digi mic needed. Full-duplex into an
                  * idle MSCC loopback often stalls ALSA so the callback never runs → no RF.
@@ -549,8 +559,9 @@ void *UDP_Thread(void *my_param) {
                         if (stream_status != 0) {
                             print_time();
                             fprintf(G_fp_logfile,
-                                "[%d] UDP Thread. CMD_SET_AUDIO_DEVICE DIGITAL stream failed (%d) (no operator fallback)\n",
+                                "[%d] UDP Thread. CMD_SET_AUDIO_DEVICE DIGITAL stream failed (%d) — output-only I/Q\n",
                                 line_number++, stream_status);
+                            stream_status = manage_stream(1, -1, 2);
                         }
                     }
                 }
@@ -567,8 +578,11 @@ void *UDP_Thread(void *my_param) {
                 if (op_idx < 0 || op_idx >= MAX_INPUT_DEVICES) {
                     print_time();
                     fprintf(G_fp_logfile,
-                        "[%d] UDP Thread. CMD_SET_AUDIO_DEVICE OPERATOR: invalid operator index %d — abort switch\n",
+                        "[%d] UDP Thread. CMD_SET_AUDIO_DEVICE OPERATOR: invalid operator index %d — output-only I/Q\n",
                         line_number++, op_idx);
+                    G_audio_mode = OPERATOR_AUDIO;
+                    stream_status = manage_stream(0, 0, 2);
+                    stream_status = manage_stream(1, -1, 2);
                     break;
                 }
                 /* Stop path only needs a valid stream_running flag; avoid OOB on dig_idx. */
@@ -593,8 +607,12 @@ void *UDP_Thread(void *my_param) {
                 if (op_idx < 0 || op_idx >= MAX_INPUT_DEVICES) {
                     print_time();
                     fprintf(G_fp_logfile,
-                        "[%d] UDP Thread. CMD_SET_AUDIO_DEVICE REMOTE: invalid operator index %d — abort switch\n",
+                        "[%d] UDP Thread. CMD_SET_AUDIO_DEVICE REMOTE: invalid operator index %d — output-only I/Q (MSA1 still)\n",
                         line_number++, op_idx);
+                    G_audio_mode = t_opcode_data;
+                    remote_mic_reset_stream();
+                    stream_status = manage_stream(0, 0, 2);
+                    stream_status = manage_stream(1, -1, 2);
                     break;
                 }
                 if (dig_idx < 0 || dig_idx >= MAX_INPUT_DEVICES || dig_idx == NO_INPUT_DEVICE)

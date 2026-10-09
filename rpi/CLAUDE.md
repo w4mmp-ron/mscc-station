@@ -78,6 +78,8 @@ that holds the half-finished upgrade; Ron was told to make a new one.
 **Resume point 2026-10-08: item 19 (spectrum dB labels squeezed 2:1).** Ron's S9 / S1 test
 done: squeeze proven, exact factor not. The note for Stew (with the readings) was committed
 and pushed 2026-10-08 with these notes. Waiting for Stew's step test and client fix.
+**Later 2026-10-08: item 20 (trans no-mic port of cmd-067) built on the Pi, works; mscc 1.0.57
+built. Waiting for Ron's word to commit.**
 
 1. Test FREQ CAL STOP on the Pi (needs WPF 9.26.5+). Back burner (Ron 2026-09-27).
 2. cmd-046: TUNE power separate (Windows/Ubuntu trans + WPF). With Stew; no Pi change.
@@ -384,6 +386,24 @@ and pushed 2026-10-08 with these notes. Waiting for Stew's step test and client 
    Same day, all four SMSG bands (80, 40, 30, 20 m): S meter S9 and the peak about the same
    low reading (around -87) on each = not band dependent, one correction covers all bands.
    (In the note for Stew too.)
+20. **trans starts with no operator mic (2026-10-08, port of Stew's cmd-067 Part B1, Ubuntu trans
+   3.142, commit 22f6f5b).** Before: `SDRcore-trans-linux/sources/main.c` logged "NO MICROPHONE
+   DEVICE FOUND" and exited. Now: logs "No operator mic set: TX voice off" and opens the I/Q
+   output only (`manage_stream(1, -1, 2)`, log "OUTPUT-ONLY I/Q (no mic)"); the digital-mic
+   fallback copies the operator record only when the operator index is valid; `udp_thread.c`
+   CMD_SET_AUDIO_DEVICE with no operator mic goes to output-only I/Q instead of "abort switch"
+   (DIGITAL with a valid digital mic, OPERATOR, REMOTE). Stew's hunks applied unchanged (the Pi
+   code was the same as Ubuntu's before his change). `extern.h` VERSION_MINOR 140 -> 142.
+   WSL syntax check clean. **Built on the Pi 2026-10-08, Ron: "works".**
+   **mscc 1.0.57 built 2026-10-08** (WSL, usual recipe; index export + the new binary and
+   control laid over it): same 110 files / modes as 1.0.56; only `sdrcore-trans` (Ron's Pi
+   build 2026-10-08), the control version and `factory/README.md` (doc text from the repo)
+   differ. In `rpi/mscc-deb/` and `installers/rpi/` (1.0.56 removed there). Not installed on
+   the Pi yet (the Pi runs 1.0.56 + the hand-built trans). Not committed. recv / ms-sdr unchanged:
+   recv with an unmatched speaker uses the default output or the first one found; with no
+   output device at all it takes `Audio_Device_Error` (no input-only stream exists).
+   Test on the Pi: empty `~/.local/mscc/operator-microphone.ini`, start: trans stays up, RX
+   works, TUNE gives RF; restore the mic: SSB TX audio works.
 7. Next mscc .deb build picks up the "(package mscc-init)" hint text in mscc-deb postinst /
    build-deb.sh / install-mscc.sh (source only, committed 82b819b). No rebuild just for that.
 
