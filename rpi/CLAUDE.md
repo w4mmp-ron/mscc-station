@@ -79,7 +79,7 @@ that holds the half-finished upgrade; Ron was told to make a new one.
 done: squeeze proven, exact factor not. The note for Stew (with the readings) was committed
 and pushed 2026-10-08 with these notes. Waiting for Stew's step test and client fix.
 **Later 2026-10-08: item 20 (trans no-mic port of cmd-067) built on the Pi, works; mscc 1.0.57
-built. Waiting for Ron's word to commit.**
+built, committed afc9af9 (pushed).**
 
 1. Test FREQ CAL STOP on the Pi (needs WPF 9.26.5+). Back burner (Ron 2026-09-27).
 2. cmd-046: TUNE power separate (Windows/Ubuntu trans + WPF). With Stew; no Pi change.
@@ -399,11 +399,12 @@ built. Waiting for Ron's word to commit.**
    control laid over it): same 110 files / modes as 1.0.56; only `sdrcore-trans` (Ron's Pi
    build 2026-10-08), the control version and `factory/README.md` (doc text from the repo)
    differ. In `rpi/mscc-deb/` and `installers/rpi/` (1.0.56 removed there). Not installed on
-   the Pi yet (the Pi runs 1.0.56 + the hand-built trans). Not committed. recv / ms-sdr unchanged:
+   the Pi yet (the Pi runs 1.0.56 + the hand-built trans). Committed afc9af9 (pushed). recv / ms-sdr unchanged:
    recv with an unmatched speaker uses the default output or the first one found; with no
    output device at all it takes `Audio_Device_Error` (no input-only stream exists).
    Test on the Pi: empty `~/.local/mscc/operator-microphone.ini`, start: trans stays up, RX
    works, TUNE gives RF; restore the mic: SSB TX audio works.
+   Note for Stew (for his records, nothing to do): `.mscc-coord/NOTE-FOR-STEW-PI-NO-MIC-2026-10-08.md`.
 7. Next mscc .deb build picks up the "(package mscc-init)" hint text in mscc-deb postinst /
    build-deb.sh / install-mscc.sh (source only, committed 82b819b). No rebuild just for that.
 
