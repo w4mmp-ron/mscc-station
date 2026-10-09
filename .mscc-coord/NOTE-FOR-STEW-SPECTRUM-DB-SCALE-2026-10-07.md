@@ -97,6 +97,45 @@ S1. The server and client drawing path was checked end to end (max over bins, Y 
 frame averaging, `RawYToDb`, offset, trace and label mapping): all linear, nothing else
 bends the scale. So either the rulers are off or there is a second cause not found yet.
 
+## Ron's test build, 2026-10-09 (the fix above, tried)
+
+Ron had a private copy of the WPF client (R10.8.1 source) built with the fix, to see the
+effect. It is not in the repo. The two videos Ron sent you are from it.
+
+What was changed in the copy:
+
+- `RawYToDb`: scale 75, bias 80, upper clamp 140. Nothing else in the data path.
+- `SpectrumDbCalCenter`: -86.9, a value worked out from the recv code (S meter =
+  20*log10(A) - 20; spectrum = 20*log10(A) + 66.9 for a 4096 point Hamming window), to see
+  if a fixed constant can replace the calibration. dB CAL trim slider kept, +/-20.
+- Its own ini keys for the offset, so the normal client's saved dB CAL was left alone.
+
+Results, Pi host, 20 m, CW, SMSG carrier, read off the videos (carrier tuned 300 Hz off so
+the peak is beside the tuning marker, not under it):
+
+| SMSG setting | S meter | Peak, trim 0 | Peak, trim -20 | Peak, trim +20 | Noise floor, trim 0 |
+|---|---|---|---|---|---|
+| high (S9) | S9 | about -85 | about -105 | off the top (above -73) | about -143 |
+| low (S4) | S4 | about -110 | about -130 | about -91 | about -143 |
+
+Correction to the 2026-10-08 table above: the SMSG's low setting is S4 by its manual, not S1.
+
+- **The doubled scale works.** Between the two settings the peak moved 25 dB; the old client
+  moves it about 12 or 13. The noise floor did not move, and signals stand about twice as
+  far out of the noise (off air on 15 m FT8: about 39 dB above the floor, 16 before).
+- **The trim is linear:** everything moves dB for dB with the slider.
+- **The centre -86.9 is too low**, by 12 dB at S9 and 7 dB at S4 if the needle is taken at
+  face value. Why the calculated value is off is not found. A centre near -75 to -80 would
+  put S9 at -73.
+- **The needle cannot settle it.** `Db_to_Smeter` shows S9 for -78 to -73 dBm and S4 for
+  -108 to -103, so the real step between the two settings is somewhere from 25 to 35 dB.
+
+Ron's position: no spectrum calibration should be needed. The S meter and the spectrum come
+from the same samples, so for a carrier they should show the same number, one fixed
+constant apart, whatever the generator really puts out. Once the S meter shows its dBm
+number again (you are adding it), two readings (S9 and S4) give that constant and show
+whether the two displays track.
+
 ## To do: a clean step test (you have the gear)
 
 Two levels that are both well above the noise, a known step apart: for example -73 dBm and

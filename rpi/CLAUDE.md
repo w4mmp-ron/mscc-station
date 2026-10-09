@@ -93,6 +93,59 @@ installed on the Pi). The notes (`rpi/CLAUDE.md` list changes above, `rpi/si5351
 commit message, in plain words (no bare item / cmd numbers).** Ron's own list now: (a) spectrum level shift / dB CAL after the full-FFT fix,
 not measured; (b) Si5351 birdie: decide on the one-line firmware test. Firmware not touched.
 Ron asks for "the list, concise" as three groups: Yours / With Stew / Parked.
+**2026-10-09 (later): private WPF test build `rpi/wpf-spectrum-test/` (Ron: prove the spectrum
+needs no calibration; Stew disagrees with the 2:1 analysis). NEVER commit it: the folder has its
+own `.gitignore` with `*`, so git does not see it (ripgrep / the Grep tool skip it too; use
+grep in the shell). Copy of the tracked WPF source at 8564843 (R10.8.1) + 5 edits:
+`UdpRadioService.cs` `RawYToDb` scale 150 -> 75, bias 40 -> 80, clamp 80 -> 140 (true dB, same
+wire data); `SpectrumColorSettings.cs` centre -91.3 -> -86.9, worked out from the recv code
+(S meter = 20log(A) - 20; spectrum = 20log(A) + 66.9, Hamming 4096 sum 2212), trim slider +/-20
+kept; `SpectrumWaterfallSettings.cs` ini keys `SPECTRUM_DB20_OFFSET` (+ `_HF`, `_LF`) so the
+normal client offsets (-91.12 in Ron's ini) are not read or overwritten; tooltips; csproj
+`CopyToMsccNet9` target off unless `-p:CopyToMsccNet9=true`. Built (dotnet 9, Release, 0
+errors): `src/MSCC.Wpf/bin/Release/net9.0-windows/MSCC.Wpf.exe`, shows version 10.9.0.
+`C:\mscc-net9` not touched. NOT run yet. Expected with trim 0: SMSG S9 carrier peak near -73
+(carrier between two FFT bins reads up to 1.7 dB low). Ron's 2026-10-08 reading (-87 at
+offset -91.12) would instead call for about -81, i.e. the peak would read about -79: 5 to 6 dB
+from the calculated value, not explained; the test will show which is right.**
+**Run by Ron 2026-10-09, "this is the way the spectrum should look"** (`Downloads\mscc-1.wmv`
+old client 10.4.0, `mscc-2.wmv` test build 10.9.0; both on air, 21.074 USB FT8, Pi host, 2
+minutes apart). Old: floor about -118, strongest peaks about -102 (16 dB above the floor). New:
+floor about -136, peaks about -97 (about 39 dB above the floor). So signals stand about twice
+as far out of the noise and the floor reads lower, as intended. NOT checked in these videos:
+S9 carrier = -73 (no SMSG carrier in them), so the -86.9 offset is still unproven.
+Third video `Downloads/Video_2026-10-09_165009.wmv` (test build, SMSG carrier 14.0672 CW, S
+meter S9, Ron: "the slider starts at zero and progresses up ... It is working"). Read frame by
+frame: the visible top of the yellow carrier is about -107 for the first 20 s, then rises and
+settles at about -87 (floor about -141) from 40 s on. NOT a valid peak reading: the carrier sits
+exactly under the white tuning marker, which hides the thin tip of the spike, and the S/W window
+(trim value) is not in the picture. Asked Ron for the trim value and to retune a few hundred Hz
+so the tip shows beside the marker. Offset -86.9 still unproven; if -87 at trim +20 is the true
+peak the fixed offset is about 34 dB too low, which would need explaining.
+**Fourth video `Downloads/Video_2026-10-09_165828.wmv` = the valid one** (VFO 14.0669 CW so the
+carrier is beside the marker; Ron moved dB CAL 0 -> far left -> far right -> 0). Measured every
+2.5 s, counting the white trace line as well as the yellow fill (the third video was read on
+the fill only, so its numbers are too low; ignore them). Trim 0: peak -84 to -86.5 (about -85),
+floor about -143. Trim -20: peak about -105, floor off the bottom. Trim +20: peak off the top
+of the pane (-73), floor -123. So the trim moves everything 1:1 and the scale is linear, but
+**at trim 0 the S9 carrier reads about -85, 12 dB under -73: the calculated offset -86.9 is
+wrong by about 12 dB (a factor of 4 in amplitude), cause not found.** Checked: ms-sdr passes
+the S meter through, the client adds nothing. Note the needle shows S9 for -78 and up (integer
+division in `Db_to_Smeter`), so the meter may be up to 5 dB under -73. Offset that would put
+S9 at -73: about -75. Not changed yet. S9 vs S1 tracking not tested yet.
+**Fifth video `Downloads/Video_2026-10-09_170518.wmv`: SMSG low setting = S4 (Ron: the manual
+says S4, not S1), same slider routine.** Meter S4. Trim 0: peak about -110 (-109 to -110.6),
+floor -143. Trim -20: -130. Trim +20: -91. So S9 -> -85 and S4 -> -110: the trace moved 25 dB
+for 5 S units (30 dB nominal). On the old half scale the same step would be about 12.5 dB.
+`Db_to_Smeter` shows S9 for -78..-73 and S4 for -108..-103, so the real meter step is anywhere
+from 25 to 35 dB: 25 fits only at the edge (-78 and -103, which would make the offset 7 dB low,
+not 12). Cannot be settled from the needle. Proposed to Ron: show the S meter dBm number in the
+test build. Not done yet.
+**Ron 2026-10-09: no. Stew is adding the dBm number to the S meter (as it was before the WPF
+migration). "For now this is good enough": his goal was that the spectrum mirrors the S meter;
+the S meter itself needs work, later. Test build left as it is (offset -86.9, reads 7 to 12 dB
+low). When Stew's dBm readout exists: read S9 and S4 again, set the constant from the two
+pairs, and check they track. No note for Stew about the test build written (not asked).**
 
 2. cmd-046: TUNE power separate (Windows/Ubuntu trans + WPF). With Stew; no Pi change.
 3. RF check of remote TX audio (Stew, spectrum analyzer).
