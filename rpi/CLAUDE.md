@@ -84,6 +84,15 @@ built, committed afc9af9 (pushed).**
 pushed with these notes.**
 **2026-10-09: Ron removed from the list: FREQ CAL STOP test (old item 1), rig receive drops /
 J5 (old item 21), the failed SD card.**
+**2026-10-09: the Si5351 birdie is on Ron's list, not Stew's (Ron). Next step, not decided:
+one-line firmware test (2 mA drive), see `rpi/si5351-drive.md` (has where the birdie will be).**
+**Resume point 2026-10-09 (end):** all Pi work is committed and pushed (ce21277; mscc 1.0.60
+installed on the Pi). The notes (`rpi/CLAUDE.md` list changes above, `rpi/si5351-drive.md`
+2026-10-09 review + "Where the birdie will be") were committed and pushed later the same day.
+**Rule from Ron 2026-10-09: every commit / push carries the current "With Stew" list in the
+commit message, in plain words (no bare item / cmd numbers).** Ron's own list now: (a) spectrum level shift / dB CAL after the full-FFT fix,
+not measured; (b) Si5351 birdie: decide on the one-line firmware test. Firmware not touched.
+Ron asks for "the list, concise" as three groups: Yours / With Stew / Parked.
 
 2. cmd-046: TUNE power separate (Windows/Ubuntu trans + WPF). With Stew; no Pi change.
 3. RF check of remote TX audio (Stew, spectrum analyzer).

@@ -2,6 +2,33 @@
 
 Ron's idea, 2026-10-06. **Plan only: nothing is changed, nothing is built.**
 
+**2026-10-09 review:** the birdie is 32 x LO against 18 x 25 MHz, and the LO edges at the mixer
+come from the 74ACT74 (5 V rail), whose edge speed does not depend on the Si5351 drive. So a
+lower drive only helps if the leak is on the Si5351 side. Suggested first: a one-line test,
+`si5351a.c:203` `0x4F` -> `0x4C` (2 mA), flash, look at the birdie at 14.074 USB; build the
+opcode only if it moves. Ron is leaning towards the one-line test, not decided.
+
+## Where the birdie will be
+
+Set up as before: generator off, dummy load, USB.
+
+- **20 m, dial 14.074 USB:** a pair of lines 15.3 kHz either side of the LO point. The LO
+  point is dial - 12 kHz = 14.062, so the lines are at **14.0467 and 14.0773** on the
+  spectrum. About 10 dB over the noise, steady (measured 2026-10-06: 15.27 kHz).
+  The upper one is inside the passband with Hi 4.0 kHz: a tone at about 3.3 kHz in the audio.
+- **It moves 32 kHz per 1 kHz of dial:** distance from the LO point = 32 x (dial - 14.074478).
+  Dial 14.075: pair at 16.7 kHz either side (14.0463 and 14.0797). Dial 14.0745: the pair
+  closes to under 1 kHz, at the LO point (14.0625). In CW the crossing is at dial 14.0751.
+- **Seen only within about 1.5 kHz of dial 14.0745.** Outside that the lines are more than
+  48 kHz out and the codec removes them.
+- **40 m, dial 7.043 USB:** the pair is there too (Ron 2026-10-06, position not measured).
+  Calculated: crossing at dial 7.04325, so at 7.043 the pair is 8 kHz either side of the LO
+  point 7.031 = 7.023 and 7.039.
+- Calculated only, not tested: crossings at dial 21.10575, 28.137, 28.918 and 29.6995 USB.
+
+For the one-line test, compare the height of the pair over the noise at dial 14.074 USB with
+8 mA (today) and with 2 mA.
+
 ## Why
 
 The Si5351 output beats with its 25 MHz crystal and puts a birdie pair on the spectrum (dial
