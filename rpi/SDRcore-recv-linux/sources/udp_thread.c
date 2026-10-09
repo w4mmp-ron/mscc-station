@@ -456,7 +456,7 @@ void *Send_smeter_thread(void *param) {
     while (G_all_threads_run) {
         Sleep(SEND_INTERVAL);
         f_smeter = mystate.peakRxSignalDbm;
-        i_smeter = (int16_t) f_smeter;
+        i_smeter = (int16_t) floorf(f_smeter + 0.5f); // nearest dB (a plain cast rounds toward zero)
         if (!G_tx_mode) {
             memcpy(&send_buf[1], &i_smeter, 2);
             if (sendto(ms_sdr_s, send_buf, 5, 0, (struct sockaddr *) &si_ms_sdr, slen) == SOCKET_ERROR) {

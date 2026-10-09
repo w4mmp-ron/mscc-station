@@ -80,6 +80,8 @@ done: squeeze proven, exact factor not. The note for Stew (with the readings) wa
 and pushed 2026-10-08 with these notes. Waiting for Stew's step test and client fix.
 **Later 2026-10-08: item 20 (trans no-mic port of cmd-067) built on the Pi, works; mscc 1.0.57
 built, committed afc9af9 (pushed).**
+**Then item 22 (S meter average power) built on the Pi, kept; mscc 1.0.58 built; committed and
+pushed with these notes. Item 21 (rig receive drops, J5) is open.**
 
 1. Test FREQ CAL STOP on the Pi (needs WPF 9.26.5+). Back burner (Ron 2026-09-27).
 2. cmd-046: TUNE power separate (Windows/Ubuntu trans + WPF). With Stew; no Pi change.
@@ -394,7 +396,9 @@ built, committed afc9af9 (pushed).**
    CMD_SET_AUDIO_DEVICE with no operator mic goes to output-only I/Q instead of "abort switch"
    (DIGITAL with a valid digital mic, OPERATOR, REMOTE). Stew's hunks applied unchanged (the Pi
    code was the same as Ubuntu's before his change). `extern.h` VERSION_MINOR 140 -> 142.
-   WSL syntax check clean. **Built on the Pi 2026-10-08, Ron: "works".**
+   WSL syntax check clean. **Built on the Pi 2026-10-08, Ron: "works" (normal operation, mic
+   set). The no-mic start itself is NOT tested on the Pi; Ron 2026-10-08: assume it works, he
+   will not test it and will report if it fails. Same for the 1.0.57 .deb install.**
    **mscc 1.0.57 built 2026-10-08** (WSL, usual recipe; index export + the new binary and
    control laid over it): same 110 files / modes as 1.0.56; only `sdrcore-trans` (Ron's Pi
    build 2026-10-08), the control version and `factory/README.md` (doc text from the repo)
@@ -405,6 +409,38 @@ built, committed afc9af9 (pushed).**
    Test on the Pi: empty `~/.local/mscc/operator-microphone.ini`, start: trans stays up, RX
    works, TUNE gives RF; restore the mic: SSB TX audio works.
    Note for Stew (for his records, nothing to do): `.mscc-coord/NOTE-FOR-STEW-PI-NO-MIC-2026-10-08.md`.
+21. **Rig fault, open (Ron, 2026-10-08, PSoC daughter board): receive drops to nothing, the
+   spectrum noise floor drops too. Ron suspects J5** (64-pin mother / daughter edge connector,
+   "too touchy"; pin list in psoc-replacement-stm32 `proficio-stm32f411-25MHz/docs/
+   J5-BLACK-PILL-PINMAP.md`, written for the pill). Not sdrcore. Next question, not answered
+   yet: when it drops, is the trace still a live noise trace at a lower level (RF / analog path:
+   RX line B32, band bits B26 / B28 / A30) or dead flat / frozen (I/Q stream stopped: clocks
+   A08 / A10, A12 / A14, A16 / A20, data A22)? One step at a time.
+22. **S meter: average power, not block peak (2026-10-08, Ron OK'd). Built on the Pi
+   2026-10-08 (binary 22:51), Ron: SSB, dummy load, floor was "about 2.5" (flickering S2 / S3),
+   now a steady S2; "don't see much difference"; he keeps it. Smaller than the model's 6.7 dB;
+   my guess, not measured: the dummy-load floor (about 1 count) has steady tones that do not
+   drop. Ron later: "a bit less bouncy". S9 generator check not reported.**
+   **mscc 1.0.58 built 2026-10-08** (WSL, usual recipe): same 110 files / modes as 1.0.57,
+   only `sdrcore-recv` (Ron's Pi build 2026-10-08 22:51, has the `meter_db` symbol) and the
+   control version differ. In `rpi/mscc-deb/` and `installers/rpi/` (1.0.57 removed there).
+   Not installed on the Pi yet. Pi recv `VERSION_MINOR` still 141 (not bumped, Ron not asked).
+   Was: `sdrcore.c` `fastconv` took the largest sample magnitude of one
+   2048-sample block (21 ms), `20*log10(peak) - 20`; the send thread (`udp_thread.c`, every
+   100 ms) sent the latest block only, cast toward zero; ms-sdr passes it through (its
+   `Smeter_Average` is commented out); client `Db_to_Smeter` (`MainViewModel.cs:418`) S9 = -73,
+   6 dB per unit, integer division toward zero (S steps up to 5 dB early: -78 shows S9; Stew's
+   side, not touched, not told). A peak reads noise high and jumpy; a carrier reads true.
+   Now: `sdrcore.c` sums `mag*mag`, block average power, `10*log10 - 20` (same constant, so a
+   steady carrier reads the same), floor `METER_MIN_POWER` (no log10(0)), smoothed in dB:
+   up `METER_RISE_ALPHA` 0.5 per block, down `METER_FALL_SEC` 0.3 s. `udp_thread.c`: rounds
+   to the nearest dB. Variable name `peakRxSignalDbm` kept. WSL syntax check clean.
+   Python model of old vs new (band-limited noise, 96 kHz, 2048 blocks), not a measurement:
+   noise reads lower by 6.7 dB at 2700 Hz, 4.1 dB at 400 Hz, 2.8 dB at 200 Hz; jitter 1.0-2.1 dB
+   -> 0.2-0.7 dB; carrier 0.00 dB change. Expect: resting needle about 1 S unit lower in SSB,
+   SSB voice a few dB lower, steady carriers the same (generator S9 must still read S9).
+   Possible link to item 19's test (generator off = S2, S1 setting = S3): the peak-raised
+   floor, not proven. Windows / Ubuntu recv have the old code.
 7. Next mscc .deb build picks up the "(package mscc-init)" hint text in mscc-deb postinst /
    build-deb.sh / install-mscc.sh (source only, committed 82b819b). No rebuild just for that.
 
