@@ -109,10 +109,19 @@ void doAGC(sp_cplx *samps, int nframes)
  * has its own slow average, so the hump goes and the normal noise texture stays: no
  * spike and no hole. Bins are never scaled up. A steady signal inside the slice is
  * levelled too, as it was hidden before. 4096 FFT at 96 kHz = 23.4 Hz per bin.
+ *
+ * The averages must not learn a burst: the low-frequency thump when the rig returns
+ * from transmit drove them far up, and the slice then showed as a dip that took many
+ * seconds to fade (Ron, 2026-10-10). So learning stops for PAN_DC_HOLD_FFTS after
+ * transmit and during a tuning pause (the scaling learned before stays in use), and
+ * one FFT never counts as more than PAN_DC_MAX_STEP times the current average.
  */
 #define PAN_DC_HALF_BINS 16     /* levelled each side of the LO point (375 Hz) */
 #define PAN_DC_REF_BINS 16      /* reference bins each side, just outside */
 #define PAN_DC_ALPHA 0.01f      /* per FFT (47 a second): about 2 s */
+#define PAN_DC_PRIME_FFTS 47    /* first second: plain average of all FFTs so far */
+#define PAN_DC_HOLD_FFTS 47     /* no learning for about 1 s after transmit */
+#define PAN_DC_MAX_STEP 4.0f    /* one FFT counts as at most this x the average */
 
 void doPanadapter(sp_cplx *fftbuf, int nframes)
 {
@@ -144,9 +153,10 @@ void doPanadapter(sp_cplx *fftbuf, int nframes)
         // LO point levelling (see PAN_DC_HALF_BINS): slow average power per bin + reference
         static sp_float dc_bin_avg[2 * PAN_DC_HALF_BINS];
         static sp_float dc_ref_avg = 0.0f;
-        static int dc_primed = 0;
-        sp_float dc_left, dc_right, dc_ref, dc_pow;
-        int dc_centre;
+        static int dc_count = 0; // FFTs learned so far, up to PAN_DC_PRIME_FFTS
+        static int dc_hold = 0; // FFTs left with learning stopped
+        sp_float dc_left, dc_right, dc_ref, dc_pow, dc_alpha;
+        int dc_centre, dc_learn;
 
         if (nframes > mystate.nfft) { // more than one FFT of data: use the newest nfft
                 fftbuf += nframes - mystate.nfft;
@@ -162,6 +172,7 @@ void doPanadapter(sp_cplx *fftbuf, int nframes)
                 pan_hist[keep + j].imag = fftbuf[j].imag;
         }
 
+        if (G_tx_mode) dc_hold = PAN_DC_HOLD_FFTS; // LO point levelling: no learning right after transmit
         if (panbuffer.panReady == 1 || G_tx_mode) {
                 return; // UDP code hasn't cleared the previous flag, get out
         } else { //Only reset panblocks when Panadapter_thread is NOT processing the buffer
@@ -206,31 +217,46 @@ void doPanadapter(sp_cplx *fftbuf, int nframes)
         // Level the noise hump around the LO point (see PAN_DC_HALF_BINS).
         // After the shuffle the LO point lies between dbuf[nfft/2 - 1] and dbuf[nfft/2].
         dc_centre = mystate.nfft / 2;
-        if (dc_centre >= PAN_DC_HALF_BINS + PAN_DC_REF_BINS) {
-                dc_left = 0.0f;
-                dc_right = 0.0f;
-                for (j = 0; j < PAN_DC_REF_BINS; j++) {
-                        k = dc_centre - PAN_DC_HALF_BINS - 1 - j;
-                        dc_left += (dbuf[k].real * dbuf[k].real) + (dbuf[k].imag * dbuf[k].imag);
-                        k = dc_centre + PAN_DC_HALF_BINS + j;
-                        dc_right += (dbuf[k].real * dbuf[k].real) + (dbuf[k].imag * dbuf[k].imag);
+        dc_learn = 1;
+        if (dc_hold > 0) {
+                dc_hold--;
+                dc_learn = 0;
+        }
+        if (G_Pause_Panadapter) dc_learn = 0;
+        if (dc_centre >= PAN_DC_HALF_BINS + PAN_DC_REF_BINS && (dc_learn || dc_count > 0)) {
+                // First PAN_DC_PRIME_FFTS: plain average of everything so far, then the slow average
+                dc_alpha = (dc_count < PAN_DC_PRIME_FFTS) ? 1.0f / (sp_float) (dc_count + 1) : PAN_DC_ALPHA;
+
+                if (dc_learn) {
+                        dc_left = 0.0f;
+                        dc_right = 0.0f;
+                        for (j = 0; j < PAN_DC_REF_BINS; j++) {
+                                k = dc_centre - PAN_DC_HALF_BINS - 1 - j;
+                                dc_left += (dbuf[k].real * dbuf[k].real) + (dbuf[k].imag * dbuf[k].imag);
+                                k = dc_centre + PAN_DC_HALF_BINS + j;
+                                dc_right += (dbuf[k].real * dbuf[k].real) + (dbuf[k].imag * dbuf[k].imag);
+                        }
+                        dc_ref = ((dc_left < dc_right) ? dc_left : dc_right) / (sp_float) PAN_DC_REF_BINS;
+                        if (dc_count >= PAN_DC_PRIME_FFTS && dc_ref > dc_ref_avg * PAN_DC_MAX_STEP)
+                                dc_ref = dc_ref_avg * PAN_DC_MAX_STEP;
+                        dc_ref_avg += (dc_ref - dc_ref_avg) * dc_alpha;
                 }
-                dc_ref = ((dc_left < dc_right) ? dc_left : dc_right) / (sp_float) PAN_DC_REF_BINS;
-                if (!dc_primed) dc_ref_avg = dc_ref;
-                else dc_ref_avg += (dc_ref - dc_ref_avg) * PAN_DC_ALPHA;
 
                 for (j = 0; j < 2 * PAN_DC_HALF_BINS; j++) {
                         k = dc_centre - PAN_DC_HALF_BINS + j;
-                        dc_pow = (dbuf[k].real * dbuf[k].real) + (dbuf[k].imag * dbuf[k].imag);
-                        if (!dc_primed) dc_bin_avg[j] = dc_pow;
-                        else dc_bin_avg[j] += (dc_pow - dc_bin_avg[j]) * PAN_DC_ALPHA;
+                        if (dc_learn) {
+                                dc_pow = (dbuf[k].real * dbuf[k].real) + (dbuf[k].imag * dbuf[k].imag);
+                                if (dc_count >= PAN_DC_PRIME_FFTS && dc_pow > dc_bin_avg[j] * PAN_DC_MAX_STEP)
+                                        dc_pow = dc_bin_avg[j] * PAN_DC_MAX_STEP;
+                                dc_bin_avg[j] += (dc_pow - dc_bin_avg[j]) * dc_alpha;
+                        }
                         if (dc_bin_avg[j] > dc_ref_avg && dc_bin_avg[j] > 0.0f) {
                                 sp_float scale = sqrt(dc_ref_avg / dc_bin_avg[j]);
                                 dbuf[k].real *= scale;
                                 dbuf[k].imag *= scale;
                         }
                 }
-                dc_primed = 1;
+                if (dc_learn && dc_count < PAN_DC_PRIME_FFTS) dc_count++;
         }
 
         // 96 kHz

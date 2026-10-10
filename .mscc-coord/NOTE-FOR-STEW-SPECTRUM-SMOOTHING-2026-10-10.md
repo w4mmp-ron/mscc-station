@@ -59,6 +59,13 @@ Now, `rpi/SDRcore-recv-linux/sources/dsputils.c`:
 
 Built on the Pi 2026-10-10, Ron: "Super".
 
+Follow-up the same day (in mscc 1.0.62): after a transmission the slice showed as a dip that
+took many seconds to fade. The low-frequency thump on return to receive had driven the per-bin
+averages far up. Now the averages do not learn for about 1 s after transmit
+(`PAN_DC_HOLD_FFTS`) or during a tuning pause, one FFT counts as at most 4 x the current
+average (`PAN_DC_MAX_STEP`), and the first second is a plain average (`PAN_DC_PRIME_FFTS`).
+Built on the Pi, Ron: "much better". Take the `dsputils.c` from this commit, not the earlier one.
+
 ## For you
 
 - If you have ported cmd-064 already: take this `dsputils.c` change with it (same file).
@@ -70,6 +77,6 @@ Built on the Pi 2026-10-10, Ron: "Super".
 
 ## Status
 
-Built on the Pi 2026-10-10, works (Ron). Package: `installers/rpi/mscc_1.0.61_arm64.deb`
-(1.0.60 removed); same 110 entries and modes, only `sdrcore-recv` (both changes) and the
-control version differ from 1.0.60.
+Built on the Pi 2026-10-10, works (Ron). Package: `installers/rpi/mscc_1.0.62_arm64.deb`
+(1.0.61 removed); same 110 entries and modes as 1.0.60, only `sdrcore-recv` (both changes
+and the follow-up) and the control version differ.
