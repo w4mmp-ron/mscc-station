@@ -101,6 +101,19 @@ void doAGC(sp_cplx *samps, int nframes)
         }
 }
 
+/*
+ * Levelling of the low-frequency noise hump around the LO point (VFO -12 kHz on the
+ * display). The FFT bins within PAN_DC_HALF_BINS of the LO point are scaled down so
+ * that their long-term average equals that of the PAN_DC_REF_BINS bins just outside
+ * (the quieter side of the two, so a signal on one side does not lift it). Each bin
+ * has its own slow average, so the hump goes and the normal noise texture stays: no
+ * spike and no hole. Bins are never scaled up. A steady signal inside the slice is
+ * levelled too, as it was hidden before. 4096 FFT at 96 kHz = 23.4 Hz per bin.
+ */
+#define PAN_DC_HALF_BINS 16     /* levelled each side of the LO point (375 Hz) */
+#define PAN_DC_REF_BINS 16      /* reference bins each side, just outside */
+#define PAN_DC_ALPHA 0.01f      /* per FFT (47 a second): about 2 s */
+
 void doPanadapter(sp_cplx *fftbuf, int nframes)
 {
         int j, k, bpos = 0;
@@ -128,6 +141,12 @@ void doPanadapter(sp_cplx *fftbuf, int nframes)
          */
         static sp_cplx pan_hist[4096];
         int keep;
+        // LO point levelling (see PAN_DC_HALF_BINS): slow average power per bin + reference
+        static sp_float dc_bin_avg[2 * PAN_DC_HALF_BINS];
+        static sp_float dc_ref_avg = 0.0f;
+        static int dc_primed = 0;
+        sp_float dc_left, dc_right, dc_ref, dc_pow;
+        int dc_centre;
 
         if (nframes > mystate.nfft) { // more than one FFT of data: use the newest nfft
                 fftbuf += nframes - mystate.nfft;
@@ -182,6 +201,36 @@ void doPanadapter(sp_cplx *fftbuf, int nframes)
                 dbuf[j].real = fbuf[k].real;
                 dbuf[j].imag = fbuf[k].imag;
                 k--;
+        }
+
+        // Level the noise hump around the LO point (see PAN_DC_HALF_BINS).
+        // After the shuffle the LO point lies between dbuf[nfft/2 - 1] and dbuf[nfft/2].
+        dc_centre = mystate.nfft / 2;
+        if (dc_centre >= PAN_DC_HALF_BINS + PAN_DC_REF_BINS) {
+                dc_left = 0.0f;
+                dc_right = 0.0f;
+                for (j = 0; j < PAN_DC_REF_BINS; j++) {
+                        k = dc_centre - PAN_DC_HALF_BINS - 1 - j;
+                        dc_left += (dbuf[k].real * dbuf[k].real) + (dbuf[k].imag * dbuf[k].imag);
+                        k = dc_centre + PAN_DC_HALF_BINS + j;
+                        dc_right += (dbuf[k].real * dbuf[k].real) + (dbuf[k].imag * dbuf[k].imag);
+                }
+                dc_ref = ((dc_left < dc_right) ? dc_left : dc_right) / (sp_float) PAN_DC_REF_BINS;
+                if (!dc_primed) dc_ref_avg = dc_ref;
+                else dc_ref_avg += (dc_ref - dc_ref_avg) * PAN_DC_ALPHA;
+
+                for (j = 0; j < 2 * PAN_DC_HALF_BINS; j++) {
+                        k = dc_centre - PAN_DC_HALF_BINS + j;
+                        dc_pow = (dbuf[k].real * dbuf[k].real) + (dbuf[k].imag * dbuf[k].imag);
+                        if (!dc_primed) dc_bin_avg[j] = dc_pow;
+                        else dc_bin_avg[j] += (dc_pow - dc_bin_avg[j]) * PAN_DC_ALPHA;
+                        if (dc_bin_avg[j] > dc_ref_avg && dc_bin_avg[j] > 0.0f) {
+                                sp_float scale = sqrt(dc_ref_avg / dc_bin_avg[j]);
+                                dbuf[k].real *= scale;
+                                dbuf[k].imag *= scale;
+                        }
+                }
+                dc_primed = 1;
         }
 
         // 96 kHz
@@ -371,12 +420,13 @@ void setFilterOffsets(sp_float filterSetLow, sp_float filterSetHigh)
  * DC blocker on the raw I/Q: y = x - x_prev + DC_BLOCK_A * y_prev.
  * I/Q DC plus the low-frequency noise around it (16 Hz comb, noise rising toward DC,
  * still above the floor ~300 Hz out) shows on the spectrum as the spur at VFO -12 kHz
- * (doPanadapter runs before the 12 kHz shift). 0.98 at 96 kHz = -3 dB at ~300 Hz
- * (0.9999 = 1.5 Hz removed only the DC, the spur stayed). Replaces the old pixel
- * notch + fill in panadapter.c.
+ * (doPanadapter runs before the 12 kHz shift). 0.9999 at 96 kHz = -3 dB at 1.5 Hz:
+ * it takes out the true DC only. 0.98 (-3 dB at ~300 Hz) also flattened the noise
+ * hump but left a hole about 1 kHz wide in the spectrum (Ron, 2026-10-10); the hump
+ * is now levelled in doPanadapter instead (PAN_DC_HALF_BINS).
  * Display only: that slice is 12 kHz outside the audio passband.
  */
-#define DC_BLOCK_A 0.98f
+#define DC_BLOCK_A 0.9999f
 
 /***** Convert incoming interleaved frames to complex form *****/
 void framesToComplex(sp_float *inframes, sp_cplx *incomplex, sp_cplx *outcomplex, int nframes)

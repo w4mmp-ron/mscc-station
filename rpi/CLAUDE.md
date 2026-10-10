@@ -145,7 +145,18 @@ test build. Not done yet.
 migration). "For now this is good enough": his goal was that the spectrum mirrors the S meter;
 the S meter itself needs work, later. Test build left as it is (offset -86.9, reads 7 to 12 dB
 low). When Stew's dBm readout exists: read S9 and S4 again, set the constant from the two
-pairs, and check they track. No note for Stew about the test build written (not asked).**
+pairs, and check they track.**
+Results added to `.mscc-coord/NOTE-FOR-STEW-SPECTRUM-DB-SCALE-2026-10-07.md` and pushed
+(b9df610); Ron also sent Stew the two videos. Ron: fine for users as it is; only the most
+observant will notice the offset.
+**Resume point 2026-10-09 (end of day):** everything is committed and pushed except this
+paragraph (Ron: no commit / push, just remember). Ron's list: (a) Si5351 birdie, decide on the
+one-line firmware test; (b) spectrum centre offset, once the S meter shows dBm (this also
+covers the old "level shift / dB CAL after the full-FFT fix" entry); not urgent. With Stew,
+new today: put the tested dB scale fix into the real client; dBm number on the S meter.
+`rpi/wpf-spectrum-test/` stays on disk, ignored by git.
+Rig "dead ears" (old item 21, off the list): Ron 2026-10-09 saw receive go down after a TX,
+suspects heat, not sure; it never recovers by itself, a tap on the rig brings it back. He is looking at it himself: nothing for Claude to do, not on the list.
 
 2. cmd-046: TUNE power separate (Windows/Ubuntu trans + WPF). With Stew; no Pi change.
 3. RF check of remote TX audio (Stew, spectrum analyzer).
@@ -526,6 +537,41 @@ pairs, and check they track. No note for Stew about the test build written (not 
    drive x 1.1 = a fixed 1.1 before the drive; TUNE is 0.8 x sqrt(2) = 1.13 on that scale, so
    SSB peaks are held to about 94% of TUNE power, which is rated power only after a QRP cal.
    Ron: review only, nothing to fix.
+24. **Spectrum smoothing: running average in recv (2026-10-10, Ron OK'd). Built on the Pi, Ron
+   uses `PANADAPTER_AVERAGE=9` (0.225 s) with REFRESH 1; in mscc 1.0.61, committed 2026-10-10.** Ron's complaint (video
+   `Downloads/Video_2026-10-10_112351.wmv`, test client 10.9.0): REFRESH 1 is "nervous", higher
+   values are choppy. Measured: redraws per second = 15.6 / REFRESH. REFRESH is client only
+   (`MainViewModel.cs:2070` draws 1 frame in N, drops the rest; the waterfall gets one row per
+   drawn frame); the client pins the Pi at 3 blocks per frame and never sends the smoothing
+   opcode, so recv always ran its 2-frame average (ms-sdr sends `PANADAPTER_AVERAGE` from
+   `user_controls.ini`, 0, at start; no range check there).
+   Change, `SDRcore-recv-linux/sources/panadapter.c` only: the 4-frame history is gone;
+   `PANADAPTER_AVERAGE` 0 = this frame + previous / 2 (as before), 1..100 = running average with
+   time constant value x 0.025 s (was 0.1 s / 1..30 at first: Ron found 5 = 0.5 s too slow, 2 to 3 "much better", wanted finer steps) (`alpha = 1 - exp(-frame time / tau)`, frame time from
+   `G_Panadapter_Blocks`); after a clear the first real frame loads the history. Tuning = edit
+   the ini on the Pi, restart, no rebuild. Known trade: the waterfall is smoothed too (same
+   frames). Built on the Pi 2026-10-10: 0 looks as before (Ron). Test: REFRESH 1, try 8 to 12. Not told to Stew yet; Windows / Ubuntu recv have the old code.
+   Unexplained in the video: waterfall blank + refill at 5.7 s and 8.6 s (Ron not asked again).
+25. **LO point: hole instead of hump (2026-10-10, Ron: "the DC removal is far too aggressive").**
+   Measured in the same video: hole about 1 kHz wide at the LO point (2 middle pixels at the
+   bottom, skirts to 500 Hz), = the DC blocker at 0.98 (-3 dB at 300 Hz). Ron turned down a
+   0.99 test and chose "gentle blocker for true DC". **Built on the Pi 2026-10-10, Ron: "Super"; in
+   mscc 1.0.61, committed 2026-10-10:** `SDRcore-recv-linux/sources/dsputils.c`
+   `DC_BLOCK_A` 0.98 -> 0.9999 (1.5 Hz), and new levelling in `doPanadapter` after the
+   shuffle: the 16 FFT bins each side of the LO point (375 Hz, `PAN_DC_HALF_BINS`) are scaled
+   down so each bin's slow average (`PAN_DC_ALPHA` 0.01 per FFT, about 2 s) equals that of the
+   16 bins just outside (`PAN_DC_REF_BINS`, quieter side); never scaled up. Keeps the noise
+   texture (the old pixel notch + fill was blotchy). A steady signal inside the slice is
+   flattened. Synthetic model only (hump + DC + 16 Hz comb, not the rig's real numbers): slice
+   comes out level with its neighbours, no hole. To watch on the Pi: shoulders outside 375 Hz
+   (then widen HALF_BINS), a few seconds of odd level after a band change.
+   **mscc 1.0.61 built 2026-10-10** (WSL, usual recipe): same 110 entries / modes as 1.0.60,
+   only `sdrcore-recv` (Ron's Pi build 2026-10-10 12:04, has `dc_bin_avg` and
+   `pan_average_primed`) and the control version differ. In `rpi/mscc-deb/` and
+   `installers/rpi/` (1.0.60 removed there). Not installed on the Pi yet (the Pi runs the same
+   hand-built binary). Note for Stew, both changes:
+   `.mscc-coord/NOTE-FOR-STEW-SPECTRUM-SMOOTHING-2026-10-10.md`. Committed, NOT pushed (Ron said
+   commit only). SSH from the PC to the Pi fails (host key changed with the backup card); left alone.
 7. Next mscc .deb build picks up the "(package mscc-init)" hint text in mscc-deb postinst /
    build-deb.sh / install-mscc.sh (source only, committed 82b819b). No rebuild just for that.
 

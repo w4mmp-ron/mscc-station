@@ -28,27 +28,38 @@ struct {
         uint16_t output_buffer[MAX_X];
     } avg_buffer_output;
 
-    struct {
-        uint16_t avg_buffer_input[MAX_X];
-    } buffer_input[4];
+    uint16_t prev[MAX_X];   /* previous raw frame (setting 0) */
+    float avg[MAX_X];       /* running average (setting 1..30) */
 } panadaper_average[MAX_PAN_SEGMENTS];
+
+/*
+ * Spectrum smoothing, from PANADAPTER_AVERAGE in the ms-sdr user_controls.ini
+ * (arrives as G_Smoothing = value + 2):
+ *   0       = plain average of this frame and the previous one (as before 2026-10-10)
+ *   1..100  = running average, time constant = value x 0.025 s (4 = 0.1 s, 20 = 0.5 s)
+ * The running average keeps the full frame rate, so the trace is calm without
+ * the choppy look of dropping frames.
+ */
+#define PAN_AVG_MAX_SETTING 100
+#define PAN_AVG_STEP_SEC 0.025f
+#define PAN_BLOCK_SEC (2048.0f / 96000.0f)  /* one DSP block; a frame is G_Panadapter_Blocks of them */
+
+/* 0 after a clear: the next real frame loads the history directly (no ramp up from zero). */
+static int pan_average_primed = 0;
 
 /* Clear smoothing history so a PLL glitch does not linger after unpause. */
 static void Clear_Panadapter_Average_History(void) {
     int seq;
-    int avg;
     int i;
 
     for (seq = 0; seq < MAX_PAN_SEGMENTS; seq++) {
-        for (avg = 0; avg < 4; avg++) {
-            for (i = 0; i < MAX_X; i++) {
-                panadaper_average[seq].buffer_input[avg].avg_buffer_input[i] = 0;
-            }
-        }
         for (i = 0; i < MAX_X; i++) {
+            panadaper_average[seq].prev[i] = 0;
+            panadaper_average[seq].avg[i] = 0.0f;
             panadaper_average[seq].avg_buffer_output.output_buffer[i] = 0;
         }
     }
+    pan_average_primed = 0;
 }
 
 void *Panadapter_thread(void *t) {
@@ -58,7 +69,7 @@ void *Panadapter_thread(void *t) {
     uint8_t tx_high_cut = 0;
     uint8_t tx_low_cut = 0;
     int i = 0;
-    int average_count = 0;
+    float alpha = 1.0f;
     int sequence = 0;
     int sleep_time = 1;
     int pause_cycle_count = 0;
@@ -177,10 +188,14 @@ void *Panadapter_thread(void *t) {
             segments = pixels / MAX_X;
             if (segments > MAX_PAN_SEGMENTS) segments = MAX_PAN_SEGMENTS;
 
-            /* History holds 4 frames per segment: keep smoothing in 1..4. */
-            smoothing = G_Smoothing;
-            if (smoothing < 1) smoothing = 1;
-            if (smoothing > 4) smoothing = 4;
+            /* Smoothing setting 0..100 (see PAN_AVG_MAX_SETTING above). */
+            smoothing = G_Smoothing - 2;
+            if (smoothing < 0) smoothing = 0;
+            if (smoothing > PAN_AVG_MAX_SETTING) smoothing = PAN_AVG_MAX_SETTING;
+            if (smoothing > 0) {
+                alpha = 1.0f - expf(-((float)G_Panadapter_Blocks * PAN_BLOCK_SEC) /
+                    ((float)smoothing * PAN_AVG_STEP_SEC));
+            }
 
             /*
              * The spur at VFO -12 kHz (pixels/3) used to be bridged here with a pixel notch +
@@ -204,18 +219,31 @@ void *Panadapter_thread(void *t) {
                     }
                 }
                 /*
-                 * Average the current frame with the (smoothing - 1) newest history frames.
-                 * History [smoothing-1] is the newest. Sum in 32 bits: up to 4 x MAX_Y
-                 * overflowed the uint16 output and the old sum used one frame too many.
+                 * Smooth the frame (not while pausing: those frames are zeros and the
+                 * history is cleared when the pause ends).
                  */
-                for (i = 0; i < MAX_X; i++) {
-                    uint32_t sum = panbuffer_temp.Y[i];
-                    for (average_count = 1; average_count < smoothing; average_count++)
-                        sum += panadaper_average[sequence].buffer_input[average_count].avg_buffer_input[i];
-                    sum /= (uint32_t)smoothing;
-                    if (sum > MAX_Y)
-                        sum = MAX_Y;
-                    panadaper_average[sequence].avg_buffer_output.output_buffer[i] = (uint16_t)sum;
+                if (!pausing) {
+                    for (i = 0; i < MAX_X; i++) {
+                        uint16_t y = panbuffer_temp.Y[i];
+                        float a;
+
+                        if (!pan_average_primed) {
+                            panadaper_average[sequence].prev[i] = y;
+                            panadaper_average[sequence].avg[i] = (float)y;
+                        }
+                        if (smoothing == 0) {
+                            a = ((float)y + (float)panadaper_average[sequence].prev[i]) * 0.5f;
+                            panadaper_average[sequence].avg[i] = a;
+                        } else {
+                            a = panadaper_average[sequence].avg[i];
+                            a += ((float)y - a) * alpha;
+                            panadaper_average[sequence].avg[i] = a;
+                        }
+                        panadaper_average[sequence].prev[i] = y;
+                        if (a > (float)MAX_Y)
+                            a = (float)MAX_Y;
+                        panadaper_average[sequence].avg_buffer_output.output_buffer[i] = (uint16_t)(a + 0.5f);
+                    }
                 }
 
                 /* Monitor TX blanking: scale original 400-wide half cuts */
@@ -245,12 +273,9 @@ void *Panadapter_thread(void *t) {
                         line_number++, sequence, strerror(errno));
                 }
 
-                for (average_count = 0; average_count < (smoothing - 1); average_count++) {
-                    memcpy(panadaper_average[sequence].buffer_input[average_count].avg_buffer_input,
-                        panadaper_average[sequence].buffer_input[(average_count + 1)].avg_buffer_input, (MAX_X * 2));
-                }
-                memcpy(panadaper_average[sequence].buffer_input[average_count].avg_buffer_input, panbuffer_temp.Y,
-                    (MAX_X * 2));
+            }
+            if (!pausing) {
+                pan_average_primed = 1;
             }
 
             /* Decrement pause once per full multi-segment frame */
