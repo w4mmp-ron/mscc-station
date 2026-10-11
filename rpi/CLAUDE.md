@@ -575,7 +575,7 @@ suspects heat, not sure; it never recovers by itself, a tap on the rig brings it
    `sdrcore-recv` (Ron's Pi build 2026-10-10 13:21, has `dc_hold` / `dc_count`: the after-TX
    follow-up below) and the control version differ. In `rpi/mscc-deb/` and `installers/rpi/`
    (1.0.61 removed there). Not installed on the Pi yet (the Pi runs the same hand-built binary).
-   Committed, NOT pushed (Ron said commit only). SSH from the PC to the Pi fails (host key changed with the backup card); left alone.
+   Committed a8094ee, pushed. SSH from the PC to the Pi fails (host key changed with the backup card); left alone.
    **Follow-up 2026-10-10 (Ron: after TX the dip at the LO point is obvious and fades too
    slowly). Built on the Pi 2026-10-10, Ron: "much better" (TX length makes no difference); in
    mscc 1.0.62, committed 2026-10-10.** Cause from
@@ -585,6 +585,8 @@ suspects heat, not sure; it never recovers by itself, a tap on the rig brings it
    1 s) after `G_tx_mode` and while `G_Pause_Panadapter` (the scaling learned before stays in
    use); one FFT counts as at most `PAN_DC_MAX_STEP` (4) x the current average; the first
    `PAN_DC_PRIME_FFTS` (47) are a plain average instead of priming from one FFT.
+   **Stew on board with items 24 and 25 (Ron, 2026-10-10). The port to Windows / Ubuntu
+   recv is still his to do.**
 7. Next mscc .deb build picks up the "(package mscc-init)" hint text in mscc-deb postinst /
    build-deb.sh / install-mscc.sh (source only, committed 82b819b). No rebuild just for that.
 

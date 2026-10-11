@@ -80,3 +80,5 @@ Built on the Pi, Ron: "much better". Take the `dsputils.c` from this commit, not
 Built on the Pi 2026-10-10, works (Ron). Package: `installers/rpi/mscc_1.0.62_arm64.deb`
 (1.0.61 removed); same 110 entries and modes as 1.0.60, only `sdrcore-recv` (both changes
 and the follow-up) and the control version differ.
+
+Stew on board with both changes (Ron, 2026-10-10). Port to Windows / Ubuntu recv open.
