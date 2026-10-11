@@ -2,6 +2,16 @@
 
 Installer: `mscc-net9-R<version>-install.exe` (WPF client + Windows servers). Install the newest one; older installers in this folder are kept for roll-back only.
 
+## R10.11.2 — 2026-10-11  (`mscc-net9-R10-11-2-install.exe`, title bar 10.11.2)
+
+### Fixed
+- Spectrum: no more dark hole (or spike) in the middle of the spectrum and down the waterfall at VFO -12 kHz. The noise there is now levelled to match its surroundings.
+- Spectrum: after a transmission the middle of the spectrum no longer shows a dip that takes many seconds to fade.
+
+### Changed
+- Spectrum smoothing (PANADAPTER_AVERAGE in user_controls.ini): 0 looks as before; 1 to 100 give a calmer trace at full frame rate (time constant = value x 0.025 s, e.g. 9 = 0.225 s). Signal levels are unchanged. The waterfall is smoothed the same way.
+- Receive server 3.146 (Windows). Client unchanged apart from the version number.
+
 ## R10.11.1 — 2026-10-11  (`mscc-net9-R10-11-1-install.exe`, title bar 10.11.1)
 
 ### Added
