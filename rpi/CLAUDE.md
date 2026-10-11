@@ -603,21 +603,10 @@ suspects heat, not sure; it never recovers by itself, a tap on the rig brings it
    client. Checked 2026-10-10: no WPF source commits since 8564843, so the
    private copy differs from Stew's only by the five dB scale edits. If it is ever done there:
    three marked edits + a patch file against Stew's source.
-27. **Idea, open (Ron 2026-10-10: "not wild about the side effects"; un-parked the same day,
-   nothing changed yet): fixed noise floor on the spectrum**, so the floor
-   sits at the same height on every band. Proposed for `panadapter.c` only: before a frame is
-   sent, histogram the raw points (1/3 dB steps), floor = level 20% of the points lie below;
-   running average about 2 s, loaded directly on the first frame after a history clear (band
-   change / tuning pause), holds in TX because the thread does not process then; after the
-   smoothing each point = point - floor + target, limited to 0..`MAX_Y` (smoothing history
-   stays in true units). Trial as defines (`PAN_FLOOR_TARGET_DB` 0 = off, `PAN_FLOOR_PERCENT`
-   20, `PAN_FLOOR_TAU_SEC` 2.0) plus a log line of the measured floor to pick the target; an
-   ini key would need a new ms-sdr -> recv opcode (numbers shared with Stew). Side effects
-   that made Ron hold off: the client dB scale becomes relative to the floor (against the dB
-   scale fix / dBm work), band-to-band and preamp / local noise differences no longer show,
-   waterfall shifts with the trace, 20% rule needs a fifth of the 72 kHz free of signals.
-   S meter not affected. A true scale is only possible if the client does the shift and
-   corrects its labels (Stew's work).
+27. **Dropped (Ron 2026-10-10: "I don't like the side effects"): fixed noise floor on the
+   spectrum.** Was: recv shifts the trace so the floor sits at the same height on every band.
+   Side effects: dB scale becomes relative to the floor, band-to-band and preamp / local noise
+   differences no longer show. Nothing was built. Do not propose again.
 7. Next mscc .deb build picks up the "(package mscc-init)" hint text in mscc-deb postinst /
    build-deb.sh / install-mscc.sh (source only, committed 82b819b). No rebuild just for that.
 
