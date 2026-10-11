@@ -4,13 +4,20 @@ Currently shipped in this folder:
 
 | Package | Version |
 |---------|---------|
-| `mscc` (servers) | 1.0.52 |
-| `mscc-ui` (Avalonia client) | 0.6.74 |
+| `mscc` (servers) | 1.0.53 |
+| `mscc-ui` (Avalonia client) | 0.6.75 |
 | `mscc-firmware` (optional radio firmware files) | 1.0.1 |
 | `mscc-init-gui` | 1.0.13 (unchanged this period) |
 | `mscc-portaudio` | 19.8.2 (unchanged this period) |
 
-## mscc 1.0.52 / mscc-ui 0.6.74 — 2026-10-11
+## mscc 1.0.53 / mscc-ui 0.6.75 — 2026-10-11
+
+### Changed
+- S-meter needle moves smoothly with the signal (it used to jump one S unit, 6 dB, at a time). The reading still shows whole S units (S9+10), or dBm when clicked.
+- S-meter reads the average signal power instead of the peak: noise reads steadier and about one S unit lower; a steady carrier reads the same. Rounded to the nearest dB.
+- Receive server 3.145 (Ubuntu). Install mscc and mscc-ui together.
+
+## mscc 1.0.52 / mscc-ui 0.6.74 — 2026-10-11 (superseded)
 
 ### Fixed
 - Spectrum: a steady signal no longer drops 10-15 dB and jumps back while tuning (each screen pixel now shows the strongest of the points it covers, in the client and in the receiver).

@@ -4,8 +4,8 @@
 |--|--|
 | **Host** | stew-HP-Notebook |
 | **Checkout** | `/home/stew/Documents/GitHub/mscc-station` |
-| **Build** | cmd-072 |
-| **Last command id** | cmd-072 |
+| **Build** | cmd-073 |
+| **Last command id** | cmd-073 |
 | **State** | done |
 | **Updated** | 2026-10-11 |
 
@@ -13,7 +13,8 @@
 
 | command id | state | note |
 |------------|-------|------|
-| cmd-072 | done | Ubuntu = Windows cmd-068..071. recv 3.144 (Pi panadapter.c verbatim, dsputils.c Pi spectrum hunks, Ubuntu cal/WINDBG kept), Avalonia max-per-pixel, 3200 fixed, true-dB defaults + SPECTRUM_DB_LAW reset, S-meter dBm click. mscc 1.0.52 ui 0.6.74 ms-sdr 3.179. Smoke 1-5 pass (Stew 2026-10-11); LO-point pumping near centre known (see NOTE-FOR-RON-LO-POINT-LEVELLING-2026-10-11.md). No rpi. No Solidus. No push. |
+| cmd-073 | done | Avalonia 0.6.75 smooth S-meter needle (fractional S units, 6 dB/unit to S9, 10 dB/unit above; readout whole units). recv 3.145 Pi 48a04b6 average-power S-meter (sdrcore.c Pi verbatim, udp_thread.c rounding). mscc 1.0.53 ms-sdr 3.180. Smoke pass with TG and 2.5 dB attenuator steps (Stew 2026-10-11). No rpi. No Solidus. No push. |
+| cmd-072 | done | Ubuntu = Windows cmd-068..071. recv 3.144 (Pi panadapter.c verbatim, dsputils.c Pi spectrum hunks, Ubuntu cal/WINDBG kept), Avalonia max-per-pixel, 3200 fixed, true-dB defaults + SPECTRUM_DB_LAW reset, S-meter dBm click. mscc 1.0.52 ui 0.6.74 ms-sdr 3.179. Commit 4d8a583. Smoke 1-5 pass (Stew 2026-10-11); LO-point pumping near centre known (see NOTE-FOR-RON-LO-POINT-LEVELLING-2026-10-11.md). No rpi. No Solidus. No push. |
 | cmd-067c | done | DIGITAL opens digital mic when operator mic missing. Revert Avalonia PTT block and comm-port.ini drop. Rebuilt mscc 1.0.51 ui 0.6.73. trans 3.142 recv 3.143 ms-sdr 3.178. Smoke pass (Stew 2026-10-08). No rpi. No Solidus. No pull, no push. |
 | cmd-067 | done | Part B Linux plus 067c. trans no-mic start, DIGITAL with no op mic, Avalonia RX IQ 2200/630. PTT block and comm-port.ini drop reverted. mscc 1.0.51 ui 0.6.73 ms-sdr 3.178. Smoke pass (Stew 2026-10-08). No rpi. No Solidus. No pull, no push. |
 | cmd-066 | done | mscc-firmware 1.0.1 one dated cyacd+hex per radio. Commit 7dd42fc. Stew: upgrade installed, Load File on the packaged folder. History 1.0.0 kept in linux/mscc-firmware-deb. installers/rpi still 1.0.0. No rpi source. No Solidus. No pull, no push. |
@@ -35,6 +36,10 @@
 | cmd-032 | done | mscc_1.0.44_amd64.deb with remote_mic stream reset |
 
 ## Notes
+
+### cmd-073
+
+Avalonia 0.6.75 smooth S-meter needle (fractional S units). recv 3.145 Pi average-power S-meter (sdrcore.c verbatim 48a04b6, udp_thread nearest dB). trans 3.142, ms-sdr 3.180. Debs mscc 1.0.53 and mscc-ui 0.6.75 amd64. Smoke 1-11 not run (needs apt). Stop before commit. No rpi. No Solidus.
 
 ### cmd-072
 

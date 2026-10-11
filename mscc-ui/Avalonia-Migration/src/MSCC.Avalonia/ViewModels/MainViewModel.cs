@@ -185,7 +185,7 @@ public partial class MainViewModel : ViewModelBase, IDisposable
         ModeText = "";
         NotifyModeFlags();
         NotifyBandFlags();
-        AppendLog("MSCC Avalonia 0.6.74 — spectrum true dB + max per pixel, S-meter dBm click.");
+        AppendLog("MSCC Avalonia 0.6.75 — smooth S-meter needle.");
         AppendLog("PTT = TX (voice modes); TUN = TUNE + carrier. S/W opens pan settings.");
         AppendLog($"Log: {LogFilePath}");
         CwPitchLabel = CwPitchOptions[Math.Clamp(CwPitchIndex, 0, CwPitchOptions.Count - 1)];
@@ -315,7 +315,7 @@ public partial class MainViewModel : ViewModelBase, IDisposable
     [ObservableProperty] private string _frequencyDisplayMhz = "0.000000";
     [ObservableProperty] private string _modeText = "";
     [ObservableProperty] private string _smeterText = "—";
-    /// <summary>S-meter units 0–15 (WPF Db_to_Smeter). Drives analog face.</summary>
+    /// <summary>S-meter needle, fractional S units 0–15 (cmd-073). Drives analog face.</summary>
     [ObservableProperty] private double _sMeter;
     [ObservableProperty] private bool _smeterHold = true;
     [ObservableProperty] private bool _smeterPeak;
@@ -495,7 +495,7 @@ public partial class MainViewModel : ViewModelBase, IDisposable
     [ObservableProperty] private string _proficioTempText = "— °C";
     [ObservableProperty] private string _paTempText = "— °C";
     [ObservableProperty] private string _paCurrentText = "— mA";
-    [ObservableProperty] private string _clientVersionText = "0.6.74";
+    [ObservableProperty] private string _clientVersionText = "0.6.75";
     [ObservableProperty] private bool _alcOn = true;
     /// <summary>AMP / QRO path (PA bypass). Red when on (WPF).</summary>
     [ObservableProperty] private bool _ampOn;
@@ -1699,6 +1699,19 @@ public partial class MainViewModel : ViewModelBase, IDisposable
         return 9 + overValue;
     }
 
+    /// <summary>
+    /// cmd-073: smooth needle. dBm → fractional S units on the meter's own scale:
+    /// 6 dB per unit up to S9 (−73 dBm), 10 dB per unit above (unit 10 = +10 … 15 = +60).
+    /// The readout text still rounds to whole units (S9+10 style).
+    /// </summary>
+    private static double DbToSmeterNeedle(int dbm)
+    {
+        double units = dbm <= -73
+            ? 9.0 + (dbm + 73) / 6.0
+            : 9.0 + (dbm + 73) / 10.0;
+        return Math.Clamp(units, 0.0, 15.0);
+    }
+
     private static string FormatSmeterReading(int units)
     {
         if (units <= 0) return "S0";
@@ -1710,7 +1723,7 @@ public partial class MainViewModel : ViewModelBase, IDisposable
     {
         SMeterDbm = dbm;
         int units = DbToSmeter(dbm);
-        SMeter = units;
+        SMeter = DbToSmeterNeedle(dbm); // cmd-073: smooth needle (was the whole S unit)
         SmeterText = FormatSmeterReading(units);
     }
 

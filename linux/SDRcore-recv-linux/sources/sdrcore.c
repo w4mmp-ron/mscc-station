@@ -25,6 +25,12 @@ static sp_float hfilt[32768];
 static sp_cplx filt[32768];
 static sp_cplx samp[32768];
 /* NFM discriminator + de-emphasis (~750 µs US amateur) + DC block */
+/* S-meter: average power of each block, smoothed in dB (fast rise, slow fall) */
+#define METER_RISE_ALPHA 0.5f   // share of an upward step taken per block (about 2 blocks)
+#define METER_FALL_SEC   0.3f   // fall time constant, seconds
+#define METER_MIN_POWER  1.0e-20f // floor, avoids log10(0) on an all-zero block
+static sp_float meter_db = 0.0f;
+static int meter_started = 0;
 static sp_float fm_prev_i = 0.0f;
 static sp_float fm_prev_q = 0.0f;
 static sp_float fm_deemp = 0.0f;
@@ -97,7 +103,10 @@ void fastconv(sp_cplx *in, sp_cplx *out, int frames)
         sp_float magaccum = 0.0f;
         sp_float mag;
         sp_float fsbcut = 0.0f;
-        sp_float peakmag = 0.0f;
+        sp_float powaccum = 0.0f;
+        sp_float blockpow;
+        sp_float blockdb;
+        sp_float blocksec;
 
         // re-init DSP if requested
         if (mystate.initDSPflag) initDSP();
@@ -153,8 +162,8 @@ void fastconv(sp_cplx *in, sp_cplx *out, int frames)
                 mag = sqrt((samp[i].real * samp[i].real) + (samp[i].imag * samp[i].imag));
                 magaccum += (mag * 100000.0f);
 
-                // capture peak magnitude for s-meter
-                if (mag > peakmag) peakmag = mag;
+                // sum the power for the s-meter (average, not peak: a peak reads noise high)
+                powaccum += mag * mag;
 
                 // Simple AM demod - more work required here
                 if (mystate.opmode == MODE_AM) {
@@ -250,6 +259,20 @@ void fastconv(sp_cplx *in, sp_cplx *out, int frames)
                 input_save[j].imag = samp[i].imag;
         }
 
-        mystate.peakRxSignalDbm = 20.0f * log10(peakmag) - 20.0f;
+        /* S-meter. Average power of this block in dB; a steady carrier reads the same as
+         * the old peak did (same -20 constant). Smoothed in dB: up fast, down slowly. */
+        blockpow = powaccum / ((sp_float) mystate.nfft - mystate.filtertaps);
+        if (blockpow < METER_MIN_POWER) blockpow = METER_MIN_POWER;
+        blockdb = 10.0f * log10(blockpow) - 20.0f;
+        if (!meter_started) {
+                meter_db = blockdb;
+                meter_started = 1;
+        } else if (blockdb > meter_db) {
+                meter_db += (blockdb - meter_db) * METER_RISE_ALPHA;
+        } else {
+                blocksec = ((sp_float) mystate.nfft - mystate.filtertaps) / mystate.samplerate;
+                meter_db += (blockdb - meter_db) * (blocksec / (METER_FALL_SEC + blocksec));
+        }
+        mystate.peakRxSignalDbm = meter_db;
 
 }

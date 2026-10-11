@@ -515,7 +515,7 @@ public partial class AnalogSMeterControl : UserControl
         }
 
         if (ReadingText != null)
-            ReadingText.Text = ShowDbm ? $"{Dbm} dBm" : FormatSmeterReading((int)Math.Round(main));
+            ReadingText.Text = ShowDbm ? $"{Dbm} dBm" : FormatSmeterReading(ReadoutUnits(main));
     }
 
     private static double UnitToAngle(double unit)
@@ -531,5 +531,16 @@ public partial class AnalogSMeterControl : UserControl
         if (v <= 0) return "S0";
         if (v <= 9) return $"S{v}";
         return $"S9+{(v - 9) * 10}";
+    }
+
+    /// <summary>
+    /// cmd-073: whole S unit for the readout from the fractional needle. Nearest unit, a tie
+    /// goes up (same as DbToSmeter): −76…−73 = S9, −77 = S8; above S9 nearest 10 dB (−68 = S9+10).
+    /// </summary>
+    private static int ReadoutUnits(double main)
+    {
+        int u = (int)Math.Floor(main + 0.5);
+        if (main > 0.0 && u < 1) u = 1;
+        return Math.Clamp(u, 0, (int)MaxSUnit);
     }
 }

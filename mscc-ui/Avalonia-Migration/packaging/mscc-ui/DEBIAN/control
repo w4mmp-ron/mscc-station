@@ -1,5 +1,5 @@
 Package: mscc-ui
-Version: 0.6.74
+Version: 0.6.75
 Section: hamradio
 Priority: optional
 Architecture: arm64
