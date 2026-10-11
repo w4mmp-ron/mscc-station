@@ -35,6 +35,15 @@ public partial class AnalogSMeterControl : UserControl
     public static readonly StyledProperty<double> PeakHoldSecondsProperty =
         AvaloniaProperty.Register<AnalogSMeterControl, double>(nameof(PeakHoldSeconds), 2.0);
 
+    /// <summary>cmd-070: last S-meter report in whole dBm.</summary>
+    public static readonly StyledProperty<int> DbmProperty =
+        AvaloniaProperty.Register<AnalogSMeterControl, int>(nameof(Dbm), -130);
+
+    /// <summary>cmd-070: readout in dBm (true) or S units (false). Click toggles.</summary>
+    public static readonly StyledProperty<bool> ShowDbmProperty =
+        AvaloniaProperty.Register<AnalogSMeterControl, bool>(
+            nameof(ShowDbm), false, defaultBindingMode: BindingMode.TwoWay);
+
     public double Value
     {
         get => GetValue(ValueProperty);
@@ -58,6 +67,9 @@ public partial class AnalogSMeterControl : UserControl
         get => GetValue(PeakHoldSecondsProperty);
         set => SetValue(PeakHoldSecondsProperty, value);
     }
+
+    public int Dbm { get => GetValue(DbmProperty); set => SetValue(DbmProperty, value); }
+    public bool ShowDbm { get => GetValue(ShowDbmProperty); set => SetValue(ShowDbmProperty, value); }
 
     private AvLine? _needle;
     private AvLine? _peakNeedle;
@@ -99,6 +111,7 @@ public partial class AnalogSMeterControl : UserControl
             ApplyRawSample(Value, force: false);
         else if (e.Property == HoldEnabledProperty || e.Property == PeakEnabledProperty)
             OnHoldPeakChanged();
+        else if (e.Property == DbmProperty || e.Property == ShowDbmProperty) UpdateNeedles();
     }
 
     private void WireCheckBoxes()
@@ -110,6 +123,11 @@ public partial class AnalogSMeterControl : UserControl
                 HoldCheckBox.IsChecked = HoldEnabled;
             HoldCheckBox.IsCheckedChanged += OnHoldCheckChanged;
         }
+        if (ReadingBorder != null)
+        {
+            ReadingBorder.PointerPressed -= OnReadingPressed;
+            ReadingBorder.PointerPressed += OnReadingPressed;
+        }
         if (PeakCheckBox != null)
         {
             PeakCheckBox.IsCheckedChanged -= OnPeakCheckChanged;
@@ -117,6 +135,13 @@ public partial class AnalogSMeterControl : UserControl
                 PeakCheckBox.IsChecked = PeakEnabled;
             PeakCheckBox.IsCheckedChanged += OnPeakCheckChanged;
         }
+    }
+
+    // cmd-070: click the readout to toggle S units / dBm (persisted via the ShowDbm binding).
+    private void OnReadingPressed(object? sender, global::Avalonia.Input.PointerPressedEventArgs e)
+    {
+        ShowDbm = !ShowDbm;
+        e.Handled = true;
     }
 
     private void OnHoldCheckChanged(object? sender, RoutedEventArgs e)
@@ -490,7 +515,7 @@ public partial class AnalogSMeterControl : UserControl
         }
 
         if (ReadingText != null)
-            ReadingText.Text = FormatSmeterReading((int)Math.Round(main));
+            ReadingText.Text = ShowDbm ? $"{Dbm} dBm" : FormatSmeterReading((int)Math.Round(main));
     }
 
     private static double UnitToAngle(double unit)

@@ -10,6 +10,22 @@ internal static class SpectrumRenderer
 {
     public static float ToDisplayDb(float rawMappedDb, float dbOffset) => rawMappedDb + dbOffset;
 
+    /// <summary>
+    /// cmd-068: largest value in data[i0 .. i1-1] (at least data[i0]). Indices are clamped.
+    /// One pixel covers several points when points &gt; pixels; drawing only one of them
+    /// made a carrier dip 10-15 dB while tuning.
+    /// </summary>
+    private static float MaxInRange(float[] data, int i0, int i1)
+    {
+        int n = data.Length;
+        i0 = Math.Clamp(i0, 0, n - 1);
+        i1 = Math.Clamp(i1, i0 + 1, n);
+        float m = data[i0];
+        for (int i = i0 + 1; i < i1; i++)
+            if (data[i] > m) m = data[i];
+        return m;
+    }
+
     public static void Render(
         SpectrumUpdate update,
         int width,
@@ -92,8 +108,15 @@ internal static class SpectrumRenderer
             double dataFrac = viewStart + t * viewWidth;
             int idx = (int)Math.Round(dataFrac * (data.Length - 1) + cwOffsetBins);
             idx = Math.Clamp(idx, 0, data.Length - 1);
+            // cmd-068: max of all points up to (not incl.) the next pixel's first point.
+            int idxNext = idx;
+            if (x + 1 < width)
+            {
+                double dataFracNext = viewStart + ((double)(x + 1) / (width - 1)) * viewWidth;
+                idxNext = (int)Math.Round(dataFracNext * (data.Length - 1) + cwOffsetBins);
+            }
 
-            float dbv = ToDisplayDb(data[idx], dbOffset);
+            float dbv = ToDisplayDb(MaxInRange(data, idx, idxNext), dbOffset);
             float norm = Math.Clamp((dbv - minDb) / range, 0f, 1f);
             int y = (int)((1 - norm) * plotBottom);
             y = Math.Clamp(y, 0, plotBottom);
@@ -204,8 +227,15 @@ internal static class SpectrumRenderer
                     double dataFrac = viewStart + t * viewWidth;
                     int idx = (int)Math.Round(dataFrac * (lineLen - 1) + cwOffsetBins);
                     idx = Math.Clamp(idx, 0, lineLen - 1);
+                    // cmd-068: max of the row's points up to (not incl.) the next pixel's first point.
+                    int idxNext = idx;
+                    if (x + 1 < width)
+                    {
+                        double dataFracNext = viewStart + ((double)(x + 1) / (width - 1)) * viewWidth;
+                        idxNext = (int)Math.Round(dataFracNext * (lineLen - 1) + cwOffsetBins);
+                    }
 
-                    float dbv = ToDisplayDb(line[idx], dbOffset);
+                    float dbv = ToDisplayDb(MaxInRange(line, idx, idxNext), dbOffset);
                     WaterfallPalettes.MapColor(scheme, dbv, wfLow, wfHigh, out byte wr, out byte wg, out byte wb);
 
                     int o = y * stride + x * 4;

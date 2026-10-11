@@ -114,7 +114,7 @@
             <!-- dB CAL + GRID -->
             <Grid ColumnDefinitions="60,*,40,Auto" Margin="0,2,0,0">
               <TextBlock Text="dB CAL" FontSize="10" Foreground="#D0D0D0" VerticalAlignment="Center"
-                         ToolTip.Tip="Relative trim ±20 dB around −91.3 absolute"/>
+                         ToolTip.Tip="Relative trim ±20 dB around −83.6 absolute"/>
               <Slider Grid.Column="1" Minimum="-20" Maximum="20" SmallChange="0.5"
                       Value="{Binding DbCalRelative}" VerticalAlignment="Center"/>
               <TextBlock Grid.Column="2" Text="{Binding DbCalRelative, StringFormat={}{0:0.0}}"
@@ -152,7 +152,8 @@
               <CheckBox Content="VIEW GRID" IsChecked="{Binding ViewGrid}"
                         FontSize="11" FontWeight="Bold"
                         ToolTip.Tip="Show horizontal dB grid lines on the spectrum"/>
-              <StackPanel>
+              <!-- cmd-068: spectrum resolution fixed at Max (3200); selector hidden. -->
+              <StackPanel IsVisible="False">
                 <TextBlock Text="SPECTRUM RESOLUTION" FontSize="10" Foreground="#D0D0D0" Margin="0,0,0,2"
                            ToolTip.Tip="Bins across 72 kHz. Higher = sharper spectrum, more UDP traffic. Use Normal if remote spectrum stutters."/>
                 <ListBox Width="120" Height="58" FontSize="9"

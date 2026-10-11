@@ -5,11 +5,11 @@ namespace MSCC.Avalonia.Controls;
 /// </summary>
 public sealed class SpectrumSwBank
 {
-    public float WaterfallHighDb { get; set; } = -50f;
-    public float WaterfallLowDb { get; set; } = -120f;
+    public float WaterfallHighDb { get; set; } = -40f;
+    public float WaterfallLowDb { get; set; } = -150f;
     public bool WaterfallDirectionNormal { get; set; } = true;
     public float GridMaxDb { get; set; } = -20f;
-    public float GridMinDb { get; set; } = -125f;
+    public float GridMinDb { get; set; } = -155f;
     public bool ViewGrid { get; set; } = true;
     public bool ShowWaterfall { get; set; } = true;
 
@@ -18,12 +18,11 @@ public sealed class SpectrumSwBank
 
     public static SpectrumSwBank CreateProficioDefaults() => new()
     {
-        // Field-tuned HF defaults (WPF WaterfallHf*)
-        WaterfallHighDb = -44f,
-        WaterfallLowDb = -106f,
+        WaterfallHighDb = -40f, // cmd-069/070 true-dB defaults (WPF ShipHf*)
+        WaterfallLowDb = -115f,
         WaterfallDirectionNormal = true,
         GridMaxDb = -20f,
-        GridMinDb = -125f,
+        GridMinDb = -155f,
         ViewGrid = true,
         ShowWaterfall = true,
         WaterfallPalette = "Enhanced",
@@ -31,11 +30,11 @@ public sealed class SpectrumSwBank
 
     public static SpectrumSwBank CreateGeminusDefaults() => new()
     {
-        WaterfallHighDb = -50f,
-        WaterfallLowDb = -120f,
+        WaterfallHighDb = -35f, // WPF ShipLf*
+        WaterfallLowDb = -105f,
         WaterfallDirectionNormal = true,
         GridMaxDb = -20f,
-        GridMinDb = -125f,
+        GridMinDb = -155f,
         ViewGrid = true,
         ShowWaterfall = true,
         WaterfallPalette = "Enhanced",
@@ -75,8 +74,8 @@ public sealed class SpectrumDisplaySettings
 {
     public static SpectrumDisplaySettings Instance { get; } = new();
 
-    /// <summary>WPF SpectrumDbCalCenter — absolute offset when relative trim is 0.</summary>
-    public const float DbCalCenterAbsolute = -91.3f;
+    /// <summary>Absolute dB CAL at trim 0 (true-dB scale, TG step test 2026-10-10; WPF SpectrumDbCalCenter).</summary>
+    public const float DbCalCenterAbsolute = -83.6f;
 
     public event Action? Changed;
 
@@ -93,9 +92,9 @@ public sealed class SpectrumDisplaySettings
 
     // ----- Live (= active bank) -----
     public float GridMaxDb { get; private set; } = -20f;
-    public float GridMinDb { get; private set; } = -125f;
-    public float WaterfallHighDb { get; private set; } = -50f;
-    public float WaterfallLowDb { get; private set; } = -120f;
+    public float GridMinDb { get; private set; } = -155f;
+    public float WaterfallHighDb { get; private set; } = -40f;
+    public float WaterfallLowDb { get; private set; } = -150f;
     public double ZoomFactor { get; private set; } = 1.0;
     public bool ViewGrid { get; private set; } = true;
     public bool ShowWaterfall { get; private set; } = true;
@@ -154,7 +153,7 @@ public sealed class SpectrumDisplaySettings
         maxDb = Math.Clamp(maxDb, -80f, 0f);
         minDb = Math.Clamp(minDb, -180f, -40f);
         if (maxDb - minDb < 40f)
-            minDb = maxDb - 105f;
+            minDb = maxDb - 135f; // e.g. −20 → −155
         if (Math.Abs(GridMaxDb - maxDb) < 0.01f && Math.Abs(GridMinDb - minDb) < 0.01f)
             return;
         GridMaxDb = maxDb;

@@ -55,9 +55,9 @@ public partial class SpectrumWaterfallViewModel : ViewModelBase
     [ObservableProperty] private double _zoomFactor = 1;
     [ObservableProperty] private float _dbCalRelative;
     [ObservableProperty] private float _gridMaxDb = -20;
-    [ObservableProperty] private float _gridMinDb = -125;
-    [ObservableProperty] private float _waterfallHighDb = -50;
-    [ObservableProperty] private float _waterfallLowDb = -120;
+    [ObservableProperty] private float _gridMinDb = -155;
+    [ObservableProperty] private float _waterfallHighDb = -40;
+    [ObservableProperty] private float _waterfallLowDb = -150;
     [ObservableProperty] private bool _viewGrid = true;
     [ObservableProperty] private bool _showWaterfall = true;
     /// <summary>True = normal (oldest top); false = reverse (newest top).</summary>

@@ -52,7 +52,7 @@ public partial class MainViewModel : ViewModelBase, IDisposable
     private bool? _audioBeforeDigU;
     private int _stepIndex = 2;
     /// <summary>0=Normal 800, 1=High 1600, 2=Max 3200. Sticky PAN_RESOLUTION.</summary>
-    private int _panResolutionIndex;
+    private int _panResolutionIndex = 2;
     private int _lowCutIndex;
     private int _highCutIndex = 2;
     private int _cwFilterIndex;
@@ -185,7 +185,7 @@ public partial class MainViewModel : ViewModelBase, IDisposable
         ModeText = "";
         NotifyModeFlags();
         NotifyBandFlags();
-        AppendLog("MSCC Avalonia 0.6.73 — trans starts with no mic; RX IQ 2200/630.");
+        AppendLog("MSCC Avalonia 0.6.74 — spectrum true dB + max per pixel, S-meter dBm click.");
         AppendLog("PTT = TX (voice modes); TUN = TUNE + carrier. S/W opens pan settings.");
         AppendLog($"Log: {LogFilePath}");
         CwPitchLabel = CwPitchOptions[Math.Clamp(CwPitchIndex, 0, CwPitchOptions.Count - 1)];
@@ -319,6 +319,10 @@ public partial class MainViewModel : ViewModelBase, IDisposable
     [ObservableProperty] private double _sMeter;
     [ObservableProperty] private bool _smeterHold = true;
     [ObservableProperty] private bool _smeterPeak;
+    /// <summary>cmd-070: last S-meter report in whole dBm.</summary>
+    [ObservableProperty] private int _sMeterDbm = -130;
+    /// <summary>cmd-070: S-meter readout shows dBm instead of S units. Persisted SMETER_DBM.</summary>
+    [ObservableProperty] private bool _smeterShowDbm;
     [ObservableProperty] private string _alcText = "—";
     /// <summary>ALC meter 0–100 (smoothed). Drives analog face.</summary>
     [ObservableProperty] private double _alcValue;
@@ -491,7 +495,7 @@ public partial class MainViewModel : ViewModelBase, IDisposable
     [ObservableProperty] private string _proficioTempText = "— °C";
     [ObservableProperty] private string _paTempText = "— °C";
     [ObservableProperty] private string _paCurrentText = "— mA";
-    [ObservableProperty] private string _clientVersionText = "0.6.73";
+    [ObservableProperty] private string _clientVersionText = "0.6.74";
     [ObservableProperty] private bool _alcOn = true;
     /// <summary>AMP / QRO path (PA bypass). Red when on (WPF).</summary>
     [ObservableProperty] private bool _ampOn;
@@ -1680,8 +1684,8 @@ public partial class MainViewModel : ViewModelBase, IDisposable
 
         if (dbm <= -73)
         {
-            // S1 to S9: 6 dB per S-unit, S9 = -73 dBm
-            int smeterValue = 9 + (dbm + 73) / 6;
+            // cmd-070: nearest S unit, a tie goes up (WPF): −76…−73 = S9, −82…−77 = S8.
+            int smeterValue = 9 + (int)Math.Floor((dbm + 73) / 6.0 + 0.5);
             return smeterValue < 1 ? 1 : smeterValue;
         }
 
@@ -1704,6 +1708,7 @@ public partial class MainViewModel : ViewModelBase, IDisposable
 
     private void ApplySmeterSample(int dbm)
     {
+        SMeterDbm = dbm;
         int units = DbToSmeter(dbm);
         SMeter = units;
         SmeterText = FormatSmeterReading(units);
@@ -2091,6 +2096,8 @@ public partial class MainViewModel : ViewModelBase, IDisposable
             AppendLog($"Meter: S HOLD={(SmeterHold ? "on" : "off")} Peak={(value ? "on" : "off")}");
         ScheduleSaveClientSettings();
     }
+
+    partial void OnSmeterShowDbmChanged(bool value) => ScheduleSaveClientSettings();
 
     partial void OnAlcHoldChanged(bool value)
     {
@@ -6718,6 +6725,7 @@ public partial class MainViewModel : ViewModelBase, IDisposable
 
             SmeterHold = s.SmeterHold;
             SmeterPeak = s.SmeterPeak;
+            SmeterShowDbm = s.SmeterDbm;
             AlcHold = s.AlcHold;
             AlcPeak = s.AlcPeak;
             _panResolutionIndex = ClientSettingsStore.ClampPanResolutionIndex(s.PanResolutionIndex);
@@ -6858,6 +6866,7 @@ public partial class MainViewModel : ViewModelBase, IDisposable
             AlcOn = AlcOn,
             SmeterHold = SmeterHold,
             SmeterPeak = SmeterPeak,
+            SmeterDbm = SmeterShowDbm,
             AlcHold = AlcHold,
             AlcPeak = AlcPeak,
             SpectrumZoom = sw.ZoomFactor,

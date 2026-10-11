@@ -183,10 +183,12 @@
                                     Width="180" Height="120"
                                     VerticalAlignment="Center"
                                     Value="{Binding SMeter}"
+                                    Dbm="{Binding SMeterDbm}"
+                                    ShowDbm="{Binding SmeterShowDbm, Mode=TwoWay}"
                                     HoldEnabled="{Binding SmeterHold, Mode=TwoWay}"
                                     PeakEnabled="{Binding SmeterPeak, Mode=TwoWay}"
                                     PeakHoldSeconds="2"
-                                    ToolTip.Tip="S-meter (live). S1–S9 / +10…+60 units."/>
+                                    ToolTip.Tip="S-meter (live). Click the reading for S units / dBm."/>
 
           <!-- VFO A — click to select; digit-hover wheel. Larger digits for easier hit-test. -->
           <Border x:Name="VfoAPanel"

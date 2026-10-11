@@ -27,12 +27,15 @@
                   FontWeight="Bold"
                   Foreground="White"
                   ToolTip.Tip="Slow fall of the main S-meter needle when signal drops (client-side). Off = needle tracks instantly."/>
-        <Border Background="#FF444444"
+        <Border x:Name="ReadingBorder"
+                Background="#FF444444"
                 BorderBrush="#FF888888"
                 BorderThickness="1"
                 CornerRadius="2"
                 Padding="4,1"
-                MinWidth="48">
+                MinWidth="60"
+                Cursor="Hand"
+                ToolTip.Tip="Click: S units / dBm">
           <TextBlock x:Name="ReadingText"
                      Text="S0"
                      FontSize="11"

@@ -4,13 +4,30 @@ Currently shipped in this folder:
 
 | Package | Version |
 |---------|---------|
-| `mscc` (servers) | 1.0.51 |
-| `mscc-ui` (Avalonia client) | 0.6.73 |
+| `mscc` (servers) | 1.0.52 |
+| `mscc-ui` (Avalonia client) | 0.6.74 |
 | `mscc-firmware` (optional radio firmware files) | 1.0.1 |
 | `mscc-init-gui` | 1.0.13 (unchanged this period) |
 | `mscc-portaudio` | 19.8.2 (unchanged this period) |
 
-## mscc 1.0.51 / mscc-ui 0.6.73 — 2026-10-08
+## mscc 1.0.52 / mscc-ui 0.6.74 — 2026-10-11
+
+### Fixed
+- Spectrum: a steady signal no longer drops 10-15 dB and jumps back while tuning (each screen pixel now shows the strongest of the points it covers, in the client and in the receiver).
+- Spectrum dB scale now matches real dB: a 20 dB change in signal moves the trace 20 dB, so one dB CAL holds at every level.
+- Spectrum: no more dark hole (or spike) at VFO -12 kHz; the noise there is levelled to match its surroundings. After a transmission the middle of the spectrum no longer shows a slow-fading dip.
+
+### Added
+- S-meter: click the reading to switch between S units and dBm. The choice is remembered.
+
+### Changed
+- Spectrum resolution fixed at Max (3200); the selector is gone.
+- On first start, dB CAL trim, GRID MIN and the waterfall LOW/HIGH are reset once to new defaults (trim 0 = -83.6, GRID MIN -155, waterfall Proficio -115/-40, Geminus -105/-35). Set dB CAL once with a known signal if you need exact levels.
+- S-meter S units round to the nearest unit (S9 is -76 to -73 dBm).
+- Spectrum smoothing (PANADAPTER_AVERAGE in ~/.local/mscc/user_controls.ini): 0 looks as before; 1 to 100 give a calmer trace at full frame rate (value x 0.025 s).
+- Receive server 3.144 (Ubuntu). Install mscc and mscc-ui together.
+
+## mscc 1.0.51 / mscc-ui 0.6.73 — 2026-10-08 (superseded)
 
 ### Fixed
 - Transmit server starts when the operator mic is missing or not found (TX voice off; TUNE/CW still work, I/Q output-only).
@@ -53,8 +70,5 @@ If your mic changes, re-run MSCC Init, then Stop/Start MSCC.
 - **SPECTRUM RESOLUTION** control (800 / 1600 / 3200), matching the Windows client.
 ### Fixed
 - Remote audio: switching between Phones and Digital, or turning Remote on with Digital selected, no longer crashes the audio stream.
-
-## Not yet in an installer / upcoming
-- Spectrum "strongest bin per display point" (done on the Pi, not yet ported).
 
 Earlier changes: see git history.

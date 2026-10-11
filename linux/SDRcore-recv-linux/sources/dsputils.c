@@ -115,6 +115,28 @@ void doAGC(sp_cplx *samps, int nframes)
 #endif
 }
 
+/*
+ * Levelling of the low-frequency noise hump around the LO point (VFO -12 kHz on the
+ * display). The FFT bins within PAN_DC_HALF_BINS of the LO point are scaled down so
+ * that their long-term average equals that of the PAN_DC_REF_BINS bins just outside
+ * (the quieter side of the two, so a signal on one side does not lift it). Each bin
+ * has its own slow average, so the hump goes and the normal noise texture stays: no
+ * spike and no hole. Bins are never scaled up. A steady signal inside the slice is
+ * levelled too, as it was hidden before. 4096 FFT at 96 kHz = 23.4 Hz per bin.
+ *
+ * The averages must not learn a burst: the low-frequency thump when the rig returns
+ * from transmit drove them far up, and the slice then showed as a dip that took many
+ * seconds to fade (Ron, 2026-10-10). So learning stops for PAN_DC_HOLD_FFTS after
+ * transmit and during a tuning pause (the scaling learned before stays in use), and
+ * one FFT never counts as more than PAN_DC_MAX_STEP times the current average.
+ */
+#define PAN_DC_HALF_BINS 16     /* levelled each side of the LO point (375 Hz) */
+#define PAN_DC_REF_BINS 16      /* reference bins each side, just outside */
+#define PAN_DC_ALPHA 0.01f      /* per FFT (47 a second): about 2 s */
+#define PAN_DC_PRIME_FFTS 47    /* first second: plain average of all FFTs so far */
+#define PAN_DC_HOLD_FFTS 47     /* no learning for about 1 s after transmit */
+#define PAN_DC_MAX_STEP 4.0f    /* one FFT counts as at most this x the average */
+
 void doPanadapter(sp_cplx *fftbuf, int nframes)
 {
         int j, k, bpos = 0;
@@ -142,6 +164,13 @@ void doPanadapter(sp_cplx *fftbuf, int nframes)
          */
         static sp_cplx pan_hist[4096];
         int keep;
+        // LO point levelling (see PAN_DC_HALF_BINS): slow average power per bin + reference
+        static sp_float dc_bin_avg[2 * PAN_DC_HALF_BINS];
+        static sp_float dc_ref_avg = 0.0f;
+        static int dc_count = 0; // FFTs learned so far, up to PAN_DC_PRIME_FFTS
+        static int dc_hold = 0; // FFTs left with learning stopped
+        sp_float dc_left, dc_right, dc_ref, dc_pow, dc_alpha;
+        int dc_centre, dc_learn;
 
         if (nframes > mystate.nfft) { // more than one FFT of data: use the newest nfft
                 fftbuf += nframes - mystate.nfft;
@@ -157,6 +186,7 @@ void doPanadapter(sp_cplx *fftbuf, int nframes)
                 pan_hist[keep + j].imag = fftbuf[j].imag;
         }
 
+        if (G_tx_mode) dc_hold = PAN_DC_HOLD_FFTS; // LO point levelling: no learning right after transmit
         if (panbuffer.panReady == 1 || G_tx_mode) {
                 return; // UDP code hasn't cleared the previous flag, get out
         } else { //Only reset panblocks when Panadapter_thread is NOT processing the buffer
@@ -198,6 +228,51 @@ void doPanadapter(sp_cplx *fftbuf, int nframes)
                 k--;
         }
 
+        // Level the noise hump around the LO point (see PAN_DC_HALF_BINS).
+        // After the shuffle the LO point lies between dbuf[nfft/2 - 1] and dbuf[nfft/2].
+        dc_centre = mystate.nfft / 2;
+        dc_learn = 1;
+        if (dc_hold > 0) {
+                dc_hold--;
+                dc_learn = 0;
+        }
+        if (G_Pause_Panadapter) dc_learn = 0;
+        if (dc_centre >= PAN_DC_HALF_BINS + PAN_DC_REF_BINS && (dc_learn || dc_count > 0)) {
+                // First PAN_DC_PRIME_FFTS: plain average of everything so far, then the slow average
+                dc_alpha = (dc_count < PAN_DC_PRIME_FFTS) ? 1.0f / (sp_float) (dc_count + 1) : PAN_DC_ALPHA;
+
+                if (dc_learn) {
+                        dc_left = 0.0f;
+                        dc_right = 0.0f;
+                        for (j = 0; j < PAN_DC_REF_BINS; j++) {
+                                k = dc_centre - PAN_DC_HALF_BINS - 1 - j;
+                                dc_left += (dbuf[k].real * dbuf[k].real) + (dbuf[k].imag * dbuf[k].imag);
+                                k = dc_centre + PAN_DC_HALF_BINS + j;
+                                dc_right += (dbuf[k].real * dbuf[k].real) + (dbuf[k].imag * dbuf[k].imag);
+                        }
+                        dc_ref = ((dc_left < dc_right) ? dc_left : dc_right) / (sp_float) PAN_DC_REF_BINS;
+                        if (dc_count >= PAN_DC_PRIME_FFTS && dc_ref > dc_ref_avg * PAN_DC_MAX_STEP)
+                                dc_ref = dc_ref_avg * PAN_DC_MAX_STEP;
+                        dc_ref_avg += (dc_ref - dc_ref_avg) * dc_alpha;
+                }
+
+                for (j = 0; j < 2 * PAN_DC_HALF_BINS; j++) {
+                        k = dc_centre - PAN_DC_HALF_BINS + j;
+                        if (dc_learn) {
+                                dc_pow = (dbuf[k].real * dbuf[k].real) + (dbuf[k].imag * dbuf[k].imag);
+                                if (dc_count >= PAN_DC_PRIME_FFTS && dc_pow > dc_bin_avg[j] * PAN_DC_MAX_STEP)
+                                        dc_pow = dc_bin_avg[j] * PAN_DC_MAX_STEP;
+                                dc_bin_avg[j] += (dc_pow - dc_bin_avg[j]) * dc_alpha;
+                        }
+                        if (dc_bin_avg[j] > dc_ref_avg && dc_bin_avg[j] > 0.0f) {
+                                sp_float scale = sqrt(dc_ref_avg / dc_bin_avg[j]);
+                                dbuf[k].real *= scale;
+                                dbuf[k].imag *= scale;
+                        }
+                }
+                if (dc_learn && dc_count < PAN_DC_PRIME_FFTS) dc_count++;
+        }
+
         // 96 kHz
         bpos = 1024;
         fpos = (sp_float) bpos;
@@ -205,12 +280,26 @@ void doPanadapter(sp_cplx *fftbuf, int nframes)
         fstep = (float) plotframes / (float) pixels;
 
         for (j = 0; j < pixels; j++) {
+                int bend;
+                sp_float m2, best = 0.0f;
+
                 // Guard FFT index (fstep can nudge bpos to nfft)
                 if (bpos < 0) bpos = 0;
                 if (bpos >= mystate.nfft) bpos = mystate.nfft - 1;
 
-                // calculate magnitude of bin
-                mag = sqrt((dbuf[bpos].real * dbuf[bpos].real) + (dbuf[bpos].imag * dbuf[bpos].imag));
+                // Largest bin of ALL the FFT bins this display point covers
+                // (3.84 bins at 800 points, 1.92 at 1600, 1 at 3200). Taking only
+                // the first bin made a steady carrier vanish whenever it sat
+                // between two sampled bins (signal generator test, 2026-10-05).
+                fpos += fstep;
+                bend = (int) fpos;
+                if (bend <= bpos) bend = bpos + 1;
+                if (bend > mystate.nfft) bend = mystate.nfft;
+                for (k = bpos; k < bend; k++) {
+                        m2 = (dbuf[k].real * dbuf[k].real) + (dbuf[k].imag * dbuf[k].imag);
+                        if (m2 > best) best = m2;
+                }
+                mag = sqrt(best);
 
                 // Convert to log display units (avoid log10(0)).
                 // Y = max(0, (10*log10(|FFT|) + BIAS) * 150), then capped by panadapter MAX_Y.
@@ -233,7 +322,6 @@ void doPanadapter(sp_cplx *fftbuf, int nframes)
                         panbuffer.Y[j] = isamp;
                 } else if (panbuffer.Y[j] > 1) panbuffer.Y[j] *= 0.95f;
 
-                fpos += fstep;
                 bpos = (int) fpos;
         }
 
@@ -359,12 +447,13 @@ void setFilterOffsets(sp_float filterSetLow, sp_float filterSetHigh)
  * DC blocker on the raw I/Q: y = x - x_prev + DC_BLOCK_A * y_prev.
  * I/Q DC plus the low-frequency noise around it (16 Hz comb, noise rising toward DC,
  * still above the floor ~300 Hz out) shows on the spectrum as the spur at VFO -12 kHz
- * (doPanadapter runs before the 12 kHz shift). 0.98 at 96 kHz = -3 dB at ~300 Hz
- * (0.9999 = 1.5 Hz removed only the DC, the spur stayed). Replaces the old pixel
- * notch + fill in panadapter.c.
+ * (doPanadapter runs before the 12 kHz shift). 0.9999 at 96 kHz = -3 dB at 1.5 Hz:
+ * it takes out the true DC only. 0.98 (-3 dB at ~300 Hz) also flattened the noise
+ * hump but left a hole about 1 kHz wide in the spectrum (Ron, 2026-10-10); the hump
+ * is now levelled in doPanadapter instead (PAN_DC_HALF_BINS).
  * Display only: that slice is 12 kHz outside the audio passband.
  */
-#define DC_BLOCK_A 0.98f
+#define DC_BLOCK_A 0.9999f
 
 /***** Convert incoming interleaved frames to complex form *****/
 void framesToComplex(sp_float *inframes, sp_cplx *incomplex, sp_cplx *outcomplex, int nframes)

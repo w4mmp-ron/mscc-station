@@ -123,20 +123,21 @@ public sealed class ClientSettings
     public bool AlcOn { get; set; } = true;
     public bool SmeterHold { get; set; } = true;
     public bool SmeterPeak { get; set; }
+    public bool SmeterDbm { get; set; }
     public bool AlcHold { get; set; } = true;
     public bool AlcPeak { get; set; }
 
     // Global S/W (not banked)
     public double SpectrumZoom { get; set; } = 1;
     public float DbCalRelative { get; set; }
-    /// <summary>0=Normal 800, 1=High 1600, 2=Max 3200 bins across 72 kHz.</summary>
-    public int PanResolutionIndex { get; set; }
+    /// <summary>cmd-068: fixed at Max (3200); index kept only so PAN_RESOLUTION still reads/writes.</summary>
+    public int PanResolutionIndex { get; set; } = 2;
 
     // Live snapshot (mirrored from active bank for backward-compatible keys)
     public float GridMaxDb { get; set; } = -20f;
-    public float GridMinDb { get; set; } = -125f;
-    public float WaterfallHighDb { get; set; } = -50f;
-    public float WaterfallLowDb { get; set; } = -120f;
+    public float GridMinDb { get; set; } = -155f;
+    public float WaterfallHighDb { get; set; } = -40f;
+    public float WaterfallLowDb { get; set; } = -150f;
     public bool ViewGrid { get; set; } = true;
     public bool ShowWaterfall { get; set; } = true;
     public bool WaterfallDirectionNormal { get; set; } = true;
@@ -202,6 +203,7 @@ public static class ClientSettingsStore
         try
         {
             bool hadBankKeys = false;
+            bool hadDbLaw = false;
             foreach (string raw in File.ReadAllLines(path))
             {
                 string line = raw.Trim();
@@ -214,11 +216,32 @@ public static class ClientSettingsStore
                 if (key.StartsWith("HF_", StringComparison.OrdinalIgnoreCase)
                     || key.StartsWith("LF_", StringComparison.OrdinalIgnoreCase))
                     hadBankKeys = true;
+                if (key.Equals("SPECTRUM_DB_LAW", StringComparison.OrdinalIgnoreCase)) hadDbLaw = true;
                 Apply(s, key, val);
             }
 
             // Older inis only had live WF_* / GRID_* keys — seed both banks from those
             MigrateLegacyLiveIntoBanks(s, hadBankKeys);
+
+            // cmd-069/070: spectrum is now true dB (was half-dB). dB CAL trim, grid floor and
+            // waterfall levels saved for the old scale are reset once to the new defaults, then
+            // written back (SPECTRUM_DB_LAW=20) so this runs only once.
+            if (!hadDbLaw)
+            {
+                var hf = SpectrumSwBank.CreateProficioDefaults();
+                var lf = SpectrumSwBank.CreateGeminusDefaults();
+                s.DbCalRelative = 0f;
+                s.GridMinDb = -155f;
+                s.WaterfallHighDb = -40f;
+                s.WaterfallLowDb = -150f;
+                s.HfBank.GridMinDb = hf.GridMinDb;
+                s.HfBank.WaterfallHighDb = hf.WaterfallHighDb;
+                s.HfBank.WaterfallLowDb = hf.WaterfallLowDb;
+                s.LfBank.GridMinDb = lf.GridMinDb;
+                s.LfBank.WaterfallHighDb = lf.WaterfallHighDb;
+                s.LfBank.WaterfallLowDb = lf.WaterfallLowDb;
+                Save(s);
+            }
         }
         catch
         {
@@ -329,12 +352,14 @@ public static class ClientSettingsStore
             sb.AppendLine("# Meters");
             sb.AppendLine($"SMETER_HOLD={(s.SmeterHold ? "1" : "0")}");
             sb.AppendLine($"SMETER_PEAK={(s.SmeterPeak ? "1" : "0")}");
+            sb.AppendLine($"SMETER_DBM={(s.SmeterDbm ? "1" : "0")}");
             sb.AppendLine($"ALC_HOLD={(s.AlcHold ? "1" : "0")}");
             sb.AppendLine($"ALC_PEAK={(s.AlcPeak ? "1" : "0")}");
             sb.AppendLine();
             sb.AppendLine("# Global S/W");
             sb.AppendLine($"SPECTRUM_ZOOM={s.SpectrumZoom.ToString(CultureInfo.InvariantCulture)}");
             sb.AppendLine($"DB_CAL_REL={s.DbCalRelative.ToString(CultureInfo.InvariantCulture)}");
+            sb.AppendLine("SPECTRUM_DB_LAW=20");
             sb.AppendLine($"PAN_RESOLUTION={ClampPanResolutionIndex(s.PanResolutionIndex)}");
             sb.AppendLine();
             sb.AppendLine("# Live S/W (active bank snapshot — for tools/compat)");
@@ -402,19 +427,10 @@ public static class ClientSettingsStore
 
     public static int ClampPanResolutionIndex(int index) => Math.Clamp(index, 0, 2);
 
-    public static int PanResolutionBins(int index) => ClampPanResolutionIndex(index) switch
-    {
-        1 => 1600,
-        2 => 3200,
-        _ => 800
-    };
+    /// <summary>Bins sent to SDRcore: always 3200 (cmd-068).</summary>
+    public static int PanResolutionBins(int index) => 3200;
 
-    public static string PanResolutionLabel(int index) => ClampPanResolutionIndex(index) switch
-    {
-        1 => "High (1600)",
-        2 => "Max (3200)",
-        _ => "Normal (800)"
-    };
+    public static string PanResolutionLabel(int index) => "Max (3200)";
 
     public static List<string> ParseHostRecent(string val)
         => NormalizeHostRecent(null, (val ?? "").Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries));
@@ -718,6 +734,9 @@ public static class ClientSettingsStore
             case "SMETER_PEAK":
                 s.SmeterPeak = IsTruthy(val);
                 break;
+            case "SMETER_DBM":
+                s.SmeterDbm = IsTruthy(val);
+                break;
             case "ALC_HOLD":
                 s.AlcHold = IsTruthy(val);
                 break;
@@ -734,9 +753,7 @@ public static class ClientSettingsStore
                     s.DbCalRelative = Math.Clamp(db, -20f, 20f);
                 break;
             case "PAN_RESOLUTION":
-                if (int.TryParse(val, NumberStyles.Integer, CultureInfo.InvariantCulture, out int pri))
-                    s.PanResolutionIndex = ClampPanResolutionIndex(pri);
-                break;
+                s.PanResolutionIndex = 2; break; // cmd-068: old 0/1 overridden
             // Legacy NULL_LO_* keys ignored — LO null is server-side (sdrcore-recv)
 
             // Live / legacy keys
