@@ -26,15 +26,15 @@ public static class SpectrumWaterfallSettings
     public static int SpectrumBaseline { get; set; } = ShipHfBaseline;
     /// <summary>
     /// Global spectrum/waterfall dB cal (absolute). displayDb = mapped + offset.
-    /// Default = SpectrumDbCalCenter (−91.3). UI shows relative trim ±20 around that center.
+    /// Default = SpectrumDbCalCenter (−83.6). UI shows relative trim ±20 around that center.
     /// Stored as SPECTRUM_DB_OFFSET in %LocalAppData%\MSCC-NET9\MSCC_Client.ini.
     /// </summary>
     public static float SpectrumDbOffset { get; set; } = SpectrumColorSettings.SpectrumDbCalCenter;
 
     /// <summary>Spectrum view top (dBm after cal). PowerSDR SpectrumGridMax. Default −20.</summary>
     public static float SpectrumGridMax { get; set; } = -20f;
-    /// <summary>Spectrum view bottom (dBm). PowerSDR SpectrumGridMin. Default −125 (grass ~−116).</summary>
-    public static float SpectrumGridMin { get; set; } = -125f;
+    /// <summary>Spectrum view bottom (dBm). PowerSDR SpectrumGridMin. Default −155 (floor about −140).</summary>
+    public static float SpectrumGridMin { get; set; } = -155f;
     public static bool SpectrumViewGrid { get; set; } = false;
     /// <summary>dB scale labels on spectrum left (S/W); independent of VIEW GRID.</summary>
     public static bool SpectrumViewDbLabels { get; set; } = false;
@@ -46,9 +46,9 @@ public static class SpectrumWaterfallSettings
     public static int WaterfallGain { get; set; } = 50;
     /// <summary>0–100; 0 = no offset. Higher = lift levels into the palette.</summary>
     public static int WaterfallZero { get; set; } = 0;
-    /// <summary>Palette top dBm (after dB CAL). Default −50 so FT8 ~−80 is vibrant.</summary>
+    /// <summary>Palette top dBm (after dB CAL). Default −40.</summary>
     public static float WaterfallHighDb { get; set; } = SpectrumColorSettings.WaterfallHighDefault;
-    /// <summary>Palette floor dBm. Default −125 (grass cold). Independent of spectrum GRID.</summary>
+    /// <summary>Palette floor dBm. Default −150. Independent of spectrum GRID.</summary>
     public static float WaterfallLowDb { get; set; } = SpectrumColorSettings.WaterfallLowDefault;
     /// <summary>Original MSCC palette: Red/Yellow, Enhanced, Spectran, BlackWhite.</summary>
     public static string WaterfallPalette { get; set; } = "Red/Yellow";
@@ -143,21 +143,21 @@ public static class SpectrumWaterfallSettings
     public static float RemoteEqHighDb { get; set; }
 
     // Ship / Reset defaults (cmd-017). HF: field-tuned 20m. LF: not-washed first boot.
-    public const float ShipHfHighDb = -44f;
-    public const float ShipHfLowDb = -106f;
+    public const float ShipHfHighDb = -40f;   // cmd-070 centre −83.6 (was −30)
+    public const float ShipHfLowDb = -115f;   // was −105
     public const int ShipHfGain = 65;
     public const int ShipHfZero = 0;
     public const int ShipHfBaseline = 50;
     public const float ShipHfGridMax = -20f;
-    public const float ShipHfGridMin = -125f;
+    public const float ShipHfGridMin = -155f; // was −145
 
-    public const float ShipLfHighDb = -40f;
-    public const float ShipLfLowDb = -100f;
+    public const float ShipLfHighDb = -35f;   // was −25
+    public const float ShipLfLowDb = -105f;   // was −95
     public const int ShipLfGain = 40;
     public const int ShipLfZero = 0;
     public const int ShipLfBaseline = 80; // 0–100 slider, near right
     public const float ShipLfGridMax = -20f;
-    public const float ShipLfGridMin = -125f;
+    public const float ShipLfGridMin = -155f; // was −145
 
     public const long DefaultLastHfFreq = 14_074_000;
     public const long DefaultLastLfFreq = 474_200;
@@ -462,6 +462,8 @@ public static class SpectrumWaterfallSettings
     public static bool SmeterHold { get; set; } = true;
     /// <summary>S-meter Peak needle. Default off.</summary>
     public static bool SmeterPeak { get; set; } = false;
+    /// <summary>cmd-070: S-meter digital readout in dBm (true) or S units (false). Default S units.</summary>
+    public static bool SmeterShowDbm { get; set; } = false;
     /// <summary>ALC HOLD (slow fall). Default on.</summary>
     public static bool AlcHold { get; set; } = true;
     /// <summary>ALC Peak needle. Default off.</summary>
@@ -480,25 +482,16 @@ public static class SpectrumWaterfallSettings
     public static int FmPower { get; set; } = 50;
 
     /// <summary>
-    /// Panadapter resolution index: 0=Normal 800, 1=High 1600, 2=Max 3200 bins across 72 kHz.
+    /// cmd-068: spectrum resolution is fixed at Max (3200 bins across 72 kHz). Index kept only
+    /// so PAN_RESOLUTION still reads/writes; old 0/1 (800/1600) values are overridden to 2.
     /// </summary>
-    public static int PanResolutionIndex { get; set; } = 0;
+    public static int PanResolutionIndex { get; set; } = 2;
 
-    /// <summary>Bins for current PanResolutionIndex.</summary>
-    public static int PanResolutionBins => PanResolutionIndex switch
-    {
-        1 => 1600,
-        2 => 3200,
-        _ => 800
-    };
+    /// <summary>Bins sent to SDRcore: always 3200 (cmd-068).</summary>
+    public static int PanResolutionBins => 3200;
 
-    /// <summary>UI label for S/W list.</summary>
-    public static string PanResolutionLabel => PanResolutionIndex switch
-    {
-        1 => "High (1600)",
-        2 => "Max (3200)",
-        _ => "Normal (800)"
-    };
+    /// <summary>Log label.</summary>
+    public static string PanResolutionLabel => "Max (3200)";
 
     // Per-mode filter profiles (global; independent of band last-used).
     // Indices match MAIN Lo/Hi cut buttons and CW filter. DIG-U defaults narrower for digi.
@@ -716,13 +709,13 @@ public static class SpectrumWaterfallSettings
                     // - S/W open ValueChanged clamp wrote GRID_MIN=-100 (slider Maximum) and lost −120 tick
                     // - same open path wrote SPECTRUM_DB_OFFSET=-20 (DbCal Maximum) wiping cal
                     if (SpectrumGridMin > -120f)
-                        SpectrumGridMin = -125f;
+                        SpectrumGridMin = -155f;
                     if (SpectrumGridMax > -10f)
                         SpectrumGridMax = -20f;
                     if (SpectrumGridMax - SpectrumGridMin < 40f)
                     {
                         SpectrumGridMax = -20f;
-                        SpectrumGridMin = -125f;
+                        SpectrumGridMin = -155f;
                     }
                     // Old S/W open clobber wrote −20; values outside the ±20 center window snap to center.
                     if (SpectrumDbOffset >= -40f || SpectrumDbOffset < SpectrumColorSettings.SpectrumDbOffsetMin - 0.5f
@@ -833,6 +826,7 @@ public static class SpectrumWaterfallSettings
 
                     if (LineMatchesKey(line, "SMETER_HOLD")) SmeterHold = ParseIniBool(line, SmeterHold);
                     if (LineMatchesKey(line, "SMETER_PEAK")) SmeterPeak = ParseIniBool(line, SmeterPeak);
+                    if (LineMatchesKey(line, "SMETER_DBM")) SmeterShowDbm = ParseIniBool(line, SmeterShowDbm);
                     if (LineMatchesKey(line, "ALC_HOLD")) AlcHold = ParseIniBool(line, AlcHold);
                     if (LineMatchesKey(line, "ALC_PEAK")) AlcPeak = ParseIniBool(line, AlcPeak);
 
@@ -846,8 +840,8 @@ public static class SpectrumWaterfallSettings
                     if (LineMatchesKey(line, "STEP_INDEX")) StepIndex = ParseIniInt(line, StepIndex);
                     if (LineMatchesKey(line, "PAN_RESOLUTION"))
                     {
-                        int pr = ParseIniInt(line, PanResolutionIndex);
-                        PanResolutionIndex = Math.Clamp(pr, 0, 2);
+                        // cmd-068: fixed at Max (3200); an old 0/1 (800/1600) is overridden.
+                        PanResolutionIndex = 2;
                     }
 
                     if (LineMatchesKey(line, "MODE_USB_LOWCUT")) ModeUsbLowCut = ParseIniInt(line, ModeUsbLowCut);
@@ -966,6 +960,24 @@ public static class SpectrumWaterfallSettings
                 if (LastHfFreq <= 0) LastHfFreq = DefaultLastHfFreq;
                 if (LastLfFreq <= 0) LastLfFreq = DefaultLastLfFreq;
 
+                // cmd-069: spectrum is now true dB (was half-dB). dB CAL, grid floor and waterfall
+                // levels saved for the old scale are reset once to the new defaults.
+                if (!fileLines.Any(l => LineMatchesKey(l, "SPECTRUM_DB_LAW")))
+                {
+                    SpectrumDbOffset = SpectrumColorSettings.SpectrumDbCalCenter;
+                    SpectrumHfDbOffset = SpectrumColorSettings.SpectrumDbCalCenter;
+                    SpectrumLfDbOffset = SpectrumColorSettings.SpectrumDbCalCenter;
+                    SpectrumGridMin = ShipHfGridMin;
+                    SpectrumHfGridMin = ShipHfGridMin;
+                    SpectrumLfGridMin = ShipLfGridMin;
+                    WaterfallHighDb = SpectrumColorSettings.WaterfallHighDefault;
+                    WaterfallLowDb = SpectrumColorSettings.WaterfallLowDefault;
+                    WaterfallHfHighDb = ShipHfHighDb;
+                    WaterfallHfLowDb = ShipHfLowDb;
+                    WaterfallLfHighDb = ShipLfHighDb;
+                    WaterfallLfLowDb = ShipLfLowDb;
+                }
+
                 // Active bank → live (so Proficio vs Geminus restores correctly)
                 LoadWaterfallBankToLive(RadioModelIsGeminus);
             }
@@ -1034,6 +1046,7 @@ public static class SpectrumWaterfallSettings
         UpdateOrAdd(lines, "SPECTRUM_BASELINE", SpectrumBaseline.ToString());
         UpdateOrAdd(lines, "SPECTRUM_DB_OFFSET",
             SpectrumDbOffset.ToString("0.##", System.Globalization.CultureInfo.InvariantCulture));
+        UpdateOrAdd(lines, "SPECTRUM_DB_LAW", "20");
         UpdateOrAdd(lines, "SPECTRUM_GRID_MAX",
             SpectrumGridMax.ToString("0.##", System.Globalization.CultureInfo.InvariantCulture));
         UpdateOrAdd(lines, "SPECTRUM_GRID_MIN",
@@ -1113,6 +1126,7 @@ public static class SpectrumWaterfallSettings
 
         UpdateOrAdd(lines, "SMETER_HOLD", SmeterHold ? "1" : "0");
         UpdateOrAdd(lines, "SMETER_PEAK", SmeterPeak ? "1" : "0");
+        UpdateOrAdd(lines, "SMETER_DBM", SmeterShowDbm ? "1" : "0");
         UpdateOrAdd(lines, "ALC_HOLD", AlcHold ? "1" : "0");
         UpdateOrAdd(lines, "ALC_PEAK", AlcPeak ? "1" : "0");
 

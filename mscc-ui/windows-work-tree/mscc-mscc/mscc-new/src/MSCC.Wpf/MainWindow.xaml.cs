@@ -94,6 +94,7 @@ public partial class MainWindow : Window
                 // property set will Save again (harmless).
                 vm.SmeterHold = SpectrumWaterfallSettings.SmeterHold;
                 vm.PeakNeedleOn = SpectrumWaterfallSettings.SmeterPeak;
+                vm.SmeterShowDbm = SpectrumWaterfallSettings.SmeterShowDbm;
                 vm.AlcHold = SpectrumWaterfallSettings.AlcHold;
                 vm.AlcPeakNeedleOn = SpectrumWaterfallSettings.AlcPeak;
                 // AMP defaults off at startup; use AMP-off Tune Power store.

@@ -728,8 +728,15 @@ internal sealed class BasicSpectrumRenderer : ISpectrumRenderer
             double dataFrac = viewStart + t * viewWidth;
             int idx = (int)(dataFrac * (data.Length - 1) + cwOffsetBins);
             idx = Math.Clamp(idx, 0, data.Length - 1);
+            // cmd-068: max of all points up to (not incl.) the next pixel's first point.
+            int idxNext = idx;
+            if (x + 1 < width)
+            {
+                double dataFracNext = viewStart + ((double)(x + 1) / (width - 1)) * viewWidth;
+                idxNext = (int)(dataFracNext * (data.Length - 1) + cwOffsetBins);
+            }
 
-            float dbValue = SpectrumColorSettings.ToDisplayDb(data[idx]);
+            float dbValue = SpectrumColorSettings.ToDisplayDb(MaxInRange(data, idx, idxNext));
             float norm = (dbValue - minDb) / range;
             norm = Math.Clamp(norm, 0f, 1f);
 
@@ -867,12 +874,16 @@ internal sealed class BasicSpectrumRenderer : ISpectrumRenderer
                 {
                     double xt = width > 1 ? (double)x / (width - 1) : 0.5;
                     double dataFrac = viewStart + xt * viewWidth;
+                    // cmd-068: the next pixel's start; the last pixel uses one point.
+                    double dataFracNext = x + 1 < width
+                        ? viewStart + ((double)(x + 1) / (width - 1)) * viewWidth
+                        : dataFrac;
 
                     // Per-row Length: never index all rows with history[0].Length (Start can mix sizes).
                     float db0 = SpectrumColorSettings.ToDisplayDb(
-                        SampleWaterfallRow(row0, dataFrac, cwOffsetBins, refLen, minDb));
+                        SampleWaterfallRow(row0, dataFrac, dataFracNext, cwOffsetBins, refLen, minDb));
                     float db1 = SpectrumColorSettings.ToDisplayDb(
-                        SampleWaterfallRow(row1, dataFrac, cwOffsetBins, refLen, minDb));
+                        SampleWaterfallRow(row1, dataFrac, dataFracNext, cwOffsetBins, refLen, minDb));
                     float dbv = (float)(db0 * (1.0 - t) + db1 * t);
 
                     // Color window = Waterfall Low/High (not spectrum GRID). Then GAIN/ZERO fine trim.
@@ -1285,23 +1296,40 @@ internal sealed class BasicSpectrumRenderer : ISpectrumRenderer
     }
 
     /// <summary>
+    /// cmd-068: largest value in data[i0 .. i1-1] (at least data[i0]). Indices are clamped.
+    /// One pixel covers several data points when points > pixels; drawing only one
+    /// of them made a carrier dip 10-15 dB while tuning.
+    /// </summary>
+    private static float MaxInRange(float[] data, int i0, int i1)
+    {
+        int n = data.Length;
+        i0 = Math.Clamp(i0, 0, n - 1);
+        i1 = Math.Clamp(i1, i0 + 1, n);
+        float m = data[i0];
+        for (int i = i0 + 1; i < i1; i++)
+            if (data[i] > m) m = data[i];
+        return m;
+    }
+
+    /// <summary>
     /// Sample one waterfall history row using that row's own Length (never history[0].Length).
     /// Scales CW offset when the row bin count differs from the current spectrum.
+    /// cmd-068: returns the max of the row's points from dataFrac up to (not incl.) dataFracNext.
     /// </summary>
     private static float SampleWaterfallRow(
-        float[]? row, double dataFrac, int cwOffsetBins, int refLen, float fallbackDb)
+        float[]? row, double dataFrac, double dataFracNext, int cwOffsetBins, int refLen, float fallbackDb)
     {
         if (row == null || row.Length == 0)
             return fallbackDb;
         int len = row.Length;
+        if (len == 1)
+            return row[0];
         int cw = refLen > 0
             ? (int)Math.Round(cwOffsetBins * (len / (double)refLen))
             : 0;
-        int idx = len == 1
-            ? 0
-            : (int)(dataFrac * (len - 1) + cw);
-        idx = Math.Clamp(idx, 0, len - 1);
-        return row[idx];
+        int idx = (int)(dataFrac * (len - 1) + cw);
+        int idxNext = (int)(dataFracNext * (len - 1) + cw);
+        return MaxInRange(row, idx, idxNext);
     }
 
     /// <summary>

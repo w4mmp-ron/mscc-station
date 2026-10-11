@@ -51,6 +51,14 @@ public partial class MainViewModel : ObservableObject, IDisposable
     [ObservableProperty]
     private int _sMeter;
 
+    /// <summary>cmd-070: last S-meter report in whole dBm (shown when SmeterShowDbm).</summary>
+    [ObservableProperty]
+    private int _sMeterDbm = -130;
+
+    /// <summary>cmd-070: S-meter digital readout shows dBm instead of S units. Persisted SMETER_DBM.</summary>
+    [ObservableProperty]
+    private bool _smeterShowDbm;
+
     // ── External WiFi SWR meter ─────────────────────────────────────────
     [ObservableProperty]
     private double _swrValue = 1.0;
@@ -127,6 +135,12 @@ public partial class MainViewModel : ObservableObject, IDisposable
     partial void OnSmeterHoldChanged(bool value)
     {
         SpectrumWaterfallSettings.SmeterHold = value;
+        SpectrumWaterfallSettings.Save();
+    }
+
+    partial void OnSmeterShowDbmChanged(bool value)
+    {
+        SpectrumWaterfallSettings.SmeterShowDbm = value;
         SpectrumWaterfallSettings.Save();
     }
 
@@ -425,8 +439,12 @@ public partial class MainViewModel : ObservableObject, IDisposable
             }
             else if (dbm <= -73)
             {
-                // S1 to S9: 6 dB per S-unit, S9 = -73 dBm
-                smeter_value = 9 + (dbm + 73) / 6;
+                // S1 to S9: 6 dB per S-unit, S9 = -73 dBm.
+                // cmd-070: nearest S unit. A tie (±3 dB) goes to the higher unit:
+                // −76…−73 = S9, −82…−77 = S8. Floor(x + 0.5) does that.
+                // Math.Round ToPositiveInfinity lifts every fraction, so −77 stayed S9.
+                double steps = (dbm + 73) / 6.0;
+                smeter_value = 9 + (int)Math.Floor(steps + 0.5);
                 if (smeter_value < 1)
                 {
                     smeter_value = 1;
@@ -5830,6 +5848,7 @@ public partial class MainViewModel : ObservableObject, IDisposable
 
         svc.SmeterReported += dbm =>
         {
+            SMeterDbm = dbm;
             SMeter = Db_to_Smeter(dbm);
             //MonitorTextBoxText($" Smeter reported: {dbm} dBm -> S{SMeter}");
         };
@@ -6254,7 +6273,7 @@ public partial class MainViewModel : ObservableObject, IDisposable
             cwPitch = CwPitchValues[CwPitchIndex];
         }
 
-        // PowerSDR-style dBm window (after dB CAL). Grass ~−116 needs min ≈ −125.
+        // PowerSDR-style dBm window (after dB CAL). Grass ~−140 needs min ≈ −155.
         // Includes BASELINE floor-tune so packet Min/Max match the drawn pane.
         SpectrumColorSettings.GetDisplayGridWindow(out float gridMin, out float gridMax);
         if (gridMax - gridMin < 20f)

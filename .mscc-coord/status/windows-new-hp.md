@@ -4,17 +4,20 @@
 |--|--|
 | **Host** | NEW-HP-LAPTOP (Windows) |
 | **Checkout** | `C:\Users\n8vet\OneDrive\Documents\GitHub\mscc-station` |
-| **Build** | **cmd-067b** (help text, client 10.8.1, not committed) / **cmd-067** (code ready, stopped before commit) / **cmd-038** (WPF pending) |
-| **Last command id** | cmd-067b (not committed) / cmd-067 (not committed) / cmd-038 (pending) |
-| **State** | code ready, stopped before commit |
-| **Updated** | 2026-10-08 |
+| **Build** | **cmd-070** (client 10.11.1, committed) / **cmd-038** (WPF pending) |
+| **Last command id** | cmd-070 (committed) / cmd-038 (pending) |
+| **State** | done |
+| **Updated** | 2026-10-11 |
 
 ## ACK log
 
 | command id | state | note |
 |------------|-------|------|
-| cmd-067b | running | Audio panel help text only. Client 10.8.1 in C:\mscc-net9. Header says only Operator Out is required to Start, and (none) means not set. Window was not opened. Not committed. No push. |
-| cmd-067 | running | Part A built, stopped before commit. WPF was 10.8.0, then cmd-067b moved the client to 10.8.1. trans 3.146, recv 3.144, ms-sdr 3.182 in C:\mscc-net9. Multus and Proficio hidden from audio lists. Speaker required. Mic and digital can be (none). PTT blocks voice or digital when that mic is unset. 2200 m and 630 m parse for RX IQ. Trans starts output-only without a mic. Recv rejects a bad speaker and does not use the radio as the speaker. Blank COM is COM0, no popup. Part B not started. Live smoke 1-7 not run (no radio). No push. |
+| cmd-070 | done | WPF only. Client 10.11.1 in C:\mscc-net9. S-meter readout click toggles S units and dBm (SMETER_DBM). S units round to the nearest unit, ties to the higher unit. Spectrum centre -83.6, GRID MIN -155, waterfall shifted about -9. Servers not rebuilt (recv 3.145, trans 3.146, ms-sdr 3.182). Smoke 1-7 pass (Stew 2026-10-11, incl. Geminus LF/MF). Committed. |
+| cmd-069 | done | Windows recv 3.145 and WPF 10.9.1 in C:\mscc-net9. Spectrum averaging no longer adds gain. Client reads true dB with centre -75. First start resets dB CAL, GRID MIN, and waterfall once (SPECTRUM_DB_LAW=20). cmd-068 max-per-pixel and hidden resolution selector stay. TG step test pass (Stew 2026-10-11, trim -8.6 at -75 centre -> centre -83.6 in cmd-070). Committed. |
+| cmd-068 | done | WPF only. Spectrum and waterfall draw the max of the points each pixel covers. Resolution fixed at Max (3200); selector hidden. Client 10.9.0 in C:\mscc-net9. Servers not rebuilt. Smoke pass (Stew 2026-10-09). Committed. |
+| cmd-067b | done | Audio panel help text only. Client was 10.8.1, then cmd-068 moved it to 10.9.0. Header says only Operator Out is required to Start, and (none) means not set. Committed in 8564843. |
+| cmd-067 | done | Part A committed in 8564843. WPF was 10.8.0, then cmd-067b moved the client to 10.8.1. trans 3.146, recv 3.144, ms-sdr 3.182 in C:\mscc-net9. Multus and Proficio hidden from audio lists. Speaker required. Mic and digital can be (none). PTT blocks voice or digital when that mic is unset. 2200 m and 630 m parse for RX IQ. Trans starts output-only without a mic. Recv rejects a bad speaker and does not use the radio as the speaker. Blank COM is COM0, no popup. Part B not started. Live smoke 1-7 not run (no radio). No push. |
 | cmd-064 | done | Windows SDRcore-recv 3.143 in C:\mscc-net9. DC blocker 0.98 on raw I/Q, spectrum FFT uses the last 4096 samples, cmd-053 pixel notch removed. TX monitor blanking stays. Ubuntu linux/ not edited. Live 800/1600/3200, audio, FT8, and FREQ CAL not run (no radio). Bench of the Hamming FFT on the client dB scale: carrier +3.01, noise +1.51. Same shift at every resolution. Not pushed. |
 | cmd-062 | done | WPF 10.2.0 (R10-2-0) and ms-sdr 3.181 in C:\mscc-net9. Save settings sends CMD_SET_PARK_CAL_SETTINGS 0x29. Core 0x29 was already present. SaveLiveToParked is gone. Tooltip is "Ask the host to park live cal for this radio." Unknown major warns and does not park. Live Save and the warning dialog were not run (no radio). Trans stays 3.145. Not pushed. |
 | cmd-059 | done | WPF 10.1.2 (R10-1-2), SDRcore-trans 3.145, ms-sdr 3.180 in C:\mscc-net9. Removed uncalled Factory_mirror_live_to_cal and Create_power_cal_file. QRP CAL, AMP CAL, and TX IQ show "When done, press Save settings." Save settings tooltip is "Copy live cal to parked for this radio." Park and swap unchanged. Tabs not opened on the radio. Not pushed. |
@@ -45,7 +48,10 @@
 
 ## Notes
 
-cmd-067b: Audio help text. Client 10.8.1. Not committed.
+cmd-070: client 10.11.1. S-meter dBm toggle, nearest S unit, spectrum centre -83.6. Smoke pass. Committed.
+cmd-069: recv 3.145 and client was 10.9.1, then cmd-070 moved it to 10.11.1. True dB. Smoke pass. Committed.
+cmd-068: spectrum max-per-pixel, resolution fixed at 3200. Client was 10.9.0, then cmd-069 moved it to 10.9.1. Smoke pass. Committed.
+cmd-067b: Audio help text. Client was 10.8.1. Not committed.
 cmd-067: Part A code ready, not committed. Client is now 10.8.1. trans 3.146, recv 3.144, ms-sdr 3.182. All four are in C:\mscc-net9. Live bench not run (no radio on this laptop). Part B is ubuntu-stew. cmd-038 still pending.
 cmd-064: done. Windows recv 3.143. The -12 kHz spur fix is in the DSP. The pixel notch is gone. cmd-038 still pending.
 cmd-062: done. WPF 10.2.0, ms-sdr 3.181. Host park is opcode 0x29. The client no longer copies cal files.

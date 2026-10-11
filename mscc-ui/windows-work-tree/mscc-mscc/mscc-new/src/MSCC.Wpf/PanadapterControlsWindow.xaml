@@ -98,18 +98,18 @@
                                     SmallChange="0.5" LargeChange="2" Value="0"
                                     TickFrequency="5" IsSnapToTickEnabled="False"
                                     PreviewMouseWheel="OnSliderPreviewMouseWheel"
-                                    ToolTip="dB cal trim (±20). 0 = center (−91.3 absolute)."/>
+                                    ToolTip="dB cal trim (±20). 0 = center (−83.6 absolute)."/>
                             <Button Content="&gt;" Width="20" Height="18" Click="DbCalRight_Click" FontSize="8"
                                     ToolTip="+1 dB (raise the display)"/>
                             <TextBlock x:Name="DbCalValueText" Text="0.0" FontSize="9" FontWeight="Bold"
                                        Foreground="#00FFAA" Width="44" Margin="6,0,0,0" VerticalAlignment="Center"
                                        ToolTip="Relative trim (0 = center). Absolute offset shown in tooltip when open."/>
                             <Button Content="RST" Width="28" Height="18" Margin="4,0,0,0" FontSize="8"
-                                    Click="DbCalReset_Click" ToolTip="Reset dB cal trim to 0 (center −91.3)"/>
+                                    Click="DbCalReset_Click" ToolTip="Reset dB cal trim to 0 (center −83.6)"/>
                         </StackPanel>
                         <!-- PowerSDR-style spectrum dBm window (view range; independent of dB CAL) -->
                         <StackPanel Orientation="Horizontal" Margin="0,4,0,0"
-                                    ToolTip="Spectrum view window in dBm (after dB CAL). Defaults −20…−125 so HF grass (~−116) fills the lower pane. Not the same as BASELINE.">
+                                    ToolTip="Spectrum view window in dBm (after dB CAL). Defaults −20…−155 so HF grass (~−140) fills the lower pane. Not the same as BASELINE.">
                             <TextBlock Text="GRID MAX" FontSize="10" Foreground="#D0D0D0" Width="60" VerticalAlignment="Center"
                                        ToolTip="Top of spectrum pane (dBm). Default −20; lower to zoom levels (e.g. −40)."/>
                             <!-- ValueChanged in code after restore — XAML wire wrote GRID MAX/MIN on open. -->
@@ -120,16 +120,16 @@
                             <TextBlock x:Name="GridMaxValueText" Text="-20" FontSize="9" FontWeight="Bold"
                                        Foreground="#00FFAA" Width="36" Margin="4,0,8,0" VerticalAlignment="Center"/>
                             <TextBlock Text="MIN" FontSize="10" Foreground="#D0D0D0" Width="28" VerticalAlignment="Center"
-                                       ToolTip="Bottom of spectrum pane (dBm). Default −125 shows full grass near −116."/>
-                            <!-- Range −160…−90 so default −125 is valid. Old Max −100 made WPF clamp default 0 → −100 (lost −120 tick). -->
+                                       ToolTip="Bottom of spectrum pane (dBm). Default −155 shows full grass near −140."/>
+                            <!-- Range −160…−90 so default −155 is valid. Old Max −100 made WPF clamp default 0 → −100 (lost −120 tick). -->
                             <Slider x:Name="GridMinSlider" Width="90" Minimum="-160" Maximum="-90" Margin="2,0"
-                                    SmallChange="1" LargeChange="5" Value="-125"
+                                    SmallChange="1" LargeChange="5" Value="-155"
                                     PreviewMouseWheel="OnSliderPreviewMouseWheel"
-                                    ToolTip="Spectrum bottom dBm (−160…−90). Default −125 (full grass near −116)."/>
-                            <TextBlock x:Name="GridMinValueText" Text="-125" FontSize="9" FontWeight="Bold"
+                                    ToolTip="Spectrum bottom dBm (−160…−90). Default −155 (full grass near −140)."/>
+                            <TextBlock x:Name="GridMinValueText" Text="-155" FontSize="9" FontWeight="Bold"
                                        Foreground="#00FFAA" Width="40" Margin="4,0,0,0" VerticalAlignment="Center"/>
                             <Button Content="RST" Width="28" Height="18" Margin="6,0,0,0" FontSize="8"
-                                    Click="GridRangeReset_Click" ToolTip="Reset grid to −20 … −125"/>
+                                    Click="GridRangeReset_Click" ToolTip="Reset grid to −20 … −155"/>
                         </StackPanel>
                         <StackPanel Orientation="Horizontal" Margin="0,4,0,0">
                             <TextBlock Text="REFRESH" FontSize="10" Foreground="#D0D0D0" Width="60" VerticalAlignment="Center"/>
@@ -142,8 +142,8 @@
                                 <ListBoxItem Content="8"/>
                                 <ListBoxItem Content="10"/>
                             </ListBox>
-                            <!-- Pan resolution: bins across 72 kHz (UDP segments of 400). Display zoom is separate. -->
-                            <StackPanel Margin="12,0,0,0" VerticalAlignment="Top">
+                            <!-- cmd-068: spectrum resolution fixed at Max (3200); selector hidden. Display zoom is separate. -->
+                            <StackPanel Margin="12,0,0,0" VerticalAlignment="Top" Visibility="Collapsed">
                                 <TextBlock Text="SPECTRUM RESOLUTION" FontSize="10" Foreground="#D0D0D0"
                                            ToolTip="Bins across 72 kHz. Higher = sharper spectrum/zoom, more network traffic. Use Normal if the remote spectrum stutters."/>
                                 <ListBox x:Name="PanResolutionList" Width="100" Height="55" FontSize="9" Margin="0,2,0,0"
@@ -228,29 +228,29 @@
                             <StackPanel Margin="12,0,0,0" VerticalAlignment="Top" Width="260">
                                 <!-- PowerSDR-style palette window (independent of spectrum GRID). Handlers in code. -->
                                 <TextBlock Text="WF HIGH (hot)" FontSize="10" Foreground="#D0D0D0"
-                                           ToolTip="Top of waterfall palette in dBm (after dB CAL). Default −50 so FT8 ~−80 is vibrant."/>
+                                           ToolTip="Top of waterfall palette in dBm (after dB CAL). Default −40."/>
                                 <StackPanel Orientation="Horizontal" Margin="0,2,0,6">
                                     <Slider x:Name="WaterfallHighSlider" Width="150" Minimum="-100" Maximum="-20"
-                                            SmallChange="1" LargeChange="5" Value="-50"
+                                            SmallChange="1" LargeChange="5" Value="-40"
                                             PreviewMouseWheel="OnSliderPreviewMouseWheel"
                                             ToolTip="Palette top dBm (−100…−20). Lower = more contrast on weak digital."/>
-                                    <TextBlock x:Name="WaterfallHighValueText" Text="-50" FontSize="10" FontWeight="Bold"
+                                    <TextBlock x:Name="WaterfallHighValueText" Text="-40" FontSize="10" FontWeight="Bold"
                                                Foreground="#00FFAA" Width="36" Margin="6,0,0,0" VerticalAlignment="Center"/>
                                 </StackPanel>
                                 <TextBlock Text="WF LOW (cold)" FontSize="10" Foreground="#D0D0D0"
-                                           ToolTip="Bottom of waterfall palette in dBm. Default −125 keeps grass dark."/>
+                                           ToolTip="Bottom of waterfall palette in dBm. Default −150."/>
                                 <StackPanel Orientation="Horizontal" Margin="0,2,0,6">
                                     <Slider x:Name="WaterfallLowSlider" Width="150" Minimum="-160" Maximum="-90"
-                                            SmallChange="1" LargeChange="5" Value="-125"
+                                            SmallChange="1" LargeChange="5" Value="-150"
                                             PreviewMouseWheel="OnSliderPreviewMouseWheel"
                                             ToolTip="Palette floor dBm (−160…−90). Raise slightly if background is milky."/>
-                                    <TextBlock x:Name="WaterfallLowValueText" Text="-125" FontSize="10" FontWeight="Bold"
+                                    <TextBlock x:Name="WaterfallLowValueText" Text="-150" FontSize="10" FontWeight="Bold"
                                                Foreground="#00FFAA" Width="40" Margin="6,0,0,0" VerticalAlignment="Center"/>
                                     <Button Content="RST" Width="28" Height="18" Margin="6,0,0,0" FontSize="8"
                                             Click="WaterfallRangeReset_Click"
-                                            ToolTip="Reset waterfall to High −50 / Low −125"/>
+                                            ToolTip="Reset waterfall to the ship window (HF −40/−115, LF −35/−105)"/>
                                 </StackPanel>
-                                <TextBlock Text="High −50 / Low −125 = FT8 contrast defaults" FontSize="10" Foreground="#D0D0D0" Margin="0,0,0,8"/>
+                                <TextBlock Text="HF −40/−115, LF −35/−105" FontSize="10" Foreground="#D0D0D0" Margin="0,0,0,8"/>
                                 <TextBlock Text="GAIN (fine)" FontSize="10" Foreground="#D0D0D0"/>
                                 <StackPanel Orientation="Horizontal" Margin="0,2,0,6">
                                     <Slider x:Name="WaterfallGainSlider" Width="150" Minimum="0" Maximum="100"

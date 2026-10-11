@@ -89,7 +89,7 @@ public partial class PanadapterControlsWindow : Window
 
         if (DbCalSlider != null)
         {
-            // Slider is relative trim around SpectrumDbCalCenter (−91.3 = UI 0).
+            // Slider is relative trim around SpectrumDbCalCenter (−83.6 = UI 0).
             DbCalSlider.Value = SpectrumColorSettings.GetSpectrumDbCalRelative();
             UpdateDbCalValueText();
         }
@@ -474,7 +474,7 @@ public partial class PanadapterControlsWindow : Window
     private void OnDbCalChanged(object sender, RoutedPropertyChangedEventArgs<double> e) =>
         ApplyDbCalRelative((float)e.NewValue);
 
-    /// <param name="relativeDb">UI trim: 0 = center (−91.3 absolute), ±20 span.</param>
+    /// <param name="relativeDb">UI trim: 0 = center (−83.6 absolute), ±20 span.</param>
     private void ApplyDbCalRelative(float relativeDb)
     {
         SpectrumColorSettings.SetSpectrumDbCalRelative(relativeDb);
@@ -507,7 +507,7 @@ public partial class PanadapterControlsWindow : Window
         ApplySpectrumGrid(SpectrumColorSettings.SpectrumGridMax, (float)e.NewValue);
 
     private void GridRangeReset_Click(object sender, RoutedEventArgs e) =>
-        ApplySpectrumGrid(-20f, -125f);
+        ApplySpectrumGrid(-20f, -155f);
 
     private void ApplySpectrumGrid(float maxDb, float minDb)
     {

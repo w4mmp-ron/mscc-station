@@ -2,6 +2,23 @@
 
 Installer: `mscc-net9-R<version>-install.exe` (WPF client + Windows servers). Install the newest one; older installers in this folder are kept for roll-back only.
 
+## R10.11.1 — 2026-10-11  (`mscc-net9-R10-11-1-install.exe`, title bar 10.11.1)
+
+### Added
+- S-meter: click the digital readout to switch between S units (S9+10) and dBm (-63 dBm). The choice is remembered.
+
+### Fixed
+- Spectrum and waterfall: a steady signal no longer dips by 10-15 dB (and its waterfall line no longer breaks up) as you tune, at any zoom. Each screen pixel now shows the strongest point it covers instead of a single sample.
+- Spectrum dB scale now matches real dB: a 20 dB change in signal moves the trace 20 dB (it moved only about 10 to 15 dB before), so one dB CAL holds at every level. The receive server's spectrum averaging no longer adds gain.
+
+### Changed
+- SPECTRUM RESOLUTION is fixed at Max (3200) and the selector is gone from the S/W controls. A saved Normal/High setting is ignored. Use the spectrum zoom to see more detail.
+- At 1x zoom the noise floor on the spectrum looks slightly higher and smoother than before (same signal levels).
+- On first start, dB CAL, the spectrum GRID MIN and the waterfall LOW/HIGH are reset once to new defaults (centre −83.6, GRID MIN −155, waterfall −150…−40), because the old values were set for the old scale. Signals now stand about twice as far above the noise floor, and the floor reads lower (about −140). Set dB CAL once with a known signal if you need exact levels.
+- Receive server 3.145 (Windows). Install the client and the servers together (this installer does both).
+- S-meter S units now round to the nearest unit (S9 is -76 to -73 dBm; it used to show S9 down to -78).
+- Spectrum dB CAL centre set from a signal-generator step test (-70 dBm reads -70 with the trim at 0).
+
 ## R10.8.1 — 2026-10-08  (`mscc-net9-R10-8-1-install.exe`, title bar 10.8.1)
 
 ### Fixed

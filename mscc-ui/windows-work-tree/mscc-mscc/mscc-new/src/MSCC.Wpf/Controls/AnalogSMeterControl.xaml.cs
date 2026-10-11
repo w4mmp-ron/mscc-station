@@ -81,6 +81,23 @@ public partial class AnalogSMeterControl : UserControl
             typeof(AnalogSMeterControl),
             new PropertyMetadata(2.0, OnPowerReadingChanged));
 
+    /// <summary>cmd-070: last S-meter report in whole dBm (from ms-sdr 0xD4).</summary>
+    public static readonly DependencyProperty DbmProperty =
+        DependencyProperty.Register(
+            nameof(Dbm),
+            typeof(int),
+            typeof(AnalogSMeterControl),
+            new PropertyMetadata(-130, OnReadoutModeChanged));
+
+    /// <summary>cmd-070: true = digital readout shows dBm, false = S units. Click toggles (RX face only).</summary>
+    public static readonly DependencyProperty ShowDbmProperty =
+        DependencyProperty.Register(
+            nameof(ShowDbm),
+            typeof(bool),
+            typeof(AnalogSMeterControl),
+            new FrameworkPropertyMetadata(false,
+                FrameworkPropertyMetadataOptions.BindsTwoWayByDefault, OnReadoutModeChanged));
+
     public int Value
     {
         get => (int)GetValue(ValueProperty);
@@ -135,6 +152,18 @@ public partial class AnalogSMeterControl : UserControl
     {
         get => (double)GetValue(SwrThresholdProperty);
         set => SetValue(SwrThresholdProperty, value);
+    }
+
+    public int Dbm
+    {
+        get => (int)GetValue(DbmProperty);
+        set => SetValue(DbmProperty, value);
+    }
+
+    public bool ShowDbm
+    {
+        get => (bool)GetValue(ShowDbmProperty);
+        set => SetValue(ShowDbmProperty, value);
     }
 
     /// <summary>Raised when operator clicks red RESET on a latched SWR fault.</summary>
@@ -227,7 +256,14 @@ public partial class AnalogSMeterControl : UserControl
 
     private void OnReadingClick(object sender, MouseButtonEventArgs e)
     {
-        if (!PowerMode || !Fault) return;
+        if (!PowerMode)
+        {
+            // cmd-070: RX face — toggle S units / dBm (persisted via the ShowDbm binding).
+            ShowDbm = !ShowDbm;
+            e.Handled = true;
+            return;
+        }
+        if (!Fault) return;
         ResetRequested?.Invoke(this, new RoutedEventArgs());
         e.Handled = true;
     }
@@ -312,6 +348,12 @@ public partial class AnalogSMeterControl : UserControl
         else
             c.ApplyRawSample(c.Value, force: true);
         c.UpdateNeedles();
+    }
+
+    private static void OnReadoutModeChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
+    {
+        if (d is AnalogSMeterControl c && !c.PowerMode)
+            c.UpdateNeedles();
     }
 
     private static void OnPowerReadingChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
@@ -855,15 +897,18 @@ public partial class AnalogSMeterControl : UserControl
 
         if (!PowerMode)
         {
-            ReadingText.Text = FormatSmeterReading((int)Math.Round(main));
+            // cmd-070: dBm = raw last report (whole dB); S units follow the needle as before.
+            ReadingText.Text = ShowDbm ? $"{Dbm} dBm" : FormatSmeterReading((int)Math.Round(main));
             ReadingText.Foreground = ReadingGreen;
-            ReadingText.Cursor = Cursors.Arrow;
+            ReadingText.Cursor = Cursors.Hand;
             if (ReadingBorder != null)
             {
                 ReadingBorder.Background = ReadingNormalBg;
                 ReadingBorder.BorderBrush = ReadingNormalBorder;
-                ReadingBorder.Cursor = Cursors.Arrow;
-                ReadingBorder.ToolTip = "S-meter reading";
+                ReadingBorder.Cursor = Cursors.Hand;
+                ReadingBorder.ToolTip = ShowDbm
+                    ? "S-meter in dBm (click for S units)"
+                    : "S-meter reading (click for dBm)";
             }
             return;
         }

@@ -205,24 +205,38 @@ void doPanadapter(sp_cplx *fftbuf, int nframes)
         fstep = (float) plotframes / (float) pixels;
 
         for (j = 0; j < pixels; j++) {
+                int bend;
+                sp_float m2, best = 0.0f;
+
                 // Guard FFT index (fstep can nudge bpos to nfft)
                 if (bpos < 0) bpos = 0;
                 if (bpos >= mystate.nfft) bpos = mystate.nfft - 1;
 
-                // calculate magnitude of bin
-                mag = sqrt((dbuf[bpos].real * dbuf[bpos].real) + (dbuf[bpos].imag * dbuf[bpos].imag));
+                // Largest bin of ALL the FFT bins this display point covers
+                // (3.84 bins at 800 points, 1.92 at 1600, 1 at 3200). Taking only
+                // the first bin made a steady carrier vanish whenever it sat
+                // between two sampled bins (signal generator test, 2026-10-05).
+                fpos += fstep;
+                bend = (int) fpos;
+                if (bend <= bpos) bend = bpos + 1;
+                if (bend > mystate.nfft) bend = mystate.nfft;
+                for (k = bpos; k < bend; k++) {
+                        m2 = (dbuf[k].real * dbuf[k].real) + (dbuf[k].imag * dbuf[k].imag);
+                        if (m2 > best) best = m2;
+                }
+                mag = sqrt(best);
 
                 // Convert to log display units (avoid log10(0)).
                 // Y = max(0, (10*log10(|FFT|) + BIAS) * 150), then capped by panadapter MAX_Y
-                // and local maxmag (~16383).
+                // and local maxmag (~16383). The same Y is (20*log10(|FFT|) + 80) * 75.
+                // Client RawYToDb reads scale 75 / bias 80 (true dB, cmd-069). Do not change
+                // this packing: Windows, Pi, and Ubuntu clients share the wire format.
                 //
                 // BIAS 22 (original) put the Y=0 digital floor only ~78 dB below a typical
                 // hot peak after client dB CAL → grass shelf near −100 with −120 grid empty.
-                // BIAS 40 opens ~18 dB more below that floor so grass can sit near −116…−120
-                // without shifting calibrated peaks (for Y>0 under both biases,
-                // display dB = 10*log10(|FFT|) + SPECTRUM_DB_OFFSET either way).
+                // BIAS 40 opens ~18 dB more below that floor.
                 // MAX_Y was already raised to 16000 (~106 dB above Y=0) so strong signals
-                // still fit. Keep inverse bias in UdpRadioService.RawYToDb in lockstep.
+                // still fit.
                 if (mag < 1.0e-20f) mag = 1.0e-20f;
                 mag = (10.0f * log10(mag));
                 mag += 40.0f;
@@ -240,7 +254,6 @@ void doPanadapter(sp_cplx *fftbuf, int nframes)
                         panbuffer.Y[j] = isamp;
                 } else if (panbuffer.Y[j] > 1) panbuffer.Y[j] *= 0.95f;
 
-                fpos += fstep;
                 bpos = (int) fpos;
         }
 

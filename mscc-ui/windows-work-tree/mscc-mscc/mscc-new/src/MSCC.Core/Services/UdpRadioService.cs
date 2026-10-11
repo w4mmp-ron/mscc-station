@@ -2410,20 +2410,20 @@ public class UdpRadioService : IRadioService, IDisposable
     }
 
     /// <summary>
-    /// Invert sdrcore panadapter Y → relative dB.
-    /// Server (dsputils.c): Y = max(0, (10*log10(|FFT|) + bias) * 150), then MAX_Y (16000).
-    /// Inverse: relDb = Y/150 − bias. Client SPECTRUM_DB_OFFSET then sets absolute labels.
-    /// Bias must match dsputils.c (40). Raising bias alone without MAX_Y would clip peaks;
-    /// raising bias with matching client inverse deepens the Y=0 floor without moving peaks
-    /// that already had Y&gt;0 (same 10*log10 + offset). Deploy mscc-recv + client together.
+    /// Invert sdrcore panadapter Y → relative dB (true dB, cmd-069).
+    /// Server (dsputils.c): Y = max(0, (10*log10(|FFT|) + 40) * 150), then MAX_Y (16000).
+    /// |FFT| is a magnitude, so 10*log10 is half-dB. The same Y equals (20*log10(|FFT|) + 80) * 75:
+    /// reading it with scale 75 / bias 80 gives 20*log10(|FFT|), so a 20 dB step moves the trace 20 dB.
+    /// Wire data unchanged: works with every sdrcore-recv (Windows, Pi, Ubuntu).
+    /// Client SPECTRUM_DB_OFFSET (dB CAL) then sets absolute labels.
     /// </summary>
     private static float RawYToDb(ushort y)
     {
-        const float scale = 150f;
-        const float bias = 40f; // must match dsputils.c mag += 40
+        const float scale = 75f;
+        const float bias = 80f;
         float relDb = (y / scale) - bias;
         if (relDb < -200f) relDb = -200f;
-        if (relDb > 80f) relDb = 80f;
+        if (relDb > 140f) relDb = 140f;   // Y 16000 → +133
         return relDb;
     }
 

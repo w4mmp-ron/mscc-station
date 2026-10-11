@@ -43,7 +43,7 @@
                         BorderThickness="1"
                         CornerRadius="2"
                         Padding="5,1"
-                        MinWidth="56"
+                        MinWidth="64"
                         VerticalAlignment="Center">
                     <TextBlock x:Name="ReadingText"
                                Text="S0"

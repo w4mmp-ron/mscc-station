@@ -52,19 +52,19 @@ public static class SpectrumColorSettings
     /// Display dB offset applied after raw panadapter→dB map (phase-1 spectrum cal).
     /// displayDb = rawMappedDb + SpectrumDbOffset. Global for HF/LF (same path is close).
     /// Stored absolute in MSCC_Client.ini as SPECTRUM_DB_OFFSET.
-    /// UI is relative to <see cref="SpectrumDbCalCenter"/> (−91.3 = “0” on the slider),
+    /// UI is relative to <see cref="SpectrumDbCalCenter"/> (−83.6 = “0” on the slider),
     /// with a fine trim of ±<see cref="SpectrumDbCalUiSpan"/> dB.
     /// </summary>
     public static float SpectrumDbOffset { get; private set; } = SpectrumDbCalCenter;
 
-    /// <summary>Field-proven center cal (slider “0”) after pan bias 40 — ~−91.3 absolute.</summary>
-    public const float SpectrumDbCalCenter = -91.3f;
+    /// <summary>Centre cal (slider "0") for the true-dB scale: TG step test on NEW-HP 2026-10-10 (−70 dBm reads −70 at −83.6).</summary>
+    public const float SpectrumDbCalCenter = -83.6f;
 
     /// <summary>UI trim range around center (±dB). Enough for HF/LF tweak; not a full scale swing.</summary>
     public const float SpectrumDbCalUiSpan = 20f;
 
-    public static float SpectrumDbOffsetMin => SpectrumDbCalCenter - SpectrumDbCalUiSpan; // −111.3
-    public static float SpectrumDbOffsetMax => SpectrumDbCalCenter + SpectrumDbCalUiSpan; // −71.3
+    public static float SpectrumDbOffsetMin => SpectrumDbCalCenter - SpectrumDbCalUiSpan; // −103.6
+    public static float SpectrumDbOffsetMax => SpectrumDbCalCenter + SpectrumDbCalUiSpan; // −63.6
 
     public static void SetSpectrumDbOffset(float offsetDb) =>
         SpectrumDbOffset = Math.Clamp(offsetDb, SpectrumDbOffsetMin, SpectrumDbOffsetMax);
@@ -81,19 +81,19 @@ public static class SpectrumColorSettings
 
     /// <summary>
     /// PowerSDR-style spectrum view window (absolute dBm after dB CAL).
-    /// Defaults favor HF/LF grass near −116 (min ≈ −125) without wasting space at 0 dBm.
+    /// Floor about −140; min −155 so the grass fills the lower pane.
     /// </summary>
     public static float SpectrumGridMax { get; private set; } = -20f;
-    public static float SpectrumGridMin { get; private set; } = -125f;
+    public static float SpectrumGridMin { get; private set; } = -155f;
 
     /// <summary>Set spectrum dBm window. Ensures max &gt; min by at least 40 dB for usable grass.</summary>
     public static void SetSpectrumGrid(float maxDb, float minDb)
     {
         maxDb = Math.Clamp(maxDb, -80f, 0f);
-        // Allow deep floors (grass ~−116 needs min ≤ −125). Upper clamp −80 was too high as a "min".
+        // Allow deep floors (grass ~−140 needs min ≤ −155). Upper clamp −80 was too high as a "min".
         minDb = Math.Clamp(minDb, -180f, -90f);
         if (maxDb - minDb < 40f)
-            minDb = maxDb - 105f; // e.g. −20 → −125
+            minDb = maxDb - 135f; // e.g. −20 → −155
         if (minDb >= maxDb)
             minDb = maxDb - 40f;
         SpectrumGridMax = maxDb;
@@ -197,13 +197,13 @@ public static class SpectrumColorSettings
     /// PowerSDR-style waterfall color window (absolute dBm after dB CAL).
     /// Independent of spectrum GRID MAX/MIN so FT8 ~−80 can be vibrant without
     /// a 100 dB palette span that washes when GAIN is raised.
-    /// Defaults: Low −125 (grass cold), High −50 (−70/−80 mid-hot).
+    /// Defaults: Low −150, High −40.
     /// </summary>
-    public static float WaterfallHighDb { get; private set; } = -50f;
-    public static float WaterfallLowDb { get; private set; } = -125f;
+    public static float WaterfallHighDb { get; private set; } = -40f;
+    public static float WaterfallLowDb { get; private set; } = -150f;
 
-    public const float WaterfallHighDefault = -50f;
-    public const float WaterfallLowDefault = -125f;
+    public const float WaterfallHighDefault = -40f;
+    public const float WaterfallLowDefault = -150f;
 
     /// <summary>
     /// Set waterfall palette dBm window.
@@ -213,9 +213,9 @@ public static class SpectrumColorSettings
     /// </summary>
     public static void SetWaterfallRange(float highDb, float lowDb, bool highIsPrimary = true)
     {
-        // High: top of palette (hot). Typical −80…−20; default −50 for digital contrast.
+        // High: top of palette (hot). Typical −80…−20; default −40.
         highDb = Math.Clamp(highDb, -100f, -20f);
-        // Low: black/cold floor. Typical −160…−90; default −125.
+        // Low: black/cold floor. Typical −160…−90; default −150.
         lowDb = Math.Clamp(lowDb, -160f, -90f);
 
         // Minimum color span so HIGH and LOW cannot cross or collapse (gentle only).
