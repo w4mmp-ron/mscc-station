@@ -48,8 +48,9 @@ public partial class MainViewModel : ObservableObject, IDisposable
 
     private int _spectrumFrameCounter;
 
+    /// <summary>S-meter needle, fractional S units 0–15 (cmd-073b).</summary>
     [ObservableProperty]
-    private int _sMeter;
+    private double _sMeter;
 
     /// <summary>cmd-070: last S-meter report in whole dBm (shown when SmeterShowDbm).</summary>
     [ObservableProperty]
@@ -471,6 +472,19 @@ public partial class MainViewModel : ObservableObject, IDisposable
             }
 
             return smeter_value;
+    }
+
+    /// <summary>
+    /// cmd-073b: smooth needle. dBm → fractional S units on the meter's own scale:
+    /// 6 dB per unit up to S9 (−73 dBm), 10 dB per unit above (unit 10 = +10 … 15 = +60).
+    /// The readout text still rounds to whole units (S9+10 style).
+    /// </summary>
+    private static double DbToSmeterNeedle(int dbm)
+    {
+        double units = dbm <= -73
+            ? 9.0 + (dbm + 73) / 6.0
+            : 9.0 + (dbm + 73) / 10.0;
+        return Math.Clamp(units, 0.0, 15.0);
     }
 
 
@@ -2102,7 +2116,7 @@ public partial class MainViewModel : ObservableObject, IDisposable
                 dispatcher.BeginInvoke(() =>
                 {
                     CurrentSpectrum = enriched;
-                    PowerOut = (int)(RadioState.RfPowerPercent * 0.85 + (SMeter > 8 ? 12 : 0));
+                    PowerOut = (int)(RadioState.RfPowerPercent * 0.85 + (Db_to_Smeter(SMeterDbm) > 8 ? 12 : 0));
                     ForwardPower = PowerOut;
                     ReversePower = Math.Max(0, PowerOut / 5);
                     Swr = (ReversePower > 0) ? Math.Clamp(ReversePower * 3 / 10 + 1, 1, 10) : 1;
@@ -2111,7 +2125,7 @@ public partial class MainViewModel : ObservableObject, IDisposable
             else
             {
                 CurrentSpectrum = enriched;
-                PowerOut = (int)(RadioState.RfPowerPercent * 0.85 + (SMeter > 8 ? 12 : 0));
+                PowerOut = (int)(RadioState.RfPowerPercent * 0.85 + (Db_to_Smeter(SMeterDbm) > 8 ? 12 : 0));
                 ForwardPower = PowerOut;
                 ReversePower = Math.Max(0, PowerOut / 5);
                 Swr = (ReversePower > 0) ? Math.Clamp(ReversePower * 3 / 10 + 1, 1, 10) : 1;
@@ -5849,7 +5863,7 @@ public partial class MainViewModel : ObservableObject, IDisposable
         svc.SmeterReported += dbm =>
         {
             SMeterDbm = dbm;
-            SMeter = Db_to_Smeter(dbm);
+            SMeter = DbToSmeterNeedle(dbm); // cmd-073b: smooth needle (was Db_to_Smeter, whole S unit)
             //MonitorTextBoxText($" Smeter reported: {dbm} dBm -> S{SMeter}");
         };
 

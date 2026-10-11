@@ -2,6 +2,13 @@
 
 Installer: `mscc-net9-R<version>-install.exe` (WPF client + Windows servers). Install the newest one; older installers in this folder are kept for roll-back only.
 
+## R10.11.3 — 2026-10-11  (`mscc-net9-R10-11-3-install.exe`, title bar 10.11.3)
+
+### Changed
+- S-meter: the needle now moves smoothly in fractions of an S unit (6 dB per unit up to S9, 10 dB per unit above) instead of jumping a whole S unit. The digital readout still shows whole units (S9, S9+10) or dBm.
+- S-meter: the receive server measures average power instead of the block peak, smoothed (fast rise, 0.3 s fall) and rounded to the nearest dB. Noise reads steadier and a little lower; a steady carrier reads the same.
+- Receive server 3.147 (Windows).
+
 ## R10.11.2 — 2026-10-11  (`mscc-net9-R10-11-2-install.exe`, title bar 10.11.2)
 
 ### Fixed

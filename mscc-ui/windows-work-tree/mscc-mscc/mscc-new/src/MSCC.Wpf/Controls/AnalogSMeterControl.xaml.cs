@@ -19,9 +19,9 @@ public partial class AnalogSMeterControl : UserControl
     public static readonly DependencyProperty ValueProperty =
         DependencyProperty.Register(
             nameof(Value),
-            typeof(int),
+            typeof(double),
             typeof(AnalogSMeterControl),
-            new PropertyMetadata(0, OnValueChanged));
+            new PropertyMetadata(0.0, OnValueChanged));
 
     public static readonly DependencyProperty HoldEnabledProperty =
         DependencyProperty.Register(
@@ -98,9 +98,10 @@ public partial class AnalogSMeterControl : UserControl
             new FrameworkPropertyMetadata(false,
                 FrameworkPropertyMetadataOptions.BindsTwoWayByDefault, OnReadoutModeChanged));
 
-    public int Value
+    /// <summary>RX needle in fractional S units 0–15 (cmd-073b). Not used by the power face.</summary>
+    public double Value
     {
-        get => (int)GetValue(ValueProperty);
+        get => (double)GetValue(ValueProperty);
         set => SetValue(ValueProperty, value);
     }
 
@@ -309,7 +310,7 @@ public partial class AnalogSMeterControl : UserControl
     private static void OnValueChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
     {
         if (d is AnalogSMeterControl c && !c.PowerMode)
-            c.ApplyRawSample((int)e.NewValue, force: false);
+            c.ApplyRawSample((double)e.NewValue, force: false);
     }
 
     private static void OnHoldPeakChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
@@ -441,7 +442,7 @@ public partial class AnalogSMeterControl : UserControl
     /// Hold: snap up immediately; fall only via timer.
     /// Peak: track max; hang then decay via timer.
     /// </summary>
-    private void ApplyRawSample(int raw, bool force)
+    private void ApplyRawSample(double raw, bool force)
     {
         double r = Math.Clamp(raw, 0, MaxSUnit);
         ApplyLevelSample(r, force);
@@ -898,7 +899,7 @@ public partial class AnalogSMeterControl : UserControl
         if (!PowerMode)
         {
             // cmd-070: dBm = raw last report (whole dB); S units follow the needle as before.
-            ReadingText.Text = ShowDbm ? $"{Dbm} dBm" : FormatSmeterReading((int)Math.Round(main));
+            ReadingText.Text = ShowDbm ? $"{Dbm} dBm" : FormatSmeterReading(ReadoutUnits(main));
             ReadingText.Foreground = ReadingGreen;
             ReadingText.Cursor = Cursors.Hand;
             if (ReadingBorder != null)
@@ -961,5 +962,16 @@ public partial class AnalogSMeterControl : UserControl
         if (v <= 0) return "S0";
         if (v <= 9) return $"S{v}";
         return $"S9+{(v - 9) * 10}";
+    }
+
+    /// <summary>
+    /// cmd-073b: whole S unit for the readout from the fractional needle. Nearest unit, a tie
+    /// goes up (same as Db_to_Smeter): −76…−73 = S9, −77 = S8; above S9 nearest 10 dB (−68 = S9+10).
+    /// </summary>
+    private static int ReadoutUnits(double main)
+    {
+        int u = (int)Math.Floor(main + 0.5);
+        if (main > 0.0 && u < 1) u = 1;
+        return Math.Clamp(u, 0, (int)MaxSUnit);
     }
 }

@@ -4,8 +4,8 @@
 |--|--|
 | **Host** | NEW-HP-LAPTOP (Windows) |
 | **Checkout** | `C:\Users\n8vet\OneDrive\Documents\GitHub\mscc-station` |
-| **Build** | **cmd-071** (recv 3.146, client 10.11.2 version-only, committed) / **cmd-038** (WPF pending) |
-| **Last command id** | cmd-071 (committed) / cmd-038 (pending) |
+| **Build** | **cmd-073b** (recv 3.147, client 10.11.3, committed) / **cmd-038** (WPF pending) |
+| **Last command id** | cmd-073b (committed) / cmd-038 (pending) |
 | **State** | done |
 | **Updated** | 2026-10-11 |
 
@@ -13,6 +13,7 @@
 
 | command id | state | note |
 |------------|-------|------|
+| cmd-073b | done | Windows recv 3.147 in C:\mscc-net9 (243200 bytes, 2026-10-11 15:03:23, same hash as Release). Average-power S-meter, nearest dB. WPF needle is fractional S units; readout stays whole units. Client 10.11.3 (FileVersion 10.11.3.0). trans 3.146 and ms-sdr 3.182 unchanged (2026-10-08). Smoke pass (Stew 2026-10-11). Committed. |
 | cmd-071 | done | Windows recv 3.146 in C:\mscc-net9 (242176 bytes, 2026-10-11 12:31:38). panadapter.c copied from the Pi. LO-point levelling and DC_BLOCK_A 0.9999. Client 10.11.2 is a version-only Release (FileVersion 10.11.2.0). trans 3.146 and ms-sdr 3.182 unchanged (2026-10-08). Smoke pass (Stew 2026-10-11); LO-point levelling pumps near centre, paused - see NOTE-FOR-RON-LO-POINT-LEVELLING-2026-10-11.md. Committed. |
 | cmd-070 | done | WPF only. Client 10.11.1 in C:\mscc-net9. S-meter readout click toggles S units and dBm (SMETER_DBM). S units round to the nearest unit, ties to the higher unit. Spectrum centre -83.6, GRID MIN -155, waterfall shifted about -9. Servers not rebuilt (recv 3.145, trans 3.146, ms-sdr 3.182). Smoke 1-7 pass (Stew 2026-10-11, incl. Geminus LF/MF). Committed. |
 | cmd-069 | done | Windows recv 3.145 and WPF 10.9.1 in C:\mscc-net9. Spectrum averaging no longer adds gain. Client reads true dB with centre -75. First start resets dB CAL, GRID MIN, and waterfall once (SPECTRUM_DB_LAW=20). cmd-068 max-per-pixel and hidden resolution selector stay. TG step test pass (Stew 2026-10-11, trim -8.6 at -75 centre -> centre -83.6 in cmd-070). Committed. |
@@ -49,6 +50,7 @@
 
 ## Notes
 
+cmd-073b: recv 3.147, client 10.11.3. Smooth S-meter needle and average-power meter. Smoke pass. Committed.
 cmd-071: recv 3.146, client 10.11.2 version-only. Smoke pass. Committed. LO point paused (see note).
 cmd-070: client 10.11.1. S-meter dBm toggle, nearest S unit, spectrum centre -83.6. Smoke pass. Committed.
 cmd-069: recv 3.145 and client was 10.9.1, then cmd-070 moved it to 10.11.1. True dB. Smoke pass. Committed.
