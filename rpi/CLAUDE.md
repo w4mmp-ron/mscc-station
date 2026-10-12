@@ -157,6 +157,24 @@ new today: put the tested dB scale fix into the real client; dBm number on the S
 `rpi/wpf-spectrum-test/` stays on disk, ignored by git.
 Rig "dead ears" (old item 21, off the list): Ron 2026-10-09 saw receive go down after a TX,
 suspects heat, not sure; it never recovers by itself, a tap on the rig brings it back. He is looking at it himself: nothing for Claude to do, not on the list.
+**Resume point 2026-10-12:** pulled Stew's 5 commits (to 547b9ad; Windows client 10.11.3, recv
+3.147). He adopted: true dB spectrum scale (scale 75 / bias 80), strongest point per pixel,
+spectrum smoothing (Pi `panadapter.c` as it is), LO point levelling + after-TX hold + gentle DC
+blocker, average-power S meter, dBm on the S meter (click the readout). His own: dB CAL centre
+-83.6 from a generator step test (not our -86.9), resolution fixed at 3200 (selector gone),
+smooth needle, S units rounded to nearest. Compared Windows recv with the Pi: `panadapter.c`
+identical, spectrum / S meter code in `dsputils.c` / `sdrcore.c` the same, wire format
+unchanged = no Pi port needed (Pi recv still version 143; the new client is NOT run against
+the Pi yet). Not in the pull: ALC button state in the client, REFRESH as smoothing control.
+Stew's note `.mscc-coord/NOTE-FOR-RON-LO-POINT-LEVELLING-2026-10-11.md` (on hold, nothing to
+do): the levelled slice shows as a lighter waterfall band with edge lines; a signal at the LO
+point is pushed down in about 10 s and leaves a hole for about 20 s; a fixed narrow fill was
+discussed, not adopted (hump width differs per shack). Parked.
+Still NOT committed: the MSCC Volume work (item 28: `rpi/mscc-volume/`, mscc 1.0.63,
+mscc-volume 1.0.0, `mscc.sh`, `mscc-virtual-audio.sh`, the deleted Grok volume files); waits
+for Ron's Save / Forget reboot test. Ron's list: that test; Si5351 birdie firmware test
+decision; spectrum centre offset against Stew's dBm readout. Same day: ALC review 2 and the
+SWR meter ideas (ALC outer loop, automatic power cal), under item 23.
 
 2. cmd-046: TUNE power separate (Windows/Ubuntu trans + WPF). With Stew; no Pi change.
 3. RF check of remote TX audio (Stew, spectrum analyzer).
@@ -537,6 +555,67 @@ suspects heat, not sure; it never recovers by itself, a tap on the rig brings it
    drive x 1.1 = a fixed 1.1 before the drive; TUNE is 0.8 x sqrt(2) = 1.13 on that scale, so
    SSB peaks are held to about 94% of TUNE power, which is rated power only after a QRP cal.
    Ron: review only, nothing to fix.
+   **ALC review 2 (2026-10-12, Ron asked; code only, nothing measured, nothing changed).**
+   - When: `sdrcoretx.c:110` runs `doALC` in AM / LSB / USB only, after the TX filter, when
+     `G_Do_ALC` (the ALC button, 0x23). `dsputils.c` `doALC`: peak of |I| (1 ms decay) x gain
+     >= `G_ALC_limit` x `G_ALC_multiplier` = drive x 1.1 (`driver.c:255` sets the limit to the
+     drive of the band / mode). Attack 1 ms, release 3 s, gain 1.0 down to 0.1 (20 dB at most).
+   - Effect on the I/Q: one gain on I and Q (phase, sideband suppression, balance unchanged);
+     only turns down; one peak holds the level down for seconds (3 s release); the 1 ms attack
+     is amplitude modulation applied after the filter, so hard ALC widens the signal; the
+     detector looks at |I| only, not sqrt(I^2 + Q^2), so a peak mostly in Q can pass; overdrive
+     beyond 20 dB passes unlimited.
+   - Meter: `alc.c` `ALC_Meter_thread` sends 0x4F every 50 ms while transmitting with the ALC
+     button on, value 0..100 from the gain g at that instant (`alc_float_to_meter`), no
+     averaging in trans, ms-sdr passes it through, the client shows a short average. Mic audio
+     (local / remote): linear, (1 - g) / 0.9 x 100. Digital audio (local / remote): dB, 5 counts
+     per dB (comment in the code: on purpose for VAC / WSJT, reason not known). With the ALC
+     button off nothing is sent: the meter sits at 0 with no limiting.
+   - Client zones (`MSCC.Wpf/Controls/AnalogAlcMeterControl.xaml.cs`): green 0-20, yellow
+     20-50, red 50-100. In dB of reduction: mic 20 = 1.7, 50 = 5.2, 100 = 20; digital 20 = 4,
+     50 = 10, 100 = 20. Told Ron: voice in the green is fine, peaks into the yellow normal,
+     red costs average power and widens the signal; for digital the zones are forgiving (green
+     while ALC works), the right reading there is 0. I did not recommend making digital use
+     the mic scale; no change asked for.
+   - **Guidance for users (Ron 2026-10-12): in digital modes the ALC meter must read 0, no ALC
+     action.** Wording given to Ron: keep the ALC button on and adjust the audio level (WSJT-X
+     Pwr slider or the digital mic gain) until the ALC meter reads 0 while transmitting; any
+     reading above 0 means the audio is too high. Set the power with the power control, not
+     with audio. Leave the ALC button on: with it off the meter always reads 0 and tells
+     nothing. (0 does not mean full power: check the power reading.) Where it gets published
+     (manual / client text) not decided.
+   - Purpose (Ron asked 2026-10-12): keep loud audio from overdriving the finals (distortion,
+     splatter). Unlike a traditional rig this ALC does not measure the finals (no feedback
+     from the rig): it only limits the I/Q to 1.1 x the set drive before it goes to the rig,
+     so it protects the finals only as well as the drive level is set; the power calibration
+     is what ties that level to the real output.
+   - **Idea, Ron 2026-10-12 (discussed only, nothing designed or changed): use the SWR meter
+     readings to assist ALC.** Answer given: yes as a slow correction, not as the ALC itself.
+     The readings come from the WiFi SWR meter over UDP (`ms-sdr-linux/source/
+     swr_wifi_meter.c`, GUI updates deliberately kept slow), far too slow for a limiter that
+     must act in about 1 ms, so `doALC` stays. Possible outer loop: forward power slowly trims
+     the ALC target (or the drive) so peak output settles on the set power = the feedback from
+     the finals that ALC lacks; reflected power / high SWR could pull the drive back. Plumbing
+     half there: ms-sdr already sends forward power to trans (`CMD_SET_FOWARD_POWER_VALUE`
+     0x38, `swr_wifi_meter.c:160`); trans stores it in `G_watts` (`udp_thread.c:645`) and
+     nothing reads it. Open: only for users who have the meter; clean fallback when the meter
+     is offline (3 s timeout zeroes the readings); does the meter report peak or average power
+     on voice (NOT checked); actual report rate not measured.
+   - **Idea, Ron 2026-10-12 (discussed only): the SWR meter could also assist the power
+     calibration.** Answer given: yes, a better fit than the ALC use. Cal uses a steady TUNE
+     carrier, so the slow report rate and peak / average do not matter. Could be automatic:
+     trans keys TUNE into a dummy load, steps the cal value until forward power = the target,
+     saves, next band (today the user moves the cal slider per band reading a wattmeter).
+     Fits: trans already gets forward power (0x38) and owns `power_cal.ini`. Limits: only as
+     accurate as the meter on each band; needs a dummy load and someone present (it
+     transmits); only for users with the meter, so the manual slider stays.
+     **Ron's rule for it (2026-10-12, "something to think about", nothing designed): when a
+     calibration is requested, do it automatically only if trans is receiving power data;
+     if not, no automatic calibration (manual as today).** Needed for that gate (my notes):
+     trans has no way today to tell fresh data from old (`G_watts` just holds the last value,
+     no time stamp; ms-sdr sends zeros once when the meter times out), so trans needs a
+     "last report" time; and the reading must rise when TUNE is keyed, otherwise stop and
+     fall back to manual (meter on another antenna / rig, or stuck).
 24. **Spectrum smoothing: running average in recv (2026-10-10, Ron OK'd). Built on the Pi, Ron
    uses `PANADAPTER_AVERAGE=9` (0.225 s) with REFRESH 1; in mscc 1.0.61, committed 2026-10-10.** Ron's complaint (video
    `Downloads/Video_2026-10-10_112351.wmv`, test client 10.9.0): REFRESH 1 is "nervous", higher
@@ -607,6 +686,55 @@ suspects heat, not sure; it never recovers by itself, a tap on the rig brings it
    spectrum.** Was: recv shifts the trace so the floor sits at the same height on every band.
    Side effects: dB scale becomes relative to the floor, band-to-band and preamp / local noise
    differences no longer show. Nothing was built. Do not propose again.
+28. **Volume window for the digital virtual devices (2026-10-10, Ron: like the Windows Sound
+   shortcut; Grok's `rpi/mscc-volume-gui` "really screwed things up"). Run on the Pi by copying
+   the script (Ron 2026-10-10: window opens with both at 100%, VirtualA slider moves the WSJT-X
+   receive meter; Save / Forget NOT tested yet). Not committed.** `rpi/mscc-volume/mscc-volume.py`, one file, tkinter + `pactl`, run
+   with `python3 mscc-volume.py`, not packaged. Two sliders only (Ron's choice; a Playback /
+   Recording tab layout was offered and turned down): VirtualA sink (receive, recv -> WSJT-X)
+   and VirtualB sink (transmit, WSJT-X -> trans); percent + dB (`60*log10(pct/100)`), mute,
+   100% button. Opening changes nothing (reads the live level once a second); a slider move
+   sets the level and keeps nothing; Save writes `~/.local/mscc/volume-levels.conf` (same
+   `key|kind|name|pct|mute` lines the installed `mscc-virtual-audio.sh` already applies at
+   login, desktop-button Start or by hand, so no package change; a plain `mscc start` in a
+   terminal does NOT rebuild the sinks or read the file: `mscc.sh` only runs
+   `mscc-volume-restore` if installed, and mscc-init 1.0.18 removed it), Forget deletes it. Monitors and operator devices are
+   never set; a monitor not at 100% only gives a warning. Tested on the PC against a fake
+   `pactl` only. What was wrong in Grok's (from its code): every slider move was saved and
+   re-applied at each start and each GUI open / refresh; operator devices matched by name
+   scoring; sink + monitor sliders on the same pipe; percent only.
+   **Installer + Grok volume leftovers removed (2026-10-10, Ron: separate installer, "no remnant of
+   the old Grok stuff", "don't break what works now"). Nothing installed on the Pi yet, not
+   committed.**
+   - `rpi/mscc-volume/`: `build-deb.sh` + `packaging/` -> `mscc-volume_1.0.0_all.deb` (own
+     package, WSL build; the script strips CR itself). Installs `/usr/bin/mscc-volume` and
+     `mscc-volume.desktop` (`Categories=X-MSCC;` = the MSCC menu folder, which the mscc package
+     creates). `Conflicts / Replaces: mscc-volume-gui` so Grok's package goes if it is still on
+     a Pi. In `installers/rpi/` + an optional line in `INSTALL.md`.
+   - Deleted (24 tracked files, restorable from git): `rpi/mscc-volume-gui/` and, in
+     `rpi/mscc-init-gui/`, `mscc_volume_gui/` + `mscc-volume-restore` (not shipped since 1.0.15).
+     KEPT: `mscc_init_gui/volume.py`: MSCC Init uses it (`config.py` `set_operator_levels_100`),
+     it is not the volume GUI. The old `mscc-init-gui_1.0.12..17` .debs in that folder were
+     deleted too (Ron; all tracked, 1.0.14 had Grok's GUI inside); `mscc-init_1.0.18` kept.
+     Left: the mscc-init postinst lines that delete `~/mscc/mscc-volume-gui`.
+   - `mscc.sh` (both copies: `mscc-binaries/` = the packaged one, and `mscc-deb/packaging/.../
+     binaries/`): `restore_pulse_volumes` and its call removed. `apply_alsa_levels_100` kept.
+   - `mscc-virtual-audio.sh`: the restore block (Grok's restore tool lookup + a fallback that
+     set ANY sink / source in the file) replaced by `apply_saved_levels`: only `sink` lines
+     for VirtualA / VirtualB, percent + mute; all else ignored. Tested in WSL with a fake
+     `pactl`: no file = 100% only; file with CRLF, mute and old operator lines = only the two
+     sinks set; last line without newline OK.
+   - **mscc 1.0.63 built 2026-10-10** (WSL, usual recipe): same 110 entries / modes as 1.0.62;
+     only `mscc.sh`, `mscc-virtual-audio.sh` and the control version differ (binaries the
+     same). In `rpi/mscc-deb/` and `installers/rpi/` (1.0.62 removed there).
+   - **Installed on the Pi 2026-10-10 (Ron): mscc 1.0.63 + mscc-volume 1.0.0, rebooted. MSCC
+     Volume is in the MSCC menu, both at 100%; configuration unchanged, client volume
+     controls and WSJT-X work as before. Save / Forget across a reboot NOT tested yet (Ron:
+     tomorrow).** `installers/rpi/install-mscc.sh` removed (Ron never used it; `INSTALL.md`
+     now has the plain `apt install` line); the copy in `rpi/mscc-deb/` and the docs that
+     mention it stay (Ron).
+   - To test on the Pi: install both .debs, reboot; MSCC menu shows MSCC Volume; Save 80%,
+     reboot (or desktop Start), window shows VirtualA 80%; Forget, reboot, 100%.
 7. Next mscc .deb build picks up the "(package mscc-init)" hint text in mscc-deb postinst /
    build-deb.sh / install-mscc.sh (source only, committed 82b819b). No rebuild just for that.
 
