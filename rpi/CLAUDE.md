@@ -698,6 +698,11 @@ in a prompt on 2026-10-12; Ron did not run it). In lists say "Save and Forget bu
    client. Checked 2026-10-10: no WPF source commits since 8564843, so the
    private copy differs from Stew's only by the five dB scale edits. If it is ever done there:
    three marked edits + a patch file against Stew's source.
+   **2026-10-12: Ron runs WPF 10.11.3 against the Pi, "working well", and asked for this; label
+   settled: SMOOTHING.** Note for Stew, committed and pushed 2026-10-12 with these notes:
+   `.mscc-coord/NOTE-FOR-STEW-SMOOTHING-CONTROL-2026-10-12.md`. Checked for it: Windows recv
+   `panadapter.c` = the Pi's (same 0..100 range), Windows ms-sdr handles 0xDA the same way, the
+   10.11.3 client still drops frames (`MainViewModel.cs` about 2100) and has no 0xDA constant.
 27. **Dropped (Ron 2026-10-10: "I don't like the side effects"): fixed noise floor on the
    spectrum.** Was: recv shifts the trace so the floor sits at the same height on every band.
    Side effects: dB scale becomes relative to the floor, band-to-band and preamp / local noise
