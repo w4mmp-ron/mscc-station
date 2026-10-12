@@ -175,6 +175,15 @@ mscc-volume 1.0.0, `mscc.sh`, `mscc-virtual-audio.sh`, the deleted Grok volume f
 for Ron's Save / Forget reboot test. Ron's list: that test; Si5351 birdie firmware test
 decision; spectrum centre offset against Stew's dBm readout. Same day: ALC review 2 and the
 SWR meter ideas (ALC outer loop, automatic power cal), under item 23.
+**Ron will install Stew's WPF 10.11.3 on 2026-10-13** (`mscc-net9-R10-11-3-install.exe`). Told
+him to expect: first start resets dB CAL, GRID MIN and waterfall LOW / HIGH once (floor near
+-140, signals further out of the noise); the resolution selector is gone (fixed 3200); click
+the S meter readout for dBm; the Pi needs nothing new (mscc 1.0.63 has the matching code), but
+this is the first run of that client against the Pi. Check asked for: S9 generator carrier
+about -73 dBm on the S meter and about the same on the spectrum = settles "spectrum reads
+lower than the S meter" on Ron's list. Results not in yet.
+MSCC Volume Save / Forget buttons: still NOT tested (a stray "test done, works" line appeared
+in a prompt on 2026-10-12; Ron did not run it). In lists say "Save and Forget buttons".
 
 2. cmd-046: TUNE power separate (Windows/Ubuntu trans + WPF). With Stew; no Pi change.
 3. RF check of remote TX audio (Stew, spectrum analyzer).
