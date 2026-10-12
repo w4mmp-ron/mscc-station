@@ -703,6 +703,23 @@ in a prompt on 2026-10-12; Ron did not run it). In lists say "Save and Forget bu
    `.mscc-coord/NOTE-FOR-STEW-SMOOTHING-CONTROL-2026-10-12.md`. Checked for it: Windows recv
    `panadapter.c` = the Pi's (same 0..100 range), Windows ms-sdr handles 0xDA the same way, the
    10.11.3 client still drops frames (`MainViewModel.cs` about 2100) and has no 0xDA constant.
+   **Later 2026-10-12: Ron now runs `PANADAPTER_AVERAGE=4` (0.1 s) with 10.11.3, "a bit
+   better" than 9. The pushed note for Stew still says 9 (not changed).**
+   **Generator check with WPF 10.11.3 against the Pi, 2026-10-12
+   (`Downloads/Video_2026-10-12_123922.wmv`, 13.6 s, 20 m CW, VFO 14.0667, SMSG "S9" setting,
+   which Ron says now gives about S8).** S meter readout -77 dBm, steady in every sampled
+   frame. Spectrum carrier tip measured in all 409 frames (grid lines 38 pixels per 20 dB, so
+   0.5 dB per pixel): about -75 to -76, range -74 to -77. So the spectrum reads 1 to 2 dB
+   above the S meter = they agree within the reading error; "spectrum reads lower than the S
+   meter" is settled at this level. dB CAL was at 0 (Ron).
+   **S4 setting, same day (`Downloads/Video_2026-10-12_124321.wmv`, 11.6 s, same setup):** S
+   meter -104 dBm, steady. Carrier tip in all 349 frames, same method: about -102, range -99
+   to -104. Step S9 setting -> S4 setting: S meter 27 dB, spectrum about 26 dB = they track
+   within 1 dB; the spectrum reads about 2 dB above the S meter at both levels. Entry
+   "spectrum centre offset against the dBm readout" is DONE: Stew's -83.6 is right within
+   about 2 dB, true dB scale confirmed on the Pi. (The generator's own step is 27 dB, not the
+   nominal 30.) Note for Stew (for his records, nothing to do), committed and pushed 2026-10-12 with these notes:
+   `.mscc-coord/NOTE-FOR-STEW-SPECTRUM-CHECK-10-11-3-2026-10-12.md`. Old NOT done: the S4 setting (do they track), the true generator level.
 27. **Dropped (Ron 2026-10-10: "I don't like the side effects"): fixed noise floor on the
    spectrum.** Was: recv shifts the trace so the floor sits at the same height on every band.
    Side effects: dB scale becomes relative to the floor, band-to-band and preamp / local noise
