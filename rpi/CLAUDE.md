@@ -179,6 +179,13 @@ SWR meter ideas (ALC outer loop, automatic power cal), under item 23.
 2. cmd-046: TUNE power separate (Windows/Ubuntu trans + WPF). With Stew; no Pi change.
 3. RF check of remote TX audio (Stew, spectrum analyzer).
 4. cmd-048 (Stew): port Pi QRP/QRO power cal to Ubuntu/Windows; Windows factory-seed choice -> Ron.
+   What it is (Ron asked 2026-10-12, he had forgotten; say it this way): the Pi power cal
+   rework of 2026-09-28. trans owns `power_cal.ini` (before, ms-sdr wrote it and trans
+   reloaded everything per slider step); a cal slider step changes RAM only and the file is
+   saved once the slider is still (1 log line per step, was about 70 + 7 file operations);
+   same for the amplifier (QRO) cal slider, `amplifier.ini` dropped. Ron's Pi test: 2 bands,
+   "power response very good", QRP + QRO cal smoother; in mscc 1.0.50+. Windows / Ubuntu
+   still the old way, same file format. Details: the two 2026-09-28 sections at the end.
 5. cmd-050 (Stew): Ubuntu kit/docs/drop-installers.sh for the mscc-init rename (below).
 6. Done 2026-09-29: mscc-init 1.0.18 installed on the Pi, works (Ron).
 8. Spectrum -12 kHz DC-spur notch sized in FFT bins (2026-09-29, `SDRcore-recv-linux/sources/panadapter.c`,
