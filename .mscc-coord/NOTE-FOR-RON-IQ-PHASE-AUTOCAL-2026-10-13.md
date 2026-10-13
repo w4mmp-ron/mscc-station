@@ -71,3 +71,26 @@ Read on the Windows and Ubuntu sources, 2026-10-13. Line numbers are from `867ea
 ## 5. RX I/Q tab fixes
 
 Your points (a)-(c) are going ahead as a WPF client brief (APPLY ALL label, START shows ACTIVE, APPLY confirmation / cancelled message). Your other suggestions from that note will be looked at in the same brief.
+
+## UP 24 kHz -> Jump to image (Stew 10-13)
+
+**Today:**
+- UP 24 kHz on the RX IQ tab **retunes the whole radio**. The client adds 24 kHz to the dial and sends a normal frequency set (`MainViewModel.cs` `ComputeRxIqTuneFreqHz` / `ApplyRxIqTuneFrequency`, about lines 3753-3776, `SetFrequencyAsync`).
+- ms-sdr moves the LO with it.
+- The signal then sits on the other side of the LO and its image falls in the passband. But because the LO and dial have moved, the picture on the spectrum changes: the image moves or vanishes from where the operator was looking.
+
+**Correct behaviour (Stew):**
+- The **LO and the dial stay fixed**. Example: LO 14.012, TG carrier at 14.024 (dial 14.024, passband at LO + 12 kHz).
+- **Only the receive/audio window moves** to the mirror frequency: 2 × LO − signal = 14.000.
+- The image can then be heard and nulled with the amplitude slider (and later phase) while the spectrum stays put.
+- The button should be a **JUMP TO IMAGE** toggle. Pressing it again (or STOP) returns the window to the signal.
+
+**What it needs (checked 2026-10-13, Windows sources):**
+- The client has **no existing way** to move the receive window without moving the LO:
+  - RIT (0x89 / 0x8A) is added to the tune frequency in ms-sdr `freq_queue.c:29-30`, so it retunes the LO as well.
+  - The recv demodulator NCO is fixed at +12 kHz (`SDRcore-recv/sources/sdrcore.c:64` `csstate.loFreq = 12000.0f`) with no command to change it.
+- So this needs a **small recv change**: a command (new opcode, or a sub-value) that sets `csstate.loFreq` to −12000 (the mirror of +12000) and recomputes `phaseInc`, plus the sideband handling if needed. The client then toggles it.
+- That touches recv on Windows, Ubuntu and the Pi, plus a pass-through in ms-sdr.
+- **Question for Ron:** would you do the Pi recv side first (as with smoothing)? Is −12000 the right mirror, or does the audio sideband also need flipping?
+
+Until then, cmd-076 (WPF) leaves UP 24 kHz as it is and only fixes the other RX IQ tab items.
