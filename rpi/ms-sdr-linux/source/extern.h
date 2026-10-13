@@ -545,6 +545,8 @@ extern int User_Controls_Send_To_Gui();    /* client connect: sync UI only */
 extern int User_Controls_Send();           /* both (legacy) */
 extern int Apply_Appliance_Startup();     /* cores + startup.ini LO/band without client */
 extern int User_Controls_Update_Init_File();
+#define USER_CONTROLS_SAVE_DELAY 3 //seconds after the last volume / mic gain step
+extern uint8_t G_User_Controls_Save_Pending;
 extern uint8_t G_Speaker_Mute_Status;
 extern uint8_t G_QRP;
 extern uint8_t G_Speaker_volume;
