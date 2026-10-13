@@ -4,8 +4,8 @@
 |--|--|
 | **Host** | NEW-HP-LAPTOP (Windows) |
 | **Checkout** | `C:\Users\n8vet\OneDrive\Documents\GitHub\mscc-station` |
-| **Build** | **cmd-074** (trans 3.147, ms-sdr 3.183, client 10.13.0, not committed) / **cmd-038** (WPF pending) |
-| **Last command id** | cmd-074 (running, stopped before commit) / cmd-038 (pending) |
+| **Build** | **cmd-075** (client 10.13.1, WPF only, not committed) / **cmd-038** (WPF pending) |
+| **Last command id** | cmd-075 (running, stopped before commit) / cmd-038 (pending) |
 | **State** | code ready, stopped before commit |
 | **Updated** | 2026-10-13 |
 
@@ -13,6 +13,7 @@
 
 | command id | state | note |
 |------------|-------|------|
+| cmd-075 | running | WPF only. Client 10.13.1 (FileVersion 10.13.1.0, 222208 bytes, 2026-10-13 12:16:36) in C:\mscc-net9. S/W SMOOTHING sends 0xDA (default 3) and frame dropping is gone. Waterfall default is Falling, once. BASELINE and waterfall levels are per band. Servers not rebuilt (trans 3.147, ms-sdr 3.183, recv 3.147). Smoke 1-6 not run (no radio). Not committed. No push. |
 | cmd-074 | running | Part A. WPF TX ALC button removed. Trans 3.147 ignores ALC-off (244736 bytes, 2026-10-13 10:39:56, same hash as Release). ms-sdr 3.183 saves volume and mic gain a few seconds after the last step (341504 bytes, 2026-10-13 10:40:08, same hash). Client 10.13.0 (FileVersion 10.13.0.0) in C:\mscc-net9. Recv 3.147 unchanged (243200 bytes, 2026-10-11 15:03:23). Smoke 1-5 not run (no radio). Not committed. No push. |
 | cmd-073b | done | Windows recv 3.147 in C:\mscc-net9 (243200 bytes, 2026-10-11 15:03:23, same hash as Release). Average-power S-meter, nearest dB. WPF needle is fractional S units; readout stays whole units. Client 10.11.3 (FileVersion 10.11.3.0). trans 3.146 and ms-sdr 3.182 unchanged (2026-10-08). Smoke pass (Stew 2026-10-11). Committed. |
 | cmd-071 | done | Windows recv 3.146 in C:\mscc-net9 (242176 bytes, 2026-10-11 12:31:38). panadapter.c copied from the Pi. LO-point levelling and DC_BLOCK_A 0.9999. Client 10.11.2 is a version-only Release (FileVersion 10.11.2.0). trans 3.146 and ms-sdr 3.182 unchanged (2026-10-08). Smoke pass (Stew 2026-10-11); LO-point levelling pumps near centre, paused - see NOTE-FOR-RON-LO-POINT-LEVELLING-2026-10-11.md. Committed. |
@@ -51,6 +52,7 @@
 
 ## Notes
 
+cmd-075: WPF only, code ready, stopped before commit. Client 10.13.1. SMOOTHING 0xDA default 3, full frame rate, waterfall Falling once, per-band BASELINE and waterfall levels. Servers not rebuilt. Smoke 1-6 not run (no radio). No push.
 cmd-074: Part A code ready, stopped before commit. Client 10.13.0. Trans 3.147, ms-sdr 3.183. ALC button gone; trans ignores ALC-off. Volume and mic gain saved a few seconds after the last slider step. Smoke 1-5 not run (no radio). No push.
 cmd-073b: recv 3.147, client 10.11.3. Smooth S-meter needle and average-power meter. Smoke pass. Committed.
 cmd-071: recv 3.146, client 10.11.2 version-only. Smoke pass. Committed. LO point paused (see note).

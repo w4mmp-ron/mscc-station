@@ -2,6 +2,13 @@
 
 Installer: `mscc-net9-R<version>-install.exe` (WPF client + Windows servers). Install the newest one; older installers in this folder are kept for roll-back only.
 
+## R10.13.1 — 2026-10-13  (`mscc-net9-R10-13-1-install.exe`, title bar 10.13.1)
+
+### Changed
+- S/W window: REFRESH is now SMOOTHING. It sets the host's spectrum smoothing (0 = light, higher = calmer; default 3) and the spectrum and waterfall always run at full speed (no more dropped frames). The waterfall therefore scrolls faster than with the old REFRESH 3-4.
+- Waterfall: new lines now appear at the top and move down (Falling) by default. Tick "Climbing" for the old direction. Existing settings are moved to Falling once.
+- S/W window: BASELINE and the waterfall HIGH / LOW / GAIN / ZERO are remembered per band (bands with different noise keep their own settings). A band you have not adjusted keeps the current values.
+
 ## R10.13.0 — 2026-10-13  (`mscc-net9-R10-13-0-install.exe`, title bar 10.13.0)
 
 ### Changed

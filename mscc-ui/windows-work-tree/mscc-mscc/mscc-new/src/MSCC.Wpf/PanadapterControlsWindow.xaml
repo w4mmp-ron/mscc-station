@@ -132,15 +132,20 @@
                                     Click="GridRangeReset_Click" ToolTip="Reset grid to −20 … −155"/>
                         </StackPanel>
                         <StackPanel Orientation="Horizontal" Margin="0,4,0,0">
-                            <TextBlock Text="REFRESH" FontSize="10" Foreground="#D0D0D0" Width="60" VerticalAlignment="Center"/>
-                            <ListBox x:Name="RefreshList" Width="55" Height="55" FontSize="8" Background="#111" Foreground="White" SelectionChanged="OnRefreshSelectionChanged">
+                            <TextBlock Text="SMOOTHING" FontSize="10" Foreground="#D0D0D0" Width="72" VerticalAlignment="Center"
+                                       ToolTip="Server spectrum smoothing (time constant = value × 25 ms; 0 = light 2-frame average). Applies to spectrum and waterfall."/>
+                            <ListBox x:Name="SmoothingList" Width="55" Height="55" FontSize="8" Background="#111" Foreground="White" SelectionChanged="OnSmoothingSelectionChanged">
+                                <ListBoxItem Content="0"/>
                                 <ListBoxItem Content="1"/>
                                 <ListBoxItem Content="2"/>
                                 <ListBoxItem Content="3"/>
                                 <ListBoxItem Content="4"/>
-                                <ListBoxItem Content="5"/>
+                                <ListBoxItem Content="6"/>
                                 <ListBoxItem Content="8"/>
                                 <ListBoxItem Content="10"/>
+                                <ListBoxItem Content="15"/>
+                                <ListBoxItem Content="20"/>
+                                <ListBoxItem Content="30"/>
                             </ListBox>
                             <!-- cmd-068: spectrum resolution fixed at Max (3200); selector hidden. Display zoom is separate. -->
                             <StackPanel Margin="12,0,0,0" VerticalAlignment="Top" Visibility="Collapsed">
@@ -284,11 +289,11 @@
                                 </StackPanel>
 
                                 <CheckBox x:Name="WaterfallDirectionCheckBox"
-                                          Content="Direction Normal"
+                                          Content="Climbing"
                                           FontSize="10" Foreground="White" Margin="0,10,0,0"
                                           Checked="OnWaterfallDirectionChanged"
                                           Unchecked="OnWaterfallDirectionChanged"
-                                          ToolTip="Checked = oldest at top / newest at bottom. Unchecked = reversed (newest at top)."/>
+                                          ToolTip="Checked = Climbing (new lines appear at the bottom and move up). Unchecked = Falling (default: new lines at the top, moving down)."/>
                             </StackPanel>
                         </StackPanel>
                     </StackPanel>

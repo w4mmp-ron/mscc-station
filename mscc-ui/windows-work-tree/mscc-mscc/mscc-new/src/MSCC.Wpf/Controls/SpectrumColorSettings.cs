@@ -293,11 +293,10 @@ public static class SpectrumColorSettings
     }
 
     /// <summary>
-    /// true = normal (oldest at top, newest at bottom);
-    /// false = reversed (newest at top, oldest at bottom).
-    /// Matches original MSCC Direction Normal / Reversed.
+    /// true = climbing (newest at bottom);
+    /// false = falling (newest at top, default).
     /// </summary>
-    public static bool WaterfallDirectionNormal { get; private set; } = true;
+    public static bool WaterfallDirectionNormal { get; private set; } = false;
 
     public static void SetWaterfallDirectionNormal(bool normal) =>
         WaterfallDirectionNormal = normal;

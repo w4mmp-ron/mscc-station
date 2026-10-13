@@ -46,8 +46,6 @@ public partial class MainViewModel : ObservableObject, IDisposable
     [ObservableProperty]
     private SpectrumUpdate? _currentSpectrum;
 
-    private int _spectrumFrameCounter;
-
     /// <summary>S-meter needle, fractional S units 0–15 (cmd-073b).</summary>
     [ObservableProperty]
     private double _sMeter;
@@ -1393,6 +1391,9 @@ public partial class MainViewModel : ObservableObject, IDisposable
     /// <summary>Only one Spectrum/Waterfall controls window allowed at a time.</summary>
     private PanadapterControlsWindow? _specWaterfallWindow;
 
+    /// <summary>cmd-075: move open S/W level sliders to the band just selected.</summary>
+    public void SyncSpecWaterfallWindow() => _specWaterfallWindow?.SyncLevelSlidersFromSettings();
+
     /// <summary>Only one debug log window allowed at a time.</summary>
     private DebugLogWindow? _debugLogWindow;
 
@@ -2093,16 +2094,6 @@ public partial class MainViewModel : ObservableObject, IDisposable
 
         _radioService.SpectrumUpdated += update =>
         {
-            // Throttle display updates based on SpectrumRefresh (user setting in S/W popup).
-            // E.g. 4 means render 1 out of every 4 frames to reduce CPU/GPU load.
-            int div = Math.Max(1, SpectrumWaterfallSettings.SpectrumRefresh);
-            _spectrumFrameCounter = (_spectrumFrameCounter + 1) % div;
-            if (_spectrumFrameCounter != 0)
-            {
-                // Drop this frame for display (still process UDP, just skip render)
-                return;
-            }
-
             var enriched = EnrichSpectrumUpdate(update);
             // Spectrum frames arrive on background receive thread; must marshal to UI thread
             // so that the ObservableProperty change notification + binding to SpectrumDisplayControl works reliably.
@@ -5497,6 +5488,7 @@ public partial class MainViewModel : ObservableObject, IDisposable
             {
                 RememberRecentHost(BackendIp);
                 ApplyPanResolution("start");
+                ApplySpectrumSmoothing("start");
                 PushAudioToRadio("start");
                 if (RemoteAudio)
                     StartRemoteAf("start");
@@ -5541,6 +5533,14 @@ public partial class MainViewModel : ObservableObject, IDisposable
         {
             MonitorTextBoxText($" Pan resolution apply error: {ex.Message}");
         }
+    }
+
+    /// <summary>cmd-075: send the S/W SMOOTHING value (0xDA) to the host.</summary>
+    public void ApplySpectrumSmoothing(string reason = "settings")
+    {
+        int v = SpectrumWaterfallSettings.SpectrumSmoothing;
+        _ = _radioService.SetPanadapterSmoothingAsync(v);
+        MonitorTextBoxText($" Spectrum smoothing {v} ({reason})");
     }
 
     private static void ClearAllWaterfallHistories(DependencyObject parent)

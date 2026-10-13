@@ -54,7 +54,7 @@ public static class SpectrumWaterfallSettings
     public static string WaterfallPalette { get; set; } = "Red/Yellow";
     /// <summary>0 = off; 1–5 = mark every N seconds (original Time_grid).</summary>
     public static int WaterfallTimeMarker { get; set; } = 0;
-    public static bool WaterfallDirectionNormal { get; set; } = true;
+    public static bool WaterfallDirectionNormal { get; set; } = false;
 
     /// <summary>True = Geminus (LF) waterfall bank; false = Proficio (HF). Sticky RADIO_MODEL.</summary>
     public static bool RadioModelIsGeminus { get; set; }
@@ -168,7 +168,7 @@ public static class SpectrumWaterfallSettings
     public static int WaterfallHfGain { get; set; } = ShipHfGain;
     public static int WaterfallHfZero { get; set; } = ShipHfZero;
     public static string WaterfallHfPalette { get; set; } = "Enhanced";
-    public static bool WaterfallHfDirectionNormal { get; set; } = true;
+    public static bool WaterfallHfDirectionNormal { get; set; } = false;
     public static int SpectrumHfBaseline { get; set; } = ShipHfBaseline;
     public static float SpectrumHfGridMax { get; set; } = ShipHfGridMax;
     public static float SpectrumHfGridMin { get; set; } = ShipHfGridMin;
@@ -180,7 +180,7 @@ public static class SpectrumWaterfallSettings
     public static int WaterfallLfGain { get; set; } = ShipLfGain;
     public static int WaterfallLfZero { get; set; } = ShipLfZero;
     public static string WaterfallLfPalette { get; set; } = "Enhanced";
-    public static bool WaterfallLfDirectionNormal { get; set; } = true;
+    public static bool WaterfallLfDirectionNormal { get; set; } = false;
     public static int SpectrumLfBaseline { get; set; } = ShipLfBaseline;
     public static float SpectrumLfGridMax { get; set; } = ShipLfGridMax;
     public static float SpectrumLfGridMin { get; set; } = ShipLfGridMin;
@@ -255,6 +255,45 @@ public static class SpectrumWaterfallSettings
         }
     }
 
+    /// <summary>cmd-075: band whose S/W levels are live (normalized key, "" = unknown).</summary>
+    private static string _swLevelsBand = "";
+
+    /// <summary>cmd-075: save BASELINE + waterfall HIGH/LOW/GAIN/ZERO for one band (MSCC_LastUsed.ini, VFO A file).</summary>
+    private static void SaveSwLevelsForBand(string band)
+    {
+        string b = NormalizeBandKey(band);
+        if (string.IsNullOrEmpty(b) || !GetValidBandPrefixes().Contains(b)) return;
+        string path = GetLastUsedPath(forVfoB: false);
+        if (string.IsNullOrEmpty(path)) return;
+        var lines = File.Exists(path) ? File.ReadAllLines(path).ToList() : new List<string>();
+        var ci = System.Globalization.CultureInfo.InvariantCulture;
+        UpdateOrAdd(lines, $"{b}_SW_BASELINE", SpectrumBaseline.ToString(ci));
+        UpdateOrAdd(lines, $"{b}_WF_HIGH", WaterfallHighDb.ToString("0.0", ci));
+        UpdateOrAdd(lines, $"{b}_WF_LOW", WaterfallLowDb.ToString("0.0", ci));
+        UpdateOrAdd(lines, $"{b}_WF_GAIN", WaterfallGain.ToString(ci));
+        UpdateOrAdd(lines, $"{b}_WF_ZERO", WaterfallZero.ToString(ci));
+        EnsureLastUsedFileExists(path);
+        File.WriteAllLines(path, lines);
+    }
+
+    /// <summary>cmd-075: load saved per-band levels into live fields. False = nothing saved for that band.</summary>
+    private static bool LoadSwLevelsForBand(string band)
+    {
+        string b = NormalizeBandKey(band);
+        string path = GetLastUsedPath(forVfoB: false);
+        if (string.IsNullOrEmpty(b) || string.IsNullOrEmpty(path) || !File.Exists(path)) return false;
+        bool any = false;
+        foreach (string line in File.ReadAllLines(path))
+        {
+            if (LineMatchesKey(line, $"{b}_SW_BASELINE")) { SpectrumBaseline = ParseIniInt(line, SpectrumBaseline); any = true; }
+            else if (LineMatchesKey(line, $"{b}_WF_HIGH")) { WaterfallHighDb = ParseIniFloat(line, WaterfallHighDb); any = true; }
+            else if (LineMatchesKey(line, $"{b}_WF_LOW")) { WaterfallLowDb = ParseIniFloat(line, WaterfallLowDb); any = true; }
+            else if (LineMatchesKey(line, $"{b}_WF_GAIN")) { WaterfallGain = ParseIniInt(line, WaterfallGain); any = true; }
+            else if (LineMatchesKey(line, $"{b}_WF_ZERO")) { WaterfallZero = ParseIniInt(line, WaterfallZero); any = true; }
+        }
+        return any;
+    }
+
     /// <summary>
     /// Switch radio model bank: save current live waterfall to the leaving bank,
     /// load the other bank into live + renderer.
@@ -266,6 +305,10 @@ public static class SpectrumWaterfallSettings
     public static void ApplyWaterfallBankForActiveBand(string? band)
     {
         SwitchRadioModelWaterfall(nowGeminus: IsLfWaterfallBand(band));
+        // cmd-075: per-band BASELINE + waterfall levels on top of the HF/LF bank.
+        _swLevelsBand = NormalizeBandKey(band ?? "");
+        if (LoadSwLevelsForBand(_swLevelsBand))
+            ApplyLiveWaterfallToRenderer();
     }
 
     /// <summary>HF amateur / beacons vs LF/MF (&lt; 1.8 MHz, below 160m).</summary>
@@ -340,11 +383,14 @@ public static class SpectrumWaterfallSettings
     public static void SaveLiveWaterfallAndActiveBank()
     {
         CaptureLiveWaterfallToBank(RadioModelIsGeminus);
+        if (_swLevelsBand.Length > 0)
+            SaveSwLevelsForBand(_swLevelsBand);
         Save();
     }
 
     // Spectrum/Waterfall combined
-    public static int SpectrumRefresh { get; set; } = 4;
+    /// <summary>cmd-075: server spectrum smoothing 0..30 (0xDA). Default 3 (Stew). Replaces client REFRESH (frame dropping).</summary>
+    public static int SpectrumSmoothing { get; set; } = 3;
     public static string SpectrumAverage { get; set; } = "Maximum";
     public static string SpectrumFilterMarker { get; set; } = "WHITE";
     /// <summary>AUTO SNAP checkbox (S/W popup). When true, spectrum click-to-tune snaps (non-CW).</summary>
@@ -802,7 +848,7 @@ public static class SpectrumWaterfallSettings
                             || rm.Equals("LF", StringComparison.OrdinalIgnoreCase);
                     }
 
-                    if (line.Contains("SPECTRUM_REFRESH")) SpectrumRefresh = ParseIniInt(line, SpectrumRefresh);
+                    if (LineMatchesKey(line, "SPECTRUM_SMOOTHING")) SpectrumSmoothing = Math.Clamp(ParseIniInt(line, SpectrumSmoothing), 0, 100);
                     if (line.Contains("SPECTRUM_AVERAGE")) SpectrumAverage = ParseIniString(line, SpectrumAverage);
                     if (line.Contains("SPECTRUM_FILTER_MARKER")) SpectrumFilterMarker = ParseIniString(line, SpectrumFilterMarker);
                     if (line.Contains("SPECTRUM_AUTO_SNAP")) SpectrumAutoSnap = ParseIniBool(line, SpectrumAutoSnap);
@@ -978,6 +1024,15 @@ public static class SpectrumWaterfallSettings
                     WaterfallLfLowDb = ShipLfLowDb;
                 }
 
+                // cmd-075: waterfall default is now Falling. The old default (Normal = climbing) was
+                // always saved, so move everyone to Falling once; "Climbing" can be ticked again.
+                if (!fileLines.Any(l => LineMatchesKey(l, "WATERFALL_FALLING_DEFAULT")))
+                {
+                    WaterfallDirectionNormal = false;
+                    WaterfallHfDirectionNormal = false;
+                    WaterfallLfDirectionNormal = false;
+                }
+
                 // Active bank → live (so Proficio vs Geminus restores correctly)
                 LoadWaterfallBankToLive(RadioModelIsGeminus);
             }
@@ -1047,6 +1102,7 @@ public static class SpectrumWaterfallSettings
         UpdateOrAdd(lines, "SPECTRUM_DB_OFFSET",
             SpectrumDbOffset.ToString("0.##", System.Globalization.CultureInfo.InvariantCulture));
         UpdateOrAdd(lines, "SPECTRUM_DB_LAW", "20");
+        UpdateOrAdd(lines, "WATERFALL_FALLING_DEFAULT", "1");
         UpdateOrAdd(lines, "SPECTRUM_GRID_MAX",
             SpectrumGridMax.ToString("0.##", System.Globalization.CultureInfo.InvariantCulture));
         UpdateOrAdd(lines, "SPECTRUM_GRID_MIN",
@@ -1102,7 +1158,7 @@ public static class SpectrumWaterfallSettings
         UpdateOrAdd(lines, "LAST_HF_MODE", LastHfMode ?? "USB");
         UpdateOrAdd(lines, "LAST_LF_MODE", LastLfMode ?? "USB");
 
-        UpdateOrAdd(lines, "SPECTRUM_REFRESH", SpectrumRefresh.ToString());
+        UpdateOrAdd(lines, "SPECTRUM_SMOOTHING", SpectrumSmoothing.ToString());
         UpdateOrAdd(lines, "SPECTRUM_AVERAGE", SpectrumAverage);
         UpdateOrAdd(lines, "SPECTRUM_FILTER_MARKER", SpectrumFilterMarker);
         UpdateOrAdd(lines, "SPECTRUM_AUTO_SNAP", SpectrumAutoSnap ? "1" : "0");

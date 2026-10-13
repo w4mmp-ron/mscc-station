@@ -241,6 +241,14 @@ public class UdpRadioService : IRadioService, IDisposable
             $" Pan resolution: {bins} bins (0x5F index {index}) + refresh blocks={fastRefreshBlocks}");
     }
 
+    public async Task SetPanadapterSmoothingAsync(int value, CancellationToken cancellationToken = default)
+    {
+        if (!_started) return;
+        short v = (short)Math.Clamp(value, 0, 100);
+        await _transport.SendAsync(Opcodes.CMD_GET_SET_PANADAPTER_SMOOTHING, v, cancellationToken);
+        DebugMonitor.MonitorTextBoxText($" Send CMD_GET_SET_PANADAPTER_SMOOTHING (0xDA): {v}");
+    }
+
     public async Task ParkCalSettingsAsync(CancellationToken cancellationToken = default)
     {
         if (!_started) return;

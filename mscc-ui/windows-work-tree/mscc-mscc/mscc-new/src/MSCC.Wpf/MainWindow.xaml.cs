@@ -430,6 +430,7 @@ public partial class MainWindow : Window
         string band = ViewModel.RadioState.CurrentBand ?? "";
         bool lf = SpectrumWaterfallSettings.IsLfWaterfallBand(band);
         SpectrumWaterfallSettings.ApplyWaterfallBankForActiveBand(band);
+        ViewModel.SyncSpecWaterfallWindow();
         ViewModel.MonitorTextBoxText(
             lf ? $" S/W follow band {band} → LF bank" : $" S/W follow band {band} → HF bank");
     }

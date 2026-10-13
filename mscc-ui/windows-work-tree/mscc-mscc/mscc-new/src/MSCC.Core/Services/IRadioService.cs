@@ -161,6 +161,9 @@ public interface IRadioService : IDisposable
     /// </summary>
     Task SetPanResolutionAsync(int bins, CancellationToken cancellationToken = default);
 
+    /// <summary>cmd-075: server spectrum smoothing 0..100 (0xDA; ms-sdr stores PANADAPTER_AVERAGE).</summary>
+    Task SetPanadapterSmoothingAsync(int value, CancellationToken cancellationToken = default);
+
     /// <summary>
     /// Ask the host to park live cal (iq.ini, power_cal.ini, amplifier_cal.ini) for the current radio line.
     /// Opcode 0x29. No-op if the session is not started.

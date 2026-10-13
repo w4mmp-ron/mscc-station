@@ -148,6 +148,9 @@ public static class Opcodes
     /// </summary>
     public const byte CMD_GET_SET_PANADAPTER_REFRESH = 0x5F;
 
+    /// <summary>Server spectrum smoothing (ms-sdr PANADAPTER_AVERAGE → recv). 0 = 2-frame average; N = running average, time constant N × 25 ms.</summary>
+    public const byte CMD_GET_SET_PANADAPTER_SMOOTHING = 0xDA;
+
     // Incoming reports from backend (server -> GUI) - values from original protocol
     public const byte CMD_MODE_SET_BY_SERVER = 0xA8;
     public const byte CMD_GET_SET_SMETER = 0xD4;

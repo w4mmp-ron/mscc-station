@@ -55,7 +55,7 @@ public partial class PanadapterControlsWindow : Window
             SelectItemByContent(BackgroundList, SpectrumWaterfallSettings.SpectrumBackground);
             SelectItemByContent(LineList, SpectrumWaterfallSettings.SpectrumLine);
             SelectItemByContent(CursorList, SpectrumWaterfallSettings.SpectrumCursor);
-            SelectItemByContent(RefreshList, SpectrumWaterfallSettings.SpectrumRefresh.ToString());
+            SelectItemByContent(SmoothingList, SpectrumWaterfallSettings.SpectrumSmoothing.ToString());
             SelectItemByContent(WaterfallPaletteList, SpectrumColorSettings.WaterfallPaletteName);
             SelectPanResolutionList();
         }
@@ -252,9 +252,7 @@ public partial class PanadapterControlsWindow : Window
     private void UpdateWaterfallDirectionCheckboxText()
     {
         if (WaterfallDirectionCheckBox == null) return;
-        WaterfallDirectionCheckBox.Content = SpectrumColorSettings.WaterfallDirectionNormal
-            ? "Direction Normal"
-            : "Direction Reversed";
+        WaterfallDirectionCheckBox.Content = "Climbing";
     }
 
     private void SuppressListSelectionHandlers(bool suppress)
@@ -279,10 +277,10 @@ public partial class PanadapterControlsWindow : Window
             if (suppress) CursorList.SelectionChanged -= OnCursorSelectionChanged;
             else CursorList.SelectionChanged += OnCursorSelectionChanged;
         }
-        if (RefreshList != null)
+        if (SmoothingList != null)
         {
-            if (suppress) RefreshList.SelectionChanged -= OnRefreshSelectionChanged;
-            else RefreshList.SelectionChanged += OnRefreshSelectionChanged;
+            if (suppress) SmoothingList.SelectionChanged -= OnSmoothingSelectionChanged;
+            else SmoothingList.SelectionChanged += OnSmoothingSelectionChanged;
         }
         if (WaterfallPaletteList != null)
         {
@@ -539,16 +537,44 @@ public partial class PanadapterControlsWindow : Window
             GridMinValueText.Text = $"{SpectrumColorSettings.SpectrumGridMin:0}";
     }
 
-    private void OnRefreshSelectionChanged(object sender, SelectionChangedEventArgs e)
+    private void OnSmoothingSelectionChanged(object sender, SelectionChangedEventArgs e)
     {
-        if (sender is ListBox lb && lb.SelectedItem is ListBoxItem item)
+        if (sender is ListBox lb && lb.SelectedItem is ListBoxItem item &&
+            int.TryParse(item.Content?.ToString(), out int v) && v >= 0)
         {
-            string txt = item.Content?.ToString() ?? "4";
-            if (int.TryParse(txt, out int refresh) && refresh > 0)
+            SpectrumWaterfallSettings.SpectrumSmoothing = v;
+            SpectrumWaterfallSettings.Save();
+            try
             {
-                SpectrumWaterfallSettings.SpectrumRefresh = refresh;
-                SpectrumWaterfallSettings.Save();
+                if (Owner is MainWindow mw && mw.ViewModel != null)
+                    mw.ViewModel.ApplySpectrumSmoothing("S/W");
             }
+            catch { /* ignore if window not owned by MainWindow */ }
+        }
+    }
+
+    /// <summary>cmd-075: re-read BASELINE + waterfall level sliders after a band change (no save).</summary>
+    public void SyncLevelSlidersFromSettings()
+    {
+        if (BaselineSlider != null) BaselineSlider.ValueChanged -= OnBaselineChanged;
+        if (WaterfallHighSlider != null) WaterfallHighSlider.ValueChanged -= OnWaterfallHighChanged;
+        if (WaterfallLowSlider != null) WaterfallLowSlider.ValueChanged -= OnWaterfallLowChanged;
+        if (WaterfallGainSlider != null) WaterfallGainSlider.ValueChanged -= OnWaterfallGainChanged;
+        if (WaterfallZeroSlider != null) WaterfallZeroSlider.ValueChanged -= OnWaterfallZeroChanged;
+        try
+        {
+            if (BaselineSlider != null) BaselineSlider.Value = SpectrumWaterfallSettings.SpectrumBaseline;
+            if (WaterfallHighSlider != null) WaterfallHighSlider.Value = SpectrumColorSettings.WaterfallHighDb;
+            if (WaterfallLowSlider != null) WaterfallLowSlider.Value = SpectrumColorSettings.WaterfallLowDb;
+            UpdateWaterfallRangeValueText();
+            if (WaterfallGainSlider != null) WaterfallGainSlider.Value = SpectrumColorSettings.WaterfallGain;
+            if (WaterfallGainValueText != null) WaterfallGainValueText.Text = SpectrumColorSettings.WaterfallGain.ToString();
+            if (WaterfallZeroSlider != null) WaterfallZeroSlider.Value = SpectrumColorSettings.WaterfallZero;
+            if (WaterfallZeroValueText != null) WaterfallZeroValueText.Text = SpectrumColorSettings.WaterfallZero.ToString();
+        }
+        finally
+        {
+            AttachSliderHandlers();
         }
     }
 
