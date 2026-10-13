@@ -1195,23 +1195,6 @@
                                             </Style>
                                         </Button.Style>
                                     </Button>
-                                    <Button Grid.Row="1" Grid.Column="1" Content="ALC"
-                                            Command="{Binding ToggleAlcCommand}"
-                                            Width="100" HorizontalAlignment="Left"
-                                            Foreground="Black" FontWeight="Bold">
-                                        <Button.Style>
-                                            <Style TargetType="Button" BasedOn="{StaticResource MsccGoldButtonStyle}">
-                                                <Setter Property="Height" Value="28"/>
-                                                <Style.Triggers>
-                                                    <DataTrigger Binding="{Binding AlcOn}" Value="True">
-                                                        <Setter Property="Background" Value="{DynamicResource UiButtonSelectedBrush}"/>
-                                                        <Setter Property="BorderBrush" Value="{DynamicResource UiButtonSelectedBorderBrush}"/>
-                                                        <Setter Property="Foreground" Value="White"/>
-                                                    </DataTrigger>
-                                                </Style.Triggers>
-                                            </Style>
-                                        </Button.Style>
-                                    </Button>
                                 </Grid>
                             </StackPanel>
                         </Border>

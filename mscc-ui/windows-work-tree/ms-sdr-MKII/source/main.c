@@ -437,6 +437,14 @@ void* Flusher_thread(void* t) {
         if (G_Allow_Log_Write == TRUE) {
             fflush(G_fp_logfile);
             Sleep(3000);
+
+            /* Volume / mic gain sliders: write user_controls.ini once, after the last step. */
+            if (G_User_Controls_Save_Pending > 0) {
+                G_User_Controls_Save_Pending--;
+                if (G_User_Controls_Save_Pending == 0) {
+                    User_Controls_Update_Init_File();
+                }
+            }
             if (previous_startup_freq != G_tune_freq && G_TX == FALSE) {
                 Update_Startup(G_tune_freq, G_mode);
                 previous_startup_freq = G_tune_freq;

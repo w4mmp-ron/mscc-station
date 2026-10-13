@@ -696,6 +696,11 @@ int User_Controls_Send() {
     return status;
 }
 
+/* Volume and mic gain sliders send many steps, so those commands do not write the file.
+ * They set this count and Flusher_thread writes the file once, that many passes after
+ * the last step. */
+uint8_t G_User_Controls_Save_Pending = 0;
+
 int User_Controls_Update_Init_File() {
     int status = 0;
     FILE *fp_User_ini;
@@ -1029,6 +1034,7 @@ int User_Controls_Process(uint8_t command, char *buf, byte extened) {
                     G_Sound_Device == REMOTE_SOUND_DEVICE) {
                     SDRcore_recv_send_param(CMD_SET_SPEAKER_VOLUME, User_Controls.Phones_Volume_Level);
                 }
+                G_User_Controls_Save_Pending = USER_CONTROLS_SAVE_DELAY;
                 update_flag = FALSE;
                 print_time(0);
                 fprintf(G_fp_logfile, "[%d] User_Controls_Process. CMD_SET_PHONES_VOLUME_LEVEL: %d \n",
@@ -1042,6 +1048,7 @@ int User_Controls_Process(uint8_t command, char *buf, byte extened) {
                 } else if (G_Sound_Device == REMOTE_SOUND_DEVICE) {
                     SDRcore_trans_send_param(CMD_SET_MIC_VOLUME, 100);
                 }
+                G_User_Controls_Save_Pending = USER_CONTROLS_SAVE_DELAY;
                 update_flag = FALSE;
                 print_time(0);
                 fprintf(G_fp_logfile, "[%d] User_Controls_Process. CMD_SET_PHONES_MIC_GAIN_LEVEL: %d \n",
@@ -1054,6 +1061,7 @@ int User_Controls_Process(uint8_t command, char *buf, byte extened) {
                     G_Sound_Device == REMOTE_DIGITAL_SOUND_DEVICE) {
                     SDRcore_recv_send_param(CMD_SET_SPEAKER_VOLUME, User_Controls.Digital_Volume_Level);
                 }
+                G_User_Controls_Save_Pending = USER_CONTROLS_SAVE_DELAY;
                 update_flag = FALSE;
                 print_time(0);
                 fprintf(G_fp_logfile, "[%d] User_Controls_Process. CMD_SET_DIGITAL_VOLUME_LEVEL: %d \n",
@@ -1068,6 +1076,7 @@ int User_Controls_Process(uint8_t command, char *buf, byte extened) {
                     /* Keep sticky for local D; do not attenuate remote MSA1. */
                     SDRcore_trans_send_param(CMD_SET_MIC_VOLUME, 100);
                 }
+                G_User_Controls_Save_Pending = USER_CONTROLS_SAVE_DELAY;
                 update_flag = FALSE;
                 print_time(0);
                 fprintf(G_fp_logfile, "[%d] User_Controls_Process. CMD_SET_DIGITAL_MIC_GAIN_LEVEL: %d \n",

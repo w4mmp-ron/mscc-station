@@ -2,6 +2,13 @@
 
 Installer: `mscc-net9-R<version>-install.exe` (WPF client + Windows servers). Install the newest one; older installers in this folder are kept for roll-back only.
 
+## R10.13.0 — 2026-10-13  (`mscc-net9-R10-13-0-install.exe`, title bar 10.13.0)
+
+### Changed
+- TX ALC is always on. The ALC button is gone from the TX tab; the transmit server ignores an "ALC off" from older clients.
+- Volume and mic gain (phones and digital): the slider settings are now saved on the host a few seconds after you stop moving them, and come back after a restart.
+- Transmit server 3.147, ms-sdr 3.183 (Windows).
+
 ## R10.11.3 — 2026-10-11  (`mscc-net9-R10-11-3-install.exe`, title bar 10.11.3)
 
 ### Changed

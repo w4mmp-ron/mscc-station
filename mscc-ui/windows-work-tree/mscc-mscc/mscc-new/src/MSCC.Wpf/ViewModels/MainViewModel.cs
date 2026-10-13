@@ -277,9 +277,6 @@ public partial class MainViewModel : ObservableObject, IDisposable
         set { if (AmpOn != value) AmpOn = value; }
     }
 
-    [ObservableProperty]
-    private bool _alcOn = true;
-
     /// <summary>Same as AMP off. Clicking it clears AmpOn; clicking it again does nothing.</summary>
     public bool QrpMode
     {
@@ -1941,7 +1938,6 @@ public partial class MainViewModel : ObservableObject, IDisposable
 
         ToggleQrpCommand = new RelayCommand(() => { if (AmpOn) AmpOn = false; });
         ToggleAutoTuneCommand = new RelayCommand(() => AutoTune = !AutoTune);
-        ToggleAlcCommand = new RelayCommand(() => AlcOn = !AlcOn);
         ToggleNbCommand = new RelayCommand(() => NbOn = !NbOn);
         ToggleNrCommand = new RelayCommand(() => NrOn = !NrOn);
         // Match legacy Freqbutton3: send 0x8E payload 1 when turning ON, 0 when OFF
@@ -3666,7 +3662,6 @@ public partial class MainViewModel : ObservableObject, IDisposable
     // Rx/Tx tab commands
     public IRelayCommand ToggleQrpCommand { get; }
     public IRelayCommand ToggleAutoTuneCommand { get; }
-    public IRelayCommand ToggleAlcCommand { get; }
     public IRelayCommand ToggleNbCommand { get; }
     public IRelayCommand ToggleNrCommand { get; }
     public IRelayCommand ToggleAnCommand { get; }
@@ -4817,7 +4812,6 @@ public partial class MainViewModel : ObservableObject, IDisposable
         MonitorTextBoxText($" FM power % set: {value}");
         NotifyMainOperatePower();
     }
-    partial void OnAlcOnChanged(bool value) { _ = _radioService.SetAlcOnAsync(value); MonitorTextBoxText($" AlcOn set: {value}"); }
     partial void OnAutoTuneChanged(bool value)
     {
         _ = _radioService.SetAutoTuneAsync(value);
