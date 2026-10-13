@@ -657,12 +657,9 @@ void *UDP_Thread(void *my_param) {
                 break;
 
             case CMD_SET_ALC_MULTIPLIER:
-                if (t_opcode_data == 0) {
-                    G_Do_ALC = FALSE;
-                } else {
-                    G_ALC_multiplier = (float) 11.0 / 10.0f;
-                    G_Do_ALC = TRUE;
-                }
+                //ALC is always on. The off value (0) was for testing and is ignored.
+                G_ALC_multiplier = (float) 11.0 / 10.0f;
+                G_Do_ALC = TRUE;
                 print_time();
                 fprintf(G_fp_logfile, "[%d] UDP Thread. CMD_SET_ALC_MULTIPLIER. received_data: %d, G_ALC_multiplier: %f, G_Do_ACL: %d\n",
                     line_number++, t_opcode_data, G_ALC_multiplier, G_Do_ALC);
