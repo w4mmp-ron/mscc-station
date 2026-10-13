@@ -4073,6 +4073,7 @@ public partial class MainViewModel : ObservableObject, IDisposable
         if (ret != MessageBoxResult.Yes)
         {
             MonitorTextBoxText(" RX IQ APPLY cancelled");
+            RxIqStatus = "APPLY cancelled - value NOT saved. Press APPLY and choose Yes to save.";
             return;
         }
         // Original IQ_Commit when RX active: CMD_SET_COMMIT_IQ 0x57, wait 0x56
@@ -4103,12 +4104,13 @@ public partial class MainViewModel : ObservableObject, IDisposable
             MessageBox.Show("IQ VALUES NOT SET.", "MSCC",
                 MessageBoxButton.OK, MessageBoxImage.Asterisk);
             MonitorTextBoxText(" RX IQ RESET ALL cancelled");
+            RxIqStatus = "APPLY ALL cancelled - nothing changed.";
             return;
         }
         // Ensure current offset is on radio, then 0x55 RX + 0x8D
         _ = _radioService.SetIqOffsetAsync(RxIqOffset);
         _ = _radioService.ResetAllIqBandsAsync(rxIq: true);
-        RxIqStatus = "RESET ALL sent — all bands set to current I/Q offset (0x8D).";
+        RxIqStatus = "APPLY ALL sent — all bands set to current I/Q offset (0x8D).";
         MonitorTextBoxText($" RX IQ RESET ALL (0x55 RX + 0x8D) offset={RxIqOffset}");
         MessageBox.Show("ALL BANDS HAVE BEEN SET TO I/Q SLIDER BAR VALUE.", "MSCC",
             MessageBoxButton.OK, MessageBoxImage.Asterisk);

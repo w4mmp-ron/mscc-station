@@ -1629,13 +1629,14 @@
                                     <Border Background="#444" BorderBrush="#888" BorderThickness="1" Padding="8,2" MinWidth="110" Margin="0,0,12,0">
                                         <TextBlock Text="{Binding RxIqFreqDisplay}" FontFamily="Consolas" Foreground="#00FFAA" FontWeight="Bold" FontSize="12" HorizontalAlignment="Center"/>
                                     </Border>
-                                    <Button Content="START" Width="88" Height="26" Margin="0,0,10,0"
+                                    <Button Width="88" Height="26" Margin="0,0,10,0"
                                             Command="{Binding StartRxIqCommand}"
                                             FontSize="11" FontWeight="Bold" Foreground="Black"
                                             ToolTip="Start or end receive image balancing on this band.">
                                         <Button.Style>
                                             <Style TargetType="Button" BasedOn="{StaticResource MsccGoldButtonStyle}">
                                                 <Setter Property="Height" Value="26"/>
+                                                <Setter Property="Content" Value="START"/>
                                                 <Style.Triggers>
                                                     <DataTrigger Binding="{Binding RxIqSessionActive}" Value="True">
                                                         <Setter Property="Background" Value="{DynamicResource UiButtonSelectedBrush}"/>
@@ -1659,12 +1660,12 @@
                                             FontSize="10" FontWeight="Bold" Foreground="Black"
                                             IsEnabled="{Binding RxIqSessionActive}"
                                             ToolTip="Save this balance value for this band."/>
-                                    <Button Content="RESET ALL" Width="72" Height="26"
+                                    <Button Content="APPLY ALL" Width="72" Height="26"
                                             Command="{Binding ResetAllRxIqCommand}"
                                             Style="{StaticResource MsccGoldButtonStyle}"
                                             FontSize="10" FontWeight="Bold" Foreground="Black"
                                             IsEnabled="{Binding RxIqSessionActive}"
-                                            ToolTip="Copy the current value to all bands."/>
+                                            ToolTip="Copy the current I/Q value to all bands (saved)."/>
                                 </StackPanel>
 
                                 <!-- I/Q OFFSET row -->

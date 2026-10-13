@@ -2,6 +2,11 @@
 
 Installer: `mscc-net9-R<version>-install.exe` (WPF client + Windows servers). Install the newest one; older installers in this folder are kept for roll-back only.
 
+## R10.13.2 — 2026-10-13  (`mscc-net9-R10-13-2-install.exe`, title bar 10.13.2)
+
+### Changed
+- RX IQ tab: RESET ALL is now labelled APPLY ALL (it copies the current value to all bands). START now reads ACTIVE while a session runs. Cancelling APPLY now says the value was not saved.
+
 ## R10.13.1 — 2026-10-13  (`mscc-net9-R10-13-1-install.exe`, title bar 10.13.1)
 
 ### Changed
