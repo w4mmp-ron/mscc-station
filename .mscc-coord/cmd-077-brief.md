@@ -1,3 +1,7 @@
+# DROPPED (Stew 10-13)
+
+Tested as WPF 10.13.3, not committed, code reverted. Reason: see `NOTE-FOR-RON-WATERFALL-RAW-2026-10-13.md` (needs raw waterfall data from the host plus smooth scrolling). Do not implement.
+
 # cmd-077: WPF waterfall WF SPEED (1-5, default 3) with max across skipped frames, and max (not blend) when the waterfall is squeezed
 
 Host: **windows-new-hp**. Repo: `C:\Users\n8vet\OneDrive\Documents\GitHub\mscc-station`.
