@@ -1,0 +1,11 @@
+[Desktop Entry]
+Type=Application
+Name=MSCC Volume
+GenericName=MSCC digital audio levels
+Comment=Levels of VirtualA (receive) and VirtualB (transmit)
+Exec=mscc-volume
+Icon=audio-volume-high
+Terminal=false
+Categories=X-MSCC;
+Keywords=MSCC;SDR;Proficio;Multus;volume;audio;
+StartupNotify=true

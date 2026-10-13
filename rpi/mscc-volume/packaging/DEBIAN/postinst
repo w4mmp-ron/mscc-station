@@ -1,0 +1,13 @@
+#!/bin/bash
+set -e
+
+case "$1" in
+configure)
+  chmod 755 /usr/bin/mscc-volume 2>/dev/null || true
+  if command -v update-desktop-database >/dev/null 2>&1; then
+    update-desktop-database -q /usr/share/applications 2>/dev/null || true
+  fi
+  echo "mscc-volume installed. Menu: MSCC > MSCC Volume, or run: mscc-volume"
+  ;;
+esac
+exit 0
