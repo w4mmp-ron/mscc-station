@@ -16,3 +16,5 @@ Typical run (sound card number from `--list`):
 
 Only one program can use the sound card at a time: close `iqbd-meter.py` before `iq-auto.py`.
 The phase opcodes exist only in the Pi `sdrcore-trans` build (see `rpi/CLAUDE.md`).
+
+`iq-ron-proficio-mkii-2026-10-14.ini`: Ron's Proficio MKII, all bands 10-160 m set with `iq-auto.py --phase` on 2026-10-13/14 (copy of the Pi `~/.local/mscc/iq.ini`). A measured record of one rig, not a factory table.
