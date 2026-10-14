@@ -1,5 +1,5 @@
 Package: mscc-volume
-Version: 1.0.0
+Version: 1.0.1
 Section: hamradio
 Priority: optional
 Architecture: all
@@ -15,7 +15,7 @@ Description: MSCC Volume: levels of the digital virtual devices on Raspberry Pi 
  .
  Opening it changes nothing. Save keeps the levels in
  $HOME/.local/mscc/volume-levels.conf (applied by mscc-virtual-audio at
- login or desktop Start); Forget deletes that file.
+ login or desktop Start); Forget deletes that file and sets both to 100%.
  .
  Desktop menu: MSCC > MSCC Volume. Command: mscc-volume.
  Run as your normal desktop user (not root).

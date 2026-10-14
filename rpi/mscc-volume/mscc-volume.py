@@ -15,7 +15,8 @@ Rules:
     that file when it rebuilds the sinks: at login, at a desktop-button Start
     and when run by hand (without the file both are 100%). A plain "mscc start"
     in a terminal does not rebuild them, so the levels stay as they are.
-    Forget deletes the file.
+    Forget deletes the file and sets both to 100%, not muted (WirePlumber
+    remembers the last levels across a reboot, so they must be reset now).
   - Only the VirtualA and VirtualB sinks are set. The monitors and the operator
     speaker / microphone are never touched.
 """
@@ -250,6 +251,12 @@ class App(tk.Tk):
             pass
         except OSError as e:
             messagebox.showerror("MSCC Volume", f"Could not delete the file: {e}")
+        # WirePlumber keeps its own copy of the last levels and restores it after a
+        # reboot, so set 100% / unmuted now or the old levels come back.
+        for row in self.rows:
+            if row.present:
+                row.set_level(100)
+                pactl("set-sink-mute", row.name, "0")
         self.refresh()
 
 
