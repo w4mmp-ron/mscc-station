@@ -1540,6 +1540,19 @@ void * Command_Processor(void *my_param) {
                 Gui_send_param(CMD_GET_SET_MSSDR_STATUS, 1);
                 //Spectrum_Waterfall_send_param(CMD_GET_SET_MSSDR_STATUS, t_opcode_data);
             }
+            else if (t_opcode_data == 0 && G_client_session_active) {
+                /* Client leaving (its Stop): free the session now instead of
+                 * waiting ~45 s for the client keep-alive check. Owner only. */
+                print_time(0);
+                if (Session_Is_Owner(&si_other)) {
+                    fprintf(G_fp_logfile, "[%d] Command_Interface. CMD_CHECK_GUI_STATUS 0: client leaving, releasing session\n",
+                        line_number++);
+                    Session_Release();
+                } else {
+                    fprintf(G_fp_logfile, "[%d] Command_Interface. CMD_CHECK_GUI_STATUS 0 from %s: not the session owner, ignored\n",
+                        line_number++, inet_ntoa(si_other.sin_addr));
+                }
+            }
             else {
                 print_time(0);
                 fprintf(G_fp_logfile, "[%d] Command_Interface . CMD_GUI_RUNNING : MSCC Not Initialized %d\n",
