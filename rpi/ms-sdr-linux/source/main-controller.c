@@ -2200,6 +2200,19 @@ void * Command_Processor(void *my_param) {
                 mode = 'D';
                 break;
             }
+            /* Leaving TUNE: drop TX before the mode change. The radio firmware does not
+             * act on PTT off while in CW mode, so TUNE -> CW with TX still on left the PA
+             * keyed until another mode was picked. The client's own TUNE off arrives after
+             * this and is harmless. The firmware should be fixed as well (rpi/CLAUDE.md). */
+            if (G_Tune && mode != 'T') {
+                print_time(0);
+                fprintf(G_fp_logfile, "[%d] Command_Interface. CMD_SET_MAIN_MODE. TUNE still on: TX off before mode %c\n",
+                    line_number++, mode);
+                Tune_button(FALSE, FALSE);
+                SDRcore_trans_send_param(CMD_SET_TX_ON, FALSE);
+                SDRcore_recv_send_param(CMD_SET_TX_ON, FALSE);
+                Sleep(20);
+            }
             ModeChanged(mode);
             Sleep(50);
             //G_MFC_Mode = t_opcode_data;
