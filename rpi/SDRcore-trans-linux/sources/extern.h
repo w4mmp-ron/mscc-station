@@ -100,6 +100,8 @@ extern PaDeviceIndex Proficio_Device;
 extern sp_float G_mic_volume;
 extern sp_float iMult;
 extern sp_float qMult;
+extern sp_float iqPhaseSin;
+extern sp_float iqPhaseCos;
 extern int ms_sdr_s;
 #if defined(__linux__) || defined(__APPLE__)
 extern socklen_t slen;

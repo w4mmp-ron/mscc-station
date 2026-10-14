@@ -409,6 +409,7 @@ void *UDP_Thread(void *my_param) {
     sp_float high_cut = 2700.0f;
     sp_float low_cut = 75.0f;
     int iq_band = NO_IQ_BAND;
+    int iq_active = NO_IQ_BAND; /* record whose I/Q correction is in use now */
     int iq_offset = 0;
     uint32_t operating_band = 0;
     uint32_t previous_operating_band = 0;
@@ -982,6 +983,8 @@ void *UDP_Thread(void *my_param) {
                             break;
                     }
                     IQ_calc(iq_offset);
+                    iq_active = Get_IQ_Record((int) operating_band);
+                    IQ_phase_calc((iq_active < 12) ? G_iq_stack[iq_active].iq_phase : 0);
                     previous_operating_band = operating_band;
                 }
                 print_time();
@@ -1003,6 +1006,8 @@ void *UDP_Thread(void *my_param) {
                 G_iq_stack[iq_band].record = iq_band;
                 iq_offset = G_iq_stack[iq_band].iq_offset;
                 IQ_calc(iq_offset);
+                iq_active = iq_band;
+                IQ_phase_calc(G_iq_stack[iq_band].iq_phase);
                 iq_buffer.opcode = CMD_GET_IQ_VALUE;
                 iq_buffer.iq_value = G_iq_stack[iq_band].iq_offset;
                 print_time();
@@ -1018,8 +1023,34 @@ void *UDP_Thread(void *my_param) {
                 fprintf(G_fp_logfile, "[%d] UDP Thread. CMD_SET_IQ_BAND. Finished. band: %d\n", line_number++, iq_band);
                 break;
 
+            case CMD_SET_IQ_PHASE:
+                if (iq_active < 12) {
+                    G_iq_stack[iq_active].iq_phase = IQ_phase_calc(i_opcode_data);
+                    print_time();
+                    fprintf(G_fp_logfile, "[%d] UDP Thread. CMD_SET_IQ_PHASE. record: %d, IQ_phase: %d\n",
+                            line_number++, iq_active, G_iq_stack[iq_active].iq_phase);
+                } else {
+                    print_time();
+                    fprintf(G_fp_logfile, "[%d] UDP Thread. CMD_SET_IQ_PHASE. NO BAND YET. Ignored\n", line_number++);
+                }
+                /* fall through: answer with the value now in use */
+            case CMD_GET_IQ_PHASE:
+            {
+                /* Answer to the sender: opcode, record (200 = no band yet), phase, amplitude offset. */
+                char reply[10];
+                int reply_phase = (iq_active < 12) ? G_iq_stack[iq_active].iq_phase : 0;
+                int reply_offset = (iq_active < 12) ? G_iq_stack[iq_active].iq_offset : 0;
+
+                reply[0] = (char) CMD_GET_IQ_PHASE;
+                reply[1] = (char) iq_active;
+                memcpy(&reply[2], &reply_phase, 4);
+                memcpy(&reply[6], &reply_offset, 4);
+                sendto(sdrcore_s, reply, sizeof (reply), 0, (struct sockaddr *) &si_peer, peer_len);
+                break;
+            }
+
             case CMD_SET_COMMIT_IQ:
-                if (iq_band != NO_IQ_BAND) {
+                if (iq_band != NO_IQ_BAND || iq_active < 12) {
                     print_time();
                     fprintf(G_fp_logfile, "[%d] UDP Thread. CMD_SET_COMMIT_IQ. band: %d\n", line_number++, iq_band);
                     Sleep(50);

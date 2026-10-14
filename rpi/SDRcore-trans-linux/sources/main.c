@@ -70,6 +70,8 @@ uint16_t G_VU_value = 0;
 sp_float G_peak = 0.0f;
 sp_float iMult = 1.0f;
 sp_float qMult = 1.0f;
+sp_float iqPhaseSin = 0.0f;
+sp_float iqPhaseCos = 1.0f;
 uint8_t G_DSP_Busy = FALSE;
 int G_null_count = 0;
 uint8_t transmit = TRUE;
@@ -343,7 +345,7 @@ static void process_mic_to_iq(const SAMPLE *in, SAMPLE *out, unsigned long frame
     for (i = 0; i < framesPerBuffer; i++) {
         *outbuffer = outcplx[i].real * iMult;
         outbuffer++;
-        *outbuffer = outcplx[i].imag * qMult;
+        *outbuffer = (outcplx[i].imag * iqPhaseCos + outcplx[i].real * iqPhaseSin) * qMult;
         outbuffer++;
     }
 }

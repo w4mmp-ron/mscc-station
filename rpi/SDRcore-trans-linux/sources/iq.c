@@ -10,6 +10,7 @@ struct iq_stack {
     int record;
     int band;
     int iq_offset;
+    int iq_phase; /* steps of IQ_PHASE_STEP_DEG; 0 when the file has no IQ_PHASE= */
 } G_iq_stack[12];
 //10M, 12M, 15M,17M,20M,30M,40M,60M,80M,160M,630M,2200M
 //int iq_defaults_PCB_5[] = {-104, -97, -41, -41, -43, -33, -31, -9, -5, -3};
@@ -207,11 +208,12 @@ int update_iq_ini_file() {
         IQ_update = fopen(l_path, "w");
         if (IQ_update != NULL) {
             for (band = 0; band < 12; band++) {
-                fprintf(IQ_update, "RECORD=%d,BAND=%d,IQ_OFFSET=%d\n", G_iq_stack[band].record, G_iq_stack[band].band,
-                        G_iq_stack[band].iq_offset);
+                fprintf(IQ_update, "RECORD=%d,BAND=%d,IQ_OFFSET=%d,IQ_PHASE=%d\n", G_iq_stack[band].record, G_iq_stack[band].band,
+                        G_iq_stack[band].iq_offset, G_iq_stack[band].iq_phase);
                 print_time();
-                fprintf(G_fp_logfile, "[%d] update_iq_ini_file. RECORD=%d,BAND=%d,IQ_OFFSET=%d\n", line_number++,
-                        G_iq_stack[band].record, G_iq_stack[band].band, G_iq_stack[band].iq_offset);
+                fprintf(G_fp_logfile, "[%d] update_iq_ini_file. RECORD=%d,BAND=%d,IQ_OFFSET=%d,IQ_PHASE=%d\n", line_number++,
+                        G_iq_stack[band].record, G_iq_stack[band].band, G_iq_stack[band].iq_offset,
+                        G_iq_stack[band].iq_phase);
             }
             fflush(IQ_update);
             fclose(IQ_update);
@@ -244,6 +246,22 @@ void IQ_calc(int iq_int) {
             line_number++, iq_int, iMult, qMult);
 }
 
+/* Phase correction of the transmit I/Q: Q is turned by phase_steps x IQ_PHASE_STEP_DEG.
+ * Returns the value used (limited to +/-IQ_PHASE_MAX_STEPS). */
+int IQ_phase_calc(int phase_steps) {
+    double radians;
+
+    if (phase_steps > IQ_PHASE_MAX_STEPS) phase_steps = IQ_PHASE_MAX_STEPS;
+    if (phase_steps < -IQ_PHASE_MAX_STEPS) phase_steps = -IQ_PHASE_MAX_STEPS;
+    radians = (double) phase_steps * IQ_PHASE_STEP_DEG * 3.14159265358979323846 / 180.0;
+    iqPhaseSin = (sp_float) sin(radians);
+    iqPhaseCos = (sp_float) cos(radians);
+    print_time();
+    fprintf(G_fp_logfile, "[%d] IQ_phase_calc. iq_phase: %d (%.2f deg), sin: %f, cos: %f\n",
+            line_number++, phase_steps, (double) phase_steps * IQ_PHASE_STEP_DEG, iqPhaseSin, iqPhaseCos);
+    return phase_steps;
+}
+
 int init_IQ_structure() {
     FILE *IQ_ini = NULL;
     int status = 1;
@@ -257,6 +275,7 @@ int init_IQ_structure() {
         char *record_number;
         char *band;
         char *iq_offset;
+        char *iq_phase;
     } iq_record;
 
     if ((homedir = My_getenv("HOME")) != NULL) {
@@ -277,6 +296,9 @@ int init_IQ_structure() {
                 G_iq_stack[record].band = mynumber;
                 mynumber = atoi((iq_record.iq_offset + 10));
                 G_iq_stack[record].iq_offset = mynumber;
+                /* Optional field: files written before the phase correction have none. */
+                iq_record.iq_phase = strstr(iq_init_record, "IQ_PHASE=");
+                G_iq_stack[record].iq_phase = (iq_record.iq_phase != NULL) ? atoi(iq_record.iq_phase + 9) : 0;
                 //print_time();
                 //fprintf(G_fp_logfile, "[%d] init_IQ_structure. Record: %d, Band:%d, Offset: %d\n", line_number++,
                 //	G_iq_stack[record].record, G_iq_stack[record].band, G_iq_stack[record].iq_offset);

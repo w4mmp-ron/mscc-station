@@ -86,6 +86,11 @@ pushed with these notes.**
 J5 (old item 21), the failed SD card.**
 **2026-10-09: the Si5351 birdie is on Ron's list, not Stew's (Ron). Next step, not decided:
 one-line firmware test (2 mA drive), see `rpi/si5351-drive.md` (has where the birdie will be).**
+**2026-10-12: one-line firmware test done: 2 mA drive changes nothing (both lines within 1 dB
+of the 8 mA baseline). Drive level ruled out, the `mscc.ini` / opcode plan dropped, line put
+back to `0x4F`; normal firmware rebuilt and flashed the same day (Ron). Result is in
+`rpi/si5351-drive.md`, not committed. Ron: keep it on his side, NOT told to Stew. Left: hardware
+(74ACT74 / 5 V side or the TCXO) or the workarounds (Hi 3.0 kHz, shifting the LO offset).**
 **Resume point 2026-10-09 (end):** all Pi work is committed and pushed (ce21277; mscc 1.0.60
 installed on the Pi). The notes (`rpi/CLAUDE.md` list changes above, `rpi/si5351-drive.md`
 2026-10-09 review + "Where the birdie will be") were committed and pushed later the same day.
@@ -184,6 +189,91 @@ about -73 dBm on the S meter and about the same on the spectrum = settles "spect
 lower than the S meter" on Ron's list. Results not in yet.
 MSCC Volume Save / Forget buttons: still NOT tested (a stray "test done, works" line appeared
 in a prompt on 2026-10-12; Ron did not run it). In lists say "Save and Forget buttons".
+**Resume point 2026-10-12 (end, second session):** five notes for Stew pushed today: 4cf98ef
+(REFRESH becomes SMOOTHING), b2ec47f (10.11.3 spectrum / S meter check), cbd6dea (RX IQ tab,
+four client points), 7254510 (receive I/Q defaults per band, idea), 6bc3628 (BASELINE per
+band, idea). Ron's list: the MSCC Volume Save and Forget buttons; optional receive I/Q on
+80 / 40 / 30 m with UP 24 kHz. 20 m receive I/Q is 58 (checked). Local only, NOT committed (Ron: "don't update anything"):
+the MSCC Volume work, `rpi/si5351-drive.md` (birdie test result), the Post Build fix in
+`radio-psoc-firmware/Proficio-MKII-PTT` (`.cyprj`, `POST-BUILD.txt`), PSoC Creator's build
+output and new `Release` files, and the notes in this file written after b2ec47f.
+**RX IQ tab reviewed 2026-10-12 (Ron asked how to use it; code only, nothing run, nothing
+changed).** Path: WPF `MainViewModel.cs` `StartRxIq` (0x58 band, 0x55 RX, main freq) ->
+ms-sdr `iq.c` -> recv `udp_thread.c` / `iq.c`. Correction is amplitude only: `IQ_calc`,
+0.05% per step on I (value >= 0) or Q (value < 0), slider +/-200 = 10%, applied in
+`dsputils.c` `framesToComplex`; no phase term. Slider acts live (recv RAM), APPLY (0x57)
+writes `~/.local/mscc/recv-iq.ini` for that band; an unsaved value stays in use until a band
+change or restart. ZERO saves 0 at once; RESET ALL copies the slider value to all bands.
+UP 24 kHz puts the passband on the image; LO FINE then needs about 2 x the tone pitch.
+The session leaves the dial where it was tuned. **Possible fault, not tested:** START sends
+the band (0x58) before the RX / TX select (0x55), not awaited; after a TX IQ session ms-sdr
+still has `rx_tx` = TX, so the band would take the TX path (mode 'T', cal frequency, sent
+to trans) and recv would not get the band. Not told to Stew.
+**Done on 20 m with Ron, 2026-10-12 (WPF 10.11.3, Pi host, SMSG S9, dial 14.067 CW):** image
+of the 14.0672 carrier at 14.0415. Saved value 58 gave -119 (43 dB under the carrier at
+-76); the null is flat from about 76 to 99 at -130 to -132 (54 to 56 dB, at the noise
+peaks); 87 applied. `recv-iq.ini` record 4 (20 m) = 87, confirmed in the file and the recv
+log. All 11 other records are 58 (one value once copied to all bands), not calibrated per
+band. A line at 14.0423 (-120) does not move with the slider: rig spur. Client faults seen:
+the START button never shows ACTIVE (local `Content="START"` in the XAML beats the style
+trigger; it only goes dim); the APPLY box defaults to No. The Pi's `~/.local/mscc` is
+readable from the PC as `V:\ini-files` (ini files and the three server logs).
+**CORRECTION, same day: 87 was the wrong value; 58 is right and is saved again (file and
+logs checked, 18:14:53 UTC; all 12 records are 58).** My steps had Ron null the image of an
+in-passband carrier, which falls 25 kHz below and never reaches the audio. The image that
+matters is the one that lands in the passband, from a signal below the LO point: that is
+what UP 24 kHz is for (dial +24 kHz; LO FINE +1200 in CW puts it on the pitch).
+`Downloads/rx-iq-3.wmv` (UP 24 kHz, LO FINE 1200, dial 14.0922, sweep -127..112): in-passband
+image -126 at 52..59 (50 dB under the carrier), -116 at 87 (40 dB), -111.5 at 0 (36 dB);
+60..67 not read (pointer over the slider). So the two sides null at different values (87
+against 58); cause not known (amplitude-only correction). **Correct procedure: START, tick
+UP 24 kHz, LO FINE about 2 x the pitch, null the line at the tuning marker (or the S meter),
+APPLY with the mouse (box defaults to No), check `recv-iq.ini`.** Ron also pressed ZERO twice
+on the way (saves 0 at once; ms-sdr log 18:03 and 18:04 UTC).
+**Idea, Ron 2026-10-12 ("I will think about it", nothing designed or changed):** strong
+signals are hard to find on every band (SMSG has 80 / 40 / 30 / 20 only), so fill the
+uncalibrated bands from the calibrated ones. Ron proposed the average; my answer: the built-in
+table `iq_defaults_PCB` trends with frequency (-3 on 160 m to -104 on 10 m), so nearest
+calibrated band is the better rule; test first = calibrate 80 / 40 / 30 and see whether the
+values trend. Needed either way (Ron): a mark for which bands have been calibrated; none
+exists. My suggestion: recv adds `,CAL=1` to that band's line in `recv-iq.ini` on APPLY
+(the reader finds fields by name, so old files still load; all bands start unmarked).
+Ron's second version, same day (still thinking): Stew measures a default per band, RESET
+writes the defaults to the bands without `CAL=1`. My answer: better than average / nearest
+band, and it fits what exists: TX already has `factory/iq/<line>/iq.ini` per radio model,
+and Windows once had per-PCB `rev-XXX/recv-iq.ini` (the built-in `iq_defaults_PCB` is such a
+table). Open: unit-to-unit spread (Ron's 20 m is +58, the built-in table says -43, table's
+origin unknown), so Stew would need two units of a model to see if a default is worth it.
+Ron: he thinks the built-in table is from an earlier Proficio version; Stew would have to
+measure every model he will support. Written up for Stew as an idea ("he can decide"),
+committed alone and pushed 2026-10-12 as 7254510:
+`.mscc-coord/NOTE-FOR-STEW-RX-IQ-BAND-DEFAULTS-2026-10-12.md`.
+**Idea, Ron 2026-10-12: S/W BASELINE kept per band. Note for Stew committed alone and
+pushed as 6bc3628: `.mscc-coord/NOTE-FOR-STEW-BASELINE-PER-BAND-2026-10-12.md`.** Ron
+re-adjusts only BASELINE when going 20 m -> 15 m (noise higher on 15). From the code:
+BASELINE is client only (`SpectrumColorSettings.GetDisplayGridWindow`: raises the bottom of
+the dB window, 0.3 dB per step on Proficio, labels stay true), one value per radio family
+(HF / LF bank), not per band; the per-band last-used record would be the place. Ron's dummy
+load check: noise almost identical on 20 and 15 m = the rig is the same on both, the extra
+15 m noise comes in through the antenna.
+**Private note, Ron + Claude only, NOT for Stew (Ron 2026-10-12): receive I/Q phase
+correction. Idea only, nothing built, not planned.** Today's correction is amplitude only
+and the in-passband image stops at about 50 dB down (20 m, 58). Adding phase: recv
+`dsputils.c` `framesToComplex` one extra line (Q += p x I, next to `iMult` / `qMult`); a
+second value per band in `recv-iq.ini` read by name (0 = as today); one new opcode through
+ms-sdr like 0x52; client second slider on the RX IQ tab under the same APPLY (Stew);
+Windows / Ubuntu recv the same lines (Stew). One gain + one phase value per band is enough
+because the passband is always 12 kHz from the LO point. Harder parts: two knobs interact
+(null one, then the other, repeat); gain unknown, the image is 50 dB down and the noise
+about 62 dB down with an S9 carrier, so at most 12 dB to see without a stronger signal.
+My estimate, not measured: an afternoon for the Pi side. Cheap trial offered and turned
+down for now: phase value from the ini only, no opcode, no client change.
+Ron: the RX IQ RESET ALL button should be labelled APPLY ALL (TX IQ RESET ALL is a real
+reset, keep). Ron also wants START to tick UP 24 kHz by default. Note for Stew with these four client
+points, committed alone and pushed 2026-10-12 as cbd6dea (this file was NOT in that commit:
+it holds the birdie test notes Ron wants kept local):
+`.mscc-coord/NOTE-FOR-STEW-RX-IQ-TAB-2026-10-12.md`. The possible START-after-TX-IQ fault is
+NOT in that note (not tested).
 
 2. cmd-046: TUNE power separate (Windows/Ubuntu trans + WPF). With Stew; no Pi change.
 3. RF check of remote TX audio (Stew, spectrum analyzer).
@@ -1048,3 +1138,157 @@ amplifier_table.user_power_value removed. Old ~/amplifier.ini left on disk, harm
 mscc 1.0.50 built 2026-09-28 (WSL, LF copy): ms-sdr + sdrcore-trans from the Pi (QRP/QRO cal
 changes, amplifier.ini removed); sdrcore-recv same as 1.0.49. In installers/rpi (1.0.49 removed).
 **Installed on the Pi 2026-09-28, works (Ron).** Deb still ships init-files/amplifier.ini (unused; Ron: keep for now).
+
+## 2026-10-12 (late) — Pi desktop switched to X11; audio levels after the reboots (local note)
+
+- Pi desktop is now X11 + RealVNC Server (was Wayland/labwc + wayvnc), for RealVNC Viewer speed.
+  cmdline.txt has `video=HDMI-A-1:1920x1080@60D`; `~/.config/autostart/vnc-1080.desktop` sets
+  1920x1080 with xrandr. `wlr-randr` no longer applies. Avalonia client and WSJT-X are X11 programs.
+- After the reboots WPF digital volume 100 pegged the WSJT-X meter. All Pi levels were 100% (pipes
+  and streams): no `volume-levels.conf` existed, so VirtualA is 100% after a reboot. CAUSE NOT PROVEN: I assumed it had been lower before
+  (unsaved), but Ron is sure it was 100% and digital volume 100 was right, and the 2026-10-10
+  note says the window opened at 100%. Ruled out: pipe and stream levels, AGC (FAST as usual),
+  digital volume attenuation 0x96 (WPF never sends it, recv default index 0 = 1.0). Ron set VirtualA to 32% in MSCC Volume and pressed Save
+  (file now: VirtualA 32%, VirtualB 100%). VirtualB is right at 100%.
+- "No ALC action" was TX ALC left off in user_controls.ini after Ron ran the Avalonia client; WPF
+  read it back. Ron switched it on again. Not told to Stew.
+- The `peek:` value in the trans log reads 0.000000 in digital mode even with full power; not a
+  sign of missing audio.
+- Still to check by Ron: after the next reboot VirtualA comes back at 32% (this is the Save test).
+- Avalonia client felt slow on the Pi (Ron: not a concern now; unknown whether new with X11).
+- Reboot check done (Ron, 2026-10-12 evening): VirtualA 32% / VirtualB 100% came back, WSJT-X meter
+  normal with WPF digital volume 100, TX ALC still on. MSCC Volume Save across a reboot = PASSED.
+  Forget across a reboot not tested. WPF restored digital volume 100 / mic gain 100 from
+  user_controls.ini (correct).
+- 2026-10-12 (Ron's decision): sdrcore-trans ALC can no longer be switched off.
+  `SDRcore-trans-linux/sources/udp_thread.c` CMD_SET_ALC_MULTIPLIER (0x23) now sets G_Do_ALC = TRUE
+  for any value (the off value was for testing, years ago). Trans only; ms-sdr still stores and
+  reports the button value, so the client TX ALC button and `user_controls.ini` can say "off" while
+  ALC is on. Checked: ms-sdr and WPF never send off except from the button; ALC acts on AM/LSB/USB
+  only. EDITED, NOT BUILT, NOT TESTED, not committed. Not told to Stew. Pi only (Windows / Ubuntu
+  trans unchanged).
+- 2026-10-12: sdrcore-trans "ALC always on" BUILT AND TESTED by Ron (button has no effect, ALC
+  always on). Note for Stew written, not committed: `.mscc-coord/NOTE-FOR-STEW-ALC-BUTTON-2026-10-12.md`
+  (asks him to remove the ALC button; Avalonia not named).
+- 2026-10-12: Digital Volume / Digital Mic Gain came back at 100 after `mscc restart`. Cause (old
+  behaviour, not new): ms-sdr `User_Controls_Process` sets `update_flag = FALSE` for the four
+  volume / mic gain level commands (phones and digital), so the value is only in memory until some
+  other saved control is changed or Stop_all runs; `mscc restart` uses pkill and ms-sdr has no
+  signal handler, so no final save. Fix (Ron OK'd): those four commands set
+  `G_User_Controls_Save_Pending = USER_CONTROLS_SAVE_DELAY` (3) and Flusher_thread (1 s loop) counts
+  it down and calls `User_Controls_Update_Init_File()` once. Files: ms-sdr-linux/source
+  user_controls.c, extern.h, main.c. EDITED, NOT BUILT, NOT TESTED, not committed.
+  Test: move Digital Mic Gain, touch nothing else, wait 5 s, `mscc restart` -> value comes back.
+- 2026-10-12: ms-sdr delayed save of volume / mic gain levels BUILT AND TESTED by Ron ("the slider
+  now function correctly"). Not committed. Uncommitted source now: trans udp_thread.c (ALC always
+  on), ms-sdr user_controls.c / extern.h / main.c, plus the ALC button note for Stew.
+- 2026-10-12: commits c0d26a1 (trans ALC always on + binary), 85b694c (ms-sdr slider save, source),
+  cb476ef (note for Stew: remove ALC button), pushed. Then **mscc 1.0.64 built** (WSL, usual
+  recipe via a temp git index so the uncommitted 1.0.63 MSCC Volume files are included; 110 files;
+  binaries = the Pi's: ms-sdr 20:57 with slider save, sdrcore-trans 18:59 with ALC always on,
+  sdrcore-recv 10 Oct). Copied to rpi/mscc-deb and installers/rpi (1.0.63 removed from
+  installers/rpi; it stays in rpi/mscc-deb). NOT committed, NOT installed on the Pi from the .deb.
+  V: is the Pi's whole home directory (V:\mscc = installed binaries), not only ini-files.
+- 2026-10-12 (end): committed and pushed e1adebf (MSCC Volume work, item 28: rpi/mscc-volume,
+  mscc-volume 1.0.0, scripts, old Grok volume GUI removed, mscc 1.0.63 .deb) and 0dff8fe
+  (mscc 1.0.64: new ms-sdr binary, control, .deb in rpi/mscc-deb and installers/rpi, 1.0.62 gone
+  from installers/rpi). Left uncommitted on purpose: rpi/CLAUDE.md, rpi/si5351-drive.md (birdie /
+  private notes) and the PSoC Post Build fix + build output. Ron's list: MSCC Volume Forget across
+  a reboot; install 1.0.64 from the package (optional). With Stew: + remove the TX ALC button
+  (replaces "button state from ms-sdr").
+- 2026-10-12 (Ron): dropped from the Parked list, do not list again: "why receive level was high
+  at digital volume 100" and "Avalonia client slow on the Pi".
+
+## 2026-10-13 — resume; Stew's cmd-074 / cmd-075 pulled
+
+- Pulled d8e021a (cmd-074, WPF 10.13.0: TX ALC button removed, Windows trans 3.147 ALC always on,
+  Windows ms-sdr 3.183 saves volume / mic gain) and 867eab9 (cmd-075, WPF 10.13.1: SMOOTHING
+  control 0xDA default 3 sent at every Start, frame dropping removed, waterfall Falling by
+  default, BASELINE + waterfall levels per band). Done from the With Stew list: remove ALC button,
+  REFRESH becomes SMOOTHING, BASELINE per band.
+- Stew's `.mscc-coord/NOTE-FOR-RON-SMOOTHING-WATERFALL-2026-10-13.md` waits for Ron's answer:
+  waterfall now 15.6 rows/s (3x faster) and smears at high SMOOTHING. Option (a) client WF SPEED
+  divisor with max-per-point rows (speed only); (b) recv sends unsmoothed data for the waterfall
+  (all platforms, protocol change, Pi recv = Ron's work).
+- Ron's list: answer that note; install WPF 10.13.1; MSCC Volume Forget across a reboot;
+  mscc 1.0.64 from the package (optional); receive I/Q on 80/40/30 m (optional).
+- 2026-10-13: Ron installed WPF 10.13.1. `smear.wmv` (SMOOTHING 3 then 10 at ~15 s, 20 m CW):
+  no smear at 3, smear at 10 (row carry-over ~0.2 s vs ~1.5-2 s). Pi and Windows recv send the
+  same rate: panadapter.c identical, 3 blocks = 15.6 frames/s (trace updates 15.6/s in the video).
+  My first "Pi sends 9.5 rows/s" was WRONG: 9.4 is screen pixels/s. WPF waterfall keeps the last
+  300 rows (MaxWaterfallHistory) and stretches them over the height with linear blending of two
+  neighbour rows (always 19 s on screen; Ron's is ~180 px = 0.6 px/row).
+  Ron's answer to Stew: option (a) WF SPEED in the client. Note committed and pushed:
+  `.mscc-coord/NOTE-FOR-STEW-WATERFALL-ANSWER-2026-10-13.md`. With Stew list: WF SPEED added.
+- 2026-10-13: Stew pushed three more (pulled by rebase): 314b286 NOTE-FOR-RON-IQ-PHASE-AUTOCAL,
+  5d28cfb cmd-076 brief (RX IQ tab, "jump to image"), bc13b7e "UP 24 kHz discussion, keep as is".
+  NOT READ YET with Ron.
+- 2026-10-13: waterfall answer pushed as bb095fc (after rebase onto Stew's three note commits).
+  **STEW'S OPEN QUESTIONS FOR RON (Ron 2026-10-13: "Nothing at the moment. But keep his list of
+  questions to return to").** From `.mscc-coord/NOTE-FOR-RON-IQ-PHASE-AUTOCAL-2026-10-13.md`:
+  1. I/Q phase correction (Stew proposes it himself: TX needs it, RX too; manual PHASE slider
+     first, automatic later; recv `Q' = Q + k*I` in framesToComplex, trans on the output, per-band
+     `IQ_PHASE=`, new opcode): will Ron do the Pi side first and Stew ports? Range and step
+     (his example: +/-5 deg in 0.05 deg steps)?
+  2. Confirm the Pi has no phase term today. Recv: confirmed amplitude only. Trans: NOT checked.
+  3. Automatic power calibration from the SWR / power meter (user enters QRP and QRO targets):
+     how did Solidus do it (loop, safety limits, time per band)? Can code be reused?
+  4. UP 24 kHz: Stew keeps it as is. Does Ron want option 1 (display-only slide, client) or
+     option 2 (recv NCO to -12 kHz by a new command, all platforms), or leave it?
+  Also in that note, no answer needed: automatic RX I/Q later (mostly recv); receive I/Q per-band
+  defaults PARKED by Stew; RX IQ tab points (a)-(c) go ahead as cmd-076 (WPF only, not built yet).
+  The phase correction is no longer only Ron's private note: Stew raised it on his own.
+- 2026-10-13: Ron installed mscc 1.0.64 from the package on the Pi: "mscc running properly".
+  Off his list.
+- 2026-10-13 (Ron): Stew's question 4, UP 24 kHz: "my answer is leave. No changes." Neither of
+  Stew's two options wanted. NOT yet told to Stew. Questions 1-3 still open.
+  Ron: hold the UP 24 kHz answer and send it to Stew in ONE note together with his answers to
+  questions 1-3 (phase: Pi first / range and step; Pi phase term today; Solidus power cal).
+
+**Resume point 2026-10-13 (end of session).** Pushed: bb095fc (waterfall answer, option (a)).
+Ron installed WPF 10.13.1 and mscc 1.0.64 (package proven). Held for Stew, send in ONE note with
+the other answers: UP 24 kHz stays as it is. Stew's questions still open with Ron: phase
+correction (Pi first? range/step), Pi phase term today (recv confirmed none, trans unchecked),
+Solidus power cal. Ron's list also: MSCC Volume Forget across a reboot; receive I/Q on
+80/40/30 m (optional). Uncommitted on purpose: this file, si5351-drive.md, PSoC Post Build fix +
+build output. Separate topic (not sdrcore): IQBD detector, see memory file iqbd-detector.md.
+
+**2026-10-13 (evening): Ron wants to look at implementing I/Q phase, TX first.** Reason: IQBD
+detector + `rpi\tools\tx-iq-balance\iqbd-meter.py` (memory file iqbd-detector.md) show the TX
+amplitude null on 10 m is shallow (image stays about 8 dB above the LO leakage line; on 20 m it
+goes below it). Stew's question 2 answered for trans: **Pi trans has NO phase term** (checked:
+`SDRcore-trans-linux/sources/main.c` 343-348 `outcplx.real * iMult` / `.imag * qMult`, `iq.c`
+`IQ_calc`; `iq.ini` lines are `RECORD=,BAND=,IQ_OFFSET=` and `update_iq_ini_file` rewrites only
+those three, so a new `IQ_PHASE=` field must be written there too or APPLY drops it). Proposal
+given to Ron, NOTHING changed yet: stage 1 trans only (phase term on the output, `IQ_PHASE=` per
+band, a live opcode driven by a small script on the Pi, no client / ms-sdr change); stage 2 opcode
+through ms-sdr + client slider (Stew). Not told to Stew.
+**Same evening: stage 1 MADE (Ron OK'd, asked for a slider GUI). NOT built on the Pi, NOT run,
+NOT committed.** Trans, 6 files in `SDRcore-trans-linux/sources/`: `commands.h` (new opcodes
+`CMD_SET_IQ_PHASE 0x2A`, `CMD_GET_IQ_PHASE 0x2B`, provisional numbers: free in trans and in
+ms-sdr `usbavrcmd.h`, not agreed with Stew; `IQ_PHASE_STEP_DEG 0.05`, `IQ_PHASE_MAX_STEPS 400`
+= +/-20 deg), `extern.h` + `main.c` (`iqPhaseSin` / `iqPhaseCos`; output loop
+`Q' = (Q*cos + I*sin) * qMult`), `iq.h` + `iq.c` (`iq_phase` in `G_iq_stack`, `IQ_phase_calc`,
+`IQ_PHASE=` read by name and written by `update_iq_ini_file`), `udp_thread.c` (`iq_active` =
+record whose correction is in use, set at band change and at CMD_SET_IQ_BAND; 0x2A sets the
+phase of that record and answers the sender; 0x2B answers only: opcode, record, phase int32,
+amplitude int32; 0x57 COMMIT now also accepted outside a TX IQ session when a band is known).
+WSL syntax check with the Makefile flags: clean. Version left at 3.142.
+Slider GUI `rpi\tools\tx-iq-balance\iq-phase.py` (tkinter, runs on the PC, `--host` default
+`proficio`, UDP 9200 straight to trans): follows the band, live on every step, SAVE sends 0x57.
+Tested only against a stand-in server on the PC (10 checks pass).
+Known gaps: `mscc-init-linux/sources/iq.c` and Windows / Ubuntu trans rewrite `iq.ini` without
+`IQ_PHASE=` (they load it fine, drop it on their next save); sign of the phase value not known
+(sweep both ways); an unsaved value is lost at a band change (file re-read), same as amplitude.
+**Later same evening: stage 1 BUILT on the Pi by Ron and RUN on the rig. Proof of concept works;
+Ron: finishing the phase work is probably not worth the effort.** 10 m: slider and SAVE work
+(`iq.ini` now `RECORD=0,BAND=0,IQ_OFFSET=-74,IQ_PHASE=-5`), phase null only -0.25 deg, gain
+about 4 dB. The shallow 10 m null was the AMPLITUDE value 5 steps off (-69, null is -74 when
+stepped singly with a pause): image then 13-14 dB under the LO leakage line. My "10 m residual
+is phase error" reading was wrong; Ron: phase was never a real issue with this hardware design.
+Only 10 m tried. **Decision (Ron): leave the phase code IN trans; stage 2 (ms-sdr opcode +
+client slider) is Stew's choice, Ron does not push it.** Still NOT committed, version still
+3.142, opcode numbers still not agreed with Stew, nothing told to Stew (goes in Ron's one note).
+
+**2026-10-13:** the three scripts moved to `rpi/tools/tx-iq-balance/` (Ron: they belong in the tree) with a README; uncommitted.
+**2026-10-13 (Ron: commit and push all of the I/Q work):** trans phase code (6 files), `rpi/tools/tx-iq-balance/`, `.mscc-coord/NOTE-FOR-STEW-IQ-PHASE-ANSWERS-2026-10-13.md` and this file committed and pushed together; the note is now with Stew. Still open with Ron: his Solidus power cal answer. si5351-drive.md and PSoC build output still uncommitted on purpose.
