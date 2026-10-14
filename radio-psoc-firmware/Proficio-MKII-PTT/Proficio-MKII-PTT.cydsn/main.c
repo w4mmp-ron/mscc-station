@@ -137,6 +137,15 @@ int main()
         Sync_Main();
         if(E_host_mode == 'C') {
             if(previous_host_mode != E_host_mode){
+                //Entering CW: drop any host PTT / TUNE TX. TX_Main() does not run in CW,
+                //so a PTT off sent after the mode change would never be acted on.
+                Control_Write(Control_Read() & ~CONTROL_LED);   //Restore LED operation to normal
+                Control_Write(Control_Read() | CONTROL_RX);     //Turn OFF PA - Negative logic level
+                control_status = Control_Read();
+                control_status = control_status | CONTROL_AMP;  //Turn OFF the AMP port - Negative logic level
+                control_status = control_status | CONTROL_DOUT; //Turn ON output from PCM3060
+                Control_Write(control_status);
+                TX_Request = 0;
                 previous_host_mode = E_host_mode;
             }
             Manage_Paddles_Port();
