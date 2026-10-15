@@ -1955,7 +1955,7 @@ void * Command_Processor(void *my_param) {
             if (t_opcode_data == KEEP_ALIVE_FROM_RECV ||
                 i_opcode_data == KEEP_ALIVE_FROM_RECV) {
                 G_sdrcore_recv_keep_alive++;
-                if ((G_sdrcore_recv_keep_alive % 10) == 1) {
+                if (G_sdrcore_recv_keep_alive == 1) {    /* first only: SD card wear */
                     print_time(0);
                     fprintf(G_fp_logfile,
                         "[%d] Command_Interface. KEEP-ALIVE from sdrcore-recv count=%llu\n",
@@ -1966,7 +1966,7 @@ void * Command_Processor(void *my_param) {
             } else if (t_opcode_data == KEEP_ALIVE_FROM_TRANS ||
                        i_opcode_data == KEEP_ALIVE_FROM_TRANS) {
                 G_sdrcore_trans_keep_alive++;
-                if ((G_sdrcore_trans_keep_alive % 10) == 1) {
+                if (G_sdrcore_trans_keep_alive == 1) {    /* first only: SD card wear */
                     print_time(0);
                     fprintf(G_fp_logfile,
                         "[%d] Command_Interface. KEEP-ALIVE from sdrcore-trans count=%llu\n",

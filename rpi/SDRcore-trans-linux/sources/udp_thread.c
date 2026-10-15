@@ -889,7 +889,7 @@ void *UDP_Thread(void *my_param) {
 
             case CMD_SET_KEEP_ALIVE:
                 G_keep_alive++;
-                if ((G_keep_alive % 10) == 1) {
+                if (G_keep_alive == 1) {    /* first only: SD card wear */
                     print_time();
                     fprintf(G_fp_logfile,
                         "[%d] UDP Thread. CMD_SET_KEEP_ALIVE from %s:%u count=%lld\n",

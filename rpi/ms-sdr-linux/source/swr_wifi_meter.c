@@ -23,7 +23,6 @@
 #define SWR_WIFI_DEFAULT_TIMEOUT_MS 3000
 /* Keep GUI meter updates slow — each triple was flooding WPF (KA timeout). */
 #define SWR_WIFI_SEND_MIN_MS        500
-#define SWR_WIFI_RX_LOG_MS          5000  /* periodic "got data" log while online */
 #define SWR_WIFI_RECV_BUF           1024
 #define SWR_WIFI_HTTP_TIMEOUT_SEC   2
 
@@ -314,7 +313,6 @@ void *Swr_wifi_meter_main(void *param)
     unsigned long long pkt_since_log = 0;
     unsigned long long last_pkt_ms = 0;
     unsigned long long last_send_ms = 0;
-    unsigned long long last_rx_log_ms = 0;
     unsigned long long now_ms;
     char src_ip[64];
     char message[256];
@@ -410,10 +408,8 @@ void *Swr_wifi_meter_main(void *param)
             pkt_count++;
             pkt_since_log++;
 
-            /* Prove the pipe without a client: first good packet + every 5 s */
-            if (first_good
-                || last_rx_log_ms == 0
-                || (now_ms - last_rx_log_ms) >= (unsigned long long)SWR_WIFI_RX_LOG_MS) {
+            /* Prove the pipe without a client: first good packet only (SD card wear) */
+            if (first_good) {
                 print_time(0);
                 fprintf(G_fp_logfile,
                     "[%d] Swr_wifi. RX from %s  fwd=%.2f ref=%.2f swr=%.2f fault=%d  "
@@ -427,7 +423,6 @@ void *Swr_wifi_meter_main(void *param)
                         ? "ready" : "not-ready");
                 first_good = 0;
                 pkt_since_log = 0;
-                last_rx_log_ms = now_ms;
             }
 
             /* Fault edge: message only (protection stays on the meter) */

@@ -476,7 +476,8 @@ void* Flusher_thread(void* t) {
          */
         if (G_MSCC_Initialized == 1 || G_client_session_active) {
             Gui_send_param(CMD_SET_KEEP_ALIVE, 1);
-            if ((ka_log_count++ % 10) == 0) {
+            if (ka_log_count == 0) {    /* first only: SD card wear */
+                ka_log_count = 1;
                 print_time(0);
                 fprintf(G_fp_logfile, "[%d] Flusher_thread. Sent CMD_SET_KEEP_ALIVE (0xF4) to client\n",
                     line_number++);
@@ -528,15 +529,7 @@ void* Flusher_thread(void* t) {
              */
             if (G_Threads_Started == TRUE) {
                 if (servers_count++ >= 10) {
-                    print_time(0);
-                    fprintf(G_fp_logfile,
-                        "[%d] Flusher_thread. core KA status recv=%llu (was %llu) trans=%llu (was %llu)\n",
-                        line_number++,
-                        (unsigned long long)G_sdrcore_recv_keep_alive,
-                        (unsigned long long)previous_sdrcore_recv_keep_alive,
-                        (unsigned long long)G_sdrcore_trans_keep_alive,
-                        (unsigned long long)previous_sdrcore_trans_keep_alive);
-                    fflush(G_fp_logfile);
+                    /* No routine "core KA status" line (SD card wear); missing KA still logged */
                     if (G_sdrcore_recv_keep_alive > previous_sdrcore_recv_keep_alive) {
                         previous_sdrcore_recv_keep_alive = G_sdrcore_recv_keep_alive;
                     }
