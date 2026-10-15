@@ -56,5 +56,12 @@ Before this, every band on Ron's rig was 58.
    sudo on the Pi).
 3. Later, if useful: a small recv command "send spectrum frames to me" would let the scripts
    run without sudo, and from a PC. Not needed now.
+4. Put the same thing in the client. The client already gets the same spectrum (ms-sdr
+   passes it on unchanged) and already sends the I/Q value and the save. So the RX IQ tab
+   could have an AUTO button: it moves the I/Q value up and down by itself, watches the
+   image on the spectrum, and stops at the lowest one. A second button could fill the bands
+   that have no signal generator from the bands that were set. It would then work with
+   every recv (Pi, Windows, Ubuntu), with no scripts and no sudo. The scripts show how it
+   is done.
 
 Your choice. Nothing in `factory/` or the client has been changed.
