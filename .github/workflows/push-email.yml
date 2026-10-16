@@ -1,0 +1,35 @@
+# Email on every push to main (replaces GitHub's retired push emails, 2026-10-15).
+# Repo secrets: MAIL_SERVER, MAIL_USERNAME, MAIL_PASSWORD, MAIL_TO.
+name: Push email
+
+on:
+  push:
+    branches: [main]
+
+jobs:
+  email:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Build message
+        id: msg
+        run: |
+          n=$(jq '.commits | length' "$GITHUB_EVENT_PATH")
+          pusher=$(jq -r '.pusher.name' "$GITHUB_EVENT_PATH")
+          echo "subject=[${GITHUB_REPOSITORY#*/}] $n commit(s) pushed to ${GITHUB_REF_NAME} by $pusher" >> "$GITHUB_OUTPUT"
+          {
+            jq -r '.commits[] | "\(.id[0:7])  \(.author.name)\n\(.message)\n\(.url)\n"' "$GITHUB_EVENT_PATH"
+            echo "Compare: $(jq -r '.compare' "$GITHUB_EVENT_PATH")"
+          } > body.txt
+
+      - name: Send email
+        uses: dawidd6/action-send-mail@v3.12.0
+        with:
+          server_address: ${{ secrets.MAIL_SERVER }}
+          server_port: 465
+          secure: true
+          username: ${{ secrets.MAIL_USERNAME }}
+          password: ${{ secrets.MAIL_PASSWORD }}
+          from: GitHub mscc-station <${{ secrets.MAIL_USERNAME }}>
+          to: ${{ secrets.MAIL_TO }}
+          subject: ${{ steps.msg.outputs.subject }}
+          body: file://body.txt
