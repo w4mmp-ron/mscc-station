@@ -140,3 +140,7 @@
 
 
 
+
+/* Text message for the client via ms-sdr (same bytes as ms-sdr usbavrcmd.h) */
+#define CMD_SET_EXTENDED_COMMAND 0x0B
+#define CMD_SET_SERVER_ERROR 0x30

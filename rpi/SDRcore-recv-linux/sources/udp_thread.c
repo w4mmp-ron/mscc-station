@@ -1245,6 +1245,7 @@ void *UDP_Thread(void *my_param) {
                         (unsigned)ntohs(si_peer.sin_port),
                         (long long)G_keep_alive);
                     fflush(G_fp_logfile);
+                    Core_Message_Flush();    /* ms-sdr is up: send waiting messages */
                 }
                 break;
 
@@ -1635,4 +1636,81 @@ void *UDP_Thread(void *my_param) {
     }
     pthread_exit(0);
     return (NULL);
+}
+
+/*
+ * Text messages for the client, sent through ms-sdr as the same
+ * CMD_SET_EXTENDED_COMMAND + CMD_SET_SERVER_ERROR packet ms-sdr sends to the
+ * client. ms-sdr starts after the cores, so messages wait here until its first
+ * keep-alive arrives (Core_Message_Flush). now = 1 sends at once (fatal exit).
+ * Each different message is sent once only.
+ */
+#define CORE_MSG_MAX 8
+#define CORE_MSG_LEN 200
+static char core_msg_text[CORE_MSG_MAX][CORE_MSG_LEN];
+static int core_msg_sent[CORE_MSG_MAX];
+static int core_msg_count = 0;
+static pthread_mutex_t core_msg_lock = PTHREAD_MUTEX_INITIALIZER;
+
+static void core_message_send(const char *text) {
+    char send_buf[CORE_MSG_LEN + 2] = { 0 };
+    size_t len = strlen(text) + 1;
+
+    send_buf[0] = CMD_SET_EXTENDED_COMMAND;
+    send_buf[1] = CMD_SET_SERVER_ERROR;
+    memcpy(&send_buf[2], text, len);
+    if (sendto(ms_sdr_s, send_buf, (int)(len + 2), 0, (struct sockaddr *) &si_ms_sdr, slen) == SOCKET_ERROR) {
+        print_time();
+        fprintf(G_fp_logfile, "[%d] Core_Send_Message. sendto FAILED: %s\n", line_number++, strerror(errno));
+    }
+}
+
+void Core_Send_Message(const char *text, int now) {
+    char line[CORE_MSG_LEN];
+    int i;
+    int wait;
+
+    snprintf(line, sizeof (line), "SDRcore-recv: %s", text);
+    pthread_mutex_lock(&core_msg_lock);
+    for (i = 0; i < core_msg_count; i++) {
+        if (strcmp(core_msg_text[i], line) == 0) {
+            pthread_mutex_unlock(&core_msg_lock);
+            return;
+        }
+    }
+    if (core_msg_count == CORE_MSG_MAX) {
+        pthread_mutex_unlock(&core_msg_lock);
+        print_time();
+        fprintf(G_fp_logfile, "[%d] Core_Send_Message. list full, not sent: %s\n", line_number++, line);
+        return;
+    }
+    i = core_msg_count++;
+    strcpy(core_msg_text[i], line);
+    core_msg_sent[i] = 0;
+    print_time();
+    fprintf(G_fp_logfile, "[%d] Core_Send_Message. %s\n", line_number++, line);
+    fflush(G_fp_logfile);
+    if (now) {
+        /* UDP setup runs in the UDP thread; give it a moment at startup */
+        for (wait = 0; si_ms_sdr.sin_port == 0 && wait < 20; wait++)
+            Sleep(50);
+    }
+    if (si_ms_sdr.sin_port != 0 && (now || G_keep_alive > 0)) {
+        core_message_send(line);
+        core_msg_sent[i] = 1;
+    }
+    pthread_mutex_unlock(&core_msg_lock);
+}
+
+void Core_Message_Flush(void) {
+    int i;
+
+    pthread_mutex_lock(&core_msg_lock);
+    for (i = 0; i < core_msg_count; i++) {
+        if (!core_msg_sent[i]) {
+            core_message_send(core_msg_text[i]);
+            core_msg_sent[i] = 1;
+        }
+    }
+    pthread_mutex_unlock(&core_msg_lock);
 }

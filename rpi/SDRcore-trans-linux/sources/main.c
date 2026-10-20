@@ -1099,6 +1099,7 @@ int main(int argc, char **argv) {
                 "Is the Multus sound device visible to PortAudio/ALSA?\r\n"
                 "Then restart MSCC\r\n",
                 "SDRcore-trans", MB_OK | MB_ICONEXCLAMATION);
+            Core_Send_Message("TRANSCEIVER I/Q AUDIO DEVICE NOT FOUND\nIS THE TRANSCEIVER ON?", 1);
             goto error;
         }
 
@@ -1106,6 +1107,7 @@ int main(int argc, char **argv) {
             print_time();
             fprintf(G_fp_logfile,
                 "[%d] main. No operator mic set: TX voice off\n", line_number++);
+            Core_Send_Message("OPERATOR MIC NOT FOUND (operator-microphone.ini)\nVOICE TX WITH THE LOCAL MIC WILL NOT WORK", 0);
         }
 
         /*
@@ -1129,6 +1131,7 @@ int main(int argc, char **argv) {
                     "[%d] main. Digital mic not found — fallback to operator mic index %d ('%s')\n",
                     line_number++, G_digital_input_device_index,
                     G_input_devices[G_input_device_index].name);
+                Core_Send_Message("DIGITAL MIC NOT FOUND (digital-microphone.ini)\nDIGITAL MODES WILL USE THE OPERATOR MIC", 0);
             } else {
                 print_time();
                 fprintf(G_fp_logfile,
@@ -1208,6 +1211,7 @@ int main(int argc, char **argv) {
                 fprintf(G_fp_logfile,
                     "[%d] main. operator mic open failed (%d) — I/Q TX only so keep-alive lives\n",
                     line_number++, status);
+                Core_Send_Message("OPERATOR MIC FAILED TO OPEN\nVOICE TX WITH THE LOCAL MIC WILL NOT WORK", 0);
                 status = manage_stream(1, -1, 2);
                 if (status) {
                     err = status;
@@ -1253,6 +1257,7 @@ error:
         fprintf(G_fp_logfile, "[%d] sdrcore-trans terminating (audio init failed)\n", line_number++);
         fflush(G_fp_logfile);
     }
+    Core_Send_Message("AUDIO START FAILED, STOPPING\nSEE ~/.local/mscc/sdrcore-trans.log", 1);
     MessageBoxA(NULL, "SDRcore-trans initialization FAILED.  Send logs to Multus SDR, LLC", "SDRcore-trans",
         MB_OK | MB_ICONEXCLAMATION);
     remote_mic_shutdown();

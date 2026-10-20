@@ -26,7 +26,7 @@
  * Month is months from 09/24. Release number 0-9.
  */
 #define VERSION_MAJOR 3
-#define VERSION_MINOR 144
+#define VERSION_MINOR 145
 #define VERSION_MS_SDRCORE_RECV ((((VERSION_MINOR) << 8) & 0xff00) | ((VERSION_MAJOR) & 0x00ff))
 
 #define MAX_OUTPUT_DEVICES 50
@@ -117,6 +117,8 @@ extern void *Panadapter_thread(void *t);
 extern void *Check_Image_Level_thread(void *param);
 /* Call as print_time() or print_time(0) — both OK */
 void print_time_impl(void);
+void Core_Send_Message(const char *text, int now);
+void Core_Message_Flush(void);
 #define print_time(...) print_time_impl()
 extern int Open_log_file(void);
 extern void setFilterOffsets(sp_float filterSetLow, sp_float filterSetHigh);

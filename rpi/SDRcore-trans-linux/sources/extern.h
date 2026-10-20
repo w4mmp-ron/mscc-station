@@ -30,7 +30,7 @@
 
 /* {Model}.{[M]M}{Release Number} */
 #define VERSION_MAJOR 3
-#define VERSION_MINOR 143
+#define VERSION_MINOR 144
 #define VERSION_MS_SDRCORE_TRANS ((((VERSION_MINOR) << 8) & 0xff00) | ((VERSION_MAJOR) & 0x00ff))
 
 #define MAX_KEEP_ALIVE_COUNT 15
@@ -87,6 +87,8 @@ extern uint8_t G_QSK;
 extern int G_null_count;
 extern int line_number;
 void print_time_impl(void);
+void Core_Send_Message(const char *text, int now);
+void Core_Message_Flush(void);
 #define print_time(...) print_time_impl()
 extern int Open_log_file(void);
 extern void Reset_Logfile(void);

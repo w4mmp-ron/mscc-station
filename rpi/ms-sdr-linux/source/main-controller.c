@@ -353,27 +353,20 @@ void Stop_all(uint8_t up_date_transceiver, uint8_t shutdown_status) {
 
 void *Gui_send_message(void *t) {
     Set_Thread_Name("gui-send");
-    char buf[PATH_MAX] = { 0 };
-    int slen = sizeof (si_gui);
     char message[PATH_MAX];
-    int size = 0;
     int message_status = 0;
 
     print_time(0);
     fprintf(G_fp_logfile, "[%d] Gui_send_message. STARTED\n", line_number++);
     while (G_all_threads_run) {
-        buf[0] = CMD_SET_EXTENDED_COMMAND;
-        buf[1] = CMD_SET_SERVER_ERROR;
         if (G_Remote_GUI_Attached == TRUE && G_MSCC_Initialized == TRUE) {
             message_status = message_queue_dequeue(message);
             if (message_status != 0) {
-                size = sizeof (message);
-                strcpy(&buf[2], message);
-                if (sendto(gui_s, buf, (size + 2), 0, (struct sockaddr *) &si_gui, slen) == SOCKET_ERROR) {
+                /* Same path as meters / KA (session peer + dll_s), text only: [0x0B][0x30][text] */
+                if (Gui_send_param_extended(CMD_SET_SERVER_ERROR, (byte *) message, (int) strlen(message))) {
                     print_time(0);
-                    fprintf(G_fp_logfile, "[%d] Gui_send_message. sentto gui_s FAILED. error code : %s\n",
-                            line_number++, strerror(errno));
-
+                    fprintf(G_fp_logfile, "[%d] Gui_send_message. Sent to client: %s\n",
+                            line_number++, message);
                 }
             }
         }
@@ -1065,6 +1058,18 @@ uint8_t Extended_command(char *receive_buffer) {
             fprintf(G_fp_logfile, "[%d] Extended_command . CMD_SET_METER_HOLD Opcode: %X, Data: %d\n",
                     line_number++, opcode, t_opcode_data);
 
+            break;
+        case CMD_SET_SERVER_ERROR:
+            /* Text message from sdrcore-recv / sdrcore-trans: queue it for the client */
+        {
+            char text[256] = {0};
+
+            strncpy(text, &receive_buffer[2], sizeof (text) - 1);
+            print_time(0);
+            fprintf(G_fp_logfile, "[%d] Extended_command . CMD_SET_SERVER_ERROR from core: %s\n",
+                    line_number++, text);
+            Gui_Add_Message(text);
+        }
             break;
         default:
             print_time(0);

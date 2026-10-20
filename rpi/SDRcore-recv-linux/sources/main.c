@@ -477,6 +477,7 @@ void Audio_Device_Error(PaError err) {
         fprintf(G_fp_logfile, "[%d] sdrcore-recv terminating (audio init failed)\n", line_number++);
         fflush(G_fp_logfile);
     }
+    Core_Send_Message("AUDIO START FAILED, STOPPING\nSEE ~/.local/mscc/sdrcore-recv.log", 1);
     MessageBoxA(NULL, "SDRcore-recv initialization FAILED.  Send logs to Multus SDR, LLC", "SDRcore-recv",
             MB_OK | MB_ICONEXCLAMATION);
     Pa_Terminate();
@@ -1100,6 +1101,7 @@ int main(int argc, char **argv) {
             line_number++,
             G_digital_audio_device[0] ? G_digital_audio_device : "(empty)");
         fflush(G_fp_logfile);
+        Core_Send_Message("DIGITAL SPEAKER NOT FOUND (digital-speaker.ini)\nDIGITAL MODES WILL NOT WORK", 0);
     } else {
         const PaDeviceInfo *ddi =
             Pa_GetDeviceInfo((PaDeviceIndex)G_digital_output_devices[G_digital_output_device_index].device_index);
@@ -1124,6 +1126,7 @@ int main(int argc, char **argv) {
             "     Check: arecord -l ; device list above must include 'Proficio: USB Audio (hw:...)'\n",
             line_number++);
         fflush(G_fp_logfile);
+        Core_Send_Message("TRANSCEIVER I/Q AUDIO DEVICE NOT FOUND\nIS THE TRANSCEIVER ON?", 1);
         Audio_Device_Error(err);
     }
 
