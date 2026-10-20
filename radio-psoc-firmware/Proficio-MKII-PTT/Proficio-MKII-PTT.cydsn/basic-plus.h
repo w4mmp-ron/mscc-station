@@ -39,7 +39,7 @@
 
 
 #define FIRMWARE_VERSION_MAJOR 3
-#define FIRMWARE_VERSION_MINOR 233
+#define FIRMWARE_VERSION_MINOR 234
 #define FIRMWARE_VERSION ((((FIRMWARE_VERSION_MINOR) << 8) & 0xff00) | ((FIRMWARE_VERSION_MAJOR) & 0x00ff))
 #define EEPROM_PCB_VERSION_LOCATION 11
         
@@ -145,6 +145,12 @@ extern uint8 E_AMP_Value;
 extern uint8_t E_TX_Hold;
 extern uint8_t E_Amplifier;
 extern uint8_t E_QSK;
+extern uint8_t E_key_delay_ms;  //Non-QSK amp key delay in ms, from E_TX_Hold
+#define KEY_DELAY_DIVIDER 16u   //Key delay = TX hold (ms) / 16. TX hold 500 ms -> 31 ms
+#define KEY_DELAY_MIN_MS 20u    //Shortest amp relay settle time allowed
+#define KEY_DELAY_MAX_MS 40u
+#define AMP_RELEASE_MS 10u      //Non-CW: PA off this long before AMP off, so the amp relay never opens with RF
+extern volatile uint8 E_ms_tick; //1 ms count from KEY_DELAY_interrupt
 extern volatile uint8_t E_PTT;
 extern uint8_t E_band;
 /* USB reboot request: 0=none, 1=app soft reset, 2=enter PSoC bootloader */
@@ -255,6 +261,7 @@ void Manage_Paddles_Port(void);
 CY_ISR_PROTO(CW_interrupt);
 CY_ISR_PROTO(KEY_interrupt);
 CY_ISR_PROTO(QSK_interrupt);
+CY_ISR_PROTO(KEY_DELAY_interrupt);
 uint8 Configure_CW();
 extern uint8 TX_State;
 extern uint8 TX_Phase;

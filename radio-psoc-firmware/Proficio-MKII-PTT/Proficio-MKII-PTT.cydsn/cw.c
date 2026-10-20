@@ -52,6 +52,59 @@ CY_ISR(QSK_interrupt){
     QSK_pop_filter = FALSE;
 }
 
+/*
+ * Non-QSK amp keying delay. AMP port goes on at first key down; the key lines are
+ * sampled every 1 ms into key_delay_buf and played to the PA (CONTROL_RX) key_delay_ms late
+ * so the amp relays settle before RF. Element lengths are unchanged.
+ * key_delay_ms is latched from E_key_delay_ms (set from E_TX_Hold in main.c) at the start
+ * of each over, so a change never alters an element mid-over.
+ * Key_Delay_Timer: fixed-function, CW_Clock (10 kHz), period 10 -> 1 ms tc.
+ * ISR uses the register macros, not Status_Read()/Control_Read()/Control_Write():
+ * Keil 8051 functions are not reentrant and the main loop calls those.
+ * Main loop Control_Write() read-modify-writes may briefly undo CONTROL_RX;
+ * the ISR rewrites it every tick, so worst case is a 1 ms edge error.
+ */
+#define KEY_DELAY_BUF_SIZE 64u       /* ms of key history, power of 2, > KEY_DELAY_MAX_MS */
+static uint8 key_delay_buf[KEY_DELAY_BUF_SIZE];
+static volatile uint8 key_delay_idx = 0;
+static volatile uint8 key_delay_ms = 0;        /* delay for this over */
+static volatile uint8 key_up_ms = 0;           /* ms since last key down, stops at 255 */
+static volatile uint8 key_delay_active = FALSE;
+static volatile uint8 key_delay_busy = FALSE;   /* TRUE until delayed RF of last key down is done */
+static volatile uint8 key_delay_lo_ready = FALSE; /* LO on TX freq. PA held off until TRUE */
+volatile uint8 E_ms_tick = 0;                   /* free running 1 ms count, used by TX_Main() amp delay */
+
+CY_ISR(KEY_DELAY_interrupt){
+    uint8 reg;
+    uint8 key;
+
+    E_ms_tick++;
+    if(!key_delay_active) return;
+    if(TX_Inhibit || (E_host_mode != 'C')){ //Left CW or inhibited mid-over: PA off, stop playing
+        Control_Control |= CONTROL_RX;
+        key_delay_busy = FALSE;
+        key_delay_active = FALSE;
+        return;
+    }
+    reg = Status_Status;
+    key = (!(reg & STATUS_KEY_0) || !(reg & STATUS_KEY_1));
+    key_delay_buf[key_delay_idx] = key;
+    if(key){
+        key_up_ms = 0;
+    }else if(key_up_ms < 255u){
+        key_up_ms++;
+    }
+    reg = Control_Control;
+    if(key_delay_lo_ready && key_delay_buf[(uint8)(key_delay_idx - key_delay_ms) & (KEY_DELAY_BUF_SIZE - 1u)]){
+        reg &= ~CONTROL_RX;     //Turn ON PA - Negative logic level
+    }else{
+        reg |= CONTROL_RX;      //Turn OFF PA - Negative logic level
+    }
+    Control_Control = reg;
+    key_delay_idx = (key_delay_idx + 1u) & (KEY_DELAY_BUF_SIZE - 1u);
+    key_delay_busy = (key_up_ms <= key_delay_ms);
+}
+
 uint8 keyer_write(uint8_t buffer)
 {
 	uint8_t msg_buffer = 0;
@@ -247,6 +300,7 @@ void Manage_Paddles_Port(void)
     uint8 paddles_section;
     static uint8_t state = 0;
     uint8_t control_status = 0;
+    uint8 i;
     static uint32 previous_CW_LO_Freq = 0;
     
     switch(state){  //When in CW mode Manage_Paddles_Port manages the LO freq.
@@ -271,8 +325,17 @@ void Manage_Paddles_Port(void)
             CyExitCriticalSection(paddles_section);
             if (key & STATUS_KEY_0)  E_key_0 = TRUE; else E_key_0 = FALSE;
             if (key & STATUS_KEY_1)  E_key_1 = TRUE; else E_key_1 = FALSE;
-            if(!E_key_0 || !E_key_1){ //Key is DOWN   
+            if(!E_key_0 || !E_key_1){ //Key is DOWN
                 E_key_down = TRUE;
+                if(E_QSK == FALSE){ //Non-QSK: AMP on and start recording the key now, before the LO change, so the first element is not clipped
+                    for(i = 0; i < KEY_DELAY_BUF_SIZE; i++) key_delay_buf[i] = 0; //ISR not active yet so no race
+                    key_delay_ms = E_key_delay_ms;
+                    key_up_ms = 0;          //Key is down now
+                    key_delay_busy = TRUE;
+                    key_delay_lo_ready = FALSE;
+                    key_delay_active = TRUE;
+                    Control_Write(Control_Read() & ~CONTROL_AMP);   //Turn ON the AMP port - Negative logic level
+                }
                 state++;
             }else{
                 state = 0;//Key is not down return to idle state
@@ -292,9 +355,9 @@ void Manage_Paddles_Port(void)
                 control_status = control_status & ~CONTROL_RX;      //Turn ON PA - Negative logic level. PA controls CW ON/OFF 
                 E_cw_hold = TRUE;                                   /* hang timer starts on key-up (case 6) */
                 state = 5;
-            }else{
-                control_status = control_status & ~CONTROL_AMP;     //Turn ON the AMP port - Negative logic level
-                state = 4;
+            }else{  //Non-QSK amp. AMP on and ISR recording since case 1. LO is now on TX freq, let the ISR key the PA
+                key_delay_lo_ready = TRUE;
+                state = 20;
             }
             Control_Write(control_status);
             break;
@@ -345,6 +408,37 @@ void Manage_Paddles_Port(void)
                 state = 4; //KEY is DOWN. TURN ON PA in state 4
             }else{
                 state = 7; //KEY is UP.  Check timer state;
+            }
+            break;
+        case 20: //Non-QSK: ISR is keying the PA. Wait until key UP and delayed RF finished
+            if(!key_delay_active){  //ISR stopped (left CW or TX_Inhibit)
+                state = 22;
+            }else if(!key_delay_busy){
+                E_cw_hold = TRUE;   //Start semi-break-in hang from end of RF
+                CW_Hold_Control_Write(CW_CONTROL_RESET);
+                state = 21;
+            }
+            break;
+        case 21: //Non-QSK: hang timer running, PA off, AMP still on
+            if(!key_delay_active){
+                state = 22;
+            }else if(key_delay_busy){
+                state = 20;         //KEY DOWN again during hang
+            }else if(E_cw_hold == FALSE){
+                key_delay_active = FALSE;
+                state = 22;
+            }
+            break;
+        case 22: //Non-QSK: back to RX, same as case 7
+            Control_Write(Control_Read() | CONTROL_RX);         //Turn OFF PA - Negative logic level
+            SI5351_status = si5351aSetFrequency(CW_LO_Freq);    //Set the LO to the CW RX dial frequency
+            if(SI5351_status == 0){
+                control_status = Control_Read();
+                control_status = control_status | CONTROL_AMP;  //Turn OFF the AMP port - Negative logic level
+                control_status = control_status | CONTROL_DOUT; //Turn ON output from PCM3060
+                Control_Write(control_status);
+                E_key_down = FALSE;
+                state = 0;
             }
             break;
     }

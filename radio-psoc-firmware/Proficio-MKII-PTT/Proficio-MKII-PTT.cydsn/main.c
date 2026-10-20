@@ -59,6 +59,7 @@ uint8_t E_band;
 uint8 E_si5351_status = 0;
 uint8_t E_Amplifier = FALSE;
 uint8_t E_QSK = FALSE;
+uint8_t E_key_delay_ms = (CW_DEFAULT_HOLD_TIME * 10) / KEY_DELAY_DIVIDER;
 volatile uint8_t E_PTT = FALSE;
 volatile uint8_t E_reboot_request = REBOOT_REQ_NONE;
 
@@ -77,7 +78,9 @@ void main_init() {
     I2C_DISPLAY_Start();
     CW_Hold_Timer_Start();
     CW_isr_StartEx(CW_interrupt);
-       
+    Key_Delay_Timer_Start();                    //1 ms tick for non-QSK amp key delay
+    Key_Delay_isr_StartEx(KEY_DELAY_interrupt);
+
     Settings_Init();
     si_err = si5351_init(SI5351_CRYSTAL_LOAD_10PF,0);
     //si_err = si5351_init(SI5351_CRYSTAL_LOAD_12PF,0);
@@ -185,6 +188,9 @@ int main()
                 if (previous_TX_hold_time != E_TX_Hold){
                     previous_TX_hold_time = E_TX_Hold;
                     CW_Hold_Timer_WritePeriod((previous_TX_hold_time * 100)); //Configure the CW hold timer
+                    E_key_delay_ms = (uint8_t)(((uint16)previous_TX_hold_time * 10u) / KEY_DELAY_DIVIDER); //TX hold is in 10 ms units
+                    if(E_key_delay_ms < KEY_DELAY_MIN_MS) E_key_delay_ms = KEY_DELAY_MIN_MS;
+                    if(E_key_delay_ms > KEY_DELAY_MAX_MS) E_key_delay_ms = KEY_DELAY_MAX_MS;
                 }
                if(E_keyer_installed == TRUE){
                     Configure_CW();
