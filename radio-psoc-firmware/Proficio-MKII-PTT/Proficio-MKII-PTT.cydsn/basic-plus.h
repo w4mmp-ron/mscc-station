@@ -39,7 +39,7 @@
 
 
 #define FIRMWARE_VERSION_MAJOR 3
-#define FIRMWARE_VERSION_MINOR 234
+#define FIRMWARE_VERSION_MINOR 236
 #define FIRMWARE_VERSION ((((FIRMWARE_VERSION_MINOR) << 8) & 0xff00) | ((FIRMWARE_VERSION_MAJOR) & 0x00ff))
 #define EEPROM_PCB_VERSION_LOCATION 11
         
@@ -135,6 +135,48 @@ extern volatile uint8_t E_keyer_mem_q_head;
 extern volatile uint8_t E_keyer_mem_q_tail;
 extern volatile uint8_t E_keyer_mem_q_count;
 //extern uint8 E_cw_defaults;
+
+/*
+ * Per-band calibration in the radio (calibration.c), same protocol as the Black Pill 3.7.
+ * CMD_CALIBRATION (usbvend.h): wValue high byte = type, low byte = band.
+ * Read = get, write = set; exact length or stall. Payloads little endian:
+ *   1 RX IQ: int16 gain, int16 phase (4 bytes)    2 TX IQ: same
+ *   3 power: uint16 (2 bytes)
+ *   4 save:  write with no data saves to EEPROM; read = [save status, 1 = loaded at boot]
+ *   5 valid: read only, 3 x uint16 masks [RX IQ, TX IQ, power], bit N = band N set
+ *   6 clear: write with no data sets every value and mask to 0 (RAM; save to keep it).
+ *            Refused (stall) while a save is running.
+ * 0 is a real value: the server uses the valid masks, its own default for unset bands.
+ * Bands: MSCC order, 0 = 10 m ... 9 = 160 m, 10 = 630 m, 11 = 2200 m.
+ */
+#define CAL_BANDS       12u
+#define CAL_TYPE_RX_IQ  1u
+#define CAL_TYPE_TX_IQ  2u
+#define CAL_TYPE_POWER  3u
+#define CAL_TYPE_SAVE   4u
+#define CAL_TYPE_VALID  5u
+#define CAL_TYPE_CLEAR  6u
+#define CAL_SAVE_IDLE    0u  /* no save since boot */
+#define CAL_SAVE_BUSY    1u
+#define CAL_SAVE_OK      2u
+#define CAL_SAVE_FAILED  3u  /* EEPROM error or verify mismatch */
+#define CAL_SAVE_REFUSED 4u  /* radio was transmitting */
+typedef struct {            /* bytes only: no padding, 9 EEPROM rows */
+    uint8 magic[4];
+    uint8 version;
+    uint8 pad;
+    uint8 rx_iq[CAL_BANDS][4];
+    uint8 tx_iq[CAL_BANDS][4];
+    uint8 power[CAL_BANDS][2];
+    uint8 valid[3][2];      /* uint16 little endian per type */
+    uint8 reserved[10];
+    uint8 crc[2];           /* CRC-16 of everything before it, little endian */
+} cal_record_t;
+extern cal_record_t E_cal;
+extern uint8 E_cal_status[2];
+extern volatile uint8 E_cal_save_req;
+void Cal_Init(void);
+void Cal_Main(void);
 
 extern uint32 E_current_rit_freq;
 extern uint32 E_new_rit_freq;

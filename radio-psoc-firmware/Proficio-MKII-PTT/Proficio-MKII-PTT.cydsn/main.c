@@ -82,6 +82,7 @@ void main_init() {
     Key_Delay_isr_StartEx(KEY_DELAY_interrupt);
 
     Settings_Init();
+    Cal_Init();                                 //per-band calibration from EEPROM (after EEPROM_Start)
     si_err = si5351_init(SI5351_CRYSTAL_LOAD_10PF,0);
     //si_err = si5351_init(SI5351_CRYSTAL_LOAD_12PF,0);
     if (!si_err) {
@@ -185,6 +186,7 @@ int main()
                 break;
             case 2:
                 Settings_Main();
+                Cal_Main();                     //calibration EEPROM save, one row per pass
                 if (previous_TX_hold_time != E_TX_Hold){
                     previous_TX_hold_time = E_TX_Hold;
                     CW_Hold_Timer_WritePeriod((previous_TX_hold_time * 100)); //Configure the CW hold timer

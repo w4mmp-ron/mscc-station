@@ -23,6 +23,7 @@
 
 #include <basic-plus.h>
 #include <usbvend.h>
+#include <USBFS_pvt.h>     // USBFS_InitNoDataControlTransfer (CMD_CALIBRATION save)
 #define PPM_INT 0
 #define PPM_DEC 1
 #define PPM_INT_RECEIVED 0x01
@@ -68,6 +69,9 @@ uint8 USBFS_HandleVendorRqst(void)  //This called by the USBFS component.  This 
     static int32 l_int = 0;
     uint8_t E_Potentia_temperature;
     static int8_t int_value = 0;
+    static uint8 l_cal_type, l_cal_band;   // CMD_CALIBRATION: wValue high / low byte
+    static uint16 l_cal_len;               // CMD_CALIBRATION: wLength
+    static uint8 l_cal_i;                  // CMD_CALIBRATION clear: byte index
     
      
     reqType = CY_GET_REG8(USBFS_bmRequestType);
@@ -186,6 +190,34 @@ uint8 USBFS_HandleVendorRqst(void)  //This called by the USBFS component.  This 
                 USBFS_currentTD.pData = (void *)&PPM_result;
                 USBFS_currentTD.count = 2;
                 requestHandled  = USBFS_InitControlRead();
+                break;
+
+            /* Per-band calibration read (calibration.c). Bad type / band: not handled (stall). */
+            case CMD_CALIBRATION:
+                l_cal_type = CY_GET_REG8(USBFS_wValueHi);
+                l_cal_band = CY_GET_REG8(USBFS_wValueLo);
+                USBFS_currentTD.count = 0;
+                if (l_cal_type == CAL_TYPE_SAVE) {
+                    USBFS_currentTD.pData = (void *)E_cal_status;
+                    USBFS_currentTD.count = 2;
+                } else if (l_cal_type == CAL_TYPE_VALID) {
+                    USBFS_currentTD.pData = (void *)&E_cal.valid[0][0];
+                    USBFS_currentTD.count = 6;
+                } else if (l_cal_band < CAL_BANDS) {
+                    if (l_cal_type == CAL_TYPE_RX_IQ) {
+                        USBFS_currentTD.pData = (void *)&E_cal.rx_iq[l_cal_band][0];
+                        USBFS_currentTD.count = 4;
+                    } else if (l_cal_type == CAL_TYPE_TX_IQ) {
+                        USBFS_currentTD.pData = (void *)&E_cal.tx_iq[l_cal_band][0];
+                        USBFS_currentTD.count = 4;
+                    } else if (l_cal_type == CAL_TYPE_POWER) {
+                        USBFS_currentTD.pData = (void *)&E_cal.power[l_cal_band][0];
+                        USBFS_currentTD.count = 2;
+                    }
+                }
+                if (USBFS_currentTD.count != 0) {
+                    requestHandled  = USBFS_InitControlRead();
+                }
                 break;
             /*case CMD_SET_XTAL_DEC:
                 USBFS_currentTD.pData = (void *)&ee_ppm_int;
@@ -337,6 +369,53 @@ uint8 USBFS_HandleVendorRqst(void)  //This called by the USBFS component.  This 
                 USBFS_currentTD.pData = (void *)E_keyer_mem_pkt;
                 USBFS_currentTD.count = 2;
                 requestHandled = USBFS_InitControlWrite();
+                break;
+
+            /*
+             * Per-band calibration set / save (calibration.c). The data stage lands straight
+             * in E_cal and the band is marked valid here, so the main loop has nothing to do.
+             * Save (no data): flag only, Cal_Main() writes the EEPROM.
+             * Exact length only: a wrong type / band / length is not handled (stall).
+             */
+            case CMD_CALIBRATION:
+                l_cal_type = CY_GET_REG8(USBFS_wValueHi);
+                l_cal_band = CY_GET_REG8(USBFS_wValueLo);
+                l_cal_len = ((uint16)CY_GET_REG8(USBFS_lengthHi) << 8) | CY_GET_REG8(USBFS_length);
+                if (l_cal_type == CAL_TYPE_SAVE) {
+                    if (l_cal_len == 0) {
+                        E_cal_status[0] = CAL_SAVE_BUSY;
+                        E_cal_save_req = 1;
+                        requestHandled = USBFS_InitNoDataControlTransfer();
+                    }
+                    break;
+                }
+                // Clear: inline loop, no memset (library call from the ISR = L15)
+                if (l_cal_type == CAL_TYPE_CLEAR) {
+                    if (l_cal_len == 0 && E_cal_status[0] != CAL_SAVE_BUSY) {
+                        for (l_cal_i = 0; l_cal_i < sizeof(E_cal); l_cal_i++) {
+                            ((uint8 *)&E_cal)[l_cal_i] = 0;
+                        }
+                        requestHandled = USBFS_InitNoDataControlTransfer();
+                    }
+                    break;
+                }
+                if (l_cal_band >= CAL_BANDS) break;
+                USBFS_currentTD.count = 0;
+                if (l_cal_type == CAL_TYPE_RX_IQ && l_cal_len == 4) {
+                    USBFS_currentTD.pData = (void *)&E_cal.rx_iq[l_cal_band][0];
+                    USBFS_currentTD.count = 4;
+                } else if (l_cal_type == CAL_TYPE_TX_IQ && l_cal_len == 4) {
+                    USBFS_currentTD.pData = (void *)&E_cal.tx_iq[l_cal_band][0];
+                    USBFS_currentTD.count = 4;
+                } else if (l_cal_type == CAL_TYPE_POWER && l_cal_len == 2) {
+                    USBFS_currentTD.pData = (void *)&E_cal.power[l_cal_band][0];
+                    USBFS_currentTD.count = 2;
+                }
+                if (USBFS_currentTD.count != 0) {
+                    // valid mask = uint16 little endian: band 0-7 in byte 0, 8-11 in byte 1
+                    E_cal.valid[l_cal_type - CAL_TYPE_RX_IQ][l_cal_band >> 3] |= (uint8)(1u << (l_cal_band & 7u));
+                    requestHandled = USBFS_InitControlWrite();
+                }
                 break;
            
           
