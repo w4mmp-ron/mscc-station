@@ -21,6 +21,10 @@ void Factory_seed_reload_servers(void);
 /* Overwrite the live file from factory/<kind>/<line>/<leaf>. Does not touch cal/<line>/. */
 int Factory_reseed_live_file(const char *kind, const char *leaf);
 
+/* factory/power/<line>/power_cal.ini POWER_LEVEL by record (0 = 160 m) into values[12].
+ * 1 = loaded, 0 = no factory file (values untouched). */
+int Factory_power_cal_values(int values[12]);
+
 /* Save settings: copy live park-set into cal/<line>/ and write LAST_LINE.txt.
  * Unknown major (not 1..8): warn and no-op. Missing live files: skip with a warning. */
 void Factory_park_live_settings(void);

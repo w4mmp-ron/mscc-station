@@ -3,6 +3,7 @@
 #include "usbavrcmd.h"
 #include <errno.h>
 #include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
 #include <sys/stat.h>
 #include <unistd.h>
@@ -351,6 +352,35 @@ int Factory_reseed_live_file(const char *kind, const char *leaf)
     print_time(0);
     fprintf(G_fp_logfile, "[%d] Factory_reseed. %s -> %s (line=%s major=%d)\n",
             line_number++, src, dst, line, G_major_version);
+    return 1;
+}
+
+int Factory_power_cal_values(int values[12])
+{
+    char factory_root[MAX_PATH];
+    char path[MAX_PATH];
+    char rec[132];
+    char *r, *p;
+    int record;
+    FILE *fp;
+
+    if (!find_factory_root(factory_root, sizeof factory_root))
+        return 0;
+    snprintf(path, sizeof path, "%s/power/%s/power_cal.ini", factory_root,
+             Factory_line_from_major(G_major_version));
+    fp = fopen(path, "r");
+    if (fp == NULL)
+        return 0;
+    while (fgets(rec, sizeof rec, fp) != NULL) {
+        r = strstr(rec, "RECORD=");
+        p = strstr(rec, "POWER_LEVEL=");
+        if (r == NULL || p == NULL)
+            continue;
+        record = atoi(r + 7);
+        if (record >= 0 && record < 12)
+            values[record] = atoi(p + 12);
+    }
+    fclose(fp);
     return 1;
 }
 

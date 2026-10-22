@@ -39,7 +39,7 @@
 
 
 #define FIRMWARE_VERSION_MAJOR 3
-#define FIRMWARE_VERSION_MINOR 236
+#define FIRMWARE_VERSION_MINOR 238
 #define FIRMWARE_VERSION ((((FIRMWARE_VERSION_MINOR) << 8) & 0xff00) | ((FIRMWARE_VERSION_MAJOR) & 0x00ff))
 #define EEPROM_PCB_VERSION_LOCATION 11
         
@@ -142,10 +142,12 @@ extern volatile uint8_t E_keyer_mem_q_count;
  * Read = get, write = set; exact length or stall. Payloads little endian:
  *   1 RX IQ: int16 gain, int16 phase (4 bytes)    2 TX IQ: same
  *   3 power: uint16 (2 bytes)
- *   4 save:  write with no data saves to EEPROM; read = [save status, 1 = loaded at boot]
+ *            1-3 are written to EEPROM by the radio itself, one row per band (3.238).
+ *   4 status: read only = [write status, 1 = loaded at boot]. 3.238: no save command
+ *            (write stalls; was "write with no data saves" in 3.235-3.237).
  *   5 valid: read only, 3 x uint16 masks [RX IQ, TX IQ, power], bit N = band N set
- *   6 clear: write with no data sets every value and mask to 0 (RAM; save to keep it).
- *            Refused (stall) while a save is running.
+ *   6 clear: write with no data sets every value and mask to 0 (all 12 rows rewritten).
+ *            Test tool only.
  * 0 is a real value: the server uses the valid masks, its own default for unset bands.
  * Bands: MSCC order, 0 = 10 m ... 9 = 160 m, 10 = 630 m, 11 = 2200 m.
  */
@@ -156,12 +158,13 @@ extern volatile uint8_t E_keyer_mem_q_count;
 #define CAL_TYPE_SAVE   4u
 #define CAL_TYPE_VALID  5u
 #define CAL_TYPE_CLEAR  6u
-#define CAL_SAVE_IDLE    0u  /* no save since boot */
-#define CAL_SAVE_BUSY    1u
+#define CAL_SAVE_IDLE    0u  /* no row written since boot */
+#define CAL_SAVE_BUSY    1u  /* row being written */
 #define CAL_SAVE_OK      2u
-#define CAL_SAVE_FAILED  3u  /* EEPROM error or verify mismatch */
-#define CAL_SAVE_REFUSED 4u  /* radio was transmitting */
-typedef struct {            /* bytes only: no padding, 9 EEPROM rows */
+#define CAL_SAVE_FAILED  3u  /* EEPROM error */
+#define CAL_SAVE_REFUSED 4u  /* not used since 3.238 (writes wait for RX) */
+#define CAL_QUIET_SET   10u  /* Cal_Main passes (~3.5 ms) after a set before writing */
+typedef struct {            /* RAM only since 3.238 (EEPROM = one row per band, calibration.c) */
     uint8 magic[4];
     uint8 version;
     uint8 pad;
@@ -174,7 +177,8 @@ typedef struct {            /* bytes only: no padding, 9 EEPROM rows */
 } cal_record_t;
 extern cal_record_t E_cal;
 extern uint8 E_cal_status[2];
-extern volatile uint8 E_cal_save_req;
+extern volatile uint8 E_cal_dirty[CAL_BANDS];  /* ISR: band set, its row to write */
+extern volatile uint8 E_cal_quiet;             /* ISR: passes to wait before writing */
 void Cal_Init(void);
 void Cal_Main(void);
 

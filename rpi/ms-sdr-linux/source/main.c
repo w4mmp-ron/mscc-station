@@ -493,6 +493,10 @@ void* Flusher_thread(void* t) {
             }
         }
 
+        /* Power cal slider: radio saves its calibration copy after the last step. */
+        if (G_Radio_Cal_Save_Pending > 0)
+            Radio_cal_save_tick();
+
         if (G_Allow_Log_Write == TRUE) {
             fflush(G_fp_logfile);
             if (previous_startup_freq != G_tune_freq && G_TX == FALSE) {
@@ -1417,6 +1421,7 @@ int main(int argc, char **argv) {
                 "[%d] main. Network ready — reload cal if a live file was replaced, then Apply_Appliance_Startup\n",
                 line_number++);
             Factory_seed_reload_servers();
+            Radio_cal_load_power();
             Apply_Appliance_Startup();
         } else {
             print_time(0);

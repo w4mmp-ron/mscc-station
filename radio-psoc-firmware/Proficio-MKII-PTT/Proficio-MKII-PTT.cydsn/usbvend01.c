@@ -372,29 +372,25 @@ uint8 USBFS_HandleVendorRqst(void)  //This called by the USBFS component.  This 
                 break;
 
             /*
-             * Per-band calibration set / save (calibration.c). The data stage lands straight
-             * in E_cal and the band is marked valid here, so the main loop has nothing to do.
-             * Save (no data): flag only, Cal_Main() writes the EEPROM.
+             * Per-band calibration set (calibration.c). The data stage lands straight in
+             * E_cal, the band is marked valid and dirty here; Cal_Main() writes that band's
+             * EEPROM row by itself (3.238, the PPM way). No save command (type 4 write stalls).
              * Exact length only: a wrong type / band / length is not handled (stall).
              */
             case CMD_CALIBRATION:
                 l_cal_type = CY_GET_REG8(USBFS_wValueHi);
                 l_cal_band = CY_GET_REG8(USBFS_wValueLo);
                 l_cal_len = ((uint16)CY_GET_REG8(USBFS_lengthHi) << 8) | CY_GET_REG8(USBFS_length);
-                if (l_cal_type == CAL_TYPE_SAVE) {
-                    if (l_cal_len == 0) {
-                        E_cal_status[0] = CAL_SAVE_BUSY;
-                        E_cal_save_req = 1;
-                        requestHandled = USBFS_InitNoDataControlTransfer();
-                    }
-                    break;
-                }
-                // Clear: inline loop, no memset (library call from the ISR = L15)
+                // Clear (test tool only): inline loop, no memset (library call from the ISR = L15)
                 if (l_cal_type == CAL_TYPE_CLEAR) {
-                    if (l_cal_len == 0 && E_cal_status[0] != CAL_SAVE_BUSY) {
+                    if (l_cal_len == 0) {
                         for (l_cal_i = 0; l_cal_i < sizeof(E_cal); l_cal_i++) {
                             ((uint8 *)&E_cal)[l_cal_i] = 0;
                         }
+                        for (l_cal_i = 0; l_cal_i < CAL_BANDS; l_cal_i++) {
+                            E_cal_dirty[l_cal_i] = 1;
+                        }
+                        E_cal_quiet = CAL_QUIET_SET;
                         requestHandled = USBFS_InitNoDataControlTransfer();
                     }
                     break;
@@ -414,6 +410,8 @@ uint8 USBFS_HandleVendorRqst(void)  //This called by the USBFS component.  This 
                 if (USBFS_currentTD.count != 0) {
                     // valid mask = uint16 little endian: band 0-7 in byte 0, 8-11 in byte 1
                     E_cal.valid[l_cal_type - CAL_TYPE_RX_IQ][l_cal_band >> 3] |= (uint8)(1u << (l_cal_band & 7u));
+                    E_cal_dirty[l_cal_band] = 1;
+                    E_cal_quiet = CAL_QUIET_SET;
                     requestHandled = USBFS_InitControlWrite();
                 }
                 break;

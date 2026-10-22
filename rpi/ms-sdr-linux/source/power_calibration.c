@@ -6,12 +6,31 @@
 #include "usbavrcmd.h"
 //#include "SRDLL.h"
 #include "extern.h"
+#include "factory_seed.h"
 #include "version.h"
 
 /* QRP power calibration.
  * sdrcore-trans owns ~/power_cal.ini (creates it with factory values, writes it on 0xA2).
  * ms-sdr only reads it on band select to report the stored value to the client, tunes the
  * radio, and forwards the calibration commands to sdrcore-trans. */
+
+/* In-radio copy of the power calibration (radio firmware CMD_CALIBRATION 0xC8: PSoC 3.238+).
+ * Slider steps only note the band's value; once the slider has been still for
+ * RADIO_CAL_SAVE_DELAY seconds and the rig is out of TX, each changed band's value is sent
+ * to the radio ONCE, and the radio writes it to EEPROM by itself (like the PPM update).
+ * No save command (PSoC 3.235-3.237 had one; it hung the radio's USB, 2026-10-22).
+ * Radio band order is MSCC order (0 = 10 m ... 9 = 160 m), the reverse of G_power_stack's
+ * record for 0-9. 0xC8 here is the radio's opcode, not usbavrcmd.h CMD_SET_FAVS_NAME. */
+#define RADIO_CMD_CALIBRATION   0xC8
+#define RADIO_CAL_TYPE_POWER    3
+#define RADIO_CAL_SAVE_DELAY    5
+/* 0 = no value writes to the radio (radio USB hang hunt, 2026-10-22); the startup
+ * read-back still runs. 1 = normal. */
+#define RADIO_CAL_WRITES        1
+
+uint8_t G_Radio_Cal_Save_Pending = 0;
+static volatile int radio_cal_pending[12];      /* 1 = value below not sent yet */
+static volatile int radio_cal_value[12];
 
 struct {
     int record;
@@ -63,6 +82,132 @@ uint8_t Band_to_record(uint32_t band) {
             break;
     }
     return record;
+}
+
+static int Record_to_radio_band(int record) {
+    return (record <= 9) ? 9 - record : record;
+}
+
+/* Slider step: note the value; Radio_cal_save_tick sends it once the slider is still. */
+static void Radio_cal_store_power(int record, int value) {
+    if (record < 0 || record >= 12)
+        return;
+#if !RADIO_CAL_WRITES
+    print_time(0);
+    fprintf(G_fp_logfile, "[%d] Radio_cal_store_power . Writes disabled. Record: %d, Value: %d not sent\n",
+            line_number++, record, value);
+    return;
+#endif
+    radio_cal_value[record] = value;
+    radio_cal_pending[record] = 1;
+    G_Radio_Cal_Save_Pending = RADIO_CAL_SAVE_DELAY;
+}
+
+static void Radio_cal_send_power(int record, int value) {
+    unsigned char data[2];
+    int band = Record_to_radio_band(record);
+    int status;
+
+    data[0] = (unsigned char) (value & 0xFF);   /* uint16, little endian */
+    data[1] = (unsigned char) ((value >> 8) & 0xFF);
+    status = usbControlMsgOUT(RADIO_CMD_CALIBRATION, (RADIO_CAL_TYPE_POWER << 8) | band, 0, (char *) data, 2);
+    print_time(0);
+    if (status == 2) {
+        fprintf(G_fp_logfile, "[%d] Radio_cal_send_power . Radio band: %d, Value: %d sent (radio writes EEPROM)\n",
+                line_number++, band, value);
+    } else {
+        /* older radio firmware stalls 0xC8: power cal still works through trans */
+        fprintf(G_fp_logfile, "[%d] Radio_cal_send_power . FAILED (radio firmware without 0xC8?) Radio band: %d, Status: %d\n",
+                line_number++, band, status);
+    }
+}
+
+#define RADIO_CAL_TYPE_VALID    5
+
+/* At startup: the radio's power values win over power_cal.ini. Bands the radio does not
+ * have get the factory value for the radio type (the file may hold another radio's
+ * calibration); the file is never copied into the radio. Each band that differs from the
+ * file goes to trans as 0xA1 band + 0xA2 value, the same as a slider step, so trans stays
+ * the only writer of power_cal.ini. Older firmware stalls 0xC8: file used as before.
+ * No factory tree: bands the radio lacks keep the file's value. */
+void Radio_cal_load_power(void) {
+    static const int record_meters[12] = { 160, 80, 60, 40, 30, 20, 17, 15, 12, 10, 630, 2200 };
+    unsigned char masks[6];
+    unsigned char data[2];
+    uint16_t power_mask;
+    int factory[12];
+    int have_factory;
+    const char *source;
+    int record, band, value, status;
+    int changed = 0;
+
+    status = usbControlMsgIN(RADIO_CMD_CALIBRATION, RADIO_CAL_TYPE_VALID << 8, 0, (char *) masks, 6);
+    if (status != 6) {
+        print_time(0);
+        fprintf(G_fp_logfile, "[%d] Radio_cal_load_power . No calibration in radio (firmware without 0xC8?) Status: %d. Using power_cal.ini\n",
+                line_number++, status);
+        return;
+    }
+    power_mask = (uint16_t) (masks[4] | (masks[5] << 8));   /* [RX IQ, TX IQ, power] */
+    Initialize_power_calibration();
+    have_factory = Factory_power_cal_values(factory);
+    for (record = 0; record < 12; record++) {
+        band = Record_to_radio_band(record);
+        print_time(0);
+        if (power_mask & (1 << band)) {
+            source = "radio";
+            status = usbControlMsgIN(RADIO_CMD_CALIBRATION, (RADIO_CAL_TYPE_POWER << 8) | band, 0, (char *) data, 2);
+            if (status != 2) {
+                fprintf(G_fp_logfile, "[%d] Radio_cal_load_power . %d m read FAILED. Status: %d\n", line_number++,
+                        record_meters[record], status);
+                continue;
+            }
+            value = data[0] | (data[1] << 8);
+        } else if (have_factory) {
+            source = "factory";
+            value = factory[record];
+        } else {
+            fprintf(G_fp_logfile, "[%d] Radio_cal_load_power . %d m not in radio, no factory file, file %d kept\n",
+                    line_number++, record_meters[record], G_power_stack[record].power_level);
+            continue;
+        }
+        if (value < 0 || value > 255) {  /* client slider and 0xA2 are 8 bit */
+            fprintf(G_fp_logfile, "[%d] Radio_cal_load_power . %d m %s %d out of range, file %d kept\n", line_number++,
+                    record_meters[record], source, value, G_power_stack[record].power_level);
+            continue;
+        }
+        fprintf(G_fp_logfile, "[%d] Radio_cal_load_power . %d m %s %d, file %d, %s\n", line_number++,
+                record_meters[record], source, value, G_power_stack[record].power_level,
+                (value == G_power_stack[record].power_level) ? "same" : "sent to trans");
+        if (value != G_power_stack[record].power_level) {
+            G_power_stack[record].power_level = value;
+            SDRcore_trans_send_param(CMD_SET_BAND_POWER_BAND, record_meters[record]);
+            SDRcore_trans_send_param(CMD_SET_BAND_POWER_POWER, value);
+            changed++;
+        }
+    }
+    print_time(0);
+    fprintf(G_fp_logfile, "[%d] Radio_cal_load_power . Finished. Power mask 0x%04X, %d band(s) changed\n", line_number++,
+            power_mask, changed);
+}
+
+/* Called once a second from Flusher_thread while G_Radio_Cal_Save_Pending > 0. */
+void Radio_cal_save_tick(void) {
+    int record;
+
+    if (G_Radio_Cal_Save_Pending > 1) {
+        G_Radio_Cal_Save_Pending--;
+        return;
+    }
+    if (G_TX)
+        return; /* stay at 1: try again next second */
+    G_Radio_Cal_Save_Pending = 0;
+    for (record = 0; record < 12; record++) {
+        if (radio_cal_pending[record]) {
+            radio_cal_pending[record] = 0;
+            Radio_cal_send_power(record, radio_cal_value[record]);
+        }
+    }
 }
 
 uint32_t Set_freq_for_power_cal(uint32_t band) {
@@ -266,6 +411,7 @@ int Power_calibration(uint32_t command, char *buf) {
                 G_power_stack[record].power_level = calibration_value; /* copy for 0xB4; trans saves the file */
                 SDRcore_trans_send_param(CMD_SET_BAND_POWER_BAND, Tranceiver_band);
                 SDRcore_trans_send_param(CMD_SET_BAND_POWER_POWER, calibration_value);
+                Radio_cal_store_power(record, calibration_value);
             } else {
                 Gui_send_param(CMD_GET_BAND_POWER, 0);
                 print_time(0);

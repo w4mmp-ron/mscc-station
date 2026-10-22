@@ -471,6 +471,9 @@ extern uint8_t G_in_IQ_calibration_mode;
 
 //For Power Calibration
 extern int Power_calibration(uint32_t command, char *buffer);
+extern void Radio_cal_save_tick(void);
+extern void Radio_cal_load_power(void);
+extern uint8_t G_Radio_Cal_Save_Pending;
 //extern uint8_t G_calibration_mode;
 extern int Initialize_power_calibration();
 extern int Check_Power_Cal_Version();
