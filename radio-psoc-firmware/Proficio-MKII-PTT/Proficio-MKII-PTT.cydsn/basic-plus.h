@@ -39,7 +39,7 @@
 
 
 #define FIRMWARE_VERSION_MAJOR 3
-#define FIRMWARE_VERSION_MINOR 238
+#define FIRMWARE_VERSION_MINOR 240
 #define FIRMWARE_VERSION ((((FIRMWARE_VERSION_MINOR) << 8) & 0xff00) | ((FIRMWARE_VERSION_MAJOR) & 0x00ff))
 #define EEPROM_PCB_VERSION_LOCATION 11
         
@@ -146,8 +146,7 @@ extern volatile uint8_t E_keyer_mem_q_count;
  *   4 status: read only = [write status, 1 = loaded at boot]. 3.238: no save command
  *            (write stalls; was "write with no data saves" in 3.235-3.237).
  *   5 valid: read only, 3 x uint16 masks [RX IQ, TX IQ, power], bit N = band N set
- *   6 clear: write with no data sets every value and mask to 0 (all 12 rows rewritten).
- *            Test tool only.
+ *   6 clear: removed in 3.239 (no-data request, like the old save; now stalls).
  * 0 is a real value: the server uses the valid masks, its own default for unset bands.
  * Bands: MSCC order, 0 = 10 m ... 9 = 160 m, 10 = 630 m, 11 = 2200 m.
  */
@@ -157,7 +156,6 @@ extern volatile uint8_t E_keyer_mem_q_count;
 #define CAL_TYPE_POWER  3u
 #define CAL_TYPE_SAVE   4u
 #define CAL_TYPE_VALID  5u
-#define CAL_TYPE_CLEAR  6u
 #define CAL_SAVE_IDLE    0u  /* no row written since boot */
 #define CAL_SAVE_BUSY    1u  /* row being written */
 #define CAL_SAVE_OK      2u
@@ -304,6 +302,8 @@ extern uint8 E_dll_version;
 
 //cw.c
 void Manage_Paddles_Port(void);
+void CW_Key_Delay_Stop(void);
+uint8 PCM3060_SetRegister(uint8 reg, uint8 val);
 CY_ISR_PROTO(CW_interrupt);
 CY_ISR_PROTO(KEY_interrupt);
 CY_ISR_PROTO(QSK_interrupt);

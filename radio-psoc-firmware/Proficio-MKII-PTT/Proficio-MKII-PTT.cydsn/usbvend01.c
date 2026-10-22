@@ -23,7 +23,6 @@
 
 #include <basic-plus.h>
 #include <usbvend.h>
-#include <USBFS_pvt.h>     // USBFS_InitNoDataControlTransfer (CMD_CALIBRATION save)
 #define PPM_INT 0
 #define PPM_DEC 1
 #define PPM_INT_RECEIVED 0x01
@@ -71,7 +70,6 @@ uint8 USBFS_HandleVendorRqst(void)  //This called by the USBFS component.  This 
     static int8_t int_value = 0;
     static uint8 l_cal_type, l_cal_band;   // CMD_CALIBRATION: wValue high / low byte
     static uint16 l_cal_len;               // CMD_CALIBRATION: wLength
-    static uint8 l_cal_i;                  // CMD_CALIBRATION clear: byte index
     
      
     reqType = CY_GET_REG8(USBFS_bmRequestType);
@@ -381,20 +379,6 @@ uint8 USBFS_HandleVendorRqst(void)  //This called by the USBFS component.  This 
                 l_cal_type = CY_GET_REG8(USBFS_wValueHi);
                 l_cal_band = CY_GET_REG8(USBFS_wValueLo);
                 l_cal_len = ((uint16)CY_GET_REG8(USBFS_lengthHi) << 8) | CY_GET_REG8(USBFS_length);
-                // Clear (test tool only): inline loop, no memset (library call from the ISR = L15)
-                if (l_cal_type == CAL_TYPE_CLEAR) {
-                    if (l_cal_len == 0) {
-                        for (l_cal_i = 0; l_cal_i < sizeof(E_cal); l_cal_i++) {
-                            ((uint8 *)&E_cal)[l_cal_i] = 0;
-                        }
-                        for (l_cal_i = 0; l_cal_i < CAL_BANDS; l_cal_i++) {
-                            E_cal_dirty[l_cal_i] = 1;
-                        }
-                        E_cal_quiet = CAL_QUIET_SET;
-                        requestHandled = USBFS_InitNoDataControlTransfer();
-                    }
-                    break;
-                }
                 if (l_cal_band >= CAL_BANDS) break;
                 USBFS_currentTD.count = 0;
                 if (l_cal_type == CAL_TYPE_RX_IQ && l_cal_len == 4) {

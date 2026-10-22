@@ -172,6 +172,7 @@ int main()
             case 1:
                 if(E_host_mode != 'C'){
                     if(previous_host_mode != E_host_mode){
+                        CW_Key_Delay_Stop();                            //Stop CW key delay ISR, DAC unmuted
                         Control_Write(Control_Read() & ~CONTROL_LED);   //Restore LED operation to normal
                         Control_Write(Control_Read() | CONTROL_RX);     //Turn OFF PA - Negative logic level
                         control_status = Control_Read();

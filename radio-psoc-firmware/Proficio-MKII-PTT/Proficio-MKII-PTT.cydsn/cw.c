@@ -63,7 +63,25 @@ CY_ISR(QSK_interrupt){
  * Keil 8051 functions are not reentrant and the main loop calls those.
  * Main loop Control_Write() read-modify-writes may briefly undo CONTROL_RX;
  * the ISR rewrites it every tick, so worst case is a 1 ms edge error.
+ *
+ * Key click shaping (3.240, as the Legacy 1.232 copy): SDRcore-trans sends a steady carrier
+ * in CW, so the RF edges were the hard PA switch. Now the PCM3060 DAC soft mute (reg 0x44,
+ * MUT21/MUT22) ramps the I/Q level 0.5 dB per 8/fs, i.e. 6 dB/ms at 96 kHz, 16.7 ms from
+ * full to mute. Non-QSK only (QSK has no key delay to ramp ahead in). The DAC is kept muted
+ * in non-QSK CW. For each element the PA goes on and the DAC unmutes DAC_RISE_LEAD_MS before
+ * the delayed key down (so the -6 dB point lands on the edge); at the delayed key up the DAC
+ * mutes and the PA goes off DAC_RAMP_MS later. The ISR only asks for the mute / unmute
+ * (dac_req); the main loop does the I2C write. Spaces shorter than DAC_RISE_LEAD_MS merge
+ * (above about 80 WPM).
  */
+#define DAC_RAMP_MS 18u        /* soft mute full ramp 16.7 ms at 96 kHz, rounded up */
+#define DAC_RISE_LEAD_MS 14u   /* < KEY_DELAY_MIN_MS. Unmute this early: -6 dB after about 15 ms */
+#define DAC_REQ_NONE 0u
+#define DAC_REQ_MUTE 1u
+#define DAC_REQ_UNMUTE 2u
+#define PCM3060_REG_DAC_MUTE 0x44u
+#define PCM3060_DAC_MUTE_ON 0x03u      /* MUT22 + MUT21 */
+#define PCM3060_DAC_MUTE_OFF 0x00u
 #define KEY_DELAY_BUF_SIZE 64u       /* ms of key history, power of 2, > KEY_DELAY_MAX_MS */
 static uint8 key_delay_buf[KEY_DELAY_BUF_SIZE];
 static volatile uint8 key_delay_idx = 0;
@@ -73,15 +91,22 @@ static volatile uint8 key_delay_active = FALSE;
 static volatile uint8 key_delay_busy = FALSE;   /* TRUE until delayed RF of last key down is done */
 static volatile uint8 key_delay_lo_ready = FALSE; /* LO on TX freq. PA held off until TRUE */
 volatile uint8 E_ms_tick = 0;                   /* free running 1 ms count, used by TX_Main() amp delay */
+static volatile uint8 dac_req = DAC_REQ_NONE;   /* ISR -> main loop: PCM3060 soft mute request */
+static volatile uint8 rf_on = FALSE;            /* PA on and DAC unmuted for an element */
+static volatile uint8 rf_off_ms = 255;          /* ms since DAC mute started, stops at 255 */
+static uint8 dac_muted = FALSE;                 /* main loop copy of the PCM3060 mute bits */
 
 CY_ISR(KEY_DELAY_interrupt){
     uint8 reg;
     uint8 key;
+    uint8 on;
 
     E_ms_tick++;
     if(!key_delay_active) return;
     if(TX_Inhibit || (E_host_mode != 'C')){ //Left CW or inhibited mid-over: PA off, stop playing
         Control_Control |= CONTROL_RX;
+        rf_on = FALSE;
+        dac_req = DAC_REQ_MUTE;
         key_delay_busy = FALSE;
         key_delay_active = FALSE;
         return;
@@ -94,15 +119,48 @@ CY_ISR(KEY_DELAY_interrupt){
     }else if(key_up_ms < 255u){
         key_up_ms++;
     }
-    reg = Control_Control;
-    if(key_delay_lo_ready && key_delay_buf[(uint8)(key_delay_idx - key_delay_ms) & (KEY_DELAY_BUF_SIZE - 1u)]){
-        reg &= ~CONTROL_RX;     //Turn ON PA - Negative logic level
-    }else{
-        reg |= CONTROL_RX;      //Turn OFF PA - Negative logic level
+    on = FALSE;
+    if(key_delay_lo_ready){ //RF from DAC_RISE_LEAD_MS before the delayed key down to the delayed key up
+        on = key_delay_buf[(uint8)(key_delay_idx - key_delay_ms) & (KEY_DELAY_BUF_SIZE - 1u)]
+          || key_delay_buf[(uint8)(key_delay_idx - (key_delay_ms - DAC_RISE_LEAD_MS)) & (KEY_DELAY_BUF_SIZE - 1u)];
     }
-    Control_Control = reg;
+    if(on && !rf_on){
+        Control_Control &= ~CONTROL_RX;     //Turn ON PA - Negative logic level. DAC ramps up
+        dac_req = DAC_REQ_UNMUTE;
+        rf_on = TRUE;
+    }else if(!on && rf_on){
+        dac_req = DAC_REQ_MUTE;             //DAC ramps down, PA goes off when done
+        rf_on = FALSE;
+        rf_off_ms = 0;
+    }else if(!rf_on){
+        if(rf_off_ms < 255u) rf_off_ms++;
+        if(rf_off_ms >= DAC_RAMP_MS){
+            Control_Control |= CONTROL_RX;  //Turn OFF PA - Negative logic level
+        }else{
+            Control_Control &= ~CONTROL_RX; //Ramping down: PA stays on (rewrite every tick)
+        }
+    }else{
+        Control_Control &= ~CONTROL_RX;     //Rewrite every tick: a main loop Control_Write() may undo it
+    }
     key_delay_idx = (key_delay_idx + 1u) & (KEY_DELAY_BUF_SIZE - 1u);
-    key_delay_busy = (key_up_ms <= key_delay_ms);
+    key_delay_busy = (key_up_ms <= key_delay_ms) || rf_on || (rf_off_ms < DAC_RAMP_MS);
+}
+
+/* Main loop only (I2C): PCM3060 DAC soft mute on / off */
+static void cw_dac_mute(uint8 mute)
+{
+    PCM3060_SetRegister(PCM3060_REG_DAC_MUTE, mute ? PCM3060_DAC_MUTE_ON : PCM3060_DAC_MUTE_OFF);
+    dac_muted = mute;
+}
+
+/* Main loop, on leaving CW: stop the ISR; DAC back to full for SSB / digital / TUNE */
+void CW_Key_Delay_Stop(void)
+{
+    key_delay_active = FALSE;
+    key_delay_busy = FALSE;
+    rf_on = FALSE;
+    dac_req = DAC_REQ_NONE;
+    if(dac_muted) cw_dac_mute(FALSE);
 }
 
 uint8 keyer_write(uint8_t buffer)
@@ -302,9 +360,25 @@ void Manage_Paddles_Port(void)
     uint8_t control_status = 0;
     uint8 i;
     static uint32 previous_CW_LO_Freq = 0;
-    
+    uint8 req;
+
+    paddles_section = CyEnterCriticalSection();     //Take the ISR's DAC mute request
+    req = dac_req;
+    dac_req = DAC_REQ_NONE;
+    CyExitCriticalSection(paddles_section);
+    if(req == DAC_REQ_UNMUTE){
+        cw_dac_mute(FALSE);
+    }else if(req == DAC_REQ_MUTE){
+        cw_dac_mute(TRUE);
+    }
+
     switch(state){  //When in CW mode Manage_Paddles_Port manages the LO freq.
         case 0:     //Idle state
+            if(E_QSK == FALSE){
+                if(!dac_muted) cw_dac_mute(TRUE);   //Non-QSK: DAC muted in CW so each element ramps up from mute
+            }else{
+                if(dac_muted) cw_dac_mute(FALSE);   //QSK: no shaping, DAC at full
+            }
             if(previous_CW_LO_Freq != CW_LO_Freq){
                 SI5351_status = si5351aSetFrequency(CW_LO_Freq);
                 if(SI5351_status == 0){
@@ -328,11 +402,16 @@ void Manage_Paddles_Port(void)
             if(!E_key_0 || !E_key_1){ //Key is DOWN
                 E_key_down = TRUE;
                 if(E_QSK == FALSE){ //Non-QSK: AMP on and start recording the key now, before the LO change, so the first element is not clipped
+                    if(!dac_muted) cw_dac_mute(TRUE); //Normally already muted in idle
                     for(i = 0; i < KEY_DELAY_BUF_SIZE; i++) key_delay_buf[i] = 0; //ISR not active yet so no race
                     key_delay_ms = E_key_delay_ms;
+                    if(key_delay_ms < KEY_DELAY_MIN_MS) key_delay_ms = KEY_DELAY_MIN_MS; //ISR needs key_delay_ms > DAC_RISE_LEAD_MS
                     key_up_ms = 0;          //Key is down now
                     key_delay_busy = TRUE;
                     key_delay_lo_ready = FALSE;
+                    rf_on = FALSE;
+                    rf_off_ms = 255;
+                    dac_req = DAC_REQ_NONE;
                     key_delay_active = TRUE;
                     Control_Write(Control_Read() & ~CONTROL_AMP);   //Turn ON the AMP port - Negative logic level
                 }

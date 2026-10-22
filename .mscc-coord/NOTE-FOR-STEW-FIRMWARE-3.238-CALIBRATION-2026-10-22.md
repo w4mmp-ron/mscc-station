@@ -19,7 +19,7 @@ Read = get, write = set, exact length or the request stalls. Little endian.
 | 3 power | uint16 (2 bytes) | |
 | 4 status | read only: [write status, loaded at boot] | |
 | 5 valid | read only: 3 x uint16 masks [RX, TX, power], bit N = band N | 0 is a real value |
-| 6 clear | write, no data: all values and masks to 0 | test tool only |
+| 6 clear | removed in 3.239 (stalls) | was a no-data request like the old save |
 
 Bands in MSCC order: 0 = 10 m ... 9 = 160 m, 10 = 630 m, 11 = 2200 m.
 

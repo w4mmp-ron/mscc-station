@@ -7,6 +7,8 @@
 // interface change ~1-3 s after a save (9 rows + a no-data control request).
 // Same opcode / types / sizes as the Black Pill (CMD_CALIBRATION 0xC8, see basic-plus.h),
 // except type 4 write (save) is gone: it stalls here.
+// 3.239: clear (type 6) removed: a no-data control request like the 3.236/3.237 save, the
+// likely hang cause. Type 6 now stalls.
 // The radio only stores the values; the server applies them.
 //
 // The record lives in RAM (E_cal). usbvend01.c (USB ISR) reads and writes it directly:
