@@ -792,14 +792,30 @@ void *Manage_MKII_PTT_Switch(void *my_parm) {
     int r = 0;
     int tx_mode = FALSE;
     static int previous_tx_mode = 0;
-    int ptt = FALSE;
-    int sleep_time = 1;
+    uint8_t ptt = FALSE;   /* the radio answers 1 byte */
+    int read_failing = FALSE;
+    int sleep_time = 20;   /* ms (delayMicroseconds = Sleep, ms); was 1 (Ron, 2026-10-24) */
 
     while (G_all_threads_run) {
         if (G_PTT_Switch_Allow == TRUE) {
             r = usbControlMsgIN(CMD_GET_PTT, 0, 0, (char*) &ptt, sizeof (ptt));
-            if (r) {
-                tx_mode = ptt;
+            /* Only a good 1-byte read counts. r < 0 (USB error / timeout) used to pass
+             * "if (r)" and junk in the buffer was taken as a PTT change (2026-10-24). */
+            if (r != 1) {
+                if (!read_failing) {
+                    read_failing = TRUE;
+                    print_time(0);
+                    fprintf(G_fp_logfile, "[%d] Manage_MKII_PTT_Switch. CMD_GET_PTT read failed, r: %d (ignored)\n",
+                            line_number++, r);
+                }
+            } else {
+                if (read_failing) {
+                    read_failing = FALSE;
+                    print_time(0);
+                    fprintf(G_fp_logfile, "[%d] Manage_MKII_PTT_Switch. CMD_GET_PTT read OK again\n",
+                            line_number++);
+                }
+                tx_mode = ptt ? TRUE : FALSE;
                 if (previous_tx_mode != tx_mode) {
                     Set_PTT(tx_mode, TRUE);
                     SDRcore_recv_send_param(CMD_SET_TX_ON, tx_mode);
@@ -825,7 +841,7 @@ void *Manage_MKII_PTT_Switch(void *my_parm) {
 void *Get_Key_Status(void *my_parm) {
     Set_Thread_Name("key-status");
     int r = 0;
-    int key = FALSE;
+    uint8_t key = FALSE;   /* the radio answers 1 byte */
     int sleep_time = 1;
     static int previous_key = FALSE;
 
@@ -835,7 +851,7 @@ void *Get_Key_Status(void *my_parm) {
     while (G_all_threads_run) {
         if (G_TX_Inhibit == FALSE) {
             r = usbControlMsgIN(CMD_GET_KEY_DOWN, 0, 0, (char*)&key, sizeof(key));
-            if (r) {
+            if (r == 1) {   /* was "if (r)": r < 0 (error) passed too */
                 if (previous_key != key) {
                     previous_key = key;
                     //Spectrum_Waterfall_send_param(CMD_SET_TX_ON, key);
@@ -1259,7 +1275,11 @@ int static Start_Threads() {
         fprintf(G_fp_logfile, "[%d] main. Start Freq_Dequeue_thread thread Started, return code from pthread_create() is %d\n",
                 line_number++, G_Freq_Queue_rc);
     }
-    Start_Key_status_thread();
+    /* Key-down poll thread NOT started (Ron, 2026-10-24): it only logged the key
+     * (CMD_GET_KEY_DOWN every ~1 ms, result unused) and loaded the radio's USB
+     * control endpoint. The radio keys CW itself. */
+    /* Start_Key_status_thread(); */
+    (void)Start_Key_status_thread;
     Sleep(1000);
     /* MKII rear PTT sense (CMD_GET_PTT). Legacy: PROFICIO-MKII=0 in mscc.ini */
     if (G_proficio_mkii) {
