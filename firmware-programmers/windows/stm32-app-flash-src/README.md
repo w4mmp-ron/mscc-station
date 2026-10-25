@@ -1,4 +1,4 @@
-# stm32-dfu-downloader — Proficio application DFU flasher (Windows, Black Pill)
+# stm32-app-flash-src — Proficio application DFU flasher (Windows, Black Pill)
 
 WinForms UI that runs **`dfu-util.exe` from this app’s folder**.
 
