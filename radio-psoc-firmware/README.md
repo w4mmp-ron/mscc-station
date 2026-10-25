@@ -27,8 +27,8 @@ Application `.cyacd` for USB HID upload is produced under each source tree’s `
 
 | Host | CLI + GUI |
 |------|-----------|
-| Raspberry Pi | `rpi/psoc-usb-bootload-linux/` |
-| Ubuntu x86_64 | `linux/psoc-usb-bootload-linux/` |
+| Raspberry Pi | `firmware-programmers/rpi/psoc-usb-bootload/` |
+| Ubuntu x86_64 | `firmware-programmers/debian/psoc-usb-bootload/` |
 
 Field flash notes: each Proficio tree still has `STEW-FIRMWARE-UPDATE.md`.
 

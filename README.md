@@ -91,7 +91,7 @@ Pi work lives under **`rpi/`**. Ubuntu laptop work lives under **`linux/`**. Tre
 | `rpi/ms-sdr-linux/` / `linux/ms-sdr-linux/` | Command hub (Pi / Ubuntu) |
 | `rpi/SDRcore-recv-linux/` / `linux/SDRcore-recv-linux/` | RX DSP |
 | `rpi/SDRcore-trans-linux/` / `linux/SDRcore-trans-linux/` | TX DSP |
-| `rpi/psoc-usb-bootload-linux/` / `linux/psoc-usb-bootload-linux/` | Firmware **CLI** (`make` → `bootloader`) + **GUI** (`bootloader-gui.py`) — not the same file |
+| `firmware-programmers/rpi/psoc-usb-bootload/` / `firmware-programmers/debian/psoc-usb-bootload/` | Firmware **CLI** (`make` → `bootloader`) + **GUI** (`bootloader-gui.py`) — not the same file |
 | `rpi/mscc-init-gui/` | Init wizard (`mscc-init`, Architecture: all `.deb`) |
 | `factory/` | Factory calibration tables per radio line (shipped in the `mscc` debs at `/usr/share/mscc/factory/` and next to the Windows servers) |
 
@@ -121,8 +121,8 @@ See `docs/manuals/` (Remote Operation guide) and `mscc-remote-audio/STEW-REMOTE-
 | `radio-psoc-firmware/Proficio-Legacy/` | Legacy Proficio |
 | `radio-psoc-firmware/Proficio-bootloader/` | PSoC Creator bootloader project |
 | `radio-psoc-firmware/release/<RadioName>/` | Shipping `.cyacd` / `.hex` (packaged as the optional `mscc-firmware` deb → `/usr/share/mscc/firmware/`) |
-| `linux/psoc-usb-bootload-linux/` | Ubuntu firmware **upload** tools (CLI + GUI) |
-| `rpi/psoc-usb-bootload-linux/` | Pi firmware upload tools (guide for Ubuntu) |
+| `firmware-programmers/debian/psoc-usb-bootload/` | Ubuntu firmware **upload** tools (CLI + GUI) |
+| `firmware-programmers/rpi/psoc-usb-bootload/` | Pi firmware upload tools (guide for Ubuntu) |
 
 ### PIC keyer
 

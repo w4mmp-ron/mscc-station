@@ -109,14 +109,17 @@ cmd_show() {
 
 cmd_build() {
   mkdir -p "$BINDIR/logs"
-  local t
+  local t d
   for t in SDRcore-recv-linux SDRcore-trans-linux ms-sdr-linux mscc-init-linux psoc-usb-bootload-linux; do
     log "build $t"
-    [[ "$CLEAN" -eq 1 ]] && make -C "$LINUX/$t" clean
+    d="$LINUX/$t"
+    # Ubuntu PSoC flasher moved to firmware-programmers/ (2026-10-25)
+    if [[ "$t" == psoc-usb-bootload-linux ]]; then d="$ROOT/firmware-programmers/debian/psoc-usb-bootload"; fi
+    [[ "$CLEAN" -eq 1 ]] && make -C "$d" clean
     case "$t" in
       psoc-usb-bootload-linux)
-        make -C "$LINUX/$t"
-        install -m 755 "$LINUX/$t/bootloader" "$BINDIR/bootloader"
+        make -C "$d"
+        install -m 755 "$d/bootloader" "$BINDIR/bootloader"
         ;;
       ms-sdr-linux)
         make -C "$LINUX/$t" BINDIR="$BINDIR"

@@ -157,14 +157,17 @@ cmd_build() {
     PORTAUDIO_RPATH=/usr/local/lib
     LDFLAGS="-L$AARCH_LIB"
   )
-  local t
+  local t d
   for t in SDRcore-recv-linux SDRcore-trans-linux ms-sdr-linux mscc-init-linux psoc-usb-bootload-linux; do
     log "build $t (aarch64)"
-    [[ "$CLEAN" -eq 1 ]] && make -C "$RPI/$t" clean
+    d="$RPI/$t"
+    # Pi PSoC flasher moved to firmware-programmers/ (2026-10-25)
+    if [[ "$t" == psoc-usb-bootload-linux ]]; then d="$ROOT/firmware-programmers/rpi/psoc-usb-bootload"; fi
+    [[ "$CLEAN" -eq 1 ]] && make -C "$d" clean
     case "$t" in
       psoc-usb-bootload-linux)
-        make -C "$RPI/$t" CC="$CC_X" LDFLAGS="-L$AARCH_LIB"
-        install -m 755 "$RPI/$t/bootloader" "$BINDIR/bootloader"
+        make -C "$d" CC="$CC_X" LDFLAGS="-L$AARCH_LIB"
+        install -m 755 "$d/bootloader" "$BINDIR/bootloader"
         ;;
       ms-sdr-linux)
         make -C "$RPI/$t" CC="$CC_X" BINDIR="$BINDIR" LDFLAGS="-L$AARCH_LIB"

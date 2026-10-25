@@ -1,6 +1,6 @@
 # psoc-usb-bootload-linux (Ubuntu x86_64 copy)
 
-Guide original: [`../../rpi/psoc-usb-bootload-linux/`](../../rpi/psoc-usb-bootload-linux/). Edit **this** tree for Ubuntu; do not change `rpi/` for laptop fixes.
+Guide original: [`../../rpi/psoc-usb-bootload/`](../../rpi/psoc-usb-bootload/). Edit **this** tree for Ubuntu; do not change the Pi copy for laptop fixes.
 
 `bootloader-gui.py` is the **GUI**. `bootloader` is the **C CLI** (`make`); it is gitignored and CPU-specific (x86-64 here, aarch64 on the Pi).
 
@@ -18,7 +18,7 @@ Same job as Windows `bootloader.exe`, simplified: **BOOT jumper + one command**.
 
 ```bash
 sudo apt-get install -y build-essential libhidapi-dev libusb-1.0-0-dev
-cd linux/psoc-usb-bootload-linux   # from the mscc-station repo root
+cd firmware-programmers/debian/psoc-usb-bootload   # from the mscc-station repo root
 make clean && make
 ```
 

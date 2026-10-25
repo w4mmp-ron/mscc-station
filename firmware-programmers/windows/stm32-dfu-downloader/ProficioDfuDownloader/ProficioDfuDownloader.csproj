@@ -1,0 +1,33 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>WinExe</OutputType>
+    <TargetFramework>net9.0-windows</TargetFramework>
+    <Nullable>enable</Nullable>
+    <UseWindowsForms>true</UseWindowsForms>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <ApplicationTitle>Proficio DFU Downloader</ApplicationTitle>
+    <RootNamespace>ProficioDfuDownloader</RootNamespace>
+    <AssemblyName>ProficioDfuDownloader</AssemblyName>
+    <AppendTargetFrameworkToOutputPath>false</AppendTargetFrameworkToOutputPath>
+    <AppendRuntimeIdentifierToOutputPath>false</AppendRuntimeIdentifierToOutputPath>
+    <!-- dotnet publish puts the ready-to-run exe in ..\..\stm32-flash\ (firmware-programmers\windows) -->
+    <PublishDir>$(MSBuildProjectDirectory)\..\..\stm32-flash\</PublishDir>
+  </PropertyGroup>
+
+  <!-- No .pdb in stm32-flash\ -->
+  <PropertyGroup Condition="'$(Configuration)' == 'Release'">
+    <DebugType>none</DebugType>
+  </PropertyGroup>
+
+  <!-- dfu-util.exe + libusb live beside the app -->
+  <ItemGroup>
+    <None Include="..\tools\dfu-util.exe" Link="dfu-util.exe">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Include="..\tools\libusb-1.0.dll" Link="libusb-1.0.dll">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+  </ItemGroup>
+
+</Project>
