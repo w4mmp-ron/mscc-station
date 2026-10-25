@@ -1,5 +1,5 @@
 Package: mscc-firmware
-Version: 1.0.1
+Version: 1.0.2
 Section: hamradio
 Priority: optional
 Architecture: all
@@ -19,5 +19,5 @@ Description: Multus/Proficio application firmware for USB bootloader upload
  Ultimus-MKII-PTT.
  .
  USB Bootloader Load File defaults to this folder when installed.
- Install with: sudo apt install ./mscc-firmware_1.0.1_all.deb
+ Install with: sudo apt install ./mscc-firmware_1.0.2_all.deb
  (or ./mscc-firmware_*_all.deb).

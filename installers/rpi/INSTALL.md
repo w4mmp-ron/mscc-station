@@ -13,7 +13,7 @@ Need: Pi **4 or 5**, 64-bit Raspberry Pi OS (desktop recommended).
 | `mscc-init` | 1.0.18 | recommended: MSCC Init (GUI + text wizard) |
 | `mscc-ui` | 0.6.71 | optional: Avalonia UI on the Pi (not needed with the Windows client) |
 | `mscc-volume` | 1.0.1 | optional: MSCC Volume, levels of VirtualA / VirtualB |
-| `mscc-firmware` | 1.0.0 | optional: PSoC radio firmware files for Firmware Upload |
+| `mscc-firmware` | 1.0.2 | optional: PSoC radio firmware files for Firmware Upload |
 
 ```bash
 cd /path/to/this/folder

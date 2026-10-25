@@ -16,7 +16,7 @@
 | Setup wizard (MSCC Init) | `mscc-init_1.0.18_all.deb` | **3rd** (recommended) |
 | Avalonia UI (optional) | `mscc-ui_0.6.71_arm64.deb` | **4th** — see `installers/rpi/` |
 | MSCC Volume (optional) | `mscc-volume_1.0.1_all.deb` | any time after mscc |
-| Radio firmware files (optional) | `mscc-firmware_1.0.0_all.deb` | any time — PSoC `.cyacd` files for **Firmware Upload** |
+| Radio firmware files (optional) | `mscc-firmware_1.0.2_all.deb` | any time — PSoC `.cyacd` files for **Firmware Upload** |
 
 ---
 
