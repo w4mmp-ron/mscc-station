@@ -12,9 +12,11 @@
 | Package | Example filename | Order |
 |---------|------------------|--------|
 | PortAudio | `mscc-portaudio_19.8.3_arm64.deb` | **1st** |
-| Main stack | `mscc_1.0.43_arm64.deb` | **2nd** |
-| Setup wizard | `mscc-init-gui_1.0.12_all.deb` | **3rd** (recommended) |
-| Avalonia UI (optional) | `mscc-ui_0.6.37_arm64.deb` | **4th** — see `installers/rpi/` |
+| Main stack | `mscc_1.0.71_arm64.deb` | **2nd** |
+| Setup wizard (MSCC Init) | `mscc-init_1.0.18_all.deb` | **3rd** (recommended) |
+| Avalonia UI (optional) | `mscc-ui_0.6.71_arm64.deb` | **4th** — see `installers/rpi/` |
+| MSCC Volume (optional) | `mscc-volume_1.0.1_all.deb` | any time after mscc |
+| Radio firmware files (optional) | `mscc-firmware_1.0.0_all.deb` | any time — PSoC `.cyacd` files for **Firmware Upload** |
 
 ---
 
@@ -58,12 +60,11 @@ This is a **supported configuration choice**, not a defective install: Pi 4 is f
 ## What you need
 
 1. Pi 4/5 with Raspberry Pi OS **desktop** (menu + Terminal).  
-2. The three `.deb` files on the Pi (USB stick, Downloads folder, etc.).  
-3. Optional helper: **`install-mscc.sh`** (same folder as the main `.deb`).  
-4. Network on the Pi the first time (so `apt` can pull libraries).  
-5. Multus / Proficio powered on when you configure (recommended).  
-6. PC and Pi on the same network (or as your site requires) for the MSCC client.  
-7. **Operator audio plan** (see table above) — especially on **Pi 4**, plan an **I²S HAT** or digi path rather than a USB headset next to the Proficio.
+2. The `.deb` files from `installers/rpi/` on the Pi (USB stick, Downloads folder, etc.).  
+3. Network on the Pi the first time (so `apt` can pull libraries).  
+4. Multus / Proficio powered on when you configure (recommended).  
+5. PC and Pi on the same network (or as your site requires) for the MSCC client.  
+6. **Operator audio plan** (see table above) — especially on **Pi 4**, plan an **I²S HAT** or digi path rather than a USB headset next to the Proficio.
 
 ---
 
@@ -127,18 +128,9 @@ Do **not** rely on old `$HOME/portaudio-install` + `.bashrc` exports for a norma
 
 ### 2) Install the main MSCC package
 
-**Helper script (if you have it):**
-
-```bash
-chmod +x install-mscc.sh
-./install-mscc.sh
-```
-
-**Or install the `.deb` directly:**
-
 ```bash
 sudo apt update
-sudo apt install -y ./mscc_1.0.32_arm64.deb
+sudo apt install -y ./mscc_1.0.71_arm64.deb
 ```
 
 (Use the real filename if the version differs.)
@@ -155,7 +147,8 @@ This package installs:
 | Piece | What it is |
 |-------|------------|
 | Servers | `ms-sdr`, `sdrcore-recv`, `sdrcore-trans` → `$HOME/mscc/` |
-| Firmware upload | `psoc-bootloader` (CLI) + `psoc-bootloader.gui` (Windows-like GUI); menu **MSCC → Firmware Upload** |
+| Firmware upload (PSoC radios) | `psoc-bootloader` (CLI) + `psoc-bootloader.gui` (Windows-like GUI); menu **MSCC → Firmware Upload** |
+| Firmware upload (Black Pill) | `stm32-app-flash <file.bin>` (USB, app; `mscc stop` first) and `stm32-bootloader-flash <file.bin>` (ST-Link); since mscc 1.0.69, replaces the old `proficio-flash-tools` package |
 | Start/stop | `mscc` command and desktop **MSCC Start** / **MSCC Stop** |
 | Digi audio | `mscc-virtual-audio` creates **VirtualA** / **VirtualB** |
 | Config seed | `$HOME/.local/mscc/` **only if empty** (never overwrites your files later) |
@@ -166,10 +159,11 @@ This package installs:
 ### 3) Install the GUI setup wizard (recommended)
 
 ```bash
-sudo apt install -y ./mscc-init-gui_1.0.11_all.deb
+sudo apt install -y ./mscc-init_1.0.18_all.deb
 ```
 
-(Use the real filename if the version differs.)
+(Use the real filename if the version differs. The package was called `mscc-init-gui` before; the
+command is still `mscc-init-gui`.)
 
 Adds menu **MSCC Init**. Needs desktop packages such as `python3-tk` and `python3-pyaudio` (usually installed automatically).
 
@@ -332,14 +326,13 @@ ldd $HOME/mscc/sdrcore-recv | grep portaudio
 
 **Logs** (if something fails):
 
-- Often: `~/sdrcore-recv.log`, `~/sdrcore-trans.log`, `~/ms-sdr.log`  
-- Or under: `$HOME/.local/mscc/`  
+- Servers: `$HOME/.local/mscc/sdrcore-recv.log`, `sdrcore-trans.log`, `ms-sdr.log`  
 - Start script text: `$HOME/mscc/logs/`  
 
 Useful digi / audio lines:
 
 ```bash
-grep -E "VirtualA|DUAL STREAM|ALSA card|portaudio|FAILED" ~/sdrcore-recv.log | tail -30
+grep -E "VirtualA|DUAL STREAM|ALSA card|portaudio|FAILED" ~/.local/mscc/sdrcore-recv.log | tail -30
 ```
 
 ---
@@ -362,7 +355,7 @@ Re-run **MSCC Init** only if you change phones, HAT, or CAT wiring.
 |---------|-------------|
 | `mscc: command not found` | New Desktop Terminal, or log out/in |
 | No menu entries | Confirm packages installed; look under **MSCC**; log out/in |
-| `mscc-init-gui` missing | Install `mscc-init-gui_*.deb`; need desktop + `python3-tk` / `python3-pyaudio` |
+| `mscc-init-gui` missing | Install `mscc-init_*.deb`; need desktop + `python3-tk` / `python3-pyaudio` |
 | No `/dev/tnt0` | Reboot once; install headers: `sudo apt install -y linux-headers-$(uname -r)` |
 | No VirtualA/B | `mscc-virtual-audio` or `systemctl --user enable --now mscc-virtual-audio` |
 | Digi devices not listed in init / WSJT | Install **mscc-portaudio** first; check `ldd` → `/usr/local` |
@@ -399,7 +392,8 @@ You do not start them individually for normal use — use **MSCC Start** / `mscc
 Desktop Terminal (order matters):
   1. sudo apt install -y ./mscc-portaudio_*_arm64.deb
   2. sudo apt install -y ./mscc_*_arm64.deb
-  3. sudo apt install -y ./mscc-init-gui_*_all.deb
+  3. sudo apt install -y ./mscc-init_*_all.deb
+  Optional: ./mscc-ui_*_arm64.deb, ./mscc-volume_*_all.deb, ./mscc-firmware_*_all.deb
   (log out/in if first time)
   Optional checks:
      ldconfig -p | grep portaudio
