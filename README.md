@@ -91,7 +91,7 @@ Pi work lives under **`rpi/`**. Ubuntu laptop work lives under **`linux/`**. Tre
 | `rpi/ms-sdr-linux/` / `linux/ms-sdr-linux/` | Command hub (Pi / Ubuntu) |
 | `rpi/SDRcore-recv-linux/` / `linux/SDRcore-recv-linux/` | RX DSP |
 | `rpi/SDRcore-trans-linux/` / `linux/SDRcore-trans-linux/` | TX DSP |
-| `firmware-programmers/rpi/psoc-usb-bootload/` / `firmware-programmers/debian/psoc-usb-bootload/` | Firmware **CLI** (`make` → `bootloader`) + **GUI** (`bootloader-gui.py`) — not the same file |
+| `firmware-programmers/rpi/psoc-usb-bootload/` / `firmware-programmers/debian/psoc-usb-bootload/` | Firmware **CLI** (`make` → `psoc-bootloader`) + **GUI** (`psoc-bootloader.gui`) — not the same file |
 | `rpi/mscc-init-gui/` | Init wizard (`mscc-init`, Architecture: all `.deb`) |
 | `factory/` | Factory calibration tables per radio line (shipped in the `mscc` debs at `/usr/share/mscc/factory/` and next to the Windows servers) |
 

@@ -29,7 +29,7 @@ Order: **PortAudio → servers → init-gui → UI**.
 
 Everyday: `mscc start` / `mscc status` / `mscc stop`.
 
-Firmware: BOOT jumper → Morse LOADER → menu **Firmware Upload** (or `bootloader file.cyacd`). With `mscc-firmware` installed, **Load File** opens `/usr/share/mscc/firmware/<radio>/`.
+Firmware: BOOT jumper → Morse LOADER → menu **Firmware Upload** (or `psoc-bootloader file.cyacd`). With `mscc-firmware` installed, **Load File** opens `/usr/share/mscc/firmware/<radio>/`.
 
 Calibration: factory tables ship in `/usr/share/mscc/factory/`. After calibrating, press **Save settings** in MSCC UI to keep the calibration for that radio (stored under `~/.local/mscc/cal/<line>/`).
 

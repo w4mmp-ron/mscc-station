@@ -54,10 +54,10 @@ install -m 755 "$HELPERS/mscc.sh" "$BIN_SRC/mscc.sh"
 rm -rf "$PA_STAGE"
 
 need_dir "$BIN_SRC"
-for b in ms-sdr sdrcore-recv sdrcore-trans mscc-init bootloader mscc.sh; do
+for b in ms-sdr sdrcore-recv sdrcore-trans mscc-init psoc-bootloader mscc.sh; do
   need_file "$BIN_SRC/$b"
 done
-need_file "$HELPERS/bootloader-gui"
+need_file "$HELPERS/psoc-bootloader.gui"
 need_file "$HELPERS/mscc-desktop-ctl.sh"
 need_file "$HELPERS/mscc-status-report"
 need_file "$HELPERS/mscc-virtual-audio.sh"
@@ -86,14 +86,14 @@ mkdir -p "$PKG/usr/share/mscc/binaries" \
          "$PKG/usr/share/mscc/udev" \
          "$PKG/usr/share/mscc/bin"
 
-for b in ms-sdr sdrcore-recv sdrcore-trans mscc-init bootloader mscc.sh; do
+for b in ms-sdr sdrcore-recv sdrcore-trans mscc-init psoc-bootloader mscc.sh; do
   cp -a "$BIN_SRC/$b" "$PKG/usr/share/mscc/binaries/$b"
 done
 chmod 755 "$PKG/usr/share/mscc/binaries/"*
 
 # Refuse AArch64 / wrong CPU
 if command -v readelf >/dev/null 2>&1; then
-  for b in ms-sdr sdrcore-recv sdrcore-trans mscc-init bootloader; do
+  for b in ms-sdr sdrcore-recv sdrcore-trans mscc-init psoc-bootloader; do
     f="$PKG/usr/share/mscc/binaries/$b"
     if ! readelf -h "$f" 2>/dev/null | grep -qi 'X86-64\|x86-64'; then
       echo "ERROR: $b is not x86-64 — refuse to build amd64 .deb" >&2
@@ -116,7 +116,7 @@ if command -v readelf >/dev/null 2>&1; then
   fi
 fi
 
-cp -a "$HELPERS/bootloader-gui" "$PKG/usr/share/mscc/bin/"
+cp -a "$HELPERS/psoc-bootloader.gui" "$PKG/usr/share/mscc/bin/"
 cp -a "$HELPERS/mscc-desktop-ctl.sh" "$PKG/usr/share/mscc/bin/"
 cp -a "$HELPERS/mscc-status-report" "$PKG/usr/share/mscc/bin/"
 cp -a "$HELPERS/mscc-virtual-audio.sh" "$PKG/usr/share/mscc/bin/"

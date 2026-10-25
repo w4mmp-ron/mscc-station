@@ -22,7 +22,7 @@ Flashing a **`.cyacd` never replaces the bootloader.** Customers and field updat
 | Item | Where |
 |------|--------|
 | App `.cyacd` | `Release-Proficio-*/Release/` (after Creator build + `copy-release`) |
-| Linux / Pi upload | **`bootloader`** (CLI) or **`bootloader-gui`** (Windows-like GUI); MSCC menu **Firmware Upload** |
+| Linux / Pi upload | **`psoc-bootloader`** (CLI) or **`psoc-bootloader.gui`** (Windows-like GUI); MSCC menu **Firmware Upload** |
 | Windows USB host | `bootloader.exe` + `Bootloader_Utils.dll` + `CyUSB.dll` (e.g. Migration `utilities\`) |
 | On-chip LOADER sources | `bootloader/` — leave alone unless MiniProg3 factory work |
 
@@ -49,8 +49,8 @@ Flashing a **`.cyacd` never replaces the bootloader.** Customers and field updat
 
 **Pi** (ms-sdr **stopped**):
 
-- GUI: `bootloader-gui` (or menu **MSCC → Firmware Upload**) — Load File → Program  
-- CLI: `bootloader /path/to/Proficio-MKII-PTT-YYYYMMDD.cyacd`
+- GUI: `psoc-bootloader.gui` (or menu **MSCC → Firmware Upload**) — Load File → Program  
+- CLI: `psoc-bootloader /path/to/Proficio-MKII-PTT-YYYYMMDD.cyacd`
 
 **Windows:** run `bootloader.exe`, select the `.cyacd`, program.
 

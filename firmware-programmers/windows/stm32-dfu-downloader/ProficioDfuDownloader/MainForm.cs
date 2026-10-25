@@ -31,7 +31,7 @@ public sealed class MainForm : Form
 
     public MainForm()
     {
-        Text = "Proficio DFU Downloader";
+        Text = "STM32 App Flash (Black Pill, USB DFU)";
         Width = 720;
         Height = 520;
         MinimumSize = new Size(560, 400);

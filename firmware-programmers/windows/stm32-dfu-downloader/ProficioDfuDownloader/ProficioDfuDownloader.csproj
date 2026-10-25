@@ -6,9 +6,10 @@
     <Nullable>enable</Nullable>
     <UseWindowsForms>true</UseWindowsForms>
     <ImplicitUsings>enable</ImplicitUsings>
-    <ApplicationTitle>Proficio DFU Downloader</ApplicationTitle>
+    <ApplicationTitle>STM32 App Flash</ApplicationTitle>
     <RootNamespace>ProficioDfuDownloader</RootNamespace>
-    <AssemblyName>ProficioDfuDownloader</AssemblyName>
+    <!-- Published as stm32-app-flash.exe (renamed from ProficioDfuDownloader.exe 2026-10-25) -->
+    <AssemblyName>stm32-app-flash</AssemblyName>
     <AppendTargetFrameworkToOutputPath>false</AppendTargetFrameworkToOutputPath>
     <AppendRuntimeIdentifierToOutputPath>false</AppendRuntimeIdentifierToOutputPath>
     <!-- dotnet publish puts the ready-to-run exe in ..\..\stm32-flash\ (firmware-programmers\windows) -->

@@ -167,7 +167,7 @@ cmd_build() {
     case "$t" in
       psoc-usb-bootload-linux)
         make -C "$d" CC="$CC_X" LDFLAGS="-L$AARCH_LIB"
-        install -m 755 "$d/bootloader" "$BINDIR/bootloader"
+        install -m 755 "$d/psoc-bootloader" "$BINDIR/psoc-bootloader"
         ;;
       ms-sdr-linux)
         make -C "$RPI/$t" CC="$CC_X" BINDIR="$BINDIR" LDFLAGS="-L$AARCH_LIB"
@@ -179,7 +179,7 @@ cmd_build() {
   done
   log "AArch64 binaries in $BINDIR"
   local b
-  for b in ms-sdr sdrcore-recv sdrcore-trans mscc-init bootloader; do
+  for b in ms-sdr sdrcore-recv sdrcore-trans mscc-init psoc-bootloader; do
     file "$BINDIR/$b"
     readelf -h "$BINDIR/$b" | grep -E 'Machine:' || true
   done
@@ -198,7 +198,7 @@ cmd_stage() {
   local dest="$RPI/mscc-binaries"
   mkdir -p "$dest"
   local b
-  for b in ms-sdr sdrcore-recv sdrcore-trans mscc-init bootloader; do
+  for b in ms-sdr sdrcore-recv sdrcore-trans mscc-init psoc-bootloader; do
     [[ -x "$BINDIR/$b" ]] || { echo "ERROR: missing $BINDIR/$b — run build first" >&2; exit 1; }
     assert_aarch64 "$BINDIR/$b"
     cp -a "$BINDIR/$b" "$dest/$b"

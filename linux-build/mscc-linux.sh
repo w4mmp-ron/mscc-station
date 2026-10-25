@@ -34,7 +34,7 @@ Ubuntu x86_64 only. Same C sources as the Pi; extra flags are for this laptop.
 Commands:
   show      print audio/icon parameters
   build     compile into $HOME/mscc (x86_64)
-  helpers   copy mscc.sh, status-report, virtual-audio, desktop-ctl, bootloader-gui
+  helpers   copy mscc.sh, status-report, virtual-audio, desktop-ctl, psoc-bootloader.gui
   icons     user desktop Start / Stop / Status / Firmware
   all       build + helpers + icons
   package   build mscc_*_amd64.deb (also copies into installers/linux/)
@@ -119,7 +119,7 @@ cmd_build() {
     case "$t" in
       psoc-usb-bootload-linux)
         make -C "$d"
-        install -m 755 "$d/bootloader" "$BINDIR/bootloader"
+        install -m 755 "$d/psoc-bootloader" "$BINDIR/psoc-bootloader"
         ;;
       ms-sdr-linux)
         make -C "$LINUX/$t" BINDIR="$BINDIR"
@@ -141,7 +141,7 @@ cmd_helpers() {
   install -m 755 "$src/mscc-status-report" "$BINDIR/mscc-status-report"
   install -m 755 "$src/mscc-virtual-audio.sh" "$BINDIR/mscc-virtual-audio.sh"
   install -m 755 "$src/mscc-desktop-ctl.sh" "$BINDIR/mscc-desktop-ctl.sh"
-  install -m 755 "$src/bootloader-gui" "$BINDIR/bootloader-gui"
+  install -m 755 "$src/psoc-bootloader.gui" "$BINDIR/psoc-bootloader.gui"
   cat > "$BINDIR/mscc-status-window.sh" << EOF
 #!/bin/bash
 set +e

@@ -1,20 +1,20 @@
 #!/bin/bash
 # Burn the Black Pill bootloader (or bootloader + app) at 0x08000000 via ST-Link.
-# Linux / Raspberry Pi version of flash-bootloader.ps1. Uses st-flash (stlink-tools).
+# Linux / Raspberry Pi version of stm32-bootloader-flash.ps1. Uses st-flash (stlink-tools).
 #
 # Usage:
-#   ./flash-bootloader.sh <file.bin>   # image at 0x08000000, e.g.
+#   ./stm32-bootloader-flash.sh <file.bin>   # image at 0x08000000, e.g.
 #       boot-app-firmware-async.bin (bootloader + app, new board) or bootload-PA8.bin
 # 1.0.5: no default image (the package carries none, Ron: users would flash an old one).
 #
 # Needs: sudo apt install stlink-tools
 # Run with sudo if the ST-Link isn't accessible to your user (no udev rule).
-# App-only updates over USB DFU (no ST-Link): ./flash-proficio.sh
+# App-only updates over USB DFU (no ST-Link): ./stm32-app-flash.sh
 
 set -euo pipefail
 BL_ADDR="0x08000000"
 [[ $# -eq 1 ]] || {
-  echo "Usage: sudo proficio-flash-bootloader <file.bin>"
+  echo "Usage: sudo stm32-bootloader-flash <file.bin>"
   echo "  Image for 0x08000000: boot-app-firmware-async.bin (bootloader + app) or bootload-PA8.bin."
   exit 1
 }

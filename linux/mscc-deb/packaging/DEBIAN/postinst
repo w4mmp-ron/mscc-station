@@ -120,7 +120,9 @@ configure)
   # Drop legacy ALSA digi helper if present in package tree or old installs
   rm -f "$MSCC_DIR/audio-setup" /usr/local/bin/mscc-audio-setup 2>/dev/null || true
   chmod 755 "$MSCC_DIR/ms-sdr" "$MSCC_DIR/sdrcore-recv" "$MSCC_DIR/sdrcore-trans" \
-            "$MSCC_DIR/mscc-init" "$MSCC_DIR/mscc.sh" "$MSCC_DIR/bootloader" 2>/dev/null || true
+            "$MSCC_DIR/mscc-init" "$MSCC_DIR/mscc.sh" "$MSCC_DIR/psoc-bootloader" 2>/dev/null || true
+  # PSoC burner renamed bootloader -> psoc-bootloader (2026-10-25): drop old names
+  rm -f "$MSCC_DIR/bootloader" /usr/local/bin/bootloader /usr/local/bin/bootloader-gui 2>/dev/null || true
   chown -R "$REAL_USER:$REAL_USER" "$MSCC_DIR"
 
   # --- config seed (never overwrite existing files) ---
@@ -141,20 +143,20 @@ configure)
   mkdir -p /usr/local/bin
   ln -sfn "$MSCC_DIR/mscc-init"    /usr/local/bin/mscc-init
   ln -sfn "$MSCC_DIR/mscc.sh"      /usr/local/bin/mscc
-  ln -sfn "$MSCC_DIR/bootloader"   /usr/local/bin/bootloader
-  ln -sfn /usr/share/mscc/bin/bootloader-gui /usr/local/bin/bootloader-gui
+  ln -sfn "$MSCC_DIR/psoc-bootloader" /usr/local/bin/psoc-bootloader
+  ln -sfn /usr/share/mscc/bin/psoc-bootloader.gui /usr/local/bin/psoc-bootloader.gui
   ln -sfn /usr/share/mscc/bin/mscc-virtual-audio.sh /usr/local/bin/mscc-virtual-audio
   ln -sfn /usr/share/mscc/bin/mscc-desktop-ctl.sh /usr/local/bin/mscc-desktop-ctl
   ln -sfn /usr/share/mscc/bin/mscc-status-window.sh /usr/local/bin/mscc-status-window
   chmod 755 /usr/share/mscc/bin/mscc-virtual-audio.sh 2>/dev/null || true
   chmod 755 /usr/share/mscc/bin/mscc-desktop-ctl.sh 2>/dev/null || true
   chmod 755 /usr/share/mscc/bin/mscc-status-report 2>/dev/null || true
-  chmod 755 /usr/share/mscc/bin/bootloader-gui 2>/dev/null || true
+  chmod 755 /usr/share/mscc/bin/psoc-bootloader.gui 2>/dev/null || true
   chmod 755 /usr/share/mscc/bin/mscc-status-window.sh 2>/dev/null || true
   log "links: /usr/local/bin/mscc-init → $MSCC_DIR/mscc-init"
   log "links: /usr/local/bin/mscc → $MSCC_DIR/mscc.sh"
-  log "links: /usr/local/bin/bootloader → $MSCC_DIR/bootloader"
-  log "links: /usr/local/bin/bootloader-gui → /usr/share/mscc/bin/bootloader-gui"
+  log "links: /usr/local/bin/psoc-bootloader → $MSCC_DIR/psoc-bootloader"
+  log "links: /usr/local/bin/psoc-bootloader.gui → /usr/share/mscc/bin/psoc-bootloader.gui"
   log "links: /usr/local/bin/mscc-virtual-audio → /usr/share/mscc/bin/mscc-virtual-audio.sh"
   log "links: /usr/local/bin/mscc-desktop-ctl → /usr/share/mscc/bin/mscc-desktop-ctl.sh"
   log "status report: /usr/share/mscc/bin/mscc-status-report (via mscc status)"
@@ -297,11 +299,11 @@ configure)
   echo "================================================================"
   echo "  Binaries:  $MSCC_DIR"
   echo "  Config:    $CFG_DIR"
-  echo "  Links:     mscc , mscc-init , bootloader , bootloader-gui , mscc-virtual-audio , mscc-desktop-ctl"
+  echo "  Links:     mscc , mscc-init , psoc-bootloader , psoc-bootloader.gui , mscc-virtual-audio , mscc-desktop-ctl"
   echo "  Desktop:   MSCC — Start / Stop / Status / Firmware Upload"
   echo "  Groups:    dialout, plugdev, audio (log out/in if just added)"
   echo "  Udev:      /etc/udev/rules.d/99-proficio.rules (app + HID LOADER)"
-  echo "  Firmware:  bootloader-gui   or:  bootloader file.cyacd"
+  echo "  Firmware:  psoc-bootloader.gui   or:  psoc-bootloader file.cyacd"
   echo "             (BOOT jumper on; stop ms-sdr first)"
   echo "  Digi:      VirtualA/B via mscc-virtual-audio (user systemd at login)"
   echo "  Audio:     mscc-portaudio at /usr/local (Pulse+ALSA)"

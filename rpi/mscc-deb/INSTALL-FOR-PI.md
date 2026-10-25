@@ -155,7 +155,7 @@ This package installs:
 | Piece | What it is |
 |-------|------------|
 | Servers | `ms-sdr`, `sdrcore-recv`, `sdrcore-trans` → `$HOME/mscc/` |
-| Firmware upload | `bootloader` (CLI) + `bootloader-gui` (Windows-like GUI); menu **MSCC → Firmware Upload** |
+| Firmware upload | `psoc-bootloader` (CLI) + `psoc-bootloader.gui` (Windows-like GUI); menu **MSCC → Firmware Upload** |
 | Start/stop | `mscc` command and desktop **MSCC Start** / **MSCC Stop** |
 | Digi audio | `mscc-virtual-audio` creates **VirtualA** / **VirtualB** |
 | Config seed | `$HOME/.local/mscc/` **only if empty** (never overwrites your files later) |

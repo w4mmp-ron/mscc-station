@@ -2,7 +2,7 @@
 
 Ubuntu laptop copy (edit there, not here): [`../../debian/psoc-usb-bootload/`](../../debian/psoc-usb-bootload/).
 
-**`bootloader-gui.py`** is the Python GUI. **`bootloader`** is the compiled C CLI (`make`; gitignored). They are not the same file. Pi binary: `../../../rpi/mscc-binaries/bootloader` (AArch64).
+**`psoc-bootloader.gui`** is the Python GUI. **`psoc-bootloader`** is the compiled C CLI (`make`; gitignored). They are not the same file. Pi binary: `../../../rpi/mscc-binaries/psoc-bootloader` (AArch64).
 
 Upload Proficio / Omnia **application** firmware (`.cyacd`) from a Pi over USB HID.
 
@@ -12,7 +12,7 @@ Same job as Windows `bootloader.exe`, simplified: **BOOT jumper + one command**.
 |--|--|
 | Device mode | BOOT jumper → Morse **LOADER** → HID **`04b4:b71d`** |
 | File | Creator **`.cyacd`** |
-| Binary | `./bootloader` |
+| Binary | `./psoc-bootloader` |
 
 ## Build (Pi)
 
@@ -31,15 +31,15 @@ If link fails: `make LIBS="-lhidapi-hidraw -lusb-1.0"`
 ```bash
 # 1. BOOT jumper on, power on (LOADER)
 # 2. Stop ms-sdr
-./bootloader /path/to/Proficio-MKII-PTT-YYYYMMDD.cyacd
+./psoc-bootloader /path/to/Proficio-MKII-PTT-YYYYMMDD.cyacd
 # 3. Power off, remove jumper, power on
 ```
 
 **GUI** (Windows USBBootloaderHost-style; needs `python3-tk`)
 
 ```bash
-./bootloader-gui.py
-# or after mscc install:  bootloader-gui
+./psoc-bootloader.gui
+# or after mscc install:  psoc-bootloader.gui
 ```
 
 Load File → `.cyacd`, wait for **Connected** (`04b4:b71d`), Program.

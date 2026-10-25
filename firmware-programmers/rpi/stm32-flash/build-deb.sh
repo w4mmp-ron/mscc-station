@@ -15,15 +15,15 @@ ROOT="$STAGE/$PKG"
 mkdir -p "$ROOT/DEBIAN" "$ROOT/$SHARE/rpi-tools" "$ROOT/usr/bin"
 
 # Scripts + README (strip CR: the Windows checkout may have CRLF)
-for f in flash-bootloader.sh flash-proficio.sh README.md; do
+for f in stm32-bootloader-flash.sh stm32-app-flash.sh README.md; do
   tr -d '\r' < "$HERE/$f" > "$ROOT/$SHARE/rpi-tools/$f"
 done
 chmod 755 "$ROOT/$SHARE/rpi-tools/"*.sh
 chmod 644 "$ROOT/$SHARE/rpi-tools/README.md"
 
 # Commands on the PATH
-ln -s "../share/$PKG/rpi-tools/flash-bootloader.sh" "$ROOT/usr/bin/proficio-flash-bootloader"
-ln -s "../share/$PKG/rpi-tools/flash-proficio.sh"   "$ROOT/usr/bin/proficio-flash-app"
+ln -s "../share/$PKG/rpi-tools/stm32-bootloader-flash.sh" "$ROOT/usr/bin/stm32-bootloader-flash"
+ln -s "../share/$PKG/rpi-tools/stm32-app-flash.sh"   "$ROOT/usr/bin/stm32-app-flash"
 
 SIZE_KB="$(du -sk "$ROOT" | cut -f1)"
 cat > "$ROOT/DEBIAN/control" <<EOF
@@ -36,9 +36,9 @@ Installed-Size: $SIZE_KB
 Section: electronics
 Priority: optional
 Description: Flash tools for the Proficio MKII Black Pill (STM32F411)
- proficio-flash-bootloader <file.bin>: ST-Link (st-flash) burn at 0x08000000
+ stm32-bootloader-flash <file.bin>: ST-Link (st-flash) burn at 0x08000000
  (boot-app-firmware-async.bin = bootloader + app, or bootload-PA8.bin).
- proficio-flash-app <file.bin>: USB DFU (dfu-util) app burn at 0x08008000; puts
+ stm32-app-flash <file.bin>: USB DFU (dfu-util) app burn at 0x08008000; puts
  the pill into DFU itself (mscc must be stopped).
  No firmware images included: give the image file from the release folder.
 EOF
@@ -51,8 +51,8 @@ if [ "\$1" = "configure" ]; then
   echo ""
   echo "$PKG $VERSION installed (tools only, no firmware images)."
   echo "  Commands (in /usr/bin):"
-  echo "    proficio-flash-bootloader <file.bin>   ST-Link burn at 0x08000000"
-  echo "    proficio-flash-app <file.bin>          USB DFU app burn (mscc stop first)"
+  echo "    stm32-bootloader-flash <file.bin>   ST-Link burn at 0x08000000"
+  echo "    stm32-app-flash <file.bin>          USB DFU app burn (mscc stop first)"
   echo "  Give the image file, e.g. ~/app-firmware-async.bin from the release folder."
   echo "  Scripts and README in /usr/share/$PKG/rpi-tools/"
   echo ""

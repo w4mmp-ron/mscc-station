@@ -11,7 +11,7 @@ Treat this folder as the **Pi source of truth**. For Ubuntu-only fixes, copy/ada
 | `mscc-deb/` / `mscc-binaries/` | `mscc_*_arm64.deb` (AArch64 ELFs) |
 | `../installers/rpi/` | Operator kit + [`INSTALL.md`](../installers/rpi/INSTALL.md) |
 | Current share kit | [`../installers/rpi/`](../installers/rpi/) (copy newest here after a `.deb` build) |
-| `../firmware-programmers/rpi/psoc-usb-bootload/` (moved 2026-10-25) | Firmware upload: **`bootloader-gui.py`** (GUI) + `make` → **`bootloader`** (C CLI, gitignored). Pi binary: `mscc-binaries/bootloader` |
+| `../firmware-programmers/rpi/psoc-usb-bootload/` (moved 2026-10-25) | Firmware upload: **`psoc-bootloader.gui`** (GUI) + `make` → **`psoc-bootloader`** (C CLI, gitignored). Pi binary: `mscc-binaries/psoc-bootloader` |
 | `mscc-init-gui/` / `mscc-init-linux/` / `mscc-init-files-linux/` | Init |
 | `mscc-portaudio/` | Pulse+ALSA PortAudio for the Pi |
 | `tty0tty-master/` | CAT null-modem |

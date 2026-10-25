@@ -2,7 +2,7 @@
 
 Guide original: [`../../rpi/psoc-usb-bootload/`](../../rpi/psoc-usb-bootload/). Edit **this** tree for Ubuntu; do not change the Pi copy for laptop fixes.
 
-`bootloader-gui.py` is the **GUI**. `bootloader` is the **C CLI** (`make`); it is gitignored and CPU-specific (x86-64 here, aarch64 on the Pi).
+`psoc-bootloader.gui` is the **GUI**. `psoc-bootloader` is the **C CLI** (`make`); it is gitignored and CPU-specific (x86-64 here, aarch64 on the Pi).
 
 Upload Proficio / Omnia **application** firmware (`.cyacd`) over USB HID.
 
@@ -12,7 +12,7 @@ Same job as Windows `bootloader.exe`, simplified: **BOOT jumper + one command**.
 |--|--|
 | Device mode | BOOT jumper → Morse **LOADER** → HID **`04b4:b71d`** |
 | File | Creator **`.cyacd`** |
-| Binary | `./bootloader` |
+| Binary | `./psoc-bootloader` |
 
 ## Build (Ubuntu x86_64)
 
@@ -22,7 +22,7 @@ cd firmware-programmers/debian/psoc-usb-bootload   # from the mscc-station repo 
 make clean && make
 ```
 
-`./linux-build/mscc-linux.sh all` also builds this CLI and installs it as `$HOME/mscc/bootloader`.
+`./linux-build/mscc-linux.sh all` also builds this CLI and installs it as `$HOME/mscc/psoc-bootloader`.
 
 If link fails: `make LIBS="-lhidapi-hidraw -lusb-1.0"`
 
@@ -33,15 +33,15 @@ If link fails: `make LIBS="-lhidapi-hidraw -lusb-1.0"`
 ```bash
 # 1. BOOT jumper on, power on (LOADER)
 # 2. Stop ms-sdr
-./bootloader /path/to/Proficio-MKII-PTT-YYYYMMDD.cyacd
+./psoc-bootloader /path/to/Proficio-MKII-PTT-YYYYMMDD.cyacd
 # 3. Power off, remove jumper, power on
 ```
 
 **GUI** (Windows USBBootloaderHost-style; needs `python3-tk`)
 
 ```bash
-./bootloader-gui.py
-# or after mscc install:  bootloader-gui
+./psoc-bootloader.gui
+# or after mscc install:  psoc-bootloader.gui
 ```
 
 Load File → `.cyacd`, wait for **Connected** (`04b4:b71d`), Program.

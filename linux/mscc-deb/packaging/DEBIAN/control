@@ -10,7 +10,7 @@ Recommends: linux-headers-generic, pipewire-pulse | pulseaudio, pipewire, libnot
 Homepage: https://local/mscc
 Description: MSCC stack for Multus/Proficio on Ubuntu Desktop (amd64)
  Prebuilt MSCC servers (ms-sdr, sdrcore-recv, sdrcore-trans), mscc-init,
- Proficio firmware upload (bootloader CLI + GUI), start/stop script,
+ Proficio PSoC firmware upload (psoc-bootloader CLI + psoc-bootloader.gui), start/stop script,
  Pulse/PipeWire virtual digi sinks (VirtualA/B), desktop menu
  Start/Stop/Status/Firmware Upload, and tty0tty null-modem module.
  Linked with rpath /usr/local against mscc-portaudio (Pulse+ALSA).

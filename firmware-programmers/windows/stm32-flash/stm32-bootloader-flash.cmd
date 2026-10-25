@@ -4,7 +4,7 @@ cd /d "%~dp0"
 
 echo Flashing bootloader (ST-Link / CubeProgrammer CLI)...
 echo.
-powershell.exe -NoProfile -ExecutionPolicy Bypass -File "%~dp0flash-bootloader.ps1" %*
+powershell.exe -NoProfile -ExecutionPolicy Bypass -File "%~dp0stm32-bootloader-flash.ps1" %*
 set ERR=%ERRORLEVEL%
 
 echo.

@@ -1,18 +1,23 @@
 Package: mscc
-Version: 1.0.68
+Version: 1.0.71
 Section: hamradio
 Priority: optional
 Architecture: arm64
 Maintainer: Multus SDR / MSCC Linux <local@localhost>
 Installed-Size: 1350
-Depends: libc6, libportaudio2, libusb-1.0-0, libhidapi-libusb0, build-essential, kmod, udev, passwd, alsa-utils, pulseaudio-utils, python3, python3-tk
+Depends: libc6, libportaudio2, libusb-1.0-0, libhidapi-libusb0, build-essential, kmod, udev, passwd, alsa-utils, pulseaudio-utils, python3, python3-tk, stlink-tools, dfu-util, python3-usb, usbutils
+Conflicts: proficio-flash-tools
+Replaces: proficio-flash-tools
 Recommends: linux-headers-rpi-v8 | linux-headers-rpi-2712, pipewire-pulse | pulseaudio, pipewire, libnotify-bin, python3-pyaudio
 Homepage: https://local/mscc
 Description: MSCC stack for Multus/Proficio on Raspberry Pi OS (64-bit)
  Prebuilt MSCC servers (ms-sdr, sdrcore-recv, sdrcore-trans),
- Proficio firmware upload (bootloader CLI + GUI), start/stop script,
+ Proficio PSoC firmware upload (psoc-bootloader CLI + psoc-bootloader.gui), start/stop script,
  Pulse/PipeWire virtual digi sinks (VirtualA/B), desktop menu
  Start/Stop/Status/Firmware Upload, and tty0tty null-modem module.
+ Black Pill (STM32F411) flash tools: stm32-app-flash <file.bin> (USB DFU)
+ and stm32-bootloader-flash <file.bin> (ST-Link); replaces the old
+ proficio-flash-tools package.
  Includes NFM (MODE_FM) RX/TX and CMD_SET_FM_POWER (0x9E) when binaries
  are rebuilt from SDRcore-*-linux / ms-sdr-linux with FM sources.
  .

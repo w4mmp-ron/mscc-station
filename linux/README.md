@@ -11,8 +11,8 @@ This folder is the Ubuntu Desktop (amd64) working copy: same product, different 
 | `SDRcore-trans-linux/` | TX DSP |
 | `ms-sdr-linux/` | command hub |
 | `mscc-init-linux/` | CLI init |
-| `../firmware-programmers/debian/psoc-usb-bootload/` (moved 2026-10-25) | firmware **CLI** (`make` → `bootloader`) + **GUI** (`bootloader-gui.py`) |
-| `helpers/` | `mscc.sh`, status, virtual-audio, desktop-ctl, bootloader-gui launcher |
+| `../firmware-programmers/debian/psoc-usb-bootload/` (moved 2026-10-25) | firmware **CLI** (`make` → `psoc-bootloader`) + **GUI** (`psoc-bootloader.gui`) |
+| `helpers/` | `mscc.sh`, status, virtual-audio, desktop-ctl, psoc-bootloader.gui launcher |
 | `tty0tty-master/` | CAT null-modem |
 | `udev/` | Proficio USB rules |
 | `mscc-init-files-linux/` | config seed |
@@ -25,7 +25,7 @@ Output is **`$HOME/mscc`** (x86-64). Never copy those ELFs into [`../rpi/mscc-bi
 
 | File | What it is |
 |------|------------|
-| **`bootloader`** | Compiled **C** CLI (HID `.cyacd` upload). Produced by `make`. **Not in git** (see `.gitignore`). Pi ships an **AArch64** copy in `rpi/mscc-binaries/bootloader`. Ubuntu `make` produces **x86-64** into `$HOME/mscc/bootloader`. |
-| **`bootloader-gui.py`** | **Python/Tk** GUI. It runs the CLI `bootloader`. Same script the Pi package installs as `bootloader-gui`. |
+| **`psoc-bootloader`** | Compiled **C** CLI (HID `.cyacd` upload). Produced by `make`. **Not in git** (see `.gitignore`). Pi ships an **AArch64** copy in `rpi/mscc-binaries/psoc-bootloader`. Ubuntu `make` produces **x86-64** into `$HOME/mscc/psoc-bootloader`. |
+| **`psoc-bootloader.gui`** | **Python/Tk** GUI. It runs the CLI `psoc-bootloader`. Same script the Pi package installs as `psoc-bootloader.gui`. |
 
-Pi and Ubuntu may need different **binaries** (CPU + hidapi). The GUI script can stay shared until Ubuntu needs its own changes — then edit `firmware-programmers/debian/psoc-usb-bootload/bootloader-gui.py`, not the Pi copy.
+Pi and Ubuntu may need different **binaries** (CPU + hidapi). The GUI script can stay shared until Ubuntu needs its own changes — then edit `firmware-programmers/debian/psoc-usb-bootload/psoc-bootloader.gui`, not the Pi copy.

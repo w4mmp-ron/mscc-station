@@ -56,7 +56,7 @@ From the repo root:
 ./linux-build/mscc-linux.sh all
 ```
 
-That compiles `ms-sdr`, `sdrcore-recv`, `sdrcore-trans`, `mscc-init`, and `bootloader` into **`$HOME/mscc`**, copies start/stop helpers, and installs user menu entries (Start / Stop / Status / Firmware). Audio link is `PORTAUDIO=mscc` (rpath `/usr/local` — install `mscc-portaudio_*_amd64.deb` first).
+That compiles `ms-sdr`, `sdrcore-recv`, `sdrcore-trans`, `mscc-init`, and `psoc-bootloader` into **`$HOME/mscc`**, copies start/stop helpers, and installs user menu entries (Start / Stop / Status / Firmware). Audio link is `PORTAUDIO=mscc` (rpath `/usr/local` — install `mscc-portaudio_*_amd64.deb` first).
 
 Details: [`linux-build/README.md`](linux-build/README.md).
 
@@ -116,8 +116,8 @@ udevadm trigger
 mkdir -p /usr/local/bin
 ln -sfn "$USER_MSCC/mscc.sh"                /usr/local/bin/mscc
 ln -sfn "$USER_MSCC/mscc-init"              /usr/local/bin/mscc-init
-ln -sfn "$USER_MSCC/bootloader"             /usr/local/bin/bootloader
-ln -sfn "$USER_MSCC/bootloader-gui"         /usr/local/bin/bootloader-gui
+ln -sfn "$USER_MSCC/psoc-bootloader"             /usr/local/bin/psoc-bootloader
+ln -sfn "$USER_MSCC/psoc-bootloader.gui"         /usr/local/bin/psoc-bootloader.gui
 ln -sfn "$USER_MSCC/mscc-virtual-audio.sh"  /usr/local/bin/mscc-virtual-audio
 
 apt-get install -y "$MSCC/installers/linux/mscc-init-gui_1.0.13_all.deb"

@@ -1,6 +1,6 @@
 #!/bin/bash
 # Flash the Proficio app at 0x08008000 over USB DFU (no ST-Link, pill stays in the rig).
-# Usage: sudo ./flash-proficio.sh <app-firmware.bin>
+# Usage: sudo ./stm32-app-flash.sh <app-firmware.bin>
 #
 # 1.0.4 (2026-10-23): puts the pill into DFU itself (USB command 0xFE, as the Windows
 # flasher) when the radio is running; refuses while mscc is running; waits for the radio
@@ -13,7 +13,7 @@ RADIO_ID="16c0:05dc"
 DFU_ID="0483:df11"
 
 [[ $# -eq 1 ]] || {
-  echo "Usage: sudo proficio-flash-app <app-firmware.bin>"
+  echo "Usage: sudo stm32-app-flash <app-firmware.bin>"
   echo "  App image for 0x08008000, e.g. ~/app-firmware-async.bin (from the release folder)."
   exit 1
 }

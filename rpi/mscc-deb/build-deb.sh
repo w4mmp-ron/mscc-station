@@ -17,6 +17,8 @@ BIN_SRC="$TREE/mscc-binaries"
 INIT_SRC="$TREE/mscc-init-files-linux"
 FACTORY_SRC="$TREE/../factory"
 TTY_SRC="$TREE/tty0tty-master/module"
+# Black Pill flash scripts (were the proficio-flash-tools package until 1.0.5)
+FLASH_SRC="$TREE/../firmware-programmers/rpi/stm32-flash"
 
 VERSION="$(sed -n 's/^Version:[[:space:]]*//p' "$PKG/DEBIAN/control" | head -1 | tr -d '\r')"
 [[ -n "$VERSION" ]] || { echo "ERROR: no Version in $PKG/DEBIAN/control" >&2; exit 1; }
@@ -43,10 +45,13 @@ need_file "$BIN_SRC/ms-sdr"
 need_file "$BIN_SRC/mscc.sh"
 need_file "$BIN_SRC/sdrcore-trans"
 need_file "$BIN_SRC/sdrcore-recv"
-need_file "$BIN_SRC/bootloader"
+need_file "$BIN_SRC/psoc-bootloader"
 need_file "$TTY_SRC/tty0tty.c"
 need_file "$TTY_SRC/Makefile"
 need_file "$TTY_SRC/99-tty0tty.rules"
+need_file "$FLASH_SRC/stm32-app-flash.sh"
+need_file "$FLASH_SRC/stm32-bootloader-flash.sh"
+need_file "$FLASH_SRC/README.md"
 need_file "$PKG/DEBIAN/control"
 need_file "$PKG/DEBIAN/postinst"
 
@@ -87,11 +92,11 @@ fi
 echo "  ms-sdr:      $(wc -c < "$PKG/usr/share/mscc/binaries/ms-sdr") bytes"
 echo "  sdrcore-recv:$(wc -c < "$PKG/usr/share/mscc/binaries/sdrcore-recv") bytes"
 echo "  sdrcore-trans:$(wc -c < "$PKG/usr/share/mscc/binaries/sdrcore-trans") bytes"
-echo "  bootloader:  $(wc -c < "$PKG/usr/share/mscc/binaries/bootloader") bytes"
+echo "  psoc-bootloader:  $(wc -c < "$PKG/usr/share/mscc/binaries/psoc-bootloader") bytes"
 
 # This .deb is Architecture: arm64. Refuse Ubuntu-laptop (amd64) binaries.
 if command -v readelf >/dev/null 2>&1; then
-  for b in ms-sdr sdrcore-recv sdrcore-trans bootloader; do
+  for b in ms-sdr sdrcore-recv sdrcore-trans psoc-bootloader; do
     f="$PKG/usr/share/mscc/binaries/$b"
     [[ -f "$f" ]] || { echo "ERROR: missing $f" >&2; exit 1; }
     if ! readelf -h "$f" 2>/dev/null | grep -qi 'AArch64\|ARM aarch64'; then
@@ -127,11 +132,23 @@ else
   echo "ERROR: missing mscc-status-report" >&2
   exit 1
 fi
-if [[ -f "$ROOT/packaging/usr/share/mscc/bin/bootloader-gui" ]]; then
-  cp -a "$ROOT/packaging/usr/share/mscc/bin/bootloader-gui" "$PKG/usr/share/mscc/bin/"
-  chmod 755 "$PKG/usr/share/mscc/bin/bootloader-gui"
+# Black Pill flash tools: stm32-app-flash (USB DFU) / stm32-bootloader-flash (ST-Link)
+rm -rf "$PKG/usr/share/mscc/flash-tools"
+mkdir -p "$PKG/usr/share/mscc/flash-tools" "$PKG/usr/bin"
+for f in stm32-app-flash.sh stm32-bootloader-flash.sh README.md; do
+  tr -d '\r' < "$FLASH_SRC/$f" > "$PKG/usr/share/mscc/flash-tools/$f"
+done
+chmod 755 "$PKG/usr/share/mscc/flash-tools/"*.sh
+chmod 644 "$PKG/usr/share/mscc/flash-tools/README.md"
+ln -sf "../share/mscc/flash-tools/stm32-app-flash.sh"   "$PKG/usr/bin/stm32-app-flash"
+ln -sf "../share/mscc/flash-tools/stm32-bootloader-flash.sh" "$PKG/usr/bin/stm32-bootloader-flash"
+echo "  flash-tools: stm32-app-flash, stm32-bootloader-flash"
+
+if [[ -f "$ROOT/packaging/usr/share/mscc/bin/psoc-bootloader.gui" ]]; then
+  cp -a "$ROOT/packaging/usr/share/mscc/bin/psoc-bootloader.gui" "$PKG/usr/share/mscc/bin/"
+  chmod 755 "$PKG/usr/share/mscc/bin/psoc-bootloader.gui"
 else
-  echo "ERROR: missing bootloader-gui" >&2
+  echo "ERROR: missing psoc-bootloader.gui" >&2
   exit 1
 fi
 if [[ -d "$ROOT/packaging/usr/share/applications" ]]; then
@@ -161,7 +178,7 @@ grep -q 'X-MSCC' "$PKG/usr/share/applications/mscc-start.desktop"
 grep -q 'X-MSCC' "$PKG/usr/share/applications/mscc-stop.desktop"
 grep -q 'X-MSCC' "$PKG/usr/share/applications/mscc-status.desktop"
 grep -q 'X-MSCC' "$PKG/usr/share/applications/mscc-bootloader.desktop"
-need_file "$ROOT/packaging/usr/share/mscc/bin/bootloader-gui"
+need_file "$ROOT/packaging/usr/share/mscc/bin/psoc-bootloader.gui"
 need_file "$ROOT/packaging/usr/share/applications/mscc-bootloader.desktop"
 grep -q 'mscc-desktop-ctl' "$PKG/usr/share/applications/mscc-start.desktop"
 grep -q 'mscc-desktop-ctl status' "$PKG/usr/share/applications/mscc-status.desktop"

@@ -3,10 +3,10 @@
 # (bootloader + app in one image) @ 0x08000000.
 #
 # Usage:
-#   .\flash-bootloader.ps1
-#   .\flash-bootloader.ps1 -Image bootload-PA8
-#   .\flash-bootloader.ps1 -Image combined
-#   .\flash-bootloader.ps1 -BinPath .\bootload-PA8.bin
+#   .\stm32-bootloader-flash.ps1
+#   .\stm32-bootloader-flash.ps1 -Image bootload-PA8
+#   .\stm32-bootloader-flash.ps1 -Image combined
+#   .\stm32-bootloader-flash.ps1 -BinPath .\bootload-PA8.bin
 #
 # Without -BinPath the image is looked for next to this script, then in the STM32 repo's
 # release folder (..\..\..\psoc-replacement-stm32\proficio-stm32f411-25MHz\release).

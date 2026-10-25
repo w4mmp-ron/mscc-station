@@ -5,7 +5,7 @@ USB Bootloader — Pi / Linux GUI for Proficio .cyacd upload.
 Mirrors the classic Windows USBBootloaderHost layout:
   Vendor/Product ID, security key, Load File, Program, progress, status log.
 
-Requires the CLI helper ``bootloader`` (same folder, $HOME/mscc, or PATH).
+Requires the CLI helper ``psoc-bootloader`` (same folder, $HOME/mscc, or PATH).
 Field use: BOOT jumper on → Morse LOADER (04b4:b71d) → Load File → Program.
 """
 
@@ -37,17 +37,17 @@ def _default_load_dir() -> Optional[str]:
 
 
 def _which_bootloader() -> Optional[Path]:
-    w = shutil.which("bootloader")
+    w = shutil.which("psoc-bootloader")
     if w:
         return Path(w)
-    home = Path.home() / "mscc" / "bootloader"
+    home = Path.home() / "mscc" / "psoc-bootloader"
     if home.is_file() and os.access(home, os.X_OK):
         return home
-    here = Path(__file__).resolve().parent / "bootloader"
+    here = Path(__file__).resolve().parent / "psoc-bootloader"
     if here.is_file() and os.access(here, os.X_OK):
         return here
     # Packaged next to this script under /usr/share/mscc/bin
-    share = Path("/usr/share/mscc/binaries/bootloader")
+    share = Path("/usr/share/mscc/binaries/psoc-bootloader")
     if share.is_file() and os.access(share, os.X_OK):
         return share
     return None
@@ -167,7 +167,7 @@ class BootloaderApp(tk.Tk):
         if bl:
             self._log(f"CLI helper: {bl}")
         else:
-            self._log("WARNING: 'bootloader' binary not found on PATH or in ~/mscc")
+            self._log("WARNING: 'psoc-bootloader' binary not found on PATH or in ~/mscc")
 
     def _log(self, msg: str) -> None:
         ts = datetime.now().strftime("%H:%M:%S")
@@ -234,7 +234,7 @@ class BootloaderApp(tk.Tk):
         if not bl:
             messagebox.showerror(
                 APP_TITLE,
-                "bootloader helper not found.\nInstall mscc package or build psoc-usb-bootload-linux.",
+                "psoc-bootloader helper not found.\nInstall mscc package or build firmware-programmers/*/psoc-usb-bootload.",
             )
             return
 

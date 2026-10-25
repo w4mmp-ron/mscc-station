@@ -3,7 +3,7 @@
 # Symlink: /dev/proficio
 SUBSYSTEM=="usb", ATTR{idVendor}=="16c0", ATTR{idProduct}=="05dc", MODE="0666", GROUP="plugdev", TAG+="uaccess", SYMLINK+="proficio"
 
-# PSoC HID bootloader (BOOT jumper / Morse LOADER) — used by $HOME/mscc/bootloader
+# PSoC HID bootloader (BOOT jumper / Morse LOADER) — used by $HOME/mscc/psoc-bootloader
 # Symlink: /dev/proficio-bootloader
 SUBSYSTEM=="usb", ATTR{idVendor}=="04b4", ATTR{idProduct}=="b71d", MODE="0666", GROUP="plugdev", TAG+="uaccess", SYMLINK+="proficio-bootloader"
 

@@ -89,4 +89,4 @@ Does **not** remove servers package `mscc` or your sticky settings.
 
 ## Firmware upload
 
-Not part of this UI package — use **MSCC → Firmware Upload** from the **`mscc`** server package (`bootloader-gui`). See `rpi/pi-install/INSTALL.md` section E.
+Not part of this UI package — use **MSCC → Firmware Upload** from the **`mscc`** server package (`psoc-bootloader.gui`). See `rpi/pi-install/INSTALL.md` section E.

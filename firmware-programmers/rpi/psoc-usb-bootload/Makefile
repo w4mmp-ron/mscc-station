@@ -21,7 +21,7 @@ SRCS = \
 	cybootloaderutils/cybtldr_parse.c
 
 OBJS = $(SRCS:.c=.o)
-TARGET = bootloader
+TARGET = psoc-bootloader
 
 .PHONY: all clean install
 
