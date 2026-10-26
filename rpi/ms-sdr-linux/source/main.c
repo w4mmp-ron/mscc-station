@@ -116,6 +116,7 @@ uint8_t G_Threads_Started = FALSE;
 int G_major_version = 0;
 int G_minor_version = 0;
 int G_firmware_version_packed = 0;
+int G_firmware_type = FIRMWARE_TYPE_UNKNOWN;
 char G_l_path[MAX_PATH] = { 0 };
 long t = 0;
 uint8_t G_Sound_Device = 0;
@@ -1355,6 +1356,11 @@ int main(int argc, char **argv) {
             print_time(0);
             fprintf(G_fp_logfile, "[%d] main . srGetVersion returned Transceiver Firmware Version: %d.%d \n",
                     line_number++, G_major_version, G_minor_version);
+            G_firmware_type = (G_minor_version >= FIRMWARE_PSOC_MINOR_MIN) ? FIRMWARE_TYPE_PSOC
+                                                                          : FIRMWARE_TYPE_STM32;
+            print_time(0);
+            fprintf(G_fp_logfile, "[%d] main . Firmware type: %s (minor %d)\n", line_number++,
+                    G_firmware_type == FIRMWARE_TYPE_PSOC ? "PSoC" : "STM32", G_minor_version);
             Factory_seed_live_inis();
             if (G_major_version >= MULTUS_MAJOR_VERSION_119 && G_minor_version >= MULTUS_MINOR_VERSION_81) {
                 print_time(0);

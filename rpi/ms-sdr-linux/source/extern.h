@@ -438,6 +438,13 @@ extern int G_major_version;
 extern int G_minor_version;
 /* USB FW word repacked for client 0xB2: (minor<<8)|major — same as Proficio FIRMWARE_VERSION */
 extern int G_firmware_version_packed;
+/* Radio firmware type from the version MINOR (Ron, 2026-10-25): the STM32 Black Pill
+ * uses 1-199, the PSoC 200 and up (3.240). Set in main() after srGetVersion. */
+#define FIRMWARE_PSOC_MINOR_MIN 200
+#define FIRMWARE_TYPE_UNKNOWN 0
+#define FIRMWARE_TYPE_PSOC    1
+#define FIRMWARE_TYPE_STM32   2
+extern int G_firmware_type;
 extern const char *homedir;
 extern uint8_t G_Sound_Device; 
 extern int16_t G_spectrum_cycle_count;
