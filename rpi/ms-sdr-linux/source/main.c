@@ -740,7 +740,7 @@ int Tune_button(int on_off, uint8_t allow_MKII_PTT_Switch) {
 
     print_time(0);
     fprintf(G_fp_logfile, "[%d] Tune_button called . on_off: %d, previous_mode: %c,G_mode: %c\n",
-            line_number++, on_off, G_previous_mode, G_mode);
+            line_number++, on_off, G_previous_mode ? G_previous_mode : '-', G_mode);   //0 = no previous mode yet; %c would log a NUL
     if (G_TX_Inhibit == FALSE && G_check_bias == FALSE) {
         G_dll_active = TRUE;
         if (on_off == TRUE && allow_MKII_PTT_Switch == FALSE) {
