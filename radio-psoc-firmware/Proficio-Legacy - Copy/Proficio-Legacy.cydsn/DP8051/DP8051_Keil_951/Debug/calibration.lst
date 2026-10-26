@@ -1,0 +1,907 @@
+C51 COMPILER V9.51   CALIBRATION                                                           10/26/2026 10:09:12 PAGE 1   
+
+
+C51 COMPILER V9.51, COMPILATION OF MODULE CALIBRATION
+OBJECT MODULE PLACED IN .\DP8051\DP8051_Keil_951\Debug\calibration.obj
+COMPILER INVOKED BY: C:\Program Files (x86)\Cypress\PSoC Creator\4.4\PSoC Creator\import\keil\pk51\9.51\C51\BIN\c51.exe 
+                    -calibration.c NOIV LARGE MODDP2 OMF2 VB(1) NOIP INCDIR(.,Generated_Source\PSoC3) FF(3) DB WL(2) PR(.\DP8051\DP8051_Keil_
+                    -951\Debug/calibration.lst) CD OT(5,SPEED) OA OJ(.\DP8051\DP8051_Keil_951\Debug\calibration.obj)
+
+line level    source
+
+   1          // Per-band calibration stored in the radio (RX IQ, TX IQ, power). 3.235, 2026-10-21;
+   2          // 3.236 adds clear (type 6, in usbvend01.c).
+   3          // 3.237: no EEPROM_UpdateTemperature() before a save (as the PPM save in settings01.c).
+   4          // 3.238: no save command. Done the PPM way (Ron: "something I know works"): a value set
+   5          // from the host is written to EEPROM by the radio itself, ONE row per band, with one
+   6          // EEPROM_StartWrite like Set_PPM(). 3.236/3.237 hung USB on Ron's MKII at an audio
+   7          // interface change ~1-3 s after a save (9 rows + a no-data control request).
+   8          // Same opcode / types / sizes as the Black Pill (CMD_CALIBRATION 0xC8, see basic-plus.h),
+   9          // except type 4 write (save) is gone: it stalls here.
+  10          // 3.239: clear (type 6) removed: a no-data control request like the 3.236/3.237 save, the
+  11          // likely hang cause. Type 6 now stalls.
+  12          // The radio only stores the values; the server applies them.
+  13          //
+  14          // The record lives in RAM (E_cal). usbvend01.c (USB ISR) reads and writes it directly:
+  15          // a set lands straight in the record, marks the band valid and marks the band dirty.
+  16          // Values are raw little-endian bytes as the host sent them (the 8051 is big endian, so
+  17          // the firmware never treats them as numbers).
+  18          //
+  19          // EEPROM: one 16-byte row per band, rows CAL_ROW_FIRST .. CAL_ROW_FIRST + 11:
+  20          //   [0] 'C'  [1] version  [2] band  [3] valid bits (1 RX IQ, 2 TX IQ, 4 power)
+  21          //   [4..7] RX IQ  [8..11] TX IQ  [12..13] power  [14] 0  [15] checksum (sum of 0..14)
+  22          // Cal_Main() (main loop) writes one dirty row, waits for it to finish (EEPROM_Query
+  23          // releases the SPC), then the next. It waits CAL_QUIET_SET passes after the last set so the
+  24          // USB data stage has landed, and does not write while transmitting (rows stay dirty).
+  25          // Boot: Cal_Init() loads each good row; a bad row = that band 0, not valid.
+  26          //
+  27          // Variable naming conventions:     E_<variable> -> Externally defined global
+  28          //                                  l_<variable> -> locally defined variable
+  29          //                                  All UPPERCASE -> Define
+  30          
+  31          #include <basic-plus.h>
+  32          #include <usbvend.h>
+  33          #include <STRING.H>
+  34          
+  35          #define CAL_ROW_FIRST   8u      // EEPROM row 0 = crystal / PPM / IQ channels (settings01.c), row 1 = keye
+             -r
+  36          #define CAL_ROW_MAGIC   'C'
+  37          #define CAL_ROW_VERSION 2u
+  38          
+  39          #define CAL_ST_IDLE     0u
+  40          #define CAL_ST_WAIT     1u
+  41          
+  42          cal_record_t E_cal;
+  43          uint8 E_cal_status[2] = {CAL_SAVE_IDLE, 0u};   // [write status, 1 = loaded from EEPROM]
+  44          volatile uint8 E_cal_dirty[CAL_BANDS];          // set by the ISR, cleared when the row write starts
+  45          volatile uint8 E_cal_quiet = 0;                 // set by the ISR at each set
+  46          
+  47          static uint8 l_state = CAL_ST_IDLE;
+  48          static uint8 l_row[CYDEV_EEPROM_ROW_SIZE];
+  49          
+  50          static uint8 Cal_Sum(const uint8 *p) {
+  51   1          uint8 i, sum = 0;
+  52   1      
+C51 COMPILER V9.51   CALIBRATION                                                           10/26/2026 10:09:12 PAGE 2   
+
+  53   1          for (i = 0; i < (CYDEV_EEPROM_ROW_SIZE - 1u); i++) sum += p[i];
+  54   1          return sum;
+  55   1      }
+  56          
+  57          static void Cal_Build_Row(uint8 band) {
+  58   1          uint8 i, l_bit = (uint8)(1u << (band & 7u)), l_hi = band >> 3;
+  59   1      
+  60   1          l_row[0] = CAL_ROW_MAGIC;
+  61   1          l_row[1] = CAL_ROW_VERSION;
+  62   1          l_row[2] = band;
+  63   1          l_row[3] = 0;
+  64   1          if (E_cal.valid[0][l_hi] & l_bit) l_row[3] |= 1u;
+  65   1          if (E_cal.valid[1][l_hi] & l_bit) l_row[3] |= 2u;
+  66   1          if (E_cal.valid[2][l_hi] & l_bit) l_row[3] |= 4u;
+  67   1          for (i = 0; i < 4u; i++) {
+  68   2              l_row[4u + i] = E_cal.rx_iq[band][i];
+  69   2              l_row[8u + i] = E_cal.tx_iq[band][i];
+  70   2          }
+  71   1          l_row[12] = E_cal.power[band][0];
+  72   1          l_row[13] = E_cal.power[band][1];
+  73   1          l_row[14] = 0;
+  74   1          l_row[15] = Cal_Sum(l_row);
+  75   1      }
+  76          
+  77          // Call after Settings_Init() (EEPROM_Start)
+  78          void Cal_Init(void) {
+  79   1          reg8 *l_ee;
+  80   1          uint8 band, i, l_bit, l_hi;
+  81   1      
+  82   1          memset(&E_cal, 0, sizeof(E_cal));
+  83   1          E_cal_status[1] = 0u;
+  84   1          for (band = 0; band < CAL_BANDS; band++) {
+  85   2              E_cal_dirty[band] = 0;
+  86   2              l_ee = (reg8 *)(CYDEV_EE_BASE + ((uint16)(CAL_ROW_FIRST + band) * CYDEV_EEPROM_ROW_SIZE));
+  87   2              for (i = 0; i < CYDEV_EEPROM_ROW_SIZE; i++) l_row[i] = l_ee[i];
+  88   2              if (l_row[0] != CAL_ROW_MAGIC || l_row[1] != CAL_ROW_VERSION || l_row[2] != band ||
+  89   2                  l_row[15] != Cal_Sum(l_row)) continue;
+  90   2              l_bit = (uint8)(1u << (band & 7u));
+  91   2              l_hi = band >> 3;
+  92   2              if (l_row[3] & 1u) E_cal.valid[0][l_hi] |= l_bit;
+  93   2              if (l_row[3] & 2u) E_cal.valid[1][l_hi] |= l_bit;
+  94   2              if (l_row[3] & 4u) E_cal.valid[2][l_hi] |= l_bit;
+  95   2              for (i = 0; i < 4u; i++) {
+  96   3                  E_cal.rx_iq[band][i] = l_row[4u + i];
+  97   3                  E_cal.tx_iq[band][i] = l_row[8u + i];
+  98   3              }
+  99   2              E_cal.power[band][0] = l_row[12];
+ 100   2              E_cal.power[band][1] = l_row[13];
+ 101   2              E_cal_status[1] = 1u;
+ 102   2          }
+ 103   1      }
+ 104          
+ 105          // Main loop: writes the rows of the bands the host set, one row at a time
+ 106          void Cal_Main(void) {
+ 107   1          cystatus l_status;
+ 108   1          uint8 band, l_int;
+ 109   1      
+ 110   1          switch (l_state) {
+ 111   2          case CAL_ST_IDLE:
+ 112   2              if (E_cal_quiet) {                      // a set just arrived: let the data stage land
+ 113   3                  E_cal_quiet--;
+ 114   3                  break;
+C51 COMPILER V9.51   CALIBRATION                                                           10/26/2026 10:09:12 PAGE 3   
+
+ 115   3              }
+ 116   2              if (TX_Request || E_PTT || E_key_down) break;   // rows stay dirty until RX
+ 117   2              for (band = 0; band < CAL_BANDS; band++) {
+ 118   3                  if (E_cal_dirty[band]) break;
+ 119   3              }
+ 120   2              if (band >= CAL_BANDS) break;
+ 121   2              l_int = CyEnterCriticalSection();       // the ISR may set it again: that write follows
+ 122   2              E_cal_dirty[band] = 0;
+ 123   2              Cal_Build_Row(band);
+ 124   2              CyExitCriticalSection(l_int);
+ 125   2              E_cal_status[0] = CAL_SAVE_BUSY;
+ 126   2              l_status = EEPROM_StartWrite(l_row, (uint8)(CAL_ROW_FIRST + band));
+ 127   2              if (l_status == CYRET_STARTED) {
+ 128   3                  l_state = CAL_ST_WAIT;
+ 129   3              } else {
+ 130   3                  E_cal_dirty[band] = 1;              // SPC busy (e.g. temperature read): next pass
+ 131   3              }
+ 132   2              break;
+ 133   2      
+ 134   2          case CAL_ST_WAIT:
+ 135   2              l_status = EEPROM_Query();              // also releases the SPC when done
+ 136   2              if (l_status == CYRET_STARTED) break;   // row still being written
+ 137   2              E_cal_status[0] = (l_status == CYRET_SUCCESS) ? CAL_SAVE_OK : CAL_SAVE_FAILED;
+ 138   2              if (l_status == CYRET_SUCCESS) E_cal_status[1] = 1u;
+ 139   2              l_state = CAL_ST_IDLE;
+ 140   2              break;
+ 141   2      
+ 142   2          default:
+ 143   2              l_state = CAL_ST_IDLE;
+ 144   2              break;
+ 145   2          }
+ 146   1      }
+C51 COMPILER V9.51   CALIBRATION                                                           10/26/2026 10:09:12 PAGE 4   
+
+ASSEMBLY LISTING OF GENERATED OBJECT CODE
+
+
+             ; FUNCTION _Cal_Sum (BEGIN)
+                                           ; SOURCE LINE # 50
+                 R     MOV     DPTR,#p
+                       MOV     A,R3
+                       MOVX    @DPTR,A
+                       INC     DPTR
+                       MOV     A,R2
+                       MOVX    @DPTR,A
+                       INC     DPTR
+                       MOV     A,R1
+                       MOVX    @DPTR,A
+                                           ; SOURCE LINE # 51
+;---- Variable 'sum' assigned to Register 'R7' ----
+                       CLR     A
+                       MOV     R7,A
+                                           ; SOURCE LINE # 53
+;---- Variable 'i' assigned to Register 'R6' ----
+                       MOV     R6,A
+             ?C0001:
+                       MOV     A,R6
+                       CLR     C
+                       SUBB    A,#0FH
+                 R     xJGE    ?C0002
+                 R     MOV     DPTR,#p
+                       MOVX    A,@DPTR
+                       MOV     R3,A
+                       INC     DPTR
+                       MOVX    A,@DPTR
+                       MOV     R2,A
+                       INC     DPTR
+                       MOVX    A,@DPTR
+                       ADD     A,R6
+                       MOV     R1,A
+                       CLR     A
+                       ADDC    A,R2
+                       MOV     R2,A
+                 E     CALL    ?C?CLDPTR
+                       ADD     A,R7
+                       MOV     R7,A
+                       INC     R6
+                 R     xJMP    ?C0001
+             ?C0002:
+                                           ; SOURCE LINE # 54
+                                           ; SOURCE LINE # 55
+             ?C0004:
+                       RET     
+             ; FUNCTION _Cal_Sum (END)
+
+             ; FUNCTION _Cal_Build_Row (BEGIN)
+                                           ; SOURCE LINE # 57
+;---- Variable 'band' assigned to Register 'R3' ----
+                       MOV     R3,AR7
+                                           ; SOURCE LINE # 58
+                       MOV     A,R7
+                       ANL     A,#07H
+                       MOV     R6,A
+                       MOV     A,#01H
+                       MOV     R0,AR6
+                       INC     R0
+C51 COMPILER V9.51   CALIBRATION                                                           10/26/2026 10:09:12 PAGE 5   
+
+                 R     xJMP    ?C0047
+             ?C0046:
+                       CLR     C
+                       RLC     A
+             ?C0047:
+                 R     DJNZ    R0,?C0046
+                       MOV     R6,A
+;---- Variable 'l_bit' assigned to Register 'R6' ----
+                       MOV     R7,AR3
+                       MOV     A,R7
+                       RRC     A
+                       RRC     A
+                       RRC     A
+                       ANL     A,#01FH
+                       MOV     R5,A
+;---- Variable 'l_hi' assigned to Register 'R5' ----
+                                           ; SOURCE LINE # 60
+                 R     MOV     DPTR,#l_row
+                       MOV     A,#043H
+                       MOVX    @DPTR,A
+                                           ; SOURCE LINE # 61
+                       INC     DPTR
+                       MOV     A,#02H
+                       MOVX    @DPTR,A
+                                           ; SOURCE LINE # 62
+                       INC     DPTR
+                       MOV     A,R7
+                       MOVX    @DPTR,A
+                                           ; SOURCE LINE # 63
+                       CLR     A
+                       INC     DPTR
+                       MOVX    @DPTR,A
+                                           ; SOURCE LINE # 64
+                 R     MOV     A,#LOW E_cal+07EH
+                       ADD     A,R5
+                       MOV     DPL,A
+                       CLR     A
+                 R     ADDC    A,#HIGH E_cal+07EH
+                       MOV     DPH,A
+                       MOVX    A,@DPTR
+                       ANL     A,R6
+                 R     xJZ     ?C0005
+                 R     MOV     DPTR,#l_row+03H
+                       MOVX    A,@DPTR
+                       ORL     A,#01H
+                       MOVX    @DPTR,A
+             ?C0005:
+                                           ; SOURCE LINE # 65
+                 R     MOV     A,#LOW E_cal+080H
+                       ADD     A,R5
+                       MOV     DPL,A
+                       CLR     A
+                 R     ADDC    A,#HIGH E_cal+080H
+                       MOV     DPH,A
+                       MOVX    A,@DPTR
+                       ANL     A,R6
+                 R     xJZ     ?C0006
+                 R     MOV     DPTR,#l_row+03H
+                       MOVX    A,@DPTR
+                       ORL     A,#02H
+                       MOVX    @DPTR,A
+             ?C0006:
+C51 COMPILER V9.51   CALIBRATION                                                           10/26/2026 10:09:12 PAGE 6   
+
+                                           ; SOURCE LINE # 66
+                 R     MOV     A,#LOW E_cal+082H
+                       ADD     A,R5
+                       MOV     DPL,A
+                       CLR     A
+                 R     ADDC    A,#HIGH E_cal+082H
+                       MOV     DPH,A
+                       MOVX    A,@DPTR
+                       ANL     A,R6
+                 R     xJZ     ?C0007
+                 R     MOV     DPTR,#l_row+03H
+                       MOVX    A,@DPTR
+                       ORL     A,#04H
+                       MOVX    @DPTR,A
+             ?C0007:
+                                           ; SOURCE LINE # 67
+;---- Variable 'i' assigned to Register 'R7' ----
+                       CLR     A
+                       MOV     R7,A
+             ?C0008:
+                       MOV     A,R7
+                       CLR     C
+                       SUBB    A,#04H
+                 R     xJGE    ?C0009
+                                           ; SOURCE LINE # 68
+                       MOV     A,R3
+                       ADD     A,ACC
+                       ADD     A,ACC
+                 R     ADD     A,#LOW E_cal+06H
+                       MOV     DPL,A
+                       CLR     A
+                 R     ADDC    A,#HIGH E_cal+06H
+                       MOV     DPH,A
+                       MOV     A,DPL
+                       ADD     A,R7
+                       MOV     DPL,A
+                       CLR     A
+                       ADDC    A,DPH
+                       MOV     DPH,A
+                       MOVX    A,@DPTR
+                       MOV     R6,A
+                 R     MOV     A,#LOW l_row+04H
+                       ADD     A,R7
+                       MOV     DPL,A
+                       CLR     A
+                 R     ADDC    A,#HIGH l_row+04H
+                       MOV     DPH,A
+                       MOV     A,R6
+                       MOVX    @DPTR,A
+                                           ; SOURCE LINE # 69
+                       MOV     A,R3
+                       ADD     A,ACC
+                       ADD     A,ACC
+                 R     ADD     A,#LOW E_cal+036H
+                       MOV     DPL,A
+                       CLR     A
+                 R     ADDC    A,#HIGH E_cal+036H
+                       MOV     DPH,A
+                       MOV     A,DPL
+                       ADD     A,R7
+                       MOV     DPL,A
+                       CLR     A
+C51 COMPILER V9.51   CALIBRATION                                                           10/26/2026 10:09:12 PAGE 7   
+
+                       ADDC    A,DPH
+                       MOV     DPH,A
+                       MOVX    A,@DPTR
+                       MOV     R6,A
+                 R     MOV     A,#LOW l_row+08H
+                       ADD     A,R7
+                       MOV     DPL,A
+                       CLR     A
+                 R     ADDC    A,#HIGH l_row+08H
+                       MOV     DPH,A
+                       MOV     A,R6
+                       MOVX    @DPTR,A
+                                           ; SOURCE LINE # 70
+                       INC     R7
+                 R     xJMP    ?C0008
+             ?C0009:
+                                           ; SOURCE LINE # 71
+                       MOV     A,R3
+                       ADD     A,ACC
+                 R     ADD     A,#LOW E_cal+066H
+                       MOV     DPL,A
+                       CLR     A
+                 R     ADDC    A,#HIGH E_cal+066H
+                       MOV     DPH,A
+                       MOVX    A,@DPTR
+                 R     MOV     DPTR,#l_row+0CH
+                       MOVX    @DPTR,A
+                                           ; SOURCE LINE # 72
+                       MOV     A,R3
+                       ADD     A,ACC
+                 R     ADD     A,#LOW E_cal+067H
+                       MOV     DPL,A
+                       CLR     A
+                 R     ADDC    A,#HIGH E_cal+067H
+                       MOV     DPH,A
+                       MOVX    A,@DPTR
+                 R     MOV     DPTR,#l_row+0DH
+                       MOVX    @DPTR,A
+                                           ; SOURCE LINE # 73
+                       CLR     A
+                       INC     DPTR
+                       MOVX    @DPTR,A
+                                           ; SOURCE LINE # 74
+                       MOV     R3,#01H
+                 R     MOV     R2,#HIGH l_row
+                 R     MOV     R1,#LOW l_row
+                 R     CALL    _Cal_Sum
+                 R     MOV     DPTR,#l_row+0FH
+                       MOV     A,R7
+                       MOVX    @DPTR,A
+                                           ; SOURCE LINE # 75
+                       RET     
+             ; FUNCTION _Cal_Build_Row (END)
+
+             ; FUNCTION Cal_Init (BEGIN)
+                                           ; SOURCE LINE # 78
+                                           ; SOURCE LINE # 82
+                       MOV     R6,#00H
+                       MOV     R7,#090H
+                       MOV     R5,#00H
+                       MOV     R3,#01H
+                 R     MOV     R2,#HIGH E_cal
+C51 COMPILER V9.51   CALIBRATION                                                           10/26/2026 10:09:12 PAGE 8   
+
+                 R     MOV     R1,#LOW E_cal
+                 E     CALL    ?C?MEMSET
+                                           ; SOURCE LINE # 83
+                       CLR     A
+                 R     MOV     DPTR,#E_cal_status+01H
+                       MOVX    @DPTR,A
+                                           ; SOURCE LINE # 84
+                 R     MOV     DPTR,#band
+                       MOVX    @DPTR,A
+             ?C0012:
+                 R     MOV     DPTR,#band
+                       MOVX    A,@DPTR
+                       MOV     R7,A
+                       CLR     C
+                       SUBB    A,#0CH
+                 R     xJGE    ?C0026
+                                           ; SOURCE LINE # 85
+                 R     MOV     A,#LOW E_cal_dirty
+                       ADD     A,R7
+                       MOV     DPL,A
+                       CLR     A
+                 R     ADDC    A,#HIGH E_cal_dirty
+                       MOV     DPH,A
+                       CLR     A
+                       MOVX    @DPTR,A
+                                           ; SOURCE LINE # 86
+                       MOV     A,R7
+                       MOV     B,#010H
+                       MUL     AB
+                       ADD     A,#080H
+                       MOV     R7,A
+                       MOV     A,B
+                       ADDC    A,#080H
+                       MOV     R6,A
+;---- Variable 'l_ee' assigned to Register 'R6/R7' ----
+                                           ; SOURCE LINE # 87
+                       CLR     A
+                 R     MOV     DPTR,#i
+                       MOVX    @DPTR,A
+             ?C0015:
+                 R     MOV     DPTR,#i
+                       MOVX    A,@DPTR
+                       CLR     C
+                       SUBB    A,#010H
+                 R     xJGE    ?C0016
+                       MOVX    A,@DPTR
+                       MOV     R5,A
+                       ADD     A,R7
+                       MOV     DPL,A
+                       CLR     A
+                       ADDC    A,R6
+                       MOV     DPH,A
+                       MOVX    A,@DPTR
+                       MOV     R4,A
+                 R     MOV     A,#LOW l_row
+                       ADD     A,R5
+                       MOV     DPL,A
+                       CLR     A
+                 R     ADDC    A,#HIGH l_row
+                       MOV     DPH,A
+                       MOV     A,R4
+                       MOVX    @DPTR,A
+C51 COMPILER V9.51   CALIBRATION                                                           10/26/2026 10:09:12 PAGE 9   
+
+                 R     MOV     DPTR,#i
+                       MOVX    A,@DPTR
+                       INC     A
+                       MOVX    @DPTR,A
+                 R     xJMP    ?C0015
+             ?C0016:
+                                           ; SOURCE LINE # 88
+                 R     MOV     DPTR,#l_row
+                       MOVX    A,@DPTR
+                       XRL     A,#043H
+                 R     xJNZ    ?C0014
+                       INC     DPTR
+                       MOVX    A,@DPTR
+                       XRL     A,#02H
+                 R     xJNZ    ?C0014
+                 R     MOV     DPTR,#band
+                       MOVX    A,@DPTR
+                       MOV     R7,A
+                 R     MOV     DPTR,#l_row+02H
+                       MOVX    A,@DPTR
+                       XRL     A,R7
+                 R     xJNZ    ?C0014
+                       MOV     R3,#01H
+                 R     MOV     R2,#HIGH l_row
+                 R     MOV     R1,#LOW l_row
+                 R     CALL    _Cal_Sum
+                 R     MOV     DPTR,#l_row+0FH
+                       MOVX    A,@DPTR
+                       XRL     A,R7
+                 R     xJNZ    ?C0014
+                                           ; SOURCE LINE # 89
+             ?C0018:
+                                           ; SOURCE LINE # 90
+                 R     MOV     DPTR,#band
+                       MOVX    A,@DPTR
+                       MOV     R7,A
+                       ANL     A,#07H
+                       MOV     R6,A
+                       MOV     A,#01H
+                       MOV     R0,AR6
+                       INC     R0
+                 R     xJMP    ?C0049
+             ?C0048:
+                       CLR     C
+                       RLC     A
+             ?C0049:
+                 R     DJNZ    R0,?C0048
+                       MOV     R6,A
+;---- Variable 'l_bit' assigned to Register 'R6' ----
+                                           ; SOURCE LINE # 91
+                       MOV     A,R7
+                       RRC     A
+                       RRC     A
+                       RRC     A
+                       ANL     A,#01FH
+                       MOV     R7,A
+;---- Variable 'l_hi' assigned to Register 'R7' ----
+                                           ; SOURCE LINE # 92
+                 R     MOV     DPTR,#l_row+03H
+                       MOVX    A,@DPTR
+                       MOV     R5,A
+                 R     xJNB    ACC.0,?C0020
+C51 COMPILER V9.51   CALIBRATION                                                           10/26/2026 10:09:12 PAGE 10  
+
+                 R     MOV     A,#LOW E_cal+07EH
+                       ADD     A,R7
+                       MOV     DPL,A
+                       CLR     A
+                 R     ADDC    A,#HIGH E_cal+07EH
+                       MOV     DPH,A
+                       MOVX    A,@DPTR
+                       ORL     A,R6
+                       MOVX    @DPTR,A
+             ?C0020:
+                                           ; SOURCE LINE # 93
+                       MOV     A,R5
+                 R     xJNB    ACC.1,?C0021
+                 R     MOV     A,#LOW E_cal+080H
+                       ADD     A,R7
+                       MOV     DPL,A
+                       CLR     A
+                 R     ADDC    A,#HIGH E_cal+080H
+                       MOV     DPH,A
+                       MOVX    A,@DPTR
+                       ORL     A,R6
+                       MOVX    @DPTR,A
+             ?C0021:
+                                           ; SOURCE LINE # 94
+                 R     MOV     DPTR,#l_row+03H
+                       MOVX    A,@DPTR
+                 R     xJNB    ACC.2,?C0022
+                 R     MOV     A,#LOW E_cal+082H
+                       ADD     A,R7
+                       MOV     DPL,A
+                       CLR     A
+                 R     ADDC    A,#HIGH E_cal+082H
+                       MOV     DPH,A
+                       MOVX    A,@DPTR
+                       ORL     A,R6
+                       MOVX    @DPTR,A
+             ?C0022:
+                                           ; SOURCE LINE # 95
+                       CLR     A
+                 R     MOV     DPTR,#i
+                       MOVX    @DPTR,A
+             ?C0023:
+                 R     MOV     DPTR,#i
+                       MOVX    A,@DPTR
+                       CLR     C
+                       SUBB    A,#04H
+                 R     xJGE    ?C0024
+                                           ; SOURCE LINE # 96
+                       MOVX    A,@DPTR
+                       MOV     R7,A
+                 R     ADD     A,#LOW l_row+04H
+                       MOV     DPL,A
+                       CLR     A
+                 R     ADDC    A,#HIGH l_row+04H
+                       MOV     DPH,A
+                       MOVX    A,@DPTR
+                       MOV     R6,A
+                 R     MOV     DPTR,#band
+                       MOVX    A,@DPTR
+                       MOV     R5,A
+                       ADD     A,ACC
+                       ADD     A,ACC
+C51 COMPILER V9.51   CALIBRATION                                                           10/26/2026 10:09:12 PAGE 11  
+
+                 R     ADD     A,#LOW E_cal+06H
+                       MOV     DPL,A
+                       CLR     A
+                 R     ADDC    A,#HIGH E_cal+06H
+                       MOV     DPH,A
+                       MOV     A,DPL
+                       ADD     A,R7
+                       MOV     DPL,A
+                       CLR     A
+                       ADDC    A,DPH
+                       MOV     DPH,A
+                       MOV     A,R6
+                       MOVX    @DPTR,A
+                                           ; SOURCE LINE # 97
+                 R     MOV     DPTR,#i
+                       MOVX    A,@DPTR
+                       MOV     R7,A
+                 R     ADD     A,#LOW l_row+08H
+                       MOV     DPL,A
+                       CLR     A
+                 R     ADDC    A,#HIGH l_row+08H
+                       MOV     DPH,A
+                       MOVX    A,@DPTR
+                       MOV     R6,A
+                       MOV     A,R5
+                       ADD     A,ACC
+                       ADD     A,ACC
+                 R     ADD     A,#LOW E_cal+036H
+                       MOV     DPL,A
+                       CLR     A
+                 R     ADDC    A,#HIGH E_cal+036H
+                       MOV     DPH,A
+                       MOV     A,DPL
+                       ADD     A,R7
+                       MOV     DPL,A
+                       CLR     A
+                       ADDC    A,DPH
+                       MOV     DPH,A
+                       MOV     A,R6
+                       MOVX    @DPTR,A
+                                           ; SOURCE LINE # 98
+                 R     MOV     DPTR,#i
+                       MOVX    A,@DPTR
+                       INC     A
+                       MOVX    @DPTR,A
+                 R     xJMP    ?C0023
+             ?C0024:
+                                           ; SOURCE LINE # 99
+                 R     MOV     DPTR,#l_row+0CH
+                       MOVX    A,@DPTR
+                       MOV     R7,A
+                 R     MOV     DPTR,#band
+                       MOVX    A,@DPTR
+                       MOV     R6,A
+                       ADD     A,ACC
+                 R     ADD     A,#LOW E_cal+066H
+                       MOV     DPL,A
+                       CLR     A
+                 R     ADDC    A,#HIGH E_cal+066H
+                       MOV     DPH,A
+                       MOV     A,R7
+                       MOVX    @DPTR,A
+C51 COMPILER V9.51   CALIBRATION                                                           10/26/2026 10:09:12 PAGE 12  
+
+                                           ; SOURCE LINE # 100
+                 R     MOV     DPTR,#l_row+0DH
+                       MOVX    A,@DPTR
+                       MOV     R7,A
+                       MOV     A,R6
+                       ADD     A,ACC
+                 R     ADD     A,#LOW E_cal+067H
+                       MOV     DPL,A
+                       CLR     A
+                 R     ADDC    A,#HIGH E_cal+067H
+                       MOV     DPH,A
+                       MOV     A,R7
+                       MOVX    @DPTR,A
+                                           ; SOURCE LINE # 101
+                 R     MOV     DPTR,#E_cal_status+01H
+                       MOV     A,#01H
+                       MOVX    @DPTR,A
+                                           ; SOURCE LINE # 102
+             ?C0014:
+                 R     MOV     DPTR,#band
+                       MOVX    A,@DPTR
+                       INC     A
+                       MOVX    @DPTR,A
+                 R     xJMP    ?C0012
+                                           ; SOURCE LINE # 103
+             ?C0026:
+                       RET     
+             ; FUNCTION Cal_Init (END)
+
+             ; FUNCTION Cal_Main (BEGIN)
+                                           ; SOURCE LINE # 106
+                                           ; SOURCE LINE # 110
+                 R     MOV     DPTR,#l_state
+                       MOVX    A,@DPTR
+                       DEC     A
+                 R     xJZ     ?C0039
+                       INC     A
+                 R     xJNZ    ?C0044
+                                           ; SOURCE LINE # 111
+             ?C0028:
+                                           ; SOURCE LINE # 112
+                 R     MOV     DPTR,#E_cal_quiet
+                       MOVX    A,@DPTR
+                 R     xJZ     ?C0029
+                                           ; SOURCE LINE # 113
+                       MOVX    A,@DPTR
+                       DEC     A
+                       MOVX    @DPTR,A
+                                           ; SOURCE LINE # 114
+                       RET     
+                                           ; SOURCE LINE # 115
+             ?C0029:
+                                           ; SOURCE LINE # 116
+                 E     MOV     DPTR,#TX_Request
+                       MOVX    A,@DPTR
+                 R     xJNZ    ?C0045
+                 E     MOV     DPTR,#E_PTT
+                       MOVX    A,@DPTR
+                 R     xJNZ    ?C0045
+                 E     MOV     DPTR,#E_key_down
+                       MOVX    A,@DPTR
+                 R     xJNZ    ?C0045
+C51 COMPILER V9.51   CALIBRATION                                                           10/26/2026 10:09:12 PAGE 13  
+
+             ?C0030:
+                                           ; SOURCE LINE # 117
+                       CLR     A
+                 R     MOV     DPTR,#band
+                       MOVX    @DPTR,A
+             ?C0032:
+                 R     MOV     DPTR,#band
+                       MOVX    A,@DPTR
+                       MOV     R7,A
+                       CLR     C
+                       SUBB    A,#0CH
+                 R     xJGE    ?C0033
+                                           ; SOURCE LINE # 118
+                 R     MOV     A,#LOW E_cal_dirty
+                       ADD     A,R7
+                       MOV     DPL,A
+                       CLR     A
+                 R     ADDC    A,#HIGH E_cal_dirty
+                       MOV     DPH,A
+                       MOVX    A,@DPTR
+                 R     xJNZ    ?C0033
+             ?C0035:
+                                           ; SOURCE LINE # 119
+             ?C0034:
+                 R     MOV     DPTR,#band
+                       MOVX    A,@DPTR
+                       INC     A
+                       MOVX    @DPTR,A
+                 R     xJMP    ?C0032
+             ?C0033:
+                                           ; SOURCE LINE # 120
+                 R     MOV     DPTR,#band
+                       MOVX    A,@DPTR
+                       CLR     C
+                       SUBB    A,#0CH
+                 R     xJGE    ?C0045
+             ?C0036:
+                                           ; SOURCE LINE # 121
+                 E     CALL    CyEnterCriticalSection
+;---- Variable 'l_int' assigned to Register 'R4' ----
+                       MOV     R4,AR7
+                                           ; SOURCE LINE # 122
+                 R     MOV     DPTR,#band
+                       MOVX    A,@DPTR
+                       MOV     R7,A
+                 R     ADD     A,#LOW E_cal_dirty
+                       MOV     DPL,A
+                       CLR     A
+                 R     ADDC    A,#HIGH E_cal_dirty
+                       MOV     DPH,A
+                       CLR     A
+                       MOVX    @DPTR,A
+                                           ; SOURCE LINE # 123
+                 R     CALL    _Cal_Build_Row
+                                           ; SOURCE LINE # 124
+                       MOV     R7,AR4
+                 E     CALL    _CyExitCriticalSection
+                                           ; SOURCE LINE # 125
+                 R     MOV     DPTR,#E_cal_status
+                       MOV     A,#01H
+                       MOVX    @DPTR,A
+                                           ; SOURCE LINE # 126
+C51 COMPILER V9.51   CALIBRATION                                                           10/26/2026 10:09:12 PAGE 14  
+
+                       MOV     R3,A
+                 R     MOV     R2,#HIGH l_row
+                 R     MOV     R1,#LOW l_row
+                 R     MOV     DPTR,#band
+                       MOVX    A,@DPTR
+                       ADD     A,#08H
+                       MOV     R5,A
+                 E     CALL    _EEPROM_StartWrite
+                 R     MOV     DPTR,#l_status
+                       MOV     A,R7
+                       MOVX    @DPTR,A
+                                           ; SOURCE LINE # 127
+                 R     xJNE    A,#07H,?C0037
+                                           ; SOURCE LINE # 128
+                 R     MOV     DPTR,#l_state
+                       MOV     A,#01H
+                       MOVX    @DPTR,A
+                                           ; SOURCE LINE # 129
+                       RET     
+             ?C0037:
+                                           ; SOURCE LINE # 130
+                 R     MOV     DPTR,#band
+                       MOVX    A,@DPTR
+                 R     ADD     A,#LOW E_cal_dirty
+                       MOV     DPL,A
+                       CLR     A
+                 R     ADDC    A,#HIGH E_cal_dirty
+                       MOV     DPH,A
+                       MOV     A,#01H
+                       MOVX    @DPTR,A
+                                           ; SOURCE LINE # 131
+                                           ; SOURCE LINE # 132
+                       RET     
+                                           ; SOURCE LINE # 134
+             ?C0039:
+                                           ; SOURCE LINE # 135
+                 E     CALL    EEPROM_Query
+                 R     MOV     DPTR,#l_status
+                       MOV     A,R7
+                       MOVX    @DPTR,A
+                                           ; SOURCE LINE # 136
+                       XRL     A,#07H
+                 R     xJZ     ?C0045
+             ?C0040:
+                                           ; SOURCE LINE # 137
+                 R     MOV     DPTR,#l_status
+                       MOVX    A,@DPTR
+                       MOV     R7,A
+                 R     xJNZ    ?C0041
+                       MOV     R6,#02H
+                 R     xJMP    ?C0042
+             ?C0041:
+                       MOV     R6,#03H
+             ?C0042:
+                 R     MOV     DPTR,#E_cal_status
+                       MOV     A,R6
+                       MOVX    @DPTR,A
+                                           ; SOURCE LINE # 138
+                       MOV     A,R7
+                 R     xJNZ    ?C0043
+                       INC     DPTR
+                       INC     A
+C51 COMPILER V9.51   CALIBRATION                                                           10/26/2026 10:09:12 PAGE 15  
+
+                       MOVX    @DPTR,A
+             ?C0043:
+                                           ; SOURCE LINE # 139
+                       CLR     A
+                 R     MOV     DPTR,#l_state
+                       MOVX    @DPTR,A
+                                           ; SOURCE LINE # 140
+                       RET     
+                                           ; SOURCE LINE # 142
+             ?C0044:
+                                           ; SOURCE LINE # 143
+                       CLR     A
+                 R     MOV     DPTR,#l_state
+                       MOVX    @DPTR,A
+                                           ; SOURCE LINE # 144
+                                           ; SOURCE LINE # 145
+                                           ; SOURCE LINE # 146
+             ?C0045:
+                       RET     
+             ; FUNCTION Cal_Main (END)
+
+
+
+MODULE INFORMATION:   STATIC OVERLAYABLE
+   CODE SIZE        =    992    ----
+   CONSTANT SIZE    =   ----    ----
+   XDATA SIZE       =    176       7
+   PDATA SIZE       =   ----    ----
+   DATA SIZE        =   ----    ----
+   IDATA SIZE       =   ----    ----
+   BIT SIZE         =   ----    ----
+   EDATA SIZE       =   ----    ----
+   HDATA SIZE       =   ----    ----
+   XDATA CONST SIZE =   ----    ----
+   FAR CONST SIZE   =   ----    ----
+END OF MODULE INFORMATION.
+
+
+C51 COMPILATION COMPLETE.  0 WARNING(S),  0 ERROR(S)

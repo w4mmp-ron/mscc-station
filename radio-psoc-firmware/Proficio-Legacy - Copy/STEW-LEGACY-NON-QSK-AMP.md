@@ -2,12 +2,30 @@
 
 **From:** Ron (W4MMP)  
 **Date:** 2026-10-20  
-**Firmware:** Proficio Legacy 1.232, in the folder `radio-psoc-firmware\Proficio-Legacy - Copy`
+**Firmware:** Proficio Legacy **1.235** (updated 2026-10-26, see "Update 1.235" below; 1.232 was the first), in the folder `radio-psoc-firmware\Proficio-Legacy - Copy`
 (a copy of your Legacy tree; your `Proficio-Legacy` is untouched)  
 **Status:** builds clean. **Not tested on a radio**; I don't have a Legacy rig. Over to you.
 
 This is the same idea as the MKII PTT 3.234 change (`STEW-NON-QSK-AMP.md` in Proficio-MKII-PTT),
 adapted to the way Legacy keys CW. Take it, change it or leave it; your call.
+
+## Update 1.235 (2026-10-26)
+
+Three changes bring Legacy in line with MKII-PTT 3.240:
+
+1. **CW keying held steady (1.233).** During CW, the 1 ms key-delay interrupt now writes the
+   I/Q gate (DIN) on every tick: open through each element and its 18 ms fade-out, closed
+   after. Before, a routine main-loop control write could close DIN early, cutting an element
+   short or causing a click.
+2. **Switching to CW drops any transmit (1.234).** If PTT or TUNE from the host is still on
+   when the mode changes to CW, the radio now turns PA, AMP and the TX LED off and goes back to
+   receive. Before, it could stay stuck in transmit.
+3. **Calibration stored in the radio (1.235).** Same as MKII-PTT: per-band receive IQ,
+   transmit IQ and power values (CMD_CALIBRATION 0xC8), kept in EEPROM rows 8-19. Nothing else
+   in Legacy uses those rows. New file `calibration.c`.
+
+Flash file: `Proficio-Legacy - Copy\Debug\Proficio-Legacy.cyacd`. Built clean; not tested on a
+Legacy rig yet. Test items 6 and 7 at the end cover these.
 
 ## How Legacy keys CW (unchanged idea)
 
@@ -89,7 +107,9 @@ file): PTT on → AMP on → wait the key delay → PA on. PTT off → PA off �
   states, DIN reopened at the end of the hang.
 - `main.c`: starts the timer; works out the key delay from TX hold; reopens DIN on leaving CW.
 - `tx.c`: amp-then-PA order (same file as MKII 3.234).
-- `basic-plus.h`: limits and shared names; `PCM3060_SetRegister` prototype; version 1.232.
+- `basic-plus.h`: limits and shared names; `PCM3060_SetRegister` prototype; version 1.235.
+- 1.233-1.235: `cw.c` (DIN every tick), `main.c` (entering CW drops TX; calibration load and
+  save), `calibration.c` (new), `usbvend.h` / `usbvend01.c` (0xC8), `basic-plus.h`.
 
 ## Post-build step
 
@@ -101,13 +121,15 @@ cyacd are made fine). In the copy it now points to the copy's own `copy-release.
 
 ## Could you test on a Legacy rig?
 
-1. Radio reports 1.232.
+1. Radio reports 1.235.
 2. CW: keys normally, first dot complete, sounds right. On a receiver nearby or a scope:
    softer edges and less click than before; at higher speeds (30+ WPM) elements still clean.
 3. **SSB after CW**: send some CW, switch to SSB, PTT: you should get RF (the bug fix).
 4. Receive audio returns normally after CW and after SSB.
 5. With a non-QSK amp and a scope, if you have time: AMP on to RF out about 31 ms at 500 ms
    hold, in CW and on SSB PTT; RF stopped before the AMP line drops.
+6. CW at a few speeds: no chopped elements, no new clicks (1.233).
+7. In SSB with PTT or TUNE on, switch to CW: the radio drops back to receive cleanly (1.234).
 
 If it looks good you can move it into your Legacy tree, or tell me and I'll help. Nothing has
 been committed.

@@ -1,4 +1,4 @@
-C51 COMPILER V9.51   TX                                                                    10/20/2026 11:01:04 PAGE 1   
+C51 COMPILER V9.51   TX                                                                    10/26/2026 10:09:08 PAGE 1   
 
 
 C51 COMPILER V9.51, COMPILATION OF MODULE TX
@@ -62,7 +62,7 @@ line level    source
   50   4                      }else{
   51   4                          Control_Write(Control_Read() & ~CONTROL_AMP);   //AMP on first - Negative logic level
   52   4                          delay_ms = E_key_delay_ms;
-C51 COMPILER V9.51   TX                                                                    10/20/2026 11:01:04 PAGE 2   
+C51 COMPILER V9.51   TX                                                                    10/26/2026 10:09:08 PAGE 2   
 
   53   4                          start_tick = E_ms_tick;
   54   4                          state = 3;
@@ -107,7 +107,7 @@ line level    source
   93   2          }
   94   1      
   95   1      }
-C51 COMPILER V9.51   TX                                                                    10/20/2026 11:01:04 PAGE 3   
+C51 COMPILER V9.51   TX                                                                    10/26/2026 10:09:08 PAGE 3   
 
 ASSEMBLY LISTING OF GENERATED OBJECT CODE
 
@@ -171,7 +171,7 @@ ASSEMBLY LISTING OF GENERATED OBJECT CODE
                        MOVX    A,@DPTR
                  R     MOV     DPTR,#start_tick
                        MOVX    @DPTR,A
-C51 COMPILER V9.51   TX                                                                    10/20/2026 11:01:04 PAGE 4   
+C51 COMPILER V9.51   TX                                                                    10/26/2026 10:09:08 PAGE 4   
 
                                            ; SOURCE LINE # 54
                  R     MOV     DPTR,#state
@@ -235,7 +235,7 @@ ASSEMBLY LISTING OF GENERATED OBJECT CODE
                  R     xJLT    ?C0019
                                            ; SOURCE LINE # 67
                  E     CALL    Control_Read
-C51 COMPILER V9.51   TX                                                                    10/20/2026 11:01:04 PAGE 5   
+C51 COMPILER V9.51   TX                                                                    10/26/2026 10:09:08 PAGE 5   
 
                        MOV     A,R7
                        ANL     A,#0FDH
@@ -299,7 +299,7 @@ ASSEMBLY LISTING OF GENERATED OBJECT CODE
              ?C0016:
                                            ; SOURCE LINE # 84
                  E     CALL    Control_Read
-C51 COMPILER V9.51   TX                                                                    10/20/2026 11:01:04 PAGE 6   
+C51 COMPILER V9.51   TX                                                                    10/26/2026 10:09:08 PAGE 6   
 
                        MOV     A,R7
                        ORL     A,#02H

@@ -131,7 +131,13 @@ CY_ISR(KEY_DELAY_interrupt){
         rf_off_ms = 0;
     }else if(!rf_on){
         if(rf_off_ms < 255u) rf_off_ms++;
-        if(rf_off_ms >= DAC_RAMP_MS) Control_Control &= ~CONTROL_DIN;   //I/Q blanked
+        if(rf_off_ms >= DAC_RAMP_MS){
+            Control_Control &= ~CONTROL_DIN;    //I/Q blanked
+        }else{
+            Control_Control |= CONTROL_DIN;     //Ramping down: DIN stays open (rewrite every tick)
+        }
+    }else{
+        Control_Control |= CONTROL_DIN;         //Rewrite every tick: a main loop Control_Write() may undo it
     }
     key_delay_idx = (key_delay_idx + 1u) & (KEY_DELAY_BUF_SIZE - 1u);
     key_delay_busy = (key_up_ms <= key_delay_ms) || rf_on || (rf_off_ms < DAC_RAMP_MS);

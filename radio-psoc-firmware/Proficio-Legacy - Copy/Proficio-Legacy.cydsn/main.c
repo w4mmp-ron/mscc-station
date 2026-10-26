@@ -82,6 +82,7 @@ void main_init() {
     Key_Delay_isr_StartEx(KEY_DELAY_interrupt);
 
     Settings_Init();
+    Cal_Init();                                 //per-band calibration from EEPROM (after EEPROM_Start)
     si_err = si5351_init(SI5351_CRYSTAL_LOAD_10PF,0);
     //si_err = si5351_init(SI5351_CRYSTAL_LOAD_12PF,0);
     if (!si_err) {
@@ -140,6 +141,15 @@ int main()
         Sync_Main();
         if(E_host_mode == 'C') {
             if(previous_host_mode != E_host_mode){
+                //Entering CW: drop any host PTT / TUNE TX. TX_Main() does not run in CW,
+                //so a PTT off sent after the mode change would never be acted on.
+                Control_Write(Control_Read() & ~CONTROL_LED);   //Restore LED operation to normal
+                Control_Write(Control_Read() | CONTROL_RX);     //Turn OFF PA - Negative logic level
+                control_status = Control_Read();
+                control_status = control_status | CONTROL_AMP;  //Turn OFF the AMP port - Negative logic level
+                control_status = control_status | CONTROL_DOUT; //Turn ON output from PCM3060
+                Control_Write(control_status);
+                TX_Request = 0;
                 previous_host_mode = E_host_mode;
             }
             Manage_Paddles_Port();
@@ -171,6 +181,7 @@ int main()
                 break;
             case 2:
                 Settings_Main();
+                Cal_Main();                     //calibration EEPROM save, one row per pass
                 if (previous_TX_hold_time != E_TX_Hold){
                     previous_TX_hold_time = E_TX_Hold;
                     CW_Hold_Timer_WritePeriod((previous_TX_hold_time * 100)); //Configure the CW hold timer
