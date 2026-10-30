@@ -1816,6 +1816,27 @@
                                         </Border>
                                     </Grid>
 
+                                    <!-- PHASE (2026-10-30): TX I/Q phase, steps of 0.05 deg -->
+                                    <Grid Margin="0,4,0,8" HorizontalAlignment="Left">
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="70"/>
+                                            <ColumnDefinition Width="280"/>
+                                            <ColumnDefinition Width="Auto"/>
+                                        </Grid.ColumnDefinitions>
+                                        <TextBlock Grid.Column="0" Text="PHASE" Foreground="White" VerticalAlignment="Center" FontWeight="Bold"/>
+                                        <Slider Grid.Column="1" Minimum="-100" Maximum="100"
+                                                SmallChange="1" LargeChange="5"
+                                                Value="{Binding TxIqPhase, Mode=TwoWay}"
+                                                IsEnabled="{Binding TxIqTxOn}"
+                                                IsSnapToTickEnabled="True" TickFrequency="1"
+                                                VerticalAlignment="Center"
+                                                PreviewMouseWheel="Slider_PreviewMouseWheel"
+                                                ToolTip="TX I/Q phase, 0.05 degree steps (±5°). Set OFFSET first, then step PHASE one click at a time for the weakest image; recheck OFFSET."/>
+                                        <Border Grid.Column="2" Background="#444" BorderBrush="#888" BorderThickness="1" Padding="8,4" Margin="12,0,0,0" MinWidth="56">
+                                            <TextBlock Text="{Binding TxIqPhaseText}" Foreground="#00FFAA" FontWeight="Bold" FontSize="12" HorizontalAlignment="Center"/>
+                                        </Border>
+                                    </Grid>
+
                                     <!-- TX / APPLY / RESET -->
                                     <StackPanel Orientation="Horizontal" Margin="0,8,0,4">
                                         <Button Content="TX" Width="110" Height="28" Margin="0,0,12,0"

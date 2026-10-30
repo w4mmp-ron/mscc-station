@@ -406,6 +406,17 @@ extern pid_t G_main_pid;
 extern int G_major_version;
 extern int G_minor_version;
 extern int G_firmware_version_packed;
+/* Radio firmware type from the version MINOR (Ron, Pi 68ac537): the STM32 Black Pill
+ * uses 1-199, the PSoC 200 and up (3.240). Set in main() after srGetVersion. */
+#define FIRMWARE_PSOC_MINOR_MIN 200
+#define FIRMWARE_TYPE_UNKNOWN 0
+#define FIRMWARE_TYPE_PSOC    1
+#define FIRMWARE_TYPE_STM32   2
+extern int G_firmware_type;
+/* Power calibration stored in the radio (0xC8, Pi 6680c11): power_calibration.c */
+extern void Radio_cal_save_tick(void);
+extern void Radio_cal_load_power(void);
+extern uint8_t G_Radio_Cal_Save_Pending;
 extern const char *homedir;
 extern uint8_t G_Sound_Device; 
 extern int16_t G_spectrum_cycle_count;

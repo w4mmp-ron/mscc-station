@@ -3,7 +3,20 @@
 extern blanker_state nbstate;
 extern state mystate;
 
-void initBlanker(uint8_t overridedefaults, uint8_t enabled, float threshold, int16_t width)
+/*
+ * Settings request. initBlanker() runs in the UDP thread and only stores the request;
+ * blankerPoll() applies it in the audio thread before the next block. Before, the UDP
+ * thread rebuilt nbstate while doBlanker() used it: a shorter width at the wrong moment
+ * left oindex past delaylen, it never wrapped, read past the delay line, and a NaN from
+ * there locked the AGC (audio silent until restart; Ron 2026-10-29).
+ */
+static volatile int nb_request = 0;
+static uint8_t nb_req_override;
+static uint8_t nb_req_enabled;
+static float nb_req_threshold;
+static int16_t nb_req_width;
+
+static void applyBlanker(uint8_t overridedefaults, uint8_t enabled, float threshold, int16_t width)
 {
         sp_float ga, gb;
 
@@ -19,12 +32,13 @@ void initBlanker(uint8_t overridedefaults, uint8_t enabled, float threshold, int
 
         if (overridedefaults) {
                 nbstate.enabled = enabled;
-                print_time();
                 nbstate.threshold = (sp_float) threshold / 1000.0f;
-                print_time();
-                fprintf(G_fp_logfile, "[%d] initBlanker . nbstate.threshold: %f\n", line_number++, nbstate.threshold);
                 nbstate.rampwidth = width;
         }
+
+        // delay line and gain ramp are 10000 long; delaylen must be at least 1
+        if (nbstate.rampwidth < 2) nbstate.rampwidth = 2;
+        if (nbstate.rampwidth > 9998) nbstate.rampwidth = 9998;
 
         // Calculated from above
         nbstate.delaylen = nbstate.rampwidth / 2;
@@ -47,6 +61,32 @@ void initBlanker(uint8_t overridedefaults, uint8_t enabled, float threshold, int
                 if (gb < 0.0f) nbstate.gainramp[j] = 0.0f;
                 else nbstate.gainramp[j] = gb;
         }
+        // index 0 is the resting gain (not blanking): unity (it was 1 - ga, e.g. 0.7)
+        nbstate.gainramp[0] = 1.0f;
+}
+
+// UDP thread: store the request, applied by blankerPoll() in the audio thread
+void initBlanker(uint8_t overridedefaults, uint8_t enabled, float threshold, int16_t width)
+{
+        nb_req_override = overridedefaults;
+        nb_req_enabled = enabled;
+        nb_req_threshold = threshold;
+        nb_req_width = width;
+        nb_request = 1;
+
+        if (overridedefaults) {
+                print_time();
+                fprintf(G_fp_logfile, "[%d] initBlanker . nbstate.threshold: %f\n", line_number++,
+                        (sp_float) threshold / 1000.0f);
+        }
+}
+
+// Audio thread, before doBlanker: apply a pending request
+void blankerPoll(void)
+{
+        if (!nb_request) return;
+        nb_request = 0; // clear first: a request made while applying is applied next block
+        applyBlanker(nb_req_override, nb_req_enabled, nb_req_threshold, nb_req_width);
 }
 
 void doBlanker(sp_cplx *samps, int nframes)
@@ -55,6 +95,8 @@ void doBlanker(sp_cplx *samps, int nframes)
         int i, j, sp;
         sp_float tmp;
         static int tripcounter = 0;
+
+        if (tripcounter >= nbstate.rampwidth) tripcounter = 0; // width made shorter
 
         for (j = 0; j < nframes; j++) {
                 // get I and Q samples into delay line
@@ -93,7 +135,7 @@ void doBlanker(sp_cplx *samps, int nframes)
                 if (tripcounter > 0) tripcounter--;
 
                 // rotate the delay line indexes
-                if (++nbstate.iindex == nbstate.delaylen) nbstate.iindex = 0;
-                if (++nbstate.oindex == nbstate.delaylen) nbstate.oindex = 0;
+                if (++nbstate.iindex >= nbstate.delaylen) nbstate.iindex = 0;
+                if (++nbstate.oindex >= nbstate.delaylen) nbstate.oindex = 0;
         }
 }

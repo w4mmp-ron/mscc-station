@@ -113,6 +113,7 @@ uint8_t G_Allow_Log_Write = TRUE;
 uint8_t G_Threads_Started = FALSE;
 int G_major_version = 0;
 int G_minor_version = 0;
+int G_firmware_type = FIRMWARE_TYPE_UNKNOWN;
 int G_firmware_version_packed = 0;
 char G_l_path[MAX_PATH] = { 0 };
 long t = 0;
@@ -445,6 +446,11 @@ void* Flusher_thread(void* t) {
                     User_Controls_Update_Init_File();
                 }
             }
+
+            /* Power cal slider: send the band's value to the radio (0xC8) after the last step. */
+            if (G_Radio_Cal_Save_Pending > 0)
+                Radio_cal_save_tick();
+
             if (previous_startup_freq != G_tune_freq && G_TX == FALSE) {
                 Update_Startup(G_tune_freq, G_mode);
                 previous_startup_freq = G_tune_freq;
@@ -646,7 +652,7 @@ int Tune_button(int on_off, uint8_t allow_MKII_PTT_Switch) {
 
     print_time(0);
     fprintf(G_fp_logfile, "[%d] Tune_button called . on_off: %d, previous_mode: %c,G_mode: %c\n",
-            line_number++, on_off, G_previous_mode, G_mode);
+            line_number++, on_off, G_previous_mode ? G_previous_mode : '-', G_mode);   //0 = no previous mode yet; %c would log a NUL
     if (G_TX_Inhibit == FALSE && G_check_bias == FALSE) {
         G_dll_active = TRUE;
         if (on_off == TRUE && allow_MKII_PTT_Switch == FALSE) {
@@ -698,14 +704,30 @@ void *Manage_MKII_PTT_Switch(void *my_parm) {
     int r = 0;
     int tx_mode = FALSE;
     static int previous_tx_mode = 0;
-    int ptt = FALSE;
-    int sleep_time = 1;
+    uint8_t ptt = FALSE;   /* the radio answers 1 byte */
+    int read_failing = FALSE;
+    int sleep_time = 20;   /* ms (delayMicroseconds = Sleep, ms); was 1. Ported from Pi b5074a0 (ms-sdr Windows, 2026-10-30) */
 
     while (G_all_threads_run) {
         if (G_PTT_Switch_Allow == TRUE) {
             r = usbControlMsgIN(CMD_GET_PTT, 0, 0, (char*) &ptt, sizeof (ptt));
-            if (r) {
-                tx_mode = ptt;
+            /* Only a good 1-byte read counts. r < 0 (USB error / timeout) used to pass
+             * "if (r)" and junk in the buffer was taken as a PTT change (2026-10-24). */
+            if (r != 1) {
+                if (!read_failing) {
+                    read_failing = TRUE;
+                    print_time(0);
+                    fprintf(G_fp_logfile, "[%d] Manage_MKII_PTT_Switch. CMD_GET_PTT read failed, r: %d (ignored)\n",
+                            line_number++, r);
+                }
+            } else {
+                if (read_failing) {
+                    read_failing = FALSE;
+                    print_time(0);
+                    fprintf(G_fp_logfile, "[%d] Manage_MKII_PTT_Switch. CMD_GET_PTT read OK again\n",
+                            line_number++);
+                }
+                tx_mode = ptt ? TRUE : FALSE;
                 if (previous_tx_mode != tx_mode) {
                     Set_PTT(tx_mode, TRUE);
                     SDRcore_recv_send_param(CMD_SET_TX_ON, tx_mode);
@@ -730,7 +752,7 @@ void *Manage_MKII_PTT_Switch(void *my_parm) {
 
 void *Get_Key_Status(void *my_parm) {
     int r = 0;
-    int key = FALSE;
+    uint8_t key = FALSE;   /* the radio answers 1 byte */
     int sleep_time = 1;
     static int previous_key = FALSE;
 
@@ -740,7 +762,7 @@ void *Get_Key_Status(void *my_parm) {
     while (G_all_threads_run) {
         if (G_TX_Inhibit == FALSE) {
             r = usbControlMsgIN(CMD_GET_KEY_DOWN, 0, 0, (char*)&key, sizeof(key));
-            if (r) {
+            if (r == 1) {   /* was "if (r)": r < 0 (error) passed too */
                 if (previous_key != key) {
                     previous_key = key;
                     //Spectrum_Waterfall_send_param(CMD_SET_TX_ON, key);
@@ -1158,7 +1180,10 @@ int static Start_Threads() {
         fprintf(G_fp_logfile, "[%d] main. Start Freq_Dequeue_thread thread Started, return code from pthread_create() is %d\n",
                 line_number++, G_Freq_Queue_rc);
     }
-    Start_Key_status_thread();
+    /* Not started (Pi b5074a0): it only logged CMD_GET_KEY_DOWN, nothing used it, and it
+     * added a USB control read every 1 ms. */
+    /* Start_Key_status_thread(); */
+    (void)Start_Key_status_thread;
     Sleep(1000);
     /* MKII rear PTT sense (CMD_GET_PTT). Legacy: PROFICIO-MKII=0 in mscc.ini */
     if (G_proficio_mkii) {
@@ -1218,6 +1243,11 @@ int main(int argc, char **argv) {
             print_time(0);
             fprintf(G_fp_logfile, "[%d] main . srGetVersion returned Transceiver Firmware Version: %d.%d \n",
                     line_number++, G_major_version, G_minor_version);
+            G_firmware_type = (G_minor_version >= FIRMWARE_PSOC_MINOR_MIN) ? FIRMWARE_TYPE_PSOC
+                                                                          : FIRMWARE_TYPE_STM32;
+            print_time(0);
+            fprintf(G_fp_logfile, "[%d] main . Firmware type: %s (minor %d)\n", line_number++,
+                    G_firmware_type == FIRMWARE_TYPE_PSOC ? "PSoC" : "STM32", G_minor_version);
             Factory_seed_live_inis();
             if (G_major_version >= MULTUS_MAJOR_VERSION_119 && G_minor_version >= MULTUS_MINOR_VERSION_81) {
                 print_time(0);
@@ -1304,6 +1334,7 @@ int main(int argc, char **argv) {
                 "[%d] main. Network ready - reload cal if a live file was replaced, then Apply_Appliance_Startup\n",
                 line_number++);
             Factory_seed_reload_servers();
+            Radio_cal_load_power();
             Apply_Appliance_Startup();
         } else {
             print_time(0);

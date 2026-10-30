@@ -401,6 +401,7 @@ void *UDP_Thread(void *my_param) {
     sp_float high_cut = 2700.0f;
     sp_float low_cut = 75.0f;
     int iq_band = NO_IQ_BAND;
+    int iq_active = NO_IQ_BAND; /* trans 3.150: record whose I/Q correction is in use now */
     int iq_offset = 0;
     uint32_t operating_band = 0;
     uint32_t previous_operating_band = 0;
@@ -853,6 +854,8 @@ void *UDP_Thread(void *my_param) {
                             break;
                     }
                     IQ_calc(iq_offset);
+                    iq_active = Get_IQ_Record((int) operating_band);
+                    IQ_phase_calc((iq_active >= 0 && iq_active < 12) ? G_iq_stack[iq_active].iq_phase : 0);
                     previous_operating_band = operating_band;
                 }
                 print_time();
@@ -862,6 +865,14 @@ void *UDP_Thread(void *my_param) {
 
             case CMD_SET_IQ_BAND:
                 iq_band = Get_IQ_Record(s_opcode_data);
+                if (iq_band < 0 || iq_band >= 12) {
+                    /* Unknown band: Get_IQ_Record returns NO_IQ_BAND (200); G_iq_stack has 12 entries. */
+                    print_time();
+                    fprintf(G_fp_logfile, "[%d] UDP Thread. CMD_SET_IQ_BAND. Unknown band %d. Ignored\n",
+                            line_number++, s_opcode_data);
+                    iq_band = NO_IQ_BAND;
+                    break;
+                }
                 G_iq_stack[iq_band].band = iq_band;
                 G_iq_stack[iq_band].record = iq_band;
                 iq_offset = G_iq_stack[iq_band].iq_offset;
@@ -877,12 +888,38 @@ void *UDP_Thread(void *my_param) {
                     fprintf(G_fp_logfile, "[%d] UDP Thread. CMD_SET_IQ_BAND. sentto failed with error code : %s\n",
                             line_number++, strerror(errno));
                 }
+                /* trans 3.150: phase for this band, and report it (0x2B) so the client shows it */
+                iq_active = iq_band;
+                IQ_phase_calc(G_iq_stack[iq_band].iq_phase);
+                iq_buffer.opcode = CMD_GET_IQ_PHASE;
+                iq_buffer.iq_value = G_iq_stack[iq_band].iq_phase;
+                sendto(ms_sdr_s, (char *) &iq_buffer, sizeof (iq_buffer), 0, (struct sockaddr *) &si_ms_sdr, slen);
                 print_time();
-                fprintf(G_fp_logfile, "[%d] UDP Thread. CMD_SET_IQ_BAND. Finished. band: %d\n", line_number++, iq_band);
+                fprintf(G_fp_logfile, "[%d] UDP Thread. CMD_SET_IQ_BAND. Finished. band: %d, IQ_phase: %d\n", line_number++,
+                        iq_band, G_iq_stack[iq_band].iq_phase);
+                break;
+
+            case CMD_SET_IQ_PHASE:
+                /* trans 3.150 (Ron, Pi dcdebbc): set the TX phase of the band in use, report it back */
+                if (iq_active >= 0 && iq_active < 12) {
+                    G_iq_stack[iq_active].iq_phase = IQ_phase_calc(i_opcode_data);
+                    print_time();
+                    fprintf(G_fp_logfile, "[%d] UDP Thread. CMD_SET_IQ_PHASE. record: %d, IQ_phase: %d\n",
+                            line_number++, iq_active, G_iq_stack[iq_active].iq_phase);
+                } else {
+                    print_time();
+                    fprintf(G_fp_logfile, "[%d] UDP Thread. CMD_SET_IQ_PHASE. NO BAND YET. Ignored\n", line_number++);
+                }
+                /* fall through: report the value now in use */
+            case CMD_GET_IQ_PHASE:
+                iq_buffer.opcode = CMD_GET_IQ_PHASE;
+                iq_buffer.iq_value = (iq_active >= 0 && iq_active < 12) ? G_iq_stack[iq_active].iq_phase : 0;
+                sendto(ms_sdr_s, (char *) &iq_buffer, sizeof (iq_buffer), 0, (struct sockaddr *) &si_ms_sdr, slen);
                 break;
 
             case CMD_SET_COMMIT_IQ:
-                if (iq_band != NO_IQ_BAND) {
+                /* trans 3.150: also saves outside a TX IQ session once a band is in use (Pi dcdebbc) */
+                if (iq_band != NO_IQ_BAND || (iq_active >= 0 && iq_active < 12)) {
                     print_time();
                     fprintf(G_fp_logfile, "[%d] UDP Thread. CMD_SET_COMMIT_IQ. band: %d\n", line_number++, iq_band);
                     Sleep(50);
@@ -917,6 +954,9 @@ void *UDP_Thread(void *my_param) {
                 if (status == 1) {
                     status = init_IQ_structure();
                     if (status == 1) {
+                        if (iq_active >= 0 && iq_active < 12) {   /* trans 3.150: reapply phase */
+                            IQ_phase_calc(G_iq_stack[iq_active].iq_phase);
+                        }
                         print_time();
                         fprintf(G_fp_logfile, "[%d] UDP_Thread. init_IQ_structure . Successful \n", line_number++);
                     } else {

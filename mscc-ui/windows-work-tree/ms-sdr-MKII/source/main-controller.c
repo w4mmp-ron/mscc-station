@@ -358,27 +358,20 @@ void Stop_all(uint8_t up_date_transceiver, uint8_t shutdown_status) {
 }
 
 void *Gui_send_message(void *t) {
-    char buf[PATH_MAX] = { 0 };
-    int slen = sizeof (si_gui);
     char message[PATH_MAX];
-    int size = 0;
     int message_status = 0;
 
     print_time(0);
     fprintf(G_fp_logfile, "[%d] Gui_send_message. STARTED\n", line_number++);
     while (G_all_threads_run) {
-        buf[0] = CMD_SET_EXTENDED_COMMAND;
-        buf[1] = CMD_SET_SERVER_ERROR;
         if (G_Remote_GUI_Attached == TRUE && G_MSCC_Initialized == TRUE) {
             message_status = message_queue_dequeue(message);
             if (message_status != 0) {
-                size = sizeof (message);
-                strcpy(&buf[2], message);
-                if (sendto(gui_s, buf, (size + 2), 0, (struct sockaddr *) &si_gui, slen) == SOCKET_ERROR) {
+                /* Same path as meters / KA (session peer + dll_s), text only: [0x0B][0x30][text] */
+                if (Gui_send_param_extended(CMD_SET_SERVER_ERROR, (byte *) message, (int) strlen(message))) {
                     print_time(0);
-                    fprintf(G_fp_logfile, "[%d] Gui_send_message. sentto gui_s FAILED. error code : %s\n",
-                            line_number++, strerror(errno));
-
+                    fprintf(G_fp_logfile, "[%d] Gui_send_message. Sent to client: %s\n",
+                            line_number++, message);
                 }
             }
         }
@@ -1062,6 +1055,18 @@ uint8_t Extended_command(char *receive_buffer) {
             fprintf(G_fp_logfile, "[%d] Extended_command . CMD_SET_PTT_SWITCH Opcode: %X, Data: %d\n",
                     line_number++, opcode, t_opcode_data);
             break;
+        case CMD_SET_SERVER_ERROR:
+            /* Text message from sdrcore-recv / sdrcore-trans: queue it for the client (Pi 7453e0d) */
+        {
+            char text[256] = {0};
+
+            strncpy(text, &receive_buffer[2], sizeof (text) - 1);
+            print_time(0);
+            fprintf(G_fp_logfile, "[%d] Extended_command . CMD_SET_SERVER_ERROR from core: %s\n",
+                    line_number++, text);
+            Gui_Add_Message(text);
+        }
+            break;
         case CMD_SET_METER_HOLD:
             //G_Meter_hold = t_opcode_data;
             print_time(0);
@@ -1517,6 +1522,21 @@ void * Command_Processor(void *my_param) {
                 print_time(0);
                 fprintf(G_fp_logfile, "[%d] Command_Interface. CMD_GET_PPM. G_current_int: %d, G_current_dec: %d \n",
                     line_number++, G_current_int, G_current_dec);
+                /*
+                 * Frequency calibration starts from G_int / G_dec (coarse = what the radio
+                 * applies, fine = measured error). They were only loaded from freq_cal.ini
+                 * by Init_PPM() after a calibration, so the first calibration after a
+                 * start began from 0 while the radio already applied its stored PPM, and
+                 * overwrote a good value with the small leftover error (Ron 2026-10-30).
+                 * Start from the radio's own value, read just above.
+                 */
+                if (r >= 0) {
+                    G_int = (INT8) G_current_int;
+                    G_dec = (INT8) G_current_dec;
+                    print_time(0);
+                    fprintf(G_fp_logfile, "[%d] Command_Interface. CMD_GET_PPM. calibration start point G_int: %d, G_dec: %d\n",
+                        line_number++, G_int, G_dec);
+                }
                 //Gui_send_param(CMD_GET_MIA_STATUS, 1);
                 Sleep(100);
                 Gui_send_param(CMD_GET_OPTIONS_STATUS, 1);
@@ -1561,6 +1581,19 @@ void * Command_Processor(void *my_param) {
                 Sleep(100);
                 Gui_send_param(CMD_GET_SET_MSSDR_STATUS, 1);
                 //Spectrum_Waterfall_send_param(CMD_GET_SET_MSSDR_STATUS, t_opcode_data);
+            }
+            else if (t_opcode_data == 0 && G_client_session_active) {
+                /* Pi 840b648: client leaving (its Stop): free the session now instead of
+                 * waiting ~45 s for the client keep-alive check. Owner only. */
+                print_time(0);
+                if (Session_Is_Owner(&si_other)) {
+                    fprintf(G_fp_logfile, "[%d] Command_Interface. CMD_CHECK_GUI_STATUS 0: client leaving, releasing session\n",
+                        line_number++);
+                    Session_Release();
+                } else {
+                    fprintf(G_fp_logfile, "[%d] Command_Interface. CMD_CHECK_GUI_STATUS 0 from %s: not the session owner, ignored\n",
+                        line_number++, inet_ntoa(si_other.sin_addr));
+                }
             }
             else {
                 print_time(0);
@@ -2026,6 +2059,22 @@ void * Command_Processor(void *my_param) {
             G_dll_active = FALSE;
             break;
 
+        case CMD_SET_IQ_PHASE:
+            G_dll_active = TRUE;
+            IQ_calibration(opcode, G_receive_buf);
+            G_dll_active = FALSE;
+            break;
+
+        case CMD_GET_IQ_PHASE:
+            /* From trans: TX phase in use (int32 steps of 0.05 deg) -> client */
+            op_code_data_32 = (int*)&G_receive_buf[1];
+            memcpy(&i_opcode_data, op_code_data_32, 4);
+            print_time(0);
+            fprintf(G_fp_logfile, "[%d] CMD_GET_IQ_PHASE . Calling Gui_send_param with %d \n", line_number++,
+                i_opcode_data);
+            Gui_send_param(CMD_GET_IQ_PHASE, i_opcode_data);
+            break;
+
         case CMD_GET_IQ_VALUE:
             op_code_data_32 = (int*)&G_receive_buf[1];
             memcpy(&i_opcode_data, op_code_data_32, 4);
@@ -2221,6 +2270,19 @@ void * Command_Processor(void *my_param) {
             case 6:
                 mode = 'D';
                 break;
+            }
+            /* Leaving TUNE: drop TX before the mode change. The radio firmware does not
+             * act on PTT off while in CW mode, so TUNE -> CW with TX still on left the PA
+             * keyed until another mode was picked. The client's own TUNE off arrives after
+             * this and is harmless. The firmware should be fixed as well (Pi 3ad8ce0). */
+            if (G_Tune && mode != 'T') {
+                print_time(0);
+                fprintf(G_fp_logfile, "[%d] Command_Interface. CMD_SET_MAIN_MODE. TUNE still on: TX off before mode %c\n",
+                    line_number++, mode);
+                Tune_button(FALSE, FALSE);
+                SDRcore_trans_send_param(CMD_SET_TX_ON, FALSE);
+                SDRcore_recv_send_param(CMD_SET_TX_ON, FALSE);
+                Sleep(20);
             }
             ModeChanged(mode);
             Sleep(50);

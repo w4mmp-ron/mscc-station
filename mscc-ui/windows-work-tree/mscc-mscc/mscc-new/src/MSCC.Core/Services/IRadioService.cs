@@ -416,6 +416,9 @@ public interface IRadioService : IDisposable
     /// <summary>TX IQ offset (CMD_SET_IQ_OFFSET 0x52). Int32, typically −200…+200.</summary>
     Task SetIqOffsetAsync(int offset, CancellationToken cancellationToken = default);
 
+    /// <summary>TX IQ phase (CMD_SET_IQ_PHASE 0x2A). Int32 steps of 0.05 deg, ±400.</summary>
+    Task SetIqPhaseAsync(int steps, CancellationToken cancellationToken = default);
+
     /// <summary>Commit current IQ value (CMD_SET_COMMIT_IQ 0x57).</summary>
     Task CommitIqAsync(CancellationToken cancellationToken = default);
 
@@ -436,4 +439,7 @@ public interface IRadioService : IDisposable
 
     /// <summary>Server IQ slider value (0x8B CMD_GET_IQ_VALUE).</summary>
     event Action<int> IqValueReported;
+
+    /// <summary>TX IQ phase in use (0x2B CMD_GET_IQ_PHASE), steps of 0.05 deg.</summary>
+    event Action<int> IqPhaseReported;
 }

@@ -527,6 +527,8 @@ int main(int argc, char **argv) {
     print_time();
     fprintf(G_fp_logfile, "[%d] main -> PortAudio Version: 0x%8X\n", line_number++, Pa_GetVersion());
     print_time();
+    fprintf(G_fp_logfile, "[%d] main -> recv 3.150 (TX mute w/o stream stop, AM lowpass + DC block, noise blanker fix)\n", line_number++);
+    print_time();
     fprintf(G_fp_logfile, "[%d] main -> PortAudio Version text: '%s'\n", line_number++,
             Pa_GetVersionInfo()->versionText);
     //Now get the MME devices

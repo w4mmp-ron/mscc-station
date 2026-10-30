@@ -31,6 +31,14 @@
 #define CMD_SET_IQ_BAND  0x58
 #define CMD_GET_IQ_VALUE 0x8B
 #define CMD_SET_IQ_DEFAULTS 0x8D
+/* Transmit I/Q phase correction (Ron, Pi dcdebbc; Windows trans 3.150).
+ * Value = steps of IQ_PHASE_STEP_DEG, for the band in use. ms-sdr forwards 0x2A from the
+ * client; trans reports the value in use to ms-sdr as 0x2B + int32 (on IQ band select and
+ * after each set). */
+#define CMD_SET_IQ_PHASE 0x2A
+#define CMD_GET_IQ_PHASE 0x2B
+#define IQ_PHASE_STEP_DEG 0.05
+#define IQ_PHASE_MAX_STEPS 400
 #define CMD_SET_MICROPHONE_STATUS 0x8F
 #define IQ_B2200 11
 #define IQ_B630 10

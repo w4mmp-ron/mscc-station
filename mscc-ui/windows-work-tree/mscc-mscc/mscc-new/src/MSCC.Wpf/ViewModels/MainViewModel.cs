@@ -1246,6 +1246,11 @@ public partial class MainViewModel : ObservableObject, IDisposable
 
     [ObservableProperty] private int _txIqSelectedBand;
     [ObservableProperty] private int _txIqOffset;          // −200…+200
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(TxIqPhaseText))]
+    private int _txIqPhase;                                 // steps of 0.05 deg, ±100 on the slider
+    public string TxIqPhaseText => $"{TxIqPhase} ({TxIqPhase * 0.05:+0.00;-0.00;0.00}°)";
+    private bool _suppressTxIqPhase;
     [ObservableProperty] private int _txIqPower = 100;     // cal tune power 0–100
     [ObservableProperty] private bool _txIqTxOn;
     [ObservableProperty] private string _txIqStatus = "Select a band (QRP only).";
@@ -2392,6 +2397,9 @@ public partial class MainViewModel : ObservableObject, IDisposable
         _suppressTxIqOffset = true;
         try { TxIqOffset = 0; }
         finally { _suppressTxIqOffset = false; }
+        _suppressTxIqPhase = true;
+        try { TxIqPhase = 0; }
+        finally { _suppressTxIqPhase = false; }
         TxIqCommitting = false;
         TxIqStatus = "Select a band (QRP only).";
 
@@ -2457,6 +2465,9 @@ public partial class MainViewModel : ObservableObject, IDisposable
         _suppressTxIqOffset = true;
         try { TxIqOffset = 0; }
         finally { _suppressTxIqOffset = false; }
+        _suppressTxIqPhase = true;   /* trans reports the band's phase (0x2B) right after 0x58 */
+        try { TxIqPhase = 0; }
+        finally { _suppressTxIqPhase = false; }
         TxIqStatus = $"{band}M @ {freq / 1_000_000.0:F3} MHz — set power, then TX ON.";
         MonitorTextBoxText($" TX IQ band select: {band}m freq={freq} (ms-sdr iq_calibration_freqs)");
     }
@@ -2474,6 +2485,21 @@ public partial class MainViewModel : ObservableObject, IDisposable
         }
         _ = _radioService.SetIqOffsetAsync(v);
         MonitorTextBoxText($" TX IQ offset: {v}");
+    }
+
+    partial void OnTxIqPhaseChanged(int value)
+    {
+        if (_suppressTxIqPhase) return;
+        if (!TxIqTxOn || TxIqSelectedBand <= 0) return;
+        int v = Math.Clamp(value, -400, 400);
+        if (v != value)
+        {
+            _suppressTxIqPhase = true;
+            try { TxIqPhase = v; }
+            finally { _suppressTxIqPhase = false; }
+        }
+        _ = _radioService.SetIqPhaseAsync(v);
+        MonitorTextBoxText($" TX IQ phase: {v} ({v * 0.05:F2} deg)");
     }
 
     partial void OnTxIqPowerChanged(int value)
@@ -2603,7 +2629,7 @@ public partial class MainViewModel : ObservableObject, IDisposable
         TxIqCommitting = true;
         TxIqStatus = "APPLYING…";
         _ = _radioService.CommitIqAsync();
-        MonitorTextBoxText($" TX IQ COMMIT (0x57) band={TxIqSelectedBand} offset={TxIqOffset}");
+        MonitorTextBoxText($" TX IQ COMMIT (0x57) band={TxIqSelectedBand} offset={TxIqOffset} phase={TxIqPhase}");
     }
 
     [RelayCommand]
@@ -6197,6 +6223,14 @@ public partial class MainViewModel : ObservableObject, IDisposable
             try { TxIqOffset = clamped; }
             finally { _suppressTxIqOffset = false; }
             MonitorTextBoxText($" TX IQ value from server: {v}");
+        };
+        svc.IqPhaseReported += v =>
+        {
+            if (!_txIqTabActive) return;
+            _suppressTxIqPhase = true;
+            try { TxIqPhase = Math.Clamp(v, -400, 400); }
+            finally { _suppressTxIqPhase = false; }
+            MonitorTextBoxText($" TX IQ phase from server: {v}");
         };
 
         // Note: the RadioState.PropertyChanged and filter/vfo subs are already global on the state object

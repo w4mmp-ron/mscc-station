@@ -286,6 +286,11 @@ public static class Opcodes
     public const byte CMD_SET_COMMIT_IQ = 0x57;
     public const byte CMD_SET_IQ_BAND = 0x58;
     public const byte CMD_GET_IQ_VALUE = 0x8B;
+    /// <summary>TX I/Q phase (Int32 steps of 0.05 deg) to ms-sdr -> trans (2026-10-30).</summary>
+    public const byte CMD_SET_IQ_PHASE = 0x2A;
+    /// <summary>TX I/Q phase in use, from trans via ms-sdr (Int32 steps of 0.05 deg).</summary>
+    public const byte CMD_GET_IQ_PHASE = 0x2B;
+    public const double IQ_PHASE_STEP_DEG = 0.05;
     public const byte CMD_SET_IQ_ALL_BANDS = 0x8D;
     public const byte CMD_REPORT_IMAGE_VALUE = 0xC6;
     public const byte CMD_START_STOP_IMAGE_VALUE = 0xC7;

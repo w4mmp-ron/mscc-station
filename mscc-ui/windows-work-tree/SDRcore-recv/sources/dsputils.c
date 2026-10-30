@@ -89,9 +89,14 @@ void doAGC(sp_cplx *samps, int nframes)
                 // set gain to limits, if outside
                 if (agcstate.gain > agcstate.maxgain) agcstate.gain = agcstate.maxgain;
                 if (agcstate.gain < 0.01f) agcstate.gain = 0.01f;
+                // recv 3.150 (Ron, Pi c9850ca): a NaN gets past the limits above and would keep the audio silent for good
+                if (!isfinite(agcstate.gain)) agcstate.gain = 1.0f;
+                if (!isfinite(agcstate.maxval)) agcstate.maxval = 0.0f;
 
                 ioutput = (agcstate.idelay[agcstate.oindex] * agcstate.gain);
                 qoutput = (agcstate.qdelay[agcstate.oindex] * agcstate.gain);
+                if (!isfinite(ioutput)) ioutput = 0.0f;
+                if (!isfinite(qoutput)) qoutput = 0.0f;
 
                 agcstate.iindex++;
                 if (agcstate.iindex == MAXDELAY) agcstate.iindex = 0;
@@ -614,6 +619,7 @@ void complex_shift(sp_cplx *samps, int nsamps)
         sp_float im1, isum, im2, qm1, qsum, qm2, cnco, snco;
         int i;
 
+        blankerPoll(); // recv 3.150: apply new noise blanker settings here, in the audio thread
         if (nbstate.enabled == TRUE) doBlanker(samps, nsamps);
         doPanadapter(samps, nsamps);
 

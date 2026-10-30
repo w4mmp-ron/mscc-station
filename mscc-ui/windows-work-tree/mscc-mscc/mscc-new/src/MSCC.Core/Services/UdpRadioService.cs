@@ -164,6 +164,7 @@ public class UdpRadioService : IRadioService, IDisposable
     // TX I/Q calibration reports
     public event Action<int>? IqOperationCompleteReported;
     public event Action<int>? IqValueReported;
+    public event Action<int>? IqPhaseReported;
 
     public bool IsConnected => _started || (_transport?.IsConnected ?? false);
 
@@ -606,6 +607,14 @@ public class UdpRadioService : IRadioService, IDisposable
         int v = Math.Clamp(offset, -200, 200);
         DebugMonitor.MonitorTextBoxText($" Send CMD_SET_IQ_OFFSET (0x52): {v}");
         await _transport.SendAsync(Opcodes.CMD_SET_IQ_OFFSET, v, cancellationToken);
+    }
+
+    public async Task SetIqPhaseAsync(int steps, CancellationToken cancellationToken = default)
+    {
+        if (!_started) return;
+        int v = Math.Clamp(steps, -400, 400);
+        DebugMonitor.MonitorTextBoxText($" Send CMD_SET_IQ_PHASE (0x2A): {v}");
+        await _transport.SendAsync(Opcodes.CMD_SET_IQ_PHASE, v, cancellationToken);
     }
 
     public async Task CommitIqAsync(CancellationToken cancellationToken = default)
@@ -2177,6 +2186,15 @@ public class UdpRadioService : IRadioService, IDisposable
                     int iq = BitConverter.ToInt32(e.Payload, 0);
                     IqValueReported?.Invoke(iq);
                     DebugMonitor.MonitorTextBoxText($" Processed CMD_GET_IQ_VALUE (0x8B): {iq}");
+                }
+                break;
+
+            case Opcodes.CMD_GET_IQ_PHASE:
+                if (e.Payload.Length >= 4)
+                {
+                    int ph = BitConverter.ToInt32(e.Payload, 0);
+                    IqPhaseReported?.Invoke(ph);
+                    DebugMonitor.MonitorTextBoxText($" Processed CMD_GET_IQ_PHASE (0x2B): {ph}");
                 }
                 break;
 

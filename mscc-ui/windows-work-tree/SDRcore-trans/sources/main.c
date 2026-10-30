@@ -70,6 +70,8 @@ uint16_t G_VU_value = 0;
 sp_float G_peak = 0.0f;
 sp_float iMult = 1.0f;
 sp_float qMult = 1.0f;
+sp_float iqPhaseSin = 0.0f;   /* trans 3.150: TX I/Q phase correction, 0 deg = no change */
+sp_float iqPhaseCos = 1.0f;
 uint8_t G_DSP_Busy = FALSE;
 int G_null_count = 0;
 volatile int G_tx_mic_gate_samples = 0;
@@ -237,7 +239,8 @@ static int sdrAudioCallback(const void *inputBuffer, void *outputBuffer,
      */
     for (i = 0; i < framesPerBuffer; i++) {
         sp_float oi = outcplx[i].real * iMult;
-        sp_float oq = outcplx[i].imag * qMult;
+        /* trans 3.150: Q turned by the per-band phase correction (Ron, Pi dcdebbc) */
+        sp_float oq = (outcplx[i].imag * iqPhaseCos + outcplx[i].real * iqPhaseSin) * qMult;
         *outbuffer = oi;
         outbuffer++;
         *outbuffer = oq;

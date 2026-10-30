@@ -190,6 +190,17 @@ int IQ_calibration(uint8_t command, char *buffer) {
             fprintf(G_fp_logfile, "[%d] IQ_calibration . CMD_SET_IQ_OFFSET . Finished. status: %d\n", line_number++, status);
             break;
 
+        case CMD_SET_IQ_PHASE:
+            /* TX only: trans applies it to the band in use and reports it back (0x2B) */
+            op_code_data_32 = (int*) &buffer[1];
+            memcpy(&i_opcode_data, op_code_data_32, 4);
+            print_time(1);
+            fprintf(G_fp_logfile, "[%d] IQ_calibration . CMD_SET_IQ_PHASE . iq_phase: %d (RX/TX %d)\n",
+                    line_number++, i_opcode_data, rx_tx);
+            SDRcore_trans_send_param(CMD_SET_IQ_PHASE, i_opcode_data);
+            G_IQBD_New_Value_Set = TRUE;
+            break;
+
         case CMD_SET_COMMIT_IQ:
             print_time(1);
             fprintf(G_fp_logfile, "[%d] IQ_calibration . CMD_SET_COMMIT_IQ . Calling SDRcore: RX/TX: %d, t_opcode_data: %d\n",

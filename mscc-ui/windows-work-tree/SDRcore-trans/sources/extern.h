@@ -103,6 +103,8 @@ extern PaDeviceIndex Proficio_Device;
 extern sp_float G_mic_volume;
 extern sp_float iMult;
 extern sp_float qMult;
+extern sp_float iqPhaseSin;   /* trans 3.150: TX I/Q phase correction (iq.c IQ_phase_calc) */
+extern sp_float iqPhaseCos;
 extern int ms_sdr_s;
 extern int slen;
 extern struct sockaddr_in si_ms_sdr;
