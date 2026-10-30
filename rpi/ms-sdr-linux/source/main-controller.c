@@ -1500,6 +1500,21 @@ void * Command_Processor(void *my_param) {
                 print_time(0);
                 fprintf(G_fp_logfile, "[%d] Command_Interface. CMD_GET_PPM. G_current_int: %d, G_current_dec: %d \n",
                     line_number++, G_current_int, G_current_dec);
+                /*
+                 * Frequency calibration starts from G_int / G_dec (coarse = what the radio
+                 * applies, fine = measured error). They were only loaded from freq_cal.ini
+                 * by Init_PPM() after a calibration, so the first calibration after a
+                 * start began from 0 while the radio already applied its stored PPM, and
+                 * overwrote a good value with the small leftover error (Ron 2026-10-30).
+                 * Start from the radio's own value, read just above.
+                 */
+                if (r >= 0) {
+                    G_int = (INT8) G_current_int;
+                    G_dec = (INT8) G_current_dec;
+                    print_time(0);
+                    fprintf(G_fp_logfile, "[%d] Command_Interface. CMD_GET_PPM. calibration start point G_int: %d, G_dec: %d\n",
+                        line_number++, G_int, G_dec);
+                }
                 //Gui_send_param(CMD_GET_MIA_STATUS, 1);
                 Sleep(100);
                 Gui_send_param(CMD_GET_OPTIONS_STATUS, 1);
