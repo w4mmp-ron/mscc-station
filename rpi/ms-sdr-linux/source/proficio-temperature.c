@@ -23,6 +23,8 @@
 #define NORMAL_BANDS 10
 #define MAX_BANDS NORMAL_BANDS + STANDARD_CARRIER_LIMIT
 #define TEMP_LOG_MS 30000   // 3.183: chip / heat sink temperature log line every 30 s
+#define HEAT_SINK_OPEN  (-99)  // 3.184: pill fault codes on 0x06 (firmware 3.12)
+#define HEAT_SINK_SHORT 999
 
 INT32 E_temp = 0;
 INT32 RPi_temp = 0;
@@ -234,8 +236,16 @@ void *Check_temperature(void *t) {
             if (log_ms >= TEMP_LOG_MS) {
                 log_ms = 0;
                 print_time(0);
-                fprintf(G_fp_logfile, "[%d] Check_temperature. Chip: %d C, heat sink: %d C\n", line_number++,
-                        (int) E_temp, (int) heat_sink);
+                // 3.184: pill 3.12 sends -99 = thermistor open, 999 = shorted
+                if (heat_sink == HEAT_SINK_OPEN)
+                    fprintf(G_fp_logfile, "[%d] Check_temperature. Chip: %d C, heat sink: OPEN (thermistor open or unplugged)\n",
+                            line_number++, (int) E_temp);
+                else if (heat_sink == HEAT_SINK_SHORT)
+                    fprintf(G_fp_logfile, "[%d] Check_temperature. Chip: %d C, heat sink: SHORTED (thermistor shorted)\n",
+                            line_number++, (int) E_temp);
+                else
+                    fprintf(G_fp_logfile, "[%d] Check_temperature. Chip: %d C, heat sink: %d C\n", line_number++,
+                            (int) E_temp, (int) heat_sink);
             }
         }
         Sleep(sleep_time);
