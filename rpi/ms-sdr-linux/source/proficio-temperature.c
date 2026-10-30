@@ -22,6 +22,7 @@
 #define TX_DELAY 10
 #define NORMAL_BANDS 10
 #define MAX_BANDS NORMAL_BANDS + STANDARD_CARRIER_LIMIT
+#define TEMP_LOG_MS 30000   // 3.183: chip / heat sink temperature log line every 30 s
 
 INT32 E_temp = 0;
 INT32 RPi_temp = 0;
@@ -207,10 +208,12 @@ void Initialize_band_data() {
 void *Check_temperature(void *t) {
     Set_Thread_Name("temperature");
     INT32 iTemperature = 0;
+    INT32 heat_sink = 0;
     int sleep_time = 3000;
+    int log_ms = TEMP_LOG_MS; // first line on the first pass
     uint8_t transceiver_read = FALSE;
     int r;
-    
+
     print_time(0);
     fprintf(G_fp_logfile, "[%d] Check_temperature. Started. \n", line_number++);
     Sleep(7000); //Allow other subsystems to start and stabilize
@@ -221,8 +224,20 @@ void *Check_temperature(void *t) {
         G_Proficio_temperature = TRUE;
         E_temp = iTemperature;
         Gui_send_param(CMD_GET_TRANSCEIVER_TEMP, E_temp);
-        //print_time(0);
-        //fprintf(G_fp_logfile, "[%d] Check_temperature. E_temp: %d \n", line_number++,E_temp);
+        // 3.183: the STM32 radio also has a heat sink thermistor on 0x06 (the PSoC does not answer it)
+        if (G_firmware_type == FIRMWARE_TYPE_STM32) {
+            r = usbControlMsgIN(CMD_GET_POTENTIA_TEMPERATURE, 0xA55A, 0, (char*) &heat_sink, sizeof (heat_sink));
+            if (r >= 0) {
+                Gui_send_param(CMD_GET_POTENTIA_TEMPERATURE, heat_sink);
+            }
+            log_ms += sleep_time;
+            if (log_ms >= TEMP_LOG_MS) {
+                log_ms = 0;
+                print_time(0);
+                fprintf(G_fp_logfile, "[%d] Check_temperature. Chip: %d C, heat sink: %d C\n", line_number++,
+                        (int) E_temp, (int) heat_sink);
+            }
+        }
         Sleep(sleep_time);
     }
     print_time(0);
