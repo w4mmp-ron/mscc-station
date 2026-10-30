@@ -202,12 +202,13 @@ void framesToComplex(sp_float *inframes, sp_cplx *incomplex, sp_cplx *outcomplex
 
 void initALC() {
     int j;
-    alcstate.attackms = 1.0f;
+    /* 3.145: was attack 1 ms, envelope fall 1 ms (see doALC) */
+    alcstate.attackms = 3.0f;
     alcstate.releasems = 3000.0f;
-    alcstate.envattackms = 1.0f;
+    alcstate.envattackms = 50.0f;
 
-    // gain negative ramp
-    alcstate.negramp = (float) pow(0.01f, 1.0f / (alcstate.attackms * mystate.samplerate * 0.001f));
+    // gain attack: share of the way to the wanted gain per sample (one pole, attackms)
+    alcstate.negramp = 1.0f - (float) exp(-1.0 / (alcstate.attackms * mystate.samplerate * 0.001f));
 
     // gain positive ramp
     alcstate.posramp = (float) pow(0.01f, 1.0f / (alcstate.releasems * mystate.samplerate * 0.001f));
@@ -226,9 +227,18 @@ void initALC() {
 
 }
 
-/* ALC - negative-going only. Use in conjunction with an over-gain input stage */
+/*
+ * ALC - negative-going only. Use in conjunction with an over-gain input stage.
+ * 3.145 (Stew's SSB splatter, 2026-10-29): it runs after the SSB filter, so any fast
+ * gain change goes on the air as splatter. Before, the level was fabs(I), which dips
+ * to zero every few samples at the 12 kHz IF, fell 40 dB in 1 ms, and the gain was cut
+ * 0.4 dB per sample while over the target: AM at near sample rate, broadband streaks,
+ * worst early in an over (3 s release). Now: level = |I + jQ| (smooth for SSB / AM),
+ * peak held and falling 40 dB in 50 ms, gain moves toward target / level with a 3 ms
+ * attack, same 3 s release. The gain moves at voice-envelope speed only.
+ */
 void doALC(sp_cplx *samps, int nframes) {
-    sp_float ioutput, qoutput, isamp, qsamp, wk;
+    sp_float ioutput, qoutput, isamp, qsamp, wk, want;
     sp_float peak = 0.0f;
     int j;
     static int peakblocks = 0;
@@ -248,17 +258,24 @@ void doALC(sp_cplx *samps, int nframes) {
             qsamp *= alcstate.pregain;
         }
 
-        wk = fabs(isamp);
+        wk = sqrtf(isamp * isamp + qsamp * qsamp);
         if (wk > alcstate.maxval) alcstate.maxval = wk;
-            // if current peak is greater than target, decay gain
         else alcstate.maxval *= alcstate.envramp;
         alcstate.targetlevel = ALC_TARGET;
+        // gain that puts the held peak on the target
+        if (alcstate.maxval * alcstate.maxgain > alcstate.targetlevel)
+            want = alcstate.targetlevel / alcstate.maxval;
+        else
+            want = alcstate.maxgain;
         // decide which way to drive gain
         if ((alcstate.maxval * alcstate.gain) >= alcstate.targetlevel) {
             G_alc_count++;
-            alcstate.gain *= alcstate.negramp;
+        }
+        if (want < alcstate.gain) {
+            alcstate.gain += (want - alcstate.gain) * alcstate.negramp;
         } else {
             alcstate.gain *= alcstate.posramp;
+            if (alcstate.gain > want) alcstate.gain = want;
         }
 
         // set gain to limits, if outside
