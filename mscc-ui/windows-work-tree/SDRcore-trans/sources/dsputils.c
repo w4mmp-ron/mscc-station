@@ -513,14 +513,46 @@ void am_modulate(sp_cplx *samps) {
 // TUNE mode modulator - generate I and Q carriers, then feed them to the balanced modulator
 // with a DC offset, which unbalances it and generates the carrier.
 
+/*
+ * TUNE start ramp (trans 3.148). The TUNE carrier used to start at full level in one
+ * sample. Through the TUNE TX filter (lo1 +/- bw) that step went on the air as a hump
+ * about +/-2.7 kHz wide around the carrier (Stew's SA, 2026-10-29). Now the carrier
+ * rises with a raised cosine over TUNE_RAMP_MS when the mode changes to TUNE
+ * (udp_thread.c CMD_SET_MAIN_MODE sets G_tune_ramp_pos = 0). CW also calls this
+ * function; it is never armed for CW (the radio shapes CW with the DAC soft mute).
+ * The end of TUNE is shaped in the radio firmware (DAC soft mute before TX_HI off).
+ */
+#define TUNE_RAMP_MS 5.0f
+volatile int G_tune_ramp_pos = -1;
+
 void tune_modulate(sp_cplx *samps) {
     int i;
     sp_float gain = 1.5f;
-
+    sp_float ramp = 1.0f;
+    int ramp_len = (int) (mystate.samplerate * TUNE_RAMP_MS / 1000.0f);
+    int start_pos = G_tune_ramp_pos;   /* armed (0) only by the UDP thread on entry to TUNE */
+    int ramp_pos = start_pos;
     sp_float carrierI, carrierQ;
+
+    if (ramp_len < 1)
+        ramp_pos = -1;
     for (i = 0; i < mystate.nfft - mystate.filtertaps; i++) {
         carrierI = (sp_float) sin(mystate.lo1_phaseacc);
         carrierQ = (sp_float) cos(mystate.lo1_phaseacc);
+
+        if (ramp_pos >= 0) {
+            if (ramp_pos < ramp_len) {
+                ramp = 0.5f - 0.5f * (sp_float) cos(3.14159265358979 * (double) ramp_pos / (double) ramp_len);
+                ramp_pos++;
+            } else {
+                ramp = 1.0f;
+                ramp_pos = -1;
+            }
+        } else {
+            ramp = 1.0f;
+        }
+        carrierI *= ramp;
+        carrierQ *= ramp;
 
         // modulate that stream, adding an offset to create the carrier
         samps[i].real = (carrierI * (1.0f + samps[i].real)) * 0.8f; // TUNE at 80% of available power
@@ -532,6 +564,9 @@ void tune_modulate(sp_cplx *samps) {
         if (mystate.lo1_phaseacc > TPI) mystate.lo1_phaseacc -= TPI; // wrap phase accumulator
         if (mystate.lo1_phaseacc < -TPI) mystate.lo1_phaseacc += TPI; // accommodate negative frequencies
     }
+    /* Store progress, unless the UDP thread re-armed the ramp during this block. */
+    if (G_tune_ramp_pos == start_pos)
+        G_tune_ramp_pos = ramp_pos;
 }
 
 void cw_modulate(sp_cplx *samps) {

@@ -920,11 +920,26 @@ void *UDP_Thread(void *my_param) {
                             /*stream_status = manage_sidetone_stream(0,
                                     G_output_devices[G_output_device_index].device_index,
                                     G_output_devices[G_output_device_index].num_channels);*/
+                            /*
+                             * recv 3.148: reopen the path the client chose. This used to always
+                             * reopen the operator speaker, so after TUN (the client sends the
+                             * mode before TUNE off) or CW with DIGITAL selected, audio moved to
+                             * the speakers while the client still showed DIGITAL.
+                             */
                             if (speaker_slot_ok(G_output_device_index)) {
+                                int dig = G_digital_output_device_index;
                                 stream_status = manage_stream(0, G_output_devices[G_output_device_index].device_index,
                                         G_output_devices[G_output_device_index].num_channels);
-                                stream_status = manage_stream(1, G_output_devices[G_output_device_index].device_index,
-                                        G_output_devices[G_output_device_index].num_channels);
+                                if ((G_recv_audio_mode == DIGITAL_AUDIO || G_recv_audio_mode == REMOTE_DIGITAL_AUDIO) &&
+                                        speaker_slot_ok(dig)) {
+                                    print_time();
+                                    fprintf(G_fp_logfile, "[%d] UDP Thread . CMD_SET_TX_ON . CW TX off: reopen DIGITAL (mode=%d)\n",
+                                            line_number++, (int) G_recv_audio_mode);
+                                    stream_status = manage_stream(1, G_digital_output_devices[dig].device_index, 2);
+                                } else {
+                                    stream_status = manage_stream(1, G_output_devices[G_output_device_index].device_index,
+                                            G_output_devices[G_output_device_index].num_channels);
+                                }
                             }
                         }
                     }

@@ -1167,6 +1167,8 @@ void *UDP_Thread(void *my_param) {
                                 G_mode);
                         break;
                     case 4:
+                        if (mystate.opmode != MODE_TUNE)
+                            G_tune_ramp_pos = 0; /* carrier rises over TUNE_RAMP_MS (dsputils.c) */
                         G_mode = 'T';
                         mystate.opmode = MODE_TUNE;
                         print_time();

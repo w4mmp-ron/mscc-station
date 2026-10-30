@@ -34,7 +34,7 @@
 // Release number is in the range of 0 to 9
 
 #define VERSION_MAJOR 3
-#define VERSION_MINOR 147
+#define VERSION_MINOR 148
 #define VERSION_MS_SDRCORE_TRANS ((((VERSION_MINOR) << 8) & 0xff00) | ((VERSION_MAJOR) & 0x00ff))
 
 /* Local DIGITAL/OPERATOR only. Discard this much mic audio after TX 0->1
@@ -80,6 +80,7 @@ extern FILE *G_fp_logfile;
 extern uint8_t G_Allow_Log_Write;
 extern char G_mode;
 extern int G_mode_change;
+extern volatile int G_tune_ramp_pos; /* TUNE start ramp: -1 idle, else next sample index */
 extern uint16_t G_band;
 extern uint8_t G_Mia_Status;
 extern uint8_t G_tx_mode;
