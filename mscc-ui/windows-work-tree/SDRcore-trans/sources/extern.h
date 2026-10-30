@@ -66,6 +66,7 @@ extern int num_input_devices_found;
 extern state mystate;
 extern micproc_state micstate;
 extern sp_float G_ALC_gain;
+extern volatile sp_float G_ALC_peak_env; /* trans 3.149: peak envelope before ALC, since last meter read */
 extern long int G_alc_count;
 extern sp_float G_ALC_limit;
 extern sp_float G_ALC_multiplier;

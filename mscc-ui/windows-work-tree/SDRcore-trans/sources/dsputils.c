@@ -15,9 +15,15 @@ sp_float gain;
 extern sp_float G_mic_volume;
 extern sp_float G_peak;
 sp_float G_ALC_gain = 0.0f;
+volatile sp_float G_ALC_peak_env = 0.0f; /* trans 3.149: read and reset by ALC_Meter_thread */
 sp_float G_ALC_limit = 0.0f;
 long int G_alc_count = 0;
-sp_float G_ALC_multiplier = (float)11.0 / 10.0f;
+/* trans 3.149: ALC ceiling = drive x ALC_CEILING. Was 1.1, which let SSB peaks reach
+ * 0.5-0.65 of full scale at SSB power 100 and overdrove the PA (close-in splatter at
+ * mic 45-50). Measured 10-30 on Proficio MKII PTT: peaks <= 0.22 clean, 0.43-0.57 splatter.
+ * 0.6 (0.28) still splattered above mic ~20 (10-30); 0.45 -> 0.21 at drive 0.46. */
+#define ALC_CEILING 0.45f
+sp_float G_ALC_multiplier = ALC_CEILING;
 #endif
 
 //#define ALC_TARGET 0.85000f
@@ -199,12 +205,26 @@ void framesToComplex(sp_float *inframes, sp_cplx *incomplex, sp_cplx *outcomplex
 }
 
 // Initialize ALC state struct
+/*
+ * 3.149: ALC rework. The old ALC took its envelope from fabs(I) only. After the SSB
+ * filter the signal sits at a 9-15 kHz IF, so |I| falls to zero every ~40 us; with a
+ * 1 ms (40 dB) envelope decay and a 0.4 dB-per-sample gain attack, the gain chattered
+ * at about twice the IF rate whenever the level reached the target. That amplitude-
+ * modulated the filtered signal and spread it across the band (seen as the broadband
+ * burst on the first loud syllable). Now: envelope = |I + jQ| (smooth for SSB), peak
+ * hold with ALC_ENV_DECAY_MS decay, gain eased toward target/envelope with an
+ * ALC_ATTACK_MS time constant, and the old 3 s release.
+ */
+#define ALC_ATTACK_MS    2.0f    /* gain-reduction time constant */
+#define ALC_ENV_DECAY_MS 50.0f   /* envelope peak-hold decay, to 40 dB */
+static sp_float alc_atk_coef = 0.01f;
 
 void initALC() {
     int j;
-    alcstate.attackms = 1.0f;
+    alcstate.attackms = ALC_ATTACK_MS;
     alcstate.releasems = 3000.0f;
-    alcstate.envattackms = 1.0f;
+    alcstate.envattackms = ALC_ENV_DECAY_MS;
+    alc_atk_coef = (sp_float) (1.0 - exp(-1.0 / (ALC_ATTACK_MS * mystate.samplerate * 0.001)));
 
     // gain negative ramp
     alcstate.negramp = (float) pow(0.01f, 1.0f / (alcstate.attackms * mystate.samplerate * 0.001f));
@@ -218,7 +238,7 @@ void initALC() {
 
     alcstate.pregain = 1.0f;
     alcstate.maxgain = 1.0f;
-    alcstate.maxval = 1.0f;
+    alcstate.maxval = 0.0f;  /* 3.149: was 1.0, which pulled the gain to 0.1 at start-up */
     alcstate.gain = 1.0f;
     alcstate.targetlevel = ALC_TARGET;
     //alcstate.targetlevel = 0.50000000f;		// 0.9f
@@ -248,17 +268,24 @@ void doALC(sp_cplx *samps, int nframes) {
             qsamp *= alcstate.pregain;
         }
 
-        wk = fabs(isamp);
+        /* 3.149: complex-magnitude envelope (no IF ripple), peak hold with slow decay */
+        wk = (sp_float) sqrt(isamp * isamp + qsamp * qsamp);
+        if (wk > G_ALC_peak_env) G_ALC_peak_env = wk;   /* trans 3.149: for the ALC level meter */
         if (wk > alcstate.maxval) alcstate.maxval = wk;
-            // if current peak is greater than target, decay gain
         else alcstate.maxval *= alcstate.envramp;
         alcstate.targetlevel = ALC_TARGET;
-        // decide which way to drive gain
-        if ((alcstate.maxval * alcstate.gain) >= alcstate.targetlevel) {
-            G_alc_count++;
-            alcstate.gain *= alcstate.negramp;
-        } else {
-            alcstate.gain *= alcstate.posramp;
+        /* gain needed to hold the envelope at the target */
+        {
+            sp_float want = alcstate.maxgain;
+            if (alcstate.maxval * alcstate.maxgain > alcstate.targetlevel && alcstate.maxval > 0.0f)
+                want = alcstate.targetlevel / alcstate.maxval;
+            if (want < alcstate.gain) {
+                G_alc_count++;
+                alcstate.gain += (want - alcstate.gain) * alc_atk_coef;  /* smooth attack */
+            } else {
+                alcstate.gain *= alcstate.posramp;                        /* slow release */
+                if (alcstate.gain > want) alcstate.gain = want;
+            }
         }
 
         // set gain to limits, if outside

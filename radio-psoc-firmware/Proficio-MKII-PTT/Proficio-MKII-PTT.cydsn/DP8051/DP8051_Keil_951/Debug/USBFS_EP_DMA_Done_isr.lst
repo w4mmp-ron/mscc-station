@@ -1,4 +1,4 @@
-C51 COMPILER V9.51   USBFS_EP_DMA_DONE_ISR                                                 08/22/2026 15:14:01 PAGE 1   
+C51 COMPILER V9.51   USBFS_EP_DMA_DONE_ISR                                                 10/29/2026 11:54:48 PAGE 1   
 
 
 C51 COMPILER V9.51, COMPILATION OF MODULE USBFS_EP_DMA_DONE_ISR
@@ -62,7 +62,7 @@ line level    source
   50          *******************************************************************************/
   51          void USBFS_EP_DMA_Done_isr_Start(void) 
   52          {
-C51 COMPILER V9.51   USBFS_EP_DMA_DONE_ISR                                                 08/22/2026 15:14:01 PAGE 2   
+C51 COMPILER V9.51   USBFS_EP_DMA_DONE_ISR                                                 10/29/2026 11:54:48 PAGE 2   
 
   53   1          /* For all we know the interrupt is active. */
   54   1          USBFS_EP_DMA_Done_isr_Disable();
@@ -126,7 +126,7 @@ line level    source
  112          ********************************************************************************
  113          *
  114          * Summary:
-C51 COMPILER V9.51   USBFS_EP_DMA_DONE_ISR                                                 08/22/2026 15:14:01 PAGE 3   
+C51 COMPILER V9.51   USBFS_EP_DMA_DONE_ISR                                                 10/29/2026 11:54:48 PAGE 3   
 
  115          *   Disables and removes the interrupt.
  116          *
@@ -190,7 +190,7 @@ line level    source
  173          ********************************************************************************
  174          *
  175          * Summary:
-C51 COMPILER V9.51   USBFS_EP_DMA_DONE_ISR                                                 08/22/2026 15:14:01 PAGE 4   
+C51 COMPILER V9.51   USBFS_EP_DMA_DONE_ISR                                                 10/29/2026 11:54:48 PAGE 4   
 
  176          *   Change the ISR vector for the Interrupt. Note calling USBFS_EP_DMA_Done_isr_Start
  177          *   will override any effect this method would have had. To set the vector 
@@ -254,7 +254,7 @@ line level    source
  235          *   Interrupt Editor.
  236          *
  237          *   Note This API has no effect on Non-maskable interrupt NMI).
-C51 COMPILER V9.51   USBFS_EP_DMA_DONE_ISR                                                 08/22/2026 15:14:01 PAGE 5   
+C51 COMPILER V9.51   USBFS_EP_DMA_DONE_ISR                                                 10/29/2026 11:54:48 PAGE 5   
 
  238          *
  239          * Parameters:
@@ -318,7 +318,7 @@ line level    source
  297          void USBFS_EP_DMA_Done_isr_Enable(void) 
  298          {
  299   1          /* Enable the general interrupt. */
-C51 COMPILER V9.51   USBFS_EP_DMA_DONE_ISR                                                 08/22/2026 15:14:01 PAGE 6   
+C51 COMPILER V9.51   USBFS_EP_DMA_DONE_ISR                                                 10/29/2026 11:54:48 PAGE 6   
 
  300   1          *USBFS_EP_DMA_Done_isr_INTC_SET_EN = USBFS_EP_DMA_Done_isr__INTC_MASK;
  301   1      }
@@ -382,7 +382,7 @@ line level    source
  359          *
  360          * Side Effects:
  361          *   If interrupts are enabled and the interrupt is set up properly, the ISR is
-C51 COMPILER V9.51   USBFS_EP_DMA_DONE_ISR                                                 08/22/2026 15:14:01 PAGE 7   
+C51 COMPILER V9.51   USBFS_EP_DMA_DONE_ISR                                                 10/29/2026 11:54:48 PAGE 7   
 
  362          *   entered (depending on the priority of this interrupt and other pending 
  363          *   interrupts).
@@ -422,7 +422,7 @@ line level    source
  397          
  398          
  399          /* [] END OF FILE */
-C51 COMPILER V9.51   USBFS_EP_DMA_DONE_ISR                                                 08/22/2026 15:14:01 PAGE 8   
+C51 COMPILER V9.51   USBFS_EP_DMA_DONE_ISR                                                 10/29/2026 11:54:48 PAGE 8   
 
 ASSEMBLY LISTING OF GENERATED OBJECT CODE
 
@@ -486,7 +486,7 @@ ASSEMBLY LISTING OF GENERATED OBJECT CODE
                                            ; SOURCE LINE # 151
                                            ; SOURCE LINE # 168
                        RETI    
-C51 COMPILER V9.51   USBFS_EP_DMA_DONE_ISR                                                 08/22/2026 15:14:01 PAGE 9   
+C51 COMPILER V9.51   USBFS_EP_DMA_DONE_ISR                                                 10/29/2026 11:54:48 PAGE 9   
 
              ; FUNCTION USBFS_EP_DMA_Done_isr_Interrupt (END)
 
@@ -497,7 +497,7 @@ ASSEMBLY LISTING OF GENERATED OBJECT CODE
                                            ; SOURCE LINE # 200
                        MOV     R3,#02H
                        MOV     R2,#044H
-                       MOV     R1,#02H
+                       MOV     R1,#04H
                        MOV     R5,AR7
                        MOV     R4,AR6
                  E     CALL    _cywrite16_nodpx
@@ -511,7 +511,7 @@ ASSEMBLY LISTING OF GENERATED OBJECT CODE
                                            ; SOURCE LINE # 220
                        MOV     R3,#02H
                        MOV     R2,#044H
-                       MOV     R1,#02H
+                       MOV     R1,#04H
                  E     CALL    _cyread16_nodpx
                                            ; SOURCE LINE # 221
              ?C0006:
@@ -527,7 +527,7 @@ ASSEMBLY LISTING OF GENERATED OBJECT CODE
                        SWAP    A
                        RLC     A
                        ANL     A,#0E0H
-                       MOV     DPTR,#04481H
+                       MOV     DPTR,#04482H
                        MOVX    @DPTR,A
                                            ; SOURCE LINE # 251
                        RET     
@@ -537,7 +537,7 @@ ASSEMBLY LISTING OF GENERATED OBJECT CODE
                                            ; SOURCE LINE # 270
                                            ; SOURCE LINE # 271
                                            ; SOURCE LINE # 275
-                       MOV     DPTR,#04481H
+                       MOV     DPTR,#04482H
                        MOVX    A,@DPTR
                        MOV     R7,A
                        SWAP    A
@@ -550,7 +550,7 @@ ASSEMBLY LISTING OF GENERATED OBJECT CODE
              ?C0008:
                        RET     
              ; FUNCTION USBFS_EP_DMA_Done_isr_GetPriority (END)
-C51 COMPILER V9.51   USBFS_EP_DMA_DONE_ISR                                                 08/22/2026 15:14:01 PAGE 10  
+C51 COMPILER V9.51   USBFS_EP_DMA_DONE_ISR                                                 10/29/2026 11:54:48 PAGE 10  
 
 
              ; FUNCTION USBFS_EP_DMA_Done_isr_Enable (BEGIN)
@@ -558,7 +558,7 @@ ASSEMBLY LISTING OF GENERATED OBJECT CODE
                                            ; SOURCE LINE # 298
                                            ; SOURCE LINE # 300
                        MOV     DPTR,#044C0H
-                       MOV     A,#02H
+                       MOV     A,#04H
                        MOVX    @DPTR,A
                                            ; SOURCE LINE # 301
                        RET     
@@ -570,7 +570,7 @@ ASSEMBLY LISTING OF GENERATED OBJECT CODE
                                            ; SOURCE LINE # 321
                        MOV     DPTR,#044C0H
                        MOVX    A,@DPTR
-                 R     xJNB    ACC.1,?C0010
+                 R     xJNB    ACC.2,?C0010
                        MOV     R7,#01H
                  R     xJMP    ?C0011
              ?C0010:
@@ -586,7 +586,7 @@ ASSEMBLY LISTING OF GENERATED OBJECT CODE
                                            ; SOURCE LINE # 340
                                            ; SOURCE LINE # 342
                        MOV     DPTR,#044C8H
-                       MOV     A,#02H
+                       MOV     A,#04H
                        MOVX    @DPTR,A
                                            ; SOURCE LINE # 343
                        RET     
@@ -597,7 +597,7 @@ ASSEMBLY LISTING OF GENERATED OBJECT CODE
                                            ; SOURCE LINE # 367
                                            ; SOURCE LINE # 368
                        MOV     DPTR,#044D0H
-                       MOV     A,#02H
+                       MOV     A,#04H
                        MOVX    @DPTR,A
                                            ; SOURCE LINE # 369
                        RET     
@@ -608,13 +608,13 @@ ASSEMBLY LISTING OF GENERATED OBJECT CODE
                                            ; SOURCE LINE # 392
                                            ; SOURCE LINE # 393
                        MOV     DPTR,#044D8H
-                       MOV     A,#02H
+                       MOV     A,#04H
                        MOVX    @DPTR,A
                                            ; SOURCE LINE # 394
                        RET     
              ; FUNCTION USBFS_EP_DMA_Done_isr_ClearPending (END)
 
-C51 COMPILER V9.51   USBFS_EP_DMA_DONE_ISR                                                 08/22/2026 15:14:01 PAGE 11  
+C51 COMPILER V9.51   USBFS_EP_DMA_DONE_ISR                                                 10/29/2026 11:54:48 PAGE 11  
 
 
 

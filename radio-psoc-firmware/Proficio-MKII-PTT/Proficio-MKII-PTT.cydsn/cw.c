@@ -163,6 +163,13 @@ void CW_Key_Delay_Stop(void)
     if(dac_muted) cw_dac_mute(FALSE);
 }
 
+/* Main loop only (I2C): DAC soft mute for the PTT / TUNE path in tx.c (3.241).
+ * Shares dac_muted with CW so both paths agree on the PCM3060 state. */
+void TX_DAC_Mute(uint8 mute)
+{
+    if(dac_muted != mute) cw_dac_mute(mute);
+}
+
 uint8 keyer_write(uint8_t buffer)
 {
 	uint8_t msg_buffer = 0;

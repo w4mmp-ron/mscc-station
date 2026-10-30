@@ -56,6 +56,8 @@
 #include "CW_Clock.h"
 #include "CW_Hold_Control.h"
 #include "CW_isr.h"
+#include "Key_Delay_Timer.h"
+#include "Key_Delay_isr.h"
 #include "USBFS_ep3_dma.h"
 #include "USBFS_EP17_DMA_Done_SR.h"
 #include "USBFS_ep2_dma.h"

@@ -885,10 +885,12 @@ void *UDP_Thread(void *my_param) {
                             fprintf(G_fp_logfile, "[%d] UDP Thread. CMD_SET_TX_ON \n",
                                     line_number++);
                             if (G_Monitor == 0) {
+                                /* recv 3.149: do not stop the stream (it shares the radio USB audio
+                                 * device with the TX I/Q). The callback outputs silence while
+                                 * G_tx_mode is set and MONITOR is off. */
                                 print_time();
-                                fprintf(G_fp_logfile, "[%d] UDP Thread. CMD_SET_TX_ON . G_Monitor: %d \n",
+                                fprintf(G_fp_logfile, "[%d] UDP Thread. CMD_SET_TX_ON . G_Monitor: %d (recv 3.149: RX muted, stream kept running)\n",
                                         line_number++, G_Monitor);
-                                Pa_StopStream(stream);
                             }
                         } else {
                             print_time();
@@ -908,10 +910,10 @@ void *UDP_Thread(void *my_param) {
                             fprintf(G_fp_logfile, "[%d] UDP Thread . CMD_SET_TX_ON \n",
                                     line_number++);
                             if (G_Monitor == 0) {
+                                /* recv 3.149: stream was never stopped; the callback unmutes on its own. */
                                 print_time();
-                                fprintf(G_fp_logfile, "[%d] UDP Thread . CMD_SET_TX_ON . G_Monitor: %d \n",
+                                fprintf(G_fp_logfile, "[%d] UDP Thread . CMD_SET_TX_ON . G_Monitor: %d (recv 3.149: RX unmuted)\n",
                                         line_number++, G_Monitor);
-                                Pa_StartStream(stream);
                             }
                         } else {
                             print_time();

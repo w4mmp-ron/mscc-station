@@ -1,33 +1,88 @@
 <?xml version="1.0" encoding="utf-8"?>
 <blockRegMap version="1" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://cypress.com/xsd/cyblockregmap cyblockregmap.xsd" xmlns="http://cypress.com/xsd/cyblockregmap">
+  <block name="BEAT_CLK" BASE="0x0" SIZE="0x0" desc="" visible="true" hidden="false" />
   <block name="AMP" BASE="0x0" SIZE="0x0" desc="" visible="true" hidden="false" />
   <block name="BS2" BASE="0x0" SIZE="0x0" desc="" visible="true" hidden="false" />
-  <block name="LED1" BASE="0x0" SIZE="0x0" desc="" visible="true" hidden="false" />
+  <block name="Bootloadable" BASE="0x0" SIZE="0x0" desc="" visible="true" hidden="false" />
+  <block name="Debouncer_2" BASE="0x0" SIZE="0x0" desc="" visible="true" hidden="false" />
+  <block name="Debouncer_1" BASE="0x0" SIZE="0x0" desc="" visible="true" hidden="false" />
   <block name="Band_Control" BASE="0x0" SIZE="0x0" desc="" visible="true" hidden="false">
     <register name="Band_Control_CONTROL_REG" address="0x6576" bitWidth="8" desc="" hidden="false" />
   </block>
-  <block name="Bootloadable" BASE="0x0" SIZE="0x0" desc="" visible="true" hidden="false" />
-  <block name="BEAT_CLK" BASE="0x0" SIZE="0x0" desc="" visible="true" hidden="false" />
-  <block name="FRAC_CLK" BASE="0x0" SIZE="0x0" desc="" visible="true" hidden="false" />
+  <block name="EEPROM" BASE="0x0" SIZE="0x0" desc="" visible="true" hidden="false" />
   <block name="BOOT" BASE="0x0" SIZE="0x0" desc="" visible="true" hidden="false" />
   <block name="PTT" BASE="0x0" SIZE="0x0" desc="" visible="true" hidden="false" />
-  <block name="TxI2S_Stage" BASE="0x0" SIZE="0x0" desc="" visible="true" hidden="false" />
-  <block name="P_DMA" BASE="0x0" SIZE="0x0" desc="" visible="true" hidden="false" />
   <block name="TxI2S_Zero" BASE="0x0" SIZE="0x0" desc="" visible="true" hidden="false" />
-  <block name="EEPROM" BASE="0x0" SIZE="0x0" desc="" visible="true" hidden="false" />
-  <block name="Debouncer_1" BASE="0x0" SIZE="0x0" desc="" visible="true" hidden="false" />
-  <block name="Sync_2" BASE="0x0" SIZE="0x0" desc="" visible="true" hidden="false" />
-  <block name="CW_isr" BASE="0x0" SIZE="0x0" desc="" visible="true" hidden="false" />
-  <block name="CW_Hold_Control" BASE="0x0" SIZE="0x0" desc="" visible="true" hidden="false">
-    <register name="CW_Hold_Control_CONTROL_REG" address="0x6477" bitWidth="8" desc="" hidden="false" />
+  <block name="LED1" BASE="0x0" SIZE="0x0" desc="" visible="true" hidden="false" />
+  <block name="FRAC_CLK" BASE="0x0" SIZE="0x0" desc="" visible="true" hidden="false" />
+  <block name="P_DMA" BASE="0x0" SIZE="0x0" desc="" visible="true" hidden="false" />
+  <block name="Debounce_Clock" BASE="0x0" SIZE="0x0" desc="" visible="true" hidden="false" />
+  <block name="Key_Delay_Timer" BASE="0x0" SIZE="0x0" desc="" visible="true" hidden="false">
+    <block name="VirtualMux_2" BASE="0x0" SIZE="0x0" desc="" visible="true" hidden="false" />
+    <block name="ZeroTerminal_1" BASE="0x0" SIZE="0x0" desc="" visible="true" hidden="false" />
+    <block name="TimerHW" BASE="0x0" SIZE="0x0" desc="" visible="true" hidden="false" />
+    <block name="OneTerminal_1" BASE="0x0" SIZE="0x0" desc="" visible="true" hidden="false" />
+    <block name="VirtualMux_1" BASE="0x0" SIZE="0x0" desc="" visible="true" hidden="false" />
+    <block name="VirtualMux_3" BASE="0x0" SIZE="0x0" desc="" visible="true" hidden="false" />
+    <register name="Key_Delay_Timer_GLOBAL_ENABLE" address="0x43A3" bitWidth="8" desc="PM.ACT.CFG" hidden="false">
+      <field name="en_timer" from="3" to="0" access="RW" resetVal="" desc="Enable timer/counters." hidden="false" />
+    </register>
+    <register name="Key_Delay_Timer_CONTROL" address="0x4F0C" bitWidth="8" desc="TMRx.CFG0" hidden="false">
+      <field name="EN" from="0" to="0" access="RW" resetVal="" desc="Enables timer/comparator." hidden="false" />
+      <field name="MODE" from="1" to="1" access="RW" resetVal="" desc="Mode. (0 = Timer; 1 = Comparator)" hidden="false">
+        <value name="Timer" value="0" desc="Timer mode. CNT/CMP register holds timer count value." />
+        <value name="Comparator" value="1" desc="Comparator mode. CNT/CMP register holds comparator threshold value." />
+      </field>
+      <field name="ONESHOT" from="2" to="2" access="RW" resetVal="" desc="Timer stops upon reaching stop condition defined by TMR_CFG bits. Can be restarted by asserting TIMER RESET or disabling and re-enabling block." hidden="false" />
+      <field name="CMP_BUFF" from="3" to="3" access="RW" resetVal="" desc="Buffer compare register. Compare register updates only on timer terminal count." hidden="false" />
+      <field name="INV" from="4" to="4" access="RW" resetVal="" desc="Invert sense of TIMEREN signal" hidden="false" />
+      <field name="DB" from="5" to="5" access="RW" resetVal="" desc="Deadband mode--Deadband phases phi1 and phi2 are outputted on CMP and TC output pins respectively." hidden="false">
+        <value name="Timer" value="0" desc="CMP and TC are output." />
+        <value name="Deadband" value="1" desc="PHI1 (instead of CMP) and PHI2 (instead of TC) are output." />
+      </field>
+      <field name="DEADBAND_PERIOD" from="7" to="6" access="RW" resetVal="" desc="Deadband Period" hidden="false" />
+    </register>
+    <register name="Key_Delay_Timer_CONTROL2" address="0x4F0D" bitWidth="8" desc="TMRx.CFG1" hidden="false">
+      <field name="IRQ_SEL" from="0" to="0" access="RW" resetVal="" desc="Irq selection. (0 = raw interrupts; 1 = status register interrupts)" hidden="false" />
+      <field name="FTC" from="1" to="1" access="RW" resetVal="" desc="First Terminal Count (FTC). Setting this bit forces a single pulse on the TC pin when first enabled." hidden="false">
+        <value name="Disable FTC" value="0" desc="Disable the single cycle pulse, which signifies the timer is starting." />
+        <value name="Enable FTC" value="1" desc="Enable the single cycle pulse, which signifies the timer is starting." />
+      </field>
+      <field name="DCOR" from="2" to="2" access="RW" resetVal="" desc="Disable Clear on Read (DCOR) of Status Register SR0." hidden="false" />
+      <field name="DBMODE" from="3" to="3" access="RW" resetVal="" desc="Deadband mode (asynchronous/synchronous). CMP output pin is also affected when not in deadband mode (CFG0.DEADBAND)." hidden="false" />
+      <field name="CLK_BUS_EN_SEL" from="6" to="4" access="RW" resetVal="" desc="Digital Global Clock selection." hidden="false" />
+      <field name="BUS_CLK_SEL" from="7" to="7" access="RW" resetVal="" desc="Bus Clock selection." hidden="false" />
+    </register>
+    <register name="Key_Delay_Timer_CONTROL3_" address="0x4F0E" bitWidth="8" desc="TMRx.CFG2" hidden="false">
+      <field name="TMR_CFG" from="1" to="0" access="RW" resetVal="" desc="Timer configuration (MODE = 0): 000 = Continuous; 001 = Pulsewidth; 010 = Period; 011 = Stop on IRQ" hidden="false">
+        <value name="Continuous" value="0" desc="Timer runs while EN bit of CFG0 register is set to '1'." />
+        <value name="Pulsewidth" value="1" desc="Timer runs from positive to negative edge of TIMEREN." />
+        <value name="Period" value="10" desc="Timer runs from positive to positive edge of TIMEREN." />
+        <value name="Irq" value="11" desc="Timer runs until IRQ." />
+      </field>
+      <field name="COD" from="2" to="2" access="RW" resetVal="" desc="Clear On Disable (COD). Clears or gates outputs to zero." hidden="false" />
+      <field name="ROD" from="3" to="3" access="RW" resetVal="" desc="Reset On Disable (ROD). Resets internal state of output logic" hidden="false" />
+      <field name="CMP_CFG" from="6" to="4" access="RW" resetVal="" desc="Comparator configurations" hidden="false">
+        <value name="Equal" value="0" desc="Compare Equal " />
+        <value name="Less than" value="1" desc="Compare Less Than " />
+        <value name="Less than or equal" value="10" desc="Compare Less Than or Equal ." />
+        <value name="Greater" value="11" desc="Compare Greater Than ." />
+        <value name="Greater than or equal" value="100" desc="Compare Greater Than or Equal " />
+      </field>
+      <field name="HW_EN" from="7" to="7" access="RW" resetVal="" desc="When set Timer Enable controls counting." hidden="false" />
+    </register>
+    <register name="Key_Delay_Timer_PERIOD" address="0x4F10" bitWidth="16" desc="TMRx.PER0 - Assigned Period" hidden="false" />
+    <register name="Key_Delay_Timer_COUNTER" address="0x4F12" bitWidth="16" desc="TMRx.CNT_CMP0 - Current Down Counter Value" hidden="false" />
   </block>
+  <block name="PTT_Debounce" BASE="0x0" SIZE="0x0" desc="" visible="true" hidden="false" />
+  <block name="Sync_2" BASE="0x0" SIZE="0x0" desc="" visible="true" hidden="false" />
+  <block name="Key_Delay_isr" BASE="0x0" SIZE="0x0" desc="" visible="true" hidden="false" />
   <block name="Em_EEPROM_Dynamic" BASE="0x0" SIZE="0x0" desc="" visible="true" hidden="false" />
   <block name="cy_boot" BASE="0x0" SIZE="0x0" desc="" visible="true" hidden="false" />
-  <block name="PTT_Debounce" BASE="0x0" SIZE="0x0" desc="" visible="true" hidden="false" />
-  <block name="CW_Clock" BASE="0x0" SIZE="0x0" desc="" visible="true" hidden="false" />
+  <block name="cy_constant_1" BASE="0x0" SIZE="0x0" desc="" visible="true" hidden="false" />
+  <block name="and_2" BASE="0x0" SIZE="0x0" desc="" visible="true" hidden="false" />
+  <block name="DieTemp_1" BASE="0x0" SIZE="0x0" desc="" visible="true" hidden="false" />
   <block name="and_1" BASE="0x0" SIZE="0x0" desc="" visible="true" hidden="false" />
-  <block name="Debounce_Clock" BASE="0x0" SIZE="0x0" desc="" visible="true" hidden="false" />
-  <block name="Debouncer_2" BASE="0x0" SIZE="0x0" desc="" visible="true" hidden="false" />
   <block name="CW_Hold_Timer" BASE="0x0" SIZE="0x0" desc="" visible="true" hidden="false">
     <block name="VirtualMux_2" BASE="0x0" SIZE="0x0" desc="" visible="true" hidden="false" />
     <block name="ZeroTerminal_1" BASE="0x0" SIZE="0x0" desc="" visible="true" hidden="false" />
@@ -85,14 +140,16 @@
     <register name="CW_Hold_Timer_PERIOD" address="0x4F04" bitWidth="16" desc="TMRx.PER0 - Assigned Period" hidden="false" />
     <register name="CW_Hold_Timer_COUNTER" address="0x4F06" bitWidth="16" desc="TMRx.CNT_CMP0 - Current Down Counter Value" hidden="false" />
   </block>
-  <block name="and_2" BASE="0x0" SIZE="0x0" desc="" visible="true" hidden="false" />
-  <block name="DieTemp_1" BASE="0x0" SIZE="0x0" desc="" visible="true" hidden="false" />
-  <block name="TxI2S_Buff" BASE="0x0" SIZE="0x0" desc="" visible="true" hidden="false" />
+  <block name="CW_isr" BASE="0x0" SIZE="0x0" desc="" visible="true" hidden="false" />
+  <block name="CW_Hold_Control" BASE="0x0" SIZE="0x0" desc="" visible="true" hidden="false">
+    <register name="CW_Hold_Control_CONTROL_REG" address="0x657B" bitWidth="8" desc="" hidden="false" />
+  </block>
+  <block name="CW_Clock" BASE="0x0" SIZE="0x0" desc="" visible="true" hidden="false" />
   <block name="BCK2" BASE="0x0" SIZE="0x0" desc="" visible="true" hidden="false" />
   <block name="DIN" BASE="0x0" SIZE="0x0" desc="" visible="true" hidden="false" />
   <block name="I2S" BASE="0x0" SIZE="0x0" desc="" visible="true" hidden="false">
     <block name="bI2S" BASE="0x0" SIZE="0x0" desc="" visible="true" hidden="false" />
-    <register name="RX_STATUS_0_REG" address="0x6569" bitWidth="8" desc="" hidden="false">
+    <register name="RX_STATUS_0_REG" address="0x6469" bitWidth="8" desc="" hidden="false">
       <field name="INT" from="7" to="7" access="R" resetVal="" desc="Interrupt bit" hidden="false" />
       <field name="CH1 F1" from="5" to="5" access="R" resetVal="" desc="Stereo channel 1 FIFO 1 state" hidden="false">
         <value name="EMPTY" value="0" desc="" />
@@ -119,7 +176,7 @@
         <value name="OVERFLOW" value="1" desc="" />
       </field>
     </register>
-    <register name="TX_STATUS_0_REG" address="0x656B" bitWidth="8" desc="" hidden="false">
+    <register name="TX_STATUS_0_REG" address="0x6565" bitWidth="8" desc="" hidden="false">
       <field name="INT" from="7" to="7" access="R" resetVal="" desc="Interrupt bit" hidden="false" />
       <field name="CH1 F1" from="5" to="5" access="R" resetVal="" desc="Stereo channel 1 FIFO 1 state" hidden="false">
         <value name="FULL" value="0" desc="" />
@@ -146,7 +203,7 @@
         <value name="UNDERFLOW" value="1" desc="" />
       </field>
     </register>
-    <register name="CONTROL_REG" address="0x6579" bitWidth="8" desc="" hidden="false">
+    <register name="CONTROL_REG" address="0x6577" bitWidth="8" desc="" hidden="false">
       <field name="RESOLUTION" from="4" to="3" access="RW" resetVal="" desc="Specifies data bits value. Applicable only if dynamic bit resolution is selected." hidden="false">
         <value name="8-BIT" value="00" desc="" />
         <value name="16-BIT" value="01" desc="" />
@@ -167,10 +224,10 @@
       </field>
     </register>
   </block>
+  <block name="I2S_CLK" BASE="0x0" SIZE="0x0" desc="" visible="true" hidden="false" />
+  <block name="RX" BASE="0x0" SIZE="0x0" desc="" visible="true" hidden="false" />
   <block name="LRCK2" BASE="0x0" SIZE="0x0" desc="" visible="true" hidden="false" />
   <block name="not_1" BASE="0x0" SIZE="0x0" desc="" visible="true" hidden="false" />
-  <block name="I2S_CLK" BASE="0x0" SIZE="0x0" desc="" visible="true" hidden="false" />
-  <block name="SDA" BASE="0x0" SIZE="0x0" desc="" visible="true" hidden="false" />
   <block name="LRCK1" BASE="0x0" SIZE="0x0" desc="" visible="true" hidden="false" />
   <block name="I2C_DISPLAY" BASE="0x0" SIZE="0x0" desc="" visible="true" hidden="false">
     <block name="Vmux_clock" BASE="0x0" SIZE="0x0" desc="" visible="true" hidden="false" />
@@ -255,9 +312,9 @@
     <block name="ep_0" BASE="0x0" SIZE="0x0" desc="" visible="true" hidden="false" />
     <block name="bus_reset" BASE="0x0" SIZE="0x0" desc="" visible="true" hidden="false" />
     <block name="USBFS_EP8_DMA_Done_SR" BASE="0x0" SIZE="0x0" desc="" visible="true" hidden="false">
-      <register name="USBFS_EP8_DMA_Done_SR_STATUS_REG" address="0x6564" bitWidth="8" desc="" hidden="false" />
-      <register name="USBFS_EP8_DMA_Done_SR_MASK_REG" address="0x6584" bitWidth="8" desc="" hidden="false" />
-      <register name="USBFS_EP8_DMA_Done_SR_STATUS_AUX_CTL_REG" address="0x6594" bitWidth="8" desc="" hidden="false">
+      <register name="USBFS_EP8_DMA_Done_SR_STATUS_REG" address="0x656A" bitWidth="8" desc="" hidden="false" />
+      <register name="USBFS_EP8_DMA_Done_SR_MASK_REG" address="0x658A" bitWidth="8" desc="" hidden="false" />
+      <register name="USBFS_EP8_DMA_Done_SR_STATUS_AUX_CTL_REG" address="0x659A" bitWidth="8" desc="" hidden="false">
         <field name="FIFO0" from="5" to="5" access="RW" resetVal="" desc="FIFO0 clear" hidden="false">
           <value name="ENABLED" value="1" desc="Enable counter" />
           <value name="DISABLED" value="0" desc="Disable counter" />
@@ -301,9 +358,9 @@
     <block name="VirtualMux_5" BASE="0x0" SIZE="0x0" desc="" visible="true" hidden="false" />
     <block name="ZeroTerminal_5" BASE="0x0" SIZE="0x0" desc="" visible="true" hidden="false" />
     <block name="USBFS_EP17_DMA_Done_SR" BASE="0x0" SIZE="0x0" desc="" visible="true" hidden="false">
-      <register name="USBFS_EP17_DMA_Done_SR_STATUS_REG" address="0x6567" bitWidth="8" desc="" hidden="false" />
-      <register name="USBFS_EP17_DMA_Done_SR_MASK_REG" address="0x6587" bitWidth="8" desc="" hidden="false" />
-      <register name="USBFS_EP17_DMA_Done_SR_STATUS_AUX_CTL_REG" address="0x6597" bitWidth="8" desc="" hidden="false">
+      <register name="USBFS_EP17_DMA_Done_SR_STATUS_REG" address="0x6566" bitWidth="8" desc="" hidden="false" />
+      <register name="USBFS_EP17_DMA_Done_SR_MASK_REG" address="0x6586" bitWidth="8" desc="" hidden="false" />
+      <register name="USBFS_EP17_DMA_Done_SR_STATUS_AUX_CTL_REG" address="0x6596" bitWidth="8" desc="" hidden="false">
         <field name="FIFO0" from="5" to="5" access="RW" resetVal="" desc="FIFO0 clear" hidden="false">
           <value name="ENABLED" value="1" desc="Enable counter" />
           <value name="DISABLED" value="0" desc="Disable counter" />
@@ -1161,23 +1218,25 @@
       <field name="RA9" from="0" to="0" access="RW" resetVal="" desc="Read Address for EP MSB." hidden="false" />
     </register>
   </block>
+  <block name="BCK1" BASE="0x0" SIZE="0x0" desc="" visible="true" hidden="false" />
+  <block name="SDA" BASE="0x0" SIZE="0x0" desc="" visible="true" hidden="false" />
   <block name="SCL" BASE="0x0" SIZE="0x0" desc="" visible="true" hidden="false" />
   <block name="DOUT" BASE="0x0" SIZE="0x0" desc="" visible="true" hidden="false" />
-  <block name="BCK1" BASE="0x0" SIZE="0x0" desc="" visible="true" hidden="false" />
-  <block name="RX" BASE="0x0" SIZE="0x0" desc="" visible="true" hidden="false" />
+  <block name="SCK2" BASE="0x0" SIZE="0x0" desc="" visible="true" hidden="false" />
+  <block name="KEY_0" BASE="0x0" SIZE="0x0" desc="" visible="true" hidden="false" />
   <block name="RxI2S_Stage" BASE="0x0" SIZE="0x0" desc="" visible="true" hidden="false" />
   <block name="RxI2S_Buff" BASE="0x0" SIZE="0x0" desc="" visible="true" hidden="false" />
-  <block name="FracN" BASE="0x0" SIZE="0x0" desc="" visible="true" hidden="false" />
-  <block name="SyncSOF" BASE="0x0" SIZE="0x0" desc="" visible="true" hidden="false" />
   <block name="Control" BASE="0x0" SIZE="0x0" desc="" visible="true" hidden="false">
-    <register name="Control_CONTROL_REG" address="0x6474" bitWidth="8" desc="" hidden="false" />
+    <register name="Control_CONTROL_REG" address="0x6479" bitWidth="8" desc="" hidden="false" />
   </block>
-  <block name="KEY_0" BASE="0x0" SIZE="0x0" desc="" visible="true" hidden="false" />
-  <block name="BS0" BASE="0x0" SIZE="0x0" desc="" visible="true" hidden="false" />
+  <block name="TxI2S_Stage" BASE="0x0" SIZE="0x0" desc="" visible="true" hidden="false" />
+  <block name="TxI2S_Buff" BASE="0x0" SIZE="0x0" desc="" visible="true" hidden="false" />
+  <block name="SyncSOF" BASE="0x0" SIZE="0x0" desc="" visible="true" hidden="false" />
+  <block name="KEY_1" BASE="0x0" SIZE="0x0" desc="" visible="true" hidden="false" />
   <block name="Status" BASE="0x0" SIZE="0x0" desc="" visible="true" hidden="false">
-    <register name="Status_STATUS_REG" address="0x6460" bitWidth="8" desc="" hidden="false" />
-    <register name="Status_MASK_REG" address="0x6480" bitWidth="8" desc="" hidden="false" />
-    <register name="Status_STATUS_AUX_CTL_REG" address="0x6490" bitWidth="8" desc="" hidden="false">
+    <register name="Status_STATUS_REG" address="0x6464" bitWidth="8" desc="" hidden="false" />
+    <register name="Status_MASK_REG" address="0x6484" bitWidth="8" desc="" hidden="false" />
+    <register name="Status_STATUS_AUX_CTL_REG" address="0x6494" bitWidth="8" desc="" hidden="false">
       <field name="FIFO0" from="5" to="5" access="RW" resetVal="" desc="FIFO0 clear" hidden="false">
         <value name="ENABLED" value="1" desc="Enable counter" />
         <value name="DISABLED" value="0" desc="Disable counter" />
@@ -1205,8 +1264,8 @@
     </register>
   </block>
   <block name="BS1" BASE="0x0" SIZE="0x0" desc="" visible="true" hidden="false" />
-  <block name="SCK2" BASE="0x0" SIZE="0x0" desc="" visible="true" hidden="false" />
-  <block name="My_BUS_CLK" BASE="0x0" SIZE="0x0" desc="" visible="true" hidden="false" />
   <block name="SCK1" BASE="0x0" SIZE="0x0" desc="" visible="true" hidden="false" />
-  <block name="KEY_1" BASE="0x0" SIZE="0x0" desc="" visible="true" hidden="false" />
+  <block name="FracN" BASE="0x0" SIZE="0x0" desc="" visible="true" hidden="false" />
+  <block name="BS0" BASE="0x0" SIZE="0x0" desc="" visible="true" hidden="false" />
+  <block name="My_BUS_CLK" BASE="0x0" SIZE="0x0" desc="" visible="true" hidden="false" />
 </blockRegMap>

@@ -2124,7 +2124,7 @@
 <name_val_pair name="4bd5669a-0e4e-4e1c-9625-e982dd945372@Debug@DP8051@Linker@Debugging@SymbolTypeInfoInOutput" v="True" />
 <name_val_pair name="4bd5669a-0e4e-4e1c-9625-e982dd945372@Debug@DP8051@Linker@Command Line@Command Line" v="" />
 <name_val_pair name="4bd5669a-0e4e-4e1c-9625-e982dd945372@Debug@DP8051@User Commands@General@Pre Build Commands" v="" />
-<name_val_pair name="4bd5669a-0e4e-4e1c-9625-e982dd945372@Debug@DP8051@User Commands@General@Post Build Commands" v="cmd /c &quot;C:\Users\Ron\.grok\worktrees\radio-psoc-firmware\Proficio-MKII-PTT\copy-release.bat&quot;" />
+<name_val_pair name="4bd5669a-0e4e-4e1c-9625-e982dd945372@Debug@DP8051@User Commands@General@Post Build Commands" v="" />
 <name_val_pair name="4bd5669a-0e4e-4e1c-9625-e982dd945372@Release@DP8051@General@Output Directory" v="${ProjectDir}\${ProcessorType}\${Platform}\${Config}" />
 <name_val_pair name="4bd5669a-0e4e-4e1c-9625-e982dd945372@Release@DP8051@Assembly@General@Additional Include Directories" v="" />
 <name_val_pair name="4bd5669a-0e4e-4e1c-9625-e982dd945372@Release@DP8051@Assembly@General@AssemblyGenDebugInfo" v="False" />

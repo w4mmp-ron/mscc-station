@@ -111,10 +111,14 @@ int alc_float_to_meter(float alc)
         return clamp_int(meter, 0, 100);
     }
 
-    /* Distance below 1.0, in thousandths → 0.999f => 1, 0.900f => 100 */
-    deficit = 1.0f - alc;
-    meter = (int)(deficit * 1000.0f + 0.5f);  /* round half up */
-
+    /* 3.149: analog voice: 0-10 dB of ALC gain reduction -> 0-100.
+     * Was (1-gain)*1000, full scale at 0.9 dB, so it only ever blipped to 100.
+     * Set the mic gain so voice peaks show a little ALC (about 20-40 on the meter). */
+    (void) deficit;
+    {
+        float db = -20.0f * log10f(alc);
+        meter = (int)(db / 10.0f * 100.0f + 0.5f);
+    }
     return clamp_int(meter, 0, 100);
 }
 
@@ -132,12 +136,27 @@ void* ALC_Meter_thread(void* t) {
 
     Sleep(1000); //Let the subsystem initialize before processing ALC
     print_time();
-    fprintf(G_fp_logfile, "[%d] ALC_Meter_thread. Thread STARTED.\n", line_number++);
+    fprintf(G_fp_logfile, "[%d] ALC_Meter_thread. Thread STARTED. trans 3.149 (ALC 0.45, level meter, TX audio LPF 6k)\n", line_number++);
     while (G_all_threads_run) {
         if (G_tx_mode == TRUE && G_Do_ALC == TRUE && G_Allow_ALC_Send == TRUE) {
             new_session = TRUE;
             alc = G_ALC_gain;
-            result_average = alc_float_to_meter(alc);
+            if (G_audio_mode == DIGITAL_AUDIO || G_audio_mode == REMOTE_DIGITAL_AUDIO) {
+                result_average = alc_float_to_meter(alc);
+            } else {
+                /* trans 3.149: voice ALC meter = peak envelope / ALC ceiling. 100 = the ALC
+                 * is just starting to act (clean limit of the PA). Set the mic gain so voice
+                 * peaks reach about 70-100. The old meter showed only gain reduction, so it
+                 * read 0 until the signal was already at the limit. */
+                float target = G_ALC_limit * G_ALC_multiplier;
+                float pk = G_ALC_peak_env;
+                int m = 0;
+                G_ALC_peak_env = 0.0f;
+                if (target > 0.0f) m = (int) (pk / target * 100.0f + 0.5f);
+                if (m > 100) m = 100;
+                if (m < 0) m = 0;
+                result_average = (uint16_t) m;
+            }
             //print_time();
             //fprintf(G_fp_logfile, "[%d] ALC_Meter_thread. CMD_SET_ALC. result_average: %d, alc: %f\n",
             //    line_number++, result_average, alc);

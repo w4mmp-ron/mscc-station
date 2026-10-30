@@ -1,6 +1,6 @@
 // ======================================================================
 // Proficio-MKII-PTT.v generated from TopDesign.cysch
-// 08/22/2026 at 15:13
+// 10/29/2026 at 11:54
 // This file is auto generated. ANY EDITS YOU MAKE MAY BE LOST WHEN THIS FILE IS REGENERATED!!!
 // ======================================================================
 
@@ -981,11 +981,11 @@ endmodule
 `endif
 
 `ifdef WARP
-`define CY_BLK_DIR "C:\Users\Ron\.grok\worktrees\Release-Proficio-MKII-PTT\Proficio-MKII-PTT.cydsn\FracN"
-`include "C:\Users\Ron\.grok\worktrees\Release-Proficio-MKII-PTT\Proficio-MKII-PTT.cydsn\FracN\FracN.v"
+`define CY_BLK_DIR "C:\Users\n8vet\OneDrive\Documents\github\mscc-station\radio-psoc-firmware\Proficio-MKII-PTT\Proficio-MKII-PTT.cydsn\FracN"
+`include "C:\Users\n8vet\OneDrive\Documents\github\mscc-station\radio-psoc-firmware\Proficio-MKII-PTT\Proficio-MKII-PTT.cydsn\FracN\FracN.v"
 `else
-`define CY_BLK_DIR "C:\Users\Ron\.grok\worktrees\Release-Proficio-MKII-PTT\Proficio-MKII-PTT.cydsn\FracN"
-`include "C:\Users\Ron\.grok\worktrees\Release-Proficio-MKII-PTT\Proficio-MKII-PTT.cydsn\FracN\FracN.v"
+`define CY_BLK_DIR "C:\Users\n8vet\OneDrive\Documents\github\mscc-station\radio-psoc-firmware\Proficio-MKII-PTT\Proficio-MKII-PTT.cydsn\FracN"
+`include "C:\Users\n8vet\OneDrive\Documents\github\mscc-station\radio-psoc-firmware\Proficio-MKII-PTT\Proficio-MKII-PTT.cydsn\FracN\FracN.v"
 `endif
 
 // Component: CyControlReg_v1_80
@@ -1007,11 +1007,11 @@ endmodule
 `endif
 
 `ifdef WARP
-`define CY_BLK_DIR "C:\Users\Ron\.grok\worktrees\Release-Proficio-MKII-PTT\Proficio-MKII-PTT.cydsn\SyncSOF"
-`include "C:\Users\Ron\.grok\worktrees\Release-Proficio-MKII-PTT\Proficio-MKII-PTT.cydsn\SyncSOF\SyncSOF.v"
+`define CY_BLK_DIR "C:\Users\n8vet\OneDrive\Documents\github\mscc-station\radio-psoc-firmware\Proficio-MKII-PTT\Proficio-MKII-PTT.cydsn\SyncSOF"
+`include "C:\Users\n8vet\OneDrive\Documents\github\mscc-station\radio-psoc-firmware\Proficio-MKII-PTT\Proficio-MKII-PTT.cydsn\SyncSOF\SyncSOF.v"
 `else
-`define CY_BLK_DIR "C:\Users\Ron\.grok\worktrees\Release-Proficio-MKII-PTT\Proficio-MKII-PTT.cydsn\SyncSOF"
-`include "C:\Users\Ron\.grok\worktrees\Release-Proficio-MKII-PTT\Proficio-MKII-PTT.cydsn\SyncSOF\SyncSOF.v"
+`define CY_BLK_DIR "C:\Users\n8vet\OneDrive\Documents\github\mscc-station\radio-psoc-firmware\Proficio-MKII-PTT\Proficio-MKII-PTT.cydsn\SyncSOF"
+`include "C:\Users\n8vet\OneDrive\Documents\github\mscc-station\radio-psoc-firmware\Proficio-MKII-PTT\Proficio-MKII-PTT.cydsn\SyncSOF\SyncSOF.v"
 `endif
 
 // Component: Debouncer_v1_0
@@ -1105,11 +1105,96 @@ module Timer_v2_80_3 (
 
 endmodule
 
+// Timer_v2_80(CaptureAlternatingFall=false, CaptureAlternatingRise=false, CaptureCount=2, CaptureCounterEnabled=false, CaptureInputEnabled=false, CaptureMode=0, CONTROL3=1, ControlRegRemoved=0, CtlModeReplacementString=SyncCtl, CyGetRegReplacementString=CY_GET_REG16, CySetRegReplacementString=CY_SET_REG16, DeviceFamily=PSoC3, EnableMode=0, FF16=true, FF8=false, FixedFunction=true, FixedFunctionUsed=1, HWCaptureCounterEnabled=false, InterruptOnCapture=false, InterruptOnFIFOFull=false, InterruptOnTC=true, IntOnCapture=0, IntOnFIFOFull=0, IntOnTC=1, NumberOfCaptures=1, param45=1, Period=9, RegDefReplacementString=reg16, RegSizeReplacementString=uint16, Resolution=16, RstStatusReplacementString=rstSts, RunMode=0, SiliconRevision=3, SoftwareCaptureModeEnabled=false, SoftwareTriggerModeEnabled=false, TriggerInputEnabled=false, TriggerMode=0, UDB16=false, UDB24=false, UDB32=false, UDB8=false, UDBControlReg=false, UsesHWEnable=0, VerilogSectionReplacementString=sT16, CY_API_CALLBACK_HEADER_INCLUDE=, CY_COMMENT=, CY_COMPONENT_NAME=Timer_v2_80, CY_CONFIG_TITLE=Key_Delay_Timer, CY_CONST_CONFIG=true, CY_CONTROL_FILE=<:default:>, CY_DATASHEET_FILE=<:default:>, CY_FITTER_NAME=Key_Delay_Timer, CY_INSTANCE_SHORT_NAME=Key_Delay_Timer, CY_MAJOR_VERSION=2, CY_MINOR_VERSION=80, CY_PDL_DRIVER_NAME=, CY_PDL_DRIVER_REQ_VERSION=, CY_PDL_DRIVER_SUBGROUP=, CY_PDL_DRIVER_VARIANT=, CY_REMOVE=false, CY_SUPPRESS_API_GEN=false, CY_VERSION=PSoC Creator  4.4, INSTANCE_NAME=Key_Delay_Timer, )
+module Timer_v2_80_4 (
+    capture,
+    capture_out,
+    clock,
+    enable,
+    interrupt,
+    reset,
+    tc,
+    trigger);
+    input       capture;
+    output      capture_out;
+    input       clock;
+    input       enable;
+    output      interrupt;
+    input       reset;
+    output      tc;
+    input       trigger;
+
+    parameter CaptureCount = 2;
+    parameter CaptureCounterEnabled = 0;
+    parameter DeviceFamily = "PSoC3";
+    parameter InterruptOnCapture = 0;
+    parameter InterruptOnTC = 1;
+    parameter Resolution = 16;
+    parameter SiliconRevision = "3";
+
+          wire  Net_260;
+          wire  Net_261;
+          wire  Net_266;
+          wire  Net_102;
+          wire  Net_55;
+          wire  Net_57;
+          wire  Net_53;
+          wire  Net_51;
+
+    cy_psoc3_timer_v1_0 TimerHW (
+        .capture(capture),
+        .clock(clock),
+        .compare(Net_261),
+        .enable(Net_266),
+        .interrupt(Net_57),
+        .kill(Net_260),
+        .tc(Net_51),
+        .timer_reset(reset));
+
+    ZeroTerminal ZeroTerminal_1 (
+        .z(Net_260));
+
+	// VirtualMux_2 (cy_virtualmux_v1_0)
+	assign interrupt = Net_57;
+
+	// VirtualMux_3 (cy_virtualmux_v1_0)
+	assign tc = Net_51;
+
+    OneTerminal OneTerminal_1 (
+        .o(Net_102));
+
+	// VirtualMux_1 (cy_virtualmux_v1_0)
+	assign Net_266 = Net_102;
+
+
+
+endmodule
+
+// Component: cy_constant_v1_0
+`ifdef CY_BLK_DIR
+`undef CY_BLK_DIR
+`endif
+
+`ifdef WARP
+`define CY_BLK_DIR "C:\Program Files (x86)\Cypress\PSoC Creator\4.4\PSoC Creator\psoc\content\CyPrimitives\cyprimitives.cylib\cy_constant_v1_0"
+`include "C:\Program Files (x86)\Cypress\PSoC Creator\4.4\PSoC Creator\psoc\content\CyPrimitives\cyprimitives.cylib\cy_constant_v1_0\cy_constant_v1_0.v"
+`else
+`define CY_BLK_DIR "C:\Program Files (x86)\Cypress\PSoC Creator\4.4\PSoC Creator\psoc\content\CyPrimitives\cyprimitives.cylib\cy_constant_v1_0"
+`include "C:\Program Files (x86)\Cypress\PSoC Creator\4.4\PSoC Creator\psoc\content\CyPrimitives\cyprimitives.cylib\cy_constant_v1_0\cy_constant_v1_0.v"
+`endif
+
 // top
 module top ;
 
           wire  Key_wire_1;
           wire  Key_wire_0;
+          wire  Net_8144;
+          wire  Net_8143;
+          wire  Net_8142;
+          wire  Net_8141;
+          wire  Net_8140;
+          wire  Net_8138;
+          wire  Net_8137;
           wire  Net_8129;
           wire  Net_8127;
           wire  Net_8128;
@@ -1205,6 +1290,7 @@ module top ;
           wire  Net_7684;
           wire  Net_8068;
           wire  Net_8071;
+          wire  PTT_Wire;
           wire  Net_8123;
           wire  Net_7685;
           wire  Net_4317;
@@ -1212,7 +1298,6 @@ module top ;
           wire  Net_7639;
           wire  Net_7720;
           wire  Net_6748;
-          wire  PTT_Wire;
           wire  Net_3626;
           wire [0:0] Net_4292;
           wire [0:0] Net_4293;
@@ -3047,6 +3132,32 @@ module top ;
     defparam PTT_Debounce.NegEdgeDetect = 0;
     defparam PTT_Debounce.PosEdgeDetect = 0;
     defparam PTT_Debounce.SignalWidth = 1;
+
+    Timer_v2_80_4 Key_Delay_Timer (
+        .capture(1'b0),
+        .capture_out(Net_8138),
+        .clock(Net_8086),
+        .enable(1'b1),
+        .interrupt(Net_8141),
+        .reset(Net_8142),
+        .tc(Net_8143),
+        .trigger(1'b1));
+    defparam Key_Delay_Timer.CaptureCount = 2;
+    defparam Key_Delay_Timer.CaptureCounterEnabled = 0;
+    defparam Key_Delay_Timer.DeviceFamily = "PSoC3";
+    defparam Key_Delay_Timer.InterruptOnCapture = 0;
+    defparam Key_Delay_Timer.InterruptOnTC = 1;
+    defparam Key_Delay_Timer.Resolution = 16;
+    defparam Key_Delay_Timer.SiliconRevision = "3";
+
+
+	cy_isr_v1_0
+		#(.int_type(2'b00))
+		Key_Delay_isr
+		 (.int_signal(Net_8143));
+
+
+    assign Net_8142 = 1'h0;
 
 
 

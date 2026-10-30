@@ -133,6 +133,8 @@ int main()
     static uint8_t previous_TX_hold_time = 0;
     uint8_t ptt_section = 0;
     uint8_t ptt_delay_count = 10;
+    uint8_t mode_change_pending = FALSE;    //3.242
+    uint8_t mode_drain_tick = 0;
            
     main_init();
     for(;;) {
@@ -141,6 +143,18 @@ int main()
         Sync_Main();
         if(E_host_mode == 'C') {
             if(previous_host_mode != E_host_mode){
+                if(!mode_change_pending){
+                    mode_change_pending = TRUE;
+                    mode_drain_tick = E_ms_tick;
+                }
+            }
+            if((previous_host_mode != E_host_mode) && !TX_Idle() &&
+               ((uint8)(E_ms_tick - mode_drain_tick) < MODE_DRAIN_MAX_MS)){
+                //3.242: host PTT / TUNE still keyed (e.g. TUN released into CW). Let TX_Main
+                //ramp the DAC down and drop the PA / AMP in order before CW takes over.
+                TX_Request = 0;
+                TX_Main();
+            }else if(previous_host_mode != E_host_mode){
                 //Entering CW: drop any host PTT / TUNE TX. TX_Main() does not run in CW,
                 //so a PTT off sent after the mode change would never be acted on.
                 Control_Write(Control_Read() & ~CONTROL_LED);   //Restore LED operation to normal
@@ -150,9 +164,11 @@ int main()
                 control_status = control_status | CONTROL_DOUT; //Turn ON output from PCM3060
                 Control_Write(control_status);
                 TX_Request = 0;
+                TX_Reset();                                     //3.241: TX_Main back to idle, CW owns the DAC mute
                 previous_host_mode = E_host_mode;
+                mode_change_pending = FALSE;
             }
-            Manage_Paddles_Port();
+            if(previous_host_mode == E_host_mode) Manage_Paddles_Port();
         }
         // Everything else runs twice per millisecond
         // Keep T1 first for timing accuracy
@@ -171,7 +187,14 @@ int main()
                 break;
             case 1:
                 if(E_host_mode != 'C'){
+                    if((previous_host_mode != E_host_mode) && (previous_host_mode != 'C') && (previous_host_mode != 0)){
+                        //3.242: change between non-CW modes (e.g. TUNE -> USB/DIG on TUN release, sent
+                        //before TUN off). Do NOT hard-drop the PA here: TX_Main ramps the DAC down first.
+                        previous_host_mode = E_host_mode;
+                        mode_change_pending = FALSE;
+                    }
                     if(previous_host_mode != E_host_mode){
+                        //Leaving CW (or first pass after power up)
                         CW_Key_Delay_Stop();                            //Stop CW key delay ISR, DAC unmuted
                         Control_Write(Control_Read() & ~CONTROL_LED);   //Restore LED operation to normal
                         Control_Write(Control_Read() | CONTROL_RX);     //Turn OFF PA - Negative logic level
@@ -181,6 +204,7 @@ int main()
                         Control_Write(control_status);
                         TX_Request = 0;
                         previous_host_mode = E_host_mode;
+                        mode_change_pending = FALSE;
                     }
                     TX_Main();
                 }

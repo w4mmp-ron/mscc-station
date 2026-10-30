@@ -136,6 +136,28 @@ static int sdrAudioCallback(const void *inputBuffer, void *outputBuffer,
         }
     }
 
+    /*
+     * recv 3.149: TX mute without stopping the stream. recv used to call
+     * Pa_StopStream() at TX on (and Pa_StartStream() at TX off) when MONITOR was off.
+     * The RX input is on the same radio USB audio device that trans sends TX I/Q to,
+     * and stopping it interrupted the TX stream for ~100 ms twice in the first
+     * ~0.6 s of every over. Any speech in that window was chopped, which showed as
+     * broadband splatter (seen with trans 3.149-TXDBG3: callback gaps of 75-140 ms
+     * with output underflow; gone with MONITOR on). Now the stream keeps running and
+     * the output is silent while transmitting. The DSP (and AGC) is skipped, as when
+     * the stream was stopped. CW keeps its own tone-stream path in udp_thread.c.
+     */
+    if (G_tx_mode == TRUE && G_Monitor == 0 && G_mode != 'C') {
+        static float rx_tx_silence[4096 * 2]; /* zero-initialised */
+        for (i = 0; i < framesPerBuffer; i++) {
+            *out++ = 0; /* left - silent */
+            *out++ = 0; /* right - silent */
+        }
+        if (remote_phones_enabled() && framesPerBuffer <= 4096u)
+            remote_phones_feed(rx_tx_silence, framesPerBuffer);
+        return paContinue;
+    }
+
     if (inputBuffer == NULL) {
         for (i = 0; i < framesPerBuffer; i++) {
             *out++ = 0; /* left - silent */

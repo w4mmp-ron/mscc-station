@@ -87,6 +87,40 @@ static int sdrAudioCallback(const void *inputBuffer, void *outputBuffer,
 
 static int gNumNoInputs = 0;
 
+/*
+ * trans 3.149: TX audio low-pass before the AM/SSB modulator.
+ * ssb_modulate() mixes the mic audio to the 12 kHz IF as double sideband and the IF filter
+ * then keeps one side. The side that becomes the RF image comes from mic audio at
+ * 12 kHz + IF offset: about 21-24 kHz for LSB (IF 9.3-11.9 kHz) and 24-27 kHz for USB.
+ * Nothing removed that audio, and a 48 kHz mic resampled to 96 kHz has hiss up to ~23.5 kHz,
+ * so LSB showed an image almost as strong as the signal (40 m, 10-30). 8th-order Butterworth
+ * low-pass, fc 6 kHz at fs 96 kHz: -0.9 dB at 5.5 kHz, -100 dB at 21.3 kHz. Simulated image
+ * rejection without/with: LSB 1.3 / 105 dB, USB 11 / 126 dB.
+ */
+static const double tx_lpf_sos[4][5] = {    /* b0 b1 b2 a1 a2, fs = 96 kHz */
+    { 8.881993221155e-07, 1.776398644231e-06, 8.881993221155e-07, -1.343502062906e+00, 4.541961539664e-01 },
+    { 1.0, 2.0, 1.0, -1.401739933120e+00, 5.172323704475e-01 },
+    { 1.0, 2.0, 1.0, -1.523789873410e+00, 6.493382738637e-01 },
+    { 1.0, 2.0, 1.0, -1.719392914169e+00, 8.610574795347e-01 },
+};
+static double tx_lpf_z[4][2];
+
+static void tx_audio_lowpass(sp_cplx *samps, int n) {
+    int k, s;
+    for (k = 0; k < n; k++) {
+        double x = samps[k].real;
+        for (s = 0; s < 4; s++) {   /* direct form II transposed */
+            const double *c = tx_lpf_sos[s];
+            double y = c[0] * x + tx_lpf_z[s][0];
+            tx_lpf_z[s][0] = c[1] * x - c[3] * y + tx_lpf_z[s][1];
+            tx_lpf_z[s][1] = c[2] * x - c[4] * y;
+            x = y;
+        }
+        samps[k].real = (sp_float) x;
+        samps[k].imag = (sp_float) x;   /* framesToComplex() feeds the same audio to both */
+    }
+}
+
 /* This routine will be called by the PortAudio engine when audio is needed.
  ** It may be called at interrupt level on some machines so don't do anything
  ** that could mess up the system like calling malloc() or free().
@@ -162,8 +196,9 @@ static int sdrAudioCallback(const void *inputBuffer, void *outputBuffer,
             G_tx_mic_gate_samples = left;
     }
     if ((mystate.opmode == MODE_AM) || (mystate.opmode == MODE_LSB) ||
-        (mystate.opmode == MODE_USB) || (mystate.opmode == MODE_FM))
+        (mystate.opmode == MODE_USB) || (mystate.opmode == MODE_FM)) {
         doMicProc(incplx, framesPerBuffer);
+    }
     //if ((G_tx_mode == 1) || G_QSK) {
     if (G_mode != 'T' && G_null_count++ < MAX_NULL) {
         null_modulate(incplx); // no mode, zero out IQ stream for no output
@@ -185,6 +220,9 @@ static int sdrAudioCallback(const void *inputBuffer, void *outputBuffer,
         }
     } else {
         /**************************** AM and SSB modulators *********************************/
+        /* trans 3.149: remove mic audio that would land in the opposite (image) sideband */
+        if ((mystate.opmode == MODE_AM) || (mystate.opmode == MODE_LSB) || (mystate.opmode == MODE_USB))
+            tx_audio_lowpass(incplx, (int) framesPerBuffer);
         if (mystate.opmode == MODE_AM) am_modulate(incplx);
         if (mystate.opmode == MODE_LSB) ssb_modulate(incplx);
         if (mystate.opmode == MODE_USB) ssb_modulate(incplx);
@@ -198,9 +236,11 @@ static int sdrAudioCallback(const void *inputBuffer, void *outputBuffer,
             Q should lead I by 90 degrees.
      */
     for (i = 0; i < framesPerBuffer; i++) {
-        *outbuffer = outcplx[i].real * iMult;
+        sp_float oi = outcplx[i].real * iMult;
+        sp_float oq = outcplx[i].imag * qMult;
+        *outbuffer = oi;
         outbuffer++;
-        *outbuffer = outcplx[i].imag * qMult;
+        *outbuffer = oq;
         outbuffer++;
     }
     G_DSP_Busy = FALSE;

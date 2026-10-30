@@ -1,4 +1,4 @@
-C51 COMPILER V9.51   CW_HOLD_CONTROL_PM                                                    08/22/2026 15:14:03 PAGE 1   
+C51 COMPILER V9.51   CW_HOLD_CONTROL_PM                                                    10/29/2026 11:54:50 PAGE 1   
 
 
 C51 COMPILER V9.51, COMPILATION OF MODULE CW_HOLD_CONTROL_PM
@@ -62,7 +62,7 @@ line level    source
   50          * Summary:
   51          *  Restores the control register value.
   52          *
-C51 COMPILER V9.51   CW_HOLD_CONTROL_PM                                                    08/22/2026 15:14:03 PAGE 2   
+C51 COMPILER V9.51   CW_HOLD_CONTROL_PM                                                    10/29/2026 11:54:50 PAGE 2   
 
   53          * Parameters:
   54          *  None
@@ -121,7 +121,7 @@ line level    source
  107          
  108          
  109          /* [] END OF FILE */
-C51 COMPILER V9.51   CW_HOLD_CONTROL_PM                                                    08/22/2026 15:14:03 PAGE 3   
+C51 COMPILER V9.51   CW_HOLD_CONTROL_PM                                                    10/29/2026 11:54:50 PAGE 3   
 
 ASSEMBLY LISTING OF GENERATED OBJECT CODE
 
@@ -130,7 +130,7 @@ ASSEMBLY LISTING OF GENERATED OBJECT CODE
                                            ; SOURCE LINE # 40
                                            ; SOURCE LINE # 41
                                            ; SOURCE LINE # 42
-                       MOV     DPTR,#06477H
+                       MOV     DPTR,#0657BH
                        MOVX    A,@DPTR
                  R     MOV     DPTR,#CW_Hold_Control_backup
                        MOVX    @DPTR,A
@@ -144,7 +144,7 @@ ASSEMBLY LISTING OF GENERATED OBJECT CODE
                                            ; SOURCE LINE # 63
                  R     MOV     DPTR,#CW_Hold_Control_backup
                        MOVX    A,@DPTR
-                       MOV     DPTR,#06477H
+                       MOV     DPTR,#0657BH
                        MOVX    @DPTR,A
                                            ; SOURCE LINE # 64
                        RET     

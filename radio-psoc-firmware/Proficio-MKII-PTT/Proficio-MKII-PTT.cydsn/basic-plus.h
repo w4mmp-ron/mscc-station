@@ -39,7 +39,7 @@
 
 
 #define FIRMWARE_VERSION_MAJOR 3
-#define FIRMWARE_VERSION_MINOR 240
+#define FIRMWARE_VERSION_MINOR 242
 #define FIRMWARE_VERSION ((((FIRMWARE_VERSION_MINOR) << 8) & 0xff00) | ((FIRMWARE_VERSION_MAJOR) & 0x00ff))
 #define EEPROM_PCB_VERSION_LOCATION 11
         
@@ -194,6 +194,8 @@ extern uint8_t E_key_delay_ms;  //Non-QSK amp key delay in ms, from E_TX_Hold
 #define KEY_DELAY_MIN_MS 20u    //Shortest amp relay settle time allowed
 #define KEY_DELAY_MAX_MS 40u
 #define AMP_RELEASE_MS 10u      //Non-CW: PA off this long before AMP off, so the amp relay never opens with RF
+#define TX_DAC_RAMP_MS 18u      //Non-CW: DAC soft mute ramp before PA off (16.7 ms at 96 kHz)
+#define MODE_DRAIN_MAX_MS 60u   //Entering CW while host PTT / TUNE keyed: max wait for TX_Main to ramp down
 extern volatile uint8 E_ms_tick; //1 ms count from KEY_DELAY_interrupt
 extern volatile uint8_t E_PTT;
 extern uint8_t E_band;
@@ -264,6 +266,8 @@ void Settings_Main(void);
 extern uint8 TX_Request;
 extern uint8 TX_Inhibit;
 void TX_Main(void);
+void TX_Reset(void);
+uint8 TX_Idle(void);
 
 // t1.c
 extern uint8 T1_Band_Number;
@@ -303,6 +307,7 @@ extern uint8 E_dll_version;
 //cw.c
 void Manage_Paddles_Port(void);
 void CW_Key_Delay_Stop(void);
+void TX_DAC_Mute(uint8 mute);
 uint8 PCM3060_SetRegister(uint8 reg, uint8 val);
 CY_ISR_PROTO(CW_interrupt);
 CY_ISR_PROTO(KEY_interrupt);

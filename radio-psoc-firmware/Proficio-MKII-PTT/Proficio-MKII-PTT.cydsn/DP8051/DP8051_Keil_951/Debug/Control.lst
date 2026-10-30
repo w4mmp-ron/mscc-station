@@ -1,4 +1,4 @@
-C51 COMPILER V9.51   CONTROL                                                               08/22/2026 15:14:00 PAGE 1   
+C51 COMPILER V9.51   CONTROL                                                               10/29/2026 11:54:45 PAGE 1   
 
 
 C51 COMPILER V9.51, COMPILATION OF MODULE CONTROL
@@ -62,7 +62,7 @@ line level    source
   51          *  None.
   52          *
   53          * Return:
-C51 COMPILER V9.51   CONTROL                                                               08/22/2026 15:14:00 PAGE 2   
+C51 COMPILER V9.51   CONTROL                                                               10/29/2026 11:54:45 PAGE 2   
 
   54          *  Returns the current value in the Control Register.
   55          *
@@ -76,7 +76,7 @@ line level    source
   63          
   64          
   65          /* [] END OF FILE */
-C51 COMPILER V9.51   CONTROL                                                               08/22/2026 15:14:00 PAGE 3   
+C51 COMPILER V9.51   CONTROL                                                               10/29/2026 11:54:45 PAGE 3   
 
 ASSEMBLY LISTING OF GENERATED OBJECT CODE
 
@@ -86,7 +86,7 @@ ASSEMBLY LISTING OF GENERATED OBJECT CODE
 ;---- Variable 'control' assigned to Register 'R7' ----
                                            ; SOURCE LINE # 38
                                            ; SOURCE LINE # 39
-                       MOV     DPTR,#06474H
+                       MOV     DPTR,#06479H
                        MOV     A,R7
                        MOVX    @DPTR,A
                                            ; SOURCE LINE # 40
@@ -97,7 +97,7 @@ ASSEMBLY LISTING OF GENERATED OBJECT CODE
                                            ; SOURCE LINE # 57
                                            ; SOURCE LINE # 58
                                            ; SOURCE LINE # 59
-                       MOV     DPTR,#06474H
+                       MOV     DPTR,#06479H
                        MOVX    A,@DPTR
                        MOV     R7,A
                                            ; SOURCE LINE # 60
