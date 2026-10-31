@@ -30,7 +30,7 @@
 
 /* {Model}.{[M]M}{Release Number} */
 #define VERSION_MAJOR 3
-#define VERSION_MINOR 145
+#define VERSION_MINOR 146
 #define VERSION_MS_SDRCORE_TRANS ((((VERSION_MINOR) << 8) & 0xff00) | ((VERSION_MAJOR) & 0x00ff))
 
 #define MAX_KEEP_ALIVE_COUNT 15
@@ -67,6 +67,7 @@ extern state mystate;
 extern micproc_state micstate;
 extern sp_float G_ALC_gain;
 extern long int G_alc_count;
+extern volatile sp_float G_ALC_peak_env; /* 3.146: peak level before the ALC, since last meter read */
 extern sp_float G_ALC_limit;
 extern sp_float G_ALC_multiplier;
 extern int8_t G_Do_ALC;

@@ -15,9 +15,14 @@ sp_float gain;
 extern sp_float G_mic_volume;
 extern sp_float G_peak;
 sp_float G_ALC_gain = 0.0f;
+volatile sp_float G_ALC_peak_env = 0.0f; /* 3.146: peak level before the ALC, read and reset by ALC_Meter_thread */
 sp_float G_ALC_limit = 0.0f;
 long int G_alc_count = 0;
-sp_float G_ALC_multiplier = (float)11.0 / 10.0f;
+/* 3.146 (from Stew's Windows trans 3.149): ALC ceiling = drive x ALC_CEILING. Was 1.1,
+ * which let SSB peaks overdrive the PA (close-in splatter on Stew's analyzer, peaks
+ * 0.43-0.57 of full scale); 0.45 measured clean. */
+#define ALC_CEILING 0.45f
+sp_float G_ALC_multiplier = ALC_CEILING;
 #endif
 
 //#define ALC_TARGET 0.85000f
@@ -202,8 +207,8 @@ void framesToComplex(sp_float *inframes, sp_cplx *incomplex, sp_cplx *outcomplex
 
 void initALC() {
     int j;
-    /* 3.145: was attack 1 ms, envelope fall 1 ms (see doALC) */
-    alcstate.attackms = 3.0f;
+    /* 3.145: was attack 1 ms, envelope fall 1 ms (see doALC). 3.146: attack 2 ms (as Windows) */
+    alcstate.attackms = 2.0f;
     alcstate.releasems = 3000.0f;
     alcstate.envattackms = 50.0f;
 
@@ -219,7 +224,7 @@ void initALC() {
 
     alcstate.pregain = 1.0f;
     alcstate.maxgain = 1.0f;
-    alcstate.maxval = 1.0f;
+    alcstate.maxval = 0.0f;  /* 3.146: was 1.0, which pulled the gain to 0.1 at start-up */
     alcstate.gain = 1.0f;
     alcstate.targetlevel = ALC_TARGET;
     //alcstate.targetlevel = 0.50000000f;		// 0.9f
@@ -259,6 +264,7 @@ void doALC(sp_cplx *samps, int nframes) {
         }
 
         wk = sqrtf(isamp * isamp + qsamp * qsamp);
+        if (wk > G_ALC_peak_env) G_ALC_peak_env = wk;   /* 3.146: for the voice ALC meter */
         if (wk > alcstate.maxval) alcstate.maxval = wk;
         else alcstate.maxval *= alcstate.envramp;
         alcstate.targetlevel = ALC_TARGET;

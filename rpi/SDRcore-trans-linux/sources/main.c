@@ -99,6 +99,38 @@ static int sdrIqPlayOnlyCallback(const void *inputBuffer, void *outputBuffer,
 static int gNumNoInputs = 0;
 
 /*
+ * 3.146 (from Stew's Windows trans 3.149): TX audio low-pass before the AM/SSB modulator.
+ * ssb_modulate() mixes the mic audio to the 12 kHz IF as double sideband and the IF
+ * filter keeps one side. Mic audio at about 21-24 kHz (hiss; a 48 kHz mic resampled to
+ * 96 kHz) lands in the LSB passband from the other side of the LO and goes out as the
+ * image (USB's matching band, 24-27 kHz, is mostly above it). 8th-order Butterworth,
+ * fc 6 kHz at fs 96 kHz: -0.9 dB at 5.5 kHz, -100 dB at 21.3 kHz.
+ */
+static const double tx_lpf_sos[4][5] = {    /* b0 b1 b2 a1 a2, fs = 96 kHz */
+    { 8.881993221155e-07, 1.776398644231e-06, 8.881993221155e-07, -1.343502062906e+00, 4.541961539664e-01 },
+    { 1.0, 2.0, 1.0, -1.401739933120e+00, 5.172323704475e-01 },
+    { 1.0, 2.0, 1.0, -1.523789873410e+00, 6.493382738637e-01 },
+    { 1.0, 2.0, 1.0, -1.719392914169e+00, 8.610574795347e-01 },
+};
+static double tx_lpf_z[4][2];
+
+static void tx_audio_lowpass(sp_cplx *samps, int n) {
+    int k, s;
+    for (k = 0; k < n; k++) {
+        double x = samps[k].real;
+        for (s = 0; s < 4; s++) {   /* direct form II transposed */
+            const double *c = tx_lpf_sos[s];
+            double y = c[0] * x + tx_lpf_z[s][0];
+            tx_lpf_z[s][0] = c[1] * x - c[3] * y + tx_lpf_z[s][1];
+            tx_lpf_z[s][1] = c[2] * x - c[4] * y;
+            x = y;
+        }
+        samps[k].real = (sp_float) x;
+        samps[k].imag = (sp_float) x;   /* framesToComplex() feeds the same audio to both */
+    }
+}
+
+/*
  * Dual-stream (Pulse digi mic in + ALSA Proficio I/Q out): PortAudio rejects
  * mixed-host full duplex (-9993). Mic capture → ring @ 96k; I/Q play reads ring + DSP.
  * Non-96k operator mic: open capture at device rate, Oboe upsample into ring at 96k.
@@ -334,6 +366,9 @@ static void process_mic_to_iq(const SAMPLE *in, SAMPLE *out, unsigned long frame
             outcplx[i].imag = incplx[i].imag * mystate.txPower;
         }
     } else {
+        /* 3.146: remove mic audio that would land in the opposite (image) sideband */
+        if ((mystate.opmode == MODE_AM) || (mystate.opmode == MODE_LSB) || (mystate.opmode == MODE_USB))
+            tx_audio_lowpass(incplx, (int) framesPerBuffer);
         if (mystate.opmode == MODE_AM) am_modulate(incplx);
         if (mystate.opmode == MODE_LSB) ssb_modulate(incplx);
         if (mystate.opmode == MODE_USB) ssb_modulate(incplx);

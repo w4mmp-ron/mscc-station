@@ -317,6 +317,23 @@ static void process_iq_to_stereo(const SAMPLE *in, SAMPLE *out, unsigned long fr
 {
     unsigned int i;
 
+    /*
+     * 3.149 (from Stew's Windows recv 3.149): silent while transmitting (MONITOR off,
+     * not CW) instead of Pa_StopStream at TX on / Pa_StartStream at TX off. The I/Q
+     * input shares the radio's USB audio device with trans' TX I/Q; on Windows the
+     * stop / start made 75-140 ms gaps in the TX audio = splatter. The DSP (and AGC)
+     * is skipped, as when the stream was stopped. CW keeps its tone stream.
+     */
+    if (G_tx_mode == TRUE && G_Monitor == 0 && G_mode != 'C') {
+        if (remote_phones_enabled() && framesPerBuffer <= 4096u) {
+            static float rp_silence[4096 * 2]; /* zero-initialised */
+            remote_phones_feed(rp_silence, framesPerBuffer);
+        }
+        for (i = 0; i < framesPerBuffer * 2u; i++)
+            out[i] = 0;
+        return;
+    }
+
     inbuffer = (sp_float *)in;
     outbuffer = (sp_float *)out;
 

@@ -131,7 +131,22 @@ void* ALC_Meter_thread(void* t) {
         if (G_tx_mode == TRUE && G_Do_ALC == TRUE && G_Allow_ALC_Send == TRUE) {
             new_session = TRUE;
             alc = G_ALC_gain;
-            result_average = alc_float_to_meter(alc);
+            if (G_audio_mode == DIGITAL_AUDIO || G_audio_mode == REMOTE_DIGITAL_AUDIO) {
+                result_average = alc_float_to_meter(alc);
+            } else {
+                /* 3.146 (as Windows trans 3.149): voice ALC meter = peak level since the
+                 * last read / ALC ceiling. 100 = the ALC is just starting to act. The old
+                 * meter showed gain reduction only, so it read 0 until the signal was
+                 * already at the limit. */
+                float target = G_ALC_limit * G_ALC_multiplier;
+                float pk = G_ALC_peak_env;
+                int m = 0;
+                G_ALC_peak_env = 0.0f;
+                if (target > 0.0f) m = (int) (pk / target * 100.0f + 0.5f);
+                if (m > 100) m = 100;
+                if (m < 0) m = 0;
+                result_average = (uint16_t) m;
+            }
             //print_time();
             //fprintf(G_fp_logfile, "[%d] ALC_Meter_thread. CMD_SET_ALC. result_average: %d, alc: %f\n",
             //    line_number++, result_average, alc);

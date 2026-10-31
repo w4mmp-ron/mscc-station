@@ -940,10 +940,11 @@ void *UDP_Thread(void *my_param) {
                             fprintf(G_fp_logfile, "[%d] UDP Thread. CMD_SET_TX_ON \n",
                                     line_number++);
                             if (G_Monitor == 0) {
+                                /* 3.149: stream kept running; process_iq_to_stereo() outputs
+                                 * silence while G_tx_mode is set (was Pa_StopStream) */
                                 print_time();
-                                fprintf(G_fp_logfile, "[%d] UDP Thread. CMD_SET_TX_ON . G_Monitor: %d \n",
+                                fprintf(G_fp_logfile, "[%d] UDP Thread. CMD_SET_TX_ON . G_Monitor: %d (RX muted, stream kept running)\n",
                                         line_number++, G_Monitor);
-                                Pa_StopStream(stream);
                             }
                         } else {
                             print_time();
@@ -962,10 +963,10 @@ void *UDP_Thread(void *my_param) {
                             fprintf(G_fp_logfile, "[%d] UDP Thread . CMD_SET_TX_ON \n",
                                     line_number++);
                             if (G_Monitor == 0) {
+                                /* 3.149: stream was never stopped; the callback unmutes on its own */
                                 print_time();
-                                fprintf(G_fp_logfile, "[%d] UDP Thread . CMD_SET_TX_ON . G_Monitor: %d \n",
+                                fprintf(G_fp_logfile, "[%d] UDP Thread . CMD_SET_TX_ON . G_Monitor: %d (RX unmuted)\n",
                                         line_number++, G_Monitor);
-                                Pa_StartStream(stream);
                             }
                         } else {
                             print_time();
