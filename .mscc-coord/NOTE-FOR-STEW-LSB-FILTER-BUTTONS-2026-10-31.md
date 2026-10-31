@@ -8,6 +8,11 @@ On an AM broadcast station (WRMI 5850 kHz), listening in LSB and USB tuned exact
 carrier: LSB sounds hollow and higher pitched than USB. Pressing the LO CUT button in LSB
 changes nothing.
 
+**Why it matters beyond voice:** FreeDV (700D, RADE) puts signal down to a few hundred Hz.
+Received in LSB, a 500 Hz low cut takes off the bottom of it, so it decodes worse or not at
+all. Ron says FreeDV is still used on LSB on 40 m and below. Until the fix, LSB always has
+a 500 Hz low cut, whatever the LO CUT button shows.
+
 ## What the server log shows (Pi sdrcore-recv)
 
     USB:  FIR=[75,5500] Hz     (lo cut 75 Hz, as set)
