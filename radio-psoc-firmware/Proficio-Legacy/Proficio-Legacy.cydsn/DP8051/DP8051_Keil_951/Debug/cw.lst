@@ -1,4 +1,4 @@
-C51 COMPILER V9.51   CW                                                                    10/31/2026 18:53:24 PAGE 1   
+C51 COMPILER V9.51   CW                                                                    10/31/2026 19:32:13 PAGE 1   
 
 
 C51 COMPILER V9.51, COMPILATION OF MODULE CW
@@ -62,7 +62,7 @@ line level    source
   50          
   51          CY_ISR(QSK_interrupt){
   52   1          QSK_pop_filter = FALSE;
-C51 COMPILER V9.51   CW                                                                    10/31/2026 18:53:24 PAGE 2   
+C51 COMPILER V9.51   CW                                                                    10/31/2026 19:32:13 PAGE 2   
 
   53   1      }
   54          
@@ -126,7 +126,7 @@ line level    source
  112   1          key = (!(reg & STATUS_KEY_0) || !(reg & STATUS_KEY_1));
  113   1          key_delay_buf[key_delay_idx] = key;
  114   1          if(key){
-C51 COMPILER V9.51   CW                                                                    10/31/2026 18:53:24 PAGE 3   
+C51 COMPILER V9.51   CW                                                                    10/31/2026 19:32:13 PAGE 3   
 
  115   2              key_up_ms = 0;
  116   2          }else if(key_up_ms < 255u){
@@ -190,7 +190,7 @@ line level    source
  172   1              uint8_t msg_buffer = 0;
  173   1              uint8_t ret_status = 0;
  174   1              uint8_t write_status = 0;
-C51 COMPILER V9.51   CW                                                                    10/31/2026 18:53:24 PAGE 4   
+C51 COMPILER V9.51   CW                                                                    10/31/2026 19:32:13 PAGE 4   
 
  175   1          uint8 buffer_written = 0;
  176   1          uint8 attempt;
@@ -254,7 +254,7 @@ line level    source
  234   3                  buffer[0] = SET_KEYER_MODE;
  235   3                  buffer[1] = E_keyer_mode;
  236   3                  keyer_mode = E_keyer_mode;
-C51 COMPILER V9.51   CW                                                                    10/31/2026 18:53:24 PAGE 5   
+C51 COMPILER V9.51   CW                                                                    10/31/2026 19:32:13 PAGE 5   
 
  237   3                  state = 10;
  238   3              }else{
@@ -318,7 +318,7 @@ line level    source
  296   2              break;
  297   2      
  298   2              case 6:
-C51 COMPILER V9.51   CW                                                                    10/31/2026 18:53:24 PAGE 6   
+C51 COMPILER V9.51   CW                                                                    10/31/2026 19:32:13 PAGE 6   
 
  299   2              /* SET_MEM_TEXT_WPM 0x76 — push to PIC when host changes (PIC may no-op until Farnsworth) */
  300   2              if(mem_text_wpm != E_mem_text_wpm){
@@ -382,7 +382,7 @@ line level    source
  358          
  359          /*
  360           * Legacy CW (relay T/R):
-C51 COMPILER V9.51   CW                                                                    10/31/2026 18:53:24 PAGE 7   
+C51 COMPILER V9.51   CW                                                                    10/31/2026 19:32:13 PAGE 7   
 
  361           *  - CONTROL_RX / CONTROL_AMP: latched for the whole semi-break-in session
  362           *    (first key-down until CW hold timer expires). Avoids relay chatter.
@@ -446,7 +446,7 @@ line level    source
  420           */
  421          static void cw_mark_on(void)
  422          {
-C51 COMPILER V9.51   CW                                                                    10/31/2026 18:53:24 PAGE 8   
+C51 COMPILER V9.51   CW                                                                    10/31/2026 19:32:13 PAGE 8   
 
  423   1          uint8_t c;
  424   1      
@@ -510,7 +510,7 @@ line level    source
  481   1          c = c | CONTROL_AMP | CONTROL_RX | CONTROL_DOUT; /* AMP off, PA off, RX audio on */
  482   1          Control_Write(c);
  483   1          Control_Write(Control_Read() | CONTROL_DIN);     /* TX I/Q on again (power-up state) so SSB/digital wo
-C51 COMPILER V9.51   CW                                                                    10/31/2026 18:53:24 PAGE 9   
+C51 COMPILER V9.51   CW                                                                    10/31/2026 19:32:13 PAGE 9   
 
              -rk after CW */
  484   1          E_key_down = FALSE;
@@ -574,7 +574,7 @@ line level    source
  541   2                  cw_mark_on();
  542   2                  state = CW_ST_MARK_HOLD;
  543   2                  break;
-C51 COMPILER V9.51   CW                                                                    10/31/2026 18:53:24 PAGE 10  
+C51 COMPILER V9.51   CW                                                                    10/31/2026 19:32:13 PAGE 10  
 
  544   2              case CW_ST_MARK_HOLD: // stay in mark while key down
  545   2                  if (!cw_keys_down())
@@ -626,7 +626,7 @@ line level    source
  591   2          }
  592   1      }
  593            
-C51 COMPILER V9.51   CW                                                                    10/31/2026 18:53:24 PAGE 11  
+C51 COMPILER V9.51   CW                                                                    10/31/2026 19:32:13 PAGE 11  
 
 ASSEMBLY LISTING OF GENERATED OBJECT CODE
 
@@ -690,7 +690,7 @@ ASSEMBLY LISTING OF GENERATED OBJECT CODE
              ; FUNCTION QSK_interrupt (END)
 
              ; FUNCTION KEY_DELAY_interrupt (BEGIN)
-C51 COMPILER V9.51   CW                                                                    10/31/2026 18:53:24 PAGE 12  
+C51 COMPILER V9.51   CW                                                                    10/31/2026 19:32:13 PAGE 12  
 
                        PUSH    ACC
                        PUSH    DPH
@@ -754,7 +754,7 @@ ASSEMBLY LISTING OF GENERATED OBJECT CODE
                        MOVX    A,@DPTR
                        MOV     R7,A
 ;---- Variable 'reg' assigned to Register 'R7' ----
-C51 COMPILER V9.51   CW                                                                    10/31/2026 18:53:24 PAGE 13  
+C51 COMPILER V9.51   CW                                                                    10/31/2026 19:32:13 PAGE 13  
 
                                            ; SOURCE LINE # 112
                  R     xJNB    ACC.0,?C0010
@@ -818,7 +818,7 @@ ASSEMBLY LISTING OF GENERATED OBJECT CODE
                        MOV     DPL,A
                        MOV     A,R4
                  R     ADDC    A,#HIGH key_delay_buf
-C51 COMPILER V9.51   CW                                                                    10/31/2026 18:53:24 PAGE 14  
+C51 COMPILER V9.51   CW                                                                    10/31/2026 19:32:13 PAGE 14  
 
                        MOV     DPH,A
                        MOVX    A,@DPTR
@@ -882,7 +882,7 @@ ASSEMBLY LISTING OF GENERATED OBJECT CODE
                                            ; SOURCE LINE # 130
                  R     MOV     DPTR,#rf_on
                        CLR     A
-C51 COMPILER V9.51   CW                                                                    10/31/2026 18:53:24 PAGE 15  
+C51 COMPILER V9.51   CW                                                                    10/31/2026 19:32:13 PAGE 15  
 
                        MOVX    @DPTR,A
                                            ; SOURCE LINE # 131
@@ -946,7 +946,7 @@ ASSEMBLY LISTING OF GENERATED OBJECT CODE
                        MOV     R7,A
                  R     MOV     DPTR,#key_up_ms
                        MOVX    A,@DPTR
-C51 COMPILER V9.51   CW                                                                    10/31/2026 18:53:24 PAGE 16  
+C51 COMPILER V9.51   CW                                                                    10/31/2026 19:32:13 PAGE 16  
 
                        SETB    C
                        SUBB    A,R7
@@ -1010,7 +1010,7 @@ ASSEMBLY LISTING OF GENERATED OBJECT CODE
              ; FUNCTION CW_Key_Delay_Stop (BEGIN)
                                            ; SOURCE LINE # 154
                                            ; SOURCE LINE # 155
-C51 COMPILER V9.51   CW                                                                    10/31/2026 18:53:24 PAGE 17  
+C51 COMPILER V9.51   CW                                                                    10/31/2026 19:32:13 PAGE 17  
 
                                            ; SOURCE LINE # 156
                        CLR     A
@@ -1074,7 +1074,7 @@ ASSEMBLY LISTING OF GENERATED OBJECT CODE
                        MOV     A,R7
                        MOVX    @DPTR,A
                                            ; SOURCE LINE # 183
-C51 COMPILER V9.51   CW                                                                    10/31/2026 18:53:24 PAGE 18  
+C51 COMPILER V9.51   CW                                                                    10/31/2026 19:32:13 PAGE 18  
 
                        CLR     A
                  R     MOV     DPTR,#attempt
@@ -1138,7 +1138,7 @@ ASSEMBLY LISTING OF GENERATED OBJECT CODE
              ?C0038:
                                            ; SOURCE LINE # 195
                  R     MOV     DPTR,#ret_status
-C51 COMPILER V9.51   CW                                                                    10/31/2026 18:53:24 PAGE 19  
+C51 COMPILER V9.51   CW                                                                    10/31/2026 19:32:13 PAGE 19  
 
                        MOVX    A,@DPTR
                        MOV     R7,A
@@ -1202,7 +1202,7 @@ ASSEMBLY LISTING OF GENERATED OBJECT CODE
                  E     ADD     A,#LOW E_keyer_mem_q
                        MOV     DPL,A
                        CLR     A
-C51 COMPILER V9.51   CW                                                                    10/31/2026 18:53:24 PAGE 20  
+C51 COMPILER V9.51   CW                                                                    10/31/2026 19:32:13 PAGE 20  
 
                  E     ADDC    A,#HIGH E_keyer_mem_q
                        MOV     DPH,A
@@ -1266,7 +1266,7 @@ ASSEMBLY LISTING OF GENERATED OBJECT CODE
                        MOV     A,R7
                        MOVX    @DPTR,A
                                            ; SOURCE LINE # 236
-C51 COMPILER V9.51   CW                                                                    10/31/2026 18:53:24 PAGE 21  
+C51 COMPILER V9.51   CW                                                                    10/31/2026 19:32:13 PAGE 21  
 
                  R     MOV     DPTR,#keyer_mode
                        MOVX    @DPTR,A
@@ -1330,7 +1330,7 @@ ASSEMBLY LISTING OF GENERATED OBJECT CODE
                  R     MOV     DPTR,#spacing
                        MOVX    A,@DPTR
                        XRL     A,R7
-C51 COMPILER V9.51   CW                                                                    10/31/2026 18:53:24 PAGE 22  
+C51 COMPILER V9.51   CW                                                                    10/31/2026 19:32:13 PAGE 22  
 
                  R     xJZ     ?C0054
                                            ; SOURCE LINE # 256
@@ -1394,7 +1394,7 @@ ASSEMBLY LISTING OF GENERATED OBJECT CODE
                        MOVX    @DPTR,A
                                            ; SOURCE LINE # 273
                                            ; SOURCE LINE # 274
-C51 COMPILER V9.51   CW                                                                    10/31/2026 18:53:24 PAGE 23  
+C51 COMPILER V9.51   CW                                                                    10/31/2026 19:32:13 PAGE 23  
 
                  R     xJMP    ?C0046
                                            ; SOURCE LINE # 276
@@ -1458,7 +1458,7 @@ ASSEMBLY LISTING OF GENERATED OBJECT CODE
                  R     MOV     DPTR,#state
                        MOV     A,#0AH
                        MOVX    @DPTR,A
-C51 COMPILER V9.51   CW                                                                    10/31/2026 18:53:24 PAGE 24  
+C51 COMPILER V9.51   CW                                                                    10/31/2026 19:32:13 PAGE 24  
 
                                            ; SOURCE LINE # 293
                  R     xJMP    ?C0046
@@ -1522,7 +1522,7 @@ ASSEMBLY LISTING OF GENERATED OBJECT CODE
                                            ; SOURCE LINE # 314
                  E     MOV     DPTR,#E_keyer_mem_q_tail
                        MOVX    A,@DPTR
-C51 COMPILER V9.51   CW                                                                    10/31/2026 18:53:24 PAGE 25  
+C51 COMPILER V9.51   CW                                                                    10/31/2026 19:32:13 PAGE 25  
 
                  E     ADD     A,#LOW E_keyer_mem_q
                        MOV     DPL,A
@@ -1586,7 +1586,7 @@ ASSEMBLY LISTING OF GENERATED OBJECT CODE
                        INC     A
                        MOVX    @DPTR,A
                                            ; SOURCE LINE # 329
-C51 COMPILER V9.51   CW                                                                    10/31/2026 18:53:24 PAGE 26  
+C51 COMPILER V9.51   CW                                                                    10/31/2026 19:32:13 PAGE 26  
 
                  R     MOV     DPTR,#state
                        MOV     A,#0AH
@@ -1650,7 +1650,7 @@ ASSEMBLY LISTING OF GENERATED OBJECT CODE
                                            ; SOURCE LINE # 356
                  R     MOV     DPTR,#state
                        MOVX    A,@DPTR
-C51 COMPILER V9.51   CW                                                                    10/31/2026 18:53:24 PAGE 27  
+C51 COMPILER V9.51   CW                                                                    10/31/2026 19:32:13 PAGE 27  
 
                        MOV     R7,A
                                            ; SOURCE LINE # 357
@@ -1714,7 +1714,7 @@ ASSEMBLY LISTING OF GENERATED OBJECT CODE
                        MOVX    A,@DPTR
                  R     xJNZ    ?C0085
              ?C0087:
-C51 COMPILER V9.51   CW                                                                    10/31/2026 18:53:24 PAGE 28  
+C51 COMPILER V9.51   CW                                                                    10/31/2026 19:32:13 PAGE 28  
 
                        MOV     R7,#01H
                  R     xJMP    ?C0086
@@ -1778,7 +1778,7 @@ ASSEMBLY LISTING OF GENERATED OBJECT CODE
                  E     CALL    _si5351aSetFrequency
                                            ; SOURCE LINE # 414
              ?C0089:
-C51 COMPILER V9.51   CW                                                                    10/31/2026 18:53:24 PAGE 29  
+C51 COMPILER V9.51   CW                                                                    10/31/2026 19:32:13 PAGE 29  
 
                        RET     
              ; FUNCTION cw_session_start (END)
@@ -1842,7 +1842,7 @@ ASSEMBLY LISTING OF GENERATED OBJECT CODE
                                            ; SOURCE LINE # 452
 ;---- Variable 'i' assigned to Register 'R7' ----
                        CLR     A
-C51 COMPILER V9.51   CW                                                                    10/31/2026 18:53:24 PAGE 30  
+C51 COMPILER V9.51   CW                                                                    10/31/2026 19:32:13 PAGE 30  
 
                        MOV     R7,A
              ?C0093:
@@ -1906,7 +1906,7 @@ ASSEMBLY LISTING OF GENERATED OBJECT CODE
                        ANL     A,#0FDH
                        MOV     R7,A
                                            ; SOURCE LINE # 465
-C51 COMPILER V9.51   CW                                                                    10/31/2026 18:53:24 PAGE 31  
+C51 COMPILER V9.51   CW                                                                    10/31/2026 19:32:13 PAGE 31  
 
                        ANL     A,#0FBH
                        MOV     R7,A
@@ -1970,7 +1970,7 @@ ASSEMBLY LISTING OF GENERATED OBJECT CODE
                        RET     
              ; FUNCTION cw_session_end (END)
 
-C51 COMPILER V9.51   CW                                                                    10/31/2026 18:53:24 PAGE 32  
+C51 COMPILER V9.51   CW                                                                    10/31/2026 19:32:13 PAGE 32  
 
              ; FUNCTION Manage_Paddles_Port (BEGIN)
                                            ; SOURCE LINE # 488
@@ -2034,7 +2034,7 @@ ASSEMBLY LISTING OF GENERATED OBJECT CODE
                  R     DW      ?C0139
                        DB      016H
                        DW      00H
-C51 COMPILER V9.51   CW                                                                    10/31/2026 18:53:24 PAGE 33  
+C51 COMPILER V9.51   CW                                                                    10/31/2026 19:32:13 PAGE 33  
 
                  R     DW      ?C0141
                                            ; SOURCE LINE # 505
@@ -2098,7 +2098,7 @@ ASSEMBLY LISTING OF GENERATED OBJECT CODE
                                            ; SOURCE LINE # 511
                  R     xJNZ    ?C0141
                                            ; SOURCE LINE # 512
-C51 COMPILER V9.51   CW                                                                    10/31/2026 18:53:24 PAGE 34  
+C51 COMPILER V9.51   CW                                                                    10/31/2026 19:32:13 PAGE 34  
 
                  R     MOV     DPTR,#CW_LO_Freq
                        MOVX    A,@DPTR
@@ -2162,7 +2162,7 @@ ASSEMBLY LISTING OF GENERATED OBJECT CODE
                                            ; SOURCE LINE # 527
                                            ; SOURCE LINE # 528
                        RET     
-C51 COMPILER V9.51   CW                                                                    10/31/2026 18:53:24 PAGE 35  
+C51 COMPILER V9.51   CW                                                                    10/31/2026 19:32:13 PAGE 35  
 
                                            ; SOURCE LINE # 529
              ?C0114:
@@ -2226,7 +2226,7 @@ ASSEMBLY LISTING OF GENERATED OBJECT CODE
                  R     MOV     DPTR,#state
                        MOV     A,#07H
                        MOVX    @DPTR,A
-C51 COMPILER V9.51   CW                                                                    10/31/2026 18:53:24 PAGE 36  
+C51 COMPILER V9.51   CW                                                                    10/31/2026 19:32:13 PAGE 36  
 
                                            ; SOURCE LINE # 551
                        RET     
@@ -2290,7 +2290,7 @@ ASSEMBLY LISTING OF GENERATED OBJECT CODE
                  R     MOV     DPTR,#key_delay_busy
                        MOVX    A,@DPTR
                  R     xJNZ    ?C0141
-C51 COMPILER V9.51   CW                                                                    10/31/2026 18:53:24 PAGE 37  
+C51 COMPILER V9.51   CW                                                                    10/31/2026 19:32:13 PAGE 37  
 
                                            ; SOURCE LINE # 571
                  E     MOV     DPTR,#E_cw_hold
@@ -2354,7 +2354,7 @@ ASSEMBLY LISTING OF GENERATED OBJECT CODE
                                            ; SOURCE LINE # 589
                  R     MOV     DPTR,#state
                        MOVX    @DPTR,A
-C51 COMPILER V9.51   CW                                                                    10/31/2026 18:53:24 PAGE 38  
+C51 COMPILER V9.51   CW                                                                    10/31/2026 19:32:13 PAGE 38  
 
                                            ; SOURCE LINE # 590
                                            ; SOURCE LINE # 591

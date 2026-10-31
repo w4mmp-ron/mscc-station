@@ -23,6 +23,22 @@ Planned major map (client header / factory cal key): **1** Proficio Legacy · **
 
 Application `.cyacd` for USB HID upload is produced under each source tree’s `Release/` after Creator build + `copy-release`. **Build then copies** the shipping `.cyacd` and `.hex` into `release/<RadioName>/`.
 
+## Ultimus builds (from the Proficio trees, 2026-10-31)
+
+Ultimus radios are hand-buildable (through-hole) Proficios: same firmware, different major
+(6 Legacy, 8 MKII PTT, 7 MKII ATU) and USB product string "Ultimus". They are built from the
+Proficio trees, so a Proficio fix is an Ultimus fix:
+
+1. Build the Proficio project in PSoC Creator (Shift+F6).
+2. Run `build-ultimus.bat` (or `py -3 build-ultimus.py legacy|mkii-ptt|mkii-atu|all`).
+3. Output: `release/Ultimus-<radio>/Ultimus-<radio>-YYYYMMDD.cyacd` / `.hex`.
+
+The script works in a git-ignored copy (`_ultimus-build/`), recompiles the application with
+`DF(ULTIMUS)` (the `#ifdef ULTIMUS` in `basic-plus.h` picks the major), patches the USB product
+string, and links / makes the .cyacd with the same tools and options as Creator. A tree without
+the `#ifdef ULTIMUS` switch is skipped. Done so far: **Legacy**. The old `Ultimus-*` source trees
+are frozen copies from 2026-09-20 and are retired as each Proficio tree gets the switch.
+
 ## Upload tools (not this folder)
 
 | Host | CLI + GUI |

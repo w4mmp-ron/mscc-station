@@ -24,7 +24,21 @@ every pull. Newest first. Detailed write-ups for Ron go in `.mscc-coord/NOTE-FOR
 | ms-sdr | 3.188 | PTT poll `r == 1`, power cal in the radio (0xC8), CW + TUN stuck TX, 0xFE 0 release, 0x30 messages forwarded, firmware type in log, PPM cal start point, TX I/Q phase, **TX/RX I/Q stored in and loaded from the radio**, **TX I/Q from CW mode fix** |
 | client | 10.31.2 | TX I/Q PHASE slider; LSB/USB/DIG-U/AM filter buttons send the index (Ron's LSB note 10-31); cuts pushed once at connect |
 | FW MKII PTT | 3.242 | DAC soft mute on TUN/PTT release, mode-change drain |
+| FW Proficio Legacy | 1.236 | Ron's 1.235 (CW key delay + fades, 0xC8 cal store, SSB-after-CW fix) + TUN/PTT DAC fade and mode-change drain (= MKII 3.241/3.242). In `Proficio-Legacy/`; `Proficio-Legacy - Copy` kept as reference. Tested on a Legacy rig 10-31 |
 | FW Geminus MKII | 2.153 | **0xC8 calibration store (2.152)**, **DAC soft-mute shaping on TUN/PTT and CW (2.153)** |
+
+## Ultimus firmware built from the Proficio trees (2026-10-31)
+
+- Ultimus = hand-built (through-hole) Proficio: same code, major 6/8/7 and USB product
+  "Ultimus". The `Ultimus-*` trees were frozen 9/20 copies (only basic-plus.h major and a
+  hand-edited generated USBFS_descr.c differed).
+- `radio-psoc-firmware/build-ultimus.py` (+ `.bat`): after a Creator build of the Proficio tree,
+  copies the .cydsn to git-ignored `_ultimus-build/`, recompiles the app with `DF(ULTIMUS)`
+  (`#ifdef ULTIMUS` in basic-plus.h picks the major), patches the USB product string, links and
+  runs CyHexTool with Creator's options, writes `release/Ultimus-<radio>/...-YYYYMMDD.cyacd/.hex`.
+  Trees without the switch are skipped.
+- Done: Legacy (Ultimus 6.236 confirmed in MSCC on Stew's Ultimus Legacy). Next: MKII PTT, MKII
+  ATU (ATU has none of the 3.23x-3.242 mods yet; its extra is the ATU port for an external tuner).
 
 ## Digital TX fixes, trans 3.152 / 3.153 (2026-10-31)
 
@@ -140,6 +154,6 @@ every pull. Newest first. Detailed write-ups for Ron go in `.mscc-coord/NOTE-FOR
   clear back: why was it removed in 3.239?).
 - recv: no speaker found -> use the first non-Multus output instead of stopping.
 - MKII PTT 3.243: RIT retune on `TX_Idle()`, QSK release mute (Ron's answers 10-29).
-- Legacy firmware from `Proficio-Legacy - Copy` (Ron: people waiting).
+- Legacy: done (1.236). Next: Ultimus Legacy (clone of Proficio Legacy), Ultimus MKII PTT, ATU lines.
 - recv/trans side of the 0x30 server messages (needs the client to show them).
 - Pi/Ubuntu: audio LPF, ALC ceiling/meter, recv stream-stop check, phase in client.
