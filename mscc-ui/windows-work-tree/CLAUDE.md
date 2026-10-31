@@ -3,6 +3,10 @@
 Notes from Stew's Claude sessions on the Windows side, kept here so Ron's Claude sees them on
 every pull. Newest first. Detailed write-ups for Ron go in `.mscc-coord/NOTE-FOR-RON-*.md`.
 
+**FROM RON, 2026-10-31, READ FIRST:** WPF client bug: in LSB the LO CUT / HI CUT buttons send
+the wrong filter values (LSB stuck at a 500 Hz low cut, sounds hollow; AM likely too).
+See `.mscc-coord/NOTE-FOR-STEW-LSB-FILTER-BUTTONS-2026-10-31.md`. Remove this line when fixed.
+
 ## Where things are
 
 - Servers: `SDRcore-trans/`, `SDRcore-recv/`, `ms-sdr-MKII/` (VS 2022; trans/recv config
