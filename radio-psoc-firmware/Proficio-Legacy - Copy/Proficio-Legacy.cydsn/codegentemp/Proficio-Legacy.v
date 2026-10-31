@@ -1,6 +1,6 @@
 // ======================================================================
 // Proficio-Legacy.v generated from TopDesign.cysch
-// 10/20/2026 at 10:41
+// 10/31/2026 at 16:29
 // This file is auto generated. ANY EDITS YOU MAKE MAY BE LOST WHEN THIS FILE IS REGENERATED!!!
 // ======================================================================
 
@@ -968,11 +968,11 @@ endmodule
 `endif
 
 `ifdef WARP
-`define CY_BLK_DIR "C:\Users\Ron\.grok\worktrees\radio-psoc-firmware\Proficio-Legacy - Copy\Proficio-Legacy.cydsn\FracN"
-`include "C:\Users\Ron\.grok\worktrees\radio-psoc-firmware\Proficio-Legacy - Copy\Proficio-Legacy.cydsn\FracN\FracN.v"
+`define CY_BLK_DIR "C:\Users\n8vet\OneDrive\Documents\github\mscc-station\radio-psoc-firmware\Proficio-Legacy - Copy\Proficio-Legacy.cydsn\FracN"
+`include "C:\Users\n8vet\OneDrive\Documents\github\mscc-station\radio-psoc-firmware\Proficio-Legacy - Copy\Proficio-Legacy.cydsn\FracN\FracN.v"
 `else
-`define CY_BLK_DIR "C:\Users\Ron\.grok\worktrees\radio-psoc-firmware\Proficio-Legacy - Copy\Proficio-Legacy.cydsn\FracN"
-`include "C:\Users\Ron\.grok\worktrees\radio-psoc-firmware\Proficio-Legacy - Copy\Proficio-Legacy.cydsn\FracN\FracN.v"
+`define CY_BLK_DIR "C:\Users\n8vet\OneDrive\Documents\github\mscc-station\radio-psoc-firmware\Proficio-Legacy - Copy\Proficio-Legacy.cydsn\FracN"
+`include "C:\Users\n8vet\OneDrive\Documents\github\mscc-station\radio-psoc-firmware\Proficio-Legacy - Copy\Proficio-Legacy.cydsn\FracN\FracN.v"
 `endif
 
 // Component: CyControlReg_v1_80
@@ -994,11 +994,11 @@ endmodule
 `endif
 
 `ifdef WARP
-`define CY_BLK_DIR "C:\Users\Ron\.grok\worktrees\radio-psoc-firmware\Proficio-Legacy - Copy\Proficio-Legacy.cydsn\SyncSOF"
-`include "C:\Users\Ron\.grok\worktrees\radio-psoc-firmware\Proficio-Legacy - Copy\Proficio-Legacy.cydsn\SyncSOF\SyncSOF.v"
+`define CY_BLK_DIR "C:\Users\n8vet\OneDrive\Documents\github\mscc-station\radio-psoc-firmware\Proficio-Legacy - Copy\Proficio-Legacy.cydsn\SyncSOF"
+`include "C:\Users\n8vet\OneDrive\Documents\github\mscc-station\radio-psoc-firmware\Proficio-Legacy - Copy\Proficio-Legacy.cydsn\SyncSOF\SyncSOF.v"
 `else
-`define CY_BLK_DIR "C:\Users\Ron\.grok\worktrees\radio-psoc-firmware\Proficio-Legacy - Copy\Proficio-Legacy.cydsn\SyncSOF"
-`include "C:\Users\Ron\.grok\worktrees\radio-psoc-firmware\Proficio-Legacy - Copy\Proficio-Legacy.cydsn\SyncSOF\SyncSOF.v"
+`define CY_BLK_DIR "C:\Users\n8vet\OneDrive\Documents\github\mscc-station\radio-psoc-firmware\Proficio-Legacy - Copy\Proficio-Legacy.cydsn\SyncSOF"
+`include "C:\Users\n8vet\OneDrive\Documents\github\mscc-station\radio-psoc-firmware\Proficio-Legacy - Copy\Proficio-Legacy.cydsn\SyncSOF\SyncSOF.v"
 `endif
 
 // Component: Debouncer_v1_0

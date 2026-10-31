@@ -1,5 +1,5 @@
 -- Project:   Proficio-Legacy
--- Generated: 08/22/2026 15:33:17
+-- Generated: 10/31/2026 18:53:04
 -- PSoC Creator  4.4
 
 ENTITY \Proficio-Legacy\ IS
@@ -116,6 +116,7 @@ ARCHITECTURE __DEFAULT__ OF \Proficio-Legacy\ IS
     SIGNAL Net_8144 : bit;
     SIGNAL Net_8144_SYNCOUT : bit;
     SIGNAL Net_8146 : bit;
+    SIGNAL Net_8153 : bit;
     SIGNAL RX(0)__PA : bit;
     SIGNAL SCK1(0)__PA : bit;
     SIGNAL SCK2(0)__PA : bit;
@@ -285,6 +286,8 @@ ARCHITECTURE __DEFAULT__ OF \Proficio-Legacy\ IS
     SIGNAL \I2S:bI2S:tx_underflow_0\ : bit;
     SIGNAL \I2S:bI2S:tx_underflow_sticky\ : bit;
     SIGNAL \I2S:bI2S:txenable\ : bit;
+    SIGNAL \Key_Delay_Timer:Net_261\ : bit;
+    SIGNAL \Key_Delay_Timer:Net_57\ : bit;
     SIGNAL \SyncSOF:MODULE_7:g1:a0:xneq\ : bit;
     ATTRIBUTE soft OF \SyncSOF:MODULE_7:g1:a0:xneq\ : SIGNAL IS 1;
     SIGNAL \SyncSOF:buffer_0\ : bit;
@@ -4855,6 +4858,27 @@ BEGIN
             clock => Net_8086,
             in => Net_7924,
             out => Net_8087);
+
+    \Key_Delay_Timer:TimerHW\:timercell
+        GENERIC MAP(
+            cy_registers => "")
+        PORT MAP(
+            clock => \ClockBlock.dclk_glb_ff_2__sig\,
+            kill => open,
+            enable => __ONE__,
+            capture => open,
+            timer_reset => open,
+            tc => Net_8153,
+            cmp => \Key_Delay_Timer:Net_261\,
+            irq => \Key_Delay_Timer:Net_57\);
+
+    Key_Delay_isr:interrupt
+        GENERIC MAP(
+            int_type => "00",
+            is_nmi => 0)
+        PORT MAP(
+            interrupt => Net_8153,
+            clock => ClockBlock_BUS_CLK);
 
     \I2S:bI2S:reset\:macrocell
         GENERIC MAP(

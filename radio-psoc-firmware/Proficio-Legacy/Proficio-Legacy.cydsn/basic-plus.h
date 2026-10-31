@@ -39,7 +39,7 @@
 
 
 #define FIRMWARE_VERSION_MAJOR 1
-#define FIRMWARE_VERSION_MINOR 231
+#define FIRMWARE_VERSION_MINOR 236   // 1.236 (2026-10-31): TUN/PTT DAC soft mute + mode-change drain (MKII PTT 3.241/3.242)
 #define FIRMWARE_VERSION ((((FIRMWARE_VERSION_MINOR) << 8) & 0xff00) | ((FIRMWARE_VERSION_MAJOR) & 0x00ff))
 #define EEPROM_PCB_VERSION_LOCATION 11
         
@@ -136,6 +136,50 @@ extern volatile uint8_t E_keyer_mem_q_tail;
 extern volatile uint8_t E_keyer_mem_q_count;
 //extern uint8 E_cw_defaults;
 
+/*
+ * Per-band calibration in the radio (calibration.c), same protocol as the Black Pill 3.7.
+ * CMD_CALIBRATION (usbvend.h): wValue high byte = type, low byte = band.
+ * Read = get, write = set; exact length or stall. Payloads little endian:
+ *   1 RX IQ: int16 gain, int16 phase (4 bytes)    2 TX IQ: same
+ *   3 power: uint16 (2 bytes)
+ *            1-3 are written to EEPROM by the radio itself, one row per band (3.238).
+ *   4 status: read only = [write status, 1 = loaded at boot]. 3.238: no save command
+ *            (write stalls; was "write with no data saves" in 3.235-3.237).
+ *   5 valid: read only, 3 x uint16 masks [RX IQ, TX IQ, power], bit N = band N set
+ *   6 clear: removed in 3.239 (no-data request, like the old save; now stalls).
+ * 0 is a real value: the server uses the valid masks, its own default for unset bands.
+ * Bands: MSCC order, 0 = 10 m ... 9 = 160 m, 10 = 630 m, 11 = 2200 m.
+ */
+#define CAL_BANDS       12u
+#define CAL_TYPE_RX_IQ  1u
+#define CAL_TYPE_TX_IQ  2u
+#define CAL_TYPE_POWER  3u
+#define CAL_TYPE_SAVE   4u
+#define CAL_TYPE_VALID  5u
+#define CAL_SAVE_IDLE    0u  /* no row written since boot */
+#define CAL_SAVE_BUSY    1u  /* row being written */
+#define CAL_SAVE_OK      2u
+#define CAL_SAVE_FAILED  3u  /* EEPROM error */
+#define CAL_SAVE_REFUSED 4u  /* not used since 3.238 (writes wait for RX) */
+#define CAL_QUIET_SET   10u  /* Cal_Main passes (~3.5 ms) after a set before writing */
+typedef struct {            /* RAM only since 3.238 (EEPROM = one row per band, calibration.c) */
+    uint8 magic[4];
+    uint8 version;
+    uint8 pad;
+    uint8 rx_iq[CAL_BANDS][4];
+    uint8 tx_iq[CAL_BANDS][4];
+    uint8 power[CAL_BANDS][2];
+    uint8 valid[3][2];      /* uint16 little endian per type */
+    uint8 reserved[10];
+    uint8 crc[2];           /* CRC-16 of everything before it, little endian */
+} cal_record_t;
+extern cal_record_t E_cal;
+extern uint8 E_cal_status[2];
+extern volatile uint8 E_cal_dirty[CAL_BANDS];  /* ISR: band set, its row to write */
+extern volatile uint8 E_cal_quiet;             /* ISR: passes to wait before writing */
+void Cal_Init(void);
+void Cal_Main(void);
+
 extern uint32 E_current_rit_freq;
 extern uint32 E_new_rit_freq;
 extern uint8 E_transverter;
@@ -145,6 +189,14 @@ extern uint8 E_AMP_Value;
 extern uint8_t E_TX_Hold;
 extern uint8_t E_Amplifier;
 extern uint8_t E_QSK;
+extern uint8_t E_key_delay_ms;  //Non-QSK amp key delay in ms, from E_TX_Hold
+#define KEY_DELAY_DIVIDER 16u   //Key delay = TX hold (ms) / 16. TX hold 500 ms -> 31 ms
+#define KEY_DELAY_MIN_MS 20u    //Shortest amp relay settle time allowed
+#define KEY_DELAY_MAX_MS 40u
+#define AMP_RELEASE_MS 10u      //Non-CW: PA off this long before AMP off, so the amp relay never opens with RF
+#define TX_DAC_RAMP_MS 18u      //Non-CW: DAC soft mute ramp before PA off (16.7 ms at 96 kHz)
+#define MODE_DRAIN_MAX_MS 60u   //Entering CW while host PTT / TUNE keyed: max wait for TX_Main to ramp down
+extern volatile uint8 E_ms_tick; //1 ms count from KEY_DELAY_interrupt
 extern volatile uint8_t E_PTT;
 /* USB reboot request: 0=none, 1=app soft reset, 2=enter PSoC bootloader */
 extern volatile uint8_t E_reboot_request;
@@ -199,6 +251,7 @@ void Si570_Fake_Reset(void);
 uint8 PCM3060_Init(void);
 void PCM3060_Start(void);
 uint8 PCM3060_Stop(void);
+uint8 PCM3060_SetRegister(uint8 reg, uint8 val);
 uint8* PCM3060_TxBuf(void);
 uint8* PCM3060_RxBuf(void);
 void PCM3060_Adj_Output_Volume(uint8 level);
@@ -214,6 +267,8 @@ void Settings_Main(void);
 extern uint8 TX_Request;
 extern uint8 TX_Inhibit;
 void TX_Main(void);
+void TX_Reset(void);
+uint8 TX_Idle(void);
 
 // t1.c
 extern uint8 T1_Band_Number;
@@ -255,6 +310,9 @@ void Manage_Paddles_Port(void);
 CY_ISR_PROTO(CW_interrupt);
 CY_ISR_PROTO(KEY_interrupt);
 CY_ISR_PROTO(QSK_interrupt);
+CY_ISR_PROTO(KEY_DELAY_interrupt);
+void CW_Key_Delay_Stop(void);
+void TX_DAC_Mute(uint8 mute);
 uint8 Configure_CW();
 extern uint8 TX_State;
 extern uint8 TX_Phase;

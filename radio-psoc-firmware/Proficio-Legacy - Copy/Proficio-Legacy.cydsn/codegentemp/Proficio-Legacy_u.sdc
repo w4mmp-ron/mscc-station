@@ -1,3 +1,3 @@
-# Component constraints for C:\Users\Ron\.grok\worktrees\radio-psoc-firmware\Proficio-Legacy - Copy\Proficio-Legacy.cydsn\TopDesign\TopDesign.cysch
-# Project: C:\Users\Ron\.grok\worktrees\radio-psoc-firmware\Proficio-Legacy - Copy\Proficio-Legacy.cydsn\Proficio-Legacy.cyprj
-# Date: Tue, 20 Oct 2026 14:41:38 GMT
+# Component constraints for C:\Users\n8vet\OneDrive\Documents\github\mscc-station\radio-psoc-firmware\Proficio-Legacy - Copy\Proficio-Legacy.cydsn\TopDesign\TopDesign.cysch
+# Project: C:\Users\n8vet\OneDrive\Documents\github\mscc-station\radio-psoc-firmware\Proficio-Legacy - Copy\Proficio-Legacy.cydsn\Proficio-Legacy.cyprj
+# Date: Sat, 31 Oct 2026 20:29:44 GMT

@@ -1,4 +1,4 @@
-C51 COMPILER V9.51   KEY_DELAY_ISR                                                         10/20/2026 10:40:10 PAGE 1   
+C51 COMPILER V9.51   KEY_DELAY_ISR                                                         10/31/2026 16:30:19 PAGE 1   
 
 
 C51 COMPILER V9.51, COMPILATION OF MODULE KEY_DELAY_ISR
@@ -62,7 +62,7 @@ line level    source
   50          *******************************************************************************/
   51          void Key_Delay_isr_Start(void) 
   52          {
-C51 COMPILER V9.51   KEY_DELAY_ISR                                                         10/20/2026 10:40:10 PAGE 2   
+C51 COMPILER V9.51   KEY_DELAY_ISR                                                         10/31/2026 16:30:19 PAGE 2   
 
   53   1          /* For all we know the interrupt is active. */
   54   1          Key_Delay_isr_Disable();
@@ -126,7 +126,7 @@ line level    source
  112          ********************************************************************************
  113          *
  114          * Summary:
-C51 COMPILER V9.51   KEY_DELAY_ISR                                                         10/20/2026 10:40:10 PAGE 3   
+C51 COMPILER V9.51   KEY_DELAY_ISR                                                         10/31/2026 16:30:19 PAGE 3   
 
  115          *   Disables and removes the interrupt.
  116          *
@@ -190,7 +190,7 @@ line level    source
  174          *
  175          * Summary:
  176          *   Change the ISR vector for the Interrupt. Note calling Key_Delay_isr_Start
-C51 COMPILER V9.51   KEY_DELAY_ISR                                                         10/20/2026 10:40:10 PAGE 4   
+C51 COMPILER V9.51   KEY_DELAY_ISR                                                         10/31/2026 16:30:19 PAGE 4   
 
  177          *   will override any effect this method would have had. To set the vector 
  178          *   before the component has been started use Key_Delay_isr_StartEx instead.
@@ -254,7 +254,7 @@ line level    source
  236          *
  237          *   Note This API has no effect on Non-maskable interrupt NMI).
  238          *
-C51 COMPILER V9.51   KEY_DELAY_ISR                                                         10/20/2026 10:40:10 PAGE 5   
+C51 COMPILER V9.51   KEY_DELAY_ISR                                                         10/31/2026 16:30:19 PAGE 5   
 
  239          * Parameters:
  240          *   priority: Priority of the interrupt, 0 being the highest priority
@@ -318,7 +318,7 @@ line level    source
  298          {
  299   1          /* Enable the general interrupt. */
  300   1          *Key_Delay_isr_INTC_SET_EN = Key_Delay_isr__INTC_MASK;
-C51 COMPILER V9.51   KEY_DELAY_ISR                                                         10/20/2026 10:40:10 PAGE 6   
+C51 COMPILER V9.51   KEY_DELAY_ISR                                                         10/31/2026 16:30:19 PAGE 6   
 
  301   1      }
  302          
@@ -382,7 +382,7 @@ line level    source
  360          * Side Effects:
  361          *   If interrupts are enabled and the interrupt is set up properly, the ISR is
  362          *   entered (depending on the priority of this interrupt and other pending 
-C51 COMPILER V9.51   KEY_DELAY_ISR                                                         10/20/2026 10:40:10 PAGE 7   
+C51 COMPILER V9.51   KEY_DELAY_ISR                                                         10/31/2026 16:30:19 PAGE 7   
 
  363          *   interrupts).
  364          *
@@ -421,7 +421,7 @@ line level    source
  397          
  398          
  399          /* [] END OF FILE */
-C51 COMPILER V9.51   KEY_DELAY_ISR                                                         10/20/2026 10:40:10 PAGE 8   
+C51 COMPILER V9.51   KEY_DELAY_ISR                                                         10/31/2026 16:30:19 PAGE 8   
 
 ASSEMBLY LISTING OF GENERATED OBJECT CODE
 
@@ -485,7 +485,7 @@ ASSEMBLY LISTING OF GENERATED OBJECT CODE
                                            ; SOURCE LINE # 151
                                            ; SOURCE LINE # 168
                        RETI    
-C51 COMPILER V9.51   KEY_DELAY_ISR                                                         10/20/2026 10:40:10 PAGE 9   
+C51 COMPILER V9.51   KEY_DELAY_ISR                                                         10/31/2026 16:30:19 PAGE 9   
 
              ; FUNCTION Key_Delay_isr_Interrupt (END)
 
@@ -549,7 +549,7 @@ ASSEMBLY LISTING OF GENERATED OBJECT CODE
              ?C0008:
                        RET     
              ; FUNCTION Key_Delay_isr_GetPriority (END)
-C51 COMPILER V9.51   KEY_DELAY_ISR                                                         10/20/2026 10:40:10 PAGE 10  
+C51 COMPILER V9.51   KEY_DELAY_ISR                                                         10/31/2026 16:30:19 PAGE 10  
 
 
              ; FUNCTION Key_Delay_isr_Enable (BEGIN)
@@ -613,7 +613,7 @@ ASSEMBLY LISTING OF GENERATED OBJECT CODE
                        RET     
              ; FUNCTION Key_Delay_isr_ClearPending (END)
 
-C51 COMPILER V9.51   KEY_DELAY_ISR                                                         10/20/2026 10:40:10 PAGE 11  
+C51 COMPILER V9.51   KEY_DELAY_ISR                                                         10/31/2026 16:30:19 PAGE 11  
 
 
 

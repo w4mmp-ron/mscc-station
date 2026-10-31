@@ -75,6 +75,8 @@
 /* PIC keyer CQ memory — match ms-sdr CMD_SET_KEYER_MEMORY.
  * Param: 0=play, 1=store begin, 2=store end, 0x20-0x7E=append ASCII char */
 #define CMD_SET_KEYER_MEMORY 0x9C
+/* Per-band calibration get / set / save, same as Black Pill 3.7 (basic-plus.h). */
+#define CMD_CALIBRATION      0xC8
 
 //Special Commands
 #define CMD_SET_TRANSCEIVER_CW_PITCH 0x90           
