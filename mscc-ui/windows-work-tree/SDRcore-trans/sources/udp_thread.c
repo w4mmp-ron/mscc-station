@@ -1004,6 +1004,7 @@ void *UDP_Thread(void *my_param) {
                             //        G_input_devices[G_input_device_index].num_channels);
                             //Pa_StopStream(stream);
                             G_tx_mic_gate_samples = 0;
+                            G_tx_mic_fade_samples = 0;
                             Set_Mic_Mute(TRUE); //Turn off the microphone
                             G_null_count = 0;
                             break;
@@ -1012,17 +1013,23 @@ void *UDP_Thread(void *my_param) {
                             //        G_input_devices[G_input_device_index].num_channels);
                             //Pa_StartStream(stream);
                             if (G_audio_mode == DIGITAL_AUDIO || G_audio_mode == OPERATOR_AUDIO) {
-                                int gate = (int) ((TX_MIC_GATE_MS / 1000.0f) * mystate.samplerate);
+                                int gate_ms = (G_audio_mode == DIGITAL_AUDIO) ? TX_MIC_GATE_DIGITAL_MS : TX_MIC_GATE_MS;
+                                int gate = (int) ((gate_ms / 1000.0f) * mystate.samplerate);
+                                int fade = (int) ((TX_MIC_FADE_MS / 1000.0f) * mystate.samplerate);
                                 if (gate < 1)
-                                    gate = (TX_MIC_GATE_MS * 96);
+                                    gate = (gate_ms * 96);
+                                if (fade < 1)
+                                    fade = (TX_MIC_FADE_MS * 96);
                                 /* Arm before unmute so the next callback cannot pass stale mic. */
+                                G_tx_mic_fade_samples = fade;
                                 G_tx_mic_gate_samples = gate;
                                 print_time();
                                 fprintf(G_fp_logfile,
-                                    "[%d] UDP Thread. CMD_SET_TX_ON. local mic gate %d samples (%d ms) audio_mode=%d\n",
-                                    line_number++, gate, TX_MIC_GATE_MS, (int) G_audio_mode);
+                                    "[%d] UDP Thread. CMD_SET_TX_ON. local mic gate %d samples (%d ms) + %d ms fade audio_mode=%d\n",
+                                    line_number++, gate, gate_ms, TX_MIC_FADE_MS, (int) G_audio_mode);
                             } else {
                                 G_tx_mic_gate_samples = 0;
+                                G_tx_mic_fade_samples = 0;
                             }
                             Set_Mic_Mute(FALSE); //Turn ON the microphone
                             break;

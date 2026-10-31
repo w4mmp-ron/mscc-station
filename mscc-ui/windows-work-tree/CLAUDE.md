@@ -19,12 +19,38 @@ every pull. Newest first. Detailed write-ups for Ron go in `.mscc-coord/NOTE-FOR
 
 | Part | Version | Main changes |
 |---|---|---|
-| trans | 3.151 | ALC rework (\|I+jQ\| envelope, ceiling 0.45 x drive), voice ALC level meter, 6 kHz audio LPF before the SSB/AM mixer (LSB image fix), TX I/Q phase, **TX I/Q from the radio (0x2C)** |
+| trans | 3.153 | ALC rework (\|I+jQ\| envelope), ceiling 0.45 x drive for voice, **1.0 x drive for digital (3.152)**, voice ALC level meter, 6 kHz audio LPF before the SSB/AM mixer (LSB image fix), TX I/Q phase, TX I/Q from the radio (0x2C), **digital (VAC) key-up gate 200 ms + 10 ms fade (3.153)** |
 | recv | 3.151 | RX stream kept running at PTT (muted, not stopped), Ron's AM lowpass + DC block and noise blanker fix, **RX I/Q from the radio (0x2C)** |
 | ms-sdr | 3.188 | PTT poll `r == 1`, power cal in the radio (0xC8), CW + TUN stuck TX, 0xFE 0 release, 0x30 messages forwarded, firmware type in log, PPM cal start point, TX I/Q phase, **TX/RX I/Q stored in and loaded from the radio**, **TX I/Q from CW mode fix** |
-| client | 10.31.1 | TX I/Q PHASE slider; LSB/USB/DIG-U/AM filter buttons send the index (Ron's LSB note 10-31); cuts pushed once at connect |
+| client | 10.31.2 | TX I/Q PHASE slider; LSB/USB/DIG-U/AM filter buttons send the index (Ron's LSB note 10-31); cuts pushed once at connect |
 | FW MKII PTT | 3.242 | DAC soft mute on TUN/PTT release, mode-change drain |
 | FW Geminus MKII | 2.153 | **0xC8 calibration store (2.152)**, **DAC soft-mute shaping on TUN/PTT and CW (2.153)** |
+
+## Digital TX fixes, trans 3.152 / 3.153 (2026-10-31)
+
+- 3.152: the 3.149 ALC ceiling (0.45 x drive) also applied to digital audio. A WSJT-X tone is
+  constant envelope, so it was held to 0.45 of the drive = 0.2 of the QRP CAL power (Proficio
+  5 W cal -> 1 W, ALC meter pegged red; same on every radio and PC). Digital audio
+  (`DIGITAL_AUDIO`, `REMOTE_DIGITAL_AUDIO`) now uses 1.0 x drive (`ALC_DIGITAL_CEILING` in
+  dsputils.c); voice keeps 0.45. Full power confirmed.
+- 3.153: 2.8 kHz-wide bump about 50 dB down at every key-up, fixed at the TX passband centre.
+  With one VB-Cable, recv's RX audio goes into CABLE Input and comes back on CABLE Output
+  (trans' digital input); recv mutes at TX on, but ~100 ms of buffered band noise reached the
+  modulator past the 35 ms gate. Digital gate now `TX_MIC_GATE_DIGITAL_MS` 200 ms, then
+  `TX_MIC_FADE_MS` 10 ms linear fade-in (main.c callback); mic stays 35 ms. Confirmed gone.
+  (Two virtual cables would also avoid it.)
+
+## Ron's answers 10-31 (`.mscc-coord/NOTE-FOR-STEW-CAL-*`, `...GEMINUS-1MS-TICK...`)
+
+- I/Q slot layout matches the Black Pill (`cal_iq_t`: int16 gain, int16 phase); 0x2C kept, the
+  Pi will use the same number.
+- 0xC8 clear came out in 3.239 because it was a no-data control request (same shape as the
+  save that hung USB). Bring it back for reset-to-factory as a control READ: type 6, band or
+  0xFF, handler clears valid bits + marks dirty + returns `E_cal_status`; Cal_Main rewrites the
+  rows. No zero-length OUT, no EEPROM work in the handler. Tell Ron when the host side is
+  ready (pill gets the same handler).
+- Geminus main-loop 1 ms tick: fine for now (it only runs slow). Later: hardware 1 ms timer ISR
+  as on the Proficio; first scope a spare pin per main-loop pass (must stay well under 0.5 ms).
 
 ## Calibration travels with the radio (2026-10-31)
 

@@ -1,10 +1,10 @@
 ﻿[Setup]
-AIVersion=10.9
+AIVersion=10.10
 AIEdition=1
 GUID={39A967A1-3F24-48CB-B447-E9F82C0B5EC1}
 AppName=MSCC-NET9
 AppEdition=
-AppVersion=10.13.0+0dff8fe5663e3619d93f2730208bf29f1edcdecb
+AppVersion=10.30.0+4d75aa8fd2d329dd607113cf053ec9c6a653546f
 GetVerFromExe=1
 AppDescription=MSCC-NET9
 CompanyName=Multus SDR, LLC.
@@ -41,8 +41,8 @@ dotNET=1
 dotNETVersion=11
 LinkDN=https://dotnet.microsoft.com/en-us/download/dotnet/9.0
 PackageType=0
-SetupFolder=C:\Users\n8vet\OneDrive\Documents\GitHub\mscc-station\installers\windows
-SetupFileName=mscc-net9-R10-13-2-install
+SetupFolder=C:\Users\n8vet\OneDrive\Documents\github\mscc-station\installers\windows
+SetupFileName=mscc-net9-R10-31-1-install
 IconFile=Default
 SourceDir=C:\mscc-net9
 InstallDir=<SystemDrive>\mscc-net9
@@ -113,6 +113,7 @@ Languages=English,
 DefaultLanguage=English
 AutoDetectLanguage=1
 HideOtherLanguages=0
+ShowFlags=1
 QueryText=0
 QueryTextName=
 QueryTextReq=0
@@ -169,8 +170,8 @@ OptionSignFile=0
 OptionSignFileAll=0
 OptionSignCommand=/K signtool sign /f MyCert.pfx "%s"
 TotalFiles=0
-SourceDirFiles=148
-SourceDirSize=72030604
+SourceDirFiles=157
+SourceDirSize=73692369
 
 [GUI]
 FontName=Verdana

@@ -29,7 +29,11 @@ sp_float G_ALC_multiplier = ALC_CEILING;
 //#define ALC_TARGET 0.85000f
 
 //#define ALC_TARGET 0.9f
-#define ALC_TARGET (G_ALC_limit * G_ALC_multiplier)
+/* trans 3.152: the 0.45 ceiling is for voice only. A digital tone (WSJT-X etc.) is constant
+ * envelope, so 0.45 x drive gave only 0.2 of the QRP CAL power (5 W cal -> 1 W, ALC in the
+ * red). Digital audio uses the full drive, i.e. the same level as TUN / QRP CAL. */
+#define ALC_DIGITAL_CEILING 1.0f
+#define ALC_TARGET (G_ALC_limit * (((G_audio_mode == DIGITAL_AUDIO) || (G_audio_mode == REMOTE_DIGITAL_AUDIO)) ? ALC_DIGITAL_CEILING : G_ALC_multiplier))
 
 // Initialize speech processor state struct
 

@@ -75,6 +75,7 @@ sp_float iqPhaseCos = 1.0f;
 uint8_t G_DSP_Busy = FALSE;
 int G_null_count = 0;
 volatile int G_tx_mic_gate_samples = 0;
+volatile int G_tx_mic_fade_samples = 0;   /* trans 3.153: fade-in after the gate */
 uint8_t transmit = TRUE;
 #endif
 
@@ -196,6 +197,24 @@ static int sdrAudioCallback(const void *inputBuffer, void *outputBuffer,
         }
         if (G_tx_mic_gate_samples == gate)
             G_tx_mic_gate_samples = left;
+    } else if (G_tx_mic_fade_samples > 0 &&
+        (G_audio_mode == DIGITAL_AUDIO || G_audio_mode == OPERATOR_AUDIO)) {
+        /* trans 3.153: linear fade-in over TX_MIC_FADE_MS after the gate */
+        int total = (int) ((TX_MIC_FADE_MS / 1000.0f) * mystate.samplerate);
+        int left = G_tx_mic_fade_samples;
+        if (total < 1)
+            total = 1;
+        for (i = 0; i < framesPerBuffer; i++) {
+            sp_float g = 1.0f;
+            if (left > 0) {
+                g = 1.0f - (sp_float) left / (sp_float) total;
+                if (g < 0.0f) g = 0.0f;
+                left--;
+            }
+            incplx[i].real *= g;
+            incplx[i].imag *= g;
+        }
+        G_tx_mic_fade_samples = left;
     }
     if ((mystate.opmode == MODE_AM) || (mystate.opmode == MODE_LSB) ||
         (mystate.opmode == MODE_USB) || (mystate.opmode == MODE_FM)) {

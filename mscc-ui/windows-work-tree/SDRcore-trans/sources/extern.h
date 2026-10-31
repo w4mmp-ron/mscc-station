@@ -41,6 +41,12 @@
  * so VAC/PortAudio samples queued across key-up do not reach the modulator.
  * At 96 kHz this is about 3-4 callbacks. Remote modes 2/3 leave it at 0. */
 #define TX_MIC_GATE_MS 35
+/* trans 3.153: digital (VAC) gate is longer. With one virtual cable recv's RX audio goes into
+ * CABLE Input and comes back on CABLE Output (trans' digital input); recv mutes at TX on,
+ * but ~100 ms of band noise is still buffered and was transmitted as a 2.8 kHz bump at key-up.
+ * WSJT-X tones start well after this. Then a short fade-in so nothing starts with a hard edge. */
+#define TX_MIC_GATE_DIGITAL_MS 200
+#define TX_MIC_FADE_MS 10
 
 #define MAX_KEEP_ALIVE_COUNT 15
 #define MAX_INPUT_DEVICES 50
@@ -88,6 +94,7 @@ extern uint8_t G_tx_mode;
 extern uint8_t G_QSK;
 extern int G_null_count;
 extern volatile int G_tx_mic_gate_samples;
+extern volatile int G_tx_mic_fade_samples;
 extern int line_number;
 extern void print_time(void);
 //extern void Sleep(long sleep_time);
