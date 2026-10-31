@@ -1,0 +1,1 @@
+sudo dmesg -wxT | grep -iE 'usb|dwc|xhci|gadget'

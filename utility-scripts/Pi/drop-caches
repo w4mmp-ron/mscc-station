@@ -1,0 +1,4 @@
+#!/bin/bash
+# Free the page cache (works with or without sudo in front).
+sync
+echo 3 | sudo tee /proc/sys/vm/drop_caches >/dev/null
