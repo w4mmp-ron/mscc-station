@@ -710,6 +710,22 @@ public class UdpRadioService : IRadioService, IDisposable
         await _transport.SendAsync(Opcodes.CMD_SET_BW_HICUT, index, cancellationToken);
     }
 
+    public async Task SetLowCutIndexAsync(int index, CancellationToken cancellationToken = default)
+    {
+        if (!_started) return;
+        short i = (short)Math.Clamp(index, 0, 4);
+        DebugMonitor.MonitorTextBoxText($" Send low cut index: {i} (button)");
+        await _transport.SendAsync(Opcodes.CMD_SET_BW_LOCUT, i, cancellationToken);
+    }
+
+    public async Task SetHighCutIndexAsync(int index, CancellationToken cancellationToken = default)
+    {
+        if (!_started) return;
+        short i = (short)Math.Clamp(index, 0, 6);
+        DebugMonitor.MonitorTextBoxText($" Send high cut index: {i} (button)");
+        await _transport.SendAsync(Opcodes.CMD_SET_BW_HICUT, i, cancellationToken);
+    }
+
     private short LowCutHzToIndex(int hz)
     {
         hz = Math.Abs(hz);

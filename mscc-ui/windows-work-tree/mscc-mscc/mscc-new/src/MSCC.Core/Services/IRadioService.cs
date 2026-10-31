@@ -180,6 +180,13 @@ public interface IRadioService : IDisposable
     /// </summary>
     Task SetFilterHighAsync(int highHz, CancellationToken cancellationToken = default);
 
+    /// <summary>LO CUT button index (CMD_SET_BW_LOCUT): 0-4 = 500, 300, 200, 100, 75 Hz. Same in every mode;
+    /// sdrcore-recv places the passband for LSB/USB itself (2026-10-31, Ron's LSB note).</summary>
+    Task SetLowCutIndexAsync(int index, CancellationToken cancellationToken = default);
+
+    /// <summary>HI CUT button index (CMD_SET_BW_HICUT): 0-6 = 5500, 4000, 3000, 2700, 2400, 1400, 1000 Hz.</summary>
+    Task SetHighCutIndexAsync(int index, CancellationToken cancellationToken = default);
+
     /// <summary>
     /// Sets RIT on/off and offset.
     /// </summary>

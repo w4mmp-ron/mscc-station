@@ -2091,8 +2091,13 @@ public partial class MainViewModel : ObservableObject, IDisposable
             if (e.PropertyName == nameof(RadioState.ActiveVfo.Filter) && RadioState.ActiveVfo != null)
             {
                 var f = RadioState.ActiveVfo.Filter;
-                _ = _radioService.SetFilterLowAsync(f.LowHz);
-                _ = _radioService.SetFilterHighAsync(f.HighHz);
+                if (SendsCutIndexes(RadioState.ActiveVfo.Mode))
+                    _ = PushCutIndexesToRadioAsync();
+                else
+                {
+                    _ = _radioService.SetFilterLowAsync(f.LowHz);
+                    _ = _radioService.SetFilterHighAsync(f.HighHz);
+                }
                 _ = _radioService.SetCwPitchAsync(f.CwPitchHz);
             }
         };
@@ -3424,8 +3429,13 @@ public partial class MainViewModel : ObservableObject, IDisposable
             var f = RadioState.ActiveVfo.Filter;
             if (f != null)
             {
-                await _radioService.SetFilterLowAsync(f.LowHz).ConfigureAwait(false);
-                await _radioService.SetFilterHighAsync(f.HighHz).ConfigureAwait(false);
+                if (SendsCutIndexes(RadioState.ActiveVfo.Mode))
+                    await PushCutIndexesToRadioAsync().ConfigureAwait(false);
+                else
+                {
+                    await _radioService.SetFilterLowAsync(f.LowHz).ConfigureAwait(false);
+                    await _radioService.SetFilterHighAsync(f.HighHz).ConfigureAwait(false);
+                }
             }
             await _radioService.SetCwFilterAsync(snap.CwFilterIndex).ConfigureAwait(false);
             await _radioService.SetTunePowerAsync(snap.TunePowerPercent).ConfigureAwait(false);
@@ -4588,7 +4598,9 @@ public partial class MainViewModel : ObservableObject, IDisposable
             RecomputeFilterHzForCurrentCutsAndMode();
             // Push cuts to radio (Recompute unhooks filter PropertyChanged)
             var f = RadioState.ActiveVfo.Filter;
-            if (f != null)
+            if (SendsCutIndexes(mode))
+                _ = PushCutIndexesToRadioAsync();
+            else if (f != null)
             {
                 _ = _radioService.SetFilterLowAsync(f.LowHz);
                 _ = _radioService.SetFilterHighAsync(f.HighHz);
@@ -4727,18 +4739,41 @@ public partial class MainViewModel : ObservableObject, IDisposable
         UpdateCurrentSpectrumFilters();
     }
 
+    /// <summary>
+    /// 2026-10-31 (Ron's LSB filter note): in these modes the server gets the LO CUT / HI CUT
+    /// button indexes as they are. The Hz edges are for drawing only: in LSB they are negative
+    /// and swapped, so the old Hz -> index round trip always sent index 0 (500 Hz / 5500 Hz).
+    /// </summary>
+    private static bool SendsCutIndexes(RadioMode m) =>
+        m is RadioMode.LSB or RadioMode.USB or RadioMode.DigU or RadioMode.AM;
+
+    /// <summary>One push of the client's LO/HI CUT per session, once the startup frequency is known:
+    /// ms-sdr restores the last indexes it received (user_controls.ini), which can differ from the
+    /// client's per-mode profile (e.g. index 0 left there by the pre-10.31 LSB bug).</summary>
+    private bool _cutsPushedThisSession;
+
+    private async Task PushCutIndexesToRadioAsync()
+    {
+        var mode = RadioState.ActiveVfo.Mode;
+        int lo = (LowCutIndex % 5 + 5) % 5;
+        int hi = NormalizeHighCut(HighCutIndex, mode);
+        await _radioService.SetLowCutIndexAsync(lo).ConfigureAwait(false);
+        await _radioService.SetHighCutIndexAsync(hi).ConfigureAwait(false);
+    }
+
     private void OnActiveFilterPropertyChanged(object? sender, PropertyChangedEventArgs e)
     {
         var f = RadioState.ActiveVfo.Filter;
+        bool byIndex = SendsCutIndexes(RadioState.ActiveVfo.Mode);
         if (e.PropertyName == nameof(FilterSettings.LowHz))
         {
-            _ = _radioService.SetFilterLowAsync(f.LowHz);
-            MonitorTextBoxText($" Filter low set: {f.LowHz}");
+            if (!byIndex) _ = _radioService.SetFilterLowAsync(f.LowHz);
+            MonitorTextBoxText($" Filter low set: {f.LowHz}{(byIndex ? " (display; index sent by button)" : "")}");
         }
         else if (e.PropertyName == nameof(FilterSettings.HighHz))
         {
-            _ = _radioService.SetFilterHighAsync(f.HighHz);
-            MonitorTextBoxText($" Filter high set: {f.HighHz}");
+            if (!byIndex) _ = _radioService.SetFilterHighAsync(f.HighHz);
+            MonitorTextBoxText($" Filter high set: {f.HighHz}{(byIndex ? " (display; index sent by button)" : "")}");
         }
         else if (e.PropertyName == nameof(FilterSettings.CwPitchHz))
         {
@@ -5007,8 +5042,9 @@ public partial class MainViewModel : ObservableObject, IDisposable
             // CW: low side (negative) of narrow passband — recompute full CW width from CW filter
             RecomputeFilterHzForCurrentCutsAndMode();
         }
-        // Filter Hz mutation above triggers OnActiveFilterPropertyChanged which sends the correct index via service.
-        // (Do not call SetFilterLowAsync here with index value -- it expects Hz.)
+        // LSB/USB/DIG-U/AM: send the button index itself (the Hz edges above are for drawing).
+        // Other modes: the Hz mutation triggers OnActiveFilterPropertyChanged as before.
+        if (SendsCutIndexes(mode)) _ = _radioService.SetLowCutIndexAsync(value);
         MonitorTextBoxText($" LowCutIndex set: {value} ({LowCutLabel})");
         SaveModeFilterProfile(mode);
         SaveLastUsedForCurrentBand();
@@ -5047,8 +5083,8 @@ public partial class MainViewModel : ObservableObject, IDisposable
             // CW: recompute full width from CW filter button (Hi is not the AM-style edge)
             RecomputeFilterHzForCurrentCutsAndMode();
         }
-        // Filter Hz mutation above triggers OnActiveFilterPropertyChanged which sends the correct index via service.
-        // (Do not call SetFilterHighAsync here with index value -- it expects Hz.)
+        // LSB/USB/DIG-U/AM: send the button index itself (the Hz edges above are for drawing).
+        if (SendsCutIndexes(mode)) _ = _radioService.SetHighCutIndexAsync(value);
         MonitorTextBoxText($" HighCutIndex set: {value} ({HighCutLabel})");
         if (_suppressHighCutPersist) return;
         SaveModeFilterProfile(mode);
@@ -5510,6 +5546,7 @@ public partial class MainViewModel : ObservableObject, IDisposable
             {
                 MonitorTextBoxText($" Start ({reason}): remote endpoint {BackendIp}:{BackendPort}");
             }
+            _cutsPushedThisSession = false;
             await _radioService.StartAsync(launchSubsystems: launch);
             IsRadioRunning = _radioService.IsConnected;
             if (IsRadioRunning)
@@ -5854,6 +5891,12 @@ public partial class MainViewModel : ObservableObject, IDisposable
             // Do NOT LoadLastUsed (would send tune). DIG-U overlay only.
             MonitorTextBoxText($" Frequency reported from backend: {freq}");
             TryRestoreDigUAfterFreqKnown();
+            if (!_cutsPushedThisSession && SendsCutIndexes(RadioState.ActiveVfo.Mode))
+            {
+                _cutsPushedThisSession = true;
+                _ = PushCutIndexesToRadioAsync();
+                MonitorTextBoxText($" Filter cuts pushed at connect: Lo={LowCutIndex} Hi={HighCutIndex}");
+            }
             FrequencyReportedForConnectSafety?.Invoke();
         };
 

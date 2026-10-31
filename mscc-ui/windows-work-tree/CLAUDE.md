@@ -3,10 +3,6 @@
 Notes from Stew's Claude sessions on the Windows side, kept here so Ron's Claude sees them on
 every pull. Newest first. Detailed write-ups for Ron go in `.mscc-coord/NOTE-FOR-RON-*.md`.
 
-**FROM RON, 2026-10-31, READ FIRST:** WPF client bug: in LSB the LO CUT / HI CUT buttons send
-the wrong filter values (LSB stuck at a 500 Hz low cut, sounds hollow; AM likely too).
-See `.mscc-coord/NOTE-FOR-STEW-LSB-FILTER-BUTTONS-2026-10-31.md`. Remove this line when fixed.
-
 ## Where things are
 
 - Servers: `SDRcore-trans/`, `SDRcore-recv/`, `ms-sdr-MKII/` (VS 2022; trans/recv config
@@ -26,8 +22,18 @@ See `.mscc-coord/NOTE-FOR-STEW-LSB-FILTER-BUTTONS-2026-10-31.md`. Remove this li
 | trans | 3.150 | ALC rework (\|I+jQ\| envelope, ceiling 0.45 x drive), voice ALC level meter, 6 kHz audio LPF before the SSB/AM mixer (LSB image fix), **TX I/Q phase** |
 | recv | 3.150 | RX stream kept running at PTT (muted, not stopped: broadband splatter fix), Ron's AM lowpass + DC block and noise blanker fix (Pi c9850ca) |
 | ms-sdr | 3.186 | PTT poll `r == 1`, power cal in the radio (0xC8), CW + TUN stuck TX, 0xFE 0 release, 0x30 messages forwarded, firmware type in log, PPM cal start point, TX I/Q phase pass-through |
-| client | 10.30.0 | TX I/Q PHASE slider |
+| client | 10.31.1 | TX I/Q PHASE slider; LSB/USB/DIG-U/AM filter buttons send the index (Ron's LSB note 10-31); cuts pushed once at connect |
 | FW MKII PTT | 3.242 | DAC soft mute on TUN/PTT release, mode-change drain |
+
+## LSB filter buttons (client 10.31.x, 2026-10-31)
+
+- Bug (Ron): the client turned button indexes into RF edges in Hz and back; in LSB the edges
+  are negative/swapped, so every LO/HI CUT went out as index 0 (LSB always 500 Hz low cut).
+- Fix: `SetLowCutIndexAsync` / `SetHighCutIndexAsync` send the index in LSB/USB/DIG-U/AM;
+  Hz edges are display only. CW/FM unchanged. Client pushes LO/HI CUT once at connect
+  (ms-sdr restores its own last indexes from user_controls.ini, which could differ).
+- Tested on Stew's MKII; reply in `.mscc-coord/NOTE-FOR-RON-LSB-FILTER-FIXED-2026-10-31.md`.
+  Avalonia client not checked yet.
 
 ## TX I/Q phase (Windows, 2026-10-30)
 
@@ -65,6 +71,8 @@ See `.mscc-coord/NOTE-FOR-STEW-LSB-FILTER-BUTTONS-2026-10-31.md`. Remove this li
 - ALC ceiling 0.45 x drive; meter shows the peak level against the ceiling.
 
 ## Open / next
+
+- Avalonia client: same LSB filter-index bug likely.
 
 - Source tags for `power_cal.ini`, `iq.ini`, `recv-iq.ini`.
 - Geminus MKII: calibration storage (0xC8) in firmware.
