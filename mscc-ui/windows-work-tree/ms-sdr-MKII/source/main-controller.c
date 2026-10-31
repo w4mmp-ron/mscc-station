@@ -2073,6 +2073,7 @@ void * Command_Processor(void *my_param) {
             fprintf(G_fp_logfile, "[%d] CMD_GET_IQ_PHASE . Calling Gui_send_param with %d \n", line_number++,
                 i_opcode_data);
             Gui_send_param(CMD_GET_IQ_PHASE, i_opcode_data);
+            IQ_report_phase(i_opcode_data);
             break;
 
         case CMD_GET_IQ_VALUE:
@@ -2082,6 +2083,7 @@ void * Command_Processor(void *my_param) {
             fprintf(G_fp_logfile, "[%d] CMD_GET_IQ_VALUE . Calling Gui_send_param with %d \n", line_number++,
                 i_opcode_data);
             Gui_send_param(CMD_GET_IQ_VALUE, i_opcode_data);
+            IQ_report_value(i_opcode_data);
             break;
 
         case CMD_SET_COMMIT_IQ:
@@ -2239,6 +2241,7 @@ void * Command_Processor(void *my_param) {
             //Process_hr50(CMD_GET_SET_HR50_COMM_SEND_BAND_INFO, buf);
             G_dll_active = FALSE;
             G_calibration_mode = FALSE;
+            G_iq_cal_active = FALSE;
             //Spectrum_Waterfall_send_param(CMD_SET_SPECTRUM_WATERFALL_FREQ, G_tune_freq);
             print_time(0);
             fprintf(G_fp_logfile, "[%d] Command_Interface. CMD_SET_MAIN_FREQ. Finished\n", line_number++);

@@ -416,6 +416,11 @@ extern int G_firmware_type;
 /* Power calibration stored in the radio (0xC8, Pi 6680c11): power_calibration.c */
 extern void Radio_cal_save_tick(void);
 extern void Radio_cal_load_power(void);
+/* ms-sdr 3.187: TX / RX I/Q in the radio's calibration store (power_calibration.c, iq.c) */
+extern void Radio_cal_store_iq(int tx, int record, int offset, int phase);
+extern void Radio_cal_load_iq(void);
+extern void IQ_report_value(int value);
+extern void IQ_report_phase(int value);
 extern uint8_t G_Radio_Cal_Save_Pending;
 extern const char *homedir;
 extern uint8_t G_Sound_Device; 
@@ -445,6 +450,7 @@ int Start_Serial_Port();
 //For I/Q Calibration routine
 extern int IQ_calibration(uint8_t command, char *buf);
 extern uint8_t G_calibration_mode;
+extern uint8_t G_iq_cal_active;
 extern uint8_t G_IQBD_Monitor;
 extern uint8_t G_in_IQ_calibration_mode;
 

@@ -79,6 +79,7 @@ void main_init() {
     CW_isr_StartEx(CW_interrupt);
        
     Settings_Init();
+    Cal_Init();                                 //2.152: per-band calibration from EEPROM (after EEPROM_Start)
     si_err = si5351_init(SI5351_CRYSTAL_LOAD_10PF,0);
     //si_err = si5351_init(SI5351_CRYSTAL_LOAD_12PF,0);
     if (!si_err) {
@@ -119,6 +120,8 @@ void main_usb_vbus(void) {
     }
 }
 
+volatile uint8 E_ms_tick = 0;   //2.153: 1 ms count from STATUS_BEAT (main loop)
+
 int main()
 {
     uint8 i, beat, beater = 0;
@@ -129,6 +132,10 @@ int main()
     static uint8_t previous_TX_hold_time = 0;
     uint8_t ptt_section = 0;
     uint8_t ptt_delay_count = 10;
+    uint8_t mode_change_pending = FALSE;    //2.153
+    uint8_t mode_drain_tick = 0;
+    uint8_t half_ms = 0;
+    uint8_t cw_tick = 0;
            
     main_init();
     for(;;) {
@@ -137,9 +144,36 @@ int main()
         Sync_Main();
         if(E_host_mode == 'C') {
             if(previous_host_mode != E_host_mode){
-                previous_host_mode = E_host_mode;
+                if(!mode_change_pending){
+                    mode_change_pending = TRUE;
+                    mode_drain_tick = E_ms_tick;
+                }
             }
-            Manage_Paddles_Port();
+            if((previous_host_mode != E_host_mode) && !TX_Idle() &&
+               ((uint8)(E_ms_tick - mode_drain_tick) < MODE_DRAIN_MAX_MS)){
+                //2.153: TUN / PTT still keyed (e.g. TUN released into CW). Let TX_Main ramp the
+                //DAC down and drop the relays in order before CW takes over.
+                TX_Request = 0;
+                TX_Main();
+            }else if(previous_host_mode != E_host_mode){
+                //Entering CW: drop any TUN / PTT TX (TX_Main does not run in CW)
+                Band_Control_Write(Band_Control_Read() & ~CONTROL_BAND_TX);
+                control_status = Control_Read() & ~CONTROL_LED;
+                control_status = control_status | CONTROL_RX | CONTROL_AMP | CONTROL_DOUT | CONTROL_DIN;
+                Control_Write(control_status);
+                TX_Request = 0;
+                TX_Reset();                     //CW owns the DAC mute now
+                previous_host_mode = E_host_mode;
+                mode_change_pending = FALSE;
+                cw_tick = E_ms_tick;
+            }
+            if(previous_host_mode == E_host_mode){
+                while(cw_tick != E_ms_tick){    //1 ms key sampling (catches up after a slow pass)
+                    cw_tick++;
+                    CW_Key_Delay_Tick();
+                }
+                Manage_Paddles_Port();
+            }
         }
         // Everything else runs twice per millisecond
         // Keep T1 first for timing accuracy
@@ -158,7 +192,14 @@ int main()
                 break;
             case 1:
                 if(E_host_mode != 'C'){
+                    if((previous_host_mode != E_host_mode) && (previous_host_mode != 'C') && (previous_host_mode != 0)){
+                        //2.153: change between non-CW modes (e.g. TUNE -> USB on TUN release, sent before
+                        //TUN off). Do NOT hard-drop the relays here: TX_Main ramps the DAC down first.
+                        previous_host_mode = E_host_mode;
+                        mode_change_pending = FALSE;
+                    }
                     if(previous_host_mode != E_host_mode){
+                        CW_Key_Delay_Stop();            //2.153: leaving CW (or first pass): DAC unmuted
                         Control_Write(Control_Read() & ~CONTROL_LED);   //Restore LED operation to normal
                         Control_Write(Control_Read() | CONTROL_RX);     //Turn OFF PA - Negative logic level
                         Band_Control_Write(Band_Control_Read() & ~CONTROL_BAND_TX);
@@ -175,6 +216,7 @@ int main()
                 break;
             case 2:
                 Settings_Main();
+                Cal_Main();                     //2.152: calibration EEPROM save, one row per pass
                 if (previous_TX_hold_time != E_TX_Hold){
                     previous_TX_hold_time = E_TX_Hold;
                     CW_Hold_Timer_WritePeriod((previous_TX_hold_time * 100)); //Configure the CW hold timer
@@ -216,6 +258,8 @@ int main()
                 break;
             default:
                 main_usb_vbus();
+                half_ms ^= 1;                   //2.153: STATUS_BEAT changes every 0.5 ms
+                if(!half_ms) E_ms_tick++;
                 beater = 0;
                 beat = i;
             }

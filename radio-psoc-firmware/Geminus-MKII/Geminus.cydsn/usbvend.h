@@ -119,4 +119,7 @@
 #define CMD_REBOOT_APP       0x0F
 #define CMD_REBOOT           CMD_REBOOT_APP /* alias */
 
+/* Per-band calibration get / set / save, same as Black Pill 3.7 (basic-plus.h). */
+#define CMD_CALIBRATION      0xC8
+
 /* [] END OF FILE */

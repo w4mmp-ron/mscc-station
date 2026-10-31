@@ -84,6 +84,7 @@ ULONG32 G_thread_sleep_time = THREAD_SLEEP_TIME;
 uint8_t G_updating_last_used = 0;
 uint8_t G_setting_last_used = 0;
 uint8_t G_calibration_mode = 0;
+uint8_t G_iq_cal_active = 0;   /* 3.188: I/Q calibration session: mode changes still go to the radio */
 uint8_t G_in_IQ_calibration_mode = 0;
 uint8_t G_Speaker_Mute_Status = 0;
 ULONG64 G_Heart_beat = 0;
@@ -957,7 +958,10 @@ void ModeChanged(char mode) {
     fprintf(G_fp_logfile, "[%d] ModeChanged. mode: %c,G_calibrating: %d. STARTED\n", line_number++, mode, G_calibration_mode);
     //Disable mode setting if the application is in Power Calibration mode.  
     //Power Calibration has control of the Proficio
-    if (!G_calibration_mode) {
+    /* 3.188: during I/Q calibration the radio mode is still set (power calibration keeps
+     * control). A radio left in CW ignores TX on (Geminus: TX_Main only runs out of CW),
+     * so TX I/Q from CW never transmitted. */
+    if (!G_calibration_mode || G_iq_cal_active) {
         G_dll_active = TRUE;
         status = Radio_send_parameters(SET_CW_MODE, mode, 1);
         Sleep(50);
@@ -1335,6 +1339,7 @@ int main(int argc, char **argv) {
                 line_number++);
             Factory_seed_reload_servers();
             Radio_cal_load_power();
+            Radio_cal_load_iq();
             Apply_Appliance_Startup();
         } else {
             print_time(0);

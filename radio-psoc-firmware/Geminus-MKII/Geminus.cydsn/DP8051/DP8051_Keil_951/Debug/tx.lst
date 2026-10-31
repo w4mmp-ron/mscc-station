@@ -1,4 +1,4 @@
-C51 COMPILER V9.51   TX                                                                    09/03/2026 15:33:26 PAGE 1   
+C51 COMPILER V9.51   TX                                                                    10/31/2026 10:02:06 PAGE 1   
 
 
 C51 COMPILER V9.51, COMPILATION OF MODULE TX
@@ -43,150 +43,222 @@ line level    source
   31          uint8 TX_Request = 0;
   32          uint8 TX_Inhibit = 0;
   33          
-  34          void TX_Main(void) {
-  35   1          static uint8 state = 0; 
-  36   1         
-  37   1          /*switch (state) {
-  38   1              case 0: // receiving
-  39   1                  if (TX_Request && !TX_Inhibit) {
-  40   1                      state = 2;
-  41   1                      Control_Write(Control_Read() & ~CONTROL_RX);
-  42   1                  }
-  43   1                  break;
-  44   1              case 2:
-  45   1                  Control_Write(Control_Read() & ~CONTROL_AMP);
-  46   1                  state = 10;
-  47   1                  break;
-  48   1              case 10: // transmitting
-  49   1                  if (!TX_Request && !TX_Inhibit) {
-  50   1                      Control_Write(Control_Read() & ~(CONTROL_LED) | CONTROL_AMP);
-  51   1                      state = 11;
-  52   1                   }
-C51 COMPILER V9.51   TX                                                                    09/03/2026 15:33:26 PAGE 2   
+  34          /*
+  35           * Geminus 2.153 (2026-10-31): TUN / PTT edges shaped with the PCM3060 DAC soft mute, as the
+  36           * Proficio MKII PTT 3.241. Before, the T/R relay, BS2 and AMP switched with RF at full level
+  37           * and the I/Q went straight to full: broadband noise at the TUN / PTT edges.
+  38           *   Key:     I/Q blank (DIN) + DAC mute, T/R + BS2 + AMP on, TX_KEY_DELAY_MS (relays settle,
+  39           *            DAC fully muted), I/Q on into the muted DAC, DAC unmute (ramps up).
+  40           *   Release: DAC mute, TX_DAC_RAMP_MS, AMP + BS2 off, AMP_RELEASE_MS, T/R off, I/Q path and
+  41           *            DAC back for RX.
+  42           */
+  43          static uint8 state = 0;
+  44          static uint8 start_tick = 0;
+  45          
+  46          /* Main loop: TX_Main back to idle (entering CW, where cw.c owns the DAC mute) */
+  47          void TX_Reset(void) {
+  48   1          state = 0;
+  49   1      }
+  50          
+  51          /* TRUE when TX_Main is receiving (relays off, DAC unmuted) */
+  52          uint8 TX_Idle(void) {
+C51 COMPILER V9.51   TX                                                                    10/31/2026 10:02:06 PAGE 2   
 
-  53   1                 break;
-  54   1              case 11:
-  55   1                  Control_Write(Control_Read() | CONTROL_RX);
-  56   1                  state = 0;
-  57   1                  break;
-  58   1          }*/
-  59   1           switch (state) {
-  60   2              case 0: // receiving to TX State
-  61   2                  if (TX_Request && !TX_Inhibit) {
-  62   3                      state = 1;
-  63   3                      Control_Write(Control_Read() & ~CONTROL_RX);
-  64   3                      Band_Control_Write(Band_Control_Read() | CONTROL_BAND_TX); //OR function
-  65   3                  }
-  66   2                  break;
-  67   2              case 1:
-  68   2                  state = 2;//
-  69   2                  break;
-  70   2              case 2:
-  71   2                  Control_Write(Control_Read() & ~CONTROL_AMP);
-  72   2                  state = 10;
+  53   1          return (state == 0);
+  54   1      }
+  55          
+  56          static void tx_relays_off(void) {
+  57   1          Control_Write((Control_Read() & ~CONTROL_LED) | CONTROL_RX | CONTROL_DIN);  //T/R off, I/Q path back
+  58   1          TX_DAC_Mute(FALSE);
+  59   1      }
+  60          
+  61          void TX_Main(void) {
+  62   1          switch (state) {
+  63   2              case 0: // receiving
+  64   2                  if (TX_Request && !TX_Inhibit) {
+  65   3                      Control_Write(Control_Read() & ~CONTROL_DIN);   //I/Q blank: no RF while the relays switch
+  66   3                      TX_DAC_Mute(TRUE);
+  67   3                      Control_Write(Control_Read() & ~CONTROL_RX);    //T/R on - Negative logic level
+  68   3                      Band_Control_Write(Band_Control_Read() | CONTROL_BAND_TX);
+  69   3                      Control_Write(Control_Read() & ~CONTROL_AMP);   //AMP on - Negative logic level
+  70   3                      start_tick = E_ms_tick;
+  71   3                      state = 3;
+  72   3                  }
   73   2                  break;
-  74   2              case 10: // transmitting to RX State
-  75   2                  if (!TX_Request && !TX_Inhibit) {
-  76   3                      Control_Write(Control_Read() & ~(CONTROL_LED) | CONTROL_AMP);
-  77   3                      Band_Control_Write(Band_Control_Read() & ~ CONTROL_BAND_TX); //logical AND function to tur
-             -n off TX and flipping state of pin
-  78   3                      state = 11;
-  79   3                   }
-  80   2                 break;
-  81   2              case 11:
-  82   2                  Control_Write(Control_Read() | CONTROL_RX);
-  83   2                  state = 0;
-  84   2                  break;
-  85   2          }
-  86   1          
-  87   1      }
-C51 COMPILER V9.51   TX                                                                    09/03/2026 15:33:26 PAGE 3   
+  74   2              case 3: // relays settling, I/Q blank, DAC muting
+  75   2                  if (!TX_Request || TX_Inhibit) {
+  76   3                      Control_Write(Control_Read() | CONTROL_AMP);
+  77   3                      Band_Control_Write(Band_Control_Read() & ~CONTROL_BAND_TX);
+  78   3                      tx_relays_off();                                //No RF was sent
+  79   3                      state = 0;
+  80   3                  } else if ((uint8)(E_ms_tick - start_tick) >= TX_KEY_DELAY_MS) {
+  81   3                      Control_Write(Control_Read() | CONTROL_DIN);    //I/Q into the muted DAC
+  82   3                      TX_DAC_Mute(FALSE);                             //RF ramps up
+  83   3                      state = 10;
+  84   3                  }
+  85   2                  break;
+  86   2              case 10: // transmitting
+  87   2                  if (!TX_Request && !TX_Inhibit) {
+  88   3                      TX_DAC_Mute(TRUE);                              //Ramp RF down first, relays stay
+  89   3                      start_tick = E_ms_tick;
+  90   3                      state = 13;
+  91   3                  }
+  92   2                  break;
+  93   2              case 13: // DAC ramping down
+  94   2                  if (TX_Request) {
+  95   3                      TX_DAC_Mute(FALSE);                             //Re-keyed during the ramp
+  96   3                      state = 10;
+  97   3                  } else if ((uint8)(E_ms_tick - start_tick) >= TX_DAC_RAMP_MS) {
+  98   3                      Control_Write(Control_Read() & ~CONTROL_DIN);   //I/Q blank
+  99   3                      Control_Write(Control_Read() | CONTROL_AMP);    //AMP off
+ 100   3                      Band_Control_Write(Band_Control_Read() & ~CONTROL_BAND_TX);
+ 101   3                      start_tick = E_ms_tick;
+ 102   3                      state = 12;
+ 103   3                  }
+ 104   2                  break;
+ 105   2              case 12: // AMP off, waiting before the T/R relay
+ 106   2                  if ((uint8)(E_ms_tick - start_tick) >= AMP_RELEASE_MS) {
+ 107   3                      tx_relays_off();
+ 108   3                      state = 0;
+ 109   3                  }
+ 110   2                  break;
+ 111   2              default:
+ 112   2                  state = 0;
+ 113   2                  break;
+ 114   2          }
+C51 COMPILER V9.51   TX                                                                    10/31/2026 10:02:06 PAGE 3   
+
+ 115   1      }
+C51 COMPILER V9.51   TX                                                                    10/31/2026 10:02:06 PAGE 4   
 
 ASSEMBLY LISTING OF GENERATED OBJECT CODE
 
 
-             ; FUNCTION TX_Main (BEGIN)
-                                           ; SOURCE LINE # 34
-                                           ; SOURCE LINE # 59
+             ; FUNCTION TX_Reset (BEGIN)
+                                           ; SOURCE LINE # 47
+                                           ; SOURCE LINE # 48
+                       CLR     A
+                 R     MOV     DPTR,#state
+                       MOVX    @DPTR,A
+                                           ; SOURCE LINE # 49
+                       RET     
+             ; FUNCTION TX_Reset (END)
+
+             ; FUNCTION TX_Idle (BEGIN)
+                                           ; SOURCE LINE # 52
+                                           ; SOURCE LINE # 53
                  R     MOV     DPTR,#state
                        MOVX    A,@DPTR
-                       DEC     A
-                 R     xJZ     ?C0004
-                       DEC     A
-                 R     xJZ     ?C0005
-                       ADD     A,#0F8H
-                 R     xJZ     ?C0006
-                       DEC     A
-                 R     xJZ     ?C0008
-                       ADD     A,#0BH
-                 R     xJNZ    ?C0009
-                                           ; SOURCE LINE # 60
+                 R     xJNZ    ?C0002
+                       MOV     R7,#01H
+                 R     xJMP    ?C0003
              ?C0002:
+                       MOV     R7,#00H
+             ?C0003:
+                                           ; SOURCE LINE # 54
+             ?C0004:
+                       RET     
+             ; FUNCTION TX_Idle (END)
+
+             ; FUNCTION tx_relays_off (BEGIN)
+                                           ; SOURCE LINE # 56
+                                           ; SOURCE LINE # 57
+                 E     CALL    Control_Read
+                       MOV     A,R7
+                       ANL     A,#0FEH
+                       ORL     A,#06H
+                       MOV     R7,A
+                 E     CALL    _Control_Write
+                                           ; SOURCE LINE # 58
+                       CLR     A
+                       MOV     R7,A
+                 E     CALL    _TX_DAC_Mute
+                                           ; SOURCE LINE # 59
+                       RET     
+             ; FUNCTION tx_relays_off (END)
+
+             ; FUNCTION TX_Main (BEGIN)
                                            ; SOURCE LINE # 61
-                 R     MOV     DPTR,#TX_Request
-                       MOVX    A,@DPTR
-                 R     xJZ     ?C0009
-                 R     MOV     DPTR,#TX_Inhibit
-                       MOVX    A,@DPTR
-                 R     xJNZ    ?C0009
                                            ; SOURCE LINE # 62
                  R     MOV     DPTR,#state
-                       INC     A
-                       MOVX    @DPTR,A
+                       MOVX    A,@DPTR
+                       ADD     A,#0FDH
+                 R     xJZ     ?C0009
+                       ADD     A,#0F9H
+                 R     xJZ     ?C0014
+                       ADD     A,#0FEH
+                 R     xJZ     ?C0020
+                       DEC     A
+                 R     xJZ     ?C0016
+                       ADD     A,#0DH
+                 R     xJNZ    ?C0022
                                            ; SOURCE LINE # 63
+C51 COMPILER V9.51   TX                                                                    10/31/2026 10:02:06 PAGE 5   
+
+             ?C0007:
+                                           ; SOURCE LINE # 64
+                 R     MOV     DPTR,#TX_Request
+                       MOVX    A,@DPTR
+                 R     xJZ     ?C0023
+                 R     MOV     DPTR,#TX_Inhibit
+                       MOVX    A,@DPTR
+                 R     xJNZ    ?C0023
+                                           ; SOURCE LINE # 65
+                 E     CALL    Control_Read
+                       MOV     A,R7
+                       ANL     A,#0FBH
+                       MOV     R7,A
+                 E     CALL    _Control_Write
+                                           ; SOURCE LINE # 66
+                       MOV     R7,#01H
+                 E     CALL    _TX_DAC_Mute
+                                           ; SOURCE LINE # 67
                  E     CALL    Control_Read
                        MOV     A,R7
                        ANL     A,#0FDH
                        MOV     R7,A
                  E     CALL    _Control_Write
-                                           ; SOURCE LINE # 64
+                                           ; SOURCE LINE # 68
                  E     CALL    Band_Control_Read
                        MOV     A,R7
                        ORL     A,#04H
                        MOV     R7,A
                  E     CALL    _Band_Control_Write
-                                           ; SOURCE LINE # 65
-                                           ; SOURCE LINE # 66
-                       RET     
-                                           ; SOURCE LINE # 67
-             ?C0004:
-                                           ; SOURCE LINE # 68
-                 R     MOV     DPTR,#state
-                       MOV     A,#02H
-                       MOVX    @DPTR,A
                                            ; SOURCE LINE # 69
-                       RET     
-                                           ; SOURCE LINE # 70
-             ?C0005:
-                                           ; SOURCE LINE # 71
                  E     CALL    Control_Read
                        MOV     A,R7
                        ANL     A,#0F7H
                        MOV     R7,A
                  E     CALL    _Control_Write
-C51 COMPILER V9.51   TX                                                                    09/03/2026 15:33:26 PAGE 4   
-
-                                           ; SOURCE LINE # 72
-                 R     MOV     DPTR,#state
-                       MOV     A,#0AH
+                                           ; SOURCE LINE # 70
+                 E     MOV     DPTR,#E_ms_tick
+                       MOVX    A,@DPTR
+                 R     MOV     DPTR,#start_tick
                        MOVX    @DPTR,A
+                                           ; SOURCE LINE # 71
+                 R     MOV     DPTR,#state
+                       MOV     A,#03H
+                       MOVX    @DPTR,A
+                                           ; SOURCE LINE # 72
                                            ; SOURCE LINE # 73
                        RET     
                                            ; SOURCE LINE # 74
-             ?C0006:
+             ?C0009:
                                            ; SOURCE LINE # 75
                  R     MOV     DPTR,#TX_Request
                        MOVX    A,@DPTR
-                 R     xJNZ    ?C0009
+                 R     xJZ     ?C0011
                  R     MOV     DPTR,#TX_Inhibit
                        MOVX    A,@DPTR
-                 R     xJNZ    ?C0009
+                 R     xJZ     ?C0010
+             ?C0011:
                                            ; SOURCE LINE # 76
                  E     CALL    Control_Read
                        MOV     A,R7
-                       ANL     A,#0FEH
                        ORL     A,#08H
                        MOV     R7,A
+C51 COMPILER V9.51   TX                                                                    10/31/2026 10:02:06 PAGE 6   
+
                  E     CALL    _Control_Write
                                            ; SOURCE LINE # 77
                  E     CALL    Band_Control_Read
@@ -195,41 +267,169 @@ ASSEMBLY LISTING OF GENERATED OBJECT CODE
                        MOV     R7,A
                  E     CALL    _Band_Control_Write
                                            ; SOURCE LINE # 78
-                 R     MOV     DPTR,#state
-                       MOV     A,#0BH
-                       MOVX    @DPTR,A
+                 R     CALL    tx_relays_off
                                            ; SOURCE LINE # 79
-                                           ; SOURCE LINE # 80
-                       RET     
-                                           ; SOURCE LINE # 81
-             ?C0008:
-                                           ; SOURCE LINE # 82
-                 E     CALL    Control_Read
-                       MOV     A,R7
-                       ORL     A,#02H
-                       MOV     R7,A
-                 E     CALL    _Control_Write
-                                           ; SOURCE LINE # 83
                        CLR     A
                  R     MOV     DPTR,#state
                        MOVX    @DPTR,A
+                                           ; SOURCE LINE # 80
+                       RET     
+             ?C0010:
+                 R     MOV     DPTR,#start_tick
+                       MOVX    A,@DPTR
+                       MOV     R7,A
+                 E     MOV     DPTR,#E_ms_tick
+                       MOVX    A,@DPTR
+                       CLR     C
+                       SUBB    A,R7
+                       CLR     C
+                       SUBB    A,#019H
+                 R     xJLT    ?C0023
+                                           ; SOURCE LINE # 81
+                 E     CALL    Control_Read
+                       MOV     A,R7
+                       ORL     A,#04H
+                       MOV     R7,A
+                 E     CALL    _Control_Write
+                                           ; SOURCE LINE # 82
+                       CLR     A
+                       MOV     R7,A
+                 E     CALL    _TX_DAC_Mute
+                                           ; SOURCE LINE # 83
+                 R     MOV     DPTR,#state
+                       MOV     A,#0AH
+                       MOVX    @DPTR,A
                                            ; SOURCE LINE # 84
                                            ; SOURCE LINE # 85
+                       RET     
+                                           ; SOURCE LINE # 86
+             ?C0014:
                                            ; SOURCE LINE # 87
-             ?C0009:
+                 R     MOV     DPTR,#TX_Request
+                       MOVX    A,@DPTR
+                 R     xJNZ    ?C0023
+                 R     MOV     DPTR,#TX_Inhibit
+                       MOVX    A,@DPTR
+                 R     xJNZ    ?C0023
+                                           ; SOURCE LINE # 88
+                       MOV     R7,#01H
+                 E     CALL    _TX_DAC_Mute
+                                           ; SOURCE LINE # 89
+                 E     MOV     DPTR,#E_ms_tick
+                       MOVX    A,@DPTR
+                 R     MOV     DPTR,#start_tick
+                       MOVX    @DPTR,A
+                                           ; SOURCE LINE # 90
+                 R     MOV     DPTR,#state
+C51 COMPILER V9.51   TX                                                                    10/31/2026 10:02:06 PAGE 7   
+
+                       MOV     A,#0DH
+                       MOVX    @DPTR,A
+                                           ; SOURCE LINE # 91
+                                           ; SOURCE LINE # 92
+                       RET     
+                                           ; SOURCE LINE # 93
+             ?C0016:
+                                           ; SOURCE LINE # 94
+                 R     MOV     DPTR,#TX_Request
+                       MOVX    A,@DPTR
+                 R     xJZ     ?C0017
+                                           ; SOURCE LINE # 95
+                       CLR     A
+                       MOV     R7,A
+                 E     CALL    _TX_DAC_Mute
+                                           ; SOURCE LINE # 96
+                 R     MOV     DPTR,#state
+                       MOV     A,#0AH
+                       MOVX    @DPTR,A
+                                           ; SOURCE LINE # 97
+                       RET     
+             ?C0017:
+                 R     MOV     DPTR,#start_tick
+                       MOVX    A,@DPTR
+                       MOV     R7,A
+                 E     MOV     DPTR,#E_ms_tick
+                       MOVX    A,@DPTR
+                       CLR     C
+                       SUBB    A,R7
+                       CLR     C
+                       SUBB    A,#012H
+                 R     xJLT    ?C0023
+                                           ; SOURCE LINE # 98
+                 E     CALL    Control_Read
+                       MOV     A,R7
+                       ANL     A,#0FBH
+                       MOV     R7,A
+                 E     CALL    _Control_Write
+                                           ; SOURCE LINE # 99
+                 E     CALL    Control_Read
+                       MOV     A,R7
+                       ORL     A,#08H
+                       MOV     R7,A
+                 E     CALL    _Control_Write
+                                           ; SOURCE LINE # 100
+                 E     CALL    Band_Control_Read
+                       MOV     A,R7
+                       ANL     A,#0FBH
+                       MOV     R7,A
+                 E     CALL    _Band_Control_Write
+                                           ; SOURCE LINE # 101
+                 E     MOV     DPTR,#E_ms_tick
+                       MOVX    A,@DPTR
+                 R     MOV     DPTR,#start_tick
+                       MOVX    @DPTR,A
+                                           ; SOURCE LINE # 102
+                 R     MOV     DPTR,#state
+                       MOV     A,#0CH
+                       MOVX    @DPTR,A
+                                           ; SOURCE LINE # 103
+                                           ; SOURCE LINE # 104
+                       RET     
+C51 COMPILER V9.51   TX                                                                    10/31/2026 10:02:06 PAGE 8   
+
+                                           ; SOURCE LINE # 105
+             ?C0020:
+                                           ; SOURCE LINE # 106
+                 R     MOV     DPTR,#start_tick
+                       MOVX    A,@DPTR
+                       MOV     R7,A
+                 E     MOV     DPTR,#E_ms_tick
+                       MOVX    A,@DPTR
+                       CLR     C
+                       SUBB    A,R7
+                       CLR     C
+                       SUBB    A,#0AH
+                 R     xJLT    ?C0023
+                                           ; SOURCE LINE # 107
+                 R     CALL    tx_relays_off
+                                           ; SOURCE LINE # 108
+                       CLR     A
+                 R     MOV     DPTR,#state
+                       MOVX    @DPTR,A
+                                           ; SOURCE LINE # 109
+                                           ; SOURCE LINE # 110
+                       RET     
+                                           ; SOURCE LINE # 111
+             ?C0022:
+                                           ; SOURCE LINE # 112
+                       CLR     A
+                 R     MOV     DPTR,#state
+                       MOVX    @DPTR,A
+                                           ; SOURCE LINE # 113
+                                           ; SOURCE LINE # 114
+                                           ; SOURCE LINE # 115
+             ?C0023:
                        RET     
              ; FUNCTION TX_Main (END)
 
 
 
 MODULE INFORMATION:   STATIC OVERLAYABLE
-   CODE SIZE        =    167    ----
+   CODE SIZE        =    402    ----
    CONSTANT SIZE    =   ----    ----
-   XDATA SIZE       =      3    ----
+   XDATA SIZE       =      4    ----
    PDATA SIZE       =   ----    ----
    DATA SIZE        =   ----    ----
-C51 COMPILER V9.51   TX                                                                    09/03/2026 15:33:26 PAGE 5   
-
    IDATA SIZE       =   ----    ----
    BIT SIZE         =   ----    ----
    EDATA SIZE       =   ----    ----

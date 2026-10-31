@@ -21,6 +21,9 @@
 #define IQ_OPERATION_COMPLETE 0x56
 #define CMD_SET_COMMIT_IQ 0x57
 #define CMD_SET_IQ_BAND  0x58
+/* ms-sdr -> core (2026-10-31): one band's I/Q from the radio's calibration store.
+ * int32 = record (bits 0-7) | offset int12 (bits 8-19) | phase int12 (bits 20-31). */
+#define CMD_SET_IQ_RECORD 0x2C
 #define IQ_IMAGE_CHECK_START 1
 #define IQ_IMAGE_CHECK_STOP 2
 #define IQ_IMAGE_CHECK_RUN 3

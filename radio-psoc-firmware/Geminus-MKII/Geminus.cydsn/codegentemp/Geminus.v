@@ -1,6 +1,6 @@
 // ======================================================================
 // Geminus.v generated from TopDesign.cysch
-// 09/03/2026 at 15:33
+// 10/31/2026 at 08:46
 // This file is auto generated. ANY EDITS YOU MAKE MAY BE LOST WHEN THIS FILE IS REGENERATED!!!
 // ======================================================================
 
@@ -981,11 +981,11 @@ endmodule
 `endif
 
 `ifdef WARP
-`define CY_BLK_DIR "C:\Users\n8vet\OneDrive\Documents\github\Release-Geminus-MKII\Geminus.cydsn\FracN"
-`include "C:\Users\n8vet\OneDrive\Documents\github\Release-Geminus-MKII\Geminus.cydsn\FracN\FracN.v"
+`define CY_BLK_DIR "C:\Users\n8vet\OneDrive\Documents\github\mscc-station\radio-psoc-firmware\Geminus-MKII\Geminus.cydsn\FracN"
+`include "C:\Users\n8vet\OneDrive\Documents\github\mscc-station\radio-psoc-firmware\Geminus-MKII\Geminus.cydsn\FracN\FracN.v"
 `else
-`define CY_BLK_DIR "C:\Users\n8vet\OneDrive\Documents\github\Release-Geminus-MKII\Geminus.cydsn\FracN"
-`include "C:\Users\n8vet\OneDrive\Documents\github\Release-Geminus-MKII\Geminus.cydsn\FracN\FracN.v"
+`define CY_BLK_DIR "C:\Users\n8vet\OneDrive\Documents\github\mscc-station\radio-psoc-firmware\Geminus-MKII\Geminus.cydsn\FracN"
+`include "C:\Users\n8vet\OneDrive\Documents\github\mscc-station\radio-psoc-firmware\Geminus-MKII\Geminus.cydsn\FracN\FracN.v"
 `endif
 
 // Component: CyControlReg_v1_80
@@ -1007,11 +1007,11 @@ endmodule
 `endif
 
 `ifdef WARP
-`define CY_BLK_DIR "C:\Users\n8vet\OneDrive\Documents\github\Release-Geminus-MKII\Geminus.cydsn\SyncSOF"
-`include "C:\Users\n8vet\OneDrive\Documents\github\Release-Geminus-MKII\Geminus.cydsn\SyncSOF\SyncSOF.v"
+`define CY_BLK_DIR "C:\Users\n8vet\OneDrive\Documents\github\mscc-station\radio-psoc-firmware\Geminus-MKII\Geminus.cydsn\SyncSOF"
+`include "C:\Users\n8vet\OneDrive\Documents\github\mscc-station\radio-psoc-firmware\Geminus-MKII\Geminus.cydsn\SyncSOF\SyncSOF.v"
 `else
-`define CY_BLK_DIR "C:\Users\n8vet\OneDrive\Documents\github\Release-Geminus-MKII\Geminus.cydsn\SyncSOF"
-`include "C:\Users\n8vet\OneDrive\Documents\github\Release-Geminus-MKII\Geminus.cydsn\SyncSOF\SyncSOF.v"
+`define CY_BLK_DIR "C:\Users\n8vet\OneDrive\Documents\github\mscc-station\radio-psoc-firmware\Geminus-MKII\Geminus.cydsn\SyncSOF"
+`include "C:\Users\n8vet\OneDrive\Documents\github\mscc-station\radio-psoc-firmware\Geminus-MKII\Geminus.cydsn\SyncSOF\SyncSOF.v"
 `endif
 
 // Component: Debouncer_v1_0

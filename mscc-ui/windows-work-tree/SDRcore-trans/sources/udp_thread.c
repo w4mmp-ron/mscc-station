@@ -917,6 +917,31 @@ void *UDP_Thread(void *my_param) {
                 sendto(ms_sdr_s, (char *) &iq_buffer, sizeof (iq_buffer), 0, (struct sockaddr *) &si_ms_sdr, slen);
                 break;
 
+            case CMD_SET_IQ_RECORD:
+            {
+                /* trans 3.151: band I/Q from the radio's calibration store (ms-sdr at startup) */
+                int rec = i_opcode_data & 0xFF;
+                int off = (i_opcode_data >> 8) & 0xFFF;
+                int ph = (i_opcode_data >> 20) & 0xFFF;
+                if (off & 0x800) off -= 0x1000;
+                if (ph & 0x800) ph -= 0x1000;
+                if (rec < 12) {
+                    G_iq_stack[rec].record = rec;
+                    G_iq_stack[rec].band = rec;
+                    G_iq_stack[rec].iq_offset = off;
+                    G_iq_stack[rec].iq_phase = ph;
+                    status = update_iq_ini_file();
+                    if (rec == iq_active) {
+                        IQ_calc(off);
+                        IQ_phase_calc(ph);
+                    }
+                    print_time();
+                    fprintf(G_fp_logfile, "[%d] UDP Thread. CMD_SET_IQ_RECORD (from radio). record: %d, offset: %d, phase: %d%s\n",
+                            line_number++, rec, off, ph, (rec == iq_active) ? " (in use, applied)" : "");
+                }
+                break;
+            }
+
             case CMD_SET_COMMIT_IQ:
                 /* trans 3.150: also saves outside a TX IQ session once a band is in use (Pi dcdebbc) */
                 if (iq_band != NO_IQ_BAND || (iq_active >= 0 && iq_active < 12)) {

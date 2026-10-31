@@ -216,6 +216,10 @@
  * trans reports the value in use as 0x2B + int32; ms-sdr forwards it to the client. */
 #define CMD_SET_IQ_PHASE 0x2A
 #define CMD_GET_IQ_PHASE 0x2B
+/* ms-sdr -> recv / trans (ms-sdr 3.187): one band's I/Q from the radio's calibration store.
+ * int32 = record (bits 0-7, 0 = 10 m .. 11 = 2200 m) | offset int12 (bits 8-19) | phase int12 (bits 20-31).
+ * The core sets that band, saves its ini file and applies it if the band is in use. */
+#define CMD_SET_IQ_RECORD 0x2C
 
 //Panadapter Control
 #define CMD_GET_SET_PANADAPTER_FILL 0x59
