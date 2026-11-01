@@ -66,11 +66,42 @@ Questions:
    Geminus MKII 2.153, MKII PTT 3.242, MKII ATU 4.243, Ultimus Legacy 6.236, Ultimus MKII ATU
    7.243, Ultimus MKII PTT 8.242 (plus 5.120 as you have it). 4.243, 7.243 and 8.242 are built
    and pushed but not flashed yet. Stew is testing them now.
-2. **Does the calibration in the radio survive a firmware update?** Not checked yet. Stew
-   will calibrate a band, reflash, and check it on each radio as he goes through the firmware
-   testing. Answer to follow.
+2. **Does the calibration in the radio survive a firmware update?** Yes. Stew checked on
+   11-01: the calibrations held after reflashing the application (.cyacd through the
+   bootloader). The update rewrites only the application flash, not the EEPROM rows.
 3. to 5. (ALC target reading, AMP CAL target, new pictures): later, after the firmware
    testing.
 
 Your ALC one-ceiling question, the NR / NB ports and the NR Off/Low/Med/High suggestion all
 look good to Stew. They are queued after the firmware testing, so no code until then.
+
+## ALC ceiling: why 0.45, and a question about 0.89
+
+- **Why 0.45:** it came from Stew's Signal Hound tests on 10-30 (Proficio MKII PTT, see the
+  `ALC_CEILING` comment in Windows `dsputils.c`). With the old 1.1 there was close-in splatter at
+  mic 45-50 (peaks 0.43-0.57 of full scale, clean up to 0.22). 0.6 still splattered above mic
+  about 20. The 6 kHz TX audio LPF and the ALC rework went in at the same time (trans 3.149), so
+  some of that splatter may have had other causes. It needs measuring again.
+- **Agreed:** 0.45 x drive against TUN at 0.8 x drive caps voice (and a whistle, which is a
+  steady tone) at about 56 % of the TUN amplitude, about 32 % of the power. That fits your
+  ~40 W.
+- **Question:** 0.89 x drive is about 11 % above the TUN amplitude, so a loud whistle or a
+  two-tone could reach about 124 % of the power calibrated in TUN (about 124 W PEP on a 100 W
+  setup). Was that on purpose? If voice peaks should stop at the calibrated power, the ceiling
+  would be 0.8 (= TUN).
+- **Stew's tests:** first the hot computer mic against a weak headset mic, with the amp, on
+  trans 3.153: ALC meter, PEP on the Signal Hound, splatter. Then a trans test build with 0.8 /
+  0.89, using a two-tone (44 dBm per tone = 100 W PEP) and IMD.
+
+## Proposal: built-in TWO-TONE test
+
+Like other SDR programs, so nobody needs an external tone generator, VAC or PC audio levels:
+
+- trans (Windows and Pi) generates 700 + 1900 Hz in place of the mic samples, before the ALC,
+  so it tests the real voice path (ceiling, LPF, modulator, PA).
+- Level: combined peak = TUN amplitude (each tone -6 dB), so PEP = calibrated power, plus a
+  0 to -10 dB control for IMD sweeps.
+- ms-sdr passes one new opcode to trans and keys like TUN (SSB). Client (WPF and Avalonia): a
+  2-TONE button and the level.
+- Question: which opcode number suits you on the Pi side? On the list for after Stew's firmware
+  tests.

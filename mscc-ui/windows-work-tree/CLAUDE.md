@@ -155,6 +155,34 @@ every pull. Newest first. Detailed write-ups for Ron go in `.mscc-coord/NOTE-FOR
 
 ## Open / next
 
+- Built-in TWO-TONE test (Stew, 11-01): trans generates 700 + 1900 Hz in place of the mic
+  samples, before the ALC (tests the real voice path: ceiling, 6 kHz LPF, modulator, PA). Level
+  set so the combined peak = TUN amplitude (each tone -6 dB, PEP = calibrated power), plus a
+  0..-10 dB level control for IMD sweeps. ms-sdr passes one new opcode to trans and keys like
+  TUN (SSB). Client: 2-TONE button + level (WPF and Avalonia). Pi trans too: opcode to agree
+  with Ron. After the firmware tests.
+- ALC ceiling (Ron 11-01 asks why voice keeps 0.45): 0.45 came from Stew's 10-30 Signal Hound
+  splatter tests (see dsputils.c comment). 0.45 x drive vs TUN 0.8 x drive caps voice/whistle
+  peaks at ~56% amplitude = ~32% of TUN power (Ron's ~40 W). Ron's 0.89 is ~11% above TUN
+  amplitude (~124% power); 0.8 would cap at the calibrated power. Stew testing hot computer mic
+  vs weak headset mic with the amp on 3.153 first; then a trans test build with 0.8 / 0.89
+  (two constants: dsputils.c ALC_CEILING, udp_thread.c CMD_SET_ALC_MULTIPLIER 0.45f).
+- FREQ CAL tab starts in USB when entered straight from TX IQ (seen twice 11-01; the cal
+  fails outside CW). Cause found in the client (`MainWindow.xaml.cs` tab handler): FREQ CAL's
+  `EnterFreqCalTab()` runs first and sets CW, then `LeaveTxIqTab()` runs later in the same
+  handler and its fire-and-forget `RestoreOperatingStateAfterCalTabAsync()` puts the pre-TX-IQ
+  mode (USB) back, in the client and on the radio. Same from QRP CAL and AMP CAL. Fix later:
+  run the Leave handlers first and enter FREQ CAL after the restore has finished (so FREQ CAL
+  also saves the user's real mode). Also add the tab line "Radio must be in CW mode during
+  FREQ CAL". Workaround now: go to MAIN first, or press CW.
+- FREQ CAL tab: open it at full (4x) zoom, which most users want, and keep the zoom slider
+  active there so it can be changed; restore the user's zoom on leaving. At 1x the cal signal is
+  impossible to see.
+- Ron 11-01 notes, queued until the firmware tests are done (no code yet): QRP CAL lamps from
+  the radio's valid masks (`NOTE-FOR-RON-CAL-STATUS-LAMPS-2026-11-01.md`), ALC one ceiling
+  (0.89 on the Pi), recv NR spectral subtraction + new noise blanker ports, NR Off/Low/Med/High,
+  guide questions. Cal after reflash: **holds** (Stew, 11-01: calibrations survived a .cyacd
+  reflash; the bootloader does not touch the EEPROM rows).
 - Avalonia client: same LSB filter-index bug likely.
 - Source tags for `power_cal.ini`, `iq.ini`, `recv-iq.ini`; reset to factory (needs the 0xC8
   clear back: why was it removed in 3.239?).
