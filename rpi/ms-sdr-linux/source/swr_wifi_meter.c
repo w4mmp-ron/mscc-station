@@ -163,12 +163,33 @@ static void swr_wifi_send_to_gui(double fwd, double ref, double swr)
     Gui_send_param_extended(CMD_SET_REVERSE_POWER, extended_data, (int)sizeof(reverse_send));
 }
 
+/* 3.187: meter fault / online state to the client (extended sub CMD_SET_SWR_FAULT).
+ * Not gated by SWR_METER_TO_GUI: a fault is a safety state, and an old client simply
+ * ignores the unknown sub. The meter IP lets the client send its HTTP fault reset. */
+static void swr_wifi_send_fault(int fault, int online)
+{
+    byte data[6];
+    struct in_addr a;
+    const char *ip = G_swr_wifi_learned_ip[0] ? G_swr_wifi_learned_ip : G_swr_wifi_meter_ip;
+
+    if (!(G_Remote_GUI_Attached == TRUE && G_MSCC_Initialized == TRUE))
+        return;
+
+    data[0] = (byte)(fault ? 1 : 0);
+    data[1] = (byte)(online ? 1 : 0);
+    memset(&data[2], 0, 4);
+    if (ip[0] && inet_pton(AF_INET, ip, &a) == 1)
+        memcpy(&data[2], &a.s_addr, 4);   /* network order: a.b.c.d as sent */
+    Gui_send_param_extended(CMD_SET_SWR_FAULT, data, (int)sizeof(data));
+}
+
 static void swr_wifi_zero_gui(void)
 {
     G_swr_wifi_fwd = 0.0;
     G_swr_wifi_ref = 0.0;
     G_swr_wifi_swr = 1.0;
     swr_wifi_send_to_gui(0.0, 0.0, 1.0);
+    swr_wifi_send_fault(0, 0);
 }
 
 /* Optional fault clear: HTTP GET http://{ip}/reset (Python UI path).
@@ -425,7 +446,8 @@ void *Swr_wifi_meter_main(void *param)
                 pkt_since_log = 0;
             }
 
-            /* Fault edge: message only (protection stays on the meter) */
+            /* Fault edge: the meter protects the radio; ms-sdr tells the client at once
+             * (3.187: CMD_SET_SWR_FAULT, so the client can force RX and offer RESET). */
             if (fault && !prev_fault) {
                 print_time(0);
                 fprintf(G_fp_logfile,
@@ -442,14 +464,16 @@ void *Swr_wifi_meter_main(void *param)
                 print_time(0);
                 fprintf(G_fp_logfile, "[%d] Swr_wifi. fault cleared\n", line_number++);
             }
-            prev_fault = fault;
 
-            /* Throttle GUI traffic; always allow first after silence */
-            if (last_send_ms == 0
+            /* Throttle GUI traffic; always allow first after silence. A fault change
+             * goes out at once, with the readings that caused it. */
+            if (last_send_ms == 0 || fault != prev_fault
                 || (now_ms - last_send_ms) >= (unsigned long long)SWR_WIFI_SEND_MIN_MS) {
                 swr_wifi_send_to_gui(fwd, ref, swr);
+                swr_wifi_send_fault(fault, 1);
                 last_send_ms = now_ms;
             }
+            prev_fault = fault;
         }
 
         /* Offline timeout → zero meters once */

@@ -187,6 +187,7 @@ static void Session_Claim(const struct sockaddr_in *peer) {
     /* Immediate I'm-Alive so client watchdog (~10s) does not fire during long handshake. */
     Gui_send_param(CMD_SET_KEEP_ALIVE, 1);
     Gui_send_param(CMD_SET_KEEP_ALIVE, 1);
+    Radio_cal_send_status();    /* 3.188: calibration status lamps (if the masks are read already) */
 }
 
 void Session_Release(void) {

@@ -37,6 +37,12 @@ static volatile int radio_cal_value[12];
 #define RADIO_CAL_TYPE_RX_IQ    1
 #define RADIO_CAL_TYPE_TX_IQ    2
 static volatile int radio_iq_pending[2][12];
+/* 3.188 (as Windows ms-sdr 3.189): the radio's valid masks, as read with type 5: [RX IQ lo, hi,
+ * TX IQ lo, hi, power lo, hi]. radio_cal_store: -1 = not read yet, 0 = no store (older firmware),
+ * 1 = store. Sent to the client on CMD_SET_CAL_STATUS (0x2D) so its status lamps show what is in
+ * the radio. */
+static unsigned char radio_cal_masks[6];
+static volatile int radio_cal_store = -1;
 static volatile int radio_iq_offset[2][12];
 static volatile int radio_iq_phase[2][12];
 
@@ -132,6 +138,43 @@ static void Radio_cal_send_power(int record, int value) {
 
 #define RADIO_CAL_TYPE_VALID    5
 
+/* 3.188: read the three valid masks into radio_cal_masks. Returns 1 = store, 0 = no store. */
+static int Radio_cal_read_masks(void) {
+    unsigned char masks[6];
+    int status = usbControlMsgIN(RADIO_CMD_CALIBRATION, RADIO_CAL_TYPE_VALID << 8, 0, (char *) masks, 6);
+
+    if (status == 6) {
+        memcpy(radio_cal_masks, masks, 6);
+        radio_cal_store = 1;
+    } else {
+        memset(radio_cal_masks, 0, 6);
+        radio_cal_store = 0;
+    }
+    return radio_cal_store;
+}
+
+/* 3.188 (as Windows 3.189): tell the client what is in the radio. One CMD_SET_CAL_STATUS (0x2D)
+ * per kind: int32 = kind (1 RX IQ, 2 TX IQ, 3 power) | flags << 8 (bit 0 = radio has a store)
+ * | mask << 16 (bit N = band N, MSCC order 0 = 10 m ... 9 = 160 m, 10 = 630 m, 11 = 2200 m).
+ * Called when a client session starts, after the startup read and after each write to the
+ * radio. Nothing is sent before the masks have been read. */
+void Radio_cal_send_status(void) {
+    int kind, mask, flags, data;
+
+    if (radio_cal_store < 0)
+        return;
+    flags = (radio_cal_store == 1) ? 1 : 0;
+    for (kind = 1; kind <= 3; kind++) {
+        mask = flags ? (radio_cal_masks[2 * (kind - 1)] | (radio_cal_masks[2 * (kind - 1) + 1] << 8)) : 0;
+        data = (kind & 0xFF) | (flags << 8) | ((mask & 0xFFFF) << 16);
+        Gui_send_param(CMD_SET_CAL_STATUS, data);
+    }
+    print_time(0);
+    fprintf(G_fp_logfile, "[%d] Radio_cal_send_status . store %d, RX IQ 0x%02X%02X, TX IQ 0x%02X%02X, power 0x%02X%02X\n",
+            line_number++, radio_cal_store, radio_cal_masks[1], radio_cal_masks[0], radio_cal_masks[3],
+            radio_cal_masks[2], radio_cal_masks[5], radio_cal_masks[4]);
+}
+
 /* At startup: the radio's power values win over power_cal.ini. Bands the radio does not
  * have keep the file's value (3.186, as Windows ms-sdr 3.185: before, they got the factory
  * value, which overwrote a calibrated power_cal.ini on the first start with a radio that
@@ -149,11 +192,15 @@ void Radio_cal_load_power(void) {
 
     status = usbControlMsgIN(RADIO_CMD_CALIBRATION, RADIO_CAL_TYPE_VALID << 8, 0, (char *) masks, 6);
     if (status != 6) {
+        radio_cal_store = 0;
+        memset(radio_cal_masks, 0, 6);
         print_time(0);
         fprintf(G_fp_logfile, "[%d] Radio_cal_load_power . No calibration in radio (firmware without 0xC8?) Status: %d. Using power_cal.ini\n",
                 line_number++, status);
         return;
     }
+    memcpy(radio_cal_masks, masks, 6);
+    radio_cal_store = 1;
     power_mask = (uint16_t) (masks[4] | (masks[5] << 8));   /* [RX IQ, TX IQ, power] */
     Initialize_power_calibration();
     for (record = 0; record < 12; record++) {
@@ -184,7 +231,7 @@ void Radio_cal_load_power(void) {
         if (value != G_power_stack[record].power_level) {
             G_power_stack[record].power_level = value;
             SDRcore_trans_send_param(CMD_SET_BAND_POWER_BAND, record_meters[record]);
-            SDRcore_trans_send_param(CMD_SET_BAND_POWER_POWER, value);
+            SDRcore_trans_send_param(CMD_SET_BAND_POWER_POWER, value | POWER_CAL_SAVE_FLAG); /* 3.188: trans saves */
             changed++;
         }
     }
@@ -248,11 +295,16 @@ void Radio_cal_load_iq(void) {
 
     status = usbControlMsgIN(RADIO_CMD_CALIBRATION, RADIO_CAL_TYPE_VALID << 8, 0, (char *) masks, 6);
     if (status != 6) {
+        radio_cal_store = 0;
+        memset(radio_cal_masks, 0, 6);
         print_time(0);
         fprintf(G_fp_logfile, "[%d] Radio_cal_load_iq . No calibration in radio (firmware without 0xC8?) Status: %d. Using iq.ini / recv-iq.ini\n",
                 line_number++, status);
+        Radio_cal_send_status();    /* 3.188: client keeps its local lamps */
         return;
     }
+    memcpy(radio_cal_masks, masks, 6);
+    radio_cal_store = 1;
     for (k = 0; k < 2; k++) {                   /* masks[0..1] RX IQ, masks[2..3] TX IQ */
         mask = (uint16_t) (masks[2 * k] | (masks[2 * k + 1] << 8));
         for (band = 0; band < 12; band++) {
@@ -287,11 +339,13 @@ void Radio_cal_load_iq(void) {
     print_time(0);
     fprintf(G_fp_logfile, "[%d] Radio_cal_load_iq . Finished. RX mask 0x%02X%02X, TX mask 0x%02X%02X, %d band(s) from radio\n",
             line_number++, masks[1], masks[0], masks[3], masks[2], loaded);
+    Radio_cal_send_status();        /* 3.188: status lamps (if a client is already attached) */
 }
 
 /* Called once a second from Flusher_thread while G_Radio_Cal_Save_Pending > 0. */
 void Radio_cal_save_tick(void) {
     int record;
+    int sent = 0;
 
     if (G_Radio_Cal_Save_Pending > 1) {
         G_Radio_Cal_Save_Pending--;
@@ -304,15 +358,22 @@ void Radio_cal_save_tick(void) {
         if (radio_cal_pending[record]) {
             radio_cal_pending[record] = 0;
             Radio_cal_send_power(record, radio_cal_value[record]);
+            sent++;
         }
         if (radio_iq_pending[0][record]) {
             radio_iq_pending[0][record] = 0;
             Radio_cal_send_iq(0, record);
+            sent++;
         }
         if (radio_iq_pending[1][record]) {
             radio_iq_pending[1][record] = 0;
             Radio_cal_send_iq(1, record);
+            sent++;
         }
+    }
+    if (sent) {                     /* 3.188: read back what the radio holds now, tell the client */
+        Radio_cal_read_masks();
+        Radio_cal_send_status();
     }
 }
 
@@ -474,6 +535,7 @@ int Power_calibration(uint32_t command, char *buf) {
     static uint8_t opcode_data_8_bit;
     static short int *opcode_data_short;
     static short int s_opcode_data;
+    int power_cal_save = 0;         /* 3.188 */
 
     opcode_data_8_bit = (uint8_t) (buf[1]);
     opcode_data_short = (short int*) &buf[1];
@@ -510,15 +572,22 @@ int Power_calibration(uint32_t command, char *buf) {
             break;
 
         case CMD_SET_BAND_POWER_POWER:
+            /* 3.188 (as Windows 3.189): slider steps are live only. The client's "Save this
+             * calibration?" Yes sends the value again with POWER_CAL_SAVE_FLAG (0x8000): only then
+             * trans writes power_cal.ini and the value goes into the radio. Needs client 11.1.0
+             * (an old client never sends the flag). */
             calibration_value = opcode_data_8_bit;
+            power_cal_save = (s_opcode_data & POWER_CAL_SAVE_FLAG) ? 1 : 0;
             print_time(1);
-            fprintf(G_fp_logfile, "[%d] CMD_SET_BAND_POWER_POWER . Received . Cal Value: %d\n", line_number++,
-                    calibration_value);
+            fprintf(G_fp_logfile, "[%d] CMD_SET_BAND_POWER_POWER . Received . Cal Value: %d, %s\n", line_number++,
+                    calibration_value, power_cal_save ? "SAVE" : "live");
             if (proficio_configured) {
-                G_power_stack[record].power_level = calibration_value; /* copy for 0xB4; trans saves the file */
+                G_power_stack[record].power_level = calibration_value; /* copy for 0xB4 */
                 SDRcore_trans_send_param(CMD_SET_BAND_POWER_BAND, Tranceiver_band);
-                SDRcore_trans_send_param(CMD_SET_BAND_POWER_POWER, calibration_value);
-                Radio_cal_store_power(record, calibration_value);
+                SDRcore_trans_send_param(CMD_SET_BAND_POWER_POWER,
+                                         calibration_value | (power_cal_save ? POWER_CAL_SAVE_FLAG : 0));
+                if (power_cal_save)
+                    Radio_cal_store_power(record, calibration_value);
             } else {
                 Gui_send_param(CMD_GET_BAND_POWER, 0);
                 print_time(0);

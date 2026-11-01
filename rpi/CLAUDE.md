@@ -71,6 +71,29 @@ Git repo root: `C:\Users\Ron\.grok\worktrees`.
   backwards: correct = Input VirtualA.monitor, Output VirtualB (also fixed in Configurations setup 4).
   11 draft items (Appendix C). In the note for Stew (Linux guide section).
 - **Next:** a Pi / Linux remote guide, when Ron says.
+- **2026-11-01: Pi ms-sdr 3.187: WiFi SWR meter fault to the client, BUILT on the Pi 15:35 (~/mscc/ms-sdr),
+  NOT committed, running only after mscc stop/start.** Meter is UDP unicast: at a Pi station it talks
+  to ms-sdr only, which relayed SWR/FWD/REF but never the fault (client got Fault=false; the 0x30
+  "SWR METER FAULT" text is dropped by the client). New extended sub 0x0F CMD_SET_SWR_FAULT:
+  [fault][online][meter IPv4 4 bytes], sent at once on a fault change, with each update (<= 2/s),
+  and offline; not gated by SWR_METER_TO_GUI. Files: swr_wifi_meter.c, usbavrcmd.h, version.h (187,
+  synced back from the Pi). Client side = Stew: `.mscc-coord/NOTE-FOR-STEW-SWR-FAULT-TO-CLIENT-2026-11-01.md`.
+  Windows ms-sdr has no meter code (client listens directly there).
+- **2026-11-01 17:00: Pi ms-sdr 3.188 + trans 3.150 BUILT and RUNNING on the Pi (Ron restarted, old client 10.31.x, no calibration until 11.1.0;
+  committed): port of Stew's Windows round 1 (ms-sdr 3.189 / trans 3.154 / client 11.1.0, 49d8c90).**
+  0xA2 slider = live only; 0xA2 | 0x8000 (POWER_CAL_SAVE_FLAG) = save: ms-sdr writes the radio, trans
+  writes power_cal.ini (trans reads the flag from buf[2] bit 7; value stays buf[1]). Startup copy from
+  the radio to trans sent WITH the flag. New 0x2D CMD_SET_CAL_STATUS ms-sdr -> client: int32 kind (1 RX
+  IQ, 2 TX IQ, 3 power) | flags<<8 (bit0 store) | mask<<16; sent at Session_Claim, end of
+  Radio_cal_load_iq, after each radio write (masks reread). Includes the 3.187 SWR fault (0x0F).
+  **Needs client 11.1.0** (old client never sends the save flag = QRP cal not saved). New trans with an
+  old ms-sdr never saves power_cal.ini (Stew's trans comment says otherwise; code saves on flag only).
+  Files: ms-sdr power_calibration.c, main-controller.c, usbavrcmd.h, extern.h, swr_wifi_meter.c,
+  version.h (188); trans udp_thread.c, extern.h (150).
+- **SWR meter firmware (Ron 2026-11-01):** auto-tune on 30 m runs longer than the meter's time limit, so
+  the meter faults. Firmware source is NOT in the tree (only swr-meter/ Python app + summary); Ron asks
+  Stew to add it. Then find the limit and fix. Also pending Ron's decision: should ms-sdr itself stop
+  TX on a meter fault (backstop; WSJT-X on the Pi keys via CAT, so the client can't stop it).
 - **Parked:** NR warble fix (Ron 2026-11-01: leave it, NR works well; lower level = less
   warble). Sync AM (off the list). Complex Goertzel for FREQ CAL and FM transmit (future ideas,
   see "Ron confirmed" below).

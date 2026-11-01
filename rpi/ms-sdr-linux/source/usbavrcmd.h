@@ -219,6 +219,13 @@
 /* ms-sdr -> recv / trans: one band's I/Q from the radio's calibration store.
  * int32 = record (bits 0-7, 0 = 10 m .. 11 = 2200 m) | offset int12 (bits 8-19) | phase int12 (bits 20-31). */
 #define CMD_SET_IQ_RECORD 0x2C
+/* ms-sdr 3.188 (as Windows 3.189): radio calibration status, ms-sdr -> client only. int32 = kind
+ * (1 RX IQ, 2 TX IQ, 3 power) | flags << 8 (bit 0 = radio has a calibration store) | uint16 band
+ * mask << 16 (bit N = band N, MSCC order 0 = 10 m ... 9 = 160 m, 10 = 630 m, 11 = 2200 m). */
+#define CMD_SET_CAL_STATUS 0x2D
+/* ms-sdr 3.188: CMD_SET_BAND_POWER_POWER (0xA2) data with this bit = save (client "Save this
+ * calibration?" Yes): trans writes power_cal.ini and ms-sdr writes the radio. Without it: live only. */
+#define POWER_CAL_SAVE_FLAG 0x8000
 
 //Panadapter Control
 #define CMD_GET_SET_PANADAPTER_FILL 0x59
@@ -461,6 +468,11 @@
 #define CMD_SET_REVERSE_POWER 0x0C
 #define CMD_SET_SWR 0x0D
 #define CMD_SET_SOLIDUS_STATUS 0x0E
+/* ms-sdr 3.187: WiFi SWR meter state to the client (Pi: the meter talks to ms-sdr only,
+ * UDP unicast). Data: [fault 0/1][online 0/1][meter IPv4 a.b.c.d, 4 bytes; 0.0.0.0 = unknown].
+ * Sent at once on a fault change, and with each meter update (at most 2/s). The client
+ * treats fault=1 like its own direct-meter fault (RX, PTT off, RESET via HTTP to that IP). */
+#define CMD_SET_SWR_FAULT 0x0F
 #define CMD_SET_FORTIS_DEVICES 0x32
 
 //RPi Temperture

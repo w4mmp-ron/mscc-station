@@ -486,6 +486,7 @@ extern void Radio_cal_load_power(void);
 /* 3.185: TX / RX I/Q in the radio's calibration store (power_calibration.c, iq.c) */
 extern void Radio_cal_store_iq(int tx, int record, int offset, int phase);
 extern void Radio_cal_load_iq(void);
+extern void Radio_cal_send_status(void);   /* 3.188: 0x2D to the client */
 extern uint8_t G_Radio_Cal_Save_Pending;
 //extern uint8_t G_calibration_mode;
 extern int Initialize_power_calibration();
