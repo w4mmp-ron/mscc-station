@@ -781,110 +781,178 @@ void anotch(sp_cplx *samps, int n)
         } /* ANOTCH ENDS */
 }
 
-/* Private delay line for NR — must not share adelay() with anotch. */
-static sp_float nr_delay(sp_float samp, long amount)
-{
-        static long indelay = 0;
-        static long outdelay = 0;
-        static sp_float buckets[256];
-
-        if (amount < 2) amount = 2;
-        if (amount > 255) amount = 255;
-
-        buckets[indelay] = samp;
-
-        outdelay--;
-        if (outdelay < 0) outdelay = amount - 1;
-
-        indelay--;
-        if (indelay < 0) indelay = amount - 1;
-
-        return buckets[outdelay];
-}
-
-/* Reset LMS state (UDP path on enable / level change). */
+/* Reset NR state (UDP path on enable / off). Done inside denoise() on the audio thread. */
 void denoise_reset(void)
 {
         G_nr_reset_request = 1;
 }
 
 /*
- * Adaptive Line Enhancer (ALE) noise reduction.
+ * 3.151: Spectral-subtraction noise reduction (replaces the LMS line enhancer).
  *
- * Speech is more self-correlated over a short delay than broadband hiss.
- * LMS filter output y = correlated (speech) estimate; e = d - y residual.
- * Auto-notch uses e (remove tones); NR uses y (keep speech) — first pass
- * wrongly mixed e and was nearly inaudible on white noise.
+ * Why replaced: the old LMS "adaptive line enhancer" boosted anything that was
+ * correlated over its delay. Noise through recv's sharp audio filter is strongly
+ * correlated at the filter edge, so it made a ~3.8 kHz whistle; its per-sample
+ * normalisation also over-shot at quiet moments (peaks up to clipping), and the
+ * speech band lost up to 10 dB. Measured on Ron's rig 2026-10-31.
  *
- * Level → wet (always audible when ON, even if client still sends 10):
- *   wet = 0.35 + 0.65 * (level/100)
- * Own delay line so concurrent auto-notch is safe.
+ * How this one works (the usual SDR method):
+ *  1. Cut the audio into overlapping blocks of NR_N samples (NR_N = 2048 at 96 kHz
+ *     = 21 ms, 47 Hz per bin), a new block every NR_HOP = NR_N/2 samples.
+ *  2. Window each block (square-root Hann) and FFT it.
+ *  3. Per bin, keep a running noise estimate: the smoothed power, which follows
+ *     the power straight DOWN and may only creep UP slowly (NR_RISE_DB_PER_S).
+ *     Speech comes and goes; noise is what is always there, so the low point
+ *     of each bin is the noise ("minimum tracking").
+ *  4. Per bin, a gain between a floor and 1.0 (Wiener gain with the
+ *     "decision-directed" SNR estimate). The decision-directed smoothing is what
+ *     stops the "musical noise" (random chirps) plain subtraction makes.
+ *     The gain is NEVER above 1: NR can only make a bin quieter, never louder,
+ *     so it cannot whistle or clip.
+ *  5. Inverse FFT, window again, overlap-add. Square-root Hann twice at 50 %
+ *     overlap adds up to exactly 1, so with all gains 1.0 the audio is unchanged
+ *     (just delayed by NR_N samples = 21 ms while NR is on).
+ *
+ * Level (client payload 1..100) sets the strength:
+ *   floor   = -6 dB (level 1) ... -20 dB (level 100): how far a noise-only bin is
+ *             turned down (never to zero, so the band still sounds natural)
+ *   oversub = 1.0 ... 2.0: how much the noise estimate is "over-counted"
+ *
+ * Input / output as before: samps[].real at the DSP rate (after the AGC);
+ * real and imag (L / R) both get the result.
+ * The FFT is the same jimfft() fastconv uses (complex, in place); we feed the
+ * real audio with imag = 0. All buffers are static (no allocation in the callback).
  */
+#define NR_N             2048                   /* FFT size (power of 2)            */
+#define NR_HOP           (NR_N / 2)             /* new samples per block (50 %)     */
+#define NR_PSMOOTH       0.80f                  /* power smoothing per block        */
+#define NR_DD_ALPHA      0.98f                  /* decision-directed smoothing      */
+#define NR_RISE_DB_PER_S 3.0f                   /* noise estimate may rise this fast */
+#define NR_MIN_BIAS      1.5f                   /* minimum of smoothed power reads low */
+#define NR_EPS           1.0e-12f
+
 void denoise(sp_cplx *samps, int n)
 {
-        static long numtaps = 48;
-        static long ndelay = 32;
-        static sp_float mu_base = 0.002f; /* much stronger adaptation than v1 */
-        static sp_float gain = 1.0f;
-        static sp_float alpha = 0.08f;
-        static sp_float sigma = 2.0f;
-        static sp_float history[128];
-        static sp_float taps[128];
-        static uint8_t inited = 0;
+        static sp_float win[NR_N];              /* square-root Hann                    */
+        static sp_float inbuf[NR_N];            /* last NR_N input samples (oldest first) */
+        static sp_float ola[NR_N];              /* overlap-add accumulator             */
+        static sp_float outq[NR_HOP];           /* finished output, played out next    */
+        static sp_cplx  fbuf[NR_N];             /* FFT work buffer                     */
+        static sp_float psmooth[NR_N / 2 + 1];  /* smoothed power per bin              */
+        static sp_float noise[NR_N / 2 + 1];    /* noise estimate per bin              */
+        static sp_float prev_clean[NR_N / 2 + 1]; /* last block's cleaned power        */
+        static sp_float rise = 1.0f;            /* per-block noise rise factor         */
+        static int pos = 0;                     /* samples gathered for the next block */
+        static int blocks = 0;                  /* blocks since reset                  */
+        static uint8_t win_ready = 0;
 
-        sp_float d, e, y, mu_e, mu, wet, out;
-        sp_float samp;
-        int j, i;
-        int level;
+        sp_float floor_gain, oversub, x, y;
+        int j, k, level;
 
         if (!nrstate.enabled || nrstate.level == 0) {
                 return;
         }
 
-        if (G_nr_reset_request || !inited) {
-                for (i = 0; i < 128; i++) {
-                        history[i] = 0.0f;
-                        taps[i] = 0.0f;
+        if (!win_ready) {
+                for (k = 0; k < NR_N; k++)
+                        win[k] = sqrtf(0.5f - 0.5f * cosf(2.0f * (sp_float)PI * (sp_float)k / (sp_float)NR_N));
+                /* noise may rise NR_RISE_DB_PER_S dB per second; blocks per second = rate / hop */
+                rise = powf(10.0f, NR_RISE_DB_PER_S / 10.0f / (mystate.samplerate / (sp_float)NR_HOP));
+                win_ready = 1;
+                G_nr_reset_request = 1;
+        }
+
+        if (G_nr_reset_request) {
+                for (k = 0; k < NR_N; k++) {
+                        inbuf[k] = 0.0f;
+                        ola[k] = 0.0f;
                 }
-                sigma = 2.0f;
-                inited = 1;
+                for (k = 0; k < NR_HOP; k++)
+                        outq[k] = 0.0f;
+                for (k = 0; k <= NR_N / 2; k++) {
+                        psmooth[k] = 0.0f;
+                        noise[k] = 0.0f;
+                        prev_clean[k] = 0.0f;
+                }
+                pos = 0;
+                blocks = 0;
                 G_nr_reset_request = 0;
         }
 
         level = nrstate.level;
         if (level < 1) level = 1;
         if (level > 100) level = 100;
-        wet = 0.35f + 0.65f * ((sp_float)level / 100.0f);
-        mu = mu_base * (0.4f + 0.6f * ((sp_float)level / 100.0f));
+        floor_gain = powf(10.0f, (-6.0f - 14.0f * (sp_float)level / 100.0f) / 20.0f);
+        oversub = 1.0f + (sp_float)level / 100.0f;
 
         for (j = 0; j < n; j++) {
-                samp = samps[j].real;
-                d = samp * gain;
+                /* sample in, finished sample out (NR_N samples later) */
+                inbuf[NR_N - NR_HOP + pos] = samps[j].real;
+                y = outq[pos];
+                samps[j].real = y;
+                samps[j].imag = y;
+                pos++;
+                if (pos < NR_HOP)
+                        continue;
+                pos = 0;
 
-                history[0] = nr_delay(d, ndelay);
-                y = 0.0f;
-                for (i = 0; i < numtaps; i++) {
-                        y += taps[i] * history[i];
+                /* ---- one block ---- */
+                for (k = 0; k < NR_N; k++) {
+                        fbuf[k].real = inbuf[k] * win[k];
+                        fbuf[k].imag = 0.0f;
                 }
+                jimfft(fbuf, NR_N);
 
-                e = d - y;
+                for (k = 0; k <= NR_N / 2; k++) {
+                        sp_float p, post, prio, g, nz;
 
-                sigma = alpha * (history[0] * history[0]) + (1.0f - alpha) * sigma;
-                if (sigma < 1.0e-6f) sigma = 1.0e-6f;
-                mu_e = mu * e / sigma;
+                        p = fbuf[k].real * fbuf[k].real + fbuf[k].imag * fbuf[k].imag;
 
-                for (i = 0; i < numtaps; i++) {
-                        taps[i] += (mu_e * history[i]);
+                        /* noise estimate: smoothed power, follows down at once, rises slowly */
+                        if (blocks == 0) {
+                                psmooth[k] = p;
+                                noise[k] = p;
+                        } else {
+                                psmooth[k] = NR_PSMOOTH * psmooth[k] + (1.0f - NR_PSMOOTH) * p;
+                                noise[k] *= rise;
+                                if (psmooth[k] < noise[k])
+                                        noise[k] = psmooth[k];
+                        }
+                        nz = noise[k] * NR_MIN_BIAS * oversub + NR_EPS;
+
+                        /* Wiener gain, decision-directed a-priori SNR */
+                        post = p / nz;
+                        x = post - 1.0f;
+                        if (x < 0.0f) x = 0.0f;
+                        prio = NR_DD_ALPHA * (prev_clean[k] / nz) + (1.0f - NR_DD_ALPHA) * x;
+                        g = prio / (1.0f + prio);
+                        if (g < floor_gain) g = floor_gain;
+                        if (g > 1.0f) g = 1.0f;
+                        /* first ~0.1 s after switching on: estimate not settled, pass audio */
+                        if (blocks < 10) g = 1.0f;
+
+                        prev_clean[k] = g * g * p;
+
+                        fbuf[k].real *= g;
+                        fbuf[k].imag *= g;
+                        if (k > 0 && k < NR_N / 2) {    /* mirror bin, same gain */
+                                fbuf[NR_N - k].real *= g;
+                                fbuf[NR_N - k].imag *= g;
+                        }
                 }
+                if (blocks < 1000000) blocks++;
 
-                for (i = numtaps; i >= 1; i--) {
-                        history[i] = history[i - 1];
+                jimifft(fbuf, NR_N);
+
+                /* window again and overlap-add; the first NR_HOP samples are finished */
+                for (k = 0; k < NR_N; k++)
+                        ola[k] += fbuf[k].real * win[k];
+                for (k = 0; k < NR_HOP; k++) {
+                        outq[k] = ola[k];
+                        ola[k] = ola[k + NR_HOP];
+                        ola[k + NR_HOP] = 0.0f;
+                        inbuf[k] = inbuf[k + NR_HOP];   /* slide input by one hop */
                 }
-
-                /* Dry + speech estimate y (not residual e) */
-                out = (1.0f - wet) * d + wet * y;
-                samps[j].real = out;
-                samps[j].imag = out;
         }
 }
 
