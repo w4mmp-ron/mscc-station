@@ -26,6 +26,18 @@ uint32_t iq_cal_freq;
 uint16_t iq_band;
 int iq_offset;
 uint8_t rx_tx = 3;
+/* 3.185 (as Windows ms-sdr 3.187): I/Q value in use for the band being calibrated (client sets +
+ * core reports after band select), written to the radio's calibration store (0xC8) on APPLY. */
+static int iq_cur_offset[2] = { 0, 0 };   /* [IQ_RX, IQ_TX] */
+static int iq_cur_phase = 0;              /* TX only */
+
+void IQ_report_value(int value) {         /* 0x8B from recv / trans after band select */
+    if (rx_tx == IQ_RX || rx_tx == IQ_TX) iq_cur_offset[rx_tx] = value;
+}
+
+void IQ_report_phase(int value) {         /* 0x2B from trans after band select / phase set */
+    iq_cur_phase = value;
+}
 int iq_calibration_freqs[] = {28350000, 24930000, 21225000, 18110000, 14175000, 10125000, 7150000, 5330500, 3750000,
     1900000, 475000, 136000};
 
@@ -146,6 +158,7 @@ int IQ_calibration(uint8_t command, char *buffer) {
         case IQ_CALIBRATION_RX_TX:
             rx_tx = t_opcode_data;
             G_calibration_mode = TRUE;
+            G_iq_cal_active = TRUE;   /* 3.185: mode changes still reach the radio */
             print_time(0);
             fprintf(G_fp_logfile, "[%d] IQ_calibration . IQ_CALIBRATION_RX_TX . RX/TX Mode %d, G_calibration_mode: %d\n",
                     line_number++, rx_tx, G_calibration_mode);
@@ -179,6 +192,7 @@ int IQ_calibration(uint8_t command, char *buffer) {
             op_code_data_32 = (int*) &buffer[1];
             memcpy(&i_opcode_data, op_code_data_32, 4);
             iq_offset = i_opcode_data;
+            if (rx_tx == IQ_RX || rx_tx == IQ_TX) iq_cur_offset[rx_tx] = iq_offset;
             print_time(1);
             fprintf(G_fp_logfile, "[%d] IQ_calibration . CMD_SET_IQ_OFFSET . Calling set_iq_record . iq_offset: %d\n", line_number++, iq_offset);
             if (rx_tx == IQ_RX) {
@@ -191,6 +205,18 @@ int IQ_calibration(uint8_t command, char *buffer) {
             fprintf(G_fp_logfile, "[%d] IQ_calibration . CMD_SET_IQ_OFFSET . Finished. status: %d\n", line_number++, status);
             break;
 
+        case CMD_SET_IQ_PHASE:
+            /* 3.185: TX only: trans applies it to the band in use and reports it back (0x2B) */
+            op_code_data_32 = (int*) &buffer[1];
+            memcpy(&i_opcode_data, op_code_data_32, 4);
+            print_time(1);
+            fprintf(G_fp_logfile, "[%d] IQ_calibration . CMD_SET_IQ_PHASE . iq_phase: %d (RX/TX %d)\n",
+                    line_number++, i_opcode_data, rx_tx);
+            SDRcore_trans_send_param(CMD_SET_IQ_PHASE, i_opcode_data);
+            iq_cur_phase = i_opcode_data;
+            G_IQBD_New_Value_Set = TRUE;
+            break;
+
         case CMD_SET_COMMIT_IQ:
             print_time(1);
             fprintf(G_fp_logfile, "[%d] IQ_calibration . CMD_SET_COMMIT_IQ . Calling SDRcore: RX/TX: %d, t_opcode_data: %d\n",
@@ -200,6 +226,11 @@ int IQ_calibration(uint8_t command, char *buffer) {
                 SDRcore_recv_send_param(CMD_SET_COMMIT_IQ, iq_band);
             } else {
                 SDRcore_trans_send_param(CMD_SET_COMMIT_IQ, iq_band);
+            }
+            /* 3.185: and into the radio's calibration store (sent when out of TX) */
+            if (rx_tx == IQ_RX || rx_tx == IQ_TX) {
+                Radio_cal_store_iq(rx_tx == IQ_TX, IQ_Band_to_Record(iq_band), iq_cur_offset[rx_tx],
+                                   (rx_tx == IQ_TX) ? iq_cur_phase : 0);
             }
             Sleep(1000);
             Gui_send_param(IQ_OPERATION_COMPLETE, 1);

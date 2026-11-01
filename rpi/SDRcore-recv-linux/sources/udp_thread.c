@@ -1341,6 +1341,32 @@ void *UDP_Thread(void *my_param) {
                         line_number++, iq_band);
                 break;
 
+            case CMD_SET_IQ_RECORD:
+            {
+                /* 3.150 (as Windows recv 3.151): one band's RX I/Q from the radio's calibration
+                 * store, sent by ms-sdr at startup. Save it in recv-iq.ini; apply it if in use. */
+                int rec;
+                int off;
+                memcpy(&i_opcode_data, &buf[1], 4);
+                rec = i_opcode_data & 0xFF;
+                off = (i_opcode_data >> 8) & 0xFFF;
+                if (off & 0x800) off -= 0x1000;
+                if (rec < 12) {
+                    G_iq_stack[rec].record = rec;
+                    G_iq_stack[rec].band = rec;
+                    G_iq_stack[rec].iq_offset = off;
+                    status = update_iq_ini_file();
+                    if (rec == Get_IQ_Record(operating_band)) {
+                        iq_offset = off;
+                        IQ_calc(off);
+                    }
+                    print_time();
+                    fprintf(G_fp_logfile, "[%d] UDP Thread. CMD_SET_IQ_RECORD (from radio). record: %d, offset: %d%s\n",
+                            line_number++, rec, off, (rec == Get_IQ_Record(operating_band)) ? " (in use, applied)" : "");
+                }
+                break;
+            }
+
             case CMD_SET_IQ_ALL_BANDS:
                 print_time();
                 fprintf(G_fp_logfile, "[%d] UDP Thread. CMD_SET_IQ_DEFAULTS \n", line_number++);

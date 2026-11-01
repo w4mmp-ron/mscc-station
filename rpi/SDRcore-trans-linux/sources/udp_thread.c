@@ -18,6 +18,16 @@ uint16_t ms_sdr_port = 0;
 struct sockaddr_in si_me, si_ms_sdr;
 int sdrcore_s, ms_sdr_s, recv_len;
 socklen_t slen = (socklen_t)sizeof(si_ms_sdr);
+
+/* 3.147: TX phase in use -> ms-sdr as 0x2B + int32 (as Windows trans), so ms-sdr can pass it
+ * to the client and store it in the radio on APPLY. */
+static void send_iq_phase_to_ms_sdr(int phase) {
+    char msg[5];
+
+    msg[0] = (char) CMD_GET_IQ_PHASE;
+    memcpy(&msg[1], &phase, 4);
+    sendto(ms_sdr_s, msg, sizeof (msg), 0, (struct sockaddr *) &si_ms_sdr, slen);
+}
 extern struct input_devices G_input_devices[MAX_INPUT_DEVICES];
 extern struct input_devices G_digital_input_devices[MAX_INPUT_DEVICES];
 extern power_levels G_power_levels;
@@ -659,7 +669,7 @@ void *UDP_Thread(void *my_param) {
 
             case CMD_SET_ALC_MULTIPLIER:
                 //ALC is always on. The off value (0) was for testing and is ignored.
-                G_ALC_multiplier = 0.45f; /* 3.146: ALC ceiling, see dsputils.c ALC_CEILING */
+                G_ALC_multiplier = ALC_CEILING; /* 3.148: was a hard 0.45, see dsputils.c ALC_CEILING */
                 G_Do_ALC = TRUE;
                 print_time();
                 fprintf(G_fp_logfile, "[%d] UDP Thread. CMD_SET_ALC_MULTIPLIER. received_data: %d, G_ALC_multiplier: %f, G_Do_ACL: %d\n",
@@ -1020,6 +1030,7 @@ void *UDP_Thread(void *my_param) {
                     fprintf(G_fp_logfile, "[%d] UDP Thread. CMD_SET_IQ_BAND. sentto failed with error code : %s\n",
                             line_number++, strerror(errno));
                 }
+                send_iq_phase_to_ms_sdr(G_iq_stack[iq_band].iq_phase);   /* 3.147 */
                 print_time();
                 fprintf(G_fp_logfile, "[%d] UDP Thread. CMD_SET_IQ_BAND. Finished. band: %d\n", line_number++, iq_band);
                 break;
@@ -1047,6 +1058,33 @@ void *UDP_Thread(void *my_param) {
                 memcpy(&reply[2], &reply_phase, 4);
                 memcpy(&reply[6], &reply_offset, 4);
                 sendto(sdrcore_s, reply, sizeof (reply), 0, (struct sockaddr *) &si_peer, peer_len);
+                send_iq_phase_to_ms_sdr(reply_phase);   /* 3.147: and to ms-sdr (client slider, APPLY) */
+                break;
+            }
+
+            case CMD_SET_IQ_RECORD:
+            {
+                /* 3.147 (as Windows trans 3.151): one band's I/Q from the radio's calibration
+                 * store, sent by ms-sdr at startup. Save it in iq.ini; apply it if in use. */
+                int rec = i_opcode_data & 0xFF;
+                int off = (i_opcode_data >> 8) & 0xFFF;
+                int ph = (i_opcode_data >> 20) & 0xFFF;
+                if (off & 0x800) off -= 0x1000;
+                if (ph & 0x800) ph -= 0x1000;
+                if (rec < 12) {
+                    G_iq_stack[rec].record = rec;
+                    G_iq_stack[rec].band = rec;
+                    G_iq_stack[rec].iq_offset = off;
+                    G_iq_stack[rec].iq_phase = ph;
+                    status = update_iq_ini_file();
+                    if (rec == iq_active) {
+                        IQ_calc(off);
+                        IQ_phase_calc(ph);
+                    }
+                    print_time();
+                    fprintf(G_fp_logfile, "[%d] UDP Thread. CMD_SET_IQ_RECORD (from radio). record: %d, offset: %d, phase: %d%s\n",
+                            line_number++, rec, off, ph, (rec == iq_active) ? " (in use, applied)" : "");
+                }
                 break;
             }
 

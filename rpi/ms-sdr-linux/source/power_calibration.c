@@ -31,6 +31,14 @@
 uint8_t G_Radio_Cal_Save_Pending = 0;
 static volatile int radio_cal_pending[12];      /* 1 = value below not sent yet */
 static volatile int radio_cal_value[12];
+/* 3.185 (as Windows ms-sdr 3.187): I/Q waiting to be sent to the radio, [0] RX (type 1),
+ * [1] TX (type 2). Payload as the firmware stores it: int16 gain, int16 phase, little endian.
+ * Gain = IQ_OFFSET steps, phase = IQ_PHASE steps (0.05 deg); RX phase is 0 for now. */
+#define RADIO_CAL_TYPE_RX_IQ    1
+#define RADIO_CAL_TYPE_TX_IQ    2
+static volatile int radio_iq_pending[2][12];
+static volatile int radio_iq_offset[2][12];
+static volatile int radio_iq_phase[2][12];
 
 struct {
     int record;
@@ -125,18 +133,16 @@ static void Radio_cal_send_power(int record, int value) {
 #define RADIO_CAL_TYPE_VALID    5
 
 /* At startup: the radio's power values win over power_cal.ini. Bands the radio does not
- * have get the factory value for the radio type (the file may hold another radio's
- * calibration); the file is never copied into the radio. Each band that differs from the
- * file goes to trans as 0xA1 band + 0xA2 value, the same as a slider step, so trans stays
- * the only writer of power_cal.ini. Older firmware stalls 0xC8: file used as before.
- * No factory tree: bands the radio lacks keep the file's value. */
+ * have keep the file's value (3.186, as Windows ms-sdr 3.185: before, they got the factory
+ * value, which overwrote a calibrated power_cal.ini on the first start with a radio that
+ * held nothing yet). The file is never copied into the radio. Each band that differs from
+ * the file goes to trans as 0xA1 band + 0xA2 value, the same as a slider step, so trans
+ * stays the only writer of power_cal.ini. Older firmware stalls 0xC8: file used as before. */
 void Radio_cal_load_power(void) {
     static const int record_meters[12] = { 160, 80, 60, 40, 30, 20, 17, 15, 12, 10, 630, 2200 };
     unsigned char masks[6];
     unsigned char data[2];
     uint16_t power_mask;
-    int factory[12];
-    int have_factory;
     const char *source;
     int record, band, value, status;
     int changed = 0;
@@ -150,7 +156,6 @@ void Radio_cal_load_power(void) {
     }
     power_mask = (uint16_t) (masks[4] | (masks[5] << 8));   /* [RX IQ, TX IQ, power] */
     Initialize_power_calibration();
-    have_factory = Factory_power_cal_values(factory);
     for (record = 0; record < 12; record++) {
         band = Record_to_radio_band(record);
         print_time(0);
@@ -163,11 +168,8 @@ void Radio_cal_load_power(void) {
                 continue;
             }
             value = data[0] | (data[1] << 8);
-        } else if (have_factory) {
-            source = "factory";
-            value = factory[record];
         } else {
-            fprintf(G_fp_logfile, "[%d] Radio_cal_load_power . %d m not in radio, no factory file, file %d kept\n",
+            fprintf(G_fp_logfile, "[%d] Radio_cal_load_power . %d m not in radio, file %d kept\n",
                     line_number++, record_meters[record], G_power_stack[record].power_level);
             continue;
         }
@@ -191,6 +193,102 @@ void Radio_cal_load_power(void) {
             power_mask, changed);
 }
 
+/* 3.185 (as Windows ms-sdr 3.187): APPLY in the RX / TX I/Q tab notes the band's value;
+ * Radio_cal_save_tick sends it when out of TX.
+ * record = IQ record = radio band (0 = 10 m .. 9 = 160 m, 10 = 630 m, 11 = 2200 m). */
+void Radio_cal_store_iq(int tx, int record, int offset, int phase) {
+    int k = tx ? 1 : 0;
+
+    if (record < 0 || record >= 12)
+        return;
+#if !RADIO_CAL_WRITES
+    return;
+#endif
+    radio_iq_offset[k][record] = offset;
+    radio_iq_phase[k][record] = phase;
+    radio_iq_pending[k][record] = 1;
+    G_Radio_Cal_Save_Pending = RADIO_CAL_SAVE_DELAY;
+    print_time(0);
+    fprintf(G_fp_logfile, "[%d] Radio_cal_store_iq . %s band %d: offset %d, phase %d (queued)\n", line_number++,
+            tx ? "TX" : "RX", record, offset, phase);
+}
+
+static void Radio_cal_send_iq(int k, int record) {
+    unsigned char data[4];
+    int offset = radio_iq_offset[k][record];
+    int phase = radio_iq_phase[k][record];
+    int status;
+
+    data[0] = (unsigned char) (offset & 0xFF);          /* int16 gain, little endian */
+    data[1] = (unsigned char) ((offset >> 8) & 0xFF);
+    data[2] = (unsigned char) (phase & 0xFF);           /* int16 phase, little endian */
+    data[3] = (unsigned char) ((phase >> 8) & 0xFF);
+    status = usbControlMsgOUT(RADIO_CMD_CALIBRATION,
+                              ((k ? RADIO_CAL_TYPE_TX_IQ : RADIO_CAL_TYPE_RX_IQ) << 8) | record, 0, (char *) data, 4);
+    print_time(0);
+    if (status == 4) {
+        fprintf(G_fp_logfile, "[%d] Radio_cal_send_iq . %s band %d: offset %d, phase %d sent (radio stores it)\n",
+                line_number++, k ? "TX" : "RX", record, offset, phase);
+    } else {
+        fprintf(G_fp_logfile, "[%d] Radio_cal_send_iq . FAILED (radio firmware without 0xC8?) %s band %d, Status: %d\n",
+                line_number++, k ? "TX" : "RX", record, status);
+    }
+}
+
+/* 3.185: at startup, after Radio_cal_load_power: bands the radio holds go to recv (RX) /
+ * trans (TX) as CMD_SET_IQ_RECORD; the core saves its ini file and applies the band if it is in
+ * use. Bands the radio does not hold keep the ini file's value. Older firmware stalls 0xC8:
+ * files as before. */
+void Radio_cal_load_iq(void) {
+    static const char *band_name[12] = { "10", "12", "15", "17", "20", "30", "40", "60", "80", "160", "630", "2200" };
+    unsigned char masks[6];
+    unsigned char data[4];
+    uint16_t mask;
+    int k, band, status, offset, phase, packed, loaded = 0;
+
+    status = usbControlMsgIN(RADIO_CMD_CALIBRATION, RADIO_CAL_TYPE_VALID << 8, 0, (char *) masks, 6);
+    if (status != 6) {
+        print_time(0);
+        fprintf(G_fp_logfile, "[%d] Radio_cal_load_iq . No calibration in radio (firmware without 0xC8?) Status: %d. Using iq.ini / recv-iq.ini\n",
+                line_number++, status);
+        return;
+    }
+    for (k = 0; k < 2; k++) {                   /* masks[0..1] RX IQ, masks[2..3] TX IQ */
+        mask = (uint16_t) (masks[2 * k] | (masks[2 * k + 1] << 8));
+        for (band = 0; band < 12; band++) {
+            if (!(mask & (1 << band)))
+                continue;
+            status = usbControlMsgIN(RADIO_CMD_CALIBRATION, ((k ? RADIO_CAL_TYPE_TX_IQ : RADIO_CAL_TYPE_RX_IQ) << 8) | band,
+                                     0, (char *) data, 4);
+            print_time(0);
+            if (status != 4) {
+                fprintf(G_fp_logfile, "[%d] Radio_cal_load_iq . %s %s m read FAILED. Status: %d\n", line_number++,
+                        k ? "TX" : "RX", band_name[band], status);
+                continue;
+            }
+            offset = (int) (int16_t) (data[0] | (data[1] << 8));
+            phase = (int) (int16_t) (data[2] | (data[3] << 8));
+            if (offset < -2048 || offset > 2047 || phase < -2048 || phase > 2047) {
+                fprintf(G_fp_logfile, "[%d] Radio_cal_load_iq . %s %s m offset %d / phase %d out of range, file kept\n",
+                        line_number++, k ? "TX" : "RX", band_name[band], offset, phase);
+                continue;
+            }
+            packed = (band & 0xFF) | ((offset & 0xFFF) << 8) | ((phase & 0xFFF) << 20);
+            fprintf(G_fp_logfile, "[%d] Radio_cal_load_iq . %s %s m from radio: offset %d, phase %d -> %s\n",
+                    line_number++, k ? "TX" : "RX", band_name[band], offset, phase, k ? "trans" : "recv");
+            if (k)
+                SDRcore_trans_send_param(CMD_SET_IQ_RECORD, packed);
+            else
+                SDRcore_recv_send_param(CMD_SET_IQ_RECORD, packed);
+            Sleep(20);
+            loaded++;
+        }
+    }
+    print_time(0);
+    fprintf(G_fp_logfile, "[%d] Radio_cal_load_iq . Finished. RX mask 0x%02X%02X, TX mask 0x%02X%02X, %d band(s) from radio\n",
+            line_number++, masks[1], masks[0], masks[3], masks[2], loaded);
+}
+
 /* Called once a second from Flusher_thread while G_Radio_Cal_Save_Pending > 0. */
 void Radio_cal_save_tick(void) {
     int record;
@@ -206,6 +304,14 @@ void Radio_cal_save_tick(void) {
         if (radio_cal_pending[record]) {
             radio_cal_pending[record] = 0;
             Radio_cal_send_power(record, radio_cal_value[record]);
+        }
+        if (radio_iq_pending[0][record]) {
+            radio_iq_pending[0][record] = 0;
+            Radio_cal_send_iq(0, record);
+        }
+        if (radio_iq_pending[1][record]) {
+            radio_iq_pending[1][record] = 0;
+            Radio_cal_send_iq(1, record);
         }
     }
 }
@@ -378,6 +484,7 @@ int Power_calibration(uint32_t command, char *buf) {
             print_time(1);
             fprintf(G_fp_logfile, "[%d] CMD_SET_BAND_POWER_BAND . Called\n", line_number++);
             G_calibration_mode = 1;
+            G_iq_cal_active = 0;        /* 3.185: power calibration controls the radio mode */
             Tranceiver_band = s_opcode_data;
             record = Band_to_record(Tranceiver_band);
             calibration_frequency = Set_freq_for_power_cal(Tranceiver_band);

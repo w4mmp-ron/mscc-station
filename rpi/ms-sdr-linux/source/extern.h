@@ -473,13 +473,19 @@ int Start_Serial_Port();
 //For I/Q Calibration routine
 extern int IQ_calibration(uint8_t command, char *buf);
 extern uint8_t G_calibration_mode;
+extern uint8_t G_iq_cal_active;
 extern uint8_t G_IQBD_Monitor;
 extern uint8_t G_in_IQ_calibration_mode;
+extern void IQ_report_value(int value);
+extern void IQ_report_phase(int value);
 
 //For Power Calibration
 extern int Power_calibration(uint32_t command, char *buffer);
 extern void Radio_cal_save_tick(void);
 extern void Radio_cal_load_power(void);
+/* 3.185: TX / RX I/Q in the radio's calibration store (power_calibration.c, iq.c) */
+extern void Radio_cal_store_iq(int tx, int record, int offset, int phase);
+extern void Radio_cal_load_iq(void);
 extern uint8_t G_Radio_Cal_Save_Pending;
 //extern uint8_t G_calibration_mode;
 extern int Initialize_power_calibration();

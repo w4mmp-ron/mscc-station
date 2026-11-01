@@ -20,8 +20,7 @@ sp_float G_ALC_limit = 0.0f;
 long int G_alc_count = 0;
 /* 3.146 (from Stew's Windows trans 3.149): ALC ceiling = drive x ALC_CEILING. Was 1.1,
  * which let SSB peaks overdrive the PA (close-in splatter on Stew's analyzer, peaks
- * 0.43-0.57 of full scale); 0.45 measured clean. */
-#define ALC_CEILING 0.45f
+ * 0.43-0.57 of full scale); 0.45 measured clean. 3.148: ALC_CEILING now in extern.h. */
 sp_float G_ALC_multiplier = ALC_CEILING;
 #endif
 

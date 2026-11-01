@@ -2044,6 +2044,24 @@ void * Command_Processor(void *my_param) {
             G_dll_active = FALSE;
             break;
 
+        case CMD_SET_IQ_PHASE:
+            /* 3.185: client PHASE slider -> trans (as Windows ms-sdr 3.186) */
+            G_dll_active = TRUE;
+            IQ_calibration(opcode, G_receive_buf);
+            G_dll_active = FALSE;
+            break;
+
+        case CMD_GET_IQ_PHASE:
+            /* 3.185: from trans: TX phase in use (int32 steps of 0.05 deg) -> client */
+            op_code_data_32 = (int*)&G_receive_buf[1];
+            memcpy(&i_opcode_data, op_code_data_32, 4);
+            print_time(0);
+            fprintf(G_fp_logfile, "[%d] CMD_GET_IQ_PHASE . Calling Gui_send_param with %d \n", line_number++,
+                i_opcode_data);
+            Gui_send_param(CMD_GET_IQ_PHASE, i_opcode_data);
+            IQ_report_phase(i_opcode_data);
+            break;
+
         case CMD_GET_IQ_VALUE:
             op_code_data_32 = (int*)&G_receive_buf[1];
             memcpy(&i_opcode_data, op_code_data_32, 4);
@@ -2051,6 +2069,7 @@ void * Command_Processor(void *my_param) {
             fprintf(G_fp_logfile, "[%d] CMD_GET_IQ_VALUE . Calling Gui_send_param with %d \n", line_number++,
                 i_opcode_data);
             Gui_send_param(CMD_GET_IQ_VALUE, i_opcode_data);
+            IQ_report_value(i_opcode_data);
             break;
 
         case CMD_SET_COMMIT_IQ:
@@ -2201,6 +2220,7 @@ void * Command_Processor(void *my_param) {
             //Process_hr50(CMD_GET_SET_HR50_COMM_SEND_BAND_INFO, buf);
             G_dll_active = FALSE;
             G_calibration_mode = FALSE;
+            G_iq_cal_active = FALSE;   /* 3.185 */
             //Spectrum_Waterfall_send_param(CMD_SET_SPECTRUM_WATERFALL_FREQ, G_tune_freq);
             print_time(0);
             fprintf(G_fp_logfile, "[%d] Command_Interface. CMD_SET_MAIN_FREQ. Finished\n", line_number++);

@@ -30,7 +30,7 @@
 
 /* {Model}.{[M]M}{Release Number} */
 #define VERSION_MAJOR 3
-#define VERSION_MINOR 146
+#define VERSION_MINOR 149
 #define VERSION_MS_SDRCORE_TRANS ((((VERSION_MINOR) << 8) & 0xff00) | ((VERSION_MAJOR) & 0x00ff))
 
 #define MAX_KEEP_ALIVE_COUNT 15
@@ -70,6 +70,10 @@ extern long int G_alc_count;
 extern volatile sp_float G_ALC_peak_env; /* 3.146: peak level before the ALC, since last meter read */
 extern sp_float G_ALC_limit;
 extern sp_float G_ALC_multiplier;
+/* 3.148: ALC ceiling = drive x ALC_CEILING. Was 0.45 (3.146) = about 32% of TUNE power
+ * (Ron: SSB only ~40 W of 100). 0.80 (3.148) gave a WSJT tone 89 W vs TUNE 109 W on the
+ * ATU-100; 3.149: 0.89 = WSJT at TUNE power. */
+#define ALC_CEILING 0.89f
 extern int8_t G_Do_ALC;
 extern int8_t G_Allow_ALC_Send;
 extern uint8_t G_audio_mode;

@@ -212,6 +212,13 @@
 #define IQ_OPERATION_COMPLETE 0x56
 #define CMD_SET_COMMIT_IQ 0x57
 #define CMD_SET_IQ_BAND  0x58
+/* 3.185 (as Windows ms-sdr 3.186 / 3.187): TX I/Q phase, client -> ms-sdr -> trans (int32
+ * steps of 0.05 deg); trans reports the value in use as 0x2B + int32, ms-sdr forwards it. */
+#define CMD_SET_IQ_PHASE 0x2A
+#define CMD_GET_IQ_PHASE 0x2B
+/* ms-sdr -> recv / trans: one band's I/Q from the radio's calibration store.
+ * int32 = record (bits 0-7, 0 = 10 m .. 11 = 2200 m) | offset int12 (bits 8-19) | phase int12 (bits 20-31). */
+#define CMD_SET_IQ_RECORD 0x2C
 
 //Panadapter Control
 #define CMD_GET_SET_PANADAPTER_FILL 0x59
