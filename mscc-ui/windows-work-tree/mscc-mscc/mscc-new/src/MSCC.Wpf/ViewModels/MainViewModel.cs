@@ -1808,6 +1808,16 @@ public partial class MainViewModel : ObservableObject, IDisposable
     /// <summary>FREQ CAL tab swaps to CW without writing that mode into last-used or LAST_HF/LF.</summary>
     private bool _suppressPersonalityRemember;
     private bool _freqCalEntryHeld;
+
+    /// <summary>
+    /// 11.1.1: restore started by leaving TX IQ / QRP CAL / AMP CAL. FREQ CAL entry waits for it,
+    /// otherwise that restore put the old mode (e.g. USB) back after FREQ CAL had set CW.
+    /// </summary>
+    private Task _calTabRestoreTask = Task.CompletedTask;
+    private bool _freqCalWanted;
+    private int _freqCalEnterSeq;
+    /// <summary>11.1.2: left-panel SPECTRUM ZOOM from before FREQ CAL (the tab opens at 4×).</summary>
+    private double _freqCalSavedZoom = 1.0;
     private RadioMode _freqCalSavedMode;
     private int _freqCalSavedFilter;
     private int _freqCalSavedPitch;
@@ -2421,7 +2431,7 @@ public partial class MainViewModel : ObservableObject, IDisposable
             MonitorTextBoxText(" TX IQ LEAVE: no snapshot");
             return;
         }
-        _ = RestoreOperatingStateAfterCalTabAsync(snap, "TX IQ");
+        _calTabRestoreTask = RestoreOperatingStateAfterCalTabAsync(snap, "TX IQ");
     }
 
     private void ForceStopTxIqSession(string reason)
@@ -3366,7 +3376,7 @@ public partial class MainViewModel : ObservableObject, IDisposable
             return;
         }
 
-        _ = RestoreOperatingStateAfterCalTabAsync(snap, "Pwr Cal");
+        _calTabRestoreTask = RestoreOperatingStateAfterCalTabAsync(snap, "Pwr Cal");
     }
 
     /// <summary>
@@ -3438,7 +3448,7 @@ public partial class MainViewModel : ObservableObject, IDisposable
             return;
         }
 
-        _ = RestoreOperatingStateAfterCalTabAsync(snap, "Amp Cal");
+        _calTabRestoreTask = RestoreOperatingStateAfterCalTabAsync(snap, "Amp Cal");
     }
 
     private async Task RestoreOperatingStateAfterCalTabAsync(OperatingStateSnapshot snap, string logTag)
@@ -3926,8 +3936,26 @@ public partial class MainViewModel : ObservableObject, IDisposable
     }
 
     /// <summary>FREQ CAL tab: CW, 200 Hz filter, 600 Hz pitch. Last-used mode is left alone.</summary>
-    public void EnterFreqCalTab()
+    public async void EnterFreqCalTab()
     {
+        _freqCalWanted = true;
+        int seq = ++_freqCalEnterSeq;
+
+        // 11.1.1: the tab handler may leave TX IQ / QRP CAL / AMP CAL after this call. Let it run,
+        // then wait for that tab's restore (mode, VFO, filters) before switching to CW.
+        await Task.Yield();
+        if (!_calTabRestoreTask.IsCompleted)
+        {
+            MonitorTextBoxText(" Freq Cal ENTER: waiting for the previous cal tab to restore");
+            try { await _calTabRestoreTask; }
+            catch { /* restore logs its own errors */ }
+        }
+        if (!_freqCalWanted || seq != _freqCalEnterSeq)
+        {
+            MonitorTextBoxText(" Freq Cal ENTER: tab left before entry finished");
+            return;
+        }
+
         if (_freqCalEntryHeld)
         {
             MonitorTextBoxText(" Freq Cal ENTER: session already open");
@@ -3938,7 +3966,9 @@ public partial class MainViewModel : ObservableObject, IDisposable
         _freqCalSavedMode = mode;
         _freqCalSavedFilter = CwFilterIndex;
         _freqCalSavedPitch = CwPitchIndex;
+        _freqCalSavedZoom = SpectrumZoom;
         _freqCalEntryHeld = true;
+        SpectrumZoom = 4.0;     // 11.1.2: cal signal easy to see; left-panel slider still works
 
         bool prevSave = SuppressLastUsedSave;
         bool prevPersonality = _suppressPersonalityRemember;
@@ -3964,12 +3994,14 @@ public partial class MainViewModel : ObservableObject, IDisposable
     /// <summary>Leave FREQ CAL: restore the mode, CW filter, and pitch from entry.</summary>
     public void LeaveFreqCalTab()
     {
+        _freqCalWanted = false;
         if (!_freqCalEntryHeld) return;
 
         var mode = _freqCalSavedMode;
         int filter = _freqCalSavedFilter;
         int pitch = _freqCalSavedPitch;
         _freqCalEntryHeld = false;
+        SpectrumZoom = _freqCalSavedZoom;   // 11.1.2: main-screen zoom back
 
         bool prevSave = SuppressLastUsedSave;
         bool prevPersonality = _suppressPersonalityRemember;

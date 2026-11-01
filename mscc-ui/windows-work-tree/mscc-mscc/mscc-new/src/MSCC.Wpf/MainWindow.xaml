@@ -1890,6 +1890,8 @@
 
                         <StackPanel Grid.Row="0" Margin="0,0,0,4">
                             <TextBlock Text="FREQUENCY CALIBRATION" FontWeight="SemiBold" Foreground="#00FFAA" Margin="0,0,0,3" FontSize="14"/>
+                            <TextBlock Text="The radio must be in CW mode during FREQ CAL. This tab switches to CW; if the mode shows anything else, press CW before AUTO or CHECK."
+                                       FontSize="12" Foreground="#FFC000" TextWrapping="Wrap" Margin="0,0,0,4"/>
 
                             <!-- Larger buttons: LOOSE, AUTO, MANUAL, CHECK, RESET, STOP -->
                             <StackPanel Orientation="Horizontal" Margin="0,0,0,3">
@@ -1926,6 +1928,7 @@
                         <!-- Spectrum - visual only, no waterfall (reduced height to make room for larger controls) -->
                         <controls:SpectrumDisplayControl Grid.Row="1" 
                                                        SpectrumUpdate="{Binding CurrentSpectrum}" 
+                                                       ZoomFactor="{Binding SpectrumZoom}"
                                                        IsInteractive="False"
                                                        ShowWaterfall="False"
                                                        MinHeight="280"/>

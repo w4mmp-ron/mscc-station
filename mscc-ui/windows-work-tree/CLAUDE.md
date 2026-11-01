@@ -22,7 +22,7 @@ every pull. Newest first. Detailed write-ups for Ron go in `.mscc-coord/NOTE-FOR
 | trans | 3.154 | **QRP cal: power_cal.ini written only on the save flag (3.154)**, ALC rework (\|I+jQ\| envelope), ceiling 0.45 x drive for voice, **1.0 x drive for digital (3.152)**, voice ALC level meter, 6 kHz audio LPF before the SSB/AM mixer (LSB image fix), TX I/Q phase, TX I/Q from the radio (0x2C), **digital (VAC) key-up gate 200 ms + 10 ms fade (3.153)** |
 | recv | 3.151 | RX stream kept running at PTT (muted, not stopped), Ron's AM lowpass + DC block and noise blanker fix, **RX I/Q from the radio (0x2C)** |
 | ms-sdr | 3.189 | **QRP save step (0xA2 bit 15 = save; radio written only then), radio cal status to the client on 0x2D at connect / after each radio write (3.189)**, PTT poll `r == 1`, power cal in the radio (0xC8), CW + TUN stuck TX, 0xFE 0 release, 0x30 messages forwarded, firmware type in log, PPM cal start point, TX I/Q phase, **TX/RX I/Q stored in and loaded from the radio**, **TX I/Q from CW mode fix** |
-| client | 11.1.0 | **QRP CAL "Save this calibration?" Yes/No (Reject gone), lamps follow the radio's power mask (0x2D), I/Q APPLY renamed SAVE, Start / Save settings / POTENTIA tooltips, Full Power renamed AMP (11.1.0)**; TX I/Q PHASE slider; LSB/USB/DIG-U/AM filter buttons send the index (Ron's LSB note 10-31); cuts pushed once at connect |
+| client | 11.1.2 | **FREQ CAL: waits for the previous cal tab's restore before CW (USB bug fixed), "must be in CW" note, opens at 4× left-panel zoom and restores it on leave (11.1.2)**; **QRP CAL "Save this calibration?" Yes/No (Reject gone), lamps follow the radio's power mask (0x2D), I/Q APPLY renamed SAVE, Start / Save settings / POTENTIA tooltips, Full Power renamed AMP (11.1.0)**; TX I/Q PHASE slider; LSB/USB/DIG-U/AM filter buttons send the index (Ron's LSB note 10-31); cuts pushed once at connect |
 | FW MKII PTT | 3.242 | DAC soft mute on TUN/PTT release, mode-change drain |
 | FW Proficio Legacy | 1.236 | Ron's 1.235 (CW key delay + fades, 0xC8 cal store, SSB-after-CW fix) + TUN/PTT DAC fade and mode-change drain (= MKII 3.241/3.242). In `Proficio-Legacy/`; `Proficio-Legacy - Copy` kept as reference. Tested on a Legacy rig 10-31 |
 | FW Proficio MKII ATU | 4.243 | = MKII PTT 3.242 app code (cal store, CW key delay + fades, TUN/PTT DAC mute, mode drain) + Elecraft T1 port kept (`t1.c`, `T1_Main()` in the beater, `STATUS_ATU_0`). Schematic: `Key_Delay_Timer` (FF 16-bit, CW_Clock, period 10, continuous, reset tied 0) + `Key_Delay_isr` added on the CW Management sheet. Built 10-31, **tested on a radio 11-01**; T1 untested (no T1 here) |
@@ -188,17 +188,9 @@ every pull. Newest first. Detailed write-ups for Ron go in `.mscc-coord/NOTE-FOR
   amplitude (~124% power); 0.8 would cap at the calibrated power. Stew testing hot computer mic
   vs weak headset mic with the amp on 3.153 first; then a trans test build with 0.8 / 0.89
   (two constants: dsputils.c ALC_CEILING, udp_thread.c CMD_SET_ALC_MULTIPLIER 0.45f).
-- FREQ CAL tab starts in USB when entered straight from TX IQ (seen twice 11-01; the cal
-  fails outside CW). Cause found in the client (`MainWindow.xaml.cs` tab handler): FREQ CAL's
-  `EnterFreqCalTab()` runs first and sets CW, then `LeaveTxIqTab()` runs later in the same
-  handler and its fire-and-forget `RestoreOperatingStateAfterCalTabAsync()` puts the pre-TX-IQ
-  mode (USB) back, in the client and on the radio. Same from QRP CAL and AMP CAL. Fix later:
-  run the Leave handlers first and enter FREQ CAL after the restore has finished (so FREQ CAL
-  also saves the user's real mode). Also add the tab line "Radio must be in CW mode during
-  FREQ CAL". Workaround now: go to MAIN first, or press CW.
-- FREQ CAL tab: open it at full (4x) zoom, which most users want, and keep the zoom slider
-  active there so it can be changed; restore the user's zoom on leaving. At 1x the cal signal is
-  impossible to see.
+- FREQ CAL items **done in client 11.1.2** (11-01, tested): race fixed (EnterFreqCalTab awaits
+  `_calTabRestoreTask` from Leave TX IQ / QRP CAL / AMP CAL), CW note on the tab, left-panel
+  SPECTRUM ZOOM drives the FREQ CAL spectrum, set to 4× on entry and restored on leave.
 - Ron 11-01 notes, queued until the firmware tests are done (no code yet): QRP CAL lamps from
   the radio's valid masks (`NOTE-FOR-RON-CAL-STATUS-LAMPS-2026-11-01.md`), ALC one ceiling
   (0.89 on the Pi), recv NR spectral subtraction + new noise blanker ports, NR Off/Low/Med/High,
