@@ -42,7 +42,7 @@ uint8 Band_Main(void) {
     if (i != E_current_LO_freq) {
         i = E_current_LO_freq;
         // Watch for special IQ reversal frequencies
-        switch (i) {
+        /*switch (i) {
             case 33333333: Audio_IQ_Channels = 0; // 33.333333 MHz
                 break; 
             case 33444444: Audio_IQ_Channels = 1; // 33.444444 MHz
@@ -51,6 +51,7 @@ uint8 Band_Main(void) {
                 break;
             case 33666666: Audio_IQ_Channels = 3; // 33.666666 MHz
         } //End of switch (i)
+        */
         if (i > 55000000) T1_Band_Number = 12; // 55.000 MHz (This will not be set. Proficio doesn't go this high anyway)
         else if (i > 31000000) T1_Band_Number = 11; // 31.000 MHz (This will not be set. Proficio doesn't go this high anyway)
         else if (i > 26000000) T1_Band_Number = 10; // 26.000 MHz

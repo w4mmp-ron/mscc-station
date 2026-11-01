@@ -38,7 +38,12 @@
 
 
 
+// Ultimus MKII PTT = same code built by build-ultimus.py with ULTIMUS defined (major 8).
+#ifdef ULTIMUS
+#define FIRMWARE_VERSION_MAJOR 8
+#else
 #define FIRMWARE_VERSION_MAJOR 3
+#endif
 #define FIRMWARE_VERSION_MINOR 242
 #define FIRMWARE_VERSION ((((FIRMWARE_VERSION_MINOR) << 8) & 0xff00) | ((FIRMWARE_VERSION_MAJOR) & 0x00ff))
 #define EEPROM_PCB_VERSION_LOCATION 11

@@ -31,8 +31,6 @@
 #define CMD_SET_USRP1       0x50 // CMD_SET_USRP1
 #define CMD_GET_CW_KEY      0x51 // CMD_GET_CW_KEY
 #define CMD_SET_SI570       0x20 // CMD_SET_SI570 - Not Needed for Multus - Currently a NOOP 
-#define CMD_GET_PPM_INT     0x94 // Return INTEGER PART OF PPM
-#define CMD_GET_PPM_DEC     0x95 // Return DECIMAL PART OF PPM
 
 
 //These receive Data FROM the HOST
@@ -41,7 +39,8 @@
 #define CMD_SET_XTAL_INT    0x33 // CMD_SET_XTAL - Used for calibration 
 #define	CMD_SET_PPM		    0x35
 #define CMD_SET_XTAL_DEC    0x3A // CMD_SET_XTAL - Used for calibration 
-
+#define CMD_GET_PPM_INT     0x94 // Return INTEGER PART OF PPM
+#define CMD_GET_PPM_DEC     0x95 // Return DECIMAL PART OF PPM
 
 #define CMD_GET_POTENTIA_POWER 0x05
 #define CMD_GET_POTENTIA_TEMPERATURE 0x06
@@ -76,6 +75,8 @@
 /* PIC keyer CQ memory — match ms-sdr CMD_SET_KEYER_MEMORY.
  * Param: 0=play, 1=store begin, 2=store end, 0x20-0x7E=append ASCII char */
 #define CMD_SET_KEYER_MEMORY 0x9C
+/* Per-band calibration get / set / save, same as Black Pill 3.7 (basic-plus.h). */
+#define CMD_CALIBRATION      0xC8
 
 //Special Commands
 #define CMD_SET_TRANSCEIVER_CW_PITCH 0x90           

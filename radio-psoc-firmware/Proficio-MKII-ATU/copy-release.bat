@@ -7,6 +7,7 @@ set "ROOT=%ROOT:~0,-1%"
 set "BUILD=%ROOT%\Proficio-MKII-ATU.cydsn\DP8051\DP8051_Keil_951\Debug"
 set "DEST=%ROOT%\Release"
 
+REM Windows date stamp YYYYMMDD (locale-safe enough for en-US)
 set "STAMP=%date:~10,4%%date:~4,2%%date:~7,2%"
 
 echo copy-release: ROOT=%ROOT%

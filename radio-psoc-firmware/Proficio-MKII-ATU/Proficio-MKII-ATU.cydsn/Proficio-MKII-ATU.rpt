@@ -1,13 +1,13 @@
-Loading plugins phase: Elapsed time ==> 0s.225ms
+Loading plugins phase: Elapsed time ==> 0s.174ms
 <CYPRESSTAG name="CyDsfit arguments...">
-cydsfit arguments: -.fdsnotice -.fdswarpdepfile=warp_dependencies.txt -.fdselabdepfile=elab_dependencies.txt -.fdsbldfile=generated_files.txt -.fdsreffile=referenced_files.txt -p C:\Users\Ron\.grok\worktrees\Release-Proficio-MKII-ATU\Proficio-MKII-ATU.cydsn\Proficio-MKII-ATU.cyprj -d CY8C3246PVI-147 -s C:\Users\Ron\.grok\worktrees\Release-Proficio-MKII-ATU\Proficio-MKII-ATU.cydsn\Generated_Source\PSoC3 -- -yv2 -q10 -ygs -o2 -v3 -.fftcfgtype=BE
+cydsfit arguments: -.fdsnotice -.fdswarpdepfile=warp_dependencies.txt -.fdselabdepfile=elab_dependencies.txt -.fdsbldfile=generated_files.txt -.fdsreffile=referenced_files.txt -p C:\Users\n8vet\OneDrive\Documents\github\mscc-station\radio-psoc-firmware\Proficio-MKII-ATU\Proficio-MKII-ATU.cydsn\Proficio-MKII-ATU.cyprj -d CY8C3246PVI-147 -s C:\Users\n8vet\OneDrive\Documents\github\mscc-station\radio-psoc-firmware\Proficio-MKII-ATU\Proficio-MKII-ATU.cydsn\Generated_Source\PSoC3 -- -yv2 -q10 -ygs -o2 -v3 -.fftcfgtype=BE
 </CYPRESSTAG>
 <CYPRESSTAG name="Design elaboration results...">
 </CYPRESSTAG>
-Elaboration phase: Elapsed time ==> 2s.230ms
+Elaboration phase: Elapsed time ==> 2s.424ms
 <CYPRESSTAG name="HDL generation results...">
 </CYPRESSTAG>
-HDL generation phase: Elapsed time ==> 0s.087ms
+HDL generation phase: Elapsed time ==> 0s.061ms
 <CYPRESSTAG name="Synthesis results...">
 
      | | | | | | |
@@ -25,23 +25,23 @@ HDL generation phase: Elapsed time ==> 0s.087ms
 ======================================================================
 Compiling:  Proficio-MKII-ATU.v
 Program  :   C:\Program Files (x86)\Cypress\PSoC Creator\4.4\PSoC Creator\warp\bin\warp.exe
-Options  :    -yv2 -q10 -ygs -o2 -v3 -.fftcfgtype=BE -ya -.fftprj=C:\Users\Ron\.grok\worktrees\Release-Proficio-MKII-ATU\Proficio-MKII-ATU.cydsn\Proficio-MKII-ATU.cyprj -dcpsoc3 Proficio-MKII-ATU.v -verilog
+Options  :    -yv2 -q10 -ygs -o2 -v3 -.fftcfgtype=BE -ya -.fftprj=C:\Users\n8vet\OneDrive\Documents\github\mscc-station\radio-psoc-firmware\Proficio-MKII-ATU\Proficio-MKII-ATU.cydsn\Proficio-MKII-ATU.cyprj -dcpsoc3 Proficio-MKII-ATU.v -verilog
 ======================================================================
 
 ======================================================================
 Compiling:  Proficio-MKII-ATU.v
 Program  :   C:\Program Files (x86)\Cypress\PSoC Creator\4.4\PSoC Creator\warp\bin\warp.exe
-Options  :    -yv2 -q10 -ygs -o2 -v3 -.fftcfgtype=BE -ya -.fftprj=C:\Users\Ron\.grok\worktrees\Release-Proficio-MKII-ATU\Proficio-MKII-ATU.cydsn\Proficio-MKII-ATU.cyprj -dcpsoc3 Proficio-MKII-ATU.v -verilog
+Options  :    -yv2 -q10 -ygs -o2 -v3 -.fftcfgtype=BE -ya -.fftprj=C:\Users\n8vet\OneDrive\Documents\github\mscc-station\radio-psoc-firmware\Proficio-MKII-ATU\Proficio-MKII-ATU.cydsn\Proficio-MKII-ATU.cyprj -dcpsoc3 Proficio-MKII-ATU.v -verilog
 ======================================================================
 
 ======================================================================
 Compiling:  Proficio-MKII-ATU.v
 Program  :   vlogfe
-Options  :    -yv2 -q10 -ygs -o2 -v3 -.fftcfgtype=BE -ya -.fftprj=C:\Users\Ron\.grok\worktrees\Release-Proficio-MKII-ATU\Proficio-MKII-ATU.cydsn\Proficio-MKII-ATU.cyprj -dcpsoc3 -verilog Proficio-MKII-ATU.v
+Options  :    -yv2 -q10 -ygs -o2 -v3 -.fftcfgtype=BE -ya -.fftprj=C:\Users\n8vet\OneDrive\Documents\github\mscc-station\radio-psoc-firmware\Proficio-MKII-ATU\Proficio-MKII-ATU.cydsn\Proficio-MKII-ATU.cyprj -dcpsoc3 -verilog Proficio-MKII-ATU.v
 ======================================================================
 
 vlogfe V6.3 IR 41:  Verilog parser
-Sat Aug 22 15:31:28 2026
+Sat Oct 31 20:28:38 2026
 
 
 ======================================================================
@@ -51,7 +51,7 @@ Options  :    -yv2 -q10 Proficio-MKII-ATU.v
 ======================================================================
 
 vpp V6.3 IR 41:  Verilog Pre-Processor
-Sat Aug 22 15:31:28 2026
+Sat Oct 31 20:28:38 2026
 
 Flattening file 'C:\Program Files (x86)\Cypress\PSoC Creator\4.4\PSoC Creator\psoc\content\CyPrimitives\cyprimitives.cylib\CyStatusReg_v1_90\CyStatusReg_v1_90.v'
 Flattening file 'C:\Program Files (x86)\Cypress\PSoC Creator\4.4\PSoC Creator\warp\lib\common\cypress.v'
@@ -64,15 +64,16 @@ Flattening file 'C:\Program Files (x86)\Cypress\PSoC Creator\4.4\PSoC Creator\ps
 Flattening file 'C:\Program Files (x86)\Cypress\PSoC Creator\4.4\PSoC Creator\psoc\content\CyPrimitives\cyprimitives.cylib\or_v1_0\or_v1_0.v'
 Flattening file 'C:\Program Files (x86)\Cypress\PSoC Creator\4.4\PSoC Creator\psoc\content\CyComponentLibrary\CyComponentLibrary.cylib\bI2S_v2_70\bI2S_v2_70.v'
 Flattening file 'C:\Program Files (x86)\Cypress\PSoC Creator\4.4\PSoC Creator\warp\lib\common\cypress.v'
-Flattening file 'C:\Users\Ron\.grok\worktrees\Release-Proficio-MKII-ATU\Proficio-MKII-ATU.cydsn\FracN\FracN.v'
+Flattening file 'C:\Users\n8vet\OneDrive\Documents\github\mscc-station\radio-psoc-firmware\Proficio-MKII-ATU\Proficio-MKII-ATU.cydsn\FracN\FracN.v'
 Flattening file 'C:\Program Files (x86)\Cypress\PSoC Creator\4.4\PSoC Creator\warp\lib\common\cypress.v'
 Flattening file 'C:\Program Files (x86)\Cypress\PSoC Creator\4.4\PSoC Creator\psoc\content\CyPrimitives\cyprimitives.cylib\CyControlReg_v1_80\CyControlReg_v1_80.v'
 Flattening file 'C:\Program Files (x86)\Cypress\PSoC Creator\4.4\PSoC Creator\warp\lib\common\cypress.v'
-Flattening file 'C:\Users\Ron\.grok\worktrees\Release-Proficio-MKII-ATU\Proficio-MKII-ATU.cydsn\SyncSOF\SyncSOF.v'
+Flattening file 'C:\Users\n8vet\OneDrive\Documents\github\mscc-station\radio-psoc-firmware\Proficio-MKII-ATU\Proficio-MKII-ATU.cydsn\SyncSOF\SyncSOF.v'
 Flattening file 'C:\Program Files (x86)\Cypress\PSoC Creator\4.4\PSoC Creator\warp\lib\common\cypress.v'
 Flattening file 'C:\Program Files (x86)\Cypress\PSoC Creator\4.4\PSoC Creator\psoc\content\CyComponentLibrary\CyComponentLibrary.cylib\Debouncer_v1_0\Debouncer_v1_0.v'
 Flattening file 'C:\Program Files (x86)\Cypress\PSoC Creator\4.4\PSoC Creator\warp\lib\common\cypress.v'
 Flattening file 'C:\Program Files (x86)\Cypress\PSoC Creator\4.4\PSoC Creator\psoc\content\CyPrimitives\cyprimitives.cylib\and_v1_0\and_v1_0.v'
+Flattening file 'C:\Program Files (x86)\Cypress\PSoC Creator\4.4\PSoC Creator\psoc\content\CyPrimitives\cyprimitives.cylib\cy_constant_v1_0\cy_constant_v1_0.v'
 
 vpp:  No errors.
 
@@ -100,13 +101,13 @@ C:\Program Files (x86)\Cypress\PSoC Creator\4.4\PSoC Creator\psoc\content\CyComp
 C:\Program Files (x86)\Cypress\PSoC Creator\4.4\PSoC Creator\psoc\content\CyComponentLibrary\CyComponentLibrary.cylib\bI2S_v2_70\bI2S_v2_70.v (line 414, col 66):  Note: Substituting module 'cmp_vv_vv' for '>='.
 C:\Program Files (x86)\Cypress\PSoC Creator\4.4\PSoC Creator\psoc\content\CyComponentLibrary\CyComponentLibrary.cylib\bI2S_v2_70\bI2S_v2_70.v (line 415, col 63):  Note: Substituting module 'cmp_vv_vv' for '<='.
 C:\Program Files (x86)\Cypress\PSoC Creator\4.4\PSoC Creator\psoc\content\CyComponentLibrary\CyComponentLibrary.cylib\bI2S_v2_70\bI2S_v2_70.v (line 415, col 90):  Note: Substituting module 'cmp_vv_vv' for '>='.
-C:\Users\Ron\.grok\worktrees\Release-Proficio-MKII-ATU\Proficio-MKII-ATU.cydsn\FracN\FracN.v (line 39, col 38):  Note: Substituting module 'add_vv_vv' for '+'.
-C:\Users\Ron\.grok\worktrees\Release-Proficio-MKII-ATU\Proficio-MKII-ATU.cydsn\FracN\FracN.v (line 40, col 38):  Note: Substituting module 'add_vv_vv' for '+'.
-C:\Users\Ron\.grok\worktrees\Release-Proficio-MKII-ATU\Proficio-MKII-ATU.cydsn\FracN\FracN.v (line 58, col 46):  Note: Substituting module 'add_vv_vv' for '+'.
-C:\Users\Ron\.grok\worktrees\Release-Proficio-MKII-ATU\Proficio-MKII-ATU.cydsn\FracN\FracN.v (line 58, col 68):  Note: Substituting module 'add_vv_vv' for '+'.
-C:\Users\Ron\.grok\worktrees\Release-Proficio-MKII-ATU\Proficio-MKII-ATU.cydsn\FracN\FracN.v (line 58, col 81):  Note: Substituting module 'add_vv_vv' for '+'.
-C:\Users\Ron\.grok\worktrees\Release-Proficio-MKII-ATU\Proficio-MKII-ATU.cydsn\SyncSOF\SyncSOF.v (line 93, col 39):  Note: Substituting module 'add_vi_vv' for '+'.
-C:\Users\Ron\.grok\worktrees\Release-Proficio-MKII-ATU\Proficio-MKII-ATU.cydsn\SyncSOF\SyncSOF.v (line 101, col 34):  Note: Substituting module 'cmp_vv_vv' for '/='.
+C:\Users\n8vet\OneDrive\Documents\github\mscc-station\radio-psoc-firmware\Proficio-MKII-ATU\Proficio-MKII-ATU.cydsn\FracN\FracN.v (line 39, col 38):  Note: Substituting module 'add_vv_vv' for '+'.
+C:\Users\n8vet\OneDrive\Documents\github\mscc-station\radio-psoc-firmware\Proficio-MKII-ATU\Proficio-MKII-ATU.cydsn\FracN\FracN.v (line 40, col 38):  Note: Substituting module 'add_vv_vv' for '+'.
+C:\Users\n8vet\OneDrive\Documents\github\mscc-station\radio-psoc-firmware\Proficio-MKII-ATU\Proficio-MKII-ATU.cydsn\FracN\FracN.v (line 58, col 46):  Note: Substituting module 'add_vv_vv' for '+'.
+C:\Users\n8vet\OneDrive\Documents\github\mscc-station\radio-psoc-firmware\Proficio-MKII-ATU\Proficio-MKII-ATU.cydsn\FracN\FracN.v (line 58, col 68):  Note: Substituting module 'add_vv_vv' for '+'.
+C:\Users\n8vet\OneDrive\Documents\github\mscc-station\radio-psoc-firmware\Proficio-MKII-ATU\Proficio-MKII-ATU.cydsn\FracN\FracN.v (line 58, col 81):  Note: Substituting module 'add_vv_vv' for '+'.
+C:\Users\n8vet\OneDrive\Documents\github\mscc-station\radio-psoc-firmware\Proficio-MKII-ATU\Proficio-MKII-ATU.cydsn\SyncSOF\SyncSOF.v (line 93, col 39):  Note: Substituting module 'add_vi_vv' for '+'.
+C:\Users\n8vet\OneDrive\Documents\github\mscc-station\radio-psoc-firmware\Proficio-MKII-ATU\Proficio-MKII-ATU.cydsn\SyncSOF\SyncSOF.v (line 101, col 34):  Note: Substituting module 'cmp_vv_vv' for '/='.
 Linking 'C:\Program Files (x86)\Cypress\PSoC Creator\4.4\PSoC Creator\warp\lib\common\stdlogic\cy_psoc3pkg.vif'.
 Linking 'C:\Program Files (x86)\Cypress\PSoC Creator\4.4\PSoC Creator\warp\lib\common\stdlogic\cy_psoc3.vif'.
 
@@ -116,11 +117,11 @@ vlogfe:  No errors.
 ======================================================================
 Compiling:  Proficio-MKII-ATU.v
 Program  :   tovif
-Options  :    -yv2 -q10 -ygs -o2 -v3 -.fftcfgtype=BE -ya -.fftprj=C:\Users\Ron\.grok\worktrees\Release-Proficio-MKII-ATU\Proficio-MKII-ATU.cydsn\Proficio-MKII-ATU.cyprj -dcpsoc3 -verilog Proficio-MKII-ATU.v
+Options  :    -yv2 -q10 -ygs -o2 -v3 -.fftcfgtype=BE -ya -.fftprj=C:\Users\n8vet\OneDrive\Documents\github\mscc-station\radio-psoc-firmware\Proficio-MKII-ATU\Proficio-MKII-ATU.cydsn\Proficio-MKII-ATU.cyprj -dcpsoc3 -verilog Proficio-MKII-ATU.v
 ======================================================================
 
 tovif V6.3 IR 41:  High-level synthesis
-Sat Aug 22 15:31:28 2026
+Sat Oct 31 20:28:39 2026
 
 Linking 'C:\Program Files (x86)\Cypress\PSoC Creator\4.4\PSoC Creator\warp\lib\common\std.vhd'.
 Linking 'C:\Program Files (x86)\Cypress\PSoC Creator\4.4\PSoC Creator\warp\lib\common\cypress.vhd'.
@@ -131,22 +132,23 @@ Linking 'C:\Program Files (x86)\Cypress\PSoC Creator\4.4\PSoC Creator\warp\lib\c
 Linking 'C:\Program Files (x86)\Cypress\PSoC Creator\4.4\PSoC Creator\warp\lib\common\stdlogic\mod_cnst.vif'.
 Linking 'C:\Program Files (x86)\Cypress\PSoC Creator\4.4\PSoC Creator\warp\lib\common\stdlogic\mod_mthv.vif'.
 Linking 'C:\Program Files (x86)\Cypress\PSoC Creator\4.4\PSoC Creator\warp\lib\common\stdlogic\mod_genv.vif'.
-Linking 'C:\Users\Ron\.grok\worktrees\Release-Proficio-MKII-ATU\Proficio-MKII-ATU.cydsn\codegentemp\Proficio-MKII-ATU.ctl'.
+Linking 'C:\Users\n8vet\OneDrive\Documents\github\mscc-station\radio-psoc-firmware\Proficio-MKII-ATU\Proficio-MKII-ATU.cydsn\codegentemp\Proficio-MKII-ATU.ctl'.
 Linking 'C:\Program Files (x86)\Cypress\PSoC Creator\4.4\PSoC Creator\psoc\content\CyPrimitives\cyprimitives.cylib\CyStatusReg_v1_90\CyStatusReg_v1_90.v'.
 Linking 'C:\Program Files (x86)\Cypress\PSoC Creator\4.4\PSoC Creator\warp\lib\common\cypress.v'.
 Linking 'C:\Program Files (x86)\Cypress\PSoC Creator\4.4\PSoC Creator\warp\lib\common\cy_psoc3_inc.v'.
-Linking 'C:\Users\Ron\.grok\worktrees\Release-Proficio-MKII-ATU\Proficio-MKII-ATU.cydsn\codegentemp\Proficio-MKII-ATU.v'.
+Linking 'C:\Users\n8vet\OneDrive\Documents\github\mscc-station\radio-psoc-firmware\Proficio-MKII-ATU\Proficio-MKII-ATU.cydsn\codegentemp\Proficio-MKII-ATU.v'.
 Linking 'C:\Program Files (x86)\Cypress\PSoC Creator\4.4\PSoC Creator\psoc\content\CyPrimitives\cyprimitives.cylib\cy_virtualmux_v1_0\cy_virtualmux_v1_0.v'.
 Linking 'C:\Program Files (x86)\Cypress\PSoC Creator\4.4\PSoC Creator\psoc\content\CyPrimitives\cyprimitives.cylib\ZeroTerminal\ZeroTerminal.v'.
 Linking 'C:\Program Files (x86)\Cypress\PSoC Creator\4.4\PSoC Creator\psoc\content\CyPrimitives\cyprimitives.cylib\cy_sync_v1_0\cy_sync_v1_0.v'.
 Linking 'C:\Program Files (x86)\Cypress\PSoC Creator\4.4\PSoC Creator\psoc\content\CyPrimitives\cyprimitives.cylib\OneTerminal\OneTerminal.v'.
 Linking 'C:\Program Files (x86)\Cypress\PSoC Creator\4.4\PSoC Creator\psoc\content\CyPrimitives\cyprimitives.cylib\or_v1_0\or_v1_0.v'.
 Linking 'C:\Program Files (x86)\Cypress\PSoC Creator\4.4\PSoC Creator\psoc\content\CyComponentLibrary\CyComponentLibrary.cylib\bI2S_v2_70\bI2S_v2_70.v'.
-Linking 'C:\Users\Ron\.grok\worktrees\Release-Proficio-MKII-ATU\Proficio-MKII-ATU.cydsn\FracN\FracN.v'.
+Linking 'C:\Users\n8vet\OneDrive\Documents\github\mscc-station\radio-psoc-firmware\Proficio-MKII-ATU\Proficio-MKII-ATU.cydsn\FracN\FracN.v'.
 Linking 'C:\Program Files (x86)\Cypress\PSoC Creator\4.4\PSoC Creator\psoc\content\CyPrimitives\cyprimitives.cylib\CyControlReg_v1_80\CyControlReg_v1_80.v'.
-Linking 'C:\Users\Ron\.grok\worktrees\Release-Proficio-MKII-ATU\Proficio-MKII-ATU.cydsn\SyncSOF\SyncSOF.v'.
+Linking 'C:\Users\n8vet\OneDrive\Documents\github\mscc-station\radio-psoc-firmware\Proficio-MKII-ATU\Proficio-MKII-ATU.cydsn\SyncSOF\SyncSOF.v'.
 Linking 'C:\Program Files (x86)\Cypress\PSoC Creator\4.4\PSoC Creator\psoc\content\CyComponentLibrary\CyComponentLibrary.cylib\Debouncer_v1_0\Debouncer_v1_0.v'.
 Linking 'C:\Program Files (x86)\Cypress\PSoC Creator\4.4\PSoC Creator\psoc\content\CyPrimitives\cyprimitives.cylib\and_v1_0\and_v1_0.v'.
+Linking 'C:\Program Files (x86)\Cypress\PSoC Creator\4.4\PSoC Creator\psoc\content\CyPrimitives\cyprimitives.cylib\cy_constant_v1_0\cy_constant_v1_0.v'.
 Linking 'C:\Program Files (x86)\Cypress\PSoC Creator\4.4\PSoC Creator\warp\lib\common\stdlogic\cy_psoc3pkg.vif'.
 Linking 'C:\Program Files (x86)\Cypress\PSoC Creator\4.4\PSoC Creator\warp\lib\common\stdlogic\cy_psoc3.vif'.
 Linking 'C:\Program Files (x86)\Cypress\PSoC Creator\4.4\PSoC Creator\warp\lib\lcpsoc3\stdlogic\cpsoc3.vif'.
@@ -160,11 +162,11 @@ tovif:  No errors.
 ======================================================================
 Compiling:  Proficio-MKII-ATU.v
 Program  :   topld
-Options  :    -yv2 -q10 -ygs -o2 -v3 -.fftcfgtype=BE -ya -.fftprj=C:\Users\Ron\.grok\worktrees\Release-Proficio-MKII-ATU\Proficio-MKII-ATU.cydsn\Proficio-MKII-ATU.cyprj -dcpsoc3 -verilog Proficio-MKII-ATU.v
+Options  :    -yv2 -q10 -ygs -o2 -v3 -.fftcfgtype=BE -ya -.fftprj=C:\Users\n8vet\OneDrive\Documents\github\mscc-station\radio-psoc-firmware\Proficio-MKII-ATU\Proficio-MKII-ATU.cydsn\Proficio-MKII-ATU.cyprj -dcpsoc3 -verilog Proficio-MKII-ATU.v
 ======================================================================
 
 topld V6.3 IR 41:  Synthesis and optimization
-Sat Aug 22 15:31:29 2026
+Sat Oct 31 20:28:39 2026
 
 Linking 'C:\Program Files (x86)\Cypress\PSoC Creator\4.4\PSoC Creator\warp\lib\common\std.vhd'.
 Linking 'C:\Program Files (x86)\Cypress\PSoC Creator\4.4\PSoC Creator\warp\lib\common\cypress.vhd'.
@@ -175,22 +177,23 @@ Linking 'C:\Program Files (x86)\Cypress\PSoC Creator\4.4\PSoC Creator\warp\lib\c
 Linking 'C:\Program Files (x86)\Cypress\PSoC Creator\4.4\PSoC Creator\warp\lib\common\stdlogic\mod_cnst.vif'.
 Linking 'C:\Program Files (x86)\Cypress\PSoC Creator\4.4\PSoC Creator\warp\lib\common\stdlogic\mod_mthv.vif'.
 Linking 'C:\Program Files (x86)\Cypress\PSoC Creator\4.4\PSoC Creator\warp\lib\common\stdlogic\mod_genv.vif'.
-Linking 'C:\Users\Ron\.grok\worktrees\Release-Proficio-MKII-ATU\Proficio-MKII-ATU.cydsn\codegentemp\Proficio-MKII-ATU.ctl'.
+Linking 'C:\Users\n8vet\OneDrive\Documents\github\mscc-station\radio-psoc-firmware\Proficio-MKII-ATU\Proficio-MKII-ATU.cydsn\codegentemp\Proficio-MKII-ATU.ctl'.
 Linking 'C:\Program Files (x86)\Cypress\PSoC Creator\4.4\PSoC Creator\psoc\content\CyPrimitives\cyprimitives.cylib\CyStatusReg_v1_90\CyStatusReg_v1_90.v'.
 Linking 'C:\Program Files (x86)\Cypress\PSoC Creator\4.4\PSoC Creator\warp\lib\common\cypress.v'.
 Linking 'C:\Program Files (x86)\Cypress\PSoC Creator\4.4\PSoC Creator\warp\lib\common\cy_psoc3_inc.v'.
-Linking 'C:\Users\Ron\.grok\worktrees\Release-Proficio-MKII-ATU\Proficio-MKII-ATU.cydsn\codegentemp\Proficio-MKII-ATU.v'.
+Linking 'C:\Users\n8vet\OneDrive\Documents\github\mscc-station\radio-psoc-firmware\Proficio-MKII-ATU\Proficio-MKII-ATU.cydsn\codegentemp\Proficio-MKII-ATU.v'.
 Linking 'C:\Program Files (x86)\Cypress\PSoC Creator\4.4\PSoC Creator\psoc\content\CyPrimitives\cyprimitives.cylib\cy_virtualmux_v1_0\cy_virtualmux_v1_0.v'.
 Linking 'C:\Program Files (x86)\Cypress\PSoC Creator\4.4\PSoC Creator\psoc\content\CyPrimitives\cyprimitives.cylib\ZeroTerminal\ZeroTerminal.v'.
 Linking 'C:\Program Files (x86)\Cypress\PSoC Creator\4.4\PSoC Creator\psoc\content\CyPrimitives\cyprimitives.cylib\cy_sync_v1_0\cy_sync_v1_0.v'.
 Linking 'C:\Program Files (x86)\Cypress\PSoC Creator\4.4\PSoC Creator\psoc\content\CyPrimitives\cyprimitives.cylib\OneTerminal\OneTerminal.v'.
 Linking 'C:\Program Files (x86)\Cypress\PSoC Creator\4.4\PSoC Creator\psoc\content\CyPrimitives\cyprimitives.cylib\or_v1_0\or_v1_0.v'.
 Linking 'C:\Program Files (x86)\Cypress\PSoC Creator\4.4\PSoC Creator\psoc\content\CyComponentLibrary\CyComponentLibrary.cylib\bI2S_v2_70\bI2S_v2_70.v'.
-Linking 'C:\Users\Ron\.grok\worktrees\Release-Proficio-MKII-ATU\Proficio-MKII-ATU.cydsn\FracN\FracN.v'.
+Linking 'C:\Users\n8vet\OneDrive\Documents\github\mscc-station\radio-psoc-firmware\Proficio-MKII-ATU\Proficio-MKII-ATU.cydsn\FracN\FracN.v'.
 Linking 'C:\Program Files (x86)\Cypress\PSoC Creator\4.4\PSoC Creator\psoc\content\CyPrimitives\cyprimitives.cylib\CyControlReg_v1_80\CyControlReg_v1_80.v'.
-Linking 'C:\Users\Ron\.grok\worktrees\Release-Proficio-MKII-ATU\Proficio-MKII-ATU.cydsn\SyncSOF\SyncSOF.v'.
+Linking 'C:\Users\n8vet\OneDrive\Documents\github\mscc-station\radio-psoc-firmware\Proficio-MKII-ATU\Proficio-MKII-ATU.cydsn\SyncSOF\SyncSOF.v'.
 Linking 'C:\Program Files (x86)\Cypress\PSoC Creator\4.4\PSoC Creator\psoc\content\CyComponentLibrary\CyComponentLibrary.cylib\Debouncer_v1_0\Debouncer_v1_0.v'.
 Linking 'C:\Program Files (x86)\Cypress\PSoC Creator\4.4\PSoC Creator\psoc\content\CyPrimitives\cyprimitives.cylib\and_v1_0\and_v1_0.v'.
+Linking 'C:\Program Files (x86)\Cypress\PSoC Creator\4.4\PSoC Creator\psoc\content\CyPrimitives\cyprimitives.cylib\cy_constant_v1_0\cy_constant_v1_0.v'.
 Linking 'C:\Program Files (x86)\Cypress\PSoC Creator\4.4\PSoC Creator\warp\lib\common\stdlogic\cy_psoc3pkg.vif'.
 Linking 'C:\Program Files (x86)\Cypress\PSoC Creator\4.4\PSoC Creator\warp\lib\common\stdlogic\cy_psoc3.vif'.
 Linking 'C:\Program Files (x86)\Cypress\PSoC Creator\4.4\PSoC Creator\warp\lib\lcpsoc3\stdlogic\cpsoc3.vif'.
@@ -492,6 +495,7 @@ Detecting unused logic.
 	Net_8033
 	Net_8034
 	Net_8035
+	Net_8151
 
     Synthesized names
 	\FracN:add_vv_vv_MODGEN_5_7\
@@ -526,7 +530,7 @@ Detecting unused logic.
 	\SyncSOF:add_vi_vv_MODGEN_6_3\
 	\SyncSOF:add_vi_vv_MODGEN_6_2\
 
-Deleted 290 User equations/components.
+Deleted 291 User equations/components.
 Deleted 31 Synthesized equations/components.
 
 ------------------------------------------------------
@@ -675,6 +679,9 @@ Aliasing \CW_Hold_Timer:Net_260\ to zero
 Aliasing \CW_Hold_Timer:Net_102\ to \USBFS:tmpOE__VBUS_net_0\
 Aliasing \CW_Hold_Control:rst\ to zero
 Aliasing tmpOE__ATU_1_net_0 to \USBFS:tmpOE__VBUS_net_0\
+Aliasing \Key_Delay_Timer:Net_260\ to zero
+Aliasing Net_8152 to zero
+Aliasing \Key_Delay_Timer:Net_102\ to \USBFS:tmpOE__VBUS_net_0\
 Aliasing \I2S:bI2S:tx_swap_done_reg\\D\ to zero
 Aliasing \I2S:bI2S:d0_load\\D\ to zero
 Aliasing \I2S:bI2S:rx_f1_load\\D\ to zero
@@ -1501,61 +1508,66 @@ Removing Rhs of wire Net_7924[2088] = \CW_Hold_Control:control_out_0\[2089]
 Removing Rhs of wire Net_7924[2088] = \CW_Hold_Control:control_0\[2112]
 Removing Lhs of wire tmpOE__ATU_0_net_0[2116] = Net_8146[1702]
 Removing Lhs of wire tmpOE__ATU_1_net_0[2121] = one[33]
-Removing Lhs of wire \I2S:bI2S:tx_swap_done_reg\\D\[2130] = zero[20]
-Removing Lhs of wire \I2S:bI2S:d0_load\\D\[2131] = zero[20]
-Removing Lhs of wire \I2S:bI2S:tx_int_reg\\D\[2135] = \I2S:bI2S:tx_int_out_0\[245]
-Removing Lhs of wire \I2S:bI2S:rx_f1_load\\D\[2141] = zero[20]
-Removing Lhs of wire \I2S:bI2S:rx_int_reg\\D\[2144] = \I2S:bI2S:rx_int_out_0\[300]
-Removing Lhs of wire \FracN:pOut_6\\D\[2146] = \FracN:MODULE_5:g1:a0:s_6\[1531]
-Removing Lhs of wire \FracN:pOut_5\\D\[2147] = \FracN:MODULE_5:g1:a0:s_5\[1532]
-Removing Lhs of wire \FracN:pOut_4\\D\[2148] = \FracN:MODULE_5:g1:a0:s_4\[1533]
-Removing Lhs of wire \FracN:pOut_3\\D\[2149] = \FracN:MODULE_5:g1:a0:s_3\[1534]
-Removing Lhs of wire \FracN:pOut_2\\D\[2150] = \FracN:MODULE_5:g1:a0:s_2\[1535]
-Removing Lhs of wire \FracN:pOut_1\\D\[2151] = \FracN:MODULE_5:g1:a0:s_1\[1536]
-Removing Lhs of wire \FracN:pOut_0\\D\[2152] = \FracN:MODULE_5:g1:a0:s_0\[1537]
-Removing Lhs of wire \FracN:acc1_13\\D\[2153] = \FracN:adder1_13\[504]
-Removing Lhs of wire \FracN:acc1_12\\D\[2154] = \FracN:adder1_12\[506]
-Removing Lhs of wire \FracN:acc1_11\\D\[2155] = \FracN:adder1_11\[508]
-Removing Lhs of wire \FracN:acc1_10\\D\[2156] = \FracN:adder1_10\[510]
-Removing Lhs of wire \FracN:acc1_9\\D\[2157] = \FracN:adder1_9\[512]
-Removing Lhs of wire \FracN:acc1_8\\D\[2158] = \FracN:adder1_8\[514]
-Removing Lhs of wire \FracN:acc1_7\\D\[2159] = \FracN:adder1_7\[516]
-Removing Lhs of wire \FracN:acc1_6\\D\[2160] = \FracN:adder1_6\[518]
-Removing Lhs of wire \FracN:acc1_5\\D\[2161] = \FracN:adder1_5\[520]
-Removing Lhs of wire \FracN:acc1_4\\D\[2162] = \FracN:adder1_4\[522]
-Removing Lhs of wire \FracN:acc1_3\\D\[2163] = \FracN:adder1_3\[524]
-Removing Lhs of wire \FracN:acc1_2\\D\[2164] = \FracN:adder1_2\[526]
-Removing Lhs of wire \FracN:acc1_1\\D\[2165] = \FracN:adder1_1\[528]
-Removing Lhs of wire \FracN:acc1_0\\D\[2166] = \FracN:adder1_0\[530]
-Removing Lhs of wire \FracN:acc2_13\\D\[2167] = \FracN:adder2_13\[534]
-Removing Lhs of wire \FracN:acc2_12\\D\[2168] = \FracN:adder2_12\[536]
-Removing Lhs of wire \FracN:acc2_11\\D\[2169] = \FracN:adder2_11\[538]
-Removing Lhs of wire \FracN:acc2_10\\D\[2170] = \FracN:adder2_10\[540]
-Removing Lhs of wire \FracN:acc2_9\\D\[2171] = \FracN:adder2_9\[542]
-Removing Lhs of wire \FracN:acc2_8\\D\[2172] = \FracN:adder2_8\[544]
-Removing Lhs of wire \FracN:acc2_7\\D\[2173] = \FracN:adder2_7\[546]
-Removing Lhs of wire \FracN:acc2_6\\D\[2174] = \FracN:adder2_6\[548]
-Removing Lhs of wire \FracN:acc2_5\\D\[2175] = \FracN:adder2_5\[550]
-Removing Lhs of wire \FracN:acc2_4\\D\[2176] = \FracN:adder2_4\[552]
-Removing Lhs of wire \FracN:acc2_3\\D\[2177] = \FracN:adder2_3\[554]
-Removing Lhs of wire \FracN:acc2_2\\D\[2178] = \FracN:adder2_2\[556]
-Removing Lhs of wire \FracN:acc2_1\\D\[2179] = \FracN:adder2_1\[558]
-Removing Lhs of wire \FracN:acc2_0\\D\[2180] = \FracN:adder2_0\[560]
-Removing Lhs of wire \FracN:minus1\\D\[2181] = \FracN:adder2_14\[532]
-Removing Lhs of wire \SyncSOF:frame_pos_ready\\D\[2197] = \SyncSOF:MODULE_7:g1:a0:xneq\[1991]
-Removing Lhs of wire \Debouncer_1:DEBOUNCER[0]:d_sync_0\\D\[2202] = Net_8071[1685]
-Removing Lhs of wire \Debouncer_1:DEBOUNCER[0]:d_sync_1\\D\[2203] = Key_wire_0[443]
-Removing Lhs of wire Net_8014D[2204] = zero[20]
-Removing Lhs of wire Net_8012D[2205] = zero[20]
-Removing Lhs of wire Net_8013D[2206] = zero[20]
-Removing Lhs of wire \Debouncer_2:DEBOUNCER[0]:d_sync_0\\D\[2207] = Net_8068[456]
-Removing Lhs of wire \Debouncer_2:DEBOUNCER[0]:d_sync_1\\D\[2208] = Key_wire_1[441]
-Removing Lhs of wire Net_8017D[2209] = zero[20]
-Removing Lhs of wire Net_8015D[2210] = zero[20]
-Removing Lhs of wire Net_8016D[2211] = zero[20]
+Removing Lhs of wire \Key_Delay_Timer:Net_260\[2127] = zero[20]
+Removing Lhs of wire \Key_Delay_Timer:Net_266\[2128] = one[33]
+Removing Lhs of wire Net_8152[2129] = zero[20]
+Removing Rhs of wire Net_8153[2134] = \Key_Delay_Timer:Net_51\[2130]
+Removing Lhs of wire \Key_Delay_Timer:Net_102\[2135] = one[33]
+Removing Lhs of wire \I2S:bI2S:tx_swap_done_reg\\D\[2141] = zero[20]
+Removing Lhs of wire \I2S:bI2S:d0_load\\D\[2142] = zero[20]
+Removing Lhs of wire \I2S:bI2S:tx_int_reg\\D\[2146] = \I2S:bI2S:tx_int_out_0\[245]
+Removing Lhs of wire \I2S:bI2S:rx_f1_load\\D\[2152] = zero[20]
+Removing Lhs of wire \I2S:bI2S:rx_int_reg\\D\[2155] = \I2S:bI2S:rx_int_out_0\[300]
+Removing Lhs of wire \FracN:pOut_6\\D\[2157] = \FracN:MODULE_5:g1:a0:s_6\[1531]
+Removing Lhs of wire \FracN:pOut_5\\D\[2158] = \FracN:MODULE_5:g1:a0:s_5\[1532]
+Removing Lhs of wire \FracN:pOut_4\\D\[2159] = \FracN:MODULE_5:g1:a0:s_4\[1533]
+Removing Lhs of wire \FracN:pOut_3\\D\[2160] = \FracN:MODULE_5:g1:a0:s_3\[1534]
+Removing Lhs of wire \FracN:pOut_2\\D\[2161] = \FracN:MODULE_5:g1:a0:s_2\[1535]
+Removing Lhs of wire \FracN:pOut_1\\D\[2162] = \FracN:MODULE_5:g1:a0:s_1\[1536]
+Removing Lhs of wire \FracN:pOut_0\\D\[2163] = \FracN:MODULE_5:g1:a0:s_0\[1537]
+Removing Lhs of wire \FracN:acc1_13\\D\[2164] = \FracN:adder1_13\[504]
+Removing Lhs of wire \FracN:acc1_12\\D\[2165] = \FracN:adder1_12\[506]
+Removing Lhs of wire \FracN:acc1_11\\D\[2166] = \FracN:adder1_11\[508]
+Removing Lhs of wire \FracN:acc1_10\\D\[2167] = \FracN:adder1_10\[510]
+Removing Lhs of wire \FracN:acc1_9\\D\[2168] = \FracN:adder1_9\[512]
+Removing Lhs of wire \FracN:acc1_8\\D\[2169] = \FracN:adder1_8\[514]
+Removing Lhs of wire \FracN:acc1_7\\D\[2170] = \FracN:adder1_7\[516]
+Removing Lhs of wire \FracN:acc1_6\\D\[2171] = \FracN:adder1_6\[518]
+Removing Lhs of wire \FracN:acc1_5\\D\[2172] = \FracN:adder1_5\[520]
+Removing Lhs of wire \FracN:acc1_4\\D\[2173] = \FracN:adder1_4\[522]
+Removing Lhs of wire \FracN:acc1_3\\D\[2174] = \FracN:adder1_3\[524]
+Removing Lhs of wire \FracN:acc1_2\\D\[2175] = \FracN:adder1_2\[526]
+Removing Lhs of wire \FracN:acc1_1\\D\[2176] = \FracN:adder1_1\[528]
+Removing Lhs of wire \FracN:acc1_0\\D\[2177] = \FracN:adder1_0\[530]
+Removing Lhs of wire \FracN:acc2_13\\D\[2178] = \FracN:adder2_13\[534]
+Removing Lhs of wire \FracN:acc2_12\\D\[2179] = \FracN:adder2_12\[536]
+Removing Lhs of wire \FracN:acc2_11\\D\[2180] = \FracN:adder2_11\[538]
+Removing Lhs of wire \FracN:acc2_10\\D\[2181] = \FracN:adder2_10\[540]
+Removing Lhs of wire \FracN:acc2_9\\D\[2182] = \FracN:adder2_9\[542]
+Removing Lhs of wire \FracN:acc2_8\\D\[2183] = \FracN:adder2_8\[544]
+Removing Lhs of wire \FracN:acc2_7\\D\[2184] = \FracN:adder2_7\[546]
+Removing Lhs of wire \FracN:acc2_6\\D\[2185] = \FracN:adder2_6\[548]
+Removing Lhs of wire \FracN:acc2_5\\D\[2186] = \FracN:adder2_5\[550]
+Removing Lhs of wire \FracN:acc2_4\\D\[2187] = \FracN:adder2_4\[552]
+Removing Lhs of wire \FracN:acc2_3\\D\[2188] = \FracN:adder2_3\[554]
+Removing Lhs of wire \FracN:acc2_2\\D\[2189] = \FracN:adder2_2\[556]
+Removing Lhs of wire \FracN:acc2_1\\D\[2190] = \FracN:adder2_1\[558]
+Removing Lhs of wire \FracN:acc2_0\\D\[2191] = \FracN:adder2_0\[560]
+Removing Lhs of wire \FracN:minus1\\D\[2192] = \FracN:adder2_14\[532]
+Removing Lhs of wire \SyncSOF:frame_pos_ready\\D\[2208] = \SyncSOF:MODULE_7:g1:a0:xneq\[1991]
+Removing Lhs of wire \Debouncer_1:DEBOUNCER[0]:d_sync_0\\D\[2213] = Net_8071[1685]
+Removing Lhs of wire \Debouncer_1:DEBOUNCER[0]:d_sync_1\\D\[2214] = Key_wire_0[443]
+Removing Lhs of wire Net_8014D[2215] = zero[20]
+Removing Lhs of wire Net_8012D[2216] = zero[20]
+Removing Lhs of wire Net_8013D[2217] = zero[20]
+Removing Lhs of wire \Debouncer_2:DEBOUNCER[0]:d_sync_0\\D\[2218] = Net_8068[456]
+Removing Lhs of wire \Debouncer_2:DEBOUNCER[0]:d_sync_1\\D\[2219] = Key_wire_1[441]
+Removing Lhs of wire Net_8017D[2220] = zero[20]
+Removing Lhs of wire Net_8015D[2221] = zero[20]
+Removing Lhs of wire Net_8016D[2222] = zero[20]
 
 ------------------------------------------------------
-Aliased 0 equations, 866 wires.
+Aliased 0 equations, 871 wires.
 ------------------------------------------------------
 
 ----------------------------------------------------------
@@ -1773,16 +1785,16 @@ topld:  No errors.
 
 CYPRESS_DIR    : C:\Program Files (x86)\Cypress\PSoC Creator\4.4\PSoC Creator\warp
 Warp Program   : C:\Program Files (x86)\Cypress\PSoC Creator\4.4\PSoC Creator\warp\bin\warp.exe
-Warp Arguments : -yv2 -q10 -ygs -o2 -v3 -.fftcfgtype=BE -ya -.fftprj=C:\Users\Ron\.grok\worktrees\Release-Proficio-MKII-ATU\Proficio-MKII-ATU.cydsn\Proficio-MKII-ATU.cyprj -dcpsoc3 Proficio-MKII-ATU.v -verilog
+Warp Arguments : -yv2 -q10 -ygs -o2 -v3 -.fftcfgtype=BE -ya -.fftprj=C:\Users\n8vet\OneDrive\Documents\github\mscc-station\radio-psoc-firmware\Proficio-MKII-ATU\Proficio-MKII-ATU.cydsn\Proficio-MKII-ATU.cyprj -dcpsoc3 Proficio-MKII-ATU.v -verilog
 </CYPRESSTAG>
-Warp synthesis phase: Elapsed time ==> 0s.946ms
+Warp synthesis phase: Elapsed time ==> 1s.488ms
 <CYPRESSTAG name="Fitter results...">
 <CYPRESSTAG name="Fitter startup details...">
-cyp3fit: V4.4.0.80, Family: PSoC3, Started at: Saturday, 22 August 2026 15:31:29
-Options: -yv2 -q10 -ygs -o2 -v3 -.fftcfgtype=BE -ya -.fftprj=C:\Users\Ron\.grok\worktrees\Release-Proficio-MKII-ATU\Proficio-MKII-ATU.cydsn\Proficio-MKII-ATU.cyprj -d CY8C3246PVI-147 Proficio-MKII-ATU.v -verilog
+cyp3fit: V4.4.0.80, Family: PSoC3, Started at: Saturday, 31 October 2026 20:28:40
+Options: -yv2 -q10 -ygs -o2 -v3 -.fftcfgtype=BE -ya -.fftprj=C:\Users\n8vet\OneDrive\Documents\github\mscc-station\radio-psoc-firmware\Proficio-MKII-ATU\Proficio-MKII-ATU.cydsn\Proficio-MKII-ATU.cyprj -d CY8C3246PVI-147 Proficio-MKII-ATU.v -verilog
 </CYPRESSTAG>
 <CYPRESSTAG name="Design parsing">
-Design parsing phase: Elapsed time ==> 0s.090ms
+Design parsing phase: Elapsed time ==> 0s.036ms
 </CYPRESSTAG>
 <CYPRESSTAG name="Tech Mapping">
 <CYPRESSTAG name="Initial Mapping" icon="FILE_RPT_TECHM">
@@ -1896,7 +1908,7 @@ Assigning clock My_BUS_CLK to clock BUS_CLK because it is a pass-through
 <CYPRESSTAG name="Global Clock Selection" icon="FILE_RPT_TECHM">
     Digital Clock 0: Automatic-assigning  clock 'FRAC_CLK'. Fanout=37, Signal=Net_7639
     Digital Clock 1: Automatic-assigning  clock 'I2S_CLK'. Fanout=1, Signal=Net_7968
-    Digital Clock 2: Automatic-assigning  clock 'CW_Clock'. Fanout=3, Signal=Net_8086
+    Digital Clock 2: Automatic-assigning  clock 'CW_Clock'. Fanout=4, Signal=Net_8086
     Digital Clock 3: Automatic-assigning  clock 'BEAT_CLK'. Fanout=1, Signal=Net_7684
     Digital Clock 4: Automatic-assigning  clock 'Debounce_Clock'. Fanout=2, Signal=Net_8123
 </CYPRESSTAG>
@@ -3728,7 +3740,7 @@ Design Equations
         !(
             0
         );
-        Output = __ONE__ (fanout=1)
+        Output = __ONE__ (fanout=2)
 
     MacroCell: Name=\I2S:bI2S:reset\, Mode=(D-Register)
         Total # of inputs        : 1
@@ -5033,6 +5045,15 @@ Design Equations
             int_type = "10"
             is_nmi = 0
         }
+
+    interrupt: Name =Key_Delay_isr
+        PORT MAP (
+            interrupt => Net_8153 );
+        Properties:
+        {
+            int_type = "10"
+            is_nmi = 0
+        }
     </CYPRESSTAG>
 </CYPRESSTAG>
 <CYPRESSTAG name="Technology mapping summary" expanded>
@@ -5046,13 +5067,13 @@ Resource Type                 : Used : Free :  Max :  % Used
 Digital Clocks                :    5 :    3 :    8 : 62.50 %
 Analog Clocks                 :    0 :    4 :    4 :  0.00 %
 CapSense Buffers              :    0 :    2 :    2 :  0.00 %
-Interrupts                    :   10 :   22 :   32 : 31.25 %
+Interrupts                    :   11 :   21 :   32 : 34.38 %
 IO                            :   30 :    1 :   31 : 96.77 %
 Segment LCD                   :    0 :    1 :    1 :  0.00 %
 I2C                           :    1 :    0 :    1 : 100.00 %
 USB                           :    1 :    0 :    1 : 100.00 %
 DMA Channels                  :    8 :   16 :   24 : 33.33 %
-Timer                         :    1 :    3 :    4 : 25.00 %
+Timer                         :    2 :    2 :    4 : 50.00 %
 UDB                           :      :      :      :        
   Macrocells                  :   89 :  103 :  192 : 46.35 %
   Unique P-terms              :  162 :  222 :  384 : 42.19 %
@@ -5072,8 +5093,8 @@ LPF                           :    0 :    2 :    2 :  0.00 %
 DAC                           :      :      :      :        
   VIDAC                       :    0 :    1 :    1 :  0.00 %
 </CYPRESSTAG>
-Technology Mapping: Elapsed time ==> 0s.344ms
-Tech Mapping phase: Elapsed time ==> 0s.490ms
+Technology Mapping: Elapsed time ==> 0s.252ms
+Tech Mapping phase: Elapsed time ==> 0s.330ms
 </CYPRESSTAG>
 <CYPRESSTAG name="Analog Placement">
 Initial Analog Placement Results:
@@ -5102,10 +5123,10 @@ IO_7@[IOP=(15)][IoId=(7)] : \USBFS:Dm(0)\ (fixed)
 IO_6@[IOP=(15)][IoId=(6)] : \USBFS:Dp(0)\ (fixed)
 IO_7@[IOP=(1)][IoId=(7)] : \USBFS:VBUS(0)\ (fixed)
 USB[0]@[FFB(USB,0)] : \USBFS:USB\
-Analog Placement phase: Elapsed time ==> 0s.091ms
+Analog Placement phase: Elapsed time ==> 0s.025ms
 </CYPRESSTAG>
 <CYPRESSTAG name="Analog Routing">
-Analog Routing phase: Elapsed time ==> 0s.002ms
+Analog Routing phase: Elapsed time ==> 0s.001ms
 </CYPRESSTAG>
 <CYPRESSTAG name="Analog Code Generation">
 ============ Analog Final Answer Routes ============
@@ -5120,7 +5141,7 @@ Dump of CyP35AnalogRoutingResultsDB
 IsVddaHalfUsedForComp = False
 IsVddaHalfUsedForSar0 = False
 IsVddaHalfUsedForSar1 = False
-Analog Code Generation phase: Elapsed time ==> 0s.023ms
+Analog Code Generation phase: Elapsed time ==> 0s.009ms
 </CYPRESSTAG>
 <CYPRESSTAG name="Digital Placement">
 <CYPRESSTAG name="PLD Packing">
@@ -5131,27 +5152,27 @@ PLD Packing Summary
 ------------------------------------------------------------
             Resource Type : Used : Free :  Max :  % Used
     ====================================================
-                     PLDs :   37 :   11 :   48 :  77.08%
+                     PLDs :   33 :   15 :   48 :  68.75%
 
 <CYPRESSTAG name="PLD Statistics">
 
         PLD Resource Type :     Average/LAB
     =======================================
-                   Inputs :            5.68
-                   Pterms :            4.89
-               Macrocells :            2.41
+                   Inputs :            5.55
+                   Pterms :            5.39
+               Macrocells :            2.70
 </CYPRESSTAG>
 <CYPRESSTAG name="Packed PLD Contents">
 Packed PLD Contents not displayed at this verbose level.</CYPRESSTAG>
 </CYPRESSTAG>
-PLD Packing: Elapsed time ==> 0s.026ms
+PLD Packing: Elapsed time ==> 0s.001ms
 </CYPRESSTAG>
 <CYPRESSTAG name="Partitioning">
 <CYPRESSTAG name="Initial Partitioning Summary">
 Initial Partitioning Summary not displayed at this verbose level.</CYPRESSTAG>
 <CYPRESSTAG name="Final Partitioning Summary">
 Final Partitioning Summary not displayed at this verbose level.</CYPRESSTAG>
-Partitioning: Elapsed time ==> 0s.250ms
+Partitioning: Elapsed time ==> 0s.137ms
 </CYPRESSTAG>
 <CYPRESSTAG name="Final Placement Summary">
 
@@ -5161,19 +5182,64 @@ Final Placement Summary
 
        Resource Type :      Count : Avg Inputs : Avg Outputs
     ========================================================
-                 UDB :         19 :       9.53 :       4.68
+                 UDB :         17 :      10.00 :       5.24
 <CYPRESSTAG name="Final Placement Details">
 <CYPRESSTAG name="Component Details">
 
 ------------------------------------------------------------
 Component Placement Details
 ------------------------------------------------------------
-UDB [UDB=(0,0)] contents:
-LAB@[UDB=(0,0)][LB=0] #macrocells=1, #inputs=9, #pterms=5
+UDB [UDB=(0,0)] is empty.
+UDB [UDB=(0,1)] contents:
+LAB@[UDB=(0,1)][LB=0] #macrocells=1, #inputs=3, #pterms=2
 {
     [McSlotId=0]: (empty)
     [McSlotId=1]: (empty)
-    [McSlotId=2]:     MacroCell: Name=\I2S:bI2S:rx_state_0\, Mode=(D-Register) @ [UDB=(0,0)][LB=0][MC=2]
+    [McSlotId=2]: (empty)
+    [McSlotId=3]:     MacroCell: Name=\SyncSOF:frame_pos_hi_3\, Mode=(D-Register) @ [UDB=(0,1)][LB=0][MC=3]
+        Total # of inputs        : 3
+        Total # of product terms : 2
+        List of special equations: 
+            Clock  = (ClockBlock_BUS_CLK) => Global
+            Clock Enable: True
+        Main Equation            : 2 pterms
+        (
+              \SyncSOF:clockcount2_5\ * \SyncSOF:MODULE_7:g1:a0:xneq\
+            + \SyncSOF:frame_pos_hi_3\ * !\SyncSOF:MODULE_7:g1:a0:xneq\
+        );
+        Output = \SyncSOF:frame_pos_hi_3\ (fanout=2)
+        Properties               : 
+        {
+        }
+}
+
+LAB@[UDB=(0,1)][LB=1] #macrocells=3, #inputs=9, #pterms=8
+{
+    [McSlotId=0]:     MacroCell: Name=\I2S:bI2S:rx_state_1\, Mode=(D-Register) @ [UDB=(0,1)][LB=1][MC=0]
+        Total # of inputs        : 9
+        Total # of product terms : 3
+        List of special equations: 
+            Clock  = (Net_7968) => Global
+            Clock Enable: True
+        Main Equation            : 3 pterms
+        (
+              !\I2S:bI2S:count_5\ * \I2S:bI2S:count_3\ * \I2S:bI2S:count_2\ * 
+              !\I2S:bI2S:count_1\ * !\I2S:bI2S:rx_state_2\ * 
+              !\I2S:bI2S:rx_state_1\ * !\I2S:bI2S:rx_state_0\ * 
+              \I2S:bI2S:rxenable\
+            + !\I2S:bI2S:count_4\ * \I2S:bI2S:count_3\ * \I2S:bI2S:count_2\ * 
+              !\I2S:bI2S:count_1\ * !\I2S:bI2S:rx_state_2\ * 
+              !\I2S:bI2S:rx_state_1\ * !\I2S:bI2S:rx_state_0\ * 
+              \I2S:bI2S:rxenable\
+            + \I2S:bI2S:rx_state_2\ * !\I2S:bI2S:rx_state_1\ * 
+              \I2S:bI2S:rx_state_0\ * \I2S:bI2S:rxenable\
+        );
+        Output = \I2S:bI2S:rx_state_1\ (fanout=5)
+        Properties               : 
+        {
+        }
+
+    [McSlotId=1]:     MacroCell: Name=\I2S:bI2S:rx_state_0\, Mode=(D-Register) @ [UDB=(0,1)][LB=1][MC=1]
         Total # of inputs        : 9
         Total # of product terms : 5
         List of special equations: 
@@ -5198,475 +5264,7 @@ LAB@[UDB=(0,0)][LB=0] #macrocells=1, #inputs=9, #pterms=5
         {
         }
 
-    [McSlotId=3]: (empty)
-}
-
-LAB@[UDB=(0,0)][LB=1] #macrocells=1, #inputs=9, #pterms=3
-{
-    [McSlotId=0]:     MacroCell: Name=\I2S:bI2S:rx_state_1\, Mode=(D-Register) @ [UDB=(0,0)][LB=1][MC=0]
-        Total # of inputs        : 9
-        Total # of product terms : 3
-        List of special equations: 
-            Clock  = (Net_7968) => Global
-            Clock Enable: True
-        Main Equation            : 3 pterms
-        (
-              !\I2S:bI2S:count_5\ * \I2S:bI2S:count_3\ * \I2S:bI2S:count_2\ * 
-              !\I2S:bI2S:count_1\ * !\I2S:bI2S:rx_state_2\ * 
-              !\I2S:bI2S:rx_state_1\ * !\I2S:bI2S:rx_state_0\ * 
-              \I2S:bI2S:rxenable\
-            + !\I2S:bI2S:count_4\ * \I2S:bI2S:count_3\ * \I2S:bI2S:count_2\ * 
-              !\I2S:bI2S:count_1\ * !\I2S:bI2S:rx_state_2\ * 
-              !\I2S:bI2S:rx_state_1\ * !\I2S:bI2S:rx_state_0\ * 
-              \I2S:bI2S:rxenable\
-            + \I2S:bI2S:rx_state_2\ * !\I2S:bI2S:rx_state_1\ * 
-              \I2S:bI2S:rx_state_0\ * \I2S:bI2S:rxenable\
-        );
-        Output = \I2S:bI2S:rx_state_1\ (fanout=5)
-        Properties               : 
-        {
-        }
-
-    [McSlotId=1]: (empty)
-    [McSlotId=2]: (empty)
-    [McSlotId=3]: (empty)
-}
-
-statusicell: Name =\USBFS:EP8_DMA_Done_SR:sts_intr:sts_reg\
-    PORT MAP (
-        clock => ClockBlock_BUS_CLK ,
-        status_1 => \USBFS:Net_2040_7\ ,
-        status_0 => \USBFS:EPs_1_to_7_dma_complete\ ,
-        interrupt => \USBFS:Net_2032\ );
-    Properties:
-    {
-        cy_force_order = 1
-        cy_int_mask = "0000011"
-        cy_md_select = "0000011"
-    }
-    Clock Polarity: Active High
-    Clock Enable: True
-
-UDB [UDB=(0,1)] contents:
-LAB@[UDB=(0,1)][LB=0] #macrocells=4, #inputs=8, #pterms=8
-{
-    [McSlotId=0]:     MacroCell: Name=\FracN:adder1_8\, Mode=(D-Register, Carry-Chain-Continue (next @ [UDB=(0,1)][LB=0][MC=1])) @ [UDB=(0,1)][LB=0][MC=0]
-        Total # of inputs        : 2
-        Total # of product terms : 2
-        List of special equations: 
-            Clock  = (Net_7639) => Global
-            Cpt0 Equation   = (\FracN:frac_8\ * \FracN:acc1_8\)
-            Cpt1 Equation   = (!\FracN:frac_8\ * !\FracN:acc1_8\)
-            Clock Enable: True
-        Main Equation            : 2 pterms
-        (
-              !\FracN:frac_8\ * !\FracN:acc1_8\
-            + \FracN:frac_8\ * \FracN:acc1_8\
-        );
-        Cin = \FracN:MODULE_1:g1:a0:g0:u0:gof:g_arith(0):ga:cadd_7\
-        Cout = \FracN:MODULE_1:g1:a0:g0:u0:gof:g_arith(0):ga:cadd_8\
-        Output = \FracN:acc1_8\ (fanout=6)
-        Properties               : 
-        {
-        }
-
-    [McSlotId=1]:     MacroCell: Name=\FracN:adder1_9\, Mode=(D-Register, Carry-Chain-Continue (next @ [UDB=(0,1)][LB=0][MC=2])) @ [UDB=(0,1)][LB=0][MC=1]
-        Total # of inputs        : 2
-        Total # of product terms : 2
-        List of special equations: 
-            Clock  = (Net_7639) => Global
-            Cpt0 Equation   = (\FracN:frac_9\ * \FracN:acc1_9\)
-            Cpt1 Equation   = (!\FracN:frac_9\ * !\FracN:acc1_9\)
-            Clock Enable: True
-        Main Equation            : 2 pterms
-        (
-              !\FracN:frac_9\ * !\FracN:acc1_9\
-            + \FracN:frac_9\ * \FracN:acc1_9\
-        );
-        Cin = \FracN:MODULE_1:g1:a0:g0:u0:gof:g_arith(0):ga:cadd_8\
-        Cout = \FracN:MODULE_1:g1:a0:g0:u0:gof:g_arith(0):ga:cadd_9\
-        Output = \FracN:acc1_9\ (fanout=6)
-        Properties               : 
-        {
-        }
-
-    [McSlotId=2]:     MacroCell: Name=\FracN:adder1_10\, Mode=(D-Register, Carry-Chain-Continue (next @ [UDB=(0,1)][LB=0][MC=3])) @ [UDB=(0,1)][LB=0][MC=2]
-        Total # of inputs        : 2
-        Total # of product terms : 2
-        List of special equations: 
-            Clock  = (Net_7639) => Global
-            Cpt0 Equation   = (\FracN:frac_10\ * \FracN:acc1_10\)
-            Cpt1 Equation   = (!\FracN:frac_10\ * !\FracN:acc1_10\)
-            Clock Enable: True
-        Main Equation            : 2 pterms
-        (
-              !\FracN:frac_10\ * !\FracN:acc1_10\
-            + \FracN:frac_10\ * \FracN:acc1_10\
-        );
-        Cin = \FracN:MODULE_1:g1:a0:g0:u0:gof:g_arith(0):ga:cadd_9\
-        Cout = \FracN:MODULE_1:g1:a0:g0:u0:gof:g_arith(0):ga:cadd_10\
-        Output = \FracN:acc1_10\ (fanout=6)
-        Properties               : 
-        {
-        }
-
-    [McSlotId=3]:     MacroCell: Name=\FracN:adder1_11\, Mode=(D-Register, Carry-Chain-Continue (next @ [UDB=(0,1)][LB=1][MC=0])) @ [UDB=(0,1)][LB=0][MC=3]
-        Total # of inputs        : 2
-        Total # of product terms : 2
-        List of special equations: 
-            Clock  = (Net_7639) => Global
-            Cpt0 Equation   = (\FracN:frac_11\ * \FracN:acc1_11\)
-            Cpt1 Equation   = (!\FracN:frac_11\ * !\FracN:acc1_11\)
-            Clock Enable: True
-        Main Equation            : 2 pterms
-        (
-              !\FracN:frac_11\ * !\FracN:acc1_11\
-            + \FracN:frac_11\ * \FracN:acc1_11\
-        );
-        Cin = \FracN:MODULE_1:g1:a0:g0:u0:gof:g_arith(0):ga:cadd_10\
-        Cout = \FracN:MODULE_1:g1:a0:g0:u0:gof:g_arith(0):ga:cadd_11\
-        Output = \FracN:acc1_11\ (fanout=6)
-        Properties               : 
-        {
-        }
-}
-
-LAB@[UDB=(0,1)][LB=1] #macrocells=3, #inputs=4, #pterms=6
-{
-    [McSlotId=0]:     MacroCell: Name=\FracN:adder1_12\, Mode=(D-Register, Carry-Chain-Continue (next @ [UDB=(0,1)][LB=1][MC=1])) @ [UDB=(0,1)][LB=1][MC=0]
-        Total # of inputs        : 2
-        Total # of product terms : 2
-        List of special equations: 
-            Clock  = (Net_7639) => Global
-            Cpt0 Equation   = (\FracN:frac_12\ * \FracN:acc1_12\)
-            Cpt1 Equation   = (!\FracN:frac_12\ * !\FracN:acc1_12\)
-            Clock Enable: True
-        Main Equation            : 2 pterms
-        (
-              !\FracN:frac_12\ * !\FracN:acc1_12\
-            + \FracN:frac_12\ * \FracN:acc1_12\
-        );
-        Cin = \FracN:MODULE_1:g1:a0:g0:u0:gof:g_arith(0):ga:cadd_11\
-        Cout = \FracN:MODULE_1:g1:a0:g0:u0:gof:g_arith(0):ga:cadd_12\
-        Output = \FracN:acc1_12\ (fanout=6)
-        Properties               : 
-        {
-        }
-
-    [McSlotId=1]:     MacroCell: Name=\FracN:adder1_13\, Mode=(D-Register, Carry-Chain-Continue (next @ [UDB=(0,1)][LB=1][MC=2])) @ [UDB=(0,1)][LB=1][MC=1]
-        Total # of inputs        : 2
-        Total # of product terms : 2
-        List of special equations: 
-            Clock  = (Net_7639) => Global
-            Cpt0 Equation   = (\FracN:frac_13\ * \FracN:acc1_13\)
-            Cpt1 Equation   = (!\FracN:frac_13\ * !\FracN:acc1_13\)
-            Clock Enable: True
-        Main Equation            : 2 pterms
-        (
-              !\FracN:frac_13\ * !\FracN:acc1_13\
-            + \FracN:frac_13\ * \FracN:acc1_13\
-        );
-        Cin = \FracN:MODULE_1:g1:a0:g0:u0:gof:g_arith(0):ga:cadd_12\
-        Cout = \FracN:MODULE_1:g1:a0:g0:u0:gof:g_arith(0):ga:cadd_13\
-        Output = \FracN:acc1_13\ (fanout=6)
-        Properties               : 
-        {
-        }
-
-    [McSlotId=2]:     MacroCell: Name=\FracN:adder1_14\, Mode=(Combinatorial, Carry-Chain-Last) @ [UDB=(0,1)][LB=1][MC=2]
-        Total # of inputs        : 0
-        Total # of product terms : 2
-        List of special equations: 
-            Cpt0 Equation   = (0)
-            Cpt1 Equation   = (1)
-            Clock Enable: True
-        Main Equation            : 1 pterm
-        (
-            1
-        );
-        Cin = \FracN:MODULE_1:g1:a0:g0:u0:gof:g_arith(0):ga:cadd_13\
-        Cout = \FracN:adder1_14_cout\
-        Output = \FracN:adder1_14\ (fanout=7)
-        Properties               : 
-        {
-        }
-
-    [McSlotId=3]: (empty)
-}
-
-controlcell: Name =\FracN:FRAC_HI\
-    PORT MAP (
-        control_7 => \FracN:fHigh_7\ ,
-        control_6 => \FracN:fHigh_6\ ,
-        control_5 => \FracN:frac_13\ ,
-        control_4 => \FracN:frac_12\ ,
-        control_3 => \FracN:frac_11\ ,
-        control_2 => \FracN:frac_10\ ,
-        control_1 => \FracN:frac_9\ ,
-        control_0 => \FracN:frac_8\ );
-    Properties:
-    {
-        cy_ctrl_mode_0 = "00000000"
-        cy_ctrl_mode_1 = "00000000"
-        cy_ext_reset = 0
-        cy_force_order = 1
-        cy_init_value = "00111101"
-    }
-    Clock Enable: True
-
-synccell: Name =\USBFS:nrqSync:genblk1[7]:INST\
-    PORT MAP (
-        clock => ClockBlock_BUS_CLK ,
-        out => \USBFS:Net_2040_7\ );
-    Properties:
-    {
-    }
-    Clock Polarity: Active High
-    Clock Enable: True
-
-UDB [UDB=(0,2)] contents:
-LAB@[UDB=(0,2)][LB=0] #macrocells=4, #inputs=8, #pterms=8
-{
-    [McSlotId=0]:     MacroCell: Name=\FracN:adder2_8\, Mode=(D-Register, Carry-Chain-Continue (next @ [UDB=(0,2)][LB=0][MC=1])) @ [UDB=(0,2)][LB=0][MC=0]
-        Total # of inputs        : 2
-        Total # of product terms : 2
-        List of special equations: 
-            Clock  = (Net_7639) => Global
-            Cpt0 Equation   = (\FracN:acc1_8\ * \FracN:acc2_8\)
-            Cpt1 Equation   = (!\FracN:acc1_8\ * !\FracN:acc2_8\)
-            Clock Enable: True
-        Main Equation            : 2 pterms
-        (
-              !\FracN:acc1_8\ * !\FracN:acc2_8\
-            + \FracN:acc1_8\ * \FracN:acc2_8\
-        );
-        Cin = \FracN:MODULE_2:g1:a0:g0:u0:gof:g_arith(0):ga:cadd_7\
-        Cout = \FracN:MODULE_2:g1:a0:g0:u0:gof:g_arith(0):ga:cadd_8\
-        Output = \FracN:acc2_8\ (fanout=3)
-        Properties               : 
-        {
-        }
-
-    [McSlotId=1]:     MacroCell: Name=\FracN:adder2_9\, Mode=(D-Register, Carry-Chain-Continue (next @ [UDB=(0,2)][LB=0][MC=2])) @ [UDB=(0,2)][LB=0][MC=1]
-        Total # of inputs        : 2
-        Total # of product terms : 2
-        List of special equations: 
-            Clock  = (Net_7639) => Global
-            Cpt0 Equation   = (\FracN:acc1_9\ * \FracN:acc2_9\)
-            Cpt1 Equation   = (!\FracN:acc1_9\ * !\FracN:acc2_9\)
-            Clock Enable: True
-        Main Equation            : 2 pterms
-        (
-              !\FracN:acc1_9\ * !\FracN:acc2_9\
-            + \FracN:acc1_9\ * \FracN:acc2_9\
-        );
-        Cin = \FracN:MODULE_2:g1:a0:g0:u0:gof:g_arith(0):ga:cadd_8\
-        Cout = \FracN:MODULE_2:g1:a0:g0:u0:gof:g_arith(0):ga:cadd_9\
-        Output = \FracN:acc2_9\ (fanout=3)
-        Properties               : 
-        {
-        }
-
-    [McSlotId=2]:     MacroCell: Name=\FracN:adder2_10\, Mode=(D-Register, Carry-Chain-Continue (next @ [UDB=(0,2)][LB=0][MC=3])) @ [UDB=(0,2)][LB=0][MC=2]
-        Total # of inputs        : 2
-        Total # of product terms : 2
-        List of special equations: 
-            Clock  = (Net_7639) => Global
-            Cpt0 Equation   = (\FracN:acc1_10\ * \FracN:acc2_10\)
-            Cpt1 Equation   = (!\FracN:acc1_10\ * !\FracN:acc2_10\)
-            Clock Enable: True
-        Main Equation            : 2 pterms
-        (
-              !\FracN:acc1_10\ * !\FracN:acc2_10\
-            + \FracN:acc1_10\ * \FracN:acc2_10\
-        );
-        Cin = \FracN:MODULE_2:g1:a0:g0:u0:gof:g_arith(0):ga:cadd_9\
-        Cout = \FracN:MODULE_2:g1:a0:g0:u0:gof:g_arith(0):ga:cadd_10\
-        Output = \FracN:acc2_10\ (fanout=3)
-        Properties               : 
-        {
-        }
-
-    [McSlotId=3]:     MacroCell: Name=\FracN:adder2_11\, Mode=(D-Register, Carry-Chain-Continue (next @ [UDB=(0,2)][LB=1][MC=0])) @ [UDB=(0,2)][LB=0][MC=3]
-        Total # of inputs        : 2
-        Total # of product terms : 2
-        List of special equations: 
-            Clock  = (Net_7639) => Global
-            Cpt0 Equation   = (\FracN:acc1_11\ * \FracN:acc2_11\)
-            Cpt1 Equation   = (!\FracN:acc1_11\ * !\FracN:acc2_11\)
-            Clock Enable: True
-        Main Equation            : 2 pterms
-        (
-              !\FracN:acc1_11\ * !\FracN:acc2_11\
-            + \FracN:acc1_11\ * \FracN:acc2_11\
-        );
-        Cin = \FracN:MODULE_2:g1:a0:g0:u0:gof:g_arith(0):ga:cadd_10\
-        Cout = \FracN:MODULE_2:g1:a0:g0:u0:gof:g_arith(0):ga:cadd_11\
-        Output = \FracN:acc2_11\ (fanout=3)
-        Properties               : 
-        {
-        }
-}
-
-LAB@[UDB=(0,2)][LB=1] #macrocells=3, #inputs=4, #pterms=6
-{
-    [McSlotId=0]:     MacroCell: Name=\FracN:adder2_12\, Mode=(D-Register, Carry-Chain-Continue (next @ [UDB=(0,2)][LB=1][MC=1])) @ [UDB=(0,2)][LB=1][MC=0]
-        Total # of inputs        : 2
-        Total # of product terms : 2
-        List of special equations: 
-            Clock  = (Net_7639) => Global
-            Cpt0 Equation   = (\FracN:acc1_12\ * \FracN:acc2_12\)
-            Cpt1 Equation   = (!\FracN:acc1_12\ * !\FracN:acc2_12\)
-            Clock Enable: True
-        Main Equation            : 2 pterms
-        (
-              !\FracN:acc1_12\ * !\FracN:acc2_12\
-            + \FracN:acc1_12\ * \FracN:acc2_12\
-        );
-        Cin = \FracN:MODULE_2:g1:a0:g0:u0:gof:g_arith(0):ga:cadd_11\
-        Cout = \FracN:MODULE_2:g1:a0:g0:u0:gof:g_arith(0):ga:cadd_12\
-        Output = \FracN:acc2_12\ (fanout=3)
-        Properties               : 
-        {
-        }
-
-    [McSlotId=1]:     MacroCell: Name=\FracN:adder2_13\, Mode=(D-Register, Carry-Chain-Continue (next @ [UDB=(0,2)][LB=1][MC=2])) @ [UDB=(0,2)][LB=1][MC=1]
-        Total # of inputs        : 2
-        Total # of product terms : 2
-        List of special equations: 
-            Clock  = (Net_7639) => Global
-            Cpt0 Equation   = (\FracN:acc1_13\ * \FracN:acc2_13\)
-            Cpt1 Equation   = (!\FracN:acc1_13\ * !\FracN:acc2_13\)
-            Clock Enable: True
-        Main Equation            : 2 pterms
-        (
-              !\FracN:acc1_13\ * !\FracN:acc2_13\
-            + \FracN:acc1_13\ * \FracN:acc2_13\
-        );
-        Cin = \FracN:MODULE_2:g1:a0:g0:u0:gof:g_arith(0):ga:cadd_12\
-        Cout = \FracN:MODULE_2:g1:a0:g0:u0:gof:g_arith(0):ga:cadd_13\
-        Output = \FracN:acc2_13\ (fanout=3)
-        Properties               : 
-        {
-        }
-
-    [McSlotId=2]:     MacroCell: Name=\FracN:adder2_14\, Mode=(Combinatorial, Carry-Chain-Last) @ [UDB=(0,2)][LB=1][MC=2]
-        Total # of inputs        : 0
-        Total # of product terms : 2
-        List of special equations: 
-            Cpt0 Equation   = (0)
-            Cpt1 Equation   = (1)
-            Clock Enable: True
-        Main Equation            : 1 pterm
-        (
-            1
-        );
-        Cin = \FracN:MODULE_2:g1:a0:g0:u0:gof:g_arith(0):ga:cadd_13\
-        Cout = \FracN:adder2_14_cout\
-        Output = \FracN:adder2_14\ (fanout=4)
-        Properties               : 
-        {
-        }
-
-    [McSlotId=3]: (empty)
-}
-
-count7cell: Name =\I2S:bI2S:BitCounter\
-    PORT MAP (
-        clock => Net_7968 ,
-        enable => \I2S:bI2S:ctrl_reg_out_2\ ,
-        count_6 => \I2S:bI2S:count_6\ ,
-        count_5 => \I2S:bI2S:count_5\ ,
-        count_4 => \I2S:bI2S:count_4\ ,
-        count_3 => \I2S:bI2S:count_3\ ,
-        count_2 => \I2S:bI2S:count_2\ ,
-        count_1 => \I2S:bI2S:count_1\ ,
-        count_0 => Net_7720 );
-    Properties:
-    {
-        cy_alt_mode = 0
-        cy_init_value = "0000000"
-        cy_period = "1111111"
-        cy_route_en = 1
-        cy_route_ld = 0
-    }
-    Clock Polarity: Active High
-    Clock Enable: True
-
-UDB [UDB=(0,3)] is empty.
-UDB [UDB=(0,4)] is empty.
-UDB [UDB=(0,5)] is empty.
-UDB [UDB=(1,0)] contents:
-LAB@[UDB=(1,0)][LB=0] #macrocells=1, #inputs=1, #pterms=1
-{
-    [McSlotId=0]:     MacroCell: Name=\FracN:minus1\, Mode=(D-Register) @ [UDB=(1,0)][LB=0][MC=0]
-        Total # of inputs        : 1
-        Total # of product terms : 1
-        List of special equations: 
-            Clock  = (Net_7639) => Global
-            Clock Enable: True
-        Main Equation            : 1 pterm
-        (
-              \FracN:adder2_14\
-        );
-        Output = \FracN:minus1\ (fanout=21)
-        Properties               : 
-        {
-        }
-
-    [McSlotId=1]: (empty)
-    [McSlotId=2]: (empty)
-    [McSlotId=3]: (empty)
-}
-
-LAB@[UDB=(1,0)][LB=1] #macrocells=4, #inputs=7, #pterms=5
-{
-    [McSlotId=0]:     MacroCell: Name=\I2S:bI2S:rx_overflow_0\, Mode=(Combinatorial) @ [UDB=(1,0)][LB=1][MC=0]
-        Total # of inputs        : 2
-        Total # of product terms : 1
-            Clock Enable: True
-        Main Equation            : 1 pterm
-        (
-              \I2S:bI2S:rx_f0_load\ * \I2S:bI2S:rx_f0_full_0\
-        );
-        Output = \I2S:bI2S:rx_overflow_0\ (fanout=1)
-        Properties               : 
-        {
-        }
-
-    [McSlotId=1]:     MacroCell: Name=\I2S:bI2S:rx_f0_load\, Mode=(D-Register) @ [UDB=(1,0)][LB=1][MC=1]
-        Total # of inputs        : 3
-        Total # of product terms : 2
-        List of special equations: 
-            Clock  = (Net_7968) => Global
-            Clock Enable: True
-        Main Equation            : 2 pterms
-        (
-              \I2S:bI2S:rx_state_2\ * !\I2S:bI2S:rx_state_1\ * 
-              \I2S:bI2S:rx_state_0\
-            + \I2S:bI2S:rx_state_1\ * !\I2S:bI2S:rx_state_0\
-        );
-        Output = \I2S:bI2S:rx_f0_load\ (fanout=3)
-        Properties               : 
-        {
-        }
-
-    [McSlotId=2]:     MacroCell: Name=\I2S:bI2S:tx_state_2\, Mode=(D-Register) @ [UDB=(1,0)][LB=1][MC=2]
-        Total # of inputs        : 1
-        Total # of product terms : 1
-        List of special equations: 
-            Clock  = (Net_7968) => Global
-            Clock Enable: True
-        Main Equation            : 1 pterm
-        (
-              !\I2S:bI2S:txenable\
-        );
-        Output = \I2S:bI2S:tx_state_2\ (fanout=5)
-        Properties               : 
-        {
-        }
-
-    [McSlotId=3]:     MacroCell: Name=\I2S:bI2S:rx_state_2\, Mode=(D-Register) @ [UDB=(1,0)][LB=1][MC=3]
+    [McSlotId=2]:     MacroCell: Name=\I2S:bI2S:rx_state_2\, Mode=(D-Register) @ [UDB=(0,1)][LB=1][MC=2]
         Total # of inputs        : 4
         Total # of product terms : 1
         List of special equations: 
@@ -5681,6 +5279,8 @@ LAB@[UDB=(1,0)][LB=1] #macrocells=4, #inputs=7, #pterms=5
         Properties               : 
         {
         }
+
+    [McSlotId=3]: (empty)
 }
 
 datapathcell: Name =\I2S:bI2S:Rx:CH[0]:dpRx:u0\
@@ -5757,10 +5357,361 @@ controlcell: Name =\I2S:bI2S:CtlReg\
     Clock Polarity: Active High
     Clock Enable: True
 
-UDB [UDB=(1,1)] contents:
-LAB@[UDB=(1,1)][LB=0] #macrocells=4, #inputs=8, #pterms=8
+UDB [UDB=(0,2)] contents:
+LAB@[UDB=(0,2)][LB=0] #macrocells=1, #inputs=11, #pterms=8
 {
-    [McSlotId=0]:     MacroCell: Name=\FracN:adder1_0\, Mode=(D-Register, Carry-Chain-Start (next @ [UDB=(1,1)][LB=0][MC=1])) @ [UDB=(1,1)][LB=0][MC=0]
+    [McSlotId=0]:     MacroCell: Name=\I2S:bI2S:rxenable\, Mode=(D-Register) @ [UDB=(0,2)][LB=0][MC=0]
+        Total # of inputs        : 11
+        Total # of product terms : 8
+        List of special equations: 
+            Clock  = (Net_7968) => Global
+            Clock Enable: True
+        Main Equation            : 8 pterms
+        (
+              !Net_7720 * \I2S:bI2S:count_6\ * \I2S:bI2S:count_5\ * 
+              \I2S:bI2S:count_4\ * \I2S:bI2S:count_3\ * \I2S:bI2S:count_2\ * 
+              !\I2S:bI2S:count_1\ * !\I2S:bI2S:rx_overflow_sticky\ * 
+              \I2S:bI2S:rxenable\
+            + Net_7720 * \I2S:bI2S:ctrl_reg_out_1\ * \I2S:bI2S:count_6\ * 
+              \I2S:bI2S:count_5\ * \I2S:bI2S:count_4\ * \I2S:bI2S:count_3\ * 
+              \I2S:bI2S:count_2\ * !\I2S:bI2S:count_1\ * 
+              !\I2S:bI2S:rx_overflow_sticky\
+            + \I2S:bI2S:ctrl_reg_out_2\ * !\I2S:bI2S:count_6\ * 
+              !\I2S:bI2S:rx_overflow_sticky\ * \I2S:bI2S:rxenable\
+            + \I2S:bI2S:ctrl_reg_out_2\ * !\I2S:bI2S:count_5\ * 
+              !\I2S:bI2S:rx_overflow_sticky\ * \I2S:bI2S:rxenable\
+            + \I2S:bI2S:ctrl_reg_out_2\ * !\I2S:bI2S:count_4\ * 
+              !\I2S:bI2S:rx_overflow_sticky\ * \I2S:bI2S:rxenable\
+            + \I2S:bI2S:ctrl_reg_out_2\ * !\I2S:bI2S:count_3\ * 
+              !\I2S:bI2S:rx_overflow_sticky\ * \I2S:bI2S:rxenable\
+            + \I2S:bI2S:ctrl_reg_out_2\ * !\I2S:bI2S:count_2\ * 
+              !\I2S:bI2S:rx_overflow_sticky\ * \I2S:bI2S:rxenable\
+            + \I2S:bI2S:ctrl_reg_out_2\ * \I2S:bI2S:count_1\ * 
+              !\I2S:bI2S:rx_overflow_sticky\ * \I2S:bI2S:rxenable\
+        );
+        Output = \I2S:bI2S:rxenable\ (fanout=4)
+        Properties               : 
+        {
+        }
+
+    [McSlotId=1]: (empty)
+    [McSlotId=2]: (empty)
+    [McSlotId=3]: (empty)
+}
+
+LAB@[UDB=(0,2)][LB=1] #macrocells=3, #inputs=7, #pterms=5
+{
+    [McSlotId=0]:     MacroCell: Name=\I2S:bI2S:rx_overflow_sticky\, Mode=(D-Register) @ [UDB=(0,2)][LB=1][MC=0]
+        Total # of inputs        : 4
+        Total # of product terms : 2
+        List of special equations: 
+            Clock  = (Net_7968) => Global
+            Clock Enable: True
+        Main Equation            : 2 pterms
+        (
+              \I2S:bI2S:ctrl_reg_out_1\ * \I2S:bI2S:rx_f0_load\ * 
+              \I2S:bI2S:rx_f0_full_0\
+            + \I2S:bI2S:ctrl_reg_out_1\ * \I2S:bI2S:rx_overflow_sticky\
+        );
+        Output = \I2S:bI2S:rx_overflow_sticky\ (fanout=2)
+        Properties               : 
+        {
+        }
+
+    [McSlotId=1]:     MacroCell: Name=\I2S:bI2S:rx_f0_load\, Mode=(D-Register) @ [UDB=(0,2)][LB=1][MC=1]
+        Total # of inputs        : 3
+        Total # of product terms : 2
+        List of special equations: 
+            Clock  = (Net_7968) => Global
+            Clock Enable: True
+        Main Equation            : 2 pterms
+        (
+              \I2S:bI2S:rx_state_2\ * !\I2S:bI2S:rx_state_1\ * 
+              \I2S:bI2S:rx_state_0\
+            + \I2S:bI2S:rx_state_1\ * !\I2S:bI2S:rx_state_0\
+        );
+        Output = \I2S:bI2S:rx_f0_load\ (fanout=3)
+        Properties               : 
+        {
+        }
+
+    [McSlotId=2]:     MacroCell: Name=\I2S:bI2S:rx_overflow_0\, Mode=(Combinatorial) @ [UDB=(0,2)][LB=1][MC=2]
+        Total # of inputs        : 2
+        Total # of product terms : 1
+            Clock Enable: True
+        Main Equation            : 1 pterm
+        (
+              \I2S:bI2S:rx_f0_load\ * \I2S:bI2S:rx_f0_full_0\
+        );
+        Output = \I2S:bI2S:rx_overflow_0\ (fanout=1)
+        Properties               : 
+        {
+        }
+
+    [McSlotId=3]: (empty)
+}
+
+count7cell: Name =\I2S:bI2S:BitCounter\
+    PORT MAP (
+        clock => Net_7968 ,
+        enable => \I2S:bI2S:ctrl_reg_out_2\ ,
+        count_6 => \I2S:bI2S:count_6\ ,
+        count_5 => \I2S:bI2S:count_5\ ,
+        count_4 => \I2S:bI2S:count_4\ ,
+        count_3 => \I2S:bI2S:count_3\ ,
+        count_2 => \I2S:bI2S:count_2\ ,
+        count_1 => \I2S:bI2S:count_1\ ,
+        count_0 => Net_7720 );
+    Properties:
+    {
+        cy_alt_mode = 0
+        cy_init_value = "0000000"
+        cy_period = "1111111"
+        cy_route_en = 1
+        cy_route_ld = 0
+    }
+    Clock Polarity: Active High
+    Clock Enable: True
+
+UDB [UDB=(0,3)] is empty.
+UDB [UDB=(0,4)] is empty.
+UDB [UDB=(0,5)] is empty.
+UDB [UDB=(1,0)] is empty.
+UDB [UDB=(1,1)] contents:
+LAB@[UDB=(1,1)][LB=0] #macrocells=3, #inputs=9, #pterms=8
+{
+    [McSlotId=0]:     MacroCell: Name=\I2S:bI2S:tx_state_0\, Mode=(D-Register) @ [UDB=(1,1)][LB=0][MC=0]
+        Total # of inputs        : 9
+        Total # of product terms : 4
+        List of special equations: 
+            Clock  = (Net_7968) => Global
+            Clock Enable: True
+        Main Equation            : 4 pterms
+        (
+              \I2S:bI2S:count_5\ * \I2S:bI2S:count_3\ * \I2S:bI2S:count_2\ * 
+              \I2S:bI2S:count_1\ * !\I2S:bI2S:tx_state_2\ * 
+              !\I2S:bI2S:tx_state_1\ * !\I2S:bI2S:tx_state_0\
+            + \I2S:bI2S:count_4\ * \I2S:bI2S:count_3\ * \I2S:bI2S:count_2\ * 
+              \I2S:bI2S:count_1\ * !\I2S:bI2S:tx_state_2\ * 
+              !\I2S:bI2S:tx_state_1\ * !\I2S:bI2S:tx_state_0\
+            + !\I2S:bI2S:txenable\
+            + \I2S:bI2S:tx_state_2\ * \I2S:bI2S:tx_state_1\ * 
+              \I2S:bI2S:tx_state_0\
+        );
+        Output = \I2S:bI2S:tx_state_0\ (fanout=5)
+        Properties               : 
+        {
+        }
+
+    [McSlotId=1]:     MacroCell: Name=\I2S:bI2S:tx_state_1\, Mode=(D-Register) @ [UDB=(1,1)][LB=0][MC=1]
+        Total # of inputs        : 9
+        Total # of product terms : 5
+        List of special equations: 
+            Clock  = (Net_7968) => Global
+            Clock Enable: True
+        Main Equation            : 5 pterms
+        (
+              !\I2S:bI2S:count_5\ * !\I2S:bI2S:count_4\ * 
+              !\I2S:bI2S:tx_state_2\ * !\I2S:bI2S:tx_state_1\ * 
+              !\I2S:bI2S:tx_state_0\
+            + !\I2S:bI2S:count_3\ * !\I2S:bI2S:tx_state_2\ * 
+              !\I2S:bI2S:tx_state_1\ * !\I2S:bI2S:tx_state_0\
+            + !\I2S:bI2S:count_2\ * !\I2S:bI2S:tx_state_2\ * 
+              !\I2S:bI2S:tx_state_1\ * !\I2S:bI2S:tx_state_0\
+            + !\I2S:bI2S:count_1\ * !\I2S:bI2S:tx_state_2\ * 
+              !\I2S:bI2S:tx_state_1\ * !\I2S:bI2S:tx_state_0\
+            + !\I2S:bI2S:txenable\
+        );
+        Output = \I2S:bI2S:tx_state_1\ (fanout=5)
+        Properties               : 
+        {
+        }
+
+    [McSlotId=2]:     MacroCell: Name=\I2S:bI2S:tx_state_2\, Mode=(D-Register) @ [UDB=(1,1)][LB=0][MC=2]
+        Total # of inputs        : 1
+        Total # of product terms : 1
+        List of special equations: 
+            Clock  = (Net_7968) => Global
+            Clock Enable: True
+        Main Equation            : 1 pterm
+        (
+              !\I2S:bI2S:txenable\
+        );
+        Output = \I2S:bI2S:tx_state_2\ (fanout=5)
+        Properties               : 
+        {
+        }
+
+    [McSlotId=3]: (empty)
+}
+
+LAB@[UDB=(1,1)][LB=1] #macrocells=2, #inputs=6, #pterms=3
+{
+    [McSlotId=0]:     MacroCell: Name=\I2S:bI2S:tx_underflow_sticky\, Mode=(D-Register) @ [UDB=(1,1)][LB=1][MC=0]
+        Total # of inputs        : 6
+        Total # of product terms : 2
+        List of special equations: 
+            Clock  = (Net_7968) => Global
+            Clock Enable: True
+        Main Equation            : 2 pterms
+        (
+              \I2S:bI2S:ctrl_reg_out_0\ * \I2S:bI2S:tx_underflow_sticky\
+            + \I2S:bI2S:ctrl_reg_out_0\ * !\I2S:bI2S:tx_state_2\ * 
+              !\I2S:bI2S:tx_state_1\ * \I2S:bI2S:tx_state_0\ * 
+              \I2S:bI2S:tx_f0_empty_0\
+        );
+        Output = \I2S:bI2S:tx_underflow_sticky\ (fanout=2)
+        Properties               : 
+        {
+        }
+
+    [McSlotId=1]:     MacroCell: Name=\I2S:bI2S:tx_underflow_0\, Mode=(Combinatorial) @ [UDB=(1,1)][LB=1][MC=1]
+        Total # of inputs        : 4
+        Total # of product terms : 1
+            Clock Enable: True
+        Main Equation            : 1 pterm
+        (
+              !\I2S:bI2S:tx_state_2\ * !\I2S:bI2S:tx_state_1\ * 
+              \I2S:bI2S:tx_state_0\ * \I2S:bI2S:tx_f0_empty_0\
+        );
+        Output = \I2S:bI2S:tx_underflow_0\ (fanout=1)
+        Properties               : 
+        {
+        }
+
+    [McSlotId=2]: (empty)
+    [McSlotId=3]: (empty)
+}
+
+statusicell: Name =\I2S:bI2S:Tx:STS[0]:Sts\
+    PORT MAP (
+        clock => Net_7968 ,
+        status_1 => Net_4292_0 ,
+        status_0 => \I2S:bI2S:tx_underflow_0\ ,
+        interrupt => \I2S:bI2S:tx_int_out_0\ );
+    Properties:
+    {
+        cy_force_order = 1
+        cy_int_mask = "0000000"
+        cy_md_select = "0000001"
+    }
+    Clock Polarity: Active High
+    Clock Enable: True
+
+UDB [UDB=(1,2)] contents:
+LAB@[UDB=(1,2)][LB=0] #macrocells=1, #inputs=11, #pterms=8
+{
+    [McSlotId=0]:     MacroCell: Name=\I2S:bI2S:txenable\, Mode=(D-Register) @ [UDB=(1,2)][LB=0][MC=0]
+        Total # of inputs        : 11
+        Total # of product terms : 8
+        List of special equations: 
+            Clock  = (Net_7968) => Global
+            Clock Enable: True
+        Main Equation            : 8 pterms
+        (
+              !Net_7720 * \I2S:bI2S:ctrl_reg_out_0\ * !\I2S:bI2S:count_6\ * 
+              !\I2S:bI2S:count_5\ * !\I2S:bI2S:count_4\ * !\I2S:bI2S:count_3\ * 
+              !\I2S:bI2S:count_2\ * !\I2S:bI2S:count_1\ * 
+              !\I2S:bI2S:tx_underflow_sticky\
+            + Net_7720 * \I2S:bI2S:ctrl_reg_out_2\ * 
+              !\I2S:bI2S:tx_underflow_sticky\ * \I2S:bI2S:txenable\
+            + \I2S:bI2S:ctrl_reg_out_2\ * \I2S:bI2S:count_6\ * 
+              !\I2S:bI2S:tx_underflow_sticky\ * \I2S:bI2S:txenable\
+            + \I2S:bI2S:ctrl_reg_out_2\ * \I2S:bI2S:count_5\ * 
+              !\I2S:bI2S:tx_underflow_sticky\ * \I2S:bI2S:txenable\
+            + \I2S:bI2S:ctrl_reg_out_2\ * \I2S:bI2S:count_4\ * 
+              !\I2S:bI2S:tx_underflow_sticky\ * \I2S:bI2S:txenable\
+            + \I2S:bI2S:ctrl_reg_out_2\ * \I2S:bI2S:count_3\ * 
+              !\I2S:bI2S:tx_underflow_sticky\ * \I2S:bI2S:txenable\
+            + \I2S:bI2S:ctrl_reg_out_2\ * \I2S:bI2S:count_2\ * 
+              !\I2S:bI2S:tx_underflow_sticky\ * \I2S:bI2S:txenable\
+            + \I2S:bI2S:ctrl_reg_out_2\ * \I2S:bI2S:count_1\ * 
+              !\I2S:bI2S:tx_underflow_sticky\ * \I2S:bI2S:txenable\
+        );
+        Output = \I2S:bI2S:txenable\ (fanout=4)
+        Properties               : 
+        {
+        }
+
+    [McSlotId=1]: (empty)
+    [McSlotId=2]: (empty)
+    [McSlotId=3]: (empty)
+}
+
+LAB@[UDB=(1,2)][LB=1] #macrocells=2, #inputs=4, #pterms=3
+{
+    [McSlotId=0]:     MacroCell: Name=\I2S:bI2S:reset\, Mode=(D-Register) @ [UDB=(1,2)][LB=1][MC=0]
+        Total # of inputs        : 1
+        Total # of product terms : 1
+        List of special equations: 
+            Clock  = (Net_7968) => Global
+            Clock Enable: True
+        Main Equation            : 1 pterm
+        (
+              !\I2S:bI2S:ctrl_reg_out_2\
+        );
+        Output = \I2S:bI2S:reset\ (fanout=1)
+        Properties               : 
+        {
+        }
+
+    [McSlotId=1]: (empty)
+    [McSlotId=2]: (empty)
+    [McSlotId=3]:     MacroCell: Name=Net_7882_0, Mode=(D-Register) @ [UDB=(1,2)][LB=1][MC=3]
+        Total # of inputs        : 3
+        Total # of product terms : 2
+        List of special equations: 
+            Clock  = (Net_7968) => Global
+            Clock Enable: True
+        Main Equation            : 2 pterms
+        (
+              !Net_7720 * Net_7882_0
+            + Net_7720 * \I2S:bI2S:tx_data_out_0\
+        );
+        Output = Net_7882_0 (fanout=2)
+        Properties               : 
+        {
+        }
+}
+
+synccell: Name =\Sync_2:genblk1[0]:INST\
+    PORT MAP (
+        clock => Net_8086 ,
+        in => Net_7924 ,
+        out => Net_8087 );
+    Properties:
+    {
+    }
+    Clock Polarity: Active High
+    Clock Enable: True
+
+UDB [UDB=(1,3)] is empty.
+UDB [UDB=(1,4)] is empty.
+UDB [UDB=(1,5)] contents:
+LAB@[UDB=(1,5)][LB=1] #macrocells=1, #inputs=0, #pterms=0
+{
+    [McSlotId=0]: (empty)
+    [McSlotId=1]:     MacroCell: Name=__ONE__, Mode=(Combinatorial) @ [UDB=(1,5)][LB=1][MC=1]
+        Total # of inputs        : 0
+        Total # of product terms : 0
+            Clock Enable: True
+        Main Equation            : 0 pterms
+        !(
+            0
+        );
+        Output = __ONE__ (fanout=2)
+        Properties               : 
+        {
+        }
+
+    [McSlotId=2]: (empty)
+    [McSlotId=3]: (empty)
+}
+
+UDB [UDB=(2,0)] contents:
+LAB@[UDB=(2,0)][LB=0] #macrocells=4, #inputs=8, #pterms=8
+{
+    [McSlotId=0]:     MacroCell: Name=\FracN:adder1_0\, Mode=(D-Register, Carry-Chain-Start (next @ [UDB=(2,0)][LB=0][MC=1])) @ [UDB=(2,0)][LB=0][MC=0]
         Total # of inputs        : 2
         Total # of product terms : 2
         List of special equations: 
@@ -5779,7 +5730,7 @@ LAB@[UDB=(1,1)][LB=0] #macrocells=4, #inputs=8, #pterms=8
         {
         }
 
-    [McSlotId=1]:     MacroCell: Name=\FracN:adder1_1\, Mode=(D-Register, Carry-Chain-Continue (next @ [UDB=(1,1)][LB=0][MC=2])) @ [UDB=(1,1)][LB=0][MC=1]
+    [McSlotId=1]:     MacroCell: Name=\FracN:adder1_1\, Mode=(D-Register, Carry-Chain-Continue (next @ [UDB=(2,0)][LB=0][MC=2])) @ [UDB=(2,0)][LB=0][MC=1]
         Total # of inputs        : 2
         Total # of product terms : 2
         List of special equations: 
@@ -5799,7 +5750,7 @@ LAB@[UDB=(1,1)][LB=0] #macrocells=4, #inputs=8, #pterms=8
         {
         }
 
-    [McSlotId=2]:     MacroCell: Name=\FracN:adder1_2\, Mode=(D-Register, Carry-Chain-Continue (next @ [UDB=(1,1)][LB=0][MC=3])) @ [UDB=(1,1)][LB=0][MC=2]
+    [McSlotId=2]:     MacroCell: Name=\FracN:adder1_2\, Mode=(D-Register, Carry-Chain-Continue (next @ [UDB=(2,0)][LB=0][MC=3])) @ [UDB=(2,0)][LB=0][MC=2]
         Total # of inputs        : 2
         Total # of product terms : 2
         List of special equations: 
@@ -5819,7 +5770,7 @@ LAB@[UDB=(1,1)][LB=0] #macrocells=4, #inputs=8, #pterms=8
         {
         }
 
-    [McSlotId=3]:     MacroCell: Name=\FracN:adder1_3\, Mode=(D-Register, Carry-Chain-Continue (next @ [UDB=(1,1)][LB=1][MC=0])) @ [UDB=(1,1)][LB=0][MC=3]
+    [McSlotId=3]:     MacroCell: Name=\FracN:adder1_3\, Mode=(D-Register, Carry-Chain-Continue (next @ [UDB=(2,0)][LB=1][MC=0])) @ [UDB=(2,0)][LB=0][MC=3]
         Total # of inputs        : 2
         Total # of product terms : 2
         List of special equations: 
@@ -5840,9 +5791,9 @@ LAB@[UDB=(1,1)][LB=0] #macrocells=4, #inputs=8, #pterms=8
         }
 }
 
-LAB@[UDB=(1,1)][LB=1] #macrocells=4, #inputs=8, #pterms=8
+LAB@[UDB=(2,0)][LB=1] #macrocells=4, #inputs=8, #pterms=8
 {
-    [McSlotId=0]:     MacroCell: Name=\FracN:adder1_4\, Mode=(D-Register, Carry-Chain-Continue (next @ [UDB=(1,1)][LB=1][MC=1])) @ [UDB=(1,1)][LB=1][MC=0]
+    [McSlotId=0]:     MacroCell: Name=\FracN:adder1_4\, Mode=(D-Register, Carry-Chain-Continue (next @ [UDB=(2,0)][LB=1][MC=1])) @ [UDB=(2,0)][LB=1][MC=0]
         Total # of inputs        : 2
         Total # of product terms : 2
         List of special equations: 
@@ -5862,7 +5813,7 @@ LAB@[UDB=(1,1)][LB=1] #macrocells=4, #inputs=8, #pterms=8
         {
         }
 
-    [McSlotId=1]:     MacroCell: Name=\FracN:adder1_5\, Mode=(D-Register, Carry-Chain-Continue (next @ [UDB=(1,1)][LB=1][MC=2])) @ [UDB=(1,1)][LB=1][MC=1]
+    [McSlotId=1]:     MacroCell: Name=\FracN:adder1_5\, Mode=(D-Register, Carry-Chain-Continue (next @ [UDB=(2,0)][LB=1][MC=2])) @ [UDB=(2,0)][LB=1][MC=1]
         Total # of inputs        : 2
         Total # of product terms : 2
         List of special equations: 
@@ -5882,7 +5833,7 @@ LAB@[UDB=(1,1)][LB=1] #macrocells=4, #inputs=8, #pterms=8
         {
         }
 
-    [McSlotId=2]:     MacroCell: Name=\FracN:adder1_6\, Mode=(D-Register, Carry-Chain-Continue (next @ [UDB=(1,1)][LB=1][MC=3])) @ [UDB=(1,1)][LB=1][MC=2]
+    [McSlotId=2]:     MacroCell: Name=\FracN:adder1_6\, Mode=(D-Register, Carry-Chain-Continue (next @ [UDB=(2,0)][LB=1][MC=3])) @ [UDB=(2,0)][LB=1][MC=2]
         Total # of inputs        : 2
         Total # of product terms : 2
         List of special equations: 
@@ -5902,7 +5853,7 @@ LAB@[UDB=(1,1)][LB=1] #macrocells=4, #inputs=8, #pterms=8
         {
         }
 
-    [McSlotId=3]:     MacroCell: Name=\FracN:adder1_7\, Mode=(D-Register, Carry-Chain-Continue (next @ [UDB=(0,1)][LB=0][MC=0])) @ [UDB=(1,1)][LB=1][MC=3]
+    [McSlotId=3]:     MacroCell: Name=\FracN:adder1_7\, Mode=(D-Register, Carry-Chain-Continue (next @ [UDB=(3,0)][LB=0][MC=0])) @ [UDB=(2,0)][LB=1][MC=3]
         Total # of inputs        : 2
         Total # of product terms : 2
         List of special equations: 
@@ -5943,294 +5894,20 @@ controlcell: Name =\FracN:FRAC_LO\
     }
     Clock Enable: True
 
-synccell: Name =\USBFS:nrqSync:genblk1[3]:INST\
+synccell: Name =\USBFS:nrqSync:genblk1[7]:INST\
     PORT MAP (
         clock => ClockBlock_BUS_CLK ,
-        out => \USBFS:Net_2040_3\ );
+        out => \USBFS:Net_2040_7\ );
     Properties:
     {
     }
     Clock Polarity: Active High
     Clock Enable: True
 
-UDB [UDB=(1,2)] contents:
-LAB@[UDB=(1,2)][LB=0] #macrocells=4, #inputs=8, #pterms=8
-{
-    [McSlotId=0]:     MacroCell: Name=\FracN:adder2_0\, Mode=(D-Register, Carry-Chain-Start (next @ [UDB=(1,2)][LB=0][MC=1])) @ [UDB=(1,2)][LB=0][MC=0]
-        Total # of inputs        : 2
-        Total # of product terms : 2
-        List of special equations: 
-            Clock  = (Net_7639) => Global
-            Cpt0 Equation   = (\FracN:acc1_0\ * \FracN:acc2_0\)
-            Cpt1 Equation   = (!\FracN:acc1_0\ * !\FracN:acc2_0\)
-            Clock Enable: True
-        Main Equation            : 2 pterms
-        (
-              !\FracN:acc1_0\ * !\FracN:acc2_0\
-            + \FracN:acc1_0\ * \FracN:acc2_0\
-        );
-        Cout = \FracN:MODULE_2:g1:a0:g0:u0:gof:g_arith(0):ga:cadd_0\
-        Output = \FracN:acc2_0\ (fanout=3)
-        Properties               : 
-        {
-        }
-
-    [McSlotId=1]:     MacroCell: Name=\FracN:adder2_1\, Mode=(D-Register, Carry-Chain-Continue (next @ [UDB=(1,2)][LB=0][MC=2])) @ [UDB=(1,2)][LB=0][MC=1]
-        Total # of inputs        : 2
-        Total # of product terms : 2
-        List of special equations: 
-            Clock  = (Net_7639) => Global
-            Cpt0 Equation   = (\FracN:acc1_1\ * \FracN:acc2_1\)
-            Cpt1 Equation   = (!\FracN:acc1_1\ * !\FracN:acc2_1\)
-            Clock Enable: True
-        Main Equation            : 2 pterms
-        (
-              !\FracN:acc1_1\ * !\FracN:acc2_1\
-            + \FracN:acc1_1\ * \FracN:acc2_1\
-        );
-        Cin = \FracN:MODULE_2:g1:a0:g0:u0:gof:g_arith(0):ga:cadd_0\
-        Cout = \FracN:MODULE_2:g1:a0:g0:u0:gof:g_arith(0):ga:cadd_1\
-        Output = \FracN:acc2_1\ (fanout=3)
-        Properties               : 
-        {
-        }
-
-    [McSlotId=2]:     MacroCell: Name=\FracN:adder2_2\, Mode=(D-Register, Carry-Chain-Continue (next @ [UDB=(1,2)][LB=0][MC=3])) @ [UDB=(1,2)][LB=0][MC=2]
-        Total # of inputs        : 2
-        Total # of product terms : 2
-        List of special equations: 
-            Clock  = (Net_7639) => Global
-            Cpt0 Equation   = (\FracN:acc1_2\ * \FracN:acc2_2\)
-            Cpt1 Equation   = (!\FracN:acc1_2\ * !\FracN:acc2_2\)
-            Clock Enable: True
-        Main Equation            : 2 pterms
-        (
-              !\FracN:acc1_2\ * !\FracN:acc2_2\
-            + \FracN:acc1_2\ * \FracN:acc2_2\
-        );
-        Cin = \FracN:MODULE_2:g1:a0:g0:u0:gof:g_arith(0):ga:cadd_1\
-        Cout = \FracN:MODULE_2:g1:a0:g0:u0:gof:g_arith(0):ga:cadd_2\
-        Output = \FracN:acc2_2\ (fanout=3)
-        Properties               : 
-        {
-        }
-
-    [McSlotId=3]:     MacroCell: Name=\FracN:adder2_3\, Mode=(D-Register, Carry-Chain-Continue (next @ [UDB=(1,2)][LB=1][MC=0])) @ [UDB=(1,2)][LB=0][MC=3]
-        Total # of inputs        : 2
-        Total # of product terms : 2
-        List of special equations: 
-            Clock  = (Net_7639) => Global
-            Cpt0 Equation   = (\FracN:acc1_3\ * \FracN:acc2_3\)
-            Cpt1 Equation   = (!\FracN:acc1_3\ * !\FracN:acc2_3\)
-            Clock Enable: True
-        Main Equation            : 2 pterms
-        (
-              !\FracN:acc1_3\ * !\FracN:acc2_3\
-            + \FracN:acc1_3\ * \FracN:acc2_3\
-        );
-        Cin = \FracN:MODULE_2:g1:a0:g0:u0:gof:g_arith(0):ga:cadd_2\
-        Cout = \FracN:MODULE_2:g1:a0:g0:u0:gof:g_arith(0):ga:cadd_3\
-        Output = \FracN:acc2_3\ (fanout=3)
-        Properties               : 
-        {
-        }
-}
-
-LAB@[UDB=(1,2)][LB=1] #macrocells=4, #inputs=8, #pterms=8
-{
-    [McSlotId=0]:     MacroCell: Name=\FracN:adder2_4\, Mode=(D-Register, Carry-Chain-Continue (next @ [UDB=(1,2)][LB=1][MC=1])) @ [UDB=(1,2)][LB=1][MC=0]
-        Total # of inputs        : 2
-        Total # of product terms : 2
-        List of special equations: 
-            Clock  = (Net_7639) => Global
-            Cpt0 Equation   = (\FracN:acc1_4\ * \FracN:acc2_4\)
-            Cpt1 Equation   = (!\FracN:acc1_4\ * !\FracN:acc2_4\)
-            Clock Enable: True
-        Main Equation            : 2 pterms
-        (
-              !\FracN:acc1_4\ * !\FracN:acc2_4\
-            + \FracN:acc1_4\ * \FracN:acc2_4\
-        );
-        Cin = \FracN:MODULE_2:g1:a0:g0:u0:gof:g_arith(0):ga:cadd_3\
-        Cout = \FracN:MODULE_2:g1:a0:g0:u0:gof:g_arith(0):ga:cadd_4\
-        Output = \FracN:acc2_4\ (fanout=3)
-        Properties               : 
-        {
-        }
-
-    [McSlotId=1]:     MacroCell: Name=\FracN:adder2_5\, Mode=(D-Register, Carry-Chain-Continue (next @ [UDB=(1,2)][LB=1][MC=2])) @ [UDB=(1,2)][LB=1][MC=1]
-        Total # of inputs        : 2
-        Total # of product terms : 2
-        List of special equations: 
-            Clock  = (Net_7639) => Global
-            Cpt0 Equation   = (\FracN:acc1_5\ * \FracN:acc2_5\)
-            Cpt1 Equation   = (!\FracN:acc1_5\ * !\FracN:acc2_5\)
-            Clock Enable: True
-        Main Equation            : 2 pterms
-        (
-              !\FracN:acc1_5\ * !\FracN:acc2_5\
-            + \FracN:acc1_5\ * \FracN:acc2_5\
-        );
-        Cin = \FracN:MODULE_2:g1:a0:g0:u0:gof:g_arith(0):ga:cadd_4\
-        Cout = \FracN:MODULE_2:g1:a0:g0:u0:gof:g_arith(0):ga:cadd_5\
-        Output = \FracN:acc2_5\ (fanout=3)
-        Properties               : 
-        {
-        }
-
-    [McSlotId=2]:     MacroCell: Name=\FracN:adder2_6\, Mode=(D-Register, Carry-Chain-Continue (next @ [UDB=(1,2)][LB=1][MC=3])) @ [UDB=(1,2)][LB=1][MC=2]
-        Total # of inputs        : 2
-        Total # of product terms : 2
-        List of special equations: 
-            Clock  = (Net_7639) => Global
-            Cpt0 Equation   = (\FracN:acc1_6\ * \FracN:acc2_6\)
-            Cpt1 Equation   = (!\FracN:acc1_6\ * !\FracN:acc2_6\)
-            Clock Enable: True
-        Main Equation            : 2 pterms
-        (
-              !\FracN:acc1_6\ * !\FracN:acc2_6\
-            + \FracN:acc1_6\ * \FracN:acc2_6\
-        );
-        Cin = \FracN:MODULE_2:g1:a0:g0:u0:gof:g_arith(0):ga:cadd_5\
-        Cout = \FracN:MODULE_2:g1:a0:g0:u0:gof:g_arith(0):ga:cadd_6\
-        Output = \FracN:acc2_6\ (fanout=3)
-        Properties               : 
-        {
-        }
-
-    [McSlotId=3]:     MacroCell: Name=\FracN:adder2_7\, Mode=(D-Register, Carry-Chain-Continue (next @ [UDB=(0,2)][LB=0][MC=0])) @ [UDB=(1,2)][LB=1][MC=3]
-        Total # of inputs        : 2
-        Total # of product terms : 2
-        List of special equations: 
-            Clock  = (Net_7639) => Global
-            Cpt0 Equation   = (\FracN:acc1_7\ * \FracN:acc2_7\)
-            Cpt1 Equation   = (!\FracN:acc1_7\ * !\FracN:acc2_7\)
-            Clock Enable: True
-        Main Equation            : 2 pterms
-        (
-              !\FracN:acc1_7\ * !\FracN:acc2_7\
-            + \FracN:acc1_7\ * \FracN:acc2_7\
-        );
-        Cin = \FracN:MODULE_2:g1:a0:g0:u0:gof:g_arith(0):ga:cadd_6\
-        Cout = \FracN:MODULE_2:g1:a0:g0:u0:gof:g_arith(0):ga:cadd_7\
-        Output = \FracN:acc2_7\ (fanout=3)
-        Properties               : 
-        {
-        }
-}
-
-synccell: Name =\Sync_2:genblk1[0]:INST\
-    PORT MAP (
-        clock => Net_8086 ,
-        in => Net_7924 ,
-        out => Net_8087 );
-    Properties:
-    {
-    }
-    Clock Polarity: Active High
-    Clock Enable: True
-
-UDB [UDB=(1,3)] is empty.
-UDB [UDB=(1,4)] contents:
-LAB@[UDB=(1,4)][LB=1] #macrocells=1, #inputs=0, #pterms=0
-{
-    [McSlotId=0]: (empty)
-    [McSlotId=1]: (empty)
-    [McSlotId=2]: (empty)
-    [McSlotId=3]:     MacroCell: Name=__ONE__, Mode=(Combinatorial) @ [UDB=(1,4)][LB=1][MC=3]
-        Total # of inputs        : 0
-        Total # of product terms : 0
-            Clock Enable: True
-        Main Equation            : 0 pterms
-        !(
-            0
-        );
-        Output = __ONE__ (fanout=1)
-        Properties               : 
-        {
-        }
-}
-
-UDB [UDB=(1,5)] is empty.
-UDB [UDB=(2,0)] contents:
-LAB@[UDB=(2,0)][LB=0] #macrocells=1, #inputs=6, #pterms=2
-{
-    [McSlotId=0]:     MacroCell: Name=\I2S:bI2S:tx_underflow_sticky\, Mode=(D-Register) @ [UDB=(2,0)][LB=0][MC=0]
-        Total # of inputs        : 6
-        Total # of product terms : 2
-        List of special equations: 
-            Clock  = (Net_7968) => Global
-            Clock Enable: True
-        Main Equation            : 2 pterms
-        (
-              \I2S:bI2S:ctrl_reg_out_0\ * \I2S:bI2S:tx_underflow_sticky\
-            + \I2S:bI2S:ctrl_reg_out_0\ * !\I2S:bI2S:tx_state_2\ * 
-              !\I2S:bI2S:tx_state_1\ * \I2S:bI2S:tx_state_0\ * 
-              \I2S:bI2S:tx_f0_empty_0\
-        );
-        Output = \I2S:bI2S:tx_underflow_sticky\ (fanout=2)
-        Properties               : 
-        {
-        }
-
-    [McSlotId=1]: (empty)
-    [McSlotId=2]: (empty)
-    [McSlotId=3]: (empty)
-}
-
-LAB@[UDB=(2,0)][LB=1] #macrocells=1, #inputs=11, #pterms=8
-{
-    [McSlotId=0]: (empty)
-    [McSlotId=1]: (empty)
-    [McSlotId=2]:     MacroCell: Name=\I2S:bI2S:txenable\, Mode=(D-Register) @ [UDB=(2,0)][LB=1][MC=2]
-        Total # of inputs        : 11
-        Total # of product terms : 8
-        List of special equations: 
-            Clock  = (Net_7968) => Global
-            Clock Enable: True
-        Main Equation            : 8 pterms
-        (
-              !Net_7720 * \I2S:bI2S:ctrl_reg_out_0\ * !\I2S:bI2S:count_6\ * 
-              !\I2S:bI2S:count_5\ * !\I2S:bI2S:count_4\ * !\I2S:bI2S:count_3\ * 
-              !\I2S:bI2S:count_2\ * !\I2S:bI2S:count_1\ * 
-              !\I2S:bI2S:tx_underflow_sticky\
-            + Net_7720 * \I2S:bI2S:ctrl_reg_out_2\ * 
-              !\I2S:bI2S:tx_underflow_sticky\ * \I2S:bI2S:txenable\
-            + \I2S:bI2S:ctrl_reg_out_2\ * \I2S:bI2S:count_6\ * 
-              !\I2S:bI2S:tx_underflow_sticky\ * \I2S:bI2S:txenable\
-            + \I2S:bI2S:ctrl_reg_out_2\ * \I2S:bI2S:count_5\ * 
-              !\I2S:bI2S:tx_underflow_sticky\ * \I2S:bI2S:txenable\
-            + \I2S:bI2S:ctrl_reg_out_2\ * \I2S:bI2S:count_4\ * 
-              !\I2S:bI2S:tx_underflow_sticky\ * \I2S:bI2S:txenable\
-            + \I2S:bI2S:ctrl_reg_out_2\ * \I2S:bI2S:count_3\ * 
-              !\I2S:bI2S:tx_underflow_sticky\ * \I2S:bI2S:txenable\
-            + \I2S:bI2S:ctrl_reg_out_2\ * \I2S:bI2S:count_2\ * 
-              !\I2S:bI2S:tx_underflow_sticky\ * \I2S:bI2S:txenable\
-            + \I2S:bI2S:ctrl_reg_out_2\ * \I2S:bI2S:count_1\ * 
-              !\I2S:bI2S:tx_underflow_sticky\ * \I2S:bI2S:txenable\
-        );
-        Output = \I2S:bI2S:txenable\ (fanout=4)
-        Properties               : 
-        {
-        }
-
-    [McSlotId=3]: (empty)
-}
-
-synccell: Name =\USBFS:nrqSync:genblk1[6]:INST\
+synccell: Name =\USBFS:nrqSync:genblk1[0]:INST\
     PORT MAP (
         clock => ClockBlock_BUS_CLK ,
-        out => \USBFS:Net_2040_6\ );
-    Properties:
-    {
-    }
-    Clock Polarity: Active High
-    Clock Enable: True
-
-synccell: Name =\USBFS:nrqSync:genblk1[4]:INST\
-    PORT MAP (
-        clock => ClockBlock_BUS_CLK ,
-        out => \USBFS:Net_2040_4\ );
+        out => \USBFS:Net_2040_0\ );
     Properties:
     {
     }
@@ -6238,291 +5915,151 @@ synccell: Name =\USBFS:nrqSync:genblk1[4]:INST\
     Clock Enable: True
 
 UDB [UDB=(2,1)] contents:
-LAB@[UDB=(2,1)][LB=0] #macrocells=1, #inputs=11, #pterms=8
+LAB@[UDB=(2,1)][LB=0] #macrocells=4, #inputs=2, #pterms=8
 {
-    [McSlotId=0]:     MacroCell: Name=\I2S:bI2S:rxenable\, Mode=(D-Register) @ [UDB=(2,1)][LB=0][MC=0]
-        Total # of inputs        : 11
-        Total # of product terms : 8
-        List of special equations: 
-            Clock  = (Net_7968) => Global
-            Clock Enable: True
-        Main Equation            : 8 pterms
-        (
-              !Net_7720 * \I2S:bI2S:count_6\ * \I2S:bI2S:count_5\ * 
-              \I2S:bI2S:count_4\ * \I2S:bI2S:count_3\ * \I2S:bI2S:count_2\ * 
-              !\I2S:bI2S:count_1\ * !\I2S:bI2S:rx_overflow_sticky\ * 
-              \I2S:bI2S:rxenable\
-            + Net_7720 * \I2S:bI2S:ctrl_reg_out_1\ * \I2S:bI2S:count_6\ * 
-              \I2S:bI2S:count_5\ * \I2S:bI2S:count_4\ * \I2S:bI2S:count_3\ * 
-              \I2S:bI2S:count_2\ * !\I2S:bI2S:count_1\ * 
-              !\I2S:bI2S:rx_overflow_sticky\
-            + \I2S:bI2S:ctrl_reg_out_2\ * !\I2S:bI2S:count_6\ * 
-              !\I2S:bI2S:rx_overflow_sticky\ * \I2S:bI2S:rxenable\
-            + \I2S:bI2S:ctrl_reg_out_2\ * !\I2S:bI2S:count_5\ * 
-              !\I2S:bI2S:rx_overflow_sticky\ * \I2S:bI2S:rxenable\
-            + \I2S:bI2S:ctrl_reg_out_2\ * !\I2S:bI2S:count_4\ * 
-              !\I2S:bI2S:rx_overflow_sticky\ * \I2S:bI2S:rxenable\
-            + \I2S:bI2S:ctrl_reg_out_2\ * !\I2S:bI2S:count_3\ * 
-              !\I2S:bI2S:rx_overflow_sticky\ * \I2S:bI2S:rxenable\
-            + \I2S:bI2S:ctrl_reg_out_2\ * !\I2S:bI2S:count_2\ * 
-              !\I2S:bI2S:rx_overflow_sticky\ * \I2S:bI2S:rxenable\
-            + \I2S:bI2S:ctrl_reg_out_2\ * \I2S:bI2S:count_1\ * 
-              !\I2S:bI2S:rx_overflow_sticky\ * \I2S:bI2S:rxenable\
-        );
-        Output = \I2S:bI2S:rxenable\ (fanout=4)
-        Properties               : 
-        {
-        }
-
-    [McSlotId=1]: (empty)
-    [McSlotId=2]: (empty)
-    [McSlotId=3]: (empty)
-}
-
-LAB@[UDB=(2,1)][LB=1] #macrocells=3, #inputs=9, #pterms=4
-{
-    [McSlotId=0]:     MacroCell: Name=\I2S:bI2S:rx_overflow_sticky\, Mode=(D-Register) @ [UDB=(2,1)][LB=1][MC=0]
-        Total # of inputs        : 4
-        Total # of product terms : 2
-        List of special equations: 
-            Clock  = (Net_7968) => Global
-            Clock Enable: True
-        Main Equation            : 2 pterms
-        (
-              \I2S:bI2S:ctrl_reg_out_1\ * \I2S:bI2S:rx_f0_load\ * 
-              \I2S:bI2S:rx_f0_full_0\
-            + \I2S:bI2S:ctrl_reg_out_1\ * \I2S:bI2S:rx_overflow_sticky\
-        );
-        Output = \I2S:bI2S:rx_overflow_sticky\ (fanout=2)
-        Properties               : 
-        {
-        }
-
-    [McSlotId=1]:     MacroCell: Name=\I2S:bI2S:reset\, Mode=(D-Register) @ [UDB=(2,1)][LB=1][MC=1]
-        Total # of inputs        : 1
-        Total # of product terms : 1
-        List of special equations: 
-            Clock  = (Net_7968) => Global
-            Clock Enable: True
-        Main Equation            : 1 pterm
-        (
-              !\I2S:bI2S:ctrl_reg_out_2\
-        );
-        Output = \I2S:bI2S:reset\ (fanout=1)
-        Properties               : 
-        {
-        }
-
-    [McSlotId=2]: (empty)
-    [McSlotId=3]:     MacroCell: Name=\I2S:bI2S:tx_underflow_0\, Mode=(Combinatorial) @ [UDB=(2,1)][LB=1][MC=3]
-        Total # of inputs        : 4
-        Total # of product terms : 1
-            Clock Enable: True
-        Main Equation            : 1 pterm
-        (
-              !\I2S:bI2S:tx_state_2\ * !\I2S:bI2S:tx_state_1\ * 
-              \I2S:bI2S:tx_state_0\ * \I2S:bI2S:tx_f0_empty_0\
-        );
-        Output = \I2S:bI2S:tx_underflow_0\ (fanout=1)
-        Properties               : 
-        {
-        }
-}
-
-statusicell: Name =\I2S:bI2S:Tx:STS[0]:Sts\
-    PORT MAP (
-        clock => Net_7968 ,
-        status_1 => Net_4292_0 ,
-        status_0 => \I2S:bI2S:tx_underflow_0\ ,
-        interrupt => \I2S:bI2S:tx_int_out_0\ );
-    Properties:
-    {
-        cy_force_order = 1
-        cy_int_mask = "0000000"
-        cy_md_select = "0000001"
-    }
-    Clock Polarity: Active High
-    Clock Enable: True
-
-controlcell: Name =\Control:Sync:ctrl_reg\
-    PORT MAP (
-        control_7 => Net_8142 ,
-        control_6 => Net_8146 ,
-        control_5 => Net_8145 ,
-        control_4 => Net_8077 ,
-        control_3 => Net_7988 ,
-        control_2 => Net_8073 ,
-        control_1 => Net_7975 ,
-        control_0 => Net_7989 );
-    Properties:
-    {
-        cy_ctrl_mode_0 = "00000000"
-        cy_ctrl_mode_1 = "00000000"
-        cy_ext_reset = 0
-        cy_force_order = 1
-        cy_init_value = "00011111"
-    }
-    Clock Enable: True
-
-UDB [UDB=(2,2)] contents:
-LAB@[UDB=(2,2)][LB=0] #macrocells=4, #inputs=5, #pterms=8
-{
-    [McSlotId=0]:     MacroCell: Name=\FracN:MODULE_5:g1:a0:s_0\, Mode=(D-Register, Carry-Chain-Start (next @ [UDB=(2,2)][LB=0][MC=1])) @ [UDB=(2,2)][LB=0][MC=0]
+    [McSlotId=0]:     MacroCell: Name=\FracN:MODULE_4:g1:a0:s_0\, Mode=(Combinatorial, Carry-Chain-Start (next @ [UDB=(2,1)][LB=0][MC=1])) @ [UDB=(2,1)][LB=0][MC=0]
         Total # of inputs        : 2
         Total # of product terms : 2
         List of special equations: 
-            Clock  = (Net_7639) => Global
-            Cpt0 Equation   = (\FracN:minus1\ * \FracN:MODULE_4:g1:a0:s_0\)
-            Cpt1 Equation   = (!\FracN:minus1\ * !\FracN:MODULE_4:g1:a0:s_0\)
+            Cpt0 Equation   = (!\FracN:adder1_14\ * \FracN:adder2_14\)
+            Cpt1 Equation   = (\FracN:adder1_14\ * !\FracN:adder2_14\)
             Clock Enable: True
         Main Equation            : 2 pterms
         (
-              !\FracN:minus1\ * !\FracN:MODULE_4:g1:a0:s_0\
-            + \FracN:minus1\ * \FracN:MODULE_4:g1:a0:s_0\
+              !\FracN:adder1_14\ * \FracN:adder2_14\
+            + \FracN:adder1_14\ * !\FracN:adder2_14\
         );
-        Cout = \FracN:MODULE_5:g1:a0:g0:u0:gof:g_arith(0):ga:cadd_0\
-        Output = \FracN:pOut_0\ (fanout=1)
+        Cout = \FracN:MODULE_4:g1:a0:g0:u0:gof:g_arith(0):ga:cadd_0\
+        Output = \FracN:MODULE_4:g1:a0:s_0\ (fanout=3)
         Properties               : 
         {
         }
 
-    [McSlotId=1]:     MacroCell: Name=\FracN:MODULE_5:g1:a0:s_1\, Mode=(D-Register, Carry-Chain-Continue (next @ [UDB=(2,2)][LB=0][MC=2])) @ [UDB=(2,2)][LB=0][MC=1]
-        Total # of inputs        : 2
-        Total # of product terms : 2
-        List of special equations: 
-            Clock  = (Net_7639) => Global
-            Cpt0 Equation   = (\FracN:minus1\ * \FracN:MODULE_4:g1:a0:s_1\)
-            Cpt1 Equation   = (!\FracN:minus1\ * !\FracN:MODULE_4:g1:a0:s_1\)
-            Clock Enable: True
-        Main Equation            : 2 pterms
-        (
-              !\FracN:minus1\ * !\FracN:MODULE_4:g1:a0:s_1\
-            + \FracN:minus1\ * \FracN:MODULE_4:g1:a0:s_1\
-        );
-        Cin = \FracN:MODULE_5:g1:a0:g0:u0:gof:g_arith(0):ga:cadd_0\
-        Cout = \FracN:MODULE_5:g1:a0:g0:u0:gof:g_arith(0):ga:cadd_1\
-        Output = \FracN:pOut_1\ (fanout=1)
-        Properties               : 
-        {
-        }
-
-    [McSlotId=2]:     MacroCell: Name=\FracN:MODULE_5:g1:a0:s_2\, Mode=(D-Register, Carry-Chain-Continue (next @ [UDB=(2,2)][LB=0][MC=3])) @ [UDB=(2,2)][LB=0][MC=2]
-        Total # of inputs        : 2
-        Total # of product terms : 2
-        List of special equations: 
-            Clock  = (Net_7639) => Global
-            Cpt0 Equation   = (\FracN:minus1\ * \FracN:MODULE_4:g1:a0:s_2\)
-            Cpt1 Equation   = (!\FracN:minus1\ * !\FracN:MODULE_4:g1:a0:s_2\)
-            Clock Enable: True
-        Main Equation            : 2 pterms
-        (
-              !\FracN:minus1\ * !\FracN:MODULE_4:g1:a0:s_2\
-            + \FracN:minus1\ * \FracN:MODULE_4:g1:a0:s_2\
-        );
-        Cin = \FracN:MODULE_5:g1:a0:g0:u0:gof:g_arith(0):ga:cadd_1\
-        Cout = \FracN:MODULE_5:g1:a0:g0:u0:gof:g_arith(0):ga:cadd_2\
-        Output = \FracN:pOut_2\ (fanout=1)
-        Properties               : 
-        {
-        }
-
-    [McSlotId=3]:     MacroCell: Name=\FracN:MODULE_5:g1:a0:s_3\, Mode=(D-Register, Carry-Chain-Continue (next @ [UDB=(2,2)][LB=1][MC=0])) @ [UDB=(2,2)][LB=0][MC=3]
-        Total # of inputs        : 2
-        Total # of product terms : 2
-        List of special equations: 
-            Clock  = (Net_7639) => Global
-            Cpt0 Equation   = (\FracN:minus1\ * \FracN:MODULE_4:g1:a0:s_3\)
-            Cpt1 Equation   = (!\FracN:minus1\ * !\FracN:MODULE_4:g1:a0:s_3\)
-            Clock Enable: True
-        Main Equation            : 2 pterms
-        (
-              !\FracN:minus1\ * !\FracN:MODULE_4:g1:a0:s_3\
-            + \FracN:minus1\ * \FracN:MODULE_4:g1:a0:s_3\
-        );
-        Cin = \FracN:MODULE_5:g1:a0:g0:u0:gof:g_arith(0):ga:cadd_2\
-        Cout = \FracN:MODULE_5:g1:a0:g0:u0:gof:g_arith(0):ga:cadd_3\
-        Output = \FracN:pOut_3\ (fanout=1)
-        Properties               : 
-        {
-        }
-}
-
-LAB@[UDB=(2,2)][LB=1] #macrocells=4, #inputs=5, #pterms=8
-{
-    [McSlotId=0]:     MacroCell: Name=\FracN:MODULE_5:g1:a0:s_4\, Mode=(D-Register, Carry-Chain-Continue (next @ [UDB=(2,2)][LB=1][MC=1])) @ [UDB=(2,2)][LB=1][MC=0]
-        Total # of inputs        : 2
-        Total # of product terms : 2
-        List of special equations: 
-            Clock  = (Net_7639) => Global
-            Cpt0 Equation   = (\FracN:minus1\ * \FracN:MODULE_4:g1:a0:s_4\)
-            Cpt1 Equation   = (!\FracN:minus1\ * !\FracN:MODULE_4:g1:a0:s_4\)
-            Clock Enable: True
-        Main Equation            : 2 pterms
-        (
-              !\FracN:minus1\ * !\FracN:MODULE_4:g1:a0:s_4\
-            + \FracN:minus1\ * \FracN:MODULE_4:g1:a0:s_4\
-        );
-        Cin = \FracN:MODULE_5:g1:a0:g0:u0:gof:g_arith(0):ga:cadd_3\
-        Cout = \FracN:MODULE_5:g1:a0:g0:u0:gof:g_arith(0):ga:cadd_4\
-        Output = \FracN:pOut_4\ (fanout=1)
-        Properties               : 
-        {
-        }
-
-    [McSlotId=1]:     MacroCell: Name=\FracN:MODULE_5:g1:a0:s_5\, Mode=(D-Register, Carry-Chain-Continue (next @ [UDB=(2,2)][LB=1][MC=2])) @ [UDB=(2,2)][LB=1][MC=1]
-        Total # of inputs        : 2
-        Total # of product terms : 2
-        List of special equations: 
-            Clock  = (Net_7639) => Global
-            Cpt0 Equation   = (\FracN:minus1\ * \FracN:MODULE_4:g1:a0:s_5\)
-            Cpt1 Equation   = (!\FracN:minus1\ * !\FracN:MODULE_4:g1:a0:s_5\)
-            Clock Enable: True
-        Main Equation            : 2 pterms
-        (
-              !\FracN:minus1\ * !\FracN:MODULE_4:g1:a0:s_5\
-            + \FracN:minus1\ * \FracN:MODULE_4:g1:a0:s_5\
-        );
-        Cin = \FracN:MODULE_5:g1:a0:g0:u0:gof:g_arith(0):ga:cadd_4\
-        Cout = \FracN:MODULE_5:g1:a0:g0:u0:gof:g_arith(0):ga:cadd_5\
-        Output = \FracN:pOut_5\ (fanout=1)
-        Properties               : 
-        {
-        }
-
-    [McSlotId=2]:     MacroCell: Name=\FracN:MODULE_5:g1:a0:s_6\, Mode=(D-Register, Carry-Chain-Continue (next @ [UDB=(2,2)][LB=1][MC=3])) @ [UDB=(2,2)][LB=1][MC=2]
-        Total # of inputs        : 2
-        Total # of product terms : 2
-        List of special equations: 
-            Clock  = (Net_7639) => Global
-            Cpt0 Equation   = (\FracN:minus1\ * \FracN:MODULE_4:g1:a0:s_6\)
-            Cpt1 Equation   = (!\FracN:minus1\ * !\FracN:MODULE_4:g1:a0:s_6\)
-            Clock Enable: True
-        Main Equation            : 2 pterms
-        (
-              !\FracN:minus1\ * !\FracN:MODULE_4:g1:a0:s_6\
-            + \FracN:minus1\ * \FracN:MODULE_4:g1:a0:s_6\
-        );
-        Cin = \FracN:MODULE_5:g1:a0:g0:u0:gof:g_arith(0):ga:cadd_5\
-        Cout = \FracN:MODULE_5:g1:a0:g0:u0:gof:g_arith(0):ga:cadd_6\
-        Output = \FracN:pOut_6\ (fanout=1)
-        Properties               : 
-        {
-        }
-
-    [McSlotId=3]:     MacroCell: Name=\FracN:MODULE_5:g1:a0:g0:u0:gof:g_arith(0):ga:tmpadd_7\, Mode=(Combinatorial, Carry-Chain-Last) @ [UDB=(2,2)][LB=1][MC=3]
+    [McSlotId=1]:     MacroCell: Name=\FracN:MODULE_4:g1:a0:s_1\, Mode=(Combinatorial, Carry-Chain-Continue (next @ [UDB=(2,1)][LB=0][MC=2])) @ [UDB=(2,1)][LB=0][MC=1]
         Total # of inputs        : 1
         Total # of product terms : 2
         List of special equations: 
             Cpt0 Equation   = (0)
-            Cpt1 Equation   = (!\FracN:MODULE_4:g1:a0:s_7\)
+            Cpt1 Equation   = (\FracN:adder1_14\)
             Clock Enable: True
         Main Equation            : 1 pterm
         (
-              !\FracN:MODULE_4:g1:a0:s_7\
+              \FracN:adder1_14\
         );
-        Cin = \FracN:MODULE_5:g1:a0:g0:u0:gof:g_arith(0):ga:cadd_6\
-        Cout = \FracN:MODULE_5:g1:a0:g0:u0:gof:g_arith(0):ga:tmpadd_7_cout\
-        Output = \FracN:MODULE_5:g1:a0:g0:u0:gof:g_arith(0):ga:tmpadd_7\ (fanout=0)
+        Cin = \FracN:MODULE_4:g1:a0:g0:u0:gof:g_arith(0):ga:cadd_0\
+        Cout = \FracN:MODULE_4:g1:a0:g0:u0:gof:g_arith(0):ga:cadd_1\
+        Output = \FracN:MODULE_4:g1:a0:s_1\ (fanout=3)
+        Properties               : 
+        {
+        }
+
+    [McSlotId=2]:     MacroCell: Name=\FracN:MODULE_4:g1:a0:s_2\, Mode=(Combinatorial, Carry-Chain-Continue (next @ [UDB=(2,1)][LB=0][MC=3])) @ [UDB=(2,1)][LB=0][MC=2]
+        Total # of inputs        : 1
+        Total # of product terms : 2
+        List of special equations: 
+            Cpt0 Equation   = (0)
+            Cpt1 Equation   = (!\FracN:adder1_14\)
+            Clock Enable: True
+        Main Equation            : 1 pterm
+        (
+              !\FracN:adder1_14\
+        );
+        Cin = \FracN:MODULE_4:g1:a0:g0:u0:gof:g_arith(0):ga:cadd_1\
+        Cout = \FracN:MODULE_4:g1:a0:g0:u0:gof:g_arith(0):ga:cadd_2\
+        Output = \FracN:MODULE_4:g1:a0:s_2\ (fanout=3)
+        Properties               : 
+        {
+        }
+
+    [McSlotId=3]:     MacroCell: Name=\FracN:MODULE_4:g1:a0:s_3\, Mode=(Combinatorial, Carry-Chain-Continue (next @ [UDB=(2,1)][LB=1][MC=0])) @ [UDB=(2,1)][LB=0][MC=3]
+        Total # of inputs        : 0
+        Total # of product terms : 2
+        List of special equations: 
+            Cpt0 Equation   = (0)
+            Cpt1 Equation   = (1)
+            Clock Enable: True
+        Main Equation            : 1 pterm
+        (
+            1
+        );
+        Cin = \FracN:MODULE_4:g1:a0:g0:u0:gof:g_arith(0):ga:cadd_2\
+        Cout = \FracN:MODULE_4:g1:a0:g0:u0:gof:g_arith(0):ga:cadd_3\
+        Output = \FracN:MODULE_4:g1:a0:s_3\ (fanout=3)
+        Properties               : 
+        {
+        }
+}
+
+LAB@[UDB=(2,1)][LB=1] #macrocells=4, #inputs=0, #pterms=6
+{
+    [McSlotId=0]:     MacroCell: Name=\FracN:MODULE_4:g1:a0:s_4\, Mode=(Combinatorial, Carry-Chain-Continue (next @ [UDB=(2,1)][LB=1][MC=1])) @ [UDB=(2,1)][LB=1][MC=0]
+        Total # of inputs        : 0
+        Total # of product terms : 2
+        List of special equations: 
+            Cpt0 Equation   = (0)
+            Cpt1 Equation   = (0)
+            Clock Enable: True
+        Main Equation            : 0 pterms
+        (
+            0
+        );
+        Cin = \FracN:MODULE_4:g1:a0:g0:u0:gof:g_arith(0):ga:cadd_3\
+        Cout = \FracN:MODULE_4:g1:a0:g0:u0:gof:g_arith(0):ga:cadd_4\
+        Output = \FracN:MODULE_4:g1:a0:s_4\ (fanout=3)
+        Properties               : 
+        {
+        }
+
+    [McSlotId=1]:     MacroCell: Name=\FracN:MODULE_4:g1:a0:s_5\, Mode=(Combinatorial, Carry-Chain-Continue (next @ [UDB=(2,1)][LB=1][MC=2])) @ [UDB=(2,1)][LB=1][MC=1]
+        Total # of inputs        : 0
+        Total # of product terms : 2
+        List of special equations: 
+            Cpt0 Equation   = (0)
+            Cpt1 Equation   = (1)
+            Clock Enable: True
+        Main Equation            : 1 pterm
+        (
+            1
+        );
+        Cin = \FracN:MODULE_4:g1:a0:g0:u0:gof:g_arith(0):ga:cadd_4\
+        Cout = \FracN:MODULE_4:g1:a0:g0:u0:gof:g_arith(0):ga:cadd_5\
+        Output = \FracN:MODULE_4:g1:a0:s_5\ (fanout=3)
+        Properties               : 
+        {
+        }
+
+    [McSlotId=2]:     MacroCell: Name=\FracN:MODULE_4:g1:a0:s_6\, Mode=(Combinatorial, Carry-Chain-Continue (next @ [UDB=(2,1)][LB=1][MC=3])) @ [UDB=(2,1)][LB=1][MC=2]
+        Total # of inputs        : 0
+        Total # of product terms : 2
+        List of special equations: 
+            Cpt0 Equation   = (0)
+            Cpt1 Equation   = (1)
+            Clock Enable: True
+        Main Equation            : 1 pterm
+        (
+            1
+        );
+        Cin = \FracN:MODULE_4:g1:a0:g0:u0:gof:g_arith(0):ga:cadd_5\
+        Cout = \FracN:MODULE_4:g1:a0:g0:u0:gof:g_arith(0):ga:cadd_6\
+        Output = \FracN:MODULE_4:g1:a0:s_6\ (fanout=3)
+        Properties               : 
+        {
+        }
+
+    [McSlotId=3]:     MacroCell: Name=\FracN:MODULE_4:g1:a0:s_7\, Mode=(Combinatorial, Carry-Chain-Last) @ [UDB=(2,1)][LB=1][MC=3]
+        Total # of inputs        : 0
+        Total # of product terms : 2
+        List of special equations: 
+            Cpt0 Equation   = (0)
+            Cpt1 Equation   = (1)
+            Clock Enable: True
+        Main Equation            : 1 pterm
+        (
+            1
+        );
+        Cin = \FracN:MODULE_4:g1:a0:g0:u0:gof:g_arith(0):ga:cadd_6\
+        Cout = \FracN:MODULE_4:g1:a0:s_7_cout\
+        Output = \FracN:MODULE_4:g1:a0:s_7\ (fanout=2)
         Properties               : 
         {
         }
@@ -6564,15 +6101,437 @@ datapathcell: Name =\I2S:bI2S:Tx:CH[0]:dpTx:u0\
     Clock Polarity: Active High
     Clock Enable: True
 
-statuscell: Name =\FracN:PLL_P\
+statusicell: Name =\USBFS:EP17_DMA_Done_SR:sts_intr:sts_reg\
     PORT MAP (
-        status_6 => \FracN:pOut_6\ ,
-        status_5 => \FracN:pOut_5\ ,
-        status_4 => \FracN:pOut_4\ ,
-        status_3 => \FracN:pOut_3\ ,
-        status_2 => \FracN:pOut_2\ ,
-        status_1 => \FracN:pOut_1\ ,
-        status_0 => \FracN:pOut_0\ );
+        clock => ClockBlock_BUS_CLK ,
+        status_6 => \USBFS:Net_2040_6\ ,
+        status_5 => \USBFS:Net_2040_5\ ,
+        status_4 => \USBFS:Net_2040_4\ ,
+        status_3 => \USBFS:Net_2040_3\ ,
+        status_2 => \USBFS:Net_2040_2\ ,
+        status_1 => \USBFS:Net_2040_1\ ,
+        status_0 => \USBFS:Net_2040_0\ ,
+        interrupt => \USBFS:EPs_1_to_7_dma_complete\ );
+    Properties:
+    {
+        cy_force_order = 1
+        cy_int_mask = "1111111"
+        cy_md_select = "1111111"
+    }
+    Clock Polarity: Active High
+    Clock Enable: True
+
+UDB [UDB=(2,2)] contents:
+LAB@[UDB=(2,2)][LB=0] #macrocells=4, #inputs=8, #pterms=8
+{
+    [McSlotId=0]:     MacroCell: Name=\FracN:adder2_8\, Mode=(D-Register, Carry-Chain-Continue (next @ [UDB=(2,2)][LB=0][MC=1])) @ [UDB=(2,2)][LB=0][MC=0]
+        Total # of inputs        : 2
+        Total # of product terms : 2
+        List of special equations: 
+            Clock  = (Net_7639) => Global
+            Cpt0 Equation   = (\FracN:acc1_8\ * \FracN:acc2_8\)
+            Cpt1 Equation   = (!\FracN:acc1_8\ * !\FracN:acc2_8\)
+            Clock Enable: True
+        Main Equation            : 2 pterms
+        (
+              !\FracN:acc1_8\ * !\FracN:acc2_8\
+            + \FracN:acc1_8\ * \FracN:acc2_8\
+        );
+        Cin = \FracN:MODULE_2:g1:a0:g0:u0:gof:g_arith(0):ga:cadd_7\
+        Cout = \FracN:MODULE_2:g1:a0:g0:u0:gof:g_arith(0):ga:cadd_8\
+        Output = \FracN:acc2_8\ (fanout=3)
+        Properties               : 
+        {
+        }
+
+    [McSlotId=1]:     MacroCell: Name=\FracN:adder2_9\, Mode=(D-Register, Carry-Chain-Continue (next @ [UDB=(2,2)][LB=0][MC=2])) @ [UDB=(2,2)][LB=0][MC=1]
+        Total # of inputs        : 2
+        Total # of product terms : 2
+        List of special equations: 
+            Clock  = (Net_7639) => Global
+            Cpt0 Equation   = (\FracN:acc1_9\ * \FracN:acc2_9\)
+            Cpt1 Equation   = (!\FracN:acc1_9\ * !\FracN:acc2_9\)
+            Clock Enable: True
+        Main Equation            : 2 pterms
+        (
+              !\FracN:acc1_9\ * !\FracN:acc2_9\
+            + \FracN:acc1_9\ * \FracN:acc2_9\
+        );
+        Cin = \FracN:MODULE_2:g1:a0:g0:u0:gof:g_arith(0):ga:cadd_8\
+        Cout = \FracN:MODULE_2:g1:a0:g0:u0:gof:g_arith(0):ga:cadd_9\
+        Output = \FracN:acc2_9\ (fanout=3)
+        Properties               : 
+        {
+        }
+
+    [McSlotId=2]:     MacroCell: Name=\FracN:adder2_10\, Mode=(D-Register, Carry-Chain-Continue (next @ [UDB=(2,2)][LB=0][MC=3])) @ [UDB=(2,2)][LB=0][MC=2]
+        Total # of inputs        : 2
+        Total # of product terms : 2
+        List of special equations: 
+            Clock  = (Net_7639) => Global
+            Cpt0 Equation   = (\FracN:acc1_10\ * \FracN:acc2_10\)
+            Cpt1 Equation   = (!\FracN:acc1_10\ * !\FracN:acc2_10\)
+            Clock Enable: True
+        Main Equation            : 2 pterms
+        (
+              !\FracN:acc1_10\ * !\FracN:acc2_10\
+            + \FracN:acc1_10\ * \FracN:acc2_10\
+        );
+        Cin = \FracN:MODULE_2:g1:a0:g0:u0:gof:g_arith(0):ga:cadd_9\
+        Cout = \FracN:MODULE_2:g1:a0:g0:u0:gof:g_arith(0):ga:cadd_10\
+        Output = \FracN:acc2_10\ (fanout=3)
+        Properties               : 
+        {
+        }
+
+    [McSlotId=3]:     MacroCell: Name=\FracN:adder2_11\, Mode=(D-Register, Carry-Chain-Continue (next @ [UDB=(2,2)][LB=1][MC=0])) @ [UDB=(2,2)][LB=0][MC=3]
+        Total # of inputs        : 2
+        Total # of product terms : 2
+        List of special equations: 
+            Clock  = (Net_7639) => Global
+            Cpt0 Equation   = (\FracN:acc1_11\ * \FracN:acc2_11\)
+            Cpt1 Equation   = (!\FracN:acc1_11\ * !\FracN:acc2_11\)
+            Clock Enable: True
+        Main Equation            : 2 pterms
+        (
+              !\FracN:acc1_11\ * !\FracN:acc2_11\
+            + \FracN:acc1_11\ * \FracN:acc2_11\
+        );
+        Cin = \FracN:MODULE_2:g1:a0:g0:u0:gof:g_arith(0):ga:cadd_10\
+        Cout = \FracN:MODULE_2:g1:a0:g0:u0:gof:g_arith(0):ga:cadd_11\
+        Output = \FracN:acc2_11\ (fanout=3)
+        Properties               : 
+        {
+        }
+}
+
+LAB@[UDB=(2,2)][LB=1] #macrocells=4, #inputs=5, #pterms=7
+{
+    [McSlotId=0]:     MacroCell: Name=\FracN:adder2_12\, Mode=(D-Register, Carry-Chain-Continue (next @ [UDB=(2,2)][LB=1][MC=1])) @ [UDB=(2,2)][LB=1][MC=0]
+        Total # of inputs        : 2
+        Total # of product terms : 2
+        List of special equations: 
+            Clock  = (Net_7639) => Global
+            Cpt0 Equation   = (\FracN:acc1_12\ * \FracN:acc2_12\)
+            Cpt1 Equation   = (!\FracN:acc1_12\ * !\FracN:acc2_12\)
+            Clock Enable: True
+        Main Equation            : 2 pterms
+        (
+              !\FracN:acc1_12\ * !\FracN:acc2_12\
+            + \FracN:acc1_12\ * \FracN:acc2_12\
+        );
+        Cin = \FracN:MODULE_2:g1:a0:g0:u0:gof:g_arith(0):ga:cadd_11\
+        Cout = \FracN:MODULE_2:g1:a0:g0:u0:gof:g_arith(0):ga:cadd_12\
+        Output = \FracN:acc2_12\ (fanout=3)
+        Properties               : 
+        {
+        }
+
+    [McSlotId=1]:     MacroCell: Name=\FracN:adder2_13\, Mode=(D-Register, Carry-Chain-Continue (next @ [UDB=(2,2)][LB=1][MC=2])) @ [UDB=(2,2)][LB=1][MC=1]
+        Total # of inputs        : 2
+        Total # of product terms : 2
+        List of special equations: 
+            Clock  = (Net_7639) => Global
+            Cpt0 Equation   = (\FracN:acc1_13\ * \FracN:acc2_13\)
+            Cpt1 Equation   = (!\FracN:acc1_13\ * !\FracN:acc2_13\)
+            Clock Enable: True
+        Main Equation            : 2 pterms
+        (
+              !\FracN:acc1_13\ * !\FracN:acc2_13\
+            + \FracN:acc1_13\ * \FracN:acc2_13\
+        );
+        Cin = \FracN:MODULE_2:g1:a0:g0:u0:gof:g_arith(0):ga:cadd_12\
+        Cout = \FracN:MODULE_2:g1:a0:g0:u0:gof:g_arith(0):ga:cadd_13\
+        Output = \FracN:acc2_13\ (fanout=3)
+        Properties               : 
+        {
+        }
+
+    [McSlotId=2]:     MacroCell: Name=\FracN:adder2_14\, Mode=(Combinatorial, Carry-Chain-Last) @ [UDB=(2,2)][LB=1][MC=2]
+        Total # of inputs        : 0
+        Total # of product terms : 2
+        List of special equations: 
+            Cpt0 Equation   = (0)
+            Cpt1 Equation   = (1)
+            Clock Enable: True
+        Main Equation            : 1 pterm
+        (
+            1
+        );
+        Cin = \FracN:MODULE_2:g1:a0:g0:u0:gof:g_arith(0):ga:cadd_13\
+        Cout = \FracN:adder2_14_cout\
+        Output = \FracN:adder2_14\ (fanout=4)
+        Properties               : 
+        {
+        }
+
+    [McSlotId=3]:     MacroCell: Name=\FracN:minus1\, Mode=(D-Register) @ [UDB=(2,2)][LB=1][MC=3]
+        Total # of inputs        : 1
+        Total # of product terms : 1
+        List of special equations: 
+            Clock  = (Net_7639) => Global
+            Clock Enable: True
+        Main Equation            : 1 pterm
+        (
+              \FracN:adder2_14\
+        );
+        Output = \FracN:minus1\ (fanout=21)
+        Properties               : 
+        {
+        }
+}
+
+synccell: Name =\USBFS:nrqSync:genblk1[3]:INST\
+    PORT MAP (
+        clock => ClockBlock_BUS_CLK ,
+        out => \USBFS:Net_2040_3\ );
+    Properties:
+    {
+    }
+    Clock Polarity: Active High
+    Clock Enable: True
+
+UDB [UDB=(2,3)] contents:
+LAB@[UDB=(2,3)][LB=0] #macrocells=1, #inputs=2, #pterms=1
+{
+    [McSlotId=0]: (empty)
+    [McSlotId=1]: (empty)
+    [McSlotId=2]: (empty)
+    [McSlotId=3]:     MacroCell: Name=Net_6748, Mode=(D-Register) @ [UDB=(2,3)][LB=0][MC=3]
+        Total # of inputs        : 2
+        Total # of product terms : 1
+        List of special equations: 
+            Clock  = (Net_7968) => Global
+            Clock Enable: True
+        Main Equation            : 1 pterm
+        (
+              !\I2S:bI2S:reset\ * !\I2S:bI2S:count_6\
+        );
+        Output = Net_6748 (fanout=2)
+        Properties               : 
+        {
+        }
+}
+
+LAB@[UDB=(2,3)][LB=1] #macrocells=2, #inputs=2, #pterms=1
+{
+    [McSlotId=0]:     MacroCell: Name=\SyncSOF:sof_sync\, Mode=(T-Register) @ [UDB=(2,3)][LB=1][MC=0]
+        Total # of inputs        : 0
+        Total # of product terms : 0
+        List of special equations: 
+            Clock  = (Net_7567)
+            Clock Enable: True
+        Main Equation            : 0 pterms
+        !(
+            0
+        );
+        Output = \SyncSOF:sof_sync\ (fanout=3)
+        Properties               : 
+        {
+        }
+
+    [McSlotId=1]:     MacroCell: Name=\SyncSOF:buffer_1\, Mode=(D-Register) @ [UDB=(2,3)][LB=1][MC=1]
+        Total # of inputs        : 2
+        Total # of product terms : 1
+        List of special equations: 
+            Clock  = (Net_7567)
+            Reset  = (Net_4317)
+            Clock Enable: True
+        Main Equation            : 1 pterm
+        (
+              !\SyncSOF:buffer_1\ * \SyncSOF:buffer_0\
+        );
+        Output = \SyncSOF:buffer_1\ (fanout=3)
+        Properties               : 
+        {
+        }
+
+    [McSlotId=2]: (empty)
+    [McSlotId=3]: (empty)
+}
+
+synccell: Name =\USBFS:nrqSync:genblk1[6]:INST\
+    PORT MAP (
+        clock => ClockBlock_BUS_CLK ,
+        out => \USBFS:Net_2040_6\ );
+    Properties:
+    {
+    }
+    Clock Polarity: Active High
+    Clock Enable: True
+
+synccell: Name =\USBFS:nrqSync:genblk1[5]:INST\
+    PORT MAP (
+        clock => ClockBlock_BUS_CLK ,
+        out => \USBFS:Net_2040_5\ );
+    Properties:
+    {
+    }
+    Clock Polarity: Active High
+    Clock Enable: True
+
+synccell: Name =\USBFS:nrqSync:genblk1[4]:INST\
+    PORT MAP (
+        clock => ClockBlock_BUS_CLK ,
+        out => \USBFS:Net_2040_4\ );
+    Properties:
+    {
+    }
+    Clock Polarity: Active High
+    Clock Enable: True
+
+synccell: Name =\USBFS:nrqSync:genblk1[1]:INST\
+    PORT MAP (
+        clock => ClockBlock_BUS_CLK ,
+        in => \USBFS:Net_1498\ ,
+        out => \USBFS:Net_2040_1\ );
+    Properties:
+    {
+    }
+    Clock Polarity: Active High
+    Clock Enable: True
+
+UDB [UDB=(2,4)] contents:
+LAB@[UDB=(2,4)][LB=0] #macrocells=1, #inputs=2, #pterms=1
+{
+    [McSlotId=0]:     MacroCell: Name=\SyncSOF:buffer_0\, Mode=(D-Register) @ [UDB=(2,4)][LB=0][MC=0]
+        Total # of inputs        : 2
+        Total # of product terms : 1
+        List of special equations: 
+            Clock  = (Net_7567)
+            Preset = (Net_4317)
+            Clock Enable: True
+        Main Equation            : 1 pterm
+        (
+              !\SyncSOF:buffer_1\ * !\SyncSOF:buffer_0\
+        );
+        Output = \SyncSOF:buffer_0\ (fanout=3)
+        Properties               : 
+        {
+        }
+
+    [McSlotId=1]: (empty)
+    [McSlotId=2]: (empty)
+    [McSlotId=3]: (empty)
+}
+
+LAB@[UDB=(2,4)][LB=1] #macrocells=2, #inputs=6, #pterms=3
+{
+    [McSlotId=0]: (empty)
+    [McSlotId=1]:     MacroCell: Name=\I2S:bI2S:rx_data_in_0\, Mode=(D-Register) @ [UDB=(2,4)][LB=1][MC=1]
+        Total # of inputs        : 4
+        Total # of product terms : 2
+        List of special equations: 
+            Clock  = (Net_7968) => Global
+            Clock Enable: True
+        Main Equation            : 2 pterms
+        (
+              !Net_7720 * Net_8076 * Net_8077
+            + Net_7720 * \I2S:bI2S:rx_data_in_0\
+        );
+        Output = \I2S:bI2S:rx_data_in_0\ (fanout=2)
+        Properties               : 
+        {
+        }
+
+    [McSlotId=2]:     MacroCell: Name=Net_7907, Mode=(Combinatorial) @ [UDB=(2,4)][LB=1][MC=2]
+        Total # of inputs        : 2
+        Total # of product terms : 1
+            Clock Enable: True
+        Main Equation            : 1 pterm
+        (
+              Net_7882_0 * Net_8073
+        );
+        Output = Net_7907 (fanout=1)
+        Properties               : 
+        {
+        }
+
+    [McSlotId=3]: (empty)
+}
+
+statuscell: Name =\SyncSOF:BUFFER\
+    PORT MAP (
+        status_1 => \SyncSOF:buffer_1\ ,
+        status_0 => \SyncSOF:buffer_0\ );
+    Properties:
+    {
+        cy_force_order = 1
+        cy_md_select = "00000000"
+    }
+    Clock Enable: True
+
+controlcell: Name =\Control:Sync:ctrl_reg\
+    PORT MAP (
+        control_7 => Net_8142 ,
+        control_6 => Net_8146 ,
+        control_5 => Net_8145 ,
+        control_4 => Net_8077 ,
+        control_3 => Net_7988 ,
+        control_2 => Net_8073 ,
+        control_1 => Net_7975 ,
+        control_0 => Net_7989 );
+    Properties:
+    {
+        cy_ctrl_mode_0 = "00000000"
+        cy_ctrl_mode_1 = "00000000"
+        cy_ext_reset = 0
+        cy_force_order = 1
+        cy_init_value = "00011111"
+    }
+    Clock Enable: True
+
+UDB [UDB=(2,5)] contents:
+LAB@[UDB=(2,5)][LB=0] #macrocells=1, #inputs=1, #pterms=1
+{
+    [McSlotId=0]: (empty)
+    [McSlotId=1]: (empty)
+    [McSlotId=2]: (empty)
+    [McSlotId=3]:     MacroCell: Name=Key_wire_0, Mode=(D-Register) @ [UDB=(2,5)][LB=0][MC=3]
+        Total # of inputs        : 1
+        Total # of product terms : 1
+        List of special equations: 
+            Clock  = (Net_8123) => Global
+            Clock Enable: True
+        Main Equation            : 1 pterm
+        (
+              Net_8071
+        );
+        Output = Key_wire_0 (fanout=1)
+        Properties               : 
+        {
+        }
+}
+
+LAB@[UDB=(2,5)][LB=1] #macrocells=1, #inputs=1, #pterms=1
+{
+    [McSlotId=0]: (empty)
+    [McSlotId=1]:     MacroCell: Name=Key_wire_1, Mode=(D-Register) @ [UDB=(2,5)][LB=1][MC=1]
+        Total # of inputs        : 1
+        Total # of product terms : 1
+        List of special equations: 
+            Clock  = (Net_8123) => Global
+            Clock Enable: True
+        Main Equation            : 1 pterm
+        (
+              Net_8068
+        );
+        Output = Key_wire_1 (fanout=1)
+        Properties               : 
+        {
+        }
+
+    [McSlotId=2]: (empty)
+    [McSlotId=3]: (empty)
+}
+
+statuscell: Name =\Status:sts:sts_reg\
+    PORT MAP (
+        status_4 => Net_8144_SYNCOUT ,
+        status_3 => Net_7684_local ,
+        status_2 => Net_7977 ,
+        status_1 => Key_wire_0 ,
+        status_0 => Key_wire_1 );
     Properties:
     {
         cy_force_order = 1
@@ -6602,37 +6561,146 @@ controlcell: Name =\CW_Hold_Control:Sync:ctrl_reg\
     Clock Polarity: Active High
     Clock Enable: True
 
-UDB [UDB=(2,3)] contents:
-LAB@[UDB=(2,3)][LB=0] #macrocells=2, #inputs=6, #pterms=3
+UDB [UDB=(3,0)] contents:
+LAB@[UDB=(3,0)][LB=0] #macrocells=4, #inputs=8, #pterms=8
 {
-    [McSlotId=0]:     MacroCell: Name=\I2S:bI2S:rx_data_in_0\, Mode=(D-Register) @ [UDB=(2,3)][LB=0][MC=0]
-        Total # of inputs        : 4
+    [McSlotId=0]:     MacroCell: Name=\FracN:adder1_8\, Mode=(D-Register, Carry-Chain-Continue (next @ [UDB=(3,0)][LB=0][MC=1])) @ [UDB=(3,0)][LB=0][MC=0]
+        Total # of inputs        : 2
         Total # of product terms : 2
         List of special equations: 
-            Clock  = (Net_7968) => Global
+            Clock  = (Net_7639) => Global
+            Cpt0 Equation   = (\FracN:frac_8\ * \FracN:acc1_8\)
+            Cpt1 Equation   = (!\FracN:frac_8\ * !\FracN:acc1_8\)
             Clock Enable: True
         Main Equation            : 2 pterms
         (
-              !Net_7720 * Net_8076 * Net_8077
-            + Net_7720 * \I2S:bI2S:rx_data_in_0\
+              !\FracN:frac_8\ * !\FracN:acc1_8\
+            + \FracN:frac_8\ * \FracN:acc1_8\
         );
-        Output = \I2S:bI2S:rx_data_in_0\ (fanout=2)
+        Cin = \FracN:MODULE_1:g1:a0:g0:u0:gof:g_arith(0):ga:cadd_7\
+        Cout = \FracN:MODULE_1:g1:a0:g0:u0:gof:g_arith(0):ga:cadd_8\
+        Output = \FracN:acc1_8\ (fanout=6)
         Properties               : 
         {
         }
 
-    [McSlotId=1]: (empty)
-    [McSlotId=2]:     MacroCell: Name=Net_6748, Mode=(D-Register) @ [UDB=(2,3)][LB=0][MC=2]
+    [McSlotId=1]:     MacroCell: Name=\FracN:adder1_9\, Mode=(D-Register, Carry-Chain-Continue (next @ [UDB=(3,0)][LB=0][MC=2])) @ [UDB=(3,0)][LB=0][MC=1]
         Total # of inputs        : 2
-        Total # of product terms : 1
+        Total # of product terms : 2
         List of special equations: 
-            Clock  = (Net_7968) => Global
+            Clock  = (Net_7639) => Global
+            Cpt0 Equation   = (\FracN:frac_9\ * \FracN:acc1_9\)
+            Cpt1 Equation   = (!\FracN:frac_9\ * !\FracN:acc1_9\)
+            Clock Enable: True
+        Main Equation            : 2 pterms
+        (
+              !\FracN:frac_9\ * !\FracN:acc1_9\
+            + \FracN:frac_9\ * \FracN:acc1_9\
+        );
+        Cin = \FracN:MODULE_1:g1:a0:g0:u0:gof:g_arith(0):ga:cadd_8\
+        Cout = \FracN:MODULE_1:g1:a0:g0:u0:gof:g_arith(0):ga:cadd_9\
+        Output = \FracN:acc1_9\ (fanout=6)
+        Properties               : 
+        {
+        }
+
+    [McSlotId=2]:     MacroCell: Name=\FracN:adder1_10\, Mode=(D-Register, Carry-Chain-Continue (next @ [UDB=(3,0)][LB=0][MC=3])) @ [UDB=(3,0)][LB=0][MC=2]
+        Total # of inputs        : 2
+        Total # of product terms : 2
+        List of special equations: 
+            Clock  = (Net_7639) => Global
+            Cpt0 Equation   = (\FracN:frac_10\ * \FracN:acc1_10\)
+            Cpt1 Equation   = (!\FracN:frac_10\ * !\FracN:acc1_10\)
+            Clock Enable: True
+        Main Equation            : 2 pterms
+        (
+              !\FracN:frac_10\ * !\FracN:acc1_10\
+            + \FracN:frac_10\ * \FracN:acc1_10\
+        );
+        Cin = \FracN:MODULE_1:g1:a0:g0:u0:gof:g_arith(0):ga:cadd_9\
+        Cout = \FracN:MODULE_1:g1:a0:g0:u0:gof:g_arith(0):ga:cadd_10\
+        Output = \FracN:acc1_10\ (fanout=6)
+        Properties               : 
+        {
+        }
+
+    [McSlotId=3]:     MacroCell: Name=\FracN:adder1_11\, Mode=(D-Register, Carry-Chain-Continue (next @ [UDB=(3,0)][LB=1][MC=0])) @ [UDB=(3,0)][LB=0][MC=3]
+        Total # of inputs        : 2
+        Total # of product terms : 2
+        List of special equations: 
+            Clock  = (Net_7639) => Global
+            Cpt0 Equation   = (\FracN:frac_11\ * \FracN:acc1_11\)
+            Cpt1 Equation   = (!\FracN:frac_11\ * !\FracN:acc1_11\)
+            Clock Enable: True
+        Main Equation            : 2 pterms
+        (
+              !\FracN:frac_11\ * !\FracN:acc1_11\
+            + \FracN:frac_11\ * \FracN:acc1_11\
+        );
+        Cin = \FracN:MODULE_1:g1:a0:g0:u0:gof:g_arith(0):ga:cadd_10\
+        Cout = \FracN:MODULE_1:g1:a0:g0:u0:gof:g_arith(0):ga:cadd_11\
+        Output = \FracN:acc1_11\ (fanout=6)
+        Properties               : 
+        {
+        }
+}
+
+LAB@[UDB=(3,0)][LB=1] #macrocells=3, #inputs=4, #pterms=6
+{
+    [McSlotId=0]:     MacroCell: Name=\FracN:adder1_12\, Mode=(D-Register, Carry-Chain-Continue (next @ [UDB=(3,0)][LB=1][MC=1])) @ [UDB=(3,0)][LB=1][MC=0]
+        Total # of inputs        : 2
+        Total # of product terms : 2
+        List of special equations: 
+            Clock  = (Net_7639) => Global
+            Cpt0 Equation   = (\FracN:frac_12\ * \FracN:acc1_12\)
+            Cpt1 Equation   = (!\FracN:frac_12\ * !\FracN:acc1_12\)
+            Clock Enable: True
+        Main Equation            : 2 pterms
+        (
+              !\FracN:frac_12\ * !\FracN:acc1_12\
+            + \FracN:frac_12\ * \FracN:acc1_12\
+        );
+        Cin = \FracN:MODULE_1:g1:a0:g0:u0:gof:g_arith(0):ga:cadd_11\
+        Cout = \FracN:MODULE_1:g1:a0:g0:u0:gof:g_arith(0):ga:cadd_12\
+        Output = \FracN:acc1_12\ (fanout=6)
+        Properties               : 
+        {
+        }
+
+    [McSlotId=1]:     MacroCell: Name=\FracN:adder1_13\, Mode=(D-Register, Carry-Chain-Continue (next @ [UDB=(3,0)][LB=1][MC=2])) @ [UDB=(3,0)][LB=1][MC=1]
+        Total # of inputs        : 2
+        Total # of product terms : 2
+        List of special equations: 
+            Clock  = (Net_7639) => Global
+            Cpt0 Equation   = (\FracN:frac_13\ * \FracN:acc1_13\)
+            Cpt1 Equation   = (!\FracN:frac_13\ * !\FracN:acc1_13\)
+            Clock Enable: True
+        Main Equation            : 2 pterms
+        (
+              !\FracN:frac_13\ * !\FracN:acc1_13\
+            + \FracN:frac_13\ * \FracN:acc1_13\
+        );
+        Cin = \FracN:MODULE_1:g1:a0:g0:u0:gof:g_arith(0):ga:cadd_12\
+        Cout = \FracN:MODULE_1:g1:a0:g0:u0:gof:g_arith(0):ga:cadd_13\
+        Output = \FracN:acc1_13\ (fanout=6)
+        Properties               : 
+        {
+        }
+
+    [McSlotId=2]:     MacroCell: Name=\FracN:adder1_14\, Mode=(Combinatorial, Carry-Chain-Last) @ [UDB=(3,0)][LB=1][MC=2]
+        Total # of inputs        : 0
+        Total # of product terms : 2
+        List of special equations: 
+            Cpt0 Equation   = (0)
+            Cpt1 Equation   = (1)
             Clock Enable: True
         Main Equation            : 1 pterm
         (
-              !\I2S:bI2S:reset\ * !\I2S:bI2S:count_6\
+            1
         );
-        Output = Net_6748 (fanout=2)
+        Cin = \FracN:MODULE_1:g1:a0:g0:u0:gof:g_arith(0):ga:cadd_13\
+        Cout = \FracN:adder1_14_cout\
+        Output = \FracN:adder1_14\ (fanout=7)
         Properties               : 
         {
         }
@@ -6640,74 +6708,386 @@ LAB@[UDB=(2,3)][LB=0] #macrocells=2, #inputs=6, #pterms=3
     [McSlotId=3]: (empty)
 }
 
-LAB@[UDB=(2,3)][LB=1] #macrocells=3, #inputs=7, #pterms=6
+statusicell: Name =\USBFS:EP8_DMA_Done_SR:sts_intr:sts_reg\
+    PORT MAP (
+        clock => ClockBlock_BUS_CLK ,
+        status_1 => \USBFS:Net_2040_7\ ,
+        status_0 => \USBFS:EPs_1_to_7_dma_complete\ ,
+        interrupt => \USBFS:Net_2032\ );
+    Properties:
+    {
+        cy_force_order = 1
+        cy_int_mask = "0000011"
+        cy_md_select = "0000011"
+    }
+    Clock Polarity: Active High
+    Clock Enable: True
+
+controlcell: Name =\FracN:FRAC_HI\
+    PORT MAP (
+        control_7 => \FracN:fHigh_7\ ,
+        control_6 => \FracN:fHigh_6\ ,
+        control_5 => \FracN:frac_13\ ,
+        control_4 => \FracN:frac_12\ ,
+        control_3 => \FracN:frac_11\ ,
+        control_2 => \FracN:frac_10\ ,
+        control_1 => \FracN:frac_9\ ,
+        control_0 => \FracN:frac_8\ );
+    Properties:
+    {
+        cy_ctrl_mode_0 = "00000000"
+        cy_ctrl_mode_1 = "00000000"
+        cy_ext_reset = 0
+        cy_force_order = 1
+        cy_init_value = "00111101"
+    }
+    Clock Enable: True
+
+UDB [UDB=(3,1)] contents:
+LAB@[UDB=(3,1)][LB=0] #macrocells=4, #inputs=5, #pterms=8
 {
-    [McSlotId=0]:     MacroCell: Name=\SyncSOF:frame_pos_hi_6\, Mode=(D-Register) @ [UDB=(2,3)][LB=1][MC=0]
-        Total # of inputs        : 3
+    [McSlotId=0]:     MacroCell: Name=\FracN:MODULE_5:g1:a0:s_0\, Mode=(D-Register, Carry-Chain-Start (next @ [UDB=(3,1)][LB=0][MC=1])) @ [UDB=(3,1)][LB=0][MC=0]
+        Total # of inputs        : 2
         Total # of product terms : 2
         List of special equations: 
-            Clock  = (ClockBlock_BUS_CLK) => Global
+            Clock  = (Net_7639) => Global
+            Cpt0 Equation   = (\FracN:minus1\ * \FracN:MODULE_4:g1:a0:s_0\)
+            Cpt1 Equation   = (!\FracN:minus1\ * !\FracN:MODULE_4:g1:a0:s_0\)
             Clock Enable: True
         Main Equation            : 2 pterms
         (
-              \SyncSOF:clockcount3_2\ * \SyncSOF:MODULE_7:g1:a0:xneq\
-            + \SyncSOF:frame_pos_hi_6\ * !\SyncSOF:MODULE_7:g1:a0:xneq\
+              !\FracN:minus1\ * !\FracN:MODULE_4:g1:a0:s_0\
+            + \FracN:minus1\ * \FracN:MODULE_4:g1:a0:s_0\
         );
-        Output = \SyncSOF:frame_pos_hi_6\ (fanout=2)
+        Cout = \FracN:MODULE_5:g1:a0:g0:u0:gof:g_arith(0):ga:cadd_0\
+        Output = \FracN:pOut_0\ (fanout=1)
         Properties               : 
         {
         }
 
-    [McSlotId=1]:     MacroCell: Name=\SyncSOF:frame_pos_hi_4\, Mode=(D-Register) @ [UDB=(2,3)][LB=1][MC=1]
-        Total # of inputs        : 3
+    [McSlotId=1]:     MacroCell: Name=\FracN:MODULE_5:g1:a0:s_1\, Mode=(D-Register, Carry-Chain-Continue (next @ [UDB=(3,1)][LB=0][MC=2])) @ [UDB=(3,1)][LB=0][MC=1]
+        Total # of inputs        : 2
         Total # of product terms : 2
         List of special equations: 
-            Clock  = (ClockBlock_BUS_CLK) => Global
+            Clock  = (Net_7639) => Global
+            Cpt0 Equation   = (\FracN:minus1\ * \FracN:MODULE_4:g1:a0:s_1\)
+            Cpt1 Equation   = (!\FracN:minus1\ * !\FracN:MODULE_4:g1:a0:s_1\)
             Clock Enable: True
         Main Equation            : 2 pterms
         (
-              \SyncSOF:clockcount3_0\ * \SyncSOF:MODULE_7:g1:a0:xneq\
-            + \SyncSOF:frame_pos_hi_4\ * !\SyncSOF:MODULE_7:g1:a0:xneq\
+              !\FracN:minus1\ * !\FracN:MODULE_4:g1:a0:s_1\
+            + \FracN:minus1\ * \FracN:MODULE_4:g1:a0:s_1\
         );
-        Output = \SyncSOF:frame_pos_hi_4\ (fanout=2)
+        Cin = \FracN:MODULE_5:g1:a0:g0:u0:gof:g_arith(0):ga:cadd_0\
+        Cout = \FracN:MODULE_5:g1:a0:g0:u0:gof:g_arith(0):ga:cadd_1\
+        Output = \FracN:pOut_1\ (fanout=1)
         Properties               : 
         {
         }
 
-    [McSlotId=2]: (empty)
-    [McSlotId=3]:     MacroCell: Name=\SyncSOF:frame_pos_hi_7\, Mode=(D-Register) @ [UDB=(2,3)][LB=1][MC=3]
-        Total # of inputs        : 3
+    [McSlotId=2]:     MacroCell: Name=\FracN:MODULE_5:g1:a0:s_2\, Mode=(D-Register, Carry-Chain-Continue (next @ [UDB=(3,1)][LB=0][MC=3])) @ [UDB=(3,1)][LB=0][MC=2]
+        Total # of inputs        : 2
         Total # of product terms : 2
         List of special equations: 
-            Clock  = (ClockBlock_BUS_CLK) => Global
+            Clock  = (Net_7639) => Global
+            Cpt0 Equation   = (\FracN:minus1\ * \FracN:MODULE_4:g1:a0:s_2\)
+            Cpt1 Equation   = (!\FracN:minus1\ * !\FracN:MODULE_4:g1:a0:s_2\)
             Clock Enable: True
         Main Equation            : 2 pterms
         (
-              \SyncSOF:clockcount3_3\ * \SyncSOF:MODULE_7:g1:a0:xneq\
-            + \SyncSOF:frame_pos_hi_7\ * !\SyncSOF:MODULE_7:g1:a0:xneq\
+              !\FracN:minus1\ * !\FracN:MODULE_4:g1:a0:s_2\
+            + \FracN:minus1\ * \FracN:MODULE_4:g1:a0:s_2\
         );
-        Output = \SyncSOF:frame_pos_hi_7\ (fanout=2)
+        Cin = \FracN:MODULE_5:g1:a0:g0:u0:gof:g_arith(0):ga:cadd_1\
+        Cout = \FracN:MODULE_5:g1:a0:g0:u0:gof:g_arith(0):ga:cadd_2\
+        Output = \FracN:pOut_2\ (fanout=1)
+        Properties               : 
+        {
+        }
+
+    [McSlotId=3]:     MacroCell: Name=\FracN:MODULE_5:g1:a0:s_3\, Mode=(D-Register, Carry-Chain-Continue (next @ [UDB=(3,1)][LB=1][MC=0])) @ [UDB=(3,1)][LB=0][MC=3]
+        Total # of inputs        : 2
+        Total # of product terms : 2
+        List of special equations: 
+            Clock  = (Net_7639) => Global
+            Cpt0 Equation   = (\FracN:minus1\ * \FracN:MODULE_4:g1:a0:s_3\)
+            Cpt1 Equation   = (!\FracN:minus1\ * !\FracN:MODULE_4:g1:a0:s_3\)
+            Clock Enable: True
+        Main Equation            : 2 pterms
+        (
+              !\FracN:minus1\ * !\FracN:MODULE_4:g1:a0:s_3\
+            + \FracN:minus1\ * \FracN:MODULE_4:g1:a0:s_3\
+        );
+        Cin = \FracN:MODULE_5:g1:a0:g0:u0:gof:g_arith(0):ga:cadd_2\
+        Cout = \FracN:MODULE_5:g1:a0:g0:u0:gof:g_arith(0):ga:cadd_3\
+        Output = \FracN:pOut_3\ (fanout=1)
         Properties               : 
         {
         }
 }
 
-statuscell: Name =\SyncSOF:FRAME_POS_HI\
+LAB@[UDB=(3,1)][LB=1] #macrocells=4, #inputs=5, #pterms=8
+{
+    [McSlotId=0]:     MacroCell: Name=\FracN:MODULE_5:g1:a0:s_4\, Mode=(D-Register, Carry-Chain-Continue (next @ [UDB=(3,1)][LB=1][MC=1])) @ [UDB=(3,1)][LB=1][MC=0]
+        Total # of inputs        : 2
+        Total # of product terms : 2
+        List of special equations: 
+            Clock  = (Net_7639) => Global
+            Cpt0 Equation   = (\FracN:minus1\ * \FracN:MODULE_4:g1:a0:s_4\)
+            Cpt1 Equation   = (!\FracN:minus1\ * !\FracN:MODULE_4:g1:a0:s_4\)
+            Clock Enable: True
+        Main Equation            : 2 pterms
+        (
+              !\FracN:minus1\ * !\FracN:MODULE_4:g1:a0:s_4\
+            + \FracN:minus1\ * \FracN:MODULE_4:g1:a0:s_4\
+        );
+        Cin = \FracN:MODULE_5:g1:a0:g0:u0:gof:g_arith(0):ga:cadd_3\
+        Cout = \FracN:MODULE_5:g1:a0:g0:u0:gof:g_arith(0):ga:cadd_4\
+        Output = \FracN:pOut_4\ (fanout=1)
+        Properties               : 
+        {
+        }
+
+    [McSlotId=1]:     MacroCell: Name=\FracN:MODULE_5:g1:a0:s_5\, Mode=(D-Register, Carry-Chain-Continue (next @ [UDB=(3,1)][LB=1][MC=2])) @ [UDB=(3,1)][LB=1][MC=1]
+        Total # of inputs        : 2
+        Total # of product terms : 2
+        List of special equations: 
+            Clock  = (Net_7639) => Global
+            Cpt0 Equation   = (\FracN:minus1\ * \FracN:MODULE_4:g1:a0:s_5\)
+            Cpt1 Equation   = (!\FracN:minus1\ * !\FracN:MODULE_4:g1:a0:s_5\)
+            Clock Enable: True
+        Main Equation            : 2 pterms
+        (
+              !\FracN:minus1\ * !\FracN:MODULE_4:g1:a0:s_5\
+            + \FracN:minus1\ * \FracN:MODULE_4:g1:a0:s_5\
+        );
+        Cin = \FracN:MODULE_5:g1:a0:g0:u0:gof:g_arith(0):ga:cadd_4\
+        Cout = \FracN:MODULE_5:g1:a0:g0:u0:gof:g_arith(0):ga:cadd_5\
+        Output = \FracN:pOut_5\ (fanout=1)
+        Properties               : 
+        {
+        }
+
+    [McSlotId=2]:     MacroCell: Name=\FracN:MODULE_5:g1:a0:s_6\, Mode=(D-Register, Carry-Chain-Continue (next @ [UDB=(3,1)][LB=1][MC=3])) @ [UDB=(3,1)][LB=1][MC=2]
+        Total # of inputs        : 2
+        Total # of product terms : 2
+        List of special equations: 
+            Clock  = (Net_7639) => Global
+            Cpt0 Equation   = (\FracN:minus1\ * \FracN:MODULE_4:g1:a0:s_6\)
+            Cpt1 Equation   = (!\FracN:minus1\ * !\FracN:MODULE_4:g1:a0:s_6\)
+            Clock Enable: True
+        Main Equation            : 2 pterms
+        (
+              !\FracN:minus1\ * !\FracN:MODULE_4:g1:a0:s_6\
+            + \FracN:minus1\ * \FracN:MODULE_4:g1:a0:s_6\
+        );
+        Cin = \FracN:MODULE_5:g1:a0:g0:u0:gof:g_arith(0):ga:cadd_5\
+        Cout = \FracN:MODULE_5:g1:a0:g0:u0:gof:g_arith(0):ga:cadd_6\
+        Output = \FracN:pOut_6\ (fanout=1)
+        Properties               : 
+        {
+        }
+
+    [McSlotId=3]:     MacroCell: Name=\FracN:MODULE_5:g1:a0:g0:u0:gof:g_arith(0):ga:tmpadd_7\, Mode=(Combinatorial, Carry-Chain-Last) @ [UDB=(3,1)][LB=1][MC=3]
+        Total # of inputs        : 1
+        Total # of product terms : 2
+        List of special equations: 
+            Cpt0 Equation   = (0)
+            Cpt1 Equation   = (!\FracN:MODULE_4:g1:a0:s_7\)
+            Clock Enable: True
+        Main Equation            : 1 pterm
+        (
+              !\FracN:MODULE_4:g1:a0:s_7\
+        );
+        Cin = \FracN:MODULE_5:g1:a0:g0:u0:gof:g_arith(0):ga:cadd_6\
+        Cout = \FracN:MODULE_5:g1:a0:g0:u0:gof:g_arith(0):ga:tmpadd_7_cout\
+        Output = \FracN:MODULE_5:g1:a0:g0:u0:gof:g_arith(0):ga:tmpadd_7\ (fanout=0)
+        Properties               : 
+        {
+        }
+}
+
+statuscell: Name =\FracN:PLL_P\
     PORT MAP (
-        status_7 => \SyncSOF:frame_pos_hi_7\ ,
-        status_6 => \SyncSOF:frame_pos_hi_6\ ,
-        status_5 => \SyncSOF:frame_pos_hi_5\ ,
-        status_4 => \SyncSOF:frame_pos_hi_4\ ,
-        status_3 => \SyncSOF:frame_pos_hi_3\ ,
-        status_2 => \SyncSOF:frame_pos_hi_2\ ,
-        status_1 => \SyncSOF:frame_pos_hi_1\ ,
-        status_0 => \SyncSOF:frame_pos_hi_0\ );
+        status_6 => \FracN:pOut_6\ ,
+        status_5 => \FracN:pOut_5\ ,
+        status_4 => \FracN:pOut_4\ ,
+        status_3 => \FracN:pOut_3\ ,
+        status_2 => \FracN:pOut_2\ ,
+        status_1 => \FracN:pOut_1\ ,
+        status_0 => \FracN:pOut_0\ );
     Properties:
     {
         cy_force_order = 1
         cy_md_select = "00000000"
     }
     Clock Enable: True
+
+UDB [UDB=(3,2)] contents:
+LAB@[UDB=(3,2)][LB=0] #macrocells=4, #inputs=8, #pterms=8
+{
+    [McSlotId=0]:     MacroCell: Name=\FracN:adder2_0\, Mode=(D-Register, Carry-Chain-Start (next @ [UDB=(3,2)][LB=0][MC=1])) @ [UDB=(3,2)][LB=0][MC=0]
+        Total # of inputs        : 2
+        Total # of product terms : 2
+        List of special equations: 
+            Clock  = (Net_7639) => Global
+            Cpt0 Equation   = (\FracN:acc1_0\ * \FracN:acc2_0\)
+            Cpt1 Equation   = (!\FracN:acc1_0\ * !\FracN:acc2_0\)
+            Clock Enable: True
+        Main Equation            : 2 pterms
+        (
+              !\FracN:acc1_0\ * !\FracN:acc2_0\
+            + \FracN:acc1_0\ * \FracN:acc2_0\
+        );
+        Cout = \FracN:MODULE_2:g1:a0:g0:u0:gof:g_arith(0):ga:cadd_0\
+        Output = \FracN:acc2_0\ (fanout=3)
+        Properties               : 
+        {
+        }
+
+    [McSlotId=1]:     MacroCell: Name=\FracN:adder2_1\, Mode=(D-Register, Carry-Chain-Continue (next @ [UDB=(3,2)][LB=0][MC=2])) @ [UDB=(3,2)][LB=0][MC=1]
+        Total # of inputs        : 2
+        Total # of product terms : 2
+        List of special equations: 
+            Clock  = (Net_7639) => Global
+            Cpt0 Equation   = (\FracN:acc1_1\ * \FracN:acc2_1\)
+            Cpt1 Equation   = (!\FracN:acc1_1\ * !\FracN:acc2_1\)
+            Clock Enable: True
+        Main Equation            : 2 pterms
+        (
+              !\FracN:acc1_1\ * !\FracN:acc2_1\
+            + \FracN:acc1_1\ * \FracN:acc2_1\
+        );
+        Cin = \FracN:MODULE_2:g1:a0:g0:u0:gof:g_arith(0):ga:cadd_0\
+        Cout = \FracN:MODULE_2:g1:a0:g0:u0:gof:g_arith(0):ga:cadd_1\
+        Output = \FracN:acc2_1\ (fanout=3)
+        Properties               : 
+        {
+        }
+
+    [McSlotId=2]:     MacroCell: Name=\FracN:adder2_2\, Mode=(D-Register, Carry-Chain-Continue (next @ [UDB=(3,2)][LB=0][MC=3])) @ [UDB=(3,2)][LB=0][MC=2]
+        Total # of inputs        : 2
+        Total # of product terms : 2
+        List of special equations: 
+            Clock  = (Net_7639) => Global
+            Cpt0 Equation   = (\FracN:acc1_2\ * \FracN:acc2_2\)
+            Cpt1 Equation   = (!\FracN:acc1_2\ * !\FracN:acc2_2\)
+            Clock Enable: True
+        Main Equation            : 2 pterms
+        (
+              !\FracN:acc1_2\ * !\FracN:acc2_2\
+            + \FracN:acc1_2\ * \FracN:acc2_2\
+        );
+        Cin = \FracN:MODULE_2:g1:a0:g0:u0:gof:g_arith(0):ga:cadd_1\
+        Cout = \FracN:MODULE_2:g1:a0:g0:u0:gof:g_arith(0):ga:cadd_2\
+        Output = \FracN:acc2_2\ (fanout=3)
+        Properties               : 
+        {
+        }
+
+    [McSlotId=3]:     MacroCell: Name=\FracN:adder2_3\, Mode=(D-Register, Carry-Chain-Continue (next @ [UDB=(3,2)][LB=1][MC=0])) @ [UDB=(3,2)][LB=0][MC=3]
+        Total # of inputs        : 2
+        Total # of product terms : 2
+        List of special equations: 
+            Clock  = (Net_7639) => Global
+            Cpt0 Equation   = (\FracN:acc1_3\ * \FracN:acc2_3\)
+            Cpt1 Equation   = (!\FracN:acc1_3\ * !\FracN:acc2_3\)
+            Clock Enable: True
+        Main Equation            : 2 pterms
+        (
+              !\FracN:acc1_3\ * !\FracN:acc2_3\
+            + \FracN:acc1_3\ * \FracN:acc2_3\
+        );
+        Cin = \FracN:MODULE_2:g1:a0:g0:u0:gof:g_arith(0):ga:cadd_2\
+        Cout = \FracN:MODULE_2:g1:a0:g0:u0:gof:g_arith(0):ga:cadd_3\
+        Output = \FracN:acc2_3\ (fanout=3)
+        Properties               : 
+        {
+        }
+}
+
+LAB@[UDB=(3,2)][LB=1] #macrocells=4, #inputs=8, #pterms=8
+{
+    [McSlotId=0]:     MacroCell: Name=\FracN:adder2_4\, Mode=(D-Register, Carry-Chain-Continue (next @ [UDB=(3,2)][LB=1][MC=1])) @ [UDB=(3,2)][LB=1][MC=0]
+        Total # of inputs        : 2
+        Total # of product terms : 2
+        List of special equations: 
+            Clock  = (Net_7639) => Global
+            Cpt0 Equation   = (\FracN:acc1_4\ * \FracN:acc2_4\)
+            Cpt1 Equation   = (!\FracN:acc1_4\ * !\FracN:acc2_4\)
+            Clock Enable: True
+        Main Equation            : 2 pterms
+        (
+              !\FracN:acc1_4\ * !\FracN:acc2_4\
+            + \FracN:acc1_4\ * \FracN:acc2_4\
+        );
+        Cin = \FracN:MODULE_2:g1:a0:g0:u0:gof:g_arith(0):ga:cadd_3\
+        Cout = \FracN:MODULE_2:g1:a0:g0:u0:gof:g_arith(0):ga:cadd_4\
+        Output = \FracN:acc2_4\ (fanout=3)
+        Properties               : 
+        {
+        }
+
+    [McSlotId=1]:     MacroCell: Name=\FracN:adder2_5\, Mode=(D-Register, Carry-Chain-Continue (next @ [UDB=(3,2)][LB=1][MC=2])) @ [UDB=(3,2)][LB=1][MC=1]
+        Total # of inputs        : 2
+        Total # of product terms : 2
+        List of special equations: 
+            Clock  = (Net_7639) => Global
+            Cpt0 Equation   = (\FracN:acc1_5\ * \FracN:acc2_5\)
+            Cpt1 Equation   = (!\FracN:acc1_5\ * !\FracN:acc2_5\)
+            Clock Enable: True
+        Main Equation            : 2 pterms
+        (
+              !\FracN:acc1_5\ * !\FracN:acc2_5\
+            + \FracN:acc1_5\ * \FracN:acc2_5\
+        );
+        Cin = \FracN:MODULE_2:g1:a0:g0:u0:gof:g_arith(0):ga:cadd_4\
+        Cout = \FracN:MODULE_2:g1:a0:g0:u0:gof:g_arith(0):ga:cadd_5\
+        Output = \FracN:acc2_5\ (fanout=3)
+        Properties               : 
+        {
+        }
+
+    [McSlotId=2]:     MacroCell: Name=\FracN:adder2_6\, Mode=(D-Register, Carry-Chain-Continue (next @ [UDB=(3,2)][LB=1][MC=3])) @ [UDB=(3,2)][LB=1][MC=2]
+        Total # of inputs        : 2
+        Total # of product terms : 2
+        List of special equations: 
+            Clock  = (Net_7639) => Global
+            Cpt0 Equation   = (\FracN:acc1_6\ * \FracN:acc2_6\)
+            Cpt1 Equation   = (!\FracN:acc1_6\ * !\FracN:acc2_6\)
+            Clock Enable: True
+        Main Equation            : 2 pterms
+        (
+              !\FracN:acc1_6\ * !\FracN:acc2_6\
+            + \FracN:acc1_6\ * \FracN:acc2_6\
+        );
+        Cin = \FracN:MODULE_2:g1:a0:g0:u0:gof:g_arith(0):ga:cadd_5\
+        Cout = \FracN:MODULE_2:g1:a0:g0:u0:gof:g_arith(0):ga:cadd_6\
+        Output = \FracN:acc2_6\ (fanout=3)
+        Properties               : 
+        {
+        }
+
+    [McSlotId=3]:     MacroCell: Name=\FracN:adder2_7\, Mode=(D-Register, Carry-Chain-Continue (next @ [UDB=(2,2)][LB=0][MC=0])) @ [UDB=(3,2)][LB=1][MC=3]
+        Total # of inputs        : 2
+        Total # of product terms : 2
+        List of special equations: 
+            Clock  = (Net_7639) => Global
+            Cpt0 Equation   = (\FracN:acc1_7\ * \FracN:acc2_7\)
+            Cpt1 Equation   = (!\FracN:acc1_7\ * !\FracN:acc2_7\)
+            Clock Enable: True
+        Main Equation            : 2 pterms
+        (
+              !\FracN:acc1_7\ * !\FracN:acc2_7\
+            + \FracN:acc1_7\ * \FracN:acc2_7\
+        );
+        Cin = \FracN:MODULE_2:g1:a0:g0:u0:gof:g_arith(0):ga:cadd_6\
+        Cout = \FracN:MODULE_2:g1:a0:g0:u0:gof:g_arith(0):ga:cadd_7\
+        Output = \FracN:acc2_7\ (fanout=3)
+        Properties               : 
+        {
+        }
+}
 
 count7cell: Name =\SyncSOF:Counter2\
     PORT MAP (
@@ -6732,46 +7112,62 @@ count7cell: Name =\SyncSOF:Counter2\
     Clock Polarity: Active High
     Clock Enable: PosEdge(\SyncSOF:clocktc2\)
 
-UDB [UDB=(2,4)] contents:
-LAB@[UDB=(2,4)][LB=0] #macrocells=2, #inputs=2, #pterms=2
+UDB [UDB=(3,3)] contents:
+LAB@[UDB=(3,3)][LB=0] #macrocells=3, #inputs=7, #pterms=6
 {
-    [McSlotId=0]: (empty)
-    [McSlotId=1]:     MacroCell: Name=Key_wire_1, Mode=(D-Register) @ [UDB=(2,4)][LB=0][MC=1]
-        Total # of inputs        : 1
-        Total # of product terms : 1
+    [McSlotId=0]:     MacroCell: Name=\SyncSOF:frame_pos_hi_0\, Mode=(D-Register) @ [UDB=(3,3)][LB=0][MC=0]
+        Total # of inputs        : 3
+        Total # of product terms : 2
         List of special equations: 
-            Clock  = (Net_8123) => Global
+            Clock  = (ClockBlock_BUS_CLK) => Global
             Clock Enable: True
-        Main Equation            : 1 pterm
+        Main Equation            : 2 pterms
         (
-              Net_8068
+              \SyncSOF:clockcount2_2\ * \SyncSOF:MODULE_7:g1:a0:xneq\
+            + \SyncSOF:frame_pos_hi_0\ * !\SyncSOF:MODULE_7:g1:a0:xneq\
         );
-        Output = Key_wire_1 (fanout=1)
+        Output = \SyncSOF:frame_pos_hi_0\ (fanout=2)
         Properties               : 
         {
         }
 
-    [McSlotId=2]:     MacroCell: Name=Key_wire_0, Mode=(D-Register) @ [UDB=(2,4)][LB=0][MC=2]
-        Total # of inputs        : 1
-        Total # of product terms : 1
+    [McSlotId=1]: (empty)
+    [McSlotId=2]:     MacroCell: Name=\SyncSOF:frame_pos_hi_6\, Mode=(D-Register) @ [UDB=(3,3)][LB=0][MC=2]
+        Total # of inputs        : 3
+        Total # of product terms : 2
         List of special equations: 
-            Clock  = (Net_8123) => Global
+            Clock  = (ClockBlock_BUS_CLK) => Global
             Clock Enable: True
-        Main Equation            : 1 pterm
+        Main Equation            : 2 pterms
         (
-              Net_8071
+              \SyncSOF:clockcount3_2\ * \SyncSOF:MODULE_7:g1:a0:xneq\
+            + \SyncSOF:frame_pos_hi_6\ * !\SyncSOF:MODULE_7:g1:a0:xneq\
         );
-        Output = Key_wire_0 (fanout=1)
+        Output = \SyncSOF:frame_pos_hi_6\ (fanout=2)
         Properties               : 
         {
         }
 
-    [McSlotId=3]: (empty)
+    [McSlotId=3]:     MacroCell: Name=\SyncSOF:frame_pos_hi_4\, Mode=(D-Register) @ [UDB=(3,3)][LB=0][MC=3]
+        Total # of inputs        : 3
+        Total # of product terms : 2
+        List of special equations: 
+            Clock  = (ClockBlock_BUS_CLK) => Global
+            Clock Enable: True
+        Main Equation            : 2 pterms
+        (
+              \SyncSOF:clockcount3_0\ * \SyncSOF:MODULE_7:g1:a0:xneq\
+            + \SyncSOF:frame_pos_hi_4\ * !\SyncSOF:MODULE_7:g1:a0:xneq\
+        );
+        Output = \SyncSOF:frame_pos_hi_4\ (fanout=2)
+        Properties               : 
+        {
+        }
 }
 
-LAB@[UDB=(2,4)][LB=1] #macrocells=2, #inputs=5, #pterms=4
+LAB@[UDB=(3,3)][LB=1] #macrocells=2, #inputs=5, #pterms=4
 {
-    [McSlotId=0]:     MacroCell: Name=\SyncSOF:frame_pos_hi_2\, Mode=(D-Register) @ [UDB=(2,4)][LB=1][MC=0]
+    [McSlotId=0]:     MacroCell: Name=\SyncSOF:frame_pos_hi_7\, Mode=(D-Register) @ [UDB=(3,3)][LB=1][MC=0]
         Total # of inputs        : 3
         Total # of product terms : 2
         List of special equations: 
@@ -6779,15 +7175,15 @@ LAB@[UDB=(2,4)][LB=1] #macrocells=2, #inputs=5, #pterms=4
             Clock Enable: True
         Main Equation            : 2 pterms
         (
-              \SyncSOF:clockcount2_4\ * \SyncSOF:MODULE_7:g1:a0:xneq\
-            + \SyncSOF:frame_pos_hi_2\ * !\SyncSOF:MODULE_7:g1:a0:xneq\
+              \SyncSOF:clockcount3_3\ * \SyncSOF:MODULE_7:g1:a0:xneq\
+            + \SyncSOF:frame_pos_hi_7\ * !\SyncSOF:MODULE_7:g1:a0:xneq\
         );
-        Output = \SyncSOF:frame_pos_hi_2\ (fanout=2)
+        Output = \SyncSOF:frame_pos_hi_7\ (fanout=2)
         Properties               : 
         {
         }
 
-    [McSlotId=1]:     MacroCell: Name=\SyncSOF:frame_pos_hi_1\, Mode=(D-Register) @ [UDB=(2,4)][LB=1][MC=1]
+    [McSlotId=1]:     MacroCell: Name=\SyncSOF:frame_pos_hi_5\, Mode=(D-Register) @ [UDB=(3,3)][LB=1][MC=1]
         Total # of inputs        : 3
         Total # of product terms : 2
         List of special equations: 
@@ -6795,10 +7191,10 @@ LAB@[UDB=(2,4)][LB=1] #macrocells=2, #inputs=5, #pterms=4
             Clock Enable: True
         Main Equation            : 2 pterms
         (
-              \SyncSOF:clockcount2_3\ * \SyncSOF:MODULE_7:g1:a0:xneq\
-            + \SyncSOF:frame_pos_hi_1\ * !\SyncSOF:MODULE_7:g1:a0:xneq\
+              \SyncSOF:clockcount3_1\ * \SyncSOF:MODULE_7:g1:a0:xneq\
+            + \SyncSOF:frame_pos_hi_5\ * !\SyncSOF:MODULE_7:g1:a0:xneq\
         );
-        Output = \SyncSOF:frame_pos_hi_1\ (fanout=2)
+        Output = \SyncSOF:frame_pos_hi_5\ (fanout=2)
         Properties               : 
         {
         }
@@ -6807,13 +7203,16 @@ LAB@[UDB=(2,4)][LB=1] #macrocells=2, #inputs=5, #pterms=4
     [McSlotId=3]: (empty)
 }
 
-statuscell: Name =\Status:sts:sts_reg\
+statuscell: Name =\SyncSOF:FRAME_POS_HI\
     PORT MAP (
-        status_4 => Net_8144_SYNCOUT ,
-        status_3 => Net_7684_local ,
-        status_2 => Net_7977 ,
-        status_1 => Key_wire_0 ,
-        status_0 => Key_wire_1 );
+        status_7 => \SyncSOF:frame_pos_hi_7\ ,
+        status_6 => \SyncSOF:frame_pos_hi_6\ ,
+        status_5 => \SyncSOF:frame_pos_hi_5\ ,
+        status_4 => \SyncSOF:frame_pos_hi_4\ ,
+        status_3 => \SyncSOF:frame_pos_hi_3\ ,
+        status_2 => \SyncSOF:frame_pos_hi_2\ ,
+        status_1 => \SyncSOF:frame_pos_hi_1\ ,
+        status_0 => \SyncSOF:frame_pos_hi_0\ );
     Properties:
     {
         cy_force_order = 1
@@ -6845,10 +7244,10 @@ count7cell: Name =\SyncSOF:Counter1\
     Clock Polarity: Active High
     Clock Enable: PosEdge(\SyncSOF:clocktc1\)
 
-UDB [UDB=(2,5)] contents:
-LAB@[UDB=(2,5)][LB=0] #macrocells=1, #inputs=3, #pterms=2
+UDB [UDB=(3,4)] contents:
+LAB@[UDB=(3,4)][LB=0] #macrocells=3, #inputs=7, #pterms=6
 {
-    [McSlotId=0]:     MacroCell: Name=\SyncSOF:frame_pos_hi_5\, Mode=(D-Register) @ [UDB=(2,5)][LB=0][MC=0]
+    [McSlotId=0]:     MacroCell: Name=\SyncSOF:frame_pos_hi_2\, Mode=(D-Register) @ [UDB=(3,4)][LB=0][MC=0]
         Total # of inputs        : 3
         Total # of product terms : 2
         List of special equations: 
@@ -6856,22 +7255,15 @@ LAB@[UDB=(2,5)][LB=0] #macrocells=1, #inputs=3, #pterms=2
             Clock Enable: True
         Main Equation            : 2 pterms
         (
-              \SyncSOF:clockcount3_1\ * \SyncSOF:MODULE_7:g1:a0:xneq\
-            + \SyncSOF:frame_pos_hi_5\ * !\SyncSOF:MODULE_7:g1:a0:xneq\
+              \SyncSOF:clockcount2_4\ * \SyncSOF:MODULE_7:g1:a0:xneq\
+            + \SyncSOF:frame_pos_hi_2\ * !\SyncSOF:MODULE_7:g1:a0:xneq\
         );
-        Output = \SyncSOF:frame_pos_hi_5\ (fanout=2)
+        Output = \SyncSOF:frame_pos_hi_2\ (fanout=2)
         Properties               : 
         {
         }
 
-    [McSlotId=1]: (empty)
-    [McSlotId=2]: (empty)
-    [McSlotId=3]: (empty)
-}
-
-LAB@[UDB=(2,5)][LB=1] #macrocells=3, #inputs=7, #pterms=6
-{
-    [McSlotId=0]:     MacroCell: Name=\SyncSOF:frame_pos_lo_5\, Mode=(D-Register) @ [UDB=(2,5)][LB=1][MC=0]
+    [McSlotId=1]:     MacroCell: Name=\SyncSOF:sof_prev\, Mode=(D-Register) @ [UDB=(3,4)][LB=0][MC=1]
         Total # of inputs        : 3
         Total # of product terms : 2
         List of special equations: 
@@ -6879,32 +7271,16 @@ LAB@[UDB=(2,5)][LB=1] #macrocells=3, #inputs=7, #pterms=6
             Clock Enable: True
         Main Equation            : 2 pterms
         (
-              \SyncSOF:clockcount2_0\ * \SyncSOF:MODULE_7:g1:a0:xneq\
-            + \SyncSOF:frame_pos_lo_5\ * !\SyncSOF:MODULE_7:g1:a0:xneq\
+              \SyncSOF:sof_sync\ * \SyncSOF:MODULE_7:g1:a0:xneq\
+            + \SyncSOF:sof_prev\ * !\SyncSOF:MODULE_7:g1:a0:xneq\
         );
-        Output = \SyncSOF:frame_pos_lo_5\ (fanout=2)
-        Properties               : 
-        {
-        }
-
-    [McSlotId=1]:     MacroCell: Name=\SyncSOF:frame_pos_hi_0\, Mode=(D-Register) @ [UDB=(2,5)][LB=1][MC=1]
-        Total # of inputs        : 3
-        Total # of product terms : 2
-        List of special equations: 
-            Clock  = (ClockBlock_BUS_CLK) => Global
-            Clock Enable: True
-        Main Equation            : 2 pterms
-        (
-              \SyncSOF:clockcount2_2\ * \SyncSOF:MODULE_7:g1:a0:xneq\
-            + \SyncSOF:frame_pos_hi_0\ * !\SyncSOF:MODULE_7:g1:a0:xneq\
-        );
-        Output = \SyncSOF:frame_pos_hi_0\ (fanout=2)
+        Output = \SyncSOF:sof_prev\ (fanout=3)
         Properties               : 
         {
         }
 
     [McSlotId=2]: (empty)
-    [McSlotId=3]:     MacroCell: Name=\SyncSOF:frame_pos_hi_3\, Mode=(D-Register) @ [UDB=(2,5)][LB=1][MC=3]
+    [McSlotId=3]:     MacroCell: Name=\SyncSOF:frame_pos_hi_1\, Mode=(D-Register) @ [UDB=(3,4)][LB=0][MC=3]
         Total # of inputs        : 3
         Total # of product terms : 2
         List of special equations: 
@@ -6912,153 +7288,49 @@ LAB@[UDB=(2,5)][LB=1] #macrocells=3, #inputs=7, #pterms=6
             Clock Enable: True
         Main Equation            : 2 pterms
         (
-              \SyncSOF:clockcount2_5\ * \SyncSOF:MODULE_7:g1:a0:xneq\
-            + \SyncSOF:frame_pos_hi_3\ * !\SyncSOF:MODULE_7:g1:a0:xneq\
+              \SyncSOF:clockcount2_3\ * \SyncSOF:MODULE_7:g1:a0:xneq\
+            + \SyncSOF:frame_pos_hi_1\ * !\SyncSOF:MODULE_7:g1:a0:xneq\
         );
-        Output = \SyncSOF:frame_pos_hi_3\ (fanout=2)
+        Output = \SyncSOF:frame_pos_hi_1\ (fanout=2)
         Properties               : 
         {
         }
 }
 
-synccell: Name =ATU_0(0)_SYNC
-    PORT MAP (
-        in => Net_8144 ,
-        out => Net_8144_SYNCOUT ,
-        clock => ClockBlock_BUS_CLK );
-    Properties:
-    {
-    }
-    Clock Polarity: Active High
-    Clock Enable: True
-
-UDB [UDB=(3,0)] contents:
-LAB@[UDB=(3,0)][LB=0] #macrocells=1, #inputs=9, #pterms=4
-{
-    [McSlotId=0]:     MacroCell: Name=\I2S:bI2S:tx_state_0\, Mode=(D-Register) @ [UDB=(3,0)][LB=0][MC=0]
-        Total # of inputs        : 9
-        Total # of product terms : 4
-        List of special equations: 
-            Clock  = (Net_7968) => Global
-            Clock Enable: True
-        Main Equation            : 4 pterms
-        (
-              \I2S:bI2S:count_5\ * \I2S:bI2S:count_3\ * \I2S:bI2S:count_2\ * 
-              \I2S:bI2S:count_1\ * !\I2S:bI2S:tx_state_2\ * 
-              !\I2S:bI2S:tx_state_1\ * !\I2S:bI2S:tx_state_0\
-            + \I2S:bI2S:count_4\ * \I2S:bI2S:count_3\ * \I2S:bI2S:count_2\ * 
-              \I2S:bI2S:count_1\ * !\I2S:bI2S:tx_state_2\ * 
-              !\I2S:bI2S:tx_state_1\ * !\I2S:bI2S:tx_state_0\
-            + !\I2S:bI2S:txenable\
-            + \I2S:bI2S:tx_state_2\ * \I2S:bI2S:tx_state_1\ * 
-              \I2S:bI2S:tx_state_0\
-        );
-        Output = \I2S:bI2S:tx_state_0\ (fanout=5)
-        Properties               : 
-        {
-        }
-
-    [McSlotId=1]: (empty)
-    [McSlotId=2]: (empty)
-    [McSlotId=3]: (empty)
-}
-
-LAB@[UDB=(3,0)][LB=1] #macrocells=1, #inputs=9, #pterms=5
+LAB@[UDB=(3,4)][LB=1] #macrocells=2, #inputs=5, #pterms=4
 {
     [McSlotId=0]: (empty)
     [McSlotId=1]: (empty)
-    [McSlotId=2]:     MacroCell: Name=\I2S:bI2S:tx_state_1\, Mode=(D-Register) @ [UDB=(3,0)][LB=1][MC=2]
-        Total # of inputs        : 9
-        Total # of product terms : 5
+    [McSlotId=2]:     MacroCell: Name=\SyncSOF:frame_pos_lo_6\, Mode=(D-Register) @ [UDB=(3,4)][LB=1][MC=2]
+        Total # of inputs        : 3
+        Total # of product terms : 2
         List of special equations: 
-            Clock  = (Net_7968) => Global
+            Clock  = (ClockBlock_BUS_CLK) => Global
             Clock Enable: True
-        Main Equation            : 5 pterms
+        Main Equation            : 2 pterms
         (
-              !\I2S:bI2S:count_5\ * !\I2S:bI2S:count_4\ * 
-              !\I2S:bI2S:tx_state_2\ * !\I2S:bI2S:tx_state_1\ * 
-              !\I2S:bI2S:tx_state_0\
-            + !\I2S:bI2S:count_3\ * !\I2S:bI2S:tx_state_2\ * 
-              !\I2S:bI2S:tx_state_1\ * !\I2S:bI2S:tx_state_0\
-            + !\I2S:bI2S:count_2\ * !\I2S:bI2S:tx_state_2\ * 
-              !\I2S:bI2S:tx_state_1\ * !\I2S:bI2S:tx_state_0\
-            + !\I2S:bI2S:count_1\ * !\I2S:bI2S:tx_state_2\ * 
-              !\I2S:bI2S:tx_state_1\ * !\I2S:bI2S:tx_state_0\
-            + !\I2S:bI2S:txenable\
+              \SyncSOF:clockcount2_1\ * \SyncSOF:MODULE_7:g1:a0:xneq\
+            + \SyncSOF:frame_pos_lo_6\ * !\SyncSOF:MODULE_7:g1:a0:xneq\
         );
-        Output = \I2S:bI2S:tx_state_1\ (fanout=5)
+        Output = \SyncSOF:frame_pos_lo_6\ (fanout=2)
         Properties               : 
         {
         }
 
-    [McSlotId=3]: (empty)
-}
-
-statusicell: Name =\USBFS:EP17_DMA_Done_SR:sts_intr:sts_reg\
-    PORT MAP (
-        clock => ClockBlock_BUS_CLK ,
-        status_6 => \USBFS:Net_2040_6\ ,
-        status_5 => \USBFS:Net_2040_5\ ,
-        status_4 => \USBFS:Net_2040_4\ ,
-        status_3 => \USBFS:Net_2040_3\ ,
-        status_2 => \USBFS:Net_2040_2\ ,
-        status_1 => \USBFS:Net_2040_1\ ,
-        status_0 => \USBFS:Net_2040_0\ ,
-        interrupt => \USBFS:EPs_1_to_7_dma_complete\ );
-    Properties:
-    {
-        cy_force_order = 1
-        cy_int_mask = "1111111"
-        cy_md_select = "1111111"
-    }
-    Clock Polarity: Active High
-    Clock Enable: True
-
-UDB [UDB=(3,1)] contents:
-LAB@[UDB=(3,1)][LB=0] #macrocells=1, #inputs=2, #pterms=1
-{
-    [McSlotId=0]: (empty)
-    [McSlotId=1]:     MacroCell: Name=\SyncSOF:buffer_1\, Mode=(D-Register) @ [UDB=(3,1)][LB=0][MC=1]
+    [McSlotId=3]:     MacroCell: Name=\SyncSOF:MODULE_7:g1:a0:xneq\, Mode=(Combinatorial) @ [UDB=(3,4)][LB=1][MC=3]
         Total # of inputs        : 2
-        Total # of product terms : 1
-        List of special equations: 
-            Clock  = (Net_7567)
-            Reset  = (Net_4317)
+        Total # of product terms : 2
             Clock Enable: True
-        Main Equation            : 1 pterm
+        Main Equation            : 2 pterms
         (
-              !\SyncSOF:buffer_1\ * \SyncSOF:buffer_0\
+              !\SyncSOF:sof_sync\ * \SyncSOF:sof_prev\
+            + \SyncSOF:sof_sync\ * !\SyncSOF:sof_prev\
         );
-        Output = \SyncSOF:buffer_1\ (fanout=3)
+        Output = \SyncSOF:MODULE_7:g1:a0:xneq\ (fanout=16)
         Properties               : 
         {
+            soft = 1
         }
-
-    [McSlotId=2]: (empty)
-    [McSlotId=3]: (empty)
-}
-
-LAB@[UDB=(3,1)][LB=1] #macrocells=1, #inputs=2, #pterms=1
-{
-    [McSlotId=0]: (empty)
-    [McSlotId=1]:     MacroCell: Name=\SyncSOF:buffer_0\, Mode=(D-Register) @ [UDB=(3,1)][LB=1][MC=1]
-        Total # of inputs        : 2
-        Total # of product terms : 1
-        List of special equations: 
-            Clock  = (Net_7567)
-            Preset = (Net_4317)
-            Clock Enable: True
-        Main Equation            : 1 pterm
-        (
-              !\SyncSOF:buffer_1\ * !\SyncSOF:buffer_0\
-        );
-        Output = \SyncSOF:buffer_0\ (fanout=3)
-        Properties               : 
-        {
-        }
-
-    [McSlotId=2]: (empty)
-    [McSlotId=3]: (empty)
 }
 
 controlcell: Name =\Band_Control:Sync:ctrl_reg\
@@ -7081,337 +7353,13 @@ controlcell: Name =\Band_Control:Sync:ctrl_reg\
     }
     Clock Enable: True
 
-synccell: Name =\USBFS:nrqSync:genblk1[0]:INST\
+synccell: Name =SDA(0)_SYNC
     PORT MAP (
-        clock => ClockBlock_BUS_CLK ,
-        out => \USBFS:Net_2040_0\ );
+        in => \I2C_DISPLAY:Net_1109_1\ ,
+        out => \I2C_DISPLAY:Net_1109_1_SYNCOUT\ ,
+        clock => ClockBlock_BUS_CLK );
     Properties:
     {
-    }
-    Clock Polarity: Active High
-    Clock Enable: True
-
-UDB [UDB=(3,2)] contents:
-LAB@[UDB=(3,2)][LB=0] #macrocells=4, #inputs=2, #pterms=8
-{
-    [McSlotId=0]:     MacroCell: Name=\FracN:MODULE_4:g1:a0:s_0\, Mode=(Combinatorial, Carry-Chain-Start (next @ [UDB=(3,2)][LB=0][MC=1])) @ [UDB=(3,2)][LB=0][MC=0]
-        Total # of inputs        : 2
-        Total # of product terms : 2
-        List of special equations: 
-            Cpt0 Equation   = (!\FracN:adder1_14\ * \FracN:adder2_14\)
-            Cpt1 Equation   = (\FracN:adder1_14\ * !\FracN:adder2_14\)
-            Clock Enable: True
-        Main Equation            : 2 pterms
-        (
-              !\FracN:adder1_14\ * \FracN:adder2_14\
-            + \FracN:adder1_14\ * !\FracN:adder2_14\
-        );
-        Cout = \FracN:MODULE_4:g1:a0:g0:u0:gof:g_arith(0):ga:cadd_0\
-        Output = \FracN:MODULE_4:g1:a0:s_0\ (fanout=3)
-        Properties               : 
-        {
-        }
-
-    [McSlotId=1]:     MacroCell: Name=\FracN:MODULE_4:g1:a0:s_1\, Mode=(Combinatorial, Carry-Chain-Continue (next @ [UDB=(3,2)][LB=0][MC=2])) @ [UDB=(3,2)][LB=0][MC=1]
-        Total # of inputs        : 1
-        Total # of product terms : 2
-        List of special equations: 
-            Cpt0 Equation   = (0)
-            Cpt1 Equation   = (\FracN:adder1_14\)
-            Clock Enable: True
-        Main Equation            : 1 pterm
-        (
-              \FracN:adder1_14\
-        );
-        Cin = \FracN:MODULE_4:g1:a0:g0:u0:gof:g_arith(0):ga:cadd_0\
-        Cout = \FracN:MODULE_4:g1:a0:g0:u0:gof:g_arith(0):ga:cadd_1\
-        Output = \FracN:MODULE_4:g1:a0:s_1\ (fanout=3)
-        Properties               : 
-        {
-        }
-
-    [McSlotId=2]:     MacroCell: Name=\FracN:MODULE_4:g1:a0:s_2\, Mode=(Combinatorial, Carry-Chain-Continue (next @ [UDB=(3,2)][LB=0][MC=3])) @ [UDB=(3,2)][LB=0][MC=2]
-        Total # of inputs        : 1
-        Total # of product terms : 2
-        List of special equations: 
-            Cpt0 Equation   = (0)
-            Cpt1 Equation   = (!\FracN:adder1_14\)
-            Clock Enable: True
-        Main Equation            : 1 pterm
-        (
-              !\FracN:adder1_14\
-        );
-        Cin = \FracN:MODULE_4:g1:a0:g0:u0:gof:g_arith(0):ga:cadd_1\
-        Cout = \FracN:MODULE_4:g1:a0:g0:u0:gof:g_arith(0):ga:cadd_2\
-        Output = \FracN:MODULE_4:g1:a0:s_2\ (fanout=3)
-        Properties               : 
-        {
-        }
-
-    [McSlotId=3]:     MacroCell: Name=\FracN:MODULE_4:g1:a0:s_3\, Mode=(Combinatorial, Carry-Chain-Continue (next @ [UDB=(3,2)][LB=1][MC=0])) @ [UDB=(3,2)][LB=0][MC=3]
-        Total # of inputs        : 0
-        Total # of product terms : 2
-        List of special equations: 
-            Cpt0 Equation   = (0)
-            Cpt1 Equation   = (1)
-            Clock Enable: True
-        Main Equation            : 1 pterm
-        (
-            1
-        );
-        Cin = \FracN:MODULE_4:g1:a0:g0:u0:gof:g_arith(0):ga:cadd_2\
-        Cout = \FracN:MODULE_4:g1:a0:g0:u0:gof:g_arith(0):ga:cadd_3\
-        Output = \FracN:MODULE_4:g1:a0:s_3\ (fanout=3)
-        Properties               : 
-        {
-        }
-}
-
-LAB@[UDB=(3,2)][LB=1] #macrocells=4, #inputs=0, #pterms=6
-{
-    [McSlotId=0]:     MacroCell: Name=\FracN:MODULE_4:g1:a0:s_4\, Mode=(Combinatorial, Carry-Chain-Continue (next @ [UDB=(3,2)][LB=1][MC=1])) @ [UDB=(3,2)][LB=1][MC=0]
-        Total # of inputs        : 0
-        Total # of product terms : 2
-        List of special equations: 
-            Cpt0 Equation   = (0)
-            Cpt1 Equation   = (0)
-            Clock Enable: True
-        Main Equation            : 0 pterms
-        (
-            0
-        );
-        Cin = \FracN:MODULE_4:g1:a0:g0:u0:gof:g_arith(0):ga:cadd_3\
-        Cout = \FracN:MODULE_4:g1:a0:g0:u0:gof:g_arith(0):ga:cadd_4\
-        Output = \FracN:MODULE_4:g1:a0:s_4\ (fanout=3)
-        Properties               : 
-        {
-        }
-
-    [McSlotId=1]:     MacroCell: Name=\FracN:MODULE_4:g1:a0:s_5\, Mode=(Combinatorial, Carry-Chain-Continue (next @ [UDB=(3,2)][LB=1][MC=2])) @ [UDB=(3,2)][LB=1][MC=1]
-        Total # of inputs        : 0
-        Total # of product terms : 2
-        List of special equations: 
-            Cpt0 Equation   = (0)
-            Cpt1 Equation   = (1)
-            Clock Enable: True
-        Main Equation            : 1 pterm
-        (
-            1
-        );
-        Cin = \FracN:MODULE_4:g1:a0:g0:u0:gof:g_arith(0):ga:cadd_4\
-        Cout = \FracN:MODULE_4:g1:a0:g0:u0:gof:g_arith(0):ga:cadd_5\
-        Output = \FracN:MODULE_4:g1:a0:s_5\ (fanout=3)
-        Properties               : 
-        {
-        }
-
-    [McSlotId=2]:     MacroCell: Name=\FracN:MODULE_4:g1:a0:s_6\, Mode=(Combinatorial, Carry-Chain-Continue (next @ [UDB=(3,2)][LB=1][MC=3])) @ [UDB=(3,2)][LB=1][MC=2]
-        Total # of inputs        : 0
-        Total # of product terms : 2
-        List of special equations: 
-            Cpt0 Equation   = (0)
-            Cpt1 Equation   = (1)
-            Clock Enable: True
-        Main Equation            : 1 pterm
-        (
-            1
-        );
-        Cin = \FracN:MODULE_4:g1:a0:g0:u0:gof:g_arith(0):ga:cadd_5\
-        Cout = \FracN:MODULE_4:g1:a0:g0:u0:gof:g_arith(0):ga:cadd_6\
-        Output = \FracN:MODULE_4:g1:a0:s_6\ (fanout=3)
-        Properties               : 
-        {
-        }
-
-    [McSlotId=3]:     MacroCell: Name=\FracN:MODULE_4:g1:a0:s_7\, Mode=(Combinatorial, Carry-Chain-Last) @ [UDB=(3,2)][LB=1][MC=3]
-        Total # of inputs        : 0
-        Total # of product terms : 2
-        List of special equations: 
-            Cpt0 Equation   = (0)
-            Cpt1 Equation   = (1)
-            Clock Enable: True
-        Main Equation            : 1 pterm
-        (
-            1
-        );
-        Cin = \FracN:MODULE_4:g1:a0:g0:u0:gof:g_arith(0):ga:cadd_6\
-        Cout = \FracN:MODULE_4:g1:a0:s_7_cout\
-        Output = \FracN:MODULE_4:g1:a0:s_7\ (fanout=2)
-        Properties               : 
-        {
-        }
-}
-
-synccell: Name =\USBFS:nrqSync:genblk1[5]:INST\
-    PORT MAP (
-        clock => ClockBlock_BUS_CLK ,
-        out => \USBFS:Net_2040_5\ );
-    Properties:
-    {
-    }
-    Clock Polarity: Active High
-    Clock Enable: True
-
-synccell: Name =\USBFS:nrqSync:genblk1[1]:INST\
-    PORT MAP (
-        clock => ClockBlock_BUS_CLK ,
-        in => \USBFS:Net_1498\ ,
-        out => \USBFS:Net_2040_1\ );
-    Properties:
-    {
-    }
-    Clock Polarity: Active High
-    Clock Enable: True
-
-UDB [UDB=(3,3)] contents:
-LAB@[UDB=(3,3)][LB=0] #macrocells=1, #inputs=3, #pterms=2
-{
-    [McSlotId=0]: (empty)
-    [McSlotId=1]: (empty)
-    [McSlotId=2]:     MacroCell: Name=Net_7882_0, Mode=(D-Register) @ [UDB=(3,3)][LB=0][MC=2]
-        Total # of inputs        : 3
-        Total # of product terms : 2
-        List of special equations: 
-            Clock  = (Net_7968) => Global
-            Clock Enable: True
-        Main Equation            : 2 pterms
-        (
-              !Net_7720 * Net_7882_0
-            + Net_7720 * \I2S:bI2S:tx_data_out_0\
-        );
-        Output = Net_7882_0 (fanout=2)
-        Properties               : 
-        {
-        }
-
-    [McSlotId=3]: (empty)
-}
-
-LAB@[UDB=(3,3)][LB=1] #macrocells=2, #inputs=5, #pterms=3
-{
-    [McSlotId=0]: (empty)
-    [McSlotId=1]:     MacroCell: Name=\SyncSOF:sof_prev\, Mode=(D-Register) @ [UDB=(3,3)][LB=1][MC=1]
-        Total # of inputs        : 3
-        Total # of product terms : 2
-        List of special equations: 
-            Clock  = (ClockBlock_BUS_CLK) => Global
-            Clock Enable: True
-        Main Equation            : 2 pterms
-        (
-              \SyncSOF:sof_sync\ * \SyncSOF:MODULE_7:g1:a0:xneq\
-            + \SyncSOF:sof_prev\ * !\SyncSOF:MODULE_7:g1:a0:xneq\
-        );
-        Output = \SyncSOF:sof_prev\ (fanout=3)
-        Properties               : 
-        {
-        }
-
-    [McSlotId=2]:     MacroCell: Name=Net_7907, Mode=(Combinatorial) @ [UDB=(3,3)][LB=1][MC=2]
-        Total # of inputs        : 2
-        Total # of product terms : 1
-            Clock Enable: True
-        Main Equation            : 1 pterm
-        (
-              Net_7882_0 * Net_8073
-        );
-        Output = Net_7907 (fanout=1)
-        Properties               : 
-        {
-        }
-
-    [McSlotId=3]: (empty)
-}
-
-statuscell: Name =\SyncSOF:BUFFER\
-    PORT MAP (
-        status_1 => \SyncSOF:buffer_1\ ,
-        status_0 => \SyncSOF:buffer_0\ );
-    Properties:
-    {
-        cy_force_order = 1
-        cy_md_select = "00000000"
-    }
-    Clock Enable: True
-
-UDB [UDB=(3,4)] contents:
-LAB@[UDB=(3,4)][LB=0] #macrocells=1, #inputs=0, #pterms=0
-{
-    [McSlotId=0]: (empty)
-    [McSlotId=1]: (empty)
-    [McSlotId=2]:     MacroCell: Name=\SyncSOF:sof_sync\, Mode=(T-Register) @ [UDB=(3,4)][LB=0][MC=2]
-        Total # of inputs        : 0
-        Total # of product terms : 0
-        List of special equations: 
-            Clock  = (Net_7567)
-            Clock Enable: True
-        Main Equation            : 0 pterms
-        !(
-            0
-        );
-        Output = \SyncSOF:sof_sync\ (fanout=3)
-        Properties               : 
-        {
-        }
-
-    [McSlotId=3]: (empty)
-}
-
-LAB@[UDB=(3,4)][LB=1] #macrocells=2, #inputs=5, #pterms=4
-{
-    [McSlotId=0]:     MacroCell: Name=\SyncSOF:MODULE_7:g1:a0:xneq\, Mode=(Combinatorial) @ [UDB=(3,4)][LB=1][MC=0]
-        Total # of inputs        : 2
-        Total # of product terms : 2
-            Clock Enable: True
-        Main Equation            : 2 pterms
-        (
-              !\SyncSOF:sof_sync\ * \SyncSOF:sof_prev\
-            + \SyncSOF:sof_sync\ * !\SyncSOF:sof_prev\
-        );
-        Output = \SyncSOF:MODULE_7:g1:a0:xneq\ (fanout=16)
-        Properties               : 
-        {
-            soft = 1
-        }
-
-    [McSlotId=1]:     MacroCell: Name=\SyncSOF:frame_pos_lo_0\, Mode=(D-Register) @ [UDB=(3,4)][LB=1][MC=1]
-        Total # of inputs        : 3
-        Total # of product terms : 2
-        List of special equations: 
-            Clock  = (ClockBlock_BUS_CLK) => Global
-            Clock Enable: True
-        Main Equation            : 2 pterms
-        (
-              \SyncSOF:clockcount1_1\ * \SyncSOF:MODULE_7:g1:a0:xneq\
-            + \SyncSOF:frame_pos_lo_0\ * !\SyncSOF:MODULE_7:g1:a0:xneq\
-        );
-        Output = \SyncSOF:frame_pos_lo_0\ (fanout=2)
-        Properties               : 
-        {
-        }
-
-    [McSlotId=2]: (empty)
-    [McSlotId=3]: (empty)
-}
-
-count7cell: Name =\SyncSOF:Counter0\
-    PORT MAP (
-        clock => ClockBlock_BUS_CLK ,
-        reset => Net_4317 ,
-        count_6 => \SyncSOF:clockcount1_6\ ,
-        count_5 => \SyncSOF:clockcount1_5\ ,
-        count_4 => \SyncSOF:clockcount1_4\ ,
-        count_3 => \SyncSOF:clockcount1_3\ ,
-        count_2 => \SyncSOF:clockcount1_2\ ,
-        count_1 => \SyncSOF:clockcount1_1\ ,
-        count_0 => \SyncSOF:clockcount1_0\ ,
-        tc => \SyncSOF:clocktc1\ );
-    Properties:
-    {
-        cy_alt_mode = 0
-        cy_init_value = "0000000"
-        cy_period = "0111111"
-        cy_route_en = 0
-        cy_route_ld = 0
     }
     Clock Polarity: Active High
     Clock Enable: True
@@ -7420,17 +7368,6 @@ synccell: Name =SCL(0)_SYNC
     PORT MAP (
         in => \I2C_DISPLAY:Net_1109_0\ ,
         out => \I2C_DISPLAY:Net_1109_0_SYNCOUT\ ,
-        clock => ClockBlock_BUS_CLK );
-    Properties:
-    {
-    }
-    Clock Polarity: Active High
-    Clock Enable: True
-
-synccell: Name =SDA(0)_SYNC
-    PORT MAP (
-        in => \I2C_DISPLAY:Net_1109_1\ ,
-        out => \I2C_DISPLAY:Net_1109_1_SYNCOUT\ ,
         clock => ClockBlock_BUS_CLK );
     Properties:
     {
@@ -7449,63 +7386,21 @@ synccell: Name =\USBFS:nrqSync:genblk1[2]:INST\
     Clock Polarity: Active High
     Clock Enable: True
 
+synccell: Name =ATU_0(0)_SYNC
+    PORT MAP (
+        in => Net_8144 ,
+        out => Net_8144_SYNCOUT ,
+        clock => ClockBlock_BUS_CLK );
+    Properties:
+    {
+    }
+    Clock Polarity: Active High
+    Clock Enable: True
+
 UDB [UDB=(3,5)] contents:
-LAB@[UDB=(3,5)][LB=0] #macrocells=2, #inputs=5, #pterms=4
+LAB@[UDB=(3,5)][LB=0] #macrocells=3, #inputs=7, #pterms=6
 {
-    [McSlotId=0]: (empty)
-    [McSlotId=1]:     MacroCell: Name=\SyncSOF:frame_pos_lo_1\, Mode=(D-Register) @ [UDB=(3,5)][LB=0][MC=1]
-        Total # of inputs        : 3
-        Total # of product terms : 2
-        List of special equations: 
-            Clock  = (ClockBlock_BUS_CLK) => Global
-            Clock Enable: True
-        Main Equation            : 2 pterms
-        (
-              \SyncSOF:clockcount1_2\ * \SyncSOF:MODULE_7:g1:a0:xneq\
-            + \SyncSOF:frame_pos_lo_1\ * !\SyncSOF:MODULE_7:g1:a0:xneq\
-        );
-        Output = \SyncSOF:frame_pos_lo_1\ (fanout=2)
-        Properties               : 
-        {
-        }
-
-    [McSlotId=2]: (empty)
-    [McSlotId=3]:     MacroCell: Name=\SyncSOF:frame_pos_lo_2\, Mode=(D-Register) @ [UDB=(3,5)][LB=0][MC=3]
-        Total # of inputs        : 3
-        Total # of product terms : 2
-        List of special equations: 
-            Clock  = (ClockBlock_BUS_CLK) => Global
-            Clock Enable: True
-        Main Equation            : 2 pterms
-        (
-              \SyncSOF:clockcount1_3\ * \SyncSOF:MODULE_7:g1:a0:xneq\
-            + \SyncSOF:frame_pos_lo_2\ * !\SyncSOF:MODULE_7:g1:a0:xneq\
-        );
-        Output = \SyncSOF:frame_pos_lo_2\ (fanout=2)
-        Properties               : 
-        {
-        }
-}
-
-LAB@[UDB=(3,5)][LB=1] #macrocells=4, #inputs=9, #pterms=8
-{
-    [McSlotId=0]:     MacroCell: Name=\SyncSOF:frame_pos_lo_6\, Mode=(D-Register) @ [UDB=(3,5)][LB=1][MC=0]
-        Total # of inputs        : 3
-        Total # of product terms : 2
-        List of special equations: 
-            Clock  = (ClockBlock_BUS_CLK) => Global
-            Clock Enable: True
-        Main Equation            : 2 pterms
-        (
-              \SyncSOF:clockcount2_1\ * \SyncSOF:MODULE_7:g1:a0:xneq\
-            + \SyncSOF:frame_pos_lo_6\ * !\SyncSOF:MODULE_7:g1:a0:xneq\
-        );
-        Output = \SyncSOF:frame_pos_lo_6\ (fanout=2)
-        Properties               : 
-        {
-        }
-
-    [McSlotId=1]:     MacroCell: Name=\SyncSOF:frame_pos_lo_4\, Mode=(D-Register) @ [UDB=(3,5)][LB=1][MC=1]
+    [McSlotId=0]:     MacroCell: Name=\SyncSOF:frame_pos_lo_4\, Mode=(D-Register) @ [UDB=(3,5)][LB=0][MC=0]
         Total # of inputs        : 3
         Total # of product terms : 2
         List of special equations: 
@@ -7521,7 +7416,7 @@ LAB@[UDB=(3,5)][LB=1] #macrocells=4, #inputs=9, #pterms=8
         {
         }
 
-    [McSlotId=2]:     MacroCell: Name=\SyncSOF:frame_pos_ready\, Mode=(D-Register) @ [UDB=(3,5)][LB=1][MC=2]
+    [McSlotId=1]:     MacroCell: Name=\SyncSOF:frame_pos_ready\, Mode=(D-Register) @ [UDB=(3,5)][LB=0][MC=1]
         Total # of inputs        : 2
         Total # of product terms : 2
         List of special equations: 
@@ -7537,7 +7432,27 @@ LAB@[UDB=(3,5)][LB=1] #macrocells=4, #inputs=9, #pterms=8
         {
         }
 
-    [McSlotId=3]:     MacroCell: Name=\SyncSOF:frame_pos_lo_3\, Mode=(D-Register) @ [UDB=(3,5)][LB=1][MC=3]
+    [McSlotId=2]: (empty)
+    [McSlotId=3]:     MacroCell: Name=\SyncSOF:frame_pos_lo_1\, Mode=(D-Register) @ [UDB=(3,5)][LB=0][MC=3]
+        Total # of inputs        : 3
+        Total # of product terms : 2
+        List of special equations: 
+            Clock  = (ClockBlock_BUS_CLK) => Global
+            Clock Enable: True
+        Main Equation            : 2 pterms
+        (
+              \SyncSOF:clockcount1_2\ * \SyncSOF:MODULE_7:g1:a0:xneq\
+            + \SyncSOF:frame_pos_lo_1\ * !\SyncSOF:MODULE_7:g1:a0:xneq\
+        );
+        Output = \SyncSOF:frame_pos_lo_1\ (fanout=2)
+        Properties               : 
+        {
+        }
+}
+
+LAB@[UDB=(3,5)][LB=1] #macrocells=4, #inputs=9, #pterms=8
+{
+    [McSlotId=0]:     MacroCell: Name=\SyncSOF:frame_pos_lo_3\, Mode=(D-Register) @ [UDB=(3,5)][LB=1][MC=0]
         Total # of inputs        : 3
         Total # of product terms : 2
         List of special equations: 
@@ -7549,6 +7464,54 @@ LAB@[UDB=(3,5)][LB=1] #macrocells=4, #inputs=9, #pterms=8
             + \SyncSOF:frame_pos_lo_3\ * !\SyncSOF:MODULE_7:g1:a0:xneq\
         );
         Output = \SyncSOF:frame_pos_lo_3\ (fanout=2)
+        Properties               : 
+        {
+        }
+
+    [McSlotId=1]:     MacroCell: Name=\SyncSOF:frame_pos_lo_0\, Mode=(D-Register) @ [UDB=(3,5)][LB=1][MC=1]
+        Total # of inputs        : 3
+        Total # of product terms : 2
+        List of special equations: 
+            Clock  = (ClockBlock_BUS_CLK) => Global
+            Clock Enable: True
+        Main Equation            : 2 pterms
+        (
+              \SyncSOF:clockcount1_1\ * \SyncSOF:MODULE_7:g1:a0:xneq\
+            + \SyncSOF:frame_pos_lo_0\ * !\SyncSOF:MODULE_7:g1:a0:xneq\
+        );
+        Output = \SyncSOF:frame_pos_lo_0\ (fanout=2)
+        Properties               : 
+        {
+        }
+
+    [McSlotId=2]:     MacroCell: Name=\SyncSOF:frame_pos_lo_5\, Mode=(D-Register) @ [UDB=(3,5)][LB=1][MC=2]
+        Total # of inputs        : 3
+        Total # of product terms : 2
+        List of special equations: 
+            Clock  = (ClockBlock_BUS_CLK) => Global
+            Clock Enable: True
+        Main Equation            : 2 pterms
+        (
+              \SyncSOF:clockcount2_0\ * \SyncSOF:MODULE_7:g1:a0:xneq\
+            + \SyncSOF:frame_pos_lo_5\ * !\SyncSOF:MODULE_7:g1:a0:xneq\
+        );
+        Output = \SyncSOF:frame_pos_lo_5\ (fanout=2)
+        Properties               : 
+        {
+        }
+
+    [McSlotId=3]:     MacroCell: Name=\SyncSOF:frame_pos_lo_2\, Mode=(D-Register) @ [UDB=(3,5)][LB=1][MC=3]
+        Total # of inputs        : 3
+        Total # of product terms : 2
+        List of special equations: 
+            Clock  = (ClockBlock_BUS_CLK) => Global
+            Clock Enable: True
+        Main Equation            : 2 pterms
+        (
+              \SyncSOF:clockcount1_3\ * \SyncSOF:MODULE_7:g1:a0:xneq\
+            + \SyncSOF:frame_pos_lo_2\ * !\SyncSOF:MODULE_7:g1:a0:xneq\
+        );
+        Output = \SyncSOF:frame_pos_lo_2\ (fanout=2)
         Properties               : 
         {
         }
@@ -7573,6 +7536,29 @@ statuscell: Name =\SyncSOF:FRAME_POS_LO\
     Clock Polarity: Active High
     Clock Enable: True
 
+count7cell: Name =\SyncSOF:Counter0\
+    PORT MAP (
+        clock => ClockBlock_BUS_CLK ,
+        reset => Net_4317 ,
+        count_6 => \SyncSOF:clockcount1_6\ ,
+        count_5 => \SyncSOF:clockcount1_5\ ,
+        count_4 => \SyncSOF:clockcount1_4\ ,
+        count_3 => \SyncSOF:clockcount1_3\ ,
+        count_2 => \SyncSOF:clockcount1_2\ ,
+        count_1 => \SyncSOF:clockcount1_1\ ,
+        count_0 => \SyncSOF:clockcount1_0\ ,
+        tc => \SyncSOF:clocktc1\ );
+    Properties:
+    {
+        cy_alt_mode = 0
+        cy_init_value = "0000000"
+        cy_period = "0111111"
+        cy_route_en = 0
+        cy_route_ld = 0
+    }
+    Clock Polarity: Active High
+    Clock Enable: True
+
 Intr container @ [IntrContainer=(0)]: 
   Intr@ [IntrContainer=(0)][IntrId=(0)] 
     interrupt: Name =CW_isr
@@ -7584,6 +7570,15 @@ Intr container @ [IntrContainer=(0)]:
             is_nmi = 0
         }
   Intr@ [IntrContainer=(0)][IntrId=(1)] 
+    interrupt: Name =Key_Delay_isr
+        PORT MAP (
+            interrupt => Net_8153 );
+        Properties:
+        {
+            int_type = "10"
+            is_nmi = 0
+        }
+  Intr@ [IntrContainer=(0)][IntrId=(2)] 
     interrupt: Name =\USBFS:EP_DMA_Done_isr\
         PORT MAP (
             interrupt => \USBFS:Net_2032\ );
@@ -7592,7 +7587,7 @@ Intr container @ [IntrContainer=(0)]:
             int_type = "10"
             is_nmi = 0
         }
-  Intr@ [IntrContainer=(0)][IntrId=(2)] 
+  Intr@ [IntrContainer=(0)][IntrId=(3)] 
     interrupt: Name =\USBFS:ep_2\
         PORT MAP (
             interrupt => \USBFS:ep_int_2\ );
@@ -7601,7 +7596,7 @@ Intr container @ [IntrContainer=(0)]:
             int_type = "10"
             is_nmi = 0
         }
-  Intr@ [IntrContainer=(0)][IntrId=(3)] 
+  Intr@ [IntrContainer=(0)][IntrId=(4)] 
     interrupt: Name =\USBFS:ep_3\
         PORT MAP (
             interrupt => \USBFS:ep_int_3\ );
@@ -8880,6 +8875,18 @@ Timer group 0:
         {
             cy_registers = ""
         }
+    Timer Block @ F(Timer,1): 
+    timercell: Name =\Key_Delay_Timer:TimerHW\
+        PORT MAP (
+            clock => Net_8086 ,
+            enable => __ONE__ ,
+            tc => Net_8153 ,
+            cmp => \Key_Delay_Timer:Net_261\ ,
+            irq => \Key_Delay_Timer:Net_57\ );
+        Properties:
+        {
+            cy_registers = ""
+        }
 USB group 0: 
     USB Block @ F(USB,0): 
     usbcell: Name =\USBFS:USB\
@@ -8959,36 +8966,36 @@ Port | Pin | Fixed |      Type |       Drive Mode |            Name | Connection
 </CYPRESSTAG>
 </CYPRESSTAG>
 </CYPRESSTAG>
-Digital component placer commit/Report: Elapsed time ==> 0s.095ms
-Digital Placement phase: Elapsed time ==> 2s.201ms
+Digital component placer commit/Report: Elapsed time ==> 0s.157ms
+Digital Placement phase: Elapsed time ==> 2s.661ms
 </CYPRESSTAG>
 <CYPRESSTAG name="Digital Routing">
 "C:\Program Files (x86)\Cypress\PSoC Creator\4.4\PSoC Creator\bin/sjrouter.exe" --xml-path "C:\Program Files (x86)\Cypress\PSoC Creator\4.4\PSoC Creator\dev\psoc3/route_arch-rrg.cydata" --vh2-path "Proficio-MKII-ATU_r.vh2" --pcf-path "Proficio-MKII-ATU.pco" --des-name "Proficio-MKII-ATU" --dsf-path "Proficio-MKII-ATU.dsf" --sdc-path "Proficio-MKII-ATU.sdc" --lib-path "Proficio-MKII-ATU_r.lib"
 Routing successful.
-Digital Routing phase: Elapsed time ==> 2s.615ms
+Digital Routing phase: Elapsed time ==> 3s.070ms
 </CYPRESSTAG>
 <CYPRESSTAG name="Bitstream Generation">
-Bitstream Generation phase: Elapsed time ==> 0s.331ms
+Bitstream Generation phase: Elapsed time ==> 0s.239ms
 </CYPRESSTAG>
 <CYPRESSTAG name="Bitstream Verification">
-Bitstream Verification phase: Elapsed time ==> 0s.095ms
+Bitstream Verification phase: Elapsed time ==> 0s.061ms
 </CYPRESSTAG>
 <CYPRESSTAG name="Static timing analysis">
-Warning: sta.M0021: Proficio-MKII-ATU_timing.html: Warning-1350: Asynchronous path(s) exist from "\USBFS:USB\/sof_int" to "CyBUS_CLK". See the timing report for details. (File=C:\Users\Ron\.grok\worktrees\Release-Proficio-MKII-ATU\Proficio-MKII-ATU.cydsn\Proficio-MKII-ATU_timing.html)
-Warning: sta.M0021: Proficio-MKII-ATU_timing.html: Warning-1350: Asynchronous path(s) exist from "CyBUS_CLK" to "\USBFS:USB\/sof_int". See the timing report for details. (File=C:\Users\Ron\.grok\worktrees\Release-Proficio-MKII-ATU\Proficio-MKII-ATU.cydsn\Proficio-MKII-ATU_timing.html)
-Warning: sta.M0019: Proficio-MKII-ATU_timing.html: Warning-1366: Setup time violation found in a path from clock ( CyBUS_CLK ) to clock ( FRAC_CLK ). (File=C:\Users\Ron\.grok\worktrees\Release-Proficio-MKII-ATU\Proficio-MKII-ATU.cydsn\Proficio-MKII-ATU_timing.html)
+Warning: sta.M0021: Proficio-MKII-ATU_timing.html: Warning-1350: Asynchronous path(s) exist from "\USBFS:USB\/sof_int" to "CyBUS_CLK". See the timing report for details. (File=C:\Users\n8vet\OneDrive\Documents\github\mscc-station\radio-psoc-firmware\Proficio-MKII-ATU\Proficio-MKII-ATU.cydsn\Proficio-MKII-ATU_timing.html)
+Warning: sta.M0021: Proficio-MKII-ATU_timing.html: Warning-1350: Asynchronous path(s) exist from "CyBUS_CLK" to "\USBFS:USB\/sof_int". See the timing report for details. (File=C:\Users\n8vet\OneDrive\Documents\github\mscc-station\radio-psoc-firmware\Proficio-MKII-ATU\Proficio-MKII-ATU.cydsn\Proficio-MKII-ATU_timing.html)
+Warning: sta.M0019: Proficio-MKII-ATU_timing.html: Warning-1366: Setup time violation found in a path from clock ( CyBUS_CLK ) to clock ( FRAC_CLK ). (File=C:\Users\n8vet\OneDrive\Documents\github\mscc-station\radio-psoc-firmware\Proficio-MKII-ATU\Proficio-MKII-ATU.cydsn\Proficio-MKII-ATU_timing.html)
 Timing report is in Proficio-MKII-ATU_timing.html.
-Static timing analysis phase: Elapsed time ==> 0s.734ms
+Static timing analysis phase: Elapsed time ==> 0s.853ms
 </CYPRESSTAG>
 <CYPRESSTAG name="Data reporting">
-Data reporting phase: Elapsed time ==> 0s.207ms
+Data reporting phase: Elapsed time ==> 0s.000ms
 </CYPRESSTAG>
 <CYPRESSTAG name="Database update...">
-Design database save phase: Elapsed time ==> 0s.257ms
+Design database save phase: Elapsed time ==> 0s.336ms
 </CYPRESSTAG>
-cydsfit: Elapsed time ==> 7s.223ms
+cydsfit: Elapsed time ==> 7s.705ms
 </CYPRESSTAG>
-Fitter phase: Elapsed time ==> 7s.232ms
-API generation phase: Elapsed time ==> 1s.948ms
-Dependency generation phase: Elapsed time ==> 0s.017ms
-Cleanup phase: Elapsed time ==> 0s.002ms
+Fitter phase: Elapsed time ==> 7s.707ms
+API generation phase: Elapsed time ==> 3s.109ms
+Dependency generation phase: Elapsed time ==> 0s.011ms
+Cleanup phase: Elapsed time ==> 0s.001ms

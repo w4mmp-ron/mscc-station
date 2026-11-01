@@ -1,4 +1,4 @@
-C51 COMPILER V9.51   MAIN                                                                  10/29/2026 12:58:39 PAGE 1   
+C51 COMPILER V9.51   MAIN                                                                  10/31/2026 20:49:27 PAGE 1   
 
 
 C51 COMPILER V9.51, COMPILATION OF MODULE MAIN
@@ -62,7 +62,7 @@ line level    source
   50          uint32 E_current_rit_freq = 0;
   51          uint8 E_transverter = 0;
   52          uint8 E_pcb_version = 2;
-C51 COMPILER V9.51   MAIN                                                                  10/29/2026 12:58:39 PAGE 2   
+C51 COMPILER V9.51   MAIN                                                                  10/31/2026 20:49:27 PAGE 2   
 
   53          
   54          uint8 E_PPM_needs_updated = FALSE;
@@ -126,7 +126,7 @@ line level    source
  112   2              if(!USBFS_initVar) {
  113   3                  USBFS_Start(0, USBFS_DWR_VDDD_OPERATION);
  114   3                  Audio_Start();
-C51 COMPILER V9.51   MAIN                                                                  10/29/2026 12:58:39 PAGE 3   
+C51 COMPILER V9.51   MAIN                                                                  10/31/2026 20:49:27 PAGE 3   
 
  115   3                  PCM3060_Start();
  116   3              }
@@ -190,7 +190,7 @@ line level    source
  172   3              }
  173   2              // Everything else runs twice per millisecond
  174   2              // Keep T1 first for timing accuracy
-C51 COMPILER V9.51   MAIN                                                                  10/29/2026 12:58:39 PAGE 4   
+C51 COMPILER V9.51   MAIN                                                                  10/31/2026 20:49:27 PAGE 4   
 
  175   2              i = Status_Read() & STATUS_BEAT;
  176   2              if (beat != i) {
@@ -254,7 +254,7 @@ line level    source
  228   4                      break;
  229   4                  case 4:
  230   4                      if(E_si5351_status == 0){
-C51 COMPILER V9.51   MAIN                                                                  10/29/2026 12:58:39 PAGE 5   
+C51 COMPILER V9.51   MAIN                                                                  10/31/2026 20:49:27 PAGE 5   
 
  231   5                          Band_Main();
  232   5                      }
@@ -318,7 +318,7 @@ line level    source
  290   1          uint16 timer = 0;
  291   1          
  292   1          if(USBFS_initVar) USBFS_Stop();
-C51 COMPILER V9.51   MAIN                                                                  10/29/2026 12:58:39 PAGE 6   
+C51 COMPILER V9.51   MAIN                                                                  10/31/2026 20:49:27 PAGE 6   
 
  293   1          Control_Write(Control_Read() & CONTROL_LED | CONTROL_AMP | CONTROL_RX);
  294   1          Morse_Main(msg);
@@ -334,7 +334,7 @@ line level    source
  304   3              }    
  305   2          }
  306   1      }
-C51 COMPILER V9.51   MAIN                                                                  10/29/2026 12:58:39 PAGE 7   
+C51 COMPILER V9.51   MAIN                                                                  10/31/2026 20:49:27 PAGE 7   
 
 ASSEMBLY LISTING OF GENERATED OBJECT CODE
 
@@ -398,7 +398,7 @@ ASSEMBLY LISTING OF GENERATED OBJECT CODE
                  E     CALL    ?C?LSTXDATA
                        MOV     R7,#0C0H
                  E     CALL    _si5351_init
-C51 COMPILER V9.51   MAIN                                                                  10/29/2026 12:58:39 PAGE 8   
+C51 COMPILER V9.51   MAIN                                                                  10/31/2026 20:49:27 PAGE 8   
 
                  R     MOV     DPTR,#si_err
                        MOV     A,R7
@@ -462,7 +462,7 @@ ASSEMBLY LISTING OF GENERATED OBJECT CODE
                                            ; SOURCE LINE # 102
                  E     MOV     DPTR,#E_current_LO_freq
                        MOVX    A,@DPTR
-C51 COMPILER V9.51   MAIN                                                                  10/29/2026 12:58:39 PAGE 9   
+C51 COMPILER V9.51   MAIN                                                                  10/31/2026 20:49:27 PAGE 9   
 
                        MOV     R4,A
                        INC     DPTR
@@ -526,7 +526,7 @@ ASSEMBLY LISTING OF GENERATED OBJECT CODE
              ?C0008:
                                            ; SOURCE LINE # 118
                  E     MOV     DPTR,#USBFS_initVar
-C51 COMPILER V9.51   MAIN                                                                  10/29/2026 12:58:39 PAGE 10  
+C51 COMPILER V9.51   MAIN                                                                  10/31/2026 20:49:27 PAGE 10  
 
                        MOVX    A,@DPTR
                  R     xJZ     ?C0012
@@ -590,7 +590,7 @@ ASSEMBLY LISTING OF GENERATED OBJECT CODE
                  E     CALL    Sync_Main
                                            ; SOURCE LINE # 144
                  R     MOV     DPTR,#E_host_mode
-C51 COMPILER V9.51   MAIN                                                                  10/29/2026 12:58:39 PAGE 11  
+C51 COMPILER V9.51   MAIN                                                                  10/31/2026 20:49:27 PAGE 11  
 
                        MOVX    A,@DPTR
                        MOV     R7,A
@@ -654,7 +654,7 @@ ASSEMBLY LISTING OF GENERATED OBJECT CODE
                                            ; SOURCE LINE # 160
                  E     CALL    Control_Read
                        MOV     A,R7
-C51 COMPILER V9.51   MAIN                                                                  10/29/2026 12:58:39 PAGE 12  
+C51 COMPILER V9.51   MAIN                                                                  10/31/2026 20:49:27 PAGE 12  
 
                        ANL     A,#0FEH
                        MOV     R7,A
@@ -718,7 +718,7 @@ ASSEMBLY LISTING OF GENERATED OBJECT CODE
                        MOVX    A,@DPTR
                        XRL     A,R7
                  R     xJZ     ?C0013
-C51 COMPILER V9.51   MAIN                                                                  10/29/2026 12:58:39 PAGE 13  
+C51 COMPILER V9.51   MAIN                                                                  10/31/2026 20:49:27 PAGE 13  
 
                                            ; SOURCE LINE # 177
                        INC     DPTR
@@ -782,7 +782,7 @@ ASSEMBLY LISTING OF GENERATED OBJECT CODE
                                            ; SOURCE LINE # 184
                  R     MOV     DPTR,#ptt_delay_count
                        MOV     A,#0AH
-C51 COMPILER V9.51   MAIN                                                                  10/29/2026 12:58:39 PAGE 14  
+C51 COMPILER V9.51   MAIN                                                                  10/31/2026 20:49:27 PAGE 14  
 
                        MOVX    @DPTR,A
                                            ; SOURCE LINE # 185
@@ -846,7 +846,7 @@ ASSEMBLY LISTING OF GENERATED OBJECT CODE
                                            ; SOURCE LINE # 203
                        ORL     A,#010H
                        MOV     R7,A
-C51 COMPILER V9.51   MAIN                                                                  10/29/2026 12:58:39 PAGE 15  
+C51 COMPILER V9.51   MAIN                                                                  10/31/2026 20:49:27 PAGE 15  
 
                        MOVX    @DPTR,A
                                            ; SOURCE LINE # 204
@@ -910,7 +910,7 @@ ASSEMBLY LISTING OF GENERATED OBJECT CODE
                        XCH     A,R0
                        XRL     A,R0
                        MOV     A,R7
-C51 COMPILER V9.51   MAIN                                                                  10/29/2026 12:58:39 PAGE 16  
+C51 COMPILER V9.51   MAIN                                                                  10/31/2026 20:49:27 PAGE 16  
 
                        SWAP    A
                        ANL     A,#0FH
@@ -974,7 +974,7 @@ ASSEMBLY LISTING OF GENERATED OBJECT CODE
                  R     MOV     R1,#LOW ?SC_12
                  R     CALL    _ERROR
                                            ; SOURCE LINE # 237
-C51 COMPILER V9.51   MAIN                                                                  10/29/2026 12:58:39 PAGE 17  
+C51 COMPILER V9.51   MAIN                                                                  10/31/2026 20:49:27 PAGE 17  
 
                  R     xJMP    ?C0013
                                            ; SOURCE LINE # 238
@@ -1038,7 +1038,7 @@ ASSEMBLY LISTING OF GENERATED OBJECT CODE
                        MOV     R6,#01H
                        MOV     R5,A
                        MOV     R4,A
-C51 COMPILER V9.51   MAIN                                                                  10/29/2026 12:58:39 PAGE 18  
+C51 COMPILER V9.51   MAIN                                                                  10/31/2026 20:49:27 PAGE 18  
 
                  E     CALL    _?CyDelay
                                            ; SOURCE LINE # 254
@@ -1102,7 +1102,7 @@ ASSEMBLY LISTING OF GENERATED OBJECT CODE
                        INC     DPTR
                        MOV     A,R2
                        MOVX    @DPTR,A
-C51 COMPILER V9.51   MAIN                                                                  10/29/2026 12:58:39 PAGE 19  
+C51 COMPILER V9.51   MAIN                                                                  10/31/2026 20:49:27 PAGE 19  
 
                        INC     DPTR
                        MOV     A,R1
@@ -1166,7 +1166,7 @@ ASSEMBLY LISTING OF GENERATED OBJECT CODE
                        MOV     R1,A
                        CLR     A
                        ADDC    A,R2
-C51 COMPILER V9.51   MAIN                                                                  10/29/2026 12:58:39 PAGE 20  
+C51 COMPILER V9.51   MAIN                                                                  10/31/2026 20:49:27 PAGE 20  
 
                        MOV     R2,A
                        MOV     A,R7
@@ -1230,7 +1230,7 @@ ASSEMBLY LISTING OF GENERATED OBJECT CODE
                        MOV     R1,A
                        CLR     A
                        ADDC    A,R2
-C51 COMPILER V9.51   MAIN                                                                  10/29/2026 12:58:39 PAGE 21  
+C51 COMPILER V9.51   MAIN                                                                  10/31/2026 20:49:27 PAGE 21  
 
                        MOV     R2,A
                        MOV     A,R7
@@ -1294,7 +1294,7 @@ ASSEMBLY LISTING OF GENERATED OBJECT CODE
                        MOV     A,R3
                        MOVX    @DPTR,A
                        INC     DPTR
-C51 COMPILER V9.51   MAIN                                                                  10/29/2026 12:58:39 PAGE 22  
+C51 COMPILER V9.51   MAIN                                                                  10/31/2026 20:49:27 PAGE 22  
 
                        MOV     A,R2
                        MOVX    @DPTR,A
@@ -1358,7 +1358,7 @@ ASSEMBLY LISTING OF GENERATED OBJECT CODE
                        ADDC    A,R2
                        MOV     R2,A
                        MOV     A,R7
-C51 COMPILER V9.51   MAIN                                                                  10/29/2026 12:58:39 PAGE 23  
+C51 COMPILER V9.51   MAIN                                                                  10/31/2026 20:49:27 PAGE 23  
 
                  E     CALL    ?C?CSTPTR
                                            ; SOURCE LINE # 286
@@ -1422,7 +1422,7 @@ ASSEMBLY LISTING OF GENERATED OBJECT CODE
                                            ; SOURCE LINE # 297
                  E     CALL    Status_Read
                        MOV     A,R7
-C51 COMPILER V9.51   MAIN                                                                  10/29/2026 12:58:39 PAGE 24  
+C51 COMPILER V9.51   MAIN                                                                  10/31/2026 20:49:27 PAGE 24  
 
                        ANL     A,#08H
                        MOV     R7,A

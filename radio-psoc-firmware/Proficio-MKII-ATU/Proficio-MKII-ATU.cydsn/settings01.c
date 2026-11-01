@@ -40,15 +40,9 @@ uint8 buffer[CYDEV_EEPROM_ROW_SIZE];
 #define AUDIO_CHANNELS 2
 #define CALIBRATION_TEMPERATURE 3
 #define DELAY_LIMIT 200
-
-#define PPM_INT 0
-#define PPM_DEC 1
-#define PPM_RECEIVED 0x03
-#define AUDIO_CHANNELS 2
-#define CALIBRATION_TEMPERATURE 3
-#define DELAY_LIMIT 200
 #define PPM_INT_SIGN 3
 #define PPM_DEC_SIGN 4
+
 
 void Settings_Init(){
     reg8  *RegPointer;
@@ -69,7 +63,15 @@ void Settings_Init(){
     if(dec_sign == 1){
         ee_ppm_dec = ee_ppm_dec * -1;
     }
+    
+    /*if(ee_ppm_int == 0){
+        ee_ppm_int = -21;
+    }
+    if(ee_ppm_dec == 0){
+        ee_ppm_dec = -50;
+    }*/
     Audio_IQ_Channels = RegPointer[AUDIO_CHANNELS];
+    Audio_IQ_Channels = 0;
 }
 
 int Set_PPM(void ) {
@@ -81,7 +83,7 @@ int Set_PPM(void ) {
     RegPointer = (reg8 *) (CYDEV_EE_BASE + 0u);
     status = EEPROM_QueryWrite();
     if(status != CYRET_STARTED){
-         for (i=5; i < CYDEV_EEPROM_ROW_SIZE; i++) {
+        for (i=5; i < CYDEV_EEPROM_ROW_SIZE; i++) {
             buffer[i] = 0;
         }
         if(ee_ppm_int < 0){
@@ -99,7 +101,10 @@ int Set_PPM(void ) {
             buffer[PPM_DEC_SIGN] = 0;
         }
         buffer[AUDIO_CHANNELS] = Audio_IQ_Channels;
+        //CySetTemp();
         EEPROM_StartWrite(buffer, 0);
+        //while((si5351aSetFrequency((E_current_LO_freq + 100)) != 0));
+        //while((si5351aSetFrequency((E_current_LO_freq)) != 0));
         E_PPM_needs_updated = 0;
         E_PPM_needs_set = E_PPM_NEEDS_SET_STEP_1;
     }

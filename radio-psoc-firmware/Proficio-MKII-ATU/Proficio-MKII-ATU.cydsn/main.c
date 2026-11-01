@@ -59,6 +59,7 @@ uint8_t E_band;
 uint8 E_si5351_status = 0;
 uint8_t E_Amplifier = FALSE;
 uint8_t E_QSK = FALSE;
+uint8_t E_key_delay_ms = (CW_DEFAULT_HOLD_TIME * 10) / KEY_DELAY_DIVIDER;
 volatile uint8_t E_PTT = FALSE;
 volatile uint8_t E_reboot_request = REBOOT_REQ_NONE;
 
@@ -77,8 +78,11 @@ void main_init() {
     I2C_DISPLAY_Start();
     CW_Hold_Timer_Start();
     CW_isr_StartEx(CW_interrupt);
-       
+    Key_Delay_Timer_Start();                    //1 ms tick for non-QSK amp key delay
+    Key_Delay_isr_StartEx(KEY_DELAY_interrupt);
+
     Settings_Init();
+    Cal_Init();                                 //per-band calibration from EEPROM (after EEPROM_Start)
     si_err = si5351_init(SI5351_CRYSTAL_LOAD_10PF,0);
     //si_err = si5351_init(SI5351_CRYSTAL_LOAD_12PF,0);
     if (!si_err) {
@@ -94,7 +98,7 @@ void main_init() {
     
     Band_Control_Write(CONTROL_BAND_20_30);
     E_current_LO_freq = 14000000;
-    E_smooth = FALSE;
+    //E_SI5351_Reset = FALSE;
     while((si5351aSetFrequency(E_current_LO_freq) != 0));
     CyDelay(1500); //Wait for Keyer MCU to boot
     Control_Write(Control_Read() & ~CONTROL_LED);
@@ -123,12 +127,11 @@ int main()
 {
     uint8 i, beat, beater = 0;
     uint8_t previous_host_mode = 0;
-    uint8_t ptt = 0;
     uint16 timer = 0;
     uint8_t control_status = 0;
     static uint8_t previous_TX_hold_time = 0;
-    uint8_t ptt_section = 0;
-    uint8_t ptt_delay_count = 10;
+    uint8_t mode_change_pending = FALSE;    //3.242
+    uint8_t mode_drain_tick = 0;
            
     main_init();
     for(;;) {
@@ -137,9 +140,32 @@ int main()
         Sync_Main();
         if(E_host_mode == 'C') {
             if(previous_host_mode != E_host_mode){
-                previous_host_mode = E_host_mode;
+                if(!mode_change_pending){
+                    mode_change_pending = TRUE;
+                    mode_drain_tick = E_ms_tick;
+                }
             }
-            Manage_Paddles_Port();
+            if((previous_host_mode != E_host_mode) && !TX_Idle() &&
+               ((uint8)(E_ms_tick - mode_drain_tick) < MODE_DRAIN_MAX_MS)){
+                //3.242: host PTT / TUNE still keyed (e.g. TUN released into CW). Let TX_Main
+                //ramp the DAC down and drop the PA / AMP in order before CW takes over.
+                TX_Request = 0;
+                TX_Main();
+            }else if(previous_host_mode != E_host_mode){
+                //Entering CW: drop any host PTT / TUNE TX. TX_Main() does not run in CW,
+                //so a PTT off sent after the mode change would never be acted on.
+                Control_Write(Control_Read() & ~CONTROL_LED);   //Restore LED operation to normal
+                Control_Write(Control_Read() | CONTROL_RX);     //Turn OFF PA - Negative logic level
+                control_status = Control_Read();
+                control_status = control_status | CONTROL_AMP;  //Turn OFF the AMP port - Negative logic level
+                control_status = control_status | CONTROL_DOUT; //Turn ON output from PCM3060
+                Control_Write(control_status);
+                TX_Request = 0;
+                TX_Reset();                                     //3.241: TX_Main back to idle, CW owns the DAC mute
+                previous_host_mode = E_host_mode;
+                mode_change_pending = FALSE;
+            }
+            if(previous_host_mode == E_host_mode) Manage_Paddles_Port();
         }
         // Everything else runs twice per millisecond
         // Keep T1 first for timing accuracy
@@ -147,11 +173,19 @@ int main()
         if (beat != i) {
             switch(beater++) {
             case 0:
-                T1_Main();
+                T1_Main();                      //Elecraft T1 ATU port (ATU_0 data, ATU_1 tune)
                 break;
             case 1:
                 if(E_host_mode != 'C'){
+                    if((previous_host_mode != E_host_mode) && (previous_host_mode != 'C') && (previous_host_mode != 0)){
+                        //3.242: change between non-CW modes (e.g. TUNE -> USB/DIG on TUN release, sent
+                        //before TUN off). Do NOT hard-drop the PA here: TX_Main ramps the DAC down first.
+                        previous_host_mode = E_host_mode;
+                        mode_change_pending = FALSE;
+                    }
                     if(previous_host_mode != E_host_mode){
+                        //Leaving CW (or first pass after power up)
+                        CW_Key_Delay_Stop();                            //Stop CW key delay ISR, DAC unmuted
                         Control_Write(Control_Read() & ~CONTROL_LED);   //Restore LED operation to normal
                         Control_Write(Control_Read() | CONTROL_RX);     //Turn OFF PA - Negative logic level
                         control_status = Control_Read();
@@ -160,15 +194,20 @@ int main()
                         Control_Write(control_status);
                         TX_Request = 0;
                         previous_host_mode = E_host_mode;
+                        mode_change_pending = FALSE;
                     }
                     TX_Main();
                 }
                 break;
             case 2:
                 Settings_Main();
+                Cal_Main();                     //calibration EEPROM save, one row per pass
                 if (previous_TX_hold_time != E_TX_Hold){
                     previous_TX_hold_time = E_TX_Hold;
                     CW_Hold_Timer_WritePeriod((previous_TX_hold_time * 100)); //Configure the CW hold timer
+                    E_key_delay_ms = (uint8_t)(((uint16)previous_TX_hold_time * 10u) / KEY_DELAY_DIVIDER); //TX hold is in 10 ms units
+                    if(E_key_delay_ms < KEY_DELAY_MIN_MS) E_key_delay_ms = KEY_DELAY_MIN_MS;
+                    if(E_key_delay_ms > KEY_DELAY_MAX_MS) E_key_delay_ms = KEY_DELAY_MAX_MS;
                 }
                if(E_keyer_installed == TRUE){
                     Configure_CW();

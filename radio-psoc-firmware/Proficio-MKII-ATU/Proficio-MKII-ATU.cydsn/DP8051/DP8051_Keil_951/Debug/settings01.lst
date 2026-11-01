@@ -1,4 +1,4 @@
-C51 COMPILER V9.51   SETTINGS01                                                            08/22/2026 15:31:41 PAGE 1   
+C51 COMPILER V9.51   SETTINGS01                                                            10/31/2026 20:28:56 PAGE 1   
 
 
 C51 COMPILER V9.51, COMPILATION OF MODULE SETTINGS01
@@ -52,185 +52,192 @@ line level    source
   40          #define AUDIO_CHANNELS 2
   41          #define CALIBRATION_TEMPERATURE 3
   42          #define DELAY_LIMIT 200
-  43          
-  44          #define PPM_INT 0
-  45          #define PPM_DEC 1
-  46          #define PPM_RECEIVED 0x03
-  47          #define AUDIO_CHANNELS 2
-  48          #define CALIBRATION_TEMPERATURE 3
-  49          #define DELAY_LIMIT 200
-  50          #define PPM_INT_SIGN 3
-  51          #define PPM_DEC_SIGN 4
-  52          
-C51 COMPILER V9.51   SETTINGS01                                                            08/22/2026 15:31:41 PAGE 2   
+  43          #define PPM_INT_SIGN 3
+  44          #define PPM_DEC_SIGN 4
+  45          
+  46          
+  47          void Settings_Init(){
+  48   1          reg8  *RegPointer;
+  49   1          int8_t int_sign = 0;
+  50   1          int8_t dec_sign = 0;
+  51   1          
+  52   1          EEPROM_Start();
+C51 COMPILER V9.51   SETTINGS01                                                            10/31/2026 20:28:56 PAGE 2   
 
-  53          void Settings_Init(){
-  54   1          reg8  *RegPointer;
-  55   1          int8_t int_sign = 0;
-  56   1          int8_t dec_sign = 0;
-  57   1          
-  58   1          EEPROM_Start();
-  59   1          CyDelay(100);
-  60   1          RegPointer = (reg8 *) (CYDEV_EE_BASE + 0u);
-  61   1          ee_ppm_int = RegPointer[PPM_INT];
-  62   1          ee_ppm_dec = RegPointer[PPM_DEC];
-  63   1          int_sign = RegPointer[PPM_INT_SIGN];
-  64   1          dec_sign = RegPointer[PPM_DEC_SIGN];
-  65   1          
-  66   1          if(int_sign == 1){
-  67   2              ee_ppm_int = ee_ppm_int * -1;
-  68   2          }
-  69   1          if(dec_sign == 1){
-  70   2              ee_ppm_dec = ee_ppm_dec * -1;
-  71   2          }
-  72   1          Audio_IQ_Channels = RegPointer[AUDIO_CHANNELS];
-  73   1      }
-  74          
-  75          int Set_PPM(void ) {
-  76   1          volatile cystatus status = 0;
-  77   1          reg8 *RegPointer;
-  78   1          uint8_t i = 0;
-  79   1          uint8_t freq_status =0;
-  80   1                
-  81   1          RegPointer = (reg8 *) (CYDEV_EE_BASE + 0u);
-  82   1          status = EEPROM_QueryWrite();
-  83   1          if(status != CYRET_STARTED){
-  84   2               for (i=5; i < CYDEV_EEPROM_ROW_SIZE; i++) {
-  85   3                  buffer[i] = 0;
-  86   3              }
-  87   2              if(ee_ppm_int < 0){
-  88   3                  buffer[PPM_INT] = (ee_ppm_int * -1);
-  89   3                  buffer[PPM_INT_SIGN] = 1;
-  90   3              }else{
-  91   3                  buffer[PPM_INT] = ee_ppm_int;
-  92   3                  buffer[PPM_INT_SIGN] = 0;
-  93   3              }
-  94   2              if(ee_ppm_dec < 0){
-  95   3                  buffer[PPM_DEC] = (ee_ppm_dec * -1);
-  96   3                  buffer[PPM_DEC_SIGN] = 1;
-  97   3              }else{
-  98   3                  buffer[PPM_DEC] = ee_ppm_dec;
-  99   3                  buffer[PPM_DEC_SIGN] = 0;
- 100   3              }
- 101   2              buffer[AUDIO_CHANNELS] = Audio_IQ_Channels;
- 102   2              EEPROM_StartWrite(buffer, 0);
- 103   2              E_PPM_needs_updated = 0;
- 104   2              E_PPM_needs_set = E_PPM_NEEDS_SET_STEP_1;
- 105   2          }
- 106   1          return status;
- 107   1        }
- 108          
- 109          
- 110          
- 111          void Settings_Main(){
- 112   1          //volatile uint8 l_audio_channels;
- 113   1          reg8 *RegPointer;
- 114   1          cystatus  error = 0;
-C51 COMPILER V9.51   SETTINGS01                                                            08/22/2026 15:31:41 PAGE 3   
+  53   1          CyDelay(100);
+  54   1          RegPointer = (reg8 *) (CYDEV_EE_BASE + 0u);
+  55   1          ee_ppm_int = RegPointer[PPM_INT];
+  56   1          ee_ppm_dec = RegPointer[PPM_DEC];
+  57   1          int_sign = RegPointer[PPM_INT_SIGN];
+  58   1          dec_sign = RegPointer[PPM_DEC_SIGN];
+  59   1          
+  60   1          if(int_sign == 1){
+  61   2              ee_ppm_int = ee_ppm_int * -1;
+  62   2          }
+  63   1          if(dec_sign == 1){
+  64   2              ee_ppm_dec = ee_ppm_dec * -1;
+  65   2          }
+  66   1          
+  67   1          /*if(ee_ppm_int == 0){
+  68   1              ee_ppm_int = -21;
+  69   1          }
+  70   1          if(ee_ppm_dec == 0){
+  71   1              ee_ppm_dec = -50;
+  72   1          }*/
+  73   1          Audio_IQ_Channels = RegPointer[AUDIO_CHANNELS];
+  74   1          Audio_IQ_Channels = 0;
+  75   1      }
+  76          
+  77          int Set_PPM(void ) {
+  78   1          volatile cystatus status = 0;
+  79   1          reg8 *RegPointer;
+  80   1          uint8_t i = 0;
+  81   1          uint8_t freq_status =0;
+  82   1                
+  83   1          RegPointer = (reg8 *) (CYDEV_EE_BASE + 0u);
+  84   1          status = EEPROM_QueryWrite();
+  85   1          if(status != CYRET_STARTED){
+  86   2              for (i=5; i < CYDEV_EEPROM_ROW_SIZE; i++) {
+  87   3                  buffer[i] = 0;
+  88   3              }
+  89   2              if(ee_ppm_int < 0){
+  90   3                  buffer[PPM_INT] = (ee_ppm_int * -1);
+  91   3                  buffer[PPM_INT_SIGN] = 1;
+  92   3              }else{
+  93   3                  buffer[PPM_INT] = ee_ppm_int;
+  94   3                  buffer[PPM_INT_SIGN] = 0;
+  95   3              }
+  96   2              if(ee_ppm_dec < 0){
+  97   3                  buffer[PPM_DEC] = (ee_ppm_dec * -1);
+  98   3                  buffer[PPM_DEC_SIGN] = 1;
+  99   3              }else{
+ 100   3                  buffer[PPM_DEC] = ee_ppm_dec;
+ 101   3                  buffer[PPM_DEC_SIGN] = 0;
+ 102   3              }
+ 103   2              buffer[AUDIO_CHANNELS] = Audio_IQ_Channels;
+ 104   2              //CySetTemp();
+ 105   2              EEPROM_StartWrite(buffer, 0);
+ 106   2              //while((si5351aSetFrequency((E_current_LO_freq + 100)) != 0));
+ 107   2              //while((si5351aSetFrequency((E_current_LO_freq)) != 0));
+ 108   2              E_PPM_needs_updated = 0;
+ 109   2              E_PPM_needs_set = E_PPM_NEEDS_SET_STEP_1;
+ 110   2          }
+ 111   1          return status;
+ 112   1        }
+ 113          
+ 114          
+C51 COMPILER V9.51   SETTINGS01                                                            10/31/2026 20:28:56 PAGE 3   
 
- 115   1          //uint8 critical_section;
- 116   1          volatile int8 l_calibration_int = 0;
- 117   1          volatile int8 l_calibration_dec = 0;
- 118   1          
- 119   1          
- 120   1          RegPointer = (reg8 *) (CYDEV_EE_BASE + 0u);
- 121   1          l_calibration_int = ee_ppm_int;
- 122   1          l_calibration_dec = ee_ppm_dec;
- 123   1          if(E_PPM_needs_updated == PPM_RECEIVED){
- 124   2              l_calibration_int = (E_calibration_int);
- 125   2              l_calibration_dec = (E_calibration_dec);
- 126   2              ee_ppm_int = (l_calibration_int);   
- 127   2              ee_ppm_dec = (l_calibration_dec);
- 128   2              Set_PPM();
- 129   2          }
- 130   1              
- 131   1          /*l_audio_channels = RegPointer[AUDIO_CHANNELS];
- 132   1          if(l_audio_channels != Audio_IQ_Channels){
- 133   1              critical_section = CyEnterCriticalSection();
- 134   1              error = EEPROM_ByteWritePos(Audio_IQ_Channels,0u,AUDIO_CHANNELS);
- 135   1              CyExitCriticalSection(critical_section);
- 136   1          }*/
- 137   1      }    
- 138          
- 139          /*void Settings_Init(void) {
- 140              float crystal_freq;
- 141              EEPROM_Start();
- 142              
- 143              crystal_freq = ((float)swap32(*(reg32*)CYDEV_EE_BASE) / 0x01000000);
- 144              
- 145              if (
- 146                  crystal_freq < XTAL_MIN || crystal_freq > XTAL_MAX ||
- 147                  REVERSE_DATA(CYDEV_EE_BASE) > 3
- 148              ) {
- 149                  // New radio! Si570_Start() will compute xtal
- 150                  // and it will immediately be stored in eeprom.
- 151                  Si570_Xtal = 0;
- 152                  Audio_IQ_Channels = 0;
- 153              } else {
- 154                  Si570_Xtal = XTAL_DATA(CYDEV_EE_BASE);
- 155                  Audio_IQ_Channels = REVERSE_DATA(CYDEV_EE_BASE);
- 156              }
- 157              
- 158          }
- 159          
- 160          void Settings_Main(void) {
- 161              uint8 i;
+ 115          
+ 116          void Settings_Main(){
+ 117   1          //volatile uint8 l_audio_channels;
+ 118   1          reg8 *RegPointer;
+ 119   1          cystatus  error = 0;
+ 120   1          //uint8 critical_section;
+ 121   1          volatile int8 l_calibration_int = 0;
+ 122   1          volatile int8 l_calibration_dec = 0;
+ 123   1          
+ 124   1          
+ 125   1          RegPointer = (reg8 *) (CYDEV_EE_BASE + 0u);
+ 126   1          l_calibration_int = ee_ppm_int;
+ 127   1          l_calibration_dec = ee_ppm_dec;
+ 128   1          if(E_PPM_needs_updated == PPM_RECEIVED){
+ 129   2              l_calibration_int = (E_calibration_int);
+ 130   2              l_calibration_dec = (E_calibration_dec);
+ 131   2              ee_ppm_int = (l_calibration_int);   
+ 132   2              ee_ppm_dec = (l_calibration_dec);
+ 133   2              Set_PPM();
+ 134   2          }
+ 135   1              
+ 136   1          /*l_audio_channels = RegPointer[AUDIO_CHANNELS];
+ 137   1          if(l_audio_channels != Audio_IQ_Channels){
+ 138   1              critical_section = CyEnterCriticalSection();
+ 139   1              error = EEPROM_ByteWritePos(Audio_IQ_Channels,0u,AUDIO_CHANNELS);
+ 140   1              CyExitCriticalSection(critical_section);
+ 141   1          }*/
+ 142   1      }    
+ 143          
+ 144          /*void Settings_Init(void) {
+ 145              float crystal_freq;
+ 146              EEPROM_Start();
+ 147              
+ 148              crystal_freq = ((float)swap32(*(reg32*)CYDEV_EE_BASE) / 0x01000000);
+ 149              
+ 150              if (
+ 151                  crystal_freq < XTAL_MIN || crystal_freq > XTAL_MAX ||
+ 152                  REVERSE_DATA(CYDEV_EE_BASE) > 3
+ 153              ) {
+ 154                  // New radio! Si570_Start() will compute xtal
+ 155                  // and it will immediately be stored in eeprom.
+ 156                  Si570_Xtal = 0;
+ 157                  Audio_IQ_Channels = 0;
+ 158              } else {
+ 159                  Si570_Xtal = XTAL_DATA(CYDEV_EE_BASE);
+ 160                  Audio_IQ_Channels = REVERSE_DATA(CYDEV_EE_BASE);
+ 161              }
  162              
- 163              if (
- 164                  XTAL_DATA(CYDEV_EE_BASE) != Si570_Xtal ||
- 165                  REVERSE_DATA(CYDEV_EE_BASE) != Audio_IQ_Channels
- 166              ) {
- 167                  if (EEPROM_QueryWrite() != CYRET_STARTED) {
- 168                      for (i=4; i < CYDEV_EEPROM_ROW_SIZE; i++) buffer[i] = 0;
- 169                      XTAL_DATA(buffer) = Si570_Xtal;
- 170                      REVERSE_DATA(buffer) = Audio_IQ_Channels;
- 171                      CySetTemp();
- 172                      EEPROM_StartWrite(buffer, 0);
- 173                  }
- 174              }
- 175          
- 176          }*/
-C51 COMPILER V9.51   SETTINGS01                                                            08/22/2026 15:31:41 PAGE 4   
+ 163          }
+ 164          
+ 165          void Settings_Main(void) {
+ 166              uint8 i;
+ 167              
+ 168              if (
+ 169                  XTAL_DATA(CYDEV_EE_BASE) != Si570_Xtal ||
+ 170                  REVERSE_DATA(CYDEV_EE_BASE) != Audio_IQ_Channels
+ 171              ) {
+ 172                  if (EEPROM_QueryWrite() != CYRET_STARTED) {
+ 173                      for (i=4; i < CYDEV_EEPROM_ROW_SIZE; i++) buffer[i] = 0;
+ 174                      XTAL_DATA(buffer) = Si570_Xtal;
+ 175                      REVERSE_DATA(buffer) = Audio_IQ_Channels;
+ 176                      CySetTemp();
+C51 COMPILER V9.51   SETTINGS01                                                            10/31/2026 20:28:56 PAGE 4   
+
+ 177                      EEPROM_StartWrite(buffer, 0);
+ 178                  }
+ 179              }
+ 180          
+ 181          }*/
+C51 COMPILER V9.51   SETTINGS01                                                            10/31/2026 20:28:56 PAGE 5   
 
 ASSEMBLY LISTING OF GENERATED OBJECT CODE
 
 
              ; FUNCTION Settings_Init (BEGIN)
-                                           ; SOURCE LINE # 53
-                                           ; SOURCE LINE # 55
+                                           ; SOURCE LINE # 47
+                                           ; SOURCE LINE # 49
                        CLR     A
                  R     MOV     DPTR,#int_sign
                        MOVX    @DPTR,A
-                                           ; SOURCE LINE # 56
+                                           ; SOURCE LINE # 50
                        INC     DPTR
                        MOVX    @DPTR,A
-                                           ; SOURCE LINE # 58
+                                           ; SOURCE LINE # 52
                  E     CALL    EEPROM_Start
-                                           ; SOURCE LINE # 59
+                                           ; SOURCE LINE # 53
                        CLR     A
                        MOV     R7,#064H
                        MOV     R6,A
                        MOV     R5,A
                        MOV     R4,A
                  E     CALL    _?CyDelay
-                                           ; SOURCE LINE # 60
+                                           ; SOURCE LINE # 54
 ;---- Variable 'RegPointer' assigned to Register 'R2/R3' ----
                        MOV     R3,#00H
                        MOV     R2,#080H
-                                           ; SOURCE LINE # 61
+                                           ; SOURCE LINE # 55
                        MOV     DPL,R3
                        MOV     DPH,R2
                        MOVX    A,@DPTR
                  E     MOV     DPTR,#ee_ppm_int
                        MOVX    @DPTR,A
-                                           ; SOURCE LINE # 62
+                                           ; SOURCE LINE # 56
                        MOV     DPL,R3
                        MOV     DPH,R2
                        INC     DPTR
                        MOVX    A,@DPTR
                  E     MOV     DPTR,#ee_ppm_dec
                        MOVX    @DPTR,A
-                                           ; SOURCE LINE # 63
+                                           ; SOURCE LINE # 57
                        MOV     DPL,R3
                        MOV     DPH,R2
                        INC     DPTR
@@ -239,7 +246,7 @@ ASSEMBLY LISTING OF GENERATED OBJECT CODE
                        MOVX    A,@DPTR
                  R     MOV     DPTR,#int_sign
                        MOVX    @DPTR,A
-                                           ; SOURCE LINE # 64
+                                           ; SOURCE LINE # 58
                        MOV     A,R3
                        ADD     A,#04H
                        MOV     DPL,A
@@ -249,12 +256,12 @@ ASSEMBLY LISTING OF GENERATED OBJECT CODE
                        MOVX    A,@DPTR
                  R     MOV     DPTR,#dec_sign
                        MOVX    @DPTR,A
-                                           ; SOURCE LINE # 66
+                                           ; SOURCE LINE # 60
                  R     MOV     DPTR,#int_sign
                        MOVX    A,@DPTR
                  R     xJNE    A,#01H,?C0001
-                                           ; SOURCE LINE # 67
-C51 COMPILER V9.51   SETTINGS01                                                            08/22/2026 15:31:41 PAGE 5   
+                                           ; SOURCE LINE # 61
+C51 COMPILER V9.51   SETTINGS01                                                            10/31/2026 20:28:56 PAGE 6   
 
                  E     MOV     DPTR,#ee_ppm_int
                        MOVX    A,@DPTR
@@ -267,13 +274,13 @@ ASSEMBLY LISTING OF GENERATED OBJECT CODE
                  E     CALL    ?C?IMUL
                        MOV     A,R7
                        MOVX    @DPTR,A
-                                           ; SOURCE LINE # 68
+                                           ; SOURCE LINE # 62
              ?C0001:
-                                           ; SOURCE LINE # 69
+                                           ; SOURCE LINE # 63
                  R     MOV     DPTR,#dec_sign
                        MOVX    A,@DPTR
                  R     xJNE    A,#01H,?C0002
-                                           ; SOURCE LINE # 70
+                                           ; SOURCE LINE # 64
                  E     MOV     DPTR,#ee_ppm_dec
                        MOVX    A,@DPTR
                        MOV     R7,A
@@ -285,9 +292,9 @@ ASSEMBLY LISTING OF GENERATED OBJECT CODE
                  E     CALL    ?C?IMUL
                        MOV     A,R7
                        MOVX    @DPTR,A
-                                           ; SOURCE LINE # 71
+                                           ; SOURCE LINE # 65
              ?C0002:
-                                           ; SOURCE LINE # 72
+                                           ; SOURCE LINE # 73
                        MOV     R6,AR2
                        MOV     R7,AR3
                        MOV     DPL,R7
@@ -297,41 +304,44 @@ ASSEMBLY LISTING OF GENERATED OBJECT CODE
                        MOVX    A,@DPTR
                  E     MOV     DPTR,#Audio_IQ_Channels
                        MOVX    @DPTR,A
-                                           ; SOURCE LINE # 73
+                                           ; SOURCE LINE # 74
+                       CLR     A
+                       MOVX    @DPTR,A
+                                           ; SOURCE LINE # 75
                        RET     
              ; FUNCTION Settings_Init (END)
 
              ; FUNCTION Set_PPM (BEGIN)
-                                           ; SOURCE LINE # 75
-                                           ; SOURCE LINE # 76
+                                           ; SOURCE LINE # 77
+                                           ; SOURCE LINE # 78
                        CLR     A
                  R     MOV     DPTR,#status
                        MOVX    @DPTR,A
-                                           ; SOURCE LINE # 78
+                                           ; SOURCE LINE # 80
                  R     MOV     DPTR,#i
                        MOVX    @DPTR,A
-                                           ; SOURCE LINE # 79
+                                           ; SOURCE LINE # 81
                        INC     DPTR
                        MOVX    @DPTR,A
-                                           ; SOURCE LINE # 81
+                                           ; SOURCE LINE # 83
                  R     MOV     DPTR,#RegPointer
+C51 COMPILER V9.51   SETTINGS01                                                            10/31/2026 20:28:56 PAGE 7   
+
                        MOV     A,#080H
                        MOVX    @DPTR,A
                        INC     DPTR
-C51 COMPILER V9.51   SETTINGS01                                                            08/22/2026 15:31:41 PAGE 6   
-
                        CLR     A
                        MOVX    @DPTR,A
-                                           ; SOURCE LINE # 82
+                                           ; SOURCE LINE # 84
                  E     CALL    EEPROM_Query
                  R     MOV     DPTR,#status
                        MOV     A,R7
                        MOVX    @DPTR,A
-                                           ; SOURCE LINE # 83
+                                           ; SOURCE LINE # 85
                        MOVX    A,@DPTR
                        XRL     A,#07H
                  R     xJZ     ?C0004
-                                           ; SOURCE LINE # 84
+                                           ; SOURCE LINE # 86
                  R     MOV     DPTR,#i
                        MOV     A,#05H
                        MOVX    @DPTR,A
@@ -342,7 +352,7 @@ ASSEMBLY LISTING OF GENERATED OBJECT CODE
                        CLR     C
                        SUBB    A,#010H
                  R     xJGE    ?C0006
-                                           ; SOURCE LINE # 85
+                                           ; SOURCE LINE # 87
                  R     MOV     A,#LOW buffer
                        ADD     A,R7
                        MOV     DPL,A
@@ -351,21 +361,21 @@ ASSEMBLY LISTING OF GENERATED OBJECT CODE
                        MOV     DPH,A
                        CLR     A
                        MOVX    @DPTR,A
-                                           ; SOURCE LINE # 86
+                                           ; SOURCE LINE # 88
                  R     MOV     DPTR,#i
                        MOVX    A,@DPTR
                        INC     A
                        MOVX    @DPTR,A
                  R     xJMP    ?C0005
              ?C0006:
-                                           ; SOURCE LINE # 87
+                                           ; SOURCE LINE # 89
                  E     MOV     DPTR,#ee_ppm_int
                        MOVX    A,@DPTR
                        CLR     C
                        XRL     A,#080H
                        SUBB    A,#080H
                  R     xJGE    ?C0008
-                                           ; SOURCE LINE # 88
+                                           ; SOURCE LINE # 90
                        MOVX    A,@DPTR
                        MOV     R7,A
                        RLC     A
@@ -377,34 +387,34 @@ ASSEMBLY LISTING OF GENERATED OBJECT CODE
                  R     MOV     DPTR,#buffer
                        MOV     A,R7
                        MOVX    @DPTR,A
-                                           ; SOURCE LINE # 89
+                                           ; SOURCE LINE # 91
                  R     MOV     DPTR,#buffer+03H
+C51 COMPILER V9.51   SETTINGS01                                                            10/31/2026 20:28:56 PAGE 8   
+
                        MOV     A,#01H
                        MOVX    @DPTR,A
-                                           ; SOURCE LINE # 90
-C51 COMPILER V9.51   SETTINGS01                                                            08/22/2026 15:31:41 PAGE 7   
-
+                                           ; SOURCE LINE # 92
                  R     xJMP    ?C0009
              ?C0008:
-                                           ; SOURCE LINE # 91
+                                           ; SOURCE LINE # 93
                  E     MOV     DPTR,#ee_ppm_int
                        MOVX    A,@DPTR
                  R     MOV     DPTR,#buffer
                        MOVX    @DPTR,A
-                                           ; SOURCE LINE # 92
+                                           ; SOURCE LINE # 94
                        CLR     A
                  R     MOV     DPTR,#buffer+03H
                        MOVX    @DPTR,A
-                                           ; SOURCE LINE # 93
+                                           ; SOURCE LINE # 95
              ?C0009:
-                                           ; SOURCE LINE # 94
+                                           ; SOURCE LINE # 96
                  E     MOV     DPTR,#ee_ppm_dec
                        MOVX    A,@DPTR
                        CLR     C
                        XRL     A,#080H
                        SUBB    A,#080H
                  R     xJGE    ?C0010
-                                           ; SOURCE LINE # 95
+                                           ; SOURCE LINE # 97
                        MOVX    A,@DPTR
                        MOV     R7,A
                        RLC     A
@@ -416,117 +426,117 @@ ASSEMBLY LISTING OF GENERATED OBJECT CODE
                  R     MOV     DPTR,#buffer+01H
                        MOV     A,R7
                        MOVX    @DPTR,A
-                                           ; SOURCE LINE # 96
+                                           ; SOURCE LINE # 98
                  R     MOV     DPTR,#buffer+04H
                        MOV     A,#01H
                        MOVX    @DPTR,A
-                                           ; SOURCE LINE # 97
+                                           ; SOURCE LINE # 99
                  R     xJMP    ?C0011
              ?C0010:
-                                           ; SOURCE LINE # 98
+                                           ; SOURCE LINE # 100
                  E     MOV     DPTR,#ee_ppm_dec
                        MOVX    A,@DPTR
                  R     MOV     DPTR,#buffer+01H
                        MOVX    @DPTR,A
-                                           ; SOURCE LINE # 99
+                                           ; SOURCE LINE # 101
                        CLR     A
                  R     MOV     DPTR,#buffer+04H
                        MOVX    @DPTR,A
-                                           ; SOURCE LINE # 100
+                                           ; SOURCE LINE # 102
              ?C0011:
-                                           ; SOURCE LINE # 101
+                                           ; SOURCE LINE # 103
                  E     MOV     DPTR,#Audio_IQ_Channels
                        MOVX    A,@DPTR
                  R     MOV     DPTR,#buffer+02H
                        MOVX    @DPTR,A
-                                           ; SOURCE LINE # 102
+                                           ; SOURCE LINE # 105
                        MOV     R3,#01H
                  R     MOV     R2,#HIGH buffer
                  R     MOV     R1,#LOW buffer
+C51 COMPILER V9.51   SETTINGS01                                                            10/31/2026 20:28:56 PAGE 9   
+
                        CLR     A
                        MOV     R5,A
                  E     CALL    _EEPROM_StartWrite
-C51 COMPILER V9.51   SETTINGS01                                                            08/22/2026 15:31:41 PAGE 8   
-
-                                           ; SOURCE LINE # 103
+                                           ; SOURCE LINE # 108
                        CLR     A
                  E     MOV     DPTR,#E_PPM_needs_updated
                        MOVX    @DPTR,A
-                                           ; SOURCE LINE # 104
+                                           ; SOURCE LINE # 109
                  E     MOV     DPTR,#E_PPM_needs_set
                        MOV     A,#02H
                        MOVX    @DPTR,A
-                                           ; SOURCE LINE # 105
+                                           ; SOURCE LINE # 110
              ?C0004:
-                                           ; SOURCE LINE # 106
+                                           ; SOURCE LINE # 111
                  R     MOV     DPTR,#status
                        MOVX    A,@DPTR
                        MOV     R7,A
                        MOV     R6,#00H
-                                           ; SOURCE LINE # 107
+                                           ; SOURCE LINE # 112
              ?C0012:
                        RET     
              ; FUNCTION Set_PPM (END)
 
              ; FUNCTION Settings_Main (BEGIN)
-                                           ; SOURCE LINE # 111
-                                           ; SOURCE LINE # 114
+                                           ; SOURCE LINE # 116
+                                           ; SOURCE LINE # 119
                        CLR     A
                  R     MOV     DPTR,#error
                        MOVX    @DPTR,A
-                                           ; SOURCE LINE # 116
+                                           ; SOURCE LINE # 121
                        INC     DPTR
                        MOVX    @DPTR,A
-                                           ; SOURCE LINE # 117
+                                           ; SOURCE LINE # 122
                        INC     DPTR
                        MOVX    @DPTR,A
-                                           ; SOURCE LINE # 120
+                                           ; SOURCE LINE # 125
                  R     MOV     DPTR,#RegPointer
                        MOV     A,#080H
                        MOVX    @DPTR,A
                        INC     DPTR
                        CLR     A
                        MOVX    @DPTR,A
-                                           ; SOURCE LINE # 121
+                                           ; SOURCE LINE # 126
                  E     MOV     DPTR,#ee_ppm_int
                        MOVX    A,@DPTR
                  R     MOV     DPTR,#l_calibration_int
                        MOVX    @DPTR,A
-                                           ; SOURCE LINE # 122
+                                           ; SOURCE LINE # 127
                  E     MOV     DPTR,#ee_ppm_dec
                        MOVX    A,@DPTR
                  R     MOV     DPTR,#l_calibration_dec
                        MOVX    @DPTR,A
-                                           ; SOURCE LINE # 123
+                                           ; SOURCE LINE # 128
                  E     MOV     DPTR,#E_PPM_needs_updated
                        MOVX    A,@DPTR
                  R     xJNE    A,#03H,?C0014
-                                           ; SOURCE LINE # 124
+                                           ; SOURCE LINE # 129
                  E     MOV     DPTR,#E_calibration_int
                        MOVX    A,@DPTR
                  R     MOV     DPTR,#l_calibration_int
                        MOVX    @DPTR,A
-                                           ; SOURCE LINE # 125
+                                           ; SOURCE LINE # 130
+C51 COMPILER V9.51   SETTINGS01                                                            10/31/2026 20:28:56 PAGE 10  
+
                  E     MOV     DPTR,#E_calibration_dec
                        MOVX    A,@DPTR
                  R     MOV     DPTR,#l_calibration_dec
-C51 COMPILER V9.51   SETTINGS01                                                            08/22/2026 15:31:41 PAGE 9   
-
                        MOVX    @DPTR,A
-                                           ; SOURCE LINE # 126
+                                           ; SOURCE LINE # 131
                  R     MOV     DPTR,#l_calibration_int
                        MOVX    A,@DPTR
                  E     MOV     DPTR,#ee_ppm_int
                        MOVX    @DPTR,A
-                                           ; SOURCE LINE # 127
+                                           ; SOURCE LINE # 132
                  R     MOV     DPTR,#l_calibration_dec
                        MOVX    A,@DPTR
                  E     MOV     DPTR,#ee_ppm_dec
                        MOVX    @DPTR,A
-                                           ; SOURCE LINE # 128
+                                           ; SOURCE LINE # 133
                  R     CALL    Set_PPM
-                                           ; SOURCE LINE # 129
-                                           ; SOURCE LINE # 137
+                                           ; SOURCE LINE # 134
+                                           ; SOURCE LINE # 142
              ?C0014:
                        RET     
              ; FUNCTION Settings_Main (END)
@@ -534,7 +544,7 @@ ASSEMBLY LISTING OF GENERATED OBJECT CODE
 
 
 MODULE INFORMATION:   STATIC OVERLAYABLE
-   CODE SIZE        =    448    ----
+   CODE SIZE        =    450    ----
    CONSTANT SIZE    =   ----    ----
    XDATA SIZE       =     16      12
    PDATA SIZE       =   ----    ----
