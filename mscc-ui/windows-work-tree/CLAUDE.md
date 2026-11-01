@@ -15,14 +15,14 @@ every pull. Newest first. Detailed write-ups for Ron go in `.mscc-coord/NOTE-FOR
 - Machines: **Shack** = build PC (VS, PSoC Creator). **NEW-HP** = test PC with the radio
   (Proficio MKII PTT, FW 3.242), Signal Hound SA, good mic.
 
-## Versions in the field (2026-10-31)
+## Versions in the field (2026-11-01)
 
 | Part | Version | Main changes |
 |---|---|---|
-| trans | 3.153 | ALC rework (\|I+jQ\| envelope), ceiling 0.45 x drive for voice, **1.0 x drive for digital (3.152)**, voice ALC level meter, 6 kHz audio LPF before the SSB/AM mixer (LSB image fix), TX I/Q phase, TX I/Q from the radio (0x2C), **digital (VAC) key-up gate 200 ms + 10 ms fade (3.153)** |
+| trans | 3.154 | **QRP cal: power_cal.ini written only on the save flag (3.154)**, ALC rework (\|I+jQ\| envelope), ceiling 0.45 x drive for voice, **1.0 x drive for digital (3.152)**, voice ALC level meter, 6 kHz audio LPF before the SSB/AM mixer (LSB image fix), TX I/Q phase, TX I/Q from the radio (0x2C), **digital (VAC) key-up gate 200 ms + 10 ms fade (3.153)** |
 | recv | 3.151 | RX stream kept running at PTT (muted, not stopped), Ron's AM lowpass + DC block and noise blanker fix, **RX I/Q from the radio (0x2C)** |
-| ms-sdr | 3.188 | PTT poll `r == 1`, power cal in the radio (0xC8), CW + TUN stuck TX, 0xFE 0 release, 0x30 messages forwarded, firmware type in log, PPM cal start point, TX I/Q phase, **TX/RX I/Q stored in and loaded from the radio**, **TX I/Q from CW mode fix** |
-| client | 10.31.2 | TX I/Q PHASE slider; LSB/USB/DIG-U/AM filter buttons send the index (Ron's LSB note 10-31); cuts pushed once at connect |
+| ms-sdr | 3.189 | **QRP save step (0xA2 bit 15 = save; radio written only then), radio cal status to the client on 0x2D at connect / after each radio write (3.189)**, PTT poll `r == 1`, power cal in the radio (0xC8), CW + TUN stuck TX, 0xFE 0 release, 0x30 messages forwarded, firmware type in log, PPM cal start point, TX I/Q phase, **TX/RX I/Q stored in and loaded from the radio**, **TX I/Q from CW mode fix** |
+| client | 11.1.0 | **QRP CAL "Save this calibration?" Yes/No (Reject gone), lamps follow the radio's power mask (0x2D), I/Q APPLY renamed SAVE, Start / Save settings / POTENTIA tooltips, Full Power renamed AMP (11.1.0)**; TX I/Q PHASE slider; LSB/USB/DIG-U/AM filter buttons send the index (Ron's LSB note 10-31); cuts pushed once at connect |
 | FW MKII PTT | 3.242 | DAC soft mute on TUN/PTT release, mode-change drain |
 | FW Proficio Legacy | 1.236 | Ron's 1.235 (CW key delay + fades, 0xC8 cal store, SSB-after-CW fix) + TUN/PTT DAC fade and mode-change drain (= MKII 3.241/3.242). In `Proficio-Legacy/`; `Proficio-Legacy - Copy` kept as reference. Tested on a Legacy rig 10-31 |
 | FW Proficio MKII ATU | 4.243 | = MKII PTT 3.242 app code (cal store, CW key delay + fades, TUN/PTT DAC mute, mode drain) + Elecraft T1 port kept (`t1.c`, `T1_Main()` in the beater, `STATUS_ATU_0`). Schematic: `Key_Delay_Timer` (FF 16-bit, CW_Clock, period 10, continuous, reset tied 0) + `Key_Delay_isr` added on the CW Management sheet. Built 10-31, **tested on a radio 11-01**; T1 untested (no T1 here) |
@@ -155,6 +155,27 @@ every pull. Newest first. Detailed write-ups for Ron go in `.mscc-coord/NOTE-FOR
 
 ## Open / next
 
+- **Round 1 done 11-01** (ms-sdr 3.189, trans 3.154, client 11.1.0; tested by Stew on several
+  radios, incl. a fully calibrated one showing green lamps): QRP save step, 0x2D status masks,
+  APPLY -> SAVE, tooltip fixes. Pi ms-sdr + trans side is Ron's (`NOTE-FOR-RON-ROUND1-QRP-SAVE-0x2D-2026-11-01.md`).
+  Open from it: RX IQ APPLY ALL (0x8D) writes only the PC files, never the radio (radio values win at
+  the next start): decide later. RX / TX IQ lamps from the 0x2D masks: later. Avalonia client: same
+  changes when the Avalonia catch-up happens. Opcodes free in all trees: 0x2E, 0x2F (2 TONE next).
+- **Agreed with Ron 11-01** (`.mscc-coord/NOTE-FOR-STEW-ALC-089-TWO-TONE-2026-11-01.md`):
+  - QRP save step: slider live only; "Save this calibration?" Yes = 0xA2 | 0x8000, No = previous
+    value; Reject removed. New servers need the new client (no fallback; release note).
+  - Status masks ms-sdr -> client on **0x2D**: kind (1 RX IQ, 2 TX IQ, 3 power), flags (bit 0 =
+    store present), uint16 band mask. At connect, after each radio write, after a clear.
+  - Resets = clear, never factory into the radio. Type 6 clear (control READ, data stage):
+    wValueHi 6, wValueLo band or 0xFF, **wIndex kind** (1 RX IQ, 2 TX IQ, 3 power, 0 all).
+    Per-kind resets incl. RX IQ; SETTINGS Reset configuration = client settings only.
+    Firmware: PSoC lines + Geminus + Black Pill need the handler.
+  - Split: Ron = Pi ms-sdr + trans; Stew's side = Windows ms-sdr, trans, client (WPF + Avalonia).
+  - **2 TONE is ours on Windows AND Pi** (trans, ms-sdr, client). Any opcode free in both trees;
+    name it in the push note.
+  - ALC 0.89 on purpose: Ron's rig (ATU-100 meter), steady WSJT-X tone: 0.45 ~40 W, 0.80 89 W,
+    0.89 95 W, TUN 109 W (PA near compression, so not the 124 % the square law suggests). No
+    splatter check yet (no analyzer): settle 0.8 vs 0.89 with 2 TONE + Signal Hound (PEP, IMD).
 - Built-in TWO-TONE test (Stew, 11-01): trans generates 700 + 1900 Hz in place of the mic
   samples, before the ALC (tests the real voice path: ceiling, 6 kHz LPF, modulator, PA). Level
   set so the combined peak = TUN amplitude (each tone -6 dB, PEP = calibrated power), plus a

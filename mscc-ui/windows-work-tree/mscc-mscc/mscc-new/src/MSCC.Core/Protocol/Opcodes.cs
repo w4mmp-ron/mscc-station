@@ -290,6 +290,14 @@ public static class Opcodes
     public const byte CMD_SET_IQ_PHASE = 0x2A;
     /// <summary>TX I/Q phase in use, from trans via ms-sdr (Int32 steps of 0.05 deg).</summary>
     public const byte CMD_GET_IQ_PHASE = 0x2B;
+    /// <summary>
+    /// Radio calibration status from ms-sdr (3.189+), one message per kind. Int32 = kind (1 RX IQ,
+    /// 2 TX IQ, 3 power) | flags &lt;&lt; 8 (bit 0 = radio has a calibration store) | band mask &lt;&lt; 16
+    /// (bit N = band N: 0 = 10 m ... 9 = 160 m, 10 = 630 m, 11 = 2200 m). Agreed with Ron 2026-11-01.
+    /// </summary>
+    public const byte CMD_GET_CAL_STATUS = 0x2D;
+    /// <summary>CMD_SET_BAND_POWER_POWER (0xA2) data bit: save this QRP value (radio + power_cal.ini).</summary>
+    public const int POWER_CAL_SAVE_FLAG = 0x8000;
     public const double IQ_PHASE_STEP_DEG = 0.05;
     public const byte CMD_SET_IQ_ALL_BANDS = 0x8D;
     public const byte CMD_REPORT_IMAGE_VALUE = 0xC6;

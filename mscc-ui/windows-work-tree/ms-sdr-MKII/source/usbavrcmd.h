@@ -220,6 +220,13 @@
  * int32 = record (bits 0-7, 0 = 10 m .. 11 = 2200 m) | offset int12 (bits 8-19) | phase int12 (bits 20-31).
  * The core sets that band, saves its ini file and applies it if the band is in use. */
 #define CMD_SET_IQ_RECORD 0x2C
+/* ms-sdr 3.189: radio calibration status, ms-sdr -> client only. int32 = kind (1 RX IQ, 2 TX IQ,
+ * 3 power) | flags << 8 (bit 0 = radio has a calibration store) | uint16 band mask << 16 (bit N =
+ * band N, MSCC order 0 = 10 m ... 9 = 160 m, 10 = 630 m, 11 = 2200 m). Agreed with Ron 2026-11-01. */
+#define CMD_SET_CAL_STATUS 0x2D
+/* ms-sdr 3.189: CMD_SET_BAND_POWER_POWER (0xA2) data with this bit = save (client "Save this
+ * calibration?" Yes): trans writes power_cal.ini and ms-sdr writes the radio. Without it: live only. */
+#define POWER_CAL_SAVE_FLAG 0x8000
 
 //Panadapter Control
 #define CMD_GET_SET_PANADAPTER_FILL 0x59

@@ -136,7 +136,7 @@ void* ALC_Meter_thread(void* t) {
 
     Sleep(1000); //Let the subsystem initialize before processing ALC
     print_time();
-    fprintf(G_fp_logfile, "[%d] ALC_Meter_thread. Thread STARTED. trans 3.153 (ALC 0.45 voice / 1.0 digital, VAC gate 200 ms, level meter, TX audio LPF 6k, TX IQ phase, IQ from radio)\n", line_number++);
+    fprintf(G_fp_logfile, "[%d] ALC_Meter_thread. Thread STARTED. trans 3.154 (QRP cal save on flag only, ALC 0.45 voice / 1.0 digital, VAC gate 200 ms, level meter, TX audio LPF 6k, TX IQ phase, IQ from radio)\n", line_number++);
     while (G_all_threads_run) {
         if (G_tx_mode == TRUE && G_Do_ALC == TRUE && G_Allow_ALC_Send == TRUE) {
             new_session = TRUE;

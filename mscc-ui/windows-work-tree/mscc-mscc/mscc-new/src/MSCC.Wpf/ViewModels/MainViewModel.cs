@@ -239,6 +239,12 @@ public partial class MainViewModel : ObservableObject, IDisposable
     /// <summary>Last step from server 0xB4 (for cancel restore of previous value).</summary>
     private int _powerCalPreviousReceivedStep;
 
+    /// <summary>
+    /// True once ms-sdr (3.189+) reported that the radio has a calibration store (0x2D).
+    /// Then the QRP CAL lamps follow the radio's power mask; otherwise client-settings.ini.
+    /// </summary>
+    private bool _radioCalHasStore;
+
     // Rx/Tx tab specific
     [ObservableProperty]
     private int _tunePowerPercent = 10;
@@ -2383,7 +2389,7 @@ public partial class MainViewModel : ObservableObject, IDisposable
 
         TxIqTxOn = false;
         TxIqCommitting = false;
-        TxIqStatus = "Select a band, then TX ON. Adjust OFFSET (use external RX for image). APPLY to commit.";
+        TxIqStatus = "Select a band, then TX ON. Adjust OFFSET (use external RX for image). SAVE to keep it.";
         MonitorTextBoxText(
             $" TX IQ ENTER: snapshot saved, TUNE_POWER 100, QRP only (AmpOn={AmpOn})");
     }
@@ -2554,7 +2560,7 @@ public partial class MainViewModel : ObservableObject, IDisposable
                 TxIqTxOn = true;
                 RadioState.IsTransmitting = true;
                 TxIqStatus =
-                    $"TX ON @ {freq / 1_000_000.0:F3} MHz — null image with OFFSET, then APPLY or TX OFF.";
+                    $"TX ON @ {freq / 1_000_000.0:F3} MHz — null image with OFFSET, then SAVE or TX OFF.";
                 MonitorTextBoxText(
                     $" TX IQ TX ON band={TxIqSelectedBand} freq={freq} power={TxIqPower} → 0x55/0x58/TUNE/RIG_TUNE/0x54");
             }
@@ -2569,7 +2575,7 @@ public partial class MainViewModel : ObservableObject, IDisposable
         else
         {
             await StopTxIqCarrierAsync().ConfigureAwait(true);
-            TxIqStatus = "TX OFF. Use APPLY to commit the current I/Q value if desired.";
+            TxIqStatus = "TX OFF. Use SAVE to keep the current I/Q value if desired.";
         }
     }
 
@@ -2620,7 +2626,7 @@ public partial class MainViewModel : ObservableObject, IDisposable
         }
 
         var ret = MessageBox.Show(
-            "APPLY THE CURRENT I/Q VALUE?",
+            "SAVE THE CURRENT I/Q VALUE?",
             "MSCC",
             MessageBoxButton.YesNo,
             MessageBoxImage.Question,
@@ -2632,7 +2638,7 @@ public partial class MainViewModel : ObservableObject, IDisposable
     private void CommitTxIqValue()
     {
         TxIqCommitting = true;
-        TxIqStatus = "APPLYING…";
+        TxIqStatus = "SAVING…";
         _ = _radioService.CommitIqAsync();
         MonitorTextBoxText($" TX IQ COMMIT (0x57) band={TxIqSelectedBand} offset={TxIqOffset} phase={TxIqPhase}");
     }
@@ -2931,11 +2937,62 @@ public partial class MainViewModel : ObservableObject, IDisposable
         }
     }
 
+    /// <summary>Radio band bit (MSCC order) for a QRP CAL band in meters, or -1.</summary>
+    private static int RadioCalBitForBand(int meters) => meters switch
+    {
+        10 => 0, 12 => 1, 15 => 2, 17 => 3, 20 => 4, 30 => 5,
+        40 => 6, 60 => 7, 80 => 8, 160 => 9, 630 => 10, 2200 => 11,
+        _ => -1
+    };
+
+    /// <summary>
+    /// ms-sdr 3.189 0x2D: what the radio holds. Kind 3 (power) drives the QRP CAL lamps:
+    /// green = the radio holds a saved value for that band, white = default (factory) value.
+    /// Without a store (older firmware) the lamps stay on client-settings.ini.
+    /// </summary>
+    private void ApplyRadioCalStatus(int kind, bool hasStore, int mask)
+    {
+        string kindName = kind switch { 1 => "RX IQ", 2 => "TX IQ", 3 => "power", _ => $"kind {kind}" };
+        MonitorTextBoxText($" Radio cal status: {kindName} store={hasStore} mask=0x{mask:X4}");
+        if (kind != 3) return;      // RX / TX IQ lamps: later
+        if (!hasStore)
+        {
+            if (_radioCalHasStore)
+            {
+                _radioCalHasStore = false;
+                ApplyLocalPowerCalLamps();
+            }
+            return;
+        }
+        _radioCalHasStore = true;
+        foreach (var item in PowerCalBandStatuses)
+        {
+            int bit = RadioCalBitForBand(item.BandNumber);
+            item.IsCalibrated = bit >= 0 && (mask & (1 << bit)) != 0;
+        }
+    }
+
+    /// <summary>QRP CAL lamps from client-settings.ini (radios without a calibration store).</summary>
+    private void ApplyLocalPowerCalLamps()
+    {
+        try
+        {
+            var flags = PowerCalStatusStore.Load();
+            foreach (var item in PowerCalBandStatuses)
+                item.IsCalibrated = flags.TryGetValue(item.BandNumber, out bool v) && v;
+        }
+        catch (Exception ex)
+        {
+            MonitorTextBoxText($" QRP cal status (local) load failed: {ex.Message}");
+        }
+    }
+
     /// <summary>
     /// Set calibrated flag for a QRP CAL band and save client-settings.ini.
     /// </summary>
     public void SetPowerCalBandCalibrated(int bandNumber, bool calibrated)
     {
+        if (_radioCalHasStore) return;  // 3.189: lamps follow the radio's mask (0x2D)
         var item = PowerCalBandStatuses.FirstOrDefault(b => b.BandNumber == bandNumber);
         if (item == null) return;
         if (item.IsCalibrated == calibrated) return;
@@ -3136,7 +3193,8 @@ public partial class MainViewModel : ObservableObject, IDisposable
         }
         else
         {
-            // End calibrate session
+            // End calibrate session. 3.189: slider steps were live only; save happens below on Yes.
+            int finalStep = Math.Clamp(PowerCalSliderValue, 0, 100);
             PowerCalCalibrating = false;
             PowerCalTxOn = false;
             _ = _radioService.SetCalibrationTuneAsync(false);
@@ -3156,28 +3214,39 @@ public partial class MainViewModel : ObservableObject, IDisposable
                 $" Pwr Cal CALIBRATE STOP band={PowerCalSelectedBand} → 0xAC 0");
 
             var ret = MessageBox.Show(
-                "ACCEPT THIS CALIBRATION ?",
+                $"SAVE THIS CALIBRATION?\r\n\r\nYes: save step {finalStep} for {PowerCalSelectedBand} m (stored in the radio).\r\nNo: go back to the previous value.",
                 "MSCC",
-                MessageBoxButton.YesNoCancel,
+                MessageBoxButton.YesNo,
                 MessageBoxImage.Question,
-                MessageBoxResult.Cancel);
+                MessageBoxResult.Yes);
 
             int band = PowerCalSelectedBand;
             if (ret == MessageBoxResult.Yes)
             {
-                SetPowerCalBandCalibrated(band, true);
-                MonitorTextBoxText($" Pwr Cal ACCEPT band={band}m calibrated");
-            }
-            else if (ret == MessageBoxResult.No)
-            {
-                SetPowerCalBandCalibrated(band, false);
-                MessageBox.Show("CALIBRATION NOT SET", "MSCC",
-                    MessageBoxButton.OK, MessageBoxImage.Information);
-                MonitorTextBoxText($" Pwr Cal REJECT band={band}m not calibrated");
+                // 0xA2 | 0x8000: ms-sdr writes the radio, trans writes power_cal.ini.
+                _ = _radioService.SaveBandPowerAsync(finalStep);
+                _powerCalPreviousReceivedStep = finalStep;
+                _suppressPowerCalSlider = true;
+                try
+                {
+                    PowerCalSliderValue = finalStep;
+                    PowerCalStepLabel = $"CALIBRATION STEP: {finalStep}";
+                }
+                finally
+                {
+                    _suppressPowerCalSlider = false;
+                }
+                if (_radioCalHasStore)
+                    MonitorTextBoxText($" Pwr Cal SAVE band={band}m step={finalStep} (lamp follows the radio, 0x2D)");
+                else
+                {
+                    SetPowerCalBandCalibrated(band, true);
+                    MonitorTextBoxText($" Pwr Cal SAVE band={band}m step={finalStep} (no radio store: local lamp)");
+                }
             }
             else
             {
-                // Cancel: restore previous server step via 0xA2
+                // No: restore the value from before the session (live only, nothing saved)
                 int restore = Math.Clamp(_powerCalPreviousReceivedStep, 0, 100);
                 _ = _radioService.SetBandPowerPowerAsync(restore);
                 _suppressPowerCalSlider = true;
@@ -3190,10 +3259,10 @@ public partial class MainViewModel : ObservableObject, IDisposable
                 {
                     _suppressPowerCalSlider = false;
                 }
-                MessageBox.Show("CALIBRATION CANCELLED", "MSCC",
+                MessageBox.Show("CALIBRATION NOT SAVED. PREVIOUS VALUE RESTORED.", "MSCC",
                     MessageBoxButton.OK, MessageBoxImage.Information);
                 MonitorTextBoxText(
-                    $" Pwr Cal CANCEL band={band}m restore 0xA2={restore}");
+                    $" Pwr Cal NOT SAVED band={band}m restore 0xA2={restore} (live)");
             }
         }
     }
@@ -3260,6 +3329,13 @@ public partial class MainViewModel : ObservableObject, IDisposable
         _powerCalTabActive = false;
 
         // End cal TX / calibrate session if still on (must tell server — it only knows last state)
+        if (PowerCalCalibrating && PowerCalSelectedBand > 0)
+        {
+            // 3.189: leaving mid-session = not saved; put the previous value back (live only)
+            int restore = Math.Clamp(_powerCalPreviousReceivedStep, 0, 100);
+            _ = _radioService.SetBandPowerPowerAsync(restore);
+            MonitorTextBoxText($" Pwr Cal LEAVE during CALIBRATE: not saved, restore 0xA2={restore}");
+        }
         if (PowerCalTxOn || PowerCalCalibrating)
         {
             PowerCalTxOn = false;
@@ -4040,7 +4116,7 @@ public partial class MainViewModel : ObservableObject, IDisposable
         RadioState.ActiveVfo.FrequencyHz = _rxIqBaseFreqHz;
 
         RxIqSessionActive = true;
-        RxIqStatus = $"ACTIVE — {RxIqBandLabel} {RxIqFreqDisplay}. Adjust I/Q OFFSET (spectrum), then APPLY.";
+        RxIqStatus = $"ACTIVE — {RxIqBandLabel} {RxIqFreqDisplay}. Adjust I/Q OFFSET (spectrum), then SAVE.";
         MonitorTextBoxText(
             $" RX IQ START: band={meters.Value}m base={_rxIqBaseFreqHz} → 0x58 + 0x55 RX + SET_MAIN_FREQ");
     }
@@ -4101,20 +4177,20 @@ public partial class MainViewModel : ObservableObject, IDisposable
             return;
         }
         var ret = MessageBox.Show(
-            "APPLY THE CURRENT I/Q VALUE?",
+            "SAVE THE CURRENT I/Q VALUE?",
             "MSCC",
             MessageBoxButton.YesNo,
             MessageBoxImage.Question,
             MessageBoxResult.No);
         if (ret != MessageBoxResult.Yes)
         {
-            MonitorTextBoxText(" RX IQ APPLY cancelled");
-            RxIqStatus = "APPLY cancelled - value NOT saved. Press APPLY and choose Yes to save.";
+            MonitorTextBoxText(" RX IQ SAVE cancelled");
+            RxIqStatus = "SAVE cancelled - value NOT saved. Press SAVE and choose Yes to save.";
             return;
         }
         // Original IQ_Commit when RX active: CMD_SET_COMMIT_IQ 0x57, wait 0x56
         RxIqCommitting = true;
-        RxIqStatus = "APPLYING… (0x57)";
+        RxIqStatus = "SAVING… (0x57)";
         _ = _radioService.CommitIqAsync();
         MonitorTextBoxText($" RX IQ APPLY (0x57) band={_rxIqBandMeters} offset={RxIqOffset}");
     }
@@ -5626,6 +5702,12 @@ public partial class MainViewModel : ObservableObject, IDisposable
     {
         if (_freqCalEntryHeld)
             LeaveFreqCalTab();
+        if (_radioCalHasStore)
+        {
+            // Next radio may have no store: show the local lamps until ms-sdr reports again
+            _radioCalHasStore = false;
+            ApplyLocalPowerCalLamps();
+        }
         MonitorTextBoxText($" Stop ({reason}): ending radio session...");
         try
         {
@@ -6214,17 +6296,17 @@ public partial class MainViewModel : ObservableObject, IDisposable
                 RxIqCommitting = false;
                 if (op == 1)
                 {
-                    RxIqStatus = "APPLY/ZERO succeeded (IQ_OPERATION_COMPLETE).";
+                    RxIqStatus = "SAVE/ZERO succeeded (IQ_OPERATION_COMPLETE).";
                     MonitorTextBoxText(" RX IQ APPLY SUCCESS (0x56=1)");
                 }
                 else if (op == 0)
                 {
-                    RxIqStatus = "APPLY/ZERO failed (IQ_OPERATION_COMPLETE).";
+                    RxIqStatus = "SAVE/ZERO failed (IQ_OPERATION_COMPLETE).";
                     MonitorTextBoxText(" RX IQ APPLY FAILED (0x56=0)");
                 }
                 else
                 {
-                    RxIqStatus = $"APPLY complete (operand={op}).";
+                    RxIqStatus = $"SAVE complete (operand={op}).";
                     MonitorTextBoxText($" RX IQ APPLY COMPLETE operand={op}");
                 }
                 return;
@@ -6236,12 +6318,12 @@ public partial class MainViewModel : ObservableObject, IDisposable
             TxIqCommitting = false;
             if (op == 1)
             {
-                TxIqStatus = "APPLY succeeded (IQ_OPERATION_COMPLETE).";
+                TxIqStatus = "SAVE succeeded (IQ_OPERATION_COMPLETE).";
                 MonitorTextBoxText(" TX IQ APPLY SUCCESS (0x56=1)");
             }
             else if (op == 0)
             {
-                TxIqStatus = "APPLY failed (IQ_OPERATION_COMPLETE).";
+                TxIqStatus = "SAVE failed (IQ_OPERATION_COMPLETE).";
                 MonitorTextBoxText(" TX IQ APPLY FAILED (0x56=0)");
             }
             else
@@ -6266,6 +6348,15 @@ public partial class MainViewModel : ObservableObject, IDisposable
             try { TxIqOffset = clamped; }
             finally { _suppressTxIqOffset = false; }
             MonitorTextBoxText($" TX IQ value from server: {v}");
+        };
+        // 3.189: radio calibration status (0x2D). Power (kind 3) drives the QRP CAL lamps.
+        svc.RadioCalStatusReported += (kind, hasStore, mask) =>
+        {
+            void apply() => ApplyRadioCalStatus(kind, hasStore, mask);
+            if (System.Windows.Application.Current?.Dispatcher is { } d && !d.CheckAccess())
+                d.BeginInvoke(apply);
+            else
+                apply();
         };
         svc.IqPhaseReported += v =>
         {

@@ -165,6 +165,8 @@ public class UdpRadioService : IRadioService, IDisposable
     public event Action<int>? IqOperationCompleteReported;
     public event Action<int>? IqValueReported;
     public event Action<int>? IqPhaseReported;
+    /// <summary>Radio calibration status (0x2D): kind (1 RX IQ, 2 TX IQ, 3 power), radio has a store, band mask.</summary>
+    public event Action<int, bool, int>? RadioCalStatusReported;
 
     public bool IsConnected => _started || (_transport?.IsConnected ?? false);
 
@@ -538,6 +540,16 @@ public class UdpRadioService : IRadioService, IDisposable
         // Original Proficio_Calibrate_Power_hScrollBar_Scroll → CMD_SET_BAND_POWER_POWER (0xA2)
         short p = (short)Math.Clamp(percent, 0, 100);
         DebugMonitor.MonitorTextBoxText($" Send CMD_SET_BAND_POWER_POWER (0xA2): {p}");
+        await _transport.SendAsync(Opcodes.CMD_SET_BAND_POWER_POWER, p, cancellationToken);
+    }
+
+    public async Task SaveBandPowerAsync(int percent, CancellationToken cancellationToken = default)
+    {
+        if (!_started) return;
+        // ms-sdr 3.189: same 0xA2 with bit 15 set = save (radio + power_cal.ini). Old ms-sdr reads
+        // only the low byte, so it sees a normal slider step with the same value.
+        short p = unchecked((short)(Math.Clamp(percent, 0, 100) | Opcodes.POWER_CAL_SAVE_FLAG));
+        DebugMonitor.MonitorTextBoxText($" Send CMD_SET_BAND_POWER_POWER (0xA2) SAVE: {Math.Clamp(percent, 0, 100)}");
         await _transport.SendAsync(Opcodes.CMD_SET_BAND_POWER_POWER, p, cancellationToken);
     }
 
@@ -2211,6 +2223,18 @@ public class UdpRadioService : IRadioService, IDisposable
                     int ph = BitConverter.ToInt32(e.Payload, 0);
                     IqPhaseReported?.Invoke(ph);
                     DebugMonitor.MonitorTextBoxText($" Processed CMD_GET_IQ_PHASE (0x2B): {ph}");
+                }
+                break;
+
+            case Opcodes.CMD_GET_CAL_STATUS:
+                if (e.Payload.Length >= 4)
+                {
+                    int kind = e.Payload[0];
+                    bool hasStore = (e.Payload[1] & 0x01) != 0;
+                    int mask = e.Payload[2] | (e.Payload[3] << 8);
+                    RadioCalStatusReported?.Invoke(kind, hasStore, mask);
+                    DebugMonitor.MonitorTextBoxText(
+                        $" Processed CMD_GET_CAL_STATUS (0x2D): kind={kind} store={hasStore} mask=0x{mask:X4}");
                 }
                 break;
 

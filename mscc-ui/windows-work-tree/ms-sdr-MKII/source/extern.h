@@ -419,6 +419,7 @@ extern void Radio_cal_load_power(void);
 /* ms-sdr 3.187: TX / RX I/Q in the radio's calibration store (power_calibration.c, iq.c) */
 extern void Radio_cal_store_iq(int tx, int record, int offset, int phase);
 extern void Radio_cal_load_iq(void);
+extern void Radio_cal_send_status(void);   /* 3.189: 0x2D to the client */
 extern void IQ_report_value(int value);
 extern void IQ_report_phase(int value);
 extern uint8_t G_Radio_Cal_Save_Pending;

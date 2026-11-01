@@ -382,16 +382,20 @@ int Get_IQ_Record(int band) {
 }
 
 /* QRP calibration value for one band (0xA2), sent on every slider step. One value per band,
- * used by every mode. RAM only here; Drive_Manager recomputes the drive now and saves
- * power_cal.ini once the slider has been still for ~0.5 s (no full reload, no other files). */
-void Set_QRP_calibration(int band_index, int value) {
+ * used by every mode. Drive_Manager recomputes the drive now.
+ * trans 3.154: slider steps are live only (RAM). power_cal.ini is written only when ms-sdr sends
+ * the value with the save flag (bit 15 of the data: client "Save this calibration?" Yes, or the
+ * startup copy from the radio). Older ms-sdr never sets it: then every step saves, as before. */
+#define POWER_CAL_SAVE_FLAG_HI 0x80     /* bit 15 = buf[2] bit 7 */
+void Set_QRP_calibration(int band_index, int value, int save) {
     int mode = 0;
 
     G_Proficio_Calibration_Levels[band_index].power_level = value;
     for (mode = 0; mode < 6; mode++) {
         proficio_table[band_index].mode[mode].calibration_value = value;
     }
-    G_power_cal_save_countdown = POWER_CAL_SAVE_DELAY;
+    if (save)
+        G_power_cal_save_countdown = POWER_CAL_SAVE_DELAY;
     G_drive_recalc = 1;
 }
 
@@ -720,10 +724,14 @@ void *UDP_Thread(void *my_param) {
                             line_number++, transceiver_calibration_band);
                     break;
                 }
-                Set_QRP_calibration(transceiver_calibration_index, t_opcode_data);
-                print_time();
-                fprintf(G_fp_logfile, "[%d] UDP Thread. CMD_SET_BAND_POWER_POWER. Band: %d, Index: %d, Power: %d\n",
-                        line_number++, transceiver_calibration_band, transceiver_calibration_index, t_opcode_data);
+                {
+                    int save = (((uint8_t) buf[2]) & POWER_CAL_SAVE_FLAG_HI) ? 1 : 0;
+                    Set_QRP_calibration(transceiver_calibration_index, t_opcode_data, save);
+                    print_time();
+                    fprintf(G_fp_logfile, "[%d] UDP Thread. CMD_SET_BAND_POWER_POWER. Band: %d, Index: %d, Power: %d, %s\n",
+                            line_number++, transceiver_calibration_band, transceiver_calibration_index, t_opcode_data,
+                            save ? "SAVE" : "live");
+                }
                 break;
                 //End of commands for calibrating the Proficio
 

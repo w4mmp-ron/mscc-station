@@ -224,7 +224,7 @@
             IsEnabled="{Binding CanStartLocalRadioSession}"
             Width="120" Click="StartStop_Click" FontSize="11" Height="28"
             HorizontalAlignment="Left" Margin="0,0,0,4"
-            ToolTip="Start: connect (and launch backends if Launch Servers is on). Disabled until COM + operator speaker/mic are set in Settings. Stop: end session / stop backends this app launched. Stop then Start after COM/audio changes.">
+            ToolTip="Start: connect (and launch backends if Launch Servers is on). Needs the operator speaker (Settings → Audio → Out); a missing COM port only disables CAT. Stop: end session / stop backends this app launched. Stop then Start after COM/audio changes.">
         <Button.Style>
             <Style TargetType="Button" BasedOn="{StaticResource MsccGoldButtonStyle}">
                 <Style.Triggers>
@@ -236,7 +236,7 @@
                     </DataTrigger>
                     <Trigger Property="IsEnabled" Value="False">
                         <Setter Property="Opacity" Value="0.45"/>
-                        <Setter Property="ToolTip" Value="Set COM port and operator Out/Mic in Settings → Audio (leave blank until you choose), then Apply. Start enables when setup is complete."/>
+                        <Setter Property="ToolTip" Value="Choose the operator speaker in Settings → Audio → Out, then Apply. Start enables when it is set (COM port is optional: without it CAT is off)."/>
                     </Trigger>
                 </Style.Triggers>
             </Style>
@@ -246,7 +246,7 @@
                Foreground="#FFCC66" FontSize="9" FontWeight="Bold"
                TextWrapping="Wrap" MaxWidth="150" Margin="0,0,0,4"
                Visibility="{Binding SetupStatusLine, Converter={StaticResource StringNullOrEmptyToVisibilityConverter}}"
-               ToolTip="Set COM port and operator speaker under Settings before starting local servers."/>
+               ToolTip="Choose the operator speaker under Settings → Audio before starting local servers (COM port optional)."/>
     <StackPanel Orientation="Horizontal" Margin="0,0,0,4" VerticalAlignment="Center">
         <CheckBox Content="Auto Start"
                   IsChecked="{Binding AutoStartServers}"
@@ -905,7 +905,7 @@
                                     <TextBlock Text="ms" Foreground="#D0D0D0" FontSize="11" VerticalAlignment="Center" Margin="4,0"/>
                                 </StackPanel>
                                 <CheckBox Content="POTENTIA / QSK" IsChecked="{Binding CwQsk, Mode=TwoWay}" Foreground="White" FontSize="10"
-                                          ToolTip="Amplifier PIN diode T/R switching"/>
+                                          ToolTip="Potentia 50/100 attached: amp line and PA keyed together (QSK, no amp key delay)."/>
                             </StackPanel>
                         </Grid>
 
@@ -1159,7 +1159,7 @@
                                             </Style>
                                         </Button.Style>
                                     </Button>
-                                    <Button Grid.Row="0" Grid.Column="1" Content="Full Power"
+                                    <Button Grid.Row="0" Grid.Column="1" Content="AMP"
                                             Command="{Binding ToggleFullPowerCommand}"
                                             ToolTip="Amplifier setting (same as AMP on). Uses the AMP CAL table; never drives above your QRP CAL level."
                                             Margin="0,0,0,6" Width="100" HorizontalAlignment="Left"
@@ -1315,7 +1315,7 @@
                             <Border Background="#FF1A1A1A" BorderBrush="#555" BorderThickness="1" CornerRadius="4" Padding="10" Margin="0,0,0,10">
                                 <StackPanel>
                                     <TextBlock Text="QRP / TRANSCEIVER" FontWeight="Bold" Foreground="#00FFAA" FontSize="14" Margin="0,0,0,4"/>
-                                    <TextBlock Text="When done, press Save settings." Foreground="#D0D0D0" FontSize="11" Margin="0,0,0,10"/>
+                                    <TextBlock Text="Turn CALIBRATE off when done and choose Yes to save the band (stored in the radio)." Foreground="#D0D0D0" FontSize="11" TextWrapping="Wrap" Margin="0,0,0,10"/>
 
                                     <!-- CALIBRATION STATUS -->
                                     <Border Background="#FF252525" BorderBrush="#444" BorderThickness="1" CornerRadius="4" Padding="10,8" Margin="0,0,0,10">
@@ -1654,18 +1654,18 @@
                                               VerticalAlignment="Center" Margin="0,0,10,0"
                                               IsEnabled="{Binding RxIqSessionActive}"
                                               ToolTip="Add +24 kHz to LO (image nulling aid)"/>
-                                    <Button Content="APPLY" Width="58" Height="26" Margin="0,0,4,0"
+                                    <Button Content="SAVE" Width="58" Height="26" Margin="0,0,4,0"
                                             Command="{Binding ApplyRxIqCommand}"
                                             Style="{StaticResource MsccGoldButtonStyle}"
                                             FontSize="10" FontWeight="Bold" Foreground="Black"
                                             IsEnabled="{Binding RxIqSessionActive}"
-                                            ToolTip="Save this balance value for this band."/>
+                                            ToolTip="Save this balance value for this band (stored in the radio)."/>
                                     <Button Content="APPLY ALL" Width="72" Height="26"
                                             Command="{Binding ResetAllRxIqCommand}"
                                             Style="{StaticResource MsccGoldButtonStyle}"
                                             FontSize="10" FontWeight="Bold" Foreground="Black"
                                             IsEnabled="{Binding RxIqSessionActive}"
-                                            ToolTip="Copy the current I/Q value to all bands (saved)."/>
+                                            ToolTip="Copy the current I/Q value to all bands (PC files only; use SAVE per band to store it in the radio)."/>
                                 </StackPanel>
 
                                 <!-- I/Q OFFSET row -->
@@ -1735,8 +1735,8 @@
                             <Border Background="#FF1A1A1A" BorderBrush="#555" BorderThickness="1" CornerRadius="4" Padding="10" Margin="0,0,0,10">
                                 <StackPanel>
                                     <TextBlock Text="TRANSMIT I/Q BALANCE" FontWeight="Bold" Foreground="#00FFAA" FontSize="14" Margin="0,0,0,4"/>
-                                    <TextBlock Text="When done, press Save settings." Foreground="#D0D0D0" FontSize="11" Margin="0,0,0,4"/>
-                                    <TextBlock Text="QRP only (AMP must be off). Select band → set power → TX ON → adjust OFFSET (external RX for image) → APPLY."
+                                    <TextBlock Text="SAVE stores the value for the selected band (in the radio)." Foreground="#D0D0D0" FontSize="11" Margin="0,0,0,4"/>
+                                    <TextBlock Text="QRP only (AMP must be off). Select band → set power → TX ON → adjust OFFSET (external RX for image) → SAVE."
                                                Foreground="#D0D0D0" FontSize="11" TextWrapping="Wrap" Margin="0,0,0,10"/>
 
                                     <!-- BAND SELECTION (same squeeze layout as QRP/AMP CAL) -->
@@ -1837,12 +1837,12 @@
                                         </Border>
                                     </Grid>
 
-                                    <!-- TX / APPLY / RESET -->
+                                    <!-- TX / SAVE / RESET -->
                                     <StackPanel Orientation="Horizontal" Margin="0,8,0,4">
                                         <Button Content="TX" Width="110" Height="28" Margin="0,0,12,0"
                                                 Command="{Binding ToggleTxIqTxCommand}"
                                                 FontSize="12" FontWeight="Bold" Foreground="Black"
-                                                ToolTip="Start/stop the test carrier. Use APPLY to save.">
+                                                ToolTip="Start/stop the test carrier. Use SAVE to keep the value.">
                                             <Button.Style>
                                                 <Style TargetType="Button" BasedOn="{StaticResource MsccGoldButtonStyle}">
                                                     <Style.Triggers>
@@ -1856,11 +1856,11 @@
                                                 </Style>
                                             </Button.Style>
                                         </Button>
-                                        <Button Content="APPLY" Width="110" Height="28" Margin="0,0,12,0"
+                                        <Button Content="SAVE" Width="110" Height="28" Margin="0,0,12,0"
                                                 Command="{Binding ApplyTxIqCommand}"
                                                 Style="{StaticResource MsccGoldButtonStyle}"
                                                 FontSize="12" FontWeight="Bold" Foreground="Black"
-                                                ToolTip="Save this balance value for this band."/>
+                                                ToolTip="Save this balance value for this band (stored in the radio)."/>
                                         <Button Content="RESET ALL" Width="110" Height="28"
                                                 Command="{Binding ResetAllTxIqCommand}"
                                                 Style="{StaticResource MsccGoldButtonStyle}"
@@ -2436,7 +2436,7 @@
                         Click="SaveSettings_Click"
                         FontSize="9" FontWeight="Bold"
                         Style="{StaticResource MsccGoldButtonStyle}"
-                        ToolTip="Ask the host to park live cal for this radio."/>
+                        ToolTip="Park the calibration files on the host for this radio type. Needed for AMP CAL, and for radios without calibration storage. QRP CAL, TX IQ and RX IQ are stored in the radio on current firmware."/>
             </StackPanel>
         </Border>
         </Grid>

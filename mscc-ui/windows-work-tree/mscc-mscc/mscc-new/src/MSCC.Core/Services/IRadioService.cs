@@ -105,6 +105,9 @@ public interface IRadioService : IDisposable
     /// </summary>
     Task SetBandPowerPowerAsync(int percent, CancellationToken cancellationToken = default);
 
+    /// <summary>QRP CAL "Save this calibration?" Yes: 0xA2 with the save flag (ms-sdr 3.189+).</summary>
+    Task SaveBandPowerAsync(int percent, CancellationToken cancellationToken = default);
+
     /// <summary>
     /// Power-cal TX on/off (CMD_CALIBRATION_TUNE 0xAC). true=1, false=0.
     /// </summary>
@@ -449,4 +452,7 @@ public interface IRadioService : IDisposable
 
     /// <summary>TX IQ phase in use (0x2B CMD_GET_IQ_PHASE), steps of 0.05 deg.</summary>
     event Action<int> IqPhaseReported;
+
+    /// <summary>Radio calibration status from ms-sdr 3.189+ (0x2D): kind (1 RX IQ, 2 TX IQ, 3 power), radio has a store, band mask.</summary>
+    event Action<int, bool, int> RadioCalStatusReported;
 }
