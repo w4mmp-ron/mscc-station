@@ -1,2 +1,5 @@
 # build-ultimus.py work copies (Ultimus builds made from the Proficio trees)
 _ultimus-build/
+
+# PSoC Creator per-user settings (<project>.cyprj.<user>, <workspace>.cywrk.<user>)
+*.n8vet
