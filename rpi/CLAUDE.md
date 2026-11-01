@@ -27,11 +27,35 @@ History: Claude worked in a copy `rpi/sdrcore-claude/` (commits fe0c9a1, 0443c21
 (originals unchanged since 8dee14a) and the copy deleted.
 Git repo root: `C:\Users\Ron\.grok\worktrees`.
 
-## Open list (Ron, updated 2026-09-29) - read first on resume
+## Open list (Ron, updated 2026-11-01) - read first on resume
 
 - **Commits (Ron, 2026-10-05): too many commits and pushes.** Finish everything that belongs
   to a piece of work first (code, notes, note for Stew), then ONE commit and one push. No
   follow-up "notes: committed xyz" commits.
+
+**Current list (2026-11-01, after 212107e):**
+- **Pi runs:** recv 3.152 (automatic NB + spectral NR), trans 3.149 (ALC ceiling 0.89),
+  ms-sdr 3.186, pill 3.12. DRM recv 3.152 built in `~/mscc-drm` (switch:
+  `mscc stop; ~/utils/recv-switch.sh drm|normal; mscc start`). All server code committed and pushed.
+- **Ron:** nothing open. Option: NB threshold a bit right of middle (~5x, slider ~750) to also
+  catch the near misses (5.4-6.0x seen on 20 m).
+- **Waiting on Stew (notes in `.mscc-coord/`):**
+  1. Port the new NB to Windows recv; client questions (Pulse min 50 us, threshold Low/Med/High
+     = 1/500/750, slider 1001..1009 oddity, send NB state on connect).
+     `NOTE-FOR-STEW-RECV-NB-AUTOMATIC-2026-11-01.md`
+  2. NR control as Off/Low/Med/High = 0/15/50/85 (client only).
+     `NOTE-FOR-STEW-NR-LOW-MED-HIGH-2026-11-01.md`
+  3. Port the spectral NR to Windows recv. `NOTE-FOR-STEW-RECV-NR-SPECTRAL-2026-10-31.md`
+  4. SSB voice + ALC meter on the air, splatter check at the 0.89 ceiling; one ALC ceiling for
+     voice and digital (`NOTE-FOR-STEW-ALC-ONE-CEILING-2026-10-31.md`).
+  5. Windows Operator's Guide Release 1 draft: Appendix C answers (firmware table, cal survives
+     FW update, ALC target, Windows NR, reset-to-factory, AMP CAL target), pictures, guide source.
+  6. TX IQ RESET ALL / Reset configuration don't stick (radio values win at next start).
+  7. Heat sink temperature 0x06 in the client; Pi-side ports noted in his CLAUDE.md; new
+     scripts into utility-scripts.
+- **Parked:** NR warble fix (Ron 2026-11-01: leave it, NR works well; lower level = less
+  warble). Sync AM (off the list). Complex Goertzel for FREQ CAL and FM transmit (future ideas,
+  see "Ron confirmed" below).
 
 Old history (resume points before 2026-10-31 afternoon, dated change logs, closed items) is
 in `rpi/CLAUDE-history.md`. Grep it for earlier work on a topic; don't read it whole.
