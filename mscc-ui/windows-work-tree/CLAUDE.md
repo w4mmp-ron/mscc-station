@@ -25,7 +25,7 @@ every pull. Newest first. Detailed write-ups for Ron go in `.mscc-coord/NOTE-FOR
 | client | 10.31.2 | TX I/Q PHASE slider; LSB/USB/DIG-U/AM filter buttons send the index (Ron's LSB note 10-31); cuts pushed once at connect |
 | FW MKII PTT | 3.242 | DAC soft mute on TUN/PTT release, mode-change drain |
 | FW Proficio Legacy | 1.236 | Ron's 1.235 (CW key delay + fades, 0xC8 cal store, SSB-after-CW fix) + TUN/PTT DAC fade and mode-change drain (= MKII 3.241/3.242). In `Proficio-Legacy/`; `Proficio-Legacy - Copy` kept as reference. Tested on a Legacy rig 10-31 |
-| FW Proficio MKII ATU | 4.243 | = MKII PTT 3.242 app code (cal store, CW key delay + fades, TUN/PTT DAC mute, mode drain) + Elecraft T1 port kept (`t1.c`, `T1_Main()` in the beater, `STATUS_ATU_0`). Schematic: `Key_Delay_Timer` (FF 16-bit, CW_Clock, period 10, continuous, reset tied 0) + `Key_Delay_isr` added on the CW Management sheet. Built 10-31, not flashed yet; T1 untested (no T1 here) |
+| FW Proficio MKII ATU | 4.243 | = MKII PTT 3.242 app code (cal store, CW key delay + fades, TUN/PTT DAC mute, mode drain) + Elecraft T1 port kept (`t1.c`, `T1_Main()` in the beater, `STATUS_ATU_0`). Schematic: `Key_Delay_Timer` (FF 16-bit, CW_Clock, period 10, continuous, reset tied 0) + `Key_Delay_isr` added on the CW Management sheet. Built 10-31, **tested on a radio 11-01**; T1 untested (no T1 here) |
 | FW Geminus MKII | 2.153 | **0xC8 calibration store (2.152)**, **DAC soft-mute shaping on TUN/PTT and CW (2.153)** |
 
 ## Ultimus firmware built from the Proficio trees (2026-10-31)
@@ -39,7 +39,7 @@ every pull. Newest first. Detailed write-ups for Ron go in `.mscc-coord/NOTE-FOR
   runs CyHexTool with Creator's options, writes `release/Ultimus-<radio>/...-YYYYMMDD.cyacd/.hex`.
   Trees without the switch are skipped.
 - Done: Legacy (Ultimus 6.236 confirmed in MSCC on Stew's Ultimus Legacy), MKII ATU (Ultimus
-  7.243 built 10-31, not flashed yet), MKII PTT (Ultimus 8.242 built 10-31, not flashed yet).
+  7.243, tested 11-01), MKII PTT (Ultimus 8.242, tested 11-01).
   All three Proficio trees have the switch; `build-ultimus.bat` builds all three.
 - MKII ATU notes: the T1 data line (ATU_0, status bit 0x10) is the PTT input on MKII PTT, so the
   ATU firmware reads no PTT input (`E_PTT` stays 0, as in 4.151). Nothing ever sets `T1_Tune_Request` (old code too):
@@ -188,7 +188,11 @@ every pull. Newest first. Detailed write-ups for Ron go in `.mscc-coord/NOTE-FOR
   clear back: why was it removed in 3.239?).
 - recv: no speaker found -> use the first non-Multus output instead of stopping.
 - MKII PTT 3.243: RIT retune on `TX_Idle()`, QSK release mute (Ron's answers 10-29).
-- Legacy 1.236, MKII ATU 4.243, Ultimus Legacy 6.236 / MKII PTT 8.242 / MKII ATU 7.243: done.
-  Next: flash/test MKII ATU and Ultimus MKII PTT/ATU, retire the old `Ultimus-*` trees (Stew's OK).
+- **Firmware tests done on all radios (Stew, 11-01)**: Legacy 1.236, Geminus MKII 2.153, MKII PTT
+  3.242, MKII ATU 4.243, Ultimus Legacy 6.236 / MKII PTT 8.242 / MKII ATU 7.243. Calibration in the
+  radio survives a reflash. Code work on the open list can start. Still to do: retire the old
+  `Ultimus-*` trees (Stew's OK); rebuild the Linux firmware package (mscc-firmware, still 1.0.2
+  with older images) with the current image for **every** radio: Linux supports all radios, not
+  just Geminus.
 - recv/trans side of the 0x30 server messages (needs the client to show them).
 - Pi/Ubuntu: audio LPF, ALC ceiling/meter, recv stream-stop check, phase in client.
