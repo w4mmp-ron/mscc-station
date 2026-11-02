@@ -296,6 +296,8 @@ public static class Opcodes
     /// (bit N = band N: 0 = 10 m ... 9 = 160 m, 10 = 630 m, 11 = 2200 m). Agreed with Ron 2026-11-01.
     /// </summary>
     public const byte CMD_GET_CAL_STATUS = 0x2D;
+    /// <summary>2 TONE on/off (byte 1/0) to ms-sdr, passed to trans (700 + 1900 Hz in the voice path, trans 3.155+).</summary>
+    public const byte CMD_SET_TWO_TONE = 0x88;
     /// <summary>CMD_SET_BAND_POWER_POWER (0xA2) data bit: save this QRP value (radio + power_cal.ini).</summary>
     public const int POWER_CAL_SAVE_FLAG = 0x8000;
     public const double IQ_PHASE_STEP_DEG = 0.05;

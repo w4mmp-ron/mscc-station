@@ -1128,6 +1128,13 @@ public class UdpRadioService : IRadioService, IDisposable
         await _transport.SendAsync(Opcodes.CMD_SET_RIG_TUNE, on ? (byte)1 : (byte)0, cancellationToken);
     }
 
+    public async Task SetTwoToneAsync(bool on, CancellationToken cancellationToken = default)
+    {
+        if (!_started) return;
+        DebugMonitor.MonitorTextBoxText($" Send CMD_SET_TWO_TONE (0x88): {(on ? 1 : 0)}");
+        await _transport.SendAsync(Opcodes.CMD_SET_TWO_TONE, on ? (byte)1 : (byte)0, cancellationToken);
+    }
+
     public async Task SetQrpModeAsync(bool qrp, CancellationToken cancellationToken = default)
     {
         if (!_started) return;

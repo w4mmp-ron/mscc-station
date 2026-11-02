@@ -19,10 +19,10 @@ every pull. Newest first. Detailed write-ups for Ron go in `.mscc-coord/NOTE-FOR
 
 | Part | Version | Main changes |
 |---|---|---|
-| trans | 3.154 | **QRP cal: power_cal.ini written only on the save flag (3.154)**, ALC rework (\|I+jQ\| envelope), ceiling 0.45 x drive for voice, **1.0 x drive for digital (3.152)**, voice ALC level meter, 6 kHz audio LPF before the SSB/AM mixer (LSB image fix), TX I/Q phase, TX I/Q from the radio (0x2C), **digital (VAC) key-up gate 200 ms + 10 ms fade (3.153)** |
+| trans | 3.157 | **voice ALC ceiling 0.89 x drive, as on the Pi (3.157)**, **2 TONE: 0x88 puts 700 + 1900 Hz in place of the mic, USB/LSB, through the voice path (3.155)**, **QRP cal: power_cal.ini written only on the save flag (3.154)**, ALC rework (\|I+jQ\| envelope), **1.0 x drive for digital (3.152)**, voice ALC level meter, 6 kHz audio LPF before the SSB/AM mixer (LSB image fix), TX I/Q phase, TX I/Q from the radio (0x2C), **digital (VAC) key-up gate 200 ms + 10 ms fade (3.153)** |
 | recv | 3.151 | RX stream kept running at PTT (muted, not stopped), Ron's AM lowpass + DC block and noise blanker fix, **RX I/Q from the radio (0x2C)** |
 | ms-sdr | 3.189 | **QRP save step (0xA2 bit 15 = save; radio written only then), radio cal status to the client on 0x2D at connect / after each radio write (3.189)**, PTT poll `r == 1`, power cal in the radio (0xC8), CW + TUN stuck TX, 0xFE 0 release, 0x30 messages forwarded, firmware type in log, PPM cal start point, TX I/Q phase, **TX/RX I/Q stored in and loaded from the radio**, **TX I/Q from CW mode fix** |
-| client | 11.1.2 | **FREQ CAL: waits for the previous cal tab's restore before CW (USB bug fixed), "must be in CW" note, opens at 4× left-panel zoom and restores it on leave (11.1.2)**; **QRP CAL "Save this calibration?" Yes/No (Reject gone), lamps follow the radio's power mask (0x2D), I/Q APPLY renamed SAVE, Start / Save settings / POTENTIA tooltips, Full Power renamed AMP (11.1.0)**; TX I/Q PHASE slider; LSB/USB/DIG-U/AM filter buttons send the index (Ron's LSB note 10-31); cuts pushed once at connect |
+| client | 11.1.3 | **2 TONE button next to Tune: arms two-tone, Tune then sends it (switches to USB if needed), disarmed on Stop (11.1.3)**; **FREQ CAL: waits for the previous cal tab's restore before CW (USB bug fixed), "must be in CW" note, opens at 4× left-panel zoom and restores it on leave (11.1.2)**; **QRP CAL "Save this calibration?" Yes/No (Reject gone), lamps follow the radio's power mask (0x2D), I/Q APPLY renamed SAVE, Start / Save settings / POTENTIA tooltips, Full Power renamed AMP (11.1.0)**; TX I/Q PHASE slider; LSB/USB/DIG-U/AM filter buttons send the index (Ron's LSB note 10-31); cuts pushed once at connect |
 | FW MKII PTT | 3.242 | DAC soft mute on TUN/PTT release, mode-change drain |
 | FW Proficio Legacy | 1.236 | Ron's 1.235 (CW key delay + fades, 0xC8 cal store, SSB-after-CW fix) + TUN/PTT DAC fade and mode-change drain (= MKII 3.241/3.242). In `Proficio-Legacy/`; `Proficio-Legacy - Copy` kept as reference. Tested on a Legacy rig 10-31 |
 | FW Proficio MKII ATU | 4.243 | = MKII PTT 3.242 app code (cal store, CW key delay + fades, TUN/PTT DAC mute, mode drain) + Elecraft T1 port kept (`t1.c`, `T1_Main()` in the beater, `STATUS_ATU_0`). Schematic: `Key_Delay_Timer` (FF 16-bit, CW_Clock, period 10, continuous, reset tied 0) + `Key_Delay_isr` added on the CW Management sheet. Built 10-31, **tested on a radio 11-01**; T1 untested (no T1 here) |
@@ -147,11 +147,32 @@ every pull. Newest first. Detailed write-ups for Ron go in `.mscc-coord/NOTE-FOR
   reset to factory later (needs the 0xC8 clear back, removed in 3.239: ask Ron why).
 - Geminus MKII firmware: 0xC8 added in 2.152 (2026-10-31).
 
+## 2 TONE and the ALC ceiling, trans 3.155-3.157 / client 11.1.3 (2026-11-01)
+
+- 2 TONE reuses **0x88 `CMD_SET_TWO_TONE`** (both ms-sdr trees already pass it to trans; no new
+  opcode; 0x2E/0x2F still free). trans `twoToneAudio()` (dsputils.c) replaces the mic samples
+  (700 + 1900 Hz, 0.8 each, 5 ms fade-in) before the audio LPF / SSB modulator / ALC; no speech
+  processor. Level follows the SSB slider. Client: `TwoToneArmed`, `StartTwoToneTx` /
+  `StopTwoToneTx` in `OnTuneModeChanged`.
+- **StarTech USB sound card = 1 kHz comb.** Used as the Phones mic it put a comb exactly 1 kHz
+  apart, ~48 dB under the carrier, plus ~20 dB more close-in noise, on every transmission (TUN
+  too, although trans zeroes the mic in TUN/CW) whenever trans had it open. Followed the device
+  between Phones and Digital; gone on a virtual cable and on the PC's own sound card. Device thrown
+  out. Guide note: comb on TUN -> try the mic on a virtual cable. The 10-30 "voice splatter" that
+  set the 0.45 ceiling was most likely this device.
+- 3.156 (20 ms ALC envelope peak hold) changed nothing: not committed as such, removed in 3.157.
+- **3.157: voice ceiling 0.89** (dsputils.c `ALC_CEILING` and udp_thread.c
+  `CMD_SET_ALC_MULTIPLIER`). Signal Hound, 630 m, SSB 100, each tone vs TUN carrier:
+  Digital (1.0) -7.3 dBc, IMD3 ~33 dB under the tones; Phones at 0.45 -14.6 dBc; **Phones at 0.89
+  a little under -8 dBc, IMD3 -33.85 dB** (PA still fine). ~6 dB more voice peak power: that was
+  Ron's missing SSB power. The ALC settles ~2 dB under its ceiling, so 0.89 puts voice PEP near
+  the calibrated power. 0.8 vs 0.89 settled: 0.89.
+
 ## Earlier today (details in `.mscc-coord/NOTE-FOR-RON-SSB-TX-RESULTS-WINDOWS-3.149-2026-10-30.md`)
 
 - Broadband SSB splatter = recv `Pa_StopStream` at PTT on the shared USB audio device.
 - LSB image = no audio low-pass before the DSB mixer (21-24 kHz mic hiss -> opposite sideband).
-- ALC ceiling 0.45 x drive; meter shows the peak level against the ceiling.
+- ALC ceiling 0.45 x drive (0.89 since 3.157); meter shows the peak level against the ceiling.
 
 ## Open / next
 
@@ -176,18 +197,8 @@ every pull. Newest first. Detailed write-ups for Ron go in `.mscc-coord/NOTE-FOR
   - ALC 0.89 on purpose: Ron's rig (ATU-100 meter), steady WSJT-X tone: 0.45 ~40 W, 0.80 89 W,
     0.89 95 W, TUN 109 W (PA near compression, so not the 124 % the square law suggests). No
     splatter check yet (no analyzer): settle 0.8 vs 0.89 with 2 TONE + Signal Hound (PEP, IMD).
-- Built-in TWO-TONE test (Stew, 11-01): trans generates 700 + 1900 Hz in place of the mic
-  samples, before the ALC (tests the real voice path: ceiling, 6 kHz LPF, modulator, PA). Level
-  set so the combined peak = TUN amplitude (each tone -6 dB, PEP = calibrated power), plus a
-  0..-10 dB level control for IMD sweeps. ms-sdr passes one new opcode to trans and keys like
-  TUN (SSB). Client: 2-TONE button + level (WPF and Avalonia). Pi trans too: opcode to agree
-  with Ron. After the firmware tests.
-- ALC ceiling (Ron 11-01 asks why voice keeps 0.45): 0.45 came from Stew's 10-30 Signal Hound
-  splatter tests (see dsputils.c comment). 0.45 x drive vs TUN 0.8 x drive caps voice/whistle
-  peaks at ~56% amplitude = ~32% of TUN power (Ron's ~40 W). Ron's 0.89 is ~11% above TUN
-  amplitude (~124% power); 0.8 would cap at the calibrated power. Stew testing hot computer mic
-  vs weak headset mic with the amp on 3.153 first; then a trans test build with 0.8 / 0.89
-  (two constants: dsputils.c ALC_CEILING, udp_thread.c CMD_SET_ALC_MULTIPLIER 0.45f).
+- **2 TONE and ALC 0.89 done 11-01** (trans 3.157, client 11.1.3; see the section above). Pi
+  trans needs the same `twoToneAudio()` change and 0x88 handling (note to Ron 11-01).
 - FREQ CAL items **done in client 11.1.2** (11-01, tested): race fixed (EnterFreqCalTab awaits
   `_calTabRestoreTask` from Leave TX IQ / QRP CAL / AMP CAL), CW note on the tab, left-panel
   SPECTRUM ZOOM drives the FREQ CAL spectrum, set to 4× on entry and restored on leave.

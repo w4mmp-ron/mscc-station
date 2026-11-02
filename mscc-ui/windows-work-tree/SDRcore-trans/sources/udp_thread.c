@@ -544,7 +544,7 @@ void *UDP_Thread(void *my_param) {
 
             case CMD_SET_ALC_MULTIPLIER:
                 //ALC is always on. The off value (0) was for testing and is ignored.
-                G_ALC_multiplier = 0.45f; /* trans 3.149: ALC ceiling, see dsputils.c ALC_CEILING */
+                G_ALC_multiplier = 0.89f; /* trans 3.157: 0.89, see dsputils.c ALC_CEILING */
                 G_Do_ALC = TRUE;
                 print_time();
                 fprintf(G_fp_logfile, "[%d] UDP Thread. CMD_SET_ALC_MULTIPLIER. received_data: %d, G_ALC_multiplier: %f, G_Do_ACL: %d\n",

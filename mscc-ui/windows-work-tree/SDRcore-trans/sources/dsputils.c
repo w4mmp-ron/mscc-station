@@ -21,15 +21,20 @@ long int G_alc_count = 0;
 /* trans 3.149: ALC ceiling = drive x ALC_CEILING. Was 1.1, which let SSB peaks reach
  * 0.5-0.65 of full scale at SSB power 100 and overdrove the PA (close-in splatter at
  * mic 45-50). Measured 10-30 on Proficio MKII PTT: peaks <= 0.22 clean, 0.43-0.57 splatter.
- * 0.6 (0.28) still splattered above mic ~20 (10-30); 0.45 -> 0.21 at drive 0.46. */
-#define ALC_CEILING 0.45f
+ * 0.6 (0.28) still splattered above mic ~20 (10-30); 0.45 -> 0.21 at drive 0.46.
+ * trans 3.157: 0.89, as on the Pi (Ron). The 10-30 splatter was not the ceiling: on Shack a
+ * StarTech USB sound card used as the Phones mic put a 1 kHz comb on every transmission (TUN
+ * too) while it was open. 2 TONE at SSB 100 (630 m, 11-01), each tone vs TUN: Digital (1.0)
+ * -7.3 dBc, IMD3 33 dB below the tones; Phones at 0.45 -14.6 dBc. The ALC settles about 2 dB
+ * under its ceiling, so 0.89 puts voice PEP near the calibrated power (each tone about -8 dBc). */
+#define ALC_CEILING 0.89f
 sp_float G_ALC_multiplier = ALC_CEILING;
 #endif
 
 //#define ALC_TARGET 0.85000f
 
 //#define ALC_TARGET 0.9f
-/* trans 3.152: the 0.45 ceiling is for voice only. A digital tone (WSJT-X etc.) is constant
+/* trans 3.152: the voice ceiling (0.45 then, 0.89 since 3.157) is for voice only. A digital tone (WSJT-X etc.) is constant
  * envelope, so 0.45 x drive gave only 0.2 of the QRP CAL power (5 W cal -> 1 W, ALC in the
  * red). Digital audio uses the full drive, i.e. the same level as TUN / QRP CAL. */
 #define ALC_DIGITAL_CEILING 1.0f
@@ -714,6 +719,47 @@ void jimifft(sp_cplx *samps, int n) {
 
     return;
 
+}
+
+/* trans 3.155: 2 TONE test signal, 700 + 1900 Hz, fed into the voice path in place of the mic
+ * samples (before tx_audio_lowpass, ssb_modulate, fastconv: so it goes through the drive and
+ * the ALC like voice). Mono audio, real = imag as framesToComplex makes it.
+ * Level: ssb_modulate splits a real audio tone into two sidebands of half amplitude and the SSB
+ * filter keeps one, so each tone leaves at TWO_TONE_LEVEL / 2 = 0.4: half of the TUN carrier
+ * (0.8, tune_modulate). The two tones then peak together at the TUN level at the same drive:
+ * PEP = calibrated power with the SSB slider at 100 % if the ALC ceiling allows it.
+ * 5 ms raised-cosine fade-in at each key-down. */
+#define TWO_TONE_LEVEL   0.8f
+#define TWO_TONE_F1      700.0
+#define TWO_TONE_F2      1900.0
+#define TWO_TONE_RAMP_MS 5.0f
+void twoToneAudio(sp_cplx *samps, int nframes, int keyed) {
+    static double p1 = 0.0, p2 = 0.0;
+    static int ramp_pos = 0;
+    double w1 = TPI * TWO_TONE_F1 / mystate.samplerate;
+    double w2 = TPI * TWO_TONE_F2 / mystate.samplerate;
+    int ramp_len = (int) (mystate.samplerate * TWO_TONE_RAMP_MS / 1000.0f);
+    int j;
+    sp_float g, x;
+
+    if (!keyed)
+        ramp_pos = 0;
+    for (j = 0; j < nframes; j++) {
+        if (ramp_len > 0 && ramp_pos < ramp_len) {
+            g = (sp_float) (0.5 - 0.5 * cos(3.14159265358979 * (double) ramp_pos / (double) ramp_len));
+            if (keyed)
+                ramp_pos++;
+        } else {
+            g = 1.0f;
+        }
+        x = (sp_float) (TWO_TONE_LEVEL * (sin(p1) + sin(p2))) * g;
+        samps[j].real = x;
+        samps[j].imag = x;
+        p1 += w1;
+        p2 += w2;
+        if (p1 > TPI) p1 -= TPI;
+        if (p2 > TPI) p2 -= TPI;
+    }
 }
 
 void twoTone(sp_cplx *samps) {

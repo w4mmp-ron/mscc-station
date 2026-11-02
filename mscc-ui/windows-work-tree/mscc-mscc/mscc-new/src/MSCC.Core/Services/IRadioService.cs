@@ -247,6 +247,9 @@ public interface IRadioService : IDisposable
     /// <summary>ALC button on/off via CMD_SET_ALC_MULTIPLIER (0x23): 1=on, 0=off.</summary>
     Task SetAlcOnAsync(bool on, CancellationToken cancellationToken = default);
     Task SetAutoTuneAsync(bool on, CancellationToken cancellationToken = default);
+
+    /// <summary>2 TONE test signal on/off (0x88; trans 3.155+ feeds it into the voice path in USB/LSB).</summary>
+    Task SetTwoToneAsync(bool on, CancellationToken cancellationToken = default);
     Task SetQrpModeAsync(bool qrp, CancellationToken cancellationToken = default);
     Task SetTransmitAsync(bool on, CancellationToken cancellationToken = default);
     Task SetPaBypassAsync(bool on, CancellationToken cancellationToken = default);

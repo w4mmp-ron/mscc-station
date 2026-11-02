@@ -1132,6 +1132,17 @@ public partial class MainViewModel : ObservableObject, IDisposable
     [ObservableProperty] private bool _tuneMode;
     partial void OnTuneModeChanged(bool value)
     {
+        // 11.2.0: with 2 TONE armed, TUN sends the two-tone test signal in SSB instead of a carrier
+        if (value && TwoToneArmed)
+        {
+            StartTwoToneTx();
+            return;
+        }
+        if (!value && _twoToneActive)
+        {
+            StopTwoToneTx();
+            return;
+        }
         if (value)
         {
             _previousMode = RadioState.ActiveVfo.Mode;
@@ -1157,6 +1168,91 @@ public partial class MainViewModel : ObservableObject, IDisposable
         // Returning to RX: clear ALC if neither PTT nor TUN is keyed
         MaybeZeroAlcMeterOnRx();
         NotifyMainOperatePower();
+    }
+
+    /// <summary>
+    /// 2 TONE button (RX/TX tab): arms the two-tone test. TUN then keys SSB (USB unless already
+    /// USB/LSB) with 700 + 1900 Hz from trans in place of the mic (0x88), through the voice path
+    /// (ALC, filter, drive). Level = SSB power slider. Stays armed until pressed again or Stop.
+    /// </summary>
+    [ObservableProperty] private bool _twoToneArmed;
+    private bool _twoToneActive;
+    private RadioMode _twoTonePrevMode = RadioMode.USB;
+    private bool _twoToneModeChanged;
+
+    [RelayCommand]
+    private void ToggleTwoTone()
+    {
+        if (TuneMode)
+        {
+            MonitorTextBoxText(" 2 TONE: turn TUN off first");
+            return;
+        }
+        TwoToneArmed = !TwoToneArmed;
+        MonitorTextBoxText($" 2 TONE {(TwoToneArmed ? "armed (TUN sends two tones)" : "off")}");
+    }
+
+    private void StartTwoToneTx()
+    {
+        _twoToneActive = true;
+        _twoTonePrevMode = RadioState.ActiveVfo.Mode;
+        _twoToneModeChanged = _twoTonePrevMode is not (RadioMode.USB or RadioMode.LSB);
+        if (_twoToneModeChanged)
+            RadioState.ActiveVfo.Mode = RadioMode.USB;
+        RadioState.IsTransmitting = true;
+        string mode = FormatModeDisplay(RadioState.ActiveVfo.Mode);
+        if (!_suppressTransmitCommands && !TxSetByServer)
+            _ = StartTwoToneTxAsync(_twoToneModeChanged ? mode : null);
+        MonitorTextBoxText($" 2 TONE TX on ({mode}{(_twoToneModeChanged ? ", switched from " + FormatModeDisplay(_twoTonePrevMode) : "")})");
+        NotifyMainOperatePower();
+    }
+
+    private async Task StartTwoToneTxAsync(string? setMode)
+    {
+        try
+        {
+            if (setMode != null)
+            {
+                await _radioService.SetModeAsync(setMode);
+                await Task.Delay(50);
+            }
+            await _radioService.SetTwoToneAsync(true);
+            await _radioService.SetTransmitAsync(true);
+        }
+        catch (Exception ex)
+        {
+            MonitorTextBoxText($" 2 TONE start error: {ex.Message}");
+        }
+    }
+
+    private void StopTwoToneTx()
+    {
+        _twoToneActive = false;
+        RadioState.IsTransmitting = false;
+        bool restore = _twoToneModeChanged;
+        _twoToneModeChanged = false;
+        if (restore)
+            RadioState.ActiveVfo.Mode = _twoTonePrevMode;
+        if (!_suppressTransmitCommands && !TxSetByServer)
+            _ = StopTwoToneTxAsync(restore ? FormatModeDisplay(_twoTonePrevMode) : null);
+        MonitorTextBoxText($" 2 TONE TX off{(restore ? ", mode back to " + FormatModeDisplay(_twoTonePrevMode) : "")}");
+        MaybeZeroAlcMeterOnRx();
+        NotifyMainOperatePower();
+    }
+
+    private async Task StopTwoToneTxAsync(string? restoreMode)
+    {
+        try
+        {
+            await _radioService.SetTransmitAsync(false);
+            await _radioService.SetTwoToneAsync(false);
+            if (restoreMode != null)
+                await _radioService.SetModeAsync(restoreMode);
+        }
+        catch (Exception ex)
+        {
+            MonitorTextBoxText($" 2 TONE stop error: {ex.Message}");
+        }
     }
 
     /// <summary>
@@ -5734,6 +5830,8 @@ public partial class MainViewModel : ObservableObject, IDisposable
     {
         if (_freqCalEntryHeld)
             LeaveFreqCalTab();
+        if (TwoToneArmed)
+            TwoToneArmed = false;   // 11.2.0: 2 TONE is never armed after Stop
         if (_radioCalHasStore)
         {
             // Next radio may have no store: show the local lamps until ms-sdr reports again

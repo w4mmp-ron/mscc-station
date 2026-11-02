@@ -137,6 +137,7 @@ static int sdrAudioCallback(const void *inputBuffer, void *outputBuffer,
     const SAMPLE *in = (const SAMPLE*) inputBuffer;
     static SAMPLE remote_buf[4096 * 2];
     int mic_channels;
+    int two_tone;       /* trans 3.155 */
     unsigned int i;
     (void) timeInfo; /* Prevent unused variable warnings. */
     (void) statusFlags;
@@ -216,17 +217,18 @@ static int sdrAudioCallback(const void *inputBuffer, void *outputBuffer,
         }
         G_tx_mic_fade_samples = left;
     }
-    if ((mystate.opmode == MODE_AM) || (mystate.opmode == MODE_LSB) ||
+    /* trans 3.155: 2 TONE (client 0x88 = 1, USB / LSB only) replaces the mic audio here, so it
+     * takes the voice path below: audio LPF, SSB modulator, drive and ALC. No speech processor. */
+    two_tone = mystate.twoToneFlag && ((mystate.opmode == MODE_USB) || (mystate.opmode == MODE_LSB));
+    if (two_tone) {
+        twoToneAudio(incplx, (int) framesPerBuffer, G_tx_mode == TRUE);
+    } else if ((mystate.opmode == MODE_AM) || (mystate.opmode == MODE_LSB) ||
         (mystate.opmode == MODE_USB) || (mystate.opmode == MODE_FM)) {
         doMicProc(incplx, framesPerBuffer);
     }
     //if ((G_tx_mode == 1) || G_QSK) {
     if (G_mode != 'T' && G_null_count++ < MAX_NULL) {
         null_modulate(incplx); // no mode, zero out IQ stream for no output
-        fastconv(incplx, outcplx, (int) framesPerBuffer);
-    } else if (mystate.twoToneFlag) {
-        ssb_modulate(incplx);
-        twoTone(incplx); // overwrites any mic audio data in buffer
         fastconv(incplx, outcplx, (int) framesPerBuffer);
     } else if (mystate.opmode == MODE_FM) {
         /*

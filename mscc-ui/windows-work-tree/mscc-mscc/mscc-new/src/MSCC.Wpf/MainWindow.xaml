@@ -1130,7 +1130,7 @@
                                     </StackPanel>
                                 </StackPanel>
 
-                                <!-- Row 2: buttons in 2×2 (QRP | Full Power / Tune | ALC) -->
+                                <!-- Row 2: buttons in 2×2 (QRP | AMP / Tune | 2 TONE) -->
                                 <Grid HorizontalAlignment="Left" Margin="0,4,0,0">
                                     <Grid.RowDefinitions>
                                         <RowDefinition Height="Auto"/>
@@ -1189,6 +1189,25 @@
                                                     <DataTrigger Binding="{Binding TuneMode}" Value="True">
                                                         <Setter Property="Background" Value="{DynamicResource UiButtonAlertBrush}"/>
                                                         <Setter Property="BorderBrush" Value="{DynamicResource UiButtonAlertBorderBrush}"/>
+                                                        <Setter Property="Foreground" Value="White"/>
+                                                    </DataTrigger>
+                                                </Style.Triggers>
+                                            </Style>
+                                        </Button.Style>
+                                    </Button>
+                                    <Button Grid.Row="1" Grid.Column="1" Content="2 TONE"
+                                            Command="{Binding ToggleTwoToneCommand}"
+                                            IsEnabled="{Binding CanUserControlTransmit}"
+                                            ToolTip="Arms the two-tone test (700 + 1900 Hz). Then TUN transmits the two tones in SSB (USB unless already USB/LSB) through the voice path. Level = SSB power slider: at 100 % the peaks reach the TUN level (each tone 6 dB down) if the ALC allows it. Press again to disarm."
+                                            Margin="0,0,0,0" Width="100" HorizontalAlignment="Left"
+                                            Foreground="Black" FontWeight="Bold">
+                                        <Button.Style>
+                                            <Style TargetType="Button" BasedOn="{StaticResource MsccGoldButtonStyle}">
+                                                <Setter Property="Height" Value="28"/>
+                                                <Style.Triggers>
+                                                    <DataTrigger Binding="{Binding TwoToneArmed}" Value="True">
+                                                        <Setter Property="Background" Value="{DynamicResource UiButtonSelectedBrush}"/>
+                                                        <Setter Property="BorderBrush" Value="{DynamicResource UiButtonSelectedBorderBrush}"/>
                                                         <Setter Property="Foreground" Value="White"/>
                                                     </DataTrigger>
                                                 </Style.Triggers>
