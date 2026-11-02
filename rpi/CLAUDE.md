@@ -96,7 +96,9 @@ Git repo root: `C:\Users\Ron\.grok\worktrees`.
   R11-1-5), Windows trans 3.157 (2 TONE + voice ALC 0.89; 0.45 was a bad StarTech USB card). Note:
   `.mscc-coord/NOTE-FOR-STEW-2TONE-PI-AND-0x2E-2026-11-01.md`. Running since 19:46. **Fault test PASSED 19:51
   (Ron, client 11.1.5):** meter fault latched -> client showed fault + RESET, Ron pressed RESET (client
-  direct HTTP) -> meter cleared, ms-sdr relayed it. Open: 2 TONE on air; 0x2E RESET path (needs Stew's client send).
+  direct HTTP) -> meter cleared, ms-sdr relayed it. **2 TONE PASSED 20:12 (Ron, 20 m USB, full power; button is on the RX/TX tab;
+  panadapter stops in TX so tones/IMD not seen).** Note: `NOTE-FOR-STEW-2TONE-PI-TESTED-2026-11-01.md`.
+  Open: 0x2E RESET path (needs Stew's client send).
 - **SWR meter firmware (Ron 2026-11-01):** auto-tune on 30 m runs longer than the meter's time limit, so
   the meter faults. Firmware source is NOT in the tree (only swr-meter/ Python app + summary); Ron asks
   Stew to add it. 11-01 evening tests: trips ~1 s into a 15 m auto-tune (tune power 43: fwd 61 ref 25.00
