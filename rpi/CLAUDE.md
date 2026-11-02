@@ -80,13 +80,7 @@ Git repo root: `C:\Users\Ron\.grok\worktrees`.
   8051 time, fade vs key delay. Pill already fades in software (5 ms raised cosine, fw 3.6).
   Reply to Stew: `.mscc-coord/NOTE-FOR-STEW-TX-EDGE-COMB-CW-2026-11-02.md` (pushed 7089904);
   waiting on his answer.
-- **Ron (2026-11-02): pill TX underrun while keyed = hard drop (click).** pill 3.12 pio-async
-  `audio.c` `audio_i2s_tx_block()`: on a USB underrun / FIFO overflow it plays a silent block at
-  once, no ramp (the raised-cosine shaping is CPU in the I2S DMA half/full interrupt; USB OTG FS
-  has no DMA). Fix: while keyed, repeat the last good block (or ramp down) instead of silence.
-  First check if it happens: `s_tx_underruns` (and `s_tx_dropped`) after some CW keying.
-  Pill's live-stream shaping is better than the PSoC stored-carrier idea; QSK CW is unshaped on
-  both (no key delay = no lead time).
+- **Pill CW edges on an analyzer: not checked yet** (pill 5 ms raised cosine, should show no comb).
 - **Waiting on Stew (notes in `.mscc-coord/`):**
   1. Port the new NB to Windows recv; client questions (Pulse min 50 us, threshold Low/Med/High
      = 1/500/750, slider 1001..1009 oddity, send NB state on connect).
@@ -186,6 +180,10 @@ Git repo root: `C:\Users\Ron\.grok\worktrees`.
   element (longer normally, shorter only for very short elements/spaces), any key, no speed
   needed. Pill: easy (table + step count), only if 5 ms proves a problem on the analyzer. PSoC:
   only after the own-I/Q fix (doesn't fix the staircase).
+  Pill TX underrun while keyed (2026-11-02): `audio_i2s_tx_block()` plays a silent block at once
+  on a USB underrun (hard drop = click). TESTED 11-02 with `~/utils/audio-stats.py mark` / `since`:
+  2.1 min CW non-QSK = out_under 0, out_drop 0, out level steady 1552; 1 underrun in 6.5 h before.
+  Fix (repeat the last good block or ramp down while keyed) only if one ever shows up.
 
 Old history (resume points before 2026-10-31 afternoon, dated change logs, closed items) is
 in `rpi/CLAUDE-history.md`. Grep it for earlier work on a topic; don't read it whole.
