@@ -58,6 +58,16 @@ Git repo root: `C:\Users\Ron\.grok\worktrees`.
   fades, SetTxBufAddress), all modes, no soft mute, no host change. Ron's go-ahead:
   `NOTE-FOR-STEW-TX-EDGE-COMB-LIVE-FADE-2026-11-02.md` (8-bit gain table, ISR or dummy-Zero for
   timing, latch the slot index, 5 ms). Old idea below for history.
+  **Stew, 2026-11-02 afternoon: PARKED on his side** (`NOTE-FOR-RON-FIRMWARE-FOLDERS-AND-RELEASES-
+  2026-11-02.md`): 3.244 (Buff TDs re-pointed, slots 1 ms late) = noise + stalled audio; 3.245
+  (scale next slot in place) = RX and TX dead; neither committed, FW back at 3.243 / 4.244. He needs
+  the real USB vs DAC slot timing. From SyncSOF.v: index steps at each SOF, forced to 1 when the
+  player wraps to slot 0, SOF lands mid-slot at a PLL-held point -> USB is 1 ahead for part of
+  each ms and 2 ahead for the rest. Ron: leave it to Stew (his Claude can read SyncSOF.v too).
+  Same push: PSoC trees renamed `Proficio-Ultimus-Legacy / -MKII-PTT / -MKII-ATU`, Ultimus trees
+  removed, releases in each tree's `Release/` named by version (copy-release.py, -b2 if same
+  version differs; bump the minor for every test build); Ron: reopen Creator projects from the
+  new folders, fix the post-build path.
 - **Ron (2026-11-02): PSoC makes its own CW I/Q (fix for Stew's 12 kHz comb).** Comb = PCM3060
   soft mute 0.5 dB per 8/fs staircase at every non-QSK release / CW key-up, ~-65 dBc (Stew's
   note `.mscc-coord/NOTE-FOR-RON-TX-EDGE-COMB-DAC-SOFT-MUTE-2026-11-02.md`). PCM3060 volume
