@@ -40,6 +40,14 @@ uint8 TX_Inhibit = 0;
  * switches with RF at full level (broadband splatter at TUN / PTT release).
  *   Key:     DAC mute, AMP on, key delay (>= 20 ms > 16.7 ms ramp), PA on, DAC unmute.
  *   Release: DAC mute, TX_DAC_RAMP_MS, PA off, AMP_RELEASE_MS, AMP off, DAC unmute.
+ *
+ * 3.243 / 4.244: non-QSK keeps the DAC muted the whole time it receives, and unmutes it only
+ * after the PA is on. SDRcore-trans still has tens of ms of carrier / two-tone queued when the
+ * radio unkeys; with the DAC unmuted again 28 ms after release that tail played with the PA off
+ * and leaked out (spurs at the 12 kHz TX IF spacing on the SA, a beep / click in the speaker,
+ * Stew 11-02). The DAC carries TX I/Q only, so RX loses nothing. QSK (no shaping) keeps the
+ * DAC at full, as before. In CW, cw.c owns the mute.
+ *   Release: DAC mute, TX_DAC_RAMP_MS, PA off, AMP_RELEASE_MS, AMP off (DAC stays muted).
  */
 static uint8 state = 0;
 
@@ -59,6 +67,7 @@ void TX_Main(void) {
 
     switch (state) {
         case 0: // receiving
+            TX_DAC_Mute(E_QSK == TRUE ? FALSE : TRUE);          //3.243: non-QSK muted in RX, QSK at full
             if (TX_Request && !TX_Inhibit) {
                 if(E_QSK == TRUE){
                     state = 2;
@@ -79,8 +88,7 @@ void TX_Main(void) {
         case 3: // Non-QSK: AMP on, waiting for the amp relays before PA on
             if (!TX_Request || TX_Inhibit) {
                 Control_Write(Control_Read() | CONTROL_AMP);    //PTT dropped before PA on. AMP off
-                TX_DAC_Mute(FALSE);
-                state = 0;
+                state = 0;                                      //3.243: DAC stays muted
             }else if ((uint8)(E_ms_tick - start_tick) >= delay_ms) {
                 Control_Write(Control_Read() & ~CONTROL_RX);    //PA on - Negative logic level
                 TX_DAC_Mute(FALSE);                             //Then ramp the DAC up (~3 ms 10-90 %)
@@ -116,8 +124,7 @@ void TX_Main(void) {
         case 12: // Non-QSK: PA off, waiting for RF to die before AMP off
             if ((uint8)(E_ms_tick - start_tick) >= AMP_RELEASE_MS) {
                 Control_Write(Control_Read() | CONTROL_AMP);
-                TX_DAC_Mute(FALSE);                             //DAC back at full for RX / next over
-                state = 0;
+                state = 0;                                      //3.243: DAC stays muted in RX (no TX tail)
             }
             break;
     }

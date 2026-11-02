@@ -1,5 +1,5 @@
 -- Project:   Proficio-MKII-ATU
--- Generated: 10/31/2026 20:28:43
+-- Generated: 11/02/2026 09:02:39
 -- PSoC Creator  4.4
 
 ENTITY \Proficio-MKII-ATU\ IS
@@ -5040,7 +5040,7 @@ BEGIN
 
     Key_Delay_isr:interrupt
         GENERIC MAP(
-            int_type => "10",
+            int_type => "00",
             is_nmi => 0)
         PORT MAP(
             interrupt => Net_8153,

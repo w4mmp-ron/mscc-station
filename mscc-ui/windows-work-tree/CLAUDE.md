@@ -23,9 +23,9 @@ every pull. Newest first. Detailed write-ups for Ron go in `.mscc-coord/NOTE-FOR
 | recv | 3.151 | RX stream kept running at PTT (muted, not stopped), Ron's AM lowpass + DC block and noise blanker fix, **RX I/Q from the radio (0x2C)** |
 | ms-sdr | 3.189 | **QRP save step (0xA2 bit 15 = save; radio written only then), radio cal status to the client on 0x2D at connect / after each radio write (3.189)**, PTT poll `r == 1`, power cal in the radio (0xC8), CW + TUN stuck TX, 0xFE 0 release, 0x30 messages forwarded, firmware type in log, PPM cal start point, TX I/Q phase, **TX/RX I/Q stored in and loaded from the radio**, **TX I/Q from CW mode fix** |
 | client | 11.1.5 | **WiFi SWR meter fault relayed by Pi ms-sdr 3.188 (extended 0x0F: fault, online, meter IP) handled; fault kept with every relayed reading; RESET falls back to the 0x0F IP (11.1.5)**; **2 TONE button next to Tune: arms two-tone, Tune then sends it (switches to USB if needed), disarmed on Stop (11.1.3)**; **FREQ CAL: waits for the previous cal tab's restore before CW (USB bug fixed), "must be in CW" note, opens at 4× left-panel zoom and restores it on leave (11.1.2)**; **QRP CAL "Save this calibration?" Yes/No (Reject gone), lamps follow the radio's power mask (0x2D), I/Q APPLY renamed SAVE, Start / Save settings / POTENTIA tooltips, Full Power renamed AMP (11.1.0)**; TX I/Q PHASE slider; LSB/USB/DIG-U/AM filter buttons send the index (Ron's LSB note 10-31); cuts pushed once at connect |
-| FW MKII PTT | 3.242 | DAC soft mute on TUN/PTT release, mode-change drain |
+| FW MKII PTT | 3.243 | DAC soft mute on TUN/PTT release, mode-change drain; **3.243: DAC kept muted in non-QSK RX (no effect on the comb, see 11-02)** |
 | FW Proficio Legacy | 1.236 | Ron's 1.235 (CW key delay + fades, 0xC8 cal store, SSB-after-CW fix) + TUN/PTT DAC fade and mode-change drain (= MKII 3.241/3.242). In `Proficio-Legacy/`; `Proficio-Legacy - Copy` kept as reference. Tested on a Legacy rig 10-31 |
-| FW Proficio MKII ATU | 4.243 | = MKII PTT 3.242 app code (cal store, CW key delay + fades, TUN/PTT DAC mute, mode drain) + Elecraft T1 port kept (`t1.c`, `T1_Main()` in the beater, `STATUS_ATU_0`). Schematic: `Key_Delay_Timer` (FF 16-bit, CW_Clock, period 10, continuous, reset tied 0) + `Key_Delay_isr` added on the CW Management sheet. Built 10-31, **tested on a radio 11-01**; T1 untested (no T1 here) |
+| FW Proficio MKII ATU | 4.244 | **4.244: `Key_Delay_isr` RISING_EDGE (was DERIVED: ms tick fast, PA hot-switched), DAC muted in non-QSK RX.** = MKII PTT 3.242 app code (cal store, CW key delay + fades, TUN/PTT DAC mute, mode drain) + Elecraft T1 port kept (`t1.c`, `T1_Main()` in the beater, `STATUS_ATU_0`). Schematic: `Key_Delay_Timer` (FF 16-bit, CW_Clock, period 10, continuous, reset tied 0) + `Key_Delay_isr` added on the CW Management sheet. Built 10-31, **tested on a radio 11-01**; T1 untested (no T1 here) |
 | FW Geminus MKII | 2.153 | **0xC8 calibration store (2.152)**, **DAC soft-mute shaping on TUN/PTT and CW (2.153)** |
 
 ## Ultimus firmware built from the Proficio trees (2026-10-31)
@@ -146,6 +146,24 @@ every pull. Newest first. Detailed write-ups for Ron go in `.mscc-coord/NOTE-FOR
   so nobody re-calibrates), a factory set version, TX/RX I/Q stored in the radio,
   reset to factory later (needs the 0xC8 clear back, removed in 3.239: ask Ron why).
 - Geminus MKII firmware: 0xC8 added in 2.152 (2026-10-31).
+
+## TX edges: ATU timer fix and the 12 kHz comb (2026-11-02)
+
+Details and pictures: `.mscc-coord/NOTE-FOR-RON-TX-EDGE-COMB-DAC-SOFT-MUTE-2026-11-02.md`,
+`.mscc-coord/RESULTS/2026-11-02-tx-edges/`.
+
+- **ATU 4.244 / Ultimus 7.244:** `Key_Delay_isr` was DERIVED (level on the timer TC) in the ATU
+  TopDesign, RISING_EDGE in the PTT. The ms tick ran fast, every delay was too short, and the PA
+  switched with RF up (wide-band noise at key-down and release). Set to RISING_EDGE by Stew;
+  tested clean.
+- **Comb 12 kHz apart, about -65 dBc, ~16 ms at every non-QSK ramp-down** (TUN, 2 TONE, SSB/DIG
+  release, each CW key-up; all firmwares): the PCM3060 soft mute steps 0.5 dB every 8/fs = a 12 kHz
+  staircase. QSK skips the ramp: no comb, but hot switching (wide-band edges). Not fixed. Options
+  sent to Ron: leave it, or fade in trans and delay radio PTT off until trans's queued audio is out.
+- PTT 3.243 / ATU 4.244 also keep the DAC muted in non-QSK RX (unmute only after PA on). No
+  effect on the comb; harmless; Ron to say keep or revert.
+- Beep in Phones at the end of 2 TONE / click at the end of TUN: guess = recv unmutes during the
+  radio's 28 ms ramp-down. Not checked yet.
 
 ## SWR meter fault from the Pi, client 11.1.5 (2026-11-01)
 

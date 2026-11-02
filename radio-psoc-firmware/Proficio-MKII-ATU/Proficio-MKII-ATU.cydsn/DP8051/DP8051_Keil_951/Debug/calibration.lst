@@ -1,4 +1,4 @@
-C51 COMPILER V9.51   CALIBRATION                                                           10/31/2026 20:28:59 PAGE 1   
+C51 COMPILER V9.51   CALIBRATION                                                           11/02/2026 09:14:27 PAGE 1   
 
 
 C51 COMPILER V9.51, COMPILATION OF MODULE CALIBRATION
@@ -62,7 +62,7 @@ line level    source
   50          static uint8 Cal_Sum(const uint8 *p) {
   51   1          uint8 i, sum = 0;
   52   1      
-C51 COMPILER V9.51   CALIBRATION                                                           10/31/2026 20:28:59 PAGE 2   
+C51 COMPILER V9.51   CALIBRATION                                                           11/02/2026 09:14:27 PAGE 2   
 
   53   1          for (i = 0; i < (CYDEV_EEPROM_ROW_SIZE - 1u); i++) sum += p[i];
   54   1          return sum;
@@ -126,7 +126,7 @@ line level    source
  112   2              if (E_cal_quiet) {                      // a set just arrived: let the data stage land
  113   3                  E_cal_quiet--;
  114   3                  break;
-C51 COMPILER V9.51   CALIBRATION                                                           10/31/2026 20:28:59 PAGE 3   
+C51 COMPILER V9.51   CALIBRATION                                                           11/02/2026 09:14:27 PAGE 3   
 
  115   3              }
  116   2              if (TX_Request || E_PTT || E_key_down) break;   // rows stay dirty until RX
@@ -160,7 +160,7 @@ line level    source
  144   2              break;
  145   2          }
  146   1      }
-C51 COMPILER V9.51   CALIBRATION                                                           10/31/2026 20:28:59 PAGE 4   
+C51 COMPILER V9.51   CALIBRATION                                                           11/02/2026 09:14:27 PAGE 4   
 
 ASSEMBLY LISTING OF GENERATED OBJECT CODE
 
@@ -224,7 +224,7 @@ ASSEMBLY LISTING OF GENERATED OBJECT CODE
                        MOV     A,#01H
                        MOV     R0,AR6
                        INC     R0
-C51 COMPILER V9.51   CALIBRATION                                                           10/31/2026 20:28:59 PAGE 5   
+C51 COMPILER V9.51   CALIBRATION                                                           11/02/2026 09:14:27 PAGE 5   
 
                  R     xJMP    ?C0047
              ?C0046:
@@ -288,7 +288,7 @@ ASSEMBLY LISTING OF GENERATED OBJECT CODE
                        ORL     A,#02H
                        MOVX    @DPTR,A
              ?C0006:
-C51 COMPILER V9.51   CALIBRATION                                                           10/31/2026 20:28:59 PAGE 6   
+C51 COMPILER V9.51   CALIBRATION                                                           11/02/2026 09:14:27 PAGE 6   
 
                                            ; SOURCE LINE # 66
                  R     MOV     A,#LOW E_cal+082H
@@ -352,7 +352,7 @@ ASSEMBLY LISTING OF GENERATED OBJECT CODE
                        ADD     A,R7
                        MOV     DPL,A
                        CLR     A
-C51 COMPILER V9.51   CALIBRATION                                                           10/31/2026 20:28:59 PAGE 7   
+C51 COMPILER V9.51   CALIBRATION                                                           11/02/2026 09:14:27 PAGE 7   
 
                        ADDC    A,DPH
                        MOV     DPH,A
@@ -416,7 +416,7 @@ ASSEMBLY LISTING OF GENERATED OBJECT CODE
                        MOV     R5,#00H
                        MOV     R3,#01H
                  R     MOV     R2,#HIGH E_cal
-C51 COMPILER V9.51   CALIBRATION                                                           10/31/2026 20:28:59 PAGE 8   
+C51 COMPILER V9.51   CALIBRATION                                                           11/02/2026 09:14:27 PAGE 8   
 
                  R     MOV     R1,#LOW E_cal
                  E     CALL    ?C?MEMSET
@@ -480,7 +480,7 @@ ASSEMBLY LISTING OF GENERATED OBJECT CODE
                        MOV     DPH,A
                        MOV     A,R4
                        MOVX    @DPTR,A
-C51 COMPILER V9.51   CALIBRATION                                                           10/31/2026 20:28:59 PAGE 9   
+C51 COMPILER V9.51   CALIBRATION                                                           11/02/2026 09:14:27 PAGE 9   
 
                  R     MOV     DPTR,#i
                        MOVX    A,@DPTR
@@ -544,7 +544,7 @@ ASSEMBLY LISTING OF GENERATED OBJECT CODE
                        MOVX    A,@DPTR
                        MOV     R5,A
                  R     xJNB    ACC.0,?C0020
-C51 COMPILER V9.51   CALIBRATION                                                           10/31/2026 20:28:59 PAGE 10  
+C51 COMPILER V9.51   CALIBRATION                                                           11/02/2026 09:14:27 PAGE 10  
 
                  R     MOV     A,#LOW E_cal+07EH
                        ADD     A,R7
@@ -608,7 +608,7 @@ ASSEMBLY LISTING OF GENERATED OBJECT CODE
                        MOV     R5,A
                        ADD     A,ACC
                        ADD     A,ACC
-C51 COMPILER V9.51   CALIBRATION                                                           10/31/2026 20:28:59 PAGE 11  
+C51 COMPILER V9.51   CALIBRATION                                                           11/02/2026 09:14:27 PAGE 11  
 
                  R     ADD     A,#LOW E_cal+06H
                        MOV     DPL,A
@@ -672,7 +672,7 @@ ASSEMBLY LISTING OF GENERATED OBJECT CODE
                        MOV     DPH,A
                        MOV     A,R7
                        MOVX    @DPTR,A
-C51 COMPILER V9.51   CALIBRATION                                                           10/31/2026 20:28:59 PAGE 12  
+C51 COMPILER V9.51   CALIBRATION                                                           11/02/2026 09:14:27 PAGE 12  
 
                                            ; SOURCE LINE # 100
                  R     MOV     DPTR,#l_row+0DH
@@ -736,7 +736,7 @@ ASSEMBLY LISTING OF GENERATED OBJECT CODE
                  E     MOV     DPTR,#E_key_down
                        MOVX    A,@DPTR
                  R     xJNZ    ?C0045
-C51 COMPILER V9.51   CALIBRATION                                                           10/31/2026 20:28:59 PAGE 13  
+C51 COMPILER V9.51   CALIBRATION                                                           11/02/2026 09:14:27 PAGE 13  
 
              ?C0030:
                                            ; SOURCE LINE # 117
@@ -800,7 +800,7 @@ ASSEMBLY LISTING OF GENERATED OBJECT CODE
                        MOV     A,#01H
                        MOVX    @DPTR,A
                                            ; SOURCE LINE # 126
-C51 COMPILER V9.51   CALIBRATION                                                           10/31/2026 20:28:59 PAGE 14  
+C51 COMPILER V9.51   CALIBRATION                                                           11/02/2026 09:14:27 PAGE 14  
 
                        MOV     R3,A
                  R     MOV     R2,#HIGH l_row
@@ -864,7 +864,7 @@ ASSEMBLY LISTING OF GENERATED OBJECT CODE
                  R     xJNZ    ?C0043
                        INC     DPTR
                        INC     A
-C51 COMPILER V9.51   CALIBRATION                                                           10/31/2026 20:28:59 PAGE 15  
+C51 COMPILER V9.51   CALIBRATION                                                           11/02/2026 09:14:27 PAGE 15  
 
                        MOVX    @DPTR,A
              ?C0043:

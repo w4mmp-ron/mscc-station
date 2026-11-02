@@ -2,7 +2,7 @@
 --	Conversion of Proficio-MKII-ATU.v to vh2:
 --
 --	Cypress Semiconductor - WARP Version 6.3 IR 41
---	Sat Oct 31 20:28:40 2026
+--	Mon Nov 02 09:02:35 2026
 --
 
 USE cypress.cypress.all;
@@ -5282,7 +5282,7 @@ ATU_1:cy_psoc3_pins_v1_10
 		compare=>\Key_Delay_Timer:Net_261\,
 		interrupt=>\Key_Delay_Timer:Net_57\);
 Key_Delay_isr:cy_isr_v1_0
-	GENERIC MAP(int_type=>"10",
+	GENERIC MAP(int_type=>"00",
 		is_nmi=>'0')
 	PORT MAP(int_signal=>Net_8153);
 \I2S:bI2S:reset\:cy_dff

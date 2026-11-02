@@ -1,6 +1,6 @@
 // ======================================================================
 // Proficio-MKII-ATU.v generated from TopDesign.cysch
-// 10/31/2026 at 20:28
+// 11/02/2026 at 09:02
 // This file is auto generated. ANY EDITS YOU MAKE MAY BE LOST WHEN THIS FILE IS REGENERATED!!!
 // ======================================================================
 
@@ -3194,7 +3194,7 @@ module top ;
 
 
 	cy_isr_v1_0
-		#(.int_type(2'b10))
+		#(.int_type(2'b00))
 		Key_Delay_isr
 		 (.int_signal(Net_8153));
 

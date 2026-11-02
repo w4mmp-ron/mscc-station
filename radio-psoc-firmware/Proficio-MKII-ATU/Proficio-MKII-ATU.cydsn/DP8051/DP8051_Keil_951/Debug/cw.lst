@@ -1,4 +1,4 @@
-C51 COMPILER V9.51   CW                                                                    10/31/2026 20:28:58 PAGE 1   
+C51 COMPILER V9.51   CW                                                                    11/02/2026 09:14:26 PAGE 1   
 
 
 C51 COMPILER V9.51, COMPILATION OF MODULE CW
@@ -62,7 +62,7 @@ line level    source
   50          
   51          CY_ISR(QSK_interrupt){
   52   1          QSK_pop_filter = FALSE;
-C51 COMPILER V9.51   CW                                                                    10/31/2026 20:28:58 PAGE 2   
+C51 COMPILER V9.51   CW                                                                    11/02/2026 09:14:26 PAGE 2   
 
   53   1      }
   54          
@@ -126,7 +126,7 @@ line level    source
  112   2              return;
  113   2          }
  114   1          reg = Status_Status;
-C51 COMPILER V9.51   CW                                                                    10/31/2026 20:28:58 PAGE 3   
+C51 COMPILER V9.51   CW                                                                    11/02/2026 09:14:26 PAGE 3   
 
  115   1          key = (!(reg & STATUS_KEY_0) || !(reg & STATUS_KEY_1));
  116   1          key_delay_buf[key_delay_idx] = key;
@@ -170,14 +170,14 @@ line level    source
  153   1          dac_muted = mute;
  154   1      }
  155          
- 156          /* Main loop, on leaving CW: stop the ISR; DAC back to full for SSB / digital / TUNE */
- 157          void CW_Key_Delay_Stop(void)
- 158          {
- 159   1          key_delay_active = FALSE;
- 160   1          key_delay_busy = FALSE;
- 161   1          rf_on = FALSE;
- 162   1          dac_req = DAC_REQ_NONE;
- 163   1          if(dac_muted) cw_dac_mute(FALSE);
+ 156          /* Main loop, on leaving CW: stop the ISR. 3.243: the DAC is left as it is; TX_Main() sets it
+ 157           * on its next pass (muted in non-QSK RX, full in QSK). */
+ 158          void CW_Key_Delay_Stop(void)
+ 159          {
+ 160   1          key_delay_active = FALSE;
+ 161   1          key_delay_busy = FALSE;
+ 162   1          rf_on = FALSE;
+ 163   1          dac_req = DAC_REQ_NONE;
  164   1      }
  165          
  166          /* Main loop only (I2C): DAC soft mute for the PTT / TUNE path in tx.c (3.241).
@@ -190,7 +190,7 @@ line level    source
  173          uint8 keyer_write(uint8_t buffer)
  174          {
  175   1              uint8_t msg_buffer = 0;
-C51 COMPILER V9.51   CW                                                                    10/31/2026 20:28:58 PAGE 4   
+C51 COMPILER V9.51   CW                                                                    11/02/2026 09:14:26 PAGE 4   
 
  176   1              uint8_t ret_status = 0;
  177   1              uint8_t write_status = 0;
@@ -254,7 +254,7 @@ line level    source
  235   2              case 0:
  236   2              if(keyer_mode != E_keyer_mode){
  237   3                  buffer[0] = SET_KEYER_MODE;
-C51 COMPILER V9.51   CW                                                                    10/31/2026 20:28:58 PAGE 5   
+C51 COMPILER V9.51   CW                                                                    11/02/2026 09:14:26 PAGE 5   
 
  238   3                  buffer[1] = E_keyer_mode;
  239   3                  keyer_mode = E_keyer_mode;
@@ -318,7 +318,7 @@ line level    source
  297   3                  state++;
  298   3              }
  299   2              break;
-C51 COMPILER V9.51   CW                                                                    10/31/2026 20:28:58 PAGE 6   
+C51 COMPILER V9.51   CW                                                                    11/02/2026 09:14:26 PAGE 6   
 
  300   2      
  301   2              case 6:
@@ -382,7 +382,7 @@ line level    source
  359   1          return state;
  360   1      }
  361          
-C51 COMPILER V9.51   CW                                                                    10/31/2026 20:28:58 PAGE 7   
+C51 COMPILER V9.51   CW                                                                    11/02/2026 09:14:26 PAGE 7   
 
  362          void Manage_Paddles_Port(void)  
  363          {
@@ -446,7 +446,7 @@ line level    source
              -elay_ms > DAC_RISE_LEAD_MS
  416   4                          key_up_ms = 0;          //Key is down now
  417   4                          key_delay_busy = TRUE;
-C51 COMPILER V9.51   CW                                                                    10/31/2026 20:28:58 PAGE 8   
+C51 COMPILER V9.51   CW                                                                    11/02/2026 09:14:26 PAGE 8   
 
  418   4                          key_delay_lo_ready = FALSE;
  419   4                          rf_on = FALSE;
@@ -510,7 +510,7 @@ line level    source
  467   2                  E_cw_hold = TRUE;
  468   2                  CW_Hold_Control_Write(CW_CONTROL_RESET);
  469   2                  state++;
-C51 COMPILER V9.51   CW                                                                    10/31/2026 20:28:58 PAGE 9   
+C51 COMPILER V9.51   CW                                                                    11/02/2026 09:14:26 PAGE 9   
 
  470   2                  break;
  471   2              case 7: //Check CW hold timer.  KEY is UP
@@ -574,13 +574,13 @@ line level    source
  526   3                      E_key_down = FALSE;
  527   3                      state = 0;
  528   3                  }
-C51 COMPILER V9.51   CW                                                                    10/31/2026 20:28:58 PAGE 10  
+C51 COMPILER V9.51   CW                                                                    11/02/2026 09:14:26 PAGE 10  
 
  529   2                  break;
  530   2          }
  531   1      }
  532            
-C51 COMPILER V9.51   CW                                                                    10/31/2026 20:28:58 PAGE 11  
+C51 COMPILER V9.51   CW                                                                    11/02/2026 09:14:26 PAGE 11  
 
 ASSEMBLY LISTING OF GENERATED OBJECT CODE
 
@@ -644,7 +644,7 @@ ASSEMBLY LISTING OF GENERATED OBJECT CODE
              ; FUNCTION QSK_interrupt (END)
 
              ; FUNCTION KEY_DELAY_interrupt (BEGIN)
-C51 COMPILER V9.51   CW                                                                    10/31/2026 20:28:58 PAGE 12  
+C51 COMPILER V9.51   CW                                                                    11/02/2026 09:14:26 PAGE 12  
 
                        PUSH    ACC
                        PUSH    DPH
@@ -708,7 +708,7 @@ ASSEMBLY LISTING OF GENERATED OBJECT CODE
                        MOVX    A,@DPTR
                        MOV     R7,A
 ;---- Variable 'reg' assigned to Register 'R7' ----
-C51 COMPILER V9.51   CW                                                                    10/31/2026 20:28:58 PAGE 13  
+C51 COMPILER V9.51   CW                                                                    11/02/2026 09:14:26 PAGE 13  
 
                                            ; SOURCE LINE # 115
                  R     xJNB    ACC.0,?C0010
@@ -772,7 +772,7 @@ ASSEMBLY LISTING OF GENERATED OBJECT CODE
                        MOV     DPL,A
                        MOV     A,R4
                  R     ADDC    A,#HIGH key_delay_buf
-C51 COMPILER V9.51   CW                                                                    10/31/2026 20:28:58 PAGE 14  
+C51 COMPILER V9.51   CW                                                                    11/02/2026 09:14:26 PAGE 14  
 
                        MOV     DPH,A
                        MOVX    A,@DPTR
@@ -836,7 +836,7 @@ ASSEMBLY LISTING OF GENERATED OBJECT CODE
                                            ; SOURCE LINE # 133
                  R     MOV     DPTR,#rf_on
                        CLR     A
-C51 COMPILER V9.51   CW                                                                    10/31/2026 20:28:58 PAGE 15  
+C51 COMPILER V9.51   CW                                                                    11/02/2026 09:14:26 PAGE 15  
 
                        MOVX    @DPTR,A
                                            ; SOURCE LINE # 134
@@ -900,7 +900,7 @@ ASSEMBLY LISTING OF GENERATED OBJECT CODE
                        MOV     R7,A
                  R     MOV     DPTR,#key_up_ms
                        MOVX    A,@DPTR
-C51 COMPILER V9.51   CW                                                                    10/31/2026 20:28:58 PAGE 16  
+C51 COMPILER V9.51   CW                                                                    11/02/2026 09:14:26 PAGE 16  
 
                        SETB    C
                        SUBB    A,R7
@@ -962,32 +962,24 @@ ASSEMBLY LISTING OF GENERATED OBJECT CODE
              ; FUNCTION _cw_dac_mute (END)
 
              ; FUNCTION CW_Key_Delay_Stop (BEGIN)
-                                           ; SOURCE LINE # 157
                                            ; SOURCE LINE # 158
-C51 COMPILER V9.51   CW                                                                    10/31/2026 20:28:58 PAGE 17  
-
                                            ; SOURCE LINE # 159
+C51 COMPILER V9.51   CW                                                                    11/02/2026 09:14:26 PAGE 17  
+
+                                           ; SOURCE LINE # 160
                        CLR     A
                  R     MOV     DPTR,#key_delay_active
                        MOVX    @DPTR,A
-                                           ; SOURCE LINE # 160
+                                           ; SOURCE LINE # 161
                  R     MOV     DPTR,#key_delay_busy
                        MOVX    @DPTR,A
-                                           ; SOURCE LINE # 161
+                                           ; SOURCE LINE # 162
                  R     MOV     DPTR,#rf_on
                        MOVX    @DPTR,A
-                                           ; SOURCE LINE # 162
+                                           ; SOURCE LINE # 163
                  R     MOV     DPTR,#dac_req
                        MOVX    @DPTR,A
-                                           ; SOURCE LINE # 163
-                 R     MOV     DPTR,#dac_muted
-                       MOVX    A,@DPTR
-                 R     xJZ     ?C0034
-                       CLR     A
-                       MOV     R7,A
-                 R     CALL    _cw_dac_mute
                                            ; SOURCE LINE # 164
-             ?C0034:
                        RET     
              ; FUNCTION CW_Key_Delay_Stop (END)
 
@@ -999,10 +991,10 @@ ASSEMBLY LISTING OF GENERATED OBJECT CODE
                  R     MOV     DPTR,#dac_muted
                        MOVX    A,@DPTR
                        XRL     A,R7
-                 R     xJZ     ?C0036
+                 R     xJZ     ?C0035
                  R     CALL    _cw_dac_mute
                                            ; SOURCE LINE # 171
-             ?C0036:
+             ?C0035:
                        RET     
              ; FUNCTION _TX_DAC_Mute (END)
 
@@ -1028,17 +1020,17 @@ ASSEMBLY LISTING OF GENERATED OBJECT CODE
                        MOV     A,R7
                        MOVX    @DPTR,A
                                            ; SOURCE LINE # 186
-C51 COMPILER V9.51   CW                                                                    10/31/2026 20:28:58 PAGE 18  
-
                        CLR     A
                  R     MOV     DPTR,#attempt
                        MOVX    @DPTR,A
-             ?C0037:
+             ?C0036:
                  R     MOV     DPTR,#attempt
                        MOVX    A,@DPTR
                        CLR     C
                        SUBB    A,#08H
-                 R     xJGE    ?C0038
+C51 COMPILER V9.51   CW                                                                    11/02/2026 09:14:26 PAGE 18  
+
+                 R     xJGE    ?C0037
                                            ; SOURCE LINE # 187
                        MOV     R3,#01H
                  R     MOV     R2,#HIGH msg_buffer
@@ -1054,28 +1046,28 @@ ASSEMBLY LISTING OF GENERATED OBJECT CODE
                  R     MOV     DPTR,#write_status
                        MOV     A,R7
                        MOVX    @DPTR,A
-             ?C0040:
+             ?C0039:
                                            ; SOURCE LINE # 189
                  E     CALL    I2C_DISPLAY_MasterStatus
                        MOV     A,R7
-                 R     xJNB    ACC.1,?C0040
+                 R     xJNB    ACC.1,?C0039
                                            ; SOURCE LINE # 190
-             ?C0041:
+             ?C0040:
                                            ; SOURCE LINE # 191
                  E     CALL    I2C_DISPLAY_MasterGetWriteBufSize
                  R     MOV     DPTR,#buffer_written
                        MOV     A,R7
                        MOVX    @DPTR,A
                                            ; SOURCE LINE # 192
-                 R     xJNE    A,#01H,?C0042
+                 R     xJNE    A,#01H,?C0041
                                            ; SOURCE LINE # 193
                  R     MOV     DPTR,#ret_status
                        MOV     A,#01H
                        MOVX    @DPTR,A
                                            ; SOURCE LINE # 194
-                 R     xJMP    ?C0038
+                 R     xJMP    ?C0037
                                            ; SOURCE LINE # 195
-             ?C0042:
+             ?C0041:
                                            ; SOURCE LINE # 196
                        CLR     A
                        MOV     R7,#05H
@@ -1088,20 +1080,20 @@ ASSEMBLY LISTING OF GENERATED OBJECT CODE
                        MOVX    A,@DPTR
                        INC     A
                        MOVX    @DPTR,A
-                 R     xJMP    ?C0037
-             ?C0038:
+                 R     xJMP    ?C0036
+             ?C0037:
                                            ; SOURCE LINE # 198
                  R     MOV     DPTR,#ret_status
-C51 COMPILER V9.51   CW                                                                    10/31/2026 20:28:58 PAGE 19  
-
                        MOVX    A,@DPTR
                        MOV     R7,A
                                            ; SOURCE LINE # 199
-             ?C0043:
+             ?C0042:
                        RET     
              ; FUNCTION _keyer_write (END)
 
              ; FUNCTION Configure_CW (BEGIN)
+C51 COMPILER V9.51   CW                                                                    11/02/2026 09:14:26 PAGE 19  
+
                                            ; SOURCE LINE # 201
                                            ; SOURCE LINE # 213
                        CLR     A
@@ -1129,18 +1121,18 @@ ASSEMBLY LISTING OF GENERATED OBJECT CODE
 ;---- Variable 's1' assigned to Register 'R4' ----
                                            ; SOURCE LINE # 225
                        MOV     A,R6
-                 R     xJZ     ?C0044
+                 R     xJZ     ?C0043
                        XRL     A,R4
-                 R     xJNZ    ?C0044
+                 R     xJNZ    ?C0043
                        MOV     A,R7
                        XRL     A,R5
-                 R     xJNZ    ?C0044
+                 R     xJNZ    ?C0043
                  R     MOV     DPTR,#last_mem_seq
                        MOVX    A,@DPTR
                        MOV     R5,A
                        MOV     A,R6
                        XRL     A,R5
-                 R     xJZ     ?C0044
+                 R     xJZ     ?C0043
                                            ; SOURCE LINE # 226
                        MOV     A,R6
                        MOVX    @DPTR,A
@@ -1149,15 +1141,13 @@ ASSEMBLY LISTING OF GENERATED OBJECT CODE
                        MOVX    A,@DPTR
                        CLR     C
                        SUBB    A,#050H
-                 R     xJGE    ?C0044
+                 R     xJGE    ?C0043
                                            ; SOURCE LINE # 228
                  E     MOV     DPTR,#E_keyer_mem_q_head
                        MOVX    A,@DPTR
                  E     ADD     A,#LOW E_keyer_mem_q
                        MOV     DPL,A
                        CLR     A
-C51 COMPILER V9.51   CW                                                                    10/31/2026 20:28:58 PAGE 20  
-
                  E     ADDC    A,#HIGH E_keyer_mem_q
                        MOV     DPH,A
                        MOV     A,R7
@@ -1166,6 +1156,8 @@ ASSEMBLY LISTING OF GENERATED OBJECT CODE
                  E     MOV     DPTR,#E_keyer_mem_q_head
                        MOVX    A,@DPTR
                        INC     A
+C51 COMPILER V9.51   CW                                                                    11/02/2026 09:14:26 PAGE 20  
+
                        MOV     B,#050H
                        DIV     AB
                        MOV     A,B
@@ -1177,32 +1169,32 @@ ASSEMBLY LISTING OF GENERATED OBJECT CODE
                        MOVX    @DPTR,A
                                            ; SOURCE LINE # 231
                                            ; SOURCE LINE # 232
-             ?C0044:
+             ?C0043:
                                            ; SOURCE LINE # 234
                  R     MOV     DPTR,#state
                        MOVX    A,@DPTR
-                 R     CJNE    A,#0BH,?C0147
-             ?C0147:
-                 R     xJNC    ?C0046
-                 R     MOV     DPTR,#?C0148
+                 R     CJNE    A,#0BH,?C0146
+             ?C0146:
+                 R     xJNC    ?C0045
+                 R     MOV     DPTR,#?C0147
                        MOV     R0,A
                        ADD     A,R0
                        ADD     A,R0
                        JMP     @A+DPTR
-             ?C0148:
-                 R     LJMP    ?C0047
-                 R     LJMP    ?C0050
-                 R     LJMP    ?C0053
-                 R     LJMP    ?C0056
-                 R     LJMP    ?C0059
-                 R     LJMP    ?C0062
-                 R     LJMP    ?C0065
-                 R     LJMP    ?C0068
+             ?C0147:
                  R     LJMP    ?C0046
-                 R     LJMP    ?C0046
-                 R     LJMP    ?C0071
+                 R     LJMP    ?C0049
+                 R     LJMP    ?C0052
+                 R     LJMP    ?C0055
+                 R     LJMP    ?C0058
+                 R     LJMP    ?C0061
+                 R     LJMP    ?C0064
+                 R     LJMP    ?C0067
+                 R     LJMP    ?C0045
+                 R     LJMP    ?C0045
+                 R     LJMP    ?C0070
                                            ; SOURCE LINE # 235
-             ?C0047:
+             ?C0046:
                                            ; SOURCE LINE # 236
                  E     MOV     DPTR,#E_keyer_mode
                        MOVX    A,@DPTR
@@ -1210,7 +1202,7 @@ ASSEMBLY LISTING OF GENERATED OBJECT CODE
                  R     MOV     DPTR,#keyer_mode
                        MOVX    A,@DPTR
                        XRL     A,R7
-                 R     xJZ     ?C0048
+                 R     xJZ     ?C0047
                                            ; SOURCE LINE # 237
                  R     MOV     DPTR,#buffer
                        MOV     A,#071H
@@ -1220,8 +1212,6 @@ ASSEMBLY LISTING OF GENERATED OBJECT CODE
                        MOV     A,R7
                        MOVX    @DPTR,A
                                            ; SOURCE LINE # 239
-C51 COMPILER V9.51   CW                                                                    10/31/2026 20:28:58 PAGE 21  
-
                  R     MOV     DPTR,#keyer_mode
                        MOVX    @DPTR,A
                                            ; SOURCE LINE # 240
@@ -1229,8 +1219,10 @@ ASSEMBLY LISTING OF GENERATED OBJECT CODE
                        MOV     A,#0AH
                        MOVX    @DPTR,A
                                            ; SOURCE LINE # 241
-                 R     xJMP    ?C0046
-             ?C0048:
+                 R     xJMP    ?C0045
+C51 COMPILER V9.51   CW                                                                    11/02/2026 09:14:26 PAGE 21  
+
+             ?C0047:
                                            ; SOURCE LINE # 242
                  R     MOV     DPTR,#state
                        MOVX    A,@DPTR
@@ -1238,9 +1230,9 @@ ASSEMBLY LISTING OF GENERATED OBJECT CODE
                        MOVX    @DPTR,A
                                            ; SOURCE LINE # 243
                                            ; SOURCE LINE # 244
-                 R     xJMP    ?C0046
+                 R     xJMP    ?C0045
                                            ; SOURCE LINE # 246
-             ?C0050:
+             ?C0049:
                                            ; SOURCE LINE # 247
                  E     MOV     DPTR,#E_paddle
                        MOVX    A,@DPTR
@@ -1248,7 +1240,7 @@ ASSEMBLY LISTING OF GENERATED OBJECT CODE
                  R     MOV     DPTR,#paddle
                        MOVX    A,@DPTR
                        XRL     A,R7
-                 R     xJZ     ?C0051
+                 R     xJZ     ?C0050
                                            ; SOURCE LINE # 248
                        INC     DPTR
                        MOV     A,#073H
@@ -1265,8 +1257,8 @@ ASSEMBLY LISTING OF GENERATED OBJECT CODE
                        MOV     A,#0AH
                        MOVX    @DPTR,A
                                            ; SOURCE LINE # 252
-                 R     xJMP    ?C0046
-             ?C0051:
+                 R     xJMP    ?C0045
+             ?C0050:
                                            ; SOURCE LINE # 253
                  R     MOV     DPTR,#state
                        MOVX    A,@DPTR
@@ -1274,9 +1266,9 @@ ASSEMBLY LISTING OF GENERATED OBJECT CODE
                        MOVX    @DPTR,A
                                            ; SOURCE LINE # 254
                                            ; SOURCE LINE # 255
-                 R     xJMP    ?C0046
+                 R     xJMP    ?C0045
                                            ; SOURCE LINE # 257
-             ?C0053:
+             ?C0052:
                                            ; SOURCE LINE # 258
                  E     MOV     DPTR,#E_spacing
                        MOVX    A,@DPTR
@@ -1284,9 +1276,7 @@ ASSEMBLY LISTING OF GENERATED OBJECT CODE
                  R     MOV     DPTR,#spacing
                        MOVX    A,@DPTR
                        XRL     A,R7
-C51 COMPILER V9.51   CW                                                                    10/31/2026 20:28:58 PAGE 22  
-
-                 R     xJZ     ?C0054
+                 R     xJZ     ?C0053
                                            ; SOURCE LINE # 259
                  R     MOV     DPTR,#buffer
                        MOV     A,#075H
@@ -1294,6 +1284,8 @@ ASSEMBLY LISTING OF GENERATED OBJECT CODE
                                            ; SOURCE LINE # 260
                        INC     DPTR
                        MOV     A,R7
+C51 COMPILER V9.51   CW                                                                    11/02/2026 09:14:26 PAGE 22  
+
                        MOVX    @DPTR,A
                                            ; SOURCE LINE # 261
                  R     MOV     DPTR,#spacing
@@ -1303,8 +1295,8 @@ ASSEMBLY LISTING OF GENERATED OBJECT CODE
                        MOV     A,#0AH
                        MOVX    @DPTR,A
                                            ; SOURCE LINE # 263
-                 R     xJMP    ?C0046
-             ?C0054:
+                 R     xJMP    ?C0045
+             ?C0053:
                                            ; SOURCE LINE # 264
                  R     MOV     DPTR,#state
                        MOVX    A,@DPTR
@@ -1312,9 +1304,9 @@ ASSEMBLY LISTING OF GENERATED OBJECT CODE
                        MOVX    @DPTR,A
                                            ; SOURCE LINE # 265
                                            ; SOURCE LINE # 266
-                 R     xJMP    ?C0046
+                 R     xJMP    ?C0045
                                            ; SOURCE LINE # 268
-             ?C0056:
+             ?C0055:
                                            ; SOURCE LINE # 269
                  E     MOV     DPTR,#E_weight
                        MOVX    A,@DPTR
@@ -1322,7 +1314,7 @@ ASSEMBLY LISTING OF GENERATED OBJECT CODE
                  R     MOV     DPTR,#weight
                        MOVX    A,@DPTR
                        XRL     A,R7
-                 R     xJZ     ?C0057
+                 R     xJZ     ?C0056
                                            ; SOURCE LINE # 270
                  R     MOV     DPTR,#buffer
                        MOV     A,#077H
@@ -1339,8 +1331,8 @@ ASSEMBLY LISTING OF GENERATED OBJECT CODE
                        MOV     A,#0AH
                        MOVX    @DPTR,A
                                            ; SOURCE LINE # 274
-                 R     xJMP    ?C0046
-             ?C0057:
+                 R     xJMP    ?C0045
+             ?C0056:
                                            ; SOURCE LINE # 275
                  R     MOV     DPTR,#state
                        MOVX    A,@DPTR
@@ -1348,19 +1340,19 @@ ASSEMBLY LISTING OF GENERATED OBJECT CODE
                        MOVX    @DPTR,A
                                            ; SOURCE LINE # 276
                                            ; SOURCE LINE # 277
-C51 COMPILER V9.51   CW                                                                    10/31/2026 20:28:58 PAGE 23  
-
-                 R     xJMP    ?C0046
+                 R     xJMP    ?C0045
                                            ; SOURCE LINE # 279
-             ?C0059:
+             ?C0058:
                                            ; SOURCE LINE # 280
                  E     MOV     DPTR,#E_side_tone
                        MOVX    A,@DPTR
                        MOV     R7,A
                  R     MOV     DPTR,#side_tone
+C51 COMPILER V9.51   CW                                                                    11/02/2026 09:14:26 PAGE 23  
+
                        MOVX    A,@DPTR
                        XRL     A,R7
-                 R     xJZ     ?C0060
+                 R     xJZ     ?C0059
                                            ; SOURCE LINE # 281
                  R     MOV     DPTR,#buffer
                        MOV     A,#07FH
@@ -1377,8 +1369,8 @@ ASSEMBLY LISTING OF GENERATED OBJECT CODE
                        MOV     A,#0AH
                        MOVX    @DPTR,A
                                            ; SOURCE LINE # 285
-                 R     xJMP    ?C0046
-             ?C0060:
+                 R     xJMP    ?C0045
+             ?C0059:
                                            ; SOURCE LINE # 286
                  R     MOV     DPTR,#state
                        MOVX    A,@DPTR
@@ -1386,9 +1378,9 @@ ASSEMBLY LISTING OF GENERATED OBJECT CODE
                        MOVX    @DPTR,A
                                            ; SOURCE LINE # 287
                                            ; SOURCE LINE # 288
-                 R     xJMP    ?C0046
+                 R     xJMP    ?C0045
                                            ; SOURCE LINE # 290
-             ?C0062:
+             ?C0061:
                                            ; SOURCE LINE # 291
                  E     MOV     DPTR,#E_wpm
                        MOVX    A,@DPTR
@@ -1396,7 +1388,7 @@ ASSEMBLY LISTING OF GENERATED OBJECT CODE
                  R     MOV     DPTR,#wpm
                        MOVX    A,@DPTR
                        XRL     A,R7
-                 R     xJZ     ?C0063
+                 R     xJZ     ?C0062
                                            ; SOURCE LINE # 292
                  R     MOV     DPTR,#buffer
                        MOV     A,#07BH
@@ -1412,21 +1404,21 @@ ASSEMBLY LISTING OF GENERATED OBJECT CODE
                  R     MOV     DPTR,#state
                        MOV     A,#0AH
                        MOVX    @DPTR,A
-C51 COMPILER V9.51   CW                                                                    10/31/2026 20:28:58 PAGE 24  
-
                                            ; SOURCE LINE # 296
-                 R     xJMP    ?C0046
-             ?C0063:
+                 R     xJMP    ?C0045
+             ?C0062:
                                            ; SOURCE LINE # 297
                  R     MOV     DPTR,#state
                        MOVX    A,@DPTR
                        INC     A
                        MOVX    @DPTR,A
+C51 COMPILER V9.51   CW                                                                    11/02/2026 09:14:26 PAGE 24  
+
                                            ; SOURCE LINE # 298
                                            ; SOURCE LINE # 299
-                 R     xJMP    ?C0046
+                 R     xJMP    ?C0045
                                            ; SOURCE LINE # 301
-             ?C0065:
+             ?C0064:
                                            ; SOURCE LINE # 303
                  E     MOV     DPTR,#E_mem_text_wpm
                        MOVX    A,@DPTR
@@ -1434,7 +1426,7 @@ ASSEMBLY LISTING OF GENERATED OBJECT CODE
                  R     MOV     DPTR,#mem_text_wpm
                        MOVX    A,@DPTR
                        XRL     A,R7
-                 R     xJZ     ?C0066
+                 R     xJZ     ?C0065
                                            ; SOURCE LINE # 304
                  R     MOV     DPTR,#buffer
                        MOV     A,#076H
@@ -1451,8 +1443,8 @@ ASSEMBLY LISTING OF GENERATED OBJECT CODE
                        MOV     A,#0AH
                        MOVX    @DPTR,A
                                            ; SOURCE LINE # 308
-                 R     xJMP    ?C0046
-             ?C0066:
+                 R     xJMP    ?C0045
+             ?C0065:
                                            ; SOURCE LINE # 309
                  R     MOV     DPTR,#state
                        MOVX    A,@DPTR
@@ -1460,15 +1452,15 @@ ASSEMBLY LISTING OF GENERATED OBJECT CODE
                        MOVX    @DPTR,A
                                            ; SOURCE LINE # 310
                                            ; SOURCE LINE # 311
-                 R     xJMP    ?C0046
+                 R     xJMP    ?C0045
                                            ; SOURCE LINE # 313
-             ?C0068:
+             ?C0067:
                                            ; SOURCE LINE # 315
                  E     MOV     DPTR,#E_keyer_mem_q_count
                        MOVX    A,@DPTR
                        SETB    C
                        SUBB    A,#00H
-                 R     xJLT    ?C0069
+                 R     xJLT    ?C0068
                                            ; SOURCE LINE # 316
                  R     MOV     DPTR,#buffer
                        MOV     A,#09CH
@@ -1476,8 +1468,6 @@ ASSEMBLY LISTING OF GENERATED OBJECT CODE
                                            ; SOURCE LINE # 317
                  E     MOV     DPTR,#E_keyer_mem_q_tail
                        MOVX    A,@DPTR
-C51 COMPILER V9.51   CW                                                                    10/31/2026 20:28:58 PAGE 25  
-
                  E     ADD     A,#LOW E_keyer_mem_q
                        MOV     DPL,A
                        CLR     A
@@ -1486,6 +1476,8 @@ ASSEMBLY LISTING OF GENERATED OBJECT CODE
                        MOVX    A,@DPTR
                  R     MOV     DPTR,#buffer+01H
                        MOVX    @DPTR,A
+C51 COMPILER V9.51   CW                                                                    11/02/2026 09:14:26 PAGE 25  
+
                                            ; SOURCE LINE # 318
                  E     MOV     DPTR,#E_keyer_mem_q_tail
                        MOVX    A,@DPTR
@@ -1504,26 +1496,26 @@ ASSEMBLY LISTING OF GENERATED OBJECT CODE
                        MOV     A,#0AH
                        MOVX    @DPTR,A
                                            ; SOURCE LINE # 321
-                 R     xJMP    ?C0046
-             ?C0069:
+                 R     xJMP    ?C0045
+             ?C0068:
                                            ; SOURCE LINE # 322
                        CLR     A
                  R     MOV     DPTR,#state
                        MOVX    @DPTR,A
                                            ; SOURCE LINE # 323
                                            ; SOURCE LINE # 324
-                 R     xJMP    ?C0046
+                 R     xJMP    ?C0045
                                            ; SOURCE LINE # 326
-             ?C0071:
+             ?C0070:
                                            ; SOURCE LINE # 327
                  R     MOV     DPTR,#send_state
                        MOVX    A,@DPTR
                        DEC     A
-                 R     xJZ     ?C0076
+                 R     xJZ     ?C0075
                        INC     A
-                 R     xJNZ    ?C0046
+                 R     xJNZ    ?C0045
                                            ; SOURCE LINE # 328
-             ?C0073:
+             ?C0072:
                                            ; SOURCE LINE # 329
                  R     MOV     DPTR,#buffer
                        MOVX    A,@DPTR
@@ -1533,23 +1525,23 @@ ASSEMBLY LISTING OF GENERATED OBJECT CODE
                        MOV     A,R7
                        MOVX    @DPTR,A
                                            ; SOURCE LINE # 330
-                 R     xJNE    A,#01H,?C0074
+                 R     xJNE    A,#01H,?C0073
                                            ; SOURCE LINE # 331
                  R     MOV     DPTR,#send_state
                        MOVX    A,@DPTR
                        INC     A
                        MOVX    @DPTR,A
                                            ; SOURCE LINE # 332
-C51 COMPILER V9.51   CW                                                                    10/31/2026 20:28:58 PAGE 26  
-
                  R     MOV     DPTR,#state
                        MOV     A,#0AH
                        MOVX    @DPTR,A
                                            ; SOURCE LINE # 333
-                 R     xJMP    ?C0046
-             ?C0074:
+                 R     xJMP    ?C0045
+             ?C0073:
                                            ; SOURCE LINE # 334
                        CLR     A
+C51 COMPILER V9.51   CW                                                                    11/02/2026 09:14:26 PAGE 26  
+
                  R     MOV     DPTR,#state
                        MOVX    @DPTR,A
                                            ; SOURCE LINE # 335
@@ -1560,9 +1552,9 @@ ASSEMBLY LISTING OF GENERATED OBJECT CODE
                        MOVX    @DPTR,A
                                            ; SOURCE LINE # 338
                                            ; SOURCE LINE # 339
-                 R     xJMP    ?C0046
+                 R     xJMP    ?C0045
                                            ; SOURCE LINE # 341
-             ?C0076:
+             ?C0075:
                                            ; SOURCE LINE # 342
                  R     MOV     DPTR,#buffer+01H
                        MOVX    A,@DPTR
@@ -1572,7 +1564,7 @@ ASSEMBLY LISTING OF GENERATED OBJECT CODE
                        MOV     A,R7
                        MOVX    @DPTR,A
                                            ; SOURCE LINE # 343
-                 R     xJNE    A,#01H,?C0077
+                 R     xJNE    A,#01H,?C0076
                                            ; SOURCE LINE # 344
                        CLR     A
                  R     MOV     DPTR,#send_state
@@ -1581,8 +1573,8 @@ ASSEMBLY LISTING OF GENERATED OBJECT CODE
                  R     MOV     DPTR,#state
                        MOVX    @DPTR,A
                                            ; SOURCE LINE # 346
-                 R     xJMP    ?C0046
-             ?C0077:
+                 R     xJMP    ?C0045
+             ?C0076:
                                            ; SOURCE LINE # 347
                        CLR     A
                  R     MOV     DPTR,#state
@@ -1600,20 +1592,20 @@ ASSEMBLY LISTING OF GENERATED OBJECT CODE
                                            ; SOURCE LINE # 356
                                            ; SOURCE LINE # 357
                                            ; SOURCE LINE # 358
-             ?C0046:
+             ?C0045:
                                            ; SOURCE LINE # 359
                  R     MOV     DPTR,#state
                        MOVX    A,@DPTR
-C51 COMPILER V9.51   CW                                                                    10/31/2026 20:28:58 PAGE 27  
-
                        MOV     R7,A
                                            ; SOURCE LINE # 360
-             ?C0080:
+             ?C0079:
                        RET     
              ; FUNCTION Configure_CW (END)
 
              ; FUNCTION Manage_Paddles_Port (BEGIN)
                                            ; SOURCE LINE # 362
+C51 COMPILER V9.51   CW                                                                    11/02/2026 09:14:26 PAGE 27  
+
                                            ; SOURCE LINE # 363
                                            ; SOURCE LINE # 367
                        CLR     A
@@ -1641,78 +1633,78 @@ ASSEMBLY LISTING OF GENERATED OBJECT CODE
                                            ; SOURCE LINE # 376
                  R     MOV     DPTR,#req
                        MOVX    A,@DPTR
-                 R     xJNE    A,#02H,?C0081
+                 R     xJNE    A,#02H,?C0080
                                            ; SOURCE LINE # 377
                        CLR     A
                        MOV     R7,A
                  R     CALL    _cw_dac_mute
                                            ; SOURCE LINE # 378
-                 R     xJMP    ?C0082
-             ?C0081:
+                 R     xJMP    ?C0081
+             ?C0080:
                  R     MOV     DPTR,#req
                        MOVX    A,@DPTR
-                 R     xJNE    A,#01H,?C0082
+                 R     xJNE    A,#01H,?C0081
                                            ; SOURCE LINE # 379
                        MOV     R7,#01H
                  R     CALL    _cw_dac_mute
                                            ; SOURCE LINE # 380
-             ?C0082:
+             ?C0081:
                                            ; SOURCE LINE # 382
                  R     MOV     DPTR,#state
                        MOVX    A,@DPTR
                  E     CALL    ?C?CCASE
-                 R     DW      ?C0085
+                 R     DW      ?C0084
                        DB      00H
-                 R     DW      ?C0095
+                 R     DW      ?C0094
                        DB      01H
-                 R     DW      ?C0109
+                 R     DW      ?C0108
                        DB      02H
-                 R     DW      ?C0111
-C51 COMPILER V9.51   CW                                                                    10/31/2026 20:28:58 PAGE 28  
-
+                 R     DW      ?C0110
                        DB      03H
-                 R     DW      ?C0114
+                 R     DW      ?C0113
                        DB      04H
-                 R     DW      ?C0115
+                 R     DW      ?C0114
                        DB      05H
-                 R     DW      ?C0121
+                 R     DW      ?C0120
                        DB      06H
-                 R     DW      ?C0122
+                 R     DW      ?C0121
+C51 COMPILER V9.51   CW                                                                    11/02/2026 09:14:26 PAGE 28  
+
                        DB      07H
-                 R     DW      ?C0126
+                 R     DW      ?C0125
                        DB      0AH
-                 R     DW      ?C0134
+                 R     DW      ?C0133
                        DB      014H
-                 R     DW      ?C0138
+                 R     DW      ?C0137
                        DB      015H
-                 R     DW      ?C0144
+                 R     DW      ?C0143
                        DB      016H
                        DW      00H
-                 R     DW      ?C0146
+                 R     DW      ?C0145
                                            ; SOURCE LINE # 383
-             ?C0085:
+             ?C0084:
                                            ; SOURCE LINE # 384
                  E     MOV     DPTR,#E_QSK
                        MOVX    A,@DPTR
-                 R     xJNZ    ?C0086
+                 R     xJNZ    ?C0085
                                            ; SOURCE LINE # 385
                  R     MOV     DPTR,#dac_muted
                        MOVX    A,@DPTR
-                 R     xJNZ    ?C0088
+                 R     xJNZ    ?C0087
                        MOV     R7,#01H
                  R     CALL    _cw_dac_mute
                                            ; SOURCE LINE # 386
-                 R     xJMP    ?C0088
-             ?C0086:
+                 R     xJMP    ?C0087
+             ?C0085:
                                            ; SOURCE LINE # 387
                  R     MOV     DPTR,#dac_muted
                        MOVX    A,@DPTR
-                 R     xJZ     ?C0088
+                 R     xJZ     ?C0087
                        CLR     A
                        MOV     R7,A
                  R     CALL    _cw_dac_mute
                                            ; SOURCE LINE # 388
-             ?C0088:
+             ?C0087:
                                            ; SOURCE LINE # 389
                  R     MOV     DPTR,#CW_LO_Freq
                        MOVX    A,@DPTR
@@ -1732,8 +1724,6 @@ ASSEMBLY LISTING OF GENERATED OBJECT CODE
                        INC     DPTR
                        MOVX    A,@DPTR
                        MOV     R1,A
-C51 COMPILER V9.51   CW                                                                    10/31/2026 20:28:58 PAGE 29  
-
                        INC     DPTR
                        MOVX    A,@DPTR
                        MOV     R2,A
@@ -1742,7 +1732,9 @@ ASSEMBLY LISTING OF GENERATED OBJECT CODE
                        MOV     R3,A
                        CLR     C
                  E     CALL    ?C?ULCMP
-                 R     xJZ     ?C0090
+C51 COMPILER V9.51   CW                                                                    11/02/2026 09:14:26 PAGE 29  
+
+                 R     xJZ     ?C0089
                                            ; SOURCE LINE # 390
                  R     MOV     DPTR,#CW_LO_Freq
                        MOVX    A,@DPTR
@@ -1761,7 +1753,7 @@ ASSEMBLY LISTING OF GENERATED OBJECT CODE
                        MOV     A,R7
                        MOVX    @DPTR,A
                                            ; SOURCE LINE # 391
-                 R     xJNZ    ?C0146
+                 R     xJNZ    ?C0145
                                            ; SOURCE LINE # 392
                  R     MOV     DPTR,#CW_LO_Freq
                        MOVX    A,@DPTR
@@ -1780,11 +1772,11 @@ ASSEMBLY LISTING OF GENERATED OBJECT CODE
                                            ; SOURCE LINE # 393
                  E     MOV     DPTR,#TX_Inhibit
                        MOVX    A,@DPTR
-                 R     xJNZ    ?C0146
+                 R     xJNZ    ?C0145
                  E     MOV     DPTR,#E_host_mode
                        MOVX    A,@DPTR
                        XRL     A,#043H
-                 R     xJNZ    ?C0146
+                 R     xJNZ    ?C0145
                                            ; SOURCE LINE # 394
                  R     MOV     DPTR,#state
                        MOVX    A,@DPTR
@@ -1794,18 +1786,18 @@ ASSEMBLY LISTING OF GENERATED OBJECT CODE
                                            ; SOURCE LINE # 396
                                            ; SOURCE LINE # 397
                        RET     
-             ?C0090:
+             ?C0089:
                                            ; SOURCE LINE # 398
-C51 COMPILER V9.51   CW                                                                    10/31/2026 20:28:58 PAGE 30  
-
                  E     MOV     DPTR,#TX_Inhibit
                        MOVX    A,@DPTR
-                 R     xJNZ    ?C0146
+                 R     xJNZ    ?C0145
                  E     MOV     DPTR,#E_host_mode
                        MOVX    A,@DPTR
                        XRL     A,#043H
-                 R     xJNZ    ?C0146
+                 R     xJNZ    ?C0145
                                            ; SOURCE LINE # 399
+C51 COMPILER V9.51   CW                                                                    11/02/2026 09:14:26 PAGE 30  
+
                  R     MOV     DPTR,#state
                        MOVX    A,@DPTR
                        INC     A
@@ -1815,7 +1807,7 @@ ASSEMBLY LISTING OF GENERATED OBJECT CODE
                                            ; SOURCE LINE # 402
                        RET     
                                            ; SOURCE LINE # 403
-             ?C0095:
+             ?C0094:
                                            ; SOURCE LINE # 404
                  E     CALL    CyEnterCriticalSection
                  R     MOV     DPTR,#paddles_section
@@ -1835,67 +1827,67 @@ ASSEMBLY LISTING OF GENERATED OBJECT CODE
                  R     MOV     DPTR,#key
                        MOVX    A,@DPTR
                        MOV     R7,A
-                 R     xJNB    ACC.0,?C0096
+                 R     xJNB    ACC.0,?C0095
                  E     MOV     DPTR,#E_key_0
                        MOV     A,#01H
                        MOVX    @DPTR,A
-                 R     xJMP    ?C0097
-             ?C0096:
+                 R     xJMP    ?C0096
+             ?C0095:
                        CLR     A
                  E     MOV     DPTR,#E_key_0
                        MOVX    @DPTR,A
-             ?C0097:
+             ?C0096:
                                            ; SOURCE LINE # 408
                        MOV     A,R7
-                 R     xJNB    ACC.1,?C0098
+                 R     xJNB    ACC.1,?C0097
                  E     MOV     DPTR,#E_key_1
                        MOV     A,#01H
                        MOVX    @DPTR,A
-                 R     xJMP    ?C0099
-             ?C0098:
+                 R     xJMP    ?C0098
+             ?C0097:
                        CLR     A
                  E     MOV     DPTR,#E_key_1
                        MOVX    @DPTR,A
-             ?C0099:
+             ?C0098:
                                            ; SOURCE LINE # 409
                  E     MOV     DPTR,#E_key_0
                        MOVX    A,@DPTR
-C51 COMPILER V9.51   CW                                                                    10/31/2026 20:28:58 PAGE 31  
-
-                 R     xJZ     ?C0101
+                 R     xJZ     ?C0100
                  E     MOV     DPTR,#E_key_1
                        MOVX    A,@DPTR
-                 R     xJNZ    ?C0100
-             ?C0101:
+                 R     xJNZ    ?C0099
+             ?C0100:
                                            ; SOURCE LINE # 410
                  E     MOV     DPTR,#E_key_down
                        MOV     A,#01H
+C51 COMPILER V9.51   CW                                                                    11/02/2026 09:14:26 PAGE 31  
+
                        MOVX    @DPTR,A
                                            ; SOURCE LINE # 411
                  E     MOV     DPTR,#E_QSK
                        MOVX    A,@DPTR
-                 R     xJNZ    ?C0102
+                 R     xJNZ    ?C0101
                                            ; SOURCE LINE # 412
                  R     MOV     DPTR,#dac_muted
                        MOVX    A,@DPTR
-                 R     xJNZ    ?C0103
+                 R     xJNZ    ?C0102
                        MOV     R7,#01H
                  R     CALL    _cw_dac_mute
-             ?C0103:
+             ?C0102:
                                            ; SOURCE LINE # 413
 ;---- Variable 'i' assigned to Register 'R7' ----
                        CLR     A
                        MOV     R7,A
-             ?C0104:
+             ?C0103:
                        MOV     R7,#040H
                  R     MOV     DPTR,#key_delay_buf
                        CLR     A
-             ?C0149:
+             ?C0148:
                        MOVX    @DPTR,A
                        INC     DPTR
-                 R     DJNZ    R7,?C0149
+                 R     DJNZ    R7,?C0148
                        MOV     R7,#040H
-             ?C0105:
+             ?C0104:
                                            ; SOURCE LINE # 414
                  E     MOV     DPTR,#E_key_delay_ms
                        MOVX    A,@DPTR
@@ -1905,10 +1897,10 @@ ASSEMBLY LISTING OF GENERATED OBJECT CODE
                        MOVX    A,@DPTR
                        CLR     C
                        SUBB    A,#014H
-                 R     xJGE    ?C0107
+                 R     xJGE    ?C0106
                        MOV     A,#014H
                        MOVX    @DPTR,A
-             ?C0107:
+             ?C0106:
                                            ; SOURCE LINE # 416
                        CLR     A
                  R     MOV     DPTR,#key_up_ms
@@ -1924,8 +1916,6 @@ ASSEMBLY LISTING OF GENERATED OBJECT CODE
                                            ; SOURCE LINE # 419
                  R     MOV     DPTR,#rf_on
                        MOVX    @DPTR,A
-C51 COMPILER V9.51   CW                                                                    10/31/2026 20:28:58 PAGE 32  
-
                                            ; SOURCE LINE # 420
                  R     MOV     DPTR,#rf_off_ms
                        MOV     A,#0FFH
@@ -1934,6 +1924,8 @@ ASSEMBLY LISTING OF GENERATED OBJECT CODE
                        CLR     A
                  R     MOV     DPTR,#dac_req
                        MOVX    @DPTR,A
+C51 COMPILER V9.51   CW                                                                    11/02/2026 09:14:26 PAGE 32  
+
                                            ; SOURCE LINE # 422
                  R     MOV     DPTR,#key_delay_active
                        INC     A
@@ -1945,7 +1937,7 @@ ASSEMBLY LISTING OF GENERATED OBJECT CODE
                        MOV     R7,A
                  E     CALL    _Control_Write
                                            ; SOURCE LINE # 424
-             ?C0102:
+             ?C0101:
                                            ; SOURCE LINE # 425
                  R     MOV     DPTR,#state
                        MOVX    A,@DPTR
@@ -1953,7 +1945,7 @@ ASSEMBLY LISTING OF GENERATED OBJECT CODE
                        MOVX    @DPTR,A
                                            ; SOURCE LINE # 426
                        RET     
-             ?C0100:
+             ?C0099:
                                            ; SOURCE LINE # 427
                        CLR     A
                  R     MOV     DPTR,#state
@@ -1962,7 +1954,7 @@ ASSEMBLY LISTING OF GENERATED OBJECT CODE
                                            ; SOURCE LINE # 429
                        RET     
                                            ; SOURCE LINE # 430
-             ?C0109:
+             ?C0108:
                                            ; SOURCE LINE # 431
                  E     CALL    Control_Read
                        MOV     A,R7
@@ -1988,8 +1980,6 @@ ASSEMBLY LISTING OF GENERATED OBJECT CODE
                        MOVX    A,@DPTR
                        MOV     R1,A
                        INC     DPTR
-C51 COMPILER V9.51   CW                                                                    10/31/2026 20:28:58 PAGE 33  
-
                        MOVX    A,@DPTR
                        MOV     R2,A
                        INC     DPTR
@@ -1998,6 +1988,8 @@ ASSEMBLY LISTING OF GENERATED OBJECT CODE
                        MOV     R7,A
                        MOV     A,R2
                        ADDC    A,R6
+C51 COMPILER V9.51   CW                                                                    11/02/2026 09:14:26 PAGE 33  
+
                        MOV     R6,A
                        MOV     A,R1
                        ADDC    A,R5
@@ -2010,7 +2002,7 @@ ASSEMBLY LISTING OF GENERATED OBJECT CODE
                        MOV     A,R7
                        MOVX    @DPTR,A
                                            ; SOURCE LINE # 433
-                 R     xJNZ    ?C0146
+                 R     xJNZ    ?C0145
                                            ; SOURCE LINE # 434
                  R     MOV     DPTR,#state
                        MOVX    A,@DPTR
@@ -2020,7 +2012,7 @@ ASSEMBLY LISTING OF GENERATED OBJECT CODE
                                            ; SOURCE LINE # 436
                        RET     
                                            ; SOURCE LINE # 437
-             ?C0111:
+             ?C0110:
                                            ; SOURCE LINE # 438
                  E     CALL    Control_Read
                  R     MOV     DPTR,#control_status
@@ -2029,7 +2021,7 @@ ASSEMBLY LISTING OF GENERATED OBJECT CODE
                                            ; SOURCE LINE # 439
                  E     MOV     DPTR,#E_QSK
                        MOVX    A,@DPTR
-                 R     xJNE    A,#01H,?C0112
+                 R     xJNE    A,#01H,?C0111
                                            ; SOURCE LINE # 440
                  R     MOV     DPTR,#control_status
                        MOVX    A,@DPTR
@@ -2047,21 +2039,21 @@ ASSEMBLY LISTING OF GENERATED OBJECT CODE
                        MOV     A,#05H
                        MOVX    @DPTR,A
                                            ; SOURCE LINE # 444
-                 R     xJMP    ?C0113
-             ?C0112:
+                 R     xJMP    ?C0112
+             ?C0111:
                                            ; SOURCE LINE # 445
                  R     MOV     DPTR,#key_delay_lo_ready
                        MOV     A,#01H
-C51 COMPILER V9.51   CW                                                                    10/31/2026 20:28:58 PAGE 34  
-
                        MOVX    @DPTR,A
                                            ; SOURCE LINE # 446
                  R     MOV     DPTR,#state
                        MOV     A,#014H
                        MOVX    @DPTR,A
                                            ; SOURCE LINE # 447
-             ?C0113:
+             ?C0112:
                                            ; SOURCE LINE # 448
+C51 COMPILER V9.51   CW                                                                    11/02/2026 09:14:26 PAGE 34  
+
                  R     MOV     DPTR,#control_status
                        MOVX    A,@DPTR
                        MOV     R7,A
@@ -2069,7 +2061,7 @@ ASSEMBLY LISTING OF GENERATED OBJECT CODE
                                            ; SOURCE LINE # 449
                        RET     
                                            ; SOURCE LINE # 450
-             ?C0114:
+             ?C0113:
                                            ; SOURCE LINE # 451
                  E     CALL    Control_Read
                        MOV     A,R7
@@ -2088,7 +2080,7 @@ ASSEMBLY LISTING OF GENERATED OBJECT CODE
                                            ; SOURCE LINE # 454
                        RET     
                                            ; SOURCE LINE # 455
-             ?C0115:
+             ?C0114:
                                            ; SOURCE LINE # 456
                  E     CALL    CyEnterCriticalSection
                  R     MOV     DPTR,#paddles_section
@@ -2108,37 +2100,37 @@ ASSEMBLY LISTING OF GENERATED OBJECT CODE
                  R     MOV     DPTR,#key
                        MOVX    A,@DPTR
                        MOV     R7,A
-                 R     xJNB    ACC.0,?C0116
+                 R     xJNB    ACC.0,?C0115
                  E     MOV     DPTR,#E_key_0
                        MOV     A,#01H
                        MOVX    @DPTR,A
-                 R     xJMP    ?C0117
-             ?C0116:
+                 R     xJMP    ?C0116
+             ?C0115:
                        CLR     A
                  E     MOV     DPTR,#E_key_0
-C51 COMPILER V9.51   CW                                                                    10/31/2026 20:28:58 PAGE 35  
-
                        MOVX    @DPTR,A
-             ?C0117:
+             ?C0116:
                                            ; SOURCE LINE # 460
                        MOV     A,R7
-                 R     xJNB    ACC.1,?C0118
+                 R     xJNB    ACC.1,?C0117
                  E     MOV     DPTR,#E_key_1
                        MOV     A,#01H
                        MOVX    @DPTR,A
-                 R     xJMP    ?C0119
-             ?C0118:
+C51 COMPILER V9.51   CW                                                                    11/02/2026 09:14:26 PAGE 35  
+
+                 R     xJMP    ?C0118
+             ?C0117:
                        CLR     A
                  E     MOV     DPTR,#E_key_1
                        MOVX    @DPTR,A
-             ?C0119:
+             ?C0118:
                                            ; SOURCE LINE # 461
                  E     MOV     DPTR,#E_key_0
                        MOVX    A,@DPTR
-                 R     xJZ     ?C0146
+                 R     xJZ     ?C0145
                  E     MOV     DPTR,#E_key_1
                        MOVX    A,@DPTR
-                 R     xJZ     ?C0146
+                 R     xJZ     ?C0145
                                            ; SOURCE LINE # 462
                  R     MOV     DPTR,#state
                        MOVX    A,@DPTR
@@ -2148,7 +2140,7 @@ ASSEMBLY LISTING OF GENERATED OBJECT CODE
                                            ; SOURCE LINE # 464
                        RET     
                                            ; SOURCE LINE # 465
-             ?C0121:
+             ?C0120:
                                            ; SOURCE LINE # 466
                  E     CALL    Control_Read
                        MOV     A,R7
@@ -2170,18 +2162,16 @@ ASSEMBLY LISTING OF GENERATED OBJECT CODE
                                            ; SOURCE LINE # 470
                        RET     
                                            ; SOURCE LINE # 471
-             ?C0122:
+             ?C0121:
                                            ; SOURCE LINE # 472
                  E     MOV     DPTR,#E_cw_hold
                        MOVX    A,@DPTR
-                 R     xJNZ    ?C0123
+                 R     xJNZ    ?C0122
                                            ; SOURCE LINE # 473
                  R     MOV     DPTR,#CW_LO_Freq
                        MOVX    A,@DPTR
                        MOV     R4,A
                        INC     DPTR
-C51 COMPILER V9.51   CW                                                                    10/31/2026 20:28:58 PAGE 36  
-
                        MOVX    A,@DPTR
                        MOV     R5,A
                        INC     DPTR
@@ -2190,12 +2180,14 @@ ASSEMBLY LISTING OF GENERATED OBJECT CODE
                        INC     DPTR
                        MOVX    A,@DPTR
                        MOV     R7,A
+C51 COMPILER V9.51   CW                                                                    11/02/2026 09:14:26 PAGE 36  
+
                  E     CALL    _si5351aSetFrequency
                  R     MOV     DPTR,#SI5351_status
                        MOV     A,R7
                        MOVX    @DPTR,A
                                            ; SOURCE LINE # 474
-                 R     xJNZ    ?C0146
+                 R     xJNZ    ?C0145
                                            ; SOURCE LINE # 475
                  E     CALL    Control_Read
                  R     MOV     DPTR,#control_status
@@ -2220,7 +2212,7 @@ ASSEMBLY LISTING OF GENERATED OBJECT CODE
                                            ; SOURCE LINE # 481
                                            ; SOURCE LINE # 482
                        RET     
-             ?C0123:
+             ?C0122:
                                            ; SOURCE LINE # 483
                  R     MOV     DPTR,#state
                        MOV     A,#0AH
@@ -2229,7 +2221,7 @@ ASSEMBLY LISTING OF GENERATED OBJECT CODE
                                            ; SOURCE LINE # 485
                        RET     
                                            ; SOURCE LINE # 486
-             ?C0126:
+             ?C0125:
                                            ; SOURCE LINE # 487
                  E     CALL    CyEnterCriticalSection
                  R     MOV     DPTR,#paddles_section
@@ -2244,50 +2236,50 @@ ASSEMBLY LISTING OF GENERATED OBJECT CODE
                        INC     DPTR
                        MOVX    A,@DPTR
                        MOV     R7,A
-C51 COMPILER V9.51   CW                                                                    10/31/2026 20:28:58 PAGE 37  
-
                  E     CALL    _CyExitCriticalSection
                                            ; SOURCE LINE # 490
                  R     MOV     DPTR,#key
                        MOVX    A,@DPTR
                        MOV     R7,A
-                 R     xJNB    ACC.0,?C0127
+                 R     xJNB    ACC.0,?C0126
                  E     MOV     DPTR,#E_key_0
                        MOV     A,#01H
+C51 COMPILER V9.51   CW                                                                    11/02/2026 09:14:26 PAGE 37  
+
                        MOVX    @DPTR,A
-                 R     xJMP    ?C0128
-             ?C0127:
+                 R     xJMP    ?C0127
+             ?C0126:
                        CLR     A
                  E     MOV     DPTR,#E_key_0
                        MOVX    @DPTR,A
-             ?C0128:
+             ?C0127:
                                            ; SOURCE LINE # 491
                        MOV     A,R7
-                 R     xJNB    ACC.1,?C0129
+                 R     xJNB    ACC.1,?C0128
                  E     MOV     DPTR,#E_key_1
                        MOV     A,#01H
                        MOVX    @DPTR,A
-                 R     xJMP    ?C0130
-             ?C0129:
+                 R     xJMP    ?C0129
+             ?C0128:
                        CLR     A
                  E     MOV     DPTR,#E_key_1
                        MOVX    @DPTR,A
-             ?C0130:
+             ?C0129:
                                            ; SOURCE LINE # 493
                  E     MOV     DPTR,#E_key_0
                        MOVX    A,@DPTR
-                 R     xJZ     ?C0132
+                 R     xJZ     ?C0131
                  E     MOV     DPTR,#E_key_1
                        MOVX    A,@DPTR
-                 R     xJNZ    ?C0131
-             ?C0132:
+                 R     xJNZ    ?C0130
+             ?C0131:
                                            ; SOURCE LINE # 494
                  R     MOV     DPTR,#state
                        MOV     A,#04H
                        MOVX    @DPTR,A
                                            ; SOURCE LINE # 495
                        RET     
-             ?C0131:
+             ?C0130:
                                            ; SOURCE LINE # 496
                  R     MOV     DPTR,#state
                        MOV     A,#07H
@@ -2296,28 +2288,28 @@ ASSEMBLY LISTING OF GENERATED OBJECT CODE
                                            ; SOURCE LINE # 498
                        RET     
                                            ; SOURCE LINE # 499
-             ?C0134:
+             ?C0133:
                                            ; SOURCE LINE # 500
                  R     MOV     DPTR,#key_delay_active
                        MOVX    A,@DPTR
-                 R     xJNZ    ?C0135
+                 R     xJNZ    ?C0134
                                            ; SOURCE LINE # 501
                  R     MOV     DPTR,#state
                        MOV     A,#016H
                        MOVX    @DPTR,A
                                            ; SOURCE LINE # 502
                        RET     
-             ?C0135:
-C51 COMPILER V9.51   CW                                                                    10/31/2026 20:28:58 PAGE 38  
-
+             ?C0134:
                  R     MOV     DPTR,#key_delay_busy
                        MOVX    A,@DPTR
-                 R     xJNZ    ?C0146
+                 R     xJNZ    ?C0145
                                            ; SOURCE LINE # 503
                  E     MOV     DPTR,#E_cw_hold
                        INC     A
                        MOVX    @DPTR,A
                                            ; SOURCE LINE # 504
+C51 COMPILER V9.51   CW                                                                    11/02/2026 09:14:26 PAGE 38  
+
                        MOV     R7,A
                  E     CALL    _CW_Hold_Control_Write
                                            ; SOURCE LINE # 505
@@ -2328,31 +2320,31 @@ ASSEMBLY LISTING OF GENERATED OBJECT CODE
                                            ; SOURCE LINE # 507
                        RET     
                                            ; SOURCE LINE # 508
-             ?C0138:
+             ?C0137:
                                            ; SOURCE LINE # 509
                  R     MOV     DPTR,#key_delay_active
                        MOVX    A,@DPTR
-                 R     xJNZ    ?C0139
+                 R     xJNZ    ?C0138
                                            ; SOURCE LINE # 510
                  R     MOV     DPTR,#state
                        MOV     A,#016H
                        MOVX    @DPTR,A
                                            ; SOURCE LINE # 511
                        RET     
-             ?C0139:
+             ?C0138:
                  R     MOV     DPTR,#key_delay_busy
                        MOVX    A,@DPTR
-                 R     xJZ     ?C0141
+                 R     xJZ     ?C0140
                                            ; SOURCE LINE # 512
                  R     MOV     DPTR,#state
                        MOV     A,#014H
                        MOVX    @DPTR,A
                                            ; SOURCE LINE # 513
                        RET     
-             ?C0141:
+             ?C0140:
                  E     MOV     DPTR,#E_cw_hold
                        MOVX    A,@DPTR
-                 R     xJNZ    ?C0146
+                 R     xJNZ    ?C0145
                                            ; SOURCE LINE # 514
                  R     MOV     DPTR,#key_delay_active
                        MOVX    @DPTR,A
@@ -2364,7 +2356,7 @@ ASSEMBLY LISTING OF GENERATED OBJECT CODE
                                            ; SOURCE LINE # 517
                        RET     
                                            ; SOURCE LINE # 518
-             ?C0144:
+             ?C0143:
                                            ; SOURCE LINE # 519
                  E     CALL    Control_Read
                        MOV     A,R7
@@ -2372,8 +2364,6 @@ ASSEMBLY LISTING OF GENERATED OBJECT CODE
                        MOV     R7,A
                  E     CALL    _Control_Write
                                            ; SOURCE LINE # 520
-C51 COMPILER V9.51   CW                                                                    10/31/2026 20:28:58 PAGE 39  
-
                  R     MOV     DPTR,#CW_LO_Freq
                        MOVX    A,@DPTR
                        MOV     R4,A
@@ -2382,6 +2372,8 @@ ASSEMBLY LISTING OF GENERATED OBJECT CODE
                        MOV     R5,A
                        INC     DPTR
                        MOVX    A,@DPTR
+C51 COMPILER V9.51   CW                                                                    11/02/2026 09:14:26 PAGE 39  
+
                        MOV     R6,A
                        INC     DPTR
                        MOVX    A,@DPTR
@@ -2391,7 +2383,7 @@ ASSEMBLY LISTING OF GENERATED OBJECT CODE
                        MOV     A,R7
                        MOVX    @DPTR,A
                                            ; SOURCE LINE # 521
-                 R     xJNZ    ?C0146
+                 R     xJNZ    ?C0145
                                            ; SOURCE LINE # 522
                  E     CALL    Control_Read
                  R     MOV     DPTR,#control_status
@@ -2417,14 +2409,14 @@ ASSEMBLY LISTING OF GENERATED OBJECT CODE
                                            ; SOURCE LINE # 529
                                            ; SOURCE LINE # 530
                                            ; SOURCE LINE # 531
-             ?C0146:
+             ?C0145:
                        RET     
              ; FUNCTION Manage_Paddles_Port (END)
 
 
 
 MODULE INFORMATION:   STATIC OVERLAYABLE
-   CODE SIZE        =   2499    ----
+   CODE SIZE        =   2485    ----
    CONSTANT SIZE    =   ----    ----
    XDATA SIZE       =    102      11
    PDATA SIZE       =   ----    ----
@@ -2436,8 +2428,6 @@ MODULE INFORMATION:   STATIC OVERLAYABLE
    XDATA CONST SIZE =   ----    ----
    FAR CONST SIZE   =   ----    ----
 END OF MODULE INFORMATION.
-
-C51 COMPILER V9.51   CW                                                                    10/31/2026 20:28:58 PAGE 40  
 
 
 C51 COMPILATION COMPLETE.  0 WARNING(S),  0 ERROR(S)

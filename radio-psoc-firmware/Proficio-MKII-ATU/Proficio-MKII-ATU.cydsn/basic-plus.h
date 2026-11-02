@@ -46,7 +46,7 @@
 #else
 #define FIRMWARE_VERSION_MAJOR 4
 #endif
-#define FIRMWARE_VERSION_MINOR 243
+#define FIRMWARE_VERSION_MINOR 244   //4.244: DAC muted in non-QSK RX; Key_Delay_isr RISING_EDGE (was DERIVED: ms tick ran fast)
 #define FIRMWARE_VERSION ((((FIRMWARE_VERSION_MINOR) << 8) & 0xff00) | ((FIRMWARE_VERSION_MAJOR) & 0x00ff))
 #define EEPROM_PCB_VERSION_LOCATION 11
         

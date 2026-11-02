@@ -15,9 +15,9 @@ I1206: Completed Reading of file C:\Program Files (x86)\Cypress\PSoC Creator\4.4
 I1209: Started routing
 I1223: Total Nets : 235 
 I1212: Iteration  1 :   140 unrouted : 1 seconds
-I1212: Iteration  2 :    34 unrouted : 0 seconds
+I1212: Iteration  2 :    34 unrouted : 1 seconds
 I1212: Iteration  3 :     8 unrouted : 0 seconds
-I1212: Iteration  4 :     3 unrouted : 1 seconds
+I1212: Iteration  4 :     3 unrouted : 0 seconds
 I1212: Iteration  5 :     0 unrouted : 0 seconds
 I1215: Routing is successful
 Warning-1366: Setup time violation found in a path from clock ( CyBUS_CLK ) to clock ( FRAC_CLK ).

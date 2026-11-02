@@ -1,5 +1,5 @@
 -- Project:   C:\Users\n8vet\OneDrive\Documents\github\mscc-station\radio-psoc-firmware\Proficio-MKII-ATU\Proficio-MKII-ATU.cydsn\Proficio-MKII-ATU.cyprj
--- Generated: 10/31/2026 20:28:46
+-- Generated: 11/02/2026 09:02:43
 -- PSoC Creator  4.4
 
 ENTITY \Proficio-MKII-ATU\ IS
@@ -5040,7 +5040,7 @@ BEGIN
 
     Key_Delay_isr:interrupt
         GENERIC MAP(
-            int_type => "10",
+            int_type => "00",
             is_nmi => 0)
         PORT MAP(
             interrupt => Net_8153,

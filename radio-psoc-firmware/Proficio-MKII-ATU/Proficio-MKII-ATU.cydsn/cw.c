@@ -153,14 +153,14 @@ static void cw_dac_mute(uint8 mute)
     dac_muted = mute;
 }
 
-/* Main loop, on leaving CW: stop the ISR; DAC back to full for SSB / digital / TUNE */
+/* Main loop, on leaving CW: stop the ISR. 3.243: the DAC is left as it is; TX_Main() sets it
+ * on its next pass (muted in non-QSK RX, full in QSK). */
 void CW_Key_Delay_Stop(void)
 {
     key_delay_active = FALSE;
     key_delay_busy = FALSE;
     rf_on = FALSE;
     dac_req = DAC_REQ_NONE;
-    if(dac_muted) cw_dac_mute(FALSE);
 }
 
 /* Main loop only (I2C): DAC soft mute for the PTT / TUNE path in tx.c (3.241).

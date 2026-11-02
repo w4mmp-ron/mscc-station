@@ -44,7 +44,7 @@
 #else
 #define FIRMWARE_VERSION_MAJOR 3
 #endif
-#define FIRMWARE_VERSION_MINOR 242
+#define FIRMWARE_VERSION_MINOR 243   //3.243: DAC muted in non-QSK RX (no TX tail after release)
 #define FIRMWARE_VERSION ((((FIRMWARE_VERSION_MINOR) << 8) & 0xff00) | ((FIRMWARE_VERSION_MAJOR) & 0x00ff))
 #define EEPROM_PCB_VERSION_LOCATION 11
         
