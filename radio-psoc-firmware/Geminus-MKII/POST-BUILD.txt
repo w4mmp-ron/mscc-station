@@ -1,0 +1,14 @@
+# PSoC Creator post-build: copy .cyacd + .hex to release\ by version
+
+Project -> Build Settings -> User Commands -> Post Build (Debug configuration), full path, in quotes:
+
+    cmd /c "C:\Users\n8vet\OneDrive\Documents\github\mscc-station\radio-psoc-firmware\Geminus-MKII\copy-release.bat"
+
+(${ProjDir} does not work here. Already set in the .cyprj; re-check after moving the repo.)
+
+Writes  Geminus-MKII\release\Geminus-MKII-<major>.<minor>.cyacd / .hex   (e.g. Geminus-MKII-2.153)
+
+A different build of an existing version is saved as ...-b2 with a warning: bump
+FIRMWARE_VERSION_MINOR in Geminus.cydsn\basic-plus.h for every build you flash for testing.
+
+Manual: double-click Geminus-MKII\copy-release.bat after a build.

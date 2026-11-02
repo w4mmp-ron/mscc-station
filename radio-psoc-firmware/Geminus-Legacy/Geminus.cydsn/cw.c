@@ -17,7 +17,7 @@
 
 // Variable naming conventions:     E_<variable> -> Externally defined global
 //                                  ff_<variable> -> Externally defined global stored in flash memory
-//                                  ee_<variable> -> Externally defined global stored in EEPROM memory
+//                                  ee_<variable> -> Externally defined global to be stored in EEPROM memory
 //                                  l_<variable> -> locally defined variable
 //                                  All UPPERCASE -> Define
 
@@ -55,16 +55,27 @@ CY_ISR(QSK_interrupt){
 uint8 keyer_write(uint8_t buffer)
 {
 	uint8_t msg_buffer = 0;
-	uint8_t ret_status = 1;
+	uint8_t ret_status = 0;
 	uint8_t write_status = 0;
     uint8 buffer_written = 0;
-        
-	msg_buffer = buffer;
-	write_status = I2C_DISPLAY_MasterWriteBuf(KEYER_SLAVE_ADDRESS,&msg_buffer,1u,I2C_DISPLAY_MODE_COMPLETE_XFER);
-    while((I2C_DISPLAY_MasterStatus() & I2C_DISPLAY_MSTAT_WR_CMPLT) == 0u){};
-    buffer_written = I2C_DISPLAY_MasterGetWriteBufSize();
-    if(buffer_written != (1u)) {
-        ret_status = 0;
+    uint8 attempt;
+
+    /*
+     * PIC may NACK while busy (e.g. EEPROM write on STORE_END). Retry a few
+     * times so a following PLAY is not dropped and keyer not marked missing.
+     */
+    msg_buffer = buffer;
+    for (attempt = 0; attempt < 8u; attempt++) {
+        write_status = I2C_DISPLAY_MasterWriteBuf(KEYER_SLAVE_ADDRESS, &msg_buffer, 1u,
+            I2C_DISPLAY_MODE_COMPLETE_XFER);
+        while ((I2C_DISPLAY_MasterStatus() & I2C_DISPLAY_MSTAT_WR_CMPLT) == 0u) {
+        }
+        buffer_written = I2C_DISPLAY_MasterGetWriteBufSize();
+        if (buffer_written == 1u) {
+            ret_status = 1;
+            break;
+        }
+        CyDelay(5u);
     }
     return ret_status;
 }
@@ -74,12 +85,33 @@ uint8 Configure_CW(){
     static uint8_t keyer_mode = 0;
     static uint8_t wpm = 0;
     static uint8_t spacing = 0;
+    static uint8_t mem_text_wpm = 0;
     static uint8_t weight = 0;
     static uint8_t side_tone = 0;
     static uint8_t paddle = 0;
     static uint8_t buffer[2];
 	static uint8_t send_state = 0;
+    static uint8_t last_mem_seq = 0;
     uint8 write_status = 0;
+    uint8_t p0, p1, s0, s1;
+
+    /*
+     * Always poll USB mem packet (even while I2C-sending state 10).
+     * Double-read so we do not catch a half-updated [param,seq] mid-write.
+     * Queue holds params until I2C can send (one 0x9C pair at a time).
+     */
+    p0 = E_keyer_mem_pkt[0];
+    s0 = E_keyer_mem_pkt[1];
+    p1 = E_keyer_mem_pkt[0];
+    s1 = E_keyer_mem_pkt[1];
+    if (s0 != 0 && s0 == s1 && p0 == p1 && s0 != last_mem_seq) {
+        last_mem_seq = s0;
+        if (E_keyer_mem_q_count < KEYER_MEM_Q_SIZE) {
+            E_keyer_mem_q[E_keyer_mem_q_head] = p0;
+            E_keyer_mem_q_head = (E_keyer_mem_q_head + 1) % KEYER_MEM_Q_SIZE;
+            E_keyer_mem_q_count++;
+        }
+    }
            
     switch(state){
         case 0:
@@ -144,6 +176,31 @@ uint8 Configure_CW(){
             wpm = E_wpm;
             state = 10;
         }else{
+            state++;
+        }
+        break;
+
+        case 6:
+        /* SET_MEM_TEXT_WPM 0x76 — push to PIC when host changes (PIC may no-op until Farnsworth) */
+        if(mem_text_wpm != E_mem_text_wpm){
+            buffer[0] = SET_MEM_TEXT_WPM;
+            buffer[1] = E_mem_text_wpm;
+            mem_text_wpm = E_mem_text_wpm;
+            state = 10;
+        }else{
+            state++;
+        }
+        break;
+
+        case 7:
+        /* Start one queued CQ-memory I2C transfer if idle path reached here */
+        if (E_keyer_mem_q_count > 0) {
+            buffer[0] = CMD_SET_KEYER_MEMORY;
+            buffer[1] = E_keyer_mem_q[E_keyer_mem_q_tail];
+            E_keyer_mem_q_tail = (E_keyer_mem_q_tail + 1) % KEYER_MEM_Q_SIZE;
+            E_keyer_mem_q_count--;
+            state = 10;
+        } else {
             state = 0;
         }
         break;
@@ -185,22 +242,65 @@ uint8 Configure_CW(){
 }
 
 /*
- * Geminus-Legacy CW (relay T/R, external keyer, no onboard PIC memories):
+ * Geminus CW (relay T/R; MKII: internal PIC keyer, Legacy: external keyer or straight key
+ * on the key jack, E_keyer_installed = FALSE). Same code in Geminus-MKII and Geminus-Legacy:
  *  - CONTROL_RX / CONTROL_AMP / CONTROL_BAND_TX (BS2): latched for the whole
  *    semi-break-in session. Avoids relay chatter and wear.
- *  - CONTROL_DIN: element keying from the key jack (external keyer or straight key).
  *  - CONTROL_DOUT: mute RX audio for the session.
- * Ported from Proficio-Legacy DIN session; Geminus also latches BS2 TX.
+ *
+ * 2.153 (2026-10-31): elements keyed with the PCM3060 DAC soft mute instead of CONTROL_DIN
+ * (a hard I/Q switch: key clicks on both edges), as Proficio MKII PTT 3.240. The key lines
+ * are sampled every 1 ms (CW_Key_Delay_Tick, main loop) into key_delay_buf and played
+ * CW_KEY_DELAY_MS late, so each element can ramp up from DAC_RISE_LEAD_MS before the delayed
+ * key down (-6 dB point on the edge) and ramp down from the delayed key up. Element lengths
+ * are kept. The relays close at the first key down with the DAC muted, well before the first
+ * RF. The DAC stays muted in CW idle. Spaces shorter than DAC_RISE_LEAD_MS merge (> 80 WPM).
  */
+#define CW_KEY_DELAY_MS 30u     /* > DAC_RISE_LEAD_MS + relay settle */
+#define DAC_RAMP_MS 18u         /* soft mute full ramp 16.7 ms at 96 kHz, rounded up */
+#define DAC_RISE_LEAD_MS 14u    /* unmute this early: -6 dB after about 15 ms */
+#define PCM3060_REG_DAC_MUTE 0x44u
+#define PCM3060_DAC_MUTE_ON 0x03u      /* MUT22 + MUT21 */
+#define PCM3060_DAC_MUTE_OFF 0x00u
+#define KEY_DELAY_BUF_SIZE 64u  /* ms of key history, power of 2, > CW_KEY_DELAY_MS */
 
 #define CW_ST_IDLE          0
 #define CW_ST_WAIT_KEY      1
 #define CW_ST_SESSION_START 2
-#define CW_ST_MARK          3
-#define CW_ST_MARK_HOLD     5
-#define CW_ST_SPACE         6
-#define CW_ST_HANG          7
-#define CW_ST_HANG_POLL     10
+#define CW_ST_RUN           20
+#define CW_ST_HANG          21
+#define CW_ST_END           22
+
+static uint8 key_delay_buf[KEY_DELAY_BUF_SIZE];
+static uint8 key_delay_idx = 0;
+static uint8 key_up_ms = 0;            /* ms since last key down, stops at 255 */
+static uint8 key_delay_active = FALSE;
+static uint8 key_delay_busy = FALSE;   /* TRUE until delayed RF of last key down is done */
+static uint8 key_delay_lo_ready = FALSE;
+static uint8 rf_on = FALSE;            /* DAC unmuted for an element */
+static uint8 rf_off_ms = 255;          /* ms since DAC mute started, stops at 255 */
+static uint8 dac_muted = FALSE;        /* copy of the PCM3060 mute bits */
+
+static void cw_dac_mute(uint8 mute)
+{
+    PCM3060_SetRegister(PCM3060_REG_DAC_MUTE, mute ? PCM3060_DAC_MUTE_ON : PCM3060_DAC_MUTE_OFF);
+    dac_muted = mute;
+}
+
+/* Main loop (I2C): DAC soft mute for the TUN / PTT path in tx.c. Shares dac_muted with CW. */
+void TX_DAC_Mute(uint8 mute)
+{
+    if (dac_muted != mute) cw_dac_mute(mute);
+}
+
+/* Main loop, on leaving CW: stop the key delay; DAC back to full for SSB / digital / TUN */
+void CW_Key_Delay_Stop(void)
+{
+    key_delay_active = FALSE;
+    key_delay_busy = FALSE;
+    rf_on = FALSE;
+    if (dac_muted) cw_dac_mute(FALSE);
+}
 
 static uint8_t cw_keys_down(void)
 {
@@ -221,35 +321,57 @@ static uint8_t cw_keys_down(void)
     return (uint8_t)(!E_key_0 || !E_key_1);
 }
 
-static uint8 cw_session_start(void)
+/* Main loop, once per ms (E_ms_tick) in CW */
+void CW_Key_Delay_Tick(void)
+{
+    uint8 key;
+    uint8 on;
+
+    if (!key_delay_active) return;
+    if (TX_Inhibit || (E_host_mode != 'C')) {   /* Left CW or inhibited mid-over */
+        rf_on = FALSE;
+        TX_DAC_Mute(TRUE);
+        key_delay_busy = FALSE;
+        key_delay_active = FALSE;
+        return;
+    }
+    key = cw_keys_down();
+    key_delay_buf[key_delay_idx] = key;
+    if (key) {
+        key_up_ms = 0;
+    } else if (key_up_ms < 255u) {
+        key_up_ms++;
+    }
+    on = FALSE;
+    if (key_delay_lo_ready) {   /* RF from DAC_RISE_LEAD_MS before the delayed key down to the delayed key up */
+        on = key_delay_buf[(uint8)(key_delay_idx - CW_KEY_DELAY_MS) & (KEY_DELAY_BUF_SIZE - 1u)]
+          || key_delay_buf[(uint8)(key_delay_idx - (CW_KEY_DELAY_MS - DAC_RISE_LEAD_MS)) & (KEY_DELAY_BUF_SIZE - 1u)];
+    }
+    if (on && !rf_on) {
+        TX_DAC_Mute(FALSE);     /* ramps up */
+        rf_on = TRUE;
+    } else if (!on && rf_on) {
+        TX_DAC_Mute(TRUE);      /* ramps down */
+        rf_on = FALSE;
+        rf_off_ms = 0;
+    } else if (!rf_on && (rf_off_ms < 255u)) {
+        rf_off_ms++;
+    }
+    key_delay_idx = (key_delay_idx + 1u) & (KEY_DELAY_BUF_SIZE - 1u);
+    key_delay_busy = (key_up_ms <= CW_KEY_DELAY_MS) || rf_on || (rf_off_ms < DAC_RAMP_MS);
+}
+
+static void cw_session_relays_on(void)
 {
     uint8_t c;
 
     c = Control_Read();
     c = c & ~CONTROL_DOUT;   /* PCM3060 RX out OFF */
-    c = c & ~CONTROL_DIN;    /* I/Q blank until mark */
-    Control_Write(c);
-    return si5351aSetFrequency(CW_LO_Freq + E_cw_pitch_freq);
-}
-
-static void cw_mark_on(void)
-{
-    uint8_t c;
-
-    c = Control_Read();
+    c = c | CONTROL_DIN;     /* I/Q into the (muted) DAC */
     c = c & ~CONTROL_AMP;    /* AMP ON (active low) */
-    c = c & ~CONTROL_RX;     /* PA / T-R ON (active low) */
-    c = c | CONTROL_DIN;     /* I/Q on → RF */
+    c = c & ~CONTROL_RX;     /* T/R ON (active low) */
     Control_Write(c);
     Band_Control_Write(Band_Control_Read() | CONTROL_BAND_TX); /* Geminus BS2 TX */
-    E_cw_hold = TRUE;
-}
-
-static void cw_mark_off(void)
-{
-    Control_Write(Control_Read() & ~CONTROL_DIN);
-    E_cw_hold = TRUE;
-    CW_Hold_Control_Write(CW_CONTROL_RESET);
 }
 
 static uint8 cw_session_end(void)
@@ -262,6 +384,7 @@ static uint8 cw_session_end(void)
         return st;
     Band_Control_Write(Band_Control_Read() & ~CONTROL_BAND_TX);
     c = Control_Read();
+    /* AMP off, T/R off, RX audio on, I/Q path on for later SSB */
     c = c | CONTROL_AMP | CONTROL_RX | CONTROL_DOUT | CONTROL_DIN;
     Control_Write(c);
     E_key_down = FALSE;
@@ -272,9 +395,11 @@ void Manage_Paddles_Port(void)
 {
     static uint8_t state = CW_ST_IDLE;
     static uint32 previous_CW_LO_Freq = 0;
+    uint8 i;
     
     switch(state){
         case CW_ST_IDLE:
+            if (!dac_muted) cw_dac_mute(TRUE);  /* DAC muted in CW so each element ramps up from mute */
             if (previous_CW_LO_Freq != CW_LO_Freq) {
                 SI5351_status = si5351aSetFrequency(CW_LO_Freq);
                 if (SI5351_status == 0)
@@ -288,42 +413,53 @@ void Manage_Paddles_Port(void)
         case CW_ST_WAIT_KEY:
             if (cw_keys_down()) {
                 E_key_down = TRUE;
+                for (i = 0; i < KEY_DELAY_BUF_SIZE; i++) key_delay_buf[i] = 0;
+                key_up_ms = 0;
+                key_delay_busy = TRUE;
+                key_delay_lo_ready = FALSE;
+                rf_on = FALSE;
+                rf_off_ms = 255;
+                key_delay_active = TRUE;    /* start recording the key now: first element not clipped */
+                cw_session_relays_on();
                 state = CW_ST_SESSION_START;
             } else {
                 state = CW_ST_IDLE;
             }
             break;
         case CW_ST_SESSION_START:
-            SI5351_status = cw_session_start();
-            if (SI5351_status == 0)
-                state = CW_ST_MARK;
-            break;
-        case CW_ST_MARK:
-            cw_mark_on();
-            state = CW_ST_MARK_HOLD;
-            break;
-        case CW_ST_MARK_HOLD:
-            if (!cw_keys_down())
-                state = CW_ST_SPACE;
-            break;
-        case CW_ST_SPACE:
-            cw_mark_off();
-            state = CW_ST_HANG;
-            break;
-        case CW_ST_HANG:
-            if (E_cw_hold == FALSE) {
-                SI5351_status = cw_session_end();
-                if (SI5351_status == 0)
-                    state = CW_ST_IDLE;
-            } else {
-                state = CW_ST_HANG_POLL;
+            SI5351_status = si5351aSetFrequency(CW_LO_Freq + E_cw_pitch_freq); /* LO to the TX frequency */
+            if (SI5351_status == 0) {
+                key_delay_lo_ready = TRUE;
+                state = CW_ST_RUN;
             }
             break;
-        case CW_ST_HANG_POLL:
-            if (cw_keys_down())
-                state = CW_ST_MARK;
-            else
+        case CW_ST_RUN:     /* delayed RF playing. Wait until key up and the last element is done */
+            if (!key_delay_active) {
+                state = CW_ST_END;
+            } else if (!key_delay_busy) {
+                E_cw_hold = TRUE;           /* semi-break-in hang from the end of RF */
+                CW_Hold_Control_Write(CW_CONTROL_RESET);
                 state = CW_ST_HANG;
+            }
+            break;
+        case CW_ST_HANG:
+            if (!key_delay_active) {
+                state = CW_ST_END;
+            } else if (key_delay_busy) {
+                state = CW_ST_RUN;          /* key down again during the hang */
+            } else if (E_cw_hold == FALSE) {
+                key_delay_active = FALSE;
+                state = CW_ST_END;
+            }
+            break;
+        case CW_ST_END:
+            if (!dac_muted) cw_dac_mute(TRUE);
+            SI5351_status = cw_session_end();
+            if (SI5351_status == 0)
+                state = CW_ST_IDLE;
+            break;
+        default:
+            state = CW_ST_IDLE;
             break;
     }
 }

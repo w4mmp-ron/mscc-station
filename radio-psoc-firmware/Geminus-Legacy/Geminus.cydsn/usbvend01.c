@@ -30,6 +30,8 @@
 
 //extern struct band_volume E_band_and_volume[10];
 uint32 result;
+int32 PPM_result = 0;
+int32 PPM_temp = 0;
 uint8 E_dll_version = SI570_DLL;
 static uint8_t ppm_start = 0;
 static int32 proficio_temperature = 0;
@@ -65,6 +67,8 @@ uint8 emulated_register(void) {
 uint8 USBFS_HandleVendorRqst(void)  //This called by the USBFS component.  This is an interrupt handler. 
 {                                   //This Interrupt handler can not call other routines.  
     uint8 requestHandled = USBFS_FALSE;
+    static uint8 l_cal_type, l_cal_band;   // CMD_CALIBRATION: wValue high / low byte (2.152)
+    static uint16 l_cal_len;               // CMD_CALIBRATION: wLength
     uint8 reqType, reqCmd;
     static int32 l_dec = 0;
     static int32 l_int = 0;
@@ -173,6 +177,52 @@ uint8 USBFS_HandleVendorRqst(void)  //This called by the USBFS component.  This 
                 USBFS_currentTD.count = sizeof(int_value);
                 requestHandled  = USBFS_InitControlRead();
                 break;
+                
+            case CMD_GET_PPM_INT:
+                PPM_temp = ee_ppm_int;
+                PPM_result = swap32_int(PPM_temp);
+                USBFS_currentTD.pData = (void *)&PPM_result;
+                USBFS_currentTD.count = 2;
+                requestHandled  = USBFS_InitControlRead();
+                break;
+                
+            case CMD_GET_PPM_DEC:
+                PPM_temp = ee_ppm_dec;
+                PPM_result = swap32_int(PPM_temp);
+                USBFS_currentTD.pData = (void *)&PPM_result;
+                USBFS_currentTD.count = 2;
+                requestHandled  = USBFS_InitControlRead();
+                break;
+
+            /* Per-band calibration read (calibration.c). Bad type / band: not handled (stall). */
+            case CMD_CALIBRATION:
+                l_cal_type = CY_GET_REG8(USBFS_wValueHi);
+                l_cal_band = CY_GET_REG8(USBFS_wValueLo);
+                USBFS_currentTD.count = 0;
+                if (l_cal_type == CAL_TYPE_SAVE) {
+                    USBFS_currentTD.pData = (void *)E_cal_status;
+                    USBFS_currentTD.count = 2;
+                } else if (l_cal_type == CAL_TYPE_VALID) {
+                    USBFS_currentTD.pData = (void *)&E_cal.valid[0][0];
+                    USBFS_currentTD.count = 6;
+                } else if (l_cal_band < CAL_BANDS) {
+                    if (l_cal_type == CAL_TYPE_RX_IQ) {
+                        USBFS_currentTD.pData = (void *)&E_cal.rx_iq[l_cal_band][0];
+                        USBFS_currentTD.count = 4;
+                    } else if (l_cal_type == CAL_TYPE_TX_IQ) {
+                        USBFS_currentTD.pData = (void *)&E_cal.tx_iq[l_cal_band][0];
+                        USBFS_currentTD.count = 4;
+                    } else if (l_cal_type == CAL_TYPE_POWER) {
+                        USBFS_currentTD.pData = (void *)&E_cal.power[l_cal_band][0];
+                        USBFS_currentTD.count = 2;
+                    }
+                }
+                if (USBFS_currentTD.count != 0) {
+                    requestHandled  = USBFS_InitControlRead();
+                }
+                break;
+                
+                
                 
             /*case CMD_SET_XTAL_DEC:
                 USBFS_currentTD.pData = (void *)&ee_ppm_int;
@@ -283,6 +333,13 @@ uint8 USBFS_HandleVendorRqst(void)  //This called by the USBFS component.  This 
                 USBFS_currentTD.count = sizeof(E_spacing);
                 requestHandled  = USBFS_InitControlWrite();
                 break;
+
+            /* Memory-play text WPM (Farnsworth gaps); same control-write style as SET_WPM */
+            case SET_MEM_TEXT_WPM:
+                USBFS_currentTD.pData = (void *)&E_mem_text_wpm;
+                USBFS_currentTD.count = sizeof(E_mem_text_wpm);
+                requestHandled  = USBFS_InitControlWrite();
+                break;
                 
             case SET_WEIGHT:
                 USBFS_currentTD.pData = (void *)&E_weight;
@@ -306,6 +363,48 @@ uint8 USBFS_HandleVendorRqst(void)  //This called by the USBFS component.  This 
                 USBFS_currentTD.pData = (void *)&E_keyer_installed;
                 USBFS_currentTD.count = sizeof(E_keyer_installed);
                 requestHandled  = USBFS_InitControlWrite();
+                break;
+
+            /*
+             * PIC keyer CQ (0x9C). Control write 2 bytes into E_keyer_mem_pkt:
+             *   [0]=param  [1]=seq (host increments each time so Configure_CW sees a change).
+             * Same InitControlWrite style as SET_WPM (no zero-length OUT / USBFS_TRUE).
+             */
+            case CMD_SET_KEYER_MEMORY:
+                USBFS_currentTD.pData = (void *)E_keyer_mem_pkt;
+                USBFS_currentTD.count = 2;
+                requestHandled = USBFS_InitControlWrite();
+                break;
+
+            /*
+             * Per-band calibration set (calibration.c). The data stage lands straight in
+             * E_cal, the band is marked valid and dirty here; Cal_Main() writes that band's
+             * EEPROM row by itself (3.238, the PPM way). No save command (type 4 write stalls).
+             * Exact length only: a wrong type / band / length is not handled (stall).
+             */
+            case CMD_CALIBRATION:
+                l_cal_type = CY_GET_REG8(USBFS_wValueHi);
+                l_cal_band = CY_GET_REG8(USBFS_wValueLo);
+                l_cal_len = ((uint16)CY_GET_REG8(USBFS_lengthHi) << 8) | CY_GET_REG8(USBFS_length);
+                if (l_cal_band >= CAL_BANDS) break;
+                USBFS_currentTD.count = 0;
+                if (l_cal_type == CAL_TYPE_RX_IQ && l_cal_len == 4) {
+                    USBFS_currentTD.pData = (void *)&E_cal.rx_iq[l_cal_band][0];
+                    USBFS_currentTD.count = 4;
+                } else if (l_cal_type == CAL_TYPE_TX_IQ && l_cal_len == 4) {
+                    USBFS_currentTD.pData = (void *)&E_cal.tx_iq[l_cal_band][0];
+                    USBFS_currentTD.count = 4;
+                } else if (l_cal_type == CAL_TYPE_POWER && l_cal_len == 2) {
+                    USBFS_currentTD.pData = (void *)&E_cal.power[l_cal_band][0];
+                    USBFS_currentTD.count = 2;
+                }
+                if (USBFS_currentTD.count != 0) {
+                    // valid mask = uint16 little endian: band 0-7 in byte 0, 8-11 in byte 1
+                    E_cal.valid[l_cal_type - CAL_TYPE_RX_IQ][l_cal_band >> 3] |= (uint8)(1u << (l_cal_band & 7u));
+                    E_cal_dirty[l_cal_band] = 1;
+                    E_cal_quiet = CAL_QUIET_SET;
+                    requestHandled = USBFS_InitControlWrite();
+                }
                 break;
 
             /*

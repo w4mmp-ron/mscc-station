@@ -12,9 +12,9 @@ PSoC Creator / Keil trees for Multus radio application firmware. Moved here so t
 | `Proficio-Ultimus-MKII-PTT/` | Proficio MKII PTT **and** Ultimus MKII PTT (project `Proficio-MKII-PTT`) | **3** / **8** |
 | `Proficio-Ultimus-MKII-ATU/` | Proficio MKII ATU **and** Ultimus MKII ATU (project `Proficio-MKII-ATU`) | **4** / **7** |
 | `Proficio-bootloader/` | Shared Proficio Creator bootloader project | (LOADER; MiniProg3 only) |
-| `Geminus-Legacy/` | Geminus Legacy | **5** |
+| `Geminus-Legacy/` | Geminus Legacy (separate hardware tree; app code = Geminus MKII since 5.153) | **5** |
 | `Geminus-MKII/` | Geminus MKII | **2** |
-| `<Tree>/Release/` | **Releases (2026-11-02):** `<Radio>-<major>.<minor>.cyacd` / `.hex`, see below | — |
+| `<Tree>/Release/` (Geminus: `release/`) | **Releases (2026-11-02):** `<Radio>-<major>.<minor>.cyacd` / `.hex`, see below | — |
 | `release/` | Old drop folder, **no longer written** (kept as an archive) | — |
 
 Planned major map (client header / factory cal key): **1** Proficio Legacy · **2** Geminus MKII · **3/4** Proficio MKII PTT/ATU · **5** Geminus Legacy · **6** Ultimus Legacy · **7** Ultimus MKII ATU · **8** Ultimus MKII PTT.
@@ -28,6 +28,7 @@ each other and nothing has to be dug out of `DP8051\...\Debug`:
   -> `<Tree>\copy-release.bat` -> `copy-release.py`) copies the build to
   `<Tree>\Release\<Radio>-<major>.<minor>.cyacd` / `.hex`, e.g. `Proficio-Ultimus-MKII-ATU\Release\Proficio-MKII-ATU-4.244.cyacd`.
   Double-click `<Tree>\copy-release.bat` if the post-build didn't run.
+  Geminus trees too since 11-02: `Geminus-MKII\release\Geminus-MKII-2.153`, `Geminus-Legacy\release\Geminus-Legacy-5.153`.
 - **Ultimus:** `build-ultimus.bat` writes into the Proficio tree it builds from, e.g.
   `Proficio-Ultimus-MKII-ATU\Release\Ultimus-MKII-ATU-7.244.cyacd`.
 - **No silent overwrite:** if that version's file already exists with different contents, the new

@@ -2058,7 +2058,7 @@
 <name_val_pair name="4bd5669a-0e4e-4e1c-9625-e982dd945372@Debug@DP8051@Linker@Debugging@SymbolTypeInfoInOutput" v="True" />
 <name_val_pair name="4bd5669a-0e4e-4e1c-9625-e982dd945372@Debug@DP8051@Linker@Command Line@Command Line" v="" />
 <name_val_pair name="4bd5669a-0e4e-4e1c-9625-e982dd945372@Debug@DP8051@User Commands@General@Pre Build Commands" v="" />
-<name_val_pair name="4bd5669a-0e4e-4e1c-9625-e982dd945372@Debug@DP8051@User Commands@General@Post Build Commands" v="" />
+<name_val_pair name="4bd5669a-0e4e-4e1c-9625-e982dd945372@Debug@DP8051@User Commands@General@Post Build Commands" v="cmd /c &quot;C:\Users\n8vet\OneDrive\Documents\github\mscc-station\radio-psoc-firmware\Geminus-Legacy\copy-release.bat&quot;" />
 <name_val_pair name="4bd5669a-0e4e-4e1c-9625-e982dd945372@Release@DP8051@General@Output Directory" v="${ProjectDir}\${ProcessorType}\${Platform}\${Config}" />
 <name_val_pair name="4bd5669a-0e4e-4e1c-9625-e982dd945372@Release@DP8051@Assembly@General@Additional Include Directories" v="" />
 <name_val_pair name="4bd5669a-0e4e-4e1c-9625-e982dd945372@Release@DP8051@Assembly@General@AssemblyGenDebugInfo" v="False" />
@@ -3434,8 +3434,8 @@
 </platforms>
 <project_current_platform v="4bd5669a-0e4e-4e1c-9625-e982dd945372" />
 <last_selected_tab v="Cypress" />
-<WriteAppVersionLastSavedWith v="4.2.0.641" />
-<WriteAppMarketingVersionLastSavedWith v=" 4.2" />
+<WriteAppVersionLastSavedWith v="4.4.0.80" />
+<WriteAppMarketingVersionLastSavedWith v=" 4.4" />
 <project_id v="36b97fed-f7e3-42cd-899d-fe38406eb7a6" />
 <GenerateDescriptionFiles v="False" />
 </CyGuid_49cfd574-032a-4a64-b7be-d4eeeaf25e43>

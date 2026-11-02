@@ -37,9 +37,59 @@
 //   5 Geminus Legacy · 6 Ultimus Legacy · 7 Ultimus MKII ATU · 8 Ultimus MKII PTT
 // Minor is the build/release number (0–255).
 
-#define FIRMWARE_VERSION_MAJOR 5
-#define FIRMWARE_VERSION_MINOR 120
+
+#define FIRMWARE_VERSION_MAJOR 5     // Geminus Legacy (Geminus MKII is 2)
+#define FIRMWARE_VERSION_MINOR 153   // 5.153 (2026-11-02): Geminus MKII 2.153 code ported to Geminus Legacy (no onboard PIC keyer):
+                                     //   DAC soft-mute ramps on TUN/PTT edges and CW elements, per-band calibration 0xC8,
+                                     //   entering CW drops TUN/PTT TX. Was 5.120.
+                                     // 2.153 (2026-10-31): DAC soft-mute ramps on TUN/PTT edges and CW elements (Proficio 3.240-3.242)
+                                     // 2.152 (2026-10-31): per-band calibration store 0xC8, as Proficio MKII PTT 3.238+
 #define FIRMWARE_VERSION ((((FIRMWARE_VERSION_MINOR) << 8) & 0xff00) | ((FIRMWARE_VERSION_MAJOR) & 0x00ff))
+
+/*
+ * Per-band calibration in the radio (Geminus: end of settings01.c), same protocol as the Black Pill 3.7.
+ * CMD_CALIBRATION (usbvend.h): wValue high byte = type, low byte = band.
+ * Read = get, write = set; exact length or stall. Payloads little endian:
+ *   1 RX IQ: int16 gain, int16 phase (4 bytes)    2 TX IQ: same
+ *   3 power: uint16 (2 bytes)
+ *            1-3 are written to EEPROM by the radio itself, one row per band (3.238).
+ *   4 status: read only = [write status, 1 = loaded at boot]. 3.238: no save command
+ *            (write stalls; was "write with no data saves" in 3.235-3.237).
+ *   5 valid: read only, 3 x uint16 masks [RX IQ, TX IQ, power], bit N = band N set
+ *   6 clear: removed in 3.239 (no-data request, like the old save; now stalls).
+ * 0 is a real value: the server uses the valid masks, its own default for unset bands.
+ * Bands: MSCC order, 0 = 10 m ... 9 = 160 m, 10 = 630 m, 11 = 2200 m.
+ */
+#define CAL_BANDS       12u
+#define CAL_TYPE_RX_IQ  1u
+#define CAL_TYPE_TX_IQ  2u
+#define CAL_TYPE_POWER  3u
+#define CAL_TYPE_SAVE   4u
+#define CAL_TYPE_VALID  5u
+#define CAL_SAVE_IDLE    0u  /* no row written since boot */
+#define CAL_SAVE_BUSY    1u  /* row being written */
+#define CAL_SAVE_OK      2u
+#define CAL_SAVE_FAILED  3u  /* EEPROM error */
+#define CAL_SAVE_REFUSED 4u  /* not used since 3.238 (writes wait for RX) */
+#define CAL_QUIET_SET   10u  /* Cal_Main passes (~3.5 ms) after a set before writing */
+typedef struct {            /* RAM only since 3.238 (EEPROM = one row per band, calibration.c) */
+    uint8 magic[4];
+    uint8 version;
+    uint8 pad;
+    uint8 rx_iq[CAL_BANDS][4];
+    uint8 tx_iq[CAL_BANDS][4];
+    uint8 power[CAL_BANDS][2];
+    uint8 valid[3][2];      /* uint16 little endian per type */
+    uint8 reserved[10];
+    uint8 crc[2];           /* CRC-16 of everything before it, little endian */
+} cal_record_t;
+extern cal_record_t E_cal;
+extern uint8 E_cal_status[2];
+extern volatile uint8 E_cal_dirty[CAL_BANDS];  /* ISR: band set, its row to write */
+extern volatile uint8 E_cal_quiet;             /* ISR: passes to wait before writing */
+void Cal_Init(void);
+void Cal_Main(void);
+
 #define EEPROM_PCB_VERSION_LOCATION 11
         
 typedef uint16 uint16_t;
@@ -117,10 +167,23 @@ extern uint8 E_cw_hold;
 extern uint8_t E_keyer_mode;
 extern uint8_t E_wpm;
 extern uint8_t E_spacing;
+extern uint8_t E_mem_text_wpm; /* SET_MEM_TEXT_WPM 0x76: 0=off, else memory-play text WPM */
 extern uint8_t E_weight;
 extern uint8_t E_side_tone;
 extern uint8_t E_paddle;
 extern uint8_t E_keyer_installed;
+/*
+ * Keyer CQ memory USB packet (control write, 2 bytes — same style as other CW ops):
+ *   E_keyer_mem_pkt[0] = param (0=play, 1=begin, 2=end, 0x20-0x7E=ASCII)
+ *   E_keyer_mem_pkt[1] = sequence (host increments each transfer; never 0)
+ * Configure_CW: stable-read on seq change → ring queue → I2C one pair at a time.
+ */
+#define KEYER_MEM_Q_SIZE 80
+extern volatile uint8_t E_keyer_mem_pkt[2];
+extern volatile uint8_t E_keyer_mem_q[KEYER_MEM_Q_SIZE];
+extern volatile uint8_t E_keyer_mem_q_head;
+extern volatile uint8_t E_keyer_mem_q_tail;
+extern volatile uint8_t E_keyer_mem_q_count;
 //extern uint8 E_cw_defaults;
 
 extern uint32 E_current_rit_freq;
@@ -200,6 +263,22 @@ void Settings_Main(void);
 extern uint8 TX_Request;
 extern uint8 TX_Inhibit;
 void TX_Main(void);
+void TX_Reset(void);
+uint8 TX_Idle(void);
+/*
+ * 2.153: RF edge shaping with the PCM3060 DAC soft mute (reg 0x44), as Proficio MKII PTT
+ * 3.240-3.242. 0.5 dB per 8/fs = 16.7 ms full ramp at 96 kHz. No 1 ms timer ISR on the
+ * Geminus: E_ms_tick counts in the main loop from STATUS_BEAT (one change per 0.5 ms).
+ */
+#define TX_KEY_DELAY_MS 25u     //TUN/PTT: relays on with I/Q blanked and DAC muting, RF ramps up after this
+#define TX_DAC_RAMP_MS 18u      //DAC soft mute ramp before relays drop (16.7 ms at 96 kHz)
+#define AMP_RELEASE_MS 10u      //AMP / BS2 off this long before the T/R relay
+#define MODE_DRAIN_MAX_MS 60u   //Entering CW while TUN / PTT keyed: max wait for TX_Main to ramp down
+extern volatile uint8 E_ms_tick;
+void TX_DAC_Mute(uint8 mute);
+void CW_Key_Delay_Stop(void);
+void CW_Key_Delay_Tick(void);
+uint8 PCM3060_SetRegister(uint8 reg, uint8 val);
 
 // t1.c
 extern uint8 T1_Band_Number;

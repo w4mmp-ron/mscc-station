@@ -17,7 +17,8 @@ every pull. Newest first. Detailed write-ups for Ron go in `.mscc-coord/NOTE-FOR
   `Ultimus-*` trees are deleted. Releases go to each tree's `Release\` as
   `<Radio>-<major>.<minor>.cyacd/.hex` (Proficio from the Creator post-build via `copy-release.bat`
   -> `copy-release.py`, Ultimus from `build-ultimus.bat`); never overwritten (a different build of
-  the same version becomes `-b2`). **Bump FIRMWARE_VERSION_MINOR for every test build.** Old
+  the same version becomes `-b2`). **Bump FIRMWARE_VERSION_MINOR for every test build.** Geminus
+  trees use the same `copy-release.bat` post-build (folders `Geminus-MKII\release`, `Geminus-Legacy\release`). Old
   top-level `release\` = archive. Post-build lines use the full path (`${ProjDir}` fails).
 - Machines: **Shack** = build PC (VS, PSoC Creator). **NEW-HP** = test PC with the radio
   (Proficio MKII PTT, FW 3.242), Signal Hound SA, good mic.
@@ -34,6 +35,7 @@ every pull. Newest first. Detailed write-ups for Ron go in `.mscc-coord/NOTE-FOR
 | FW Proficio Legacy | 1.236 | Ron's 1.235 (CW key delay + fades, 0xC8 cal store, SSB-after-CW fix) + TUN/PTT DAC fade and mode-change drain (= MKII 3.241/3.242). In `Proficio-Ultimus-Legacy/` (was `Proficio-Legacy/`); `Proficio-Legacy - Copy` kept as reference. Tested on a Legacy rig 10-31 |
 | FW Proficio MKII ATU | 4.244 | **4.244: `Key_Delay_isr` RISING_EDGE (was DERIVED: ms tick fast, PA hot-switched), DAC muted in non-QSK RX.** = MKII PTT 3.242 app code (cal store, CW key delay + fades, TUN/PTT DAC mute, mode drain) + Elecraft T1 port kept (`t1.c`, `T1_Main()` in the beater, `STATUS_ATU_0`). Schematic: `Key_Delay_Timer` (FF 16-bit, CW_Clock, period 10, continuous, reset tied 0) + `Key_Delay_isr` added on the CW Management sheet. Built 10-31, **tested on a radio 11-01**; T1 untested (no T1 here) |
 | FW Geminus MKII | 2.153 | **0xC8 calibration store (2.152)**, **DAC soft-mute shaping on TUN/PTT and CW (2.153)** |
+| FW Geminus Legacy | 5.153 | **11-02: Geminus MKII 2.153 app code ported (same schematic/pins); major 5, `E_keyer_installed = FALSE` (no onboard PIC). Old Legacy CW (DIN-gated, no fades) replaced. Bootloadable dependency fixed to `..\bootloader\...\Release\bootloader.hex`. Built, not yet tested on a radio.** Trees stay separate (Stew: different radios) |
 
 ## Ultimus firmware built from the Proficio trees (2026-10-31)
 

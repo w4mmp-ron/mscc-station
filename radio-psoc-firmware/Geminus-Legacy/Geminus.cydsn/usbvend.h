@@ -31,6 +31,8 @@
 #define CMD_SET_USRP1       0x50 // CMD_SET_USRP1
 #define CMD_GET_CW_KEY      0x51 // CMD_GET_CW_KEY
 #define CMD_SET_SI570       0x20 // CMD_SET_SI570 - Not Needed for Multus - Currently a NOOP 
+#define CMD_GET_PPM_INT     0x94 // Return INTEGER PART OF PPM
+#define CMD_GET_PPM_DEC     0x95 // Return DECIMAL PART OF PPM
 
 
 //These receive Data FROM the HOST
@@ -52,7 +54,10 @@
 #define SET_CW_PADDLE 0x73
 #define SET_IAMBIC_TYPE 0x74
 #define SET_SPACING 0x75
-#define SET_MEMORY_TYPE 0x76
+/* Memory-play Farnsworth text WPM (was SET_MEMORY_TYPE).
+ * Param: 0=off; 5–60=text WPM for CQ memory inter-char gaps. Elements use SET_WPM. */
+#define SET_MEM_TEXT_WPM 0x76
+#define SET_MEMORY_TYPE SET_MEM_TEXT_WPM /* legacy alias */
 #define SET_WEIGHT 0x77
 #define SET_SEMI_BREAKIN 0x78
 #define SET_SEMI_CONTROL 0x79
@@ -63,10 +68,14 @@
 #define SET_CW_INTERFACE_METHOD 0x7E
 #define SET_SIDE_TONE 0x7F
 
-// CW Message Management
+// CW Message Management (legacy 0x80-0x82; NB uses those on host now)
 #define SET_CW_RECORD_MESSAGE 0x80
 #define SET_CW_PLAY_MSG 0x81
 #define SET_CW_STOP_MSG 0x82
+
+/* PIC keyer CQ memory — match ms-sdr CMD_SET_KEYER_MEMORY.
+ * Param: 0=play, 1=store begin, 2=store end, 0x20-0x7E=append ASCII char */
+#define CMD_SET_KEYER_MEMORY 0x9C
 
 //Special Commands
 #define CMD_SET_TRANSCEIVER_CW_PITCH 0x90           
@@ -109,5 +118,8 @@
 #define CMD_ENTER_BOOTLOADER 0x0E
 #define CMD_REBOOT_APP       0x0F
 #define CMD_REBOOT           CMD_REBOOT_APP /* alias */
+
+/* Per-band calibration get / set / save, same as Black Pill 3.7 (basic-plus.h). */
+#define CMD_CALIBRATION      0xC8
 
 /* [] END OF FILE */
