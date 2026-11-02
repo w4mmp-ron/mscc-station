@@ -165,7 +165,11 @@ Git repo root: `C:\Users\Ron\.grok\worktrees`.
   TX on a meter fault (backstop; WSJT-X on the Pi keys via CAT, so the client can't stop it).
 - **Parked:** NR warble fix (Ron 2026-11-01: leave it, NR works well; lower level = less
   warble). Sync AM (off the list). Complex Goertzel for FREQ CAL and FM transmit (future ideas,
-  see "Ron confirmed" below).
+  see "Ron confirmed" below). CW ramp length by speed (Ron 2026-11-02, just a thought): the key
+  delay (20-40 ms) already shows each element's length ahead, so the ramp could be chosen per
+  element (longer normally, shorter only for very short elements/spaces), any key, no speed
+  needed. Pill: easy (table + step count), only if 5 ms proves a problem on the analyzer. PSoC:
+  only after the own-I/Q fix (doesn't fix the staircase).
 
 Old history (resume points before 2026-10-31 afternoon, dated change logs, closed items) is
 in `rpi/CLAUDE-history.md`. Grep it for earlier work on a topic; don't read it whole.
