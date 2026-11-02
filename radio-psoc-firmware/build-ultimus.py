@@ -5,9 +5,10 @@ Ultimus radios are hand-buildable (through-hole) Proficios. The firmware is the 
 only the firmware major (radio identity for MSCC / factory cal) and the USB product string
 differ. So each Ultimus image is built from the matching Proficio tree:
 
-    legacy    Proficio-Legacy    major 1  ->  Ultimus-Legacy    major 6
-    mkii-ptt  Proficio-MKII-PTT  major 3  ->  Ultimus-MKII-PTT  major 8
-    mkii-atu  Proficio-MKII-ATU  major 4  ->  Ultimus-MKII-ATU  major 7
+    legacy    Proficio-Ultimus-Legacy   (Proficio-Legacy,   major 1)  ->  Ultimus-Legacy    major 6
+    mkii-ptt  Proficio-Ultimus-MKII-PTT (Proficio-MKII-PTT, major 3)  ->  Ultimus-MKII-PTT  major 8
+    mkii-atu  Proficio-Ultimus-MKII-ATU (Proficio-MKII-ATU, major 4)  ->  Ultimus-MKII-ATU  major 7
+(folders renamed 2026-11-02; the old separate Ultimus-* source trees are gone)
 
 How it works
   1. Build the Proficio project in PSoC Creator as usual (Shift+F6). That makes the
@@ -19,7 +20,7 @@ How it works
      picks the Ultimus major), sets the USB product string to "Ultimus", links and makes the
      .cyacd / .hex with the same Keil / Cypress tools and options Creator uses, then copies
      them to the Proficio tree's Release\ folder as <name>-<major>.<minor>.cyacd/.hex, e.g.
-     Proficio-MKII-ATU\Release\Ultimus-MKII-ATU-7.244.cyacd (never overwriting a different
+     Proficio-Ultimus-MKII-ATU\Release\Ultimus-MKII-ATU-7.244.cyacd (never overwriting a different
      build of the same version: see copy-release.py).
 
 Requires: PSoC Creator 4.4 (Keil C51 licence) on this PC, Python 3.
@@ -50,9 +51,9 @@ BOOTLOADER_HEX = os.path.join(HERE, "Proficio-bootloader", "bootloader.cydsn",
                               "DP8051", "DP8051_Keil_951", "Release", "bootloader.hex")
 
 VARIANTS = {
-    "legacy":   ("Proficio-Legacy",   "Proficio-Legacy",   "Ultimus-Legacy",   6),
-    "mkii-ptt": ("Proficio-MKII-PTT", "Proficio-MKII-PTT", "Ultimus-MKII-PTT", 8),
-    "mkii-atu": ("Proficio-MKII-ATU", "Proficio-MKII-ATU", "Ultimus-MKII-ATU", 7),
+    "legacy":   ("Proficio-Ultimus-Legacy",   "Proficio-Legacy",   "Ultimus-Legacy",   6),
+    "mkii-ptt": ("Proficio-Ultimus-MKII-PTT", "Proficio-MKII-PTT", "Ultimus-MKII-PTT", 8),
+    "mkii-atu": ("Proficio-Ultimus-MKII-ATU", "Proficio-MKII-ATU", "Ultimus-MKII-ATU", 7),
 }
 PRODUCT = "Ultimus"
 

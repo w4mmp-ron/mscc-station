@@ -12,6 +12,13 @@ every pull. Newest first. Detailed write-ups for Ron go in `.mscc-coord/NOTE-FOR
   `MSCC.Wpf.*` / `MSCC.Core.*` to `C:\mscc-net9` itself (`CopyToMsccNet9` target).
   Version in `MSCC.Wpf/ClientVersion.txt` (bumped per build).
 - Radio firmware: `radio-psoc-firmware/` (PSoC Creator 4.4, Keil; builds on Shack only).
+  **Since 11-02:** one tree per family, `Proficio-Ultimus-Legacy/`, `Proficio-Ultimus-MKII-PTT/`,
+  `Proficio-Ultimus-MKII-ATU/` (Creator projects keep their `Proficio-*` names); the separate
+  `Ultimus-*` trees are deleted. Releases go to each tree's `Release\` as
+  `<Radio>-<major>.<minor>.cyacd/.hex` (Proficio from the Creator post-build via `copy-release.bat`
+  -> `copy-release.py`, Ultimus from `build-ultimus.bat`); never overwritten (a different build of
+  the same version becomes `-b2`). **Bump FIRMWARE_VERSION_MINOR for every test build.** Old
+  top-level `release\` = archive. Post-build lines use the full path (`${ProjDir}` fails).
 - Machines: **Shack** = build PC (VS, PSoC Creator). **NEW-HP** = test PC with the radio
   (Proficio MKII PTT, FW 3.242), Signal Hound SA, good mic.
 
@@ -24,7 +31,7 @@ every pull. Newest first. Detailed write-ups for Ron go in `.mscc-coord/NOTE-FOR
 | ms-sdr | 3.189 | **QRP save step (0xA2 bit 15 = save; radio written only then), radio cal status to the client on 0x2D at connect / after each radio write (3.189)**, PTT poll `r == 1`, power cal in the radio (0xC8), CW + TUN stuck TX, 0xFE 0 release, 0x30 messages forwarded, firmware type in log, PPM cal start point, TX I/Q phase, **TX/RX I/Q stored in and loaded from the radio**, **TX I/Q from CW mode fix** |
 | client | 11.1.5 | **WiFi SWR meter fault relayed by Pi ms-sdr 3.188 (extended 0x0F: fault, online, meter IP) handled; fault kept with every relayed reading; RESET falls back to the 0x0F IP (11.1.5)**; **2 TONE button next to Tune: arms two-tone, Tune then sends it (switches to USB if needed), disarmed on Stop (11.1.3)**; **FREQ CAL: waits for the previous cal tab's restore before CW (USB bug fixed), "must be in CW" note, opens at 4× left-panel zoom and restores it on leave (11.1.2)**; **QRP CAL "Save this calibration?" Yes/No (Reject gone), lamps follow the radio's power mask (0x2D), I/Q APPLY renamed SAVE, Start / Save settings / POTENTIA tooltips, Full Power renamed AMP (11.1.0)**; TX I/Q PHASE slider; LSB/USB/DIG-U/AM filter buttons send the index (Ron's LSB note 10-31); cuts pushed once at connect |
 | FW MKII PTT | 3.243 | DAC soft mute on TUN/PTT release, mode-change drain; **3.243: DAC kept muted in non-QSK RX (no effect on the comb, see 11-02)** |
-| FW Proficio Legacy | 1.236 | Ron's 1.235 (CW key delay + fades, 0xC8 cal store, SSB-after-CW fix) + TUN/PTT DAC fade and mode-change drain (= MKII 3.241/3.242). In `Proficio-Legacy/`; `Proficio-Legacy - Copy` kept as reference. Tested on a Legacy rig 10-31 |
+| FW Proficio Legacy | 1.236 | Ron's 1.235 (CW key delay + fades, 0xC8 cal store, SSB-after-CW fix) + TUN/PTT DAC fade and mode-change drain (= MKII 3.241/3.242). In `Proficio-Ultimus-Legacy/` (was `Proficio-Legacy/`); `Proficio-Legacy - Copy` kept as reference. Tested on a Legacy rig 10-31 |
 | FW Proficio MKII ATU | 4.244 | **4.244: `Key_Delay_isr` RISING_EDGE (was DERIVED: ms tick fast, PA hot-switched), DAC muted in non-QSK RX.** = MKII PTT 3.242 app code (cal store, CW key delay + fades, TUN/PTT DAC mute, mode drain) + Elecraft T1 port kept (`t1.c`, `T1_Main()` in the beater, `STATUS_ATU_0`). Schematic: `Key_Delay_Timer` (FF 16-bit, CW_Clock, period 10, continuous, reset tied 0) + `Key_Delay_isr` added on the CW Management sheet. Built 10-31, **tested on a radio 11-01**; T1 untested (no T1 here) |
 | FW Geminus MKII | 2.153 | **0xC8 calibration store (2.152)**, **DAC soft-mute shaping on TUN/PTT and CW (2.153)** |
 
@@ -36,7 +43,7 @@ every pull. Newest first. Detailed write-ups for Ron go in `.mscc-coord/NOTE-FOR
 - `radio-psoc-firmware/build-ultimus.py` (+ `.bat`): after a Creator build of the Proficio tree,
   copies the .cydsn to git-ignored `_ultimus-build/`, recompiles the app with `DF(ULTIMUS)`
   (`#ifdef ULTIMUS` in basic-plus.h picks the major), patches the USB product string, links and
-  runs CyHexTool with Creator's options, writes `release/Ultimus-<radio>/...-YYYYMMDD.cyacd/.hex`.
+  runs CyHexTool with Creator's options, writes `<tree>\Release\Ultimus-<radio>-<major>.<minor>.cyacd/.hex` (since 11-02).
   Trees without the switch are skipped.
 - Done: Legacy (Ultimus 6.236 confirmed in MSCC on Stew's Ultimus Legacy), MKII ATU (Ultimus
   7.243, tested 11-01), MKII PTT (Ultimus 8.242, tested 11-01).

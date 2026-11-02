@@ -1,16 +1,18 @@
 r"""
 Copy a PSoC Creator build into the tree's own Release\ folder, named by firmware version.
 
-    py -3 copy-release.py <TreeFolder> [<ProjectName>]
+    py -3 copy-release.py <TreeFolder> <ProjectName> [<ReleaseName>]
 
-    <TreeFolder>   folder under radio-psoc-firmware, e.g. Proficio-MKII-ATU
-    <ProjectName>  Creator project name if different from the folder (Geminus trees: Geminus)
+    <TreeFolder>   folder under radio-psoc-firmware, e.g. Proficio-Ultimus-MKII-ATU
+    <ProjectName>  Creator project in it, e.g. Proficio-MKII-ATU (Geminus trees: Geminus)
+    <ReleaseName>  name for the release files, default = <ProjectName> (Geminus-MKII: Geminus-MKII)
 
 Reads FIRMWARE_VERSION_MAJOR / _MINOR from <Tree>\<Project>.cydsn\basic-plus.h (the non-Ultimus
 major when there is an #ifdef ULTIMUS switch) and copies
     <Tree>\<Project>.cydsn\DP8051\DP8051_Keil_951\Debug\<Project>.cyacd / .hex
 to
-    <Tree>\Release\<Tree>-<major>.<minor>.cyacd / .hex      e.g. Proficio-MKII-ATU-4.244.cyacd
+    <Tree>\Release\<ReleaseName>-<major>.<minor>.cyacd / .hex
+e.g. Proficio-Ultimus-MKII-ATU\Release\Proficio-MKII-ATU-4.244.cyacd
 
 A release is never overwritten with different contents: if <name>-4.244.cyacd already exists and
 differs, the new build is saved as <name>-4.244-b2 (b3, ...) and you are told to bump
@@ -79,10 +81,11 @@ def place(files, dest_dir, base):
 
 
 def main():
-    if len(sys.argv) < 2:
-        fail("usage: copy-release.py <TreeFolder> [<ProjectName>]")
+    if len(sys.argv) < 3:
+        fail("usage: copy-release.py <TreeFolder> <ProjectName> [<ReleaseName>]")
     tree = sys.argv[1]
-    proj = sys.argv[2] if len(sys.argv) > 2 else tree
+    proj = sys.argv[2]
+    rname = sys.argv[3] if len(sys.argv) > 3 else proj
     root = os.path.join(HERE, tree)
     cydsn = os.path.join(root, proj + ".cydsn")
     major, minor = firmware_version(os.path.join(cydsn, "basic-plus.h"))
@@ -92,7 +95,7 @@ def main():
         if not os.path.isfile(f):
             fail("missing %s: build the project in PSoC Creator first" % f)
         files[ext] = f
-    base = "%s-%d.%d" % (tree, major, minor)
+    base = "%s-%d.%d" % (rname, major, minor)
     name = place(files, os.path.join(root, "Release"), base)
     print("OK: %s\\Release\\%s.cyacd / .hex" % (tree, name))
 

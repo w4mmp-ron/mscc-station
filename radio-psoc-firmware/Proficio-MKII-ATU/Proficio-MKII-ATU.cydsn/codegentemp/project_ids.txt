@@ -1,8 +1,0 @@
-C:\Users\n8vet\OneDrive\Documents\github\mscc-station\radio-psoc-firmware\Proficio-MKII-ATU\Proficio-MKII-ATU.cydsn\Proficio-MKII-ATU.cyprj|cb777963-81bd-44e0-b144-8c3beae8d668
-C:\Program Files (x86)\Cypress\PSoC Creator\4.4\PSoC Creator\psoc\content\default\CyAnnotationLibrary\CyAnnotationLibrary.cylib\CyAnnotationLibrary.cyprj|fb932e8e-bbe2-4182-83b0-7ccc3a0cc530
-C:\Users\n8vet\OneDrive\Documents\PSoC Creator\4.4\Downloads ( 4.4).cylib\Downloads ( 4.4).cyprj|672d4348-e1f5-4635-ba8c-b2a2d0250775
-C:\Users\n8vet\OneDrive\Documents\PSoC Creator\4.2\Downloads ( 4.2).cylib\Downloads ( 4.2).cyprj|7dc52800-fd02-4ee5-8296-6573dbb6a229
-C:\Program Files (x86)\Cypress\PSoC Creator\4.4\PSoC Creator\psoc\content\cycomponentlibraryupdates\CyComponentLibraryUpdates.cylib\CyComponentLibraryUpdates.cyprj|1c8e2636-76c8-480d-8cf2-8ee69b2fe4c2
-C:\Program Files (x86)\Cypress\PSoC Creator\4.4\PSoC Creator\psoc\content\cycomponentlibrary\CyComponentLibrary.cylib\CyComponentLibrary.cyprj|893c9b19-7a5b-48c4-a1a7-6d8217563256
-C:\Program Files (x86)\Cypress\PSoC Creator\4.4\PSoC Creator\psoc\content\cyprimitives\CyPrimitives.cylib\CyPrimitives.cyprj|fcc78586-db5f-4acd-b91c-eca861886a57
-C:\Program Files (x86)\Cypress\PSoC Creator\4.4\PSoC Creator\psoc\content\default\CyReferenceLibrary\CyReferenceLibrary.cylib\CyReferenceLibrary.cyprj|58c8e0fa-d4ba-426d-aad6-f6e2de2e9967

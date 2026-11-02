@@ -3,3 +3,6 @@ _ultimus-build/
 
 # PSoC Creator per-user settings (<project>.cyprj.<user>, <workspace>.cywrk.<user>)
 *.n8vet
+
+# Python cache (copy-release.py imported by build-ultimus.py)
+__pycache__/

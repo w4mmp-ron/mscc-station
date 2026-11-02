@@ -1,0 +1,22 @@
+# PSoC Creator post-build: copy .cyacd + .hex to Release\ by version
+
+Project -> Build Settings -> User Commands -> Post Build (Debug configuration), full path, in quotes:
+
+    cmd /c "C:\Users\n8vet\OneDrive\Documents\github\mscc-station\radio-psoc-firmware\Proficio-Ultimus-Legacy\copy-release.bat"
+
+(${ProjDir} does not work here. Already set in the .cyprj; re-check after moving the repo.)
+
+## What gets written
+
+    Proficio-Ultimus-Legacy\Release\Proficio-Legacy-<major>.<minor>.cyacd / .hex      e.g. Proficio-Legacy-4.244
+
+build-ultimus.bat puts the Ultimus build of this tree in the same folder:
+
+    Proficio-Ultimus-Legacy\Release\Ultimus-...-<major>.<minor>.cyacd / .hex
+
+A different build of an existing version is saved as ...-b2 with a warning: bump
+FIRMWARE_VERSION_MINOR in basic-plus.h for every build you flash for testing.
+
+## Manual
+
+Double-click  Proficio-Ultimus-Legacy\copy-release.bat
