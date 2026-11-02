@@ -94,10 +94,15 @@ Git repo root: `C:\Users\Ron\.grok\worktrees`.
   CMD_SWR_METER_RESET: client RESET -> HTTP reset to the meter in a detached thread) BUILT on the Pi, NOT
   running until mscc stop/start, NOT committed.** Stew pulled 11-01: client 11.1.5 (0x0F handled, installer
   R11-1-5), Windows trans 3.157 (2 TONE + voice ALC 0.89; 0.45 was a bad StarTech USB card). Note:
-  `.mscc-coord/NOTE-FOR-STEW-2TONE-PI-AND-0x2E-2026-11-01.md`. Tests: 2 TONE on air; fault latch + RESET with 11.1.5.
+  `.mscc-coord/NOTE-FOR-STEW-2TONE-PI-AND-0x2E-2026-11-01.md`. Running since 19:46. **Fault test PASSED 19:51
+  (Ron, client 11.1.5):** meter fault latched -> client showed fault + RESET, Ron pressed RESET (client
+  direct HTTP) -> meter cleared, ms-sdr relayed it. Open: 2 TONE on air; 0x2E RESET path (needs Stew's client send).
 - **SWR meter firmware (Ron 2026-11-01):** auto-tune on 30 m runs longer than the meter's time limit, so
   the meter faults. Firmware source is NOT in the tree (only swr-meter/ Python app + summary); Ron asks
-  Stew to add it. Then find the limit and fix. Also pending Ron's decision: should ms-sdr itself stop
+  Stew to add it. 11-01 evening tests: trips ~1 s into a 15 m auto-tune (tune power 43: fwd 61 ref 25.00
+  swr 4.55; 34: fwd 38 ref 25.00 swr 9.82); 30 m tunes 5.5-7.4 s did not trip. Ron: meter "Fault Trip
+  Count" is already at max and is too short for a slow tuner match (firmware limit). Client 11.1.5 dropped
+  TX 2 ms after the relayed fault (good). Then find the limit and fix. Also pending Ron's decision: should ms-sdr itself stop
   TX on a meter fault (backstop; WSJT-X on the Pi keys via CAT, so the client can't stop it).
 - **Parked:** NR warble fix (Ron 2026-11-01: leave it, NR works well; lower level = less
   warble). Sync AM (off the list). Complex Goertzel for FREQ CAL and FM transmit (future ideas,
