@@ -34,6 +34,10 @@ Git repo root: `C:\Users\Ron\.grok\worktrees`.
   to a piece of work first (code, notes, note for Stew), then ONE commit and one push. No
   follow-up "notes: committed xyz" commits.
 
+**ON HOLD (Ron, 2026-11-02): no new changes until Stew catches up on the important Pi work
+(automatic NB, spectral NR, NR Low/Med/High, client controls).** When he pushes: pull, short
+review of what he ported, say if the Pi needs a matching change. Don't start new work meanwhile.
+
 **Current list (2026-11-01, after 212107e):**
 - **Pi runs:** recv 3.152 (automatic NB + spectral NR), trans 3.149 (ALC ceiling 0.89),
   ms-sdr 3.186, pill 3.12. DRM recv 3.152 built in `~/mscc-drm` (switch:
