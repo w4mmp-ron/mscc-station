@@ -52,6 +52,12 @@ Git repo root: `C:\Users\Ron\.grok\worktrees`.
   0, 1, 8-19 (cal row per band is full, byte 14 only spare); plan: 12 QRO rows 20-31, same
   one-row-per-band write. Then ms-sdr load/send as QRP, trans save flag, Windows ms-sdr port,
   client (Stew).
+- **2026-11-02 later: PSoC comb fix handed to Stew (Ron: Stew does the PSoC, Ron does the pill).**
+  Stew's answer (`NOTE-FOR-RON-TX-EDGE-COMB-ANSWERS-2026-11-02.md`): comb on BOTH CW edges, not
+  audible on air; his better plan = fade the LIVE slot (copy + raised-cosine scale only during
+  fades, SetTxBufAddress), all modes, no soft mute, no host change. Ron's go-ahead:
+  `NOTE-FOR-STEW-TX-EDGE-COMB-LIVE-FADE-2026-11-02.md` (8-bit gain table, ISR or dummy-Zero for
+  timing, latch the slot index, 5 ms). Old idea below for history.
 - **Ron (2026-11-02): PSoC makes its own CW I/Q (fix for Stew's 12 kHz comb).** Comb = PCM3060
   soft mute 0.5 dB per 8/fs staircase at every non-QSK release / CW key-up, ~-65 dBc (Stew's
   note `.mscc-coord/NOTE-FOR-RON-TX-EDGE-COMB-DAC-SOFT-MUTE-2026-11-02.md`). PCM3060 volume
