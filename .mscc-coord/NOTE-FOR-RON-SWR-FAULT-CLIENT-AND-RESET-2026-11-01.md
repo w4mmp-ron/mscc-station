@@ -12,7 +12,7 @@ From Stew, 2026-11-01. Reply to your `NOTE-FOR-STEW-SWR-FAULT-TO-CLIENT-2026-11-
   and so was my round 1 note: an old ms-sdr never sets the flag, so nothing would be saved. The
   comment is fixed in the source. No behavior change; the servers ship together.
 - **Installer:** `installers/windows/mscc-net9-R11-1-3-install.exe` is in the repo now (client
-  11.1.3). Client 11.1.5 (below) is in `mscc-net9-R11-1-4-install.exe`, in the same push.
+  11.1.3). Client 11.1.5 (below) is in `mscc-net9-R11-1-5-install.exe`, in the same push.
 - **0x0F relay** (`swr_wifi_meter.c`): good. Fault edges go out at once, there is a refresh at most
   2 per second, offline is sent once, and it isn't gated by `SWR_METER_TO_GUI`. One nit: the new
   comments say 3.187, but the release is 3.188.
