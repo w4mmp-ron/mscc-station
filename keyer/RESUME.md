@@ -1,6 +1,6 @@
 # Keyer CQ memory — handoff / resume
 
-**Date:** 2026-08-08  
+**Date:** 2026-08-08 (status updated 2026-11-02)  
 **Tree:** `worktrees/keyer`  
 **Detail protocol:** `KEYER-MEMORY.md` (read that first for opcodes and test scripts)
 
@@ -13,8 +13,8 @@
 | PIC firmware | **Done** — 4 slots × 48 chars, select/store/play, paddle abort edge |
 | Proficio | **Done** for `0x9C` — USB 2-byte `[param,seq]`, ring queue (80), I²C one byte at a time |
 | ms-sdr (Linux) | **Done** for `0x9C` path + helpers + pacing; see `ms-sdr-linux/RESUME.md` |
-| ms-sdr (Windows) | **Needs Stew** — mirror Linux: opcode, 2-byte USB pack, gap after each `0x9C` |
-| MSCC client | Constants in `Opcodes.cs` only — **no CQ memory UI yet** |
+| ms-sdr (Windows) | **Done** (Stew) — `0x9C` in `ms-sdr-MKII/source/main-controller.c` (~line 804) |
+| MSCC client (WPF) | **Done** (Stew) — CW tab, **CQ MEMORY**: 4 slots, text box + R (store) + P (play); Farnsworth for memory play (`MainWindow.xaml` ~912, `MainViewModel.cs` ~5484) |
 | Farnsworth `0x76` | **Full path** — ms-sdr + Proficio + PIC memory-play gaps |
 
 End-to-end proven: store/play slot 0–3 via USB script and via UDP → ms-sdr → Proficio → PIC.
@@ -79,8 +79,8 @@ Handshake `0xFE,1`, drain startup, no STOP on exit. Single-session lock — no o
 
 ## GUI (Stew)
 
-Client guide: **`mscc-client/docs/KEYER-MEMORY-GUI-GUIDE.md`** (mockup: 4 slots, R=store, P=play).
+Built in the WPF client (see Status). Original client guide: **`mscc-client/docs/KEYER-MEMORY-GUI-GUIDE.md`** (mockup: 4 slots, R=store, P=play).
 
 ## Resume prompt (paste)
 
-> Keyer CQ memory handoff. Protocol in `keyer/KEYER-MEMORY.md` + `keyer/RESUME.md`. PIC + Proficio + Linux ms-sdr done; Windows ms-sdr needs 0x9C packing; client UI guide for Stew: `mscc-client/docs/KEYER-MEMORY-GUI-GUIDE.md`.
+> Keyer CQ memory handoff. Protocol in `keyer/KEYER-MEMORY.md` + `keyer/RESUME.md`. PIC, Proficio, Linux and Windows ms-sdr, and the WPF client CQ MEMORY section are all done. Open: sidetone first-key pop (`hardware-fix/SIDETONE-FIRST-KEY-POP.md`).
