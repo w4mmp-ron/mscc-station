@@ -64,6 +64,13 @@ Git repo root: `C:\Users\Ron\.grok\worktrees`.
   8051 time, fade vs key delay. Pill already fades in software (5 ms raised cosine, fw 3.6).
   Reply to Stew: `.mscc-coord/NOTE-FOR-STEW-TX-EDGE-COMB-CW-2026-11-02.md` (pushed 7089904);
   waiting on his answer.
+- **Ron (2026-11-02): pill TX underrun while keyed = hard drop (click).** pill 3.12 pio-async
+  `audio.c` `audio_i2s_tx_block()`: on a USB underrun / FIFO overflow it plays a silent block at
+  once, no ramp (the raised-cosine shaping is CPU in the I2S DMA half/full interrupt; USB OTG FS
+  has no DMA). Fix: while keyed, repeat the last good block (or ramp down) instead of silence.
+  First check if it happens: `s_tx_underruns` (and `s_tx_dropped`) after some CW keying.
+  Pill's live-stream shaping is better than the PSoC stored-carrier idea; QSK CW is unshaped on
+  both (no key delay = no lead time).
 - **Waiting on Stew (notes in `.mscc-coord/`):**
   1. Port the new NB to Windows recv; client questions (Pulse min 50 us, threshold Low/Med/High
      = 1/500/750, slider 1001..1009 oddity, send NB state on connect).
