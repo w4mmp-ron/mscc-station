@@ -85,6 +85,18 @@ review of what he ported, say if the Pi needs a matching change. Don't start new
   Reply to Stew: `.mscc-coord/NOTE-FOR-STEW-TX-EDGE-COMB-CW-2026-11-02.md` (pushed 7089904);
   waiting on his answer.
 - **Pill CW edges on an analyzer: not checked yet** (pill 5 ms raised cosine, should show no comb).
+- **Keyer: Farnsworth on the paddles (Ron 2026-11-02, not started; "not yet").** Goal: letters 18
+  wpm, overall 13 wpm (W1AW style) so the other station doesn't go QRQ. Already there: Farnsworth
+  for memory play (`0x76` SET_MEM_TEXT_WPM, PIC computes `mem_letter_gap` / `mem_word_gap`) and
+  autospace for paddles (`SET_SPACING 0x75` -> LETTERSPACE state, 2 extra dits, latches early
+  presses; keyer/main.c ~618-655). Change = PIC only, ~10 lines: top bit 0x80 of the 0x76 byte =
+  "paddles too"; LETTERSPACE waits `mem_letter_gap` instead of `2 * dot_delay` when set. No radio FW
+  (pill / PSoC) or ms-sdr change: 0x76 byte passed through raw (ms-sdr Pi + Windows, pill cw.c state
+  6, PSoC usbvend01/cw.c). Autospace must be on. Letter gaps only first (word gaps by the operator).
+  Client (Stew): checkbox sets the bit; ms-sdr echoes the stored value at connect (would show 141
+  until handled); test with a script meanwhile. To check later: memory-play Farnsworth letter gap
+  added on top of the 1-dit element space -> ~1 dit longer than ARRL, overall a bit slow.
+  Next when Ron says: write the PIC change, Ron builds in MPLAB X, tries on the paddles.
 - **Waiting on Stew (notes in `.mscc-coord/`):**
   1. Port the new NB to Windows recv; client questions (Pulse min 50 us, threshold Low/Med/High
      = 1/500/750, slider 1001..1009 oddity, send NB state on connect).
