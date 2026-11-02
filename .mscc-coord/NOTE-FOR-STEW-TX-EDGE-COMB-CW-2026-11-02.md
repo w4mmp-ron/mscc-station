@@ -32,8 +32,8 @@ raised-cosine fade, and not use the DAC soft mute at all. From reading the code 
 - That carrier already has the drive level, power cal and TX I/Q cal in it. The PSoC doesn't
   need to work any of that out.
 - **Grab:** while receiving in CW, the 8051 copies one packet out of `TxI2S[n]` (pcm3060.c) into
-  its own 384-byte buffer, after the USB DMA fills it and before the zero DMA clears it. It
-  takes a new copy every receive period, so band, power or cal changes are picked up.
+  its own 384-byte buffer (see "Change the DMA chain" below for the timing). It takes a new copy
+  every receive period, so band, power or cal changes are picked up.
 - **Play:** the hook is already there: `PCM3060_SetTxBufAddress()` points the DAC DMA at any
   buffer for the current millisecond. In CW TX, each ms it points at:
   - a fade-up buffer at key-down (stored carrier x raised-cosine gain, ~5 ms),
@@ -45,6 +45,35 @@ raised-cosine fade, and not use the DAC soft mute at all. From reading the code 
 - The DAC stays unmuted in CW, so there is no 12 kHz staircase and no comb, and the PA still
   goes on and off with no drive on it.
 - The same path could give QSK clean edges too.
+
+### How the TX audio gets to the DAC today (read from pcm3060.c, audio.c and the netlist)
+
+- USB packet (1 ms) -> `Audio_Main` (main loop, polled) starts the USB DMA into `TxI2S[n]`,
+  byte-swapped on the way, so RAM holds big-endian 16-bit I/Q in DAC order. `n` comes from the
+  SyncSOF hardware counter; USB always fills the slot after the one playing.
+- I2S "FIFO has room" -> **Stage** DMA: 3 TDs per word = stage byte, stage byte, zero byte
+  (16-bit sample sent as 24-bit). After each data byte, Stage's done signal starts both:
+  - **Buff**: fetches the next byte from `TxI2S[n]` into the stage byte;
+  - **Zero**: writes 0 into the same byte of `TxI2S[n]`, so a slot is erased right behind the
+    reader.
+- `Sync_Main` steers the audio PLL to USB start-of-frame, so nothing slips.
+
+So a USB slot holds good data only for less than 1 ms before it is played and erased. That makes
+the grab tight.
+
+### Change the DMA chain, not the Cypress code
+
+The chain is set up in our own code (`DmaTxStart()` in pcm3060.c). The Cypress parts (DMA
+hardware, `CyDma...` functions, generated `TxI2S_*_dma.c`) don't need to change; the generated
+files are rewritten at every build anyway.
+
+- In CW, point the **Zero** TDs at a dummy byte (no address increment) instead of `TxI2S[n]`.
+  The USB data then stays in the slot and the 8051 can copy it any time. Put it back when
+  leaving CW.
+- Our own buffers (fade-up, carrier, fade-down) can be played with
+  `PCM3060_SetTxBufAddress()` (already there, not used today), or added as extra TDs.
+- The DMA only moves bytes; it can't scale them. The raised-cosine multiply is still done by the
+  8051, into a buffer (192 multiplies per ms).
 
 Things to check:
 
