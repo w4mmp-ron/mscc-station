@@ -52,6 +52,18 @@ Git repo root: `C:\Users\Ron\.grok\worktrees`.
   0, 1, 8-19 (cal row per band is full, byte 14 only spare); plan: 12 QRO rows 20-31, same
   one-row-per-band write. Then ms-sdr load/send as QRP, trans save flag, Windows ms-sdr port,
   client (Stew).
+- **Ron (2026-11-02): PSoC makes its own CW I/Q (fix for Stew's 12 kHz comb).** Comb = PCM3060
+  soft mute 0.5 dB per 8/fs staircase at every non-QSK release / CW key-up, ~-65 dBc (Stew's
+  note `.mscc-coord/NOTE-FOR-RON-TX-EDGE-COMB-DAC-SOFT-MUTE-2026-11-02.md`). PCM3060 volume
+  stepping ruled out (still a staircase, too many I2C writes). Idea (code read only, not tried):
+  trans CW carrier = 12 kHz at 96 kHz = 1 ms USB slot is exactly 12 cycles; 8051 grabs one slot
+  from `TxI2S[n]`, builds raised-cosine fade buffers (192 multiplies/ms), plays them with
+  `PCM3060_SetTxBufAddress()` (exists, unused); DAC stays unmuted. Grab window < 1 ms because the
+  Zero DMA erases each slot behind the reader: in CW point the Zero TDs (`DmaTxStart()`, our code,
+  not Cypress) at a dummy byte. Checks: trans sends a steady carrier in CW RX (Pi: `#ifdef RON`),
+  8051 time, fade vs key delay. Pill already fades in software (5 ms raised cosine, fw 3.6).
+  Reply to Stew: `.mscc-coord/NOTE-FOR-STEW-TX-EDGE-COMB-CW-2026-11-02.md` (pushed 7089904);
+  waiting on his answer.
 - **Waiting on Stew (notes in `.mscc-coord/`):**
   1. Port the new NB to Windows recv; client questions (Pulse min 50 us, threshold Low/Med/High
      = 1/500/750, slider 1001..1009 oddity, send NB state on connect).
