@@ -20,6 +20,7 @@ file is for Claude only.
 | Path | Rule |
 |---|---|
 | `rpi/SDRcore-recv-linux/`, `rpi/SDRcore-trans-linux/`, `rpi/ms-sdr-linux/` | **Working trees** (Pi source of truth). Claude edits here. |
+| `swr-meter/ron/HF_SWR_R4_1/` | **Our copy of the WiFi SWR meter firmware** (ESP32 Arduino; copied 2026-11-01 from Stew's `swr-meter/HF_SWR_R4_1/` @ 67fa644, source only, no build/). Claude edits here; Stew's copy is read-only. |
 | Rest of `C:\Users\Ron\.grok\worktrees` | Read-only reference unless Ron says otherwise. |
 
 History: Claude worked in a copy `rpi/sdrcore-claude/` (commits fe0c9a1, 0443c21,
@@ -103,7 +104,21 @@ Git repo root: `C:\Users\Ron\.grok\worktrees`.
   the meter faults. Firmware source is NOT in the tree (only swr-meter/ Python app + summary); Ron asks
   Stew to add it. 11-01 evening tests: trips ~1 s into a 15 m auto-tune (tune power 43: fwd 61 ref 25.00
   swr 4.55; 34: fwd 38 ref 25.00 swr 9.82); 30 m tunes 5.5-7.4 s did not trip. Ron: meter "Fault Trip
-  Count" is already at max and is too short for a slow tuner match (firmware limit). Client 11.1.5 dropped
+  Count" is already at max and is too short for a slow tuner match (firmware limit).
+  Stew added the source 11-01 (67fa644, swr-meter/HF_SWR_R4_1). Cause: 1 count = one FWD+REF pair ~2.4 ms,
+  max 24 = ~58 ms; REF table tops at 25.00 W (clipped). **FIXED in our copy swr-meter/ron/HF_SWR_R4_1
+  (git-excluded via .git/info/exclude until done): TUNE ALLOWANCE** (tuneGraceSec 0..10 s, default 5;
+  SWR not counted for the first N s of a new TX = RF after >= 2 s with none; web field + prefs + saved list;
+  no touch control). Built with arduino-cli (IDE bundled; esp32 3.3.11, lvgl 9.4.0, TFT_eSPI 2.5.43, Stew's
+  User_Setup.h/lv_conf.h copied into the libs) -> swr-meter/ron/build/; Ron OTA-loaded it (http://meter/update)
+  20:43. Test PASSED 20:45 (Ron): 20/15/30/15 m tunes, no fault, client showed readings.
+  **21:00 allowance now ONLY FOR TUNES (Ron):** meter /api?tune=1|0 flag (RAM, self-clears after
+  tuneGraceSec; JSON "tune"); 2 s idle rule removed. **Pi ms-sdr 3.191** (running): Tune_button sends
+  tune=1 (waits <= 300 ms for the answer) BEFORE keying, tune=0 after (thread); skipped if meter
+  off/offline. Also reset fix: ms-sdr asked /reset (no such page, 404 taken as OK) -> now only
+  /api?action=reset, result read from the answer ("fault":0). Test PASSED 21:06 (Ron): 15 m tune 16 s,
+  tune=1 OK ~20 ms before key, no fault. Old firmware ignores tune=1 (logged "no tune flag"), harmless.
+  ms-sdr committed; firmware still git-excluded until Ron says done. Next: note for Stew then. Client 11.1.5 dropped
   TX 2 ms after the relayed fault (good). Then find the limit and fix. Also pending Ron's decision: should ms-sdr itself stop
   TX on a meter fault (backstop; WSJT-X on the Pi keys via CAT, so the client can't stop it).
 - **Parked:** NR warble fix (Ron 2026-11-01: leave it, NR works well; lower level = less

@@ -192,70 +192,152 @@ static void swr_wifi_zero_gui(void)
     swr_wifi_send_fault(0, 0);
 }
 
-/* Optional fault clear: HTTP GET http://{ip}/reset (Python UI path).
- * Also tries /api?action=reset (firmware dashboard path). Non-fatal on fail. */
-static void swr_wifi_http_reset(const char *meter_ip)
+/* 3.190: one HTTP GET to the meter's web server (port 80). Returns the number of answer bytes
+ * read into resp (NUL-terminated), or -1 when there is no connection. timeout_ms caps the
+ * connect, the send and each read (Linux applies SO_SNDTIMEO to connect too). */
+static int swr_wifi_http_get(const char *meter_ip, const char *path, int timeout_ms,
+                             char *resp, int resp_size)
 {
     SOCKET s;
     struct sockaddr_in addr;
     char req[256];
-    char resp[256];
-    int n;
-    const char *paths[] = { "/reset", "/api?action=reset" };
-    int i;
+    int n, got;
+
+    if (resp_size < 1)
+        return -1;
+    resp[0] = '\0';
+    s = socket(AF_INET, SOCK_STREAM, 0);
+    if (s == INVALID_SOCKET)
+        return -1;
+
+#if defined(__linux__) || defined(__APPLE__)
+    {
+        struct timeval tv;
+        tv.tv_sec = timeout_ms / 1000;
+        tv.tv_usec = (timeout_ms % 1000) * 1000;
+        setsockopt(s, SOL_SOCKET, SO_RCVTIMEO, (const char *)&tv, sizeof(tv));
+        setsockopt(s, SOL_SOCKET, SO_SNDTIMEO, (const char *)&tv, sizeof(tv));
+    }
+#endif
+
+    memset(&addr, 0, sizeof(addr));
+    addr.sin_family = AF_INET;
+    addr.sin_port = htons(80);
+    if (inet_pton(AF_INET, meter_ip, &addr.sin_addr) != 1 ||
+        connect(s, (struct sockaddr *)&addr, sizeof(addr)) != 0) {
+        closesocket(s);
+        return -1;
+    }
+
+    snprintf(req, sizeof(req),
+        "GET %s HTTP/1.0\r\nHost: %s\r\nConnection: close\r\n\r\n",
+        path, meter_ip);
+    if ((int)send(s, req, (int)strlen(req), 0) <= 0) {
+        closesocket(s);
+        return -1;
+    }
+
+    /* Read the whole answer (status line + JSON); the meter closes the connection */
+    got = 0;
+    while (got < resp_size - 1 &&
+           (n = (int)recv(s, resp + got, resp_size - 1 - got, 0)) > 0)
+        got += n;
+    resp[got] = '\0';
+    closesocket(s);
+    return got;
+}
+
+/* Fault clear: HTTP GET http://{ip}/api?action=reset (the meter firmware's only reset route).
+ * 3.190: was "/reset" first, then "/api?action=reset". The firmware (HF_SWR_R4_1) has no /reset
+ * page, so it answered 404 and ms-sdr took any answer as success: the second path was never
+ * tried and the meter was never reset. Now one path, and success is read from the meter's
+ * answer: it returns its status JSON, and "fault":0 means the fault is clear.
+ * Note: the meter only resets with no RF (FWD < 0.1 W); during TX it answers "fault":1.
+ * Non-fatal on fail (logged). */
+static void swr_wifi_http_reset(const char *meter_ip)
+{
+    char resp[1024];
+    const char *path = "/api?action=reset";
+    int got;
 
     if (!meter_ip || !meter_ip[0] || !G_swr_wifi_http_reset)
         return;
 
-    for (i = 0; i < 2; i++) {
-        s = socket(AF_INET, SOCK_STREAM, 0);
-        if (s == INVALID_SOCKET)
-            continue;
-
-#if defined(__linux__) || defined(__APPLE__)
-        {
-            struct timeval tv;
-            tv.tv_sec = SWR_WIFI_HTTP_TIMEOUT_SEC;
-            tv.tv_usec = 0;
-            setsockopt(s, SOL_SOCKET, SO_RCVTIMEO, (const char *)&tv, sizeof(tv));
-            setsockopt(s, SOL_SOCKET, SO_SNDTIMEO, (const char *)&tv, sizeof(tv));
-        }
-#endif
-
-        memset(&addr, 0, sizeof(addr));
-        addr.sin_family = AF_INET;
-        addr.sin_port = htons(80);
-        if (inet_pton(AF_INET, meter_ip, &addr.sin_addr) != 1) {
-            closesocket(s);
-            continue;
-        }
-
-        if (connect(s, (struct sockaddr *)&addr, sizeof(addr)) != 0) {
-            closesocket(s);
-            continue;
-        }
-
-        snprintf(req, sizeof(req),
-            "GET %s HTTP/1.0\r\nHost: %s\r\nConnection: close\r\n\r\n",
-            paths[i], meter_ip);
-        n = (int)send(s, req, (int)strlen(req), 0);
-        if (n > 0) {
-            /* drain a little so server can finish */
-            (void)recv(s, resp, sizeof(resp) - 1, 0);
-            print_time(0);
-            fprintf(G_fp_logfile,
-                "[%d] swr_wifi_http_reset. OK %s on %s\n",
-                line_number++, paths[i], meter_ip);
-            closesocket(s);
-            return;
-        }
-        closesocket(s);
-    }
-
+    got = swr_wifi_http_get(meter_ip, path, SWR_WIFI_HTTP_TIMEOUT_SEC * 1000, resp, (int)sizeof(resp));
     print_time(0);
-    fprintf(G_fp_logfile,
-        "[%d] swr_wifi_http_reset. FAILED for %s\n",
-        line_number++, meter_ip);
+    if (got < 0) {
+        fprintf(G_fp_logfile, "[%d] swr_wifi_http_reset. FAILED for %s (no connection)\n",
+            line_number++, meter_ip);
+    } else if (strstr(resp, " 200") != NULL && strstr(resp, "\"fault\":0") != NULL) {
+        fprintf(G_fp_logfile, "[%d] swr_wifi_http_reset. OK %s on %s: fault clear\n",
+            line_number++, path, meter_ip);
+    } else if (strstr(resp, "\"fault\":1") != NULL) {
+        fprintf(G_fp_logfile, "[%d] swr_wifi_http_reset. %s on %s: meter still faulted "
+            "(it resets only with no RF)\n", line_number++, path, meter_ip);
+    } else {
+        fprintf(G_fp_logfile, "[%d] swr_wifi_http_reset. %s on %s: unexpected answer (%d bytes): %.60s\n",
+            line_number++, path, meter_ip, got, resp);
+    }
+}
+
+/* 3.190: TUNE flag to the meter (Ron 2026-11-01). The meter's "Tune Allowance" (our firmware
+ * swr-meter/ron/HF_SWR_R4_1) ignores high SWR while the tuner searches, but only while this flag
+ * is set; every other transmission keeps the fast trip. The meter trips after ~58 ms of high SWR
+ * (Trip Count 24 x ~2.4 ms), so tune=1 must arrive BEFORE RF:
+ *   on = 1: sent and the answer awaited here, BEFORE Tune_button keys the radio, at most
+ *           SWR_WIFI_TUNE_TIMEOUT_MS (normally a few ms on the LAN).
+ *   on = 0: sent after unkeying, in a short detached thread (nothing waits for it).
+ * Skipped when the meter is off, offline or its IP is unknown. A meter with Stew's firmware
+ * ignores the "tune" argument (it just answers its status): harmless. If the flag never
+ * arrives, the tune simply gets no allowance (may trip as before); protection is never lost.
+ * The meter also clears the flag itself after the allowance time. */
+#define SWR_WIFI_TUNE_TIMEOUT_MS 300
+
+static const char *swr_wifi_ip(void)
+{
+    return G_swr_wifi_learned_ip[0] ? G_swr_wifi_learned_ip : G_swr_wifi_meter_ip;
+}
+
+static void swr_wifi_send_tune(int on, int timeout_ms)
+{
+    char resp[512];
+    char ip[64];
+    int got;
+    const char *path = on ? "/api?tune=1" : "/api?tune=0";
+
+    snprintf(ip, sizeof(ip), "%s", swr_wifi_ip());
+    if (!ip[0])
+        return;
+    got = swr_wifi_http_get(ip, path, timeout_ms, resp, (int)sizeof(resp));
+    print_time(0);
+    if (got < 0)
+        fprintf(G_fp_logfile, "[%d] Swr_wifi_tune. %s to %s FAILED (no connection, no allowance)\n",
+            line_number++, path, ip);
+    else if (strstr(resp, on ? "\"tune\":1" : "\"tune\":0") != NULL)
+        fprintf(G_fp_logfile, "[%d] Swr_wifi_tune. %s to %s OK\n", line_number++, path, ip);
+    else
+        fprintf(G_fp_logfile, "[%d] Swr_wifi_tune. %s to %s: meter has no tune flag (old firmware?)\n",
+            line_number++, path, ip);
+}
+
+static void *swr_wifi_tune_off_thread(void *arg)
+{
+    (void)arg;
+    swr_wifi_send_tune(0, SWR_WIFI_HTTP_TIMEOUT_SEC * 1000);
+    return NULL;
+}
+
+void Swr_wifi_tune(int on)
+{
+    pthread_t t;
+
+    if (!G_swr_wifi_enable || !G_swr_wifi_online || !swr_wifi_ip()[0])
+        return;
+    if (on) {
+        swr_wifi_send_tune(1, SWR_WIFI_TUNE_TIMEOUT_MS);
+    } else if (pthread_create(&t, NULL, swr_wifi_tune_off_thread, NULL) == 0) {
+        pthread_detach(t);
+    }
 }
 
 /* Public: clear latched fault on the meter (if IP known). */

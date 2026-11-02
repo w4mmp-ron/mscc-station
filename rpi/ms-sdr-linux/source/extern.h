@@ -210,6 +210,7 @@ extern int Start_swr_wifi_meter_thread(void);
 extern void Parse_swr_wifi_record(const char *record);
 extern void Swr_wifi_request_reset(void);
 extern void Swr_wifi_client_reset(void);   /* 3.189: CMD_SWR_METER_RESET (0x2E) */
+extern void Swr_wifi_tune(int on);          /* 3.190: TUN flag to the meter (tune allowance) */
 
 //For Solidus Temperature
 int Read_solidus_temperature();

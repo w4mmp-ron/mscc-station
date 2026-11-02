@@ -749,7 +749,14 @@ int Tune_button(int on_off, uint8_t allow_MKII_PTT_Switch) {
             ptt_switch_inhibited = TRUE;
         }
         G_Tune = on_off;
+        /* 3.190: tell the WiFi SWR meter a tune starts BEFORE RF (its tune allowance lets the
+         * tuner search without a fault; waits <= 300 ms for the meter), and that it ended after
+         * unkeying (own thread). No meter / offline: skipped. See swr_wifi_meter.c. */
+        if (on_off)
+            Swr_wifi_tune(1);
         SetModeRxTx(on_off, 0);
+        if (!on_off)
+            Swr_wifi_tune(0);
         //Spectrum_Waterfall_send_param(CMD_SET_TX_ON, on_off);
         if (on_off == FALSE && ptt_switch_inhibited == TRUE) {
             ptt_switch_inhibited = FALSE;
