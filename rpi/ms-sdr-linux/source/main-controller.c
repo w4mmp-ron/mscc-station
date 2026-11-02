@@ -1861,6 +1861,10 @@ void * Command_Processor(void *my_param) {
             User_Controls_Process(opcode, G_receive_buf, FALSE);
             break;
 
+        case CMD_SWR_METER_RESET:   /* 3.189: client RESET -> WiFi SWR meter (HTTP, own thread) */
+            Swr_wifi_client_reset();
+            break;
+
         case CMD_GET_SET_PANADAPTER_BASE:
             User_Controls_Process(opcode, G_receive_buf, FALSE);
             break;

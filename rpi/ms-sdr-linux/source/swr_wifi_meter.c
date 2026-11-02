@@ -163,7 +163,7 @@ static void swr_wifi_send_to_gui(double fwd, double ref, double swr)
     Gui_send_param_extended(CMD_SET_REVERSE_POWER, extended_data, (int)sizeof(reverse_send));
 }
 
-/* 3.187: meter fault / online state to the client (extended sub CMD_SET_SWR_FAULT).
+/* 3.188: meter fault / online state to the client (extended sub CMD_SET_SWR_FAULT).
  * Not gated by SWR_METER_TO_GUI: a fault is a safety state, and an old client simply
  * ignores the unknown sub. The meter IP lets the client send its HTTP fault reset. */
 static void swr_wifi_send_fault(int fault, int online)
@@ -264,6 +264,63 @@ void Swr_wifi_request_reset(void)
     const char *ip = G_swr_wifi_learned_ip[0] ? G_swr_wifi_learned_ip : G_swr_wifi_meter_ip;
     if (ip[0])
         swr_wifi_http_reset(ip);
+}
+
+/* ms-sdr 3.189: client RESET button through ms-sdr (CMD_SWR_METER_RESET 0x2E, data ignored).
+ * The client's own HTTP /reset only works on the meter's network; a remote client (internet,
+ * VPN, other subnet) can't reach a meter on the Pi's network, so it asks ms-sdr. The HTTP call
+ * can block up to ~8 s (2 paths x 2 s connect + 2 s read) when the meter is gone, so it runs in
+ * its own detached thread, not in the client UDP thread. An explicit RESET is sent even with
+ * HTTP_RESET=0 (that setting is for the automatic reset). One at a time: a press while one is
+ * running is logged and dropped. Result is in the log only; the meter's next update (0x0F)
+ * tells the client whether the fault cleared. */
+static volatile int swr_wifi_reset_busy = 0;
+
+static void *swr_wifi_reset_thread(void *arg)
+{
+    char ip[64];
+    uint8_t saved = G_swr_wifi_http_reset;
+
+    (void)arg;
+    snprintf(ip, sizeof(ip), "%s",
+        G_swr_wifi_learned_ip[0] ? G_swr_wifi_learned_ip : G_swr_wifi_meter_ip);
+    if (ip[0]) {
+        G_swr_wifi_http_reset = 1;      /* explicit request: not gated by the auto setting */
+        swr_wifi_http_reset(ip);
+        G_swr_wifi_http_reset = saved;
+    } else {
+        print_time(0);
+        fprintf(G_fp_logfile,
+            "[%d] Swr_wifi_client_reset. no meter IP known (no update received, METER_IP unset)\n",
+            line_number++);
+    }
+    swr_wifi_reset_busy = 0;
+    return NULL;
+}
+
+void Swr_wifi_client_reset(void)
+{
+    pthread_t t;
+
+    print_time(0);
+    fprintf(G_fp_logfile, "[%d] Swr_wifi_client_reset. CMD_SWR_METER_RESET from client (meter %s)\n",
+        line_number++,
+        G_swr_wifi_learned_ip[0] ? G_swr_wifi_learned_ip :
+        (G_swr_wifi_meter_ip[0] ? G_swr_wifi_meter_ip : "unknown"));
+    if (swr_wifi_reset_busy) {
+        print_time(0);
+        fprintf(G_fp_logfile, "[%d] Swr_wifi_client_reset. reset already running, ignored\n",
+            line_number++);
+        return;
+    }
+    swr_wifi_reset_busy = 1;
+    if (pthread_create(&t, NULL, swr_wifi_reset_thread, NULL) != 0) {
+        swr_wifi_reset_busy = 0;
+        print_time(0);
+        fprintf(G_fp_logfile, "[%d] Swr_wifi_client_reset. pthread_create FAILED\n", line_number++);
+        return;
+    }
+    pthread_detach(t);
 }
 
 static int swr_wifi_bind(uint16_t port)
@@ -447,7 +504,7 @@ void *Swr_wifi_meter_main(void *param)
             }
 
             /* Fault edge: the meter protects the radio; ms-sdr tells the client at once
-             * (3.187: CMD_SET_SWR_FAULT, so the client can force RX and offer RESET). */
+             * (3.188: CMD_SET_SWR_FAULT, so the client can force RX and offer RESET). */
             if (fault && !prev_fault) {
                 print_time(0);
                 fprintf(G_fp_logfile,

@@ -657,6 +657,48 @@ void jimifft(sp_cplx *samps, int n) {
 
 }
 
+/* trans 3.151 (port of Stew's Windows trans 3.155): 2 TONE test signal, 700 + 1900 Hz, fed
+ * into the voice path in place of the mic samples (before tx_audio_lowpass, ssb_modulate,
+ * fastconv: so it goes through the drive and the ALC like voice). Mono audio, real = imag as
+ * framesToComplex makes it.
+ * Level: ssb_modulate splits a real audio tone into two sidebands of half amplitude and the SSB
+ * filter keeps one, so each tone leaves at TWO_TONE_LEVEL / 2 = 0.4: half of the TUN carrier
+ * (0.8, tune_modulate). The two tones then peak together at the TUN level at the same drive:
+ * PEP = calibrated power with the SSB slider at 100 % if the ALC ceiling allows it.
+ * 5 ms raised-cosine fade-in at each key-down (keyed = G_tx_mode). */
+#define TWO_TONE_LEVEL   0.8f
+#define TWO_TONE_F1      700.0
+#define TWO_TONE_F2      1900.0
+#define TWO_TONE_RAMP_MS 5.0f
+void twoToneAudio(sp_cplx *samps, int nframes, int keyed) {
+    static double p1 = 0.0, p2 = 0.0;
+    static int ramp_pos = 0;
+    double w1 = TPI * TWO_TONE_F1 / mystate.samplerate;
+    double w2 = TPI * TWO_TONE_F2 / mystate.samplerate;
+    int ramp_len = (int) (mystate.samplerate * TWO_TONE_RAMP_MS / 1000.0f);
+    int j;
+    sp_float g, x;
+
+    if (!keyed)
+        ramp_pos = 0;
+    for (j = 0; j < nframes; j++) {
+        if (ramp_len > 0 && ramp_pos < ramp_len) {
+            g = (sp_float) (0.5 - 0.5 * cos(3.14159265358979 * (double) ramp_pos / (double) ramp_len));
+            if (keyed)
+                ramp_pos++;
+        } else {
+            g = 1.0f;
+        }
+        x = (sp_float) (TWO_TONE_LEVEL * (sin(p1) + sin(p2))) * g;
+        samps[j].real = x;
+        samps[j].imag = x;
+        p1 += w1;
+        p2 += w2;
+        if (p1 > TPI) p1 -= TPI;
+        if (p2 > TPI) p2 -= TPI;
+    }
+}
+
 void twoTone(sp_cplx *samps) {
     static sp_float f1 = 700.0f;
     static sp_float f2 = 1900.0;

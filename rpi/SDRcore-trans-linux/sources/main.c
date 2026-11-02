@@ -333,6 +333,8 @@ static double pick_mic_sample_rate(const PaStreamParameters *in_params,
 static void process_mic_to_iq(const SAMPLE *in, SAMPLE *out, unsigned long framesPerBuffer, int in_ch)
 {
     unsigned int i;
+    int two_tone = mystate.twoToneFlag &&
+        ((mystate.opmode == MODE_USB) || (mystate.opmode == MODE_LSB));   /* trans 3.151 */
 
     outbuffer = (sp_float *)out;
     if (in == NULL) {
@@ -346,17 +348,20 @@ static void process_mic_to_iq(const SAMPLE *in, SAMPLE *out, unsigned long frame
     } else {
         inbuffer = (sp_float *)in;
         framesToComplex(inbuffer, incplx, outcplx, framesPerBuffer, in_ch);
-        if ((mystate.opmode == MODE_AM) || (mystate.opmode == MODE_LSB) ||
-            (mystate.opmode == MODE_USB) || (mystate.opmode == MODE_FM))
+        if (!two_tone &&
+            ((mystate.opmode == MODE_AM) || (mystate.opmode == MODE_LSB) ||
+             (mystate.opmode == MODE_USB) || (mystate.opmode == MODE_FM)))
             doMicProc(incplx, framesPerBuffer);
     }
+    /* trans 3.151 (port of Stew's Windows 3.155): 2 TONE (client 0x88 = 1, USB / LSB only)
+     * replaces the mic audio here, so it takes the voice path below: audio LPF, SSB
+     * modulator, drive and ALC. No speech processor. Done after the input branch so it also
+     * works with no mic open (in == NULL). Level follows the SSB slider. */
+    if (two_tone)
+        twoToneAudio(incplx, (int)framesPerBuffer, G_tx_mode == TRUE);
 
     if (G_mode != 'T' && G_null_count++ < MAX_NULL) {
         null_modulate(incplx);
-        fastconv(incplx, outcplx, (int)framesPerBuffer);
-    } else if (mystate.twoToneFlag) {
-        ssb_modulate(incplx);
-        twoTone(incplx);
         fastconv(incplx, outcplx, (int)framesPerBuffer);
     } else if (mystate.opmode == MODE_FM) {
         /* NFM: direct I/Q — SSB overlap-save FIR destroys constant-envelope FM. */

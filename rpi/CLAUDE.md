@@ -90,6 +90,11 @@ Git repo root: `C:\Users\Ron\.grok\worktrees`.
   old ms-sdr never saves power_cal.ini (Stew's trans comment says otherwise; code saves on flag only).
   Files: ms-sdr power_calibration.c, main-controller.c, usbavrcmd.h, extern.h, swr_wifi_meter.c,
   version.h (188); trans udp_thread.c, extern.h (150).
+- **2026-11-01 19:41: Pi trans 3.151 (2 TONE, port of Stew's Windows 3.155 on 0x88) + ms-sdr 3.189 (0x2E
+  CMD_SWR_METER_RESET: client RESET -> HTTP reset to the meter in a detached thread) BUILT on the Pi, NOT
+  running until mscc stop/start, NOT committed.** Stew pulled 11-01: client 11.1.5 (0x0F handled, installer
+  R11-1-5), Windows trans 3.157 (2 TONE + voice ALC 0.89; 0.45 was a bad StarTech USB card). Note:
+  `.mscc-coord/NOTE-FOR-STEW-2TONE-PI-AND-0x2E-2026-11-01.md`. Tests: 2 TONE on air; fault latch + RESET with 11.1.5.
 - **SWR meter firmware (Ron 2026-11-01):** auto-tune on 30 m runs longer than the meter's time limit, so
   the meter faults. Firmware source is NOT in the tree (only swr-meter/ Python app + summary); Ron asks
   Stew to add it. Then find the limit and fix. Also pending Ron's decision: should ms-sdr itself stop

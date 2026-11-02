@@ -7,6 +7,7 @@ typedef struct {
 } cmstate;
 
 void twoTone(sp_cplx *samps);
+void twoToneAudio(sp_cplx *samps, int nframes, int keyed);   /* trans 3.151: 2 TONE */
 void cw_modulate(sp_cplx *samps);
 void initMicProc();
 void doMicProc(sp_cplx *samps, int nframes);
