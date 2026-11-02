@@ -38,8 +38,20 @@ Git repo root: `C:\Users\Ron\.grok\worktrees`.
 - **Pi runs:** recv 3.152 (automatic NB + spectral NR), trans 3.149 (ALC ceiling 0.89),
   ms-sdr 3.186, pill 3.12. DRM recv 3.152 built in `~/mscc-drm` (switch:
   `mscc stop; ~/utils/recv-switch.sh drm|normal; mscc start`). All server code committed and pushed.
-- **Ron:** nothing open. Option: NB threshold a bit right of middle (~5x, slider ~750) to also
+- **Ron:** Option: NB threshold a bit right of middle (~5x, slider ~750) to also
   catch the near misses (5.4-6.0x seen on 20 m).
+- **Ron (2026-11-02): update the guides: QRP power, TX IQ and RX IQ cal are now stored in the
+  rig/daughter board.** Windows, Linux and Remote drafts (`docs/manuals/*-Release-1-DRAFT.docx`)
+  and the Configurations draft: check every calibration / Save settings / reset text says so
+  (APPLY stores in the radio, radio values win at start, power_cal.ini only for bands the radio
+  doesn't hold).
+- **Ron (2026-11-02): store QRO (amplifier) cal in the radio too.** Today ~/amplifier_cal.ini
+  (trans owns, ms-sdr amplifier.c reads, 12 bands, int; -99 = none). Room checked (code read only):
+  pill 3.12 = flash log sector 7, 128 KB, 16-byte entries, 4 value bytes: new type 8 (not 6 =
+  old clear), no layout change. PSoC MKII (ATU/PTT 3.238+) = EEPROM 2 KB = 128 rows; used rows
+  0, 1, 8-19 (cal row per band is full, byte 14 only spare); plan: 12 QRO rows 20-31, same
+  one-row-per-band write. Then ms-sdr load/send as QRP, trans save flag, Windows ms-sdr port,
+  client (Stew).
 - **Waiting on Stew (notes in `.mscc-coord/`):**
   1. Port the new NB to Windows recv; client questions (Pulse min 50 us, threshold Low/Med/High
      = 1/500/750, slider 1001..1009 oddity, send NB state on connect).
@@ -60,6 +72,15 @@ Git repo root: `C:\Users\Ron\.grok\worktrees`.
      (2026-11-01) MSCC UI = current Windows client (NB Thr 1..100 vs 1..1009 scale!, ALC switch,
      Remote window), Ubuntu scripts/utilities = Pi (mscc-init 1.0.18 + text wizard, mscc-volume,
      apt kit order). `NOTE-FOR-STEW-USER-DOCUMENTS-2026-11-01.md`
+- **Noise spike = Pi buck regulator (Ron, 2026-11-02):** the buck regulator that powers the
+  built-in Pi in the Proficio MKII makes a noise spike. The power wire from the motherboard to
+  that supply is a bit long and acts as a radiator. Fix in progress: a toroid (choke on the wire)
+  arrives 2026-11-02. Not a software issue. Open: spike frequency/bands, before/after result.
+  Schematic (Stew, 2024-08-09, Downloads\Schematic_RPi-Mounting-PCB_2026-11-02.pdf): LMR33630
+  12 V -> 5.17 V 3 A buck, L1 8.2 uH (suggests the 400 kHz version, unverified), input only 10 uF
+  electrolytic + 0.22 uF ceramic (pulsed input current rides the 12 V wire), output 47 uF + 0.1 uF,
+  no input LC filter. Ideas: both wires through a mix 31 toroid (several turns), near the buck board;
+  more input ceramic (2x 10 uF) / small LC on 12 V for a board revision.
 - **Ron (setup 3 = his station):** confirm mscc-init's WSJT-X COM port / audio device names on the Pi
   and what he does in the Windows client so Pi digital audio reaches WSJT-X (Configurations draft item).
 - **Rules (Ron 2026-11-01):** assume Stew makes MSCC UI (Avalonia) match the current Windows client,
@@ -118,7 +139,9 @@ Git repo root: `C:\Users\Ron\.grok\worktrees`.
   off/offline. Also reset fix: ms-sdr asked /reset (no such page, 404 taken as OK) -> now only
   /api?action=reset, result read from the answer ("fault":0). Test PASSED 21:06 (Ron): 15 m tune 16 s,
   tune=1 OK ~20 ms before key, no fault. Old firmware ignores tune=1 (logged "no tune flag"), harmless.
-  ms-sdr committed; firmware still git-excluded until Ron says done. Next: note for Stew then. Client 11.1.5 dropped
+  ms-sdr committed; firmware still git-excluded until Ron says done. Next: note for Stew then.
+  21:18: touch control "Tune Allow (s)" on the meter SETTINGS page (rows respaced to 52 px:
+  52/104/156/208/260; -/+ 0..10, 0 = OFF, saved on Back). Ron: fits and works. Client 11.1.5 dropped
   TX 2 ms after the relayed fault (good). Then find the limit and fix. Also pending Ron's decision: should ms-sdr itself stop
   TX on a meter fault (backstop; WSJT-X on the Pi keys via CAT, so the client can't stop it).
 - **Parked:** NR warble fix (Ron 2026-11-01: leave it, NR works well; lower level = less
