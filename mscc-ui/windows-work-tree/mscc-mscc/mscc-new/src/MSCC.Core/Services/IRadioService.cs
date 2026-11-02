@@ -416,6 +416,10 @@ public interface IRadioService : IDisposable
     /// </summary>
     event Action<SwrMeterReading> RadioSwrMeterReported;
 
+    /// <summary>11.1.5: WiFi SWR meter IP last relayed by ms-sdr (extended 0x0F), or null.
+    /// Used for the HTTP fault reset when the client has no meter IP of its own (Pi host).</summary>
+    string? RadioSwrMeterIp { get; }
+
     // ----- TX I/Q balance calibration (original IQ_Controls; manual only) -----
     /// <summary>Select IQ cal band path (CMD_SET_IQ_BAND 0x58). Band meters: 2200, 630, 160…10.</summary>
     Task SetIqBandAsync(int bandNumber, CancellationToken cancellationToken = default);

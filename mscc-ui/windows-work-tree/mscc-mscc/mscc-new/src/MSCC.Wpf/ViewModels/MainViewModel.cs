@@ -6774,6 +6774,8 @@ public partial class MainViewModel : ObservableObject, IDisposable
         string ip = SwrMeterSettings.ActiveMeterIp(IsGeminusRadioModel);
         if (string.IsNullOrWhiteSpace(ip))
             ip = _swrMeter.LastSourceIp ?? "";
+        if (string.IsNullOrWhiteSpace(ip))
+            ip = _radioService.RadioSwrMeterIp ?? "";   // 11.1.5: Pi host, IP relayed by ms-sdr (0x0F)
         MonitorTextBoxText($" SWR RESET → {ip}");
         var (ok, msg) = await _swrMeter.ResetFaultAsync(ip);
         MonitorTextBoxText($" SWR RESET: {(ok ? "OK" : "FAIL")} — {msg}");

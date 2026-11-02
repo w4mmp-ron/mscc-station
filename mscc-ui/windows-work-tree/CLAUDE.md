@@ -22,7 +22,7 @@ every pull. Newest first. Detailed write-ups for Ron go in `.mscc-coord/NOTE-FOR
 | trans | 3.157 | **voice ALC ceiling 0.89 x drive, as on the Pi (3.157)**, **2 TONE: 0x88 puts 700 + 1900 Hz in place of the mic, USB/LSB, through the voice path (3.155)**, **QRP cal: power_cal.ini written only on the save flag (3.154)**, ALC rework (\|I+jQ\| envelope), **1.0 x drive for digital (3.152)**, voice ALC level meter, 6 kHz audio LPF before the SSB/AM mixer (LSB image fix), TX I/Q phase, TX I/Q from the radio (0x2C), **digital (VAC) key-up gate 200 ms + 10 ms fade (3.153)** |
 | recv | 3.151 | RX stream kept running at PTT (muted, not stopped), Ron's AM lowpass + DC block and noise blanker fix, **RX I/Q from the radio (0x2C)** |
 | ms-sdr | 3.189 | **QRP save step (0xA2 bit 15 = save; radio written only then), radio cal status to the client on 0x2D at connect / after each radio write (3.189)**, PTT poll `r == 1`, power cal in the radio (0xC8), CW + TUN stuck TX, 0xFE 0 release, 0x30 messages forwarded, firmware type in log, PPM cal start point, TX I/Q phase, **TX/RX I/Q stored in and loaded from the radio**, **TX I/Q from CW mode fix** |
-| client | 11.1.3 | **2 TONE button next to Tune: arms two-tone, Tune then sends it (switches to USB if needed), disarmed on Stop (11.1.3)**; **FREQ CAL: waits for the previous cal tab's restore before CW (USB bug fixed), "must be in CW" note, opens at 4× left-panel zoom and restores it on leave (11.1.2)**; **QRP CAL "Save this calibration?" Yes/No (Reject gone), lamps follow the radio's power mask (0x2D), I/Q APPLY renamed SAVE, Start / Save settings / POTENTIA tooltips, Full Power renamed AMP (11.1.0)**; TX I/Q PHASE slider; LSB/USB/DIG-U/AM filter buttons send the index (Ron's LSB note 10-31); cuts pushed once at connect |
+| client | 11.1.5 | **WiFi SWR meter fault relayed by Pi ms-sdr 3.188 (extended 0x0F: fault, online, meter IP) handled; fault kept with every relayed reading; RESET falls back to the 0x0F IP (11.1.5)**; **2 TONE button next to Tune: arms two-tone, Tune then sends it (switches to USB if needed), disarmed on Stop (11.1.3)**; **FREQ CAL: waits for the previous cal tab's restore before CW (USB bug fixed), "must be in CW" note, opens at 4× left-panel zoom and restores it on leave (11.1.2)**; **QRP CAL "Save this calibration?" Yes/No (Reject gone), lamps follow the radio's power mask (0x2D), I/Q APPLY renamed SAVE, Start / Save settings / POTENTIA tooltips, Full Power renamed AMP (11.1.0)**; TX I/Q PHASE slider; LSB/USB/DIG-U/AM filter buttons send the index (Ron's LSB note 10-31); cuts pushed once at connect |
 | FW MKII PTT | 3.242 | DAC soft mute on TUN/PTT release, mode-change drain |
 | FW Proficio Legacy | 1.236 | Ron's 1.235 (CW key delay + fades, 0xC8 cal store, SSB-after-CW fix) + TUN/PTT DAC fade and mode-change drain (= MKII 3.241/3.242). In `Proficio-Legacy/`; `Proficio-Legacy - Copy` kept as reference. Tested on a Legacy rig 10-31 |
 | FW Proficio MKII ATU | 4.243 | = MKII PTT 3.242 app code (cal store, CW key delay + fades, TUN/PTT DAC mute, mode drain) + Elecraft T1 port kept (`t1.c`, `T1_Main()` in the beater, `STATUS_ATU_0`). Schematic: `Key_Delay_Timer` (FF 16-bit, CW_Clock, period 10, continuous, reset tied 0) + `Key_Delay_isr` added on the CW Management sheet. Built 10-31, **tested on a radio 11-01**; T1 untested (no T1 here) |
@@ -146,6 +146,20 @@ every pull. Newest first. Detailed write-ups for Ron go in `.mscc-coord/NOTE-FOR
   so nobody re-calibrates), a factory set version, TX/RX I/Q stored in the radio,
   reset to factory later (needs the 0xC8 clear back, removed in 3.239: ask Ron why).
 - Geminus MKII firmware: 0xC8 added in 2.152 (2026-10-31).
+
+## SWR meter fault from the Pi, client 11.1.5 (2026-11-01)
+
+- Ron's Pi ms-sdr 3.188 relays the WiFi meter state as extended sub **0x0F**
+  `[fault][online][IP a.b.c.d]` (`swr_wifi_meter.c`, not gated by `SWR_METER_TO_GUI`). Windows
+  ms-sdr has no meter code (the Windows client listens on 6999 itself).
+- Client: `UdpRadioService` keeps `_radioSwrFault` and sends it with every relayed F/R/SWR reading
+  (they had `Fault = false` hard-coded, which would clear a fault at the next reading). online = 0
+  zeroes the meters and clears the fault. `RadioSwrMeterIp` (memory only) is the last RESET fallback.
+- Proposed to Ron: **0x2E `CMD_SWR_METER_RESET`** client -> ms-sdr -> `Swr_wifi_request_reset()`
+  (exists, no caller), so RESET works from a remote client that can't reach the Pi's LAN
+  (`NOTE-FOR-RON-SWR-FAULT-CLIENT-AND-RESET-2026-11-01.md`). Client side after his OK.
+- trans `Set_QRP_calibration` comment fixed (Ron): an old ms-sdr never sets the save flag, so
+  nothing saves. Source only, not rebuilt.
 
 ## 2 TONE and the ALC ceiling, trans 3.155-3.157 / client 11.1.3 (2026-11-01)
 

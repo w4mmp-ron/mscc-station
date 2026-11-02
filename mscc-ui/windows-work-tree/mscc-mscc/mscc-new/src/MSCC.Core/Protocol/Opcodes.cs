@@ -320,6 +320,9 @@ public static class Opcodes
     public const byte EXT_CMD_SET_REVERSE_POWER = 0x0C;
     /// <summary>Extended sub: SWR ×10 as one byte at payload offset 1.</summary>
     public const byte EXT_CMD_SET_SWR = 0x0D;
+    /// <summary>Extended sub (Pi ms-sdr 3.188): WiFi SWR meter state relayed by ms-sdr.
+    /// Payload after the sub: [fault 0/1][online 0/1][IP a][IP b][IP c][IP d] (0.0.0.0 = unknown).</summary>
+    public const byte EXT_CMD_SET_SWR_FAULT = 0x0F;
 
     // TODO: add more as reverse-engineered (status, extended power, temps, drift, antenna, etc.)
 }

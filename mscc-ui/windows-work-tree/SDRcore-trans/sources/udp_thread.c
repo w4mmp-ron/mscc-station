@@ -385,7 +385,8 @@ int Get_IQ_Record(int band) {
  * used by every mode. Drive_Manager recomputes the drive now.
  * trans 3.154: slider steps are live only (RAM). power_cal.ini is written only when ms-sdr sends
  * the value with the save flag (bit 15 of the data: client "Save this calibration?" Yes, or the
- * startup copy from the radio). Older ms-sdr never sets it: then every step saves, as before. */
+ * startup copy from the radio). An older ms-sdr never sets it, so nothing would be saved: ms-sdr
+ * 3.189 and trans ship together (comment fixed 11-01, Ron). */
 #define POWER_CAL_SAVE_FLAG_HI 0x80     /* bit 15 = buf[2] bit 7 */
 void Set_QRP_calibration(int band_index, int value, int save) {
     int mode = 0;

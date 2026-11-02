@@ -150,6 +150,12 @@ public class UdpRadioService : IRadioService, IDisposable
     private float _radioSwrFwd;
     private float _radioSwrRef;
     private float _radioSwr = 1f;
+    // 11.1.5: meter state from extended 0x0F (Pi ms-sdr 3.188). Kept here so every relayed
+    // reading carries it: the F/R/SWR packets used to report Fault = false, which would clear
+    // a fault half a second after it was raised.
+    private bool _radioSwrFault;
+    private string? _radioSwrMeterIp;
+    public string? RadioSwrMeterIp => _radioSwrMeterIp;
 
     // Frequency Calibration reports (progress 0-100, status 1=success/0=fail, delta Hz from check)
     public event Action<int>? CalProgressReported;
@@ -2284,6 +2290,7 @@ public class UdpRadioService : IRadioService, IDisposable
             Opcodes.EXT_CMD_SET_FORWARD_POWER => "FORWARD_POWER",
             Opcodes.EXT_CMD_SET_REVERSE_POWER => "REVERSE_POWER",
             Opcodes.EXT_CMD_SET_SWR => "SWR",
+            Opcodes.EXT_CMD_SET_SWR_FAULT => "SWR_FAULT",
             0x0E => "SOLIDUS_STATUS",
             _ => "UNKNOWN_SUB"
         };
@@ -2322,6 +2329,28 @@ public class UdpRadioService : IRadioService, IDisposable
                     handled = true;
                 }
                 break;
+            case Opcodes.EXT_CMD_SET_SWR_FAULT:
+                // 11.1.5: [sub][fault][online][IP a.b.c.d]
+                if (payload.Length >= 3)
+                {
+                    bool fault = payload[1] != 0;
+                    bool online = payload[2] != 0;
+                    if (payload.Length >= 7 && (payload[3] | payload[4] | payload[5] | payload[6]) != 0)
+                        _radioSwrMeterIp = $"{payload[3]}.{payload[4]}.{payload[5]}.{payload[6]}";
+                    if (!online)
+                    {
+                        // Meter went quiet: zero the meters and clear the fault, as on the direct path.
+                        fault = false;
+                        _radioSwrFwd = 0f;
+                        _radioSwrRef = 0f;
+                        _radioSwr = 1f;
+                    }
+                    if (fault != _radioSwrFault || !online)
+                        DebugMonitor.MonitorTextBoxText($" SWR meter (ms-sdr 0x0F): fault={(fault ? 1 : 0)} online={(online ? 1 : 0)} ip={_radioSwrMeterIp ?? "?"}");
+                    _radioSwrFault = fault;
+                    handled = true;
+                }
+                break;
         }
 
         if (!handled)
@@ -2333,7 +2362,7 @@ public class UdpRadioService : IRadioService, IDisposable
             ReflectedWatts = _radioSwrRef,
             PeakWatts = _radioSwrFwd,
             Swr = _radioSwr,
-            Fault = false,
+            Fault = _radioSwrFault,
             Tx = _radioSwrFwd > 0.05f,
             SwrThreshold = 2f,
             SourceIp = null,
