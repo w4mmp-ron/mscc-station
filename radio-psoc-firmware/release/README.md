@@ -1,4 +1,11 @@
-﻿# Firmware release drops
+# Old firmware drop folder (retired 2026-11-02)
+
+Nothing is written here any more. Releases now go to each source tree's own `Release/` folder,
+named `<Tree>-<major>.<minor>.cyacd` / `.hex` (see `../README.md`). The files below are kept as an archive.
+
+---
+
+# Firmware release drops
 
 After a successful PSoC Creator / Keil build on **Shack**, Grok Build copies the shipping artifacts here:
 

@@ -1,4 +1,4 @@
-C51 COMPILER V9.51   USBVEND01                                                             11/02/2026 09:14:25 PAGE 1   
+C51 COMPILER V9.51   USBVEND01                                                             11/02/2026 13:20:54 PAGE 1   
 
 
 C51 COMPILER V9.51, COMPILATION OF MODULE USBVEND01
@@ -62,7 +62,7 @@ line level    source
   50          
   51          
   52          // Maps PSoC registers into one that looks like the AVR
-C51 COMPILER V9.51   USBVEND01                                                             11/02/2026 09:14:25 PAGE 2   
+C51 COMPILER V9.51   USBVEND01                                                             11/02/2026 13:20:54 PAGE 2   
 
   53          uint8 emulated_register(void) {
   54   1          uint8 reg = 0, key;
@@ -126,7 +126,7 @@ line level    source
  112   3                      E_dll_version = SI570_DLL;
  113   3                      break;
  114   3                  case 0x3F: // CMD_GET_SI570
-C51 COMPILER V9.51   USBVEND01                                                             11/02/2026 09:14:25 PAGE 3   
+C51 COMPILER V9.51   USBVEND01                                                             11/02/2026 13:20:54 PAGE 3   
 
  115   3                      USBFS_currentTD.pData = (void *)(Si570_Buf+2);
  116   3                      USBFS_currentTD.count = 6;
@@ -190,7 +190,7 @@ line level    source
  174   3                      requestHandled  = USBFS_InitControlRead();
  175   3                      break;
  176   3                      
-C51 COMPILER V9.51   USBVEND01                                                             11/02/2026 09:14:25 PAGE 4   
+C51 COMPILER V9.51   USBVEND01                                                             11/02/2026 13:20:54 PAGE 4   
 
  177   3                  case CMD_GET_PPM_INT:
  178   3                      PPM_temp = ee_ppm_int;
@@ -254,7 +254,7 @@ line level    source
  236   3                      USBFS_currentTD.pData = (void *)&Si570_OLD;
  237   3                      USBFS_currentTD.count = 6;
  238   3                      requestHandled  = USBFS_InitControlWrite();
-C51 COMPILER V9.51   USBVEND01                                                             11/02/2026 09:14:25 PAGE 5   
+C51 COMPILER V9.51   USBVEND01                                                             11/02/2026 13:20:54 PAGE 5   
 
  239   3                      break;
  240   3                  case CMD_SET_FREQ: // CMD_SET_FREQ
@@ -318,7 +318,7 @@ line level    source
  298   3                      break;
  299   3                      
  300   3                  case SET_TX_HOLD:
-C51 COMPILER V9.51   USBVEND01                                                             11/02/2026 09:14:25 PAGE 6   
+C51 COMPILER V9.51   USBVEND01                                                             11/02/2026 13:20:54 PAGE 6   
 
  301   3                      USBFS_currentTD.pData = (void *)&E_TX_Hold;
  302   3                      USBFS_currentTD.count = sizeof(E_TX_Hold);
@@ -382,7 +382,7 @@ line level    source
  360   3      
  361   3                  /*
  362   3                   * PIC keyer CQ (0x9C). Control write 2 bytes into E_keyer_mem_pkt:
-C51 COMPILER V9.51   USBVEND01                                                             11/02/2026 09:14:25 PAGE 7   
+C51 COMPILER V9.51   USBVEND01                                                             11/02/2026 13:20:54 PAGE 7   
 
  363   3                   *   [0]=param  [1]=seq (host increments each time so Configure_CW sees a change).
  364   3                   * Same InitControlWrite style as SET_WPM (no zero-length OUT / USBFS_TRUE).
@@ -431,7 +431,7 @@ line level    source
  406   1          return(requestHandled);
  407   1      }
  408          
-C51 COMPILER V9.51   USBVEND01                                                             11/02/2026 09:14:25 PAGE 8   
+C51 COMPILER V9.51   USBVEND01                                                             11/02/2026 13:20:54 PAGE 8   
 
 ASSEMBLY LISTING OF GENERATED OBJECT CODE
 
@@ -495,7 +495,7 @@ ASSEMBLY LISTING OF GENERATED OBJECT CODE
                  E     MOV     DPH,?C_XBP
                  E     MOV     DPL,?C_XBP+01H
                        MOVX    A,@DPTR
-C51 COMPILER V9.51   USBVEND01                                                             11/02/2026 09:14:25 PAGE 9   
+C51 COMPILER V9.51   USBVEND01                                                             11/02/2026 13:20:54 PAGE 9   
 
                        MOV     R3,A
                        INC     DPTR
@@ -559,7 +559,7 @@ ASSEMBLY LISTING OF GENERATED OBJECT CODE
                  E     MOV     DPH,?C_XBP
                  E     MOV     DPL,?C_XBP+01H
                        MOVX    A,@DPTR
-C51 COMPILER V9.51   USBVEND01                                                             11/02/2026 09:14:25 PAGE 10  
+C51 COMPILER V9.51   USBVEND01                                                             11/02/2026 13:20:54 PAGE 10  
 
                        MOV     R3,A
                        INC     DPTR
@@ -623,7 +623,7 @@ ASSEMBLY LISTING OF GENERATED OBJECT CODE
                  E     CALL    ?C?ADDXBP
                        RET     
              ; FUNCTION _?swap32_int (END)
-C51 COMPILER V9.51   USBVEND01                                                             11/02/2026 09:14:25 PAGE 11  
+C51 COMPILER V9.51   USBVEND01                                                             11/02/2026 13:20:54 PAGE 11  
 
 
              ; FUNCTION emulated_register (BEGIN)
@@ -687,7 +687,7 @@ ASSEMBLY LISTING OF GENERATED OBJECT CODE
                        XRL     A,#080H
                  R     xJNZ    ?C0006
                                            ; SOURCE LINE # 80
-C51 COMPILER V9.51   USBVEND01                                                             11/02/2026 09:14:25 PAGE 12  
+C51 COMPILER V9.51   USBVEND01                                                             11/02/2026 13:20:54 PAGE 12  
 
                                            ; SOURCE LINE # 81
                        INC     DPTR
@@ -751,7 +751,7 @@ ASSEMBLY LISTING OF GENERATED OBJECT CODE
                        MOVX    @DPTR,A
                                            ; SOURCE LINE # 86
                  E     MOV     DPTR,#USBFS_currentTD
-C51 COMPILER V9.51   USBVEND01                                                             11/02/2026 09:14:25 PAGE 13  
+C51 COMPILER V9.51   USBVEND01                                                             11/02/2026 13:20:54 PAGE 13  
 
                        CLR     A
                        MOVX    @DPTR,A
@@ -815,7 +815,7 @@ ASSEMBLY LISTING OF GENERATED OBJECT CODE
                        MOVX    @DPTR,A
                                            ; SOURCE LINE # 96
                  R     xJMP    ?C0006
-C51 COMPILER V9.51   USBVEND01                                                             11/02/2026 09:14:25 PAGE 14  
+C51 COMPILER V9.51   USBVEND01                                                             11/02/2026 13:20:54 PAGE 14  
 
                                            ; SOURCE LINE # 97
              ?C0010:
@@ -879,7 +879,7 @@ ASSEMBLY LISTING OF GENERATED OBJECT CODE
                        MOVX    @DPTR,A
                                            ; SOURCE LINE # 107
                  R     xJMP    ?C0006
-C51 COMPILER V9.51   USBVEND01                                                             11/02/2026 09:14:25 PAGE 15  
+C51 COMPILER V9.51   USBVEND01                                                             11/02/2026 13:20:54 PAGE 15  
 
                                            ; SOURCE LINE # 108
              ?C0012:
@@ -943,7 +943,7 @@ ASSEMBLY LISTING OF GENERATED OBJECT CODE
              ?C0014:
                                            ; SOURCE LINE # 120
                        MOV     DPTR,#06002H
-C51 COMPILER V9.51   USBVEND01                                                             11/02/2026 09:14:25 PAGE 16  
+C51 COMPILER V9.51   USBVEND01                                                             11/02/2026 13:20:54 PAGE 16  
 
                        MOVX    A,@DPTR
                  R     xJNB    ACC.0,?C0015
@@ -1007,7 +1007,7 @@ ASSEMBLY LISTING OF GENERATED OBJECT CODE
                        ORL     A,R6
                  R     xJNZ    ?C0006
                                            ; SOURCE LINE # 138
-C51 COMPILER V9.51   USBVEND01                                                             11/02/2026 09:14:25 PAGE 17  
+C51 COMPILER V9.51   USBVEND01                                                             11/02/2026 13:20:54 PAGE 17  
 
                  R     MOV     DPTR,#result
                        MOVX    @DPTR,A
@@ -1071,7 +1071,7 @@ ASSEMBLY LISTING OF GENERATED OBJECT CODE
                  E     MOV     DPTR,#USBFS_currentTD+02H
                        MOV     A,#01H
                        MOVX    @DPTR,A
-C51 COMPILER V9.51   USBVEND01                                                             11/02/2026 09:14:25 PAGE 18  
+C51 COMPILER V9.51   USBVEND01                                                             11/02/2026 13:20:54 PAGE 18  
 
                        INC     DPTR
                  E     MOV     A,#HIGH E_PTT
@@ -1135,7 +1135,7 @@ ASSEMBLY LISTING OF GENERATED OBJECT CODE
                        MOVX    @DPTR,A
                                            ; SOURCE LINE # 162
                  R     xJMP    ?C0006
-C51 COMPILER V9.51   USBVEND01                                                             11/02/2026 09:14:25 PAGE 19  
+C51 COMPILER V9.51   USBVEND01                                                             11/02/2026 13:20:54 PAGE 19  
 
                                            ; SOURCE LINE # 164
              ?C0023:
@@ -1199,7 +1199,7 @@ ASSEMBLY LISTING OF GENERATED OBJECT CODE
                                            ; SOURCE LINE # 178
                  E     MOV     DPTR,#ee_ppm_int
                        MOVX    A,@DPTR
-C51 COMPILER V9.51   USBVEND01                                                             11/02/2026 09:14:25 PAGE 20  
+C51 COMPILER V9.51   USBVEND01                                                             11/02/2026 13:20:54 PAGE 20  
 
                        MOV     R7,A
                        RLC     A
@@ -1263,7 +1263,7 @@ ASSEMBLY LISTING OF GENERATED OBJECT CODE
                  R     MOV     DPTR,#PPM_temp
                  E     CALL    ?C?LSTXDATA
                                            ; SOURCE LINE # 187
-C51 COMPILER V9.51   USBVEND01                                                             11/02/2026 09:14:25 PAGE 21  
+C51 COMPILER V9.51   USBVEND01                                                             11/02/2026 13:20:54 PAGE 21  
 
                  R     MOV     DPTR,#PPM_temp
                        MOVX    A,@DPTR
@@ -1327,7 +1327,7 @@ ASSEMBLY LISTING OF GENERATED OBJECT CODE
                        MOVX    A,@DPTR
                        MOV     R7,A
                  R     xJNE    A,#04H,?C0028
-C51 COMPILER V9.51   USBVEND01                                                             11/02/2026 09:14:25 PAGE 22  
+C51 COMPILER V9.51   USBVEND01                                                             11/02/2026 13:20:54 PAGE 22  
 
                                            ; SOURCE LINE # 199
                  E     MOV     DPTR,#USBFS_currentTD+02H
@@ -1391,7 +1391,7 @@ ASSEMBLY LISTING OF GENERATED OBJECT CODE
                        ADDC    A,B
                        MOV     R2,A
                  E     MOV     DPTR,#USBFS_currentTD+02H
-C51 COMPILER V9.51   USBVEND01                                                             11/02/2026 09:14:25 PAGE 23  
+C51 COMPILER V9.51   USBVEND01                                                             11/02/2026 13:20:54 PAGE 23  
 
                        MOV     A,#01H
                        MOVX    @DPTR,A
@@ -1455,7 +1455,7 @@ ASSEMBLY LISTING OF GENERATED OBJECT CODE
                        MOV     R1,A
                  E     MOV     A,#HIGH E_cal+066H
                        ADDC    A,B
-C51 COMPILER V9.51   USBVEND01                                                             11/02/2026 09:14:25 PAGE 24  
+C51 COMPILER V9.51   USBVEND01                                                             11/02/2026 13:20:54 PAGE 24  
 
                        MOV     R2,A
                  E     MOV     DPTR,#USBFS_currentTD+02H
@@ -1519,7 +1519,7 @@ ASSEMBLY LISTING OF GENERATED OBJECT CODE
                        DB      070H
                  R     DW      ?C0054
                        DB      071H
-C51 COMPILER V9.51   USBVEND01                                                             11/02/2026 09:14:25 PAGE 25  
+C51 COMPILER V9.51   USBVEND01                                                             11/02/2026 13:20:54 PAGE 25  
 
                  R     DW      ?C0051
                        DB      072H
@@ -1583,7 +1583,7 @@ ASSEMBLY LISTING OF GENERATED OBJECT CODE
                                            ; SOURCE LINE # 239
                  R     xJMP    ?C0039
                                            ; SOURCE LINE # 240
-C51 COMPILER V9.51   USBVEND01                                                             11/02/2026 09:14:25 PAGE 26  
+C51 COMPILER V9.51   USBVEND01                                                             11/02/2026 13:20:54 PAGE 26  
 
              ?C0042:
                                            ; SOURCE LINE # 241
@@ -1647,7 +1647,7 @@ ASSEMBLY LISTING OF GENERATED OBJECT CODE
                        MOV     R6,A
                        MOV     R5,A
                        MOV     R4,A
-C51 COMPILER V9.51   USBVEND01                                                             11/02/2026 09:14:25 PAGE 27  
+C51 COMPILER V9.51   USBVEND01                                                             11/02/2026 13:20:54 PAGE 27  
 
                  R     MOV     DPTR,#l_int
                  E     CALL    ?C?LSTXDATA
@@ -1711,7 +1711,7 @@ ASSEMBLY LISTING OF GENERATED OBJECT CODE
                        MOV     A,#01H
                        MOVX    @DPTR,A
                        INC     DPTR
-C51 COMPILER V9.51   USBVEND01                                                             11/02/2026 09:14:25 PAGE 28  
+C51 COMPILER V9.51   USBVEND01                                                             11/02/2026 13:20:54 PAGE 28  
 
                  E     MOV     A,#HIGH E_ppm
                        MOVX    @DPTR,A
@@ -1775,7 +1775,7 @@ ASSEMBLY LISTING OF GENERATED OBJECT CODE
                        CLR     A
                        MOVX    @DPTR,A
                        INC     DPTR
-C51 COMPILER V9.51   USBVEND01                                                             11/02/2026 09:14:25 PAGE 29  
+C51 COMPILER V9.51   USBVEND01                                                             11/02/2026 13:20:54 PAGE 29  
 
                        INC     A
                        MOVX    @DPTR,A
@@ -1839,7 +1839,7 @@ ASSEMBLY LISTING OF GENERATED OBJECT CODE
                                            ; SOURCE LINE # 285
                  R     xJMP    ?C0039
                                            ; SOURCE LINE # 288
-C51 COMPILER V9.51   USBVEND01                                                             11/02/2026 09:14:25 PAGE 30  
+C51 COMPILER V9.51   USBVEND01                                                             11/02/2026 13:20:54 PAGE 30  
 
              ?C0050:
                                            ; SOURCE LINE # 289
@@ -1903,7 +1903,7 @@ ASSEMBLY LISTING OF GENERATED OBJECT CODE
                        MOVX    @DPTR,A
                        INC     DPTR
                  E     MOV     A,#LOW E_TX_Hold
-C51 COMPILER V9.51   USBVEND01                                                             11/02/2026 09:14:25 PAGE 31  
+C51 COMPILER V9.51   USBVEND01                                                             11/02/2026 13:20:54 PAGE 31  
 
                        MOVX    @DPTR,A
                                            ; SOURCE LINE # 302
@@ -1967,7 +1967,7 @@ ASSEMBLY LISTING OF GENERATED OBJECT CODE
                        INC     DPTR
                        INC     A
                        MOVX    @DPTR,A
-C51 COMPILER V9.51   USBVEND01                                                             11/02/2026 09:14:25 PAGE 32  
+C51 COMPILER V9.51   USBVEND01                                                             11/02/2026 13:20:54 PAGE 32  
 
                                            ; SOURCE LINE # 315
                  E     CALL    USBFS_InitControlWrite
@@ -2031,7 +2031,7 @@ ASSEMBLY LISTING OF GENERATED OBJECT CODE
                                            ; SOURCE LINE # 331
              ?C0057:
                                            ; SOURCE LINE # 332
-C51 COMPILER V9.51   USBVEND01                                                             11/02/2026 09:14:25 PAGE 33  
+C51 COMPILER V9.51   USBVEND01                                                             11/02/2026 13:20:54 PAGE 33  
 
                  E     MOV     DPTR,#USBFS_currentTD+02H
                        MOV     A,#01H
@@ -2095,7 +2095,7 @@ ASSEMBLY LISTING OF GENERATED OBJECT CODE
                  E     MOV     A,#LOW E_wpm
                        MOVX    @DPTR,A
                                            ; SOURCE LINE # 345
-C51 COMPILER V9.51   USBVEND01                                                             11/02/2026 09:14:25 PAGE 34  
+C51 COMPILER V9.51   USBVEND01                                                             11/02/2026 13:20:54 PAGE 34  
 
                  E     MOV     DPTR,#USBFS_currentTD
                        CLR     A
@@ -2159,7 +2159,7 @@ ASSEMBLY LISTING OF GENERATED OBJECT CODE
                  E     CALL    USBFS_InitControlWrite
                  R     MOV     DPTR,#requestHandled
                        MOV     A,R7
-C51 COMPILER V9.51   USBVEND01                                                             11/02/2026 09:14:25 PAGE 35  
+C51 COMPILER V9.51   USBVEND01                                                             11/02/2026 13:20:54 PAGE 35  
 
                        MOVX    @DPTR,A
                                            ; SOURCE LINE # 359
@@ -2223,7 +2223,7 @@ ASSEMBLY LISTING OF GENERATED OBJECT CODE
                                            ; SOURCE LINE # 382
                  R     MOV     DPTR,#l_cal_band
                        MOVX    A,@DPTR
-C51 COMPILER V9.51   USBVEND01                                                             11/02/2026 09:14:25 PAGE 36  
+C51 COMPILER V9.51   USBVEND01                                                             11/02/2026 13:20:54 PAGE 36  
 
                        MOV     R7,A
                        CLR     C
@@ -2287,7 +2287,7 @@ ASSEMBLY LISTING OF GENERATED OBJECT CODE
                        XRL     A,#04H
              ?C0074:
                  R     xJNZ    ?C0067
-C51 COMPILER V9.51   USBVEND01                                                             11/02/2026 09:14:25 PAGE 37  
+C51 COMPILER V9.51   USBVEND01                                                             11/02/2026 13:20:54 PAGE 37  
 
                                            ; SOURCE LINE # 388
                  R     MOV     DPTR,#l_cal_band
@@ -2351,7 +2351,7 @@ ASSEMBLY LISTING OF GENERATED OBJECT CODE
                                            ; SOURCE LINE # 392
                  E     MOV     DPTR,#USBFS_currentTD
                        CLR     A
-C51 COMPILER V9.51   USBVEND01                                                             11/02/2026 09:14:25 PAGE 38  
+C51 COMPILER V9.51   USBVEND01                                                             11/02/2026 13:20:54 PAGE 38  
 
                        MOVX    @DPTR,A
                        INC     DPTR
@@ -2415,7 +2415,7 @@ ASSEMBLY LISTING OF GENERATED OBJECT CODE
                        MOVX    A,@DPTR
                  E     ADD     A,#LOW E_cal_dirty
                        MOV     DPL,A
-C51 COMPILER V9.51   USBVEND01                                                             11/02/2026 09:14:25 PAGE 39  
+C51 COMPILER V9.51   USBVEND01                                                             11/02/2026 13:20:54 PAGE 39  
 
                        CLR     A
                  E     ADDC    A,#HIGH E_cal_dirty

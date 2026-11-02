@@ -17,11 +17,25 @@ PSoC Creator / Keil trees for Multus radio application firmware. Moved here so t
 | `Ultimus-Legacy/` | Ultimus Legacy — clone of Proficio-Legacy; Creator project still named Proficio-Legacy | **6** |
 | `Ultimus-MKII-PTT/` | Ultimus MKII PTT — clone of Proficio-MKII-PTT; Creator project still named Proficio-MKII-PTT | **8** |
 | `Ultimus-MKII-ATU/` | Ultimus MKII ATU — clone of Proficio-MKII-ATU; Creator project still named Proficio-MKII-ATU | **7** |
-| `release/<RadioName>/` | Post-build drop for shipping `.cyacd` / `.hex` (see `release/README.md`) | — |
+| `<Tree>/Release/` | **Releases (2026-11-02):** `<Tree>-<major>.<minor>.cyacd` / `.hex`, see below | — |
+| `release/` | Old drop folder, **no longer written** (kept as an archive) | — |
 
 Planned major map (client header / factory cal key): **1** Proficio Legacy · **2** Geminus MKII · **3/4** Proficio MKII PTT/ATU · **5** Geminus Legacy · **6** Ultimus Legacy · **7** Ultimus MKII ATU · **8** Ultimus MKII PTT.
 
-Application `.cyacd` for USB HID upload is produced under each source tree’s `Release/` after Creator build + `copy-release`. **Build then copies** the shipping `.cyacd` and `.hex` into `release/<RadioName>/`.
+## Releases: version in the file name, in the tree's own `Release/` (2026-11-02)
+
+Every build is saved under the version it reports, so two builds on the same day never overwrite
+each other and nothing has to be dug out of `DP8051\...\Debug`:
+
+- **Proficio / Geminus:** build in PSoC Creator. The post-build (`<Project>.cydsn\post-build-release.bat`
+  -> `<Tree>\copy-release.bat` -> `copy-release.py`) copies the build to
+  `<Tree>\Release\<Tree>-<major>.<minor>.cyacd` / `.hex`, e.g. `Proficio-MKII-ATU\Release\Proficio-MKII-ATU-4.244.cyacd`.
+  Double-click `<Tree>\copy-release.bat` if the post-build didn't run.
+- **Ultimus:** `build-ultimus.bat` writes into the Proficio tree it builds from, e.g.
+  `Proficio-MKII-ATU\Release\Ultimus-MKII-ATU-7.244.cyacd`.
+- **No silent overwrite:** if that version's file already exists with different contents, the new
+  build is saved as `...-4.244-b2` and you're told to bump `FIRMWARE_VERSION_MINOR`.
+  **Bump the minor for every build you flash for testing.**
 
 ## Ultimus builds (from the Proficio trees, 2026-10-31)
 
@@ -31,7 +45,7 @@ Proficio trees, so a Proficio fix is an Ultimus fix:
 
 1. Build the Proficio project in PSoC Creator (Shift+F6).
 2. Run `build-ultimus.bat` (or `py -3 build-ultimus.py legacy|mkii-ptt|mkii-atu|all`).
-3. Output: `release/Ultimus-<radio>/Ultimus-<radio>-YYYYMMDD.cyacd` / `.hex`.
+3. Output: `<Proficio tree>/Release/Ultimus-<radio>-<major>.<minor>.cyacd` / `.hex`.
 
 The script works in a git-ignored copy (`_ultimus-build/`), recompiles the application with
 `DF(ULTIMUS)` (the `#ifdef ULTIMUS` in `basic-plus.h` picks the major), patches the USB product

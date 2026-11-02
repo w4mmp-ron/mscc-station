@@ -18,7 +18,9 @@ How it works
      tree is not touched), recompiles the application sources with DF(ULTIMUS) (basic-plus.h
      picks the Ultimus major), sets the USB product string to "Ultimus", links and makes the
      .cyacd / .hex with the same Keil / Cypress tools and options Creator uses, then copies
-     them to release\<name>\<name>-YYYYMMDD.cyacd/.hex.
+     them to the Proficio tree's Release\ folder as <name>-<major>.<minor>.cyacd/.hex, e.g.
+     Proficio-MKII-ATU\Release\Ultimus-MKII-ATU-7.244.cyacd (never overwriting a different
+     build of the same version: see copy-release.py).
 
 Requires: PSoC Creator 4.4 (Keil C51 licence) on this PC, Python 3.
 The Proficio basic-plus.h must contain the switch:
@@ -30,7 +32,7 @@ The Proficio basic-plus.h must contain the switch:
 2026-10-31, Stew / Claude.
 """
 from __future__ import print_function
-import datetime
+import importlib.util
 import os
 import re
 import shutil
@@ -53,6 +55,10 @@ VARIANTS = {
     "mkii-atu": ("Proficio-MKII-ATU", "Proficio-MKII-ATU", "Ultimus-MKII-ATU", 7),
 }
 PRODUCT = "Ultimus"
+
+_spec = importlib.util.spec_from_file_location("copy_release", os.path.join(HERE, "copy-release.py"))
+copy_release = importlib.util.module_from_spec(_spec)
+_spec.loader.exec_module(copy_release)
 
 
 def fail(msg):
@@ -180,13 +186,11 @@ def build(key):
         if not os.path.isfile(f):
             fail("CyHexTool made no %s" % f)
 
-    rel = os.path.join(HERE, "release", name)
-    if not os.path.isdir(rel):
-        os.makedirs(rel)
-    stamp = datetime.date.today().strftime("%Y%m%d")
-    for ext, f in ((".cyacd", out_cyacd), (".hex", out_hex)):
-        shutil.copyfile(f, os.path.join(rel, "%s-%s%s" % (name, stamp, ext)))
-    print("OK: %s major %d -> release\\%s\\%s-%s.cyacd / .hex" % (name, major, name, name, stamp))
+    _, minor = copy_release.firmware_version(os.path.join(src_cydsn, "basic-plus.h"), ultimus=True)
+    rel = os.path.join(HERE, tree, "Release")
+    used = copy_release.place({".cyacd": out_cyacd, ".hex": out_hex}, rel,
+                              "%s-%d.%d" % (name, major, minor))
+    print("OK: %s -> %s\\Release\\%s.cyacd / .hex" % (name, tree, used))
 
 
 def main():
