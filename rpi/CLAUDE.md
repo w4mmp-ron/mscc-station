@@ -198,7 +198,15 @@ review of what he ported, say if the Pi needs a matching change. Don't start new
      (2026-11-01) MSCC UI = current Windows client (NB Thr 1..100 vs 1..1009 scale!, ALC switch,
      Remote window), Ubuntu scripts/utilities = Pi (mscc-init 1.0.18 + text wizard, mscc-volume,
      apt kit order). `NOTE-FOR-STEW-USER-DOCUMENTS-2026-11-01.md`
-  9. WiFi SWR meter firmware: our changes (tune allowance, mDNS, WiFi retry, PEAK hold, AVG,
+  9. PSoC non-QSK CW top speed (Ron 2026-11-03): check on his analyzer with dits at 45 and 55 wpm
+     whether the spaces go fully quiet. Why: the PCM3060 soft mute (all current PSoC trees) ramps
+     0.5 dB per 8/fs = 16.75 ms full <-> mute at 96 kHz (TI SLAS533B p32/34); unmute starts 14 ms
+     before each delayed key-down. Worked out, not measured: full mute in every space up to 39 wpm;
+     ~-40 dB at 58 wpm; merge above ~86 wpm. Unknown: can the mute bit reverse mid-ramp? (datasheet:
+     attenuation commands wait for the running change.) If not, elements above 39 wpm start late.
+     Wording for users until then: "non-QSK CW clean up to at least 39 wpm". QSK is not shaped.
+     Note: `NOTE-FOR-STEW-PSOC-CW-TOP-SPEED-2026-11-03.md`.
+  10. WiFi SWR meter firmware: our changes (tune allowance, mDNS, WiFi retry, PEAK hold, AVG,
      PEAK SWR on the screen, JSON keys; REF table tops at 25 W, left to him), his call whether to take them into his copy.
      `NOTE-FOR-STEW-SWR-METER-FIRMWARE-CHANGES-2026-11-06.md` (pushed bb31561)
   10. Windows ms-sdr stops all servers ~45 s after a remote client leaves (one line,
