@@ -117,15 +117,6 @@ review of what he ported, say if the Pi needs a matching change. Don't start new
      (2026-11-01) MSCC UI = current Windows client (NB Thr 1..100 vs 1..1009 scale!, ALC switch,
      Remote window), Ubuntu scripts/utilities = Pi (mscc-init 1.0.18 + text wizard, mscc-volume,
      apt kit order). `NOTE-FOR-STEW-USER-DOCUMENTS-2026-11-01.md`
-- **Noise spike = Pi buck regulator (Ron, 2026-11-02):** the buck regulator that powers the
-  built-in Pi in the Proficio MKII makes a noise spike. The power wire from the motherboard to
-  that supply is a bit long and acts as a radiator. Fix in progress: a toroid (choke on the wire)
-  arrives 2026-11-02. Not a software issue. Open: spike frequency/bands, before/after result.
-  Schematic (Stew, 2024-08-09, Downloads\Schematic_RPi-Mounting-PCB_2026-11-02.pdf): LMR33630
-  12 V -> 5.17 V 3 A buck, L1 8.2 uH (suggests the 400 kHz version, unverified), input only 10 uF
-  electrolytic + 0.22 uF ceramic (pulsed input current rides the 12 V wire), output 47 uF + 0.1 uF,
-  no input LC filter. Ideas: both wires through a mix 31 toroid (several turns), near the buck board;
-  more input ceramic (2x 10 uF) / small LC on 12 V for a board revision.
 - **Ron (setup 3 = his station):** confirm mscc-init's WSJT-X COM port / audio device names on the Pi
   and what he does in the Windows client so Pi digital audio reaches WSJT-X (Configurations draft item).
 - **Rules (Ron 2026-11-01):** assume Stew makes MSCC UI (Avalonia) match the current Windows client,
