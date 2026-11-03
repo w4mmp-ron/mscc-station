@@ -43,7 +43,8 @@ review of what he ported, say if the Pi needs a matching change. Don't start new
   built, OTA-loaded and TESTED (Ron, WSJT-X); PEAK SWR beside the big SWR (later 2026-11-06) built,
   loaded, works (Ron), committed, not pushed yet; details in the SWR meter firmware entry further down.
   Pushed: firmware 44b02ec, note for Stew bb31561
-  (`.mscc-coord/NOTE-FOR-STEW-SWR-METER-FIRMWARE-CHANGES-2026-11-06.md`). Those two pushed commit messages
+  (`.mscc-coord/NOTE-FOR-STEW-SWR-METER-FIRMWARE-CHANGES-2026-11-06.md`). The two PSoC CW top speed
+  commits were reordered after them and are still local (hold). Those two pushed commit messages
   left out the "With Stew" list; put it in the next sdrcore commit. Open: test the WiFi retry
   (router off, meter restarted); Ron to decide if ms-sdr itself stops TX on a meter fault
   (backstop for WSJT-X on the Pi keying via CAT). Build: arduino-cli inside the Arduino IDE,
@@ -198,7 +199,7 @@ review of what he ported, say if the Pi needs a matching change. Don't start new
      (2026-11-01) MSCC UI = current Windows client (NB Thr 1..100 vs 1..1009 scale!, ALC switch,
      Remote window), Ubuntu scripts/utilities = Pi (mscc-init 1.0.18 + text wizard, mscc-volume,
      apt kit order). `NOTE-FOR-STEW-USER-DOCUMENTS-2026-11-01.md`
-  9. PSoC non-QSK CW top speed (Ron 2026-11-03): check on his analyzer with dits at 45 and 55 wpm
+  9. ON HOLD (Ron 2026-11-03, note committed locally, NOT pushed; do not push until Ron says): PSoC non-QSK CW top speed (Ron 2026-11-03): check on his analyzer with dits at 45 and 55 wpm
      whether the spaces go fully quiet. Why: the PCM3060 soft mute (all current PSoC trees) ramps
      0.5 dB per 8/fs = 16.75 ms full <-> mute at 96 kHz (TI SLAS533B p32/34); unmute starts 14 ms
      before each delayed key-down. Worked out, not measured: full mute in every space up to 39 wpm;
