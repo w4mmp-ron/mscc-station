@@ -117,8 +117,11 @@ review of what he ported, say if the Pi needs a matching change. Don't start new
      (2026-11-01) MSCC UI = current Windows client (NB Thr 1..100 vs 1..1009 scale!, ALC switch,
      Remote window), Ubuntu scripts/utilities = Pi (mscc-init 1.0.18 + text wizard, mscc-volume,
      apt kit order). `NOTE-FOR-STEW-USER-DOCUMENTS-2026-11-01.md`
-- **Ron (setup 3 = his station):** confirm mscc-init's WSJT-X COM port / audio device names on the Pi
-  and what he does in the Windows client so Pi digital audio reaches WSJT-X (Configurations draft item).
+- **Setup 3 (Ron's station), Configurations draft item: ANSWERED 2026-11-03, draft updated (DRAFT box + Appendix A item 2 removed).**
+  Read on the Pi: ms-sdr CAT /dev/tnt0, WSJT-X /dev/tnt1 (pair), Rig Kenwood TS-2000, PTT RTS on tnt1;
+  MSCC plays VirtualA -> WSJT-X in VirtualA.monitor; WSJT-X out VirtualB -> MSCC VirtualB.monitor; Mono.
+  Ron: nothing set in the Windows client for COM ports or audio; mscc-init on the Pi sets them, and the
+  Phones devices too. Unknown: VirtualA_TX / VirtualB_TX exist on the Pi, unused by these settings.
 - **Rules (Ron 2026-11-01):** assume Stew makes MSCC UI (Avalonia) match the current Windows client,
   and the Ubuntu scripts/utilities match the Pi. No separate Avalonia review; document the Pi
   versions for both Linux hosts. Linux guide Release 0 reviewed (old versions, Appendix G Pi install
