@@ -9,7 +9,7 @@ Need: Pi **4 or 5**, 64-bit Raspberry Pi OS (desktop recommended).
 | Package | Version | |
 |---|---|---|
 | `mscc-portaudio` | 19.8.3 | required, install first |
-| `mscc` | 1.0.71 | required: servers, PSoC and Black Pill flash tools |
+| `mscc` | 1.0.73 | required: servers, PSoC and Black Pill flash tools |
 | `mscc-init` | 1.0.18 | recommended: MSCC Init (GUI + text wizard) |
 | `mscc-ui` | 0.6.71 | optional: Avalonia UI on the Pi (not needed with the Windows client) |
 | `mscc-volume` | 1.0.1 | optional: MSCC Volume, levels of VirtualA / VirtualB |

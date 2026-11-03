@@ -12,7 +12,7 @@
 | Package | Example filename | Order |
 |---------|------------------|--------|
 | PortAudio | `mscc-portaudio_19.8.3_arm64.deb` | **1st** |
-| Main stack | `mscc_1.0.71_arm64.deb` | **2nd** |
+| Main stack | `mscc_1.0.73_arm64.deb` | **2nd** |
 | Setup wizard (MSCC Init) | `mscc-init_1.0.18_all.deb` | **3rd** (recommended) |
 | Avalonia UI (optional) | `mscc-ui_0.6.71_arm64.deb` | **4th** — see `installers/rpi/` |
 | MSCC Volume (optional) | `mscc-volume_1.0.1_all.deb` | any time after mscc |
@@ -130,7 +130,7 @@ Do **not** rely on old `$HOME/portaudio-install` + `.bashrc` exports for a norma
 
 ```bash
 sudo apt update
-sudo apt install -y ./mscc_1.0.71_arm64.deb
+sudo apt install -y ./mscc_1.0.73_arm64.deb
 ```
 
 (Use the real filename if the version differs.)
