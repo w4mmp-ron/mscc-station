@@ -97,6 +97,20 @@ review of what he ported, say if the Pi needs a matching change. Don't start new
   until handled); test with a script meanwhile. To check later: memory-play Farnsworth letter gap
   added on top of the 1-dit element space -> ~1 dit longer than ARRL, overall a bit slow.
   Next when Ron says: write the PIC change, Ron builds in MPLAB X, tries on the paddles.
+- **AM receive spectrum is 140 Hz low (Ron 2026-11-03; do when the Pi hold lifts).** On WWV
+  20 MHz in AM the carrier sits ~6 px left of the spectrum center line at 4x zoom (measured
+  157 +-15 Hz from a PNG; USB, LSB and CW are on center). Cause: ms-sdr sets the AM receive LO
+  with `AM_OFFSET_RX (-11860)`; every other mode, and AM transmit, uses -12000, and sdrcore-recv
+  always mixes down by exactly 12000 Hz. Likely reason Ron set 11860 years ago (he doesn't
+  remember; this is read from the code): the old AM filter was the SSB bandpass (Lo..Hi), which
+  blocks 0 Hz, so the carrier had to sit 140 Hz off. The sdrcore-recv 3.147 AM fix (c9850ca)
+  made AM a lowpass (0..Hi), so 11860 is no longer needed. Fix: one line,
+  `AM_OFFSET_RX (-11860)` -> `(-12000)`, in `rpi/ms-sdr-linux/source/extern.h:58` (Pi) and
+  `mscc-ui/windows-work-tree/ms-sdr-MKII/source/extern.h:47` (Windows ms-sdr; tell Stew). Don't
+  change it in the old trees (`linux/`, `Solidus/servers/`): their recv still uses the bandpass
+  for AM and would lose the carrier. Leave the PSoC `AM_OFFSET 11860` (`si5351.c`) alone unless
+  the PSoC turns out to set the LO in AM. Test: WWV in AM, carrier on the center line, audio
+  sounds the same.
 - **Waiting on Stew (notes in `.mscc-coord/`):**
   1. Port the new NB to Windows recv; client questions (Pulse min 50 us, threshold Low/Med/High
      = 1/500/750, slider 1001..1009 oddity, send NB state on connect).
@@ -156,8 +170,12 @@ review of what he ported, say if the Pi needs a matching change. Don't start new
   running until mscc stop/start, NOT committed.** Stew pulled 11-01: client 11.1.5 (0x0F handled, installer
   R11-1-5), Windows trans 3.157 (2 TONE + voice ALC 0.89; 0.45 was a bad StarTech USB card). Note:
   `.mscc-coord/NOTE-FOR-STEW-2TONE-PI-AND-0x2E-2026-11-01.md`. Running since 19:46. **Fault test PASSED 19:51
-  (Ron, client 11.1.5):** meter fault latched -> client showed fault + RESET, Ron pressed RESET (client
-  direct HTTP) -> meter cleared, ms-sdr relayed it. **2 TONE PASSED 20:12 (Ron, 20 m USB, full power; button is on the RX/TX tab;
+  (Ron, client 11.1.5):** meter fault latched -> client showed fault + RESET, Ron pressed the RESET
+  button ON THE METER ITSELF (corrected 2026-11-03; this line used to say the client's RESET) -> meter
+  cleared, ms-sdr relayed it. The client's own RESET was first tested 2026-11-03 (client HTTP straight
+  to the meter, after fixing a typo in MSCC_Client.ini SWR_HF_IP=192.156.12.222 -> 192.168.12.222): worked.
+  Not tested yet: client RESET from a remote client (Tailscale) - the client sends the reset straight
+  to the meter's LAN IP, and doesn't use ms-sdr's 0x2E reset yet. **2 TONE PASSED 20:12 (Ron, 20 m USB, full power; button is on the RX/TX tab;
   panadapter stops in TX so tones/IMD not seen).** Note: `NOTE-FOR-STEW-2TONE-PI-TESTED-2026-11-01.md`.
   Open: 0x2E RESET path (needs Stew's client send).
 - **SWR meter firmware (Ron 2026-11-01):** auto-tune on 30 m runs longer than the meter's time limit, so
