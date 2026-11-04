@@ -20,7 +20,7 @@ file is for Claude only.
 | Path | Rule |
 |---|---|
 | `rpi/SDRcore-recv-linux/`, `rpi/SDRcore-trans-linux/`, `rpi/ms-sdr-linux/` | **Working trees** (Pi source of truth). Claude edits here. |
-| `swr-meter/ron/HF_SWR_R4_1/` | **Our copy of the WiFi SWR meter firmware** (ESP32 Arduino; copied 2026-11-01 from Stew's `swr-meter/HF_SWR_R4_1/` @ 67fa644, source only, no build/). Claude edits here; Stew's copy is read-only. |
+| `swr-meter/ron/HF_SWR_R4_1/` | **Our copy of the WiFi SWR meter firmware** (ESP32 Arduino; copied 2026-11-01 from Stew's `swr-meter/HF_SWR_R4_1/` @ 67fa644). In git since 2026-11-04: the source plus `swr-meter/ron/build/HF_SWR_R4_1.ino.bin` (the file to OTA-load at http://hf-swr-meter.local/update); other build output stays local. Claude edits here; Stew's copy is read-only. |
 | Rest of `C:\Users\Ron\.grok\worktrees` | Read-only reference unless Ron says otherwise. |
 
 History: Claude worked in a copy `rpi/sdrcore-claude/` (commits fe0c9a1, 0443c21,
@@ -196,7 +196,8 @@ review of what he ported, say if the Pi needs a matching change. Don't start new
   off/offline. Also reset fix: ms-sdr asked /reset (no such page, 404 taken as OK) -> now only
   /api?action=reset, result read from the answer ("fault":0). Test PASSED 21:06 (Ron): 15 m tune 16 s,
   tune=1 OK ~20 ms before key, no fault. Old firmware ignores tune=1 (logged "no tune flag"), harmless.
-  ms-sdr committed; firmware still git-excluded until Ron says done. Next: note for Stew then.
+  ms-sdr committed. Firmware committed 2026-11-04 (Ron; no longer git-excluded), with mDNS added (meter
+  answers as hf-swr-meter.local; tested from Firefox, Ron). Next: note for Stew about the firmware changes.
   21:18: touch control "Tune Allow (s)" on the meter SETTINGS page (rows respaced to 52 px:
   52/104/156/208/260; -/+ 0..10, 0 = OFF, saved on Back). Ron: fits and works. Client 11.1.5 dropped
   TX 2 ms after the relayed fault (good). Then find the limit and fix. Also pending Ron's decision: should ms-sdr itself stop
