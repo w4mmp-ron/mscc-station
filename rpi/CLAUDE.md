@@ -93,10 +93,30 @@ review of what he ported, say if the Pi needs a matching change. Don't start new
   "paddles too"; LETTERSPACE waits `mem_letter_gap` instead of `2 * dot_delay` when set. No radio FW
   (pill / PSoC) or ms-sdr change: 0x76 byte passed through raw (ms-sdr Pi + Windows, pill cw.c state
   6, PSoC usbvend01/cw.c). Autospace must be on. Letter gaps only first (word gaps by the operator).
-  Client (Stew): checkbox sets the bit; ms-sdr echoes the stored value at connect (would show 141
-  until handled); test with a script meanwhile. To check later: memory-play Farnsworth letter gap
-  added on top of the 1-dit element space -> ~1 dit longer than ARRL, overall a bit slow.
-  Next when Ron says: write the PIC change, Ron builds in MPLAB X, tries on the paddles.
+  To check later: memory-play Farnsworth letter gap added on top of the 1-dit element space ->
+  ~1 dit longer than ARRL, overall a bit slow.
+  **2026-11-05: bit-7 plan does NOT work with today's WPF client.** At connect ms-sdr reports 141;
+  the client clamps it to 60 (`UdpRadioService.cs:2201`), shows 60, and because the value changed
+  `OnCwMemTextWpmChanged` (`MainViewModel.cs:5412`) sends 60 back -> ms-sdr saves 60, the PIC gets
+  60: paddle bit lost and memory Farnsworth off. Options: (a) Stew keeps bit 7 in the client (2
+  clamps + checkbox); (b) a separate on/off opcode, suggested **0x9D** (free everywhere, next to
+  0x9C keyer memory), needs ms-sdr Pi + Windows, pill, PSoC, PIC and client; (c) script-only test
+  with the client closed. Proposed PIC code (not written; Ron stopped the edit): flag
+  `cw_paddle_farns`, `paddle_letter_gap = max(2*dot_delay, mem_letter_gap - dot_delay)` in
+  `keyer_update()` (true ARRL gap, ~6 dits at 18/13), LETTERSPACE `kdelay >= paddle_letter_gap`.
+  Ron to pick (a) / (b) / (c). Avalonia client not checked.
+- **Opcodes: free and reclaimed (2026-11-05).** Survey of every layer (Pi + Windows ms-sdr,
+  recv, trans, WPF client, pill pio-async, PSoC MKII, PIC keyer). Free everywhere: **0x2F, 0x9D,
+  0x9F**. Reclaimed in the Pi ms-sdr `source/usbavrcmd.h` (26 never-used defines commented out,
+  marked `reclaimed 2026-11-05`; AVAILABLE OPCODES block at the top of the file): 0x15-0x1E,
+  0x5C, 0x83, 0x84, 0xAD, 0xC0, 0xC1, 0xC2, 0xC4, 0xF8; also unused 0xD6. Leftover unused names
+  elsewhere: 0xAD client `Opcodes.cs`, 0xC0 pill / PSoC `usbvend.h`, 0xC1 / 0xC2 / 0xC4 / 0xD6
+  sdrcore-trans `commands.h`; clear before reuse. More room: 0x0B extended command sub-byte (in use
+  0x09-0x0D, 0x0F, 0x30). Header copied to V: (matched git first), syntax check on the Pi clean,
+  no full build; **header change not committed yet** (Pi hold: Ron asked for it). Windows ms-sdr
+  (Stew's) not changed. Pi vs Windows differences seen: 0x0F SWR fault and 0x2E SWR meter reset
+  (Pi ms-sdr only), 0x0B and 0x30 (Pi recv / trans only), 0x85 / 0x86 panadapter gain / base
+  (Pi recv only).
 - **AM receive spectrum is 140 Hz low (Ron 2026-11-03; do when the Pi hold lifts).** On WWV
   20 MHz in AM the carrier sits ~6 px left of the spectrum center line at 4x zoom (measured
   157 +-15 Hz from a PNG; USB, LSB and CW are on center). Cause: ms-sdr sets the AM receive LO
