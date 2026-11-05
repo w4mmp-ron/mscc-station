@@ -38,10 +38,13 @@ Git repo root: `C:\Users\Ron\.grok\worktrees`.
 (automatic NB, spectral NR, NR Low/Med/High, client controls).** When he pushes: pull, short
 review of what he ported, say if the Pi needs a matching change. Don't start new work meanwhile.
 
-**Current list (2026-11-01, after 212107e):**
+**Current list (updated 2026-11-05, after f78d141):**
 - **Pi runs:** recv 3.152 (automatic NB + spectral NR), trans 3.151 (2026-11-05: operator mic
   fix, see below), ms-sdr 3.193 (0x9D paddle Farnsworth, reported to the client), pill 3.13,
   PIC keyer = keyer-buffer (buffered Farnsworth), package mscc 1.0.75 installed (Ron 2026-11-05).
+  Pushed 2026-11-05: keyer + 0x9D work (fb90f87), mscc 1.0.75 (f78d141), pill 3.13 (a2e351d in
+  psoc-replacement-stm32). Open from today: SSB on a dummy load to confirm the mic fix;
+  Stew's PADDLE checkbox (note pushed); pill re-sending keyer settings after a PIC reset.
 - **2026-11-05 mscc 1.0.74 / 1.0.75 (`installers/rpi/mscc_1.0.75_arm64.deb`):**
   - **/dev/tnt* missing after a kernel update:** the Pi booted kernel 6.18.60 (installed 11-03);
     tty0tty was only built for the older kernels. 1.0.74 adds kernel hooks
