@@ -175,6 +175,15 @@ const unsigned long udpDelayTX = 30;
 unsigned long  udpDelay = udpDelayRX;
 unsigned long connectionStartTime = 0;
 bool isAttemptingConnection = false;
+/* W4MMP 2026-11-04: WiFi join RETRY. The original code gave up for good if the meter wasn't on
+ * WiFi 15 s after starting ("AUTH FAILED", WiFi off until a power cycle), which happened at Ron's
+ * station with the right password (router slow / meter started first). Now it waits
+ * WIFI_RETRY_MS and tries again, forever, while WiFi is enabled. See handleWiFiBackground(). */
+#define WIFI_JOIN_TIMEOUT_MS 15000UL
+#define WIFI_RETRY_MS        30000UL
+bool wifiRetryWaiting = false;          // true = join timed out, waiting WIFI_RETRY_MS before trying again
+unsigned long wifiRetryStartMs = 0;     // millis() when the wait started
+unsigned int wifiJoinAttempts = 0;      // attempts since the last successful join (for the screen / Serial)
 
 TFT_eSPI tft = TFT_eSPI();
 SPIClass spiTouch = SPIClass(VSPI);
@@ -1803,20 +1812,45 @@ void handleWiFiBackground() {
     bool isConnected = (WiFi.status() == WL_CONNECTED);
 
     if (!isConnected && isAttemptingConnection) {
-        if (millis() - connectionStartTime > 15000) { // 15 second timeout
-            Serial.println("Connection Timeout: Likely Wrong Password. Disabling WiFi.");
-            WiFi.disconnect(true); // Shut down the reconnect loop
+        if (millis() - connectionStartTime > WIFI_JOIN_TIMEOUT_MS) { // 15 second timeout
+            /* W4MMP 2026-11-04: don't give up for good (see WIFI_RETRY_MS). Say why if the ESP32
+             * knows: network not found, or join failed (often a wrong password). Either way
+             * stop this attempt and try again after WIFI_RETRY_MS. */
+            wl_status_t st = WiFi.status();
+            // short: ipBuf is 16 chars and gets "-RETRY" added
+            const char *why = (st == WL_NO_SSID_AVAIL) ? "NO NET"
+                            : (st == WL_CONNECT_FAILED) ? "JOIN FAIL"
+                            : "NO WIFI";
+            wifiJoinAttempts++;
+            Serial.printf("WiFi join timeout (attempt %u, status %d = %s). Retry in %lu s.\n",
+                          wifiJoinAttempts, (int)st, why, WIFI_RETRY_MS / 1000);
+            WiFi.disconnect(true); // stop this attempt; setupWiFi() starts a fresh one
             isAttemptingConnection = false;
-            
-            // Update UI to show the failure
-            if (lbl_ip != NULL && lv_obj_is_valid(lbl_ip)) lv_label_set_text(lbl_ip, "AUTH FAILED");
+            wifiRetryWaiting = true;
+            wifiRetryStartMs = millis();
+
+            // Update UI: reason + that it will retry (was "AUTH FAILED", final)
+            snprintf(ipBuf, sizeof(ipBuf), "%s-RETRY", why);
+            if (lbl_ip != NULL && lv_obj_is_valid(lbl_ip)) lv_label_set_text(lbl_ip, ipBuf);
             return;
         }
+    }
+
+    // W4MMP 2026-11-04: retry the join after the wait
+    if (!isConnected && wifiRetryWaiting && millis() - wifiRetryStartMs >= WIFI_RETRY_MS) {
+        wifiRetryWaiting = false;
+        Serial.println("WiFi: retrying join");
+        setupWiFi();      // sets CONNECTING..., restarts the 15 s timer
+        if (lbl_ip != NULL && lv_obj_is_valid(lbl_ip)) lv_label_set_text(lbl_ip, ipBuf);
+        return;
     }
 
     // STATE CHANGE: Just connected!
     if (isConnected && !wasConnected) {
         isAttemptingConnection = false;
+        wifiRetryWaiting = false;      // W4MMP: join retry (see WIFI_RETRY_MS)
+        if (wifiJoinAttempts) Serial.printf("WiFi joined after %u failed attempt(s)\n", wifiJoinAttempts);
+        wifiJoinAttempts = 0;
         Serial.println("WiFi Connected!");
         String ipStr = WiFi.localIP().toString();
         strncpy(ipBuf, ipStr.c_str(), sizeof(ipBuf) - 1);
@@ -3184,6 +3218,7 @@ void drawNetworkPage() {
             WiFi.disconnect(true);
             wasConnected = false;
             isAttemptingConnection = false;
+            wifiRetryWaiting = false;   // W4MMP: WiFi turned off by the user = no join retry
         }
         updateNetworkPageValues();
     }, LV_EVENT_CLICKED, NULL);
