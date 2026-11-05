@@ -46,6 +46,8 @@ toggle `CW_Paddle_Farnsworth` 0 then 1 with an mscc restart each. Fix idea: pill
 all keyer settings when the PIC comes back.
 
 **Ideas, not started:** keyboard CW (client text into the player; client is Stew's).
+**Stand-alone version (2026-11-05):** hardware draft in `worktrees/keyer-standalone` (9 V box);
+its firmware will be a `STANDALONE` build of this tree (see that folder's spec, section 6).
 
 **Build:** MPLAB X project in this folder (paths point at keyer-buffer). Command line:
 `make -f nbproject/Makefile-production.mk SUBPROJECTS= .build-conf CONF=production` with

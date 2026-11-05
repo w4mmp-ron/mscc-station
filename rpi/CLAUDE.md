@@ -127,6 +127,15 @@ review of what he ported, say if the Pi needs a matching change. Don't start new
   each. Fix idea: pill re-sends all keyer settings when the PIC comes back.
   Not done: Windows ms-sdr (Stew's) and PSoC have no 0x9D; ms-sdr only logs a rejected 0x9D.
   Idea, not started: keyboard CW (client text into the player).
+- **Stand-alone keyer (Ron 2026-11-05, started; `worktrees/keyer-standalone`, pushed c46d5f2).**
+  The PIC keyer as its own 9 V box (from Ron's Rev 2 schematic, N8VET): modern rigs only (VO1400
+  key out, isolated), PTT / amp output fitted, rig audio pass-through kept (RX path normally
+  closed CPC1117: no current), LM386 on switched 5 V, MCP1703 LDO, AO3401A reverse protection,
+  speed knob 5-60 wpm, FN + paddle menu, 1590B-size aluminium box. Draft 1: spec, netlist, BOM
+  (LCSC numbers), reference drawing, Eagle schematic in Rev 2 style (Ron imported it into
+  EasyEDA: "much better"). **Next:** (1) confirm the (check) items; (2) LCSC footprints in
+  EasyEDA, then send the exported .net for a check against NETLIST.md; (3) firmware: stand-alone
+  build of keyer-buffer (menu, speed pot, battery check, sleep), PC bench first.
 - **Opcodes: free and reclaimed (2026-11-05).** Survey of every layer (Pi + Windows ms-sdr,
   recv, trans, WPF client, pill pio-async, PSoC MKII, PIC keyer). Free everywhere: **0x2F,
   0x9F** (0x9D taken 2026-11-05 by SET_PADDLE_FARNSWORTH). Reclaimed in the Pi ms-sdr `source/usbavrcmd.h` (26 never-used defines commented out,
