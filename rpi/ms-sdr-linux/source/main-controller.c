@@ -2448,7 +2448,7 @@ void * Command_Processor(void *my_param) {
 
         /*
          * Farnsworth on the paddles (SET_PADDLE_FARNSWORTH 0x9D), 2026-11-05.
-         * Not from the client today; a script can send it. MKII + keyer only.
+         * From the client (or a script). Saved in cw.ini, sent to the radio (MKII + keyer only).
          */
         case SET_PADDLE_FARNSWORTH:
             cw_record.paddle_farns = (t_opcode_data != 0) ? 1 : 0;
@@ -2584,6 +2584,9 @@ void Send_CW_params_to_gui(void) {
     Gui_send_param(SET_TX_HOLD, cw_record.tx_hold);
     Gui_send_param(SET_WPM, cw_record.speed);
     Gui_send_param(SET_MEM_TEXT_WPM, cw_record.text_wpm);
+    /* 2026-11-05: paddle Farnsworth on/off. A client without a handler only logs
+     * "No handler for opcode 0x9D" (WPF UdpRadioService default case). */
+    Gui_send_param(SET_PADDLE_FARNSWORTH, cw_record.paddle_farns);
     Gui_send_param(SET_KEYER_MODE, cw_record.keyer_mode);
 
     print_time(0);

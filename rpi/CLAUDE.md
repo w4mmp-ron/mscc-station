@@ -40,10 +40,8 @@ review of what he ported, say if the Pi needs a matching change. Don't start new
 
 **Current list (2026-11-01, after 212107e):**
 - **Pi runs:** recv 3.152 (automatic NB + spectral NR), trans 3.149 (ALC ceiling 0.89),
-  ms-sdr 3.192 (2026-11-05: 0x9D paddle Farnsworth), pill 3.13, PIC keyer = keyer-buffer
-  (buffered Farnsworth). DRM recv 3.152 built in `~/mscc-drm` (switch:
-  `mscc stop; ~/utils/recv-switch.sh drm|normal; mscc start`). Server code committed; the
-  2026-11-05 ms-sdr / keyer / opcode commits are NOT pushed.
+  ms-sdr 3.193 (2026-11-05: 0x9D paddle Farnsworth, reported to the client), pill 3.13,
+  PIC keyer = keyer-buffer (buffered Farnsworth). Server code committed and pushed (2026-11-05).
 - **Ron:** Option: NB threshold a bit right of middle (~5x, slider ~750) to also
   catch the near misses (5.4-6.0x seen on 20 m).
 - **Ron (2026-11-02): update the guides: QRP power, TX IQ and RX IQ cal are now stored in the

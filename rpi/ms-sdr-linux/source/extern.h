@@ -256,7 +256,7 @@ struct cw_parameters_record {
     uint8_t tx_hold;
     uint8_t speed;
     uint8_t text_wpm; /* SET_MEM_TEXT_WPM 0x76: 0=off, else memory-play text WPM */
-    uint8_t paddle_farns; /* SET_PADDLE_FARNSWORTH 0x9D: 0=off, 1=on (not sent to the client) */
+    uint8_t paddle_farns; /* SET_PADDLE_FARNSWORTH 0x9D: 0=off, 1=on (reported to the client at connect) */
     uint8_t tone_index;
 };
 extern struct cw_parameters_record cw_record;

@@ -70,7 +70,8 @@
 //#define GET_CW_DEFAULTS 0x9D
 /* Farnsworth on the paddles (2026-11-05): 0=off, 1=on. From cw.ini
  * CW_Paddle_Farnsworth; sent to the radio (pill 3.13+ passes it to the PIC keyer).
- * Never sent to the client. */
+ * Reported to the client at connect with the other CW settings (a client without a
+ * handler ignores it). */
 #define SET_PADDLE_FARNSWORTH 0x9D
 #define CMD_SET_FM_POWER 0x9E
 //#define GET_CW_INTERFACE_METHOD 0x9E
