@@ -39,9 +39,30 @@ Git repo root: `C:\Users\Ron\.grok\worktrees`.
 review of what he ported, say if the Pi needs a matching change. Don't start new work meanwhile.
 
 **Current list (2026-11-01, after 212107e):**
-- **Pi runs:** recv 3.152 (automatic NB + spectral NR), trans 3.149 (ALC ceiling 0.89),
-  ms-sdr 3.193 (2026-11-05: 0x9D paddle Farnsworth, reported to the client), pill 3.13,
-  PIC keyer = keyer-buffer (buffered Farnsworth). Server code committed and pushed (2026-11-05).
+- **Pi runs:** recv 3.152 (automatic NB + spectral NR), trans 3.151 (2026-11-05: operator mic
+  fix, see below), ms-sdr 3.193 (0x9D paddle Farnsworth, reported to the client), pill 3.13,
+  PIC keyer = keyer-buffer (buffered Farnsworth), package mscc 1.0.75 installed (Ron 2026-11-05).
+- **2026-11-05 mscc 1.0.74 / 1.0.75 (`installers/rpi/mscc_1.0.75_arm64.deb`):**
+  - **/dev/tnt* missing after a kernel update:** the Pi booted kernel 6.18.60 (installed 11-03);
+    tty0tty was only built for the older kernels. 1.0.74 adds kernel hooks
+    (`/etc/kernel/postinst.d/mscc-tty0tty`, `/etc/kernel/header_postinst.d/mscc-tty0tty` ->
+    `/usr/share/mscc/bin/mscc-tty0tty-kernel <kver>`, log `/var/log/mscc-tty0tty.log`, never
+    fails the kernel install) and postinst builds it for every installed kernel with headers.
+    Checked on the Pi: hooks run by run-parts, build with headers, skip without; tnt0-7 back.
+    Next kernel update: the log should say "built and installed" for the new version.
+  - **Operator mic bug (sdrcore-trans, found 11-05):** `score_operator_input()` tied the headset
+    speaker monitor (`alsa_output.usb-C-Media...analog-stereo.monitor`) with the real mic
+    (`alsa_input...mono-fallback`), both 6200, monitor first -> trans used the monitor: phone TX
+    would send RX audio. Fix: never a `.monitor` for the operator mic (input-devices.c). Built on
+    the Pi (trans 3.151), log now shows the mono-fallback mic. **Not yet checked on the air**
+    (SSB on a dummy load). Windows trans (Stew's) not checked.
+  - **`mscc status` false FAIL "Operator speaker: no PortAudio device matches"** in Phones mode:
+    the report wanted the exact ALSA name; with recv playing through Pulse the raw hw:3,0 shows
+    0 outputs. 1.0.75 report scores operator devices like recv / trans (folded name, Pulse
+    preferred, no .monitor mic), so it shows the device the servers open. Passed on the Pi.
+  - Package build: WSL wrapper stages under /tmp and strips CR from text only (scratchpad
+    `build-mscc-deb.sh`, session-only). 51 world-writable data files in the package (same in
+    1.0.73), left as is.
 - **Ron:** Option: NB threshold a bit right of middle (~5x, slider ~750) to also
   catch the near misses (5.4-6.0x seen on 20 m).
 - **Ron (2026-11-02): update the guides: QRP power, TX IQ and RX IQ cal are now stored in the

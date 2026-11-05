@@ -1,0 +1,42 @@
+#!/bin/sh
+# MSCC: build the tty0tty null-modem module (/dev/tnt0..tnt7) for one kernel.
+#
+# Installed as kernel hooks, so a kernel update does not lose /dev/tnt*:
+#   /etc/kernel/postinst.d/mscc-tty0tty         (runs when a kernel image is installed)
+#   /etc/kernel/header_postinst.d/mscc-tty0tty  (runs when its headers are installed;
+#                                                they often arrive after the image)
+# The kernel packages call it as:  mscc-tty0tty <kernel version> [<image path>]
+# By hand:  sudo /usr/share/mscc/bin/mscc-tty0tty-kernel $(uname -r)
+#
+# Never fails the kernel install: problems go to /var/log/mscc-tty0tty.log.
+# The module loads at the next boot (/etc/modules-load.d/tty0tty.conf).
+
+KVER="${1:-}"
+SRC=/usr/share/mscc/tty0tty/module
+LOG=/var/log/mscc-tty0tty.log
+
+log() { echo "$(date '+%F %T') $KVER: $*" >> "$LOG" 2>/dev/null; }
+
+[ -n "$KVER" ] || exit 0
+[ -f "$SRC/tty0tty.c" ] || exit 0              # mscc removed: nothing to do
+if [ ! -d "/lib/modules/$KVER/build" ]; then
+    log "no kernel headers yet, skipped (the header hook builds it later)"
+    exit 0
+fi
+
+TMP="$(mktemp -d /tmp/mscc-tty0tty.XXXXXX)" || exit 0
+cp "$SRC/Makefile" "$SRC/tty0tty.c" "$TMP/" 2>/dev/null || { rm -rf "$TMP"; exit 0; }
+
+if make -C "/lib/modules/$KVER/build" M="$TMP" modules >> "$LOG" 2>&1 \
+   && [ -f "$TMP/tty0tty.ko" ]; then
+    mkdir -p "/lib/modules/$KVER/misc"
+    cp "$TMP/tty0tty.ko" "/lib/modules/$KVER/misc/tty0tty.ko"
+    depmod -a "$KVER" >> "$LOG" 2>&1
+    log "tty0tty built and installed"
+    echo "mscc: tty0tty built for kernel $KVER"
+else
+    log "tty0tty build FAILED (see above)"
+    echo "mscc: tty0tty build failed for kernel $KVER, see $LOG" >&2
+fi
+rm -rf "$TMP"
+exit 0

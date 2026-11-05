@@ -238,6 +238,10 @@ static int score_operator_input(const PaDeviceInfo *info, const char *want)
         return -1;
     if (strstr(info->name, "Virtual"))
         return -1;
+    /* 2026-11-05: never a speaker monitor (".monitor" = what the phones play).
+     * It tied with the real headset mic and won, so phone TX sent RX audio. */
+    if (strstr(info->name, ".monitor") || strstr(info->name, ".Monitor"))
+        return -1;
     if (strcmp(info->name, want) == 0)
         score = 8000;
     else if (strstr(info->name, want))

@@ -1,0 +1,3 @@
+#!/bin/sh
+# MSCC: rebuild tty0tty (/dev/tnt*) once a kernel's headers are installed.
+exec /usr/share/mscc/bin/mscc-tty0tty-kernel "$@"

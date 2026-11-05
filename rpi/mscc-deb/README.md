@@ -60,7 +60,7 @@ See **INSTALL-FOR-PI.md** for the full operator card.
 | User systemd | `/usr/lib/systemd/user/mscc-virtual-audio.service` | Creates Virtual* at user login |
 | Proficio udev | `/etc/udev/rules.d/99-proficio.rules` | USB 16c0:05dc access |
 | Boot overlay | `config.txt` | `dtoverlay=audioinjector-wm8731-audio` (operator HAT) |
-| tty0tty | built on target | `/dev/tnt0`… for CAT/PTT null-modem |
+| tty0tty | built on target; rebuilt automatically for each new kernel (1.0.74+, `/etc/kernel/postinst.d` + `header_postinst.d` → `/usr/share/mscc/bin/mscc-tty0tty-kernel`, log `/var/log/mscc-tty0tty.log`) | `/dev/tnt0`… for CAT/PTT null-modem |
 
 **Install user:** package postinst resolves `SUDO_USER` and installs into **that** user’s home — not root’s. No hard-coded `/home/ron` paths.
 

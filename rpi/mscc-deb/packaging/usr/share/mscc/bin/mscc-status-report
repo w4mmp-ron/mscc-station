@@ -307,6 +307,67 @@ def best_match(
     return best
 
 
+def _fold(s: str) -> str:
+    """Letters and digits only, lower case (sdrcore fold_alnum)."""
+    return "".join(c.lower() for c in s if c.isalnum())
+
+
+def _folded_hit(nf: str, wf: str) -> int:
+    """sdrcore folded_hit: whole folded name, else the longest 20..10 char prefix."""
+    if not nf or not wf:
+        return 0
+    if wf in nf or nf in wf:
+        return 8
+    n = min(len(wf), 20)
+    while n >= 10:
+        if wf[:n] in nf:
+            return n
+        n -= 1
+    return 0
+
+
+def score_operator(want: str, d: dict, *, for_output: bool) -> int:
+    """Same scoring as sdrcore-recv score_operator_output / sdrcore-trans
+    score_operator_input (1.0.75), so the report shows the device the servers open:
+    Pulse preferred (no exclusive ALSA open of the headset), never Proficio /
+    Multus / Virtual, and for the mic never a '.monitor' (that is the speaker)."""
+    name = d["name"]
+    ch = d["out"] if for_output else d["in"]
+    if not want or not name or ch < 1:
+        return -1
+    if "Proficio" in name or "Multus" in name or "Virtual" in name:
+        return -1
+    if not for_output and ".monitor" in name.lower():
+        return -1
+    if name == want:
+        score = 8000
+    elif want in name:
+        score = 4000
+    else:
+        score = 0
+    hit = _folded_hit(_fold(name), _fold(want))
+    if hit:
+        score += 2000 + hit * 10
+    if score <= 0:
+        return -1
+    if "Pulse" in d["api"]:
+        score += 4000
+    elif "hw:" in name:
+        score -= 2500
+    return score
+
+
+def best_operator_match(want: str, devices: List[dict], *, want_out: bool) -> Optional[dict]:
+    best = None
+    best_sc = -1
+    for d in devices:   # first best wins, as in the servers
+        sc = score_operator(want, d, for_output=want_out)
+        if sc > best_sc:
+            best_sc = sc
+            best = d
+    return best
+
+
 def is_proficio_name(name: str) -> bool:
     n = name.lower()
     return "proficio" in n or "multus" in n
@@ -387,7 +448,10 @@ def check_config_and_audio(R: Report) -> None:
         if not want:
             R.fail(f"{label}: no config name")
             return
-        m = best_match(want, devices, want_out=want_out)
+        if label.lower().startswith("operator") and want_out is not None:
+            m = best_operator_match(want, devices, want_out=want_out)
+        else:
+            m = best_match(want, devices, want_out=want_out)
         if m:
             R.ok(
                 f"{label}: matched pa={m['index']} api={m['api']} "

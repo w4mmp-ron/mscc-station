@@ -356,7 +356,7 @@ Re-run **MSCC Init** only if you change phones, HAT, or CAT wiring.
 | `mscc: command not found` | New Desktop Terminal, or log out/in |
 | No menu entries | Confirm packages installed; look under **MSCC**; log out/in |
 | `mscc-init-gui` missing | Install `mscc-init_*.deb`; need desktop + `python3-tk` / `python3-pyaudio` |
-| No `/dev/tnt0` | Reboot once; install headers: `sudo apt install -y linux-headers-$(uname -r)` |
+| No `/dev/tnt0` | Reboot once; install headers: `sudo apt install -y linux-headers-$(uname -r)`. After a kernel update (1.0.74+ rebuilds it by itself, see `/var/log/mscc-tty0tty.log`), or by hand: `sudo /usr/share/mscc/bin/mscc-tty0tty-kernel $(uname -r)` then `sudo modprobe tty0tty` |
 | No VirtualA/B | `mscc-virtual-audio` or `systemctl --user enable --now mscc-virtual-audio` |
 | Digi devices not listed in init / WSJT | Install **mscc-portaudio** first; check `ldd` → `/usr/local` |
 | Wrong PortAudio (`ldd` shows only `/lib/...`) | Install `mscc-portaudio`; use **mscc 1.0.23+** |

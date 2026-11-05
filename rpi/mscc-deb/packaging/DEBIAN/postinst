@@ -316,6 +316,16 @@ configure)
     fi
     chmod 644 /etc/udev/rules.d/99-tty0tty.rules 2>/dev/null || true
   fi
+  # Other installed kernels (e.g. one installed by apt but not booted yet), so a
+  # reboot into it still has /dev/tnt*. Kernel updates from now on are covered by
+  # /etc/kernel/postinst.d/mscc-tty0tty and header_postinst.d/mscc-tty0tty (1.0.74).
+  for kdir in /lib/modules/*/build; do
+    [[ -d "$kdir" ]] || continue
+    k="$(basename "$(dirname "$kdir")")"
+    [[ "$k" == "$KVER" ]] && continue
+    [[ -f "/lib/modules/$k/misc/tty0tty.ko" ]] && continue
+    /usr/share/mscc/bin/mscc-tty0tty-kernel "$k" || true
+  done
 
   # WSJT-X in the MSCC menu (override Debian AudioVideo category)
   if [[ -f "$SHARE/desktop/wsjtx.desktop" ]]; then

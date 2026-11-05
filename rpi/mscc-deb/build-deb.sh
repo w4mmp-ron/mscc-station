@@ -218,6 +218,18 @@ for f in dkms.conf tty0tty.conf; do
   [[ -f "$TTY_SRC/$f" ]] && cp -a "$TTY_SRC/$f" "$PKG/usr/share/mscc/tty0tty/module/" || true
 done
 
+# tty0tty kernel hooks (1.0.74): rebuild /dev/tnt* support after a kernel update
+need_file "$ROOT/packaging/usr/share/mscc/bin/mscc-tty0tty-kernel"
+need_file "$ROOT/packaging/etc/kernel/postinst.d/mscc-tty0tty"
+need_file "$ROOT/packaging/etc/kernel/header_postinst.d/mscc-tty0tty"
+for f in usr/share/mscc/bin/mscc-tty0tty-kernel etc/kernel/postinst.d/mscc-tty0tty \
+         etc/kernel/header_postinst.d/mscc-tty0tty; do
+  mkdir -p "$(dirname "$PKG/$f")"
+  tr -d '\r' < "$ROOT/packaging/$f" > "$PKG/$f"
+  chmod 755 "$PKG/$f"
+done
+echo "  kernel hooks: tty0tty rebuilt on kernel / header install"
+
 # Permissions for maintainer scripts (must work on real Linux FS)
 chmod 755 "$PKG/DEBIAN"
 chmod 755 "$PKG/DEBIAN/postinst" "$PKG/DEBIAN/prerm" "$PKG/DEBIAN/postrm"
