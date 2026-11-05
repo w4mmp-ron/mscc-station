@@ -1,5 +1,10 @@
 # Keyer CQ memory — handoff / resume
 
+> **2026-11-05: active keyer work moved to `worktrees/keyer-buffer`** (buffered Farnsworth,
+> 1 ms timer, now in the rig). This tree holds the previous keyer: 0x9D stretches the paddle
+> letter space (`Release/Keyer-MCU-20261105.hex`, d40a7ba); Ron found it "wonky". Read
+> `keyer-buffer/RESUME.md` first.
+
 **Date:** 2026-08-08 (status updated 2026-11-02)  
 **Tree:** `worktrees/keyer`  
 **Detail protocol:** `KEYER-MEMORY.md` (read that first for opcodes and test scripts)

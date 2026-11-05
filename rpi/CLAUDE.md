@@ -40,8 +40,10 @@ review of what he ported, say if the Pi needs a matching change. Don't start new
 
 **Current list (2026-11-01, after 212107e):**
 - **Pi runs:** recv 3.152 (automatic NB + spectral NR), trans 3.149 (ALC ceiling 0.89),
-  ms-sdr 3.186, pill 3.12. DRM recv 3.152 built in `~/mscc-drm` (switch:
-  `mscc stop; ~/utils/recv-switch.sh drm|normal; mscc start`). All server code committed and pushed.
+  ms-sdr 3.192 (2026-11-05: 0x9D paddle Farnsworth), pill 3.13, PIC keyer = keyer-buffer
+  (buffered Farnsworth). DRM recv 3.152 built in `~/mscc-drm` (switch:
+  `mscc stop; ~/utils/recv-switch.sh drm|normal; mscc start`). Server code committed; the
+  2026-11-05 ms-sdr / keyer / opcode commits are NOT pushed.
 - **Ron:** Option: NB threshold a bit right of middle (~5x, slider ~750) to also
   catch the near misses (5.4-6.0x seen on 20 m).
 - **Ron (2026-11-02): update the guides: QRP power, TX IQ and RX IQ cal are now stored in the
@@ -85,35 +87,33 @@ review of what he ported, say if the Pi needs a matching change. Don't start new
   Reply to Stew: `.mscc-coord/NOTE-FOR-STEW-TX-EDGE-COMB-CW-2026-11-02.md` (pushed 7089904);
   waiting on his answer.
 - **Pill CW edges on an analyzer: not checked yet** (pill 5 ms raised cosine, should show no comb).
-- **Keyer: Farnsworth on the paddles (Ron 2026-11-02, not started; "not yet").** Goal: letters 18
-  wpm, overall 13 wpm (W1AW style) so the other station doesn't go QRQ. Already there: Farnsworth
-  for memory play (`0x76` SET_MEM_TEXT_WPM, PIC computes `mem_letter_gap` / `mem_word_gap`) and
-  autospace for paddles (`SET_SPACING 0x75` -> LETTERSPACE state, 2 extra dits, latches early
-  presses; keyer/main.c ~618-655). Change = PIC only, ~10 lines: top bit 0x80 of the 0x76 byte =
-  "paddles too"; LETTERSPACE waits `mem_letter_gap` instead of `2 * dot_delay` when set. No radio FW
-  (pill / PSoC) or ms-sdr change: 0x76 byte passed through raw (ms-sdr Pi + Windows, pill cw.c state
-  6, PSoC usbvend01/cw.c). Autospace must be on. Letter gaps only first (word gaps by the operator).
-  To check later: memory-play Farnsworth letter gap added on top of the 1-dit element space ->
-  ~1 dit longer than ARRL, overall a bit slow.
-  **2026-11-05: bit-7 plan does NOT work with today's WPF client.** At connect ms-sdr reports 141;
-  the client clamps it to 60 (`UdpRadioService.cs:2201`), shows 60, and because the value changed
-  `OnCwMemTextWpmChanged` (`MainViewModel.cs:5412`) sends 60 back -> ms-sdr saves 60, the PIC gets
-  60: paddle bit lost and memory Farnsworth off. Options: (a) Stew keeps bit 7 in the client (2
-  clamps + checkbox); (b) a separate on/off opcode, suggested **0x9D** (free everywhere, next to
-  0x9C keyer memory), needs ms-sdr Pi + Windows, pill, PSoC, PIC and client; (c) script-only test
-  with the client closed. Proposed PIC code (not written; Ron stopped the edit): flag
-  `cw_paddle_farns`, `paddle_letter_gap = max(2*dot_delay, mem_letter_gap - dot_delay)` in
-  `keyer_update()` (true ARRL gap, ~6 dits at 18/13), LETTERSPACE `kdelay >= paddle_letter_gap`.
-  Ron to pick (a) / (b) / (c). Avalonia client not checked.
+- **Keyer: buffered Farnsworth on the paddles — DONE and in the rig (2026-11-05).** Details,
+  design and build / flash steps: `keyer-buffer/RESUME.md` (top section). Ron: "all the work",
+  "the speed sounds spot on". You key at your own speed and hear yourself; letters go into a
+  buffer and go on the air with Farnsworth gaps (letters at SET_WPM, gaps at the 0x76 text WPM);
+  20 letters waiting -> STP on the sidetone, paddles off, drain, RES. Switch = new opcode
+  **0x9D SET_PADDLE_FARNSWORTH** (0/1): Pi `cw.ini` `CW_Paddle_Farnsworth=` (ms-sdr 3.192),
+  pill 3.13 passes it to the PIC, client never sees it (no client change). Ron's cw.ini now:
+  CW_Speed 18, CW_Mem_Text_WPM 15, CW_Paddle_Farnsworth 1 (backup cw.ini.bak-20261105).
+  How we got there: bit 7 of 0x76 was dropped (the WPF client clamps the 0x76 value to 60 and
+  sends it back at connect); the first try, stretching LETTERSPACE in the old keyer
+  (`worktrees/keyer`, d40a7ba), worked but felt "wonky" (holds your next letter back). The new
+  keyer (`worktrees/keyer-buffer`) rebuilt the PIC timing on a 1 ms TMR2 tick, state machines,
+  real-ms element times (the old loop timing was off; 18 now = true 18 wpm).
+  **Kink to fix:** a PIC reset with the radio on (e.g. reflash) loses 0x9D, and the pill only
+  forwards a changed value; workaround = toggle CW_Paddle_Farnsworth 0 / 1 with an mscc restart
+  each. Fix idea: pill re-sends all keyer settings when the PIC comes back.
+  Not done: Windows ms-sdr (Stew's) and PSoC have no 0x9D; ms-sdr only logs a rejected 0x9D.
+  Idea, not started: keyboard CW (client text into the player).
 - **Opcodes: free and reclaimed (2026-11-05).** Survey of every layer (Pi + Windows ms-sdr,
-  recv, trans, WPF client, pill pio-async, PSoC MKII, PIC keyer). Free everywhere: **0x2F, 0x9D,
-  0x9F**. Reclaimed in the Pi ms-sdr `source/usbavrcmd.h` (26 never-used defines commented out,
+  recv, trans, WPF client, pill pio-async, PSoC MKII, PIC keyer). Free everywhere: **0x2F,
+  0x9F** (0x9D taken 2026-11-05 by SET_PADDLE_FARNSWORTH). Reclaimed in the Pi ms-sdr `source/usbavrcmd.h` (26 never-used defines commented out,
   marked `reclaimed 2026-11-05`; AVAILABLE OPCODES block at the top of the file): 0x15-0x1E,
   0x5C, 0x83, 0x84, 0xAD, 0xC0, 0xC1, 0xC2, 0xC4, 0xF8; also unused 0xD6. Leftover unused names
   elsewhere: 0xAD client `Opcodes.cs`, 0xC0 pill / PSoC `usbvend.h`, 0xC1 / 0xC2 / 0xC4 / 0xD6
   sdrcore-trans `commands.h`; clear before reuse. More room: 0x0B extended command sub-byte (in use
-  0x09-0x0D, 0x0F, 0x30). Header copied to V: (matched git first), syntax check on the Pi clean,
-  no full build; **header change not committed yet** (Pi hold: Ron asked for it). Windows ms-sdr
+  0x09-0x0D, 0x0F, 0x30). Header committed c01f487 (Pi hold: Ron asked for it), built into
+  ms-sdr 3.192. Windows ms-sdr
   (Stew's) not changed. Pi vs Windows differences seen: 0x0F SWR fault and 0x2E SWR meter reset
   (Pi ms-sdr only), 0x0B and 0x30 (Pi recv / trans only), 0x85 / 0x86 panadapter gain / base
   (Pi recv only).
