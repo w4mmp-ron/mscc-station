@@ -11,7 +11,7 @@ I2C1_ADDR_RX 2
 I2C1_DATA_TX 3
 I2C1_DATA_RX 4
 ]
-"533 C:/Users/Ron/.grok/worktrees/keyer/main.c
+"547 C:/Users/Ron/.grok/worktrees/keyer/main.c
 [e E6988 . `uc
 CHECK 0
 PREDOT 1
@@ -25,53 +25,53 @@ DASHHELD 8
 LETTERSPACE 9
 EXITLOOP 10
 ]
-"155
+"162
 [v _morse_lookup morse_lookup `(*.25DCuc  1 s 2 morse_lookup ]
-"184
+"191
 [v _Audio_interrupt_time_out Audio_interrupt_time_out `(v  1 e 1 0 ]
-"194
+"201
 [v _CMD_dequeue CMD_dequeue `(uc  1 e 1 0 ]
-"218
+"225
 [v _CMD_queue_add CMD_queue_add `(v  1 e 1 0 ]
-"242
+"249
 [v _I2C_SlaveAddressCallbackHandler I2C_SlaveAddressCallbackHandler `(v  1 e 1 0 ]
-"259
+"266
 [v _I2C_SlaveReceiveCallbackHandler I2C_SlaveReceiveCallbackHandler `(v  1 e 1 0 ]
-"279
-[v _I2C_SlaveTransmitCallbackHandler I2C_SlaveTransmitCallbackHandler `(v  1 e 1 0 ]
-"283
-[v _I2C_SlaveCollisionCallbackHandler I2C_SlaveCollisionCallbackHandler `(v  1 e 1 0 ]
 "286
+[v _I2C_SlaveTransmitCallbackHandler I2C_SlaveTransmitCallbackHandler `(v  1 e 1 0 ]
+"290
+[v _I2C_SlaveCollisionCallbackHandler I2C_SlaveCollisionCallbackHandler `(v  1 e 1 0 ]
+"293
 [v _keyer_update keyer_update `(v  1 e 1 0 ]
-"350
+"364
 [v _clear_memory clear_memory `(v  1 e 1 0 ]
-"355
+"369
 [v _set_keyer_out set_keyer_out `(v  1 e 1 0 ]
-"373
+"387
 [v _keyer_idle_release keyer_idle_release `(v  1 s 1 keyer_idle_release ]
-"384
+"398
 [v _paddles_closed paddles_closed `(uc  1 s 1 paddles_closed ]
-"388
+"402
 [v _element_delay element_delay `(v  1 s 1 element_delay ]
-"408
+"422
 [v _send_mark send_mark `(v  1 s 1 send_mark ]
-"414
+"428
 [v _send_morse_char send_morse_char `(v  1 s 1 send_morse_char ]
-"439
-[v _msg_load_from_eeprom msg_load_from_eeprom `(v  1 s 1 msg_load_from_eeprom ]
 "453
+[v _msg_load_from_eeprom msg_load_from_eeprom `(v  1 s 1 msg_load_from_eeprom ]
+"467
 [v _msg_save_to_eeprom msg_save_to_eeprom `(v  1 s 1 msg_save_to_eeprom ]
-"468
+"482
 [v _keyer_play_message keyer_play_message `(v  1 s 1 keyer_play_message ]
-"502
+"516
 [v _keyer keyer `(v  1 e 1 0 ]
-"667
+"681
 [v _CW_Update_Config CW_Update_Config `(v  1 e 1 0 ]
-"776
+"794
 [v _CW_Initialize CW_Initialize `(v  1 e 1 0 ]
-"792
+"814
 [v _I2C_Initialize I2C_Initialize `(v  1 e 1 0 ]
-"801
+"823
 [v _main main `(v  1 e 1 0 ]
 "5 C:\Program Files\Microchip\xc8\v2.45\pic\sources\c99\common\aldiv.c
 [v ___aldiv __aldiv `(l  1 e 4 0 ]
@@ -203,114 +203,118 @@ EXITLOOP 10
 [v _TMR3_SetInterruptHandler TMR3_SetInterruptHandler `(v  1 e 1 0 ]
 "175
 [v _TMR3_DefaultInterruptHandler TMR3_DefaultInterruptHandler `(v  1 e 1 0 ]
-"87 C:/Users/Ron/.grok/worktrees/keyer/main.c
+"92 C:/Users/Ron/.grok/worktrees/keyer/main.c
 [v _dot_memory dot_memory `i  1 s 2 dot_memory ]
-"88
-[v _dash_memory dash_memory `i  1 s 2 dash_memory ]
-"89
-[v _key_state key_state `i  1 s 2 key_state ]
-"90
-[v _kdelay kdelay `i  1 s 2 kdelay ]
-"91
-[v _dot_delay dot_delay `i  1 s 2 dot_delay ]
-"92
-[v _dash_delay dash_delay `i  1 s 2 dash_delay ]
 "93
-[v _kcwl kcwl `i  1 s 2 kcwl ]
+[v _dash_memory dash_memory `i  1 s 2 dash_memory ]
 "94
-[v _kcwr kcwr `i  1 s 2 kcwr ]
+[v _key_state key_state `i  1 s 2 key_state ]
 "95
-[v _kdot kdot `*.4i  1 s 1 kdot ]
+[v _kdelay kdelay `i  1 s 2 kdelay ]
 "96
-[v _kdash kdash `*.4i  1 s 1 kdash ]
+[v _dot_delay dot_delay `i  1 s 2 dot_delay ]
+"97
+[v _dash_delay dash_delay `i  1 s 2 dash_delay ]
 "98
-[v _cw_keyer_speed cw_keyer_speed `i  1 s 2 cw_keyer_speed ]
+[v _kcwl kcwl `i  1 s 2 kcwl ]
 "99
-[v _cw_keyer_weight cw_keyer_weight `i  1 s 2 cw_keyer_weight ]
+[v _kcwr kcwr `i  1 s 2 kcwr ]
 "100
-[v _cw_keyer_mode cw_keyer_mode `i  1 s 2 cw_keyer_mode ]
+[v _kdot kdot `*.4i  1 s 1 kdot ]
 "101
-[v _cw_keyer_spacing cw_keyer_spacing `i  1 s 2 cw_keyer_spacing ]
-"102
-[v _cw_keys_reversed cw_keys_reversed `i  1 s 2 cw_keys_reversed ]
+[v _kdash kdash `*.4i  1 s 1 kdash ]
 "103
-[v _cw_mem_text_wpm cw_mem_text_wpm `i  1 s 2 cw_mem_text_wpm ]
+[v _cw_keyer_speed cw_keyer_speed `i  1 s 2 cw_keyer_speed ]
 "104
-[v _cw_loop_delay cw_loop_delay `l  1 s 4 cw_loop_delay ]
+[v _cw_keyer_weight cw_keyer_weight `i  1 s 2 cw_keyer_weight ]
+"105
+[v _cw_keyer_mode cw_keyer_mode `i  1 s 2 cw_keyer_mode ]
 "106
-[v _mem_letter_gap mem_letter_gap `i  1 s 2 mem_letter_gap ]
+[v _cw_keyer_spacing cw_keyer_spacing `i  1 s 2 cw_keyer_spacing ]
 "107
-[v _mem_word_gap mem_word_gap `i  1 s 2 mem_word_gap ]
+[v _cw_keys_reversed cw_keys_reversed `i  1 s 2 cw_keys_reversed ]
+"108
+[v _cw_mem_text_wpm cw_mem_text_wpm `i  1 s 2 cw_mem_text_wpm ]
 "109
-[v _keyer_out keyer_out `i  1 s 2 keyer_out ]
+[v _cw_loop_delay cw_loop_delay `l  1 s 4 cw_loop_delay ]
 "111
-[v _cw_keyer_speed__eeprom cw_keyer_speed__eeprom `VEi  1 e 2 0 ]
+[v _mem_letter_gap mem_letter_gap `i  1 s 2 mem_letter_gap ]
 "112
-[v _cw_keyer_weight__eeprom cw_keyer_weight__eeprom `VEi  1 e 2 0 ]
+[v _mem_word_gap mem_word_gap `i  1 s 2 mem_word_gap ]
 "113
-[v _cw_keyer_mode__eeprom cw_keyer_mode__eeprom `VEi  1 e 2 0 ]
+[v _cw_paddle_farns cw_paddle_farns `i  1 s 2 cw_paddle_farns ]
 "114
-[v _cw_keyer_spacing__eeprom cw_keyer_spacing__eeprom `VEi  1 e 2 0 ]
-"115
-[v _cw_keys_reversed__eeprom cw_keys_reversed__eeprom `VEi  1 e 2 0 ]
+[v _paddle_letter_gap paddle_letter_gap `i  1 s 2 paddle_letter_gap ]
 "116
-[v _cw_loop_delay_calibration__eeprom cw_loop_delay_calibration__eeprom `VEl  1 e 4 0 ]
-"117
-[v _NCO1INCH__eeprom NCO1INCH__eeprom `VEuc  1 e 1 0 ]
+[v _keyer_out keyer_out `i  1 s 2 keyer_out ]
 "118
-[v _NCO1INCL__eeprom NCO1INCL__eeprom `VEuc  1 e 1 0 ]
+[v _cw_keyer_speed__eeprom cw_keyer_speed__eeprom `VEi  1 e 2 0 ]
+"119
+[v _cw_keyer_weight__eeprom cw_keyer_weight__eeprom `VEi  1 e 2 0 ]
+"120
+[v _cw_keyer_mode__eeprom cw_keyer_mode__eeprom `VEi  1 e 2 0 ]
 "121
-[v _cw_msg_len__eeprom cw_msg_len__eeprom `VE[4]uc  1 e 4 0 ]
+[v _cw_keyer_spacing__eeprom cw_keyer_spacing__eeprom `VEi  1 e 2 0 ]
 "122
-[v _cw_msg__eeprom cw_msg__eeprom `VE[192]uc  1 e 192 0 ]
+[v _cw_keys_reversed__eeprom cw_keys_reversed__eeprom `VEi  1 e 2 0 ]
+"123
+[v _cw_loop_delay_calibration__eeprom cw_loop_delay_calibration__eeprom `VEl  1 e 4 0 ]
 "124
-[v _cw_mem_text_wpm__eeprom cw_mem_text_wpm__eeprom `VEi  1 e 2 0 ]
-"126
-[v _cw_msg_ram cw_msg_ram `[48]uc  1 s 48 cw_msg_ram ]
-"127
-[v _cw_msg_len cw_msg_len `uc  1 s 1 cw_msg_len ]
+[v _NCO1INCH__eeprom NCO1INCH__eeprom `VEuc  1 e 1 0 ]
+"125
+[v _NCO1INCL__eeprom NCO1INCL__eeprom `VEuc  1 e 1 0 ]
 "128
-[v _cw_msg_store_len cw_msg_store_len `uc  1 s 1 cw_msg_store_len ]
+[v _cw_msg_len__eeprom cw_msg_len__eeprom `VE[4]uc  1 e 4 0 ]
 "129
-[v _mem_current_slot mem_current_slot `uc  1 s 1 mem_current_slot ]
-"130
-[v _mem_select_pending mem_select_pending `uc  1 s 1 mem_select_pending ]
+[v _cw_msg__eeprom cw_msg__eeprom `VE[192]uc  1 e 192 0 ]
 "131
-[v _mem_play_active mem_play_active `uc  1 s 1 mem_play_active ]
-"132
-[v _mem_play_abort mem_play_abort `uc  1 s 1 mem_play_abort ]
+[v _cw_mem_text_wpm__eeprom cw_mem_text_wpm__eeprom `VEi  1 e 2 0 ]
+"133
+[v _cw_msg_ram cw_msg_ram `[48]uc  1 s 48 cw_msg_ram ]
 "134
+[v _cw_msg_len cw_msg_len `uc  1 s 1 cw_msg_len ]
+"135
+[v _cw_msg_store_len cw_msg_store_len `uc  1 s 1 cw_msg_store_len ]
+"136
+[v _mem_current_slot mem_current_slot `uc  1 s 1 mem_current_slot ]
+"137
+[v _mem_select_pending mem_select_pending `uc  1 s 1 mem_select_pending ]
+"138
+[v _mem_play_active mem_play_active `uc  1 s 1 mem_play_active ]
+"139
+[v _mem_play_abort mem_play_abort `uc  1 s 1 mem_play_abort ]
+"141
 [v _SlaveAddress SlaveAddress `VEuc  1 e 1 0 ]
 [v _SlaveR_W SlaveR_W `VEuc  1 e 1 0 ]
 [v _SlaveInit SlaveInit `VEuc  1 e 1 0 ]
 [v _msg msg `VEuc  1 e 1 0 ]
-"135
-[v _first_pass first_pass `VEuc  1 e 1 0 ]
-"136
-[v _tmpSlaveAddr tmpSlaveAddr `VEuc  1 e 1 0 ]
-"137
-[v _param1 param1 `VEuc  1 e 1 0 ]
-"138
-[v _param2 param2 `VEuc  1 e 1 0 ]
-"140
-[v _CMD_Queue CMD_Queue `VE[16][3]uc  1 e 48 0 ]
-"141
-[v _CMD_queue_front CMD_queue_front `VEs  1 e 2 0 ]
 "142
-[v _CMD_queue_rear CMD_queue_rear `VEs  1 e 2 0 ]
+[v _first_pass first_pass `VEuc  1 e 1 0 ]
 "143
-[v _CMD_add_queue_busy CMD_add_queue_busy `VEuc  1 e 1 0 ]
+[v _tmpSlaveAddr tmpSlaveAddr `VEuc  1 e 1 0 ]
 "144
-[v _CMD_queue_count CMD_queue_count `VEuc  1 e 1 0 ]
+[v _param1 param1 `VEuc  1 e 1 0 ]
 "145
-[v _Queue_Overrun Queue_Overrun `VEuc  1 e 1 0 ]
-"146
-[v _Return_Queue_count Return_Queue_count `VEuc  1 e 1 0 ]
+[v _param2 param2 `VEuc  1 e 1 0 ]
+"147
+[v _CMD_Queue CMD_Queue `VE[16][3]uc  1 e 48 0 ]
 "148
-[v _audio_time_out audio_time_out `VEuc  1 e 1 0 ]
+[v _CMD_queue_front CMD_queue_front `VEs  1 e 2 0 ]
 "149
+[v _CMD_queue_rear CMD_queue_rear `VEs  1 e 2 0 ]
+"150
+[v _CMD_add_queue_busy CMD_add_queue_busy `VEuc  1 e 1 0 ]
+"151
+[v _CMD_queue_count CMD_queue_count `VEuc  1 e 1 0 ]
+"152
+[v _Queue_Overrun Queue_Overrun `VEuc  1 e 1 0 ]
+"153
+[v _Return_Queue_count Return_Queue_count `VEuc  1 e 1 0 ]
+"155
+[v _audio_time_out audio_time_out `VEuc  1 e 1 0 ]
+"156
 [v _tx_active tx_active `uc  1 s 1 tx_active ]
-"382
+"396
 [v _mem_abort_armed mem_abort_armed `uc  1 s 1 mem_abort_armed ]
 "135 C:/Users/Ron/.grok/worktrees/keyer/mcc_generated_files/i2c1_slave.h
 [v _MSSP1_InterruptHandler MSSP1_InterruptHandler `*.37(v  1 e 2 0 ]
@@ -324,19 +328,19 @@ EXITLOOP 10
 [v _I2C1_SlaveBusColInterruptHandler I2C1_SlaveBusColInterruptHandler `*.37(v  1 e 2 0 ]
 "140
 [v _I2C1_SlaveWrColInterruptHandler I2C1_SlaveWrColInterruptHandler `*.37(v  1 e 2 0 ]
-[s S1290 . 1 `uc 1 C 1 0 :1:0 
+[s S1292 . 1 `uc 1 C 1 0 :1:0 
 `uc 1 DC 1 0 :1:1 
 `uc 1 Z 1 0 :1:2 
 `uc 1 nPD 1 0 :1:3 
 `uc 1 nTO 1 0 :1:4 
 ]
 "131 C:/Users/Ron/.mchp_packs/Microchip/PIC16F1xxxx_DFP/1.19.363/xc8\pic\include\proc\pic16f18326.h
-[s S1296 . 1 `uc 1 CARRY 1 0 :1:0 
+[s S1298 . 1 `uc 1 CARRY 1 0 :1:0 
 `uc 1 . 1 0 :1:1 
 `uc 1 ZERO 1 0 :1:2 
 ]
-[u S1300 . 1 `S1290 1 . 1 0 `S1296 1 . 1 0 ]
-[v _STATUSbits STATUSbits `VES1300  1 e 1 @3 ]
+[u S1302 . 1 `S1292 1 . 1 0 `S1298 1 . 1 0 ]
+[v _STATUSbits STATUSbits `VES1302  1 e 1 @3 ]
 [s S28 . 1 `uc 1 INTEDG 1 0 :1:0 
 `uc 1 . 1 0 :5:1 
 `uc 1 PEIE 1 0 :1:6 
@@ -655,22 +659,22 @@ EXITLOOP 10
 [v _timer3ReloadVal timer3ReloadVal `VEus  1 e 2 0 ]
 "58
 [v _TMR3_InterruptHandler TMR3_InterruptHandler `*.37(v  1 e 2 0 ]
-"801 C:/Users/Ron/.grok/worktrees/keyer/main.c
+"823 C:/Users/Ron/.grok/worktrees/keyer/main.c
 [v _main main `(v  1 e 1 0 ]
 {
-"830
+"852
 } 0
-"502
+"516
 [v _keyer keyer `(v  1 e 1 0 ]
 {
-"503
+"517
 [v keyer@loop_count loop_count `l  1 a 4 7 ]
-"665
+"679
 } 0
-"350
+"364
 [v _clear_memory clear_memory `(v  1 e 1 0 ]
 {
-"353
+"367
 } 0
 "99 C:\Users\Ron\.grok\worktrees\keyer\mcc_generated_files/tmr3.c
 [v _TMR3_StopTimer TMR3_StopTimer `(v  1 e 1 0 ]
@@ -729,10 +733,10 @@ EXITLOOP 10
 {
 "81
 } 0
-"792 C:/Users/Ron/.grok/worktrees/keyer/main.c
+"814 C:/Users/Ron/.grok/worktrees/keyer/main.c
 [v _I2C_Initialize I2C_Initialize `(v  1 e 1 0 ]
 {
-"799
+"821
 } 0
 "116 C:\Users\Ron\.grok\worktrees\keyer\mcc_generated_files/i2c1_slave.c
 [v _I2C1_Open I2C1_Open `(v  1 e 1 0 ]
@@ -808,30 +812,30 @@ EXITLOOP 10
 {
 "114
 } 0
-"667 C:/Users/Ron/.grok/worktrees/keyer/main.c
+"681 C:/Users/Ron/.grok/worktrees/keyer/main.c
 [v _CW_Update_Config CW_Update_Config `(v  1 e 1 0 ]
 {
-"669
+"683
 [v CW_Update_Config@p1 p1 `uc  1 a 1 51 ]
-"668
+"682
 [v CW_Update_Config@scan_msg scan_msg `uc  1 a 1 50 ]
-"670
+"684
 [v CW_Update_Config@p2 p2 `uc  1 a 1 49 ]
-"774
+"792
 } 0
-"453
+"467
 [v _msg_save_to_eeprom msg_save_to_eeprom `(v  1 s 1 msg_save_to_eeprom ]
 {
 [v msg_save_to_eeprom@slot slot `uc  1 a 1 wreg ]
-"455
+"469
 [v msg_save_to_eeprom@base base `us  1 a 2 9 ]
-"454
+"468
 [v msg_save_to_eeprom@i i `uc  1 a 1 12 ]
-"453
+"467
 [v msg_save_to_eeprom@slot slot `uc  1 a 1 wreg ]
-"457
+"471
 [v msg_save_to_eeprom@slot slot `uc  1 a 1 11 ]
-"466
+"480
 } 0
 "150 C:\Program Files\Microchip\xc8\v2.45\pic\sources\c99\pic\__eeprom.c
 [v ___ctoee __ctoee `(uc  1 e 1 0 ]
@@ -843,72 +847,72 @@ EXITLOOP 10
 [v ___ctoee@addr addr `*.28VEv  1 a 1 6 ]
 "154
 } 0
-"468 C:/Users/Ron/.grok/worktrees/keyer/main.c
+"482 C:/Users/Ron/.grok/worktrees/keyer/main.c
 [v _keyer_play_message keyer_play_message `(v  1 s 1 keyer_play_message ]
 {
-"470
+"484
 [v keyer_play_message@wait wait `us  1 a 2 44 ]
-"469
+"483
 [v keyer_play_message@i i `uc  1 a 1 46 ]
-"500
+"514
 } 0
-"414
+"428
 [v _send_morse_char send_morse_char `(v  1 s 1 send_morse_char ]
 {
 [v send_morse_char@c c `uc  1 a 1 wreg ]
-"415
+"429
 [v send_morse_char@p p `*.25DCuc  1 a 2 23 ]
-"416
+"430
 [v send_morse_char@i i `i  1 a 2 21 ]
-"414
+"428
 [v send_morse_char@c c `uc  1 a 1 wreg ]
-"419
+"433
 [v send_morse_char@c c `uc  1 a 1 20 ]
-"437
+"451
 } 0
-"408
+"422
 [v _send_mark send_mark `(v  1 s 1 send_mark ]
 {
 [v send_mark@units units `i  1 p 2 15 ]
-"412
+"426
 } 0
-"388
+"402
 [v _element_delay element_delay `(v  1 s 1 element_delay ]
 {
-"389
+"403
 [v element_delay@loop_count loop_count `l  1 a 4 9 ]
-"390
+"404
 [v element_delay@u u `i  1 a 2 13 ]
-"388
+"402
 [v element_delay@units units `i  1 p 2 2 ]
-"406
+"420
 } 0
-"355
+"369
 [v _set_keyer_out set_keyer_out `(v  1 e 1 0 ]
 {
 [v set_keyer_out@state state `i  1 p 2 0 ]
-"371
+"385
 } 0
-"384
+"398
 [v _paddles_closed paddles_closed `(uc  1 s 1 paddles_closed ]
 {
-"386
+"400
 } 0
-"155
+"162
 [v _morse_lookup morse_lookup `(*.25DCuc  1 s 2 morse_lookup ]
 {
 [v morse_lookup@c c `uc  1 a 1 wreg ]
 [v morse_lookup@c c `uc  1 a 1 wreg ]
-"157
+"164
 [v morse_lookup@table table `DC[43]*.25DCuc  1 s 86 table ]
-"166
+"173
 [v morse_lookup@c c `uc  1 a 1 5 ]
-"182
+"189
 } 0
-"373
+"387
 [v _keyer_idle_release keyer_idle_release `(v  1 s 1 keyer_idle_release ]
 {
-"379
+"393
 } 0
 "157 C:\Program Files\Microchip\xc8\v2.45\pic\sources\c99\pic\__eeprom.c
 [v ___itoee __itoee `(ui  1 e 2 0 ]
@@ -934,17 +938,17 @@ EXITLOOP 10
 [v ___memcpyee@to to `*.28VEuc  1 a 1 4 ]
 "101
 } 0
-"194 C:/Users/Ron/.grok/worktrees/keyer/main.c
+"201 C:/Users/Ron/.grok/worktrees/keyer/main.c
 [v _CMD_dequeue CMD_dequeue `(uc  1 e 1 0 ]
 {
 [v CMD_dequeue@p1 p1 `*.4uc  1 a 1 wreg ]
-"195
+"202
 [v CMD_dequeue@ret ret `uc  1 a 1 8 ]
-"194
+"201
 [v CMD_dequeue@p1 p1 `*.4uc  1 a 1 wreg ]
 [v CMD_dequeue@p2 p2 `*.4uc  1 p 1 4 ]
 [v CMD_dequeue@p1 p1 `*.4uc  1 a 1 7 ]
-"216
+"223
 } 0
 "4 C:\Program Files\Microchip\xc8\v2.45\pic\sources\c99\common\Umul8.c
 [v ___bmul __bmul `(uc  1 e 1 0 ]
@@ -959,24 +963,24 @@ EXITLOOP 10
 [v ___bmul@multiplier multiplier `uc  1 a 1 3 ]
 "51
 } 0
-"776 C:/Users/Ron/.grok/worktrees/keyer/main.c
+"794 C:/Users/Ron/.grok/worktrees/keyer/main.c
 [v _CW_Initialize CW_Initialize `(v  1 e 1 0 ]
 {
-"790
+"812
 } 0
-"439
+"453
 [v _msg_load_from_eeprom msg_load_from_eeprom `(v  1 s 1 msg_load_from_eeprom ]
 {
 [v msg_load_from_eeprom@slot slot `uc  1 a 1 wreg ]
-"441
+"455
 [v msg_load_from_eeprom@base base `us  1 a 2 9 ]
-"440
+"454
 [v msg_load_from_eeprom@i i `uc  1 a 1 12 ]
-"439
+"453
 [v msg_load_from_eeprom@slot slot `uc  1 a 1 wreg ]
-"443
+"457
 [v msg_load_from_eeprom@slot slot `uc  1 a 1 11 ]
-"451
+"465
 } 0
 "104 C:\Program Files\Microchip\xc8\v2.45\pic\sources\c99\pic\__eeprom.c
 [v ___eetoc __eetoc `(uc  1 e 1 0 ]
@@ -990,14 +994,14 @@ EXITLOOP 10
 [v ___eetoc@addr addr `*.28VEv  1 a 1 5 ]
 "109
 } 0
-"286 C:/Users/Ron/.grok/worktrees/keyer/main.c
+"293 C:/Users/Ron/.grok/worktrees/keyer/main.c
 [v _keyer_update keyer_update `(v  1 e 1 0 ]
 {
-"288
+"295
 [v keyer_update@gap gap `l  1 a 4 37 ]
-"287
+"294
 [v keyer_update@text_wpm text_wpm `i  1 a 2 41 ]
-"348
+"362
 } 0
 "15 C:\Program Files\Microchip\xc8\v2.45\pic\sources\c99\common\Umul16.c
 [v ___wmul __wmul `(ui  1 e 2 0 ]
@@ -1087,10 +1091,10 @@ EXITLOOP 10
 [v i1TMR3_WriteTimer@timerVal timerVal `us  1 p 2 0 ]
 "140
 } 0
-"184 C:/Users/Ron/.grok/worktrees/keyer/main.c
+"191 C:/Users/Ron/.grok/worktrees/keyer/main.c
 [v _Audio_interrupt_time_out Audio_interrupt_time_out `(v  1 e 1 0 ]
 {
-"192
+"199
 } 0
 "175 C:\Users\Ron\.grok\worktrees\keyer\mcc_generated_files/tmr3.c
 [v _TMR3_DefaultInterruptHandler TMR3_DefaultInterruptHandler `(v  1 e 1 0 ]
@@ -1112,10 +1116,10 @@ EXITLOOP 10
 {
 "260
 } 0
-"279 C:/Users/Ron/.grok/worktrees/keyer/main.c
+"286 C:/Users/Ron/.grok/worktrees/keyer/main.c
 [v _I2C_SlaveTransmitCallbackHandler I2C_SlaveTransmitCallbackHandler `(v  1 e 1 0 ]
 {
-"281
+"288
 } 0
 "140 C:\Users\Ron\.grok\worktrees\keyer\mcc_generated_files/i2c1_slave.c
 [v _I2C1_Write I2C1_Write `(v  1 e 1 0 ]
@@ -1150,23 +1154,23 @@ EXITLOOP 10
 {
 "243
 } 0
-"259 C:/Users/Ron/.grok/worktrees/keyer/main.c
+"266 C:/Users/Ron/.grok/worktrees/keyer/main.c
 [v _I2C_SlaveReceiveCallbackHandler I2C_SlaveReceiveCallbackHandler `(v  1 e 1 0 ]
 {
-"260
+"267
 [v I2C_SlaveReceiveCallbackHandler@b b `uc  1 a 1 11 ]
-"277
+"284
 } 0
-"218
+"225
 [v _CMD_queue_add CMD_queue_add `(v  1 e 1 0 ]
 {
 [v CMD_queue_add@command command `uc  1 a 1 wreg ]
 [v CMD_queue_add@command command `uc  1 a 1 wreg ]
 [v CMD_queue_add@p1 p1 `uc  1 p 1 4 ]
 [v CMD_queue_add@p2 p2 `uc  1 p 1 5 ]
-"221
+"228
 [v CMD_queue_add@command command `uc  1 a 1 10 ]
-"240
+"247
 } 0
 "4 C:\Program Files\Microchip\xc8\v2.45\pic\sources\c99\common\Umul8.c
 [v i1___bmul __bmul `(uc  1 e 1 0 ]
@@ -1216,10 +1220,10 @@ EXITLOOP 10
 {
 "276
 } 0
-"242 C:/Users/Ron/.grok/worktrees/keyer/main.c
+"249 C:/Users/Ron/.grok/worktrees/keyer/main.c
 [v _I2C_SlaveAddressCallbackHandler I2C_SlaveAddressCallbackHandler `(v  1 e 1 0 ]
 {
-"257
+"264
 } 0
 "135 C:\Users\Ron\.grok\worktrees\keyer\mcc_generated_files/i2c1_slave.c
 [v _I2C1_Read I2C1_Read `(uc  1 e 1 0 ]

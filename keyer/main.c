@@ -18,6 +18,9 @@
               select pending: non-slot params fall through (not discarded).
   2026-08-08  CMD queue full: drop newest (do not wipe queue — lost BEGIN/play).
   2026-08-08  ARRL/PARIS Farnsworth gaps (31 element + 19 spacing units/word).
+  2026-11-05  SET_PADDLE_FARNSWORTH 0x9D (0/1): paddle letter gap stretched to the
+              Farnsworth letter gap (text WPM from 0x76). On also enables the
+              letter space (LETTERSPACE) without SET_SPACING.
  */
 #include "mcc_generated_files/mcc.h"
 #include "defines.h"
@@ -42,6 +45,8 @@
  * 0=off; 5–60=overall/text WPM. Char elements stay on SET_WPM. */
 #define SET_MEM_TEXT_WPM 0x76
 #define SET_MEMORY_TYPE SET_MEM_TEXT_WPM
+/* Farnsworth on the paddles: 0=off, 1=on (letter gap at the 0x76 text WPM) */
+#define SET_PADDLE_FARNSWORTH 0x9D
 #define SET_WEIGHT 0x77
 #define SET_WPM 0x7B
 #define SET_IAMBIC_TUNING 0x7C
@@ -105,6 +110,8 @@ static int32_t cw_loop_delay = 0;
 /* Memory-play letter/word gaps in element_delay units (Farnsworth-adjusted) */
 static int mem_letter_gap = 0;
 static int mem_word_gap = 0;
+static int cw_paddle_farns = 0;   /* SET_PADDLE_FARNSWORTH 0x9D: 0=off, 1=on */
+static int paddle_letter_gap = 0; /* LETTERSPACE length (kdelay counts) */
 
 static int keyer_out = 0;
 
@@ -337,6 +344,13 @@ void keyer_update() {
         mem_letter_gap = 2 * dot_delay;
         mem_word_gap = 4 * dot_delay;
     }
+
+    /* Paddles: normal letter space = 2 dits after the 1-dit element space (3 total).
+     * Farnsworth: mem_letter_gap is the whole ARRL letter gap, so take off the
+     * element space the keyer has already left. Never shorter than normal. */
+    paddle_letter_gap = 2 * dot_delay;
+    if (cw_paddle_farns && mem_letter_gap - dot_delay > paddle_letter_gap)
+        paddle_letter_gap = mem_letter_gap - dot_delay;
 
     if (cw_keys_reversed) {
         kdot = &kcwr;
@@ -620,7 +634,7 @@ void keyer() {
                     key_state = PREDOT;
                 else if (*kdash)
                     key_state = PREDASH;
-                else if (cw_keyer_spacing) {
+                else if (cw_keyer_spacing || cw_paddle_farns) {
                     clear_memory();
                     key_state = LETTERSPACE;
                 } else
@@ -631,14 +645,14 @@ void keyer() {
                     key_state = PREDASH;
                 else if (*kdot)
                     key_state = PREDOT;
-                else if (cw_keyer_spacing) {
+                else if (cw_keyer_spacing || cw_paddle_farns) {
                     clear_memory();
                     key_state = LETTERSPACE;
                 } else
                     key_state = EXITLOOP;
                 break;
             case LETTERSPACE:
-                if (kdelay == 2 * dot_delay) {
+                if (kdelay >= paddle_letter_gap) {
                     kdelay = 0;
                     if (dot_memory)
                         key_state = PREDOT;
@@ -707,6 +721,10 @@ void CW_Update_Config() {
                 p1 = 60;
             cw_mem_text_wpm = p1;
             cw_mem_text_wpm__eeprom = p1;
+            break;
+        case SET_PADDLE_FARNSWORTH:
+            /* 0=off, anything else=on */
+            cw_paddle_farns = (p1 != 0) ? 1 : 0;   /* RAM only, see CW_Initialize */
             break;
         case SET_IAMBIC_TUNING:
             break;
@@ -780,6 +798,10 @@ void CW_Initialize() {
     cw_keyer_mode = cw_keyer_mode__eeprom;
     cw_keyer_spacing = cw_keyer_spacing__eeprom;
     cw_mem_text_wpm = cw_mem_text_wpm__eeprom;
+    /* SET_PADDLE_FARNSWORTH is not kept in EEPROM (a new __eeprom variable moves the
+     * settings layout): off at power-up until the radio sends it (pill at boot,
+     * ms-sdr at every connect). */
+    cw_paddle_farns = 0;
     NCO1INCH = NCO1INCH__eeprom;
     NCO1INCL = NCO1INCL__eeprom;
     NCO1CONbits.N1EN = 0;

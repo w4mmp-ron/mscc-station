@@ -59,8 +59,8 @@ Version 4.0 HI-TECH Software Intermediate Code
 "20 C:\Program Files\Microchip\xc8\v2.45\pic\include\builtins.h
 [v __delay `JF202 ~T0 @X0 0 e ]
 [p i __delay ]
-"533 C:/Users/Ron/.grok/worktrees/keyer/main.c
-[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 533:     key_state = CHECK;
+"547 C:/Users/Ron/.grok/worktrees/keyer/main.c
+[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 547:     key_state = CHECK;
 [c E6988 0 1 2 3 4 5 6 7 8 9 10 .. ]
 [n E6988 . CHECK PREDOT PREDASH SENDDOT SENDDASH DOTDELAY DASHDELAY DOTHELD DASHHELD LETTERSPACE EXITLOOP  ]
 "8264 C:/Users/Ron/.mchp_packs/Microchip/PIC16F1xxxx_DFP/1.19.363/xc8\pic\include\proc\pic16f18326.h
@@ -79,22 +79,22 @@ Version 4.0 HI-TECH Software Intermediate Code
 "130
 [; ;C:/Users/Ron/.grok/worktrees/keyer/mcc_generated_files/i2c1_slave.h: 130: void I2C1_SlaveSetReadIntHandler(i2c1InterruptHandler handler);
 [v _I2C1_SlaveSetReadIntHandler `(v ~T0 @X0 0 ef1`*F6685 ]
-[v F7126 `(v ~T0 @X0 0 tf ]
+[v F7128 `(v ~T0 @X0 0 tf ]
 [v F6681 `(v ~T0 @X0 0 tf ]
 "129
 [; ;C:/Users/Ron/.grok/worktrees/keyer/mcc_generated_files/i2c1_slave.h: 129: void I2C1_SlaveSetAddrIntHandler(i2c1InterruptHandler handler);
 [v _I2C1_SlaveSetAddrIntHandler `(v ~T0 @X0 0 ef1`*F6681 ]
-[v F7128 `(v ~T0 @X0 0 tf ]
+[v F7130 `(v ~T0 @X0 0 tf ]
 [v F6689 `(v ~T0 @X0 0 tf ]
 "131
 [; ;C:/Users/Ron/.grok/worktrees/keyer/mcc_generated_files/i2c1_slave.h: 131: void I2C1_SlaveSetWriteIntHandler(i2c1InterruptHandler handler);
 [v _I2C1_SlaveSetWriteIntHandler `(v ~T0 @X0 0 ef1`*F6689 ]
-[v F7130 `(v ~T0 @X0 0 tf ]
+[v F7132 `(v ~T0 @X0 0 tf ]
 [v F6693 `(v ~T0 @X0 0 tf ]
 "132
 [; ;C:/Users/Ron/.grok/worktrees/keyer/mcc_generated_files/i2c1_slave.h: 132: void I2C1_SlaveSetBusColIntHandler(i2c1InterruptHandler handler);
 [v _I2C1_SlaveSetBusColIntHandler `(v ~T0 @X0 0 ef1`*F6693 ]
-[v F7132 `(v ~T0 @X0 0 tf ]
+[v F7134 `(v ~T0 @X0 0 tf ]
 [p mainexit ]
 "74 C:/Users/Ron/.grok/worktrees/keyer/mcc_generated_files/mcc.h
 [; ;C:/Users/Ron/.grok/worktrees/keyer/mcc_generated_files/mcc.h: 74: void SYSTEM_Initialize(void);
@@ -1184,250 +1184,262 @@ Version 4.0 HI-TECH Software Intermediate Code
 [p n 1498  ]
 "35
 [p n 2083  ]
-"87 C:/Users/Ron/.grok/worktrees/keyer/main.c
-[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 87: static int dot_memory = 0;
+"92 C:/Users/Ron/.grok/worktrees/keyer/main.c
+[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 92: static int dot_memory = 0;
 [v _dot_memory `i ~T0 @X0 1 s ]
 [i _dot_memory
 -> 0 `i
 ]
-"88
-[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 88: static int dash_memory = 0;
+"93
+[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 93: static int dash_memory = 0;
 [v _dash_memory `i ~T0 @X0 1 s ]
 [i _dash_memory
 -> 0 `i
 ]
-"89
-[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 89: static int key_state = 0;
+"94
+[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 94: static int key_state = 0;
 [v _key_state `i ~T0 @X0 1 s ]
 [i _key_state
 -> 0 `i
 ]
-"90
-[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 90: static int kdelay = 0;
+"95
+[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 95: static int kdelay = 0;
 [v _kdelay `i ~T0 @X0 1 s ]
 [i _kdelay
 -> 0 `i
 ]
-"91
-[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 91: static int dot_delay = 0;
+"96
+[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 96: static int dot_delay = 0;
 [v _dot_delay `i ~T0 @X0 1 s ]
 [i _dot_delay
 -> 0 `i
 ]
-"92
-[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 92: static int dash_delay = 0;
+"97
+[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 97: static int dash_delay = 0;
 [v _dash_delay `i ~T0 @X0 1 s ]
 [i _dash_delay
 -> 0 `i
 ]
-"93
-[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 93: static int kcwl = 0;
+"98
+[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 98: static int kcwl = 0;
 [v _kcwl `i ~T0 @X0 1 s ]
 [i _kcwl
 -> 0 `i
 ]
-"94
-[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 94: static int kcwr = 0;
+"99
+[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 99: static int kcwr = 0;
 [v _kcwr `i ~T0 @X0 1 s ]
 [i _kcwr
 -> 0 `i
 ]
-"95
-[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 95: static int *kdot;
+"100
+[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 100: static int *kdot;
 [v _kdot `*i ~T0 @X0 1 s ]
-"96
-[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 96: static int *kdash;
+"101
+[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 101: static int *kdash;
 [v _kdash `*i ~T0 @X0 1 s ]
-"98
-[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 98: static int cw_keyer_speed = 18;
+"103
+[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 103: static int cw_keyer_speed = 18;
 [v _cw_keyer_speed `i ~T0 @X0 1 s ]
 [i _cw_keyer_speed
 -> 18 `i
 ]
-"99
-[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 99: static int cw_keyer_weight = 50;
+"104
+[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 104: static int cw_keyer_weight = 50;
 [v _cw_keyer_weight `i ~T0 @X0 1 s ]
 [i _cw_keyer_weight
 -> 50 `i
 ]
-"100
-[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 100: static int cw_keyer_mode = 2;
+"105
+[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 105: static int cw_keyer_mode = 2;
 [v _cw_keyer_mode `i ~T0 @X0 1 s ]
 [i _cw_keyer_mode
 -> 2 `i
 ]
-"101
-[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 101: static int cw_keyer_spacing = 0;
+"106
+[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 106: static int cw_keyer_spacing = 0;
 [v _cw_keyer_spacing `i ~T0 @X0 1 s ]
 [i _cw_keyer_spacing
 -> 0 `i
 ]
-"102
-[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 102: static int cw_keys_reversed = 1;
+"107
+[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 107: static int cw_keys_reversed = 1;
 [v _cw_keys_reversed `i ~T0 @X0 1 s ]
 [i _cw_keys_reversed
 -> 1 `i
 ]
-"103
-[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 103: static int cw_mem_text_wpm = 0;
+"108
+[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 108: static int cw_mem_text_wpm = 0;
 [v _cw_mem_text_wpm `i ~T0 @X0 1 s ]
 [i _cw_mem_text_wpm
 -> 0 `i
 ]
-"104
-[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 104: static int32_t cw_loop_delay = 0;
+"109
+[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 109: static int32_t cw_loop_delay = 0;
 [v _cw_loop_delay `l ~T0 @X0 1 s ]
 [i _cw_loop_delay
 -> -> 0 `i `l
 ]
-"106
-[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 106: static int mem_letter_gap = 0;
+"111
+[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 111: static int mem_letter_gap = 0;
 [v _mem_letter_gap `i ~T0 @X0 1 s ]
 [i _mem_letter_gap
 -> 0 `i
 ]
-"107
-[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 107: static int mem_word_gap = 0;
+"112
+[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 112: static int mem_word_gap = 0;
 [v _mem_word_gap `i ~T0 @X0 1 s ]
 [i _mem_word_gap
 -> 0 `i
 ]
-"109
-[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 109: static int keyer_out = 0;
+"113
+[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 113: static int cw_paddle_farns = 0;
+[v _cw_paddle_farns `i ~T0 @X0 1 s ]
+[i _cw_paddle_farns
+-> 0 `i
+]
+"114
+[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 114: static int paddle_letter_gap = 0;
+[v _paddle_letter_gap `i ~T0 @X0 1 s ]
+[i _paddle_letter_gap
+-> 0 `i
+]
+"116
+[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 116: static int keyer_out = 0;
 [v _keyer_out `i ~T0 @X0 1 s ]
 [i _keyer_out
 -> 0 `i
 ]
-"111
-[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 111: __eeprom int cw_keyer_speed__eeprom = 18;
+"118
+[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 118: __eeprom int cw_keyer_speed__eeprom = 18;
 [v _cw_keyer_speed__eeprom `Ei ~T0 @X0 1 e ]
 [i _cw_keyer_speed__eeprom
 -> 18 `i
 ]
-"112
-[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 112: __eeprom int cw_keyer_weight__eeprom = 50;
+"119
+[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 119: __eeprom int cw_keyer_weight__eeprom = 50;
 [v _cw_keyer_weight__eeprom `Ei ~T0 @X0 1 e ]
 [i _cw_keyer_weight__eeprom
 -> 50 `i
 ]
-"113
-[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 113: __eeprom int cw_keyer_mode__eeprom = 2;
+"120
+[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 120: __eeprom int cw_keyer_mode__eeprom = 2;
 [v _cw_keyer_mode__eeprom `Ei ~T0 @X0 1 e ]
 [i _cw_keyer_mode__eeprom
 -> 2 `i
 ]
-"114
-[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 114: __eeprom int cw_keyer_spacing__eeprom = 0;
+"121
+[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 121: __eeprom int cw_keyer_spacing__eeprom = 0;
 [v _cw_keyer_spacing__eeprom `Ei ~T0 @X0 1 e ]
 [i _cw_keyer_spacing__eeprom
 -> 0 `i
 ]
-"115
-[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 115: __eeprom int cw_keys_reversed__eeprom = 1;
+"122
+[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 122: __eeprom int cw_keys_reversed__eeprom = 1;
 [v _cw_keys_reversed__eeprom `Ei ~T0 @X0 1 e ]
 [i _cw_keys_reversed__eeprom
 -> 1 `i
 ]
-"116
-[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 116: __eeprom int32_t cw_loop_delay_calibration__eeprom = 0;
+"123
+[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 123: __eeprom int32_t cw_loop_delay_calibration__eeprom = 0;
 [v _cw_loop_delay_calibration__eeprom `El ~T0 @X0 1 e ]
 [i _cw_loop_delay_calibration__eeprom
 -> -> 0 `i `l
 ]
-"117
-[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 117: __eeprom uint8_t NCO1INCH__eeprom = 0;
+"124
+[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 124: __eeprom uint8_t NCO1INCH__eeprom = 0;
 [v _NCO1INCH__eeprom `Euc ~T0 @X0 1 e ]
 [i _NCO1INCH__eeprom
 -> -> 0 `i `uc
 ]
-"118
-[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 118: __eeprom uint8_t NCO1INCL__eeprom = 0x27;
+"125
+[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 125: __eeprom uint8_t NCO1INCL__eeprom = 0x27;
 [v _NCO1INCL__eeprom `Euc ~T0 @X0 1 e ]
 [i _NCO1INCL__eeprom
 -> -> 39 `i `uc
 ]
-"121
-[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 121: __eeprom uint8_t cw_msg_len__eeprom[4];
+"128
+[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 128: __eeprom uint8_t cw_msg_len__eeprom[4];
 [v _cw_msg_len__eeprom `Euc ~T0 @X0 -> 4 `i e ]
-"122
-[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 122: __eeprom uint8_t cw_msg__eeprom[4 * 48];
+"129
+[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 129: __eeprom uint8_t cw_msg__eeprom[4 * 48];
 [v _cw_msg__eeprom `Euc ~T0 @X0 -> 192 `i e ]
-"124
-[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 124: __eeprom int cw_mem_text_wpm__eeprom = 0;
+"131
+[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 131: __eeprom int cw_mem_text_wpm__eeprom = 0;
 [v _cw_mem_text_wpm__eeprom `Ei ~T0 @X0 1 e ]
 [i _cw_mem_text_wpm__eeprom
 -> 0 `i
 ]
-"126
-[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 126: static uint8_t cw_msg_ram[48];
+"133
+[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 133: static uint8_t cw_msg_ram[48];
 [v _cw_msg_ram `uc ~T0 @X0 -> 48 `i s ]
-"127
-[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 127: static uint8_t cw_msg_len = 0;
+"134
+[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 134: static uint8_t cw_msg_len = 0;
 [v _cw_msg_len `uc ~T0 @X0 1 s ]
 [i _cw_msg_len
 -> -> 0 `i `uc
 ]
-"128
-[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 128: static uint8_t cw_msg_store_len = 0;
+"135
+[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 135: static uint8_t cw_msg_store_len = 0;
 [v _cw_msg_store_len `uc ~T0 @X0 1 s ]
 [i _cw_msg_store_len
 -> -> 0 `i `uc
 ]
-"129
-[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 129: static uint8_t mem_current_slot = 0;
+"136
+[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 136: static uint8_t mem_current_slot = 0;
 [v _mem_current_slot `uc ~T0 @X0 1 s ]
 [i _mem_current_slot
 -> -> 0 `i `uc
 ]
-"130
-[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 130: static uint8_t mem_select_pending = 0;
+"137
+[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 137: static uint8_t mem_select_pending = 0;
 [v _mem_select_pending `uc ~T0 @X0 1 s ]
 [i _mem_select_pending
 -> -> 0 `i `uc
 ]
-"131
-[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 131: static uint8_t mem_play_active = 0;
+"138
+[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 138: static uint8_t mem_play_active = 0;
 [v _mem_play_active `uc ~T0 @X0 1 s ]
 [i _mem_play_active
 -> -> 0 `i `uc
 ]
-"132
-[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 132: static uint8_t mem_play_abort = 0;
+"139
+[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 139: static uint8_t mem_play_abort = 0;
 [v _mem_play_abort `uc ~T0 @X0 1 s ]
 [i _mem_play_abort
 -> -> 0 `i `uc
 ]
-"134
-[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 134: volatile uint8_t SlaveAddress, SlaveR_W, SlaveInit, msg;
+"141
+[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 141: volatile uint8_t SlaveAddress, SlaveR_W, SlaveInit, msg;
 [v _SlaveAddress `Vuc ~T0 @X0 1 e ]
 [v _SlaveR_W `Vuc ~T0 @X0 1 e ]
 [v _SlaveInit `Vuc ~T0 @X0 1 e ]
 [v _msg `Vuc ~T0 @X0 1 e ]
-"135
-[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 135: volatile uint8_t first_pass = 1;
+"142
+[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 142: volatile uint8_t first_pass = 1;
 [v _first_pass `Vuc ~T0 @X0 1 e ]
 [i _first_pass
 -> -> 1 `i `uc
 ]
-"136
-[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 136: volatile uint8_t tmpSlaveAddr;
+"143
+[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 143: volatile uint8_t tmpSlaveAddr;
 [v _tmpSlaveAddr `Vuc ~T0 @X0 1 e ]
-"137
-[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 137: volatile uint8_t param1 = 0;
+"144
+[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 144: volatile uint8_t param1 = 0;
 [v _param1 `Vuc ~T0 @X0 1 e ]
 [i _param1
 -> -> 0 `i `uc
 ]
-"138
-[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 138: volatile uint8_t param2 = 0;
+"145
+[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 145: volatile uint8_t param2 = 0;
 [v _param2 `Vuc ~T0 @X0 1 e ]
 [i _param2
 -> -> 0 `i `uc
 ]
-[v F7047 `Vuc ~T0 @X0 -> 3 `i t ]
-"140
-[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 140: volatile uint8_t CMD_Queue[16][3] = {0};
-[v _CMD_Queue `F7047 ~T0 @X0 -> 16 `i e ]
+[v F7049 `Vuc ~T0 @X0 -> 3 `i t ]
+"147
+[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 147: volatile uint8_t CMD_Queue[16][3] = {0};
+[v _CMD_Queue `F7049 ~T0 @X0 -> 16 `i e ]
 [i _CMD_Queue
 :U ..
 :U ..
@@ -1435,72 +1447,72 @@ Version 4.0 HI-TECH Software Intermediate Code
 ..
 ..
 ]
-"141
-[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 141: volatile int16_t CMD_queue_front = -1;
+"148
+[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 148: volatile int16_t CMD_queue_front = -1;
 [v _CMD_queue_front `Vs ~T0 @X0 1 e ]
 [i _CMD_queue_front
 -> -U -> 1 `i `s
 ]
-"142
-[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 142: volatile int16_t CMD_queue_rear = -1;
+"149
+[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 149: volatile int16_t CMD_queue_rear = -1;
 [v _CMD_queue_rear `Vs ~T0 @X0 1 e ]
 [i _CMD_queue_rear
 -> -U -> 1 `i `s
 ]
-"143
-[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 143: volatile uint8_t CMD_add_queue_busy = 0;
+"150
+[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 150: volatile uint8_t CMD_add_queue_busy = 0;
 [v _CMD_add_queue_busy `Vuc ~T0 @X0 1 e ]
 [i _CMD_add_queue_busy
 -> -> 0 `i `uc
 ]
-"144
-[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 144: volatile uint8_t CMD_queue_count = 0;
+"151
+[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 151: volatile uint8_t CMD_queue_count = 0;
 [v _CMD_queue_count `Vuc ~T0 @X0 1 e ]
 [i _CMD_queue_count
 -> -> 0 `i `uc
 ]
-"145
-[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 145: volatile uint8_t Queue_Overrun = 0;
+"152
+[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 152: volatile uint8_t Queue_Overrun = 0;
 [v _Queue_Overrun `Vuc ~T0 @X0 1 e ]
 [i _Queue_Overrun
 -> -> 0 `i `uc
 ]
-"146
-[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 146: volatile uint8_t Return_Queue_count = 0;
+"153
+[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 153: volatile uint8_t Return_Queue_count = 0;
 [v _Return_Queue_count `Vuc ~T0 @X0 1 e ]
 [i _Return_Queue_count
 -> -> 0 `i `uc
 ]
-"148
-[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 148: volatile uint8_t audio_time_out = 0;
+"155
+[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 155: volatile uint8_t audio_time_out = 0;
 [v _audio_time_out `Vuc ~T0 @X0 1 e ]
 [i _audio_time_out
 -> -> 0 `i `uc
 ]
-"149
-[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 149: static uint8_t tx_active = 0;
+"156
+[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 156: static uint8_t tx_active = 0;
 [v _tx_active `uc ~T0 @X0 1 s ]
 [i _tx_active
 -> -> 0 `i `uc
 ]
-"155
-[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 155: static const char *morse_lookup(char c)
+"162
+[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 162: static const char *morse_lookup(char c)
 [v _morse_lookup `(*Cuc ~T0 @X0 1 sf1`uc ]
-"156
-[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 156: {
+"163
+[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 163: {
 {
 [e :U _morse_lookup ]
-"155
-[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 155: static const char *morse_lookup(char c)
+"162
+[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 162: static const char *morse_lookup(char c)
 [v _c `uc ~T0 @X0 1 r1 ]
-"156
-[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 156: {
+"163
+[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 163: {
 [f ]
-[v F7060 `*Cuc ~T0 @X0 1 t ]
-"157
-[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 157:     static const char *const table[43] = {
-[v F7058 `C*Cuc ~T0 @X0 -> 43 `i s table ]
-[i F7058
+[v F7062 `*Cuc ~T0 @X0 1 t ]
+"164
+[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 164:     static const char *const table[43] = {
+[v F7060 `C*Cuc ~T0 @X0 -> 43 `i s table ]
+[i F7060
 :U ..
 :s 1C
 :s 2C
@@ -1540,75 +1552,75 @@ Version 4.0 HI-TECH Software Intermediate Code
 :s 36C
 ..
 ]
-"166
-[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 166:     if (c >= '0' && c <= '9')
+"173
+[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 173:     if (c >= '0' && c <= '9')
 [e $ ! && >= -> _c `ui -> 48 `ui <= -> _c `ui -> 57 `ui 927  ]
-"167
-[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 167:         return table[c - '0'];
-[e ) *U + &U F7058 * -> - -> _c `ui -> 48 `ui `ux -> -> # *U &U F7058 `ui `ux ]
+"174
+[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 174:         return table[c - '0'];
+[e ) *U + &U F7060 * -> - -> _c `ui -> 48 `ui `ux -> -> # *U &U F7060 `ui `ux ]
 [e $UE 926  ]
 [e :U 927 ]
-"168
-[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 168:     if (c >= 'a' && c <= 'z')
+"175
+[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 175:     if (c >= 'a' && c <= 'z')
 [e $ ! && >= -> _c `ui -> 97 `ui <= -> _c `ui -> 122 `ui 928  ]
-"169
-[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 169:         c = (char)(c - 'a' + 'A');
+"176
+[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 176:         c = (char)(c - 'a' + 'A');
 [e = _c -> + - -> _c `ui -> 97 `ui -> 65 `ui `uc ]
 [e :U 928 ]
-"170
-[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 170:     if (c >= 'A' && c <= 'Z')
+"177
+[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 177:     if (c >= 'A' && c <= 'Z')
 [e $ ! && >= -> _c `ui -> 65 `ui <= -> _c `ui -> 90 `ui 929  ]
-"171
-[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 171:         return table[10 + (c - 'A')];
-[e ) *U + &U F7058 * -> + -> -> 10 `i `ui - -> _c `ui -> 65 `ui `ux -> -> # *U &U F7058 `ui `ux ]
+"178
+[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 178:         return table[10 + (c - 'A')];
+[e ) *U + &U F7060 * -> + -> -> 10 `i `ui - -> _c `ui -> 65 `ui `ux -> -> # *U &U F7060 `ui `ux ]
 [e $UE 926  ]
 [e :U 929 ]
-"172
-[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 172:     switch (c) {
+"179
+[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 179:     switch (c) {
 [e $U 931  ]
 {
-"173
-[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 173:         case '/': return "-..-.";
+"180
+[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 180:         case '/': return "-..-.";
 [e :U 932 ]
 [e ) :s 37C ]
 [e $UE 926  ]
-"174
-[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 174:         case '?': return "..--..";
+"181
+[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 181:         case '?': return "..--..";
 [e :U 933 ]
 [e ) :s 38C ]
 [e $UE 926  ]
-"175
-[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 175:         case '.': return ".-.-.-";
+"182
+[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 182:         case '.': return ".-.-.-";
 [e :U 934 ]
 [e ) :s 39C ]
 [e $UE 926  ]
-"176
-[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 176:         case ',': return "--..--";
+"183
+[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 183:         case ',': return "--..--";
 [e :U 935 ]
 [e ) :s 40C ]
 [e $UE 926  ]
-"177
-[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 177:         case '=': return "-...-";
+"184
+[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 184:         case '=': return "-...-";
 [e :U 936 ]
 [e ) :s 41C ]
 [e $UE 926  ]
-"178
-[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 178:         case '+': return ".-.-.";
+"185
+[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 185:         case '+': return ".-.-.";
 [e :U 937 ]
 [e ) :s 42C ]
 [e $UE 926  ]
-"179
-[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 179:         case ' ': return ((void*)0);
+"186
+[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 186:         case ' ': return ((void*)0);
 [e :U 938 ]
 [e ) -> -> -> 0 `i `*v `*Cuc ]
 [e $UE 926  ]
-"180
-[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 180:         default: return ((void*)0);
+"187
+[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 187:         default: return ((void*)0);
 [e :U 939 ]
 [e ) -> -> -> 0 `i `*v `*Cuc ]
 [e $UE 926  ]
-"181
-[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 181:     }
+"188
+[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 188:     }
 }
 [e $U 930  ]
 [e :U 931 ]
@@ -1621,144 +1633,144 @@ Version 4.0 HI-TECH Software Intermediate Code
  , $ -> -> 32 `ui `i 938
  939 ]
 [e :U 930 ]
-"182
-[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 182: }
+"189
+[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 189: }
 [e :UE 926 ]
 }
-"184
-[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 184: void Audio_interrupt_time_out(void) {
+"191
+[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 191: void Audio_interrupt_time_out(void) {
 [v _Audio_interrupt_time_out `(v ~T0 @X0 1 ef ]
 {
 [e :U _Audio_interrupt_time_out ]
 [f ]
-"185
-[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 185:     if (audio_time_out == 1) {
+"192
+[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 192:     if (audio_time_out == 1) {
 [e $ ! == -> _audio_time_out `i -> 1 `i 941  ]
 {
-"186
-[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 186:         do { LATAbits.LATA2 = 0; } while(0);
+"193
+[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 193:         do { LATAbits.LATA2 = 0; } while(0);
 [e :U 944 ]
 {
 [e = . . _LATAbits 0 2 -> -> 0 `i `uc ]
 }
 [e :U 943 ]
-"187
-[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 187:         audio_time_out = 0;
+"194
+[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 194:         audio_time_out = 0;
 [e = _audio_time_out -> -> 0 `i `uc ]
-"188
-[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 188:     } else {
+"195
+[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 195:     } else {
 }
 [e $U 945  ]
 [e :U 941 ]
 {
-"189
-[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 189:         do { LATAbits.LATA2 = 1; } while(0);
+"196
+[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 196:         do { LATAbits.LATA2 = 1; } while(0);
 [e :U 948 ]
 {
 [e = . . _LATAbits 0 2 -> -> 1 `i `uc ]
 }
 [e :U 947 ]
-"190
-[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 190:         audio_time_out = 1;
+"197
+[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 197:         audio_time_out = 1;
 [e = _audio_time_out -> -> 1 `i `uc ]
-"191
-[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 191:     }
+"198
+[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 198:     }
 }
 [e :U 945 ]
-"192
-[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 192: }
+"199
+[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 199: }
 [e :UE 940 ]
 }
-"194
-[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 194: uint8_t CMD_dequeue(uint8_t *p1, uint8_t *p2) {
+"201
+[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 201: uint8_t CMD_dequeue(uint8_t *p1, uint8_t *p2) {
 [v _CMD_dequeue `(uc ~T0 @X0 1 ef2`*uc`*uc ]
 {
 [e :U _CMD_dequeue ]
 [v _p1 `*uc ~T0 @X0 1 r1 ]
 [v _p2 `*uc ~T0 @X0 1 r2 ]
 [f ]
-"195
-[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 195:     uint8_t ret = 199;
+"202
+[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 202:     uint8_t ret = 199;
 [v _ret `uc ~T0 @X0 1 a ]
 [e = _ret -> -> 199 `i `uc ]
-"197
-[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 197:     if (CMD_add_queue_busy == 0) {
+"204
+[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 204:     if (CMD_add_queue_busy == 0) {
 [e $ ! == -> _CMD_add_queue_busy `i -> 0 `i 950  ]
 {
-"198
-[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 198:         if (CMD_queue_front == -1) {
+"205
+[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 205:         if (CMD_queue_front == -1) {
 [e $ ! == -> _CMD_queue_front `i -U -> 1 `i 951  ]
 {
-"199
-[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 199:             ret = 199;
+"206
+[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 206:             ret = 199;
 [e = _ret -> -> 199 `i `uc ]
-"200
-[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 200:         } else {
+"207
+[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 207:         } else {
 }
 [e $U 952  ]
 [e :U 951 ]
 {
-"201
-[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 201:             ret = CMD_Queue[CMD_queue_front][0];
+"208
+[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 208:             ret = CMD_Queue[CMD_queue_front][0];
 [e = _ret *U + &U *U + &U _CMD_Queue * -> -> _CMD_queue_front `Vus `ux -> * -> # *U &U *U &U _CMD_Queue `ui -> -> 3 `i `ui `ux * -> -> -> 0 `i `ui `ux -> -> # *U &U *U + &U _CMD_Queue * -> -> _CMD_queue_front `Vus `ux -> * -> # *U &U *U &U _CMD_Queue `ui -> -> 3 `i `ui `ux `ui `ux ]
-"202
-[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 202:             *p1 = CMD_Queue[CMD_queue_front][1];
+"209
+[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 209:             *p1 = CMD_Queue[CMD_queue_front][1];
 [e = *U _p1 *U + &U *U + &U _CMD_Queue * -> -> _CMD_queue_front `Vus `ux -> * -> # *U &U *U &U _CMD_Queue `ui -> -> 3 `i `ui `ux * -> -> -> 1 `i `ui `ux -> -> # *U &U *U + &U _CMD_Queue * -> -> _CMD_queue_front `Vus `ux -> * -> # *U &U *U &U _CMD_Queue `ui -> -> 3 `i `ui `ux `ui `ux ]
-"203
-[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 203:             *p2 = CMD_Queue[CMD_queue_front][2];
+"210
+[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 210:             *p2 = CMD_Queue[CMD_queue_front][2];
 [e = *U _p2 *U + &U *U + &U _CMD_Queue * -> -> _CMD_queue_front `Vus `ux -> * -> # *U &U *U &U _CMD_Queue `ui -> -> 3 `i `ui `ux * -> -> -> 2 `i `ui `ux -> -> # *U &U *U + &U _CMD_Queue * -> -> _CMD_queue_front `Vus `ux -> * -> # *U &U *U &U _CMD_Queue `ui -> -> 3 `i `ui `ux `ui `ux ]
-"204
-[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 204:             CMD_Queue[CMD_queue_front][0] = 199;
+"211
+[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 211:             CMD_Queue[CMD_queue_front][0] = 199;
 [e = *U + &U *U + &U _CMD_Queue * -> -> _CMD_queue_front `Vus `ux -> * -> # *U &U *U &U _CMD_Queue `ui -> -> 3 `i `ui `ux * -> -> -> 0 `i `ui `ux -> -> # *U &U *U + &U _CMD_Queue * -> -> _CMD_queue_front `Vus `ux -> * -> # *U &U *U &U _CMD_Queue `ui -> -> 3 `i `ui `ux `ui `ux -> -> 199 `i `uc ]
-"205
-[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 205:             if (CMD_queue_front == CMD_queue_rear) {
+"212
+[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 212:             if (CMD_queue_front == CMD_queue_rear) {
 [e $ ! == -> _CMD_queue_front `i -> _CMD_queue_rear `i 953  ]
 {
-"206
-[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 206:                 CMD_queue_front = CMD_queue_rear = -1;
+"213
+[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 213:                 CMD_queue_front = CMD_queue_rear = -1;
 [e = _CMD_queue_front = _CMD_queue_rear -> -U -> 1 `i `s ]
-"207
-[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 207:             } else {
+"214
+[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 214:             } else {
 }
 [e $U 954  ]
 [e :U 953 ]
 {
-"208
-[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 208:                 CMD_queue_front = (CMD_queue_front + 1) % 16;
+"215
+[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 215:                 CMD_queue_front = (CMD_queue_front + 1) % 16;
 [e = _CMD_queue_front -> % + -> _CMD_queue_front `i -> 1 `i -> 16 `i `s ]
-"209
-[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 209:             }
+"216
+[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 216:             }
 }
 [e :U 954 ]
-"210
-[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 210:             if (ret != 199) {
+"217
+[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 217:             if (ret != 199) {
 [e $ ! != -> _ret `i -> 199 `i 955  ]
 {
-"211
-[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 211:                 CMD_queue_count--;
+"218
+[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 218:                 CMD_queue_count--;
 [e -- _CMD_queue_count -> -> 1 `i `Vuc ]
-"212
-[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 212:             }
+"219
+[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 219:             }
 }
 [e :U 955 ]
-"213
-[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 213:         }
+"220
+[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 220:         }
 }
 [e :U 952 ]
-"214
-[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 214:     }
+"221
+[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 221:     }
 }
 [e :U 950 ]
-"215
-[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 215:     return ret;
+"222
+[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 222:     return ret;
 [e ) _ret ]
 [e $UE 949  ]
-"216
-[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 216: }
+"223
+[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 223: }
 [e :UE 949 ]
 }
-"218
-[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 218: void CMD_queue_add(uint8_t command, uint8_t p1, uint8_t p2) {
+"225
+[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 225: void CMD_queue_add(uint8_t command, uint8_t p1, uint8_t p2) {
 [v _CMD_queue_add `(v ~T0 @X0 1 ef3`uc`uc`uc ]
 {
 [e :U _CMD_queue_add ]
@@ -1766,760 +1778,719 @@ Version 4.0 HI-TECH Software Intermediate Code
 [v _p1 `uc ~T0 @X0 1 r2 ]
 [v _p2 `uc ~T0 @X0 1 r3 ]
 [f ]
-"221
-[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 221:     CMD_add_queue_busy = 1;
+"228
+[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 228:     CMD_add_queue_busy = 1;
 [e = _CMD_add_queue_busy -> -> 1 `i `uc ]
-"222
-[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 222:     if (CMD_queue_front == (CMD_queue_rear + 1) % 16) {
+"229
+[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 229:     if (CMD_queue_front == (CMD_queue_rear + 1) % 16) {
 [e $ ! == -> _CMD_queue_front `i % + -> _CMD_queue_rear `i -> 1 `i -> 16 `i 957  ]
 {
-"223
-[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 223:         Queue_Overrun = 1;
+"230
+[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 230:         Queue_Overrun = 1;
 [e = _Queue_Overrun -> -> 1 `i `uc ]
-"224
-[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 224:         CMD_add_queue_busy = 0;
+"231
+[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 231:         CMD_add_queue_busy = 0;
 [e = _CMD_add_queue_busy -> -> 0 `i `uc ]
-"225
-[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 225:         return;
+"232
+[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 232:         return;
 [e $UE 956  ]
-"226
-[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 226:     }
+"233
+[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 233:     }
 }
 [e :U 957 ]
-"227
-[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 227:     if (CMD_queue_front == -1) {
+"234
+[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 234:     if (CMD_queue_front == -1) {
 [e $ ! == -> _CMD_queue_front `i -U -> 1 `i 958  ]
 {
-"228
-[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 228:         CMD_queue_front = CMD_queue_rear = 0;
+"235
+[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 235:         CMD_queue_front = CMD_queue_rear = 0;
 [e = _CMD_queue_front = _CMD_queue_rear -> -> 0 `i `s ]
-"229
-[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 229:     } else {
+"236
+[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 236:     } else {
 }
 [e $U 959  ]
 [e :U 958 ]
 {
-"230
-[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 230:         CMD_queue_rear = (CMD_queue_rear + 1) % 16;
-[e = _CMD_queue_rear -> % + -> _CMD_queue_rear `i -> 1 `i -> 16 `i `s ]
-"231
-[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 231:     }
-}
-[e :U 959 ]
-"232
-[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 232:     CMD_Queue[CMD_queue_rear][0] = command;
-[e = *U + &U *U + &U _CMD_Queue * -> -> _CMD_queue_rear `Vus `ux -> * -> # *U &U *U &U _CMD_Queue `ui -> -> 3 `i `ui `ux * -> -> -> 0 `i `ui `ux -> -> # *U &U *U + &U _CMD_Queue * -> -> _CMD_queue_rear `Vus `ux -> * -> # *U &U *U &U _CMD_Queue `ui -> -> 3 `i `ui `ux `ui `ux _command ]
-"233
-[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 233:     CMD_Queue[CMD_queue_rear][1] = p1;
-[e = *U + &U *U + &U _CMD_Queue * -> -> _CMD_queue_rear `Vus `ux -> * -> # *U &U *U &U _CMD_Queue `ui -> -> 3 `i `ui `ux * -> -> -> 1 `i `ui `ux -> -> # *U &U *U + &U _CMD_Queue * -> -> _CMD_queue_rear `Vus `ux -> * -> # *U &U *U &U _CMD_Queue `ui -> -> 3 `i `ui `ux `ui `ux _p1 ]
-"234
-[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 234:     CMD_Queue[CMD_queue_rear][2] = p2;
-[e = *U + &U *U + &U _CMD_Queue * -> -> _CMD_queue_rear `Vus `ux -> * -> # *U &U *U &U _CMD_Queue `ui -> -> 3 `i `ui `ux * -> -> -> 2 `i `ui `ux -> -> # *U &U *U + &U _CMD_Queue * -> -> _CMD_queue_rear `Vus `ux -> * -> # *U &U *U &U _CMD_Queue `ui -> -> 3 `i `ui `ux `ui `ux _p2 ]
-"235
-[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 235:     CMD_queue_count++;
-[e ++ _CMD_queue_count -> -> 1 `i `Vuc ]
-"236
-[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 236:     if (CMD_queue_count > 16) {
-[e $ ! > -> _CMD_queue_count `i -> 16 `i 960  ]
-{
 "237
-[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 237:         CMD_queue_count = 16;
-[e = _CMD_queue_count -> -> 16 `i `uc ]
+[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 237:         CMD_queue_rear = (CMD_queue_rear + 1) % 16;
+[e = _CMD_queue_rear -> % + -> _CMD_queue_rear `i -> 1 `i -> 16 `i `s ]
 "238
 [; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 238:     }
 }
-[e :U 960 ]
+[e :U 959 ]
 "239
-[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 239:     CMD_add_queue_busy = 0;
-[e = _CMD_add_queue_busy -> -> 0 `i `uc ]
+[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 239:     CMD_Queue[CMD_queue_rear][0] = command;
+[e = *U + &U *U + &U _CMD_Queue * -> -> _CMD_queue_rear `Vus `ux -> * -> # *U &U *U &U _CMD_Queue `ui -> -> 3 `i `ui `ux * -> -> -> 0 `i `ui `ux -> -> # *U &U *U + &U _CMD_Queue * -> -> _CMD_queue_rear `Vus `ux -> * -> # *U &U *U &U _CMD_Queue `ui -> -> 3 `i `ui `ux `ui `ux _command ]
 "240
-[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 240: }
+[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 240:     CMD_Queue[CMD_queue_rear][1] = p1;
+[e = *U + &U *U + &U _CMD_Queue * -> -> _CMD_queue_rear `Vus `ux -> * -> # *U &U *U &U _CMD_Queue `ui -> -> 3 `i `ui `ux * -> -> -> 1 `i `ui `ux -> -> # *U &U *U + &U _CMD_Queue * -> -> _CMD_queue_rear `Vus `ux -> * -> # *U &U *U &U _CMD_Queue `ui -> -> 3 `i `ui `ux `ui `ux _p1 ]
+"241
+[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 241:     CMD_Queue[CMD_queue_rear][2] = p2;
+[e = *U + &U *U + &U _CMD_Queue * -> -> _CMD_queue_rear `Vus `ux -> * -> # *U &U *U &U _CMD_Queue `ui -> -> 3 `i `ui `ux * -> -> -> 2 `i `ui `ux -> -> # *U &U *U + &U _CMD_Queue * -> -> _CMD_queue_rear `Vus `ux -> * -> # *U &U *U &U _CMD_Queue `ui -> -> 3 `i `ui `ux `ui `ux _p2 ]
+"242
+[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 242:     CMD_queue_count++;
+[e ++ _CMD_queue_count -> -> 1 `i `Vuc ]
+"243
+[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 243:     if (CMD_queue_count > 16) {
+[e $ ! > -> _CMD_queue_count `i -> 16 `i 960  ]
+{
+"244
+[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 244:         CMD_queue_count = 16;
+[e = _CMD_queue_count -> -> 16 `i `uc ]
+"245
+[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 245:     }
+}
+[e :U 960 ]
+"246
+[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 246:     CMD_add_queue_busy = 0;
+[e = _CMD_add_queue_busy -> -> 0 `i `uc ]
+"247
+[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 247: }
 [e :UE 956 ]
 }
-"242
-[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 242: void I2C_SlaveAddressCallbackHandler() {
+"249
+[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 249: void I2C_SlaveAddressCallbackHandler() {
 [v _I2C_SlaveAddressCallbackHandler `(v ~T0 @X0 1 ef ]
 {
 [e :U _I2C_SlaveAddressCallbackHandler ]
 [f ]
-"243
-[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 243:     tmpSlaveAddr = I2C1_Read();
+"250
+[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 250:     tmpSlaveAddr = I2C1_Read();
 [e = _tmpSlaveAddr ( _I2C1_Read ..  ]
-"244
-[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 244:     SlaveAddress = tmpSlaveAddr >> 1u;
+"251
+[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 251:     SlaveAddress = tmpSlaveAddr >> 1u;
 [e = _SlaveAddress -> >> -> _tmpSlaveAddr `i -> 1 `ui `uc ]
-"245
-[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 245:     SlaveR_W = tmpSlaveAddr & 0x01u;
+"252
+[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 252:     SlaveR_W = tmpSlaveAddr & 0x01u;
 [e = _SlaveR_W -> & -> _tmpSlaveAddr `ui -> 1 `ui `uc ]
-"247
-[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 247:     if (SlaveR_W == 0) {
+"254
+[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 254:     if (SlaveR_W == 0) {
 [e $ ! == -> _SlaveR_W `i -> 0 `i 962  ]
 {
-"250
-[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 250:         SlaveInit = 1;
+"257
+[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 257:         SlaveInit = 1;
 [e = _SlaveInit -> -> 1 `i `uc ]
-"251
-[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 251:     } else {
+"258
+[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 258:     } else {
 }
 [e $U 963  ]
 [e :U 962 ]
 {
-"252
-[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 252:         Return_Queue_count = CMD_queue_count;
+"259
+[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 259:         Return_Queue_count = CMD_queue_count;
 [e = _Return_Queue_count _CMD_queue_count ]
-"253
-[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 253:         if (Return_Queue_count > 32) {
+"260
+[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 260:         if (Return_Queue_count > 32) {
 [e $ ! > -> _Return_Queue_count `i -> 32 `i 964  ]
 {
-"254
-[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 254:             Return_Queue_count = 32;
+"261
+[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 261:             Return_Queue_count = 32;
 [e = _Return_Queue_count -> -> 32 `i `uc ]
-"255
-[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 255:         }
+"262
+[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 262:         }
 }
 [e :U 964 ]
-"256
-[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 256:     }
+"263
+[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 263:     }
 }
 [e :U 963 ]
-"257
-[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 257: }
+"264
+[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 264: }
 [e :UE 961 ]
 }
-"259
-[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 259: void I2C_SlaveReceiveCallbackHandler() {
+"266
+[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 266: void I2C_SlaveReceiveCallbackHandler() {
 [v _I2C_SlaveReceiveCallbackHandler `(v ~T0 @X0 1 ef ]
 {
 [e :U _I2C_SlaveReceiveCallbackHandler ]
 [f ]
-"260
-[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 260:     uint8_t b;
+"267
+[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 267:     uint8_t b;
 [v _b `uc ~T0 @X0 1 a ]
-"263
-[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 263:     if (!SlaveInit) {
+"270
+[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 270:     if (!SlaveInit) {
 [e $ ! ! != -> _SlaveInit `i -> 0 `i 966  ]
 {
-"264
-[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 264:         (void)I2C1_Read();
+"271
+[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 271:         (void)I2C1_Read();
 [e ( _I2C1_Read ..  ]
-"265
-[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 265:         return;
+"272
+[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 272:         return;
 [e $UE 965  ]
-"266
-[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 266:     }
+"273
+[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 273:     }
 }
 [e :U 966 ]
-"267
-[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 267:     SlaveInit--;
+"274
+[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 274:     SlaveInit--;
 [e -- _SlaveInit -> -> 1 `i `Vuc ]
-"268
-[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 268:     b = I2C1_Read();
+"275
+[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 275:     b = I2C1_Read();
 [e = _b ( _I2C1_Read ..  ]
-"269
-[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 269:     if (first_pass == 1) {
+"276
+[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 276:     if (first_pass == 1) {
 [e $ ! == -> _first_pass `i -> 1 `i 967  ]
 {
-"270
-[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 270:         msg = b;
+"277
+[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 277:         msg = b;
 [e = _msg _b ]
-"271
-[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 271:         first_pass = 0;
+"278
+[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 278:         first_pass = 0;
 [e = _first_pass -> -> 0 `i `uc ]
-"272
-[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 272:     } else {
+"279
+[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 279:     } else {
 }
 [e $U 968  ]
 [e :U 967 ]
 {
-"273
-[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 273:         param1 = b;
+"280
+[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 280:         param1 = b;
 [e = _param1 _b ]
-"274
-[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 274:         first_pass = 1;
+"281
+[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 281:         first_pass = 1;
 [e = _first_pass -> -> 1 `i `uc ]
-"275
-[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 275:         CMD_queue_add(msg, param1, 0);
+"282
+[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 282:         CMD_queue_add(msg, param1, 0);
 [e ( _CMD_queue_add (3 , , _msg _param1 -> -> 0 `i `uc ]
-"276
-[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 276:     }
+"283
+[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 283:     }
 }
 [e :U 968 ]
-"277
-[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 277: }
+"284
+[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 284: }
 [e :UE 965 ]
 }
-"279
-[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 279: void I2C_SlaveTransmitCallbackHandler() {
+"286
+[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 286: void I2C_SlaveTransmitCallbackHandler() {
 [v _I2C_SlaveTransmitCallbackHandler `(v ~T0 @X0 1 ef ]
 {
 [e :U _I2C_SlaveTransmitCallbackHandler ]
 [f ]
-"280
-[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 280:     I2C1_Write(Return_Queue_count);
+"287
+[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 287:     I2C1_Write(Return_Queue_count);
 [e ( _I2C1_Write (1 _Return_Queue_count ]
-"281
-[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 281: }
+"288
+[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 288: }
 [e :UE 969 ]
 }
-"283
-[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 283: void I2C_SlaveCollisionCallbackHandler() {
+"290
+[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 290: void I2C_SlaveCollisionCallbackHandler() {
 [v _I2C_SlaveCollisionCallbackHandler `(v ~T0 @X0 1 ef ]
 {
 [e :U _I2C_SlaveCollisionCallbackHandler ]
 [f ]
-"284
-[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 284: }
+"291
+[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 291: }
 [e :UE 970 ]
 }
-"286
-[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 286: void keyer_update() {
+"293
+[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 293: void keyer_update() {
 [v _keyer_update `(v ~T0 @X0 1 ef ]
 {
 [e :U _keyer_update ]
 [f ]
-"287
-[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 287:     int text_wpm;
+"294
+[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 294:     int text_wpm;
 [v _text_wpm `i ~T0 @X0 1 a ]
-"288
-[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 288:     int32_t gap;
+"295
+[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 295:     int32_t gap;
 [v _gap `l ~T0 @X0 1 a ]
-"290
-[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 290:     if (cw_keyer_speed < 5)
+"297
+[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 297:     if (cw_keyer_speed < 5)
 [e $ ! < _cw_keyer_speed -> 5 `i 972  ]
-"291
-[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 291:         cw_keyer_speed = 5;
+"298
+[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 298:         cw_keyer_speed = 5;
 [e = _cw_keyer_speed -> 5 `i ]
 [e :U 972 ]
-"292
-[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 292:     if (cw_keyer_speed > 60)
+"299
+[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 299:     if (cw_keyer_speed > 60)
 [e $ ! > _cw_keyer_speed -> 60 `i 973  ]
-"293
-[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 293:         cw_keyer_speed = 60;
+"300
+[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 300:         cw_keyer_speed = 60;
 [e = _cw_keyer_speed -> 60 `i ]
 [e :U 973 ]
-"294
-[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 294:     dot_delay = 1200 / cw_keyer_speed;
+"301
+[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 301:     dot_delay = 1200 / cw_keyer_speed;
 [e = _dot_delay / -> 1200 `i _cw_keyer_speed ]
-"295
-[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 295:     cw_loop_delay = 2750 / cw_keyer_speed;
+"302
+[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 302:     cw_loop_delay = 2750 / cw_keyer_speed;
 [e = _cw_loop_delay -> / -> 2750 `i _cw_keyer_speed `l ]
-"296
-[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 296:     dash_delay = (dot_delay * 3 * cw_keyer_weight) / 50;
+"303
+[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 303:     dash_delay = (dot_delay * 3 * cw_keyer_weight) / 50;
 [e = _dash_delay / * * _dot_delay -> 3 `i _cw_keyer_weight -> 50 `i ]
-"314
-[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 314:     text_wpm = cw_mem_text_wpm;
+"321
+[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 321:     text_wpm = cw_mem_text_wpm;
 [e = _text_wpm _cw_mem_text_wpm ]
-"315
-[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 315:     if (text_wpm != 0 && text_wpm < 5)
+"322
+[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 322:     if (text_wpm != 0 && text_wpm < 5)
 [e $ ! && != _text_wpm -> 0 `i < _text_wpm -> 5 `i 974  ]
-"316
-[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 316:         text_wpm = 0;
+"323
+[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 323:         text_wpm = 0;
 [e = _text_wpm -> 0 `i ]
 [e :U 974 ]
-"317
-[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 317:     if (text_wpm > 60)
+"324
+[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 324:     if (text_wpm > 60)
 [e $ ! > _text_wpm -> 60 `i 975  ]
-"318
-[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 318:         text_wpm = 60;
+"325
+[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 325:         text_wpm = 60;
 [e = _text_wpm -> 60 `i ]
 [e :U 975 ]
-"319
-[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 319:     if (text_wpm > 0 && text_wpm < cw_keyer_speed) {
+"326
+[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 326:     if (text_wpm > 0 && text_wpm < cw_keyer_speed) {
 [e $ ! && > _text_wpm -> 0 `i < _text_wpm _cw_keyer_speed 976  ]
 {
-"321
-[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 321:         gap = (int32_t)50 * (int32_t)cw_keyer_speed - (int32_t)31 * (int32_t)text_wpm;
+"328
+[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 328:         gap = (int32_t)50 * (int32_t)cw_keyer_speed - (int32_t)31 * (int32_t)text_wpm;
 [e = _gap - * -> -> 50 `i `l -> _cw_keyer_speed `l * -> -> 31 `i `l -> _text_wpm `l ]
-"322
-[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 322:         if (gap <= 0) {
+"329
+[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 329:         if (gap <= 0) {
 [e $ ! <= _gap -> -> 0 `i `l 977  ]
 {
-"323
-[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 323:             mem_letter_gap = 2 * dot_delay;
+"330
+[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 330:             mem_letter_gap = 2 * dot_delay;
 [e = _mem_letter_gap * -> 2 `i _dot_delay ]
-"324
-[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 324:             mem_word_gap = 4 * dot_delay;
+"331
+[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 331:             mem_word_gap = 4 * dot_delay;
 [e = _mem_word_gap * -> 4 `i _dot_delay ]
-"325
-[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 325:         } else {
+"332
+[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 332:         } else {
 }
 [e $U 978  ]
 [e :U 977 ]
 {
-"327
-[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 327:             mem_letter_gap = (int)((3 * gap * (int32_t)dot_delay) /
+"334
+[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 334:             mem_letter_gap = (int)((3 * gap * (int32_t)dot_delay) /
 [e = _mem_letter_gap -> / * * -> -> 3 `i `l _gap -> _dot_delay `l * -> -> 19 `i `l -> _text_wpm `l `i ]
-"329
-[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 329:             mem_word_gap = (int)((4 * gap * (int32_t)dot_delay) /
+"336
+[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 336:             mem_word_gap = (int)((4 * gap * (int32_t)dot_delay) /
 [e = _mem_word_gap -> / * * -> -> 4 `i `l _gap -> _dot_delay `l * -> -> 19 `i `l -> _text_wpm `l `i ]
-"331
-[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 331:             if (mem_letter_gap < 2 * dot_delay)
+"338
+[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 338:             if (mem_letter_gap < 2 * dot_delay)
 [e $ ! < _mem_letter_gap * -> 2 `i _dot_delay 979  ]
-"332
-[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 332:                 mem_letter_gap = 2 * dot_delay;
+"339
+[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 339:                 mem_letter_gap = 2 * dot_delay;
 [e = _mem_letter_gap * -> 2 `i _dot_delay ]
 [e :U 979 ]
-"333
-[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 333:             if (mem_word_gap < 4 * dot_delay)
+"340
+[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 340:             if (mem_word_gap < 4 * dot_delay)
 [e $ ! < _mem_word_gap * -> 4 `i _dot_delay 980  ]
-"334
-[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 334:                 mem_word_gap = 4 * dot_delay;
+"341
+[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 341:                 mem_word_gap = 4 * dot_delay;
 [e = _mem_word_gap * -> 4 `i _dot_delay ]
 [e :U 980 ]
-"335
-[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 335:         }
+"342
+[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 342:         }
 }
 [e :U 978 ]
-"336
-[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 336:     } else {
+"343
+[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 343:     } else {
 }
 [e $U 981  ]
 [e :U 976 ]
 {
-"337
-[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 337:         mem_letter_gap = 2 * dot_delay;
+"344
+[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 344:         mem_letter_gap = 2 * dot_delay;
 [e = _mem_letter_gap * -> 2 `i _dot_delay ]
-"338
-[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 338:         mem_word_gap = 4 * dot_delay;
+"345
+[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 345:         mem_word_gap = 4 * dot_delay;
 [e = _mem_word_gap * -> 4 `i _dot_delay ]
-"339
-[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 339:     }
+"346
+[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 346:     }
 }
 [e :U 981 ]
-"341
-[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 341:     if (cw_keys_reversed) {
-[e $ ! != _cw_keys_reversed -> 0 `i 982  ]
-{
-"342
-[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 342:         kdot = &kcwr;
-[e = _kdot &U _kcwr ]
-"343
-[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 343:         kdash = &kcwl;
-[e = _kdash &U _kcwl ]
-"344
-[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 344:     } else {
-}
-[e $U 983  ]
+"351
+[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 351:     paddle_letter_gap = 2 * dot_delay;
+[e = _paddle_letter_gap * -> 2 `i _dot_delay ]
+"352
+[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 352:     if (cw_paddle_farns && mem_letter_gap - dot_delay > paddle_letter_gap)
+[e $ ! && != _cw_paddle_farns -> 0 `i > - _mem_letter_gap _dot_delay _paddle_letter_gap 982  ]
+"353
+[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 353:         paddle_letter_gap = mem_letter_gap - dot_delay;
+[e = _paddle_letter_gap - _mem_letter_gap _dot_delay ]
 [e :U 982 ]
+"355
+[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 355:     if (cw_keys_reversed) {
+[e $ ! != _cw_keys_reversed -> 0 `i 983  ]
 {
-"345
-[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 345:         kdot = &kcwl;
-[e = _kdot &U _kcwl ]
-"346
-[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 346:         kdash = &kcwr;
-[e = _kdash &U _kcwr ]
-"347
-[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 347:     }
+"356
+[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 356:         kdot = &kcwr;
+[e = _kdot &U _kcwr ]
+"357
+[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 357:         kdash = &kcwl;
+[e = _kdash &U _kcwl ]
+"358
+[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 358:     } else {
 }
+[e $U 984  ]
 [e :U 983 ]
-"348
-[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 348: }
+{
+"359
+[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 359:         kdot = &kcwl;
+[e = _kdot &U _kcwl ]
+"360
+[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 360:         kdash = &kcwr;
+[e = _kdash &U _kcwr ]
+"361
+[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 361:     }
+}
+[e :U 984 ]
+"362
+[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 362: }
 [e :UE 971 ]
 }
-"350
-[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 350: void clear_memory() {
+"364
+[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 364: void clear_memory() {
 [v _clear_memory `(v ~T0 @X0 1 ef ]
 {
 [e :U _clear_memory ]
 [f ]
-"351
-[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 351:     dot_memory = 0;
+"365
+[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 365:     dot_memory = 0;
 [e = _dot_memory -> 0 `i ]
-"352
-[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 352:     dash_memory = 0;
+"366
+[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 366:     dash_memory = 0;
 [e = _dash_memory -> 0 `i ]
-"353
-[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 353: }
-[e :UE 984 ]
+"367
+[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 367: }
+[e :UE 985 ]
 }
-"355
-[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 355: void set_keyer_out(int state) {
+"369
+[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 369: void set_keyer_out(int state) {
 [v _set_keyer_out `(v ~T0 @X0 1 ef1`i ]
 {
 [e :U _set_keyer_out ]
 [v _state `i ~T0 @X0 1 r1 ]
 [f ]
-"356
-[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 356:     if (keyer_out != state) {
-[e $ ! != _keyer_out _state 986  ]
+"370
+[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 370:     if (keyer_out != state) {
+[e $ ! != _keyer_out _state 987  ]
 {
-"357
-[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 357:         keyer_out = state;
+"371
+[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 371:         keyer_out = state;
 [e = _keyer_out _state ]
-"358
-[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 358:         if (tx_active == 0) {
-[e $ ! == -> _tx_active `i -> 0 `i 987  ]
+"372
+[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 372:         if (tx_active == 0) {
+[e $ ! == -> _tx_active `i -> 0 `i 988  ]
 {
-"359
-[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 359:             tx_active = 1;
+"373
+[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 373:             tx_active = 1;
 [e = _tx_active -> -> 1 `i `uc ]
-"360
-[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 360:             do { LATAbits.LATA2 = 1; } while(0);
-[e :U 990 ]
+"374
+[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 374:             do { LATAbits.LATA2 = 1; } while(0);
+[e :U 991 ]
 {
 [e = . . _LATAbits 0 2 -> -> 1 `i `uc ]
 }
-[e :U 989 ]
-"361
-[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 361:             do { LATCbits.LATC3 = 0; } while(0);
-[e :U 993 ]
+[e :U 990 ]
+"375
+[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 375:             do { LATCbits.LATC3 = 0; } while(0);
+[e :U 994 ]
 {
 [e = . . _LATCbits 0 3 -> -> 0 `i `uc ]
 }
-[e :U 992 ]
-"362
-[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 362:         }
+[e :U 993 ]
+"376
+[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 376:         }
 }
-[e :U 987 ]
-"363
-[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 363:         if (state) {
-[e $ ! != _state -> 0 `i 994  ]
+[e :U 988 ]
+"377
+[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 377:         if (state) {
+[e $ ! != _state -> 0 `i 995  ]
 {
-"364
-[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 364:             do { LATCbits.LATC5 = 0; } while(0);
-[e :U 997 ]
+"378
+[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 378:             do { LATCbits.LATC5 = 0; } while(0);
+[e :U 998 ]
 {
 [e = . . _LATCbits 0 5 -> -> 0 `i `uc ]
 }
-[e :U 996 ]
-"365
-[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 365:             NCO1CONbits.N1EN = 1;
+[e :U 997 ]
+"379
+[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 379:             NCO1CONbits.N1EN = 1;
 [e = . . _NCO1CONbits 0 5 -> -> 1 `i `uc ]
-"366
-[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 366:         } else {
+"380
+[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 380:         } else {
 }
-[e $U 998  ]
-[e :U 994 ]
+[e $U 999  ]
+[e :U 995 ]
 {
-"367
-[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 367:             do { LATCbits.LATC5 = 1; } while(0);
-[e :U 1001 ]
+"381
+[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 381:             do { LATCbits.LATC5 = 1; } while(0);
+[e :U 1002 ]
 {
 [e = . . _LATCbits 0 5 -> -> 1 `i `uc ]
 }
-[e :U 1000 ]
-"368
-[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 368:             NCO1CONbits.N1EN = 0;
+[e :U 1001 ]
+"382
+[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 382:             NCO1CONbits.N1EN = 0;
 [e = . . _NCO1CONbits 0 5 -> -> 0 `i `uc ]
-"369
-[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 369:         }
+"383
+[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 383:         }
 }
-[e :U 998 ]
-"370
-[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 370:     }
+[e :U 999 ]
+"384
+[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 384:     }
 }
-[e :U 986 ]
-"371
-[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 371: }
-[e :UE 985 ]
+[e :U 987 ]
+"385
+[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 385: }
+[e :UE 986 ]
 }
-"373
-[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 373: static void keyer_idle_release(void) {
+"387
+[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 387: static void keyer_idle_release(void) {
 [v _keyer_idle_release `(v ~T0 @X0 1 sf ]
 {
 [e :U _keyer_idle_release ]
 [f ]
-"374
-[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 374:     if (tx_active == 1) {
-[e $ ! == -> _tx_active `i -> 1 `i 1003  ]
+"388
+[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 388:     if (tx_active == 1) {
+[e $ ! == -> _tx_active `i -> 1 `i 1004  ]
 {
-"375
-[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 375:         tx_active = 0;
+"389
+[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 389:         tx_active = 0;
 [e = _tx_active -> -> 0 `i `uc ]
-"376
-[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 376:         do { LATAbits.LATA2 = 0; } while(0);
-[e :U 1006 ]
+"390
+[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 390:         do { LATAbits.LATA2 = 0; } while(0);
+[e :U 1007 ]
 {
 [e = . . _LATAbits 0 2 -> -> 0 `i `uc ]
 }
-[e :U 1005 ]
-"377
-[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 377:         do { LATCbits.LATC3 = 1; } while(0);
-[e :U 1009 ]
+[e :U 1006 ]
+"391
+[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 391:         do { LATCbits.LATC3 = 1; } while(0);
+[e :U 1010 ]
 {
 [e = . . _LATCbits 0 3 -> -> 1 `i `uc ]
 }
-[e :U 1008 ]
-"378
-[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 378:     }
+[e :U 1009 ]
+"392
+[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 392:     }
 }
-[e :U 1003 ]
-"379
-[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 379: }
-[e :UE 1002 ]
+[e :U 1004 ]
+"393
+[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 393: }
+[e :UE 1003 ]
 }
-"382
-[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 382: static uint8_t mem_abort_armed = 0;
+"396
+[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 396: static uint8_t mem_abort_armed = 0;
 [v _mem_abort_armed `uc ~T0 @X0 1 s ]
 [i _mem_abort_armed
 -> -> 0 `i `uc
 ]
-"384
-[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 384: static uint8_t paddles_closed(void) {
+"398
+[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 398: static uint8_t paddles_closed(void) {
 [v _paddles_closed `(uc ~T0 @X0 1 sf ]
 {
 [e :U _paddles_closed ]
 [f ]
-"385
-[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 385:     return (uint8_t)((!(PORTAbits.RA5)) || (!(PORTAbits.RA4)));
+"399
+[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 399:     return (uint8_t)((!(PORTAbits.RA5)) || (!(PORTAbits.RA4)));
 [e ) -> -> || ! != -> . . _PORTAbits 0 5 `i -> 0 `i ! != -> . . _PORTAbits 0 4 `i -> 0 `i `i `uc ]
-[e $UE 1010  ]
-"386
-[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 386: }
-[e :UE 1010 ]
+[e $UE 1011  ]
+"400
+[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 400: }
+[e :UE 1011 ]
 }
-"388
-[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 388: static void element_delay(int units) {
+"402
+[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 402: static void element_delay(int units) {
 [v _element_delay `(v ~T0 @X0 1 sf1`i ]
 {
 [e :U _element_delay ]
 [v _units `i ~T0 @X0 1 r1 ]
 [f ]
-"389
-[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 389:     int32_t loop_count;
+"403
+[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 403:     int32_t loop_count;
 [v _loop_count `l ~T0 @X0 1 a ]
-"390
-[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 390:     int u;
+"404
+[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 404:     int u;
 [v _u `i ~T0 @X0 1 a ]
-"391
-[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 391:     for (u = 0; u < units; u++) {
+"405
+[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 405:     for (u = 0; u < units; u++) {
 {
 [e = _u -> 0 `i ]
-[e $U 1015  ]
-[e :U 1012 ]
+[e $U 1016  ]
+[e :U 1013 ]
 {
-"392
-[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 392:         if (mem_play_active) {
-[e $ ! != -> _mem_play_active `i -> 0 `i 1016  ]
+"406
+[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 406:         if (mem_play_active) {
+[e $ ! != -> _mem_play_active `i -> 0 `i 1017  ]
 {
-"393
-[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 393:             if (!paddles_closed()) {
-[e $ ! ! != -> ( _paddles_closed ..  `i -> 0 `i 1017  ]
+"407
+[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 407:             if (!paddles_closed()) {
+[e $ ! ! != -> ( _paddles_closed ..  `i -> 0 `i 1018  ]
 {
-"394
-[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 394:                 mem_abort_armed = 1;
+"408
+[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 408:                 mem_abort_armed = 1;
 [e = _mem_abort_armed -> -> 1 `i `uc ]
-"395
-[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 395:             } else if (mem_abort_armed) {
+"409
+[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 409:             } else if (mem_abort_armed) {
 }
-[e $U 1018  ]
-[e :U 1017 ]
-[e $ ! != -> _mem_abort_armed `i -> 0 `i 1019  ]
-{
-"396
-[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 396:                 mem_play_abort = 1;
-[e = _mem_play_abort -> -> 1 `i `uc ]
-"397
-[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 397:                 set_keyer_out(0);
-[e ( _set_keyer_out (1 -> 0 `i ]
-"398
-[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 398:                 return;
-[e $UE 1011  ]
-"399
-[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 399:             }
-}
-[e :U 1019 ]
+[e $U 1019  ]
 [e :U 1018 ]
-"400
-[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 400:         }
-}
-[e :U 1016 ]
-"401
-[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 401:         loop_count = 0;
-[e = _loop_count -> -> 0 `i `l ]
-"402
-[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 402:         while (loop_count++ < cw_loop_delay) {
-[e $U 1020  ]
-[e :U 1021 ]
+[e $ ! != -> _mem_abort_armed `i -> 0 `i 1020  ]
 {
-"403
-[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 403:             _delay((unsigned long)((1)*(32000000/4000000.0)));
-[e ( __delay (1 -> * -> -> 1 `i `d / -> -> 32000000 `l `d .4000000.0 `ul ]
-"404
-[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 404:         }
+"410
+[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 410:                 mem_play_abort = 1;
+[e = _mem_play_abort -> -> 1 `i `uc ]
+"411
+[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 411:                 set_keyer_out(0);
+[e ( _set_keyer_out (1 -> 0 `i ]
+"412
+[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 412:                 return;
+[e $UE 1012  ]
+"413
+[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 413:             }
 }
 [e :U 1020 ]
-"402
-[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 402:         while (loop_count++ < cw_loop_delay) {
-[e $ < ++ _loop_count -> -> 1 `i `l _cw_loop_delay 1021  ]
+[e :U 1019 ]
+"414
+[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 414:         }
+}
+[e :U 1017 ]
+"415
+[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 415:         loop_count = 0;
+[e = _loop_count -> -> 0 `i `l ]
+"416
+[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 416:         while (loop_count++ < cw_loop_delay) {
+[e $U 1021  ]
 [e :U 1022 ]
-"405
-[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 405:     }
+{
+"417
+[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 417:             _delay((unsigned long)((1)*(32000000/4000000.0)));
+[e ( __delay (1 -> * -> -> 1 `i `d / -> -> 32000000 `l `d .4000000.0 `ul ]
+"418
+[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 418:         }
+}
+[e :U 1021 ]
+"416
+[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 416:         while (loop_count++ < cw_loop_delay) {
+[e $ < ++ _loop_count -> -> 1 `i `l _cw_loop_delay 1022  ]
+[e :U 1023 ]
+"419
+[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 419:     }
 }
 [e ++ _u -> 1 `i ]
-[e :U 1015 ]
-[e $ < _u _units 1012  ]
-[e :U 1013 ]
+[e :U 1016 ]
+[e $ < _u _units 1013  ]
+[e :U 1014 ]
 }
-"406
-[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 406: }
-[e :UE 1011 ]
+"420
+[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 420: }
+[e :UE 1012 ]
 }
-"408
-[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 408: static void send_mark(int units) {
+"422
+[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 422: static void send_mark(int units) {
 [v _send_mark `(v ~T0 @X0 1 sf1`i ]
 {
 [e :U _send_mark ]
 [v _units `i ~T0 @X0 1 r1 ]
 [f ]
-"409
-[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 409:     set_keyer_out(1);
+"423
+[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 423:     set_keyer_out(1);
 [e ( _set_keyer_out (1 -> 1 `i ]
-"410
-[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 410:     element_delay(units);
+"424
+[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 424:     element_delay(units);
 [e ( _element_delay (1 _units ]
-"411
-[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 411:     set_keyer_out(0);
+"425
+[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 425:     set_keyer_out(0);
 [e ( _set_keyer_out (1 -> 0 `i ]
-"412
-[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 412: }
-[e :UE 1023 ]
+"426
+[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 426: }
+[e :UE 1024 ]
 }
-"414
-[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 414: static void send_morse_char(char c) {
+"428
+[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 428: static void send_morse_char(char c) {
 [v _send_morse_char `(v ~T0 @X0 1 sf1`uc ]
 {
 [e :U _send_morse_char ]
 [v _c `uc ~T0 @X0 1 r1 ]
 [f ]
-"415
-[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 415:     const char *p;
+"429
+[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 429:     const char *p;
 [v _p `*Cuc ~T0 @X0 1 a ]
-"416
-[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 416:     int i;
+"430
+[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 430:     int i;
 [v _i `i ~T0 @X0 1 a ]
-"419
-[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 419:     if (c == ' ' || c == '\t') {
-[e $ ! || == -> _c `ui -> 32 `ui == -> _c `ui -> 9 `ui 1025  ]
+"433
+[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 433:     if (c == ' ' || c == '\t') {
+[e $ ! || == -> _c `ui -> 32 `ui == -> _c `ui -> 9 `ui 1026  ]
 {
-"420
-[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 420:         element_delay(mem_word_gap);
+"434
+[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 434:         element_delay(mem_word_gap);
 [e ( _element_delay (1 _mem_word_gap ]
-"421
-[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 421:         return;
-[e $UE 1024  ]
-"422
-[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 422:     }
+"435
+[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 435:         return;
+[e $UE 1025  ]
+"436
+[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 436:     }
 }
-[e :U 1025 ]
-"423
-[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 423:     p = morse_lookup(c);
-[e = _p ( _morse_lookup (1 _c ]
-"424
-[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 424:     if (p == ((void*)0))
-[e $ ! == _p -> -> -> 0 `i `*v `*Cuc 1026  ]
-"425
-[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 425:         return;
-[e $UE 1024  ]
 [e :U 1026 ]
-"426
-[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 426:     for (i = 0; p[i] != '\0'; i++) {
+"437
+[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 437:     p = morse_lookup(c);
+[e = _p ( _morse_lookup (1 _c ]
+"438
+[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 438:     if (p == ((void*)0))
+[e $ ! == _p -> -> -> 0 `i `*v `*Cuc 1027  ]
+"439
+[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 439:         return;
+[e $UE 1025  ]
+[e :U 1027 ]
+"440
+[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 440:     for (i = 0; p[i] != '\0'; i++) {
 {
 [e = _i -> 0 `i ]
-[e $U 1030  ]
-[e :U 1027 ]
+[e $U 1031  ]
+[e :U 1028 ]
 {
-"427
-[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 427:         if (mem_play_abort)
-[e $ ! != -> _mem_play_abort `i -> 0 `i 1031  ]
-"428
-[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 428:             return;
-[e $UE 1024  ]
-[e :U 1031 ]
-"429
-[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 429:         if (p[i] == '.')
-[e $ ! == -> *U + _p * -> _i `x -> -> # *U _p `i `x `ui -> 46 `ui 1032  ]
-"430
-[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 430:             send_mark(dot_delay);
-[e ( _send_mark (1 _dot_delay ]
-[e $U 1033  ]
-"431
-[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 431:         else if (p[i] == '-')
+"441
+[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 441:         if (mem_play_abort)
+[e $ ! != -> _mem_play_abort `i -> 0 `i 1032  ]
+"442
+[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 442:             return;
+[e $UE 1025  ]
 [e :U 1032 ]
-[e $ ! == -> *U + _p * -> _i `x -> -> # *U _p `i `x `ui -> 45 `ui 1034  ]
-"432
-[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 432:             send_mark(dash_delay);
-[e ( _send_mark (1 _dash_delay ]
-[e :U 1034 ]
+"443
+[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 443:         if (p[i] == '.')
+[e $ ! == -> *U + _p * -> _i `x -> -> # *U _p `i `x `ui -> 46 `ui 1033  ]
+"444
+[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 444:             send_mark(dot_delay);
+[e ( _send_mark (1 _dot_delay ]
+[e $U 1034  ]
+"445
+[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 445:         else if (p[i] == '-')
 [e :U 1033 ]
-"433
-[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 433:         if (p[i + 1] != '\0')
-[e $ ! != -> *U + _p * -> + _i -> 1 `i `x -> -> # *U _p `i `x `ui -> 0 `ui 1035  ]
-"434
-[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 434:             element_delay(dot_delay);
-[e ( _element_delay (1 _dot_delay ]
+[e $ ! == -> *U + _p * -> _i `x -> -> # *U _p `i `x `ui -> 45 `ui 1035  ]
+"446
+[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 446:             send_mark(dash_delay);
+[e ( _send_mark (1 _dash_delay ]
 [e :U 1035 ]
-"435
-[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 435:     }
+[e :U 1034 ]
+"447
+[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 447:         if (p[i + 1] != '\0')
+[e $ ! != -> *U + _p * -> + _i -> 1 `i `x -> -> # *U _p `i `x `ui -> 0 `ui 1036  ]
+"448
+[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 448:             element_delay(dot_delay);
+[e ( _element_delay (1 _dot_delay ]
+[e :U 1036 ]
+"449
+[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 449:     }
 }
 [e ++ _i -> 1 `i ]
-[e :U 1030 ]
-[e $ != -> *U + _p * -> _i `x -> -> # *U _p `i `x `ui -> 0 `ui 1027  ]
-[e :U 1028 ]
+[e :U 1031 ]
+[e $ != -> *U + _p * -> _i `x -> -> # *U _p `i `x `ui -> 0 `ui 1028  ]
+[e :U 1029 ]
 }
-"436
-[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 436:     element_delay(mem_letter_gap);
+"450
+[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 450:     element_delay(mem_letter_gap);
 [e ( _element_delay (1 _mem_letter_gap ]
-"437
-[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 437: }
-[e :UE 1024 ]
+"451
+[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 451: }
+[e :UE 1025 ]
 }
-"439
-[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 439: static void msg_load_from_eeprom(uint8_t slot) {
+"453
+[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 453: static void msg_load_from_eeprom(uint8_t slot) {
 [v _msg_load_from_eeprom `(v ~T0 @X0 1 sf1`uc ]
 {
 [e :U _msg_load_from_eeprom ]
-[v _slot `uc ~T0 @X0 1 r1 ]
-[f ]
-"440
-[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 440:     uint8_t i;
-[v _i `uc ~T0 @X0 1 a ]
-"441
-[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 441:     uint16_t base;
-[v _base `us ~T0 @X0 1 a ]
-"443
-[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 443:     if (slot >= 4)
-[e $ ! >= -> _slot `i -> 4 `i 1037  ]
-"444
-[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 444:         slot = 0;
-[e = _slot -> -> 0 `i `uc ]
-[e :U 1037 ]
-"445
-[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 445:     cw_msg_len = cw_msg_len__eeprom[slot];
-[e = _cw_msg_len *U + &U _cw_msg_len__eeprom * -> _slot `ux -> -> # *U &U _cw_msg_len__eeprom `ui `ux ]
-"446
-[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 446:     if (cw_msg_len > 48)
-[e $ ! > -> _cw_msg_len `i -> 48 `i 1038  ]
-"447
-[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 447:         cw_msg_len = 48;
-[e = _cw_msg_len -> -> 48 `i `uc ]
-[e :U 1038 ]
-"448
-[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 448:     base = (uint16_t)slot * 48;
-[e = _base -> * -> -> _slot `us `ui -> -> 48 `i `ui `us ]
-"449
-[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 449:     for (i = 0; i < cw_msg_len; i++)
-{
-[e = _i -> -> 0 `i `uc ]
-[e $U 1042  ]
-[e :U 1039 ]
-"450
-[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 450:         cw_msg_ram[i] = cw_msg__eeprom[base + i];
-[e = *U + &U _cw_msg_ram * -> _i `ux -> -> # *U &U _cw_msg_ram `ui `ux *U + &U _cw_msg__eeprom * -> + -> _base `ui -> _i `ui `ux -> -> # *U &U _cw_msg__eeprom `ui `ux ]
-[e ++ _i -> -> 1 `i `uc ]
-[e :U 1042 ]
-[e $ < -> _i `i -> _cw_msg_len `i 1039  ]
-[e :U 1040 ]
-}
-"451
-[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 451: }
-[e :UE 1036 ]
-}
-"453
-[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 453: static void msg_save_to_eeprom(uint8_t slot) {
-[v _msg_save_to_eeprom `(v ~T0 @X0 1 sf1`uc ]
-{
-[e :U _msg_save_to_eeprom ]
 [v _slot `uc ~T0 @X0 1 r1 ]
 [f ]
 "454
@@ -2530,952 +2501,958 @@ Version 4.0 HI-TECH Software Intermediate Code
 [v _base `us ~T0 @X0 1 a ]
 "457
 [; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 457:     if (slot >= 4)
-[e $ ! >= -> _slot `i -> 4 `i 1044  ]
+[e $ ! >= -> _slot `i -> 4 `i 1038  ]
 "458
 [; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 458:         slot = 0;
 [e = _slot -> -> 0 `i `uc ]
-[e :U 1044 ]
+[e :U 1038 ]
 "459
-[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 459:     if (cw_msg_store_len > 48)
-[e $ ! > -> _cw_msg_store_len `i -> 48 `i 1045  ]
+[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 459:     cw_msg_len = cw_msg_len__eeprom[slot];
+[e = _cw_msg_len *U + &U _cw_msg_len__eeprom * -> _slot `ux -> -> # *U &U _cw_msg_len__eeprom `ui `ux ]
 "460
-[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 460:         cw_msg_store_len = 48;
-[e = _cw_msg_store_len -> -> 48 `i `uc ]
-[e :U 1045 ]
+[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 460:     if (cw_msg_len > 48)
+[e $ ! > -> _cw_msg_len `i -> 48 `i 1039  ]
 "461
-[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 461:     base = (uint16_t)slot * 48;
-[e = _base -> * -> -> _slot `us `ui -> -> 48 `i `ui `us ]
+[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 461:         cw_msg_len = 48;
+[e = _cw_msg_len -> -> 48 `i `uc ]
+[e :U 1039 ]
 "462
-[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 462:     cw_msg_len__eeprom[slot] = cw_msg_store_len;
-[e = *U + &U _cw_msg_len__eeprom * -> _slot `ux -> -> # *U &U _cw_msg_len__eeprom `ui `ux _cw_msg_store_len ]
+[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 462:     base = (uint16_t)slot * 48;
+[e = _base -> * -> -> _slot `us `ui -> -> 48 `i `ui `us ]
 "463
-[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 463:     for (i = 0; i < cw_msg_store_len; i++)
+[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 463:     for (i = 0; i < cw_msg_len; i++)
 {
 [e = _i -> -> 0 `i `uc ]
-[e $U 1049  ]
-[e :U 1046 ]
+[e $U 1043  ]
+[e :U 1040 ]
 "464
-[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 464:         cw_msg__eeprom[base + i] = cw_msg_ram[i];
-[e = *U + &U _cw_msg__eeprom * -> + -> _base `ui -> _i `ui `ux -> -> # *U &U _cw_msg__eeprom `ui `ux *U + &U _cw_msg_ram * -> _i `ux -> -> # *U &U _cw_msg_ram `ui `ux ]
+[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 464:         cw_msg_ram[i] = cw_msg__eeprom[base + i];
+[e = *U + &U _cw_msg_ram * -> _i `ux -> -> # *U &U _cw_msg_ram `ui `ux *U + &U _cw_msg__eeprom * -> + -> _base `ui -> _i `ui `ux -> -> # *U &U _cw_msg__eeprom `ui `ux ]
 [e ++ _i -> -> 1 `i `uc ]
-[e :U 1049 ]
-[e $ < -> _i `i -> _cw_msg_store_len `i 1046  ]
-[e :U 1047 ]
+[e :U 1043 ]
+[e $ < -> _i `i -> _cw_msg_len `i 1040  ]
+[e :U 1041 ]
 }
 "465
-[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 465:     cw_msg_len = cw_msg_store_len;
-[e = _cw_msg_len _cw_msg_store_len ]
-"466
-[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 466: }
-[e :UE 1043 ]
+[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 465: }
+[e :UE 1037 ]
 }
+"467
+[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 467: static void msg_save_to_eeprom(uint8_t slot) {
+[v _msg_save_to_eeprom `(v ~T0 @X0 1 sf1`uc ]
+{
+[e :U _msg_save_to_eeprom ]
+[v _slot `uc ~T0 @X0 1 r1 ]
+[f ]
 "468
-[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 468: static void keyer_play_message(void) {
+[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 468:     uint8_t i;
+[v _i `uc ~T0 @X0 1 a ]
+"469
+[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 469:     uint16_t base;
+[v _base `us ~T0 @X0 1 a ]
+"471
+[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 471:     if (slot >= 4)
+[e $ ! >= -> _slot `i -> 4 `i 1045  ]
+"472
+[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 472:         slot = 0;
+[e = _slot -> -> 0 `i `uc ]
+[e :U 1045 ]
+"473
+[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 473:     if (cw_msg_store_len > 48)
+[e $ ! > -> _cw_msg_store_len `i -> 48 `i 1046  ]
+"474
+[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 474:         cw_msg_store_len = 48;
+[e = _cw_msg_store_len -> -> 48 `i `uc ]
+[e :U 1046 ]
+"475
+[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 475:     base = (uint16_t)slot * 48;
+[e = _base -> * -> -> _slot `us `ui -> -> 48 `i `ui `us ]
+"476
+[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 476:     cw_msg_len__eeprom[slot] = cw_msg_store_len;
+[e = *U + &U _cw_msg_len__eeprom * -> _slot `ux -> -> # *U &U _cw_msg_len__eeprom `ui `ux _cw_msg_store_len ]
+"477
+[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 477:     for (i = 0; i < cw_msg_store_len; i++)
+{
+[e = _i -> -> 0 `i `uc ]
+[e $U 1050  ]
+[e :U 1047 ]
+"478
+[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 478:         cw_msg__eeprom[base + i] = cw_msg_ram[i];
+[e = *U + &U _cw_msg__eeprom * -> + -> _base `ui -> _i `ui `ux -> -> # *U &U _cw_msg__eeprom `ui `ux *U + &U _cw_msg_ram * -> _i `ux -> -> # *U &U _cw_msg_ram `ui `ux ]
+[e ++ _i -> -> 1 `i `uc ]
+[e :U 1050 ]
+[e $ < -> _i `i -> _cw_msg_store_len `i 1047  ]
+[e :U 1048 ]
+}
+"479
+[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 479:     cw_msg_len = cw_msg_store_len;
+[e = _cw_msg_len _cw_msg_store_len ]
+"480
+[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 480: }
+[e :UE 1044 ]
+}
+"482
+[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 482: static void keyer_play_message(void) {
 [v _keyer_play_message `(v ~T0 @X0 1 sf ]
 {
 [e :U _keyer_play_message ]
 [f ]
-"469
-[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 469:     uint8_t i;
+"483
+[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 483:     uint8_t i;
 [v _i `uc ~T0 @X0 1 a ]
-"470
-[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 470:     uint16_t wait;
+"484
+[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 484:     uint16_t wait;
 [v _wait `us ~T0 @X0 1 a ]
-"472
-[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 472:     msg_load_from_eeprom(mem_current_slot);
+"486
+[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 486:     msg_load_from_eeprom(mem_current_slot);
 [e ( _msg_load_from_eeprom (1 _mem_current_slot ]
-"473
-[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 473:     if (cw_msg_len == 0)
-[e $ ! == -> _cw_msg_len `i -> 0 `i 1051  ]
-"474
-[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 474:         return;
-[e $UE 1050  ]
-[e :U 1051 ]
-"480
-[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 480:     for (wait = 0; wait < 500 && paddles_closed(); wait++) {
+"487
+[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 487:     if (cw_msg_len == 0)
+[e $ ! == -> _cw_msg_len `i -> 0 `i 1052  ]
+"488
+[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 488:         return;
+[e $UE 1051  ]
+[e :U 1052 ]
+"494
+[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 494:     for (wait = 0; wait < 500 && paddles_closed(); wait++) {
 {
 [e = _wait -> -> 0 `i `us ]
-[e $U 1055  ]
-[e :U 1052 ]
+[e $U 1056  ]
+[e :U 1053 ]
 {
-"481
-[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 481:         _delay((unsigned long)((1)*(32000000/4000.0)));
+"495
+[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 495:         _delay((unsigned long)((1)*(32000000/4000.0)));
 [e ( __delay (1 -> * -> -> 1 `i `d / -> -> 32000000 `l `d .4000.0 `ul ]
-"482
-[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 482:     }
+"496
+[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 496:     }
 }
 [e ++ _wait -> -> 1 `i `us ]
-[e :U 1055 ]
-[e $ && < -> _wait `ui -> -> 500 `i `ui != -> ( _paddles_closed ..  `i -> 0 `i 1052  ]
-[e :U 1053 ]
+[e :U 1056 ]
+[e $ && < -> _wait `ui -> -> 500 `i `ui != -> ( _paddles_closed ..  `i -> 0 `i 1053  ]
+[e :U 1054 ]
 }
-"484
-[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 484:     mem_play_active = 1;
+"498
+[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 498:     mem_play_active = 1;
 [e = _mem_play_active -> -> 1 `i `uc ]
-"485
-[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 485:     mem_play_abort = 0;
+"499
+[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 499:     mem_play_abort = 0;
 [e = _mem_play_abort -> -> 0 `i `uc ]
-"486
-[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 486:     mem_abort_armed = 0;
+"500
+[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 500:     mem_abort_armed = 0;
 [e = _mem_abort_armed -> -> 0 `i `uc ]
-"487
-[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 487:     keyer_update();
+"501
+[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 501:     keyer_update();
 [e ( _keyer_update ..  ]
-"489
-[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 489:     for (i = 0; i < cw_msg_len; i++) {
+"503
+[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 503:     for (i = 0; i < cw_msg_len; i++) {
 {
 [e = _i -> -> 0 `i `uc ]
-[e $U 1059  ]
-[e :U 1056 ]
+[e $U 1060  ]
+[e :U 1057 ]
 {
-"490
-[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 490:         if (mem_play_abort)
-[e $ ! != -> _mem_play_abort `i -> 0 `i 1060  ]
-"491
-[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 491:             break;
-[e $U 1057  ]
-[e :U 1060 ]
-"492
-[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 492:         send_morse_char((char)cw_msg_ram[i]);
+"504
+[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 504:         if (mem_play_abort)
+[e $ ! != -> _mem_play_abort `i -> 0 `i 1061  ]
+"505
+[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 505:             break;
+[e $U 1058  ]
+[e :U 1061 ]
+"506
+[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 506:         send_morse_char((char)cw_msg_ram[i]);
 [e ( _send_morse_char (1 -> *U + &U _cw_msg_ram * -> _i `ux -> -> # *U &U _cw_msg_ram `ui `ux `uc ]
-"493
-[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 493:     }
+"507
+[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 507:     }
 }
 [e ++ _i -> -> 1 `i `uc ]
-[e :U 1059 ]
-[e $ < -> _i `i -> _cw_msg_len `i 1056  ]
-[e :U 1057 ]
+[e :U 1060 ]
+[e $ < -> _i `i -> _cw_msg_len `i 1057  ]
+[e :U 1058 ]
 }
-"495
-[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 495:     set_keyer_out(0);
+"509
+[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 509:     set_keyer_out(0);
 [e ( _set_keyer_out (1 -> 0 `i ]
-"496
-[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 496:     keyer_idle_release();
+"510
+[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 510:     keyer_idle_release();
 [e ( _keyer_idle_release ..  ]
-"497
-[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 497:     mem_play_active = 0;
+"511
+[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 511:     mem_play_active = 0;
 [e = _mem_play_active -> -> 0 `i `uc ]
-"498
-[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 498:     mem_play_abort = 0;
+"512
+[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 512:     mem_play_abort = 0;
 [e = _mem_play_abort -> -> 0 `i `uc ]
-"499
-[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 499:     mem_abort_armed = 0;
+"513
+[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 513:     mem_abort_armed = 0;
 [e = _mem_abort_armed -> -> 0 `i `uc ]
-"500
-[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 500: }
-[e :UE 1050 ]
+"514
+[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 514: }
+[e :UE 1051 ]
 }
-"502
-[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 502: void keyer() {
+"516
+[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 516: void keyer() {
 [v _keyer `(v ~T0 @X0 1 ef ]
 {
 [e :U _keyer ]
 [f ]
-"503
-[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 503:     int32_t loop_count = 0;
+"517
+[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 517:     int32_t loop_count = 0;
 [v _loop_count `l ~T0 @X0 1 a ]
 [e = _loop_count -> -> 0 `i `l ]
-"506
-[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 506:     if (mem_play_active)
-[e $ ! != -> _mem_play_active `i -> 0 `i 1062  ]
-"507
-[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 507:         return;
-[e $UE 1061  ]
-[e :U 1062 ]
-"515
-[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 515:     if (cw_keyer_mode == 0) {
-[e $ ! == _cw_keyer_mode -> 0 `i 1063  ]
-{
-"516
-[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 516:         kcwl = !(PORTAbits.RA5);
-[e = _kcwl -> ! != -> . . _PORTAbits 0 5 `i -> 0 `i `i ]
-"517
-[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 517:         kcwr = !(PORTAbits.RA4);
-[e = _kcwr -> ! != -> . . _PORTAbits 0 4 `i -> 0 `i `i ]
-"519
-[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 519:         if (kcwl || kcwr) {
-[e $ ! || != _kcwl -> 0 `i != _kcwr -> 0 `i 1064  ]
-{
 "520
-[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 520:             set_keyer_out(1);
-[e ( _set_keyer_out (1 -> 1 `i ]
+[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 520:     if (mem_play_active)
+[e $ ! != -> _mem_play_active `i -> 0 `i 1063  ]
 "521
-[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 521:         } else {
-}
-[e $U 1065  ]
-[e :U 1064 ]
-{
-"522
-[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 522:             set_keyer_out(0);
-[e ( _set_keyer_out (1 -> 0 `i ]
-"523
-[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 523:             keyer_idle_release();
-[e ( _keyer_idle_release ..  ]
-"524
-[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 524:         }
-}
-[e :U 1065 ]
-"526
-[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 526:         loop_count = 0;
-[e = _loop_count -> -> 0 `i `l ]
-"527
-[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 527:         while (loop_count++ < 50) {
-[e $U 1066  ]
-[e :U 1067 ]
-{
-"528
-[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 528:             _delay((unsigned long)((1)*(32000000/4000000.0)));
-[e ( __delay (1 -> * -> -> 1 `i `d / -> -> 32000000 `l `d .4000000.0 `ul ]
+[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 521:         return;
+[e $UE 1062  ]
+[e :U 1063 ]
 "529
-[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 529:         }
+[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 529:     if (cw_keyer_mode == 0) {
+[e $ ! == _cw_keyer_mode -> 0 `i 1064  ]
+{
+"530
+[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 530:         kcwl = !(PORTAbits.RA5);
+[e = _kcwl -> ! != -> . . _PORTAbits 0 5 `i -> 0 `i `i ]
+"531
+[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 531:         kcwr = !(PORTAbits.RA4);
+[e = _kcwr -> ! != -> . . _PORTAbits 0 4 `i -> 0 `i `i ]
+"533
+[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 533:         if (kcwl || kcwr) {
+[e $ ! || != _kcwl -> 0 `i != _kcwr -> 0 `i 1065  ]
+{
+"534
+[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 534:             set_keyer_out(1);
+[e ( _set_keyer_out (1 -> 1 `i ]
+"535
+[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 535:         } else {
+}
+[e $U 1066  ]
+[e :U 1065 ]
+{
+"536
+[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 536:             set_keyer_out(0);
+[e ( _set_keyer_out (1 -> 0 `i ]
+"537
+[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 537:             keyer_idle_release();
+[e ( _keyer_idle_release ..  ]
+"538
+[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 538:         }
 }
 [e :U 1066 ]
-"527
-[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 527:         while (loop_count++ < 50) {
-[e $ < ++ _loop_count -> -> 1 `i `l -> -> 50 `i `l 1067  ]
-[e :U 1068 ]
-"530
-[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 530:         return;
-[e $UE 1061  ]
-"531
-[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 531:     }
-}
-[e :U 1063 ]
-"533
-[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 533:     key_state = CHECK;
-[e = _key_state -> . `E6988 0 `i ]
-"534
-[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 534:     while (key_state != EXITLOOP) {
-[e $U 1069  ]
-[e :U 1070 ]
-{
-"535
-[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 535:         kcwl = !(PORTAbits.RA5);
-[e = _kcwl -> ! != -> . . _PORTAbits 0 5 `i -> 0 `i `i ]
-"536
-[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 536:         kcwr = !(PORTAbits.RA4);
-[e = _kcwr -> ! != -> . . _PORTAbits 0 4 `i -> 0 `i `i ]
-"537
-[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 537:         switch (key_state) {
-[e $U 1073  ]
-{
-"538
-[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 538:             case CHECK:
-[e :U 1074 ]
-"539
-[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 539:                 if (*kdot)
-[e $ ! != *U _kdot -> 0 `i 1075  ]
 "540
-[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 540:                     key_state = PREDOT;
-[e = _key_state -> . `E6988 1 `i ]
-[e $U 1076  ]
+[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 540:         loop_count = 0;
+[e = _loop_count -> -> 0 `i `l ]
 "541
-[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 541:                 else if (*kdash)
-[e :U 1075 ]
-[e $ ! != *U _kdash -> 0 `i 1077  ]
+[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 541:         while (loop_count++ < 50) {
+[e $U 1067  ]
+[e :U 1068 ]
+{
 "542
-[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 542:                     key_state = PREDASH;
-[e = _key_state -> . `E6988 2 `i ]
-[e $U 1078  ]
+[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 542:             _delay((unsigned long)((1)*(32000000/4000000.0)));
+[e ( __delay (1 -> * -> -> 1 `i `d / -> -> 32000000 `l `d .4000000.0 `ul ]
 "543
-[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 543:                 else {
-[e :U 1077 ]
-{
+[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 543:         }
+}
+[e :U 1067 ]
+"541
+[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 541:         while (loop_count++ < 50) {
+[e $ < ++ _loop_count -> -> 1 `i `l -> -> 50 `i `l 1068  ]
+[e :U 1069 ]
 "544
-[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 544:                     set_keyer_out(0);
-[e ( _set_keyer_out (1 -> 0 `i ]
+[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 544:         return;
+[e $UE 1062  ]
 "545
-[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 545:                     key_state = EXITLOOP;
-[e = _key_state -> . `E6988 10 `i ]
-"546
-[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 546:                 }
+[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 545:     }
 }
-[e :U 1078 ]
-[e :U 1076 ]
+[e :U 1064 ]
 "547
-[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 547:                 break;
-[e $U 1072  ]
+[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 547:     key_state = CHECK;
+[e = _key_state -> . `E6988 0 `i ]
 "548
-[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 548:             case PREDOT:
-[e :U 1079 ]
+[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 548:     while (key_state != EXITLOOP) {
+[e $U 1070  ]
+[e :U 1071 ]
+{
 "549
-[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 549:                 clear_memory();
-[e ( _clear_memory ..  ]
+[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 549:         kcwl = !(PORTAbits.RA5);
+[e = _kcwl -> ! != -> . . _PORTAbits 0 5 `i -> 0 `i `i ]
 "550
-[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 550:                 key_state = SENDDOT;
-[e = _key_state -> . `E6988 3 `i ]
+[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 550:         kcwr = !(PORTAbits.RA4);
+[e = _kcwr -> ! != -> . . _PORTAbits 0 4 `i -> 0 `i `i ]
 "551
-[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 551:                 break;
-[e $U 1072  ]
+[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 551:         switch (key_state) {
+[e $U 1074  ]
+{
 "552
-[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 552:             case PREDASH:
-[e :U 1080 ]
+[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 552:             case CHECK:
+[e :U 1075 ]
 "553
-[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 553:                 clear_memory();
-[e ( _clear_memory ..  ]
+[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 553:                 if (*kdot)
+[e $ ! != *U _kdot -> 0 `i 1076  ]
 "554
-[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 554:                 key_state = SENDDASH;
-[e = _key_state -> . `E6988 4 `i ]
+[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 554:                     key_state = PREDOT;
+[e = _key_state -> . `E6988 1 `i ]
+[e $U 1077  ]
 "555
-[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 555:                 break;
-[e $U 1072  ]
+[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 555:                 else if (*kdash)
+[e :U 1076 ]
+[e $ ! != *U _kdash -> 0 `i 1078  ]
 "556
-[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 556:             case SENDDOT:
-[e :U 1081 ]
-"557
-[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 557:                 set_keyer_out(1);
-[e ( _set_keyer_out (1 -> 1 `i ]
-"558
-[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 558:                 if (kdelay == dot_delay) {
-[e $ ! == _kdelay _dot_delay 1082  ]
-{
-"559
-[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 559:                     kdelay = 0;
-[e = _kdelay -> 0 `i ]
-"560
-[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 560:                     set_keyer_out(0);
-[e ( _set_keyer_out (1 -> 0 `i ]
-"561
-[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 561:                     key_state = DOTDELAY;
-[e = _key_state -> . `E6988 5 `i ]
-"562
-[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 562:                 } else
-}
-[e $U 1083  ]
-[e :U 1082 ]
-"563
-[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 563:                     kdelay++;
-[e ++ _kdelay -> 1 `i ]
-[e :U 1083 ]
-"564
-[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 564:                 if (cw_keyer_mode == 1) {
-[e $ ! == _cw_keyer_mode -> 1 `i 1084  ]
-{
-"565
-[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 565:                     if (!*kdot && !*kdash)
-[e $ ! && ! != *U _kdot -> 0 `i ! != *U _kdash -> 0 `i 1085  ]
-"566
-[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 566:                         dash_memory = 0;
-[e = _dash_memory -> 0 `i ]
-[e $U 1086  ]
-"567
-[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 567:                     else if (*kdash)
-[e :U 1085 ]
-[e $ ! != *U _kdash -> 0 `i 1087  ]
-"568
-[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 568:                         dash_memory = 1;
-[e = _dash_memory -> 1 `i ]
-[e :U 1087 ]
-[e :U 1086 ]
-"569
-[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 569:                 } else if (cw_keyer_mode == 2) {
-}
-[e $U 1088  ]
-[e :U 1084 ]
-[e $ ! == _cw_keyer_mode -> 2 `i 1089  ]
-{
-"570
-[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 570:                     if (*kdash)
-[e $ ! != *U _kdash -> 0 `i 1090  ]
-"571
-[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 571:                         dash_memory = 1;
-[e = _dash_memory -> 1 `i ]
-[e :U 1090 ]
-"572
-[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 572:                 }
-}
-[e :U 1089 ]
-[e :U 1088 ]
-"573
-[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 573:                 break;
-[e $U 1072  ]
-"574
-[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 574:             case SENDDASH:
-[e :U 1091 ]
-"575
-[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 575:                 set_keyer_out(1);
-[e ( _set_keyer_out (1 -> 1 `i ]
-"576
-[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 576:                 if (kdelay == dash_delay) {
-[e $ ! == _kdelay _dash_delay 1092  ]
-{
-"577
-[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 577:                     kdelay = 0;
-[e = _kdelay -> 0 `i ]
-"578
-[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 578:                     set_keyer_out(0);
-[e ( _set_keyer_out (1 -> 0 `i ]
-"579
-[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 579:                     key_state = DASHDELAY;
-[e = _key_state -> . `E6988 6 `i ]
-"580
-[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 580:                 } else
-}
-[e $U 1093  ]
-[e :U 1092 ]
-"581
-[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 581:                     kdelay++;
-[e ++ _kdelay -> 1 `i ]
-[e :U 1093 ]
-"582
-[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 582:                 if (cw_keyer_mode == 1) {
-[e $ ! == _cw_keyer_mode -> 1 `i 1094  ]
-{
-"583
-[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 583:                     if (!*kdot && !*kdash)
-[e $ ! && ! != *U _kdot -> 0 `i ! != *U _kdash -> 0 `i 1095  ]
-"584
-[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 584:                         dot_memory = 0;
-[e = _dot_memory -> 0 `i ]
-[e $U 1096  ]
-"585
-[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 585:                     else if (*kdot)
-[e :U 1095 ]
-[e $ ! != *U _kdot -> 0 `i 1097  ]
-"586
-[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 586:                         dot_memory = 1;
-[e = _dot_memory -> 1 `i ]
-[e :U 1097 ]
-[e :U 1096 ]
-"587
-[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 587:                 } else if (cw_keyer_mode == 2) {
-}
-[e $U 1098  ]
-[e :U 1094 ]
-[e $ ! == _cw_keyer_mode -> 2 `i 1099  ]
-{
-"588
-[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 588:                     if (*kdot)
-[e $ ! != *U _kdot -> 0 `i 1100  ]
-"589
-[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 589:                         dot_memory = 1;
-[e = _dot_memory -> 1 `i ]
-[e :U 1100 ]
-"590
-[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 590:                 }
-}
-[e :U 1099 ]
-[e :U 1098 ]
-"591
-[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 591:                 break;
-[e $U 1072  ]
-"592
-[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 592:             case DOTDELAY:
-[e :U 1101 ]
-"593
-[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 593:                 if (kdelay == dot_delay) {
-[e $ ! == _kdelay _dot_delay 1102  ]
-{
-"594
-[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 594:                     kdelay = 0;
-[e = _kdelay -> 0 `i ]
-"595
-[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 595:                     if (!*kdot && cw_keyer_mode == 0)
-[e $ ! && ! != *U _kdot -> 0 `i == _cw_keyer_mode -> 0 `i 1103  ]
-"596
-[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 596:                         key_state = EXITLOOP;
-[e = _key_state -> . `E6988 10 `i ]
-[e $U 1104  ]
-"597
-[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 597:                     else if (dash_memory)
-[e :U 1103 ]
-[e $ ! != _dash_memory -> 0 `i 1105  ]
-"598
-[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 598:                         key_state = PREDASH;
+[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 556:                     key_state = PREDASH;
 [e = _key_state -> . `E6988 2 `i ]
-[e $U 1106  ]
-"599
-[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 599:                     else
-[e :U 1105 ]
-"600
-[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 600:                         key_state = DOTHELD;
-[e = _key_state -> . `E6988 7 `i ]
-[e :U 1106 ]
-[e :U 1104 ]
-"601
-[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 601:                 } else
+[e $U 1079  ]
+"557
+[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 557:                 else {
+[e :U 1078 ]
+{
+"558
+[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 558:                     set_keyer_out(0);
+[e ( _set_keyer_out (1 -> 0 `i ]
+"559
+[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 559:                     key_state = EXITLOOP;
+[e = _key_state -> . `E6988 10 `i ]
+"560
+[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 560:                 }
 }
-[e $U 1107  ]
-[e :U 1102 ]
-"602
-[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 602:                     kdelay++;
+[e :U 1079 ]
+[e :U 1077 ]
+"561
+[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 561:                 break;
+[e $U 1073  ]
+"562
+[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 562:             case PREDOT:
+[e :U 1080 ]
+"563
+[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 563:                 clear_memory();
+[e ( _clear_memory ..  ]
+"564
+[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 564:                 key_state = SENDDOT;
+[e = _key_state -> . `E6988 3 `i ]
+"565
+[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 565:                 break;
+[e $U 1073  ]
+"566
+[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 566:             case PREDASH:
+[e :U 1081 ]
+"567
+[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 567:                 clear_memory();
+[e ( _clear_memory ..  ]
+"568
+[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 568:                 key_state = SENDDASH;
+[e = _key_state -> . `E6988 4 `i ]
+"569
+[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 569:                 break;
+[e $U 1073  ]
+"570
+[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 570:             case SENDDOT:
+[e :U 1082 ]
+"571
+[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 571:                 set_keyer_out(1);
+[e ( _set_keyer_out (1 -> 1 `i ]
+"572
+[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 572:                 if (kdelay == dot_delay) {
+[e $ ! == _kdelay _dot_delay 1083  ]
+{
+"573
+[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 573:                     kdelay = 0;
+[e = _kdelay -> 0 `i ]
+"574
+[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 574:                     set_keyer_out(0);
+[e ( _set_keyer_out (1 -> 0 `i ]
+"575
+[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 575:                     key_state = DOTDELAY;
+[e = _key_state -> . `E6988 5 `i ]
+"576
+[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 576:                 } else
+}
+[e $U 1084  ]
+[e :U 1083 ]
+"577
+[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 577:                     kdelay++;
 [e ++ _kdelay -> 1 `i ]
-[e :U 1107 ]
-"603
-[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 603:                 if (*kdash)
-[e $ ! != *U _kdash -> 0 `i 1108  ]
-"604
-[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 604:                     dash_memory = 1;
+[e :U 1084 ]
+"578
+[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 578:                 if (cw_keyer_mode == 1) {
+[e $ ! == _cw_keyer_mode -> 1 `i 1085  ]
+{
+"579
+[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 579:                     if (!*kdot && !*kdash)
+[e $ ! && ! != *U _kdot -> 0 `i ! != *U _kdash -> 0 `i 1086  ]
+"580
+[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 580:                         dash_memory = 0;
+[e = _dash_memory -> 0 `i ]
+[e $U 1087  ]
+"581
+[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 581:                     else if (*kdash)
+[e :U 1086 ]
+[e $ ! != *U _kdash -> 0 `i 1088  ]
+"582
+[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 582:                         dash_memory = 1;
 [e = _dash_memory -> 1 `i ]
-[e :U 1108 ]
+[e :U 1088 ]
+[e :U 1087 ]
+"583
+[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 583:                 } else if (cw_keyer_mode == 2) {
+}
+[e $U 1089  ]
+[e :U 1085 ]
+[e $ ! == _cw_keyer_mode -> 2 `i 1090  ]
+{
+"584
+[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 584:                     if (*kdash)
+[e $ ! != *U _kdash -> 0 `i 1091  ]
+"585
+[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 585:                         dash_memory = 1;
+[e = _dash_memory -> 1 `i ]
+[e :U 1091 ]
+"586
+[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 586:                 }
+}
+[e :U 1090 ]
+[e :U 1089 ]
+"587
+[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 587:                 break;
+[e $U 1073  ]
+"588
+[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 588:             case SENDDASH:
+[e :U 1092 ]
+"589
+[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 589:                 set_keyer_out(1);
+[e ( _set_keyer_out (1 -> 1 `i ]
+"590
+[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 590:                 if (kdelay == dash_delay) {
+[e $ ! == _kdelay _dash_delay 1093  ]
+{
+"591
+[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 591:                     kdelay = 0;
+[e = _kdelay -> 0 `i ]
+"592
+[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 592:                     set_keyer_out(0);
+[e ( _set_keyer_out (1 -> 0 `i ]
+"593
+[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 593:                     key_state = DASHDELAY;
+[e = _key_state -> . `E6988 6 `i ]
+"594
+[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 594:                 } else
+}
+[e $U 1094  ]
+[e :U 1093 ]
+"595
+[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 595:                     kdelay++;
+[e ++ _kdelay -> 1 `i ]
+[e :U 1094 ]
+"596
+[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 596:                 if (cw_keyer_mode == 1) {
+[e $ ! == _cw_keyer_mode -> 1 `i 1095  ]
+{
+"597
+[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 597:                     if (!*kdot && !*kdash)
+[e $ ! && ! != *U _kdot -> 0 `i ! != *U _kdash -> 0 `i 1096  ]
+"598
+[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 598:                         dot_memory = 0;
+[e = _dot_memory -> 0 `i ]
+[e $U 1097  ]
+"599
+[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 599:                     else if (*kdot)
+[e :U 1096 ]
+[e $ ! != *U _kdot -> 0 `i 1098  ]
+"600
+[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 600:                         dot_memory = 1;
+[e = _dot_memory -> 1 `i ]
+[e :U 1098 ]
+[e :U 1097 ]
+"601
+[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 601:                 } else if (cw_keyer_mode == 2) {
+}
+[e $U 1099  ]
+[e :U 1095 ]
+[e $ ! == _cw_keyer_mode -> 2 `i 1100  ]
+{
+"602
+[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 602:                     if (*kdot)
+[e $ ! != *U _kdot -> 0 `i 1101  ]
+"603
+[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 603:                         dot_memory = 1;
+[e = _dot_memory -> 1 `i ]
+[e :U 1101 ]
+"604
+[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 604:                 }
+}
+[e :U 1100 ]
+[e :U 1099 ]
 "605
 [; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 605:                 break;
-[e $U 1072  ]
+[e $U 1073  ]
 "606
-[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 606:             case DASHDELAY:
-[e :U 1109 ]
+[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 606:             case DOTDELAY:
+[e :U 1102 ]
 "607
 [; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 607:                 if (kdelay == dot_delay) {
-[e $ ! == _kdelay _dot_delay 1110  ]
+[e $ ! == _kdelay _dot_delay 1103  ]
 {
 "608
 [; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 608:                     kdelay = 0;
 [e = _kdelay -> 0 `i ]
 "609
-[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 609:                     if (dot_memory)
-[e $ ! != _dot_memory -> 0 `i 1111  ]
+[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 609:                     if (!*kdot && cw_keyer_mode == 0)
+[e $ ! && ! != *U _kdot -> 0 `i == _cw_keyer_mode -> 0 `i 1104  ]
 "610
-[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 610:                         key_state = PREDOT;
-[e = _key_state -> . `E6988 1 `i ]
-[e $U 1112  ]
+[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 610:                         key_state = EXITLOOP;
+[e = _key_state -> . `E6988 10 `i ]
+[e $U 1105  ]
 "611
-[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 611:                     else
-[e :U 1111 ]
+[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 611:                     else if (dash_memory)
+[e :U 1104 ]
+[e $ ! != _dash_memory -> 0 `i 1106  ]
 "612
-[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 612:                         key_state = DASHHELD;
-[e = _key_state -> . `E6988 8 `i ]
-[e :U 1112 ]
+[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 612:                         key_state = PREDASH;
+[e = _key_state -> . `E6988 2 `i ]
+[e $U 1107  ]
 "613
-[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 613:                 } else
-}
-[e $U 1113  ]
-[e :U 1110 ]
+[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 613:                     else
+[e :U 1106 ]
 "614
-[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 614:                     kdelay++;
-[e ++ _kdelay -> 1 `i ]
-[e :U 1113 ]
+[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 614:                         key_state = DOTHELD;
+[e = _key_state -> . `E6988 7 `i ]
+[e :U 1107 ]
+[e :U 1105 ]
 "615
-[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 615:                 if (*kdot)
-[e $ ! != *U _kdot -> 0 `i 1114  ]
+[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 615:                 } else
+}
+[e $U 1108  ]
+[e :U 1103 ]
 "616
-[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 616:                     dot_memory = 1;
-[e = _dot_memory -> 1 `i ]
-[e :U 1114 ]
-"617
-[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 617:                 break;
-[e $U 1072  ]
-"618
-[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 618:             case DOTHELD:
-[e :U 1115 ]
-"619
-[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 619:                 if (*kdot)
-[e $ ! != *U _kdot -> 0 `i 1116  ]
-"620
-[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 620:                     key_state = PREDOT;
-[e = _key_state -> . `E6988 1 `i ]
-[e $U 1117  ]
-"621
-[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 621:                 else if (*kdash)
-[e :U 1116 ]
-[e $ ! != *U _kdash -> 0 `i 1118  ]
-"622
-[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 622:                     key_state = PREDASH;
-[e = _key_state -> . `E6988 2 `i ]
-[e $U 1119  ]
-"623
-[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 623:                 else if (cw_keyer_spacing) {
-[e :U 1118 ]
-[e $ ! != _cw_keyer_spacing -> 0 `i 1120  ]
-{
-"624
-[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 624:                     clear_memory();
-[e ( _clear_memory ..  ]
-"625
-[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 625:                     key_state = LETTERSPACE;
-[e = _key_state -> . `E6988 9 `i ]
-"626
-[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 626:                 } else
-}
-[e $U 1121  ]
-[e :U 1120 ]
-"627
-[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 627:                     key_state = EXITLOOP;
-[e = _key_state -> . `E6988 10 `i ]
-[e :U 1121 ]
-[e :U 1119 ]
-[e :U 1117 ]
-"628
-[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 628:                 break;
-[e $U 1072  ]
-"629
-[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 629:             case DASHHELD:
-[e :U 1122 ]
-"630
-[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 630:                 if (*kdash)
-[e $ ! != *U _kdash -> 0 `i 1123  ]
-"631
-[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 631:                     key_state = PREDASH;
-[e = _key_state -> . `E6988 2 `i ]
-[e $U 1124  ]
-"632
-[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 632:                 else if (*kdot)
-[e :U 1123 ]
-[e $ ! != *U _kdot -> 0 `i 1125  ]
-"633
-[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 633:                     key_state = PREDOT;
-[e = _key_state -> . `E6988 1 `i ]
-[e $U 1126  ]
-"634
-[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 634:                 else if (cw_keyer_spacing) {
-[e :U 1125 ]
-[e $ ! != _cw_keyer_spacing -> 0 `i 1127  ]
-{
-"635
-[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 635:                     clear_memory();
-[e ( _clear_memory ..  ]
-"636
-[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 636:                     key_state = LETTERSPACE;
-[e = _key_state -> . `E6988 9 `i ]
-"637
-[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 637:                 } else
-}
-[e $U 1128  ]
-[e :U 1127 ]
-"638
-[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 638:                     key_state = EXITLOOP;
-[e = _key_state -> . `E6988 10 `i ]
-[e :U 1128 ]
-[e :U 1126 ]
-[e :U 1124 ]
-"639
-[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 639:                 break;
-[e $U 1072  ]
-"640
-[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 640:             case LETTERSPACE:
-[e :U 1129 ]
-"641
-[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 641:                 if (kdelay == 2 * dot_delay) {
-[e $ ! == _kdelay * -> 2 `i _dot_delay 1130  ]
-{
-"642
-[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 642:                     kdelay = 0;
-[e = _kdelay -> 0 `i ]
-"643
-[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 643:                     if (dot_memory)
-[e $ ! != _dot_memory -> 0 `i 1131  ]
-"644
-[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 644:                         key_state = PREDOT;
-[e = _key_state -> . `E6988 1 `i ]
-[e $U 1132  ]
-"645
-[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 645:                     else if (dash_memory)
-[e :U 1131 ]
-[e $ ! != _dash_memory -> 0 `i 1133  ]
-"646
-[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 646:                         key_state = PREDASH;
-[e = _key_state -> . `E6988 2 `i ]
-[e $U 1134  ]
-"647
-[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 647:                     else
-[e :U 1133 ]
-"648
-[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 648:                         key_state = EXITLOOP;
-[e = _key_state -> . `E6988 10 `i ]
-[e :U 1134 ]
-[e :U 1132 ]
-"649
-[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 649:                 } else
-}
-[e $U 1135  ]
-[e :U 1130 ]
-"650
-[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 650:                     kdelay++;
+[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 616:                     kdelay++;
 [e ++ _kdelay -> 1 `i ]
-[e :U 1135 ]
-"651
-[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 651:                 if (*kdot)
-[e $ ! != *U _kdot -> 0 `i 1136  ]
-"652
-[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 652:                     dot_memory = 1;
-[e = _dot_memory -> 1 `i ]
-[e :U 1136 ]
-"653
-[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 653:                 if (*kdash)
-[e $ ! != *U _kdash -> 0 `i 1137  ]
-"654
-[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 654:                     dash_memory = 1;
+[e :U 1108 ]
+"617
+[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 617:                 if (*kdash)
+[e $ ! != *U _kdash -> 0 `i 1109  ]
+"618
+[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 618:                     dash_memory = 1;
 [e = _dash_memory -> 1 `i ]
-[e :U 1137 ]
-"655
-[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 655:                 break;
-[e $U 1072  ]
-"656
-[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 656:             default:
-[e :U 1138 ]
-"657
-[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 657:                 key_state = EXITLOOP;
-[e = _key_state -> . `E6988 10 `i ]
-"658
-[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 658:         }
-}
-[e $U 1072  ]
-[e :U 1073 ]
-[e [\ _key_state , $ . `E6988 0 1074
- , $ . `E6988 1 1079
- , $ . `E6988 2 1080
- , $ . `E6988 3 1081
- , $ . `E6988 4 1091
- , $ . `E6988 5 1101
- , $ . `E6988 6 1109
- , $ . `E6988 7 1115
- , $ . `E6988 8 1122
- , $ . `E6988 9 1129
- 1138 ]
-[e :U 1072 ]
-"659
-[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 659:         loop_count = 0;
-[e = _loop_count -> -> 0 `i `l ]
-"660
-[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 660:         while (loop_count++ < cw_loop_delay) {
-[e $U 1139  ]
-[e :U 1140 ]
+[e :U 1109 ]
+"619
+[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 619:                 break;
+[e $U 1073  ]
+"620
+[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 620:             case DASHDELAY:
+[e :U 1110 ]
+"621
+[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 621:                 if (kdelay == dot_delay) {
+[e $ ! == _kdelay _dot_delay 1111  ]
 {
-"661
-[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 661:             _delay((unsigned long)((1)*(32000000/4000000.0)));
-[e ( __delay (1 -> * -> -> 1 `i `d / -> -> 32000000 `l `d .4000000.0 `ul ]
-"662
-[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 662:         }
+"622
+[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 622:                     kdelay = 0;
+[e = _kdelay -> 0 `i ]
+"623
+[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 623:                     if (dot_memory)
+[e $ ! != _dot_memory -> 0 `i 1112  ]
+"624
+[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 624:                         key_state = PREDOT;
+[e = _key_state -> . `E6988 1 `i ]
+[e $U 1113  ]
+"625
+[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 625:                     else
+[e :U 1112 ]
+"626
+[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 626:                         key_state = DASHHELD;
+[e = _key_state -> . `E6988 8 `i ]
+[e :U 1113 ]
+"627
+[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 627:                 } else
 }
-[e :U 1139 ]
+[e $U 1114  ]
+[e :U 1111 ]
+"628
+[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 628:                     kdelay++;
+[e ++ _kdelay -> 1 `i ]
+[e :U 1114 ]
+"629
+[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 629:                 if (*kdot)
+[e $ ! != *U _kdot -> 0 `i 1115  ]
+"630
+[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 630:                     dot_memory = 1;
+[e = _dot_memory -> 1 `i ]
+[e :U 1115 ]
+"631
+[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 631:                 break;
+[e $U 1073  ]
+"632
+[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 632:             case DOTHELD:
+[e :U 1116 ]
+"633
+[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 633:                 if (*kdot)
+[e $ ! != *U _kdot -> 0 `i 1117  ]
+"634
+[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 634:                     key_state = PREDOT;
+[e = _key_state -> . `E6988 1 `i ]
+[e $U 1118  ]
+"635
+[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 635:                 else if (*kdash)
+[e :U 1117 ]
+[e $ ! != *U _kdash -> 0 `i 1119  ]
+"636
+[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 636:                     key_state = PREDASH;
+[e = _key_state -> . `E6988 2 `i ]
+[e $U 1120  ]
+"637
+[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 637:                 else if (cw_keyer_spacing || cw_paddle_farns) {
+[e :U 1119 ]
+[e $ ! || != _cw_keyer_spacing -> 0 `i != _cw_paddle_farns -> 0 `i 1121  ]
+{
+"638
+[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 638:                     clear_memory();
+[e ( _clear_memory ..  ]
+"639
+[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 639:                     key_state = LETTERSPACE;
+[e = _key_state -> . `E6988 9 `i ]
+"640
+[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 640:                 } else
+}
+[e $U 1122  ]
+[e :U 1121 ]
+"641
+[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 641:                     key_state = EXITLOOP;
+[e = _key_state -> . `E6988 10 `i ]
+[e :U 1122 ]
+[e :U 1120 ]
+[e :U 1118 ]
+"642
+[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 642:                 break;
+[e $U 1073  ]
+"643
+[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 643:             case DASHHELD:
+[e :U 1123 ]
+"644
+[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 644:                 if (*kdash)
+[e $ ! != *U _kdash -> 0 `i 1124  ]
+"645
+[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 645:                     key_state = PREDASH;
+[e = _key_state -> . `E6988 2 `i ]
+[e $U 1125  ]
+"646
+[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 646:                 else if (*kdot)
+[e :U 1124 ]
+[e $ ! != *U _kdot -> 0 `i 1126  ]
+"647
+[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 647:                     key_state = PREDOT;
+[e = _key_state -> . `E6988 1 `i ]
+[e $U 1127  ]
+"648
+[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 648:                 else if (cw_keyer_spacing || cw_paddle_farns) {
+[e :U 1126 ]
+[e $ ! || != _cw_keyer_spacing -> 0 `i != _cw_paddle_farns -> 0 `i 1128  ]
+{
+"649
+[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 649:                     clear_memory();
+[e ( _clear_memory ..  ]
+"650
+[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 650:                     key_state = LETTERSPACE;
+[e = _key_state -> . `E6988 9 `i ]
+"651
+[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 651:                 } else
+}
+[e $U 1129  ]
+[e :U 1128 ]
+"652
+[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 652:                     key_state = EXITLOOP;
+[e = _key_state -> . `E6988 10 `i ]
+[e :U 1129 ]
+[e :U 1127 ]
+[e :U 1125 ]
+"653
+[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 653:                 break;
+[e $U 1073  ]
+"654
+[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 654:             case LETTERSPACE:
+[e :U 1130 ]
+"655
+[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 655:                 if (kdelay >= paddle_letter_gap) {
+[e $ ! >= _kdelay _paddle_letter_gap 1131  ]
+{
+"656
+[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 656:                     kdelay = 0;
+[e = _kdelay -> 0 `i ]
+"657
+[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 657:                     if (dot_memory)
+[e $ ! != _dot_memory -> 0 `i 1132  ]
+"658
+[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 658:                         key_state = PREDOT;
+[e = _key_state -> . `E6988 1 `i ]
+[e $U 1133  ]
+"659
+[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 659:                     else if (dash_memory)
+[e :U 1132 ]
+[e $ ! != _dash_memory -> 0 `i 1134  ]
 "660
-[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 660:         while (loop_count++ < cw_loop_delay) {
-[e $ < ++ _loop_count -> -> 1 `i `l _cw_loop_delay 1140  ]
-[e :U 1141 ]
+[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 660:                         key_state = PREDASH;
+[e = _key_state -> . `E6988 2 `i ]
+[e $U 1135  ]
+"661
+[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 661:                     else
+[e :U 1134 ]
+"662
+[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 662:                         key_state = EXITLOOP;
+[e = _key_state -> . `E6988 10 `i ]
+[e :U 1135 ]
+[e :U 1133 ]
 "663
-[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 663:     }
+[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 663:                 } else
 }
-[e :U 1069 ]
-"534
-[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 534:     while (key_state != EXITLOOP) {
-[e $ != _key_state -> . `E6988 10 `i 1070  ]
-[e :U 1071 ]
+[e $U 1136  ]
+[e :U 1131 ]
 "664
-[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 664:     keyer_idle_release();
-[e ( _keyer_idle_release ..  ]
+[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 664:                     kdelay++;
+[e ++ _kdelay -> 1 `i ]
+[e :U 1136 ]
 "665
-[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 665: }
-[e :UE 1061 ]
-}
+[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 665:                 if (*kdot)
+[e $ ! != *U _kdot -> 0 `i 1137  ]
+"666
+[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 666:                     dot_memory = 1;
+[e = _dot_memory -> 1 `i ]
+[e :U 1137 ]
 "667
-[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 667: void CW_Update_Config() {
+[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 667:                 if (*kdash)
+[e $ ! != *U _kdash -> 0 `i 1138  ]
+"668
+[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 668:                     dash_memory = 1;
+[e = _dash_memory -> 1 `i ]
+[e :U 1138 ]
+"669
+[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 669:                 break;
+[e $U 1073  ]
+"670
+[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 670:             default:
+[e :U 1139 ]
+"671
+[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 671:                 key_state = EXITLOOP;
+[e = _key_state -> . `E6988 10 `i ]
+"672
+[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 672:         }
+}
+[e $U 1073  ]
+[e :U 1074 ]
+[e [\ _key_state , $ . `E6988 0 1075
+ , $ . `E6988 1 1080
+ , $ . `E6988 2 1081
+ , $ . `E6988 3 1082
+ , $ . `E6988 4 1092
+ , $ . `E6988 5 1102
+ , $ . `E6988 6 1110
+ , $ . `E6988 7 1116
+ , $ . `E6988 8 1123
+ , $ . `E6988 9 1130
+ 1139 ]
+[e :U 1073 ]
+"673
+[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 673:         loop_count = 0;
+[e = _loop_count -> -> 0 `i `l ]
+"674
+[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 674:         while (loop_count++ < cw_loop_delay) {
+[e $U 1140  ]
+[e :U 1141 ]
+{
+"675
+[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 675:             _delay((unsigned long)((1)*(32000000/4000000.0)));
+[e ( __delay (1 -> * -> -> 1 `i `d / -> -> 32000000 `l `d .4000000.0 `ul ]
+"676
+[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 676:         }
+}
+[e :U 1140 ]
+"674
+[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 674:         while (loop_count++ < cw_loop_delay) {
+[e $ < ++ _loop_count -> -> 1 `i `l _cw_loop_delay 1141  ]
+[e :U 1142 ]
+"677
+[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 677:     }
+}
+[e :U 1070 ]
+"548
+[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 548:     while (key_state != EXITLOOP) {
+[e $ != _key_state -> . `E6988 10 `i 1071  ]
+[e :U 1072 ]
+"678
+[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 678:     keyer_idle_release();
+[e ( _keyer_idle_release ..  ]
+"679
+[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 679: }
+[e :UE 1062 ]
+}
+"681
+[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 681: void CW_Update_Config() {
 [v _CW_Update_Config `(v ~T0 @X0 1 ef ]
 {
 [e :U _CW_Update_Config ]
 [f ]
-"668
-[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 668:     uint8_t scan_msg = 199;
+"682
+[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 682:     uint8_t scan_msg = 199;
 [v _scan_msg `uc ~T0 @X0 1 a ]
 [e = _scan_msg -> -> 199 `i `uc ]
-"669
-[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 669:     uint8_t p1 = 0;
+"683
+[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 683:     uint8_t p1 = 0;
 [v _p1 `uc ~T0 @X0 1 a ]
 [e = _p1 -> -> 0 `i `uc ]
-"670
-[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 670:     uint8_t p2 = 0;
+"684
+[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 684:     uint8_t p2 = 0;
 [v _p2 `uc ~T0 @X0 1 a ]
 [e = _p2 -> -> 0 `i `uc ]
-"672
-[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 672:     scan_msg = CMD_dequeue(&p1, &p2);
-[e = _scan_msg ( _CMD_dequeue (2 , &U _p1 &U _p2 ]
-"673
-[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 673:     if (scan_msg == 199)
-[e $ ! == -> _scan_msg `i -> 199 `i 1143  ]
-"674
-[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 674:         return;
-[e $UE 1142  ]
-[e :U 1143 ]
-"677
-[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 677:     if (scan_msg != 0x9C || p1 != 0)
-[e $ ! || != -> _scan_msg `i -> 156 `i != -> _p1 `i -> 0 `i 1144  ]
-"678
-[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 678:         NCO1CONbits.N1EN = 0;
-[e = . . _NCO1CONbits 0 5 -> -> 0 `i `uc ]
-[e :U 1144 ]
-"679
-[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 679:     switch (scan_msg) {
-[e $U 1146  ]
-{
-"680
-[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 680:         case 0x73:
-[e :U 1147 ]
-"681
-[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 681:             cw_keys_reversed = p1;
-[e = _cw_keys_reversed -> _p1 `i ]
-"682
-[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 682:             cw_keys_reversed__eeprom = p1;
-[e = _cw_keys_reversed__eeprom -> _p1 `i ]
-"683
-[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 683:             break;
-[e $U 1145  ]
-"684
-[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 684:         case 0x77:
-[e :U 1148 ]
-"685
-[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 685:             cw_keyer_weight = p1;
-[e = _cw_keyer_weight -> _p1 `i ]
 "686
-[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 686:             cw_keyer_weight__eeprom = p1;
-[e = _cw_keyer_weight__eeprom -> _p1 `i ]
+[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 686:     scan_msg = CMD_dequeue(&p1, &p2);
+[e = _scan_msg ( _CMD_dequeue (2 , &U _p1 &U _p2 ]
 "687
-[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 687:             break;
-[e $U 1145  ]
+[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 687:     if (scan_msg == 199)
+[e $ ! == -> _scan_msg `i -> 199 `i 1144  ]
 "688
-[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 688:         case 0x71:
-[e :U 1149 ]
-"689
-[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 689:             cw_keyer_mode = p1;
-[e = _cw_keyer_mode -> _p1 `i ]
-"690
-[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 690:             cw_keyer_mode__eeprom = p1;
-[e = _cw_keyer_mode__eeprom -> _p1 `i ]
+[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 688:         return;
+[e $UE 1143  ]
+[e :U 1144 ]
 "691
-[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 691:             break;
-[e $U 1145  ]
+[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 691:     if (scan_msg != 0x9C || p1 != 0)
+[e $ ! || != -> _scan_msg `i -> 156 `i != -> _p1 `i -> 0 `i 1145  ]
 "692
-[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 692:         case 0x7B:
-[e :U 1150 ]
+[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 692:         NCO1CONbits.N1EN = 0;
+[e = . . _NCO1CONbits 0 5 -> -> 0 `i `uc ]
+[e :U 1145 ]
 "693
-[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 693:             if (p1 == 5)
-[e $ ! == -> _p1 `i -> 5 `i 1151  ]
+[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 693:     switch (scan_msg) {
+[e $U 1147  ]
+{
 "694
-[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 694:                 p1 = 6;
-[e = _p1 -> -> 6 `i `uc ]
-[e :U 1151 ]
+[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 694:         case 0x73:
+[e :U 1148 ]
 "695
-[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 695:             cw_keyer_speed = p1;
-[e = _cw_keyer_speed -> _p1 `i ]
+[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 695:             cw_keys_reversed = p1;
+[e = _cw_keys_reversed -> _p1 `i ]
 "696
-[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 696:             cw_keyer_speed__eeprom = p1;
-[e = _cw_keyer_speed__eeprom -> _p1 `i ]
+[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 696:             cw_keys_reversed__eeprom = p1;
+[e = _cw_keys_reversed__eeprom -> _p1 `i ]
 "697
 [; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 697:             break;
-[e $U 1145  ]
+[e $U 1146  ]
 "698
-[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 698:         case 0x75:
-[e :U 1152 ]
+[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 698:         case 0x77:
+[e :U 1149 ]
 "699
-[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 699:             cw_keyer_spacing = p1;
-[e = _cw_keyer_spacing -> _p1 `i ]
+[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 699:             cw_keyer_weight = p1;
+[e = _cw_keyer_weight -> _p1 `i ]
 "700
-[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 700:             cw_keyer_spacing__eeprom = p1;
-[e = _cw_keyer_spacing__eeprom -> _p1 `i ]
+[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 700:             cw_keyer_weight__eeprom = p1;
+[e = _cw_keyer_weight__eeprom -> _p1 `i ]
 "701
 [; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 701:             break;
-[e $U 1145  ]
+[e $U 1146  ]
 "702
-[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 702:         case 0x76:
-[e :U 1153 ]
+[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 702:         case 0x71:
+[e :U 1150 ]
+"703
+[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 703:             cw_keyer_mode = p1;
+[e = _cw_keyer_mode -> _p1 `i ]
 "704
-[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 704:             if (p1 != 0 && p1 < 5)
-[e $ ! && != -> _p1 `i -> 0 `i < -> _p1 `i -> 5 `i 1154  ]
+[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 704:             cw_keyer_mode__eeprom = p1;
+[e = _cw_keyer_mode__eeprom -> _p1 `i ]
 "705
-[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 705:                 p1 = 0;
-[e = _p1 -> -> 0 `i `uc ]
-[e :U 1154 ]
+[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 705:             break;
+[e $U 1146  ]
 "706
-[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 706:             if (p1 > 60)
-[e $ ! > -> _p1 `i -> 60 `i 1155  ]
+[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 706:         case 0x7B:
+[e :U 1151 ]
 "707
-[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 707:                 p1 = 60;
-[e = _p1 -> -> 60 `i `uc ]
-[e :U 1155 ]
+[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 707:             if (p1 == 5)
+[e $ ! == -> _p1 `i -> 5 `i 1152  ]
 "708
-[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 708:             cw_mem_text_wpm = p1;
-[e = _cw_mem_text_wpm -> _p1 `i ]
+[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 708:                 p1 = 6;
+[e = _p1 -> -> 6 `i `uc ]
+[e :U 1152 ]
 "709
-[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 709:             cw_mem_text_wpm__eeprom = p1;
-[e = _cw_mem_text_wpm__eeprom -> _p1 `i ]
+[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 709:             cw_keyer_speed = p1;
+[e = _cw_keyer_speed -> _p1 `i ]
 "710
-[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 710:             break;
-[e $U 1145  ]
+[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 710:             cw_keyer_speed__eeprom = p1;
+[e = _cw_keyer_speed__eeprom -> _p1 `i ]
 "711
-[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 711:         case 0x7C:
-[e :U 1156 ]
+[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 711:             break;
+[e $U 1146  ]
 "712
-[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 712:             break;
-[e $U 1145  ]
+[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 712:         case 0x75:
+[e :U 1153 ]
 "713
-[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 713:         case 0x7F:
-[e :U 1157 ]
+[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 713:             cw_keyer_spacing = p1;
+[e = _cw_keyer_spacing -> _p1 `i ]
 "714
-[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 714:             switch (p1) {
-[e $U 1159  ]
-{
+[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 714:             cw_keyer_spacing__eeprom = p1;
+[e = _cw_keyer_spacing__eeprom -> _p1 `i ]
 "715
-[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 715:                 case 0:
-[e :U 1160 ]
+[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 715:             break;
+[e $U 1146  ]
 "716
-[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 716:                     NCO1INCH = 0;
-[e = _NCO1INCH -> -> 0 `i `uc ]
-"717
-[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 717:                     NCO1INCL = 0x1A;
-[e = _NCO1INCL -> -> 26 `i `uc ]
+[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 716:         case 0x76:
+[e :U 1154 ]
 "718
-[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 718:                     NCO1INCH__eeprom = 0;
-[e = _NCO1INCH__eeprom -> -> 0 `i `uc ]
+[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 718:             if (p1 != 0 && p1 < 5)
+[e $ ! && != -> _p1 `i -> 0 `i < -> _p1 `i -> 5 `i 1155  ]
 "719
-[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 719:                     NCO1INCL__eeprom = 0x1A;
-[e = _NCO1INCL__eeprom -> -> 26 `i `uc ]
+[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 719:                 p1 = 0;
+[e = _p1 -> -> 0 `i `uc ]
+[e :U 1155 ]
 "720
-[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 720:                     break;
-[e $U 1158  ]
+[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 720:             if (p1 > 60)
+[e $ ! > -> _p1 `i -> 60 `i 1156  ]
 "721
-[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 721:                 case 1:
-[e :U 1161 ]
+[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 721:                 p1 = 60;
+[e = _p1 -> -> 60 `i `uc ]
+[e :U 1156 ]
 "722
-[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 722:                     NCO1INCH = 0;
-[e = _NCO1INCH -> -> 0 `i `uc ]
+[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 722:             cw_mem_text_wpm = p1;
+[e = _cw_mem_text_wpm -> _p1 `i ]
 "723
-[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 723:                     NCO1INCL = 0x27;
-[e = _NCO1INCL -> -> 39 `i `uc ]
+[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 723:             cw_mem_text_wpm__eeprom = p1;
+[e = _cw_mem_text_wpm__eeprom -> _p1 `i ]
 "724
-[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 724:                     NCO1INCH__eeprom = 0;
-[e = _NCO1INCH__eeprom -> -> 0 `i `uc ]
+[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 724:             break;
+[e $U 1146  ]
 "725
-[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 725:                     NCO1INCL__eeprom = 0x27;
-[e = _NCO1INCL__eeprom -> -> 39 `i `uc ]
-"726
-[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 726:                     break;
-[e $U 1158  ]
+[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 725:         case 0x9D:
+[e :U 1157 ]
 "727
-[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 727:                 case 2:
-[e :U 1162 ]
+[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 727:             cw_paddle_farns = (p1 != 0) ? 1 : 0;
+[e = _cw_paddle_farns ? != -> _p1 `i -> 0 `i : -> 1 `i -> 0 `i ]
 "728
-[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 728:                     NCO1INCH = 0;
-[e = _NCO1INCH -> -> 0 `i `uc ]
+[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 728:             break;
+[e $U 1146  ]
 "729
-[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 729:                     NCO1INCL = 0x34;
-[e = _NCO1INCL -> -> 52 `i `uc ]
+[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 729:         case 0x7C:
+[e :U 1158 ]
 "730
-[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 730:                     NCO1INCH__eeprom = 0;
-[e = _NCO1INCH__eeprom -> -> 0 `i `uc ]
+[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 730:             break;
+[e $U 1146  ]
 "731
-[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 731:                     NCO1INCL__eeprom = 0x34;
-[e = _NCO1INCL__eeprom -> -> 52 `i `uc ]
+[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 731:         case 0x7F:
+[e :U 1159 ]
 "732
-[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 732:                     break;
-[e $U 1158  ]
+[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 732:             switch (p1) {
+[e $U 1161  ]
+{
 "733
-[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 733:                 case 3:
-[e :U 1163 ]
+[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 733:                 case 0:
+[e :U 1162 ]
 "734
 [; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 734:                     NCO1INCH = 0;
 [e = _NCO1INCH -> -> 0 `i `uc ]
 "735
-[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 735:                     NCO1INCL = 0x42;
-[e = _NCO1INCL -> -> 66 `i `uc ]
+[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 735:                     NCO1INCL = 0x1A;
+[e = _NCO1INCL -> -> 26 `i `uc ]
 "736
 [; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 736:                     NCO1INCH__eeprom = 0;
 [e = _NCO1INCH__eeprom -> -> 0 `i `uc ]
 "737
-[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 737:                     NCO1INCL__eeprom = 0x42;
-[e = _NCO1INCL__eeprom -> -> 66 `i `uc ]
+[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 737:                     NCO1INCL__eeprom = 0x1A;
+[e = _NCO1INCL__eeprom -> -> 26 `i `uc ]
 "738
 [; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 738:                     break;
-[e $U 1158  ]
+[e $U 1160  ]
 "739
-[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 739:                 default:
-[e :U 1164 ]
+[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 739:                 case 1:
+[e :U 1163 ]
 "740
 [; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 740:                     NCO1INCH = 0;
 [e = _NCO1INCH -> -> 0 `i `uc ]
@@ -3489,356 +3466,414 @@ Version 4.0 HI-TECH Software Intermediate Code
 [; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 743:                     NCO1INCL__eeprom = 0x27;
 [e = _NCO1INCL__eeprom -> -> 39 `i `uc ]
 "744
-[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 744:             }
-}
-[e $U 1158  ]
-[e :U 1159 ]
-[e [\ -> _p1 `i , $ -> 0 `i 1160
- , $ -> 1 `i 1161
- , $ -> 2 `i 1162
- , $ -> 3 `i 1163
- 1164 ]
-[e :U 1158 ]
+[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 744:                     break;
+[e $U 1160  ]
 "745
-[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 745:             break;
-[e $U 1145  ]
+[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 745:                 case 2:
+[e :U 1164 ]
 "746
-[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 746:         case 0x9C:
-[e :U 1165 ]
+[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 746:                     NCO1INCH = 0;
+[e = _NCO1INCH -> -> 0 `i `uc ]
+"747
+[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 747:                     NCO1INCL = 0x34;
+[e = _NCO1INCL -> -> 52 `i `uc ]
 "748
-[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 748:             if (mem_select_pending) {
-[e $ ! != -> _mem_select_pending `i -> 0 `i 1166  ]
-{
+[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 748:                     NCO1INCH__eeprom = 0;
+[e = _NCO1INCH__eeprom -> -> 0 `i `uc ]
 "749
-[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 749:                 mem_select_pending = 0;
-[e = _mem_select_pending -> -> 0 `i `uc ]
+[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 749:                     NCO1INCL__eeprom = 0x34;
+[e = _NCO1INCL__eeprom -> -> 52 `i `uc ]
 "750
-[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 750:                 if (p1 < 4) {
-[e $ ! < -> _p1 `i -> 4 `i 1167  ]
-{
+[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 750:                     break;
+[e $U 1160  ]
 "751
-[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 751:                     mem_current_slot = p1;
-[e = _mem_current_slot _p1 ]
+[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 751:                 case 3:
+[e :U 1165 ]
 "752
-[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 752:                     break;
-[e $U 1145  ]
+[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 752:                     NCO1INCH = 0;
+[e = _NCO1INCH -> -> 0 `i `uc ]
 "753
-[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 753:                 }
-}
-[e :U 1167 ]
+[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 753:                     NCO1INCL = 0x42;
+[e = _NCO1INCL -> -> 66 `i `uc ]
+"754
+[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 754:                     NCO1INCH__eeprom = 0;
+[e = _NCO1INCH__eeprom -> -> 0 `i `uc ]
 "755
-[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 755:             }
-}
-[e :U 1166 ]
+[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 755:                     NCO1INCL__eeprom = 0x42;
+[e = _NCO1INCL__eeprom -> -> 66 `i `uc ]
 "756
-[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 756:             if (p1 == 3) {
-[e $ ! == -> _p1 `i -> 3 `i 1168  ]
-{
+[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 756:                     break;
+[e $U 1160  ]
 "757
-[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 757:                 mem_select_pending = 1;
-[e = _mem_select_pending -> -> 1 `i `uc ]
+[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 757:                 default:
+[e :U 1166 ]
 "758
-[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 758:             } else if (p1 == 0) {
-}
-[e $U 1169  ]
-[e :U 1168 ]
-[e $ ! == -> _p1 `i -> 0 `i 1170  ]
-{
+[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 758:                     NCO1INCH = 0;
+[e = _NCO1INCH -> -> 0 `i `uc ]
 "759
-[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 759:                 keyer_play_message();
-[e ( _keyer_play_message ..  ]
+[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 759:                     NCO1INCL = 0x27;
+[e = _NCO1INCL -> -> 39 `i `uc ]
 "760
-[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 760:             } else if (p1 == 1) {
+[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 760:                     NCO1INCH__eeprom = 0;
+[e = _NCO1INCH__eeprom -> -> 0 `i `uc ]
+"761
+[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 761:                     NCO1INCL__eeprom = 0x27;
+[e = _NCO1INCL__eeprom -> -> 39 `i `uc ]
+"762
+[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 762:             }
+}
+[e $U 1160  ]
+[e :U 1161 ]
+[e [\ -> _p1 `i , $ -> 0 `i 1162
+ , $ -> 1 `i 1163
+ , $ -> 2 `i 1164
+ , $ -> 3 `i 1165
+ 1166 ]
+[e :U 1160 ]
+"763
+[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 763:             break;
+[e $U 1146  ]
+"764
+[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 764:         case 0x9C:
+[e :U 1167 ]
+"766
+[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 766:             if (mem_select_pending) {
+[e $ ! != -> _mem_select_pending `i -> 0 `i 1168  ]
+{
+"767
+[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 767:                 mem_select_pending = 0;
+[e = _mem_select_pending -> -> 0 `i `uc ]
+"768
+[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 768:                 if (p1 < 4) {
+[e $ ! < -> _p1 `i -> 4 `i 1169  ]
+{
+"769
+[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 769:                     mem_current_slot = p1;
+[e = _mem_current_slot _p1 ]
+"770
+[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 770:                     break;
+[e $U 1146  ]
+"771
+[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 771:                 }
+}
+[e :U 1169 ]
+"773
+[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 773:             }
+}
+[e :U 1168 ]
+"774
+[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 774:             if (p1 == 3) {
+[e $ ! == -> _p1 `i -> 3 `i 1170  ]
+{
+"775
+[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 775:                 mem_select_pending = 1;
+[e = _mem_select_pending -> -> 1 `i `uc ]
+"776
+[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 776:             } else if (p1 == 0) {
 }
 [e $U 1171  ]
 [e :U 1170 ]
-[e $ ! == -> _p1 `i -> 1 `i 1172  ]
+[e $ ! == -> _p1 `i -> 0 `i 1172  ]
 {
-"761
-[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 761:                 cw_msg_store_len = 0;
-[e = _cw_msg_store_len -> -> 0 `i `uc ]
-"762
-[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 762:             } else if (p1 == 2) {
+"777
+[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 777:                 keyer_play_message();
+[e ( _keyer_play_message ..  ]
+"778
+[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 778:             } else if (p1 == 1) {
 }
 [e $U 1173  ]
 [e :U 1172 ]
-[e $ ! == -> _p1 `i -> 2 `i 1174  ]
+[e $ ! == -> _p1 `i -> 1 `i 1174  ]
 {
-"763
-[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 763:                 msg_save_to_eeprom(mem_current_slot);
-[e ( _msg_save_to_eeprom (1 _mem_current_slot ]
-"764
-[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 764:             } else if (p1 >= 0x20 && p1 <= 0x7E) {
+"779
+[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 779:                 cw_msg_store_len = 0;
+[e = _cw_msg_store_len -> -> 0 `i `uc ]
+"780
+[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 780:             } else if (p1 == 2) {
 }
 [e $U 1175  ]
 [e :U 1174 ]
-[e $ ! && >= -> _p1 `i -> 32 `i <= -> _p1 `i -> 126 `i 1176  ]
+[e $ ! == -> _p1 `i -> 2 `i 1176  ]
 {
-"765
-[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 765:                 if (cw_msg_store_len < 48) {
-[e $ ! < -> _cw_msg_store_len `i -> 48 `i 1177  ]
-{
-"766
-[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 766:                     cw_msg_ram[cw_msg_store_len++] = p1;
-[e = *U + &U _cw_msg_ram * -> ++ _cw_msg_store_len -> -> 1 `i `uc `ux -> -> # *U &U _cw_msg_ram `ui `ux _p1 ]
-"767
-[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 767:                 }
+"781
+[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 781:                 msg_save_to_eeprom(mem_current_slot);
+[e ( _msg_save_to_eeprom (1 _mem_current_slot ]
+"782
+[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 782:             } else if (p1 >= 0x20 && p1 <= 0x7E) {
 }
-[e :U 1177 ]
-"768
-[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 768:             }
-}
+[e $U 1177  ]
 [e :U 1176 ]
+[e $ ! && >= -> _p1 `i -> 32 `i <= -> _p1 `i -> 126 `i 1178  ]
+{
+"783
+[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 783:                 if (cw_msg_store_len < 48) {
+[e $ ! < -> _cw_msg_store_len `i -> 48 `i 1179  ]
+{
+"784
+[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 784:                     cw_msg_ram[cw_msg_store_len++] = p1;
+[e = *U + &U _cw_msg_ram * -> ++ _cw_msg_store_len -> -> 1 `i `uc `ux -> -> # *U &U _cw_msg_ram `ui `ux _p1 ]
+"785
+[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 785:                 }
+}
+[e :U 1179 ]
+"786
+[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 786:             }
+}
+[e :U 1178 ]
+[e :U 1177 ]
 [e :U 1175 ]
 [e :U 1173 ]
 [e :U 1171 ]
-[e :U 1169 ]
-"769
-[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 769:             break;
-[e $U 1145  ]
-"770
-[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 770:         default:
-[e :U 1178 ]
-"771
-[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 771:             break;
-[e $U 1145  ]
-"772
-[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 772:     }
+"787
+[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 787:             break;
+[e $U 1146  ]
+"788
+[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 788:         default:
+[e :U 1180 ]
+"789
+[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 789:             break;
+[e $U 1146  ]
+"790
+[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 790:     }
 }
-[e $U 1145  ]
+[e $U 1146  ]
+[e :U 1147 ]
+[e [\ -> _scan_msg `i , $ -> 115 `i 1148
+ , $ -> 119 `i 1149
+ , $ -> 113 `i 1150
+ , $ -> 123 `i 1151
+ , $ -> 117 `i 1153
+ , $ -> 118 `i 1154
+ , $ -> 157 `i 1157
+ , $ -> 124 `i 1158
+ , $ -> 127 `i 1159
+ , $ -> 156 `i 1167
+ 1180 ]
 [e :U 1146 ]
-[e [\ -> _scan_msg `i , $ -> 115 `i 1147
- , $ -> 119 `i 1148
- , $ -> 113 `i 1149
- , $ -> 123 `i 1150
- , $ -> 117 `i 1152
- , $ -> 118 `i 1153
- , $ -> 124 `i 1156
- , $ -> 127 `i 1157
- , $ -> 156 `i 1165
- 1178 ]
-[e :U 1145 ]
-"773
-[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 773:     keyer_update();
+"791
+[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 791:     keyer_update();
 [e ( _keyer_update ..  ]
-"774
-[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 774: }
-[e :UE 1142 ]
+"792
+[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 792: }
+[e :UE 1143 ]
 }
-"776
-[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 776: void CW_Initialize() {
+"794
+[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 794: void CW_Initialize() {
 [v _CW_Initialize `(v ~T0 @X0 1 ef ]
 {
 [e :U _CW_Initialize ]
 [f ]
-"777
-[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 777:     cw_keyer_speed = cw_keyer_speed__eeprom;
+"795
+[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 795:     cw_keyer_speed = cw_keyer_speed__eeprom;
 [e = _cw_keyer_speed _cw_keyer_speed__eeprom ]
-"778
-[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 778:     cw_keys_reversed = cw_keys_reversed__eeprom;
+"796
+[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 796:     cw_keys_reversed = cw_keys_reversed__eeprom;
 [e = _cw_keys_reversed _cw_keys_reversed__eeprom ]
-"779
-[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 779:     cw_keyer_weight = cw_keyer_weight__eeprom;
+"797
+[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 797:     cw_keyer_weight = cw_keyer_weight__eeprom;
 [e = _cw_keyer_weight _cw_keyer_weight__eeprom ]
-"780
-[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 780:     cw_keyer_mode = cw_keyer_mode__eeprom;
+"798
+[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 798:     cw_keyer_mode = cw_keyer_mode__eeprom;
 [e = _cw_keyer_mode _cw_keyer_mode__eeprom ]
-"781
-[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 781:     cw_keyer_spacing = cw_keyer_spacing__eeprom;
+"799
+[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 799:     cw_keyer_spacing = cw_keyer_spacing__eeprom;
 [e = _cw_keyer_spacing _cw_keyer_spacing__eeprom ]
-"782
-[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 782:     cw_mem_text_wpm = cw_mem_text_wpm__eeprom;
+"800
+[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 800:     cw_mem_text_wpm = cw_mem_text_wpm__eeprom;
 [e = _cw_mem_text_wpm _cw_mem_text_wpm__eeprom ]
-"783
-[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 783:     NCO1INCH = NCO1INCH__eeprom;
+"804
+[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 804:     cw_paddle_farns = 0;
+[e = _cw_paddle_farns -> 0 `i ]
+"805
+[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 805:     NCO1INCH = NCO1INCH__eeprom;
 [e = _NCO1INCH _NCO1INCH__eeprom ]
-"784
-[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 784:     NCO1INCL = NCO1INCL__eeprom;
+"806
+[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 806:     NCO1INCL = NCO1INCL__eeprom;
 [e = _NCO1INCL _NCO1INCL__eeprom ]
-"785
-[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 785:     NCO1CONbits.N1EN = 0;
+"807
+[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 807:     NCO1CONbits.N1EN = 0;
 [e = . . _NCO1CONbits 0 5 -> -> 0 `i `uc ]
-"786
-[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 786:     mem_current_slot = 0;
+"808
+[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 808:     mem_current_slot = 0;
 [e = _mem_current_slot -> -> 0 `i `uc ]
-"787
-[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 787:     mem_select_pending = 0;
+"809
+[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 809:     mem_select_pending = 0;
 [e = _mem_select_pending -> -> 0 `i `uc ]
-"788
-[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 788:     msg_load_from_eeprom(0);
+"810
+[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 810:     msg_load_from_eeprom(0);
 [e ( _msg_load_from_eeprom (1 -> -> 0 `i `uc ]
-"789
-[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 789:     keyer_update();
+"811
+[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 811:     keyer_update();
 [e ( _keyer_update ..  ]
-"790
-[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 790: }
-[e :UE 1179 ]
+"812
+[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 812: }
+[e :UE 1181 ]
 }
-"792
-[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 792: void I2C_Initialize() {
+"814
+[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 814: void I2C_Initialize() {
 [v _I2C_Initialize `(v ~T0 @X0 1 ef ]
 {
 [e :U _I2C_Initialize ]
 [f ]
-"793
-[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 793:     I2C1_Initialize();
+"815
+[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 815:     I2C1_Initialize();
 [e ( _I2C1_Initialize ..  ]
-"794
-[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 794:     I2C1_Open();
+"816
+[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 816:     I2C1_Open();
 [e ( _I2C1_Open ..  ]
-"795
-[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 795:     I2C1_SlaveSetReadIntHandler(I2C_SlaveReceiveCallbackHandler);
-[e ( _I2C1_SlaveSetReadIntHandler (1 -> &U _I2C_SlaveReceiveCallbackHandler `*F7126 ]
-"796
-[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 796:     I2C1_SlaveSetAddrIntHandler(I2C_SlaveAddressCallbackHandler);
-[e ( _I2C1_SlaveSetAddrIntHandler (1 -> &U _I2C_SlaveAddressCallbackHandler `*F7128 ]
-"797
-[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 797:     I2C1_SlaveSetWriteIntHandler(I2C_SlaveTransmitCallbackHandler);
-[e ( _I2C1_SlaveSetWriteIntHandler (1 -> &U _I2C_SlaveTransmitCallbackHandler `*F7130 ]
-"798
-[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 798:     I2C1_SlaveSetBusColIntHandler(I2C_SlaveCollisionCallbackHandler);
-[e ( _I2C1_SlaveSetBusColIntHandler (1 -> &U _I2C_SlaveCollisionCallbackHandler `*F7132 ]
-"799
-[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 799: }
-[e :UE 1180 ]
+"817
+[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 817:     I2C1_SlaveSetReadIntHandler(I2C_SlaveReceiveCallbackHandler);
+[e ( _I2C1_SlaveSetReadIntHandler (1 -> &U _I2C_SlaveReceiveCallbackHandler `*F7128 ]
+"818
+[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 818:     I2C1_SlaveSetAddrIntHandler(I2C_SlaveAddressCallbackHandler);
+[e ( _I2C1_SlaveSetAddrIntHandler (1 -> &U _I2C_SlaveAddressCallbackHandler `*F7130 ]
+"819
+[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 819:     I2C1_SlaveSetWriteIntHandler(I2C_SlaveTransmitCallbackHandler);
+[e ( _I2C1_SlaveSetWriteIntHandler (1 -> &U _I2C_SlaveTransmitCallbackHandler `*F7132 ]
+"820
+[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 820:     I2C1_SlaveSetBusColIntHandler(I2C_SlaveCollisionCallbackHandler);
+[e ( _I2C1_SlaveSetBusColIntHandler (1 -> &U _I2C_SlaveCollisionCallbackHandler `*F7134 ]
+"821
+[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 821: }
+[e :UE 1182 ]
 }
 [v $root$_main `(v ~T0 @X0 0 e ]
-"801
-[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 801: void main(void) {
+"823
+[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 823: void main(void) {
 [v _main `(v ~T0 @X0 1 ef ]
 {
 [e :U _main ]
 [f ]
-"802
-[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 802:     _delay((unsigned long)((1000)*(32000000/4000.0)));
+"824
+[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 824:     _delay((unsigned long)((1000)*(32000000/4000.0)));
 [e ( __delay (1 -> * -> -> 1000 `i `d / -> -> 32000000 `l `d .4000.0 `ul ]
-"803
-[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 803:     SYSTEM_Initialize();
+"825
+[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 825:     SYSTEM_Initialize();
 [e ( _SYSTEM_Initialize ..  ]
-"804
-[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 804:     I2C_Initialize();
+"826
+[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 826:     I2C_Initialize();
 [e ( _I2C_Initialize ..  ]
-"805
-[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 805:     TMR3_Initialize();
+"827
+[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 827:     TMR3_Initialize();
 [e ( _TMR3_Initialize ..  ]
-"806
-[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 806:     TMR3_SetInterruptHandler(Audio_interrupt_time_out);
+"828
+[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 828:     TMR3_SetInterruptHandler(Audio_interrupt_time_out);
 [e ( _TMR3_SetInterruptHandler (1 &U _Audio_interrupt_time_out ]
-"807
-[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 807:     TMR3_StopTimer();
+"829
+[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 829:     TMR3_StopTimer();
 [e ( _TMR3_StopTimer ..  ]
-"808
-[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 808:     TMR3_WriteTimer(0xE000);
+"830
+[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 830:     TMR3_WriteTimer(0xE000);
 [e ( _TMR3_WriteTimer (1 -> -> 57344 `ui `us ]
-"809
-[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 809:     TMR3_Reload();
+"831
+[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 831:     TMR3_Reload();
 [e ( _TMR3_Reload ..  ]
-"810
-[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 810:     (INTCONbits.GIE = 1);
+"832
+[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 832:     (INTCONbits.GIE = 1);
 [e = . . _INTCONbits 0 3 -> -> 1 `i `uc ]
-"811
-[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 811:     (INTCONbits.PEIE = 1);
+"833
+[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 833:     (INTCONbits.PEIE = 1);
 [e = . . _INTCONbits 0 2 -> -> 1 `i `uc ]
-"812
-[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 812:     CW_Initialize();
+"834
+[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 834:     CW_Initialize();
 [e ( _CW_Initialize ..  ]
-"813
-[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 813:     do { WPUAbits.WPUA5 = 1; } while(0);
-[e :U 1184 ]
+"835
+[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 835:     do { WPUAbits.WPUA5 = 1; } while(0);
+[e :U 1186 ]
 {
 [e = . . _WPUAbits 0 5 -> -> 1 `i `uc ]
 }
-[e :U 1183 ]
-"814
-[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 814:     do { WPUAbits.WPUA4 = 1; } while(0);
-[e :U 1187 ]
+[e :U 1185 ]
+"836
+[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 836:     do { WPUAbits.WPUA4 = 1; } while(0);
+[e :U 1189 ]
 {
 [e = . . _WPUAbits 0 4 -> -> 1 `i `uc ]
 }
-[e :U 1186 ]
-"815
-[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 815:     do { WPUCbits.WPUC4 = 1; } while(0);
-[e :U 1190 ]
+[e :U 1188 ]
+"837
+[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 837:     do { WPUCbits.WPUC4 = 1; } while(0);
+[e :U 1192 ]
 {
 [e = . . _WPUCbits 0 4 -> -> 1 `i `uc ]
 }
-[e :U 1189 ]
-"816
-[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 816:     do { WPUCbits.WPUC5 = 1; } while(0);
-[e :U 1193 ]
+[e :U 1191 ]
+"838
+[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 838:     do { WPUCbits.WPUC5 = 1; } while(0);
+[e :U 1195 ]
 {
 [e = . . _WPUCbits 0 5 -> -> 1 `i `uc ]
 }
-[e :U 1192 ]
-"817
-[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 817:     do { LATAbits.LATA4 = 0; } while(0);
-[e :U 1196 ]
+[e :U 1194 ]
+"839
+[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 839:     do { LATAbits.LATA4 = 0; } while(0);
+[e :U 1198 ]
 {
 [e = . . _LATAbits 0 4 -> -> 0 `i `uc ]
 }
-[e :U 1195 ]
-"818
-[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 818:     do { LATAbits.LATA5 = 0; } while(0);
-[e :U 1199 ]
+[e :U 1197 ]
+"840
+[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 840:     do { LATAbits.LATA5 = 0; } while(0);
+[e :U 1201 ]
 {
 [e = . . _LATAbits 0 5 -> -> 0 `i `uc ]
 }
-[e :U 1198 ]
-"819
-[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 819:     do { LATCbits.LATC4 = 1; } while(0);
-[e :U 1202 ]
+[e :U 1200 ]
+"841
+[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 841:     do { LATCbits.LATC4 = 1; } while(0);
+[e :U 1204 ]
 {
 [e = . . _LATCbits 0 4 -> -> 1 `i `uc ]
 }
-[e :U 1201 ]
-"820
-[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 820:     do { LATCbits.LATC5 = 1; } while(0);
-[e :U 1205 ]
+[e :U 1203 ]
+"842
+[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 842:     do { LATCbits.LATC5 = 1; } while(0);
+[e :U 1207 ]
 {
 [e = . . _LATCbits 0 5 -> -> 1 `i `uc ]
 }
-[e :U 1204 ]
-"821
-[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 821:     do { LATAbits.LATA2 = 0; } while(0);
-[e :U 1208 ]
+[e :U 1206 ]
+"843
+[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 843:     do { LATAbits.LATA2 = 0; } while(0);
+[e :U 1210 ]
 {
 [e = . . _LATAbits 0 2 -> -> 0 `i `uc ]
 }
-[e :U 1207 ]
-"822
-[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 822:     do { LATCbits.LATC3 = 1; } while(0);
-[e :U 1211 ]
+[e :U 1209 ]
+"844
+[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 844:     do { LATCbits.LATC3 = 1; } while(0);
+[e :U 1213 ]
 {
 [e = . . _LATCbits 0 3 -> -> 1 `i `uc ]
 }
-[e :U 1210 ]
-"824
-[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 824:     while (1) {
-[e :U 1213 ]
-{
-"825
-[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 825:         keyer();
-[e ( _keyer ..  ]
-"826
-[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 826:         if (CMD_add_queue_busy == 0) {
-[e $ ! == -> _CMD_add_queue_busy `i -> 0 `i 1215  ]
-{
-"827
-[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 827:             CW_Update_Config();
-[e ( _CW_Update_Config ..  ]
-"828
-[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 828:         }
-}
-[e :U 1215 ]
-"829
-[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 829:     }
-}
 [e :U 1212 ]
-[e $U 1213  ]
+"846
+[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 846:     while (1) {
+[e :U 1215 ]
+{
+"847
+[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 847:         keyer();
+[e ( _keyer ..  ]
+"848
+[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 848:         if (CMD_add_queue_busy == 0) {
+[e $ ! == -> _CMD_add_queue_busy `i -> 0 `i 1217  ]
+{
+"849
+[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 849:             CW_Update_Config();
+[e ( _CW_Update_Config ..  ]
+"850
+[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 850:         }
+}
+[e :U 1217 ]
+"851
+[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 851:     }
+}
 [e :U 1214 ]
-"830
-[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 830: }
-[e :UE 1181 ]
+[e $U 1215  ]
+[e :U 1216 ]
+"852
+[; ;C:/Users/Ron/.grok/worktrees/keyer/main.c: 852: }
+[e :UE 1183 ]
 }
 [a 6C 46 46 46 46 46 0 ]
 [a 7C 45 46 46 46 46 0 ]

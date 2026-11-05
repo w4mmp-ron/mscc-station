@@ -7,7 +7,7 @@
 # 1 "C:\\Program Files\\Microchip\\xc8\\v2.45\\pic\\include\\language_support.h" 1 3
 # 2 "<built-in>" 2
 # 1 "C:/Users/Ron/.grok/worktrees/keyer/main.c" 2
-# 22 "C:/Users/Ron/.grok/worktrees/keyer/main.c"
+# 25 "C:/Users/Ron/.grok/worktrees/keyer/main.c"
 # 1 "C:/Users/Ron/.grok/worktrees/keyer/mcc_generated_files/mcc.h" 1
 # 49 "C:/Users/Ron/.grok/worktrees/keyer/mcc_generated_files/mcc.h"
 # 1 "C:\\Program Files\\Microchip\\xc8\\v2.45\\pic\\include\\xc.h" 1 3
@@ -10929,7 +10929,7 @@ void OSCILLATOR_Initialize(void);
 void WDT_Initialize(void);
 # 111 "C:/Users/Ron/.grok/worktrees/keyer/mcc_generated_files/mcc.h"
 void PMD_Initialize(void);
-# 23 "C:/Users/Ron/.grok/worktrees/keyer/main.c" 2
+# 26 "C:/Users/Ron/.grok/worktrees/keyer/main.c" 2
 # 1 "C:/Users/Ron/.grok/worktrees/keyer/defines.h" 1
 # 30 "C:/Users/Ron/.grok/worktrees/keyer/defines.h"
 #pragma warning disable 520
@@ -10938,7 +10938,7 @@ void PMD_Initialize(void);
 #pragma warning disable 1510
 #pragma warning disable 1498
 #pragma warning disable 2083
-# 24 "C:/Users/Ron/.grok/worktrees/keyer/main.c" 2
+# 27 "C:/Users/Ron/.grok/worktrees/keyer/main.c" 2
 # 1 "C:\\Program Files\\Microchip\\xc8\\v2.45\\pic\\include\\c99\\string.h" 1 3
 # 25 "C:\\Program Files\\Microchip\\xc8\\v2.45\\pic\\include\\c99\\string.h" 3
 # 1 "C:\\Program Files\\Microchip\\xc8\\v2.45\\pic\\include\\c99\\bits/alltypes.h" 1 3
@@ -10996,13 +10996,13 @@ size_t strxfrm_l (char *restrict, const char *restrict, size_t, locale_t);
 
 
 void *memccpy (void *restrict, const void *restrict, int, size_t);
-# 25 "C:/Users/Ron/.grok/worktrees/keyer/main.c" 2
+# 28 "C:/Users/Ron/.grok/worktrees/keyer/main.c" 2
 
 # 1 "C:\\Program Files\\Microchip\\xc8\\v2.45\\pic\\include\\c99\\limits.h" 1 3
 # 10 "C:\\Program Files\\Microchip\\xc8\\v2.45\\pic\\include\\c99\\limits.h" 3
 # 1 "C:\\Program Files\\Microchip\\xc8\\v2.45\\pic\\include\\c99\\bits/limits.h" 1 3
 # 11 "C:\\Program Files\\Microchip\\xc8\\v2.45\\pic\\include\\c99\\limits.h" 2 3
-# 27 "C:/Users/Ron/.grok/worktrees/keyer/main.c" 2
+# 30 "C:/Users/Ron/.grok/worktrees/keyer/main.c" 2
 # 1 "C:\\Program Files\\Microchip\\xc8\\v2.45\\pic\\include\\c99\\ctype.h" 1 3
 # 10 "C:\\Program Files\\Microchip\\xc8\\v2.45\\pic\\include\\c99\\ctype.h" 3
 int isalnum(int);
@@ -11037,8 +11037,8 @@ int isupper_l(int, locale_t);
 int isxdigit_l(int, locale_t);
 int tolower_l(int, locale_t);
 int toupper_l(int, locale_t);
-# 28 "C:/Users/Ron/.grok/worktrees/keyer/main.c" 2
-# 73 "C:/Users/Ron/.grok/worktrees/keyer/main.c"
+# 31 "C:/Users/Ron/.grok/worktrees/keyer/main.c" 2
+# 78 "C:/Users/Ron/.grok/worktrees/keyer/main.c"
 enum {
     CHECK = 0,
     PREDOT,
@@ -11074,6 +11074,8 @@ static int32_t cw_loop_delay = 0;
 
 static int mem_letter_gap = 0;
 static int mem_word_gap = 0;
+static int cw_paddle_farns = 0;
+static int paddle_letter_gap = 0;
 
 static int keyer_out = 0;
 
@@ -11263,7 +11265,7 @@ void keyer_update() {
     dot_delay = 1200 / cw_keyer_speed;
     cw_loop_delay = 2750 / cw_keyer_speed;
     dash_delay = (dot_delay * 3 * cw_keyer_weight) / 50;
-# 314 "C:/Users/Ron/.grok/worktrees/keyer/main.c"
+# 321 "C:/Users/Ron/.grok/worktrees/keyer/main.c"
     text_wpm = cw_mem_text_wpm;
     if (text_wpm != 0 && text_wpm < 5)
         text_wpm = 0;
@@ -11290,6 +11292,13 @@ void keyer_update() {
         mem_letter_gap = 2 * dot_delay;
         mem_word_gap = 4 * dot_delay;
     }
+
+
+
+
+    paddle_letter_gap = 2 * dot_delay;
+    if (cw_paddle_farns && mem_letter_gap - dot_delay > paddle_letter_gap)
+        paddle_letter_gap = mem_letter_gap - dot_delay;
 
     if (cw_keys_reversed) {
         kdot = &kcwr;
@@ -11573,7 +11582,7 @@ void keyer() {
                     key_state = PREDOT;
                 else if (*kdash)
                     key_state = PREDASH;
-                else if (cw_keyer_spacing) {
+                else if (cw_keyer_spacing || cw_paddle_farns) {
                     clear_memory();
                     key_state = LETTERSPACE;
                 } else
@@ -11584,14 +11593,14 @@ void keyer() {
                     key_state = PREDASH;
                 else if (*kdot)
                     key_state = PREDOT;
-                else if (cw_keyer_spacing) {
+                else if (cw_keyer_spacing || cw_paddle_farns) {
                     clear_memory();
                     key_state = LETTERSPACE;
                 } else
                     key_state = EXITLOOP;
                 break;
             case LETTERSPACE:
-                if (kdelay == 2 * dot_delay) {
+                if (kdelay >= paddle_letter_gap) {
                     kdelay = 0;
                     if (dot_memory)
                         key_state = PREDOT;
@@ -11660,6 +11669,10 @@ void CW_Update_Config() {
                 p1 = 60;
             cw_mem_text_wpm = p1;
             cw_mem_text_wpm__eeprom = p1;
+            break;
+        case 0x9D:
+
+            cw_paddle_farns = (p1 != 0) ? 1 : 0;
             break;
         case 0x7C:
             break;
@@ -11733,6 +11746,10 @@ void CW_Initialize() {
     cw_keyer_mode = cw_keyer_mode__eeprom;
     cw_keyer_spacing = cw_keyer_spacing__eeprom;
     cw_mem_text_wpm = cw_mem_text_wpm__eeprom;
+
+
+
+    cw_paddle_farns = 0;
     NCO1INCH = NCO1INCH__eeprom;
     NCO1INCL = NCO1INCL__eeprom;
     NCO1CONbits.N1EN = 0;

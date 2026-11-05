@@ -28,9 +28,11 @@
 //
 // Free in every layer (servers Pi + Windows, WPF client, pill, PSoC MKII,
 // PIC keyer):
-//   0x2F, 0x9D, 0x9F
-//   (0x9D / 0x9F: old GET_CW_DEFAULTS / GET_SIDE_TONE, commented out here;
-//    sdrcore-trans commands.h still defines them but never uses them.)
+//   0x2F, 0x9F
+//   (0x9F: old GET_SIDE_TONE, commented out here; sdrcore-trans commands.h
+//    still defines it but never uses it.)
+//   0x9D taken 2026-11-05: SET_PADDLE_FARNSWORTH (sdrcore-trans still has an
+//    unused GET_CW_DEFAULTS 0x9D name).
 //
 // Reclaimed 2026-11-05 (defined here but never used, now commented out,
 // marked "reclaimed 2026-11-05"):
@@ -66,6 +68,10 @@
 
 //#define GET_IAMBIC_TUNING 0x9C  /* retired — see CMD_SET_KEYER_MEMORY */
 //#define GET_CW_DEFAULTS 0x9D
+/* Farnsworth on the paddles (2026-11-05): 0=off, 1=on. From cw.ini
+ * CW_Paddle_Farnsworth; sent to the radio (pill 3.13+ passes it to the PIC keyer).
+ * Never sent to the client. */
+#define SET_PADDLE_FARNSWORTH 0x9D
 #define CMD_SET_FM_POWER 0x9E
 //#define GET_CW_INTERFACE_METHOD 0x9E
 //#define GET_SIDE_TONE 0x9F

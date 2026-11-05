@@ -835,7 +835,8 @@ int Radio_send_parameters(int command, int cmd_value, int print) {
         failed = TRUE;
     }
     if (failed) {
-        if (command != CMD_SET_KEYER_MEMORY)
+        /* SET_PADDLE_FARNSWORTH: older radio firmware (pill < 3.13, PSoC) rejects it; log only */
+        if (command != CMD_SET_KEYER_MEMORY && command != SET_PADDLE_FARNSWORTH)
             Stop_all(0, STOP_PROFICIO_COMMS);
     } else if (print == 0) {
         print_time(0);
@@ -2445,6 +2446,20 @@ void * Command_Processor(void *my_param) {
             Update_CW_ini();
             break;
 
+        /*
+         * Farnsworth on the paddles (SET_PADDLE_FARNSWORTH 0x9D), 2026-11-05.
+         * Not from the client today; a script can send it. MKII + keyer only.
+         */
+        case SET_PADDLE_FARNSWORTH:
+            cw_record.paddle_farns = (t_opcode_data != 0) ? 1 : 0;
+            print_time(0);
+            fprintf(G_fp_logfile, "[%d] SET_PADDLE_FARNSWORTH paddle_farns=%d\n",
+                line_number++, (int)cw_record.paddle_farns);
+            if (G_proficio_mkii && cw_record.keyer_Installed == 1)
+                Radio_send_parameters(SET_PADDLE_FARNSWORTH, (int)cw_record.paddle_farns, 1);
+            Update_CW_ini();
+            break;
+
         case SET_QSK:
             Radio_send_parameters(opcode, t_opcode_data, 1);
             break;
@@ -2526,6 +2541,7 @@ int Update_CW_ini() {
             fprintf(fp_cw_ini, "CW_Tx_Hold=%d;\n", cw_record.tx_hold);
             fprintf(fp_cw_ini, "CW_Speed=%d;\n", cw_record.speed);
             fprintf(fp_cw_ini, "CW_Mem_Text_WPM=%d;\n", cw_record.text_wpm);
+            fprintf(fp_cw_ini, "CW_Paddle_Farnsworth=%d;\n", cw_record.paddle_farns);
             fprintf(fp_cw_ini, "CW_Semi_Break_In=%d;\n", 0);
             fprintf(fp_cw_ini, "CW_Semi_Control=%d;\n", 0);
             fprintf(fp_cw_ini, "CW_Side_Tone_Volume=%d;\n", 0);
@@ -2657,6 +2673,14 @@ int initialize_keyer() {
         print_time(0);
         fprintf(G_fp_logfile, "[%d] initialize_keyer. Radio_send_parameters returned with status: %d\n", line_number++, status);
 
+        cmd_value = cw_record.paddle_farns;
+        print_time(0);
+        fprintf(G_fp_logfile, "[%d] initialize_keyer. calling Radio_send_parameters.  SET_PADDLE_FARNSWORTH. data: %d\n",
+                line_number++, cmd_value);
+        status = Radio_send_parameters(SET_PADDLE_FARNSWORTH, cmd_value, 1);
+        print_time(0);
+        fprintf(G_fp_logfile, "[%d] initialize_keyer. Radio_send_parameters returned with status: %d\n", line_number++, status);
+
         cmd_value = cw_record.keyer_mode;
         print_time(0);
         fprintf(G_fp_logfile, "[%d] initialize_keyer. calling Radio_send_parameters.  SET_KEYER_MODE. data: %d\n", line_number++,
@@ -2781,6 +2805,14 @@ int parse_cw_init_record(char *record) {
         if (cmd_value > 60)
             cmd_value = 60;
         cw_record.text_wpm = (uint8_t)cmd_value;
+    }
+    parameter = strstr(record, "CW_Paddle_Farnsworth=");
+    if (parameter != NULL) {
+        length = strlen("CW_Paddle_Farnsworth=");
+        cmd_value = atoi(&parameter[length]);
+        print_time(0);
+        fprintf(G_fp_logfile, "[%d] Parse_cw_init . CW_Paddle_Farnsworth: %d\n", line_number++, cmd_value);
+        cw_record.paddle_farns = (cmd_value != 0) ? 1 : 0;
     }
     /*parameter = strstr(record, "CW_Semi_Break_In=");
     if (parameter != NULL) {
