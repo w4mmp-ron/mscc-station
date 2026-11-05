@@ -19,6 +19,42 @@
 
 
 
+//**************************************************************************
+// AVAILABLE OPCODES (checked 2026-11-05)
+//
+// Opcode bytes are shared: the client (UDP), ms-sdr, sdrcore-recv/trans,
+// the radio (USB vendor request) and the PIC keyer (I2C) mostly use the
+// same number for the same command. Pick a new opcode from these lists.
+//
+// Free in every layer (servers Pi + Windows, WPF client, pill, PSoC MKII,
+// PIC keyer):
+//   0x2F, 0x9D, 0x9F
+//   (0x9D / 0x9F: old GET_CW_DEFAULTS / GET_SIDE_TONE, commented out here;
+//    sdrcore-trans commands.h still defines them but never uses them.)
+//
+// Reclaimed 2026-11-05 (defined here but never used, now commented out,
+// marked "reclaimed 2026-11-05"):
+//   0x15-0x1B  CMD_SET_IO / GET_IO / SET_FILTER / RX + TX band filter (PE0FKO)
+//   0x15-0x1D  CMD_MFC_SET_* (MFC code is not built on the Pi)
+//   0x1E       CMD_SET_GUI_STAR
+//   0x5C       CMD_GET_SET_PANADAPTER_AVERAGE
+//   0x83       CMD_GET_SET_PANADAPTER_STATUS
+//   0x84       CMD_GET_SET_SMETER_STATUS
+//   0xAD       CMD_SET_COMMIT_POWER_VALUES (client Opcodes.cs still names it, unused)
+//   0xC0       CMD_SET_S_METER (pill / PSoC usbvend.h still name it, unused)
+//   0xC1, 0xC2, 0xC4  CMD_SET_FAVS_UPDATE / GET_FAVS / SET_FAVS_DELETE
+//              (sdrcore-trans names them band stack, unused)
+//   0xF8       CMD_SET_AMPLIFIER
+// Also unused: 0xD6 (only sdrcore-trans CMD_SET_LAST_USED_BAND_STACK_INDEX).
+//
+// Before using a reclaimed value: grep the Windows ms-sdr (Stew's, not
+// changed), sdrcore-recv/trans and the client for it, and remove any
+// leftover define there.
+//
+// More room: CMD_SET_EXTENDED_COMMAND 0x0B carries a second byte as a
+// sub-command (sub-commands in use: 0x09-0x0D, 0x0F, 0x30).
+//**************************************************************************
+
 #define CMD_SET_SPECTRUM_WATERFALL_FREQ 0x91
 #define CMD_SET_SPECTRUM_WATERFALL_MODE 0x92
 #define CMD_GET_PPM_INT 0x94
@@ -52,13 +88,14 @@
 //								0x10	// V1.4: 
 #define CMD_READ_EEPROM   0x11 // V1.4: Not implemented
 
-#define CMD_SET_IO    0x15
-#define CMD_GET_IO    0x16
-#define CMD_SET_FILTER   0x17
-#define CMD_SET_RX_BAND_FILTER 0x18 // V15.12
-#define CMD_GET_RX_BAND_FILTER 0x19 // V15.12
-#define CMD_SET_TX_BAND_FILTER 0x1a // MOBO Only
-#define CMD_GET_TX_BAND_FILTER 0x1b // MOBO Only
+/* Reclaimed 2026-11-05 (never used): see AVAILABLE OPCODES at the top */
+//#define CMD_SET_IO    0x15
+//#define CMD_GET_IO    0x16
+//#define CMD_SET_FILTER   0x17
+//#define CMD_SET_RX_BAND_FILTER 0x18 // V15.12
+//#define CMD_GET_RX_BAND_FILTER 0x19 // V15.12
+//#define CMD_SET_TX_BAND_FILTER 0x1a // MOBO Only
+//#define CMD_GET_TX_BAND_FILTER 0x1b // MOBO Only
 
 #define CMD_SET_SI570   0x20 // Write byte to Si570 register
 
@@ -235,7 +272,7 @@
 #define CMD_GET_SET_PANADAPTER_FILL 0x59
 #define CMD_GET_SET_PANADAPTER_LINE 0x5A
 #define CMD_GET_SET_PANADAPTER_MARKER 0x5B
-#define CMD_GET_SET_PANADAPTER_AVERAGE 0x5C
+//#define CMD_GET_SET_PANADAPTER_AVERAGE 0x5C  /* reclaimed 2026-11-05 */
 #define CMD_GET_SET_PANADAPTER_BACKGROUND 0x5D
 #define CMD_GET_SET_PANADAPTER_CURSOR 0x5E
 #define CMD_GET_SET_PANADAPTER_REFRESH 0x5F
@@ -313,8 +350,8 @@
 #define CMD_GET_SET_NB_ENABLE 0x80
 #define CMD_GET_SET_NB_PULSE_WIDTH 0x81
 #define CMD_GET_SET_NB_THRESHOLD 0x82
-#define CMD_GET_SET_PANADAPTER_STATUS 0x83
-#define CMD_GET_SET_SMETER_STATUS 0x84
+//#define CMD_GET_SET_PANADAPTER_STATUS 0x83  /* reclaimed 2026-11-05 */
+//#define CMD_GET_SET_SMETER_STATUS 0x84  /* reclaimed 2026-11-05 */
 #define CMD_GET_SET_PANADAPTER_GAIN 0x85
 #define CMD_GET_SET_PANADAPTER_BASE 0x86
 #define CMD_GET_SET_AGC 0x87
@@ -342,7 +379,7 @@
 #define CMD_SET_BAND_VOLUME_DEFAULTS 0xAA
 #define CMD_CALIBRATION_MASTER_RESET 0xAB
 #define CMD_CALIBRATION_TUNE 0xAC
-#define CMD_SET_COMMIT_POWER_VALUES 0xAD
+//#define CMD_SET_COMMIT_POWER_VALUES 0xAD  /* reclaimed 2026-11-05 */
 #define CMD_SET_STANDARD_CARRIER 0xAF
 
 
@@ -364,11 +401,11 @@
 #define CMD_GET_TRANSCEIVER_TEMP 0xBF
 
 
-#define CMD_SET_S_METER 0xC0
+//#define CMD_SET_S_METER 0xC0  /* reclaimed 2026-11-05 */
 
-#define CMD_SET_FAVS_UPDATE  0xC1
-#define CMD_GET_FAVS 0xC2
-#define CMD_SET_FAVS_DELETE 0xC4
+//#define CMD_SET_FAVS_UPDATE  0xC1  /* reclaimed 2026-11-05 */
+//#define CMD_GET_FAVS 0xC2  /* reclaimed 2026-11-05 */
+//#define CMD_SET_FAVS_DELETE 0xC4  /* reclaimed 2026-11-05 */
 #define CMD_SET_FAVS_NAME 0xC8
 #define CMD_REPORT_IMAGE_VALUE 0xC6
 #define CMD_START_STOP_IMAGE_VALUE 0xC7
@@ -446,7 +483,7 @@
 #define CMD_GET_SET_MSSDR_STATUS 0xF5
 #define CMD_SET_BAND 0xF6
 #define CMD_SET_PA_BYPASS 0xF7
-#define CMD_SET_AMPLIFIER 0xF8
+//#define CMD_SET_AMPLIFIER 0xF8  /* reclaimed 2026-11-05 */
 #define CMD_SET_AMPLIFIER_INITIALIZE 0xF9  
 #define CMD_SET_AMPLIFIER_POWER 0xFA
 #define CMD_GET_AMPLIFIER_POWER 0xFB
@@ -485,16 +522,16 @@
 // MFC Function Codes
 #define CMD_MFC_AUTO_ZERO 0x13
 #define CMD_MFC_SET_ZERO 0x14
-#define CMD_MFC_SET_BAND 0x15
-#define CMD_MFC_SET_FAVS 0x16
-#define CMD_MFC_SET_STEP 0x17
-#define CMD_MFC_SET_TUNE 0x18
-#define CMD_MFC_SET_MODE 0x19
-#define CMD_MFC_SET_RIT_MODE 0x1A
-#define CMD_MFC_SET_CW_BW 0x1B
-#define CMD_MFC_SET_HI_BW 0x1C
-#define CMD_MFC_SET_RIT 0x1D
-#define CMD_SET_GUI_STAR 0x1E
+//#define CMD_MFC_SET_BAND 0x15  /* reclaimed 2026-11-05 */
+//#define CMD_MFC_SET_FAVS 0x16  /* reclaimed 2026-11-05 */
+//#define CMD_MFC_SET_STEP 0x17  /* reclaimed 2026-11-05 */
+//#define CMD_MFC_SET_TUNE 0x18  /* reclaimed 2026-11-05 */
+//#define CMD_MFC_SET_MODE 0x19  /* reclaimed 2026-11-05 */
+//#define CMD_MFC_SET_RIT_MODE 0x1A  /* reclaimed 2026-11-05 */
+//#define CMD_MFC_SET_CW_BW 0x1B  /* reclaimed 2026-11-05 */
+//#define CMD_MFC_SET_HI_BW 0x1C  /* reclaimed 2026-11-05 */
+//#define CMD_MFC_SET_RIT 0x1D  /* reclaimed 2026-11-05 */
+//#define CMD_SET_GUI_STAR 0x1E  /* reclaimed 2026-11-05 */
 #define CMD_SET_CAL_ABORT 0x1F
 
 #define CMD_SET_KNOB_SWITCH 0x20
