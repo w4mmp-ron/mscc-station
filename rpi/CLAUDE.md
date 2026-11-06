@@ -203,6 +203,10 @@ review of what he ported, say if the Pi needs a matching change. Don't start new
   11. Offer: an x86_64 (amd64) package of Ron's Avalonia copy for Ubuntu / Debian; Claude adds an
      -Arch amd64 choice to the build script, builds it, README steps. Only if he wants it.
      `NOTE-FOR-STEW-AVALONIA-X86-BUILD-2026-11-06.md`
+  13. Windows ms-sdr has no WiFi SWR meter support: no swr_wifi_meter.c, and meter.c is not in
+     ms-sdr.vcxproj (no Meter_main thread), so a Windows host sends no SWR / FWD / REF, no 0x0F
+     fault and no 0x2E reset. Option: port the Pi's swr_wifi_meter.c. His call.
+     `NOTE-FOR-STEW-WINDOWS-SWR-METER-2026-11-06.md`
 - **Setup 3 (Ron's station), Configurations draft item: ANSWERED 2026-11-03, draft updated (DRAFT box + Appendix A item 2 removed).**
   Read on the Pi: ms-sdr CAT /dev/tnt0, WSJT-X /dev/tnt1 (pair), Rig Kenwood TS-2000, PTT RTS on tnt1;
   MSCC plays VirtualA -> WSJT-X in VirtualA.monitor; WSJT-X out VirtualB -> MSCC VirtualB.monitor; Mono.
