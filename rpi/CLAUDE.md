@@ -207,6 +207,17 @@ review of what he ported, say if the Pi needs a matching change. Don't start new
      ms-sdr.vcxproj (no Meter_main thread), so a Windows host sends no SWR / FWD / REF, no 0x0F
      fault and no 0x2E reset. Option: port the Pi's swr_wifi_meter.c. His call.
      `NOTE-FOR-STEW-WINDOWS-SWR-METER-2026-11-06.md`
+  14. Windows ms-sdr reads the radio's power / TX IQ / RX IQ only if the network is up within
+     5 s of startup; a late network means the radio is never read that run (client connect runs
+     Apply_Appliance_Startup only). Pi ms-sdr 3.194 retries once at client connect
+     (Radio_cal_startup_load). Option: same change on Windows. His call.
+     `NOTE-FOR-STEW-RADIO-CAL-READ-LATE-NETWORK-2026-11-06.md`
+- **Pi ms-sdr 3.194 (2026-11-06): radio calibration read retried at client connect, BUILT on the Pi
+  18:10 (~/mscc/ms-sdr), NOT tested yet, committed and pushed.** New `Radio_cal_startup_load(who)` in
+  power_calibration.c (mutex + once-per-run flag, needs G_network_initialized): reload replaced
+  cal files, Radio_cal_load_power, Radio_cal_load_iq. Called from main.c at startup (replaces
+  the three calls) and in main-controller.c at client connect before Apply_Appliance_Startup.
+  Log line: `Radio_cal_startup_load . startup|client connect: reading the radio's calibration`.
 - **Setup 3 (Ron's station), Configurations draft item: ANSWERED 2026-11-03, draft updated (DRAFT box + Appendix A item 2 removed).**
   Read on the Pi: ms-sdr CAT /dev/tnt0, WSJT-X /dev/tnt1 (pair), Rig Kenwood TS-2000, PTT RTS on tnt1;
   MSCC plays VirtualA -> WSJT-X in VirtualA.monitor; WSJT-X out VirtualB -> MSCC VirtualB.monitor; Mono.

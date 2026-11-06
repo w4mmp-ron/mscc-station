@@ -1457,9 +1457,7 @@ int main(int argc, char **argv) {
             fprintf(G_fp_logfile,
                 "[%d] main. Network ready — reload cal if a live file was replaced, then Apply_Appliance_Startup\n",
                 line_number++);
-            Factory_seed_reload_servers();
-            Radio_cal_load_power();
-            Radio_cal_load_iq();
+            Radio_cal_startup_load("startup");
             Apply_Appliance_Startup();
         } else {
             print_time(0);

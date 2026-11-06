@@ -342,6 +342,27 @@ void Radio_cal_load_iq(void) {
     Radio_cal_send_status();        /* 3.188: status lamps (if a client is already attached) */
 }
 
+/* 3.194: the startup read of the radio's calibration (and the reload of replaced cal files),
+ * done once per ms-sdr run as soon as the network is up. Called from main at startup and again
+ * at each client connect: if the network was not ready at startup, the first client connect
+ * does it (before, the radio was then never read in that run). */
+static pthread_mutex_t radio_cal_startup_lock = PTHREAD_MUTEX_INITIALIZER;
+static int radio_cal_startup_done = 0;
+
+void Radio_cal_startup_load(const char *who) {
+    pthread_mutex_lock(&radio_cal_startup_lock);
+    if (!radio_cal_startup_done && G_network_initialized) {
+        print_time(0);
+        fprintf(G_fp_logfile, "[%d] Radio_cal_startup_load . %s: reading the radio's calibration\n",
+                line_number++, who);
+        Factory_seed_reload_servers();
+        Radio_cal_load_power();
+        Radio_cal_load_iq();
+        radio_cal_startup_done = 1;
+    }
+    pthread_mutex_unlock(&radio_cal_startup_lock);
+}
+
 /* Called once a second from Flusher_thread while G_Radio_Cal_Save_Pending > 0. */
 void Radio_cal_save_tick(void) {
     int record;

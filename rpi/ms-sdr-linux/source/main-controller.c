@@ -1528,7 +1528,9 @@ void * Command_Processor(void *my_param) {
                 /*
                  * Headless split: cores may already be live from Apply_Appliance_Startup().
                  * On client connect: re-apply cores (sync) + GUI-only user_controls push.
+                 * 3.194: first read the radio's calibration if startup could not (network late).
                  */
+                Radio_cal_startup_load("client connect");
                 if (!G_appliance_startup_done) {
                     Apply_Appliance_Startup();
                 } else {

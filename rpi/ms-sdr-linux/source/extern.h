@@ -490,6 +490,7 @@ extern void Radio_cal_load_power(void);
 extern void Radio_cal_store_iq(int tx, int record, int offset, int phase);
 extern void Radio_cal_load_iq(void);
 extern void Radio_cal_send_status(void);   /* 3.188: 0x2D to the client */
+extern void Radio_cal_startup_load(const char *who);   /* 3.194: once per run, startup or first connect */
 extern uint8_t G_Radio_Cal_Save_Pending;
 //extern uint8_t G_calibration_mode;
 extern int Initialize_power_calibration();
