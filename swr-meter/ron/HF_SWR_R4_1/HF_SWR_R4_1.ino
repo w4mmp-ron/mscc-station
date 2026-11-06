@@ -274,7 +274,20 @@ enum Page { PAGE_MAIN, PAGE_MENU_ROOT, PAGE_SETTINGS, PAGE_DISPLAY, PAGE_NETWORK
 Page currentPage = PAGE_MAIN;
 
 //=======Peak Button===============
-bool showPeakMode = false;  // false = Volts mode (default), true = Peak watts mode
+/* W4MMP 2026-11-06: the PEAK/VOLTS button now steps VOLTS -> PEAK -> AVG -> VOLTS.
+ * AVG = FWD and REF watts averaged over the last 1 s (AVG_SLOTS x PEAK_DECAY_TICK_MS), every
+ * reading counted, pauses included. After RF stops the last AVG is shown for peakHoldSec, then 0.
+ * Saved as "auxMode"; the old "peakMode" bool is read once if "auxMode" was never saved. */
+#define AUX_VOLTS 0
+#define AUX_PEAK  1
+#define AUX_AVG   2
+uint8_t auxMode = AUX_PEAK;
+#define AVG_SLOTS 50                      // 50 x 20 ms = 1 s window
+float avgFWD = 0, avgREF = 0;             // shown AVG values (W)
+float avgSumF = 0, avgSumR = 0;           // readings added up in the current 20 ms slot
+int   avgCntF = 0, avgCntR = 0;
+unsigned long lastRfMs = 0;               // last FWD reading above MIN_POWER_THRESHOLD
+void applyAuxModeStyle();
 bool useCrossNeedle = false; // main page: analog needles vs bar graph
 float lastFwdV = -999.0;
 float lastRefV = -999.0;
@@ -284,11 +297,26 @@ float reflectedVoltage = 0.0f;
 // we will tune it from real measurements
 const float FWD_HIGH_RANGE_SCALE = 2.30f;     // ← start with this value 2.30f
 
-// Peak hold timer 
-unsigned long peakHoldStart = 0;          // Timestamp when RF dropped below threshold
-const unsigned long PEAK_HOLD_DURATION = 600;  // 5 seconds — easy to adjust here manually  
-bool peakHolding = false;                 // Flag if we're in hold period
-#define PEAK_DECAY_STEP 0.95             // Multiplier for smooth fall
+/* W4MMP 2026-11-06: PEAK HOLD.
+ * Before: the hold was a fixed 600 ms that restarted only on a reading AT OR ABOVE the held
+ * peak, then the peak fell x0.95 every 10 ms but never below the latest single reading, so
+ * PEAK looked almost live. REF had no timer of its own.
+ * Now: FWD and REF each have their own timer. The hold restarts on any reading within
+ * PEAK_REFRESH_FRACTION (10%) of the held peak, so steady CW / SSB keeps it up. After
+ * peakHoldSec (0.5..5 s, default 2 s, web setting) the peak falls x0.97 every 20 ms
+ * (~3.5 s from 100 W to 0), with no floor from the live reading. A higher reading still
+ * raises the peak at once. */
+float peakHoldSec = 2.0f;                 // web setting "Peak Hold (s)", saved as "peakHold"
+#define PEAK_HOLD_MIN_SEC 0.5f
+#define PEAK_HOLD_MAX_SEC 5.0f
+#define PEAK_REFRESH_FRACTION 0.90f       // reading >= 90% of the held peak restarts the hold
+#define PEAK_DECAY_STEP 0.97f             // multiplier per decay tick
+#define PEAK_DECAY_TICK_MS 20
+#define PEAK_ZERO_W 0.15f                 // below this the peak is cleared
+unsigned long peakHoldStart = 0;          // FWD: last time a reading was near the peak
+unsigned long peakHoldStartRef = 0;       // REF: same, its own timer
+bool peakHolding = false;                 // FWD peak is being held or decaying
+bool peakHoldingRef = false;              // REF peak is being held or decaying
 
 //=============Voltage Format =============
 // Voltage format selection: 0 = Measured, 1 = RMS, 2 = Peak
@@ -355,11 +383,12 @@ SettingItem mySettings[] = {
   {"Saver Min",  NULL,   NULL,   &screensaverMinutes,   NULL, NULL,  NULL},
   {"Volt Mode", NULL, NULL, NULL, &voltageFormatMode, NULL, NULL},
   {"Menu TO",  NULL,   NULL,   &menuTimeout,   NULL, NULL,  NULL},
-  {"Peak Mode", NULL, NULL, NULL, NULL, &showPeakMode, NULL},
+  {"Aux Mode", NULL, NULL, NULL, &auxMode, NULL, NULL},   // W4MMP: 0 VOLTS, 1 PEAK, 2 AVG
   {"SWR Min Pwr", NULL, NULL, NULL, NULL, &minSWRPowerCheckEnabled, NULL},
   {"Min SWR Pwr", NULL, NULL, &minSWRPowerThreshold, NULL, NULL, NULL},
   {"swr Fault Cnt", NULL, NULL, &swrFaultCountLimit, NULL, NULL, NULL},
-  {"Tune Allow s", NULL, NULL, &tuneGraceSec, NULL, NULL, NULL}   // W4MMP 2026-11-01
+  {"Tune Allow s", NULL, NULL, &tuneGraceSec, NULL, NULL, NULL},  // W4MMP 2026-11-01
+  {"Peak Hold s", NULL, &peakHoldSec, NULL, NULL, NULL, NULL}     // W4MMP 2026-11-06
 };
 
 const int SETTINGS_COUNT = sizeof(mySettings) / sizeof(mySettings[0]);
@@ -463,12 +492,16 @@ void loadSettings() {
   screensaverEnabled = preferences.getBool("ssEnabled", true); // Default to ON
   screensaverMinutes = preferences.getInt("ssMin", 3);
   menuTimeout = preferences.getInt("menuTO", 30);
-  showPeakMode = preferences.getBool("peakMode", true);
+  // W4MMP: three-way mode; first start after the update takes the old PEAK/VOLTS choice
+  if (preferences.isKey("auxMode")) auxMode = preferences.getUChar("auxMode", AUX_PEAK);
+  else auxMode = preferences.getBool("peakMode", true) ? AUX_PEAK : AUX_VOLTS;
+  if (auxMode > AUX_AVG) auxMode = AUX_PEAK;
   useCrossNeedle = preferences.getBool("needleFace", false);
   minSWRPowerCheckEnabled = preferences.getBool("minPwrEn", false);
   minSWRPowerThreshold = preferences.getInt("minPwrVal", 10);
   swrFaultCountLimit = preferences.getInt("faultLimit", 3);
   tuneGraceSec = constrain(preferences.getInt("tuneGrace", 5), 0, TUNE_GRACE_MAX_SEC);   // W4MMP
+  peakHoldSec = constrain(preferences.getFloat("peakHold", 2.0f), PEAK_HOLD_MIN_SEC, PEAK_HOLD_MAX_SEC);   // W4MMP
   preferences.end();
 }
 
@@ -491,12 +524,13 @@ void saveSettings() {
   preferences.putBool("ssEnabled", screensaverEnabled);
   preferences.putInt("ssMin", screensaverMinutes);
   preferences.putInt("menuTO", menuTimeout);
-  preferences.putBool("peakMode", showPeakMode);
+  preferences.putUChar("auxMode", auxMode);   // W4MMP
   preferences.putBool("needleFace", useCrossNeedle);
   preferences.putBool("minPwrEn", minSWRPowerCheckEnabled);
   preferences.putInt("minPwrVal", minSWRPowerThreshold);
   preferences.putInt("faultLimit", swrFaultCountLimit);
   preferences.putInt("tuneGrace", tuneGraceSec);   // W4MMP
+  preferences.putFloat("peakHold", peakHoldSec);   // W4MMP
   preferences.end();
 }
 
@@ -679,13 +713,15 @@ void loop() {
 
                 barSmoothFwd = (instantP > MIN_POWER_THRESHOLD) ? instantP : 0.0f;
 
+                // W4MMP: peak hold. Higher = new peak; within 10% of the peak = hold restarts.
                 if (instantP > MIN_POWER_THRESHOLD) {
-                    if (instantP >= peakFWD){
-                    peakFWD = instantP;
-                        peakHoldStart = millis();
-                    }
-                    peakHolding = true; 
+                    if (instantP >= peakFWD) peakFWD = instantP;
+                    if (instantP >= peakFWD * PEAK_REFRESH_FRACTION) peakHoldStart = millis();
+                    peakHolding = true;
+                    lastRfMs = millis();
                 }
+                avgSumF += barSmoothFwd;   // W4MMP: AVG, every reading (0 when no RF)
+                avgCntF++;
 
                 // Move to REF
                 ads.startADCReading(ADS1X15_REG_CONFIG_MUX_SINGLE_1, false);
@@ -706,12 +742,14 @@ void loop() {
                 // Follows the REF signal 1:1. Zeroes out if below threshold.
                 barSmoothRef = (instantRP > (MIN_POWER_THRESHOLD)) ? instantRP : 0.0f;
 
-                //  THE REF PEAK LINE: Only moves UP here.
-                // Falls via your decay block once barSmoothRef drops.
-                if (instantRP > peakREF && instantRP > (MIN_POWER_THRESHOLD)) {
-                    peakREF = instantRP;
-                    // Note: We usually let FWD trigger the peakHoldStart timer for both
+                // W4MMP: REF peak hold, same rule as FWD, with its own timer.
+                if (instantRP > MIN_POWER_THRESHOLD) {
+                    if (instantRP >= peakREF) peakREF = instantRP;
+                    if (instantRP >= peakREF * PEAK_REFRESH_FRACTION) peakHoldStartRef = millis();
+                    peakHoldingRef = true;
                 }
+                avgSumR += barSmoothRef;   // W4MMP: AVG
+                avgCntR++;
 
                 // W4MMP 2026-11-01: tune allowance, only while MSCC says TUN is on (see tuneGraceSec)
                 bool inTuneGrace = false;
@@ -871,26 +909,63 @@ void loop() {
    } 
 
     // --- PEAK HOLDING & DECAY LOGIC ---
+    // W4MMP 2026-11-06: FWD and REF decay separately, each after its own hold; no live floor.
     static uint32_t lastDecayTick = 0;
 
-    if (peakHolding && (millis() - peakHoldStart > PEAK_HOLD_DURATION)) {
-        if (millis() - lastDecayTick >= 10) { 
-            lastDecayTick = millis();
+    if (millis() - lastDecayTick >= PEAK_DECAY_TICK_MS) {
+        lastDecayTick = millis();
+        unsigned long holdMs = (unsigned long)(peakHoldSec * 1000.0f);
 
-            //  Decay the peak values
+        // W4MMP 2026-11-06: AVG, 1 s sliding window of 20 ms slots (each slot = mean of its readings)
+        static float slotF[AVG_SLOTS] = {0}, slotR[AVG_SLOTS] = {0};
+        static float winSumF = 0, winSumR = 0;
+        static int slotIdx = 0;
+        static int slotsFilled = 0;     // slots used since the window was started
+        static bool avgIdle = true;     // true after no RF for longer than the hold
+        bool transmitting = (millis() - lastRfMs < 100);
+        float sF = (avgCntF > 0) ? avgSumF / avgCntF : 0.0f;
+        float sR = (avgCntR > 0) ? avgSumR / avgCntR : 0.0f;
+        avgSumF = avgSumR = 0; avgCntF = avgCntR = 0;
+        // New transmission (RF after more than the hold with none): start a fresh window, so
+        // the zeros from the idle time don't drag AVG down for the first second.
+        if (transmitting && avgIdle) {
+            for (int i = 0; i < AVG_SLOTS; i++) { slotF[i] = 0; slotR[i] = 0; }
+            winSumF = winSumR = 0;
+            slotIdx = 0;
+            slotsFilled = 0;
+            avgIdle = false;
+        }
+        winSumF += sF - slotF[slotIdx]; slotF[slotIdx] = sF;
+        winSumR += sR - slotR[slotIdx]; slotR[slotIdx] = sR;
+        slotIdx = (slotIdx + 1) % AVG_SLOTS;
+        if (slotsFilled < AVG_SLOTS) slotsFilled++;
+        if (winSumF < 0) winSumF = 0;   // float rounding guard
+        if (winSumR < 0) winSumR = 0;
+        if (transmitting) {
+            // Shown only once the window holds a full 1 s since key-down (before that the
+            // held value or 0 stays), so the first number is already a steady 1 s average.
+            if (slotsFilled >= AVG_SLOTS) {
+                avgFWD = winSumF / AVG_SLOTS;
+                avgREF = winSumR / AVG_SLOTS;
+            }
+        } else if (millis() - lastRfMs > holdMs) { // unkeyed longer than the hold: clear
+            avgFWD = 0;
+            avgREF = 0;
+            avgIdle = true;
+        }                                          // else: hold the last value
+
+        if (peakHolding && (millis() - peakHoldStart > holdMs)) {
             peakFWD *= PEAK_DECAY_STEP;
-            peakREF *= PEAK_DECAY_STEP;
-
-            //  SAFETY: Don't let the peak line fall below the current bar
-            if (peakFWD < barSmoothFwd) peakFWD = barSmoothFwd;
-            if (peakREF < barSmoothRef) peakREF = barSmoothRef;
-
-            //  Reset when values get near zero
-            if (peakFWD < 0.15f && barSmoothFwd < 0.15f) {
+            if (peakFWD < PEAK_ZERO_W) {
                 peakFWD = 0;
-                peakREF = 0;
                 peakHolding = false;
-                barSmoothFwd = 0;
+            }
+        }
+        if (peakHoldingRef && (millis() - peakHoldStartRef > holdMs)) {
+            peakREF *= PEAK_DECAY_STEP;
+            if (peakREF < PEAK_ZERO_W) {
+                peakREF = 0;
+                peakHoldingRef = false;
             }
         }
     }
@@ -1308,30 +1383,13 @@ void drawMainPage() {
   lv_obj_set_style_bg_color(btn_peak, lv_palette_darken(LV_PALETTE_BLUE, 2), LV_STATE_PRESSED);
   // Add the Label
   lbl_peak_btn = lv_label_create(btn_peak);
-  lv_label_set_text(lbl_peak_btn, showPeakMode ? "PEAK" : "VOLTS");
   lv_obj_center(lbl_peak_btn);
-  if (showPeakMode) {
-     lv_obj_set_style_border_color(btn_peak, lv_palette_main(LV_PALETTE_AMBER), 0);
-     lv_obj_set_style_text_color(lbl_peak_btn, lv_palette_main(LV_PALETTE_AMBER), 0);
-     saveSettings();
-   } else {
-     lv_obj_set_style_border_color(btn_peak, lv_color_hex(0x00FFFF), 0); // Cyan
-     lv_obj_set_style_text_color(lbl_peak_btn, lv_color_hex(0x00FFFF), 0);
-     saveSettings();
-   }
+  applyAuxModeStyle();   // W4MMP: VOLTS / PEAK / AVG
 
   lv_obj_add_event_cb(btn_peak, [](lv_event_t * e) {
-      showPeakMode = !showPeakMode;
-      lv_label_set_text(lbl_peak_btn, showPeakMode ? "PEAK" : "VOLTS");
-      if (showPeakMode) {
-          lv_obj_set_style_border_color(btn_peak, lv_palette_main(LV_PALETTE_AMBER), 0);
-          lv_obj_set_style_text_color(lbl_peak_btn, lv_palette_main(LV_PALETTE_AMBER), 0);
-          saveSettings();
-      } else {
-          lv_obj_set_style_border_color(btn_peak, lv_color_hex(0x00FFFF), 0); // Cyan
-          lv_obj_set_style_text_color(lbl_peak_btn, lv_color_hex(0x00FFFF), 0);
-          saveSettings();
-      }
+      auxMode = (auxMode + 1) % 3;   // W4MMP: VOLTS -> PEAK -> AVG -> VOLTS
+      applyAuxModeStyle();
+      saveSettings();
       lastFwdV = -999.0f;
       lastRefV = -999.0f;
   }, LV_EVENT_CLICKED, NULL);
@@ -1558,8 +1616,11 @@ void updateDynamicValues() {
   float displayedFwd;
   const char* fwdUnit;
 
-  if (showPeakMode) {
+  if (auxMode == AUX_PEAK) {
     displayedFwd = peakFWD;          // Peak hold in watts
+    fwdUnit = "W";
+  } else if (auxMode == AUX_AVG) {
+    displayedFwd = avgFWD;           // W4MMP: 1 s average in watts
     fwdUnit = "W";
   } else {
     switch (voltageFormatMode) {
@@ -1581,8 +1642,13 @@ void updateDynamicValues() {
     }
   }
 
+  // W4MMP: in AVG mode the values are redrawn at most 4 times a second
+  static uint32_t lastAvgDraw = 0;
+  bool auxDrawSlot = (auxMode != AUX_AVG) || (millis() - lastAvgDraw >= 250);
+  if (auxMode == AUX_AVG && auxDrawSlot) lastAvgDraw = millis();
+
   // --- FWD Auxiliary (Voltage or Peak) Logic ---
-  if (fabs(displayedFwd - lastFwdV) >= (showPeakMode ? POWER_CHANGE_THRESHOLD : 0.002)) {
+  if (auxDrawSlot && fabs(displayedFwd - lastFwdV) >= (auxMode != AUX_VOLTS ? POWER_CHANGE_THRESHOLD : 0.002)) {
     char auxBuf[20];
     
     snprintf(auxBuf, sizeof(auxBuf), "%6.3f %s", (double)displayedFwd, fwdUnit);
@@ -1595,8 +1661,11 @@ void updateDynamicValues() {
   float displayedRef;
   const char* refUnit = "V";  // always "V" unless in peak watts mode
 
-  if (showPeakMode) {
+  if (auxMode == AUX_PEAK) {
     displayedRef = peakREF;
+    refUnit = "W";
+  } else if (auxMode == AUX_AVG) {
+    displayedRef = avgREF;
     refUnit = "W";
   } else {
     switch (voltageFormatMode) {
@@ -1617,7 +1686,7 @@ void updateDynamicValues() {
 
   //--- REF Auxiliary (Voltage or Peak) Logic ---
 
-  if (fabs(displayedRef - lastRefV) >= (showPeakMode ? POWER_CHANGE_THRESHOLD : 0.002)) {
+  if (auxDrawSlot && fabs(displayedRef - lastRefV) >= (auxMode != AUX_VOLTS ? POWER_CHANGE_THRESHOLD : 0.002)) {
       char refAuxBuf[20];
       snprintf(refAuxBuf, sizeof(refAuxBuf), "%6.3f %s", (double)displayedRef, refUnit);
       lv_label_set_text(lbl_ref_aux_val, refAuxBuf);
@@ -1915,6 +1984,10 @@ String buildJsonData() {
     json += "\"fwd\":" + String(forwardPower, 1) + ",";
     json += "\"ref\":" + String(reflectedPower, 1) + ",";
     json += "\"peak\":" + String(peakFWD, 1) + ",";
+    json += "\"peakRef\":" + String(peakREF, 1) + ",";       // W4MMP 2026-11-06
+    json += "\"avg\":" + String(avgFWD, 1) + ",";            // W4MMP 2026-11-06: 1 s average
+    json += "\"avgRef\":" + String(avgREF, 1) + ",";
+    json += "\"peakHold\":" + String(peakHoldSec, 1) + ",";  // W4MMP 2026-11-06
     json += "\"swr\":" + String(swr, 2) + ",";
     json += "\"fault\":" + String(faultState ? 1 : 0) + ",";
     json += "\"tx\":" + String(forwardPower > MIN_POWER_THRESHOLD ? 1 : 0) + ",";
@@ -1967,6 +2040,7 @@ void setupWebServerRoutes() {
             }
             if (target == "tripCnt")   swrFaultCountLimit = (int)constrain(val, 3, 24);
             if (target == "tuneGrace") tuneGraceSec = (int)constrain(val, 0, TUNE_GRACE_MAX_SEC);   // W4MMP
+            if (target == "peakHold")  peakHoldSec = constrain(val, PEAK_HOLD_MIN_SEC, PEAK_HOLD_MAX_SEC);   // W4MMP
             if (target == "bypass")    minSWRPowerCheckEnabled = (val > 0.5);
             if (target == "lowThr")    minSWRPowerThreshold = constrain(val, 5.0, 50.0);
             saveSettings();
@@ -2213,6 +2287,10 @@ void setupWebServerRoutes() {
                         <input type="number" step="1" min="0" max="10" id="set-tunegrace" onchange="updateParam('tuneGrace', this.value)">
                     </div>
                     <div class="set-item">
+                        <label>Peak Hold (s)</label>
+                        <input type="number" step="0.5" min="0.5" max="5" id="set-peakhold" onchange="updateParam('peakHold', this.value)">
+                    </div>
+                    <div class="set-item">
                         <label>Low Power Bypass</label>
                         <select id="set-bypass" onchange="updateParam('bypass', this.value)">
                             <option value="1">ON</option>
@@ -2304,6 +2382,7 @@ void setupWebServerRoutes() {
                     syncInput('set-swr', d.swrThr);
                     syncInput('set-trip', d.tripCnt);
                     syncInput('set-tunegrace', d.tuneGrace);
+                    syncInput('set-peakhold', d.peakHold);
                     syncInput('set-bypass', d.bypass);
                     syncInput('set-lowThr', d.lowThr);
 
@@ -4341,4 +4420,23 @@ void resetSWRFault() {
         Serial.println("Fault RESET executed");
         Serial.println("SWR Fault Reset via Web Interface");
     }
+}
+
+// W4MMP 2026-11-06: PEAK/VOLTS/AVG button text and colour, and the label beside the value.
+void applyAuxModeStyle() {
+    const char* btnText = "VOLTS";
+    const char* auxText = "VOLT:";
+    lv_color_t col = lv_color_hex(0x00FFFF);                       // VOLTS: cyan
+    if (auxMode == AUX_PEAK) {
+        btnText = "PEAK"; auxText = "PEAK:"; col = lv_palette_main(LV_PALETTE_AMBER);
+    } else if (auxMode == AUX_AVG) {
+        btnText = "AVG";  auxText = "AVG:";  col = lv_palette_main(LV_PALETTE_GREEN);
+    }
+    if (btn_peak != NULL && lbl_peak_btn != NULL) {
+        lv_label_set_text(lbl_peak_btn, btnText);
+        lv_obj_set_style_border_color(btn_peak, col, 0);
+        lv_obj_set_style_text_color(lbl_peak_btn, col, 0);
+    }
+    if (lbl_fwd_aux != NULL) lv_label_set_text_static(lbl_fwd_aux, auxText);
+    if (lbl_ref_aux != NULL) lv_label_set_text_static(lbl_ref_aux, auxText);
 }

@@ -287,6 +287,20 @@ review of what he ported, say if the Pi needs a matching change. Don't start new
   52/104/156/208/260; -/+ 0..10, 0 = OFF, saved on Back). Ron: fits and works. Client 11.1.5 dropped
   TX 2 ms after the relayed fault (good). Then find the limit and fix. Also pending Ron's decision: should ms-sdr itself stop
   TX on a meter fault (backstop; WSJT-X on the Pi keys via CAT, so the client can't stop it).
+  **2026-11-04: WiFi join retry** (012852c): after the 15 s timeout the meter retries every 30 s
+  (NO NET-RETRY / JOIN FAIL-RETRY / NO WIFI-RETRY). Loaded, works; the retry itself (router off,
+  meter restarted) NOT tested yet.
+  **2026-11-06: PEAK hold + AVG mode, TESTED (Ron).** Old peak was not a hold: fixed 600 ms (comment
+  said 5 s), hold restarted only on a reading >= the peak, decay x0.95/10 ms floored at the live
+  reading (looked live), REF had no timer. Now: FWD and REF each have a hold timer; a reading within
+  10% of the peak restarts it; hold = peakHoldSec (0.5..5 s, default 2, web field "Peak Hold (s)",
+  pref "peakHold"; no touch control, Ron); then x0.97/20 ms, no floor. The PEAK/VOLTS button now
+  steps VOLTS -> PEAK -> AVG (cyan / amber / green; label VOLT: / PEAK: / AVG:); pref "auxMode"
+  (old "peakMode" read once). AVG = FWD/REF watts over a 1 s window (50 x 20 ms slots, pauses
+  counted); fresh window when RF starts after > hold with none; shown only once the window is full
+  (first 1 s of a TX shows the held value or 0, Ron: steadier for WSJT-X); AVG label redraw <= 4/s;
+  held for peakHoldSec after RF stops, then 0. JSON adds "peakRef", "peakHold", "avg", "avgRef".
+  Firmware ~1508 KB, bin in swr-meter/ron/build/.
 - **Parked:** NR warble fix (Ron 2026-11-01: leave it, NR works well; lower level = less
   warble). Sync AM (off the list). Complex Goertzel for FREQ CAL and FM transmit (future ideas,
   see "Ron confirmed" below). CW ramp length by speed (Ron 2026-11-02, just a thought): the key
