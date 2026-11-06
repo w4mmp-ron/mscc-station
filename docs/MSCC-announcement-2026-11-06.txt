@@ -1,0 +1,95 @@
+Subject: MSCC: the most capable, most configurable MSCC ever
+
+Dear Multus SDR friends,
+
+It's a real pleasure to write to you today. Over the past weeks the MSCC team has been hard at work, and the result is the most flexible, most capable and most beautifully configurable MSCC we've ever made. Some of what you'll read below is soon to be released, and we simply couldn't wait to tell you about it.
+
+
+YOUR RADIO, YOUR COMPUTER, YOUR WAY
+
+MSCC has always been built as a client and servers working together, and that design now pays off in full. Your radio can sit on a Windows PC, a Raspberry Pi, or a Debian / Ubuntu x86 PC. You can operate it from any of them: right at the radio, or from another computer anywhere in your house.
+
+- Windows at the radio, operated from that PC, another Windows PC, a Raspberry Pi or a Linux PC.
+- A Raspberry Pi or Debian x86 PC at the radio, operated from that machine itself, from a Windows PC, or from another Pi or Linux PC.
+
+Every combination, one MSCC. A new guide, "MSCC Configurations: Which setup is yours?", walks you through each one in plain words, so you can pick yours in minutes.
+
+
+REMOTE OPERATION, DONE RIGHT
+
+Sit in your favourite chair and the shack comes to you.
+
+- Remote Phones: the radio in your headphones and your voice on the air, from any computer in the house.
+- Remote Digital: WSJT-X, JS8Call, fldigi and friends on the computer you're sitting at. The radio's audio comes to you, and your transmit audio goes straight back.
+- On Raspberry Pi and Linux clients, MSCC sets up its own virtual sound devices every time you log in. There's nothing to wire up and nothing to forget.
+- Key the radio by CAT or by RTS, whichever your digital program likes.
+- Proven on the air: FT8 contacts made with the radio on a Windows PC and WSJT-X on a Raspberry Pi in another room.
+
+
+THE BEST DSP ENGINE WE'VE EVER BUILT
+
+At the heart of MSCC is a new-generation DSP engine, and it's the finest we've ever offered. Every signal you hear and see passes through it, and you'll notice the difference on the first band you tune.
+
+- An automatic noise blanker that finds and removes impulse noise by itself, with no fiddling required.
+- Spectral noise reduction that lifts weak signals out of the hiss, with simple Off / Low / Med / High settings.
+- Crisp, flexible filtering, with low and high cuts you can set to suit every mode and every band.
+- Smooth AGC that keeps strong and weak stations comfortable to listen to.
+- A spectrum and waterfall you can tune to your taste: smoothing, a falling waterfall, time and peak markers, dB labels, auto snap, and baseline, waterfall gain and zero set per band.
+
+Quiet bands sound cleaner, crowded bands sound calmer, and weak signals you used to miss are now there to work.
+
+
+THE FINEST CW WE'VE EVER OFFERED
+
+With the latest firmware, CW on your Multus radio is pure joy: a signal that is as pleasant to receive as it is to send.
+
+- Soft, clean edges, no key clicks. Your dits and dahs start and stop gently, so your signal stays narrow and your neighbours on the band stay happy.
+    - Coming soon, the new Black Pill daughter board shapes every element with a true raised-cosine envelope, rising and falling smoothly over 5 milliseconds. This is the gold standard of CW keying, shaped right in the signal itself.
+    - On the Proficio Legacy, every element fades in and out with a gentle soft ramp.
+    - On the MKII, the power amplifier's own natural rise keeps the edges round.
+- Buffered Farnsworth from your paddles. Key ahead at your own pace: your sidetone follows your hand instantly, while the radio sends each letter at your character speed with Farnsworth spacing between them. Up to 20 letters wait their turn, so you never have to slow down for the radio. Users who have tried it say the speed is spot on.
+- Keyer memories. CQ and your favourite exchanges are one click away.
+- Near-QSK for those who love to hear the band between their words.
+- A friend to your amplifier. For non-QSK amplifiers, the radio switches the amplifier first and holds the RF back a few milliseconds until it is ready. Your first dit arrives whole, the amplifier's relays are spared, and the release waits for your last element.
+- A stand-alone keyer is on the way: the same buffered Farnsworth keyer in its own 9-volt box.
+
+If you love CW, update your firmware. You'll hear the difference, and so will everyone who works you.
+
+
+A TRANSMITTER YOU CAN TRUST
+
+- An ALC meter that shows exactly where you stand, for voice and digital alike.
+- A two-tone test for checking your signal.
+- The WiFi SWR meter shows forward power, SWR and peak SWR, with peak hold and averaging. It also protects your radio when something goes wrong.
+- Amplifier heat sink temperature at a glance.
+
+
+CALIBRATION IN YOUR HANDS
+
+Receive and transmit IQ, frequency, power, amplifier and QRP calibration, all from MSCC, stored safely in the radio, and kept across firmware updates.
+
+
+CONFIGURED YOUR WAY
+
+Every setting has its place, and MSCC remembers how you like things:
+
+- your Phones and Digital devices, each kept separately
+- your last Remote mode
+- your window sizes and positions
+- your levels
+- your favourite frequencies
+
+Set it once and it simply stays yours. This is the ultimate in configurability.
+
+
+GETTING IT
+
+[download links / versions for Windows, Raspberry Pi and Debian x86]
+[firmware version and where to get it]
+We'll let you know the moment each new piece is ready.
+
+As always, thank you for your reports, your patience and your enthusiasm. You are the reason MSCC keeps getting better. We can't wait to hear you on the air.
+
+73,
+[your name and call]
+Multus SDR, LLC
