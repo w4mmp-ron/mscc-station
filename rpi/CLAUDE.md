@@ -197,6 +197,21 @@ review of what he ported, say if the Pi needs a matching change. Don't start new
   backwards: correct = Input VirtualA.monitor, Output VirtualB (also fixed in Configurations setup 4).
   11 draft items (Appendix C). In the note for Stew (Linux guide section).
 - **Next:** a Pi / Linux remote guide, when Ron says.
+- **Remote audio summary for Stew (2026-11-05, pushed 6c8db8a): `mscc-remote-audio/REMOTE-AUDIO-WHAT-WE-KNOW.md`.**
+  Plain English (Ron: the first version "was written for a machine"). Why: Stew was being led to
+  redo remote audio; Ron: Pi host -> WPF Windows client works fine, same server code on every host.
+  Stew mixes up which way round (host = has the radio + servers, client = where you sit); the file
+  asks him to name both. Ron's device model (corrected me): VirtualA / VirtualB belong to the
+  SERVERS (local Digital, WSJT-X on the same computer), not the remote client. Remote client:
+  Remote Phones = real speaker + mic; Remote Digital = client <-> virtual sound device <-> WSJT-X
+  (Stew: VB-Audio; Ron: two USB adapters back to back). Linux client: PipeWire null sinks,
+  PROPOSED names `mscc_remote_rx` "MSCC Remote RX" (client plays, WSJT-X input = its monitor) and
+  `mscc_remote_tx` "MSCC Remote TX" (WSJT-X output, client input = its monitor); not made yet,
+  no script yet (idea: like mscc-virtual-audio, client side). Open (Stew's): Avalonia doesn't save
+  the Remote device choices or Phones (reverts to one shared device; maybe the spectrum noise,
+  a guess). Stew asked to add his VB-Audio setup to the file. Still to correct (proposed, not
+  approved): the 11-01 user-documents note and the Remote guide say "Pi / Linux remote works
+  differently"; the remote-audio part is the same on every host.
 - **2026-11-01: Pi ms-sdr 3.187: WiFi SWR meter fault to the client, BUILT on the Pi 15:35 (~/mscc/ms-sdr),
   NOT committed, running only after mscc stop/start.** Meter is UDP unicast: at a Pi station it talks
   to ms-sdr only, which relayed SWR/FWD/REF but never the fault (client got Fault=false; the 0x30
