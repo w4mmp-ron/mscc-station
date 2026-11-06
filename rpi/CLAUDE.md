@@ -38,7 +38,17 @@ Git repo root: `C:\Users\Ron\.grok\worktrees`.
 (automatic NB, spectral NR, NR Low/Med/High, client controls).** When he pushes: pull, short
 review of what he ported, say if the Pi needs a matching change. Don't start new work meanwhile.
 
-**Current list (updated 2026-11-05, after f78d141):**
+**Current list (updated 2026-11-06, after bb31561):**
+- **WiFi SWR meter (2026-11-06, Ron's copy `swr-meter/ron/HF_SWR_R4_1/`):** PEAK hold + AVG mode
+  built, OTA-loaded and TESTED (Ron, WSJT-X); details in the SWR meter firmware entry further down.
+  Pushed: firmware 44b02ec, note for Stew bb31561
+  (`.mscc-coord/NOTE-FOR-STEW-SWR-METER-FIRMWARE-CHANGES-2026-11-06.md`). Those two pushed commit messages
+  left out the "With Stew" list; put it in the next sdrcore commit. Open: test the WiFi retry
+  (router off, meter restarted); Ron to decide if ms-sdr itself stops TX on a meter fault
+  (backstop for WSJT-X on the Pi keying via CAT). Build: arduino-cli inside the Arduino IDE,
+  FQBN esp32:esp32:esp32 with FlashSize=4M, PartitionScheme=min_spiffs (full option string in the
+  2026-11-06 session); Ron to add Windows Defender exclusions (Arduino15, arduino cache,
+  libraries, build) because builds were slow.
 - **Pi runs:** mscc-avalonia 1.6.79 (Ron's Avalonia copy, below), recv 3.152 (automatic NB + spectral NR), trans 3.151 (2026-11-05: operator mic
   fix, see below), ms-sdr 3.193 (0x9D paddle Farnsworth, reported to the client), pill 3.13,
   PIC keyer = keyer-buffer (buffered Farnsworth), package mscc 1.0.75 installed (Ron 2026-11-05).
@@ -182,6 +192,9 @@ review of what he ported, say if the Pi needs a matching change. Don't start new
      (2026-11-01) MSCC UI = current Windows client (NB Thr 1..100 vs 1..1009 scale!, ALC switch,
      Remote window), Ubuntu scripts/utilities = Pi (mscc-init 1.0.18 + text wizard, mscc-volume,
      apt kit order). `NOTE-FOR-STEW-USER-DOCUMENTS-2026-11-01.md`
+  9. WiFi SWR meter firmware: our changes (tune allowance, mDNS, WiFi retry, PEAK hold, AVG,
+     JSON keys; REF table tops at 25 W, left to him), his call whether to take them into his copy.
+     `NOTE-FOR-STEW-SWR-METER-FIRMWARE-CHANGES-2026-11-06.md` (pushed bb31561)
 - **Setup 3 (Ron's station), Configurations draft item: ANSWERED 2026-11-03, draft updated (DRAFT box + Appendix A item 2 removed).**
   Read on the Pi: ms-sdr CAT /dev/tnt0, WSJT-X /dev/tnt1 (pair), Rig Kenwood TS-2000, PTT RTS on tnt1;
   MSCC plays VirtualA -> WSJT-X in VirtualA.monitor; WSJT-X out VirtualB -> MSCC VirtualB.monitor; Mono.
