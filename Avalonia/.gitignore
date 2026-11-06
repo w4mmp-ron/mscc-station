@@ -1,0 +1,5 @@
+# Build output (the Pi packages are copied to installers/rpi)
+publish/
+*.deb
+bin/
+obj/
