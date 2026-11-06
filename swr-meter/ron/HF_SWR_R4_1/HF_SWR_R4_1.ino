@@ -80,6 +80,7 @@ lv_obj_t * btn_meter_style = NULL;
 lv_obj_t * lbl_fwd_val;
 lv_obj_t * lbl_ref_val;
 lv_obj_t * lbl_swr_val;
+lv_obj_t * lbl_swr_peak_val = NULL;   // W4MMP 2026-11-06: peak SWR, right of the big SWR
 lv_obj_t * lbl_swr_title;
 lv_obj_t * bar_fwd;
 lv_obj_t * bar_ref;
@@ -237,6 +238,7 @@ float lastForwardPeakPower = -999.0;
 float lastReflectedPower = -999.0;  
 float lastReflectedPeakPower = -999.0;    // ← NEW
 float lastSwr = -999.0;                 // ← NEW
+float lastPeakSwr = -999.0;             // W4MMP 2026-11-06: last peak SWR drawn
 bool lastHighRange = !highRange;        // ← NEW
 float barSmoothFwd = 0.0f;
 float barSmoothRef = 0.0f;
@@ -317,6 +319,12 @@ unsigned long peakHoldStart = 0;          // FWD: last time a reading was near t
 unsigned long peakHoldStartRef = 0;       // REF: same, its own timer
 bool peakHolding = false;                 // FWD peak is being held or decaying
 bool peakHoldingRef = false;              // REF peak is being held or decaying
+/* W4MMP 2026-11-06: PEAK SWR (screen only, not in the JSON). Follows the averaged SWR (the big
+ * number), counted only while FWD >= MIN_POWER_THRESHOLD. Held for peakHoldSec; a reading
+ * whose (SWR - 1) is within 10% of the peak's restarts the hold. When the hold runs out it
+ * drops straight to the live SWR (1.00 when not transmitting), no decay. */
+float peakSWR = 1.0f;
+unsigned long peakSwrStart = 0;
 
 //=============Voltage Format =============
 // Voltage format selection: 0 = Measured, 1 = RMS, 2 = Peak
@@ -822,6 +830,22 @@ void loop() {
                         swr = 1.0f;
                     }
 
+                    // W4MMP 2026-11-06: peak SWR hold
+                    {
+                        unsigned long swrHoldMs = (unsigned long)(peakHoldSec * 1000.0f);
+                        bool swrHoldOver = (millis() - peakSwrStart > swrHoldMs);
+                        if (forwardPower >= MIN_POWER_THRESHOLD) {
+                            if (swr >= peakSWR || swrHoldOver) {
+                                peakSWR = swr;
+                                peakSwrStart = millis();
+                            } else if (swr - 1.0f >= (peakSWR - 1.0f) * PEAK_REFRESH_FRACTION) {
+                                peakSwrStart = millis();
+                            }
+                        } else if (swrHoldOver) {
+                            peakSWR = 1.0f;
+                        }
+                    }
+
                     fwdAccumulator = 0;
                     revAccumulator = 0;
                     currentSample = 0;
@@ -1160,7 +1184,7 @@ void drawMainPage() {
     lv_obj_set_style_text_font(lbl_swr_title, &montserrat_64_swr, 0);
     lv_obj_set_style_text_color(lbl_swr_title, lv_color_hex(0xEEEEEE), 0);
     lv_label_set_text_static(lbl_swr_title, "SWR:");
-    lv_obj_set_pos(lbl_swr_title, 70, 40);
+    lv_obj_set_pos(lbl_swr_title, 5, 40);     // W4MMP 2026-11-06: was 70, room for PEAK SWR
     //lv_obj_set_style_transform_scale(lbl_swr_title, 333, 0); //~ 1.3X size
     lv_obj_clear_flag(lbl_swr_title, LV_OBJ_FLAG_CLICKABLE);
 
@@ -1169,10 +1193,27 @@ void drawMainPage() {
     lv_obj_set_style_text_font(lbl_swr_val, &montserrat_64_swr, 0);
     lv_obj_set_style_text_color(lbl_swr_val, lv_palette_main(LV_PALETTE_AMBER), 0);
     lv_label_set_text(lbl_swr_val, "1.00");
-    lv_obj_set_pos(lbl_swr_val, 270, 40);
+    lv_obj_set_pos(lbl_swr_val, 195, 40);     // W4MMP 2026-11-06: was 270
     //lv_obj_set_style_transform_scale(lbl_swr_val, 333, 0); //~ 1.3X size
     lv_obj_add_flag(lbl_swr_val, LV_OBJ_FLAG_IGNORE_LAYOUT);
     lv_obj_clear_flag(lbl_swr_val, LV_OBJ_FLAG_CLICKABLE);
+
+    // W4MMP 2026-11-06: PEAK SWR, small caption + value right of the big SWR (always shown)
+    lv_obj_t * lbl_swr_peak_title = lv_label_create(screen_main);
+    lv_obj_set_style_text_font(lbl_swr_peak_title, &lv_font_montserrat_18, 0);
+    lv_obj_set_style_text_color(lbl_swr_peak_title, lv_color_hex(0xEEEEEE), 0);
+    lv_label_set_text_static(lbl_swr_peak_title, "PEAK");
+    lv_obj_set_pos(lbl_swr_peak_title, 385, 44);
+    lv_obj_clear_flag(lbl_swr_peak_title, LV_OBJ_FLAG_CLICKABLE);
+
+    lbl_swr_peak_val = lv_label_create(screen_main);
+    lv_obj_set_style_text_font(lbl_swr_peak_val, &lv_font_montserrat_32, 0);
+    lv_obj_set_style_text_color(lbl_swr_peak_val, lv_palette_main(LV_PALETTE_AMBER), 0);
+    lv_label_set_text(lbl_swr_peak_val, "1.00");
+    lv_obj_set_pos(lbl_swr_peak_val, 385, 66);
+    lv_obj_add_flag(lbl_swr_peak_val, LV_OBJ_FLAG_IGNORE_LAYOUT);
+    lv_obj_clear_flag(lbl_swr_peak_val, LV_OBJ_FLAG_CLICKABLE);
+    lastPeakSwr = -999.0f;
 
     //  FWD Section
     lv_obj_t * lbl_fwd_title = lv_label_create(screen_main);
@@ -1490,6 +1531,16 @@ void updateDynamicValues() {
           lv_obj_set_style_text_color(lbl_swr_val, lv_palette_main(LV_PALETTE_AMBER), 0);
       }
       lastSwr = swr; // Update the tracking variable
+  }
+
+  // W4MMP 2026-11-06: PEAK SWR
+  if (lbl_swr_peak_val != NULL && fabs(peakSWR - lastPeakSwr) >= SWR_CHANGE_THRESHOLD) {
+      char pkBuf[10];
+      dtostrf(peakSWR, 4, 2, pkBuf);
+      lv_label_set_text(lbl_swr_peak_val, pkBuf);
+      lv_obj_set_style_text_color(lbl_swr_peak_val,
+          lv_palette_main(peakSWR > swrAlarmThreshold ? LV_PALETTE_RED : LV_PALETTE_AMBER), 0);
+      lastPeakSwr = peakSWR;
   }
 
     // FWD power
@@ -3849,6 +3900,7 @@ void forceDataRedraw() {
   lastForwardPeakPower = -1.0;
   lastReflectedPower = -1.0;
   lastSwr = -1.0;
+  lastPeakSwr = -1.0;   // W4MMP 2026-11-06
   lastHighRange = "garbage";
   fwdVisualMax = -1;
   refVisualMax = -1;

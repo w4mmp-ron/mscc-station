@@ -40,7 +40,8 @@ review of what he ported, say if the Pi needs a matching change. Don't start new
 
 **Current list (updated 2026-11-06, after bb31561):**
 - **WiFi SWR meter (2026-11-06, Ron's copy `swr-meter/ron/HF_SWR_R4_1/`):** PEAK hold + AVG mode
-  built, OTA-loaded and TESTED (Ron, WSJT-X); details in the SWR meter firmware entry further down.
+  built, OTA-loaded and TESTED (Ron, WSJT-X); PEAK SWR beside the big SWR (later 2026-11-06) built,
+  loaded, works (Ron), committed, not pushed yet; details in the SWR meter firmware entry further down.
   Pushed: firmware 44b02ec, note for Stew bb31561
   (`.mscc-coord/NOTE-FOR-STEW-SWR-METER-FIRMWARE-CHANGES-2026-11-06.md`). Those two pushed commit messages
   left out the "With Stew" list; put it in the next sdrcore commit. Open: test the WiFi retry
@@ -193,7 +194,7 @@ review of what he ported, say if the Pi needs a matching change. Don't start new
      Remote window), Ubuntu scripts/utilities = Pi (mscc-init 1.0.18 + text wizard, mscc-volume,
      apt kit order). `NOTE-FOR-STEW-USER-DOCUMENTS-2026-11-01.md`
   9. WiFi SWR meter firmware: our changes (tune allowance, mDNS, WiFi retry, PEAK hold, AVG,
-     JSON keys; REF table tops at 25 W, left to him), his call whether to take them into his copy.
+     PEAK SWR on the screen, JSON keys; REF table tops at 25 W, left to him), his call whether to take them into his copy.
      `NOTE-FOR-STEW-SWR-METER-FIRMWARE-CHANGES-2026-11-06.md` (pushed bb31561)
 - **Setup 3 (Ron's station), Configurations draft item: ANSWERED 2026-11-03, draft updated (DRAFT box + Appendix A item 2 removed).**
   Read on the Pi: ms-sdr CAT /dev/tnt0, WSJT-X /dev/tnt1 (pair), Rig Kenwood TS-2000, PTT RTS on tnt1;
@@ -314,6 +315,13 @@ review of what he ported, say if the Pi needs a matching change. Don't start new
   (first 1 s of a TX shows the held value or 0, Ron: steadier for WSJT-X); AVG label redraw <= 4/s;
   held for peakHoldSec after RF stops, then 0. JSON adds "peakRef", "peakHold", "avg", "avgRef".
   Firmware ~1508 KB, bin in swr-meter/ron/build/.
+  **2026-11-06 later: PEAK SWR on the main screen, WORKS (Ron).** "SWR:" moved x 70 -> 5, value
+  270 -> 195 (64 px font kept; "10.00" ends ~x 370); new "PEAK" caption (montserrat 18, 385,44) and
+  value (montserrat 32, 385,66), always shown, amber / red over the alarm threshold. peakSWR follows
+  the averaged swr (the big number), only while FWD >= MIN_POWER_THRESHOLD; hold = peakHoldSec,
+  restarted by a reading whose (SWR - 1) is within 10% of the peak's; after the hold it drops to the
+  live SWR (1.00 unkeyed), no decay. NOT in the JSON / web page (Ron). Cross-needle mode unchanged.
+  Firmware ~1509 KB.
 - **Parked:** NR warble fix (Ron 2026-11-01: leave it, NR works well; lower level = less
   warble). Sync AM (off the list). Complex Goertzel for FREQ CAL and FM transmit (future ideas,
   see "Ron confirmed" below). CW ramp length by speed (Ron 2026-11-02, just a thought): the key

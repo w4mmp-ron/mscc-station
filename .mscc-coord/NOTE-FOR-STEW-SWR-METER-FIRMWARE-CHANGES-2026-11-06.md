@@ -86,6 +86,21 @@ Ron's old PEAK / VOLTS choice is carried over the first time it starts.
 Tested by Ron with WSJT-X.
 
 
+## 6. PEAK SWR beside the big SWR
+
+Added later the same day. The main screen now shows a smaller PEAK SWR to the right of the big
+SWR number. To make room, "SWR:" moved to the left edge and the big number moved left with it.
+Same size font as before.
+
+- It holds the highest SWR (the same averaged SWR as the big number) while you transmit.
+- Same hold rule and hold time as the PEAK watts. After the hold it goes straight back to the
+  live SWR, or 1.00 when you're not transmitting.
+- Amber, red when over the SWR alarm threshold. Always shown.
+- Screen only: not in the JSON or on the web page. The cross-needle screen is unchanged.
+
+Tested by Ron.
+
+
 ## JSON
 
 New keys, added beside the old ones (nothing removed or renamed):
