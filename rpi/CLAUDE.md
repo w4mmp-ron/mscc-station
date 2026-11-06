@@ -41,11 +41,11 @@ review of what he ported, say if the Pi needs a matching change. Don't start new
 **Current list (updated 2026-11-06, after bb31561):**
 - **WiFi SWR meter (2026-11-06, Ron's copy `swr-meter/ron/HF_SWR_R4_1/`):** PEAK hold + AVG mode
   built, OTA-loaded and TESTED (Ron, WSJT-X); PEAK SWR beside the big SWR (later 2026-11-06) built,
-  loaded, works (Ron), committed, not pushed yet; details in the SWR meter firmware entry further down.
+  loaded, works (Ron); details in the SWR meter firmware entry further down.
   Pushed: firmware 44b02ec, note for Stew bb31561
-  (`.mscc-coord/NOTE-FOR-STEW-SWR-METER-FIRMWARE-CHANGES-2026-11-06.md`). The two PSoC CW top speed
-  commits were reordered after them and are still local (hold). Those two pushed commit messages
-  left out the "With Stew" list; put it in the next sdrcore commit. Open: test the WiFi retry
+  (`.mscc-coord/NOTE-FOR-STEW-SWR-METER-FIRMWARE-CHANGES-2026-11-06.md`), notes 1ab59db, PEAK SWR
+  a2134e5 (has the "With Stew" list). The two PSoC CW top speed commits (0cec97e, 4ea90e3) come
+  after them and are still local (hold). Open: test the WiFi retry
   (router off, meter restarted); Ron to decide if ms-sdr itself stops TX on a meter fault
   (backstop for WSJT-X on the Pi keying via CAT). Build: arduino-cli inside the Arduino IDE,
   FQBN esp32:esp32:esp32 with FlashSize=4M, PartitionScheme=min_spiffs (full option string in the
@@ -210,11 +210,11 @@ review of what he ported, say if the Pi needs a matching change. Don't start new
   10. WiFi SWR meter firmware: our changes (tune allowance, mDNS, WiFi retry, PEAK hold, AVG,
      PEAK SWR on the screen, JSON keys; REF table tops at 25 W, left to him), his call whether to take them into his copy.
      `NOTE-FOR-STEW-SWR-METER-FIRMWARE-CHANGES-2026-11-06.md` (pushed bb31561)
-  10. Windows ms-sdr stops all servers ~45 s after a remote client leaves (one line,
+  11. Windows ms-sdr stops all servers ~45 s after a remote client leaves (one line,
      `servers_failed = 0;` in Flusher_thread case 1, as on the Pi), his option; and check the RF
      in Remote Digital from the Pi client. `NOTE-FOR-STEW-WINDOWS-MSSDR-CLIENT-GONE-2026-11-06.md`
      (committed 2026-11-06, push held with the PSoC commits).
-  11. Offer: an x86_64 (amd64) package of Ron's Avalonia copy for Ubuntu / Debian; Claude adds an
+  12. Offer: an x86_64 (amd64) package of Ron's Avalonia copy for Ubuntu / Debian; Claude adds an
      -Arch amd64 choice to the build script, builds it, README steps. Only if he wants it.
      `NOTE-FOR-STEW-AVALONIA-X86-BUILD-2026-11-06.md`
   13. Windows ms-sdr has no WiFi SWR meter support: no swr_wifi_meter.c, and meter.c is not in
@@ -397,7 +397,7 @@ review of what he ported, say if the Pi needs a matching change. Don't start new
   TS-2000, Serial /dev/ttyUSB11 (= tnt1; Avalonia holds tnt0). The pair comes back by itself
   after a Pi reboot (Ron checked). Windows ms-sdr stops all servers ~45 s after the
   client leaves (Flusher_thread "Client FAILED" falls through to Stop_all; the Pi sets
-  servers_failed = 0). Start the Windows servers again before each connect. Note for Stew (list item 10):
+  servers_failed = 0). Start the Windows servers again before each connect. Note for Stew (list item 11):
   `.mscc-coord/NOTE-FOR-STEW-WINDOWS-MSSDR-CLIENT-GONE-2026-11-06.md`. Pi ms-sdr PIN=2
   (DCD) never keys: it checks fDCD, which is never set (only fRLSD is read).
 - **2026-11-01: Pi ms-sdr 3.187: WiFi SWR meter fault to the client, BUILT on the Pi 15:35 (~/mscc/ms-sdr),
