@@ -282,7 +282,7 @@ review of what he ported, say if the Pi needs a matching change. Don't start new
   /api?action=reset, result read from the answer ("fault":0). Test PASSED 21:06 (Ron): 15 m tune 16 s,
   tune=1 OK ~20 ms before key, no fault. Old firmware ignores tune=1 (logged "no tune flag"), harmless.
   ms-sdr committed. Firmware committed 2026-11-04 (Ron; no longer git-excluded), with mDNS added (meter
-  answers as hf-swr-meter.local; tested from Firefox, Ron). Next: note for Stew about the firmware changes.
+  answers as hf-swr-meter.local; tested from Firefox, Ron). Note for Stew about the firmware changes: `.mscc-coord/NOTE-FOR-STEW-SWR-METER-FIRMWARE-CHANGES-2026-11-06.md` (2026-11-06; tune allowance, mDNS, WiFi retry, PEAK hold, AVG, JSON keys, 25 W REF table limit).
   21:18: touch control "Tune Allow (s)" on the meter SETTINGS page (rows respaced to 52 px:
   52/104/156/208/260; -/+ 0..10, 0 = OFF, saved on Back). Ron: fits and works. Client 11.1.5 dropped
   TX 2 ms after the relayed fault (good). Then find the limit and fix. Also pending Ron's decision: should ms-sdr itself stop
