@@ -72,7 +72,7 @@ public partial class RemoteAfWindow : Window
         RxHeading.Text = digi ? "DIGITAL RX (VAC)" : "PHONES RX";
         MicHeading.Text = digi ? "DIGITAL MIC TX (VAC)" : "EQ / MIC TX";
         VacHint.Text = digi
-            ? "WSJT-X should use the same Digital Speaker / Mic as mscc-init (VirtualA / VirtualB)."
+            ? "WSJT-X: Input = monitor of the RX device above, Output = the device whose monitor is the mic above (e.g. MSCC_Remote_RX / MSCC_Remote_TX)."
             : "";
         VacHint.IsVisible = digi;
         string catPort = _vm.RemoteCat?.PortName ?? KenwoodCatPort.ResolveLinuxCatPath() ?? "(none)";
@@ -95,18 +95,9 @@ public partial class RemoteAfWindow : Window
         _ready = false;
         PathPhones.IsChecked = !digi;
         PathDigital.IsChecked = digi;
-        if (digi)
-        {
-            int play = MainViewModel.FindNamedAfDevice(RemoteAfEngine.PlayDevices, LinuxDigitalIni.DigitalSpeaker);
-            int mic = MainViewModel.FindNamedAfDevice(RemoteAfEngine.MicDevices, LinuxDigitalIni.DigitalMic);
-            SelectByTag(PlayDeviceCombo, play);
-            SelectByTag(MicDeviceCombo, mic);
-        }
-        else
-        {
-            SelectByTag(PlayDeviceCombo, _vm.RemotePlayDeviceIndex);
-            SelectByTag(MicDeviceCombo, _vm.RemoteMicDeviceIndex);
-        }
+        // Saved choice for this path (by name), else the path's defaults.
+        SelectByTag(PlayDeviceCombo, _vm.ResolveRemotePlayDevice());
+        SelectByTag(MicDeviceCombo, _vm.ResolveRemoteMicDevice());
         _ready = was;
     }
 
@@ -130,6 +121,7 @@ public partial class RemoteAfWindow : Window
             LogBox.Text += msg + "\n";
             if (LogBox.Text.Length > 8000)
                 LogBox.Text = LogBox.Text[^4000..];
+            LogBox.CaretIndex = LogBox.Text.Length;   // keep the newest line in view
         });
     }
 
@@ -148,8 +140,7 @@ public partial class RemoteAfWindow : Window
         {
             if (_vm.RemoteAf != null)
                 _vm.RemoteAf.PlayDeviceIndex = idx;
-            if (!_vm.RemoteDigitalAudio)
-                _vm.RemotePlayDeviceIndex = idx;
+            _vm.SaveRemoteDeviceChoice(play: true, idx);
             _vm.ApplyRemoteAfDevicesAndRestart("play device");
         }
     }
@@ -161,8 +152,7 @@ public partial class RemoteAfWindow : Window
         {
             if (_vm.RemoteAf != null)
                 _vm.RemoteAf.MicDeviceIndex = idx;
-            if (!_vm.RemoteDigitalAudio)
-                _vm.RemoteMicDeviceIndex = idx;
+            _vm.SaveRemoteDeviceChoice(play: false, idx);
             _vm.ApplyRemoteAfDevicesAndRestart("mic device");
         }
     }

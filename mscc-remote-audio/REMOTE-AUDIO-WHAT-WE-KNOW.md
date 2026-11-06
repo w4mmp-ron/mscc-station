@@ -71,21 +71,30 @@ switches it off.
   set up (one cable or two, and which way each one goes)? Then it's written down.
 - **Ron, Windows client:** two USB audio adapters wired back to back.
 - **Linux client (Avalonia on Ubuntu or the Pi):** two PipeWire / PulseAudio "null sinks", which
-  do what VB-Audio does on Windows. Proposed names (not made yet):
+  do what VB-Audio does on Windows. Working on the air since 2026-11-06 (Ron: Windows host, the Pi
+  as client, two FT8 QSOs):
 
-  | Device | Internal name | Name shown in menus | Who plays into it | Who listens |
-  |---|---|---|---|---|
-  | Receive | `mscc_remote_rx` | MSCC Remote RX | the client | WSJT-X input = "Monitor of MSCC Remote RX" |
-  | Transmit | `mscc_remote_tx` | MSCC Remote TX | WSJT-X output | client input = "Monitor of MSCC Remote TX" |
+  | Device | Who plays into it | Who listens |
+  |---|---|---|
+  | `MSCC_Remote_RX` | the client (radio receive audio) | WSJT-X Input = `MSCC_Remote_RX.monitor` |
+  | `MSCC_Remote_TX` | WSJT-X Output | the client's mic = `MSCC_Remote_TX.monitor` |
 
   RX and TX are from the radio's point of view. Each null sink is a fake speaker; what's played
-  into it comes out of its "Monitor of ..." fake microphone. To make them by hand (48 kHz, like
-  VirtualA and VirtualB; gone after a reboot unless added to the startup config):
+  into it comes out of its ".monitor" fake microphone. Ron's mscc-avalonia package (1.6.84 on)
+  makes them at every login. To make them by hand (48 kHz, like VirtualA and VirtualB; gone after
+  a reboot):
 
   ```
-  pactl load-module module-null-sink sink_name=mscc_remote_rx rate=48000 sink_properties='device.description="MSCC Remote RX"'
-  pactl load-module module-null-sink sink_name=mscc_remote_tx rate=48000 sink_properties='device.description="MSCC Remote TX"'
+  pactl load-module module-null-sink sink_name=MSCC_Remote_RX rate=48000 sink_properties=device.description=MSCC_Remote_RX
+  pactl load-module module-null-sink sink_name=MSCC_Remote_TX rate=48000 sink_properties=device.description=MSCC_Remote_TX
   ```
+
+  Keep the name and the description the same. My first try used "MSCC Remote RX" as the
+  description for `mscc_remote_rx`, and Avalonia crashed inside PortAudio when it opened it.
+
+  WSJT-X in Remote Digital needs PTT from CAT or RTS: the client has no VOX. CAT works in any
+  Avalonia. RTS needs Ron's copy (1.6.81 on), which watches CTS on the client's end of the
+  tty0tty pair, the same way ms-sdr does locally (`PIN=1` in comm-port.ini).
 
 A note on VirtualA and VirtualB, the virtual devices the Linux installer makes: they belong to
 the **servers**. They let the servers talk to WSJT-X when it runs on the same computer as the
@@ -114,7 +123,12 @@ What's right for one of these is wrong for the others, so settings can't be carr
 - In Avalonia, the Remote Audio device choices don't stay saved: they go back to one shared
   device, and the Phones choice isn't kept either. Remote Phones and Remote Digital each need
   their own devices, so the problem is the choices not being saved. The shared device might
-  also be the noise you saw on the spectrum, but that's only a guess.
+  also be the noise you saw on the spectrum, but that's only a guess. (Ron's copy saves them by
+  name since 1.6.80, if you want to look at how.)
+- With a Windows host, the servers stop about 45 seconds after the client goes away, so they
+  have to be started again before the next connect. The Pi host keeps running.
+- The RF in Remote Digital from the Pi client hasn't been looked at yet. Stew, could you check it
+  when you have a chance?
 
 ## More detail, if needed
 

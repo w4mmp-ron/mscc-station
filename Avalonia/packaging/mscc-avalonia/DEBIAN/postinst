@@ -15,6 +15,33 @@ fi
 if command -v gtk-update-icon-cache >/dev/null 2>&1; then
   gtk-update-icon-cache -q /usr/share/icons/hicolor 2>/dev/null || true
 fi
+# --- Remote Digital audio pair (MSCC_Remote_RX / MSCC_Remote_TX) ---
+RA_SH=/usr/share/mscc-avalonia/bin/mscc-avalonia-remote-audio.sh
+RA_UNIT=mscc-avalonia-remote-audio.service
+chmod 755 "$RA_SH" 2>/dev/null || true
+# No ALSA names: 1.6.83 added them, but without pipewire-alsa they were broken and a
+# same-named ALSA MSCC_Remote_TX hid the real one from WSJT-X. Remove that file.
+rm -f /etc/alsa/conf.d/99-mscc-avalonia-remote.conf
+# Every user gets the pair at login
+if command -v systemctl >/dev/null 2>&1; then
+  systemctl --global enable "$RA_UNIT" >/dev/null 2>&1 || true
+fi
+# Make it now for the installing user if their session is up (else it comes at next login)
+RU="${SUDO_USER:-}"
+if [ -n "$RU" ] && [ "$RU" != "root" ] && command -v runuser >/dev/null 2>&1; then
+  RUID="$(id -u "$RU" 2>/dev/null || true)"
+  if [ -n "$RUID" ] && [ -d "/run/user/$RUID" ]; then
+    runuser -u "$RU" -- env XDG_RUNTIME_DIR="/run/user/$RUID" \
+      DBUS_SESSION_BUS_ADDRESS="unix:path=/run/user/$RUID/bus" \
+      systemctl --user daemon-reload >/dev/null 2>&1 || true
+    runuser -u "$RU" -- env XDG_RUNTIME_DIR="/run/user/$RUID" \
+      DBUS_SESSION_BUS_ADDRESS="unix:path=/run/user/$RUID/bus" \
+      systemctl --user restart "$RA_UNIT" >/dev/null 2>&1 || true
+  fi
+fi
+
 echo "mscc-avalonia installed. Menu: MSCC → MSCC Avalonia  (or run: mscc-avalonia)"
+echo "Remote Digital audio: MSCC_Remote_RX / MSCC_Remote_TX (made at login)."
+echo "  WSJT-X Input = MSCC_Remote_RX.monitor, Output = MSCC_Remote_TX"
 echo "Start servers first with MSCC Start, then open MSCC Avalonia."
 exit 0

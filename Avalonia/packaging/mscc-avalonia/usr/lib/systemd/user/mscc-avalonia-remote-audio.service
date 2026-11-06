@@ -1,0 +1,13 @@
+[Unit]
+Description=MSCC Avalonia Remote Digital audio pair (MSCC_Remote_RX / MSCC_Remote_TX)
+Documentation=file:///usr/share/mscc-avalonia/bin/mscc-avalonia-remote-audio.sh
+After=pipewire.service pipewire-pulse.service sound.target
+Wants=pipewire.service
+
+[Service]
+Type=oneshot
+ExecStart=/usr/share/mscc-avalonia/bin/mscc-avalonia-remote-audio.sh
+RemainAfterExit=yes
+
+[Install]
+WantedBy=default.target

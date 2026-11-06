@@ -1,5 +1,5 @@
 Package: mscc-avalonia
-Version: 1.6.79
+Version: 1.6.86
 Section: hamradio
 Priority: optional
 Architecture: arm64

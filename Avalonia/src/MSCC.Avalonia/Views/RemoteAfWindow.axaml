@@ -4,7 +4,7 @@
         x:Class="MSCC.Avalonia.Views.RemoteAfWindow"
         x:DataType="vm:MainViewModel"
         Title="Remote Audio"
-        Width="440" Height="520" MinWidth="360" MinHeight="360"
+        Width="520" Height="720" MinWidth="420" MinHeight="600"
         WindowStartupLocation="CenterOwner"
         Background="#FF1C1C1C" Foreground="White">
   <Grid Margin="10" RowDefinitions="Auto,Auto,Auto,*,Auto">
@@ -80,7 +80,7 @@
       </StackPanel>
     </Border>
 
-    <TextBox x:Name="LogBox" Grid.Row="3" IsReadOnly="True" FontFamily="Consolas" FontSize="11"
+    <TextBox x:Name="LogBox" Grid.Row="3" MinHeight="160" IsReadOnly="True" FontFamily="Consolas" FontSize="11"
              Background="#111" Foreground="#D0D0D0" BorderBrush="#444"
              AcceptsReturn="True" TextWrapping="Wrap" Margin="0,0,0,8"/>
 

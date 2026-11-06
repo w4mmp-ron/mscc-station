@@ -54,6 +54,8 @@ public sealed class ClientSettings
     /// With Phones path: CMD_SET_AUDIO_DEVICE=2 (remote mic). Ignored while Digital.
     /// </summary>
     public bool RemoteAudio { get; set; }
+    /// <summary>Remote path last used: true = Digital, false = Phones.</summary>
+    public bool RemoteDigitalAudio { get; set; }
     public bool RemoteMonitorAtRadio { get; set; }
     public int RemotePlayVolume { get; set; } = 80;
     public int RemoteMicVolume { get; set; } = 80;
@@ -66,6 +68,11 @@ public sealed class ClientSettings
     public float RemoteEqHighDb { get; set; }
     public int RemotePlayDeviceIndex { get; set; } = -1;
     public int RemoteMicDeviceIndex { get; set; } = -1;
+    /// <summary>Remote device choices saved by name ("Name|HostApi"); indexes shift when devices change.</summary>
+    public string RemotePlayDeviceName { get; set; } = "";
+    public string RemoteMicDeviceName { get; set; } = "";
+    public string RemoteDigiPlayDeviceName { get; set; } = "";
+    public string RemoteDigiMicDeviceName { get; set; } = "";
 
     /// <summary>FM Simplex (no TX offset). Unchecked → VFO-B = A−100 kHz split.</summary>
     public bool FmSimplex { get; set; }
@@ -356,6 +363,7 @@ public static class ClientSettingsStore
             sb.AppendLine($"D_MIC={s.DMicGain}");
             sb.AppendLine($"DIGITAL_AUDIO={(s.IsDigitalAudio ? "1" : "0")}");
             sb.AppendLine($"REMOTE_AUDIO={(s.RemoteAudio ? "1" : "0")}");
+            sb.AppendLine($"REMOTE_DIGITAL={(s.RemoteDigitalAudio ? "1" : "0")}");
             sb.AppendLine($"REMOTE_MONITOR={(s.RemoteMonitorAtRadio ? "1" : "0")}");
             sb.AppendLine($"REMOTE_PLAY_VOL={s.RemotePlayVolume}");
             sb.AppendLine($"REMOTE_MIC_VOL={s.RemoteMicVolume}");
@@ -367,6 +375,10 @@ public static class ClientSettingsStore
             sb.AppendLine($"REMOTE_EQ_HIGH={s.RemoteEqHighDb.ToString(CultureInfo.InvariantCulture)}");
             sb.AppendLine($"REMOTE_PLAY_DEV={s.RemotePlayDeviceIndex}");
             sb.AppendLine($"REMOTE_MIC_DEV={s.RemoteMicDeviceIndex}");
+            sb.AppendLine($"REMOTE_PLAY_NAME={s.RemotePlayDeviceName}");
+            sb.AppendLine($"REMOTE_MIC_NAME={s.RemoteMicDeviceName}");
+            sb.AppendLine($"REMOTE_DIGI_PLAY_NAME={s.RemoteDigiPlayDeviceName}");
+            sb.AppendLine($"REMOTE_DIGI_MIC_NAME={s.RemoteDigiMicDeviceName}");
             sb.AppendLine($"FM_SIMPLEX={(s.FmSimplex ? "1" : "0")}");
             sb.AppendLine();
             sb.AppendLine("# RIT");
@@ -643,6 +655,9 @@ public static class ClientSettingsStore
             case "DIGITAL_AUDIO":
                 s.IsDigitalAudio = IsTruthy(val);
                 break;
+            case "REMOTE_DIGITAL":
+                s.RemoteDigitalAudio = IsTruthy(val);
+                break;
             case "REMOTE_AUDIO":
                 s.RemoteAudio = IsTruthy(val);
                 break;
@@ -686,6 +701,18 @@ public static class ClientSettingsStore
             case "REMOTE_MIC_DEV":
                 if (int.TryParse(val, NumberStyles.Integer, CultureInfo.InvariantCulture, out int rmd))
                     s.RemoteMicDeviceIndex = rmd;
+                break;
+            case "REMOTE_PLAY_NAME":
+                s.RemotePlayDeviceName = val;
+                break;
+            case "REMOTE_MIC_NAME":
+                s.RemoteMicDeviceName = val;
+                break;
+            case "REMOTE_DIGI_PLAY_NAME":
+                s.RemoteDigiPlayDeviceName = val;
+                break;
+            case "REMOTE_DIGI_MIC_NAME":
+                s.RemoteDigiMicDeviceName = val;
                 break;
             case "FM_SIMPLEX":
                 s.FmSimplex = IsTruthy(val);

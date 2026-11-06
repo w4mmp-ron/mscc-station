@@ -50,7 +50,7 @@ review of what he ported, say if the Pi needs a matching change. Don't start new
   FQBN esp32:esp32:esp32 with FlashSize=4M, PartitionScheme=min_spiffs (full option string in the
   2026-11-06 session); Ron to add Windows Defender exclusions (Arduino15, arduino cache,
   libraries, build) because builds were slow.
-- **Pi runs:** mscc-avalonia 1.6.79 (Ron's Avalonia copy, below), recv 3.152 (automatic NB + spectral NR), trans 3.151 (2026-11-05: operator mic
+- **Pi runs:** mscc-avalonia 1.6.86 (Ron's Avalonia copy, below), recv 3.152 (automatic NB + spectral NR), trans 3.151 (2026-11-05: operator mic
   fix, see below), ms-sdr 3.193 (0x9D paddle Farnsworth, reported to the client), pill 3.13,
   PIC keyer = keyer-buffer (buffered Farnsworth), package mscc 1.0.75 installed (Ron 2026-11-05).
   Pushed 2026-11-05: keyer + 0x9D work (fb90f87), mscc 1.0.75 (f78d141), pill 3.13 (a2e351d in
@@ -196,6 +196,13 @@ review of what he ported, say if the Pi needs a matching change. Don't start new
   9. WiFi SWR meter firmware: our changes (tune allowance, mDNS, WiFi retry, PEAK hold, AVG,
      PEAK SWR on the screen, JSON keys; REF table tops at 25 W, left to him), his call whether to take them into his copy.
      `NOTE-FOR-STEW-SWR-METER-FIRMWARE-CHANGES-2026-11-06.md` (pushed bb31561)
+  10. Windows ms-sdr stops all servers ~45 s after a remote client leaves (one line,
+     `servers_failed = 0;` in Flusher_thread case 1, as on the Pi), his option; and check the RF
+     in Remote Digital from the Pi client. `NOTE-FOR-STEW-WINDOWS-MSSDR-CLIENT-GONE-2026-11-06.md`
+     (committed 2026-11-06, push held with the PSoC commits).
+  11. Offer: an x86_64 (amd64) package of Ron's Avalonia copy for Ubuntu / Debian; Claude adds an
+     -Arch amd64 choice to the build script, builds it, README steps. Only if he wants it.
+     `NOTE-FOR-STEW-AVALONIA-X86-BUILD-2026-11-06.md`
 - **Setup 3 (Ron's station), Configurations draft item: ANSWERED 2026-11-03, draft updated (DRAFT box + Appendix A item 2 removed).**
   Read on the Pi: ms-sdr CAT /dev/tnt0, WSJT-X /dev/tnt1 (pair), Rig Kenwood TS-2000, PTT RTS on tnt1;
   MSCC plays VirtualA -> WSJT-X in VirtualA.monitor; WSJT-X out VirtualB -> MSCC VirtualB.monitor; Mono.
@@ -218,16 +225,17 @@ review of what he ported, say if the Pi needs a matching change. Don't start new
   asks him to name both. Ron's device model (corrected me): VirtualA / VirtualB belong to the
   SERVERS (local Digital, WSJT-X on the same computer), not the remote client. Remote client:
   Remote Phones = real speaker + mic; Remote Digital = client <-> virtual sound device <-> WSJT-X
-  (Stew: VB-Audio; Ron: two USB adapters back to back). Linux client: PipeWire null sinks,
-  PROPOSED names `mscc_remote_rx` "MSCC Remote RX" (client plays, WSJT-X input = its monitor) and
-  `mscc_remote_tx` "MSCC Remote TX" (WSJT-X output, client input = its monitor); not made yet,
-  no script yet (idea: like mscc-virtual-audio, client side). Open (Stew's): Avalonia doesn't save
-  the Remote device choices or Phones (reverts to one shared device; maybe the spectrum noise,
-  a guess). Stew asked to add his VB-Audio setup to the file. Still to correct (proposed, not
+  (Stew: VB-Audio; Ron: two USB adapters back to back). Linux client: PipeWire null sinks
+  `MSCC_Remote_RX` (client plays, WSJT-X input = MSCC_Remote_RX.monitor) and `MSCC_Remote_TX`
+  (WSJT-X output, client input = MSCC_Remote_TX.monitor), made at login by Ron's mscc-avalonia
+  since 1.6.84 (2026-11-06, see the Avalonia item below). The first proposal (`mscc_remote_rx`
+  "MSCC Remote RX") crashed PortAudio: name and description must be the same. Open (Stew's
+  mscc-ui, fixed in Ron's copy 1.6.80): Avalonia doesn't save the Remote device choices or
+  Phones (reverts to one shared device; maybe the spectrum noise, a guess). Stew asked to add his VB-Audio setup to the file. Still to correct (proposed, not
   approved): the 11-01 user-documents note and the Remote guide say "Pi / Linux remote works
   differently"; the remote-audio part is the same on every host.
-- **Ron's Avalonia client copy (2026-11-05/06, pushed 24d8738): `worktrees/Avalonia`, Pi package
-  `mscc-avalonia` 1.6.79 (installed on the Pi, Ron: width / size memory work).** Copy of Stew's
+- **Ron's Avalonia client copy (2026-11-05/06, pushed 24d8738 = 1.6.79): `worktrees/Avalonia`, Pi
+  package `mscc-avalonia` 1.6.86 installed on the Pi (2026-11-06).** Copy of Stew's
   `mscc-ui/Avalonia-Migration` 0.6.75 with its own `src/MSCC.Core` copy; never touch Stew's WPF /
   Avalonia trees (building must not write there either). Version 1.x (Ron) vs Stew's 0.6.x.
   Installs beside Stew's mscc-ui 0.6.31: /opt/mscc-avalonia, /usr/bin/mscc-avalonia, menu
@@ -243,8 +251,33 @@ review of what he ported, say if the Pi needs a matching change. Don't start new
   BASELINE / WF GAIN / WF ZERO per band. Also: window size / position remembered, own resize grips
   (the Pi's Openbox runs ~/.config/openbox/rpd-rc.xml = theme only, no side handles).
   Not ported: Reset configuration, identity request, RF power report. **Not tested on the air yet**
-  (2 TONE, PHASE, QRP save, SWR meter, smoothing). Remote Phones / Digital devices: see the remote
-  audio item above (Linux client null sinks, proposed, not made).
+  (2 TONE, PHASE, QRP save, SWR meter, smoothing).
+  **2026-11-06, Remote Digital on the air (1.6.80 to 1.6.86): Windows host (servers on Ron's PC),
+  Avalonia + WSJT-X on the Pi, two FT8 QSOs.** Stew to check the RF (Ron can't see it).
+  1.6.80 Remote devices saved by name ("Name|HostApi"), Phones and Digital separately
+  (REMOTE_PLAY_NAME, REMOTE_MIC_NAME, REMOTE_DIGI_PLAY_NAME, REMOTE_DIGI_MIC_NAME); before, Digital
+  always went back to VirtualA / VirtualB.monitor and Phones kept a PortAudio index that shifts.
+  1.6.81 Remote CAT watches the line in comm-port.ini PIN= (1 = CTS = WSJT-X RTS, 2 = DCD = DTR)
+  every 10 ms and keys like CAT TX; (ms-sdr Pin_Check_Thread does the same locally). WSJT-X PTT =
+  RTS or CAT both work. Linux raises RTS when a port opens: watch for a short key at WSJT-X start.
+  1.6.82 Digital default mic = MSCC_Remote_TX.monitor (PortAudio lists the internal name, not
+  "Monitor of ..."); Remote window 520x720 with the log always visible; closing the main window
+  closes the Remote window and exits (ShutdownMode OnMainWindowClose).
+  1.6.83 / 1.6.84 installer: user service `mscc-avalonia-remote-audio.service` (systemctl --global
+  enable) runs /usr/share/mscc-avalonia/bin/mscc-avalonia-remote-audio.sh (pactl null sinks,
+  name = description, 48 kHz, leaves existing ones alone). 1.6.83 also put ALSA names in
+  /etc/alsa/conf.d; the Pi has no pipewire-alsa, so they were broken and a same-named ALSA
+  MSCC_Remote_TX hid the real one from WSJT-X. Removed in 1.6.84 (postinst deletes the file).
+  1.6.85 Remote Phones / Digital choice saved (REMOTE_DIGITAL). 1.6.86 title bar version from the
+  build (was a hard-coded 0.6.75).
+  Learned: Avalonia's Remote Digital needs PTT from WSJT-X (CAT or RTS); there is no VOX. WSJT-X on
+  the Pi (Qt5, PulseAudio plugin): Input MSCC_Remote_RX.monitor, Output MSCC_Remote_TX, Rig
+  TS-2000, Serial /dev/ttyUSB11 (= tnt1; Avalonia holds tnt0). The pair comes back by itself
+  after a Pi reboot (Ron checked). Windows ms-sdr stops all servers ~45 s after the
+  client leaves (Flusher_thread "Client FAILED" falls through to Stop_all; the Pi sets
+  servers_failed = 0). Start the Windows servers again before each connect. Note for Stew (list item 10):
+  `.mscc-coord/NOTE-FOR-STEW-WINDOWS-MSSDR-CLIENT-GONE-2026-11-06.md`. Pi ms-sdr PIN=2
+  (DCD) never keys: it checks fDCD, which is never set (only fRLSD is read).
 - **2026-11-01: Pi ms-sdr 3.187: WiFi SWR meter fault to the client, BUILT on the Pi 15:35 (~/mscc/ms-sdr),
   NOT committed, running only after mscc stop/start.** Meter is UDP unicast: at a Pi station it talks
   to ms-sdr only, which relayed SWR/FWD/REF but never the fault (client got Fault=false; the 0x30

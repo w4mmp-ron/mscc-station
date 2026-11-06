@@ -187,7 +187,7 @@ public partial class MainViewModel : ViewModelBase, IDisposable
         ModeText = "";
         NotifyModeFlags();
         NotifyBandFlags();
-        AppendLog("MSCC Avalonia 0.6.75 — smooth S-meter needle.");
+        AppendLog($"MSCC Avalonia {AppVersion}");
         AppendLog("PTT = TX (voice modes); TUN = TUNE + carrier. S/W opens pan settings.");
         AppendLog($"Log: {LogFilePath}");
         CwPitchLabel = CwPitchOptions[Math.Clamp(CwPitchIndex, 0, CwPitchOptions.Count - 1)];
@@ -591,6 +591,17 @@ public partial class MainViewModel : ViewModelBase, IDisposable
     [ObservableProperty] private float _remoteEqHighDb;
     [ObservableProperty] private int _remotePlayDeviceIndex = -1;
     [ObservableProperty] private int _remoteMicDeviceIndex = -1;
+    // Saved by name ("Name|HostApi"), Phones and Digital separately.
+    [ObservableProperty] private string _remotePlayDeviceName = "";
+    [ObservableProperty] private string _remoteMicDeviceName = "";
+    [ObservableProperty] private string _remoteDigiPlayDeviceName = "";
+    [ObservableProperty] private string _remoteDigiMicDeviceName = "";
+    partial void OnRemotePlayDeviceIndexChanged(int value) => ScheduleSaveClientSettings();
+    partial void OnRemoteMicDeviceIndexChanged(int value) => ScheduleSaveClientSettings();
+    partial void OnRemotePlayDeviceNameChanged(string value) => ScheduleSaveClientSettings();
+    partial void OnRemoteMicDeviceNameChanged(string value) => ScheduleSaveClientSettings();
+    partial void OnRemoteDigiPlayDeviceNameChanged(string value) => ScheduleSaveClientSettings();
+    partial void OnRemoteDigiMicDeviceNameChanged(string value) => ScheduleSaveClientSettings();
 
     internal RemoteAfEngine? RemoteAf { get; private set; }
     internal KenwoodCatPort? RemoteCat { get; private set; }
@@ -666,7 +677,23 @@ public partial class MainViewModel : ViewModelBase, IDisposable
     [ObservableProperty] private string _proficioTempText = "— °C";
     [ObservableProperty] private string _paTempText = "— °C";
     [ObservableProperty] private string _paCurrentText = "— mA";
-    [ObservableProperty] private string _clientVersionText = "0.6.75";
+    [ObservableProperty] private string _clientVersionText = AppVersion;
+
+    /// <summary>Client version from the build (csproj &lt;Version&gt;), e.g. "1.6.86".</summary>
+    internal static readonly string AppVersion = ReadAppVersion();
+
+    private static string ReadAppVersion()
+    {
+        var asm = typeof(MainViewModel).Assembly;
+        string? v = System.Reflection.CustomAttributeExtensions
+            .GetCustomAttribute<System.Reflection.AssemblyInformationalVersionAttribute>(asm)?.InformationalVersion;
+        if (string.IsNullOrWhiteSpace(v))
+            v = asm.GetName().Version?.ToString(3);
+        if (string.IsNullOrWhiteSpace(v))
+            return "?";
+        int plus = v.IndexOf('+');   // drop "+<git hash>" the SDK may add
+        return plus > 0 ? v[..plus] : v;
+    }
     [ObservableProperty] private bool _alcOn = true;
     /// <summary>AMP / QRO path (PA bypass). Red when on (WPF).</summary>
     [ObservableProperty] private bool _ampOn;
@@ -1888,6 +1915,8 @@ public partial class MainViewModel : ViewModelBase, IDisposable
         {
             KickOwnedServerStop();
             await PrepareDisconnectAsync(closeWindow: true).ConfigureAwait(true);
+            // Main window closing: stop Remote AF + CAT and close the Remote window too.
+            try { StopRemoteAf(closeWindow: true); } catch { /* ignore */ }
             if (IsConnected)
             {
                 try { ForceTxOffAsync().GetAwaiter().GetResult(); } catch { /* ignore */ }
@@ -2687,6 +2716,7 @@ public partial class MainViewModel : ViewModelBase, IDisposable
     partial void OnRemoteDigitalAudioChanged(bool value)
     {
         OnPropertyChanged(nameof(AudioPathButtonText));
+        ScheduleSaveClientSettings();   // REMOTE_DIGITAL: next Remote opens on the same path
         if (_suppressAudioSend || !RemoteAudio) return;
         PushAudioToRadio(value ? "R-path→D" : "R-path→P");
         ApplyRemoteAfDevicesAndRestart(value ? "R-path→D" : "R-path→P");
@@ -2839,24 +2869,119 @@ public partial class MainViewModel : ViewModelBase, IDisposable
     internal void ApplyRemoteAfDevices()
     {
         if (RemoteAf == null) return;
+        int play = ResolveRemotePlayDevice();
+        int mic = ResolveRemoteMicDevice();
+        RemoteAf.PlayDeviceIndex = play;
+        RemoteAf.MicDeviceIndex = mic;
         if (RemoteDigitalAudio)
         {
-            // Always re-resolve: saved REMOTE_MIC_DEV may be ALSA VirtualB_monitor (silent).
-            int play = FindNamedAfDevice(RemoteAfEngine.PlayDevices, LinuxDigitalIni.DigitalSpeaker);
-            int mic = FindNamedAfDevice(RemoteAfEngine.MicDevices, LinuxDigitalIni.DigitalMic);
-            RemoteAf.PlayDeviceIndex = play;
-            RemoteAf.MicDeviceIndex = mic;
             RemoteAf.ApplyEq(false, 0, 0, 0);
             if (!string.IsNullOrEmpty(PortAudioNative.LoadedLibraryPath))
                 AppendLog($"PortAudio: {PortAudioNative.LoadedLibraryPath}");
-            AppendLog($"R-Digital VAC {DescribeAf(RemoteAfEngine.PlayDevices, play, LinuxDigitalIni.DigitalSpeaker)} | {DescribeAf(RemoteAfEngine.MicDevices, mic, LinuxDigitalIni.DigitalMic)}");
+            AppendLog($"R-Digital VAC {DescribeAf(RemoteAfEngine.PlayDevices, play, "play")} | {DescribeAf(RemoteAfEngine.MicDevices, mic, "mic")}");
         }
         else
         {
-            RemoteAf.PlayDeviceIndex = RemotePlayDeviceIndex;
-            RemoteAf.MicDeviceIndex = RemoteMicDeviceIndex;
             RemoteAf.ApplyEq(RemoteEqEnabled, RemoteEqLowDb, RemoteEqMidDb, RemoteEqHighDb);
+            AppendLog($"R-Phones {DescribeAf(RemoteAfEngine.PlayDevices, play, "play")} | {DescribeAf(RemoteAfEngine.MicDevices, mic, "mic")}");
         }
+    }
+
+    // Digital with nothing saved: the client's own pair first, then the server kit's VirtualA/B.
+    private static readonly string[] DigiPlayDefaults = { "MSCC_Remote_RX", "MSCC Remote RX" };
+    // PortAudio (Pulse) lists the internal name, e.g. "MSCC_Remote_TX.monitor".
+    private static readonly string[] DigiMicDefaults = { "MSCC_Remote_TX.monitor", "Monitor of MSCC_Remote_TX" };
+
+    /// <summary>Playback device for the current Remote path (saved name, then defaults).</summary>
+    internal int ResolveRemotePlayDevice()
+    {
+        var devs = RemoteAfEngine.PlayDevices;
+        if (RemoteDigitalAudio)
+        {
+            int i = FindSavedAfDevice(devs, RemoteDigiPlayDeviceName);
+            if (i >= 0) return i;
+            foreach (string n in DigiPlayDefaults)
+            {
+                i = FindNamedAfDevice(devs, n);
+                if (i >= 0) return i;
+            }
+            return FindNamedAfDevice(devs, LinuxDigitalIni.DigitalSpeaker);
+        }
+        int p = FindSavedAfDevice(devs, RemotePlayDeviceName);
+        return p >= 0 ? p : RemotePlayDeviceIndex;
+    }
+
+    /// <summary>Capture device for the current Remote path (saved name, then defaults).</summary>
+    internal int ResolveRemoteMicDevice()
+    {
+        var devs = RemoteAfEngine.MicDevices;
+        if (RemoteDigitalAudio)
+        {
+            int i = FindSavedAfDevice(devs, RemoteDigiMicDeviceName);
+            if (i >= 0) return i;
+            foreach (string n in DigiMicDefaults)
+            {
+                i = FindNamedAfDevice(devs, n);
+                if (i >= 0) return i;
+            }
+            return FindNamedAfDevice(devs, LinuxDigitalIni.DigitalMic);
+        }
+        int m = FindSavedAfDevice(devs, RemoteMicDeviceName);
+        return m >= 0 ? m : RemoteMicDeviceIndex;
+    }
+
+    /// <summary>Remember a device picked in the Remote window, by name, for the current path.</summary>
+    internal void SaveRemoteDeviceChoice(bool play, int index)
+    {
+        var devs = play ? RemoteAfEngine.PlayDevices : RemoteAfEngine.MicDevices;
+        string key = AfDeviceKey(devs, index);
+        if (RemoteDigitalAudio)
+        {
+            if (play) RemoteDigiPlayDeviceName = key;
+            else RemoteDigiMicDeviceName = key;
+        }
+        else if (play)
+        {
+            RemotePlayDeviceIndex = index;
+            RemotePlayDeviceName = key;
+        }
+        else
+        {
+            RemoteMicDeviceIndex = index;
+            RemoteMicDeviceName = key;
+        }
+        AppendLog($"Remote {(RemoteDigitalAudio ? "Digital" : "Phones")} {(play ? "play" : "mic")} saved: {key}");
+    }
+
+    internal static string AfDeviceKey(
+        IReadOnlyList<(int Index, string Name, string HostApi, int InCh, int OutCh)> devices, int index)
+    {
+        foreach (var d in devices)
+            if (d.Index == index)
+                return $"{d.Name}|{d.HostApi}";
+        return "";
+    }
+
+    /// <summary>Exact name match; same host API first, else prefer PulseAudio.</summary>
+    internal static int FindSavedAfDevice(
+        IReadOnlyList<(int Index, string Name, string HostApi, int InCh, int OutCh)> devices, string saved)
+    {
+        if (string.IsNullOrWhiteSpace(saved) || devices == null)
+            return -1;
+        int bar = saved.LastIndexOf('|');
+        string name = bar >= 0 ? saved[..bar] : saved;
+        string api = bar >= 0 ? saved[(bar + 1)..] : "";
+        int nameOnly = -1;
+        foreach (var d in devices)
+        {
+            if (d.Index < 0 || !string.Equals(d.Name, name, StringComparison.Ordinal))
+                continue;
+            if (api.Length == 0 || string.Equals(d.HostApi, api, StringComparison.Ordinal))
+                return d.Index;
+            if (nameOnly < 0 || PortAudioNative.IsPulseApi(d.HostApi))
+                nameOnly = d.Index;
+        }
+        return nameOnly;
     }
 
     internal void ApplyRemoteAfDevicesAndRestart(string reason)
@@ -7199,6 +7324,7 @@ public partial class MainViewModel : ViewModelBase, IDisposable
             DMicGain = Math.Clamp(s.DMicGain, 0, 100);
             IsDigitalAudio = s.IsDigitalAudio;
             RemoteAudio = s.RemoteAudio;
+            RemoteDigitalAudio = s.RemoteDigitalAudio;
             RemoteMonitorAtRadio = s.RemoteMonitorAtRadio;
             RemotePlayVolume = Math.Clamp(s.RemotePlayVolume, 0, 100);
             RemoteMicVolume = Math.Clamp(s.RemoteMicVolume, 0, 100);
@@ -7210,6 +7336,10 @@ public partial class MainViewModel : ViewModelBase, IDisposable
             RemoteEqHighDb = s.RemoteEqHighDb;
             RemotePlayDeviceIndex = s.RemotePlayDeviceIndex;
             RemoteMicDeviceIndex = s.RemoteMicDeviceIndex;
+            RemotePlayDeviceName = s.RemotePlayDeviceName ?? "";
+            RemoteMicDeviceName = s.RemoteMicDeviceName ?? "";
+            RemoteDigiPlayDeviceName = s.RemoteDigiPlayDeviceName ?? "";
+            RemoteDigiMicDeviceName = s.RemoteDigiMicDeviceName ?? "";
             FmSimplex = s.FmSimplex;
             _suppressAudioSend = false;
             OnPropertyChanged(nameof(IsRemoteAudioAllowed));
@@ -7410,6 +7540,7 @@ public partial class MainViewModel : ViewModelBase, IDisposable
             DMicGain = DMicGain,
             IsDigitalAudio = IsDigitalAudio,
             RemoteAudio = RemoteAudio,
+            RemoteDigitalAudio = RemoteDigitalAudio,
             RemoteMonitorAtRadio = RemoteMonitorAtRadio,
             RemotePlayVolume = RemotePlayVolume,
             RemoteMicVolume = RemoteMicVolume,
@@ -7421,6 +7552,10 @@ public partial class MainViewModel : ViewModelBase, IDisposable
             RemoteEqHighDb = RemoteEqHighDb,
             RemotePlayDeviceIndex = RemotePlayDeviceIndex,
             RemoteMicDeviceIndex = RemoteMicDeviceIndex,
+            RemotePlayDeviceName = RemotePlayDeviceName,
+            RemoteMicDeviceName = RemoteMicDeviceName,
+            RemoteDigiPlayDeviceName = RemoteDigiPlayDeviceName,
+            RemoteDigiMicDeviceName = RemoteDigiMicDeviceName,
             FmSimplex = FmSimplex,
             RitOn = RitOn,
             RitOffset = RitOffset,

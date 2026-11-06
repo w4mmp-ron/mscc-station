@@ -25,6 +25,17 @@ public sealed class KenwoodTs2000
     /// </summary>
     private int _pttLatched;
 
+    /// <summary>
+    /// PTT from a serial control line (digi app RTS → our CTS, like ms-sdr PIN=1).
+    /// Same effect as TX; / RX;, so IF; reports TX while the line is on.
+    /// </summary>
+    public void SetLinePtt(bool tx, string line)
+    {
+        Volatile.Write(ref _pttLatched, tx ? 1 : 0);
+        Trace?.Invoke(tx ? $"CAT {line} on → key" : $"CAT {line} off → unkey");
+        SetPtt?.Invoke(tx);
+    }
+
     /// <summary>Handle one command including trailing ';'. Returns reply or null.</summary>
     public string? Handle(string command)
     {

@@ -113,9 +113,14 @@ foreach ($script in @("postinst", "postrm")) {
     [System.IO.File]::WriteAllText($p, $t, [System.Text.UTF8Encoding]::new($false))
   }
 }
-$launcher = Join-Path $Pkg "usr\bin\mscc-avalonia"
-$lt = [System.IO.File]::ReadAllText($launcher) -replace "`r`n", "`n" -replace "`r", "`n"
-[System.IO.File]::WriteAllText($launcher, $lt, [System.Text.UTF8Encoding]::new($false))
+foreach ($rel in @("usr\bin\mscc-avalonia",
+                   "usr\share\mscc-avalonia\bin\mscc-avalonia-remote-audio.sh",
+                   "usr\lib\systemd\user\mscc-avalonia-remote-audio.service")) {
+  $p = Join-Path $Pkg $rel
+  if (-not (Test-Path $p)) { throw "Missing package file $rel" }
+  $lt = [System.IO.File]::ReadAllText($p) -replace "`r`n", "`n" -replace "`r", "`n"
+  [System.IO.File]::WriteAllText($p, $lt, [System.Text.UTF8Encoding]::new($false))
+}
 
 # 4) Build control.tar.gz and data.tar.gz
 $ControlTar = Join-Path $Stage "control.tar.gz"
@@ -157,7 +162,7 @@ def add_tree(tar, root, rel=''):
             info = tar.gettarinfo(full, arcname=arc)
             info.uid = 0; info.gid = 0; info.uname = 'root'; info.gname = 'root'
             if (arc.endswith('usr/bin/mscc-avalonia') or arc.endswith('opt/mscc-avalonia/MSCC.Avalonia')
-                    or arc.endswith('.so') or os.path.basename(arc) == 'createdump'):
+                    or arc.endswith('.so') or arc.endswith('.sh') or os.path.basename(arc) == 'createdump'):
                 info.mode = 0o755
             else:
                 info.mode = 0o644
