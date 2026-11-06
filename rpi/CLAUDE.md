@@ -39,7 +39,7 @@ Git repo root: `C:\Users\Ron\.grok\worktrees`.
 review of what he ported, say if the Pi needs a matching change. Don't start new work meanwhile.
 
 **Current list (updated 2026-11-05, after f78d141):**
-- **Pi runs:** recv 3.152 (automatic NB + spectral NR), trans 3.151 (2026-11-05: operator mic
+- **Pi runs:** mscc-avalonia 1.6.79 (Ron's Avalonia copy, below), recv 3.152 (automatic NB + spectral NR), trans 3.151 (2026-11-05: operator mic
   fix, see below), ms-sdr 3.193 (0x9D paddle Farnsworth, reported to the client), pill 3.13,
   PIC keyer = keyer-buffer (buffered Farnsworth), package mscc 1.0.75 installed (Ron 2026-11-05).
   Pushed 2026-11-05: keyer + 0x9D work (fb90f87), mscc 1.0.75 (f78d141), pill 3.13 (a2e351d in
@@ -212,6 +212,25 @@ review of what he ported, say if the Pi needs a matching change. Don't start new
   a guess). Stew asked to add his VB-Audio setup to the file. Still to correct (proposed, not
   approved): the 11-01 user-documents note and the Remote guide say "Pi / Linux remote works
   differently"; the remote-audio part is the same on every host.
+- **Ron's Avalonia client copy (2026-11-05/06, pushed 24d8738): `worktrees/Avalonia`, Pi package
+  `mscc-avalonia` 1.6.79 (installed on the Pi, Ron: width / size memory work).** Copy of Stew's
+  `mscc-ui/Avalonia-Migration` 0.6.75 with its own `src/MSCC.Core` copy; never touch Stew's WPF /
+  Avalonia trees (building must not write there either). Version 1.x (Ron) vs Stew's 0.6.x.
+  Installs beside Stew's mscc-ui 0.6.31: /opt/mscc-avalonia, /usr/bin/mscc-avalonia, menu
+  "MSCC Avalonia". Build `Avalonia/build-mscc-avalonia-deb.ps1` (bump Version in the csproj and
+  `packaging/mscc-avalonia/DEBIAN/control`), deb to installers/rpi + Pi ~; publish/ and *.deb not
+  committed. Own settings `~/.config/MSCC-Avalonia/mscc-avalonia.ini` (seeded once from the shared
+  file); reads only a copy of `~/.local/mscc/*.ini` the launcher makes at each start
+  (`~/.config/MSCC-Avalonia/host/`); never writes mscc.ini (on the Pi it is ~/.local/mscc/mscc.ini).
+  Still shared with Stew's client: favorites and last-used files (Ron thinking about it).
+  Ported from WPF 11.1.5: ALC button removed, 2 TONE, TX IQ PHASE, cuts at connect, QRP save step +
+  0x2D lamps, SAVE / APPLY ALL labels, FREQ CAL note + 4x, SMOOTHING + Falling waterfall, SWR meter
+  (FWD face, fault RESET, settings), TIME DISPLAY + TIME MARKER, PEAK MARKER, dB LABELS, AUTO SNAP,
+  BASELINE / WF GAIN / WF ZERO per band. Also: window size / position remembered, own resize grips
+  (the Pi's Openbox runs ~/.config/openbox/rpd-rc.xml = theme only, no side handles).
+  Not ported: Reset configuration, identity request, RF power report. **Not tested on the air yet**
+  (2 TONE, PHASE, QRP save, SWR meter, smoothing). Remote Phones / Digital devices: see the remote
+  audio item above (Linux client null sinks, proposed, not made).
 - **2026-11-01: Pi ms-sdr 3.187: WiFi SWR meter fault to the client, BUILT on the Pi 15:35 (~/mscc/ms-sdr),
   NOT committed, running only after mscc stop/start.** Meter is UDP unicast: at a Pi station it talks
   to ms-sdr only, which relayed SWR/FWD/REF but never the fault (client got Fault=false; the 0x30
