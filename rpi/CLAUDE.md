@@ -50,7 +50,7 @@ review of what he ported, say if the Pi needs a matching change. Don't start new
   FQBN esp32:esp32:esp32 with FlashSize=4M, PartitionScheme=min_spiffs (full option string in the
   2026-11-06 session); Ron to add Windows Defender exclusions (Arduino15, arduino cache,
   libraries, build) because builds were slow.
-- **Pi runs:** mscc-avalonia 1.6.88 (Ron's Avalonia copy, below), recv 3.152 (automatic NB + spectral NR), trans 3.151 (2026-11-05: operator mic
+- **Pi runs:** mscc-avalonia 1.6.89 (Ron's Avalonia copy, below), recv 3.152 (automatic NB + spectral NR), trans 3.151 (2026-11-05: operator mic
   fix, see below), ms-sdr 3.193 (0x9D paddle Farnsworth, reported to the client), pill 3.13,
   PIC keyer = keyer-buffer (buffered Farnsworth), package mscc 1.0.75 installed (Ron 2026-11-05).
   Pushed 2026-11-05: keyer + 0x9D work (fb90f87), mscc 1.0.75 (f78d141), pill 3.13 (a2e351d in
@@ -250,7 +250,7 @@ review of what he ported, say if the Pi needs a matching change. Don't start new
   approved): the 11-01 user-documents note and the Remote guide say "Pi / Linux remote works
   differently"; the remote-audio part is the same on every host.
 - **Ron's Avalonia client copy (2026-11-05/06, pushed 24d8738 = 1.6.79): `worktrees/Avalonia`, Pi
-  package `mscc-avalonia` 1.6.88 installed on the Pi (2026-11-07).** Copy of Stew's
+  package `mscc-avalonia` 1.6.89 installed on the Pi (2026-11-07).** Copy of Stew's
   `mscc-ui/Avalonia-Migration` 0.6.75 with its own `src/MSCC.Core` copy; never touch Stew's WPF /
   Avalonia trees (building must not write there either). Version 1.x (Ron) vs Stew's 0.6.x.
   Installs beside Stew's mscc-ui 0.6.31: /opt/mscc-avalonia, /usr/bin/mscc-avalonia, menu
@@ -286,7 +286,8 @@ review of what he ported, say if the Pi needs a matching change. Don't start new
   1.6.85 Remote Phones / Digital choice saved (REMOTE_DIGITAL). 1.6.86 title bar version from the
   build (was a hard-coded 0.6.75). 1.6.87 (2026-11-07, works, Ron): keep-alive lost pop-up as WPF
   ("MSCC - Server Not Responding", Yes = wait again, No = close MSCC, X = Yes); before, only status text. 1.6.88 (2026-11-07, Ron: "Much better"): spectrum draws every frame
-  (SpectrumRefreshDivisor 3 -> 1); at 3200 bins ~12 frames/s arrive (99 pkts/s, 8 per frame), it drew ~4/s.
+  (SpectrumRefreshDivisor 3 -> 1); at 3200 bins ~12 frames/s arrive (99 pkts/s, 8 per frame), it drew ~4/s. 1.6.89: spectrum banner
+  ("Center ... MHz | bins | zoom | click to tune", from Stew's Avalonia, not in WPF) removed: covered the pass band.
   Learned: Avalonia's Remote Digital needs PTT from WSJT-X (CAT or RTS); there is no VOX. WSJT-X on
   the Pi (Qt5, PulseAudio plugin): Input MSCC_Remote_RX.monitor, Output MSCC_Remote_TX, Rig
   TS-2000, Serial /dev/ttyUSB11 (= tnt1; Avalonia holds tnt0). The pair comes back by itself

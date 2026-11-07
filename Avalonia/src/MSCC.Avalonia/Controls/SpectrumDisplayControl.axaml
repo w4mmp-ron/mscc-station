@@ -9,7 +9,7 @@
            Stretch="Fill"
            HorizontalAlignment="Stretch"
            VerticalAlignment="Stretch" />
-    <!-- WPF port: PEAK MARKER readout (top right, so the hint stays readable) -->
+    <!-- WPF port: PEAK MARKER readout (top right) -->
     <Border x:Name="PeakMarkerBox"
             HorizontalAlignment="Right" VerticalAlignment="Top"
             Margin="0,4,6,0" Padding="5,2"
@@ -19,15 +19,6 @@
                  FontFamily="Consolas, Courier New, monospace"
                  FontSize="13" FontWeight="Bold" Foreground="#FFEECC00"/>
     </Border>
-    <Border HorizontalAlignment="Left" VerticalAlignment="Top"
-            Margin="6,4,0,0" Padding="6,2"
-            Background="#AA222222" CornerRadius="3"
-            IsHitTestVisible="False">
-      <TextBlock x:Name="HintText"
-                 Text="Spectrum / waterfall — click to tune"
-                 FontSize="11"
-                 Foreground="#FF88AACC"
-                 FontFamily="Consolas, Courier New, monospace" />
-    </Border>
+    <!-- 1.6.89: the "Center ... MHz | bins | zoom | click to tune" banner removed (Ron: covered the pass band) -->
   </Grid>
 </UserControl>

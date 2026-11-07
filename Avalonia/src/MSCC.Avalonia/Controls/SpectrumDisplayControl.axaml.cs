@@ -219,16 +219,6 @@ public partial class SpectrumDisplayControl : UserControl
             SpectrumImage.Source = _bitmap;
         else
             SpectrumImage.InvalidateVisual();
-
-        if (HintText != null && update.CenterFrequencyHz > 0)
-        {
-            double mhz = update.CenterFrequencyHz / 1_000_000.0;
-            int vis = Math.Max(1, (int)Math.Round(
-                (update.SpanHz > 0 ? update.SpanHz : SpectrumUpdate.DefaultPanadapterSpanHz) /
-                Math.Max(1.0, settings.ZoomFactor)));
-            HintText.Text =
-                $"Center {mhz:0.000000} MHz  |  {update.Data.Length} bins  |  zoom {settings.ZoomFactor:0}× (~{vis / 1000.0:0.#} kHz)  |  click to tune";
-        }
     }
 
     private void PushWaterfallLine(float[] data)

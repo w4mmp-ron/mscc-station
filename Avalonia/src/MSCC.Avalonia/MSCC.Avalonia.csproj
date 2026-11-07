@@ -5,7 +5,7 @@
     <ImplicitUsings>enable</ImplicitUsings>
     <RootNamespace>MSCC.Avalonia</RootNamespace>
     <AssemblyName>MSCC.Avalonia</AssemblyName>
-    <Version>1.6.88</Version>
+    <Version>1.6.89</Version>
     <Description>MSCC Avalonia — CQ memory, Remote Audio, legacy external keyer</Description>
     <Nullable>enable</Nullable>
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
