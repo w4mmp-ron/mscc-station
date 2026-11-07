@@ -545,9 +545,41 @@ public partial class MainViewModel : ViewModelBase, IDisposable
         string ip = (host ?? "").Trim();
         if (string.IsNullOrEmpty(ip))
             return false;
-        return ip.Equals("127.0.0.1", StringComparison.OrdinalIgnoreCase)
-            || ip.Equals("localhost", StringComparison.OrdinalIgnoreCase)
-            || ip.Equals("::1", StringComparison.OrdinalIgnoreCase);
+        if (ip.Equals("localhost", StringComparison.OrdinalIgnoreCase))
+            return true;
+
+        // 1.6.91: this computer's own name (proficio, proficio.local) counts as local too.
+        // No DNS lookup here (it could block the UI): compare names only.
+        try
+        {
+            string me = System.Net.Dns.GetHostName();
+            if (!string.IsNullOrEmpty(me)
+                && (ip.Equals(me, StringComparison.OrdinalIgnoreCase)
+                    || ip.Equals(me + ".local", StringComparison.OrdinalIgnoreCase)))
+                return true;
+        }
+        catch { /* not local by name */ }
+
+        if (!System.Net.IPAddress.TryParse(ip, out var addr))
+            return false;
+        if (System.Net.IPAddress.IsLoopback(addr))
+            return true;
+
+        // 1.6.91: this computer's own network address (e.g. 192.168.12.199) counts as local,
+        // so Remote Audio can't open the CAT port that the local ms-sdr already has open.
+        try
+        {
+            foreach (var nic in System.Net.NetworkInformation.NetworkInterface.GetAllNetworkInterfaces())
+            {
+                foreach (var ua in nic.GetIPProperties().UnicastAddresses)
+                {
+                    if (ua.Address.Equals(addr))
+                        return true;
+                }
+            }
+        }
+        catch { /* not local by address */ }
+        return false;
     }
 
     /// <summary>Remote seat only when Connect-only to another host (not 127.0.0.1 / localhost).</summary>
@@ -2738,7 +2770,7 @@ public partial class MainViewModel : ViewModelBase, IDisposable
             _suppressAudioSend = true;
             try { RemoteAudio = false; }
             finally { _suppressAudioSend = false; }
-            AppendLog("Remote blocked: local 127.0.0.1 owns CAT. Connect-only to a remote host.");
+            AppendLog("Remote blocked: this computer's own servers own CAT (connected to " + (Host ?? "").Trim() + "). Connect-only to a remote host.");
             return;
         }
         if (value)
