@@ -7255,6 +7255,45 @@ public partial class MainViewModel : ViewModelBase, IDisposable
         }
     }
 
+    /// <summary>
+    /// 1.6.87: as WPF OnServerKeepAliveLost. Yes = keep running and wait for the server again;
+    /// No = close MSCC (main window close, so the Remote window closes and settings are saved).
+    /// Closing the box with its X counts as Yes.
+    /// </summary>
+    private async Task AskAfterKeepAliveLostAsync()
+    {
+        AppendLog("Server keep-alive LOST - showing warning");
+        var result = await MsccDialog.YesNoAsync(
+            "No \"I'm Alive\" (keep-alive) messages have been received from the server for several seconds.\n\n" +
+            "The server may have stopped, crashed, or the network link may be down.\n\n" +
+            "Yes = Continue running (wait for the server again)\n" +
+            "No  = Close MSCC",
+            "MSCC - Server Not Responding").ConfigureAwait(true);
+
+        if (result != MsccDialog.Result.No)
+        {
+            AppendLog("Keep-alive warning: user chose Continue");
+            try { _radio?.ResetKeepAliveWatch(); } catch { /* ignore */ }
+            return;
+        }
+
+        AppendLog("Keep-alive warning: user chose Close - closing MSCC");
+        try
+        {
+            if (Application.Current?.ApplicationLifetime is IClassicDesktopStyleApplicationLifetime desk)
+            {
+                if (desk.MainWindow != null)
+                    desk.MainWindow.Close();
+                else
+                    desk.Shutdown();
+            }
+        }
+        catch (Exception ex)
+        {
+            AppendLog($"Close after keep-alive loss error: {ex.Message}");
+        }
+    }
+
     private static void ClearAllWaterfallHistories()
     {
         try
@@ -8448,6 +8487,7 @@ public partial class MainViewModel : ViewModelBase, IDisposable
                 }
                 StatusText = "WARNING: keep-alive lost";
                 AppendLog("Server keep-alive lost.");
+                _ = AskAfterKeepAliveLostAsync();
             });
 
         radio.SpectrumUpdated += update =>

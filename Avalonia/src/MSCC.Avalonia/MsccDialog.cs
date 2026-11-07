@@ -23,6 +23,10 @@ internal static class MsccDialog
     public static async Task<bool> ConfirmAsync(string message, string title = "MSCC")
         => await ShowAsync(title, message, yesNo: true) == Result.Yes;
 
+    /// <summary>Yes / No; closing the window with its X gives Cancel.</summary>
+    public static Task<Result> YesNoAsync(string message, string title = "MSCC")
+        => ShowAsync(title, message, yesNo: true);
+
     public static Task<Result> YesNoCancelAsync(string message, string title = "MSCC")
         => ShowAsync(title, message, yesNoCancel: true);
 
