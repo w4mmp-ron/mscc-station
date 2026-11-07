@@ -160,7 +160,7 @@ public partial class MainViewModel : ViewModelBase, IDisposable
     private DispatcherTimer? _alcIdleTimer;
     private const double AlcIdleTimeoutSeconds = 3.0;
 
-    private const int SpectrumRefreshDivisor = 3;
+    private const int SpectrumRefreshDivisor = 1;   // 1.6.88: draw every frame (was 3: ~4 fps at 3200 bins, choppy)
 
     public MainViewModel()
     {
