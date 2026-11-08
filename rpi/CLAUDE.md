@@ -274,6 +274,13 @@ review of what he ported, say if the Pi needs a matching change. Don't start new
   reconfigures endpoints on the same device and can miss a few IN frames. Fits "only in band
   change / tune windows"; doesn't explain why the 17:47 watch over 4 reopens saw none. Proof:
   after the hold, the dual-stream fix (never reopen the I/Q stream) should remove these too.
+  **Impact (Ron 2026-11-08: edge cases):** only band change and TUNE (trans reopen); no data is
+  being received then. Frequency changes within a band can't cause it: trans has no frequency
+  command at all; recv gets CMD_SET_MAIN_FREQ (`udp_thread.c:737`) only to pause the
+  spectrum (short blank for small steps, longer for >= 100 kHz = Si5351 PLL reset), its audio
+  stream is untouched. A gap alone loses nothing (pill sends the samples a frame later); only
+  in_drop loses 1 ms of I/Q. Modes that would feel a drop: packet / VARA / ARDOP (frame resent),
+  PSK31 / RTTY (maybe one character), DRM (short dropout); FT8 / WSPR / SSB / CW: none.
 - **Pi ms-sdr Last_used.ini is dead (found 2026-11-08; Ron: leave it alone for now).** Every
   startup logs `Init_last_used_VFO_A/B . Open file failed. Last_used.ini will be created`; it never
   is. `Update_last_used_VFO_A/B` (`last_used.c`) never reaches its write (no "Open" line in the
