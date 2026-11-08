@@ -228,6 +228,18 @@ review of what he ported, say if the Pi needs a matching change. Don't start new
   test line (since pill start 11-07 23:52, 17.6 h): gaps 103, in_drop 5, out_under 10. The mark
   from 16:58 is still set (since = clean so far). Question: do underruns come with server
   restarts or in normal running? The log answers it.
+  **Answered by two 120 s watches (2026-11-08 17:43 / 17:47):** FT8 key-down / key-up = clean.
+  One transmit underrun (out_lvl to 0) at EVERY band change and EVERY tune key-up (and one near a
+  tune key-down); key-downs otherwise clean; no pill faults. Cause is sdrcore-trans, not the pill:
+  `udp_thread.c:1394-1424` (CMD_SET_MAIN_MODE) in DIGITAL / R-DIGITAL audio mode always runs
+  manage_stream(0) + manage_stream(1) = stop and reopen the stream, even when the mode is the same
+  (the client sends mode U again after every band change). Tune: mode T reopens output-only I/Q
+  just BEFORE TX on; key-up: TX off, then mode U reopens full duplex. The T/C <-> voice rebuild is
+  needed (comment: idle aloop stalls full duplex); the same-mode one is not. No harm on the air
+  (all while receiving / un-keyed), but it puts an underrun on the pill counters each time.
+  **Fix idea (after the hold, Ron 2026-11-08: no change yet):** rebuild only when the stream kind
+  changes (full duplex <-> output-only), skip when the mode stays the same. Windows trans
+  (Stew's) not checked. For "the pill is solid": count these as host-side, expected.
 - **Pi ms-sdr Last_used.ini is dead (found 2026-11-08; Ron: leave it alone for now).** Every
   startup logs `Init_last_used_VFO_A/B . Open file failed. Last_used.ini will be created`; it never
   is. `Update_last_used_VFO_A/B` (`last_used.c`) never reaches its write (no "Open" line in the
