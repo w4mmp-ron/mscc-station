@@ -240,6 +240,14 @@ review of what he ported, say if the Pi needs a matching change. Don't start new
   **Fix idea (after the hold, Ron 2026-11-08: no change yet):** rebuild only when the stream kind
   changes (full duplex <-> output-only), skip when the mode stays the same. Windows trans
   (Stew's) not checked. For "the pill is solid": count these as host-side, expected.
+  **Better fix idea (Ron 2026-11-08: why stop the audio at all?):** the reopen exists because
+  a single full-duplex PortAudio stream (VirtualB.monitor in + Proficio I/Q out) stalls its
+  output when the idle loopback input stalls in TUNE / CW. Ron's Pi runs trans in DUAL STREAM
+  (log: `DUAL STREAM: in_dev=17 'VirtualB.monitor' @48000 | out_dev=1 ALSA @96000`, main.c
+  520-607): mic and I/Q are separate streams, so an idle mic can't stall the I/Q. In dual mode:
+  never reopen the I/Q stream (just ignore / stop the mic stream in T / C); keep the reopen only
+  for the single full-duplex case. Removes the band-change and tune underruns completely. Not
+  verified: whether the single-stream case still needs it.
 - **Pi ms-sdr Last_used.ini is dead (found 2026-11-08; Ron: leave it alone for now).** Every
   startup logs `Init_last_used_VFO_A/B . Open file failed. Last_used.ini will be created`; it never
   is. `Update_last_used_VFO_A/B` (`last_used.c`) never reaches its write (no "Open" line in the
