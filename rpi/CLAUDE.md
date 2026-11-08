@@ -260,6 +260,20 @@ review of what he ported, say if the Pi needs a matching change. Don't start new
   Gaps / drops are below recv (Pi USB host late collecting IN), not the pill. Next: read each
   `<<<` cron line against the server logs (UTC there, local in the stats log) to see if they keep
   landing in band-change / tune windows. No client runs on the Pi (client is on Windows).
+  **Pill code read (2026-11-08, pill pio-async, no change): the pill can't cause the gaps.**
+  RX streaming is all in interrupts: I2S DMA ISR (`audio_i2s_rx_block`, 96-frame copy) fills the
+  IN FIFO, the USB ISR queues the next packet (`tud_audio_tx_done_isr`, TinyUSB 0.21, which also
+  counts the gaps from the USB frame number); both priority 1. Main loop (relays, Si5351 I2C,
+  beat6) is pre-empted by them, so loop max 1.9 ms doesn't matter. `__disable_irq` sections are a
+  few instructions. No path holds the USB ISR off ~1 ms. `gaps max 2` = single missed frames.
+  **in_drop follows from the gaps:** each missed frame leaves +384 bytes in the IN FIFO, flow
+  control (95/96/97 frames) drains ~4 bytes/ms, so ~5 missed frames close together (FIFO
+  ~1170 of 3104) fill it and each further one drops a block (17:40-17:50: 9 gaps, 5 drops = a
+  cluster). **Likely cause (NOT verified):** trans's stream reopen closes / reopens the Proficio
+  ALSA playback = snd-usb-audio changes the OUT interface alt setting = the Pi's USB host
+  reconfigures endpoints on the same device and can miss a few IN frames. Fits "only in band
+  change / tune windows"; doesn't explain why the 17:47 watch over 4 reopens saw none. Proof:
+  after the hold, the dual-stream fix (never reopen the I/Q stream) should remove these too.
 - **Pi ms-sdr Last_used.ini is dead (found 2026-11-08; Ron: leave it alone for now).** Every
   startup logs `Init_last_used_VFO_A/B . Open file failed. Last_used.ini will be created`; it never
   is. `Update_last_used_VFO_A/B` (`last_used.c`) never reaches its write (no "Open" line in the
