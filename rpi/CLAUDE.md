@@ -248,6 +248,18 @@ review of what he ported, say if the Pi needs a matching change. Don't start new
   never reopen the I/Q stream (just ignore / stop the mic stream in T / C); keep the reopen only
   for the single full-duplex case. Removes the band-change and tune underruns completely. Not
   verified: whether the single-stream case still needs it.
+  **Receive losses (gaps / in_drop), 2026-11-08 evening: cause still open, Ron: no FT8 impact,
+  keep the cron log only (no long background watch).** Cron windows: 17:30-17:40 (FT8 + band
+  change + tune) 3 gaps; 17:40-17:50 (FT8 + band changes + tunes) 9 gaps, 5 drops; 17:50-18:00
+  (8 FT8 TX, no band change / tune) clean; 18:00-18:10 (idle, WSJT-X receiving) clean. Also 5
+  gaps + 1 drop at ~17:29 (cause unknown). Neither 120 s watch (FT8 TX; band changes + tunes) saw
+  any, so band change / tune does not cause them every time, if at all. Ruled out: recv (keeps its
+  stream running through TX, band change = I/Q reload + spectrum pause only); kernel log (no USB /
+  audio messages); Claude's ssh / log-search load (18:13 test: 30 s control and 30 s of 4750
+  awk/grep passes over the server logs, counters unchanged: gaps 120, in_drop 11, out_under 22).
+  Gaps / drops are below recv (Pi USB host late collecting IN), not the pill. Next: read each
+  `<<<` cron line against the server logs (UTC there, local in the stats log) to see if they keep
+  landing in band-change / tune windows. No client runs on the Pi (client is on Windows).
 - **Pi ms-sdr Last_used.ini is dead (found 2026-11-08; Ron: leave it alone for now).** Every
   startup logs `Init_last_used_VFO_A/B . Open file failed. Last_used.ini will be created`; it never
   is. `Update_last_used_VFO_A/B` (`last_used.c`) never reaches its write (no "Open" line in the
