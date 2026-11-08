@@ -213,11 +213,23 @@ review of what he ported, say if the Pi needs a matching change. Don't start new
      (Radio_cal_startup_load). Option: same change on Windows. His call.
      `NOTE-FOR-STEW-RADIO-CAL-READ-LATE-NETWORK-2026-11-06.md`
 - **Pi ms-sdr 3.194 (2026-11-06): radio calibration read retried at client connect, BUILT on the Pi
-  18:10 (~/mscc/ms-sdr), NOT tested yet, committed and pushed.** New `Radio_cal_startup_load(who)` in
+  18:10 (~/mscc/ms-sdr), committed and pushed. Checked in the log 2026-11-08: PASSED** (one read at
+  startup 04:59: power 10 bands same, RX IQ 12 + TX IQ 10 from radio, no errors; the two later
+  client connects sent status only, no second read). New `Radio_cal_startup_load(who)` in
   power_calibration.c (mutex + once-per-run flag, needs G_network_initialized): reload replaced
   cal files, Radio_cal_load_power, Radio_cal_load_iq. Called from main.c at startup (replaces
   the three calls) and in main-controller.c at client connect before Apply_Appliance_Startup.
   Log line: `Radio_cal_startup_load . startup|client connect: reading the radio's calibration`.
+- **Pi ms-sdr Last_used.ini is dead (found 2026-11-08; Ron: leave it alone for now).** Every
+  startup logs `Init_last_used_VFO_A/B . Open file failed. Last_used.ini will be created`; it never
+  is. `Update_last_used_VFO_A/B` (`last_used.c`) never reaches its write (no "Open" line in the
+  log, so one of its conditions always skips it), and `~/.local/mscc/vfoa/` and `vfob/` don't
+  exist anyway (ms-sdr doesn't create them). The in-memory table still fills on band changes,
+  but nobody asks for it: the WPF client keeps its own per-band last-used
+  (`SaveLastUsedForCurrentBand`) and sent no 0xD7 / 0xD8 / 0xD9 request all day. `startup.ini`
+  (same thread, `Update_Startup`) IS used and written. Option for later (after the hold): drop
+  the Init calls and the Last_used.ini write, keep startup.ini. Heat sink -40 C / OPEN in the
+  log = thermistor removed (Ron), expected.
 - **Setup 3 (Ron's station), Configurations draft item: ANSWERED 2026-11-03, draft updated (DRAFT box + Appendix A item 2 removed).**
   Read on the Pi: ms-sdr CAT /dev/tnt0, WSJT-X /dev/tnt1 (pair), Rig Kenwood TS-2000, PTT RTS on tnt1;
   MSCC plays VirtualA -> WSJT-X in VirtualA.monitor; WSJT-X out VirtualB -> MSCC VirtualB.monitor; Mono.
