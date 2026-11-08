@@ -263,8 +263,15 @@ def since(d):
     s = read(d, False)
     c = read_ctrl(d)
     ms0 = m["stats"]["ms"]
-    if s["ms"] < ms0:
-        print("pill restarted after the mark: counts below are since that restart")
+    # When the pill started, by this computer's clock, at the mark and now. A later
+    # start = the pill restarted after the mark, even if it has since been up longer
+    # than it had been at the mark (the old "ms < ms0" test missed that). 60 s slack
+    # for the pill's clock drifting against this one.
+    start_then = m["time"] - ms0 / 1000.0
+    start_now = time.time() - s["ms"] / 1000.0
+    if s["ms"] < ms0 or start_now - start_then > 60:
+        print("pill restarted after the mark (pill started %s): counts below are since"
+              " that restart" % time.strftime("%Y-%m-%d %H:%M:%S", time.localtime(start_now)))
         base, cbase = {}, {}
     else:
         base, cbase = m["stats"], m["ctrl"] or {}
