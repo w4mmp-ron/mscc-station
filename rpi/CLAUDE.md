@@ -220,6 +220,14 @@ review of what he ported, say if the Pi needs a matching change. Don't start new
   cal files, Radio_cal_load_power, Radio_cal_load_iq. Called from main.c at startup (replaces
   the three calls) and in main-controller.c at client connect before Apply_Appliance_Startup.
   Log line: `Radio_cal_startup_load . startup|client connect: reading the radio's calibration`.
+- **Pill audio stats logged by cron (2026-11-08).** `audio-stats.py log` (utility-scripts Pi +
+  Windows, same file; Pi copy in ~/utils) adds one line to `~/.local/mscc/audio-stats.log`: change
+  since the last run, servers up / DOWN / restarted, PILL RESTARTED; trouble ends in `<<<`. State
+  in `~/.audio-stats-log.json`. Ron's crontab: `*/10 * * * * /usr/bin/python3
+  /home/ron/utils/audio-stats.py log`. Check: `grep '<<<' ~/.local/mscc/audio-stats.log`. First
+  test line (since pill start 11-07 23:52, 17.6 h): gaps 103, in_drop 5, out_under 10. The mark
+  from 16:58 is still set (since = clean so far). Question: do underruns come with server
+  restarts or in normal running? The log answers it.
 - **Pi ms-sdr Last_used.ini is dead (found 2026-11-08; Ron: leave it alone for now).** Every
   startup logs `Init_last_used_VFO_A/B . Open file failed. Last_used.ini will be created`; it never
   is. `Update_last_used_VFO_A/B` (`last_used.c`) never reaches its write (no "Open" line in the

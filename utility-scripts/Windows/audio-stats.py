@@ -12,6 +12,11 @@ so it runs with the servers up. Needs python3-usb (pyusb).
                               except the gap max and FIFO min / max
   audio-stats.py since        what changed since the mark (ctrl max and loop max
                               stay since power-up)
+  audio-stats.py log [FILE]   add one line to FILE (default ~/.local/mscc/audio-stats.log):
+                              what changed since the last 'log' run, servers up / down /
+                              restarted, pill restarts; trouble lines end in <<<. Made for
+                              cron. Clears nothing (mark / since still work). Its own state
+                              file: ~/.audio-stats-log.json
 
 Counters (IN = radio -> Pi, RX I/Q; OUT = Pi -> radio, TX I/Q):
   in_pkts     IN packets scheduled (about 1000 per second)
@@ -301,9 +306,98 @@ def since(d):
     print_loop(read_loop(d))
 
 
+LOG_FILE = os.path.join(os.path.expanduser("~"), ".local", "mscc", "audio-stats.log")
+LOG_STATE = os.path.join(os.path.expanduser("~"), ".audio-stats-log.json")
+LOG_KEYS = ["in_empty", "in_gaps", "in_drop", "out_under", "out_drop", "ep0_cut"]
+LOG_CTRL = ["abandoned", "slow"]
+SERVERS = ["sdrcore-recv", "sdrcore-trans", "ms-sdr"]
+
+
+def server_pids():
+    """{name: pid or None} for the three servers (Linux /proc); {} elsewhere."""
+    if not os.path.isdir("/proc"):
+        return {}
+    found = {n: None for n in SERVERS}
+    for p in os.listdir("/proc"):
+        if p.isdigit():
+            try:
+                with open("/proc/%s/comm" % p) as f:
+                    name = f.read().strip()
+            except OSError:
+                continue
+            if name in found and found[name] is None:
+                found[name] = int(p)
+    return found
+
+
+def log_line(path, text):
+    os.makedirs(os.path.dirname(path), exist_ok=True)
+    with open(path, "a") as f:
+        f.write("%s  %s\n" % (time.strftime("%Y-%m-%d %H:%M:%S"), text))
+
+
+def log(path):
+    """One line per run (for cron): what changed since the previous run. Reads only,
+    clears nothing on the pill, so mark / since are not disturbed."""
+    try:
+        d = dev()
+        s = read(d, False)
+    except SystemExit as e:
+        log_line(path, "NO READ: %s  <<<" % e)
+        return
+    c = read_ctrl(d) or {}
+    now = time.time()
+    pids = server_pids()
+    try:
+        with open(LOG_STATE) as f:
+            prev = json.load(f)
+    except (OSError, ValueError):
+        prev = None
+    notes = []
+    start_now = now - s["ms"] / 1000.0
+    if prev is None:
+        base, cbase = {}, {}
+        notes.append("first line: counts since pill power-up")
+    elif s["ms"] < prev["stats"]["ms"] or start_now - prev["start"] > 60:
+        base, cbase = {}, {}
+        notes.append("PILL RESTARTED %s (%s): counts since then" % (
+            time.strftime("%Y-%m-%d %H:%M:%S", time.localtime(start_now)),
+            reset_text(s.get("reset", 0) & 0xFF)))
+    else:
+        base, cbase = prev["stats"], prev.get("ctrl") or {}
+    dk = {k: (s[k] - base.get(k, 0)) & 0xFFFFFFFF for k in LOG_KEYS if k in s}
+    dc = {k: (c[k] - cbase.get(k, 0)) & 0xFFFFFFFF for k in LOG_CTRL if k in c}
+    mins = (s["ms"] - base.get("ms", 0)) / 60000.0
+    if pids:
+        down = [n for n in SERVERS if pids[n] is None]
+        if down:
+            notes.append("servers DOWN: " + ", ".join(down))
+        elif prev is not None and prev.get("pids") and prev["pids"] != pids:
+            notes.append("servers restarted")
+    bad = any(dk.values()) or any(dc.values())
+    text = "up %5.1f h  %5.1f min  in %7d  empty %d  gaps %d (max %d ms)  in_drop %d  " \
+           "out_under %d  out_drop %d  ep0_cut %d  abandoned %d  slow %d" % (
+               s["ms"] / 3600000.0, mins, (s["in_pkts"] - base.get("in_pkts", 0)) & 0xFFFFFFFF,
+               dk.get("in_empty", 0), dk.get("in_gaps", 0), s["in_gap_max"], dk.get("in_drop", 0),
+               dk.get("out_under", 0), dk.get("out_drop", 0), dk.get("ep0_cut", 0),
+               dc.get("abandoned", 0), dc.get("slow", 0))
+    if pids and not any("DOWN" in n for n in notes):
+        text += "  servers up"
+    if notes:
+        text += "  [" + "; ".join(notes) + "]"
+    if bad:
+        text += "  <<<"
+    log_line(path, text)
+    with open(LOG_STATE, "w") as f:
+        json.dump({"time": now, "start": start_now, "stats": s, "ctrl": c, "pids": pids}, f)
+
+
 def main():
-    d = dev()
     cmd = sys.argv[1] if len(sys.argv) > 1 else ""
+    if cmd == "log":
+        log(sys.argv[2] if len(sys.argv) > 2 else LOG_FILE)
+        return
+    d = dev()
     if cmd == "watch":
         watch(d, float(sys.argv[2]) if len(sys.argv) > 2 else 60)
     elif cmd == "mark":

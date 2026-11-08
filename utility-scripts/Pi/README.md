@@ -11,12 +11,27 @@ The others: type python3 and the path, as below.
     audio-stats.py mark
     audio-stats.py since
     audio-stats.py watch 30
+    audio-stats.py log
 
 Black Pill health counters, read over USB. Safe any time, servers up or down.
 - no word: all counters since the pill started
 - mark: remember the counters now, as a starting point
 - since: what changed since the last mark
 - watch 30: print the changes every half second for 30 s
+- log: add one line to ~/.local/mscc/audio-stats.log with what changed since the
+  last log run, and whether the servers are up, down or were restarted. Lines with
+  trouble end in <<<. It clears nothing, so mark and since still work.
+
+To log every 10 minutes, type crontab -e and add this line (use your own path):
+
+    */10 * * * * /usr/bin/python3 /home/ron/utilities/audio-stats.py log
+
+Then, to see only the trouble:
+
+    grep '<<<' ~/.local/mscc/audio-stats.log
+
+The first line counts from when the pill started. "max" after gaps is the largest
+gap since the last mark or watch (those clear it), not just since the last line.
 
 Normal: counters stay flat while receiving and while transmitting.
 Bad: last reset = WATCHDOG, a hang record, abandoned or ep0_cut above 0.
