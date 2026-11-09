@@ -1,5 +1,6 @@
 #define _CRT_SECURE_NO_WARNINGS 1
 #include <math.h>
+#include <time.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include "usbavrcmd.h"
@@ -207,6 +208,106 @@ void Initialize_band_data() {
     }
 }
 
+/* 3.195 (Ron 2026-11-09, one exception to the Pi hold): the pill's audio stream counters
+ * (radio command 0xC9 CMD_AUDIO_STATS, pill 3.11+, same read as utility-scripts audio-stats.py)
+ * go to this log every 10 minutes of normal running. A frequency / band change, mode change
+ * (incl. TUNE), client connect or server stop restarts the 10 minutes, so each line covers only
+ * normal running (receive, FT8 transmits). Read only (value 0): nothing on the pill is cleared.
+ * Off unless mscc.ini has PILL_STATS=1; (main-controller.c Parse_mscc_record).
+ * 0xC9 here is the radio (USB) command; the client opcode 0xC9 is CMD_SET_AUTO_SNAP_STATUS. */
+#define RADIO_CMD_AUDIO_STATS  0xC9
+#define AUDIO_STATS_WINDOW_MS  (10 * 60 * 1000)
+#define AUDIO_STATS_SETTLE_MS  30000   // quiet time after an event before a new window starts
+#define AUDIO_STATS_WORDS      16
+enum { AS_MS = 1, AS_IN_PKTS, AS_IN_EMPTY, AS_IN_GAPS, AS_IN_GAP_MAX, AS_IN_LVL_MIN, AS_IN_LVL_MAX,
+       AS_IN_DROP, AS_OUT_UNDER, AS_OUT_DROP, AS_OUT_LVL_MIN, AS_OUT_LVL_MAX, AS_RESET, AS_EP0_CUT };
+
+uint8_t G_pill_stats = FALSE;                 // mscc.ini PILL_STATS=1 turns it on
+static volatile uint64_t s_audio_busy_ms = 0;      // time of the last radio-management event
+static const char *volatile s_audio_busy_why = "";
+
+static uint64_t audio_stats_now_ms(void) {
+    struct timespec ts;
+    clock_gettime(CLOCK_MONOTONIC, &ts);
+    return (uint64_t) ts.tv_sec * 1000ULL + (uint64_t) ts.tv_nsec / 1000000ULL;
+}
+
+/* Called where ms-sdr manages the radio; restarts the stats window. */
+void Audio_stats_busy(const char *why) {
+    s_audio_busy_why = why;
+    s_audio_busy_ms = audio_stats_now_ms();
+}
+
+/* Returns the number of 32-bit words read (0 on failure). */
+static int audio_stats_read(uint32_t *w) {
+    int r;
+    memset(w, 0, AUDIO_STATS_WORDS * sizeof (uint32_t));
+    r = usbControlMsgIN(RADIO_CMD_AUDIO_STATS, 0, 0, (char *) w, AUDIO_STATS_WORDS * sizeof (uint32_t));
+    return (r >= (AS_OUT_DROP + 1) * 4) ? r / 4 : 0;
+}
+
+/* Called from the temperature loop (every 3 s, STM32 radio only). */
+static void Audio_stats_tick(void) {
+    static uint32_t base[AUDIO_STATS_WORDS];
+    static int have_base = FALSE;
+    static uint64_t base_at = 0;       // host time of the base read
+    static uint64_t base_busy = 0;     // s_audio_busy_ms when the window started
+    static int read_failed = FALSE;
+    uint32_t w[AUDIO_STATS_WORDS];
+    uint64_t now = audio_stats_now_ms();
+    uint64_t busy = s_audio_busy_ms;
+    int n;
+
+    if (busy != 0 && now - busy < AUDIO_STATS_SETTLE_MS)
+        return;                                   // radio being managed: wait
+    if (have_base && busy == base_busy && now - base_at < AUDIO_STATS_WINDOW_MS)
+        return;                                   // window running
+    n = audio_stats_read(w);
+    if (n == 0) {
+        if (!read_failed) {
+            read_failed = TRUE;
+            print_time(0);
+            fprintf(G_fp_logfile, "[%d] Pill_stats. Pill counters read (0xC9) failed (pill older than 3.11?); will keep trying\n",
+                    line_number++);
+        }
+        have_base = FALSE;
+        return;
+    }
+    read_failed = FALSE;
+    if (s_audio_busy_ms != busy)
+        return;                                   // an event came in during the read
+    if (have_base && busy == base_busy) {
+        // a full quiet window: report it
+        if (w[AS_MS] < base[AS_MS]) {
+            print_time(0);
+            fprintf(G_fp_logfile, "[%d] Pill_stats. PILL RESTARTED (up %.1f h), counters start again  <<<\n",
+                    line_number++, w[AS_MS] / 3600000.0);
+        } else {
+            uint32_t empty = w[AS_IN_EMPTY] - base[AS_IN_EMPTY];
+            uint32_t gaps = w[AS_IN_GAPS] - base[AS_IN_GAPS];
+            uint32_t in_drop = w[AS_IN_DROP] - base[AS_IN_DROP];
+            uint32_t out_under = w[AS_OUT_UNDER] - base[AS_OUT_UNDER];
+            uint32_t out_drop = w[AS_OUT_DROP] - base[AS_OUT_DROP];
+            uint32_t ep0_cut = (n > AS_EP0_CUT) ? w[AS_EP0_CUT] - base[AS_EP0_CUT] : 0;
+            int trouble = (empty || gaps || in_drop || out_under || out_drop || ep0_cut);
+            print_time(0);
+            fprintf(G_fp_logfile,
+                    "[%d] Pill_stats. %.1f min normal running, pill up %.1f h: in %u  empty %u  gaps %u (max %u ms)  in_drop %u  out_under %u  out_drop %u  ep0_cut %u%s\n",
+                    line_number++, (now - base_at) / 60000.0, w[AS_MS] / 3600000.0,
+                    w[AS_IN_PKTS] - base[AS_IN_PKTS], empty, gaps, w[AS_IN_GAP_MAX], in_drop, out_under,
+                    out_drop, ep0_cut, trouble ? "  <<<" : "");
+        }
+    } else if (!have_base) {
+        print_time(0);
+        fprintf(G_fp_logfile, "[%d] Pill_stats. Pill counters every %d min of normal running (window restarts at band / freq / mode change, client connect)\n",
+                line_number++, AUDIO_STATS_WINDOW_MS / 60000);
+    }
+    memcpy(base, w, sizeof (base));
+    have_base = TRUE;
+    base_at = now;
+    base_busy = busy;
+}
+
 void *Check_temperature(void *t) {
     Set_Thread_Name("temperature");
     INT32 iTemperature = 0;
@@ -247,6 +348,8 @@ void *Check_temperature(void *t) {
                     fprintf(G_fp_logfile, "[%d] Check_temperature. Chip: %d C, heat sink: %d C\n", line_number++,
                             (int) E_temp, (int) heat_sink);
             }
+            if (G_pill_stats)
+                Audio_stats_tick();   // 3.195: pill audio counters, every 10 min of normal running
         }
         Sleep(sleep_time);
     }

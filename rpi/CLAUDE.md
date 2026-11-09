@@ -51,7 +51,7 @@ review of what he ported, say if the Pi needs a matching change. Don't start new
   2026-11-06 session); Ron to add Windows Defender exclusions (Arduino15, arduino cache,
   libraries, build) because builds were slow.
 - **Pi runs:** mscc-avalonia 1.6.89 (Ron's Avalonia copy, below), recv 3.152 (automatic NB + spectral NR), trans 3.151 (2026-11-05: operator mic
-  fix, see below), ms-sdr 3.193 (0x9D paddle Farnsworth, reported to the client), pill 3.13,
+  fix, see below), ms-sdr 3.195 (Pill_stats log, below), pill 3.13,
   PIC keyer = keyer-buffer (buffered Farnsworth), package mscc 1.0.75 installed (Ron 2026-11-05).
   Pushed 2026-11-05: keyer + 0x9D work (fb90f87), mscc 1.0.75 (f78d141), pill 3.13 (a2e351d in
   psoc-replacement-stm32). Open from today: SSB on a dummy load to confirm the mic fix;
@@ -220,6 +220,18 @@ review of what he ported, say if the Pi needs a matching change. Don't start new
   cal files, Radio_cal_load_power, Radio_cal_load_iq. Called from main.c at startup (replaces
   the three calls) and in main-controller.c at client connect before Apply_Appliance_Startup.
   Log line: `Radio_cal_startup_load . startup|client connect: reading the radio's calibration`.
+- **Pi ms-sdr 3.195 (2026-11-09, Ron: the one exception to the hold): pill counters in the
+  ms-sdr log. BUILT on the Pi 13:03, WORKS (Ron's mscc.ini has `PILL_STATS=1;`).** mscc.ini
+  `PILL_STATS=1` (default off) -> the temperature thread (every 3 s, STM32 radio only) reads radio
+  command 0xC9 (`RADIO_CMD_AUDIO_STATS`, read only, value 0; client 0xC9 = auto snap, no
+  conflict) and logs `Pill_stats. 10.0 min normal running, pill up .. h: in .. empty .. gaps ..
+  (max .. ms) in_drop .. out_under .. out_drop .. ep0_cut ..` (`<<<` on trouble, PILL RESTARTED
+  line). `Audio_stats_busy(why)` restarts the 10 min: SetHWLO_queue when the frequency changes
+  (TX on / off re-sends the same one; RIT / split keying does count), ModeChanged (incl. TUNE),
+  Session_Claim, Stop_all; new window only after 30 s quiet. Files: proficio-temperature.c,
+  extern.h, main.c, main-controller.c (Parse_mscc_record), version.h 195. First lines 13:14 and
+  13:24 clean. Ron (2026-11-09): gaps etc. during connect / band change / tune don't matter, only
+  normal running. Cron log still on. Docs: utility-scripts/Pi/README.md (audio-stats section).
 - **Pill audio stats logged by cron (2026-11-08).** `audio-stats.py log` (utility-scripts Pi +
   Windows, same file; Pi copy in ~/utils) adds one line to `~/.local/mscc/audio-stats.log`: change
   since the last run, servers up / DOWN / restarted, PILL RESTARTED; trouble ends in `<<<`. State

@@ -591,6 +591,8 @@ extern uint8_t G_Calibration_reset;
 
 //For temperature process
 void *Check_temperature(void *t);
+void Audio_stats_busy(const char *why);   // 3.195: restarts the pill audio stats window
+extern uint8_t G_pill_stats;         // 3.195: mscc.ini PILL_STATS= (default 0 = off)
 extern INT8 G_delta_drift_int;
 extern uint8_t G_Proficio_temperature;
 //extern int Start_Temp_Check();

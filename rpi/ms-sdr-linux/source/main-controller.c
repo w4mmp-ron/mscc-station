@@ -167,6 +167,7 @@ static int Session_Is_Owner(const struct sockaddr_in *peer) {
 }
 
 static void Session_Claim(const struct sockaddr_in *peer) {
+    Audio_stats_busy("client connect");   // 3.195
     if (peer != NULL) {
         G_session_client = *peer;
         G_session_client_valid = TRUE;
@@ -274,6 +275,7 @@ void Stop_all(uint8_t up_date_transceiver, uint8_t shutdown_status) {
     int ret = 0;
     uint8_t status = 0;
 
+    Audio_stats_busy("servers stopped");   // 3.195
     print_time(1);
     fprintf(G_fp_logfile, "[%d] Stop_all Called. update_transceiver: %d, shutdown_status: %d\n",
             line_number++, up_date_transceiver, shutdown_status);
@@ -2981,6 +2983,17 @@ void Parse_mscc_record(char *record) {
         print_time(0);
         fprintf(G_fp_logfile, "[%d] Parse_mscc_record. G_proficio_mkii: %d\n",
             line_number++, (int)G_proficio_mkii);
+        status = 1;
+    }
+
+    /* 3.195: PILL_STATS=1 -> pill audio counters to this log every 10 min of normal
+     * running (proficio-temperature.c). Default 0 (off) when the key is missing. */
+    parameter = strstr(record, "PILL_STATS=");
+    if (parameter != NULL) {
+        cmd_value = atoi(&parameter[strlen("PILL_STATS=")]);
+        G_pill_stats = (cmd_value != 0) ? TRUE : FALSE;
+        print_time(0);
+        fprintf(G_fp_logfile, "[%d] Parse_mscc_record. PILL_STATS: %d\n", line_number++, (int) G_pill_stats);
         status = 1;
     }
 

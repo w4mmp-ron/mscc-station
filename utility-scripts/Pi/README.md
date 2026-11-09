@@ -33,6 +33,18 @@ Then, to see only the trouble:
 The first line counts from when the pill started. "max" after gaps is the largest
 gap since the last mark or watch (those clear it), not just since the last line.
 
+ms-sdr 3.195 and later can log the same counters itself, without cron. Add this
+line to ~/.local/mscc/mscc.ini and restart mscc:
+
+    PILL_STATS=1;
+
+Then ms-sdr writes a Pill_stats line to ~/.local/mscc/ms-sdr.log after every 10
+minutes of normal running (receive, FT8 transmits). A band or frequency change,
+mode change, TUNE or client connect starts the 10 minutes again, so those don't
+show up. To see the lines:
+
+    grep Pill_stats ~/.local/mscc/ms-sdr.log
+
 Normal: counters stay flat while receiving and while transmitting.
 Bad: last reset = WATCHDOG, a hang record, abandoned or ep0_cut above 0.
 On a lockup: run audio-stats.py and copy ~/.local/mscc/*.log BEFORE any reset or

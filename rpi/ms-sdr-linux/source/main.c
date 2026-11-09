@@ -947,6 +947,8 @@ int SetHWLO_queue(long tune_freq) {
     static uint16_t previous_band = FREQ_OUT_OF_RANGE;
 
     delta_freq = (labs) ((previous_freq - tune_freq));
+    if (delta_freq != 0)
+        Audio_stats_busy("frequency change");   // 3.195 (TX on / off re-sends the same frequency)
     G_dll_active = TRUE;
     previous_freq = tune_freq;
     switch (G_mode) {
@@ -1052,6 +1054,7 @@ void ModeChanged(char mode) {
     long t = 0;
     static int signal_sent = 0;
 
+    Audio_stats_busy("mode change");   // 3.195
     print_time(0);
     fprintf(G_fp_logfile, "[%d] ModeChanged. mode: %c,G_calibrating: %d. STARTED\n", line_number++, mode, G_calibration_mode);
     //Disable mode setting if the application is in Power Calibration mode.  
