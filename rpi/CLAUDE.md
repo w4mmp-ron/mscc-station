@@ -53,6 +53,11 @@ review of what he ported, say if the Pi needs a matching change. Don't start new
 - **Pi runs:** mscc-avalonia 1.6.89 (Ron's Avalonia copy, below), recv 3.152 (automatic NB + spectral NR), trans 3.151 (2026-11-05: operator mic
   fix, see below), ms-sdr 3.195 (Pill_stats log, below), pill 3.13,
   PIC keyer = keyer-buffer (buffered Farnsworth), package mscc 1.0.75 installed (Ron 2026-11-05).
+  **mscc 1.0.76 built 2026-11-09** (`installers/rpi/mscc_1.0.76_arm64.deb`, also V:\ = Pi home)
+  = 1.0.75 + ms-sdr 3.195 (Pill_stats; md5 = the running ~/mscc/ms-sdr). 125 files, same modes, no
+  CR in text files. Not installed from the .deb yet. Build: scratchpad build-mscc-deb.sh (WSL Debian,
+  stages under /tmp/mscc-src, strips CR from text only, runs build-deb.sh; session-only).
+  INSTALL-FOR-PI.md now names 1.0.76 (the .docx / .pdf copies not regenerated).
   Pushed 2026-11-05: keyer + 0x9D work (fb90f87), mscc 1.0.75 (f78d141), pill 3.13 (a2e351d in
   psoc-replacement-stm32). Open from today: SSB on a dummy load to confirm the mic fix;
   Stew's PADDLE checkbox (note pushed); pill re-sending keyer settings after a PIC reset.
