@@ -14,6 +14,7 @@ The Windows servers keep their files in %LOCALAPPDATA%\MSCC-NET9.
     audio-stats mark
     audio-stats since
     audio-stats watch 30
+    audio-stats log
 
 Black Pill health counters, read over USB, when the pill is plugged into this
 PC. Safe any time, servers up or down. Same output as on the Pi.
@@ -21,6 +22,21 @@ PC. Safe any time, servers up or down. Same output as on the Pi.
 - mark: remember the counters now, as a starting point
 - since: what changed since the last mark
 - watch 30: print the changes every half second for 30 s
+- log: add one line to %USERPROFILE%\.local\mscc\audio-stats.log with what
+  changed since the last log run, and notes a pill restart. Lines with trouble
+  end in <<<. It clears nothing, so mark and since still work. On Windows it
+  can't tell whether the servers are up (it says nothing about them).
+
+To log every 10 minutes, type this once in a Command Prompt (use your own path):
+
+    schtasks /create /sc minute /mo 10 /tn "audio-stats log" /tr "C:\path\to\audio-stats.cmd log"
+
+To stop it: schtasks /delete /tn "audio-stats log". To see only the trouble:
+
+    findstr "<<<" %USERPROFILE%\.local\mscc\audio-stats.log
+
+The first line counts from when the pill started. "max" after gaps is the largest
+gap since the last mark or watch (those clear it), not just since the last line.
 
 Bad: last reset = WATCHDOG, a hang record, abandoned or ep0_cut above 0.
 
