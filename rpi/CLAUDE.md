@@ -281,6 +281,11 @@ review of what he ported, say if the Pi needs a matching change. Don't start new
   stream is untouched. A gap alone loses nothing (pill sends the samples a frame later); only
   in_drop loses 1 ms of I/Q. Modes that would feel a drop: packet / VARA / ARDOP (frame resent),
   PSK31 / RTTY (maybe one character), DRM (short dropout); FT8 / WSPR / SSB / CW: none.
+- **Ron 2026-11-08 22:20: the Black Pill (pill 3.13) is PRODUCTION READY.** Cron log, pill up
+  22.5 h: 17:50-22:10 local clean (idle receive, WSJT on); 22:10-22:20 FT8 on 30 m (~10
+  transmits) + 2 tunes: gaps 0, in_drop 0, out_under 4 = the 4 trans reopens (T/U mode commands),
+  host-side as above. No pill fault counted all day (ep0_cut, abandoned, slow, out_drop, resets,
+  hang record all 0). Left: the trans dual-stream no-reopen fix (after the hold). Cron log stays on.
 - **Pi ms-sdr Last_used.ini is dead (found 2026-11-08; Ron: leave it alone for now).** Every
   startup logs `Init_last_used_VFO_A/B . Open file failed. Last_used.ini will be created`; it never
   is. `Update_last_used_VFO_A/B` (`last_used.c`) never reaches its write (no "Open" line in the
