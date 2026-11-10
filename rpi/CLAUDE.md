@@ -39,6 +39,31 @@ Git repo root: `C:\Users\Ron\.grok\worktrees`.
 review of what he ported, say if the Pi needs a matching change. Don't start new work meanwhile.
 
 **Current list (updated 2026-11-06, after bb31561):**
+- **After the hold (Ron 2026-11-09): WSJT-X "right-click for rig tune" does nothing.** WSJT-X on
+  the Pi (rig TS-2000) asks hamlib for the rig's tuner, which should send Kenwood `AC111;` (not yet
+  seen on the serial line). ms-sdr `comm-port.c` only handles AI ID IF MD PS RM FW KS FA FB RX TX,
+  so AC is ignored. Fix: handle `AC` in comm-port.c and start MSCC's own TUN carrier
+  (`tune_modulate`); first capture what WSJT-X really sends, and decide how TUN ends (AC has no
+  stop: timeout, or WSJT-X Tune released). Left-click Tune (CAT PTT + tone) works and stays as is.
+  **What WSJT-X 3.0.2 can send (Pi uses hamlib 4.6.2; from hamlib source `rigs/kenwood/ts2000.c`
+  + `kenwood.c` tag 4.6.2, not a capture; actual set depends on WSJT-X settings):**
+
+  | WSJT-X action | hamlib sends | ms-sdr handles? |
+  |---|---|---|
+  | Connect | `ID;` (wants `ID019;`), `AI;`, `AI0;` if AI on, `IF;` | yes (`AI0;` no reply, fine) |
+  | Read freq | `FA;` (`FB;` for VFO B / split TX) | yes |
+  | Set freq | `FA;`, then `FA00014074000;`, then `ID;` | yes |
+  | Read mode | `MD;` | yes |
+  | Set mode | `MD;`, then `MDn;` (1 LSB 2 USB 3 CW 4 FM 5 AM 6 FSK 7 CW-R) | yes for 1-5 |
+  | Read PTT / VFO / split | `IF;` (cached 0.5 s) | yes |
+  | PTT on | `VX0;TX;` | yes (finds `TX;`, `VX0;` ignored) |
+  | PTT off | `RX;` | yes |
+  | Set VFO | `SA;`, then `FR0;` / `FR1;` | **no** |
+  | Split (Split = Rig only) | `IF;`, then `FR0;FT1;` / `FR0;FT0;` | **no** |
+  | Power status | `PS;` | yes |
+  | Right-click Tune | `AC111;` (RIG_OP_TUNE) | **no** |
+
+  Every set command except `RX` is followed by `ID;` (hamlib's check). Gaps: AC, SA, FR, FT.
 - **WiFi SWR meter (2026-11-06, Ron's copy `swr-meter/ron/HF_SWR_R4_1/`):** PEAK hold + AVG mode
   built, OTA-loaded and TESTED (Ron, WSJT-X); PEAK SWR beside the big SWR (later 2026-11-06) built,
   loaded, works (Ron); details in the SWR meter firmware entry further down.
