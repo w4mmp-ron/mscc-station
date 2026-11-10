@@ -53,10 +53,11 @@ overflow STP / drain / RES, CQ play + abort, straight key. Bench was in Claude's
 (`ksim/`), not kept in the repo. On the rig (Ron): STP at 30 wpm, paddles off until the
 buffer cleared, RES, paddles back; CQ, straight, direct all fine.
 
-**Known kink (to fix):** if the PIC resets while the radio stays on (e.g. reflash), 0x9D is
-lost (PIC starts at 0) and the pill only forwards a value when it changes. Workaround:
-toggle `CW_Paddle_Farnsworth` 0 then 1 with an mscc restart each. Fix idea: pill re-sends
-all keyer settings when the PIC comes back.
+**PIC reset kink: FIXED 2026-11-10 (pill 3.14).** A PIC reset with the radio on (e.g. reflash)
+loses 0x9D (PIC RAM only, starts at 0). The pill used to forward 0x9D only when it changed;
+3.14 passes every 0x9D from ms-sdr on, so after a PIC reset one `mscc restart` (or client
+reconnect) puts it back. Tested by Ron: PIC re-flashed, one restart, held paddle buffered again.
+(Ron's choice over a 2 s periodic re-send: 0x9D only comes at start-up or when the option changes.)
 
 **Ideas, not started:** keyboard CW (client text into the player; client is Stew's).
 **Stand-alone version (2026-11-05):** hardware draft in `worktrees/keyer-standalone` (9 V box);

@@ -34,7 +34,7 @@ Git repo root: `C:\Users\Ron\.grok\worktrees`.
   to a piece of work first (code, notes, note for Stew), then ONE commit and one push. No
   follow-up "notes: committed xyz" commits.
 
-**ON HOLD (Ron, 2026-11-02): no new changes until Stew catches up on the important Pi work
+**HOLD LIFTED 2026-11-10 (Ron: Stew gave the go-ahead to implement all the changes). Was: ON HOLD (Ron, 2026-11-02): no new changes until Stew catches up on the important Pi work
 (automatic NB, spectral NR, NR Low/Med/High, client controls).** When he pushes: pull, short
 review of what he ported, say if the Pi needs a matching change. Don't start new work meanwhile.
 
@@ -77,7 +77,7 @@ review of what he ported, say if the Pi needs a matching change. Don't start new
   2026-11-06 session); Ron to add Windows Defender exclusions (Arduino15, arduino cache,
   libraries, build) because builds were slow.
 - **Pi runs:** mscc-avalonia 1.6.89 (Ron's Avalonia copy, below), recv 3.152 (automatic NB + spectral NR), trans 3.151 (2026-11-05: operator mic
-  fix, see below), ms-sdr 3.195 (Pill_stats log, below), pill 3.13,
+  fix, see below), ms-sdr 3.195 (Pill_stats log, below), pill 3.14 (2026-11-10, 0x9D passed through),
   PIC keyer = keyer-buffer (buffered Farnsworth), package mscc 1.0.75 installed (Ron 2026-11-05).
   **mscc 1.0.76 built 2026-11-09** (`installers/rpi/mscc_1.0.76_arm64.deb`, also V:\ = Pi home)
   = 1.0.75 + ms-sdr 3.195 (Pill_stats; md5 = the running ~/mscc/ms-sdr). 125 files, same modes, no
@@ -86,7 +86,7 @@ review of what he ported, say if the Pi needs a matching change. Don't start new
   INSTALL-FOR-PI.md now names 1.0.76 (the .docx / .pdf copies not regenerated).
   Pushed 2026-11-05: keyer + 0x9D work (fb90f87), mscc 1.0.75 (f78d141), pill 3.13 (a2e351d in
   psoc-replacement-stm32). Open from today: SSB on a dummy load to confirm the mic fix;
-  Stew's PADDLE checkbox (note pushed); pill re-sending keyer settings after a PIC reset.
+  Stew's PADDLE checkbox (note pushed). (PIC reset kink fixed 11-10, pill 3.14.)
 - **2026-11-05 mscc 1.0.74 / 1.0.75 (`installers/rpi/mscc_1.0.75_arm64.deb`):**
   - **/dev/tnt* missing after a kernel update:** the Pi booted kernel 6.18.60 (installed 11-03);
     tty0tty was only built for the older kernels. 1.0.74 adds kernel hooks
@@ -164,9 +164,10 @@ review of what he ported, say if the Pi needs a matching change. Don't start new
   (`worktrees/keyer`, d40a7ba), worked but felt "wonky" (holds your next letter back). The new
   keyer (`worktrees/keyer-buffer`) rebuilt the PIC timing on a 1 ms TMR2 tick, state machines,
   real-ms element times (the old loop timing was off; 18 now = true 18 wpm).
-  **Kink to fix:** a PIC reset with the radio on (e.g. reflash) loses 0x9D, and the pill only
-  forwards a changed value; workaround = toggle CW_Paddle_Farnsworth 0 / 1 with an mscc restart
-  each. Fix idea: pill re-sends all keyer settings when the PIC comes back.
+  **PIC reset kink FIXED 2026-11-10 (pill 3.14):** the pill now passes every 0x9D on (was: only
+  changes), so after a PIC reset one mscc restart puts Farnsworth back. Tested (Ron).
+  **2026-11-10 keyer streamed** (keyer-buffer 79831ce, in the rig): a held paddle starts at once
+  (was ~2 s wait, 16-element chunks). Pi cw.ini = `~/.local/mscc/cw.ini`.
   Not done: Windows ms-sdr (Stew's) and PSoC have no 0x9D; ms-sdr only logs a rejected 0x9D.
   Idea, not started: keyboard CW (client text into the player).
 - **Stand-alone keyer (Ron 2026-11-05, started; `worktrees/keyer-standalone`, pushed c46d5f2).**
