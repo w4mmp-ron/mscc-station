@@ -83,3 +83,6 @@ psoc-replacement-stm32/
 
 *.iobj
 *.ipdb
+
+# Superseded installers, kept locally only (Ron 2026-11-10)
+installers/*/old/
