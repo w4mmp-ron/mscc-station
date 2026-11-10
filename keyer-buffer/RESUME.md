@@ -7,6 +7,19 @@
 Backup of the PIC before it: `Release/Keyer-MCU-backup-before-buffer-20261105.hex`.
 **Ron, 2026-11-05: all tested on the rig and working; "the speed sounds spot on".**
 
+**2026-11-10: streamed (in the rig, `Release/Keyer-MCU-buffer-stream-20261110.hex`; backup of
+the PIC before it `Keyer-MCU-backup-before-stream-20261110.hex`). Ron: works, a held paddle
+starts right away.** Was: a letter went on the air only once closed (2-dit pause or 16
+elements), so a held paddle waited ~2 s (dit) / ~4 s (dah) and came out in 16-element chunks.
+Now the buffer holds 1-byte symbols (dot / dash / letter end / word space, 128 entries) and the
+player starts each element as it is keyed; letter / word gaps unchanged (the wait for the
+letter to close counts towards the gap). No 16-element limit on the paddles; STP also at 120
+entries waiting (guard). EEPROM layout unchanged (hex EEPROM data identical). PC bench
+(scratchpad, not kept): held dit / dah key in 1 ms, steady; E-gap-E = 302 ms at 18/15; STP at
+20 letters, drain, back to idle. The rest of this section describes the 11-05 letter buffer;
+it still holds except where this paragraph says otherwise. Pi cw.ini is
+`~/.local/mscc/cw.ini` (not the Avalonia host copy).
+
 **Idea:** key at whatever speed feels right; the sidetone follows your hand; each finished
 letter goes into a buffer and the transmitter sends it with Farnsworth spacing (letters at
 SET_WPM, gaps at the 0x76 text WPM). Too far ahead -> STP on the sidetone, paddles off,

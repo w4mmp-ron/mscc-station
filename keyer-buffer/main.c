@@ -88,11 +88,19 @@
 #define KEYER_MSG_MAX   48
 
 /* Buffered Farnsworth (0x9D) */
-#define BUF_SIZE            64  /* letter / word-space entries, power of 2 (3 bytes each) */
-#define BUF_LIMIT           20  /* letters waiting -> STP, paddles suspended (max ~60 entries with word spaces) */
+/* The buffer holds single symbols (element / letter end / word space), so the
+ * transmitter starts on the first element of a letter (streamed, 2026-11-10). */
+#define BUF_SIZE           128  /* symbol entries, power of 2, 1 byte each */
+#define BUF_ENTRY_LIMIT    120  /* entries waiting -> STP too (e.g. a paddle held while behind) */
+#define BUF_LIMIT           20  /* letters waiting -> STP, paddles suspended */
 #define LETTER_END_DITS      2  /* gap after the last mark that closes a letter */
 #define WORD_GAP_DITS        5  /* gap after the last mark that adds a word space */
-#define LETTER_MAX_ELEMENTS 16  /* longer -> letter closed, next element starts a new one */
+#define LETTER_MAX_ELEMENTS 16  /* CQ text letters: elements kept per character */
+
+#define SYM_WORD   0u           /* buffer symbols */
+#define SYM_DOT    1u
+#define SYM_DASH   2u
+#define SYM_END    3u           /* letter end: the player sends the letter gap */
 #define MEM_START_WAIT_MS  500  /* CQ play: wait this long for the paddles to open */
 
 static int cw_keyer_speed = 18;
@@ -378,39 +386,36 @@ static uint8_t paddles_closed(void) {
 }
 
 /* ------------------------------------------------------------------------- */
-/* Letter buffer (buffered Farnsworth): len 0 = word space                    */
+/* Symbol buffer (buffered Farnsworth): SYM_DOT / SYM_DASH / SYM_END / SYM_WORD */
 /* ------------------------------------------------------------------------- */
 
-static uint8_t buf_len[BUF_SIZE];
-static uint16_t buf_bits[BUF_SIZE];   /* bit i = 1: element i is a dash */
+static uint8_t buf_sym[BUF_SIZE];
 static uint8_t buf_head = 0;
 static uint8_t buf_tail = 0;
 static uint8_t buf_count = 0;
-static uint8_t buf_letters = 0;       /* letters waiting (word spaces not counted) */
+static uint8_t buf_letters = 0;       /* finished letters waiting (SYM_END count) */
 
 static void buf_clear(void) {
     buf_head = buf_tail = buf_count = buf_letters = 0;
 }
 
-static void buf_push(uint8_t len, uint16_t bits) {
+static void buf_push(uint8_t sym) {
     if (buf_count >= BUF_SIZE)
         return;
-    buf_len[buf_head] = len;
-    buf_bits[buf_head] = bits;
+    buf_sym[buf_head] = sym;
     buf_head = (uint8_t)((buf_head + 1u) & (BUF_SIZE - 1u));
     buf_count++;
-    if (len != 0)
+    if (sym == SYM_END)
         buf_letters++;
 }
 
-static uint8_t buf_pop(uint8_t *len, uint16_t *bits) {
+static uint8_t buf_pop(uint8_t *sym) {
     if (buf_count == 0)
         return FALSE;
-    *len = buf_len[buf_tail];
-    *bits = buf_bits[buf_tail];
+    *sym = buf_sym[buf_tail];
     buf_tail = (uint8_t)((buf_tail + 1u) & (BUF_SIZE - 1u));
     buf_count--;
-    if (*len != 0)
+    if (*sym == SYM_END)
         buf_letters--;
     return TRUE;
 }
@@ -448,11 +453,6 @@ static uint8_t seq_next(seq_t *s, uint8_t *len, uint16_t *bits) {
     char c;
     uint8_t n;
 
-    if (s->use_buf) {
-        if (!buf_pop(len, bits))
-            return 0;
-        return (*len == 0) ? 2u : 1u;
-    }
     while (s->text != NULL && s->text_pos < s->text_len) {
         c = s->text[s->text_pos++];
         if (c == ' ' || c == '\t')
@@ -489,10 +489,76 @@ static uint16_t seq_elem_ms(seq_t *s) {
     return ((s->bits >> s->idx) & 1u) ? dash_delay : dot_delay;
 }
 
+/* Player from the buffer, between symbols: take the next one now (no 1 ms
+ * step lost, so the player stays in step with the paddles when caught up). */
+static void seq_buf_next(seq_t *s) {
+    uint8_t sym;
+    uint16_t t;
+
+    if (!buf_pop(&sym))
+        return;                         /* nothing yet: wait (idle_ms counts) */
+    s->timer = 0;
+    if (sym == SYM_DOT || sym == SYM_DASH) {
+        s->target = (sym == SYM_DASH) ? dash_delay : dot_delay;
+        s->mark = 1;
+        s->idle_ms = 0;
+        s->state = SQ_MARK;
+        return;
+    }
+    if (sym == SYM_END) {
+        /* whole letter gap after the last mark: the 1-dit space just done and
+         * the wait for the letter to close count towards it */
+        t = s->farns ? tx_letter_gap : (uint16_t)(3u * dot_delay);
+        t = (t > dot_delay) ? (uint16_t)(t - dot_delay) : 0u;
+    } else {
+        /* word space: extra after the letter gap; idle time counts */
+        t = s->farns ? tx_word_extra : (uint16_t)(4u * dot_delay);
+    }
+    if (s->idle_ms >= t) {
+        s->idle_ms = (uint16_t)(s->idle_ms - t);   /* waited long enough already */
+    } else {
+        s->target = (uint16_t)(t - s->idle_ms);
+        s->state = SQ_GAP;
+    }
+}
+
+static void seq_tick_buf(seq_t *s) {
+    switch (s->state) {
+    case SQ_IDLE:
+        if (s->idle_ms < 60000u)
+            s->idle_ms++;
+        seq_buf_next(s);
+        break;
+    case SQ_MARK:
+        if (++s->timer >= s->target) {
+            s->mark = 0;
+            s->timer = 0;
+            s->target = dot_delay;              /* space after every element */
+            s->state = SQ_SPACE;
+        }
+        break;
+    case SQ_SPACE:
+    case SQ_GAP:
+        if (++s->timer >= s->target) {
+            s->idle_ms = 0;
+            s->state = SQ_IDLE;
+            seq_buf_next(s);
+        }
+        break;
+    default:
+        seq_stop(s);
+        break;
+    }
+}
+
 static void seq_tick(seq_t *s) {
     uint8_t got;
     uint16_t extra;
 
+    if (s->use_buf) {
+        seq_tick_buf(s);
+        return;
+    }
     switch (s->state) {
     case SQ_IDLE:
         got = seq_next(s, &s->len, &s->bits);
@@ -569,9 +635,7 @@ static uint8_t dot_memory = 0;
 static uint8_t dash_memory = 0;
 static uint8_t pd_suspend_phase = 0;
 /* buffered letter being keyed */
-static uint8_t letter_open = FALSE;
-static uint8_t letter_len = 0;
-static uint16_t letter_bits = 0;
+static uint8_t letter_open = FALSE; /* elements went in, SYM_END not yet */
 static uint16_t pd_gap = 0xFFFFu;  /* ms since the last mark ended */
 static uint8_t word_pending = FALSE; /* a letter went in since the last word space */
 
@@ -579,28 +643,33 @@ static uint8_t buffered_mode(void) {
     return (uint8_t)(cw_paddle_farns && cw_keyer_mode != KEYER_STRAIGHT);
 }
 
+static void pd_suspend(void) {
+    /* Too far ahead: stop taking paddles, drain; STP after a word-space pause
+     * so it does not run into the operator's last letter */
+    if (pd_state == PD_SUSPEND)
+        return;
+    pd_mark = 0;
+    pd_state = PD_SUSPEND;
+    pd_suspend_phase = 0;
+    pd_timer = 0;
+}
+
 static void pd_close_letter(void) {
     if (!letter_open)
         return;
     letter_open = FALSE;
-    buf_push(letter_len, letter_bits);
+    buf_push(SYM_END);
     word_pending = TRUE;
-    if (buf_letters >= BUF_LIMIT && pd_state != PD_SUSPEND) {
-        /* Too far ahead: stop taking paddles, drain; STP after a word-space pause
-         * so it does not run into the operator's last letter */
-        pd_state = PD_SUSPEND;
-        pd_suspend_phase = 0;
-        pd_timer = 0;
-    }
+    if (buf_letters >= BUF_LIMIT || buf_count >= BUF_ENTRY_LIMIT)
+        pd_suspend();
 }
 
 static void pd_start_element(uint8_t dash) {
-    if (buffered_mode()) {
-        if (letter_open && letter_len >= LETTER_MAX_ELEMENTS) {
-            pd_close_letter();
-            if (pd_state == PD_SUSPEND)
-                return;     /* that letter hit the limit: STP, no new element */
-        }
+    if (buffered_mode() && buf_count >= BUF_ENTRY_LIMIT) {
+        /* buffer nearly full (paddle held while behind): end the letter, STP */
+        pd_close_letter();
+        pd_suspend();
+        return;
     }
     dot_memory = 0;
     dash_memory = 0;
@@ -609,14 +678,8 @@ static void pd_start_element(uint8_t dash) {
     pd_mark = 1;
     pd_state = PD_MARK;
     if (buffered_mode()) {
-        if (!letter_open) {
-            letter_open = TRUE;
-            letter_len = 0;
-            letter_bits = 0;
-        }
-        if (dash)
-            letter_bits |= (uint16_t)(1u << letter_len);
-        letter_len++;
+        letter_open = TRUE;
+        buf_push(dash ? SYM_DASH : SYM_DOT);   /* the player can start it now */
     }
 }
 
@@ -685,7 +748,7 @@ static void paddle_tick(void) {
             if (pd_state == PD_IDLE && word_pending &&
                 pd_gap >= WORD_GAP_DITS * dot_delay) {
                 word_pending = FALSE;
-                buf_push(0, 0);
+                buf_push(SYM_WORD);
             }
         }
         break;
