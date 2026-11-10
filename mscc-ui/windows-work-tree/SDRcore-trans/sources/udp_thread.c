@@ -622,8 +622,13 @@ void *UDP_Thread(void *my_param) {
                 print_time();
                 fprintf(G_fp_logfile, "[%d] UDP Thread. CMD_SET_AMPLIFIER_CALIBRATION_RESET. received_data: %d\n",
                         line_number++, t_opcode_data);
-                //Create_amplifier_calibration_file(t_opcode_data);
-                //G_power_file_needs_updated = TRUE;
+                /* Pi trans 3.152 port (Ron 2026-11-10): hard reset of the amplifier (QRO)
+                 * calibration, from ms-sdr CMD_SET_CAL_RESET_ALL: amplifier_cal.ini rewritten
+                 * with -99 (not calibrated) on every band, then read back in. */
+                if (t_opcode_data != 0) {
+                    Create_amplifier_calibration_file(TRUE);
+                    Init_amplifier_calibration();
+                }
                 break;
 
             case CMD_AMPLIFIER_TUNE:

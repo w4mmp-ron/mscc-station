@@ -57,9 +57,8 @@ public static class Opcodes
     public const byte CMD_GET_FREQ_INIT            = 0xB0;
     public const byte CMD_GET_MODE_INIT            = 0xB8;
     public const byte CMD_GET_BAND_INIT            = 0xB9;
-    public const byte CMD_GET_SET_LAST_USED_FREQ   = 0xD7;
-    public const byte CMD_GET_SET_LAST_USED_MODE   = 0xD8;
-    public const byte CMD_GET_SET_LAST_USED_BAND   = 0xD9;
+    // 0xD7-0xD9 (CMD_GET_SET_LAST_USED_FREQ / _MODE / _BAND) reclaimed 2026-11-10: the server
+    // last-used band stack was removed (ms-sdr 3.199); the client keeps its own last-used.
     public const byte CMD_SET_DISPLAY_FREQ         = 0xBB;  // used by ms-sdr for startup frequency (Gui_send_param(CMD_SET_DISPLAY_FREQ, G_tune_freq)) when favorites not yet implemented
 
     /// <summary>
@@ -201,6 +200,9 @@ public static class Opcodes
     public const int KEYER_MEM_SLOT_COUNT = 4;
     /// <summary>Farnsworth text/overall WPM for memory play gaps only (0=off, 5–60).</summary>
     public const byte SET_MEM_TEXT_WPM = 0x76;
+    /// <summary>Farnsworth on the paddles (buffered PIC keyer), 0 = off, 1 = on. ms-sdr saves it in
+    /// cw.ini (CW_Paddle_Farnsworth=), sends it to the radio and reports it at connect.</summary>
+    public const byte SET_PADDLE_FARNSWORTH = 0x9D;
 
     // Default filters (from Filter_control, for Rx/Tx tab)
     public const byte CMD_SET_BW_LOCUT_DEFAULT = 0xDC;
@@ -269,6 +271,11 @@ public static class Opcodes
 
     // Temps and versions (reports)
     public const byte CMD_GET_TRANSCEIVER_TEMP = 0xBF;
+    /// <summary>Heat sink temperature (ms-sdr 3.183+ Pi / 3.191+ Windows, STM32 radio only; the
+    /// PSoC does not send it). Int32 °C; -99 = thermistor open / unplugged, 999 = shorted.</summary>
+    public const byte CMD_GET_POTENTIA_TEMPERATURE = 0x06;
+    public const int HEAT_SINK_OPEN = -99;
+    public const int HEAT_SINK_SHORT = 999;
     // CMD_RPI_SET_TEMPERATURE (0x12) ignored per user - not valid for this work
     // public const byte CMD_RPI_SET_TEMPERATURE = 0x12;
     public const byte CMD_GET_SET_FIRMWARE_VERSION = 0xB2;
@@ -296,6 +303,16 @@ public static class Opcodes
     /// (bit N = band N: 0 = 10 m ... 9 = 160 m, 10 = 630 m, 11 = 2200 m). Agreed with Ron 2026-11-01.
     /// </summary>
     public const byte CMD_GET_CAL_STATUS = 0x2D;
+    /// <summary>SWR meter RESET to ms-sdr (data ignored; Pi ms-sdr 3.189+, Windows 3.196+). ms-sdr
+    /// sends the HTTP reset to the WiFi meter itself, so RESET works when the client can't reach
+    /// the meter (remote / VPN / other subnet). Used when the meter state came from ms-sdr (0x0F).</summary>
+    public const byte CMD_SWR_METER_RESET = 0x2E;
+    /// <summary>Hard calibration reset to ms-sdr (3.197+, Ron 2026-11-10), 1 byte = kind below.
+    /// ms-sdr sets the host files AND the radio, so the radio's old values can't win at the next start.</summary>
+    public const byte CMD_SET_CAL_RESET_ALL = 0x2F;
+    public const byte CAL_RESET_RX_IQ = 1;   // 0 / 0 (no correction) on all bands
+    public const byte CAL_RESET_POWER = 2;   // factory QRP power table
+    public const byte CAL_RESET_AMP = 3;     // amplifier cal -99 (not calibrated), host only
     /// <summary>2 TONE on/off (byte 1/0) to ms-sdr, passed to trans (700 + 1900 Hz in the voice path, trans 3.155+).</summary>
     public const byte CMD_SET_TWO_TONE = 0x88;
     /// <summary>CMD_SET_BAND_POWER_POWER (0xA2) data bit: save this QRP value (radio + power_cal.ini).</summary>
@@ -323,6 +340,8 @@ public static class Opcodes
     /// <summary>Extended sub (Pi ms-sdr 3.188): WiFi SWR meter state relayed by ms-sdr.
     /// Payload after the sub: [fault 0/1][online 0/1][IP a][IP b][IP c][IP d] (0.0.0.0 = unknown).</summary>
     public const byte EXT_CMD_SET_SWR_FAULT = 0x0F;
+    /// <summary>Extended sub: server message text from ms-sdr ([0x0B][0x30][ASCII text]).</summary>
+    public const byte EXT_CMD_SET_SERVER_ERROR = 0x30;
 
     // TODO: add more as reverse-engineered (status, extended power, temps, drift, antenna, etc.)
 }

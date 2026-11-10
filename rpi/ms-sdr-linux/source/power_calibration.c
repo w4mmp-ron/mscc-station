@@ -260,6 +260,72 @@ void Radio_cal_store_iq(int tx, int record, int offset, int phase) {
             tx ? "TX" : "RX", record, offset, phase);
 }
 
+extern int Init_amplifier_calibration();
+
+/* 3.197 (Ron 2026-11-10): hard calibration reset, client CMD_SET_CAL_RESET_ALL (0x2F).
+ * The host file AND the radio get the reset values, so the radio's stored values can't win at
+ * the next start. Radio writes are queued; Radio_cal_save_tick sends them out of TX and then
+ * refreshes the status lamps.
+ *   CAL_RESET_RX_IQ: offset 0 / phase 0 (no correction) on all 12 bands. There is no factory
+ *     RX IQ table. recv saves recv-iq.ini on each CMD_SET_IQ_RECORD and applies the band in use.
+ *   CAL_RESET_POWER: the factory QRP table (factory/power/<line>/power_cal.ini) to trans (which
+ *     saves power_cal.ini, POWER_CAL_SAVE_FLAG) and to the radio.
+ *   CAL_RESET_AMP: trans rewrites amplifier_cal.ini with -99 (not calibrated) on all bands
+ *     (trans 3.152+); host only, the radio holds no amplifier calibration. */
+void Radio_cal_reset_all(int kind) {
+    static const int record_meters[12] = { 160, 80, 60, 40, 30, 20, 17, 15, 12, 10, 630, 2200 };
+    int band, record, packed;
+    int values[12];
+
+    print_time(1);
+    switch (kind) {
+        case CAL_RESET_RX_IQ:
+            fprintf(G_fp_logfile, "[%d] Radio_cal_reset_all . RX IQ: 0 / 0 on all bands (recv + radio)\n", line_number++);
+            for (band = 0; band < 12; band++) {
+                packed = band & 0xFF;               /* offset 0, phase 0 */
+                SDRcore_recv_send_param(CMD_SET_IQ_RECORD, packed);
+                Sleep(20);
+                Radio_cal_store_iq(0, band, 0, 0);
+            }
+            break;
+
+        case CAL_RESET_POWER:
+            for (record = 0; record < 12; record++)
+                values[record] = G_power_stack[record].power_level;
+            if (!Factory_power_cal_values(values)) {
+                fprintf(G_fp_logfile, "[%d] Radio_cal_reset_all . QRP power: no factory table, nothing changed\n",
+                        line_number++);
+                break;
+            }
+            fprintf(G_fp_logfile, "[%d] Radio_cal_reset_all . QRP power: factory table (trans + radio)\n", line_number++);
+            for (record = 0; record < 12; record++) {
+                if (values[record] < 0 || values[record] > 255)
+                    continue;
+                G_power_stack[record].power_level = values[record];
+                SDRcore_trans_send_param(CMD_SET_BAND_POWER_BAND, record_meters[record]);
+                SDRcore_trans_send_param(CMD_SET_BAND_POWER_POWER, values[record] | POWER_CAL_SAVE_FLAG);
+                Sleep(20);
+                Radio_cal_store_power(record, values[record]);
+                print_time(0);
+                fprintf(G_fp_logfile, "[%d] Radio_cal_reset_all . %d m power %d\n", line_number++,
+                        record_meters[record], values[record]);
+            }
+            break;
+
+        case CAL_RESET_AMP:
+            fprintf(G_fp_logfile, "[%d] Radio_cal_reset_all . Amplifier: amplifier_cal.ini -99 (trans), host only\n",
+                    line_number++);
+            SDRcore_trans_send_param(CMD_SET_AMPLIFIER_CALIBRATION_RESET, 1);
+            Sleep(200);                             /* trans writes the file */
+            Init_amplifier_calibration();           /* ms-sdr reads it again */
+            break;
+
+        default:
+            fprintf(G_fp_logfile, "[%d] Radio_cal_reset_all . unknown kind %d, ignored\n", line_number++, kind);
+            break;
+    }
+}
+
 static void Radio_cal_send_iq(int k, int record) {
     unsigned char data[4];
     int offset = radio_iq_offset[k][record];

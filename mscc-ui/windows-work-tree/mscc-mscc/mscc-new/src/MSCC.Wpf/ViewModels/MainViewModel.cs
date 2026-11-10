@@ -297,21 +297,43 @@ public partial class MainViewModel : ObservableObject, IDisposable
     [ObservableProperty]
     private bool _nbOn;
 
-    /// <summary>NB pulse width (µs). Original range ~10–510; default 200.</summary>
+    /// <summary>NB pulse width (µs), 50–510 (recv 3.152 uses at least ~42 µs anyway); default 200.</summary>
     [ObservableProperty]
     private int _nbPulse = 200;
 
-    /// <summary>NB threshold raw (original 1–1009). Display % ≈ value/10.</summary>
+    /// <summary>NB threshold sent to recv (0x82). recv 3.152: 1 = 8x the band level (blanks only
+    /// big pulses) .. 1000 = 4x. The client offers three settings: Low 1 (8x), Med 500 (6x),
+    /// High 750 (5x); default Med.</summary>
     [ObservableProperty]
-    private int _nbThreshold = 20;
+    [NotifyPropertyChangedFor(nameof(NbLevelIndex))]
+    private int _nbThreshold = NbThresholdMed;
+
+    public const int NbThresholdLow = 1;
+    public const int NbThresholdMed = 500;
+    public const int NbThresholdHigh = 750;
+
+    /// <summary>0 = Low, 1 = Med, 2 = High: nearest of the three to <see cref="NbThreshold"/>
+    /// (a value reported by the server may be anything 1..1009).</summary>
+    public int NbLevelIndex => NbThreshold < 250 ? 0 : NbThreshold < 625 ? 1 : 2;
 
     private bool _suppressNbCommand;
 
     [ObservableProperty]
     private bool _nrOn;
 
+    /// <summary>NR level sent with CMD_SET_NR (0xA3) while NR is on (recv 3.151 spectral NR,
+    /// 1..100). The client offers Low 15 / Med 50 / High 85; NR button off = 0.</summary>
     [ObservableProperty]
-    private int _nrLevel = 50;
+    [NotifyPropertyChangedFor(nameof(NrLevelIndex))]
+    private int _nrLevel = NrLevelMed;
+
+    public const int NrLevelLow = 15;
+    public const int NrLevelMed = 50;
+    public const int NrLevelHigh = 85;
+
+    /// <summary>0 = Low, 1 = Med, 2 = High: nearest of the three to <see cref="NrLevel"/>
+    /// (a level reported by the server may be anything 1..100).</summary>
+    public int NrLevelIndex => NrLevel < 33 ? 0 : NrLevel < 68 ? 1 : 2;
 
     /// <summary>Suppress NR send while applying appliance → UI reports (0xA3).</summary>
     private bool _suppressNrCommand;
@@ -516,6 +538,10 @@ public partial class MainViewModel : ObservableObject, IDisposable
     [ObservableProperty]
     [NotifyPropertyChangedFor(nameof(CwMemTextWpmLabel))]
     private int _cwMemTextWpm;
+    /// <summary>PADDLE checkbox: Farnsworth on the paddles (0x9D). ms-sdr keeps it in cw.ini and
+    /// reports it at connect; ticking it sends 0x9D (not stored in the client).</summary>
+    [ObservableProperty] private bool _cwPaddleFarnsworth;
+    private bool _suppressPaddleFarnsCommand;
     [ObservableProperty] private int _cwKeyerMode = 1; // IAMBIC-A
     [ObservableProperty] private int _cwSpacing = 0;
     [ObservableProperty] private int _cwPaddle = 0;
@@ -1510,6 +1536,24 @@ public partial class MainViewModel : ObservableObject, IDisposable
 
     // Display info from Aud/Sys
     [ObservableProperty] private double _proficioTempC;
+
+    /// <summary>Heat sink temperature (0x06, STM32 radio only), °C; -99 open, 999 shorted.</summary>
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(HeatSinkText))]
+    [NotifyPropertyChangedFor(nameof(HeatSinkFault))]
+    private int _heatSinkTempC;
+
+    /// <summary>True once the radio has sent a heat sink reading (the PSoC never does).</summary>
+    [ObservableProperty] private bool _heatSinkSeen;
+
+    public bool HeatSinkFault =>
+        HeatSinkTempC == MSCC.Core.Protocol.Opcodes.HEAT_SINK_OPEN ||
+        HeatSinkTempC == MSCC.Core.Protocol.Opcodes.HEAT_SINK_SHORT;
+
+    public string HeatSinkText =>
+        HeatSinkTempC == MSCC.Core.Protocol.Opcodes.HEAT_SINK_OPEN ? "Heat sink: OPEN (thermistor open or unplugged)"
+        : HeatSinkTempC == MSCC.Core.Protocol.Opcodes.HEAT_SINK_SHORT ? "Heat sink: SHORTED (thermistor shorted)"
+        : $"Heat sink: {HeatSinkTempC} °C";
     [ObservableProperty] private double _ampTempC;
     [ObservableProperty] private int _ampCurrentMa;
     [ObservableProperty] private int _alcValue;  // ALC meter value (0–100, averaged for display)
@@ -2057,6 +2101,12 @@ public partial class MainViewModel : ObservableObject, IDisposable
         ToggleQrpCommand = new RelayCommand(() => { if (AmpOn) AmpOn = false; });
         ToggleAutoTuneCommand = new RelayCommand(() => AutoTune = !AutoTune);
         ToggleNbCommand = new RelayCommand(() => NbOn = !NbOn);
+        NbLowCommand = new RelayCommand(() => NbThreshold = NbThresholdLow);
+        NbMedCommand = new RelayCommand(() => NbThreshold = NbThresholdMed);
+        NbHighCommand = new RelayCommand(() => NbThreshold = NbThresholdHigh);
+        NrLowCommand = new RelayCommand(() => NrLevel = NrLevelLow);
+        NrMedCommand = new RelayCommand(() => NrLevel = NrLevelMed);
+        NrHighCommand = new RelayCommand(() => NrLevel = NrLevelHigh);
         ToggleNrCommand = new RelayCommand(() => NrOn = !NrOn);
         // Match legacy Freqbutton3: send 0x8E payload 1 when turning ON, 0 when OFF
         ToggleAnCommand = new RelayCommand(ToggleAn);
@@ -2779,6 +2829,68 @@ public partial class MainViewModel : ObservableObject, IDisposable
         finally { _suppressTxIqOffset = false; }
         TxIqStatus = "Factory reset of all I/Q bands requested.";
         MonitorTextBoxText(" TX IQ RESET ALL BANDS (0x8D)");
+        // ms-sdr 3.196: the factory values also go into the radio, so it now counts as
+        // calibrated (to factory values), unlike a new radio with nothing stored. OK only.
+        MessageBox.Show("CALIBRATED TO FACTORY VALUES", "MSCC",
+            MessageBoxButton.OK, MessageBoxImage.Information);
+    }
+
+    /// <summary>RX IQ tab → RESET ALL: 0 / 0 (no correction) on all bands, files + radio (0x2F).</summary>
+    [RelayCommand]
+    private void HardResetRxIq() => HardCalReset(MSCC.Core.Protocol.Opcodes.CAL_RESET_RX_IQ,
+        "THIS RESETS ALL RX I/Q VALUES TO FACTORY VALUES (NO CORRECTION) ON EVERY BAND.",
+        "CALIBRATED TO FACTORY VALUES");
+
+    /// <summary>QRP CAL tab → RESET ALL: factory QRP power table, files + radio (0x2F).</summary>
+    [RelayCommand]
+    private void HardResetPowerCal() => HardCalReset(MSCC.Core.Protocol.Opcodes.CAL_RESET_POWER,
+        "THIS RESETS THE QRP POWER CALIBRATION TO FACTORY VALUES ON EVERY BAND.",
+        "CALIBRATED TO FACTORY VALUES");
+
+    /// <summary>AMP CAL tab → RESET ALL: amplifier cal cleared (-99) on all bands, host only (0x2F).</summary>
+    [RelayCommand]
+    private void HardResetAmpCal() => HardCalReset(MSCC.Core.Protocol.Opcodes.CAL_RESET_AMP,
+        "THIS CLEARS THE AMPLIFIER CALIBRATION ON EVERY BAND (NOT CALIBRATED).",
+        "AMPLIFIER CALIBRATION CLEARED");
+
+    /// <summary>Ron 2026-11-10: hard reset = host files AND radio (ms-sdr 3.197). Yes/No first,
+    /// then an OK-only pop-up. Refused while transmitting or calibrating.</summary>
+    private void HardCalReset(byte kind, string question, string done)
+    {
+        if (!_radioService.IsConnected)
+        {
+            MessageBox.Show("Start MSCC (connect to the servers) first.", "MSCC",
+                MessageBoxButton.OK, MessageBoxImage.Asterisk);
+            return;
+        }
+        if (PowerCalTxOn || AmpCalTxOn || TxIqTxOn || PowerCalCalibrating || AmpCalCalibrating)
+        {
+            MessageBox.Show("Turn TX OFF and stop calibrating before reset.", "MSCC",
+                MessageBoxButton.OK, MessageBoxImage.Asterisk);
+            return;
+        }
+        var ret = MessageBox.Show(question + "\r\nARE YOU SURE YOU WANT TO CONTINUE?", "MSCC",
+            MessageBoxButton.YesNo, MessageBoxImage.Warning, MessageBoxResult.No);
+        if (ret != MessageBoxResult.Yes) return;
+
+        _ = _radioService.SendCalResetAllAsync(kind);
+        MonitorTextBoxText($" Hard calibration reset sent (0x2F, kind {kind})");
+
+        // Band boxes: AMP is client-settings only -> all white. QRP with a radio store follows the
+        // radio's 0x2D report (factory values held = green); without a store -> all white.
+        if (kind == MSCC.Core.Protocol.Opcodes.CAL_RESET_AMP)
+        {
+            foreach (var item in AmpCalBandStatuses)
+                item.IsCalibrated = false;
+            SaveAmpCalStatus();
+        }
+        else if (kind == MSCC.Core.Protocol.Opcodes.CAL_RESET_POWER && !_radioCalHasStore)
+        {
+            foreach (var item in PowerCalBandStatuses)
+                item.IsCalibrated = false;
+            SavePowerCalStatus();
+        }
+        MessageBox.Show(done, "MSCC", MessageBoxButton.OK, MessageBoxImage.Information);
     }
 
     /// <summary>
@@ -3060,6 +3172,7 @@ public partial class MainViewModel : ObservableObject, IDisposable
     {
         string kindName = kind switch { 1 => "RX IQ", 2 => "TX IQ", 3 => "power", _ => $"kind {kind}" };
         MonitorTextBoxText($" Radio cal status: {kindName} store={hasStore} mask=0x{mask:X4}");
+        if (!hasStore) WarnFirmwareUpdate();
         if (kind != 3) return;      // RX / TX IQ lamps: later
         if (!hasStore)
         {
@@ -3076,6 +3189,33 @@ public partial class MainViewModel : ObservableObject, IDisposable
             int bit = RadioCalBitForBand(item.BandNumber);
             item.IsCalibrated = bit >= 0 && (mask & (1 << bit)) != 0;
         }
+    }
+
+    private bool _firmwareUpdateWarned;
+
+    /// <summary>
+    /// 0x2D with no store = radio firmware without the calibration store (0xC8). Once per run:
+    /// MSCC keeps running on the calibration files, but the radio must be updated.
+    /// </summary>
+    private void WarnFirmwareUpdate()
+    {
+        if (_firmwareUpdateWarned) return;
+        _firmwareUpdateWarned = true;
+        MonitorTextBoxText(" Radio firmware has no calibration store: firmware update required");
+        System.Windows.Application.Current?.Dispatcher.BeginInvoke(() =>
+            MessageBox.Show(
+                "RADIO FIRMWARE UPDATE REQUIRED\r\n\r\n" +
+                "This version of MSCC stores calibration in the radio.\r\n" +
+                "The radio's firmware is too old to do that.\r\n\r\n" +
+                "Update the radio firmware (the firmware is in the\r\n" +
+                "PSoC Firmware / Black Pill Firmware folders of the MSCC install).\r\n\r\n" +
+                "Minimum firmware:\r\n" +
+                "  Black Pill 3.14\r\n" +
+                "  Proficio Legacy 1.236,  MKII PTT 3.243,  MKII ATU 4.244\r\n" +
+                "  Geminus MKII 2.153,  Geminus Legacy 5.153\r\n" +
+                "  Ultimus Legacy 6.236,  MKII ATU 7.244,  MKII PTT 8.243\r\n\r\n" +
+                "Until then MSCC uses the calibration files on this PC.",
+                "MSCC", MessageBoxButton.OK, MessageBoxImage.Warning));
     }
 
     /// <summary>QRP CAL lamps from client-settings.ini (radios without a calibration store).</summary>
@@ -3872,6 +4012,14 @@ public partial class MainViewModel : ObservableObject, IDisposable
     public IRelayCommand ToggleQrpCommand { get; }
     public IRelayCommand ToggleAutoTuneCommand { get; }
     public IRelayCommand ToggleNbCommand { get; }
+    /// <summary>NB threshold Low / Med / High (8x / 6x / 5x the band level).</summary>
+    public IRelayCommand NbLowCommand { get; }
+    public IRelayCommand NbMedCommand { get; }
+    public IRelayCommand NbHighCommand { get; }
+    /// <summary>NR level Low / Med / High (15 / 50 / 85); the NR button is on/off.</summary>
+    public IRelayCommand NrLowCommand { get; }
+    public IRelayCommand NrMedCommand { get; }
+    public IRelayCommand NrHighCommand { get; }
     public IRelayCommand ToggleNrCommand { get; }
     public IRelayCommand ToggleAnCommand { get; }
     public IRelayCommand ToggleFullPowerCommand { get; }
@@ -5104,7 +5252,7 @@ public partial class MainViewModel : ObservableObject, IDisposable
 
     partial void OnNbPulseChanged(int value)
     {
-        value = Math.Clamp(value, 10, 510);
+        value = Math.Clamp(value, 50, 510);
         if (!_suppressNbCommand)
             _ = _radioService.SetNbPulseWidthAsync(value);
         MonitorTextBoxText($" NbPulse set: {value} uS{(_suppressNbCommand ? " (from server)" : "")}");
@@ -5112,7 +5260,7 @@ public partial class MainViewModel : ObservableObject, IDisposable
 
     partial void OnNbThresholdChanged(int value)
     {
-        value = Math.Clamp(value, 1, 1009);
+        value = Math.Clamp(value, 1, 1000);
         if (!_suppressNbCommand)
             _ = _radioService.SetNbThresholdAsync(value);
         MonitorTextBoxText($" NbThreshold set: {value}{(_suppressNbCommand ? " (from server)" : "")}");
@@ -5407,6 +5555,13 @@ public partial class MainViewModel : ObservableObject, IDisposable
         if (ExternalElectronicKeyer) return;
         _ = _radioService.SetCwWpmAsync(value);
         MonitorTextBoxText($" CW Speed set: {value} WPM");
+    }
+
+    partial void OnCwPaddleFarnsworthChanged(bool value)
+    {
+        if (_suppressPaddleFarnsCommand || ExternalElectronicKeyer) return;
+        _ = _radioService.SetPaddleFarnsworthAsync(value);
+        MonitorTextBoxText($" Paddle Farnsworth set: {(value ? "ON" : "OFF")} (0x9D)");
     }
 
     partial void OnCwMemTextWpmChanged(int value)
@@ -5759,6 +5914,7 @@ public partial class MainViewModel : ObservableObject, IDisposable
                 ApplyPanResolution("start");
                 ApplySpectrumSmoothing("start");
                 PushAudioToRadio("start");
+                PushNbToRadio("start");
                 if (RemoteAudio)
                     StartRemoteAf("start");
                 ScheduleIdentityAskIfMissing();
@@ -5802,6 +5958,18 @@ public partial class MainViewModel : ObservableObject, IDisposable
         {
             MonitorTextBoxText($" Pan resolution apply error: {ex.Message}");
         }
+    }
+
+    /// <summary>Send the noise blanker state (0x80 on/off, 0x81 pulse, 0x82 threshold) at every
+    /// connect, so recv always matches what the client shows (recv starts with NB on until told).</summary>
+    private void PushNbToRadio(string reason)
+    {
+        int pulse = Math.Clamp(NbPulse, 50, 510);
+        int thr = Math.Clamp(NbThreshold, 1, 1000);
+        _ = _radioService.SetNbPulseWidthAsync(pulse);
+        _ = _radioService.SetNbThresholdAsync(thr);
+        _ = _radioService.SetNbOnAsync(NbOn);
+        MonitorTextBoxText($" NB pushed ({reason}): {(NbOn ? "ON" : "OFF")}, pulse {pulse} uS, threshold {thr}");
     }
 
     /// <summary>cmd-075: send the S/W SMOOTHING value (0xDA) to the host.</summary>
@@ -6323,13 +6491,13 @@ public partial class MainViewModel : ObservableObject, IDisposable
         svc.NbPulseWidthReported += us =>
         {
             _suppressNbCommand = true;
-            try { NbPulse = Math.Clamp(us, 10, 510); }
+            try { NbPulse = Math.Clamp(us, 50, 510); }
             finally { _suppressNbCommand = false; }
         };
         svc.NbThresholdReported += thr =>
         {
             _suppressNbCommand = true;
-            try { NbThreshold = Math.Clamp(thr, 1, 1009); }
+            try { NbThreshold = Math.Clamp(thr, 1, 1000); }
             finally { _suppressNbCommand = false; }
         };
 
@@ -6391,8 +6559,26 @@ public partial class MainViewModel : ObservableObject, IDisposable
             CwMemTextWpm = SpectrumWaterfallSettings.ClampCwMemTextWpm(v);
             MonitorTextBoxText($" CwMemTextWpm (Farnsworth) reported: {(CwMemTextWpm <= 0 ? "Off" : CwMemTextWpm.ToString())}");
         };
+        svc.PaddleFarnsworthReported += on => RunOnUi(() =>
+        {
+            _suppressPaddleFarnsCommand = true;   // the server's value: don't send it back
+            try { CwPaddleFarnsworth = on; }
+            finally { _suppressPaddleFarnsCommand = false; }
+            MonitorTextBoxText($" Paddle Farnsworth reported: {(on ? "ON" : "OFF")}");
+        });
 
         svc.ProficioTempReported += t => { ProficioTempC = t; };
+        svc.HeatSinkTempReported += t => { HeatSinkTempC = t; HeatSinkSeen = true; };
+        // ms-sdr server messages (0x0B/0x30): SWR METER FAULT, thread failures, bias ...
+        svc.ServerErrorReported += text => RunOnUi(() =>
+        {
+            LastServerMessage = text;
+            string title = text.StartsWith("SWR METER FAULT", StringComparison.OrdinalIgnoreCase)
+                ? "SWR METER FAULT" : "MSCC server message";
+            // BeginInvoke: the pop-up never holds up the UDP receive path
+            Application.Current?.Dispatcher.BeginInvoke(() =>
+                MessageBox.Show(text, title, MessageBoxButton.OK, MessageBoxImage.Warning));
+        });
         svc.AmpTempReported += t => { AmpTempC = t; };
         svc.AmpCurrentReported += ma => { AmpCurrentMa = ma; MonitorTextBoxText($" AmpCurrent reported: {ma}"); };
         svc.AlcReported += alc => ApplyAlcMeterSample(alc);
@@ -6738,6 +6924,7 @@ public partial class MainViewModel : ObservableObject, IDisposable
                 try
                 {
                     if (PttOn) PttOn = false;
+                    if (TuneMode) TuneMode = false;   // TUN button off, mode restored (11.10.11)
                     if (AutoTune) AutoTune = false;
                     _ = _radioService.SetTransmitAsync(false);
                 }
@@ -6771,6 +6958,19 @@ public partial class MainViewModel : ObservableObject, IDisposable
     /// <summary>HTTP reset to active profile meter IP (or last UDP source).</summary>
     public async Task ResetSwrFaultAsync()
     {
+        // Meter state came from ms-sdr (0x0F): the meter talks to the server, which may be out
+        // of the client's reach (remote / VPN / other subnet). Ask ms-sdr to reset it (0x2E).
+        if (_radioService.IsConnected && _radioService.RadioSwrMeterViaServer)
+        {
+            bool sent = await _radioService.SendSwrMeterResetAsync();
+            if (sent)
+            {
+                MonitorTextBoxText(" SWR RESET → via ms-sdr (0x2E)");
+                SwrStatusText = "RESET sent to the meter via the server";
+                return;
+            }
+            MonitorTextBoxText(" SWR RESET: 0x2E not sent, trying the meter directly");
+        }
         string ip = SwrMeterSettings.ActiveMeterIp(IsGeminusRadioModel);
         if (string.IsNullOrWhiteSpace(ip))
             ip = _swrMeter.LastSourceIp ?? "";

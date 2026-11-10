@@ -28,7 +28,8 @@
 //
 // Free in every layer (servers Pi + Windows, WPF client, pill, PSoC MKII,
 // PIC keyer):
-//   0x2F, 0x9F
+//   0x9F
+//   0x2F taken 2026-11-10: CMD_SET_CAL_RESET_ALL (client -> ms-sdr only).
 //   (0x9F: old GET_SIDE_TONE, commented out here; sdrcore-trans commands.h
 //    still defines it but never uses it.)
 //   0x9D taken 2026-11-05: SET_PADDLE_FARNSWORTH (sdrcore-trans still has an
@@ -47,6 +48,12 @@
 //   0xC1, 0xC2, 0xC4  CMD_SET_FAVS_UPDATE / GET_FAVS / SET_FAVS_DELETE
 //              (sdrcore-trans names them band stack, unused)
 //   0xF8       CMD_SET_AMPLIFIER
+//
+// Reclaimed 2026-11-10 (server last-used band stack removed from Pi + Windows
+// ms-sdr; it was never started and the client keeps its own last-used):
+//   0xD7-0xD9  CMD_GET_SET_LAST_USED_FREQ / _MODE / _BAND (client cleared in
+//              11.10.12). Leftover names: sdrcore-recv/trans commands.h
+//              (unused). Remove those before reusing.
 // Also unused: 0xD6 (only sdrcore-trans CMD_SET_LAST_USED_BAND_STACK_INDEX).
 //
 // Before using a reclaimed value: grep the Windows ms-sdr (Stew's, not
@@ -271,6 +278,13 @@
  * sends the HTTP reset to the WiFi SWR meter (Swr_wifi_client_reset); Windows ms-sdr has no
  * meter code (ignore / log). The client uses it when the meter state came from ms-sdr (0x0F). */
 #define CMD_SWR_METER_RESET 0x2E
+/* ms-sdr 3.197 (Ron 2026-11-10): hard calibration reset from the client, 1 data byte = kind.
+ * Files AND radio set, so the reset sticks (TX IQ = RESET ALL, CMD_SET_IQ_DEFAULTS; frequency =
+ * CMD_SET_CAL_RESET). Client -> ms-sdr only. */
+#define CMD_SET_CAL_RESET_ALL 0x2F
+#define CAL_RESET_RX_IQ  1   /* 0 / 0 (no correction) on all bands: recv-iq.ini + radio */
+#define CAL_RESET_POWER  2   /* factory QRP power table: power_cal.ini (trans) + radio */
+#define CAL_RESET_AMP    3   /* amplifier_cal.ini -99 (not calibrated); host only */
 /* ms-sdr 3.188: CMD_SET_BAND_POWER_POWER (0xA2) data with this bit = save (client "Save this
  * calibration?" Yes): trans writes power_cal.ini and ms-sdr writes the radio. Without it: live only. */
 #define POWER_CAL_SAVE_FLAG 0x8000
@@ -433,9 +447,9 @@
 #define CMD_GET_SET_PANADAPTER 0xD5
 
 
-#define CMD_GET_SET_LAST_USED_FREQ 0xD7
-#define CMD_GET_SET_LAST_USED_MODE 0xD8
-#define CMD_GET_SET_LAST_USED_BAND 0xD9
+//#define CMD_GET_SET_LAST_USED_FREQ 0xD7   reclaimed 2026-11-10
+//#define CMD_GET_SET_LAST_USED_MODE 0xD8   reclaimed 2026-11-10
+//#define CMD_GET_SET_LAST_USED_BAND 0xD9   reclaimed 2026-11-10
 #define CMD_GET_SET_PANADAPTER_SMOOTHING 0xDA
 #define CMD_SET_CW_BW 0xDB
 #define CMD_SET_BW_LOCUT_DEFAULT 0xDC

@@ -1277,19 +1277,26 @@ public partial class MainWindow : Window
             MessageBoxImage.Information);
     }
 
+    /// <summary>Calibration files that Reset configuration keeps (Ron 2026-11-10: settings only).</summary>
+    private static bool IsKeptCalFile(string fileName) =>
+        ConfigBootstrap.IsRadioCalIniFile(fileName) ||
+        string.Equals(fileName, "amplifier_cal.ini", StringComparison.OrdinalIgnoreCase);
+
     /// <summary>
-    /// Settings → Reset configuration: wipe config files under %LocalAppData%\MSCC-NET9
-    /// (keep logs\), reseed from install init-files, restart app.
+    /// Settings → Reset configuration: client SETTINGS only (Ron 2026-11-10). Wipes the config
+    /// files under %LocalAppData%\MSCC-NET9 and reseeds them from install init-files, but keeps
+    /// logs\, the calibration files (iq.ini, recv-iq.ini, freq_cal.ini, power_cal.ini,
+    /// amplifier_cal.ini) and the cal\ folder (Save settings copies). Calibration is reset only
+    /// with its own buttons (TX IQ RESET ALL, FREQ CAL RESET). Then the app closes.
     /// </summary>
     private void SettingsConfigReset_Click(object sender, RoutedEventArgs e)
     {
         var result = MessageBox.Show(
-            "This will delete MSCC configuration files under:\n\n" +
+            "This resets the MSCC client settings (screen, audio, COM port, colours) under:\n\n" +
             $"  {ConfigBootstrap.ConfigDirectory}\n\n" +
-            "Logs are kept. Client UI / audio / COM templates come from init-files next to MSCC.Wpf.exe.\n\n" +
-            "Radio IQ, freq cal, and QRP (iq.ini, freq_cal.ini, power_cal.ini) are NOT copied from those templates.\n" +
-            "The per-line IQ/QRP cache (cal\\<line>\\) is deleted too. They reseed from factory tables\n" +
-            "for the radio that is connected when servers start.\n\n" +
+            "Your calibration is NOT touched: TX IQ, RX IQ, QRP power, frequency and amplifier\n" +
+            "calibration and the Save settings copies (cal\\) are kept. Logs are kept.\n" +
+            "To reset calibration, use its own reset button (TX IQ RESET ALL, FREQ CAL RESET).\n\n" +
             "MSCC will close and you should start it again.\n\nContinue?",
             "Reset configuration to defaults",
             MessageBoxButton.YesNo,
@@ -1304,15 +1311,18 @@ public partial class MainWindow : Window
             string dest = ConfigBootstrap.ConfigDirectory;
             Directory.CreateDirectory(dest);
 
-            // Remove config files and subdirs except logs
+            // Remove config files and subdirs, except logs, calibration files and cal\
             foreach (string file in Directory.GetFiles(dest))
             {
+                if (IsKeptCalFile(Path.GetFileName(file)))
+                    continue;
                 try { File.Delete(file); } catch { /* best effort */ }
             }
             foreach (string dir in Directory.GetDirectories(dest))
             {
                 string name = Path.GetFileName(dir);
-                if (string.Equals(name, "logs", StringComparison.OrdinalIgnoreCase))
+                if (string.Equals(name, "logs", StringComparison.OrdinalIgnoreCase) ||
+                    string.Equals(name, "cal", StringComparison.OrdinalIgnoreCase))
                     continue;
                 try { Directory.Delete(dir, recursive: true); } catch { /* best effort */ }
             }
@@ -1324,19 +1334,16 @@ public partial class MainWindow : Window
                 foreach (string srcFile in Directory.GetFiles(initSrc, "*", SearchOption.AllDirectories))
                 {
                     string fname = Path.GetFileName(srcFile);
-                    if (ConfigBootstrap.IsRadioCalIniFile(fname))
-                        continue;
+                    if (IsKeptCalFile(fname))
+                        continue;   // never overwrite calibration with a template
                     string rel = Path.GetRelativePath(initSrc, srcFile);
+                    if (rel.StartsWith("cal" + Path.DirectorySeparatorChar, StringComparison.OrdinalIgnoreCase))
+                        continue;   // cal\ (Save settings copies) is kept as it is
                     string dstFile = Path.Combine(dest, rel);
                     string? dstDir = Path.GetDirectoryName(dstFile);
                     if (!string.IsNullOrEmpty(dstDir))
                         Directory.CreateDirectory(dstDir);
                     File.Copy(srcFile, dstFile, overwrite: true);
-                }
-                foreach (string cal in ConfigBootstrap.RadioCalIniFiles)
-                {
-                    string leftover = Path.Combine(dest, cal);
-                    try { if (File.Exists(leftover)) File.Delete(leftover); } catch { /* best effort */ }
                 }
             }
 

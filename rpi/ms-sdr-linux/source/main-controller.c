@@ -699,44 +699,6 @@ void Gui_get_param(uint8_t op_code, char *buffer) {
             Gui_send_param(CMD_GET_SET_MSSDR_STATUS, 1);
             break;
 
-        case CMD_GET_SET_LAST_USED_BAND:
-            band = s_opcode_data;
-            print_time(1);
-            fprintf(G_fp_logfile, "[%d] Gui_get_parm. CMD_GET_SET_LAST_USED_BAND. Calling Send_last_used with band: %d \n",
-                    line_number++, band);
-            switch (G_vfo) {
-                case VFO_A:
-                    Gui_send_param(CMD_SET_VFO, VFO_A);
-                    Sleep(100);
-                    Send_last_used_VFO_A(band, 0);
-                    break;
-                case VFO_B:
-                    Gui_send_param(CMD_SET_VFO, VFO_B);
-                    Sleep(100);
-                    Send_last_used_VFO_B(band, 0);
-                    break;
-            }
-            break;
-
-        case CMD_GET_SET_LAST_USED_MODE:
-            band = s_opcode_data;
-            print_time(1);
-            fprintf(G_fp_logfile, "[%d] Gui_get_parm. CMD_GET_SET_LAST_USED_MODE. Calling Send_last_used with band: %d \n",
-                    line_number++, band);
-            switch (G_vfo) {
-                case VFO_A:
-                    Gui_send_param(CMD_SET_VFO, VFO_A);
-                    Sleep(100);
-                    Send_last_used_VFO_A(band, 0);
-                    break;
-                case VFO_B:
-                    Gui_send_param(CMD_SET_VFO, VFO_B);
-                    Sleep(100);
-                    Send_last_used_VFO_B(band, 0);
-                    break;
-            }
-            break;
-
         case CMD_GET_BAND_INIT:
             if (G_network_initialized) {
                 print_time(1);
@@ -1137,72 +1099,6 @@ uint8_t Extended_command(char *receive_buffer) {
     }
 }*/
 
-int Intialize_GUI_Last_Used_VFO_B() {
-    int status = 0;
-
-    Gui_send_param(CMD_SET_VFO, VFO_B);
-    Sleep(10);
-    Send_last_used_VFO_B(160, 0);
-    Sleep(10);
-    Send_last_used_VFO_B(80, 0);
-    Sleep(10);
-    Send_last_used_VFO_B(60, 0);
-    Sleep(10);
-    Send_last_used_VFO_B(40, 0);
-    Sleep(10);
-    Send_last_used_VFO_B(30, 0);
-    Sleep(10);
-    Send_last_used_VFO_B(20, 0);
-    Sleep(10);
-    Send_last_used_VFO_B(17, 0);
-    Sleep(10);
-    Send_last_used_VFO_B(15, 0);
-    Sleep(10);
-    Send_last_used_VFO_B(12, 0);
-    Sleep(10);
-    Send_last_used_VFO_B(10, 0);
-    Sleep(10);
-    Send_last_used_VFO_B(2200, 0);
-    Sleep(10);
-    Send_last_used_VFO_B(630, 0);
-    Sleep(10);
-    Gui_send_param(CMD_SET_VFO, G_current_vfo);
-    return status;
-}
-
-int Intialize_GUI_Last_Used_VFO_A() {
-    int status = 0;
-
-    Gui_send_param(CMD_SET_VFO, VFO_A);
-    Sleep(10);
-    Send_last_used_VFO_A(160, 0);
-    Sleep(10);
-    Send_last_used_VFO_A(80, 0);
-    Sleep(10);
-    Send_last_used_VFO_A(60, 0);
-    Sleep(10);
-    Send_last_used_VFO_A(40, 0);
-    Sleep(10);
-    Send_last_used_VFO_A(30, 0);
-    Sleep(10);
-    Send_last_used_VFO_A(20, 0);
-    Sleep(10);
-    Send_last_used_VFO_A(17, 0);
-    Sleep(10);
-    Send_last_used_VFO_A(15, 0);
-    Sleep(10);
-    Send_last_used_VFO_A(12, 0);
-    Sleep(10);
-    Send_last_used_VFO_A(10, 0);
-    Sleep(10);
-    Send_last_used_VFO_A(2200, 0);
-    Sleep(10);
-    Send_last_used_VFO_A(630, 0);
-    Sleep(10);
-    Gui_send_param(CMD_SET_VFO, G_current_vfo);
-    return status;
-}
-
 void * Command_Processor(void *my_param) {
     Set_Thread_Name("cmd-processor");
     int count = 0;
@@ -1568,7 +1464,7 @@ void * Command_Processor(void *my_param) {
             }
             else if (t_opcode_data == 0 && G_client_session_active) {
                 /* Client leaving (its Stop): free the session now instead of
-                 * waiting ~45 s for the client keep-alive check. Owner only. */
+                 * waiting ~15 s for the client keep-alive check. Owner only. */
                 print_time(0);
                 if (Session_Is_Owner(&si_other)) {
                     fprintf(G_fp_logfile, "[%d] Command_Interface. CMD_CHECK_GUI_STATUS 0: client leaving, releasing session\n",
@@ -1868,6 +1764,10 @@ void * Command_Processor(void *my_param) {
 
         case CMD_SWR_METER_RESET:   /* 3.189: client RESET -> WiFi SWR meter (HTTP, own thread) */
             Swr_wifi_client_reset();
+            break;
+
+        case CMD_SET_CAL_RESET_ALL: /* 3.197: hard reset of RX IQ (1) / QRP power (2) / amplifier (3) */
+            Radio_cal_reset_all((int) t_opcode_data);
             break;
 
         case CMD_GET_SET_PANADAPTER_BASE:

@@ -704,44 +704,6 @@ void Gui_get_param(uint8_t op_code, char *buffer) {
             Gui_send_param(CMD_GET_SET_MSSDR_STATUS, 1);
             break;
 
-        case CMD_GET_SET_LAST_USED_BAND:
-            band = s_opcode_data;
-            print_time(1);
-            fprintf(G_fp_logfile, "[%d] Gui_get_parm. CMD_GET_SET_LAST_USED_BAND. Calling Send_last_used with band: %d \n",
-                    line_number++, band);
-            switch (G_vfo) {
-                case VFO_A:
-                    Gui_send_param(CMD_SET_VFO, VFO_A);
-                    Sleep(100);
-                    Send_last_used_VFO_A(band, 0);
-                    break;
-                case VFO_B:
-                    Gui_send_param(CMD_SET_VFO, VFO_B);
-                    Sleep(100);
-                    Send_last_used_VFO_B(band, 0);
-                    break;
-            }
-            break;
-
-        case CMD_GET_SET_LAST_USED_MODE:
-            band = s_opcode_data;
-            print_time(1);
-            fprintf(G_fp_logfile, "[%d] Gui_get_parm. CMD_GET_SET_LAST_USED_MODE. Calling Send_last_used with band: %d \n",
-                    line_number++, band);
-            switch (G_vfo) {
-                case VFO_A:
-                    Gui_send_param(CMD_SET_VFO, VFO_A);
-                    Sleep(100);
-                    Send_last_used_VFO_A(band, 0);
-                    break;
-                case VFO_B:
-                    Gui_send_param(CMD_SET_VFO, VFO_B);
-                    Sleep(100);
-                    Send_last_used_VFO_B(band, 0);
-                    break;
-            }
-            break;
-
         case CMD_GET_BAND_INIT:
             if (G_network_initialized) {
                 print_time(1);
@@ -841,7 +803,8 @@ int Radio_send_parameters(int command, int cmd_value, int print) {
         failed = TRUE;
     }
     if (failed) {
-        if (command != CMD_SET_KEYER_MEMORY)
+        /* SET_PADDLE_FARNSWORTH: older radio firmware (pill < 3.13, PSoC) rejects it; log only */
+        if (command != CMD_SET_KEYER_MEMORY && command != SET_PADDLE_FARNSWORTH)
             Stop_all(0, STOP_PROFICIO_COMMS);
     } else if (print == 0) {
         print_time(0);
@@ -1138,72 +1101,6 @@ uint8_t Extended_command(char *receive_buffer) {
                     line_number++, op_code_data);
     }
 }*/
-
-int Intialize_GUI_Last_Used_VFO_B() {
-    int status = 0;
-
-    Gui_send_param(CMD_SET_VFO, VFO_B);
-    Sleep(10);
-    Send_last_used_VFO_B(160, 0);
-    Sleep(10);
-    Send_last_used_VFO_B(80, 0);
-    Sleep(10);
-    Send_last_used_VFO_B(60, 0);
-    Sleep(10);
-    Send_last_used_VFO_B(40, 0);
-    Sleep(10);
-    Send_last_used_VFO_B(30, 0);
-    Sleep(10);
-    Send_last_used_VFO_B(20, 0);
-    Sleep(10);
-    Send_last_used_VFO_B(17, 0);
-    Sleep(10);
-    Send_last_used_VFO_B(15, 0);
-    Sleep(10);
-    Send_last_used_VFO_B(12, 0);
-    Sleep(10);
-    Send_last_used_VFO_B(10, 0);
-    Sleep(10);
-    Send_last_used_VFO_B(2200, 0);
-    Sleep(10);
-    Send_last_used_VFO_B(630, 0);
-    Sleep(10);
-    Gui_send_param(CMD_SET_VFO, G_current_vfo);
-    return status;
-}
-
-int Intialize_GUI_Last_Used_VFO_A() {
-    int status = 0;
-
-    Gui_send_param(CMD_SET_VFO, VFO_A);
-    Sleep(10);
-    Send_last_used_VFO_A(160, 0);
-    Sleep(10);
-    Send_last_used_VFO_A(80, 0);
-    Sleep(10);
-    Send_last_used_VFO_A(60, 0);
-    Sleep(10);
-    Send_last_used_VFO_A(40, 0);
-    Sleep(10);
-    Send_last_used_VFO_A(30, 0);
-    Sleep(10);
-    Send_last_used_VFO_A(20, 0);
-    Sleep(10);
-    Send_last_used_VFO_A(17, 0);
-    Sleep(10);
-    Send_last_used_VFO_A(15, 0);
-    Sleep(10);
-    Send_last_used_VFO_A(12, 0);
-    Sleep(10);
-    Send_last_used_VFO_A(10, 0);
-    Sleep(10);
-    Send_last_used_VFO_A(2200, 0);
-    Sleep(10);
-    Send_last_used_VFO_A(630, 0);
-    Sleep(10);
-    Gui_send_param(CMD_SET_VFO, G_current_vfo);
-    return status;
-}
 
 void * Command_Processor(void *my_param) {
     int count = 0;
@@ -1893,6 +1790,10 @@ void * Command_Processor(void *my_param) {
             Swr_wifi_client_reset();
             break;
 
+        case CMD_SET_CAL_RESET_ALL: /* Pi 3.197 port: hard reset of RX IQ (1) / QRP power (2) / amplifier (3) */
+            Radio_cal_reset_all((int) t_opcode_data);
+            break;
+
         case CMD_GET_SET_PANADAPTER_BASE:
             User_Controls_Process(opcode, G_receive_buf, FALSE);
             break;
@@ -2468,6 +2369,20 @@ void * Command_Processor(void *my_param) {
             Update_CW_ini();
             break;
 
+        /*
+         * Pi 2026-11-05 port: Farnsworth on the paddles (SET_PADDLE_FARNSWORTH 0x9D).
+         * From the client (PADDLE checkbox). Saved in cw.ini, sent to the radio (MKII + keyer only).
+         */
+        case SET_PADDLE_FARNSWORTH:
+            cw_record.paddle_farns = (t_opcode_data != 0) ? 1 : 0;
+            print_time(0);
+            fprintf(G_fp_logfile, "[%d] SET_PADDLE_FARNSWORTH paddle_farns=%d\n",
+                line_number++, (int)cw_record.paddle_farns);
+            if (G_proficio_mkii && cw_record.keyer_Installed == 1)
+                Radio_send_parameters(SET_PADDLE_FARNSWORTH, (int)cw_record.paddle_farns, 1);
+            Update_CW_ini();
+            break;
+
         case SET_QSK:
             Radio_send_parameters(opcode, t_opcode_data, 1);
             break;
@@ -2549,6 +2464,7 @@ int Update_CW_ini() {
             fprintf(fp_cw_ini, "CW_Tx_Hold=%d;\n", cw_record.tx_hold);
             fprintf(fp_cw_ini, "CW_Speed=%d;\n", cw_record.speed);
             fprintf(fp_cw_ini, "CW_Mem_Text_WPM=%d;\n", cw_record.text_wpm);
+            fprintf(fp_cw_ini, "CW_Paddle_Farnsworth=%d;\n", cw_record.paddle_farns);
             fprintf(fp_cw_ini, "CW_Semi_Break_In=%d;\n", 0);
             fprintf(fp_cw_ini, "CW_Semi_Control=%d;\n", 0);
             fprintf(fp_cw_ini, "CW_Side_Tone_Volume=%d;\n", 0);
@@ -2591,6 +2507,7 @@ void Send_CW_params_to_gui(void) {
     Gui_send_param(SET_TX_HOLD, cw_record.tx_hold);
     Gui_send_param(SET_WPM, cw_record.speed);
     Gui_send_param(SET_MEM_TEXT_WPM, cw_record.text_wpm);
+    Gui_send_param(SET_PADDLE_FARNSWORTH, cw_record.paddle_farns);   /* Pi 2026-11-05 port */
     Gui_send_param(SET_KEYER_MODE, cw_record.keyer_mode);
 
     print_time(0);
@@ -2677,6 +2594,14 @@ int initialize_keyer() {
         fprintf(G_fp_logfile, "[%d] initialize_keyer. calling Radio_send_parameters.  SET_MEM_TEXT_WPM. data: %d\n",
                 line_number++, cmd_value);
         status = Radio_send_parameters(SET_MEM_TEXT_WPM, cmd_value, 1);
+        print_time(0);
+        fprintf(G_fp_logfile, "[%d] initialize_keyer. Radio_send_parameters returned with status: %d\n", line_number++, status);
+
+        cmd_value = cw_record.paddle_farns;   /* Pi 2026-11-05 port */
+        print_time(0);
+        fprintf(G_fp_logfile, "[%d] initialize_keyer. calling Radio_send_parameters.  SET_PADDLE_FARNSWORTH. data: %d\n",
+                line_number++, cmd_value);
+        status = Radio_send_parameters(SET_PADDLE_FARNSWORTH, cmd_value, 1);
         print_time(0);
         fprintf(G_fp_logfile, "[%d] initialize_keyer. Radio_send_parameters returned with status: %d\n", line_number++, status);
 
@@ -2805,6 +2730,14 @@ int parse_cw_init_record(char *record) {
         if (cmd_value != 0 && cmd_value < 5)
             cmd_value = 0;
         cw_record.text_wpm = (uint8_t)cmd_value;
+    }
+    parameter = strstr(record, "CW_Paddle_Farnsworth=");   /* Pi 2026-11-05 port */
+    if (parameter != NULL) {
+        length = strlen("CW_Paddle_Farnsworth=");
+        cmd_value = atoi(&parameter[length]);
+        print_time(0);
+        fprintf(G_fp_logfile, "[%d] Parse_cw_init . CW_Paddle_Farnsworth: %d\n", line_number++, cmd_value);
+        cw_record.paddle_farns = (cmd_value != 0) ? 1 : 0;
     }
     /*parameter = strstr(record, "CW_Semi_Break_In=");
     if (parameter != NULL) {

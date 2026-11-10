@@ -1,0 +1,23 @@
+{
+  "runtimeTarget": {
+    "name": ".NETCoreApp,Version=v9.0",
+    "signature": ""
+  },
+  "compilationOptions": {},
+  "targets": {
+    ".NETCoreApp,Version=v9.0": {
+      "stm32-app-flash/1.0.0": {
+        "runtime": {
+          "stm32-app-flash.dll": {}
+        }
+      }
+    }
+  },
+  "libraries": {
+    "stm32-app-flash/1.0.0": {
+      "type": "project",
+      "serviceable": false,
+      "sha512": ""
+    }
+  }
+}

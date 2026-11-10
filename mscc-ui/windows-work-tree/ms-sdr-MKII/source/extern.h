@@ -224,6 +224,7 @@ struct cw_parameters_record {
     uint8_t tx_hold;
     uint8_t speed;
     uint8_t text_wpm; /* SET_MEM_TEXT_WPM 0x76: 0=off, else memory-play text WPM */
+    uint8_t paddle_farns; /* SET_PADDLE_FARNSWORTH 0x9D: 0=off, 1=on (reported to the client at connect) */
     uint8_t tone_index;
 };
 extern struct cw_parameters_record cw_record;
@@ -268,15 +269,6 @@ extern BOOL srGetFreq(double* pMHz);
 
 //for Last_used
 extern int Get_Startup(uint32_t *freq, char *mode);
-extern int Create_Last_Used();
-extern int Init_last_used_VFO_A();
-extern int Init_last_used_VFO_B();
-extern int Update_last_used_VFO_A();
-extern int Update_last_used_VFO_B();
-extern int Set_last_used_VFO_A(uint32_t i, char mode);
-extern int Set_last_used_VFO_B(uint32_t i, char mode);
-extern int Send_last_used_VFO_A(uint16_t band, uint8_t element);
-extern int Send_last_used_VFO_B(uint16_t band, uint8_t element);
 extern int Update_Startup(uint32_t freq, char mode);
 extern uint8_t G_vfo;
 extern uint8_t G_current_vfo;
@@ -362,8 +354,6 @@ extern uint8_t G_pcb_version;
 extern uint8_t G_proficio_mkii;
 extern uint8_t G_gui_running;
 extern int G_Transmit;
-extern uint8_t G_updating_last_used;
-extern uint8_t G_setting_last_used;
 extern ULONG64 G_Heart_beat;
 extern uint8_t G_delete_SDRcore_init_files;
 extern uint8_t G_delete_Comm_port_init_file;
@@ -418,6 +408,7 @@ extern void Radio_cal_save_tick(void);
 extern void Radio_cal_load_power(void);
 /* ms-sdr 3.187: TX / RX I/Q in the radio's calibration store (power_calibration.c, iq.c) */
 extern void Radio_cal_store_iq(int tx, int record, int offset, int phase);
+extern void Radio_cal_reset_all(int kind);   /* Pi 3.197 port: CMD_SET_CAL_RESET_ALL (0x2F) */
 extern void Radio_cal_load_iq(void);
 extern void Radio_cal_send_status(void);   /* 3.189: 0x2D to the client */
 extern void IQ_report_value(int value);

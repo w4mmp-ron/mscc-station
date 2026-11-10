@@ -81,8 +81,6 @@ uint8_t G_gui_running = 0;
 uint8_t G_all_threads_run = 1;
 uint8_t G_main_thread_run = 1;
 ULONG32 G_thread_sleep_time = THREAD_SLEEP_TIME;
-uint8_t G_updating_last_used = 0;
-uint8_t G_setting_last_used = 0;
 uint8_t G_calibration_mode = 0;
 uint8_t G_iq_cal_active = 0;   /* 3.188: I/Q calibration session: mode changes still go to the radio */
 uint8_t G_in_IQ_calibration_mode = 0;
@@ -126,7 +124,6 @@ uint16_t G_subsys_initialized = 0x0000;
 int ret = 0;
 
 struct band_stack G_band_stack[10];
-struct last_used_stack G_last_used_stack[10];
 
 //For the Get_Key_Down_Status
 pthread_t G_Get_Key_Status_thread;
@@ -143,8 +140,6 @@ pthread_t G_Flusher_thread;
 int G_Flusher_thread_rc;
 
 //For the last used updater thread
-pthread_t G_Update_last_used_thread;
-int G_Udate_last_used_thread_rc;
 
 pthread_t G_Check_temperature_thread;
 int G_Check_temperature_rc;
@@ -526,45 +521,6 @@ void* Flusher_thread(void* t) {
     return NULL;
 }
 
-void *Update_last_used_thread(void *last_used_tread) {
-    int status = 0;
-    uint32_t previous_startup_freq = 0;
-
-    print_time(0);
-    fprintf(G_fp_logfile, "[%d] Update_last_used_thread . Started\n", line_number++);
-    Sleep(3000); //Wait until the remaining subsystems are initialized
-    while (G_all_threads_run) {
-        if (!G_dll_active && G_MSCC_Initialized == 1) {
-            if (!G_setting_power_band) {
-                switch (G_vfo) {
-                    case VFO_A:
-                        status = Update_last_used_VFO_A();
-                        break;
-                    case VFO_B:
-                        status = Update_last_used_VFO_B();
-                        break;
-                }
-                if (status != 0) {
-                    if (G_tune_freq != 0) {
-                        if (previous_startup_freq != G_tune_freq && G_TX == FALSE) {
-                            if (G_vfo == VFO_A) {
-                                Update_Startup(G_tune_freq, G_mode);
-                                previous_startup_freq = G_tune_freq;
-                            }
-                        }
-                    }
-                }
-            }
-        }
-        Sleep(G_thread_sleep_time);
-    }
-    print_time(0);
-    fprintf(G_fp_logfile, "[%d] Update_last_used_thread . NORMAL EXIT.\n", line_number++);
-    pthread_exit(0);
-    return NULL;
-
-}
-
 uint16_t Get_band_by_frequency(uint32_t freq, uint8_t apply_offset) {
     uint32_t offset = 0;
     uint16_t band = GENERAL_BAND;
@@ -852,7 +808,6 @@ int SetHWLO_queue(long tune_freq) {
     static long previous_freq = 0;
     long delta_freq = 0;
     byte mute_active = FALSE;
-    int set_last_used_status = FALSE;
     static uint16_t previous_band = FREQ_OUT_OF_RANGE;
 
     delta_freq = (labs) ((previous_freq - tune_freq));
@@ -912,29 +867,6 @@ int SetHWLO_queue(long tune_freq) {
         SDRcore_recv_send_param(CMD_SET_SDR_CORE_BAND, G_band_normal);
         previous_band = G_band_normal;
     }
-    if (G_band_normal != GENERAL_BAND) {
-        switch (G_vfo) {
-            case VFO_A:
-                set_last_used_status = Set_last_used_VFO_A(G_tune_freq, G_mode);
-                if (set_last_used_status == FALSE) { // Try again.  Update_Last_Used is busy
-                    print_time(0);
-                    fprintf(G_fp_logfile, "[%d] SetHWLO_queue . set_last_used-> BUSY. set_last_used_status: %d \n",
-                            line_number++, set_last_used_status);
-                    Sleep(100);
-                    set_last_used_status = Set_last_used_VFO_A(G_tune_freq, G_mode);
-                }
-                break;
-            case VFO_B:
-                set_last_used_status = Set_last_used_VFO_B(G_tune_freq, G_mode);
-                if (set_last_used_status == FALSE) { // Try again.  Update_Last_Used is busy
-                    print_time(0);
-                    fprintf(G_fp_logfile, "[%d] SetHWLO_queue . set_last_used-> BUSY. set_last_used_status: %d \n",
-                            line_number++, set_last_used_status);
-                    Sleep(100);
-                    set_last_used_status = Set_last_used_VFO_B(G_tune_freq, G_mode);
-                }
-        }
-    }
     return status;
 }
 
@@ -983,27 +915,6 @@ void ModeChanged(char mode) {
         } else {
             print_time(0);
             fprintf(G_fp_logfile, "[%d] ModeChanged. Call to usbControlMsgOUT Failed . status: %d\n", line_number++, status);
-        }
-        if (!G_in_IQ_calibration_mode) {
-            if (G_band_normal != GENERAL_BAND) {
-                print_time(0);
-                fprintf(G_fp_logfile, "[%d] ModeChanged. Calling set_last_used for mode %c \n", line_number++, G_mode);
-                switch (G_vfo) {
-                    case VFO_A:
-                        status = Set_last_used_VFO_A(G_tune_freq, G_mode);
-                        if (status == FALSE) { // Try again.  Update_Last_Used is busy
-                            Sleep(100);
-                            status = Set_last_used_VFO_A(G_tune_freq, G_mode);
-                        }
-                        break;
-                    case VFO_B:
-                        status = Set_last_used_VFO_B(G_tune_freq, G_mode);
-                        if (status == FALSE) { // Try again.  Update_Last_Used is busy
-                            Sleep(100);
-                            status = Set_last_used_VFO_B(G_tune_freq, G_mode);
-                        }
-                }
-            }
         }
         print_time(0);
         fprintf(G_fp_logfile, "[%d] ModeChanged. FINISHED \n", line_number++);
@@ -1169,20 +1080,6 @@ int static Start_Threads() {
                 line_number++, G_CW_Command_Interface_rc);
     }
     Sleep(2000);
-    /*print_time(0);
-    fprintf(G_fp_logfile, "[%d] main. Starting Update_last_used_thread \n", line_number++);
-    G_Udate_last_used_thread_rc = pthread_create(&G_Update_last_used_thread, NULL,
-            Update_last_used_thread, (void *) t);
-    if (G_Udate_last_used_thread_rc) {
-        print_time(0);
-        fprintf(G_fp_logfile, "[%d] main. Start Update_last_used_thread thread failed, return code from pthread_create() is %d\n",
-                line_number++, G_Udate_last_used_thread_rc);
-        status = -1;
-    } else {
-        print_time(0);
-        fprintf(G_fp_logfile, "[%d] main. Start Update_last_used_thread thread Started, return code from pthread_create() is %d\n",
-                line_number++, G_Udate_last_used_thread_rc);
-    }*/
     print_time(0);
     fprintf(G_fp_logfile, "[%d] main. Starting Freq_Dequeue_thread \n", line_number++);
     G_Freq_Queue_rc = pthread_create(&G_Freq_Queue_thread, NULL, Freq_Dequeue_thread, (void *) t);
@@ -1304,12 +1201,6 @@ int main(int argc, char **argv) {
     
     /* power_cal.ini and amplifier_cal.ini are owned by sdrcore-trans.
      * amplifier.ini is unused. */
-    print_time(0);
-    fprintf(G_fp_logfile, "[%d] main . Calling Init_last_used_VFO_A \n", line_number++);
-    status = Init_last_used_VFO_A();
-    print_time(0);
-    fprintf(G_fp_logfile, "[%d] main . Calling Init_last_used_VFO_B \n", line_number++);
-    status = Init_last_used_VFO_B();
     Sleep(10);
     print_time(0);
     fprintf(G_fp_logfile, "[%d] main. Calling User_Controls_Init \n", line_number++);

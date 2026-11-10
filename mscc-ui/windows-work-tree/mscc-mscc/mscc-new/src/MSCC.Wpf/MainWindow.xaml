@@ -858,7 +858,7 @@
                                 </StackPanel>
                                 <StackPanel Orientation="Horizontal" Margin="0,0,0,8"
                                             IsEnabled="{Binding PicKeyerControlsEnabled}"
-                                            ToolTip="Farnsworth for CQ memory play only. SPEED = letter speed; this opens gaps between letters/words (Off or 5–60). No effect on paddle.">
+                                            ToolTip="Farnsworth spacing. SPEED = letter speed; this opens gaps between letters/words (Off or 5–60). Used for CQ memory play, and for the paddles when PADDLE is ticked.">
                                     <TextBlock Text="FARNSWORTH" Width="78" Foreground="White" VerticalAlignment="Center" FontSize="10"/>
                                     <Border Background="#FF444444" BorderThickness="1" BorderBrush="#FF888888" Padding="3,1" MinWidth="35">
                                         <TextBlock Text="{Binding CwMemTextWpmLabel}" FontSize="11" FontWeight="Bold" Foreground="#00FFAA" HorizontalAlignment="Center"/>
@@ -880,6 +880,9 @@
                                         </Button.Style>
                                     </Button>
                                     <TextBlock Text="WPM" Foreground="#D0D0D0" FontSize="9" VerticalAlignment="Center" Margin="4,0"/>
+                                    <CheckBox Content="PADDLE" IsChecked="{Binding CwPaddleFarnsworth, Mode=TwoWay}"
+                                              Foreground="White" FontSize="10" VerticalAlignment="Center" Margin="6,0,0,0"
+                                              ToolTip="Farnsworth on the paddles: key at your own speed. The keyer sends your letters at SPEED with gaps set by FARNSWORTH. If you get 20 letters ahead you hear STP; the paddles pause until it catches up, then RES."/>
                                 </StackPanel>
                                 <StackPanel Orientation="Horizontal" Margin="0,0,0,10">
                                     <TextBlock Text="HOLD" Width="78" Foreground="White" VerticalAlignment="Center" FontSize="10"/>
@@ -1454,6 +1457,11 @@
                                                 </Style>
                                             </Button.Style>
                                         </Button>
+                                        <Button Content="RESET ALL" Width="100" Height="28" Margin="16,0,0,0"
+                                                Command="{Binding HardResetPowerCalCommand}"
+                                                Style="{StaticResource MsccGoldButtonStyle}"
+                                                FontSize="12" FontWeight="Bold" Foreground="Black"
+                                                ToolTip="Reset QRP power calibration on every band to factory values, in the files AND the radio."/>
                                     </StackPanel>
                                 </StackPanel>
                             </Border>
@@ -1612,6 +1620,11 @@
                                                     </Style>
                                                 </Button.Style>
                                             </Button>
+                                            <Button Content="RESET ALL" Width="100" Height="28" Margin="16,0,0,0"
+                                                    Command="{Binding HardResetAmpCalCommand}"
+                                                    Style="{StaticResource MsccGoldButtonStyle}"
+                                                    FontSize="12" FontWeight="Bold" Foreground="Black"
+                                                    ToolTip="Clear the amplifier calibration on every band (not calibrated). Stored on the host only."/>
                                         </StackPanel>
                                     </Grid>
                                 </StackPanel>
@@ -1685,6 +1698,11 @@
                                             FontSize="10" FontWeight="Bold" Foreground="Black"
                                             IsEnabled="{Binding RxIqSessionActive}"
                                             ToolTip="Copy the current I/Q value to all bands (PC files only; use SAVE per band to store it in the radio)."/>
+                                    <Button Content="RESET ALL" Width="72" Height="26" Margin="8,0,0,0"
+                                            Command="{Binding HardResetRxIqCommand}"
+                                            Style="{StaticResource MsccGoldButtonStyle}"
+                                            FontSize="10" FontWeight="Bold" Foreground="Black"
+                                            ToolTip="Reset RX I/Q on every band to factory (no correction), in the files AND the radio."/>
                                 </StackPanel>
 
                                 <!-- I/Q OFFSET row -->
@@ -1983,6 +2001,24 @@
                                     <TextBlock Text="{Binding ProficioTempC, StringFormat=Proficio: {0:F1} °C}"
                                                Foreground="{DynamicResource UiPrimaryTextBrush}" FontSize="12"
                                                ToolTip="Transceiver board temperature (°C)."/>
+                                    <!-- Heat sink (0x06): STM32 radio only; hidden until the radio sends it -->
+                                    <TextBlock Text="{Binding HeatSinkText}" FontSize="12" Margin="0,2,0,0"
+                                               ToolTip="Heat sink temperature (°C) from the radio's thermistor. OPEN / SHORTED = thermistor fault.">
+                                        <TextBlock.Style>
+                                            <Style TargetType="TextBlock">
+                                                <Setter Property="Foreground" Value="{DynamicResource UiPrimaryTextBrush}"/>
+                                                <Setter Property="Visibility" Value="Collapsed"/>
+                                                <Style.Triggers>
+                                                    <DataTrigger Binding="{Binding HeatSinkSeen}" Value="True">
+                                                        <Setter Property="Visibility" Value="Visible"/>
+                                                    </DataTrigger>
+                                                    <DataTrigger Binding="{Binding HeatSinkFault}" Value="True">
+                                                        <Setter Property="Foreground" Value="#FFFF6060"/>
+                                                    </DataTrigger>
+                                                </Style.Triggers>
+                                            </Style>
+                                        </TextBlock.Style>
+                                    </TextBlock>
                                     <!-- Future amp monitoring (front-and-center when used) — keep bindings ready:
                                     <TextBlock Text="{Binding AmpTempC, StringFormat=PA temp: {0:F1} °C}"
                                                Foreground="{DynamicResource UiPrimaryTextBrush}" FontSize="12" Margin="0,4,0,0"
@@ -2279,12 +2315,10 @@
                           Foreground="#CCC" FontSize="10" Margin="0,2,0,4"
                           ToolTip="Checked: TX=RX on VFO-A. Unchecked: TX on VFO-B (A−100 kHz) via split."/>
 
-                <!-- First-wave operate controls (full NB controls live here; NR/MON/TX BW also) -->
-                <TextBlock Text="RX / TX" FontWeight="Bold" Foreground="{DynamicResource UiAccentBrush}" FontSize="10"
-                           Margin="0,5,0,3" HorizontalAlignment="Left"/>
-
+                <!-- First-wave operate controls (full NB controls live here; NR/MON/TX BW also).
+                     "RX / TX" heading removed 11.10.13 (Ron: not needed). -->
                 <!-- NB | NR | AN -->
-                <Grid HorizontalAlignment="Left" Margin="0,0,0,4">
+                <Grid HorizontalAlignment="Left" Margin="0,4,0,4">
                     <Grid.ColumnDefinitions>
                         <ColumnDefinition Width="*"/>
                         <ColumnDefinition Width="*"/>
@@ -2345,7 +2379,7 @@
                 <StackPanel Orientation="Horizontal" Margin="0,0,0,3" VerticalAlignment="Center"
                             ToolTip="Noise blanker pulse width (µs)">
                     <TextBlock Text="Pulse" Width="36" VerticalAlignment="Center" Foreground="{DynamicResource UiPrimaryTextBrush}" FontSize="9"/>
-                    <Slider Width="72" Minimum="10" Maximum="510" SmallChange="1" LargeChange="10"
+                    <Slider Width="72" Minimum="50" Maximum="510" SmallChange="1" LargeChange="10"
                             Value="{Binding NbPulse, Mode=TwoWay}" PreviewMouseWheel="Slider_PreviewMouseWheel"
                             VerticalAlignment="Center"/>
                     <Border Background="#FF444444" BorderThickness="1" BorderBrush="#FF888888" Margin="3,0,0,0" Padding="2,1" MinWidth="40">
@@ -2353,29 +2387,106 @@
                                    Foreground="{DynamicResource UiAccentBrush}" HorizontalAlignment="Center"/>
                     </Border>
                 </StackPanel>
-                <StackPanel Orientation="Horizontal" Margin="0,0,0,4" VerticalAlignment="Center"
-                            ToolTip="Noise blanker threshold">
-                    <TextBlock Text="Thr" Width="36" VerticalAlignment="Center" Foreground="{DynamicResource UiPrimaryTextBrush}" FontSize="9"/>
-                    <Slider Width="72" Minimum="1" Maximum="1009" SmallChange="5" LargeChange="20"
-                            Value="{Binding NbThreshold, Mode=TwoWay}" PreviewMouseWheel="Slider_PreviewMouseWheel"
-                            VerticalAlignment="Center"/>
-                    <Border Background="#FF444444" BorderThickness="1" BorderBrush="#FF888888" Margin="3,0,0,0" Padding="2,1" MinWidth="40">
-                        <TextBlock Text="{Binding NbThreshold}" FontSize="10" FontWeight="Bold"
-                                   Foreground="{DynamicResource UiAccentBrush}" HorizontalAlignment="Center"/>
-                    </Border>
+                <!-- NB threshold: Low / Med / High = 8x / 6x / 5x the band level (recv 3.152) -->
+                <StackPanel Orientation="Horizontal" Margin="0,0,0,4" VerticalAlignment="Center">
+                    <TextBlock Text="Thr" Width="36" VerticalAlignment="Center" Foreground="{DynamicResource UiPrimaryTextBrush}" FontSize="9"
+                               ToolTip="Noise blanker threshold"/>
+                    <Button Content="LOW" Width="38" Height="18" Margin="0,0,2,0" Command="{Binding NbLowCommand}"
+                            Foreground="Black" FontSize="8" FontWeight="Bold"
+                            ToolTip="Low: blanks only big pulses (8x the band level)">
+                        <Button.Style>
+                            <Style TargetType="Button" BasedOn="{StaticResource MsccGoldButtonStyle}">
+                                <Style.Triggers>
+                                    <DataTrigger Binding="{Binding NbLevelIndex}" Value="0">
+                                        <Setter Property="Background" Value="{DynamicResource UiButtonSelectedBrush}"/>
+                                        <Setter Property="BorderBrush" Value="{DynamicResource UiButtonSelectedBorderBrush}"/>
+                                        <Setter Property="Foreground" Value="White"/>
+                                    </DataTrigger>
+                                </Style.Triggers>
+                            </Style>
+                        </Button.Style>
+                    </Button>
+                    <Button Content="MED" Width="38" Height="18" Margin="0,0,2,0" Command="{Binding NbMedCommand}"
+                            Foreground="Black" FontSize="8" FontWeight="Bold"
+                            ToolTip="Medium: 6x the band level (a good start)">
+                        <Button.Style>
+                            <Style TargetType="Button" BasedOn="{StaticResource MsccGoldButtonStyle}">
+                                <Style.Triggers>
+                                    <DataTrigger Binding="{Binding NbLevelIndex}" Value="1">
+                                        <Setter Property="Background" Value="{DynamicResource UiButtonSelectedBrush}"/>
+                                        <Setter Property="BorderBrush" Value="{DynamicResource UiButtonSelectedBorderBrush}"/>
+                                        <Setter Property="Foreground" Value="White"/>
+                                    </DataTrigger>
+                                </Style.Triggers>
+                            </Style>
+                        </Button.Style>
+                    </Button>
+                    <Button Content="HIGH" Width="38" Height="18" Command="{Binding NbHighCommand}"
+                            Foreground="Black" FontSize="8" FontWeight="Bold"
+                            ToolTip="High: blanks smaller pulses too (5x the band level)">
+                        <Button.Style>
+                            <Style TargetType="Button" BasedOn="{StaticResource MsccGoldButtonStyle}">
+                                <Style.Triggers>
+                                    <DataTrigger Binding="{Binding NbLevelIndex}" Value="2">
+                                        <Setter Property="Background" Value="{DynamicResource UiButtonSelectedBrush}"/>
+                                        <Setter Property="BorderBrush" Value="{DynamicResource UiButtonSelectedBorderBrush}"/>
+                                        <Setter Property="Foreground" Value="White"/>
+                                    </DataTrigger>
+                                </Style.Triggers>
+                            </Style>
+                        </Button.Style>
+                    </Button>
                 </StackPanel>
 
-                <!-- NR level (moved from RX/TX) -->
-                <StackPanel Orientation="Horizontal" Margin="0,0,0,6" VerticalAlignment="Center"
-                            ToolTip="Noise reduction level (0–100)">
-                    <TextBlock Text="NR" Width="36" VerticalAlignment="Center" Foreground="{DynamicResource UiPrimaryTextBrush}" FontSize="9"/>
-                    <Slider Width="72" Minimum="0" Maximum="100" SmallChange="1"
-                            Value="{Binding NrLevel, Mode=TwoWay}" PreviewMouseWheel="Slider_PreviewMouseWheel"
-                            VerticalAlignment="Center"/>
-                    <Border Background="#FF444444" BorderThickness="1" BorderBrush="#FF888888" Margin="3,0,0,0" Padding="2,1" MinWidth="40">
-                        <TextBlock Text="{Binding NrLevel}" FontSize="10" FontWeight="Bold"
-                                   Foreground="{DynamicResource UiAccentBrush}" HorizontalAlignment="Center"/>
-                    </Border>
+                <!-- NR level: Low / Med / High = 15 / 50 / 85 (NR button = on/off) -->
+                <StackPanel Orientation="Horizontal" Margin="0,0,0,6" VerticalAlignment="Center">
+                    <TextBlock Text="NR" Width="36" VerticalAlignment="Center" Foreground="{DynamicResource UiPrimaryTextBrush}" FontSize="9"
+                               ToolTip="Noise reduction level (the NR button turns it on / off)"/>
+                    <Button Content="LOW" Width="38" Height="18" Margin="0,0,2,0" Command="{Binding NrLowCommand}"
+                            Foreground="Black" FontSize="8" FontWeight="Bold"
+                            ToolTip="Low: about 7-8 dB less hiss, natural sound">
+                        <Button.Style>
+                            <Style TargetType="Button" BasedOn="{StaticResource MsccGoldButtonStyle}">
+                                <Style.Triggers>
+                                    <DataTrigger Binding="{Binding NrLevelIndex}" Value="0">
+                                        <Setter Property="Background" Value="{DynamicResource UiButtonSelectedBrush}"/>
+                                        <Setter Property="BorderBrush" Value="{DynamicResource UiButtonSelectedBorderBrush}"/>
+                                        <Setter Property="Foreground" Value="White"/>
+                                    </DataTrigger>
+                                </Style.Triggers>
+                            </Style>
+                        </Button.Style>
+                    </Button>
+                    <Button Content="MED" Width="38" Height="18" Margin="0,0,2,0" Command="{Binding NrMedCommand}"
+                            Foreground="Black" FontSize="8" FontWeight="Bold"
+                            ToolTip="Medium: about 12 dB less hiss (a touch of warble)">
+                        <Button.Style>
+                            <Style TargetType="Button" BasedOn="{StaticResource MsccGoldButtonStyle}">
+                                <Style.Triggers>
+                                    <DataTrigger Binding="{Binding NrLevelIndex}" Value="1">
+                                        <Setter Property="Background" Value="{DynamicResource UiButtonSelectedBrush}"/>
+                                        <Setter Property="BorderBrush" Value="{DynamicResource UiButtonSelectedBorderBrush}"/>
+                                        <Setter Property="Foreground" Value="White"/>
+                                    </DataTrigger>
+                                </Style.Triggers>
+                            </Style>
+                        </Button.Style>
+                    </Button>
+                    <Button Content="HIGH" Width="38" Height="18" Command="{Binding NrHighCommand}"
+                            Foreground="Black" FontSize="8" FontWeight="Bold"
+                            ToolTip="High: about 16 dB less hiss, more warble (weak signals in heavy noise)">
+                        <Button.Style>
+                            <Style TargetType="Button" BasedOn="{StaticResource MsccGoldButtonStyle}">
+                                <Style.Triggers>
+                                    <DataTrigger Binding="{Binding NrLevelIndex}" Value="2">
+                                        <Setter Property="Background" Value="{DynamicResource UiButtonSelectedBrush}"/>
+                                        <Setter Property="BorderBrush" Value="{DynamicResource UiButtonSelectedBorderBrush}"/>
+                                        <Setter Property="Foreground" Value="White"/>
+                                    </DataTrigger>
+                                </Style.Triggers>
+                            </Style>
+                        </Button.Style>
+                    </Button>
                 </StackPanel>
 
                 <!-- MON | TX BW (cycle) -->

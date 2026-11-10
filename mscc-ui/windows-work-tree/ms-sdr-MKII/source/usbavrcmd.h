@@ -228,6 +228,12 @@
  * data ignored. ms-sdr sends the HTTP reset to the WiFi SWR meter (Swr_wifi_client_reset).
  * The client uses it when the meter state came from ms-sdr (0x0F). */
 #define CMD_SWR_METER_RESET 0x2E
+/* Pi ms-sdr 3.197 port (Ron 2026-11-10): hard calibration reset from the client, 1 data byte =
+ * kind. Files AND radio set, so the reset sticks. Client -> ms-sdr only. */
+#define CMD_SET_CAL_RESET_ALL 0x2F
+#define CAL_RESET_RX_IQ  1   /* 0 / 0 (no correction) on all bands: recv-iq.ini + radio */
+#define CAL_RESET_POWER  2   /* factory QRP power table: power_cal.ini (trans) + radio */
+#define CAL_RESET_AMP    3   /* amplifier_cal.ini -99 (not calibrated); host only */
 /* ms-sdr 3.189: CMD_SET_BAND_POWER_POWER (0xA2) data with this bit = save (client "Save this
  * calibration?" Yes): trans writes power_cal.ini and ms-sdr writes the radio. Without it: live only. */
 #define POWER_CAL_SAVE_FLAG 0x8000
@@ -287,6 +293,8 @@
  * Param: 0=off; 5–60=overall/text WPM for inter-char/word gaps on CQ memory play.
  * Character elements stay on SET_WPM. If text >= char WPM, treat as off. */
 #define SET_MEM_TEXT_WPM 0x76
+/* Pi 2026-11-05 port: Farnsworth on the paddles (buffered keyer), 0 = off, 1 = on. */
+#define SET_PADDLE_FARNSWORTH 0x9D
 #define SET_WEIGHT 0x77
 #define SET_TX_HOLD 0x7A
 #define SET_WPM 0x7B
@@ -385,9 +393,9 @@
 #define CMD_GET_SET_PANADAPTER 0xD5
 
 
-#define CMD_GET_SET_LAST_USED_FREQ 0xD7
-#define CMD_GET_SET_LAST_USED_MODE 0xD8
-#define CMD_GET_SET_LAST_USED_BAND 0xD9
+//#define CMD_GET_SET_LAST_USED_FREQ 0xD7   reclaimed 2026-11-10 (see Pi usbavrcmd.h list)
+//#define CMD_GET_SET_LAST_USED_MODE 0xD8   reclaimed 2026-11-10
+//#define CMD_GET_SET_LAST_USED_BAND 0xD9   reclaimed 2026-11-10
 #define CMD_GET_SET_PANADAPTER_SMOOTHING 0xDA
 #define CMD_SET_CW_BW 0xDB
 #define CMD_SET_BW_LOCUT_DEFAULT 0xDC
