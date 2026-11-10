@@ -8,6 +8,7 @@
     <ClCompile Include="source\user_controls.c" />
     <ClCompile Include="source\freq_queue.c" />
     <ClCompile Include="source\proficio-temperature.c" />
+    <ClCompile Include="source\swr_wifi_meter.c" />
     <ClCompile Include="source\main.c" />
     <ClCompile Include="source\usbcmd.c" />
     <ClCompile Include="source\main-controller.c" />

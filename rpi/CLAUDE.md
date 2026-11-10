@@ -38,6 +38,13 @@ Git repo root: `C:\Users\Ron\.grok\worktrees`.
 (automatic NB, spectral NR, NR Low/Med/High, client controls).** When he pushes: pull, short
 review of what he ported, say if the Pi needs a matching change. Don't start new work meanwhile.
 
+**Stew's list, Ron doing it (2026-11-10): servers first, then client. Versions after all server changes.**
+- Done (not on air yet, Windows rig needed): Windows recv automatic NB (blanker.c + struct), Windows recv spectral NR (denoise()).
+- TX IQ RESET ALL (Ron 11-10): ms-sdr writes the FACTORY TX IQ values into the radio (no clear). A radio with factory values = calibrated (to factory), unlike a new rig with nothing stored. DONE in Pi ms-sdr (iq.c, factory_seed.c/.h; copied to V:, syntax-checked, NOT built) and Windows ms-sdr (built). Ron tests later (needs a full calibration after).
+- Windows ms-sdr, built, not on air: heat sink 0x06 read + 30 s log (proficio-temperature.c); WiFi SWR meter port (swr_wifi_meter.c added to vcxproj, Windows clock / thread-name shims; 0x0F fault, 0x2E reset, tune flag, SWR_* ini keys; needs SWR_METER_TO_GUI=1 in mscc.ini, firewall UDP 6999, meter sending to the PC); Pill_stats (PILL_STATS=1). Windows build auto-bumped ms-sdr 3.189 -> 3.191.
+- Server list done 2026-11-10. Next: versions, then the client list.
+- **Client (later):** RESET ALL -> pop-up warning like "CALIBRATED TO FACTORY VALUES". Also Reset configuration = client settings only.
+
 **Current list (updated 2026-11-06, after bb31561):**
 - **After the hold (Ron 2026-11-09): WSJT-X "right-click for rig tune" does nothing.** WSJT-X on
   the Pi (rig TS-2000) asks hamlib for the rig's tuner, which should send Kenwood `AC111;` (not yet

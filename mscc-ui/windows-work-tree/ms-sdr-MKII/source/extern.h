@@ -545,6 +545,32 @@ extern int Create_PPM_ini();
 extern void Factory_seed_live_inis(void);
 extern void Factory_seed_reload_servers(void);
 extern int Factory_reseed_live_file(const char *kind, const char *leaf);
+extern int Factory_iq_values(int offset[12], int phase[12]);
+
+/* WiFi SWR meter (UDP JSON -> existing GUI meter opcodes). See swr_wifi_meter.c
+ * (ported from Pi ms-sdr 3.190, 2026-11-10) */
+extern uint8_t G_swr_wifi_enable;
+extern uint16_t G_swr_wifi_port;
+extern char G_swr_wifi_meter_ip[64];
+extern int G_swr_wifi_timeout_ms;
+extern uint8_t G_swr_wifi_http_reset;
+extern uint8_t G_swr_wifi_to_gui;
+extern double G_swr_wifi_fwd;
+extern double G_swr_wifi_ref;
+extern double G_swr_wifi_swr;
+extern double G_swr_wifi_v;
+extern int G_swr_wifi_fault;
+extern uint8_t G_swr_wifi_online;
+extern char G_swr_wifi_learned_ip[64];
+extern void *Swr_wifi_meter_main(void *param);
+extern int Start_swr_wifi_meter_thread(void);
+extern void Parse_swr_wifi_record(const char *record);
+extern void Swr_wifi_request_reset(void);
+extern void Swr_wifi_client_reset(void);   /* CMD_SWR_METER_RESET (0x2E) */
+extern void Swr_wifi_tune(int on);          /* TUN flag to the meter (tune allowance) */
+
+void Audio_stats_busy(const char *why);   // Pi 3.195 port: restarts the pill audio stats window
+extern uint8_t G_pill_stats;              // mscc.ini PILL_STATS= (default 0 = off)
 extern void Factory_park_live_settings(void);
 extern const char *Factory_line_from_major(int major);
 extern INT8 G_int;

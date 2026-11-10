@@ -25,6 +25,10 @@ int Factory_reseed_live_file(const char *kind, const char *leaf);
  * 1 = loaded, 0 = no factory file (values untouched). (Pi 6680c11) */
 int Factory_power_cal_values(int values[12]);
 
+/* factory\iq\<line>\iq.ini TX IQ offset / phase by record into offset[12] / phase[12].
+ * Returns records read, 0 = no factory file. (Pi ms-sdr 3.196) */
+int Factory_iq_values(int offset[12], int phase[12]);
+
 /* Save settings: copy live iq.ini, power_cal.ini, and amplifier_cal.ini into cal/<line>/
  * and write LAST_LINE.txt. Unknown major (not 1..8): warn and no-op. */
 void Factory_park_live_settings(void);

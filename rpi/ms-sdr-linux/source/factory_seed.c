@@ -384,6 +384,41 @@ int Factory_power_cal_values(int values[12])
     return 1;
 }
 
+/* 3.196: factory TX IQ per band (record 0..11) from factory/iq/<line>/iq.ini.
+ * IQ_PHASE= is optional (0 when missing). Returns the number of records read. */
+int Factory_iq_values(int offset[12], int phase[12])
+{
+    char factory_root[MAX_PATH];
+    char path[MAX_PATH];
+    char rec[132];
+    char *r, *o, *p;
+    int record, n = 0;
+    FILE *fp;
+
+    if (!find_factory_root(factory_root, sizeof factory_root))
+        return 0;
+    snprintf(path, sizeof path, "%s/iq/%s/iq.ini", factory_root,
+             Factory_line_from_major(G_major_version));
+    fp = fopen(path, "r");
+    if (fp == NULL)
+        return 0;
+    while (fgets(rec, sizeof rec, fp) != NULL) {
+        r = strstr(rec, "RECORD=");
+        o = strstr(rec, "IQ_OFFSET=");
+        p = strstr(rec, "IQ_PHASE=");
+        if (r == NULL || o == NULL)
+            continue;
+        record = atoi(r + 7);
+        if (record < 0 || record >= 12)
+            continue;
+        offset[record] = atoi(o + 10);
+        phase[record] = (p != NULL) ? atoi(p + 9) : 0;
+        n++;
+    }
+    fclose(fp);
+    return n;
+}
+
 void Factory_seed_live_inis(void)
 {
     char factory_root[MAX_PATH];

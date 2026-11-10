@@ -173,6 +173,7 @@ static int Session_Is_Owner(const struct sockaddr_in *peer) {
 }
 
 static void Session_Claim(const struct sockaddr_in *peer) {
+    Audio_stats_busy("client connect");   // Pi 3.195 port (pill stats window restarts)
     if (peer != NULL) {
         G_session_client = *peer;
         G_session_client_valid = TRUE;
@@ -280,6 +281,7 @@ void Stop_all(uint8_t up_date_transceiver, uint8_t shutdown_status) {
     int ret = 0;
     uint8_t status = 0;
 
+    Audio_stats_busy("servers stopped");   // Pi 3.195 port
     print_time(1);
     fprintf(G_fp_logfile, "[%d] Stop_all Called. update_transceiver: %d, shutdown_status: %d\n",
             line_number++, up_date_transceiver, shutdown_status);
@@ -1887,6 +1889,10 @@ void * Command_Processor(void *my_param) {
             User_Controls_Process(opcode, G_receive_buf, FALSE);
             break;
 
+        case CMD_SWR_METER_RESET:   /* Pi 3.189 port: client RESET -> WiFi SWR meter (HTTP, own thread) */
+            Swr_wifi_client_reset();
+            break;
+
         case CMD_GET_SET_PANADAPTER_BASE:
             User_Controls_Process(opcode, G_receive_buf, FALSE);
             break;
@@ -2939,6 +2945,20 @@ void Parse_mscc_record(char *record) {
             line_number++, (int)G_proficio_mkii);
         status = 1;
     }
+
+    /* Pi 3.195 port: PILL_STATS=1 -> pill audio counters to this log every 10 min of normal
+     * running (proficio-temperature.c). Default 0 (off) when the key is missing. */
+    parameter = strstr(record, "PILL_STATS=");
+    if (parameter != NULL) {
+        cmd_value = atoi(&parameter[strlen("PILL_STATS=")]);
+        G_pill_stats = (cmd_value != 0) ? TRUE : FALSE;
+        print_time(0);
+        fprintf(G_fp_logfile, "[%d] Parse_mscc_record. PILL_STATS: %d\n", line_number++, (int) G_pill_stats);
+        status = 1;
+    }
+
+    /* WiFi SWR meter keys (SWR_METER= etc.) — parsed in swr_wifi_meter.c (Pi port 2026-11-10) */
+    Parse_swr_wifi_record(record);
 }
 
 int initialize_mscc() {

@@ -224,6 +224,10 @@
  * 3 power) | flags << 8 (bit 0 = radio has a calibration store) | uint16 band mask << 16 (bit N =
  * band N, MSCC order 0 = 10 m ... 9 = 160 m, 10 = 630 m, 11 = 2200 m). Agreed with Ron 2026-11-01. */
 #define CMD_SET_CAL_STATUS 0x2D
+/* Pi ms-sdr 3.189 (Stew's proposal 11-01), Windows 2026-11-10: client RESET button -> ms-sdr,
+ * data ignored. ms-sdr sends the HTTP reset to the WiFi SWR meter (Swr_wifi_client_reset).
+ * The client uses it when the meter state came from ms-sdr (0x0F). */
+#define CMD_SWR_METER_RESET 0x2E
 /* ms-sdr 3.189: CMD_SET_BAND_POWER_POWER (0xA2) data with this bit = save (client "Save this
  * calibration?" Yes): trans writes power_cal.ini and ms-sdr writes the radio. Without it: live only. */
 #define POWER_CAL_SAVE_FLAG 0x8000
@@ -464,6 +468,10 @@
 #define CMD_SET_REVERSE_POWER 0x0C
 #define CMD_SET_SWR 0x0D
 #define CMD_SET_SOLIDUS_STATUS 0x0E
+/* Pi ms-sdr 3.188, Windows 2026-11-10: WiFi SWR meter state to the client (the meter talks to
+ * ms-sdr only, UDP unicast). Data: [fault 0/1][online 0/1][meter IPv4 a.b.c.d, 4 bytes;
+ * 0.0.0.0 = unknown]. Sent at once on a fault change, and with each meter update (at most 2/s). */
+#define CMD_SET_SWR_FAULT 0x0F
 #define CMD_SET_FORTIS_DEVICES 0x32
 
 //RPi Temperture

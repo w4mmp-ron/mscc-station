@@ -346,13 +346,13 @@ void doBlanker(sp_cplx *samps, int nframes)
                         nb_run_peak = 0.0f;
                         nbstate.run = 0;
 
-                        uint8_t near = (m > NB_NEAR_FRAC * k * nbstate.mean);
-                        if (near) {
+                        uint8_t isNear = (m > NB_NEAR_FRAC * k * nbstate.mean);
+                        if (isNear) {
                                 sp_float ratio = m / (nbstate.mean + 1e-12f);
                                 if (!nb_near_prev) nb_log_near++;
                                 if (ratio > nb_log_pknear) nb_log_pknear = ratio;
                         }
-                        nb_near_prev = near;
+                        nb_near_prev = isNear;
                         nbstate.mean += nbstate.meancoef * (m - nbstate.mean);
                 }
                 if (!isfinite(nbstate.mean)) nbstate.mean = 0.0f;

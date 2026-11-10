@@ -661,7 +661,14 @@ int Tune_button(int on_off, uint8_t allow_MKII_PTT_Switch) {
             ptt_switch_inhibited = TRUE;
         }
         G_Tune = on_off;
+        /* Pi 3.190 port: tell the WiFi SWR meter a tune starts BEFORE RF (its tune allowance
+         * lets the tuner search without a fault; waits <= 300 ms for the meter), and that it
+         * ended after unkeying (own thread). No meter / offline: skipped. */
+        if (on_off)
+            Swr_wifi_tune(1);
         SetModeRxTx(on_off, 0);
+        if (!on_off)
+            Swr_wifi_tune(0);
         //Spectrum_Waterfall_send_param(CMD_SET_TX_ON, on_off);
         if (on_off == FALSE && ptt_switch_inhibited == TRUE) {
             ptt_switch_inhibited = FALSE;
@@ -849,6 +856,8 @@ int SetHWLO_queue(long tune_freq) {
     static uint16_t previous_band = FREQ_OUT_OF_RANGE;
 
     delta_freq = (labs) ((previous_freq - tune_freq));
+    if (delta_freq != 0)
+        Audio_stats_busy("frequency change");   // Pi 3.195 port (TX on / off re-sends the same frequency)
     G_dll_active = TRUE;
     previous_freq = tune_freq;
     switch (G_mode) {
@@ -954,6 +963,7 @@ void ModeChanged(char mode) {
     long t = 0;
     static int signal_sent = 0;
 
+    Audio_stats_busy("mode change");   // Pi 3.195 port
     print_time(0);
     fprintf(G_fp_logfile, "[%d] ModeChanged. mode: %c,G_calibrating: %d. STARTED\n", line_number++, mode, G_calibration_mode);
     //Disable mode setting if the application is in Power Calibration mode.  
@@ -1104,6 +1114,8 @@ int static Start_Threads() {
     }
 
     status = Start_check_temperature_thread();
+    /* WiFi SWR meter: UDP JSON -> GUI F/R/SWR (mscc.ini SWR_METER=), Pi port 2026-11-10 */
+    Start_swr_wifi_meter_thread();
     //Init_I2C_Controls();
 
     /*if (G_pcb_version != GEMINUS) {

@@ -149,6 +149,21 @@ int IQ_calibration(uint8_t command, char *buffer) {
                         line_number++);
                 }
                 SDRcore_trans_send_param(CMD_SET_IQ_DEFAULTS, 1);
+                /* Pi ms-sdr 3.196 (Ron 2026-11-10): the reset sticks: the factory values go
+                 * into the radio too (no clear), else the radio's stored values win at the next
+                 * start. Queued; Radio_cal_save_tick sends them out of TX and refreshes the lamps. */
+                {
+                    int f_off[12] = {0}, f_ph[12] = {0};
+                    int rec, n = Factory_iq_values(f_off, f_ph);
+
+                    print_time(0);
+                    fprintf(G_fp_logfile, "[%d] IQ_calibration . CMD_SET_IQ_DEFAULTS . %d factory TX IQ bands to the radio\n",
+                            line_number++, n);
+                    if (n > 0) {
+                        for (rec = 0; rec < 12; rec++)
+                            Radio_cal_store_iq(1, rec, f_off[rec], f_ph[rec]);
+                    }
+                }
             } else {
                 SDRcore_recv_send_param(CMD_SET_IQ_DEFAULTS, 1);
             }

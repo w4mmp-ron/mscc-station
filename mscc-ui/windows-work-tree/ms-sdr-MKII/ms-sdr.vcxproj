@@ -103,6 +103,7 @@ xcopy /e /i /y "$(ProjectDir)..\..\..\factory" "$(OutDir)factory"</Command>
     <ClCompile Include="source\message_queue.c" />
     <ClCompile Include="source\power_calibration.c" />
     <ClCompile Include="source\proficio-temperature.c" />
+    <ClCompile Include="source\swr_wifi_meter.c" />
     <ClCompile Include="source\usbcmd.c" />
     <ClCompile Include="source\user_controls.c" />
   </ItemGroup>
