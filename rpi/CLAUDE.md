@@ -8,8 +8,14 @@ file is for Claude only.
 
 - Short, plain-English answers. Say what is verified and what isn't.
 - **"stop" means stop immediately.**
-- Ask before large or risky changes. Commit / push **only when asked**,
-  `git add` specific paths only (Grok and other tools work in this repo too).
+- Ask before large or risky changes. `git add` specific paths only (Grok and other
+  tools work in this repo too).
+- **Rules since 2026-11-11 (Ron):** (1) NO commits until Ron says we are finished (notes too:
+  "update the notes" = edit only). (2) Keep in sync: every server change (ms-sdr, recv, trans)
+  goes into BOTH the Pi tree (`rpi/*-linux`, copied to V:) and the Windows tree
+  (`mscc-ui/windows-work-tree/`); every WPF client change also goes into Avalonia (Ron's copy
+  `worktrees/Avalonia`). (3) On "finished": build the relevant installers (Windows R-build,
+  Pi `mscc`, `mscc-avalonia` if the client changed), one commit, push, GitHub Release.
 - Ron does **not** `git pull` on the Pi. He copies the changed source files from
   Windows to the Pi and builds there. Give him the file list, not git steps.
 - Ubuntu (`linux/`) work is Stew's; don't track or report it. After a pull, report
@@ -58,8 +64,47 @@ review of what he ported, say if the Pi needs a matching change. Don't start new
   - **Installers are GitHub Release downloads, not committed** (`.gitignore` installers/windows/*.exe, installers/rpi/*.deb; Ubuntu installers/linux unchanged). Release R11-10-14: https://github.com/w4mmp-ron/mscc-station/releases/tag/R11-10-14.
   - **Pi = 2 packages since mscc 1.0.79 (Ron):** `mscc` now also carries PortAudio (/usr/local lib + headers, loader file /etc/ld.so.conf.d/mscc.conf), MSCC Init, MSCC Volume, PSoC firmware (/usr/share/mscc/firmware/<Radio>/, same versioned files as the Windows payload) and Black Pill 25 MHz firmware (/usr/share/mscc/firmware/black-pill/). Conflicts/Replaces/Provides mscc-portaudio, mscc-init(-gui), mscc-volume(-gui), mscc-firmware: apt removes them. build-deb.sh takes the firmware from mscc-ui/installer/windows/payload (run stage.ps1 first) and PortAudio from rpi/mscc-portaudio/mscc-portaudio_19.8.3_arm64.deb. Installed on the Pi 2026-11-10 (old packages removed, servers running); mscc-ui 0.6.31 purged from the Pi. Optional: `mscc-avalonia`. INSTALL-FOR-PI .docx/.pdf not regenerated.
 
+**2026-11-11 (finished, Ron): Release R11-11-2.** Windows `mscc-net9-R11-11-2-install.exe` (WPF 11.11.2,
+ms-sdr 3.208); Pi `mscc_1.0.80_arm64.deb` (= 1.0.79 + ms-sdr 3.206, md5 = the running ~/mscc/ms-sdr) and
+`mscc-avalonia_1.6.95_arm64.deb` (both also on V:\, not installed from the .deb). INSTALL docs +
+Windows CHANGELOG updated, INSTALL-FOR-PI .docx / .pdf regenerated. Pi runs ms-sdr 3.206, recv 3.153,
+trans 3.158, pill 3.15.
+- **WSJT-X right-click Tune (CAT `AC111;`) DONE, tested on the Pi (Ron).** Capture (strace on
+  ms-sdr's /dev/tnt0): each right-click sends `AC111;ID;`, nothing to end it, and WSJT-X sends
+  NOTHING for a right-click while its tune runs (so the tune can't be stopped from WSJT-X).
+  ms-sdr `comm-port.c`: AC111; = MSCC TUN carrier like the client TUN button (mode T, tune power if
+  the client sent one, Tune_button = SWR meter tune flag before RF, TX on), client gets
+  CMD_SET_TX_SET_BY_SERVER 1 (as CAT PTT; client locks PTT/TUN). Ends after 10-11 s
+  (`Cat_tune_tick()` from the 1 s Flusher loop, main.c), at a second AC111; (other apps), or
+  before a CAT `TX;`; then TX off, old mode back, TX released. Ended elsewhere (SWR / temperature
+  fault, client mode change / disconnect): tick puts the mode back if still T and releases TX.
+  An AC111; within 1 s of the start is ignored (seen 4 times ~150 ms after the start, cause not
+  found, not seen under strace). Log: `CAT tune. START / STOP (reason) / ignored`. Files: comm-port.c,
+  main.c, extern.h in both trees. Pi ms-sdr built (version.h on the Pi 3.206), Windows ms-sdr 3.208
+  built, not on a Windows rig. Tune power shows 0 in the log until the client sends it (trans
+  then uses its own; Ron: power looked normal).
+- **RX IQ START order fixed (client):** WPF `StartRxIq` and Avalonia `StartRxIqAsync` now send
+  0x55 RX before 0x58 band (ms-sdr iq.c routes 0x58 by the last 0x55; band first after a TX I/Q
+  session took the TX path: retune to the TX cal freq + trans TUNE). WPF 11.11.1, Avalonia
+  1.6.95 (csproj + DEBIAN/control), both built, not tested on the rig. Test: TX I/Q cal, then
+  RX IQ START: rig stays on the receive freq, trans not in TUNE.
+- Stew note `.mscc-coord/NOTE-FOR-STEW-RX-IQ-TOOLS-2026-10-14.md`: option 4 (client AUTO
+  button) removed (Ron).
+- **Client power meter in watts (Ron, TESTED on WPF 11.11.2 at ~120 W, "the fix is fine").** Was
+  x1 / x10 / x100 (10 / 100 / 1000 W full scale): 110 W jumped to x100 = needle at 1.1 of 10. Now
+  full scale 10 / 20 / 50 / 100 / 200 / 500 / 1000 W, tick labels in watts (200 W = 0 40 80 120
+  160 200), centre legend "W", up at 95 % of full scale, down below 30 % of the next lower one
+  (as before). `AnalogSMeterControl.xaml.cs` (WPF) and `.axaml.cs` (Avalonia 1.6.95, built, not
+  tried). New WPF + Windows ms-sdr 3.208 copied to `C:\mscc-net9` (old ms-sdr in
+  `C:\mscc-net9-old\ms-sdr-MKII-3.206-backup.exe`).
+- **WiFi SWR meter vs client (checked, fine):** tcpdump of UDP 6999 on the Pi during a WSJT-X PTT
+  tune: packets every 0.1-0.2 s, `fwd` 120.8 easing to ~117.5 W, `peak` 122.2, `avg` 111-114,
+  swr 1.32. ms-sdr passes `fwd` to the client (client ~120 W = right). ms-sdr logs only the FIRST
+  meter packet after start (SD wear) plus fault edges; option (not done): one "TX end: peak fwd /
+  ref / swr" line per transmit. `tune` = 0 on CAT PTT (flag only on CAT AC111; or client TUN).
+
 **Current list (updated 2026-11-06, after bb31561):**
-- **After the hold (Ron 2026-11-09): WSJT-X "right-click for rig tune" does nothing.** WSJT-X on
+- **DONE 2026-11-11 (see above). Was: WSJT-X "right-click for rig tune" does nothing.** WSJT-X on
   the Pi (rig TS-2000) asks hamlib for the rig's tuner, which should send Kenwood `AC111;` (not yet
   seen on the serial line). ms-sdr `comm-port.c` only handles AI ID IF MD PS RM FW KS FA FB RX TX,
   so AC is ignored. Fix: handle `AC` in comm-port.c and start MSCC's own TUN carrier
@@ -81,9 +126,9 @@ review of what he ported, say if the Pi needs a matching change. Don't start new
   | Set VFO | `SA;`, then `FR0;` / `FR1;` | **no** |
   | Split (Split = Rig only) | `IF;`, then `FR0;FT1;` / `FR0;FT0;` | **no** |
   | Power status | `PS;` | yes |
-  | Right-click Tune | `AC111;` (RIG_OP_TUNE) | **no** |
+  | Right-click Tune | `AC111;` (RIG_OP_TUNE) | yes since 2026-11-11 (10-11 s TUN) |
 
-  Every set command except `RX` is followed by `ID;` (hamlib's check). Gaps: AC, SA, FR, FT.
+  Every set command except `RX` is followed by `ID;` (hamlib's check). Gaps: SA, FR, FT.
 - **WiFi SWR meter (2026-11-06, Ron's copy `swr-meter/ron/HF_SWR_R4_1/`):** PEAK hold + AVG mode
   built, OTA-loaded and TESTED (Ron, WSJT-X); PEAK SWR beside the big SWR (later 2026-11-06) built,
   loaded, works (Ron); details in the SWR meter firmware entry further down.

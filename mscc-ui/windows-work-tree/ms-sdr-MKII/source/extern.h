@@ -298,6 +298,7 @@ extern void print_time(int print_new_line);
 extern int Open_log_file();
 extern void *Command_Processor(void *my_param);
 extern int Tune_button(int on_off, uint8_t allow_MKII_PTT);
+extern void Cat_tune_tick(void);   /* comm-port.c: CAT AC111; tune timeout */
 extern int Gui_send_param(uint8_t op_code, int op_data);
 extern int Gui_send_param_extended(uint8_t op_code, byte *op_data, int size);
 extern int Spectrum_Waterfall_send_param(uint8_t op_code, int op_data);

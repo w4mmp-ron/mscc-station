@@ -11,7 +11,7 @@ namespace MSCC.Wpf.Controls;
 /// <summary>
 /// Compact analog meter for the MAIN top bar.
 /// RX: S-meter (S1–S9 / +10…+60, value space 0–15).
-/// TX / SWR fault: FWD power face (even 0–10 ticks, ×1/×10/×100 full-scale) with SWR in the digital box.
+/// TX / SWR fault: FWD power face (0–10 tick positions labelled in watts, 10…1000 W full scale) with SWR in the digital box.
 /// On fault: stay on power face; digital becomes red RESET (click → ResetRequested).
 /// </summary>
 public partial class AnalogSMeterControl : UserControl
@@ -193,14 +193,15 @@ public partial class AnalogSMeterControl : UserControl
     private DateTime _peakLastRiseUtc = DateTime.MinValue;
     private DispatcherTimer? _ballisticsTimer;
 
-    /// <summary>×1 → 10 W FS, ×10 → 100 W, ×100 → 1000 W. Fixed 0–10 dial.</summary>
-    private int _powerMultiplier = 1;
+    /// <summary>Power full scale in watts: 10 / 20 / 50 / 100 / 200 / 500 / 1000 (Ron 2026-11-11;
+    /// was ×1 / ×10 / ×100). Dial positions stay 0–10, the labels are watts.</summary>
+    private int _powerFullScaleW = 10;
 
     /// <summary>While fault latched, freeze needle at last power (RF drops after force-RX).</summary>
     private bool _powerFrozen;
     private double _frozenDisplayLevel;
     private double _frozenPeakLevel;
-    private int _frozenMultiplier = 1;
+    private int _frozenFullScaleW = 10;
 
     private static readonly SolidColorBrush ReadingGreen = FreezeBrush(0x00, 0xFF, 0xAA);
     private static readonly SolidColorBrush ReadingSwrOk = FreezeBrush(0xFF, 0xB7, 0x4D);
@@ -336,7 +337,7 @@ public partial class AnalogSMeterControl : UserControl
         {
             // Leaving power face only when not faulted (VM keeps PowerMode true while fault latched).
             c._powerFrozen = false;
-            c._powerMultiplier = 1;
+            c._powerFullScaleW = 10;
         }
         c.BuildFace();
         if (power)
@@ -388,15 +389,15 @@ public partial class AnalogSMeterControl : UserControl
         UpdatePowerMultiplier(ForwardWatts);
         double units = PowerMode && _displayLevel > 0.05
             ? _displayLevel
-            : WattsToUnits(ForwardWatts, _powerMultiplier);
+            : WattsToUnits(ForwardWatts, _powerFullScaleW);
         // Prefer the higher of needle vs live watts so a late-arriving zero doesn't wipe the latch.
-        double live = WattsToUnits(ForwardWatts, _powerMultiplier);
+        double live = WattsToUnits(ForwardWatts, _powerFullScaleW);
         units = Math.Max(units, live);
 
         _powerFrozen = true;
         _frozenDisplayLevel = units;
         _frozenPeakLevel = Math.Max(_peakLevel, units);
-        _frozenMultiplier = _powerMultiplier;
+        _frozenFullScaleW = _powerFullScaleW;
         _displayLevel = _frozenDisplayLevel;
         _peakLevel = _frozenPeakLevel;
     }
@@ -409,12 +410,12 @@ public partial class AnalogSMeterControl : UserControl
             return Math.Clamp(Value, 0, MaxSUnit);
         if (_powerFrozen)
             return _frozenDisplayLevel;
-        return WattsToUnits(ForwardWatts, _powerMultiplier);
+        return WattsToUnits(ForwardWatts, _powerFullScaleW);
     }
 
-    private static double WattsToUnits(double watts, int multiplier)
+    private static double WattsToUnits(double watts, int fullScaleW)
     {
-        double fullScale = 10.0 * Math.Max(1, multiplier);
+        double fullScale = Math.Max(1, fullScaleW);
         if (fullScale <= 0) return 0;
         return Math.Clamp(watts / fullScale * MaxPowerUnit, 0, MaxPowerUnit);
     }
@@ -455,13 +456,14 @@ public partial class AnalogSMeterControl : UserControl
         {
             _displayLevel = _frozenDisplayLevel;
             _peakLevel = _frozenPeakLevel;
-            _powerMultiplier = _frozenMultiplier;
+            _powerFullScaleW = _frozenFullScaleW;
             UpdateCenterLegend();
+            UpdatePowerLabels();
             return;
         }
 
         UpdatePowerMultiplier(ForwardWatts);
-        double r = WattsToUnits(ForwardWatts, _powerMultiplier);
+        double r = WattsToUnits(ForwardWatts, _powerFullScaleW);
         ApplyLevelSample(r, force);
     }
 
@@ -493,32 +495,24 @@ public partial class AnalogSMeterControl : UserControl
     }
 
     /// <summary>
-    /// Auto-range with hysteresis: ×1 (10 W), ×10 (100 W), ×100 (1000 W).
-    /// Only center legend changes — dial ticks stay 0…10.
+    /// Auto-range with hysteresis over PowerRangesW (10…1000 W full scale).
+    /// Tick positions stay 0…10; UpdatePowerLabels relabels them in watts.
     /// </summary>
     private void UpdatePowerMultiplier(double watts)
     {
-        int prev = _powerMultiplier;
-        if (_powerMultiplier <= 1)
-        {
-            if (watts >= 9.5)
-                _powerMultiplier = 10;
-        }
-        else if (_powerMultiplier == 10)
-        {
-            if (watts >= 95)
-                _powerMultiplier = 100;
-            else if (watts < 3.0)
-                _powerMultiplier = 1;
-        }
-        else // 100
-        {
-            if (watts < 30)
-                _powerMultiplier = 10;
-        }
+        int prev = _powerFullScaleW;
+        int i = Array.IndexOf(PowerRangesW, _powerFullScaleW);
+        if (i < 0) i = 0;
+        // Up at 95 % of full scale; down below 30 % of the next lower full scale (as before).
+        while (i < PowerRangesW.Length - 1 && watts >= PowerRangesW[i] * 0.95) i++;
+        while (i > 0 && watts < PowerRangesW[i - 1] * 0.3) i--;
+        _powerFullScaleW = PowerRangesW[i];
 
-        if (_powerMultiplier != prev)
+        if (_powerFullScaleW != prev)
+        {
             UpdateCenterLegend();
+            UpdatePowerLabels();
+        }
     }
 
     private void BallisticsTick()
@@ -569,9 +563,9 @@ public partial class AnalogSMeterControl : UserControl
         // Keep auto-range alive between samples (UDP rate)
         if (PowerMode && !_powerFrozen)
         {
-            int before = _powerMultiplier;
+            int before = _powerFullScaleW;
             UpdatePowerMultiplier(ForwardWatts);
-            if (_powerMultiplier != before)
+            if (_powerFullScaleW != before)
                 changed = true;
         }
 
@@ -641,10 +635,10 @@ public partial class AnalogSMeterControl : UserControl
         else
             BuildSmeterTicksAndZones(labelInset);
 
-        // Center legend: "S" or "×1" / "×10" / "×100"
+        // Center legend: "S" or "W" (power dial labelled in watts)
         _centerLegend = new TextBlock
         {
-            Text = PowerMode ? FormatMultiplier(_powerMultiplier) : "S",
+            Text = PowerMode ? FormatMultiplier(_powerFullScaleW) : "S",
             FontSize = PowerMode ? 9 : 8,
             FontFamily = new FontFamily("Consolas"),
             Foreground = PowerMode ? new SolidColorBrush(Color.FromRgb(0x00, 0xCC, 0x99)) : Brushes.DimGray,
@@ -720,6 +714,7 @@ public partial class AnalogSMeterControl : UserControl
 
     private void BuildPowerTicksAndZones(double labelInset)
     {
+        _powerLabels.Clear();
         // Even 0–10 scale: green low, yellow mid, red high
         DrawArcZone(0, 6, Color.FromRgb(0, 150, 85), 4.0);
         DrawArcZone(6, 8, Color.FromRgb(190, 150, 20), 4.0);
@@ -730,12 +725,13 @@ public partial class AnalogSMeterControl : UserControl
         for (int u = 0; u <= 10; u++)
         {
             bool major = u % 2 == 0;
-            string label = major ? u.ToString() : "";
-            DrawTickLabel(u, label, major, highlight: u == 10, labelInset, smallLabel: false);
+            string label = major ? PowerLabelText(u) : "";
+            var tb = DrawTickLabel(u, label, major, highlight: u == 10, labelInset, smallLabel: label.Length >= 4);
+            if (tb != null) _powerLabels.Add((tb, u));
         }
     }
 
-    private void DrawTickLabel(int unit, string label, bool major, bool highlight, double labelInset, bool smallLabel)
+    private TextBlock? DrawTickLabel(int unit, string label, bool major, bool highlight, double labelInset, bool smallLabel)
     {
         double ang = UnitToAngle(unit);
         double rad = DegToRad(ang);
@@ -754,7 +750,7 @@ public partial class AnalogSMeterControl : UserControl
         });
 
         if (string.IsNullOrEmpty(label))
-            return;
+            return null;
 
         double lr = _radius - labelInset;
         double lx = _cx + lr * Math.Sin(rad);
@@ -770,7 +766,9 @@ public partial class AnalogSMeterControl : UserControl
         tb.Measure(new Size(double.PositiveInfinity, double.PositiveInfinity));
         Canvas.SetLeft(tb, lx - tb.DesiredSize.Width / 2);
         Canvas.SetTop(tb, ly - tb.DesiredSize.Height / 2);
+        tb.Tag = new Point(lx, ly);
         FaceCanvas.Children.Add(tb);
+        return tb;
     }
 
     private void UpdateCenterLegend()
@@ -781,19 +779,38 @@ public partial class AnalogSMeterControl : UserControl
             _centerLegend.Text = "S";
             return;
         }
-        string t = FormatMultiplier(_powerMultiplier);
+        string t = FormatMultiplier(_powerFullScaleW);
         if (_centerLegend.Text == t) return;
         _centerLegend.Text = t;
         _centerLegend.Measure(new Size(double.PositiveInfinity, double.PositiveInfinity));
         Canvas.SetLeft(_centerLegend, _cx - _centerLegend.DesiredSize.Width / 2);
     }
 
-    private static string FormatMultiplier(int m) => m switch
+    /// <summary>Center legend in power mode: the dial is in watts now.</summary>
+    private static string FormatMultiplier(int fullScaleW) => "W";
+
+    private static readonly int[] PowerRangesW = { 10, 20, 50, 100, 200, 500, 1000 };
+    private readonly List<(TextBlock tb, int unit)> _powerLabels = new();
+
+    private string PowerLabelText(int unit) => (unit * _powerFullScaleW / 10).ToString();
+
+    /// <summary>Range changed: relabel the major ticks in watts (positions stay).</summary>
+    private void UpdatePowerLabels()
     {
-        100 => "×100",
-        10 => "×10",
-        _ => "×1"
-    };
+        if (!PowerMode) return;
+        foreach (var (tb, unit) in _powerLabels)
+        {
+            string t = PowerLabelText(unit);
+            if (tb.Text == t) continue;
+            bool small = t.Length >= 4;
+            tb.Text = t;
+            tb.FontSize = small ? 7 : 8;
+            if (tb.Tag is not Point p) continue;
+            tb.Measure(new Size(double.PositiveInfinity, double.PositiveInfinity));
+            Canvas.SetLeft(tb, p.X - tb.DesiredSize.Width / 2);
+            Canvas.SetTop(tb, p.Y - tb.DesiredSize.Height / 2);
+        }
+    }
 
     private void UpdateHoldPeakTooltips()
     {
@@ -940,9 +957,9 @@ public partial class AnalogSMeterControl : UserControl
             ReadingBorder.Background = ReadingNormalBg;
             ReadingBorder.BorderBrush = ReadingNormalBorder;
             ReadingBorder.Cursor = Cursors.Arrow;
-            double fs = 10.0 * _powerMultiplier;
+            double fs = _powerFullScaleW;
             ReadingBorder.ToolTip =
-                $"SWR {swr:0.00}  ·  FWD {ForwardWatts:0.0} W  ·  FS {fs:0} W ({FormatMultiplier(_powerMultiplier)})";
+                $"SWR {swr:0.00}  ·  FWD {ForwardWatts:0.0} W  ·  FS {fs:0} W";
         }
     }
 

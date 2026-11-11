@@ -9,9 +9,9 @@ The installer is **not in git**. Download it from the **Releases** page:
 releases stay there for roll-back).
 
 Run the newest **`mscc-net9-R*-install.exe`** (built with Actual Installer) — currently
-**`mscc-net9-R11-10-14-install.exe`** (title bar 11.10.14). Typical deploy folder: **`C:\mscc-net9`**.
+**`mscc-net9-R11-11-2-install.exe`** (title bar 11.11.2). Typical deploy folder: **`C:\mscc-net9`**.
 
-That installer is the **WPF** client plus the Windows servers (ms-sdr 3.206, recv 3.153,
+That installer is the **WPF** client plus the Windows servers (ms-sdr 3.208, recv 3.153,
 trans 3.158), the PSoC radio firmware and the Black Pill firmware + flash tools.
 
 Factory calibration tables are installed next to the servers (`C:\mscc-net9\factory\`). The

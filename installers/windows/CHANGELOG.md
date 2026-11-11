@@ -2,6 +2,13 @@
 
 Installer: `mscc-net9-R<version>-install.exe` (WPF client + Windows servers). Install the newest one; older installers in this folder are kept for roll-back only.
 
+## R11.11.2 — 2026-11-11  (`mscc-net9-R11-11-2-install.exe`, title bar 11.11.2)
+
+### Changed
+- Power meter: the dial is now labelled in watts and picks a full scale of 10, 20, 50, 100, 200, 500 or 1000 W (was ×1 / ×10 / ×100). About 110 W now reads on the 200 W scale, just past the middle, instead of near the bottom of the 1000 W scale.
+- RX IQ START: the client now says "receive" before it sends the band. After a TX I/Q calibration, RX IQ START could retune to the TX calibration frequency and put the transmit server in TUNE.
+- ms-sdr 3.208: WSJT-X right-click Tune (CAT `AC111;`) now gives a 10-11 s tune carrier, the same as the client's TUN button (SWR meter tune flag first, then RF; back to the old mode after). The client shows "Server owns TX" while it runs.
+
 ## R10.13.2 — 2026-10-13  (`mscc-net9-R10-13-2-install.exe`, title bar 10.13.2)
 
 ### Changed

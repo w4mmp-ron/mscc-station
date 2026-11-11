@@ -494,6 +494,9 @@ void* Flusher_thread(void* t) {
         if (G_Radio_Cal_Save_Pending > 0)
             Radio_cal_save_tick();
 
+        /* CAT tune (AC111;): ends after 10 s or when something else ended it. */
+        Cat_tune_tick();
+
         if (G_Allow_Log_Write == TRUE) {
             fflush(G_fp_logfile);
             if (previous_startup_freq != G_tune_freq && G_TX == FALSE) {

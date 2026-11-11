@@ -4400,16 +4400,18 @@ public partial class MainViewModel : ObservableObject, IDisposable
             _suppressRxIqOffset = false;
         }
 
-        // Original order after band resolve: 0x58 band, then 0x55 RX_IQBD (enter path)
-        _ = _radioService.SetIqBandAsync(meters.Value);
+        // 0x55 RX_IQBD FIRST, then 0x58 band (Ron 2026-11-11). ms-sdr iq.c routes 0x58 by the last
+        // 0x55: band first after a TX I/Q session took the TX path (retune to the TX cal freq,
+        // trans in TUNE). Same order as TX I/Q START.
         _ = _radioService.SetIqCalibrationRxTxAsync(txIq: false); // RX_IQBD
+        _ = _radioService.SetIqBandAsync(meters.Value);
         _ = _radioService.SetFrequencyAsync(_rxIqBaseFreqHz);
         RadioState.ActiveVfo.FrequencyHz = _rxIqBaseFreqHz;
 
         RxIqSessionActive = true;
         RxIqStatus = $"ACTIVE — {RxIqBandLabel} {RxIqFreqDisplay}. Adjust I/Q OFFSET (spectrum), then SAVE.";
         MonitorTextBoxText(
-            $" RX IQ START: band={meters.Value}m base={_rxIqBaseFreqHz} → 0x58 + 0x55 RX + SET_MAIN_FREQ");
+            $" RX IQ START: band={meters.Value}m base={_rxIqBaseFreqHz} → 0x55 RX + 0x58 + SET_MAIN_FREQ");
     }
 
     [RelayCommand]

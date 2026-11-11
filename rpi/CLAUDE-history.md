@@ -1135,7 +1135,7 @@ changes, amplifier.ini removed); sdrcore-recv same as 1.0.49. In installers/rpi 
      how did Solidus do it (loop, safety limits, time per band)? Can code be reused?
   4. UP 24 kHz: Stew keeps it as is. Does Ron want option 1 (display-only slide, client) or
      option 2 (recv NCO to -12 kHz by a new command, all platforms), or leave it?
-  Also in that note, no answer needed: automatic RX I/Q later (mostly recv); receive I/Q per-band
+  Also in that note, no answer needed: receive I/Q per-band
   defaults PARKED by Stew; RX IQ tab points (a)-(c) go ahead as cmd-076 (WPF only, not built yet).
   The phase correction is no longer only Ron's private note: Stew raised it on his own.
 - 2026-10-13: Ron installed mscc 1.0.64 from the package on the Pi: "mscc running properly".

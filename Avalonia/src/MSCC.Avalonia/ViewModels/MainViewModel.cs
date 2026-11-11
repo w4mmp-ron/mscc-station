@@ -5192,8 +5192,10 @@ public partial class MainViewModel : ViewModelBase, IDisposable
 
         try
         {
-            await _radio.SetIqBandAsync(meters.Value).ConfigureAwait(true);
+            // 0x55 RX_IQBD FIRST, then 0x58 band (Ron 2026-11-11): ms-sdr routes 0x58 by the last
+            // 0x55, so band first after a TX I/Q session took the TX path. Same order as TX I/Q.
             await _radio.SetIqCalibrationRxTxAsync(txIq: false).ConfigureAwait(true);
+            await _radio.SetIqBandAsync(meters.Value).ConfigureAwait(true);
             await _radio.SetFrequencyAsync(_rxIqBaseFreqHz).ConfigureAwait(true);
             _frequencyHz = _rxIqBaseFreqHz;
             UpdateFrequencyUi(_rxIqBaseFreqHz);
