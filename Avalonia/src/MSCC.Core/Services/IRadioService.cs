@@ -225,6 +225,12 @@ public interface IRadioService : IDisposable
     /// <summary>Optional Farnsworth text WPM for memory play (0x76). 0=off; 5–60.</summary>
     Task SetKeyerMemTextWpmAsync(int textWpm, CancellationToken cancellationToken = default);
 
+    /// <summary>Farnsworth on the paddles on/off (SET_PADDLE_FARNSWORTH 0x9D).</summary>
+    Task SetPaddleFarnsworthAsync(bool on, CancellationToken cancellationToken = default);
+
+    /// <summary>ms-sdr reports SET_PADDLE_FARNSWORTH (0x9D) from cw.ini at connect.</summary>
+    event Action<bool> PaddleFarnsworthReported;
+
     /// <summary>
     /// Sets the tuning step index (0=100kHz ... 5=1Hz) from Step button on main tab.
     /// </summary>
@@ -402,6 +408,11 @@ public interface IRadioService : IDisposable
     event Action<int> CwMemTextWpmReported;
 
     event Action<double> ProficioTempReported; // °C
+    /// <summary>Heat sink temperature (0x06), °C; -99 = open, 999 = shorted. STM32 radio only.</summary>
+    event Action<int> HeatSinkTempReported;
+    /// <summary>Server message text from ms-sdr (extended 0x0B sub 0x30, Gui_Add_Message), e.g.
+    /// "SWR METER FAULT\nSWR=3.10  FWD=50.0W  REF=13.0W" or a thread failure.</summary>
+    event Action<string> ServerErrorReported;
     event Action<double> AmpTempReported;
     event Action<int> AmpCurrentReported; // mA
     /// <summary>Proficio/radio firmware (CMD_GET_SET_FIRMWARE_VERSION 0xB2) → UI FW:</summary>
@@ -419,6 +430,13 @@ public interface IRadioService : IDisposable
     /// <summary>11.1.5: WiFi SWR meter IP last relayed by ms-sdr (extended 0x0F), or null.
     /// Used for the HTTP fault reset when the client has no meter IP of its own (Pi host).</summary>
     string? RadioSwrMeterIp { get; }
+
+    /// <summary>True once ms-sdr has relayed the WiFi meter state (extended 0x0F) this session:
+    /// the meter talks to ms-sdr, so RESET should go through ms-sdr (0x2E).</summary>
+    bool RadioSwrMeterViaServer { get; }
+
+    /// <summary>SWR meter RESET through ms-sdr (CMD_SWR_METER_RESET 0x2E). False if not sent.</summary>
+    Task<bool> SendSwrMeterResetAsync(CancellationToken cancellationToken = default);
 
     // ----- TX I/Q balance calibration (original IQ_Controls; manual only) -----
     /// <summary>Select IQ cal band path (CMD_SET_IQ_BAND 0x58). Band meters: 2200, 630, 160…10.</summary>
@@ -444,6 +462,12 @@ public interface IRadioService : IDisposable
     /// Prefaces with IQ_CALIBRATION_RX_TX (0x55): RX_IQBD if <paramref name="rxIq"/>, else TX_IQBD (original).
     /// </summary>
     Task ResetAllIqBandsAsync(bool rxIq = false, CancellationToken cancellationToken = default);
+
+    /// <summary>Hard calibration reset (CMD_SET_CAL_RESET_ALL 0x2F, ms-sdr 3.197+): kind
+    /// <see cref="Opcodes.CAL_RESET_RX_IQ"/> (0 / 0 all bands), <see cref="Opcodes.CAL_RESET_POWER"/>
+    /// (factory QRP table) or <see cref="Opcodes.CAL_RESET_AMP"/> (-99 all bands). ms-sdr sets
+    /// the host files and the radio, so the reset sticks.</summary>
+    Task SendCalResetAllAsync(byte kind, CancellationToken cancellationToken = default);
 
     /// <summary>
     /// Re-request radio firmware (0xB2) and ms-sdr core (0xB3), plus GUI-ready (0xFE)

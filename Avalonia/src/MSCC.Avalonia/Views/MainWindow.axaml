@@ -460,7 +460,7 @@
                   </StackPanel>
 
                   <StackPanel Orientation="Horizontal" Spacing="4" IsEnabled="{Binding PicKeyerControlsEnabled}"
-                              ToolTip.Tip="Farnsworth for CQ memory play only. SPEED = letter speed; this opens gaps between letters/words (Off or 5–60). No effect on paddle.">
+                              ToolTip.Tip="Farnsworth spacing. SPEED = letter speed; this opens gaps between letters/words (Off or 5–60). Used for CQ memory play, and for the paddles when PADDLE is ticked.">
                     <TextBlock Text="FARNSWORTH" Foreground="White" VerticalAlignment="Center" FontSize="10" Width="72"/>
                     <Border Background="#FF444444" BorderBrush="#FF888888" BorderThickness="1" Padding="4,1" MinWidth="36">
                       <TextBlock Text="{Binding CwMemTextWpmLabel}" FontSize="12" FontWeight="Bold"
@@ -471,6 +471,9 @@
                     <Button Content="+" Classes="mscc-gold" Width="24" Height="22"
                             Command="{Binding IncCwMemTextWpmCommand}"/>
                     <TextBlock Text="WPM" Foreground="#AAA" FontSize="9" VerticalAlignment="Center"/>
+                    <CheckBox Content="PADDLE" IsChecked="{Binding CwPaddleFarnsworth}" Foreground="White" FontSize="10"
+                              VerticalAlignment="Center" Margin="6,0,0,0"
+                              ToolTip.Tip="Farnsworth on the paddles: the keyer sends your letters at SPEED with gaps set by FARNSWORTH (0x9D, kept by ms-sdr in cw.ini)."/>
                   </StackPanel>
 
                   <StackPanel Orientation="Horizontal" Spacing="4">
@@ -901,6 +904,9 @@
                           Command="{Binding TogglePowerCalCalibrateCommand}"
                           Classes.mscc-selected="{Binding PowerCalCalibrating}"
                           ToolTip.Tip="Start/stop power calibration. Click again, then Yes saves the band in the radio, No restores the previous value."/>
+                  <Button Content="RESET ALL" Classes="mscc-gold" Width="100" Height="28"
+                          Command="{Binding HardResetPowerCalCommand}"
+                          ToolTip.Tip="Reset QRP power calibration on every band to factory values, in the files AND the radio."/>
                 </StackPanel>
 
                 <StackPanel Orientation="Horizontal" Spacing="6" IsVisible="{Binding PowerCalAcceptPrompt}">
@@ -1009,6 +1015,9 @@
                           Command="{Binding ToggleAmpCalCalibrateCommand}"
                           Classes.mscc-selected="{Binding AmpCalCalibrating}"
                           ToolTip.Tip="Start/stop amplifier power calibration. Adjust POWER, then click again to accept. QRP CAL must be done for this band first."/>
+                  <Button Content="RESET ALL" Classes="mscc-gold" Width="100" Height="28"
+                          Command="{Binding HardResetAmpCalCommand}"
+                          ToolTip.Tip="Clear the amplifier calibration on every band (not calibrated). Stored on the host only."/>
                 </StackPanel>
 
                 <StackPanel Orientation="Horizontal" Spacing="6" IsVisible="{Binding AmpCalAcceptPrompt}">
@@ -1063,6 +1072,9 @@
                             Command="{Binding ResetAllRxIqCommand}"
                             IsEnabled="{Binding RxIqSessionActive}"
                             ToolTip.Tip="Copy the current I/Q value to all bands (PC files only; use SAVE per band to store it in the radio)."/>
+                    <Button Content="RESET ALL" Classes="mscc-gold" Width="80" Height="26"
+                            Command="{Binding HardResetRxIqCommand}"
+                            ToolTip.Tip="Reset RX I/Q on every band to factory (no correction), in the files AND the radio."/>
                   </StackPanel>
 
                   <Grid ColumnDefinitions="88,*,Auto,Auto">
@@ -1518,6 +1530,9 @@
                 <TextBlock Text="TEMPS / STATUS" FontWeight="Bold" Foreground="#00FFAA" Margin="0,12,0,0"/>
                 <TextBlock Text="{Binding ProficioTempText, StringFormat=Proficio: {0}}" FontSize="12" Foreground="#CCCCCC"/>
                 <TextBlock Text="{Binding PaTempText, StringFormat=PA temp: {0}}" FontSize="12" Foreground="#CCCCCC"/>
+                <TextBlock Text="{Binding HeatSinkText}" FontSize="12" IsVisible="{Binding HeatSinkSeen}"
+                           Foreground="#CCCCCC" Classes.mscc-fault="{Binding HeatSinkFault}"
+                           ToolTip.Tip="Heat sink temperature from the radio's thermistor (STM32 radio). OPEN / SHORTED = thermistor fault."/>
                 <TextBlock Text="{Binding PaCurrentText, StringFormat=PA current: {0}}" FontSize="12" Foreground="#CCCCCC"/>
                 <TextBlock Text="{Binding PacketStatsText}" FontSize="11" Foreground="#888888" TextWrapping="Wrap"/>
 
@@ -1629,7 +1644,6 @@
                     Foreground="#CCC" FontSize="10" Margin="2,2,2,4"
                     ToolTip.Tip="Checked: TX=RX on VFO-A. Unchecked: TX on VFO-B (A−100 kHz) via split."/>
 
-          <TextBlock Classes="mscc-section" Text="RX / TX"/>
           <!-- Equal-width cells so MON is not clipped on narrow right rail -->
           <UniformGrid Columns="4" Margin="0,0,0,1">
             <Button Content="NB" Classes="mscc-gold" Command="{Binding ToggleNbCommand}"
@@ -1651,23 +1665,40 @@
           </UniformGrid>
           <Grid ColumnDefinitions="32,*,26" Height="20" Margin="0,0,0,1">
             <TextBlock Classes="mscc-label" Text="Pls"/>
-            <Slider Grid.Column="1" Classes="mscc-slider" Minimum="10" Maximum="510" Value="{Binding NbPulse}"
+            <Slider Grid.Column="1" Classes="mscc-slider" Minimum="50" Maximum="510" Value="{Binding NbPulse}"
                     IsEnabled="{Binding IsConnected}"
                     ToolTip.Tip="Noise blanker pulse width (µs)"/>
             <TextBlock Grid.Column="2" Classes="mscc-readout" Text="{Binding NbPulse}"/>
           </Grid>
-          <Grid ColumnDefinitions="32,*,26" Height="20" Margin="0,0,0,1">
-            <TextBlock Classes="mscc-label" Text="Thr"/>
-            <Slider Grid.Column="1" Classes="mscc-slider" Minimum="1" Maximum="100" Value="{Binding NbThreshold}"
-                    IsEnabled="{Binding IsConnected}"
-                    ToolTip.Tip="Noise blanker threshold"/>
-            <TextBlock Grid.Column="2" Classes="mscc-readout" Text="{Binding NbThreshold}"/>
+          <Grid ColumnDefinitions="32,*,*,*" Height="20" Margin="0,0,0,1">
+            <TextBlock Classes="mscc-label" Text="Thr" ToolTip.Tip="Noise blanker threshold: Low 8x / Med 6x / High 5x the band level"/>
+            <Button Grid.Column="1" Content="LOW" Classes="mscc-gold" Command="{Binding NbLowCommand}"
+                    Margin="1" MinHeight="18" HorizontalAlignment="Stretch" FontSize="8" Padding="1,0"
+                    Classes.mscc-selected="{Binding NbLowSelected}" IsEnabled="{Binding IsConnected}"
+                    ToolTip.Tip="Low: blanks only big pulses (8x the band level)"/>
+            <Button Grid.Column="2" Content="MED" Classes="mscc-gold" Command="{Binding NbMedCommand}"
+                    Margin="1" MinHeight="18" HorizontalAlignment="Stretch" FontSize="8" Padding="1,0"
+                    Classes.mscc-selected="{Binding NbMedSelected}" IsEnabled="{Binding IsConnected}"
+                    ToolTip.Tip="Medium: 6x the band level (a good start)"/>
+            <Button Grid.Column="3" Content="HIGH" Classes="mscc-gold" Command="{Binding NbHighCommand}"
+                    Margin="1" MinHeight="18" HorizontalAlignment="Stretch" FontSize="8" Padding="1,0"
+                    Classes.mscc-selected="{Binding NbHighSelected}" IsEnabled="{Binding IsConnected}"
+                    ToolTip.Tip="High: blanks smaller pulses too (5x the band level)"/>
           </Grid>
-          <Grid ColumnDefinitions="32,*,26" Height="20" Margin="0,0,0,1">
-            <TextBlock Classes="mscc-label" Text="NR"/>
-            <Slider Grid.Column="1" Classes="mscc-slider" Minimum="0" Maximum="100" Value="{Binding NrLevel}"
-                    IsEnabled="{Binding IsConnected}"/>
-            <TextBlock Grid.Column="2" Classes="mscc-readout" Text="{Binding NrLevel}"/>
+          <Grid ColumnDefinitions="32,*,*,*" Height="20" Margin="0,0,0,1">
+            <TextBlock Classes="mscc-label" Text="NR" ToolTip.Tip="Noise reduction level (NR button = on/off)"/>
+            <Button Grid.Column="1" Content="LOW" Classes="mscc-gold" Command="{Binding NrLowCommand}"
+                    Margin="1" MinHeight="18" HorizontalAlignment="Stretch" FontSize="8" Padding="1,0"
+                    Classes.mscc-selected="{Binding NrLowSelected}" IsEnabled="{Binding IsConnected}"
+                    ToolTip.Tip="Low noise reduction (15)"/>
+            <Button Grid.Column="2" Content="MED" Classes="mscc-gold" Command="{Binding NrMedCommand}"
+                    Margin="1" MinHeight="18" HorizontalAlignment="Stretch" FontSize="8" Padding="1,0"
+                    Classes.mscc-selected="{Binding NrMedSelected}" IsEnabled="{Binding IsConnected}"
+                    ToolTip.Tip="Medium noise reduction (50)"/>
+            <Button Grid.Column="3" Content="HIGH" Classes="mscc-gold" Command="{Binding NrHighCommand}"
+                    Margin="1" MinHeight="18" HorizontalAlignment="Stretch" FontSize="8" Padding="1,0"
+                    Classes.mscc-selected="{Binding NrHighSelected}" IsEnabled="{Binding IsConnected}"
+                    ToolTip.Tip="High noise reduction (85, more warble)"/>
           </Grid>
 
           <TextBlock Classes="mscc-section" Text="CW"/>

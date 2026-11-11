@@ -138,6 +138,8 @@ public class UdpRadioService : IRadioService, IDisposable
     public event Action<int>? CwMemTextWpmReported;
 
     public event Action<double>? ProficioTempReported;
+    public event Action<int>? HeatSinkTempReported;
+    public event Action<string>? ServerErrorReported;
     public event Action<double>? AmpTempReported;
     public event Action<int>? AmpCurrentReported;
     public event Action<string>? FirmwareVersionReported;
@@ -156,6 +158,8 @@ public class UdpRadioService : IRadioService, IDisposable
     private bool _radioSwrFault;
     private string? _radioSwrMeterIp;
     public string? RadioSwrMeterIp => _radioSwrMeterIp;
+    private volatile bool _radioSwrMeterViaServer;   // a 0x0F came from ms-sdr this session
+    public bool RadioSwrMeterViaServer => _radioSwrMeterViaServer;
 
     // Frequency Calibration reports (progress 0-100, status 1=success/0=fail, delta Hz from check)
     public event Action<int>? CalProgressReported;
@@ -294,6 +298,7 @@ public class UdpRadioService : IRadioService, IDisposable
     {
         if (_started) return;
 
+        _radioSwrMeterViaServer = false;   // learned again from this session's 0x0F
         EnsureTransportForStart();
 
         // Optionally spawn co-located backends (same as original Start_subsystem).
@@ -653,6 +658,20 @@ public class UdpRadioService : IRadioService, IDisposable
         await _transport.SendAsync(Opcodes.CMD_SET_IQ_ALL_BANDS, (short)1, cancellationToken);
     }
 
+    public async Task SendCalResetAllAsync(byte kind, CancellationToken cancellationToken = default)
+    {
+        if (!_started) return;
+        string what = kind switch
+        {
+            Opcodes.CAL_RESET_RX_IQ => "RX IQ",
+            Opcodes.CAL_RESET_POWER => "QRP power",
+            Opcodes.CAL_RESET_AMP => "amplifier",
+            _ => $"kind {kind}"
+        };
+        DebugMonitor.MonitorTextBoxText($" Send CMD_SET_CAL_RESET_ALL (0x2F): {kind} ({what})");
+        await _transport.SendAsync(Opcodes.CMD_SET_CAL_RESET_ALL, (short)kind, cancellationToken);
+    }
+
     public async Task SetFrequencyAsync(long frequencyHz, CancellationToken cancellationToken = default)
     {
         if (!_started) return;
@@ -980,6 +999,15 @@ public class UdpRadioService : IRadioService, IDisposable
         await _transport.SendAsync(Opcodes.SET_MEM_TEXT_WPM, (short)w, cancellationToken);
     }
 
+    public event Action<bool>? PaddleFarnsworthReported;
+
+    public async Task SetPaddleFarnsworthAsync(bool on, CancellationToken cancellationToken = default)
+    {
+        if (!_started) return;
+        DebugMonitor.MonitorTextBoxText($" Send SET_PADDLE_FARNSWORTH 0x9D: {(on ? 1 : 0)}");
+        await _transport.SendAsync(Opcodes.SET_PADDLE_FARNSWORTH, (short)(on ? 1 : 0), cancellationToken);
+    }
+
     // Frequency Calibration (manual)
     public async Task SetForceCalibrationAsync(bool on, CancellationToken cancellationToken = default)
     {
@@ -1180,6 +1208,14 @@ public class UdpRadioService : IRadioService, IDisposable
     public event Action<int>? NbThresholdReported;
     public event Action<int>? NrValueReported;
     public event Action<bool>? AutoNotchReported;
+
+    public async Task<bool> SendSwrMeterResetAsync(CancellationToken cancellationToken = default)
+    {
+        if (!_started) return false;
+        DebugMonitor.MonitorTextBoxText(" Send CMD_SWR_METER_RESET (0x2E): ms-sdr resets the WiFi meter");
+        await _transport.SendAsync(Opcodes.CMD_SWR_METER_RESET, (short)0, cancellationToken);
+        return true;
+    }
 
     public async Task SetNbOnAsync(bool on, CancellationToken cancellationToken = default)
     {
@@ -1668,6 +1704,7 @@ public class UdpRadioService : IRadioService, IDisposable
              e.Opcode != Opcodes.CMD_GET_SET_SMETER &&
              e.Opcode != Opcodes.CMD_SET_KEEP_ALIVE &&
              e.Opcode != Opcodes.CMD_GET_TRANSCEIVER_TEMP &&
+             e.Opcode != Opcodes.CMD_GET_POTENTIA_TEMPERATURE &&
              e.Opcode != Opcodes.CMD_SET_ALC &&
              !quietExtendedSwr))
         {
@@ -1686,7 +1723,6 @@ public class UdpRadioService : IRadioService, IDisposable
                 break;
 
             case Opcodes.CMD_SET_MAIN_FREQ:
-            case Opcodes.CMD_GET_SET_LAST_USED_FREQ:
             case Opcodes.CMD_GET_FREQ_INIT:
             case Opcodes.CMD_SET_SPECTRUM_WATERFALL_FREQ: // from panadapter contexts
             case Opcodes.CMD_SET_DISPLAY_FREQ: // ms-sdr now sends this for startup frequency: Gui_send_param(CMD_SET_DISPLAY_FREQ, G_tune_freq)
@@ -1700,7 +1736,6 @@ public class UdpRadioService : IRadioService, IDisposable
 
             case Opcodes.CMD_SET_MAIN_MODE:
             case Opcodes.CMD_MODE_SET_BY_SERVER:
-            case Opcodes.CMD_GET_SET_LAST_USED_MODE:
             case Opcodes.CMD_GET_MODE_INIT:
             case Opcodes.CMD_SET_SPECTRUM_WATERFALL_MODE:
                 if (e.Payload.Length >= 1)
@@ -2098,6 +2133,12 @@ public class UdpRadioService : IRadioService, IDisposable
                 }
                 break;
 
+            case Opcodes.CMD_GET_POTENTIA_TEMPERATURE:
+                // Heat sink (STM32 radio): int32 °C, -99 open, 999 shorted; every 3 s
+                if (e.Payload.Length >= 4)
+                    HeatSinkTempReported?.Invoke(BitConverter.ToInt32(e.Payload, 0));
+                break;
+
             // CMD_RPI_SET_TEMPERATURE (0x12) ignored per user instruction - not valid for this work.
 
             // Versions — 4-byte int; major = low byte, minor = next (original guiCode style)
@@ -2203,6 +2244,12 @@ public class UdpRadioService : IRadioService, IDisposable
                 }
                 break;
 
+            case Opcodes.SET_PADDLE_FARNSWORTH:
+                // ms-sdr at connect (cw.ini CW_Paddle_Farnsworth=): 0 or 1
+                if (e.Payload.Length >= 1)
+                    PaddleFarnsworthReported?.Invoke(e.Payload[0] != 0);
+                break;
+
             case Opcodes.CMD_SET_CW_TX_HOLD:
                 if (e.Payload.Length >= 1)
                 {
@@ -2257,6 +2304,16 @@ public class UdpRadioService : IRadioService, IDisposable
                     byte sub = e.Payload[0];
                     if (TryHandleExtendedSwrMeter(sub, e.Payload))
                         break;
+                    if (sub == Opcodes.EXT_CMD_SET_SERVER_ERROR)
+                    {
+                        // ms-sdr Gui_Add_Message: [0x0B][0x30][text], e.g. "SWR METER FAULT\nSWR=..."
+                        string text = System.Text.Encoding.ASCII.GetString(e.Payload, 1, e.Payload.Length - 1)
+                            .TrimEnd('\0').Trim();
+                        DebugMonitor.MonitorTextBoxText($" Server message (0x0B/0x30): {text.Replace("\n", " | ")}");
+                        if (text.Length > 0)
+                            ServerErrorReported?.Invoke(text);
+                        break;
+                    }
                     string subName = GetExtendedSubName(sub);
                     if (VerboseSpectrumLogging)
                     {
@@ -2335,6 +2392,7 @@ public class UdpRadioService : IRadioService, IDisposable
                 {
                     bool fault = payload[1] != 0;
                     bool online = payload[2] != 0;
+                    _radioSwrMeterViaServer = true;   // RESET goes through ms-sdr (0x2E) from now on
                     if (payload.Length >= 7 && (payload[3] | payload[4] | payload[5] | payload[6]) != 0)
                         _radioSwrMeterIp = $"{payload[3]}.{payload[4]}.{payload[5]}.{payload[6]}";
                     if (!online)

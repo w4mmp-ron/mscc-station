@@ -484,6 +484,19 @@ public partial class MainViewModel : ViewModelBase, IDisposable
     /// <summary>HTTP reset to the active profile meter IP, else the last UDP source, else the IP ms-sdr relayed.</summary>
     internal async Task ResetSwrFaultAsync()
     {
+        // ms-sdr relays the meter (0x0F): ask ms-sdr to reset it (0x2E), the meter may be out of
+        // the client's reach (remote / other subnet). As WPF 11.10.
+        if (_radio != null && IsConnected && _radio.RadioSwrMeterViaServer)
+        {
+            bool sent = await _radio.SendSwrMeterResetAsync().ConfigureAwait(true);
+            if (sent)
+            {
+                AppendLog("SWR RESET → via ms-sdr (0x2E)");
+                SwrStatusText = "RESET sent to the meter via the server";
+                return;
+            }
+            AppendLog("SWR RESET: 0x2E not sent, trying the meter directly");
+        }
         string ip = ActiveSwrMeterIp();
         if (string.IsNullOrWhiteSpace(ip))
             ip = _swrMeter.LastSourceIp ?? "";
@@ -694,10 +707,142 @@ public partial class MainViewModel : ViewModelBase, IDisposable
     /// <summary>When true, new Core log lines are not added to the UI list (file still logs).</summary>
     [ObservableProperty] private bool _logUiPaused;
     [ObservableProperty] private bool _nbOn;
-    [ObservableProperty] private int _nbPulse = 10;
-    [ObservableProperty] private int _nbThreshold = 20;
+    /// <summary>NB pulse width (µs), 50–510; default 200 (as WPF 11.10).</summary>
+    [ObservableProperty] private int _nbPulse = 200;
+    /// <summary>NB threshold (0x82). recv 3.152: 1 = 8x the band level .. 1000 = 4x. Offered as
+    /// Low 1 (8x) / Med 500 (6x) / High 750 (5x), as WPF 11.10.</summary>
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(NbLowSelected))]
+    [NotifyPropertyChangedFor(nameof(NbMedSelected))]
+    [NotifyPropertyChangedFor(nameof(NbHighSelected))]
+    private int _nbThreshold = NbThresholdMed;
+    public const int NbThresholdLow = 1;
+    public const int NbThresholdMed = 500;
+    public const int NbThresholdHigh = 750;
+    /// <summary>0 = Low, 1 = Med, 2 = High: nearest of the three to NbThreshold.</summary>
+    public int NbLevelIndex => NbThreshold < 250 ? 0 : NbThreshold < 625 ? 1 : 2;
+    public bool NbLowSelected => NbLevelIndex == 0;
+    public bool NbMedSelected => NbLevelIndex == 1;
+    public bool NbHighSelected => NbLevelIndex == 2;
     [ObservableProperty] private bool _nrOn;
-    [ObservableProperty] private int _nrLevel = 40;
+    /// <summary>NR level (0xA3) while NR is on: Low 15 / Med 50 / High 85 (as WPF 11.10).</summary>
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(NrLowSelected))]
+    [NotifyPropertyChangedFor(nameof(NrMedSelected))]
+    [NotifyPropertyChangedFor(nameof(NrHighSelected))]
+    private int _nrLevel = NrLevelMed;
+    public const int NrLevelLow = 15;
+    public const int NrLevelMed = 50;
+    public const int NrLevelHigh = 85;
+    public int NrLevelIndex => NrLevel < 33 ? 0 : NrLevel < 68 ? 1 : 2;
+    public bool NrLowSelected => NrLevelIndex == 0;
+    public bool NrMedSelected => NrLevelIndex == 1;
+    public bool NrHighSelected => NrLevelIndex == 2;
+
+    [RelayCommand] private void NbLow() => NbThreshold = NbThresholdLow;
+    [RelayCommand] private void NbMed() => NbThreshold = NbThresholdMed;
+    [RelayCommand] private void NbHigh() => NbThreshold = NbThresholdHigh;
+    [RelayCommand] private void NrLow() => NrLevel = NrLevelLow;
+    [RelayCommand] private void NrMed() => NrLevel = NrLevelMed;
+    [RelayCommand] private void NrHigh() => NrLevel = NrLevelHigh;
+
+    /// <summary>PADDLE checkbox: Farnsworth on the paddles (0x9D). ms-sdr keeps it in cw.ini and
+    /// reports it at connect; ticking it sends 0x9D (not stored in the client).</summary>
+    [ObservableProperty] private bool _cwPaddleFarnsworth;
+    private bool _suppressPaddleFarnsCommand;
+
+    partial void OnCwPaddleFarnsworthChanged(bool value)
+    {
+        if (_suppressPaddleFarnsCommand || ExternalElectronicKeyer || _radio == null || !IsConnected) return;
+        _ = _radio.SetPaddleFarnsworthAsync(value);
+        AppendLog($"Paddle Farnsworth set: {(value ? "ON" : "OFF")} (0x9D)");
+    }
+
+    /// <summary>Heat sink temperature (0x06, STM32 radio only), °C; -99 open, 999 shorted.</summary>
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(HeatSinkText))]
+    [NotifyPropertyChangedFor(nameof(HeatSinkFault))]
+    private int _heatSinkTempC;
+    /// <summary>True once the radio has sent a heat sink reading (the PSoC never does).</summary>
+    [ObservableProperty] private bool _heatSinkSeen;
+    public bool HeatSinkFault =>
+        HeatSinkTempC == MSCC.Core.Protocol.Opcodes.HEAT_SINK_OPEN ||
+        HeatSinkTempC == MSCC.Core.Protocol.Opcodes.HEAT_SINK_SHORT;
+    public string HeatSinkText =>
+        HeatSinkTempC == MSCC.Core.Protocol.Opcodes.HEAT_SINK_OPEN ? "Heat sink: OPEN (thermistor open or unplugged)"
+        : HeatSinkTempC == MSCC.Core.Protocol.Opcodes.HEAT_SINK_SHORT ? "Heat sink: SHORTED (thermistor shorted)"
+        : $"Heat sink: {HeatSinkTempC} °C";
+
+    /// <summary>Last ms-sdr server message (0x0B/0x30).</summary>
+    [ObservableProperty] private string _lastServerMessage = "";
+
+    private bool _firmwareUpdateWarned;
+
+    /// <summary>0x2D with no store = radio firmware without the calibration store. Once per run.</summary>
+    private void WarnFirmwareUpdate()
+    {
+        if (_firmwareUpdateWarned) return;
+        _firmwareUpdateWarned = true;
+        AppendLog("Radio firmware has no calibration store: firmware update required");
+        _ = MsccDialog.AlertAsync(
+            "RADIO FIRMWARE UPDATE REQUIRED\n\n" +
+            "This version of MSCC stores calibration in the radio.\n" +
+            "The radio's firmware is too old to do that.\n\n" +
+            "Update the radio firmware (package mscc-firmware, or the\n" +
+            "PSoC Firmware / Black Pill Firmware folders of the Windows install).\n\n" +
+            "Minimum firmware:\n" +
+            "  Black Pill 3.14\n" +
+            "  Proficio Legacy 1.236,  MKII PTT 3.243,  MKII ATU 4.244\n" +
+            "  Geminus MKII 2.153,  Geminus Legacy 5.153\n" +
+            "  Ultimus Legacy 6.236,  MKII ATU 7.244,  MKII PTT 8.243\n\n" +
+            "Until then MSCC uses the calibration files on this computer.");
+    }
+
+    /// <summary>RX IQ RESET ALL (hard): 0 / 0 on all bands, files + radio (0x2F).</summary>
+    [RelayCommand]
+    private Task HardResetRxIqAsync() => HardCalResetAsync(MSCC.Core.Protocol.Opcodes.CAL_RESET_RX_IQ,
+        "THIS RESETS ALL RX I/Q VALUES TO FACTORY VALUES (NO CORRECTION) ON EVERY BAND.",
+        "CALIBRATED TO FACTORY VALUES");
+
+    /// <summary>QRP CAL RESET ALL (hard): factory QRP power table, files + radio (0x2F).</summary>
+    [RelayCommand]
+    private Task HardResetPowerCalAsync() => HardCalResetAsync(MSCC.Core.Protocol.Opcodes.CAL_RESET_POWER,
+        "THIS RESETS THE QRP POWER CALIBRATION TO FACTORY VALUES ON EVERY BAND.",
+        "CALIBRATED TO FACTORY VALUES");
+
+    /// <summary>AMP CAL RESET ALL (hard): amplifier cal cleared (-99) on all bands, host only (0x2F).</summary>
+    [RelayCommand]
+    private Task HardResetAmpCalAsync() => HardCalResetAsync(MSCC.Core.Protocol.Opcodes.CAL_RESET_AMP,
+        "THIS CLEARS THE AMPLIFIER CALIBRATION ON EVERY BAND (NOT CALIBRATED).",
+        "AMPLIFIER CALIBRATION CLEARED");
+
+    /// <summary>Hard reset = host files AND radio (ms-sdr 3.197+). Yes/No first, then OK only.</summary>
+    private async Task HardCalResetAsync(byte kind, string question, string done)
+    {
+        if (_radio == null || !IsConnected)
+        {
+            await MsccDialog.AlertAsync("Start MSCC (connect to the servers) first.").ConfigureAwait(true);
+            return;
+        }
+        if (PowerCalTxOn || AmpCalTxOn || TxIqTxOn || PowerCalCalibrating || AmpCalCalibrating)
+        {
+            await MsccDialog.AlertAsync("Turn TX OFF and stop calibrating before reset.").ConfigureAwait(true);
+            return;
+        }
+        if (!await MsccDialog.ConfirmAsync(question + "\nARE YOU SURE YOU WANT TO CONTINUE?").ConfigureAwait(true))
+            return;
+        _ = _radio.SendCalResetAllAsync(kind);
+        AppendLog($"Hard calibration reset sent (0x2F, kind {kind})");
+        if (kind == MSCC.Core.Protocol.Opcodes.CAL_RESET_AMP)
+        {
+            foreach (var item in AmpCalBandStatuses) SetAmpCalBandCalibrated(item.BandNumber, false);
+        }
+        else if (kind == MSCC.Core.Protocol.Opcodes.CAL_RESET_POWER && !_radioCalHasStore)
+        {
+            foreach (var item in PowerCalBandStatuses) SetPowerCalBandCalibrated(item.BandNumber, false);
+        }
+        await MsccDialog.AlertAsync(done).ConfigureAwait(true);
+    }
     [ObservableProperty] private bool _anOn;
     [ObservableProperty] private bool _monitorOn;
     [ObservableProperty] private int _cwSpeed = 20;
@@ -1716,6 +1861,7 @@ public partial class MainViewModel : ViewModelBase, IDisposable
             await PushStickyOperateToRadioAsync().ConfigureAwait(true);
 
             PushAudioToRadio("connect");
+            PushNbToRadio("connect");
             if (RemoteAudio)
                 StartRemoteAf("connect");
         }
@@ -2643,6 +2789,19 @@ public partial class MainViewModel : ViewModelBase, IDisposable
 
     partial void OnRemoteMicVolumeChanged(int value) => ScheduleSaveClientSettings();
     partial void OnRemoteDigitalMicVolumeChanged(int value) => ScheduleSaveClientSettings();
+
+    /// <summary>Send the noise blanker state (0x80 / 0x81 / 0x82) at every connect, so recv
+    /// always matches what the client shows (recv starts with NB on until told). As WPF 11.10.</summary>
+    private void PushNbToRadio(string reason)
+    {
+        if (_radio == null) return;
+        int pulse = Math.Clamp(NbPulse, 50, 510);
+        int thr = Math.Clamp(NbThreshold, 1, 1000);
+        _ = SendNbPulseAsync(pulse);
+        _ = SendNbThresholdAsync(thr);
+        _ = SendNbOnAsync(NbOn);
+        AppendLog($"NB pushed ({reason}): {(NbOn ? "ON" : "OFF")}, pulse {pulse} uS, threshold {thr}");
+    }
 
     private void PushAudioToRadio(string reason)
     {
@@ -4138,6 +4297,7 @@ public partial class MainViewModel : ViewModelBase, IDisposable
     {
         string kindName = kind switch { 1 => "RX IQ", 2 => "TX IQ", 3 => "power", _ => $"kind {kind}" };
         AppendLog($"Radio cal status: {kindName} store={hasStore} mask=0x{mask:X4}");
+        if (!hasStore) WarnFirmwareUpdate();
         if (kind != 3) return;      // RX / TX IQ lamps: not in WPF either
         if (!hasStore)
         {
@@ -5477,6 +5637,8 @@ public partial class MainViewModel : ViewModelBase, IDisposable
             finally { _suppressTxIqPhase = false; }
             TxIqStatus = "Factory reset of all I/Q bands requested.";
             AppendLog("TX IQ RESET ALL (0x8D)");
+            // ms-sdr 3.196: the factory values also go into the radio = calibrated to factory. OK only.
+            await MsccDialog.AlertAsync("CALIBRATED TO FACTORY VALUES").ConfigureAwait(true);
         }
         catch (Exception ex)
         {
@@ -6360,14 +6522,14 @@ public partial class MainViewModel : ViewModelBase, IDisposable
     {
         ScheduleSaveClientSettings();
         if (_suppressNbCommand || !CanOperate()) return;
-        _ = SendNbPulseAsync(Math.Clamp(value, 10, 510));
+        _ = SendNbPulseAsync(Math.Clamp(value, 50, 510));
     }
 
     partial void OnNbThresholdChanged(int value)
     {
         ScheduleSaveClientSettings();
         if (_suppressNbCommand || !CanOperate()) return;
-        _ = SendNbThresholdAsync(Math.Clamp(value, 1, 1009));
+        _ = SendNbThresholdAsync(Math.Clamp(value, 1, 1000));
     }
 
     partial void OnNrOnChanged(bool value)
@@ -8460,7 +8622,7 @@ public partial class MainViewModel : ViewModelBase, IDisposable
             PostToUi(() =>
             {
                 _suppressNbCommand = true;
-                NbPulse = us;
+                NbPulse = Math.Clamp(us, 50, 510);
                 _suppressNbCommand = false;
             });
 
@@ -8468,7 +8630,7 @@ public partial class MainViewModel : ViewModelBase, IDisposable
             PostToUi(() =>
             {
                 _suppressNbCommand = true;
-                NbThreshold = thr;
+                NbThreshold = Math.Clamp(thr, 1, 1000);
                 _suppressNbCommand = false;
             });
 
@@ -8499,6 +8661,29 @@ public partial class MainViewModel : ViewModelBase, IDisposable
 
         radio.ProficioTempReported += t =>
             PostToUi(() => ProficioTempText = $"{t:0.0} °C");
+
+        radio.HeatSinkTempReported += t =>
+            PostToUi(() => { HeatSinkTempC = t; HeatSinkSeen = true; });
+
+        // ms-sdr server messages (0x0B/0x30): SWR METER FAULT, thread failures, bias ...
+        radio.ServerErrorReported += text =>
+            PostToUi(() =>
+            {
+                LastServerMessage = text;
+                AppendLog("Server message: " + text);
+                string title = text.StartsWith("SWR METER FAULT", StringComparison.OrdinalIgnoreCase)
+                    ? "SWR METER FAULT" : "MSCC server message";
+                _ = MsccDialog.AlertAsync(text, title);
+            });
+
+        radio.PaddleFarnsworthReported += on =>
+            PostToUi(() =>
+            {
+                _suppressPaddleFarnsCommand = true;   // the server's value: don't send it back
+                try { CwPaddleFarnsworth = on; }
+                finally { _suppressPaddleFarnsCommand = false; }
+                AppendLog($"Paddle Farnsworth reported: {(on ? "ON" : "OFF")}");
+            });
 
         radio.AmpTempReported += t =>
             PostToUi(() => PaTempText = $"{t:0.0} °C");
