@@ -4,31 +4,37 @@
 
 Need: Pi **4 or 5**, 64-bit Raspberry Pi OS (desktop recommended).
 
-## Packages (this folder)
+## Download
+
+The packages are **not in git**. Download them from the **Releases** page:
+<https://github.com/w4mmp-ron/mscc-station/releases> (newest release at the top; older
+releases stay there for roll-back). Put the `.deb` files in one folder on the Pi.
 
 | Package | Version | |
 |---|---|---|
 | `mscc-portaudio` | 19.8.3 | required, install first |
-| `mscc` | 1.0.73 | required: servers, PSoC and Black Pill flash tools |
+| `mscc` | 1.0.78 | required: servers (ms-sdr 3.203, recv 3.153, trans 3.158), PSoC and Black Pill flash tools |
 | `mscc-init` | 1.0.18 | recommended: MSCC Init (GUI + text wizard) |
-| `mscc-ui` | 0.6.71 | optional: Avalonia UI on the Pi (not needed with the Windows client) |
+| `mscc-avalonia` | 1.6.94 | optional: MSCC Avalonia client on the Pi (not needed with the Windows client) |
+| `mscc-ui` | 0.6.71 | optional: Stew's older Avalonia UI (installs side by side with mscc-avalonia) |
 | `mscc-volume` | 1.0.1 | optional: MSCC Volume, levels of VirtualA / VirtualB |
 | `mscc-firmware` | 1.0.2 | optional: PSoC radio firmware files for Firmware Upload |
 
 ```bash
-cd /path/to/this/folder
+cd /path/to/the/downloaded/debs
 sudo apt install -y ./mscc-portaudio_*_arm64.deb   # first
 sudo apt install -y ./mscc_*_arm64.deb             # servers + flash tools
 sudo apt install -y ./mscc-init_*_all.deb          # MSCC Init
-sudo apt install -y ./mscc-ui_*_arm64.deb          # optional
+sudo apt install -y ./mscc-avalonia_*_arm64.deb    # optional
 sudo apt install -y ./mscc-volume_*_all.deb        # optional
 sudo apt install -y ./mscc-firmware_*_all.deb      # optional
 ```
 
-Order: **PortAudio → mscc → mscc-init → the optional ones**.
+Order: **PortAudio → mscc → mscc-init → the optional ones**. Installing `mscc` asks before it
+stops running servers (answer `y`).
 
 Then: log out/in (first install) → **MSCC Init** → **MSCC Start** → connect the client
-(Windows client to the Pi's IP, or mscc-ui on the Pi).
+(Windows client to the Pi's IP, or MSCC Avalonia on the Pi).
 
 ## Firmware upload
 

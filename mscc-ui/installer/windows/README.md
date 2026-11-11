@@ -10,7 +10,12 @@ Actual Installer (10.8) project for MSCC on Windows. Replaces building from `C:\
 ## Release steps
 1. Build the client (`dotnet build -c Release`) and the Windows servers.
 2. `pwsh installer\windows\stage.ps1`
-3. Open `MSCC.aip` in Actual Installer, set AppVersion / SetupFileName, build.
+3. Open `MSCC.aip` in Actual Installer, set AppVersion / SetupFileName, build
+   (or `"C:\Program Files (x86)\Actual Installer\actinst.exe" /S MSCC.aip`).
+4. Publish (2026-11-10, Ron): installers are **not committed** (`.gitignore`). Put the new
+   `.exe` and the current Pi `.deb` files on a GitHub Release, e.g.
+   `gh release create R11-10-14 installers/windows/*.exe installers/rpi/*.deb --title "..." --notes-file notes.md`.
+   Users download from <https://github.com/w4mmp-ron/mscc-station/releases>.
 
 ## payload sources
 | Files | Source |

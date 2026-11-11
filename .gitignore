@@ -86,3 +86,6 @@ psoc-replacement-stm32/
 
 # Superseded installers, kept locally only (Ron 2026-11-10)
 installers/*/old/
+# Installers are published as GitHub Release downloads, not committed (Ron 2026-11-10)
+installers/windows/*.exe
+installers/rpi/*.deb
