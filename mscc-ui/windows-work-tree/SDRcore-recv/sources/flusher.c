@@ -3,63 +3,37 @@
 #define MAX_KEEP_ALIVE_STARTUP_COUNT 15
 #define MAX_KEEP_ALIVE_RUN_COUNT 8
 
-/*struct {
-    int Major;
-    int Minor;
-    char year[20];
-    int month;
-    int day_number;
-    char day[20];
-    char date[20];
-} Version;
-
-void Get_Version_Month() {
-    if (strstr(Version.date, "Jan") != NULL) Version.month = 1 * 100;
-    if (strstr(Version.date, "Feb") != NULL) Version.month = 2 * 100;
-    if (strstr(Version.date, "Mar") != NULL) Version.month = 3 * 100;
-    if (strstr(Version.date, "Apr") != NULL) Version.month = 4 * 100;
-    if (strstr(Version.date, "May") != NULL) Version.month = 5 * 100;
-    if (strstr(Version.date, "Jun") != NULL) Version.month = 6 * 100;
-    if (strstr(Version.date, "Jul") != NULL) Version.month = 7 * 100;
-    if (strstr(Version.date, "Aug") != NULL) Version.month = 8 * 100;
-    if (strstr(Version.date, "Sep") != NULL) Version.month = 9 * 100;
-    if (strstr(Version.date, "Oct") != NULL) Version.month = 100;
-    if (strstr(Version.date, "Nov") != NULL) Version.month = 110;
-    if (strstr(Version.date, "Dec") != NULL) Version.month = 120;
-
-}*/
+/*
+ * Keep-alive (clear rules):
+ *   - ms-sdr → this core:  CMD_SET_KEEP_ALIVE (0xF4)  — bumps G_keep_alive here
+ *   - this core → ms-sdr:  CMD_SET_KEEP_ALIVE (0xF4) + KEEP_ALIVE_FROM_RECV
+ *   Version opcodes are NOT used as keep-alive.
+ */
 
 void *Flusher_thread(void *t) {
     long long previous_keep_alive = 0;
     uint8_t count = 0;
     uint8_t count_limit = MAX_KEEP_ALIVE_STARTUP_COUNT;
-    int8_t send_version = 0;
     char send_buf[20];
-    int status = 0;
-    uint8_t error_reported = 0;
     int l_slen = 0;
+    int ka_src = KEEP_ALIVE_FROM_RECV;
     unsigned int version = VERSION_MS_SDRCORE_RECV;
+    static unsigned ka_send_log = 0;
 
-    //Set up the Version info
-    /*strcpy(Version.date, __DATE__);
-    strcpy(Version.year, &Version.date[7]);
-    Version.Major = atoi(Version.year);
-    Version.Major = (Version.Major - 2000) + 100;
-    strncpy(Version.day, &Version.date[4], 2);
-    Version.Minor = atoi(Version.day);
-    Version.day_number = atoi(Version.day);
-    Version.month = 0;
-    Get_Version_Month();
-    Version.Minor = Version.day_number + Version.month;
-    */
+    (void)t;
 
     while (G_all_threads_run) {
         Sleep(3000);
         fflush(G_fp_logfile);
+
+        /* Watchdog: ms-sdr must send us 0xF4 */
         if (count++ > count_limit) {
             if (G_keep_alive <= previous_keep_alive) {
                 print_time();
-                fprintf(G_fp_logfile, "[%d] Keep Alive FAILED. sdrcore-recv will now stop \n", line_number++);
+                fprintf(G_fp_logfile,
+                    "[%d] Keep Alive FAILED — no CMD_SET_KEEP_ALIVE (0xF4) from ms-sdr; sdrcore-recv stopping\n",
+                    line_number++);
+                fflush(G_fp_logfile);
                 MessageBoxA(NULL, "MS-SDR has stopped sending KeepAlive Messages. sdrcore-recv will now terminate",
                         "sdrcore-recv", MB_OK | MB_ICONEXCLAMATION);
                 G_all_threads_run = 0;
@@ -69,13 +43,27 @@ void *Flusher_thread(void *t) {
             }
             count = 0;
         }
+
+        /* Heartbeat to ms-sdr: real keep-alive opcode + source id */
+        l_slen = (int)sizeof(si_ms_sdr);
+        memset(send_buf, 0, sizeof(send_buf));
+        send_buf[0] = CMD_SET_KEEP_ALIVE;
+        memcpy(&send_buf[1], &ka_src, 4);
+        sendto(ms_sdr_s, send_buf, 5, 0, (struct sockaddr *)&si_ms_sdr, l_slen);
+
+        /* Optional version packet (not used for keep-alive counters on ms-sdr) */
+        memset(send_buf, 0, sizeof(send_buf));
         send_buf[0] = CMD_GET_SET_SDRCORE_RECV_VERSION;
-        l_slen = sizeof (si_ms_sdr);
         memcpy(&send_buf[1], &version, 4);
-        sendto(ms_sdr_s, send_buf, 5, 0, (struct sockaddr*)&si_ms_sdr, l_slen);
-        //print_time();
-        //fprintf(G_fp_logfile, "[%d] Flusher_thread . version info sent. Major: %d, Minor: %d\n", line_number++,
-        //        Version.Major, Version.Minor);
+        sendto(ms_sdr_s, send_buf, 5, 0, (struct sockaddr *)&si_ms_sdr, l_slen);
+
+        if (ka_send_log++ == 0) {    /* first only: SD card wear */
+            print_time();
+            fprintf(G_fp_logfile,
+                "[%d] Flusher_thread. Sent CMD_SET_KEEP_ALIVE (0xF4) source=RECV(%d) to ms-sdr\n",
+                line_number++, ka_src);
+            fflush(G_fp_logfile);
+        }
     }
     pthread_exit(0);
     return (NULL);

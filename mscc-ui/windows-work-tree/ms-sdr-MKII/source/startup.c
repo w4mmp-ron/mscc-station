@@ -7,12 +7,10 @@
 #include "usbavrcmd.h"
 //#include "SRDLL.h"
 #include "extern.h"
-#include "last_used.h"
+#include "startup.h"
 #include "version.h"
 
-/* 2026-11-10 (Ron): the server-side last-used band stack (vfoa/vfob Last_used.ini,
- * 0xD7-0xD9) was removed: its thread was disabled and the client keeps its own
- * last-used per band. Only the startup frequency / mode (startup.ini) is kept here. */
+/* startup.ini: the startup frequency and mode (read at start, written on change). */
 
 uint8_t G_vfo = VFO_A;
 uint8_t G_current_vfo = VFO_A;
@@ -68,6 +66,14 @@ int Update_Startup(uint32_t freq, char mode) {
 
     print_time(0);
     fprintf(G_fp_logfile, "[%d] Update_Startup - Called. freq: %d, mode: %c\n", line_number++, freq, mode);
+    /* 3.204 (Ron 2026-11-10, as Pi 3.201): TUNE is never saved. TUN sends mode T; saved, a stop
+     * or crash while TUN was on brought the next start up in TUNE. The file keeps the mode from before. */
+    if (mode == MODE_TUNE_LETTER) {
+        print_time(0);
+        fprintf(G_fp_logfile, "[%d] Update_Startup - TUNE: not saved (startup.ini keeps the previous mode)\n",
+            line_number++);
+        return status;
+    }
     if ((homedir = My_getenv("HOME")) != NULL) {
         strcpy(file_name, homedir);
         strcat(file_name,"/startup.ini");

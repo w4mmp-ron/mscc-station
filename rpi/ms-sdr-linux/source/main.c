@@ -17,7 +17,7 @@
 
 #include "version.h"
 #include "band_stack.h"
-#include "last_used.h"
+#include "startup.h"
 #include "factory_seed.h"
 #include "iq.h"
 //Pthreads
@@ -1021,11 +1021,11 @@ void ModeChanged(char mode) {
 
 int static Start_Key_status_thread() {
     int status = TRUE;
-    long last_used_t = 0;
+    long thread_arg = 0;
 
     print_time(0);
     fprintf(G_fp_logfile, "[%d] main. Starting Start_Key_PTT_status_thread thread \n", line_number++);
-    G_Get_Key_Status_rc = pthread_create(&G_Get_Key_Status_thread, NULL, Get_Key_Status, (void *) last_used_t);
+    G_Get_Key_Status_rc = pthread_create(&G_Get_Key_Status_thread, NULL, Get_Key_Status, (void *) thread_arg);
     if (G_Get_Key_Status_rc) {
         print_time(0);
         fprintf(G_fp_logfile, "[%d] main. Start G_Get_Key_Down_Status_thread thread failed, return code from pthread_create() is %d\n",
@@ -1040,11 +1040,11 @@ int static Start_Key_status_thread() {
 }
 int static Start_check_temperature_thread() {
     int status = TRUE;
-    long last_used_t = 0;
+    long thread_arg = 0;
 
     print_time(0);
     fprintf(G_fp_logfile, "[%d] main . Starting Check_temperature thread \n", line_number++);
-    G_Check_temperature_rc = pthread_create(&G_Check_temperature_thread, NULL, Check_temperature, (void *) last_used_t);
+    G_Check_temperature_rc = pthread_create(&G_Check_temperature_thread, NULL, Check_temperature, (void *) thread_arg);
     if (G_Check_temperature_rc) {
         print_time(0);
         fprintf(G_fp_logfile, "[%d] main . Start Check_temperature thread failed, return code from pthread_create() is %d\n",
@@ -1218,7 +1218,7 @@ int main(int argc, char **argv) {
     uint8_t mode;
     long t = 0;
     long gui_t = 0;
-    long last_used_t = 0;
+    long thread_arg = 0;
     int completion_status = TRUE;
     int dir_configured = 0;
     //char *message;

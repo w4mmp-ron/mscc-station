@@ -704,7 +704,9 @@ void *UDP_Thread(void *my_param) {
             fprintf(G_fp_logfile, "[%d] UDP Thread. recvfrom. Error Code : %s (len=%d)\n",
                     line_number++, strerror(errno), recv_len);
             fflush(G_fp_logfile);
-            /* Do not kill whole process on a single bad recv */
+            /* Do not kill whole process on a single bad recv.
+             * recv 3.153: 10 ms pause, so an error that repeats cannot flood the log. */
+            Sleep(10);
             continue;
         }
         opcode = (uint8_t) buf[0];

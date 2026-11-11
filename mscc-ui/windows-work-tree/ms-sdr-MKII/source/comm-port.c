@@ -425,59 +425,47 @@ int parse_record(char *receive_buffer, int size) {
         write_to_comm_port(write_buffer, 6);
     }
 
-    /*record_start = strstr(work_buffer_ptr, "MD1;");
-    if (record_start != NULL) {
-            print_time(0);
-            fprintf(G_fp_logfile, "[%d] Parse Record -> Received\n", line_number++);
-            mode_number = atoi(&record_start[2]);
-            G_mode = mode_to_letter(mode_number);
-            command = MD;
-            SDRcore_recv_send_param(CMD_SET_MAIN_MODE, mode_number);
-            SDRcore_trans_send_param(CMD_SET_MAIN_MODE, mode_number);
-            ModeChanged(G_mode);
-            Gui_send_param(CMD_MODE_SET_BY_SERVER, G_mode);
-            print_time(0);
-            fprintf(G_fp_logfile, "[%d] Parse Record -> Received -> MD{%d}, G_mode: %c\n", line_number++, MD_Set_Command, G_mode);
-            process_count += strlen("MD3;");
-            work_buffer_ptr += strlen("MD3;");
-            continue;
-    }
+    /*
+     * Kenwood mode SET: MDn;  (n = 1 LSB, 2 USB, 3 CW — matches MD; reply mapping above)
+     * WSJT-X and other digi apps send this; Windows 3.202: ported from the Pi (was commented out here, MD2; was discarded).
+     * Query MD; is handled above (readback only).
+     */
+    {
+        int mode_number = 0;
+        int md_set = 0;
 
-    record_start = strstr(work_buffer_ptr, "MD2;");
-    if (record_start != NULL) {
-            print_time(0);
-            fprintf(G_fp_logfile, "[%d] Parse Record -> Received\n", line_number++);
-            mode_number = atoi(&record_start[2]);
-            G_mode = mode_to_letter(mode_number);
-            command = MD;
-            SDRcore_recv_send_param(CMD_SET_MAIN_MODE, mode_number);
-            SDRcore_trans_send_param(CMD_SET_MAIN_MODE, mode_number);
-            ModeChanged(G_mode);
-            Gui_send_param(CMD_MODE_SET_BY_SERVER, G_mode);
-            print_time(0);
-            fprintf(G_fp_logfile, "[%d] Parse Record -> Received -> MD{%d}, G_mode: %c\n", line_number++, MD_Set_Command, G_mode);
-            process_count += strlen("MD3;");
-            work_buffer_ptr += strlen("MD3;");
-            continue;
-    }
+        if (strstr(receive_buffer, "MD1;") != NULL) {
+            mode_number = 1; /* LSB */
+            md_set = 1;
+        } else if (strstr(receive_buffer, "MD2;") != NULL) {
+            mode_number = 2; /* USB */
+            md_set = 1;
+        } else if (strstr(receive_buffer, "MD3;") != NULL) {
+            mode_number = 3; /* CW */
+            md_set = 1;
+        }
+        /* Optional common Kenwood/data modes if an app sends them */
+        else if (strstr(receive_buffer, "MD4;") != NULL) {
+            mode_number = 4;
+            md_set = 1;
+        } else if (strstr(receive_buffer, "MD5;") != NULL) {
+            mode_number = 5; /* often AM in our reply map */
+            md_set = 1;
+        }
 
-    record_start = strstr(work_buffer_ptr, "MD3;");
-    if (record_start != NULL) {
-            print_time(0);
-            fprintf(G_fp_logfile, "[%d] Parse Record -> Received\n", line_number++);
-            mode_number = atoi(&record_start[2]);
-            G_mode = mode_to_letter(mode_number);
+        if (md_set) {
             command = MD;
+            G_mode = mode_to_letter(mode_number);
             SDRcore_recv_send_param(CMD_SET_MAIN_MODE, mode_number);
             SDRcore_trans_send_param(CMD_SET_MAIN_MODE, mode_number);
             ModeChanged(G_mode);
             Gui_send_param(CMD_MODE_SET_BY_SERVER, G_mode);
             print_time(0);
-            fprintf(G_fp_logfile, "[%d] Parse Record -> Received -> MD{%d}, G_mode: %c\n", line_number++, MD_Set_Command, G_mode);
-            process_count += strlen("MD3;");
-            work_buffer_ptr += strlen("MD3;");
-            continue;
-    }*/
+            fprintf(G_fp_logfile,
+                "[%d] parse_record. MD set received MD%d; -> G_mode=%c cores mode=%d\n",
+                line_number++, mode_number, G_mode, mode_number);
+        }
+    }
 
     record_start = strstr(receive_buffer, "FA;");
     if (record_start != NULL) {

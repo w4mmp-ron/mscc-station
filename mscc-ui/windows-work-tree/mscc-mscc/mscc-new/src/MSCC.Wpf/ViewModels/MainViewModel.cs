@@ -190,6 +190,7 @@ public partial class MainViewModel : ObservableObject, IDisposable
     /// When false, Start only connects (use with external Start-MsccServers.bat). Persisted LAUNCH_SERVERS.
     /// </summary>
     [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(StartStopToolTip))]
     [NotifyPropertyChangedFor(nameof(IsRemoteAudioAllowed))]
     private bool _launchServersOnStart = true;
 
@@ -1763,12 +1764,26 @@ public partial class MainViewModel : ObservableObject, IDisposable
     /// </summary>
     [ObservableProperty]
     [NotifyPropertyChangedFor(nameof(StartStopButtonText))]
+    [NotifyPropertyChangedFor(nameof(StartStopToolTip))]
     [NotifyPropertyChangedFor(nameof(SetupStatusLine))]
     [NotifyPropertyChangedFor(nameof(CanStartLocalRadioSession))]
     private bool _isRadioRunning;
 
     /// <summary>Start button when idle; Stop when session active.</summary>
-    public string StartStopButtonText => IsRadioRunning ? "Stop" : "Start";
+    public string StartStopButtonText => IsRadioRunning ? "Disconnect" : "Connect";
+
+    /// <summary>True when the current session was started with Launch Servers (Stop sends CMD_SET_STOP).</summary>
+    private bool _serversLaunchedThisSession;
+
+    /// <summary>Connect button tip: says whether the servers start / stop with it (11.10.14).</summary>
+    public string StartStopToolTip =>
+        IsRadioRunning
+            ? (_serversLaunchedThisSession
+                ? "Disconnect. Also stops the servers this client started."
+                : "Disconnect. The servers keep running.")
+            : (LaunchServersOnStart
+                ? "Connect. Also starts the servers on this computer."
+                : "Connect to the server below.");
 
     /// <summary>
     /// Soft status under Start: empty when OK, or "Setup needed: …" when local Launch Servers
@@ -5540,13 +5555,13 @@ public partial class MainViewModel : ObservableObject, IDisposable
             "              (writes mscc.ini and restarts backends)\n" +
             "  • Linux:    mscc-init → PROFICIO-MKII, then restart ms-sdr\n\n" +
             "If the host is already in that mode, skip the host step.\n" +
-            "Then press Start on this client.",
+            "Then press Connect on this client.",
             "MSCC — Remote / connect-only",
             MessageBoxButton.OK,
             MessageBoxImage.Information);
         StopRadioService("external-keyer change (remote)");
         MonitorTextBoxText(
-            " External keyer: session stopped. Restart host backends if needed, then press Start.");
+            " External keyer: session stopped. Restart host backends if needed, then press Connect.");
     }
 
     partial void OnCwSpeedChanged(int value)
@@ -5907,6 +5922,7 @@ public partial class MainViewModel : ObservableObject, IDisposable
             }
             _cutsPushedThisSession = false;
             await _radioService.StartAsync(launchSubsystems: launch);
+            _serversLaunchedThisSession = launch;
             IsRadioRunning = _radioService.IsConnected;
             if (IsRadioRunning)
             {
@@ -5922,7 +5938,7 @@ public partial class MainViewModel : ObservableObject, IDisposable
             RefreshSetupStatus();
             MonitorTextBoxText(
                 IsRadioRunning
-                    ? " Start complete — session running (button = Stop)"
+                    ? " Start complete — session running (button = Disconnect)"
                     : " Start finished but IsConnected is false");
         }
         catch (Exception ex)
@@ -6038,8 +6054,9 @@ public partial class MainViewModel : ObservableObject, IDisposable
         {
             MonitorTextBoxText($" Stop error: {ex.Message}");
         }
+        _serversLaunchedThisSession = false;
         IsRadioRunning = false;
-        MonitorTextBoxText(" Stop complete — press Start to connect again (or restart servers)");
+        MonitorTextBoxText(" Stop complete — press Connect to connect again (or restart servers)");
     }
 
     public bool SuppressLastUsedSave { get; set; } = false;

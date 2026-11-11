@@ -138,7 +138,7 @@ public partial class MainWindow : Window
                     {
                         SelectSettingsTab();
                         vm.MonitorTextBoxText(
-                            " Setup: open Settings → set COM port and operator speaker, then press Start");
+                            " Setup: open Settings → set COM port and operator speaker, then press Connect");
                     }
                 });
 
@@ -1044,7 +1044,7 @@ public partial class MainWindow : Window
                 if (vm.LaunchServersOnStart && !vm.CanStartLocalRadioSession)
                 {
                     vm.MonitorTextBoxText(
-                        " Auto-start skipped — finish COM + operator speaker in Settings, then press Start");
+                        " Auto-start skipped — finish COM + operator speaker in Settings, then press Connect");
                 }
                 else
                 {

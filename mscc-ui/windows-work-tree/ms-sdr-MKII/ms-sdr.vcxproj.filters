@@ -3,7 +3,7 @@
   <ItemGroup>
     <ClCompile Include="source\cw-snap.c" />
     <ClCompile Include="source\iq.c" />
-    <ClCompile Include="source\last_used.c" />
+    <ClCompile Include="source\startup.c" />
     <ClCompile Include="source\power_calibration.c" />
     <ClCompile Include="source\user_controls.c" />
     <ClCompile Include="source\freq_queue.c" />
@@ -24,7 +24,7 @@
     <ClInclude Include="source\hr50.h" />
     <ClInclude Include="source\iambino.h" />
     <ClInclude Include="source\iq.h" />
-    <ClInclude Include="source\last_used.h" />
+    <ClInclude Include="source\startup.h" />
     <ClInclude Include="source\lusb0_usb.h" />
     <ClInclude Include="source\ms-sdr.h" />
     <ClInclude Include="source\port_defines.h" />

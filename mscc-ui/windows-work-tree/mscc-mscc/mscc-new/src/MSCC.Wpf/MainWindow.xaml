@@ -224,9 +224,10 @@
             IsEnabled="{Binding CanStartLocalRadioSession}"
             Width="120" Click="StartStop_Click" FontSize="11" Height="28"
             HorizontalAlignment="Left" Margin="0,0,0,4"
-            ToolTip="Start: connect (and launch backends if Launch Servers is on). Needs the operator speaker (Settings → Audio → Out); a missing COM port only disables CAT. Stop: end session / stop backends this app launched. Stop then Start after COM/audio changes.">
+            ToolTipService.ShowOnDisabled="True">
         <Button.Style>
             <Style TargetType="Button" BasedOn="{StaticResource MsccGoldButtonStyle}">
+                <Setter Property="ToolTip" Value="{Binding StartStopToolTip}"/>
                 <Style.Triggers>
                     <!-- Running = green Stop -->
                     <DataTrigger Binding="{Binding IsRadioRunning}" Value="True">
@@ -236,7 +237,7 @@
                     </DataTrigger>
                     <Trigger Property="IsEnabled" Value="False">
                         <Setter Property="Opacity" Value="0.45"/>
-                        <Setter Property="ToolTip" Value="Choose the operator speaker in Settings → Audio → Out, then Apply. Start enables when it is set (COM port is optional: without it CAT is off)."/>
+                        <Setter Property="ToolTip" Value="Choose the operator speaker in Settings → Audio → Out, then Apply. Connect enables when it is set (COM port is optional: without it CAT is off)."/>
                     </Trigger>
                 </Style.Triggers>
             </Style>
@@ -252,12 +253,12 @@
                   IsChecked="{Binding AutoStartServers}"
                   Foreground="{DynamicResource UiPrimaryTextBrush}" FontSize="9" FontWeight="Bold"
                   VerticalAlignment="Center"
-                  ToolTip="When checked, press Start automatically when the MSCC window loads (saved in MSCC_Client.ini)"/>
+                  ToolTip="When checked, press Connect automatically when the MSCC window loads (saved in MSCC_Client.ini)"/>
         <CheckBox Content="Launch Servers"
                   IsChecked="{Binding LaunchServersOnStart}"
                   Foreground="{DynamicResource UiPrimaryTextBrush}" FontSize="9" FontWeight="Bold"
                   Margin="6,0,0,0" VerticalAlignment="Center"
-                  ToolTip="Checked: Start also runs the radio servers on this PC. Uncheck if the servers already run here or on another computer."/>
+                  ToolTip="Checked: Connect also runs the radio servers on this PC, and Disconnect stops them. Uncheck if the servers already run here or on another computer."/>
     </StackPanel>
     <Grid Margin="0,0,0,3">
         <Grid.ColumnDefinitions>

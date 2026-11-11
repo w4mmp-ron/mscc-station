@@ -592,6 +592,8 @@ int main(int argc, char **argv) {
     if (playDevice == 0) {
         print_time();
         fprintf(G_fp_logfile, "[%d] main. Mark II NOT FOUND (0).\n", line_number++);
+        fflush(G_fp_logfile);
+        Core_Send_Message("TRANSCEIVER I/Q AUDIO DEVICE NOT FOUND\nIS THE TRANSCEIVER ON?", 1);   /* trans 3.158 (as Pi) */
         MessageBoxA(NULL, "THE TRANSCEIVER I/Q AUDIO DEVICE HAS NOT BEEN FOUND \
 							\r\nIs the Transceiver Powered ON? \
 							\r\nHas the Transceiver been power cycled? \
@@ -625,11 +627,19 @@ int main(int argc, char **argv) {
     outputParameters.suggestedLatency = 0.025f; // Pa_GetDeviceInfo(outputParameters.device)->defaultLowOutputLatency;
     outputParameters.hostApiSpecificStreamInfo = NULL;
 
+    /* trans 3.158 (as Pi): a missing digital mic falls back to the operator mic (mic_dev in
+     * udp_thread.c); say so once. */
+    if (G_digital_input_device_index == NO_INPUT_DEVICE && G_input_device_index != NO_INPUT_DEVICE) {
+        print_time();
+        fprintf(G_fp_logfile, "[%d] main. Digital mic not found - digital modes use the operator mic\n", line_number++);
+        Core_Send_Message("DIGITAL MIC NOT FOUND (digital-microphone.ini)\nDIGITAL MODES WILL USE THE OPERATOR MIC", 0);
+    }
     //Initialize the output devices structure
     //Now Start the audio stream
     if (G_input_device_index == NO_INPUT_DEVICE) {
         print_time();
         fprintf(G_fp_logfile, "[%d] main. No operator mic set: TX voice off\n", line_number++);
+        Core_Send_Message("OPERATOR MIC NOT FOUND (operator-microphone.ini)\nVOICE TX WITH THE LOCAL MIC WILL NOT WORK", 0);   /* trans 3.158 (as Pi) */
         status = manage_stream(1, -1, 0);
         if (status) {
             err = status;
@@ -645,6 +655,7 @@ int main(int argc, char **argv) {
             fprintf(G_fp_logfile,
                 "[%d] main. operator mic open failed (%d) — OUTPUT-ONLY I/Q (no mic)\n",
                 line_number++, status);
+            Core_Send_Message("OPERATOR MIC FAILED TO OPEN\nVOICE TX WITH THE LOCAL MIC WILL NOT WORK", 0);   /* trans 3.158 (as Pi) */
             status = manage_stream(1, -1, 0);
             if (status) {
                 err = status;
@@ -661,23 +672,42 @@ int main(int argc, char **argv) {
         Sleep(100);
     }
     remote_mic_shutdown();
-    err = Pa_CloseStream(stream);
-    if (err != paNoError) goto error;
+    /* trans 3.158 (Ron 2026-11-10, same on the Pi): a normal stop just closes the stream and
+     * exits 0. A close error is logged only; the "AUDIO START FAILED" error path is for
+     * start-up failures. */
+    if (stream != NULL) {
+        err = Pa_CloseStream(stream);
+        if (err != paNoError) {
+            print_time();
+            fprintf(G_fp_logfile, "[%d] main. stop: Pa_CloseStream error %d (%s), exiting anyway\n",
+                line_number++, err, Pa_GetErrorText(err));
+            fflush(G_fp_logfile);
+        }
+    }
     Sleep(100);
     Pa_Terminate();
     exit(0);
 
 error:
+    /* trans 3.158 (as Pi): fatal audio init. Log, tell the client (pop-up via ms-sdr), exit 1. */
+    G_all_threads_run = 0;
+    if (G_fp_logfile != NULL) {
+        print_time();
+        fprintf(G_fp_logfile, "[%d] An error occured while using the portaudio stream\n", line_number++);
+        print_time();
+        fprintf(G_fp_logfile, "[%d] Error number: %d\n", line_number++, err);
+        print_time();
+        fprintf(G_fp_logfile, "[%d] Error message: %s\n", line_number++,
+            err != paNoError ? Pa_GetErrorText(err) : "(no PortAudio error - missing device)");
+        print_time();
+        fprintf(G_fp_logfile, "[%d] sdrcore-trans terminating (audio init failed)\n", line_number++);
+        fflush(G_fp_logfile);
+    }
+    Core_Send_Message("AUDIO START FAILED, STOPPING\nSEE sdrcore-trans.log (MSCC-NET9 folder)", 1);
+    MessageBoxA(NULL, "SDRcore-trans initialization FAILED.  Send logs to Multus SDR, LLC", "SDRcore-trans",
+        MB_OK | MB_ICONEXCLAMATION);
     remote_mic_shutdown();
     Pa_Terminate();
-    print_time();
-    fprintf(G_fp_logfile, "[%d] An error occured while using the portaudio stream\n", line_number++);
-    print_time();
-    fprintf(G_fp_logfile, "[%d] Error number: %d\n", line_number++, err);
-    print_time();
-    fprintf(G_fp_logfile, "[%d] Error message: %s\n", line_number++, Pa_GetErrorText(err));
-    MessageBoxA(NULL, "SDRcore-trans initialization FAILED.  Send logs to Multus SDR, LLC", "SDRcore-trans", 
-    	MB_OK | MB_ICONEXCLAMATION);
-    exit(0);
+    exit(1);
 }
 

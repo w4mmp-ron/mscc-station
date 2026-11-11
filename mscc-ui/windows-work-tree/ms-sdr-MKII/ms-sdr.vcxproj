@@ -75,7 +75,7 @@ xcopy /e /i /y "$(ProjectDir)..\..\..\factory" "$(OutDir)factory"</Command>
     <ClInclude Include="source\hr50.h" />
     <ClInclude Include="source\iambino.h" />
     <ClInclude Include="source\iq.h" />
-    <ClInclude Include="source\last_used.h" />
+    <ClInclude Include="source\startup.h" />
     <ClInclude Include="source\lusb0_usb.h" />
     <ClInclude Include="source\mcp3422.h" />
     <ClInclude Include="source\ms-sdr.h" />
@@ -97,7 +97,7 @@ xcopy /e /i /y "$(ProjectDir)..\..\..\factory" "$(OutDir)factory"</Command>
     <ClCompile Include="source\cw-snap.c" />
     <ClCompile Include="source\freq_queue.c" />
     <ClCompile Include="source\iq.c" />
-    <ClCompile Include="source\last_used.c" />
+    <ClCompile Include="source\startup.c" />
     <ClCompile Include="source\main-controller.c" />
     <ClCompile Include="source\main.c" />
     <ClCompile Include="source\message_queue.c" />

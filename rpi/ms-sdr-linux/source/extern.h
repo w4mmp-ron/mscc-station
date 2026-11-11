@@ -299,7 +299,7 @@ extern BOOL srGetFreq(double* pMHz);
 
 
 
-//for Last_used
+//startup.ini (startup.c)
 extern int Get_Startup(uint32_t *freq, char *mode);
 extern int Update_Startup(uint32_t freq, char mode);
 extern uint8_t G_vfo;

@@ -773,7 +773,7 @@ int User_Controls_Update_Init_File() {
                 "PANADAPTER_STATUS=%d;\n"
                 "SMETER_STATUS=%d;\n"
                 "MICROPHONE_STATUS=%d;\n"
-                "WATERFALL_STATUS=%d\n"
+                "WATERFALL_STATUS=%d;\n"
                 "WATERFALL_GRID=%d;\n"
                 "WATERFALL_PALLET=%d;\n"
                 "WATERFALL_DIRECTION=%d;\n"

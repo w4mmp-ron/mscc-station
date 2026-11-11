@@ -15,19 +15,30 @@ sp_float gain;
 extern sp_float G_mic_volume;
 extern sp_float G_peak;
 sp_float G_ALC_gain = 0.0f;
-volatile sp_float G_ALC_peak_env = 0.0f; /* 3.146: peak level before the ALC, read and reset by ALC_Meter_thread */
+volatile sp_float G_ALC_peak_env = 0.0f; /* trans 3.149: read and reset by ALC_Meter_thread */
 sp_float G_ALC_limit = 0.0f;
 long int G_alc_count = 0;
-/* 3.146 (from Stew's Windows trans 3.149): ALC ceiling = drive x ALC_CEILING. Was 1.1,
- * which let SSB peaks overdrive the PA (close-in splatter on Stew's analyzer, peaks
- * 0.43-0.57 of full scale); 0.45 measured clean. 3.148: ALC_CEILING now in extern.h. */
+/* trans 3.149: ALC ceiling = drive x ALC_CEILING. Was 1.1, which let SSB peaks reach
+ * 0.5-0.65 of full scale at SSB power 100 and overdrove the PA (close-in splatter at
+ * mic 45-50). Measured 10-30 on Proficio MKII PTT: peaks <= 0.22 clean, 0.43-0.57 splatter.
+ * 0.6 (0.28) still splattered above mic ~20 (10-30); 0.45 -> 0.21 at drive 0.46.
+ * trans 3.157: 0.89, as on the Pi (Ron). The 10-30 splatter was not the ceiling: on Shack a
+ * StarTech USB sound card used as the Phones mic put a 1 kHz comb on every transmission (TUN
+ * too) while it was open. 2 TONE at SSB 100 (630 m, 11-01), each tone vs TUN: Digital (1.0)
+ * -7.3 dBc, IMD3 33 dB below the tones; Phones at 0.45 -14.6 dBc. The ALC settles about 2 dB
+ * under its ceiling, so 0.89 puts voice PEP near the calibrated power (each tone about -8 dBc). */
+#define ALC_CEILING 0.89f
 sp_float G_ALC_multiplier = ALC_CEILING;
 #endif
 
 //#define ALC_TARGET 0.85000f
 
 //#define ALC_TARGET 0.9f
-#define ALC_TARGET (G_ALC_limit * G_ALC_multiplier)
+/* trans 3.152: the voice ceiling (0.45 then, 0.89 since 3.157) is for voice only. A digital tone (WSJT-X etc.) is constant
+ * envelope, so 0.45 x drive gave only 0.2 of the QRP CAL power (5 W cal -> 1 W, ALC in the
+ * red). Digital audio uses the full drive, i.e. the same level as TUN / QRP CAL. */
+#define ALC_DIGITAL_CEILING 1.0f
+#define ALC_TARGET (G_ALC_limit * (((G_audio_mode == DIGITAL_AUDIO) || (G_audio_mode == REMOTE_DIGITAL_AUDIO)) ? ALC_DIGITAL_CEILING : G_ALC_multiplier))
 
 // Initialize speech processor state struct
 
@@ -180,10 +191,14 @@ void framesToComplex(sp_float *inframes, sp_cplx *incomplex, sp_cplx *outcomplex
 
 
     if ((mystate.opmode == MODE_CW) || (mystate.opmode == MODE_TUNE)) gain = 0.0f;
-    else if (G_audio_mode == REMOTE_DIGITAL_AUDIO || G_audio_mode == REMOTE_AUDIO)
-        /* Line-level: remote MSA1 phones, remote MSA1 digital.
-         * Remote phones forced mic=100 * 6.324 overdrove the PA.
-         * Local digital (opcode 0) keeps the original analog gain below. */
+    else if (G_audio_mode == DIGITAL_AUDIO || G_audio_mode == REMOTE_DIGITAL_AUDIO ||
+             G_audio_mode == REMOTE_AUDIO)
+        /* VAC/WSJT line-level. Analog 16 dB flattened the PWR slider.
+         * 2.5× plus digital mic 1.3 at 100 lets WSJT 0 dB go a bit past
+         * QRP CAL so you can ride ALC then back off. TUN unchanged.
+         * trans 3.158 (Ron 2026-11-10, same on the Pi): Remote Phones (MSA1 from the
+         * client) is line level too; mic 100 x 6.324 overdrove the PA (Pi finding).
+         * Only the local Phones mic gets the analog boost. */
         gain = 2.5f;
     else {
         if (inputchannels == 1) gain = 3.16228f;
@@ -203,16 +218,29 @@ void framesToComplex(sp_float *inframes, sp_cplx *incomplex, sp_cplx *outcomplex
 }
 
 // Initialize ALC state struct
+/*
+ * 3.149: ALC rework. The old ALC took its envelope from fabs(I) only. After the SSB
+ * filter the signal sits at a 9-15 kHz IF, so |I| falls to zero every ~40 us; with a
+ * 1 ms (40 dB) envelope decay and a 0.4 dB-per-sample gain attack, the gain chattered
+ * at about twice the IF rate whenever the level reached the target. That amplitude-
+ * modulated the filtered signal and spread it across the band (seen as the broadband
+ * burst on the first loud syllable). Now: envelope = |I + jQ| (smooth for SSB), peak
+ * hold with ALC_ENV_DECAY_MS decay, gain eased toward target/envelope with an
+ * ALC_ATTACK_MS time constant, and the old 3 s release.
+ */
+#define ALC_ATTACK_MS    2.0f    /* gain-reduction time constant */
+#define ALC_ENV_DECAY_MS 50.0f   /* envelope peak-hold decay, to 40 dB */
+static sp_float alc_atk_coef = 0.01f;
 
 void initALC() {
     int j;
-    /* 3.145: was attack 1 ms, envelope fall 1 ms (see doALC). 3.146: attack 2 ms (as Windows) */
-    alcstate.attackms = 2.0f;
+    alcstate.attackms = ALC_ATTACK_MS;
     alcstate.releasems = 3000.0f;
-    alcstate.envattackms = 50.0f;
+    alcstate.envattackms = ALC_ENV_DECAY_MS;
+    alc_atk_coef = (sp_float) (1.0 - exp(-1.0 / (ALC_ATTACK_MS * mystate.samplerate * 0.001)));
 
-    // gain attack: share of the way to the wanted gain per sample (one pole, attackms)
-    alcstate.negramp = 1.0f - (float) exp(-1.0 / (alcstate.attackms * mystate.samplerate * 0.001f));
+    // gain negative ramp
+    alcstate.negramp = (float) pow(0.01f, 1.0f / (alcstate.attackms * mystate.samplerate * 0.001f));
 
     // gain positive ramp
     alcstate.posramp = (float) pow(0.01f, 1.0f / (alcstate.releasems * mystate.samplerate * 0.001f));
@@ -223,7 +251,7 @@ void initALC() {
 
     alcstate.pregain = 1.0f;
     alcstate.maxgain = 1.0f;
-    alcstate.maxval = 0.0f;  /* 3.146: was 1.0, which pulled the gain to 0.1 at start-up */
+    alcstate.maxval = 0.0f;  /* 3.149: was 1.0, which pulled the gain to 0.1 at start-up */
     alcstate.gain = 1.0f;
     alcstate.targetlevel = ALC_TARGET;
     //alcstate.targetlevel = 0.50000000f;		// 0.9f
@@ -231,18 +259,9 @@ void initALC() {
 
 }
 
-/*
- * ALC - negative-going only. Use in conjunction with an over-gain input stage.
- * 3.145 (Stew's SSB splatter, 2026-10-29): it runs after the SSB filter, so any fast
- * gain change goes on the air as splatter. Before, the level was fabs(I), which dips
- * to zero every few samples at the 12 kHz IF, fell 40 dB in 1 ms, and the gain was cut
- * 0.4 dB per sample while over the target: AM at near sample rate, broadband streaks,
- * worst early in an over (3 s release). Now: level = |I + jQ| (smooth for SSB / AM),
- * peak held and falling 40 dB in 50 ms, gain moves toward target / level with a 3 ms
- * attack, same 3 s release. The gain moves at voice-envelope speed only.
- */
+/* ALC - negative-going only. Use in conjunction with an over-gain input stage */
 void doALC(sp_cplx *samps, int nframes) {
-    sp_float ioutput, qoutput, isamp, qsamp, wk, want;
+    sp_float ioutput, qoutput, isamp, qsamp, wk;
     sp_float peak = 0.0f;
     int j;
     static int peakblocks = 0;
@@ -262,25 +281,24 @@ void doALC(sp_cplx *samps, int nframes) {
             qsamp *= alcstate.pregain;
         }
 
-        wk = sqrtf(isamp * isamp + qsamp * qsamp);
-        if (wk > G_ALC_peak_env) G_ALC_peak_env = wk;   /* 3.146: for the voice ALC meter */
+        /* 3.149: complex-magnitude envelope (no IF ripple), peak hold with slow decay */
+        wk = (sp_float) sqrt(isamp * isamp + qsamp * qsamp);
+        if (wk > G_ALC_peak_env) G_ALC_peak_env = wk;   /* trans 3.149: for the ALC level meter */
         if (wk > alcstate.maxval) alcstate.maxval = wk;
         else alcstate.maxval *= alcstate.envramp;
         alcstate.targetlevel = ALC_TARGET;
-        // gain that puts the held peak on the target
-        if (alcstate.maxval * alcstate.maxgain > alcstate.targetlevel)
-            want = alcstate.targetlevel / alcstate.maxval;
-        else
-            want = alcstate.maxgain;
-        // decide which way to drive gain
-        if ((alcstate.maxval * alcstate.gain) >= alcstate.targetlevel) {
-            G_alc_count++;
-        }
-        if (want < alcstate.gain) {
-            alcstate.gain += (want - alcstate.gain) * alcstate.negramp;
-        } else {
-            alcstate.gain *= alcstate.posramp;
-            if (alcstate.gain > want) alcstate.gain = want;
+        /* gain needed to hold the envelope at the target */
+        {
+            sp_float want = alcstate.maxgain;
+            if (alcstate.maxval * alcstate.maxgain > alcstate.targetlevel && alcstate.maxval > 0.0f)
+                want = alcstate.targetlevel / alcstate.maxval;
+            if (want < alcstate.gain) {
+                G_alc_count++;
+                alcstate.gain += (want - alcstate.gain) * alc_atk_coef;  /* smooth attack */
+            } else {
+                alcstate.gain *= alcstate.posramp;                        /* slow release */
+                if (alcstate.gain > want) alcstate.gain = want;
+            }
         }
 
         // set gain to limits, if outside
@@ -459,20 +477,26 @@ void fm_modulate(sp_cplx *samps) {
     sp_float dev_inc = (sp_float)(TPI * (double)FM_PEAK_DEV_HZ / (double)mystate.samplerate);
     static sp_float fm_audio_phase = 0.0f;
     static sp_float fm_dc = 0.0f;
+    static int fm_peak_log_skip = 0;
+    sp_float peak = 0.0f;
 
     for (i = 0; i < mystate.nfft - mystate.filtertaps; i++) {
         sp_float audio = samps[i].real;
+        /* Slow DC remove so mic bias does not park the carrier off-frequency. */
         fm_dc += 0.001f * (audio - fm_dc);
         audio -= fm_dc;
+        /* Modest pre-gain so typical mic levels approach ~5 kHz peak. */
         audio *= 2.0f;
         if (audio > 1.0f) audio = 1.0f;
         if (audio < -1.0f) audio = -1.0f;
+        if (fabs(audio) > peak) peak = (sp_float)fabs(audio);
 
         fm_audio_phase += dev_inc * audio;
         if (fm_audio_phase > TPI) fm_audio_phase -= TPI;
         if (fm_audio_phase < -TPI) fm_audio_phase += TPI;
 
         {
+            /* Same I/Q convention as tune/ssb: I=sin, Q=cos of LO+FM phase. */
             sp_float phase = mystate.lo1_phaseacc + fm_audio_phase;
             samps[i].real = gain * (sp_float)sin(phase);
             samps[i].imag = gain * (sp_float)cos(phase);
@@ -481,6 +505,15 @@ void fm_modulate(sp_cplx *samps) {
         mystate.lo1_phaseacc += mystate.lo1_phaseinc;
         if (mystate.lo1_phaseacc > TPI) mystate.lo1_phaseacc -= TPI;
         if (mystate.lo1_phaseacc < -TPI) mystate.lo1_phaseacc += TPI;
+    }
+
+    if (fm_peak_log_skip == 0 && G_fp_logfile) {
+        print_time();
+        fprintf(G_fp_logfile, "[%d] fm_modulate. peak|audio|=%.3f (1.0 => ~%.0f Hz dev)\n",
+                line_number++, peak, (double)FM_PEAK_DEV_HZ);
+        fm_peak_log_skip = 100;
+    } else if (fm_peak_log_skip > 0) {
+        fm_peak_log_skip--;
     }
 }
 
@@ -520,14 +553,46 @@ void am_modulate(sp_cplx *samps) {
 // TUNE mode modulator - generate I and Q carriers, then feed them to the balanced modulator
 // with a DC offset, which unbalances it and generates the carrier.
 
+/*
+ * TUNE start ramp (trans 3.148). The TUNE carrier used to start at full level in one
+ * sample. Through the TUNE TX filter (lo1 +/- bw) that step went on the air as a hump
+ * about +/-2.7 kHz wide around the carrier (Stew's SA, 2026-10-29). Now the carrier
+ * rises with a raised cosine over TUNE_RAMP_MS when the mode changes to TUNE
+ * (udp_thread.c CMD_SET_MAIN_MODE sets G_tune_ramp_pos = 0). CW also calls this
+ * function; it is never armed for CW (the radio shapes CW with the DAC soft mute).
+ * The end of TUNE is shaped in the radio firmware (DAC soft mute before TX_HI off).
+ */
+#define TUNE_RAMP_MS 5.0f
+volatile int G_tune_ramp_pos = -1;
+
 void tune_modulate(sp_cplx *samps) {
     int i;
     sp_float gain = 1.5f;
-
+    sp_float ramp = 1.0f;
+    int ramp_len = (int) (mystate.samplerate * TUNE_RAMP_MS / 1000.0f);
+    int start_pos = G_tune_ramp_pos;   /* armed (0) only by the UDP thread on entry to TUNE */
+    int ramp_pos = start_pos;
     sp_float carrierI, carrierQ;
+
+    if (ramp_len < 1)
+        ramp_pos = -1;
     for (i = 0; i < mystate.nfft - mystate.filtertaps; i++) {
         carrierI = (sp_float) sin(mystate.lo1_phaseacc);
         carrierQ = (sp_float) cos(mystate.lo1_phaseacc);
+
+        if (ramp_pos >= 0) {
+            if (ramp_pos < ramp_len) {
+                ramp = 0.5f - 0.5f * (sp_float) cos(3.14159265358979 * (double) ramp_pos / (double) ramp_len);
+                ramp_pos++;
+            } else {
+                ramp = 1.0f;
+                ramp_pos = -1;
+            }
+        } else {
+            ramp = 1.0f;
+        }
+        carrierI *= ramp;
+        carrierQ *= ramp;
 
         // modulate that stream, adding an offset to create the carrier
         samps[i].real = (carrierI * (1.0f + samps[i].real)) * 0.8f; // TUNE at 80% of available power
@@ -539,6 +604,9 @@ void tune_modulate(sp_cplx *samps) {
         if (mystate.lo1_phaseacc > TPI) mystate.lo1_phaseacc -= TPI; // wrap phase accumulator
         if (mystate.lo1_phaseacc < -TPI) mystate.lo1_phaseacc += TPI; // accommodate negative frequencies
     }
+    /* Store progress, unless the UDP thread re-armed the ramp during this block. */
+    if (G_tune_ramp_pos == start_pos)
+        G_tune_ramp_pos = ramp_pos;
 }
 
 void cw_modulate(sp_cplx *samps) {
@@ -657,15 +725,14 @@ void jimifft(sp_cplx *samps, int n) {
 
 }
 
-/* trans 3.151 (port of Stew's Windows trans 3.155): 2 TONE test signal, 700 + 1900 Hz, fed
- * into the voice path in place of the mic samples (before tx_audio_lowpass, ssb_modulate,
- * fastconv: so it goes through the drive and the ALC like voice). Mono audio, real = imag as
- * framesToComplex makes it.
+/* trans 3.155: 2 TONE test signal, 700 + 1900 Hz, fed into the voice path in place of the mic
+ * samples (before tx_audio_lowpass, ssb_modulate, fastconv: so it goes through the drive and
+ * the ALC like voice). Mono audio, real = imag as framesToComplex makes it.
  * Level: ssb_modulate splits a real audio tone into two sidebands of half amplitude and the SSB
  * filter keeps one, so each tone leaves at TWO_TONE_LEVEL / 2 = 0.4: half of the TUN carrier
  * (0.8, tune_modulate). The two tones then peak together at the TUN level at the same drive:
  * PEP = calibrated power with the SSB slider at 100 % if the ALC ceiling allows it.
- * 5 ms raised-cosine fade-in at each key-down (keyed = G_tx_mode). */
+ * 5 ms raised-cosine fade-in at each key-down. */
 #define TWO_TONE_LEVEL   0.8f
 #define TWO_TONE_F1      700.0
 #define TWO_TONE_F2      1900.0

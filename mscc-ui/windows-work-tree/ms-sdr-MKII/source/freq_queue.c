@@ -27,7 +27,11 @@ unsigned long freq_queue_add(unsigned long freq) {
     unsigned long status = QUEUE_SUCCESS;
     if (freq != 0) {
         if (G_Rit_Status && !G_TX) {
-            freq = freq + G_Rit_Offset;
+            /* 3.202 (as Pi): G_Rit_Offset is signed; never below 0 Hz */
+            long long f = (long long)freq + (long long)G_Rit_Offset;
+            if (f < 0)
+                f = 0;
+            freq = (unsigned long)f;
         }
         if (!E_queue_busy) {
             E_queue_busy = TRUE;

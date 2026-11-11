@@ -603,13 +603,8 @@ void Gui_get_param(uint8_t op_code, char *buffer) {
     switch (op_code) {
 
         case CMD_SET_NR:
-            /* Live from client: persist NR_VALUE, apply to recv (0 = off, non-zero = level) */
-            User_Controls.NR_Value = t_opcode_data;
-            SDRcore_recv_send_param(CMD_SET_NR, t_opcode_data);
-            User_Controls_Update_Init_File();
-            print_time(0);
-            fprintf(G_fp_logfile, "[%d] Gui_get_param. CMD_SET_NR → NR_VALUE=%d\n",
-                line_number++, User_Controls.NR_Value);
+            /* Store NR_VALUE in user_controls.ini + forward to sdrcore-recv (3.202, as Pi) */
+            User_Controls_Process(op_code, buffer, FALSE);
             break;
 
         case CMD_SET_CALIBRATION_DATA:
@@ -1202,30 +1197,42 @@ void * Command_Processor(void *my_param) {
         print_time(0);
         fprintf(G_fp_logfile, "[%d] Command_Interface. Remote Client Socket Created\n", line_number++);
     }
-    host_name = gethostbyname(G_Client_Host_Name);
-    if (host_name != NULL) {
-        ipaddress = (struct in_addr **) host_name->h_addr_list;
-        for (i = 0; ipaddress[i] != NULL; i++) {
-            strcpy(gui_ip, inet_ntoa(*ipaddress[count]));
-        }
+    /* Client address from mscc.ini MSCC_IP=... (see initialize_mscc).
+     * 3.202 (as Pi): empty / unresolvable → 127.0.0.1 for local Windows client + WSL. */
+    if (G_Client_Host_Name[0] == '\0') {
+        strcpy(G_Client_Host_Name, "127.0.0.1");
         print_time(0);
-        fprintf(G_fp_logfile, "[%d] Command_Interface. Client IP Address: Name: %s, IP: %s\n", line_number++, G_Client_Host_Name,
-                gui_ip);
-        G_Remote_GUI_Attached = TRUE;
-        memset((char *) &si_gui, 0, sizeof (si_gui));
-        si_gui.sin_family = AF_INET;
-        si_gui.sin_port = htons(G_gui_port);
-        si_gui.sin_addr.s_addr = inet_addr(gui_ip);
-    } else {
-        print_time(0);
-        fprintf(G_fp_logfile, "[%d] Command_Interface. Client Host FAILED: NOT FOUND: Name: %s, IP: %s\n", line_number++,
-                G_Client_Host_Name, gui_ip);
-        strcpy(message, "HOST NAME NOT FOUND ");
-        strcat(message, G_Client_Host_Name);
-        MessageBoxA(NULL, " HOST NAME NOT FOUND", "MS-SDR",
-            MB_OK | MB_TASKMODAL | MB_ICONEXCLAMATION);
-        Stop_all(0, STOP_NETWORK_FAILED);
+        fprintf(G_fp_logfile, "[%d] Command_Interface. MSCC_IP empty - defaulting to 127.0.0.1\n",
+            line_number++);
     }
+    gui_ip[0] = '\0';
+    /* Numeric IP: skip DNS */
+    if (inet_addr(G_Client_Host_Name) != INADDR_NONE) {
+        strncpy(gui_ip, G_Client_Host_Name, sizeof(gui_ip) - 1);
+    } else {
+        host_name = gethostbyname(G_Client_Host_Name);
+        if (host_name != NULL) {
+            ipaddress = (struct in_addr **) host_name->h_addr_list;
+            if (ipaddress[0] != NULL) {
+                strncpy(gui_ip, inet_ntoa(*ipaddress[0]), sizeof(gui_ip) - 1);
+            }
+        }
+    }
+    if (gui_ip[0] == '\0') {
+        print_time(0);
+        fprintf(G_fp_logfile, "[%d] Command_Interface. Client Host FAILED: NOT FOUND: Name: %s - using 127.0.0.1\n",
+            line_number++, G_Client_Host_Name);
+        strcpy(gui_ip, "127.0.0.1");
+        strcpy(G_Client_Host_Name, "127.0.0.1");
+    }
+    print_time(0);
+    fprintf(G_fp_logfile, "[%d] Command_Interface. Client IP Address: Name: %s, IP: %s\n", line_number++, G_Client_Host_Name,
+            gui_ip);
+    G_Remote_GUI_Attached = TRUE;
+    memset((char *) &si_gui, 0, sizeof (si_gui));
+    si_gui.sin_family = AF_INET;
+    si_gui.sin_port = htons(G_gui_port);
+    si_gui.sin_addr.s_addr = inet_addr(gui_ip);
 
     ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
     //Set up the SDRcore_recv connection configuration
@@ -1448,7 +1455,9 @@ void * Command_Processor(void *my_param) {
                 /*
                  * Headless split: cores may already be live from Apply_Appliance_Startup().
                  * On client connect: re-apply cores (sync) + GUI-only user_controls push.
+                 * 3.202 (Pi 3.194): first read the radio's calibration if startup could not.
                  */
+                Radio_cal_startup_load("client connect");
                 if (!G_appliance_startup_done) {
                     Apply_Appliance_Startup();
                 } else {
@@ -1574,10 +1583,8 @@ void * Command_Processor(void *my_param) {
             break;
 
         case CMD_SET_ALC_MULTIPLIER:
-            SDRcore_trans_send_param(CMD_SET_ALC_MULTIPLIER, t_opcode_data);
-            print_time(0);
-            fprintf(G_fp_logfile, "[%d] Command_Interface . CMD_SET_ALC_MULTIPLIER: %d\n",
-                line_number++, t_opcode_data);
+            /* 3.202 (as Pi): saved in user_controls.ini, sent to trans and back to the client */
+            User_Controls_Process(opcode, G_receive_buf, FALSE);
             break;
 
         case CMD_SET_AMPLIFIER_CALIBRATION_RESET:
@@ -1856,12 +1863,16 @@ void * Command_Processor(void *my_param) {
         case CMD_SET_RIT_FREQ:
             op_code_data_32 = (int*)&G_receive_buf[1];
             memcpy(&i_opcode_data, op_code_data_32, 4);
-            G_Rit_Offset = i_opcode_data;
+            G_Rit_Offset = (int32_t)i_opcode_data;
+            if (G_Rit_Offset > 500)             /* 3.202 (as Pi): RIT range +-500 Hz */
+                G_Rit_Offset = 500;
+            else if (G_Rit_Offset < -500)
+                G_Rit_Offset = -500;
             if (G_Rit_Status == TRUE) {
                 freq_queue_add(G_tune_freq);
             }
             print_time(0);
-            fprintf(G_fp_logfile, "[%d] SET_RIT_FREQUENCY. G_Rit_Offset: %ld\n", line_number++, G_Rit_Offset);
+            fprintf(G_fp_logfile, "[%d] SET_RIT_FREQUENCY. G_Rit_Offset: %d\n", line_number++, (int)G_Rit_Offset);
             break;
 
         case CMD_GET_SET_NB_ENABLE:
@@ -2132,9 +2143,6 @@ void * Command_Processor(void *my_param) {
             print_time(0);
             fprintf(G_fp_logfile, "[%d] Command_Interface. CMD_SET_MAIN_FREQ. Calling SetHWLO with: %ld\n", line_number++, (G_tune_freq));
             freq_queue_add(G_tune_freq);
-            print_time(0);
-            fprintf(G_fp_logfile, "[%d] Command_Interface. CMD_SET_MAIN_FREQ. Calling set_last_used for Freq: %ld\n", line_number++, (G_tune_freq));
-            //set_last_used(G_tune_freq, G_mode);
             //Set_band_normal(G_tune_freq, TRUE);
             if (iq_mode == 1) {
                 iq_mode = 0;
@@ -2723,12 +2731,11 @@ int parse_cw_init_record(char *record) {
         cmd_value = atoi(&parameter[length]);
         print_time(0);
         fprintf(G_fp_logfile, "[%d] Parse_cw_init . CW_Mem_Text_WPM: %d\n", line_number++, cmd_value);
-        if (cmd_value < 0)
-            cmd_value = 0;
+        /* 0 = Farnsworth off; else clamp to keyer WPM range (3.202, as Pi: 1-4 -> 5, was 0) */
+        if (cmd_value != 0 && cmd_value < 5)
+            cmd_value = 5;
         if (cmd_value > 60)
             cmd_value = 60;
-        if (cmd_value != 0 && cmd_value < 5)
-            cmd_value = 0;
         cw_record.text_wpm = (uint8_t)cmd_value;
     }
     parameter = strstr(record, "CW_Paddle_Farnsworth=");   /* Pi 2026-11-05 port */
@@ -2804,6 +2811,31 @@ int get_cw_params() {
         fprintf(G_fp_logfile, "[%d] get_cw_params. File: %s\n", line_number++, file_name);
         fflush(G_fp_logfile);
         cw_ini = fopen(file_name, "r");
+        if (cw_ini == NULL) {
+            /* 3.202 (as Pi): create a minimal default instead of stopping */
+            print_time(0);
+            fprintf(G_fp_logfile, "[%d] get_cw_params Open: FAILED - creating default (3.202, as Pi) %s\n",
+                line_number++, file_name);
+            cw_ini = fopen(file_name, "w");
+            if (cw_ini != NULL) {
+                fprintf(cw_ini,
+                    "CW_Keyer_Installed=0;\n"
+                    "CW_Keyer_Mode=1;\n"
+                    "CW_Iambic_Type=0;\n"
+                    "CW_Iambic_Calibrate=0;\n"
+                    "CW_Memory=0;\n"
+                    "CW_Spacing=0;\n"
+                    "CW_Paddle=1;\n"
+                    "CW_Weight=50;\n"
+                    "CW_Tx_Hold=15;\n"
+                    "CW_Speed=18;\n"
+                    "CW_Semi_Break_In=0;\n"
+                    "CW_Semi_Control=0;\n"
+                    "CW_Side_Tone_Volume=0;\n");
+                fclose(cw_ini);
+                cw_ini = fopen(file_name, "r");
+            }
+        }
         if (cw_ini != NULL) {
             record_status = fgets(cw_init_record, sizeof (cw_init_record), cw_ini);
             while (record_status != NULL) {
@@ -2815,8 +2847,7 @@ int get_cw_params() {
             }
         } else {
             print_time(0);
-            fprintf(G_fp_logfile, "[%d] get_cw_params Open: FAILED\n", line_number++);
-            Stop_all(1, 0);
+            fprintf(G_fp_logfile, "[%d] get_cw_params Open: FAILED (continuing without cw.ini)\n", line_number++);
         }
         print_time(0);
         fprintf(G_fp_logfile, "[%d] get_cw_params . Finished\n", line_number++);
@@ -2910,6 +2941,24 @@ int initialize_mscc() {
         fprintf(G_fp_logfile, "[%d] initialize_mscc. File: %s\n", line_number++, file_name);
         fflush(G_fp_logfile);
         fp_mscc_ini = fopen(file_name, "r");
+        if (fp_mscc_ini == NULL) {
+            /* 3.202 (as Pi): default, client on this machine via localhost */
+            print_time(0);
+            fprintf(G_fp_logfile, "[%d] initialize_mscc Open: FAILED - creating default (3.202, as Pi) %s\n",
+                line_number++, file_name);
+            fp_mscc_ini = fopen(file_name, "w");
+            if (fp_mscc_ini != NULL) {
+                fprintf(fp_mscc_ini,
+                    "MSCC_PORT=8889;\n"
+                    "MSCC_IP=127.0.0.1;\n"
+                    "PCB_VERSION=10;\n"
+                    "PROFICIO-MKII=1;\n"
+                    "SWR_METER=1;\n"
+                    "SWR_METER_PORT=6999;\n");
+                fclose(fp_mscc_ini);
+                fp_mscc_ini = fopen(file_name, "r");
+            }
+        }
         if (fp_mscc_ini != NULL) {
             record_status = fgets(init_record, sizeof (init_record), fp_mscc_ini);
             while (record_status != NULL) {
@@ -2921,8 +2970,8 @@ int initialize_mscc() {
             }
         } else {
             print_time(0);
-            fprintf(G_fp_logfile, "[%d] initialize_mscc Open: FAILED\n", line_number++);
-            Stop_all(1, 0);
+            fprintf(G_fp_logfile, "[%d] initialize_mscc Open: FAILED (continuing; MSCC_IP defaults later)\n",
+                line_number++);
         }
         if (G_proficio_mkii == 0)
             G_PTT_Switch_Allow = FALSE;

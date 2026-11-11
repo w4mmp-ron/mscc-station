@@ -396,7 +396,7 @@ public static class ConfigBootstrap
         }
 
         lines.Add("");
-        lines.Add("Open Settings to choose COM port and audio devices, then press Start again.");
+        lines.Add("Open Settings to choose COM port and audio devices, then press Connect again.");
         return string.Join(Environment.NewLine, lines);
     }
 }

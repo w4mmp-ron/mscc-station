@@ -1207,6 +1207,15 @@ public partial class MainViewModel : ViewModelBase, IDisposable
     }
 
     public string ConnectButtonText => IsConnected ? "Disconnect" : "Connect";
+    /// <summary>Connect button tip: says whether the servers start / stop with it (1.6.94).</summary>
+    public string ConnectToolTip =>
+        IsConnected
+            ? (_serversOurs
+                ? "Disconnect. Also stops the servers this client started."
+                : "Disconnect. The servers keep running.")
+            : (LaunchServers && IsLocalHost(Host)
+                ? "Connect. Also starts the servers on this computer."
+                : "Connect to the server below.");
     /// <summary>Left-rail Audio path button: Phones or Digital.</summary>
     public string AudioPathButtonText =>
         RemoteAudio
@@ -1222,6 +1231,7 @@ public partial class MainViewModel : ViewModelBase, IDisposable
     partial void OnIsConnectedChanged(bool value)
     {
         OnPropertyChanged(nameof(ConnectButtonText));
+        OnPropertyChanged(nameof(ConnectToolTip));
         OnPropertyChanged(nameof(CanUserControlTransmit));
         OnPropertyChanged(nameof(DigitalControlsEnabled));
         OnPropertyChanged(nameof(LaunchOptionEnabled));
@@ -8055,6 +8065,7 @@ public partial class MainViewModel : ViewModelBase, IDisposable
 
     partial void OnHostChanged(string value)
     {
+        OnPropertyChanged(nameof(ConnectToolTip));
         OnPropertyChanged(nameof(IsRemoteAudioAllowed));
         OnPropertyChanged(nameof(RemoteAudioCheckboxEnabled));
         OnPropertyChanged(nameof(LaunchOptionEnabled));
@@ -8065,6 +8076,7 @@ public partial class MainViewModel : ViewModelBase, IDisposable
     }
     partial void OnLaunchServersChanged(bool value)
     {
+        OnPropertyChanged(nameof(ConnectToolTip));
         RefreshIdleStatusText();
         ScheduleSaveClientSettings();
     }

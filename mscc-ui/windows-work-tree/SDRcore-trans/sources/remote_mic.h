@@ -17,6 +17,9 @@ void remote_mic_init(void);
 
 void remote_mic_shutdown(void);
 
+/* trans 3.158 (as Pi): empty the ring and re-prime (called when the REMOTE path is selected). */
+void remote_mic_reset_stream(void);
+
 /* 1 if UDP listener is running (packets may fill the ring). */
 int remote_mic_ready(void);
 

@@ -18,7 +18,7 @@
  * record for 0-9. 0xC8 here is the radio's opcode, not usbavrcmd.h CMD_SET_FAVS_NAME. */
 #define RADIO_CMD_CALIBRATION   0xC8
 #define RADIO_CAL_TYPE_POWER    3
-#define RADIO_CAL_SAVE_DELAY    2   /* Windows Flusher_thread ticks every 3 s (Pi: 5 x 1 s) */
+#define RADIO_CAL_SAVE_DELAY    5   /* seconds (Flusher_thread 1 s loop since 3.202, as Pi) */
 /* 0 = no value writes to the radio (radio USB hang hunt, 2026-10-22); the startup
  * read-back still runs. 1 = normal. */
 #define RADIO_CAL_WRITES        1
@@ -407,7 +407,28 @@ void Radio_cal_load_iq(void) {
     Radio_cal_send_status();        /* 3.189: status lamps (if a client is already attached) */
 }
 
-/* Called every 3 s from Flusher_thread while G_Radio_Cal_Save_Pending > 0. */
+/* 3.202 (Pi 3.194 port): the startup read of the radio's calibration (and the reload of
+ * replaced cal files), done once per ms-sdr run as soon as the network is up. Called from main
+ * at startup and again at each client connect: if the network was not ready at startup, the
+ * first client connect does it (before, the radio was then never read in that run). */
+static pthread_mutex_t radio_cal_startup_lock = PTHREAD_MUTEX_INITIALIZER;
+static int radio_cal_startup_done = 0;
+
+void Radio_cal_startup_load(const char *who) {
+    pthread_mutex_lock(&radio_cal_startup_lock);
+    if (!radio_cal_startup_done && G_network_initialized) {
+        print_time(0);
+        fprintf(G_fp_logfile, "[%d] Radio_cal_startup_load . %s: reading the radio's calibration\n",
+                line_number++, who);
+        Factory_seed_reload_servers();
+        Radio_cal_load_power();
+        Radio_cal_load_iq();
+        radio_cal_startup_done = 1;
+    }
+    pthread_mutex_unlock(&radio_cal_startup_lock);
+}
+
+/* Called once a second from Flusher_thread while G_Radio_Cal_Save_Pending > 0. */
 void Radio_cal_save_tick(void) {
     int record;
     int sent = 0;

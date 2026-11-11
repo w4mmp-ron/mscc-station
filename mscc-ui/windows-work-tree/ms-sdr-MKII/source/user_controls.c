@@ -131,6 +131,7 @@ int User_Controls_Init() {
         fprintf(G_fp_logfile, "[%d] User_Controls_Init . user_controls.ini Path: %s\n", line_number++, file_name);
         User_Controls.Panadapter_Status = 0;
         User_Controls.Smeter_Status = 0;
+        User_Controls.Alc_Multiplier = 1; /* TX ALC on unless the file says otherwise (older files have no key) */
         fP_User_ini = fopen(file_name, "r");
         if (fP_User_ini != NULL) {
             record_status = fgets(init_record, sizeof (init_record), fP_User_ini);
@@ -402,6 +403,8 @@ int User_Controls_Init() {
                 strcpy(field, "PANADAPTER_REFRESH");
                 status = Parse_User_Controls_record(init_record, field);
                 if (status != -1) {
+                    /* 0 kills spectrum (panReady never set); heal sticky poison from old clients. */
+                    if (status < 1) status = 6;
                     User_Controls.Panadapter_Refresh = status;
                     print_time(0);
                     fprintf(G_fp_logfile, "[%d] User_Controls_Init . PANADAPTER_REFRESH: %d\n", line_number++, status);
@@ -527,6 +530,14 @@ int User_Controls_Init() {
                     print_time(0);
                     fprintf(G_fp_logfile, "[%d] User_Controls_Init . WATERFALL_SPEED: %d\n", line_number++, status);
                 }
+                memset(field, 0, sizeof (field));
+                strcpy(field, "CMD_SET_ALC_MULTIPLIER");
+                status = Parse_User_Controls_record(init_record, field);
+                if (status != -1) {
+                    User_Controls.Alc_Multiplier = status ? 1 : 0;
+                    print_time(0);
+                    fprintf(G_fp_logfile, "[%d] User_Controls_Init . CMD_SET_ALC_MULTIPLIER: %d\n", line_number++, status);
+                }
                 record_status = fgets(init_record, sizeof (init_record), fP_User_ini);
             }
         } else {
@@ -561,7 +572,7 @@ int User_Controls_Apply_To_Cores() {
     if (!G_network_initialized) {
         print_time(0);
         fprintf(G_fp_logfile,
-            "[%d] User_Controls_Apply_To_Cores. SKIP - network not initialized\n",
+            "[%d] User_Controls_Apply_To_Cores. SKIP — network not initialized\n",
             line_number++);
         return -1;
     }
@@ -575,25 +586,30 @@ int User_Controls_Apply_To_Cores() {
     SDRcore_recv_send_param(CMD_SET_CW_BW, User_Controls.Filter_CW_Index);
     SDRcore_trans_send_param(CMD_SET_COMPRESSION_STATE, User_Controls.Compression);
     SDRcore_trans_send_param(CMD_SET_COMPRESSION_LEVEL, User_Controls.Compression_Level);
+    SDRcore_trans_send_param(CMD_SET_ALC_MULTIPLIER, User_Controls.Alc_Multiplier);
     SDRcore_recv_send_param(CMD_GET_SET_NB_ENABLE, User_Controls.NB);
     SDRcore_recv_send_param(CMD_GET_SET_NB_PULSE_WIDTH, User_Controls.NB_Pulse_Width);
     SDRcore_recv_send_param(CMD_GET_SET_NB_THRESHOLD, User_Controls.NB_Threshold);
-    /* NR_VALUE: 0 = off; non-zero = on with that level (same field as client 0xA3) */
-    SDRcore_recv_send_param(CMD_SET_NR, User_Controls.NR_Value);
     print_time(0);
-    fprintf(G_fp_logfile, "[%d] User_Controls_Apply_To_Cores. CMD_SET_NR → %d\n",
-        line_number++, User_Controls.NR_Value);
+    fprintf(G_fp_logfile,
+        "[%d] User_Controls_Apply_To_Cores. NB -> recv enable=%d pulse=%d threshold=%d\n",
+        line_number++, (int)User_Controls.NB, (int)User_Controls.NB_Pulse_Width,
+        (int)User_Controls.NB_Threshold);
     SDRcore_recv_send_param(CMD_SET_CW_PITCH, User_Controls.CW_Pitch);
     SDRcore_recv_send_param(CMD_GET_SET_PANADAPTER_SMOOTHING, User_Controls.Panadapter_Average);
     SDRcore_recv_send_param(CMD_GET_SET_PANADAPTER_REFRESH, User_Controls.Panadapter_Refresh);
     SDRcore_recv_send_param(CMD_GET_SET_AGC, User_Controls.AGC_Index);
     SDRcore_recv_send_param(CMD_SET_AGC_FAST_LEVEL, User_Controls.ALC_Value);
+    /* NR: 0 = off, non-zero = on with level (same as live CMD_SET_NR) */
+    SDRcore_recv_send_param(CMD_SET_NR, User_Controls.NR_Value);
+    print_time(0);
+    fprintf(G_fp_logfile,
+        "[%d] User_Controls_Apply_To_Cores. CMD_SET_NR -> sdrcore-recv NR_VALUE=%d (%s)\n",
+        line_number++, (int)User_Controls.NR_Value,
+        User_Controls.NR_Value == 0 ? "off" : "on");
     SDRcore_trans_send_param(CMD_SET_PA_BYPASS, User_Controls.QRP);
     SDRcore_trans_send_param(CMD_SET_MICROPHONE_STATUS, User_Controls.Microphone_status);
     SDRcore_recv_send_param(CMD_GET_SET_AUTO_NOTCH, User_Controls.Auto_Notch);
-    print_time(0);
-    fprintf(G_fp_logfile, "[%d] User_Controls_Apply_To_Cores. CMD_GET_SET_AUTO_NOTCH → %d\n",
-        line_number++, User_Controls.Auto_Notch);
 
     /* P/D path + volumes — critical for headless digi without a client */
     SDRcore_trans_send_param(CMD_SET_AUDIO_DEVICE, User_Controls.Audio_Device);
@@ -652,21 +668,21 @@ int User_Controls_Send_To_Gui() {
     Gui_send_param(CMD_SET_CW_BW_DEFAULT, User_Controls.Filter_CW_Index);
     Gui_send_param(CMD_SET_COMPRESSION_STATE, User_Controls.Compression);
     Gui_send_param(CMD_SET_COMPRESSION_LEVEL, User_Controls.Compression_Level);
+    Gui_send_param(CMD_SET_ALC_MULTIPLIER, User_Controls.Alc_Multiplier);
     Gui_send_param(CMD_GET_SET_NB_ENABLE, User_Controls.NB);
     Gui_send_param(CMD_GET_SET_NB_PULSE_WIDTH, User_Controls.NB_Pulse_Width);
     Gui_send_param(CMD_GET_SET_NB_THRESHOLD, User_Controls.NB_Threshold);
-    /* NR + AN so reconnecting client matches appliance DSP state */
+    /* NR: 0 = off; non-zero = on with level (same opcode client uses) */
     Gui_send_param(CMD_SET_NR, User_Controls.NR_Value);
     print_time(0);
-    fprintf(G_fp_logfile, "[%d] User_Controls_Send_To_Gui. CMD_SET_NR → %d\n",
-        line_number++, User_Controls.NR_Value);
+    fprintf(G_fp_logfile,
+        "[%d] User_Controls_Send_To_Gui. CMD_SET_NR -> client NR_VALUE=%d (%s)\n",
+        line_number++, (int)User_Controls.NR_Value,
+        User_Controls.NR_Value == 0 ? "off" : "on");
     Gui_send_param(CMD_SET_CW_PITCH, User_Controls.CW_Pitch);
     Gui_send_param(CMD_GET_SET_AGC, User_Controls.AGC_Index);
     Gui_send_param(CMD_SET_AGC_FAST_LEVEL, User_Controls.ALC_Value);
     Gui_send_param(CMD_GET_SET_AUTO_NOTCH, User_Controls.Auto_Notch);
-    print_time(0);
-    fprintf(G_fp_logfile, "[%d] User_Controls_Send_To_Gui. CMD_GET_SET_AUTO_NOTCH → %d\n",
-        line_number++, User_Controls.Auto_Notch);
     print_time(0);
     fprintf(G_fp_logfile, "[%d] User_Controls_Send_To_Gui . QRP: %d\n", line_number++, User_Controls.QRP);
     Gui_send_param(CMD_SET_PA_BYPASS, User_Controls.QRP);
@@ -697,7 +713,7 @@ int User_Controls_Send() {
 }
 
 /* Volume and mic gain sliders send many steps, so those commands do not write the file.
- * They set this count and Flusher_thread writes the file once, that many passes after
+ * They set this count and Flusher_thread writes the file once, that many seconds after
  * the last step. */
 uint8_t G_User_Controls_Save_Pending = 0;
 
@@ -757,13 +773,14 @@ int User_Controls_Update_Init_File() {
                 "PANADAPTER_STATUS=%d;\n"
                 "SMETER_STATUS=%d;\n"
                 "MICROPHONE_STATUS=%d;\n"
-                "WATERFALL_STATUS=%d\n"
+                "WATERFALL_STATUS=%d;\n"
                 "WATERFALL_GRID=%d;\n"
                 "WATERFALL_PALLET=%d;\n"
                 "WATERFALL_DIRECTION=%d;\n"
                 "WATERFALL_GAIN=%d;\n"
                 "WATERFALL_ZERO=%d;\n"
                 "WATERFALL_SPEED=%d;\n"
+                "CMD_SET_ALC_MULTIPLIER=%d;\n"
                 ,
                 User_Controls.Version,
                 User_Controls.Speaker_Volume,
@@ -810,7 +827,8 @@ int User_Controls_Update_Init_File() {
                 User_Controls.Waterfall_direction,
                 User_Controls.Waterfall_gain,
                 User_Controls.Waterfall_zero,
-                User_Controls.Waterfall_speed),
+                User_Controls.Waterfall_speed,
+                User_Controls.Alc_Multiplier),
                 fclose(fp_User_ini);
         }
         else {
@@ -1006,15 +1024,13 @@ int User_Controls_Process(uint8_t command, char *buf, byte extened) {
                 if (opcode_data_8_bit == DIGITAL_SOUND_DEVICE ||
                     opcode_data_8_bit == REMOTE_DIGITAL_SOUND_DEVICE) {
                     int g = User_Controls.Digital_Mic_Gain;
-                    /* Remote Digital: client MSA1 is the operator mic. Host gain
-                     * (0 at boot / leftover local trim) must not cut WSJT TUNE. */
+                    /* Remote Digital: client MSA1 is the operator mic. */
                     if (opcode_data_8_bit == REMOTE_DIGITAL_SOUND_DEVICE)
                         g = 100;
                     SDRcore_trans_send_param(CMD_SET_MIC_VOLUME, g);
                     SDRcore_recv_send_param(CMD_SET_SPEAKER_VOLUME, User_Controls.Digital_Volume_Level);
                 }
                 else {
-                    /* Phones (1) or R-Phones (2) */
                     int g = User_Controls.Phones_Mic_Gain;
                     if (opcode_data_8_bit == REMOTE_SOUND_DEVICE)
                         g = 100;
@@ -1073,7 +1089,6 @@ int User_Controls_Process(uint8_t command, char *buf, byte extened) {
                 if (G_Sound_Device == DIGITAL_SOUND_DEVICE) {
                     SDRcore_trans_send_param(CMD_SET_MIC_VOLUME, User_Controls.Digital_Mic_Gain);
                 } else if (G_Sound_Device == REMOTE_DIGITAL_SOUND_DEVICE) {
-                    /* Keep sticky for local D; do not attenuate remote MSA1. */
                     SDRcore_trans_send_param(CMD_SET_MIC_VOLUME, 100);
                 }
                 G_User_Controls_Save_Pending = USER_CONTROLS_SAVE_DELAY;
@@ -1174,6 +1189,15 @@ int User_Controls_Process(uint8_t command, char *buf, byte extened) {
                         line_number++, s_opcode_data);
                 break;
 
+            case CMD_SET_ALC_MULTIPLIER:
+                /* TX ALC button: 0 = off, non-zero = on. Saved so trans and the client get it back at start / connect. */
+                User_Controls.Alc_Multiplier = t_opcode_data ? 1 : 0;
+                SDRcore_trans_send_param(CMD_SET_ALC_MULTIPLIER, User_Controls.Alc_Multiplier);
+                print_time(1);
+                fprintf(G_fp_logfile, "[%d] User_Controls_Process . CMD_SET_ALC_MULTIPLIER . VALUE: %d \n",
+                        line_number++, User_Controls.Alc_Multiplier);
+                break;
+
             case CMD_SET_TWO_TONE:
                 SDRcore_trans_send_param(CMD_SET_TWO_TONE, t_opcode_data);
                 print_time(1);
@@ -1182,18 +1206,59 @@ int User_Controls_Process(uint8_t command, char *buf, byte extened) {
                 break;
 
             case CMD_GET_SET_NB_ENABLE:
-                SDRcore_recv_send_param(CMD_GET_SET_NB_ENABLE, t_opcode_data);
-                User_Controls.NB = t_opcode_data;
+                {
+                    uint8_t prev = User_Controls.NB;
+                    SDRcore_recv_send_param(CMD_GET_SET_NB_ENABLE, t_opcode_data);
+                    User_Controls.NB = t_opcode_data;
+                    print_time(1);
+                    if (prev != t_opcode_data) {
+                        fprintf(G_fp_logfile,
+                            "[%d] User_Controls_Process . CMD_GET_SET_NB_ENABLE CHANGED %d -> %d (%s)\n",
+                            line_number++, (int)prev, (int)t_opcode_data,
+                            t_opcode_data ? "on" : "off");
+                    } else {
+                        fprintf(G_fp_logfile,
+                            "[%d] User_Controls_Process . CMD_GET_SET_NB_ENABLE . NB=%d (%s)\n",
+                            line_number++, (int)t_opcode_data,
+                            t_opcode_data ? "on" : "off");
+                    }
+                }
                 break;
 
             case CMD_GET_SET_NB_THRESHOLD:
-                SDRcore_recv_send_param(CMD_GET_SET_NB_THRESHOLD, s_opcode_data);
-                User_Controls.NB_Threshold = s_opcode_data;
+                {
+                    int prev = User_Controls.NB_Threshold;
+                    SDRcore_recv_send_param(CMD_GET_SET_NB_THRESHOLD, s_opcode_data);
+                    User_Controls.NB_Threshold = s_opcode_data;
+                    print_time(1);
+                    if (prev != s_opcode_data) {
+                        fprintf(G_fp_logfile,
+                            "[%d] User_Controls_Process . CMD_GET_SET_NB_THRESHOLD CHANGED %d -> %d\n",
+                            line_number++, prev, (int)s_opcode_data);
+                    } else {
+                        fprintf(G_fp_logfile,
+                            "[%d] User_Controls_Process . CMD_GET_SET_NB_THRESHOLD . value=%d\n",
+                            line_number++, (int)s_opcode_data);
+                    }
+                }
                 break;
 
             case CMD_GET_SET_NB_PULSE_WIDTH:
-                SDRcore_recv_send_param(CMD_GET_SET_NB_PULSE_WIDTH, s_opcode_data);
-                User_Controls.NB_Pulse_Width = s_opcode_data;
+                {
+                    int prev = User_Controls.NB_Pulse_Width;
+                    SDRcore_recv_send_param(CMD_GET_SET_NB_PULSE_WIDTH, s_opcode_data);
+                    User_Controls.NB_Pulse_Width = s_opcode_data;
+                    print_time(1);
+                    if (prev != s_opcode_data) {
+                        fprintf(G_fp_logfile,
+                            "[%d] User_Controls_Process . CMD_GET_SET_NB_PULSE_WIDTH CHANGED %d -> %d\n",
+                            line_number++, prev, (int)s_opcode_data);
+                    } else {
+                        fprintf(G_fp_logfile,
+                            "[%d] User_Controls_Process . CMD_GET_SET_NB_PULSE_WIDTH . value=%d\n",
+                            line_number++, (int)s_opcode_data);
+                    }
+                }
                 break;
 
             case CMD_SET_MIC_VOLUME:
@@ -1337,6 +1402,31 @@ int User_Controls_Process(uint8_t command, char *buf, byte extened) {
                 fprintf(G_fp_logfile, "[%d] User_Controls_Process . CMD_GET_SET_AUTO_NOTCH . Finished \n", line_number++);
                 break;
 
+            case CMD_SET_NR:
+                /*
+                 * 0 = off; non-zero = on with level (byte payload matches live client path).
+                 * Persist NR_VALUE so appliance start can re-apply to sdrcore-recv.
+                 */
+                {
+                    uint8_t nr = t_opcode_data;
+                    uint8_t prev = User_Controls.NR_Value;
+                    User_Controls.NR_Value = nr;
+                    SDRcore_recv_send_param(CMD_SET_NR, nr);
+                    print_time(1);
+                    if (prev != nr) {
+                        fprintf(G_fp_logfile,
+                            "[%d] User_Controls_Process . CMD_SET_NR CHANGED %d -> %d (%s) - saved to user_controls.ini\n",
+                            line_number++, (int)prev, (int)nr,
+                            nr == 0 ? "off" : "on");
+                    } else {
+                        fprintf(G_fp_logfile,
+                            "[%d] User_Controls_Process . CMD_SET_NR . NR_VALUE=%d (%s) — unchanged\n",
+                            line_number++, (int)nr,
+                            nr == 0 ? "off" : "on");
+                    }
+                }
+                break;
+
             case CMD_SET_CW_PITCH:
                 cw_pitch = opcode_data_8_bit;
                 switch (cw_pitch) {
@@ -1399,6 +1489,17 @@ int User_Controls_Process(uint8_t command, char *buf, byte extened) {
                 break;
 
             case CMD_GET_SET_PANADAPTER_REFRESH:
+                /* 0/1/2 = pan bins 800/1600/3200. 3–10 = legacy refresh blocks.
+                 * Rewrite to 6 only when the value is none of those (not a
+                 * resolution index and not a real refresh rate). Index 0 must
+                 * reach recv or 800 bins never comes back. */
+                if (t_opcode_data > 10) {
+                    print_time(0);
+                    fprintf(G_fp_logfile,
+                        "[%d] User_Controls_Process . CMD_GET_SET_PANADAPTER_REFRESH: %d invalid — using 6\n",
+                        line_number++, t_opcode_data);
+                    t_opcode_data = 6;
+                }
                 SDRcore_recv_send_param(CMD_GET_SET_PANADAPTER_REFRESH, t_opcode_data);
                 User_Controls.Panadapter_Refresh = t_opcode_data;
                 print_time(0);
@@ -1500,7 +1601,8 @@ int Write_User_Controls() {
                     "WATERFALL_DIRECTION=%d;\n"
                     "WATERFALL_GAIN=%d;\n"
                     "WATERFALL_ZERO=%d;\n"
-                    "WATERFALL_SPEED=%d;\n",
+                    "WATERFALL_SPEED=%d;\n"
+                    "CMD_SET_ALC_MULTIPLIER=%d;\n",
                     User_Controls.Version = VERSION,
                     User_Controls.Speaker_Volume = 0,
                     User_Controls.Speaker_Muted = 0,
@@ -1540,7 +1642,8 @@ int Write_User_Controls() {
                     User_Controls.Waterfall_direction = 0,
                     User_Controls.Waterfall_gain = 2891,
                     User_Controls.Waterfall_zero = 410,
-                    User_Controls.Waterfall_speed = 1),
+                    User_Controls.Waterfall_speed = 1,
+                    User_Controls.Alc_Multiplier = 1),
                     fclose(fp_User_ini);
         } else {
             print_time(0);

@@ -37,10 +37,14 @@
 // Release number is in the range of 0 to 9
 
 #define VERSION_MAJOR 3
-#define VERSION_MINOR 152
+#define VERSION_MINOR 153
 #define VERSION_MS_SDRCORE_RECV ((((VERSION_MINOR) << 8) & 0xff00) | ((VERSION_MAJOR) & 0x00ff))
 
 #define MAX_OUTPUT_DEVICES 50
+/* Must match main.c — invalid slot for operator/digital speaker tables (recv 3.153, as Pi) */
+#ifndef NO_OUTPUT_DEVICE
+#define NO_OUTPUT_DEVICE 100
+#endif
 #define MAX_PIXELS 3200
 #define DISPLAY_CENTER 399
 #define DISPLAY_BANDWIDTH 72000
@@ -115,6 +119,8 @@ struct output_devices {
 extern struct sockaddr_in si_me, si_ms_sdr;
 extern int sdrcore_s, ms_sdr_s, recv_len;
 extern int slen;
+void Core_Send_Message(const char *text, int now);   /* recv 3.153 (as Pi): pop-up text via ms-sdr */
+void Core_Message_Flush(void);
 
 extern int num_output_devices_found;
 extern state mystate;

@@ -2113,9 +2113,6 @@ void * Command_Processor(void *my_param) {
             print_time(0);
             fprintf(G_fp_logfile, "[%d] Command_Interface. CMD_SET_MAIN_FREQ. Calling SetHWLO with: %ld\n", line_number++, (G_tune_freq));
             freq_queue_add(G_tune_freq);
-            print_time(0);
-            fprintf(G_fp_logfile, "[%d] Command_Interface. CMD_SET_MAIN_FREQ. Calling set_last_used for Freq: %ld\n", line_number++, (G_tune_freq));
-            //set_last_used(G_tune_freq, G_mode);
             //Set_band_normal(G_tune_freq, TRUE);
             if (iq_mode == 1) {
                 iq_mode = 0;

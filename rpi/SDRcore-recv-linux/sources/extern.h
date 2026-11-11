@@ -26,7 +26,7 @@
  * Month is months from 09/24. Release number 0-9.
  */
 #define VERSION_MAJOR 3
-#define VERSION_MINOR 152
+#define VERSION_MINOR 153   /* 3.153 (2026-11-10): 10 ms pause after a recvfrom error (as Windows recv 3.153) */
 #define VERSION_MS_SDRCORE_RECV ((((VERSION_MINOR) << 8) & 0xff00) | ((VERSION_MAJOR) & 0x00ff))
 
 #define MAX_OUTPUT_DEVICES 50

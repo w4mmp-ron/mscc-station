@@ -267,7 +267,7 @@ extern BOOL srGetFreq(double* pMHz);
 
 
 
-//for Last_used
+//startup.ini (startup.c)
 extern int Get_Startup(uint32_t *freq, char *mode);
 extern int Update_Startup(uint32_t freq, char mode);
 extern uint8_t G_vfo;
@@ -359,7 +359,7 @@ extern uint8_t G_delete_SDRcore_init_files;
 extern uint8_t G_delete_Comm_port_init_file;
 extern uint8_t G_Message_Box_Displayed;
 extern uint8_t G_Rit_Status;
-extern uint32_t G_Rit_Offset;
+extern int32_t G_Rit_Offset; /* signed Hz; client sends int, range ~-500..+500 */
 extern uint8_t G_CW_Snap_Running;
 extern int G_CW_Offset;
 extern uint8_t G_all_threads_run;
@@ -410,6 +410,7 @@ extern void Radio_cal_load_power(void);
 extern void Radio_cal_store_iq(int tx, int record, int offset, int phase);
 extern void Radio_cal_reset_all(int kind);   /* Pi 3.197 port: CMD_SET_CAL_RESET_ALL (0x2F) */
 extern void Radio_cal_load_iq(void);
+extern void Radio_cal_startup_load(const char *who);   /* 3.202 (Pi 3.194): once per run, startup or first connect */
 extern void Radio_cal_send_status(void);   /* 3.189: 0x2D to the client */
 extern void IQ_report_value(int value);
 extern void IQ_report_phase(int value);
@@ -505,6 +506,7 @@ struct User_Record {
     int Waterfall_zero;
     int Waterfall_speed;
     uint8_t TX_hi_cut;
+    uint8_t Alc_Multiplier; //CMD_SET_ALC_MULTIPLIER: TX ALC button, 0 = off, 1 = on (3.202, as Pi)
 };
 struct Current_Filters_Record{
     uint8_t High_Cut;
@@ -521,7 +523,7 @@ extern int User_Controls_Send();           /* both (legacy) */
 extern int Apply_Appliance_Startup();     /* cores + startup.ini LO/band without client */
 extern void Send_CW_params_to_gui(void);  /* cw.ini fields to client after Session_Claim */
 extern int User_Controls_Update_Init_File();
-#define USER_CONTROLS_SAVE_DELAY 2 //Flusher_thread passes (3 s each) after the last volume / mic gain step
+#define USER_CONTROLS_SAVE_DELAY 3 //seconds after the last volume / mic gain step (1 s loop since 3.202, as Pi)
 extern uint8_t G_User_Controls_Save_Pending;
 extern uint8_t G_Speaker_Mute_Status;
 extern uint8_t G_QRP;

@@ -28,7 +28,7 @@ SRCS = \
 	source/freq_queue.c \
 	source/factory_seed.c \
 	source/iq.c \
-	source/last_used.c \
+	source/startup.c \
 	source/main-controller.c \
 	source/main.c \
 	source/message_queue.c \

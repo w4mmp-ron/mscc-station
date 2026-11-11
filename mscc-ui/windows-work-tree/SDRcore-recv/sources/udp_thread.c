@@ -1,8 +1,7 @@
+#define _CRT_SECURE_NO_WARNINGS 1
+#define _WINSOCK_DEPRECATED_NO_WARNINGS 1
 #include "extern.h"
 #include "remote_phones.h"
-#define _CRT_SECURE_NO_WARNINGS 1
-
-#define _WINSOCK_DEPRECATED_NO_WARNINGS 1
 #define BUFLEN 512  //Max length of buffer
 
 #define SERVER "127.0.0.1"
@@ -20,10 +19,6 @@ extern panadapter_buffer panbuffer;
 
 char buf[BUFLEN];
 int count = 0;
-
-static int speaker_slot_ok(int idx) {
-    return idx >= 0 && idx < MAX_OUTPUT_DEVICES;
-}
 
 uint16_t G_SDRcore_port = 0;
 uint16_t ms_sdr_port = 0;
@@ -67,9 +62,9 @@ static void Trigger_Panadapter_Pause(int frames) {
 
 struct {
     uint32_t freq;
-    uint32_t magnitude_low;
-    uint32_t magnitude;
-    uint32_t magnitude_high;
+    float magnitude_low;    /* unscaled Goertzel mags (no int overflow on strong signals) */
+    float magnitude;
+    float magnitude_high;
     float low_cut;
     float center;
     float high_cut;
@@ -197,10 +192,17 @@ int Setup_UDP(void) {
     memset((char*)&si_ms_sdr, 0, sizeof(si_ms_sdr));
     si_ms_sdr.sin_family = AF_INET;
     si_ms_sdr.sin_port = htons(ms_sdr_port);
-    //si_ms_sdr.sin_addr.s_addr = inet_addr(SERVER);
-    inet_pton(AF_INET, SERVER, &address);
-    si_ms_sdr.sin_addr.s_addr = address;
-
+    if (inet_pton(AF_INET, SERVER, &si_ms_sdr.sin_addr) != 1) {
+        print_time();
+        fprintf(G_fp_logfile, "[%d] Setup_UDP -> inet_pton(%s) failed\n", line_number++, SERVER);
+        si_ms_sdr.sin_addr.s_addr = htonl(INADDR_LOOPBACK);
+    }
+    print_time();
+    fprintf(G_fp_logfile,
+        "[%d] Setup_UDP -> listen :%d, ms-sdr %s:%d, status=%d\n",
+        line_number++, G_SDRcore_port, SERVER, ms_sdr_port, status);
+    fflush(G_fp_logfile);
+    (void)address;
     return status;
 }
 
@@ -211,14 +213,17 @@ int update_calibrate_data(uint32_t value) {
     char send_buf[20] = { 0 };
 
     print_time(0);
-    fprintf(G_fp_logfile, "[%d] update_calibrate_data . Called . Data: %ld\n", line_number++, value);
+    fprintf(G_fp_logfile, "[%d] update_calibrate_data . Called . Data: %u\n", line_number++, value);
     while (calibration_state == 0 && count < 30000) {
         Sleep(1);
         if (mycalstate.calReady == 1) {
-            cal_data[G_calibration_element].magnitude_low = mycalstate.calMagLow;
+            if (G_calibration_element >= MAX_CALIBRATION_ELEMENT) {  /* table full: reuse the last slot (ms-sdr sends <= 1201) */
+                G_calibration_element = MAX_CALIBRATION_ELEMENT - 1;
+            }
+            cal_data[G_calibration_element].magnitude_low = mycalstate.calMagLowF;
             cal_data[G_calibration_element].freq = value;
-            cal_data[G_calibration_element].magnitude = mycalstate.calMag;
-            cal_data[G_calibration_element].magnitude_high = mycalstate.calMagHigh;
+            cal_data[G_calibration_element].magnitude = mycalstate.calMagF;
+            cal_data[G_calibration_element].magnitude_high = mycalstate.calMagHighF;
             cal_data[G_calibration_element].low_cut = calibration_limits.low_cut;
             cal_data[G_calibration_element].center = calibration_limits.center;
             cal_data[G_calibration_element].high_cut = calibration_limits.high_cut;
@@ -253,10 +258,10 @@ uint32_t Send_calibration_data() {
     //int calibration_state = 0;
     //int error = 0;
     uint32_t freq;
-    uint32_t magnitude_low_max = 0;
-    uint32_t magnitude_mid_max = 0;
-    uint32_t magnitude_high_max = 0;
-    uint32_t average_magnitude_max = 0;
+    float magnitude_low_max = 0.0f;
+    float magnitude_mid_max = 0.0f;
+    float magnitude_high_max = 0.0f;
+    double average_magnitude_max = 0.0;  /* in the old mag * 1e6 units, like Calibration_Low_Limit */
     int low_max = 0;
     int mid_max = 0;
     int high_max = 0;
@@ -279,7 +284,7 @@ uint32_t Send_calibration_data() {
             high_max = count;
         }
     }
-    average_magnitude_max = (uint32_t) ((float) ((magnitude_high_max + magnitude_low_max + magnitude_mid_max)) / 3.0f);
+    average_magnitude_max = ((double) magnitude_high_max + magnitude_low_max + magnitude_mid_max) / 3.0 * 1000000.0;
     if (average_magnitude_max > Calibration_Low_Limit) {
         freq = (cal_data[low_max].freq + cal_data[mid_max].freq + cal_data[high_max].freq) / 3;
     } else {
@@ -290,10 +295,10 @@ uint32_t Send_calibration_data() {
     sendto(ms_sdr_s, send_buf, 5, 0, (struct sockaddr *) &si_ms_sdr, slen);
     G_calibration_element = 0;
     print_time();
-    fprintf(G_fp_logfile, "[%d] Send_calibration_data . average_magnitude_max %ld\n", line_number,
-            average_magnitude_max);
+    fprintf(G_fp_logfile, "[%d] Send_calibration_data . average_magnitude_max %.0f (limit %u)\n", line_number,
+            average_magnitude_max, Calibration_Low_Limit);
     print_time(0);
-    fprintf(G_fp_logfile, "[%d] Send_calibration_data . calculate_offset_freq . Finished. calculate_offset_freq: %ld\n",
+    fprintf(G_fp_logfile, "[%d] Send_calibration_data . calculate_offset_freq . Finished. calculate_offset_freq: %u\n",
             line_number++, freq);
     return freq;
 }
@@ -309,9 +314,12 @@ int CW_snap_update_calibrate_data() {
     while (calibration_state == 0 && count < 30000) {
         Sleep(1);
         if (mycalstate.calReady == 1) {
-            cal_data[G_calibration_element].magnitude_low = mycalstate.calMagLow;
-            cal_data[G_calibration_element].magnitude = mycalstate.calMag;
-            cal_data[G_calibration_element].magnitude_high = mycalstate.calMagHigh;
+            if (G_calibration_element >= MAX_CALIBRATION_ELEMENT) {  /* table full: reuse the last slot (ms-sdr sends <= 1201) */
+                G_calibration_element = MAX_CALIBRATION_ELEMENT - 1;
+            }
+            cal_data[G_calibration_element].magnitude_low = mycalstate.calMagLowF;
+            cal_data[G_calibration_element].magnitude = mycalstate.calMagF;
+            cal_data[G_calibration_element].magnitude_high = mycalstate.calMagHighF;
             cal_data[G_calibration_element].low_cut = calibration_limits.low_cut;
             cal_data[G_calibration_element].center = calibration_limits.center;
             cal_data[G_calibration_element].high_cut = calibration_limits.high_cut;
@@ -354,9 +362,9 @@ uint16_t CW_snap_Send_calibration_data() {
     char send_buf[20] = { 0 };
     //int calibration_state = 0;
     //int error = 0;
-    uint32_t magnitude_low_max = 0;
-    uint32_t magnitude_mid_max = 0;
-    uint32_t magnitude_high_max = 0;
+    float magnitude_low_max = 0.0f;
+    float magnitude_mid_max = 0.0f;
+    float magnitude_high_max = 0.0f;
     int low_max_count = 0;
     int mid_max_count = 0;
     int high_max_count = 0;
@@ -554,6 +562,23 @@ float Get_Volume_Attn(int index) {
     return attenuation;
 }
 
+/* Phones (1/2) and digital (0/3) keep separate attenuation; use the one for the current mode. */
+static uint8_t Active_Volume_ATTN(void) {
+    if (G_recv_audio_mode == DIGITAL_AUDIO || G_recv_audio_mode == REMOTE_DIGITAL_AUDIO)
+        return G_Digital_Volume_ATTN;
+    return G_Volume_ATTN;
+}
+
+/* After a CW transmission, reopen the output for the current audio mode (not always phones). */
+static int Reopen_Current_Output(void) {
+    int dig = G_digital_output_device_index;
+    int op = G_output_device_index;
+    if ((G_recv_audio_mode == DIGITAL_AUDIO || G_recv_audio_mode == REMOTE_DIGITAL_AUDIO) &&
+        dig >= 0 && dig < MAX_OUTPUT_DEVICES && dig != NO_OUTPUT_DEVICE)
+        return manage_stream(1, G_digital_output_devices[dig].device_index, 2);
+    return manage_stream(1, G_output_devices[op].device_index, G_output_devices[op].num_channels);
+}
+
 int Get_IQ_Record(int band) {
     int record = 200;
     switch (band) {
@@ -662,18 +687,29 @@ void *UDP_Thread(void *my_param) {
     calibration_limits.high_cut = 602.0f;
     set_cw_bandwidth(cw_bw, cw_center);
     initAGC(1000.0f);
-    Load_IQ_Defaults();
+    /* I/Q offsets: only $HOME/.local/mscc/recv-iq.ini (no rev-MKII/ tree) */
     iq_init_status = Init_IQ_structure();
     if (iq_init_status == 0) {
         create_iq_ini_file(1);
+        Init_IQ_structure();
     }
     while (G_all_threads_run) {
-        if ((recv_len = recvfrom(sdrcore_s, buf, BUFLEN, 0, (struct sockaddr *) &si_me, &slen)) == SOCKET_ERROR) {
+        struct sockaddr_in si_peer;
+        int peer_len = (int)sizeof(si_peer);
+
+        memset(&si_peer, 0, sizeof(si_peer));
+        recv_len = recvfrom(sdrcore_s, buf, BUFLEN, 0, (struct sockaddr *)&si_peer, &peer_len);
+        if (recv_len == SOCKET_ERROR || recv_len < 1) {
+            if (!G_all_threads_run)
+                break;
             print_time();
-            fprintf(G_fp_logfile, "[%d] UDP Thread. recvfrom. Error Code : %s. UDP Thread Exiting. FAILED\n", 
-                    line_number++, strerror(errno));
-            UDP_status = 1;
-            G_all_threads_run = 0;
+            fprintf(G_fp_logfile, "[%d] UDP Thread. recvfrom. Error Code : %s (len=%d)\n",
+                    line_number++, strerror(errno), recv_len);
+            fflush(G_fp_logfile);
+            /* Do not kill whole process on a single bad recv.
+             * recv 3.153: 10 ms pause, so an error that repeats cannot flood the log. */
+            Sleep(10);
+            continue;
         }
         opcode = (uint8_t) buf[0];
         t_opcode_data = (uint8_t) (buf[1]);
@@ -717,7 +753,7 @@ void *UDP_Thread(void *my_param) {
             }
             previous_freq = i_opcode_data;
             print_time();
-            fprintf(G_fp_logfile, "[%d] UDP Thread. CMD_SET_MAIN_FREQ. freq: %ld, delta: %ld, pause_frames: %d\n",
+            fprintf(G_fp_logfile, "[%d] UDP Thread. CMD_SET_MAIN_FREQ. freq: %d, delta: %ld, pause_frames: %d\n",
                 line_number++, i_opcode_data, delta_freq, G_Pause_Panadapter_Cycles);
             break;
 
@@ -730,7 +766,7 @@ void *UDP_Thread(void *my_param) {
                 case REMOTE_DIGITAL_AUDIO: {
                     int dig = G_digital_output_device_index;
                     int op = G_output_device_index;
-                    if (!speaker_slot_ok(op)) {
+                    if (op < 0 || op >= MAX_OUTPUT_DEVICES || op == NO_OUTPUT_DEVICE) {
                         print_time();
                         fprintf(G_fp_logfile,
                             "[%d] UDP Thread. DIGITAL: invalid operator speaker index %d — abort\n",
@@ -739,51 +775,72 @@ void *UDP_Thread(void *my_param) {
                     }
                     manage_stream(0, G_output_devices[op].device_index,
                         G_output_devices[op].num_channels);
-                    if (!speaker_slot_ok(dig)) {
+                    if (dig < 0 || dig >= MAX_OUTPUT_DEVICES || dig == NO_OUTPUT_DEVICE) {
                         print_time();
                         fprintf(G_fp_logfile,
-                            "[%d] UDP Thread. DIGITAL: no matched digi speaker — reopen operator\n",
+                            "[%d] UDP Thread. DIGITAL: no matched digi speaker "
+                            "(set digital-speaker.ini e.g. VirtualA or MSCC_Cable_Out) — reopen operator\n",
                             line_number++);
                         stream_status = manage_stream(1, G_output_devices[op].device_index,
                             G_output_devices[op].num_channels);
-                        G_recv_audio_mode = t_opcode_data;
                         break;
                     }
+                    print_time();
+                    fprintf(G_fp_logfile,
+                        "[%d] UDP Thread. DIGITAL open pa=%d ch=2 name='%s'\n",
+                        line_number++,
+                        G_digital_output_devices[dig].device_index,
+                        G_digital_output_devices[dig].name);
                     stream_status = manage_stream(1, G_digital_output_devices[dig].device_index, 2);
                     G_recv_audio_mode = t_opcode_data;
+                    if (stream_status != 0) {
+                        print_time();
+                        fprintf(G_fp_logfile,
+                            "[%d] UDP Thread. DIGITAL open FAILED status=%d (no operator fallback)\n",
+                            line_number++, stream_status);
+                    }
                     print_time();
-                    fprintf(G_fp_logfile, "[%d] UDP Thread. CMD_SET_AUDIO_DEVICE %s (mode=%d)\n",
+                    fprintf(G_fp_logfile,
+                        "[%d] UDP Thread. CMD_SET_AUDIO_DEVICE %s (mode=%d) VirtualA open status=%d\n",
                         line_number++,
                         t_opcode_data == REMOTE_DIGITAL_AUDIO ? "REMOTE_DIGITAL" : "DIGITAL",
-                        (int)t_opcode_data);
+                        (int)t_opcode_data, stream_status);
                     break;
                 }
                 case OPERATOR_AUDIO:
                 case REMOTE_AUDIO: {
-                    /* Remote AF RX is MSA1; local speaker path same as Phones. */
+                    /* Remote AF RX is MsccRemotePhones; local speaker path same as Phones. */
                     int dig = G_digital_output_device_index;
                     int op = G_output_device_index;
-                    if (!speaker_slot_ok(op)) {
+                    if (op < 0 || op >= MAX_OUTPUT_DEVICES || op == NO_OUTPUT_DEVICE) {
                         print_time();
                         fprintf(G_fp_logfile,
                             "[%d] UDP Thread. OPERATOR/REMOTE: invalid operator index %d\n",
                             line_number++, op);
                         break;
                     }
-                    if (speaker_slot_ok(dig))
+                    if (dig >= 0 && dig < MAX_OUTPUT_DEVICES && dig != NO_OUTPUT_DEVICE)
                         manage_stream(0, G_digital_output_devices[dig].device_index, 2);
                     else
-                        manage_stream(0, G_output_devices[op].device_index, 2);
+                        manage_stream(0, 0, 2);
                     stream_status = manage_stream(1, G_output_devices[op].device_index,
                         G_output_devices[op].num_channels);
                     G_recv_audio_mode = t_opcode_data;
                     print_time();
-                    fprintf(G_fp_logfile, "[%d] UDP Thread. CMD_SET_AUDIO_DEVICE %s done\n",
-                        line_number++, t_opcode_data == REMOTE_AUDIO ? "REMOTE" : "OPERATOR");
+                    fprintf(G_fp_logfile,
+                        "[%d] UDP Thread. CMD_SET_AUDIO_DEVICE %s done. op=%d stream_status=%d\n",
+                        line_number++,
+                        t_opcode_data == REMOTE_AUDIO ? "REMOTE" : "OPERATOR",
+                        op, stream_status);
                     break;
                 }
                 }
+                /* Mode may have switched phones <-> digital: apply that mode's attenuation. */
+                volume_attn = Get_Volume_Attn(Active_Volume_ATTN());
+                if (speaker_muted == FALSE)
+                    G_volumeLevel = master_volume * volume_attn;
                 break;
+
             case CMD_SET_REMOTE_RX_HOST:
                 op_code_data_32 = (int *)&buf[1];
                 memcpy(&i_opcode_data, op_code_data_32, 4);
@@ -793,6 +850,7 @@ void *UDP_Thread(void *my_param) {
                     line_number++, (unsigned)i_opcode_data);
                 remote_phones_set_host((unsigned)i_opcode_data);
                 break;
+
             case CMD_SET_REMOTE_RX_CTRL:
                 op_code_data_32 = (int *)&buf[1];
                 memcpy(&i_opcode_data, op_code_data_32, 4);
@@ -802,6 +860,7 @@ void *UDP_Thread(void *my_param) {
                     line_number++, (unsigned)i_opcode_data);
                 remote_phones_set_ctrl((unsigned)i_opcode_data);
                 break;
+
             case CMD_START_STOP_IMAGE_VALUE:
                 G_Image_Check = t_opcode_data;
                 print_time();
@@ -835,7 +894,7 @@ void *UDP_Thread(void *my_param) {
 
             case CMD_SET_VOLUME_ATTN:
                 G_Volume_ATTN = t_opcode_data;
-                volume_attn = Get_Volume_Attn(t_opcode_data);
+                volume_attn = Get_Volume_Attn(Active_Volume_ATTN());
                 if (speaker_muted == FALSE) {
                     G_volumeLevel = master_volume * volume_attn;
                 }
@@ -847,7 +906,7 @@ void *UDP_Thread(void *my_param) {
 
             case CMD_SET_DIGITAL_VOLUME_ATTN:
                 G_Digital_Volume_ATTN = t_opcode_data;
-                volume_attn = Get_Volume_Attn(t_opcode_data);
+                volume_attn = Get_Volume_Attn(Active_Volume_ATTN());
                 if (speaker_muted == FALSE) {
                     G_volumeLevel = master_volume * volume_attn;
                 }
@@ -885,20 +944,18 @@ void *UDP_Thread(void *my_param) {
                             fprintf(G_fp_logfile, "[%d] UDP Thread. CMD_SET_TX_ON \n",
                                     line_number++);
                             if (G_Monitor == 0) {
-                                /* recv 3.149: do not stop the stream (it shares the radio USB audio
-                                 * device with the TX I/Q). The callback outputs silence while
-                                 * G_tx_mode is set and MONITOR is off. */
+                                /* 3.149: stream kept running; process_iq_to_stereo() outputs
+                                 * silence while G_tx_mode is set (was Pa_StopStream) */
                                 print_time();
-                                fprintf(G_fp_logfile, "[%d] UDP Thread. CMD_SET_TX_ON . G_Monitor: %d (recv 3.149: RX muted, stream kept running)\n",
+                                fprintf(G_fp_logfile, "[%d] UDP Thread. CMD_SET_TX_ON . G_Monitor: %d (RX muted, stream kept running)\n",
                                         line_number++, G_Monitor);
                             }
                         } else {
                             print_time();
                             fprintf(G_fp_logfile, "[%d] UDP Thread . CMD_SET_TX_ON . Starting Tone Stream stream: \n",
                                     line_number++);
-                            if (speaker_slot_ok(G_output_device_index))
-                                stream_status = manage_stream(0, G_output_devices[G_output_device_index].device_index,
-                                        G_output_devices[G_output_device_index].num_channels);
+                            stream_status = manage_stream(0, G_output_devices[G_output_device_index].device_index,
+                                    G_output_devices[G_output_device_index].num_channels);
                             /*stream_status = manage_sidetone_stream(0, G_output_devices[G_output_device_index].device_index,
                                     G_output_devices[G_output_device_index].num_channels);
                             stream_status = manage_sidetone_stream(1, G_output_devices[G_output_device_index].device_index,
@@ -910,9 +967,9 @@ void *UDP_Thread(void *my_param) {
                             fprintf(G_fp_logfile, "[%d] UDP Thread . CMD_SET_TX_ON \n",
                                     line_number++);
                             if (G_Monitor == 0) {
-                                /* recv 3.149: stream was never stopped; the callback unmutes on its own. */
+                                /* 3.149: stream was never stopped; the callback unmutes on its own */
                                 print_time();
-                                fprintf(G_fp_logfile, "[%d] UDP Thread . CMD_SET_TX_ON . G_Monitor: %d (recv 3.149: RX unmuted)\n",
+                                fprintf(G_fp_logfile, "[%d] UDP Thread . CMD_SET_TX_ON . G_Monitor: %d (RX unmuted)\n",
                                         line_number++, G_Monitor);
                             }
                         } else {
@@ -922,27 +979,9 @@ void *UDP_Thread(void *my_param) {
                             /*stream_status = manage_sidetone_stream(0,
                                     G_output_devices[G_output_device_index].device_index,
                                     G_output_devices[G_output_device_index].num_channels);*/
-                            /*
-                             * recv 3.148: reopen the path the client chose. This used to always
-                             * reopen the operator speaker, so after TUN (the client sends the
-                             * mode before TUNE off) or CW with DIGITAL selected, audio moved to
-                             * the speakers while the client still showed DIGITAL.
-                             */
-                            if (speaker_slot_ok(G_output_device_index)) {
-                                int dig = G_digital_output_device_index;
-                                stream_status = manage_stream(0, G_output_devices[G_output_device_index].device_index,
-                                        G_output_devices[G_output_device_index].num_channels);
-                                if ((G_recv_audio_mode == DIGITAL_AUDIO || G_recv_audio_mode == REMOTE_DIGITAL_AUDIO) &&
-                                        speaker_slot_ok(dig)) {
-                                    print_time();
-                                    fprintf(G_fp_logfile, "[%d] UDP Thread . CMD_SET_TX_ON . CW TX off: reopen DIGITAL (mode=%d)\n",
-                                            line_number++, (int) G_recv_audio_mode);
-                                    stream_status = manage_stream(1, G_digital_output_devices[dig].device_index, 2);
-                                } else {
-                                    stream_status = manage_stream(1, G_output_devices[G_output_device_index].device_index,
-                                            G_output_devices[G_output_device_index].num_channels);
-                                }
-                            }
+                            stream_status = manage_stream(0, G_output_devices[G_output_device_index].device_index,
+                                    G_output_devices[G_output_device_index].num_channels);
+                            stream_status = Reopen_Current_Output();
                         }
                     }
                     previous_G_tx_mode = G_tx_mode;
@@ -1012,7 +1051,9 @@ void *UDP_Thread(void *my_param) {
                  * Legacy refresh values 3–10 still adjust G_Panadapter_Blocks only. */
                 if (t_opcode_data <= 2) {
                     static const int pix_table[3] = { 800, 1600, 3200 };
+                    static const char *res_name[3] = { "Normal", "High", "Max" };
                     int new_pix = pix_table[t_opcode_data];
+                    int old_pix = G_Panadapter_Pixels;
                     if (new_pix > MAX_PIXELS) new_pix = MAX_PIXELS;
                     if (new_pix != G_Panadapter_Pixels) {
                         /* Drop in-flight pan first so DSP does not write while we clear */
@@ -1020,21 +1061,37 @@ void *UDP_Thread(void *my_param) {
                         G_Panadapter_Pixels = new_pix;
                         memset(panbuffer.Y, 0, sizeof(panbuffer.Y));
                         G_Pan_Flush_History = TRUE;
-                        print_time();
-                        fprintf(G_fp_logfile,
-                            "[%d] UDP Thread. PAN RESOLUTION → %d bins (index %d) sizeof(Y)=%u\n",
-                            line_number++, G_Panadapter_Pixels, t_opcode_data,
-                            (unsigned)sizeof(panbuffer.Y));
                     }
+                    print_time();
+                    fprintf(G_fp_logfile,
+                        "[%d] UDP Thread. PAN RESOLUTION %s → %d bins (index %d, %s) "
+                        "was %d  segments=%d  Ybuf=%u bytes\n",
+                        line_number++,
+                        (old_pix != G_Panadapter_Pixels) ? "CHANGED" : "unchanged",
+                        G_Panadapter_Pixels, t_opcode_data,
+                        res_name[t_opcode_data],
+                        old_pix,
+                        G_Panadapter_Pixels / MAX_X,
+                        (unsigned)sizeof(panbuffer.Y));
+                    fflush(G_fp_logfile);
                 } else if (t_opcode_data >= 3 && t_opcode_data <= 10) {
+                    uint8_t old_blocks = G_Panadapter_Blocks;
                     G_Panadapter_Blocks = (uint8_t)t_opcode_data;
                     print_time();
-                    fprintf(G_fp_logfile, "[%d] UDP Thread. CMD_GET_SET_PANADAPTER_REFRESH blocks: %d\n",
-                        line_number++, G_Panadapter_Blocks);
+                    fprintf(G_fp_logfile,
+                        "[%d] UDP Thread. PAN REFRESH BLOCKS %s → %d (was %d) "
+                        "(legacy rate, not bin resolution)\n",
+                        line_number++,
+                        (old_blocks != G_Panadapter_Blocks) ? "CHANGED" : "unchanged",
+                        G_Panadapter_Blocks, old_blocks);
+                    fflush(G_fp_logfile);
                 } else {
                     print_time();
-                    fprintf(G_fp_logfile, "[%d] UDP Thread. CMD_GET_SET_PANADAPTER_REFRESH ignored: %d\n",
+                    fprintf(G_fp_logfile,
+                        "[%d] UDP Thread. PAN REFRESH ignored opcode_data=%d "
+                        "(want 0..2 resolution or 3..10 blocks)\n",
                         line_number++, t_opcode_data);
+                    fflush(G_fp_logfile);
                 }
                 break;
 
@@ -1116,7 +1173,36 @@ void *UDP_Thread(void *my_param) {
                 break;
 
             case CMD_GET_SET_PANADAPTER_SMOOTHING:
-                G_Smoothing = t_opcode_data + 2;
+                {
+                    int old_smooth = G_Smoothing;
+                    G_Smoothing = t_opcode_data + 2;
+                    print_time();
+                    fprintf(G_fp_logfile,
+                        "[%d] UDP Thread. PAN SMOOTHING %s → %d (raw index %d, was %d)\n",
+                        line_number++,
+                        (old_smooth != G_Smoothing) ? "CHANGED" : "unchanged",
+                        G_Smoothing, t_opcode_data, old_smooth);
+                    fflush(G_fp_logfile);
+                }
+                break;
+
+            case CMD_GET_SET_PANADAPTER_GAIN:
+                /* Often client display only; log so we see if GUI sends it to the core. */
+                print_time();
+                fprintf(G_fp_logfile,
+                    "[%d] UDP Thread. PAN GAIN cmd received raw=%d s_data=%d "
+                    "(recv core does not apply display grid gain)\n",
+                    line_number++, t_opcode_data, s_opcode_data);
+                fflush(G_fp_logfile);
+                break;
+
+            case CMD_GET_SET_PANADAPTER_BASE:
+                print_time();
+                fprintf(G_fp_logfile,
+                    "[%d] UDP Thread. PAN BASE/grid cmd received raw=%d s_data=%d "
+                    "(recv core does not apply display grid base — usually client-only)\n",
+                    line_number++, t_opcode_data, s_opcode_data);
+                fflush(G_fp_logfile);
                 break;
 
             case CMD_GET_SET_NB_ENABLE:
@@ -1155,8 +1241,17 @@ void *UDP_Thread(void *my_param) {
 
             case CMD_SET_KEEP_ALIVE:
                 G_keep_alive++;
-                //fprintf(G_fp_logfile, "[%d] UDP Thread . CMD_SET_KEEP_ALIVE . Called. \n", line_number++);
-                //update_calibrate_data(i_opcode_data);
+                if (G_keep_alive == 1) {    /* first only: SD card wear */
+                    print_time();
+                    fprintf(G_fp_logfile,
+                        "[%d] UDP Thread. CMD_SET_KEEP_ALIVE from %s:%u count=%lld\n",
+                        line_number++,
+                        inet_ntoa(si_peer.sin_addr),
+                        (unsigned)ntohs(si_peer.sin_port),
+                        (long long)G_keep_alive);
+                    fflush(G_fp_logfile);
+                    Core_Message_Flush();    /* ms-sdr is up: send waiting messages */
+                }
                 break;
 
             case CMD_SET_SDR_CORE_BAND:
@@ -1222,6 +1317,14 @@ void *UDP_Thread(void *my_param) {
                 fprintf(G_fp_logfile, "[%d] UDP Thread. CMD_SET_IQ_BAND. s_opcode_data: %d \n",
                         line_number++, s_opcode_data);
                 iq_band = Get_IQ_Record(s_opcode_data);
+                if (iq_band < 0 || iq_band >= 12) {
+                    /* Unknown band: Get_IQ_Record returns NO_IQ_BAND (200); G_iq_stack has 12 entries. */
+                    print_time();
+                    fprintf(G_fp_logfile, "[%d] UDP Thread. CMD_SET_IQ_BAND. Unknown band %d. Ignored\n",
+                            line_number++, s_opcode_data);
+                    iq_band = NO_IQ_BAND;
+                    break;
+                }
                 G_iq_stack[iq_band].band = iq_band;
                 G_iq_stack[iq_band].record = iq_band;
                 iq_offset = G_iq_stack[iq_band].iq_offset;
@@ -1244,7 +1347,8 @@ void *UDP_Thread(void *my_param) {
 
             case CMD_SET_IQ_RECORD:
             {
-                /* recv 3.151: band RX I/Q from the radio's calibration store (ms-sdr at startup) */
+                /* 3.150 (as Windows recv 3.151): one band's RX I/Q from the radio's calibration
+                 * store, sent by ms-sdr at startup. Save it in recv-iq.ini; apply it if in use. */
                 int rec;
                 int off;
                 memcpy(&i_opcode_data, &buf[1], 4);
@@ -1261,8 +1365,8 @@ void *UDP_Thread(void *my_param) {
                         IQ_calc(off);
                     }
                     print_time();
-                    fprintf(G_fp_logfile, "[%d] UDP Thread. CMD_SET_IQ_RECORD (from radio). record: %d, offset: %d\n",
-                            line_number++, rec, off);
+                    fprintf(G_fp_logfile, "[%d] UDP Thread. CMD_SET_IQ_RECORD (from radio). record: %d, offset: %d%s\n",
+                            line_number++, rec, off, (rec == Get_IQ_Record(operating_band)) ? " (in use, applied)" : "");
                 }
                 break;
             }
@@ -1317,7 +1421,7 @@ void *UDP_Thread(void *my_param) {
                 mycalstate.calReady = FALSE;
                 mycalstate.calStart = 1;
                 print_time();
-                fprintf(G_fp_logfile, "[%d] UDP Thread . CMD_SET_CALIBRATION_START . Called. Frequency: %ld\n", line_number++, i_opcode_data);
+                fprintf(G_fp_logfile, "[%d] UDP Thread . CMD_SET_CALIBRATION_START . Called. Frequency: %d\n", line_number++, i_opcode_data);
                 update_calibrate_data(i_opcode_data);
                 break;
 
@@ -1326,7 +1430,7 @@ void *UDP_Thread(void *my_param) {
                 memcpy(&i_opcode_data, op_code_data_32, 4);
                 mycalstate.Cycle_Count = (uint32_t) i_opcode_data;
                 print_time();
-                fprintf(G_fp_logfile, "[%d] UDP Thread . CDM_SET_CALIBRATE_CYCLE_COUNT . Called. Cycle Count: %ld\n", line_number++, mycalstate.Cycle_Count);
+                fprintf(G_fp_logfile, "[%d] UDP Thread . CDM_SET_CALIBRATE_CYCLE_COUNT . Called. Cycle Count: %u\n", line_number++, mycalstate.Cycle_Count);
                 break;
 
             case CMD_SET_CALIBRATION_FINISHED:
@@ -1339,11 +1443,9 @@ void *UDP_Thread(void *my_param) {
                         device_output_record_index = t_opcode_data;
                         print_time();
                         fprintf(G_fp_logfile, "[%d] UDP Thread . CMD_GET_SET_SPEAKER_DEVICE . Calling manage_stream with param: %d \n", line_number++, device_output_record_index);
-                        if (device_output_record_index >= 0 && device_output_record_index < MAX_OUTPUT_DEVICES) {
                         manage_stream(0, G_output_devices[device_output_record_index].device_index, G_output_devices[device_output_record_index].num_channels);
                         Sleep(50);
                         manage_stream(1, G_output_devices[device_output_record_index].device_index, G_output_devices[device_output_record_index].num_channels);
-                        }
                         print_time();
                         fprintf(G_fp_logfile, "[%d] UDP Thread . CMD_GET_SET_SPEAKER_DEVICE . Calling set_selected_device with param: %d \n", line_number++, device_output_record_index);
                         set_selected_device(device_output_record_index);
@@ -1437,10 +1539,8 @@ void *UDP_Thread(void *my_param) {
                 mystate.initDSPflag = TRUE;
                 print_time();
                 fprintf(G_fp_logfile,
-                        "[%d] UDP Thread . CMD_SET_MAIN_MODE: New Mode %c  lastHR=[%.0f,%.0f] filt=[%.0f,%.0f] Hz\n",
-                        line_number++, G_mode,
-                        mystate.lastHRFiltLow, mystate.lastHRFiltHigh,
-                        mystate.filtLowHz, mystate.filtHighHz);
+                        "[%d] UDP Thread . CMD_SET_MAIN_MODE: New Mode %c  FIR=[%.0f,%.0f] Hz\n",
+                        line_number++, G_mode, mystate.lastHRFiltLow, mystate.lastHRFiltHigh);
                 break;
 
             case CMD_SET_CW_BW:
@@ -1506,7 +1606,6 @@ void *UDP_Thread(void *my_param) {
                 }
                 if (!cw_mode) {
                     if (mystate.opmode == MODE_FM) {
-                        /* Hicut sets FM half-BW; real FIR → ±high (see setFilterOffsets). */
                         mystate.lastHRFiltLow = 50.0f;
                         mystate.lastHRFiltHigh = high_cut;
                     } else {
@@ -1517,10 +1616,8 @@ void *UDP_Thread(void *my_param) {
                     mystate.initDSPflag = TRUE;
                 }
                 print_time();
-                fprintf(G_fp_logfile,
-                        "[%d] UDP Thread . CMD_SET_BW_HICUT: New filter . Low: %f, High: %f, CW MODE: %d  (FM±=%.0f)\n",
-                        line_number++, mystate.lastHRFiltLow, mystate.lastHRFiltHigh, cw_mode,
-                        (mystate.opmode == MODE_FM) ? mystate.filtHighHz : 0.0f);
+                fprintf(G_fp_logfile, "[%d] UDP Thread . CMD_SET_BW_HICUT: New filter . Low: %f, High: %f, CW MODE: %d\n",
+                        line_number++, mystate.lastHRFiltLow, mystate.lastHRFiltHigh, cw_mode);
                 break;
 
             case CMD_SET_BW_LOCUT:
@@ -1548,7 +1645,6 @@ void *UDP_Thread(void *my_param) {
                 }
                 if (!cw_mode) {
                     if (mystate.opmode == MODE_FM) {
-                        /* Locut is meaningless for centered FM — keep ± current high. */
                         print_time();
                         fprintf(G_fp_logfile,
                                 "[%d] UDP Thread . CMD_SET_BW_LOCUT ignored in FM (keep FIR=[%.0f,%.0f])\n",
@@ -1571,4 +1667,81 @@ void *UDP_Thread(void *my_param) {
     }
     pthread_exit(0);
     return (NULL);
+}
+
+/*
+ * Text messages for the client, sent through ms-sdr as the same
+ * CMD_SET_EXTENDED_COMMAND + CMD_SET_SERVER_ERROR packet ms-sdr sends to the
+ * client. ms-sdr starts after the cores, so messages wait here until its first
+ * keep-alive arrives (Core_Message_Flush). now = 1 sends at once (fatal exit).
+ * Each different message is sent once only.
+ */
+#define CORE_MSG_MAX 8
+#define CORE_MSG_LEN 200
+static char core_msg_text[CORE_MSG_MAX][CORE_MSG_LEN];
+static int core_msg_sent[CORE_MSG_MAX];
+static int core_msg_count = 0;
+static pthread_mutex_t core_msg_lock = PTHREAD_MUTEX_INITIALIZER;
+
+static void core_message_send(const char *text) {
+    char send_buf[CORE_MSG_LEN + 2] = { 0 };
+    size_t len = strlen(text) + 1;
+
+    send_buf[0] = CMD_SET_EXTENDED_COMMAND;
+    send_buf[1] = CMD_SET_SERVER_ERROR;
+    memcpy(&send_buf[2], text, len);
+    if (sendto(ms_sdr_s, send_buf, (int)(len + 2), 0, (struct sockaddr *) &si_ms_sdr, slen) == SOCKET_ERROR) {
+        print_time();
+        fprintf(G_fp_logfile, "[%d] Core_Send_Message. sendto FAILED: %s\n", line_number++, strerror(errno));
+    }
+}
+
+void Core_Send_Message(const char *text, int now) {
+    char line[CORE_MSG_LEN];
+    int i;
+    int wait;
+
+    snprintf(line, sizeof (line), "SDRcore-recv: %s", text);
+    pthread_mutex_lock(&core_msg_lock);
+    for (i = 0; i < core_msg_count; i++) {
+        if (strcmp(core_msg_text[i], line) == 0) {
+            pthread_mutex_unlock(&core_msg_lock);
+            return;
+        }
+    }
+    if (core_msg_count == CORE_MSG_MAX) {
+        pthread_mutex_unlock(&core_msg_lock);
+        print_time();
+        fprintf(G_fp_logfile, "[%d] Core_Send_Message. list full, not sent: %s\n", line_number++, line);
+        return;
+    }
+    i = core_msg_count++;
+    strcpy(core_msg_text[i], line);
+    core_msg_sent[i] = 0;
+    print_time();
+    fprintf(G_fp_logfile, "[%d] Core_Send_Message. %s\n", line_number++, line);
+    fflush(G_fp_logfile);
+    if (now) {
+        /* UDP setup runs in the UDP thread; give it a moment at startup */
+        for (wait = 0; si_ms_sdr.sin_port == 0 && wait < 20; wait++)
+            Sleep(50);
+    }
+    if (si_ms_sdr.sin_port != 0 && (now || G_keep_alive > 0)) {
+        core_message_send(line);
+        core_msg_sent[i] = 1;
+    }
+    pthread_mutex_unlock(&core_msg_lock);
+}
+
+void Core_Message_Flush(void) {
+    int i;
+
+    pthread_mutex_lock(&core_msg_lock);
+    for (i = 0; i < core_msg_count; i++) {
+        if (!core_msg_sent[i]) {
+            core_message_send(core_msg_text[i]);
+            core_msg_sent[i] = 1;
+        }
+    }
+    pthread_mutex_unlock(&core_msg_lock);
 }

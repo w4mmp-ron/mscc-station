@@ -30,7 +30,7 @@
 
 /* {Model}.{[M]M}{Release Number} */
 #define VERSION_MAJOR 3
-#define VERSION_MINOR 157
+#define VERSION_MINOR 158
 #define VERSION_MS_SDRCORE_TRANS ((((VERSION_MINOR) << 8) & 0xff00) | ((VERSION_MAJOR) & 0x00ff))
 
 #define MAX_KEEP_ALIVE_COUNT 15
@@ -74,6 +74,14 @@ extern sp_float G_ALC_multiplier;
  * (Ron: SSB only ~40 W of 100). 0.80 (3.148) gave a WSJT tone 89 W vs TUNE 109 W on the
  * ATU-100; 3.149: 0.89 = WSJT at TUNE power. */
 #define ALC_CEILING 0.89f
+/* trans 3.158 (as Windows trans): local mic gate at key-down (stale mic / VAC audio dropped),
+ * then a short fade-in. Not for remote audio (MSA1). */
+#define TX_MIC_GATE_MS 35
+#define TX_MIC_GATE_DIGITAL_MS 200
+#define TX_MIC_FADE_MS 10
+extern volatile int G_tx_mic_gate_samples;
+extern volatile int G_tx_mic_fade_samples;
+extern volatile int G_tune_ramp_pos; /* TUNE start ramp: -1 idle, else next sample index (dsputils.c) */
 extern int8_t G_Do_ALC;
 extern int8_t G_Allow_ALC_Send;
 extern uint8_t G_audio_mode;

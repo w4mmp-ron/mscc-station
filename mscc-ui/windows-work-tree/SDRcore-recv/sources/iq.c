@@ -142,84 +142,18 @@ void *Check_Image_Level_thread(void *param) {
     return (NULL);
 }
 
-int Load_IQ_Defaults() {
-    FILE *IQ_Defaults;
-    char l_path[MAX_PATH] = {0};
-    int status = 0;
-    char iq_init_record[132];
-    int mynumber;
-    int record = 0;
-
-    struct {
-        char *record_number;
-        char *band;
-        char *iq_offset;
-    } iq_record;
-
+/* Windows used per-PCB defaults under rev-XXX/recv-iq.ini.
+ * Linux MSCC: only $HOME/.local/mscc/recv-iq.ini (Init_IQ_structure /
+ * create_iq_ini_file). Built-in iq_defaults_PCB[] seeds a new file if missing. */
+int Load_IQ_Defaults(void) {
     print_time(0);
-    fprintf(G_fp_logfile, "[%d] Load_IQ_Defaults. Called \n", line_number++);
-    if ((homedir = My_getenv("HOME")) != NULL) {
-        strcpy(l_path, homedir);
-        //strcat(l_path, "/.local/share/mscc");
-        switch (G_PCB_Version) {
-            case 1:
-                strcat(l_path, "/rev-0/recv-iq.ini");
-                break;
-            case 2:
-                strcat(l_path, "/rev-c/recv-iq.ini");
-                break;
-            case 4:
-                strcat(l_path, "/rev-4/recv-iq.ini");
-                break;
-            case 5:
-                strcat(l_path, "/rev-5/recv-iq.ini");
-                break;
-            case 6:
-                strcat(l_path, "/rev-g/recv-iq.ini");
-                break;
-            case 7:
-                strcat(l_path, "/rev-m/recv-iq.ini");
-                break;
-            case 8:
-                strcat(l_path, "/rev-u/recv-iq.ini");
-                break;
-            case 10:
-                strcat(l_path, "/rev-MKII/recv-iq.ini");
-                break;
-        }
-        print_time(0);
-        fprintf(G_fp_logfile, "[%d] Load_IQ_Defaults. %s\n", line_number++, l_path);
-        IQ_Defaults = fopen(l_path, "r");
-        if (IQ_Defaults != NULL) {
-            while (fgets(iq_init_record, sizeof (iq_init_record), IQ_Defaults) != NULL) {
-                //iq_record.record_number = strstr(iq_init_record, "RECORD=");
-                //iq_record.band = strstr(iq_init_record, "BAND=");
-                iq_record.iq_offset = strstr(iq_init_record, "IQ_OFFSET");
-                mynumber = atoi((iq_record.iq_offset + 10));
-                iq_defaults_PCB[record] = mynumber;
-                //print_time(0);
-                //fprintf(G_fp_logfile, "[%d] UDP Thread . init_IQ_structure . init_IQ_structure . Record: G_iq_stack[%d].%d, Band: G_iq_stack[%d].%d, Offset: G_iq_stack[%d].%d\n", line_number++,
-                //        record, G_iq_stack[record].record, record, G_iq_stack[record].band, record, G_iq_stack[record].iq_offset);
-                record++;
-            }
-            print_time();
-            fprintf(G_fp_logfile, "[%d] Load_IQ_Defaults.", line_number);
-            for (record = 0; record < 12; record++) {
-                fprintf(G_fp_logfile, "record: %d, offset: %d ", record, iq_defaults_PCB[record]);
-            }
-            fprintf(G_fp_logfile, "\n");
-            fclose(IQ_Defaults);
-            status = 1;
-        } else {
-            print_time(0);
-            fprintf(G_fp_logfile, "[%d] Load_IQ_Defaults. File Open FAILED: %s\n",
-                    line_number++, l_path);
-        }
-    } else {
-        print_time();
-        fprintf(G_fp_logfile, "[%d] Load_IQ_Defaults. getenv failed\n", line_number++);
+    if (G_fp_logfile != NULL) {
+        fprintf(G_fp_logfile,
+            "[%d] Load_IQ_Defaults. skipped (no rev-XXX defaults; use ~/.local/mscc/recv-iq.ini)\n",
+            line_number++);
+        fflush(G_fp_logfile);
     }
-    return status;
+    return 0;
 }
 
 int create_iq_ini_file(int force) {

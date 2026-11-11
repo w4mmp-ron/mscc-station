@@ -488,6 +488,7 @@ void *UDP_Thread(void *my_param) {
                     line_number++, strerror(errno), recv_len);
             fflush(G_fp_logfile);
 #if defined(SDRCORE_NO_USB) || defined(__linux__) || defined(__APPLE__)
+            Sleep(10);   /* trans 3.158: an error that repeats cannot flood the log */
             continue;
 #else
             UDP_status = 1;
@@ -1139,6 +1140,9 @@ void *UDP_Thread(void *my_param) {
                 if (status == 1) {
                     status = init_IQ_structure();
                     if (status == 1) {
+                        if (iq_active < 12) {   /* trans 3.158 (as Windows 3.150): reapply phase */
+                            IQ_phase_calc(G_iq_stack[iq_active].iq_phase);
+                        }
                         print_time();
                         fprintf(G_fp_logfile, "[%d] UDP_Thread. init_IQ_structure . Successful \n", line_number++);
                     } else {
@@ -1161,6 +1165,8 @@ void *UDP_Thread(void *my_param) {
                             //status = manage_stream(0, G_input_devices[G_input_device_index].device_index,
                             //        G_input_devices[G_input_device_index].num_channels);
                             //Pa_StopStream(stream);
+                            G_tx_mic_gate_samples = 0;
+                            G_tx_mic_fade_samples = 0;
                             Set_Mic_Mute(TRUE); //Turn off the microphone
                             G_null_count = 0;
                             break;
@@ -1168,6 +1174,26 @@ void *UDP_Thread(void *my_param) {
                             //status = manage_stream(1, G_input_devices[G_input_device_index].device_index,
                             //        G_input_devices[G_input_device_index].num_channels);
                             //Pa_StartStream(stream);
+                            /* trans 3.158 (as Windows trans 3.153): key-down mic gate, local mic only */
+                            if (G_audio_mode == DIGITAL_AUDIO || G_audio_mode == OPERATOR_AUDIO) {
+                                int gate_ms = (G_audio_mode == DIGITAL_AUDIO) ? TX_MIC_GATE_DIGITAL_MS : TX_MIC_GATE_MS;
+                                int gate = (int) ((gate_ms / 1000.0f) * mystate.samplerate);
+                                int fade = (int) ((TX_MIC_FADE_MS / 1000.0f) * mystate.samplerate);
+                                if (gate < 1)
+                                    gate = (gate_ms * 96);
+                                if (fade < 1)
+                                    fade = (TX_MIC_FADE_MS * 96);
+                                /* Arm before unmute so the next callback cannot pass stale mic. */
+                                G_tx_mic_fade_samples = fade;
+                                G_tx_mic_gate_samples = gate;
+                                print_time();
+                                fprintf(G_fp_logfile,
+                                    "[%d] UDP Thread. CMD_SET_TX_ON. local mic gate %d samples (%d ms) + %d ms fade audio_mode=%d\n",
+                                    line_number++, gate, gate_ms, TX_MIC_FADE_MS, (int) G_audio_mode);
+                            } else {
+                                G_tx_mic_gate_samples = 0;
+                                G_tx_mic_fade_samples = 0;
+                            }
                             Set_Mic_Mute(FALSE); //Turn ON the microphone
                             break;
                     }
@@ -1367,6 +1393,8 @@ void *UDP_Thread(void *my_param) {
                                 G_mode);
                         break;
                     case 4:
+                        if (mystate.opmode != MODE_TUNE)
+                            G_tune_ramp_pos = 0; /* trans 3.158 (as Windows): carrier rises over TUNE_RAMP_MS */
                         G_mode = 'T';
                         mystate.opmode = MODE_TUNE;
                         print_time();

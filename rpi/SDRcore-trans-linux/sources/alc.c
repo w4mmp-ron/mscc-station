@@ -87,28 +87,38 @@ int alc_float_to_meter(float alc)
     float deficit;
     int meter;
 
-    if (alc != alc) /* NaN */
+    /* Guard NaN / nonsense */
+    if (alc != alc)          /* NaN */
         return 0;
     if (alc >= 1.0f)
         return 0;
     if (alc <= 0.0f)
         return 100;
 
-    /* VAC/WSJT: 0–20 dB of doALC reduction → 0–100. Analog keeps ~1 dB FS. */
+    /*
+     * Analog phones: (1-gain)*1000 → ~1 dB of ALC = full scale.
+     * Line-level VAC/WSJT runs doALC down toward 0.1, so that scale pegs
+     * red on a clean CAL tone. Digital: 0–20 dB of gain reduction → 0–100
+     * (green 0–20, yellow 20–50, red 50+ on the analog face).
+     */
     if (G_audio_mode == DIGITAL_AUDIO || G_audio_mode == REMOTE_DIGITAL_AUDIO) {
-        float g = alc < 0.1f ? 0.1f : alc;
-        float db = -20.0f * log10f(g);
+        float g = alc;
+        float db;
+        if (g < 0.1f)
+            g = 0.1f;
+        db = -20.0f * log10f(g); /* 1.0 → 0 dB, 0.1 → 20 dB */
         meter = (int)(db / 20.0f * 100.0f + 0.5f);
         return clamp_int(meter, 0, 100);
     }
 
-    const float max_gain = 1.0f;
-    const float min_gain = 0.1f;
-    float span = max_gain - min_gain;
-    deficit = max_gain - alc;
-    if (alc <= min_gain)
-        return 100;
-    meter = (int)(deficit / span * 100.0f + 0.5f);
+    /* 3.149: analog voice: 0-10 dB of ALC gain reduction -> 0-100.
+     * Was (1-gain)*1000, full scale at 0.9 dB, so it only ever blipped to 100.
+     * Set the mic gain so voice peaks show a little ALC (about 20-40 on the meter). */
+    (void) deficit;
+    {
+        float db = -20.0f * log10f(alc);
+        meter = (int)(db / 10.0f * 100.0f + 0.5f);
+    }
     return clamp_int(meter, 0, 100);
 }
 
@@ -126,7 +136,7 @@ void* ALC_Meter_thread(void* t) {
 
     Sleep(1000); //Let the subsystem initialize before processing ALC
     print_time();
-    fprintf(G_fp_logfile, "[%d] ALC_Meter_thread. Thread STARTED.\n", line_number++);
+    fprintf(G_fp_logfile, "[%d] ALC_Meter_thread. Thread STARTED. trans 3.158 (ALC 0.89 voice / 1.0 digital, 2 TONE on 0x88 through the voice path, QRP cal save on flag only, VAC gate 200 ms, level meter, TX audio LPF 6k, TX IQ phase, IQ from radio)\n", line_number++);
     while (G_all_threads_run) {
         if (G_tx_mode == TRUE && G_Do_ALC == TRUE && G_Allow_ALC_Send == TRUE) {
             new_session = TRUE;
@@ -134,10 +144,10 @@ void* ALC_Meter_thread(void* t) {
             if (G_audio_mode == DIGITAL_AUDIO || G_audio_mode == REMOTE_DIGITAL_AUDIO) {
                 result_average = alc_float_to_meter(alc);
             } else {
-                /* 3.146 (as Windows trans 3.149): voice ALC meter = peak level since the
-                 * last read / ALC ceiling. 100 = the ALC is just starting to act. The old
-                 * meter showed gain reduction only, so it read 0 until the signal was
-                 * already at the limit. */
+                /* trans 3.149: voice ALC meter = peak envelope / ALC ceiling. 100 = the ALC
+                 * is just starting to act (clean limit of the PA). Set the mic gain so voice
+                 * peaks reach about 70-100. The old meter showed only gain reduction, so it
+                 * read 0 until the signal was already at the limit. */
                 float target = G_ALC_limit * G_ALC_multiplier;
                 float pk = G_ALC_peak_env;
                 int m = 0;

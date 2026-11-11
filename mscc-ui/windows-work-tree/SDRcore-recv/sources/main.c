@@ -257,17 +257,30 @@ void Print_Message_Box(void *nothing, char *message, char * sender, int ok_butto
 //}
 
 void Audio_Device_Error(PaError err) {
-
-    Pa_Terminate();
-    print_time();
-    fprintf(G_fp_logfile, "[%d] An error occured while using the portaudio stream\n", line_number++);
-    print_time();
-    fprintf(G_fp_logfile, "[%d] Error number: %d\n", line_number++, err);
-    print_time();
-    fprintf(G_fp_logfile, "[%d] Error message: %s\n", line_number++, Pa_GetErrorText(err));
+    /*
+     * recv 3.153 (as Pi): fatal audio init failure. Must not return: callers fell through
+     * and dereferenced Pa_GetDeviceInfo() after Pa_Terminate (NULL) -> crash, e.g. when no
+     * radio I/Q device was found.
+     */
+    G_all_threads_run = 0;
+    if (G_fp_logfile != NULL) {
+        print_time();
+        fprintf(G_fp_logfile, "[%d] An error occured while using the portaudio stream\n", line_number++);
+        print_time();
+        fprintf(G_fp_logfile, "[%d] Error number: %d\n", line_number++, err);
+        print_time();
+        fprintf(G_fp_logfile, "[%d] Error message: %s\n", line_number++,
+            err != paNoError ? Pa_GetErrorText(err) : "(no PortAudio error - missing device)");
+        print_time();
+        fprintf(G_fp_logfile, "[%d] sdrcore-recv terminating (audio init failed)\n", line_number++);
+        fflush(G_fp_logfile);
+    }
+    /* recv 3.153 (as Pi): tell the client too (pop-up via ms-sdr) */
+    Core_Send_Message("AUDIO START FAILED, STOPPING\nSEE sdrcore-recv.log (MSCC-NET9 folder)", 1);
     MessageBoxA(NULL, "SDRcore-recv initialization FAILED.  Send logs to Multus SDR, LLC", "SDRcore-recv",
             MB_OK | MB_ICONEXCLAMATION);
-    G_all_threads_run = 0;
+    Pa_Terminate();
+    exit(1);
 }
 
 int manage_stream(int start_stop, int device, int channels) {
@@ -575,6 +588,7 @@ int main(int argc, char **argv) {
         print_time();
         fprintf(G_fp_logfile, "[%d] No Multus SDR Device found. Please check hardware and try again.\n", line_number++);
         fflush(G_fp_logfile);
+        Core_Send_Message("TRANSCEIVER I/Q AUDIO DEVICE NOT FOUND\nIS THE TRANSCEIVER ON?", 1);   /* recv 3.153 (as Pi) */
         Audio_Device_Error(err);
     }
     inputParameters.device = recordDevice;
@@ -598,6 +612,7 @@ int main(int argc, char **argv) {
     if (G_digital_output_device_index == NO_OUTPUT_DEVICE) {
         print_time();
         fprintf(G_fp_logfile, "[%d] main. Error: FAILED. No digital output device found\n", line_number++);
+        Core_Send_Message("DIGITAL SPEAKER NOT FOUND (digital-speaker.ini)\nDIGITAL MODES WILL NOT WORK", 0);   /* recv 3.153 (as Pi) */
     }
     if (G_output_device_index == NO_OUTPUT_DEVICE) {
         PaDeviceIndex def_out = Pa_GetDefaultOutputDevice();
@@ -642,14 +657,11 @@ int main(int argc, char **argv) {
         Sleep(100);
     }
     remote_phones_shutdown();
-    err = Pa_CloseStream(stream);
-    if (err != paNoError) {
-        Audio_Device_Error(err);
-    } else {
-        Sleep(100);
-        Pa_Terminate();
-        exit(0);
-    }
-
+    /* recv 3.153 (as Pi): normal stop closes the stream (if open) and exits 0.
+     * Audio_Device_Error is for start-up failures only (it exits with a pop-up). */
+    manage_stream(0, 0, 2);
+    Sleep(100);
+    Pa_Terminate();
+    exit(0);
 }
 

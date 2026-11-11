@@ -2,10 +2,18 @@
  * MSCC remote operator mic — Windows receiver (MSA1 UDP).
  * Protocol matches MsccRemotePhones TX (default port 9101).
  *
- * Client CMD_SET_AUDIO_DEVICE=2 (REMOTE_AUDIO) selects this mic path.
+ * Client CMD_SET_AUDIO_DEVICE=2 or 3 selects this mic path.
  * INI supplies PORT only (ENABLED is ignored; kept for old files).
  * Digital (D) ignores this module.
+ *
+ * trans 3.158 (2026-11-10): the Pi trans receiver ported as is (fill priming to 100 ms,
+ * resync above 250 ms, +/-300 ppm rate trim instead of the old 0.8 % / 2.4 % pitch steps,
+ * hold-last + re-prime on underrun, rate-limited EVENT log lines, stream reset when the
+ * REMOTE path is selected). Only the platform calls differ (Winsock, GetTickCount64,
+ * Interlocked*, GetSystemTime).
  */
+#define _CRT_SECURE_NO_WARNINGS 1
+#define _WINSOCK_DEPRECATED_NO_WARNINGS 1
 #include "remote_mic.h"
 #include "extern.h"
 #include "commands.h"
@@ -13,6 +21,7 @@
 #include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <stdarg.h>
 #include <string.h>
 
 #define MSA1_MAGIC          0x3141534Du
@@ -21,6 +30,32 @@
 #define REMOTE_RATE         48000
 #define RING_FRAMES         16384 /* @ 48 kHz mono float */
 #define MAX_PKT_FRAMES      2048
+/* Diagnostic only. ~100 ms between repeat EVENT lines. */
+#define EVENT_LIMIT_MS          100ull
+/* 480-frame packs are ~10 ms. Log gaps at 5x that, not one late packet. */
+#define UDP_GAP_EVENT_MS        50ull
+/* Wake the receiver while no packets arrive, so fill EVENTs still get logged. */
+#define RECV_TIMEOUT_MS         100
+
+/*
+ * Fill clock control (48 kHz ring -> 96 kHz I/Q).
+ * The client and radio clocks differ by tens of ppm. Correct that with a tiny,
+ * smooth rate trim (at most +/-300 ppm, ~0.5 Hz on a 1500 Hz tone) instead of
+ * the old 0.8 % / 2.4 % steps, which shifted FT8 tones by 2-6 tone slots.
+ * Big level errors (start, underrun, stall) are fixed by waiting or skipping,
+ * never by changing pitch.
+ */
+#define FILL_TARGET         4800u   /* 100 ms @ 48 kHz: prime to this, trim toward it */
+#define FILL_RESYNC_HIGH    12000u  /* 250 ms: above this, skip oldest back to target */
+#define FILL_TRIM_MAX       300e-6f /* max rate trim */
+#define FILL_TRIM_GAIN      600e-6f /* trim per (level error / target) */
+#define FILL_LEVEL_ALPHA    0.005f  /* level low-pass per callback (~2 s) */
+
+/* Windows forms of the Pi's GCC __atomic builtins (relaxed order is enough here). */
+#define ATOMIC_ADD(p, v)    InterlockedExchangeAdd((volatile LONG *)(p), (LONG)(v))
+#define ATOMIC_TAKE(p)      ((unsigned)InterlockedExchange((volatile LONG *)(p), 0))
+#define ATOMIC_CLEAR(p)     InterlockedExchange((volatile LONG *)(p), 0)
+
 static int g_port = 9101;
 static int g_thread_started;
 
@@ -36,8 +71,25 @@ static volatile uint64_t g_last_pkt_ms;
 static unsigned g_pkt_ok;
 static unsigned g_pkt_bad;
 static volatile unsigned g_under;
+static volatile unsigned g_overflow;       /* drops since last summary */
+static unsigned g_overflow_pending;        /* drops not yet in an EVENT */
+static uint64_t g_overflow_log_ms;
+static uint64_t g_udp_log_ms;
+static volatile float g_fill_step = 0.5f;  /* last step chosen by fill */
 
-/* 48 kHz ring → 96 kHz: linear interp. g_frac is 48 kHz phase (0..1). */
+/* Fill state (audio callback only, except reset). */
+static volatile int g_priming = 1;         /* 1 = wait for FILL_TARGET before reading */
+static float g_level_f;                    /* low-passed ring level */
+
+/* Set by the audio callback, logged by the receiver thread (no file I/O in the callback). */
+static volatile unsigned g_ev_hold;        /* underruns -> hold last + re-prime */
+static volatile unsigned g_ev_hold_occ;
+static volatile unsigned g_ev_primed;      /* priming finished */
+static volatile unsigned g_ev_skip;        /* frames skipped by resync */
+static volatile unsigned g_ev_skip_occ;
+static uint64_t g_fill_log_ms;
+
+/* 48 kHz ring -> 96 kHz: linear interp. g_frac is 48 kHz phase (0..1). */
 static float g_hist0, g_hist1, g_frac;
 
 static uint64_t now_ms(void)
@@ -45,12 +97,94 @@ static uint64_t now_ms(void)
     return (uint64_t)GetTickCount64();
 }
 
+/* t= is UTC. print_time() is whole seconds; milliseconds live in the body.
+ * Audio path is unchanged — these lines are diagnostic only. */
+static void log_remote_event(const char *fmt, ...)
+{
+    char body[240];
+    char tbuf[64];
+    SYSTEMTIME st;
+    va_list ap;
+
+    if (!G_fp_logfile || !fmt)
+        return;
+    va_start(ap, fmt);
+    vsnprintf(body, sizeof(body), fmt, ap);
+    va_end(ap);
+    GetSystemTime(&st);
+    snprintf(tbuf, sizeof(tbuf), "%02u:%02u:%02u.%03uZ",
+        (unsigned)st.wHour, (unsigned)st.wMinute, (unsigned)st.wSecond,
+        (unsigned)st.wMilliseconds);
+    print_time();
+    fprintf(G_fp_logfile,
+        "[%d] remote_mic EVENT %s mono_ms=%llu t=%s\n",
+        line_number++, body,
+        (unsigned long long)now_ms(), tbuf);
+    fflush(G_fp_logfile);
+}
+
+static void reset_event_state(void)
+{
+    g_overflow = 0;
+    g_overflow_pending = 0;
+    g_overflow_log_ms = 0;
+    g_udp_log_ms = 0;
+    g_fill_step = 0.5f;
+    ATOMIC_CLEAR(&g_ev_hold);
+    ATOMIC_CLEAR(&g_ev_primed);
+    ATOMIC_CLEAR(&g_ev_skip);
+    g_fill_log_ms = 0;
+}
+
+static unsigned ring_level(void);
+
+/* Receiver thread: log what the audio callback recorded. Rate-limited. */
+static void log_fill_events_if_due(uint64_t now)
+{
+    unsigned hold, primed, skip;
+
+    if (g_fill_log_ms != 0ull && (now - g_fill_log_ms) < EVENT_LIMIT_MS)
+        return;
+    hold = ATOMIC_TAKE(&g_ev_hold);
+    primed = ATOMIC_TAKE(&g_ev_primed);
+    skip = ATOMIC_TAKE(&g_ev_skip);
+    if (hold == 0u && primed == 0u && skip == 0u)
+        return;
+    g_fill_log_ms = now;
+    if (hold)
+        log_remote_event("hold_last reprime count=%u occ=%u under=%u",
+            hold, g_ev_hold_occ, g_under);
+    if (skip)
+        log_remote_event("resync skipped=%u occ_before=%u target=%u",
+            skip, g_ev_skip_occ, FILL_TARGET);
+    if (primed)
+        log_remote_event("primed count=%u occ=%u step=%.6f",
+            primed, ring_level(), (double)g_fill_step);
+}
+
+static void log_overflow_if_due(uint64_t now)
+{
+    unsigned dropped;
+
+    if (g_overflow_pending == 0u)
+        return;
+    if (g_overflow_log_ms != 0ull && (now - g_overflow_log_ms) < EVENT_LIMIT_MS)
+        return;
+    dropped = g_overflow_pending;
+    g_overflow_pending = 0u;
+    g_overflow_log_ms = now;
+    log_remote_event("overflow dropped=%u occ=%u", dropped, ring_level());
+}
+
 static void ring_write_one(float s)
 {
     unsigned w = g_w;
     unsigned next = (w + 1u) % RING_FRAMES;
-    if (next == g_r)
-        return; /* overrun — drop */
+    if (next == g_r) {
+        g_overflow++;
+        g_overflow_pending++;
+        return; /* overrun — drop sample, same as before */
+    }
     g_ring[w] = s;
     g_w = next;
 }
@@ -192,7 +326,15 @@ static void *receiver_thread(void *arg)
 
         if (!g_run)
             break;
-        if (n < 0) {
+        if (n == SOCKET_ERROR) {
+            int wsa = WSAGetLastError();
+            if (wsa == WSAETIMEDOUT || wsa == WSAEWOULDBLOCK) {
+                /* RECV_TIMEOUT_MS with no packet: still log fill events. */
+                log_fill_events_if_due(now_ms());
+                continue;
+            }
+            if (wsa == WSAEINTR)
+                continue;
             Sleep(2);
             continue;
         }
@@ -204,36 +346,72 @@ static void *receiver_thread(void *arg)
         (void)seq;
         /* Prefer 48 kHz; if other rate, still ingest (host should send 48k). */
         {
+            uint64_t now = now_ms();
+            uint64_t gap_ms = 0;
+            int have_prev = 0;
             const int16_t *pcm = (const int16_t *)(buf + MSA1_HEADER_SIZE);
+
+            if (g_last_pkt_ms != 0ull && now >= g_last_pkt_ms) {
+                gap_ms = now - g_last_pkt_ms;
+                have_prev = 1;
+            }
             for (i = 0; i < frames; i++) {
                 int16_t s = (ch >= 2) ? pcm[i * 2u] : pcm[i];
                 float f = (float)s / 32768.0f;
                 ring_write_one(f);
             }
+            if (have_prev && gap_ms >= UDP_GAP_EVENT_MS &&
+                (g_udp_log_ms == 0ull || (now - g_udp_log_ms) >= EVENT_LIMIT_MS)) {
+                log_remote_event("udp_gap gap_ms=%llu occ=%u pkts=%u",
+                    (unsigned long long)gap_ms, ring_level(), g_pkt_ok);
+                g_udp_log_ms = now;
+            }
+            log_overflow_if_due(now);
+            log_fill_events_if_due(now);
+            g_last_pkt_ms = now;
         }
-        g_last_pkt_ms = now_ms();
         g_pkt_ok++;
         if (G_fp_logfile && (g_pkt_ok == 1u || (g_pkt_ok % 500u) == 0u)) {
             float peak = 0.f;
             unsigned j;
             char addrbuf[64];
-            const int16_t *pcm2 = (const int16_t *)(buf + MSA1_HEADER_SIZE);
+            const int16_t *pcm = (const int16_t *)(buf + MSA1_HEADER_SIZE);
             for (j = 0; j < frames; j++) {
-                int16_t s = (ch >= 2) ? pcm2[j * 2u] : pcm2[j];
+                int16_t s = (ch >= 2) ? pcm[j * 2u] : pcm[j];
                 float a = (s < 0) ? -(float)s : (float)s;
                 if (a > peak) peak = a;
             }
             inet_ntop(AF_INET, &from.sin_addr, addrbuf, sizeof(addrbuf));
             print_time();
             fprintf(G_fp_logfile,
-                "[%d] remote_mic: pkt ok=%u bad=%u rate=%u ch=%u frames=%u peak=%.0f occ=%u under=%u from %s\n",
+                "[%d] remote_mic: pkt ok=%u bad=%u rate=%u ch=%u frames=%u peak=%.0f occ=%u under=%u overflow=%u step=%.6f mono_ms=%llu from %s\n",
                 line_number++, g_pkt_ok, g_pkt_bad, rate, ch, frames, peak,
-                ring_level(), g_under, addrbuf);
+                ring_level(), g_under, g_overflow, (double)g_fill_step,
+                (unsigned long long)now_ms(), addrbuf);
             g_under = 0;
+            g_overflow = 0;
             fflush(G_fp_logfile);
         }
     }
     return NULL;
+}
+
+void remote_mic_reset_stream(void)
+{
+    g_w = g_r = 0;
+    g_hist0 = g_hist1 = 0.0f;
+    g_frac = 0.0f;
+    g_priming = 1;
+    g_level_f = 0.0f;
+    g_under = 0;
+    reset_event_state();
+    if (G_fp_logfile) {
+        print_time();
+        fprintf(G_fp_logfile,
+            "[%d] remote_mic: stream reset (REMOTE path)\n",
+            line_number++);
+        fflush(G_fp_logfile);
+    }
 }
 
 void remote_mic_init(void)
@@ -248,8 +426,11 @@ void remote_mic_init(void)
     g_last_pkt_ms = 0;
     g_pkt_ok = g_pkt_bad = 0;
     g_under = 0;
+    reset_event_state();
     g_hist0 = g_hist1 = 0.0f;
     g_frac = 0.0f;
+    g_priming = 1;
+    g_level_f = 0.0f;
 
     load_config();
 
@@ -264,6 +445,10 @@ void remote_mic_init(void)
         return;
     }
     setsockopt(g_sock, SOL_SOCKET, SO_REUSEADDR, (const char *)&yes, sizeof(yes));
+    {
+        DWORD tv = RECV_TIMEOUT_MS;   /* Windows SO_RCVTIMEO is milliseconds */
+        setsockopt(g_sock, SOL_SOCKET, SO_RCVTIMEO, (const char *)&tv, sizeof(tv));
+    }
 
     memset(&addr, 0, sizeof(addr));
     addr.sin_family = AF_INET;
@@ -328,41 +513,71 @@ int remote_mic_ready(void)
 void remote_mic_fill_stereo_96k(float *stereo_interleaved, unsigned frames)
 {
     unsigned i;
+    unsigned occ;
+    float step, trim;
+
     if (!stereo_interleaved || frames == 0)
         return;
 
     /*
-     * 48 kHz mono ring → 96 kHz stereo. Old path held each sample twice and
-     * wrote zeros on underrun — that AM/phase-hits a WSJT tone so the SA
-     * looks like FM even when drive is low. Linear interp + hold-last, and
-     * nudge consume rate so two PC clocks don't click.
+     * 48 kHz mono ring -> 96 kHz stereo, linear interpolation.
+     * Runs in the audio callback: no file I/O here. Events are counted and
+     * logged by the receiver thread.
      */
-    for (i = 0; i < frames; i++) {
-        unsigned occ = ring_level();
-        float step = 0.5f;
-        float s;
-        if (occ > (RING_FRAMES * 3u) / 4u)
-            step = 0.512f;
-        else if (occ > (RING_FRAMES * 5u) / 8u)
-            step = 0.504f;
-        else if (occ < RING_FRAMES / 8u)
-            step = 0.488f;
-        else if (occ < RING_FRAMES / 4u)
-            step = 0.496f;
+    occ = ring_level();
 
-        while (g_frac >= 1.0f) {
-            int ok = 0;
-            g_hist0 = g_hist1;
-            g_hist1 = ring_read_one(&ok);
-            if (!ok) {
-                g_hist1 = g_hist0;
-                g_under++;
+    /* Start / after underrun: hold until the ring reaches the target level. */
+    if (g_priming && occ >= FILL_TARGET) {
+        g_priming = 0;
+        g_level_f = (float)occ;
+        ATOMIC_ADD(&g_ev_primed, 1u);
+    }
+
+    /* Too much queued (stall then burst): skip the oldest audio, once. */
+    if (!g_priming && occ > FILL_RESYNC_HIGH) {
+        unsigned skip = occ - FILL_TARGET;
+        g_r = (g_r + skip) % RING_FRAMES;
+        g_ev_skip_occ = occ;
+        ATOMIC_ADD(&g_ev_skip, skip);
+        occ = FILL_TARGET;
+        g_level_f = (float)occ;
+    }
+
+    /* Small, smooth rate trim toward the target level (clock drift only). */
+    g_level_f += FILL_LEVEL_ALPHA * ((float)occ - g_level_f);
+    trim = FILL_TRIM_GAIN * (g_level_f - (float)FILL_TARGET) / (float)FILL_TARGET;
+    if (trim > FILL_TRIM_MAX)
+        trim = FILL_TRIM_MAX;
+    if (trim < -FILL_TRIM_MAX)
+        trim = -FILL_TRIM_MAX;
+    step = 0.5f * (1.0f + trim);
+    g_fill_step = step;
+
+    for (i = 0; i < frames; i++) {
+        float s;
+
+        if (!g_priming) {
+            while (g_frac >= 1.0f) {
+                int ok = 0;
+                g_hist0 = g_hist1;
+                g_hist1 = ring_read_one(&ok);
+                if (!ok) {
+                    /* Underrun: hold last sample and re-prime. */
+                    g_hist1 = g_hist0;
+                    g_frac = 0.0f;
+                    g_priming = 1;
+                    g_under++;
+                    g_ev_hold_occ = ring_level();
+                    ATOMIC_ADD(&g_ev_hold, 1u);
+                    break;
+                }
+                g_frac -= 1.0f;
             }
-            g_frac -= 1.0f;
         }
         s = g_hist0 + (g_hist1 - g_hist0) * g_frac;
         stereo_interleaved[i * 2u] = s;
         stereo_interleaved[i * 2u + 1u] = s;
-        g_frac += step;
+        if (!g_priming)
+            g_frac += step;
     }
 }

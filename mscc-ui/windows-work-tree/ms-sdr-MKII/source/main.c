@@ -15,7 +15,7 @@
 
 #include "version.h"
 #include "band_stack.h"
-#include "last_used.h"
+#include "startup.h"
 #include "iq.h"
 #include "factory_seed.h"
 //Pthreads
@@ -90,7 +90,7 @@ uint8_t G_delete_SDRcore_init_files = 0;
 uint8_t G_delete_Comm_port_init_file = 0;
 uint8_t G_Message_Box_Displayed = 0;
 uint8_t G_Rit_Status = 0;
-uint32_t G_Rit_Offset = 0;
+int32_t G_Rit_Offset = 0; /* signed Hz (3.202, as Pi; was uint32_t) */
 uint8_t G_Rit_Step = 0;
 uint8_t G_CW_Snap_Running = 0;
 int G_CW_Offset = -600;
@@ -430,35 +430,38 @@ void* Flusher_thread(void* t) {
     op_code = CMD_CHECK_GUI_STATUS;
     op_data = 1;
     while (G_all_threads_run) {
-        //Reset_Logfile();
+        /* 3.202 (as Pi): 1 s loop, was 3 s. Keep-alive (0xF4) to the client every 1 s while a
+         * session is active; client timeout ~15 s (was ~45 s at 3 s x 15). */
+        if (G_MSCC_Initialized == 1 || G_client_session_active) {
+            Gui_send_param(CMD_SET_KEEP_ALIVE, KEEP_ALIVE_FROM_CLIENT);
+        }
+        Sleep(1000);
+
+        /* Volume / mic gain sliders: write user_controls.ini once, after the last step. */
+        if (G_User_Controls_Save_Pending > 0) {
+            G_User_Controls_Save_Pending--;
+            if (G_User_Controls_Save_Pending == 0) {
+                User_Controls_Update_Init_File();
+            }
+        }
+
+        /* Power cal slider: send the band's value to the radio (0xC8) after the last step. */
+        if (G_Radio_Cal_Save_Pending > 0)
+            Radio_cal_save_tick();
+
         if (G_Allow_Log_Write == TRUE) {
             fflush(G_fp_logfile);
-            Sleep(3000);
-
-            /* Volume / mic gain sliders: write user_controls.ini once, after the last step. */
-            if (G_User_Controls_Save_Pending > 0) {
-                G_User_Controls_Save_Pending--;
-                if (G_User_Controls_Save_Pending == 0) {
-                    User_Controls_Update_Init_File();
-                }
-            }
-
-            /* Power cal slider: send the band's value to the radio (0xC8) after the last step. */
-            if (G_Radio_Cal_Save_Pending > 0)
-                Radio_cal_save_tick();
-
             if (previous_startup_freq != G_tune_freq && G_TX == FALSE) {
                 Update_Startup(G_tune_freq, G_mode);
                 previous_startup_freq = G_tune_freq;
             }
             if (G_network_initialized) {
-                /* ms-sdr → cores: tagged keep-alive (payload = client-style source id) */
+                /* ms-sdr -> cores: tagged keep-alive (payload = client-style source id) */
                 SDRcore_recv_send_param(CMD_SET_KEEP_ALIVE, KEEP_ALIVE_FROM_CLIENT);
                 SDRcore_trans_send_param(CMD_SET_KEEP_ALIVE, KEEP_ALIVE_FROM_CLIENT);
             }
             if (G_MSCC_Initialized == 1 || G_client_session_active) {
-                Gui_send_param(CMD_SET_KEEP_ALIVE, KEEP_ALIVE_FROM_CLIENT);
-                /* Was 6 (~18s with 3s Sleep). Match Linux grace under pan flood (~45s). */
+                /* ~15 s with no client keep-alive releases the session (as Pi 3.198) */
                 if (gui_count++ >= 15) {
                     if (G_Heart_beat > previous_heart_beat) {
                         previous_heart_beat = G_Heart_beat;
@@ -469,19 +472,29 @@ void* Flusher_thread(void* t) {
                     gui_count = 0;
                 }
             }
+            /* Cores pulse every 3 s; checked every ~10 s (as Pi; was 6 x 3 s) */
             if (G_Threads_Started == TRUE) {
-                if (servers_count++ >= 6) {
+                if (servers_count++ >= 10) {
                     if (G_sdrcore_recv_keep_alive > previous_sdrcore_recv_keep_alive) {
                         previous_sdrcore_recv_keep_alive = G_sdrcore_recv_keep_alive;
                     }
                     else {
+                        print_time(0);
+                        fprintf(G_fp_logfile,
+                            "[%d] Flusher_thread. KEEP-ALIVE missing from sdrcore-recv. count still %llu\n",
+                            line_number++, (unsigned long long)G_sdrcore_recv_keep_alive);
                         servers_failed = 2;
                     }
                     if (G_sdrcore_trans_keep_alive > previous_sdrcore_trans_keep_alive) {
                         previous_sdrcore_trans_keep_alive = G_sdrcore_trans_keep_alive;
                     }
                     else {
-                        servers_failed = 3;
+                        print_time(0);
+                        fprintf(G_fp_logfile,
+                            "[%d] Flusher_thread. KEEP-ALIVE missing from sdrcore-trans. count still %llu\n",
+                            line_number++, (unsigned long long)G_sdrcore_trans_keep_alive);
+                        if (servers_failed == 0)
+                            servers_failed = 3;
                     }
                     servers_count = 0;
                 }
@@ -493,20 +506,26 @@ void* Flusher_thread(void* t) {
                     fprintf(G_fp_logfile, "[%d] Flusher_thread. Client FAILED: %d\n",
                         line_number++, servers_failed);
                     Session_Release();
+                    /* 3.201: client gone = release the session only, servers keep running (as Linux).
+                     * Was: fell through to Stop_all below, so a remote client closing stopped
+                     * all the Windows servers. */
+                    servers_failed = 0;
                     break;
                 case 2:
                     fprintf(G_fp_logfile, "[%d] Flusher_thread. Sdrcore-recv FAILED: %d\n",
                         line_number++, servers_failed);
                     Gui_Add_Message("NO RESPONSE FROM Sdrcore-recv\n MSCC WILL NOW STOP");
+                    Sleep(5000);
+                    Stop_all(1, 0);
                     break;
                 case 3:
                     fprintf(G_fp_logfile, "[%d] Flusher_thread. Sdrcore-trans FAILED: %d\n",
                         line_number++, servers_failed);
                     Gui_Add_Message("NO RESPONSE FROM Sdrcore-trans\n MSCC WILL NOW STOP");
+                    Sleep(5000);
+                    Stop_all(1, 0);
                     break;
                 }
-                Sleep(5000);
-                Stop_all(1, 0);
             }
         }
     }
@@ -915,9 +934,14 @@ void ModeChanged(char mode) {
         } else {
             print_time(0);
             fprintf(G_fp_logfile, "[%d] ModeChanged. Call to usbControlMsgOUT Failed . status: %d\n", line_number++, status);
+            /* Still remember requested mode for startup.ini (3.202, as Pi) */
+            G_mode = mode;
         }
+        /* Persist mode (and current freq) so the next start matches GUI / CAT mode (3.202, as Pi) */
+        Update_Startup(G_tune_freq, G_mode);
         print_time(0);
-        fprintf(G_fp_logfile, "[%d] ModeChanged. FINISHED \n", line_number++);
+        fprintf(G_fp_logfile, "[%d] ModeChanged. FINISHED (startup.ini MODE=%c)\n",
+            line_number++, G_mode);
         G_dll_active = FALSE;
     }
 }
@@ -925,11 +949,11 @@ void ModeChanged(char mode) {
 
 int static Start_Key_status_thread() {
     int status = TRUE;
-    long last_used_t = 0;
+    long thread_arg = 0;
 
     print_time(0);
     fprintf(G_fp_logfile, "[%d] main. Starting Start_Key_PTT_status_thread thread \n", line_number++);
-    G_Get_Key_Status_rc = pthread_create(&G_Get_Key_Status_thread, NULL, Get_Key_Status, (void *) last_used_t);
+    G_Get_Key_Status_rc = pthread_create(&G_Get_Key_Status_thread, NULL, Get_Key_Status, (void *) thread_arg);
     if (G_Get_Key_Status_rc) {
         print_time(0);
         fprintf(G_fp_logfile, "[%d] main. Start G_Get_Key_Down_Status_thread thread failed, return code from pthread_create() is %d\n",
@@ -944,11 +968,11 @@ int static Start_Key_status_thread() {
 }
 int static Start_check_temperature_thread() {
     int status = TRUE;
-    long last_used_t = 0;
+    long thread_arg = 0;
 
     print_time(0);
     fprintf(G_fp_logfile, "[%d] main . Starting Check_temperature thread \n", line_number++);
-    G_Check_temperature_rc = pthread_create(&G_Check_temperature_thread, NULL, Check_temperature, (void *) last_used_t);
+    G_Check_temperature_rc = pthread_create(&G_Check_temperature_thread, NULL, Check_temperature, (void *) thread_arg);
     if (G_Check_temperature_rc) {
         print_time(0);
         fprintf(G_fp_logfile, "[%d] main . Start Check_temperature thread failed, return code from pthread_create() is %d\n",
@@ -1120,7 +1144,7 @@ int main(int argc, char **argv) {
     uint8_t mode;
     long t = 0;
     long gui_t = 0;
-    long last_used_t = 0;
+    long thread_arg = 0;
     int completion_status = TRUE;
     int dir_configured = 0;
     //char *message;
@@ -1240,9 +1264,7 @@ int main(int argc, char **argv) {
             fprintf(G_fp_logfile,
                 "[%d] main. Network ready - reload cal if a live file was replaced, then Apply_Appliance_Startup\n",
                 line_number++);
-            Factory_seed_reload_servers();
-            Radio_cal_load_power();
-            Radio_cal_load_iq();
+            Radio_cal_startup_load("startup");
             Apply_Appliance_Startup();
         } else {
             print_time(0);

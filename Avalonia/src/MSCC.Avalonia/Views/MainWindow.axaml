@@ -31,14 +31,15 @@
           <TextBlock Classes="mscc-section" Text="SERVER" Margin="0,0,0,1"/>
           <Button Content="{Binding ConnectButtonText}"
                   Command="{Binding ToggleConnectCommand}"
+                  ToolTip.Tip="{Binding ConnectToolTip}"
                   Classes="mscc-gold" HorizontalAlignment="Stretch" Height="24"/>
           <TextBlock Text="{Binding StatusText}" FontSize="9" Foreground="#FFCC66"
                      TextWrapping="Wrap" MaxLines="2" Margin="0,1,0,2"/>
           <StackPanel Orientation="Horizontal" Spacing="2" Margin="0,0,0,1">
             <CheckBox Content="Auto" IsChecked="{Binding AutoStart}"
                       FontSize="8" IsEnabled="{Binding AutoOptionEnabled}"
-                      ToolTip.Tip="Checked: press Connect automatically when MSCC UI opens. Works for any Host; servers start only if Launch is also checked (this computer only)."/>
-            <CheckBox Content="Launch" IsChecked="{Binding LaunchServers}"
+                      ToolTip.Tip="Checked: press Connect automatically when MSCC UI opens. Works for any Host; servers start only if Launch Servers is also checked (this computer only)."/>
+            <CheckBox Content="Launch Servers" IsChecked="{Binding LaunchServers}"
                       FontSize="8" IsEnabled="{Binding LaunchOptionEnabled}"
                       ToolTip.Tip="Checked: Connect also starts the radio servers on this computer (same as MSCC Start) if they are not running, and Disconnect stops them again. Only for Host 127.0.0.1."/>
           </StackPanel>

@@ -166,6 +166,8 @@ void Init_Proficio_table() {
                     break;
             }
         }
+        /* log last mode slot (trans 3.158, as Pi: mode was one past the end here) */
+        mode = FM_POWER;
         print_time();
         fprintf(G_fp_logfile, "[%d] Init_Proficio_table. Band: %d, Mode: %d, calibration_value %d, user_power_level: %d\n",
                 line_number++, band, mode, proficio_table[band].mode[mode].calibration_value,
@@ -457,12 +459,22 @@ void *UDP_Thread(void *my_param) {
     fprintf(G_fp_logfile, "[%d] UDP Thread. G_Do_ALC: %d, G_ALC_multiplier: %f\n", line_number++, G_Do_ALC, G_ALC_multiplier);
     iq_band = NO_IQ_BAND;
     while (G_all_threads_run) {
-        if ((recv_len = recvfrom(sdrcore_s, buf, BUFLEN, 0, (struct sockaddr *) &si_me, &slen)) == SOCKET_ERROR) {
+        struct sockaddr_in si_peer;
+        int peer_len = (int)sizeof(si_peer);
+
+        memset(&si_peer, 0, sizeof(si_peer));
+        recv_len = recvfrom(sdrcore_s, buf, BUFLEN, 0, (struct sockaddr *)&si_peer, &peer_len);
+        if (recv_len == SOCKET_ERROR || recv_len < 1) {
+            /* trans 3.158 (as Pi): a bad receive is logged and skipped. Before, the thread
+             * stopped trans, and the stale buffer was still handled as a command first. */
+            if (!G_all_threads_run)
+                break;
             print_time();
-            fprintf(G_fp_logfile, "[%d] UDP Thread. recvfrom Failed. Error Code : %s. UDP Thread Exiting\n", line_number++,
-                    strerror(errno));
-            UDP_status = 1;
-            G_all_threads_run = 0;
+            fprintf(G_fp_logfile, "[%d] UDP Thread. recvfrom Failed. WSA %d (len=%d)\n",
+                    line_number++, WSAGetLastError(), recv_len);
+            fflush(G_fp_logfile);
+            Sleep(10);   /* an error that repeats cannot flood the log */
+            continue;
         }
         opcode = (uint8_t) buf[0];
         t_opcode_data = (uint8_t) (buf[1]);
@@ -510,6 +522,7 @@ void *UDP_Thread(void *my_param) {
                 int ch = 0;
                 int dev = mic_dev(G_input_devices, G_input_device_index, &ch);
                 G_audio_mode = t_opcode_data;
+                remote_mic_reset_stream();   /* trans 3.158 (as Pi): start the remote mic fresh */
                 stream_status = manage_stream(0, dev, ch);
                 stream_status = manage_stream(1, dev, ch);
                 print_time();
@@ -784,6 +797,17 @@ void *UDP_Thread(void *my_param) {
 
             case CMD_SET_KEEP_ALIVE:
                 G_keep_alive++;
+                if (G_keep_alive == 1) {    /* trans 3.158 (as Pi): first only */
+                    char peer_ip[64] = { 0 };
+                    inet_ntop(AF_INET, &si_peer.sin_addr, peer_ip, sizeof(peer_ip));
+                    print_time();
+                    fprintf(G_fp_logfile,
+                        "[%d] UDP Thread. CMD_SET_KEEP_ALIVE from %s:%u count=%lld\n",
+                        line_number++, peer_ip,
+                        (unsigned)ntohs(si_peer.sin_port), (long long)G_keep_alive);
+                    fflush(G_fp_logfile);
+                    Core_Message_Flush();    /* ms-sdr is up: send waiting messages */
+                }
                 break;
 
             case CMD_SET_SDR_CORE_BAND:
@@ -1326,4 +1350,76 @@ void *UDP_Thread(void *my_param) {
     fprintf(G_fp_logfile, "[%d] UDP Thread. Exit\n", line_number++);
     pthread_exit(0);
     return (NULL);
+}
+
+/* trans 3.158 (as Pi): text messages for the client (pop-up), sent through ms-sdr.
+ * Queued until ms-sdr has sent its first keep-alive unless now = 1. */
+#define CORE_MSG_MAX 8
+#define CORE_MSG_LEN 200
+static char core_msg_text[CORE_MSG_MAX][CORE_MSG_LEN];
+static int core_msg_sent[CORE_MSG_MAX];
+static int core_msg_count = 0;
+static pthread_mutex_t core_msg_lock = PTHREAD_MUTEX_INITIALIZER;
+
+static void core_message_send(const char *text) {
+    char send_buf[CORE_MSG_LEN + 2] = { 0 };
+    size_t len = strlen(text) + 1;
+
+    send_buf[0] = CMD_SET_EXTENDED_COMMAND;
+    send_buf[1] = CMD_SET_SERVER_ERROR;
+    memcpy(&send_buf[2], text, len);
+    if (sendto(ms_sdr_s, send_buf, (int)(len + 2), 0, (struct sockaddr *) &si_ms_sdr, slen) == SOCKET_ERROR) {
+        print_time();
+        fprintf(G_fp_logfile, "[%d] Core_Send_Message. sendto FAILED: %s\n", line_number++, strerror(errno));
+    }
+}
+
+void Core_Send_Message(const char *text, int now) {
+    char line[CORE_MSG_LEN];
+    int i;
+    int wait;
+
+    snprintf(line, sizeof (line), "SDRcore-trans: %s", text);
+    pthread_mutex_lock(&core_msg_lock);
+    for (i = 0; i < core_msg_count; i++) {
+        if (strcmp(core_msg_text[i], line) == 0) {
+            pthread_mutex_unlock(&core_msg_lock);
+            return;
+        }
+    }
+    if (core_msg_count == CORE_MSG_MAX) {
+        pthread_mutex_unlock(&core_msg_lock);
+        print_time();
+        fprintf(G_fp_logfile, "[%d] Core_Send_Message. list full, not sent: %s\n", line_number++, line);
+        return;
+    }
+    i = core_msg_count++;
+    strcpy(core_msg_text[i], line);
+    core_msg_sent[i] = 0;
+    print_time();
+    fprintf(G_fp_logfile, "[%d] Core_Send_Message. %s\n", line_number++, line);
+    fflush(G_fp_logfile);
+    if (now) {
+        /* UDP setup runs in the UDP thread; give it a moment at startup */
+        for (wait = 0; si_ms_sdr.sin_port == 0 && wait < 20; wait++)
+            Sleep(50);
+    }
+    if (si_ms_sdr.sin_port != 0 && (now || G_keep_alive > 0)) {
+        core_message_send(line);
+        core_msg_sent[i] = 1;
+    }
+    pthread_mutex_unlock(&core_msg_lock);
+}
+
+void Core_Message_Flush(void) {
+    int i;
+
+    pthread_mutex_lock(&core_msg_lock);
+    for (i = 0; i < core_msg_count; i++) {
+        if (!core_msg_sent[i]) {
+            core_message_send(core_msg_text[i]);
+            core_msg_sent[i] = 1;
+        }
+    }
+    pthread_mutex_unlock(&core_msg_lock);
 }

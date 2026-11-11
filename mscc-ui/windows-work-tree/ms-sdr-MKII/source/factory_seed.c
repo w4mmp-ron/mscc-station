@@ -41,29 +41,91 @@ static int file_exists(const char *path)
     return 0;
 }
 
+/* 3.202 (as Pi): copy through "<dst>.tmp" + replace, so a failed or interrupted copy never
+ * leaves a half-written (or emptied) cal file. The old dst stays until the new one is complete. */
 static int copy_file(const char *src, const char *dst)
 {
     FILE *in = fopen(src, "rb");
     FILE *out;
     char buf[4096];
+    char tmp[MAX_PATH];
     size_t n;
+    int ok = 1;
     if (!in)
         return 0;
-    out = fopen(dst, "wb");
+    snprintf(tmp, sizeof tmp, "%s.tmp", dst);
+    out = fopen(tmp, "wb");
     if (!out) {
         fclose(in);
         return 0;
     }
-    while ((n = fread(buf, 1, sizeof buf, in)) > 0)
-        fwrite(buf, 1, n, out);
+    while ((n = fread(buf, 1, sizeof buf, in)) > 0) {
+        if (fwrite(buf, 1, n, out) != n) {
+            ok = 0;
+            break;
+        }
+    }
+    if (ferror(in))
+        ok = 0;
     fclose(in);
-    fclose(out);
-    return 1;
+    if (fclose(out) != 0)
+        ok = 0;
+    if (ok && !MoveFileExA(tmp, dst, MOVEFILE_REPLACE_EXISTING))
+        ok = 0;
+    if (!ok)
+        remove(tmp);
+    return ok;
+}
+
+static int files_equal(const char *a, const char *b)
+{
+    FILE *fa = fopen(a, "rb");
+    FILE *fb = fopen(b, "rb");
+    int ca, cb, same = 1;
+    if (!fa || !fb) {
+        if (fa) fclose(fa);
+        if (fb) fclose(fb);
+        return 0;
+    }
+    do {
+        ca = fgetc(fa);
+        cb = fgetc(fb);
+        if (ca != cb) {
+            same = 0;
+            break;
+        }
+    } while (ca != EOF);
+    fclose(fa);
+    fclose(fb);
+    return same;
+}
+
+/* 3.202 (as Pi): copy a live cal file over a parked one, keeping the parked file it replaces
+ * as "<leaf>.bak" (one generation). Protects a good parked calibration if the live file turns
+ * out to belong to another radio (e.g. LAST_LINE.txt lost) or is bad. Identical files: nothing
+ * to do. Returns 1 if dst now matches src. */
+static int copy_keep_bak(const char *src, const char *dst)
+{
+    char bak[MAX_PATH];
+    if (file_exists(dst)) {
+        if (files_equal(src, dst))
+            return 1;
+        snprintf(bak, sizeof bak, "%s.bak", dst);
+        copy_file(dst, bak);
+    }
+    return copy_file(src, dst);
 }
 
 static void ensure_dir(const char *path)
 {
-    CreateDirectoryA(path, NULL);
+    if (!CreateDirectoryA(path, NULL)) {
+        DWORD err = GetLastError();   /* read before print_time can change it */
+        if (err != ERROR_ALREADY_EXISTS) {
+            print_time(0);
+            fprintf(G_fp_logfile, "[%d] cal mkdir FAILED %s err=%lu\n",
+                    line_number++, path, (unsigned long)err);
+        }
+    }
 }
 
 static int find_factory_root(char *out, size_t n)
@@ -137,7 +199,7 @@ static void stash_one(const char *live, const char *prev, const char *leaf)
     char src[MAX_PATH], dst[MAX_PATH];
     snprintf(src, sizeof src, "%s\\%s", live, leaf);
     snprintf(dst, sizeof dst, "%s\\cal\\%s\\%s", live, prev, leaf);
-    if (file_exists(src) && copy_file(src, dst)) {
+    if (file_exists(src) && copy_keep_bak(src, dst)) {
         print_time(0);
         fprintf(G_fp_logfile, "[%d] cal stash line=%s %s\n", line_number++, prev, leaf);
     }
@@ -442,6 +504,13 @@ void Factory_park_live_settings(void)
         return;
     }
     ensure_cal_line_dir(live, line);
+    /* 3.202 (as Pi): trans holds a cal slider change in memory for a few seconds before writing
+     * the file. INITIALIZE makes trans write any pending change now (then reload the same
+     * values), so the copy below gets the current calibration. */
+    if (G_network_initialized) {
+        SDRcore_trans_send_param(CMD_SET_SDRCORE_TRANS_INITIALIZE, 1);
+        Sleep(300);
+    }
     for (i = 0; i < 3; i++) {
         snprintf(src, sizeof src, "%s\\%s", live, leaves[i]);
         snprintf(dst, sizeof dst, "%s\\cal\\%s\\%s", live, line, leaves[i]);
@@ -451,7 +520,7 @@ void Factory_park_live_settings(void)
                     line_number++, leaves[i]);
             continue;
         }
-        if (copy_file(src, dst)) {
+        if (copy_keep_bak(src, dst)) {
             print_time(0);
             fprintf(G_fp_logfile, "[%d] Factory_park. %s -> cal\\%s\\\n",
                     line_number++, leaves[i], line);

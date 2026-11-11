@@ -34,7 +34,7 @@
 // Release number is in the range of 0 to 9
 
 #define VERSION_MAJOR 3
-#define VERSION_MINOR 157
+#define VERSION_MINOR 158
 #define VERSION_MS_SDRCORE_TRANS ((((VERSION_MINOR) << 8) & 0xff00) | ((VERSION_MAJOR) & 0x00ff))
 
 /* Local DIGITAL/OPERATOR only. Discard this much mic audio after TX 0->1
@@ -98,6 +98,8 @@ extern volatile int G_tx_mic_fade_samples;
 extern int line_number;
 extern void print_time(void);
 //extern void Sleep(long sleep_time);
+void Core_Send_Message(const char *text, int now);   /* trans 3.158 (as Pi) */
+void Core_Message_Flush(void);
 extern int Open_log_file();
 extern void Reset_Logfile();
 extern void setFilterOffsets(sp_float filterSetLow, sp_float filterSetHigh);

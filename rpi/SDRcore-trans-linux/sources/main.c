@@ -74,6 +74,8 @@ sp_float iqPhaseSin = 0.0f;
 sp_float iqPhaseCos = 1.0f;
 uint8_t G_DSP_Busy = FALSE;
 int G_null_count = 0;
+volatile int G_tx_mic_gate_samples = 0;   /* trans 3.158 (as Windows): key-down mic gate */
+volatile int G_tx_mic_fade_samples = 0;   /* fade-in after the gate */
 uint8_t transmit = TRUE;
 #endif
 
@@ -348,6 +350,41 @@ static void process_mic_to_iq(const SAMPLE *in, SAMPLE *out, unsigned long frame
     } else {
         inbuffer = (sp_float *)in;
         framesToComplex(inbuffer, incplx, outcplx, framesPerBuffer, in_ch);
+        /*
+         * trans 3.158 (as Windows trans 3.153): local key-up gate. Unmute is immediate, but the
+         * mic / digital buffer still holds pre-key samples. Drop whole callbacks until the sample
+         * budget is spent, then fade in over TX_MIC_FADE_MS. Remote audio is not gated.
+         */
+        if (G_tx_mic_gate_samples > 0 &&
+            (G_audio_mode == DIGITAL_AUDIO || G_audio_mode == OPERATOR_AUDIO)) {
+            int gate = G_tx_mic_gate_samples;
+            int left = gate - (int) framesPerBuffer;
+            if (left < 0)
+                left = 0;
+            for (i = 0; i < framesPerBuffer; i++) {
+                incplx[i].real = 0.0f;
+                incplx[i].imag = 0.0f;
+            }
+            if (G_tx_mic_gate_samples == gate)
+                G_tx_mic_gate_samples = left;
+        } else if (G_tx_mic_fade_samples > 0 &&
+            (G_audio_mode == DIGITAL_AUDIO || G_audio_mode == OPERATOR_AUDIO)) {
+            int total = (int) ((TX_MIC_FADE_MS / 1000.0f) * mystate.samplerate);
+            int left = G_tx_mic_fade_samples;
+            if (total < 1)
+                total = 1;
+            for (i = 0; i < framesPerBuffer; i++) {
+                sp_float g = 1.0f;
+                if (left > 0) {
+                    g = 1.0f - (sp_float) left / (sp_float) total;
+                    if (g < 0.0f) g = 0.0f;
+                    left--;
+                }
+                incplx[i].real *= g;
+                incplx[i].imag *= g;
+            }
+            G_tx_mic_fade_samples = left;
+        }
         if (!two_tone &&
             ((mystate.opmode == MODE_AM) || (mystate.opmode == MODE_LSB) ||
              (mystate.opmode == MODE_USB) || (mystate.opmode == MODE_FM)))
@@ -1270,10 +1307,17 @@ int main(int argc, char **argv) {
         Sleep(100);
     }
     remote_mic_shutdown();
+    /* trans 3.158 (Ron 2026-11-10, same on Windows): a normal stop just closes the stream and
+     * exits 0. A close error is logged only; the "AUDIO START FAILED" error path is for
+     * start-up failures. */
     if (stream != NULL) {
         err = Pa_CloseStream(stream);
-        if (err != paNoError)
-            goto error;
+        if (err != paNoError) {
+            print_time();
+            fprintf(G_fp_logfile, "[%d] main. stop: Pa_CloseStream error %d (%s), exiting anyway\n",
+                line_number++, err, Pa_GetErrorText(err));
+            fflush(G_fp_logfile);
+        }
     }
     Sleep(100);
     Pa_Terminate();

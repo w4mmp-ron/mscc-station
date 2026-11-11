@@ -294,5 +294,11 @@
 #define CFG_CW_DEFAULTS_OFF 0
 #define CFG_CW_DEFAULTS_ON 1
 
+/* trans 3.158 (as Pi): payload identifying the sender of 0xF4 keep-alive to ms-sdr */
+#define KEEP_ALIVE_FROM_CLIENT 1
+#define KEEP_ALIVE_FROM_RECV   2
+#define KEEP_ALIVE_FROM_TRANS  3
 
-
+/* trans 3.158 (as Pi): text message for the client via ms-sdr (same bytes as ms-sdr usbavrcmd.h) */
+#define CMD_SET_EXTENDED_COMMAND 0x0B
+#define CMD_SET_SERVER_ERROR 0x30
