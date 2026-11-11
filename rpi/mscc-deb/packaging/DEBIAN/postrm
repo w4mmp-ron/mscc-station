@@ -3,6 +3,9 @@ set -e
 
 case "$1" in
 remove|purge)
+  # 1.0.79: PortAudio loader file
+  rm -f /etc/ld.so.conf.d/mscc.conf
+  ldconfig 2>/dev/null || true
   if [[ "$1" == "purge" ]]; then
     modprobe -r tty0tty 2>/dev/null || true
     rm -f /etc/modules-load.d/tty0tty.conf

@@ -158,6 +158,12 @@ configure)
   log "links: /usr/local/bin/mscc-virtual-audio → /usr/share/mscc/bin/mscc-virtual-audio.sh"
   log "links: /usr/local/bin/mscc-desktop-ctl → /usr/share/mscc/bin/mscc-desktop-ctl.sh"
   log "status report: /usr/share/mscc/bin/mscc-status-report (via mscc status)"
+  # 1.0.79: PortAudio (was mscc-portaudio) in /usr/local/lib; own loader file name, so the
+  # old package's remove script (mscc-portaudio.conf) cannot take it away
+  echo "/usr/local/lib" > /etc/ld.so.conf.d/mscc.conf
+  ldconfig 2>/dev/null || true
+  chmod 755 /usr/bin/mscc-init-gui /usr/bin/mscc-init /usr/bin/mscc-volume 2>/dev/null || true
+  log "PortAudio: /usr/local/lib (ldconfig, /etc/ld.so.conf.d/mscc.conf)"
   if command -v update-desktop-database >/dev/null 2>&1; then
     update-desktop-database -q /usr/share/applications 2>/dev/null || true
   fi
@@ -350,6 +356,8 @@ configure)
   echo "  Groups:    dialout, plugdev, audio (log out/in if just added)"
   echo "  Udev:      /etc/udev/rules.d/99-proficio.rules (app + HID LOADER)"
   echo "  Firmware:  psoc-bootloader.gui   or:  psoc-bootloader file.cyacd"
+  echo "             PSoC files: /usr/share/mscc/firmware/<Radio>/"
+  echo "             Black Pill: sudo stm32-app-flash /usr/share/mscc/firmware/black-pill/app-firmware-async.bin"
   echo "             (BOOT jumper on; stop ms-sdr first)"
   echo "  Boot:      dtoverlay=audioinjector-wm8731-audio (reboot if newly added)"
   echo "  Digi:      VirtualA/B via mscc-virtual-audio (user systemd at login)"
@@ -361,7 +369,7 @@ configure)
   echo "    1. Log out/in (or reboot) if groups or AudioInjector overlay changed."
   echo "    2. Verify digi:  pactl list short sinks | grep Virtual"
   echo "       If missing:   mscc-virtual-audio"
-  echo "    3. Run:          mscc-init-gui   (package mscc-init)"
+  echo "    3. Run:          mscc-init-gui   (menu: MSCC Init)"
   echo "       (operator audio only; digi is fixed VirtualA / VirtualB.monitor)"
   echo "    4. Then:         mscc start"
   echo

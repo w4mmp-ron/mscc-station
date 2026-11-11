@@ -12,25 +12,17 @@ releases stay there for roll-back). Put the `.deb` files in one folder on the Pi
 
 | Package | Version | |
 |---|---|---|
-| `mscc-portaudio` | 19.8.3 | required, install first |
-| `mscc` | 1.0.78 | required: servers (ms-sdr 3.203, recv 3.153, trans 3.158), PSoC and Black Pill flash tools |
-| `mscc-init` | 1.0.18 | recommended: MSCC Init (GUI + text wizard) |
+| `mscc` | 1.0.79 | required: servers (ms-sdr 3.203, recv 3.153, trans 3.158), PortAudio, MSCC Init, MSCC Volume, PSoC + Black Pill firmware and flash tools |
 | `mscc-avalonia` | 1.6.94 | optional: MSCC Avalonia client on the Pi (not needed with the Windows client) |
-| `mscc-ui` | 0.6.71 | optional: Stew's older Avalonia UI (installs side by side with mscc-avalonia) |
-| `mscc-volume` | 1.0.1 | optional: MSCC Volume, levels of VirtualA / VirtualB |
-| `mscc-firmware` | 1.0.2 | optional: PSoC radio firmware files for Firmware Upload |
 
 ```bash
 cd /path/to/the/downloaded/debs
-sudo apt install -y ./mscc-portaudio_*_arm64.deb   # first
-sudo apt install -y ./mscc_*_arm64.deb             # servers + flash tools
-sudo apt install -y ./mscc-init_*_all.deb          # MSCC Init
+sudo apt install -y ./mscc_*_arm64.deb             # everything for the radio
 sudo apt install -y ./mscc-avalonia_*_arm64.deb    # optional
-sudo apt install -y ./mscc-volume_*_all.deb        # optional
-sudo apt install -y ./mscc-firmware_*_all.deb      # optional
 ```
 
-Order: **PortAudio → mscc → mscc-init → the optional ones**. Installing `mscc` asks before it
+Since mscc 1.0.79 the old separate packages (`mscc-portaudio`, `mscc-init`, `mscc-volume`,
+`mscc-firmware`) are part of `mscc`; installing it removes them. Installing `mscc` asks before it
 stops running servers (answer `y`).
 
 Then: log out/in (first install) → **MSCC Init** → **MSCC Start** → connect the client
@@ -40,8 +32,9 @@ Then: log out/in (first install) → **MSCC Init** → **MSCC Start** → connec
 
 - PSoC radios: BOOT jumper → Morse LOADER → menu **MSCC → Firmware Upload**
   (`psoc-bootloader.gui`), or `psoc-bootloader file.cyacd`.
-- Black Pill (mscc 1.0.69+, replaces `proficio-flash-tools`):
-  `mscc stop; sudo stm32-app-flash app-firmware-async.bin` (USB, app) or
-  `sudo stm32-bootloader-flash boot-app-firmware-async.bin` (ST-Link).
+  PSoC files: `/usr/share/mscc/firmware/<Radio>/` (same versions as the Windows installer).
+- Black Pill (25 MHz board), files in `/usr/share/mscc/firmware/black-pill/`:
+  `mscc stop; sudo stm32-app-flash /usr/share/mscc/firmware/black-pill/app-firmware-async.bin`
+  (USB, app) or `sudo stm32-bootloader-flash /usr/share/mscc/firmware/black-pill/boot-app-firmware-async.bin` (ST-Link).
 
 Full how-to: [`../../rpi/mscc-deb/INSTALL-FOR-PI.md`](../../rpi/mscc-deb/INSTALL-FOR-PI.md).

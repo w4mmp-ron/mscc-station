@@ -7,16 +7,17 @@
 **For:** Raspberry Pi **4 or 5**, **64-bit Raspberry Pi OS** (desktop recommended).  
 **Goal:** Install MSCC, configure it, and start/stop the servers — mostly point-and-click after the package install.
 
-**Current package examples (use the real filenames you were given):**
+**Packages (download from the Releases page, <https://github.com/w4mmp-ron/mscc-station/releases>):**
 
-| Package | Example filename | Order |
+| Package | Example filename | |
 |---------|------------------|--------|
-| PortAudio | `mscc-portaudio_19.8.3_arm64.deb` | **1st** |
-| Main stack | `mscc_1.0.76_arm64.deb` | **2nd** |
-| Setup wizard (MSCC Init) | `mscc-init_1.0.18_all.deb` | **3rd** (recommended) |
-| Avalonia UI (optional) | `mscc-ui_0.6.71_arm64.deb` | **4th** — see `installers/rpi/` |
-| MSCC Volume (optional) | `mscc-volume_1.0.1_all.deb` | any time after mscc |
-| Radio firmware files (optional) | `mscc-firmware_1.0.2_all.deb` | any time — PSoC `.cyacd` files for **Firmware Upload** |
+| MSCC (everything for the radio) | `mscc_1.0.79_arm64.deb` | **required** |
+| MSCC Avalonia client | `mscc-avalonia_1.6.94_arm64.deb` | optional (operate from the Pi itself) |
+
+Since mscc 1.0.79 (2026-11-10) the `mscc` package holds what used to be separate packages:
+PortAudio (`mscc-portaudio`), MSCC Init (`mscc-init`), MSCC Volume (`mscc-volume`) and the
+PSoC radio firmware (`mscc-firmware`), plus the Black Pill firmware. Installing it removes
+those old packages by itself.
 
 ---
 
@@ -87,7 +88,7 @@ After install, use the menu:
 
 ## Install steps
 
-### 1) Install PortAudio for MSCC (**required first**)
+### 1) Install the MSCC package
 
 In Desktop Terminal, go to the folder with the `.deb` files:
 
@@ -96,50 +97,20 @@ cd ~/Downloads
 # or:  cd /media/pi/YOUR_USB_NAME
 ```
 
-MSCC digi (**VirtualA** / **VirtualB**) needs a special PortAudio build (Pulse + ALSA).  
-The stock Raspberry Pi OS library alone is often **not** enough.
-
-```bash
-sudo apt install -y ./mscc-portaudio_19.8.3_arm64.deb
-```
-
-(Use the real filename if the version number differs.)
-
-This installs under **`/usr/local/lib`**. MSCC servers are built to use that copy.
-
-**Quick check (recommended):**
-
-```bash
-ldconfig -p | grep portaudio
-# good: a line with /usr/local/lib/libportaudio.so.2
-```
-
-After the main package is installed, also check:
-
-```bash
-ldd $HOME/mscc/sdrcore-recv | grep portaudio
-# good: /usr/local/lib/...
-# bad:  only /lib/aarch64-linux-gnu/...  → digi will often fail
-```
-
-Do **not** rely on old `$HOME/portaudio-install` + `.bashrc` exports for a normal install. Use this package.
-
----
-
-### 2) Install the main MSCC package
-
 ```bash
 sudo apt update
-sudo apt install -y ./mscc_1.0.76_arm64.deb
+sudo apt install -y ./mscc_1.0.79_arm64.deb
 ```
 
 (Use the real filename if the version differs.)
 
-- Enter your **password** when asked.  
-- If it asks to continue / stop old servers → type **y** when ready.  
-- Install does **not** run the setup wizard for you — that is the next step.
+- Enter your **password** when asked.
+- If it asks to continue / stop old servers → type **y** when ready.
+- Install does **not** run the setup wizard for you — that comes after the log out / in.
+- Upgrading from an older install: apt removes the old `mscc-portaudio`, `mscc-init`,
+  `mscc-volume` and `mscc-firmware` packages; that is expected.
 
-You may see a technical “Notice” about `_apt`.  
+You may see a technical “Notice” about `_apt`.
 **If the install finished and printed “MSCC installed” / “done”, ignore that notice.**
 
 This package installs:
@@ -147,25 +118,43 @@ This package installs:
 | Piece | What it is |
 |-------|------------|
 | Servers | `ms-sdr`, `sdrcore-recv`, `sdrcore-trans` → `$HOME/mscc/` |
-| Firmware upload (PSoC radios) | `psoc-bootloader` (CLI) + `psoc-bootloader.gui` (Windows-like GUI); menu **MSCC → Firmware Upload** |
-| Firmware upload (Black Pill) | `stm32-app-flash <file.bin>` (USB, app; `mscc stop` first) and `stm32-bootloader-flash <file.bin>` (ST-Link); since mscc 1.0.69, replaces the old `proficio-flash-tools` package |
+| PortAudio | MSCC's PortAudio build (Pulse + ALSA, needed for VirtualA / VirtualB) in `/usr/local/lib`; the servers are built to use it |
+| MSCC Init | menu **MSCC Init** (`mscc-init-gui`), text version `mscc-init` (SSH / no desktop) |
+| MSCC Volume | menu **MSCC Volume** (`mscc-volume`), levels of VirtualA / VirtualB |
+| Firmware upload (PSoC radios) | `psoc-bootloader` (CLI) + `psoc-bootloader.gui`; menu **MSCC → Firmware Upload** |
+| PSoC radio firmware | `/usr/share/mscc/firmware/<Radio>/` (`.cyacd` + `.hex`, the same versions as the Windows installer); Firmware Upload opens this folder |
+| Black Pill firmware + tools | `/usr/share/mscc/firmware/black-pill/` (25 MHz board). `mscc stop; sudo stm32-app-flash /usr/share/mscc/firmware/black-pill/app-firmware-async.bin` (USB, app) or `stm32-bootloader-flash <file.bin>` (ST-Link) |
 | Start/stop | `mscc` command and desktop **MSCC Start** / **MSCC Stop** |
 | Digi audio | `mscc-virtual-audio` creates **VirtualA** / **VirtualB** |
 | Config seed | `$HOME/.local/mscc/` **only if empty** (never overwrites your files later) |
 | CAT helper | tty0tty module → often `/dev/tnt0` (after build / reboot) |
 
----
-
-### 3) Install the GUI setup wizard (recommended)
+**Quick check (optional):**
 
 ```bash
-sudo apt install -y ./mscc-init_1.0.18_all.deb
+ldd $HOME/mscc/sdrcore-recv | grep portaudio
+# good: /usr/local/lib/...
+# bad:  only /lib/aarch64-linux-gnu/...  → digi will often fail
 ```
 
-(Use the real filename if the version differs. The package was called `mscc-init-gui` before; the
-command is still `mscc-init-gui`.)
+---
 
-Adds menu **MSCC Init**. Needs desktop packages such as `python3-tk` and `python3-pyaudio` (usually installed automatically).
+### 2) Optional: MSCC Avalonia (client on the Pi)
+
+Only if you want to operate from the Pi's own screen (not needed with the Windows client):
+
+```bash
+sudo apt install -y ./mscc-avalonia_1.6.94_arm64.deb
+```
+
+Menu **MSCC Avalonia**.
+
+---
+
+### 3) (nothing else to install)
+
+Older guides had separate PortAudio, MSCC Init, MSCC Volume and firmware packages. They are
+all in `mscc` now.
 
 ---
 
@@ -355,11 +344,11 @@ Re-run **MSCC Init** only if you change phones, HAT, or CAT wiring.
 |---------|-------------|
 | `mscc: command not found` | New Desktop Terminal, or log out/in |
 | No menu entries | Confirm packages installed; look under **MSCC**; log out/in |
-| `mscc-init-gui` missing | Install `mscc-init_*.deb`; need desktop + `python3-tk` / `python3-pyaudio` |
+| `mscc-init-gui` missing | Install `mscc` 1.0.79 or later (MSCC Init is in it); needs a desktop |
 | No `/dev/tnt0` | Reboot once; install headers: `sudo apt install -y linux-headers-$(uname -r)`. After a kernel update (1.0.74+ rebuilds it by itself, see `/var/log/mscc-tty0tty.log`), or by hand: `sudo /usr/share/mscc/bin/mscc-tty0tty-kernel $(uname -r)` then `sudo modprobe tty0tty` |
 | No VirtualA/B | `mscc-virtual-audio` or `systemctl --user enable --now mscc-virtual-audio` |
-| Digi devices not listed in init / WSJT | Install **mscc-portaudio** first; check `ldd` → `/usr/local` |
-| Wrong PortAudio (`ldd` shows only `/lib/...`) | Install `mscc-portaudio`; use **mscc 1.0.23+** |
+| Digi devices not listed in init / WSJT | Check `ldd $HOME/mscc/sdrcore-recv` → `/usr/local`; reinstall `mscc` |
+| Wrong PortAudio (`ldd` shows only `/lib/...`) | Reinstall `mscc` (it carries PortAudio since 1.0.79) |
 | Quiet phones after reboot | **MSCC Start** (re-applies levels); re-run **MSCC Init** if needed |
 | Quiet digi / WSJT RX weak | `pactl set-sink-volume VirtualA 100%` ; check WSJT Input = VirtualA.monitor |
 | Audio wrong device | Re-run **MSCC Init**. Digi stays VirtualA / VirtualB.monitor |
@@ -390,13 +379,10 @@ You do not start them individually for normal use — use **MSCC Start** / `mscc
 
 ```text
 Desktop Terminal (order matters):
-  1. sudo apt install -y ./mscc-portaudio_*_arm64.deb
-  2. sudo apt install -y ./mscc_*_arm64.deb
-  3. sudo apt install -y ./mscc-init_*_all.deb
-  Optional: ./mscc-ui_*_arm64.deb, ./mscc-volume_*_all.deb, ./mscc-firmware_*_all.deb
+  1. sudo apt install -y ./mscc_*_arm64.deb        (servers, PortAudio, Init, Volume, firmware)
+  Optional: sudo apt install -y ./mscc-avalonia_*_arm64.deb
   (log out/in if first time)
   Optional checks:
-     ldconfig -p | grep portaudio
      ldd $HOME/mscc/sdrcore-recv | grep portaudio
      pactl list short sinks | grep Virtual
 

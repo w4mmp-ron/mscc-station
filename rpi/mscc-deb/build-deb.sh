@@ -144,6 +144,120 @@ ln -sf "../share/mscc/flash-tools/stm32-app-flash.sh"   "$PKG/usr/bin/stm32-app-
 ln -sf "../share/mscc/flash-tools/stm32-bootloader-flash.sh" "$PKG/usr/bin/stm32-bootloader-flash"
 echo "  flash-tools: stm32-app-flash, stm32-bootloader-flash"
 
+# ---------------------------------------------------------------------------------------------
+# mscc 1.0.79 (Ron 2026-11-10): one Pi package. The servers package now also carries what used to
+# be the separate mscc-portaudio, mscc-init, mscc-volume and mscc-firmware packages, plus the
+# Black Pill firmware. Firmware = the same files as the Windows installer (stage.ps1 fills
+# mscc-ui/installer/windows/payload first). The old packages are Conflicts/Replaces in control.
+WIN_PAYLOAD="$TREE/../mscc-ui/installer/windows/payload"
+
+# PSoC radio firmware -> /usr/share/mscc/firmware/<RadioName>/ (where Firmware Upload looks)
+FW_SRC="$WIN_PAYLOAD/PSoC Firmware"
+need_dir "$FW_SRC"
+rm -rf "$PKG/usr/share/mscc/firmware"
+mkdir -p "$PKG/usr/share/mscc/firmware"
+fw_count=0
+FW_RADIOS=(
+  Proficio-Legacy:Proficio-legacy
+  Proficio-MKII-PTT:Proficio-MKII-PTT
+  Proficio-MKII-ATU:Proficio-MKII-ATU
+  Geminus-Legacy:Geminus-legacy
+  Geminus-MKII:Geminus-MKII
+  Ultimus-Legacy:Ultimus-Legacy
+  Ultimus-MKII-ATU:Ultimus-MKII-ATU
+  Ultimus-MKII-PTT:Ultimus-MKII-PTT
+)
+for entry in "${FW_RADIOS[@]}"; do
+  radio="${entry%%:*}"
+  winfolder="${entry##*:}"
+  need_dir "$FW_SRC/$winfolder"
+  shopt -s nullglob
+  cy=( "$FW_SRC/$winfolder"/*-[0-9]*.[0-9]*.cyacd )
+  hx=( "$FW_SRC/$winfolder"/*-[0-9]*.[0-9]*.hex )
+  shopt -u nullglob
+  if [[ ${#cy[@]} -ne 1 || ${#hx[@]} -ne 1 ]]; then
+    echo "ERROR: firmware $radio needs one versioned .cyacd and one .hex in $winfolder (got ${#cy[@]}/${#hx[@]})" >&2
+    exit 1
+  fi
+  [[ "$(basename "${cy[0]}" .cyacd)" == "$(basename "${hx[0]}" .hex)" ]] || {
+    echo "ERROR: firmware $radio cyacd/hex version mismatch" >&2
+    exit 1
+  }
+  mkdir -p "$PKG/usr/share/mscc/firmware/$radio"
+  install -m 644 "${cy[0]}" "${hx[0]}" "$PKG/usr/share/mscc/firmware/$radio/"
+  echo "  firmware:    $radio $(basename "${cy[0]}" .cyacd)"
+  fw_count=$((fw_count + 2))
+done
+[[ "$fw_count" -eq 16 ]] || { echo "ERROR: expected 16 firmware files, got $fw_count" >&2; exit 1; }
+
+# Black Pill (STM32F411, 25 MHz board) firmware -> /usr/share/mscc/firmware/black-pill/
+BP_SRC="$WIN_PAYLOAD/Black Pill Firmware"
+need_dir "$BP_SRC"
+mkdir -p "$PKG/usr/share/mscc/firmware/black-pill"
+for f in app-firmware-async.bin boot-app-firmware-async.bin bootload-PA8.bin; do
+  need_file "$BP_SRC/$f"
+  install -m 644 "$BP_SRC/$f" "$PKG/usr/share/mscc/firmware/black-pill/"
+done
+echo "  firmware:    black-pill app-firmware-async.bin, boot-app-firmware-async.bin, bootload-PA8.bin"
+
+# PortAudio with Pulse + ALSA (was mscc-portaudio): library, headers (servers are built on the
+# Pi) and pkg-config into /usr/local. postinst registers /usr/local/lib (mscc.conf); recv / trans
+# also have it as RUNPATH.
+PA_DEB="$TREE/mscc-portaudio/mscc-portaudio_19.8.3_arm64.deb"
+need_file "$PA_DEB"
+rm -rf "$STAGE/pa"
+mkdir -p "$STAGE/pa"
+dpkg-deb -x "$PA_DEB" "$STAGE/pa"
+need_file "$STAGE/pa/usr/local/lib/libportaudio.so.19.8"
+mkdir -p "$PKG/usr/local"
+cp -a "$STAGE/pa/usr/local/." "$PKG/usr/local/"
+rm -rf "$STAGE/pa"
+echo "  portaudio:   $(ls "$PKG/usr/local/lib" | tr '\n' ' ')"
+
+# MSCC Init (was mscc-init): GUI + text wizard
+INITGUI_SRC="$TREE/mscc-init-gui"
+need_dir "$INITGUI_SRC/mscc_init_gui"
+mkdir -p "$PKG/usr/share/mscc-init-gui/mscc_init_gui" "$PKG/usr/bin" "$PKG/usr/share/doc/mscc"
+for f in "$INITGUI_SRC/mscc_init_gui/"*.py; do
+  tr -d '\r' < "$f" > "$PKG/usr/share/mscc-init-gui/mscc_init_gui/$(basename "$f")"
+done
+cat >"$PKG/usr/bin/mscc-init-gui" <<'EOF'
+#!/usr/bin/env python3
+import sys
+sys.path.insert(0, "/usr/share/mscc-init-gui")
+from mscc_init_gui.app import main
+if __name__ == "__main__":
+    main()
+EOF
+cat >"$PKG/usr/bin/mscc-init" <<'EOF'
+#!/usr/bin/env python3
+import sys
+sys.path.insert(0, "/usr/share/mscc-init-gui")
+from mscc_init_gui.cli import main
+if __name__ == "__main__":
+    try:
+        sys.exit(main())
+    except KeyboardInterrupt:
+        print("\nCancelled - files written so far are kept.")
+        sys.exit(130)
+EOF
+tr -d '\r' < "$INITGUI_SRC/packaging/usr/share/applications/mscc-init-gui.desktop" \
+  > "$PKG/usr/share/applications/mscc-init-gui.desktop"
+[[ -f "$INITGUI_SRC/README-MSCC-INIT-GUI.md" ]] && \
+  tr -d '\r' < "$INITGUI_SRC/README-MSCC-INIT-GUI.md" > "$PKG/usr/share/doc/mscc/README-MSCC-INIT-GUI.md"
+echo "  mscc-init:   mscc-init-gui, mscc-init"
+
+# MSCC Volume (was mscc-volume)
+VOL_SRC="$TREE/mscc-volume"
+need_file "$VOL_SRC/mscc-volume.py"
+tr -d '\r' < "$VOL_SRC/mscc-volume.py" > "$PKG/usr/bin/mscc-volume"
+tr -d '\r' < "$VOL_SRC/packaging/usr/share/applications/mscc-volume.desktop" \
+  > "$PKG/usr/share/applications/mscc-volume.desktop"
+chmod 755 "$PKG/usr/bin/mscc-init-gui" "$PKG/usr/bin/mscc-init" "$PKG/usr/bin/mscc-volume"
+find "$PKG/usr/share/mscc-init-gui" -type d -exec chmod 755 {} \;
+find "$PKG/usr/share/mscc-init-gui" -type f -exec chmod 644 {} \;
+echo "  mscc-volume: mscc-volume"
+
 if [[ -f "$ROOT/packaging/usr/share/mscc/bin/psoc-bootloader.gui" ]]; then
   cp -a "$ROOT/packaging/usr/share/mscc/bin/psoc-bootloader.gui" "$PKG/usr/share/mscc/bin/"
   chmod 755 "$PKG/usr/share/mscc/bin/psoc-bootloader.gui"
@@ -262,6 +376,6 @@ echo "Current kit copy: installers/rpi/"
 echo
 echo "Then as normal user:"
 echo "  systemctl --user enable --now mscc-virtual-audio   # if sinks missing"
-echo "  mscc-init-gui # operator audio (package mscc-init)"
+echo "  mscc-init-gui # operator audio (MSCC Init, in this package)"
 echo "  mscc start    # or desktop menu: MSCC Start / MSCC Stop"
-echo "  # optional PortAudio+Pulse: \$HOME/portaudio-install (see mscc.sh)"
+echo "  # PortAudio (Pulse + ALSA) is in this package: /usr/local/lib"
