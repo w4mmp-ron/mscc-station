@@ -66,7 +66,8 @@ review of what he ported, say if the Pi needs a matching change. Don't start new
 
 **2026-11-11 (finished, Ron): Release R11-11-2.** Windows `mscc-net9-R11-11-2-install.exe` (WPF 11.11.2,
 ms-sdr 3.208); Pi `mscc_1.0.80_arm64.deb` (= 1.0.79 + ms-sdr 3.206, md5 = the running ~/mscc/ms-sdr) and
-`mscc-avalonia_1.6.95_arm64.deb` (both also on V:\, not installed from the .deb). INSTALL docs +
+`mscc-avalonia_1.6.95_arm64.deb` (both also on V:\; both INSTALLED on the Pi 2026-11-11, servers
+were stopped, /dev/tnt0-1 and the .ini files fine; Avalonia 1.6.95 not run yet). INSTALL docs +
 Windows CHANGELOG updated, INSTALL-FOR-PI .docx / .pdf regenerated. Pi runs ms-sdr 3.206, recv 3.153,
 trans 3.158, pill 3.15.
 - **WSJT-X right-click Tune (CAT `AC111;`) DONE, tested on the Pi (Ron).** Capture (strace on
@@ -83,6 +84,20 @@ trans 3.158, pill 3.15.
   main.c, extern.h in both trees. Pi ms-sdr built (version.h on the Pi 3.206), Windows ms-sdr 3.208
   built, not on a Windows rig. Tune power shows 0 in the log until the client sends it (trans
   then uses its own; Ron: power looked normal).
+  **Later 11-11 (Avalonia 1.6.95 on the Pi):** a second right-click 6.4 s into a tune DID arrive
+  (`MD2;` + `AC111;`, 16:00:49 UTC) and stopped it; at 2-3 s earlier it sent nothing. Ron: WSJT-X
+  right-click Tune itself looks buggy (sometimes sends, sometimes not). ms-sdr handles both. Note:
+  an `MD2;` during a CAT tune changes the mode with the carrier still keyed (harmless in USB);
+  option, not done: hold CAT mode sets until the tune ends.
+  Avalonia 1.6.95 meter in watts: fine (Ron). SWR fault 3.40 on 15 m at 16:00:33 = Ron's
+  left-click Tune by mistake (antenna not matched there), not a bug.
+- **proficio backup card (2026-11-11, same as squireoaks):** USB-adapter card `sda` (29.2 GB). The old
+  copy had the SD's disk ID 21382c14 (boot mix-up risk); Ron re-ran SD Card Copier with New Partition
+  UUIDs -> copy ID e6308e0a (cmdline.txt + fstab match). rpi-clone 2.0.27 (geerlingguy fork,
+  /usr/local/sbin, not on ron's PATH; Ron installed it). First `sudo /usr/local/sbin/rpi-clone -u sda`
+  32 s, exit 0. Root cron: `0 3 * * * /usr/local/sbin/rpi-clone -u sda > /var/log/rpi-clone.log 2>&1`.
+  Check after 03:00: log ends "Done with clone to /dev/sda". squireoaks: reach it only through
+  proficio (`ssh proficio 'ssh ron@squireoaks ...'`); its clone ran OK 11-11 03:00 (49 s).
 - **RX IQ START order fixed (client):** WPF `StartRxIq` and Avalonia `StartRxIqAsync` now send
   0x55 RX before 0x58 band (ms-sdr iq.c routes 0x58 by the last 0x55; band first after a TX I/Q
   session took the TX path: retune to the TX cal freq + trans TUNE). WPF 11.11.1, Avalonia
