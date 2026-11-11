@@ -103,6 +103,21 @@ no log errors); Avalonia 1.6.96 INSTALLED on the Pi 2026-11-11 (over 1.6.95), Ro
 GitHub Release R11-11-4 (the .exe + both .deb). Actual Installer: run `actinst /S` from PowerShell only (Git Bash
 turns `/S` into a path, the GUI opens and nothing is built).
 Option, not done: drag the divider on the display.
+- **RELEASE STATUS (Ron, 2026-11-11): Windows and Pi are READY FOR RELEASE at R11-11-4** (GitHub Release
+  R11-11-4, Latest: mscc-net9-R11-11-4-install.exe, mscc 1.0.80, mscc-avalonia 1.6.96). The Debian (Ubuntu x86_64,
+  `linux/`, `installers/linux`) implementation is WAITING ON STEW; don't release it until he's done.
+- **Firmware check (2026-11-11, Ron): MKII-style CW + QRP / I/Q cal store, from the source.** MKII-style CW =
+  key-delay buffer (non-QSK amp delay), key-click shaping, paddles. Cal store = 0xC8 CMD_CALIBRATION with
+  CAL_TYPE_POWER / RX_IQ / TX_IQ.
+  - PSoC, all YES on both: Proficio MKII PTT 3.243 / Ultimus 8.243 (the MKII code); MKII ATU 4.244 / Ultimus 7.244
+    (cw.c identical to PTT); Proficio Legacy 1.236 / Ultimus 6.236 (keys by gating DIN = TX I/Q, not the PA line);
+    Geminus MKII 2.153 and Geminus Legacy 5.153 (relays latched for the semi-break-in session, no QSK). Shaping on
+    PSoC = PCM3060 DAC soft mute. = the client's minimum-firmware list.
+  - Black Pill: F411 25 MHz 3.15 (shipped) YES / YES, shaping = raised-cosine ramp on the TX I/Q (also TUN / SSB /
+    digital), cal store also holds PPM. F411 8 MHz 3.14 (not shipped) YES / YES. STM32H743 3.232: paddles + QSK
+    only (no key delay, no shaping) and NO cal store (client would ask for a firmware update); not shipped.
+  - Empty leftovers in radio-psoc-firmware: `Proficio-Legacy`, `Proficio-MKII-PTT`, `Proficio-MKII-ATU`;
+    `Proficio-Legacy - Copy` (1.236) is an old copy, the current Legacy is `Proficio-Ultimus-Legacy`.
 - **proficio power (2026-11-11, Ron's custom buck board in the MII):** the Pi 5 said the supply can't give
   5 A. Cause: a Pi 5 asks the supply over USB-C Power Delivery for 5 A; a plain buck can't answer, so the Pi assumes
   3 A and limits USB to 600 mA. Supply is fine (EXT5V 5.07-5.09 V, get_throttled=0x0). Fix: EEPROM
