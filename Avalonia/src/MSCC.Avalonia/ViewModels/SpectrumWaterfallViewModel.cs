@@ -40,6 +40,7 @@ public partial class SpectrumWaterfallViewModel : ViewModelBase
         AutoSnap = _s.AutoSnap;
         SelectedAutoSnapStep = AutoSnapLabel(_s.AutoSnapStepHz);
         TimeMarkerText = _s.WaterfallTimeMarker.ToString();
+        SpectrumSplitPercent = _s.SpectrumSplitPercent;
         TimeDisplayOn = main?.TimeDisplayOn ?? false;
         SelectedSpectrumBackground = _a.SpectrumBackground;
         SelectedSpectrumFill = _a.SpectrumFill;
@@ -74,6 +75,7 @@ public partial class SpectrumWaterfallViewModel : ViewModelBase
     [ObservableProperty] private float _waterfallLowDb = -150;
     [ObservableProperty] private bool _viewGrid = true;
     [ObservableProperty] private bool _showWaterfall = true;
+    [ObservableProperty] private int _spectrumSplitPercent = SpectrumDisplaySettings.SpectrumSplitDefault;
     /// <summary>True = Climbing (newest at bottom); false = Falling (newest at top, default; WPF cmd-075).</summary>
     [ObservableProperty] private bool _waterfallDirectionNormal;
     [ObservableProperty] private string _selectedWaterfallPalette = "Enhanced";
@@ -106,6 +108,7 @@ public partial class SpectrumWaterfallViewModel : ViewModelBase
     partial void OnWaterfallZeroChanged(int value) { if (!_loading) _s.SetWaterfallZero(value); }
     partial void OnViewDbLabelsChanged(bool value) { if (!_loading) _s.SetViewDbLabels(value); }
     partial void OnPeakMarkerChanged(bool value) { if (!_loading) _s.SetPeakMarker(value); }
+    partial void OnSpectrumSplitPercentChanged(int value) { if (!_loading) _s.SetSpectrumSplitPercent(value); }
     partial void OnAutoSnapChanged(bool value) { if (!_loading) _s.SetAutoSnap(value); }
     partial void OnSelectedAutoSnapStepChanged(string value) { if (!_loading) _s.SetAutoSnapStepHz(AutoSnapHz(value)); }
     partial void OnTimeDisplayOnChanged(bool value) { if (!_loading && _main != null) _main.TimeDisplayOn = value; }
@@ -147,6 +150,7 @@ public partial class SpectrumWaterfallViewModel : ViewModelBase
         string step = AutoSnapLabel(_s.AutoSnapStepHz);
         if (SelectedAutoSnapStep != step) SelectedAutoSnapStep = step;
         TimeMarkerText = _s.WaterfallTimeMarker.ToString();
+        if (SpectrumSplitPercent != _s.SpectrumSplitPercent) SpectrumSplitPercent = _s.SpectrumSplitPercent;
         _loading = false;
     }
 

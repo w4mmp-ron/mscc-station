@@ -12,7 +12,7 @@
 | Package | Example filename | |
 |---------|------------------|--------|
 | MSCC (everything for the radio) | `mscc_1.0.80_arm64.deb` | **required** |
-| MSCC Avalonia client | `mscc-avalonia_1.6.95_arm64.deb` | optional (operate from the Pi itself) |
+| MSCC Avalonia client | `mscc-avalonia_1.6.96_arm64.deb` | optional (operate from the Pi itself) |
 
 Since mscc 1.0.79 (2026-11-10) the `mscc` package holds what used to be separate packages:
 PortAudio (`mscc-portaudio`), MSCC Init (`mscc-init`), MSCC Volume (`mscc-volume`) and the
@@ -144,7 +144,7 @@ ldd $HOME/mscc/sdrcore-recv | grep portaudio
 Only if you want to operate from the Pi's own screen (not needed with the Windows client):
 
 ```bash
-sudo apt install -y ./mscc-avalonia_1.6.95_arm64.deb
+sudo apt install -y ./mscc-avalonia_1.6.96_arm64.deb
 ```
 
 Menu **MSCC Avalonia**.

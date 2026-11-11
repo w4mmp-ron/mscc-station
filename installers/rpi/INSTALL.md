@@ -13,7 +13,7 @@ releases stay there for roll-back). Put the `.deb` files in one folder on the Pi
 | Package | Version | |
 |---|---|---|
 | `mscc` | 1.0.80 | required: servers (ms-sdr 3.206, recv 3.153, trans 3.158), PortAudio, MSCC Init, MSCC Volume, PSoC + Black Pill firmware and flash tools |
-| `mscc-avalonia` | 1.6.95 | optional: MSCC Avalonia client on the Pi (not needed with the Windows client) |
+| `mscc-avalonia` | 1.6.96 | optional: MSCC Avalonia client on the Pi (not needed with the Windows client) |
 
 ```bash
 cd /path/to/the/downloaded/debs

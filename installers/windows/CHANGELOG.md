@@ -2,6 +2,11 @@
 
 Installer: `mscc-net9-R<version>-install.exe` (WPF client + Windows servers). Install the newest one; older installers in this folder are kept for roll-back only.
 
+## R11.11.4 — 2026-11-11  (`mscc-net9-R11-11-4-install.exe`, title bar 11.11.4)
+
+### Added
+- S/W window: new SPECTRUM SIZE slider (20–80 %) under Climbing. It sets how much of the display height the spectrum uses; the waterfall gets the rest. Default 40 % (was fixed at 38 %). One setting for all bands, saved.
+
 ## R11.11.2 — 2026-11-11  (`mscc-net9-R11-11-2-install.exe`, title bar 11.11.2)
 
 ### Changed

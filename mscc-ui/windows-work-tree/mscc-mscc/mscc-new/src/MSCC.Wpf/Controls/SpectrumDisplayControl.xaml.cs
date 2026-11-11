@@ -429,7 +429,7 @@ public partial class SpectrumDisplayControl : UserControl
         // Layout matches BasicSpectrumRenderer spectrum region
         bool hasWaterfall = ShowWaterfall && _waterfallHistory.Count > 0;
         int spectrumPlotBottom = hasWaterfall
-            ? Math.Max(60, (int)(height * 0.38))
+            ? Math.Max(60, (int)(height * SpectrumColorSettings.SpectrumSplitPercent / 100.0))
             : Math.Max(60, height - 26);
 
         // Prefer live S/W grid window (GRID MAX = pane top; BASELINE fine-tunes floor only)
@@ -664,11 +664,11 @@ internal sealed class BasicSpectrumRenderer : ISpectrumRenderer
             cwOffsetBins = (int)(update.CwPitchHz * (double)data.Length / fullSpan);
         }
 
-        // === Layout: spectrum on top (~38% if waterfall), or full if no waterfall; freq scale at very bottom ===
+        // === Layout: spectrum on top (S/W SPECTRUM SIZE %, default 40, if waterfall), or full if no waterfall; freq scale at very bottom ===
         // freqMargin: room for scale-2 MHz labels + short ticks below (labels sit above ticks).
         const int freqMargin = 26;
         int spectrumHeight = hasWaterfall
-            ? Math.Max(60, (int)(height * 0.38))
+            ? Math.Max(60, (int)(height * SpectrumColorSettings.SpectrumSplitPercent / 100.0))
             : Math.Max(60, height - freqMargin);
         int wfStartY = hasWaterfall ? spectrumHeight + 3 : height;
         int wfHeight = hasWaterfall ? Math.Max(30, height - wfStartY - freqMargin) : 0;

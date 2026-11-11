@@ -136,6 +136,9 @@ public sealed class SpectrumDisplaySettings
     public int AutoSnapStepHz { get; private set; } = 100;
     /// <summary>Waterfall time marks: 0 = off, 1–5 = a line every N seconds (UTC mm:ss).</summary>
     public int WaterfallTimeMarker { get; private set; }
+    /// <summary>S/W SPECTRUM SIZE: spectrum share of the panadapter height when the waterfall is shown (20–80 %).</summary>
+    public const int SpectrumSplitMin = 20, SpectrumSplitMax = 80, SpectrumSplitDefault = 40;
+    public int SpectrumSplitPercent { get; private set; } = SpectrumSplitDefault;
 
     /// <summary>Per-band levels (key "20M", "160M", …). Band not in the map keeps the bank values.</summary>
     public Dictionary<string, SwBandLevels> BandLevels { get; } = new(StringComparer.OrdinalIgnoreCase);
@@ -312,6 +315,14 @@ public sealed class SpectrumDisplaySettings
         Notify();
     }
 
+    public void SetSpectrumSplitPercent(int percent)
+    {
+        percent = Math.Clamp(percent, SpectrumSplitMin, SpectrumSplitMax);
+        if (SpectrumSplitPercent == percent) return;
+        SpectrumSplitPercent = percent;
+        Notify();
+    }
+
     /// <summary>Advance the time marker 0→1→…→5→0 (WPF S/W button).</summary>
     public int CycleWaterfallTimeMarker()
     {
@@ -321,8 +332,9 @@ public sealed class SpectrumDisplaySettings
 
     /// <summary>Load the global extras and per-band levels from the settings file.</summary>
     public void LoadExtras(bool dbLabels, bool peakMarker, bool autoSnap, int autoSnapStepHz, int timeMarker,
-        IReadOnlyDictionary<string, SwBandLevels>? bandLevels)
+        IReadOnlyDictionary<string, SwBandLevels>? bandLevels, int spectrumSplitPercent = SpectrumSplitDefault)
     {
+        SpectrumSplitPercent = Math.Clamp(spectrumSplitPercent, SpectrumSplitMin, SpectrumSplitMax);
         ViewDbLabels = dbLabels;
         PeakMarker = peakMarker;
         AutoSnap = autoSnap;

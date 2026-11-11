@@ -67,7 +67,7 @@ internal static class SpectrumRenderer
         bool showWf = settings.ShowWaterfall && waterfallHistory is { Count: > 0 };
         const int freqMargin = 22;
         int spectrumHeight = showWf
-            ? Math.Max(50, (int)(height * 0.40))
+            ? Math.Max(50, (int)(height * settings.SpectrumSplitPercent / 100.0))
             : Math.Max(50, height - freqMargin);
         int wfStartY = showWf ? spectrumHeight + 2 : height;
         int wfHeight = showWf ? Math.Max(24, height - wfStartY - freqMargin) : 0;

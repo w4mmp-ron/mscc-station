@@ -159,6 +159,8 @@ public sealed class ClientSettings
     public bool AutoSnap { get; set; }
     public int AutoSnapStepHz { get; set; } = 100;
     public int WaterfallTimeMarker { get; set; }
+    /// <summary>S/W SPECTRUM SIZE 20–80 % (global, not per band).</summary>
+    public int SpectrumSplitPercent { get; set; } = SpectrumDisplaySettings.SpectrumSplitDefault;
     public bool TimeDisplayOn { get; set; }
     /// <summary>WPF cmd-075 port: per-band BASELINE + waterfall levels (key "20M").</summary>
     public Dictionary<string, SpectrumSwBandLevelsDto> BandLevels { get; set; } = new(StringComparer.OrdinalIgnoreCase);
@@ -442,6 +444,7 @@ public static class ClientSettingsStore
             sb.AppendLine($"AUTO_SNAP={(s.AutoSnap ? "1" : "0")}");
             sb.AppendLine($"AUTO_SNAP_STEP={s.AutoSnapStepHz}");
             sb.AppendLine($"WF_TIME_MARKER={Math.Clamp(s.WaterfallTimeMarker, 0, 5)}");
+            sb.AppendLine($"SPECTRUM_SPLIT_PERCENT={Math.Clamp(s.SpectrumSplitPercent, SpectrumDisplaySettings.SpectrumSplitMin, SpectrumDisplaySettings.SpectrumSplitMax)}");
             sb.AppendLine($"TIME_DISPLAY={(s.TimeDisplayOn ? "1" : "0")}");
             foreach (var kv in s.BandLevels)
             {
@@ -962,6 +965,10 @@ public static class ClientSettingsStore
             case "AUTO_SNAP": s.AutoSnap = IsTruthy(val); break;
             case "AUTO_SNAP_STEP": if (TryInt(val, out int snap)) s.AutoSnapStepHz = snap; break;
             case "WF_TIME_MARKER": if (TryInt(val, out int tm)) s.WaterfallTimeMarker = Math.Clamp(tm, 0, 5); break;
+            case "SPECTRUM_SPLIT_PERCENT":
+                if (TryInt(val, out int split))
+                    s.SpectrumSplitPercent = Math.Clamp(split, SpectrumDisplaySettings.SpectrumSplitMin, SpectrumDisplaySettings.SpectrumSplitMax);
+                break;
             case "TIME_DISPLAY": s.TimeDisplayOn = IsTruthy(val); break;
             case "HF_WF_PALETTE":
                 if (!string.IsNullOrWhiteSpace(val))

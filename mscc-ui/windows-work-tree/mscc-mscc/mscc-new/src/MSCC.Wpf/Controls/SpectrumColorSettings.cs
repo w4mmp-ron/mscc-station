@@ -301,6 +301,13 @@ public static class SpectrumColorSettings
     public static void SetWaterfallDirectionNormal(bool normal) =>
         WaterfallDirectionNormal = normal;
 
+    /// <summary>Spectrum share of the panadapter height when the waterfall is shown (20–80 %, default 40).</summary>
+    public const int SpectrumSplitMin = 20, SpectrumSplitMax = 80, SpectrumSplitDefault = 40;
+    public static int SpectrumSplitPercent { get; private set; } = SpectrumSplitDefault;
+
+    public static void SetSpectrumSplitPercent(int percent) =>
+        SpectrumSplitPercent = Math.Clamp(percent, SpectrumSplitMin, SpectrumSplitMax);
+
     /// <summary>
     /// Apply Gain/Zero fine trim on top of the Waterfall Low/High color window.
     /// Pass low/high from <see cref="GetWaterfallColorWindow"/> (not spectrum GRID).

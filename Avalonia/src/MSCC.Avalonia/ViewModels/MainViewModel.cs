@@ -7703,7 +7703,8 @@ public partial class MainViewModel : ViewModelBase, IDisposable
                     WaterfallLowDb = kv.Value.WaterfallLowDb,
                     WaterfallGain = kv.Value.WaterfallGain,
                     WaterfallZero = kv.Value.WaterfallZero,
-                }, StringComparer.OrdinalIgnoreCase));
+                }, StringComparer.OrdinalIgnoreCase),
+                s.SpectrumSplitPercent);
             SpectrumDisplaySettings.Instance.ApplyBand(BandText);
             TimeDisplayOn = s.TimeDisplayOn;
             _windowX = s.WindowX; _windowY = s.WindowY;
@@ -7865,6 +7866,7 @@ public partial class MainViewModel : ViewModelBase, IDisposable
             AutoSnap = sw.AutoSnap,
             AutoSnapStepHz = sw.AutoSnapStepHz,
             WaterfallTimeMarker = sw.WaterfallTimeMarker,
+            SpectrumSplitPercent = sw.SpectrumSplitPercent,
             TimeDisplayOn = TimeDisplayOn,
             WindowX = _windowX,
             WindowY = _windowY,

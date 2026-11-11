@@ -55,6 +55,8 @@ public static class SpectrumWaterfallSettings
     /// <summary>0 = off; 1–5 = mark every N seconds (original Time_grid).</summary>
     public static int WaterfallTimeMarker { get; set; } = 0;
     public static bool WaterfallDirectionNormal { get; set; } = false;
+    /// <summary>S/W SPECTRUM SIZE: spectrum share of the panadapter height, 20–80 %. Global (not per band).</summary>
+    public static int SpectrumSplitPercent { get; set; } = SpectrumColorSettings.SpectrumSplitDefault;
 
     /// <summary>True = Geminus (LF) waterfall bank; false = Proficio (HF). Sticky RADIO_MODEL.</summary>
     public static bool RadioModelIsGeminus { get; set; }
@@ -368,6 +370,7 @@ public static class SpectrumWaterfallSettings
         WaterfallZero = SpectrumColorSettings.WaterfallZero;
         SpectrumColorSettings.SetWaterfallTimeMarker(WaterfallTimeMarker);
         SpectrumColorSettings.SetWaterfallDirectionNormal(WaterfallDirectionNormal);
+        SpectrumColorSettings.SetSpectrumSplitPercent(SpectrumSplitPercent);
         SpectrumColorSettings.SetBaseline(SpectrumBaseline);
         SpectrumColorSettings.SetSpectrumDbOffset(SpectrumDbOffset);
         SpectrumDbOffset = SpectrumColorSettings.SpectrumDbOffset;
@@ -848,6 +851,9 @@ public static class SpectrumWaterfallSettings
                             || rm.Equals("LF", StringComparison.OrdinalIgnoreCase);
                     }
 
+                    if (LineMatchesKey(line, "SPECTRUM_SPLIT_PERCENT"))
+                        SpectrumSplitPercent = Math.Clamp(ParseIniInt(line, SpectrumSplitPercent),
+                            SpectrumColorSettings.SpectrumSplitMin, SpectrumColorSettings.SpectrumSplitMax);
                     if (LineMatchesKey(line, "SPECTRUM_SMOOTHING")) SpectrumSmoothing = Math.Clamp(ParseIniInt(line, SpectrumSmoothing), 0, 100);
                     if (line.Contains("SPECTRUM_AVERAGE")) SpectrumAverage = ParseIniString(line, SpectrumAverage);
                     if (line.Contains("SPECTRUM_FILTER_MARKER")) SpectrumFilterMarker = ParseIniString(line, SpectrumFilterMarker);
@@ -1159,6 +1165,7 @@ public static class SpectrumWaterfallSettings
         UpdateOrAdd(lines, "LAST_LF_MODE", LastLfMode ?? "USB");
 
         UpdateOrAdd(lines, "SPECTRUM_SMOOTHING", SpectrumSmoothing.ToString());
+        UpdateOrAdd(lines, "SPECTRUM_SPLIT_PERCENT", SpectrumSplitPercent.ToString());
         UpdateOrAdd(lines, "SPECTRUM_AVERAGE", SpectrumAverage);
         UpdateOrAdd(lines, "SPECTRUM_FILTER_MARKER", SpectrumFilterMarker);
         UpdateOrAdd(lines, "SPECTRUM_AUTO_SNAP", SpectrumAutoSnap ? "1" : "0");

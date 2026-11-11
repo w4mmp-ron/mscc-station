@@ -91,6 +91,16 @@ trans 3.158, pill 3.15.
   option, not done: hold CAT mode sets until the tune ends.
   Avalonia 1.6.95 meter in watts: fine (Ron). SWR fault 3.40 on 15 m at 16:00:33 = Ron's
   left-click Tune by mistake (antenna not matched there), not a bug.
+**2026-11-11 (finished, Ron): Release R11-11-4.** S/W **SPECTRUM SIZE** slider (20-80 %, default 40,
+under Climbing): spectrum share of the panadapter height, waterfall gets the rest (was fixed: WPF 38 %,
+Avalonia 40 %; the waterfall rows are resampled to its height, so nothing else changes). Global, not per
+band. WPF: SpectrumColorSettings.SpectrumSplitPercent (renderer + peak marker), SpectrumWaterfallSettings
+`SPECTRUM_SPLIT_PERCENT` in MSCC_Client.ini, PanadapterControlsWindow slider. Avalonia:
+SpectrumDisplaySettings.SpectrumSplitPercent (LoadExtras), SpectrumRenderer, ClientSettingsStore
+`SPECTRUM_SPLIT_PERCENT`, SpectrumWaterfallViewModel + window. WPF 11.11.4 TESTED by Ron (Windows, saved 49 %,
+no log errors); Avalonia 1.6.96 built, not run yet. Installers: Windows `mscc-net9-R11-11-4-install.exe`
+(servers unchanged), Pi `mscc-avalonia_1.6.96_arm64.deb` (on V:\, not installed); `mscc_1.0.80` unchanged.
+Option, not done: drag the divider on the display.
 - **proficio backup card (2026-11-11, same as squireoaks):** USB-adapter card `sda` (29.2 GB). The old
   copy had the SD's disk ID 21382c14 (boot mix-up risk); Ron re-ran SD Card Copier with New Partition
   UUIDs -> copy ID e6308e0a (cmdline.txt + fstab match). rpi-clone 2.0.27 (geerlingguy fork,

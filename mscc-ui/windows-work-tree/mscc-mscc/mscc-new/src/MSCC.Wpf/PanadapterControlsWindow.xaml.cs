@@ -217,6 +217,14 @@ public partial class PanadapterControlsWindow : Window
             WaterfallGainSlider.ValueChanged -= OnWaterfallGainChanged;
             WaterfallGainSlider.ValueChanged += OnWaterfallGainChanged;
         }
+        if (SpectrumSplitSlider != null)
+        {
+            SpectrumSplitSlider.ValueChanged -= OnSpectrumSplitChanged;
+            SpectrumSplitSlider.Value = SpectrumColorSettings.SpectrumSplitPercent;
+            if (SpectrumSplitValueText != null)
+                SpectrumSplitValueText.Text = $"{SpectrumColorSettings.SpectrumSplitPercent}%";
+            SpectrumSplitSlider.ValueChanged += OnSpectrumSplitChanged;
+        }
         if (WaterfallZeroSlider != null)
         {
             WaterfallZeroSlider.ValueChanged -= OnWaterfallZeroChanged;
@@ -686,6 +694,15 @@ public partial class PanadapterControlsWindow : Window
         SpectrumWaterfallSettings.SaveLiveWaterfallAndActiveBank();
         if (WaterfallZeroValueText != null)
             WaterfallZeroValueText.Text = SpectrumColorSettings.WaterfallZero.ToString();
+    }
+
+    private void OnSpectrumSplitChanged(object sender, RoutedPropertyChangedEventArgs<double> e)
+    {
+        SpectrumColorSettings.SetSpectrumSplitPercent((int)Math.Round(e.NewValue));
+        SpectrumWaterfallSettings.SpectrumSplitPercent = SpectrumColorSettings.SpectrumSplitPercent;
+        SpectrumWaterfallSettings.Save();
+        if (SpectrumSplitValueText != null)
+            SpectrumSplitValueText.Text = $"{SpectrumColorSettings.SpectrumSplitPercent}%";
     }
 
     private void OnWaterfallTimeMarkerClick(object sender, RoutedEventArgs e)
