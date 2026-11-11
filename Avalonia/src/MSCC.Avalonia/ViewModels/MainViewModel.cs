@@ -7964,6 +7964,8 @@ public partial class MainViewModel : ViewModelBase, IDisposable
                     await _radio.SetKeyerMemTextWpmAsync(
                         ClientSettingsStore.ClampCwMemTextWpm(CwMemTextWpm)).ConfigureAwait(true);
                 }
+                // recv takes a pitch only right after a CW BW (1.6.93)
+                await _radio.SetCwFilterAsync(_cwFilterIndex).ConfigureAwait(true);
                 await _radio.SetCwPitchAsync(Math.Clamp(CwPitchIndex, 0, 3)).ConfigureAwait(true);
                 await _radio.SetCwTxHoldAsync(Math.Clamp(CwHold, 1, 500)).ConfigureAwait(true);
                 await _radio.SetCwQskAsync(CwQsk).ConfigureAwait(true);
