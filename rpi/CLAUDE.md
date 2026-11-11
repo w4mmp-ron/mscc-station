@@ -103,6 +103,12 @@ no log errors); Avalonia 1.6.96 INSTALLED on the Pi 2026-11-11 (over 1.6.95), Ro
 GitHub Release R11-11-4 (the .exe + both .deb). Actual Installer: run `actinst /S` from PowerShell only (Git Bash
 turns `/S` into a path, the GUI opens and nothing is built).
 Option, not done: drag the divider on the display.
+- **proficio power (2026-11-11, Ron's custom buck board in the MII):** the Pi 5 said the supply can't give
+  5 A. Cause: a Pi 5 asks the supply over USB-C Power Delivery for 5 A; a plain buck can't answer, so the Pi assumes
+  3 A and limits USB to 600 mA. Supply is fine (EXT5V 5.07-5.09 V, get_throttled=0x0). Fix: EEPROM
+  `PSU_MAX_CURRENT=5000` (rpi-eeprom-config --apply, rebooted 17:28): usb_max_current_enable=1 (USB 1.6 A), no
+  warning in the log. Old EEPROM: BOOT_UART=1, BOOT_ORDER=0xf461, NET_INSTALL_AT_POWER_ON=1. The MSCC servers
+  do not start by themselves after a reboot (MSCC Start). Undo: remove the line, reboot.
 - **proficio backup card (2026-11-11, same as squireoaks):** USB-adapter card `sda` (29.2 GB). The old
   copy had the SD's disk ID 21382c14 (boot mix-up risk); Ron re-ran SD Card Copier with New Partition
   UUIDs -> copy ID e6308e0a (cmdline.txt + fstab match). rpi-clone 2.0.27 (geerlingguy fork,
