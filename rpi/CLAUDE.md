@@ -98,8 +98,10 @@ band. WPF: SpectrumColorSettings.SpectrumSplitPercent (renderer + peak marker), 
 `SPECTRUM_SPLIT_PERCENT` in MSCC_Client.ini, PanadapterControlsWindow slider. Avalonia:
 SpectrumDisplaySettings.SpectrumSplitPercent (LoadExtras), SpectrumRenderer, ClientSettingsStore
 `SPECTRUM_SPLIT_PERCENT`, SpectrumWaterfallViewModel + window. WPF 11.11.4 TESTED by Ron (Windows, saved 49 %,
-no log errors); Avalonia 1.6.96 built, not run yet. Installers: Windows `mscc-net9-R11-11-4-install.exe`
-(servers unchanged), Pi `mscc-avalonia_1.6.96_arm64.deb` (on V:\, not installed); `mscc_1.0.80` unchanged.
+no log errors); Avalonia 1.6.96 INSTALLED on the Pi 2026-11-11 (over 1.6.95), Ron trying it (he reports later if it fails). Installers: Windows `mscc-net9-R11-11-4-install.exe`
+(servers unchanged), Pi `mscc-avalonia_1.6.96_arm64.deb` (on V:\, installed); `mscc_1.0.80` unchanged. Commit e203740,
+GitHub Release R11-11-4 (the .exe + both .deb). Actual Installer: run `actinst /S` from PowerShell only (Git Bash
+turns `/S` into a path, the GUI opens and nothing is built).
 Option, not done: drag the divider on the display.
 - **proficio backup card (2026-11-11, same as squireoaks):** USB-adapter card `sda` (29.2 GB). The old
   copy had the SD's disk ID 21382c14 (boot mix-up risk); Ron re-ran SD Card Copier with New Partition
