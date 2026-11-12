@@ -11,7 +11,7 @@
 
 | Package | Example filename | |
 |---------|------------------|--------|
-| MSCC (everything for the radio) | `mscc_1.0.81_arm64.deb` | **required** |
+| MSCC (everything for the radio) | `mscc_1.0.82_arm64.deb` | **required** |
 | MSCC Avalonia client | `mscc-avalonia_1.6.96_arm64.deb` | optional (operate from the Pi itself) |
 
 Since mscc 1.0.79 (2026-11-10) the `mscc` package holds what used to be separate packages:
@@ -99,7 +99,7 @@ cd ~/Downloads
 
 ```bash
 sudo apt update
-sudo apt install -y ./mscc_1.0.81_arm64.deb
+sudo apt install -y ./mscc_1.0.82_arm64.deb
 ```
 
 (Use the real filename if the version differs.)

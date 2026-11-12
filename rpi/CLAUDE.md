@@ -104,7 +104,8 @@ GitHub Release R11-11-4 (the .exe + both .deb). Actual Installer: run `actinst /
 turns `/S` into a path, the GUI opens and nothing is built).
 Option, not done: drag the divider on the display.
 - **RELEASE STATUS (Ron, 2026-11-11): Windows and Pi are READY FOR RELEASE at R11-11-4** (GitHub Release
-  R11-11-4, Latest: mscc-net9-R11-11-4-install.exe, mscc 1.0.80, mscc-avalonia 1.6.96). The Debian (Ubuntu x86_64,
+  R11-11-4: mscc-net9-R11-11-4-install.exe, mscc 1.0.80, mscc-avalonia 1.6.96; Latest is now R11-11-5 with
+  mscc 1.0.82). The Debian (Ubuntu x86_64,
   `linux/`, `installers/linux`) implementation is WAITING ON STEW; don't release it until he's done.
 - **Docs: firmware upgrade note (2026-11-11, Ron).** docs/manuals drafts: Windows 2.6 + Linux 2.7 got a bold
   "Firmware update required" paragraph (cal store in the radio, upgrade for the transceiver you have, old firmware =
@@ -125,7 +126,15 @@ Option, not done: drag the divider on the display.
 - **2026-11-11 (finished, Ron): Release R11-11-5** = Black Pill versioned names + docs firmware note.
   `mscc-net9-R11-11-5-install.exe` (AppVersion 11.11.5; WPF client unchanged, title bar 11.11.4; servers
   unchanged) + `mscc_1.0.81_arm64.deb` (same servers, Black Pill files renamed) + mscc-avalonia 1.6.96 (unchanged).
-  1.0.81 NOT installed on the Pi yet. psoc-replacement-stm32 committed + pushed separately.
+  psoc-replacement-stm32 committed + pushed separately. 1.0.81 install over ssh HUNG (2nd time): postinst
+  "Stop the MSCC servers? Continue [y/N]" waits on the pty apt opens; finished with
+  `DEBIAN_FRONTEND=noninteractive dpkg --configure mscc`.
+- **2026-11-11 (finished, Ron): mscc 1.0.82 = the install no longer hangs.** postinst `confirm_stop_servers` asks only
+  when ms-sdr / sdrcore-recv / sdrcore-trans is running (else "MSCC servers not running: nothing to stop"), and the
+  question times out after 2 min (= N, install aborted). Same servers. INSTALLED on the Pi 2026-11-11 with plain
+  `sudo apt install -y` over ssh (finished at once; the 2-min timeout not tested, servers weren't running). Replaces
+  1.0.81 in GitHub Release R11-11-5 (Windows installer unchanged). Over ssh still use
+  `sudo -n env DEBIAN_FRONTEND=noninteractive apt install -y ...`.
 - **Black Pill firmware now versioned like the PSoC (2026-11-11, Ron; released in R11-11-5).** Names:
   `BlackPill-25MHz-<major>.<minor>-app.bin` + `...-boot-app.bin` (were app-firmware-async.bin /
   boot-app-firmware-async.bin); `bootload-PA8.bin` keeps its name. Version = FIRMWARE_VERSION_MAJOR/MINOR in

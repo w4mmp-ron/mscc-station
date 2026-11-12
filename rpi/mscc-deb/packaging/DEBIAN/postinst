@@ -58,9 +58,20 @@ stop_mscc_servers() {
   log "MSCC servers stopped (or were not running)"
 }
 
+servers_running() {
+  pgrep -x ms-sdr >/dev/null 2>&1 || pgrep -x sdrcore-recv >/dev/null 2>&1 ||
+    pgrep -x sdrcore-trans >/dev/null 2>&1
+}
+
 confirm_stop_servers() {
-  # Interactive: require explicit yes. Default N aborts install.
-  # Non-interactive (apt -y / DEBIAN_FRONTEND=noninteractive): proceed with stop.
+  # Ask only when a server is actually running (1.0.82: an install over ssh with nothing
+  # running used to wait forever on this question). Interactive: require explicit yes;
+  # no answer within 2 minutes = N. Default N aborts install.
+  # Non-interactive (DEBIAN_FRONTEND=noninteractive or no tty): proceed with stop.
+  if ! servers_running; then
+    log "MSCC servers not running: nothing to stop"
+    return 0
+  fi
   if [[ "${DEBIAN_FRONTEND:-}" == "noninteractive" ]] || [[ ! -r /dev/tty ]]; then
     log "non-interactive install: will stop MSCC servers if running"
     return 0
@@ -79,9 +90,11 @@ confirm_stop_servers() {
     echo
   } > /dev/tty
   local ans=""
-  echo -n "Continue? [y/N] " > /dev/tty
-  if ! IFS= read -r ans < /dev/tty; then
+  echo -n "Continue? [y/N] (2 min) " > /dev/tty
+  if ! IFS= read -r -t 120 ans < /dev/tty; then
     ans=""
+    echo > /dev/tty
+    echo "mscc: no answer in 2 minutes." > /dev/tty
   fi
   case "${ans}" in
     y|Y|yes|YES)
