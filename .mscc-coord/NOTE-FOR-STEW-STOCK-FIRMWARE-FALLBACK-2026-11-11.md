@@ -5,8 +5,10 @@ From Ron, 2026-11-11. This one needs you: Ron doesn't know where all the origina
 ## Why
 
 All our new radio firmware stores the calibration in the radio and has the new CW. If a new
-version ever causes trouble on a radio, the user needs a way back to the firmware that radio had
-before our changes. Right now we only keep our own builds, so there is nothing to fall back to.
+version ever causes trouble on a radio, we first analyze the problem and try to fix the new
+firmware. Going back to the firmware that radio had before our changes is the last resort, but
+for that we need to have it. Right now we only keep our own builds, so there is nothing to fall
+back to.
 
 ## What we need
 
@@ -20,9 +22,10 @@ For every radio, the last stock firmware from before our changes (the `.cyacd` f
 
 ## Where to keep them
 
-`radio-psoc-firmware/original/<Radio>/`, next to our own releases, one folder per radio. The
-folder is kept out of git for now (the repo is public; tell Ron if these files may be shared).
-Once you know what a file is, put the radio, the version and the date in its name, for example
+`radio-psoc-firmware/original/<Radio>/`, next to our own releases, one folder per radio. This is
+for safe keeping only: the original firmware does NOT go in the installers. The folder is kept
+out of git for now; Ron may put it in git later for safe keeping (the original firmware is open
+source, so the public repo is not a problem). Once you know what a file is, put the radio, the version and the date in its name, for example
 `Proficio-MKII-PTT-original-3.130-2025-06-01.cyacd`, and update the README in that folder
 (where each file came from, which radios it is for).
 
@@ -51,5 +54,6 @@ and all three Ultimus.
   firmware is the only way to get a copy if a file is missing: with a MiniProg3 and PSoC
   Programmer, read the chip to a `.hex` (our builds have read protection off; check that the stock
   ones do too).
-- Once the files are in place, we can put them in the installers in their own "stock" folder, so
-  users have them too. Ron will decide that.
+- The original firmware is not given to users with the installers. If a user has trouble with
+  the new firmware, we look at it and fix the new firmware first; the original is handed out
+  only as the last resort.

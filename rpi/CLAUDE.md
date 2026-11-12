@@ -131,7 +131,11 @@ Option, not done: drag the divider on the display.
   Stew asked in the note. **`radio-psoc-firmware/original/` is in .gitignore** (public repo; may not be ours to
   publish) — local only on Ron's PC until Stew confirms. Stew can't see them in git, so Ron SENDS them to him:
   `radio-psoc-firmware/original-firmware-for-Stew-2026-11-11.zip` (185 KB, the folder + README; also
-  git-ignored); the Stew note says so. Still missing: one Proficio (Legacy or MKII PTT), Geminus
+  git-ignored); the Stew note says so. Zip SENT to Stew 2026-11-11.
+  **Policy (Ron, 2026-11-11):** the original firmware is open source (public repo is fine), but it NEVER goes in
+  the installers; it may go in git later for safe keeping (not decided). A user firmware problem: analyze and fix
+  the new firmware first; the original is the last resort. Stew note + original/README updated to say so (the
+  README copy in the zip Stew has is the older wording). Still missing: one Proficio (Legacy or MKII PTT), Geminus
   Legacy, all three Ultimus.
   **C:\mscc-net9 fresh install (Ron, 2026-11-11):** the installer only adds files, so PSoC Firmware had piled up old
   dated / unversioned copies, .gitkeep files and old folders. Ron deleted C:\mscc-net9 and reinstalled R11-11-5
