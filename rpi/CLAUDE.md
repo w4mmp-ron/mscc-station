@@ -114,6 +114,14 @@ Option, not done: drag the divider on the display.
   example now versioned + Black Pill folder. Remote guide 1.3 and Configurations rule 5 got short versions; the
   announcement's GETTING IT got an IMPORTANT paragraph. Release-0 PDFs, DRAFT boxes and the Linux file column
   (old mscc-firmware 1.0.2 names; Ubuntu waits on Stew) left alone. Backups in the session scratchpad only.
+  **Later the same day (Ron):** Windows + Linux guides got the notice on its OWN PAGE (page 2, between the title
+  page and About this guide): "IMPORTANT / The radio's firmware must be upgraded" (24 / 20 pt bold red), body
+  16 pt bold, clickable link to "3. Updating the radio firmware" (bookmark _UpdatingFirmware) + 2.6 (Windows) /
+  2.7 (Linux). Contents page numbers are one page off until Word updates the TOC field: settings.xml has
+  updateFields, so Word asks on open; answer Yes and save. Not checked in Word yet (only LibreOffice text check).
+  Windows chapter 3 got "You don't need Zadig for this": the PSoC bootloader is a USB HID device (04B4:B71D,
+  Windows driver built in); Zadig/WinUSB is only for normal use (16C0:05DC); don't run Zadig while the LED
+  blinks LOADER. Still stale in Linux 2.7: firmware "from the mscc-firmware package" (Pi now = mscc).
 - **PSoC firmware backup / fallback (2026-11-11).** The USB bootloader has NO read command (only erase / program /
   row checksum), so PSoC firmware can't be dumped like the Black Pill; MiniProg3 + PSoC Programmer can read the chip
   (our builds: protection off). Per-radio data that matters = EEPROM (cal, PPM, settings); an upload never touches
