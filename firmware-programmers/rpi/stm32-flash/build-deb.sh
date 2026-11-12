@@ -37,7 +37,7 @@ Section: electronics
 Priority: optional
 Description: Flash tools for the Proficio MKII Black Pill (STM32F411)
  stm32-bootloader-flash <file.bin>: ST-Link (st-flash) burn at 0x08000000
- (boot-app-firmware-async.bin = bootloader + app, or bootload-PA8.bin).
+ (BlackPill-25MHz-<version>-boot-app.bin = bootloader + app, or bootload-PA8.bin).
  stm32-app-flash <file.bin>: USB DFU (dfu-util) app burn at 0x08008000; puts
  the pill into DFU itself (mscc must be stopped).
  No firmware images included: give the image file from the release folder.
@@ -53,7 +53,7 @@ if [ "\$1" = "configure" ]; then
   echo "  Commands (in /usr/bin):"
   echo "    stm32-bootloader-flash <file.bin>   ST-Link burn at 0x08000000"
   echo "    stm32-app-flash <file.bin>          USB DFU app burn (mscc stop first)"
-  echo "  Give the image file, e.g. ~/app-firmware-async.bin from the release folder."
+  echo "  Give the image file, e.g. ~/BlackPill-25MHz-3.15-app.bin from the release folder."
   echo "  Scripts and README in /usr/share/$PKG/rpi-tools/"
   echo ""
 fi

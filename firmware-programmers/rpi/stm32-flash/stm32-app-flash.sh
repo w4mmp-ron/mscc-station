@@ -14,7 +14,7 @@ DFU_ID="0483:df11"
 
 [[ $# -eq 1 ]] || {
   echo "Usage: sudo stm32-app-flash <app-firmware.bin>"
-  echo "  App image for 0x08008000, e.g. ~/app-firmware-async.bin (from the release folder)."
+  echo "  App image for 0x08008000, e.g. ~/BlackPill-25MHz-3.15-app.bin (from the release folder)."
   exit 1
 }
 FW="$1"

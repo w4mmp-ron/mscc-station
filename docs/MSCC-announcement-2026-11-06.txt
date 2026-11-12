@@ -86,6 +86,9 @@ GETTING IT
 
 [download links / versions for Windows, Raspberry Pi and Debian x86]
 [firmware version and where to get it]
+
+IMPORTANT: UPDATE YOUR RADIO'S FIRMWARE. The new MSCC stores your calibration in the radio, so every radio needs the new firmware for its own model: Proficio, Geminus or Ultimus; Legacy or MKII; PTT or ATU; or the Black Pill board. The firmware comes with MSCC, and the Operator's Guide shows how to load it. If your radio's firmware is too old, MSCC tells you when you connect.
+
 We'll let you know the moment each new piece is ready.
 
 As always, thank you for your reports, your patience and your enthusiasm. You are the reason MSCC keeps getting better. We can't wait to hear you on the air.

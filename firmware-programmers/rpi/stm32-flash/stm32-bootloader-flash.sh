@@ -4,7 +4,7 @@
 #
 # Usage:
 #   ./stm32-bootloader-flash.sh <file.bin>   # image at 0x08000000, e.g.
-#       boot-app-firmware-async.bin (bootloader + app, new board) or bootload-PA8.bin
+#       BlackPill-25MHz-<version>-boot-app.bin (bootloader + app, new board) or bootload-PA8.bin
 # 1.0.5: no default image (the package carries none, Ron: users would flash an old one).
 #
 # Needs: sudo apt install stlink-tools
@@ -15,7 +15,7 @@ set -euo pipefail
 BL_ADDR="0x08000000"
 [[ $# -eq 1 ]] || {
   echo "Usage: sudo stm32-bootloader-flash <file.bin>"
-  echo "  Image for 0x08000000: boot-app-firmware-async.bin (bootloader + app) or bootload-PA8.bin."
+  echo "  Image for 0x08000000: BlackPill-25MHz-<version>-boot-app.bin (bootloader + app) or bootload-PA8.bin."
   exit 1
 }
 FW="$1"

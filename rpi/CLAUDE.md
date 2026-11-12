@@ -106,6 +106,41 @@ Option, not done: drag the divider on the display.
 - **RELEASE STATUS (Ron, 2026-11-11): Windows and Pi are READY FOR RELEASE at R11-11-4** (GitHub Release
   R11-11-4, Latest: mscc-net9-R11-11-4-install.exe, mscc 1.0.80, mscc-avalonia 1.6.96). The Debian (Ubuntu x86_64,
   `linux/`, `installers/linux`) implementation is WAITING ON STEW; don't release it until he's done.
+- **Docs: firmware upgrade note (2026-11-11, Ron).** docs/manuals drafts: Windows 2.6 + Linux 2.7 got a bold
+  "Firmware update required" paragraph (cal store in the radio, upgrade for the transceiver you have, old firmware =
+  "RADIO FIRMWARE UPDATE REQUIRED" + cal only on the PC); firmware tables updated to the shipped versions (3.243,
+  4.244, 5.153, 7.244, 8.243; were 3.242 / 4.243 / 5.120 / 7.243 / 8.242) + a Black Pill 3.15 row; Windows file
+  example now versioned + Black Pill folder. Remote guide 1.3 and Configurations rule 5 got short versions; the
+  announcement's GETTING IT got an IMPORTANT paragraph. Release-0 PDFs, DRAFT boxes and the Linux file column
+  (old mscc-firmware 1.0.2 names; Ubuntu waits on Stew) left alone. Backups in the session scratchpad only.
+- **PSoC firmware backup / fallback (2026-11-11).** The USB bootloader has NO read command (only erase / program /
+  row checksum), so PSoC firmware can't be dumped like the Black Pill; MiniProg3 + PSoC Programmer can read the chip
+  (our builds: protection off). Per-radio data that matters = EEPROM (cal, PPM, settings); an upload never touches
+  it. Idea, not done: an EEPROM read vendor command + MSCC Back up / Restore (needs new firmware on every radio).
+  Pi programmer (firmware-programmers/rpi/psoc-usb-bootload, CLI + Tk GUI, in /usr/local/bin on proficio) reviewed:
+  works; no check that the file fits the radio (all radios = same PSoC; row checksums could identify the installed
+  firmware and warn), stale "install mscc-firmware" / YYYYMMDD wording, unused Security Key field. Not changed.
+  **Stock firmware fallback = Stew (Ron):** the pre-change firmware for every radio isn't in our files; note
+  `.mscc-coord/NOTE-FOR-STEW-STOCK-FIRMWARE-FALLBACK-2026-11-11.md` (suggests radio-psoc-firmware/stock/<Radio>/).
+- **2026-11-11 (finished, Ron): Release R11-11-5** = Black Pill versioned names + docs firmware note.
+  `mscc-net9-R11-11-5-install.exe` (AppVersion 11.11.5; WPF client unchanged, title bar 11.11.4; servers
+  unchanged) + `mscc_1.0.81_arm64.deb` (same servers, Black Pill files renamed) + mscc-avalonia 1.6.96 (unchanged).
+  1.0.81 NOT installed on the Pi yet. psoc-replacement-stm32 committed + pushed separately.
+- **Black Pill firmware now versioned like the PSoC (2026-11-11, Ron; released in R11-11-5).** Names:
+  `BlackPill-25MHz-<major>.<minor>-app.bin` + `...-boot-app.bin` (were app-firmware-async.bin /
+  boot-app-firmware-async.bin); `bootload-PA8.bin` keeps its name. Version = FIRMWARE_VERSION_MAJOR/MINOR in
+  include/proficio_config.h. psoc-replacement-stm32 (SEPARATE repo, w4mmp-ron/psoc-replacement-stm32, needs its own
+  commit): `extra_tinyusb.py` writes the versioned files into release/; a rebuild with different bytes of the same
+  version is saved as `...-<ver>-b2-...` + a "bump the minor" warning (like PSoC copy-release.py; the build time is
+  in the image, so every rebuild differs: bump the minor for every build you flash or ship). release/ 3.15 files
+  renamed (built 11-10 15:44 = the 3.15 change), release/README, LED-CODES.md, platformio.ini comment updated.
+  mscc-station: stage.ps1 ships the newest versioned set (never -bN) and clears old .bin from the payload (ran OK,
+  payload = 3.15 files); rpi/mscc-deb/build-deb.sh takes exactly one versioned set (tested, path with a space);
+  stm32-bootloader-flash.ps1 `-Image combined` finds the newest -boot-app.bin (tested); Pi stm32-flash scripts,
+  READMEs, installers/rpi/INSTALL.md, INSTALL-FOR-PI (.md/.docx/.pdf) updated. Not yet run through a real `pio run`
+  (rebuilding 3.15 now would give -b2; first real test = next version bump). Pi keeps the old names in
+  /usr/share/mscc/firmware/black-pill until the next mscc .deb (bump to 1.0.81); Windows installer needs a new
+  R-build too. Left alone (not mine): 8 MHz build_info.h, .vscode/settings.json in that repo.
 - **Firmware check (2026-11-11, Ron): MKII-style CW + QRP / I/Q cal store, from the source.** MKII-style CW =
   key-delay buffer (non-QSK amp delay), key-click shaping, paddles. Cal store = 0xC8 CMD_CALIBRATION with
   CAL_TYPE_POWER / RX_IQ / TX_IQ.

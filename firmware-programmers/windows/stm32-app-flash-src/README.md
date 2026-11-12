@@ -36,7 +36,7 @@ its old name `ProficioDfuDownloader`.
 ## Use
 
 1. Hold **KEY (PA0)** + tap **NRST**, release KEY → DFU (`0483:df11`)
-2. **Browse** to `app-firmware-async.bin` (STM32 repo: `psoc-replacement-stm32\proficio-stm32f411-25MHz\release\`)
+2. **Browse** to `BlackPill-25MHz-<version>-app.bin` (STM32 repo: `psoc-replacement-stm32\proficio-stm32f411-25MHz\release\`)
 3. **Burn application**
 
 ```text

@@ -6,8 +6,8 @@ default, no images in the package since 1.0.5): copy the image from the STM32 re
 
 | Script | Burns | How | Needs |
 |---|---|---|---|
-| `stm32-bootloader-flash.sh <file>` | `boot-app-firmware-async.bin` (bootloader + app, new board in one step) or `bootload-PA8.bin` @ `0x08000000` | ST-Link (SWD) | `sudo apt install stlink-tools` |
-| `stm32-app-flash.sh <file>` | `app-firmware-async.bin` @ `0x08008000` (app only) | USB DFU, no ST-Link; puts the pill into DFU itself (mscc stopped) | `sudo apt install dfu-util python3-usb` |
+| `stm32-bootloader-flash.sh <file>` | `BlackPill-25MHz-3.15-boot-app.bin` (bootloader + app, new board in one step) or `bootload-PA8.bin` @ `0x08000000` | ST-Link (SWD) | `sudo apt install stlink-tools` |
+| `stm32-app-flash.sh <file>` | `BlackPill-25MHz-3.15-app.bin` @ `0x08008000` (app only) | USB DFU, no ST-Link; puts the pill into DFU itself (mscc stopped) | `sudo apt install dfu-util python3-usb` |
 
 Same jobs as the Windows tools in `../../windows/stm32-flash/` (`stm32-bootloader-flash.ps1` and `stm32-app-flash.exe`).
 
@@ -19,8 +19,8 @@ The separate package below is history; `build-deb.sh` here still builds it if ev
 
 ```bash
 sudo apt install ./proficio-flash-tools_1.0.5_all.deb          # pulls in stlink-tools, dfu-util, python3-usb
-sudo stm32-bootloader-flash ~/boot-app-firmware-async.bin   # ST-Link, new board
-mscc stop; sudo stm32-app-flash ~/app-firmware-async.bin    # USB, pill stays in the rig
+sudo stm32-bootloader-flash ~/BlackPill-25MHz-3.15-boot-app.bin   # ST-Link, new board
+mscc stop; sudo stm32-app-flash ~/BlackPill-25MHz-3.15-app.bin    # USB, pill stays in the rig
 ```
 
 The package carries the scripts only (`/usr/share/proficio-flash-tools/`), no firmware: a
@@ -32,8 +32,8 @@ Debian or the Pi) when the scripts change.
 ```bash
 cd firmware-programmers/rpi/stm32-flash      # from the mscc-station repo root
 REL=../../../psoc-replacement-stm32/proficio-stm32f411-25MHz/release
-sudo ./stm32-bootloader-flash.sh $REL/boot-app-firmware-async.bin   # ST-Link wired to SWDIO/SWCLK/GND/3.3V
-sudo ./stm32-app-flash.sh $REL/app-firmware-async.bin          # mscc stopped; sends the pill to DFU (USB 0xFE)
+sudo ./stm32-bootloader-flash.sh $REL/BlackPill-25MHz-3.15-boot-app.bin   # ST-Link wired to SWDIO/SWCLK/GND/3.3V
+sudo ./stm32-app-flash.sh $REL/BlackPill-25MHz-3.15-app.bin          # mscc stopped; sends the pill to DFU (USB 0xFE)
 ```
 
 `sudo` is only needed if your user can't open the USB device (no udev rule).

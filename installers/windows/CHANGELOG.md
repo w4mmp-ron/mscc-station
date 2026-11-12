@@ -2,6 +2,13 @@
 
 Installer: `mscc-net9-R<version>-install.exe` (WPF client + Windows servers). Install the newest one; older installers in this folder are kept for roll-back only.
 
+## R11.11.5 — 2026-11-11  (`mscc-net9-R11-11-5-install.exe`, title bar 11.11.4)
+
+### Changed
+- Black Pill firmware files now carry their version, like the PSoC files: `BlackPill-25MHz-3.15-app.bin` and `BlackPill-25MHz-3.15-boot-app.bin` (were `app-firmware-async.bin` / `boot-app-firmware-async.bin`). Same firmware (3.15). `bootload-PA8.bin` is unchanged. The ST-Link script's `-Image combined` picks the newest versioned file.
+- Manuals: a "Firmware update required" note: upgrade the radio firmware for your transceiver (the calibration is now stored in the radio).
+- Client and servers unchanged from R11-11-4.
+
 ## R11.11.4 — 2026-11-11  (`mscc-net9-R11-11-4-install.exe`, title bar 11.11.4)
 
 ### Added

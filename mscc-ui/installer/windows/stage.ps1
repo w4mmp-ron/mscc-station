@@ -55,7 +55,17 @@ $rel25   = Join-Path $wtRoot 'psoc-replacement-stm32\proficio-stm32f411-25MHz\re
 Write-Host "Black Pill tools ($flash)"
 Copy-Item (Join-Path $flash '*') $bp -Force
 Write-Host "Black Pill 25 MHz ($rel25)"
-foreach ($n in 'app-firmware-async.bin','boot-app-firmware-async.bin','bootload-PA8.bin') {
+# Newest versioned images BlackPill-25MHz-<major>.<minor>-app.bin / -boot-app.bin (the -bN
+# rebuilds are never shipped); older firmware .bin files in the payload folder are removed.
+Get-ChildItem $bp -File -Filter '*.bin' | Remove-Item -Force
+$bpRx = '^BlackPill-25MHz-(\d+)\.(\d+)-app\.bin$'
+$bpApp = Get-ChildItem $rel25 -File -Filter 'BlackPill-25MHz-*-app.bin' |
+         Where-Object { $_.Name -match $bpRx } |
+         Sort-Object { [int]($_.Name -replace $bpRx,'$1') }, { [int]($_.Name -replace $bpRx,'$2') } |
+         Select-Object -Last 1
+if (-not $bpApp) { throw "no versioned Black Pill firmware (BlackPill-25MHz-<ver>-app.bin) in $rel25" }
+$bpBoot = $bpApp.Name -replace '-app\.bin$','-boot-app.bin'
+foreach ($n in $bpApp.Name, $bpBoot, 'bootload-PA8.bin') {
     Copy-Item (Join-Path $rel25 $n) $bp -Force; Write-Host "  $n" }
 
 # PSoC firmware: newest <Radio>-<major>.<minor>.hex/.cyacd from each tree's Release\

@@ -1,6 +1,6 @@
 # Burn Black Pill flash DFU bootloader via ST-Link (STM32CubeProgrammer CLI).
-# Default: bootload-PA8.bin @ 0x08000000. -Image combined: boot-app-firmware-async.bin
-# (bootloader + app in one image) @ 0x08000000.
+# Default: bootload-PA8.bin @ 0x08000000. -Image combined: the newest
+# BlackPill-25MHz-<major>.<minor>-boot-app.bin (bootloader + app in one image) @ 0x08000000.
 #
 # Usage:
 #   .\stm32-bootloader-flash.ps1
@@ -50,14 +50,28 @@ Or pass -CubeCli path\to\STM32_Programmer_CLI.exe
 "@
 }
 
+function Find-NewestCombined {
+    param([string] $Dir)
+    if (-not (Test-Path -LiteralPath $Dir)) { return $null }
+    $rx = '^BlackPill-25MHz-(\d+)\.(\d+)-boot-app\.bin$'
+    $f = Get-ChildItem -LiteralPath $Dir -File -Filter 'BlackPill-25MHz-*-boot-app.bin' |
+         Where-Object { $_.Name -match $rx } |
+         Sort-Object { [int]($_.Name -replace $rx,'$1') }, { [int]($_.Name -replace $rx,'$2') } |
+         Select-Object -Last 1
+    if ($f) { return $f.FullName }
+    return $null
+}
+
 if (-not $BinPath) {
-    $name = switch ($Image) {
-        'bootload-PA8' { 'bootload-PA8.bin' }
-        'combined'     { 'boot-app-firmware-async.bin' }
-    }
     $ReleaseDir = Join-Path $ScriptDir '..\..\..\psoc-replacement-stm32\proficio-stm32f411-25MHz\release'
-    $BinPath = Join-Path $ScriptDir $name
-    if (-not (Test-Path -LiteralPath $BinPath)) { $BinPath = Join-Path $ReleaseDir $name }
+    if ($Image -eq 'combined') {
+        $BinPath = Find-NewestCombined $ScriptDir
+        if (-not $BinPath) { $BinPath = Find-NewestCombined $ReleaseDir }
+        if (-not $BinPath) { throw "No BlackPill-25MHz-<version>-boot-app.bin next to this script or in $ReleaseDir" }
+    } else {
+        $BinPath = Join-Path $ScriptDir 'bootload-PA8.bin'
+        if (-not (Test-Path -LiteralPath $BinPath)) { $BinPath = Join-Path $ReleaseDir 'bootload-PA8.bin' }
+    }
 }
 
 if (-not (Test-Path -LiteralPath $BinPath)) {

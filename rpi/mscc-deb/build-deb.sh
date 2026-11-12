@@ -194,11 +194,20 @@ done
 BP_SRC="$WIN_PAYLOAD/Black Pill Firmware"
 need_dir "$BP_SRC"
 mkdir -p "$PKG/usr/share/mscc/firmware/black-pill"
-for f in app-firmware-async.bin boot-app-firmware-async.bin bootload-PA8.bin; do
-  need_file "$BP_SRC/$f"
-  install -m 644 "$BP_SRC/$f" "$PKG/usr/share/mscc/firmware/black-pill/"
+# stage.ps1 puts exactly one versioned set in the payload: BlackPill-25MHz-<ver>-app.bin + -boot-app.bin
+bp_app=()
+shopt -s nullglob
+for f in "$BP_SRC"/BlackPill-25MHz-*-app.bin; do
+  [[ "$f" == *-boot-app.bin ]] || bp_app+=("$f")
 done
-echo "  firmware:    black-pill app-firmware-async.bin, boot-app-firmware-async.bin, bootload-PA8.bin"
+shopt -u nullglob
+[[ ${#bp_app[@]} -eq 1 ]] || { echo "ERROR: expected one BlackPill-25MHz-<ver>-app.bin in $BP_SRC, got ${#bp_app[@]} (run stage.ps1)" >&2; exit 1; }
+bp_boot="${bp_app[0]%-app.bin}-boot-app.bin"
+for f in "${bp_app[0]}" "$bp_boot" "$BP_SRC/bootload-PA8.bin"; do
+  need_file "$f"
+  install -m 644 "$f" "$PKG/usr/share/mscc/firmware/black-pill/"
+done
+echo "  firmware:    black-pill $(basename "${bp_app[0]}"), $(basename "$bp_boot"), bootload-PA8.bin"
 
 # PortAudio with Pulse + ALSA (was mscc-portaudio): library, headers (servers are built on the
 # Pi) and pkg-config into /usr/local. postinst registers /usr/local/lib (mscc.conf); recv / trans
