@@ -91,3 +91,4 @@ installers/windows/*.exe
 installers/rpi/*.deb
 # Possible original (stock) radio firmware, local only until Stew confirms what it is and that it may be shared (Ron 2026-11-11)
 radio-psoc-firmware/original/
+radio-psoc-firmware/original-firmware-for-Stew-*.zip

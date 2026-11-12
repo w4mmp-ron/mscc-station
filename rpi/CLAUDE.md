@@ -129,7 +129,9 @@ Option, not done: drag the divider on the display.
   `Proficio-MKII-ATU/Proficio-MKII-ATU` (from "Profico MKII", 2026-07-22, never in git), `Geminus-MKII/Geminus`
   (from "Geminus MKII", 2026-07-22 = the build in Stew's original Geminus MKII tree, commit 000b1fc). NOT confirmed;
   Stew asked in the note. **`radio-psoc-firmware/original/` is in .gitignore** (public repo; may not be ours to
-  publish) — local only on Ron's PC until Stew confirms. Still missing: one Proficio (Legacy or MKII PTT), Geminus
+  publish) — local only on Ron's PC until Stew confirms. Stew can't see them in git, so Ron SENDS them to him:
+  `radio-psoc-firmware/original-firmware-for-Stew-2026-11-11.zip` (185 KB, the folder + README; also
+  git-ignored); the Stew note says so. Still missing: one Proficio (Legacy or MKII PTT), Geminus
   Legacy, all three Ultimus.
   **C:\mscc-net9 fresh install (Ron, 2026-11-11):** the installer only adds files, so PSoC Firmware had piled up old
   dated / unversioned copies, .gitkeep files and old folders. Ron deleted C:\mscc-net9 and reinstalled R11-11-5

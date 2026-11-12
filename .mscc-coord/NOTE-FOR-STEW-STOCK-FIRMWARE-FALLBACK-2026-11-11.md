@@ -30,7 +30,8 @@ Once you know what a file is, put the radio, the version and the date in its nam
 
 Three old files turned up in `C:\mscc-net9\PSoC Firmware`, in folders the installer no longer
 uses. They are now copied, unchanged, to `radio-psoc-firmware/original/` (details and MD5 in
-its README):
+its README). That folder is not in git, so **Ron is sending you the files directly** as
+`original-firmware-for-Stew-2026-11-11.zip` (the folder with its README):
 
 - `Proficio/Firmware-122-01` (.cyacd + .hex), dated 2026-08-02: never in the repo, older than it.
   Looks like Proficio version 1.22. Is it stock, and for which Proficio (Legacy or MKII)?
