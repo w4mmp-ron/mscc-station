@@ -18,12 +18,28 @@ For every radio, the last stock firmware from before our changes (the `.cyacd` f
 - Ultimus Legacy, Ultimus MKII PTT, Ultimus MKII ATU (if they ever had their own stock files)
 - The Black Pill board, if a stock version of it was ever handed out
 
-## Where to keep them (suggestion)
+## Where to keep them
 
-`radio-psoc-firmware/stock/<Radio>/`, next to our own releases, one folder per radio. Put the
-radio, the version and the date in each file name, for example
-`Proficio-MKII-PTT-stock-3.130-2025-06-01.cyacd`. Add a short README that says, for each file,
-where it came from and which radios it is for.
+`radio-psoc-firmware/original/<Radio>/`, next to our own releases, one folder per radio. The
+folder is kept out of git for now (the repo is public; tell Ron if these files may be shared).
+Once you know what a file is, put the radio, the version and the date in its name, for example
+`Proficio-MKII-PTT-original-3.130-2025-06-01.cyacd`, and update the README in that folder
+(where each file came from, which radios it is for).
+
+## Found so far (Ron's PC, 2026-11-11), please confirm
+
+Three old files turned up in `C:\mscc-net9\PSoC Firmware`, in folders the installer no longer
+uses. They are now copied, unchanged, to `radio-psoc-firmware/original/` (details and MD5 in
+its README):
+
+- `Proficio/Firmware-122-01` (.cyacd + .hex), dated 2026-08-02: never in the repo, older than it.
+  Looks like Proficio version 1.22. Is it stock, and for which Proficio (Legacy or MKII)?
+- `Proficio-MKII-ATU/Proficio-MKII-ATU`, dated 2026-07-22: never in the repo either. Stock?
+- `Geminus-MKII/Geminus`, dated 2026-07-22: the build that came with your original Geminus MKII
+  project (commit 000b1fc). Is it the same as the stock Geminus MKII firmware?
+
+Still missing: Proficio Legacy or MKII PTT (whichever Firmware-122-01 isn't), Geminus Legacy,
+and all three Ultimus.
 
 ## Things to keep in mind
 

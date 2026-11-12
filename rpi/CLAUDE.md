@@ -122,7 +122,20 @@ Option, not done: drag the divider on the display.
   works; no check that the file fits the radio (all radios = same PSoC; row checksums could identify the installed
   firmware and warn), stale "install mscc-firmware" / YYYYMMDD wording, unused Security Key field. Not changed.
   **Stock firmware fallback = Stew (Ron):** the pre-change firmware for every radio isn't in our files; note
-  `.mscc-coord/NOTE-FOR-STEW-STOCK-FIRMWARE-FALLBACK-2026-11-11.md` (suggests radio-psoc-firmware/stock/<Radio>/).
+  `.mscc-coord/NOTE-FOR-STEW-STOCK-FIRMWARE-FALLBACK-2026-11-11.md` (now: radio-psoc-firmware/original/<Radio>/).
+  **Found 2026-11-11** in old, unused folders of `C:\mscc-net9\PSoC Firmware` and COPIED unchanged to
+  `radio-psoc-firmware/original/` (Ron's name; README there with source, date, MD5): `Proficio/Firmware-122-01`
+  (2026-08-02, never in git, older than the repo, looks like Proficio 1.22, model unknown),
+  `Proficio-MKII-ATU/Proficio-MKII-ATU` (from "Profico MKII", 2026-07-22, never in git), `Geminus-MKII/Geminus`
+  (from "Geminus MKII", 2026-07-22 = the build in Stew's original Geminus MKII tree, commit 000b1fc). NOT confirmed;
+  Stew asked in the note. **`radio-psoc-firmware/original/` is in .gitignore** (public repo; may not be ours to
+  publish) — local only on Ron's PC until Stew confirms. Still missing: one Proficio (Legacy or MKII PTT), Geminus
+  Legacy, all three Ultimus.
+  **C:\mscc-net9 fresh install (Ron, 2026-11-11):** the installer only adds files, so PSoC Firmware had piled up old
+  dated / unversioned copies, .gitkeep files and old folders. Ron deleted C:\mscc-net9 and reinstalled R11-11-5
+  (settings live in %LOCALAPPDATA%\MSCC-NET9, untouched). Checked: PSoC Firmware = only the 8 current versions,
+  Black Pill = the 3.15 versioned files. Idea, not done: installer removes old firmware files; folder names
+  mixed case (Proficio-legacy / Geminus-legacy vs Ultimus-Legacy), cosmetic.
 - **2026-11-11 (finished, Ron): Release R11-11-5** = Black Pill versioned names + docs firmware note.
   `mscc-net9-R11-11-5-install.exe` (AppVersion 11.11.5; WPF client unchanged, title bar 11.11.4; servers
   unchanged) + `mscc_1.0.81_arm64.deb` (same servers, Black Pill files renamed) + mscc-avalonia 1.6.96 (unchanged).
