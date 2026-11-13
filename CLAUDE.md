@@ -14,6 +14,10 @@ Machine-specific notes stay in the folder files: `rpi/CLAUDE.md` (Ron's Pi / STM
 | **"finished"** | Runs the checklist below: installers, docs, one commit, push, GitHub Release. |
 | "stop" | Stops at once. |
 
+**Pull first.** Before starting any new work, run `git pull --rebase --autostash` and tell the
+owner what came in (who, when, one line each). Run `git fetch` again before the push at
+"finished"; if the other person pushed meanwhile, rebase and rebuild whatever their changes touch.
+
 **Nothing goes into git before "finished"**, notes included. Don't ask "shall I commit?" after
 each step; the owner says "finished" when the job is done.
 

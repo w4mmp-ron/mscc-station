@@ -8,6 +8,9 @@ Claude works by are now in one file both Claudes load: **`CLAUDE.md` at the repo
 Claude Code reads it in every session in this repo, so your Claude picks it up after your next
 pull with nothing to set up. It covers:
 
+- **Pull first** (added later 2026-11-13): before starting any new work, `git pull --rebase
+  --autostash`, and `git fetch` again before the "finished" push. (Your f09daed arrived while
+  Ron was working, so his release had to be rebuilt on top of it.)
 - **Keywords:** "build" = build only; "finished" = installers, docs, one commit, push, GitHub
   Release; nothing goes into git before "finished".
 - **The "finished" checklist** (the steps in `NOTE-FOR-STEW-RELEASES-AT-FINISHED-2026-11-13.md`,
