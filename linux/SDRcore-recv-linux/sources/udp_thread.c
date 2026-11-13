@@ -1,8 +1,5 @@
 #include "extern.h"
 #include "remote_phones.h"
-#define _CRT_SECURE_NO_WARNINGS 1
-
-#define _WINSOCK_DEPRECATED_NO_WARNINGS 1
 #define BUFLEN 512  //Max length of buffer
 
 #define SERVER "127.0.0.1"
@@ -63,9 +60,9 @@ static void Trigger_Panadapter_Pause(int frames) {
 
 struct {
     uint32_t freq;
-    uint32_t magnitude_low;
-    uint32_t magnitude;
-    uint32_t magnitude_high;
+    float magnitude_low;    /* unscaled Goertzel mags (no int overflow on strong signals) */
+    float magnitude;
+    float magnitude_high;
     float low_cut;
     float center;
     float high_cut;
@@ -214,14 +211,17 @@ int update_calibrate_data(uint32_t value) {
     char send_buf[20] = { 0 };
 
     print_time(0);
-    fprintf(G_fp_logfile, "[%d] update_calibrate_data . Called . Data: %ld\n", line_number++, value);
+    fprintf(G_fp_logfile, "[%d] update_calibrate_data . Called . Data: %u\n", line_number++, value);
     while (calibration_state == 0 && count < 30000) {
         Sleep(1);
         if (mycalstate.calReady == 1) {
-            cal_data[G_calibration_element].magnitude_low = mycalstate.calMagLow;
+            if (G_calibration_element >= MAX_CALIBRATION_ELEMENT) {  /* table full: reuse the last slot (ms-sdr sends <= 1201) */
+                G_calibration_element = MAX_CALIBRATION_ELEMENT - 1;
+            }
+            cal_data[G_calibration_element].magnitude_low = mycalstate.calMagLowF;
             cal_data[G_calibration_element].freq = value;
-            cal_data[G_calibration_element].magnitude = mycalstate.calMag;
-            cal_data[G_calibration_element].magnitude_high = mycalstate.calMagHigh;
+            cal_data[G_calibration_element].magnitude = mycalstate.calMagF;
+            cal_data[G_calibration_element].magnitude_high = mycalstate.calMagHighF;
             cal_data[G_calibration_element].low_cut = calibration_limits.low_cut;
             cal_data[G_calibration_element].center = calibration_limits.center;
             cal_data[G_calibration_element].high_cut = calibration_limits.high_cut;
@@ -256,10 +256,10 @@ uint32_t Send_calibration_data() {
     //int calibration_state = 0;
     //int error = 0;
     uint32_t freq;
-    uint32_t magnitude_low_max = 0;
-    uint32_t magnitude_mid_max = 0;
-    uint32_t magnitude_high_max = 0;
-    uint32_t average_magnitude_max = 0;
+    float magnitude_low_max = 0.0f;
+    float magnitude_mid_max = 0.0f;
+    float magnitude_high_max = 0.0f;
+    double average_magnitude_max = 0.0;  /* in the old mag * 1e6 units, like Calibration_Low_Limit */
     int low_max = 0;
     int mid_max = 0;
     int high_max = 0;
@@ -282,7 +282,7 @@ uint32_t Send_calibration_data() {
             high_max = count;
         }
     }
-    average_magnitude_max = (uint32_t) ((float) ((magnitude_high_max + magnitude_low_max + magnitude_mid_max)) / 3.0f);
+    average_magnitude_max = ((double) magnitude_high_max + magnitude_low_max + magnitude_mid_max) / 3.0 * 1000000.0;
     if (average_magnitude_max > Calibration_Low_Limit) {
         freq = (cal_data[low_max].freq + cal_data[mid_max].freq + cal_data[high_max].freq) / 3;
     } else {
@@ -293,10 +293,10 @@ uint32_t Send_calibration_data() {
     sendto(ms_sdr_s, send_buf, 5, 0, (struct sockaddr *) &si_ms_sdr, slen);
     G_calibration_element = 0;
     print_time();
-    fprintf(G_fp_logfile, "[%d] Send_calibration_data . average_magnitude_max %ld\n", line_number,
-            average_magnitude_max);
+    fprintf(G_fp_logfile, "[%d] Send_calibration_data . average_magnitude_max %.0f (limit %u)\n", line_number,
+            average_magnitude_max, Calibration_Low_Limit);
     print_time(0);
-    fprintf(G_fp_logfile, "[%d] Send_calibration_data . calculate_offset_freq . Finished. calculate_offset_freq: %ld\n",
+    fprintf(G_fp_logfile, "[%d] Send_calibration_data . calculate_offset_freq . Finished. calculate_offset_freq: %u\n",
             line_number++, freq);
     return freq;
 }
@@ -312,9 +312,12 @@ int CW_snap_update_calibrate_data() {
     while (calibration_state == 0 && count < 30000) {
         Sleep(1);
         if (mycalstate.calReady == 1) {
-            cal_data[G_calibration_element].magnitude_low = mycalstate.calMagLow;
-            cal_data[G_calibration_element].magnitude = mycalstate.calMag;
-            cal_data[G_calibration_element].magnitude_high = mycalstate.calMagHigh;
+            if (G_calibration_element >= MAX_CALIBRATION_ELEMENT) {  /* table full: reuse the last slot (ms-sdr sends <= 1201) */
+                G_calibration_element = MAX_CALIBRATION_ELEMENT - 1;
+            }
+            cal_data[G_calibration_element].magnitude_low = mycalstate.calMagLowF;
+            cal_data[G_calibration_element].magnitude = mycalstate.calMagF;
+            cal_data[G_calibration_element].magnitude_high = mycalstate.calMagHighF;
             cal_data[G_calibration_element].low_cut = calibration_limits.low_cut;
             cal_data[G_calibration_element].center = calibration_limits.center;
             cal_data[G_calibration_element].high_cut = calibration_limits.high_cut;
@@ -357,9 +360,9 @@ uint16_t CW_snap_Send_calibration_data() {
     char send_buf[20] = { 0 };
     //int calibration_state = 0;
     //int error = 0;
-    uint32_t magnitude_low_max = 0;
-    uint32_t magnitude_mid_max = 0;
-    uint32_t magnitude_high_max = 0;
+    float magnitude_low_max = 0.0f;
+    float magnitude_mid_max = 0.0f;
+    float magnitude_high_max = 0.0f;
     int low_max_count = 0;
     int mid_max_count = 0;
     int high_max_count = 0;
@@ -701,14 +704,10 @@ void *UDP_Thread(void *my_param) {
             fprintf(G_fp_logfile, "[%d] UDP Thread. recvfrom. Error Code : %s (len=%d)\n",
                     line_number++, strerror(errno), recv_len);
             fflush(G_fp_logfile);
-            /* Do not kill whole process on a single bad recv under Linux/NO_USB */
-#if defined(SDRCORE_NO_USB) || defined(__linux__) || defined(__APPLE__)
+            /* Do not kill whole process on a single bad recv.
+             * recv 3.153: 10 ms pause, so an error that repeats cannot flood the log. */
+            Sleep(10);
             continue;
-#else
-            UDP_status = 1;
-            G_all_threads_run = 0;
-            break;
-#endif
         }
         opcode = (uint8_t) buf[0];
         t_opcode_data = (uint8_t) (buf[1]);
@@ -752,7 +751,7 @@ void *UDP_Thread(void *my_param) {
             }
             previous_freq = i_opcode_data;
             print_time();
-            fprintf(G_fp_logfile, "[%d] UDP Thread. CMD_SET_MAIN_FREQ. freq: %ld, delta: %ld, pause_frames: %d\n",
+            fprintf(G_fp_logfile, "[%d] UDP Thread. CMD_SET_MAIN_FREQ. freq: %d, delta: %ld, pause_frames: %d\n",
                 line_number++, i_opcode_data, delta_freq, G_Pause_Panadapter_Cycles);
             break;
 
@@ -943,10 +942,11 @@ void *UDP_Thread(void *my_param) {
                             fprintf(G_fp_logfile, "[%d] UDP Thread. CMD_SET_TX_ON \n",
                                     line_number++);
                             if (G_Monitor == 0) {
+                                /* 3.149: stream kept running; process_iq_to_stereo() outputs
+                                 * silence while G_tx_mode is set (was Pa_StopStream) */
                                 print_time();
-                                fprintf(G_fp_logfile, "[%d] UDP Thread. CMD_SET_TX_ON . G_Monitor: %d \n",
+                                fprintf(G_fp_logfile, "[%d] UDP Thread. CMD_SET_TX_ON . G_Monitor: %d (RX muted, stream kept running)\n",
                                         line_number++, G_Monitor);
-                                Pa_StopStream(stream);
                             }
                         } else {
                             print_time();
@@ -965,10 +965,10 @@ void *UDP_Thread(void *my_param) {
                             fprintf(G_fp_logfile, "[%d] UDP Thread . CMD_SET_TX_ON \n",
                                     line_number++);
                             if (G_Monitor == 0) {
+                                /* 3.149: stream was never stopped; the callback unmutes on its own */
                                 print_time();
-                                fprintf(G_fp_logfile, "[%d] UDP Thread . CMD_SET_TX_ON . G_Monitor: %d \n",
+                                fprintf(G_fp_logfile, "[%d] UDP Thread . CMD_SET_TX_ON . G_Monitor: %d (RX unmuted)\n",
                                         line_number++, G_Monitor);
-                                Pa_StartStream(stream);
                             }
                         } else {
                             print_time();
@@ -1239,7 +1239,7 @@ void *UDP_Thread(void *my_param) {
 
             case CMD_SET_KEEP_ALIVE:
                 G_keep_alive++;
-                if ((G_keep_alive % 10) == 1) {
+                if (G_keep_alive == 1) {    /* first only: SD card wear */
                     print_time();
                     fprintf(G_fp_logfile,
                         "[%d] UDP Thread. CMD_SET_KEEP_ALIVE from %s:%u count=%lld\n",
@@ -1248,6 +1248,7 @@ void *UDP_Thread(void *my_param) {
                         (unsigned)ntohs(si_peer.sin_port),
                         (long long)G_keep_alive);
                     fflush(G_fp_logfile);
+                    Core_Message_Flush();    /* ms-sdr is up: send waiting messages */
                 }
                 break;
 
@@ -1342,6 +1343,32 @@ void *UDP_Thread(void *my_param) {
                         line_number++, iq_band);
                 break;
 
+            case CMD_SET_IQ_RECORD:
+            {
+                /* 3.150 (as Windows recv 3.151): one band's RX I/Q from the radio's calibration
+                 * store, sent by ms-sdr at startup. Save it in recv-iq.ini; apply it if in use. */
+                int rec;
+                int off;
+                memcpy(&i_opcode_data, &buf[1], 4);
+                rec = i_opcode_data & 0xFF;
+                off = (i_opcode_data >> 8) & 0xFFF;
+                if (off & 0x800) off -= 0x1000;
+                if (rec < 12) {
+                    G_iq_stack[rec].record = rec;
+                    G_iq_stack[rec].band = rec;
+                    G_iq_stack[rec].iq_offset = off;
+                    status = update_iq_ini_file();
+                    if (rec == Get_IQ_Record(operating_band)) {
+                        iq_offset = off;
+                        IQ_calc(off);
+                    }
+                    print_time();
+                    fprintf(G_fp_logfile, "[%d] UDP Thread. CMD_SET_IQ_RECORD (from radio). record: %d, offset: %d%s\n",
+                            line_number++, rec, off, (rec == Get_IQ_Record(operating_band)) ? " (in use, applied)" : "");
+                }
+                break;
+            }
+
             case CMD_SET_IQ_ALL_BANDS:
                 print_time();
                 fprintf(G_fp_logfile, "[%d] UDP Thread. CMD_SET_IQ_DEFAULTS \n", line_number++);
@@ -1392,7 +1419,7 @@ void *UDP_Thread(void *my_param) {
                 mycalstate.calReady = FALSE;
                 mycalstate.calStart = 1;
                 print_time();
-                fprintf(G_fp_logfile, "[%d] UDP Thread . CMD_SET_CALIBRATION_START . Called. Frequency: %ld\n", line_number++, i_opcode_data);
+                fprintf(G_fp_logfile, "[%d] UDP Thread . CMD_SET_CALIBRATION_START . Called. Frequency: %d\n", line_number++, i_opcode_data);
                 update_calibrate_data(i_opcode_data);
                 break;
 
@@ -1401,7 +1428,7 @@ void *UDP_Thread(void *my_param) {
                 memcpy(&i_opcode_data, op_code_data_32, 4);
                 mycalstate.Cycle_Count = (uint32_t) i_opcode_data;
                 print_time();
-                fprintf(G_fp_logfile, "[%d] UDP Thread . CDM_SET_CALIBRATE_CYCLE_COUNT . Called. Cycle Count: %ld\n", line_number++, mycalstate.Cycle_Count);
+                fprintf(G_fp_logfile, "[%d] UDP Thread . CDM_SET_CALIBRATE_CYCLE_COUNT . Called. Cycle Count: %u\n", line_number++, mycalstate.Cycle_Count);
                 break;
 
             case CMD_SET_CALIBRATION_FINISHED:
@@ -1546,6 +1573,14 @@ void *UDP_Thread(void *my_param) {
 
             case CMD_SET_BW_HICUT:
                 switch (t_opcode_data) {
+                    case 5:
+                        high_cut = 1400.0f;
+                        previous_high_cut = high_cut;
+                        break;
+                    case 6:
+                        high_cut = 1000.0f;
+                        previous_high_cut = high_cut;
+                        break;
                     case 4:
                         high_cut = 2400.0f;
                         previous_high_cut = high_cut;
@@ -1564,14 +1599,6 @@ void *UDP_Thread(void *my_param) {
                         break;
                     case 0:
                         high_cut = 5500.0f;
-                        previous_high_cut = high_cut;
-                        break;
-                    case 5:
-                        high_cut = 1400.0f;
-                        previous_high_cut = high_cut;
-                        break;
-                    case 6:
-                        high_cut = 1000.0f;
                         previous_high_cut = high_cut;
                         break;
                 }
@@ -1613,6 +1640,9 @@ void *UDP_Thread(void *my_param) {
                         low_cut = 500.0f;
                         previous_low_cut = low_cut;
                         break;
+                    default:   // unknown value: keep the current low cut
+                        low_cut = previous_low_cut;
+                        break;
                 }
                 if (!cw_mode) {
                     if (mystate.opmode == MODE_FM) {
@@ -1638,4 +1668,81 @@ void *UDP_Thread(void *my_param) {
     }
     pthread_exit(0);
     return (NULL);
+}
+
+/*
+ * Text messages for the client, sent through ms-sdr as the same
+ * CMD_SET_EXTENDED_COMMAND + CMD_SET_SERVER_ERROR packet ms-sdr sends to the
+ * client. ms-sdr starts after the cores, so messages wait here until its first
+ * keep-alive arrives (Core_Message_Flush). now = 1 sends at once (fatal exit).
+ * Each different message is sent once only.
+ */
+#define CORE_MSG_MAX 8
+#define CORE_MSG_LEN 200
+static char core_msg_text[CORE_MSG_MAX][CORE_MSG_LEN];
+static int core_msg_sent[CORE_MSG_MAX];
+static int core_msg_count = 0;
+static pthread_mutex_t core_msg_lock = PTHREAD_MUTEX_INITIALIZER;
+
+static void core_message_send(const char *text) {
+    char send_buf[CORE_MSG_LEN + 2] = { 0 };
+    size_t len = strlen(text) + 1;
+
+    send_buf[0] = CMD_SET_EXTENDED_COMMAND;
+    send_buf[1] = CMD_SET_SERVER_ERROR;
+    memcpy(&send_buf[2], text, len);
+    if (sendto(ms_sdr_s, send_buf, (int)(len + 2), 0, (struct sockaddr *) &si_ms_sdr, slen) == SOCKET_ERROR) {
+        print_time();
+        fprintf(G_fp_logfile, "[%d] Core_Send_Message. sendto FAILED: %s\n", line_number++, strerror(errno));
+    }
+}
+
+void Core_Send_Message(const char *text, int now) {
+    char line[CORE_MSG_LEN];
+    int i;
+    int wait;
+
+    snprintf(line, sizeof (line), "SDRcore-recv: %s", text);
+    pthread_mutex_lock(&core_msg_lock);
+    for (i = 0; i < core_msg_count; i++) {
+        if (strcmp(core_msg_text[i], line) == 0) {
+            pthread_mutex_unlock(&core_msg_lock);
+            return;
+        }
+    }
+    if (core_msg_count == CORE_MSG_MAX) {
+        pthread_mutex_unlock(&core_msg_lock);
+        print_time();
+        fprintf(G_fp_logfile, "[%d] Core_Send_Message. list full, not sent: %s\n", line_number++, line);
+        return;
+    }
+    i = core_msg_count++;
+    strcpy(core_msg_text[i], line);
+    core_msg_sent[i] = 0;
+    print_time();
+    fprintf(G_fp_logfile, "[%d] Core_Send_Message. %s\n", line_number++, line);
+    fflush(G_fp_logfile);
+    if (now) {
+        /* UDP setup runs in the UDP thread; give it a moment at startup */
+        for (wait = 0; si_ms_sdr.sin_port == 0 && wait < 20; wait++)
+            Sleep(50);
+    }
+    if (si_ms_sdr.sin_port != 0 && (now || G_keep_alive > 0)) {
+        core_message_send(line);
+        core_msg_sent[i] = 1;
+    }
+    pthread_mutex_unlock(&core_msg_lock);
+}
+
+void Core_Message_Flush(void) {
+    int i;
+
+    pthread_mutex_lock(&core_msg_lock);
+    for (i = 0; i < core_msg_count; i++) {
+        if (!core_msg_sent[i]) {
+            core_message_send(core_msg_text[i]);
+            core_msg_sent[i] = 1;
+        }
+    }
+    pthread_mutex_unlock(&core_msg_lock);
 }

@@ -1,9 +1,8 @@
 /*
- * Platform abstraction for sdrcore-recv (Windows vs Linux/WSL).
+ * Platform layer for sdrcore-recv (Linux / Pi). Keeps the Windows-style names the
+ * code still uses (Sleep, MessageBoxA, SOCKET, WSAStartup, ...) mapped to Linux.
  */
 #pragma once
-
-#if defined(__linux__) || defined(__APPLE__)
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -68,17 +67,5 @@ int MessageBoxA(void *hwnd, const char *text, const char *caption, unsigned int 
 #define MB_ICONSTOP 0
 #define MB_TASKMODAL 0
 
-/* Prefer system PortAudio on Linux */
+/* System PortAudio (mscc-portaudio in /usr/local) */
 #include <portaudio.h>
-
-#else /* Windows */
-
-#include <WinSock2.h>
-#include <WS2tcpip.h>
-#include <Windows.h>
-#include <conio.h>
-#include <ShlObj.h>
-#include <KnownFolders.h>
-#include "portaudio.h"
-
-#endif /* __linux__ */

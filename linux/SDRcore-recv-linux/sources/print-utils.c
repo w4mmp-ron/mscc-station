@@ -1,4 +1,3 @@
-#define _CRT_SECURE_NO_WARNINGS 1
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -71,9 +70,7 @@ int Open_log_file(void) {
         printf("[%d] Open_log_file -> File Open Failed: %s\n", line_number++, file_name);
         return 0;
     }
-#if defined(__linux__) || defined(__APPLE__)
     setvbuf(G_fp_logfile, NULL, _IOLBF, 0);
-#endif
     printf("[%d] Open_log_file -> Finished: %s\n", line_number++, file_name);
     fprintf(G_fp_logfile, "[%d] Logfile Opened.  Logfile: %s\n", line_number++, file_name);
     fflush(G_fp_logfile);

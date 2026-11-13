@@ -3,6 +3,7 @@
 #include "usbavrcmd.h"
 #include <errno.h>
 #include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
 #include <sys/stat.h>
 #include <unistd.h>
@@ -41,24 +42,80 @@ static int file_exists(const char *path)
     return 0;
 }
 
+/* Pi: copy through "<dst>.tmp" + rename, so a failed or interrupted copy never
+ * leaves a half-written (or emptied) cal file. The old dst stays until the new
+ * one is complete. */
 static int copy_file(const char *src, const char *dst)
 {
     FILE *in = fopen(src, "rb");
     FILE *out;
+    char tmp[MAX_PATH];
     char buf[4096];
     size_t n;
+    int ok = 1;
     if (!in)
         return 0;
-    out = fopen(dst, "wb");
+    snprintf(tmp, sizeof tmp, "%s.tmp", dst);
+    out = fopen(tmp, "wb");
     if (!out) {
         fclose(in);
         return 0;
     }
-    while ((n = fread(buf, 1, sizeof buf, in)) > 0)
-        fwrite(buf, 1, n, out);
+    while ((n = fread(buf, 1, sizeof buf, in)) > 0) {
+        if (fwrite(buf, 1, n, out) != n) {
+            ok = 0;
+            break;
+        }
+    }
+    if (ferror(in))
+        ok = 0;
     fclose(in);
-    fclose(out);
-    return 1;
+    if (fclose(out) != 0)
+        ok = 0;
+    if (ok && rename(tmp, dst) != 0)
+        ok = 0;
+    if (!ok)
+        remove(tmp);
+    return ok;
+}
+
+static int files_equal(const char *a, const char *b)
+{
+    FILE *fa = fopen(a, "rb");
+    FILE *fb = fopen(b, "rb");
+    int ca, cb, same = 1;
+    if (!fa || !fb) {
+        if (fa) fclose(fa);
+        if (fb) fclose(fb);
+        return 0;
+    }
+    do {
+        ca = fgetc(fa);
+        cb = fgetc(fb);
+        if (ca != cb) {
+            same = 0;
+            break;
+        }
+    } while (ca != EOF);
+    fclose(fa);
+    fclose(fb);
+    return same;
+}
+
+/* Pi: copy a live cal file over a parked one, keeping the parked file it replaces
+ * as "<leaf>.bak" (one generation). Protects a good parked calibration if the
+ * live file turns out to belong to another radio (e.g. LAST_LINE.txt lost) or
+ * is bad. Identical files: nothing to do. Returns 1 if dst now matches src. */
+static int copy_keep_bak(const char *src, const char *dst)
+{
+    char bak[MAX_PATH];
+    if (file_exists(dst)) {
+        if (files_equal(src, dst))
+            return 1;
+        snprintf(bak, sizeof bak, "%s.bak", dst);
+        copy_file(dst, bak);
+    }
+    return copy_file(src, dst);
 }
 
 static void ensure_dir(const char *path)
@@ -151,7 +208,7 @@ static void stash_one(const char *live, const char *prev, const char *leaf)
     char src[MAX_PATH], dst[MAX_PATH];
     snprintf(src, sizeof src, "%s/%s", live, leaf);
     snprintf(dst, sizeof dst, "%s/cal/%s/%s", live, prev, leaf);
-    if (file_exists(src) && copy_file(src, dst)) {
+    if (file_exists(src) && copy_keep_bak(src, dst)) {
         print_time(0);
         fprintf(G_fp_logfile, "[%d] cal stash line=%s %s\n", line_number++, prev, leaf);
     }
@@ -298,6 +355,70 @@ int Factory_reseed_live_file(const char *kind, const char *leaf)
     return 1;
 }
 
+int Factory_power_cal_values(int values[12])
+{
+    char factory_root[MAX_PATH];
+    char path[MAX_PATH];
+    char rec[132];
+    char *r, *p;
+    int record;
+    FILE *fp;
+
+    if (!find_factory_root(factory_root, sizeof factory_root))
+        return 0;
+    snprintf(path, sizeof path, "%s/power/%s/power_cal.ini", factory_root,
+             Factory_line_from_major(G_major_version));
+    fp = fopen(path, "r");
+    if (fp == NULL)
+        return 0;
+    while (fgets(rec, sizeof rec, fp) != NULL) {
+        r = strstr(rec, "RECORD=");
+        p = strstr(rec, "POWER_LEVEL=");
+        if (r == NULL || p == NULL)
+            continue;
+        record = atoi(r + 7);
+        if (record >= 0 && record < 12)
+            values[record] = atoi(p + 12);
+    }
+    fclose(fp);
+    return 1;
+}
+
+/* 3.196: factory TX IQ per band (record 0..11) from factory/iq/<line>/iq.ini.
+ * IQ_PHASE= is optional (0 when missing). Returns the number of records read. */
+int Factory_iq_values(int offset[12], int phase[12])
+{
+    char factory_root[MAX_PATH];
+    char path[MAX_PATH];
+    char rec[132];
+    char *r, *o, *p;
+    int record, n = 0;
+    FILE *fp;
+
+    if (!find_factory_root(factory_root, sizeof factory_root))
+        return 0;
+    snprintf(path, sizeof path, "%s/iq/%s/iq.ini", factory_root,
+             Factory_line_from_major(G_major_version));
+    fp = fopen(path, "r");
+    if (fp == NULL)
+        return 0;
+    while (fgets(rec, sizeof rec, fp) != NULL) {
+        r = strstr(rec, "RECORD=");
+        o = strstr(rec, "IQ_OFFSET=");
+        p = strstr(rec, "IQ_PHASE=");
+        if (r == NULL || o == NULL)
+            continue;
+        record = atoi(r + 7);
+        if (record < 0 || record >= 12)
+            continue;
+        offset[record] = atoi(o + 10);
+        phase[record] = (p != NULL) ? atoi(p + 9) : 0;
+        n++;
+    }
+    fclose(fp);
+    return n;
+}
+
 void Factory_seed_live_inis(void)
 {
     char factory_root[MAX_PATH];
@@ -366,6 +487,8 @@ void Factory_seed_reload_servers(void)
     if (g_cal_reload_iq) {
         print_time(0);
         fprintf(G_fp_logfile, "[%d] Factory_seed. reload trans iq.ini\n", line_number++);
+        /* Needs sdrcore-trans 2026-10-03 or later: there CMD_SET_IQ_DEFAULTS re-reads
+         * iq.ini (as Windows). Older Pi trans deleted the file on this command. */
         SDRcore_trans_send_param(CMD_SET_IQ_DEFAULTS, 1);
         g_cal_reload_iq = 0;
     }
@@ -394,6 +517,14 @@ void Factory_park_live_settings(void)
         fprintf(G_fp_logfile, "[%d] Factory_park. live HOME path missing\n", line_number++);
         return;
     }
+    /* Pi: sdrcore-trans owns power_cal.ini / amplifier_cal.ini and holds a cal
+     * slider change in memory for a few seconds before writing the file.
+     * INITIALIZE makes trans write any pending change now (then reload the same
+     * values), so the copy below gets the current calibration. */
+    if (G_network_initialized) {
+        SDRcore_trans_send_param(CMD_SET_SDRCORE_TRANS_INITIALIZE, 1);
+        Sleep(300);
+    }
     ensure_cal_line_dir(live, line);
     for (i = 0; i < 3; i++) {
         snprintf(src, sizeof src, "%s/%s", live, leaves[i]);
@@ -404,7 +535,7 @@ void Factory_park_live_settings(void)
                     line_number++, leaves[i]);
             continue;
         }
-        if (copy_file(src, dst)) {
+        if (copy_keep_bak(src, dst)) {
             print_time(0);
             fprintf(G_fp_logfile, "[%d] Factory_park. %s -> cal/%s/\n",
                     line_number++, leaves[i], line);

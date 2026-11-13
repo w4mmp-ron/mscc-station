@@ -18,6 +18,18 @@ Copy the .deb to the Pi, then:
 sudo apt install -y ./mscc-avalonia_<version>_arm64.deb
 ```
 
+### Ubuntu / Debian PC (amd64)
+
+```bash
+pwsh -NoProfile -File build-mscc-avalonia-deb.ps1 -Arch amd64
+sudo apt install -y ./mscc-avalonia_<version>_amd64.deb
+```
+
+Same script and same version numbers as the Pi; `-Arch amd64` builds for `linux-x64` and makes
+`mscc-avalonia_<version>_amd64.deb`. It runs on Linux too (needs .NET SDK 9 or later,
+`pwsh`, `python3`). On Ubuntu 26.04: `sudo apt install dotnet-sdk-10.0` and
+`sudo snap install powershell --classic`; the .NET 10 SDK builds this .NET 9 app.
+
 - App: `/opt/mscc-avalonia`, launcher `mscc-avalonia`, menu "MSCC Avalonia".
 - Settings: `~/.config/MSCC-Avalonia/mscc-avalonia.ini`. Close Avalonia before editing it by
   hand, or it writes over your change when it closes.

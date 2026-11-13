@@ -75,7 +75,7 @@ def is_radio_iq_device(name: str) -> bool:
     if not name:
         return False
     n = name.lower()
-    if "proficio" in n or "multus" in n:
+    if "proficio" in n or "multus" in n or "ultimus" in n:
         return True
     return False
 

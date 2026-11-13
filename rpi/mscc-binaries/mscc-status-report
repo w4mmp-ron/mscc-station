@@ -309,7 +309,7 @@ def best_match(
 
 def is_proficio_name(name: str) -> bool:
     n = name.lower()
-    return "proficio" in n or "multus" in n
+    return "proficio" in n or "multus" in n or "ultimus" in n
 
 
 def check_config_and_audio(R: Report) -> None:

@@ -147,7 +147,7 @@ struct cw_parameters_record cw_record;
 
 struct sockaddr_in si_me, si_other, si_gui;
 int dll_s, gui_s, recv_len;
-int slen = sizeof (si_other);
+socklen_t slen = sizeof (si_other);
 
 /* Session lock helpers (single GUI client). */
 static int Session_Is_Owner(const struct sockaddr_in *peer) {
@@ -167,6 +167,7 @@ static int Session_Is_Owner(const struct sockaddr_in *peer) {
 }
 
 static void Session_Claim(const struct sockaddr_in *peer) {
+    Audio_stats_busy("client connect");   // 3.195
     if (peer != NULL) {
         G_session_client = *peer;
         G_session_client_valid = TRUE;
@@ -187,6 +188,7 @@ static void Session_Claim(const struct sockaddr_in *peer) {
     /* Immediate I'm-Alive so client watchdog (~10s) does not fire during long handshake. */
     Gui_send_param(CMD_SET_KEEP_ALIVE, 1);
     Gui_send_param(CMD_SET_KEEP_ALIVE, 1);
+    Radio_cal_send_status();    /* 3.188: calibration status lamps (if the masks are read already) */
 }
 
 void Session_Release(void) {
@@ -273,6 +275,7 @@ void Stop_all(uint8_t up_date_transceiver, uint8_t shutdown_status) {
     int ret = 0;
     uint8_t status = 0;
 
+    Audio_stats_busy("servers stopped");   // 3.195
     print_time(1);
     fprintf(G_fp_logfile, "[%d] Stop_all Called. update_transceiver: %d, shutdown_status: %d\n",
             line_number++, up_date_transceiver, shutdown_status);
@@ -352,27 +355,21 @@ void Stop_all(uint8_t up_date_transceiver, uint8_t shutdown_status) {
 }
 
 void *Gui_send_message(void *t) {
-    char buf[PATH_MAX] = { 0 };
-    int slen = sizeof (si_gui);
+    Set_Thread_Name("gui-send");
     char message[PATH_MAX];
-    int size = 0;
     int message_status = 0;
 
     print_time(0);
     fprintf(G_fp_logfile, "[%d] Gui_send_message. STARTED\n", line_number++);
     while (G_all_threads_run) {
-        buf[0] = CMD_SET_EXTENDED_COMMAND;
-        buf[1] = CMD_SET_SERVER_ERROR;
         if (G_Remote_GUI_Attached == TRUE && G_MSCC_Initialized == TRUE) {
             message_status = message_queue_dequeue(message);
             if (message_status != 0) {
-                size = sizeof (message);
-                strcpy(&buf[2], message);
-                if (sendto(gui_s, buf, (size + 2), 0, (struct sockaddr *) &si_gui, slen) == SOCKET_ERROR) {
+                /* Same path as meters / KA (session peer + dll_s), text only: [0x0B][0x30][text] */
+                if (Gui_send_param_extended(CMD_SET_SERVER_ERROR, (byte *) message, (int) strlen(message))) {
                     print_time(0);
-                    fprintf(G_fp_logfile, "[%d] Gui_send_message. sentto gui_s FAILED. error code : %s\n",
-                            line_number++, strerror(errno));
-
+                    fprintf(G_fp_logfile, "[%d] Gui_send_message. Sent to client: %s\n",
+                            line_number++, message);
                 }
             }
         }
@@ -702,44 +699,6 @@ void Gui_get_param(uint8_t op_code, char *buffer) {
             Gui_send_param(CMD_GET_SET_MSSDR_STATUS, 1);
             break;
 
-        case CMD_GET_SET_LAST_USED_BAND:
-            band = s_opcode_data;
-            print_time(1);
-            fprintf(G_fp_logfile, "[%d] Gui_get_parm. CMD_GET_SET_LAST_USED_BAND. Calling Send_last_used with band: %d \n",
-                    line_number++, band);
-            switch (G_vfo) {
-                case VFO_A:
-                    Gui_send_param(CMD_SET_VFO, VFO_A);
-                    Sleep(100);
-                    Send_last_used_VFO_A(band, 0);
-                    break;
-                case VFO_B:
-                    Gui_send_param(CMD_SET_VFO, VFO_B);
-                    Sleep(100);
-                    Send_last_used_VFO_B(band, 0);
-                    break;
-            }
-            break;
-
-        case CMD_GET_SET_LAST_USED_MODE:
-            band = s_opcode_data;
-            print_time(1);
-            fprintf(G_fp_logfile, "[%d] Gui_get_parm. CMD_GET_SET_LAST_USED_MODE. Calling Send_last_used with band: %d \n",
-                    line_number++, band);
-            switch (G_vfo) {
-                case VFO_A:
-                    Gui_send_param(CMD_SET_VFO, VFO_A);
-                    Sleep(100);
-                    Send_last_used_VFO_A(band, 0);
-                    break;
-                case VFO_B:
-                    Gui_send_param(CMD_SET_VFO, VFO_B);
-                    Sleep(100);
-                    Send_last_used_VFO_B(band, 0);
-                    break;
-            }
-            break;
-
         case CMD_GET_BAND_INIT:
             if (G_network_initialized) {
                 print_time(1);
@@ -840,7 +799,8 @@ int Radio_send_parameters(int command, int cmd_value, int print) {
         failed = TRUE;
     }
     if (failed) {
-        if (command != CMD_SET_KEYER_MEMORY)
+        /* SET_PADDLE_FARNSWORTH: older radio firmware (pill < 3.13, PSoC) rejects it; log only */
+        if (command != CMD_SET_KEYER_MEMORY && command != SET_PADDLE_FARNSWORTH)
             Stop_all(0, STOP_PROFICIO_COMMS);
     } else if (print == 0) {
         print_time(0);
@@ -963,25 +923,25 @@ uint8_t Extended_command(char *receive_buffer) {
                     line_number++, opcode, t_opcode_data);
             break;
         case CMD_SET_WATERFALL_DIRECTION:
-            User_Controls_Process(opcode, &t_opcode_data, TRUE);
+            User_Controls_Process(opcode, (char *) &t_opcode_data, TRUE);
             print_time(0);
             fprintf(G_fp_logfile, "[%d] Extended_command . CMD_SET_WATERFALL_DIRECTION Opcode: %X, Data: %d\n",
                     line_number++, opcode, t_opcode_data);
             break;
         case CMD_SET_WATERFALL_DISPLAY:
-            User_Controls_Process(opcode, &t_opcode_data, TRUE);
+            User_Controls_Process(opcode, (char *) &t_opcode_data, TRUE);
             print_time(0);
             fprintf(G_fp_logfile, "[%d] Extended_command . CMD_SET_WATERFALL_DISPLAY Opcode: %X, Data: %d\n",
                     line_number++, opcode, t_opcode_data);
             break;
         case CMD_SET_WATERFALL_GRID:
-            User_Controls_Process(opcode, &t_opcode_data, TRUE);
+            User_Controls_Process(opcode, (char *) &t_opcode_data, TRUE);
             print_time(0);
             fprintf(G_fp_logfile, "[%d] Extended_command . CMD_SET_WATERFALL_GRID Opcode: %X, Data: %d\n",
                     line_number++, opcode, t_opcode_data);
             break;
         case CMD_SET_WATERFALL_PALET:
-            User_Controls_Process(opcode, &t_opcode_data, TRUE);
+            User_Controls_Process(opcode, (char *) &t_opcode_data, TRUE);
             print_time(0);
             fprintf(G_fp_logfile, "[%d] Extended_command . CMD_SET_WATERFALL_PALET Opcode: %X, Data: %d\n",
                     line_number++, opcode, t_opcode_data);
@@ -1065,6 +1025,18 @@ uint8_t Extended_command(char *receive_buffer) {
                     line_number++, opcode, t_opcode_data);
 
             break;
+        case CMD_SET_SERVER_ERROR:
+            /* Text message from sdrcore-recv / sdrcore-trans: queue it for the client */
+        {
+            char text[256] = {0};
+
+            strncpy(text, &receive_buffer[2], sizeof (text) - 1);
+            print_time(0);
+            fprintf(G_fp_logfile, "[%d] Extended_command . CMD_SET_SERVER_ERROR from core: %s\n",
+                    line_number++, text);
+            Gui_Add_Message(text);
+        }
+            break;
         default:
             print_time(0);
             fprintf(G_fp_logfile, "[%d] Extended_command . Invalid Extended Opcode: %X , Value: %d\n", line_number++,
@@ -1127,73 +1099,8 @@ uint8_t Extended_command(char *receive_buffer) {
     }
 }*/
 
-int Intialize_GUI_Last_Used_VFO_B() {
-    int status = 0;
-
-    Gui_send_param(CMD_SET_VFO, VFO_B);
-    Sleep(10);
-    Send_last_used_VFO_B(160, 0);
-    Sleep(10);
-    Send_last_used_VFO_B(80, 0);
-    Sleep(10);
-    Send_last_used_VFO_B(60, 0);
-    Sleep(10);
-    Send_last_used_VFO_B(40, 0);
-    Sleep(10);
-    Send_last_used_VFO_B(30, 0);
-    Sleep(10);
-    Send_last_used_VFO_B(20, 0);
-    Sleep(10);
-    Send_last_used_VFO_B(17, 0);
-    Sleep(10);
-    Send_last_used_VFO_B(15, 0);
-    Sleep(10);
-    Send_last_used_VFO_B(12, 0);
-    Sleep(10);
-    Send_last_used_VFO_B(10, 0);
-    Sleep(10);
-    Send_last_used_VFO_B(2200, 0);
-    Sleep(10);
-    Send_last_used_VFO_B(630, 0);
-    Sleep(10);
-    Gui_send_param(CMD_SET_VFO, G_current_vfo);
-    return status;
-}
-
-int Intialize_GUI_Last_Used_VFO_A() {
-    int status = 0;
-
-    Gui_send_param(CMD_SET_VFO, VFO_A);
-    Sleep(10);
-    Send_last_used_VFO_A(160, 0);
-    Sleep(10);
-    Send_last_used_VFO_A(80, 0);
-    Sleep(10);
-    Send_last_used_VFO_A(60, 0);
-    Sleep(10);
-    Send_last_used_VFO_A(40, 0);
-    Sleep(10);
-    Send_last_used_VFO_A(30, 0);
-    Sleep(10);
-    Send_last_used_VFO_A(20, 0);
-    Sleep(10);
-    Send_last_used_VFO_A(17, 0);
-    Sleep(10);
-    Send_last_used_VFO_A(15, 0);
-    Sleep(10);
-    Send_last_used_VFO_A(12, 0);
-    Sleep(10);
-    Send_last_used_VFO_A(10, 0);
-    Sleep(10);
-    Send_last_used_VFO_A(2200, 0);
-    Sleep(10);
-    Send_last_used_VFO_A(630, 0);
-    Sleep(10);
-    Gui_send_param(CMD_SET_VFO, G_current_vfo);
-    return status;
-}
-
 void * Command_Processor(void *my_param) {
+    Set_Thread_Name("cmd-processor");
     int count = 0;
     uint8_t opcode;
     uint8_t t_opcode_data;
@@ -1405,7 +1312,8 @@ void * Command_Processor(void *my_param) {
     strcpy(Version.year, &Version.date[7]);
     Version.Major = atoi(Version.year);
     Version.Major = (Version.Major - 2000) + 100;
-    strncpy(Version.day, &Version.date[4], 2);
+    memcpy(Version.day, &Version.date[4], 2);   // 2 day digits
+    Version.day[2] = 0;
     Version.day_number = atoi(Version.day);
     Version.month = 0;
     Get_Version_Month();
@@ -1493,6 +1401,21 @@ void * Command_Processor(void *my_param) {
                 print_time(0);
                 fprintf(G_fp_logfile, "[%d] Command_Interface. CMD_GET_PPM. G_current_int: %d, G_current_dec: %d \n",
                     line_number++, G_current_int, G_current_dec);
+                /*
+                 * Frequency calibration starts from G_int / G_dec (coarse = what the radio
+                 * applies, fine = measured error). They were only loaded from freq_cal.ini
+                 * by Init_PPM() after a calibration, so the first calibration after a
+                 * start began from 0 while the radio already applied its stored PPM, and
+                 * overwrote a good value with the small leftover error (Ron 2026-10-30).
+                 * Start from the radio's own value, read just above.
+                 */
+                if (r >= 0) {
+                    G_int = (INT8) G_current_int;
+                    G_dec = (INT8) G_current_dec;
+                    print_time(0);
+                    fprintf(G_fp_logfile, "[%d] Command_Interface. CMD_GET_PPM. calibration start point G_int: %d, G_dec: %d\n",
+                        line_number++, G_int, G_dec);
+                }
                 //Gui_send_param(CMD_GET_MIA_STATUS, 1);
                 Sleep(100);
                 Gui_send_param(CMD_GET_OPTIONS_STATUS, 1);
@@ -1504,7 +1427,9 @@ void * Command_Processor(void *my_param) {
                 /*
                  * Headless split: cores may already be live from Apply_Appliance_Startup().
                  * On client connect: re-apply cores (sync) + GUI-only user_controls push.
+                 * 3.194: first read the radio's calibration if startup could not (network late).
                  */
+                Radio_cal_startup_load("client connect");
                 if (!G_appliance_startup_done) {
                     Apply_Appliance_Startup();
                 } else {
@@ -1523,7 +1448,7 @@ void * Command_Processor(void *my_param) {
                     freq_queue_add(G_tune_freq);
                 }
                 print_time(0);
-                fprintf(G_fp_logfile, "[%d] Command_Interface . Start Up Frequency: %ld Band: %d\n",
+                fprintf(G_fp_logfile, "[%d] Command_Interface . Start Up Frequency: %u Band: %d\n",
                     line_number++, G_tune_freq, G_band_normal);
                 print_time(0);
                 fprintf(G_fp_logfile, "[%d] Command_Interface . CMD_GET_MIA_STATUS. r: %d ,mia_status: %d\n",
@@ -1537,6 +1462,19 @@ void * Command_Processor(void *my_param) {
                 Sleep(100);
                 Gui_send_param(CMD_GET_SET_MSSDR_STATUS, 1);
                 //Spectrum_Waterfall_send_param(CMD_GET_SET_MSSDR_STATUS, t_opcode_data);
+            }
+            else if (t_opcode_data == 0 && G_client_session_active) {
+                /* Client leaving (its Stop): free the session now instead of
+                 * waiting ~15 s for the client keep-alive check. Owner only. */
+                print_time(0);
+                if (Session_Is_Owner(&si_other)) {
+                    fprintf(G_fp_logfile, "[%d] Command_Interface. CMD_CHECK_GUI_STATUS 0: client leaving, releasing session\n",
+                        line_number++);
+                    Session_Release();
+                } else {
+                    fprintf(G_fp_logfile, "[%d] Command_Interface. CMD_CHECK_GUI_STATUS 0 from %s: not the session owner, ignored\n",
+                        line_number++, inet_ntoa(si_other.sin_addr));
+                }
             }
             else {
                 print_time(0);
@@ -1576,7 +1514,7 @@ void * Command_Processor(void *my_param) {
             memcpy(&i_opcode_data, op_code_data_32, 4);
             G_Split_RX_FREQ = i_opcode_data;
             print_time(0);
-            fprintf(G_fp_logfile, "[%d] Command_Interface . CMD_SET_SPLIT_TX_FREQ. G_Split_RX_FREQ: %ld\n",
+            fprintf(G_fp_logfile, "[%d] Command_Interface . CMD_SET_SPLIT_TX_FREQ. G_Split_RX_FREQ: %d\n",
                 line_number++, G_Split_RX_FREQ);
             break;
 
@@ -1585,7 +1523,7 @@ void * Command_Processor(void *my_param) {
             memcpy(&i_opcode_data, op_code_data_32, 4);
             G_Split_TX_FREQ = i_opcode_data;
             print_time(0);
-            fprintf(G_fp_logfile, "[%d] Command_Interface . CMD_SET_SPLIT_TX_FREQ. G_Split_TX_FREQ: %ld\n",
+            fprintf(G_fp_logfile, "[%d] Command_Interface . CMD_SET_SPLIT_TX_FREQ. G_Split_TX_FREQ: %d\n",
                 line_number++, G_Split_TX_FREQ);
             break;
 
@@ -1617,10 +1555,7 @@ void * Command_Processor(void *my_param) {
             break;
 
         case CMD_SET_ALC_MULTIPLIER:
-            SDRcore_trans_send_param(CMD_SET_ALC_MULTIPLIER, t_opcode_data);
-            print_time(0);
-            fprintf(G_fp_logfile, "[%d] Command_Interface . CMD_SET_ALC_MULTIPLIER: %d\n",
-                line_number++, t_opcode_data);
+            User_Controls_Process(opcode, G_receive_buf, FALSE);
             break;
 
         case CMD_SET_AMPLIFIER_CALIBRATION_RESET:
@@ -1828,6 +1763,14 @@ void * Command_Processor(void *my_param) {
             User_Controls_Process(opcode, G_receive_buf, FALSE);
             break;
 
+        case CMD_SWR_METER_RESET:   /* 3.189: client RESET -> WiFi SWR meter (HTTP, own thread) */
+            Swr_wifi_client_reset();
+            break;
+
+        case CMD_SET_CAL_RESET_ALL: /* 3.197: hard reset of RX IQ (1) / QRP power (2) / amplifier (3) */
+            Radio_cal_reset_all((int) t_opcode_data);
+            break;
+
         case CMD_GET_SET_PANADAPTER_BASE:
             User_Controls_Process(opcode, G_receive_buf, FALSE);
             break;
@@ -1943,7 +1886,7 @@ void * Command_Processor(void *my_param) {
             if (t_opcode_data == KEEP_ALIVE_FROM_RECV ||
                 i_opcode_data == KEEP_ALIVE_FROM_RECV) {
                 G_sdrcore_recv_keep_alive++;
-                if ((G_sdrcore_recv_keep_alive % 10) == 1) {
+                if (G_sdrcore_recv_keep_alive == 1) {    /* first only: SD card wear */
                     print_time(0);
                     fprintf(G_fp_logfile,
                         "[%d] Command_Interface. KEEP-ALIVE from sdrcore-recv count=%llu\n",
@@ -1954,7 +1897,7 @@ void * Command_Processor(void *my_param) {
             } else if (t_opcode_data == KEEP_ALIVE_FROM_TRANS ||
                        i_opcode_data == KEEP_ALIVE_FROM_TRANS) {
                 G_sdrcore_trans_keep_alive++;
-                if ((G_sdrcore_trans_keep_alive % 10) == 1) {
+                if (G_sdrcore_trans_keep_alive == 1) {    /* first only: SD card wear */
                     print_time(0);
                     fprintf(G_fp_logfile,
                         "[%d] Command_Interface. KEEP-ALIVE from sdrcore-trans count=%llu\n",
@@ -2012,6 +1955,24 @@ void * Command_Processor(void *my_param) {
             G_dll_active = FALSE;
             break;
 
+        case CMD_SET_IQ_PHASE:
+            /* 3.185: client PHASE slider -> trans (as Windows ms-sdr 3.186) */
+            G_dll_active = TRUE;
+            IQ_calibration(opcode, G_receive_buf);
+            G_dll_active = FALSE;
+            break;
+
+        case CMD_GET_IQ_PHASE:
+            /* 3.185: from trans: TX phase in use (int32 steps of 0.05 deg) -> client */
+            op_code_data_32 = (int*)&G_receive_buf[1];
+            memcpy(&i_opcode_data, op_code_data_32, 4);
+            print_time(0);
+            fprintf(G_fp_logfile, "[%d] CMD_GET_IQ_PHASE . Calling Gui_send_param with %d \n", line_number++,
+                i_opcode_data);
+            Gui_send_param(CMD_GET_IQ_PHASE, i_opcode_data);
+            IQ_report_phase(i_opcode_data);
+            break;
+
         case CMD_GET_IQ_VALUE:
             op_code_data_32 = (int*)&G_receive_buf[1];
             memcpy(&i_opcode_data, op_code_data_32, 4);
@@ -2019,6 +1980,7 @@ void * Command_Processor(void *my_param) {
             fprintf(G_fp_logfile, "[%d] CMD_GET_IQ_VALUE . Calling Gui_send_param with %d \n", line_number++,
                 i_opcode_data);
             Gui_send_param(CMD_GET_IQ_VALUE, i_opcode_data);
+            IQ_report_value(i_opcode_data);
             break;
 
         case CMD_SET_COMMIT_IQ:
@@ -2145,16 +2107,13 @@ void * Command_Processor(void *my_param) {
             memcpy(&i_opcode_data, op_code_data_32, 4);
             G_dll_active = TRUE;
             print_time(1);
-            fprintf(G_fp_logfile, "[%d] Command_Interface. CMD_SET_MAIN_FREQ: %ld\n", line_number++, i_opcode_data);
+            fprintf(G_fp_logfile, "[%d] Command_Interface. CMD_SET_MAIN_FREQ: %d\n", line_number++, i_opcode_data);
             G_tune_freq = i_opcode_data;
             //E_freq = i_opcode_data;
             //Display_freq_queue_add(i_opcode_data);
             print_time(0);
-            fprintf(G_fp_logfile, "[%d] Command_Interface. CMD_SET_MAIN_FREQ. Calling SetHWLO with: %ld\n", line_number++, (G_tune_freq));
+            fprintf(G_fp_logfile, "[%d] Command_Interface. CMD_SET_MAIN_FREQ. Calling SetHWLO with: %u\n", line_number++, (G_tune_freq));
             freq_queue_add(G_tune_freq);
-            print_time(0);
-            fprintf(G_fp_logfile, "[%d] Command_Interface. CMD_SET_MAIN_FREQ. Calling set_last_used for Freq: %ld\n", line_number++, (G_tune_freq));
-            //set_last_used(G_tune_freq, G_mode);
             //Set_band_normal(G_tune_freq, TRUE);
             if (iq_mode == 1) {
                 iq_mode = 0;
@@ -2169,6 +2128,7 @@ void * Command_Processor(void *my_param) {
             //Process_hr50(CMD_GET_SET_HR50_COMM_SEND_BAND_INFO, buf);
             G_dll_active = FALSE;
             G_calibration_mode = FALSE;
+            G_iq_cal_active = FALSE;   /* 3.185 */
             //Spectrum_Waterfall_send_param(CMD_SET_SPECTRUM_WATERFALL_FREQ, G_tune_freq);
             print_time(0);
             fprintf(G_fp_logfile, "[%d] Command_Interface. CMD_SET_MAIN_FREQ. Finished\n", line_number++);
@@ -2200,6 +2160,19 @@ void * Command_Processor(void *my_param) {
             case 6:
                 mode = 'D';
                 break;
+            }
+            /* Leaving TUNE: drop TX before the mode change. The radio firmware does not
+             * act on PTT off while in CW mode, so TUNE -> CW with TX still on left the PA
+             * keyed until another mode was picked. The client's own TUNE off arrives after
+             * this and is harmless. The firmware should be fixed as well (rpi/CLAUDE.md). */
+            if (G_Tune && mode != 'T') {
+                print_time(0);
+                fprintf(G_fp_logfile, "[%d] Command_Interface. CMD_SET_MAIN_MODE. TUNE still on: TX off before mode %c\n",
+                    line_number++, mode);
+                Tune_button(FALSE, FALSE);
+                SDRcore_trans_send_param(CMD_SET_TX_ON, FALSE);
+                SDRcore_recv_send_param(CMD_SET_TX_ON, FALSE);
+                Sleep(20);
             }
             ModeChanged(mode);
             Sleep(50);
@@ -2375,6 +2348,20 @@ void * Command_Processor(void *my_param) {
             Update_CW_ini();
             break;
 
+        /*
+         * Farnsworth on the paddles (SET_PADDLE_FARNSWORTH 0x9D), 2026-11-05.
+         * From the client (or a script). Saved in cw.ini, sent to the radio (MKII + keyer only).
+         */
+        case SET_PADDLE_FARNSWORTH:
+            cw_record.paddle_farns = (t_opcode_data != 0) ? 1 : 0;
+            print_time(0);
+            fprintf(G_fp_logfile, "[%d] SET_PADDLE_FARNSWORTH paddle_farns=%d\n",
+                line_number++, (int)cw_record.paddle_farns);
+            if (G_proficio_mkii && cw_record.keyer_Installed == 1)
+                Radio_send_parameters(SET_PADDLE_FARNSWORTH, (int)cw_record.paddle_farns, 1);
+            Update_CW_ini();
+            break;
+
         case SET_QSK:
             Radio_send_parameters(opcode, t_opcode_data, 1);
             break;
@@ -2456,6 +2443,7 @@ int Update_CW_ini() {
             fprintf(fp_cw_ini, "CW_Tx_Hold=%d;\n", cw_record.tx_hold);
             fprintf(fp_cw_ini, "CW_Speed=%d;\n", cw_record.speed);
             fprintf(fp_cw_ini, "CW_Mem_Text_WPM=%d;\n", cw_record.text_wpm);
+            fprintf(fp_cw_ini, "CW_Paddle_Farnsworth=%d;\n", cw_record.paddle_farns);
             fprintf(fp_cw_ini, "CW_Semi_Break_In=%d;\n", 0);
             fprintf(fp_cw_ini, "CW_Semi_Control=%d;\n", 0);
             fprintf(fp_cw_ini, "CW_Side_Tone_Volume=%d;\n", 0);
@@ -2498,6 +2486,9 @@ void Send_CW_params_to_gui(void) {
     Gui_send_param(SET_TX_HOLD, cw_record.tx_hold);
     Gui_send_param(SET_WPM, cw_record.speed);
     Gui_send_param(SET_MEM_TEXT_WPM, cw_record.text_wpm);
+    /* 2026-11-05: paddle Farnsworth on/off. A client without a handler only logs
+     * "No handler for opcode 0x9D" (WPF UdpRadioService default case). */
+    Gui_send_param(SET_PADDLE_FARNSWORTH, cw_record.paddle_farns);
     Gui_send_param(SET_KEYER_MODE, cw_record.keyer_mode);
 
     print_time(0);
@@ -2584,6 +2575,14 @@ int initialize_keyer() {
         fprintf(G_fp_logfile, "[%d] initialize_keyer. calling Radio_send_parameters.  SET_MEM_TEXT_WPM. data: %d\n",
                 line_number++, cmd_value);
         status = Radio_send_parameters(SET_MEM_TEXT_WPM, cmd_value, 1);
+        print_time(0);
+        fprintf(G_fp_logfile, "[%d] initialize_keyer. Radio_send_parameters returned with status: %d\n", line_number++, status);
+
+        cmd_value = cw_record.paddle_farns;
+        print_time(0);
+        fprintf(G_fp_logfile, "[%d] initialize_keyer. calling Radio_send_parameters.  SET_PADDLE_FARNSWORTH. data: %d\n",
+                line_number++, cmd_value);
+        status = Radio_send_parameters(SET_PADDLE_FARNSWORTH, cmd_value, 1);
         print_time(0);
         fprintf(G_fp_logfile, "[%d] initialize_keyer. Radio_send_parameters returned with status: %d\n", line_number++, status);
 
@@ -2711,6 +2710,14 @@ int parse_cw_init_record(char *record) {
         if (cmd_value > 60)
             cmd_value = 60;
         cw_record.text_wpm = (uint8_t)cmd_value;
+    }
+    parameter = strstr(record, "CW_Paddle_Farnsworth=");
+    if (parameter != NULL) {
+        length = strlen("CW_Paddle_Farnsworth=");
+        cmd_value = atoi(&parameter[length]);
+        print_time(0);
+        fprintf(G_fp_logfile, "[%d] Parse_cw_init . CW_Paddle_Farnsworth: %d\n", line_number++, cmd_value);
+        cw_record.paddle_farns = (cmd_value != 0) ? 1 : 0;
     }
     /*parameter = strstr(record, "CW_Semi_Break_In=");
     if (parameter != NULL) {
@@ -2874,6 +2881,17 @@ void Parse_mscc_record(char *record) {
         print_time(0);
         fprintf(G_fp_logfile, "[%d] Parse_mscc_record. G_proficio_mkii: %d\n",
             line_number++, (int)G_proficio_mkii);
+        status = 1;
+    }
+
+    /* 3.195: PILL_STATS=1 -> pill audio counters to this log every 10 min of normal
+     * running (proficio-temperature.c). Default 0 (off) when the key is missing. */
+    parameter = strstr(record, "PILL_STATS=");
+    if (parameter != NULL) {
+        cmd_value = atoi(&parameter[strlen("PILL_STATS=")]);
+        G_pill_stats = (cmd_value != 0) ? TRUE : FALSE;
+        print_time(0);
+        fprintf(G_fp_logfile, "[%d] Parse_mscc_record. PILL_STATS: %d\n", line_number++, (int) G_pill_stats);
         status = 1;
     }
 

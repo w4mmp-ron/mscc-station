@@ -31,6 +31,15 @@
 #define CMD_SET_IQ_BAND  0x58
 #define CMD_GET_IQ_VALUE 0x8B
 #define CMD_SET_IQ_DEFAULTS 0x8D
+/* Transmit I/Q phase correction. Opcode numbers are provisional (trans only so far, not in
+ * ms-sdr or the client). Value = steps of IQ_PHASE_STEP_DEG, for the band in use. */
+#define CMD_SET_IQ_PHASE 0x2A
+#define CMD_GET_IQ_PHASE 0x2B
+/* 3.147 (as Windows 3.151): ms-sdr -> trans, one band's I/Q from the radio's calibration
+ * store at startup. int32 = record (bits 0-7) | offset int12 (bits 8-19) | phase int12 (bits 20-31). */
+#define CMD_SET_IQ_RECORD 0x2C
+#define IQ_PHASE_STEP_DEG 0.05
+#define IQ_PHASE_MAX_STEPS 400
 #define CMD_SET_MICROPHONE_STATUS 0x8F
 #define IQ_B2200 11
 #define IQ_B630 10
@@ -289,3 +298,7 @@
 
 
 
+
+/* Text message for the client via ms-sdr (same bytes as ms-sdr usbavrcmd.h) */
+#define CMD_SET_EXTENDED_COMMAND 0x0B
+#define CMD_SET_SERVER_ERROR 0x30

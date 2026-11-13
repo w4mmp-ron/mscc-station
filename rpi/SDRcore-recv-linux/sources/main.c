@@ -1027,14 +1027,18 @@ int main(int argc, char **argv) {
                  strstr(n, "hdmi") != NULL || strstr(n, "HDMI") != NULL ||
                  strcmp(n, "default") == 0 || strstr(n, "pulse") != NULL ||
                  strstr(n, "speex") != NULL || strstr(n, "upmix") != NULL ||
-                 strstr(n, "vdownmix") != NULL);
+                 strstr(n, "vdownmix") != NULL ||
+                 strstr(n, ".monitor") != NULL); /* 3.155: a sink monitor is never radio I/Q */
             if (is_virtual || is_wrapper || in_ch > 8)
                 continue;
 
-            /* Transceiver I/Q only: Multus / Proficio product name */
+            /* Transceiver I/Q only: radio USB product name. Firmware from 2026-11 reports
+             * "Multus IQ" on every model; older firmware "Proficio", released Ultimus
+             * images (6.236 / 7.245 / 8.244) "Ultimus" (3.155). */
             is_rig = (strstr(n, "Multus") != NULL || strstr(n, "multus") != NULL ||
                       strstr(n, "Proficio") != NULL || strstr(n, "proficio") != NULL ||
-                      strstr(n, "PROFICIO") != NULL);
+                      strstr(n, "PROFICIO") != NULL ||
+                      strstr(n, "Ultimus") != NULL || strstr(n, "ultimus") != NULL);
             /* Fallback: USB Audio hw: (Proficio when product string missing) */
             is_usb_hw =
                 ((strstr(n, "USB") != NULL || strstr(n, "usb") != NULL) &&

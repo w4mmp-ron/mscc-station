@@ -59,7 +59,7 @@ void *Flusher_thread(void *t) {
             memcpy(&buffer[1], &version, 4);
             sendto(ms_sdr_s, buffer, 5, 0, (struct sockaddr *)&si_ms_sdr, (socklen_t)l_slen);
 
-            if ((ka_send_log++ % 10) == 0) {
+            if (ka_send_log++ == 0) {    /* first only: SD card wear */
                 print_time();
                 fprintf(G_fp_logfile,
                     "[%d] Flusher_thread. Sent CMD_SET_KEEP_ALIVE (0xF4) source=TRANS(%d) to ms-sdr\n",

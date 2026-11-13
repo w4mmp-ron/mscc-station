@@ -19,6 +19,54 @@
 
 
 
+//**************************************************************************
+// AVAILABLE OPCODES (checked 2026-11-05)
+//
+// Opcode bytes are shared: the client (UDP), ms-sdr, sdrcore-recv/trans,
+// the radio (USB vendor request) and the PIC keyer (I2C) mostly use the
+// same number for the same command. Pick a new opcode from these lists.
+//
+// Free in every layer (servers Pi + Windows, WPF client, pill, PSoC MKII,
+// PIC keyer):
+//   (none left; use the reclaimed list below)
+//   0x9F taken 2026-11-12: CMD_KEYER_BOOT, keyer update. Radio (pill 3.16+):
+//    USB I2C pass-through to the PIC, used by keyer-flash.py with the servers
+//    stopped. PIC keyer: 0x9F 0x5C = go to its I2C bootloader. ms-sdr never
+//    sends it. (Was old GET_SIDE_TONE, commented out here; sdrcore-trans
+//    commands.h still names it, unused.)
+//   0x2F taken 2026-11-10: CMD_SET_CAL_RESET_ALL (client -> ms-sdr only).
+//   0x9D taken 2026-11-05: SET_PADDLE_FARNSWORTH (sdrcore-trans still has an
+//    unused GET_CW_DEFAULTS 0x9D name).
+//
+// Reclaimed 2026-11-05 (defined here but never used, now commented out,
+// marked "reclaimed 2026-11-05"):
+//   0x15-0x1B  CMD_SET_IO / GET_IO / SET_FILTER / RX + TX band filter (PE0FKO)
+//   0x15-0x1D  CMD_MFC_SET_* (MFC code is not built on the Pi)
+//   0x1E       CMD_SET_GUI_STAR
+//   0x5C       CMD_GET_SET_PANADAPTER_AVERAGE
+//   0x83       CMD_GET_SET_PANADAPTER_STATUS
+//   0x84       CMD_GET_SET_SMETER_STATUS
+//   0xAD       CMD_SET_COMMIT_POWER_VALUES (client Opcodes.cs still names it, unused)
+//   0xC0       CMD_SET_S_METER (pill / PSoC usbvend.h still name it, unused)
+//   0xC1, 0xC2, 0xC4  CMD_SET_FAVS_UPDATE / GET_FAVS / SET_FAVS_DELETE
+//              (sdrcore-trans names them band stack, unused)
+//   0xF8       CMD_SET_AMPLIFIER
+//
+// Reclaimed 2026-11-10 (server last-used band stack removed from Pi + Windows
+// ms-sdr; it was never started and the client keeps its own last-used):
+//   0xD7-0xD9  CMD_GET_SET_LAST_USED_FREQ / _MODE / _BAND (client cleared in
+//              11.10.12). Leftover names: sdrcore-recv/trans commands.h
+//              (unused). Remove those before reusing.
+// Also unused: 0xD6 (only sdrcore-trans CMD_SET_LAST_USED_BAND_STACK_INDEX).
+//
+// Before using a reclaimed value: grep the Windows ms-sdr (Stew's, not
+// changed), sdrcore-recv/trans and the client for it, and remove any
+// leftover define there.
+//
+// More room: CMD_SET_EXTENDED_COMMAND 0x0B carries a second byte as a
+// sub-command (sub-commands in use: 0x09-0x0D, 0x0F, 0x30).
+//**************************************************************************
+
 #define CMD_SET_SPECTRUM_WATERFALL_FREQ 0x91
 #define CMD_SET_SPECTRUM_WATERFALL_MODE 0x92
 #define CMD_GET_PPM_INT 0x94
@@ -30,6 +78,11 @@
 
 //#define GET_IAMBIC_TUNING 0x9C  /* retired — see CMD_SET_KEYER_MEMORY */
 //#define GET_CW_DEFAULTS 0x9D
+/* Farnsworth on the paddles (2026-11-05): 0=off, 1=on. From cw.ini
+ * CW_Paddle_Farnsworth; sent to the radio (pill 3.13+ passes it to the PIC keyer).
+ * Reported to the client at connect with the other CW settings (a client without a
+ * handler ignores it). */
+#define SET_PADDLE_FARNSWORTH 0x9D
 #define CMD_SET_FM_POWER 0x9E
 //#define GET_CW_INTERFACE_METHOD 0x9E
 //#define GET_SIDE_TONE 0x9F
@@ -52,13 +105,14 @@
 //								0x10	// V1.4: 
 #define CMD_READ_EEPROM   0x11 // V1.4: Not implemented
 
-#define CMD_SET_IO    0x15
-#define CMD_GET_IO    0x16
-#define CMD_SET_FILTER   0x17
-#define CMD_SET_RX_BAND_FILTER 0x18 // V15.12
-#define CMD_GET_RX_BAND_FILTER 0x19 // V15.12
-#define CMD_SET_TX_BAND_FILTER 0x1a // MOBO Only
-#define CMD_GET_TX_BAND_FILTER 0x1b // MOBO Only
+/* Reclaimed 2026-11-05 (never used): see AVAILABLE OPCODES at the top */
+//#define CMD_SET_IO    0x15
+//#define CMD_GET_IO    0x16
+//#define CMD_SET_FILTER   0x17
+//#define CMD_SET_RX_BAND_FILTER 0x18 // V15.12
+//#define CMD_GET_RX_BAND_FILTER 0x19 // V15.12
+//#define CMD_SET_TX_BAND_FILTER 0x1a // MOBO Only
+//#define CMD_GET_TX_BAND_FILTER 0x1b // MOBO Only
 
 #define CMD_SET_SI570   0x20 // Write byte to Si570 register
 
@@ -212,12 +266,37 @@
 #define IQ_OPERATION_COMPLETE 0x56
 #define CMD_SET_COMMIT_IQ 0x57
 #define CMD_SET_IQ_BAND  0x58
+/* 3.185 (as Windows ms-sdr 3.186 / 3.187): TX I/Q phase, client -> ms-sdr -> trans (int32
+ * steps of 0.05 deg); trans reports the value in use as 0x2B + int32, ms-sdr forwards it. */
+#define CMD_SET_IQ_PHASE 0x2A
+#define CMD_GET_IQ_PHASE 0x2B
+/* ms-sdr -> recv / trans: one band's I/Q from the radio's calibration store.
+ * int32 = record (bits 0-7, 0 = 10 m .. 11 = 2200 m) | offset int12 (bits 8-19) | phase int12 (bits 20-31). */
+#define CMD_SET_IQ_RECORD 0x2C
+/* ms-sdr 3.188 (as Windows 3.189): radio calibration status, ms-sdr -> client only. int32 = kind
+ * (1 RX IQ, 2 TX IQ, 3 power) | flags << 8 (bit 0 = radio has a calibration store) | uint16 band
+ * mask << 16 (bit N = band N, MSCC order 0 = 10 m ... 9 = 160 m, 10 = 630 m, 11 = 2200 m). */
+#define CMD_SET_CAL_STATUS 0x2D
+/* ms-sdr 3.189 (Stew's proposal 11-01): client RESET button -> ms-sdr, data ignored. Pi ms-sdr
+ * sends the HTTP reset to the WiFi SWR meter (Swr_wifi_client_reset); Windows ms-sdr has no
+ * meter code (ignore / log). The client uses it when the meter state came from ms-sdr (0x0F). */
+#define CMD_SWR_METER_RESET 0x2E
+/* ms-sdr 3.197 (Ron 2026-11-10): hard calibration reset from the client, 1 data byte = kind.
+ * Files AND radio set, so the reset sticks (TX IQ = RESET ALL, CMD_SET_IQ_DEFAULTS; frequency =
+ * CMD_SET_CAL_RESET). Client -> ms-sdr only. */
+#define CMD_SET_CAL_RESET_ALL 0x2F
+#define CAL_RESET_RX_IQ  1   /* 0 / 0 (no correction) on all bands: recv-iq.ini + radio */
+#define CAL_RESET_POWER  2   /* factory QRP power table: power_cal.ini (trans) + radio */
+#define CAL_RESET_AMP    3   /* amplifier_cal.ini -99 (not calibrated); host only */
+/* ms-sdr 3.188: CMD_SET_BAND_POWER_POWER (0xA2) data with this bit = save (client "Save this
+ * calibration?" Yes): trans writes power_cal.ini and ms-sdr writes the radio. Without it: live only. */
+#define POWER_CAL_SAVE_FLAG 0x8000
 
 //Panadapter Control
 #define CMD_GET_SET_PANADAPTER_FILL 0x59
 #define CMD_GET_SET_PANADAPTER_LINE 0x5A
 #define CMD_GET_SET_PANADAPTER_MARKER 0x5B
-#define CMD_GET_SET_PANADAPTER_AVERAGE 0x5C
+//#define CMD_GET_SET_PANADAPTER_AVERAGE 0x5C  /* reclaimed 2026-11-05 */
 #define CMD_GET_SET_PANADAPTER_BACKGROUND 0x5D
 #define CMD_GET_SET_PANADAPTER_CURSOR 0x5E
 #define CMD_GET_SET_PANADAPTER_REFRESH 0x5F
@@ -295,8 +374,8 @@
 #define CMD_GET_SET_NB_ENABLE 0x80
 #define CMD_GET_SET_NB_PULSE_WIDTH 0x81
 #define CMD_GET_SET_NB_THRESHOLD 0x82
-#define CMD_GET_SET_PANADAPTER_STATUS 0x83
-#define CMD_GET_SET_SMETER_STATUS 0x84
+//#define CMD_GET_SET_PANADAPTER_STATUS 0x83  /* reclaimed 2026-11-05 */
+//#define CMD_GET_SET_SMETER_STATUS 0x84  /* reclaimed 2026-11-05 */
 #define CMD_GET_SET_PANADAPTER_GAIN 0x85
 #define CMD_GET_SET_PANADAPTER_BASE 0x86
 #define CMD_GET_SET_AGC 0x87
@@ -324,7 +403,7 @@
 #define CMD_SET_BAND_VOLUME_DEFAULTS 0xAA
 #define CMD_CALIBRATION_MASTER_RESET 0xAB
 #define CMD_CALIBRATION_TUNE 0xAC
-#define CMD_SET_COMMIT_POWER_VALUES 0xAD
+//#define CMD_SET_COMMIT_POWER_VALUES 0xAD  /* reclaimed 2026-11-05 */
 #define CMD_SET_STANDARD_CARRIER 0xAF
 
 
@@ -346,11 +425,11 @@
 #define CMD_GET_TRANSCEIVER_TEMP 0xBF
 
 
-#define CMD_SET_S_METER 0xC0
+//#define CMD_SET_S_METER 0xC0  /* reclaimed 2026-11-05 */
 
-#define CMD_SET_FAVS_UPDATE  0xC1
-#define CMD_GET_FAVS 0xC2
-#define CMD_SET_FAVS_DELETE 0xC4
+//#define CMD_SET_FAVS_UPDATE  0xC1  /* reclaimed 2026-11-05 */
+//#define CMD_GET_FAVS 0xC2  /* reclaimed 2026-11-05 */
+//#define CMD_SET_FAVS_DELETE 0xC4  /* reclaimed 2026-11-05 */
 #define CMD_SET_FAVS_NAME 0xC8
 #define CMD_REPORT_IMAGE_VALUE 0xC6
 #define CMD_START_STOP_IMAGE_VALUE 0xC7
@@ -371,9 +450,9 @@
 #define CMD_GET_SET_PANADAPTER 0xD5
 
 
-#define CMD_GET_SET_LAST_USED_FREQ 0xD7
-#define CMD_GET_SET_LAST_USED_MODE 0xD8
-#define CMD_GET_SET_LAST_USED_BAND 0xD9
+//#define CMD_GET_SET_LAST_USED_FREQ 0xD7   reclaimed 2026-11-10
+//#define CMD_GET_SET_LAST_USED_MODE 0xD8   reclaimed 2026-11-10
+//#define CMD_GET_SET_LAST_USED_BAND 0xD9   reclaimed 2026-11-10
 #define CMD_GET_SET_PANADAPTER_SMOOTHING 0xDA
 #define CMD_SET_CW_BW 0xDB
 #define CMD_SET_BW_LOCUT_DEFAULT 0xDC
@@ -428,7 +507,7 @@
 #define CMD_GET_SET_MSSDR_STATUS 0xF5
 #define CMD_SET_BAND 0xF6
 #define CMD_SET_PA_BYPASS 0xF7
-#define CMD_SET_AMPLIFIER 0xF8
+//#define CMD_SET_AMPLIFIER 0xF8  /* reclaimed 2026-11-05 */
 #define CMD_SET_AMPLIFIER_INITIALIZE 0xF9  
 #define CMD_SET_AMPLIFIER_POWER 0xFA
 #define CMD_GET_AMPLIFIER_POWER 0xFB
@@ -454,6 +533,11 @@
 #define CMD_SET_REVERSE_POWER 0x0C
 #define CMD_SET_SWR 0x0D
 #define CMD_SET_SOLIDUS_STATUS 0x0E
+/* ms-sdr 3.188: WiFi SWR meter state to the client (Pi: the meter talks to ms-sdr only,
+ * UDP unicast). Data: [fault 0/1][online 0/1][meter IPv4 a.b.c.d, 4 bytes; 0.0.0.0 = unknown].
+ * Sent at once on a fault change, and with each meter update (at most 2/s). The client
+ * treats fault=1 like its own direct-meter fault (RX, PTT off, RESET via HTTP to that IP). */
+#define CMD_SET_SWR_FAULT 0x0F
 #define CMD_SET_FORTIS_DEVICES 0x32
 
 //RPi Temperture
@@ -462,16 +546,16 @@
 // MFC Function Codes
 #define CMD_MFC_AUTO_ZERO 0x13
 #define CMD_MFC_SET_ZERO 0x14
-#define CMD_MFC_SET_BAND 0x15
-#define CMD_MFC_SET_FAVS 0x16
-#define CMD_MFC_SET_STEP 0x17
-#define CMD_MFC_SET_TUNE 0x18
-#define CMD_MFC_SET_MODE 0x19
-#define CMD_MFC_SET_RIT_MODE 0x1A
-#define CMD_MFC_SET_CW_BW 0x1B
-#define CMD_MFC_SET_HI_BW 0x1C
-#define CMD_MFC_SET_RIT 0x1D
-#define CMD_SET_GUI_STAR 0x1E
+//#define CMD_MFC_SET_BAND 0x15  /* reclaimed 2026-11-05 */
+//#define CMD_MFC_SET_FAVS 0x16  /* reclaimed 2026-11-05 */
+//#define CMD_MFC_SET_STEP 0x17  /* reclaimed 2026-11-05 */
+//#define CMD_MFC_SET_TUNE 0x18  /* reclaimed 2026-11-05 */
+//#define CMD_MFC_SET_MODE 0x19  /* reclaimed 2026-11-05 */
+//#define CMD_MFC_SET_RIT_MODE 0x1A  /* reclaimed 2026-11-05 */
+//#define CMD_MFC_SET_CW_BW 0x1B  /* reclaimed 2026-11-05 */
+//#define CMD_MFC_SET_HI_BW 0x1C  /* reclaimed 2026-11-05 */
+//#define CMD_MFC_SET_RIT 0x1D  /* reclaimed 2026-11-05 */
+//#define CMD_SET_GUI_STAR 0x1E  /* reclaimed 2026-11-05 */
 #define CMD_SET_CAL_ABORT 0x1F
 
 #define CMD_SET_KNOB_SWITCH 0x20

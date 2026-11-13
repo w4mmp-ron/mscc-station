@@ -30,7 +30,8 @@
 
 /* {Model}.{[M]M}{Release Number} */
 #define VERSION_MAJOR 3
-#define VERSION_MINOR 159   /* 3.159 (2026-11-13): build-warning fix (RON define) */
+#define VERSION_MINOR 160   /* 3.160 (2026-11-13): Linux radio I/Q search accepts the "Ultimus" product name (Stew) */
+/* 3.159 (2026-11-13): build-warning fix (RON define) */
 #define VERSION_MS_SDRCORE_TRANS ((((VERSION_MINOR) << 8) & 0xff00) | ((VERSION_MAJOR) & 0x00ff))
 
 #define MAX_KEEP_ALIVE_COUNT 15

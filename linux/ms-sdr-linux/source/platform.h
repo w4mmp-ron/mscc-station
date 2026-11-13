@@ -66,6 +66,11 @@ static inline int WSAGetLastError(void) { return errno; }
 /* Sleep(ms) — Windows Sleep is milliseconds */
 void Sleep(unsigned long ms);
 
+/* Name the calling thread so top -H / htop / ps -T show it (Linux: max 15 characters).
+ * Call it first thing in a thread function. Do NOT call it from main(): the main
+ * thread's name is the process name that pgrep / pkill / killall look for. */
+void Set_Thread_Name(const char *name);
+
 /* Serial / Win32 API mapped in platform_linux.c (real fd + PTY for Kenwood CAT) */
 typedef int HANDLE;
 #define INVALID_HANDLE_VALUE (-1)

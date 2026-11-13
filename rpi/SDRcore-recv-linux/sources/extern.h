@@ -26,7 +26,8 @@
  * Month is months from 09/24. Release number 0-9.
  */
 #define VERSION_MAJOR 3
-#define VERSION_MINOR 154   /* 3.154 (2026-11-13): build-warning fixes, CMD_SET_BW_LOCUT unknown value keeps the low cut (as Windows recv 3.154) */
+#define VERSION_MINOR 155   /* 3.155 (2026-11-13): Linux radio I/Q search: never a .monitor; "Ultimus" product name accepted (Stew) */
+/* 3.154 (2026-11-13): build-warning fixes, CMD_SET_BW_LOCUT unknown value keeps the low cut (as Windows recv 3.154) */
 #define VERSION_MS_SDRCORE_RECV ((((VERSION_MINOR) << 8) & 0xff00) | ((VERSION_MAJOR) & 0x00ff))
 
 #define MAX_OUTPUT_DEVICES 50

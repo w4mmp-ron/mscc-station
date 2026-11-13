@@ -20,7 +20,7 @@
 #include "SRDLL.h"
 #include "version.h"
 #include "band_stack.h"
-#include "last_used.h"
+#include "startup.h"
 #include "iq.h"
 //Pthreads
 

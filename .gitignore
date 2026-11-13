@@ -89,6 +89,7 @@ installers/*/old/
 # Installers are published as GitHub Release downloads, not committed (Ron 2026-11-10)
 installers/windows/*.exe
 installers/rpi/*.deb
+installers/linux/*.deb
 # Possible original (stock) radio firmware, local only until Stew confirms what it is and that it may be shared (Ron 2026-11-11)
 radio-psoc-firmware/original/
 radio-psoc-firmware/original-firmware-for-Stew-*.zip

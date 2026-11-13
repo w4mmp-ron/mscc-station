@@ -1,18 +1,6 @@
-#define _CRT_SECURE_NO_WARNINGS 1
 #pragma once
 
-#include "platform.h"
-
-#if !defined(__linux__) && !defined(__APPLE__)
-#pragma comment(lib, "Ws2_32.lib")
-#include <malloc.h>
-/* Vendored Win32 pthreads / local PortAudio header (Windows build) */
-#include "pthread.h"
-#include "semaphore.h"
-#include "sched.h"
-#else
-/* system pthread/semaphore already from platform.h; no vendored Win32 copies */
-#endif
+#include "platform.h" /* system pthread / semaphore / PortAudio come from here */
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -38,7 +26,8 @@
  * Month is months from 09/24. Release number 0-9.
  */
 #define VERSION_MAJOR 3
-#define VERSION_MINOR 145
+#define VERSION_MINOR 155   /* 3.155 (2026-11-13): Linux radio I/Q search: never a .monitor; "Ultimus" product name accepted (Stew) */
+/* 3.154 (2026-11-13): build-warning fixes, CMD_SET_BW_LOCUT unknown value keeps the low cut (as Windows recv 3.154) */
 #define VERSION_MS_SDRCORE_RECV ((((VERSION_MINOR) << 8) & 0xff00) | ((VERSION_MAJOR) & 0x00ff))
 
 #define MAX_OUTPUT_DEVICES 50
@@ -116,11 +105,7 @@ struct output_devices {
 
 extern struct sockaddr_in si_me, si_ms_sdr;
 extern int sdrcore_s, ms_sdr_s, recv_len;
-#if defined(__linux__) || defined(__APPLE__)
 extern socklen_t slen;
-#else
-extern int slen;
-#endif
 
 extern int num_output_devices_found;
 extern int num_digital_output_devices_found;
@@ -133,6 +118,8 @@ extern void *Panadapter_thread(void *t);
 extern void *Check_Image_Level_thread(void *param);
 /* Call as print_time() or print_time(0) — both OK */
 void print_time_impl(void);
+void Core_Send_Message(const char *text, int now);
+void Core_Message_Flush(void);
 #define print_time(...) print_time_impl()
 extern int Open_log_file(void);
 extern void setFilterOffsets(sp_float filterSetLow, sp_float filterSetHigh);

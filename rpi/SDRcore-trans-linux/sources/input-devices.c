@@ -234,7 +234,7 @@ static int score_operator_input(const PaDeviceInfo *info, const char *want)
 
     if (!info || !info->name || !want || !want[0] || info->maxInputChannels < 1)
         return -1;
-    if (strstr(info->name, "Proficio") || strstr(info->name, "Multus"))
+    if (strstr(info->name, "Proficio") || strstr(info->name, "Multus") || strstr(info->name, "Ultimus"))
         return -1;
     if (strstr(info->name, "Virtual"))
         return -1;

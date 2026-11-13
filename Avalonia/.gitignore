@@ -3,3 +3,5 @@ publish/
 *.deb
 bin/
 obj/
+# ...but the package's launcher script is source, not build output
+!packaging/mscc-avalonia/usr/bin/

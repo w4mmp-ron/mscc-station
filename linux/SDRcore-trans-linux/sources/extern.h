@@ -30,7 +30,8 @@
 
 /* {Model}.{[M]M}{Release Number} */
 #define VERSION_MAJOR 3
-#define VERSION_MINOR 142
+#define VERSION_MINOR 160   /* 3.160 (2026-11-13): Linux radio I/Q search accepts the "Ultimus" product name (Stew) */
+/* 3.159 (2026-11-13): build-warning fix (RON define) */
 #define VERSION_MS_SDRCORE_TRANS ((((VERSION_MINOR) << 8) & 0xff00) | ((VERSION_MAJOR) & 0x00ff))
 
 #define MAX_KEEP_ALIVE_COUNT 15
@@ -67,8 +68,21 @@ extern state mystate;
 extern micproc_state micstate;
 extern sp_float G_ALC_gain;
 extern long int G_alc_count;
+extern volatile sp_float G_ALC_peak_env; /* 3.146: peak level before the ALC, since last meter read */
 extern sp_float G_ALC_limit;
 extern sp_float G_ALC_multiplier;
+/* 3.148: ALC ceiling = drive x ALC_CEILING. Was 0.45 (3.146) = about 32% of TUNE power
+ * (Ron: SSB only ~40 W of 100). 0.80 (3.148) gave a WSJT tone 89 W vs TUNE 109 W on the
+ * ATU-100; 3.149: 0.89 = WSJT at TUNE power. */
+#define ALC_CEILING 0.89f
+/* trans 3.158 (as Windows trans): local mic gate at key-down (stale mic / VAC audio dropped),
+ * then a short fade-in. Not for remote audio (MSA1). */
+#define TX_MIC_GATE_MS 35
+#define TX_MIC_GATE_DIGITAL_MS 200
+#define TX_MIC_FADE_MS 10
+extern volatile int G_tx_mic_gate_samples;
+extern volatile int G_tx_mic_fade_samples;
+extern volatile int G_tune_ramp_pos; /* TUNE start ramp: -1 idle, else next sample index (dsputils.c) */
 extern int8_t G_Do_ALC;
 extern int8_t G_Allow_ALC_Send;
 extern uint8_t G_audio_mode;
@@ -87,6 +101,8 @@ extern uint8_t G_QSK;
 extern int G_null_count;
 extern int line_number;
 void print_time_impl(void);
+void Core_Send_Message(const char *text, int now);
+void Core_Message_Flush(void);
 #define print_time(...) print_time_impl()
 extern int Open_log_file(void);
 extern void Reset_Logfile(void);
@@ -100,6 +116,8 @@ extern PaDeviceIndex Proficio_Device;
 extern sp_float G_mic_volume;
 extern sp_float iMult;
 extern sp_float qMult;
+extern sp_float iqPhaseSin;
+extern sp_float iqPhaseCos;
 extern int ms_sdr_s;
 #if defined(__linux__) || defined(__APPLE__)
 extern socklen_t slen;
@@ -162,7 +180,12 @@ extern void build_power_levels(void);
 extern int delete_iq_ini_file(void);
 extern void Init_Proficio_User_power(void);
 extern int Init_Proficio_calibration(uint8_t send_to_transceiver);
-extern int Init_amplifier_user_values(void);
+extern int Update_power_cal_file(void);
+#define POWER_CAL_SAVE_DELAY 500 /* Drive_Manager loops (~1 ms each) before power_cal.ini is saved */
+extern volatile int G_power_cal_save_countdown;
+extern volatile int G_amp_cal_save_countdown;
+extern void Flush_pending_cal_saves(void);
+extern volatile int G_drive_recalc;
 extern int Init_amplifier_calibration(void);
 extern int Update_amplifier_calibration(void);
 extern void Init_Power_All(void);

@@ -529,7 +529,7 @@ int Check_Calibration_Continue() { //This is called by Process_Frequency_Calibra
     if (G_calibration_element <= G_calibration_limit) {
         freq_queue_add(G_calibration_freq);
         print_time(0);
-        fprintf(G_fp_logfile, "[%d] Calibrate_Si5351_Continue. Calling SDRcore_recv_send_param. Param: %X, Element %d, Calibration Freq: %ld\n",
+        fprintf(G_fp_logfile, "[%d] Calibrate_Si5351_Continue. Calling SDRcore_recv_send_param. Param: %X, Element %d, Calibration Freq: %u\n",
                 line_number++, CMD_SET_CALIBRATION_START, G_calibration_element, G_calibration_freq);
         SDRcore_recv_send_param(CMD_SET_CALIBRATION_START, G_calibration_freq);
         //Spectrum_Waterfall_send_param(CMD_SET_SPECTRUM_WATERFALL_FREQ, G_calibration_freq);
@@ -877,6 +877,7 @@ int Process_Frequency_Calibration(uint8_t command, char *buf) {
             fprintf(G_fp_logfile, "[%d] Process_Frequency_Calibration. CMD_SET_CAL_RESET. reset_type %d \n",
                     line_number++, reset_type);
             Delete_PPM_ini();
+            /* Connected radio: factory/freq/<line>/ — not PCB Create_PPM_ini tables. */
             if (!Factory_reseed_live_file("freq", "freq_cal.ini")) {
                 print_time(0);
                 fprintf(G_fp_logfile,

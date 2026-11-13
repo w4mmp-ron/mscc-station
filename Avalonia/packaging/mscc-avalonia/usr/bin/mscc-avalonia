@@ -1,0 +1,27 @@
+#!/bin/sh
+# MSCC Avalonia launcher — self-contained app under /opt/mscc-avalonia
+set -e
+APPDIR="/opt/mscc-avalonia"
+BIN="$APPDIR/MSCC.Avalonia"
+if [ ! -x "$BIN" ]; then
+  echo "mscc-avalonia: missing $BIN — reinstall package mscc-avalonia" >&2
+  exit 1
+fi
+# App natives first (Skia). Then mscc-portaudio Pulse+ALSA (same idea as mscc.sh).
+# Debian ALSA-only libportaudio in /lib hides VirtualA / VirtualB.monitor.
+PA_LIB=""
+if [ -e /usr/local/lib/libportaudio.so.2 ] || [ -e /usr/local/lib/libportaudio.so ]; then
+  PA_LIB="/usr/local/lib"
+fi
+export LD_LIBRARY_PATH="$APPDIR${PA_LIB:+:$PA_LIB}${LD_LIBRARY_PATH:+:$LD_LIBRARY_PATH}"
+# Ron 2026-11-05: the app never opens the host's ~/.local/mscc. Copy its top-level .ini files
+# (device names, COM port) fresh at every start; the app reads only this copy.
+SRC="$HOME/.local/mscc"
+DST="${XDG_CONFIG_HOME:-$HOME/.config}/MSCC-Avalonia/host"
+mkdir -p "$DST" 2>/dev/null || true
+rm -f "$DST"/*.ini 2>/dev/null || true
+if [ -d "$SRC" ]; then
+  cp -p "$SRC"/*.ini "$DST"/ 2>/dev/null || true
+fi
+cd "$APPDIR" || exit 1
+exec "$BIN" "$@"

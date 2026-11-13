@@ -6,17 +6,45 @@
 #include "usbavrcmd.h"
 //#include "SRDLL.h"
 #include "extern.h"
+#include "factory_seed.h"
 #include "version.h"
 
-int Delete_power_ini_file();
+/* QRP power calibration.
+ * sdrcore-trans owns ~/power_cal.ini (creates it with factory values, writes it on 0xA2).
+ * ms-sdr only reads it on band select to report the stored value to the client, tunes the
+ * radio, and forwards the calibration commands to sdrcore-trans. */
 
-#define VERSION 3
+/* In-radio copy of the power calibration (radio firmware CMD_CALIBRATION 0xC8: PSoC 3.238+).
+ * Slider steps only note the band's value; once the slider has been still for
+ * RADIO_CAL_SAVE_DELAY seconds and the rig is out of TX, each changed band's value is sent
+ * to the radio ONCE, and the radio writes it to EEPROM by itself (like the PPM update).
+ * No save command (PSoC 3.235-3.237 had one; it hung the radio's USB, 2026-10-22).
+ * Radio band order is MSCC order (0 = 10 m ... 9 = 160 m), the reverse of G_power_stack's
+ * record for 0-9. 0xC8 here is the radio's opcode, not usbavrcmd.h CMD_SET_FAVS_NAME. */
+#define RADIO_CMD_CALIBRATION   0xC8
+#define RADIO_CAL_TYPE_POWER    3
+#define RADIO_CAL_SAVE_DELAY    5
+/* 0 = no value writes to the radio (radio USB hang hunt, 2026-10-22); the startup
+ * read-back still runs. 1 = normal. */
+#define RADIO_CAL_WRITES        1
 
-int power_defaults_PCB_6[] = {47, 30, 24, 29, 53, 72, 28, 30, 45, 40, 40, 40};
-int power_defaults_PCB_5[] = {47, 30, 24, 29, 53, 72, 28, 30, 45, 40, 40, 40};
-int power_defaults_PCB_4[] = {47, 30, 24, 29, 53, 72, 28, 30, 45, 40, 40, 40};
-int power_defaults_PCB_C[] = {47, 30, 24, 29, 53, 72, 28, 30, 45, 40, 40, 40};
-int power_defaults_PCB_0[] = {80, 35, 24, 28, 26, 35, 28, 27, 45, 33, 40, 40};
+uint8_t G_Radio_Cal_Save_Pending = 0;
+static volatile int radio_cal_pending[12];      /* 1 = value below not sent yet */
+static volatile int radio_cal_value[12];
+/* 3.185 (as Windows ms-sdr 3.187): I/Q waiting to be sent to the radio, [0] RX (type 1),
+ * [1] TX (type 2). Payload as the firmware stores it: int16 gain, int16 phase, little endian.
+ * Gain = IQ_OFFSET steps, phase = IQ_PHASE steps (0.05 deg); RX phase is 0 for now. */
+#define RADIO_CAL_TYPE_RX_IQ    1
+#define RADIO_CAL_TYPE_TX_IQ    2
+static volatile int radio_iq_pending[2][12];
+/* 3.188 (as Windows ms-sdr 3.189): the radio's valid masks, as read with type 5: [RX IQ lo, hi,
+ * TX IQ lo, hi, power lo, hi]. radio_cal_store: -1 = not read yet, 0 = no store (older firmware),
+ * 1 = store. Sent to the client on CMD_SET_CAL_STATUS (0x2D) so its status lamps show what is in
+ * the radio. */
+static unsigned char radio_cal_masks[6];
+static volatile int radio_cal_store = -1;
+static volatile int radio_iq_offset[2][12];
+static volatile int radio_iq_phase[2][12];
 
 struct {
     int record;
@@ -24,29 +52,8 @@ struct {
     int power_level;
 } G_power_stack [12];
 
-
-int G_version = 0;
 uint32_t Tranceiver_band = 0;
 //const char *homedir;
-
-int Parse_power_cal_record(char *record, char *field) {
-    int status = -1;
-    char source_field[80] = {0};
-    char *result_field;
-    int size = 0;
-
-    strcpy(source_field, field);
-    size = strlen(source_field);
-
-    if ((result_field = strstr(record, source_field)) != NULL) {
-        status = atoi((result_field + (size + 1)));
-        //print_time(0);
-        //fprintf(G_fp_logfile, "[%d] Parse_User_Controls_record. Record: %s, Field: %s, Size: %d, Result: %s\n", line_number++, record, source_field,
-        //	size, result_field);
-        return status;
-    }
-    return status;
-}
 
 uint8_t Band_to_record(uint32_t band) {
     int record = 0;
@@ -89,6 +96,372 @@ uint8_t Band_to_record(uint32_t band) {
             break;
     }
     return record;
+}
+
+static int Record_to_radio_band(int record) {
+    return (record <= 9) ? 9 - record : record;
+}
+
+/* Slider step: note the value; Radio_cal_save_tick sends it once the slider is still. */
+static void Radio_cal_store_power(int record, int value) {
+    if (record < 0 || record >= 12)
+        return;
+#if !RADIO_CAL_WRITES
+    print_time(0);
+    fprintf(G_fp_logfile, "[%d] Radio_cal_store_power . Writes disabled. Record: %d, Value: %d not sent\n",
+            line_number++, record, value);
+    return;
+#endif
+    radio_cal_value[record] = value;
+    radio_cal_pending[record] = 1;
+    G_Radio_Cal_Save_Pending = RADIO_CAL_SAVE_DELAY;
+}
+
+static void Radio_cal_send_power(int record, int value) {
+    unsigned char data[2];
+    int band = Record_to_radio_band(record);
+    int status;
+
+    data[0] = (unsigned char) (value & 0xFF);   /* uint16, little endian */
+    data[1] = (unsigned char) ((value >> 8) & 0xFF);
+    status = usbControlMsgOUT(RADIO_CMD_CALIBRATION, (RADIO_CAL_TYPE_POWER << 8) | band, 0, (char *) data, 2);
+    print_time(0);
+    if (status == 2) {
+        fprintf(G_fp_logfile, "[%d] Radio_cal_send_power . Radio band: %d, Value: %d sent (radio writes EEPROM)\n",
+                line_number++, band, value);
+    } else {
+        /* older radio firmware stalls 0xC8: power cal still works through trans */
+        fprintf(G_fp_logfile, "[%d] Radio_cal_send_power . FAILED (radio firmware without 0xC8?) Radio band: %d, Status: %d\n",
+                line_number++, band, status);
+    }
+}
+
+#define RADIO_CAL_TYPE_VALID    5
+
+/* 3.188: read the three valid masks into radio_cal_masks. Returns 1 = store, 0 = no store. */
+static int Radio_cal_read_masks(void) {
+    unsigned char masks[6];
+    int status = usbControlMsgIN(RADIO_CMD_CALIBRATION, RADIO_CAL_TYPE_VALID << 8, 0, (char *) masks, 6);
+
+    if (status == 6) {
+        memcpy(radio_cal_masks, masks, 6);
+        radio_cal_store = 1;
+    } else {
+        memset(radio_cal_masks, 0, 6);
+        radio_cal_store = 0;
+    }
+    return radio_cal_store;
+}
+
+/* 3.188 (as Windows 3.189): tell the client what is in the radio. One CMD_SET_CAL_STATUS (0x2D)
+ * per kind: int32 = kind (1 RX IQ, 2 TX IQ, 3 power) | flags << 8 (bit 0 = radio has a store)
+ * | mask << 16 (bit N = band N, MSCC order 0 = 10 m ... 9 = 160 m, 10 = 630 m, 11 = 2200 m).
+ * Called when a client session starts, after the startup read and after each write to the
+ * radio. Nothing is sent before the masks have been read. */
+void Radio_cal_send_status(void) {
+    int kind, mask, flags, data;
+
+    if (radio_cal_store < 0)
+        return;
+    flags = (radio_cal_store == 1) ? 1 : 0;
+    for (kind = 1; kind <= 3; kind++) {
+        mask = flags ? (radio_cal_masks[2 * (kind - 1)] | (radio_cal_masks[2 * (kind - 1) + 1] << 8)) : 0;
+        data = (kind & 0xFF) | (flags << 8) | ((mask & 0xFFFF) << 16);
+        Gui_send_param(CMD_SET_CAL_STATUS, data);
+    }
+    print_time(0);
+    fprintf(G_fp_logfile, "[%d] Radio_cal_send_status . store %d, RX IQ 0x%02X%02X, TX IQ 0x%02X%02X, power 0x%02X%02X\n",
+            line_number++, radio_cal_store, radio_cal_masks[1], radio_cal_masks[0], radio_cal_masks[3],
+            radio_cal_masks[2], radio_cal_masks[5], radio_cal_masks[4]);
+}
+
+/* At startup: the radio's power values win over power_cal.ini. Bands the radio does not
+ * have keep the file's value (3.186, as Windows ms-sdr 3.185: before, they got the factory
+ * value, which overwrote a calibrated power_cal.ini on the first start with a radio that
+ * held nothing yet). The file is never copied into the radio. Each band that differs from
+ * the file goes to trans as 0xA1 band + 0xA2 value, the same as a slider step, so trans
+ * stays the only writer of power_cal.ini. Older firmware stalls 0xC8: file used as before. */
+void Radio_cal_load_power(void) {
+    static const int record_meters[12] = { 160, 80, 60, 40, 30, 20, 17, 15, 12, 10, 630, 2200 };
+    unsigned char masks[6];
+    unsigned char data[2];
+    uint16_t power_mask;
+    const char *source;
+    int record, band, value, status;
+    int changed = 0;
+
+    status = usbControlMsgIN(RADIO_CMD_CALIBRATION, RADIO_CAL_TYPE_VALID << 8, 0, (char *) masks, 6);
+    if (status != 6) {
+        radio_cal_store = 0;
+        memset(radio_cal_masks, 0, 6);
+        print_time(0);
+        fprintf(G_fp_logfile, "[%d] Radio_cal_load_power . No calibration in radio (firmware without 0xC8?) Status: %d. Using power_cal.ini\n",
+                line_number++, status);
+        return;
+    }
+    memcpy(radio_cal_masks, masks, 6);
+    radio_cal_store = 1;
+    power_mask = (uint16_t) (masks[4] | (masks[5] << 8));   /* [RX IQ, TX IQ, power] */
+    Initialize_power_calibration();
+    for (record = 0; record < 12; record++) {
+        band = Record_to_radio_band(record);
+        print_time(0);
+        if (power_mask & (1 << band)) {
+            source = "radio";
+            status = usbControlMsgIN(RADIO_CMD_CALIBRATION, (RADIO_CAL_TYPE_POWER << 8) | band, 0, (char *) data, 2);
+            if (status != 2) {
+                fprintf(G_fp_logfile, "[%d] Radio_cal_load_power . %d m read FAILED. Status: %d\n", line_number++,
+                        record_meters[record], status);
+                continue;
+            }
+            value = data[0] | (data[1] << 8);
+        } else {
+            fprintf(G_fp_logfile, "[%d] Radio_cal_load_power . %d m not in radio, file %d kept\n",
+                    line_number++, record_meters[record], G_power_stack[record].power_level);
+            continue;
+        }
+        if (value < 0 || value > 255) {  /* client slider and 0xA2 are 8 bit */
+            fprintf(G_fp_logfile, "[%d] Radio_cal_load_power . %d m %s %d out of range, file %d kept\n", line_number++,
+                    record_meters[record], source, value, G_power_stack[record].power_level);
+            continue;
+        }
+        fprintf(G_fp_logfile, "[%d] Radio_cal_load_power . %d m %s %d, file %d, %s\n", line_number++,
+                record_meters[record], source, value, G_power_stack[record].power_level,
+                (value == G_power_stack[record].power_level) ? "same" : "sent to trans");
+        if (value != G_power_stack[record].power_level) {
+            G_power_stack[record].power_level = value;
+            SDRcore_trans_send_param(CMD_SET_BAND_POWER_BAND, record_meters[record]);
+            SDRcore_trans_send_param(CMD_SET_BAND_POWER_POWER, value | POWER_CAL_SAVE_FLAG); /* 3.188: trans saves */
+            changed++;
+        }
+    }
+    print_time(0);
+    fprintf(G_fp_logfile, "[%d] Radio_cal_load_power . Finished. Power mask 0x%04X, %d band(s) changed\n", line_number++,
+            power_mask, changed);
+}
+
+/* 3.185 (as Windows ms-sdr 3.187): APPLY in the RX / TX I/Q tab notes the band's value;
+ * Radio_cal_save_tick sends it when out of TX.
+ * record = IQ record = radio band (0 = 10 m .. 9 = 160 m, 10 = 630 m, 11 = 2200 m). */
+void Radio_cal_store_iq(int tx, int record, int offset, int phase) {
+    int k = tx ? 1 : 0;
+
+    if (record < 0 || record >= 12)
+        return;
+#if !RADIO_CAL_WRITES
+    return;
+#endif
+    radio_iq_offset[k][record] = offset;
+    radio_iq_phase[k][record] = phase;
+    radio_iq_pending[k][record] = 1;
+    G_Radio_Cal_Save_Pending = RADIO_CAL_SAVE_DELAY;
+    print_time(0);
+    fprintf(G_fp_logfile, "[%d] Radio_cal_store_iq . %s band %d: offset %d, phase %d (queued)\n", line_number++,
+            tx ? "TX" : "RX", record, offset, phase);
+}
+
+extern int Init_amplifier_calibration();
+
+/* 3.197 (Ron 2026-11-10): hard calibration reset, client CMD_SET_CAL_RESET_ALL (0x2F).
+ * The host file AND the radio get the reset values, so the radio's stored values can't win at
+ * the next start. Radio writes are queued; Radio_cal_save_tick sends them out of TX and then
+ * refreshes the status lamps.
+ *   CAL_RESET_RX_IQ: offset 0 / phase 0 (no correction) on all 12 bands. There is no factory
+ *     RX IQ table. recv saves recv-iq.ini on each CMD_SET_IQ_RECORD and applies the band in use.
+ *   CAL_RESET_POWER: the factory QRP table (factory/power/<line>/power_cal.ini) to trans (which
+ *     saves power_cal.ini, POWER_CAL_SAVE_FLAG) and to the radio.
+ *   CAL_RESET_AMP: trans rewrites amplifier_cal.ini with -99 (not calibrated) on all bands
+ *     (trans 3.152+); host only, the radio holds no amplifier calibration. */
+void Radio_cal_reset_all(int kind) {
+    static const int record_meters[12] = { 160, 80, 60, 40, 30, 20, 17, 15, 12, 10, 630, 2200 };
+    int band, record, packed;
+    int values[12];
+
+    print_time(1);
+    switch (kind) {
+        case CAL_RESET_RX_IQ:
+            fprintf(G_fp_logfile, "[%d] Radio_cal_reset_all . RX IQ: 0 / 0 on all bands (recv + radio)\n", line_number++);
+            for (band = 0; band < 12; band++) {
+                packed = band & 0xFF;               /* offset 0, phase 0 */
+                SDRcore_recv_send_param(CMD_SET_IQ_RECORD, packed);
+                Sleep(20);
+                Radio_cal_store_iq(0, band, 0, 0);
+            }
+            break;
+
+        case CAL_RESET_POWER:
+            for (record = 0; record < 12; record++)
+                values[record] = G_power_stack[record].power_level;
+            if (!Factory_power_cal_values(values)) {
+                fprintf(G_fp_logfile, "[%d] Radio_cal_reset_all . QRP power: no factory table, nothing changed\n",
+                        line_number++);
+                break;
+            }
+            fprintf(G_fp_logfile, "[%d] Radio_cal_reset_all . QRP power: factory table (trans + radio)\n", line_number++);
+            for (record = 0; record < 12; record++) {
+                if (values[record] < 0 || values[record] > 255)
+                    continue;
+                G_power_stack[record].power_level = values[record];
+                SDRcore_trans_send_param(CMD_SET_BAND_POWER_BAND, record_meters[record]);
+                SDRcore_trans_send_param(CMD_SET_BAND_POWER_POWER, values[record] | POWER_CAL_SAVE_FLAG);
+                Sleep(20);
+                Radio_cal_store_power(record, values[record]);
+                print_time(0);
+                fprintf(G_fp_logfile, "[%d] Radio_cal_reset_all . %d m power %d\n", line_number++,
+                        record_meters[record], values[record]);
+            }
+            break;
+
+        case CAL_RESET_AMP:
+            fprintf(G_fp_logfile, "[%d] Radio_cal_reset_all . Amplifier: amplifier_cal.ini -99 (trans), host only\n",
+                    line_number++);
+            SDRcore_trans_send_param(CMD_SET_AMPLIFIER_CALIBRATION_RESET, 1);
+            Sleep(200);                             /* trans writes the file */
+            Init_amplifier_calibration();           /* ms-sdr reads it again */
+            break;
+
+        default:
+            fprintf(G_fp_logfile, "[%d] Radio_cal_reset_all . unknown kind %d, ignored\n", line_number++, kind);
+            break;
+    }
+}
+
+static void Radio_cal_send_iq(int k, int record) {
+    unsigned char data[4];
+    int offset = radio_iq_offset[k][record];
+    int phase = radio_iq_phase[k][record];
+    int status;
+
+    data[0] = (unsigned char) (offset & 0xFF);          /* int16 gain, little endian */
+    data[1] = (unsigned char) ((offset >> 8) & 0xFF);
+    data[2] = (unsigned char) (phase & 0xFF);           /* int16 phase, little endian */
+    data[3] = (unsigned char) ((phase >> 8) & 0xFF);
+    status = usbControlMsgOUT(RADIO_CMD_CALIBRATION,
+                              ((k ? RADIO_CAL_TYPE_TX_IQ : RADIO_CAL_TYPE_RX_IQ) << 8) | record, 0, (char *) data, 4);
+    print_time(0);
+    if (status == 4) {
+        fprintf(G_fp_logfile, "[%d] Radio_cal_send_iq . %s band %d: offset %d, phase %d sent (radio stores it)\n",
+                line_number++, k ? "TX" : "RX", record, offset, phase);
+    } else {
+        fprintf(G_fp_logfile, "[%d] Radio_cal_send_iq . FAILED (radio firmware without 0xC8?) %s band %d, Status: %d\n",
+                line_number++, k ? "TX" : "RX", record, status);
+    }
+}
+
+/* 3.185: at startup, after Radio_cal_load_power: bands the radio holds go to recv (RX) /
+ * trans (TX) as CMD_SET_IQ_RECORD; the core saves its ini file and applies the band if it is in
+ * use. Bands the radio does not hold keep the ini file's value. Older firmware stalls 0xC8:
+ * files as before. */
+void Radio_cal_load_iq(void) {
+    static const char *band_name[12] = { "10", "12", "15", "17", "20", "30", "40", "60", "80", "160", "630", "2200" };
+    unsigned char masks[6];
+    unsigned char data[4];
+    uint16_t mask;
+    int k, band, status, offset, phase, packed, loaded = 0;
+
+    status = usbControlMsgIN(RADIO_CMD_CALIBRATION, RADIO_CAL_TYPE_VALID << 8, 0, (char *) masks, 6);
+    if (status != 6) {
+        radio_cal_store = 0;
+        memset(radio_cal_masks, 0, 6);
+        print_time(0);
+        fprintf(G_fp_logfile, "[%d] Radio_cal_load_iq . No calibration in radio (firmware without 0xC8?) Status: %d. Using iq.ini / recv-iq.ini\n",
+                line_number++, status);
+        Radio_cal_send_status();    /* 3.188: client keeps its local lamps */
+        return;
+    }
+    memcpy(radio_cal_masks, masks, 6);
+    radio_cal_store = 1;
+    for (k = 0; k < 2; k++) {                   /* masks[0..1] RX IQ, masks[2..3] TX IQ */
+        mask = (uint16_t) (masks[2 * k] | (masks[2 * k + 1] << 8));
+        for (band = 0; band < 12; band++) {
+            if (!(mask & (1 << band)))
+                continue;
+            status = usbControlMsgIN(RADIO_CMD_CALIBRATION, ((k ? RADIO_CAL_TYPE_TX_IQ : RADIO_CAL_TYPE_RX_IQ) << 8) | band,
+                                     0, (char *) data, 4);
+            print_time(0);
+            if (status != 4) {
+                fprintf(G_fp_logfile, "[%d] Radio_cal_load_iq . %s %s m read FAILED. Status: %d\n", line_number++,
+                        k ? "TX" : "RX", band_name[band], status);
+                continue;
+            }
+            offset = (int) (int16_t) (data[0] | (data[1] << 8));
+            phase = (int) (int16_t) (data[2] | (data[3] << 8));
+            if (offset < -2048 || offset > 2047 || phase < -2048 || phase > 2047) {
+                fprintf(G_fp_logfile, "[%d] Radio_cal_load_iq . %s %s m offset %d / phase %d out of range, file kept\n",
+                        line_number++, k ? "TX" : "RX", band_name[band], offset, phase);
+                continue;
+            }
+            packed = (band & 0xFF) | ((offset & 0xFFF) << 8) | ((phase & 0xFFF) << 20);
+            fprintf(G_fp_logfile, "[%d] Radio_cal_load_iq . %s %s m from radio: offset %d, phase %d -> %s\n",
+                    line_number++, k ? "TX" : "RX", band_name[band], offset, phase, k ? "trans" : "recv");
+            if (k)
+                SDRcore_trans_send_param(CMD_SET_IQ_RECORD, packed);
+            else
+                SDRcore_recv_send_param(CMD_SET_IQ_RECORD, packed);
+            Sleep(20);
+            loaded++;
+        }
+    }
+    print_time(0);
+    fprintf(G_fp_logfile, "[%d] Radio_cal_load_iq . Finished. RX mask 0x%02X%02X, TX mask 0x%02X%02X, %d band(s) from radio\n",
+            line_number++, masks[1], masks[0], masks[3], masks[2], loaded);
+    Radio_cal_send_status();        /* 3.188: status lamps (if a client is already attached) */
+}
+
+/* 3.194: the startup read of the radio's calibration (and the reload of replaced cal files),
+ * done once per ms-sdr run as soon as the network is up. Called from main at startup and again
+ * at each client connect: if the network was not ready at startup, the first client connect
+ * does it (before, the radio was then never read in that run). */
+static pthread_mutex_t radio_cal_startup_lock = PTHREAD_MUTEX_INITIALIZER;
+static int radio_cal_startup_done = 0;
+
+void Radio_cal_startup_load(const char *who) {
+    pthread_mutex_lock(&radio_cal_startup_lock);
+    if (!radio_cal_startup_done && G_network_initialized) {
+        print_time(0);
+        fprintf(G_fp_logfile, "[%d] Radio_cal_startup_load . %s: reading the radio's calibration\n",
+                line_number++, who);
+        Factory_seed_reload_servers();
+        Radio_cal_load_power();
+        Radio_cal_load_iq();
+        radio_cal_startup_done = 1;
+    }
+    pthread_mutex_unlock(&radio_cal_startup_lock);
+}
+
+/* Called once a second from Flusher_thread while G_Radio_Cal_Save_Pending > 0. */
+void Radio_cal_save_tick(void) {
+    int record;
+    int sent = 0;
+
+    if (G_Radio_Cal_Save_Pending > 1) {
+        G_Radio_Cal_Save_Pending--;
+        return;
+    }
+    if (G_TX)
+        return; /* stay at 1: try again next second */
+    G_Radio_Cal_Save_Pending = 0;
+    for (record = 0; record < 12; record++) {
+        if (radio_cal_pending[record]) {
+            radio_cal_pending[record] = 0;
+            Radio_cal_send_power(record, radio_cal_value[record]);
+            sent++;
+        }
+        if (radio_iq_pending[0][record]) {
+            radio_iq_pending[0][record] = 0;
+            Radio_cal_send_iq(0, record);
+            sent++;
+        }
+        if (radio_iq_pending[1][record]) {
+            radio_iq_pending[1][record] = 0;
+            Radio_cal_send_iq(1, record);
+            sent++;
+        }
+    }
+    if (sent) {                     /* 3.188: read back what the radio holds now, tell the client */
+        Radio_cal_read_masks();
+        Radio_cal_send_status();
+    }
 }
 
 uint32_t Set_freq_for_power_cal(uint32_t band) {
@@ -140,197 +513,52 @@ uint32_t Set_freq_for_power_cal(uint32_t band) {
     }
 
     print_time(0);
-    fprintf(G_fp_logfile, "[%d] Set_band_for_power_cal . Finished . Returning Frequency: %ld\n", line_number++, freq);
+    fprintf(G_fp_logfile, "[%d] Set_band_for_power_cal . Finished . Returning Frequency: %u\n", line_number++, freq);
     G_dll_active = 0;
     return freq;
 }
 
-int Delete_power_ini_file() {
-    int status = 0;
-    FILE *Power_ini_delete;
-    char file_name[PATH_MAX] = {0};
-    int ret;
-
-    if ((homedir = My_getenv("HOME")) != NULL) {
-        print_time(0);
-        fprintf(G_fp_logfile, "[%d] Delete_power_ini_file . Default Path: %s\n", line_number++, homedir);
-        strcpy(file_name, homedir);
-        strcat(file_name, "/power_cal.ini");
-        print_time(0);
-        fprintf(G_fp_logfile, "[%d] delete_ini_file . Delete_power_ini_file Path: %s\n", line_number++, homedir);
-        Power_ini_delete = fopen(file_name, "r");
-        if (Power_ini_delete != NULL) {
-            fclose(Power_ini_delete);
-            print_time(0);
-            fprintf(G_fp_logfile, "[%d] Delete_power_ini_file . File Exists . Will now delete \n", line_number++);
-            ret = remove(homedir);
-            if (ret == 0) {
-                print_time(0);
-                fprintf(G_fp_logfile, "[%d] Delete_power_ini_file . The initialization file has been deleted \n", line_number++);
-                status = 1;
-            } else {
-                print_time(0);
-                fprintf(G_fp_logfile, "[%d] Delete_power_ini_file . The initialization file Deletion has FAILED \n", line_number++);
-                status = 0;
-            }
-        }
-    }
-    return status;
-}
-
-int Update_power_ini_file() {
-    FILE *Power_ini_update;
-    char file_name[PATH_MAX] = {0};
-    int lenght = 0;
-    int band = 0;
-    int status = 0;
-
-    print_time(0);
-    fprintf(G_fp_logfile, "[%d] Update_power_ini_file . Called \n", line_number++);
-    if ((homedir = My_getenv("HOME")) != NULL) {
-        strcpy(file_name, homedir);
-        strcat(file_name, "/power_cal.ini");
-        Power_ini_update = fopen(file_name, "w");
-        if (Power_ini_update != NULL) {
-            fprintf(Power_ini_update, "VERSION=%d\n", VERSION);
-            for (band = 0; band < 12; band++) {
-                fprintf(Power_ini_update, "RECORD=%d,BAND=%d,POWER_LEVEL=%d\n", G_power_stack[band].record, G_power_stack[band].band,
-                        G_power_stack[band].power_level);
-                print_time(0);
-                fprintf(G_fp_logfile, "[%d] Update_power_ini_file . RECORD=%d,BAND=%d,POWER_LEVEL=%d\n", line_number++,
-                        G_power_stack[band].record, G_power_stack[band].band, G_power_stack[band].power_level);
-            }
-            fflush(Power_ini_update);
-            fclose(Power_ini_update);
-            status = 1;
-            SDRcore_trans_send_param(CMD_SET_SDRCORE_TRANS_INITIALIZE, 1);
-            print_time(0);
-            fprintf(G_fp_logfile, "[%d] Update_power_ini_file . Finished \n", line_number++);
-        } else {
-            print_time(0);
-            fprintf(G_fp_logfile, "[%d] Update_power_ini_file . Open file failed\n", line_number++);
-            status = 0;
-        }
-    }
-    return status;
-}
-
-int Create_power_ini_file() {
-    FILE *Power_create_ini;
-    char file_name[PATH_MAX] = {0};
-    //int lenght = 0;
-    int band = 0;
-    int status = 0;
-
-    print_time(0);
-    fprintf(G_fp_logfile, "[%d] Create_power_ini_file . Called \n", line_number++);
-    if ((homedir = My_getenv("HOME")) != NULL) {
-        strcpy(file_name, homedir);
-        strcat(file_name, "/power_cal.ini");
-        Power_create_ini = fopen(file_name, "r");
-        if (Power_create_ini == NULL) {
-            print_time(0);
-            fprintf(G_fp_logfile, "[%d] Create_power_ini_file . power_cal.ini not found. Creating power_cal.ini \n", line_number++);
-            Power_create_ini = fopen(file_name, "w");
-            if (Power_create_ini != NULL) {
-                print_time(0);
-                fprintf(G_fp_logfile, "[%d] Create_power_ini_file . Creating power_cal.ini for Version: %d \n",
-                        line_number++, VERSION);
-                fprintf(Power_create_ini, "VERSION=%d\n", VERSION);
-                for (band = 0; band < 12; band++) {
-                    switch (G_pcb_version) {
-                        case 6:
-                            fprintf(Power_create_ini, "RECORD=%d,BAND=%d,POWER_LEVEL=%d\n", band, band, power_defaults_PCB_6[band]);
-                            break;
-                        case 5:
-                            fprintf(Power_create_ini, "RECORD=%d,BAND=%d,POWER_LEVEL=%d\n", band, band, power_defaults_PCB_5[band]);
-                            break;
-                        case 4:
-                            fprintf(Power_create_ini, "RECORD=%d,BAND=%d,POWER_LEVEL=%d\n", band, band, power_defaults_PCB_4[band]);
-                            break;
-                        case 2:
-                            fprintf(Power_create_ini, "RECORD=%d,BAND=%d,POWER_LEVEL=%d\n", band, band, power_defaults_PCB_C[band]);
-                            break;
-                        default:
-                            fprintf(Power_create_ini, "RECORD=%d,BAND=%d,POWER_LEVEL=%d\n", band, band, power_defaults_PCB_5[band]);
-                            break;
-                    }
-                }
-                fclose(Power_create_ini);
-                status = 2;
-            } else {
-                print_time(0);
-                fprintf(G_fp_logfile, "[%d] Create_power_ini_file . Creation of power_cal.ini file Failed\n", line_number++);
-                status = 0;
-            }
-        } else {
-            if (Power_create_ini != NULL) {
-                fclose(Power_create_ini);
-            }
-            print_time(0);
-            fprintf(G_fp_logfile, "[%d] Create_power_ini_file . File exists . Not creating power_cal.ini file\n", line_number++);
-            status = 1;
-        }
-    }
-    print_time(0);
-    fprintf(G_fp_logfile, "[%d] Create_power_ini_file . Finished \n", line_number++);
-    return status;
-}
-
+/* Read-only load of power_cal.ini (written by sdrcore-trans). Missing file or bad lines -> 0. */
 int Initialize_power_calibration() {
     int status = 0;
     FILE *Power_initialize;
     char file_name[PATH_MAX] = {0};
     char iq_init_record[132];
-    int mynumber;
     int record = 0;
+    char *record_number;
+    char *power_value;
 
-    struct {
-        char *record_number;
-        char *band;
-        char *power_value;
-    } power_record;
-
-    if ((homedir = My_getenv("HOME")) != NULL) {
-        print_time(0);
-        fprintf(G_fp_logfile, "[%d] Initialize_power_calibration . Called \n", line_number++);
-        print_time(0);
-        fprintf(G_fp_logfile, "[%d] Initialize_power_calibration . Default Path: %s\n", line_number++, homedir);
-        strcpy(file_name, homedir);
-        strcat(file_name, "/power_cal.ini");
-        print_time(0);
-        fprintf(G_fp_logfile, "[%d] Initialize_power_calibration . power_cal.ini-> Path: %s\n", line_number++, homedir);
-        Power_initialize = fopen(file_name, "r");
-        if (Power_initialize != NULL) {
-            fgets(iq_init_record, sizeof (iq_init_record), Power_initialize); //Skip the VERSION line
-            while (fgets(iq_init_record, sizeof (iq_init_record), Power_initialize) != NULL) {
-                power_record.record_number = strstr(iq_init_record, "RECORD=");
-                power_record.band = strstr(iq_init_record, "BAND=");
-                power_record.power_value = strstr(iq_init_record, "POWER_LEVEL=");
-                mynumber = atoi((power_record.record_number + 7));
-                G_power_stack[record].record = mynumber;
-                mynumber = atoi((power_record.band + 5));
-                G_power_stack[record].band = mynumber;
-                mynumber = atoi((power_record.power_value + 12));
-                G_power_stack[record].power_level = mynumber;
-                print_time(0);
-                fprintf(G_fp_logfile, "[%d] Initialize_power_calibration . Record: %d, Band: %d, Power Level: %d\n",
-                        line_number++, G_power_stack[record].record, G_power_stack[record].band,
-                        G_power_stack[record].power_level);
-                record++;
-            }
-            fclose(Power_initialize);
-            status = 1;
-        } else {
-            print_time(0);
-            fprintf(G_fp_logfile, "[%d] Initialize_power_calibration . Open file failed\n", line_number++);
-            status = 0;
-        }
-    } else {
-        status = 0;
-        print_time(0);
-        fprintf(G_fp_logfile, "[%d] Initialize_power_calibration .  SHGetKnownFolderPath failed\n", line_number++);
+    for (record = 0; record < 12; record++) {
+        G_power_stack[record].record = record;
+        G_power_stack[record].band = record;
+        G_power_stack[record].power_level = 0;
     }
+    if ((homedir = My_getenv("HOME")) == NULL) {
+        print_time(0);
+        fprintf(G_fp_logfile, "[%d] Initialize_power_calibration . getenv failed\n", line_number++);
+        return 0;
+    }
+    snprintf(file_name, sizeof (file_name), "%s/power_cal.ini", homedir);
+    Power_initialize = fopen(file_name, "r");
+    if (Power_initialize == NULL) {
+        print_time(0);
+        fprintf(G_fp_logfile, "[%d] Initialize_power_calibration . Open failed: %s\n", line_number++, file_name);
+        return 0;
+    }
+    while (fgets(iq_init_record, sizeof (iq_init_record), Power_initialize) != NULL) {
+        record_number = strstr(iq_init_record, "RECORD=");
+        power_value = strstr(iq_init_record, "POWER_LEVEL=");
+        if (record_number == NULL || power_value == NULL) {
+            continue; /* VERSION line or junk */
+        }
+        record = atoi(record_number + 7);
+        if (record < 0 || record >= 12) {
+            continue;
+        }
+        G_power_stack[record].power_level = atoi(power_value + 12);
+    }
+    fclose(Power_initialize);
+    status = 1;
     print_time(0);
     fprintf(G_fp_logfile, "[%d] Initialize_power_calibration . Finished\n", line_number++);
     return status;
@@ -386,21 +614,16 @@ int Cal_tune_button(int on_off) {
 
 int Power_calibration(uint32_t command, char *buf) {
     int status = 0;
-    //static uint8_t band = 0;
     static uint8_t calibration_value = 0;
-    static uint8_t current_value = 40;
     static uint32_t calibration_frequency = 0;
     static uint32_t proficio_configured = 0;
-    uint8_t tune;
     unsigned long setLO_status = 0;
     static int record = 0;
-    char mode = 'n';
     static uint8_t opcode_data_8_bit;
     static short int *opcode_data_short;
     static short int s_opcode_data;
-    static int *op_code_data_32;
-    static int i_opcode_data;
-    
+    int power_cal_save = 0;         /* 3.188 */
+
     opcode_data_8_bit = (uint8_t) (buf[1]);
     opcode_data_short = (short int*) &buf[1];
     memcpy(&s_opcode_data, opcode_data_short, 2);
@@ -410,99 +633,72 @@ int Power_calibration(uint32_t command, char *buf) {
             print_time(1);
             fprintf(G_fp_logfile, "[%d] CMD_SET_BAND_POWER_BAND . Called\n", line_number++);
             G_calibration_mode = 1;
+            G_iq_cal_active = 0;        /* 3.185: power calibration controls the radio mode */
             Tranceiver_band = s_opcode_data;
             record = Band_to_record(Tranceiver_band);
             calibration_frequency = Set_freq_for_power_cal(Tranceiver_band);
             G_tune_freq = calibration_frequency;
             print_time(0);
-            fprintf(G_fp_logfile, "[%d] CMD_SET_BAND_POWER_BAND . Band: %d, Record: %d, Calibration Freq: %ld\n", line_number++,
+            fprintf(G_fp_logfile, "[%d] CMD_SET_BAND_POWER_BAND . Band: %d, Record: %d, Calibration Freq: %u\n", line_number++,
                     Tranceiver_band, record, calibration_frequency);
-            //ModeChanged('T');
-            mode = 'T';
-            //status = Radio_send_parameters(SET_CW_MODE, mode, 1);
-            //Sleep(50);
-            //status = Radio_send_parameters(SET_CW_MODE, mode, 1);
-            //Sleep(50);
             setLO_status = freq_queue_add(calibration_frequency);
             Sleep(50);
-            Initialize_power_calibration();
-            //G_Proficio_Allow_Temp_Check = FALSE; Restore this for production
+            Initialize_power_calibration(); /* file is written by sdrcore-trans */
             print_time(0);
             fprintf(G_fp_logfile, "[%d] CMD_SET_BAND_POWER_BAND . Band: %d, Power_Value: %d\n", line_number++,
-                    G_power_stack[record].band, G_power_stack[record].power_level);
+                    Tranceiver_band, G_power_stack[record].power_level);
             Gui_send_param(CMD_GET_BAND_POWER, G_power_stack[record].power_level);
-            print_time(0);
-            fprintf(G_fp_logfile, "[%d] CMD_SET_BAND_POWER_BAND . Calling SDRcore_recv_send_param \n", line_number++);
             SDRcore_recv_send_param(CMD_SET_SDR_CORE_BAND, Tranceiver_band);
             SDRcore_recv_send_param(CMD_SET_MAIN_MODE, MODE_TUNE); //Set the SDRcore processes into TUNE mode
-            print_time(0);
-            fprintf(G_fp_logfile, "[%d] CMD_SET_BAND_POWER_BAND . Calling SDRcore_trans_send_param \n", line_number++);
-            SDRcore_trans_send_param(CMD_SET_SDR_CORE_BAND, Tranceiver_band); 
-            SDRcore_trans_send_param(CMD_SET_MAIN_MODE, MODE_TUNE); //Set the SDRcore processes into TUNE mode
+            SDRcore_trans_send_param(CMD_SET_SDR_CORE_BAND, Tranceiver_band);
+            SDRcore_trans_send_param(CMD_SET_MAIN_MODE, MODE_TUNE);
             SDRcore_trans_send_param(CMD_SET_BAND_POWER_BAND, Tranceiver_band);
-            SDRcore_trans_send_param(CMD_SET_BAND_POWER_POWER, G_power_stack[record].power_level);
-            SDRcore_trans_send_param(CMD_SET_MAIN_MODE, MODE_TUNE); //Set the SDRcore processes into TUNE mode
             proficio_configured = 1;
-             print_time(0);
+            print_time(0);
             fprintf(G_fp_logfile, "[%d] CMD_SET_BAND_POWER_BAND . FINISHED \n", line_number++);
             break;
 
         case CMD_SET_BAND_POWER_POWER:
+            /* 3.188 (as Windows 3.189): slider steps are live only. The client's "Save this
+             * calibration?" Yes sends the value again with POWER_CAL_SAVE_FLAG (0x8000): only then
+             * trans writes power_cal.ini and the value goes into the radio. Needs client 11.1.0
+             * (an old client never sends the flag). */
             calibration_value = opcode_data_8_bit;
+            power_cal_save = (s_opcode_data & POWER_CAL_SAVE_FLAG) ? 1 : 0;
             print_time(1);
-            fprintf(G_fp_logfile, "[%d] CMD_SET_BAND_POWER_POWER . Received . Cal Value: %d\n", line_number++,
-                    calibration_value);
+            fprintf(G_fp_logfile, "[%d] CMD_SET_BAND_POWER_POWER . Received . Cal Value: %d, %s\n", line_number++,
+                    calibration_value, power_cal_save ? "SAVE" : "live");
             if (proficio_configured) {
-                G_power_stack[record].power_level = calibration_value;
-                print_time(0);
-                fprintf(G_fp_logfile, "[%d] CMD_SET_BAND_POWER_POWER . Calling Update_power_ini_file \n", line_number++);
-                status = Update_power_ini_file();
-                if (status == 1) {
-                    Sleep(100);
-                    SDRcore_trans_send_param(CMD_SET_SDR_CORE_BAND, Tranceiver_band);
-                    SDRcore_trans_send_param(CMD_SET_MAIN_MODE, MODE_TUNE); //Set the SDRcore processes into TUNE mode
-                    SDRcore_trans_send_param(CMD_SET_BAND_POWER_BAND, Tranceiver_band);
-                    SDRcore_trans_send_param(CMD_SET_BAND_POWER_POWER, G_power_stack[record].power_level);
-                    SDRcore_trans_send_param(CMD_SET_MAIN_MODE, MODE_TUNE); //Set the SDRcore processes into TUNE mode
-                }
+                G_power_stack[record].power_level = calibration_value; /* copy for 0xB4 */
+                SDRcore_trans_send_param(CMD_SET_BAND_POWER_BAND, Tranceiver_band);
+                SDRcore_trans_send_param(CMD_SET_BAND_POWER_POWER,
+                                         calibration_value | (power_cal_save ? POWER_CAL_SAVE_FLAG : 0));
+                if (power_cal_save)
+                    Radio_cal_store_power(record, calibration_value);
             } else {
                 Gui_send_param(CMD_GET_BAND_POWER, 0);
                 print_time(0);
                 fprintf(G_fp_logfile, "[%d] CMD_SET_BAND_POWER_POWER . Transceiver was not configured properly\n", line_number++);
-                //MessageBoxA(NULL, "Logic Error in Power Calibration Routine. Send Logs to Multus SDR, LLC. \r\n ",
-                //	"MS-SDR", MB_OK | MB_ICONASTERISK);
             }
             print_time(0);
             fprintf(G_fp_logfile, "[%d] CMD_SET_BAND_POWER_POWER . Finished \n", line_number++);
             break;
 
         case CMD_SET_BAND_VOLUME_DEFAULTS:
+            /* Not used by the client. Removed with the move of power_cal.ini to sdrcore-trans. */
             print_time(1);
-            fprintf(G_fp_logfile, "[%d] CMD_SET_BAND_VOLUME_DEFAULTS . Called\n", line_number++);
-            status = Delete_power_ini_file();
-            if (status == 1) {
-                Create_power_ini_file();
-            }
-            Initialize_power_calibration();
-            Gui_send_param(CMD_GET_BAND_POWER, G_power_stack[record].power_level);
-            Sleep(50);
-            SDRcore_trans_send_param(CMD_SET_SDR_CORE_BAND, Tranceiver_band);
-            print_time(0);
-            fprintf(G_fp_logfile, "[%d] CMD_SET_BAND_VOLUME_DEFAULTS . Finished \n", line_number++);
+            fprintf(G_fp_logfile, "[%d] CMD_SET_BAND_VOLUME_DEFAULTS . Not supported. Ignored\n", line_number++);
             break;
 
         case CMD_GET_BAND_POWER:
             print_time(1);
             if (proficio_configured) {
-                fprintf(G_fp_logfile, "[%d] CMD_GET_BAND_POWER . Called . Sending: %d \n", line_number++, current_value);
-                current_value = G_power_stack[record].power_level;
-                Gui_send_param(CMD_GET_BAND_POWER, current_value);
+                fprintf(G_fp_logfile, "[%d] CMD_GET_BAND_POWER . Called . Sending: %d \n", line_number++,
+                        G_power_stack[record].power_level);
+                Gui_send_param(CMD_GET_BAND_POWER, G_power_stack[record].power_level);
             } else {
                 Gui_send_param(CMD_GET_BAND_POWER, 0);
-                print_time(0);
-                fprintf(G_fp_logfile, "[%d] CMD_SET_BAND_POWER_POWER . Transceiver was not configured properly\n", line_number++);
-                //MessageBoxA(NULL, "Logic Error in Power Calibration Routine. Send Logs to Multus SDR, LLC. \r\n ",
-                //	"MS-SDR", MB_OK | MB_ICONASTERISK);
+                fprintf(G_fp_logfile, "[%d] CMD_GET_BAND_POWER . Transceiver was not configured properly\n", line_number++);
             }
             break;
 
@@ -511,7 +707,6 @@ int Power_calibration(uint32_t command, char *buf) {
             fprintf(G_fp_logfile, "[%d] CMD_CALIBRATION_MASTER_RESET . Called . Initializing all variables \n", line_number++);
             Tranceiver_band = 0;
             calibration_value = 0;
-            current_value = 0;
             calibration_frequency = 0;
             proficio_configured = 0;
             G_calibration_mode = 0;
@@ -521,10 +716,10 @@ int Power_calibration(uint32_t command, char *buf) {
 
         case CMD_CALIBRATION_TUNE:
             print_time(1);
-            tune = opcode_data_8_bit;
-            fprintf(G_fp_logfile, "[%d] CMD_CALIBRATION_TUNE . Tune: %d \n", line_number++, tune);
-            Cal_tune_button(tune);
+            fprintf(G_fp_logfile, "[%d] CMD_CALIBRATION_TUNE . Tune: %d \n", line_number++, opcode_data_8_bit);
+            Cal_tune_button(opcode_data_8_bit);
             break;
     }
+    (void) setLO_status;
     return status;
 }

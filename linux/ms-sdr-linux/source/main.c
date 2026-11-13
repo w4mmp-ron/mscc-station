@@ -17,7 +17,7 @@
 
 #include "version.h"
 #include "band_stack.h"
-#include "last_used.h"
+#include "startup.h"
 #include "factory_seed.h"
 #include "iq.h"
 //Pthreads
@@ -83,9 +83,8 @@ uint8_t G_gui_running = 0;
 uint8_t G_all_threads_run = 1;
 uint8_t G_main_thread_run = 1;
 ULONG32 G_thread_sleep_time = THREAD_SLEEP_TIME;
-uint8_t G_updating_last_used = 0;
-uint8_t G_setting_last_used = 0;
 uint8_t G_calibration_mode = 0;
+uint8_t G_iq_cal_active = 0;   /* 3.185: I/Q calibration session: mode changes still go to the radio */
 uint8_t G_in_IQ_calibration_mode = 0;
 uint8_t G_Speaker_Mute_Status = 0;
 ULONG64 G_Heart_beat = 0;
@@ -116,6 +115,7 @@ uint8_t G_Threads_Started = FALSE;
 int G_major_version = 0;
 int G_minor_version = 0;
 int G_firmware_version_packed = 0;
+int G_firmware_type = FIRMWARE_TYPE_UNKNOWN;
 char G_l_path[MAX_PATH] = { 0 };
 long t = 0;
 uint8_t G_Sound_Device = 0;
@@ -126,7 +126,6 @@ uint16_t G_subsys_initialized = 0x0000;
 int ret = 0;
 
 struct band_stack G_band_stack[10];
-struct last_used_stack G_last_used_stack[10];
 
 //For the Get_Key_Down_Status
 pthread_t G_Get_Key_Status_thread;
@@ -143,8 +142,6 @@ pthread_t G_Flusher_thread;
 int G_Flusher_thread_rc;
 
 //For the last used updater thread
-pthread_t G_Update_last_used_thread;
-int G_Udate_last_used_thread_rc;
 
 pthread_t G_Check_temperature_thread;
 int G_Check_temperature_rc;
@@ -450,6 +447,7 @@ void print_time(int print_new_line) {
 }
 
 void* Flusher_thread(void* t) {
+    Set_Thread_Name("log-flusher");
     int gui_count = 0;
     int servers_count = 0;
     int ka_log_count = 0;
@@ -475,13 +473,29 @@ void* Flusher_thread(void* t) {
          */
         if (G_MSCC_Initialized == 1 || G_client_session_active) {
             Gui_send_param(CMD_SET_KEEP_ALIVE, 1);
-            if ((ka_log_count++ % 10) == 0) {
+            if (ka_log_count == 0) {    /* first only: SD card wear */
+                ka_log_count = 1;
                 print_time(0);
                 fprintf(G_fp_logfile, "[%d] Flusher_thread. Sent CMD_SET_KEEP_ALIVE (0xF4) to client\n",
                     line_number++);
             }
         }
         Sleep(1000);
+
+        /* Volume / mic gain sliders: write user_controls.ini once, after the last step. */
+        if (G_User_Controls_Save_Pending > 0) {
+            G_User_Controls_Save_Pending--;
+            if (G_User_Controls_Save_Pending == 0) {
+                User_Controls_Update_Init_File();
+            }
+        }
+
+        /* Power cal slider: radio saves its calibration copy after the last step. */
+        if (G_Radio_Cal_Save_Pending > 0)
+            Radio_cal_save_tick();
+
+        /* CAT tune (AC111;): ends after 10 s or when something else ended it. */
+        Cat_tune_tick();
 
         if (G_Allow_Log_Write == TRUE) {
             fflush(G_fp_logfile);
@@ -495,10 +509,11 @@ void* Flusher_thread(void* t) {
                 SDRcore_trans_send_param(CMD_SET_KEEP_ALIVE, KEEP_ALIVE_FROM_CLIENT);
             }
             if (G_MSCC_Initialized == 1 || G_client_session_active) {
-                /* Was 15 (~15s). Under pan flood, client 0xF4 can be delayed on the
-                 * shared UDP socket; releasing the session stops server→client KA and
-                 * the UI reports keep-alive lost even though the radio is fine. */
-                if (gui_count++ >= 45) {
+                /* ~15 s with no client keep-alive (0xF4) releases the session (3.198, Ron
+                 * 2026-11-10: back from 45 to 15, as Windows ms-sdr). 45 was for client 0xF4
+                 * delayed on the shared UDP socket under pan flood; watch for false
+                 * "keep-alive lost" if that comes back. */
+                if (gui_count++ >= 15) {
 #if defined(MS_SDR_NO_USB)
                     previous_heart_beat = G_Heart_beat;
 #else
@@ -519,15 +534,7 @@ void* Flusher_thread(void* t) {
              */
             if (G_Threads_Started == TRUE) {
                 if (servers_count++ >= 10) {
-                    print_time(0);
-                    fprintf(G_fp_logfile,
-                        "[%d] Flusher_thread. core KA status recv=%llu (was %llu) trans=%llu (was %llu)\n",
-                        line_number++,
-                        (unsigned long long)G_sdrcore_recv_keep_alive,
-                        (unsigned long long)previous_sdrcore_recv_keep_alive,
-                        (unsigned long long)G_sdrcore_trans_keep_alive,
-                        (unsigned long long)previous_sdrcore_trans_keep_alive);
-                    fflush(G_fp_logfile);
+                    /* No routine "core KA status" line (SD card wear); missing KA still logged */
                     if (G_sdrcore_recv_keep_alive > previous_sdrcore_recv_keep_alive) {
                         previous_sdrcore_recv_keep_alive = G_sdrcore_recv_keep_alive;
                     }
@@ -605,45 +612,6 @@ void* Flusher_thread(void* t) {
     return NULL;
 }
 
-void *Update_last_used_thread(void *last_used_tread) {
-    int status = 0;
-    uint32_t previous_startup_freq = 0;
-
-    print_time(0);
-    fprintf(G_fp_logfile, "[%d] Update_last_used_thread . Started\n", line_number++);
-    Sleep(3000); //Wait until the remaining subsystems are initialized
-    while (G_all_threads_run) {
-        if (!G_dll_active && G_MSCC_Initialized == 1) {
-            if (!G_setting_power_band) {
-                switch (G_vfo) {
-                    case VFO_A:
-                        status = Update_last_used_VFO_A();
-                        break;
-                    case VFO_B:
-                        status = Update_last_used_VFO_B();
-                        break;
-                }
-                if (status != 0) {
-                    if (G_tune_freq != 0) {
-                        if (previous_startup_freq != G_tune_freq && G_TX == FALSE) {
-                            if (G_vfo == VFO_A) {
-                                Update_Startup(G_tune_freq, G_mode);
-                                previous_startup_freq = G_tune_freq;
-                            }
-                        }
-                    }
-                }
-            }
-        }
-        Sleep(G_thread_sleep_time);
-    }
-    print_time(0);
-    fprintf(G_fp_logfile, "[%d] Update_last_used_thread . NORMAL EXIT.\n", line_number++);
-    pthread_exit(0);
-    return NULL;
-
-}
-
 uint16_t Get_band_by_frequency(uint32_t freq, uint8_t apply_offset) {
     uint32_t offset = 0;
     uint16_t band = GENERAL_BAND;
@@ -651,7 +619,7 @@ uint16_t Get_band_by_frequency(uint32_t freq, uint8_t apply_offset) {
         offset = 12000;
     }
     print_time(0);
-    fprintf(G_fp_logfile, "[%d] Get_band_by_frequency . Frequency: %ld, Offset: %ld \n", line_number++, freq, offset);
+    fprintf(G_fp_logfile, "[%d] Get_band_by_frequency . Frequency: %u, Offset: %u \n", line_number++, freq, offset);
     if (freq >= (1800000 - offset) && freq <= (2000000 + offset)) band = 160;
     if (freq >= 3500000 - offset && freq <= 4000000 + offset) band = 80;
     if (freq >= 5330500 - offset && freq <= 5403500 + offset) band = 60;
@@ -665,7 +633,7 @@ uint16_t Get_band_by_frequency(uint32_t freq, uint8_t apply_offset) {
     if (freq >= 135700 - offset && freq <= 137800 + offset) band = 2200;
     if (freq >= 472000 - offset && freq <= 479000 + offset) band = 630;
     print_time(0);
-    fprintf(G_fp_logfile, "[%d] Get_band_by_frequency . Finished . Band: %ld\n", line_number++, band);
+    fprintf(G_fp_logfile, "[%d] Get_band_by_frequency . Finished . Band: %d\n", line_number++, band);
     return band;
 }
 
@@ -676,7 +644,7 @@ void Set_band_normal(uint32_t freq, uint8_t apply_offset) {
         offset = 12000;
     }
     print_time(0);
-    fprintf(G_fp_logfile, "[%d] Set_band_normal . Frequency: %ld, Offset: %ld \n", line_number++, freq, offset);
+    fprintf(G_fp_logfile, "[%d] Set_band_normal . Frequency: %u, Offset: %u \n", line_number++, freq, offset);
     G_dll_active = 1;
     G_band_normal = FREQ_OUT_OF_RANGE;
     if (freq >= 500000 - offset && freq <= 30000000 + offset) G_band_normal = GENERAL_BAND;
@@ -693,7 +661,7 @@ void Set_band_normal(uint32_t freq, uint8_t apply_offset) {
     if (freq >= 135700 - offset && freq <= 137800 + offset) G_band_normal = 2200;
     if (freq >= 472000 - offset && freq <= 479000 + offset) G_band_normal = 630;
     print_time(0);
-    fprintf(G_fp_logfile, "[%d] Set_band_normal . Finished . Band: %ld\n", line_number++, G_band_normal);
+    fprintf(G_fp_logfile, "[%d] Set_band_normal . Finished . Band: %d\n", line_number++, G_band_normal);
     G_dll_active = 0;
 }
 
@@ -732,7 +700,7 @@ int Tune_button(int on_off, uint8_t allow_MKII_PTT_Switch) {
 
     print_time(0);
     fprintf(G_fp_logfile, "[%d] Tune_button called . on_off: %d, previous_mode: %c,G_mode: %c\n",
-            line_number++, on_off, G_previous_mode, G_mode);
+            line_number++, on_off, G_previous_mode ? G_previous_mode : '-', G_mode);   //0 = no previous mode yet; %c would log a NUL
     if (G_TX_Inhibit == FALSE && G_check_bias == FALSE) {
         G_dll_active = TRUE;
         if (on_off == TRUE && allow_MKII_PTT_Switch == FALSE) {
@@ -740,7 +708,14 @@ int Tune_button(int on_off, uint8_t allow_MKII_PTT_Switch) {
             ptt_switch_inhibited = TRUE;
         }
         G_Tune = on_off;
+        /* 3.190: tell the WiFi SWR meter a tune starts BEFORE RF (its tune allowance lets the
+         * tuner search without a fault; waits <= 300 ms for the meter), and that it ended after
+         * unkeying (own thread). No meter / offline: skipped. See swr_wifi_meter.c. */
+        if (on_off)
+            Swr_wifi_tune(1);
         SetModeRxTx(on_off, 0);
+        if (!on_off)
+            Swr_wifi_tune(0);
         //Spectrum_Waterfall_send_param(CMD_SET_TX_ON, on_off);
         if (on_off == FALSE && ptt_switch_inhibited == TRUE) {
             ptt_switch_inhibited = FALSE;
@@ -781,17 +756,34 @@ int static TX_Hold_Timer(int period, int reset) {
 }
 
 void *Manage_MKII_PTT_Switch(void *my_parm) {
+    Set_Thread_Name("ptt-switch");
     int r = 0;
     int tx_mode = FALSE;
     static int previous_tx_mode = 0;
-    int ptt = FALSE;
-    int sleep_time = 1;
+    uint8_t ptt = FALSE;   /* the radio answers 1 byte */
+    int read_failing = FALSE;
+    int sleep_time = 20;   /* ms (delayMicroseconds = Sleep, ms); was 1 (Ron, 2026-10-24) */
 
     while (G_all_threads_run) {
         if (G_PTT_Switch_Allow == TRUE) {
             r = usbControlMsgIN(CMD_GET_PTT, 0, 0, (char*) &ptt, sizeof (ptt));
-            if (r) {
-                tx_mode = ptt;
+            /* Only a good 1-byte read counts. r < 0 (USB error / timeout) used to pass
+             * "if (r)" and junk in the buffer was taken as a PTT change (2026-10-24). */
+            if (r != 1) {
+                if (!read_failing) {
+                    read_failing = TRUE;
+                    print_time(0);
+                    fprintf(G_fp_logfile, "[%d] Manage_MKII_PTT_Switch. CMD_GET_PTT read failed, r: %d (ignored)\n",
+                            line_number++, r);
+                }
+            } else {
+                if (read_failing) {
+                    read_failing = FALSE;
+                    print_time(0);
+                    fprintf(G_fp_logfile, "[%d] Manage_MKII_PTT_Switch. CMD_GET_PTT read OK again\n",
+                            line_number++);
+                }
+                tx_mode = ptt ? TRUE : FALSE;
                 if (previous_tx_mode != tx_mode) {
                     Set_PTT(tx_mode, TRUE);
                     SDRcore_recv_send_param(CMD_SET_TX_ON, tx_mode);
@@ -815,8 +807,9 @@ void *Manage_MKII_PTT_Switch(void *my_parm) {
 }
 
 void *Get_Key_Status(void *my_parm) {
+    Set_Thread_Name("key-status");
     int r = 0;
-    int key = FALSE;
+    uint8_t key = FALSE;   /* the radio answers 1 byte */
     int sleep_time = 1;
     static int previous_key = FALSE;
 
@@ -826,7 +819,7 @@ void *Get_Key_Status(void *my_parm) {
     while (G_all_threads_run) {
         if (G_TX_Inhibit == FALSE) {
             r = usbControlMsgIN(CMD_GET_KEY_DOWN, 0, 0, (char*)&key, sizeof(key));
-            if (r) {
+            if (r == 1) {   /* was "if (r)": r < 0 (error) passed too */
                 if (previous_key != key) {
                     previous_key = key;
                     //Spectrum_Waterfall_send_param(CMD_SET_TX_ON, key);
@@ -909,10 +902,11 @@ int SetHWLO_queue(long tune_freq) {
     static long previous_freq = 0;
     long delta_freq = 0;
     byte mute_active = FALSE;
-    int set_last_used_status = FALSE;
     static uint16_t previous_band = FREQ_OUT_OF_RANGE;
 
     delta_freq = (labs) ((previous_freq - tune_freq));
+    if (delta_freq != 0)
+        Audio_stats_busy("frequency change");   // 3.195 (TX on / off re-sends the same frequency)
     G_dll_active = TRUE;
     previous_freq = tune_freq;
     switch (G_mode) {
@@ -967,29 +961,6 @@ int SetHWLO_queue(long tune_freq) {
         SDRcore_recv_send_param(CMD_SET_SDR_CORE_BAND, G_band_normal);
         previous_band = G_band_normal;
     }
-    if (G_band_normal != GENERAL_BAND) {
-        switch (G_vfo) {
-            case VFO_A:
-                set_last_used_status = Set_last_used_VFO_A(G_tune_freq, G_mode);
-                if (set_last_used_status == FALSE) { // Try again.  Update_Last_Used is busy
-                    print_time(0);
-                    fprintf(G_fp_logfile, "[%d] SetHWLO_queue . set_last_used-> BUSY. set_last_used_status: %d \n",
-                            line_number++, set_last_used_status);
-                    Sleep(100);
-                    set_last_used_status = Set_last_used_VFO_A(G_tune_freq, G_mode);
-                }
-                break;
-            case VFO_B:
-                set_last_used_status = Set_last_used_VFO_B(G_tune_freq, G_mode);
-                if (set_last_used_status == FALSE) { // Try again.  Update_Last_Used is busy
-                    print_time(0);
-                    fprintf(G_fp_logfile, "[%d] SetHWLO_queue . set_last_used-> BUSY. set_last_used_status: %d \n",
-                            line_number++, set_last_used_status);
-                    Sleep(100);
-                    set_last_used_status = Set_last_used_VFO_B(G_tune_freq, G_mode);
-                }
-        }
-    }
     return status;
 }
 
@@ -1018,11 +989,15 @@ void ModeChanged(char mode) {
     long t = 0;
     static int signal_sent = 0;
 
+    Audio_stats_busy("mode change");   // 3.195
     print_time(0);
     fprintf(G_fp_logfile, "[%d] ModeChanged. mode: %c,G_calibrating: %d. STARTED\n", line_number++, mode, G_calibration_mode);
     //Disable mode setting if the application is in Power Calibration mode.  
     //Power Calibration has control of the Proficio
-    if (!G_calibration_mode) {
+    /* 3.185 (Stew's Windows 3.188): during I/Q calibration the radio mode is still set (power
+     * calibration keeps control). A radio left in CW ignores TX on, so TX I/Q started from CW
+     * never transmitted. */
+    if (!G_calibration_mode || G_iq_cal_active) {
         G_dll_active = TRUE;
         status = Radio_send_parameters(SET_CW_MODE, mode, 1);
         Sleep(50);
@@ -1034,29 +1009,8 @@ void ModeChanged(char mode) {
         } else {
             print_time(0);
             fprintf(G_fp_logfile, "[%d] ModeChanged. Call to usbControlMsgOUT Failed . status: %d\n", line_number++, status);
-            /* Still remember requested mode for startup.ini / last-used */
+            /* Still remember requested mode for startup.ini */
             G_mode = mode;
-        }
-        if (!G_in_IQ_calibration_mode) {
-            if (G_band_normal != GENERAL_BAND) {
-                print_time(0);
-                fprintf(G_fp_logfile, "[%d] ModeChanged. Calling set_last_used for mode %c \n", line_number++, G_mode);
-                switch (G_vfo) {
-                    case VFO_A:
-                        status = Set_last_used_VFO_A(G_tune_freq, G_mode);
-                        if (status == FALSE) { // Try again.  Update_Last_Used is busy
-                            Sleep(100);
-                            status = Set_last_used_VFO_A(G_tune_freq, G_mode);
-                        }
-                        break;
-                    case VFO_B:
-                        status = Set_last_used_VFO_B(G_tune_freq, G_mode);
-                        if (status == FALSE) { // Try again.  Update_Last_Used is busy
-                            Sleep(100);
-                            status = Set_last_used_VFO_B(G_tune_freq, G_mode);
-                        }
-                }
-            }
         }
         /* Persist mode (and current freq) so next boot matches GUI / CAT mode */
         Update_Startup(G_tune_freq, G_mode);
@@ -1070,11 +1024,11 @@ void ModeChanged(char mode) {
 
 int static Start_Key_status_thread() {
     int status = TRUE;
-    long last_used_t = 0;
+    long thread_arg = 0;
 
     print_time(0);
     fprintf(G_fp_logfile, "[%d] main. Starting Start_Key_PTT_status_thread thread \n", line_number++);
-    G_Get_Key_Status_rc = pthread_create(&G_Get_Key_Status_thread, NULL, Get_Key_Status, (void *) last_used_t);
+    G_Get_Key_Status_rc = pthread_create(&G_Get_Key_Status_thread, NULL, Get_Key_Status, (void *) thread_arg);
     if (G_Get_Key_Status_rc) {
         print_time(0);
         fprintf(G_fp_logfile, "[%d] main. Start G_Get_Key_Down_Status_thread thread failed, return code from pthread_create() is %d\n",
@@ -1089,11 +1043,11 @@ int static Start_Key_status_thread() {
 }
 int static Start_check_temperature_thread() {
     int status = TRUE;
-    long last_used_t = 0;
+    long thread_arg = 0;
 
     print_time(0);
     fprintf(G_fp_logfile, "[%d] main . Starting Check_temperature thread \n", line_number++);
-    G_Check_temperature_rc = pthread_create(&G_Check_temperature_thread, NULL, Check_temperature, (void *) last_used_t);
+    G_Check_temperature_rc = pthread_create(&G_Check_temperature_thread, NULL, Check_temperature, (void *) thread_arg);
     if (G_Check_temperature_rc) {
         print_time(0);
         fprintf(G_fp_logfile, "[%d] main . Start Check_temperature thread failed, return code from pthread_create() is %d\n",
@@ -1223,20 +1177,6 @@ int static Start_Threads() {
                 line_number++, G_CW_Command_Interface_rc);
     }
     Sleep(2000);
-    /*print_time(0);
-    fprintf(G_fp_logfile, "[%d] main. Starting Update_last_used_thread \n", line_number++);
-    G_Udate_last_used_thread_rc = pthread_create(&G_Update_last_used_thread, NULL,
-            Update_last_used_thread, (void *) t);
-    if (G_Udate_last_used_thread_rc) {
-        print_time(0);
-        fprintf(G_fp_logfile, "[%d] main. Start Update_last_used_thread thread failed, return code from pthread_create() is %d\n",
-                line_number++, G_Udate_last_used_thread_rc);
-        status = -1;
-    } else {
-        print_time(0);
-        fprintf(G_fp_logfile, "[%d] main. Start Update_last_used_thread thread Started, return code from pthread_create() is %d\n",
-                line_number++, G_Udate_last_used_thread_rc);
-    }*/
     print_time(0);
     fprintf(G_fp_logfile, "[%d] main. Starting Freq_Dequeue_thread \n", line_number++);
     G_Freq_Queue_rc = pthread_create(&G_Freq_Queue_thread, NULL, Freq_Dequeue_thread, (void *) t);
@@ -1250,7 +1190,11 @@ int static Start_Threads() {
         fprintf(G_fp_logfile, "[%d] main. Start Freq_Dequeue_thread thread Started, return code from pthread_create() is %d\n",
                 line_number++, G_Freq_Queue_rc);
     }
-    Start_Key_status_thread();
+    /* Key-down poll thread NOT started (Ron, 2026-10-24): it only logged the key
+     * (CMD_GET_KEY_DOWN every ~1 ms, result unused) and loaded the radio's USB
+     * control endpoint. The radio keys CW itself. */
+    /* Start_Key_status_thread(); */
+    (void)Start_Key_status_thread;
     Sleep(1000);
     /* MKII rear PTT sense (CMD_GET_PTT). Legacy: PROFICIO-MKII=0 in mscc.ini */
     if (G_proficio_mkii) {
@@ -1277,7 +1221,7 @@ int main(int argc, char **argv) {
     uint8_t mode;
     long t = 0;
     long gui_t = 0;
-    long last_used_t = 0;
+    long thread_arg = 0;
     int completion_status = TRUE;
     int dir_configured = 0;
     //char *message;
@@ -1326,6 +1270,11 @@ int main(int argc, char **argv) {
             print_time(0);
             fprintf(G_fp_logfile, "[%d] main . srGetVersion returned Transceiver Firmware Version: %d.%d \n",
                     line_number++, G_major_version, G_minor_version);
+            G_firmware_type = (G_minor_version >= FIRMWARE_PSOC_MINOR_MIN) ? FIRMWARE_TYPE_PSOC
+                                                                          : FIRMWARE_TYPE_STM32;
+            print_time(0);
+            fprintf(G_fp_logfile, "[%d] main . Firmware type: %s (minor %d)\n", line_number++,
+                    G_firmware_type == FIRMWARE_TYPE_PSOC ? "PSoC" : "STM32", G_minor_version);
             Factory_seed_live_inis();
             if (G_major_version >= MULTUS_MAJOR_VERSION_119 && G_minor_version >= MULTUS_MINOR_VERSION_81) {
                 print_time(0);
@@ -1365,17 +1314,7 @@ int main(int argc, char **argv) {
     fprintf(G_fp_logfile, "[%d] main . Calling initialize_msccs \n", line_number++);
     initialize_mscc();
     
-    if (G_transceiver_initialization_status == TRUE) {
-        status = Create_power_ini_file();
-        Check_Amplifier_Version();
-        status = Create_amplifier_ini_file();
-    }
-    print_time(0);
-    fprintf(G_fp_logfile, "[%d] main . Calling Init_last_used_VFO_A \n", line_number++);
-    status = Init_last_used_VFO_A();
-    print_time(0);
-    fprintf(G_fp_logfile, "[%d] main . Calling Init_last_used_VFO_B \n", line_number++);
-    status = Init_last_used_VFO_B();
+    /* power_cal.ini / amplifier_cal.ini are managed by sdrcore-trans; amplifier.ini is no longer used */
     Sleep(10);
     print_time(0);
     fprintf(G_fp_logfile, "[%d] main. Calling User_Controls_Init \n", line_number++);
@@ -1415,7 +1354,7 @@ int main(int argc, char **argv) {
             fprintf(G_fp_logfile,
                 "[%d] main. Network ready — reload cal if a live file was replaced, then Apply_Appliance_Startup\n",
                 line_number++);
-            Factory_seed_reload_servers();
+            Radio_cal_startup_load("startup");
             Apply_Appliance_Startup();
         } else {
             print_time(0);

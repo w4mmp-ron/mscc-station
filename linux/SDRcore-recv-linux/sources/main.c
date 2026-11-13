@@ -3,7 +3,6 @@
 #include "remote_phones.h"
 
 
-#define _CRT_SECURE_NO_WARNINGS 1
 #define RON 1
 
 
@@ -83,7 +82,6 @@ char* My_getenv(char* myenv)
 {
     memset(G_l_path, 0, sizeof(G_l_path));
 
-#if defined(__linux__) || defined(__APPLE__)
     {
         const char *home = getenv("HOME");
         (void)myenv;
@@ -94,23 +92,6 @@ char* My_getenv(char* myenv)
 
         snprintf(G_l_path, sizeof(G_l_path), "%s/.local/mscc", home);
     }
-#else
-    // Windows
-    {
-        WCHAR path[MAX_PATH] = { 0 };
-        PWSTR lpPath = path;
-        HRESULT hr = SHGetKnownFolderPath(&FOLDERID_LocalAppData, 0, NULL, &lpPath);
-        (void)myenv;
-
-        if (SUCCEEDED(hr)) {
-            WideCharToMultiByte(CP_ACP, WC_COMPOSITECHECK, lpPath, -1, 
-                                G_l_path, sizeof(G_l_path), NULL, NULL);
-            strcat(G_l_path, "\\MSCC");
-        } else {
-            strcpy(G_l_path, "C:\\Temp\\MSCC");   // fallback
-        }
-    }
-#endif
 
     return G_l_path;
 }
@@ -336,6 +317,23 @@ static void process_iq_to_stereo(const SAMPLE *in, SAMPLE *out, unsigned long fr
 {
     unsigned int i;
 
+    /*
+     * 3.149 (from Stew's Windows recv 3.149): silent while transmitting (MONITOR off,
+     * not CW) instead of Pa_StopStream at TX on / Pa_StartStream at TX off. The I/Q
+     * input shares the radio's USB audio device with trans' TX I/Q; on Windows the
+     * stop / start made 75-140 ms gaps in the TX audio = splatter. The DSP (and AGC)
+     * is skipped, as when the stream was stopped. CW keeps its tone stream.
+     */
+    if (G_tx_mode == TRUE && G_Monitor == 0 && G_mode != 'C') {
+        if (remote_phones_enabled() && framesPerBuffer <= 4096u) {
+            static float rp_silence[4096 * 2]; /* zero-initialised */
+            remote_phones_feed(rp_silence, framesPerBuffer);
+        }
+        for (i = 0; i < framesPerBuffer * 2u; i++)
+            out[i] = 0;
+        return;
+    }
+
     inbuffer = (sp_float *)in;
     outbuffer = (sp_float *)out;
 
@@ -496,6 +494,7 @@ void Audio_Device_Error(PaError err) {
         fprintf(G_fp_logfile, "[%d] sdrcore-recv terminating (audio init failed)\n", line_number++);
         fflush(G_fp_logfile);
     }
+    Core_Send_Message("AUDIO START FAILED, STOPPING\nSEE ~/.local/mscc/sdrcore-recv.log", 1);
     MessageBoxA(NULL, "SDRcore-recv initialization FAILED.  Send logs to Multus SDR, LLC", "SDRcore-recv",
             MB_OK | MB_ICONEXCLAMATION);
     Pa_Terminate();
@@ -844,7 +843,7 @@ int main(int argc, char **argv) {
     mystate.iqReversed = 1; // Yes Virginia, we're reversed...
     mystate.iMult = 1.0f; // I and Q mag adjustments = preset to "no action"
     mystate.qMult = 1.0f;
-    mycalstate.freq_high = 598.0f;
+    mycalstate.freq_low = 598.0f;
     mycalstate.freq_center = 600.0f;
     mycalstate.freq_high = 602.f;
 
@@ -951,15 +950,9 @@ int main(int argc, char **argv) {
         print_time();
         fprintf(G_fp_logfile, "[%d] main -> Host API %d: %s (devs=%d)\n",
             line_number++, j, lpApiInfo->name, lpApiInfo->deviceCount);
-#if defined(__linux__) || defined(__APPLE__)
         if (apiTypeId == 9999 && strstr(lpApiInfo->name, "ALSA"))
             apiTypeId = j;
-#else
-        if (!strncmp("MME", lpApiInfo->name, 3))
-            apiTypeId = j;
-#endif
     }
-#if defined(__linux__) || defined(__APPLE__)
     if (apiTypeId == 9999) {
         for (j = 0; j < hostApiCount; j++) {
             lpApiInfo = Pa_GetHostApiInfo(j);
@@ -973,7 +966,6 @@ int main(int argc, char **argv) {
     }
     if (apiTypeId == 9999 && hostApiCount > 0)
         apiTypeId = 0;
-#endif
     print_time();
     fprintf(G_fp_logfile, "[%d] main -> Selected hostApi index: %d\n", line_number++, apiTypeId);
 
@@ -1011,18 +1003,11 @@ int main(int argc, char **argv) {
                 "[%d] main -> dev %d api=%d in=%d out=%d name='%s'\n",
                 line_number++, j, lpInfo->hostApi, in_ch, out_ch, n);
 
-            /* Speakers: list devices on preferred host API (and all on Linux for matching) */
-#if defined(__linux__) || defined(__APPLE__)
+            /* Speakers: list every output device (all host APIs) for name matching */
             if (out_ch > 0) {
                 build_output_devices((PaDeviceIndex)j);
                 build_digital_output_devices((PaDeviceIndex)j);
             }
-#else
-            if (lpInfo->hostApi == apiTypeId) {
-                build_output_devices((PaDeviceIndex)j);
-                build_digital_output_devices((PaDeviceIndex)j);
-            }
-#endif
             if (in_ch < 1)
                 continue;
 
@@ -1042,14 +1027,18 @@ int main(int argc, char **argv) {
                  strstr(n, "hdmi") != NULL || strstr(n, "HDMI") != NULL ||
                  strcmp(n, "default") == 0 || strstr(n, "pulse") != NULL ||
                  strstr(n, "speex") != NULL || strstr(n, "upmix") != NULL ||
-                 strstr(n, "vdownmix") != NULL);
+                 strstr(n, "vdownmix") != NULL ||
+                 strstr(n, ".monitor") != NULL); /* 3.155: a sink monitor is never radio I/Q */
             if (is_virtual || is_wrapper || in_ch > 8)
                 continue;
 
-            /* Transceiver I/Q only: Multus / Proficio product name */
+            /* Transceiver I/Q only: radio USB product name. Firmware from 2026-11 reports
+             * "Multus IQ" on every model; older firmware "Proficio", released Ultimus
+             * images (6.236 / 7.245 / 8.244) "Ultimus" (3.155). */
             is_rig = (strstr(n, "Multus") != NULL || strstr(n, "multus") != NULL ||
                       strstr(n, "Proficio") != NULL || strstr(n, "proficio") != NULL ||
-                      strstr(n, "PROFICIO") != NULL);
+                      strstr(n, "PROFICIO") != NULL ||
+                      strstr(n, "Ultimus") != NULL || strstr(n, "ultimus") != NULL);
             /* Fallback: USB Audio hw: (Proficio when product string missing) */
             is_usb_hw =
                 ((strstr(n, "USB") != NULL || strstr(n, "usb") != NULL) &&
@@ -1133,6 +1122,7 @@ int main(int argc, char **argv) {
             line_number++,
             G_digital_audio_device[0] ? G_digital_audio_device : "(empty)");
         fflush(G_fp_logfile);
+        Core_Send_Message("DIGITAL SPEAKER NOT FOUND (digital-speaker.ini)\nDIGITAL MODES WILL NOT WORK", 0);
     } else {
         const PaDeviceInfo *ddi =
             Pa_GetDeviceInfo((PaDeviceIndex)G_digital_output_devices[G_digital_output_device_index].device_index);
@@ -1157,6 +1147,7 @@ int main(int argc, char **argv) {
             "     Check: arecord -l ; device list above must include 'Proficio: USB Audio (hw:...)'\n",
             line_number++);
         fflush(G_fp_logfile);
+        Core_Send_Message("TRANSCEIVER I/Q AUDIO DEVICE NOT FOUND\nIS THE TRANSCEIVER ON?", 1);
         Audio_Device_Error(err);
     }
 

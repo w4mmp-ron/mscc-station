@@ -3,6 +3,7 @@
 
 void initBlanker(uint8_t overridedefaults, uint8_t enabled, float threshold, int16_t width);
 void doBlanker(sp_cplx *samps, int nframes);
+void blankerPoll(void);
 
 #endif //BLANKER_HEADER
 

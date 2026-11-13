@@ -18,12 +18,21 @@ uint16_t ms_sdr_port = 0;
 struct sockaddr_in si_me, si_ms_sdr;
 int sdrcore_s, ms_sdr_s, recv_len;
 socklen_t slen = (socklen_t)sizeof(si_ms_sdr);
+
+/* 3.147: TX phase in use -> ms-sdr as 0x2B + int32 (as Windows trans), so ms-sdr can pass it
+ * to the client and store it in the radio on APPLY. */
+static void send_iq_phase_to_ms_sdr(int phase) {
+    char msg[5];
+
+    msg[0] = (char) CMD_GET_IQ_PHASE;
+    memcpy(&msg[1], &phase, 4);
+    sendto(ms_sdr_s, msg, sizeof (msg), 0, (struct sockaddr *) &si_ms_sdr, slen);
+}
 extern struct input_devices G_input_devices[MAX_INPUT_DEVICES];
 extern struct input_devices G_digital_input_devices[MAX_INPUT_DEVICES];
 extern power_levels G_power_levels;
 extern power_stack G_Proficio_Calibration_Levels[];
 extern amplifier_stack G_amp_calibration_stack[];
-extern amplifier_stack G_amplifier_stack[];
 uint8_t G_PCB_Version = 10;
 uint8_t opcode;
 uint8_t t_opcode_data;
@@ -68,7 +77,6 @@ struct {
 struct {
 
     struct {
-        float user_power_value; //Populated from amplifier.ini
         float calibration_value; //Populated from amplifier_cal.ini
     };
 } amplifier_table[12]; //This table is for the Potentia
@@ -190,12 +198,11 @@ void Init_amplifier_table() {
     print_time();
     fprintf(G_fp_logfile, "[%d] Init_amplifier_table. STARTED\n",line_number++);
     for (band = 0; band < 12; band++) {
-        amplifier_table[band].user_power_value = (float) (G_amplifier_stack[band].power_level) * 0.01f;
         power_level = G_amp_calibration_stack[band].power_level;
         amplifier_table[band].calibration_value = 1.0f + ((float) power_level / 100.0f);
         print_time();
-        fprintf(G_fp_logfile, "[%d] Init_amplifier_table. Band: %d, user_power_level: %f, calibration_value: %f\n",
-                line_number++, band, amplifier_table[band].user_power_value, amplifier_table[band].calibration_value);
+        fprintf(G_fp_logfile, "[%d] Init_amplifier_table. Band: %d, calibration_value: %f\n",
+                line_number++, band, amplifier_table[band].calibration_value);
     }
     print_time();
     fprintf(G_fp_logfile, "[%d] Init_amplifier_table. FINISHED\n", line_number++);
@@ -207,7 +214,6 @@ void Init_Power_All(void) {
     Init_Proficio_User_power();
     Init_Proficio_calibration(0);
     Init_Proficio_table();
-    Init_amplifier_user_values();
     Init_amplifier_calibration();
     Init_amplifier_table();
     print_time();
@@ -393,18 +399,23 @@ int Get_IQ_Record(int band) {
     return record;
 }
 
-/* CMD_SET_MAIN_MODE wire value (0 AM, 1 LSB, 2 USB, 3 CW, 4 TUNE, 5 FM) -> proficio_table mode slot.
- * Returns -1 if the mode has no power slot (e.g. 6 = 'D'). */
-int Get_Power_Mode_Index(uint8_t wire_mode) {
-    switch (wire_mode) {
-        case 0: return AM_POWER;
-        case 1: return LSB_POWER;
-        case 2: return USB_POWER;
-        case 3: return CW_POWER;
-        case 4: return TUNE_POWER;
-        case 5: return FM_POWER;
+/* QRP calibration value for one band (0xA2), sent on every slider step. One value per band,
+ * used by every mode. Drive_Manager recomputes the drive now.
+ * 3.150 (as Windows trans 3.154): slider steps are live only (RAM). power_cal.ini is written
+ * only when ms-sdr sends the value with the save flag (bit 15 of the data = buf[2] bit 7):
+ * the client's "Save this calibration?" Yes, or ms-sdr's startup copy from the radio.
+ * Needs Pi ms-sdr 3.188 or later (an older ms-sdr never sets the flag, so nothing would save). */
+#define POWER_CAL_SAVE_FLAG_HI 0x80
+void Set_QRP_calibration(int band_index, int value, int save) {
+    int mode = 0;
+
+    G_Proficio_Calibration_Levels[band_index].power_level = value;
+    for (mode = 0; mode < 6; mode++) {
+        proficio_table[band_index].mode[mode].calibration_value = value;
     }
-    return -1;
+    if (save)
+        G_power_cal_save_countdown = POWER_CAL_SAVE_DELAY;
+    G_drive_recalc = 1;
 }
 
 void *UDP_Thread(void *my_param) {
@@ -413,13 +424,14 @@ void *UDP_Thread(void *my_param) {
     sp_float high_cut = 2700.0f;
     sp_float low_cut = 75.0f;
     int iq_band = NO_IQ_BAND;
+    int iq_active = NO_IQ_BAND; /* record whose I/Q correction is in use now */
     int iq_offset = 0;
     uint32_t operating_band = 0;
     uint32_t previous_operating_band = 0;
     uint8_t mic_muted = 0;
     int device_input_record_index = 0;
     uint8_t UDP_status = 0;
-    int transceiver_calibration_index = 0;
+    int transceiver_calibration_index = -1;
     int transceiver_calibration_band = 0;
     int amp_calibration_band = 0;
     uint8_t mode = 0;
@@ -476,6 +488,7 @@ void *UDP_Thread(void *my_param) {
                     line_number++, strerror(errno), recv_len);
             fflush(G_fp_logfile);
 #if defined(SDRCORE_NO_USB) || defined(__linux__) || defined(__APPLE__)
+            Sleep(10);   /* trans 3.158: an error that repeats cannot flood the log */
             continue;
 #else
             UDP_status = 1;
@@ -661,12 +674,9 @@ void *UDP_Thread(void *my_param) {
                 break;
 
             case CMD_SET_ALC_MULTIPLIER:
-                if (t_opcode_data == 0) {
-                    G_Do_ALC = FALSE;
-                } else {
-                    G_ALC_multiplier = (float) 11.0 / 10.0f;
-                    G_Do_ALC = TRUE;
-                }
+                //ALC is always on. The off value (0) was for testing and is ignored.
+                G_ALC_multiplier = ALC_CEILING; /* 3.148: was a hard 0.45, see dsputils.c ALC_CEILING */
+                G_Do_ALC = TRUE;
                 print_time();
                 fprintf(G_fp_logfile, "[%d] UDP Thread. CMD_SET_ALC_MULTIPLIER. received_data: %d, G_ALC_multiplier: %f, G_Do_ACL: %d\n",
                     line_number++, t_opcode_data, G_ALC_multiplier, G_Do_ALC);
@@ -692,6 +702,7 @@ void *UDP_Thread(void *my_param) {
                 print_time();
                 fprintf(G_fp_logfile, "[%d] UDP Thread. CMD_SET_SDRCORE_TRANS_INITIALIZE. STARTED State: %d \n", line_number++,
                         t_opcode_data);
+                Flush_pending_cal_saves(); /* don't reload over unsaved slider values */
                 Init_Power_All();
                 break;
 
@@ -741,8 +752,13 @@ void *UDP_Thread(void *my_param) {
                 print_time();
                 fprintf(G_fp_logfile, "[%d] UDP Thread. CMD_SET_AMPLIFIER_CALIBRATION_RESET. received_data: %d\n",
                         line_number++, t_opcode_data);
-                //Create_amplifier_calibration_file(t_opcode_data);
-                //G_power_file_needs_updated = TRUE;
+                /* 3.152 (Ron 2026-11-10): hard reset of the amplifier (QRO) calibration, from
+                 * ms-sdr CMD_SET_CAL_RESET_ALL: amplifier_cal.ini rewritten with -99 (not
+                 * calibrated) on every band, then read back in. Host only (not in the radio). */
+                if (t_opcode_data != 0) {
+                    Create_amplifier_calibration_file(TRUE);
+                    Init_amplifier_calibration();
+                }
                 break;
 
             case CMD_AMPLIFIER_TUNE:
@@ -765,9 +781,17 @@ void *UDP_Thread(void *my_param) {
                 op_code_data_32 = (int*) &buf[1];
                 memcpy(&i_opcode_data, op_code_data_32, 4);
                 amplifier_fine = i_opcode_data;
+                if (amp_calibration_band < 0 || amp_calibration_band >= 12) {
+                    break;
+                }
+                /* Sent on every slider step (-99..0). Same path as QRP 0xA2: RAM + drive recompute now,
+                 * amplifier_cal.ini saved by Drive_Manager once the slider is still (no full reload). */
+                G_amp_calibration_stack[amp_calibration_band].record = amp_calibration_band;
+                G_amp_calibration_stack[amp_calibration_band].band = amp_calibration_band;
                 G_amp_calibration_stack[amp_calibration_band].power_level = amplifier_fine;
-                amplifier_table[amp_calibration_band].calibration_value = amplifier_fine;
-                G_power_file_needs_updated = TRUE;
+                amplifier_table[amp_calibration_band].calibration_value = 1.0f + ((float) amplifier_fine / 100.0f);
+                G_amp_cal_save_countdown = POWER_CAL_SAVE_DELAY;
+                G_drive_recalc = 1;
                 print_time();
                 fprintf(G_fp_logfile, "[%d] UDP Thread. CMD_SET_POTENTIA_CALIBRATION Band: %d, Calibration Value: %d\n",
                         line_number++, amp_calibration_band, amplifier_fine);
@@ -775,12 +799,8 @@ void *UDP_Thread(void *my_param) {
 
             case CMD_SET_AMPLIFIER_POWER:
                 print_time();
-                fprintf(G_fp_logfile, "[%d] UDP Thread. CMD_SET_AMPLIFIER_POWER. STARTED. Power: %d\n", line_number++,t_opcode_data);
-                amplifier_table[amp_calibration_band].user_power_value = (float) (t_opcode_data) * 0.01f;
-                G_power_file_needs_updated = TRUE;
-                print_time();
-                fprintf(G_fp_logfile, "[%d] UDP Thread. CMD_SET_AMPLIFIER_POWER. Finished. Amplifier Band: %d, Mode: %d, Power: %d\n",
-                        line_number++, amp_calibration_band, mode, t_opcode_data);
+                fprintf(G_fp_logfile, "[%d] UDP Thread. CMD_SET_AMPLIFIER_POWER. Power: %d. NOOP (amplifier.ini removed)\n",
+                        line_number++, t_opcode_data);
                 break;
                 //End of Amplifier Routines
 
@@ -789,6 +809,7 @@ void *UDP_Thread(void *my_param) {
                 print_time();
                 fprintf(G_fp_logfile, "[%d] UDP Thread. CMD_SET_BAND_POWER_BAND. Called\n", line_number++);
                 transceiver_calibration_band = s_opcode_data;
+                transceiver_calibration_index = -1; /* unknown band -> 0xA2 ignored */
                 switch (transceiver_calibration_band) {
                     case 2200:
                         transceiver_calibration_index = POWER_B2200;
@@ -832,23 +853,22 @@ void *UDP_Thread(void *my_param) {
                         line_number++, transceiver_calibration_band, transceiver_calibration_index);
                 break;
 
-            case CMD_SET_BAND_POWER_POWER: {
-                int power_index = Get_Power_Mode_Index(mode);
-                print_time();
-                fprintf(G_fp_logfile, "[%d] UDP Thread. CMD_SET_BAND_POWER_POWER. Called\n", line_number++);
-                if (power_index < 0) {
+            case CMD_SET_BAND_POWER_POWER:
+                if (transceiver_calibration_index < 0 || transceiver_calibration_index >= 12) {
                     print_time();
-                    fprintf(G_fp_logfile, "[%d] UDP Thread. CMD_SET_BAND_POWER_POWER. No power slot for mode %d. Ignored\n",
-                            line_number++, mode);
+                    fprintf(G_fp_logfile, "[%d] UDP Thread. CMD_SET_BAND_POWER_POWER. No valid band (%d). Ignored\n",
+                            line_number++, transceiver_calibration_band);
                     break;
                 }
-                proficio_table[transceiver_calibration_index].mode[power_index].calibration_value = t_opcode_data;
-                G_power_file_needs_updated = 1;
-                print_time();
-                fprintf(G_fp_logfile, "[%d] UDP Thread. CMD_SET_BAND_POWER_POWER. Finished. Calibration Band: %d, Mode: %d, Slot: %d, Power: %d\n",
-                        line_number++, transceiver_calibration_band, mode, power_index, t_opcode_data);
+                {
+                    int save = (((uint8_t) buf[2]) & POWER_CAL_SAVE_FLAG_HI) ? 1 : 0;   /* 3.150 */
+                    Set_QRP_calibration(transceiver_calibration_index, t_opcode_data, save);
+                    print_time();
+                    fprintf(G_fp_logfile, "[%d] UDP Thread. CMD_SET_BAND_POWER_POWER. Band: %d, Index: %d, Power: %d, %s\n",
+                            line_number++, transceiver_calibration_band, transceiver_calibration_index, t_opcode_data,
+                            save ? "SAVE" : "live");
+                }
                 break;
-            }
                 //End of commands for calibrating the Proficio
 
             case CMD_SET_PCB_VERSION:
@@ -894,7 +914,7 @@ void *UDP_Thread(void *my_param) {
 
             case CMD_SET_KEEP_ALIVE:
                 G_keep_alive++;
-                if ((G_keep_alive % 10) == 1) {
+                if (G_keep_alive == 1) {    /* first only: SD card wear */
                     print_time();
                     fprintf(G_fp_logfile,
                         "[%d] UDP Thread. CMD_SET_KEEP_ALIVE from %s:%u count=%lld\n",
@@ -903,6 +923,7 @@ void *UDP_Thread(void *my_param) {
                         (unsigned)ntohs(si_peer.sin_port),
                         (long long)G_keep_alive);
                     fflush(G_fp_logfile);
+                    Core_Message_Flush();    /* ms-sdr is up: send waiting messages */
                 }
                 break;
 
@@ -988,6 +1009,8 @@ void *UDP_Thread(void *my_param) {
                             break;
                     }
                     IQ_calc(iq_offset);
+                    iq_active = Get_IQ_Record((int) operating_band);
+                    IQ_phase_calc((iq_active < 12) ? G_iq_stack[iq_active].iq_phase : 0);
                     previous_operating_band = operating_band;
                 }
                 print_time();
@@ -1009,6 +1032,8 @@ void *UDP_Thread(void *my_param) {
                 G_iq_stack[iq_band].record = iq_band;
                 iq_offset = G_iq_stack[iq_band].iq_offset;
                 IQ_calc(iq_offset);
+                iq_active = iq_band;
+                IQ_phase_calc(G_iq_stack[iq_band].iq_phase);
                 iq_buffer.opcode = CMD_GET_IQ_VALUE;
                 iq_buffer.iq_value = G_iq_stack[iq_band].iq_offset;
                 print_time();
@@ -1020,12 +1045,66 @@ void *UDP_Thread(void *my_param) {
                     fprintf(G_fp_logfile, "[%d] UDP Thread. CMD_SET_IQ_BAND. sentto failed with error code : %s\n",
                             line_number++, strerror(errno));
                 }
+                send_iq_phase_to_ms_sdr(G_iq_stack[iq_band].iq_phase);   /* 3.147 */
                 print_time();
                 fprintf(G_fp_logfile, "[%d] UDP Thread. CMD_SET_IQ_BAND. Finished. band: %d\n", line_number++, iq_band);
                 break;
 
+            case CMD_SET_IQ_PHASE:
+                if (iq_active < 12) {
+                    G_iq_stack[iq_active].iq_phase = IQ_phase_calc(i_opcode_data);
+                    print_time();
+                    fprintf(G_fp_logfile, "[%d] UDP Thread. CMD_SET_IQ_PHASE. record: %d, IQ_phase: %d\n",
+                            line_number++, iq_active, G_iq_stack[iq_active].iq_phase);
+                } else {
+                    print_time();
+                    fprintf(G_fp_logfile, "[%d] UDP Thread. CMD_SET_IQ_PHASE. NO BAND YET. Ignored\n", line_number++);
+                }
+                /* fall through: answer with the value now in use */
+            case CMD_GET_IQ_PHASE:
+            {
+                /* Answer to the sender: opcode, record (200 = no band yet), phase, amplitude offset. */
+                char reply[10];
+                int reply_phase = (iq_active < 12) ? G_iq_stack[iq_active].iq_phase : 0;
+                int reply_offset = (iq_active < 12) ? G_iq_stack[iq_active].iq_offset : 0;
+
+                reply[0] = (char) CMD_GET_IQ_PHASE;
+                reply[1] = (char) iq_active;
+                memcpy(&reply[2], &reply_phase, 4);
+                memcpy(&reply[6], &reply_offset, 4);
+                sendto(sdrcore_s, reply, sizeof (reply), 0, (struct sockaddr *) &si_peer, peer_len);
+                send_iq_phase_to_ms_sdr(reply_phase);   /* 3.147: and to ms-sdr (client slider, APPLY) */
+                break;
+            }
+
+            case CMD_SET_IQ_RECORD:
+            {
+                /* 3.147 (as Windows trans 3.151): one band's I/Q from the radio's calibration
+                 * store, sent by ms-sdr at startup. Save it in iq.ini; apply it if in use. */
+                int rec = i_opcode_data & 0xFF;
+                int off = (i_opcode_data >> 8) & 0xFFF;
+                int ph = (i_opcode_data >> 20) & 0xFFF;
+                if (off & 0x800) off -= 0x1000;
+                if (ph & 0x800) ph -= 0x1000;
+                if (rec < 12) {
+                    G_iq_stack[rec].record = rec;
+                    G_iq_stack[rec].band = rec;
+                    G_iq_stack[rec].iq_offset = off;
+                    G_iq_stack[rec].iq_phase = ph;
+                    status = update_iq_ini_file();
+                    if (rec == iq_active) {
+                        IQ_calc(off);
+                        IQ_phase_calc(ph);
+                    }
+                    print_time();
+                    fprintf(G_fp_logfile, "[%d] UDP Thread. CMD_SET_IQ_RECORD (from radio). record: %d, offset: %d, phase: %d%s\n",
+                            line_number++, rec, off, ph, (rec == iq_active) ? " (in use, applied)" : "");
+                }
+                break;
+            }
+
             case CMD_SET_COMMIT_IQ:
-                if (iq_band != NO_IQ_BAND) {
+                if (iq_band != NO_IQ_BAND || iq_active < 12) {
                     print_time();
                     fprintf(G_fp_logfile, "[%d] UDP Thread. CMD_SET_COMMIT_IQ. band: %d\n", line_number++, iq_band);
                     Sleep(50);
@@ -1053,19 +1132,22 @@ void *UDP_Thread(void *my_param) {
 
             case CMD_SET_IQ_DEFAULTS:
                 print_time();
-                fprintf(G_fp_logfile, "[%d] UDP Thread. CMD_SET_IQ_DEFAULTS. Called\n", line_number++);
-                status = delete_iq_ini_file();
+                fprintf(G_fp_logfile, "[%d] UDP Thread. CMD_SET_IQ_DEFAULTS. Called (reload live iq.ini)\n", line_number++);
+                /* Same as Windows trans: do not delete live iq.ini — ms-sdr may have just
+                 * put the factory or parked file in place. Create built-in only if the
+                 * file is still missing. */
+                status = Check_iq_ini_file();
                 if (status == 1) {
-                    status = Check_iq_ini_file();
+                    status = init_IQ_structure();
                     if (status == 1) {
-                        status = init_IQ_structure();
-                        if (status == 1) {
-                            print_time();
-                            fprintf(G_fp_logfile, "[%d] UDP_Thread. init_IQ_structure . Successful \n", line_number++);
-                        } else {
-                            print_time();
-                            fprintf(G_fp_logfile, "[%d] UDP_Thread. init_IQ_structure. Failed\n", line_number++);
+                        if (iq_active < 12) {   /* trans 3.158 (as Windows 3.150): reapply phase */
+                            IQ_phase_calc(G_iq_stack[iq_active].iq_phase);
                         }
+                        print_time();
+                        fprintf(G_fp_logfile, "[%d] UDP_Thread. init_IQ_structure . Successful \n", line_number++);
+                    } else {
+                        print_time();
+                        fprintf(G_fp_logfile, "[%d] UDP_Thread. init_IQ_structure. Failed\n", line_number++);
                     }
                 }
                 break;
@@ -1083,6 +1165,8 @@ void *UDP_Thread(void *my_param) {
                             //status = manage_stream(0, G_input_devices[G_input_device_index].device_index,
                             //        G_input_devices[G_input_device_index].num_channels);
                             //Pa_StopStream(stream);
+                            G_tx_mic_gate_samples = 0;
+                            G_tx_mic_fade_samples = 0;
                             Set_Mic_Mute(TRUE); //Turn off the microphone
                             G_null_count = 0;
                             break;
@@ -1090,6 +1174,26 @@ void *UDP_Thread(void *my_param) {
                             //status = manage_stream(1, G_input_devices[G_input_device_index].device_index,
                             //        G_input_devices[G_input_device_index].num_channels);
                             //Pa_StartStream(stream);
+                            /* trans 3.158 (as Windows trans 3.153): key-down mic gate, local mic only */
+                            if (G_audio_mode == DIGITAL_AUDIO || G_audio_mode == OPERATOR_AUDIO) {
+                                int gate_ms = (G_audio_mode == DIGITAL_AUDIO) ? TX_MIC_GATE_DIGITAL_MS : TX_MIC_GATE_MS;
+                                int gate = (int) ((gate_ms / 1000.0f) * mystate.samplerate);
+                                int fade = (int) ((TX_MIC_FADE_MS / 1000.0f) * mystate.samplerate);
+                                if (gate < 1)
+                                    gate = (gate_ms * 96);
+                                if (fade < 1)
+                                    fade = (TX_MIC_FADE_MS * 96);
+                                /* Arm before unmute so the next callback cannot pass stale mic. */
+                                G_tx_mic_fade_samples = fade;
+                                G_tx_mic_gate_samples = gate;
+                                print_time();
+                                fprintf(G_fp_logfile,
+                                    "[%d] UDP Thread. CMD_SET_TX_ON. local mic gate %d samples (%d ms) + %d ms fade audio_mode=%d\n",
+                                    line_number++, gate, gate_ms, TX_MIC_FADE_MS, (int) G_audio_mode);
+                            } else {
+                                G_tx_mic_gate_samples = 0;
+                                G_tx_mic_fade_samples = 0;
+                            }
                             Set_Mic_Mute(FALSE); //Turn ON the microphone
                             break;
                     }
@@ -1289,6 +1393,8 @@ void *UDP_Thread(void *my_param) {
                                 G_mode);
                         break;
                     case 4:
+                        if (mystate.opmode != MODE_TUNE)
+                            G_tune_ramp_pos = 0; /* trans 3.158 (as Windows): carrier rises over TUNE_RAMP_MS */
                         G_mode = 'T';
                         mystate.opmode = MODE_TUNE;
                         print_time();
@@ -1395,4 +1501,81 @@ void *UDP_Thread(void *my_param) {
     fprintf(G_fp_logfile, "[%d] UDP Thread. Exit\n", line_number++);
     pthread_exit(0);
     return (NULL);
+}
+
+/*
+ * Text messages for the client, sent through ms-sdr as the same
+ * CMD_SET_EXTENDED_COMMAND + CMD_SET_SERVER_ERROR packet ms-sdr sends to the
+ * client. ms-sdr starts after the cores, so messages wait here until its first
+ * keep-alive arrives (Core_Message_Flush). now = 1 sends at once (fatal exit).
+ * Each different message is sent once only.
+ */
+#define CORE_MSG_MAX 8
+#define CORE_MSG_LEN 200
+static char core_msg_text[CORE_MSG_MAX][CORE_MSG_LEN];
+static int core_msg_sent[CORE_MSG_MAX];
+static int core_msg_count = 0;
+static pthread_mutex_t core_msg_lock = PTHREAD_MUTEX_INITIALIZER;
+
+static void core_message_send(const char *text) {
+    char send_buf[CORE_MSG_LEN + 2] = { 0 };
+    size_t len = strlen(text) + 1;
+
+    send_buf[0] = CMD_SET_EXTENDED_COMMAND;
+    send_buf[1] = CMD_SET_SERVER_ERROR;
+    memcpy(&send_buf[2], text, len);
+    if (sendto(ms_sdr_s, send_buf, (int)(len + 2), 0, (struct sockaddr *) &si_ms_sdr, slen) == SOCKET_ERROR) {
+        print_time();
+        fprintf(G_fp_logfile, "[%d] Core_Send_Message. sendto FAILED: %s\n", line_number++, strerror(errno));
+    }
+}
+
+void Core_Send_Message(const char *text, int now) {
+    char line[CORE_MSG_LEN];
+    int i;
+    int wait;
+
+    snprintf(line, sizeof (line), "SDRcore-trans: %s", text);
+    pthread_mutex_lock(&core_msg_lock);
+    for (i = 0; i < core_msg_count; i++) {
+        if (strcmp(core_msg_text[i], line) == 0) {
+            pthread_mutex_unlock(&core_msg_lock);
+            return;
+        }
+    }
+    if (core_msg_count == CORE_MSG_MAX) {
+        pthread_mutex_unlock(&core_msg_lock);
+        print_time();
+        fprintf(G_fp_logfile, "[%d] Core_Send_Message. list full, not sent: %s\n", line_number++, line);
+        return;
+    }
+    i = core_msg_count++;
+    strcpy(core_msg_text[i], line);
+    core_msg_sent[i] = 0;
+    print_time();
+    fprintf(G_fp_logfile, "[%d] Core_Send_Message. %s\n", line_number++, line);
+    fflush(G_fp_logfile);
+    if (now) {
+        /* UDP setup runs in the UDP thread; give it a moment at startup */
+        for (wait = 0; si_ms_sdr.sin_port == 0 && wait < 20; wait++)
+            Sleep(50);
+    }
+    if (si_ms_sdr.sin_port != 0 && (now || G_keep_alive > 0)) {
+        core_message_send(line);
+        core_msg_sent[i] = 1;
+    }
+    pthread_mutex_unlock(&core_msg_lock);
+}
+
+void Core_Message_Flush(void) {
+    int i;
+
+    pthread_mutex_lock(&core_msg_lock);
+    for (i = 0; i < core_msg_count; i++) {
+        if (!core_msg_sent[i]) {
+            core_message_send(core_msg_text[i]);
+            core_msg_sent[i] = 1;
+        }
+    }
+    pthread_mutex_unlock(&core_msg_lock);
 }

@@ -20,8 +20,8 @@ CFLAGS  ?= -O2 -g -Wall -Wno-unused-variable -Wno-unused-but-set-variable -Wno-u
 # gnu17: Ubuntu 26.04 gcc 15 defaults to C23, where foo() means foo(void).
 CFLAGS  += -std=gnu17 -iquote sources -D__linux__ -DRON
 CXXFLAGS ?= -O2 -g -Wall -std=c++17
-# Use -iquote only (not -Isources): sources/pthread.h would shadow system pthread
-# and break libstdc++ when compiling the Oboe resampler.
+# Use -iquote only (not -Isources): <portaudio.h> must be the system one
+# (mscc-portaudio), not the reference copy in sources/.
 CXXFLAGS += -iquote sources -iquote sources/resampler -DRESAMPLER_OUTER_NAMESPACE=mscc
 LDFLAGS ?=
 LIBS    := -lpthread -lm -lstdc++

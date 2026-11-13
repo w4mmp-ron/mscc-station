@@ -78,6 +78,7 @@ unsigned long dequeue_freq() {
 }
 
 void *Freq_Dequeue_thread(void *t) {
+    Set_Thread_Name("freq-queue");
     unsigned long freq = 0;
     int process_delay = QUEUE_CHECK_DELAY;
 

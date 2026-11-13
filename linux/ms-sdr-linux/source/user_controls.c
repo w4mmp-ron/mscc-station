@@ -131,6 +131,7 @@ int User_Controls_Init() {
         fprintf(G_fp_logfile, "[%d] User_Controls_Init . user_controls.ini Path: %s\n", line_number++, file_name);
         User_Controls.Panadapter_Status = 0;
         User_Controls.Smeter_Status = 0;
+        User_Controls.Alc_Multiplier = 1; /* TX ALC on unless the file says otherwise (older files have no key) */
         fP_User_ini = fopen(file_name, "r");
         if (fP_User_ini != NULL) {
             record_status = fgets(init_record, sizeof (init_record), fP_User_ini);
@@ -529,6 +530,14 @@ int User_Controls_Init() {
                     print_time(0);
                     fprintf(G_fp_logfile, "[%d] User_Controls_Init . WATERFALL_SPEED: %d\n", line_number++, status);
                 }
+                memset(field, 0, sizeof (field));
+                strcpy(field, "CMD_SET_ALC_MULTIPLIER");
+                status = Parse_User_Controls_record(init_record, field);
+                if (status != -1) {
+                    User_Controls.Alc_Multiplier = status ? 1 : 0;
+                    print_time(0);
+                    fprintf(G_fp_logfile, "[%d] User_Controls_Init . CMD_SET_ALC_MULTIPLIER: %d\n", line_number++, status);
+                }
                 record_status = fgets(init_record, sizeof (init_record), fP_User_ini);
             }
         } else {
@@ -577,6 +586,7 @@ int User_Controls_Apply_To_Cores() {
     SDRcore_recv_send_param(CMD_SET_CW_BW, User_Controls.Filter_CW_Index);
     SDRcore_trans_send_param(CMD_SET_COMPRESSION_STATE, User_Controls.Compression);
     SDRcore_trans_send_param(CMD_SET_COMPRESSION_LEVEL, User_Controls.Compression_Level);
+    SDRcore_trans_send_param(CMD_SET_ALC_MULTIPLIER, User_Controls.Alc_Multiplier);
     SDRcore_recv_send_param(CMD_GET_SET_NB_ENABLE, User_Controls.NB);
     SDRcore_recv_send_param(CMD_GET_SET_NB_PULSE_WIDTH, User_Controls.NB_Pulse_Width);
     SDRcore_recv_send_param(CMD_GET_SET_NB_THRESHOLD, User_Controls.NB_Threshold);
@@ -658,6 +668,7 @@ int User_Controls_Send_To_Gui() {
     Gui_send_param(CMD_SET_CW_BW_DEFAULT, User_Controls.Filter_CW_Index);
     Gui_send_param(CMD_SET_COMPRESSION_STATE, User_Controls.Compression);
     Gui_send_param(CMD_SET_COMPRESSION_LEVEL, User_Controls.Compression_Level);
+    Gui_send_param(CMD_SET_ALC_MULTIPLIER, User_Controls.Alc_Multiplier);
     Gui_send_param(CMD_GET_SET_NB_ENABLE, User_Controls.NB);
     Gui_send_param(CMD_GET_SET_NB_PULSE_WIDTH, User_Controls.NB_Pulse_Width);
     Gui_send_param(CMD_GET_SET_NB_THRESHOLD, User_Controls.NB_Threshold);
@@ -700,6 +711,11 @@ int User_Controls_Send() {
     fprintf(G_fp_logfile, "[%d] User_Controls_Send . Finished\n", line_number++);
     return status;
 }
+
+/* Volume and mic gain sliders send many steps, so those commands do not write the file.
+ * They set this count and Flusher_thread writes the file once, that many seconds after
+ * the last step. */
+uint8_t G_User_Controls_Save_Pending = 0;
 
 int User_Controls_Update_Init_File() {
     int status = 0;
@@ -757,13 +773,14 @@ int User_Controls_Update_Init_File() {
                 "PANADAPTER_STATUS=%d;\n"
                 "SMETER_STATUS=%d;\n"
                 "MICROPHONE_STATUS=%d;\n"
-                "WATERFALL_STATUS=%d\n"
+                "WATERFALL_STATUS=%d;\n"
                 "WATERFALL_GRID=%d;\n"
                 "WATERFALL_PALLET=%d;\n"
                 "WATERFALL_DIRECTION=%d;\n"
                 "WATERFALL_GAIN=%d;\n"
                 "WATERFALL_ZERO=%d;\n"
                 "WATERFALL_SPEED=%d;\n"
+                "CMD_SET_ALC_MULTIPLIER=%d;\n"
                 ,
                 User_Controls.Version,
                 User_Controls.Speaker_Volume,
@@ -810,7 +827,8 @@ int User_Controls_Update_Init_File() {
                 User_Controls.Waterfall_direction,
                 User_Controls.Waterfall_gain,
                 User_Controls.Waterfall_zero,
-                User_Controls.Waterfall_speed),
+                User_Controls.Waterfall_speed,
+                User_Controls.Alc_Multiplier),
                 fclose(fp_User_ini);
         }
         else {
@@ -1006,8 +1024,7 @@ int User_Controls_Process(uint8_t command, char *buf, byte extened) {
                 if (opcode_data_8_bit == DIGITAL_SOUND_DEVICE ||
                     opcode_data_8_bit == REMOTE_DIGITAL_SOUND_DEVICE) {
                     int g = User_Controls.Digital_Mic_Gain;
-                    /* Remote Digital: client MSA1 is the operator mic. Host gain
-                     * (0 at boot / leftover local trim) must not cut WSJT TUNE. */
+                    /* Remote Digital: client MSA1 is the operator mic. */
                     if (opcode_data_8_bit == REMOTE_DIGITAL_SOUND_DEVICE)
                         g = 100;
                     SDRcore_trans_send_param(CMD_SET_MIC_VOLUME, g);
@@ -1033,6 +1050,7 @@ int User_Controls_Process(uint8_t command, char *buf, byte extened) {
                     G_Sound_Device == REMOTE_SOUND_DEVICE) {
                     SDRcore_recv_send_param(CMD_SET_SPEAKER_VOLUME, User_Controls.Phones_Volume_Level);
                 }
+                G_User_Controls_Save_Pending = USER_CONTROLS_SAVE_DELAY;
                 update_flag = FALSE;
                 print_time(0);
                 fprintf(G_fp_logfile, "[%d] User_Controls_Process. CMD_SET_PHONES_VOLUME_LEVEL: %d \n",
@@ -1046,6 +1064,7 @@ int User_Controls_Process(uint8_t command, char *buf, byte extened) {
                 } else if (G_Sound_Device == REMOTE_SOUND_DEVICE) {
                     SDRcore_trans_send_param(CMD_SET_MIC_VOLUME, 100);
                 }
+                G_User_Controls_Save_Pending = USER_CONTROLS_SAVE_DELAY;
                 update_flag = FALSE;
                 print_time(0);
                 fprintf(G_fp_logfile, "[%d] User_Controls_Process. CMD_SET_PHONES_MIC_GAIN_LEVEL: %d \n",
@@ -1058,6 +1077,7 @@ int User_Controls_Process(uint8_t command, char *buf, byte extened) {
                     G_Sound_Device == REMOTE_DIGITAL_SOUND_DEVICE) {
                     SDRcore_recv_send_param(CMD_SET_SPEAKER_VOLUME, User_Controls.Digital_Volume_Level);
                 }
+                G_User_Controls_Save_Pending = USER_CONTROLS_SAVE_DELAY;
                 update_flag = FALSE;
                 print_time(0);
                 fprintf(G_fp_logfile, "[%d] User_Controls_Process. CMD_SET_DIGITAL_VOLUME_LEVEL: %d \n",
@@ -1069,9 +1089,9 @@ int User_Controls_Process(uint8_t command, char *buf, byte extened) {
                 if (G_Sound_Device == DIGITAL_SOUND_DEVICE) {
                     SDRcore_trans_send_param(CMD_SET_MIC_VOLUME, User_Controls.Digital_Mic_Gain);
                 } else if (G_Sound_Device == REMOTE_DIGITAL_SOUND_DEVICE) {
-                    /* Keep sticky for local D; do not attenuate remote MSA1. */
                     SDRcore_trans_send_param(CMD_SET_MIC_VOLUME, 100);
                 }
+                G_User_Controls_Save_Pending = USER_CONTROLS_SAVE_DELAY;
                 update_flag = FALSE;
                 print_time(0);
                 fprintf(G_fp_logfile, "[%d] User_Controls_Process. CMD_SET_DIGITAL_MIC_GAIN_LEVEL: %d \n",
@@ -1167,6 +1187,15 @@ int User_Controls_Process(uint8_t command, char *buf, byte extened) {
                 print_time(1);
                 fprintf(G_fp_logfile, "[%d] User_Controls_Process . CMD_SET_AGC_FAST_LEVEL . VALUE: %d \n",
                         line_number++, s_opcode_data);
+                break;
+
+            case CMD_SET_ALC_MULTIPLIER:
+                /* TX ALC button: 0 = off, non-zero = on. Saved so trans and the client get it back at start / connect. */
+                User_Controls.Alc_Multiplier = t_opcode_data ? 1 : 0;
+                SDRcore_trans_send_param(CMD_SET_ALC_MULTIPLIER, User_Controls.Alc_Multiplier);
+                print_time(1);
+                fprintf(G_fp_logfile, "[%d] User_Controls_Process . CMD_SET_ALC_MULTIPLIER . VALUE: %d \n",
+                        line_number++, User_Controls.Alc_Multiplier);
                 break;
 
             case CMD_SET_TWO_TONE:
@@ -1572,7 +1601,8 @@ int Write_User_Controls() {
                     "WATERFALL_DIRECTION=%d;\n"
                     "WATERFALL_GAIN=%d;\n"
                     "WATERFALL_ZERO=%d;\n"
-                    "WATERFALL_SPEED=%d;\n",
+                    "WATERFALL_SPEED=%d;\n"
+                    "CMD_SET_ALC_MULTIPLIER=%d;\n",
                     User_Controls.Version = VERSION,
                     User_Controls.Speaker_Volume = 0,
                     User_Controls.Speaker_Muted = 0,
@@ -1612,7 +1642,8 @@ int Write_User_Controls() {
                     User_Controls.Waterfall_direction = 0,
                     User_Controls.Waterfall_gain = 2891,
                     User_Controls.Waterfall_zero = 410,
-                    User_Controls.Waterfall_speed = 1),
+                    User_Controls.Waterfall_speed = 1,
+                    User_Controls.Alc_Multiplier = 1),
                     fclose(fp_User_ini);
         } else {
             print_time(0);

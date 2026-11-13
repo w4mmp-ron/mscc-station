@@ -6,8 +6,9 @@ set -euo pipefail
 HERE="$(cd "$(dirname "$0")" && pwd)"
 ROOT="$(cd "$HERE/.." && pwd)"
 PA_SRC="$ROOT/portaudio"
-OUT_DIR="$ROOT/linux/mscc-portaudio"
-PKG_SRC="$OUT_DIR/packaging"
+# MSCC_PA_OUT_DIR: build-mscc-deb-amd64.sh builds into its own stage folder
+OUT_DIR="${MSCC_PA_OUT_DIR:-$ROOT/linux/mscc-portaudio}"
+PKG_SRC="$ROOT/linux/mscc-portaudio/packaging"
 BUILD="$OUT_DIR/.build"
 
 if [[ "$(uname -m)" != "x86_64" ]]; then
@@ -118,6 +119,6 @@ echo "OK: $OUT"
 ls -lh "$OUT"
 file "$OUT"
 
-if [[ -x "$HERE/drop-installers.sh" ]]; then
+if [[ -z "${MSCC_NO_DROP:-}" && -x "$HERE/drop-installers.sh" ]]; then
   "$HERE/drop-installers.sh" linux
 fi

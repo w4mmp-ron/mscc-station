@@ -4,7 +4,9 @@
  *	from James L Barber, AKA Silicon Pixels, Spokane	*
  *	Radio et al											*
  *********************************************************/
+#ifndef RON   /* the Pi Makefile already passes -DRON */
 #define RON
+#endif
 #include "extern.h"
 #include "mscc_resampler.h"
 #include "commands.h"
@@ -70,8 +72,12 @@ uint16_t G_VU_value = 0;
 sp_float G_peak = 0.0f;
 sp_float iMult = 1.0f;
 sp_float qMult = 1.0f;
+sp_float iqPhaseSin = 0.0f;
+sp_float iqPhaseCos = 1.0f;
 uint8_t G_DSP_Busy = FALSE;
 int G_null_count = 0;
+volatile int G_tx_mic_gate_samples = 0;   /* trans 3.158 (as Windows): key-down mic gate */
+volatile int G_tx_mic_fade_samples = 0;   /* fade-in after the gate */
 uint8_t transmit = TRUE;
 #endif
 
@@ -95,6 +101,38 @@ static int sdrIqPlayOnlyCallback(const void *inputBuffer, void *outputBuffer,
         void *userData);
 
 static int gNumNoInputs = 0;
+
+/*
+ * 3.146 (from Stew's Windows trans 3.149): TX audio low-pass before the AM/SSB modulator.
+ * ssb_modulate() mixes the mic audio to the 12 kHz IF as double sideband and the IF
+ * filter keeps one side. Mic audio at about 21-24 kHz (hiss; a 48 kHz mic resampled to
+ * 96 kHz) lands in the LSB passband from the other side of the LO and goes out as the
+ * image (USB's matching band, 24-27 kHz, is mostly above it). 8th-order Butterworth,
+ * fc 6 kHz at fs 96 kHz: -0.9 dB at 5.5 kHz, -100 dB at 21.3 kHz.
+ */
+static const double tx_lpf_sos[4][5] = {    /* b0 b1 b2 a1 a2, fs = 96 kHz */
+    { 8.881993221155e-07, 1.776398644231e-06, 8.881993221155e-07, -1.343502062906e+00, 4.541961539664e-01 },
+    { 1.0, 2.0, 1.0, -1.401739933120e+00, 5.172323704475e-01 },
+    { 1.0, 2.0, 1.0, -1.523789873410e+00, 6.493382738637e-01 },
+    { 1.0, 2.0, 1.0, -1.719392914169e+00, 8.610574795347e-01 },
+};
+static double tx_lpf_z[4][2];
+
+static void tx_audio_lowpass(sp_cplx *samps, int n) {
+    int k, s;
+    for (k = 0; k < n; k++) {
+        double x = samps[k].real;
+        for (s = 0; s < 4; s++) {   /* direct form II transposed */
+            const double *c = tx_lpf_sos[s];
+            double y = c[0] * x + tx_lpf_z[s][0];
+            tx_lpf_z[s][0] = c[1] * x - c[3] * y + tx_lpf_z[s][1];
+            tx_lpf_z[s][1] = c[2] * x - c[4] * y;
+            x = y;
+        }
+        samps[k].real = (sp_float) x;
+        samps[k].imag = (sp_float) x;   /* framesToComplex() feeds the same audio to both */
+    }
+}
 
 /*
  * Dual-stream (Pulse digi mic in + ALSA Proficio I/Q out): PortAudio rejects
@@ -299,6 +337,8 @@ static double pick_mic_sample_rate(const PaStreamParameters *in_params,
 static void process_mic_to_iq(const SAMPLE *in, SAMPLE *out, unsigned long framesPerBuffer, int in_ch)
 {
     unsigned int i;
+    int two_tone = mystate.twoToneFlag &&
+        ((mystate.opmode == MODE_USB) || (mystate.opmode == MODE_LSB));   /* trans 3.151 */
 
     outbuffer = (sp_float *)out;
     if (in == NULL) {
@@ -312,17 +352,55 @@ static void process_mic_to_iq(const SAMPLE *in, SAMPLE *out, unsigned long frame
     } else {
         inbuffer = (sp_float *)in;
         framesToComplex(inbuffer, incplx, outcplx, framesPerBuffer, in_ch);
-        if ((mystate.opmode == MODE_AM) || (mystate.opmode == MODE_LSB) ||
-            (mystate.opmode == MODE_USB) || (mystate.opmode == MODE_FM))
+        /*
+         * trans 3.158 (as Windows trans 3.153): local key-up gate. Unmute is immediate, but the
+         * mic / digital buffer still holds pre-key samples. Drop whole callbacks until the sample
+         * budget is spent, then fade in over TX_MIC_FADE_MS. Remote audio is not gated.
+         */
+        if (G_tx_mic_gate_samples > 0 &&
+            (G_audio_mode == DIGITAL_AUDIO || G_audio_mode == OPERATOR_AUDIO)) {
+            int gate = G_tx_mic_gate_samples;
+            int left = gate - (int) framesPerBuffer;
+            if (left < 0)
+                left = 0;
+            for (i = 0; i < framesPerBuffer; i++) {
+                incplx[i].real = 0.0f;
+                incplx[i].imag = 0.0f;
+            }
+            if (G_tx_mic_gate_samples == gate)
+                G_tx_mic_gate_samples = left;
+        } else if (G_tx_mic_fade_samples > 0 &&
+            (G_audio_mode == DIGITAL_AUDIO || G_audio_mode == OPERATOR_AUDIO)) {
+            int total = (int) ((TX_MIC_FADE_MS / 1000.0f) * mystate.samplerate);
+            int left = G_tx_mic_fade_samples;
+            if (total < 1)
+                total = 1;
+            for (i = 0; i < framesPerBuffer; i++) {
+                sp_float g = 1.0f;
+                if (left > 0) {
+                    g = 1.0f - (sp_float) left / (sp_float) total;
+                    if (g < 0.0f) g = 0.0f;
+                    left--;
+                }
+                incplx[i].real *= g;
+                incplx[i].imag *= g;
+            }
+            G_tx_mic_fade_samples = left;
+        }
+        if (!two_tone &&
+            ((mystate.opmode == MODE_AM) || (mystate.opmode == MODE_LSB) ||
+             (mystate.opmode == MODE_USB) || (mystate.opmode == MODE_FM)))
             doMicProc(incplx, framesPerBuffer);
     }
+    /* trans 3.151 (port of Stew's Windows 3.155): 2 TONE (client 0x88 = 1, USB / LSB only)
+     * replaces the mic audio here, so it takes the voice path below: audio LPF, SSB
+     * modulator, drive and ALC. No speech processor. Done after the input branch so it also
+     * works with no mic open (in == NULL). Level follows the SSB slider. */
+    if (two_tone)
+        twoToneAudio(incplx, (int)framesPerBuffer, G_tx_mode == TRUE);
 
     if (G_mode != 'T' && G_null_count++ < MAX_NULL) {
         null_modulate(incplx);
-        fastconv(incplx, outcplx, (int)framesPerBuffer);
-    } else if (mystate.twoToneFlag) {
-        ssb_modulate(incplx);
-        twoTone(incplx);
         fastconv(incplx, outcplx, (int)framesPerBuffer);
     } else if (mystate.opmode == MODE_FM) {
         /* NFM: direct I/Q — SSB overlap-save FIR destroys constant-envelope FM. */
@@ -332,6 +410,9 @@ static void process_mic_to_iq(const SAMPLE *in, SAMPLE *out, unsigned long frame
             outcplx[i].imag = incplx[i].imag * mystate.txPower;
         }
     } else {
+        /* 3.146: remove mic audio that would land in the opposite (image) sideband */
+        if ((mystate.opmode == MODE_AM) || (mystate.opmode == MODE_LSB) || (mystate.opmode == MODE_USB))
+            tx_audio_lowpass(incplx, (int) framesPerBuffer);
         if (mystate.opmode == MODE_AM) am_modulate(incplx);
         if (mystate.opmode == MODE_LSB) ssb_modulate(incplx);
         if (mystate.opmode == MODE_USB) ssb_modulate(incplx);
@@ -343,7 +424,7 @@ static void process_mic_to_iq(const SAMPLE *in, SAMPLE *out, unsigned long frame
     for (i = 0; i < framesPerBuffer; i++) {
         *outbuffer = outcplx[i].real * iMult;
         outbuffer++;
-        *outbuffer = outcplx[i].imag * qMult;
+        *outbuffer = (outcplx[i].imag * iqPhaseCos + outcplx[i].real * iqPhaseSin) * qMult;
         outbuffer++;
     }
 }
@@ -1064,9 +1145,11 @@ int main(int argc, char **argv) {
                 }
             }
 #endif
-            /* Windows: strstr(..., "Multus"); Linux radio enumerates as "Proficio" */
+            /* Windows: strstr(..., "Multus"); Linux: the radio USB product name, "Multus IQ"
+             * (firmware from 2026-11), "Proficio" (older) or "Ultimus" (released Ultimus images) */
             if (strstr(lpInfo->name, "Multus") != NULL ||
-                strstr(lpInfo->name, "Proficio") != NULL) {
+                strstr(lpInfo->name, "Proficio") != NULL ||
+                strstr(lpInfo->name, "Ultimus") != NULL) {
                 /* Prefer ALSA hw Proficio for I/Q TX, not Pulse wrapper names */
                 if (lpInfo->maxOutputChannels >= 2 &&
                     lpInfo->hostApi == apiTypeId &&
@@ -1097,6 +1180,7 @@ int main(int argc, char **argv) {
                 "Is the Multus sound device visible to PortAudio/ALSA?\r\n"
                 "Then restart MSCC\r\n",
                 "SDRcore-trans", MB_OK | MB_ICONEXCLAMATION);
+            Core_Send_Message("TRANSCEIVER I/Q AUDIO DEVICE NOT FOUND\nIS THE TRANSCEIVER ON?", 1);
             goto error;
         }
 
@@ -1104,6 +1188,7 @@ int main(int argc, char **argv) {
             print_time();
             fprintf(G_fp_logfile,
                 "[%d] main. No operator mic set: TX voice off\n", line_number++);
+            Core_Send_Message("OPERATOR MIC NOT FOUND (operator-microphone.ini)\nVOICE TX WITH THE LOCAL MIC WILL NOT WORK", 0);
         }
 
         /*
@@ -1127,6 +1212,7 @@ int main(int argc, char **argv) {
                     "[%d] main. Digital mic not found — fallback to operator mic index %d ('%s')\n",
                     line_number++, G_digital_input_device_index,
                     G_input_devices[G_input_device_index].name);
+                Core_Send_Message("DIGITAL MIC NOT FOUND (digital-microphone.ini)\nDIGITAL MODES WILL USE THE OPERATOR MIC", 0);
             } else {
                 print_time();
                 fprintf(G_fp_logfile,
@@ -1206,6 +1292,7 @@ int main(int argc, char **argv) {
                 fprintf(G_fp_logfile,
                     "[%d] main. operator mic open failed (%d) — I/Q TX only so keep-alive lives\n",
                     line_number++, status);
+                Core_Send_Message("OPERATOR MIC FAILED TO OPEN\nVOICE TX WITH THE LOCAL MIC WILL NOT WORK", 0);
                 status = manage_stream(1, -1, 2);
                 if (status) {
                     err = status;
@@ -1215,16 +1302,26 @@ int main(int argc, char **argv) {
         }
     }
 
+    /* A missing power_cal.ini stays missing. ms-sdr writes factory/power/<line>/
+     * and the network INITIALIZE reloads it. Init_Power_All uses the built-in
+     * table only until that reload. */
     Init_Power_All();
     remote_mic_init();
     while (G_all_threads_run) {
         Sleep(100);
     }
     remote_mic_shutdown();
+    /* trans 3.158 (Ron 2026-11-10, same on Windows): a normal stop just closes the stream and
+     * exits 0. A close error is logged only; the "AUDIO START FAILED" error path is for
+     * start-up failures. */
     if (stream != NULL) {
         err = Pa_CloseStream(stream);
-        if (err != paNoError)
-            goto error;
+        if (err != paNoError) {
+            print_time();
+            fprintf(G_fp_logfile, "[%d] main. stop: Pa_CloseStream error %d (%s), exiting anyway\n",
+                line_number++, err, Pa_GetErrorText(err));
+            fflush(G_fp_logfile);
+        }
     }
     Sleep(100);
     Pa_Terminate();
@@ -1248,6 +1345,7 @@ error:
         fprintf(G_fp_logfile, "[%d] sdrcore-trans terminating (audio init failed)\n", line_number++);
         fflush(G_fp_logfile);
     }
+    Core_Send_Message("AUDIO START FAILED, STOPPING\nSEE ~/.local/mscc/sdrcore-trans.log", 1);
     MessageBoxA(NULL, "SDRcore-trans initialization FAILED.  Send logs to Multus SDR, LLC", "SDRcore-trans",
         MB_OK | MB_ICONEXCLAMATION);
     remote_mic_shutdown();

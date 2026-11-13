@@ -21,6 +21,9 @@
 #define IQ_OPERATION_COMPLETE 0x56
 #define CMD_SET_COMMIT_IQ 0x57
 #define CMD_SET_IQ_BAND  0x58
+/* 3.150 (as Windows 3.151): ms-sdr -> recv, one band's RX I/Q from the radio's calibration
+ * store at startup. int32 = record (bits 0-7) | offset int12 (bits 8-19) | phase int12 (bits 20-31). */
+#define CMD_SET_IQ_RECORD 0x2C
 #define IQ_IMAGE_CHECK_START 1
 #define IQ_IMAGE_CHECK_STOP 2
 #define IQ_IMAGE_CHECK_RUN 3
@@ -140,3 +143,7 @@
 
 
 
+
+/* Text message for the client via ms-sdr (same bytes as ms-sdr usbavrcmd.h) */
+#define CMD_SET_EXTENDED_COMMAND 0x0B
+#define CMD_SET_SERVER_ERROR 0x30

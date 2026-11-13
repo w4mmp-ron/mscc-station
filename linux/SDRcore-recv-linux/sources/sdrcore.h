@@ -19,15 +19,6 @@
 //#define PAN_REFRESH		8		// send a new panadapter buffer every PAN_REFRESH FFT's
 #define PAN_REFRESH		4		// send a new panadapter buffer every PAN_REFRESH FFT's
 
-#ifdef WIN32
-#ifndef TRUE
-#define TRUE			1
-#define FALSE			0
-#endif
-#endif
-
-#define WINDBG			0
-
 /************* Set PERFORMANCELEVEL here. (read below for implications) *******************/
 #define PERFORMANCELEVEL  4
 
@@ -116,6 +107,9 @@ typedef struct {
 	unsigned int calMagLow;		// signal magnitude at 600 Hz minus NN Hz (We'll try 2 Hz first)
 	unsigned int calMag;		// signal magnitude at 600 Hz
 	unsigned int calMagHigh;	// signal magnitude at 600 Hz plus NN Hz
+	sp_float calMagLowF;		// same three, unscaled float (FREQ CAL / CW snap: no int overflow)
+	sp_float calMagF;
+	sp_float calMagHighF;
 	sp_cplx *calbuffer;			// pointer to cal buffer (allocated off heap before audio threads start)
 } calstate;
 
@@ -163,20 +157,28 @@ typedef struct {
 	sp_float phaseAccum;
 } cs_state;
 
+/* Automatic noise blanker (recv 3.152, blanker.c). Ring of ringlen = delaylen + 1
+ * samples: a sample written now is output delaylen samples later, so the gain can
+ * already be falling when a pulse reaches the output. */
 typedef struct {
-	sp_cplx delay[10000];
-	sp_float gainramp[10000];
-	sp_float threshold;
-	sp_float attackms;
-	sp_float attack;
-	sp_float releasems;
-	sp_float release;
-	sp_float envelope;
-	sp_float gain;
-	int iindex;
-	int oindex;
-	int delaylen;
-	int rampwidth;
+	sp_cplx delay[10000];   // delayed I/Q ring
+	uint8_t flag[10000];    // 1 = this ring sample was a pulse (over the threshold)
+	sp_float kbase;         // threshold factor from the slider (x running mean level)
+	sp_float kboost;        // self-protection multiplier, 1..4 (raised when blanking a lot)
+	sp_float mean;          // running mean of |I/Q| (pulses left out)
+	sp_float meancoef;      // smoothing coefficient for mean (~2 ms)
+	int run;                // pulse samples in a row so far
+	int maxrun;             // longer than this = a signal, not a pulse
+	int widx;               // ring write index
+	int delaylen;           // samples of delay = half + maxrun
+	int half;               // half the pulse width: gain ramp length
+	int ringlen;            // delaylen + 1
+	int hold;               // gain stays 0 within +/- hold samples of a pulse
+	int ahead;              // samples until the next pulse reaches the output (-1 none)
+	int since;              // samples since the last pulse left the output
+	int warmup;             // samples left before blanking may start
+	int rampwidth;          // pulse width setting (client, 96 kHz samples)
+	uint8_t prevflag;       // last input sample was a pulse (counts pulses, not samples)
 	uint8_t	enabled;
 }blanker_state;
 

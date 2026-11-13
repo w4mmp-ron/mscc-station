@@ -1,35 +1,47 @@
-# Build mscc-avalonia_*.deb for Raspberry Pi OS 64-bit (linux-arm64).
+# Build mscc-avalonia_*.deb: Raspberry Pi OS 64-bit (arm64, default) or Ubuntu / Debian PC (amd64).
 # Self-contained Avalonia client + desktop menu entry (X-MSCC, same menu as Start/Stop/Init).
-# Requires: .NET 9 SDK, Windows tar (bsdtar). No WSL/dpkg-deb required.
+# Requires: .NET SDK 9 or later, Python 3. No WSL/dpkg-deb required.
+# Runs under Windows PowerShell / pwsh on Windows, and under pwsh on Linux.
 #
-# Usage (from "Avalonia Migration" or any cwd):
-#   powershell -NoProfile -ExecutionPolicy Bypass -File build-mscc-avalonia-deb.ps1
+# Usage (from any cwd):
+#   powershell -NoProfile -ExecutionPolicy Bypass -File build-mscc-avalonia-deb.ps1              # Pi (arm64)
+#   pwsh -NoProfile -File build-mscc-avalonia-deb.ps1 -Arch amd64                                 # Ubuntu / Debian PC
+
+param(
+  [ValidateSet("arm64", "amd64")]
+  [string]$Arch = "arm64"
+)
 
 $ErrorActionPreference = "Stop"
 $Root = Split-Path -Parent $MyInvocation.MyCommand.Path
 Set-Location $Root
 
-$PkgTemplate = Join-Path $Root "packaging\mscc-avalonia"
-$ControlFile = Join-Path $PkgTemplate "DEBIAN\control"
+# Debian architecture -> .NET runtime identifier, and the OS named in the package text
+$Rid = @{ "arm64" = "linux-arm64"; "amd64" = "linux-x64" }[$Arch]
+$OsName = @{ "arm64" = "Raspberry Pi OS 64-bit"; "amd64" = "Ubuntu / Debian (amd64)" }[$Arch]
+
+$PkgTemplate = Join-Path $Root "packaging/mscc-avalonia"
+$ControlFile = Join-Path $PkgTemplate "DEBIAN/control"
 if (-not (Test-Path $ControlFile)) { throw "Missing $ControlFile" }
 
 $Version = (Select-String -Path $ControlFile -Pattern '^Version:\s*(.+)$').Matches[0].Groups[1].Value.Trim()
 if ([string]::IsNullOrWhiteSpace($Version)) { throw "No Version in control" }
 
-$OutDeb = Join-Path $Root "mscc-avalonia_${Version}_arm64.deb"
-$PublishDir = Join-Path $Root "publish\linux-arm64-sc"
-$Stage = Join-Path $env:TEMP ("mscc-avalonia-deb-" + [Guid]::NewGuid().ToString("N"))
+$OutDeb = Join-Path $Root "mscc-avalonia_${Version}_${Arch}.deb"
+$PublishDir = Join-Path $Root "publish/$Rid-sc"
+$Stage = Join-Path ([System.IO.Path]::GetTempPath()) ("mscc-avalonia-deb-" + [Guid]::NewGuid().ToString("N"))
 $Pkg = Join-Path $Stage "pkg"
 
 Write-Host "=== mscc-avalonia deb builder ===" -ForegroundColor Cyan
 Write-Host "  version: $Version"
+Write-Host "  arch:    $Arch ($Rid)"
 Write-Host "  out:     $OutDeb"
 Write-Host "  stage:   $Stage"
 
-# 1) Self-contained publish (no .NET install on Pi)
-Write-Host "Publishing self-contained linux-arm64..." -ForegroundColor Cyan
-dotnet publish (Join-Path $Root "src\MSCC.Avalonia\MSCC.Avalonia.csproj") `
-  -c Release -r linux-arm64 --self-contained true `
+# 1) Self-contained publish (no .NET install on the target)
+Write-Host "Publishing self-contained $Rid..." -ForegroundColor Cyan
+dotnet publish (Join-Path $Root "src/MSCC.Avalonia/MSCC.Avalonia.csproj") `
+  -c Release -r $Rid --self-contained true `
   -p:PublishSingleFile=false `
   -o $PublishDir
 if ($LASTEXITCODE -ne 0) { throw "dotnet publish failed" }
@@ -44,19 +56,19 @@ if (-not (Test-Path $AppBin)) {
 # 2) Stage package tree
 if (Test-Path $Stage) { Remove-Item -Recurse -Force $Stage }
 New-Item -ItemType Directory -Force -Path $Pkg | Out-Null
-Copy-Item -Recurse -Force $PkgTemplate\* $Pkg\
+Copy-Item -Recurse -Force (Join-Path $PkgTemplate "*") $Pkg
 
 # App payload
-$Opt = Join-Path $Pkg "opt\mscc-avalonia"
+$Opt = Join-Path $Pkg "opt/mscc-avalonia"
 New-Item -ItemType Directory -Force -Path $Opt | Out-Null
-Copy-Item -Recurse -Force (Join-Path $PublishDir "*") $Opt\
+Copy-Item -Recurse -Force (Join-Path $PublishDir "*") $Opt
 
 # Icons (hicolor + pixmaps fallback)
-$IconSrc256 = Join-Path $PkgTemplate "icons\mscc-avalonia-256.png"
-$IconSrc48 = Join-Path $PkgTemplate "icons\mscc-avalonia-48.png"
-$Icon256Dir = Join-Path $Pkg "usr\share\icons\hicolor\256x256\apps"
-$Icon48Dir = Join-Path $Pkg "usr\share\icons\hicolor\48x48\apps"
-$Pixmaps = Join-Path $Pkg "usr\share\pixmaps"
+$IconSrc256 = Join-Path $PkgTemplate "icons/mscc-avalonia-256.png"
+$IconSrc48 = Join-Path $PkgTemplate "icons/mscc-avalonia-48.png"
+$Icon256Dir = Join-Path $Pkg "usr/share/icons/hicolor/256x256/apps"
+$Icon48Dir = Join-Path $Pkg "usr/share/icons/hicolor/48x48/apps"
+$Pixmaps = Join-Path $Pkg "usr/share/pixmaps"
 New-Item -ItemType Directory -Force -Path $Icon256Dir, $Icon48Dir, $Pixmaps | Out-Null
 if (Test-Path $IconSrc256) {
   Copy-Item $IconSrc256 (Join-Path $Icon256Dir "mscc-avalonia.png") -Force
@@ -67,15 +79,15 @@ if (Test-Path $IconSrc48) {
 }
 
 # Docs
-$Doc = Join-Path $Pkg "usr\share\doc\mscc-avalonia"
+$Doc = Join-Path $Pkg "usr/share/doc/mscc-avalonia"
 New-Item -ItemType Directory -Force -Path $Doc | Out-Null
 @"
 mscc-avalonia $Version
 ================
-MSCC Avalonia connect-only GUI for Multus / Proficio on Raspberry Pi OS 64-bit.
+MSCC Avalonia connect-only GUI for Multus / Proficio on $OsName.
 
 Install:
-  sudo apt install -y ./mscc-avalonia_${Version}_arm64.deb
+  sudo apt install -y ./mscc-avalonia_${Version}_${Arch}.deb
 
 Run:
   MSCC Start   (servers)
@@ -94,28 +106,32 @@ Does not start or stop ms-sdr; use MSCC Start / MSCC Stop.
 
 # 3) Installed-Size (kB)
 $sizeKb = [int]((Get-ChildItem -Recurse $Pkg -File | Measure-Object -Property Length -Sum).Sum / 1KB)
-$ctrl = Get-Content (Join-Path $Pkg "DEBIAN\control") -Raw
+$ctrl = Get-Content (Join-Path $Pkg "DEBIAN/control") -Raw
 if ($ctrl -match 'Installed-Size:') {
   $ctrl = $ctrl -replace 'Installed-Size:\s*\d+', "Installed-Size: $sizeKb"
 } else {
   $ctrl = $ctrl.TrimEnd() + "`nInstalled-Size: $sizeKb`n"
 }
+# Architecture and OS name for this build (the template in git says arm64 / Raspberry Pi OS)
+$ctrl = $ctrl -replace '(?m)^Architecture:\s*\S+', "Architecture: $Arch"
+$ctrl = $ctrl -replace 'Raspberry Pi OS 64-bit \(linux-arm64\)', "$OsName ($Rid)"
 # Unix line endings for control
 $ctrl = $ctrl -replace "`r`n", "`n"
 if (-not $ctrl.EndsWith("`n")) { $ctrl += "`n" }
-[System.IO.File]::WriteAllText((Join-Path $Pkg "DEBIAN\control"), $ctrl, [System.Text.UTF8Encoding]::new($false))
+[System.IO.File]::WriteAllText((Join-Path $Pkg "DEBIAN/control"), $ctrl, [System.Text.UTF8Encoding]::new($false))
 
 # Ensure scripts use LF and no BOM
 foreach ($script in @("postinst", "postrm")) {
-  $p = Join-Path $Pkg "DEBIAN\$script"
+  $p = Join-Path $Pkg "DEBIAN/$script"
   if (Test-Path $p) {
     $t = [System.IO.File]::ReadAllText($p) -replace "`r`n", "`n" -replace "`r", "`n"
     [System.IO.File]::WriteAllText($p, $t, [System.Text.UTF8Encoding]::new($false))
   }
 }
-foreach ($rel in @("usr\bin\mscc-avalonia",
-                   "usr\share\mscc-avalonia\bin\mscc-avalonia-remote-audio.sh",
-                   "usr\lib\systemd\user\mscc-avalonia-remote-audio.service")) {
+foreach ($rel in @("usr/bin/mscc-avalonia",
+                   "usr/share/mscc-avalonia/bin/mscc-avalonia-remote-audio.sh",
+                   "usr/lib/systemd/user/mscc-avalonia-remote-audio.service",
+                   "usr/share/applications/mscc-avalonia.desktop")) {
   $p = Join-Path $Pkg $rel
   if (-not (Test-Path $p)) { throw "Missing package file $rel" }
   $lt = [System.IO.File]::ReadAllText($p) -replace "`r`n", "`n" -replace "`r", "`n"
@@ -176,7 +192,9 @@ with tarfile.open(data_out, 'w:gz', format=tarfile.GNU_FORMAT) as tar:
             add_tree(tar, pkg, top)
 print('tarballs ok')
 "@ | Set-Content -Encoding utf8 $packPy
-python $packPy $Pkg $ControlTar $DataTar
+$Python = if (Get-Command python3 -ErrorAction SilentlyContinue) { "python3" } else { "python" }
+& $Python $packPy $Pkg $ControlTar $DataTar
+if ($LASTEXITCODE -ne 0) { throw "pack_tar.py failed" }
 if (-not (Test-Path $ControlTar)) { throw "Failed to create control.tar.gz" }
 if (-not (Test-Path $DataTar)) { throw "Failed to create data.tar.gz" }
 
@@ -228,8 +246,8 @@ Write-Host ""
 Write-Host "OK: $OutDeb" -ForegroundColor Green
 Write-Host ("  size: {0:N1} MB" -f ($len / 1MB))
 Write-Host ""
-Write-Host "On the Pi (copy the .deb first):" -ForegroundColor Cyan
-Write-Host "  sudo apt install -y ./mscc-avalonia_${Version}_arm64.deb"
+Write-Host "On the $OsName computer (copy the .deb first):" -ForegroundColor Cyan
+Write-Host "  sudo apt install -y ./mscc-avalonia_${Version}_${Arch}.deb"
 Write-Host "  # Menu: MSCC → MSCC Avalonia   or run:  mscc-avalonia"
 Write-Host "  # Start servers first: MSCC Start"
 Write-Host ""

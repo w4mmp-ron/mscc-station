@@ -1145,9 +1145,11 @@ int main(int argc, char **argv) {
                 }
             }
 #endif
-            /* Windows: strstr(..., "Multus"); Linux radio enumerates as "Proficio" */
+            /* Windows: strstr(..., "Multus"); Linux: the radio USB product name, "Multus IQ"
+             * (firmware from 2026-11), "Proficio" (older) or "Ultimus" (released Ultimus images) */
             if (strstr(lpInfo->name, "Multus") != NULL ||
-                strstr(lpInfo->name, "Proficio") != NULL) {
+                strstr(lpInfo->name, "Proficio") != NULL ||
+                strstr(lpInfo->name, "Ultimus") != NULL) {
                 /* Prefer ALSA hw Proficio for I/Q TX, not Pulse wrapper names */
                 if (lpInfo->maxOutputChannels >= 2 &&
                     lpInfo->hostApi == apiTypeId &&

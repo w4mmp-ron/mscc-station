@@ -30,6 +30,15 @@ static unsigned long g_read_timeout_ms = 20;
 static int g_pty_slave_fd = -1;
 static int g_pty_master_fd = -1;
 
+void Set_Thread_Name(const char *name)
+{
+#if defined(__linux__)
+    pthread_setname_np(pthread_self(), name);
+#else
+    (void)name;
+#endif
+}
+
 void Sleep(unsigned long ms)
 {
     struct timespec ts;

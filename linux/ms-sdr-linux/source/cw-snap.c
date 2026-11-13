@@ -105,7 +105,7 @@ int CW_Snap_Process_Frequency_Calibration(uint8_t command, char *buf) {
 			G_tune_freq = G_tune_freq + CW_Snap_i_opcode_data;
 		}
 		print_time(1);
-		fprintf(G_fp_logfile, "[%d] CW_Snap_Process_Frequency_Calibration . CMD_SET_CALIBRATION_DATA . G_tune_freq: %ld \n",
+		fprintf(G_fp_logfile, "[%d] CW_Snap_Process_Frequency_Calibration . CMD_SET_CALIBRATION_DATA . G_tune_freq: %u \n",
 			line_number++, G_tune_freq);
 		//SetHWLO(G_tune_freq);
 		freq_queue_add(G_tune_freq);
@@ -122,7 +122,7 @@ int CW_Snap_Process_Frequency_Calibration(uint8_t command, char *buf) {
 
 	case CMD_CW_SNAP_START: //This is called by MSCC
 		print_time(1);
-		fprintf(G_fp_logfile, "[%d] CW_Snap_Process_Frequency_Calibration . CMD_CW_SNAP_START . Frequency: %ld\n", line_number++, CW_Snap_i_opcode_data);
+		fprintf(G_fp_logfile, "[%d] CW_Snap_Process_Frequency_Calibration . CMD_CW_SNAP_START . Frequency: %d\n", line_number++, CW_Snap_i_opcode_data);
 		//CW_Snap_max_element = MAX_CALIBRATION_ELEMENT / 4;
 		
 		calibration_initialized = CW_Snap_Calibrate_Si5351_Initialize(CW_Snap_i_opcode_data);

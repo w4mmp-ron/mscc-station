@@ -37,6 +37,11 @@ static sp_float fm_deemp = 0.0f;
 static sp_float fm_dc_x1 = 0.0f;
 static sp_float fm_dc_y1 = 0.0f;
 static int fm_demod_inited = 0;
+/* AM envelope DC block: removes the carrier level (0.999 = -3 dB at ~15 Hz at 96 kHz) */
+#define AM_DC_BLOCK_A 0.999f
+static sp_float am_dc_x1 = 0.0f;
+static sp_float am_dc_y1 = 0.0f;
+static int am_demod_inited = 0;
 
 /******* External C&C structs, defined in sdrcore-recv.c *******/
 extern state mystate;
@@ -78,8 +83,13 @@ void initDSP()
         memset(hfilt, 0, sizeof(sp_cplx) * mystate.nfft);
         memset(filt, 0, sizeof(sp_cplx) * mystate.nfft);
 
-        wsfirBP(hfilt, mystate.filtertaps, W_HANNING, mystate.lastHRFiltLow / mystate.samplerate,
-                mystate.lastHRFiltHigh / mystate.samplerate);
+        /* AM: lowpass 0..high cut. The bandpass (low..high) blocks 0 Hz, where the AM
+         * carrier is; without it the envelope detector rectifies the sidebands. */
+        if (mystate.opmode == MODE_AM)
+                wsfirLP(hfilt, mystate.filtertaps, W_HANNING, mystate.lastHRFiltHigh / mystate.samplerate);
+        else
+                wsfirBP(hfilt, mystate.filtertaps, W_HANNING, mystate.lastHRFiltLow / mystate.samplerate,
+                        mystate.lastHRFiltHigh / mystate.samplerate);
 
         tempflt = 1.0f / mystate.nfft;
 
@@ -165,10 +175,19 @@ void fastconv(sp_cplx *in, sp_cplx *out, int frames)
                 // sum the power for the s-meter (average, not peak: a peak reads noise high)
                 powaccum += mag * mag;
 
-                // Simple AM demod - more work required here
+                // AM: envelope detector + DC block (carrier level out)
                 if (mystate.opmode == MODE_AM) {
-                        samp[i].real = mag;
-                        samp[i].imag = mag;
+                        sp_float af;
+                        if (!am_demod_inited) {
+                                am_dc_x1 = mag;
+                                am_dc_y1 = 0.0f;
+                                am_demod_inited = 1;
+                        }
+                        af = mag - am_dc_x1 + AM_DC_BLOCK_A * am_dc_y1;
+                        am_dc_x1 = mag;
+                        am_dc_y1 = af;
+                        samp[i].real = af;
+                        samp[i].imag = af;
                 }
 
                 /* NFM: atan2 discr + 750 µs de-emphasis + DC block.
@@ -212,6 +231,8 @@ void fastconv(sp_cplx *in, sp_cplx *out, int frames)
 
         if (mystate.opmode != MODE_FM)
                 fm_demod_inited = 0;
+        if (mystate.opmode != MODE_AM)
+                am_demod_inited = 0;
 
         meterblocks++;
         if (meterblocks >= 2) {

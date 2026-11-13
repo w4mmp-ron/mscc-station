@@ -4,7 +4,7 @@ Claude's notes for the Pi servers `sdrcore-recv`, `sdrcore-trans` and `ms-sdr`
 (Proficio / MSCC station). Owner: **Ron (W4MMP)**. Grok follows `AGENTS.md`; this
 file is for Claude only.
 
-**Shared rules for Ron and Stew (keywords, "finished" checklist, keeping trees in step): `../CLAUDE.md` (repo root).** This file adds Ron's machine-specific notes. Debian `linux/` joins the "trees in step" rule once Stew removes the Ubuntu line below.
+**Shared rules for Ron and Stew (keywords, "finished" checklist, keeping trees in step): `../CLAUDE.md` (repo root).** This file adds Ron's machine-specific notes. Debian `linux/` is in the "trees in step" rule since 2026-11-13 (Stew copied the Pi server trees into `linux/*-linux`).
 
 ## Working with Ron
 
@@ -20,8 +20,9 @@ file is for Claude only.
   Pi `mscc`, `mscc-avalonia` if the client changed), one commit, push, GitHub Release.
 - Ron does **not** `git pull` on the Pi. He copies the changed source files from
   Windows to the Pi and builds there. Give him the file list, not git steps.
-- Ubuntu (`linux/`) work is Stew's; don't track or report it. After a pull, report
-  only Stew's **Windows** changes and whether the Pi needs a matching port.
+- Every server change goes into `rpi/`, Windows and `linux/` (Debian / Ubuntu amd64) in the
+  same step. After a pull, report Stew's Windows and `linux/` changes and whether the Pi needs
+  a matching port.
 
 ## "Finished" checklist (Ron, 2026-11-13)
 

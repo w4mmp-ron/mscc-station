@@ -217,8 +217,13 @@ configure)
 
   # --- AudioInjector HAT: dtoverlay in boot config ---
   # Bookworm+: /boot/firmware/config.txt ; older: /boot/config.txt
+  # Raspberry Pi only (Stew 2026-11-13): the amd64 package uses this postinst too, and a PC has
+  # no boot config.txt, so skip the whole step there instead of warning "add manually".
   OVERLAY_LINE="dtoverlay=audioinjector-wm8731-audio"
   BOOT_CFG=""
+  if ! grep -qa 'Raspberry Pi' /proc/device-tree/model 2>/dev/null; then
+    log "not a Raspberry Pi: AudioInjector boot overlay step skipped"
+  else
   for cand in /boot/firmware/config.txt /boot/config.txt; do
     if [[ -f "$cand" ]]; then
       BOOT_CFG="$cand"
@@ -241,6 +246,7 @@ configure)
     warn "no /boot/firmware/config.txt or /boot/config.txt — add manually:"
     warn "  $OVERLAY_LINE"
   fi
+  fi  # Raspberry Pi only
 
   # --- digi audio: Pulse/PipeWire VirtualA/B only (ALSA MSCC_Cable path removed) ---
   # Clean leftovers from older packages (snd-aloop autoload, asound conf, boot units).

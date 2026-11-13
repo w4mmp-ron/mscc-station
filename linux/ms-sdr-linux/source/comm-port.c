@@ -51,6 +51,136 @@ int baud_rate_index = 0;
 int parity_index = 0;
 int stop_bit_index = 0;
 int data_bit_index = 0;
+
+/*
+ * CAT tune (Ron 2026-11-11). WSJT-X right-click Tune -> hamlib TS-2000 RIG_OP_TUNE sends
+ * "AC111;ID;" (captured on the Pi) and nothing to end it: a real TS-2000 tuner stops by
+ * itself. So AC111; starts MSCC's own TUN carrier, the same way the client's TUN button
+ * does (mode TUNE, tune power, Tune_button = SWR meter tune flag before RF, TX on), and
+ * tells the client the server owns TX (as CAT PTT does; client locks PTT/TUN). It ends:
+ *   - by itself after CAT_TUNE_SECONDS..+1 (Cat_tune_tick, called once a second by Flusher),
+ *   - at the next AC111; (second right-click stops it); one within CAT_TUNE_DEBOUNCE_MS of
+ *     the start is ignored (3 tunes on 11-11 were stopped ~0.3 s in by an unexplained
+ *     second AC111;, not seen again in a capture),
+ *   - before a CAT TX; (PTT wins).
+ * If something else ended it (SWR / temperature fault, client mode change or disconnect),
+ * the tick sees G_Tune off and only puts the mode back (if still TUNE) and releases TX.
+ */
+#define CAT_AC 14
+#define CAT_TUNE_SECONDS 10
+#define CAT_TUNE_DEBOUNCE_MS 1000
+
+static pthread_mutex_t cat_tune_lock = PTHREAD_MUTEX_INITIALIZER;
+static int cat_tune_seconds_left = 0;   /* > 0 = a CAT tune is running */
+static char cat_tune_mode_before = 0;
+static uint64_t cat_tune_start_ms = 0;
+
+static uint64_t cat_now_ms(void) {
+#if defined(_WIN32)
+    return (uint64_t)GetTickCount64();
+#else
+    struct timespec ts;
+    clock_gettime(CLOCK_MONOTONIC, &ts);
+    return (uint64_t)ts.tv_sec * 1000u + (uint64_t)(ts.tv_nsec / 1000000);
+#endif
+}
+
+static int cat_mode_letter_to_number(char mode) {
+    int number;
+
+    if (mode == 'D')
+        return 6;
+    number = mode_to_number(mode);
+    if (number == 9 || number == MODE_TUNE)
+        number = MODE_USB;
+    return number;
+}
+
+/* Called with cat_tune_lock held. */
+static void cat_tune_stop_locked(const char *reason) {
+    char mode = cat_tune_mode_before;
+    int mode_number;
+
+    if (mode == 0 || mode == MODE_TUNE_LETTER)
+        mode = MODE_USB_LETTER;
+    mode_number = cat_mode_letter_to_number(mode);
+    cat_tune_seconds_left = 0;
+    print_time(0);
+    fprintf(G_fp_logfile, "[%d] CAT tune. STOP (%s). G_Tune: %d, G_mode: %c, back to: %c\n",
+        line_number++, reason, G_Tune, G_mode, mode);
+    if (G_Tune) {
+        /* TX off before the mode change: the radio ignores PTT off in CW (see CMD_SET_MAIN_MODE). */
+        Tune_button(FALSE, FALSE);
+        SDRcore_trans_send_param(CMD_SET_TX_ON, FALSE);
+        SDRcore_recv_send_param(CMD_SET_TX_ON, FALSE);
+        Sleep(20);
+    }
+    if (G_mode == MODE_TUNE_LETTER) {
+        ModeChanged(mode);
+        Sleep(50);
+        SDRcore_recv_send_param(CMD_SET_MAIN_MODE, mode_number);
+        SDRcore_trans_send_param(CMD_SET_MAIN_MODE, mode_number);
+    }
+    Gui_send_param(CMD_SET_TX_SET_BY_SERVER, 0);
+}
+
+/* Called with cat_tune_lock held. */
+static void cat_tune_start_locked(void) {
+    if (G_Tune || G_PTT || G_TX) {
+        print_time(0);
+        fprintf(G_fp_logfile, "[%d] CAT tune. AC111; ignored: TX busy (G_Tune %d, G_PTT %d, G_TX %d)\n",
+            line_number++, G_Tune, G_PTT, G_TX);
+        return;
+    }
+    if (G_TX_Inhibit) {
+        print_time(0);
+        fprintf(G_fp_logfile, "[%d] CAT tune. AC111; ignored: TX inhibited\n", line_number++);
+        return;
+    }
+    cat_tune_mode_before = G_mode;
+    print_time(0);
+    fprintf(G_fp_logfile, "[%d] CAT tune. START %d s. mode before: %c, tune power: %d\n",
+        line_number++, CAT_TUNE_SECONDS, G_mode ? G_mode : '-', G_Tune_Power);
+    Gui_send_param(CMD_SET_TX_SET_BY_SERVER, 1);
+    ModeChanged(MODE_TUNE_LETTER);
+    Sleep(50);
+    SDRcore_recv_send_param(CMD_SET_MAIN_MODE, MODE_TUNE);
+    SDRcore_trans_send_param(CMD_SET_MAIN_MODE, MODE_TUNE);
+    if (G_Tune_Power > 0)
+        SDRcore_trans_send_param(CMD_SET_TUNE_POWER, G_Tune_Power);
+    Tune_button(TRUE, FALSE);
+    cat_tune_seconds_left = CAT_TUNE_SECONDS + 1;   /* first tick is 0..1 s away: 10..11 s */
+    cat_tune_start_ms = cat_now_ms();
+    if (!G_Tune) {   /* Tune_button refused (TX inhibit / bias check) */
+        cat_tune_stop_locked("not keyed");
+        return;
+    }
+    SDRcore_trans_send_param(CMD_SET_TX_ON, TRUE);
+    SDRcore_recv_send_param(CMD_SET_TX_ON, TRUE);
+    if (G_QRP == 1) {   /* QRO: as CMD_SET_RIG_TUNE */
+        Sleep(150);
+    }
+}
+
+/* Flusher_thread, once a second. */
+void Cat_tune_tick(void) {
+    pthread_mutex_lock(&cat_tune_lock);
+    if (cat_tune_seconds_left > 0) {
+        if (!G_Tune)
+            cat_tune_stop_locked("ended elsewhere");
+        else if (--cat_tune_seconds_left == 0)
+            cat_tune_stop_locked("time up");
+    }
+    pthread_mutex_unlock(&cat_tune_lock);
+}
+
+/* CAT TX; arrives: a running CAT tune ends first. */
+static void cat_tune_stop_for_ptt(void) {
+    pthread_mutex_lock(&cat_tune_lock);
+    if (cat_tune_seconds_left > 0)
+        cat_tune_stop_locked("CAT TX;");
+    pthread_mutex_unlock(&cat_tune_lock);
+}
 /* defined in main.c */
 extern const char *homedir;
 
@@ -86,6 +216,7 @@ extern const char *homedir;
     return 1;
 }*/
 void *Pin_Check_Thread(void *param) {
+    Set_Thread_Name("cat-pin-check");
     int status = 0;
     static int previous_tx_mode = 0;
     static int previous_G_pins = 0;
@@ -539,10 +670,27 @@ int parse_record(char *receive_buffer, int size) {
         write_buffer[2] = '0';
         write_buffer[3] = ';';
         tx_mode = 1;
+        cat_tune_stop_for_ptt();
         Set_PTT(tx_mode,FALSE);
         Gui_send_param(CMD_SET_TX_SET_BY_SERVER, tx_mode);
         print_time(0);
         fprintf(G_fp_logfile, "[%d] parse_record. TX Received.\n", line_number++);
+    }
+
+    /* Kenwood AC111; = start tuner (hamlib RIG_OP_TUNE). No reply; first starts, next stops. */
+    record_start = strstr(receive_buffer, "AC111;");
+    if (record_start != NULL) {
+        command = CAT_AC;
+        pthread_mutex_lock(&cat_tune_lock);
+        if (cat_tune_seconds_left > 0 && cat_now_ms() - cat_tune_start_ms < CAT_TUNE_DEBOUNCE_MS) {
+            print_time(0);
+            fprintf(G_fp_logfile, "[%d] CAT tune. AC111; ignored (too soon, %d ms after start)\n",
+                line_number++, (int)(cat_now_ms() - cat_tune_start_ms));
+        } else if (cat_tune_seconds_left > 0)
+            cat_tune_stop_locked("second AC111;");
+        else
+            cat_tune_start_locked();
+        pthread_mutex_unlock(&cat_tune_lock);
     }
     if (command == NO_COMMAND_FOUND) {
         print_time(0);
@@ -554,6 +702,7 @@ int parse_record(char *receive_buffer, int size) {
     return (status);
 }
 void* Comms_port_thread(void* myparam) {
+    Set_Thread_Name("cat-port");
     //int n = 8192;
     int n = 132;
     char szBuff[8196] = { 0 };

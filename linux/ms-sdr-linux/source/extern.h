@@ -209,6 +209,8 @@ extern void *Swr_wifi_meter_main(void *param);
 extern int Start_swr_wifi_meter_thread(void);
 extern void Parse_swr_wifi_record(const char *record);
 extern void Swr_wifi_request_reset(void);
+extern void Swr_wifi_client_reset(void);   /* 3.189: CMD_SWR_METER_RESET (0x2E) */
+extern void Swr_wifi_tune(int on);          /* 3.190: TUN flag to the meter (tune allowance) */
 
 //For Solidus Temperature
 int Read_solidus_temperature();
@@ -254,6 +256,7 @@ struct cw_parameters_record {
     uint8_t tx_hold;
     uint8_t speed;
     uint8_t text_wpm; /* SET_MEM_TEXT_WPM 0x76: 0=off, else memory-play text WPM */
+    uint8_t paddle_farns; /* SET_PADDLE_FARNSWORTH 0x9D: 0=off, 1=on (reported to the client at connect) */
     uint8_t tone_index;
 };
 extern struct cw_parameters_record cw_record;
@@ -296,17 +299,8 @@ extern BOOL srGetFreq(double* pMHz);
 
 
 
-//for Last_used
+//startup.ini (startup.c)
 extern int Get_Startup(uint32_t *freq, char *mode);
-extern int Create_Last_Used();
-extern int Init_last_used_VFO_A();
-extern int Init_last_used_VFO_B();
-extern int Update_last_used_VFO_A();
-extern int Update_last_used_VFO_B();
-extern int Set_last_used_VFO_A(uint32_t i, char mode);
-extern int Set_last_used_VFO_B(uint32_t i, char mode);
-extern int Send_last_used_VFO_A(uint16_t band, uint8_t element);
-extern int Send_last_used_VFO_B(uint16_t band, uint8_t element);
 extern int Update_Startup(uint32_t freq, char mode);
 extern uint8_t G_vfo;
 extern uint8_t G_current_vfo;
@@ -336,6 +330,7 @@ extern void print_time(int print_new_line);
 extern int Open_log_file();
 extern void *Command_Processor(void *my_param);
 extern int Tune_button(int on_off, uint8_t allow_MKII_PTT);
+extern void Cat_tune_tick(void);   /* comm-port.c: CAT AC111; tune timeout */
 extern int Gui_send_param(uint8_t op_code, int op_data);
 extern int Gui_send_param_extended(uint8_t op_code, byte *op_data, int size);
 extern int Spectrum_Waterfall_send_param(uint8_t op_code, int op_data);
@@ -393,8 +388,6 @@ extern uint8_t G_pcb_version;
 extern uint8_t G_proficio_mkii;
 extern uint8_t G_gui_running;
 extern int G_Transmit;
-extern uint8_t G_updating_last_used;
-extern uint8_t G_setting_last_used;
 extern ULONG64 G_Heart_beat;
 extern uint8_t G_delete_SDRcore_init_files;
 extern uint8_t G_delete_Comm_port_init_file;
@@ -438,6 +431,13 @@ extern int G_major_version;
 extern int G_minor_version;
 /* USB FW word repacked for client 0xB2: (minor<<8)|major — same as Proficio FIRMWARE_VERSION */
 extern int G_firmware_version_packed;
+/* Radio firmware type from the version MINOR (Ron, 2026-10-25): the STM32 Black Pill
+ * uses 1-199, the PSoC 200 and up (3.240). Set in main() after srGetVersion. */
+#define FIRMWARE_PSOC_MINOR_MIN 200
+#define FIRMWARE_TYPE_UNKNOWN 0
+#define FIRMWARE_TYPE_PSOC    1
+#define FIRMWARE_TYPE_STM32   2
+extern int G_firmware_type;
 extern const char *homedir;
 extern uint8_t G_Sound_Device; 
 extern int16_t G_spectrum_cycle_count;
@@ -466,22 +466,30 @@ int Start_Serial_Port();
 //For I/Q Calibration routine
 extern int IQ_calibration(uint8_t command, char *buf);
 extern uint8_t G_calibration_mode;
+extern uint8_t G_iq_cal_active;
 extern uint8_t G_IQBD_Monitor;
 extern uint8_t G_in_IQ_calibration_mode;
+extern void IQ_report_value(int value);
+extern void IQ_report_phase(int value);
 
 //For Power Calibration
 extern int Power_calibration(uint32_t command, char *buffer);
+extern void Radio_cal_save_tick(void);
+extern void Radio_cal_load_power(void);
+/* 3.185: TX / RX I/Q in the radio's calibration store (power_calibration.c, iq.c) */
+extern void Radio_cal_store_iq(int tx, int record, int offset, int phase);
+extern void Radio_cal_reset_all(int kind);   /* 3.197: CMD_SET_CAL_RESET_ALL (0x2F) */
+extern void Radio_cal_load_iq(void);
+extern void Radio_cal_send_status(void);   /* 3.188: 0x2D to the client */
+extern void Radio_cal_startup_load(const char *who);   /* 3.194: once per run, startup or first connect */
+extern uint8_t G_Radio_Cal_Save_Pending;
 //extern uint8_t G_calibration_mode;
-extern int Create_power_ini_file();
 extern int Initialize_power_calibration();
 extern int Check_Power_Cal_Version();
 
 //For Amplifier Power Output
 extern int16_t G_Amplifier_band;
-extern int Check_Amplifier_Version();
-extern int Initialize_amplifier_power();
 extern int Amplifier_Set_Power_Level(uint8_t command, char *buf);
-extern int Create_amplifier_ini_file();
 
 // For User Controls processing
 
@@ -533,6 +541,7 @@ struct User_Record {
     int Waterfall_zero;
     int Waterfall_speed;
     uint8_t TX_hi_cut;
+    uint8_t Alc_Multiplier; //CMD_SET_ALC_MULTIPLIER: TX ALC button, 0 = off, 1 = on
 };
 struct Current_Filters_Record{
     uint8_t High_Cut;
@@ -548,6 +557,8 @@ extern int User_Controls_Send_To_Gui();    /* client connect: sync UI only */
 extern int User_Controls_Send();           /* both (legacy) */
 extern int Apply_Appliance_Startup();     /* cores + startup.ini LO/band without client */
 extern int User_Controls_Update_Init_File();
+#define USER_CONTROLS_SAVE_DELAY 3 //seconds after the last volume / mic gain step
+extern uint8_t G_User_Controls_Save_Pending;
 extern uint8_t G_Speaker_Mute_Status;
 extern uint8_t G_QRP;
 extern uint8_t G_Speaker_volume;
@@ -571,6 +582,8 @@ extern uint8_t G_Calibration_reset;
 
 //For temperature process
 void *Check_temperature(void *t);
+void Audio_stats_busy(const char *why);   // 3.195: restarts the pill audio stats window
+extern uint8_t G_pill_stats;         // 3.195: mscc.ini PILL_STATS= (default 0 = off)
 extern INT8 G_delta_drift_int;
 extern uint8_t G_Proficio_temperature;
 //extern int Start_Temp_Check();
