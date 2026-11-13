@@ -26,7 +26,7 @@ public sealed class MainForm : Form
         Height = 48,
         Dock = DockStyle.Top,
         Text = "Application update only (@ 0x08008000). Bootloader is not flashed here (use ST-Link / Cube).\r\n" +
-               "1) Hold KEY (PA0) + NRST, release KEY → DFU   2) Browse to app .bin   3) Burn",
+               "1) Fit the BOOT jumper, press NRST (LED B)   2) Browse to app .bin   3) Burn   4) Remove the jumper, press NRST",
     };
 
     public MainForm()

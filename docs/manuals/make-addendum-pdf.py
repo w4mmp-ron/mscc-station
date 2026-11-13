@@ -2,6 +2,7 @@
 make-addendum-pdf.py: MSCC-Software-Versions-Addendum.md -> .pdf (same folder).
 
     python make-addendum-pdf.py
+    python make-addendum-pdf.py MSCC-Updating-Firmware.md     (any other .md in this folder)
 
 Run after every edit of the addendum (every release). Needs Python 3 with the markdown module
 (python -m pip install --user markdown) and Microsoft Edge (prints the page to PDF).
@@ -34,10 +35,13 @@ h2, h2 + p { break-after: avoid; page-break-after: avoid; }
 
 
 def main():
+    global SRC, OUT
+    if len(sys.argv) > 1:
+        SRC = os.path.join(HERE, sys.argv[1])
+        OUT = os.path.splitext(SRC)[0] + ".pdf"
     with open(SRC, encoding="utf-8") as f:
         body = markdown.markdown(f.read(), extensions=["tables"])
-    html = ("<!doctype html><html><head><meta charset='utf-8'><title>MSCC Software Versions "
-            "Addendum</title><style>%s</style></head><body>%s</body></html>" % (CSS, body))
+    html = ("<!doctype html><html><head><meta charset='utf-8'><title>%s</title><style>%s</style></head><body>%s</body></html>" % (os.path.splitext(os.path.basename(SRC))[0], CSS, body))
     edge = next((e for e in EDGE if os.path.exists(e)), None)
     if not edge:
         sys.exit("Microsoft Edge not found")

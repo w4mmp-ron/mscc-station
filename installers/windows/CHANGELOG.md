@@ -2,6 +2,13 @@
 
 Installer: `mscc-net9-R<version>-install.exe` (WPF client + Windows servers). Install the newest one; older installers in this folder are kept for roll-back only.
 
+## R11.13.3 — 2026-11-13  (`mscc-net9-R11-13-3-install.exe`, title bar 11.11.4)
+
+### Changed
+- Black Pill flasher (`stm32-app-flash.exe`): the hint in its window now gives the real steps (fit the BOOT jumper, press NRST, burn, remove the jumper, press NRST). It used to say "hold KEY (PA0) + NRST".
+- New guide: Updating Firmware (`docs/manuals/MSCC-Updating-Firmware.pdf`): PSoC, Black Pill and keyer on Windows and the Pi.
+- Everything else unchanged from R11-13-2 (servers ms-sdr 3.209, recv 3.154, trans 3.159).
+
 ## R11.13.2 — 2026-11-13  (`mscc-net9-R11-13-2-install.exe`, title bar 11.11.4)
 
 ### Fixed (servers: ms-sdr 3.209, recv 3.154, trans 3.159)

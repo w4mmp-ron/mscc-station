@@ -61,7 +61,8 @@ The Pi and Windows servers do the same job and are kept functionally identical (
      one -> `installers/rpi/` (old one to `installers/rpi/old/`). `mscc-avalonia` only if the
      client changed.
    - Debian amd64 .debs: once the Debian work is done.
-3. **Docs:** the Addendum (`python docs/manuals/make-addendum-pdf.py`, keep it to 2 pages),
+3. **Docs:** the Addendum (`python docs/manuals/make-addendum-pdf.py`, keep it to 2 pages), the
+   Updating Firmware guide if a firmware tool or step changed (`python docs/manuals/make-addendum-pdf.py MSCC-Updating-Firmware.md`),
    `installers/windows/CHANGELOG.md`, `installers/windows/INSTALL.md`, `installers/rpi/INSTALL.md`,
    and the folder notes (`rpi/CLAUDE.md` / `mscc-ui/windows-work-tree/CLAUDE.md`).
 4. **One commit, then push.** The message says what changed and ends with the current open list

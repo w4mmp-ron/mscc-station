@@ -1,6 +1,6 @@
 # MSCC Software Versions Addendum
 
-**Release R11-13-2** · 2026-11-13
+**Release R11-13-3** · 2026-11-13
 
 The Operator's Guides describe how MSCC works; this addendum lists the version numbers that
 go with the current release. It is updated with every release, so the guides don't change
@@ -11,7 +11,7 @@ when only version numbers do. Downloads and what changed in each release:
 
 | Computer | File |
 |---|---|
-| Windows | `mscc-net9-R11-13-2-install.exe` (installs to `C:\mscc-net9`; uninstall from Apps & features) |
+| Windows | `mscc-net9-R11-13-3-install.exe` (installs to `C:\mscc-net9`; uninstall from Apps & features) |
 | Raspberry Pi (64-bit Pi OS, Pi 4 / Pi 5) | `mscc_1.0.90_arm64.deb` (required) and `mscc-avalonia_1.6.96_arm64.deb` (optional) |
 
 ## MSCC programs
