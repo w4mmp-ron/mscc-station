@@ -65,7 +65,7 @@ public sealed class MainForm : Form
         Controls.Add(_hint);
 
         _browseBtn.Click += (_, _) => Browse();
-        _listBtn.Click += async (_, _) => { if (ServersOk()) await RunDfuAsync("-l"); };
+        _listBtn.Click += async (_, _) => await ListAsync();
         _burnBtn.Click += async (_, _) => await BurnAsync();
     }
 
@@ -118,6 +118,20 @@ public sealed class MainForm : Form
             _fileBox.Text = dlg.FileName;
     }
 
+    private const string NoPillText =
+        "No Black Pill in flash mode found. Fit the BOOT jumper and press NRST (LED B), then try again.";
+
+    private async Task ListAsync()
+    {
+        if (!ServersOk())
+            return;
+        await RunDfuAsync("-l");
+        if (OutputHas("Found DFU"))
+            AppendLog("Black Pill in flash mode found: ready to Burn.\r\n");
+        else
+            AppendLog(NoPillText + "\r\n");
+    }
+
     private async Task BurnAsync()
     {
         var file = _fileBox.Text.Trim();
@@ -139,7 +153,9 @@ public sealed class MainForm : Form
         var args = $"-d 0483:df11 -a 0 -s {AppAddress}:leave -D \"{file}\"";
         AppendLog($"> dfu-util {args}\r\n");
         var code = await RunDfuAsync(args);
-        if (code == 0)
+        if (OutputHas("No DFU capable USB device"))
+            AppendLog("\r\n" + NoPillText + "\r\n");
+        else if (code == 0)
             AppendLog("\r\nDone. Reset without KEY to run the app.\r\n");
         else
             AppendLog($"\r\ndfu-util exited with code {code}. Is the pill in DFU mode?\r\n");
@@ -155,6 +171,7 @@ public sealed class MainForm : Form
 
         _listBtn.Enabled = false;
         _burnBtn.Enabled = false;
+        lock (_lastOutput) _lastOutput.Clear();
         try
         {
             var psi = new ProcessStartInfo
@@ -169,16 +186,8 @@ public sealed class MainForm : Form
             };
 
             using var proc = new Process { StartInfo = psi, EnableRaisingEvents = true };
-            proc.OutputDataReceived += (_, e) =>
-            {
-                if (e.Data is null) return;
-                BeginInvoke(() => AppendLog(e.Data + "\r\n"));
-            };
-            proc.ErrorDataReceived += (_, e) =>
-            {
-                if (e.Data is null) return;
-                BeginInvoke(() => AppendLog(e.Data + "\r\n"));
-            };
+            proc.OutputDataReceived += (_, e) => OnDfuLine(e.Data);
+            proc.ErrorDataReceived += (_, e) => OnDfuLine(e.Data);
 
             proc.Start();
             proc.BeginOutputReadLine();
@@ -196,6 +205,26 @@ public sealed class MainForm : Form
             _listBtn.Enabled = true;
             _burnBtn.Enabled = true;
         }
+    }
+
+    // dfu-util output of the current run (for the found / not found check)
+    private readonly List<string> _lastOutput = new();
+
+    private bool OutputHas(string text)
+    {
+        lock (_lastOutput) return _lastOutput.Any(l => l.Contains(text));
+    }
+
+    // dfu-util prints a copyright banner on every run: keep it (and blank lines) out of the log
+    private static readonly string[] BannerStarts =
+        { "dfu-util 0.", "Copyright ", "This program is Free Software", "Please report bugs" };
+
+    private void OnDfuLine(string? line)
+    {
+        if (line is null) return;
+        lock (_lastOutput) _lastOutput.Add(line);
+        if (line.Trim().Length == 0 || BannerStarts.Any(line.StartsWith)) return;
+        BeginInvoke(() => AppendLog(line + "\r\n"));
     }
 
     private void AppendLog(string text)

@@ -1,6 +1,6 @@
 # MSCC Software Versions Addendum
 
-**Release R11-12-5** · 2026-11-12
+**Release R11-12-6** · 2026-11-12
 
 The Operator's Guides describe how MSCC works; this addendum lists the version numbers that
 go with the current release. It is updated with every release, so the guides don't change
@@ -11,7 +11,7 @@ when only version numbers do. Downloads and what changed in each release:
 
 | Computer | File |
 |---|---|
-| Windows | `mscc-net9-R11-12-5-install.exe` (installs to `C:\mscc-net9`; uninstall from Apps & features) |
+| Windows | `mscc-net9-R11-12-6-install.exe` (installs to `C:\mscc-net9`; uninstall from Apps & features) |
 | Raspberry Pi (64-bit Pi OS, Pi 4 / Pi 5) | `mscc_1.0.85_arm64.deb` (required) and `mscc-avalonia_1.6.96_arm64.deb` (optional) |
 
 ## MSCC programs
@@ -44,7 +44,7 @@ stored in the radio). After you connect, the client's title bar shows the radio'
 | Ultimus MKII ATU | 7.245 | new in R11-12-3, **not tested on a radio yet** |
 | Ultimus MKII PTT | 8.244 | new in R11-12-3, **not tested on a radio yet** |
 | Black Pill board (any radio) | 3.16 | tested (Proficio MKII) |
-| Black Pill update tools (Pi window new) | R11-12-4 | Pi tested; Windows not yet |
+| Black Pill update tools (Pi window new) | R11-12-6 | Pi tested; Windows: checks tested, no flash yet |
 
 The five new PSoC versions add only the keyer update over USB. If you don't need that, you can
 stay on the version before (2.153, 3.243, 4.244, 7.244, 8.243) until they are tested.

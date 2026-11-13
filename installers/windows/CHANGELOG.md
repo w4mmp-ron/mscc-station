@@ -2,6 +2,12 @@
 
 Installer: `mscc-net9-R<version>-install.exe` (WPF client + Windows servers). Install the newest one; older installers in this folder are kept for roll-back only.
 
+## R11.12.6 — 2026-11-12  (`mscc-net9-R11-12-6-install.exe`, title bar 11.11.4)
+
+### Changed
+- Black Pill app flasher (`Black Pill Firmware\stm32-app-flash.exe`): **List DFU devices** and **Burn application** now say "No Black Pill in flash mode found. Fit the BOOT jumper and press NRST (LED B), then try again." when the pill is not in flash mode (List used to show only the dfu-util copyright text). The dfu-util copyright text is no longer shown.
+- Everything else unchanged from R11-12-5.
+
 ## R11.12.5 — 2026-11-12  (`mscc-net9-R11-12-5-install.exe`, title bar 11.11.4)
 
 ### Added

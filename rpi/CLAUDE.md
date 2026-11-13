@@ -137,6 +137,8 @@ Option, not done: drag the divider on the display.
   **Built R11-12-5 (uninstaller only, payload = R11-12-4) and TESTED by Ron 2026-11-12:** MSCC-NET9 in Apps & features,
   install / uninstall / install OK; %LOCALAPPDATA%\MSCC-NET9 settings kept. Apps & features version shows the client's
   file version (11.11.4+b10624a...), not 11.12.5. Shipped as Release R11-12-5 (Ron: "finished"; Pi stays mscc 1.0.85).
+  **Release R11-12-6 (2026-11-12, finished):** Windows Black Pill flasher says "No Black Pill in flash mode found..." on
+  List / Burn and hides the dfu-util banner (Ron tested both). Payload = R11-12-5 + that exe/dll. Pi stays 1.0.85.
   Same day, Ron's PC only: dead registry entries from old installs deleted (Proficio, MSCC 020.03.04.1, MSCC-PW
   023.02.17.01, HKLM\SOFTWARE\WOW6432Node\Multus SDR LLC); .reg backups in C:\Users\Ron\Documents\registry-backups. Dead MSCC Start-menu entries (old MSCC, MSCC-MKII, -GEMINUS, -Proficio, -PW, Multus SDR LLC) moved to C:\Users\Ron\Documents\startmenu-backup; only MSCC-NET9 left (Ron: clean).
 - **2026-11-12 (finished, Ron): Release R11-12-3** = Windows `mscc-net9-R11-12-3-install.exe` + Pi `mscc_1.0.84_arm64.deb`:
