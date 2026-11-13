@@ -107,8 +107,9 @@ Option, not done: drag the divider on the display.
   R11-11-4: mscc-net9-R11-11-4-install.exe, mscc 1.0.80, mscc-avalonia 1.6.96; Latest is now R11-11-5 with
   mscc 1.0.82).
   **Ron, 2026-11-11 end of day: his work is finished, "the ball is in Stew's court".** Everything works: WPF,
-  Avalonia, Windows servers and Pi servers. Waiting on Stew: the Debian / Ubuntu implementation (+ the stale
-  mscc-firmware line in Linux guide 2.7) and the original-firmware check (zip sent; missing files). The Debian (Ubuntu x86_64,
+  Avalonia, Windows servers and Pi servers. Waiting on Stew: the Debian / Ubuntu implementation and the
+  original-firmware check (zip sent; missing files). (The stale mscc-firmware line in Linux guide 2.7 was
+  fixed by Ron's 2026-11-12 draft edit, 3c0a393; dropped from Stew's list, Ron.) The Debian (Ubuntu x86_64,
   `linux/`, `installers/linux`) implementation is WAITING ON STEW; don't release it until he's done.
   **Added for Stew 2026-11-12 (Ron's OK), an option for him:** Visual Studio build bookkeeping files in
   `mscc-ui/windows-work-tree` (66 tracked: `.tlog`, `.recipe`, `.iobj`, `.ipdb`, `.lastbuildstate` for
@@ -118,6 +119,15 @@ Option, not done: drag the divider on the display.
   with CMD_KEYER_BOOT 0x9F (Proficio MKII PTT 3.244 / ATU 4.245, Geminus MKII 2.154, Ultimus MKII PTT 8.244 /
   ATU 7.245) builds clean but has never run on a radio (Ron has none with the daughter board). Steps:
   `radio-psoc-firmware/STEW-KEYER-UPDATE-TEST.md`.
+- **2026-11-12 (finished, Ron): Release R11-12-4** = Windows `mscc-net9-R11-12-4-install.exe` + Pi `mscc_1.0.85_arm64.deb`:
+  Pi window "Black Pill Firmware Update" (`firmware-programmers/rpi/stm32-flash/stm32-app-flash-gui.py`, link
+  `stm32-app-flash.gui`, menu `mscc-blackpill-flash.desktop`; runs `stm32-app-flash.sh`; lists only
+  `<ver>-app.bin`, refuses boot-app / bootload-PA8; refuses while the servers run). No sudo: udev line for
+  `0483:df11` (flash mode) in `99-proficio.rules`. Tested by Ron on the Pi (3.16 over 3.16, servers check),
+  files put there by hand; the .deb copies are byte-identical. Windows `stm32-app-flash.exe`: same servers
+  check, file filter and refusal (built, not run yet). `keyer-flash.py` Windows servers check fixed (it matched
+  `recv.exe` / `trans.exe` exactly; real names `mscc-recv.exe` / `Mscc-trans.exe`), keyer .exe rebuilt.
+  1.0.85 = 1.0.84 + those files (compared file by file). Client, servers, firmware unchanged. Not installed on the Pi.
 - **2026-11-12 (finished, Ron): Release R11-12-3** = Windows `mscc-net9-R11-12-3-install.exe` + Pi `mscc_1.0.84_arm64.deb`:
   the five PSoC keyer-update builds above (untested) + keyer-flash message listing them. R11-12-2 (same day,
   published before "finished" by mistake; Ron: leave it) = keyer GUI .exe without flashing console windows.

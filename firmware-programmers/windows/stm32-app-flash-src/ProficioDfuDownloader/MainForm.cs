@@ -65,8 +65,41 @@ public sealed class MainForm : Form
         Controls.Add(_hint);
 
         _browseBtn.Click += (_, _) => Browse();
-        _listBtn.Click += async (_, _) => await RunDfuAsync("-l");
+        _listBtn.Click += async (_, _) => { if (ServersOk()) await RunDfuAsync("-l"); };
         _burnBtn.Click += async (_, _) => await BurnAsync();
+    }
+
+    // MSCC servers (Windows image names without .exe): ms-sdr-MKII, mscc-recv, Mscc-trans,
+    // or older sdrcore-*. No firmware update while any runs (Ron 2026-11-12).
+    private static readonly string[] ServerPrefixes = { "ms-sdr", "sdrcore", "mscc-recv", "mscc-trans" };
+
+    public static List<string> ServersRunning()
+    {
+        var found = new List<string>();
+        foreach (var p in Process.GetProcesses())
+        {
+            string name;
+            try { name = p.ProcessName; } catch { continue; }
+            finally { p.Dispose(); }
+            var low = name.ToLowerInvariant();
+            if (ServerPrefixes.Any(low.StartsWith) && !found.Contains(name))
+                found.Add(name);
+        }
+        return found;
+    }
+
+    public static string ServersMessage(List<string> names) =>
+        $"The MSCC servers are running ({string.Join(", ", names)}). Close them, then run the Black Pill update again.";
+
+    // Servers running: tell the user and close the window.
+    private bool ServersOk()
+    {
+        var running = ServersRunning();
+        if (running.Count == 0)
+            return true;
+        MessageBox.Show(this, ServersMessage(running), Text, MessageBoxButtons.OK, MessageBoxIcon.Error);
+        Close();
+        return false;
     }
 
     private static string AppDir => AppContext.BaseDirectory;
@@ -77,7 +110,8 @@ public sealed class MainForm : Form
     {
         using var dlg = new OpenFileDialog
         {
-            Filter = "Application firmware (*.bin)|*.bin|All files (*.*)|*.*",
+            // only <version>-app.bin; hides -boot-app.bin and bootload-PA8.bin (ST-Link)
+            Filter = "Black Pill app (BlackPill-25MHz-<version>-app.bin)|BlackPill-25MHz-?.?-app.bin;BlackPill-25MHz-?.??-app.bin;BlackPill-25MHz-?.???-app.bin|All files (*.*)|*.*",
             Title = "Select application .bin",
         };
         if (dlg.ShowDialog(this) == DialogResult.OK)
@@ -92,6 +126,15 @@ public sealed class MainForm : Form
             MessageBox.Show(this, "Choose an application .bin first.", Text, MessageBoxButtons.OK, MessageBoxIcon.Warning);
             return;
         }
+        if (Path.GetFileName(file).EndsWith("-boot-app.bin", StringComparison.OrdinalIgnoreCase)
+            || Path.GetFileName(file).StartsWith("bootload", StringComparison.OrdinalIgnoreCase))
+        {
+            MessageBox.Show(this, $"{Path.GetFileName(file)} holds the bootloader (ST-Link only). Pick the BlackPill-25MHz-<version>-app.bin file.",
+                Text, MessageBoxButtons.OK, MessageBoxIcon.Error);
+            return;
+        }
+        if (!ServersOk())
+            return;
 
         var args = $"-d 0483:df11 -a 0 -s {AppAddress}:leave -D \"{file}\"";
         AppendLog($"> dfu-util {args}\r\n");

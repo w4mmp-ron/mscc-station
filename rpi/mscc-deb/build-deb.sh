@@ -51,6 +51,8 @@ need_file "$TTY_SRC/Makefile"
 need_file "$TTY_SRC/99-tty0tty.rules"
 need_file "$FLASH_SRC/stm32-app-flash.sh"
 need_file "$FLASH_SRC/stm32-bootloader-flash.sh"
+need_file "$FLASH_SRC/stm32-app-flash-gui.py"
+need_file "$FLASH_SRC/stm32-app-flash.desktop"
 need_file "$FLASH_SRC/README.md"
 need_file "$PKG/DEBIAN/control"
 need_file "$PKG/DEBIAN/postinst"
@@ -135,14 +137,20 @@ fi
 # Black Pill flash tools: stm32-app-flash (USB DFU) / stm32-bootloader-flash (ST-Link)
 rm -rf "$PKG/usr/share/mscc/flash-tools"
 mkdir -p "$PKG/usr/share/mscc/flash-tools" "$PKG/usr/bin"
-for f in stm32-app-flash.sh stm32-bootloader-flash.sh README.md; do
+for f in stm32-app-flash.sh stm32-bootloader-flash.sh stm32-app-flash-gui.py README.md; do
   tr -d '\r' < "$FLASH_SRC/$f" > "$PKG/usr/share/mscc/flash-tools/$f"
 done
-chmod 755 "$PKG/usr/share/mscc/flash-tools/"*.sh
+chmod 755 "$PKG/usr/share/mscc/flash-tools/"*.sh "$PKG/usr/share/mscc/flash-tools/stm32-app-flash-gui.py"
 chmod 644 "$PKG/usr/share/mscc/flash-tools/README.md"
 ln -sf "../share/mscc/flash-tools/stm32-app-flash.sh"   "$PKG/usr/bin/stm32-app-flash"
 ln -sf "../share/mscc/flash-tools/stm32-bootloader-flash.sh" "$PKG/usr/bin/stm32-bootloader-flash"
-echo "  flash-tools: stm32-app-flash, stm32-bootloader-flash"
+# window "Black Pill Firmware Update" (Ron 2026-11-12), drives stm32-app-flash.sh
+ln -sf "../share/mscc/flash-tools/stm32-app-flash-gui.py" "$PKG/usr/bin/stm32-app-flash.gui"
+mkdir -p "$PKG/usr/share/applications"
+tr -d '\r' < "$FLASH_SRC/stm32-app-flash.desktop" > "$PKG/usr/share/applications/mscc-blackpill-flash.desktop"
+chmod 644 "$PKG/usr/share/applications/mscc-blackpill-flash.desktop"
+grep -q 'X-MSCC' "$PKG/usr/share/applications/mscc-blackpill-flash.desktop"
+echo "  flash-tools: stm32-app-flash, stm32-app-flash.gui, stm32-bootloader-flash"
 
 # ---------------------------------------------------------------------------------------------
 # mscc 1.0.79 (Ron 2026-11-10): one Pi package. The servers package now also carries what used to

@@ -7,6 +7,7 @@ default, no images in the package since 1.0.5): copy the image from the STM32 re
 | Script | Burns | How | Needs |
 |---|---|---|---|
 | `stm32-bootloader-flash.sh <file>` | `BlackPill-25MHz-3.15-boot-app.bin` (bootloader + app, new board in one step) or `bootload-PA8.bin` @ `0x08000000` | ST-Link (SWD) | `sudo apt install stlink-tools` |
+| `stm32-app-flash-gui.py` (`stm32-app-flash.gui`, menu "Black Pill Firmware Update") | window: Load File, Check Radio, Program; runs `stm32-app-flash.sh`; refuses while the servers run | same as below | `python3-tk` |
 | `stm32-app-flash.sh <file>` | `BlackPill-25MHz-3.15-app.bin` @ `0x08008000` (app only) | USB DFU, no ST-Link; puts the pill into DFU itself (mscc stopped) | `sudo apt install dfu-util python3-usb` |
 
 Same jobs as the Windows tools in `../../windows/stm32-flash/` (`stm32-bootloader-flash.ps1` and `stm32-app-flash.exe`).
@@ -36,7 +37,7 @@ sudo ./stm32-bootloader-flash.sh $REL/BlackPill-25MHz-3.15-boot-app.bin   # ST-L
 sudo ./stm32-app-flash.sh $REL/BlackPill-25MHz-3.15-app.bin          # mscc stopped; sends the pill to DFU (USB 0xFE)
 ```
 
-`sudo` is only needed if your user can't open the USB device (no udev rule).
+`sudo` is only needed if your user can't open the USB device. mscc 1.0.85+ ships the udev rule for flash mode (`0483:df11` in `99-proficio.rules`), so `stm32-app-flash` and the window run without it.
 After a bootloader burn on a bare pill, the LED shows **C** (no codec), which is correct.
 
 `stm32-app-flash.sh` (1.0.4+): radio running -> it sends USB command 0xFE and waits for the DFU

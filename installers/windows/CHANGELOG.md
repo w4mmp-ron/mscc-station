@@ -2,6 +2,15 @@
 
 Installer: `mscc-net9-R<version>-install.exe` (WPF client + Windows servers). Install the newest one; older installers in this folder are kept for roll-back only.
 
+## R11.12.4 — 2026-11-12  (`mscc-net9-R11-12-4-install.exe`, title bar 11.11.4)
+
+### Changed
+- Black Pill app flasher (`Black Pill Firmware\stm32-app-flash.exe`): refuses to run while the MSCC servers are running ("close them"), like Keyer Firmware Update. Its file box lists only `BlackPill-25MHz-<version>-app.bin`; the bootloader files (`-boot-app.bin`, `bootload-PA8.bin`, ST-Link only) are refused.
+
+### Fixed
+- Keyer Firmware Update: the running-servers check missed `mscc-recv.exe` and `Mscc-trans.exe` (it only caught `ms-sdr-MKII.exe`).
+- Client, servers and all firmware unchanged from R11-12-3.
+
 ## R11.12.3 — 2026-11-12  (`mscc-net9-R11-12-3-install.exe`, title bar 11.11.4)
 
 ### Added

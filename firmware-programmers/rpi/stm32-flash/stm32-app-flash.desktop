@@ -1,0 +1,11 @@
+[Desktop Entry]
+Type=Application
+Name=Black Pill Firmware Update
+GenericName=Proficio Black Pill (radio) firmware update
+Comment=Update the radio's Black Pill firmware over USB (servers must be stopped)
+Exec=stm32-app-flash.gui
+Icon=application-x-firmware
+Terminal=false
+Categories=X-MSCC;
+Keywords=MSCC;Proficio;Black Pill;STM32;firmware;DFU;
+StartupNotify=true

@@ -1,11 +1,12 @@
 #!/bin/bash
 # Flash the Proficio app at 0x08008000 over USB DFU (no ST-Link, pill stays in the rig).
-# Usage: sudo ./stm32-app-flash.sh <app-firmware.bin>
+# Usage: stm32-app-flash <app-firmware.bin>   (no sudo needed with mscc 1.0.85+ udev rule)
 #
 # 1.0.4 (2026-10-23): puts the pill into DFU itself (USB command 0xFE, as the Windows
 # flasher) when the radio is running; refuses while mscc is running; waits for the radio
 # to come back and prints its firmware version. A BOOT jumper (PA8) left on is reported.
 # 1.0.5: no default image (the package carries none, Ron: users would flash an old one).
+# 1.0.6 (2026-11-12): no sudo (udev rule for 0483:df11); driven by stm32-app-flash-gui.py.
 
 set -euo pipefail
 APP_ADDR="0x08008000"
@@ -13,7 +14,7 @@ RADIO_ID="16c0:05dc"
 DFU_ID="0483:df11"
 
 [[ $# -eq 1 ]] || {
-  echo "Usage: sudo stm32-app-flash <app-firmware.bin>"
+  echo "Usage: stm32-app-flash <app-firmware.bin>"
   echo "  App image for 0x08008000, e.g. ~/BlackPill-25MHz-3.15-app.bin (from the release folder)."
   exit 1
 }

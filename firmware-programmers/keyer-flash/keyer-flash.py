@@ -134,7 +134,8 @@ def supported(d):
 
 # ---- servers --------------------------------------------------------------
 
-WIN_SERVERS = ("recv.exe", "trans.exe")      # plus any ms-sdr* / sdrcore* image
+# Windows images: ms-sdr-MKII.exe, mscc-recv.exe, Mscc-trans.exe (older: sdrcore-*)
+WIN_SERVERS = ("ms-sdr", "sdrcore", "mscc-recv", "mscc-trans")   # name starts
 
 
 def servers_running():
@@ -150,7 +151,7 @@ def servers_running():
         for line in out.splitlines():
             name = line.split(",")[0].strip('"')
             low = name.lower()
-            if low in WIN_SERVERS or low.startswith("ms-sdr") or low.startswith("sdrcore"):
+            if low.startswith(WIN_SERVERS):
                 if name not in found:
                     found.append(name)
         return found
