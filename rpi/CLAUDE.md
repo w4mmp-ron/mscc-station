@@ -487,53 +487,27 @@ Option, not done: drag the divider on the display.
   for AM and would lose the carrier. Leave the PSoC `AM_OFFSET 11860` (`si5351.c`) alone unless
   the PSoC turns out to set the LO in AM. Test: WWV in AM, carrier on the center line, audio
   sounds the same.
-- **Waiting on Stew (notes in `.mscc-coord/`):**
-  1. Port the new NB to Windows recv; client questions (Pulse min 50 us, threshold Low/Med/High
-     = 1/500/750, slider 1001..1009 oddity, send NB state on connect).
-     `NOTE-FOR-STEW-RECV-NB-AUTOMATIC-2026-11-01.md`
-  2. NR control as Off/Low/Med/High = 0/15/50/85 (client only).
-     `NOTE-FOR-STEW-NR-LOW-MED-HIGH-2026-11-01.md`
-  3. Port the spectral NR to Windows recv. `NOTE-FOR-STEW-RECV-NR-SPECTRAL-2026-10-31.md`
-  4. SSB voice + ALC meter on the air, splatter check at the 0.89 ceiling; one ALC ceiling for
-     voice and digital (`NOTE-FOR-STEW-ALC-ONE-CEILING-2026-10-31.md`).
-  5. Windows Operator's Guide Release 1 draft: Appendix C answers (firmware table, cal survives
-     FW update, ALC target, Windows NR, reset-to-factory, AMP CAL target), pictures, guide source.
-  6. TX IQ RESET ALL / Reset configuration don't stick (radio values win at next start).
-  7. Heat sink temperature 0x06 in the client; Pi-side ports noted in his CLAUDE.md; new
-     scripts into utility-scripts.
-  8. Review the Windows parts of `MSCC-Configurations-DRAFT.docx` (setups 1, 2) and
-     `MSCC-Operators-Guide-Remote-Windows-Release-1-DRAFT.docx` (7 draft items; key: how a Windows
-     host keeps servers running with the one-client lock). Part 3 of the same note: Ron's rules
-     (2026-11-01) MSCC UI = current Windows client (NB Thr 1..100 vs 1..1009 scale!, ALC switch,
-     Remote window), Ubuntu scripts/utilities = Pi (mscc-init 1.0.18 + text wizard, mscc-volume,
-     apt kit order). `NOTE-FOR-STEW-USER-DOCUMENTS-2026-11-01.md`
-  9. ON HOLD (Ron 2026-11-03, note committed locally, NOT pushed; do not push until Ron says): PSoC non-QSK CW top speed (Ron 2026-11-03): check on his analyzer with dits at 45 and 55 wpm
-     whether the spaces go fully quiet. Why: the PCM3060 soft mute (all current PSoC trees) ramps
-     0.5 dB per 8/fs = 16.75 ms full <-> mute at 96 kHz (TI SLAS533B p32/34); unmute starts 14 ms
-     before each delayed key-down. Worked out, not measured: full mute in every space up to 39 wpm;
-     ~-40 dB at 58 wpm; merge above ~86 wpm. Unknown: can the mute bit reverse mid-ramp? (datasheet:
-     attenuation commands wait for the running change.) If not, elements above 39 wpm start late.
-     Wording for users until then: "non-QSK CW clean up to at least 39 wpm". QSK is not shaped.
-     Note: `NOTE-FOR-STEW-PSOC-CW-TOP-SPEED-2026-11-03.md`.
-  10. WiFi SWR meter firmware: our changes (tune allowance, mDNS, WiFi retry, PEAK hold, AVG,
-     PEAK SWR on the screen, JSON keys; REF table tops at 25 W, left to him), his call whether to take them into his copy.
-     `NOTE-FOR-STEW-SWR-METER-FIRMWARE-CHANGES-2026-11-06.md` (pushed bb31561)
-  11. Windows ms-sdr stops all servers ~45 s after a remote client leaves (one line,
-     `servers_failed = 0;` in Flusher_thread case 1, as on the Pi), his option; and check the RF
-     in Remote Digital from the Pi client. `NOTE-FOR-STEW-WINDOWS-MSSDR-CLIENT-GONE-2026-11-06.md`
-     (committed 2026-11-06, push held with the PSoC commits).
-  12. Offer: an x86_64 (amd64) package of Ron's Avalonia copy for Ubuntu / Debian; Claude adds an
-     -Arch amd64 choice to the build script, builds it, README steps. Only if he wants it.
-     `NOTE-FOR-STEW-AVALONIA-X86-BUILD-2026-11-06.md`
-  13. Windows ms-sdr has no WiFi SWR meter support: no swr_wifi_meter.c, and meter.c is not in
-     ms-sdr.vcxproj (no Meter_main thread), so a Windows host sends no SWR / FWD / REF, no 0x0F
-     fault and no 0x2E reset. Option: port the Pi's swr_wifi_meter.c. His call.
-     `NOTE-FOR-STEW-WINDOWS-SWR-METER-2026-11-06.md`
-  14. Windows ms-sdr reads the radio's power / TX IQ / RX IQ only if the network is up within
-     5 s of startup; a late network means the radio is never read that run (client connect runs
-     Apply_Appliance_Startup only). Pi ms-sdr 3.194 retries once at client connect
-     (Radio_cal_startup_load). Option: same change on Windows. His call.
-     `NOTE-FOR-STEW-RADIO-CAL-READ-LATE-NETWORK-2026-11-06.md`
+- **Waiting on Stew (list refreshed 2026-11-13 = the "With Stew" list in 08e53eb; notes in `.mscc-coord/`).**
+  The 2026-11-01 list (14 items) was cleared: NB / spectral NR / NR Low-Med-High / heat sink / hard
+  resets / client-gone fix / Windows SWR meter / radio cal read at connect were done by Ron 2026-11-10;
+  the amd64 Avalonia build was done by Stew (f09daed); the ALC ceiling was settled 11-10.
+  1. Debian / Ubuntu amd64 packages (`NOTE-FOR-STEW-PI-SERVERS-BUILD-ON-AMD64-2026-11-13.md`).
+  2. Original firmware check (zip sent 11-11; missing: one Proficio, Geminus Legacy, all three Ultimus).
+  3. Keyer update test on a PSoC radio with the daughter board (`radio-psoc-firmware/STEW-KEYER-UPDATE-TEST.md`).
+  4. USB product name "Multus IQ" in all 8 radio images (his, `NOTE-FOR-STEW-WINDOWS-FIRMWARE-MULTUS-IQ-2026-11-13.md`);
+     after that the Pi `mscc` package needs the new images.
+  5. Option: git-ignore the Visual Studio build bookkeeping files in `mscc-ui/windows-work-tree`.
+  6. FYI notes: shared rules (`NOTE-FOR-STEW-SHARED-CLAUDE-RULES-2026-11-13.md`), Avalonia-Migration
+     frozen (`NOTE-FOR-STEW-AVALONIA-MIGRATION-FROZEN-2026-11-13.md`), Claude builds PSoC firmware
+     from the command line (`NOTE-FOR-STEW-PSOC-COMMAND-LINE-BUILD-2026-11-13.md`; his Claude told
+     him it can't).
+  **Not on the 11-13 list; ask Ron if still wanted before raising them:** MKII PTT 3.234 non-QSK
+  amp key delay scope check (`STEW-NON-QSK-AMP.md`); Legacy CW 1.236 on a Legacy rig
+  (`Proficio-Legacy - Copy/STEW-LEGACY-NON-QSK-AMP.md`); PSoC non-QSK CW at 45 / 55 wpm, do the
+  spaces go quiet (`NOTE-FOR-STEW-PSOC-CW-TOP-SPEED-2026-11-03.md`; users: "clean up to at least
+  39 wpm"); reviews of the Windows Operator's Guide / Configurations / Remote drafts
+  (`NOTE-FOR-STEW-USER-DOCUMENTS-2026-11-01.md`); taking our SWR meter firmware changes into his
+  copy (`NOTE-FOR-STEW-SWR-METER-FIRMWARE-CHANGES-2026-11-06.md`).
 - **Pi ms-sdr 3.194 (2026-11-06): radio calibration read retried at client connect, BUILT on the Pi
   18:10 (~/mscc/ms-sdr), committed and pushed. Checked in the log 2026-11-08: PASSED** (one read at
   startup 04:59: power 10 bands same, RX IQ 12 + TX IQ 10 from radio, no errors; the two later
