@@ -8,7 +8,8 @@ remove|upgrade|deconfigure)
         /usr/local/bin/bootloader /usr/local/bin/bootloader-gui \
         /usr/local/bin/psoc-bootloader /usr/local/bin/psoc-bootloader.gui \
         /usr/local/bin/mscc-audio-setup /usr/local/bin/mscc-virtual-audio \
-        /usr/local/bin/mscc-desktop-ctl
+        /usr/local/bin/mscc-desktop-ctl \
+        /usr/local/bin/keyer-flash /usr/local/bin/keyer-flash.gui
   ;;
 failed-upgrade)
   ;;

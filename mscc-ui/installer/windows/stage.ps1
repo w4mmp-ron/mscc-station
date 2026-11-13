@@ -1,7 +1,8 @@
 # stage.ps1 - refresh installer\windows\payload from the build outputs.
 # Run after building the client and the Windows servers, then build MSCC.aip
-# in Actual Installer. Fixed files (init-files, factory, PSoC Firmware,
-# utilities, .bat/.vbs) live in payload\ and are not touched here.
+# in Actual Installer. Fixed files (init-files, utilities, .bat/.vbs) live in
+# payload\ and are not touched here; factory, firmware (Black Pill, Keyer, PSoC)
+# and the build outputs are refreshed.
 
 $ErrorActionPreference = 'Stop'
 $here    = Split-Path -Parent $MyInvocation.MyCommand.Path
@@ -67,6 +68,25 @@ if (-not $bpApp) { throw "no versioned Black Pill firmware (BlackPill-25MHz-<ver
 $bpBoot = $bpApp.Name -replace '-app\.bin$','-boot-app.bin'
 foreach ($n in $bpApp.Name, $bpBoot, 'bootload-PA8.bin') {
     Copy-Item (Join-Path $rel25 $n) $bp -Force; Write-Host "  $n" }
+
+# Keyer (PIC on the daughter board, 2026-11-12): update tool (keyer-flash.exe / -gui.exe, built
+# by firmware-programmers\keyer-flash\build-exe.cmd) + the newest Keyer-MCU-app-<date>.hex (Pi /
+# Windows update tool) and Keyer-MCU-full-<date>.hex (PICkit: bootloader + app). Old files removed.
+$kf    = Join-Path $payload 'Keyer Firmware'
+$kTool = Join-Path $wtRoot 'firmware-programmers\windows\keyer-flash'
+$kRel  = Join-Path $wtRoot 'keyer-buffer\Release'
+New-Item -ItemType Directory -Force $kf | Out-Null
+Get-ChildItem $kf -File | Remove-Item -Force
+Write-Host "Keyer ($kTool, $kRel)"
+foreach ($n in 'keyer-flash.exe', 'keyer-flash-gui.exe') {
+    Copy-Item (Join-Path $kTool $n) $kf -Force; Write-Host "  $n" }
+$kRx  = '^Keyer-MCU-app-(\d{8})\.hex$'
+$kApp = Get-ChildItem $kRel -File | Where-Object { $_.Name -match $kRx } |
+        Sort-Object Name | Select-Object -Last 1
+if (-not $kApp) { throw "no Keyer-MCU-app-<date>.hex in $kRel" }
+$kFull = 'Keyer-MCU-full-' + ($kApp.Name -replace $kRx, '$1') + '.hex'
+foreach ($n in $kApp.Name, $kFull) {
+    Copy-Item (Join-Path $kRel $n) $kf -Force; Write-Host "  $n" }
 
 # PSoC firmware: newest <Radio>-<major>.<minor>.hex/.cyacd from each tree's Release\
 $psocSrc = Join-Path $wtRoot 'radio-psoc-firmware'

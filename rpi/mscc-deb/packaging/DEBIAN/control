@@ -1,5 +1,5 @@
 Package: mscc
-Version: 1.0.82
+Version: 1.0.83
 Section: hamradio
 Priority: optional
 Architecture: arm64
@@ -22,6 +22,9 @@ Description: MSCC stack for Multus/Proficio on Raspberry Pi OS (64-bit)
  Firmware (the same builds as the Windows installer): PSoC radio firmware for
  Firmware Upload in /usr/share/mscc/firmware/<Radio>/, Black Pill (25 MHz) in
  /usr/share/mscc/firmware/black-pill/.
+ Keyer (PIC on the daughter board, 1.0.83): keyer-flash.gui (menu "Keyer
+ Firmware Update") and keyer-flash <file.hex> update it over USB through the
+ radio (Black Pill 3.16+, servers stopped); files in /usr/share/mscc/firmware/keyer/.
  Since 1.0.79 one package: also PortAudio with Pulse + ALSA (/usr/local),
  MSCC Init (mscc-init-gui, mscc-init) and MSCC Volume; replaces the old
  mscc-portaudio, mscc-init, mscc-volume and mscc-firmware packages.

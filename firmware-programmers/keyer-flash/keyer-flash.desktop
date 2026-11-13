@@ -1,0 +1,11 @@
+[Desktop Entry]
+Type=Application
+Name=Keyer Firmware Update
+GenericName=Proficio keyer (PIC) firmware update
+Comment=Update the daughter-board keyer over USB (servers must be stopped)
+Exec=keyer-flash.gui
+Icon=application-x-firmware
+Terminal=false
+Categories=X-MSCC;
+Keywords=MSCC;Proficio;keyer;PIC;firmware;bootloader;
+StartupNotify=true

@@ -11,7 +11,9 @@ Actual Installer (10.8) project for MSCC on Windows. Replaces building from `C:\
 1. Build the client (`dotnet build -c Release`) and the Windows servers.
 2. `pwsh installer\windows\stage.ps1`
 3. Open `MSCC.aip` in Actual Installer, set AppVersion / SetupFileName, build
-   (or `"C:\Program Files (x86)\Actual Installer\actinst.exe" /S MSCC.aip`).
+   (or `"C:\Program Files (x86)\Actual Installer\actinst.exe" /S MSCC.aip`, from PowerShell).
+   If no .exe appears and actinst sits at 0 % CPU, it is showing a hidden "subscribe to our
+   newsletter?" box (2026-11-12): answer No and the build carries on.
 4. Publish (2026-11-10, Ron): installers are **not committed** (`.gitignore`). Put the new
    `.exe` and the current Pi `.deb` files on a GitHub Release, e.g.
    `gh release create R11-10-14 installers/windows/*.exe installers/rpi/*.deb --title "..." --notes-file notes.md`.
@@ -28,6 +30,7 @@ Actual Installer (10.8) project for MSCC on Windows. Replaces building from `C:\
 | init-files\, Initialize.bat, Install-MsccServers-AtBoot.bat, mscc-init.exe, mscc-remote.ico | fixed, kept here (from C:\mscc-net9, 2026-11-10) |
 | PSoC Firmware\ (one folder per radio) | newest `<Radio>-<major>.<minor>.hex/.cyacd` from each `radio-psoc-firmware\<tree>\Release\` (stage.ps1; old files in the folder are removed) |
 | Black Pill Firmware\ (stm32-app-flash, dfu-util, ST-Link scripts + 25 MHz bins) | `firmware-programmers\windows\stm32-flash` + `psoc-replacement-stm32\proficio-stm32f411-25MHz\release` (stage.ps1) |
+| Keyer Firmware\ (keyer-flash.exe, keyer-flash-gui.exe + newest Keyer-MCU-app / -full-<date>.hex) | `firmware-programmers\windows\keyer-flash` (built by `firmware-programmers\keyer-flash\build-exe.cmd`) + `keyer-buffer\Release` (stage.ps1). Start-menu shortcut "Keyer Firmware Update" in MSCC.aip |
 
 (25 MHz board only; the 8 MHz build is not shipped.)
 | utilities\ (PSoC bootloader, vc_redist) | fixed, kept here |

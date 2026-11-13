@@ -2,6 +2,15 @@
 
 Installer: `mscc-net9-R<version>-install.exe` (WPF client + Windows servers). Install the newest one; older installers in this folder are kept for roll-back only.
 
+## R11.12.1 — 2026-11-12  (`mscc-net9-R11-12-1-install.exe`, title bar 11.11.4)
+
+### Added
+- Keyer firmware update over USB, no PICkit: `C:\mscc-net9\Keyer Firmware\` holds `keyer-flash-gui.exe` (Start menu **Keyer Firmware Update**), `keyer-flash.exe` (command line) and the keyer files `Keyer-MCU-app-20261112.hex` (for the update tool) and `Keyer-MCU-full-20261112.hex` (PICkit only: bootloader + app). Close the servers first; the tool refuses while they run. Keyer settings and CQ memories are kept. The keyer needs the new bootloader put on once with the PICkit (the full file).
+
+### Changed
+- Black Pill firmware 3.16 (`BlackPill-25MHz-3.16-app.bin` / `-boot-app.bin`): passes the keyer update through to the keyer chip (USB opcode 0x9F). Nothing else changed.
+- Client, servers and PSoC firmware unchanged from R11-11-5.
+
 ## R11.11.5 — 2026-11-11  (`mscc-net9-R11-11-5-install.exe`, title bar 11.11.4)
 
 ### Changed

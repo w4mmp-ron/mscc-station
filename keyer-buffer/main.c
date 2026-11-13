@@ -34,6 +34,9 @@
               buffer drains, RES on the sidetone, paddles back once released.
               0x9D = 0: paddles key KEY_0A + sidetone directly as before (with
               SET_SPACING autospace). Element times are now real ms (1200/WPM).
+  2026-11-12  I2C bootloader (bootloader/): app built at code offset 0x400.
+              KEYER_ENTER_BOOT 0x9F with param 0x5C: set EEPROM 0xFF = 0x5C and
+              reset; the bootloader then stays on I2C 0x5C for an update.
  */
 #include "mcc_generated_files/mcc.h"
 #include "defines.h"
@@ -69,6 +72,11 @@
  *        3=select slot (next param is slot 0..3), sticky thereafter,
  *        0x20-0x7E = append printable ASCII to current slot builder */
 #define CMD_SET_KEYER_MEMORY 0x9C
+/* Enter the I2C bootloader: param must be KEYER_BOOT_KEY. EEPROM 0xFF is the
+ * bootloader's "stay" flag; keep __eeprom data below 0xFF (now ends at 0xD5). */
+#define KEYER_ENTER_BOOT 0x9F
+#define KEYER_BOOT_KEY   0x5C
+#define KEYER_BOOT_FLAG_ADDR 0xF0FF
 
 #define KEYER_MEM_PLAY        0
 #define KEYER_MEM_STORE_BEGIN 1
@@ -1112,6 +1120,15 @@ void CW_Update_Config() {
                 if (cw_msg_store_len < KEYER_MSG_MAX) {
                     cw_msg_ram[cw_msg_store_len++] = p1;
                 }
+            }
+            break;
+        case KEYER_ENTER_BOOT:
+            /* One-off on the way to an update: the EEPROM write waits ~4 ms, then
+             * reset. The bootloader holds the key lines and sidetone off. */
+            if (p1 == KEYER_BOOT_KEY) {
+                INTCONbits.GIE = 0;
+                DATAEE_WriteByte(KEYER_BOOT_FLAG_ADDR, KEYER_BOOT_KEY);
+                RESET();
             }
             break;
         default:

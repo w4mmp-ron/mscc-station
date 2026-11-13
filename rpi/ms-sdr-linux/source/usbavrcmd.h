@@ -28,10 +28,13 @@
 //
 // Free in every layer (servers Pi + Windows, WPF client, pill, PSoC MKII,
 // PIC keyer):
-//   0x9F
+//   (none left; use the reclaimed list below)
+//   0x9F taken 2026-11-12: CMD_KEYER_BOOT, keyer update. Radio (pill 3.16+):
+//    USB I2C pass-through to the PIC, used by keyer-flash.py with the servers
+//    stopped. PIC keyer: 0x9F 0x5C = go to its I2C bootloader. ms-sdr never
+//    sends it. (Was old GET_SIDE_TONE, commented out here; sdrcore-trans
+//    commands.h still names it, unused.)
 //   0x2F taken 2026-11-10: CMD_SET_CAL_RESET_ALL (client -> ms-sdr only).
-//   (0x9F: old GET_SIDE_TONE, commented out here; sdrcore-trans commands.h
-//    still defines it but never uses it.)
 //   0x9D taken 2026-11-05: SET_PADDLE_FARNSWORTH (sdrcore-trans still has an
 //    unused GET_CW_DEFAULTS 0x9D name).
 //

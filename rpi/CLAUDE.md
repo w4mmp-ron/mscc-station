@@ -105,8 +105,21 @@ turns `/S` into a path, the GUI opens and nothing is built).
 Option, not done: drag the divider on the display.
 - **RELEASE STATUS (Ron, 2026-11-11): Windows and Pi are READY FOR RELEASE at R11-11-4** (GitHub Release
   R11-11-4: mscc-net9-R11-11-4-install.exe, mscc 1.0.80, mscc-avalonia 1.6.96; Latest is now R11-11-5 with
-  mscc 1.0.82). The Debian (Ubuntu x86_64,
+  mscc 1.0.82).
+  **Ron, 2026-11-11 end of day: his work is finished, "the ball is in Stew's court".** Everything works: WPF,
+  Avalonia, Windows servers and Pi servers. Waiting on Stew: the Debian / Ubuntu implementation (+ the stale
+  mscc-firmware line in Linux guide 2.7) and the original-firmware check (zip sent; missing files). The Debian (Ubuntu x86_64,
   `linux/`, `installers/linux`) implementation is WAITING ON STEW; don't release it until he's done.
+- **2026-11-12 (finished, Ron): Release R11-12-1 = keyer update over USB.** Daughter-board PIC keyer gets an
+  I2C bootloader (0x5C; `keyer-buffer/bootloader/`); pill 3.16 passes USB opcode 0x9F (CMD_KEYER_BOOT,
+  marked taken in ms-sdr `usbavrcmd.h`; ms-sdr never sends it) to the PIC; `keyer-flash` / `keyer-flash.gui`
+  (`firmware-programmers/keyer-flash/`, Windows .exe in `firmware-programmers/windows/keyer-flash/`) refuse
+  while the servers run. Tested on the rig: Pi command line and Windows GUI, 179 rows, settings kept.
+  Installers: Windows `mscc-net9-R11-12-1-install.exe` (`Keyer Firmware\` + Start-menu "Keyer Firmware
+  Update", Black Pill 3.16; client / servers unchanged), Pi `mscc_1.0.83_arm64.deb` (= 1.0.82 + keyer tools,
+  menu entry, `/usr/share/mscc/firmware/keyer/`, Black Pill 3.16; compared file by file with 1.0.82).
+  1.0.83 not yet installed on the Pi (the tools were put there by hand first). PSoC radios: same pass-through
+  PARKED (Ron: "No step 3 for now"). Pi tools never go in ~/utils (Ron's own folder).
 - **Docs: firmware upgrade note (2026-11-11, Ron).** docs/manuals drafts: Windows 2.6 + Linux 2.7 got a bold
   "Firmware update required" paragraph (cal store in the radio, upgrade for the transceiver you have, old firmware =
   "RADIO FIRMWARE UPDATE REQUIRED" + cal only on the PC); firmware tables updated to the shipped versions (3.243,

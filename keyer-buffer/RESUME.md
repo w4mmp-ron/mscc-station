@@ -1,5 +1,62 @@
 # Keyer — handoff / resume
 
+## I2C bootloader (started 2026-11-12) — update the PIC from the Pi, no PICkit
+
+**2026-11-12, Ron: "No step 3 for now."** Steps 1 + 2 done and shipped; step 3 (PSoC
+pass-through) PARKED, don't start unasked. Until then PSoC radios update the keyer with the PICkit.
+**Status (history):** step 1 of 3. `bootloader/` written and builds (551 of 1,024 words); not yet on a chip.
+Design and protocol: `bootloader/README.md`. Bootloader address 0x5C (Ron's choice; 0x40-0x4F
+avoided, the Potentia power sensor is also 0x40 on the PSoC bus). Daughter-board radios only,
+both pill and PSoC.
+**Steps:** (1) bootloader + keyer app at code offset 0x400 + opcode 0x9F 0x5C (enter
+bootloader), bench test with the PICkit; (2) pill I2C pass-through command + Pi
+`keyer-flash.py`; (3) same pass-through in the PSoC (`Proficio-Ultimus-MKII-PTT`).
+**Done (step 1, not yet on a chip):** app built at code offset 0x400 (production config;
+`Makefile-production.mk` patched by hand with `-mcodeoffset=0x400` — MPLAB's command-line
+makefile generator renames the output after the folder, so don't use it). Opcode 0x9F 0x5C
+(free in every layer per ms-sdr `usbavrcmd.h`; 0x9E is CMD_SET_FM_POWER there) sets EEPROM
+0xFF and resets. `copy-hexfile.bat` now makes two files: `Release\Keyer-MCU-full-DATE.hex`
+(bootloader + app + EEPROM defaults, PICkit 3) and `Release\Keyer-MCU-app-DATE.hex` (app
+only, Pi utility). First pair: 20261112 (checked: layout, config words match, EEPROM 0xFF blank).
+**In the rig since 2026-11-12:** `Keyer-MCU-full-20261112.hex` (PICkit, `-Z`); backup before it
+`Release\Keyer-MCU-backup-before-boot-20261112.hex` (= 11-10 stream build). Ron: all tested, keyer
+works fine. **Step 1 done.**
+**Step 2 TESTED 2026-11-12:** PIC has bootloader v2 (PICkit, `-Z`), pill 3.16 flashed via the
+Pi; `keyer-flash.py firmware/Keyer-MCU-app-20261112.hex` on the Pi: 179 rows written +
+checked in 22 s, app back. PICkit read-back: all code = full file, EEPROM unchanged, 0xFF
+clear. Pi files: `~/utils/keyer-flash.py`, `~/utils/firmware/` (the Pi's scripts live in
+`~/utils`, not `~/utilities` as the utility-scripts README says). GUI added 2026-11-12:
+`keyer-flash-gui.py` (tkinter, Pi + Windows, uses keyer-flash.py from the same folder; layout
+like the Pi's psoc-bootloader.gui). Built, not yet run on the Pi desktop. Ron 2026-11-12: no
+keyer updates while the servers run: both tools check first and, if any server is running,
+say "stop the servers" and quit (GUI: message, window closes; also re-checked before each
+button). They no longer stop / start mscc themselves. Tested on the Pi with mscc up: refused.
+**Windows tested 2026-11-12 (Ron, MKII on the PC, servers closed):** `keyer-flash.py --check`
+OK, then the GUI: Program, 179 rows, "Keyer updated and running". Both Pi (CLI) and Windows
+(GUI) update paths proven. Windows Load File opens the script folder (no keyer firmware folder
+on Windows yet; at "finished": installer payload "Keyer Firmware" like Black Pill / PSoC).
+GUI: "Leave Bootloader" became "Start Keyer", greyed out unless the keyer is found waiting in
+its bootloader. **Pi install (Ron: ~/utils is his own, don't use it):** scripts in
+`/usr/share/mscc/bin`, links `/usr/local/bin/keyer-flash` + `keyer-flash.gui`, menu
+`/usr/share/applications/mscc-keyer-flash.desktop` ("Keyer Firmware Update"), hex in
+`/usr/share/mscc/firmware/keyer/` (Load File opens there). Put there by hand 2026-11-12; my
+files removed from ~/utils.
+**Shipped 2026-11-12 (Ron: "finished"):** sources moved to `firmware-programmers/keyer-flash/`
+(README, build-exe.cmd); Windows .exe (PyInstaller) in `firmware-programmers/windows/keyer-flash/`.
+Windows installer R11-12-1: `C:\mscc-net9\Keyer Firmware\` (2 .exe + app/full hex, Start-menu
+"Keyer Firmware Update"; stage.ps1 + MSCC.aip). Pi mscc 1.0.83: scripts, links, menu entry,
+`/usr/share/mscc/firmware/keyer/` (build-deb.sh, postinst, prerm). Both carry Black Pill 3.16.
+1.0.83 built + compared with 1.0.82 (only the keyer files and 3.16 differ); NOT yet installed on
+the Pi by me (Ron to install). **Next: step 3 (PSoC).**
+Bootloader version 2: row sent in 16-byte pieces
+(`05 off d0..d15`, then `02 sum`) so each I2C transfer is ~2 ms. The rig still has version 1
+(`Release\Keyer-MCU-full-20261112-boot1.hex`); `Keyer-MCU-full-20261112.hex` is now version 2
+(same app) and goes on once more with the PICkit. Pill 3.16: `CMD_KEYER_BOOT 0x9F`
+(`keyer_boot.c`, beater case 3; blocking HAL OK, Ron: servers are stopped during an update).
+8 MHz tree synced (keyer_boot.c/.h copied by hand: the sync script copies tracked files
+only). Script: `keyer-flash.py` (now in `firmware-programmers/keyer-flash/`). `usbavrcmd.h`:
+0x9F marked taken (copied to V:).
+
 ## keyer-buffer: buffered Farnsworth (Ron's design, 2026-11-05) — read first
 
 **Tree:** `worktrees/keyer-buffer` (copy of `worktrees/keyer` at d40a7ba; work here).
@@ -66,7 +123,9 @@ its firmware will be a `STANDALONE` build of this tree (see that folder's spec, 
 **Build:** MPLAB X project in this folder (paths point at keyer-buffer). Command line:
 `make -f nbproject/Makefile-production.mk SUBPROJECTS= .build-conf CONF=production` with
 MPLAB's GnuWin32 `make.exe` on PATH; the post-build `copy-hexfile` step fails from bash
-(run `copy-hexfile.bat` from cmd, or copy `dist/production/production/keyer.production.hex`).
+(run `copy-hexfile.bat` from cmd; since 2026-11-12 it also builds the bootloader and makes
+the full + app release files). The app hex alone starts at 0x400 and will not run without
+the bootloader.
 Flash: `ipecmd -TPPK3 -P16F18326 -F<hex> -M -Z -Y -OL` (`-Z` keeps the EEPROM, rig powers
 the PIC); read a backup first with `-GF<file>`.
 

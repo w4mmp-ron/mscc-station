@@ -107,6 +107,12 @@ those on a calibrated radio. Run it with no word for the full list.
 
 -------------------------------------------------------------------------------
 
+Keyer update (keyer-flash, Keyer Firmware Update): not here any more. It is a
+firmware tool now, installed with MSCC (Pi .deb and Windows installer). See
+firmware-programmers/keyer-flash/README.md.
+
+-------------------------------------------------------------------------------
+
     sudo python3 rx-iq-balance/rx-image-meter.py
 
 Shows the receive image rejection while you move the RX IQ slider in the client.

@@ -209,6 +209,29 @@ for f in "${bp_app[0]}" "$bp_boot" "$BP_SRC/bootload-PA8.bin"; do
 done
 echo "  firmware:    black-pill $(basename "${bp_app[0]}"), $(basename "$bp_boot"), bootload-PA8.bin"
 
+# Keyer (PIC on the daughter board, 1.0.83): Keyer-MCU-app / -full-<date>.hex (stage.ps1 puts the
+# newest pair in the payload) -> /usr/share/mscc/firmware/keyer/; update tool keyer-flash (command
+# line) + keyer-flash.gui (window, menu "Keyer Firmware Update") from firmware-programmers/keyer-flash.
+KF_FW="$WIN_PAYLOAD/Keyer Firmware"
+KF_SRC="$TREE/../firmware-programmers/keyer-flash"
+need_dir "$KF_FW"
+mkdir -p "$PKG/usr/share/mscc/firmware/keyer"
+shopt -s nullglob
+kf_hex=( "$KF_FW"/Keyer-MCU-app-*.hex "$KF_FW"/Keyer-MCU-full-*.hex )
+shopt -u nullglob
+[[ ${#kf_hex[@]} -eq 2 ]] || { echo "ERROR: expected one Keyer-MCU-app and one Keyer-MCU-full .hex in $KF_FW, got ${#kf_hex[@]} (run stage.ps1)" >&2; exit 1; }
+install -m 644 "${kf_hex[@]}" "$PKG/usr/share/mscc/firmware/keyer/"
+for f in keyer-flash.py keyer-flash-gui.py; do
+  need_file "$KF_SRC/$f"
+  tr -d '\r' < "$KF_SRC/$f" > "$PKG/usr/share/mscc/bin/$f"
+  chmod 755 "$PKG/usr/share/mscc/bin/$f"
+done
+need_file "$KF_SRC/keyer-flash.desktop"
+tr -d '\r' < "$KF_SRC/keyer-flash.desktop" > "$PKG/usr/share/applications/mscc-keyer-flash.desktop"
+chmod 644 "$PKG/usr/share/applications/mscc-keyer-flash.desktop"
+grep -q 'X-MSCC' "$PKG/usr/share/applications/mscc-keyer-flash.desktop"
+echo "  keyer:       $(basename "${kf_hex[0]}"), $(basename "${kf_hex[1]}"), keyer-flash, keyer-flash.gui"
+
 # PortAudio with Pulse + ALSA (was mscc-portaudio): library, headers (servers are built on the
 # Pi) and pkg-config into /usr/local. postinst registers /usr/local/lib (mscc.conf); recv / trans
 # also have it as RUNPATH.

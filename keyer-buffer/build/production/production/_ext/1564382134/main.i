@@ -7,7 +7,7 @@
 # 1 "C:\\Program Files\\Microchip\\xc8\\v2.45\\pic\\include\\language_support.h" 1 3
 # 2 "<built-in>" 2
 # 1 "C:/Users/Ron/.grok/worktrees/keyer-buffer/main.c" 2
-# 38 "C:/Users/Ron/.grok/worktrees/keyer-buffer/main.c"
+# 41 "C:/Users/Ron/.grok/worktrees/keyer-buffer/main.c"
 # 1 "C:/Users/Ron/.grok/worktrees/keyer-buffer/mcc_generated_files/mcc.h" 1
 # 49 "C:/Users/Ron/.grok/worktrees/keyer-buffer/mcc_generated_files/mcc.h"
 # 1 "C:\\Program Files\\Microchip\\xc8\\v2.45\\pic\\include\\xc.h" 1 3
@@ -10929,7 +10929,8 @@ void OSCILLATOR_Initialize(void);
 void WDT_Initialize(void);
 # 111 "C:/Users/Ron/.grok/worktrees/keyer-buffer/mcc_generated_files/mcc.h"
 void PMD_Initialize(void);
-# 39 "C:/Users/Ron/.grok/worktrees/keyer-buffer/main.c" 2
+# 41 "C:/Users/Ron/.grok/worktrees/keyer-buffer/main.c" 2
+
 # 1 "C:/Users/Ron/.grok/worktrees/keyer-buffer/defines.h" 1
 # 30 "C:/Users/Ron/.grok/worktrees/keyer-buffer/defines.h"
 #pragma warning disable 520
@@ -10938,7 +10939,8 @@ void PMD_Initialize(void);
 #pragma warning disable 1510
 #pragma warning disable 1498
 #pragma warning disable 2083
-# 40 "C:/Users/Ron/.grok/worktrees/keyer-buffer/main.c" 2
+# 42 "C:/Users/Ron/.grok/worktrees/keyer-buffer/main.c" 2
+
 # 1 "C:\\Program Files\\Microchip\\xc8\\v2.45\\pic\\include\\c99\\string.h" 1 3
 # 25 "C:\\Program Files\\Microchip\\xc8\\v2.45\\pic\\include\\c99\\string.h" 3
 # 1 "C:\\Program Files\\Microchip\\xc8\\v2.45\\pic\\include\\c99\\bits/alltypes.h" 1 3
@@ -10996,13 +10998,15 @@ size_t strxfrm_l (char *restrict, const char *restrict, size_t, locale_t);
 
 
 void *memccpy (void *restrict, const void *restrict, int, size_t);
-# 41 "C:/Users/Ron/.grok/worktrees/keyer-buffer/main.c" 2
+# 43 "C:/Users/Ron/.grok/worktrees/keyer-buffer/main.c" 2
+
 
 # 1 "C:\\Program Files\\Microchip\\xc8\\v2.45\\pic\\include\\c99\\limits.h" 1 3
 # 10 "C:\\Program Files\\Microchip\\xc8\\v2.45\\pic\\include\\c99\\limits.h" 3
 # 1 "C:\\Program Files\\Microchip\\xc8\\v2.45\\pic\\include\\c99\\bits/limits.h" 1 3
 # 11 "C:\\Program Files\\Microchip\\xc8\\v2.45\\pic\\include\\c99\\limits.h" 2 3
-# 43 "C:/Users/Ron/.grok/worktrees/keyer-buffer/main.c" 2
+# 45 "C:/Users/Ron/.grok/worktrees/keyer-buffer/main.c" 2
+
 # 1 "C:\\Program Files\\Microchip\\xc8\\v2.45\\pic\\include\\c99\\ctype.h" 1 3
 # 10 "C:\\Program Files\\Microchip\\xc8\\v2.45\\pic\\include\\c99\\ctype.h" 3
 int isalnum(int);
@@ -11037,8 +11041,8 @@ int isupper_l(int, locale_t);
 int isxdigit_l(int, locale_t);
 int tolower_l(int, locale_t);
 int toupper_l(int, locale_t);
-# 44 "C:/Users/Ron/.grok/worktrees/keyer-buffer/main.c" 2
-# 98 "C:/Users/Ron/.grok/worktrees/keyer-buffer/main.c"
+# 46 "C:/Users/Ron/.grok/worktrees/keyer-buffer/main.c" 2
+# 114 "C:/Users/Ron/.grok/worktrees/keyer-buffer/main.c"
 static int cw_keyer_speed = 18;
 static int cw_keyer_weight = 50;
 static int cw_keyer_mode = 2;
@@ -11258,7 +11262,7 @@ void keyer_update() {
         cw_keyer_speed = 60;
     dot_delay = (uint16_t)(1200 / cw_keyer_speed);
     dash_delay = (uint16_t)(((uint32_t)dot_delay * 3u * (uint32_t)cw_keyer_weight) / 50u);
-# 332 "C:/Users/Ron/.grok/worktrees/keyer-buffer/main.c"
+# 348 "C:/Users/Ron/.grok/worktrees/keyer-buffer/main.c"
     text_wpm = cw_mem_text_wpm;
     if (text_wpm != 0 && text_wpm < 5)
         text_wpm = 0;
@@ -11311,8 +11315,7 @@ static uint8_t paddles_closed(void) {
 
 
 
-static uint8_t buf_len[64];
-static uint16_t buf_bits[64];
+static uint8_t buf_sym[128];
 static uint8_t buf_head = 0;
 static uint8_t buf_tail = 0;
 static uint8_t buf_count = 0;
@@ -11322,25 +11325,23 @@ static void buf_clear(void) {
     buf_head = buf_tail = buf_count = buf_letters = 0;
 }
 
-static void buf_push(uint8_t len, uint16_t bits) {
-    if (buf_count >= 64)
+static void buf_push(uint8_t sym) {
+    if (buf_count >= 128)
         return;
-    buf_len[buf_head] = len;
-    buf_bits[buf_head] = bits;
-    buf_head = (uint8_t)((buf_head + 1u) & (64 - 1u));
+    buf_sym[buf_head] = sym;
+    buf_head = (uint8_t)((buf_head + 1u) & (128 - 1u));
     buf_count++;
-    if (len != 0)
+    if (sym == 3u)
         buf_letters++;
 }
 
-static uint8_t buf_pop(uint8_t *len, uint16_t *bits) {
+static uint8_t buf_pop(uint8_t *sym) {
     if (buf_count == 0)
         return 0;
-    *len = buf_len[buf_tail];
-    *bits = buf_bits[buf_tail];
-    buf_tail = (uint8_t)((buf_tail + 1u) & (64 - 1u));
+    *sym = buf_sym[buf_tail];
+    buf_tail = (uint8_t)((buf_tail + 1u) & (128 - 1u));
     buf_count--;
-    if (*len != 0)
+    if (*sym == 3u)
         buf_letters--;
     return 1;
 }
@@ -11378,11 +11379,6 @@ static uint8_t seq_next(seq_t *s, uint8_t *len, uint16_t *bits) {
     char c;
     uint8_t n;
 
-    if (s->use_buf) {
-        if (!buf_pop(len, bits))
-            return 0;
-        return (*len == 0) ? 2u : 1u;
-    }
     while (s->text != ((void*)0) && s->text_pos < s->text_len) {
         c = s->text[s->text_pos++];
         if (c == ' ' || c == '\t')
@@ -11419,10 +11415,76 @@ static uint16_t seq_elem_ms(seq_t *s) {
     return ((s->bits >> s->idx) & 1u) ? dash_delay : dot_delay;
 }
 
+
+
+static void seq_buf_next(seq_t *s) {
+    uint8_t sym;
+    uint16_t t;
+
+    if (!buf_pop(&sym))
+        return;
+    s->timer = 0;
+    if (sym == 1u || sym == 2u) {
+        s->target = (sym == 2u) ? dash_delay : dot_delay;
+        s->mark = 1;
+        s->idle_ms = 0;
+        s->state = SQ_MARK;
+        return;
+    }
+    if (sym == 3u) {
+
+
+        t = s->farns ? tx_letter_gap : (uint16_t)(3u * dot_delay);
+        t = (t > dot_delay) ? (uint16_t)(t - dot_delay) : 0u;
+    } else {
+
+        t = s->farns ? tx_word_extra : (uint16_t)(4u * dot_delay);
+    }
+    if (s->idle_ms >= t) {
+        s->idle_ms = (uint16_t)(s->idle_ms - t);
+    } else {
+        s->target = (uint16_t)(t - s->idle_ms);
+        s->state = SQ_GAP;
+    }
+}
+
+static void seq_tick_buf(seq_t *s) {
+    switch (s->state) {
+    case SQ_IDLE:
+        if (s->idle_ms < 60000u)
+            s->idle_ms++;
+        seq_buf_next(s);
+        break;
+    case SQ_MARK:
+        if (++s->timer >= s->target) {
+            s->mark = 0;
+            s->timer = 0;
+            s->target = dot_delay;
+            s->state = SQ_SPACE;
+        }
+        break;
+    case SQ_SPACE:
+    case SQ_GAP:
+        if (++s->timer >= s->target) {
+            s->idle_ms = 0;
+            s->state = SQ_IDLE;
+            seq_buf_next(s);
+        }
+        break;
+    default:
+        seq_stop(s);
+        break;
+    }
+}
+
 static void seq_tick(seq_t *s) {
     uint8_t got;
     uint16_t extra;
 
+    if (s->use_buf) {
+        seq_tick_buf(s);
+        return;
+    }
     switch (s->state) {
     case SQ_IDLE:
         got = seq_next(s, &s->len, &s->bits);
@@ -11500,8 +11562,6 @@ static uint8_t dash_memory = 0;
 static uint8_t pd_suspend_phase = 0;
 
 static uint8_t letter_open = 0;
-static uint8_t letter_len = 0;
-static uint16_t letter_bits = 0;
 static uint16_t pd_gap = 0xFFFFu;
 static uint8_t word_pending = 0;
 
@@ -11509,28 +11569,33 @@ static uint8_t buffered_mode(void) {
     return (uint8_t)(cw_paddle_farns && cw_keyer_mode != 0);
 }
 
+static void pd_suspend(void) {
+
+
+    if (pd_state == PD_SUSPEND)
+        return;
+    pd_mark = 0;
+    pd_state = PD_SUSPEND;
+    pd_suspend_phase = 0;
+    pd_timer = 0;
+}
+
 static void pd_close_letter(void) {
     if (!letter_open)
         return;
     letter_open = 0;
-    buf_push(letter_len, letter_bits);
+    buf_push(3u);
     word_pending = 1;
-    if (buf_letters >= 20 && pd_state != PD_SUSPEND) {
-
-
-        pd_state = PD_SUSPEND;
-        pd_suspend_phase = 0;
-        pd_timer = 0;
-    }
+    if (buf_letters >= 20 || buf_count >= 120)
+        pd_suspend();
 }
 
 static void pd_start_element(uint8_t dash) {
-    if (buffered_mode()) {
-        if (letter_open && letter_len >= 16) {
-            pd_close_letter();
-            if (pd_state == PD_SUSPEND)
-                return;
-        }
+    if (buffered_mode() && buf_count >= 120) {
+
+        pd_close_letter();
+        pd_suspend();
+        return;
     }
     dot_memory = 0;
     dash_memory = 0;
@@ -11539,14 +11604,8 @@ static void pd_start_element(uint8_t dash) {
     pd_mark = 1;
     pd_state = PD_MARK;
     if (buffered_mode()) {
-        if (!letter_open) {
-            letter_open = 1;
-            letter_len = 0;
-            letter_bits = 0;
-        }
-        if (dash)
-            letter_bits |= (uint16_t)(1u << letter_len);
-        letter_len++;
+        letter_open = 1;
+        buf_push(dash ? 2u : 1u);
     }
 }
 
@@ -11615,7 +11674,7 @@ static void paddle_tick(void) {
             if (pd_state == PD_IDLE && word_pending &&
                 pd_gap >= 5 * dot_delay) {
                 word_pending = 0;
-                buf_push(0, 0);
+                buf_push(0u);
             }
         }
         break;
@@ -11979,6 +12038,15 @@ void CW_Update_Config() {
                 if (cw_msg_store_len < 48) {
                     cw_msg_ram[cw_msg_store_len++] = p1;
                 }
+            }
+            break;
+        case 0x9F:
+
+
+            if (p1 == 0x5C) {
+                INTCONbits.GIE = 0;
+                DATAEE_WriteByte(0xF0FF, 0x5C);
+                __asm("reset");
             }
             break;
         default:

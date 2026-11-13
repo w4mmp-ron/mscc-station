@@ -161,6 +161,10 @@ configure)
   ln -sfn /usr/share/mscc/bin/psoc-bootloader.gui /usr/local/bin/psoc-bootloader.gui
   ln -sfn /usr/share/mscc/bin/mscc-virtual-audio.sh /usr/local/bin/mscc-virtual-audio
   ln -sfn /usr/share/mscc/bin/mscc-desktop-ctl.sh /usr/local/bin/mscc-desktop-ctl
+  # 1.0.83: keyer (PIC) update tool, command line + window
+  ln -sfn /usr/share/mscc/bin/keyer-flash.py /usr/local/bin/keyer-flash
+  ln -sfn /usr/share/mscc/bin/keyer-flash-gui.py /usr/local/bin/keyer-flash.gui
+  chmod 755 /usr/share/mscc/bin/keyer-flash.py /usr/share/mscc/bin/keyer-flash-gui.py 2>/dev/null || true
   chmod 755 /usr/share/mscc/bin/mscc-virtual-audio.sh 2>/dev/null || true
   chmod 755 /usr/share/mscc/bin/mscc-desktop-ctl.sh 2>/dev/null || true
   chmod 755 /usr/share/mscc/bin/mscc-status-report 2>/dev/null || true
@@ -170,6 +174,7 @@ configure)
   log "links: /usr/local/bin/psoc-bootloader.gui → /usr/share/mscc/bin/psoc-bootloader.gui"
   log "links: /usr/local/bin/mscc-virtual-audio → /usr/share/mscc/bin/mscc-virtual-audio.sh"
   log "links: /usr/local/bin/mscc-desktop-ctl → /usr/share/mscc/bin/mscc-desktop-ctl.sh"
+  log "links: /usr/local/bin/keyer-flash , keyer-flash.gui → /usr/share/mscc/bin/keyer-flash*.py"
   log "status report: /usr/share/mscc/bin/mscc-status-report (via mscc status)"
   # 1.0.79: PortAudio (was mscc-portaudio) in /usr/local/lib; own loader file name, so the
   # old package's remove script (mscc-portaudio.conf) cannot take it away
@@ -364,14 +369,17 @@ configure)
   echo "================================================================"
   echo "  Binaries:  $MSCC_DIR"
   echo "  Config:    $CFG_DIR"
-  echo "  Links:     mscc , psoc-bootloader , psoc-bootloader.gui , mscc-virtual-audio , mscc-desktop-ctl"
-  echo "  Desktop:   MSCC — Start / Stop / Status / Firmware Upload"
+  echo "  Links:     mscc , psoc-bootloader , psoc-bootloader.gui , mscc-virtual-audio , mscc-desktop-ctl ,"
+  echo "             keyer-flash , keyer-flash.gui"
+  echo "  Desktop:   MSCC — Start / Stop / Status / Firmware Upload / Keyer Firmware Update"
   echo "  Groups:    dialout, plugdev, audio (log out/in if just added)"
   echo "  Udev:      /etc/udev/rules.d/99-proficio.rules (app + HID LOADER)"
   echo "  Firmware:  psoc-bootloader.gui   or:  psoc-bootloader file.cyacd"
   echo "             PSoC files: /usr/share/mscc/firmware/<Radio>/"
-  echo "             Black Pill: sudo stm32-app-flash /usr/share/mscc/firmware/black-pill/app-firmware-async.bin"
+  echo "             Black Pill: sudo stm32-app-flash /usr/share/mscc/firmware/black-pill/BlackPill-25MHz-<ver>-app.bin"
   echo "             (BOOT jumper on; stop ms-sdr first)"
+  echo "             Keyer (daughter board): keyer-flash.gui  or:  keyer-flash Keyer-MCU-app-<date>.hex"
+  echo "             Keyer files: /usr/share/mscc/firmware/keyer/ (servers must be stopped)"
   echo "  Boot:      dtoverlay=audioinjector-wm8731-audio (reboot if newly added)"
   echo "  Digi:      VirtualA/B via mscc-virtual-audio (user systemd at login)"
   echo

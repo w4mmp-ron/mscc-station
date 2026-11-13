@@ -83,6 +83,12 @@ transmitting.
 
 -------------------------------------------------------------------------------
 
+Keyer update (keyer-flash, Keyer Firmware Update): not here any more. It is a
+firmware tool now, installed with MSCC (Pi .deb and Windows installer). See
+firmware-programmers/keyer-flash/README.md.
+
+-------------------------------------------------------------------------------
+
     python cal-test.py valid
     python cal-test.py dump
     python cal-test.py get tx 2
