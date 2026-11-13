@@ -2,6 +2,13 @@
 
 Installer: `mscc-net9-R<version>-install.exe` (WPF client + Windows servers). Install the newest one; older installers in this folder are kept for roll-back only.
 
+## R11.13.5 — 2026-11-13  (`mscc-net9-R11-13-5-install.exe`, title bar 11.13.6)
+
+### Changed (client)
+- Clear RIT now only puts the RIT offset back to 0; the RIT box stays on.
+- RIT is kept across restarts: the RIT box and the offset are saved and sent to the servers when you connect.
+- Servers unchanged (ms-sdr 3.211, recv 3.154, trans 3.159).
+
 ## R11.13.4 — 2026-11-13  (`mscc-net9-R11-13-4-install.exe`, title bar 11.13.4)
 
 ### Added (client, Remote Digital: WSJT-X on this PC, radio on another computer)

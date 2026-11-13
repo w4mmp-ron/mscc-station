@@ -136,6 +136,9 @@ public static class SpectrumWaterfallSettings
     public static string RemoteDigiMicDeviceName { get; set; } = "";
     /// <summary>Remote window Phones (false) / Digital (true), kept across starts (as Avalonia 1.6.85).</summary>
     public static bool RemoteDigital { get; set; }
+    /// <summary>RIT checkbox and offset (Hz), kept across starts; same keys as Avalonia (RIT_ON / RIT_OFFSET).</summary>
+    public static bool RitOn { get; set; }
+    public static int RitOffsetHz { get; set; }
     public static int RemotePlayVolume { get; set; } = 80;
     public static int RemoteMicVolume { get; set; } = 80;
     /// <summary>Remote Digital MSA1 TX drive (0–100). Separate from phones REMOTE_MIC_VOL.</summary>
@@ -946,6 +949,10 @@ public static class SpectrumWaterfallSettings
                         RemoteDigiMicDeviceName = ParseIniString(line, "");
                     if (LineMatchesKey(line, "REMOTE_DIGITAL"))
                         RemoteDigital = ParseIniBool(line, RemoteDigital);
+                    if (LineMatchesKey(line, "RIT_ON"))
+                        RitOn = ParseIniBool(line, RitOn);
+                    if (LineMatchesKey(line, "RIT_OFFSET"))
+                        RitOffsetHz = Math.Clamp(ParseIniInt(line, RitOffsetHz), -500, 500);
                     if (LineMatchesKey(line, "REMOTE_PLAY_VOL"))
                         RemotePlayVolume = Math.Clamp(ParseIniInt(line, RemotePlayVolume), 0, 100);
                     if (LineMatchesKey(line, "REMOTE_MIC_VOL"))
@@ -1251,6 +1258,8 @@ public static class SpectrumWaterfallSettings
         UpdateOrAdd(lines, "REMOTE_DIGI_PLAY_NAME", RemoteDigiPlayDeviceName ?? "");
         UpdateOrAdd(lines, "REMOTE_DIGI_MIC_NAME", RemoteDigiMicDeviceName ?? "");
         UpdateOrAdd(lines, "REMOTE_DIGITAL", RemoteDigital ? "1" : "0");
+        UpdateOrAdd(lines, "RIT_ON", RitOn ? "1" : "0");
+        UpdateOrAdd(lines, "RIT_OFFSET", Math.Clamp(RitOffsetHz, -500, 500).ToString());
         UpdateOrAdd(lines, "REMOTE_PLAY_VOL", Math.Clamp(RemotePlayVolume, 0, 100).ToString());
         UpdateOrAdd(lines, "REMOTE_MIC_VOL", Math.Clamp(RemoteMicVolume, 0, 100).ToString());
         UpdateOrAdd(lines, "REMOTE_DIGI_MIC_VOL", Math.Clamp(RemoteDigitalMicVolume, 0, 100).ToString());

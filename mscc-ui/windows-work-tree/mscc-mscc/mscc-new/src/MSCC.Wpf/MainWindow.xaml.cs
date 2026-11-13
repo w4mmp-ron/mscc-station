@@ -204,9 +204,9 @@ public partial class MainWindow : Window
     {
         if (ViewModel != null)
         {
-            ViewModel.RadioState.ActiveVfo.RitOn = false;
+            // Slider only: the RIT checkbox stays as it is (Ron 2026-11-13).
             ViewModel.RadioState.ActiveVfo.RitOffsetHz = 0;
-            ViewModel.MonitorTextBoxText(" Clear RIT clicked");
+            ViewModel.MonitorTextBoxText(" Clear RIT: offset reset to 0");
         }
     }
 

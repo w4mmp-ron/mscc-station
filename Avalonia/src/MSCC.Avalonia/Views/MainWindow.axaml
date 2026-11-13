@@ -164,7 +164,7 @@
           </Grid>
           <Button Content="Clear RIT" Classes="mscc-gold" Width="72" HorizontalAlignment="Left" Margin="0,0,0,2"
                   Command="{Binding ClearRitCommand}"
-                  ToolTip.Tip="RIT off and offset → 0"/>
+                  ToolTip.Tip="Offset → 0 (RIT stays on)"/>
 
           <!-- Temps moved to SET tab (frees left rail). Optional session counters: -->
           <TextBlock Text="{Binding PacketStatsText}" FontSize="8" Foreground="#888888" TextWrapping="Wrap" Margin="0,4,0,0"/>

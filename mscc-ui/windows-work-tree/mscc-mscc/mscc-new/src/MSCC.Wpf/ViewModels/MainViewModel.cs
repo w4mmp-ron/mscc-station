@@ -2241,6 +2241,14 @@ public partial class MainViewModel : ObservableObject, IDisposable
         _suppressKeyerMemSave = false;
         KeyerMemStatus = "";
 
+        // RIT checkbox + offset (client sticky, RIT_ON / RIT_OFFSET). Set on both VFOs before the
+        // VFO handlers are hooked, so nothing is sent; it goes to the server at connect.
+        foreach (var vfo in new[] { RadioState.VfoA, RadioState.VfoB })
+        {
+            vfo.RitOffsetHz = Math.Clamp(SpectrumWaterfallSettings.RitOffsetHz, -500, 500);
+            vfo.RitOn = SpectrumWaterfallSettings.RitOn;
+        }
+
         // External electronic keyer / legacy (sticky client + mscc.ini PROFICIO-MKII)
         _externalElectronicKeyer = SpectrumWaterfallSettings.ExternalElectronicKeyer;
         // Local 0/1 + Remote checkbox (never persist 2/3 as radio boot mode)
@@ -5207,6 +5215,7 @@ public partial class MainViewModel : ObservableObject, IDisposable
     /// ms-sdr restores the last indexes it received (user_controls.ini), which can differ from the
     /// client's per-mode profile (e.g. index 0 left there by the pre-10.31 LSB bug).</summary>
     private bool _cutsPushedThisSession;
+    private bool _ritPushedThisSession;
 
     private async Task PushCutIndexesToRadioAsync()
     {
@@ -5273,6 +5282,13 @@ public partial class MainViewModel : ObservableObject, IDisposable
         {
             var v = RadioState.ActiveVfo!;
             _ = _radioService.SetRitAsync(v.RitOn, v.RitOffsetHz);
+            int off = (int)Math.Clamp(v.RitOffsetHz, -500, 500);
+            if (SpectrumWaterfallSettings.RitOn != v.RitOn || SpectrumWaterfallSettings.RitOffsetHz != off)
+            {
+                SpectrumWaterfallSettings.RitOn = v.RitOn;
+                SpectrumWaterfallSettings.RitOffsetHz = off;
+                try { SpectrumWaterfallSettings.Save(); } catch { /* best-effort sticky */ }
+            }
         }
         else if (e.PropertyName == nameof(VfoState.FrequencyHz))
         {
@@ -6010,6 +6026,7 @@ public partial class MainViewModel : ObservableObject, IDisposable
                 MonitorTextBoxText($" Start ({reason}): remote endpoint {BackendIp}:{BackendPort}");
             }
             _cutsPushedThisSession = false;
+            _ritPushedThisSession = false;
             await _radioService.StartAsync(launchSubsystems: launch);
             _serversLaunchedThisSession = launch;
             IsRadioRunning = _radioService.IsConnected;
@@ -6382,6 +6399,13 @@ public partial class MainViewModel : ObservableObject, IDisposable
                 _cutsPushedThisSession = true;
                 _ = PushCutIndexesToRadioAsync();
                 MonitorTextBoxText($" Filter cuts pushed at connect: Lo={LowCutIndex} Hi={HighCutIndex}");
+            }
+            if (!_ritPushedThisSession)
+            {
+                _ritPushedThisSession = true;
+                var rv = RadioState.ActiveVfo;
+                _ = _radioService.SetRitAsync(rv.RitOn, rv.RitOffsetHz);
+                MonitorTextBoxText($" RIT pushed at connect: {(rv.RitOn ? "on" : "off")} offset {rv.RitOffsetHz} Hz");
             }
             FrequencyReportedForConnectSafety?.Invoke();
         };

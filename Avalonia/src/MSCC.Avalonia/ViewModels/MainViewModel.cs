@@ -1953,10 +1953,7 @@ public partial class MainViewModel : ViewModelBase, IDisposable
             ResetAlcMeter();
             BandText = "—";
             CurrentSpectrum = null;
-            _suppressRitSend = true;
-            RitOn = false;
-            RitOffset = 0;
-            _suppressRitSend = false;
+            // RIT is kept (sticky, RIT_ON / RIT_OFFSET); it is sent again at the next connect.
         }
         finally
         {
@@ -3423,13 +3420,13 @@ public partial class MainViewModel : ViewModelBase, IDisposable
     [RelayCommand]
     private void ClearRit()
     {
+        // Slider only: the RIT checkbox stays as it is (Ron 2026-11-13).
         _suppressRitSend = true;
-        RitOn = false;
         RitOffset = 0;
         _suppressRitSend = false;
         if (CanOperate())
             _ = SendRitAsync();
-        AppendLog("RIT cleared");
+        AppendLog("Clear RIT: offset reset to 0");
     }
 
     private async Task SendRitAsync()
