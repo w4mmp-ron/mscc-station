@@ -1,1 +1,0 @@
-copy /Y /B dist\production\production\keyer.production.hex Release\Keyer-MCU-%date:~10,4%%date:~4,2%%date:~7,2%.hex

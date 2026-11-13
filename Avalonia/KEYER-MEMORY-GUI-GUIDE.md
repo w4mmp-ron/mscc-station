@@ -3,7 +3,7 @@
 **Date:** 2026-08-13  
 **Audience:** Stew (Windows client / GUI)  
 **Mockup:** Ron `Downloads/mscc.jpg` (CW tab annotations)  
-**Backend protocol:** `worktrees/keyer/KEYER-MEMORY.md`, `keyer/RESUME.md`  
+**Backend protocol:** `worktrees/keyer-buffer/KEYER-MEMORY.md`, `keyer-buffer/RESUME.md`  
 **Linux host:** `worktrees/ms-sdr-linux/RESUME.md`  
 **Farnsworth delay:** §3 of this document (`0x76` / memory play gaps)  
 

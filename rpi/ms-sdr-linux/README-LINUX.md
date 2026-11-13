@@ -45,7 +45,7 @@ make clean
 
 ## Keyer CQ memory (handoff)
 
-See **`RESUME.md`** in this tree and `worktrees/keyer/KEYER-MEMORY.md`.
+See **`RESUME.md`** in this tree and `worktrees/keyer-buffer/KEYER-MEMORY.md`.
 
 - **`0x9C` `CMD_SET_KEYER_MEMORY`:** one UDP/USB param at a time; USB payload **2 bytes** `[param, seq]`; paced after each send.
 - **`0x76` `SET_MEM_TEXT_WPM`:** sent to Proficio (needs firmware flash); PIC Farnsworth apply later.

@@ -27,7 +27,7 @@ checked in 22 s, app back. PICkit read-back: all code = full file, EEPROM unchan
 clear. Pi files: `~/utils/keyer-flash.py`, `~/utils/firmware/` (the Pi's scripts live in
 `~/utils`, not `~/utilities` as the utility-scripts README says). GUI added 2026-11-12:
 `keyer-flash-gui.py` (tkinter, Pi + Windows, uses keyer-flash.py from the same folder; layout
-like the Pi's psoc-bootloader.gui). Built, not yet run on the Pi desktop. Ron 2026-11-12: no
+like the Pi's psoc-bootloader.gui). Run on the Pi desktop by Ron 2026-11-12 (mscc 1.0.83 install): works. Ron 2026-11-12: no
 keyer updates while the servers run: both tools check first and, if any server is running,
 say "stop the servers" and quit (GUI: message, window closes; also re-checked before each
 button). They no longer stop / start mscc themselves. Tested on the Pi with mscc up: refused.
