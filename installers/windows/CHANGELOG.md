@@ -2,6 +2,12 @@
 
 Installer: `mscc-net9-R<version>-install.exe` (WPF client + Windows servers). Install the newest one; older installers in this folder are kept for roll-back only.
 
+## R11.12.5 — 2026-11-12  (`mscc-net9-R11-12-5-install.exe`, title bar 11.11.4)
+
+### Added
+- Uninstaller: MSCC-NET9 now appears in Windows Settings → Apps & features, and `C:\mscc-net9\Uninstall.exe` removes the program files and shortcuts. Your settings in `%LOCALAPPDATA%\MSCC-NET9` are kept. Tested: install, uninstall, install.
+- Everything else unchanged from R11-12-4.
+
 ## R11.12.4 — 2026-11-12  (`mscc-net9-R11-12-4-install.exe`, title bar 11.11.4)
 
 ### Changed

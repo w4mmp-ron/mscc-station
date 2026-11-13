@@ -127,7 +127,18 @@ Option, not done: drag the divider on the display.
   files put there by hand; the .deb copies are byte-identical. Windows `stm32-app-flash.exe`: same servers
   check, file filter and refusal (built, not run yet). `keyer-flash.py` Windows servers check fixed (it matched
   `recv.exe` / `trans.exe` exactly; real names `mscc-recv.exe` / `Mscc-trans.exe`), keyer .exe rebuilt.
-  1.0.85 = 1.0.84 + those files (compared file by file). Client, servers, firmware unchanged. Not installed on the Pi.
+  1.0.85 = 1.0.84 + those files (compared file by file). Client, servers, firmware unchanged. Installed on the Pi
+  2026-11-12 (Ron asked; MSCC menu files moved away first to test the install: all came back).
+  **TODO next change (Ron):** postinst udev log line still says "(Proficio app 16c0:05dc + HID LOADER 04b4:b71d)";
+  add Black Pill flash mode 0483:df11 to that wording.
+  **2026-11-12 (Ron): Windows uninstaller ON for the next R build:** `MSCC.aip` `Uninstall=1`, `ShowAddRemove=1`
+  (was 0 / 0: R11-12-x had no Uninstall.exe and no Apps & features entry). Test at the next build: entry appears,
+  Uninstall removes C:\mscc-net9 files + shortcuts; check what it does with user settings in %LOCALAPPDATA%\MSCC-NET9.
+  **Built R11-12-5 (uninstaller only, payload = R11-12-4) and TESTED by Ron 2026-11-12:** MSCC-NET9 in Apps & features,
+  install / uninstall / install OK; %LOCALAPPDATA%\MSCC-NET9 settings kept. Apps & features version shows the client's
+  file version (11.11.4+b10624a...), not 11.12.5. Shipped as Release R11-12-5 (Ron: "finished"; Pi stays mscc 1.0.85).
+  Same day, Ron's PC only: dead registry entries from old installs deleted (Proficio, MSCC 020.03.04.1, MSCC-PW
+  023.02.17.01, HKLM\SOFTWARE\WOW6432Node\Multus SDR LLC); .reg backups in C:\Users\Ron\Documents\registry-backups. Dead MSCC Start-menu entries (old MSCC, MSCC-MKII, -GEMINUS, -Proficio, -PW, Multus SDR LLC) moved to C:\Users\Ron\Documents\startmenu-backup; only MSCC-NET9 left (Ron: clean).
 - **2026-11-12 (finished, Ron): Release R11-12-3** = Windows `mscc-net9-R11-12-3-install.exe` + Pi `mscc_1.0.84_arm64.deb`:
   the five PSoC keyer-update builds above (untested) + keyer-flash message listing them. R11-12-2 (same day,
   published before "finished" by mistake; Ron: leave it) = keyer GUI .exe without flashing console windows.

@@ -9,7 +9,7 @@ The installer is **not in git**. Download it from the **Releases** page:
 releases stay there for roll-back).
 
 Run the newest **`mscc-net9-R*-install.exe`** (built with Actual Installer) — currently
-**`mscc-net9-R11-12-4-install.exe`** (title bar 11.11.4). Typical deploy folder: **`C:\mscc-net9`**.
+**`mscc-net9-R11-12-5-install.exe`** (title bar 11.11.4). Typical deploy folder: **`C:\mscc-net9`**.
 
 That installer is the **WPF** client plus the Windows servers (ms-sdr 3.208, recv 3.153,
 trans 3.158), the PSoC radio firmware, the Black Pill firmware + flash tools, and the keyer
@@ -33,6 +33,13 @@ Problem reports: https://multussdr.groups.io/g/main/topics
   Windows servers yourself and Connect).
 - **Remote to a Pi or another PC:** untick Launch Servers and Connect to that computer's IP,
   UDP port **8888** (its servers already running).
+
+## Uninstall
+
+Close the client and the servers, then Settings → Apps → **MSCC-NET9** → Uninstall (or run
+`C:\mscc-net9\Uninstall.exe`). It removes the program files and shortcuts; your settings in
+`%LOCALAPPDATA%\MSCC-NET9` stay, so a reinstall picks them up again. Since R11-12-5; older
+installs have no uninstaller: install R11-12-5 over them first.
 
 How the installer is built: [`../../mscc-ui/installer/windows/README.md`](../../mscc-ui/installer/windows/README.md).
 Old release notes (to R10.13.2): [`CHANGELOG.md`](CHANGELOG.md).
