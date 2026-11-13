@@ -75,6 +75,9 @@
 /* PIC keyer CQ memory — match ms-sdr CMD_SET_KEYER_MEMORY.
  * Param: 0=play, 1=store begin, 2=store end, 0x20-0x7E=append ASCII char */
 #define CMD_SET_KEYER_MEMORY 0x9C
+/* Keyer update (2026-11-12, as Black Pill 3.16): I2C pass-through to the PIC keyer for
+ * keyer-flash.py / keyer-flash.gui. Only with the servers stopped. See cw.c Keyer_Boot_Main. */
+#define CMD_KEYER_BOOT       0x9F
 /* Per-band calibration get / set / save, same as Black Pill 3.7 (basic-plus.h). */
 #define CMD_CALIBRATION      0xC8
 

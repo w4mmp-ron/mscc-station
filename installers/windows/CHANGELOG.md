@@ -2,6 +2,13 @@
 
 Installer: `mscc-net9-R<version>-install.exe` (WPF client + Windows servers). Install the newest one; older installers in this folder are kept for roll-back only.
 
+## R11.12.3 — 2026-11-12  (`mscc-net9-R11-12-3-install.exe`, title bar 11.11.4)
+
+### Added
+- PSoC radio firmware with the keyer update over USB (same as Black Pill 3.16), for the radios with the daughter board: Proficio MKII PTT 3.244, Proficio MKII ATU 4.245, Geminus MKII 2.154, Ultimus MKII PTT 8.244, Ultimus MKII ATU 7.245. **Not tested on a radio yet** (Stew is testing). Nothing else changed in them.
+- Keyer Firmware Update: its message for older radio firmware now lists these versions.
+- Client, servers, Black Pill and the other PSoC firmware unchanged from R11-12-2.
+
 ## R11.12.2 — 2026-11-12  (`mscc-net9-R11-12-2-install.exe`, title bar 11.11.4)
 
 ### Fixed

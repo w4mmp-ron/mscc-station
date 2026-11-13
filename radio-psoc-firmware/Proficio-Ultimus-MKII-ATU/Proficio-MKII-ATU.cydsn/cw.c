@@ -529,4 +529,79 @@ void Manage_Paddles_Port(void)
             break;
     }
 }
-  
+
+/* ---- Keyer update: CMD_KEYER_BOOT 0x9F I2C pass-through (2026-11-12) -------------------
+ * Same USB protocol as Black Pill 3.16, so keyer-flash.py / keyer-flash.gui work unchanged.
+ * USBFS_HandleVendorRqst (usbvend01.c, interrupt) only stores the request in E_kb_* and sets
+ * E_kb_state = KB_RECEIVING. Here, in the main loop, the transfer starts once the control write
+ * has finished (USBFS_transferState back to idle), one transfer per call. Only used by the
+ * keyer update tool with the servers stopped; each transfer is short (up to 18 bytes out or
+ * 16 in, about 2 ms at 100 kHz), blocking like keyer_write().
+ */
+volatile uint8 E_kb_state = KB_IDLE;
+uint8 E_kb_addr = 0;
+uint8 E_kb_wlen = 0;
+uint8 E_kb_rlen = 0;
+uint8 E_kb_wbuf[KB_MAX_WR];
+uint8 E_kb_reply[2 + KB_MAX_RD];        /* [0] state, [1] count, then the bytes read */
+
+/* Wait for flag in the I2C master status, at most ~50 ms (the keyer bootloader holds SCL
+ * ~5 ms while it writes a flash row). Returns the last status. */
+static uint8 kb_wait(uint8 flag)
+{
+    uint16 n;
+    uint8 st = 0u;
+
+    for (n = 0u; n < 5000u; n++) {
+        st = I2C_DISPLAY_MasterStatus();
+        if (st & flag) break;
+        CyDelayUs(10u);
+    }
+    return st;
+}
+
+void Keyer_Boot_Main(void)
+{
+    uint8 ok = 1u;
+    uint8 st;
+
+    if (E_kb_state == KB_RECEIVING) {
+        if (USBFS_transferState != USBFS_TRANS_STATE_IDLE) return;   /* data stage not done */
+        E_kb_state = KB_PENDING;
+    }
+    if (E_kb_state != KB_PENDING) return;
+
+    E_kb_reply[1] = 0u;
+    if (E_kb_wlen == 0u && E_kb_rlen == 0u) {
+        /* address probe: is anybody at E_kb_addr? */
+        ok = (I2C_DISPLAY_MasterSendStart(E_kb_addr, I2C_DISPLAY_WRITE_XFER_MODE)
+              == I2C_DISPLAY_MSTR_NO_ERROR) ? 1u : 0u;
+        (void)I2C_DISPLAY_MasterSendStop();
+    } else {
+        if (E_kb_wlen != 0u) {
+            (void)I2C_DISPLAY_MasterClearStatus();
+            if (I2C_DISPLAY_MasterWriteBuf(E_kb_addr, E_kb_wbuf, E_kb_wlen,
+                    I2C_DISPLAY_MODE_COMPLETE_XFER) != I2C_DISPLAY_MSTR_NO_ERROR) {
+                ok = 0u;
+            } else {
+                st = kb_wait(I2C_DISPLAY_MSTAT_WR_CMPLT);
+                if (!(st & I2C_DISPLAY_MSTAT_WR_CMPLT) || (st & I2C_DISPLAY_MSTAT_ERR_MASK)
+                    || I2C_DISPLAY_MasterGetWriteBufSize() != E_kb_wlen) ok = 0u;
+            }
+        }
+        if (ok && E_kb_rlen != 0u) {
+            (void)I2C_DISPLAY_MasterClearStatus();
+            if (I2C_DISPLAY_MasterReadBuf(E_kb_addr, &E_kb_reply[2], E_kb_rlen,
+                    I2C_DISPLAY_MODE_COMPLETE_XFER) != I2C_DISPLAY_MSTR_NO_ERROR) {
+                ok = 0u;
+            } else {
+                st = kb_wait(I2C_DISPLAY_MSTAT_RD_CMPLT);
+                if (!(st & I2C_DISPLAY_MSTAT_RD_CMPLT) || (st & I2C_DISPLAY_MSTAT_ERR_MASK)
+                    || I2C_DISPLAY_MasterGetReadBufSize() != E_kb_rlen) ok = 0u;
+                else E_kb_reply[1] = E_kb_rlen;
+            }
+        }
+    }
+    E_kb_reply[0] = ok ? KB_OK : KB_FAIL;
+    E_kb_state = E_kb_reply[0];          /* last: the ISR now hands the reply to the host */
+}

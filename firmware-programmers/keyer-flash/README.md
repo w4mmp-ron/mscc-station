@@ -9,7 +9,7 @@ keyer-flash-gui.exe / keyer-flash.exe             Windows (C:\mscc-net9\Keyer Fi
 ```
 
 Updates the PIC keyer on the daughter board through the radio's USB: Pi or PC -> USB opcode
-0x9F -> Black Pill (3.16 or later) -> I2C -> keyer. No PICkit, except once: the keyer needs its
+0x9F -> radio firmware -> I2C -> keyer. No PICkit, except once: the keyer needs its
 I2C bootloader, which goes on with the PICkit and the `Keyer-MCU-full-<date>.hex` file
 (bootloader + app). After that, use the `Keyer-MCU-app-<date>.hex` file with this tool.
 
@@ -18,7 +18,9 @@ tool says so and stops without touching the keyer. An update takes about half a 
 settings and CQ memories are kept. If it is cut short, the keyer waits in its bootloader: run it
 again (in the window, Start Keyer lights up only then).
 
-PSoC radios: not yet (the PSoC firmware has no 0x9F); use the PICkit.
+Radio firmware with the keyer update (daughter-board radios only): Black Pill 3.16, Proficio
+MKII PTT 3.244 / ATU 4.245, Geminus MKII 2.154, Ultimus MKII PTT 8.244 / ATU 7.245, or later.
+The PSoC builds are NOT TESTED yet (2026-11-12, Stew to test: radio-psoc-firmware/STEW-KEYER-UPDATE-TEST.md).
 
 -------------------------------------------------------------------------------
 

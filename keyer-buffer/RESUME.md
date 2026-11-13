@@ -2,8 +2,14 @@
 
 ## I2C bootloader (started 2026-11-12) — update the PIC from the Pi, no PICkit
 
-**2026-11-12, Ron: "No step 3 for now."** Steps 1 + 2 done and shipped; step 3 (PSoC
-pass-through) PARKED, don't start unasked. Until then PSoC radios update the keyer with the PICkit.
+**Step 3 done 2026-11-12 (later, Ron asked), NOT TESTED:** PSoC 0x9F pass-through, same USB
+protocol as pill 3.16, only the daughter-board radios: Proficio MKII PTT 3.244, ATU 4.245, Geminus
+MKII 2.154, Ultimus MKII PTT 8.244 / ATU 7.245 (built here with cyprjmgr + build-ultimus.py; post-build
+path is Stew's PC, so copy-release.bat by hand). Code: usbvend.h, basic-plus.h, usbvend01.c (ISR
+stores only), cw.c Keyer_Boot_Main (main loop, beater case 2, starts when USBFS_transferState is
+idle). Ron has no PSoC daughter-board radio: **Stew tests**, note
+`radio-psoc-firmware/STEW-KEYER-UPDATE-TEST.md`. keyer-flash messages list these versions.
+(Earlier the same day: "No step 3 for now", then un-parked.)
 **Status (history):** step 1 of 3. `bootloader/` written and builds (551 of 1,024 words); not yet on a chip.
 Design and protocol: `bootloader/README.md`. Bootloader address 0x5C (Ron's choice; 0x40-0x4F
 avoided, the Potentia power sensor is also 0x40 on the PSoC bus). Daughter-board radios only,

@@ -6,7 +6,8 @@ keyer-flash.py: update the PIC keyer on the Proficio daughter board over USB.
     keyer-flash.py --check                       is the keyer app or bootloader answering?
     keyer-flash.py --exit                        leave the bootloader, run the keyer app
 
-Path: host -> USB opcode 0x9F (CMD_KEYER_BOOT) -> radio (pill 3.16+) -> I2C -> PIC.
+Path: host -> USB opcode 0x9F (CMD_KEYER_BOOT) -> radio -> I2C -> PIC.
+Radio firmware with the keyer update: Black Pill 3.16, Proficio MKII PTT 3.244 / ATU 4.245, Geminus MKII 2.154, Ultimus MKII PTT 8.244 / ATU 7.245 or later.
 The PIC needs the I2C bootloader (put on once with the PICkit, Keyer-MCU-full-*.hex,
 bootloader version 2 or later). Only the app is written (0x400-0x3FFF); the bootloader,
 the config words and the EEPROM (keyer settings, CQ memories) are left alone.
@@ -341,7 +342,7 @@ def main():
         return 1
     d = dev()
     if not supported(d):
-        print("radio firmware has no keyer update (opcode 0x9F): pill 3.16 or later needed")
+        print("radio firmware has no keyer update (opcode 0x9F); needs Black Pill 3.16, Proficio MKII PTT 3.244 / ATU 4.245, Geminus MKII 2.154, Ultimus MKII PTT 8.244 / ATU 7.245 or later")
         return 1
     if args[0] == "--check":
         check(d)

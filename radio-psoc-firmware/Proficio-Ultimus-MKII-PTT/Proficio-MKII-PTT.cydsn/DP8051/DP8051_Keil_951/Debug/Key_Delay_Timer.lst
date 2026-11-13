@@ -1,4 +1,4 @@
-C51 COMPILER V9.51   KEY_DELAY_TIMER                                                       10/29/2026 11:54:50 PAGE 1   
+C51 COMPILER V9.51   KEY_DELAY_TIMER                                                       11/12/2026 20:09:44 PAGE 1   
 
 
 C51 COMPILER V9.51, COMPILATION OF MODULE KEY_DELAY_TIMER
@@ -62,7 +62,7 @@ line level    source
   50   1          #if (Key_Delay_Timer_UsingFixedFunction)
   51   1              /* Clear all bits but the enable bit (if it's already set) for Timer operation */
   52   1              Key_Delay_Timer_CONTROL &= Key_Delay_Timer_CTRL_ENABLE;
-C51 COMPILER V9.51   KEY_DELAY_TIMER                                                       10/29/2026 11:54:50 PAGE 2   
+C51 COMPILER V9.51   KEY_DELAY_TIMER                                                       11/12/2026 20:09:44 PAGE 2   
 
   53   1      
   54   1              /* Clear the mode bits for continuous run mode */
@@ -126,7 +126,7 @@ line level    source
  112   1      
  113   1              /* Set the IRQ to use the status register interrupts */
  114   1              Key_Delay_Timer_CONTROL2 |= Key_Delay_Timer_CTRL2_IRQ_SEL;
-C51 COMPILER V9.51   KEY_DELAY_TIMER                                                       10/29/2026 11:54:50 PAGE 3   
+C51 COMPILER V9.51   KEY_DELAY_TIMER                                                       11/12/2026 20:09:44 PAGE 3   
 
  115   1          #endif /* Configuring registers of fixed function implementation */
  116   1      
@@ -190,7 +190,7 @@ line level    source
  174          *  void
  175          *
  176          * Return:
-C51 COMPILER V9.51   KEY_DELAY_TIMER                                                       10/29/2026 11:54:50 PAGE 4   
+C51 COMPILER V9.51   KEY_DELAY_TIMER                                                       11/12/2026 20:09:44 PAGE 4   
 
  177          *  void
  178          *
@@ -254,7 +254,7 @@ line level    source
  236          *
  237          * Parameters:
  238          *  void
-C51 COMPILER V9.51   KEY_DELAY_TIMER                                                       10/29/2026 11:54:50 PAGE 5   
+C51 COMPILER V9.51   KEY_DELAY_TIMER                                                       11/12/2026 20:09:44 PAGE 5   
 
  239          *
  240          * Return:
@@ -318,7 +318,7 @@ line level    source
  298          * Side Effects:
  299          *  An existing hardware capture could be overwritten.
  300          *
-C51 COMPILER V9.51   KEY_DELAY_TIMER                                                       10/29/2026 11:54:50 PAGE 6   
+C51 COMPILER V9.51   KEY_DELAY_TIMER                                                       11/12/2026 20:09:44 PAGE 6   
 
  301          *******************************************************************************/
  302          void Key_Delay_Timer_SoftwareCapture(void) 
@@ -382,7 +382,7 @@ line level    source
  360   1          #else
                       return (0);
                   #endif /* (!Key_Delay_Timer_UDB_CONTROL_REG_REMOVED) */
-C51 COMPILER V9.51   KEY_DELAY_TIMER                                                       10/29/2026 11:54:50 PAGE 7   
+C51 COMPILER V9.51   KEY_DELAY_TIMER                                                       11/12/2026 20:09:44 PAGE 7   
 
  363   1      }
  364          
@@ -446,7 +446,7 @@ line level    source
  422          *
  423          * Parameters:
  424          *  period: This value may be between 1 and (2^Resolution)-1.  A value of 0 will
-C51 COMPILER V9.51   KEY_DELAY_TIMER                                                       10/29/2026 11:54:50 PAGE 8   
+C51 COMPILER V9.51   KEY_DELAY_TIMER                                                       11/12/2026 20:09:44 PAGE 8   
 
  425          *          result in the counter remaining at zero.
  426          *
@@ -510,7 +510,7 @@ line level    source
  483   1              /* This functionality is removed until a FixedFunction HW update to
  484   1               * allow this register to be written
  485   1               */
-C51 COMPILER V9.51   KEY_DELAY_TIMER                                                       10/29/2026 11:54:50 PAGE 9   
+C51 COMPILER V9.51   KEY_DELAY_TIMER                                                       11/12/2026 20:09:44 PAGE 9   
 
  486   1              CY_SET_REG16(Key_Delay_Timer_COUNTER_LSB_PTR, (uint16)counter);
  487   1              
@@ -574,7 +574,7 @@ line level    source
               * Summary:
               *  This function sets the capture mode to either rising or falling edge.
               *
-C51 COMPILER V9.51   KEY_DELAY_TIMER                                                       10/29/2026 11:54:50 PAGE 10  
+C51 COMPILER V9.51   KEY_DELAY_TIMER                                                       11/12/2026 20:09:44 PAGE 10  
 
               * Parameters:
               *  captureMode: This parameter sets the capture mode of the UDB capture feature
@@ -638,7 +638,7 @@ line level    source
               {
                   /* This must only set to two bits of the control register associated */
                   triggerMode &= Key_Delay_Timer_CTRL_TRIG_MODE_MASK;
-C51 COMPILER V9.51   KEY_DELAY_TIMER                                                       10/29/2026 11:54:50 PAGE 11  
+C51 COMPILER V9.51   KEY_DELAY_TIMER                                                       11/12/2026 20:09:44 PAGE 11  
 
               
                   #if (!Key_Delay_Timer_UDB_CONTROL_REG_REMOVED)   /* Remove assignment if control register is removed *
@@ -702,7 +702,7 @@ line level    source
               }
               #endif /* Remove API is Trigger Mode is set to None */
               
-C51 COMPILER V9.51   KEY_DELAY_TIMER                                                       10/29/2026 11:54:50 PAGE 12  
+C51 COMPILER V9.51   KEY_DELAY_TIMER                                                       11/12/2026 20:09:44 PAGE 12  
 
               #if(Key_Delay_Timer_InterruptOnCaptureCount)
               
@@ -766,7 +766,7 @@ line level    source
               
               /*******************************************************************************
               * Function Name: Key_Delay_Timer_ReadCaptureCount
-C51 COMPILER V9.51   KEY_DELAY_TIMER                                                       10/29/2026 11:54:50 PAGE 13  
+C51 COMPILER V9.51   KEY_DELAY_TIMER                                                       11/12/2026 20:09:44 PAGE 13  
 
               ********************************************************************************
               *
@@ -813,7 +813,7 @@ line level    source
  772          
  773          
  774          /* [] END OF FILE */
-C51 COMPILER V9.51   KEY_DELAY_TIMER                                                       10/29/2026 11:54:50 PAGE 14  
+C51 COMPILER V9.51   KEY_DELAY_TIMER                                                       11/12/2026 20:09:44 PAGE 14  
 
 ASSEMBLY LISTING OF GENERATED OBJECT CODE
 
@@ -877,7 +877,7 @@ ASSEMBLY LISTING OF GENERATED OBJECT CODE
                        ORL     A,#02H
                        MOVX    @DPTR,A
                                            ; SOURCE LINE # 185
-C51 COMPILER V9.51   KEY_DELAY_TIMER                                                       10/29/2026 11:54:50 PAGE 15  
+C51 COMPILER V9.51   KEY_DELAY_TIMER                                                       11/12/2026 20:09:44 PAGE 15  
 
                        MOV     DPTR,#043B3H
                        MOVX    A,@DPTR
@@ -941,7 +941,7 @@ ASSEMBLY LISTING OF GENERATED OBJECT CODE
 ;---- Variable 'interruptMode' assigned to Register 'R7' ----
                                            ; SOURCE LINE # 280
                                            ; SOURCE LINE # 281
-C51 COMPILER V9.51   KEY_DELAY_TIMER                                                       10/29/2026 11:54:50 PAGE 16  
+C51 COMPILER V9.51   KEY_DELAY_TIMER                                                       11/12/2026 20:09:44 PAGE 16  
 
                        MOV     DPTR,#04F0FH
                        MOV     A,R7
@@ -1005,7 +1005,7 @@ ASSEMBLY LISTING OF GENERATED OBJECT CODE
                        MOV     R3,#02H
                        MOV     R2,#04FH
                        MOV     R1,#010H
-C51 COMPILER V9.51   KEY_DELAY_TIMER                                                       10/29/2026 11:54:50 PAGE 17  
+C51 COMPILER V9.51   KEY_DELAY_TIMER                                                       11/12/2026 20:09:44 PAGE 17  
 
                  E     CALL    _cyread16_nodpx
                                            ; SOURCE LINE # 412
@@ -1069,7 +1069,7 @@ ASSEMBLY LISTING OF GENERATED OBJECT CODE
                                            ; SOURCE LINE # 521
                        MOV     R3,#02H
                        MOV     R2,#04FH
-C51 COMPILER V9.51   KEY_DELAY_TIMER                                                       10/29/2026 11:54:50 PAGE 18  
+C51 COMPILER V9.51   KEY_DELAY_TIMER                                                       11/12/2026 20:09:44 PAGE 18  
 
                        MOV     R1,#014H
                  E     CALL    _cyread16_nodpx

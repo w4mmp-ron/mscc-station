@@ -1,4 +1,4 @@
-C51 COMPILER V9.51   SETTINGS01                                                            10/31/2026 10:02:10 PAGE 1   
+C51 COMPILER V9.51   SETTINGS01                                                            11/12/2026 20:12:54 PAGE 1   
 
 
 C51 COMPILER V9.51, COMPILATION OF MODULE SETTINGS01
@@ -62,7 +62,7 @@ line level    source
   50   1          int8_t int_sign = 0;
   51   1          int8_t dec_sign = 0;
   52   1          
-C51 COMPILER V9.51   SETTINGS01                                                            10/31/2026 10:02:10 PAGE 2   
+C51 COMPILER V9.51   SETTINGS01                                                            11/12/2026 20:12:54 PAGE 2   
 
   53   1          EEPROM_Start();
   54   1          CyDelay(100);
@@ -126,7 +126,7 @@ line level    source
  112   1          //uint8 critical_section;
  113   1          volatile int8 l_calibration_int = 0;
  114   1          volatile int8 l_calibration_dec = 0;
-C51 COMPILER V9.51   SETTINGS01                                                            10/31/2026 10:02:10 PAGE 3   
+C51 COMPILER V9.51   SETTINGS01                                                            11/12/2026 20:12:54 PAGE 3   
 
  115   1          
  116   1          
@@ -190,7 +190,7 @@ line level    source
  174          
  175          /* ======================================================================================
  176           * Geminus 2.152 (2026-10-31): per-band calibration store, copied from Proficio MKII PTT
-C51 COMPILER V9.51   SETTINGS01                                                            10/31/2026 10:02:10 PAGE 4   
+C51 COMPILER V9.51   SETTINGS01                                                            11/12/2026 20:12:54 PAGE 4   
 
  177           * calibration.c (3.238+). Kept in this file so the PSoC Creator project needs no new source.
  178           * EEPROM rows 8-19 (row 0 = crystal / PPM here; rows 8+ unused on the Geminus).
@@ -254,7 +254,7 @@ line level    source
  235          static void Cal_Build_Row(uint8 band) {
  236   1          uint8 i, l_bit = (uint8)(1u << (band & 7u)), l_hi = band >> 3;
  237   1      
-C51 COMPILER V9.51   SETTINGS01                                                            10/31/2026 10:02:10 PAGE 5   
+C51 COMPILER V9.51   SETTINGS01                                                            11/12/2026 20:12:54 PAGE 5   
 
  238   1          l_row[0] = CAL_ROW_MAGIC;
  239   1          l_row[1] = CAL_ROW_VERSION;
@@ -318,7 +318,7 @@ line level    source
  297   3              }
  298   2              if (band >= CAL_BANDS) break;
  299   2              l_int = CyEnterCriticalSection();       // the ISR may set it again: that write follows
-C51 COMPILER V9.51   SETTINGS01                                                            10/31/2026 10:02:10 PAGE 6   
+C51 COMPILER V9.51   SETTINGS01                                                            11/12/2026 20:12:54 PAGE 6   
 
  300   2              E_cal_dirty[band] = 0;
  301   2              Cal_Build_Row(band);
@@ -345,7 +345,7 @@ line level    source
  322   2              break;
  323   2          }
  324   1      }
-C51 COMPILER V9.51   SETTINGS01                                                            10/31/2026 10:02:10 PAGE 7   
+C51 COMPILER V9.51   SETTINGS01                                                            11/12/2026 20:12:54 PAGE 7   
 
 ASSEMBLY LISTING OF GENERATED OBJECT CODE
 
@@ -409,7 +409,7 @@ ASSEMBLY LISTING OF GENERATED OBJECT CODE
                        MOVX    A,@DPTR
                  R     xJNE    A,#01H,?C0001
                                            ; SOURCE LINE # 62
-C51 COMPILER V9.51   SETTINGS01                                                            10/31/2026 10:02:10 PAGE 8   
+C51 COMPILER V9.51   SETTINGS01                                                            11/12/2026 20:12:54 PAGE 8   
 
                  E     MOV     DPTR,#ee_ppm_int
                        MOVX    A,@DPTR
@@ -473,7 +473,7 @@ ASSEMBLY LISTING OF GENERATED OBJECT CODE
                        MOVX    @DPTR,A
                                            ; SOURCE LINE # 78
                  R     MOV     DPTR,#RegPointer
-C51 COMPILER V9.51   SETTINGS01                                                            10/31/2026 10:02:10 PAGE 9   
+C51 COMPILER V9.51   SETTINGS01                                                            11/12/2026 20:12:54 PAGE 9   
 
                        MOV     A,#080H
                        MOVX    @DPTR,A
@@ -537,7 +537,7 @@ ASSEMBLY LISTING OF GENERATED OBJECT CODE
                        MOVX    @DPTR,A
                                            ; SOURCE LINE # 86
                  R     MOV     DPTR,#buffer+03H
-C51 COMPILER V9.51   SETTINGS01                                                            10/31/2026 10:02:10 PAGE 10  
+C51 COMPILER V9.51   SETTINGS01                                                            11/12/2026 20:12:54 PAGE 10  
 
                        MOV     A,#01H
                        MOVX    @DPTR,A
@@ -601,7 +601,7 @@ ASSEMBLY LISTING OF GENERATED OBJECT CODE
                        MOV     R3,#01H
                  R     MOV     R2,#HIGH buffer
                  R     MOV     R1,#LOW buffer
-C51 COMPILER V9.51   SETTINGS01                                                            10/31/2026 10:02:10 PAGE 11  
+C51 COMPILER V9.51   SETTINGS01                                                            11/12/2026 20:12:54 PAGE 11  
 
                        CLR     A
                        MOV     R5,A
@@ -665,7 +665,7 @@ ASSEMBLY LISTING OF GENERATED OBJECT CODE
                  R     MOV     DPTR,#l_calibration_int
                        MOVX    @DPTR,A
                                            ; SOURCE LINE # 122
-C51 COMPILER V9.51   SETTINGS01                                                            10/31/2026 10:02:10 PAGE 12  
+C51 COMPILER V9.51   SETTINGS01                                                            11/12/2026 20:12:54 PAGE 12  
 
                  E     MOV     DPTR,#E_calibration_dec
                        MOVX    A,@DPTR
@@ -729,7 +729,7 @@ ASSEMBLY LISTING OF GENERATED OBJECT CODE
                        ADD     A,R7
                        MOV     R7,A
                        INC     R6
-C51 COMPILER V9.51   SETTINGS01                                                            10/31/2026 10:02:10 PAGE 13  
+C51 COMPILER V9.51   SETTINGS01                                                            11/12/2026 20:12:54 PAGE 13  
 
                  R     xJMP    ?C0015
              ?C0016:
@@ -793,7 +793,7 @@ ASSEMBLY LISTING OF GENERATED OBJECT CODE
                        ANL     A,R6
                  R     xJZ     ?C0019
                  R     MOV     DPTR,#l_row+03H
-C51 COMPILER V9.51   SETTINGS01                                                            10/31/2026 10:02:10 PAGE 14  
+C51 COMPILER V9.51   SETTINGS01                                                            11/12/2026 20:12:54 PAGE 14  
 
                        MOVX    A,@DPTR
                        ORL     A,#01H
@@ -857,7 +857,7 @@ ASSEMBLY LISTING OF GENERATED OBJECT CODE
                        MOV     R6,A
                  R     MOV     A,#LOW l_row+04H
                        ADD     A,R7
-C51 COMPILER V9.51   SETTINGS01                                                            10/31/2026 10:02:10 PAGE 15  
+C51 COMPILER V9.51   SETTINGS01                                                            11/12/2026 20:12:54 PAGE 15  
 
                        MOV     DPL,A
                        CLR     A
@@ -921,7 +921,7 @@ ASSEMBLY LISTING OF GENERATED OBJECT CODE
                        INC     DPTR
                        MOVX    @DPTR,A
                                            ; SOURCE LINE # 252
-C51 COMPILER V9.51   SETTINGS01                                                            10/31/2026 10:02:10 PAGE 16  
+C51 COMPILER V9.51   SETTINGS01                                                            11/12/2026 20:12:54 PAGE 16  
 
                        MOV     R3,#01H
                  R     MOV     R2,#HIGH l_row
@@ -985,7 +985,7 @@ ASSEMBLY LISTING OF GENERATED OBJECT CODE
                  R     MOV     DPTR,#i
                        MOVX    A,@DPTR
                        CLR     C
-C51 COMPILER V9.51   SETTINGS01                                                            10/31/2026 10:02:10 PAGE 17  
+C51 COMPILER V9.51   SETTINGS01                                                            11/12/2026 20:12:54 PAGE 17  
 
                        SUBB    A,#010H
                  R     xJGE    ?C0030
@@ -1049,7 +1049,7 @@ ASSEMBLY LISTING OF GENERATED OBJECT CODE
                        INC     R0
                  R     xJMP    ?C0063
              ?C0062:
-C51 COMPILER V9.51   SETTINGS01                                                            10/31/2026 10:02:10 PAGE 18  
+C51 COMPILER V9.51   SETTINGS01                                                            11/12/2026 20:12:54 PAGE 18  
 
                        CLR     C
                        RLC     A
@@ -1113,7 +1113,7 @@ ASSEMBLY LISTING OF GENERATED OBJECT CODE
                        MOVX    @DPTR,A
              ?C0037:
                  R     MOV     DPTR,#i
-C51 COMPILER V9.51   SETTINGS01                                                            10/31/2026 10:02:10 PAGE 19  
+C51 COMPILER V9.51   SETTINGS01                                                            11/12/2026 20:12:54 PAGE 19  
 
                        MOVX    A,@DPTR
                        CLR     C
@@ -1177,7 +1177,7 @@ ASSEMBLY LISTING OF GENERATED OBJECT CODE
                                            ; SOURCE LINE # 276
                  R     MOV     DPTR,#i
                        MOVX    A,@DPTR
-C51 COMPILER V9.51   SETTINGS01                                                            10/31/2026 10:02:10 PAGE 20  
+C51 COMPILER V9.51   SETTINGS01                                                            11/12/2026 20:12:54 PAGE 20  
 
                        INC     A
                        MOVX    @DPTR,A
@@ -1241,7 +1241,7 @@ ASSEMBLY LISTING OF GENERATED OBJECT CODE
                                            ; SOURCE LINE # 290
                  R     MOV     DPTR,#E_cal_quiet
                        MOVX    A,@DPTR
-C51 COMPILER V9.51   SETTINGS01                                                            10/31/2026 10:02:10 PAGE 21  
+C51 COMPILER V9.51   SETTINGS01                                                            11/12/2026 20:12:54 PAGE 21  
 
                  R     xJZ     ?C0043
                                            ; SOURCE LINE # 291
@@ -1305,7 +1305,7 @@ ASSEMBLY LISTING OF GENERATED OBJECT CODE
                        MOV     R4,AR7
                                            ; SOURCE LINE # 300
                  R     MOV     DPTR,#band
-C51 COMPILER V9.51   SETTINGS01                                                            10/31/2026 10:02:10 PAGE 22  
+C51 COMPILER V9.51   SETTINGS01                                                            11/12/2026 20:12:54 PAGE 22  
 
                        MOVX    A,@DPTR
                        MOV     R7,A
@@ -1369,7 +1369,7 @@ ASSEMBLY LISTING OF GENERATED OBJECT CODE
                                            ; SOURCE LINE # 314
                        XRL     A,#07H
                  R     xJZ     ?C0059
-C51 COMPILER V9.51   SETTINGS01                                                            10/31/2026 10:02:10 PAGE 23  
+C51 COMPILER V9.51   SETTINGS01                                                            11/12/2026 20:12:54 PAGE 23  
 
              ?C0054:
                                            ; SOURCE LINE # 315

@@ -224,6 +224,7 @@ int main()
                if(E_keyer_installed == TRUE){
                     Configure_CW();
                }
+                Keyer_Boot_Main();              //Keyer update 0x9F (cw.c); idle unless keyer-flash runs
                 break;
             case 3:
                 si5351_main();

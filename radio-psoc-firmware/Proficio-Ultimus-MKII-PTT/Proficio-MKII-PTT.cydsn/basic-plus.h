@@ -44,7 +44,8 @@
 #else
 #define FIRMWARE_VERSION_MAJOR 3
 #endif
-#define FIRMWARE_VERSION_MINOR 243   //3.243: DAC muted in non-QSK RX (no TX tail after release)
+#define FIRMWARE_VERSION_MINOR 244   //3.244 / Ultimus 8.244: keyer update over USB (CMD_KEYER_BOOT 0x9F I2C pass-through)
+                                     //3.243: DAC muted in non-QSK RX (no TX tail after release)
 #define FIRMWARE_VERSION ((((FIRMWARE_VERSION_MINOR) << 8) & 0xff00) | ((FIRMWARE_VERSION_MAJOR) & 0x00ff))
 #define EEPROM_PCB_VERSION_LOCATION 11
         
@@ -139,6 +140,28 @@ extern volatile uint8_t E_keyer_mem_q[KEYER_MEM_Q_SIZE];
 extern volatile uint8_t E_keyer_mem_q_head;
 extern volatile uint8_t E_keyer_mem_q_tail;
 extern volatile uint8_t E_keyer_mem_q_count;
+/*
+ * Keyer update, CMD_KEYER_BOOT 0x9F (2026-11-12; same USB protocol as Black Pill 3.16):
+ *   OUT 0x9F  wValue = I2C address (0x40 keyer app / 0x5C keyer bootloader only),
+ *             wIndex = bytes to read after the write (0..16), data = bytes to write (0..18)
+ *   IN  0x9F  state, count, then the bytes read
+ * The USB ISR only stores the request (E_kb_*); Keyer_Boot_Main() (cw.c, main loop) does
+ * the I2C once the control write has finished.
+ */
+#define KB_IDLE          0u
+#define KB_PENDING       1u
+#define KB_OK            2u
+#define KB_FAIL          3u
+#define KB_RECEIVING     5u     /* data stage of the OUT still coming in (never sent to host) */
+#define KB_MAX_WR        18u
+#define KB_MAX_RD        16u
+#define KEYER_APP_ADDRESS  0x40     /* = KEYER_SLAVE_ADDRESS in cw.c */
+#define KEYER_BOOT_ADDRESS 0x5C
+extern volatile uint8 E_kb_state;
+extern uint8 E_kb_addr, E_kb_wlen, E_kb_rlen;
+extern uint8 E_kb_wbuf[KB_MAX_WR];
+extern uint8 E_kb_reply[2 + KB_MAX_RD];
+void Keyer_Boot_Main(void);
 //extern uint8 E_cw_defaults;
 
 /*

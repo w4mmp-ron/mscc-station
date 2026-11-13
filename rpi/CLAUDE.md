@@ -114,6 +114,14 @@ Option, not done: drag the divider on the display.
   `mscc-ui/windows-work-tree` (66 tracked: `.tlog`, `.recipe`, `.iobj`, `.ipdb`, `.lastbuildstate` for
   ms-sdr / recv / trans) change at every Windows build. If he likes, git could ignore them (.gitignore +
   `git rm --cached`). Until then they are left uncommitted (Ron's choice).
+  **For Stew 2026-11-12 (Ron asked for a clear note): test the keyer update on a PSoC radio.** PSoC firmware
+  with CMD_KEYER_BOOT 0x9F (Proficio MKII PTT 3.244 / ATU 4.245, Geminus MKII 2.154, Ultimus MKII PTT 8.244 /
+  ATU 7.245) builds clean but has never run on a radio (Ron has none with the daughter board). Steps:
+  `radio-psoc-firmware/STEW-KEYER-UPDATE-TEST.md`.
+- **2026-11-12 (finished, Ron): Release R11-12-3** = Windows `mscc-net9-R11-12-3-install.exe` + Pi `mscc_1.0.84_arm64.deb`:
+  the five PSoC keyer-update builds above (untested) + keyer-flash message listing them. R11-12-2 (same day,
+  published before "finished" by mistake; Ron: leave it) = keyer GUI .exe without flashing console windows.
+  1.0.84 = 1.0.83 + those PSoC files + keyer-flash.py / -gui.py (compared file by file). Not installed on the Pi.
 - **2026-11-12 (finished, Ron): Release R11-12-1 = keyer update over USB.** Daughter-board PIC keyer gets an
   I2C bootloader (0x5C; `keyer-buffer/bootloader/`); pill 3.16 passes USB opcode 0x9F (CMD_KEYER_BOOT,
   marked taken in ms-sdr `usbavrcmd.h`; ms-sdr never sends it) to the PIC; `keyer-flash` / `keyer-flash.gui`

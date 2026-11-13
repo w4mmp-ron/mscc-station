@@ -12,7 +12,7 @@ releases stay there for roll-back). Put the `.deb` files in one folder on the Pi
 
 | Package | Version | |
 |---|---|---|
-| `mscc` | 1.0.83 | required: servers (ms-sdr 3.206, recv 3.153, trans 3.158), PortAudio, MSCC Init, MSCC Volume, PSoC + Black Pill + keyer firmware and flash tools |
+| `mscc` | 1.0.84 | required: servers (ms-sdr 3.206, recv 3.153, trans 3.158), PortAudio, MSCC Init, MSCC Volume, PSoC + Black Pill + keyer firmware and flash tools |
 | `mscc-avalonia` | 1.6.96 | optional: MSCC Avalonia client on the Pi (not needed with the Windows client) |
 
 ```bash
@@ -36,7 +36,8 @@ Then: log out/in (first install) → **MSCC Init** → **MSCC Start** → connec
 - Black Pill (25 MHz board), files in `/usr/share/mscc/firmware/black-pill/`:
   `mscc stop; sudo stm32-app-flash /usr/share/mscc/firmware/black-pill/BlackPill-25MHz-3.16-app.bin`
   (USB, app) or `sudo stm32-bootloader-flash /usr/share/mscc/firmware/black-pill/BlackPill-25MHz-3.16-boot-app.bin` (ST-Link).
-- Keyer (PIC on the daughter board; Black Pill 3.16 or later): stop the servers (`mscc stop`), then
+- Keyer (PIC on the daughter board; Black Pill 3.16, or PSoC Proficio MKII PTT 3.244 / ATU 4.245,
+  Geminus MKII 2.154, Ultimus MKII PTT 8.244 / ATU 7.245 or later; the PSoC ones not tested yet): stop the servers (`mscc stop`), then
   menu **MSCC → Keyer Firmware Update** (`keyer-flash.gui`): Load File → Program. Or
   `keyer-flash /usr/share/mscc/firmware/keyer/Keyer-MCU-app-20261112.hex`. Settings and CQ
   memories are kept. The `Keyer-MCU-full-` file is for the PICkit only (bootloader + app).

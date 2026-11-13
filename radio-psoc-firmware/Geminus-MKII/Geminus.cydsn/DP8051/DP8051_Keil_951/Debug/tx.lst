@@ -1,4 +1,4 @@
-C51 COMPILER V9.51   TX                                                                    10/31/2026 10:02:06 PAGE 1   
+C51 COMPILER V9.51   TX                                                                    11/12/2026 20:12:52 PAGE 1   
 
 
 C51 COMPILER V9.51, COMPILATION OF MODULE TX
@@ -62,7 +62,7 @@ line level    source
   50          
   51          /* TRUE when TX_Main is receiving (relays off, DAC unmuted) */
   52          uint8 TX_Idle(void) {
-C51 COMPILER V9.51   TX                                                                    10/31/2026 10:02:06 PAGE 2   
+C51 COMPILER V9.51   TX                                                                    11/12/2026 20:12:52 PAGE 2   
 
   53   1          return (state == 0);
   54   1      }
@@ -126,10 +126,10 @@ line level    source
  112   2                  state = 0;
  113   2                  break;
  114   2          }
-C51 COMPILER V9.51   TX                                                                    10/31/2026 10:02:06 PAGE 3   
+C51 COMPILER V9.51   TX                                                                    11/12/2026 20:12:52 PAGE 3   
 
  115   1      }
-C51 COMPILER V9.51   TX                                                                    10/31/2026 10:02:06 PAGE 4   
+C51 COMPILER V9.51   TX                                                                    11/12/2026 20:12:52 PAGE 4   
 
 ASSEMBLY LISTING OF GENERATED OBJECT CODE
 
@@ -193,7 +193,7 @@ ASSEMBLY LISTING OF GENERATED OBJECT CODE
                        ADD     A,#0DH
                  R     xJNZ    ?C0022
                                            ; SOURCE LINE # 63
-C51 COMPILER V9.51   TX                                                                    10/31/2026 10:02:06 PAGE 5   
+C51 COMPILER V9.51   TX                                                                    11/12/2026 20:12:52 PAGE 5   
 
              ?C0007:
                                            ; SOURCE LINE # 64
@@ -257,7 +257,7 @@ ASSEMBLY LISTING OF GENERATED OBJECT CODE
                        MOV     A,R7
                        ORL     A,#08H
                        MOV     R7,A
-C51 COMPILER V9.51   TX                                                                    10/31/2026 10:02:06 PAGE 6   
+C51 COMPILER V9.51   TX                                                                    11/12/2026 20:12:52 PAGE 6   
 
                  E     CALL    _Control_Write
                                            ; SOURCE LINE # 77
@@ -321,7 +321,7 @@ ASSEMBLY LISTING OF GENERATED OBJECT CODE
                        MOVX    @DPTR,A
                                            ; SOURCE LINE # 90
                  R     MOV     DPTR,#state
-C51 COMPILER V9.51   TX                                                                    10/31/2026 10:02:06 PAGE 7   
+C51 COMPILER V9.51   TX                                                                    11/12/2026 20:12:52 PAGE 7   
 
                        MOV     A,#0DH
                        MOVX    @DPTR,A
@@ -385,7 +385,7 @@ ASSEMBLY LISTING OF GENERATED OBJECT CODE
                                            ; SOURCE LINE # 103
                                            ; SOURCE LINE # 104
                        RET     
-C51 COMPILER V9.51   TX                                                                    10/31/2026 10:02:06 PAGE 8   
+C51 COMPILER V9.51   TX                                                                    11/12/2026 20:12:52 PAGE 8   
 
                                            ; SOURCE LINE # 105
              ?C0020:

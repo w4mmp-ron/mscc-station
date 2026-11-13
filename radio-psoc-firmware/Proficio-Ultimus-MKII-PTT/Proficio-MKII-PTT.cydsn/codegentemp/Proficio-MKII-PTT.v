@@ -1,6 +1,6 @@
 // ======================================================================
 // Proficio-MKII-PTT.v generated from TopDesign.cysch
-// 11/02/2026 at 13:56
+// 11/12/2026 at 20:09
 // This file is auto generated. ANY EDITS YOU MAKE MAY BE LOST WHEN THIS FILE IS REGENERATED!!!
 // ======================================================================
 
@@ -981,11 +981,11 @@ endmodule
 `endif
 
 `ifdef WARP
-`define CY_BLK_DIR "C:\Users\n8vet\OneDrive\Documents\github\mscc-station\radio-psoc-firmware\Proficio-Ultimus-MKII-PTT\Proficio-MKII-PTT.cydsn\FracN"
-`include "C:\Users\n8vet\OneDrive\Documents\github\mscc-station\radio-psoc-firmware\Proficio-Ultimus-MKII-PTT\Proficio-MKII-PTT.cydsn\FracN\FracN.v"
+`define CY_BLK_DIR "C:\Users\Ron\.grok\worktrees\radio-psoc-firmware\Proficio-Ultimus-MKII-PTT\Proficio-MKII-PTT.cydsn\FracN"
+`include "C:\Users\Ron\.grok\worktrees\radio-psoc-firmware\Proficio-Ultimus-MKII-PTT\Proficio-MKII-PTT.cydsn\FracN\FracN.v"
 `else
-`define CY_BLK_DIR "C:\Users\n8vet\OneDrive\Documents\github\mscc-station\radio-psoc-firmware\Proficio-Ultimus-MKII-PTT\Proficio-MKII-PTT.cydsn\FracN"
-`include "C:\Users\n8vet\OneDrive\Documents\github\mscc-station\radio-psoc-firmware\Proficio-Ultimus-MKII-PTT\Proficio-MKII-PTT.cydsn\FracN\FracN.v"
+`define CY_BLK_DIR "C:\Users\Ron\.grok\worktrees\radio-psoc-firmware\Proficio-Ultimus-MKII-PTT\Proficio-MKII-PTT.cydsn\FracN"
+`include "C:\Users\Ron\.grok\worktrees\radio-psoc-firmware\Proficio-Ultimus-MKII-PTT\Proficio-MKII-PTT.cydsn\FracN\FracN.v"
 `endif
 
 // Component: CyControlReg_v1_80
@@ -1007,11 +1007,11 @@ endmodule
 `endif
 
 `ifdef WARP
-`define CY_BLK_DIR "C:\Users\n8vet\OneDrive\Documents\github\mscc-station\radio-psoc-firmware\Proficio-Ultimus-MKII-PTT\Proficio-MKII-PTT.cydsn\SyncSOF"
-`include "C:\Users\n8vet\OneDrive\Documents\github\mscc-station\radio-psoc-firmware\Proficio-Ultimus-MKII-PTT\Proficio-MKII-PTT.cydsn\SyncSOF\SyncSOF.v"
+`define CY_BLK_DIR "C:\Users\Ron\.grok\worktrees\radio-psoc-firmware\Proficio-Ultimus-MKII-PTT\Proficio-MKII-PTT.cydsn\SyncSOF"
+`include "C:\Users\Ron\.grok\worktrees\radio-psoc-firmware\Proficio-Ultimus-MKII-PTT\Proficio-MKII-PTT.cydsn\SyncSOF\SyncSOF.v"
 `else
-`define CY_BLK_DIR "C:\Users\n8vet\OneDrive\Documents\github\mscc-station\radio-psoc-firmware\Proficio-Ultimus-MKII-PTT\Proficio-MKII-PTT.cydsn\SyncSOF"
-`include "C:\Users\n8vet\OneDrive\Documents\github\mscc-station\radio-psoc-firmware\Proficio-Ultimus-MKII-PTT\Proficio-MKII-PTT.cydsn\SyncSOF\SyncSOF.v"
+`define CY_BLK_DIR "C:\Users\Ron\.grok\worktrees\radio-psoc-firmware\Proficio-Ultimus-MKII-PTT\Proficio-MKII-PTT.cydsn\SyncSOF"
+`include "C:\Users\Ron\.grok\worktrees\radio-psoc-firmware\Proficio-Ultimus-MKII-PTT\Proficio-MKII-PTT.cydsn\SyncSOF\SyncSOF.v"
 `endif
 
 // Component: Debouncer_v1_0

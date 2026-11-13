@@ -69,6 +69,8 @@ uint8 USBFS_HandleVendorRqst(void)  //This called by the USBFS component.  This 
     uint8 requestHandled = USBFS_FALSE;
     static uint8 l_cal_type, l_cal_band;   // CMD_CALIBRATION: wValue high / low byte (2.152)
     static uint16 l_cal_len;               // CMD_CALIBRATION: wLength
+    static uint8 l_kb_hdr[2];              // CMD_KEYER_BOOT IN while not done: state, 0
+    uint16 l_kb_len;                       // CMD_KEYER_BOOT OUT: wLength
     uint8 reqType, reqCmd;
     static int32 l_dec = 0;
     static int32 l_int = 0;
@@ -221,9 +223,25 @@ uint8 USBFS_HandleVendorRqst(void)  //This called by the USBFS component.  This 
                     requestHandled  = USBFS_InitControlRead();
                 }
                 break;
-                
-                
-                
+
+            /* Keyer update (cw.c Keyer_Boot_Main): result of the last I2C pass-through.
+             * The host only asks after its OUT has finished, so a request still marked
+             * RECEIVING is complete: hand it to the main loop. Until it is done the host gets
+             * [state, 0]; once done, E_kb_reply (state, count, bytes read). */
+            case CMD_KEYER_BOOT:
+                if (E_kb_state == KB_RECEIVING) E_kb_state = KB_PENDING;
+                if (E_kb_state == KB_OK || E_kb_state == KB_FAIL) {
+                    USBFS_currentTD.pData = (void *)E_kb_reply;
+                    USBFS_currentTD.count = 2u + E_kb_reply[1];
+                } else {
+                    l_kb_hdr[0] = E_kb_state;
+                    l_kb_hdr[1] = 0u;
+                    USBFS_currentTD.pData = (void *)l_kb_hdr;
+                    USBFS_currentTD.count = 2u;
+                }
+                requestHandled  = USBFS_InitControlRead();
+                break;
+
             /*case CMD_SET_XTAL_DEC:
                 USBFS_currentTD.pData = (void *)&ee_ppm_int;
                 USBFS_currentTD.count = 1;
@@ -424,8 +442,27 @@ uint8 USBFS_HandleVendorRqst(void)  //This called by the USBFS component.  This 
                 requestHandled = USBFS_InitControlWrite();
                 E_reboot_request = REBOOT_REQ_BOOTLOADER;
                 break;
-           
-          
+
+            /* Keyer update (cw.c Keyer_Boot_Main): store one I2C pass-through request.
+             * wValue = I2C address (keyer app 0x40 or keyer bootloader 0x5C only), wIndex =
+             * bytes to read after the write (0..16), data = bytes to write (0..18). Anything
+             * else, or a request while one is still running: not handled (stall). */
+            case CMD_KEYER_BOOT:
+                l_kb_len = ((uint16)CY_GET_REG8(USBFS_lengthHi) << 8) | CY_GET_REG8(USBFS_length);
+                if (E_kb_state == KB_RECEIVING || E_kb_state == KB_PENDING) break;
+                if (CY_GET_REG8(USBFS_wValueHi) != 0u || CY_GET_REG8(USBFS_wIndexHi) != 0u) break;
+                E_kb_addr = CY_GET_REG8(USBFS_wValueLo);
+                if (E_kb_addr != KEYER_APP_ADDRESS && E_kb_addr != KEYER_BOOT_ADDRESS) break;
+                if (CY_GET_REG8(USBFS_wIndexLo) > KB_MAX_RD || l_kb_len > KB_MAX_WR) break;
+                E_kb_rlen = CY_GET_REG8(USBFS_wIndexLo);
+                E_kb_wlen = (uint8)l_kb_len;
+                E_kb_state = KB_RECEIVING;
+                USBFS_currentTD.pData = (void *)E_kb_wbuf;
+                USBFS_currentTD.count = E_kb_wlen;
+                requestHandled = USBFS_InitControlWrite();
+                break;
+
+
         }//End switch (reqCmd)
     }//End if ((reqType & USBFS_RQST_DIR_MASK) == USBFS_RQST_DIR_D2H)
     return(requestHandled);

@@ -1,4 +1,4 @@
-C51 COMPILER V9.51   CW                                                                    11/02/2026 13:20:55 PAGE 1   
+C51 COMPILER V9.51   CW                                                                    11/12/2026 20:11:22 PAGE 1   
 
 
 C51 COMPILER V9.51, COMPILATION OF MODULE CW
@@ -62,7 +62,7 @@ line level    source
   50          
   51          CY_ISR(QSK_interrupt){
   52   1          QSK_pop_filter = FALSE;
-C51 COMPILER V9.51   CW                                                                    11/02/2026 13:20:55 PAGE 2   
+C51 COMPILER V9.51   CW                                                                    11/12/2026 20:11:22 PAGE 2   
 
   53   1      }
   54          
@@ -126,7 +126,7 @@ line level    source
  112   2              return;
  113   2          }
  114   1          reg = Status_Status;
-C51 COMPILER V9.51   CW                                                                    11/02/2026 13:20:55 PAGE 3   
+C51 COMPILER V9.51   CW                                                                    11/12/2026 20:11:22 PAGE 3   
 
  115   1          key = (!(reg & STATUS_KEY_0) || !(reg & STATUS_KEY_1));
  116   1          key_delay_buf[key_delay_idx] = key;
@@ -190,7 +190,7 @@ line level    source
  173          uint8 keyer_write(uint8_t buffer)
  174          {
  175   1              uint8_t msg_buffer = 0;
-C51 COMPILER V9.51   CW                                                                    11/02/2026 13:20:55 PAGE 4   
+C51 COMPILER V9.51   CW                                                                    11/12/2026 20:11:22 PAGE 4   
 
  176   1              uint8_t ret_status = 0;
  177   1              uint8_t write_status = 0;
@@ -254,7 +254,7 @@ line level    source
  235   2              case 0:
  236   2              if(keyer_mode != E_keyer_mode){
  237   3                  buffer[0] = SET_KEYER_MODE;
-C51 COMPILER V9.51   CW                                                                    11/02/2026 13:20:55 PAGE 5   
+C51 COMPILER V9.51   CW                                                                    11/12/2026 20:11:22 PAGE 5   
 
  238   3                  buffer[1] = E_keyer_mode;
  239   3                  keyer_mode = E_keyer_mode;
@@ -318,7 +318,7 @@ line level    source
  297   3                  state++;
  298   3              }
  299   2              break;
-C51 COMPILER V9.51   CW                                                                    11/02/2026 13:20:55 PAGE 6   
+C51 COMPILER V9.51   CW                                                                    11/12/2026 20:11:22 PAGE 6   
 
  300   2      
  301   2              case 6:
@@ -382,7 +382,7 @@ line level    source
  359   1          return state;
  360   1      }
  361          
-C51 COMPILER V9.51   CW                                                                    11/02/2026 13:20:55 PAGE 7   
+C51 COMPILER V9.51   CW                                                                    11/12/2026 20:11:22 PAGE 7   
 
  362          void Manage_Paddles_Port(void)  
  363          {
@@ -446,7 +446,7 @@ line level    source
              -elay_ms > DAC_RISE_LEAD_MS
  416   4                          key_up_ms = 0;          //Key is down now
  417   4                          key_delay_busy = TRUE;
-C51 COMPILER V9.51   CW                                                                    11/02/2026 13:20:55 PAGE 8   
+C51 COMPILER V9.51   CW                                                                    11/12/2026 20:11:22 PAGE 8   
 
  418   4                          key_delay_lo_ready = FALSE;
  419   4                          rf_on = FALSE;
@@ -510,7 +510,7 @@ line level    source
  467   2                  E_cw_hold = TRUE;
  468   2                  CW_Hold_Control_Write(CW_CONTROL_RESET);
  469   2                  state++;
-C51 COMPILER V9.51   CW                                                                    11/02/2026 13:20:55 PAGE 9   
+C51 COMPILER V9.51   CW                                                                    11/12/2026 20:11:22 PAGE 9   
 
  470   2                  break;
  471   2              case 7: //Check CW hold timer.  KEY is UP
@@ -574,13 +574,90 @@ line level    source
  526   3                      E_key_down = FALSE;
  527   3                      state = 0;
  528   3                  }
-C51 COMPILER V9.51   CW                                                                    11/02/2026 13:20:55 PAGE 10  
+C51 COMPILER V9.51   CW                                                                    11/12/2026 20:11:22 PAGE 10  
 
  529   2                  break;
  530   2          }
  531   1      }
- 532            
-C51 COMPILER V9.51   CW                                                                    11/02/2026 13:20:55 PAGE 11  
+ 532          
+ 533          /* ---- Keyer update: CMD_KEYER_BOOT 0x9F I2C pass-through (2026-11-12) -------------------
+ 534           * Same USB protocol as Black Pill 3.16, so keyer-flash.py / keyer-flash.gui work unchanged.
+ 535           * USBFS_HandleVendorRqst (usbvend01.c, interrupt) only stores the request in E_kb_* and sets
+ 536           * E_kb_state = KB_RECEIVING. Here, in the main loop, the transfer starts once the control write
+ 537           * has finished (USBFS_transferState back to idle), one transfer per call. Only used by the
+ 538           * keyer update tool with the servers stopped; each transfer is short (up to 18 bytes out or
+ 539           * 16 in, about 2 ms at 100 kHz), blocking like keyer_write().
+ 540           */
+ 541          volatile uint8 E_kb_state = KB_IDLE;
+ 542          uint8 E_kb_addr = 0;
+ 543          uint8 E_kb_wlen = 0;
+ 544          uint8 E_kb_rlen = 0;
+ 545          uint8 E_kb_wbuf[KB_MAX_WR];
+ 546          uint8 E_kb_reply[2 + KB_MAX_RD];        /* [0] state, [1] count, then the bytes read */
+ 547          
+ 548          /* Wait for flag in the I2C master status, at most ~50 ms (the keyer bootloader holds SCL
+ 549           * ~5 ms while it writes a flash row). Returns the last status. */
+ 550          static uint8 kb_wait(uint8 flag)
+ 551          {
+ 552   1          uint16 n;
+ 553   1          uint8 st = 0u;
+ 554   1      
+ 555   1          for (n = 0u; n < 5000u; n++) {
+ 556   2              st = I2C_DISPLAY_MasterStatus();
+ 557   2              if (st & flag) break;
+ 558   2              CyDelayUs(10u);
+ 559   2          }
+ 560   1          return st;
+ 561   1      }
+ 562          
+ 563          void Keyer_Boot_Main(void)
+ 564          {
+ 565   1          uint8 ok = 1u;
+ 566   1          uint8 st;
+ 567   1      
+ 568   1          if (E_kb_state == KB_RECEIVING) {
+ 569   2              if (USBFS_transferState != USBFS_TRANS_STATE_IDLE) return;   /* data stage not done */
+ 570   2              E_kb_state = KB_PENDING;
+ 571   2          }
+ 572   1          if (E_kb_state != KB_PENDING) return;
+ 573   1      
+ 574   1          E_kb_reply[1] = 0u;
+ 575   1          if (E_kb_wlen == 0u && E_kb_rlen == 0u) {
+ 576   2              /* address probe: is anybody at E_kb_addr? */
+ 577   2              ok = (I2C_DISPLAY_MasterSendStart(E_kb_addr, I2C_DISPLAY_WRITE_XFER_MODE)
+ 578   2                    == I2C_DISPLAY_MSTR_NO_ERROR) ? 1u : 0u;
+ 579   2              (void)I2C_DISPLAY_MasterSendStop();
+ 580   2          } else {
+ 581   2              if (E_kb_wlen != 0u) {
+ 582   3                  (void)I2C_DISPLAY_MasterClearStatus();
+ 583   3                  if (I2C_DISPLAY_MasterWriteBuf(E_kb_addr, E_kb_wbuf, E_kb_wlen,
+ 584   3                          I2C_DISPLAY_MODE_COMPLETE_XFER) != I2C_DISPLAY_MSTR_NO_ERROR) {
+ 585   4                      ok = 0u;
+ 586   4                  } else {
+ 587   4                      st = kb_wait(I2C_DISPLAY_MSTAT_WR_CMPLT);
+ 588   4                      if (!(st & I2C_DISPLAY_MSTAT_WR_CMPLT) || (st & I2C_DISPLAY_MSTAT_ERR_MASK)
+ 589   4                          || I2C_DISPLAY_MasterGetWriteBufSize() != E_kb_wlen) ok = 0u;
+ 590   4                  }
+C51 COMPILER V9.51   CW                                                                    11/12/2026 20:11:22 PAGE 11  
+
+ 591   3              }
+ 592   2              if (ok && E_kb_rlen != 0u) {
+ 593   3                  (void)I2C_DISPLAY_MasterClearStatus();
+ 594   3                  if (I2C_DISPLAY_MasterReadBuf(E_kb_addr, &E_kb_reply[2], E_kb_rlen,
+ 595   3                          I2C_DISPLAY_MODE_COMPLETE_XFER) != I2C_DISPLAY_MSTR_NO_ERROR) {
+ 596   4                      ok = 0u;
+ 597   4                  } else {
+ 598   4                      st = kb_wait(I2C_DISPLAY_MSTAT_RD_CMPLT);
+ 599   4                      if (!(st & I2C_DISPLAY_MSTAT_RD_CMPLT) || (st & I2C_DISPLAY_MSTAT_ERR_MASK)
+ 600   4                          || I2C_DISPLAY_MasterGetReadBufSize() != E_kb_rlen) ok = 0u;
+ 601   4                      else E_kb_reply[1] = E_kb_rlen;
+ 602   4                  }
+ 603   3              }
+ 604   2          }
+ 605   1          E_kb_reply[0] = ok ? KB_OK : KB_FAIL;
+ 606   1          E_kb_state = E_kb_reply[0];          /* last: the ISR now hands the reply to the host */
+ 607   1      }
+C51 COMPILER V9.51   CW                                                                    11/12/2026 20:11:22 PAGE 12  
 
 ASSEMBLY LISTING OF GENERATED OBJECT CODE
 
@@ -644,7 +721,7 @@ ASSEMBLY LISTING OF GENERATED OBJECT CODE
              ; FUNCTION QSK_interrupt (END)
 
              ; FUNCTION KEY_DELAY_interrupt (BEGIN)
-C51 COMPILER V9.51   CW                                                                    11/02/2026 13:20:55 PAGE 12  
+C51 COMPILER V9.51   CW                                                                    11/12/2026 20:11:22 PAGE 13  
 
                        PUSH    ACC
                        PUSH    DPH
@@ -708,7 +785,7 @@ ASSEMBLY LISTING OF GENERATED OBJECT CODE
                        MOVX    A,@DPTR
                        MOV     R7,A
 ;---- Variable 'reg' assigned to Register 'R7' ----
-C51 COMPILER V9.51   CW                                                                    11/02/2026 13:20:55 PAGE 13  
+C51 COMPILER V9.51   CW                                                                    11/12/2026 20:11:22 PAGE 14  
 
                                            ; SOURCE LINE # 115
                  R     xJNB    ACC.0,?C0010
@@ -772,7 +849,7 @@ ASSEMBLY LISTING OF GENERATED OBJECT CODE
                        MOV     DPL,A
                        MOV     A,R4
                  R     ADDC    A,#HIGH key_delay_buf
-C51 COMPILER V9.51   CW                                                                    11/02/2026 13:20:55 PAGE 14  
+C51 COMPILER V9.51   CW                                                                    11/12/2026 20:11:22 PAGE 15  
 
                        MOV     DPH,A
                        MOVX    A,@DPTR
@@ -836,7 +913,7 @@ ASSEMBLY LISTING OF GENERATED OBJECT CODE
                                            ; SOURCE LINE # 133
                  R     MOV     DPTR,#rf_on
                        CLR     A
-C51 COMPILER V9.51   CW                                                                    11/02/2026 13:20:55 PAGE 15  
+C51 COMPILER V9.51   CW                                                                    11/12/2026 20:11:22 PAGE 16  
 
                        MOVX    @DPTR,A
                                            ; SOURCE LINE # 134
@@ -900,7 +977,7 @@ ASSEMBLY LISTING OF GENERATED OBJECT CODE
                        MOV     R7,A
                  R     MOV     DPTR,#key_up_ms
                        MOVX    A,@DPTR
-C51 COMPILER V9.51   CW                                                                    11/02/2026 13:20:55 PAGE 16  
+C51 COMPILER V9.51   CW                                                                    11/12/2026 20:11:22 PAGE 17  
 
                        SETB    C
                        SUBB    A,R7
@@ -964,7 +1041,7 @@ ASSEMBLY LISTING OF GENERATED OBJECT CODE
              ; FUNCTION CW_Key_Delay_Stop (BEGIN)
                                            ; SOURCE LINE # 158
                                            ; SOURCE LINE # 159
-C51 COMPILER V9.51   CW                                                                    11/02/2026 13:20:55 PAGE 17  
+C51 COMPILER V9.51   CW                                                                    11/12/2026 20:11:22 PAGE 18  
 
                                            ; SOURCE LINE # 160
                        CLR     A
@@ -1028,7 +1105,7 @@ ASSEMBLY LISTING OF GENERATED OBJECT CODE
                        MOVX    A,@DPTR
                        CLR     C
                        SUBB    A,#08H
-C51 COMPILER V9.51   CW                                                                    11/02/2026 13:20:55 PAGE 18  
+C51 COMPILER V9.51   CW                                                                    11/12/2026 20:11:22 PAGE 19  
 
                  R     xJGE    ?C0037
                                            ; SOURCE LINE # 187
@@ -1092,7 +1169,7 @@ ASSEMBLY LISTING OF GENERATED OBJECT CODE
              ; FUNCTION _keyer_write (END)
 
              ; FUNCTION Configure_CW (BEGIN)
-C51 COMPILER V9.51   CW                                                                    11/02/2026 13:20:55 PAGE 19  
+C51 COMPILER V9.51   CW                                                                    11/12/2026 20:11:22 PAGE 20  
 
                                            ; SOURCE LINE # 201
                                            ; SOURCE LINE # 213
@@ -1156,7 +1233,7 @@ ASSEMBLY LISTING OF GENERATED OBJECT CODE
                  E     MOV     DPTR,#E_keyer_mem_q_head
                        MOVX    A,@DPTR
                        INC     A
-C51 COMPILER V9.51   CW                                                                    11/02/2026 13:20:55 PAGE 20  
+C51 COMPILER V9.51   CW                                                                    11/12/2026 20:11:22 PAGE 21  
 
                        MOV     B,#050H
                        DIV     AB
@@ -1173,15 +1250,15 @@ ASSEMBLY LISTING OF GENERATED OBJECT CODE
                                            ; SOURCE LINE # 234
                  R     MOV     DPTR,#state
                        MOVX    A,@DPTR
-                 R     CJNE    A,#0BH,?C0146
-             ?C0146:
+                 R     CJNE    A,#0BH,?C0172
+             ?C0172:
                  R     xJNC    ?C0045
-                 R     MOV     DPTR,#?C0147
+                 R     MOV     DPTR,#?C0173
                        MOV     R0,A
                        ADD     A,R0
                        ADD     A,R0
                        JMP     @A+DPTR
-             ?C0147:
+             ?C0173:
                  R     LJMP    ?C0046
                  R     LJMP    ?C0049
                  R     LJMP    ?C0052
@@ -1220,7 +1297,7 @@ ASSEMBLY LISTING OF GENERATED OBJECT CODE
                        MOVX    @DPTR,A
                                            ; SOURCE LINE # 241
                  R     xJMP    ?C0045
-C51 COMPILER V9.51   CW                                                                    11/02/2026 13:20:55 PAGE 21  
+C51 COMPILER V9.51   CW                                                                    11/12/2026 20:11:22 PAGE 22  
 
              ?C0047:
                                            ; SOURCE LINE # 242
@@ -1284,7 +1361,7 @@ ASSEMBLY LISTING OF GENERATED OBJECT CODE
                                            ; SOURCE LINE # 260
                        INC     DPTR
                        MOV     A,R7
-C51 COMPILER V9.51   CW                                                                    11/02/2026 13:20:55 PAGE 22  
+C51 COMPILER V9.51   CW                                                                    11/12/2026 20:11:22 PAGE 23  
 
                        MOVX    @DPTR,A
                                            ; SOURCE LINE # 261
@@ -1348,7 +1425,7 @@ ASSEMBLY LISTING OF GENERATED OBJECT CODE
                        MOVX    A,@DPTR
                        MOV     R7,A
                  R     MOV     DPTR,#side_tone
-C51 COMPILER V9.51   CW                                                                    11/02/2026 13:20:55 PAGE 23  
+C51 COMPILER V9.51   CW                                                                    11/12/2026 20:11:22 PAGE 24  
 
                        MOVX    A,@DPTR
                        XRL     A,R7
@@ -1412,7 +1489,7 @@ ASSEMBLY LISTING OF GENERATED OBJECT CODE
                        MOVX    A,@DPTR
                        INC     A
                        MOVX    @DPTR,A
-C51 COMPILER V9.51   CW                                                                    11/02/2026 13:20:55 PAGE 24  
+C51 COMPILER V9.51   CW                                                                    11/12/2026 20:11:22 PAGE 25  
 
                                            ; SOURCE LINE # 298
                                            ; SOURCE LINE # 299
@@ -1476,7 +1553,7 @@ ASSEMBLY LISTING OF GENERATED OBJECT CODE
                        MOVX    A,@DPTR
                  R     MOV     DPTR,#buffer+01H
                        MOVX    @DPTR,A
-C51 COMPILER V9.51   CW                                                                    11/02/2026 13:20:55 PAGE 25  
+C51 COMPILER V9.51   CW                                                                    11/12/2026 20:11:22 PAGE 26  
 
                                            ; SOURCE LINE # 318
                  E     MOV     DPTR,#E_keyer_mem_q_tail
@@ -1540,7 +1617,7 @@ ASSEMBLY LISTING OF GENERATED OBJECT CODE
              ?C0073:
                                            ; SOURCE LINE # 334
                        CLR     A
-C51 COMPILER V9.51   CW                                                                    11/02/2026 13:20:55 PAGE 26  
+C51 COMPILER V9.51   CW                                                                    11/12/2026 20:11:22 PAGE 27  
 
                  R     MOV     DPTR,#state
                        MOVX    @DPTR,A
@@ -1604,7 +1681,7 @@ ASSEMBLY LISTING OF GENERATED OBJECT CODE
 
              ; FUNCTION Manage_Paddles_Port (BEGIN)
                                            ; SOURCE LINE # 362
-C51 COMPILER V9.51   CW                                                                    11/02/2026 13:20:55 PAGE 27  
+C51 COMPILER V9.51   CW                                                                    11/12/2026 20:11:22 PAGE 28  
 
                                            ; SOURCE LINE # 363
                                            ; SOURCE LINE # 367
@@ -1668,7 +1745,7 @@ ASSEMBLY LISTING OF GENERATED OBJECT CODE
                  R     DW      ?C0120
                        DB      06H
                  R     DW      ?C0121
-C51 COMPILER V9.51   CW                                                                    11/02/2026 13:20:55 PAGE 28  
+C51 COMPILER V9.51   CW                                                                    11/12/2026 20:11:22 PAGE 29  
 
                        DB      07H
                  R     DW      ?C0125
@@ -1732,7 +1809,7 @@ ASSEMBLY LISTING OF GENERATED OBJECT CODE
                        MOV     R3,A
                        CLR     C
                  E     CALL    ?C?ULCMP
-C51 COMPILER V9.51   CW                                                                    11/02/2026 13:20:55 PAGE 29  
+C51 COMPILER V9.51   CW                                                                    11/12/2026 20:11:22 PAGE 30  
 
                  R     xJZ     ?C0089
                                            ; SOURCE LINE # 390
@@ -1796,7 +1873,7 @@ ASSEMBLY LISTING OF GENERATED OBJECT CODE
                        XRL     A,#043H
                  R     xJNZ    ?C0145
                                            ; SOURCE LINE # 399
-C51 COMPILER V9.51   CW                                                                    11/02/2026 13:20:55 PAGE 30  
+C51 COMPILER V9.51   CW                                                                    11/12/2026 20:11:22 PAGE 31  
 
                  R     MOV     DPTR,#state
                        MOVX    A,@DPTR
@@ -1860,7 +1937,7 @@ ASSEMBLY LISTING OF GENERATED OBJECT CODE
                                            ; SOURCE LINE # 410
                  E     MOV     DPTR,#E_key_down
                        MOV     A,#01H
-C51 COMPILER V9.51   CW                                                                    11/02/2026 13:20:55 PAGE 31  
+C51 COMPILER V9.51   CW                                                                    11/12/2026 20:11:22 PAGE 32  
 
                        MOVX    @DPTR,A
                                            ; SOURCE LINE # 411
@@ -1882,10 +1959,10 @@ ASSEMBLY LISTING OF GENERATED OBJECT CODE
                        MOV     R7,#040H
                  R     MOV     DPTR,#key_delay_buf
                        CLR     A
-             ?C0148:
+             ?C0174:
                        MOVX    @DPTR,A
                        INC     DPTR
-                 R     DJNZ    R7,?C0148
+                 R     DJNZ    R7,?C0174
                        MOV     R7,#040H
              ?C0104:
                                            ; SOURCE LINE # 414
@@ -1924,7 +2001,7 @@ ASSEMBLY LISTING OF GENERATED OBJECT CODE
                        CLR     A
                  R     MOV     DPTR,#dac_req
                        MOVX    @DPTR,A
-C51 COMPILER V9.51   CW                                                                    11/02/2026 13:20:55 PAGE 32  
+C51 COMPILER V9.51   CW                                                                    11/12/2026 20:11:22 PAGE 33  
 
                                            ; SOURCE LINE # 422
                  R     MOV     DPTR,#key_delay_active
@@ -1988,7 +2065,7 @@ ASSEMBLY LISTING OF GENERATED OBJECT CODE
                        MOV     R7,A
                        MOV     A,R2
                        ADDC    A,R6
-C51 COMPILER V9.51   CW                                                                    11/02/2026 13:20:55 PAGE 33  
+C51 COMPILER V9.51   CW                                                                    11/12/2026 20:11:22 PAGE 34  
 
                        MOV     R6,A
                        MOV     A,R1
@@ -2052,7 +2129,7 @@ ASSEMBLY LISTING OF GENERATED OBJECT CODE
                                            ; SOURCE LINE # 447
              ?C0112:
                                            ; SOURCE LINE # 448
-C51 COMPILER V9.51   CW                                                                    11/02/2026 13:20:55 PAGE 34  
+C51 COMPILER V9.51   CW                                                                    11/12/2026 20:11:22 PAGE 35  
 
                  R     MOV     DPTR,#control_status
                        MOVX    A,@DPTR
@@ -2116,7 +2193,7 @@ ASSEMBLY LISTING OF GENERATED OBJECT CODE
                  E     MOV     DPTR,#E_key_1
                        MOV     A,#01H
                        MOVX    @DPTR,A
-C51 COMPILER V9.51   CW                                                                    11/02/2026 13:20:55 PAGE 35  
+C51 COMPILER V9.51   CW                                                                    11/12/2026 20:11:22 PAGE 36  
 
                  R     xJMP    ?C0118
              ?C0117:
@@ -2180,7 +2257,7 @@ ASSEMBLY LISTING OF GENERATED OBJECT CODE
                        INC     DPTR
                        MOVX    A,@DPTR
                        MOV     R7,A
-C51 COMPILER V9.51   CW                                                                    11/02/2026 13:20:55 PAGE 36  
+C51 COMPILER V9.51   CW                                                                    11/12/2026 20:11:22 PAGE 37  
 
                  E     CALL    _si5351aSetFrequency
                  R     MOV     DPTR,#SI5351_status
@@ -2244,7 +2321,7 @@ ASSEMBLY LISTING OF GENERATED OBJECT CODE
                  R     xJNB    ACC.0,?C0126
                  E     MOV     DPTR,#E_key_0
                        MOV     A,#01H
-C51 COMPILER V9.51   CW                                                                    11/02/2026 13:20:55 PAGE 37  
+C51 COMPILER V9.51   CW                                                                    11/12/2026 20:11:22 PAGE 38  
 
                        MOVX    @DPTR,A
                  R     xJMP    ?C0127
@@ -2308,7 +2385,7 @@ ASSEMBLY LISTING OF GENERATED OBJECT CODE
                        INC     A
                        MOVX    @DPTR,A
                                            ; SOURCE LINE # 504
-C51 COMPILER V9.51   CW                                                                    11/02/2026 13:20:55 PAGE 38  
+C51 COMPILER V9.51   CW                                                                    11/12/2026 20:11:22 PAGE 39  
 
                        MOV     R7,A
                  E     CALL    _CW_Hold_Control_Write
@@ -2372,7 +2449,7 @@ ASSEMBLY LISTING OF GENERATED OBJECT CODE
                        MOV     R5,A
                        INC     DPTR
                        MOVX    A,@DPTR
-C51 COMPILER V9.51   CW                                                                    11/02/2026 13:20:55 PAGE 39  
+C51 COMPILER V9.51   CW                                                                    11/12/2026 20:11:22 PAGE 40  
 
                        MOV     R6,A
                        INC     DPTR
@@ -2413,12 +2490,287 @@ ASSEMBLY LISTING OF GENERATED OBJECT CODE
                        RET     
              ; FUNCTION Manage_Paddles_Port (END)
 
+             ; FUNCTION _kb_wait (BEGIN)
+                                           ; SOURCE LINE # 550
+                 R     MOV     DPTR,#flag
+                       MOV     A,R7
+                       MOVX    @DPTR,A
+                                           ; SOURCE LINE # 551
+                                           ; SOURCE LINE # 553
+                       CLR     A
+                 R     MOV     DPTR,#st
+                       MOVX    @DPTR,A
+                                           ; SOURCE LINE # 555
+                 R     MOV     DPTR,#n
+                       MOVX    @DPTR,A
+                       INC     DPTR
+                       MOVX    @DPTR,A
+             ?C0146:
+                       CLR     C
+                 R     MOV     DPTR,#n+01H
+                       MOVX    A,@DPTR
+                       SUBB    A,#088H
+                 R     MOV     DPTR,#n
+                       MOVX    A,@DPTR
+                       SUBB    A,#013H
+C51 COMPILER V9.51   CW                                                                    11/12/2026 20:11:22 PAGE 41  
+
+                 R     xJGE    ?C0147
+                                           ; SOURCE LINE # 556
+                 E     CALL    I2C_DISPLAY_MasterStatus
+                 R     MOV     DPTR,#st
+                       MOV     A,R7
+                       MOVX    @DPTR,A
+                                           ; SOURCE LINE # 557
+                 R     MOV     DPTR,#flag
+                       MOVX    A,@DPTR
+                       ANL     A,R7
+                 R     xJNZ    ?C0147
+             ?C0149:
+                                           ; SOURCE LINE # 558
+                       MOV     R7,#0AH
+                       MOV     R6,#00H
+                 E     CALL    _CyDelayUs
+                                           ; SOURCE LINE # 559
+                 R     MOV     DPTR,#n+01H
+                       MOVX    A,@DPTR
+                       INC     A
+                       MOVX    @DPTR,A
+                 R     JNZ     ?C0175
+                 R     MOV     DPTR,#n
+                       MOVX    A,@DPTR
+                       INC     A
+                       MOVX    @DPTR,A
+             ?C0175:
+                 R     xJMP    ?C0146
+             ?C0147:
+                                           ; SOURCE LINE # 560
+                 R     MOV     DPTR,#st
+                       MOVX    A,@DPTR
+                       MOV     R7,A
+                                           ; SOURCE LINE # 561
+             ?C0150:
+                       RET     
+             ; FUNCTION _kb_wait (END)
+
+             ; FUNCTION Keyer_Boot_Main (BEGIN)
+                                           ; SOURCE LINE # 563
+                                           ; SOURCE LINE # 564
+                                           ; SOURCE LINE # 565
+                 R     MOV     DPTR,#ok
+                       MOV     A,#01H
+                       MOVX    @DPTR,A
+                                           ; SOURCE LINE # 568
+                 R     MOV     DPTR,#E_kb_state
+                       MOVX    A,@DPTR
+                 R     xJNE    A,#05H,?C0151
+                                           ; SOURCE LINE # 569
+                 E     MOV     DPTR,#USBFS_transferState
+                       MOVX    A,@DPTR
+                 R     xJNZ    ?C0153
+             ?C0152:
+                                           ; SOURCE LINE # 570
+                 R     MOV     DPTR,#E_kb_state
+                       MOV     A,#01H
+                       MOVX    @DPTR,A
+                                           ; SOURCE LINE # 571
+             ?C0151:
+                                           ; SOURCE LINE # 572
+                 R     MOV     DPTR,#E_kb_state
+C51 COMPILER V9.51   CW                                                                    11/12/2026 20:11:22 PAGE 42  
+
+                       MOVX    A,@DPTR
+                       XRL     A,#01H
+                 R     xJNZ    ?C0153
+             ?C0154:
+                                           ; SOURCE LINE # 574
+                       CLR     A
+                 R     MOV     DPTR,#E_kb_reply+01H
+                       MOVX    @DPTR,A
+                                           ; SOURCE LINE # 575
+                 R     MOV     DPTR,#E_kb_wlen
+                       MOVX    A,@DPTR
+                 R     xJNZ    ?C0155
+                 R     MOV     DPTR,#E_kb_rlen
+                       MOVX    A,@DPTR
+                 R     xJNZ    ?C0155
+                                           ; SOURCE LINE # 577
+                 R     MOV     DPTR,#E_kb_addr
+                       MOVX    A,@DPTR
+                       MOV     R7,A
+                       CLR     A
+                       MOV     R5,A
+                 E     CALL    _I2C_DISPLAY_MasterSendStart
+                       MOV     A,R7
+                 R     xJNZ    ?C0156
+                       MOV     R7,#01H
+                 R     xJMP    ?C0157
+             ?C0156:
+                       MOV     R7,#00H
+             ?C0157:
+                 R     MOV     DPTR,#ok
+                       MOV     A,R7
+                       MOVX    @DPTR,A
+                                           ; SOURCE LINE # 579
+                 E     CALL    I2C_DISPLAY_MasterSendStop
+                                           ; SOURCE LINE # 580
+                 R     xJMP    ?C0158
+             ?C0155:
+                                           ; SOURCE LINE # 581
+                 R     MOV     DPTR,#E_kb_wlen
+                       MOVX    A,@DPTR
+                 R     xJZ     ?C0159
+                                           ; SOURCE LINE # 582
+                 E     CALL    I2C_DISPLAY_MasterClearStatus
+                                           ; SOURCE LINE # 583
+                 R     MOV     DPTR,#E_kb_addr
+                       MOVX    A,@DPTR
+                       MOV     R7,A
+                       MOV     R3,#01H
+                 R     MOV     R2,#HIGH E_kb_wbuf
+                 R     MOV     R1,#LOW E_kb_wbuf
+                 R     MOV     DPTR,#E_kb_wlen
+                       MOVX    A,@DPTR
+                 E     MOV     DPTR,#?_I2C_DISPLAY_MasterWriteBuf?BYTE+04H
+                       MOVX    @DPTR,A
+                       CLR     A
+                       INC     DPTR
+                       MOVX    @DPTR,A
+                 E     CALL    _I2C_DISPLAY_MasterWriteBuf
+                       MOV     A,R7
+                 R     xJZ     ?C0160
+                                           ; SOURCE LINE # 584
+                                           ; SOURCE LINE # 585
+C51 COMPILER V9.51   CW                                                                    11/12/2026 20:11:22 PAGE 43  
+
+                       CLR     A
+                 R     MOV     DPTR,#ok
+                       MOVX    @DPTR,A
+                                           ; SOURCE LINE # 586
+                 R     xJMP    ?C0159
+             ?C0160:
+                                           ; SOURCE LINE # 587
+                       MOV     R7,#02H
+                 R     CALL    _kb_wait
+                 R     MOV     DPTR,#st
+                       MOV     A,R7
+                       MOVX    @DPTR,A
+                                           ; SOURCE LINE # 588
+                       ANL     A,#02H
+                 R     xJZ     ?C0163
+                       MOVX    A,@DPTR
+                       ANL     A,#0F0H
+                 R     xJNZ    ?C0163
+                 E     CALL    I2C_DISPLAY_MasterGetWriteBufSize
+                 R     MOV     DPTR,#E_kb_wlen
+                       MOVX    A,@DPTR
+                       XRL     A,R7
+                 R     xJZ     ?C0159
+             ?C0163:
+                                           ; SOURCE LINE # 589
+                       CLR     A
+                 R     MOV     DPTR,#ok
+                       MOVX    @DPTR,A
+                                           ; SOURCE LINE # 590
+                                           ; SOURCE LINE # 591
+             ?C0159:
+                                           ; SOURCE LINE # 592
+                 R     MOV     DPTR,#ok
+                       MOVX    A,@DPTR
+                 R     xJZ     ?C0158
+                 R     MOV     DPTR,#E_kb_rlen
+                       MOVX    A,@DPTR
+                 R     xJZ     ?C0158
+                                           ; SOURCE LINE # 593
+                 E     CALL    I2C_DISPLAY_MasterClearStatus
+                                           ; SOURCE LINE # 594
+                 R     MOV     DPTR,#E_kb_addr
+                       MOVX    A,@DPTR
+                       MOV     R7,A
+                       MOV     R3,#01H
+                 R     MOV     R2,#HIGH E_kb_reply+02H
+                 R     MOV     R1,#LOW E_kb_reply+02H
+                 R     MOV     DPTR,#E_kb_rlen
+                       MOVX    A,@DPTR
+                 E     MOV     DPTR,#?_I2C_DISPLAY_MasterReadBuf?BYTE+04H
+                       MOVX    @DPTR,A
+                       CLR     A
+                       INC     DPTR
+                       MOVX    @DPTR,A
+                 E     CALL    _I2C_DISPLAY_MasterReadBuf
+                       MOV     A,R7
+                 R     xJZ     ?C0165
+                                           ; SOURCE LINE # 595
+                                           ; SOURCE LINE # 596
+                       CLR     A
+                 R     MOV     DPTR,#ok
+                       MOVX    @DPTR,A
+C51 COMPILER V9.51   CW                                                                    11/12/2026 20:11:22 PAGE 44  
+
+                                           ; SOURCE LINE # 597
+                 R     xJMP    ?C0158
+             ?C0165:
+                                           ; SOURCE LINE # 598
+                       MOV     R7,#01H
+                 R     CALL    _kb_wait
+                 R     MOV     DPTR,#st
+                       MOV     A,R7
+                       MOVX    @DPTR,A
+                                           ; SOURCE LINE # 599
+                       ANL     A,#01H
+                 R     xJZ     ?C0168
+                       MOVX    A,@DPTR
+                       ANL     A,#0F0H
+                 R     xJNZ    ?C0168
+                 E     CALL    I2C_DISPLAY_MasterGetReadBufSize
+                 R     MOV     DPTR,#E_kb_rlen
+                       MOVX    A,@DPTR
+                       MOV     R6,A
+                       XRL     A,R7
+                 R     xJZ     ?C0167
+             ?C0168:
+                                           ; SOURCE LINE # 600
+                       CLR     A
+                 R     MOV     DPTR,#ok
+                       MOVX    @DPTR,A
+                 R     xJMP    ?C0158
+             ?C0167:
+                                           ; SOURCE LINE # 601
+                 R     MOV     DPTR,#E_kb_reply+01H
+                       MOV     A,R6
+                       MOVX    @DPTR,A
+                                           ; SOURCE LINE # 602
+                                           ; SOURCE LINE # 603
+                                           ; SOURCE LINE # 604
+             ?C0158:
+                                           ; SOURCE LINE # 605
+                 R     MOV     DPTR,#ok
+                       MOVX    A,@DPTR
+                 R     xJZ     ?C0170
+                       MOV     R7,#02H
+                 R     xJMP    ?C0171
+             ?C0170:
+                       MOV     R7,#03H
+             ?C0171:
+                 R     MOV     DPTR,#E_kb_reply
+                       MOV     A,R7
+                       MOVX    @DPTR,A
+                                           ; SOURCE LINE # 606
+                 R     MOV     DPTR,#E_kb_state
+                       MOVX    @DPTR,A
+                                           ; SOURCE LINE # 607
+             ?C0153:
+                       RET     
+             ; FUNCTION Keyer_Boot_Main (END)
+
 
 
 MODULE INFORMATION:   STATIC OVERLAYABLE
-   CODE SIZE        =   2485    ----
+   CODE SIZE        =   2900    ----
    CONSTANT SIZE    =   ----    ----
-   XDATA SIZE       =    102      11
+   XDATA SIZE       =    142      17
+C51 COMPILER V9.51   CW                                                                    11/12/2026 20:11:22 PAGE 45  
+
    PDATA SIZE       =   ----    ----
    DATA SIZE        =   ----    ----
    IDATA SIZE       =   ----    ----

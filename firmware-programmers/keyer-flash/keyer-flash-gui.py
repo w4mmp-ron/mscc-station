@@ -190,8 +190,7 @@ class App:
     def radio(self):
         d = kf.dev()
         if not kf.supported(d):
-            raise kf.Fail("radio firmware has no keyer update (opcode 0x9F): pill 3.16 or "
-                          "later needed")
+            raise kf.Fail("radio firmware has no keyer update (opcode 0x9F); needs Black Pill 3.16, Proficio MKII PTT 3.244 / ATU 4.245, Geminus MKII 2.154, Ultimus MKII PTT 8.244 / ATU 7.245 or later")
         return d
 
     # ---- buttons --------------------------------------------------------
