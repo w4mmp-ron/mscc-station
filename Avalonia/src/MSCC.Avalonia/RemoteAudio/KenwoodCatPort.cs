@@ -19,6 +19,8 @@ public sealed class KenwoodCatPort : IDisposable
     public event Action<string>? Log;
     public bool IsOpen => _port is { IsOpen: true };
     public string? PortName { get; private set; }
+    /// <summary>PTT line in use: 0 off (CAT only), 1 CTS (WSJT-X RTS), 2 DCD (WSJT-X DTR).</summary>
+    public int PttPin => _pin;
 
     public void Start()
     {
@@ -178,6 +180,7 @@ public sealed class KenwoodCatPort : IDisposable
     public void Stop()
     {
         _run = false;
+        try { Engine.CancelTune(); } catch { /* ignore */ }
         try { _port?.Close(); } catch { /* ignore */ }
         try { _thread?.Join(400); } catch { /* ignore */ }
         try { _pinThread?.Join(400); } catch { /* ignore */ }

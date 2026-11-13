@@ -13,7 +13,7 @@ pull with nothing to set up. It covers:
 - **The "finished" checklist** (the steps in `NOTE-FOR-STEW-RELEASES-AT-FINISHED-2026-11-13.md`,
   written out).
 - **Keeping the trees in step:** a server change goes into the Pi, Windows and (later) Debian trees
-  in the same step; a WPF change also goes into Avalonia.
+  in the same step; a client change goes into both WPF and Avalonia, either way.
 - **Versions** only in the Software Versions Addendum.
 - **Never commit** the Visual Studio .tlog / .recipe / .iobj / .ipdb / .lastbuildstate files or
   the installers.

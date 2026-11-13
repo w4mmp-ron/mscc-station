@@ -17,13 +17,95 @@ public sealed class KenwoodTs2000
     public Action<long>? SetFrequencyHz { get; set; }
     public Action<char>? SetModeDigit { get; set; }
     public Action<bool>? SetPtt { get; set; }
+    /// <summary>Press / release the client's TUN (CAT tune, AC111;).</summary>
+    public Action<bool>? SetTune { get; set; }
+    /// <summary>Is the client's TUN on? Lets a tune ended elsewhere (TUN button, fault) be seen.</summary>
+    public Func<bool> GetTuning { get; set; } = () => false;
     public Action<string>? Trace { get; set; }
+
+    /*
+     * CAT tune, same rules as ms-sdr comm-port.c (2026-11-11). WSJT-X right-click Tune -> hamlib
+     * TS-2000 RIG_OP_TUNE sends "AC111;" and nothing to end it (a real TS-2000 tuner stops by
+     * itself). So AC111; presses TUN, and the tune ends:
+     *   - by itself after TuneSeconds,
+     *   - at the next AC111; (second right-click); one within TuneDebounceMs of the start is ignored,
+     *   - before a CAT TX; (PTT wins),
+     *   - if TUN went off some other way (button, fault): only the timer stops.
+     */
+    public const int TuneSeconds = 10;
+    public const int TuneDebounceMs = 1000;
+    private readonly object _tuneLock = new();
+    private Timer? _tuneTimer;
+    private int _tuneSecondsLeft;          // > 0 = a CAT tune is running
+    private long _tuneStartMs;
+
+    /// <summary>True while a CAT tune (AC111;) is running.</summary>
+    public bool CatTuneRunning
+    {
+        get { lock (_tuneLock) return _tuneSecondsLeft > 0; }
+    }
+
+    private void TuneStartLocked()
+    {
+        _tuneSecondsLeft = TuneSeconds;
+        _tuneStartMs = Environment.TickCount64;
+        _tuneTimer ??= new Timer(_ => TuneTick(), null, Timeout.Infinite, Timeout.Infinite);
+        _tuneTimer.Change(1000, 1000);
+        Trace?.Invoke($"CAT tune start (AC111;), {TuneSeconds} s");
+        SetTune?.Invoke(true);
+    }
+
+    private void TuneStopLocked(string reason, bool releaseTun = true)
+    {
+        _tuneSecondsLeft = 0;
+        _tuneTimer?.Change(Timeout.Infinite, Timeout.Infinite);
+        Trace?.Invoke($"CAT tune stop ({reason})");
+        if (releaseTun)
+            SetTune?.Invoke(false);
+    }
+
+    private void TuneTick()
+    {
+        lock (_tuneLock)
+        {
+            if (_tuneSecondsLeft <= 0)
+                return;
+            // Give the UI the first second to switch TUN on before trusting GetTuning.
+            if (Environment.TickCount64 - _tuneStartMs > TuneDebounceMs && !GetTuning())
+                TuneStopLocked("ended elsewhere", releaseTun: false);
+            else if (--_tuneSecondsLeft == 0)
+                TuneStopLocked("time up");
+        }
+    }
+
+    /// <summary>CAT port closing: end a running CAT tune and free the timer.</summary>
+    public void CancelTune()
+    {
+        lock (_tuneLock)
+        {
+            if (_tuneSecondsLeft > 0)
+                TuneStopLocked("CAT closed");
+            _tuneTimer?.Dispose();
+            _tuneTimer = null;
+        }
+    }
 
     /// <summary>
     /// Set on TX; / cleared on RX; before UI/8888 run. WSJT-X polls IF; immediately;
     /// without this latch IF reports RX and WSJT unkeys.
     /// </summary>
     private int _pttLatched;
+
+    /// <summary>
+    /// PTT from a serial control line (digi app RTS → our CTS, like ms-sdr PIN=1).
+    /// Same effect as TX; / RX;, so IF; reports TX while the line is on.
+    /// </summary>
+    public void SetLinePtt(bool tx, string line)
+    {
+        Volatile.Write(ref _pttLatched, tx ? 1 : 0);
+        Trace?.Invoke(tx ? $"CAT {line} on → key" : $"CAT {line} off → unkey");
+        SetPtt?.Invoke(tx);
+    }
 
     /// <summary>Handle one command including trailing ';'. Returns reply or null.</summary>
     public string? Handle(string command)
@@ -83,10 +165,28 @@ public sealed class KenwoodTs2000
         }
         if (cmd is "TX;" or "TX0;" or "TX1;" or "TX2;")
         {
+            lock (_tuneLock)
+            {
+                if (_tuneSecondsLeft > 0)
+                    TuneStopLocked("CAT TX;");
+            }
             Volatile.Write(ref _pttLatched, 1);
             Trace?.Invoke("CAT TX → key");
             SetPtt?.Invoke(true);
             return null;
+        }
+        if (cmd == "AC111;")
+        {
+            lock (_tuneLock)
+            {
+                if (_tuneSecondsLeft > 0 && Environment.TickCount64 - _tuneStartMs < TuneDebounceMs)
+                    Trace?.Invoke($"CAT tune. AC111; ignored (too soon, {Environment.TickCount64 - _tuneStartMs} ms after start)");
+                else if (_tuneSecondsLeft > 0)
+                    TuneStopLocked("second AC111;");
+                else
+                    TuneStartLocked();
+            }
+            return null; // ms-sdr sends no reply either
         }
         if (cmd.StartsWith("VX", StringComparison.Ordinal))
             return null; // hamlib PTT ON is "VX0;TX;"
@@ -131,7 +231,8 @@ public sealed class KenwoodTs2000
         sb.Append("IF");
         sb.Append(Hz11(GetFrequencyHz()));
         sb.Append('0', 15);
-        bool tx = Volatile.Read(ref _pttLatched) != 0 || GetTransmitting();
+        // A CAT tune is TX too (ms-sdr: the tune carrier sets TX on).
+        bool tx = Volatile.Read(ref _pttLatched) != 0 || GetTransmitting() || CatTuneRunning;
         sb.Append(tx ? '1' : '0');
         sb.Append(GetModeDigit());
         sb.Append('0', 7);

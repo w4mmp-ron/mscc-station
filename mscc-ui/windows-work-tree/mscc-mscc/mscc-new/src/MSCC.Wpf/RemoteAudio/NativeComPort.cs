@@ -20,7 +20,11 @@ internal sealed class NativeComPort : IDisposable
 
     public bool IsOpen => _handle is { IsInvalid: false, IsClosed: false };
 
-    public void Open(string comName, int baud)
+    public const uint MsCtsOn = 0x0010;
+    public const uint MsRlsdOn = 0x0080;   // DCD
+
+    /// <param name="readTimeoutMs">ReadByte wait. The CAT loop uses 10 ms when it also watches a PTT line.</param>
+    public void Open(string comName, int baud, uint readTimeoutMs = 200)
     {
         Close();
         string path = comName.StartsWith(@"\\.\", StringComparison.Ordinal)
@@ -67,7 +71,7 @@ internal sealed class NativeComPort : IDisposable
         {
             ReadIntervalTimeout = 0,
             ReadTotalTimeoutMultiplier = 0,
-            ReadTotalTimeoutConstant = 200,
+            ReadTotalTimeoutConstant = readTimeoutMs,
             WriteTotalTimeoutMultiplier = 0,
             WriteTotalTimeoutConstant = 200,
         };
@@ -91,6 +95,15 @@ internal sealed class NativeComPort : IDisposable
         if (_handle == null || data.Length == 0)
             return;
         WriteFile(_handle, data, (uint)data.Length, out _, IntPtr.Zero);
+    }
+
+    /// <summary>Input line state (MS_CTS_ON, MS_RLSD_ON, ...). Call from the read thread: the handle is not overlapped.</summary>
+    public bool TryGetModemStatus(out uint status)
+    {
+        status = 0;
+        if (_handle == null || _handle.IsInvalid)
+            return false;
+        return GetCommModemStatus(_handle, out status);
     }
 
     public void Close()
@@ -149,6 +162,9 @@ internal sealed class NativeComPort : IDisposable
 
     [DllImport("kernel32.dll", SetLastError = true)]
     private static extern bool SetCommTimeouts(SafeFileHandle hFile, ref CommTimeouts lpCommTimeouts);
+
+    [DllImport("kernel32.dll", SetLastError = true)]
+    private static extern bool GetCommModemStatus(SafeFileHandle hFile, out uint lpModemStat);
 
     [DllImport("kernel32.dll", SetLastError = true)]
     private static extern bool ReadFile(SafeFileHandle hFile, byte[] lpBuffer, uint nNumberOfBytesToRead,

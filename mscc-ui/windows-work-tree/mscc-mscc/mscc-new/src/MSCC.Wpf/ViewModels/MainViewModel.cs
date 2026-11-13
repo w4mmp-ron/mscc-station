@@ -727,6 +727,7 @@ public partial class MainViewModel : ObservableObject, IDisposable
     {
         SpectrumWaterfallSettings.AudioDeviceMode = IsDigitalAudio ? 0 : 1;
         SpectrumWaterfallSettings.RemoteAudio = RemoteAudio;
+        SpectrumWaterfallSettings.RemoteDigital = RemoteDigitalAudio;
         SpectrumWaterfallSettings.RemoteMonitorAtRadio = RemoteMonitorAtRadio;
         try { SpectrumWaterfallSettings.Save(); } catch { /* best-effort */ }
     }
@@ -850,7 +851,11 @@ public partial class MainViewModel : ObservableObject, IDisposable
 
     partial void OnRemoteDigitalAudioChanged(bool value)
     {
-        if (_suppressAudioDeviceSend || !RemoteAudio) return;
+        if (_suppressAudioDeviceSend) return;
+        // Keep the Phones / Digital choice across starts (Remote itself still starts off).
+        SpectrumWaterfallSettings.RemoteDigital = value;
+        try { SpectrumWaterfallSettings.Save(); } catch { /* best-effort */ }
+        if (!RemoteAudio) return;
         PushAudioToRadio(value ? "R-path→D" : "R-path→P");
         ApplyRemoteAfDevicesAndRestart(value ? "R-path→D" : "R-path→P");
         if (value) StartRemoteCat(); else StopRemoteCat();
@@ -961,12 +966,28 @@ public partial class MainViewModel : ObservableObject, IDisposable
                 ActiveMode = KenwoodTs2000.ModeNameFromDigit(d, preferDigU: RemoteDigitalAudio);
             });
             cat.SetPtt = tx => RunOnUi(() => { PttOn = tx; });
+            // WSJT-X right-click Tune (AC111;) = press TUN, as ms-sdr does locally.
+            cat.GetTuning = () => TuneMode;
+            cat.SetTune = on => RunOnUi(() => { if (TuneMode != on) TuneMode = on; });
             RemoteCat.Start(CommPortConfig.Load());
         }
         catch (Exception ex)
         {
             MonitorTextBoxText($" CAT start failed: {ex.Message}");
         }
+    }
+
+    /// <summary>
+    /// Settings COM port / baud / PTT line saved: if Remote Digital CAT is open, reopen it so the
+    /// new comm-port.ini applies now (CAT reads it only when it opens).
+    /// </summary>
+    internal void ReopenRemoteCatForNewSettings()
+    {
+        if (!RemoteAudio || !RemoteDigitalAudio || RemoteCat == null)
+            return;
+        MonitorTextBoxText(" CAT settings changed — reopening Remote CAT");
+        StartRemoteCat();
+        _remoteAfWindow?.RefreshPath();
     }
 
     private void StopRemoteCat()
@@ -987,27 +1008,19 @@ public partial class MainViewModel : ObservableObject, IDisposable
     internal void ApplyRemoteAfDevices()
     {
         if (RemoteAf == null) return;
+        int play = ResolveRemotePlayDevice();
+        int mic = ResolveRemoteMicDevice();
+        RemoteAf.PlayDeviceIndex = play;
+        RemoteAf.MicDeviceIndex = mic;
         if (RemoteDigitalAudio)
         {
-            var s = AudioDeviceConfig.Load();
-            int play = FindNamedAfDevice(RemoteAfEngine.PlayDevices, s.DigitalSpeaker);
-            int mic = FindNamedAfDevice(RemoteAfEngine.MicDevices, s.DigitalMic);
-            if (play < 0)
-                play = FindVacAfDevice(RemoteAfEngine.PlayDevices);
-            if (mic < 0)
-                mic = FindVacAfDevice(RemoteAfEngine.MicDevices);
-            RemoteAf.PlayDeviceIndex = play;
-            RemoteAf.MicDeviceIndex = mic;
             RemoteAf.ApplyEq(false, 0, 0, 0);
-            MonitorTextBoxText(
-                $" Digital VAC play='{s.DigitalSpeaker.Trim()}' idx={play} mic='{s.DigitalMic.Trim()}' idx={mic}");
+            MonitorTextBoxText($" Digital VAC play idx={play} mic idx={mic}");
             if (play < 0 || mic < 0)
-                MonitorTextBoxText(" Digital: set Speaker/Mic in Settings (CABLE Input / CABLE Output)");
+                MonitorTextBoxText(" Digital: pick Play/Mic in the Remote window, or set Speaker/Mic in Settings (CABLE Input / CABLE Output)");
         }
         else
         {
-            RemoteAf.PlayDeviceIndex = SpectrumWaterfallSettings.RemotePlayDeviceIndex;
-            RemoteAf.MicDeviceIndex = SpectrumWaterfallSettings.RemoteMicDeviceIndex;
             RemoteAf.ApplyEq(
                 SpectrumWaterfallSettings.RemoteEqEnabled,
                 SpectrumWaterfallSettings.RemoteEqLowDb,
@@ -1024,6 +1037,81 @@ public partial class MainViewModel : ObservableObject, IDisposable
         RestartRemoteAfRx();
         RestartRemoteAfMic();
         MonitorTextBoxText($" Remote AF devices restarted ({reason})");
+    }
+
+    /// <summary>
+    /// Playback device for the current Remote path. Phones: saved name, then the old saved index.
+    /// Digital: saved name, then Settings Digital Speaker, then any VAC (as Avalonia 1.6.80).
+    /// </summary>
+    internal int ResolveRemotePlayDevice()
+    {
+        var devs = RemoteAfEngine.PlayDevices;
+        if (RemoteDigitalAudio)
+        {
+            int i = FindSavedAfDevice(devs, SpectrumWaterfallSettings.RemoteDigiPlayDeviceName);
+            if (i < 0) i = FindNamedAfDevice(devs, AudioDeviceConfig.Load().DigitalSpeaker);
+            if (i < 0) i = FindVacAfDevice(devs);
+            return i;
+        }
+        int p = FindSavedAfDevice(devs, SpectrumWaterfallSettings.RemotePlayDeviceName);
+        return p >= 0 ? p : SpectrumWaterfallSettings.RemotePlayDeviceIndex;
+    }
+
+    /// <summary>Capture device for the current Remote path (same order as play).</summary>
+    internal int ResolveRemoteMicDevice()
+    {
+        var devs = RemoteAfEngine.MicDevices;
+        if (RemoteDigitalAudio)
+        {
+            int i = FindSavedAfDevice(devs, SpectrumWaterfallSettings.RemoteDigiMicDeviceName);
+            if (i < 0) i = FindNamedAfDevice(devs, AudioDeviceConfig.Load().DigitalMic);
+            if (i < 0) i = FindVacAfDevice(devs);
+            return i;
+        }
+        int m = FindSavedAfDevice(devs, SpectrumWaterfallSettings.RemoteMicDeviceName);
+        return m >= 0 ? m : SpectrumWaterfallSettings.RemoteMicDeviceIndex;
+    }
+
+    /// <summary>Remember a device picked in the Remote window, by name, for the current path.</summary>
+    internal void SaveRemoteDeviceChoice(bool play, int index)
+    {
+        var devs = play ? RemoteAfEngine.PlayDevices : RemoteAfEngine.MicDevices;
+        string name = "";
+        foreach (var d in devs)
+        {
+            if (d.Index == index) { name = d.Name ?? ""; break; }
+        }
+        if (RemoteDigitalAudio)
+        {
+            if (play) SpectrumWaterfallSettings.RemoteDigiPlayDeviceName = name;
+            else SpectrumWaterfallSettings.RemoteDigiMicDeviceName = name;
+        }
+        else if (play)
+        {
+            SpectrumWaterfallSettings.RemotePlayDeviceIndex = index;
+            SpectrumWaterfallSettings.RemotePlayDeviceName = name;
+        }
+        else
+        {
+            SpectrumWaterfallSettings.RemoteMicDeviceIndex = index;
+            SpectrumWaterfallSettings.RemoteMicDeviceName = name;
+        }
+        try { SpectrumWaterfallSettings.Save(); } catch { /* best-effort */ }
+        MonitorTextBoxText($" Remote {(RemoteDigitalAudio ? "Digital" : "Phones")} {(play ? "play" : "mic")} saved: {(name.Length > 0 ? name : "(default)")}");
+    }
+
+    /// <summary>Exact saved-name match (empty = none).</summary>
+    private static int FindSavedAfDevice(IReadOnlyList<(int Index, string Name)> devices, string savedName)
+    {
+        string want = (savedName ?? "").Trim();
+        if (want.Length == 0 || devices == null)
+            return -1;
+        foreach (var d in devices)
+        {
+            if (d.Index >= 0 && string.Equals((d.Name ?? "").Trim(), want, StringComparison.OrdinalIgnoreCase))
+                return d.Index;
+        }
+        return -1;
     }
 
     /// <summary>Match digital-speaker.ini / digital-microphone.ini against WASAPI/WaveIn names.</summary>
@@ -1065,16 +1153,14 @@ public partial class MainViewModel : ObservableObject, IDisposable
     internal void RestartRemoteAfRx()
     {
         if (!RemoteAudio || RemoteAf == null) return;
-        if (!RemoteDigitalAudio)
-            RemoteAf.PlayDeviceIndex = SpectrumWaterfallSettings.RemotePlayDeviceIndex;
+        RemoteAf.PlayDeviceIndex = ResolveRemotePlayDevice();
         try { RemoteAf.StartRx(); } catch (Exception ex) { MonitorTextBoxText($" RX restart: {ex.Message}"); }
     }
 
     internal void RestartRemoteAfMic()
     {
         if (!RemoteAudio || RemoteAf == null) return;
-        if (!RemoteDigitalAudio)
-            RemoteAf.MicDeviceIndex = SpectrumWaterfallSettings.RemoteMicDeviceIndex;
+        RemoteAf.MicDeviceIndex = ResolveRemoteMicDevice();
         string host = (BackendIp ?? "").Trim();
         if (string.IsNullOrEmpty(host))
             host = "127.0.0.1";
@@ -2165,6 +2251,7 @@ public partial class MainViewModel : ObservableObject, IDisposable
             // Never restore Remote on launch — local Start would grab CAT COM.
             IsDigitalAudio = mode == 0;
             RemoteAudio = false;
+            RemoteDigitalAudio = SpectrumWaterfallSettings.RemoteDigital;
             RemoteMonitorAtRadio = SpectrumWaterfallSettings.RemoteMonitorAtRadio;
         }
         finally

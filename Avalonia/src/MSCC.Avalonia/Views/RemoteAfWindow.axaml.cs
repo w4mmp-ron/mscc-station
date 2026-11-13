@@ -80,7 +80,13 @@ public partial class RemoteAfWindow : Window
         CatHint.Text = !digi
             ? "CAT idle — tune and PTT in MSCC."
             : catOpen
-                ? $"CAT: TS-2000 on {catPort}. Freq/mode/PTT → radio via 8888."
+                ? $"CAT: TS-2000 on {catPort}. Freq/mode/PTT → radio via 8888. " +
+                  (_vm.RemoteCat!.PttPin switch
+                  {
+                      1 => "PTT: CAT or RTS.",
+                      2 => "PTT: CAT or DTR.",
+                      _ => "PTT: CAT (PIN=0 in comm-port.ini).",
+                  })
                 : $"CAT: not open ({catPort}). tty0tty busy if local ms-sdr holds it.";
         EqPanel.IsVisible = !digi;
         MuteCheck.Content = digi ? "Mute VAC play" : "Mute phones";

@@ -126,6 +126,16 @@ public static class SpectrumWaterfallSettings
     public static bool RemoteMonitorAtRadio { get; set; }
     public static int RemotePlayDeviceIndex { get; set; } = -1;
     public static int RemoteMicDeviceIndex { get; set; } = -1;
+    /// <summary>
+    /// Remote devices by name (as Avalonia 1.6.80): the index above shifts when devices come and
+    /// go. Phones and Digital each keep their own pair. Empty = not chosen yet.
+    /// </summary>
+    public static string RemotePlayDeviceName { get; set; } = "";
+    public static string RemoteMicDeviceName { get; set; } = "";
+    public static string RemoteDigiPlayDeviceName { get; set; } = "";
+    public static string RemoteDigiMicDeviceName { get; set; } = "";
+    /// <summary>Remote window Phones (false) / Digital (true), kept across starts (as Avalonia 1.6.85).</summary>
+    public static bool RemoteDigital { get; set; }
     public static int RemotePlayVolume { get; set; } = 80;
     public static int RemoteMicVolume { get; set; } = 80;
     /// <summary>Remote Digital MSA1 TX drive (0–100). Separate from phones REMOTE_MIC_VOL.</summary>
@@ -926,6 +936,16 @@ public static class SpectrumWaterfallSettings
                         RemotePlayDeviceIndex = ParseIniInt(line, RemotePlayDeviceIndex);
                     if (LineMatchesKey(line, "REMOTE_MIC_DEV"))
                         RemoteMicDeviceIndex = ParseIniInt(line, RemoteMicDeviceIndex);
+                    if (LineMatchesKey(line, "REMOTE_PLAY_NAME"))
+                        RemotePlayDeviceName = ParseIniString(line, "");
+                    if (LineMatchesKey(line, "REMOTE_MIC_NAME"))
+                        RemoteMicDeviceName = ParseIniString(line, "");
+                    if (LineMatchesKey(line, "REMOTE_DIGI_PLAY_NAME"))
+                        RemoteDigiPlayDeviceName = ParseIniString(line, "");
+                    if (LineMatchesKey(line, "REMOTE_DIGI_MIC_NAME"))
+                        RemoteDigiMicDeviceName = ParseIniString(line, "");
+                    if (LineMatchesKey(line, "REMOTE_DIGITAL"))
+                        RemoteDigital = ParseIniBool(line, RemoteDigital);
                     if (LineMatchesKey(line, "REMOTE_PLAY_VOL"))
                         RemotePlayVolume = Math.Clamp(ParseIniInt(line, RemotePlayVolume), 0, 100);
                     if (LineMatchesKey(line, "REMOTE_MIC_VOL"))
@@ -1226,6 +1246,11 @@ public static class SpectrumWaterfallSettings
         UpdateOrAdd(lines, "REMOTE_MONITOR_RADIO", RemoteMonitorAtRadio ? "1" : "0");
         UpdateOrAdd(lines, "REMOTE_PLAY_DEV", RemotePlayDeviceIndex.ToString());
         UpdateOrAdd(lines, "REMOTE_MIC_DEV", RemoteMicDeviceIndex.ToString());
+        UpdateOrAdd(lines, "REMOTE_PLAY_NAME", RemotePlayDeviceName ?? "");
+        UpdateOrAdd(lines, "REMOTE_MIC_NAME", RemoteMicDeviceName ?? "");
+        UpdateOrAdd(lines, "REMOTE_DIGI_PLAY_NAME", RemoteDigiPlayDeviceName ?? "");
+        UpdateOrAdd(lines, "REMOTE_DIGI_MIC_NAME", RemoteDigiMicDeviceName ?? "");
+        UpdateOrAdd(lines, "REMOTE_DIGITAL", RemoteDigital ? "1" : "0");
         UpdateOrAdd(lines, "REMOTE_PLAY_VOL", Math.Clamp(RemotePlayVolume, 0, 100).ToString());
         UpdateOrAdd(lines, "REMOTE_MIC_VOL", Math.Clamp(RemoteMicVolume, 0, 100).ToString());
         UpdateOrAdd(lines, "REMOTE_DIGI_MIC_VOL", Math.Clamp(RemoteDigitalMicVolume, 0, 100).ToString());

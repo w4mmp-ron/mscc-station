@@ -2,6 +2,20 @@
 
 Installer: `mscc-net9-R<version>-install.exe` (WPF client + Windows servers). Install the newest one; older installers in this folder are kept for roll-back only.
 
+## R11.13.4 — 2026-11-13  (`mscc-net9-R11-13-4-install.exe`, title bar 11.13.4)
+
+### Added (client, Remote Digital: WSJT-X on this PC, radio on another computer)
+- WSJT-X PTT = RTS (or DTR) now works in Remote Digital, as it does locally. Turn on the PTT line box in Settings → COM Port (PIN=1).
+- WSJT-X right-click Tune works in Remote Digital: TUN comes on and stops by itself after 10 s, or at a second right-click (same as local).
+- The Remote window's CAT line shows which PTT works: "PTT: CAT or RTS" or "PTT: CAT (PTT line off in Settings)".
+- The Remote window keeps its devices by name, separately for Phones and Digital, and remembers Phones or Digital for the next start.
+
+### Fixed
+- Settings → COM Port: the PTT line box was turned off at every start (comm-port.ini got PIN=0). This also affected local PTT by RTS.
+- Changing the COM port, baud rate or PTT line in Settings while in Remote Digital now applies at once.
+- ms-sdr 3.211: PTT by DTR (PIN=2) never keyed; it does now. The log shows the real Windows error when the CAT port can't be opened.
+- recv 3.154 and trans 3.159 unchanged.
+
 ## R11.13.3 — 2026-11-13  (`mscc-net9-R11-13-3-install.exe`, title bar 11.11.4)
 
 ### Changed

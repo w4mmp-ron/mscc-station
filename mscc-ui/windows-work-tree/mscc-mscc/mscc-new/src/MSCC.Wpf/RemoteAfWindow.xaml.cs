@@ -117,7 +117,7 @@ public partial class RemoteAfWindow : Window
         RxHeading.Text = digi ? "DIGITAL RX (VAC)" : "PHONES RX";
         MicHeading.Text = digi ? "DIGITAL MIC TX (VAC)" : "EQ / MIC TX";
         VacHint.Text = digi
-            ? "WSJT-X: TS-2000, CAT on the COM in Settings, PTT=CAT, audio CABLE Output / CABLE Input, Tx ~1500 Hz. Play=CABLE Input, Mic=CABLE Output."
+            ? "WSJT-X: TS-2000, CAT on the COM in Settings, PTT as on the CAT line below, audio CABLE Output / CABLE Input, Tx ~1500 Hz. Play=CABLE Input, Mic=CABLE Output."
             : "";
         VacHint.Visibility = digi ? Visibility.Visible : Visibility.Collapsed;
         string catPort = _vm.RemoteCat?.PortName ?? CommPortConfig.Load().PortName;
@@ -125,7 +125,13 @@ public partial class RemoteAfWindow : Window
         CatHint.Text = !digi
             ? "CAT idle — tune and PTT in MSCC."
             : catOpen
-                ? $"CAT: TS-2000 on {catPort} (WSJT-X serial). Freq/mode/PTT → radio via 8888."
+                ? $"CAT: TS-2000 on {catPort} (WSJT-X serial). Freq/mode/PTT → radio via 8888. " +
+                  (_vm.RemoteCat!.PttPin switch
+                  {
+                      1 => "PTT: CAT or RTS.",
+                      2 => "PTT: CAT or DTR.",
+                      _ => "PTT: CAT (PTT line off in Settings).",
+                  })
                 : $"CAT: not open ({catPort}). Check Settings COM.";
         EqPanel.Visibility = digi ? Visibility.Collapsed : Visibility.Visible;
         MuteCheck.Content = digi ? "Mute VAC play" : "Mute phones";
@@ -143,23 +149,9 @@ public partial class RemoteAfWindow : Window
         _ready = false;
         PathPhones.IsChecked = !digi;
         PathDigital.IsChecked = digi;
-        if (digi)
-        {
-            var s = AudioDeviceConfig.Load();
-            int play = MainViewModel.FindNamedAfDevice(RemoteAudio.RemoteAfEngine.PlayDevices, s.DigitalSpeaker);
-            int mic = MainViewModel.FindNamedAfDevice(RemoteAudio.RemoteAfEngine.MicDevices, s.DigitalMic);
-            if (play < 0)
-                play = MainViewModel.FindVacAfDevice(RemoteAudio.RemoteAfEngine.PlayDevices);
-            if (mic < 0)
-                mic = MainViewModel.FindVacAfDevice(RemoteAudio.RemoteAfEngine.MicDevices);
-            SelectByTag(PlayDeviceCombo, play);
-            SelectByTag(MicDeviceCombo, mic);
-        }
-        else
-        {
-            SelectByTag(PlayDeviceCombo, SpectrumWaterfallSettings.RemotePlayDeviceIndex);
-            SelectByTag(MicDeviceCombo, SpectrumWaterfallSettings.RemoteMicDeviceIndex);
-        }
+        // Saved name for this path first (Phones and Digital each keep their own).
+        SelectByTag(PlayDeviceCombo, _vm.ResolveRemotePlayDevice());
+        SelectByTag(MicDeviceCombo, _vm.ResolveRemoteMicDevice());
         _ready = wasReady;
     }
 
@@ -201,13 +193,7 @@ public partial class RemoteAfWindow : Window
         if (!_ready || _vm == null) return;
         if (PlayDeviceCombo.SelectedItem is ComboBoxItem it && it.Tag is int idx)
         {
-            if (_vm.RemoteAf != null)
-                _vm.RemoteAf.PlayDeviceIndex = idx;
-            if (!_vm.RemoteDigitalAudio)
-            {
-                SpectrumWaterfallSettings.RemotePlayDeviceIndex = idx;
-                SaveSettings();
-            }
+            _vm.SaveRemoteDeviceChoice(play: true, idx);
             _vm.RestartRemoteAfRx();
         }
     }
@@ -217,13 +203,7 @@ public partial class RemoteAfWindow : Window
         if (!_ready || _vm == null) return;
         if (MicDeviceCombo.SelectedItem is ComboBoxItem it && it.Tag is int idx)
         {
-            if (_vm.RemoteAf != null)
-                _vm.RemoteAf.MicDeviceIndex = idx;
-            if (!_vm.RemoteDigitalAudio)
-            {
-                SpectrumWaterfallSettings.RemoteMicDeviceIndex = idx;
-                SaveSettings();
-            }
+            _vm.SaveRemoteDeviceChoice(play: false, idx);
             _vm.RestartRemoteAfMic();
         }
     }

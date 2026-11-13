@@ -25,8 +25,8 @@ So between "finished"s, nothing new appears in git from us.
 - **Version numbers:** only in the Software Versions Addendum. The guides refer to it, so they
   don't change when only a version does.
 - **Pi and Windows servers are kept the same.** A server change goes into both
-  `rpi/*-linux` and `mscc-ui/windows-work-tree`; a WPF client change also goes into Ron's
-  Avalonia copy.
+  `rpi/*-linux` and `mscc-ui/windows-work-tree`; a client change goes into both WPF and Ron's
+  Avalonia copy, whichever one it started in.
 - **Pi ms-sdr `version.h`:** the Pi build bumps it on every build. At each "finished" the Pi's copy
   is put back into git, so the repo shows the version the Pi runs.
 

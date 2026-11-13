@@ -273,15 +273,23 @@ void *Pin_Check_Thread(void *param) {
                 }
                 break;
             case 2:
+                /* PIN=2: far-end DTR = DCD here. Windows reports DCD as MS_RLSD_ON (the Linux
+                 * shim maps TIOCM_CAR to it). fDCD was never set, so PIN=2 never keyed
+                 * (fixed 2026-11-13). Logs once per key, as case 1. */
+                fDCD = fRLSD;
                 if (fDCD) {
                     fDCD_set = TRUE;
-                    print_time(0);
-                    fprintf(G_fp_logfile, "[%d] Pin_Check_Thread. fDCD ON\n", line_number++);
+                    if (!reported) {
+                        print_time(0);
+                        fprintf(G_fp_logfile, "[%d] Pin_Check_Thread. fDCD ON\n", line_number++);
+                        reported = TRUE;
+                    }
                     tx_mode = 1;
                 } else {
                     if (fDCD_set == TRUE) {
                         tx_mode = 0;
                         fDCD_set = FALSE;
+                        reported = FALSE;
                     }
                 }
                 break;
@@ -789,7 +797,7 @@ int open_comm_port() {
         FormatMessageA(
             FORMAT_MESSAGE_FROM_SYSTEM | FORMAT_MESSAGE_IGNORE_INSERTS,
             NULL,
-            ERROR_FILE_NOT_FOUND,
+            GetLastError(),
             MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT),
             lastError,
             1024,
@@ -798,7 +806,7 @@ int open_comm_port() {
         fprintf(G_fp_logfile, "[%d] open_comm_port. Error Opening Com Port: %s %s\n", line_number++, windows_comm_port, lastError);
         {
             char cat_note[160];
-            snprintf(cat_note, sizeof(cat_note), "CAT PORT %s NOT AVAILABLE - CAT DISABLED\n", G_comm_port);
+            snprintf(cat_note, sizeof(cat_note), "CAT PORT %.120s NOT AVAILABLE - CAT DISABLED\n", G_comm_port);
             Gui_Add_Message(cat_note);
         }
         status = FALSE;

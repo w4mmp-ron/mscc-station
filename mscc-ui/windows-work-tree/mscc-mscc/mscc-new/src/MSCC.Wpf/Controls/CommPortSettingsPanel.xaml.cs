@@ -93,6 +93,10 @@ public partial class CommPortSettingsPanel : UserControl
     {
         if (PortCombo == null) return;
 
+        // Keep the caller's state: OnLoaded suppresses saves around this call. Setting it back to
+        // false here let the baud SelectedIndex in OnLoaded save before PinCheck was loaded, so
+        // every start wrote PIN=0 (fixed 2026-11-13).
+        bool wasSuppressed = _suppressSave;
         _suppressSave = true;
         try
         {
@@ -138,7 +142,7 @@ public partial class CommPortSettingsPanel : UserControl
         }
         finally
         {
-            _suppressSave = false;
+            _suppressSave = wasSuppressed;
         }
     }
 
@@ -165,7 +169,11 @@ public partial class CommPortSettingsPanel : UserControl
         try
         {
             if (Application.Current?.MainWindow is MainWindow mw)
+            {
                 mw.ViewModel?.RefreshSetupStatus();
+                // Remote Digital: reopen CAT so a new port / baud / PIN applies at once.
+                mw.ViewModel?.ReopenRemoteCatForNewSettings();
+            }
         }
         catch { /* ignore */ }
     }

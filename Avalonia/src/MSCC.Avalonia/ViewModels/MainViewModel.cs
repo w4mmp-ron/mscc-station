@@ -3044,6 +3044,9 @@ public partial class MainViewModel : ViewModelBase, IDisposable
                 ModeText = KenwoodTs2000.ModeNameFromDigit(d, preferDigU: RemoteDigitalAudio);
             });
             cat.SetPtt = tx => Dispatcher.UIThread.Post(() => { PttOn = tx; });
+            // WSJT-X right-click Tune (AC111;) = press TUN, as ms-sdr does locally.
+            cat.GetTuning = () => TuneMode;
+            cat.SetTune = on => Dispatcher.UIThread.Post(() => { if (TuneMode != on) TuneMode = on; });
             RemoteCat.Start();
         }
         catch (Exception ex)
