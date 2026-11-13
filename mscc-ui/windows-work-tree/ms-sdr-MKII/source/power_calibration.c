@@ -512,7 +512,7 @@ uint32_t Set_freq_for_power_cal(uint32_t band) {
     }
 
     print_time(0);
-    fprintf(G_fp_logfile, "[%d] Set_band_for_power_cal . Finished . Returning Frequency: %ld\n", line_number++, freq);
+    fprintf(G_fp_logfile, "[%d] Set_band_for_power_cal . Finished . Returning Frequency: %u\n", line_number++, freq);
     G_dll_active = 0;
     return freq;
 }
@@ -638,7 +638,7 @@ int Power_calibration(uint32_t command, char *buf) {
             calibration_frequency = Set_freq_for_power_cal(Tranceiver_band);
             G_tune_freq = calibration_frequency;
             print_time(0);
-            fprintf(G_fp_logfile, "[%d] CMD_SET_BAND_POWER_BAND . Band: %d, Record: %d, Calibration Freq: %ld\n", line_number++,
+            fprintf(G_fp_logfile, "[%d] CMD_SET_BAND_POWER_BAND . Band: %d, Record: %d, Calibration Freq: %u\n", line_number++,
                     Tranceiver_band, record, calibration_frequency);
             setLO_status = freq_queue_add(calibration_frequency);
             Sleep(50);

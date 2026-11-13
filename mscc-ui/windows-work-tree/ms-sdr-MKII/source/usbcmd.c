@@ -207,7 +207,7 @@ BOOL srGetFreq(double* pMHz) {
 
     r = usbControlMsgIN(CMD_GET_FREQ, 0, 0, (char*) &iFreq, sizeof (iFreq));
     print_time(0);
-    fprintf(G_fp_logfile, "[%d] srGetFreq . Called. iFreq: %ld, r: %d\n", line_number++, iFreq, r);
+    fprintf(G_fp_logfile, "[%d] srGetFreq . Called. iFreq: %u, r: %d\n", line_number++, iFreq, r);
 
     /*if (r == sizeof(iFreq))
     {

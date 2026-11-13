@@ -201,8 +201,8 @@ void Initialize_band_data() {
     fprintf(G_fp_logfile, "[%d] Check_temperature . Initialize_band_data . Called. \n", line_number++);
     for (band = 0; band < MAX_BANDS; band++) {
         band_data[band].delta_average_temp = 0;
-        memset(band_data[band].delta_temp_array, 0, AVERAGE_LIMIT);
-        memset(band_data[band].drift_array, 0, AVERAGE_LIMIT);
+        memset(band_data[band].delta_temp_array, 0, sizeof (band_data[band].delta_temp_array));
+        memset(band_data[band].drift_array, 0, sizeof (band_data[band].drift_array));
         band_data[band].populated = 0;
         band_data[band].drift_populated = 0;
     }

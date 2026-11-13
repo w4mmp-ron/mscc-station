@@ -921,25 +921,25 @@ uint8_t Extended_command(char *receive_buffer) {
                     line_number++, opcode, t_opcode_data);
             break;
         case CMD_SET_WATERFALL_DIRECTION:
-            User_Controls_Process(opcode, &t_opcode_data, TRUE);
+            User_Controls_Process(opcode, (char *) &t_opcode_data, TRUE);
             print_time(0);
             fprintf(G_fp_logfile, "[%d] Extended_command . CMD_SET_WATERFALL_DIRECTION Opcode: %X, Data: %d\n",
                     line_number++, opcode, t_opcode_data);
             break;
         case CMD_SET_WATERFALL_DISPLAY:
-            User_Controls_Process(opcode, &t_opcode_data, TRUE);
+            User_Controls_Process(opcode, (char *) &t_opcode_data, TRUE);
             print_time(0);
             fprintf(G_fp_logfile, "[%d] Extended_command . CMD_SET_WATERFALL_DISPLAY Opcode: %X, Data: %d\n",
                     line_number++, opcode, t_opcode_data);
             break;
         case CMD_SET_WATERFALL_GRID:
-            User_Controls_Process(opcode, &t_opcode_data, TRUE);
+            User_Controls_Process(opcode, (char *) &t_opcode_data, TRUE);
             print_time(0);
             fprintf(G_fp_logfile, "[%d] Extended_command . CMD_SET_WATERFALL_GRID Opcode: %X, Data: %d\n",
                     line_number++, opcode, t_opcode_data);
             break;
         case CMD_SET_WATERFALL_PALET:
-            User_Controls_Process(opcode, &t_opcode_data, TRUE);
+            User_Controls_Process(opcode, (char *) &t_opcode_data, TRUE);
             print_time(0);
             fprintf(G_fp_logfile, "[%d] Extended_command . CMD_SET_WATERFALL_PALET Opcode: %X, Data: %d\n",
                     line_number++, opcode, t_opcode_data);
@@ -1325,7 +1325,8 @@ void * Command_Processor(void *my_param) {
     strcpy(Version.year, &Version.date[7]);
     Version.Major = atoi(Version.year);
     Version.Major = (Version.Major - 2000) + 100;
-    strncpy(Version.day, &Version.date[4], 2);
+    memcpy(Version.day, &Version.date[4], 2);   // 2 day digits
+    Version.day[2] = 0;
     Version.day_number = atoi(Version.day);
     Version.month = 0;
     Get_Version_Month();
@@ -1476,7 +1477,7 @@ void * Command_Processor(void *my_param) {
                     freq_queue_add(G_tune_freq);
                 }
                 print_time(0);
-                fprintf(G_fp_logfile, "[%d] Command_Interface . Start Up Frequency: %ld Band: %d\n",
+                fprintf(G_fp_logfile, "[%d] Command_Interface . Start Up Frequency: %u Band: %d\n",
                     line_number++, G_tune_freq, G_band_normal);
                 print_time(0);
                 fprintf(G_fp_logfile, "[%d] Command_Interface . CMD_GET_MIA_STATUS. r: %d ,mia_status: %d\n",
@@ -1542,7 +1543,7 @@ void * Command_Processor(void *my_param) {
             memcpy(&i_opcode_data, op_code_data_32, 4);
             G_Split_RX_FREQ = i_opcode_data;
             print_time(0);
-            fprintf(G_fp_logfile, "[%d] Command_Interface . CMD_SET_SPLIT_TX_FREQ. G_Split_RX_FREQ: %ld\n",
+            fprintf(G_fp_logfile, "[%d] Command_Interface . CMD_SET_SPLIT_TX_FREQ. G_Split_RX_FREQ: %d\n",
                 line_number++, G_Split_RX_FREQ);
             break;
 
@@ -1551,7 +1552,7 @@ void * Command_Processor(void *my_param) {
             memcpy(&i_opcode_data, op_code_data_32, 4);
             G_Split_TX_FREQ = i_opcode_data;
             print_time(0);
-            fprintf(G_fp_logfile, "[%d] Command_Interface . CMD_SET_SPLIT_TX_FREQ. G_Split_TX_FREQ: %ld\n",
+            fprintf(G_fp_logfile, "[%d] Command_Interface . CMD_SET_SPLIT_TX_FREQ. G_Split_TX_FREQ: %d\n",
                 line_number++, G_Split_TX_FREQ);
             break;
 
@@ -2136,12 +2137,12 @@ void * Command_Processor(void *my_param) {
             memcpy(&i_opcode_data, op_code_data_32, 4);
             G_dll_active = TRUE;
             print_time(1);
-            fprintf(G_fp_logfile, "[%d] Command_Interface. CMD_SET_MAIN_FREQ: %ld\n", line_number++, i_opcode_data);
+            fprintf(G_fp_logfile, "[%d] Command_Interface. CMD_SET_MAIN_FREQ: %d\n", line_number++, i_opcode_data);
             G_tune_freq = i_opcode_data;
             //E_freq = i_opcode_data;
             //Display_freq_queue_add(i_opcode_data);
             print_time(0);
-            fprintf(G_fp_logfile, "[%d] Command_Interface. CMD_SET_MAIN_FREQ. Calling SetHWLO with: %ld\n", line_number++, (G_tune_freq));
+            fprintf(G_fp_logfile, "[%d] Command_Interface. CMD_SET_MAIN_FREQ. Calling SetHWLO with: %u\n", line_number++, (G_tune_freq));
             freq_queue_add(G_tune_freq);
             //Set_band_normal(G_tune_freq, TRUE);
             if (iq_mode == 1) {

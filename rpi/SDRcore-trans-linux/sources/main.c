@@ -4,7 +4,9 @@
  *	from James L Barber, AKA Silicon Pixels, Spokane	*
  *	Radio et al											*
  *********************************************************/
+#ifndef RON   /* the Pi Makefile already passes -DRON */
 #define RON
+#endif
 #include "extern.h"
 #include "mscc_resampler.h"
 #include "commands.h"

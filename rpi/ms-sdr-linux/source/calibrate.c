@@ -529,7 +529,7 @@ int Check_Calibration_Continue() { //This is called by Process_Frequency_Calibra
     if (G_calibration_element <= G_calibration_limit) {
         freq_queue_add(G_calibration_freq);
         print_time(0);
-        fprintf(G_fp_logfile, "[%d] Calibrate_Si5351_Continue. Calling SDRcore_recv_send_param. Param: %X, Element %d, Calibration Freq: %ld\n",
+        fprintf(G_fp_logfile, "[%d] Calibrate_Si5351_Continue. Calling SDRcore_recv_send_param. Param: %X, Element %d, Calibration Freq: %u\n",
                 line_number++, CMD_SET_CALIBRATION_START, G_calibration_element, G_calibration_freq);
         SDRcore_recv_send_param(CMD_SET_CALIBRATION_START, G_calibration_freq);
         //Spectrum_Waterfall_send_param(CMD_SET_SPECTRUM_WATERFALL_FREQ, G_calibration_freq);

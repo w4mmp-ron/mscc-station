@@ -20,7 +20,7 @@
 #define QUEUE_PROCESS_DELAY 10
 #define DISPLAY_COUNT 4
 
-char M_freq_queue[PATH_MAX][MAX_COMMAND_QUEUE] = {0};
+char M_freq_queue[MAX_COMMAND_QUEUE][PATH_MAX] = {0};   // 50 slots of PATH_MAX (sizes were swapped: 50-byte slots)
 int M_freq_queue_front = -1;
 int M_freq_queue_rear = -1;
 int M_queue_count = 0;
@@ -60,7 +60,7 @@ int message_queue_dequeue(char *buffer) {
     int message_status = 0;
 
     if (M_freq_queue_front == -1) {
-        memset(buffer, 0, sizeof (buffer));
+        buffer[0] = 0;   // empty queue: return an empty string (was memset of sizeof(pointer) = 8 bytes)
     } else {
         strcpy(buffer, M_freq_queue[M_freq_queue_front]);
         memset(&M_freq_queue[M_freq_queue_front], 0, PATH_MAX);
@@ -78,7 +78,7 @@ void Gui_Add_Message(char * message) {
     char data[PATH_MAX] = {0};
     int status = 0;
 
-    strncpy(data, message,PATH_MAX);
+    strncpy(data, message, PATH_MAX - 1);
     status = message_queue_add(CMD_SET_SERVER_ERROR, data, strlen(data));
     if (status != QUEUE_SUCCESS) {
         print_time(0);

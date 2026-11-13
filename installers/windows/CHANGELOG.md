@@ -2,6 +2,17 @@
 
 Installer: `mscc-net9-R<version>-install.exe` (WPF client + Windows servers). Install the newest one; older installers in this folder are kept for roll-back only.
 
+## R11.13.2 — 2026-11-13  (`mscc-net9-R11-13-2-install.exe`, title bar 11.11.4)
+
+### Fixed (servers: ms-sdr 3.209, recv 3.154, trans 3.159)
+- Server pop-up messages: the queue held 50-byte slots (its sizes were swapped), so a long message ran into the next one and a second pop-up close behind the first could be lost.
+- Heat sink temperature averaging: a reset cleared only part of the stored readings.
+- ms-sdr start-up: if startup.ini had no FREQUENCY= or MODE= line, a random value was used; now 0.
+- recv: an unknown low-cut value left the filter edge unset; it now keeps the current one.
+- Log lines print 32-bit numbers with the right format (log text only).
+- The recv and trans start-up log lines show the real version (were fixed text: recv 3.151, trans 3.158).
+- Client and firmware unchanged.
+
 ## R11.12.9 — 2026-11-12  (`mscc-net9-R11-12-9-install.exe`, title bar 11.11.4)
 
 ### Changed

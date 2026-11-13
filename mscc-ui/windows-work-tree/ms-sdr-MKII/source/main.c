@@ -550,7 +550,7 @@ uint16_t Get_band_by_frequency(uint32_t freq, uint8_t apply_offset) {
         offset = 12000;
     }
     print_time(0);
-    fprintf(G_fp_logfile, "[%d] Get_band_by_frequency . Frequency: %ld, Offset: %ld \n", line_number++, freq, offset);
+    fprintf(G_fp_logfile, "[%d] Get_band_by_frequency . Frequency: %u, Offset: %u \n", line_number++, freq, offset);
     if (freq >= (1800000 - offset) && freq <= (2000000 + offset)) band = 160;
     if (freq >= 3500000 - offset && freq <= 4000000 + offset) band = 80;
     if (freq >= 5330500 - offset && freq <= 5403500 + offset) band = 60;
@@ -564,7 +564,7 @@ uint16_t Get_band_by_frequency(uint32_t freq, uint8_t apply_offset) {
     if (freq >= 135700 - offset && freq <= 137800 + offset) band = 2200;
     if (freq >= 472000 - offset && freq <= 479000 + offset) band = 630;
     print_time(0);
-    fprintf(G_fp_logfile, "[%d] Get_band_by_frequency . Finished . Band: %ld\n", line_number++, band);
+    fprintf(G_fp_logfile, "[%d] Get_band_by_frequency . Finished . Band: %d\n", line_number++, band);
     return band;
 }
 
@@ -575,7 +575,7 @@ void Set_band_normal(uint32_t freq, uint8_t apply_offset) {
         offset = 12000;
     }
     print_time(0);
-    fprintf(G_fp_logfile, "[%d] Set_band_normal . Frequency: %ld, Offset: %ld \n", line_number++, freq, offset);
+    fprintf(G_fp_logfile, "[%d] Set_band_normal . Frequency: %u, Offset: %u \n", line_number++, freq, offset);
     G_dll_active = 1;
     G_band_normal = FREQ_OUT_OF_RANGE;
     if (freq >= 500000 - offset && freq <= 30000000 + offset) G_band_normal = GENERAL_BAND;
@@ -592,7 +592,7 @@ void Set_band_normal(uint32_t freq, uint8_t apply_offset) {
     if (freq >= 135700 - offset && freq <= 137800 + offset) G_band_normal = 2200;
     if (freq >= 472000 - offset && freq <= 479000 + offset) G_band_normal = 630;
     print_time(0);
-    fprintf(G_fp_logfile, "[%d] Set_band_normal . Finished . Band: %ld\n", line_number++, G_band_normal);
+    fprintf(G_fp_logfile, "[%d] Set_band_normal . Finished . Band: %d\n", line_number++, G_band_normal);
     G_dll_active = 0;
 }
 

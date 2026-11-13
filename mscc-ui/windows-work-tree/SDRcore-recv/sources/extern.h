@@ -37,7 +37,7 @@
 // Release number is in the range of 0 to 9
 
 #define VERSION_MAJOR 3
-#define VERSION_MINOR 153
+#define VERSION_MINOR 154   /* 3.154 (2026-11-13): build-warning fixes, CMD_SET_BW_LOCUT unknown value keeps the low cut */
 #define VERSION_MS_SDRCORE_RECV ((((VERSION_MINOR) << 8) & 0xff00) | ((VERSION_MAJOR) & 0x00ff))
 
 #define MAX_OUTPUT_DEVICES 50

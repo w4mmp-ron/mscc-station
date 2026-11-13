@@ -1642,6 +1642,9 @@ void *UDP_Thread(void *my_param) {
                         low_cut = 500.0f;
                         previous_low_cut = low_cut;
                         break;
+                    default:   // unknown value: keep the current low cut
+                        low_cut = previous_low_cut;
+                        break;
                 }
                 if (!cw_mode) {
                     if (mystate.opmode == MODE_FM) {

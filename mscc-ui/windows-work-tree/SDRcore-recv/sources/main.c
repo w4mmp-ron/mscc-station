@@ -540,7 +540,7 @@ int main(int argc, char **argv) {
     print_time();
     fprintf(G_fp_logfile, "[%d] main -> PortAudio Version: 0x%8X\n", line_number++, Pa_GetVersion());
     print_time();
-    fprintf(G_fp_logfile, "[%d] main -> recv 3.151 (TX mute w/o stream stop, AM lowpass + DC block, noise blanker fix, RX IQ from radio)\n", line_number++);
+    fprintf(G_fp_logfile, "[%d] main -> recv %d.%d (TX mute w/o stream stop, AM lowpass + DC block, noise blanker fix, RX IQ from radio)\n", line_number++, VERSION_MAJOR, VERSION_MINOR);
     print_time();
     fprintf(G_fp_logfile, "[%d] main -> PortAudio Version text: '%s'\n", line_number++,
             Pa_GetVersionInfo()->versionText);

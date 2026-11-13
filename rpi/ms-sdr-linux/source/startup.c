@@ -26,7 +26,7 @@ int Get_Startup(uint32_t *freq, char *mode) {
         char *mode_ptr;
         uint32_t freq;
         char mode;
-    } startup_record;
+    } startup_record = {0};   // freq / mode stay 0 if startup.ini lacks the key
 
     print_time(0);
     fprintf(G_fp_logfile, "[%d] Get_Startup - Called. \n", line_number++);
