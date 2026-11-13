@@ -46,8 +46,9 @@ files removed from ~/utils.
 Windows installer R11-12-1: `C:\mscc-net9\Keyer Firmware\` (2 .exe + app/full hex, Start-menu
 "Keyer Firmware Update"; stage.ps1 + MSCC.aip). Pi mscc 1.0.83: scripts, links, menu entry,
 `/usr/share/mscc/firmware/keyer/` (build-deb.sh, postinst, prerm). Both carry Black Pill 3.16.
-1.0.83 built + compared with 1.0.82 (only the keyer files and 3.16 differ); NOT yet installed on
-the Pi by me (Ron to install). **Next: step 3 (PSoC).**
+1.0.83 built + compared with 1.0.82 (only the keyer files and 3.16 differ); Installed on the Pi
+2026-11-12 (Ron asked). R11-12-2 (same day): Windows GUI .exe no longer flashes console windows
+(tasklist with CREATE_NO_WINDOW); Pi files unchanged in function, mscc 1.0.83 kept. **Next: step 3 (PSoC).**
 Bootloader version 2: row sent in 16-byte pieces
 (`05 off d0..d15`, then `02 sum`) so each I2C transfer is ~2 ms. The rig still has version 1
 (`Release\Keyer-MCU-full-20261112-boot1.hex`); `Keyer-MCU-full-20261112.hex` is now version 2

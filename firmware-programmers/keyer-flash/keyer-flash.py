@@ -141,8 +141,9 @@ def servers_running():
     found = []
     if sys.platform == "win32":
         try:
+            # CREATE_NO_WINDOW: no console window flashing up from the windowed .exe
             out = subprocess.run(["tasklist", "/fo", "csv", "/nh"], capture_output=True,
-                                 text=True).stdout
+                                 text=True, creationflags=0x08000000).stdout
         except OSError:
             return found
         for line in out.splitlines():

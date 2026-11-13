@@ -2,6 +2,12 @@
 
 Installer: `mscc-net9-R<version>-install.exe` (WPF client + Windows servers). Install the newest one; older installers in this folder are kept for roll-back only.
 
+## R11.12.2 — 2026-11-12  (`mscc-net9-R11-12-2-install.exe`, title bar 11.11.4)
+
+### Fixed
+- Keyer Firmware Update (`keyer-flash-gui.exe`): no more blank command windows flashing up when it starts and at each button (the check for running servers now runs hidden).
+- Everything else unchanged from R11-12-1.
+
 ## R11.12.1 — 2026-11-12  (`mscc-net9-R11-12-1-install.exe`, title bar 11.11.4)
 
 ### Added
