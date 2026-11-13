@@ -139,6 +139,11 @@ Option, not done: drag the divider on the display.
   file version (11.11.4+b10624a...), not 11.12.5. Shipped as Release R11-12-5 (Ron: "finished"; Pi stays mscc 1.0.85).
   **Release R11-12-6 (2026-11-12, finished):** Windows Black Pill flasher says "No Black Pill in flash mode found..." on
   List / Burn and hides the dfu-util banner (Ron tested both). Payload = R11-12-5 + that exe/dll. Pi stays 1.0.85.
+  **Next build (Ron 2026-11-12): `MSCC.aip` UpgradeMode=0 -> 2** ("If previous version is installed": Uninstall -> Update;
+  0 asked "uninstall MSCC-NET9?" on R11-12-6). 2 = Update by the help's option order (Uninstall, Uninstall Silently, Update, ...),
+  WRONG: UpgradeMode is the "Update Mode" switch (update-only program); R11-12-8 refused a fresh install after uninstall ("MSCC-NET9 is not installed... update program cannot continue"). Fixed for R11-12-9: UpgradeMode=0, IfInstalled=2 (= "If previous version is installed: Update"; option order Uninstall, Uninstall Silently, Update, ...). R11-12-9 TESTED by Ron 2026-11-12: fresh install (settings page shows), install again (no question), uninstall (files gone, settings kept): all pass. Note: Update mode leaves firmware files a new release no longer ships (older uninstalls left 12 old versioned firmware files; Ron deleted C:\mscc-net9 by hand). Shipped as Release R11-12-9 (Ron: "finished"); R11-12-7/8 were test builds (not published, moved to installers/windows/old).
+  Also next build (Ron): ReadMe page in the setup wizard (`DialogReadme=1`, `Readme=` -> `mscc-ui/installer/windows/settings-note.rtf` (RTF since R11-12-8: title bold 16 pt, text 12 pt),
+  Ron's wording: "Your settings are kept" + install/update/uninstall does not touch them + stored in %LOCALAPPDATA%/MSCC-NET9).
   Same day, Ron's PC only: dead registry entries from old installs deleted (Proficio, MSCC 020.03.04.1, MSCC-PW
   023.02.17.01, HKLM\SOFTWARE\WOW6432Node\Multus SDR LLC); .reg backups in C:\Users\Ron\Documents\registry-backups. Dead MSCC Start-menu entries (old MSCC, MSCC-MKII, -GEMINUS, -Proficio, -PW, Multus SDR LLC) moved to C:\Users\Ron\Documents\startmenu-backup; only MSCC-NET9 left (Ron: clean).
 - **2026-11-12 (finished, Ron): Release R11-12-3** = Windows `mscc-net9-R11-12-3-install.exe` + Pi `mscc_1.0.84_arm64.deb`:

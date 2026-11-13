@@ -2,6 +2,14 @@
 
 Installer: `mscc-net9-R<version>-install.exe` (WPF client + Windows servers). Install the newest one; older installers in this folder are kept for roll-back only.
 
+## R11.12.9 — 2026-11-12  (`mscc-net9-R11-12-9-install.exe`, title bar 11.11.4)
+
+### Changed
+- Installing over an existing MSCC-NET9 now updates it in place, with no "uninstall MSCC-NET9?" question.
+- New page in the setup wizard: "Your settings are kept. Installing, updating or uninstalling MSCC-NET9 does not touch your settings. They are stored separately in %LOCALAPPDATA%\MSCC-NET9".
+- Tested: fresh install, install again, uninstall (settings kept).
+- Everything else unchanged from R11-12-6. (R11-12-7 and R11-12-8 were test builds, not released.)
+
 ## R11.12.6 — 2026-11-12  (`mscc-net9-R11-12-6-install.exe`, title bar 11.11.4)
 
 ### Changed
