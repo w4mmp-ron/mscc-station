@@ -28,3 +28,6 @@
 # Misc
 .svn
 *.bak
+
+# MPLAB IPE / ipecmd log, written wherever the PICkit tool runs
+MPLABXLog.xml

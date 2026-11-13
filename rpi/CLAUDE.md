@@ -110,6 +110,10 @@ Option, not done: drag the divider on the display.
   Avalonia, Windows servers and Pi servers. Waiting on Stew: the Debian / Ubuntu implementation (+ the stale
   mscc-firmware line in Linux guide 2.7) and the original-firmware check (zip sent; missing files). The Debian (Ubuntu x86_64,
   `linux/`, `installers/linux`) implementation is WAITING ON STEW; don't release it until he's done.
+  **Added for Stew 2026-11-12 (Ron's OK), an option for him:** Visual Studio build bookkeeping files in
+  `mscc-ui/windows-work-tree` (66 tracked: `.tlog`, `.recipe`, `.iobj`, `.ipdb`, `.lastbuildstate` for
+  ms-sdr / recv / trans) change at every Windows build. If he likes, git could ignore them (.gitignore +
+  `git rm --cached`). Until then they are left uncommitted (Ron's choice).
 - **2026-11-12 (finished, Ron): Release R11-12-1 = keyer update over USB.** Daughter-board PIC keyer gets an
   I2C bootloader (0x5C; `keyer-buffer/bootloader/`); pill 3.16 passes USB opcode 0x9F (CMD_KEYER_BOOT,
   marked taken in ms-sdr `usbavrcmd.h`; ms-sdr never sends it) to the PIC; `keyer-flash` / `keyer-flash.gui`
