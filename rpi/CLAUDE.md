@@ -4,6 +4,8 @@ Claude's notes for the Pi servers `sdrcore-recv`, `sdrcore-trans` and `ms-sdr`
 (Proficio / MSCC station). Owner: **Ron (W4MMP)**. Grok follows `AGENTS.md`; this
 file is for Claude only.
 
+**Shared rules for Ron and Stew (keywords, "finished" checklist, keeping trees in step): `../CLAUDE.md` (repo root).** This file adds Ron's machine-specific notes. Debian `linux/` joins the "trees in step" rule once Stew removes the Ubuntu line below.
+
 ## Working with Ron
 
 - Short, plain-English answers. Say what is verified and what isn't.

@@ -31,3 +31,21 @@ Things to know if you use it:
   then (ms-sdr 92 files, recv 73, trans 116 differ). The Pi trees may be the easier starting point.
 
 Your call how you use this.
+
+## Later the same day: keeping `linux/` in step (from Ron)
+
+Ron says you'll drop the "`linux/` is Stew's" rule in `rpi/CLAUDE.md` after your next pull.
+Once that line is gone, Claude will treat the Debian servers like the Windows ones: every server
+change goes into the Pi, Windows and `linux/` trees in the same step. Until then Claude leaves
+`linux/` alone.
+
+The first time will be a big one, because `linux/` is about a month behind (the 92 / 73 / 116
+files above). Since the Pi source builds on amd64 as it is, the plan would be:
+
+1. Copy the Pi server source into `linux/ms-sdr-linux`, `linux/SDRcore-recv-linux` and
+   `linux/SDRcore-trans-linux`.
+2. Test build on amd64 (`make PORTAUDIO=distro`).
+3. From then on, each change goes into all three trees as it's made.
+
+If you have Debian-only changes in `linux/` that aren't in the Pi trees, say so first and they'll
+be kept.

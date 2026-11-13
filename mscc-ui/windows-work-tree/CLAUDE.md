@@ -3,6 +3,8 @@
 Notes from Stew's Claude sessions on the Windows side, kept here so Ron's Claude sees them on
 every pull. Newest first. Detailed write-ups for Ron go in `.mscc-coord/NOTE-FOR-RON-*.md`.
 
+**Shared rules for Ron and Stew (keywords like "finished", the release checklist, keeping trees in step): `CLAUDE.md` at the repo root.** Added by Ron's Claude 2026-11-13; this file stays Stew's.
+
 ## Where things are
 
 - Servers: `SDRcore-trans/`, `SDRcore-recv/`, `ms-sdr-MKII/` (VS 2022; trans/recv config
