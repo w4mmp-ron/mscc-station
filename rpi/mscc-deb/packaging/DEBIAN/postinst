@@ -210,7 +210,7 @@ configure)
     chmod 644 "$UDEV_DST"
     udevadm control --reload-rules 2>/dev/null || true
     udevadm trigger 2>/dev/null || true
-    log "installed $UDEV_DST (Proficio app 16c0:05dc + HID LOADER 04b4:b71d)"
+    log "installed $UDEV_DST (Proficio app 16c0:05dc + HID LOADER 04b4:b71d + Black Pill flash mode 0483:df11)"
   else
     warn "Proficio udev rules missing from package: $UDEV_SRC"
   fi

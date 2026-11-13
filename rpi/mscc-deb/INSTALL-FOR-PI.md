@@ -9,10 +9,12 @@
 
 **Packages (download from the Releases page, <https://github.com/w4mmp-ron/mscc-station/releases>):**
 
-| Package | Example filename | |
-|---------|------------------|--------|
-| MSCC (everything for the radio) | `mscc_1.0.84_arm64.deb` | **required** |
-| MSCC Avalonia client | `mscc-avalonia_1.6.96_arm64.deb` | optional (operate from the Pi itself) |
+| Package | Filename | |
+|---------|----------|--------|
+| MSCC (everything for the radio) | `mscc_<version>_arm64.deb` | **required** |
+| MSCC Avalonia client | `mscc-avalonia_<version>_arm64.deb` | optional (operate from the Pi itself) |
+
+The current version numbers are in the **MSCC Software Versions Addendum**.
 
 Since mscc 1.0.79 (2026-11-10) the `mscc` package holds what used to be separate packages:
 PortAudio (`mscc-portaudio`), MSCC Init (`mscc-init`), MSCC Volume (`mscc-volume`) and the
@@ -99,10 +101,10 @@ cd ~/Downloads
 
 ```bash
 sudo apt update
-sudo apt install -y ./mscc_1.0.84_arm64.deb
+sudo apt install -y ./mscc_*_arm64.deb
 ```
 
-(Use the real filename if the version differs.)
+(If the folder holds more than one mscc .deb, type the full filename instead of `mscc_*`.)
 
 - Enter your **password** when asked.
 - If it asks to continue / stop old servers → type **y** when ready.
@@ -145,7 +147,7 @@ ldd $HOME/mscc/sdrcore-recv | grep portaudio
 Only if you want to operate from the Pi's own screen (not needed with the Windows client):
 
 ```bash
-sudo apt install -y ./mscc-avalonia_1.6.96_arm64.deb
+sudo apt install -y ./mscc-avalonia_*_arm64.deb
 ```
 
 Menu **MSCC Avalonia**.
@@ -236,7 +238,7 @@ Upgrades **do not** overwrite existing config.
 | **MSCC Status** | Servers running? + config, PortAudio device match, CAT port, VirtualA/B, Proficio USB (opens a Terminal window). |
 | **MSCC Init** | Configure again (stops servers first if needed). |
 
-You may get a desktop notification if `libnotify-bin` is installed.
+Start and Stop show a small window saying what happened (for example "Servers started", "Servers already running" or "Servers were not running"). It closes by itself after 5 seconds; a warning or error stays until you press OK.
 
 **CLI alternative:**
 
