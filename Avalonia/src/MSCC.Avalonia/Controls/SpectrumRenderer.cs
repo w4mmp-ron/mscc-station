@@ -15,6 +15,12 @@ internal static class SpectrumRenderer
     /// One pixel covers several points when points &gt; pixels; drawing only one of them
     /// made a carrier dip 10-15 dB while tuning.
     /// </summary>
+    /// <summary>
+    /// Data fraction (0..1 across the full pan) -> bin index. Bin k is centred on k/N, so 0 Hz
+    /// (the tuned frequency) is bin N/2 and sits under the centre line at every zoom.
+    /// </summary>
+    internal static int FracToBin(double frac, int n) => (int)Math.Floor(frac * n + 0.5);
+
     private static float MaxInRange(float[] data, int i0, int i1)
     {
         int n = data.Length;
@@ -105,17 +111,13 @@ internal static class SpectrumRenderer
 
         for (int x = 0; x < width; x++)
         {
-            double t = width > 1 ? (double)x / (width - 1) : 0.5;
-            double dataFrac = viewStart + t * viewWidth;
-            int idx = (int)Math.Round(dataFrac * (data.Length - 1) + cwOffsetBins);
+            // Pixel x covers screen fraction [x/width, (x+1)/width) (see FracToBin).
+            double dataFrac = viewStart + ((double)x / width) * viewWidth;
+            int idx = FracToBin(dataFrac, data.Length) + cwOffsetBins;
             idx = Math.Clamp(idx, 0, data.Length - 1);
             // cmd-068: max of all points up to (not incl.) the next pixel's first point.
-            int idxNext = idx;
-            if (x + 1 < width)
-            {
-                double dataFracNext = viewStart + ((double)(x + 1) / (width - 1)) * viewWidth;
-                idxNext = (int)Math.Round(dataFracNext * (data.Length - 1) + cwOffsetBins);
-            }
+            double dataFracNext = viewStart + ((double)(x + 1) / width) * viewWidth;
+            int idxNext = FracToBin(dataFracNext, data.Length) + cwOffsetBins;
 
             float dbv = ToDisplayDb(MaxInRange(data, idx, idxNext), dbOffset);
             float norm = Math.Clamp((dbv - minDb) / range, 0f, 1f);
@@ -228,17 +230,13 @@ internal static class SpectrumRenderer
 
                 for (int x = 0; x < width; x++)
                 {
-                    double t = width > 1 ? (double)x / (width - 1) : 0.5;
-                    double dataFrac = viewStart + t * viewWidth;
-                    int idx = (int)Math.Round(dataFrac * (lineLen - 1) + cwOffsetBins);
+                    // Same pixel -> bin mapping as the spectrum (see FracToBin).
+                    double dataFrac = viewStart + ((double)x / width) * viewWidth;
+                    int idx = FracToBin(dataFrac, lineLen) + cwOffsetBins;
                     idx = Math.Clamp(idx, 0, lineLen - 1);
                     // cmd-068: max of the row's points up to (not incl.) the next pixel's first point.
-                    int idxNext = idx;
-                    if (x + 1 < width)
-                    {
-                        double dataFracNext = viewStart + ((double)(x + 1) / (width - 1)) * viewWidth;
-                        idxNext = (int)Math.Round(dataFracNext * (lineLen - 1) + cwOffsetBins);
-                    }
+                    double dataFracNext = viewStart + ((double)(x + 1) / width) * viewWidth;
+                    int idxNext = FracToBin(dataFracNext, lineLen) + cwOffsetBins;
 
                     float dbv = ToDisplayDb(MaxInRange(line, idx, idxNext), dbOffset);
                     settings.ApplyWaterfallGainZero(dbv, wfLow, wfHigh, out float adjDb, out float adjLow, out float adjHigh);

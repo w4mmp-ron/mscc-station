@@ -2,6 +2,13 @@
 
 Installer: `mscc-net9-R<version>-install.exe` (WPF client + Windows servers). Install the newest one; older installers in this folder are kept for roll-back only.
 
+## R11.14.2 — 2026-11-14  (`mscc-net9-R11-14-2-install.exe`, title bar 11.14.1)
+
+### Fixed
+- Spectrum and waterfall: a carrier on the tuned frequency now sits on the centre line at every zoom. Before, it was hidden just left of the line at 1x and one pixel right of it at 4x. Peak markers use the same maths.
+- ms-sdr 3.213: in AM the carrier sat about 140 Hz left of the centre line; it is now on centre (the AM receive offset is now 12000 Hz, as in every other mode).
+- recv 3.154 and trans 3.159 unchanged.
+
 ## R11.14.1 — 2026-11-14  (`mscc-net9-R11-14-1-install.exe`, title bar 11.13.6)
 
 ### Changed (servers)

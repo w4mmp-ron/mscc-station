@@ -286,7 +286,7 @@ public partial class SpectrumDisplayControl : UserControl
     private static int FindLocalPeakBin(float[] data, double fraction)
     {
         int n = data.Length;
-        int center = Math.Clamp((int)Math.Round(fraction * (n - 1)), 0, n - 1);
+        int center = Math.Clamp(SpectrumRenderer.FracToBin(fraction, n), 0, n - 1);
         int halfWin = Math.Max(8, n / 40);
         int lo = Math.Max(0, center - halfWin);
         int hi = Math.Min(n - 1, center + halfWin);
@@ -320,7 +320,7 @@ public partial class SpectrumDisplayControl : UserControl
 
         double dataFrac = Math.Clamp(0.5 + (double)(markerFreqHz + cwOffsetHz - update.CenterFrequencyHz) / fullSpan, 0.0, 1.0);
         int peakBin = FindLocalPeakBin(data, dataFrac);
-        double peakDataFrac = (double)peakBin / (data.Length - 1);
+        double peakDataFrac = (double)peakBin / data.Length;
         displayFreqHz = Math.Max(0, update.CenterFrequencyHz + (long)((peakDataFrac - 0.5) * fullSpan) - cwOffsetHz);
         _peakMarkerFreqHz = displayFreqHz;   // follow the peak if the LO drifts slightly
 
@@ -338,7 +338,7 @@ public partial class SpectrumDisplayControl : UserControl
         double screenFrac = 0.5 + (double)offsetHz / visSpan;
         if (screenFrac < 0.0 || screenFrac > 1.0)
             return;   // peak outside the zoomed view
-        int x = Math.Clamp((int)Math.Round(screenFrac * (width - 1)), 2, width - 3);
+        int x = Math.Clamp((int)Math.Floor(screenFrac * width), 2, width - 3);
         int stride = width * 4;
 
         const byte mb = 0x00, mg = 0xEE, mr = 0xFF;
@@ -413,7 +413,7 @@ public partial class SpectrumDisplayControl : UserControl
         double zoom = Math.Clamp(settings.ZoomFactor, 1.0, 4.0);
         double dataFrac = 0.5 * (1.0 - 1.0 / zoom) + fraction / zoom;
         int peakBin = FindLocalPeakBin(data, dataFrac);
-        double peakDataFrac = (double)peakBin / (data.Length - 1);
+        double peakDataFrac = (double)peakBin / data.Length;
         _peakMarkerFreqHz = Math.Max(0, _lastUpdate.CenterFrequencyHz
             + (long)((peakDataFrac - 0.5) * fullSpan) - _lastUpdate.CwPitchHz);
         RenderFrame(_lastUpdate, appendWaterfall: false, force: true);

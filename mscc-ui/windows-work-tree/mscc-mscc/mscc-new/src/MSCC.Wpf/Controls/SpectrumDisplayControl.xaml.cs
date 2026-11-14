@@ -360,7 +360,7 @@ public partial class SpectrumDisplayControl : UserControl
         // Peak search in the zoomed data window under the click
         double dataFrac = ScreenToDataFraction(fraction, ZoomFactor);
         int peakBin = FindLocalPeakBin(data, dataFrac);
-        double peakDataFrac = (double)peakBin / (data.Length - 1);
+        double peakDataFrac = (double)peakBin / data.Length;
         long peakFreq = _lastUpdate.CenterFrequencyHz
             + (long)((peakDataFrac - 0.5) * fullSpan)
             - cwOffsetHz;
@@ -375,7 +375,7 @@ public partial class SpectrumDisplayControl : UserControl
     private static int FindLocalPeakBin(float[] data, double fraction)
     {
         int n = data.Length;
-        int center = (int)Math.Round(fraction * (n - 1));
+        int center = BasicSpectrumRenderer.FracToBin(fraction, n);
         center = Math.Clamp(center, 0, n - 1);
         // ± ~2.5% of span (≈ ±1.8 kHz on 72 kHz) or at least ±8 bins
         int halfWin = Math.Max(8, n / 40);
@@ -416,7 +416,7 @@ public partial class SpectrumDisplayControl : UserControl
 
         // Re-peak near that bin each frame so the marker sits on the tip as the trace updates
         int peakBin = FindLocalPeakBin(data, dataFrac);
-        double peakDataFrac = (double)peakBin / (data.Length - 1);
+        double peakDataFrac = (double)peakBin / data.Length;
         displayFreqHz = update.CenterFrequencyHz
             + (long)((peakDataFrac - 0.5) * fullSpan)
             - cwOffsetHz;
@@ -450,7 +450,7 @@ public partial class SpectrumDisplayControl : UserControl
         double screenFrac = 0.5 + (double)offsetHz / visSpan;
         if (screenFrac < 0.0 || screenFrac > 1.0)
             return; // peak outside zoomed view
-        int x = (int)Math.Round(screenFrac * (width - 1));
+        int x = (int)Math.Floor(screenFrac * width);
         x = Math.Clamp(x, 2, width - 3);
         int stride = width * 4;
 
@@ -724,17 +724,13 @@ internal sealed class BasicSpectrumRenderer : ISpectrumRenderer
         // === Draw spectrum (limited to upper area; X maps through zoomed viewport) ===
         for (int x = 0; x < width; x++)
         {
-            double t = width > 1 ? (double)x / (width - 1) : 0.5;
-            double dataFrac = viewStart + t * viewWidth;
-            int idx = (int)(dataFrac * (data.Length - 1) + cwOffsetBins);
+            // Pixel x covers screen fraction [x/width, (x+1)/width) (see FracToBin).
+            double dataFrac = viewStart + ((double)x / width) * viewWidth;
+            int idx = FracToBin(dataFrac, data.Length) + cwOffsetBins;
             idx = Math.Clamp(idx, 0, data.Length - 1);
             // cmd-068: max of all points up to (not incl.) the next pixel's first point.
-            int idxNext = idx;
-            if (x + 1 < width)
-            {
-                double dataFracNext = viewStart + ((double)(x + 1) / (width - 1)) * viewWidth;
-                idxNext = (int)(dataFracNext * (data.Length - 1) + cwOffsetBins);
-            }
+            double dataFracNext = viewStart + ((double)(x + 1) / width) * viewWidth;
+            int idxNext = FracToBin(dataFracNext, data.Length) + cwOffsetBins;
 
             float dbValue = SpectrumColorSettings.ToDisplayDb(MaxInRange(data, idx, idxNext));
             float norm = (dbValue - minDb) / range;
@@ -872,12 +868,9 @@ internal sealed class BasicSpectrumRenderer : ISpectrumRenderer
 
                 for (int x = 0; x < width; x++)
                 {
-                    double xt = width > 1 ? (double)x / (width - 1) : 0.5;
-                    double dataFrac = viewStart + xt * viewWidth;
-                    // cmd-068: the next pixel's start; the last pixel uses one point.
-                    double dataFracNext = x + 1 < width
-                        ? viewStart + ((double)(x + 1) / (width - 1)) * viewWidth
-                        : dataFrac;
+                    // Same pixel -> bin mapping as the spectrum (see FracToBin).
+                    double dataFrac = viewStart + ((double)x / width) * viewWidth;
+                    double dataFracNext = viewStart + ((double)(x + 1) / width) * viewWidth;
 
                     // Per-row Length: never index all rows with history[0].Length (Start can mix sizes).
                     float db0 = SpectrumColorSettings.ToDisplayDb(
@@ -1149,7 +1142,7 @@ internal sealed class BasicSpectrumRenderer : ISpectrumRenderer
         {
             double freq = startFreq + (step * i);
             // Clamp tick X so edge ticks stay on-screen
-            int xTick = (int)Math.Round(i / 10.0 * (width - 1));
+            int xTick = (int)Math.Floor(i / 10.0 * width);
             xTick = Math.Clamp(xTick, 0, width - 1);
 
             // Short tick under the label row
@@ -1300,6 +1293,12 @@ internal sealed class BasicSpectrumRenderer : ISpectrumRenderer
     /// One pixel covers several data points when points > pixels; drawing only one
     /// of them made a carrier dip 10-15 dB while tuning.
     /// </summary>
+    /// <summary>
+    /// Data fraction (0..1 across the full pan) -> bin index. Bin k is centred on k/N, so 0 Hz
+    /// (the tuned frequency) is bin N/2 and sits under the centre line at every zoom.
+    /// </summary>
+    internal static int FracToBin(double frac, int n) => (int)Math.Floor(frac * n + 0.5);
+
     private static float MaxInRange(float[] data, int i0, int i1)
     {
         int n = data.Length;
@@ -1327,8 +1326,8 @@ internal sealed class BasicSpectrumRenderer : ISpectrumRenderer
         int cw = refLen > 0
             ? (int)Math.Round(cwOffsetBins * (len / (double)refLen))
             : 0;
-        int idx = (int)(dataFrac * (len - 1) + cw);
-        int idxNext = (int)(dataFracNext * (len - 1) + cw);
+        int idx = FracToBin(dataFrac, len) + cw;
+        int idxNext = FracToBin(dataFracNext, len) + cw;
         return MaxInRange(row, idx, idxNext);
     }
 

@@ -44,7 +44,7 @@ typedef unsigned char UCHAR;
 
 
 #define SSB_OFFSET (-12000)
-#define AM_OFFSET_RX (-11860)
+#define AM_OFFSET_RX (-12000)
 #define AM_OFFSET_TX (-12000)
 #define CW_OFFSET (- 600)
 #define PPM_INT_DEFAULT_VER_4 (-24)

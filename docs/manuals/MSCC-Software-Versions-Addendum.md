@@ -1,6 +1,6 @@
 # MSCC Software Versions Addendum
 
-**Release R11-14-1** · 2026-11-14
+**Release R11-14-2** · 2026-11-14
 
 The Operator's Guides describe how MSCC works; this addendum lists the version numbers that
 go with the current release. It is updated with every release, so the guides don't change
@@ -11,15 +11,15 @@ when only version numbers do. Downloads and what changed in each release:
 
 | Computer | File |
 |---|---|
-| Windows | `mscc-net9-R11-14-1-install.exe` (installs to `C:\mscc-net9`; uninstall from Apps & features) |
-| Raspberry Pi (64-bit Pi OS, Pi 4 / Pi 5) | `mscc_1.0.93_arm64.deb` (required) and `mscc-avalonia_1.7.00_arm64.deb` (optional) |
+| Windows | `mscc-net9-R11-14-2-install.exe` (installs to `C:\mscc-net9`; uninstall from Apps & features) |
+| Raspberry Pi (64-bit Pi OS, Pi 4 / Pi 5) | `mscc_1.0.94_arm64.deb` (required) and `mscc-avalonia_1.7.01_arm64.deb` (optional) |
 
 ## MSCC programs
 
 | Program | Windows | Raspberry Pi |
 |---|---|---|
-| MSCC client | WPF, title bar 11.13.6 | MSCC Avalonia 1.7.00 (optional) |
-| ms-sdr (server) | 3.212 | 3.209 |
+| MSCC client | WPF, title bar 11.14.1 | MSCC Avalonia 1.7.01 (optional) |
+| ms-sdr (server) | 3.213 | 3.210 |
 | recv (receive server) | 3.154 | 3.155 |
 | trans (transmit server) | 3.159 | 3.160 |
 
