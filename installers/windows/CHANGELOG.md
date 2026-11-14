@@ -5,7 +5,7 @@ Installer: `mscc-net9-R<version>-install.exe` (WPF client + Windows servers). In
 ## R11.14.1 — 2026-11-14  (`mscc-net9-R11-14-1-install.exe`, title bar 11.13.6)
 
 ### Changed (servers)
-- ms-sdr 3.212: the CAT commands TX0; and TX1; now key the radio, the same as TX;. Programs that ask for "transmit from the data port" (for example fldigi with "Audio on Auxiliary Port" ticked) now key. The transmit audio still comes from the source the client chose.
+- ms-sdr 3.212: the CAT commands TX0; and TX1; now key the radio, the same as TX;. Programs that send TX0; or TX1; now key. The transmit audio still comes from the source the client chose.
 - Client unchanged (11.13.6); recv 3.154 and trans 3.159 unchanged.
 
 ## R11.13.5 — 2026-11-13  (`mscc-net9-R11-13-5-install.exe`, title bar 11.13.6)
