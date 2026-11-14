@@ -44,6 +44,9 @@ On "finished", in this order:
 3. **Docs:** Software Versions Addendum (`docs/manuals/`, .md + `python docs/manuals/make-addendum-pdf.py`,
    2 pages), `installers/windows/CHANGELOG.md`, `installers/windows/INSTALL.md`, `installers/rpi/INSTALL.md`,
    this file. Guides carry no version numbers (they point to the Addendum).
+   **Keep this file short (Ron 2026-11-14, claude-clean up):** the finished release entry and the
+   entries it closes go straight to the end of `rpi/CLAUDE-history.md` (last section), not into the
+   Open list here; only open items, rules and current setup stay in this file.
 4. **One commit** (specific paths; not the Visual Studio .tlog / .recipe / .iobj / .ipdb / .lastbuildstate
    files), message ends with the "With Stew" list; **push**.
 5. **GitHub Release** `R<m>-<d>-<n>`: `gh release create ... --notes-file`, assets = Windows .exe + Pi .deb(s).
@@ -70,241 +73,8 @@ Git repo root: `C:\Users\Ron\.grok\worktrees`.
   to a piece of work first (code, notes, note for Stew), then ONE commit and one push. No
   follow-up "notes: committed xyz" commits.
 
-**HOLD LIFTED 2026-11-10 (Ron: Stew gave the go-ahead to implement all the changes). Was: ON HOLD (Ron, 2026-11-02): no new changes until Stew catches up on the important Pi work
-(automatic NB, spectral NR, NR Low/Med/High, client controls).** When he pushes: pull, short
-review of what he ported, say if the Pi needs a matching change. Don't start new work meanwhile.
+Finished entries (releases R11-10-14 to R11-14-2, done work, old resume points) moved to `rpi/CLAUDE-history.md` on 2026-11-14 (last section there).
 
-**Stew's list, Ron doing it (2026-11-10): servers first, then client. Versions after all server changes.**
-- Done (not on air yet, Windows rig needed): Windows recv automatic NB (blanker.c + struct), Windows recv spectral NR (denoise()).
-- TX IQ RESET ALL (Ron 11-10): ms-sdr writes the FACTORY TX IQ values into the radio (no clear). A radio with factory values = calibrated (to factory), unlike a new rig with nothing stored. DONE in Pi ms-sdr (iq.c, factory_seed.c/.h; copied to V:, syntax-checked, NOT built) and Windows ms-sdr (built). Ron tests later (needs a full calibration after).
-- Windows ms-sdr, built, not on air: heat sink 0x06 read + 30 s log (proficio-temperature.c); WiFi SWR meter port (swr_wifi_meter.c added to vcxproj, Windows clock / thread-name shims; 0x0F fault, 0x2E reset, tune flag, SWR_* ini keys; needs SWR_METER_TO_GUI=1 in mscc.ini, firewall UDP 6999, meter sending to the PC); Pill_stats (PILL_STATS=1). Windows build auto-bumped ms-sdr 3.189 -> 3.191.
-- Server list done 2026-11-10. Versions (11-10): Windows recv 3.148 -> 3.152 (= Pi recv 3.152 features), Windows ms-sdr 3.196 and Pi ms-sdr 3.196 (built on the Pi into ~/mscc/ms-sdr, runs after the next mscc restart). Pi recv unchanged (3.152, rename only). Next: the client list.
-- **Hard calibration resets (Ron 2026-11-10).** Soft = host files only (radio wins at next start); hard = files AND radio. New client opcode 0x2F CMD_SET_CAL_RESET_ALL (1 byte: 1 RX IQ = 0/0 all bands, recv + radio; 2 QRP power = factory table, trans saves + radio; 3 AMP = trans rewrites amplifier_cal.ini -99, host only). Pi ms-sdr Radio_cal_reset_all (power_calibration.c) + trans CMD_SET_AMPLIFIER_CALIBRATION_RESET switched on (udp_thread.c): on V:, syntax-checked, NOT built. Windows ms-sdr 3.197 + trans built. Client 11.10.7: RESET ALL on RX IQ / QRP CAL / AMP CAL (Yes/No, then OK-only pop-up). Existing hard resets: TX IQ RESET ALL (0x8D = CMD_SET_IQ_DEFAULTS, factory to radio since ms-sdr 3.196), FREQ CAL RESET. Reset configuration = client settings only (keeps iq/recv-iq/freq_cal/power_cal/amplifier_cal.ini + cal).
-- **Client list DONE 2026-11-10 (client 11.10.13, not on air on a Windows rig):** NB Low/Med/High + pulse 50..510 + NB sent at connect; NR Low/Med/High; heat sink display; SWR RESET via 0x2E; 0x30 server-message pop-up; RESET ALL pop-ups; Reset configuration = settings only; hard resets (0x2F); PADDLE checkbox (0x9D); cal band-box fix; firmware-update pop-up (0x2D store=0: OK-only, once per run, lists minimum firmware); SWR fault now also turns TUN off (TESTED Ron 11-10 on the Pi: fault, pop-up, TUN off, RESET via ms-sdr). 0xD7-0xD9 removed from the client.
-- **Servers 2026-11-10 (late):** Pi + Windows ms-sdr 3.200: server last-used band stack (Last_used.ini, vfoa/vfob) REMOVED (thread was commented out in both, client never asked for it, client keeps its own last-used); 0xD7-0xD9 reclaimed (usbavrcmd.h free list). Pi client keep-alive timeout 45 -> 15 s (= Windows). trans 3.157 both (Pi built). Pi runs ms-sdr 3.200, trans 3.157, recv 3.152, pill 3.15.
-- **Pill 3.15 (2026-11-10, flashed, works):** heat sink below -40 C = OPEN (-99), above 150 C = SHORT (999); was clamped, an unplugged thermistor showed -40 C (pull-up is on the board, Ron).
-- **Windows installer now builds from `mscc-ui/installer/windows/`** (payload\ + MSCC.aip + stage.ps1 + README), not C:\mscc-net9. Actual Installer: `actinst.exe /S MSCC.aip` -> `installers/windows/`. PSoC firmware = newest versioned build per radio (1.236 / 2.153 / 3.243 / 4.244 / 5.153 / 6.236 / 7.244 / 8.243), Black Pill = 25 MHz bins + flash tools (no 8 MHz). R11-10-13 built. Open: MSCC-Remote has no Release build (Oct-31 copy in payload); MSCC.aip paths are Ron's PC.
-- **Pi package mscc 1.0.77** (2026-11-10): ms-sdr 3.200, trans 3.157, recv 3.152; built on the Pi from a /tmp copy (CR stripped from scripts), in `installers/rpi/`.
-- **2026-11-10 (night): Pi and Windows servers made functionally identical (Ron).** Platform code (USB, sockets, paths, audio device discovery / ALSA-Pulse vs MME) stays different. NOT on the air yet.
-  - ms-sdr: Windows 3.206, Pi 3.203. Windows got the Pi's 1 s Flusher loop (client timeout ~15 s, was ~45 s; core check ~10 s), CAT `MDn;` mode set (was commented out), mode saved to startup.ini on every change, signed RIT +-500 Hz, Radio_cal_startup_load (radio cal read at first connect if startup missed it), safe cal copies (.tmp + replace, .bak of parked, trans INITIALIZE before park), default cw.ini / mscc.ini instead of stopping, host name fallback 127.0.0.1, the Pi user_controls.c (ALC on/off saved, NR, pan guards), FARNSWORTH 1-4 -> 5. 3.201: a client leaving no longer stops the Windows servers. Both: TUNE never saved to startup.ini (stop while TUN on came back in TUNE); `last_used.c/.h` renamed `startup.c/.h` (only startup.ini code left); WATERFALL_STATUS `;` fixed in user_controls.ini.
-  - recv 3.153 both. Windows got the Pi udp_thread.c (socket error = log + continue, digital volume per mode, I/Q band guard), float FREQ CAL / CW snap magnitudes, server pop-ups (I/Q device / digital speaker / audio start failed), 0xF4 keep-alive with source id, recv-iq.ini reload after create, Audio_Device_Error exits (was a NULL crash with no I/Q device), normal stop just exits. Both: 10 ms pause after a recvfrom error.
-  - trans 3.158 both. Ron's choices: mic gate at key-down (35 / 200 ms + 10 ms fade) and 5 ms TUN ramp on both; ALC ceiling 1.0 digital / 0.89 voice on both (Pi digital was 0.89); line gain 2.5x for Digital, Remote-Digital AND Remote-Phones (only the local Phones mic gets 6.3x); voice ALC meter 0-10 dB. Windows got the Pi remote mic receiver (100 ms priming, resync >250 ms, +/-300 ppm trim, no pitch steps), recvfrom skip (was: trans stopped and handled a stale buffer), pop-ups, exit(1) on start-up failure, 0xF4 keep-alive, Flusher no busy spin, power-table log index fix. Pi got the phase reapply after CMD_SET_IQ_DEFAULTS. Both: a close error at a normal stop is only logged. TO CHECK ON AIR: Pi WSJT-X power / ALC (digital gain 6.3 -> 2.5, ceiling 0.89 -> 1.0); Windows Remote-Phones voice needs ~8 dB more mic gain.
-  - Client: WPF 11.10.14 and Avalonia 1.6.93 / 1.6.94: SERVER button = Connect / Disconnect with a tooltip saying whether the servers start / stop; checkbox "Launch Servers" on both; Avalonia sends CW BW before CW pitch at connect (recv "CW Bandwidth NOT SET").
-  - Installers: Windows R11-10-14, Pi mscc 1.0.78 + mscc-avalonia 1.6.94 in `installers/`. Pi runs ms-sdr 3.203, recv 3.153, trans 3.158, pill 3.15.
-  - **Installers are GitHub Release downloads, not committed** (`.gitignore` installers/windows/*.exe, installers/rpi/*.deb; Ubuntu installers/linux unchanged). Release R11-10-14: https://github.com/w4mmp-ron/mscc-station/releases/tag/R11-10-14.
-  - **Pi = 2 packages since mscc 1.0.79 (Ron):** `mscc` now also carries PortAudio (/usr/local lib + headers, loader file /etc/ld.so.conf.d/mscc.conf), MSCC Init, MSCC Volume, PSoC firmware (/usr/share/mscc/firmware/<Radio>/, same versioned files as the Windows payload) and Black Pill 25 MHz firmware (/usr/share/mscc/firmware/black-pill/). Conflicts/Replaces/Provides mscc-portaudio, mscc-init(-gui), mscc-volume(-gui), mscc-firmware: apt removes them. build-deb.sh takes the firmware from mscc-ui/installer/windows/payload (run stage.ps1 first) and PortAudio from rpi/mscc-portaudio/mscc-portaudio_19.8.3_arm64.deb. Installed on the Pi 2026-11-10 (old packages removed, servers running); mscc-ui 0.6.31 purged from the Pi. Optional: `mscc-avalonia`. INSTALL-FOR-PI .docx/.pdf not regenerated.
-
-**2026-11-11 (finished, Ron): Release R11-11-2.** Windows `mscc-net9-R11-11-2-install.exe` (WPF 11.11.2,
-ms-sdr 3.208); Pi `mscc_1.0.80_arm64.deb` (= 1.0.79 + ms-sdr 3.206, md5 = the running ~/mscc/ms-sdr) and
-`mscc-avalonia_1.6.95_arm64.deb` (both also on V:\; both INSTALLED on the Pi 2026-11-11, servers
-were stopped, /dev/tnt0-1 and the .ini files fine; Avalonia 1.6.95 not run yet). INSTALL docs +
-Windows CHANGELOG updated, INSTALL-FOR-PI .docx / .pdf regenerated. Pi runs ms-sdr 3.206, recv 3.153,
-trans 3.158, pill 3.15.
-- **WSJT-X right-click Tune (CAT `AC111;`) DONE, tested on the Pi (Ron).** Capture (strace on
-  ms-sdr's /dev/tnt0): each right-click sends `AC111;ID;`, nothing to end it, and WSJT-X sends
-  NOTHING for a right-click while its tune runs (so the tune can't be stopped from WSJT-X).
-  ms-sdr `comm-port.c`: AC111; = MSCC TUN carrier like the client TUN button (mode T, tune power if
-  the client sent one, Tune_button = SWR meter tune flag before RF, TX on), client gets
-  CMD_SET_TX_SET_BY_SERVER 1 (as CAT PTT; client locks PTT/TUN). Ends after 10-11 s
-  (`Cat_tune_tick()` from the 1 s Flusher loop, main.c), at a second AC111; (other apps), or
-  before a CAT `TX;`; then TX off, old mode back, TX released. Ended elsewhere (SWR / temperature
-  fault, client mode change / disconnect): tick puts the mode back if still T and releases TX.
-  An AC111; within 1 s of the start is ignored (seen 4 times ~150 ms after the start, cause not
-  found, not seen under strace). Log: `CAT tune. START / STOP (reason) / ignored`. Files: comm-port.c,
-  main.c, extern.h in both trees. Pi ms-sdr built (version.h on the Pi 3.206), Windows ms-sdr 3.208
-  built, not on a Windows rig. Tune power shows 0 in the log until the client sends it (trans
-  then uses its own; Ron: power looked normal).
-  **Later 11-11 (Avalonia 1.6.95 on the Pi):** a second right-click 6.4 s into a tune DID arrive
-  (`MD2;` + `AC111;`, 16:00:49 UTC) and stopped it; at 2-3 s earlier it sent nothing. Ron: WSJT-X
-  right-click Tune itself looks buggy (sometimes sends, sometimes not). ms-sdr handles both. Note:
-  an `MD2;` during a CAT tune changes the mode with the carrier still keyed (harmless in USB);
-  option, not done: hold CAT mode sets until the tune ends.
-  Avalonia 1.6.95 meter in watts: fine (Ron). SWR fault 3.40 on 15 m at 16:00:33 = Ron's
-  left-click Tune by mistake (antenna not matched there), not a bug.
-**2026-11-11 (finished, Ron): Release R11-11-4.** S/W **SPECTRUM SIZE** slider (20-80 %, default 40,
-under Climbing): spectrum share of the panadapter height, waterfall gets the rest (was fixed: WPF 38 %,
-Avalonia 40 %; the waterfall rows are resampled to its height, so nothing else changes). Global, not per
-band. WPF: SpectrumColorSettings.SpectrumSplitPercent (renderer + peak marker), SpectrumWaterfallSettings
-`SPECTRUM_SPLIT_PERCENT` in MSCC_Client.ini, PanadapterControlsWindow slider. Avalonia:
-SpectrumDisplaySettings.SpectrumSplitPercent (LoadExtras), SpectrumRenderer, ClientSettingsStore
-`SPECTRUM_SPLIT_PERCENT`, SpectrumWaterfallViewModel + window. WPF 11.11.4 TESTED by Ron (Windows, saved 49 %,
-no log errors); Avalonia 1.6.96 INSTALLED on the Pi 2026-11-11 (over 1.6.95), Ron trying it (he reports later if it fails). Installers: Windows `mscc-net9-R11-11-4-install.exe`
-(servers unchanged), Pi `mscc-avalonia_1.6.96_arm64.deb` (on V:\, installed); `mscc_1.0.80` unchanged. Commit e203740,
-GitHub Release R11-11-4 (the .exe + both .deb). Actual Installer: run `actinst /S` from PowerShell only (Git Bash
-turns `/S` into a path, the GUI opens and nothing is built).
-Option, not done: drag the divider on the display.
-- **RELEASE STATUS (Ron, 2026-11-11): Windows and Pi are READY FOR RELEASE at R11-11-4** (GitHub Release
-  R11-11-4: mscc-net9-R11-11-4-install.exe, mscc 1.0.80, mscc-avalonia 1.6.96; Latest is now R11-11-5 with
-  mscc 1.0.82).
-  **Ron, 2026-11-11 end of day: his work is finished, "the ball is in Stew's court".** Everything works: WPF,
-  Avalonia, Windows servers and Pi servers. Waiting on Stew: the Debian / Ubuntu implementation and the
-  original-firmware check (zip sent; missing files). (The stale mscc-firmware line in Linux guide 2.7 was
-  fixed by Ron's 2026-11-12 draft edit, 3c0a393; dropped from Stew's list, Ron.) The Debian (Ubuntu x86_64,
-  `linux/`, `installers/linux`) implementation is WAITING ON STEW; don't release it until he's done.
-  **Ron 2026-11-13: once Stew is done, the Debian amd64 .debs become part of every "finished"** (build, attach to the Release, Addendum).
-  **Build warnings fixed 2026-11-13 (Ron asked), Pi + Windows, NOT built for real, not on air:** Pi test build in /tmp (BINDIR=/tmp, version.h untouched) went 43 -> 12 warnings. Fixed: %ld for 32-bit values -> %u / %d (log text only); proficio-temperature Initialize_band_data memsets cleared 10 bytes, not the arrays (uint32_t / int x 10); message_queue dequeue memset(sizeof pointer) -> buffer[0] = 0, strncpy bound PATH_MAX - 1; startup.c startup_record = {0} (freq / mode were garbage if startup.ini lacked a key); recv CMD_SET_BW_LOCUT default case keeps previous_low_cut; Version.day memcpy + terminator; User_Controls_Process casts; Pi slen socklen_t; trans #ifndef RON. Left (false alarms): strncpy size-1 copies, factory_seed snprintf PATH_MAX, unused TX_Hold_Timer. Pi files copied to V:. **Found, NOT fixed (asked Ron):** message_queue.c `char M_freq_queue[PATH_MAX][MAX_COMMAND_QUEUE]` has its sizes swapped (50-byte rows; long messages run into the next slot, dequeue memset PATH_MAX wipes the following ~80 slots) - both trees.
-- **2026-11-14 (finished, Ron): Release R11-14-2** = Windows `mscc-net9-R11-14-2-install.exe` (WPF 11.14.1, ms-sdr 3.213; recv / trans unchanged) + Pi `mscc_1.0.94_arm64.deb` (ms-sdr 3.210; vs 1.0.93 only control + ms-sdr) + `mscc-avalonia_1.7.01_arm64.deb` (vs 1.7.00 only app dlls / deps / README / control; same 3 CR files; INSTALLED on the Pi with mscc 1.0.94, TESTED by Ron: carrier on centre in Avalonia too; Windows R11-14-2 installed; version is in packaging/mscc-avalonia/DEBIAN/control AND the csproj). Contents below.
-- **2026-11-14 (later): spectrum centre fixes.** (1) AM: ms-sdr `AM_OFFSET_RX` -11860 -> -12000 (Pi, Windows, Debian `extern.h`); Pi ms-sdr 3.210 running (old kept as ~/mscc/ms-sdr.3.209), TESTED by Ron: AM carrier on centre. Windows ms-sdr not rebuilt yet. (2) Client pixel -> bin mapping (WPF `SpectrumDisplayControl.xaml.cs`, Avalonia `SpectrumRenderer.cs` + `SpectrumDisplayControl.axaml.cs`): new `FracToBin` (bin k centred on k/N, 0 Hz = bin N/2), pixel x = [x/W,(x+1)/W); was (N-1)/(W-1) + truncation: carrier 1 px left at 1x (hidden under the centre line, right skirt under the filter edge) and 1 px (~26 Hz) right at 4x (measured from Ron's PNGs, 687 px plot). Peak marker bin/N, marker X and WPF ticks floor(frac*W). WPF 11.14.1 installed in C:\mscc-net9, TESTED by Ron: carrier on centre at 1x and 4x. Avalonia compiles, not built as .deb / not tried. Left alone: recv fftshift in dsputils.c drops the 0 Hz bin (LO between bins N/2-1 and N/2), under 1 px.
-- **2026-11-14 (finished, Ron): Release R11-14-1** = Windows `mscc-net9-R11-14-1-install.exe` (ms-sdr 3.212; WPF 11.13.6, recv 3.154, trans 3.159 unchanged) + Pi `mscc_1.0.93_arm64.deb` (ms-sdr 3.209; vs 1.0.92 only control + ms-sdr differ, 129 files, modes same, no CR) + `mscc-avalonia_1.7.00_arm64.deb` (unchanged). ms-sdr `comm-port.c` (Pi, Windows, Debian trees): CAT `TX0;` and `TX1;` key like `TX;` (same transmit audio source; log "parse_record. TX Received (TX1;)"). Found while fixing fldigi PTT on the Pi, but NOT the fldigi cause: with Hamlib TS-2000, fldigi sends plain `TX;` even with "Audio on Auxiliary Port" ticked (log 2026-11-14 18:10 UTC); fldigi only needed a restart to apply its PTT settings. fldigi now keys by RTS on /dev/tnt1 (GPIO/Serial PTT tab, Hamlib keeps frequency); after changing fldigi PTT settings restart fldigi. Pi build in /tmp/msbuild (servers kept running). mscc 1.0.93 INSTALLED on the Pi 13:10 local; fldigi Hamlib PTT keys (sends `TX;`); `TX1;` TESTED 18:14 UTC (python on /dev/tnt1 with RTS/DTR held off, client connected): transmit 1 -> "TX Received (TX1;)", `RX;` -> transmit 0. `TX0;` same code, not sent. Windows R11-14-1 INSTALLED 2026-11-14 (ms-sdr 3.212 md5 = payload); Windows TX0; / TX1; not tried yet (Ron tests later).
-- **2026-11-13 (finished, Ron): Release R11-13-5** = Windows `mscc-net9-R11-13-5-install.exe` (WPF 11.13.6; servers unchanged) + Pi `mscc-avalonia_1.7.00_arm64.deb` (not tried on the Pi yet; Ron tests later) + `mscc_1.0.92_arm64.deb` (unchanged). Addendum, Windows CHANGELOG + INSTALL.md, installers/rpi/INSTALL.md updated.
-- **2026-11-13 (late): Clear RIT resets only the slider (Ron)**, RIT checkbox stays as it is; log "Clear RIT: offset reset to 0". WPF 11.13.5 (`MainWindow.xaml.cs` ClearRit_Click) TESTED by Ron (installed into C:\mscc-net9 by hand; built with CopyToMsccNet9 switched off via `-p:CustomAfterMicrosoftCommonTargets=<empty target file>`). Avalonia 1.6.99 (`MainViewModel.cs` ClearRit; 1.6.98 -> old). **Then RIT made sticky (Ron):** WPF 11.13.6 saves RIT_ON / RIT_OFFSET in MSCC_Client.ini (same keys as Avalonia; SpectrumWaterfallSettings + MainViewModel: loaded into both VFOs at start, saved on change, sent once per session at the first frequency report, log "RIT pushed at connect"); Avalonia 1.7.00 no longer turns RIT off / offset 0 on disconnect (that was saved, so RIT never came back), Clear RIT tooltip "Offset -> 0 (RIT stays on)". WPF 11.13.6 installed into C:\mscc-net9 and TESTED by Ron (RIT stays on after a restart); Avalonia 1.7.00 built, NOT installed: `mscc-avalonia_1.7.00_arm64.deb` in installers/rpi + V: (1.6.99 -> old, never installed). Not committed; goes out at "finished".
-- **2026-11-13 (finished, Ron): Release R11-13-4** = Windows `mscc-net9-R11-13-4-install.exe` (WPF 11.13.4, ms-sdr 3.211, recv 3.154 / trans 3.159 unchanged) + Pi `mscc_1.0.92_arm64.deb` (ms-sdr 3.208, recv 3.155, trans 3.160) + `mscc-avalonia_1.6.98_arm64.deb`. Comm / CAT parity, details below (the "BUILT, NOT installed" heading is history; all installed and tested as noted). The push at "finished" was refused: Stew had pushed f09daed (12:38: linux/ = copy of the Pi trees, Pi recv 3.155 / trans 3.160 Ultimus sound-card fix, postinst Pi-only AudioInjector guard, status report + MSCC Init "ultimus", control 1.0.91, Avalonia build script -Arch amd64 + launcher in git). Rebased (no conflicts); comm-port.c + version.h copied into linux/ms-sdr-linux (amd64 test build OK); Stew's 6 recv/trans files copied to V: (V: was = old git), built on the Pi into /tmp -> rpi/mscc-binaries -> mscc 1.0.92 (my unreleased 1.0.91 -> old). Avalonia 1.6.98 rebuilt with Stew's new script on Windows (works: same 234 files, .desktop now LF). 1.0.92 + 1.6.98 INSTALLED by Ron 13:54, servers started 13:55, logs clean (heat sink OPEN = thermistor removed, expected).
-- **2026-11-13 later: comm / CAT parity (Ron: "bring everything up to par"), BUILT (compile only), NOT installed, NOT on air:**
-  ms-sdr Pi + Windows `comm-port.c`: PIN=2 (DTR -> DCD) now keys (tested `fDCD`, never set; now `fRLSD`, logs once per key); Pi now sends the client "CAT PORT x NOT AVAILABLE - CAT DISABLED" like Windows; Windows open-failure log shows the real Win32 error (was fixed ERROR_FILE_NOT_FOUND). Windows ms-sdr built 3.211 (Release/windows-wpf). Pi real build on the Pi with BINDIR=/tmp/msbuild (servers kept running, ~/mscc untouched): ms-sdr 3.208 (V: version.h bumped), same known warnings only -> rpi/mscc-binaries/ms-sdr -> `mscc_1.0.91_arm64.deb` (vs 1.0.90: only control + ms-sdr differ, 129 files, modes same, no CR) in installers/rpi + V:, NOT installed; 1.0.90 -> installers/rpi/old. `mscc-avalonia_1.6.97_arm64.deb` (only the app dlls / deps / README / control differ; same 4 CR text files as 1.6.96) in installers/rpi + V:, NOT installed; 1.6.96 -> old. Note for Stew: `.mscc-coord/NOTE-FOR-STEW-AVALONIA-MIGRATION-FROZEN-2026-11-13.md`. Windows INSTALLED into C:\mscc-net9 2026-11-13 13:16 (MSCC closed): WPF 11.13.1 (dotnet build, CopyToMsccNet9; md5 = bin) + ms-sdr-MKII.exe 3.211 (old 3.209 kept in the session scratchpad); recv / trans unchanged. No Windows installer built yet. Pi mscc 1.0.91 + mscc-avalonia 1.6.97 INSTALLED by Ron 13:18, logs clean; WPF client connected, Remote Phones / Digital switching + saved choices seen working in the log. WPF 11.13.2 (13:3x, installed): saving COM port / baud / PTT line in Settings reopens Remote CAT at once (CAT reads comm-port.ini only when it opens; Avalonia has no COM settings screen and reads it at each CAT open). WPF 11.13.3 (installed): old bug fixed, every WPF start wrote PIN=0 to comm-port.ini (CommPortSettingsPanel.RefreshPortList cleared _suppressSave inside OnLoaded, so the baud SelectedIndex saved before PinCheck was loaded); also hit local ms-sdr, which reads the same file. TESTED 13:33-13:35 (WPF on Windows, Pi host, Remote Digital): CAT PTT, RTS PTT (CTS on/off -> Pi transmit 1/0 same second), right-click Tune (AC111; -> TUNE, transmit 1, stop after 10 s, back to USB). Remote window CAT line now shows the PTT line ("PTT: CAT or RTS" / "CAT or DTR" / "CAT (PTT line off)"; WPF hint no longer says PTT=CAT): WPF 11.13.4 installed, Avalonia 1.6.98 .deb (installers/rpi + V:, not installed; 1.6.97 -> old).
-  Clients, WPF (11.13.0 compile) + Avalonia 1.6.97 (built, no .deb yet): shared `KenwoodTs2000.cs` now identical in both MSCC.Core copies: AC111; CAT tune in Remote CAT = press TUN, same rules as ms-sdr (10 s, second AC111; stops, 1 s debounce, CAT TX; wins, TUN off elsewhere = timer stops; IF; reports TX while tuning; CAT close ends it). WPF only: RTS/DTR PTT in Remote CAT (PIN=1 CTS / 2 DCD, checked in the read loop every ~10 ms, read wait 10 ms when a line is set; non-overlapped handle), Remote devices saved by name per path (REMOTE_PLAY_NAME / REMOTE_MIC_NAME / REMOTE_DIGI_PLAY_NAME / REMOTE_DIGI_MIC_NAME; Digital falls back to Settings Digital Speaker/Mic, then VAC), Phones/Digital choice saved (REMOTE_DIGITAL). Not changed: WPF Settings PIN is a checkbox (0/1) and its Save turns PIN=2 into 1.
-  The WPF compile check half-ran CopyToMsccNet9 while MSCC was open: deleted MSCC.Wpf.deps.json + runtimeconfig.json from C:\mscc-net9; restored from installer payload (md5 match with the installed exe/dll).
-- **Pi ms-sdr version.h in git (Ron 2026-11-13):** git had 3.196 (V: is the Pi build copy and auto-bumps; version.h is never copied TO V:). Copied V: -> repo once (3.207); goes out at the next "finished". Ron: do this at EVERY "finished" (V: -> repo only).
-- **2026-11-13 (finished, Ron): Release R11-13-3** = Windows `mscc-net9-R11-13-3-install.exe` (= R11-13-2 + Black Pill flasher hint: BOOT jumper + NRST, was "hold KEY (PA0) + NRST") + Pi mscc 1.0.90 / mscc-avalonia 1.6.96 (unchanged). New guide `docs/manuals/MSCC-Updating-Firmware.md` + .pdf (from Claude Doc https://claude.ai/artifact/WRn3wDtpFP83iLjteCZyKy; PDF via `make-addendum-pdf.py <file>.md`).
-- **2026-11-13 (finished, Ron): Release R11-13-2** = Windows `mscc-net9-R11-13-2-install.exe` (ms-sdr 3.209, recv 3.154, trans 3.159) + Pi `mscc_1.0.90_arm64.deb` (ms-sdr 3.207, recv 3.154, trans 3.159; installed, logs clean) + mscc-avalonia 1.6.96 (unchanged). Build-warning fixes + message queue fix. TESTED on the Pi 2026-11-13: low cut 75/100/200/300/500 all applied; message queue: two start-up warnings (digital speaker + digital mic, ~75 chars each, queued in the same ms) both delivered whole and in order at connect (test: both digital .ini set to missing names, restored after, md5 checked). Details below.
-  **R11-13-2 BUILT 2026-11-13 (Ron: fix queue, real build, bump release; NOT released, NOT on air):** message_queue.c M_freq_queue -> [MAX_COMMAND_QUEUE][PATH_MAX] both trees. Pi real build in ~/ (V:): ms-sdr 3.207 (auto), recv 3.154, trans 3.159 (extern.h, both trees; Makefiles do not track headers: make clean needed after a header change); binaries in Pi ~/mscc (servers were stopped) = rpi/mscc-binaries -> Pi `mscc_1.0.89_arm64.deb` (installers/rpi + V:, not installed). Windows MSBuild MFC: ms-sdr 3.209, recv 3.154, trans 3.159; stage.ps1 + actinst -> `mscc-net9-R11-13-2-install.exe` (MSCC.aip AppVersion 11.13.2; my first edit doubled the BOM -> actinst exit 1, fixed). Windows CHANGELOG + INSTALL.md, installers/rpi/INSTALL.md updated; Addendum at "finished".
-  **Rebuilt same day:** trans alc.c start-up line + Windows recv main.c line print VERSION_MAJOR.MINOR (were "trans 3.158" / "recv 3.151" text); versions kept. Pi trans built into /tmp (servers running) -> `mscc_1.0.90_arm64.deb` (= 1.0.89 + trans only; 1.0.89 was installed by Ron and ran clean: no log errors). Windows recv + trans rebuilt, R11-13-2 .exe rebuilt (ms-sdr 3.209 unchanged).
-  **Test build 2026-11-13:** Pi server source builds on amd64 unchanged (WSL Debian, `make PORTAUDIO=distro`; warnings 36 / 4 / 3, no errors; not run, deleted). Told Stew: `.mscc-coord/NOTE-FOR-STEW-PI-SERVERS-BUILD-ON-AMD64-2026-11-13.md` (goes out at the next "finished").
-  **Added for Stew 2026-11-12 (Ron's OK), an option for him:** Visual Studio build bookkeeping files in
-  `mscc-ui/windows-work-tree` (66 tracked: `.tlog`, `.recipe`, `.iobj`, `.ipdb`, `.lastbuildstate` for
-  ms-sdr / recv / trans) change at every Windows build. If he likes, git could ignore them (.gitignore +
-  `git rm --cached`). Until then they are left uncommitted (Ron's choice).
-  **For Stew 2026-11-12 (Ron asked for a clear note): test the keyer update on a PSoC radio.** PSoC firmware
-  with CMD_KEYER_BOOT 0x9F (Proficio MKII PTT 3.244 / ATU 4.245, Geminus MKII 2.154, Ultimus MKII PTT 8.244 /
-  ATU 7.245) builds clean but has never run on a radio (Ron has none with the daughter board). Steps:
-  `radio-psoc-firmware/STEW-KEYER-UPDATE-TEST.md`.
-- **2026-11-12 (finished, Ron): Release R11-12-4** = Windows `mscc-net9-R11-12-4-install.exe` + Pi `mscc_1.0.85_arm64.deb`:
-  Pi window "Black Pill Firmware Update" (`firmware-programmers/rpi/stm32-flash/stm32-app-flash-gui.py`, link
-  `stm32-app-flash.gui`, menu `mscc-blackpill-flash.desktop`; runs `stm32-app-flash.sh`; lists only
-  `<ver>-app.bin`, refuses boot-app / bootload-PA8; refuses while the servers run). No sudo: udev line for
-  `0483:df11` (flash mode) in `99-proficio.rules`. Tested by Ron on the Pi (3.16 over 3.16, servers check),
-  files put there by hand; the .deb copies are byte-identical. Windows `stm32-app-flash.exe`: same servers
-  check, file filter and refusal (built, not run yet). `keyer-flash.py` Windows servers check fixed (it matched
-  `recv.exe` / `trans.exe` exactly; real names `mscc-recv.exe` / `Mscc-trans.exe`), keyer .exe rebuilt.
-  1.0.85 = 1.0.84 + those files (compared file by file). Client, servers, firmware unchanged. Installed on the Pi
-  2026-11-12 (Ron asked; MSCC menu files moved away first to test the install: all came back).
-  **DONE 2026-11-13, mscc 1.0.86 BUILT and INSTALLED on the Pi by Ron 2026-11-13 (new log line seen, tty0tty rebuilt, config untouched; not released; = 1.0.85 + this line only, compared file by file; installers/rpi + V:; WSL Debian build from a /tmp copy, file modes 755, 1.0.85 had 777):** postinst udev log line now also names Black Pill flash mode 0483:df11 (was "(Proficio app 16c0:05dc + HID LOADER 04b4:b71d)");
-- **2026-11-13 (finished, Ron): Release R11-13-1** = Pi `mscc_1.0.88_arm64.deb` (postinst udev log line names Black Pill flash mode; MSCC Start / Stop / Status window); Windows R11-12-9 .exe and mscc-avalonia 1.6.96 unchanged. Addendum (.md + .pdf), INSTALL-FOR-PI (.md/.docx/.pdf) and installers/rpi/INSTALL.md updated. Details below.
-  **mscc 1.0.87 BUILT 2026-11-13 (not installed, not released; = 1.0.86 + this only, compared file by file):** MSCC Start / Stop / Status menu gave no message: the X11 desktop (openbox + lxpanel-pi) has no notification service, notify-send failed silently. mscc-desktop-ctl.sh notify() now falls back to a small Tk window (OK button, closes after 5 s; errors red and stay). Tested on the Pi from /tmp (Ron saw it).
-  **mscc 1.0.88 BUILT + INSTALLED 2026-11-13, works (Ron) (not released; = 1.0.87 + this only):** 1.0.87 INSTALLED by Ron (Start window seen). Window now reads the mscc start / stop lines: "Servers already running (...)", "Started: x. Already running: y.", "Servers were not running.", "Stopped: x. Were not running: y."; "may have exited" = orange, "could not stop" = red, both stay until OK (Status warning too). mscc.sh unchanged. Wording tested with sample output; already-running window seen by Ron on the Pi. INSTALL-FOR-PI.md: menu-window line (was libnotify), package names now mscc_<version> / mscc_*_arm64.deb + "versions in the Addendum" (was 1.0.84 / 1.6.96); .docx + .pdf regenerated 2026-11-13.
-  **2026-11-12 (Ron): Windows uninstaller ON for the next R build:** `MSCC.aip` `Uninstall=1`, `ShowAddRemove=1`
-  (was 0 / 0: R11-12-x had no Uninstall.exe and no Apps & features entry). Test at the next build: entry appears,
-  Uninstall removes C:\mscc-net9 files + shortcuts; check what it does with user settings in %LOCALAPPDATA%\MSCC-NET9.
-  **Built R11-12-5 (uninstaller only, payload = R11-12-4) and TESTED by Ron 2026-11-12:** MSCC-NET9 in Apps & features,
-  install / uninstall / install OK; %LOCALAPPDATA%\MSCC-NET9 settings kept. Apps & features version shows the client's
-  file version (11.11.4+b10624a...), not 11.12.5. Shipped as Release R11-12-5 (Ron: "finished"; Pi stays mscc 1.0.85).
-  **Release R11-12-6 (2026-11-12, finished):** Windows Black Pill flasher says "No Black Pill in flash mode found..." on
-  List / Burn and hides the dfu-util banner (Ron tested both). Payload = R11-12-5 + that exe/dll. Pi stays 1.0.85.
-  **Next build (Ron 2026-11-12): `MSCC.aip` UpgradeMode=0 -> 2** ("If previous version is installed": Uninstall -> Update;
-  0 asked "uninstall MSCC-NET9?" on R11-12-6). 2 = Update by the help's option order (Uninstall, Uninstall Silently, Update, ...),
-  WRONG: UpgradeMode is the "Update Mode" switch (update-only program); R11-12-8 refused a fresh install after uninstall ("MSCC-NET9 is not installed... update program cannot continue"). Fixed for R11-12-9: UpgradeMode=0, IfInstalled=2 (= "If previous version is installed: Update"; option order Uninstall, Uninstall Silently, Update, ...). R11-12-9 TESTED by Ron 2026-11-12: fresh install (settings page shows), install again (no question), uninstall (files gone, settings kept): all pass. Note: Update mode leaves firmware files a new release no longer ships (older uninstalls left 12 old versioned firmware files; Ron deleted C:\mscc-net9 by hand). Shipped as Release R11-12-9 (Ron: "finished"); R11-12-7/8 were test builds (not published, moved to installers/windows/old).
-  Also next build (Ron): ReadMe page in the setup wizard (`DialogReadme=1`, `Readme=` -> `mscc-ui/installer/windows/settings-note.rtf` (RTF since R11-12-8: title bold 16 pt, text 12 pt),
-  Ron's wording: "Your settings are kept" + install/update/uninstall does not touch them + stored in %LOCALAPPDATA%/MSCC-NET9).
-  Same day, Ron's PC only: dead registry entries from old installs deleted (Proficio, MSCC 020.03.04.1, MSCC-PW
-  023.02.17.01, HKLM\SOFTWARE\WOW6432Node\Multus SDR LLC); .reg backups in C:\Users\Ron\Documents\registry-backups. Dead MSCC Start-menu entries (old MSCC, MSCC-MKII, -GEMINUS, -Proficio, -PW, Multus SDR LLC) moved to C:\Users\Ron\Documents\startmenu-backup; only MSCC-NET9 left (Ron: clean).
-- **2026-11-12 (finished, Ron): Release R11-12-3** = Windows `mscc-net9-R11-12-3-install.exe` + Pi `mscc_1.0.84_arm64.deb`:
-  the five PSoC keyer-update builds above (untested) + keyer-flash message listing them. R11-12-2 (same day,
-  published before "finished" by mistake; Ron: leave it) = keyer GUI .exe without flashing console windows.
-  1.0.84 = 1.0.83 + those PSoC files + keyer-flash.py / -gui.py (compared file by file). Not installed on the Pi.
-- **2026-11-12 (finished, Ron): Release R11-12-1 = keyer update over USB.** Daughter-board PIC keyer gets an
-  I2C bootloader (0x5C; `keyer-buffer/bootloader/`); pill 3.16 passes USB opcode 0x9F (CMD_KEYER_BOOT,
-  marked taken in ms-sdr `usbavrcmd.h`; ms-sdr never sends it) to the PIC; `keyer-flash` / `keyer-flash.gui`
-  (`firmware-programmers/keyer-flash/`, Windows .exe in `firmware-programmers/windows/keyer-flash/`) refuse
-  while the servers run. Tested on the rig: Pi command line and Windows GUI, 179 rows, settings kept.
-  Installers: Windows `mscc-net9-R11-12-1-install.exe` (`Keyer Firmware\` + Start-menu "Keyer Firmware
-  Update", Black Pill 3.16; client / servers unchanged), Pi `mscc_1.0.83_arm64.deb` (= 1.0.82 + keyer tools,
-  menu entry, `/usr/share/mscc/firmware/keyer/`, Black Pill 3.16; compared file by file with 1.0.82).
-  1.0.83 not yet installed on the Pi (the tools were put there by hand first). PSoC radios: same pass-through
-  PARKED (Ron: "No step 3 for now"). Pi tools never go in ~/utils (Ron's own folder).
-- **Docs: firmware upgrade note (2026-11-11, Ron).** docs/manuals drafts: Windows 2.6 + Linux 2.7 got a bold
-  "Firmware update required" paragraph (cal store in the radio, upgrade for the transceiver you have, old firmware =
-  "RADIO FIRMWARE UPDATE REQUIRED" + cal only on the PC); firmware tables updated to the shipped versions (3.243,
-  4.244, 5.153, 7.244, 8.243; were 3.242 / 4.243 / 5.120 / 7.243 / 8.242) + a Black Pill 3.15 row; Windows file
-  example now versioned + Black Pill folder. Remote guide 1.3 and Configurations rule 5 got short versions; the
-  announcement's GETTING IT got an IMPORTANT paragraph. Release-0 PDFs, DRAFT boxes and the Linux file column
-  (old mscc-firmware 1.0.2 names; Ubuntu waits on Stew) left alone. Backups in the session scratchpad only.
-  **Later the same day (Ron):** Windows + Linux guides got the notice on its OWN PAGE (page 2, between the title
-  page and About this guide): "IMPORTANT / The radio's firmware must be upgraded" (24 / 20 pt bold red), body
-  16 pt bold, clickable link to "3. Updating the radio firmware" (bookmark _UpdatingFirmware) + 2.6 (Windows) /
-  2.7 (Linux). Contents page numbers are one page off until Word updates the TOC field: settings.xml has
-  updateFields, so Word asks on open; answer Yes and save. Not checked in Word yet (only LibreOffice text check).
-  Windows chapter 3 got "You don't need Zadig for this": the PSoC bootloader is a USB HID device (04B4:B71D,
-  Windows driver built in); Zadig/WinUSB is only for normal use (16C0:05DC); don't run Zadig while the LED
-  blinks LOADER. Still stale in Linux 2.7: firmware "from the mscc-firmware package" (Pi now = mscc).
-- **PSoC firmware backup / fallback (2026-11-11).** The USB bootloader has NO read command (only erase / program /
-  row checksum), so PSoC firmware can't be dumped like the Black Pill; MiniProg3 + PSoC Programmer can read the chip
-  (our builds: protection off). Per-radio data that matters = EEPROM (cal, PPM, settings); an upload never touches
-  it. Idea, not done: an EEPROM read vendor command + MSCC Back up / Restore (needs new firmware on every radio).
-  Pi programmer (firmware-programmers/rpi/psoc-usb-bootload, CLI + Tk GUI, in /usr/local/bin on proficio) reviewed:
-  works; no check that the file fits the radio (all radios = same PSoC; row checksums could identify the installed
-  firmware and warn), stale "install mscc-firmware" / YYYYMMDD wording, unused Security Key field. Not changed.
-  **Stock firmware fallback = Stew (Ron):** the pre-change firmware for every radio isn't in our files; note
-  `.mscc-coord/NOTE-FOR-STEW-STOCK-FIRMWARE-FALLBACK-2026-11-11.md` (now: radio-psoc-firmware/original/<Radio>/).
-  **Found 2026-11-11** in old, unused folders of `C:\mscc-net9\PSoC Firmware` and COPIED unchanged to
-  `radio-psoc-firmware/original/` (Ron's name; README there with source, date, MD5): `Proficio/Firmware-122-01`
-  (2026-08-02, never in git, older than the repo, looks like Proficio 1.22, model unknown),
-  `Proficio-MKII-ATU/Proficio-MKII-ATU` (from "Profico MKII", 2026-07-22, never in git), `Geminus-MKII/Geminus`
-  (from "Geminus MKII", 2026-07-22 = the build in Stew's original Geminus MKII tree, commit 000b1fc). NOT confirmed;
-  Stew asked in the note. **`radio-psoc-firmware/original/` is in .gitignore** (public repo; may not be ours to
-  publish) — local only on Ron's PC until Stew confirms. Stew can't see them in git, so Ron SENDS them to him:
-  `radio-psoc-firmware/original-firmware-for-Stew-2026-11-11.zip` (185 KB, the folder + README; also
-  git-ignored); the Stew note says so. Zip SENT to Stew 2026-11-11.
-  **Policy (Ron, 2026-11-11):** the original firmware is open source (public repo is fine), but it NEVER goes in
-  the installers; it may go in git later for safe keeping (not decided). A user firmware problem: analyze and fix
-  the new firmware first; the original is the last resort. Stew note + original/README updated to say so (the
-  README copy in the zip Stew has is the older wording). Still missing: one Proficio (Legacy or MKII PTT), Geminus
-  Legacy, all three Ultimus.
-  **C:\mscc-net9 fresh install (Ron, 2026-11-11):** the installer only adds files, so PSoC Firmware had piled up old
-  dated / unversioned copies, .gitkeep files and old folders. Ron deleted C:\mscc-net9 and reinstalled R11-11-5
-  (settings live in %LOCALAPPDATA%\MSCC-NET9, untouched). Checked: PSoC Firmware = only the 8 current versions,
-  Black Pill = the 3.15 versioned files. Idea, not done: installer removes old firmware files; folder names
-  mixed case (Proficio-legacy / Geminus-legacy vs Ultimus-Legacy), cosmetic.
-- **2026-11-11 (finished, Ron): Release R11-11-5** = Black Pill versioned names + docs firmware note.
-  `mscc-net9-R11-11-5-install.exe` (AppVersion 11.11.5; WPF client unchanged, title bar 11.11.4; servers
-  unchanged) + `mscc_1.0.81_arm64.deb` (same servers, Black Pill files renamed) + mscc-avalonia 1.6.96 (unchanged).
-  psoc-replacement-stm32 committed + pushed separately. 1.0.81 install over ssh HUNG (2nd time): postinst
-  "Stop the MSCC servers? Continue [y/N]" waits on the pty apt opens; finished with
-  `DEBIAN_FRONTEND=noninteractive dpkg --configure mscc`.
-- **2026-11-11 (finished, Ron): mscc 1.0.82 = the install no longer hangs.** postinst `confirm_stop_servers` asks only
-  when ms-sdr / sdrcore-recv / sdrcore-trans is running (else "MSCC servers not running: nothing to stop"), and the
-  question times out after 2 min (= N, install aborted). Same servers. INSTALLED on the Pi 2026-11-11 with plain
-  `sudo apt install -y` over ssh (finished at once; the 2-min timeout not tested, servers weren't running). Replaces
-  1.0.81 in GitHub Release R11-11-5 (Windows installer unchanged). Over ssh still use
-  `sudo -n env DEBIAN_FRONTEND=noninteractive apt install -y ...`.
-- **Black Pill firmware now versioned like the PSoC (2026-11-11, Ron; released in R11-11-5).** Names:
-  `BlackPill-25MHz-<major>.<minor>-app.bin` + `...-boot-app.bin` (were app-firmware-async.bin /
-  boot-app-firmware-async.bin); `bootload-PA8.bin` keeps its name. Version = FIRMWARE_VERSION_MAJOR/MINOR in
-  include/proficio_config.h. psoc-replacement-stm32 (SEPARATE repo, w4mmp-ron/psoc-replacement-stm32, needs its own
-  commit): `extra_tinyusb.py` writes the versioned files into release/; a rebuild with different bytes of the same
-  version is saved as `...-<ver>-b2-...` + a "bump the minor" warning (like PSoC copy-release.py; the build time is
-  in the image, so every rebuild differs: bump the minor for every build you flash or ship). release/ 3.15 files
-  renamed (built 11-10 15:44 = the 3.15 change), release/README, LED-CODES.md, platformio.ini comment updated.
-  mscc-station: stage.ps1 ships the newest versioned set (never -bN) and clears old .bin from the payload (ran OK,
-  payload = 3.15 files); rpi/mscc-deb/build-deb.sh takes exactly one versioned set (tested, path with a space);
-  stm32-bootloader-flash.ps1 `-Image combined` finds the newest -boot-app.bin (tested); Pi stm32-flash scripts,
-  READMEs, installers/rpi/INSTALL.md, INSTALL-FOR-PI (.md/.docx/.pdf) updated. Not yet run through a real `pio run`
-  (rebuilding 3.15 now would give -b2; first real test = next version bump). Pi keeps the old names in
-  /usr/share/mscc/firmware/black-pill until the next mscc .deb (bump to 1.0.81); Windows installer needs a new
-  R-build too. Left alone (not mine): 8 MHz build_info.h, .vscode/settings.json in that repo.
-- **Firmware check (2026-11-11, Ron): MKII-style CW + QRP / I/Q cal store, from the source.** MKII-style CW =
-  key-delay buffer (non-QSK amp delay), key-click shaping, paddles. Cal store = 0xC8 CMD_CALIBRATION with
-  CAL_TYPE_POWER / RX_IQ / TX_IQ.
-  - PSoC, all YES on both: Proficio MKII PTT 3.243 / Ultimus 8.243 (the MKII code); MKII ATU 4.244 / Ultimus 7.244
-    (cw.c identical to PTT); Proficio Legacy 1.236 / Ultimus 6.236 (keys by gating DIN = TX I/Q, not the PA line);
-    Geminus MKII 2.153 and Geminus Legacy 5.153 (relays latched for the semi-break-in session, no QSK). Shaping on
-    PSoC = PCM3060 DAC soft mute. = the client's minimum-firmware list.
-  - Black Pill: F411 25 MHz 3.15 (shipped) YES / YES, shaping = raised-cosine ramp on the TX I/Q (also TUN / SSB /
-    digital), cal store also holds PPM. F411 8 MHz 3.14 (not shipped) YES / YES. STM32H743 3.232: paddles + QSK
-    only (no key delay, no shaping) and NO cal store (client would ask for a firmware update); not shipped.
-  - Empty leftovers in radio-psoc-firmware: `Proficio-Legacy`, `Proficio-MKII-PTT`, `Proficio-MKII-ATU`;
-    `Proficio-Legacy - Copy` (1.236) is an old copy, the current Legacy is `Proficio-Ultimus-Legacy`.
-- **proficio power (2026-11-11, Ron's custom buck board in the MII):** the Pi 5 said the supply can't give
-  5 A. Cause: a Pi 5 asks the supply over USB-C Power Delivery for 5 A; a plain buck can't answer, so the Pi assumes
-  3 A and limits USB to 600 mA. Supply is fine (EXT5V 5.07-5.09 V, get_throttled=0x0). Fix: EEPROM
-  `PSU_MAX_CURRENT=5000` (rpi-eeprom-config --apply, rebooted 17:28): usb_max_current_enable=1 (USB 1.6 A), no
-  warning in the log. Old EEPROM: BOOT_UART=1, BOOT_ORDER=0xf461, NET_INSTALL_AT_POWER_ON=1. The MSCC servers
-  do not start by themselves after a reboot (MSCC Start). Undo: remove the line, reboot.
-- **proficio backup card (2026-11-11, same as squireoaks):** USB-adapter card `sda` (29.2 GB). The old
-  copy had the SD's disk ID 21382c14 (boot mix-up risk); Ron re-ran SD Card Copier with New Partition
-  UUIDs -> copy ID e6308e0a (cmdline.txt + fstab match). rpi-clone 2.0.27 (geerlingguy fork,
-  /usr/local/sbin, not on ron's PATH; Ron installed it). First `sudo /usr/local/sbin/rpi-clone -u sda`
-  32 s, exit 0. Root cron: `0 3 * * * /usr/local/sbin/rpi-clone -u sda > /var/log/rpi-clone.log 2>&1`.
-  Check after 03:00: log ends "Done with clone to /dev/sda". squireoaks: reach it only through
-  proficio (`ssh proficio 'ssh ron@squireoaks ...'`); its clone ran OK 11-11 03:00 (49 s).
 - **RX IQ START order fixed (client):** WPF `StartRxIq` and Avalonia `StartRxIqAsync` now send
   0x55 RX before 0x58 band (ms-sdr iq.c routes 0x58 by the last 0x55; band first after a TX I/Q
   session took the TX path: retune to the TX cal freq + trans TUNE). WPF 11.11.1, Avalonia
@@ -312,45 +82,7 @@ Option, not done: drag the divider on the display.
   RX IQ START: rig stays on the receive freq, trans not in TUNE.
 - Stew note `.mscc-coord/NOTE-FOR-STEW-RX-IQ-TOOLS-2026-10-14.md`: option 4 (client AUTO
   button) removed (Ron).
-- **Client power meter in watts (Ron, TESTED on WPF 11.11.2 at ~120 W, "the fix is fine").** Was
-  x1 / x10 / x100 (10 / 100 / 1000 W full scale): 110 W jumped to x100 = needle at 1.1 of 10. Now
-  full scale 10 / 20 / 50 / 100 / 200 / 500 / 1000 W, tick labels in watts (200 W = 0 40 80 120
-  160 200), centre legend "W", up at 95 % of full scale, down below 30 % of the next lower one
-  (as before). `AnalogSMeterControl.xaml.cs` (WPF) and `.axaml.cs` (Avalonia 1.6.95, built, not
-  tried). New WPF + Windows ms-sdr 3.208 copied to `C:\mscc-net9` (old ms-sdr in
-  `C:\mscc-net9-old\ms-sdr-MKII-3.206-backup.exe`).
-- **WiFi SWR meter vs client (checked, fine):** tcpdump of UDP 6999 on the Pi during a WSJT-X PTT
-  tune: packets every 0.1-0.2 s, `fwd` 120.8 easing to ~117.5 W, `peak` 122.2, `avg` 111-114,
-  swr 1.32. ms-sdr passes `fwd` to the client (client ~120 W = right). ms-sdr logs only the FIRST
-  meter packet after start (SD wear) plus fault edges; option (not done): one "TX end: peak fwd /
-  ref / swr" line per transmit. `tune` = 0 on CAT PTT (flag only on CAT AC111; or client TUN).
-
 **Current list (updated 2026-11-06, after bb31561):**
-- **DONE 2026-11-11 (see above). Was: WSJT-X "right-click for rig tune" does nothing.** WSJT-X on
-  the Pi (rig TS-2000) asks hamlib for the rig's tuner, which should send Kenwood `AC111;` (not yet
-  seen on the serial line). ms-sdr `comm-port.c` only handles AI ID IF MD PS RM FW KS FA FB RX TX,
-  so AC is ignored. Fix: handle `AC` in comm-port.c and start MSCC's own TUN carrier
-  (`tune_modulate`); first capture what WSJT-X really sends, and decide how TUN ends (AC has no
-  stop: timeout, or WSJT-X Tune released). Left-click Tune (CAT PTT + tone) works and stays as is.
-  **What WSJT-X 3.0.2 can send (Pi uses hamlib 4.6.2; from hamlib source `rigs/kenwood/ts2000.c`
-  + `kenwood.c` tag 4.6.2, not a capture; actual set depends on WSJT-X settings):**
-
-  | WSJT-X action | hamlib sends | ms-sdr handles? |
-  |---|---|---|
-  | Connect | `ID;` (wants `ID019;`), `AI;`, `AI0;` if AI on, `IF;` | yes (`AI0;` no reply, fine) |
-  | Read freq | `FA;` (`FB;` for VFO B / split TX) | yes |
-  | Set freq | `FA;`, then `FA00014074000;`, then `ID;` | yes |
-  | Read mode | `MD;` | yes |
-  | Set mode | `MD;`, then `MDn;` (1 LSB 2 USB 3 CW 4 FM 5 AM 6 FSK 7 CW-R) | yes for 1-5 |
-  | Read PTT / VFO / split | `IF;` (cached 0.5 s) | yes |
-  | PTT on | `VX0;TX;` | yes (finds `TX;`, `VX0;` ignored) |
-  | PTT off | `RX;` | yes |
-  | Set VFO | `SA;`, then `FR0;` / `FR1;` | **no** |
-  | Split (Split = Rig only) | `IF;`, then `FR0;FT1;` / `FR0;FT0;` | **no** |
-  | Power status | `PS;` | yes |
-  | Right-click Tune | `AC111;` (RIG_OP_TUNE) | yes since 2026-11-11 (10-11 s TUN) |
-
-  Every set command except `RX` is followed by `ID;` (hamlib's check). Gaps: SA, FR, FT.
 - **WiFi SWR meter (2026-11-06, Ron's copy `swr-meter/ron/HF_SWR_R4_1/`):** PEAK hold + AVG mode
   built, OTA-loaded and TESTED (Ron, WSJT-X); PEAK SWR beside the big SWR (later 2026-11-06) built,
   loaded, works (Ron); details in the SWR meter firmware entry further down.
@@ -363,38 +95,6 @@ Option, not done: drag the divider on the display.
   FQBN esp32:esp32:esp32 with FlashSize=4M, PartitionScheme=min_spiffs (full option string in the
   2026-11-06 session); Ron to add Windows Defender exclusions (Arduino15, arduino cache,
   libraries, build) because builds were slow.
-- **Pi runs:** mscc-avalonia 1.6.89 (Ron's Avalonia copy, below), recv 3.152 (automatic NB + spectral NR), trans 3.151 (2026-11-05: operator mic
-  fix, see below), ms-sdr 3.195 (Pill_stats log, below), pill 3.14 (2026-11-10, 0x9D passed through),
-  PIC keyer = keyer-buffer (buffered Farnsworth), package mscc 1.0.75 installed (Ron 2026-11-05).
-  **mscc 1.0.76 built 2026-11-09** (`installers/rpi/mscc_1.0.76_arm64.deb`, also V:\ = Pi home)
-  = 1.0.75 + ms-sdr 3.195 (Pill_stats; md5 = the running ~/mscc/ms-sdr). 125 files, same modes, no
-  CR in text files. Not installed from the .deb yet. Build: scratchpad build-mscc-deb.sh (WSL Debian,
-  stages under /tmp/mscc-src, strips CR from text only, runs build-deb.sh; session-only).
-  INSTALL-FOR-PI.md now names 1.0.76 (the .docx / .pdf copies not regenerated).
-  Pushed 2026-11-05: keyer + 0x9D work (fb90f87), mscc 1.0.75 (f78d141), pill 3.13 (a2e351d in
-  psoc-replacement-stm32). Open from today: SSB on a dummy load to confirm the mic fix;
-  Stew's PADDLE checkbox (note pushed). (PIC reset kink fixed 11-10, pill 3.14.)
-- **2026-11-05 mscc 1.0.74 / 1.0.75 (`installers/rpi/mscc_1.0.75_arm64.deb`):**
-  - **/dev/tnt* missing after a kernel update:** the Pi booted kernel 6.18.60 (installed 11-03);
-    tty0tty was only built for the older kernels. 1.0.74 adds kernel hooks
-    (`/etc/kernel/postinst.d/mscc-tty0tty`, `/etc/kernel/header_postinst.d/mscc-tty0tty` ->
-    `/usr/share/mscc/bin/mscc-tty0tty-kernel <kver>`, log `/var/log/mscc-tty0tty.log`, never
-    fails the kernel install) and postinst builds it for every installed kernel with headers.
-    Checked on the Pi: hooks run by run-parts, build with headers, skip without; tnt0-7 back.
-    Next kernel update: the log should say "built and installed" for the new version.
-  - **Operator mic bug (sdrcore-trans, found 11-05):** `score_operator_input()` tied the headset
-    speaker monitor (`alsa_output.usb-C-Media...analog-stereo.monitor`) with the real mic
-    (`alsa_input...mono-fallback`), both 6200, monitor first -> trans used the monitor: phone TX
-    would send RX audio. Fix: never a `.monitor` for the operator mic (input-devices.c). Built on
-    the Pi (trans 3.151), log now shows the mono-fallback mic. **Not yet checked on the air**
-    (SSB on a dummy load). Windows trans (Stew's) not checked.
-  - **`mscc status` false FAIL "Operator speaker: no PortAudio device matches"** in Phones mode:
-    the report wanted the exact ALSA name; with recv playing through Pulse the raw hw:3,0 shows
-    0 outputs. 1.0.75 report scores operator devices like recv / trans (folded name, Pulse
-    preferred, no .monitor mic), so it shows the device the servers open. Passed on the Pi.
-  - Package build: WSL wrapper stages under /tmp and strips CR from text only (scratchpad
-    `build-mscc-deb.sh`, session-only). 51 world-writable data files in the package (same in
-    1.0.73), left as is.
 - **Ron:** Option: NB threshold a bit right of middle (~5x, slider ~750) to also
   catch the near misses (5.4-6.0x seen on 20 m).
 - **Ron (2026-11-02): update the guides: QRP power, TX IQ and RX IQ cal are now stored in the
@@ -438,25 +138,6 @@ Option, not done: drag the divider on the display.
   Reply to Stew: `.mscc-coord/NOTE-FOR-STEW-TX-EDGE-COMB-CW-2026-11-02.md` (pushed 7089904);
   waiting on his answer.
 - **Pill CW edges on an analyzer: not checked yet** (pill 5 ms raised cosine, should show no comb).
-- **Keyer: buffered Farnsworth on the paddles — DONE and in the rig (2026-11-05).** Details,
-  design and build / flash steps: `keyer-buffer/RESUME.md` (top section). Ron: "all the work",
-  "the speed sounds spot on". You key at your own speed and hear yourself; letters go into a
-  buffer and go on the air with Farnsworth gaps (letters at SET_WPM, gaps at the 0x76 text WPM);
-  20 letters waiting -> STP on the sidetone, paddles off, drain, RES. Switch = new opcode
-  **0x9D SET_PADDLE_FARNSWORTH** (0/1): Pi `cw.ini` `CW_Paddle_Farnsworth=` (ms-sdr 3.192),
-  pill 3.13 passes it to the PIC, client never sees it (no client change). Ron's cw.ini now:
-  CW_Speed 18, CW_Mem_Text_WPM 15, CW_Paddle_Farnsworth 1 (backup cw.ini.bak-20261105).
-  How we got there: bit 7 of 0x76 was dropped (the WPF client clamps the 0x76 value to 60 and
-  sends it back at connect); the first try, stretching LETTERSPACE in the old keyer
-  (`worktrees/keyer`, d40a7ba), worked but felt "wonky" (holds your next letter back). The new
-  keyer (`worktrees/keyer-buffer`) rebuilt the PIC timing on a 1 ms TMR2 tick, state machines,
-  real-ms element times (the old loop timing was off; 18 now = true 18 wpm).
-  **PIC reset kink FIXED 2026-11-10 (pill 3.14):** the pill now passes every 0x9D on (was: only
-  changes), so after a PIC reset one mscc restart puts Farnsworth back. Tested (Ron).
-  **2026-11-10 keyer streamed** (keyer-buffer 79831ce, in the rig): a held paddle starts at once
-  (was ~2 s wait, 16-element chunks). Pi cw.ini = `~/.local/mscc/cw.ini`.
-  Not done: Windows ms-sdr (Stew's) and PSoC have no 0x9D; ms-sdr only logs a rejected 0x9D.
-  Idea, not started: keyboard CW (client text into the player).
 - **Stand-alone keyer (Ron 2026-11-05, started; `worktrees/keyer-standalone`, pushed c46d5f2).**
   The PIC keyer as its own 9 V box (from Ron's Rev 2 schematic, N8VET): modern rigs only (VO1400
   key out, isolated), PTT / amp output fitted, rig audio pass-through kept (RX path normally
@@ -478,20 +159,6 @@ Option, not done: drag the divider on the display.
   (Stew's) not changed. Pi vs Windows differences seen: 0x0F SWR fault and 0x2E SWR meter reset
   (Pi ms-sdr only), 0x0B and 0x30 (Pi recv / trans only), 0x85 / 0x86 panadapter gain / base
   (Pi recv only).
-- **AM receive spectrum is 140 Hz low (Ron 2026-11-03). EDITED 2026-11-14 (Ron OK'd): `AM_OFFSET_RX` -12000 in Pi, Windows AND Debian ms-sdr `extern.h` (all three recv trees now have the AM lowpass, so the "not linux/" caveat below is old); Pi file copied to V:. Not built / tested yet; Makefile doesn't track headers, so main.c must rebuild.** On WWV
-  20 MHz in AM the carrier sits ~6 px left of the spectrum center line at 4x zoom (measured
-  157 +-15 Hz from a PNG; USB, LSB and CW are on center). Cause: ms-sdr sets the AM receive LO
-  with `AM_OFFSET_RX (-11860)`; every other mode, and AM transmit, uses -12000, and sdrcore-recv
-  always mixes down by exactly 12000 Hz. Likely reason Ron set 11860 years ago (he doesn't
-  remember; this is read from the code): the old AM filter was the SSB bandpass (Lo..Hi), which
-  blocks 0 Hz, so the carrier had to sit 140 Hz off. The sdrcore-recv 3.147 AM fix (c9850ca)
-  made AM a lowpass (0..Hi), so 11860 is no longer needed. Fix: one line,
-  `AM_OFFSET_RX (-11860)` -> `(-12000)`, in `rpi/ms-sdr-linux/source/extern.h:58` (Pi) and
-  `mscc-ui/windows-work-tree/ms-sdr-MKII/source/extern.h:47` (Windows ms-sdr; tell Stew). Don't
-  change it in the old trees (`linux/`, `Solidus/servers/`): their recv still uses the bandpass
-  for AM and would lose the carrier. Leave the PSoC `AM_OFFSET 11860` (`si5351.c`) alone unless
-  the PSoC turns out to set the LO in AM. Test: WWV in AM, carrier on the center line, audio
-  sounds the same.
 - **Waiting on Stew (list refreshed 2026-11-13 = the "With Stew" list in 08e53eb; notes in `.mscc-coord/`).**
   The 2026-11-01 list (14 items) was cleared: NB / spectral NR / NR Low-Med-High / heat sink / hard
   resets / client-gone fix / Windows SWR meter / radio cal read at connect were done by Ron 2026-11-10;
@@ -513,26 +180,6 @@ Option, not done: drag the divider on the display.
   39 wpm"); reviews of the Windows Operator's Guide / Configurations / Remote drafts
   (`NOTE-FOR-STEW-USER-DOCUMENTS-2026-11-01.md`); taking our SWR meter firmware changes into his
   copy (`NOTE-FOR-STEW-SWR-METER-FIRMWARE-CHANGES-2026-11-06.md`).
-- **Pi ms-sdr 3.194 (2026-11-06): radio calibration read retried at client connect, BUILT on the Pi
-  18:10 (~/mscc/ms-sdr), committed and pushed. Checked in the log 2026-11-08: PASSED** (one read at
-  startup 04:59: power 10 bands same, RX IQ 12 + TX IQ 10 from radio, no errors; the two later
-  client connects sent status only, no second read). New `Radio_cal_startup_load(who)` in
-  power_calibration.c (mutex + once-per-run flag, needs G_network_initialized): reload replaced
-  cal files, Radio_cal_load_power, Radio_cal_load_iq. Called from main.c at startup (replaces
-  the three calls) and in main-controller.c at client connect before Apply_Appliance_Startup.
-  Log line: `Radio_cal_startup_load . startup|client connect: reading the radio's calibration`.
-- **Pi ms-sdr 3.195 (2026-11-09, Ron: the one exception to the hold): pill counters in the
-  ms-sdr log. BUILT on the Pi 13:03, WORKS (Ron's mscc.ini has `PILL_STATS=1;`).** mscc.ini
-  `PILL_STATS=1` (default off) -> the temperature thread (every 3 s, STM32 radio only) reads radio
-  command 0xC9 (`RADIO_CMD_AUDIO_STATS`, read only, value 0; client 0xC9 = auto snap, no
-  conflict) and logs `Pill_stats. 10.0 min normal running, pill up .. h: in .. empty .. gaps ..
-  (max .. ms) in_drop .. out_under .. out_drop .. ep0_cut ..` (`<<<` on trouble, PILL RESTARTED
-  line). `Audio_stats_busy(why)` restarts the 10 min: SetHWLO_queue when the frequency changes
-  (TX on / off re-sends the same one; RIT / split keying does count), ModeChanged (incl. TUNE),
-  Session_Claim, Stop_all; new window only after 30 s quiet. Files: proficio-temperature.c,
-  extern.h, main.c, main-controller.c (Parse_mscc_record), version.h 195. First lines 13:14 and
-  13:24 clean. Ron (2026-11-09): gaps etc. during connect / band change / tune don't matter, only
-  normal running. Cron log still on. Docs: utility-scripts/Pi/README.md (audio-stats section).
 - **Pill audio stats logged by cron (2026-11-08).** `audio-stats.py log` (utility-scripts Pi +
   Windows, same file; Pi copy in ~/utils) adds one line to `~/.local/mscc/audio-stats.log`: change
   since the last run, servers up / DOWN / restarted, PILL RESTARTED; trouble ends in `<<<`. State
@@ -594,11 +241,6 @@ Option, not done: drag the divider on the display.
   stream is untouched. A gap alone loses nothing (pill sends the samples a frame later); only
   in_drop loses 1 ms of I/Q. Modes that would feel a drop: packet / VARA / ARDOP (frame resent),
   PSK31 / RTTY (maybe one character); FT8 / WSPR / SSB / CW: none.
-- **Ron 2026-11-08 22:20: the Black Pill (pill 3.13) is PRODUCTION READY.** Cron log, pill up
-  22.5 h: 17:50-22:10 local clean (idle receive, WSJT on); 22:10-22:20 FT8 on 30 m (~10
-  transmits) + 2 tunes: gaps 0, in_drop 0, out_under 4 = the 4 trans reopens (T/U mode commands),
-  host-side as above. No pill fault counted all day (ep0_cut, abandoned, slow, out_drop, resets,
-  hang record all 0). Left: the trans dual-stream no-reopen fix (after the hold). Cron log stays on.
 - **Pi ms-sdr Last_used.ini is dead (found 2026-11-08; Ron: leave it alone for now).** Every
   startup logs `Init_last_used_VFO_A/B . Open file failed. Last_used.ini will be created`; it never
   is. `Update_last_used_VFO_A/B` (`last_used.c`) never reaches its write (no "Open" line in the
@@ -609,118 +251,11 @@ Option, not done: drag the divider on the display.
   (same thread, `Update_Startup`) IS used and written. Option for later (after the hold): drop
   the Init calls and the Last_used.ini write, keep startup.ini. Heat sink -40 C / OPEN in the
   log = thermistor removed (Ron), expected.
-- **Setup 3 (Ron's station), Configurations draft item: ANSWERED 2026-11-03, draft updated (DRAFT box + Appendix A item 2 removed).**
-  Read on the Pi: ms-sdr CAT /dev/tnt0, WSJT-X /dev/tnt1 (pair), Rig Kenwood TS-2000, PTT RTS on tnt1;
-  MSCC plays VirtualA -> WSJT-X in VirtualA.monitor; WSJT-X out VirtualB -> MSCC VirtualB.monitor; Mono.
-  Ron: nothing set in the Windows client for COM ports or audio; mscc-init on the Pi sets them, and the
-  Phones devices too. Unknown: VirtualA_TX / VirtualB_TX exist on the Pi, unused by these settings.
 - **Rules (Ron 2026-11-01):** assume Stew makes MSCC UI (Avalonia) match the current Windows client,
   and the Ubuntu scripts/utilities match the Pi. No separate Avalonia review; document the Pi
   versions for both Linux hosts. Linux guide Release 0 reviewed (old versions, Appendix G Pi install
   wrong for today's kit, cal now in the radio).
-- **2026-11-01: Linux guide rewritten: `docs/manuals/MSCC-Operators-Guide-Linux-Release-1-DRAFT.docx`**
-  (39 pages, Word, Pi + Ubuntu as one, Pi kit = standard, MSCC UI = Windows client). Built from
-  scratchpad build_linux.py (session-only; edit the .docx from now on). Release 0 WSJT-X audio was
-  backwards: correct = Input VirtualA.monitor, Output VirtualB (also fixed in Configurations setup 4).
-  11 draft items (Appendix C). In the note for Stew (Linux guide section).
 - **Next:** a Pi / Linux remote guide, when Ron says.
-- **Remote audio summary for Stew (2026-11-05, pushed 6c8db8a): `mscc-remote-audio/REMOTE-AUDIO-WHAT-WE-KNOW.md`.**
-  Plain English (Ron: the first version "was written for a machine"). Why: Stew was being led to
-  redo remote audio; Ron: Pi host -> WPF Windows client works fine, same server code on every host.
-  Stew mixes up which way round (host = has the radio + servers, client = where you sit); the file
-  asks him to name both. Ron's device model (corrected me): VirtualA / VirtualB belong to the
-  SERVERS (local Digital, WSJT-X on the same computer), not the remote client. Remote client:
-  Remote Phones = real speaker + mic; Remote Digital = client <-> virtual sound device <-> WSJT-X
-  (Stew: VB-Audio; Ron: two USB adapters back to back). Linux client: PipeWire null sinks
-  `MSCC_Remote_RX` (client plays, WSJT-X input = MSCC_Remote_RX.monitor) and `MSCC_Remote_TX`
-  (WSJT-X output, client input = MSCC_Remote_TX.monitor), made at login by Ron's mscc-avalonia
-  since 1.6.84 (2026-11-06, see the Avalonia item below). The first proposal (`mscc_remote_rx`
-  "MSCC Remote RX") crashed PortAudio: name and description must be the same. Open (Stew's
-  mscc-ui, fixed in Ron's copy 1.6.80): Avalonia doesn't save the Remote device choices or
-  Phones (reverts to one shared device; maybe the spectrum noise, a guess). Stew asked to add his VB-Audio setup to the file. Still to correct (proposed, not
-  approved): the 11-01 user-documents note and the Remote guide say "Pi / Linux remote works
-  differently"; the remote-audio part is the same on every host.
-- **Ron's Avalonia client copy (2026-11-05/06, pushed 24d8738 = 1.6.79): `worktrees/Avalonia`, Pi
-  package `mscc-avalonia` 1.6.89 installed on the Pi (2026-11-07).** Copy of Stew's
-  `mscc-ui/Avalonia-Migration` 0.6.75 with its own `src/MSCC.Core` copy. Version 1.x (Ron) vs
-  Stew's 0.6.x. **Since 2026-11-13 (Ron):** WPF and this Avalonia are kept at par both ways (Ron
-  works in WPF too; see the shared `CLAUDE.md`); Stew's `mscc-ui/Avalonia-Migration` is no longer
-  kept up to date and will be deleted. Building WPF copies into `C:\mscc-net9` (CopyToMsccNet9).
-  Installs beside Stew's mscc-ui 0.6.31: /opt/mscc-avalonia, /usr/bin/mscc-avalonia, menu
-  "MSCC Avalonia". Build `Avalonia/build-mscc-avalonia-deb.ps1` (bump Version in the csproj and
-  `packaging/mscc-avalonia/DEBIAN/control`), deb to installers/rpi + Pi ~; publish/ and *.deb not
-  committed. Own settings `~/.config/MSCC-Avalonia/mscc-avalonia.ini` (seeded once from the shared
-  file); reads only a copy of `~/.local/mscc/*.ini` the launcher makes at each start
-  (`~/.config/MSCC-Avalonia/host/`); never writes mscc.ini (on the Pi it is ~/.local/mscc/mscc.ini).
-  Still shared with Stew's client: favorites and last-used files (Ron thinking about it).
-  Ported from WPF 11.1.5: ALC button removed, 2 TONE, TX IQ PHASE, cuts at connect, QRP save step +
-  0x2D lamps, SAVE / APPLY ALL labels, FREQ CAL note + 4x, SMOOTHING + Falling waterfall, SWR meter
-  (FWD face, fault RESET, settings), TIME DISPLAY + TIME MARKER, PEAK MARKER, dB LABELS, AUTO SNAP,
-  BASELINE / WF GAIN / WF ZERO per band. Also: window size / position remembered, own resize grips
-  (the Pi's Openbox runs ~/.config/openbox/rpd-rc.xml = theme only, no side handles).
-  Not ported: Reset configuration, identity request, RF power report. **Not tested on the air yet**
-  (2 TONE, PHASE, QRP save, SWR meter, smoothing).
-  **2026-11-06, Remote Digital on the air (1.6.80 to 1.6.86): Windows host (servers on Ron's PC),
-  Avalonia + WSJT-X on the Pi, two FT8 QSOs.** Stew to check the RF (Ron can't see it).
-  1.6.80 Remote devices saved by name ("Name|HostApi"), Phones and Digital separately
-  (REMOTE_PLAY_NAME, REMOTE_MIC_NAME, REMOTE_DIGI_PLAY_NAME, REMOTE_DIGI_MIC_NAME); before, Digital
-  always went back to VirtualA / VirtualB.monitor and Phones kept a PortAudio index that shifts.
-  1.6.81 Remote CAT watches the line in comm-port.ini PIN= (1 = CTS = WSJT-X RTS, 2 = DCD = DTR)
-  every 10 ms and keys like CAT TX; (ms-sdr Pin_Check_Thread does the same locally). WSJT-X PTT =
-  RTS or CAT both work. Linux raises RTS when a port opens: watch for a short key at WSJT-X start.
-  1.6.82 Digital default mic = MSCC_Remote_TX.monitor (PortAudio lists the internal name, not
-  "Monitor of ..."); Remote window 520x720 with the log always visible; closing the main window
-  closes the Remote window and exits (ShutdownMode OnMainWindowClose).
-  1.6.83 / 1.6.84 installer: user service `mscc-avalonia-remote-audio.service` (systemctl --global
-  enable) runs /usr/share/mscc-avalonia/bin/mscc-avalonia-remote-audio.sh (pactl null sinks,
-  name = description, 48 kHz, leaves existing ones alone). 1.6.83 also put ALSA names in
-  /etc/alsa/conf.d; the Pi has no pipewire-alsa, so they were broken and a same-named ALSA
-  MSCC_Remote_TX hid the real one from WSJT-X. Removed in 1.6.84 (postinst deletes the file).
-  1.6.85 Remote Phones / Digital choice saved (REMOTE_DIGITAL). 1.6.86 title bar version from the
-  build (was a hard-coded 0.6.75). 1.6.87 (2026-11-07, works, Ron): keep-alive lost pop-up as WPF
-  ("MSCC - Server Not Responding", Yes = wait again, No = close MSCC, X = Yes); before, only status text. 1.6.88 (2026-11-07, Ron: "Much better"): spectrum draws every frame
-  (SpectrumRefreshDivisor 3 -> 1); at 3200 bins ~12 frames/s arrive (99 pkts/s, 8 per frame), it drew ~4/s. 1.6.89: spectrum banner
-  ("Center ... MHz | bins | zoom | click to tune", from Stew's Avalonia, not in WPF) removed: covered the pass band.
-  Learned: Avalonia's Remote Digital needs PTT from WSJT-X (CAT or RTS); there is no VOX. WSJT-X on
-  the Pi (Qt5, PulseAudio plugin): Input MSCC_Remote_RX.monitor, Output MSCC_Remote_TX, Rig
-  TS-2000, Serial /dev/ttyUSB11 (= tnt1; Avalonia holds tnt0). The pair comes back by itself
-  after a Pi reboot (Ron checked). Windows ms-sdr stops all servers ~45 s after the
-  client leaves (Flusher_thread "Client FAILED" falls through to Stop_all; the Pi sets
-  servers_failed = 0). Start the Windows servers again before each connect. Note for Stew (list item 11):
-  `.mscc-coord/NOTE-FOR-STEW-WINDOWS-MSSDR-CLIENT-GONE-2026-11-06.md`. Pi ms-sdr PIN=2
-  (DCD) never keys: it checks fDCD, which is never set (only fRLSD is read).
-- **2026-11-01: Pi ms-sdr 3.187: WiFi SWR meter fault to the client, BUILT on the Pi 15:35 (~/mscc/ms-sdr),
-  NOT committed, running only after mscc stop/start.** Meter is UDP unicast: at a Pi station it talks
-  to ms-sdr only, which relayed SWR/FWD/REF but never the fault (client got Fault=false; the 0x30
-  "SWR METER FAULT" text is dropped by the client). New extended sub 0x0F CMD_SET_SWR_FAULT:
-  [fault][online][meter IPv4 4 bytes], sent at once on a fault change, with each update (<= 2/s),
-  and offline; not gated by SWR_METER_TO_GUI. Files: swr_wifi_meter.c, usbavrcmd.h, version.h (187,
-  synced back from the Pi). Client side = Stew: `.mscc-coord/NOTE-FOR-STEW-SWR-FAULT-TO-CLIENT-2026-11-01.md`.
-  Windows ms-sdr has no meter code (client listens directly there).
-- **2026-11-01 17:00: Pi ms-sdr 3.188 + trans 3.150 BUILT and RUNNING on the Pi (Ron restarted, old client 10.31.x, no calibration until 11.1.0;
-  committed): port of Stew's Windows round 1 (ms-sdr 3.189 / trans 3.154 / client 11.1.0, 49d8c90).**
-  0xA2 slider = live only; 0xA2 | 0x8000 (POWER_CAL_SAVE_FLAG) = save: ms-sdr writes the radio, trans
-  writes power_cal.ini (trans reads the flag from buf[2] bit 7; value stays buf[1]). Startup copy from
-  the radio to trans sent WITH the flag. New 0x2D CMD_SET_CAL_STATUS ms-sdr -> client: int32 kind (1 RX
-  IQ, 2 TX IQ, 3 power) | flags<<8 (bit0 store) | mask<<16; sent at Session_Claim, end of
-  Radio_cal_load_iq, after each radio write (masks reread). Includes the 3.187 SWR fault (0x0F).
-  **Needs client 11.1.0** (old client never sends the save flag = QRP cal not saved). New trans with an
-  old ms-sdr never saves power_cal.ini (Stew's trans comment says otherwise; code saves on flag only).
-  Files: ms-sdr power_calibration.c, main-controller.c, usbavrcmd.h, extern.h, swr_wifi_meter.c,
-  version.h (188); trans udp_thread.c, extern.h (150).
-- **2026-11-01 19:41: Pi trans 3.151 (2 TONE, port of Stew's Windows 3.155 on 0x88) + ms-sdr 3.189 (0x2E
-  CMD_SWR_METER_RESET: client RESET -> HTTP reset to the meter in a detached thread) BUILT on the Pi, NOT
-  running until mscc stop/start, NOT committed.** Stew pulled 11-01: client 11.1.5 (0x0F handled, installer
-  R11-1-5), Windows trans 3.157 (2 TONE + voice ALC 0.89; 0.45 was a bad StarTech USB card). Note:
-  `.mscc-coord/NOTE-FOR-STEW-2TONE-PI-AND-0x2E-2026-11-01.md`. Running since 19:46. **Fault test PASSED 19:51
-  (Ron, client 11.1.5):** meter fault latched -> client showed fault + RESET, Ron pressed the RESET
-  button ON THE METER ITSELF (corrected 2026-11-03; this line used to say the client's RESET) -> meter
-  cleared, ms-sdr relayed it. The client's own RESET was first tested 2026-11-03 (client HTTP straight
-  to the meter, after fixing a typo in MSCC_Client.ini SWR_HF_IP=192.156.12.222 -> 192.168.12.222): worked.
-  Not tested yet: client RESET from a remote client (Tailscale) - the client sends the reset straight
-  to the meter's LAN IP, and doesn't use ms-sdr's 0x2E reset yet. **2 TONE PASSED 20:12 (Ron, 20 m USB, full power; button is on the RX/TX tab;
-  panadapter stops in TX so tones/IMD not seen).** Note: `NOTE-FOR-STEW-2TONE-PI-TESTED-2026-11-01.md`.
-  Open: 0x2E RESET path (needs Stew's client send).
 - **SWR meter firmware (Ron 2026-11-01):** auto-tune on 30 m runs longer than the meter's time limit, so
   the meter faults. Firmware source is NOT in the tree (only swr-meter/ Python app + summary); Ron asks
   Stew to add it. 11-01 evening tests: trips ~1 s into a 15 m auto-tune (tune power 43: fwd 61 ref 25.00
@@ -781,26 +316,6 @@ Option, not done: drag the divider on the display.
 Old history (resume points before 2026-10-31 afternoon, dated change logs, closed items) is
 in `rpi/CLAUDE-history.md`. Grep it for earlier work on a topic; don't read it whole.
 
-**2026-10-31 (16:39-16:43 local): LSB filter fix CONFIRMED on Ron's rig (client 10.31.1, Pi recv 3.150).** recv log: in LSB, USB and AM every LO CUT press arrived (75 / 100 / 200 / 300 / 500) and every HI CUT press (5500 / 2400 / 2700 / 3000 / 4000), each cut moving alone. Ron: LSB and USB on an AM station now sound the same. LSB / USB recheck CLOSED. Open: Ron's I/Q test (TX I/Q from CW, PHASE slider, APPLY; server code ms-sdr 3.185 / trans 3.147 / recv 3.150 not committed until then); SSB voice / ALC meter test.
-**2026-10-31:** Ron will do the TX I/Q test later (needs setting up). Test: (1) CW mode, start TX I/Q calibration on a band: it must transmit; (2) move PHASE: phase changes; (3) APPLY; (4) Claude checks ms-sdr.log for `Radio_cal_store_iq ... queued` then `Radio_cal_send_iq ... sent`. Then commit ms-sdr 3.185 / trans 3.147 / recv 3.150.
-**2026-10-31 (12:56 local): Pi ms-sdr 3.186 = power start order as Windows 3.185 (built, running, NOT committed, goes with the I/Q-in-radio port after Ron's TX I/Q test).** `Radio_cal_load_power`: bands the radio does not hold now KEEP the power_cal.ini value (before: factory value, which overwrote a calibrated file on the first start with a radio holding nothing). Radio values still win where held. `Factory_power_cal_values()` no longer called (left in factory_seed.c, as Stew did). Log on Ron's rig: 160-10 m `radio N, file N, same`, 630 / 2200 m `not in radio, file 0 kept`, 0 changed; I/Q 22 bands from radio; no errors. Stew's open item #3 (power start order) DONE on the Pi. Pi now: recv 3.150, trans 3.147, ms-sdr 3.186, pill 3.12.
-**2026-10-31 (13:00-13:10 local): recv NR (noise reduction) found defective; Ron: replace it with a spectral-subtraction NR (option B), PARKED for now.** Ron: "the audio becomes really distorted" with NR on. Code: `denoise()` in `SDRcore-recv-linux/sources/dsputils.c` = LMS adaptive line enhancer at 96 kHz after the AGC (48 taps, 32-sample delay, mu 0.002, wet 0.35-1.0 by level, step normalised by ONE sample's power averaged over ~12 samples, no leakage, no output limit). Measured: Ron listens on Remote Phones (UDP to the PC, port 9100, 48 kHz mono s16 after a 16-byte "MSA1" header; local C-Media output is muted then, so recording its monitor gives silence). Captured with `sudo tcpdump -i any -w X.pcap "udp dst port 9100"` and decoded (scratchpad pcap2wav.py). Fair A/B on one rag chew, NR toggled during a 21 s capture (recv log times are UTC): with NR ON (level 50) a ~3.8 kHz whistle at the top of the 4 kHz filter (strongest component every second), >3 kHz energy from about -15 dB to -4 dB of total, peaks 0.33-0.37 vs 0.20 off (0.366 repeated = clipping), speech band 300-1000 Hz down up to 10 dB. Cause: the ALE boosts anything correlated over the delay; noise through recv's sharp audio filter is strongly correlated at the filter edge -> whistle; per-sample normalisation over-corrects at quiet moments -> overshoot / spikes. A Python copy of the algorithm on an upsampled NR-off capture did NOT reproduce it (the earlier NR-on / NR-off captures were at different moments; only the same-moment A/B shows it). Options: A = repair (NLMS over all taps, leakage, output never above input), B = replace with frequency-domain spectral subtraction (as most SDRs). **Ron chose B, parked.** When done: same change in the local copy (sync rule), Stew's Windows recv likely has the same NR, retest with the same A/B capture.
-**2026-10-31 (13:15 local): recv NB (noise blanker) checked: WORKS, makes no ticks of its own.** Same Remote Phones A/B capture (21 s, NB toggled; switch times from recv log `CMD_GET_SET_NB_ENABLE`), ticks = samples far outside their 10 ms neighbourhood after a first difference (scratchpad ticks.py): NB off 3.8 ticks/s (biggest 18-415x local, usually 30-50x), NB on 1.1/s (12-22x), two seconds with none; ticks back at once each time NB went off (real band impulse noise, irregular spacing 14 ms to hundreds of ms); no clicks at the switch moments; threshold 0.00999 throughout (3.147 thread fix holds). Ron finds NB hard to adjust. Why (blanker.c): threshold is an ABSOLUTE amount above the running envelope (envelope + threshold), so the same setting means different things on quiet / noisy bands; the envelope attack / release is 0.05 ms, so it nearly follows the pulse itself; no feedback on what it does; width is in raw 96 kHz samples (30 = 0.3 ms). **PARKED (Ron): automatic NB.** recv only: running level + spread over ~50-100 ms, blank only short samples far outside the spread (~5-6x), self-protection (less sensitive if blanking more than ~100/s); NB = on/off for the user (threshold knob could become Low / Medium / High: Stew). Includes "relative threshold" and "slower envelope"; pulse blanking (gain ramp) unchanged. Optional "blanking meter" (recv sends blanks per second, client shows it) needs Stew. When done: same change in the other recv copy, retest with the tick capture.
-**2026-10-31 (evening): SSB / WSJT output power low (about 40 W of 100), fixed in trans 3.149 (BUILT on the Pi over ssh, NOT committed).** Cause: the 3.146 ALC ceiling 0.45 x drive (from Stew's Windows 3.149) held peaks to 0.45 / 0.8 (TUNE level) = about 32% of TUNE power. `ALC_CEILING` moved to `extern.h` (udp_thread.c CMD_SET_ALC_MULTIPLIER uses it, was a hard 0.45). 3.148 = 0.80: WSJT tone 89 W vs TUNE 109 W (ATU-100); 3.149 = 0.89: 95 W (PA near compression). Ron then recalibrated power (QRP and QRO): output power now right. Open (Stew, Ron 2026-10-31: no SSB voice test by Ron): SSB voice + splatter check on his analyzer with the 0.89 ceiling (ask, worded as a question).
-**2026-10-31 (22:30): TX I/Q test PASSED (Ron).** CW, PHASE slider 11 -> 1 (TX), APPLY: ms-sdr.log (~/.local/mscc/ms-sdr.log) `Radio_cal_store_iq . TX band 4: offset -26, phase 1 (queued)`, 10 s later `Radio_cal_send_iq ... sent (radio stores it)`, client read back phase 1, no errors. Server code committed (ms-sdr 3.186, trans 3.149, recv 3.150), not pushed. Ron's open list is now empty; SSB voice + splatter check is Stew's.
-**2026-10-31 (late): one ALC ceiling for voice and digital (Ron).** Stew's Windows trans 3.152 (e7e4056) uses 1.0 x drive for digital, 0.45 for voice. Ron: WSJT and voice are both just audio feeding the rig; the ALC only stops overdrive, so the ceiling = full calibrated power and mic gain sets the drive. Pi stays on 3.149 (0.89 for both; a 3.150 port of Stew's split was made and undone, never built). Note for Stew: `.mscc-coord/NOTE-FOR-STEW-ALC-ONE-CEILING-2026-10-31.md` (question + options, asks for a 0.89 voice check on his Signal Hound).
-**2026-10-31 (late night): NR replaced (option B), recv 3.151, BUILT on the Pi over ssh 23:16 (~/mscc/sdrcore-recv, no warnings), NOT COMMITTED. ssh from git-bash can't resolve `proficio`; PowerShell `ssh -i $HOME\.ssh\proficio_ed25519 ron@192.168.12.199` works.** `denoise()` in dsputils.c = spectral subtraction: 2048-pt FFT at 96 kHz (21 ms, 47 Hz bins), 50 % overlap, sqrt-Hann, per-bin noise = smoothed power min-tracking (rises 3 dB/s), Wiener gain with decision-directed SNR (anti musical noise), gain 0..1 only (never louder). Level 1..100: floor -6..-20 dB, oversubtraction 1..2. Passes audio unchanged for the first ~0.1 s after ON. Adds 21 ms delay while ON. `nr_delay()` removed. Offline test (scratchpad nrtest/t.c, white noise + 1 kHz tone 0.3 s on/off): noise-only -5.8 / -12.1 / -17.3 dB at level 1 / 50 / 100, tone kept (corr 0.98-1.00), output peak never above input. On-air A/B 23:25 local (40 m rag chew, level 50, NR toggled 3x in a 39 s Remote Phones capture, scratchpad nrtest/nrab.py): background between words -40.8 -> -53.6 dB (about -12.7 dB, as the offline test), talk level -29.6 -> -30.7 dB (about 1 dB less), talk-to-gap 11 -> 23 dB, >3 kHz share -13.6 -> -19 to -23 dB, peaks 0.07-0.10 on vs 0.11-0.20 off (no overshoot / clipping), no whistle (top tone 316-469 Hz = voice). Ron: "just a touch of warble, not bad ... much better than it was". 3.151 stays on the Pi. PARKED (Ron): warble fix = smooth the gain over neighbouring bins (+/-2 bins, ~+/-100 Hz), floor unchanged; alt: higher floor. Committed and pushed with note for Stew `.mscc-coord/NOTE-FOR-STEW-RECV-NR-SPECTRAL-2026-10-31.md` (Windows recv has the identical old ALE). Windows recv (mscc-ui/windows-work-tree/SDRcore-recv) has the same old ALE -> note for Stew after the on-air test.
-**Resume point 2026-10-31 (night), the list:** Pi runs recv 3.150, trans 3.149 (ALC ceiling 0.89, voice and digital), ms-sdr 3.186, pill 3.12 (22 I/Q bands stored). All server code committed and pushed (1e3ecb4, note 836c33f); local `rpi/si5351-drive.md` edits not needed (Ron 2026-10-31: pill runs fine), left out. Ron's open list: empty (TX I/Q test passed, power fixed). Parked: (3) NR: DONE as recv 3.151 (spectral subtraction, on the Pi); warble tweak (gain smoothing across bins) parked; (4) automatic NB (blanking meter optional); (5) sync AM (off the list); (5a) Windows Operator's Guide rebuild: the 60-page PDF reads out of order and mixes terms; no editable source in the repo. Proposed order: what MSCC is + glossary, before you start, install and first start, operating, calibration as one chapter (APPLY stores I/Q in the radio), settings, digital modes, appendices. Open questions: Windows guide first? write it for the client as it is, with a note to Stew about confusing names? Stew: (2) SSB voice + ALC meter on the air, splatter check with a 0.89 ceiling; (2a) one ALC ceiling question (NOTE-FOR-STEW-ALC-ONE-CEILING-2026-10-31.md); (6) blanking meter / NB Low-Med-High display if wanted; (7) heat sink temperature 0x06 in the client; (8) Pi-side ports noted in his CLAUDE.md, new scripts into utility-scripts.
-
-**2026-11-01: Windows Operator's Guide reviewed in full (high effort): `rpi/GUIDE-REVIEW-WINDOWS-2026-11-01.md`** (read it, not this line). Main points: cal now lives in the radio (QRP / TX IQ / RX IQ), so the Save settings text is wrong; TX IQ RESET ALL and Reset configuration don't stick (radio values win at next start: Stew code issue); TX IQ PHASE missing; RX IQ RESET ALL is now APPLY ALL; POTENTIA / QSK described wrongly (Ron's 9/29 text never applied); firmware table old; pictures have no number callouts; source (WeasyPrint HTML/MD) not in repo, ask Stew. Not committed.
-**2026-11-01: new Windows guide written (Ron chose Word): `docs/manuals/MSCC-Operators-Guide-Windows-Release-1-DRAFT.docx`**, 43 pages, for client 10.31.2, reorganized as in the review (sections F), pictures reused from the Release 0 PDF, control lists keyed by the printed label (no number callouts needed). Gray DRAFT boxes + Appendix C list what to confirm (firmware table, cal survives FW update, ALC target, Windows NR, reset-to-factory, AMP CAL target) and pictures to retake. Built with python-docx from a light-markup text (scratchpad, session-only); from now on edit the .docx itself. TOC prefilled from a LibreOffice render; Word asks to update fields on open (Yes). Not committed.
-
-**2026-11-01: automatic NB, recv 3.152, BUILT on the Pi (last build 08:53, copied to V:), committed and pushed with notes for Stew.** Files: `SDRcore-recv-linux/sources/blanker.c` (rewritten), `sdrcore.h` (blanker_state), `extern.h` (3.152). No client / ms-sdr change: NB button = on/off; threshold slider = sensitivity K 4 (slider max) .. 8 (slider min), default 6 (Ron's slider sat at min -> K 8); width as before. Pulse = |I/Q| > K x running mean (2 ms, pulses left out); a "pulse" longer than the width (max 2 ms) is a signal: un-marked before the gain falls (delay = width/2 + max pulse, 0.47 ms at width 30). Gain: 0 within +/- width/6 of any pulse sample, raised-cosine back to 1 at width/2 (no restart jump). Self-protection: >400 pulses/s raises K (up to 4x), <200/s lowers it. 50 ms learn after each (re)start. Log every 10 s while on: `Blanker . N pulses/s, K ...`. Offline test (scratchpad nbtest/t.c, WSL): noise only 0 false at K 6 / 8 (1.3/s at K 4); 30x pulses -27 dB at K 6; 40 dB SSB with instant start 0 false at K 6 (first version locked up: 60 % blanked; fixed). Next: build on the Pi, Ron listens, tick capture A/B (scratchpad ticks.py from 10-31 is gone; redo). On-air 08:30 (20 m USB, K 5.95, width 40, NB toggled): ticks >18x only with NB off (28-58x), NB on 0.8/s max 18x vs off 1.2-1.5/s; blanker 1-2 pulses/s; no holes. Slider test 08:34: every step restarted the blanker (ring zeroed = up to 4 ms silence at width 400): fixed 08:38, slider steps keep level and audio (K only = no change; width = ring resized, oldest dropped or oldest stretch repeated); log `Blanker . setting: K, width`. Offline 69 steps, 0 holes. Width now read as MICROSECONDS (client slider 10..510 is labelled uS; recv used samples = 10.4x longer, up to 5.3 ms); 200 us default; built 08:42. Threshold range unchanged (K 4..8, Ron OK). Note for Stew: Windows recv also reads width as samples. On-air 08:47 (200 us, K 6): big clicks (>25x) off 0.41/s, on 0.05/s (~9 of 10 removed); one 54x passed with NB on, cause unknown (too long >0.2 ms / busy band, mean 9x higher than 08:18 / not noise). Built 08:53: log counters per interval + summary when NB turned off: `N pulses/s (biggest Nx), too long N/s (biggest), near N/s (0.67K..K, biggest)`. Decide fix from data (maxrun fixed 1 ms if too long; linear-prediction detector if busy band). Ron to restart MSCC. On-air 08:55 (60 s NB on, 200 us, K 6): no audio tick >26x, blanked 1-2/s (biggest 50-78x), too long 0 in every interval (cause 1 ruled out, maxrun change not needed), near 0.3-3/s at 5.4-6.0x (option: threshold to ~5x). Notes for Stew: `.mscc-coord/NOTE-FOR-STEW-RECV-NB-AUTOMATIC-2026-11-01.md` (port blanker.c + sdrcore.h; client questions: Pulse min 50 us, threshold Low/Med/High = 1/500/750, 1001..1009 oddity, send NB state on connect) and `.mscc-coord/NOTE-FOR-STEW-NR-LOW-MED-HIGH-2026-11-01.md` (NR slider -> Off/Low/Med/High = 0/15/50/85, client only). NR warble fix: Ron 2026-11-01 leave it (NR works well; lower level = less warble). Then a note for Stew (Windows recv, maybe Low/Med/High labels).
-
-**2026-11-01: Remote guide rewritten (Word, same style as the Windows draft), WINDOWS ONLY (Ron: Windows client + Windows servers; Pi/Linux remote differs and needs its own guide, not written yet): `docs/manuals/MSCC-Operators-Guide-Remote-Windows-Release-1-DRAFT.docx`**, 20 pages, client 10.31.2, server names as Windows .exe; session lock and ports also checked in Windows ms-sdr-MKII / SDRcore-recv / SDRcore-trans; pictures from the Release 0 PDF. Corrections from code: Phones / Digital chosen inside the Remote Audio window (main-window Phones / Digital turn Remote off); Remote off at each start; one client at a time (ms-sdr session lock, freed by Stop or ~45 s); Remote Digital CAT = client SETTINGS COM Port; closing the window keeps audio. 7 DRAFT items in Appendix C (Windows-host steps with the session lock, ipconfig picture, fixed host address, what a refused client shows, retake chapter 3 pictures, mic-level wording vs Windows ALC 0.45, WSJT-X audio picture). Built with python-docx from the Windows draft (scratchpad, session-only); edit the .docx itself from now on. Not committed.
-
-**2026-11-01: `docs/manuals/MSCC-Configurations-DRAFT.docx` (13 pages, Word, same style): client-server explained (ch 1: client, the 3 servers, ship bridge / engine room picture, always client-server even on one PC per Ron), then the five setups in plain English** (Ron): 1 Windows local, 2 Windows client PC1 + Windows servers PC2, 3 Windows client + Pi/Linux servers, 4 Pi/Linux local, 5 Pi/Linux client + Pi/Linux servers. Each: diagram, who for, what runs where, client settings, audio, digital programs, which guide. Key rule (Ron): Windows host = client owns the COM port (SETTINGS → COM Port; setup 2 WSJT-X on the client with Remote Digital); Pi/Linux host = host owns everything (mscc-init sets COM ports /dev/tnt + audio, WSJT-X runs on the Pi, reached by VNC; Windows client only operates + Remote Phones). 4 DRAFT items (setup 2 host keeping servers alive; setup 3 mscc-init port/device names + what the client does for Pi digital audio; setups 4/5 MSCC UI steps, wait for the Avalonia review). Next (Ron): the Avalonia client, then a Pi/Linux remote guide. Not committed.
-**2026-11-06: Configurations draft, setup 6 added (Ron: "looks fine"):** Pi / Linux client + Windows host (section 3.6, diagram, DRAFT box: tested with MSCC Avalonia 1.6.86, MSCC UI 0.6.x lacks the devices / saved choices / RTS, Windows servers stop ~45 s after the client leaves). "five" -> "six" throughout, 2.1 table row, 2.2 sentence, chapter 4 column 6, Appendix A item 2. Edited with python-docx (no Word on this PC); LibreOffice users: Tools > Update > Update All for the contents page numbers.
 
 ## Architecture (per Ron)
 
