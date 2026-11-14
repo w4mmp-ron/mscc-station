@@ -356,6 +356,7 @@ int write_to_comm_port(uint8_t* buffer, int size) {
 int parse_record(char *receive_buffer, int size) {
     int status = TRUE;
     char *record_start = NULL;
+    const char *tx_form = "TX;";
     char *data_record_end = NULL;
     int index = 0;
     int freq_index = 0;
@@ -668,7 +669,12 @@ int parse_record(char *receive_buffer, int size) {
         fprintf(G_fp_logfile, "[%d] parse_record. RX Received.\n", line_number++);
     }
 
+    /* Kenwood TX;, TX0; (send, mic) and TX1; (send, data port) all key the same way:
+       the transmit audio source stays the one the client chose. */
+    tx_form = "TX;";
     record_start = strstr(receive_buffer, "TX;");
+    if (record_start == NULL) { tx_form = "TX0;"; record_start = strstr(receive_buffer, "TX0;"); }
+    if (record_start == NULL) { tx_form = "TX1;"; record_start = strstr(receive_buffer, "TX1;"); }
     if (record_start != NULL) {
         command = TX;
         write_buffer[0] = 'T';
@@ -680,7 +686,7 @@ int parse_record(char *receive_buffer, int size) {
         Set_PTT(tx_mode,FALSE);
         Gui_send_param(CMD_SET_TX_SET_BY_SERVER, tx_mode);
         print_time(0);
-        fprintf(G_fp_logfile, "[%d] parse_record. TX Received.\n", line_number++);
+        fprintf(G_fp_logfile, "[%d] parse_record. TX Received (%s).\n", line_number++, tx_form);
     }
 
     /* Kenwood AC111; = start tuner (hamlib RIG_OP_TUNE). No reply; first starts, next stops. */
