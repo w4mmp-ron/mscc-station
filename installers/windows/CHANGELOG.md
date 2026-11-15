@@ -2,6 +2,12 @@
 
 Installer: `mscc-net9-R<version>-install.exe` (WPF client + Windows servers). Install the newest one; older installers in this folder are kept for roll-back only.
 
+## R11.14.3 — 2026-11-14  (`mscc-net9-R11-14-3-install.exe`, title bar 11.14.3)
+
+### Fixed
+- RX I/Q calibration: ending a session (leaving the RX IQ tab, pressing START again, disconnecting or closing) now tells recv to forget the band, so later I/Q changes can't land on that band without pressing RX IQ START first. recv 3.155 also forgets it when you change band.
+- ms-sdr 3.213 and trans 3.159 unchanged.
+
 ## R11.14.2 — 2026-11-14  (`mscc-net9-R11-14-2-install.exe`, title bar 11.14.1)
 
 ### Fixed

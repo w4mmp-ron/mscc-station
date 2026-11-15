@@ -5233,6 +5233,12 @@ public partial class MainViewModel : ViewModelBase, IDisposable
             _suppressRxIqFreqTune = false;
         }
 
+        // 0x58 band 0 = no band: recv forgets the RX I/Q band, so later I/Q changes are ignored
+        // until the next START (as WPF, Ron 2026-11-14).
+        if (_radio != null)
+        {
+            try { _ = _radio.SetIqBandAsync(0); } catch { /* ignore */ }
+        }
         RxIqStatus = $"Session ended ({reason}). Press START to re-enter.";
         AppendLog($"RX IQ LEAVE ({reason})");
     }

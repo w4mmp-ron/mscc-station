@@ -1261,6 +1261,13 @@ void *UDP_Thread(void *my_param) {
                 if (previous_operating_band != operating_band) {
                     /* Band change always implies large LO / filter step — blank spectrum */
                     Trigger_Panadapter_Pause(PAN_PAUSE_LARGE_LO_FRAMES);
+                    /* RX I/Q calibration band ends with a band change (set again by RX IQ START). */
+                    if (iq_band != NO_IQ_BAND) {
+                        print_time();
+                        fprintf(G_fp_logfile, "[%d] UDP Thread. CMD_SET_SDR_CORE_BAND. IQ band %d cleared\n",
+                                line_number++, iq_band);
+                        iq_band = NO_IQ_BAND;
+                    }
                     Init_IQ_structure();
                     switch (operating_band) {
                         case 2200:

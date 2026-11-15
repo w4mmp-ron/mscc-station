@@ -75,11 +75,6 @@ Git repo root: `C:\Users\Ron\.grok\worktrees`.
 
 Finished entries (releases R11-10-14 to R11-14-2, done work, old resume points) moved to `rpi/CLAUDE-history.md` on 2026-11-14 (last section there).
 
-- **RX IQ START order fixed (client):** WPF `StartRxIq` and Avalonia `StartRxIqAsync` now send
-  0x55 RX before 0x58 band (ms-sdr iq.c routes 0x58 by the last 0x55; band first after a TX I/Q
-  session took the TX path: retune to the TX cal freq + trans TUNE). WPF 11.11.1, Avalonia
-  1.6.95 (csproj + DEBIAN/control), both built, not tested on the rig. Test: TX I/Q cal, then
-  RX IQ START: rig stays on the receive freq, trans not in TUNE.
 - Stew note `.mscc-coord/NOTE-FOR-STEW-RX-IQ-TOOLS-2026-10-14.md`: option 4 (client AUTO
   button) removed (Ron).
 **Current list (updated 2026-11-06, after bb31561):**

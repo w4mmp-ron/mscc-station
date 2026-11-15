@@ -4430,6 +4430,9 @@ public partial class MainViewModel : ObservableObject, IDisposable
             _suppressRxIqOffset = false;
             _suppressRxIqFreqTune = false;
         }
+        // 0x58 band 0 = no band: recv forgets the RX I/Q band, so later I/Q changes are ignored
+        // until the next START (Ron 2026-11-14).
+        _ = _radioService.SetIqBandAsync(0);
         RxIqStatus = $"Session ended ({reason}). Press START to re-enter.";
         MonitorTextBoxText($" RX IQ LEAVE ({reason})");
     }
