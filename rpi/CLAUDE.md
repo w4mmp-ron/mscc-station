@@ -54,6 +54,13 @@ Finished entries (releases R11-10-14 to R11-14-2, done work, old resume points) 
   `SM1;` with `SM0nnnn;` (main 0000-0030; polled, not sent by AI). Our ms-sdr `comm-port.c` (Pi + Windows)
   doesn't answer SM at all; `RM` answers fixed values (SWR 2 dots, COMP / ALC 0). recv already has the
   S-meter value; map it to 0-30 dots. Not started.
+- **Ron (2026-11-15): client tooltips, WPF AND Avalonia.** None of the 208 WPF text tooltips has a line
+  break, so long ones show as one wide strip (64 over 70 chars; longest: two-tone test 264, PADDLE 207,
+  Save settings 193, FARNSWORTH 162, AMP on 155, Launch Servers 147, Reset configuration 145). Split at
+  sentence breaks with `&#x0a;` (lines ~50-70 chars). Fix wrong text: WPF `MainWindow.xaml` Reset
+  configuration says calibration reloads from factory (it keeps all cal since 11-10); RX IQ APPLY ALL
+  "PC files only" unchecked. Avalonia: same texts (several differ today, e.g. PADDLE shows 0x9D / cw.ini).
+  Not started.
 - **Ron (2026-11-02): store QRO (amplifier) cal in the radio too.** Today ~/amplifier_cal.ini
   (trans owns, ms-sdr amplifier.c reads, 12 bands, int; -99 = none). Room checked (code read only):
   pill 3.12 = flash log sector 7, 128 KB, 16-byte entries, 4 value bytes: new type 8 (not 6 =
