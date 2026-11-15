@@ -18,12 +18,14 @@ when only version numbers do. Downloads and what changed in each release:
 
 | Program | Windows | Raspberry Pi |
 |---|---|---|
-| MSCC client | WPF, title bar 11.14.3 | MSCC Avalonia 1.7.04 (optional) |
+| MSCC client | WPF, title bar 11.15.0 | MSCC Avalonia 1.7.04 (optional) |
 | ms-sdr (server) | 3.213 | 3.210 |
 | recv (receive server) | 3.155 | 3.156 |
 | trans (transmit server) | 3.159 | 3.160 |
 
 Avalonia 1.7.04 is built and tested on Ubuntu (Ultimus MKII): QRP and AMP cal use the last-tuned frequency and select the band when you open the tab, and AGC FAST RELEASE is 0–2000 ms in steps of 10. The 1.7.03 slider wheel and QRP CAL TUNE mode are in this build. It will be attached at the next GitHub Release, with the firmware. LF not yet tested on Geminus.
+
+The Windows WPF client (title bar 11.15.0) has the same QRP TUNE-before-0xAC fix and the same QRP/AMP last-tuned frequency and auto band-on-tab-entry as Avalonia 1.7.04. It is a client-only copy in `C:\mscc-net9` for now and rides the next GitHub Release with the firmware. LF not yet tested on Geminus. There is no new Windows installer.
 
 The Windows and Raspberry Pi servers do the same job; their numbers differ because each
 build counts up on its own (recv / trans on the Pi also have a Linux-only sound card fix for

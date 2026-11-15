@@ -1124,6 +1124,7 @@ public partial class MainWindow : Window
                 }
                 if (_freqCalTabActive || _freqCalRestorePending)
                     vm.LeaveFreqCalForShutdown();
+                vm.StopCalTabsBeforeDisconnect();
                 vm.SaveCurrentVfoBRecord();
 
                 vm.MonitorTextBoxText(

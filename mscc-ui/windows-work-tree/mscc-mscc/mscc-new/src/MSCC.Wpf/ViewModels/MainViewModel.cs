@@ -2572,7 +2572,8 @@ public partial class MainViewModel : ObservableObject, IDisposable
     }
 
     /// <summary>
-    /// Amp / QRP power-cal band frequencies (client drive tables).
+    /// Amp / QRP drive-table frequencies. QRP CAL and AMP CAL no longer use this
+    /// (they use <see cref="ResolvePowerCalFrequencyHz"/>). RX IQ START still falls back to it.
     /// </summary>
     private static long GetAmpCalFrequencyHz(int bandNumber) => bandNumber switch
     {
@@ -3003,20 +3004,92 @@ public partial class MainViewModel : ObservableObject, IDisposable
         MessageBox.Show(done, "MSCC", MessageBoxButton.OK, MessageBoxImage.Information);
     }
 
+    /// <summary>Main-tab BandButton Tag defaults (MainWindow.xaml). Not the server cal table.</summary>
+    private static long TryMainBandDefaultHz(int band) => band switch
+    {
+        2200 => 136_000,
+        630 => 474_200,
+        160 => 1_800_000,
+        80 => 3_500_000,
+        60 => 5_350_000,
+        40 => 7_000_000,
+        30 => 10_100_000,
+        20 => 14_000_000,
+        17 => 18_100_000,
+        15 => 21_000_000,
+        12 => 24_900_000,
+        10 => 28_000_000,
+        _ => 0
+    };
+
+    /// <summary>
+    /// QRP and AMP cal frequency. Current VFO when it is already on this band,
+    /// else last-used for the active VFO when that frequency still maps to the band,
+    /// else the main-tab button default.
+    /// </summary>
+    private long ResolvePowerCalFrequencyHz(int band)
+    {
+        string want = band + "m";
+        long vfoHz = RadioState.ActiveVfo.FrequencyHz;
+        if (string.Equals(GetBandNameForFrequency(vfoHz), want, StringComparison.OrdinalIgnoreCase))
+            return vfoHz;
+
+        var (lastFreq, _, _, _, _) =
+            SpectrumWaterfallSettings.LoadLastUsedForBand(want, UseVfoBLastUsedFile);
+        if (lastFreq is >= 10_000 and <= 60_000_000 &&
+            string.Equals(GetBandNameForFrequency(lastFreq), want, StringComparison.OrdinalIgnoreCase))
+            return lastFreq;
+
+        return TryMainBandDefaultHz(band);
+    }
+
+    private static int ParseCalBandParam(object? param) => param switch
+    {
+        int i => i,
+        string s when int.TryParse(s, out int n) => n,
+        _ => 0
+    };
+
+    /// <summary>Meters for a cal band name such as "20m". False for gen / out of band.</summary>
+    private static bool TryCalBandMeters(string? bandName, out int meters)
+    {
+        meters = 0;
+        if (string.IsNullOrEmpty(bandName) ||
+            !bandName.EndsWith("m", StringComparison.OrdinalIgnoreCase))
+            return false;
+        if (!int.TryParse(bandName[..^1], out meters))
+            return false;
+        return RadioCalBitForBand(meters) >= 0;
+    }
+
+    private void ApplyCalFrequencyToActiveVfo(int band, long freqHz)
+    {
+        bool prev = SuppressLastUsedSave;
+        SuppressLastUsedSave = true;
+        try
+        {
+            RadioState.ActiveVfo.FrequencyHz = freqHz;
+            RadioState.CurrentBand = band + "m";
+            StoreBandForActiveVfo(RadioState.CurrentBand);
+        }
+        finally
+        {
+            SuppressLastUsedSave = prev;
+        }
+    }
+
     /// <summary>
     /// Select band for amp power cal (original Calibration_Band_button8_Click):
-    /// set cal frequency, CMD_SET_AMPLIFIER_INITIALIZE (0xF9), CMD_SET_AMPLIFIER_POWER (0xFA)=100,
-    /// reset cal slider to -99.
+    /// picked frequency, CMD_SET_MAIN_FREQ (0xB6), CMD_SET_AMPLIFIER_INITIALIZE (0xF9),
+    /// CMD_SET_AMPLIFIER_POWER (0xFA)=100, reset cal slider to -99.
+    /// Tab entry passes force so the same band still sends 0xB6 / 0xF9 / 0xFA.
     /// </summary>
     [RelayCommand]
-    private void SelectAmpCalBand(object? param)
+    private Task SelectAmpCalBand(object? param) =>
+        SelectAmpCalBandAsync(ParseCalBandParam(param), force: false);
+
+    private async Task SelectAmpCalBandAsync(int band, bool force)
     {
-        int band = param switch
-        {
-            int i => i,
-            string s when int.TryParse(s, out int n) => n,
-            _ => 0
-        };
         if (band <= 0) return;
 
         // Original: band select disabled while PA TX/calibrating
@@ -3030,32 +3103,49 @@ public partial class MainViewModel : ObservableObject, IDisposable
             return;
         }
 
-        long freq = GetAmpCalFrequencyHz(band);
+        if (!force && AmpCalSelectedBand == band)
+            return;
+
+        long freq = ResolvePowerCalFrequencyHz(band);
         if (freq <= 0)
         {
             MonitorTextBoxText($" Amp Cal band {band}: no calibration frequency");
             return;
         }
 
-        // Same band again: still re-send init/power like cycling could re-hit same band; skip only if identical UI re-click spam
-        if (AmpCalSelectedBand == band)
-            return;
-
         AmpCalSelectedBand = band;
         foreach (var item in AmpCalBandStatuses)
             item.IsSelected = item.BandNumber == band;
 
-        // Client radio state (display)
-        RadioState.ActiveVfo.FrequencyHz = freq;
-        RadioState.CurrentBand = band + "m";
-        StoreBandForActiveVfo(RadioState.CurrentBand);
+        ApplyCalFrequencyToActiveVfo(band, freq);
 
-        // Original: CMD_SET_MAIN_FREQ to iq_calibration_freqs[band]
-        _ = _radioService.SetFrequencyAsync(freq);
-        // Original: CMD_SET_AMPLIFIER_INITIALIZE (short)Band
-        _ = _radioService.SetAmplifierInitializeAsync(band);
-        // Original: CMD_SET_AMPLIFIER_POWER Power_Value=100
-        _ = _radioService.SetAmplifierPowerAsync(100);
+        if (_radioService.IsConnected)
+        {
+            try
+            {
+                await _radioService.SetFrequencyAsync(freq);
+            }
+            catch (Exception ex)
+            {
+                MonitorTextBoxText($" Amp Cal 0xB6 failed: {ex.Message}");
+            }
+            try
+            {
+                await _radioService.SetAmplifierInitializeAsync(band);
+            }
+            catch (Exception ex)
+            {
+                MonitorTextBoxText($" Amp Cal 0xF9 failed: {ex.Message}");
+            }
+            try
+            {
+                await _radioService.SetAmplifierPowerAsync(100);
+            }
+            catch (Exception ex)
+            {
+                MonitorTextBoxText($" Amp Cal 0xFA failed: {ex.Message}");
+            }
+        }
 
         // Original: PA_Calibration_Increment path / PA_hScrollBar.Value = -99
         _suppressAmpCalSlider = true;
@@ -3359,19 +3449,16 @@ public partial class MainViewModel : ObservableObject, IDisposable
     private bool _suppressPowerCalSlider;
 
     /// <summary>
-    /// Select band for QRP power cal: UI highlight + CMD_SET_BAND_POWER_BAND (0xA1).
-    /// Band number is meters (160…10, 2200, 630) — same as original Geminus handlers.
-    /// Server replies with CMD_GET_BAND_POWER (0xB4) → updates slider / step label.
+    /// Select band for QRP power cal: UI highlight, then 0xA1, then 0xB6 at the picked frequency.
+    /// Band number is meters (160…10, 2200, 630). Tab entry passes force so the same band
+    /// still sends 0xA1 then 0xB6. Does not change mode.
     /// </summary>
     [RelayCommand]
-    private void SelectPowerCalBand(object? param)
+    private Task SelectPowerCalBand(object? param) =>
+        SelectPowerCalBandAsync(ParseCalBandParam(param), force: false);
+
+    private async Task SelectPowerCalBandAsync(int band, bool force)
     {
-        int band = param switch
-        {
-            int i => i,
-            string s when int.TryParse(s, out int n) => n,
-            _ => 0
-        };
         if (band <= 0) return;
 
         // Original: no band change while TX (calibration tune) is on
@@ -3385,25 +3472,43 @@ public partial class MainViewModel : ObservableObject, IDisposable
             return;
         }
 
-        if (PowerCalSelectedBand == band)
+        if (!force && PowerCalSelectedBand == band)
             return;
+
+        long calFreq = ResolvePowerCalFrequencyHz(band);
+        if (calFreq <= 0)
+        {
+            MonitorTextBoxText($" QRP Cal band {band}: no calibration frequency");
+            return;
+        }
 
         PowerCalSelectedBand = band;
         foreach (var item in PowerCalBandStatuses)
             item.IsSelected = item.BandNumber == band;
 
-        // Keep VFO/band label in sync (esp. LF); server table select is still 0xA1 only.
-        RadioState.CurrentBand = band + "m";
-        StoreBandForActiveVfo(RadioState.CurrentBand);
-        long calFreq = GetAmpCalFrequencyHz(band);
-        if (calFreq > 0)
+        ApplyCalFrequencyToActiveVfo(band, calFreq);
+
+        if (_radioService.IsConnected)
         {
-            RadioState.ActiveVfo.FrequencyHz = calFreq;
-            _ = _radioService.SetFrequencyAsync(calFreq);
+            try
+            {
+                await _radioService.SetBandPowerBandAsync(band);
+            }
+            catch (Exception ex)
+            {
+                MonitorTextBoxText($" QRP Cal 0xA1 failed: {ex.Message}");
+            }
+            try
+            {
+                await _radioService.SetFrequencyAsync(calFreq);
+            }
+            catch (Exception ex)
+            {
+                MonitorTextBoxText($" QRP Cal 0xB6 failed: {ex.Message}");
+            }
         }
 
-        MonitorTextBoxText($" QRP Cal band selected: {band}m f={calFreq} → 0xA1");
-        _ = _radioService.SetBandPowerBandAsync(band);
+        MonitorTextBoxText($" QRP Cal band selected: {band}m f={calFreq} → 0xA1 then 0xB6");
     }
 
     partial void OnPowerCalSliderValueChanged(int value)
@@ -3471,11 +3576,116 @@ public partial class MainViewModel : ObservableObject, IDisposable
     }
 
     /// <summary>
-    /// Pwr Cal TX toggle → CMD_CALIBRATION_TUNE (0xAC). Requires band selected; first use shows antenna warning.
+    /// Put the pre-tab mode back after QRP CAL TX/CALIBRATE stop. Snapshot mode TUNE falls back to USB.
+    /// Does not assign <see cref="ActiveMode"/> (that setter writes last-used).
+    /// </summary>
+    private async Task RestoreModeAfterPowerCalTxAsync()
+    {
+        RadioMode restoreMode = RadioMode.USB;
+        if (_prePowerCalState != null)
+        {
+            restoreMode = _prePowerCalState.IsVfoB
+                ? _prePowerCalState.VfoBMode
+                : _prePowerCalState.VfoAMode;
+        }
+        if (restoreMode == RadioMode.TUNE)
+            restoreMode = RadioMode.USB;
+
+        RadioState.ActiveVfo.Mode = restoreMode;
+        OnPropertyChanged(nameof(ActiveMode));
+        try
+        {
+            await _radioService.SetModeAsync(FormatModeDisplay(restoreMode));
+        }
+        catch (Exception ex)
+        {
+            MonitorTextBoxText($" Pwr Cal mode restore: {ex.Message}");
+        }
+    }
+
+    /// <summary>Mode TUNE and 0xA6, then 0xAC. CALIBRATE also sends 0xA2 0 before 0xAC.</summary>
+    private async Task StartPowerCalTuneCarrierAsync(bool calibrate)
+    {
+        try
+        {
+            await _radioService.SetTunePowerAsync(100);
+        }
+        catch (Exception ex)
+        {
+            MonitorTextBoxText($" Pwr Cal TUNE_POWER: {ex.Message}");
+        }
+
+        RadioState.ActiveVfo.Mode = RadioMode.TUNE;
+        OnPropertyChanged(nameof(ActiveMode));
+        try
+        {
+            await _radioService.SetModeAsync("TUNE");
+        }
+        catch (Exception ex)
+        {
+            MonitorTextBoxText($" Pwr Cal mode TUNE: {ex.Message}");
+        }
+
+        try
+        {
+            await _radioService.SetAutoTuneAsync(true);
+        }
+        catch (Exception ex)
+        {
+            MonitorTextBoxText($" Pwr Cal 0xA6 on: {ex.Message}");
+        }
+
+        if (calibrate)
+        {
+            try
+            {
+                await _radioService.SetBandPowerPowerAsync(0);
+            }
+            catch (Exception ex)
+            {
+                MonitorTextBoxText($" Pwr Cal 0xA2 0: {ex.Message}");
+            }
+        }
+
+        try
+        {
+            await _radioService.SetCalibrationTuneAsync(true);
+        }
+        catch (Exception ex)
+        {
+            MonitorTextBoxText($" Pwr Cal 0xAC on: {ex.Message}");
+        }
+    }
+
+    /// <summary>0xAC off, then 0xA6 off, then the pre-tab mode. Stays on the cal frequency.</summary>
+    private async Task StopPowerCalTuneCarrierAsync()
+    {
+        try
+        {
+            await _radioService.SetCalibrationTuneAsync(false);
+        }
+        catch (Exception ex)
+        {
+            MonitorTextBoxText($" Pwr Cal 0xAC off: {ex.Message}");
+        }
+        try
+        {
+            await _radioService.SetAutoTuneAsync(false);
+        }
+        catch (Exception ex)
+        {
+            MonitorTextBoxText($" Pwr Cal 0xA6 off: {ex.Message}");
+        }
+        await RestoreModeAfterPowerCalTxAsync();
+    }
+
+    /// <summary>
+    /// Pwr Cal TX toggle. On: mode TUNE, 0xA6, then 0xAC. Off: 0xAC, 0xA6, restore pre-tab mode.
+    /// Requires band selected; first use shows antenna warning.
     /// Disabled while manual CALIBRATE session is active (original mutual exclusion).
     /// </summary>
     [RelayCommand]
-    private void TogglePowerCalTx()
+    private async Task TogglePowerCalTx()
     {
         if (PowerCalCalibrating)
         {
@@ -3494,18 +3704,28 @@ public partial class MainViewModel : ObservableObject, IDisposable
         if (!PowerCalTxOn && !EnsurePowerCalWarningAccepted())
             return;
 
-        bool turnOn = !PowerCalTxOn;
-        PowerCalTxOn = turnOn;
-        _ = _radioService.SetCalibrationTuneAsync(turnOn);
-        MonitorTextBoxText($" Pwr Cal TX: {(turnOn ? "ON" : "OFF")} → 0xAC {(turnOn ? 1 : 0)} band={PowerCalSelectedBand}");
+        if (!PowerCalTxOn)
+        {
+            PowerCalTxOn = true;
+            await StartPowerCalTuneCarrierAsync(calibrate: false);
+            MonitorTextBoxText(
+                $" Pwr Cal TX: ON → mode TUNE, 0xA6 1, then 0xAC 1 band={PowerCalSelectedBand}");
+        }
+        else
+        {
+            PowerCalTxOn = false;
+            await StopPowerCalTuneCarrierAsync();
+            MonitorTextBoxText(
+                $" Pwr Cal TX: OFF → 0xAC 0, 0xA6 0, mode restored band={PowerCalSelectedBand}");
+        }
     }
 
     /// <summary>
     /// Manual CALIBRATE toggle (original Proficio_Manual_Calibrate_button_Click).
-    /// Start: slider=0 → 0xA2 0, TX on (0xAC 1). Stop: TX off, accept Yes/No/Cancel for status lamps.
+    /// Start: mode TUNE, 0xA6, slider=0 → 0xA2 0, then 0xAC 1. Stop: 0xAC, 0xA6, restore mode, Yes/No save.
     /// </summary>
     [RelayCommand]
-    private void TogglePowerCalCalibrate()
+    private async Task TogglePowerCalCalibrate()
     {
         if (PowerCalSelectedBand <= 0)
         {
@@ -3527,7 +3747,7 @@ public partial class MainViewModel : ObservableObject, IDisposable
             if (!EnsurePowerCalWarningAccepted())
                 return;
 
-            // Start calibrate session (original: enable scrollbar, value=0, 0xA2=0, 0xAC=1)
+            // Start calibrate session: TUNE + 0xA6, then 0xA2 0, then 0xAC 1. Do not recapture the pre-tab snapshot.
             PowerCalCalibrating = true;
             PowerCalTxOn = true;
 
@@ -3542,10 +3762,9 @@ public partial class MainViewModel : ObservableObject, IDisposable
                 _suppressPowerCalSlider = false;
             }
 
-            _ = _radioService.SetBandPowerPowerAsync(0);
-            _ = _radioService.SetCalibrationTuneAsync(true);
+            await StartPowerCalTuneCarrierAsync(calibrate: true);
             MonitorTextBoxText(
-                $" Pwr Cal CALIBRATE START band={PowerCalSelectedBand} → 0xA2 0, 0xAC 1");
+                $" Pwr Cal CALIBRATE START band={PowerCalSelectedBand} → mode TUNE, 0xA6 1, 0xA2 0, 0xAC 1");
         }
         else
         {
@@ -3553,7 +3772,7 @@ public partial class MainViewModel : ObservableObject, IDisposable
             int finalStep = Math.Clamp(PowerCalSliderValue, 0, 100);
             PowerCalCalibrating = false;
             PowerCalTxOn = false;
-            _ = _radioService.SetCalibrationTuneAsync(false);
+            await StopPowerCalTuneCarrierAsync();
 
             _suppressPowerCalSlider = true;
             try
@@ -3567,7 +3786,7 @@ public partial class MainViewModel : ObservableObject, IDisposable
             }
 
             MonitorTextBoxText(
-                $" Pwr Cal CALIBRATE STOP band={PowerCalSelectedBand} → 0xAC 0");
+                $" Pwr Cal CALIBRATE STOP band={PowerCalSelectedBand} → 0xAC 0, 0xA6 0, mode restored");
 
             var ret = MessageBox.Show(
                 $"SAVE THIS CALIBRATION?\r\n\r\nYes: save step {finalStep} for {PowerCalSelectedBand} m (stored in the radio).\r\nNo: go back to the previous value.",
@@ -3674,12 +3893,15 @@ public partial class MainViewModel : ObservableObject, IDisposable
             $" Pwr Cal ENTER: snapshot VFO={(_prePowerCalState.IsVfoB ? "B" : "A")} " +
             $"A={_prePowerCalState.VfoAFrequencyHz} B={_prePowerCalState.VfoBFrequencyHz} " +
             $"band={_prePowerCalState.CurrentBand} tunePwr saved={_prePowerCalState.TunePowerPercent}% → send TUNE_POWER 100");
+
+        // After the snapshot, so leave-tab restores the pre-tab frequency. No mode change.
+        AutoSelectCalBandForActiveVfo(powerCal: true);
     }
 
     /// <summary>
     /// Leave Pwr Cal: restore snapshot locally and push full state to ms-sdr (server only knows last cal state).
     /// </summary>
-    public void LeavePowerCalTab()
+    public void LeavePowerCalTab(bool carrierAlreadyStopped = false)
     {
         if (!_powerCalTabActive) return;
         _powerCalTabActive = false;
@@ -3692,12 +3914,16 @@ public partial class MainViewModel : ObservableObject, IDisposable
             _ = _radioService.SetBandPowerPowerAsync(restore);
             MonitorTextBoxText($" Pwr Cal LEAVE during CALIBRATE: not saved, restore 0xA2={restore}");
         }
+        Task carrierOff = Task.CompletedTask;
         if (PowerCalTxOn || PowerCalCalibrating)
         {
             PowerCalTxOn = false;
             PowerCalCalibrating = false;
-            _ = _radioService.SetCalibrationTuneAsync(false);
-            MonitorTextBoxText(" Pwr Cal LEAVE: TX off → 0xAC 0");
+            if (!carrierAlreadyStopped)
+                carrierOff = StopPowerCalCarrierForLeaveAsync();
+            MonitorTextBoxText(carrierAlreadyStopped
+                ? " Pwr Cal LEAVE: TX already stopped (0xAC 0, 0xA6 0)"
+                : " Pwr Cal LEAVE: TX off → 0xAC 0, 0xA6 0");
         }
 
         PowerCalSelectedBand = 0;
@@ -3718,11 +3944,23 @@ public partial class MainViewModel : ObservableObject, IDisposable
         _prePowerCalState = null;
         if (snap == null)
         {
+            _calTabRestoreTask = carrierOff;
             MonitorTextBoxText(" Pwr Cal LEAVE: no snapshot (nothing to restore)");
             return;
         }
 
-        _calTabRestoreTask = RestoreOperatingStateAfterCalTabAsync(snap, "Pwr Cal");
+        // Disconnect already finished 0xAC/0xA6 and GetResult's this task from the UI thread,
+        // so that path must be Restore itself (its first await is ConfigureAwait(false)).
+        // Tab leave still waits for 0xAC then 0xA6 before the snapshot restore.
+        _calTabRestoreTask = carrierOff.IsCompleted
+            ? RestoreOperatingStateAfterCalTabAsync(snap, "Pwr Cal")
+            : RestorePowerCalAfterCarrierOffAsync(carrierOff, snap);
+    }
+
+    private async Task RestorePowerCalAfterCarrierOffAsync(Task carrierOff, OperatingStateSnapshot snap)
+    {
+        await carrierOff;
+        await RestoreOperatingStateAfterCalTabAsync(snap, "Pwr Cal");
     }
 
     /// <summary>
@@ -3747,13 +3985,16 @@ public partial class MainViewModel : ObservableObject, IDisposable
             $" Amp Cal ENTER: snapshot VFO={(_preAmpCalState.IsVfoB ? "B" : "A")} " +
             $"A={_preAmpCalState.VfoAFrequencyHz} B={_preAmpCalState.VfoBFrequencyHz} " +
             $"band={_preAmpCalState.CurrentBand} tunePwr saved={_preAmpCalState.TunePowerPercent}% → TX/TUNE off, TUNE_POWER 100");
+
+        // After the snapshot, so leave-tab restores the pre-tab frequency. No mode change.
+        AutoSelectCalBandForActiveVfo(powerCal: false);
     }
 
     /// <summary>
     /// Leave AMP CAL: clear cal UI, stop TX/tune, restore snapshot + send to ms-sdr
     /// (original MFC_Leave: RIG_TUNE 0, TX 0, restore TUNE_POWER, re-select previous band).
     /// </summary>
-    public void LeaveAmpCalTab()
+    public void LeaveAmpCalTab(bool carrierAlreadyStopped = false)
     {
         if (!_ampCalTabActive) return;
         _ampCalTabActive = false;
@@ -3768,8 +4009,11 @@ public partial class MainViewModel : ObservableObject, IDisposable
         }
         if (PttOn) PttOn = false;
         if (TuneMode) TuneMode = false;
-        _ = _radioService.SetTransmitAsync(false);
-        _ = _radioService.SetAutoTuneAsync(false);
+        if (!carrierAlreadyStopped)
+        {
+            _ = _radioService.SetTransmitAsync(false);
+            _ = _radioService.SetAutoTuneAsync(false);
+        }
 
         // Clear amp cal UI (band was for cal freqs only)
         AmpCalSelectedBand = 0;
@@ -3795,6 +4039,82 @@ public partial class MainViewModel : ObservableObject, IDisposable
         }
 
         _calTabRestoreTask = RestoreOperatingStateAfterCalTabAsync(snap, "Amp Cal");
+    }
+
+    /// <summary>
+    /// Highlight and tune the cal band the active VFO is already on.
+    /// gen / out of band leaves the selection empty. Does not change mode.
+    /// </summary>
+    private void AutoSelectCalBandForActiveVfo(bool powerCal)
+    {
+        string name = GetBandNameForFrequency(RadioState.ActiveVfo.FrequencyHz);
+        if (!TryCalBandMeters(name, out int band))
+            return;
+        if (powerCal)
+            _ = SelectPowerCalBandAsync(band, force: true);
+        else
+            _ = SelectAmpCalBandAsync(band, force: true);
+    }
+
+    /// <summary>0xAC off, then 0xA6 off. Leave-tab only; the snapshot restore sends the old mode.</summary>
+    private async Task StopPowerCalCarrierForLeaveAsync()
+    {
+        try
+        {
+            await _radioService.SetCalibrationTuneAsync(false).ConfigureAwait(false);
+            await _radioService.SetAutoTuneAsync(false).ConfigureAwait(false);
+        }
+        catch (Exception ex)
+        {
+            MonitorTextBoxText($" Pwr Cal LEAVE TX off failed: {ex.Message}");
+        }
+    }
+
+    /// <summary>
+    /// Disconnect and app close do not go through the tab SelectionChanged leave path.
+    /// Stop QRP (0xAC, 0xA6, restore) and AMP (existing leave) while the radio is still connected.
+    /// </summary>
+    public void StopCalTabsBeforeDisconnect()
+    {
+        try
+        {
+            if (_powerCalTabActive || PowerCalTxOn || PowerCalCalibrating)
+            {
+                bool keyed = PowerCalTxOn || PowerCalCalibrating;
+                if (keyed && _radioService.IsConnected)
+                {
+                    try { _radioService.SetCalibrationTuneAsync(false).GetAwaiter().GetResult(); }
+                    catch (Exception ex) { MonitorTextBoxText($" Pwr Cal disconnect 0xAC off: {ex.Message}"); }
+                    try { _radioService.SetAutoTuneAsync(false).GetAwaiter().GetResult(); }
+                    catch (Exception ex) { MonitorTextBoxText($" Pwr Cal disconnect 0xA6 off: {ex.Message}"); }
+                }
+                if (!_powerCalTabActive)
+                    _powerCalTabActive = true;
+                LeavePowerCalTab(carrierAlreadyStopped: keyed);
+                try { _calTabRestoreTask.GetAwaiter().GetResult(); }
+                catch (Exception ex) { MonitorTextBoxText($" Pwr Cal disconnect restore: {ex.Message}"); }
+            }
+
+            if (_ampCalTabActive || AmpCalTxOn || AmpCalCalibrating)
+            {
+                if (_radioService.IsConnected)
+                {
+                    try { _radioService.SetTransmitAsync(false).GetAwaiter().GetResult(); }
+                    catch (Exception ex) { MonitorTextBoxText($" Amp Cal disconnect TX off: {ex.Message}"); }
+                    try { _radioService.SetAutoTuneAsync(false).GetAwaiter().GetResult(); }
+                    catch (Exception ex) { MonitorTextBoxText($" Amp Cal disconnect 0xA6 off: {ex.Message}"); }
+                }
+                if (!_ampCalTabActive)
+                    _ampCalTabActive = true;
+                LeaveAmpCalTab(carrierAlreadyStopped: true);
+                try { _calTabRestoreTask.GetAwaiter().GetResult(); }
+                catch (Exception ex) { MonitorTextBoxText($" Amp Cal disconnect restore: {ex.Message}"); }
+            }
+        }
+        catch (Exception ex)
+        {
+            MonitorTextBoxText($" Cal tab stop before disconnect: {ex.Message}");
+        }
     }
 
     private async Task RestoreOperatingStateAfterCalTabAsync(OperatingStateSnapshot snap, string logTag)
@@ -6136,6 +6456,7 @@ public partial class MainViewModel : ObservableObject, IDisposable
         {
             CancelIdentityAsk();
             _deferUsbModeReport = false;
+            StopCalTabsBeforeDisconnect();
             if (RemoteAudio && _radioService.IsConnected)
             {
                 try
@@ -6254,6 +6575,7 @@ public partial class MainViewModel : ObservableObject, IDisposable
     public void SaveLastUsedForCurrentBand()
     {
         if (SuppressLastUsedSave) return;
+        if (_powerCalTabActive || _ampCalTabActive) return;
         // Idle ctor/UI storms must not write 40m@7.100/USB over DIG-U last-used.
         if (!IsRadioRunning || RadioState.ActiveVfo.FrequencyHz <= 0) return;
         string band = RadioState.CurrentBand;

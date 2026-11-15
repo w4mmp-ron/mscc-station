@@ -2,6 +2,14 @@
 
 Installer: `mscc-net9-R<version>-install.exe` (WPF client + Windows servers). Install the newest one; older installers in this folder are kept for roll-back only.
 
+## WPF 11.15.0 — 2026-11-15  (not a new Windows installer; drop-in to C:\mscc-net9)
+
+### Fixed
+- QRP CAL CALIBRATE and TX/TUNE now set mode TUNE and send 0xA6 before 0xAC, and restore the previous mode on stop, leaving the tab, disconnect, or close. AMP CAL leave-tab already stopped TX; disconnect and close now use that same leave path.
+
+### Changed
+- QRP CAL and AMP CAL use the current VFO if already on that band, else last-used, else the main-tab button default. QRP sends 0xA1 then 0xB6. AMP uses the same picker, then 0xB6, 0xF9 and 0xFA. Opening the tab auto-selects the band. Last-used is not overwritten during cal. LF not yet tested on Geminus.
+
 ## Avalonia 1.7.04 — 2026-11-15  (not a new Windows installer; WPF and the Windows servers are unchanged)
 
 ### Changed
