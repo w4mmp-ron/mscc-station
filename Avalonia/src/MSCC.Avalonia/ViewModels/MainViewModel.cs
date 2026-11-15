@@ -2662,7 +2662,7 @@ public partial class MainViewModel : ViewModelBase, IDisposable
     {
         ScheduleSaveClientSettings();
         if (_suppressAgcCommand || !CanOperate()) return;
-        _ = SendAgcFastReleaseAsync(Math.Clamp(value, 0, 1000));
+        _ = SendAgcFastReleaseAsync(Math.Clamp(value, 0, 2000));
     }
 
     partial void OnAmpOnChanged(bool value)
@@ -4349,8 +4349,71 @@ public partial class MainViewModel : ViewModelBase, IDisposable
         AppendLog($"AMP cal status: {bandNumber}m → {(calibrated ? "calibrated" : "not calibrated")}");
     }
 
+    /// <summary>
+    /// Last frequency for QRP/AMP cal: current VFO if it is already on this band,
+    /// else last-used for the active VFO, else the main-tab band default.
+    /// </summary>
+    private long ResolvePowerCalFrequencyHz(int band)
+    {
+        string key = band.ToString(CultureInfo.InvariantCulture);
+        if (!TryBandDefaultHz(key, out long defaultHz, out string label))
+            return 0;
+
+        long current = UseVfoA ? _frequencyHz : _vfoBFrequencyHz;
+        string currentBand = BandNameForFrequency(current);
+        if (string.Equals(NormalizeBandLabel(currentBand), NormalizeBandLabel(label), StringComparison.OrdinalIgnoreCase))
+            return current;
+
+        var (lastFreq, _, _, _, _) = BandLastUsedStore.Load(label, forVfoB: !UseVfoA);
+        if (lastFreq is >= 10_000 and <= 60_000_000)
+        {
+            string recallBand = BandNameForFrequency(lastFreq);
+            if (string.Equals(NormalizeBandLabel(recallBand), NormalizeBandLabel(label), StringComparison.OrdinalIgnoreCase)
+                || recallBand is "?" or "—")
+                return lastFreq;
+        }
+
+        return defaultHz;
+    }
+
+    /// <summary>Ham band of the active VFO, and only if this radio's HF/LF buttons allow it.</summary>
+    private bool TryActiveCalBand(out int band)
+    {
+        band = 0;
+        long hz = UseVfoA ? _frequencyHz : _vfoBFrequencyHz;
+        string name = BandNameForFrequency(hz);
+        if (name is "—" or "?" or "-" || string.IsNullOrWhiteSpace(name))
+            return false;
+        string key = name.EndsWith('m') || name.EndsWith('M') ? name[..^1] : name;
+        if (!int.TryParse(key, NumberStyles.Integer, CultureInfo.InvariantCulture, out band))
+            return false;
+        if (Array.IndexOf(CalBandNumbers, band) < 0)
+            return false;
+        if (band is 2200 or 630)
+            return LfBandsEnabled;
+        return HfBandsEnabled;
+    }
+
+    /// <summary>Open QRP CAL already on the current band: 0xA1, then 0xB6 of the current VFO.</summary>
+    public Task PreparePowerCalTab()
+    {
+        if (!TryActiveCalBand(out int band))
+            return Task.CompletedTask;
+        return SelectPowerCalBandAsync(band, force: true);
+    }
+
+    /// <summary>Open AMP CAL already on the current band: same picker, then 0xB6 and 0xF9.</summary>
+    public Task PrepareAmpCalTab()
+    {
+        if (!TryActiveCalBand(out int band))
+            return Task.CompletedTask;
+        return SelectAmpCalBandAsync(band, force: true);
+    }
+
     [RelayCommand]
-    private async Task SelectPowerCalBandAsync(int band)
+    private Task SelectPowerCalBand(int band) => SelectPowerCalBandAsync(band, force: false);
+
+    private async Task SelectPowerCalBandAsync(int band, bool force)
     {
         if (band <= 0) return;
         if (PowerCalTxOn || PowerCalCalibrating)
@@ -4361,33 +4424,33 @@ public partial class MainViewModel : ViewModelBase, IDisposable
             return;
         }
 
-        if (PowerCalSelectedBand == band) return;
+        if (!force && PowerCalSelectedBand == band) return;
+
+        long calFreq = ResolvePowerCalFrequencyHz(band);
 
         PowerCalSelectedBand = band;
         foreach (var item in PowerCalBandStatuses)
             item.IsSelected = item.BandNumber == band;
 
-        long calFreq = GetCalFrequencyHz(band);
-        if (calFreq > 0 && CanOperate())
-            await ApplyFrequencyAsync(calFreq, $"qrp-cal {band}m").ConfigureAwait(true);
-        else if (calFreq > 0)
-        {
-            _frequencyHz = calFreq;
-            UpdateFrequencyUi(calFreq);
-            BandText = band + "m";
-        }
-
-        if (CanOperate() && _radio != null)
+        if (calFreq > 0 && CanOperate() && _radio != null)
         {
             try
             {
                 await _radio.SetBandPowerBandAsync(band).ConfigureAwait(true);
-                AppendLog($"QRP cal band {band}m → 0xA1");
             }
             catch (Exception ex)
             {
                 AppendLog($"QRP cal band error: {ex.Message}");
             }
+            await ApplyFrequencyAsync(calFreq, $"qrp-cal {band}m").ConfigureAwait(true);
+            AppendLog($"QRP cal band {band}m → 0xA1, 0xB6 {calFreq}");
+        }
+        else if (calFreq > 0)
+        {
+            _frequencyHz = calFreq;
+            UpdateFrequencyUi(calFreq);
+            BandText = band + "m";
+            AppendLog($"QRP cal band {band}m selected (not connected) f={calFreq}");
         }
         else
             AppendLog($"QRP cal band {band}m selected (not connected)");
@@ -4749,7 +4812,9 @@ public partial class MainViewModel : ViewModelBase, IDisposable
     }
 
     [RelayCommand]
-    private async Task SelectAmpCalBandAsync(int band)
+    private Task SelectAmpCalBand(int band) => SelectAmpCalBandAsync(band, force: false);
+
+    private async Task SelectAmpCalBandAsync(int band, bool force)
     {
         if (band <= 0) return;
         if (AmpCalTxOn || AmpCalCalibrating)
@@ -4760,13 +4825,13 @@ public partial class MainViewModel : ViewModelBase, IDisposable
             return;
         }
 
-        if (AmpCalSelectedBand == band) return;
+        if (!force && AmpCalSelectedBand == band) return;
 
         AmpCalSelectedBand = band;
         foreach (var item in AmpCalBandStatuses)
             item.IsSelected = item.BandNumber == band;
 
-        long freq = GetCalFrequencyHz(band);
+        long freq = ResolvePowerCalFrequencyHz(band);
         if (freq <= 0)
         {
             AppendLog($"AMP cal band {band}: no cal frequency");
@@ -4780,7 +4845,7 @@ public partial class MainViewModel : ViewModelBase, IDisposable
                 await ApplyFrequencyAsync(freq, $"amp-cal {band}m").ConfigureAwait(true);
                 await _radio.SetAmplifierInitializeAsync(band).ConfigureAwait(true);
                 await _radio.SetAmplifierPowerAsync(100).ConfigureAwait(true);
-                AppendLog($"AMP cal band {band}m → 0xF9, 0xFA 100, f={freq}");
+                AppendLog($"AMP cal band {band}m → 0xB6 {freq}, 0xF9, 0xFA 100");
             }
             catch (Exception ex)
             {
@@ -7683,7 +7748,7 @@ public partial class MainViewModel : ViewModelBase, IDisposable
 
             _suppressAgcCommand = true;
             AgcLevel = Math.Clamp(s.AgcLevel, 0, 2);
-            AgcFastRelease = Math.Clamp(s.AgcFastRelease, 0, 1000);
+            AgcFastRelease = Math.Clamp(s.AgcFastRelease, 0, 2000);
             _suppressAgcCommand = false;
 
             _suppressNbCommand = true;
@@ -8039,7 +8104,7 @@ public partial class MainViewModel : ViewModelBase, IDisposable
             try
             {
                 await _radio.SetAgcLevelAsync(Math.Clamp(AgcLevel, 0, 2)).ConfigureAwait(true);
-                await _radio.SetAgcFastReleaseAsync(Math.Clamp(AgcFastRelease, 0, 1000)).ConfigureAwait(true);
+                await _radio.SetAgcFastReleaseAsync(Math.Clamp(AgcFastRelease, 0, 2000)).ConfigureAwait(true);
                 await _radio.SetCompressionLevelAsync(Math.Clamp(Compression, 0, 24)).ConfigureAwait(true);
                 bool cmp = CompressionOn && !IsDigitalAudio;
                 await _radio.SetCompressionStateAsync(cmp).ConfigureAwait(true);
@@ -8530,7 +8595,7 @@ public partial class MainViewModel : ViewModelBase, IDisposable
             PostToUi(() =>
             {
                 _suppressAgcCommand = true;
-                AgcFastRelease = ms;
+                AgcFastRelease = Math.Clamp(ms, 0, 2000);
                 _suppressAgcCommand = false;
             });
 

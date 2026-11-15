@@ -2,6 +2,17 @@
 
 Installer: `mscc-net9-R<version>-install.exe` (WPF client + Windows servers). Install the newest one; older installers in this folder are kept for roll-back only.
 
+## Avalonia 1.7.04 — 2026-11-15  (not a new Windows installer; WPF and the Windows servers are unchanged)
+
+### Changed
+- QRP CAL and AMP CAL now use the last frequency tuned on that band (or the current VFO if you are already there, or the main-tab default if the band has not been used). Opening the tab auto-selects the band you were on. The freq box and the transmit frequency stay the same. Tested on Ubuntu (Ultimus MKII). LF not yet tested on Geminus.
+
+### Fixed
+- AGC FAST RELEASE is 0–2000 ms in steps of 10, like WPF, including the view-model and settings clamps (was 0–100 on the slider, 0–1000 in the clamps). The value is kept after a reload. Mouse wheel on this slider is one notch = 10 ms.
+
+### Known
+- Leaving the AMP CAL tab while still keyed does not yet force-stop AMP TX (QRP leave-tab already does). Do not jump from AMP to QRP while keyed.
+
 ## Avalonia 1.7.03 — 2026-11-15  (not a new Windows installer; WPF and the Windows servers are unchanged)
 
 ### Added

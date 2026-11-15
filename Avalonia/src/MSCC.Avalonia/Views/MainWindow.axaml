@@ -1630,7 +1630,8 @@
           </Grid>
           <Grid ColumnDefinitions="40,*,36" Height="22" Margin="0,0,0,2">
             <TextBlock Classes="mscc-label" Text="AGC"/>
-            <Slider Grid.Column="1" Classes="mscc-slider" Minimum="0" Maximum="100" Value="{Binding AgcFastRelease}"
+            <Slider Grid.Column="1" Classes="mscc-slider" Minimum="0" Maximum="2000" Value="{Binding AgcFastRelease}"
+                    SmallChange="10" PointerWheelChanged="Slider_OnPointerWheelChanged"
                     IsEnabled="{Binding IsConnected}"
                     ToolTip.Tip="AGC Fast Release (ms). Button above cycles SLO/MED/FST."/>
             <TextBlock Grid.Column="2" Classes="mscc-readout" Text="{Binding AgcFastRelease, StringFormat={}{0}ms}" FontSize="9"/>

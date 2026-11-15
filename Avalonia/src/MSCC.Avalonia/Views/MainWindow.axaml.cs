@@ -120,8 +120,17 @@ public partial class MainWindow : Window
             await vm.EnterFreqCalTab();
             return;
         }
-        if (removed != FreqCalTab)
+        if (removed == FreqCalTab && !await TryLeaveFreqCalTabAsync(vm, added))
             return;
+        if (added == QrpCalTab)
+            await vm.PreparePowerCalTab();
+        else if (added == AmpCalTab)
+            await vm.PrepareAmpCalTab();
+    }
+
+    /// <summary>Existing Freq Cal leave guards. False when the tab change was cancelled.</summary>
+    private async Task<bool> TryLeaveFreqCalTabAsync(MainViewModel vm, TabItem? added)
+    {
         if (vm.FreqCalManualMode)
         {
             _tabChangeGuard = true;
@@ -131,7 +140,7 @@ public partial class MainWindow : Window
                 _tabChangeGuard = false;
             });
             await MsccDialog.AlertAsync("EXIT MANUAL CALIBRATION FIRST.");
-            return;
+            return false;
         }
         if (vm.FreqCalInProgress &&
             (added == QrpCalTab || added == AmpCalTab || added == TxIqTab))
@@ -143,14 +152,15 @@ public partial class MainWindow : Window
                 _tabChangeGuard = false;
             });
             await MsccDialog.AlertAsync("FREQUENCY CALIBRATION IN PROGRESS.");
-            return;
+            return false;
         }
         if (vm.FreqCalInProgress)
         {
             vm.DeferFreqCalRestore();
-            return;
+            return false;
         }
         await vm.LeaveFreqCalTab();
+        return true;
     }
 
     /// <summary>Avalonia int bindings often only commit on pointer-up; send 0xA2 while dragging.</summary>

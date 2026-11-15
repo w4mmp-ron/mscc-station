@@ -817,7 +817,7 @@ public static class ClientSettingsStore
                 break;
             case "AGC_FAST_RELEASE":
                 if (int.TryParse(val, NumberStyles.Integer, CultureInfo.InvariantCulture, out int afr))
-                    s.AgcFastRelease = Math.Clamp(afr, 0, 1000);
+                    s.AgcFastRelease = Math.Clamp(afr, 0, 2000);
                 break;
             case "NB_ON":
                 s.NbOn = IsTruthy(val);
