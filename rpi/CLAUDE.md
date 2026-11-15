@@ -57,6 +57,10 @@ Finished entries (releases R11-10-14 to R11-14-2, done work, old resume points) 
   (backstop for WSJT-X on the Pi keying via CAT). Build: arduino-cli (FQBN + options in the history).
 - **Ron:** Option: NB threshold a bit right of middle (~5x, slider ~750) to also
   catch the near misses (5.4-6.0x seen on 20 m).
+- **Ron (2026-11-15): CAT `SM` (S-meter read) in ms-sdr, all trees.** A real TS-2000 answers `SM0;` /
+  `SM1;` with `SM0nnnn;` (main 0000-0030; polled, not sent by AI). Our ms-sdr `comm-port.c` (Pi + Windows)
+  doesn't answer SM at all; `RM` answers fixed values (SWR 2 dots, COMP / ALC 0). recv already has the
+  S-meter value; map it to 0-30 dots. Not started.
 - **Ron (2026-11-02): store QRO (amplifier) cal in the radio too.** Today ~/amplifier_cal.ini
   (trans owns, ms-sdr amplifier.c reads, 12 bands, int; -99 = none). Room checked (code read only):
   pill 3.12 = flash log sector 7, 128 KB, 16-byte entries, 4 value bytes: new type 8 (not 6 =
