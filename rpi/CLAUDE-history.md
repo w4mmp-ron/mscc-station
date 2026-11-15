@@ -2007,3 +2007,9 @@ right after `framesToComplex` (main.c:342), before `complex_shift`. Caveat: notc
 +/-6 bins (pure DC would be ~+/-2), so part may be non-steady skirt; test with notch kept,
 then `MP_HALF_BINS` 0 to see what's left. Windows/Ubuntu recv same path.
 
+- **Ron (2026-11-02): update the guides: QRP power, TX IQ and RX IQ cal are now stored in the
+  rig/daughter board.** Windows, Linux and Remote drafts (`docs/manuals/*-Release-1-DRAFT.docx`)
+  and the Configurations draft: check every calibration / Save settings / reset text says so
+  (APPLY stores in the radio, radio values win at start, power_cal.ini only for bands the radio
+  doesn't hold).
+- **2026-11-15 (finished, Ron): guide update above DONE.** The 11-12 drafts already said QRP / TX IQ / RX IQ are stored in the radio; only the reset text was old. Windows + Linux Operator's Guide drafts: 7.8 rewritten for the 11-10 hard resets (TX IQ RESET ALL = factory into radio + files; RX IQ RESET ALL = 0 / 0; QRP CAL RESET ALL = factory power table; AMP CAL RESET ALL = AMP table cleared, host only; Yes/No then OK, refused during TX / calibration; not undone at next start); RESET ALL lines in the RX IQ / QRP CAL / AMP CAL control lists; RX IQ caption + pictures-to-retake line; DRAFT box and Appendix C reset item removed (renumbered). Windows only: Reset configuration keeps all calibration. Configurations + Remote drafts: no change. Open: Windows Appendix C label note "RX IQ APPLY ALL writes only the PC files" not rechecked.

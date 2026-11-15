@@ -57,11 +57,6 @@ Finished entries (releases R11-10-14 to R11-14-2, done work, old resume points) 
   (backstop for WSJT-X on the Pi keying via CAT). Build: arduino-cli (FQBN + options in the history).
 - **Ron:** Option: NB threshold a bit right of middle (~5x, slider ~750) to also
   catch the near misses (5.4-6.0x seen on 20 m).
-- **Ron (2026-11-02): update the guides: QRP power, TX IQ and RX IQ cal are now stored in the
-  rig/daughter board.** Windows, Linux and Remote drafts (`docs/manuals/*-Release-1-DRAFT.docx`)
-  and the Configurations draft: check every calibration / Save settings / reset text says so
-  (APPLY stores in the radio, radio values win at start, power_cal.ini only for bands the radio
-  doesn't hold).
 - **Ron (2026-11-02): store QRO (amplifier) cal in the radio too.** Today ~/amplifier_cal.ini
   (trans owns, ms-sdr amplifier.c reads, 12 bands, int; -99 = none). Room checked (code read only):
   pill 3.12 = flash log sector 7, 128 KB, 16-byte entries, 4 value bytes: new type 8 (not 6 =
