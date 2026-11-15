@@ -2013,3 +2013,59 @@ then `MP_HALF_BINS` 0 to see what's left. Windows/Ubuntu recv same path.
   (APPLY stores in the radio, radio values win at start, power_cal.ini only for bands the radio
   doesn't hold).
 - **2026-11-15 (finished, Ron): guide update above DONE.** The 11-12 drafts already said QRP / TX IQ / RX IQ are stored in the radio; only the reset text was old. Windows + Linux Operator's Guide drafts: 7.8 rewritten for the 11-10 hard resets (TX IQ RESET ALL = factory into radio + files; RX IQ RESET ALL = 0 / 0; QRP CAL RESET ALL = factory power table; AMP CAL RESET ALL = AMP table cleared, host only; Yes/No then OK, refused during TX / calibration; not undone at next start); RESET ALL lines in the RX IQ / QRP CAL / AMP CAL control lists; RX IQ caption + pictures-to-retake line; DRAFT box and Appendix C reset item removed (renumbered). Windows only: Reset configuration keeps all calibration. Configurations + Remote drafts: no change. Open: Windows Appendix C label note "RX IQ APPLY ALL writes only the PC files" not rechecked.
+
+
+## Moved from rpi/CLAUDE.md on 2026-11-15, part 2 (claude-clean up, word for word)
+
+- **Opcodes: free and reclaimed (2026-11-05).** Survey of every layer (Pi + Windows ms-sdr,
+  recv, trans, WPF client, pill pio-async, PSoC MKII, PIC keyer). Free everywhere: **0x2F,
+  0x9F** (0x9D taken 2026-11-05 by SET_PADDLE_FARNSWORTH). Reclaimed in the Pi ms-sdr `source/usbavrcmd.h` (26 never-used defines commented out,
+  marked `reclaimed 2026-11-05`; AVAILABLE OPCODES block at the top of the file): 0x15-0x1E,
+  0x5C, 0x83, 0x84, 0xAD, 0xC0, 0xC1, 0xC2, 0xC4, 0xF8; also unused 0xD6. Leftover unused names
+  elsewhere: 0xAD client `Opcodes.cs`, 0xC0 pill / PSoC `usbvend.h`, 0xC1 / 0xC2 / 0xC4 / 0xD6
+  sdrcore-trans `commands.h`; clear before reuse. More room: 0x0B extended command sub-byte (in use
+  0x09-0x0D, 0x0F, 0x30). Header committed c01f487 (Pi hold: Ron asked for it), built into
+  ms-sdr 3.192. Windows ms-sdr
+  (Stew's) not changed. Pi vs Windows differences seen: 0x0F SWR fault and 0x2E SWR meter reset
+  (Pi ms-sdr only), 0x0B and 0x30 (Pi recv / trans only), 0x85 / 0x86 panadapter gain / base
+  (Pi recv only).
+
+(From the "Waiting on Stew" entry:)
+  **Not on the 11-13 list; ask Ron if still wanted before raising them:** MKII PTT 3.234 non-QSK
+  amp key delay scope check (`STEW-NON-QSK-AMP.md`); Legacy CW 1.236 on a Legacy rig
+  (`Proficio-Legacy - Copy/STEW-LEGACY-NON-QSK-AMP.md`); PSoC non-QSK CW at 45 / 55 wpm, do the
+  spaces go quiet (`NOTE-FOR-STEW-PSOC-CW-TOP-SPEED-2026-11-03.md`; users: "clean up to at least
+  39 wpm"); reviews of the Windows Operator's Guide / Configurations / Remote drafts
+  (`NOTE-FOR-STEW-USER-DOCUMENTS-2026-11-01.md`); taking our SWR meter firmware changes into his
+  copy (`NOTE-FOR-STEW-SWR-METER-FIRMWARE-CHANGES-2026-11-06.md`).
+
+
+## Moved from rpi/CLAUDE.md on 2026-11-15, part 3 (claude-clean up, word for word)
+
+History: Claude worked in a copy `rpi/sdrcore-claude/` (commits fe0c9a1, 0443c21,
+9bb4be2, 4cb8b74). On 2026-09-25 Ron had the changes moved back into the originals
+(originals unchanged since 8dee14a) and the copy deleted.
+- **Commits (Ron, 2026-10-05): too many commits and pushes.** Finish everything that belongs
+  to a piece of work first (code, notes, note for Stew), then ONE commit and one push. No
+  follow-up "notes: committed xyz" commits.
+- **Pi ms-sdr Last_used.ini is dead (found 2026-11-08; Ron: leave it alone for now).** Every
+  startup logs `Init_last_used_VFO_A/B . Open file failed. Last_used.ini will be created`; it never
+  is. `Update_last_used_VFO_A/B` (`last_used.c`) never reaches its write (no "Open" line in the
+  log, so one of its conditions always skips it), and `~/.local/mscc/vfoa/` and `vfob/` don't
+  exist anyway (ms-sdr doesn't create them). The in-memory table still fills on band changes,
+  but nobody asks for it: the WPF client keeps its own per-band last-used
+  (`SaveLastUsedForCurrentBand`) and sent no 0xD7 / 0xD8 / 0xD9 request all day. `startup.ini`
+  (same thread, `Update_Startup`) IS used and written. Option for later (after the hold): drop
+  the Init calls and the Last_used.ini write, keep startup.ini. Heat sink -40 C / OPEN in the
+  log = thermistor removed (Ron), expected.
+  needed. Pill: easy (table + step count), only if 5 ms proves a problem on the analyzer. PSoC:
+  only after the own-I/Q fix (doesn't fix the staircase).
+  Pill TX underrun while keyed (2026-11-02): `audio_i2s_tx_block()` plays a silent block at once
+  on a USB underrun (hard drop = click). TESTED 11-02 with `~/utils/audio-stats.py mark` / `since`:
+  2.1 min CW non-QSK = out_under 0, out_drop 0, out level steady 1552; 1 underrun in 6.5 h before.
+  Fix (repeat the last good block or ramp down while keyed) only if one ever shows up.
+
+
+## Moved from rpi/CLAUDE.md on 2026-11-15, part 4 (claude-clean up, word for word)
+
+- Pi ms-sdr Last_used.ini: closed (removed in ms-sdr 3.200, 2026-11-10); old item in `CLAUDE-history.md` (2026-11-15, part 3).

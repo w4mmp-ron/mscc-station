@@ -37,16 +37,9 @@ keywords ("build" / "update the notes" / "finished" / "stop"), pull first, nothi
 | `swr-meter/ron/HF_SWR_R4_1/` | **Our copy of the WiFi SWR meter firmware** (ESP32 Arduino; copied 2026-11-01 from Stew's `swr-meter/HF_SWR_R4_1/` @ 67fa644). In git since 2026-11-04: the source plus `swr-meter/ron/build/HF_SWR_R4_1.ino.bin` (the file to OTA-load at http://hf-swr-meter.local/update); other build output stays local. Claude edits here; Stew's copy is read-only. |
 | Rest of `C:\Users\Ron\.grok\worktrees` | Read-only reference unless Ron says otherwise. |
 
-History: Claude worked in a copy `rpi/sdrcore-claude/` (commits fe0c9a1, 0443c21,
-9bb4be2, 4cb8b74). On 2026-09-25 Ron had the changes moved back into the originals
-(originals unchanged since 8dee14a) and the copy deleted.
 Git repo root: `C:\Users\Ron\.grok\worktrees`.
 
 ## Open list (Ron, updated 2026-11-01) - read first on resume
-
-- **Commits (Ron, 2026-10-05): too many commits and pushes.** Finish everything that belongs
-  to a piece of work first (code, notes, note for Stew), then ONE commit and one push. No
-  follow-up "notes: committed xyz" commits.
 
 Finished entries (releases R11-10-14 to R11-14-2, done work, old resume points) moved to `rpi/CLAUDE-history.md` on 2026-11-14 (last section there).
 
@@ -80,18 +73,9 @@ Finished entries (releases R11-10-14 to R11-14-2, done work, old resume points) 
   EasyEDA: "much better"). **Next:** (1) confirm the (check) items; (2) LCSC footprints in
   EasyEDA, then send the exported .net for a check against NETLIST.md; (3) firmware: stand-alone
   build of keyer-buffer (menu, speed pot, battery check, sleep), PC bench first.
-- **Opcodes: free and reclaimed (2026-11-05).** Survey of every layer (Pi + Windows ms-sdr,
-  recv, trans, WPF client, pill pio-async, PSoC MKII, PIC keyer). Free everywhere: **0x2F,
-  0x9F** (0x9D taken 2026-11-05 by SET_PADDLE_FARNSWORTH). Reclaimed in the Pi ms-sdr `source/usbavrcmd.h` (26 never-used defines commented out,
-  marked `reclaimed 2026-11-05`; AVAILABLE OPCODES block at the top of the file): 0x15-0x1E,
-  0x5C, 0x83, 0x84, 0xAD, 0xC0, 0xC1, 0xC2, 0xC4, 0xF8; also unused 0xD6. Leftover unused names
-  elsewhere: 0xAD client `Opcodes.cs`, 0xC0 pill / PSoC `usbvend.h`, 0xC1 / 0xC2 / 0xC4 / 0xD6
-  sdrcore-trans `commands.h`; clear before reuse. More room: 0x0B extended command sub-byte (in use
-  0x09-0x0D, 0x0F, 0x30). Header committed c01f487 (Pi hold: Ron asked for it), built into
-  ms-sdr 3.192. Windows ms-sdr
-  (Stew's) not changed. Pi vs Windows differences seen: 0x0F SWR fault and 0x2E SWR meter reset
-  (Pi ms-sdr only), 0x0B and 0x30 (Pi recv / trans only), 0x85 / 0x86 panadapter gain / base
-  (Pi recv only).
+- **Opcodes:** the current free list is the AVAILABLE OPCODES block at the top of the Pi ms-sdr
+  `source/usbavrcmd.h` (no opcode is free in every layer now: 0x9D, 0x2F, 0x9F were taken 11-05 / 11-10 / 11-12;
+  use the reclaimed list there). The 2026-11-05 survey is in `CLAUDE-history.md` (2026-11-15, part 2).
 - **Waiting on Stew (list refreshed 2026-11-13 = the "With Stew" list in 08e53eb; notes in `.mscc-coord/`).**
   The 2026-11-01 list (14 items) was cleared: NB / spectral NR / NR Low-Med-High / heat sink / hard
   resets / client-gone fix / Windows SWR meter / radio cal read at connect were done by Ron 2026-11-10;
@@ -106,13 +90,8 @@ Finished entries (releases R11-10-14 to R11-14-2, done work, old resume points) 
      frozen (`NOTE-FOR-STEW-AVALONIA-MIGRATION-FROZEN-2026-11-13.md`), Claude builds PSoC firmware
      from the command line (`NOTE-FOR-STEW-PSOC-COMMAND-LINE-BUILD-2026-11-13.md`; his Claude told
      him it can't).
-  **Not on the 11-13 list; ask Ron if still wanted before raising them:** MKII PTT 3.234 non-QSK
-  amp key delay scope check (`STEW-NON-QSK-AMP.md`); Legacy CW 1.236 on a Legacy rig
-  (`Proficio-Legacy - Copy/STEW-LEGACY-NON-QSK-AMP.md`); PSoC non-QSK CW at 45 / 55 wpm, do the
-  spaces go quiet (`NOTE-FOR-STEW-PSOC-CW-TOP-SPEED-2026-11-03.md`; users: "clean up to at least
-  39 wpm"); reviews of the Windows Operator's Guide / Configurations / Remote drafts
-  (`NOTE-FOR-STEW-USER-DOCUMENTS-2026-11-01.md`); taking our SWR meter firmware changes into his
-  copy (`NOTE-FOR-STEW-SWR-METER-FIRMWARE-CHANGES-2026-11-06.md`).
+  **Not on the 11-13 list** (5 older Stew items: non-QSK amp delay, Legacy CW 1.236, PSoC CW top speed, guide
+  reviews, SWR meter firmware): ask Ron before raising them; list in `CLAUDE-history.md` (2026-11-15, part 2).
 - **Pill audio stats cron (2026-11-08):** `*/10 * * * * /usr/bin/python3 /home/ron/utils/audio-stats.py log`
   -> `~/.local/mscc/audio-stats.log`; check `grep '<<<' ~/.local/mscc/audio-stats.log`.
   **Open fix (Ron OK'd after the hold, not started):** transmit underrun at every band change and tune
@@ -120,16 +99,6 @@ Finished entries (releases R11-10-14 to R11-14-2, done work, old resume points) 
   Better fix (Ron): in DUAL STREAM (Ron's Pi) never reopen the I/Q stream, only stop / ignore the mic
   stream in T / C; keep the reopen for single full-duplex. Probably also removes the receive gaps /
   in_drop (not verified; pill ruled out by code read). Full investigation in `CLAUDE-history.md` (2026-11-15).
-- **Pi ms-sdr Last_used.ini is dead (found 2026-11-08; Ron: leave it alone for now).** Every
-  startup logs `Init_last_used_VFO_A/B . Open file failed. Last_used.ini will be created`; it never
-  is. `Update_last_used_VFO_A/B` (`last_used.c`) never reaches its write (no "Open" line in the
-  log, so one of its conditions always skips it), and `~/.local/mscc/vfoa/` and `vfob/` don't
-  exist anyway (ms-sdr doesn't create them). The in-memory table still fills on band changes,
-  but nobody asks for it: the WPF client keeps its own per-band last-used
-  (`SaveLastUsedForCurrentBand`) and sent no 0xD7 / 0xD8 / 0xD9 request all day. `startup.ini`
-  (same thread, `Update_Startup`) IS used and written. Option for later (after the hold): drop
-  the Init calls and the Last_used.ini write, keep startup.ini. Heat sink -40 C / OPEN in the
-  log = thermistor removed (Ron), expected.
 - **Rules (Ron 2026-11-01):** assume Stew makes MSCC UI (Avalonia) match the current Windows client,
   and the Ubuntu scripts/utilities match the Pi. No separate Avalonia review; document the Pi
   versions for both Linux hosts. Linux guide Release 0 reviewed (old versions, Appendix G Pi install
@@ -140,12 +109,7 @@ Finished entries (releases R11-10-14 to R11-14-2, done work, old resume points) 
   see `CLAUDE-history.md`, 2026-11-15). CW ramp length by speed (Ron 2026-11-02, just a thought): the key
   delay (20-40 ms) already shows each element's length ahead, so the ramp could be chosen per
   element (longer normally, shorter only for very short elements/spaces), any key, no speed
-  needed. Pill: easy (table + step count), only if 5 ms proves a problem on the analyzer. PSoC:
-  only after the own-I/Q fix (doesn't fix the staircase).
-  Pill TX underrun while keyed (2026-11-02): `audio_i2s_tx_block()` plays a silent block at once
-  on a USB underrun (hard drop = click). TESTED 11-02 with `~/utils/audio-stats.py mark` / `since`:
-  2.1 min CW non-QSK = out_under 0, out_drop 0, out level steady 1552; 1 underrun in 6.5 h before.
-  Fix (repeat the last good block or ramp down while keyed) only if one ever shows up.
+  needed. Details + pill TX underrun while keyed (fix only if one shows up): `CLAUDE-history.md` (2026-11-15, part 3).
 
 Old history (resume points before 2026-10-31 afternoon, dated change logs, closed items) is
 in `rpi/CLAUDE-history.md`. Grep it for earlier work on a topic; don't read it whole.
@@ -164,12 +128,13 @@ phones UDP 9100 (MSA1). CW is not part of remote audio.
 ## Build (on the Pi, arm64)
 
 ```bash
-cd rpi/SDRcore-recv-linux  && make clean && make
-cd ../SDRcore-trans-linux  && make clean && make
-cd ../ms-sdr-linux         && make clean && make
+cd rpi/SDRcore-recv-linux  && make clean BINDIR=/tmp/msbuild && make BINDIR=/tmp/msbuild
+cd ../SDRcore-trans-linux  && make clean BINDIR=/tmp/msbuild && make BINDIR=/tmp/msbuild
+cd ../ms-sdr-linux         && make clean BINDIR=/tmp/msbuild && make BINDIR=/tmp/msbuild
 ```
 
-`make` installs to `~/mscc/` (replaces the running binary; `BINDIR=...` to avoid).
+Without `BINDIR`, `make` installs to `~/mscc/` (replaces the running binary) and `make clean`
+DELETES the installed server (happened 2026-11-14, recv). Ron builds for real himself.
 See also `rpi/mscc-deb/BUILD-SERVERS-ON-PI.md`.
 Syntax check on Windows: WSL `Debian` has gcc. Use `-iquote sources -idirafter sources`
 (plain `-I sources` pulls in the Windows `pthread.h` and fails).
