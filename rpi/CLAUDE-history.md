@@ -1811,3 +1811,199 @@ Option, not done: drag the divider on the display.
 
 **2026-11-01: `docs/manuals/MSCC-Configurations-DRAFT.docx` (13 pages, Word, same style): client-server explained (ch 1: client, the 3 servers, ship bridge / engine room picture, always client-server even on one PC per Ron), then the five setups in plain English** (Ron): 1 Windows local, 2 Windows client PC1 + Windows servers PC2, 3 Windows client + Pi/Linux servers, 4 Pi/Linux local, 5 Pi/Linux client + Pi/Linux servers. Each: diagram, who for, what runs where, client settings, audio, digital programs, which guide. Key rule (Ron): Windows host = client owns the COM port (SETTINGS → COM Port; setup 2 WSJT-X on the client with Remote Digital); Pi/Linux host = host owns everything (mscc-init sets COM ports /dev/tnt + audio, WSJT-X runs on the Pi, reached by VNC; Windows client only operates + Remote Phones). 4 DRAFT items (setup 2 host keeping servers alive; setup 3 mscc-init port/device names + what the client does for Pi digital audio; setups 4/5 MSCC UI steps, wait for the Avalonia review). Next (Ron): the Avalonia client, then a Pi/Linux remote guide. Not committed.
 **2026-11-06: Configurations draft, setup 6 added (Ron: "looks fine"):** Pi / Linux client + Windows host (section 3.6, diagram, DRAFT box: tested with MSCC Avalonia 1.6.86, MSCC UI 0.6.x lacks the devices / saved choices / RTS, Windows servers stop ~45 s after the client leaves). "five" -> "six" throughout, 2.1 table row, 2.2 sentence, chapter 4 column 6, Appendix A item 2. Edited with python-docx (no Word on this PC); LibreOffice users: Tools > Update > Update All for the contents page numbers.
+
+## Moved from rpi/CLAUDE.md on 2026-11-15 (claude-clean up, word for word)
+
+- Stew note `.mscc-coord/NOTE-FOR-STEW-RX-IQ-TOOLS-2026-10-14.md`: option 4 (client AUTO
+  button) removed (Ron).
+
+- **WiFi SWR meter (2026-11-06, Ron's copy `swr-meter/ron/HF_SWR_R4_1/`):** PEAK hold + AVG mode
+  built, OTA-loaded and TESTED (Ron, WSJT-X); PEAK SWR beside the big SWR (later 2026-11-06) built,
+  loaded, works (Ron); details in the SWR meter firmware entry further down.
+  Pushed: firmware 44b02ec, note for Stew bb31561
+  (`.mscc-coord/NOTE-FOR-STEW-SWR-METER-FIRMWARE-CHANGES-2026-11-06.md`), notes 1ab59db, PEAK SWR
+  a2134e5 (has the "With Stew" list). The two PSoC CW top speed commits (0cec97e, 4ea90e3) come
+  after them and are still local (hold). Open: test the WiFi retry
+  (router off, meter restarted); Ron to decide if ms-sdr itself stops TX on a meter fault
+  (backstop for WSJT-X on the Pi keying via CAT). Build: arduino-cli inside the Arduino IDE,
+  FQBN esp32:esp32:esp32 with FlashSize=4M, PartitionScheme=min_spiffs (full option string in the
+  2026-11-06 session); Ron to add Windows Defender exclusions (Arduino15, arduino cache,
+  libraries, build) because builds were slow.
+
+- **2026-11-02 later: PSoC comb fix handed to Stew (Ron: Stew does the PSoC, Ron does the pill).**
+  Stew's answer (`NOTE-FOR-RON-TX-EDGE-COMB-ANSWERS-2026-11-02.md`): comb on BOTH CW edges, not
+  audible on air; his better plan = fade the LIVE slot (copy + raised-cosine scale only during
+  fades, SetTxBufAddress), all modes, no soft mute, no host change. Ron's go-ahead:
+  `NOTE-FOR-STEW-TX-EDGE-COMB-LIVE-FADE-2026-11-02.md` (8-bit gain table, ISR or dummy-Zero for
+  timing, latch the slot index, 5 ms). Old idea below for history.
+  **Stew, 2026-11-02 afternoon: PARKED on his side** (`NOTE-FOR-RON-FIRMWARE-FOLDERS-AND-RELEASES-
+  2026-11-02.md`): 3.244 (Buff TDs re-pointed, slots 1 ms late) = noise + stalled audio; 3.245
+  (scale next slot in place) = RX and TX dead; neither committed, FW back at 3.243 / 4.244. He needs
+  the real USB vs DAC slot timing. From SyncSOF.v: index steps at each SOF, forced to 1 when the
+  player wraps to slot 0, SOF lands mid-slot at a PLL-held point -> USB is 1 ahead for part of
+  each ms and 2 ahead for the rest. Ron: leave it to Stew (his Claude can read SyncSOF.v too).
+  Same push: PSoC trees renamed `Proficio-Ultimus-Legacy / -MKII-PTT / -MKII-ATU`, Ultimus trees
+  removed, releases in each tree's `Release/` named by version (copy-release.py, -b2 if same
+  version differs; bump the minor for every test build); Ron: reopen Creator projects from the
+  new folders, fix the post-build path.
+- **Ron (2026-11-02): PSoC makes its own CW I/Q (fix for Stew's 12 kHz comb).** Comb = PCM3060
+  soft mute 0.5 dB per 8/fs staircase at every non-QSK release / CW key-up, ~-65 dBc (Stew's
+  note `.mscc-coord/NOTE-FOR-RON-TX-EDGE-COMB-DAC-SOFT-MUTE-2026-11-02.md`). PCM3060 volume
+  stepping ruled out (still a staircase, too many I2C writes). Idea (code read only, not tried):
+  trans CW carrier = 12 kHz at 96 kHz = 1 ms USB slot is exactly 12 cycles; 8051 grabs one slot
+  from `TxI2S[n]`, builds raised-cosine fade buffers (192 multiplies/ms), plays them with
+  `PCM3060_SetTxBufAddress()` (exists, unused); DAC stays unmuted. Grab window < 1 ms because the
+  Zero DMA erases each slot behind the reader: in CW point the Zero TDs (`DmaTxStart()`, our code,
+  not Cypress) at a dummy byte. Checks: trans sends a steady carrier in CW RX (Pi: `#ifdef RON`),
+  8051 time, fade vs key delay. Pill already fades in software (5 ms raised cosine, fw 3.6).
+  Reply to Stew: `.mscc-coord/NOTE-FOR-STEW-TX-EDGE-COMB-CW-2026-11-02.md` (pushed 7089904);
+  waiting on his answer.
+
+- **Pill audio stats logged by cron (2026-11-08).** `audio-stats.py log` (utility-scripts Pi +
+  Windows, same file; Pi copy in ~/utils) adds one line to `~/.local/mscc/audio-stats.log`: change
+  since the last run, servers up / DOWN / restarted, PILL RESTARTED; trouble ends in `<<<`. State
+  in `~/.audio-stats-log.json`. Ron's crontab: `*/10 * * * * /usr/bin/python3
+  /home/ron/utils/audio-stats.py log`. Check: `grep '<<<' ~/.local/mscc/audio-stats.log`. First
+  test line (since pill start 11-07 23:52, 17.6 h): gaps 103, in_drop 5, out_under 10. The mark
+  from 16:58 is still set (since = clean so far). Question: do underruns come with server
+  restarts or in normal running? The log answers it.
+  **Answered by two 120 s watches (2026-11-08 17:43 / 17:47):** FT8 key-down / key-up = clean.
+  One transmit underrun (out_lvl to 0) at EVERY band change and EVERY tune key-up (and one near a
+  tune key-down); key-downs otherwise clean; no pill faults. Cause is sdrcore-trans, not the pill:
+  `udp_thread.c:1394-1424` (CMD_SET_MAIN_MODE) in DIGITAL / R-DIGITAL audio mode always runs
+  manage_stream(0) + manage_stream(1) = stop and reopen the stream, even when the mode is the same
+  (the client sends mode U again after every band change). Tune: mode T reopens output-only I/Q
+  just BEFORE TX on; key-up: TX off, then mode U reopens full duplex. The T/C <-> voice rebuild is
+  needed (comment: idle aloop stalls full duplex); the same-mode one is not. No harm on the air
+  (all while receiving / un-keyed), but it puts an underrun on the pill counters each time.
+  **Fix idea (after the hold, Ron 2026-11-08: no change yet):** rebuild only when the stream kind
+  changes (full duplex <-> output-only), skip when the mode stays the same. Windows trans
+  (Stew's) not checked. For "the pill is solid": count these as host-side, expected.
+  **Better fix idea (Ron 2026-11-08: why stop the audio at all?):** the reopen exists because
+  a single full-duplex PortAudio stream (VirtualB.monitor in + Proficio I/Q out) stalls its
+  output when the idle loopback input stalls in TUNE / CW. Ron's Pi runs trans in DUAL STREAM
+  (log: `DUAL STREAM: in_dev=17 'VirtualB.monitor' @48000 | out_dev=1 ALSA @96000`, main.c
+  520-607): mic and I/Q are separate streams, so an idle mic can't stall the I/Q. In dual mode:
+  never reopen the I/Q stream (just ignore / stop the mic stream in T / C); keep the reopen only
+  for the single full-duplex case. Removes the band-change and tune underruns completely. Not
+  verified: whether the single-stream case still needs it.
+  **Receive losses (gaps / in_drop), 2026-11-08 evening: cause still open, Ron: no FT8 impact,
+  keep the cron log only (no long background watch).** Cron windows: 17:30-17:40 (FT8 + band
+  change + tune) 3 gaps; 17:40-17:50 (FT8 + band changes + tunes) 9 gaps, 5 drops; 17:50-18:00
+  (8 FT8 TX, no band change / tune) clean; 18:00-18:10 (idle, WSJT-X receiving) clean. Also 5
+  gaps + 1 drop at ~17:29 (cause unknown). Neither 120 s watch (FT8 TX; band changes + tunes) saw
+  any, so band change / tune does not cause them every time, if at all. Ruled out: recv (keeps its
+  stream running through TX, band change = I/Q reload + spectrum pause only); kernel log (no USB /
+  audio messages); Claude's ssh / log-search load (18:13 test: 30 s control and 30 s of 4750
+  awk/grep passes over the server logs, counters unchanged: gaps 120, in_drop 11, out_under 22).
+  Gaps / drops are below recv (Pi USB host late collecting IN), not the pill. Next: read each
+  `<<<` cron line against the server logs (UTC there, local in the stats log) to see if they keep
+  landing in band-change / tune windows. No client runs on the Pi (client is on Windows).
+  **Pill code read (2026-11-08, pill pio-async, no change): the pill can't cause the gaps.**
+  RX streaming is all in interrupts: I2S DMA ISR (`audio_i2s_rx_block`, 96-frame copy) fills the
+  IN FIFO, the USB ISR queues the next packet (`tud_audio_tx_done_isr`, TinyUSB 0.21, which also
+  counts the gaps from the USB frame number); both priority 1. Main loop (relays, Si5351 I2C,
+  beat6) is pre-empted by them, so loop max 1.9 ms doesn't matter. `__disable_irq` sections are a
+  few instructions. No path holds the USB ISR off ~1 ms. `gaps max 2` = single missed frames.
+  **in_drop follows from the gaps:** each missed frame leaves +384 bytes in the IN FIFO, flow
+  control (95/96/97 frames) drains ~4 bytes/ms, so ~5 missed frames close together (FIFO
+  ~1170 of 3104) fill it and each further one drops a block (17:40-17:50: 9 gaps, 5 drops = a
+  cluster). **Likely cause (NOT verified):** trans's stream reopen closes / reopens the Proficio
+  ALSA playback = snd-usb-audio changes the OUT interface alt setting = the Pi's USB host
+  reconfigures endpoints on the same device and can miss a few IN frames. Fits "only in band
+  change / tune windows"; doesn't explain why the 17:47 watch over 4 reopens saw none. Proof:
+  after the hold, the dual-stream fix (never reopen the I/Q stream) should remove these too.
+  **Impact (Ron 2026-11-08: edge cases):** only band change and TUNE (trans reopen); no data is
+  being received then. Frequency changes within a band can't cause it: trans has no frequency
+  command at all; recv gets CMD_SET_MAIN_FREQ (`udp_thread.c:737`) only to pause the
+  spectrum (short blank for small steps, longer for >= 100 kHz = Si5351 PLL reset), its audio
+  stream is untouched. A gap alone loses nothing (pill sends the samples a frame later); only
+  in_drop loses 1 ms of I/Q. Modes that would feel a drop: packet / VARA / ARDOP (frame resent),
+  PSK31 / RTTY (maybe one character); FT8 / WSPR / SSB / CW: none.
+
+- **SWR meter firmware (Ron 2026-11-01):** auto-tune on 30 m runs longer than the meter's time limit, so
+  the meter faults. Firmware source is NOT in the tree (only swr-meter/ Python app + summary); Ron asks
+  Stew to add it. 11-01 evening tests: trips ~1 s into a 15 m auto-tune (tune power 43: fwd 61 ref 25.00
+  swr 4.55; 34: fwd 38 ref 25.00 swr 9.82); 30 m tunes 5.5-7.4 s did not trip. Ron: meter "Fault Trip
+  Count" is already at max and is too short for a slow tuner match (firmware limit).
+  Stew added the source 11-01 (67fa644, swr-meter/HF_SWR_R4_1). Cause: 1 count = one FWD+REF pair ~2.4 ms,
+  max 24 = ~58 ms; REF table tops at 25.00 W (clipped). **FIXED in our copy swr-meter/ron/HF_SWR_R4_1
+  (git-excluded via .git/info/exclude until done): TUNE ALLOWANCE** (tuneGraceSec 0..10 s, default 5;
+  SWR not counted for the first N s of a new TX = RF after >= 2 s with none; web field + prefs + saved list;
+  no touch control). Built with arduino-cli (IDE bundled; esp32 3.3.11, lvgl 9.4.0, TFT_eSPI 2.5.43, Stew's
+  User_Setup.h/lv_conf.h copied into the libs) -> swr-meter/ron/build/; Ron OTA-loaded it (http://meter/update)
+  20:43. Test PASSED 20:45 (Ron): 20/15/30/15 m tunes, no fault, client showed readings.
+  **21:00 allowance now ONLY FOR TUNES (Ron):** meter /api?tune=1|0 flag (RAM, self-clears after
+  tuneGraceSec; JSON "tune"); 2 s idle rule removed. **Pi ms-sdr 3.191** (running): Tune_button sends
+  tune=1 (waits <= 300 ms for the answer) BEFORE keying, tune=0 after (thread); skipped if meter
+  off/offline. Also reset fix: ms-sdr asked /reset (no such page, 404 taken as OK) -> now only
+  /api?action=reset, result read from the answer ("fault":0). Test PASSED 21:06 (Ron): 15 m tune 16 s,
+  tune=1 OK ~20 ms before key, no fault. Old firmware ignores tune=1 (logged "no tune flag"), harmless.
+  ms-sdr committed. Firmware committed 2026-11-04 (Ron; no longer git-excluded), with mDNS added (meter
+  answers as hf-swr-meter.local; tested from Firefox, Ron). Note for Stew about the firmware changes: `.mscc-coord/NOTE-FOR-STEW-SWR-METER-FIRMWARE-CHANGES-2026-11-06.md` (2026-11-06; tune allowance, mDNS, WiFi retry, PEAK hold, AVG, JSON keys, 25 W REF table limit).
+  21:18: touch control "Tune Allow (s)" on the meter SETTINGS page (rows respaced to 52 px:
+  52/104/156/208/260; -/+ 0..10, 0 = OFF, saved on Back). Ron: fits and works. Client 11.1.5 dropped
+  TX 2 ms after the relayed fault (good). Then find the limit and fix. Also pending Ron's decision: should ms-sdr itself stop
+  TX on a meter fault (backstop; WSJT-X on the Pi keys via CAT, so the client can't stop it).
+  **2026-11-04: WiFi join retry** (012852c): after the 15 s timeout the meter retries every 30 s
+  (NO NET-RETRY / JOIN FAIL-RETRY / NO WIFI-RETRY). Loaded, works; the retry itself (router off,
+  meter restarted) NOT tested yet.
+  **2026-11-06: PEAK hold + AVG mode, TESTED (Ron).** Old peak was not a hold: fixed 600 ms (comment
+  said 5 s), hold restarted only on a reading >= the peak, decay x0.95/10 ms floored at the live
+  reading (looked live), REF had no timer. Now: FWD and REF each have a hold timer; a reading within
+  10% of the peak restarts it; hold = peakHoldSec (0.5..5 s, default 2, web field "Peak Hold (s)",
+  pref "peakHold"; no touch control, Ron); then x0.97/20 ms, no floor. The PEAK/VOLTS button now
+  steps VOLTS -> PEAK -> AVG (cyan / amber / green; label VOLT: / PEAK: / AVG:); pref "auxMode"
+  (old "peakMode" read once). AVG = FWD/REF watts over a 1 s window (50 x 20 ms slots, pauses
+  counted); fresh window when RF starts after > hold with none; shown only once the window is full
+  (first 1 s of a TX shows the held value or 0, Ron: steadier for WSJT-X); AVG label redraw <= 4/s;
+  held for peakHoldSec after RF stops, then 0. JSON adds "peakRef", "peakHold", "avg", "avgRef".
+  Firmware ~1508 KB, bin in swr-meter/ron/build/.
+  **2026-11-06 later: PEAK SWR on the main screen, WORKS (Ron).** "SWR:" moved x 70 -> 5, value
+  270 -> 195 (64 px font kept; "10.00" ends ~x 370); new "PEAK" caption (montserrat 18, 385,44) and
+  value (montserrat 32, 385,66), always shown, amber / red over the alarm threshold. peakSWR follows
+  the averaged swr (the big number), only while FWD >= MIN_POWER_THRESHOLD; hold = peakHoldSec,
+  restarted by a reading whose (SWR - 1) is within 10% of the peak's; after the hold it drops to the
+  live SWR (1.00 unkeyed), no decay. NOT in the JSON / web page (Ron). Cross-needle mode unchanged.
+  Firmware ~1509 KB.
+
+FREQ CAL saturation fix (2026-09-27; mscc 1.0.49 installed on the Pi, FREQ CAL works - Ron): Goertzel mags were stored as int(mag*1e6),
+capped at INT_MAX (~-24 dBFS raw IQ) -> ties, first (low) step won, 3-sum wrapped. Now
+`calMag*F` floats in `sdrcore.h`, `cal_data` floats, average in double (same 1e6 units vs
+Calibration_Low_Limit). Image check keeps the scaled ints (`cal_mag_scaled`, clamped).
+WSL syntax OK. Windows recv has the same issue (not touched).
+#5 fixes (same batch, in 1.0.49): main.c freq_low init typo; cal log %ld -> %u/%d (udp_thread
+217, 299, 755, 1395, 1404); cal_data index clamped to MAX_CALIBRATION_ELEMENT-1.
+Future idea (Ron: keep in mind, not now): `goertzel_mag` uses only I (`data[i].real`) -> no
++600/-600 side check, ~3 dB SNR loss. Complex Goertzel (~10 lines) fixes both; level numbers
+change, so recheck CALIBRATION_LOW_LIMIT / LOOSE. Mirror is 1200 Hz away, outside the sweep.
+  Limit explained (Ron OK'd this wording 2026-09-29): the limit is a bar - FREQ CAL measures how
+  loud the tone is (average of low/center/high peaks, udp_thread.c:289); above the bar = found,
+  below = fail (freq 0). Normal 5,000,000, LOOSE 1,000,000. Complex Goertzel = a better ear: tone
+  reads louder (x2, +6 dB), noise also louder but less (x1.41, +3 dB), so the tone stands out
+  more (the 3 dB gain). Everything reads louder, so the bar must go UP: x2 (10,000,000 / 2,000,000)
+  = same as today; x1.41 (~7,070,000 / ~1,414,000) = a 3 dB weaker tone passes, noise still
+  doesn't (the benefit). Left at 5,000,000 -> noise could pass as a tone.
+Future item (Ron 2026-09-29): FM transmit. trans already has it: wire mode 5 -> MODE_FM
+(`udp_thread.c:1277`), `main.c:327` path (skips fastconv), `fm_modulate` (`dsputils.c:434`),
+fixed `FM_PEAK_DEV_HZ` 5000. Never tested on air (as far as known). Plan:
+1. trans: deviation becomes a setting via a new opcode (CMD_SET_FM_DEVIATION, 3000/5000),
+   default 3000 (safe). US rule: below 29.0 MHz modulation index <= 1 -> 3 kHz; 29.0-29.7 -> 5 kHz.
+2. trans: mic audio is x2 then hard-clipped -> harmonics above 3 kHz break index <= 1. Add a
+   limiter + 3 kHz low-pass AFTER the clip. Optional pre-emphasis.
+3. ms-sdr: forward the new opcode to trans. Mode letter: 'F' goes to the rig unchanged and
+   that is fine - firmware only cares 'C' vs not-'C'; si5351.c A/U/L/C switch only sets
+   E_tune_freq, which nothing reads (dead); LO = E_current_LO_freq for all non-C modes; TUNE
+   already goes as 'T' and works. display.c is legacy, not in the build (Ron). No 'U' mapping,
+   no firmware change.
+4. Client: picks 3 or 5 kHz from TX freq vs 29.000 MHz, sends on FM select and on crossing 29.0.
+5. Test (Stew, spectrum analyzer): deviation (Bessel null) at 3 and 5 kHz, occupied BW.
+6. Windows / Ubuntu trans + ms-sdr same. Ron: comment the code heavily.
+DONE 2026-10-04 with a wider blocker (0.98), see Open list 13. Old note: real fix for the -12 kHz spectrum spur =
+DC blocker on raw I/Q. Spur is I/Q DC (ADC offset + LO leakage); `complex_shift` runs
+`doPanadapter` on raw I/Q, then shifts by fixed 12 kHz (`loFreq`), so DC sits at VFO-12k,
+display only (audio never hears it). Add `y = x - x_prev + a*y_prev`, a ~0.9999, on I and Q
+right after `framesToComplex` (main.c:342), before `complex_shift`. Caveat: notch needed
++/-6 bins (pure DC would be ~+/-2), so part may be non-steady skirt; test with notch kept,
+then `MP_HALF_BINS` 0 to see what's left. Windows/Ubuntu recv same path.
+
