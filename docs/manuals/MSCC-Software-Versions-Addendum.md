@@ -12,16 +12,18 @@ when only version numbers do. Downloads and what changed in each release:
 | Computer | File |
 |---|---|
 | Windows | `mscc-net9-R11-14-3-install.exe` (installs to `C:\mscc-net9`; uninstall from Apps & features) |
-| Raspberry Pi (64-bit Pi OS, Pi 4 / Pi 5) | `mscc_1.0.95_arm64.deb` (required) and `mscc-avalonia_1.7.02_arm64.deb` (optional) |
+| Raspberry Pi (64-bit Pi OS, Pi 4 / Pi 5) | `mscc_1.0.95_arm64.deb` (required) and `mscc-avalonia_1.7.03_arm64.deb` (optional) |
 
 ## MSCC programs
 
 | Program | Windows | Raspberry Pi |
 |---|---|---|
-| MSCC client | WPF, title bar 11.14.3 | MSCC Avalonia 1.7.02 (optional) |
+| MSCC client | WPF, title bar 11.14.3 | MSCC Avalonia 1.7.03 (optional) |
 | ms-sdr (server) | 3.213 | 3.210 |
 | recv (receive server) | 3.155 | 3.156 |
 | trans (transmit server) | 3.159 | 3.160 |
+
+Avalonia 1.7.03 is built and tested on Ubuntu (slider wheel and QRP CAL TUNE mode) and will be attached at the next GitHub Release, with the firmware.
 
 The Windows and Raspberry Pi servers do the same job; their numbers differ because each
 build counts up on its own (recv / trans on the Pi also have a Linux-only sound card fix for

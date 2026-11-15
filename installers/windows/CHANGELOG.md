@@ -2,6 +2,14 @@
 
 Installer: `mscc-net9-R<version>-install.exe` (WPF client + Windows servers). Install the newest one; older installers in this folder are kept for roll-back only.
 
+## Avalonia 1.7.03 — 2026-11-15  (not a new Windows installer; WPF and the Windows servers are unchanged)
+
+### Added
+- Main-window sliders move one SmallChange per mouse-wheel notch, like WPF (RIT step 10, IQ sliders step 1). AGC FAST RELEASE was left at 0–100 in this build; Ron has since confirmed 0–2000 ms, step 10, for a follow-up.
+
+### Fixed
+- QRP CAL CALIBRATE and TX/TUNE now set mode TUNE and send 0xA6 before keying 0xAC, and restore the previous mode on stop, leaving the tab, or disconnect. That stops phone audio on the tune carrier.
+
 ## R11.14.3 — 2026-11-14  (`mscc-net9-R11-14-3-install.exe`, title bar 11.14.3)
 
 ### Fixed

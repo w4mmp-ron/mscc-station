@@ -113,6 +113,8 @@ public partial class MainWindow : Window
         if (DataContext is not MainViewModel vm) return;
         var added = e.AddedItems.Count > 0 ? e.AddedItems[0] as TabItem : null;
         var removed = e.RemovedItems.Count > 0 ? e.RemovedItems[0] as TabItem : null;
+        if (removed == QrpCalTab)
+            vm.ForceStopPowerCal("leave tab");
         if (added == FreqCalTab)
         {
             await vm.EnterFreqCalTab();
@@ -299,6 +301,22 @@ public partial class MainWindow : Window
         if (e.Delta.Y > 0) return 1;
         if (e.Delta.Y < 0) return -1;
         return 0;
+    }
+
+    /// <summary>
+    /// One notch = SmallChange (or 1). Same as WPF Slider_PreviewMouseWheel.
+    /// AGC FAST RELEASE is not wired. Handled so the notch does not scroll or reach the VFO.
+    /// </summary>
+    private void Slider_OnPointerWheelChanged(object? sender, PointerWheelEventArgs e)
+    {
+        if (sender is not Slider slider)
+            return;
+        int direction = WheelDirection(e);
+        if (direction == 0)
+            return;
+        double step = slider.SmallChange > 0 ? slider.SmallChange : 1.0;
+        slider.Value = Math.Max(slider.Minimum, Math.Min(slider.Maximum, slider.Value + direction * step));
+        e.Handled = true;
     }
 
     /// <summary>

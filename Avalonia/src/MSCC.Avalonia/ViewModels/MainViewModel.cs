@@ -90,6 +90,7 @@ public partial class MainViewModel : ViewModelBase, IDisposable
     private string _modeBeforeTxIq = "USB";
     private bool _sessionCompressionOn;
     private string _modeBeforeTune = "USB";
+    private string _modeBeforePowerCal = "USB";
     private bool _freqCalTabActive;
     private bool _freqCalHoldingCw;
     private bool _freqCalEntryHeld;
@@ -4493,9 +4494,20 @@ public partial class MainViewModel : ViewModelBase, IDisposable
         bool turnOn = !PowerCalTxOn;
         try
         {
-            await _radio.SetCalibrationTuneAsync(turnOn).ConfigureAwait(true);
+            if (turnOn)
+            {
+                RememberModeBeforePowerCal();
+                await _radio.SetModeAsync("TUNE").ConfigureAwait(true);
+                ModeText = "TUNE";
+                await _radio.SetAutoTuneAsync(true).ConfigureAwait(true);
+                await _radio.SetCalibrationTuneAsync(true).ConfigureAwait(true);
+            }
+            else
+                await ReleasePowerCalTuneAsync().ConfigureAwait(true);
             PowerCalTxOn = turnOn;
-            AppendLog($"QRP cal TX {(turnOn ? "ON" : "OFF")} → 0xAC band={PowerCalSelectedBand}");
+            AppendLog(turnOn
+                ? $"QRP cal TX ON → TUNE, 0xA6 1, 0xAC 1 band={PowerCalSelectedBand}"
+                : $"QRP cal TX OFF → 0xAC 0, 0xA6 0, mode {ModeText} band={PowerCalSelectedBand}");
         }
         catch (Exception ex)
         {
@@ -4554,9 +4566,13 @@ public partial class MainViewModel : ViewModelBase, IDisposable
 
             try
             {
+                RememberModeBeforePowerCal();
+                await _radio.SetModeAsync("TUNE").ConfigureAwait(true);
+                ModeText = "TUNE";
+                await _radio.SetAutoTuneAsync(true).ConfigureAwait(true);
                 await _radio.SetBandPowerPowerAsync(0).ConfigureAwait(true);
                 await _radio.SetCalibrationTuneAsync(true).ConfigureAwait(true);
-                AppendLog($"QRP cal CALIBRATE START band={PowerCalSelectedBand} → 0xA2 0, 0xAC 1");
+                AppendLog($"QRP cal CALIBRATE START band={PowerCalSelectedBand} → TUNE, 0xA6 1, 0xA2 0, 0xAC 1");
             }
             catch (Exception ex)
             {
@@ -4567,7 +4583,7 @@ public partial class MainViewModel : ViewModelBase, IDisposable
         {
             try
             {
-                await _radio.SetCalibrationTuneAsync(false).ConfigureAwait(true);
+                await ReleasePowerCalTuneAsync().ConfigureAwait(true);
             }
             catch (Exception ex)
             {
@@ -4594,7 +4610,7 @@ public partial class MainViewModel : ViewModelBase, IDisposable
                 $"Save step {_powerCalFinalStep} for {_powerCalPendingBand} m (stored in the radio)?";
             PowerCalAcceptPrompt = true;
             StatusText = "Save this QRP calibration?";
-            AppendLog($"QRP cal CALIBRATE STOP band={PowerCalSelectedBand} step={_powerCalFinalStep} → 0xAC 0");
+            AppendLog($"QRP cal CALIBRATE STOP band={PowerCalSelectedBand} step={_powerCalFinalStep} → 0xAC 0, 0xA6 0, mode {ModeText}");
         }
     }
 
@@ -4681,12 +4697,39 @@ public partial class MainViewModel : ViewModelBase, IDisposable
         AppendLog($"QRP cal NOT SAVED band={band}m restore 0xA2={restore} (live)");
     }
 
-    private void ForceStopPowerCal(string reason)
+    /// <summary>Keep the real mode when TX and CALIBRATE run in sequence (do not save TUNE over USB).</summary>
+    private void RememberModeBeforePowerCal()
+    {
+        string cur = (ModeText ?? "").Trim();
+        if (string.IsNullOrWhiteSpace(cur))
+        {
+            _modeBeforePowerCal = "USB";
+            return;
+        }
+        if (!string.Equals(cur, "TUNE", StringComparison.OrdinalIgnoreCase))
+            _modeBeforePowerCal = cur;
+    }
+
+    /// <summary>0xAC off, 0xA6 off, then the mode from before QRP CAL (blank or TUNE → USB).</summary>
+    private async Task ReleasePowerCalTuneAsync()
+    {
+        if (_radio == null || !IsConnected) return;
+        await _radio.SetCalibrationTuneAsync(false).ConfigureAwait(true);
+        await _radio.SetAutoTuneAsync(false).ConfigureAwait(true);
+        string restore = string.IsNullOrWhiteSpace(_modeBeforePowerCal) ||
+                         string.Equals(_modeBeforePowerCal, "TUNE", StringComparison.OrdinalIgnoreCase)
+            ? "USB"
+            : _modeBeforePowerCal;
+        await _radio.SetModeAsync(restore).ConfigureAwait(true);
+        ModeText = restore;
+    }
+
+    public void ForceStopPowerCal(string reason)
     {
         if (!PowerCalTxOn && !PowerCalCalibrating && !PowerCalAcceptPrompt) return;
         if (_radio != null && IsConnected)
         {
-            try { _ = _radio.SetCalibrationTuneAsync(false); }
+            try { _ = ReleasePowerCalTuneAsync(); }
             catch { /* best effort */ }
             if ((PowerCalCalibrating || PowerCalAcceptPrompt) && PowerCalSelectedBand > 0)
             {
