@@ -14,8 +14,8 @@ PSoC Creator / Keil trees for Multus radio application firmware. Moved here so t
 | `Proficio-bootloader/` | Shared Proficio Creator bootloader project | (LOADER; MiniProg3 only) |
 | `Geminus-Legacy/` | Geminus Legacy (separate hardware tree; app code = Geminus MKII since 5.153) | **5** |
 | `Geminus-MKII/` | Geminus MKII | **2** |
-| `<Tree>/Release/` (Geminus: `release/`) | **Releases (2026-11-02):** `<Radio>-<major>.<minor>.cyacd` / `.hex`, see below | — |
-| `release/` | Old drop folder, **no longer written** (kept as an archive) | — |
+| `<Tree>/Release/` (Geminus: `release/`) | **Current images only:** `<Radio>-<major>.<minor>.cyacd` / `.hex` | — |
+| `original/` | Unversioned / undated `Radio.cyacd` / `.hex` snapshots. Not shipping images | — |
 
 Planned major map (client header / factory cal key): **1** Proficio Legacy · **2** Geminus MKII · **3/4** Proficio MKII PTT/ATU · **5** Geminus Legacy · **6** Ultimus Legacy · **7** Ultimus MKII ATU · **8** Ultimus MKII PTT.
 
@@ -65,19 +65,19 @@ Field flash notes: each Proficio tree still has `STEW-FIRMWARE-UPDATE.md`.
 
 `proficio-stm32f411-*`, Solidus, etc. stay at **repo root** — not PSoC Creator radio apps.
 
-## Status (2026-09-20)
+## Status (2026-11-16)
 
-Majors applied and rebuilt on Shack; shipping artifacts under `release/`:
+The top-level `release/` drop folder is gone. Current images live only in each tree's `Release/` (Geminus: `release/`):
 
 | Radio | Major.Minor |
 |-------|------------:|
-| Proficio Legacy | 1.231 |
-| Geminus MKII | 2.151 |
-| Proficio MKII PTT | 3.232 |
-| Proficio MKII ATU | 4.151 |
-| Geminus Legacy | 5.120 |
-| Ultimus Legacy | 6.231 |
-| Ultimus MKII ATU | 7.151 |
-| Ultimus MKII PTT | 8.232 |
+| Proficio Legacy | 1.237 |
+| Geminus MKII | 2.156 |
+| Proficio MKII PTT | 3.246 |
+| Proficio MKII ATU | 4.247 |
+| Geminus Legacy | 5.154 (built, not hardware-tested) |
+| Ultimus Legacy | 6.237 |
+| Ultimus MKII ATU | 7.247 |
+| Ultimus MKII PTT | 8.246 |
 
-Creator project folders under Ultimus trees are still named `Proficio-*` (rename deferred). See `GROK-BUILD-FIRMWARE-MAJORS.md` for history / related client work.
+Creator project folders under Ultimus trees are still named `Proficio-*`. See `GROK-BUILD-FIRMWARE-MAJORS.md` for history / related client work.
