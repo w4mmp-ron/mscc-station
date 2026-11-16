@@ -2,6 +2,15 @@
 
 Installer: `mscc-net9-R<version>-install.exe` (WPF client + Windows servers). Install the newest one; older installers in this folder are kept for roll-back only.
 
+## Avalonia 1.7.06 — 2026-11-16  (not a new Windows installer; WPF and the Windows servers are unchanged)
+
+### Fixed
+- The filter passband on the spectrum is much more transparent (fill reduced from B+30/G+40/R+70 to B+5/G+10/R+16), so signals inside the filter stay clearly visible, like PowerSDR.
+- The filter edge lines are sky blue RGB(32,176,255), matching WPF. They had been orange because DrawVLine's (b,g,r) arguments were swapped.
+
+### Tested
+- Built and smoked on Ubuntu amd64. Pi arm64 package not built in this step.
+
 ## Avalonia 1.7.05 — 2026-11-16  (not a new Windows installer; WPF and the Windows servers are unchanged)
 
 ### Fixed

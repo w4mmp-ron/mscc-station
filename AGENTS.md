@@ -13,7 +13,7 @@ On start: `git pull`, then read [`handoff.md`](handoff.md). If `.mscc-coord/COMM
 
 ## Current work
 
-**Active — cmd-085 (ubuntu-stew / stew-HP):** Avalonia 1.7.04 → 1.7.05 small fixes (packages 12.1.1→12.1.6 idle CPU, AGC button text at start, CMP disabled in Digital, confirm TX IQ OFFSET/PHASE wheel). Brief: `.mscc-coord/cmd-085-avalonia-small-fixes-brief.md`. Commit only when Stew says "finished". Do not push.
+**Active — cmd-086 (ubuntu-stew / stew-HP):** Avalonia 1.7.05 → 1.7.06 lighter filter passband fill (PowerSDR-like) and sky-blue filter edges to match WPF. Brief: `.mscc-coord/cmd-086-avalonia-filter-transparency-brief.md`. Commit only when Stew says "finished". Do not push. WPF half is a later cmd-086b on Shack.
 
 Older notes below are stale as of 2026-10-07. Check `.mscc-coord/COMMANDS.yaml` and [`handoff.md`](handoff.md) for historical open / pending items.
 

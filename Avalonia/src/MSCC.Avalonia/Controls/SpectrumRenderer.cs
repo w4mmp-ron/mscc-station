@@ -176,14 +176,15 @@ internal static class SpectrumRenderer
                 {
                     int o = yy * stride + x * 4;
                     if (o + 3 >= bgra.Length) continue;
-                    bgra[o + 0] = (byte)Math.Min(255, bgra[o + 0] + 30);
-                    bgra[o + 1] = (byte)Math.Min(255, bgra[o + 1] + 40);
-                    bgra[o + 2] = (byte)Math.Min(255, bgra[o + 2] + 70);
+                    bgra[o + 0] = (byte)Math.Min(255, bgra[o + 0] + 5);
+                    bgra[o + 1] = (byte)Math.Min(255, bgra[o + 1] + 10);
+                    bgra[o + 2] = (byte)Math.Min(255, bgra[o + 2] + 16);
                 }
             }
 
-            DrawVLine(bgra, stride, width, plotBottom, left, 0x20, 0xB0, 0xFF);
-            DrawVLine(bgra, stride, width, plotBottom, right, 0x20, 0xB0, 0xFF);
+            // sky blue RGB(32,176,255). DrawVLine takes (b, g, r).
+            DrawVLine(bgra, stride, width, plotBottom, left, 0xFF, 0xB0, 0x20);
+            DrawVLine(bgra, stride, width, plotBottom, right, 0xFF, 0xB0, 0x20);
         }
 
         // WPF port: dB numbers on the left (S/W dB LABELS), independent of VIEW GRID
