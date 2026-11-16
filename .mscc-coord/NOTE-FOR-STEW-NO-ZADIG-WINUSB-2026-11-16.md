@@ -21,6 +21,13 @@ The Windows server (ms-sdr) moves to the newer USB library that works with WinUS
 - PC already set up with Zadig: no change, still works.
 - Radio with older firmware: Zadig as today, until its firmware is updated.
 
+**Black Pill flashing too**
+When the pill is put into flash mode, its small bootloader takes over the USB connection, and Windows sees it as a different device. Today that also needs Zadig, once per PC. The bootloader is our own code, so it can give Windows the same "use WinUSB" answer. Then flashing a pill from Windows needs no Zadig either.
+
+The bootloader can only be put on a pill with an ST-Link. That's no problem: we haven't sold any pill boards, and every pill gets its first flash with an ST-Link when it's built anyway. So every pill that ships gets the new bootloader from day one. Only our own pills (yours and mine) would need it burned again with the ST-Link.
+
+So for Black Pill radios, users would never need Zadig at all, either to run the radio or to update it. PSoC radios already update without Zadig (LOADER uses a driver built into Windows), so with the new firmware they wouldn't need it either.
+
 **Order**
 1. I do the Black Pill and Proficio MKII PTT first and test them on my rig.
 2. Once they work, I send you the exact change from MKII PTT. It should be a small, self-contained piece you can copy into the other trees (MKII ATU, Ultimus, Geminus, Legacy).
