@@ -89,7 +89,8 @@ def dev():
             d = usb.core.find(idVendor=VID, idProduct=PID, backend=be)
             if d is not None:
                 return d
-        sys.exit("radio not found (16c0:05dc): plugged in? libusb0 or WinUSB driver on Multus Control?")
+        sys.exit("radio not found (16c0:05dc): plugged in? Multus Control needs the Zadig driver\n"
+                 "(libusb-win32, libusb0.dll) or WinUSB (pill 3.17+, libusb-1.0.dll next to this script).")
     d = usb.core.find(idVendor=VID, idProduct=PID)
     if d is None:
         sys.exit("radio not found (16c0:05dc)")
@@ -100,6 +101,9 @@ def read(d, clear):
     try:
         b = bytes(d.ctrl_transfer(IN, CMD_AUDIO_STATS, 1 if clear else 0, 0, 64, TIMEOUT))
     except usb.core.USBError as e:
+        if getattr(e, "errno", None) == 13 or "Access denied" in str(e):
+            sys.exit("MSCC is using the radio (WinUSB: one program at a time). Close MSCC, or put\n"
+                     "PILL_STATS=1; in mscc.ini so ms-sdr logs these counters itself every 10 min.")
         sys.exit("read failed (%s): firmware older than 3.11?" % e)
     n = len(b) // 4
     return dict(zip(NAMES, struct.unpack("<%dI" % n, b[:n * 4])))

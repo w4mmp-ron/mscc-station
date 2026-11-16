@@ -44,16 +44,19 @@ No Zadig needed: the upload program uses a driver that comes with Windows. Don't
 ### Black Pill
 
 1. Put the Black Pill in flash mode: fit the BOOT jumper and press **NRST**. The LED shows **B**.
-2. **Zadig, first time on this PC only.** Skip this step if it has already been done on this PC. Windows needs the WinUSB driver for the pill in flash mode, and it is set once per PC.
+2. Run `C:\mscc-net9\Black Pill Firmware\stm32-app-flash.exe` (window **STM32 App Flash**).
+3. Click **List DFU devices**.
+    - The pill is listed: go on to step 5.
+    - "No Black Pill in flash mode found": check the LED shows **B** (step 1). If it does, do step 4 once.
+4. **Zadig, only if step 3 can't find the pill.** Black Pills built from November 2026 set up Windows by themselves and never need this. An older Black Pill needs it once per PC; skip it if it has already been done on this PC.
     1. Download Zadig from <https://zadig.akeo.ie> and run it.
     2. Menu **Options → List All Devices**.
-    3. Pick **STM32 BOOTLOADER** in the list. If the driver box on the left already shows **WinUSB**, it has been done: close Zadig and go on to step 3.
-    4. Set the driver on the right to **WinUSB** and click **Install Driver** (or **Replace Driver**). Wait for it to finish, then close Zadig.
+    3. Pick **STM32 BOOTLOADER** in the list. If the driver box on the left already shows **WinUSB**, it has been done: close Zadig.
+    4. Otherwise set the driver on the right to **WinUSB** and click **Install Driver** (or **Replace Driver**). Wait for it to finish, then close Zadig.
+    5. Click **List DFU devices** again: the pill is listed.
 
     Change only **STM32 BOOTLOADER**. Don't change the radio's normal USB device or the PSoC **LOADER** device.
 
-3. Run `C:\mscc-net9\Black Pill Firmware\stm32-app-flash.exe` (window **STM32 App Flash**).
-4. Click **List DFU devices** to check the pill is seen. "No Black Pill in flash mode found" means step 1 or step 2 didn't take.
 5. Click **Browse…**, pick `BlackPill-25MHz-<version>-app.bin` (not the `-boot-app` file).
 6. Click **Burn application**.
 7. Remove the BOOT jumper and press **NRST**. No power cycle needed.
@@ -66,6 +69,7 @@ This updates the application only; the bootloader is never touched (that needs a
 2. Click **Load File…**, pick `Keyer-MCU-app-<date>.hex`.
 3. Click **Program** and wait for it to finish.
 4. **Check Keyer** shows the keyer's version.
+5. **Power the radio off and on.** There is no RF output until you do.
 
 Use the `Keyer-MCU-app-` file. The `Keyer-MCU-full-` file is for a PICkit programmer only (bootloader + application). Command line: `keyer-flash.exe <file>`.
 
@@ -108,6 +112,7 @@ If it ends with the pill still in the bootloader (LED **B**), remove the BOOT ju
 1. Menu **MSCC → Keyer Firmware Update**.
 2. **Load File…** → `Keyer-MCU-app-<date>.hex` → **Program**.
 3. **Check Keyer** shows the keyer's version.
+4. **Power the radio off and on.** There is no RF output until you do.
 
 Command line: `keyer-flash /usr/share/mscc/firmware/keyer/Keyer-MCU-app-<date>.hex`
 
@@ -122,7 +127,7 @@ The Debian / Ubuntu (amd64) kit is being brought up to date and isn't on the Rel
 | "The MSCC servers are running" | Stop the servers (Windows: close the client and servers; Pi: `mscc stop`), then start the tool again. |
 | PSoC: LED doesn't blink LOADER | The shunt is on the wrong pins. Power off, move it, power on. |
 | PSoC: USB Bootloader Host never shows **Connected** | Check the USB cable and the LOADER blink. On Windows, don't run Zadig while in LOADER. |
-| Black Pill: "No Black Pill in flash mode found" (Windows) | Fit the BOOT jumper and press **NRST** (LED **B**), then try again. Still not found: on a PC that hasn't had it, do the Zadig step (Windows, Black Pill step 2). |
+| Black Pill: "No Black Pill in flash mode found" (Windows) | Fit the BOOT jumper and press **NRST** (LED **B**), then try again. Still not found: an older Black Pill needs the Zadig step once on this PC (Windows, Black Pill step 4). |
 | Black Pill: "Error during download get_status" right after the burn | Normal: the pill resets at once. |
 | Black Pill: LED stays **B** after the update | Remove the BOOT jumper and press **NRST**. |
 | Keyer tool can't find the keyer | Update the radio firmware (PSoC or Black Pill) first; the keyer update needs the minimum version in the Addendum. |

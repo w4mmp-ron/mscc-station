@@ -28,7 +28,8 @@ Write-Host "Servers ($rel)"
 Copy-Set $rel @('ms-sdr-MKII.exe','mscc-recv.exe','Mscc-trans.exe',
                 'MsccRemotePhones.exe','MsccRemotePhones.dll',
                 'MsccRemotePhones.deps.json','MsccRemotePhones.runtimeconfig.json',
-                'portaudio_x86.dll','pthreadVC2.dll')
+                'portaudio_x86.dll','pthreadVC2.dll',
+                'libusb-1.0.dll')   # 2026-11-16: ms-sdr 3.214+ (WinUSB, pill 3.17+ without Zadig)
 
 Write-Host "Client ($client)"
 if (Test-Path $client) {

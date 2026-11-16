@@ -12,7 +12,7 @@ releases stay there for roll-back). Put the `.deb` files in one folder on the Pi
 
 | Package | Version | |
 |---|---|---|
-| `mscc` | 1.0.95 | required: servers (ms-sdr 3.210, recv 3.156, trans 3.160), PortAudio, MSCC Init, MSCC Volume, PSoC + Black Pill + keyer firmware and flash tools (window "Black Pill Firmware Update" since 1.0.85) |
+| `mscc` | 1.0.96 | required: servers (ms-sdr 3.210, recv 3.156, trans 3.160), PortAudio, MSCC Init, MSCC Volume, PSoC + Black Pill + keyer firmware and flash tools (window "Black Pill Firmware Update" since 1.0.85) |
 | `mscc-avalonia` | 1.7.04 | optional: MSCC Avalonia client on the Pi (not needed with the Windows client) |
 
 ```bash
@@ -34,12 +34,13 @@ Then: log out/in (first install) → **MSCC Init** → **MSCC Start** → connec
   (`psoc-bootloader.gui`), or `psoc-bootloader file.cyacd`.
   PSoC files: `/usr/share/mscc/firmware/<Radio>/` (same versions as the Windows installer).
 - Black Pill (25 MHz board), files in `/usr/share/mscc/firmware/black-pill/`:
-  `mscc stop; sudo stm32-app-flash /usr/share/mscc/firmware/black-pill/BlackPill-25MHz-3.16-app.bin`
-  (USB, app) or `sudo stm32-bootloader-flash /usr/share/mscc/firmware/black-pill/BlackPill-25MHz-3.16-boot-app.bin` (ST-Link).
-- Keyer (PIC on the daughter board; Black Pill 3.16, or PSoC Proficio MKII PTT 3.244 / ATU 4.245,
-  Geminus MKII 2.154, Ultimus MKII PTT 8.244 / ATU 7.245 or later; the PSoC ones not tested yet): stop the servers (`mscc stop`), then
+  menu **MSCC → Black Pill Firmware Update**, or
+  `mscc stop; stm32-app-flash /usr/share/mscc/firmware/black-pill/BlackPill-25MHz-<ver>-app.bin`
+  (USB, app) or `sudo stm32-bootloader-flash /usr/share/mscc/firmware/black-pill/BlackPill-25MHz-<ver>-boot-app.bin` (ST-Link).
+- Keyer (PIC on the daughter board; Black Pill 3.16 or later, or the MKII PSoC firmware in the
+  Addendum): stop the servers (`mscc stop`), then
   menu **MSCC → Keyer Firmware Update** (`keyer-flash.gui`): Load File → Program. Or
   `keyer-flash /usr/share/mscc/firmware/keyer/Keyer-MCU-app-20261112.hex`. Settings and CQ
-  memories are kept. The `Keyer-MCU-full-` file is for the PICkit only (bootloader + app).
+  memories are kept. **Power-cycle the radio afterwards** (no RF until then). The `Keyer-MCU-full-` file is for the PICkit only (bootloader + app).
 
 Full how-to: [`../../rpi/mscc-deb/INSTALL-FOR-PI.md`](../../rpi/mscc-deb/INSTALL-FOR-PI.md).

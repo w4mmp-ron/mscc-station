@@ -1,8 +1,8 @@
 # Pi utility scripts: test tools for the Proficio on the Pi
 
-Copy these to ~/utilities on the Pi (the I/Q ones go in ~/utilities/iq-scripts).
-~/utilities is on the PATH (set in ~/.bashrc), so the first four work by name
-from a new terminal. Over ssh, put ~/utilities/ in front of the name.
+Copy these to ~/utils on the Pi (the I/Q ones go in ~/utils/iq-scripts).
+~/utils is not on the PATH, so put ~/utils/ in front of the first four names,
+for example ~/utils/audio-stats.py since.
 The others: type python3 and the path, as below.
 
 -------------------------------------------------------------------------------
@@ -24,7 +24,7 @@ Black Pill health counters, read over USB. Safe any time, servers up or down.
 
 To log every 10 minutes, type crontab -e and add this line (use your own path):
 
-    */10 * * * * /usr/bin/python3 /home/ron/utilities/audio-stats.py log
+    */10 * * * * /usr/bin/python3 /home/ron/utils/audio-stats.py log
 
 Then, to see only the trouble:
 
@@ -52,7 +52,7 @@ power cycle, or the hang record is lost.
 
 -------------------------------------------------------------------------------
 
-    bash ~/utilities/usb-snap.sh bad
+    bash ~/utils/usb-snap.sh bad
 
 Snapshot when something goes wrong. Run it while the fault is showing, before
 restarting anything. The word at the end is a label (bad, good, test1, ...).
@@ -142,3 +142,18 @@ line through the ones you did (named after --cal, in metres). --dry-run only
 shows the table; without it, it asks before writing and keeps a backup.
 Then restart mscc before saving any other I/Q value, or recv writes its old
 values back.
+
+-------------------------------------------------------------------------------
+
+    python3 ~/utils/winusb-check.py
+    python3 ~/utils/winusb-check.py flash-mode
+
+Checks the Black Pill's WinUSB answer: what Windows reads when the radio is
+plugged in, so it can use its own driver instead of Zadig. Prints OK or FAIL for
+each item and ends with "All checks passed."
+- no word: the radio running (firmware 3.17 and later). Read only, safe with the
+  servers up or down.
+- flash-mode: the pill's bootloader (2026-11-16 and later). Stop the servers
+  first: it sends the radio to flash mode and leaves it there. Bring it back with
+  stm32-app-flash and the app file (or press NRST).
+Older firmware or bootloader: it says there was no answer.

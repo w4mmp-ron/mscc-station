@@ -2,7 +2,23 @@
 
 Installer: `mscc-net9-R<version>-install.exe` (WPF client + Windows servers). Install the newest one; older installers in this folder are kept for roll-back only.
 
-## PSoC firmware — 2026-11-16  (payload updated; Windows installer not built in this step)
+## R11-16-1 — 2026-11-16  (ms-sdr 3.214, Black Pill 3.17; client 11.15.0 unchanged)
+
+### Changed
+- ms-sdr 3.214 talks to the radio through the Zadig driver (libusb-win32) or Windows' own WinUSB
+  driver and picks the right one by itself (Zadig first). New file next to it: `libusb-1.0.dll`.
+- Black Pill firmware 3.17: the radio asks Windows for WinUSB itself, so it needs no Zadig.
+  New Black Pill bootloader (ST-Link, new boards): flash mode also needs no Zadig.
+
+### Fixed
+- WiFi SWR meter on Windows: the meter link failed at start-up, so the meter never got the
+  "tuning" flag and could trip during an ATU tune.
+
+### Tested
+- Ron, Proficio MKII with Black Pill 3.17: WinUSB and Zadig, receive, TUNE with the meter,
+  QRP and AMP calibration. PSoC radio on 3.214: asked of Stew.
+
+## PSoC firmware — 2026-11-16  (released in R11-16-0)
 
 ### Changed
 - USB product name is "Multus IQ" on all eight radios: Proficio Legacy 1.237, Ultimus Legacy 6.237, Geminus Legacy 5.154, Geminus MKII 2.156, Proficio MKII PTT 3.246, Proficio MKII ATU 4.247, Ultimus MKII ATU 7.247, Ultimus MKII PTT 8.246.

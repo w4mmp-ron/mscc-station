@@ -22,7 +22,7 @@ Actual Installer (10.8) project for MSCC on Windows. Replaces building from `C:\
 ## payload sources
 | Files | Source |
 |---|---|
-| ms-sdr-MKII, mscc-recv, Mscc-trans, MsccRemotePhones, portaudio_x86, pthreadVC2 | `Release\windows-wpf\` (stage.ps1) |
+| ms-sdr-MKII, mscc-recv, Mscc-trans, MsccRemotePhones, portaudio_x86, pthreadVC2, libusb-1.0 (ms-sdr 3.214+, WinUSB) | `Release\windows-wpf\` (stage.ps1) |
 | MSCC.Wpf, MSCC.Core, CommunityToolkit, NAudio, System.IO.Ports, runtimes\ | client Release build (stage.ps1) |
 | MSCC-Remote.* | MSCC.Remote Release build (stage.ps1) |
 | Start-MsccServers.bat, runhidden.vbs | `mscc-new\deploy\` (stage.ps1) |

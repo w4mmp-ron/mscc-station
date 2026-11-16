@@ -2,9 +2,9 @@
 
 These run on the Windows PC. Open a Command Prompt in this folder, or
 double-click where it says so. The Python ones need Python 3 and pyusb
-(pip install pyusb). The USB ones use libusb0.dll (libusb-win32, the driver
-the Windows servers use) or libusb-1.0.dll, from System32 or next to the
-script.
+(pip install pyusb). The USB ones use libusb0.dll (libusb-win32, the Zadig
+driver) or libusb-1.0.dll (WinUSB), from System32 or next to the script.
+libusb-1.0.dll here is the official 64-bit libusb 1.0.30 (for 64-bit Python).
 
 The Windows servers keep their files in %LOCALAPPDATA%\MSCC-NET9.
 
@@ -17,7 +17,12 @@ The Windows servers keep their files in %LOCALAPPDATA%\MSCC-NET9.
     audio-stats log
 
 Black Pill health counters, read over USB, when the pill is plugged into this
-PC. Safe any time, servers up or down. Same output as on the Pi.
+PC. Safe any time. Same output as on the Pi.
+With the Zadig driver it works with the servers up or down. With WinUSB (pill
+3.17 and later, no Zadig) only one program can use the radio at a time, so it
+works only with MSCC closed; it says so if MSCC has the radio. While MSCC runs,
+put PILL_STATS=1; in mscc.ini (in %LOCALAPPDATA%\MSCC-NET9) and ms-sdr writes
+the same counters to its log every 10 minutes.
 - no word: all counters since the pill started
 - mark: remember the counters now, as a starting point
 - since: what changed since the last mark
@@ -125,3 +130,15 @@ feeding the 96 kHz sound card, and pip install sounddevice.
 - iq-auto.py: finds the best TX offset (and phase with --phase) by itself
 They talk to trans on the Pi (--host) and save iq.ini there, not in the radio:
 run iq-to-radio.py on the Pi afterwards. Details in tx-iq-balance\README.md.
+
+-------------------------------------------------------------------------------
+
+    python rx-capture.py
+    python rx-capture.py 3
+
+Records 1 s (or the seconds given) of the radio's raw receive I/Q from
+"Microphone (Multus Sound)", saves it as %USERPROFILE%\.local\mscc\rx-capture-*.wav
+and says what it looks like: normal, stuck data, byte slip, or overload. For the
+"spectrum all yellow, S9+40, no audio" fault: run it while the fault is there,
+BEFORE pressing NRST. Works with MSCC open. Needs pip install sounddevice numpy.
+Normal on 2026-11-16: about -66 dBFS, floor about -125 dBFS.

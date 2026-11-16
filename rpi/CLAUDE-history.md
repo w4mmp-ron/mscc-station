@@ -2069,3 +2069,10 @@ History: Claude worked in a copy `rpi/sdrcore-claude/` (commits fe0c9a1, 0443c21
 ## Moved from rpi/CLAUDE.md on 2026-11-15, part 4 (claude-clean up, word for word)
 
 - Pi ms-sdr Last_used.ini: closed (removed in ms-sdr 3.200, 2026-11-10); old item in `CLAUDE-history.md` (2026-11-15, part 3).
+
+## Release R11-16-1 (2026-11-16)
+
+- Windows `mscc-net9-R11-16-1-install.exe`: WPF 11.15.0 (unchanged, Stew's R11-16-0 payload), ms-sdr **3.214** (WinUSB or Zadig picked by itself, Zadig first; libusb-1.0 1.0.30 `libusb-1.0.dll` next to it, `libusb0.dll` delay-loaded; WiFi SWR meter WSAStartup fix), recv 3.155, trans 3.159. Pushed ahead as 4b485258 for Stew's PSoC test.
+- Pi `mscc_1.0.96`: servers unchanged (ms-sdr 3.210, recv 3.156, trans 3.160); Stew's PSoC set (MKII PTT 3.246 etc.), Black Pill **3.17** + new bootloader (WinUSB, MS OS 2.0, both app and flash mode). `mscc-avalonia_1.7.04` attached (built 2026-11-15).
+- Docs: Addendum, Updating Firmware (Zadig only for older pills; keyer power-cycle), Windows guide draft 2.4 / ch. 3, both INSTALL.md, CHANGELOG, INSTALL-FOR-PI. Stew's `Proficio-Legacy - Copy` folder removed (his request).
+- Open: Stew to run a PSoC radio on 3.214; a PC that never had Zadig; Stew's pill bootloader reburn (ST-Link). Windows RX stall after TUNE (likely RF overload, `utility-scripts/Windows/rx-capture.py` ready).

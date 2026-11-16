@@ -125,8 +125,8 @@ This package installs:
 | MSCC Volume | menu **MSCC Volume** (`mscc-volume`), levels of VirtualA / VirtualB |
 | Firmware upload (PSoC radios) | `psoc-bootloader` (CLI) + `psoc-bootloader.gui`; menu **MSCC → Firmware Upload** |
 | PSoC radio firmware | `/usr/share/mscc/firmware/<Radio>/` (`.cyacd` + `.hex`, the same versions as the Windows installer); Firmware Upload opens this folder |
-| Black Pill firmware + tools | `/usr/share/mscc/firmware/black-pill/` (25 MHz board). `mscc stop; sudo stm32-app-flash /usr/share/mscc/firmware/black-pill/BlackPill-25MHz-3.16-app.bin` (USB, app) or `stm32-bootloader-flash <file.bin>` (ST-Link) |
-| Keyer firmware + tool | Daughter-board keyer (PIC): `/usr/share/mscc/firmware/keyer/`. Stop the servers, then menu **MSCC → Keyer Firmware Update** (`keyer-flash.gui`): Load File → Program, or `keyer-flash Keyer-MCU-app-<date>.hex`. Needs Black Pill 3.16+; settings and CQ memories are kept. `Keyer-MCU-full-` = PICkit only |
+| Black Pill firmware + tools | `/usr/share/mscc/firmware/black-pill/` (25 MHz board). Menu **MSCC → Black Pill Firmware Update**, or `mscc stop; stm32-app-flash /usr/share/mscc/firmware/black-pill/BlackPill-25MHz-<ver>-app.bin` (USB, app; no sudo) or `stm32-bootloader-flash <file.bin>` (ST-Link) |
+| Keyer firmware + tool | Daughter-board keyer (PIC): `/usr/share/mscc/firmware/keyer/`. Stop the servers, then menu **MSCC → Keyer Firmware Update** (`keyer-flash.gui`): Load File → Program, or `keyer-flash Keyer-MCU-app-<date>.hex`. Needs Black Pill 3.16+; settings and CQ memories are kept. **Power-cycle the radio after a keyer update** (no RF until then; all MKII radios). `Keyer-MCU-full-` = PICkit only |
 | Start/stop | `mscc` command and desktop **MSCC Start** / **MSCC Stop** |
 | Digi audio | `mscc-virtual-audio` creates **VirtualA** / **VirtualB** |
 | Config seed | `$HOME/.local/mscc/` **only if empty** (never overwrites your files later) |
