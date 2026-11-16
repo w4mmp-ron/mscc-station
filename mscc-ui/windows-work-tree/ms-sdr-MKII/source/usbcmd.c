@@ -12,10 +12,22 @@
 #include "lusb0_usb.h"	// LIBUSB-Win32
 #include "version.h"
 
+#include "usb_winusb.h"	// WinUSB (libusb-1.0), 2026-11-16
+
 void* srUsbHandle = NULL;
 int srUsbTimeout = 500;
 static srUsbInfo_t srUsbInfo;
 #define usbHandle  ((usb_dev_handle*)srUsbHandle)
+
+/* 2026-11-16: which USB library has the radio open. Pill 3.17+ is on WinUSB by
+ * itself (no Zadig): libusb-1.0. A PC with the Zadig driver: libusb-win32.
+ * With WinUSB, srUsbHandle is only a non-NULL marker (the real handle is in
+ * usb_winusb.c); usbHandle is used only when s_usb_lib == USB_LIB_WIN32. */
+#define USB_LIB_NONE   0
+#define USB_LIB_WINUSB 1
+#define USB_LIB_WIN32  2
+static int s_usb_lib = USB_LIB_NONE;
+static int s_winusb_marker;
 
 //double floor(double x);
 
@@ -24,7 +36,9 @@ int usbControlMsgIN(int cmd, int value, int index, char* buffer, int buflen) {
     G_Transceiver_Busy = TRUE;
     //print_time(0);
     //fprintf(G_fp_logfile, "[%d] usbControlMsgIN called \n", line_number++);
-    if (usbHandle != NULL) {
+    if (s_usb_lib == USB_LIB_WINUSB) {
+        r = wusb_vendor(1, cmd, value, index, buffer, buflen, srUsbTimeout);
+    } else if (usbHandle != NULL) {
         r = usb_control_msg(usbHandle,
                 USB_TYPE_VENDOR | USB_RECIP_DEVICE | USB_ENDPOINT_IN,
                 cmd,
@@ -40,7 +54,9 @@ int usbControlMsgOUT(int cmd, int value, int index, char* buffer, int buflen) {
     int r = -1;
     //print_time(0);
     //fprintf(G_fp_logfile, "[%d] usbControlMsgOUT called \n", line_number++);
-    if (usbHandle != NULL) {
+    if (s_usb_lib == USB_LIB_WINUSB) {
+        r = wusb_vendor(0, cmd, value, index, buffer, buflen, srUsbTimeout);
+    } else if (usbHandle != NULL) {
         r = usb_control_msg(usbHandle,
                 USB_TYPE_VENDOR | USB_RECIP_DEVICE | USB_ENDPOINT_OUT,
                 cmd,
@@ -56,7 +72,11 @@ static int usbGetStringAscii(usb_dev_handle *dev, int index, int langid, TCHAR *
     char buffer[256];
     int rval, i;
 
-    if ((rval = usb_control_msg(dev, USB_ENDPOINT_IN, USB_REQ_GET_DESCRIPTOR, (USB_DT_STRING << 8) + index, langid, buffer, sizeof (buffer), 1000)) < 0)
+    if (s_usb_lib == USB_LIB_WINUSB)
+        rval = wusb_string_raw(index, langid, buffer, sizeof (buffer), 1000);
+    else
+        rval = usb_control_msg(dev, USB_ENDPOINT_IN, USB_REQ_GET_DESCRIPTOR, (USB_DT_STRING << 8) + index, langid, buffer, sizeof (buffer), 1000);
+    if (rval < 0)
         return rval;
 
     if (buffer[1] != USB_DT_STRING)
@@ -113,11 +133,66 @@ srUsbInfo_t* srGetUsbInfo() {
 }
 
 void srClose() {
-    if (usbHandle != NULL) {
+    if (s_usb_lib == USB_LIB_WINUSB) {
+        wusb_close();
+    } else if (usbHandle != NULL) {
         usb_release_interface(usbHandle, 0);
         usb_close(usbHandle);
     }
     srUsbHandle = NULL;
+    s_usb_lib = USB_LIB_NONE;
+}
+
+/* 2026-11-16: the radio over WinUSB (libusb-1.0). Same checks as the libusb-win32
+ * loop in srOpen below: VID/PID, device number, manufacturer / product / serial
+ * strings, interface 0, serial number into G_serial_number / G_Usb_serial_number.
+ * Returns the (marker) handle, or NULL when no radio is on WinUSB (then srOpen
+ * tries libusb-win32 as before). */
+static void* srOpenWinUsb(int vid, int pid, const TCHAR* pManufacturer, const TCHAR* pProduct,
+                          const TCHAR* pSerialNumber, int iDevNum, int *status) {
+    char l_temp[80] = {0};
+    int nth, r, i, l_count;
+    int iMan, iProd, iSer, address;
+
+    for (nth = 0; nth < 8; nth++) {   /* bounded: a libusb init failure must not loop */
+        r = wusb_open(vid, pid, nth);
+        if (r == -5 /* LIBUSB_ERROR_NOT_FOUND: no more radios */) {
+            return NULL;
+        }
+        if (r != 0) {
+            print_time(0);
+            fprintf(G_fp_logfile, "[%d] srOpen . WinUSB: radio %d not usable (%s), not on WinUSB?\n",
+                    line_number++, nth, wusb_error_name(r));
+            continue;
+        }
+        s_usb_lib = USB_LIB_WINUSB;
+        srUsbHandle = &s_winusb_marker;
+        wusb_device_info(&iMan, &iProd, &iSer, &address);
+        if ((iDevNum == -1 || iDevNum == address)
+                && testUsbString(iMan, srUsbInfo.Manufacturer, sizeof (srUsbInfo.Manufacturer), pManufacturer)
+                && testUsbString(iProd, srUsbInfo.Product, sizeof (srUsbInfo.Product), pProduct)
+                && testUsbString(iSer, srUsbInfo.SerialNumber, sizeof (srUsbInfo.SerialNumber), pSerialNumber)) {
+            srUsbInfo.VID = vid;
+            srUsbInfo.PID = pid;
+            *status = usbGetStringAscii(NULL, iSer, 0x0409, G_serial_number, sizeof (G_serial_number));
+            if (*status > 0) {
+                l_count = 0;
+                memcpy(l_temp, G_serial_number, sizeof (l_temp));
+                for (i = 0; i < (*status * 2) && i < (int)sizeof (l_temp); i++) {
+                    if (l_temp[i] != '\0' && l_count < (int)sizeof (G_Usb_serial_number) - 1) {
+                        G_Usb_serial_number[l_count++] = l_temp[i];
+                    }
+                }
+                G_Usb_serial_number[l_count] = '\0';
+                print_time(0);
+                fprintf(G_fp_logfile, "[%d] srOpen . using WinUSB (libusb-1.0), G_Usb_serial_number: %s, status: %d\n",
+                        line_number++, G_Usb_serial_number, *status);
+                return srUsbHandle;
+            }
+        }
+        srClose();
+    }
+    return NULL;
 }
 
 //Command 0x00
@@ -534,7 +609,9 @@ BOOL srSetXtalFreq(double MHz) {
     return r == sizeof (iFreq);
 }
 
-void* srOpen(int vid, int pid, const TCHAR* pManufacturer, const TCHAR* pProduct, const TCHAR* pSerialNumber, int iDevNum, int *status) {
+/* The original libusb-win32 (Zadig driver) open, unchanged apart from *found:
+ * set when a radio with this VID/PID is seen on the Zadig driver at all. */
+static void* srOpenWin32(int vid, int pid, const TCHAR* pManufacturer, const TCHAR* pProduct, const TCHAR* pSerialNumber, int iDevNum, int *status, int *found) {
     struct usb_bus *bus;
     struct usb_device *dev;
     //char l_converted_buffer[80] = { 0 };
@@ -543,10 +620,9 @@ void* srOpen(int vid, int pid, const TCHAR* pManufacturer, const TCHAR* pProduct
     uint8_t l_count = 0;
     int error = 0;
 
+    *found = 0;
+    s_usb_lib = USB_LIB_WIN32;
 
-    if (pManufacturer != NULL && pManufacturer[0] == '\0') pManufacturer = NULL;
-    if (pProduct != NULL && pProduct[0] == '\0') pProduct = NULL;
-    if (pSerialNumber != NULL && pSerialNumber[0] == '\0') pSerialNumber = NULL;
     usb_init();
     usb_find_busses(); // find all busses
     usb_find_devices(); // find all connected devices
@@ -554,6 +630,7 @@ void* srOpen(int vid, int pid, const TCHAR* pManufacturer, const TCHAR* pProduct
     for (bus = usb_get_busses(); bus; bus = bus->next) {
         for (dev = bus->devices; dev; dev = dev->next) {
             if (dev->descriptor.idVendor == vid && dev->descriptor.idProduct == pid) {
+                *found = 1;
                 print_time(0);
                 fprintf(G_fp_logfile, "[%d] srOpen . Multus radio found\n", line_number++);
                 if ((srUsbHandle = usb_open(dev)) != NULL) {
@@ -593,13 +670,14 @@ void* srOpen(int vid, int pid, const TCHAR* pManufacturer, const TCHAR* pProduct
                                     }
                                 }
                                 print_time(0);
-                                fprintf(G_fp_logfile, "[%d] srOpen . G_Usb_serial_number: %s, status: %d\n",
+                                fprintf(G_fp_logfile, "[%d] srOpen . using libusb-win32 (Zadig), G_Usb_serial_number: %s, status: %d\n",
                                         line_number, G_Usb_serial_number, *status);
                                 return usbHandle;
                             }
                         }
                     }
                     srClose();
+                    s_usb_lib = USB_LIB_WIN32;
                 } else {
                     print_time(0);
                     fprintf(G_fp_logfile, "[%d]  srOpen . usb_open FAILED \n", line_number++);
@@ -607,6 +685,50 @@ void* srOpen(int vid, int pid, const TCHAR* pManufacturer, const TCHAR* pProduct
             }
         }
     }
+    s_usb_lib = USB_LIB_NONE;
+    *status = 0;
+    return NULL;
+}
+
+/* 2026-11-16: open the radio with whichever driver it has.
+ * 1. Zadig driver (libusb-win32): libusb-win32 sees only devices on its own driver,
+ *    so finding the radio there means the radio IS on Zadig. Only if libusb0.dll
+ *    exists (it is delay-loaded: a PC that never ran Zadig has none).
+ * 2. Otherwise WinUSB (libusb-1.0), pill 3.17+.
+ * Never WinUSB when the radio was seen on Zadig: libusb-1.0 can then reach it
+ * through libusbK.dll, and that path crashed (2026-11-16). */
+void* srOpen(int vid, int pid, const TCHAR* pManufacturer, const TCHAR* pProduct, const TCHAR* pSerialNumber, int iDevNum, int *status) {
+    int found = 0;
+    void *h;
+
+    if (pManufacturer != NULL && pManufacturer[0] == '\0') pManufacturer = NULL;
+    if (pProduct != NULL && pProduct[0] == '\0') pProduct = NULL;
+    if (pSerialNumber != NULL && pSerialNumber[0] == '\0') pSerialNumber = NULL;
+
+    srClose();
+    if (LoadLibraryA("libusb0.dll") != NULL) {
+        h = srOpenWin32(vid, pid, pManufacturer, pProduct, pSerialNumber, iDevNum, status, &found);
+        if (h != NULL) {
+            return h;
+        }
+        if (found) {
+            print_time(0);
+            fprintf(G_fp_logfile, "[%d] srOpen . radio is on the Zadig driver but could not be opened; WinUSB not tried\n", line_number++);
+            *status = 0;
+            return NULL;
+        }
+    } else {
+        print_time(0);
+        fprintf(G_fp_logfile, "[%d] srOpen . no libusb0.dll (Zadig never run): WinUSB only\n", line_number++);
+    }
+
+    srClose();
+    h = srOpenWinUsb(vid, pid, pManufacturer, pProduct, pSerialNumber, iDevNum, status);
+    if (h != NULL) {
+        return h;
+    }
+    print_time(0);
+    fprintf(G_fp_logfile, "[%d] srOpen . radio not found on Zadig or WinUSB\n", line_number++);
     *status = 0;
     return NULL;
 }

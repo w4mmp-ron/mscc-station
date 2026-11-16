@@ -428,11 +428,32 @@ static int swr_wifi_bind(uint16_t port)
     struct sockaddr_in addr;
     int yes = 1;
 
+#ifdef _WIN32
+    /* 2026-11-16: this thread starts before the command thread's WSAStartup, so on
+     * Windows socket() failed ("socket FAILED: No error"), the listener exited, the
+     * meter was never online and MSCC never sent it the tune flag (meter tripped on
+     * TUNE). WSAStartup is counted, so calling it here as well is safe. */
+    {
+        WSADATA wsa;
+        int wr = WSAStartup(MAKEWORD(2, 2), &wsa);
+        if (wr != 0) {
+            print_time(0);
+            fprintf(G_fp_logfile, "[%d] Swr_wifi. WSAStartup FAILED: %d\n", line_number++, wr);
+            return -1;
+        }
+    }
+#endif
+
     G_swr_wifi_sock = (int)socket(AF_INET, SOCK_DGRAM, 0);
     if (G_swr_wifi_sock < 0) {
         print_time(0);
+#ifdef _WIN32
+        fprintf(G_fp_logfile, "[%d] Swr_wifi. socket FAILED: WSA error %d\n",
+            line_number++, WSAGetLastError());
+#else
         fprintf(G_fp_logfile, "[%d] Swr_wifi. socket FAILED: %s\n",
             line_number++, strerror(errno));
+#endif
         return -1;
     }
 
@@ -450,6 +471,14 @@ static int swr_wifi_bind(uint16_t port)
         tv.tv_usec = 200000; /* 200 ms poll so thread can exit cleanly */
         setsockopt(G_swr_wifi_sock, SOL_SOCKET, SO_RCVTIMEO,
             (const char *)&tv, sizeof(tv));
+    }
+#else
+    {
+        /* 2026-11-16: same 200 ms poll on Windows (milliseconds as a DWORD), so the
+         * "meter offline" timeout also works when the meter stops sending. */
+        DWORD tv_ms = 200;
+        setsockopt(G_swr_wifi_sock, SOL_SOCKET, SO_RCVTIMEO,
+            (const char *)&tv_ms, sizeof(tv_ms));
     }
 #endif
 
