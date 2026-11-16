@@ -38,7 +38,9 @@
 
 
 #define FIRMWARE_VERSION_MAJOR 2
-#define FIRMWARE_VERSION_MINOR 154   // 2.154 (2026-11-12): keyer update over USB (CMD_KEYER_BOOT 0x9F I2C pass-through)
+#define FIRMWARE_VERSION_MINOR 156   // 2.156 (2026-11-15): pass 0x9D SET_PADDLE_FARNSWORTH to the keyer PIC like 0x76
+                                     // 2.155 (2026-11-14): USB product name "Multus IQ" (was "Proficio" / "Ultimus")
+                                     // 2.154 (2026-11-12): keyer update over USB (CMD_KEYER_BOOT 0x9F I2C pass-through)
                                      // 2.153 (2026-10-31): DAC soft-mute ramps on TUN/PTT edges and CW elements (Proficio 3.240-3.242)
                                      // 2.152 (2026-10-31): per-band calibration store 0xC8, as Proficio MKII PTT 3.238+
 #define FIRMWARE_VERSION ((((FIRMWARE_VERSION_MINOR) << 8) & 0xff00) | ((FIRMWARE_VERSION_MAJOR) & 0x00ff))
@@ -165,6 +167,7 @@ extern uint8_t E_keyer_mode;
 extern uint8_t E_wpm;
 extern uint8_t E_spacing;
 extern uint8_t E_mem_text_wpm; /* SET_MEM_TEXT_WPM 0x76: 0=off, else memory-play text WPM */
+extern uint8_t E_paddle_farns; /* SET_PADDLE_FARNSWORTH 0x9D: 0=off, 1=on */
 extern uint8_t E_weight;
 extern uint8_t E_side_tone;
 extern uint8_t E_paddle;

@@ -36,6 +36,7 @@ uint8_t E_keyer_mode = 1;
 uint8_t E_wpm = 18;
 uint8_t E_spacing = 0;
 uint8_t E_mem_text_wpm = 0; /* 0=Farnsworth off until PIC uses it */
+uint8_t E_paddle_farns = 0;
 uint8_t E_weight = 50;
 uint8_t E_side_tone = 0;
 uint8_t E_paddle = 0;

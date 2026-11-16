@@ -358,6 +358,12 @@ uint8 USBFS_HandleVendorRqst(void)  //This called by the USBFS component.  This 
                 USBFS_currentTD.count = sizeof(E_mem_text_wpm);
                 requestHandled  = USBFS_InitControlWrite();
                 break;
+
+            case SET_PADDLE_FARNSWORTH:
+                USBFS_currentTD.pData = (void *)&E_paddle_farns;
+                USBFS_currentTD.count = sizeof(E_paddle_farns);
+                requestHandled  = USBFS_InitControlWrite();
+                break;
                 
             case SET_WEIGHT:
                 USBFS_currentTD.pData = (void *)&E_weight;

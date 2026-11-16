@@ -40,19 +40,18 @@ stored in the radio). After you connect, the client's title bar shows the radio'
 
 | Radio | Firmware | Status |
 |---|---|---|
-| Proficio Legacy | 1.236 | |
-| Geminus MKII | 2.154 | new in R11-12-3, **not tested on a radio yet** |
-| Proficio MKII PTT | 3.244 | new in R11-12-3, **not tested on a radio yet** |
-| Proficio MKII ATU | 4.245 | new in R11-12-3, **not tested on a radio yet** |
-| Geminus Legacy | 5.153 | |
-| Ultimus Legacy | 6.236 | |
-| Ultimus MKII ATU | 7.245 | new in R11-12-3, **not tested on a radio yet** |
-| Ultimus MKII PTT | 8.244 | new in R11-12-3, **not tested on a radio yet** |
+| Proficio Legacy | 1.237 | tested |
+| Geminus MKII | 2.156 | tested |
+| Proficio MKII PTT | 3.246 | tested |
+| Proficio MKII ATU | 4.247 | tested |
+| Geminus Legacy | 5.154 | **built, not hardware-tested** |
+| Ultimus Legacy | 6.237 | tested |
+| Ultimus MKII ATU | 7.247 | tested |
+| Ultimus MKII PTT | 8.246 | tested |
 | Black Pill board (any radio) | 3.16 | tested (Proficio MKII) |
 | Black Pill update tools (Pi window new) | R11-12-6 | Pi tested; Windows: checks tested, no flash yet |
 
-The five new PSoC versions add only the keyer update over USB. If you don't need that, you can
-stay on the version before (2.153, 3.243, 4.244, 7.244, 8.243) until they are tested.
+All eight images use the USB name Multus IQ. The three MKII trees also pass 0x9D (paddle Farnsworth) to the keyer; that keyer update was tested on all MKII radios. Geminus Legacy 5.154 is built but not hardware-tested.
 
 Where the files are: Windows `C:\mscc-net9\PSoC Firmware\<Radio>\` and
 `C:\mscc-net9\Black Pill Firmware\`; Raspberry Pi `/usr/share/mscc/firmware/<Radio>/` and
@@ -66,6 +65,6 @@ Where the files are: Windows `C:\mscc-net9\PSoC Firmware\<Radio>\` and
 | Keyer bootloader (put on once with the PICkit) | version 2, in `Keyer-MCU-full-20261112.hex` | tested |
 | Keyer Firmware Update (window and command line) | R11-12-4 | tested on Windows and Raspberry Pi |
 
-Keyer Firmware Update needs radio firmware with the keyer update: Black Pill 3.16, or the PSoC
-versions marked new above (2.154, 3.244, 4.245, 7.245, 8.244). Files: Windows
+Keyer Firmware Update needs radio firmware with the keyer update: Black Pill 3.16, or the MKII
+PSoC versions in the table above. Files: Windows
 `C:\mscc-net9\Keyer Firmware\`, Raspberry Pi `/usr/share/mscc/firmware/keyer/`.

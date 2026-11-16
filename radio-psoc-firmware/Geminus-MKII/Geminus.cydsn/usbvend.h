@@ -58,6 +58,8 @@
  * Param: 0=off; 5–60=text WPM for CQ memory inter-char gaps. Elements use SET_WPM. */
 #define SET_MEM_TEXT_WPM 0x76
 #define SET_MEMORY_TYPE SET_MEM_TEXT_WPM /* legacy alias */
+/* Paddle Farnsworth: 0=off, 1=on; pass to the PIC like 0x76. */
+#define SET_PADDLE_FARNSWORTH 0x9D
 #define SET_WEIGHT 0x77
 #define SET_SEMI_BREAKIN 0x78
 #define SET_SEMI_CONTROL 0x79

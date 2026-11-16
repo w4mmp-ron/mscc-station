@@ -39,7 +39,8 @@
 
 
 #define FIRMWARE_VERSION_MAJOR 5     // Geminus Legacy (Geminus MKII is 2)
-#define FIRMWARE_VERSION_MINOR 153   // 5.153 (2026-11-02): Geminus MKII 2.153 code ported to Geminus Legacy (no onboard PIC keyer):
+#define FIRMWARE_VERSION_MINOR 154   // 5.154 (2026-11-14): USB product name "Multus IQ" (was "Proficio" / "Ultimus")
+                                     // 5.153 (2026-11-02): Geminus MKII 2.153 code ported to Geminus Legacy (no onboard PIC keyer):
                                      //   DAC soft-mute ramps on TUN/PTT edges and CW elements, per-band calibration 0xC8,
                                      //   entering CW drops TUN/PTT TX. Was 5.120.
                                      // 2.153 (2026-10-31): DAC soft-mute ramps on TUN/PTT edges and CW elements (Proficio 3.240-3.242)

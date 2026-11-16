@@ -44,7 +44,9 @@
 #else
 #define FIRMWARE_VERSION_MAJOR 3
 #endif
-#define FIRMWARE_VERSION_MINOR 244   //3.244 / Ultimus 8.244: keyer update over USB (CMD_KEYER_BOOT 0x9F I2C pass-through)
+#define FIRMWARE_VERSION_MINOR 246   //3.246 / Ultimus 8.246 (2026-11-15): pass 0x9D SET_PADDLE_FARNSWORTH to the keyer PIC like 0x76
+                                     //3.245 / Ultimus 8.245 (2026-11-14): USB product name "Multus IQ" (was "Proficio" / "Ultimus")
+                                     //3.244 / Ultimus 8.244: keyer update over USB (CMD_KEYER_BOOT 0x9F I2C pass-through)
                                      //3.243: DAC muted in non-QSK RX (no TX tail after release)
 #define FIRMWARE_VERSION ((((FIRMWARE_VERSION_MINOR) << 8) & 0xff00) | ((FIRMWARE_VERSION_MAJOR) & 0x00ff))
 #define EEPROM_PCB_VERSION_LOCATION 11
@@ -124,6 +126,7 @@ extern uint8_t E_keyer_mode;
 extern uint8_t E_wpm;
 extern uint8_t E_spacing;
 extern uint8_t E_mem_text_wpm; /* SET_MEM_TEXT_WPM 0x76: 0=off, else memory-play text WPM */
+extern uint8_t E_paddle_farns; /* SET_PADDLE_FARNSWORTH 0x9D: 0=off, 1=on */
 extern uint8_t E_weight;
 extern uint8_t E_side_tone;
 extern uint8_t E_paddle;

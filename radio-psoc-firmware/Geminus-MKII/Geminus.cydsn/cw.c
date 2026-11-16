@@ -86,6 +86,7 @@ uint8 Configure_CW(){
     static uint8_t wpm = 0;
     static uint8_t spacing = 0;
     static uint8_t mem_text_wpm = 0;
+    static uint8_t paddle_farns = 0;
     static uint8_t weight = 0;
     static uint8_t side_tone = 0;
     static uint8_t paddle = 0;
@@ -193,6 +194,18 @@ uint8 Configure_CW(){
         break;
 
         case 7:
+        /* SET_PADDLE_FARNSWORTH 0x9D — push to PIC when host changes (0=off, 1=on) */
+        if(paddle_farns != E_paddle_farns){
+            buffer[0] = SET_PADDLE_FARNSWORTH;
+            buffer[1] = E_paddle_farns;
+            paddle_farns = E_paddle_farns;
+            state = 10;
+        }else{
+            state++;
+        }
+        break;
+
+        case 8:
         /* Start one queued CQ-memory I2C transfer if idle path reached here */
         if (E_keyer_mem_q_count > 0) {
             buffer[0] = CMD_SET_KEYER_MEMORY;

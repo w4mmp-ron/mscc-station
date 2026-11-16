@@ -2,8 +2,8 @@ r"""
 Build Ultimus firmware from the Proficio source trees (no separate Ultimus sources).
 
 Ultimus radios are hand-buildable (through-hole) Proficios. The firmware is the same code;
-only the firmware major (radio identity for MSCC / factory cal) and the USB product string
-differ. So each Ultimus image is built from the matching Proficio tree:
+only the firmware major (radio identity for MSCC / factory cal) differs. So each Ultimus
+image is built from the matching Proficio tree:
 
     legacy    Proficio-Ultimus-Legacy   (Proficio-Legacy,   major 1)  ->  Ultimus-Legacy    major 6
     mkii-ptt  Proficio-Ultimus-MKII-PTT (Proficio-MKII-PTT, major 3)  ->  Ultimus-MKII-PTT  major 8
@@ -17,7 +17,7 @@ How it works
            or double-click build-ultimus.bat
   3. The script copies the .cydsn to _ultimus-build\<name>\ (git-ignored; the Proficio
      tree is not touched), recompiles the application sources with DF(ULTIMUS) (basic-plus.h
-     picks the Ultimus major), sets the USB product string to "Ultimus", links and makes the
+     picks the Ultimus major), links and makes the
      .cyacd / .hex with the same Keil / Cypress tools and options Creator uses, then copies
      them to the Proficio tree's Release\ folder as <name>-<major>.<minor>.cyacd/.hex, e.g.
      Proficio-Ultimus-MKII-ATU\Release\Ultimus-MKII-ATU-7.244.cyacd (never overwriting a different
@@ -55,7 +55,6 @@ VARIANTS = {
     "mkii-ptt": ("Proficio-Ultimus-MKII-PTT", "Proficio-MKII-PTT", "Ultimus-MKII-PTT", 8),
     "mkii-atu": ("Proficio-Ultimus-MKII-ATU", "Proficio-MKII-ATU", "Ultimus-MKII-ATU", 7),
 }
-PRODUCT = "Ultimus"
 
 _spec = importlib.util.spec_from_file_location("copy_release", os.path.join(HERE, "copy-release.py"))
 copy_release = importlib.util.module_from_spec(_spec)
@@ -99,23 +98,6 @@ def app_sources(cydsn, proj):
     return srcs
 
 
-def set_product_string(path):
-    """USB iProduct string descriptor "Proficio" -> "Ultimus" in generated USBFS_descr.c."""
-    t = open(path).read()
-    pat = re.compile(
-        r'(\* String Descriptor: ")Proficio("\s*\n\*+/\s*\n'
-        r'/\* Descriptor Length\s*\*/ )0x[0-9A-Fa-f]+u,(\s*\n/\* DescriptorType: STRING\s*\*/ 0x03u,\s*\n)'
-        r'((?:\s*\(uint8\)\'.\', 0u,)+)')
-    m = list(pat.finditer(t))
-    if len(m) != 1:
-        fail("USB product string \"Proficio\" not found exactly once in USBFS_descr.c")
-    chars = "".join("(uint8)'%s', 0u," % c for c in PRODUCT)
-    rep = (m[0].group(1) + PRODUCT + m[0].group(2) + "0x%02Xu," % (2 + 2 * len(PRODUCT))
-           + m[0].group(3) + " " + chars)
-    t = t[:m[0].start()] + rep + t[m[0].end():]
-    open(path, "w").write(t)
-
-
 def build(key):
     tree, proj, name, major = VARIANTS[key]
     src_cydsn = os.path.join(HERE, tree, proj + ".cydsn")
@@ -144,16 +126,9 @@ def build(key):
         shutil.rmtree(work_root)
     shutil.copytree(src_cydsn, work, ignore=shutil.ignore_patterns("codegentemp"))
 
-    set_product_string(os.path.join(work, "Generated_Source", "PSoC3", "USBFS_descr.c"))
-
     print("--- C51 application sources with DF(ULTIMUS)")
     for src in app_sources(work, proj):
         c51(src, os.path.splitext(src)[0], work, ["DF(ULTIMUS)"])
-
-    print("--- C51 USBFS_descr.c (product string \"%s\") into %s.lib" % (PRODUCT, proj))
-    c51(os.path.join("Generated_Source", "PSoC3", "USBFS_descr.c"), "USBFS_descr", work)
-    run([os.path.join(KEIL, "LIBX51.exe"), "REPLACE", os.path.join(DBG, "USBFS_descr.obj"),
-         "IN", os.path.join(DBG, proj + ".lib")], work)
 
     print("--- LX51 / OHx51 / elf / entry address")
     run([os.path.join(KEIL, "LX51.exe"), "@" + os.path.join(DBG, "keilLinkCmds.lnp")], work)

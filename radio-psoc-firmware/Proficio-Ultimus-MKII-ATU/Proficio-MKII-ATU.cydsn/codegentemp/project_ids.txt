@@ -1,8 +1,8 @@
-C:\Users\Ron\.grok\worktrees\radio-psoc-firmware\Proficio-Ultimus-MKII-ATU\Proficio-MKII-ATU.cydsn\Proficio-MKII-ATU.cyprj|2a875ed3-8186-4cfb-8aca-0bf534681760
-C:\Program Files (x86)\Cypress\PSoC Creator\4.4\PSoC Creator\psoc\content\default\CyAnnotationLibrary\CyAnnotationLibrary.cylib\CyAnnotationLibrary.cyprj|0169b0cd-2713-4f5a-bf0a-1dcc95d9377f
-C:\Users\Ron\Documents\PSoC Creator\4.4\Downloads ( 4.4).cylib\Downloads ( 4.4).cyprj|3d30e338-a5f7-4a66-91de-7d592b175341
-C:\Users\Ron\Documents\PSoC Creator\4.2\Downloads ( 4.2).cylib\Downloads ( 4.2).cyprj|5b5e46af-7068-4075-81dd-13aff5f51b77
-C:\Program Files (x86)\Cypress\PSoC Creator\4.4\PSoC Creator\psoc\content\cycomponentlibraryupdates\CyComponentLibraryUpdates.cylib\CyComponentLibraryUpdates.cyprj|ece6593f-2b0c-457d-ad51-0bae1770f74f
-C:\Program Files (x86)\Cypress\PSoC Creator\4.4\PSoC Creator\psoc\content\cycomponentlibrary\CyComponentLibrary.cylib\CyComponentLibrary.cyprj|bf59f602-db1c-4156-8a9b-c82504d2897c
-C:\Program Files (x86)\Cypress\PSoC Creator\4.4\PSoC Creator\psoc\content\cyprimitives\CyPrimitives.cylib\CyPrimitives.cyprj|63c6b47a-72b8-4b46-adfa-77e0a0d8ae1b
-C:\Program Files (x86)\Cypress\PSoC Creator\4.4\PSoC Creator\psoc\content\default\CyReferenceLibrary\CyReferenceLibrary.cylib\CyReferenceLibrary.cyprj|4b1e62e0-e4e1-4771-a6c3-4552e9762f78
+C:\Users\n8vet\OneDrive\Documents\github\mscc-station\radio-psoc-firmware\Proficio-Ultimus-MKII-ATU\Proficio-MKII-ATU.cydsn\Proficio-MKII-ATU.cyprj|5f1f29b9-4dbe-459e-8083-82b5307c58bb
+C:\Program Files (x86)\Cypress\PSoC Creator\4.4\PSoC Creator\psoc\content\default\CyAnnotationLibrary\CyAnnotationLibrary.cylib\CyAnnotationLibrary.cyprj|a87aee70-f87f-47dc-89ef-7577ee4975f5
+C:\Users\n8vet\OneDrive\Documents\PSoC Creator\4.4\Downloads ( 4.4).cylib\Downloads ( 4.4).cyprj|af586f37-0462-451c-b364-fe18370bede9
+C:\Users\n8vet\OneDrive\Documents\PSoC Creator\4.2\Downloads ( 4.2).cylib\Downloads ( 4.2).cyprj|9214b46a-4df7-4868-86b2-fcf0d64ccb2d
+C:\Program Files (x86)\Cypress\PSoC Creator\4.4\PSoC Creator\psoc\content\cycomponentlibraryupdates\CyComponentLibraryUpdates.cylib\CyComponentLibraryUpdates.cyprj|8d661249-478e-48e3-8408-af4d4633e1c4
+C:\Program Files (x86)\Cypress\PSoC Creator\4.4\PSoC Creator\psoc\content\cycomponentlibrary\CyComponentLibrary.cylib\CyComponentLibrary.cyprj|6fee4425-1de7-439b-930e-ce12a50b43e2
+C:\Program Files (x86)\Cypress\PSoC Creator\4.4\PSoC Creator\psoc\content\cyprimitives\CyPrimitives.cylib\CyPrimitives.cyprj|eff3de30-daa1-41c6-bfa4-9d9ed5c430ac
+C:\Program Files (x86)\Cypress\PSoC Creator\4.4\PSoC Creator\psoc\content\default\CyReferenceLibrary\CyReferenceLibrary.cylib\CyReferenceLibrary.cyprj|98efd0e7-befc-44b2-9b05-be1b9088935c

@@ -2,6 +2,17 @@
 
 Installer: `mscc-net9-R<version>-install.exe` (WPF client + Windows servers). Install the newest one; older installers in this folder are kept for roll-back only.
 
+## PSoC firmware — 2026-11-16  (payload updated; Windows installer not built in this step)
+
+### Changed
+- USB product name is "Multus IQ" on all eight radios: Proficio Legacy 1.237, Ultimus Legacy 6.237, Geminus Legacy 5.154, Geminus MKII 2.156, Proficio MKII PTT 3.246, Proficio MKII ATU 4.247, Ultimus MKII ATU 7.247, Ultimus MKII PTT 8.246.
+- The three MKII trees forward 0x9D SET_PADDLE_FARNSWORTH to the keyer PIC.
+
+### Tested
+- Keyer PIC update tested on all MKII radios and works.
+- Geminus Legacy 5.154 is built but not hardware-tested.
+- Shack TUNE bursts were the PC/USB cable, not the firmware.
+
 ## WPF 11.15.0 — 2026-11-15  (not a new Windows installer; drop-in to C:\mscc-net9)
 
 ### Fixed

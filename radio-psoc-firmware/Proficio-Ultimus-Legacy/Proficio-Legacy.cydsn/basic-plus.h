@@ -39,13 +39,14 @@
 
 
 // Ultimus Legacy (hand-built Proficio) is built from this tree by build-ultimus.py with
-// DF(ULTIMUS): same code, major 6 and USB product string "Ultimus".
+// DF(ULTIMUS): same code, major 6. USB product name is "Multus IQ" on every radio.
 #ifdef ULTIMUS
 #define FIRMWARE_VERSION_MAJOR 6
 #else
 #define FIRMWARE_VERSION_MAJOR 1
 #endif
-#define FIRMWARE_VERSION_MINOR 236   // 1.236 (2026-10-31): TUN/PTT DAC soft mute + mode-change drain (MKII PTT 3.241/3.242)
+#define FIRMWARE_VERSION_MINOR 237   // 1.237 / Ultimus 6.237 (2026-11-14): USB product name "Multus IQ" (was "Proficio" / "Ultimus")
+                                     // 1.236 (2026-10-31): TUN/PTT DAC soft mute + mode-change drain (MKII PTT 3.241/3.242)
 #define FIRMWARE_VERSION ((((FIRMWARE_VERSION_MINOR) << 8) & 0xff00) | ((FIRMWARE_VERSION_MAJOR) & 0x00ff))
 #define EEPROM_PCB_VERSION_LOCATION 11
         
