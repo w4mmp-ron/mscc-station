@@ -2076,3 +2076,12 @@ History: Claude worked in a copy `rpi/sdrcore-claude/` (commits fe0c9a1, 0443c21
 - Pi `mscc_1.0.96`: servers unchanged (ms-sdr 3.210, recv 3.156, trans 3.160); Stew's PSoC set (MKII PTT 3.246 etc.), Black Pill **3.17** + new bootloader (WinUSB, MS OS 2.0, both app and flash mode). `mscc-avalonia_1.7.04` attached (built 2026-11-15).
 - Docs: Addendum, Updating Firmware (Zadig only for older pills; keyer power-cycle), Windows guide draft 2.4 / ch. 3, both INSTALL.md, CHANGELOG, INSTALL-FOR-PI. Stew's `Proficio-Legacy - Copy` folder removed (his request).
 - Open: Stew to run a PSoC radio on 3.214; a PC that never had Zadig; Stew's pill bootloader reburn (ST-Link). Windows RX stall after TUNE (likely RF overload, `utility-scripts/Windows/rx-capture.py` ready).
+
+
+## Moved from rpi/CLAUDE.md on 2026-11-16 (claude-clean up, word for word)
+
+Done: keyer update tested on all MKII radios (Stew, R11-16-0); Multus IQ images released in R11-16-0, Pi mscc 1.0.96 carries them (R11-16-1).
+
+  3. Keyer update test on a PSoC radio with the daughter board (`radio-psoc-firmware/STEW-KEYER-UPDATE-TEST.md`).
+  4. USB product name "Multus IQ" in all 8 radio images (his, `NOTE-FOR-STEW-WINDOWS-FIRMWARE-MULTUS-IQ-2026-11-13.md`);
+     after that the Pi `mscc` package needs the new images.

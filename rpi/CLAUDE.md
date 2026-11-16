@@ -83,15 +83,13 @@ Finished entries (releases R11-10-14 to R11-14-2, done work, old resume points) 
 - **Opcodes:** the current free list is the AVAILABLE OPCODES block at the top of the Pi ms-sdr
   `source/usbavrcmd.h` (no opcode is free in every layer now: 0x9D, 0x2F, 0x9F were taken 11-05 / 11-10 / 11-12;
   use the reclaimed list there). The 2026-11-05 survey is in `CLAUDE-history.md` (2026-11-15, part 2).
-- **Waiting on Stew (list refreshed 2026-11-13 = the "With Stew" list in 08e53eb; notes in `.mscc-coord/`).**
+- **Waiting on Stew (list refreshed 2026-11-16 = the "With Stew" list in e2d88a9b, R11-16-1; notes in `.mscc-coord/`).**
+  0. Run a PSoC radio on Windows ms-sdr 3.214 (`NOTE-FOR-STEW-TEST-MS-SDR-3.214-PSOC-2026-11-16.md`).
   The 2026-11-01 list (14 items) was cleared: NB / spectral NR / NR Low-Med-High / heat sink / hard
   resets / client-gone fix / Windows SWR meter / radio cal read at connect were done by Ron 2026-11-10;
   the amd64 Avalonia build was done by Stew (f09daed); the ALC ceiling was settled 11-10.
   1. Debian / Ubuntu amd64 packages (`NOTE-FOR-STEW-PI-SERVERS-BUILD-ON-AMD64-2026-11-13.md`).
   2. Original firmware check (zip sent 11-11; missing: one Proficio, Geminus Legacy, all three Ultimus).
-  3. Keyer update test on a PSoC radio with the daughter board (`radio-psoc-firmware/STEW-KEYER-UPDATE-TEST.md`).
-  4. USB product name "Multus IQ" in all 8 radio images (his, `NOTE-FOR-STEW-WINDOWS-FIRMWARE-MULTUS-IQ-2026-11-13.md`);
-     after that the Pi `mscc` package needs the new images.
   5. Option: git-ignore the Visual Studio build bookkeeping files in `mscc-ui/windows-work-tree`.
   6. FYI notes: shared rules (`NOTE-FOR-STEW-SHARED-CLAUDE-RULES-2026-11-13.md`), Avalonia-Migration
      frozen (`NOTE-FOR-STEW-AVALONIA-MIGRATION-FROZEN-2026-11-13.md`), Claude builds PSoC firmware
