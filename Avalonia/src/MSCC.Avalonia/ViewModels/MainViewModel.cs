@@ -209,7 +209,6 @@ public partial class MainViewModel : ViewModelBase, IDisposable
         AppendLog($"Favorites: {FavoritesStore.StorePath}");
         CoreVersionText = "—";
         FirmwareText = "—";
-        AgcButtonText = "SLO";
         SpectrumZoom = SpectrumDisplaySettings.Instance.ZoomFactor;
         SpectrumDisplaySettings.Instance.Changed += OnSpectrumSettingsChanged;
         AppearanceSettings.Instance.Changed += OnAppearanceSettingsChanged;
@@ -1415,6 +1414,8 @@ public partial class MainViewModel : ViewModelBase, IDisposable
     }
 
     private bool CanOperate() => IsConnected && !IsBusy && _radio != null;
+
+    private bool CanToggleCompression() => CanOperate() && !IsDigitalAudio;
 
     private bool CanTogglePtt() => CanUserControlTransmit;
     private bool CanToggleTune() => CanUserControlTransmit;
@@ -2629,7 +2630,7 @@ public partial class MainViewModel : ViewModelBase, IDisposable
         AmpOn = true;
     }
 
-    [RelayCommand(CanExecute = nameof(CanOperate))]
+    [RelayCommand(CanExecute = nameof(CanToggleCompression))]
     private void ToggleCompression() => CompressionOn = !CompressionOn;
 
     [RelayCommand(CanExecute = nameof(CanOperate))]
@@ -2885,6 +2886,7 @@ public partial class MainViewModel : ViewModelBase, IDisposable
         OnPropertyChanged(nameof(AudioPathButtonText));
         OnPropertyChanged(nameof(IsPhonesAudio));
         OnPropertyChanged(nameof(RemoteAudioCheckboxEnabled));
+        ToggleCompressionCommand.NotifyCanExecuteChanged();
         ScheduleSaveClientSettings();
 
         if (_suppressAudioSend) return;

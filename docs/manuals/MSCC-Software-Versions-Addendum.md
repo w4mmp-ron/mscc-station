@@ -12,18 +12,18 @@ when only version numbers do. Downloads and what changed in each release:
 | Computer | File |
 |---|---|
 | Windows | `mscc-net9-R11-16-1-install.exe` (installs to `C:\mscc-net9`; uninstall from Apps & features) |
-| Raspberry Pi (64-bit Pi OS, Pi 4 / Pi 5) | `mscc_1.0.96_arm64.deb` (required) and `mscc-avalonia_1.7.04_arm64.deb` (optional) |
+| Raspberry Pi (64-bit Pi OS, Pi 4 / Pi 5) | `mscc_1.0.96_arm64.deb` (required) and `mscc-avalonia_1.7.05_arm64.deb` (optional) |
 
 ## MSCC programs
 
 | Program | Windows | Raspberry Pi |
 |---|---|---|
-| MSCC client | WPF, title bar 11.15.0 | MSCC Avalonia 1.7.04 (optional) |
+| MSCC client | WPF, title bar 11.15.0 | MSCC Avalonia 1.7.05 (optional) |
 | ms-sdr (server) | 3.214 | 3.210 |
 | recv (receive server) | 3.155 | 3.156 |
 | trans (transmit server) | 3.159 | 3.160 |
 
-Avalonia 1.7.04 (tested on Ubuntu, Ultimus MKII): QRP and AMP cal use the last-tuned frequency and select the band when you open the tab; AGC FAST RELEASE is 0–2000 ms in steps of 10. LF not yet tested on Geminus.
+Avalonia 1.7.05 is built and tested on Ubuntu (Ultimus MKII): packages 12.1.6 (idle-CPU fix), the AGC button shows the saved SLO / MED / FST at start, and CMP is greyed in Digital. QRP and AMP cal still use the last-tuned frequency and select the band when you open the tab; AGC FAST RELEASE is 0–2000 ms in steps of 10. It will be attached at the next GitHub Release. The Pi arm64 package was not built in this step. LF not yet tested on Geminus.
 
 Windows ms-sdr 3.214 talks to the radio through the Zadig driver or through Windows' own WinUSB driver, and picks the right one by itself. With Black Pill 3.17 no Zadig is needed. It also fixes the WiFi SWR meter link on Windows.
 

@@ -2,6 +2,16 @@
 
 Installer: `mscc-net9-R<version>-install.exe` (WPF client + Windows servers). Install the newest one; older installers in this folder are kept for roll-back only.
 
+## Avalonia 1.7.05 — 2026-11-16  (not a new Windows installer; WPF and the Windows servers are unchanged)
+
+### Fixed
+- Avalonia packages 12.1.1 → 12.1.6. The 12.1.1 X11 event loop kept the client busy while idle (about half a core on the Pi even when not connected). Ron measured idle 0.2–0.3 % on 12.1.6.
+- The AGC button no longer shows SLO at every start. It now keeps SLO / MED / FST from the saved level.
+- CMP is greyed and not clickable in Digital, like WPF. It still turns off when you enter Digital, and comes back for Phones.
+
+### Tested
+- Built and smoked on Ubuntu amd64. Pi arm64 package not built in this step.
+
 ## R11-16-1 — 2026-11-16  (ms-sdr 3.214, Black Pill 3.17; client 11.15.0 unchanged)
 
 ### Changed

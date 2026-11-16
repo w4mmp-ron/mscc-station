@@ -13,7 +13,9 @@ On start: `git pull`, then read [`handoff.md`](handoff.md). If `.mscc-coord/COMM
 
 ## Current work
 
-No Build command is active as of 2026-10-07. Check `.mscc-coord/COMMANDS.yaml` for new orders. Current state and the open / pending list live in [`handoff.md`](handoff.md).
+**Active — cmd-085 (ubuntu-stew / stew-HP):** Avalonia 1.7.04 → 1.7.05 small fixes (packages 12.1.1→12.1.6 idle CPU, AGC button text at start, CMP disabled in Digital, confirm TX IQ OFFSET/PHASE wheel). Brief: `.mscc-coord/cmd-085-avalonia-small-fixes-brief.md`. Commit only when Stew says "finished". Do not push.
+
+Older notes below are stale as of 2026-10-07. Check `.mscc-coord/COMMANDS.yaml` and [`handoff.md`](handoff.md) for historical open / pending items.
 
 **Pending (no orders yet):** Ubuntu amd64 kit rebuild (recv DC blocker + full FFT 3.143, 800-bin fix, Avalonia CW PHONES removal are in source but not in `installers/linux/`); port the Pi largest-bin spectrum change to Windows / Ubuntu recv; USB-on-load LAST_MODE fix; CAT MD mode map bug on the Linux server and CAT mode-set parity; FM unfinished; DIG-CW design; FREQ CAL progress bar reset; client ask if FW missing; LAST_HF/LF digi defaults; EVENT logging cleanup; TX IQ phase (back-burner).
 
