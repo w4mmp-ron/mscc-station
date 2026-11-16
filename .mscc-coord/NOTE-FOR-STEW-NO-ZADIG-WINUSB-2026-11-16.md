@@ -28,6 +28,9 @@ The bootloader can only be put on a pill with an ST-Link. That's no problem: we 
 
 So for Black Pill radios, users would never need Zadig at all, either to run the radio or to update it. PSoC radios already update without Zadig (LOADER uses a driver built into Windows), so with the new firmware they wouldn't need it either.
 
+**Raspberry Pi and Linux: no change**
+Linux never asks the question Windows asks at plug-in, so it simply ignores the new answer. The radio shows up on the Pi exactly as it does now. The Pi servers, the USB access rules, flashing and the audio all stay as they are. I checked that nothing on the Pi or Linux side looks at the USB device version number, so raising it does no harm there. After each new firmware I'd do one quick run on the Pi (receive, transmit, a flash) to confirm nothing changed.
+
 **Order**
 1. I do the Black Pill and Proficio MKII PTT first and test them on my rig.
 2. Once they work, I send you the exact change from MKII PTT. It should be a small, self-contained piece you can copy into the other trees (MKII ATU, Ultimus, Geminus, Legacy).
