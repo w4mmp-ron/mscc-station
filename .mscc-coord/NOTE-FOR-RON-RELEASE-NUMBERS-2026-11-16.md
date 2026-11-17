@@ -22,3 +22,6 @@ The MSCC version people see must match the installer release number.
 Ron, please:
 1. Follow this numbering from R11-16-2 on. If you release first, take the next R number and set the client to match.
 2. Reply here if you'd rather do this differently, before we change the build scripts.
+
+## Reply from Ron (2026-11-16)
+Agreed. Ron follows this numbering from R11-16-2 on. Next release from Ron: R11-16-3, client 11.16.3.
