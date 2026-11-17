@@ -689,7 +689,7 @@ internal sealed class BasicSpectrumRenderer : ISpectrumRenderer
                 filterRightX = filterLeftX + 1;
         }
 
-        // === Horizontal dB grid (S/W VIEW GRID) — spectrum area, outside filter passband ===
+        // === Horizontal dB grid (S/W VIEW GRID) — full width, including filter passband ===
         if (SpectrumColorSettings.ViewGrid)
         {
             // Dim gray so lines read on dark backgrounds without drowning the trace
@@ -706,10 +706,6 @@ internal sealed class BasicSpectrumRenderer : ISpectrumRenderer
 
                 for (int x = 0; x < width; x++)
                 {
-                    // Leave passband clear — matches prior look (grid not in bandwidth shade)
-                    if (filterLeftX != int.MinValue && x >= filterLeftX && x <= filterRightX)
-                        continue;
-
                     int offset = y * stride + x * 4;
                     if (offset + 3 >= pixelBuffer.Length) continue;
 
@@ -796,7 +792,7 @@ internal sealed class BasicSpectrumRenderer : ISpectrumRenderer
             if (filterRight < filterLeft + 1)
                 filterRight = filterLeft + 1;
 
-            // Light blue-ish passband -- skip for SCOPE to avoid fill under the trace
+            // Sky blue passband tint (12% blend) -- skip for SCOPE to avoid fill under the trace
             if (SpectrumColorSettings.CurrentFillMode != "SCOPE")
             {
                 int xStart = Math.Max(0, filterLeft);
@@ -808,14 +804,16 @@ internal sealed class BasicSpectrumRenderer : ISpectrumRenderer
                         int offset = yy * stride + x * 4;
                         if (offset + 3 >= pixelBuffer.Length) continue;
 
-                        pixelBuffer[offset + 0] = (byte)Math.Min(255, pixelBuffer[offset + 0] + 25);
-                        pixelBuffer[offset + 1] = (byte)Math.Min(255, pixelBuffer[offset + 1] + 45);
-                        pixelBuffer[offset + 2] = (byte)Math.Min(255, pixelBuffer[offset + 2] + 80);
+                        // 12% blend toward sky blue RGB(32,176,255): shows on light and dark backgrounds, signals stay readable
+                        const int fillA = 30; // out of 256 (about 12%)
+                        pixelBuffer[offset + 0] = (byte)(pixelBuffer[offset + 0] + (((0xFF - pixelBuffer[offset + 0]) * fillA) >> 8));
+                        pixelBuffer[offset + 1] = (byte)(pixelBuffer[offset + 1] + (((0xB0 - pixelBuffer[offset + 1]) * fillA) >> 8));
+                        pixelBuffer[offset + 2] = (byte)(pixelBuffer[offset + 2] + (((0x20 - pixelBuffer[offset + 2]) * fillA) >> 8));
                     }
                 }
             }
 
-            // Orange filter edges (thin lines, keep even in SCOPE) — only if on-screen
+            // Sky blue filter edges RGB(32,176,255) (thin lines, keep even in SCOPE) — only if on-screen
             if (filterLeft >= 0 && filterLeft < width)
                 DrawVerticalLine(pixelBuffer, stride, width, spectrumPlotBottom, filterLeft, 0xFF, 0xB0, 0x20, 255);
             if (filterRight >= 0 && filterRight < width)

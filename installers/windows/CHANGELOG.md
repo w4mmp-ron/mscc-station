@@ -2,6 +2,15 @@
 
 Installer: `mscc-net9-R<version>-install.exe` (WPF client + Windows servers). Install the newest one; older installers in this folder are kept for roll-back only.
 
+## WPF 11.16.2 — 2026-11-16  (not a new Windows installer; drop-in to C:\mscc-net9)
+
+### Fixed
+- The filter passband is a 12% sky-blue tint; dB grid now drawn through the passband, so the band stays visible on light and dark backgrounds and signals inside the filter stay readable.
+- The "Orange filter edges" comment was wrong; the edges were already sky blue RGB(32,176,255). The comment now says sky blue. Colour unchanged.
+
+### Tested
+- Built and smoked on Shack (drop-in to C:\mscc-net9). No new Windows installer in this step.
+
 ## Avalonia 1.7.06 — 2026-11-16  (not a new Windows installer; WPF and the Windows servers are unchanged)
 
 ### Fixed

@@ -13,7 +13,7 @@ On start: `git pull`, then read [`handoff.md`](handoff.md). If `.mscc-coord/COMM
 
 ## Current work
 
-**Active — cmd-086 (ubuntu-stew / stew-HP):** Avalonia 1.7.05 → 1.7.06 lighter filter passband fill (PowerSDR-like) and sky-blue filter edges to match WPF. Brief: `.mscc-coord/cmd-086-avalonia-filter-transparency-brief.md`. Commit only when Stew says "finished". Do not push. WPF half is a later cmd-086b on Shack.
+**Active — cmd-086b (windows-shack / Shack):** WPF client, 11.15.0 → 11.16.2 (matches the next installer, R11-16-2; bump-client-version.ps1 writes ClientVersion.txt). REVISION 1: passband is a 12% sky-blue tint RGB(32,176,255); horizontal dB grid is drawn through the passband. Edge colour stays sky blue. SCOPE still skips the tint. Brief: `.mscc-coord/cmd-086b-wpf-filter-transparency-brief.md`. Commit only when Stew says "finished"; include `.mscc-coord/NOTE-FOR-RON-RELEASE-NUMBERS-2026-11-16.md`. Do not push. Avalonia half is already on main (cmd-086, 993a5d92, 1.7.06).
 
 Older notes below are stale as of 2026-10-07. Check `.mscc-coord/COMMANDS.yaml` and [`handoff.md`](handoff.md) for historical open / pending items.
 
