@@ -1,6 +1,6 @@
 # MSCC Software Versions Addendum
 
-**Release R11-16-1** · 2026-11-16
+**Release R11-16-2** · 2026-11-16
 
 The Operator's Guides describe how MSCC works; this addendum lists the version numbers that
 go with the current release. It is updated with every release, so the guides don't change
@@ -11,21 +11,21 @@ when only version numbers do. Downloads and what changed in each release:
 
 | Computer | File |
 |---|---|
-| Windows | `mscc-net9-R11-16-1-install.exe` (installs to `C:\mscc-net9`; uninstall from Apps & features) |
-| Raspberry Pi (64-bit Pi OS, Pi 4 / Pi 5) | `mscc_1.0.96_arm64.deb` (required) and `mscc-avalonia_1.7.06_arm64.deb` (optional) |
+| Windows | `mscc-net9-R11-16-2-install.exe` (installs to `C:\mscc-net9`; uninstall from Apps & features) |
+| Raspberry Pi (64-bit Pi OS, Pi 4 / Pi 5) | `mscc_1.0.96_arm64.deb` (required) and `mscc-avalonia_1.7.04_arm64.deb` (optional, on the R11-16-1 release) |
 
 ## MSCC programs
 
 | Program | Windows | Raspberry Pi |
 |---|---|---|
-| MSCC client | WPF, title bar 11.16.2 | MSCC Avalonia 1.7.06 (optional) |
+| MSCC client | WPF, title bar 11.16.2 | MSCC Avalonia 1.7.04 (optional) |
 | ms-sdr (server) | 3.214 | 3.210 |
 | recv (receive server) | 3.155 | 3.156 |
 | trans (transmit server) | 3.159 | 3.160 |
 
-Avalonia 1.7.06 is built and tested on Ubuntu: the filter passband is lighter so signals inside it stay visible, and the filter edges are sky blue to match WPF. Packages 12.1.6, the AGC button text, CMP greyed in Digital, QRP/AMP last-tuned frequency, and AGC FAST RELEASE 0–2000 ms are still in this build. It will be attached at the next GitHub Release. The Pi arm64 package was not built in this step. LF not yet tested on Geminus.
+Avalonia 1.7.06 is built and tested on Ubuntu: the filter passband is lighter so signals inside it stay visible, and the filter edges are sky blue to match WPF. Packages 12.1.6, the AGC button text, CMP greyed in Digital, QRP/AMP last-tuned frequency, and AGC FAST RELEASE 0–2000 ms are still in this build. It is not built for the Pi; the Pi package stays 1.7.04. LF not yet tested on Geminus.
 
-The Windows WPF client (title bar 11.16.2) now has the same lighter filter fill as Avalonia 1.7.06, so signals inside the passband stay visible. The filter edges were already sky blue. It is a client-only copy in `C:\mscc-net9` for now and rides the next GitHub Release. There is no new Windows installer.
+The Windows WPF client (title bar 11.16.2) now has the same lighter filter fill as Avalonia 1.7.06, so signals inside the passband stay visible. The filter edges were already sky blue. It is in the R11-16-2 Windows installer.
 
 Windows ms-sdr 3.214 talks to the radio through the Zadig driver or through Windows' own WinUSB driver, and picks the right one by itself. With Black Pill 3.17 no Zadig is needed. It also fixes the WiFi SWR meter link on Windows.
 
