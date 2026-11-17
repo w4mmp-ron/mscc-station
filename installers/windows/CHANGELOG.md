@@ -2,6 +2,15 @@
 
 Installer: `mscc-net9-R<version>-install.exe` (WPF client + Windows servers). Install the newest one; older installers in this folder are kept for roll-back only.
 
+## R11-17-0 — 2026-11-17  (WPF 11.17.0 = 11.16.2 code, new number only; Black Pill 3.19; servers unchanged: ms-sdr 3.214, recv 3.155, trans 3.159)
+
+### Fixed
+- Black Pill firmware 3.19: after a TUNE into a high SWR the radio's receive could get stuck (spectrum all bright yellow, S-meter S9+40, no audio) until NRST on the Black Pill. The receive data had slipped one bit. The Black Pill now notices this and restarts its audio chip by itself, losing about 0.1 s of receive. It never does this while transmitting.
+
+### Tested
+- Ron's rig (Proficio MKII with Black Pill) on the Pi: a faked slip was fixed in about 0.2 s; no false restarts at power-up, server restart, band changes or TUNE; receive normal.
+- Installer built from the R11-16-2 code; the client is only renumbered.
+
 ## R11-16-2 — 2026-11-16  (WPF 11.16.2; servers unchanged: ms-sdr 3.214, recv 3.155, trans 3.159)
 
 ### Fixed

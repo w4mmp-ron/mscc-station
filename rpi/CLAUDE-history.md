@@ -2085,3 +2085,19 @@ Done: keyer update tested on all MKII radios (Stew, R11-16-0); Multus IQ images 
   3. Keyer update test on a PSoC radio with the daughter board (`radio-psoc-firmware/STEW-KEYER-UPDATE-TEST.md`).
   4. USB product name "Multus IQ" in all 8 radio images (his, `NOTE-FOR-STEW-WINDOWS-FIRMWARE-MULTUS-IQ-2026-11-13.md`);
      after that the Pi `mscc` package needs the new images.
+
+## Dropped 2026-11-16 (Ron: no impact to the user), word for word from rpi/CLAUDE.md
+
+Re-checked 2026-11-16 on the Pi: 22:20-22:30 window with 2 TUNE + 5 transmit on 30 m = gaps 10, in_drop 3, out_under 6; next 5 receive-only windows clean.
+
+  **Open fix (Ron OK'd after the hold, not started):** transmit underrun at every band change and tune
+  key-up = sdrcore-trans `udp_thread.c` CMD_SET_MAIN_MODE reopens the stream even for the same mode.
+  Better fix (Ron): in DUAL STREAM (Ron's Pi) never reopen the I/Q stream, only stop / ignore the mic
+  stream in T / C; keep the reopen for single full-duplex. Probably also removes the receive gaps /
+  in_drop (not verified; pill ruled out by code read). Full investigation in `CLAUDE-history.md` (2026-11-15).
+
+## Release R11-17-0 (2026-11-17, finished, Ron)
+
+Windows `mscc-net9-R11-17-0-install.exe` (WPF 11.17.0 = 11.16.2 code, renumbered per Stew's release-number rule; built with the CopyToMsccNet9 target overridden so C:\mscc-net9 was not touched; servers unchanged ms-sdr 3.214, recv 3.155, trans 3.159) + Pi `mscc_1.0.97_arm64.deb` (only Black Pill 3.17 -> 3.19 and the version changed, every other file identical to 1.0.96; mscc-avalonia stays 1.7.04). Black Pill 3.19 (pill repo d320a23): receive slip recovery. After a TUNE into a high SWR (Pi 11-17: SWR 5.2, 54 W fwd / 25 W ref) the codec -> STM32 receive slipped one bit clock (raw capture: every sample >>1, never negative; all-yellow spectrum, S9+40) until NRST; the pill now finds that pattern and restarts I2S + codec itself while receiving. Details in the pill CLAUDE.md. `utility-scripts/*/audio-stats.py`: "rx resync" line, `rx_resync N` in the cron log line (<<< when > 0), `slip-test`; Pi ~/utils updated. Open: a real slip fixed by itself not seen yet (watch the cron log).
+
+Remote Digital TX spurs (Stew's NOTE-FOR-RON-REMOTE-DIGITAL-TX-SPURS-2026-11-17): not reproduced on Ron's rig (WPF -> Pi, Black Pill). Recorded the remote mic UDP (tcpdump port 9101, MSA1 decode) and the USB transmit I/Q (usbmon1, ep 0x01) for FT8 and for a first WSJT-X Tune right after starting Remote Digital: no missing packets, no clicks, steady level, no 1 kHz comb (only the TX I/Q cal image at -38.7 dB). Reply: `.mscc-coord/NOTE-FOR-STEW-REMOTE-DIGITAL-TX-SPURS-REPLY-2026-11-17.md` (comb likely his non-Black-Pill radio's USB audio side; random bursts = stray audio into his VB cable, trans mutes remote mic at key-up). Analysis scripts were scratchpad only.

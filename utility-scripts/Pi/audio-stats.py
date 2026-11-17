@@ -17,6 +17,9 @@ so it runs with the servers up. Needs python3-usb (pyusb).
                               restarted, pill restarts; trouble lines end in <<<. Made for
                               cron. Clears nothing (mark / since still work). Its own state
                               file: ~/.audio-stats-log.json
+  audio-stats.py slip-test    (pill 3.18+) fake a receive slip; the pill should find and
+                              fix it by itself within a second. Receive drops for ~0.2 s.
+                              Prints the receive resync count before and after.
 
 Counters (IN = radio -> Pi, RX I/Q; OUT = Pi -> radio, TX I/Q):
   in_pkts     IN packets scheduled (about 1000 per second)
@@ -44,6 +47,9 @@ Counters (IN = radio -> Pi, RX I/Q; OUT = Pi -> radio, TX I/Q):
   loop        main loop timing (3.20+): longest pass, the part that took most of it,
               and the longest time of each part (beat1 TX, beat4 band relays,
               beat6 Si5351, usb = tud_task incl. control requests)
+  rx resync   (3.18+) times the pill found the receive data one bit out of step (all
+              yellow spectrum, S9+40) and restarted the codec + I2S by itself; frame
+              errors / overruns = the STM32 receive flags (counted only)
 """
 import json
 import os
@@ -171,6 +177,52 @@ def print_loop(w):
                                      for i, n in enumerate(LOOP_PARTS)) + "  (ms)")
 
 
+def read_resync(d, test=False):
+    """Pill 3.18+: receive slip recovery (CMD_AUDIO_STATS wIndex 4).
+    test = also fake a slip (wValue 2)."""
+    try:
+        b = bytes(d.ctrl_transfer(IN, CMD_AUDIO_STATS, 2 if test else 0, 4, 64, TIMEOUT))
+    except usb.core.USBError:
+        return None
+    if len(b) < 32 or struct.unpack("<I", b[:4])[0] != (1 | (8 << 16)):
+        return None   # pill older than 3.18 (answers with the audio counters)
+    return dict(zip(["layout", "ms", "count", "last", "fre", "ovr", "codec", "state"],
+                    struct.unpack("<8I", b[:32])))
+
+
+def print_resync(r):
+    if r is None:
+        return
+    last = "  last %.1f h ago" % ((r["ms"] - r["last"]) / 3600000.0) if r["count"] else ""
+    now = ""
+    if r["state"] & 0xFF:
+        now = "  (restart running now)"
+    elif r["state"] & 0x100:
+        now = "  (slip seen, waiting for receive)"
+    elif r["layout"] == 1 | (8 << 16) and not r["state"] & 0x400 and r["ms"] < 600000:
+        now = "  (check not armed yet: 5 s of steady receive after power-up, 3.19+)"
+    print("rx resync   %d%s  frame errors %d  overruns %d%s" %
+          (r["count"], last, r["fre"], r["ovr"], now))
+
+
+def slip_test(d):
+    r0 = read_resync(d)
+    if r0 is None:
+        sys.exit("pill older than 3.18: no receive slip recovery")
+    print("rx resync before: %d, faking a slip now" % r0["count"])
+    read_resync(d, test=True)
+    for _ in range(20):
+        time.sleep(0.1)
+        r = read_resync(d)
+        if r["count"] != r0["count"] and not r["state"] & 0x2FF:
+            print("rx resync after:  %d, fixed in about %.1f s (codec status %d, read-back %d)"
+                  % (r["count"], (r["last"] - r0["ms"]) / 1000.0 + 0.1,
+                     r["codec"] & 0xFF, (r["codec"] >> 8) & 0xFF))
+            return
+    print_resync(read_resync(d))
+    print("NOT fixed within 2 s: if 'waiting for receive', the radio is transmitting")
+
+
 def print_hang(h):
     if h is None or not h["flags"] & 1:
         print("hang record none")
@@ -221,6 +273,7 @@ def once(d):
         print_hang(read_hang(d))
         print_ctrl(read_ctrl(d))
         print_loop(read_loop(d))
+        print_resync(read_resync(d))
 
 
 def watch(d, secs):
@@ -309,7 +362,7 @@ def since(d):
 LOG_FILE = os.path.join(os.path.expanduser("~"), ".local", "mscc", "audio-stats.log")
 LOG_STATE = os.path.join(os.path.expanduser("~"), ".audio-stats-log.json")
 LOG_KEYS = ["in_empty", "in_gaps", "in_drop", "out_under", "out_drop", "ep0_cut"]
-LOG_CTRL = ["abandoned", "slow"]
+LOG_CTRL = ["abandoned", "slow", "rx_resync"]
 SERVERS = ["sdrcore-recv", "sdrcore-trans", "ms-sdr"]
 
 
@@ -346,6 +399,9 @@ def log(path):
         log_line(path, "NO READ: %s  <<<" % e)
         return
     c = read_ctrl(d) or {}
+    r = read_resync(d)
+    if r is not None:
+        c["rx_resync"] = r["count"]
     now = time.time()
     pids = server_pids()
     try:
@@ -381,6 +437,8 @@ def log(path):
                dk.get("in_empty", 0), dk.get("in_gaps", 0), s["in_gap_max"], dk.get("in_drop", 0),
                dk.get("out_under", 0), dk.get("out_drop", 0), dk.get("ep0_cut", 0),
                dc.get("abandoned", 0), dc.get("slow", 0))
+    if "rx_resync" in dc:
+        text += "  rx_resync %d" % dc["rx_resync"]
     if pids and not any("DOWN" in n for n in notes):
         text += "  servers up"
     if notes:
@@ -404,6 +462,8 @@ def main():
         mark(d)
     elif cmd == "since":
         since(d)
+    elif cmd == "slip-test":
+        slip_test(d)
     else:
         once(d)
 

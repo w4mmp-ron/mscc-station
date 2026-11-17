@@ -99,11 +99,8 @@ Finished entries (releases R11-10-14 to R11-14-2, done work, old resume points) 
   reviews, SWR meter firmware): ask Ron before raising them; list in `CLAUDE-history.md` (2026-11-15, part 2).
 - **Pill audio stats cron (2026-11-08):** `*/10 * * * * /usr/bin/python3 /home/ron/utils/audio-stats.py log`
   -> `~/.local/mscc/audio-stats.log`; check `grep '<<<' ~/.local/mscc/audio-stats.log`.
-  **Open fix (Ron OK'd after the hold, not started):** transmit underrun at every band change and tune
-  key-up = sdrcore-trans `udp_thread.c` CMD_SET_MAIN_MODE reopens the stream even for the same mode.
-  Better fix (Ron): in DUAL STREAM (Ron's Pi) never reopen the I/Q stream, only stop / ignore the mic
-  stream in T / C; keep the reopen for single full-duplex. Probably also removes the receive gaps /
-  in_drop (not verified; pill ruled out by code read). Full investigation in `CLAUDE-history.md` (2026-11-15).
+  A few gaps / in_drop / out_under in a window with TUNE, band or mode changes are expected (trans
+  stream reopen); Ron dropped that fix 2026-11-16 (no user impact; `CLAUDE-history.md`).
 - **Rules (Ron 2026-11-01):** assume Stew makes MSCC UI (Avalonia) match the current Windows client,
   and the Ubuntu scripts/utilities match the Pi. No separate Avalonia review; document the Pi
   versions for both Linux hosts. Linux guide Release 0 reviewed (old versions, Appendix G Pi install
