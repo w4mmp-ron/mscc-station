@@ -2101,3 +2101,15 @@ Re-checked 2026-11-16 on the Pi: 22:20-22:30 window with 2 TUNE + 5 transmit on 
 Windows `mscc-net9-R11-17-0-install.exe` (WPF 11.17.0 = 11.16.2 code, renumbered per Stew's release-number rule; built with the CopyToMsccNet9 target overridden so C:\mscc-net9 was not touched; servers unchanged ms-sdr 3.214, recv 3.155, trans 3.159) + Pi `mscc_1.0.97_arm64.deb` (only Black Pill 3.17 -> 3.19 and the version changed, every other file identical to 1.0.96; mscc-avalonia stays 1.7.04). Black Pill 3.19 (pill repo d320a23): receive slip recovery. After a TUNE into a high SWR (Pi 11-17: SWR 5.2, 54 W fwd / 25 W ref) the codec -> STM32 receive slipped one bit clock (raw capture: every sample >>1, never negative; all-yellow spectrum, S9+40) until NRST; the pill now finds that pattern and restarts I2S + codec itself while receiving. Details in the pill CLAUDE.md. `utility-scripts/*/audio-stats.py`: "rx resync" line, `rx_resync N` in the cron log line (<<< when > 0), `slip-test`; Pi ~/utils updated. Open: a real slip fixed by itself not seen yet (watch the cron log).
 
 Remote Digital TX spurs (Stew's NOTE-FOR-RON-REMOTE-DIGITAL-TX-SPURS-2026-11-17): not reproduced on Ron's rig (WPF -> Pi, Black Pill). Recorded the remote mic UDP (tcpdump port 9101, MSA1 decode) and the USB transmit I/Q (usbmon1, ep 0x01) for FT8 and for a first WSJT-X Tune right after starting Remote Digital: no missing packets, no clicks, steady level, no 1 kHz comb (only the TX I/Q cal image at -38.7 dB). Reply: `.mscc-coord/NOTE-FOR-STEW-REMOTE-DIGITAL-TX-SPURS-REPLY-2026-11-17.md` (comb likely his non-Black-Pill radio's USB audio side; random bursts = stray audio into his VB cable, trans mutes remote mic at key-up). Analysis scripts were scratchpad only.
+
+## Dropped 2026-11-17 (Ron: off the list), word for word from rpi/CLAUDE.md
+
+- WiFi SWR meter: "test the WiFi retry (router off, meter restarted)".
+- **Pill CW edges on an analyzer: not checked yet** (pill 5 ms raised cosine, should show no comb).
+
+## Release R11-18-0 (2026-11-18)
+
+- Black Pill 3.22 (pill repo bdf66f6): receive slip recovery also catches I2S frame errors (15 polls in a row) and resets SPI2 + HAL_I2S_Init. Real RF test 11-18 12:12-12:20 EST: ~10 TUNEs at SWR 2.3, up to 169 W: ~4,600 frame errors, 7 recoveries, spectrum normal.
+- Windows R11-18-0 (WPF 11.18.0 = 11.16.2 code renumbered; servers unchanged ms-sdr 3.214 / recv 3.155 / trans 3.159). Pi mscc 1.0.98 (only the pill images changed vs 1.0.97, checked file by file); mscc-avalonia stays 1.7.04.
+- audio-stats.py (Pi + Windows): frame_err in the log line, misframe-test, "(by frame errors N)"; READMEs.
+- Note for Stew: series resistors on BCK / LRCK in the next daughter board spin (the real fix).

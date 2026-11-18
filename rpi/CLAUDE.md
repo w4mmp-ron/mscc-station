@@ -43,11 +43,17 @@ Git repo root: `C:\Users\Ron\.grok\worktrees`.
 
 Finished entries (releases R11-10-14 to R11-14-2, done work, old resume points) moved to `rpi/CLAUDE-history.md` on 2026-11-14 (last section there).
 
+**HOLD (Ron 2026-11-17): no server or client changes** (Pi + Windows ms-sdr / recv / trans, WPF + Avalonia)
+until Stew sorts out the remote audio issue (Windows client digital transmit bursts:
+`.mscc-coord/REPORT-FOR-RON-WINDOWS-CLIENT-DIGITAL-TX-BURSTS-2026-11-17.md` + our reply
+`NOTE-FOR-STEW-DIGITAL-TX-BURSTS-REPLY-2026-11-17.md`). Firmware (pill, SWR meter, keyer) is not on hold.
+Reading / investigating is fine.
+
 **Current list (updated 2026-11-06, after bb31561):**
 - **WiFi SWR meter (Ron's copy `swr-meter/ron/HF_SWR_R4_1/`):** tune allowance, mDNS, WiFi retry, PEAK hold,
-  AVG, PEAK SWR all built and tested (details in `CLAUDE-history.md`, 2026-11-15 section). Open: test the
-  WiFi retry (router off, meter restarted); Ron to decide if ms-sdr itself stops TX on a meter fault
-  (backstop for WSJT-X on the Pi keying via CAT). Build: arduino-cli (FQBN + options in the history).
+  AVG, PEAK SWR all built and tested (details in `CLAUDE-history.md`, 2026-11-15 section). Open: Ron to decide if ms-sdr itself stops TX on a meter fault
+  (backstop for WSJT-X on the Pi keying via CAT; a server change, so it waits for the 2026-11-17 hold
+  on servers + clients until Stew sorts out the remote audio issue). Build: arduino-cli (FQBN + options in the history).
 - **Ron:** Option: NB threshold a bit right of middle (~5x, slider ~750) to also
   catch the near misses (5.4-6.0x seen on 20 m).
 - **Ron (2026-11-15): CAT `SM` (S-meter read) in ms-sdr, all trees.** A real TS-2000 answers `SM0;` /
@@ -70,7 +76,6 @@ Finished entries (releases R11-10-14 to R11-14-2, done work, old resume points) 
   client (Stew).
 - **PSoC 12 kHz CW edge comb:** Stew's, PARKED on his side (3.244 / 3.245 failed; needs real USB vs DAC
   slot timing). Ron: leave it to Stew. Details + Ron's own-I/Q idea in `CLAUDE-history.md` (2026-11-15).
-- **Pill CW edges on an analyzer: not checked yet** (pill 5 ms raised cosine, should show no comb).
 - **Stand-alone keyer (Ron 2026-11-05, started; `worktrees/keyer-standalone`, pushed c46d5f2).**
   The PIC keyer as its own 9 V box (from Ron's Rev 2 schematic, N8VET): modern rigs only (VO1400
   key out, isolated), PTT / amp output fitted, rig audio pass-through kept (RX path normally
@@ -84,6 +89,9 @@ Finished entries (releases R11-10-14 to R11-14-2, done work, old resume points) 
   `source/usbavrcmd.h` (no opcode is free in every layer now: 0x9D, 0x2F, 0x9F were taken 11-05 / 11-10 / 11-12;
   use the reclaimed list there). The 2026-11-05 survey is in `CLAUDE-history.md` (2026-11-15, part 2).
 - **Waiting on Stew (list refreshed 2026-11-16 = the "With Stew" list in e2d88a9b, R11-16-1; notes in `.mscc-coord/`).**
+  Remote audio: Windows client digital transmit bursts (his report + our reply, 2026-11-17); the hold above waits on it.
+  Black Pill daughter board spin: 22-47 ohm series resistors on the bit clock and word clock (`NOTE-FOR-STEW-DAUGHTER-BOARD-CLOCK-RESISTORS-2026-11-18.md`; real fix for the receive slips, pill 3.22 is the backstop).
+  Avalonia overwrites the server's settings at connect (`NOTE-FOR-STEW-AVALONIA-CONNECT-OVERWRITES-SERVER-2026-11-17.md`).
   0. Run a PSoC radio on Windows ms-sdr 3.214 (`NOTE-FOR-STEW-TEST-MS-SDR-3.214-PSOC-2026-11-16.md`).
   The 2026-11-01 list (14 items) was cleared: NB / spectral NR / NR Low-Med-High / heat sink / hard
   resets / client-gone fix / Windows SWR meter / radio cal read at connect were done by Ron 2026-11-10;
@@ -98,7 +106,8 @@ Finished entries (releases R11-10-14 to R11-14-2, done work, old resume points) 
   **Not on the 11-13 list** (5 older Stew items: non-QSK amp delay, Legacy CW 1.236, PSoC CW top speed, guide
   reviews, SWR meter firmware): ask Ron before raising them; list in `CLAUDE-history.md` (2026-11-15, part 2).
 - **Pill audio stats cron (2026-11-08):** `*/10 * * * * /usr/bin/python3 /home/ron/utils/audio-stats.py log`
-  -> `~/.local/mscc/audio-stats.log`; check `grep '<<<' ~/.local/mscc/audio-stats.log`.
+  -> `~/.local/mscc/audio-stats.log`; check `grep '<<<' ~/.local/mscc/audio-stats.log`. Since 2026-11-17 the line also has `frame_err N` (pill I2S
+  receive frame errors; > 0 = receive slip watch, see the blackpill CLAUDE.md).
   A few gaps / in_drop / out_under in a window with TUNE, band or mode changes are expected (trans
   stream reopen); Ron dropped that fix 2026-11-16 (no user impact; `CLAUDE-history.md`).
 - **Rules (Ron 2026-11-01):** assume Stew makes MSCC UI (Avalonia) match the current Windows client,

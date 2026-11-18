@@ -16,6 +16,7 @@ The Windows servers keep their files in %LOCALAPPDATA%\MSCC-NET9.
     audio-stats watch 30
     audio-stats log
     audio-stats slip-test
+    audio-stats misframe-test
 
 Black Pill health counters, read over USB, when the pill is plugged into this
 PC. Safe any time. Same output as on the Pi.
@@ -35,11 +36,17 @@ the same counters to its log every 10 minutes.
 - slip-test (pill 3.18 and later): fakes a receive slip and checks that the pill
   fixes it by itself. Receive drops out for about 0.2 s. Should end with
   "fixed in about 0.2 s".
+- misframe-test (pill 3.22 and later): sends 3 false pulses on the bit clock so
+  the pill sees frame errors, and checks that it fixes it by itself. Receive
+  drops out for about 0.2 s. Should end with "fixed in about 0.2 s".
 
 The "rx resync" line (pill 3.18 and later) counts the times the pill found its
 receive data one bit out of step (all yellow spectrum, S-meter S9+40, seen after
 a TUNE into a high SWR) and restarted the codec by itself. Before 3.18 only NRST
 fixed that. In the log it shows as rx_resync, and a line with one ends in <<<.
+Since pill 3.22 it also counts frame errors from the audio chip (RF on the bit
+clock, for example during a transmit into a high SWR) and fixes those too; the
+line then says "(by frame errors N)". In the log it shows as frame_err.
 
 To log every 10 minutes, type this once in a Command Prompt (use your own path):
 

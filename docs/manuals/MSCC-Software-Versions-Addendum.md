@@ -1,6 +1,6 @@
 # MSCC Software Versions Addendum
 
-**Release R11-17-0** · 2026-11-17
+**Release R11-18-0** · 2026-11-18
 
 The Operator's Guides describe how MSCC works; this addendum lists the version numbers that
 go with the current release. It is updated with every release, so the guides don't change
@@ -11,21 +11,21 @@ when only version numbers do. Downloads and what changed in each release:
 
 | Computer | File |
 |---|---|
-| Windows | `mscc-net9-R11-17-0-install.exe` (installs to `C:\mscc-net9`; uninstall from Apps & features) |
-| Raspberry Pi (64-bit Pi OS, Pi 4 / Pi 5) | `mscc_1.0.97_arm64.deb` (required) and `mscc-avalonia_1.7.04_arm64.deb` (optional, on the R11-16-1 release) |
+| Windows | `mscc-net9-R11-18-0-install.exe` (installs to `C:\mscc-net9`; uninstall from Apps & features) |
+| Raspberry Pi (64-bit Pi OS, Pi 4 / Pi 5) | `mscc_1.0.98_arm64.deb` (required) and `mscc-avalonia_1.7.04_arm64.deb` (optional, on the R11-16-1 release) |
 
 ## MSCC programs
 
 | Program | Windows | Raspberry Pi |
 |---|---|---|
-| MSCC client | WPF, title bar 11.17.0 | MSCC Avalonia 1.7.04 (optional) |
+| MSCC client | WPF, title bar 11.18.0 | MSCC Avalonia 1.7.04 (optional) |
 | ms-sdr (server) | 3.214 | 3.210 |
 | recv (receive server) | 3.155 | 3.156 |
 | trans (transmit server) | 3.159 | 3.160 |
 
 Avalonia 1.7.06 is built and tested on Ubuntu: the filter passband is lighter so signals inside it stay visible, and the filter edges are sky blue to match WPF. Packages 12.1.6, the AGC button text, CMP greyed in Digital, QRP/AMP last-tuned frequency, and AGC FAST RELEASE 0–2000 ms are still in this build. It is not built for the Pi; the Pi package stays 1.7.04. LF not yet tested on Geminus.
 
-WPF 11.17.0 is the same code as 11.16.2 (lighter filter fill); only the number changed, to match R11-17-0.
+WPF 11.18.0 is the same code as 11.16.2 (lighter filter fill); only the number changed, to match R11-18-0.
 
 Windows ms-sdr 3.214 talks to the radio through the Zadig driver or through Windows' own WinUSB driver, and picks the right one by itself. With Black Pill 3.17 or later no Zadig is needed. It also fixes the WiFi SWR meter link on Windows.
 
@@ -48,7 +48,7 @@ stored in the radio). After you connect, the client's title bar shows the radio'
 | Ultimus Legacy | 6.237 | tested |
 | Ultimus MKII ATU | 7.247 | tested |
 | Ultimus MKII PTT | 8.246 | tested |
-| Black Pill board (any radio) | 3.19 (no Zadig; receive fixes itself after a high-SWR TUNE) | tested (Proficio MKII), Pi |
+| Black Pill board (any radio) | 3.22 (no Zadig; receive fixes itself after RF upsets it) | tested (Proficio MKII), Pi |
 | Black Pill bootloader (ST-Link, new boards) | 2026-11-16 (WinUSB in flash mode) | tested on the Pi |
 
 All eight images use the USB name Multus IQ; the MKII ones pass 0x9D (paddle Farnsworth) to the keyer (tested on all MKII radios).

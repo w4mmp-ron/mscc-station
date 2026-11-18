@@ -20,6 +20,11 @@ so it runs with the servers up. Needs python3-usb (pyusb).
   audio-stats.py slip-test    (pill 3.18+) fake a receive slip; the pill should find and
                               fix it by itself within a second. Receive drops for ~0.2 s.
                               Prints the receive resync count before and after.
+  audio-stats.py misframe-test (pill 3.21+) 3 false pulses on the bit clock, then (if
+                              nothing happened) on word select, as RF would make; the pill
+                              should fix it within ~0.3 s. Receive drops for ~0.3 s. Only
+                              while receiving. "Stayed in step" may also mean slipped but not
+                              found: look at the spectrum.
 
 Counters (IN = radio -> Pi, RX I/Q; OUT = Pi -> radio, TX I/Q):
   in_pkts     IN packets scheduled (about 1000 per second)
@@ -49,7 +54,8 @@ Counters (IN = radio -> Pi, RX I/Q; OUT = Pi -> radio, TX I/Q):
               beat6 Si5351, usb = tud_task incl. control requests)
   rx resync   (3.18+) times the pill found the receive data one bit out of step (all
               yellow spectrum, S9+40) and restarted the codec + I2S by itself; frame
-              errors / overruns = the STM32 receive flags (counted only)
+              errors / overruns = the STM32 receive flags. 3.20+: frame errors that
+              keep coming (~0.1 s) are a slip too; "by frame errors" = restarts from that
 """
 import json
 import os
@@ -183,9 +189,10 @@ def print_loop(w):
 
 def read_resync(d, test=False):
     """Pill 3.18+: receive slip recovery (CMD_AUDIO_STATS wIndex 4).
-    test = also fake a slip (wValue 2)."""
+    test = also fake a slip (wValue 2); an int = that wValue (3.20: 3 / 4 misframe)."""
+    wv = test if isinstance(test, int) and not isinstance(test, bool) else (2 if test else 0)
     try:
-        b = bytes(d.ctrl_transfer(IN, CMD_AUDIO_STATS, 2 if test else 0, 4, 64, TIMEOUT))
+        b = bytes(d.ctrl_transfer(IN, CMD_AUDIO_STATS, wv, 4, 64, TIMEOUT))
     except usb.core.USBError:
         return None
     if len(b) < 32 or struct.unpack("<I", b[:4])[0] != (1 | (8 << 16)):
@@ -199,8 +206,12 @@ def print_resync(r):
         return
     last = "  last %.1f h ago" % ((r["ms"] - r["last"]) / 3600000.0) if r["count"] else ""
     now = ""
+    if r["state"] >> 16:
+        last += "  (by frame errors %d)" % (r["state"] >> 16)
     if r["state"] & 0xFF:
         now = "  (restart running now)"
+    elif r["state"] & 0x800:
+        now = "  (frame errors coming now)"
     elif r["state"] & 0x100:
         now = "  (slip seen, waiting for receive)"
     elif r["layout"] == 1 | (8 << 16) and not r["state"] & 0x400 and r["ms"] < 600000:
@@ -225,6 +236,36 @@ def slip_test(d):
             return
     print_resync(read_resync(d))
     print("NOT fixed within 2 s: if 'waiting for receive', the radio is transmitting")
+
+
+def misframe_test(d):
+    """3.21+: 3 false pulses on the bit clock pin (then word select if that gave no
+    frame errors), as RF would make, and see the pill fix it by itself."""
+    r0 = read_resync(d)
+    if r0 is None:
+        sys.exit("pill older than 3.18: no receive slip recovery")
+    print("rx resync before: %d (by frame errors %d), frame errors %d"
+          % (r0["count"], r0["state"] >> 16, r0["fre"]))
+    for wv, name in ((3, "bit clock"), (4, "word select")):
+        before = read_resync(d)
+        read_resync(d, test=wv)
+        print("3 false pulses on %s" % name)
+        for _ in range(30):
+            time.sleep(0.1)
+            r = read_resync(d)
+            if r["count"] != before["count"] and not r["state"] & 0x2FF:
+                print("rx resync after:  %d (by frame errors %d), fixed in about %.1f s, "
+                      "frame errors +%d (codec status %d, read-back %d)"
+                      % (r["count"], r["state"] >> 16, (r["last"] - before["ms"]) / 1000.0 + 0.1,
+                         r["fre"] - before["fre"], r["codec"] & 0xFF, (r["codec"] >> 8) & 0xFF))
+                return
+        if r["fre"] == before["fre"]:
+            print("  no frame errors, no restart: receive stayed in step (or slipped unseen)")
+            continue
+        print_resync(r)
+        print("NOT fixed within 3 s although frame errors came (+%d)" % (r["fre"] - before["fre"]))
+        return
+    print("neither try put the receive out of step (test proves nothing)")
 
 
 def print_hang(h):
@@ -366,7 +407,7 @@ def since(d):
 LOG_FILE = os.path.join(os.path.expanduser("~"), ".local", "mscc", "audio-stats.log")
 LOG_STATE = os.path.join(os.path.expanduser("~"), ".audio-stats-log.json")
 LOG_KEYS = ["in_empty", "in_gaps", "in_drop", "out_under", "out_drop", "ep0_cut"]
-LOG_CTRL = ["abandoned", "slow", "rx_resync"]
+LOG_CTRL = ["abandoned", "slow", "rx_resync", "rx_fre"]
 SERVERS = ["sdrcore-recv", "sdrcore-trans", "ms-sdr"]
 
 
@@ -406,6 +447,7 @@ def log(path):
     r = read_resync(d)
     if r is not None:
         c["rx_resync"] = r["count"]
+        c["rx_fre"] = r["fre"]
     now = time.time()
     pids = server_pids()
     try:
@@ -443,6 +485,8 @@ def log(path):
                dc.get("abandoned", 0), dc.get("slow", 0))
     if "rx_resync" in dc:
         text += "  rx_resync %d" % dc["rx_resync"]
+    if "rx_fre" in dc:
+        text += "  frame_err %d" % dc["rx_fre"]
     if pids and not any("DOWN" in n for n in notes):
         text += "  servers up"
     if notes:
@@ -468,6 +512,8 @@ def main():
         since(d)
     elif cmd == "slip-test":
         slip_test(d)
+    elif cmd == "misframe-test":
+        misframe_test(d)
     else:
         once(d)
 
