@@ -2125,3 +2125,8 @@ Remote Digital TX spurs (Stew's NOTE-FOR-RON-REMOTE-DIGITAL-TX-SPURS-2026-11-17)
 ## Release R11-18-2 (2026-11-18)
 
 - Windows only: WPF renumbered to 11.18.2 (no code change) so the title bar matches the installer (R11-18-1 showed 11.18.0). From now on the client is renumbered at every finished (Ron). Pi mscc 1.0.99 unchanged.
+
+## Release R11-18-3 (2026-11-18)
+
+- Pi trans 3.161: POWER_CAL_SAVE_DELAY 500 -> 5000 loops (QRP power_cal.ini / QRO amplifier_cal.ini saved once the slider has been still 5 s, like ms-sdr's radio save; was every 0.5 s pause); CMD_SET_STOP flushes a pending cal save; File_content_same(): power.ini and amplifier_cal.ini not rewritten when unchanged (the client re-sends the power settings at every connect / cal tab). Tested: 75-step slider run = one write 5 s after the last step (17 m QRO -26); same value = 'Unchanged, not written'; Main click reloads the tables (17 m factor 0.74, drive 0.2294). Not on Windows (hold): listed for Stew.
+- Windows R11-18-3: WPF renumbered 11.18.3 only. Pi mscc 1.0.100: only sdrcore-trans changed vs 1.0.99.

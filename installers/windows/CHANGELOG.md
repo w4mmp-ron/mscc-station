@@ -2,6 +2,11 @@
 
 Installer: `mscc-net9-R<version>-install.exe` (WPF client + Windows servers). Install the newest one; older installers in this folder are kept for roll-back only.
 
+## R11-18-3 — 2026-11-18  (WPF 11.18.3 = 11.16.2 code, new number only; Black Pill 3.23; servers unchanged: ms-sdr 3.214, recv 3.155, trans 3.159)
+
+### Changed
+- New number only, to match the installer. Nothing changed for Windows; this release is for the Raspberry Pi transmit server 3.161 (QRP / QRO calibration files are written once per calibration, not at every pause of the slider).
+
 ## R11-18-2 — 2026-11-18  (WPF 11.18.2 = 11.16.2 code, new number only; Black Pill 3.23; servers unchanged: ms-sdr 3.214, recv 3.155, trans 3.159)
 
 ### Changed

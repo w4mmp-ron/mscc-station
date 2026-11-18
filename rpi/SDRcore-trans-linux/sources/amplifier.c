@@ -144,6 +144,8 @@ int Update_amplifier_calibration() {
     char l_path[PATH_MAX] = {0};
     char tmp_path[PATH_MAX + 8] = {0};
     int band = 0;
+    char text[1024];
+    size_t used = 0;
     const char *homedir;
 
     if ((homedir = My_getenv("HOME")) == NULL) {
@@ -151,16 +153,22 @@ int Update_amplifier_calibration() {
     }
     snprintf(l_path, sizeof (l_path), "%s/amplifier_cal.ini", homedir);
     snprintf(tmp_path, sizeof (tmp_path), "%s.tmp", l_path);
+    for (band = 0; band < 12; band++) {
+        used += snprintf(text + used, sizeof (text) - used, "RECORD=%d,BAND=%d,POWER_LEVEL=%d\n",
+                         band, band, G_amp_calibration_stack[band].power_level);
+    }
+    if (File_content_same(l_path, text)) {   /* 3.161: nothing changed, leave the file alone */
+        print_time();
+        fprintf(G_fp_logfile, "[%d] Update_amplifier_calibration. Unchanged, not written\n", line_number++);
+        return 1;
+    }
     Amplifier_initialize = fopen(tmp_path, "w");
     if (Amplifier_initialize == NULL) {
         print_time();
         fprintf(G_fp_logfile, "[%d] Update_amplifier_calibration. Open file failed\n", line_number++);
         return 0;
     }
-    for (band = 0; band < 12; band++) {
-        fprintf(Amplifier_initialize, "RECORD=%d,BAND=%d,POWER_LEVEL=%d\n",
-                band, band, G_amp_calibration_stack[band].power_level);
-    }
+    fputs(text, Amplifier_initialize);
     if (fclose(Amplifier_initialize) != 0 || rename(tmp_path, l_path) != 0) {
         print_time();
         fprintf(G_fp_logfile, "[%d] Update_amplifier_calibration. Write/rename failed: %s\n", line_number++, strerror(errno));

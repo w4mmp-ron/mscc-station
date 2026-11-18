@@ -1483,6 +1483,7 @@ void *UDP_Thread(void *my_param) {
             case CMD_SET_STOP:
                 print_time();
                 fprintf(G_fp_logfile, "[%d] UDP Thread. CMD_SET_STOP: %d. sdrcore-trans stopped\n", line_number++, t_opcode_data);
+                Flush_pending_cal_saves();  /* 3.161: a cal value still waiting its 5 s is saved now */
                 Update_amplifier_calibration();
                 G_all_threads_run = 0;
                 break;
