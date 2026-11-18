@@ -2113,3 +2113,11 @@ Remote Digital TX spurs (Stew's NOTE-FOR-RON-REMOTE-DIGITAL-TX-SPURS-2026-11-17)
 - Windows R11-18-0 (WPF 11.18.0 = 11.16.2 code renumbered; servers unchanged ms-sdr 3.214 / recv 3.155 / trans 3.159). Pi mscc 1.0.98 (only the pill images changed vs 1.0.97, checked file by file); mscc-avalonia stays 1.7.04.
 - audio-stats.py (Pi + Windows): frame_err in the log line, misframe-test, "(by frame errors N)"; READMEs.
 - Note for Stew: series resistors on BCK / LRCK in the next daughter board spin (the real fix).
+
+## Release R11-18-1 (2026-11-18)
+
+- Pi ms-sdr 3.211: `Rx_resync_tick()` in proficio-temperature.c reads the pill fix counter (0xC9 wIndex 4) every 3 s and sends "RECEIVE FIXED ITSELF" to the client after 10 s of receive, at most one per 10 min (adds up the fixes in between). Not on Windows (hold): listed for Stew.
+- Black Pill 3.23 (pill repo 88f693a): USB names as the PSoC radios (Multus IQ / Multus IQ Sound / Receive / Transmit). Flashed via the Pi; recv + trans found "Multus IQ: USB Audio (hw:2,0)".
+- Windows R11-18-1: only the Black Pill images changed (client 11.18.0 + servers are the R11-18-0 files; AppVersion 11.18.1). Pi mscc 1.0.99: ms-sdr 3.211 + Black Pill 3.23, checked file by file.
+- Windows rx-capture.py / README: text for the new sound device name (the lookup already matched "Multus").
+- Same day: Ron saw less power on 15 m after the flash: both cal sets intact (radio QRP cal = file, QRO file = backup card); digital mic gain had come down 65 -> 56. Ron's power cal check OK.

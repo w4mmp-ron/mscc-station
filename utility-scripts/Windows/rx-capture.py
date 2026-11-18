@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 """
-rx-capture.py: record 1 s of the radio's raw receive I/Q from "Microphone (Multus Sound)"
+rx-capture.py: record 1 s of the radio's raw receive I/Q from the radio's microphone device
+("Microphone (Multus IQ Sound)", Black Pill 3.23+ and PSoC; "Microphone (Multus Sound)" before)
 and say what it looks like. For the "spectrum all yellow, S9+40, no audio" fault.
 
     python rx-capture.py          (1 s)
@@ -65,7 +66,7 @@ def main():
     secs = float(sys.argv[1]) if len(sys.argv) > 1 else 1.0
     dev, api = find_device()
     if dev is None:
-        sys.exit("Microphone (Multus Sound) not found. Radio plugged in?")
+        sys.exit("Radio microphone (Multus IQ Sound / Multus Sound) not found. Radio plugged in?")
     print("Recording %.1f s from device %d (%s), %d Hz stereo 16-bit..." % (secs, dev, api, RATE))
     try:
         data = sd.rec(int(secs * RATE), samplerate=RATE, channels=2, dtype="int16", device=dev)

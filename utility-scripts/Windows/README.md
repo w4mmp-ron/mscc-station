@@ -153,7 +153,8 @@ run iq-to-radio.py on the Pi afterwards. Details in tx-iq-balance\README.md.
     python rx-capture.py 3
 
 Records 1 s (or the seconds given) of the radio's raw receive I/Q from
-"Microphone (Multus Sound)", saves it as %USERPROFILE%\.local\mscc\rx-capture-*.wav
+"Microphone (Multus IQ Sound)" (Black Pill 3.23 and later, PSoC radios) or
+"Microphone (Multus Sound)" (older Black Pill), saves it as %USERPROFILE%\.local\mscc\rx-capture-*.wav
 and says what it looks like: normal, stuck data, byte slip, or overload. For the
 "spectrum all yellow, S9+40, no audio" fault: run it while the fault is there,
 BEFORE pressing NRST. Works with MSCC open. Needs pip install sounddevice numpy.

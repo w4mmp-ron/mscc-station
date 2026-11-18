@@ -308,6 +308,84 @@ static void Audio_stats_tick(void) {
     base_busy = busy;
 }
 
+/* Ron 2026-11-18: tell the operator when the pill fixed its receive by itself (pill 3.18+
+ * receive slip recovery, 3.22 also on I2S frame errors). Read only: CMD_AUDIO_STATS wIndex 4,
+ * wValue 0 (same read as audio-stats.py "rx resync"). Words: 0 layout (1 | 8 << 16), 1 pill ms,
+ * 2 fix count, 3 ms of last fix, 4 frame errors, ... An older pill answers with the audio
+ * counters instead (layout word differs): then nothing is sent.
+ * One message only after 10 s of receive (a fix runs right after transmit ends), and at most
+ * one per 10 minutes, so a long TUNE or an FT8 session gives one pop-up with the total. */
+#define RESYNC_WORDS        8
+#define RESYNC_LAYOUT       (1u | (8u << 16))
+#define RESYNC_RX_SETTLE_MS 10000
+#define RESYNC_MSG_GAP_MS   (10 * 60 * 1000)
+
+static void Rx_resync_tick(void) {
+    static int have_base = FALSE;
+    static int unsupported = FALSE;
+    static uint32_t last_count = 0;
+    static uint32_t last_fre = 0;
+    static uint32_t pending = 0;        // fixes not yet reported to the client
+    static uint32_t pending_fre = 0;
+    static uint64_t last_msg_ms = 0;
+    static uint64_t rx_since_ms = 0;    // receiving since (0 = transmitting)
+    uint32_t w[RESYNC_WORDS];
+    uint64_t now = audio_stats_now_ms();
+    char msg[512];
+    int r;
+
+    if (unsupported)
+        return;
+    if (G_SetModeRxTX) {
+        rx_since_ms = 0;
+    } else if (rx_since_ms == 0) {
+        rx_since_ms = now;
+    }
+    memset(w, 0, sizeof (w));
+    r = usbControlMsgIN(RADIO_CMD_AUDIO_STATS, 0, 4, (char *) w, sizeof (w));
+    if (r < (int) sizeof (w))
+        return;                                   // read failed: try again next pass
+    if (w[0] != RESYNC_LAYOUT) {
+        unsupported = TRUE;
+        print_time(0);
+        fprintf(G_fp_logfile, "[%d] Rx_resync. Pill has no receive fix counter (older than 3.18): no fix messages\n",
+                line_number++);
+        return;
+    }
+    if (!have_base || w[2] < last_count) {
+        // first read, or the pill restarted (counters start again): new starting point
+        have_base = TRUE;
+        last_count = w[2];
+        last_fre = w[4];
+        pending = 0;
+        pending_fre = 0;
+        return;
+    }
+    if (w[2] > last_count) {
+        pending += w[2] - last_count;
+        pending_fre += w[4] - last_fre;
+        print_time(0);
+        fprintf(G_fp_logfile, "[%d] Rx_resync. Pill fixed its receive by itself: %u more (total %u, frame errors %u)\n",
+                line_number++, w[2] - last_count, w[2], w[4]);
+    }
+    last_count = w[2];
+    last_fre = w[4];
+    if (pending == 0 || rx_since_ms == 0 || now - rx_since_ms < RESYNC_RX_SETTLE_MS)
+        return;
+    if (last_msg_ms != 0 && now - last_msg_ms < RESYNC_MSG_GAP_MS)
+        return;                                   // keep adding up, report later
+    snprintf(msg, sizeof (msg),
+             "RECEIVE FIXED ITSELF\n"
+             "The radio's receive was upset %u time%s (%u frame errors) and the radio fixed it by itself.\n"
+             "Most likely RF from the transmitter is getting into the radio.\n"
+             "Check the SWR, the antenna and the station grounding.",
+             pending, pending == 1 ? "" : "s", pending_fre);
+    Gui_Add_Message(msg);
+    pending = 0;
+    pending_fre = 0;
+    last_msg_ms = now;
+}
+
 void *Check_temperature(void *t) {
     Set_Thread_Name("temperature");
     INT32 iTemperature = 0;
@@ -350,6 +428,7 @@ void *Check_temperature(void *t) {
             }
             if (G_pill_stats)
                 Audio_stats_tick();   // 3.195: pill audio counters, every 10 min of normal running
+            Rx_resync_tick();         // tell the operator when the pill fixed its receive
         }
         Sleep(sleep_time);
     }

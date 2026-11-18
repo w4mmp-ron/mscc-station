@@ -1,6 +1,6 @@
 # MSCC Software Versions Addendum
 
-**Release R11-18-0** · 2026-11-18
+**Release R11-18-1** · 2026-11-18
 
 The Operator's Guides describe how MSCC works; this addendum lists the version numbers that
 go with the current release. It is updated with every release, so the guides don't change
@@ -11,15 +11,15 @@ when only version numbers do. Downloads and what changed in each release:
 
 | Computer | File |
 |---|---|
-| Windows | `mscc-net9-R11-18-0-install.exe` (installs to `C:\mscc-net9`; uninstall from Apps & features) |
-| Raspberry Pi (64-bit Pi OS, Pi 4 / Pi 5) | `mscc_1.0.98_arm64.deb` (required) and `mscc-avalonia_1.7.04_arm64.deb` (optional, on the R11-16-1 release) |
+| Windows | `mscc-net9-R11-18-1-install.exe` (installs to `C:\mscc-net9`; uninstall from Apps & features) |
+| Raspberry Pi (64-bit Pi OS, Pi 4 / Pi 5) | `mscc_1.0.99_arm64.deb` (required) and `mscc-avalonia_1.7.04_arm64.deb` (optional, on the R11-16-1 release) |
 
 ## MSCC programs
 
 | Program | Windows | Raspberry Pi |
 |---|---|---|
 | MSCC client | WPF, title bar 11.18.0 | MSCC Avalonia 1.7.04 (optional) |
-| ms-sdr (server) | 3.214 | 3.210 |
+| ms-sdr (server) | 3.214 | 3.211 |
 | recv (receive server) | 3.155 | 3.156 |
 | trans (transmit server) | 3.159 | 3.160 |
 
@@ -27,7 +27,7 @@ Avalonia 1.7.06 is built and tested on Ubuntu: the filter passband is lighter so
 
 WPF 11.18.0 is the same code as 11.16.2 (lighter filter fill); only the number changed, to match R11-18-0.
 
-Windows ms-sdr 3.214 talks to the radio through the Zadig driver or through Windows' own WinUSB driver, and picks the right one by itself. With Black Pill 3.17 or later no Zadig is needed. It also fixes the WiFi SWR meter link on Windows.
+Pi ms-sdr 3.211 says "RECEIVE FIXED ITSELF" when a Black Pill fixed its receive. Windows ms-sdr 3.214 uses the Zadig driver or Windows' own WinUSB driver, whichever is there. With Black Pill 3.17 or later no Zadig is needed. It also fixes the WiFi SWR meter link on Windows.
 
 Windows and Pi server numbers differ because each build counts up on its own.
 
@@ -48,10 +48,10 @@ stored in the radio). After you connect, the client's title bar shows the radio'
 | Ultimus Legacy | 6.237 | tested |
 | Ultimus MKII ATU | 7.247 | tested |
 | Ultimus MKII PTT | 8.246 | tested |
-| Black Pill board (any radio) | 3.22 (no Zadig; receive fixes itself after RF upsets it) | tested (Proficio MKII), Pi |
+| Black Pill board (any radio) | 3.23 (no Zadig; receive fixes itself after RF upsets it) | tested (Proficio MKII), Pi |
 | Black Pill bootloader (ST-Link, new boards) | 2026-11-16 (WinUSB in flash mode) | tested on the Pi |
 
-All eight images use the USB name Multus IQ; the MKII ones pass 0x9D (paddle Farnsworth) to the keyer (tested on all MKII radios).
+All eight PSoC images and Black Pill 3.23 use the USB name Multus IQ; the MKII ones pass 0x9D (paddle Farnsworth) to the keyer (tested on all MKII radios).
 
 Files: Windows `C:\mscc-net9\PSoC Firmware\` and `Black Pill Firmware\`; Pi `/usr/share/mscc/firmware/`.
 

@@ -48,6 +48,7 @@ until Stew sorts out the remote audio issue (Windows client digital transmit bur
 `.mscc-coord/REPORT-FOR-RON-WINDOWS-CLIENT-DIGITAL-TX-BURSTS-2026-11-17.md` + our reply
 `NOTE-FOR-STEW-DIGITAL-TX-BURSTS-REPLY-2026-11-17.md`). Firmware (pill, SWR meter, keyer) is not on hold.
 Reading / investigating is fine.
+**Since 2026-11-18 (Ron): the Pi servers are open again; Windows servers + clients still on hold.** At "finished": Windows installer yes (for the pill / keyer firmware), but never change or rebuild the Windows servers or client (Stew's pushed builds go in as they are). Pi server changes are not ported to Windows; each release lists them in a note for Stew (`.mscc-coord/NOTE-FOR-STEW-PI-SERVER-CHANGES-NOT-ON-WINDOWS-2026-11-18.md`).
 
 **Current list (updated 2026-11-06, after bb31561):**
 - **WiFi SWR meter (Ron's copy `swr-meter/ron/HF_SWR_R4_1/`):** tune allowance, mDNS, WiFi retry, PEAK hold,

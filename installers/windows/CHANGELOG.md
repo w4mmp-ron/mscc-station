@@ -2,6 +2,15 @@
 
 Installer: `mscc-net9-R<version>-install.exe` (WPF client + Windows servers). Install the newest one; older installers in this folder are kept for roll-back only.
 
+## R11-18-1 — 2026-11-18  (Black Pill 3.23 only; WPF 11.18.0 and servers unchanged: ms-sdr 3.214, recv 3.155, trans 3.159)
+
+### Changed
+- Black Pill firmware 3.23: the radio now shows up as "Multus IQ" (sound devices "Multus IQ Sound", "Multus IQ Receive", "Multus IQ Transmit"), the same names as the PSoC radios. It was "Multus Control" / "Multus Sound". MSCC finds the radio either way. Windows may keep showing the old names in Sound settings until you unplug the radio and plug it back in.
+
+### Tested
+- Ron's rig (Proficio MKII with Black Pill) on the Pi: the servers found the radio under the new name; receive, FT8 and calibration normal.
+- The client and Windows servers are the same files as R11-18-0.
+
 ## R11-18-0 — 2026-11-18  (WPF 11.18.0 = 11.16.2 code, new number only; Black Pill 3.22; servers unchanged: ms-sdr 3.214, recv 3.155, trans 3.159)
 
 ### Fixed
