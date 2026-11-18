@@ -2121,3 +2121,7 @@ Remote Digital TX spurs (Stew's NOTE-FOR-RON-REMOTE-DIGITAL-TX-SPURS-2026-11-17)
 - Windows R11-18-1: only the Black Pill images changed (client 11.18.0 + servers are the R11-18-0 files; AppVersion 11.18.1). Pi mscc 1.0.99: ms-sdr 3.211 + Black Pill 3.23, checked file by file.
 - Windows rx-capture.py / README: text for the new sound device name (the lookup already matched "Multus").
 - Same day: Ron saw less power on 15 m after the flash: both cal sets intact (radio QRP cal = file, QRO file = backup card); digital mic gain had come down 65 -> 56. Ron's power cal check OK.
+
+## Release R11-18-2 (2026-11-18)
+
+- Windows only: WPF renumbered to 11.18.2 (no code change) so the title bar matches the installer (R11-18-1 showed 11.18.0). From now on the client is renumbered at every finished (Ron). Pi mscc 1.0.99 unchanged.

@@ -2,6 +2,11 @@
 
 Installer: `mscc-net9-R<version>-install.exe` (WPF client + Windows servers). Install the newest one; older installers in this folder are kept for roll-back only.
 
+## R11-18-2 — 2026-11-18  (WPF 11.18.2 = 11.16.2 code, new number only; Black Pill 3.23; servers unchanged: ms-sdr 3.214, recv 3.155, trans 3.159)
+
+### Changed
+- The client's title bar shows 11.18.2, to match the installer. R11-18-1 still showed 11.18.0. Nothing else changed from R11-18-1.
+
 ## R11-18-1 — 2026-11-18  (Black Pill 3.23 only; WPF 11.18.0 and servers unchanged: ms-sdr 3.214, recv 3.155, trans 3.159)
 
 ### Changed
