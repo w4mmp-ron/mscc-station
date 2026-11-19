@@ -162,6 +162,13 @@ public partial class MainViewModel : ViewModelBase, IDisposable
     private DispatcherTimer? _alcIdleTimer;
     private const double AlcIdleTimeoutSeconds = 3.0;
 
+    /// <summary>One-shot after Connect: ask if FW/Core is still unset.</summary>
+    private DispatcherTimer? _identityAskTimer;
+    private bool _identityAskPromptedThisConnect;
+    private const double IdentityAskDelaySeconds = 2.5;
+    /// <summary>A transverter report must not be written back to the server.</summary>
+    private bool _suppressTransverterSend;
+
     private const int SpectrumRefreshDivisor = 1;   // 1.6.88: draw every frame (was 3: ~4 fps at 3200 bins, choppy)
 
     public MainViewModel()
@@ -515,6 +522,8 @@ public partial class MainViewModel : ViewModelBase, IDisposable
     [ObservableProperty] private bool _alcPeak;
     [ObservableProperty] private string _coreVersionText = "—";
     [ObservableProperty] private string _firmwareText = "—";
+    /// <summary>Server transverter on/off. No control. A report is stored and not echoed.</summary>
+    [ObservableProperty] private bool _transverterOn;
     [ObservableProperty] private string _bandText = "—";
     [ObservableProperty] private string _stepLabel = "1 kHz";
     [ObservableProperty] private string _lowCutLabel = "500";
@@ -1270,6 +1279,13 @@ public partial class MainViewModel : ViewModelBase, IDisposable
     partial void OnCoreVersionTextChanged(string value) => OnPropertyChanged(nameof(WindowTitle));
     partial void OnFirmwareTextChanged(string value) => OnPropertyChanged(nameof(WindowTitle));
 
+    partial void OnTransverterOnChanged(bool value)
+    {
+        if (_suppressTransverterSend || _radio == null || !IsConnected) return;
+        _ = _radio.SetTransverterAsync(value);
+        AppendLog($"TransverterOn set: {value}");
+    }
+
     partial void OnModeTextChanged(string value)
     {
         SyncRfPowerFromMode();
@@ -1891,18 +1907,17 @@ public partial class MainViewModel : ViewModelBase, IDisposable
             StatusText = $"Connected {Host}:{remotePort}";
             AppendLog(_serversOurs ? "Connected (servers started by this client)." : "Connected.");
             RememberRecentHost(Host);
+            // Server state wins. ms-sdr sends its saved values after 0xFE; the client
+            // shows those reports. Send only what WPF sends at start.
             // Sticky SPECTRUM RESOLUTION (0x5F) also heals silent spectrum if a prior
             // client left refresh blocks at 0.
             await ApplyPanResolutionAsync("connect").ConfigureAwait(true);
-            // Push selected VFO + freq/mode so dual-VFO state matches UI
-            await PushActiveVfoToRadioAsync(force: true).ConfigureAwait(true);
-            // Restore sticky operate settings to the radio (server-backed)
-            await PushStickyOperateToRadioAsync().ConfigureAwait(true);
-
+            await ApplySpectrumSmoothingAsync(_spectrumSmoothing, "connect").ConfigureAwait(true);
             PushAudioToRadio("connect");
             PushNbToRadio("connect");
             if (RemoteAudio)
                 StartRemoteAf("connect");
+            ScheduleIdentityAskIfMissing();
         }
         catch (Exception ex)
         {
@@ -1926,6 +1941,7 @@ public partial class MainViewModel : ViewModelBase, IDisposable
     {
         if (IsBusy) return;
         IsBusy = true;
+        CancelIdentityAsk();
         try
         {
             await PrepareDisconnectAsync(closeWindow: false).ConfigureAwait(true);
@@ -1982,7 +1998,8 @@ public partial class MainViewModel : ViewModelBase, IDisposable
             ResetAlcMeter();
             BandText = "—";
             CurrentSpectrum = null;
-            // RIT is kept (sticky, RIT_ON / RIT_OFFSET); it is sent again at the next connect.
+            // RIT stays on screen (RIT_ON / RIT_OFFSET). It is not pushed at the next
+            // connect; the server's RIT wins until the user moves the control.
         }
         finally
         {
@@ -1993,6 +2010,79 @@ public partial class MainViewModel : ViewModelBase, IDisposable
     }
 
     private bool CanDisconnect() => IsConnected && !IsBusy;
+
+    private static bool IsUnsetVersion(string? v)
+    {
+        if (string.IsNullOrWhiteSpace(v)) return true;
+        string t = v.Trim();
+        return t is "--" or "—" or "–";
+    }
+
+    /// <summary>WPF port: 2.5 s after connect, ask if FW or Core is still unset.</summary>
+    private void ScheduleIdentityAskIfMissing()
+    {
+        CancelIdentityAsk();
+        _identityAskPromptedThisConnect = false;
+        if (!IsUnsetVersion(FirmwareText) && !IsUnsetVersion(CoreVersionText))
+        {
+            AppendLog("Identity: FW and Core already set — no prompt");
+            return;
+        }
+        _identityAskTimer = new DispatcherTimer { Interval = TimeSpan.FromSeconds(IdentityAskDelaySeconds) };
+        _identityAskTimer.Tick += OnIdentityAskTimerTick;
+        _identityAskTimer.Start();
+        AppendLog($"Identity: waiting {IdentityAskDelaySeconds:0.#}s for FW/Core");
+    }
+
+    private void CancelIdentityAsk()
+    {
+        if (_identityAskTimer == null) return;
+        _identityAskTimer.Stop();
+        _identityAskTimer.Tick -= OnIdentityAskTimerTick;
+        _identityAskTimer = null;
+    }
+
+    private async void OnIdentityAskTimerTick(object? sender, EventArgs e)
+    {
+        CancelIdentityAsk();
+        if (_identityAskPromptedThisConnect) return;
+        if (!IsConnected || _radio == null) return;
+        bool fwMissing = IsUnsetVersion(FirmwareText);
+        bool coreMissing = IsUnsetVersion(CoreVersionText);
+        if (!fwMissing && !coreMissing)
+        {
+            AppendLog("Identity: FW and Core arrived — no prompt");
+            return;
+        }
+        _identityAskPromptedThisConnect = true;
+        var result = await MsccDialog.YesNoAsync(
+            "Radio firmware / core version not received. Request identity now?",
+            "MSCC").ConfigureAwait(true);
+        if (!IsConnected || _radio == null)
+            return;
+        if (result == MsccDialog.Result.Yes)
+        {
+            AppendLog("Identity ask: Yes — requesting 0xB2 / 0xB3 / 0xFE");
+            _ = RequestIdentityNowAsync();
+        }
+        else
+        {
+            AppendLog("Identity ask: No — keep last-session gating/title");
+        }
+    }
+
+    private async Task RequestIdentityNowAsync()
+    {
+        if (_radio == null || !IsConnected) return;
+        try
+        {
+            await _radio.RequestIdentityAsync().ConfigureAwait(true);
+        }
+        catch (Exception ex)
+        {
+            AppendLog($"Identity request failed: {ex.Message}");
+        }
+    }
 
     private async Task EnsureLocalServersAsync()
     {
@@ -2127,6 +2217,7 @@ public partial class MainViewModel : ViewModelBase, IDisposable
     {
         try
         {
+            CancelIdentityAsk();
             KickOwnedServerStop();
             await PrepareDisconnectAsync(closeWindow: true).ConfigureAwait(true);
             // Main window closing: stop Remote AF + CAT and close the Remote window too.
@@ -2444,6 +2535,9 @@ public partial class MainViewModel : ViewModelBase, IDisposable
         OnPropertyChanged(nameof(VfoTuneStepDisplay));
         AppendLog($"Step → {StepLabel}");
         ScheduleSaveClientSettings();
+        // The server never reports step. WPF sends it when the user changes it, not at connect.
+        if (_radio != null)
+            _ = _radio.SetStepAsync(_stepIndex);
     }
 
     partial void OnStepLabelChanged(string value) => OnPropertyChanged(nameof(VfoTuneStepDisplay));
@@ -3075,7 +3169,8 @@ public partial class MainViewModel : ViewModelBase, IDisposable
             cat.SetFrequencyHz = hz => Dispatcher.UIThread.Post(() => _ = ApplyFrequencyAsync(hz, "CAT FA"));
             cat.SetModeDigit = d => Dispatcher.UIThread.Post(() =>
             {
-                ModeText = KenwoodTs2000.ModeNameFromDigit(d, preferDigU: RemoteDigitalAudio);
+                string mode = KenwoodTs2000.ModeNameFromDigit(d, preferDigU: RemoteDigitalAudio);
+                _ = SetModeAsync(mode);
             });
             cat.SetPtt = tx => Dispatcher.UIThread.Post(() => { PttOn = tx; });
             // WSJT-X right-click Tune (AC111;) = press TUN, as ms-sdr does locally.
@@ -6749,17 +6844,6 @@ public partial class MainViewModel : ViewModelBase, IDisposable
         catch (Exception ex) { AppendLog($"AMP error: {ex.Message}"); }
     }
 
-    private async Task SendAlcOnAsync(bool on)
-    {
-        if (_radio == null) return;
-        try
-        {
-            await _radio.SetAlcOnAsync(on).ConfigureAwait(true);
-            AppendLog($"ALC {(on ? "ON (meter + limiter)" : "OFF")}");
-        }
-        catch (Exception ex) { AppendLog($"ALC error: {ex.Message}"); }
-    }
-
     private async Task SendCompressionStateAsync(bool on)
     {
         if (_radio == null) return;
@@ -7790,8 +7874,8 @@ public partial class MainViewModel : ViewModelBase, IDisposable
 
             _suppressNbCommand = true;
             NbOn = s.NbOn;
-            NbPulse = Math.Clamp(s.NbPulse, 10, 510);
-            NbThreshold = Math.Clamp(s.NbThreshold, 1, 1009);
+            NbPulse = Math.Clamp(s.NbPulse, 50, 510);
+            NbThreshold = Math.Clamp(s.NbThreshold, 1, 1000);
             _suppressNbCommand = false;
 
             _suppressNrCommand = true;
@@ -8072,132 +8156,6 @@ public partial class MainViewModel : ViewModelBase, IDisposable
         return (_vfoBFrequencyHz > 0 && !string.IsNullOrWhiteSpace(VfoBModeText))
             ? (VfoBModeText ?? "")
             : (!string.IsNullOrEmpty(_lastSavedVfoBMode) ? _lastSavedVfoBMode : (VfoBModeText ?? ""));
-    }
-
-    /// <summary>
-    /// After connect: push sticky operate controls to ms-sdr.
-    /// PTT/TUN never restored. Failures are logged but do not drop the session.
-    /// </summary>
-    private async Task PushStickyOperateToRadioAsync()
-    {
-        if (_radio == null || !IsConnected) return;
-        AppendLog("Restoring sticky operate settings to radio…");
-
-        try
-        {
-            // Filters + step
-            ApplyFilterIndices(_lowCutIndex, _highCutIndex, _cwFilterIndex, send: true);
-            try { await _radio.SetStepAsync(_stepIndex).ConfigureAwait(true); }
-            catch (Exception ex) { AppendLog($"Step restore: {ex.Message}"); }
-
-            // Audio path + levels
-            try
-            {
-                PushAudioToRadio("sticky restore");
-                await _radio.SetPhonesVolumeLevelAsync(Math.Clamp(PVolume, 0, 100)).ConfigureAwait(true);
-                await _radio.SetPhonesMicGainLevelAsync(Math.Clamp(PMicGain, 0, 100)).ConfigureAwait(true);
-                if (!RemoteAudio)
-                {
-                    await _radio.SetDigitalVolumeLevelAsync(Math.Clamp(DVolume, 0, 100)).ConfigureAwait(true);
-                    await _radio.SetDigitalMicGainLevelAsync(Math.Clamp(DMicGain, 0, 100)).ConfigureAwait(true);
-                }
-            }
-            catch (Exception ex) { AppendLog($"Audio restore: {ex.Message}"); }
-
-            // Power banks
-            try
-            {
-                await _radio.SetTunePowerAsync(Math.Clamp(TunePowerPercent, 0, 100)).ConfigureAwait(true);
-                await _radio.SetCwPowerAsync(Math.Clamp(CwPowerPercent, 0, 100)).ConfigureAwait(true);
-                await _radio.SetSsbPowerAsync(Math.Clamp(SsbPowerPercent, 0, 100)).ConfigureAwait(true);
-                await _radio.SetAmCarrierAsync(Math.Clamp(AmCarrierPercent, 0, 100)).ConfigureAwait(true);
-                await _radio.SetFmPowerAsync(Math.Clamp(FmPowerPercent, 0, 100)).ConfigureAwait(true);
-            }
-            catch (Exception ex) { AppendLog($"Power restore: {ex.Message}"); }
-
-            // CW
-            try
-            {
-                await _radio.SetCwWpmAsync(Math.Clamp(CwSpeed, 5, 60)).ConfigureAwait(true);
-                if (!ExternalElectronicKeyer)
-                {
-                    await _radio.SetCwKeyerModeAsync(Math.Clamp(CwKeyerMode, 0, 3)).ConfigureAwait(true);
-                    await _radio.SetCwSpacingAsync(Math.Clamp(CwSpacing, 0, 2)).ConfigureAwait(true);
-                    await _radio.SetCwPaddleAsync(Math.Clamp(CwPaddle, 0, 1)).ConfigureAwait(true);
-                    int weight = CwWeightValues[Math.Clamp(CwWeightIndex, 0, CwWeightValues.Length - 1)];
-                    await _radio.SetCwWeightAsync(weight).ConfigureAwait(true);
-                    await _radio.SetKeyerMemTextWpmAsync(
-                        ClientSettingsStore.ClampCwMemTextWpm(CwMemTextWpm)).ConfigureAwait(true);
-                }
-                // recv takes a pitch only right after a CW BW (1.6.93)
-                await _radio.SetCwFilterAsync(_cwFilterIndex).ConfigureAwait(true);
-                await _radio.SetCwPitchAsync(Math.Clamp(CwPitchIndex, 0, 3)).ConfigureAwait(true);
-                await _radio.SetCwTxHoldAsync(Math.Clamp(CwHold, 1, 500)).ConfigureAwait(true);
-                await _radio.SetCwQskAsync(CwQsk).ConfigureAwait(true);
-            }
-            catch (Exception ex) { AppendLog($"CW restore: {ex.Message}"); }
-
-            // AGC / CMP / NB / NR / AN / MON
-            try
-            {
-                await _radio.SetAgcLevelAsync(Math.Clamp(AgcLevel, 0, 2)).ConfigureAwait(true);
-                await _radio.SetAgcFastReleaseAsync(Math.Clamp(AgcFastRelease, 0, 2000)).ConfigureAwait(true);
-                await _radio.SetCompressionLevelAsync(Math.Clamp(Compression, 0, 24)).ConfigureAwait(true);
-                bool cmp = CompressionOn && !IsDigitalAudio;
-                await _radio.SetCompressionStateAsync(cmp).ConfigureAwait(true);
-                await _radio.SetNbPulseWidthAsync(Math.Clamp(NbPulse, 10, 510)).ConfigureAwait(true);
-                await _radio.SetNbThresholdAsync(Math.Clamp(NbThreshold, 1, 1009)).ConfigureAwait(true);
-                await _radio.SetNbOnAsync(NbOn).ConfigureAwait(true);
-                await _radio.SetNrOnAsync(NrOn, Math.Clamp(NrLevel, 0, 100)).ConfigureAwait(true);
-                if (NrOn)
-                    await _radio.SetNrLevelAsync(Math.Clamp(NrLevel, 0, 100)).ConfigureAwait(true);
-                await _radio.SetAutoNotchOnAsync(AnOn).ConfigureAwait(true);
-                await _radio.SetMonitorAsync(MonitorOn).ConfigureAwait(true);
-            }
-            catch (Exception ex) { AppendLog($"DSP restore: {ex.Message}"); }
-
-            // AMP path (PA bypass) — after power banks
-            try
-            {
-                await _radio.SetPaBypassAsync(AmpOn).ConfigureAwait(true);
-            }
-            catch (Exception ex) { AppendLog($"AMP restore: {ex.Message}"); }
-
-            // WPF cmd-074 port: ALC is always on in trans; nothing to restore.
-
-            // WPF cmd-075 port: server spectrum smoothing (0xDA), once per session.
-            try
-            {
-                await _radio.SetPanadapterSmoothingAsync(Math.Clamp(_spectrumSmoothing, 0, 100)).ConfigureAwait(true);
-                AppendLog($"Spectrum smoothing {_spectrumSmoothing} (start)");
-            }
-            catch (Exception ex) { AppendLog($"Spectrum smoothing restore: {ex.Message}"); }
-
-            // WPF 10.31.1 port: push LO / HI CUT once per session. ms-sdr restores the last indexes it
-            // received (user_controls.ini), which can differ from this client's saved cuts.
-            try
-            {
-                int lo = ((_lowCutIndex % 5) + 5) % 5;
-                int hi = NormalizeHighCut(_highCutIndex, ActiveModeString);
-                await _radio.SetLowCutIndexAsync(lo).ConfigureAwait(true);
-                await _radio.SetHighCutIndexAsync(hi).ConfigureAwait(true);
-                AppendLog($"Filter cuts pushed at connect: Lo={LowCutLabels[lo]} Hi={HighCutLabels[hi]}");
-            }
-            catch (Exception ex) { AppendLog($"Filter cut restore: {ex.Message}"); }
-
-            // RIT last
-            try
-            {
-                await _radio.SetRitAsync(RitOn, RitOffset).ConfigureAwait(true);
-            }
-            catch (Exception ex) { AppendLog($"RIT restore: {ex.Message}"); }
-
-            AppendLog("Sticky operate settings restored.");
-        }
-        catch (Exception ex)
-        {
-            AppendLog($"Operate restore incomplete: {ex.Message}");
-        }
     }
 
     private void LoadFavoritesFromStore()
@@ -8570,6 +8528,15 @@ public partial class MainViewModel : ViewModelBase, IDisposable
                 FirmwareText = v;
                 AppendLog($"FW: {v}");
                 ApplyRadioModelFromFirmware(v);
+            });
+
+        radio.TransverterReported += on =>
+            PostToUi(() =>
+            {
+                _suppressTransverterSend = true;
+                try { TransverterOn = on; }
+                finally { _suppressTransverterSend = false; }
+                AppendLog($"Transverter reported: {on}");
             });
 
         radio.TunePowerReported += v =>
@@ -9074,6 +9041,7 @@ public partial class MainViewModel : ViewModelBase, IDisposable
 
     private void DisposeRadio()
     {
+        CancelIdentityAsk();
         if (_radio == null) return;
         try { _radio.Stop(); } catch (Exception ex) { AppendLog($"Stop: {ex.Message}"); }
         try { _radio.Dispose(); } catch { /* ignore */ }

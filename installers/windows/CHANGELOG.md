@@ -2,6 +2,22 @@
 
 Installer: `mscc-net9-R<version>-install.exe` (WPF client + Windows servers). Install the newest one; older installers in this folder are kept for roll-back only.
 
+## Avalonia 1.7.08 — 2026-11-19  (not a new Windows installer; WPF and the Windows servers are unchanged)
+
+### Fixed
+- Connect no longer writes this client's saved settings over the server. The server's frequency, mode, filters, AGC, power, CW settings, and the rest stay, and the client shows what the server reports. Connect still sends spectrum resolution, spectrum smoothing, the audio route, and the noise blanker (the receiver starts with the blanker on until told).
+- WSJT-X Mode (CAT) now changes the radio's mode, not only the on-screen label. DIG-U is used when Remote Digital is on.
+- After connect, if the firmware or core version has not arrived in 2.5 s, MSCC asks whether to request it. No leaves the session running.
+- Noise blanker limits match the controls: pulse 50–510 µs, threshold 1–1000, including values loaded from settings. A saved pulse below 50 becomes 50.
+- A fresh band memory uses USB: 20 m at 14.074 MHz, 630 m at 474.2 kHz.
+
+### Changed
+- The transverter on/off report from the server is stored. There is no new control, and the report is not written back.
+- The temporary microphone peak lines from 1.7.07 are gone. The digital transmit guard (400 ms silence, then a 5 ms fade) is unchanged.
+
+### Tested
+- Built on stew-HP (amd64). Stew has not run the checklist yet.
+
 ## Avalonia 1.7.07 — 2026-11-19  (not a new Windows installer; WPF and the Windows servers are unchanged)
 
 ### Fixed

@@ -1,4 +1,3 @@
-using System.Globalization;
 using System.Net;
 using System.Net.Sockets;
 using System.Linq;
@@ -12,10 +11,6 @@ public sealed class LinuxMicSender : IDisposable
     public const int FramesPerPacket = 480;
     public const int TxSilenceDumpMilliseconds = 400;
     public const int TxLevelRampSamples = 240; // 5 ms @ 48 kHz, linear
-
-    // Temporary. This client has no EVENT flag. Set false to strip the peak lines.
-    private static readonly bool TxGuardEdgeDiag = true;
-    private const int TxGuardDiagPackets = 10; // 100 ms @ 480 frames
 
     private IntPtr _stream;
     private Thread? _thread;
@@ -142,39 +137,6 @@ public sealed class LinuxMicSender : IDisposable
         float liveGain = 0f;
         bool capDigital = false;
         bool capKeyed = false;
-        var diagPeaks = new float[TxGuardDiagPackets];
-        int diagWrite = 0;
-        int diagFilled = 0;
-        int afterLeft = 0;
-        float afterPeak = 0f;
-        string afterEdge = "";
-
-        void LogPeak(string edge, string side, int packets, float peak)
-        {
-            int ms = packets * FramesPerPacket * 1000 / Math.Max(1, sampleRate);
-            string db = peak <= 1e-9f || float.IsNaN(peak)
-                ? "-inf"
-                : (20.0 * Math.Log10(peak)).ToString("0.0", CultureInfo.InvariantCulture);
-            Log?.Invoke($"TX guard peak {edge} {side} {ms} ms: {db} dBFS");
-        }
-
-        void OnGuardEdge(bool keyedNow)
-        {
-            if (!TxGuardEdgeDiag) return;
-            if (afterLeft > 0)
-            {
-                LogPeak(afterEdge, "after", TxGuardDiagPackets - afterLeft, afterPeak);
-                afterLeft = 0;
-            }
-            float before = 0f;
-            for (int n = 0; n < diagFilled; n++)
-                if (diagPeaks[n] > before) before = diagPeaks[n];
-            string edge = keyedNow ? "key-down" : "key-up";
-            LogPeak(edge, "before", diagFilled, before);
-            afterEdge = edge;
-            afterLeft = TxGuardDiagPackets;
-            afterPeak = 0f;
-        }
 
         while (_run && _stream != IntPtr.Zero && _udp != null && _ep != null)
         {
@@ -197,9 +159,6 @@ public sealed class LinuxMicSender : IDisposable
                     fadeLeft = 0;
                     fadeDir = 0;
                     liveGain = 1f;
-                    diagWrite = 0;
-                    diagFilled = 0;
-                    afterLeft = 0;
                 }
             }
             else
@@ -208,13 +167,9 @@ public sealed class LinuxMicSender : IDisposable
                 {
                     capDigital = true;
                     capKeyed = false;
-                    diagWrite = 0;
-                    diagFilled = 0;
-                    afterLeft = 0;
                 }
                 if (keyed != capKeyed)
                 {
-                    OnGuardEdge(keyed);
                     if (keyed)
                     {
                         dumpLeft = dumpN;
@@ -243,7 +198,6 @@ public sealed class LinuxMicSender : IDisposable
             }
 
             float vol = _volume;
-            float rawPeak = 0f;
             int off = MsccAudioProtocol.HeaderSize;
             for (int i = 0; i < FramesPerPacket; i++)
             {
@@ -256,8 +210,6 @@ public sealed class LinuxMicSender : IDisposable
                     float r = f[i * 2 + 1];
                     raw = Math.Abs(l) >= Math.Abs(r) ? l : r;
                 }
-                float abs = Math.Abs(raw);
-                if (abs > rawPeak) rawPeak = abs;
 
                 float guard = 1f;
                 if (digital)
@@ -295,19 +247,6 @@ public sealed class LinuxMicSender : IDisposable
                 if (v < short.MinValue) v = short.MinValue;
                 packet[off++] = (byte)(v & 0xFF);
                 packet[off++] = (byte)((v >> 8) & 0xFF);
-            }
-            if (digital && TxGuardEdgeDiag)
-            {
-                if (afterLeft > 0)
-                {
-                    if (rawPeak > afterPeak) afterPeak = rawPeak;
-                    afterLeft--;
-                    if (afterLeft == 0)
-                        LogPeak(afterEdge, "after", TxGuardDiagPackets, afterPeak);
-                }
-                diagPeaks[diagWrite] = rawPeak;
-                diagWrite = (diagWrite + 1) % TxGuardDiagPackets;
-                if (diagFilled < TxGuardDiagPackets) diagFilled++;
             }
             var hdr = new AudioPacketHeader
             {

@@ -179,8 +179,8 @@ public static class BandLastUsedStore
     public static bool IsLfPersonalityFreq(long frequencyHz) =>
         frequencyHz > 0 && frequencyHz < 1_800_000;
 
-    public static string LastHfMode => ReadPersonality("LAST_HF_MODE");
-    public static string LastLfMode => ReadPersonality("LAST_LF_MODE");
+    public static string LastHfMode => ReadPersonalityMode("LAST_HF_MODE");
+    public static string LastLfMode => ReadPersonalityMode("LAST_LF_MODE");
     public static long LastHfFreq => ReadPersonalityLong("LAST_HF_FREQ");
     public static long LastLfFreq => ReadPersonalityLong("LAST_LF_FREQ");
 
@@ -224,6 +224,13 @@ public static class BandLastUsedStore
         {
             return "";
         }
+    }
+
+    /// <summary>Missing LAST_HF_MODE / LAST_LF_MODE is USB, same as WPF.</summary>
+    private static string ReadPersonalityMode(string key)
+    {
+        string v = ReadPersonality(key);
+        return string.IsNullOrWhiteSpace(v) ? "USB" : v;
     }
 
     private static long ReadPersonalityLong(string key)

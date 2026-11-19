@@ -118,7 +118,7 @@ public sealed class ClientSettings
     public int AgcLevel { get; set; }
     public int AgcFastRelease { get; set; } = 50;
     public bool NbOn { get; set; }
-    public int NbPulse { get; set; } = 10;
+    public int NbPulse { get; set; } = 50;
     public int NbThreshold { get; set; } = 20;
     public bool NrOn { get; set; }
     public int NrLevel { get; set; } = 40;
@@ -824,11 +824,11 @@ public static class ClientSettingsStore
                 break;
             case "NB_PULSE":
                 if (int.TryParse(val, NumberStyles.Integer, CultureInfo.InvariantCulture, out int nbp))
-                    s.NbPulse = Math.Clamp(nbp, 10, 510);
+                    s.NbPulse = Math.Clamp(nbp, 50, 510);
                 break;
             case "NB_THRESHOLD":
                 if (int.TryParse(val, NumberStyles.Integer, CultureInfo.InvariantCulture, out int nbt))
-                    s.NbThreshold = Math.Clamp(nbt, 1, 1009);
+                    s.NbThreshold = Math.Clamp(nbt, 1, 1000);
                 break;
             case "NR_ON":
                 s.NrOn = IsTruthy(val);
