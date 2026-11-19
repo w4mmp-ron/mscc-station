@@ -2,6 +2,17 @@
 
 Installer: `mscc-net9-R<version>-install.exe` (WPF client + Windows servers). Install the newest one; older installers in this folder are kept for roll-back only.
 
+## R11-19-2 — 2026-11-19  (WPF 11.19.2 one-cable Digital TX guard; Windows servers unchanged: ms-sdr 3.214, recv 3.155, trans 3.159)
+
+### Fixed
+- Remote digital: a one-cable VB-Cable setup no longer sends a short burst of received audio at key-down. While keyed, MSCC stops playing receive audio into the cable, and it drops the first 400 ms of transmit audio after key-down. The mic is silent in Digital while not transmitting. When the mic goes from silence to live, the level ramps from 0 to full over 5 ms.
+
+### Changed
+- Windows installer `mscc-net9-R11-19-2-install.exe`. The Windows servers are the same as R11-19-1.
+
+### Tested
+- Installer built on Shack. Not installed on NEW-HP yet.
+
 ## Avalonia 1.7.08 — 2026-11-19  (not a new Windows installer; WPF and the Windows servers are unchanged)
 
 ### Fixed
@@ -27,7 +38,7 @@ Installer: `mscc-net9-R<version>-install.exe` (WPF client + Windows servers). In
 ### Tested
 - Built on stew-HP (amd64). Not smoked yet.
 
-## WPF 11.19.2 — 2026-11-19  (not a new Windows installer; drop-in to C:\mscc-net9)
+## WPF 11.19.2 — 2026-11-19  (drop-in built first; shipped in the R11-19-2 installer above)
 
 ### Fixed
 - Remote digital: a one-cable VB-Cable setup no longer sends a short burst of received audio at key-down. While keyed, MSCC stops playing receive audio into the cable, and it drops the first 400 ms of transmit audio after key-down.
@@ -35,7 +46,7 @@ Installer: `mscc-net9-R<version>-install.exe` (WPF client + Windows servers). In
 - When the Digital mic goes from silence to live, including the end of the 400 ms dump, the level ramps from 0 to full over 5 ms instead of stepping.
 
 ### Tested
-- Built on Shack (drop-in to C:\mscc-net9). No new Windows installer in this step.
+- Built on Shack as a drop-in to C:\mscc-net9. The installer is R11-19-2 above.
 
 ## R11-19-1 — 2026-11-19  (WPF 11.19.1 = 11.18.4 code, new number only; Black Pill 3.24; servers unchanged: ms-sdr 3.214, recv 3.155, trans 3.159)
 

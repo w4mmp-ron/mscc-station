@@ -40,6 +40,12 @@ For the version list, see the Software Versions Addendum.
 
 Everyday: `mscc start` / `mscc status` / `mscc stop`.
 
+## 4. WSJT-X audio
+
+Local (radio on this PC): Input `VirtualA.monitor`, Output `VirtualB`.
+
+Remote Digital (MSCC Avalonia to a Pi): set WSJT-X Output to the device chosen as the Digital mic in Remote Audio (Stew used `VirtualB_TX`). The wrong output keys the radio with no signal.
+
 Firmware: BOOT jumper, Morse LOADER, then menu **Firmware Upload** (or `psoc-bootloader file.cyacd`). **Load File** opens `/usr/share/mscc/firmware/<radio>/`.
 
 Calibration: factory tables ship in `/usr/share/mscc/factory/`. After calibrating, press **Save settings** in MSCC Avalonia. The server keeps that radio's calibration under `~/.local/mscc/cal/<line>/`.

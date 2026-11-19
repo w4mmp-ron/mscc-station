@@ -5,6 +5,11 @@ every pull. Newest first. Detailed write-ups for Ron go in `.mscc-coord/NOTE-FOR
 
 **Shared rules for Ron and Stew (keywords like "finished", the release checklist, keeping trees in step): `CLAUDE.md` at the repo root.** Added by Ron's Claude 2026-11-13; this file stays Stew's.
 
+## R11-19-2 Windows installer (2026-11-19, cmd-093)
+
+- Installer `mscc-net9-R11-19-2-install.exe` ships WPF 11.19.2 (one-cable Digital TX guard). Windows servers unchanged (ms-sdr 3.214, recv 3.155, trans 3.159). No client rebuild. Stew publishes; this step does not.
+- Open: the Remote Operator's Guide is PDF-only, so this Phones tip is not in the guide yet. On a laptop the built-in mic hears the speakers; mute the speakers or use a headset.
+
 ## WPF 11.19.2 one-cable digital TX guard (2026-11-19, cmd-089)
 
 - Remote Digital only: while keyed (CAT, PTT/MOX, or TUN), receive playback into the cable is silence and the jitter buffer keeps running; for 400 ms after key-down the remote mic sends zeros (packets and sequence numbers stay normal). Phones remote is unchanged. Log: `Remote AF: TX guard — RX playback muted, mic dump 400 ms` and `Remote AF: TX guard off`.
