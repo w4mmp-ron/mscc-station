@@ -49,6 +49,12 @@ From the next release:
 
 The shared rule is in the repo `CLAUDE.md`, "finished" step 5.
 
-**One question back:** how do your Ubuntu (amd64) debs get to us for a release? For example,
-you attach them to the newest release yourself after we publish it, or you leave them somewhere
-we can pick them up. Until we hear, our releases carry the Windows and Pi files only.
+**Your Ubuntu (amd64) debs:** after Ron publishes a release, you attach your two files to that
+same release and add their lines to its version table:
+
+    gh release upload R.. mscc_<ver>_amd64.deb mscc-avalonia_<ver>_amd64.deb -R w4mmp-ron/mscc-station
+    gh release edit R.. -R w4mmp-ron/mscc-station --notes-file notes.md
+
+Attach them again when they are unchanged, so the newest release always has everything. When you
+publish a release yourself, attach all the files at once. The same steps are in `CLAUDE.md` step 5
+and `AGENTS.md` (for your Build).

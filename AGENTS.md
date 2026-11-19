@@ -11,6 +11,63 @@ On start: `git pull`, then read [`handoff.md`](handoff.md). If `.mscc-coord/COMM
 
 ---
 
+## Shared rules with Ron and Stew ("finished", releases)
+
+These are the same rules Ron's and Stew's Claude follow. The full text is in the repo-root
+[`CLAUDE.md`](CLAUDE.md); read it before any build or release. If this file and `CLAUDE.md`
+disagree on these points, `CLAUDE.md` wins.
+
+**Keywords**
+
+| The owner says | Do |
+|---|---|
+| "build", "build R...", "make the installer" | Build only. Installers go into `installers/`. Nothing is committed, pushed or published. |
+| "update the notes" | Edit the notes only. No commit. |
+| **"finished"** | Run the "Finished" checklist in `CLAUDE.md`: installers, docs, one commit, push, GitHub Release. |
+| "stop" | Stop at once. |
+
+- **Pull first:** `git pull --rebase --autostash` before new work; `git fetch` again before the
+  push. If someone pushed meanwhile, rebase and rebuild whatever their change touches.
+- **Nothing goes into git before "finished"**, notes included. Then **one commit**, with
+  `git add` of specific paths only (other people and tools work in this repo).
+- **Versions** live only in the Software Versions Addendum
+  (`docs/manuals/MSCC-Software-Versions-Addendum.md` + `.pdf`, keep it to 2 pages). Guides never
+  carry version numbers.
+- **Release number** `R<month>-<day>-<n>`. Every Windows installer gets a new R number, and the
+  WPF client version is set to match it (R11-19-1 -> client 11.19.1).
+- **Server trees in step:** a server change goes into every server tree. On a non-Pi host the Pi
+  part is a note for Ron, not an edit (see Hard don'ts).
+
+**GitHub Release layout (Ron and Stew agreed 2026-11-19)**
+
+1. **Every release carries ALL the installers**, changed or not: the Windows installer, the Pi
+   (arm64) `mscc` and `mscc-avalonia` .debs, and the Ubuntu (amd64) `mscc` and `mscc-avalonia`
+   .debs. The newest release is always the complete current set.
+2. **The notes start with a short version table** (each package, the computer it's for, its
+   version, changed or unchanged), then what changed, then **"Downloads: which file do I need?"**
+   (one line per file), then links to the Windows and Pi install guides and the Addendum PDF.
+   Use links, not repo paths.
+3. **Check the uploaded file sizes** against the local files.
+4. **Keep only the newest release and one earlier one.** After publishing, delete every older
+   release, whoever made it: `gh release delete R.. -R w4mmp-ron/mscc-station --yes`. Keep the
+   git tags (no `--cleanup-tag`), so an old version can be rebuilt from the repo.
+
+Command: `gh release create R.. -R w4mmp-ron/mscc-station --title R.. --target main --notes-file notes.md <all installers>`.
+
+**Ubuntu .debs on a release Ron publishes:** Ron's release carries the Windows and Pi files.
+Stew (or his Build) then attaches the two Ubuntu files to that same release and fills in their
+lines in the version table:
+
+```bash
+gh release upload R.. mscc_<ver>_amd64.deb mscc-avalonia_<ver>_amd64.deb -R w4mmp-ron/mscc-station
+gh release edit R.. -R w4mmp-ron/mscc-station --notes-file notes.md   # notes with the Ubuntu lines added
+```
+
+Unchanged Ubuntu files are attached again, so the newest release always has them. Check the
+uploaded sizes. When Stew publishes a release himself, he attaches all the files at once.
+
+---
+
 ## Current work
 
 **Active — cmd-088 (windows-shack / Shack):** done locally, not pushed. WPF 11.18.4 and MsccRemotePhones hand WaveIn buffers out oldest-first (`OrderedWaveIn`). SA test passed. No installer in this step; the client drop-in is `C:\mscc-net9\MSCC.Wpf.exe`. Brief: `.mscc-coord/cmd-088-wavein-buffer-order-fix-brief.md`. Stew pushes. Leave NEW-HP alone.
@@ -21,7 +78,7 @@ Older notes below are stale as of 2026-10-07. Check `.mscc-coord/COMMANDS.yaml` 
 
 **On hold:** cmd-034 clear-on-TX + fixed 2:1 fill.
 
-**Current kits:** Windows R10-4-0 (WPF 10.4.0); Ubuntu `mscc` 1.0.49 / `mscc-ui` 0.6.71; Pi `mscc` 1.0.56 / `mscc-ui` 0.6.71 / `mscc-init` 1.0.18.
+**Current kits:** see the Software Versions Addendum (`docs/manuals/MSCC-Software-Versions-Addendum.md`) and the newest release at <https://github.com/w4mmp-ron/mscc-station/releases>.
 
 ## Who / where
 

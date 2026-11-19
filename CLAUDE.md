@@ -86,6 +86,10 @@ The Pi and Windows servers do the same job and are kept functionally identical (
    [Raspberry Pi install guide](https://github.com/w4mmp-ron/mscc-station/blob/main/installers/rpi/INSTALL.md) ·
    [Software versions (PDF)](https://github.com/w4mmp-ron/mscc-station/blob/main/docs/manuals/MSCC-Software-Versions-Addendum.pdf).
    Use links, not repo paths (people on the release page have no repo). Check the uploaded sizes.
+   **Ubuntu .debs:** on a release Ron publishes, Stew then attaches the two Ubuntu files himself
+   (`gh release upload R.. mscc_<ver>_amd64.deb mscc-avalonia_<ver>_amd64.deb -R w4mmp-ron/mscc-station`,
+   unchanged ones too) and adds their lines to the version table (`gh release edit R.. --notes-file ...`).
+   Ron's notes say "Ubuntu packages: added by Stew" until then. When Stew publishes, he attaches all files.
    **Keep only the newest release and one earlier one** as the fallback: after publishing, delete
    the older releases (`gh release delete R.. -R w4mmp-ron/mscc-station --yes`; keep the git tags,
    so an old version can still be rebuilt from the repo).
