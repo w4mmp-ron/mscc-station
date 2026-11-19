@@ -12,19 +12,19 @@ when only version numbers do. Downloads and what changed in each release:
 | Computer | File |
 |---|---|
 | Windows | `mscc-net9-R11-19-2-install.exe` → `C:\mscc-net9` |
-| Raspberry Pi (64-bit, Pi 4 / Pi 5) | `mscc_1.0.102_arm64.deb`, `mscc-avalonia_1.7.04_arm64.deb` |
+| Raspberry Pi (64-bit, Pi 4 / Pi 5) | `mscc_1.0.102_arm64.deb`, `mscc-avalonia_1.7.08_arm64.deb` |
 | Ubuntu (amd64) | `mscc_1.0.102_amd64.deb`, `mscc-avalonia_1.7.08_amd64.deb` |
 
 ## MSCC programs
 
 | Program | Windows | Raspberry Pi | Ubuntu |
 |---|---|---|---|
-| MSCC client | WPF 11.19.2 | Avalonia 1.7.04 | Avalonia 1.7.08 |
+| MSCC client | WPF 11.19.2 | Avalonia 1.7.08 | Avalonia 1.7.08 |
 | ms-sdr (server) | 3.214 | 3.215 | 3.215 |
 | recv (receive server) | 3.155 | 3.157 | 3.157 |
 | trans (transmit server) | 3.159 | 3.163 | 3.163 |
 
-Pi Avalonia stays 1.7.04. LF not yet tested on Geminus.
+Avalonia 1.7.08 (Pi and Ubuntu): connect keeps the server's settings. LF not yet tested on Geminus.
 
 WPF 11.19.2. Remote digital: a one-cable VB-Cable setup no longer sends a short burst of received audio at key-down. While keyed, MSCC stops playing receive audio into the cable, and it drops the first 400 ms of transmit audio after key-down.
 
