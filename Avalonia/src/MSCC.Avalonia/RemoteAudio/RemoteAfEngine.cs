@@ -53,6 +53,33 @@ public sealed class RemoteAfEngine : IDisposable
         set => _player.Muted = value;
     }
 
+    private bool _digitalPath;
+    private bool _keyed;
+
+    /// <summary>Remote Digital path. Phones leaves the mic and receive playback alone.</summary>
+    public bool DigitalPath
+    {
+        get => _digitalPath;
+        set
+        {
+            _digitalPath = value;
+            _mic.DigitalPath = value;
+            _player.TxSilence = value && _keyed;
+        }
+    }
+
+    /// <summary>
+    /// Keyed = PTT or TUNE. While Digital and not keyed the mic sends zeros.
+    /// Key-down dumps 400 ms then fades in. A repeat true does not restart that dump.
+    /// Receive playback is silence while Digital and keyed; the player keeps running.
+    /// </summary>
+    public void SetTxGuard(bool keyed)
+    {
+        _keyed = keyed;
+        _mic.SetTxGuard(keyed);
+        _player.TxSilence = _digitalPath && keyed;
+    }
+
     public float MicVolume
     {
         get => _mic.Volume;

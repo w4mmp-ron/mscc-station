@@ -74,6 +74,7 @@ public partial class MainViewModel : ViewModelBase, IDisposable
     private bool _suppressMonitorCommand;
     private bool _suppressDefaultFilterSend;
     private bool _suppressAudioSend;
+    private bool _remoteTxGuard;
     private bool _suppressCwSend;
     private bool _suppressRitSend;
     private bool _suppressPowerCalSlider;
@@ -1435,6 +1436,7 @@ public partial class MainViewModel : ViewModelBase, IDisposable
             Dispatcher.UIThread.Post(() => { if (_swrTxInhibited && PttOn) PttOn = false; });
             return;
         }
+        UpdateRemoteDigitalTxGuard();
         UpdateShowExternalSwrFace();
         // User (or forced) drop of PTT cancels auto-release ownership
         if (!value && _keyerPlayOwnsPtt)
@@ -1458,6 +1460,7 @@ public partial class MainViewModel : ViewModelBase, IDisposable
             Dispatcher.UIThread.Post(() => { if (_swrTxInhibited && TuneMode) TuneMode = false; });
             return;
         }
+        UpdateRemoteDigitalTxGuard();
         UpdateShowExternalSwrFace();
         // WPF 11.1.3 port: with 2 TONE armed, TUN sends the two-tone test signal in SSB instead of a carrier
         if (value && TwoToneArmed && !_suppressTransmitCommands)
@@ -1497,6 +1500,30 @@ public partial class MainViewModel : ViewModelBase, IDisposable
         }
 
         MaybeZeroAlcMeterOnRx();
+    }
+
+    /// <summary>
+    /// Remote Digital only. While not keyed the mic sends zeros. While keyed, receive playback
+    /// is silence (jitter buffer keeps running) and the mic sends zeros for 400 ms after key-down,
+    /// then a 5 ms fade-in. Key-up fades out over 5 ms. Phones remote is left alone.
+    /// PTT here includes the button, CAT TX;, and the CTS/DCD line. TUNE includes CAT AC111;.
+    /// </summary>
+    private void UpdateRemoteDigitalTxGuard()
+    {
+        bool inDigital = RemoteAudio && RemoteDigitalAudio;
+        bool keyed = PttOn || TuneMode;
+        bool guard = inDigital && keyed;
+        if (RemoteAf != null)
+        {
+            RemoteAf.DigitalPath = inDigital;
+            RemoteAf.SetTxGuard(keyed);
+        }
+        if (guard == _remoteTxGuard)
+            return;
+        _remoteTxGuard = guard;
+        AppendLog(guard
+            ? "Remote AF: TX guard — RX playback muted, mic dump 400 ms"
+            : "Remote AF: TX guard off");
     }
 
     private async Task SendPttAsync(bool on)
@@ -2918,6 +2945,8 @@ public partial class MainViewModel : ViewModelBase, IDisposable
     {
         OnPropertyChanged(nameof(AudioPathButtonText));
         ScheduleSaveClientSettings();   // REMOTE_DIGITAL: next Remote opens on the same path
+        if (!_suppressAudioSend)
+            UpdateRemoteDigitalTxGuard();
         if (_suppressAudioSend || !RemoteAudio) return;
         PushAudioToRadio(value ? "R-path→D" : "R-path→P");
         ApplyRemoteAfDevicesAndRestart(value ? "R-path→D" : "R-path→P");
@@ -2940,6 +2969,7 @@ public partial class MainViewModel : ViewModelBase, IDisposable
             try { RemoteAudio = false; }
             finally { _suppressAudioSend = false; }
             AppendLog("Remote blocked: this computer's own servers own CAT (connected to " + (Host ?? "").Trim() + "). Connect-only to a remote host.");
+            UpdateRemoteDigitalTxGuard();
             return;
         }
         if (value)
@@ -2952,6 +2982,7 @@ public partial class MainViewModel : ViewModelBase, IDisposable
             PushAudioToRadio("Remote OFF");
             StopRemoteAf(closeWindow: true);
         }
+        UpdateRemoteDigitalTxGuard();
     }
 
     partial void OnRemoteMonitorAtRadioChanged(bool value)
@@ -2980,6 +3011,7 @@ public partial class MainViewModel : ViewModelBase, IDisposable
         try { RemoteAf.Stop(); } catch { /* ignore */ }
         ApplyRemoteAfDevices();
         RemoteAf.MicVolume = RemoteMicVolumeLinear();
+        UpdateRemoteDigitalTxGuard();
         bool rxOk = false, micOk = false;
         string host = string.IsNullOrWhiteSpace(Host) ? "127.0.0.1" : Host.Trim();
         try
@@ -3017,6 +3049,7 @@ public partial class MainViewModel : ViewModelBase, IDisposable
             AppendLog("CAT idle (phones remote — PTT/tune in MSCC)");
         }
         ShowRemoteAfWindow();
+        UpdateRemoteDigitalTxGuard();
     }
 
     internal void StopRemoteAf(bool closeWindow)
@@ -3025,6 +3058,7 @@ public partial class MainViewModel : ViewModelBase, IDisposable
         try { RemoteAf?.Stop(); } catch { /* ignore */ }
         if (closeWindow)
             CloseRemoteAfWindow();
+        UpdateRemoteDigitalTxGuard();
     }
 
     private void StartRemoteCat()
@@ -3191,6 +3225,7 @@ public partial class MainViewModel : ViewModelBase, IDisposable
     internal void ApplyRemoteAfDevicesAndRestart(string reason)
     {
         if (!RemoteAudio || RemoteAf == null) return;
+        UpdateRemoteDigitalTxGuard();
         AppendLog($"Remote AF stop-before-restart ({reason})");
         try { RemoteAf.Stop(); } catch { /* ignore */ }
         ApplyRemoteAfDevices();

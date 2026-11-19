@@ -1,3 +1,4 @@
+using System.Globalization;
 using System.Net;
 using System.Net.Sockets;
 using System.Linq;
@@ -9,6 +10,13 @@ namespace MSCC.Avalonia.RemoteAudio;
 public sealed class LinuxMicSender : IDisposable
 {
     public const int FramesPerPacket = 480;
+    public const int TxSilenceDumpMilliseconds = 400;
+    public const int TxLevelRampSamples = 240; // 5 ms @ 48 kHz, linear
+
+    // Temporary. This client has no EVENT flag. Set false to strip the peak lines.
+    private static readonly bool TxGuardEdgeDiag = true;
+    private const int TxGuardDiagPackets = 10; // 100 ms @ 480 frames
+
     private IntPtr _stream;
     private Thread? _thread;
     private volatile bool _run;
@@ -17,8 +25,20 @@ public sealed class LinuxMicSender : IDisposable
     private float _volume = 1.0f;
     private int _inCh = 1;
     private ushort _seq;
+    private volatile bool _digitalPath;
+    private int _keyed;
 
     public event Action<string>? Log;
+
+    /// <summary>Remote Digital only. Phones sends the mic as captured.</summary>
+    public bool DigitalPath
+    {
+        get => _digitalPath;
+        set => _digitalPath = value;
+    }
+
+    /// <summary>Keyed = PTT or TUNE. A repeat true does not restart the 400 ms dump.</summary>
+    public void SetTxGuard(bool keyed) => Interlocked.Exchange(ref _keyed, keyed ? 1 : 0);
     public bool IsRunning => _run;
     public float Volume
     {
@@ -113,6 +133,49 @@ public sealed class LinuxMicSender : IDisposable
     {
         var f = new float[FramesPerPacket * ch];
         var packet = new byte[MsccAudioProtocol.HeaderSize + FramesPerPacket * 2];
+        int dumpN = Math.Max(1, sampleRate * TxSilenceDumpMilliseconds / 1000);
+        int rampN = Math.Max(1, sampleRate * TxLevelRampSamples / 48000);
+        int dumpLeft = 0;
+        int fadeLeft = 0;
+        int fadeDir = 0; // +1 fade in, -1 fade out
+        float fadeStart = 0f;
+        float liveGain = 0f;
+        bool capDigital = false;
+        bool capKeyed = false;
+        var diagPeaks = new float[TxGuardDiagPackets];
+        int diagWrite = 0;
+        int diagFilled = 0;
+        int afterLeft = 0;
+        float afterPeak = 0f;
+        string afterEdge = "";
+
+        void LogPeak(string edge, string side, int packets, float peak)
+        {
+            int ms = packets * FramesPerPacket * 1000 / Math.Max(1, sampleRate);
+            string db = peak <= 1e-9f || float.IsNaN(peak)
+                ? "-inf"
+                : (20.0 * Math.Log10(peak)).ToString("0.0", CultureInfo.InvariantCulture);
+            Log?.Invoke($"TX guard peak {edge} {side} {ms} ms: {db} dBFS");
+        }
+
+        void OnGuardEdge(bool keyedNow)
+        {
+            if (!TxGuardEdgeDiag) return;
+            if (afterLeft > 0)
+            {
+                LogPeak(afterEdge, "after", TxGuardDiagPackets - afterLeft, afterPeak);
+                afterLeft = 0;
+            }
+            float before = 0f;
+            for (int n = 0; n < diagFilled; n++)
+                if (diagPeaks[n] > before) before = diagPeaks[n];
+            string edge = keyedNow ? "key-down" : "key-up";
+            LogPeak(edge, "before", diagFilled, before);
+            afterEdge = edge;
+            afterLeft = TxGuardDiagPackets;
+            afterPeak = 0f;
+        }
+
         while (_run && _stream != IntPtr.Zero && _udp != null && _ep != null)
         {
             int err = PortAudioNative.Pa_ReadStream(_stream, f, FramesPerPacket);
@@ -122,25 +185,129 @@ public sealed class LinuxMicSender : IDisposable
                     Log?.Invoke("Pa_ReadStream: " + PortAudioNative.Err(err));
                 continue;
             }
+            bool digital = _digitalPath;
+            bool keyed = Volatile.Read(ref _keyed) != 0;
+            if (!digital)
+            {
+                if (capDigital)
+                {
+                    capDigital = false;
+                    capKeyed = false;
+                    dumpLeft = 0;
+                    fadeLeft = 0;
+                    fadeDir = 0;
+                    liveGain = 1f;
+                    diagWrite = 0;
+                    diagFilled = 0;
+                    afterLeft = 0;
+                }
+            }
+            else
+            {
+                if (!capDigital)
+                {
+                    capDigital = true;
+                    capKeyed = false;
+                    diagWrite = 0;
+                    diagFilled = 0;
+                    afterLeft = 0;
+                }
+                if (keyed != capKeyed)
+                {
+                    OnGuardEdge(keyed);
+                    if (keyed)
+                    {
+                        dumpLeft = dumpN;
+                        fadeLeft = 0;
+                        fadeDir = 0;
+                        liveGain = 0f;
+                    }
+                    else
+                    {
+                        dumpLeft = 0;
+                        if (liveGain <= 0.0001f)
+                        {
+                            fadeLeft = 0;
+                            fadeDir = 0;
+                            liveGain = 0f;
+                        }
+                        else
+                        {
+                            fadeStart = liveGain;
+                            fadeLeft = rampN;
+                            fadeDir = -1;
+                        }
+                    }
+                    capKeyed = keyed;
+                }
+            }
+
             float vol = _volume;
+            float rawPeak = 0f;
             int off = MsccAudioProtocol.HeaderSize;
             for (int i = 0; i < FramesPerPacket; i++)
             {
-                float s;
+                float raw;
                 if (ch == 1)
-                    s = f[i];
+                    raw = f[i];
                 else
                 {
                     float l = f[i * 2];
                     float r = f[i * 2 + 1];
-                    s = Math.Abs(l) >= Math.Abs(r) ? l : r;
+                    raw = Math.Abs(l) >= Math.Abs(r) ? l : r;
                 }
-                s *= vol;
+                float abs = Math.Abs(raw);
+                if (abs > rawPeak) rawPeak = abs;
+
+                float guard = 1f;
+                if (digital)
+                {
+                    if (dumpLeft > 0)
+                    {
+                        guard = 0f;
+                        dumpLeft--;
+                        if (dumpLeft == 0 && keyed)
+                        {
+                            fadeLeft = rampN;
+                            fadeDir = 1;
+                        }
+                    }
+                    else if (fadeLeft > 0 && fadeDir > 0)
+                    {
+                        int step = rampN - fadeLeft;
+                        guard = (step + 1) / (float)rampN;
+                        fadeLeft--;
+                    }
+                    else if (fadeLeft > 0 && fadeDir < 0)
+                    {
+                        int step = rampN - fadeLeft;
+                        guard = fadeStart * (1f - (step + 1) / (float)rampN);
+                        fadeLeft--;
+                    }
+                    else if (!keyed)
+                        guard = 0f;
+                    liveGain = guard;
+                }
+
+                float s = raw * vol * guard;
                 int v = (int)(s * 32767f);
                 if (v > short.MaxValue) v = short.MaxValue;
                 if (v < short.MinValue) v = short.MinValue;
                 packet[off++] = (byte)(v & 0xFF);
                 packet[off++] = (byte)((v >> 8) & 0xFF);
+            }
+            if (digital && TxGuardEdgeDiag)
+            {
+                if (afterLeft > 0)
+                {
+                    if (rawPeak > afterPeak) afterPeak = rawPeak;
+                    afterLeft--;
+                    if (afterLeft == 0)
+                        LogPeak(afterEdge, "after", TxGuardDiagPackets, afterPeak);
+                }
+                diagPeaks[diagWrite] = rawPeak;
+                diagWrite = (diagWrite + 1) % TxGuardDiagPackets;
+                if (diagFilled < TxGuardDiagPackets) diagFilled++;
             }
             var hdr = new AudioPacketHeader
             {

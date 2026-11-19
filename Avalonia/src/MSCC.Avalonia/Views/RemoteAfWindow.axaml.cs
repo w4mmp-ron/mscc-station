@@ -20,6 +20,7 @@ public partial class RemoteAfWindow : Window
 
     private void OnOpened(object? sender, EventArgs e)
     {
+        ScreenFit.CapToWorkingArea(this);
         _vm = DataContext as MainViewModel;
         if (_vm == null)
         {

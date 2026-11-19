@@ -4,11 +4,13 @@
         x:Class="MSCC.Avalonia.Views.RemoteAfWindow"
         x:DataType="vm:MainViewModel"
         Title="Remote Audio"
-        Width="520" Height="720" MinWidth="420" MinHeight="600"
+        Width="520" Height="720" MinWidth="420" MinHeight="360"
         WindowStartupLocation="CenterOwner"
         Background="#FF1C1C1C" Foreground="White">
-  <Grid Margin="10" RowDefinitions="Auto,Auto,Auto,*,Auto">
-    <StackPanel Grid.Row="0" Margin="0,0,0,8">
+  <Grid Margin="10" RowDefinitions="*,Auto,Auto">
+    <ScrollViewer Grid.Row="0" HorizontalScrollBarVisibility="Disabled" VerticalScrollBarVisibility="Auto">
+    <StackPanel>
+    <StackPanel Margin="0,0,0,8">
       <TextBlock x:Name="TitleBlock" Text="REMOTE AUDIO" FontWeight="SemiBold" FontSize="14"
                  Foreground="#00FFAA" Margin="0,0,0,6"/>
       <StackPanel Orientation="Horizontal">
@@ -24,7 +26,7 @@
       </StackPanel>
     </StackPanel>
 
-    <Border Grid.Row="1" Background="#FF252525" BorderBrush="#444" BorderThickness="1" Padding="8" Margin="0,0,0,8">
+    <Border Background="#FF252525" BorderBrush="#444" BorderThickness="1" Padding="8" Margin="0,0,0,8">
       <StackPanel>
         <TextBlock x:Name="RxHeading" Text="PHONES RX" FontWeight="SemiBold" Foreground="#00FFAA" Margin="0,0,0,6"/>
         <TextBlock x:Name="VacHint" Text="" TextWrapping="Wrap" FontSize="11" Foreground="#D0D0D0" Margin="0,0,0,4" IsVisible="False"/>
@@ -47,7 +49,7 @@
       </StackPanel>
     </Border>
 
-    <Border Grid.Row="2" Background="#FF252525" BorderBrush="#444" BorderThickness="1" Padding="8" Margin="0,0,0,8">
+    <Border Background="#FF252525" BorderBrush="#444" BorderThickness="1" Padding="8" Margin="0,0,0,8">
       <StackPanel>
         <TextBlock x:Name="MicHeading" Text="EQ / MIC TX" FontWeight="SemiBold" Foreground="#00FFAA" Margin="0,0,0,6"/>
         <StackPanel x:Name="EqPanel">
@@ -79,12 +81,14 @@
         </Grid>
       </StackPanel>
     </Border>
+    </StackPanel>
+    </ScrollViewer>
 
-    <TextBox x:Name="LogBox" Grid.Row="3" MinHeight="160" IsReadOnly="True" FontFamily="Consolas" FontSize="11"
+    <TextBox x:Name="LogBox" Grid.Row="1" Height="80" MinHeight="60" IsReadOnly="True" FontFamily="Consolas" FontSize="11"
              Background="#111" Foreground="#D0D0D0" BorderBrush="#444"
              AcceptsReturn="True" TextWrapping="Wrap" Margin="0,0,0,8"/>
 
-    <DockPanel Grid.Row="4">
+    <DockPanel Grid.Row="2">
       <Button Content="Reset EQ" Classes="mscc-gold" Width="80" Click="ResetEq_Click" DockPanel.Dock="Left"/>
       <TextBlock x:Name="StatusText" Margin="10,0,0,0" VerticalAlignment="Center" Foreground="#D0D0D0" Text="—"/>
     </DockPanel>

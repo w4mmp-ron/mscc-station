@@ -8,6 +8,7 @@ public partial class DebugLogWindow : Window
     public DebugLogWindow()
     {
         InitializeComponent();
+        Opened += (_, _) => ScreenFit.PlaceDebugLog(this);
     }
 
     private void Close_Click(object? sender, RoutedEventArgs e) => Close();

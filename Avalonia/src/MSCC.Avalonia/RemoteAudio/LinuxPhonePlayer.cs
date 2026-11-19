@@ -15,6 +15,15 @@ public sealed class LinuxPhonePlayer : IDisposable
     private float _volume = 0.8f;
     public PlaybackEq Eq { get; } = new();
     public bool Muted { get; set; }
+
+    /// <summary>Digital TX guard. Separate from <see cref="Muted"/> so key-up restores the slider mute.</summary>
+    private volatile bool _txSilence;
+    public bool TxSilence
+    {
+        get => _txSilence;
+        set => _txSilence = value;
+    }
+
     public float Volume
     {
         get => _volume;
@@ -115,7 +124,7 @@ public sealed class LinuxPhonePlayer : IDisposable
         while (_run && _stream != IntPtr.Zero)
         {
             _jitter.ReadSamples(pcm, _channels);
-            float vol = Muted ? 0f : _volume;
+            float vol = (Muted || _txSilence) ? 0f : _volume;
             for (int i = 0; i < 480; i++)
             {
                 float s = pcm[i * _channels] / 32768f;

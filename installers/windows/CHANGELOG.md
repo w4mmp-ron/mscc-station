@@ -2,6 +2,15 @@
 
 Installer: `mscc-net9-R<version>-install.exe` (WPF client + Windows servers). Install the newest one; older installers in this folder are kept for roll-back only.
 
+## Avalonia 1.7.07 — 2026-11-19  (not a new Windows installer; WPF and the Windows servers are unchanged)
+
+### Fixed
+- Remote Digital (WSJT-X): the wide noise bump at the start and end of TUNE and FT8. While Digital is not keyed the mic sends silence, so the radio's transmit buffer is empty at key-down. At key-down the mic stays silent for 400 ms, then fades in over 5 ms. At key-up it fades out over 5 ms, then silence. Receive playback is muted while keyed and comes back at key-up. Phones remote is unchanged.
+- Remote Audio window: the control panels scroll and the log is a short box, so Mic and Mic vol stay reachable on a 1366x768 screen. The window is kept on the screen. Debug Log opens beside Remote Audio.
+
+### Tested
+- Built on stew-HP (amd64). Not smoked yet.
+
 ## WPF 11.19.2 — 2026-11-19  (not a new Windows installer; drop-in to C:\mscc-net9)
 
 ### Fixed
