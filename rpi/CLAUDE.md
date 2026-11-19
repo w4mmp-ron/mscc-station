@@ -54,14 +54,16 @@ Reading / investigating is fine.
 - **WiFi SWR meter (Ron's copy `swr-meter/ron/HF_SWR_R4_1/`):** tune allowance, mDNS, WiFi retry, PEAK hold,
   AVG, PEAK SWR all built and tested (details in `CLAUDE-history.md`, 2026-11-15 section). The ms-sdr TX
   backstop on a meter fault shipped in R11-19-0 (Pi only; history). Build: arduino-cli (FQBN + options in the history).
-- **Ron (2026-11-15): client tooltips, WPF AND Avalonia.** None of the 208 WPF text tooltips has a line
+- **Client tooltips = Stew's (Ron 2026-11-19), note `.mscc-coord/NOTE-FOR-STEW-CLIENT-TOOLTIPS-2026-11-19.md`,
+  on the With Stew list.** Ron's original entry (2026-11-15), WPF AND Avalonia: none of the 208 WPF text tooltips has a line
   break, so long ones show as one wide strip (64 over 70 chars; longest: two-tone test 264, PADDLE 207,
   Save settings 193, FARNSWORTH 162, AMP on 155, Launch Servers 147, Reset configuration 145). Split at
   sentence breaks with `&#x0a;` (lines ~50-70 chars). Fix wrong text: WPF `MainWindow.xaml` Reset
   configuration says calibration reloads from factory (it keeps all cal since 11-10); RX IQ APPLY ALL
   "PC files only" unchecked. Avalonia: same texts (several differ today, e.g. PADDLE shows 0x9D / cw.ini).
   Not started.
-- **Ron (2026-11-18): Remote Audio window says "VAC", WPF AND Avalonia (nit, after the Windows hold).**
+- **"VAC" wording = Stew's (Ron 2026-11-19), same note as the tooltips, on the With Stew list.**
+  Ron's original entry (2026-11-18): Remote Audio window says "VAC", WPF AND Avalonia.
   Ron uses two audio adapters wired back to back, not VAC; the text is hard-coded. Change:
   "DIGITAL RX (VAC)" -> "DIGITAL RX", "DIGITAL MIC TX (VAC)" -> "DIGITAL MIC TX", "Mute VAC play" ->
   "Mute digital play" (WPF `RemoteAfWindow.xaml.cs` ~117/118/137; Avalonia `RemoteAfWindow.axaml.cs`
