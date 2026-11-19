@@ -76,12 +76,19 @@ The Pi and Windows servers do the same job and are kept functionally identical (
    for the other person (Ron's commits: a "With Stew" list).
 5. **GitHub Release** `R<month>-<day>-<n>` (e.g. R11-13-2):
    `gh release create R.. --title R.. --target main --notes-file notes.md <installers>`.
-   Notes: what changed, then **"Downloads: which file do I need?"** (one line per file, what
-   computer it's for, "(unchanged)" where so), then the links:
+   **Every release carries ALL the installers** (Ron and Stew, 2026-11-19), changed or not: the
+   Windows installer, the Pi (arm64) `mscc` and `mscc-avalonia` .debs, and the Ubuntu (amd64)
+   `mscc` and `mscc-avalonia` .debs (Stew builds those). The top release is always the complete
+   current set. Notes start with a short **version table** (each package, its version, changed or
+   unchanged), then what changed, then **"Downloads: which file do I need?"** (one line per file, what
+   computer it's for), then the links:
    [Windows install guide](https://github.com/w4mmp-ron/mscc-station/blob/main/installers/windows/INSTALL.md) ·
    [Raspberry Pi install guide](https://github.com/w4mmp-ron/mscc-station/blob/main/installers/rpi/INSTALL.md) ·
    [Software versions (PDF)](https://github.com/w4mmp-ron/mscc-station/blob/main/docs/manuals/MSCC-Software-Versions-Addendum.pdf).
    Use links, not repo paths (people on the release page have no repo). Check the uploaded sizes.
+   **Keep only the newest release and one earlier one** as the fallback: after publishing, delete
+   the older releases (`gh release delete R.. -R w4mmp-ron/mscc-station --yes`; keep the git tags,
+   so an old version can still be rebuilt from the repo).
 
 If nothing installable changed, "finished" is just the commit and push; no new release.
 

@@ -114,6 +114,10 @@ Reading / investigating is fine.
   and the Ubuntu scripts/utilities match the Pi. No separate Avalonia review; document the Pi
   versions for both Linux hosts. Linux guide Release 0 reviewed (old versions, Appendix G Pi install
   wrong for today's kit, cal now in the radio).
+- **Waiting on Stew (2026-11-19):** how his Ubuntu amd64 .debs reach our releases
+  (`.mscc-coord/NOTE-FOR-STEW-MSCC-STATUS-AND-RELEASES-REPLY-2026-11-19.md`). Until then releases carry
+  the Windows + Pi files only. Release layout (all installers, version table, keep newest two) is in the
+  repo `CLAUDE.md` step 5.
 - **Next:** a Pi / Linux remote guide, when Ron says.
 - **Parked:** NR warble fix (Ron 2026-11-01: leave it, NR works well; lower level = less
   warble). Sync AM (off the list). Complex Goertzel for FREQ CAL and FM transmit (future ideas,

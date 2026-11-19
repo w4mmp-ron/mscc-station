@@ -157,6 +157,19 @@ refused. The client's RESET (0x2E through ms-sdr) cleared it, and TUN worked aft
 **Windows port:** the Windows ms-sdr has the same `swr_wifi_meter.c` (since 2026-11-10), so the same
 four changes apply there.
 
+## R11-19-1: Pi ms-sdr 3.215, recv 3.157, trans 3.163
+
+**What it does:** each server carries its version as text inside the program file, for example
+`MSCC-VERSION sdrcore-recv 3.157`, and writes the same line to its log at start. `mscc status`
+reads it from the file without running the server. Details and the `mscc status` part:
+`NOTE-FOR-STEW-MSCC-STATUS-AND-RELEASES-REPLY-2026-11-19.md`.
+
+**Files:** `main.c` in `rpi/ms-sdr-linux/source`, `rpi/SDRcore-recv-linux/sources` and
+`rpi/SDRcore-trans-linux/sources` (the tag above `main()`, one log line after the start-up line);
+recv and trans `extern.h` (version).
+
+**Windows port:** the same few lines in each Windows server's `main.c`, when the hold ends.
+
 ## FYI: Black Pill 3.23 uses your USB names
 
 The Black Pill now uses the same USB names as your PSoC images: "Multus IQ", "Multus IQ Sound",

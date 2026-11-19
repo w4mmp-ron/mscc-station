@@ -564,6 +564,132 @@ def check_proficio_usb(R: Report) -> None:
         R.warn("Proficio control USB not seen (power / cable / udev?)")
 
 
+# ---------------------------------------------------------------------------
+# Versions (2026-11-19, Stew's request). Self-contained block: it needs only the
+# Report class (section / ok / warn / info), so it can be pasted into the Ubuntu
+# copy as is. Never adds a FAIL and never stops the report.
+#   - packages: dpkg-query
+#   - servers: the "MSCC-VERSION <name> <x.y>" text inside each program file
+#     (ms-sdr 3.214, recv 3.157, trans 3.163 and later). The programs are never
+#     run: a second ms-sdr would wipe its log and user_controls.ini.
+#   - firmware: file names under /usr/share/mscc/firmware
+#   - newest GitHub release: one HTTPS request, 4 s timeout; offline = one line
+# ---------------------------------------------------------------------------
+import json as _v_json
+import urllib.request as _v_urlreq
+
+_V_REPO_API = "https://api.github.com/repos/w4mmp-ron/mscc-station/releases/latest"
+_V_PACKAGES = ("mscc", "mscc-avalonia")
+_V_SERVERS = ("ms-sdr", "sdrcore-recv", "sdrcore-trans")
+_V_FW_DIR = Path("/usr/share/mscc/firmware")
+
+
+def _v_run(cmd: List[str], timeout: float = 5.0) -> Tuple[int, str]:
+    try:
+        p = subprocess.run(cmd, capture_output=True, text=True, timeout=timeout)
+        return p.returncode, p.stdout.strip()
+    except Exception:
+        return -1, ""
+
+
+def _v_dpkg_version(pkg: str) -> Optional[str]:
+    rc, out = _v_run(["dpkg-query", "-W", "-f=${Status}|${Version}", pkg])
+    if rc != 0 or "|" not in out:
+        return None
+    status, ver = out.split("|", 1)
+    return ver if status.endswith(" installed") else None
+
+
+def _v_newer(a: str, b: str) -> bool:
+    """True if version b is newer than a (dpkg rules)."""
+    rc, _ = _v_run(["dpkg", "--compare-versions", b, "gt", a])
+    return rc == 0
+
+
+def _v_server_version(path: Path) -> Optional[str]:
+    try:
+        data = path.read_bytes()
+    except OSError:
+        return None
+    m = re.search(rb"MSCC-VERSION [a-z-]+ (\d+\.\d+)", data)
+    return m.group(1).decode() if m else None
+
+
+def _v_github_latest() -> Tuple[Optional[str], List[str], str]:
+    """(tag, asset names, error text). Never raises."""
+    try:
+        req = _v_urlreq.Request(_V_REPO_API, headers={"User-Agent": "mscc-status",
+                                                      "Accept": "application/vnd.github+json"})
+        with _v_urlreq.urlopen(req, timeout=4) as r:
+            js = _v_json.loads(r.read().decode("utf-8", "replace"))
+        return js.get("tag_name"), [a.get("name", "") for a in js.get("assets", [])], ""
+    except Exception as e:
+        return None, [], str(e) or e.__class__.__name__
+
+
+def check_versions(R: Report) -> None:
+    try:
+        _check_versions(R)
+    except Exception as e:   # the report must never fail because of this section
+        R.info(f"Versions: could not be read ({e})")
+
+
+def _check_versions(R: Report) -> None:
+    R.section("Versions")
+    rc, arch = _v_run(["dpkg", "--print-architecture"])
+    arch = arch if rc == 0 and arch else "arm64"
+    installed = {p: _v_dpkg_version(p) for p in _V_PACKAGES}
+    for p in _V_PACKAGES:
+        R.info(f"{p}: {installed[p] or 'not installed'}")
+
+    d = mscc_dir()
+    for s in _V_SERVERS:
+        f = d / s
+        if not f.is_file():
+            R.info(f"{s}: not found in {d}")
+            continue
+        v = _v_server_version(f)
+        R.info(f"{s}: {v}" if v else f"{s}: no version tag (built before 2026-11-19)")
+
+    if _V_FW_DIR.is_dir():
+        names = []
+        for sub in sorted(_V_FW_DIR.iterdir()):
+            if not sub.is_dir():
+                continue
+            files = sorted(x.name for x in sub.iterdir() if x.is_file())
+            if sub.name == "black-pill":
+                files = [x for x in files if x.endswith("-app.bin") and "boot" not in x]
+            elif sub.name == "keyer":
+                files = [x for x in files if "-app-" in x]
+            else:
+                files = [x for x in files if x.endswith(".cyacd")]
+            names += files
+        R.info("firmware:" + ("" if names else " none"))
+        for n in names:
+            R.info(f"  {n}")
+    else:
+        R.info(f"firmware: {_V_FW_DIR} not found")
+
+    tag, assets, err = _v_github_latest()
+    if tag is None:
+        R.info(f"GitHub: no answer ({err}); versions above not compared")
+        return
+    R.info(f"GitHub newest release: {tag}")
+    for p in _V_PACKAGES:
+        have = installed[p]
+        if have is None:
+            continue
+        rx = re.compile(r"^" + re.escape(p) + r"_([0-9][^_]*)_" + re.escape(arch) + r"\.deb$")
+        rel = [m.group(1) for m in (rx.match(a) for a in assets) if m]
+        if not rel:
+            R.info(f"{p} {have}: not attached to {tag} (an unchanged package can be on an older release)")
+        elif _v_newer(have, rel[0]):
+            R.warn(f"{p} {have}: newer available ({rel[0]} in {tag})")
+        else:
+            R.ok(f"{p} {have}: up to date")
+# --------------------------- end of Versions block ---------------------------
+
+
 def summary(R: Report) -> str:
     if R.fails:
         return f"MSCC status: {R.fails} FAIL, {R.warns} WARN — see details"
@@ -575,6 +701,7 @@ def summary(R: Report) -> str:
 def main() -> int:
     R = Report()
     R.lines.append(f"MSCC status report — {home()}")
+    check_versions(R)       # 2026-11-19: Versions block above
     check_processes(R)
     check_binaries(R)
     check_portaudio_link(R)

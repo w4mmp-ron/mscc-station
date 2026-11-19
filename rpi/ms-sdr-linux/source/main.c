@@ -1227,6 +1227,14 @@ int static Start_Threads() {
     G_Threads_Started = TRUE;
     return (status);
 }
+
+/* 2026-11-19: version tag for `mscc status`, which reads it from the file (it never runs the
+ * server: a second ms-sdr would wipe the log and user_controls.ini). Same text in the log. */
+#define MSCC_VSTR_(x) #x
+#define MSCC_VSTR(x) MSCC_VSTR_(x)
+__attribute__((used)) static const char mscc_version_tag[] =
+    "MSCC-VERSION ms-sdr " MSCC_VSTR(VERSION_MAJOR) "." MSCC_VSTR(VERSION_MINOR);
+
 int main(int argc, char **argv) {
     int status;
     int ret_status;
@@ -1249,6 +1257,8 @@ int main(int argc, char **argv) {
     print_time(0);
     fprintf(G_fp_logfile, "[%d] main starting . Compile Date %s, Compile Time %s \n", line_number++,
             COMPILE_DATE, COMPILE_TIME);
+    print_time(0);
+    fprintf(G_fp_logfile, "[%d] main . %s\n", line_number++, mscc_version_tag);
     print_time(0);
     fprintf(G_fp_logfile, "[%d] main . Calling: Get_serial_number \n", line_number++);
     //G_serial_number_success = Get_serial_number(); //Disable call to Get_serial_number()

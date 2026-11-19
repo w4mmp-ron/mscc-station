@@ -2,6 +2,12 @@
 
 Installer: `mscc-net9-R<version>-install.exe` (WPF client + Windows servers). Install the newest one; older installers in this folder are kept for roll-back only.
 
+## R11-19-1 — 2026-11-19  (WPF 11.19.1 = 11.18.4 code, new number only; Black Pill 3.24; servers unchanged: ms-sdr 3.214, recv 3.155, trans 3.159)
+
+### Changed
+- New number only, to match the installer. Nothing changed for Windows; this release is for the Raspberry Pi (`mscc status` shows the installed versions, the servers carry their version number).
+- From this release on, the release page carries every installer (also the unchanged ones), with a version table at the top; only the newest release and one earlier one are kept.
+
 ## R11-19-0 — 2026-11-19  (WPF 11.19.0 = 11.18.4 code, new number only; Black Pill 3.24; servers unchanged: ms-sdr 3.214, recv 3.155, trans 3.159)
 
 ### Changed

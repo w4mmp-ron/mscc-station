@@ -1,6 +1,6 @@
 # MSCC Software Versions Addendum
 
-**Release R11-19-0** · 2026-11-19
+**Release R11-19-1** · 2026-11-19
 
 The Operator's Guides describe how MSCC works; this addendum lists the version numbers that
 go with the current release. It is updated with every release, so the guides don't change
@@ -11,23 +11,23 @@ when only version numbers do. Downloads and what changed in each release:
 
 | Computer | File |
 |---|---|
-| Windows | `mscc-net9-R11-19-0-install.exe` (installs to `C:\mscc-net9`; uninstall from Apps & features) |
-| Raspberry Pi (64-bit Pi OS, Pi 4 / Pi 5) | `mscc_1.0.101_arm64.deb` (required) and `mscc-avalonia_1.7.04_arm64.deb` (optional, on the R11-16-1 release) |
+| Windows | `mscc-net9-R11-19-1-install.exe` (installs to `C:\mscc-net9`; uninstall from Apps & features) |
+| Raspberry Pi (64-bit Pi OS, Pi 4 / Pi 5) | `mscc_1.0.102_arm64.deb` (required) and `mscc-avalonia_1.7.04_arm64.deb` (optional) |
 
 ## MSCC programs
 
 | Program | Windows | Raspberry Pi |
 |---|---|---|
-| MSCC client | WPF, title bar 11.19.0 | MSCC Avalonia 1.7.04 (optional) |
-| ms-sdr (server) | 3.214 | 3.214 |
-| recv (receive server) | 3.155 | 3.156 |
-| trans (transmit server) | 3.159 | 3.162 |
+| MSCC client | WPF, title bar 11.19.1 | MSCC Avalonia 1.7.04 (optional) |
+| ms-sdr (server) | 3.214 | 3.215 |
+| recv (receive server) | 3.155 | 3.157 |
+| trans (transmit server) | 3.159 | 3.163 |
 
 Avalonia 1.7.06 is built and tested on Ubuntu (lighter filter passband, sky blue filter edges as WPF, plus the 1.7.04 changes). It is not built for the Pi; the Pi package stays 1.7.04. LF not yet tested on Geminus.
 
-WPF 11.19.0 is 11.18.4 with a new number (11.18.4 fixed the bursts beside the carrier in remote digital transmit).
+WPF 11.19.1 is 11.18.4 with a new number (11.18.4 fixed the bursts beside the carrier in remote digital transmit).
 
-Pi ms-sdr 3.214 answers the CAT S-meter read (TS-2000 `SM`), stops transmit itself on a WiFi SWR meter fault (also when WSJT-X keys through CAT) until the fault is reset, and keeps the QRO (amplifier) calibration in a Black Pill 3.24 or later. Pi trans 3.162 goes with it. Pi ms-sdr 3.211 says "RECEIVE FIXED ITSELF" when a Black Pill fixed its receive. Windows ms-sdr 3.214 uses the Zadig driver or Windows' own WinUSB driver, whichever is there. With Black Pill 3.17 or later no Zadig is needed. It also fixes the WiFi SWR meter link on Windows.
+`mscc status` on the Pi now starts with a Versions list (packages, servers, firmware, newest release). Pi ms-sdr 3.214 answers the CAT S-meter read (TS-2000 `SM`), stops transmit itself on a WiFi SWR meter fault (also when WSJT-X keys through CAT) until the fault is reset, and keeps the QRO (amplifier) calibration in a Black Pill 3.24 or later. Pi trans 3.162 goes with it; Pi ms-sdr 3.215, recv 3.157 and trans 3.163 carry their version for `mscc status`. Pi ms-sdr 3.211 says "RECEIVE FIXED ITSELF" when a Black Pill fixed its receive. Windows ms-sdr 3.214 uses the Zadig driver or Windows' own WinUSB driver, whichever is there. With Black Pill 3.17 or later no Zadig is needed. It also fixes the WiFi SWR meter link on Windows.
 
 Windows and Pi server numbers differ because each build counts up on its own.
 

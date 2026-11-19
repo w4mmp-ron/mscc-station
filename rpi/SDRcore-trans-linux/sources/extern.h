@@ -30,7 +30,7 @@
 
 /* {Model}.{[M]M}{Release Number} */
 #define VERSION_MAJOR 3
-#define VERSION_MINOR 162   /* 3.162 (2026-11-19): CMD_SET_AMPLIFIER_CAL_RECORD 0xF8 from ms-sdr: a band's QRO cal from the radio (pill 3.24+), saved to amplifier_cal.ini. 3.161 (2026-11-18): QRP / QRO cal files saved after 5 s of a still slider, not 0.5 s; power.ini / amplifier_cal.ini not rewritten when unchanged (Ron). 3.160 (2026-11-13): Linux radio I/Q search accepts the "Ultimus" product name (Stew) */
+#define VERSION_MINOR 163   /* 3.163 (2026-11-19): "MSCC-VERSION sdrcore-trans 3.163" tag in the file + log line, for mscc status. 3.162 (2026-11-19): CMD_SET_AMPLIFIER_CAL_RECORD 0xF8 from ms-sdr: a band's QRO cal from the radio (pill 3.24+), saved to amplifier_cal.ini. 3.161 (2026-11-18): QRP / QRO cal files saved after 5 s of a still slider, not 0.5 s; power.ini / amplifier_cal.ini not rewritten when unchanged (Ron). 3.160 (2026-11-13): Linux radio I/Q search accepts the "Ultimus" product name (Stew) */
 /* 3.159 (2026-11-13): build-warning fix (RON define) */
 #define VERSION_MS_SDRCORE_TRANS ((((VERSION_MINOR) << 8) & 0xff00) | ((VERSION_MAJOR) & 0x00ff))
 
