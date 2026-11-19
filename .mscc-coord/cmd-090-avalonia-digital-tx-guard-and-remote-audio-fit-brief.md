@@ -1,11 +1,13 @@
 # cmd-090 — Avalonia (stew-HP amd64): Digital TX guard (port of cmd-089) + Remote Audio window fits 1366x768
 
-Host: stew-HP (Ubuntu amd64). Files: `mscc-ui/Avalonia-Migration/src/MSCC.Avalonia/` only.
+CORRECTED 2026-11-19: target is `Avalonia/` (the maintained client, package mscc-avalonia), NOT `mscc-ui/Avalonia-Migration` (frozen, to be deleted). Do not edit Avalonia-Migration.
+
+Host: stew-HP (Ubuntu amd64). Files: `Avalonia/src/MSCC.Avalonia/` only.
 Do NOT touch `rpi/`, `Solidus/`, `installers/rpi/`, or the WPF tree.
 "Finished" for this cmd = commit and push only. No installer upload and no GitHub release.
 Build the amd64 deb locally so Stew can install and test, but do not commit any `.deb`.
 Pull with `git pull --rebase --autostash` first. Follow repo-root CLAUDE.md / AGENTS.md.
-Version: mscc-ui 0.6.75 -> 0.6.76 (csproj, CHANGELOG, and the deb control/version file the repo uses).
+Version: mscc-avalonia 1.7.06 -> 1.7.07 (csproj, CHANGELOG, and the deb control/version file the repo uses).
 
 ## Problem 1 — Digital remote: noise bump at the start and end of every transmission
 
@@ -38,7 +40,7 @@ Do this:
 
 ## Problem 2 — Remote Audio window: Mic vol hidden on stew-HP's 1366x768 screen
 
-`Views/RemoteAfWindow.axaml` is 440x520 with fixed rows and the log box in the `*` row. On the laptop's
+`Views/RemoteAfWindow.axaml` is 520x720 with MinHeight 600 (taller than the 1366x768 screen). On the laptop's
 smaller screen the bottom of the window (Mic and Mic vol) is cut off or sits under the debug log.
 
 Do this:
@@ -58,3 +60,8 @@ Do this:
 - [ ] Phones remote unchanged (PTT, mic, receive)
 - [ ] Remote Audio window: Mic and Mic vol visible and adjustable on stew-HP
 - [ ] Debug Log window does not cover the Remote Audio window
+
+## Hook points (match WPF)
+Call the guard from the same six places WPF calls `UpdateRemoteDigitalTxGuard`: PTT, TUNE, CAT PTT,
+CAT Tune, line PTT (CTS/DCD), and Remote Audio start/stop. Lower the Remote Audio window MinHeight so it
+fits a 768-tall screen.
