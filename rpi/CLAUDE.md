@@ -67,7 +67,9 @@ Reading / investigating is fine.
   "Mute digital play" (WPF `RemoteAfWindow.xaml.cs` ~117/118/137; Avalonia `RemoteAfWindow.axaml.cs`
   ~72/73/92), and the Avalonia Digital tooltip `RemoteAfWindow.axaml` ~23 "VAC for WSJT..." ->
   "Audio devices for WSJT...". Not started.
-- **QRO cal in the radio: PSoC still to do (Ron: later).** The pill part shipped in R11-19-0 (pill 3.24,
+- **QRO cal in the radio: PSoC = Stew's (Ron 2026-11-19), note
+  `.mscc-coord/NOTE-FOR-STEW-QRO-CAL-IN-PSOC-2026-11-19.md`, on the With Stew list.** When he reports the
+  first PSoC version per radio, add the PSoC line to the Pi `Radio_has_qro_store()`. The pill part shipped in R11-19-0 (pill 3.24,
   Pi ms-sdr 3.214, trans 3.162; history). For the PSoC: same types (8 = int16 QRO per band, 9 = its
   valid mask, read only; type 5 stays 6 bytes). PSoC MKII (ATU/PTT 3.238+) EEPROM 2 KB = 128 rows; used
   rows 0, 1, 8-19 (cal row per band is full, byte 14 only spare); plan: 12 QRO rows 20-31, same
