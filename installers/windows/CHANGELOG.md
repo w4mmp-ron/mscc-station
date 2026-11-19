@@ -2,6 +2,16 @@
 
 Installer: `mscc-net9-R<version>-install.exe` (WPF client + Windows servers). Install the newest one; older installers in this folder are kept for roll-back only.
 
+## R11-19-0 — 2026-11-19  (WPF 11.19.0 = 11.18.4 code, new number only; Black Pill 3.24; servers unchanged: ms-sdr 3.214, recv 3.155, trans 3.159)
+
+### Changed
+- Black Pill firmware 3.24: the radio also keeps the QRO (amplifier) calibration per band, as it already keeps the QRP and I/Q calibration. Only the Raspberry Pi servers use it so far (Pi ms-sdr 3.214 + trans 3.162); the Windows servers keep using `amplifier_cal.ini` and work with 3.24 as with 3.23.
+- Nothing else changed for Windows. The other changes in this release are on the Raspberry Pi (CAT S-meter read, transmit stopped on a WiFi SWR meter fault).
+
+### Tested
+- Ron's rig (Proficio MKII with Black Pill 3.24) on the Pi: QRO cal copied into the radio, read back after a restart and after a rig power cycle; a 20 m recalibration reached the radio.
+- The client and Windows servers are the same code as R11-18-4.
+
 ## R11-18-4 — 2026-11-18  (WPF 11.18.4, Stew's remote mic fix; Black Pill 3.23; servers unchanged: ms-sdr 3.214, recv 3.155, trans 3.159)
 
 ### Fixed

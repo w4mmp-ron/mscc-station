@@ -62,6 +62,101 @@ on the same value gave no write. Clicking Main reloaded the tables with the new 
 
 **Windows port:** the same three changes in the Windows trans.
 
+## R11-19-0: Pi ms-sdr 3.214, Pi trans 3.162, Black Pill 3.24
+
+### CAT S-meter read (ms-sdr)
+
+**What it does:** ms-sdr answers the Kenwood TS-2000 S-meter read `SM0;` / `SM1;` with `SM0nnnn;`
+(0-30). Before, it didn't answer `SM` at all.
+
+- Scale from Hamlib's TS-2000 table: S9 = 15, S9+60 dB = 30; below S9 0 = S9-54 dB, 3 = -48,
+  6 = -36, 9 = -24, 12 = -12. Values between the points are interpolated. S9 = -73 dBm, as the
+  client meter. Answers 0 while transmitting (`G_PTT`).
+- Tested on Ron's rig: on WWV the CAT read gave 17-18, the client showed S9+10.
+
+**Files:** `rpi/ms-sdr-linux/source/comm-port.c` (new `SM` block after `RM`), `usbavrcmd.h`
+(`#define SM 14`).
+
+### QRO (amplifier) calibration stored in the radio (ms-sdr, trans, pill)
+
+**What it does:** the QRO cal per band is now kept in the radio too, as the QRP and I/Q cal already
+are. **The radio is the master** (Ron):
+- At startup, a band the radio holds uses the radio's value, and trans rewrites `amplifier_cal.ini`.
+- A band the radio doesn't hold keeps the file's value, and that value is copied into the radio.
+  A -99 (not calibrated) is never copied.
+- QRO slider: the band's value goes to the radio once the slider has been still for 5 seconds
+  and the rig is out of transmit (same as QRP / I/Q).
+- Calibration reset of the amplifier also writes -99 to the radio, so its old values can't win at
+  the next start.
+
+**Black Pill only for now (Ron).** ms-sdr sends the new requests only to a pill at 3.24 or newer.
+How it tells the radios apart: at startup ms-sdr reads the firmware version (`srGetVersion` in
+`main.c`) and looks at the minor number:
+- **PSoC:** minor 200 or more (your MKII PSoC is 3.240).
+- **Pill (STM32):** minor 1 to 199 (the pill restarted at 3.1 on 2026-10-25).
+- QRO check (`Radio_has_qro_store()` in `power_calibration.c`): `G_firmware_type == FIRMWARE_TYPE_STM32`
+  and `G_minor_version >= 24` (`PILL_QRO_CAL_MINOR_MIN`).
+- Older pills and every PSoC get no QRO request; they use `amplifier_cal.ini` only, as before.
+  The log says so: "Radio is not a Black Pill 3.24+ ... amplifier_cal.ini only".
+- When the PSoC gets QRO storage, the check needs a second line: PSoC and minor >= the new PSoC
+  version.
+
+**Radio side (pill 3.24, same `CMD_CALIBRATION` 0xC8, wValue = type << 8 | band, MSCC band order):**
+- Type 8 = QRO value, int16, 2 bytes, little endian (read / write).
+- Type 9 = QRO valid mask, uint16, 2 bytes, bit N = band N set (read only; a write stalls).
+- Type 5 (valid masks) stays 6 bytes, so older ms-sdr builds still work with pill 3.24.
+- For a PSoC version later: the same types and sizes, so ms-sdr talks to both radios the same way.
+
+**Server side:**
+- New opcode `CMD_SET_AMPLIFIER_CAL_RECORD` 0xF8, ms-sdr -> trans only (0xF8 was the unused,
+  reclaimed `CMD_SET_AMPLIFIER`): int32 = record (bits 0-7, 0 = 160 m ... 9 = 10 m, 10 = 630 m,
+  11 = 2200 m) | int16 value << 8. Trans sets that band and saves `amplifier_cal.ini`. Before,
+  trans could only take the QRO value of the band in use.
+
+**Tested on Ron's rig:** 12 file values copied into the empty radio; a restart read them back;
+a 20 m recalibration (-37) went to the radio once; with the old file put back (-26) the radio's
+-37 won and trans rewrote the file; after a rig power cycle all 12 came back from the pill's flash.
+
+**Files:**
+- `rpi/ms-sdr-linux/source/`: `power_calibration.c` (`Radio_has_qro_store`, `Radio_cal_store_qro`,
+  `Radio_cal_send_qro`, `Radio_cal_load_qro`; calls in `Radio_cal_startup_load`,
+  `Radio_cal_save_tick`, `Radio_cal_reset_all`), `amplifier.c` (`Amplifier_cal_value`,
+  `Amplifier_cal_set_value`, store call in `CMD_SET_POTENTIA_CALIBRATION`), `extern.h`, `usbavrcmd.h`.
+- `rpi/SDRcore-trans-linux/sources/`: `commands.h`, `udp_thread.c` (new case), `extern.h` (3.162).
+- Pill: `firmware/pio-async/` `calibration.c/.h`, `usb_vendor.c`, `proficio_config.h` (3.24).
+
+**Windows port:** the same ms-sdr and trans changes, using the Windows USB calls. No client change.
+
+### SWR meter fault stops transmit in ms-sdr (backstop)
+
+**What it does:** when the WiFi SWR meter reports a fault, ms-sdr itself drops transmit, whoever
+keyed it (client, WSJT-X through CAT, footswitch, TUN, CAT tune), and refuses new transmits until
+the fault is reset. Before, only the client dropped transmit, so a WSJT-X transmit on the Pi
+(CAT, the client never started it) kept going.
+
+- Released when the meter reports the fault clear (RESET on the meter or in the client), or when
+  the meter goes offline (a dead meter can't be reset).
+- Pop-up: "SWR METER FAULT ... Transmit stopped and blocked until the fault is reset."
+- Log: "Swr_wifi. FAULT latched ... TX blocked", "Set_PTT . TX refused: SWR meter fault not reset",
+  "Swr_wifi. fault cleared. TX allowed again".
+- The meter's tune allowance is unchanged.
+
+**How it works:** new flag `G_swr_fault_tx_block` (`swr_wifi_meter.c`, set on the fault edge, cleared
+on the clear edge or offline). `Set_PTT` and `Tune_button` (`main.c`) and the CAT tune start
+(`comm-port.c`) refuse to turn transmit ON while it's set; turning transmit off always works. It is
+not `G_TX_Inhibit`: that one belongs to the Solidus QRP/QRO switch, which clears it by itself.
+The CAT and footswitch paths now tell the client (and, for the footswitch, recv / trans) the real
+state `G_PTT` after `Set_PTT`, not the request, so a refused transmit shows as receive.
+
+**Tested on Ron's rig:** WSJT-X keyed through the CAT port's PTT line on 15 m; meter fault at SWR 3.32
+(86.6 W forward, 25 W reflected); ms-sdr dropped transmit 3 ms later. WSJT-X's next cycle was
+refused. The client's RESET (0x2E through ms-sdr) cleared it, and TUN worked after.
+
+**Files:** `rpi/ms-sdr-linux/source/swr_wifi_meter.c`, `main.c`, `comm-port.c`, `extern.h`.
+
+**Windows port:** the Windows ms-sdr has the same `swr_wifi_meter.c` (since 2026-11-10), so the same
+four changes apply there.
+
 ## FYI: Black Pill 3.23 uses your USB names
 
 The Black Pill now uses the same USB names as your PSoC images: "Multus IQ", "Multus IQ Sound",

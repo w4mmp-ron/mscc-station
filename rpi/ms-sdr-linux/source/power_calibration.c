@@ -262,6 +262,125 @@ void Radio_cal_store_iq(int tx, int record, int offset, int phase) {
 
 extern int Init_amplifier_calibration();
 
+/* 2026-11-19 (Ron): QRO (amplifier) cal in the radio too. Black Pill 3.24+ ONLY: type 8 = int16 per
+ * band (amplifier_cal.ini value, -99 = not calibrated), type 9 = its valid mask (uint16, read only).
+ * A PSoC radio or an older pill never gets these requests: amplifier_cal.ini only, as before.
+ * Saving: each slider step notes the band's value; Radio_cal_save_tick sends it once the slider has
+ * been still RADIO_CAL_SAVE_DELAY s and the rig is out of TX (as QRP / I/Q).
+ * Startup (Ron: the radio is the master): the radio's values win over the file; a band the radio
+ * does not hold keeps the file's value and that value is copied into the radio (not -99). */
+#define RADIO_CAL_TYPE_QRO        8
+#define RADIO_CAL_TYPE_QRO_VALID  9
+#define PILL_QRO_CAL_MINOR_MIN    24
+#define QRO_CAL_MIN              -99
+#define QRO_CAL_MAX               100
+static volatile int radio_qro_pending[12];
+static volatile int radio_qro_value[12];
+
+int Radio_has_qro_store(void) {
+    return G_firmware_type == FIRMWARE_TYPE_STM32 && G_minor_version >= PILL_QRO_CAL_MINOR_MIN;
+}
+
+/* record = amplifier record (0 = 160 m ... 9 = 10 m, 10 = 630 m, 11 = 2200 m) */
+void Radio_cal_store_qro(int record, int value) {
+    if (record < 0 || record >= 12 || !Radio_has_qro_store())
+        return;
+#if !RADIO_CAL_WRITES
+    return;
+#endif
+    radio_qro_value[record] = value;
+    radio_qro_pending[record] = 1;
+    G_Radio_Cal_Save_Pending = RADIO_CAL_SAVE_DELAY;
+}
+
+static void Radio_cal_send_qro(int record, int value) {
+    unsigned char data[2];
+    int band = Record_to_radio_band(record);
+    int status;
+
+    data[0] = (unsigned char) (value & 0xFF);           /* int16, little endian */
+    data[1] = (unsigned char) ((value >> 8) & 0xFF);
+    status = usbControlMsgOUT(RADIO_CMD_CALIBRATION, (RADIO_CAL_TYPE_QRO << 8) | band, 0, (char *) data, 2);
+    print_time(0);
+    if (status == 2) {
+        fprintf(G_fp_logfile, "[%d] Radio_cal_send_qro . Radio band: %d, QRO value: %d sent (radio stores it)\n",
+                line_number++, band, value);
+    } else {
+        fprintf(G_fp_logfile, "[%d] Radio_cal_send_qro . FAILED Radio band: %d, Status: %d\n",
+                line_number++, band, status);
+    }
+}
+
+/* At startup, after Radio_cal_load_iq. Each band the radio holds that differs from the file goes to
+ * trans (CMD_SET_AMPLIFIER_CAL_RECORD), which saves amplifier_cal.ini; trans stays its only writer. */
+void Radio_cal_load_qro(void) {
+    static const int record_meters[12] = { 160, 80, 60, 40, 30, 20, 17, 15, 12, 10, 630, 2200 };
+    unsigned char masks[2];
+    unsigned char data[2];
+    uint16_t mask;
+    int record, band, value, file_value, status;
+    int changed = 0, copied = 0;
+
+    print_time(0);
+    if (!Radio_has_qro_store()) {
+        fprintf(G_fp_logfile, "[%d] Radio_cal_load_qro . Radio is not a Black Pill 3.%d+ (%s, minor %d): amplifier_cal.ini only\n",
+                line_number++, PILL_QRO_CAL_MINOR_MIN,
+                G_firmware_type == FIRMWARE_TYPE_STM32 ? "pill" : (G_firmware_type == FIRMWARE_TYPE_PSOC ? "PSoC" : "unknown"),
+                G_minor_version);
+        return;
+    }
+    status = usbControlMsgIN(RADIO_CMD_CALIBRATION, RADIO_CAL_TYPE_QRO_VALID << 8, 0, (char *) masks, 2);
+    if (status != 2) {
+        fprintf(G_fp_logfile, "[%d] Radio_cal_load_qro . QRO mask read FAILED, Status: %d. Using amplifier_cal.ini\n",
+                line_number++, status);
+        return;
+    }
+    mask = (uint16_t) (masks[0] | (masks[1] << 8));
+    Init_amplifier_calibration();               /* file values, to compare */
+    for (record = 0; record < 12; record++) {
+        band = Record_to_radio_band(record);
+        file_value = Amplifier_cal_value(record);
+        print_time(0);
+        if (!(mask & (1 << band))) {
+            /* Radio is the master; a band it does not hold gets the file's value, unless the
+             * file says -99 (not calibrated). Sent by Radio_cal_save_tick, out of TX. */
+            int copy = (file_value != -99 && file_value >= QRO_CAL_MIN && file_value <= QRO_CAL_MAX);
+
+            if (copy) {
+                Radio_cal_store_qro(record, file_value);
+                copied++;
+            }
+            fprintf(G_fp_logfile, "[%d] Radio_cal_load_qro . %d m not in radio, file %d kept%s\n",
+                    line_number++, record_meters[record], file_value,
+                    copy ? ", copied to radio" : " (not copied)");
+            continue;
+        }
+        status = usbControlMsgIN(RADIO_CMD_CALIBRATION, (RADIO_CAL_TYPE_QRO << 8) | band, 0, (char *) data, 2);
+        if (status != 2) {
+            fprintf(G_fp_logfile, "[%d] Radio_cal_load_qro . %d m read FAILED. Status: %d\n", line_number++,
+                    record_meters[record], status);
+            continue;
+        }
+        value = (int) (int16_t) (data[0] | (data[1] << 8));
+        if (value < QRO_CAL_MIN || value > QRO_CAL_MAX) {
+            fprintf(G_fp_logfile, "[%d] Radio_cal_load_qro . %d m radio %d out of range, file %d kept\n", line_number++,
+                    record_meters[record], value, file_value);
+            continue;
+        }
+        fprintf(G_fp_logfile, "[%d] Radio_cal_load_qro . %d m radio %d, file %d, %s\n", line_number++,
+                record_meters[record], value, file_value, (value == file_value) ? "same" : "sent to trans");
+        if (value != file_value) {
+            Amplifier_cal_set_value(record, value);
+            SDRcore_trans_send_param(CMD_SET_AMPLIFIER_CAL_RECORD, (record & 0xFF) | ((value & 0xFFFF) << 8));
+            Sleep(20);
+            changed++;
+        }
+    }
+    print_time(0);
+    fprintf(G_fp_logfile, "[%d] Radio_cal_load_qro . Finished. QRO mask 0x%04X, %d band(s) changed, %d copied to radio\n",
+            line_number++, mask, changed, copied);
+}
+
 /* 3.197 (Ron 2026-11-10): hard calibration reset, client CMD_SET_CAL_RESET_ALL (0x2F).
  * The host file AND the radio get the reset values, so the radio's stored values can't win at
  * the next start. Radio writes are queued; Radio_cal_save_tick sends them out of TX and then
@@ -318,6 +437,10 @@ void Radio_cal_reset_all(int kind) {
             SDRcore_trans_send_param(CMD_SET_AMPLIFIER_CALIBRATION_RESET, 1);
             Sleep(200);                             /* trans writes the file */
             Init_amplifier_calibration();           /* ms-sdr reads it again */
+            /* 2026-11-19: pill 3.24+ also gets -99 on every band, or its old values would win
+             * at the next start (no-op for other radios) */
+            for (record = 0; record < 12; record++)
+                Radio_cal_store_qro(record, -99);
             break;
 
         default:
@@ -424,6 +547,7 @@ void Radio_cal_startup_load(const char *who) {
         Factory_seed_reload_servers();
         Radio_cal_load_power();
         Radio_cal_load_iq();
+        Radio_cal_load_qro();       /* 2026-11-19: pill 3.24+ only */
         radio_cal_startup_done = 1;
     }
     pthread_mutex_unlock(&radio_cal_startup_lock);
@@ -455,6 +579,11 @@ void Radio_cal_save_tick(void) {
         if (radio_iq_pending[1][record]) {
             radio_iq_pending[1][record] = 0;
             Radio_cal_send_iq(1, record);
+            sent++;
+        }
+        if (radio_qro_pending[record]) {    /* 2026-11-19: pill 3.24+ only (queued only then) */
+            radio_qro_pending[record] = 0;
+            Radio_cal_send_qro(record, radio_qro_value[record]);
             sent++;
         }
     }

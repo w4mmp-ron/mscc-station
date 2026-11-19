@@ -1,6 +1,6 @@
 # MSCC Software Versions Addendum
 
-**Release R11-18-4** · 2026-11-18
+**Release R11-19-0** · 2026-11-19
 
 The Operator's Guides describe how MSCC works; this addendum lists the version numbers that
 go with the current release. It is updated with every release, so the guides don't change
@@ -11,23 +11,23 @@ when only version numbers do. Downloads and what changed in each release:
 
 | Computer | File |
 |---|---|
-| Windows | `mscc-net9-R11-18-4-install.exe` (installs to `C:\mscc-net9`; uninstall from Apps & features) |
-| Raspberry Pi (64-bit Pi OS, Pi 4 / Pi 5) | `mscc_1.0.100_arm64.deb` (required) and `mscc-avalonia_1.7.04_arm64.deb` (optional, on the R11-16-1 release) |
+| Windows | `mscc-net9-R11-19-0-install.exe` (installs to `C:\mscc-net9`; uninstall from Apps & features) |
+| Raspberry Pi (64-bit Pi OS, Pi 4 / Pi 5) | `mscc_1.0.101_arm64.deb` (required) and `mscc-avalonia_1.7.04_arm64.deb` (optional, on the R11-16-1 release) |
 
 ## MSCC programs
 
 | Program | Windows | Raspberry Pi |
 |---|---|---|
-| MSCC client | WPF, title bar 11.18.4 | MSCC Avalonia 1.7.04 (optional) |
-| ms-sdr (server) | 3.214 | 3.211 |
+| MSCC client | WPF, title bar 11.19.0 | MSCC Avalonia 1.7.04 (optional) |
+| ms-sdr (server) | 3.214 | 3.214 |
 | recv (receive server) | 3.155 | 3.156 |
-| trans (transmit server) | 3.159 | 3.161 |
+| trans (transmit server) | 3.159 | 3.162 |
 
-Avalonia 1.7.06 is built and tested on Ubuntu: the filter passband is lighter so signals inside it stay visible, and the filter edges are sky blue to match WPF. Packages 12.1.6, the AGC button text, CMP greyed in Digital, QRP/AMP last-tuned frequency, and AGC FAST RELEASE 0–2000 ms are still in this build. It is not built for the Pi; the Pi package stays 1.7.04. LF not yet tested on Geminus.
+Avalonia 1.7.06 is built and tested on Ubuntu (lighter filter passband, sky blue filter edges as WPF, plus the 1.7.04 changes). It is not built for the Pi; the Pi package stays 1.7.04. LF not yet tested on Geminus.
 
-WPF 11.18.4 fixes the bursts beside the carrier in remote digital transmit.
+WPF 11.19.0 is 11.18.4 with a new number (11.18.4 fixed the bursts beside the carrier in remote digital transmit).
 
-Pi ms-sdr 3.211 says "RECEIVE FIXED ITSELF" when a Black Pill fixed its receive. Windows ms-sdr 3.214 uses the Zadig driver or Windows' own WinUSB driver, whichever is there. With Black Pill 3.17 or later no Zadig is needed. It also fixes the WiFi SWR meter link on Windows.
+Pi ms-sdr 3.214 answers the CAT S-meter read (TS-2000 `SM`), stops transmit itself on a WiFi SWR meter fault (also when WSJT-X keys through CAT) until the fault is reset, and keeps the QRO (amplifier) calibration in a Black Pill 3.24 or later. Pi trans 3.162 goes with it. Pi ms-sdr 3.211 says "RECEIVE FIXED ITSELF" when a Black Pill fixed its receive. Windows ms-sdr 3.214 uses the Zadig driver or Windows' own WinUSB driver, whichever is there. With Black Pill 3.17 or later no Zadig is needed. It also fixes the WiFi SWR meter link on Windows.
 
 Windows and Pi server numbers differ because each build counts up on its own.
 
@@ -48,10 +48,10 @@ stored in the radio). After you connect, the client's title bar shows the radio'
 | Ultimus Legacy | 6.237 | tested |
 | Ultimus MKII ATU | 7.247 | tested |
 | Ultimus MKII PTT | 8.246 | tested |
-| Black Pill board (any radio) | 3.23 (no Zadig; receive fixes itself after RF upsets it) | tested (Proficio MKII), Pi |
+| Black Pill board (any radio) | 3.24 (no Zadig; receive fixes itself; keeps the QRO cal) | tested (Proficio MKII), Pi |
 | Black Pill bootloader (ST-Link, new boards) | 2026-11-16 (WinUSB in flash mode) | tested on the Pi |
 
-All eight PSoC images and Black Pill 3.23 use the USB name Multus IQ; the MKII ones pass 0x9D (paddle Farnsworth) to the keyer (tested on all MKII radios).
+All eight PSoC images and the Black Pill use the USB name Multus IQ; the MKII ones pass 0x9D (paddle Farnsworth) to the keyer (tested on all MKII radios).
 
 Files: Windows `C:\mscc-net9\PSoC Firmware\` and `Black Pill Firmware\`; Pi `/usr/share/mscc/firmware/`.
 
@@ -63,6 +63,5 @@ Files: Windows `C:\mscc-net9\PSoC Firmware\` and `Black Pill Firmware\`; Pi `/us
 | Keyer bootloader (put on once with the PICkit) | version 2, in `Keyer-MCU-full-20261112.hex` | tested |
 | Keyer Firmware Update (window and command line) | R11-12-4 | tested on Windows and Raspberry Pi |
 
-Keyer Firmware Update needs radio firmware with the keyer update: Black Pill 3.16 or later, or the MKII
-PSoC versions in the table above. Files: Windows
+Keyer Firmware Update needs Black Pill 3.16 or later, or the MKII PSoC versions above. Files: Windows
 `C:\mscc-net9\Keyer Firmware\`, Raspberry Pi `/usr/share/mscc/firmware/keyer/`.

@@ -52,15 +52,8 @@ Reading / investigating is fine.
 
 **Current list (updated 2026-11-06, after bb31561):**
 - **WiFi SWR meter (Ron's copy `swr-meter/ron/HF_SWR_R4_1/`):** tune allowance, mDNS, WiFi retry, PEAK hold,
-  AVG, PEAK SWR all built and tested (details in `CLAUDE-history.md`, 2026-11-15 section). Open: Ron to decide if ms-sdr itself stops TX on a meter fault
-  (backstop for WSJT-X on the Pi keying via CAT; a server change, so it waits for the 2026-11-17 hold
-  on servers + clients until Stew sorts out the remote audio issue). Build: arduino-cli (FQBN + options in the history).
-- **Ron:** Option: NB threshold a bit right of middle (~5x, slider ~750) to also
-  catch the near misses (5.4-6.0x seen on 20 m).
-- **Ron (2026-11-15): CAT `SM` (S-meter read) in ms-sdr, all trees.** A real TS-2000 answers `SM0;` /
-  `SM1;` with `SM0nnnn;` (main 0000-0030; polled, not sent by AI). Our ms-sdr `comm-port.c` (Pi + Windows)
-  doesn't answer SM at all; `RM` answers fixed values (SWR 2 dots, COMP / ALC 0). recv already has the
-  S-meter value; map it to 0-30 dots. Not started.
+  AVG, PEAK SWR all built and tested (details in `CLAUDE-history.md`, 2026-11-15 section). The ms-sdr TX
+  backstop on a meter fault shipped in R11-19-0 (Pi only; history). Build: arduino-cli (FQBN + options in the history).
 - **Ron (2026-11-15): client tooltips, WPF AND Avalonia.** None of the 208 WPF text tooltips has a line
   break, so long ones show as one wide strip (64 over 70 chars; longest: two-tone test 264, PADDLE 207,
   Save settings 193, FARNSWORTH 162, AMP on 155, Launch Servers 147, Reset configuration 145). Split at
@@ -68,13 +61,19 @@ Reading / investigating is fine.
   configuration says calibration reloads from factory (it keeps all cal since 11-10); RX IQ APPLY ALL
   "PC files only" unchecked. Avalonia: same texts (several differ today, e.g. PADDLE shows 0x9D / cw.ini).
   Not started.
-- **Ron (2026-11-02): store QRO (amplifier) cal in the radio too.** Today ~/amplifier_cal.ini
-  (trans owns, ms-sdr amplifier.c reads, 12 bands, int; -99 = none). Room checked (code read only):
-  pill 3.12 = flash log sector 7, 128 KB, 16-byte entries, 4 value bytes: new type 8 (not 6 =
-  old clear), no layout change. PSoC MKII (ATU/PTT 3.238+) = EEPROM 2 KB = 128 rows; used rows
-  0, 1, 8-19 (cal row per band is full, byte 14 only spare); plan: 12 QRO rows 20-31, same
-  one-row-per-band write. Then ms-sdr load/send as QRP, trans save flag, Windows ms-sdr port,
-  client (Stew).
+- **Ron (2026-11-18): Remote Audio window says "VAC", WPF AND Avalonia (nit, after the Windows hold).**
+  Ron uses two audio adapters wired back to back, not VAC; the text is hard-coded. Change:
+  "DIGITAL RX (VAC)" -> "DIGITAL RX", "DIGITAL MIC TX (VAC)" -> "DIGITAL MIC TX", "Mute VAC play" ->
+  "Mute digital play" (WPF `RemoteAfWindow.xaml.cs` ~117/118/137; Avalonia `RemoteAfWindow.axaml.cs`
+  ~72/73/92), and the Avalonia Digital tooltip `RemoteAfWindow.axaml` ~23 "VAC for WSJT..." ->
+  "Audio devices for WSJT...". Not started.
+- **QRO cal in the radio: PSoC still to do (Ron: later).** The pill part shipped in R11-19-0 (pill 3.24,
+  Pi ms-sdr 3.214, trans 3.162; history). For the PSoC: same types (8 = int16 QRO per band, 9 = its
+  valid mask, read only; type 5 stays 6 bytes). PSoC MKII (ATU/PTT 3.238+) EEPROM 2 KB = 128 rows; used
+  rows 0, 1, 8-19 (cal row per band is full, byte 14 only spare); plan: 12 QRO rows 20-31, same
+  one-row-per-band write. Then a second line in ms-sdr `Radio_has_qro_store()`: PSoC and minor >= the
+  new PSoC version. QRP stays as is (Ron 2026-11-19): file values are NOT copied into the radio (no -99
+  marker, cal belongs to one radio); no version check needed.
 - **PSoC 12 kHz CW edge comb:** Stew's, PARKED on his side (3.244 / 3.245 failed; needs real USB vs DAC
   slot timing). Ron: leave it to Stew. Details + Ron's own-I/Q idea in `CLAUDE-history.md` (2026-11-15).
 - **Stand-alone keyer (Ron 2026-11-05, started; `worktrees/keyer-standalone`, pushed c46d5f2).**

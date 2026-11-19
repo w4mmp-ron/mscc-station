@@ -137,6 +137,11 @@ static void cat_tune_start_locked(void) {
         fprintf(G_fp_logfile, "[%d] CAT tune. AC111; ignored: TX inhibited\n", line_number++);
         return;
     }
+    if (G_swr_fault_tx_block) {             /* 2026-11-19: before the mode change below */
+        print_time(0);
+        fprintf(G_fp_logfile, "[%d] CAT tune. AC111; ignored: SWR meter fault not reset\n", line_number++);
+        return;
+    }
     cat_tune_mode_before = G_mode;
     print_time(0);
     fprintf(G_fp_logfile, "[%d] CAT tune. START %d s. mode before: %c, tune power: %d\n",
@@ -298,7 +303,7 @@ void *Pin_Check_Thread(void *param) {
         }
         if (previous_tx_mode != tx_mode) {
             Set_PTT(tx_mode,FALSE);
-            Gui_send_param(CMD_SET_TX_SET_BY_SERVER, tx_mode);
+            Gui_send_param(CMD_SET_TX_SET_BY_SERVER, G_PTT);   /* 2026-11-19: real state (TX may be refused) */
             previous_tx_mode = tx_mode;
             print_time(0);
             fprintf(G_fp_logfile, "[%d] Pin_Check_Thread. FINISHED. tx_mode: %d\n",
@@ -533,6 +538,49 @@ int parse_record(char *receive_buffer, int size) {
         write_to_comm_port(write_buffer, 8);
     }
 
+    record_start = strstr(receive_buffer, "SM");
+    if (record_start != NULL) {
+        command = SM;
+
+        // Kenwood TS-2000 SM (S-meter read): SMp; -> SMpnnnn;
+        //   p: 0 = main, 1 = sub (no sub receiver here: same value)
+        //   nnnn: 0000-0030 dots
+        // Scale points from Hamlib's TS-2000 table (dots -> dB from S9):
+        //   0=-54 3=-48 6=-36 9=-24 12=-12 15=S9 20=+20 25=+40 30=+60
+        // S9 = -73 dBm, the same as the client meter. 0 while transmitting.
+        static const int sm_dots[] = {0, 3, 6, 9, 12, 15, 20, 25, 30};
+        static const int sm_db[]   = {-54, -48, -36, -24, -12, 0, 20, 40, 60};
+        int meter_value = 0;
+        int db = (int)G_smeter_dBm + 73;            // dB from S9
+        int i;
+
+        write_buffer[0] = 'S';
+        write_buffer[1] = 'M';
+        write_buffer[2] = (record_start[2] == '1') ? '1' : '0';
+
+        if (G_PTT) {
+            meter_value = 0;
+        } else if (db <= sm_db[0]) {
+            meter_value = 0;
+        } else if (db >= sm_db[8]) {
+            meter_value = 30;
+        } else {
+            for (i = 1; i < 9; i++) {
+                if (db <= sm_db[i]) {
+                    int span_db = sm_db[i] - sm_db[i - 1];
+                    int span_dots = sm_dots[i] - sm_dots[i - 1];
+                    meter_value = sm_dots[i - 1] +
+                        ((db - sm_db[i - 1]) * span_dots + span_db / 2) / span_db;
+                    break;
+                }
+            }
+        }
+
+        UintToStr(&write_buffer[3], (uint32_t)meter_value, 4);
+        write_buffer[7] = ';';
+        write_to_comm_port(write_buffer, 8);
+    }
+
     record_start = strstr(receive_buffer, "FW;");
     if (record_start != NULL) {
         command = FW;
@@ -686,7 +734,7 @@ int parse_record(char *receive_buffer, int size) {
         tx_mode = 1;
         cat_tune_stop_for_ptt();
         Set_PTT(tx_mode,FALSE);
-        Gui_send_param(CMD_SET_TX_SET_BY_SERVER, tx_mode);
+        Gui_send_param(CMD_SET_TX_SET_BY_SERVER, G_PTT);   /* 2026-11-19: real state (TX may be refused) */
         print_time(0);
         fprintf(G_fp_logfile, "[%d] parse_record. TX Received (%s).\n", line_number++, tx_form);
     }

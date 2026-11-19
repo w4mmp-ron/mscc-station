@@ -104,6 +104,10 @@
 #define CMD_GET_BAND_POWER 0xB4 
 #define CMD_GET_MIA_STATUS 0xBE
 #define CMD_SET_AMPLIFIER_CALIBRATION_RESET 0x10
+/* 3.162 (2026-11-19): ms-sdr -> trans only. One band's QRO (amplifier) cal from the radio
+ * at startup: int32 = record (bits 0-7, 0 = 160 m ... 11 = 2200 m) | int16 value << 8.
+ * Trans keeps it and saves amplifier_cal.ini. (0xF8 was the unused CMD_SET_AMPLIFIER.) */
+#define CMD_SET_AMPLIFIER_CAL_RECORD 0xF8
 
 //Band Stacking defines
 #define CMD_SET_UPDATE_BAND_STACK  0xC1
