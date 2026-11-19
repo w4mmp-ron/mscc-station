@@ -13,7 +13,7 @@ On start: `git pull`, then read [`handoff.md`](handoff.md). If `.mscc-coord/COMM
 
 ## Current work
 
-**Active — cmd-086b (windows-shack / Shack):** WPF client, 11.15.0 → 11.16.2 (matches the next installer, R11-16-2; bump-client-version.ps1 writes ClientVersion.txt). REVISION 1: passband is a 12% sky-blue tint RGB(32,176,255); horizontal dB grid is drawn through the passband. Edge colour stays sky blue. SCOPE still skips the tint. Brief: `.mscc-coord/cmd-086b-wpf-filter-transparency-brief.md`. Commit only when Stew says "finished"; include `.mscc-coord/NOTE-FOR-RON-RELEASE-NUMBERS-2026-11-16.md`. Do not push. Avalonia half is already on main (cmd-086, 993a5d92, 1.7.06).
+**Active — cmd-088 (windows-shack / Shack):** done locally, not pushed. WPF 11.18.4 and MsccRemotePhones hand WaveIn buffers out oldest-first (`OrderedWaveIn`). SA test passed. No installer in this step; the client drop-in is `C:\mscc-net9\MSCC.Wpf.exe`. Brief: `.mscc-coord/cmd-088-wavein-buffer-order-fix-brief.md`. Stew pushes. Leave NEW-HP alone.
 
 Older notes below are stale as of 2026-10-07. Check `.mscc-coord/COMMANDS.yaml` and [`handoff.md`](handoff.md) for historical open / pending items.
 

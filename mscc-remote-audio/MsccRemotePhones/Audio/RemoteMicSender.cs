@@ -12,7 +12,7 @@ namespace MsccRemotePhones.Audio;
 /// </summary>
 public sealed class RemoteMicSender : IDisposable
 {
-    private WaveInEvent? _waveIn;
+    private OrderedWaveIn? _waveIn;
     private UdpClient? _udp;
     private IPEndPoint? _ep;
     private readonly object _gate = new();
@@ -113,7 +113,7 @@ public sealed class RemoteMicSender : IDisposable
         {
             try
             {
-                var wi = new WaveInEvent
+                var wi = new OrderedWaveIn
                 {
                     DeviceNumber = waveDev,
                     WaveFormat = new WaveFormat(_sampleRate, 16, ch),
@@ -275,10 +275,12 @@ public sealed class RemoteMicSender : IDisposable
     public void Stop()
     {
         IsRunning = false;
+        var (late, maxq) = (0, 0);
         try
         {
             if (_waveIn is not null)
             {
+                (late, maxq) = _waveIn.TakeTimingStats();
                 _waveIn.DataAvailable -= OnDataAvailable;
                 _waveIn.StopRecording();
             }
@@ -291,7 +293,7 @@ public sealed class RemoteMicSender : IDisposable
         _ep = null;
         DeviceName = null;
         _packetSamples = 0;
-        Log?.Invoke("Mic TX stopped");
+        Log?.Invoke($"Mic TX stopped late={late} maxq={maxq}");
     }
 
     public void Dispose() => Stop();

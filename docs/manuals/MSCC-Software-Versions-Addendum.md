@@ -18,14 +18,14 @@ when only version numbers do. Downloads and what changed in each release:
 
 | Program | Windows | Raspberry Pi |
 |---|---|---|
-| MSCC client | WPF, title bar 11.18.3 | MSCC Avalonia 1.7.04 (optional) |
+| MSCC client | WPF, title bar 11.18.4 | MSCC Avalonia 1.7.04 (optional) |
 | ms-sdr (server) | 3.214 | 3.211 |
 | recv (receive server) | 3.155 | 3.156 |
 | trans (transmit server) | 3.159 | 3.161 |
 
 Avalonia 1.7.06 is built and tested on Ubuntu: the filter passband is lighter so signals inside it stay visible, and the filter edges are sky blue to match WPF. Packages 12.1.6, the AGC button text, CMP greyed in Digital, QRP/AMP last-tuned frequency, and AGC FAST RELEASE 0–2000 ms are still in this build. It is not built for the Pi; the Pi package stays 1.7.04. LF not yet tested on Geminus.
 
-WPF 11.18.3 is the same code as 11.16.2 (lighter filter fill); only the number changed, to match R11-18-3.
+WPF 11.18.4 hands mic buffers out in fill order. Smoked on the SA. No new installer yet.
 
 Pi ms-sdr 3.211 says "RECEIVE FIXED ITSELF" when a Black Pill fixed its receive. Windows ms-sdr 3.214 uses the Zadig driver or Windows' own WinUSB driver, whichever is there. With Black Pill 3.17 or later no Zadig is needed. It also fixes the WiFi SWR meter link on Windows.
 

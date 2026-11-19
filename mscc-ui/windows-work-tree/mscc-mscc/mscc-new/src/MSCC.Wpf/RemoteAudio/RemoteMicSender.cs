@@ -15,7 +15,7 @@ namespace MSCC.Wpf.RemoteAudio;
 /// </summary>
 public sealed class RemoteMicSender : IDisposable
 {
-    private WaveInEvent? _waveIn;
+    private OrderedWaveIn? _waveIn;
     private UdpClient? _udp;
     private IPEndPoint? _ep;
     private readonly object _gate = new();
@@ -130,10 +130,10 @@ public sealed class RemoteMicSender : IDisposable
         // Prefer mono 48 kHz; fall back to stereo then downmix
         foreach (var ch in new[] { 1, 2 })
         {
-            WaveInEvent? wi = null;
+            OrderedWaveIn? wi = null;
             try
             {
-                wi = new WaveInEvent
+                wi = new OrderedWaveIn
                 {
                     DeviceNumber = waveDev,
                     WaveFormat = new WaveFormat(_sampleRate, 16, ch),
@@ -440,7 +440,8 @@ public sealed class RemoteMicSender : IDisposable
                     unders = _underruns;
                     _underruns = 0;
                 }
-                Log?.Invoke($"Mic TX {n} pkts → {ep} peak={peak} drops={drops} underruns={unders}");
+                var (late, maxq) = _waveIn?.TakeTimingStats() ?? (0, 0);
+                Log?.Invoke($"Mic TX {n} pkts → {ep} peak={peak} drops={drops} underruns={unders} late={late} maxq={maxq}");
             }
         }
         catch (Exception ex)

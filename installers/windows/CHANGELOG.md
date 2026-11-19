@@ -2,6 +2,14 @@
 
 Installer: `mscc-net9-R<version>-install.exe` (WPF client + Windows servers). Install the newest one; older installers in this folder are kept for roll-back only.
 
+## WPF 11.18.4 — 2026-11-18  (not a new Windows installer; drop-in to C:\mscc-net9)
+
+### Fixed
+- Remote digital transmit no longer scrambles 10 ms microphone chunks when the capture thread wakes late. Buffers are handed out oldest first. The debug log adds late= and maxq=.
+
+### Tested
+- Built and smoked on Shack (spectrum analyzer, WSJT-X TUNE, drive and mic-gain sliders). No new Windows installer in this step.
+
 ## R11-18-3 — 2026-11-18  (WPF 11.18.3 = 11.16.2 code, new number only; Black Pill 3.23; servers unchanged: ms-sdr 3.214, recv 3.155, trans 3.159)
 
 ### Changed
