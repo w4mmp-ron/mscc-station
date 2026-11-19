@@ -1,6 +1,6 @@
 # MSCC Software Versions Addendum
 
-**Release R11-18-3** · 2026-11-18
+**Release R11-18-4** · 2026-11-18
 
 The Operator's Guides describe how MSCC works; this addendum lists the version numbers that
 go with the current release. It is updated with every release, so the guides don't change
@@ -11,7 +11,7 @@ when only version numbers do. Downloads and what changed in each release:
 
 | Computer | File |
 |---|---|
-| Windows | `mscc-net9-R11-18-3-install.exe` (installs to `C:\mscc-net9`; uninstall from Apps & features) |
+| Windows | `mscc-net9-R11-18-4-install.exe` (installs to `C:\mscc-net9`; uninstall from Apps & features) |
 | Raspberry Pi (64-bit Pi OS, Pi 4 / Pi 5) | `mscc_1.0.100_arm64.deb` (required) and `mscc-avalonia_1.7.04_arm64.deb` (optional, on the R11-16-1 release) |
 
 ## MSCC programs
@@ -25,7 +25,7 @@ when only version numbers do. Downloads and what changed in each release:
 
 Avalonia 1.7.06 is built and tested on Ubuntu: the filter passband is lighter so signals inside it stay visible, and the filter edges are sky blue to match WPF. Packages 12.1.6, the AGC button text, CMP greyed in Digital, QRP/AMP last-tuned frequency, and AGC FAST RELEASE 0–2000 ms are still in this build. It is not built for the Pi; the Pi package stays 1.7.04. LF not yet tested on Geminus.
 
-WPF 11.18.4 hands mic buffers out in fill order. Smoked on the SA. No new installer yet.
+WPF 11.18.4 fixes the bursts beside the carrier in remote digital transmit.
 
 Pi ms-sdr 3.211 says "RECEIVE FIXED ITSELF" when a Black Pill fixed its receive. Windows ms-sdr 3.214 uses the Zadig driver or Windows' own WinUSB driver, whichever is there. With Black Pill 3.17 or later no Zadig is needed. It also fixes the WiFi SWR meter link on Windows.
 

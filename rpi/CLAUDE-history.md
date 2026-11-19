@@ -2130,3 +2130,8 @@ Remote Digital TX spurs (Stew's NOTE-FOR-RON-REMOTE-DIGITAL-TX-SPURS-2026-11-17)
 
 - Pi trans 3.161: POWER_CAL_SAVE_DELAY 500 -> 5000 loops (QRP power_cal.ini / QRO amplifier_cal.ini saved once the slider has been still 5 s, like ms-sdr's radio save; was every 0.5 s pause); CMD_SET_STOP flushes a pending cal save; File_content_same(): power.ini and amplifier_cal.ini not rewritten when unchanged (the client re-sends the power settings at every connect / cal tab). Tested: 75-step slider run = one write 5 s after the last step (17 m QRO -26); same value = 'Unchanged, not written'; Main click reloads the tables (17 m factor 0.74, drive 0.2294). Not on Windows (hold): listed for Stew.
 - Windows R11-18-3: WPF renumbered 11.18.3 only. Pi mscc 1.0.100: only sdrcore-trans changed vs 1.0.99.
+
+## Release R11-18-4 (2026-11-18)
+
+- Windows R11-18-4: WPF 11.18.4 = Stew's 7d9439c5 (remote mic: WaveIn buffers handed out oldest first, late= / maxq= in the Mic TX log line), built as he committed it (Ron OK'd building Stew's source). Windows servers and Black Pill 3.23 unchanged. Pi mscc 1.0.100 unchanged (attached again).
+- New: .mscc-coord/PLAN-FOR-RON-HEATSINK-POWER-COMPENSATION-2026-11-18.md (heat sink power compensation, starts when the thermistor is fitted; today no server compensates).
