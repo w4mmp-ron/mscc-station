@@ -63,10 +63,23 @@ The Pi and Windows servers do the same job and are kept functionally identical (
    - Windows: build the servers and/or the client, run `pwsh mscc-ui/installer/windows/stage.ps1`,
      set `AppVersion` and `SetupFileName` in `MSCC.aip`, run
      `"C:\Program Files (x86)\Actual Installer\actinst.exe" /S MSCC.aip` -> `installers/windows/`.
+     - **Client number = R number** (R11-19-1 -> 11.19.1). `ClientVersion.txt` counts itself on
+       every build: the first build of a day gives M.D.0, each later build +1. **Build the client
+       once** per R number (a second build bumps it again); if the number is off, set
+       `ClientVersion.txt` to one less and build once more. For a number-only build that leaves
+       `C:\mscc-net9` alone: `dotnet build MSCC.Wpf.csproj -c Release -p:CustomAfterMicrosoftCommonTargets=<file>`,
+       where the file holds `<Project><Target Name="CopyToMsccNet9" /></Project>`.
+     - **stage.ps1 copies the client from the local WPF build.** Afterwards run
+       `git status mscc-ui/installer/windows/payload` and look: only the files that belong in this
+       release may change. If the payload already had a newer client or servers (the other person's
+       pushed build), restore those payload files from git.
    - Pi: new server binaries into `rpi/mscc-binaries/`, bump `Version:` in
      `rpi/mscc-deb/packaging/DEBIAN/control`, build the .deb, compare it file by file with the last
      one -> `installers/rpi/` (old one to `installers/rpi/old/`). `mscc-avalonia` only if the
      client changed.
+     - **File-by-file check:** unpack both (`dpkg-deb -R old.deb old`, `dpkg-deb -R new.deb new`),
+       md5sum every file, diff the lists. Only the expected files may differ (control, the changed
+       servers, firmware), and the file count stays the same unless a file was meant to be added.
    - Debian amd64 .debs: once the Debian work is done.
 3. **Docs:** the Addendum (`python docs/manuals/make-addendum-pdf.py`, keep it to 2 pages), the
    Updating Firmware guide if a firmware tool or step changed (`python docs/manuals/make-addendum-pdf.py MSCC-Updating-Firmware.md`),
@@ -115,5 +128,12 @@ If nothing installable changed, "finished" is just the commit and push; no new r
 - **Actual Installer:** run actinst from **PowerShell** (Git Bash turns `/S` into a path and the GUI
   opens). If it sits at 0 % CPU with no .exe, it's showing a hidden "subscribe to our newsletter?"
   box: answer No. Keep `MSCC.aip` at one UTF-8 BOM (a doubled BOM makes actinst exit 1).
+- **`MSCC.aip` settings (don't guess them):** `UpgradeMode` must stay **0** (at 2 the installer
+  refuses a fresh install: "This update program cannot continue"). `IfInstalled=2` = install over
+  the old version without asking (0 = ask to uninstall, 1 = uninstall silently, 4 = ask the user).
+  `Uninstall=1` + `ShowAddRemove=1` = uninstaller + Apps & features entry (settings in
+  `%LOCALAPPDATA%\MSCC-NET9` are kept). Before changing any key, look it up in Actual Installer's
+  help (`hh.exe -decompile` on its `Help.chm`), and test a fresh install, an install over it, and
+  an uninstall.
 - **Pi .deb from Windows:** build from a /tmp copy in WSL Debian, with CR stripped from text files
   (not from `.hex` / `.cyacd`).
