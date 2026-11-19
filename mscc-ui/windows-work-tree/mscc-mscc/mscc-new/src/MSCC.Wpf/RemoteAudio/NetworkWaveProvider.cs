@@ -15,6 +15,7 @@ public sealed class NetworkWaveProvider : IWaveProvider
     private readonly PlaybackEq? _eq;
     private volatile float _volume = 1f;
     private volatile bool _muted;
+    private volatile bool _txSilence;
 
     public NetworkWaveProvider(JitterBuffer buffer, int sampleRate, PlaybackEq? eq = null)
     {
@@ -41,6 +42,13 @@ public sealed class NetworkWaveProvider : IWaveProvider
         set => _muted = value;
     }
 
+    /// <summary>Digital TX guard: silence while keyed. The jitter buffer still drains.</summary>
+    public bool TxSilence
+    {
+        get => _txSilence;
+        set => _txSilence = value;
+    }
+
     public int Read(byte[] buffer, int offset, int count)
     {
         // count is bytes; stereo s16 → 4 bytes per frame
@@ -59,7 +67,7 @@ public sealed class NetworkWaveProvider : IWaveProvider
 
         _buffer.ReadSamples(_srcScratch.AsSpan(0, srcSamplesNeeded), srcCh);
 
-        float vol = _muted ? 0f : _volume;
+        float vol = (_muted || _txSilence) ? 0f : _volume;
         var eq = _eq;
         int bi = offset;
         if (srcCh == 1)

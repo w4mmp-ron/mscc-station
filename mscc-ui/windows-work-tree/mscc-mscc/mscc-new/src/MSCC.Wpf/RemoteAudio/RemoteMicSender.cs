@@ -33,12 +33,27 @@ public sealed class RemoteMicSender : IDisposable
     private long _packetsSent;
     private long _samplesSent;
     private int _peakAbs;
+    private long _silenceUntilTicks;
+    private int _idleSilence;
+    private int _rampSamplesLeft;
 
     public const int DefaultTxPort = 9101;
     public const int FramesPerPacket = 480; // 10 ms @ 48 kHz
     public const int CaptureBufferMilliseconds = 10;
     public const int CaptureBufferCount = 8; // 80 ms in the driver so a short stall cannot drop
     public const int CushionMilliseconds = 60;
+    public const int TxSilenceDumpMilliseconds = 400;
+    public const int TxLevelRampSamples = 240; // 5 ms @ 48 kHz, raised cosine 0 → 1
+
+    private static readonly float[] TxLevelRampGain = BuildTxLevelRamp();
+
+    private static float[] BuildTxLevelRamp()
+    {
+        var gain = new float[TxLevelRampSamples];
+        for (int i = 0; i < TxLevelRampSamples; i++)
+            gain[i] = (float)(0.5 * (1.0 - Math.Cos(Math.PI * (i + 1) / TxLevelRampSamples)));
+        return gain;
+    }
 
     public event Action<string>? Log;
 
@@ -51,6 +66,66 @@ public sealed class RemoteMicSender : IDisposable
     {
         get => _volume;
         set => _volume = Math.Clamp(value, 0f, 1f);
+    }
+
+    /// <summary>
+    /// For 400 ms, captured samples and anything already queued are sent as zero.
+    /// Packet rate and sequence numbers are unchanged.
+    /// </summary>
+    public void BeginTxSilenceDump()
+    {
+        long until = Stopwatch.GetTimestamp()
+            + (Stopwatch.Frequency * TxSilenceDumpMilliseconds) / 1000;
+        Volatile.Write(ref _silenceUntilTicks, until);
+        ZeroQueuedSamples();
+    }
+
+    /// <summary>Leave the post-key-down window. Used when Digital is left so Phones is not clipped.</summary>
+    public void CancelTxSilenceDump()
+    {
+        Volatile.Write(ref _silenceUntilTicks, 0);
+    }
+
+    /// <summary>Phones path: open at full level. Digital arms the ramp again the next time it is silenced.</summary>
+    public void CancelLevelRamp()
+    {
+        lock (_gate)
+            _rampSamplesLeft = 0;
+    }
+
+    /// <summary>
+    /// Digital receive: send zeros the whole time the radio is not keyed, including samples
+    /// already queued. Packet rate and sequence numbers are unchanged.
+    /// </summary>
+    public void SetIdleSilence(bool silence)
+    {
+        Volatile.Write(ref _idleSilence, silence ? 1 : 0);
+        if (silence)
+            ZeroQueuedSamples();
+    }
+
+    private bool InTxSilenceDump()
+    {
+        long until = Volatile.Read(ref _silenceUntilTicks);
+        return until != 0 && Stopwatch.GetTimestamp() < until;
+    }
+
+    private bool InIdleSilence() => Volatile.Read(ref _idleSilence) != 0;
+
+    /// <summary>Replace queued samples with zero. Does not change how many are queued. Arms the open ramp.</summary>
+    private void ZeroQueuedSamples()
+    {
+        lock (_gate)
+        {
+            int idx = _ringRead;
+            for (int n = 0; n < _ringCount; n++)
+            {
+                _ring[idx] = 0;
+                if (++idx >= _ring.Length)
+                    idx = 0;
+            }
+            _rampSamplesLeft = TxLevelRampSamples;
+        }
     }
 
     public static IReadOnlyList<(int Index, string Name)> ListCaptureDevices()
@@ -261,6 +336,21 @@ public sealed class RemoteMicSender : IDisposable
                     int al = l < 0 ? -l : l;
                     int ar = r < 0 ? -r : r;
                     mono = al >= ar ? l : r;
+                }
+
+                if (InTxSilenceDump() || InIdleSilence())
+                {
+                    mono = 0;
+                    _rampSamplesLeft = TxLevelRampSamples;
+                }
+                else if (_rampSamplesLeft > 0)
+                {
+                    int i = TxLevelRampSamples - _rampSamplesLeft;
+                    int v = (int)Math.Round(mono * TxLevelRampGain[i]);
+                    if (v > short.MaxValue) v = short.MaxValue;
+                    if (v < short.MinValue) v = short.MinValue;
+                    mono = (short)v;
+                    _rampSamplesLeft--;
                 }
 
                 if (vol < 0.999f)

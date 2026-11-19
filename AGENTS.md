@@ -70,7 +70,7 @@ uploaded sizes. When Stew publishes a release himself, he attaches all the files
 
 ## Current work
 
-**Active — cmd-088 (windows-shack / Shack):** done locally, not pushed. WPF 11.18.4 and MsccRemotePhones hand WaveIn buffers out oldest-first (`OrderedWaveIn`). SA test passed. No installer in this step; the client drop-in is `C:\mscc-net9\MSCC.Wpf.exe`. Brief: `.mscc-coord/cmd-088-wavein-buffer-order-fix-brief.md`. Stew pushes. Leave NEW-HP alone.
+**Active — cmd-089 (windows-shack / Shack):** pushed. WPF 11.19.2 drop-in only. Remote Digital mutes receive playback while keyed, sends mic silence while not transmitting, zeros the mic for 400 ms after key-down, then ramps to full over 5 ms. 11.19.1 stays R11-19-1 (number only). No new installer and no GitHub Release. Brief: `.mscc-coord/cmd-089-one-cable-digital-tx-guard-brief.md`. Leave NEW-HP, rpi/, Solidus/, and Avalonia alone.
 
 Older notes below are stale as of 2026-10-07. Check `.mscc-coord/COMMANDS.yaml` and [`handoff.md`](handoff.md) for historical open / pending items.
 

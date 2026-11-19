@@ -13,6 +13,7 @@ public sealed class RemotePhonePlayer : IDisposable
     private int _sampleRate = MsccAudioProtocol.DefaultSampleRate;
     private float _volume = 1f;
     private bool _muted;
+    private bool _txSilence;
 
     public event Action<string>? Log;
 
@@ -41,6 +42,18 @@ public sealed class RemotePhonePlayer : IDisposable
             _muted = value;
             if (_provider is not null)
                 _provider.Muted = value;
+        }
+    }
+
+    /// <summary>Digital TX guard. Separate from <see cref="Muted"/> so key-up restores the slider mute.</summary>
+    public bool TxSilence
+    {
+        get => _txSilence;
+        set
+        {
+            _txSilence = value;
+            if (_provider is not null)
+                _provider.TxSilence = value;
         }
     }
     public int BufferedMs
@@ -96,6 +109,7 @@ public sealed class RemotePhonePlayer : IDisposable
         {
             Volume = _volume,
             Muted = _muted,
+            TxSilence = _txSilence,
         };
 
         Exception? last = null;

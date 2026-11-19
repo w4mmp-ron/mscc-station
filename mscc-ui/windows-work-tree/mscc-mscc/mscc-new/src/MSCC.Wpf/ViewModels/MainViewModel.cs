@@ -712,6 +712,7 @@ public partial class MainViewModel : ObservableObject, IDisposable
     private bool _remoteMonitorAtRadio;
 
     internal RemoteAfEngine? RemoteAf { get; private set; }
+    private bool _remoteTxGuard;
     internal KenwoodCatPort? RemoteCat { get; private set; }
     internal event Action<string>? RemoteAfLog;
 
@@ -855,6 +856,7 @@ public partial class MainViewModel : ObservableObject, IDisposable
         // Keep the Phones / Digital choice across starts (Remote itself still starts off).
         SpectrumWaterfallSettings.RemoteDigital = value;
         try { SpectrumWaterfallSettings.Save(); } catch { /* best-effort */ }
+        UpdateRemoteDigitalTxGuard();
         if (!RemoteAudio) return;
         PushAudioToRadio(value ? "R-path→D" : "R-path→P");
         ApplyRemoteAfDevicesAndRestart(value ? "R-path→D" : "R-path→P");
@@ -874,6 +876,7 @@ public partial class MainViewModel : ObservableObject, IDisposable
             finally { _suppressAudioDeviceSend = false; }
             MonitorTextBoxText(" Remote Audio blocked: Launch Servers / local 127.0.0.1 owns CAT. Connect-only to a remote host to use Remote.");
             PersistLocalAndRemote();
+            UpdateRemoteDigitalTxGuard();
             return;
         }
         PersistLocalAndRemote();
@@ -887,6 +890,7 @@ public partial class MainViewModel : ObservableObject, IDisposable
             PushAudioToRadio("Remote OFF");
             StopRemoteAf(closeWindow: true);
         }
+        UpdateRemoteDigitalTxGuard();
         NotifyMainOperatePower();
     }
 
@@ -915,6 +919,8 @@ public partial class MainViewModel : ObservableObject, IDisposable
         RemoteAf.MicVolume = SpectrumWaterfallSettings.RemoteMicVolumeLinear(RemoteDigitalAudio);
         RemoteAf.PlayMuted = SpectrumWaterfallSettings.RemotePlayMute;
         ApplyRemoteAfDevices();
+        // Before capture, so the first Digital receive packets are already silence.
+        RemoteAf.ApplyDigitalGuard(RemoteDigitalAudio, PttOn || TuneMode);
         try
         {
             RemoteAf.StartRx();
@@ -937,6 +943,7 @@ public partial class MainViewModel : ObservableObject, IDisposable
             MonitorTextBoxText(" CAT idle (phones remote — PTT/tune in MSCC)");
         }
         ShowRemoteAfWindow();
+        UpdateRemoteDigitalTxGuard();
     }
 
     private void StopRemoteAf(bool closeWindow)
@@ -1245,6 +1252,7 @@ public partial class MainViewModel : ObservableObject, IDisposable
     [ObservableProperty] private bool _tuneMode;
     partial void OnTuneModeChanged(bool value)
     {
+        UpdateRemoteDigitalTxGuard();
         // 11.2.0: with 2 TONE armed, TUN sends the two-tone test signal in SSB instead of a carrier
         if (value && TwoToneArmed)
         {
@@ -1401,9 +1409,29 @@ public partial class MainViewModel : ObservableObject, IDisposable
         if (!_suppressTransmitCommands && !TxSetByServer)
             _ = _radioService.SetTransmitAsync(value);
         MonitorTextBoxText($" PttOn set: {value}");
+        UpdateRemoteDigitalTxGuard();
         // Returning to RX: clear ALC if neither PTT nor TUN is keyed
         MaybeZeroAlcMeterOnRx();
         UpdateShowExternalSwrFace();
+    }
+
+    /// <summary>
+    /// Remote Digital only. While not keyed the mic sends zeros. While keyed, receive playback
+    /// is silence (jitter buffer keeps running) and the mic sends zeros for 400 ms after key-down.
+    /// Phones remote is left alone.
+    /// </summary>
+    private void UpdateRemoteDigitalTxGuard()
+    {
+        bool inDigital = RemoteAudio && RemoteDigitalAudio;
+        bool keyed = PttOn || TuneMode;
+        bool guard = inDigital && keyed;
+        RemoteAf?.ApplyDigitalGuard(inDigital, keyed);
+        if (guard == _remoteTxGuard)
+            return;
+        _remoteTxGuard = guard;
+        MonitorTextBoxText(guard
+            ? " Remote AF: TX guard — RX playback muted, mic dump 400 ms"
+            : " Remote AF: TX guard off");
     }
 
     /// <summary>Voice/digital TX needs a local mic for the current audio path. Null = OK to key.</summary>

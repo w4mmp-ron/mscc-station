@@ -56,6 +56,36 @@ public sealed class RemoteAfEngine : IDisposable
         set => _player.Muted = value;
     }
 
+    private bool _transmitting;
+
+    /// <summary>
+    /// Remote Digital only. While not keyed the mic sends zeros, so the Pi transmit buffer
+    /// is silence at key-down. While keyed, receive playback is silence and the mic stays
+    /// zero for 400 ms after key-down, then rises to full over 5 ms. Packets stay on cadence.
+    /// A repeat call does not restart the 400 ms window.
+    /// </summary>
+    public void ApplyDigitalGuard(bool inDigital, bool keyed)
+    {
+        bool transmitting = inDigital && keyed;
+        bool rising = transmitting && !_transmitting;
+        if (!inDigital)
+        {
+            _mic.CancelTxSilenceDump();
+            _mic.CancelLevelRamp();
+        }
+        // Arm the dump before live samples are allowed, and silence the queue before playback resumes.
+        if (rising)
+            _mic.BeginTxSilenceDump();
+        if (inDigital && !keyed)
+            _mic.SetIdleSilence(true);
+        if (transmitting != _transmitting)
+        {
+            _transmitting = transmitting;
+            _player.TxSilence = transmitting;
+        }
+        _mic.SetIdleSilence(inDigital && !keyed);
+    }
+
     public float MicVolume
     {
         get => _mic.Volume;

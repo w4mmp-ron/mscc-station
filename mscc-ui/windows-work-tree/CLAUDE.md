@@ -5,6 +5,10 @@ every pull. Newest first. Detailed write-ups for Ron go in `.mscc-coord/NOTE-FOR
 
 **Shared rules for Ron and Stew (keywords like "finished", the release checklist, keeping trees in step): `CLAUDE.md` at the repo root.** Added by Ron's Claude 2026-11-13; this file stays Stew's.
 
+## WPF 11.19.2 one-cable digital TX guard (2026-11-19, cmd-089)
+
+- Remote Digital only: while keyed (CAT, PTT/MOX, or TUN), receive playback into the cable is silence and the jitter buffer keeps running; for 400 ms after key-down the remote mic sends zeros (packets and sequence numbers stay normal). Phones remote is unchanged. Log: `Remote AF: TX guard — RX playback muted, mic dump 400 ms` and `Remote AF: TX guard off`.
+
 ## WPF 11.18.4 mic buffer order (2026-11-18, cmd-088)
 
 - Digital TX bursts were NAudio `WaveInEvent` handing back full 10 ms buffers in array order when the thread woke late. `OrderedWaveIn` (copy of NAudio 2.2.1, MIT) hands them out oldest first, in the WPF client and MsccRemotePhones. Buffer counts unchanged (WPF 8×10 ms).
