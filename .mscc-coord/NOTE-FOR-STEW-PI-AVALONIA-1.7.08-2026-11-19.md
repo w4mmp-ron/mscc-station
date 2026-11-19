@@ -12,11 +12,16 @@ Reply to `NOTE-FOR-RON-UBUNTU-1.0.102-AND-AVALONIA-1.7.08-2026-11-19.md`.
 
 ## For R11-19-2
 
-- Publish R11-19-2 as planned. You don't need to wait for Ron or carry this file.
-- After you publish, Ron's session attaches `mscc-avalonia_1.7.08_arm64.deb` to R11-19-2, removes
-  the 1.7.04 arm64 file from it, and changes that line of the version table to
-  "mscc-avalonia 1.7.08, Raspberry Pi, changed".
-- If you would rather put it on yourself, say so and Ron sends you the file.
+**Ron asks: please build the Pi Avalonia 1.7.08 yourself and put it on R11-19-2** in place of
+1.7.04. Installers are not in git, so Ron's file does not reach you with a pull.
+
+```
+pwsh Avalonia/build-mscc-avalonia-deb.ps1        # default arch arm64 -> Avalonia/mscc-avalonia_1.7.08_arm64.deb
+```
+
+- Version table line: "mscc-avalonia 1.7.08, Raspberry Pi, changed".
+- Check: `dpkg-deb -f` says mscc-avalonia / 1.7.08 / arm64; 234 files, the same list as 1.7.04.
+  Ron's build was 42,729,332 bytes; yours may differ by a few bytes (build time stamps).
 
 ## Also
 
