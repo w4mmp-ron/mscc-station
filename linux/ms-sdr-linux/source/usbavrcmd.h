@@ -50,7 +50,7 @@
 //   0xC0       CMD_SET_S_METER (pill / PSoC usbvend.h still name it, unused)
 //   0xC1, 0xC2, 0xC4  CMD_SET_FAVS_UPDATE / GET_FAVS / SET_FAVS_DELETE
 //              (sdrcore-trans names them band stack, unused)
-//   0xF8       CMD_SET_AMPLIFIER
+//   (0xF8 taken 2026-11-19: CMD_SET_AMPLIFIER_CAL_RECORD, ms-sdr -> trans only)
 //
 // Reclaimed 2026-11-10 (server last-used band stack removed from Pi + Windows
 // ms-sdr; it was never started and the client keeps its own last-used):
@@ -235,6 +235,7 @@
 #define FW 11
 #define KS 12
 #define RM 13
+#define SM 14
 #define NO_COMMAND_FOUND 100
 
 #define CMD_GET_SET_COMM_PORT 0x40
@@ -507,7 +508,10 @@
 #define CMD_GET_SET_MSSDR_STATUS 0xF5
 #define CMD_SET_BAND 0xF6
 #define CMD_SET_PA_BYPASS 0xF7
-//#define CMD_SET_AMPLIFIER 0xF8  /* reclaimed 2026-11-05 */
+/* 2026-11-19 (was the reclaimed CMD_SET_AMPLIFIER): ms-sdr -> sdrcore-trans only. One band's QRO
+ * cal read from the radio at startup: int32 = record (bits 0-7, 0 = 160 m ... 11 = 2200 m)
+ * | int16 value << 8. Trans 3.162+ keeps it and saves amplifier_cal.ini. */
+#define CMD_SET_AMPLIFIER_CAL_RECORD 0xF8
 #define CMD_SET_AMPLIFIER_INITIALIZE 0xF9  
 #define CMD_SET_AMPLIFIER_POWER 0xFA
 #define CMD_GET_AMPLIFIER_POWER 0xFB

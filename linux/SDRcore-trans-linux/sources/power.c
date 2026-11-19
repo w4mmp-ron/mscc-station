@@ -229,9 +229,26 @@ void Init_Proficio_User_power() {
     }
 }
 
+/* 3.161 (Ron 2026-11-18): TRUE when the file at path already holds exactly text. The power
+ * commands (TUNE / SSB / CW / AM / FM power) arrive again at every connect and cal tab change
+ * with the same values, and each one rewrote power.ini and amplifier_cal.ini; now an unchanged
+ * file is left alone. */
+int File_content_same(const char *path, const char *text) {
+    char buf[4096];
+    size_t n, len = strlen(text);
+    FILE *f;
+
+    if (len >= sizeof (buf) || (f = fopen(path, "r")) == NULL)
+        return FALSE;
+    n = fread(buf, 1, sizeof (buf), f);
+    fclose(f);
+    return (n == len && memcmp(buf, text, len) == 0);
+}
+
 int Update_Proficio_User_Power_ini() {
     FILE *fp_Power_ini;
     char l_path[PATH_MAX] = {0};
+    char text[256];
     const char* homedir;
 
     print_time();
@@ -242,12 +259,18 @@ int Update_Proficio_User_Power_ini() {
         strcat(l_path, "/power.ini");
         print_time();
         fprintf(G_fp_logfile, "[%d] Update_Proficio_User_Power_ini.  Path: %s\n", line_number++, l_path);
+        snprintf(text, sizeof (text),
+                 "USB_POWER=%d,LSB_POWER=%d,AM_POWER=%d,CW_POWER=%d,TUNE_POWER=%d,FM_POWER=%d;\n",
+                 G_power_levels.usb_power, G_power_levels.lsb_power, G_power_levels.am_power,
+                 G_power_levels.cw_power, G_power_levels.tune_power, G_power_levels.fm_power);
+        if (File_content_same(l_path, text)) {
+            print_time();
+            fprintf(G_fp_logfile, "[%d] Update_Proficio_User_Power_ini. Unchanged, not written\n", line_number++);
+            return 1;
+        }
         fp_Power_ini = fopen(l_path, "w");
         if (fp_Power_ini != NULL) {
-            fprintf(fp_Power_ini,
-                    "USB_POWER=%d,LSB_POWER=%d,AM_POWER=%d,CW_POWER=%d,TUNE_POWER=%d,FM_POWER=%d;\n",
-                    G_power_levels.usb_power, G_power_levels.lsb_power, G_power_levels.am_power,
-                    G_power_levels.cw_power, G_power_levels.tune_power, G_power_levels.fm_power);
+            fputs(text, fp_Power_ini);
             fclose(fp_Power_ini);
         } else {
             print_time();

@@ -71,6 +71,19 @@ int Init_amplifier_calibration() {
     return status;
 }
 
+/* 2026-11-19: for Radio_cal_load_qro (power_calibration.c) */
+int Amplifier_cal_value(int record) {
+    return (record >= 0 && record < 12) ? G_amp_calibration_stack[record].power_level : -99;
+}
+
+void Amplifier_cal_set_value(int record, int value) {
+    if (record < 0 || record >= 12)
+        return;
+    G_amp_calibration_stack[record].record = record;
+    G_amp_calibration_stack[record].band = record;
+    G_amp_calibration_stack[record].power_level = value;
+}
+
 uint8_t Band_to_amplifier_record(int16_t band) {
     int record = 0;
     switch (band) {
@@ -158,6 +171,7 @@ int Amplifier_Set_Power_Level(uint8_t command, char *buf) {
                     line_number++, i_opcode_data);
             G_amp_calibration_stack[record].power_level = i_opcode_data;
             SDRcore_trans_send_param(CMD_SET_POTENTIA_CALIBRATION, i_opcode_data);
+            Radio_cal_store_qro(record, i_opcode_data);   /* 2026-11-19: pill 3.24+ only */
             break;
 
         case CMD_SET_AMPLIFIER_POWER:

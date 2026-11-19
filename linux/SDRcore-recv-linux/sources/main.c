@@ -815,6 +815,13 @@ int manage_stream(int start_stop, int device, int channels) {
     }
 }*/
 
+/* 2026-11-19: version tag for `mscc status`, which reads it from the file (it never runs the
+ * server). Same text in the log at start. */
+#define MSCC_VSTR_(x) #x
+#define MSCC_VSTR(x) MSCC_VSTR_(x)
+__attribute__((used)) static const char mscc_version_tag[] =
+    "MSCC-VERSION sdrcore-recv " MSCC_VSTR(VERSION_MAJOR) "." MSCC_VSTR(VERSION_MINOR);
+
 /************************************* MAIN *********************************************/
 int main(int argc, char **argv) {
     //PaStreamParameters inputParameters, outputParameters;
@@ -871,6 +878,8 @@ int main(int argc, char **argv) {
     print_time(0);
     fprintf(G_fp_logfile, "[%d] sdrcore-recv -> starting -> Compile Date %s, Compile Time %s \n",
             line_number++, COMPILE_DATE, COMPILE_TIME);
+    print_time(0);
+    fprintf(G_fp_logfile, "[%d] sdrcore-recv -> %s\n", line_number++, mscc_version_tag);
     //Now start the UDP Thread
     print_time();
     fprintf(G_fp_logfile, "[%d] main -> Starting UDP Thread\n", line_number++);

@@ -797,6 +797,34 @@ void *UDP_Thread(void *my_param) {
                         line_number++, amp_calibration_band, amplifier_fine);
                 break;
 
+            case CMD_SET_AMPLIFIER_CAL_RECORD: {
+                /* 3.162 (2026-11-19): a band's QRO cal from the radio (pill 3.24+), sent by ms-sdr at
+                 * startup. Any band, not only the one in use. Saved on the next Drive_Manager loop
+                 * (countdown 1), so ms-sdr reads the new file at the next amp band select. */
+                int amp_record;
+                int amp_value;
+
+                op_code_data_32 = (int*) &buf[1];
+                memcpy(&i_opcode_data, op_code_data_32, 4);
+                amp_record = i_opcode_data & 0xFF;
+                amp_value = (int) (int16_t) ((i_opcode_data >> 8) & 0xFFFF);
+                print_time();
+                if (amp_record >= 12) {
+                    fprintf(G_fp_logfile, "[%d] UDP Thread. CMD_SET_AMPLIFIER_CAL_RECORD. Bad record %d, ignored\n",
+                            line_number++, amp_record);
+                    break;
+                }
+                G_amp_calibration_stack[amp_record].record = amp_record;
+                G_amp_calibration_stack[amp_record].band = amp_record;
+                G_amp_calibration_stack[amp_record].power_level = amp_value;
+                amplifier_table[amp_record].calibration_value = 1.0f + ((float) amp_value / 100.0f);
+                G_amp_cal_save_countdown = 1;
+                G_drive_recalc = 1;
+                fprintf(G_fp_logfile, "[%d] UDP Thread. CMD_SET_AMPLIFIER_CAL_RECORD. Record: %d, Value: %d (from radio)\n",
+                        line_number++, amp_record, amp_value);
+                break;
+            }
+
             case CMD_SET_AMPLIFIER_POWER:
                 print_time();
                 fprintf(G_fp_logfile, "[%d] UDP Thread. CMD_SET_AMPLIFIER_POWER. Power: %d. NOOP (amplifier.ini removed)\n",
@@ -1483,6 +1511,7 @@ void *UDP_Thread(void *my_param) {
             case CMD_SET_STOP:
                 print_time();
                 fprintf(G_fp_logfile, "[%d] UDP Thread. CMD_SET_STOP: %d. sdrcore-trans stopped\n", line_number++, t_opcode_data);
+                Flush_pending_cal_saves();  /* 3.161: a cal value still waiting its 5 s is saved now */
                 Update_amplifier_calibration();
                 G_all_threads_run = 0;
                 break;

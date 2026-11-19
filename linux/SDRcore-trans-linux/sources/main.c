@@ -960,6 +960,14 @@ char* My_getenv(char* myenv)
 
     return G_l_path;
 }
+
+/* 2026-11-19: version tag for `mscc status`, which reads it from the file (it never runs the
+ * server). Same text in the log at start. */
+#define MSCC_VSTR_(x) #x
+#define MSCC_VSTR(x) MSCC_VSTR_(x)
+__attribute__((used)) static const char mscc_version_tag[] =
+    "MSCC-VERSION sdrcore-trans " MSCC_VSTR(VERSION_MAJOR) "." MSCC_VSTR(VERSION_MINOR);
+
 /************************************* MAIN *********************************************/
 int main(int argc, char **argv) {
 
@@ -1006,6 +1014,8 @@ int main(int argc, char **argv) {
     print_time();
     fprintf(G_fp_logfile, "[%d] Main Thread - sdrcore-trans. starting. Compile Date %s, Compile Time %s \n", line_number++,
             COMPILE_DATE, COMPILE_TIME);
+    print_time();
+    fprintf(G_fp_logfile, "[%d] Main Thread - %s\n", line_number++, mscc_version_tag);
 
     power_ini_status = check_for_power_ini_file();
     if (power_ini_status == 1) {

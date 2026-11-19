@@ -204,6 +204,9 @@ extern double G_swr_wifi_swr;
 extern double G_swr_wifi_v;
 extern int G_swr_wifi_fault;
 extern uint8_t G_swr_wifi_online;
+/* 2026-11-19 (Ron): 1 = WiFi SWR meter fault latched: ms-sdr dropped TX and refuses new TX
+ * (Set_PTT / Tune_button) until the meter reports the fault clear or goes offline. */
+extern volatile uint8_t G_swr_fault_tx_block;
 extern char G_swr_wifi_learned_ip[64];
 extern void *Swr_wifi_meter_main(void *param);
 extern int Start_swr_wifi_meter_thread(void);
@@ -482,6 +485,12 @@ extern void Radio_cal_reset_all(int kind);   /* 3.197: CMD_SET_CAL_RESET_ALL (0x
 extern void Radio_cal_load_iq(void);
 extern void Radio_cal_send_status(void);   /* 3.188: 0x2D to the client */
 extern void Radio_cal_startup_load(const char *who);   /* 3.194: once per run, startup or first connect */
+/* 2026-11-19: QRO (amplifier) cal in the radio, pill 3.24+ only (power_calibration.c, amplifier.c) */
+extern int Radio_has_qro_store(void);
+extern void Radio_cal_store_qro(int record, int value);
+extern void Radio_cal_load_qro(void);
+extern int Amplifier_cal_value(int record);
+extern void Amplifier_cal_set_value(int record, int value);
 extern uint8_t G_Radio_Cal_Save_Pending;
 //extern uint8_t G_calibration_mode;
 extern int Initialize_power_calibration();

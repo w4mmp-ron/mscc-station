@@ -668,6 +668,12 @@ void Set_band_normal(uint32_t freq, uint8_t apply_offset) {
 void Set_PTT(int on_off, uint8_t allow_MKII_PTT_Switch) {
     static uint8_t ptt_switch_inhibited = FALSE;
 
+    if (on_off && G_swr_fault_tx_block) {   /* 2026-11-19: SWR meter fault (swr_wifi_meter.c) */
+        print_time(0);
+        fprintf(G_fp_logfile, "[%d] Set_PTT . TX refused: SWR meter fault not reset\n", line_number++);
+        return;
+    }
+
     if (G_TX_Inhibit == FALSE) {
         G_dll_active = TRUE;
         if (on_off == TRUE && allow_MKII_PTT_Switch == FALSE) {
@@ -701,6 +707,11 @@ int Tune_button(int on_off, uint8_t allow_MKII_PTT_Switch) {
     print_time(0);
     fprintf(G_fp_logfile, "[%d] Tune_button called . on_off: %d, previous_mode: %c,G_mode: %c\n",
             line_number++, on_off, G_previous_mode ? G_previous_mode : '-', G_mode);   //0 = no previous mode yet; %c would log a NUL
+    if (on_off && G_swr_fault_tx_block) {   /* 2026-11-19: SWR meter fault (swr_wifi_meter.c) */
+        print_time(0);
+        fprintf(G_fp_logfile, "[%d] Tune_button . TX refused: SWR meter fault not reset\n", line_number++);
+        return FALSE;
+    }
     if (G_TX_Inhibit == FALSE && G_check_bias == FALSE) {
         G_dll_active = TRUE;
         if (on_off == TRUE && allow_MKII_PTT_Switch == FALSE) {
@@ -786,9 +797,10 @@ void *Manage_MKII_PTT_Switch(void *my_parm) {
                 tx_mode = ptt ? TRUE : FALSE;
                 if (previous_tx_mode != tx_mode) {
                     Set_PTT(tx_mode, TRUE);
-                    SDRcore_recv_send_param(CMD_SET_TX_ON, tx_mode);
-                    SDRcore_trans_send_param(CMD_SET_TX_ON, tx_mode);
-                    Gui_send_param(CMD_SET_TX_SET_BY_SERVER, tx_mode);
+                    /* 2026-11-19: real state, so a refused TX (SWR meter fault) keeps the cores in RX */
+                    SDRcore_recv_send_param(CMD_SET_TX_ON, G_PTT);
+                    SDRcore_trans_send_param(CMD_SET_TX_ON, G_PTT);
+                    Gui_send_param(CMD_SET_TX_SET_BY_SERVER, G_PTT);
                     previous_tx_mode = tx_mode;
                     print_time(0);
                     fprintf(G_fp_logfile, "[%d] Manage_MKII_PTT_Switch. Set_PTT. tx_mode: %d\n",
@@ -1215,6 +1227,14 @@ int static Start_Threads() {
     G_Threads_Started = TRUE;
     return (status);
 }
+
+/* 2026-11-19: version tag for `mscc status`, which reads it from the file (it never runs the
+ * server: a second ms-sdr would wipe the log and user_controls.ini). Same text in the log. */
+#define MSCC_VSTR_(x) #x
+#define MSCC_VSTR(x) MSCC_VSTR_(x)
+__attribute__((used)) static const char mscc_version_tag[] =
+    "MSCC-VERSION ms-sdr " MSCC_VSTR(VERSION_MAJOR) "." MSCC_VSTR(VERSION_MINOR);
+
 int main(int argc, char **argv) {
     int status;
     int ret_status;
@@ -1237,6 +1257,8 @@ int main(int argc, char **argv) {
     print_time(0);
     fprintf(G_fp_logfile, "[%d] main starting . Compile Date %s, Compile Time %s \n", line_number++,
             COMPILE_DATE, COMPILE_TIME);
+    print_time(0);
+    fprintf(G_fp_logfile, "[%d] main . %s\n", line_number++, mscc_version_tag);
     print_time(0);
     fprintf(G_fp_logfile, "[%d] main . Calling: Get_serial_number \n", line_number++);
     //G_serial_number_success = Get_serial_number(); //Disable call to Get_serial_number()

@@ -4,11 +4,22 @@ Currently shipped in this folder:
 
 | Package | Version |
 |---------|---------|
-| `mscc` (servers) | 1.0.53 |
-| `mscc-ui` (Avalonia client) | 0.6.75 |
-| `mscc-firmware` (optional radio firmware files) | 1.0.1 |
-| `mscc-init-gui` | 1.0.13 (unchanged this period) |
-| `mscc-portaudio` | 19.8.2 (unchanged this period) |
+| `mscc` (servers, PortAudio, MSCC Init, Volume, firmware, flash tools) | 1.0.102 |
+| `mscc-avalonia` (client) | 1.7.08 |
+| `mscc-ui` | retired — replaced by `mscc-avalonia` |
+| `mscc-firmware` | retired — inside `mscc` since 1.0.79 |
+| `mscc-init-gui` | retired — inside `mscc` since 1.0.79 |
+| `mscc-portaudio` | retired — inside `mscc` since 1.0.79 |
+
+## mscc 1.0.102 / mscc-avalonia 1.7.08 — 2026-11-19
+
+### Changed
+- The Ubuntu servers match the Pi at R11-19-1: ms-sdr 3.215, recv 3.157, trans 3.163. A WiFi SWR fault stops transmit. CAT answers the S-meter (`SM`). QRO calibration is kept in a Black Pill 3.24 or later. Each server carries an `MSCC-VERSION` tag. `mscc status` starts with a Versions section.
+- Avalonia 1.7.07: on Remote Digital, the mic is silent until the radio is keyed, then silent for 400 ms and a 5 ms fade-in. Key-up fades out over 5 ms. Receive playback is muted while keyed. The Remote Audio window scrolls so Mic and Mic vol stay on a 1366x768 screen.
+- Avalonia 1.7.08: Connect shows the server's settings and does not write this client's saved settings over them. Connect still sends spectrum resolution, spectrum smoothing, the audio route, and the noise blanker. CAT Mode changes the radio's mode. If firmware or core has not arrived, MSCC asks after 2.5 s. A fresh band memory uses USB (20 m at 14.074 MHz, 630 m at 474.2 kHz).
+
+### Tested
+- Stew, stew-HP, 2026-11-19: SA checks passed (status Versions, TX/RX and QRO cal, WSJT-X TUNE and FT8, CAT S-meter, Remote Audio Mic vol). The radio session was to the Pi, which reported ms-sdr 3.211.
 
 ## mscc 1.0.53 / mscc-ui 0.6.75 — 2026-10-11
 

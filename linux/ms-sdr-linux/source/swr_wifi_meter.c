@@ -42,6 +42,7 @@ double G_swr_wifi_swr = 1.0;
 double G_swr_wifi_v = 0.0;
 int G_swr_wifi_fault = 0;
 uint8_t G_swr_wifi_online = 0;
+volatile uint8_t G_swr_fault_tx_block = 0;   /* 2026-11-19: see extern.h */
 char G_swr_wifi_learned_ip[64] = {0};
 
 static pthread_t G_swr_wifi_thread;
@@ -588,20 +589,34 @@ void *Swr_wifi_meter_main(void *param)
             /* Fault edge: the meter protects the radio; ms-sdr tells the client at once
              * (3.188: CMD_SET_SWR_FAULT, so the client can force RX and offer RESET). */
             if (fault && !prev_fault) {
+                /* 2026-11-19 (Ron): ms-sdr is the backstop. Drop TX whoever keyed it (client,
+                 * CAT from WSJT-X on the Pi, footswitch, tune) and refuse new TX until the
+                 * fault clears. Before, only the client dropped TX, so CAT TX kept going. */
+                int was_ptt = G_PTT, was_tune = G_Tune;
+
+                G_swr_fault_tx_block = 1;
                 print_time(0);
                 fprintf(G_fp_logfile,
-                    "[%d] Swr_wifi. FAULT latched. fwd=%.2f ref=%.2f swr=%.2f\n",
-                    line_number++, fwd, ref, swr);
+                    "[%d] Swr_wifi. FAULT latched. fwd=%.2f ref=%.2f swr=%.2f. TX blocked (PTT %d, tune %d)\n",
+                    line_number++, fwd, ref, swr, was_ptt, was_tune);
+                if (was_tune)
+                    Tune_button(FALSE, FALSE);
+                if (was_ptt)
+                    Set_PTT(FALSE, FALSE);
+                if (was_ptt || was_tune)
+                    Gui_send_param(CMD_SET_TX_SET_BY_SERVER, 0);
                 snprintf(message, sizeof(message),
-                    "SWR METER FAULT\nSWR=%.2f  FWD=%.1fW  REF=%.1fW",
+                    "SWR METER FAULT\nSWR=%.2f  FWD=%.1fW  REF=%.1fW\n"
+                    "Transmit stopped and blocked until the fault is reset.",
                     swr, fwd, ref);
                 Gui_Add_Message(message);
             }
             /* Falling edge: optional HTTP reset already done by user/app;
-             * we only log recovery. */
+             * we only log recovery. 2026-11-19: TX allowed again. */
             if (!fault && prev_fault) {
+                G_swr_fault_tx_block = 0;
                 print_time(0);
-                fprintf(G_fp_logfile, "[%d] Swr_wifi. fault cleared\n", line_number++);
+                fprintf(G_fp_logfile, "[%d] Swr_wifi. fault cleared. TX allowed again\n", line_number++);
             }
 
             /* Throttle GUI traffic; always allow first after silence. A fault change
@@ -625,6 +640,12 @@ void *Swr_wifi_meter_main(void *param)
             G_swr_wifi_online = 0;
             G_swr_wifi_fault = 0;
             prev_fault = 0;
+            /* 2026-11-19: an offline meter doesn't block TX (a dead meter can't be reset) */
+            if (G_swr_fault_tx_block) {
+                G_swr_fault_tx_block = 0;
+                print_time(0);
+                fprintf(G_fp_logfile, "[%d] Swr_wifi. meter offline: TX block released\n", line_number++);
+            }
             if (!zero_sent) {
                 swr_wifi_zero_gui();
                 zero_sent = 1;

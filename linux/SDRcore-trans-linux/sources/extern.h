@@ -30,7 +30,7 @@
 
 /* {Model}.{[M]M}{Release Number} */
 #define VERSION_MAJOR 3
-#define VERSION_MINOR 160   /* 3.160 (2026-11-13): Linux radio I/Q search accepts the "Ultimus" product name (Stew) */
+#define VERSION_MINOR 163   /* 3.163 (2026-11-19): "MSCC-VERSION sdrcore-trans 3.163" tag in the file + log line, for mscc status. 3.162 (2026-11-19): CMD_SET_AMPLIFIER_CAL_RECORD 0xF8 from ms-sdr: a band's QRO cal from the radio (pill 3.24+), saved to amplifier_cal.ini. 3.161 (2026-11-18): QRP / QRO cal files saved after 5 s of a still slider, not 0.5 s; power.ini / amplifier_cal.ini not rewritten when unchanged (Ron). 3.160 (2026-11-13): Linux radio I/Q search accepts the "Ultimus" product name (Stew) */
 /* 3.159 (2026-11-13): build-warning fix (RON define) */
 #define VERSION_MS_SDRCORE_TRANS ((((VERSION_MINOR) << 8) & 0xff00) | ((VERSION_MAJOR) & 0x00ff))
 
@@ -181,10 +181,14 @@ extern int delete_iq_ini_file(void);
 extern void Init_Proficio_User_power(void);
 extern int Init_Proficio_calibration(uint8_t send_to_transceiver);
 extern int Update_power_cal_file(void);
-#define POWER_CAL_SAVE_DELAY 500 /* Drive_Manager loops (~1 ms each) before power_cal.ini is saved */
+#define POWER_CAL_SAVE_DELAY 5000 /* Drive_Manager loops (~1 ms each) before power_cal.ini / amplifier_cal.ini are saved.
+                                   * 3.161 (Ron 2026-11-18): was 500 (0.5 s), so every short pause during a
+                                   * calibration rewrote the file; 5 s = once per calibration, the same as ms-sdr's
+                                   * radio save. Flushed anyway before a reload and at stop. */
 extern volatile int G_power_cal_save_countdown;
 extern volatile int G_amp_cal_save_countdown;
 extern void Flush_pending_cal_saves(void);
+extern int File_content_same(const char *path, const char *text); /* 3.161 */
 extern volatile int G_drive_recalc;
 extern int Init_amplifier_calibration(void);
 extern int Update_amplifier_calibration(void);
