@@ -29,6 +29,11 @@
 // Free in every layer (servers Pi + Windows, WPF client, pill, PSoC MKII,
 // PIC keyer):
 //   (none left; use the reclaimed list below)
+//   0x15 RESERVED 2026-11-20 (Ron): CMD_SET_CW_CARRIER, ms-sdr -> radio (pill),
+//    the stored 1 ms CW carrier block. Work in the separate cw-carrier repo
+//    (github.com/w4mmp-ron/cw-carrier); don't use 0x15 for anything else.
+//    (Windows ms-sdr still names 0x15 CMD_SET_IO / CMD_MFC_SET_BAND, old MFC
+//    files only, not built.)
 //   0x9F taken 2026-11-12: CMD_KEYER_BOOT, keyer update. Radio (pill 3.16+):
 //    USB I2C pass-through to the PIC, used by keyer-flash.py with the servers
 //    stopped. PIC keyer: 0x9F 0x5C = go to its I2C bootloader. ms-sdr never
