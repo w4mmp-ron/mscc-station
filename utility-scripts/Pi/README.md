@@ -173,3 +173,16 @@ each item and ends with "All checks passed."
   first: it sends the radio to flash mode and leaves it there. Bring it back with
   stm32-app-flash and the app file (or press NRST).
 Older firmware or bootloader: it says there was no answer.
+
+-------------------------------------------------------------------------------
+
+    ~/utils/pi-volts.sh
+    ~/utils/pi-volts.sh 2
+
+Shows the Pi's power: one reading, or a reading every 2 s (Ctrl-C to stop), for
+example while transmitting.
+- Pi 5: the 5 V input voltage. The Pi warns below about 4.63 V.
+- Pi 4 and Zero 2 W: these can't measure the 5 V input, so it shows "5V n/a" and
+  the core voltage instead.
+- Every Pi: the flags say LOW-NOW / WAS-LOW-SINCE-BOOT if the input dropped too low,
+  and THROTTLED-NOW / WAS-THROTTLED if the Pi slowed itself down. OK = none of them.

@@ -905,11 +905,11 @@ void loop() {
         bool rangeChanged = false;
 
         #ifdef VERSION_HF   //  HF Version (160m-10m)
-            if (!highRange && forwardPower > 400.0f) {
+            if (!highRange && forwardPower > 345.0f) {   // W4MMP 2026-11-19: was 400 (low table /1.16, same switch voltage)
                 highRange = true;
                 rangeChanged = true;
                 delay(40);
-            } else if (highRange && forwardPower < 390.0f) {
+            } else if (highRange && forwardPower < 390.0f) {   // W4MMP 2026-11-19: unchanged, high table not rescaled
                 highRange = false;
                 rangeChanged = true;
                 delay(40);

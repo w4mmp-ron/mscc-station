@@ -135,8 +135,20 @@ texts = []          # (sheet, x, y, text, size)
 sheet = 1
 _sup = defaultdict(int)
 
+# W4MMP 2026-11-19: part numbers and packages come from BOM.csv (it wins over the place() call),
+# so EasyEDA gets the LCSC number of every part on import.
+import csv as _csv, os as _os
+BOM = {}
+for _r in _csv.DictReader(open(_os.path.join(_os.path.dirname(_os.path.abspath(__file__)), "..", "BOM.csv"), encoding="utf-8")):
+    for _ref in _r["Ref"].split():
+        BOM[_ref] = _r
+
 def place(ref, symname, x, y, value="", mpn="", lcsc=""):
-    parts[ref] = dict(sym=symname, value=value, mpn=mpn, lcsc=lcsc, sheet=sheet, x=x, y=y, supply=False)
+    b = BOM.get(ref, {})
+    mpn = b.get("Manufacturer part") or mpn
+    lcsc = b.get("LCSC") or lcsc
+    parts[ref] = dict(sym=symname, value=value, mpn=mpn, lcsc=lcsc, pkg=b.get("Package", ""),
+                      sheet=sheet, x=x, y=y, supply=False)
 
 def P(ref, pin):
     p = parts[ref]
@@ -354,7 +366,7 @@ for c in ("C9", "C10", "C11", "C12"):
     gnd(c, "2")
 wire("VOL_TOP", ("C13", "2"), ("J9", "1"))
 gnd("J9", "3")
-place("U6", "LM386", 41, -9, "LM386MX-1/NOPB", "LM386MX-1/NOPB", "C23573")
+place("U6", "LM386", 41, -9, "LM386N-3/NOPB", "LM386N-3/NOPB", "C139428")
 wire("VOL_W", ("J9", "2"), (39, -5), (39, -7), (39, -10), ("U6", "IN_P"))
 wire("VOL_W", (39, -7), ("C14", "1"))
 gnd("C14", "2")
@@ -595,6 +607,13 @@ for ref, p in parts.items():
         o.append(f'<attribute name="MPN" value={quoteattr(p["mpn"])}/>')
     if p["lcsc"]:
         o.append(f'<attribute name="LCSC" value={quoteattr(p["lcsc"])}/>')
+        # names EasyEDA uses for its own parts
+        o.append('<attribute name="Supplier" value="LCSC"/>')
+        o.append(f'<attribute name="Supplier Part" value={quoteattr(p["lcsc"])}/>')
+        if p["mpn"]:
+            o.append(f'<attribute name="Manufacturer Part" value={quoteattr(p["mpn"])}/>')
+    if p.get("pkg"):
+        o.append(f'<attribute name="PACKAGE" value={quoteattr(p["pkg"])}/>')
     o.append('</part>')
 o += ['</parts>', '<sheets>']
 for sh in (1, 2):

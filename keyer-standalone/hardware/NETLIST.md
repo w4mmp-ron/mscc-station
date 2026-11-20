@@ -216,7 +216,7 @@ volume pot, L1 + C18 go from ST3 to ground. Copy Rev 2 exactly here.
 | C20 (C19) | 220 uF | AMP_OUT (+) – SIDE_TONE_OUT (−) |
 | C21 (C23) | 10 nF | SIDE_TONE_OUT – GND |
 
-U6 = LM386MX-1/NOPB (SOIC-8, LCSC C23573; the M-1 in reel packaging).
+U6 = LM386N-3/NOPB (PDIP-8, LCSC C139428; DIP-8 since 2026-11-19, Ron). Same pin-out as the SOIC-8.
 
 ### Audio switch (CHANGED: RX path now normally closed)
 

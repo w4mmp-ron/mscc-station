@@ -594,30 +594,82 @@
 <classes><class number="0" name="default" width="0" drill="0"/></classes>
 <parts>
 <part name="J1" library="keyer" deviceset="HDR2_R" device="" value="9V BATTERY">
+<attribute name="PACKAGE" value="2.54 mm"/>
 </part>
 <part name="J2" library="keyer" deviceset="HDR2_R" device="" value="POWER SW">
+<attribute name="PACKAGE" value="2.54 mm"/>
 </part>
 <part name="Q1" library="keyer" deviceset="PFET_H" device="" value="AO3401A">
 <attribute name="MPN" value="AO3401A"/>
 <attribute name="LCSC" value="C15127"/>
+<attribute name="Supplier" value="LCSC"/>
+<attribute name="Supplier Part" value="C15127"/>
+<attribute name="Manufacturer Part" value="AO3401A"/>
+<attribute name="PACKAGE" value="SOT-23"/>
 </part>
 <part name="R1" library="keyer" deviceset="R_V" device="" value="100k">
+<attribute name="MPN" value="1206W4F1003T5E"/>
+<attribute name="LCSC" value="C17900"/>
+<attribute name="Supplier" value="LCSC"/>
+<attribute name="Supplier Part" value="C17900"/>
+<attribute name="Manufacturer Part" value="1206W4F1003T5E"/>
+<attribute name="PACKAGE" value="1206"/>
 </part>
 <part name="U1" library="keyer" deviceset="MCP1703" device="" value="MCP1703T-5002E/CB">
 <attribute name="MPN" value="MCP1703T-5002E/CB"/>
 <attribute name="LCSC" value="C50754"/>
+<attribute name="Supplier" value="LCSC"/>
+<attribute name="Supplier Part" value="C50754"/>
+<attribute name="Manufacturer Part" value="MCP1703T-5002E/CB"/>
+<attribute name="PACKAGE" value="SOT-23A"/>
 </part>
 <part name="C1" library="keyer" deviceset="C_V" device="" value="1uF">
+<attribute name="MPN" value="CL31B105KBHNNNE"/>
+<attribute name="LCSC" value="C1848"/>
+<attribute name="Supplier" value="LCSC"/>
+<attribute name="Supplier Part" value="C1848"/>
+<attribute name="Manufacturer Part" value="CL31B105KBHNNNE"/>
+<attribute name="PACKAGE" value="1206"/>
 </part>
 <part name="R2" library="keyer" deviceset="R_V" device="" value="1M">
+<attribute name="MPN" value="1206W4F1004T5E"/>
+<attribute name="LCSC" value="C17927"/>
+<attribute name="Supplier" value="LCSC"/>
+<attribute name="Supplier Part" value="C17927"/>
+<attribute name="Manufacturer Part" value="1206W4F1004T5E"/>
+<attribute name="PACKAGE" value="1206"/>
 </part>
 <part name="R3" library="keyer" deviceset="R_V" device="" value="470k">
+<attribute name="MPN" value="1206W4F4703T5E"/>
+<attribute name="LCSC" value="C17997"/>
+<attribute name="Supplier" value="LCSC"/>
+<attribute name="Supplier Part" value="C17997"/>
+<attribute name="Manufacturer Part" value="1206W4F4703T5E"/>
+<attribute name="PACKAGE" value="1206"/>
 </part>
 <part name="C4" library="keyer" deviceset="C_V" device="" value="100nF">
+<attribute name="MPN" value="CL31B104KBCNNNC"/>
+<attribute name="LCSC" value="C24497"/>
+<attribute name="Supplier" value="LCSC"/>
+<attribute name="Supplier Part" value="C24497"/>
+<attribute name="Manufacturer Part" value="CL31B104KBCNNNC"/>
+<attribute name="PACKAGE" value="1206"/>
 </part>
 <part name="C2" library="keyer" deviceset="C_V" device="" value="1uF">
+<attribute name="MPN" value="CL31B105KBHNNNE"/>
+<attribute name="LCSC" value="C1848"/>
+<attribute name="Supplier" value="LCSC"/>
+<attribute name="Supplier Part" value="C1848"/>
+<attribute name="Manufacturer Part" value="CL31B105KBHNNNE"/>
+<attribute name="PACKAGE" value="1206"/>
 </part>
 <part name="C3" library="keyer" deviceset="C_V" device="" value="10uF">
+<attribute name="MPN" value="CL31A106KBHNNNE"/>
+<attribute name="LCSC" value="C13585"/>
+<attribute name="Supplier" value="LCSC"/>
+<attribute name="Supplier Part" value="C13585"/>
+<attribute name="Manufacturer Part" value="CL31A106KBHNNNE"/>
+<attribute name="PACKAGE" value="1206"/>
 </part>
 <part name="GND1" library="keyer" deviceset="SUP_GND" device="" value="GND">
 </part>
@@ -640,30 +692,65 @@
 <part name="U2" library="keyer" deviceset="PIC16F18326" device="" value="PIC16F18326-I/P">
 <attribute name="MPN" value="PIC16F18326-I/P"/>
 <attribute name="LCSC" value="C645826"/>
+<attribute name="Supplier" value="LCSC"/>
+<attribute name="Supplier Part" value="C645826"/>
+<attribute name="Manufacturer Part" value="PIC16F18326-I/P"/>
+<attribute name="PACKAGE" value="PDIP-14"/>
 </part>
 <part name="C5" library="keyer" deviceset="C_V" device="" value="100nF">
+<attribute name="MPN" value="CL31B104KBCNNNC"/>
+<attribute name="LCSC" value="C24497"/>
+<attribute name="Supplier" value="LCSC"/>
+<attribute name="Supplier Part" value="C24497"/>
+<attribute name="Manufacturer Part" value="CL31B104KBCNNNC"/>
+<attribute name="PACKAGE" value="1206"/>
 </part>
 <part name="P5V2" library="keyer" deviceset="SUP_P5V" device="" value="+5V">
 </part>
 <part name="GND9" library="keyer" deviceset="SUP_GND" device="" value="GND">
 </part>
 <part name="J8" library="keyer" deviceset="HDR6_R" device="" value="ICSP">
+<attribute name="PACKAGE" value="2.54 mm"/>
 </part>
 <part name="R13" library="keyer" deviceset="R_H" device="" value="560R">
+<attribute name="MPN" value="1206W4F5600T5E"/>
+<attribute name="LCSC" value="C17994"/>
+<attribute name="Supplier" value="LCSC"/>
+<attribute name="Supplier Part" value="C17994"/>
+<attribute name="Manufacturer Part" value="1206W4F5600T5E"/>
+<attribute name="PACKAGE" value="1206"/>
 </part>
 <part name="U4" library="keyer" deviceset="PHOTOMOS" device="" value="VO1400AEFTR">
 <attribute name="MPN" value="VO1400AEFTR"/>
 <attribute name="LCSC" value="C142551"/>
+<attribute name="Supplier" value="LCSC"/>
+<attribute name="Supplier Part" value="C142551"/>
+<attribute name="Manufacturer Part" value="VO1400AEFTR"/>
+<attribute name="PACKAGE" value="SOP-4"/>
 </part>
 <part name="R14" library="keyer" deviceset="R_H" device="" value="560R">
+<attribute name="MPN" value="1206W4F5600T5E"/>
+<attribute name="LCSC" value="C17994"/>
+<attribute name="Supplier" value="LCSC"/>
+<attribute name="Supplier Part" value="C17994"/>
+<attribute name="Manufacturer Part" value="1206W4F5600T5E"/>
+<attribute name="PACKAGE" value="1206"/>
 </part>
 <part name="U5" library="keyer" deviceset="PHOTOMOS" device="" value="VO1400AEFTR">
 <attribute name="MPN" value="VO1400AEFTR"/>
 <attribute name="LCSC" value="C142551"/>
+<attribute name="Supplier" value="LCSC"/>
+<attribute name="Supplier Part" value="C142551"/>
+<attribute name="Manufacturer Part" value="VO1400AEFTR"/>
+<attribute name="PACKAGE" value="SOP-4"/>
 </part>
 <part name="J4" library="keyer" deviceset="JACK3_L" device="" value="KEY OUT SJ1-3535NG">
 <attribute name="MPN" value="SJ1-3535NG"/>
 <attribute name="LCSC" value="C4991610"/>
+<attribute name="Supplier" value="LCSC"/>
+<attribute name="Supplier Part" value="C4991610"/>
+<attribute name="Manufacturer Part" value="SJ1-3535NG"/>
+<attribute name="PACKAGE" value="TH R/A"/>
 </part>
 <part name="P5V3" library="keyer" deviceset="SUP_P5V" device="" value="+5V">
 </part>
@@ -672,22 +759,66 @@
 <part name="J3" library="keyer" deviceset="JACK3_R" device="" value="PADDLE SJ1-3535NG">
 <attribute name="MPN" value="SJ1-3535NG"/>
 <attribute name="LCSC" value="C4991610"/>
+<attribute name="Supplier" value="LCSC"/>
+<attribute name="Supplier Part" value="C4991610"/>
+<attribute name="Manufacturer Part" value="SJ1-3535NG"/>
+<attribute name="PACKAGE" value="TH R/A"/>
 </part>
 <part name="R9" library="keyer" deviceset="R_H" device="" value="1k">
+<attribute name="MPN" value="1206W4F1001T5E"/>
+<attribute name="LCSC" value="C4410"/>
+<attribute name="Supplier" value="LCSC"/>
+<attribute name="Supplier Part" value="C4410"/>
+<attribute name="Manufacturer Part" value="1206W4F1001T5E"/>
+<attribute name="PACKAGE" value="1206"/>
 </part>
 <part name="R11" library="keyer" deviceset="R_V" device="" value="10k">
+<attribute name="MPN" value="1206W4F1002T5E"/>
+<attribute name="LCSC" value="C17902"/>
+<attribute name="Supplier" value="LCSC"/>
+<attribute name="Supplier Part" value="C17902"/>
+<attribute name="Manufacturer Part" value="1206W4F1002T5E"/>
+<attribute name="PACKAGE" value="1206"/>
 </part>
 <part name="C7" library="keyer" deviceset="C_V" device="" value="1nF">
+<attribute name="MPN" value="1206CG102J500NT"/>
+<attribute name="LCSC" value="C1885"/>
+<attribute name="Supplier" value="LCSC"/>
+<attribute name="Supplier Part" value="C1885"/>
+<attribute name="Manufacturer Part" value="1206CG102J500NT"/>
+<attribute name="PACKAGE" value="1206"/>
 </part>
 <part name="R10" library="keyer" deviceset="R_H" device="" value="1k">
+<attribute name="MPN" value="1206W4F1001T5E"/>
+<attribute name="LCSC" value="C4410"/>
+<attribute name="Supplier" value="LCSC"/>
+<attribute name="Supplier Part" value="C4410"/>
+<attribute name="Manufacturer Part" value="1206W4F1001T5E"/>
+<attribute name="PACKAGE" value="1206"/>
 </part>
 <part name="R12" library="keyer" deviceset="R_V" device="" value="10k">
+<attribute name="MPN" value="1206W4F1002T5E"/>
+<attribute name="LCSC" value="C17902"/>
+<attribute name="Supplier" value="LCSC"/>
+<attribute name="Supplier Part" value="C17902"/>
+<attribute name="Manufacturer Part" value="1206W4F1002T5E"/>
+<attribute name="PACKAGE" value="1206"/>
 </part>
 <part name="C8" library="keyer" deviceset="C_V" device="" value="1nF">
+<attribute name="MPN" value="1206CG102J500NT"/>
+<attribute name="LCSC" value="C1885"/>
+<attribute name="Supplier" value="LCSC"/>
+<attribute name="Supplier Part" value="C1885"/>
+<attribute name="Manufacturer Part" value="1206CG102J500NT"/>
+<attribute name="PACKAGE" value="1206"/>
 </part>
 <part name="U3" library="keyer" deviceset="PRTR5V0U2X" device="" value="PRTR5V0U2X">
 <attribute name="MPN" value="PRTR5V0U2X,215"/>
 <attribute name="LCSC" value="C12333"/>
+<attribute name="Supplier" value="LCSC"/>
+<attribute name="Supplier Part" value="C12333"/>
+<attribute name="Manufacturer Part" value="PRTR5V0U2X,215"/>
+<attribute name="PACKAGE" value="SOT-143B"/>
 </part>
 <part name="P5V5" library="keyer" deviceset="SUP_P5V" device="" value="+5V">
 </part>
@@ -704,18 +835,38 @@
 <part name="GND13" library="keyer" deviceset="SUP_GND" device="" value="GND">
 </part>
 <part name="R4" library="keyer" deviceset="R_V" device="" value="10k">
+<attribute name="MPN" value="1206W4F1002T5E"/>
+<attribute name="LCSC" value="C17902"/>
+<attribute name="Supplier" value="LCSC"/>
+<attribute name="Supplier Part" value="C17902"/>
+<attribute name="Manufacturer Part" value="1206W4F1002T5E"/>
+<attribute name="PACKAGE" value="1206"/>
 </part>
 <part name="R5" library="keyer" deviceset="R_H" device="" value="1k">
+<attribute name="MPN" value="1206W4F1001T5E"/>
+<attribute name="LCSC" value="C4410"/>
+<attribute name="Supplier" value="LCSC"/>
+<attribute name="Supplier Part" value="C4410"/>
+<attribute name="Manufacturer Part" value="1206W4F1001T5E"/>
+<attribute name="PACKAGE" value="1206"/>
 </part>
 <part name="J5" library="keyer" deviceset="HDR2_L" device="" value="FN BUTTON">
+<attribute name="PACKAGE" value="2.54 mm"/>
 </part>
 <part name="P5V8" library="keyer" deviceset="SUP_P5V" device="" value="+5V">
 </part>
 <part name="GND14" library="keyer" deviceset="SUP_GND" device="" value="GND">
 </part>
 <part name="J6" library="keyer" deviceset="HDR3_R" device="" value="SPEED 100k LIN">
+<attribute name="PACKAGE" value="2.54 mm"/>
 </part>
 <part name="C6" library="keyer" deviceset="C_V" device="" value="100nF">
+<attribute name="MPN" value="CL31B104KBCNNNC"/>
+<attribute name="LCSC" value="C24497"/>
+<attribute name="Supplier" value="LCSC"/>
+<attribute name="Supplier Part" value="C24497"/>
+<attribute name="Manufacturer Part" value="CL31B104KBCNNNC"/>
+<attribute name="PACKAGE" value="1206"/>
 </part>
 <part name="P5V9" library="keyer" deviceset="SUP_P5V" device="" value="+5V">
 </part>
@@ -724,44 +875,123 @@
 <part name="GND16" library="keyer" deviceset="SUP_GND" device="" value="GND">
 </part>
 <part name="J7" library="keyer" deviceset="HDR2_R" device="" value="STATUS LED">
+<attribute name="PACKAGE" value="2.54 mm"/>
 </part>
 <part name="R6" library="keyer" deviceset="R_H" device="" value="1k">
+<attribute name="MPN" value="1206W4F1001T5E"/>
+<attribute name="LCSC" value="C4410"/>
+<attribute name="Supplier" value="LCSC"/>
+<attribute name="Supplier Part" value="C4410"/>
+<attribute name="Manufacturer Part" value="1206W4F1001T5E"/>
+<attribute name="PACKAGE" value="1206"/>
 </part>
 <part name="GND17" library="keyer" deviceset="SUP_GND" device="" value="GND">
 </part>
 <part name="R7" library="keyer" deviceset="R_H" device="" value="100R">
+<attribute name="MPN" value="1206W4F1000T5E"/>
+<attribute name="LCSC" value="C17901"/>
+<attribute name="Supplier" value="LCSC"/>
+<attribute name="Supplier Part" value="C17901"/>
+<attribute name="Manufacturer Part" value="1206W4F1000T5E"/>
+<attribute name="PACKAGE" value="1206"/>
 </part>
 <part name="R8" library="keyer" deviceset="R_V" device="" value="100k">
+<attribute name="MPN" value="1206W4F1003T5E"/>
+<attribute name="LCSC" value="C17900"/>
+<attribute name="Supplier" value="LCSC"/>
+<attribute name="Supplier Part" value="C17900"/>
+<attribute name="Manufacturer Part" value="1206W4F1003T5E"/>
+<attribute name="PACKAGE" value="1206"/>
 </part>
 <part name="Q2" library="keyer" deviceset="PFET_V" device="" value="AO3401A">
 <attribute name="MPN" value="AO3401A"/>
 <attribute name="LCSC" value="C15127"/>
+<attribute name="Supplier" value="LCSC"/>
+<attribute name="Supplier Part" value="C15127"/>
+<attribute name="Manufacturer Part" value="AO3401A"/>
+<attribute name="PACKAGE" value="SOT-23"/>
 </part>
 <part name="P5V10" library="keyer" deviceset="SUP_P5V" device="" value="+5V">
 </part>
 <part name="P5V11" library="keyer" deviceset="SUP_P5V" device="" value="+5V">
 </part>
 <part name="R15" library="keyer" deviceset="R_H" device="" value="1k5">
+<attribute name="MPN" value="1206W4F1501T5E"/>
+<attribute name="LCSC" value="C26030"/>
+<attribute name="Supplier" value="LCSC"/>
+<attribute name="Supplier Part" value="C26030"/>
+<attribute name="Manufacturer Part" value="1206W4F1501T5E"/>
+<attribute name="PACKAGE" value="1206"/>
 </part>
 <part name="R16" library="keyer" deviceset="R_H" device="" value="1k5">
+<attribute name="MPN" value="1206W4F1501T5E"/>
+<attribute name="LCSC" value="C26030"/>
+<attribute name="Supplier" value="LCSC"/>
+<attribute name="Supplier Part" value="C26030"/>
+<attribute name="Manufacturer Part" value="1206W4F1501T5E"/>
+<attribute name="PACKAGE" value="1206"/>
 </part>
 <part name="R17" library="keyer" deviceset="R_H" device="" value="1k5">
+<attribute name="MPN" value="1206W4F1501T5E"/>
+<attribute name="LCSC" value="C26030"/>
+<attribute name="Supplier" value="LCSC"/>
+<attribute name="Supplier Part" value="C26030"/>
+<attribute name="Manufacturer Part" value="1206W4F1501T5E"/>
+<attribute name="PACKAGE" value="1206"/>
 </part>
 <part name="C9" library="keyer" deviceset="C_V" device="" value="100nF">
+<attribute name="MPN" value="CL31B104KBCNNNC"/>
+<attribute name="LCSC" value="C24497"/>
+<attribute name="Supplier" value="LCSC"/>
+<attribute name="Supplier Part" value="C24497"/>
+<attribute name="Manufacturer Part" value="CL31B104KBCNNNC"/>
+<attribute name="PACKAGE" value="1206"/>
 </part>
 <part name="C10" library="keyer" deviceset="C_V" device="" value="100nF">
+<attribute name="MPN" value="CL31B104KBCNNNC"/>
+<attribute name="LCSC" value="C24497"/>
+<attribute name="Supplier" value="LCSC"/>
+<attribute name="Supplier Part" value="C24497"/>
+<attribute name="Manufacturer Part" value="CL31B104KBCNNNC"/>
+<attribute name="PACKAGE" value="1206"/>
 </part>
 <part name="C11" library="keyer" deviceset="C_V" device="" value="100nF">
+<attribute name="MPN" value="CL31B104KBCNNNC"/>
+<attribute name="LCSC" value="C24497"/>
+<attribute name="Supplier" value="LCSC"/>
+<attribute name="Supplier Part" value="C24497"/>
+<attribute name="Manufacturer Part" value="CL31B104KBCNNNC"/>
+<attribute name="PACKAGE" value="1206"/>
 </part>
 <part name="L1" library="keyer" deviceset="L_V" device="" value="1mH">
+<attribute name="PACKAGE" value="SMD (e.g. 1210 or CD54)"/>
 </part>
 <part name="C12" library="keyer" deviceset="C_V" device="" value="470nF">
+<attribute name="MPN" value="TCC1206X7R474K101FT"/>
+<attribute name="LCSC" value="C282871"/>
+<attribute name="Supplier" value="LCSC"/>
+<attribute name="Supplier Part" value="C282871"/>
+<attribute name="Manufacturer Part" value="TCC1206X7R474K101FT"/>
+<attribute name="PACKAGE" value="1206"/>
 </part>
 <part name="C13" library="keyer" deviceset="C_H" device="" value="10nF">
+<attribute name="MPN" value="1206B103K500NT"/>
+<attribute name="LCSC" value="C1846"/>
+<attribute name="Supplier" value="LCSC"/>
+<attribute name="Supplier Part" value="C1846"/>
+<attribute name="Manufacturer Part" value="1206B103K500NT"/>
+<attribute name="PACKAGE" value="1206"/>
 </part>
 <part name="J9" library="keyer" deviceset="HDR3_L" device="" value="VOLUME 10k AUDIO">
+<attribute name="PACKAGE" value="2.54 mm"/>
 </part>
 <part name="C14" library="keyer" deviceset="C_V" device="" value="10nF">
+<attribute name="MPN" value="1206B103K500NT"/>
+<attribute name="LCSC" value="C1846"/>
+<attribute name="Supplier" value="LCSC"/>
+<attribute name="Supplier Part" value="C1846"/>
+<attribute name="Manufacturer Part" value="1206B103K500NT"/>
+<attribute name="PACKAGE" value="1206"/>
 </part>
 <part name="GND18" library="keyer" deviceset="SUP_GND" device="" value="GND">
 </part>
@@ -773,61 +1003,131 @@
 </part>
 <part name="GND22" library="keyer" deviceset="SUP_GND" device="" value="GND">
 </part>
-<part name="U6" library="keyer" deviceset="LM386" device="" value="LM386MX-1/NOPB">
-<attribute name="MPN" value="LM386MX-1/NOPB"/>
-<attribute name="LCSC" value="C23573"/>
+<part name="U6" library="keyer" deviceset="LM386" device="" value="LM386N-3/NOPB">
+<attribute name="MPN" value="LM386N-3/NOPB"/>
+<attribute name="LCSC" value="C139428"/>
+<attribute name="Supplier" value="LCSC"/>
+<attribute name="Supplier Part" value="C139428"/>
+<attribute name="Manufacturer Part" value="LM386N-3/NOPB"/>
+<attribute name="PACKAGE" value="PDIP-8"/>
 </part>
 <part name="GND23" library="keyer" deviceset="SUP_GND" device="" value="GND">
 </part>
 <part name="C16" library="keyer" deviceset="C_V" device="" value="100nF">
+<attribute name="MPN" value="CL31B104KBCNNNC"/>
+<attribute name="LCSC" value="C24497"/>
+<attribute name="Supplier" value="LCSC"/>
+<attribute name="Supplier Part" value="C24497"/>
+<attribute name="Manufacturer Part" value="CL31B104KBCNNNC"/>
+<attribute name="PACKAGE" value="1206"/>
 </part>
 <part name="GND24" library="keyer" deviceset="SUP_GND" device="" value="GND">
 </part>
 <part name="C19" library="keyer" deviceset="C_V" device="" value="100nF">
+<attribute name="MPN" value="CL31B104KBCNNNC"/>
+<attribute name="LCSC" value="C24497"/>
+<attribute name="Supplier" value="LCSC"/>
+<attribute name="Supplier Part" value="C24497"/>
+<attribute name="Manufacturer Part" value="CL31B104KBCNNNC"/>
+<attribute name="PACKAGE" value="1206"/>
 </part>
 <part name="R19" library="keyer" deviceset="R_V" device="" value="10R">
+<attribute name="MPN" value="1206W4F100JT5E"/>
+<attribute name="LCSC" value="C17903"/>
+<attribute name="Supplier" value="LCSC"/>
+<attribute name="Supplier Part" value="C17903"/>
+<attribute name="Manufacturer Part" value="1206W4F100JT5E"/>
+<attribute name="PACKAGE" value="1206"/>
 </part>
 <part name="C20" library="keyer" deviceset="CP_H" device="" value="220uF">
+<attribute name="PACKAGE" value="electrolytic"/>
 </part>
 <part name="C21" library="keyer" deviceset="C_V" device="" value="10nF">
+<attribute name="MPN" value="1206B103K500NT"/>
+<attribute name="LCSC" value="C1846"/>
+<attribute name="Supplier" value="LCSC"/>
+<attribute name="Supplier Part" value="C1846"/>
+<attribute name="Manufacturer Part" value="1206B103K500NT"/>
+<attribute name="PACKAGE" value="1206"/>
 </part>
 <part name="GND25" library="keyer" deviceset="SUP_GND" device="" value="GND">
 </part>
 <part name="GND26" library="keyer" deviceset="SUP_GND" device="" value="GND">
 </part>
 <part name="R18" library="keyer" deviceset="R_H" device="" value="680R">
+<attribute name="MPN" value="1206W4F6800T5E"/>
+<attribute name="LCSC" value="C17975"/>
+<attribute name="Supplier" value="LCSC"/>
+<attribute name="Supplier Part" value="C17975"/>
+<attribute name="Manufacturer Part" value="1206W4F6800T5E"/>
+<attribute name="PACKAGE" value="1206"/>
 </part>
 <part name="C15" library="keyer" deviceset="CP_H" device="" value="10uF">
+<attribute name="MPN" value="CL31A106KBHNNNE"/>
+<attribute name="LCSC" value="C13585"/>
+<attribute name="Supplier" value="LCSC"/>
+<attribute name="Supplier Part" value="C13585"/>
+<attribute name="Manufacturer Part" value="CL31A106KBHNNNE"/>
+<attribute name="PACKAGE" value="1206"/>
 </part>
 <part name="C17" library="keyer" deviceset="C_V" device="" value="100nF">
+<attribute name="MPN" value="CL31B104KBCNNNC"/>
+<attribute name="LCSC" value="C24497"/>
+<attribute name="Supplier" value="LCSC"/>
+<attribute name="Supplier Part" value="C24497"/>
+<attribute name="Manufacturer Part" value="CL31B104KBCNNNC"/>
+<attribute name="PACKAGE" value="1206"/>
 </part>
 <part name="C18" library="keyer" deviceset="CP_V" device="" value="47uF">
+<attribute name="PACKAGE" value="electrolytic"/>
 </part>
 <part name="GND27" library="keyer" deviceset="SUP_GND" device="" value="GND">
 </part>
 <part name="GND28" library="keyer" deviceset="SUP_GND" device="" value="GND">
 </part>
 <part name="R20" library="keyer" deviceset="R_V" device="" value="1k2">
+<attribute name="MPN" value="1206W4F1201T5E"/>
+<attribute name="LCSC" value="C17891"/>
+<attribute name="Supplier" value="LCSC"/>
+<attribute name="Supplier Part" value="C17891"/>
+<attribute name="Manufacturer Part" value="1206W4F1201T5E"/>
+<attribute name="PACKAGE" value="1206"/>
 </part>
 <part name="D1" library="keyer" deviceset="Z_V" device="" value="1.8V DDZ9678-7">
 <attribute name="MPN" value="DDZ9678-7"/>
+<attribute name="PACKAGE" value="SOD-123"/>
 </part>
 <part name="U7" library="keyer" deviceset="PHOTOMOS" device="" value="VO1400AEFTR (NO)">
 <attribute name="MPN" value="VO1400AEFTR"/>
 <attribute name="LCSC" value="C142551"/>
+<attribute name="Supplier" value="LCSC"/>
+<attribute name="Supplier Part" value="C142551"/>
+<attribute name="Manufacturer Part" value="VO1400AEFTR"/>
+<attribute name="PACKAGE" value="SOP-4"/>
 </part>
 <part name="P5V12" library="keyer" deviceset="SUP_P5V" device="" value="+5V">
 </part>
 <part name="GND29" library="keyer" deviceset="SUP_GND" device="" value="GND">
 </part>
 <part name="R21" library="keyer" deviceset="R_V" device="" value="1k2">
+<attribute name="MPN" value="1206W4F1201T5E"/>
+<attribute name="LCSC" value="C17891"/>
+<attribute name="Supplier" value="LCSC"/>
+<attribute name="Supplier Part" value="C17891"/>
+<attribute name="Manufacturer Part" value="1206W4F1201T5E"/>
+<attribute name="PACKAGE" value="1206"/>
 </part>
 <part name="D2" library="keyer" deviceset="Z_V" device="" value="1.8V DDZ9678-7">
 <attribute name="MPN" value="DDZ9678-7"/>
+<attribute name="PACKAGE" value="SOD-123"/>
 </part>
 <part name="U8" library="keyer" deviceset="PHOTOMOS" device="" value="CPC1117NTR (NC)">
 <attribute name="MPN" value="CPC1117NTR"/>
 <attribute name="LCSC" value="C150424"/>
+<attribute name="Supplier" value="LCSC"/>
+<attribute name="Supplier Part" value="C150424"/>
+<attribute name="Manufacturer Part" value="CPC1117NTR"/>
+<attribute name="PACKAGE" value="SOP-4"/>
 </part>
 <part name="P5V13" library="keyer" deviceset="SUP_P5V" device="" value="+5V">
 </part>
@@ -836,16 +1136,25 @@
 <part name="J11" library="keyer" deviceset="JACK2_L" device="" value="RIG AUDIO IN SJ1-3533NG">
 <attribute name="MPN" value="SJ1-3533NG"/>
 <attribute name="LCSC" value="C4992459"/>
+<attribute name="Supplier" value="LCSC"/>
+<attribute name="Supplier Part" value="C4992459"/>
+<attribute name="Manufacturer Part" value="SJ1-3533NG"/>
+<attribute name="PACKAGE" value="TH"/>
 </part>
 <part name="GND31" library="keyer" deviceset="SUP_GND" device="" value="GND">
 </part>
 <part name="J10" library="keyer" deviceset="JACK2_L" device="" value="PHONES SJ1-3533NG">
 <attribute name="MPN" value="SJ1-3533NG"/>
 <attribute name="LCSC" value="C4992459"/>
+<attribute name="Supplier" value="LCSC"/>
+<attribute name="Supplier Part" value="C4992459"/>
+<attribute name="Manufacturer Part" value="SJ1-3533NG"/>
+<attribute name="PACKAGE" value="TH"/>
 </part>
 <part name="GND32" library="keyer" deviceset="SUP_GND" device="" value="GND">
 </part>
 <part name="J12" library="keyer" deviceset="HDR2_L" device="" value="AUDIO_OUT">
+<attribute name="PACKAGE" value="2.54 mm"/>
 </part>
 <part name="GND33" library="keyer" deviceset="SUP_GND" device="" value="GND">
 </part>

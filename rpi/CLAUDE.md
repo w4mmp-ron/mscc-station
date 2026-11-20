@@ -54,6 +54,7 @@ Reading / investigating is fine.
 - **WiFi SWR meter (Ron's copy `swr-meter/ron/HF_SWR_R4_1/`):** tune allowance, mDNS, WiFi retry, PEAK hold,
   AVG, PEAK SWR all built and tested (details in `CLAUDE-history.md`, 2026-11-15 section). The ms-sdr TX
   backstop on a meter fault shipped in R11-19-0 (Pi only; history). Build: arduino-cli (FQBN + options in the history).
+  30 W table fix committed 2026-11-20 (history). Open: RF probe check vs both meters with the new 10 Mohm DMMs.
 - **Client tooltips = Stew's (Ron 2026-11-19), note `.mscc-coord/NOTE-FOR-STEW-CLIENT-TOOLTIPS-2026-11-19.md`,
   on the With Stew list.** Ron's original entry (2026-11-15), WPF AND Avalonia: none of the 208 WPF text tooltips has a line
   break, so long ones show as one wide strip (64 over 70 chars; longest: two-tone test 264, PADDLE 207,
