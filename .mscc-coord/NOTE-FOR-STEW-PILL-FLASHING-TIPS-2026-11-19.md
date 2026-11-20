@@ -4,11 +4,17 @@ A brand-new pill has no bootloader, so the USB flasher (stm32-app-flash) cannot 
 The first burn must be done with the ST-Link, the same one Ron uses. Do not use the ST built-in
 loader (KEY + NRST, or BOOT0). It does not work for this.
 
+The full step-by-step guide, with the wiring and the LED letters to expect, is in the STM32 repo: `psoc-replacement-stm32/proficio-stm32f411-25MHz/docs/STEW-INITIAL-FLASH-BURN-WINDOWS.md`.
+Ron tested it on a bare pill on 2026-10-01. Its file names were updated on 2026-11-19. The short
+version is below.
+
 ## What you need
 
 - A Windows PC with STM32CubeProgrammer installed. It is free from ST, and it includes the
   ST-Link driver.
-- The ST-Link, wired to the pill's SWD header: SWDIO, SWCLK, GND and 3.3 V.
+- The ST-Link, wired to the pill's SWD header: SWDIO, SWCLK, GND and 3.3 V. Power the pill
+  from one source only: if it is in a powered radio or has its own USB cable plugged in, leave
+  the 3.3 V wire off.
 - The BOOT0 and PA8 jumpers off.
 
 ## Steps
@@ -19,8 +25,9 @@ loader (KEY + NRST, or BOOT0). It does not work for this.
    ```powershell
    .\stm32-bootloader-flash.ps1 -Image combined
    ```
-4. When it finishes, unplug the ST-Link and plug in the rig USB. The radio should show
-   firmware 3.24.
+4. When it finishes, unplug the ST-Link and plug in the rig USB. The pill's LED should be solid
+   on, and the radio should show firmware 3.24. A bare pill, not in a radio, blinks the letter C
+   instead, which is normal.
 
 After this first burn, updates go over USB with the normal flasher, and Windows finds the driver
 by itself. Zadig is not needed.
@@ -40,6 +47,3 @@ by itself. Zadig is not needed.
   "Download verified successfully."
 - If it says "No STM32 target found", check the four wires and the 3.3 V supply, then run it again.
   A slower link can help: add `-FreqKHz 1000`.
-- The script only looks in the 25 MHz release folder. For an 8 MHz pill, give the file by hand:
-  `.\stm32-bootloader-flash.ps1 -BinPath <path to the 8 MHz boot-app .bin>`, taken from
-  `psoc-replacement-stm32\proficio-stm32f411-8MHz\release\`. Do not mix the two.
