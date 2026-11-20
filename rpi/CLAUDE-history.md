@@ -2157,3 +2157,10 @@ Remote Digital TX spurs (Stew's NOTE-FOR-RON-REMOTE-DIGITAL-TX-SPURS-2026-11-17)
 - Stand-alone keyer hardware: U6 LM386 now DIP-8 (LM386N-3/NOPB, LCSC C139428; Ron 2026-11-19); `tools/make_eagle.py` takes part numbers and packages from `BOM.csv` and writes EasyEDA's Supplier / Supplier Part / Manufacturer Part / PACKAGE attributes, so EasyEDA gets every LCSC number on import; schematic, preview and netlist regenerated.
 - `utility-scripts/Pi/pi-volts.sh`: Pi 5 shows the 5 V input; Pi 4 / Zero 2 W show "5V n/a" + core voltage; under-voltage / throttle flags on every Pi; README section added.
 - Filter master question (Ron): the server is the master; WPF's once-per-session LO / HI CUT push at startup is no longer needed (old LSB index 0 = valid 500 Hz, clears on any button / mode change). Note `.mscc-coord/NOTE-FOR-STEW-WPF-STARTUP-FILTER-PUSH-2026-11-20.md` (pushed f6247415); no server change.
+
+## 2026-11-20, later (no release, nothing installable changed)
+
+- WPF vs Avalonia check (read-only): the 11-19 parity items are in Avalonia 1.7.08; left: WPF per-mode filter memory, WPF filter push at startup, tooltip texts, "VAC" wording (the last two already Stew's).
+- Ron: the server is the master for user settings. Notes for Stew (pushed): `NOTE-FOR-STEW-WPF-STARTUP-FILTER-PUSH-2026-11-20.md` (WPF's once-per-session LO / HI CUT push no longer needed; old LSB index 0 = valid 500 Hz, no server change), `NOTE-FOR-STEW-POWER-SETTINGS-SERVER-IS-MASTER-2026-11-20.md` (power levels live only in trans; servers to report them at connect, clients to show them; seen as CW 40 W with the client showing 100).
+- Client timeouts in the Pi log at close = clients send no leaving message when they didn't start the servers. `NOTE-FOR-STEW-CLIENT-LEAVING-2026-10-14.md` got a 2026-11-20 update (Ron: always send 0xFE 0 on close; 0xFE 1 ready / 0xFE 0 leaving / 0xFF 0 stop the servers).
+- Opcode 0x15 reserved as CMD_SET_CW_CARRIER (AVAILABLE OPCODES block in `rpi/ms-sdr-linux/source/usbavrcmd.h`, comment only) for Ron's separate one-off cw-carrier work (Pi Zero 2 W test; own repo, nothing in this repo).
