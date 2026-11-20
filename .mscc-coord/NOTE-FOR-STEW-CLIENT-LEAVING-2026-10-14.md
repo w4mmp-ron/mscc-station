@@ -12,6 +12,26 @@ Reason: in connect-only mode WPF's Stop sends nothing (`UdpRadioService.cs`, CMD
 skipped on purpose so the servers keep running), so ms-sdr only finds out from the missing
 keep-alive.
 
+## Update 2026-11-20 (Ron)
+
+Still open: neither client sends 0xFE 0 yet (WPF and Avalonia, same `UdpRadioService.Stop`).
+Seen today on the Pi with Avalonia: after a close, ms-sdr logs "Client FAILED" about 15 s later
+and only then frees the session. All three ms-sdr versions (Pi, Windows, Ubuntu) already handle
+0xFE 0.
+
+Ron: even when the client did NOT start the servers, it should tell ms-sdr that it is stopping.
+
+The three messages:
+
+- 0xFE with 1 = "client ready": sent at connect, claims the session.
+- 0xFE with 0 = "client leaving": ms-sdr frees the session; the servers keep running.
+- 0xFF with 0 (CMD_SET_STOP, STOP_NORMAL) = "stop the servers".
+
+On close:
+
+- Client that started the servers: send 0xFE 0, then 0xFF 0.
+- Client that only connected (Launch Servers off, or remote): send 0xFE 0 only.
+
 ## Idea: reuse CMD_CHECK_GUI_STATUS (0xFE) with value 0
 
 - 0xFE value 1 = client ready / claims the session (as today).
