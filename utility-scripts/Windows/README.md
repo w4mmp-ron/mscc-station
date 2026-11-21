@@ -159,3 +159,24 @@ and says what it looks like: normal, stuck data, byte slip, or overload. For the
 "spectrum all yellow, S9+40, no audio" fault: run it while the fault is there,
 BEFORE pressing NRST. Works with MSCC open. Needs pip install sounddevice numpy.
 Normal on 2026-11-16: about -66 dBFS, floor about -125 dBFS.
+
+-------------------------------------------------------------------------------
+
+    pill-diag.exe          (or: python pill-diag.py)
+    build-pill-diag.cmd    (builds dist\pill-diag.exe, one file, nothing to install)
+
+Black Pill diagnostics in one window, for someone else's radio (first used for
+Stew's pills, 2026-11-21: weak receive, comb on transmit). Close MSCC first.
+Steps: find the radio (driver, version), pill state (reset, power-up I2C, hang
+record, counters), codec setup + read-back and receive frame errors, 10 s raw
+receive (sample rate against the PC clock, bits / level / I-Q check, saved as
+.wav), an optional transmit test, then the MSCC ini files + logs, program
+versions, USB driver and Windows version. Saves pill-diag-<date-time>.zip on
+the Desktop with summary.txt (FAIL / WARNING first) and details.txt.
+Transmit test: dummy load, amplifier off or unplugged (the pill keys the amp
+line too). The program sets the LO to the band's FT8 frequency (0x32), mode
+'U' (0x70), plays a 12 kHz I/Q tone at 1/10 of full scale (WASAPI exclusive)
+and keys the pill (0x50) for 5 s, no servers. Good = one carrier 12 kHz from
+the LO; a comb = pill / board. STOP, closing the window and any error unkey.
+If the program is killed while keyed, the pill stays keyed: power off the rig
+or start MSCC.
