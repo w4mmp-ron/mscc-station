@@ -34,7 +34,7 @@ keywords ("build" / "update the notes" / "finished" / "stop"), pull first, nothi
 | Path | Rule |
 |---|---|
 | `rpi/SDRcore-recv-linux/`, `rpi/SDRcore-trans-linux/`, `rpi/ms-sdr-linux/` | **Working trees** (Pi source of truth). Claude edits here. |
-| `swr-meter/ron/HF_SWR_R4_1/` | **Our copy of the WiFi SWR meter firmware** (ESP32 Arduino; copied 2026-11-01 from Stew's `swr-meter/HF_SWR_R4_1/` @ 67fa644). In git since 2026-11-04: the source plus `swr-meter/ron/build/HF_SWR_R4_1.ino.bin` (the file to OTA-load at http://hf-swr-meter.local/update); other build output stays local. Claude edits here; Stew's copy is read-only. |
+| `swr-meter/ron/HF_SWR_R4_2/` | **Our copy of the WiFi SWR meter firmware** (R4.2 since 2026-11-21; folder + sketch renamed from HF_SWR_R4_1 so the build file name matches the version) (ESP32 Arduino; copied 2026-11-01 from Stew's `swr-meter/HF_SWR_R4_1/` @ 67fa644). In git since 2026-11-04: the source plus `swr-meter/ron/build/HF_SWR_R4_2.ino.bin` (the file to OTA-load at http://hf-swr-meter.local/update); other build output stays local. Claude edits here; Stew's copy is read-only. |
 | Rest of `C:\Users\Ron\.grok\worktrees` | Read-only reference unless Ron says otherwise. |
 
 Git repo root: `C:\Users\Ron\.grok\worktrees`.
@@ -51,10 +51,6 @@ Reading / investigating is fine.
 **Since 2026-11-18 (Ron): the Pi servers are open again; Windows servers + clients still on hold.** At "finished": Windows installer yes (for the pill / keyer firmware), but never change or rebuild the Windows servers or client (Stew's pushed builds go in as they are). Pi server changes are not ported to Windows; each release lists them in a note for Stew (`.mscc-coord/NOTE-FOR-STEW-PI-SERVER-CHANGES-NOT-ON-WINDOWS-2026-11-18.md`).
 
 **Current list (updated 2026-11-06, after bb31561):**
-- **WiFi SWR meter (Ron's copy `swr-meter/ron/HF_SWR_R4_1/`):** tune allowance, mDNS, WiFi retry, PEAK hold,
-  AVG, PEAK SWR all built and tested (details in `CLAUDE-history.md`, 2026-11-15 section). The ms-sdr TX
-  backstop on a meter fault shipped in R11-19-0 (Pi only; history). Build: arduino-cli (FQBN + options in the history).
-  30 W table fix committed 2026-11-20 (history). Open: RF probe check vs both meters with the new 10 Mohm DMMs.
 - **Client tooltips = Stew's (Ron 2026-11-19), note `.mscc-coord/NOTE-FOR-STEW-CLIENT-TOOLTIPS-2026-11-19.md`,
   on the With Stew list.** Ron's original entry (2026-11-15), WPF AND Avalonia: none of the 208 WPF text tooltips has a line
   break, so long ones show as one wide strip (64 over 70 chars; longest: two-tone test 264, PADDLE 207,

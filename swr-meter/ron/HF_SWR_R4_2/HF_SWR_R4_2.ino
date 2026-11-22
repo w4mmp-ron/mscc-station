@@ -1,7 +1,9 @@
 // ========================================================
 // Digital SWR Meter - LVGL code
 // 3.5" E32R35T Touch Display
-// R4.1: bar graph or cross-needle main page 
+// R4.1: bar graph or cross-needle main page
+// R4.2 (W4MMP 2026-11-21): PEAK falls to 0 in 1 s after the hold, FWD + REF together from
+//      carrier drop, scale range kept through the hold / fall (no jump to full scale) 
 // ========================================================
 
 // ---   LF/HF VERSION TOGGLE   ---
@@ -40,9 +42,9 @@ float fwdVisualMax = 10;   //default to the 10 watt scale
 float refVisualMax = 2;
 
 #ifdef VERSION_HF
-  String codeVersion = "HF R4.1 "__DATE__ " " __TIME__;
+  String codeVersion = "HF R4.2 "__DATE__ " " __TIME__;
 #else
-  String codeVersion = "LF R4.1 "__DATE__ " " __TIME__;
+  String codeVersion = "LF R4.2 "__DATE__ " " __TIME__;
 #endif
 
 // LVGL calibration values - we can tweak these if touch is off
@@ -305,20 +307,22 @@ const float FWD_HIGH_RANGE_SCALE = 2.30f;     // ← start with this value 2.30f
  * PEAK looked almost live. REF had no timer of its own.
  * Now: FWD and REF each have their own timer. The hold restarts on any reading within
  * PEAK_REFRESH_FRACTION (10%) of the held peak, so steady CW / SSB keeps it up. After
- * peakHoldSec (0.5..5 s, default 2 s, web setting) the peak falls x0.97 every 20 ms
- * (~3.5 s from 100 W to 0), with no floor from the live reading. A higher reading still
- * raises the peak at once. */
+ * peakHoldSec (0.5..5 s, default 2 s, web setting) the peak falls to 0 in a straight line
+ * over PEAK_FALL_MS (1 s), whatever its size, so FWD and REF finish together (2026-11-21;
+ * was x0.97 every 20 ms: ~6 s from 100 W, while a small REF looked gone after ~2 s). No floor
+ * from the live reading. A higher reading still raises the peak at once and restarts the hold. */
 float peakHoldSec = 2.0f;                 // web setting "Peak Hold (s)", saved as "peakHold"
 #define PEAK_HOLD_MIN_SEC 0.5f
 #define PEAK_HOLD_MAX_SEC 5.0f
 #define PEAK_REFRESH_FRACTION 0.90f       // reading >= 90% of the held peak restarts the hold
-#define PEAK_DECAY_STEP 0.97f             // multiplier per decay tick
-#define PEAK_DECAY_TICK_MS 20
+#define PEAK_FALL_MS 1000UL               // W4MMP 2026-11-21: after the hold, straight fall to 0 in 1 s
+#define PEAK_DECAY_TICK_MS 20             // decay / AVG slot tick
 #define PEAK_ZERO_W 0.15f                 // below this the peak is cleared
 unsigned long peakHoldStart = 0;          // FWD: last time a reading was near the peak
 unsigned long peakHoldStartRef = 0;       // REF: same, its own timer
 bool peakHolding = false;                 // FWD peak is being held or decaying
 bool peakHoldingRef = false;              // REF peak is being held or decaying
+float peakHeldFWD = 0, peakHeldREF = 0;   // W4MMP 2026-11-21: value held, start of the 1 s fall
 /* W4MMP 2026-11-06: PEAK SWR (screen only, not in the JSON). Follows the averaged SWR (the big
  * number), counted only while FWD >= MIN_POWER_THRESHOLD. Held for peakHoldSec; a reading
  * whose (SWR - 1) is within 10% of the peak's restarts the hold. When the hold runs out it
@@ -724,7 +728,10 @@ void loop() {
                 // W4MMP: peak hold. Higher = new peak; within 10% of the peak = hold restarts.
                 if (instantP > MIN_POWER_THRESHOLD) {
                     if (instantP >= peakFWD) peakFWD = instantP;
-                    if (instantP >= peakFWD * PEAK_REFRESH_FRACTION) peakHoldStart = millis();
+                    if (instantP >= peakFWD * PEAK_REFRESH_FRACTION) {
+                        peakHoldStart = millis();
+                        peakHeldFWD = peakFWD;      // W4MMP 2026-11-21: fall starts from here
+                    }
                     peakHolding = true;
                     lastRfMs = millis();
                 }
@@ -753,7 +760,10 @@ void loop() {
                 // W4MMP: REF peak hold, same rule as FWD, with its own timer.
                 if (instantRP > MIN_POWER_THRESHOLD) {
                     if (instantRP >= peakREF) peakREF = instantRP;
-                    if (instantRP >= peakREF * PEAK_REFRESH_FRACTION) peakHoldStartRef = millis();
+                    if (instantRP >= peakREF * PEAK_REFRESH_FRACTION) {
+                        peakHoldStartRef = millis();
+                        peakHeldREF = peakREF;      // W4MMP 2026-11-21
+                    }
                     peakHoldingRef = true;
                 }
                 avgSumR += barSmoothRef;   // W4MMP: AVG
@@ -947,6 +957,14 @@ void loop() {
         static int slotsFilled = 0;     // slots used since the window was started
         static bool avgIdle = true;     // true after no RF for longer than the hold
         bool transmitting = (millis() - lastRfMs < 100);
+        // W4MMP 2026-11-21: carrier just dropped: FWD and REF holds both count from the last RF,
+        // from the values they show now, so the two hold and fall together.
+        static bool wasTransmitting = false;
+        if (wasTransmitting && !transmitting) {
+            if (peakHolding)    { peakHoldStart = lastRfMs;    peakHeldFWD = peakFWD; }
+            if (peakHoldingRef) { peakHoldStartRef = lastRfMs; peakHeldREF = peakREF; }
+        }
+        wasTransmitting = transmitting;
         float sF = (avgCntF > 0) ? avgSumF / avgCntF : 0.0f;
         float sR = (avgCntR > 0) ? avgSumR / avgCntR : 0.0f;
         avgSumF = avgSumR = 0; avgCntF = avgCntR = 0;
@@ -978,15 +996,20 @@ void loop() {
             avgIdle = true;
         }                                          // else: hold the last value
 
+        // W4MMP 2026-11-21: after the hold, straight line from the held value to 0 in PEAK_FALL_MS
         if (peakHolding && (millis() - peakHoldStart > holdMs)) {
-            peakFWD *= PEAK_DECAY_STEP;
+            unsigned long fallMs = millis() - peakHoldStart - holdMs;
+            peakFWD = (fallMs >= PEAK_FALL_MS) ? 0.0f
+                    : peakHeldFWD * (1.0f - (float)fallMs / (float)PEAK_FALL_MS);
             if (peakFWD < PEAK_ZERO_W) {
                 peakFWD = 0;
                 peakHolding = false;
             }
         }
         if (peakHoldingRef && (millis() - peakHoldStartRef > holdMs)) {
-            peakREF *= PEAK_DECAY_STEP;
+            unsigned long fallMs = millis() - peakHoldStartRef - holdMs;
+            peakREF = (fallMs >= PEAK_FALL_MS) ? 0.0f
+                    : peakHeldREF * (1.0f - (float)fallMs / (float)PEAK_FALL_MS);
             if (peakREF < PEAK_ZERO_W) {
                 peakREF = 0;
                 peakHoldingRef = false;
@@ -1500,6 +1523,16 @@ void drawMainPage() {
     lastRefV = -999.0f;
 }
 
+/* W4MMP 2026-11-21: scale ranges from the larger of the live reading and the held peak, so the
+ * peak marker does not jump to full scale when the carrier drops (the live reading goes to 0
+ * and the scale used to switch to its lowest range while the peak was still held). */
+static int fwdScaleMax(float p) {
+    return (p <= 10.0f) ? 10 : (p <= 100.0f) ? 100 : (p <= 200.0f) ? 200 : (p <= 500.0f) ? 500 : 1000;
+}
+static int refScaleMax(float p) {
+    return (p <= 2.0f) ? 2 : (p <= 10.0f) ? 10 : 50;
+}
+
 void updateDynamicValues() {
 
   if (isUpdatingOTA) return;
@@ -1544,7 +1577,12 @@ void updateDynamicValues() {
   }
 
     // FWD power
-    if (fabs(forwardPower - lastForwardPower) >= POWER_CHANGE_THRESHOLD) {
+    // W4MMP 2026-11-21: range from the live reading or the held peak; while the peak holds or
+    // falls, from the value it started from, so the range can't step down mid-fall (a 105 W
+    // peak on the 200 W scale used to jump to full scale when it fell under 100 W).
+    float fwdRangeP = max(forwardPower, peakHolding ? max(peakFWD, peakHeldFWD) : peakFWD);
+    if (fabs(forwardPower - lastForwardPower) >= POWER_CHANGE_THRESHOLD ||
+        fwdScaleMax(fwdRangeP) != fwdVisualMax) {
 
         char fwdBuf[16];
         if (isnan(forwardPower) || isinf(forwardPower)) forwardPower = 0.0;
@@ -1556,19 +1594,19 @@ void updateDynamicValues() {
         int majorEvery;
 
         // Dynamic Peak Scale Logic
-        if (forwardPower <= 10.0f) {
+        if (fwdRangeP <= 10.0f) {
             newMax = 10;   
             totalTicks = 21; // 0, 1, 2...10
             majorEvery = 2;  // Label every 1W
-        } else if (forwardPower <= 100.0f) {
+        } else if (fwdRangeP <= 100.0f) {
             newMax = 100;   
             totalTicks = 21;
             majorEvery = 2; 
-        } else if  (forwardPower <= 200.0f) {
+        } else if  (fwdRangeP <= 200.0f) {
             newMax = 200;   
             totalTicks = 21;
             majorEvery = 2; 
-        } else if (forwardPower <= 500.0f) {
+        } else if (fwdRangeP <= 500.0f) {
             newMax = 500;
             totalTicks = 21;
             majorEvery = 2;
@@ -1603,7 +1641,9 @@ void updateDynamicValues() {
 
   // REF power
   
-  if (fabs(reflectedPower - lastReflectedPower) >= 0.05) {
+  float refRangeP = max(reflectedPower, peakHoldingRef ? max(peakREF, peakHeldREF) : peakREF);   // W4MMP 2026-11-21: as FWD
+  if (fabs(reflectedPower - lastReflectedPower) >= 0.05 ||
+      refScaleMax(refRangeP) != refVisualMax) {
 
         char refBuf[16];
         if (isnan(reflectedPower) || isinf(reflectedPower)) reflectedPower = 0.0;
@@ -1615,11 +1655,11 @@ void updateDynamicValues() {
         int totalTicksRef;
         int majorEveryRef;
 
-        if (reflectedPower <= 2.0f) {
+        if (refRangeP <= 2.0f) {
             newMaxRef = 2;     
             totalTicksRef = 9;  
             majorEveryRef = 2;
-        } else if (reflectedPower <= 10.0f) {
+        } else if (refRangeP <= 10.0f) {
             newMaxRef = 10;    
             totalTicksRef = 11; 
             majorEveryRef = 2;  
