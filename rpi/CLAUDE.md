@@ -120,6 +120,12 @@ Reading / investigating is fine.
   reply note `.mscc-coord/NOTE-FOR-STEW-MSCC-STATUS-AND-RELEASES-REPLY-2026-11-19.md`). Our notes say
   "Ubuntu packages: added by Stew". Release layout (all installers, version table, keep newest two) is in the
   repo `CLAUDE.md` step 5.
+- **32-bit (armhf) Pi servers (Ron 2026-11-22, NOT started; for users on 32-bit Pi OS, Bookworm or Trixie):**
+  set up a 32-bit build in a new folder `~/mscc-32b` on proficio (proficio stays 64-bit), copy the
+  relevant source in, build all three servers + PortAudio as 32-bit. Proposal: a Bookworm armhf chroot
+  in that folder (debootstrap; sudo; ask first), so the binaries run on Bookworm and the host's arm64
+  packages, `~/mscc` and `/usr/local` are untouched; check first that armhf runs on the Pi 5 16K-page
+  kernel. Exception: the Zero 2 W is 64-bit Pi OS only (requirement). Findings: `CLAUDE-history.md` (2026-11-22).
 - **Next:** a Pi / Linux remote guide, when Ron says.
 - **Parked:** NR warble fix (Ron 2026-11-01: leave it, NR works well; lower level = less
   warble). Sync AM (off the list). Complex Goertzel for FREQ CAL and FM transmit (future ideas,

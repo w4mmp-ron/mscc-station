@@ -2,6 +2,15 @@
 
 Installer: `mscc-net9-R<version>-install.exe` (WPF client + Windows servers). Install the newest one; older installers in this folder are kept for roll-back only.
 
+## R11-22-0 — 2026-11-22  (Black Pill firmware 3.25; WPF 11.22.0 = 11.19.2 renumbered; Windows servers unchanged: ms-sdr 3.214, recv 3.155, trans 3.159)
+
+### Changed
+- Black Pill firmware 3.25 in `C:\mscc-net9\Black Pill Firmware\`. The pill can store a CW carrier (one 1 ms block) and play it in CW instead of the transmit audio from the PC. It stays off until a server sends the block; today's servers don't, so the radio works as with 3.24.
+- Windows installer `mscc-net9-R11-22-0-install.exe`. The client is the same as 11.19.2 with a new number; the Windows servers are the same as R11-19-2.
+
+### Tested
+- Black Pill 3.25 in Ron's Proficio MKII since 2026-11-21 (Pi: receive, FT8, CW, TUNE). Installer built on Ron's PC, not installed yet.
+
 ## R11-19-2 — 2026-11-19  (WPF 11.19.2 one-cable Digital TX guard; Windows servers unchanged: ms-sdr 3.214, recv 3.155, trans 3.159)
 
 ### Fixed
