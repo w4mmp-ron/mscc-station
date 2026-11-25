@@ -8,7 +8,7 @@ public sealed class MainForm : Form
 
     private readonly TextBox _fileBox = new() { ReadOnly = true, Anchor = AnchorStyles.Left | AnchorStyles.Right | AnchorStyles.Top };
     private readonly Button _browseBtn = new() { Text = "Browse…", AutoSize = true };
-    private readonly Button _listBtn = new() { Text = "List DFU devices", AutoSize = true };
+    private readonly Button _listBtn = new() { Text = "Check Radio", AutoSize = true };
     private readonly Button _burnBtn = new() { Text = "Burn application", AutoSize = true };
     private readonly TextBox _log = new()
     {
@@ -26,7 +26,7 @@ public sealed class MainForm : Form
         Height = 48,
         Dock = DockStyle.Top,
         Text = "Application update only (@ 0x08008000). Bootloader is not flashed here (use ST-Link / Cube).\r\n" +
-               "1) Fit the BOOT jumper, press NRST (LED B)   2) Browse to app .bin   3) Burn   4) Remove the jumper, press NRST",
+               "1) Browse to the app .bin   2) Burn. The pill goes to flash mode by itself and restarts when done.",
     };
 
     public MainForm()
@@ -65,7 +65,7 @@ public sealed class MainForm : Form
         Controls.Add(_hint);
 
         _browseBtn.Click += (_, _) => Browse();
-        _listBtn.Click += async (_, _) => await ListAsync();
+        _listBtn.Click += async (_, _) => await CheckRadioAsync();
         _burnBtn.Click += async (_, _) => await BurnAsync();
     }
 
@@ -119,17 +119,41 @@ public sealed class MainForm : Form
     }
 
     private const string NoPillText =
-        "No Black Pill in flash mode found. Fit the BOOT jumper and press NRST (LED B), then try again.";
+        "No radio and no Black Pill in flash mode found. Is the rig powered and the USB cable in?\r\n" +
+        "If it still is not found, fit the BOOT jumper and press NRST (LED B), then try again.";
 
-    private async Task ListAsync()
+    private void SetBusy(bool busy)
+    {
+        _listBtn.Enabled = !busy;
+        _burnBtn.Enabled = !busy;
+        _browseBtn.Enabled = !busy;
+    }
+
+    // Pill in flash mode (0483:df11)? Runs dfu-util -l without logging it.
+    private async Task<bool> DfuPresentAsync()
+    {
+        await RunDfuAsync("-l", quiet: true);
+        return OutputHas("0483:df11");
+    }
+
+    private static Task<string?> RadioVersionAsync() => Task.Run(RadioUsb.Version);
+
+    private async Task CheckRadioAsync()
     {
         if (!ServersOk())
             return;
-        await RunDfuAsync("-l");
-        if (OutputHas("Found DFU"))
-            AppendLog("Black Pill in flash mode found: ready to Burn.\r\n");
-        else
-            AppendLog(NoPillText + "\r\n");
+        SetBusy(true);
+        try
+        {
+            var ver = await RadioVersionAsync();
+            if (ver is not null)
+                AppendLog($"Radio running firmware {ver}. Ready to Burn.\r\n");
+            else if (await DfuPresentAsync())
+                AppendLog("Black Pill in flash mode (LED B). Ready to Burn.\r\n");
+            else
+                AppendLog(NoPillText + "\r\n");
+        }
+        finally { SetBusy(false); }
     }
 
     private async Task BurnAsync()
@@ -150,18 +174,75 @@ public sealed class MainForm : Form
         if (!ServersOk())
             return;
 
-        var args = $"-d 0483:df11 -a 0 -s {AppAddress}:leave -D \"{file}\"";
-        AppendLog($"> dfu-util {args}\r\n");
-        var code = await RunDfuAsync(args);
-        if (OutputHas("No DFU capable USB device"))
-            AppendLog("\r\n" + NoPillText + "\r\n");
-        else if (code == 0)
-            AppendLog("\r\nDone. Reset without KEY to run the app.\r\n");
-        else
-            AppendLog($"\r\ndfu-util exited with code {code}. Is the pill in DFU mode?\r\n");
+        SetBusy(true);
+        try { await BurnStepsAsync(file); }
+        finally { SetBusy(false); }
     }
 
-    private async Task<int> RunDfuAsync(string args)
+    // Same steps as the Pi stm32-app-flash script.
+    private async Task BurnStepsAsync(string file)
+    {
+        bool jumperSuspect = false;
+        if (await DfuPresentAsync())
+        {
+            AppendLog("Pill already in flash mode (BOOT jumper on?). Flashing anyway.\r\n");
+            jumperSuspect = true;
+        }
+        else
+        {
+            var ver = await RadioVersionAsync();
+            if (ver is null)
+            {
+                AppendLog(NoPillText + "\r\n");
+                return;
+            }
+            AppendLog($"Radio running firmware {ver}. Sending it to flash mode...\r\n");
+            await Task.Run(RadioUsb.SendFlashMode);
+            bool inDfu = false;
+            for (int i = 0; i < 20 && !inDfu; i++)
+            {
+                await Task.Delay(500);
+                inDfu = await DfuPresentAsync();
+            }
+            if (!inDfu)
+            {
+                AppendLog("ERROR: the pill did not go to flash mode in 10 s.\r\n" +
+                          "Fit the BOOT jumper and press NRST (LED B), then Burn again.\r\n");
+                return;
+            }
+        }
+
+        var args = $"-d 0483:df11 -a 0 -s {AppAddress}:leave -D \"{file}\"";
+        AppendLog($"> dfu-util {args}\r\n");
+        await RunDfuAsync(args);
+        // dfu-util often ends with "Error during download get_status" after :leave because
+        // the pill resets at once; that is normal, so judge by this line, not the exit code.
+        if (!OutputHas("File downloaded successfully"))
+        {
+            AppendLog("\r\nERROR: flash FAILED (see above).\r\n");
+            return;
+        }
+
+        AppendLog("\r\nFlashed OK (the get_status error above is normal). Waiting for the radio to start...\r\n");
+        string? now = null;
+        for (int i = 0; i < 20 && now is null; i++)
+        {
+            await Task.Delay(500);
+            now = await RadioVersionAsync();
+        }
+        if (now is not null)
+            AppendLog($"Done: radio running firmware {now}.\r\n");
+        else if (await DfuPresentAsync())
+            AppendLog("Flashed OK, but the pill is still in flash mode (LED B):\r\n" +
+                      "remove the BOOT jumper and press NRST. No power cycle needed." +
+                      (jumperSuspect ? "" : " (Or KEY is held / stuck.)") + "\r\n");
+        else
+            AppendLog("Radio not seen on USB after 10 s. Check the LED letter.\r\n");
+    }
+
+    private bool _quiet;
+
+    private async Task<int> RunDfuAsync(string args, bool quiet = false)
     {
         if (!File.Exists(DfuUtilPath))
         {
@@ -169,8 +250,7 @@ public sealed class MainForm : Form
             return -1;
         }
 
-        _listBtn.Enabled = false;
-        _burnBtn.Enabled = false;
+        _quiet = quiet;
         lock (_lastOutput) _lastOutput.Clear();
         try
         {
@@ -200,11 +280,6 @@ public sealed class MainForm : Form
             AppendLog("ERROR: " + ex.Message + "\r\n");
             return -1;
         }
-        finally
-        {
-            _listBtn.Enabled = true;
-            _burnBtn.Enabled = true;
-        }
     }
 
     // dfu-util output of the current run (for the found / not found check)
@@ -223,7 +298,7 @@ public sealed class MainForm : Form
     {
         if (line is null) return;
         lock (_lastOutput) _lastOutput.Add(line);
-        if (line.Trim().Length == 0 || BannerStarts.Any(line.StartsWith)) return;
+        if (_quiet || line.Trim().Length == 0 || BannerStarts.Any(line.StartsWith)) return;
         BeginInvoke(() => AppendLog(line + "\r\n"));
     }
 

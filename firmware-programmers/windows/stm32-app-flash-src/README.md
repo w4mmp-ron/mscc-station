@@ -35,10 +35,21 @@ its old name `ProficioDfuDownloader`.
 
 ## Use
 
-1. Hold **KEY (PA0)** + tap **NRST**, release KEY → DFU (`0483:df11`)
+1. **Check Radio**: running version (radio `16C0:05DC`), flash mode (`0483:df11`) or not found.
 2. **Browse** to `BlackPill-25MHz-<version>-app.bin` (STM32 repo: `psoc-replacement-stm32\proficio-stm32f411-25MHz\release\`)
-3. **Burn application**
+3. **Burn application**. Same steps as the Pi `stm32-app-flash` script (2026-11-24):
+   - Radio running: sends USB command `0xFE` (`RadioUsb.cs`, through the `libusb-1.0.dll` beside
+     dfu-util; WinUSB binds by itself since pill 3.17), waits up to 10 s for `0483:df11`.
+   - Already in flash mode (BOOT jumper on): flashes anyway, then says to remove the jumper.
+   - Burns, judges success by "File downloaded successfully" (the get_status error after
+     `:leave` is normal), waits up to 10 s for the radio and shows its version.
 
 ```text
 dfu-util -d 0483:df11 -a 0 -s 0x08008000:leave -D <app.bin>
 ```
+
+Fallback if the pill does not go to flash mode: BOOT jumper (PA8) on + NRST (LED B), Burn,
+jumper off + NRST.
+
+Note: Claude's PowerShell tool can't open USB devices (libusb ACCESS error); test from Bash /
+a normal shell.

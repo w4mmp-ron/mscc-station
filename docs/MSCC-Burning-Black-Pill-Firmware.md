@@ -53,14 +53,16 @@ Close the MSCC client and the servers first.
 
 ### Update over USB
 
-1. Fit the BOOT jumper and press **NRST**. The LED blinks **B** (flash mode).
-2. Run `stm32-app-flash.exe` and click **List DFU devices**.
-   - If it shows "No Black Pill in flash mode found", check that the LED blinks **B** (step 1).
-3. Click **Browse…** and pick `BlackPill-25MHz-<version>-app.bin` (not the `-boot-app` file).
-4. Click **Burn application**.
-5. Remove the BOOT jumper and press **NRST**. No power cycle is needed.
+No jumper is needed. The tool puts the pill into flash mode by itself.
+
+1. Run `stm32-app-flash.exe` and click **Check Radio**. It shows the firmware the radio runs now.
+2. Click **Browse…** and pick `BlackPill-25MHz-<version>-app.bin` (not the `-boot-app` file).
+3. Click **Burn application**.
+4. At the end it waits for the radio and shows "Done: radio running firmware <version>".
 
 "Error during download get_status" right after the burn is normal: the pill resets at once.
+
+If it says "No radio and no Black Pill in flash mode found", or the pill does not go to flash mode, fit the BOOT jumper and press **NRST** (the LED blinks **B**), then click **Burn application** again. Afterwards remove the jumper and press **NRST**.
 
 ### Virgin pill (ST-Link)
 

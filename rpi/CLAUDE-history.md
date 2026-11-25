@@ -2192,3 +2192,12 @@ Remote Digital TX spurs (Stew's NOTE-FOR-RON-REMOTE-DIGITAL-TX-SPURS-2026-11-17)
 - Docs: new `docs/MSCC-Burning-Black-Pill-Firmware.md` + `docs/MSCC-Burning-PSoC-Firmware.md`; Updating Firmware guide = overview + keyer (PDF rebuilt); manuals README rows.
 - Notes for Stew: 3.26, 3.27, pill-diag how-to; answers in his USB audio question file.
 - Not in this commit: the 32-bit (armhf) Pi work (paused, waits for Ron's test).
+
+## R11-25-0 (2026-11-25, Ron "finished" for pill 3.28)
+
+- Black Pill 3.28: LRCK / BCK / DIN GPIO speed VERY_HIGH -> MEDIUM (softer edges, Stew's 47 ohm scope result); MCLK unchanged. Pill repo ef433a2. Flashed on Windows; overnight 8.4 h: rx resync 0, frame errors 0, overruns 0. Open: Stew's scope at the codec pins, Ron's high-SWR TUNE.
+- Windows Black Pill updater (`firmware-programmers/windows/stm32-app-flash-src`): sends 0xFE itself (new `RadioUsb.cs`, bundled libusb-1.0.dll), "Check Radio" button, success judged by "File downloaded successfully". Ron tested (3.28 over 3.28). Burning guide Windows section + src README updated.
+- Windows R11-25-0: payload firmware 3.27 -> 3.28 + new updater, WPF renumbered 11.25.0 (no code change), Windows servers unchanged. Pi mscc 1.0.105: firmware 3.28 only (file-by-file check: control + 2 pill images). Pi servers and Avalonia unchanged.
+- R11-24-0 notes + change log: a PC that saw an older pill may keep the old Windows name `Line (Multus Sound)`.
+- Note for Stew: client log flooded by the SWR meter status (extended 0x0F).
+- Not in this commit: the 32-bit (armhf) Pi work (paused, waits for Ron's test).
