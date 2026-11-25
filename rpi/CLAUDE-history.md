@@ -2201,3 +2201,10 @@ Remote Digital TX spurs (Stew's NOTE-FOR-RON-REMOTE-DIGITAL-TX-SPURS-2026-11-17)
 - R11-24-0 notes + change log: a PC that saw an older pill may keep the old Windows name `Line (Multus Sound)`.
 - Note for Stew: client log flooded by the SWR meter status (extended 0x0F).
 - Not in this commit: the 32-bit (armhf) Pi work (paused, waits for Ron's test).
+
+## R11-25-0 Ubuntu packages (2026-11-25, Ron "finished"; Stew's go-ahead)
+
+- "finished" now builds and attaches the Ubuntu amd64 .debs (repo `CLAUDE.md` steps 2 and 5, `AGENTS.md`). Stew never attached them to R11-22-0..R11-25-0.
+- Ubuntu mscc 1.0.105 (1031400 bytes): built in WSL Debian from a `git archive HEAD` copy (CR stripped from text files) with `linux-build/build-mscc-deb-amd64.sh`. Against the Pi 1.0.105: only the 4 programs and PortAudio differ (Pi has 8 extra PA headers). `linux/` servers = Pi apart from a usbavrcmd.h comment (1254d0d3).
+- Ubuntu mscc-avalonia 1.7.08 (44740028 bytes): `pwsh Avalonia/build-mscc-avalonia-deb.ps1 -Arch amd64`; no Avalonia change since Stew's 1.7.08.
+- Both attached to R11-25-0 (Windows / Pi unchanged, no new R number). Not yet installed on Ubuntu (With Stew).

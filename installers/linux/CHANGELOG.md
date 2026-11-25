@@ -4,12 +4,22 @@ Currently shipped in this folder:
 
 | Package | Version |
 |---------|---------|
-| `mscc` (servers, PortAudio, MSCC Init, Volume, firmware, flash tools) | 1.0.102 |
+| `mscc` (servers, PortAudio, MSCC Init, Volume, firmware, flash tools) | 1.0.105 |
 | `mscc-avalonia` (client) | 1.7.08 |
 | `mscc-ui` | retired — replaced by `mscc-avalonia` |
 | `mscc-firmware` | retired — inside `mscc` since 1.0.79 |
 | `mscc-init-gui` | retired — inside `mscc` since 1.0.79 |
 | `mscc-portaudio` | retired — inside `mscc` since 1.0.79 |
+
+## mscc 1.0.105 / mscc-avalonia 1.7.08 — 2026-11-25 (release R11-25-0)
+
+### Changed
+- Same contents and number as the Pi `mscc` 1.0.105. Black Pill firmware 3.28 (was 3.24): Line sound devices, HDSDR / Quisk fixes, softer clock edges. The Black Pill updater needs no jumper.
+- Servers unchanged: ms-sdr 3.215, recv 3.157, trans 3.163. `mscc-avalonia` 1.7.08 unchanged (rebuilt from the same source).
+- From now on Ron's releases carry the Ubuntu packages too.
+
+### Tested
+- Built by Ron in WSL Debian; file-by-file check against the Pi 1.0.105 package: only the programs and PortAudio differ. Not yet installed on Ubuntu.
 
 ## mscc 1.0.102 / mscc-avalonia 1.7.08 — 2026-11-19
 

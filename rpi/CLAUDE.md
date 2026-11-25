@@ -115,11 +115,10 @@ Reading / investigating is fine.
   and the Ubuntu scripts/utilities match the Pi. No separate Avalonia review; document the Pi
   versions for both Linux hosts. Linux guide Release 0 reviewed (old versions, Appendix G Pi install
   wrong for today's kit, cal now in the radio).
-- **Waiting on Stew (2026-11-19):** he attaches his Ubuntu amd64 .debs to our releases himself
-  (`gh release upload` + version table lines; Ron 2026-11-19, in `CLAUDE.md` step 5 and `AGENTS.md`,
-  reply note `.mscc-coord/NOTE-FOR-STEW-MSCC-STATUS-AND-RELEASES-REPLY-2026-11-19.md`). Our notes say
-  "Ubuntu packages: added by Stew". Release layout (all installers, version table, keep newest two) is in the
-  repo `CLAUDE.md` step 5.
+- **Ubuntu in our releases (Ron 2026-11-25, Stew's go-ahead):** "finished" now builds and attaches the
+  Ubuntu amd64 `mscc` + `mscc-avalonia` .debs (repo `CLAUDE.md` steps 2 and 5). Before that, Stew was
+  to attach them himself (2026-11-19) and never did for R11-22-0..R11-25-0. `linux/*-linux` are at
+  R11-19-1 level (Stew's 1.0.102), so the first one needs the Pi server changes since then copied in.
 - **32-bit (armhf) Pi servers (Ron 2026-11-22, NOT started; for users on 32-bit Pi OS, Bookworm or Trixie):**
   set up a 32-bit build in a new folder `~/mscc-32b` on proficio (proficio stays 64-bit), copy the
   relevant source in, build all three servers + PortAudio as 32-bit. Proposal: a Bookworm armhf chroot

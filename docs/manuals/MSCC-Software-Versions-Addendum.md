@@ -13,7 +13,7 @@ when only version numbers do. Downloads and what changed in each release:
 |---|---|
 | Windows | `mscc-net9-R11-25-0-install.exe` → `C:\mscc-net9` |
 | Raspberry Pi (64-bit, Pi 4 / Pi 5) | `mscc_1.0.105_arm64.deb`, `mscc-avalonia_1.7.08_arm64.deb` |
-| Ubuntu (amd64) | `mscc_1.0.102_amd64.deb`, `mscc-avalonia_1.7.08_amd64.deb` |
+| Ubuntu (amd64) | `mscc_1.0.105_amd64.deb`, `mscc-avalonia_1.7.08_amd64.deb` |
 
 ## MSCC programs
 

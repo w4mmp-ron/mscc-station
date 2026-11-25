@@ -16,11 +16,11 @@ Log out and back in.
 
 ```bash
 cd /path/to/this/folder
-sudo apt install -y ./mscc_1.0.102_amd64.deb
+sudo apt install -y ./mscc_1.0.105_amd64.deb
 sudo apt install -y ./mscc-avalonia_1.7.08_amd64.deb
 ```
 
-`mscc_1.0.102_amd64.deb` is the servers, PortAudio, MSCC Init, MSCC Volume, the firmware files, and the flash tools. It replaces the old `mscc-portaudio`, `mscc-firmware`, and `mscc-init-gui` packages.
+`mscc_1.0.105_amd64.deb` is the servers, PortAudio, MSCC Init, MSCC Volume, the firmware files, and the flash tools. It replaces the old `mscc-portaudio`, `mscc-firmware`, and `mscc-init-gui` packages.
 
 `mscc-avalonia_1.7.08_amd64.deb` is the client.
 

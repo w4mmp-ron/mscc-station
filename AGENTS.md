@@ -54,17 +54,9 @@ disagree on these points, `CLAUDE.md` wins.
 
 Command: `gh release create R.. -R w4mmp-ron/mscc-station --title R.. --target main --notes-file notes.md <all installers>`.
 
-**Ubuntu .debs on a release Ron publishes:** Ron's release carries the Windows and Pi files.
-Stew (or his Build) then attaches the two Ubuntu files to that same release and fills in their
-lines in the version table:
-
-```bash
-gh release upload R.. mscc_<ver>_amd64.deb mscc-avalonia_<ver>_amd64.deb -R w4mmp-ron/mscc-station
-gh release edit R.. -R w4mmp-ron/mscc-station --notes-file notes.md   # notes with the Ubuntu lines added
-```
-
-Unchanged Ubuntu files are attached again, so the newest release always has them. Check the
-uploaded sizes. When Stew publishes a release himself, he attaches all the files at once.
+**Ubuntu .debs (since 2026-11-25, Stew's go-ahead):** whoever publishes builds and attaches all
+the files, the two Ubuntu (amd64) .debs included, changed or not, with their lines in the version
+table. Check the uploaded sizes.
 
 ---
 

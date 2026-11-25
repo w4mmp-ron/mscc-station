@@ -11,6 +11,7 @@ Installer: `mscc-net9-R<version>-install.exe` (WPF client + Windows servers). In
 
 ### Tested
 - Black Pill 3.28 in Ron's Proficio MKII on Windows, flashed with the new updater (and burned again over itself from its window by Ron). Overnight 8.4 h (FT8, two TUNEs): no receive resyncs, no frame errors, no overruns. Still to come: Stew's scope check at the codec and a high-SWR TUNE. Installer built on Ron's PC, not installed yet.
+- Added later the same day: the Ubuntu packages `mscc_1.0.105_amd64.deb` and `mscc-avalonia_1.7.08_amd64.deb` (Black Pill 3.28; servers unchanged), built by Ron, not yet installed on Ubuntu. Windows and Pi files unchanged.
 
 ## R11-24-0 — 2026-11-24  (Black Pill firmware 3.27; WPF 11.24.0 = 11.19.2 renumbered; Windows servers unchanged: ms-sdr 3.214, recv 3.155, trans 3.159)
 
