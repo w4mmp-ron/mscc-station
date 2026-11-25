@@ -97,7 +97,9 @@ The Pi and Windows servers do the same job and are kept functionally identical (
    computer it's for), then the links:
    [Windows install guide](https://github.com/w4mmp-ron/mscc-station/blob/main/installers/windows/INSTALL.md) ·
    [Raspberry Pi install guide](https://github.com/w4mmp-ron/mscc-station/blob/main/installers/rpi/INSTALL.md) ·
-   [Software versions (PDF)](https://github.com/w4mmp-ron/mscc-station/blob/main/docs/manuals/MSCC-Software-Versions-Addendum.pdf).
+   [Software versions (PDF)](https://github.com/w4mmp-ron/mscc-station/blob/main/docs/manuals/MSCC-Software-Versions-Addendum.pdf) ·
+   [Documentation](https://github.com/w4mmp-ron/mscc-station/blob/main/docs/manuals/README.md)
+   (the user documentation page: every guide, one line each; add new guides to it).
    Use links, not repo paths (people on the release page have no repo). Check the uploaded sizes.
    **Ubuntu .debs:** on a release Ron publishes, Stew then attaches the two Ubuntu files himself
    (`gh release upload R.. mscc_<ver>_amd64.deb mscc-avalonia_<ver>_amd64.deb -R w4mmp-ron/mscc-station`,

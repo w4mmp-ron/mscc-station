@@ -8,8 +8,8 @@ An MSCC radio has up to three parts with their own firmware. The MSCC installers
 
 | Part | What it is | Which radios | File | How to burn it |
 | --- | --- | --- | --- | --- |
-| PSoC radio firmware | The radio's own processor (Cypress PSoC) | Proficio, Geminus and Ultimus, Legacy and MKII, with the original processor | `<Radio>-<version>.cyacd` | [**MSCC Burning PSoC Firmware**](../MSCC-Burning-PSoC-Firmware.md) |
-| Black Pill | The STM32 board that replaces the PSoC | Radios fitted with a Black Pill (25 MHz board) | `BlackPill-25MHz-<version>-app.bin` | [**MSCC Burning Black Pill Firmware**](../MSCC-Burning-Black-Pill-Firmware.md) |
+| PSoC radio firmware | The radio's own processor (Cypress PSoC) | Proficio, Geminus and Ultimus, Legacy and MKII, with the original processor | `<Radio>-<version>.cyacd` | [**MSCC Burning PSoC Firmware**](https://github.com/w4mmp-ron/mscc-station/blob/main/docs/MSCC-Burning-PSoC-Firmware.md) |
+| Black Pill | The STM32 board that replaces the PSoC | Radios fitted with a Black Pill (25 MHz board) | `BlackPill-25MHz-<version>-app.bin` | [**MSCC Burning Black Pill Firmware**](https://github.com/w4mmp-ron/mscc-station/blob/main/docs/MSCC-Burning-Black-Pill-Firmware.md) |
 | Keyer | The PIC on the daughter board | MKII radios with the keyer daughter board | `Keyer-MCU-app-<date>.hex` | This manual, below |
 
 A radio has either a PSoC or a Black Pill, never both. The keyer is updated through the radio, so the radio's firmware must be new enough first (see the Addendum for the minimum versions).
