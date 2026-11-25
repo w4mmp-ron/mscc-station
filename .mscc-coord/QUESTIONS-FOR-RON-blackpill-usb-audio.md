@@ -90,3 +90,5 @@ Requests:
 - **Cal note.** Cal values are host-side per radio, so a radio recalibrated for the pill is wrong for the PSoC, and the reverse. The pill is an experiment for now, so Stew is recalibrating every band. No change requested for the Proficio.
 - **Maximus.** The Maximus will be a new radio with a new firmware major, built around the pill from the start. Stew is moving forward with it now that the pill works.
 - **Hardware recommendation: add 47 ohm series resistors on LRCK and BCK.** Without them, Stew's board rang at over 4 Vpp, with noise on the high and low levels. With 47 ohm resistors in series at the source, the clocks are clean at about 3.5 Vpp, and signal quality improved noticeably. Recommend adding them to the Maximus (and any pill daughter-board respin) for LRCK and BCK, and consider MCLK as well.
+
+   **Answer:** (Ron, 2026-11-24) Agreed. Use 47 ohm on BCK, LRCK, MCLK and the transmit data line (PB15), at the STM32 end. Pill 3.28 with slower pin edges will follow later. See `NOTE-FOR-STEW-CLOCK-RESISTORS-MAXIMUS-2026-11-24.md`.
