@@ -54,7 +54,7 @@ Please change `pio-async`:
 6. Bump bcdDevice so Windows enumerates it fresh.
 7. **Your decision, please answer:** a byte-for-byte match also means UAC1 plus synchronous endpoints with fixed 384-byte packets and no feedback. The pill's codec clock runs free (95.99 kHz from PLLI2S, not locked to USB), and that is why `pio-async` moved to asynchronous with feedback. Our recommendation: keep UAC2 asynchronous with feedback, and make items 1-6 identical. Windows then shows `Line (Multus IQ Sound)` for both directions, with no enhancements and no slider in the I/Q path. Go to UAC1 synchronous only if you can lock the I2S clock to USB SOF.
 
-   **Answer:**
+   **Answer:** (Ron, 2026-11-24) Items 1-6 are done in Black Pill 3.27. Item 7: keep UAC2 asynchronous with feedback. See `NOTE-FOR-STEW-PILL-3.27-USB-AUDIO-2026-11-24.md`.
 
 ## 4. Transmit comb: analysis and request
 
@@ -83,7 +83,7 @@ Requests:
 - `utility-scripts/Windows/dist/pill-diag.exe` is committed (cea409e7) together with `pill-diag.py` and `build-pill-diag.cmd`. Is a built .exe under `dist\` meant to be tracked in git?
 - There is no NOTE-FOR-STEW on how to run pill-diag. Only the results note exists (`NOTE-FOR-STEW-PILL-DIAG-RESULTS-2026-11-22.md`). Please add a short how-to (where the .exe is, close MSCC first, dummy load for step 5, where the zip lands).
 
-   **Answer:**
+   **Answer:** (Ron, 2026-11-24) Yes, keep `dist\pill-diag.exe` tracked in git. Rebuild it with `build-pill-diag.cmd` and commit it whenever `pill-diag.py` changes.
 ## Update 2026-11-24 afternoon (Stew)
 
 - **TX comb solved.** It was overdrive. The radio's existing factory cal (made with the PSoC) overdrives the pill. After QRP CAL and TX IQ cal with the pill, TX is clean on both the Pi and Windows (carrier -23.5 dBm, worst spur 54 dB down). The data-line scope check is no longer needed.

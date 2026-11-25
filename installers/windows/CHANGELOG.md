@@ -2,6 +2,18 @@
 
 Installer: `mscc-net9-R<version>-install.exe` (WPF client + Windows servers). Install the newest one; older installers in this folder are kept for roll-back only.
 
+## R11-24-0 — 2026-11-24  (Black Pill firmware 3.27; WPF 11.24.0 = 11.19.2 renumbered; Windows servers unchanged: ms-sdr 3.214, recv 3.155, trans 3.159)
+
+### Changed
+- Black Pill firmware 3.27 in `C:\mscc-net9\Black Pill Firmware\`:
+  - HDSDR and Quisk work with the pill, as with the PSoC (SoftRock crystal, frequency format and start-up frequency).
+  - Windows shows the pill's sound devices as `Line (Multus IQ Sound)` both ways, as the PSoC, with no audio enhancements or volume slider. After updating the pill, point MSCC (and HDSDR) at the new Line devices.
+- Windows installer `mscc-net9-R11-24-0-install.exe`. The client is the same as 11.19.2 with a new number; the Windows servers are the same as R11-19-2.
+- New guides: `docs/MSCC-Burning-Black-Pill-Firmware.md` and `docs/MSCC-Burning-PSoC-Firmware.md` (Windows, Pi, Ubuntu; updates and new chips). The Updating Firmware guide now points to them.
+
+### Tested
+- Black Pill 3.27 in Ron's Proficio MKII (Pi): ms-sdr reads 3.27, recv and trans find the radio. Not yet tested on Windows. Installer built on Ron's PC, not installed yet.
+
 ## R11-22-0 — 2026-11-22  (Black Pill firmware 3.25; WPF 11.22.0 = 11.19.2 renumbered; Windows servers unchanged: ms-sdr 3.214, recv 3.155, trans 3.159)
 
 ### Changed

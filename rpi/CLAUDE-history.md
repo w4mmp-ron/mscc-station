@@ -2184,3 +2184,11 @@ Remote Digital TX spurs (Stew's NOTE-FOR-RON-REMOTE-DIGITAL-TX-SPURS-2026-11-17)
 
 - Black Pill 3.25 (stored CW carrier from the cw-carrier test build 3.90, CMD_SET_CW_CARRIER 0x15; off until a host sends the block, so today's servers see 3.24 behaviour). Pill repo 0054cbc. In Ron's rig since 2026-11-21. Release had been held for Stew's pill-diag zip: back 2026-11-22 (his pill 3.24 healthy, receive only -91 dBFS vs Ron's -75 = almost no signal reaches the codec, problem before the codec). Note `.mscc-coord/NOTE-FOR-STEW-PILL-DIAG-RESULTS-2026-11-22.md` (asks: antenna socket load, analyser result, second pill).
 - Windows R11-22-0: payload firmware 3.24 -> 3.25 only, WPF renumbered 11.22.0 (no code change), Windows servers unchanged. Pi mscc 1.0.103: firmware 3.25 only (old 1.0.102 also carried a stray mscc-status-report .pyc, gone now). Pi servers, both Avalonia packages unchanged.
+
+## R11-24-0 (2026-11-24, Ron "finished" for pill 3.27)
+
+- Black Pill 3.26 (SoftRock commands as the PSoC: HDSDR / Quisk) and 3.27 (USB audio as the PSoC in Windows: Line terminals, no feature unit, L+R, PSoC strings, bcdDevice 0x0102; UAC2 async kept). Pill repo c848904. Flashed on proficio; recv + trans find the renamed device `usb-www.multus-sdr.com_Multus_IQ_...`.
+- Windows R11-24-0: payload firmware 3.25 -> 3.27 only, WPF renumbered 11.24.0 (no code change), Windows servers unchanged. Pi mscc 1.0.104: firmware 3.27 only (file-by-file check: control + 2 pill images). Pi servers and Avalonia unchanged.
+- Docs: new `docs/MSCC-Burning-Black-Pill-Firmware.md` + `docs/MSCC-Burning-PSoC-Firmware.md`; Updating Firmware guide = overview + keyer (PDF rebuilt); manuals README rows.
+- Notes for Stew: 3.26, 3.27, pill-diag how-to; answers in his USB audio question file.
+- Not in this commit: the 32-bit (armhf) Pi work (paused, waits for Ron's test).
