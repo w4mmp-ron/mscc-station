@@ -11,6 +11,7 @@
 #include "mscc_resampler.h"
 #include "commands.h"
 #include "remote_mic.h"
+#include "cw_carrier.h"
 //#include "sdrcoretx.h"
 //#include "dsputils.h"
 
@@ -58,6 +59,7 @@ pthread_t p_ALC_Meter_thread;
 int ALC_Meter_thread_rc;
 
 pthread_t p_Drive_thread;
+pthread_t p_CW_Carrier_thread;   /* cw-carrier 3.190 */
 int Drive_thread_rc;
 
 FILE *G_fp_logfile;
@@ -427,6 +429,9 @@ static void process_mic_to_iq(const SAMPLE *in, SAMPLE *out, unsigned long frame
         *outbuffer = (outcplx[i].imag * iqPhaseCos + outcplx[i].real * iqPhaseSin) * qMult;
         outbuffer++;
     }
+    /* cw-carrier 3.190: steady CW carrier (not the null-modulated start) -> 96-frame ring */
+    if (mystate.opmode == MODE_CW && !(G_mode != 'T' && G_null_count <= MAX_NULL))
+        cw_carrier_capture((const float *)out, framesPerBuffer);
 }
 
 /* Full-duplex: mic in + Proficio I/Q out (same host API). */
@@ -843,7 +848,26 @@ dual_open:
     return paNoError;
 }
 
+static int manage_stream_locked(int start_stop, int device, int channels);
+
+/* cw-carrier 3.190: the null-modulated flush after transmit (MAX_NULL callbacks) is done.
+ * The stream runs until then, so the flush stays after transmit and the next transmit
+ * doesn't start with it. */
+int trans_null_flush_done(void) {
+    return (G_mode == 'T') || (G_null_count > MAX_NULL);
+}
+
+/* cw-carrier 3.190: every stream open / close holds g_stream_lock (CW_Carrier_thread
+ * starts / stops the same stream). */
 int manage_stream(int start_stop, int device, int channels) {
+    int status;
+    pthread_mutex_lock(&g_stream_lock);
+    status = manage_stream_locked(start_stop, device, channels);
+    pthread_mutex_unlock(&g_stream_lock);
+    return status;
+}
+
+static int manage_stream_locked(int start_stop, int device, int channels) {
     PaError err = 0;
     int status = 0;
     static int stream_running = FALSE;
@@ -1059,6 +1083,11 @@ int main(int argc, char **argv) {
     }
     print_time();
     fprintf(G_fp_logfile, "[%d] Main Thread. SDRcore Starting Drive_Manager Thread\n", line_number++);
+    /* cw-carrier 3.190: idle until ms-sdr sends CMD_SET_CW_CARRIER 1 */
+    if (pthread_create(&p_CW_Carrier_thread, NULL, CW_Carrier_thread, NULL) != 0) {
+        print_time();
+        fprintf(G_fp_logfile, "[%d] Main Thread. Start up of CW_Carrier thread failed\n", line_number++);
+    }
     Drive_thread_rc = pthread_create(&p_Drive_thread, NULL, Drive_Manager, (void *) t);
     if (Drive_thread_rc) {
         print_time();

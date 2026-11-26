@@ -41,8 +41,7 @@ disagree on these points, `CLAUDE.md` wins.
 **GitHub Release layout (Ron and Stew agreed 2026-11-19)**
 
 1. **Every release carries ALL the installers**, changed or not: the Windows installer, the Pi
-   (arm64) `mscc` and `mscc-avalonia` .debs, and the Ubuntu (amd64) `mscc` and `mscc-avalonia`
-   .debs. The newest release is always the complete current set.
+   (arm64) `mscc` and `mscc-avalonia` .debs. No Ubuntu files (Stew, 2026-11-25). The newest release is always the complete current set.
 2. **The notes start with a short version table** (each package, the computer it's for, its
    version, changed or unchanged), then what changed, then **"Downloads: which file do I need?"**
    (one line per file), then links to the Windows and Pi install guides and the Addendum PDF.
@@ -54,9 +53,8 @@ disagree on these points, `CLAUDE.md` wins.
 
 Command: `gh release create R.. -R w4mmp-ron/mscc-station --title R.. --target main --notes-file notes.md <all installers>`.
 
-**Ubuntu .debs (since 2026-11-25, Stew's go-ahead):** whoever publishes builds and attaches all
-the files, the two Ubuntu (amd64) .debs included, changed or not, with their lines in the version
-table. Check the uploaded sizes.
+**Ubuntu .debs:** not in releases (Stew, 2026-11-25): no Ubuntu files or table lines. R11-25-0
+carries them once and stays as it is.
 
 ---
 

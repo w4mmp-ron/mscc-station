@@ -1,5 +1,6 @@
 #include "extern.h"
 #include "remote_phones.h"
+#include "cw_carrier_rx.h"
 #define BUFLEN 512  //Max length of buffer
 
 #define SERVER "127.0.0.1"
@@ -715,6 +716,10 @@ void *UDP_Thread(void *my_param) {
         memcpy(&s_opcode_data, opcode_data, 2);
 
         switch (opcode) {
+        case CMD_SET_CW_CARRIER:   /* cw-carrier 3.190: from ms-sdr, 0 off / 1 on */
+            cw_carrier_rx_set(t_opcode_data);
+            break;
+
         case CMD_SET_NR:
             /* Payload 0 = OFF; any other value = ON with level = payload.
              * Prefer short (s_opcode_data) so levels > 255 work if sent as int16. */

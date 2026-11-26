@@ -1,6 +1,7 @@
 #include "extern.h"
 #include "iq.h"
 #include "remote_mic.h"
+#include "cw_carrier.h"
 
 #define BUFLEN 512  //Max length of buffer
 
@@ -508,7 +509,13 @@ void *UDP_Thread(void *my_param) {
                     line_number++, mystate.txPower);
         }
 
+        cw_carrier_command_seen(opcode);   /* cw-carrier 3.190: CW block stale */
+
         switch (opcode) {
+        case CMD_SET_CW_CARRIER:   /* cw-carrier 3.190: from ms-sdr, 0 off / 1 on / 2 radio has it */
+            cw_carrier_set(t_opcode_data);
+            break;
+
         case CMD_SET_AUDIO_DEVICE:
             print_time();
             fprintf(G_fp_logfile, "[%d] UDP Thread. CMD_SET_AUDIO_DEVICE. t_opcode_data: %d\n",

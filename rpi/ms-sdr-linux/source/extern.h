@@ -593,6 +593,13 @@ extern uint8_t G_Calibration_reset;
 void *Check_temperature(void *t);
 void Audio_stats_busy(const char *why);   // 3.195: restarts the pill audio stats window
 extern uint8_t G_pill_stats;         // 3.195: mscc.ini PILL_STATS= (default 0 = off)
+/* cw-carrier (cw_carrier.c): mscc.ini CW_CARRIER= (default 0 = off) */
+extern uint8_t G_cw_carrier_ini;
+extern uint8_t G_cw_carrier_ok;
+void Cw_carrier_startup(void);
+void Cw_carrier_block(const char *msg, int len);
+void Cw_carrier_tick(void);
+void Cw_carrier_stop(void);
 extern INT8 G_delta_drift_int;
 extern uint8_t G_Proficio_temperature;
 //extern int Start_Temp_Check();

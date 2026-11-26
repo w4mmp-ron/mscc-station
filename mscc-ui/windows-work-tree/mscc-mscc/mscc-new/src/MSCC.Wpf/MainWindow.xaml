@@ -256,9 +256,10 @@
                   ToolTip="When checked, press Connect automatically when the MSCC window loads (saved in MSCC_Client.ini)"/>
         <CheckBox Content="Launch Servers"
                   IsChecked="{Binding LaunchServersOnStart}"
+                  IsEnabled="{Binding LaunchServersOptionEnabled}"
                   Foreground="{DynamicResource UiPrimaryTextBrush}" FontSize="9" FontWeight="Bold"
                   Margin="6,0,0,0" VerticalAlignment="Center"
-                  ToolTip="Checked: Connect also runs the radio servers on this PC, and Disconnect stops them. Uncheck if the servers already run here or on another computer."/>
+                  ToolTip="Checked: Connect also runs the radio servers on this PC, and Disconnect stops them. Uncheck if the servers already run here. Only for a Host on this PC (127.0.0.1): another Host turns it off."/>
     </StackPanel>
     <Grid Margin="0,0,0,3">
         <Grid.ColumnDefinitions>

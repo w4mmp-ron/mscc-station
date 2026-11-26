@@ -83,7 +83,8 @@ SRCS = \
 	sources/output-devices.c \
 	sources/tonegen.c \
 	sources/udp_thread.c \
-	sources/wsfirgen.c
+	sources/wsfirgen.c \
+	sources/cw_carrier_rx.c
 
 CXX_SRCS = \
 	sources/mscc_resampler.cpp \

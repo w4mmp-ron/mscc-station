@@ -170,6 +170,48 @@ recv and trans `extern.h` (version).
 
 **Windows port:** the same few lines in each Windows server's `main.c`, when the hold ends.
 
+## R11-25-1: Pi ms-sdr 3.216, recv 3.158, trans 3.164 (stored CW carrier)
+
+**What it does:** with a Black Pill 3.25 or later, the radio makes the CW carrier itself. trans
+captures one 1 ms block of its CW carrier I/Q (96 frames, 384 bytes, the 12 kHz tone at 96 kHz),
+ms-sdr loads it into the pill, and in CW the pill plays that block instead of the USB transmit
+audio. The servers also stop the I/Q streams while they are not needed: trans stops its output
+stream once the pill has the block (and when idle in voice / digital), recv stops receive during
+voice, digital and TUNE transmit when Monitor is off.
+
+**Switch:** `CW_CARRIER=1;` in the Pi's `~/.local/mscc/mscc.ini`, read by ms-sdr at start. Off by
+default: without the line (or with `CW_CARRIER=0;`) the servers work exactly as before. A PSoC
+radio or a pill older than 3.25 logs "off" and is not touched. Pi install guide has the how-to.
+
+**How it works:**
+- Radio command `CMD_SET_CW_CARRIER 0x15` (pill side shipped in 3.25): OUT wValue 0-5 = the six
+  64-byte pieces of the block, wValue 0xFF = clear; IN = status byte (bit 0 feature present,
+  bit 1 block loaded).
+- Server opcode 0x15 between ms-sdr, trans and recv: ms-sdr -> trans / recv value 1 = on (capture
+  a block), 0 = off, 2 = the radio has the block; trans -> ms-sdr = `[0x15][384 bytes]`.
+- trans takes a new block after any command from ms-sdr except keep-alive, TX on / off, 0x15 and the
+  WiFi SWR meter power (band, power, mode and offset changes all count); ms-sdr checks the pill status every few seconds in CW and asks trans again if the block
+  is gone. At stop, ms-sdr clears the pill's block.
+- Same code as Ron's cw-carrier test repo (`w4mmp-ron/cw-carrier`, release cw-R11-20-1).
+
+**Files:** new `rpi/ms-sdr-linux/source/cw_carrier.c`, `rpi/SDRcore-trans-linux/sources/cw_carrier.c/.h`,
+`rpi/SDRcore-recv-linux/sources/cw_carrier_rx.c/.h`; small hooks in each server's `main.c`,
+`udp_thread.c` (recv / trans), ms-sdr `main-controller.c` (0x15 case, `CW_CARRIER=` parse, stop),
+`extern.h`, `commands.h`, the Makefiles, and `usbavrcmd.h` (0x15).
+
+**Tested (Ron, proficio, Black Pill 3.28 / 3.29):** CW on 17 m and 20 m (power the same as TUNE),
+band change in CW (new block each time), TUNE (uses the normal stream, back to the stored block
+after), FT8 on 20 m (recv pauses at key-down, back about 1 s after key-up). An A/B with
+`CW_CARRIER=0` gave the same receive, so nothing changed there.
+
+**Windows / Ubuntu port:** not done. The Windows ms-sdr, recv and trans would need the same five
+files and hooks with their own USB and socket calls; without the port they work as before
+(the pill keeps using the USB transmit audio).
+
+**Stats:** with `CW_CARRIER=1` recv stops reading receive during transmit, so the pill's audio
+counters saw those seconds as drops. Black Pill 3.29 counts them apart (see the release notes);
+`audio-stats.py` shows `tx 52.9 s (5x, in_drop_tx ..., gaps_tx ...)` on each line.
+
 ## FYI: Black Pill 3.23 uses your USB names
 
 The Black Pill now uses the same USB names as your PSoC images: "Multus IQ", "Multus IQ Sound",

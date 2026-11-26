@@ -12,7 +12,7 @@ releases stay there for roll-back). Put the `.deb` files in one folder on the Pi
 
 | Package | Version | |
 |---|---|---|
-| `mscc` | 1.0.105 | required: servers (ms-sdr 3.215, recv 3.157, trans 3.163), PortAudio, MSCC Init, MSCC Volume, PSoC + Black Pill + keyer firmware and flash tools (window "Black Pill Firmware Update" since 1.0.85) |
+| `mscc` | 1.0.106 | required: servers (ms-sdr 3.216, recv 3.158, trans 3.164), PortAudio, MSCC Init, MSCC Volume, PSoC + Black Pill + keyer firmware and flash tools (window "Black Pill Firmware Update" since 1.0.85) |
 | `mscc-avalonia` | 1.7.08 | optional: MSCC Avalonia client on the Pi (not needed with the Windows client) |
 
 ```bash
@@ -42,5 +42,21 @@ Then: log out/in (first install) → **MSCC Init** → **MSCC Start** → connec
   menu **MSCC → Keyer Firmware Update** (`keyer-flash.gui`): Load File → Program. Or
   `keyer-flash /usr/share/mscc/firmware/keyer/Keyer-MCU-app-20261112.hex`. Settings and CQ
   memories are kept. **Power-cycle the radio afterwards** (no RF until then). The `Keyer-MCU-full-` file is for the PICkit only (bootloader + app).
+
+## Stored CW carrier (Black Pill 3.25 or later, optional)
+
+```bash
+mscc stop
+echo 'CW_CARRIER=1;' >> ~/.local/mscc/mscc.ini     # once; to turn it off, change the 1 to 0
+mscc start
+```
+
+With `CW_CARRIER=1;` the radio makes the CW carrier itself from a 1 ms block the servers load
+into it, and the servers stop the I/Q audio streams while they are not needed (receive pauses
+during voice, digital and TUNE transmit when Monitor is off). Off by default: without the line, or
+with `CW_CARRIER=0;`, the servers work as before. The servers read it only at start, so restart
+them after a change. A PSoC radio, or a Black Pill older than 3.25, ignores it (ms-sdr logs "off").
+MSCC Init keeps the line when it rewrites `mscc.ini`. Pi servers only (not the Windows or Ubuntu
+servers).
 
 Full how-to: [`../../rpi/mscc-deb/INSTALL-FOR-PI.md`](../../rpi/mscc-deb/INSTALL-FOR-PI.md).

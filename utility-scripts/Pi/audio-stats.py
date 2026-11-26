@@ -26,6 +26,11 @@ so it runs with the servers up. Needs python3-usb (pyusb).
                               while receiving. "Stayed in step" may also mean slipped but not
                               found: look at the spectrum.
 
+Pill 3.29+: in_gaps / in_drop / in_pkts count only while receiving. While the pill
+transmits and for 2 s after (servers with CW_CARRIER=1 stop reading receive in TX)
+they go to separate counters, shown as 'tx 38.2 s (5x, in_drop_tx .., gaps_tx ..)';
+those are expected and never mark a line with <<<.
+
 Counters (IN = radio -> Pi, RX I/Q; OUT = Pi -> radio, TX I/Q):
   in_pkts     IN packets scheduled (about 1000 per second)
   in_empty    IN packets sent EMPTY (pill had < 95 frames ready) = a 1 ms I/Q gap
@@ -197,6 +202,31 @@ def read_resync(d, test=False):
                     struct.unpack("<8I", b[:32])))
 
 
+TX_NAMES = ["layout", "ms", "tx_ms", "tx_count", "in_drop_tx", "in_gaps_tx",
+            "in_pkts_tx", "hold_ms"]
+TX_KEYS = ["tx_ms", "tx_count", "in_drop_tx", "in_gaps_tx", "in_pkts_tx"]
+
+
+def read_tx(d):
+    """Pill 3.29+: transmit time + receive counts while transmitting (CMD_AUDIO_STATS
+    wIndex 5). None on an older pill (it answers with the audio counters)."""
+    try:
+        b = bytes(d.ctrl_transfer(IN, CMD_AUDIO_STATS, 0, 5, 64, TIMEOUT))
+    except usb.core.USBError:
+        return None
+    if len(b) < 32 or struct.unpack("<I", b[:4])[0] != (1 | (8 << 16)):
+        return None
+    return dict(zip(TX_NAMES, struct.unpack("<8I", b[:32])))
+
+
+def tx_text(t, base=None):
+    """'tx 38.2 s (5x, in_drop_tx 38089, gaps_tx 12)'; base = earlier read or None."""
+    base = base or {}
+    dt = {k: (t[k] - base.get(k, 0)) & 0xFFFFFFFF for k in TX_KEYS}
+    return "tx %.1f s (%dx, in_drop_tx %d, gaps_tx %d)" % (
+        dt["tx_ms"] / 1000.0, dt["tx_count"], dt["in_drop_tx"], dt["in_gaps_tx"])
+
+
 def print_resync(r):
     if r is None:
         return
@@ -315,6 +345,9 @@ def once(d):
         print_ctrl(read_ctrl(d))
         print_loop(read_loop(d))
         print_resync(read_resync(d))
+    tx = read_tx(d)
+    if tx is not None:
+        print("%-11s %s (since power-up; not in the counts above)" % ("transmit", tx_text(tx)))
 
 
 def watch(d, secs):
@@ -347,8 +380,9 @@ def mark(d):
     gap max and FIFO min / max, so 'since' shows those from the mark on."""
     s = read(d, True)
     c = read_ctrl(d)
+    tx = read_tx(d)
     with open(MARK_FILE, "w") as f:
-        json.dump({"time": time.time(), "stats": s, "ctrl": c}, f)
+        json.dump({"time": time.time(), "stats": s, "ctrl": c, "tx": tx}, f)
     print("mark saved %s (pill up %.1f h): 'since' shows changes from now" %
           (time.strftime("%Y-%m-%d %H:%M:%S"), s["ms"] / 3600000.0))
 
@@ -390,6 +424,10 @@ def since(d):
             "  not ACKed %d" % dc["in_toc"] if "in_toc" in dc else "",
             "  old reply stopped %d  core wait ran out %d" % (dc["ep0_abort"], dc["wait_to"])
             if "ep0_abort" in dc else "", dc["slow"]))
+    tx = read_tx(d)
+    if tx is not None:
+        print("%-11s %s (since the mark; not in the counts above)" % (
+            "transmit", tx_text(tx, (m.get("tx") or {}) if base else {})))
     if "reset" in s:
         f = s["reset"] & 0xFF
         print("%-11s 0x%02X = %s" % ("last reset", f, reset_text(f)))
@@ -444,6 +482,7 @@ def log(path):
     if r is not None:
         c["rx_resync"] = r["count"]
         c["rx_fre"] = r["fre"]
+    tx = read_tx(d)
     now = time.time()
     pids = server_pids()
     try:
@@ -463,6 +502,7 @@ def log(path):
             reset_text(s.get("reset", 0) & 0xFF)))
     else:
         base, cbase = prev["stats"], prev.get("ctrl") or {}
+    txbase = (prev.get("tx") or {}) if (prev is not None and base) else {}
     dk = {k: (s[k] - base.get(k, 0)) & 0xFFFFFFFF for k in LOG_KEYS if k in s}
     dc = {k: (c[k] - cbase.get(k, 0)) & 0xFFFFFFFF for k in LOG_CTRL if k in c}
     mins = (s["ms"] - base.get("ms", 0)) / 60000.0
@@ -483,6 +523,8 @@ def log(path):
         text += "  rx_resync %d" % dc["rx_resync"]
     if "rx_fre" in dc:
         text += "  frame_err %d" % dc["rx_fre"]
+    if tx is not None:
+        text += "  " + tx_text(tx, txbase)
     if pids and not any("DOWN" in n for n in notes):
         text += "  servers up"
     if notes:
@@ -491,7 +533,8 @@ def log(path):
         text += "  <<<"
     log_line(path, text)
     with open(LOG_STATE, "w") as f:
-        json.dump({"time": now, "start": start_now, "stats": s, "ctrl": c, "pids": pids}, f)
+        json.dump({"time": now, "start": start_now, "stats": s, "ctrl": c, "pids": pids,
+                   "tx": tx}, f)
 
 
 def main():

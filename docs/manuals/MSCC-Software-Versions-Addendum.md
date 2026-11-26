@@ -1,6 +1,6 @@
 # MSCC Software Versions Addendum
 
-**Release R11-25-0** · 2026-11-25
+**Release R11-25-1** · 2026-11-25
 
 The Operator's Guides describe how MSCC works; this addendum lists the version numbers that
 go with the current release. It is updated with every release, so the guides don't change
@@ -11,24 +11,25 @@ when only version numbers do. Downloads and what changed in each release:
 
 | Computer | File |
 |---|---|
-| Windows | `mscc-net9-R11-25-0-install.exe` → `C:\mscc-net9` |
-| Raspberry Pi (64-bit, Pi 4 / Pi 5) | `mscc_1.0.105_arm64.deb`, `mscc-avalonia_1.7.08_arm64.deb` |
-| Ubuntu (amd64) | `mscc_1.0.105_amd64.deb`, `mscc-avalonia_1.7.08_amd64.deb` |
+| Windows | `mscc-net9-R11-25-1-install.exe` → `C:\mscc-net9` |
+| Raspberry Pi (64-bit, Pi 4 / Pi 5) | `mscc_1.0.106_arm64.deb`, `mscc-avalonia_1.7.08_arm64.deb` |
+
+Ubuntu packages: not in this release (R11-25-0 has 1.0.105 / 1.7.08 amd64).
 
 ## MSCC programs
 
 | Program | Windows | Raspberry Pi | Ubuntu |
 |---|---|---|---|
-| MSCC client | WPF 11.25.0 | Avalonia 1.7.08 | Avalonia 1.7.08 |
-| ms-sdr (server) | 3.214 | 3.215 | 3.215 |
-| recv (receive server) | 3.155 | 3.157 | 3.157 |
-| trans (transmit server) | 3.159 | 3.163 | 3.163 |
+| MSCC client | WPF 11.25.1 | Avalonia 1.7.08 | Avalonia 1.7.08 |
+| ms-sdr (server) | 3.214 | 3.216 | 3.215 |
+| recv (receive server) | 3.155 | 3.158 | 3.157 |
+| trans (transmit server) | 3.159 | 3.164 | 3.163 |
 
 Avalonia 1.7.08 (Pi and Ubuntu): connect keeps the server's settings. LF not yet tested on Geminus.
 
-WPF 11.25.0 is the same client as 11.19.2 with a new number. Remote digital: a one-cable VB-Cable setup no longer sends a short burst of received audio at key-down. While keyed, MSCC stops playing receive audio into the cable, and it drops the first 400 ms of transmit audio after key-down.
+WPF 11.25.1: Launch Servers is only for a Host on this PC. Another Host turns it off and greys it out, and Connect then never starts servers on this PC. Otherwise as 11.19.2. Remote digital: a one-cable VB-Cable setup no longer sends a short burst of received audio at key-down. While keyed, MSCC stops playing receive audio into the cable, and it drops the first 400 ms of transmit audio after key-down.
 
-`mscc status` on the Pi lists packages, servers, firmware, and the newest release. Pi ms-sdr 3.214 answers the CAT S-meter read, stops transmit on a WiFi SWR fault until reset (including a CAT key from WSJT-X), and keeps the QRO calibration in Black Pill 3.24 or later. Pi ms-sdr 3.215, recv 3.157 and trans 3.163 carry their version. Pi ms-sdr 3.211 says "RECEIVE FIXED ITSELF" when a Black Pill fixed its receive. Windows ms-sdr 3.214 uses Zadig or WinUSB; Black Pill 3.17 or later needs no Zadig.
+Pi ms-sdr 3.216, recv 3.158 and trans 3.164: stored CW carrier (Black Pill 3.25+), on with `CW_CARRIER=1;` in the Pi's mscc.ini (Pi install guide). `mscc status` on the Pi lists packages, servers, firmware, and the newest release. Pi ms-sdr 3.214 answers the CAT S-meter read, stops transmit on a WiFi SWR fault until reset (including a CAT key from WSJT-X), and keeps the QRO calibration in Black Pill 3.24 or later. Windows ms-sdr 3.214 uses Zadig or WinUSB; Black Pill 3.17 or later needs no Zadig.
 
 Windows and Pi server numbers differ because each build counts up on its own.
 
@@ -49,8 +50,8 @@ stored in the radio). After you connect, the client's title bar shows the radio'
 | Ultimus Legacy | 6.237 | tested |
 | Ultimus MKII ATU | 7.247 | tested |
 | Ultimus MKII PTT | 8.246 | tested |
-| Black Pill board (any radio) | 3.28 (no Zadig; receive fixes itself; keeps the QRO cal; HDSDR / Quisk; Line devices; softer clocks) | tested (Proficio MKII), Pi + Windows |
-| Black Pill bootloader (ST-Link, new boards) | 2026-11-16 (WinUSB in flash mode) | tested on the Pi |
+| Black Pill board (any radio) | 3.29 (no Zadig; fixes its receive; keeps QRO cal; HDSDR / Quisk; Line devices; soft clocks; TX stats apart) | tested (Proficio MKII), Pi + Windows |
+| Black Pill bootloader | 2026-11-16 (WinUSB in flash mode) | tested on the Pi |
 
 All eight PSoC images and the Black Pill use the USB name Multus IQ; the MKII ones pass 0x9D (paddle Farnsworth) to the keyer (tested on all MKII radios).
 

@@ -35,6 +35,7 @@ SRCS = \
 	source/power_calibration.c \
 	source/proficio-temperature.c \
 	source/swr_wifi_meter.c \
+	source/cw_carrier.c \
 	source/usbcmd.c \
 	source/user_controls.c
 

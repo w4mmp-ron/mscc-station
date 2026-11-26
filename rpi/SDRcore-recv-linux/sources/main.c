@@ -1,6 +1,7 @@
 #include "extern.h"
 #include "mscc_resampler.h"
 #include "remote_phones.h"
+#include "cw_carrier_rx.h"
 
 
 #define RON 1
@@ -44,6 +45,7 @@ int UDP_thread_rc;
 
 //For the flusher Thread
 pthread_t p_Flusher_thread;
+pthread_t p_CW_Carrier_RX_thread;   /* cw-carrier 3.190 */
 int Flusher_thread_rc;
 
 //For the S_meter Thread
@@ -518,7 +520,19 @@ static void manage_stream_close_all(void)
     play_resampler_destroy();
 }
 
+static int manage_stream_locked(int start_stop, int device, int channels);
+
+/* cw-carrier 3.190: every stream open / close holds g_stream_lock (CW_Carrier_RX_thread
+ * stops / starts the same receive stream during transmit). */
 int manage_stream(int start_stop, int device, int channels) {
+    int status;
+    pthread_mutex_lock(&g_stream_lock);
+    status = manage_stream_locked(start_stop, device, channels);
+    pthread_mutex_unlock(&g_stream_lock);
+    return status;
+}
+
+static int manage_stream_locked(int start_stop, int device, int channels) {
     PaError err = 0;
     int status = 0;
     static int started = FALSE;
@@ -891,6 +905,11 @@ int main(int argc, char **argv) {
     }
     print_time();
     fprintf(G_fp_logfile, "[%d] main -> Starting Flusher Thread\n", line_number++);
+    /* cw-carrier 3.190: idle until ms-sdr sends CMD_SET_CW_CARRIER 1 */
+    if (pthread_create(&p_CW_Carrier_RX_thread, NULL, CW_Carrier_RX_thread, NULL) != 0) {
+        print_time();
+        fprintf(G_fp_logfile, "[%d] Start up of CW_Carrier_RX thread failed\n", line_number++);
+    }
     Flusher_thread_rc = pthread_create(&p_Flusher_thread, NULL, Flusher_thread, (void *) t);
     if (Flusher_thread_rc) {
         print_time();

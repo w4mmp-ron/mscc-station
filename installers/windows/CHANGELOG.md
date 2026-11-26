@@ -2,6 +2,18 @@
 
 Installer: `mscc-net9-R<version>-install.exe` (WPF client + Windows servers). Install the newest one; older installers in this folder are kept for roll-back only.
 
+## R11-25-1 — 2026-11-25  (Black Pill firmware 3.29; WPF 11.25.1 Launch Servers fix; Windows servers unchanged: ms-sdr 3.214, recv 3.155, trans 3.159)
+
+### Fixed
+- WPF 11.25.1: **Launch Servers is only for a Host on this PC** (127.0.0.1). With another Host (for example the Pi, `proficio.local`), MSCC unticks Launch Servers and greys it out, and Connect never starts servers on this PC. Before, a ticked box with a remote Host started the Windows servers anyway (they could not find the radio and showed warnings). Switching Host back to 127.0.0.1 makes the box clickable again; it stays unticked until you tick it.
+
+### Changed
+- Black Pill firmware 3.29 in `C:\mscc-net9\Black Pill Firmware\`: the pill's audio counters (`audio-stats.py`) count receive faults only. Receive packets missed while the radio transmits (and for 2 s after) are counted apart, with the transmit time. Nothing changes for operating.
+- Windows installer `mscc-net9-R11-25-1-install.exe`. The Windows servers are the same as R11-19-2.
+
+### Tested
+- WPF 11.25.1 against the Pi servers (Ron): with Host `proficio.local` the box unticks and greys out, Connect starts nothing on the PC; Host 127.0.0.1 makes it clickable again. Black Pill 3.29 in Ron's Proficio MKII (Pi): FT8 and TUNE, transmit time counted as 52.9 s / 5 key-downs, the same as the server logs, receive drops 0. Installer built on Ron's PC, not installed yet.
+
 ## R11-25-0 — 2026-11-25  (Black Pill firmware 3.28; WPF 11.25.0 = 11.19.2 renumbered; Windows servers unchanged: ms-sdr 3.214, recv 3.155, trans 3.159)
 
 ### Changed

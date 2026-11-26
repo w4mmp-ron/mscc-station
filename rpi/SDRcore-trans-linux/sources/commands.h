@@ -132,6 +132,7 @@
 #define CMD_GET_MODE_INIT 0xB8
 #define CMD_GET_BAND_INIT 0xB9
 #define CMD_SET_TX_ON 0xBA
+#define CMD_SET_CW_CARRIER 0x15   /* cw-carrier 3.190: ms-sdr <-> trans, see cw_carrier.c */
 #define CMD_SET_DISPLAY_FREQ 0xBB
 #define CMD_SET_TX_SET_BY_SERVER 0xBC
 

@@ -111,14 +111,18 @@ Reading / investigating is fine.
   receive frame errors; > 0 = receive slip watch, see the blackpill CLAUDE.md).
   A few gaps / in_drop / out_under in a window with TUNE, band or mode changes are expected (trans
   stream reopen); Ron dropped that fix 2026-11-16 (no user impact; `CLAUDE-history.md`).
+  **Black Pill 3.29+:** gaps / in_drop count receive only; transmit (+ 2 s) shows as `tx N s (Nx,
+  in_drop_tx .., gaps_tx ..)` and never marks `<<<` (with `CW_CARRIER=1` recv stops reading during
+  transmit). out_under still counts about one per trans stream stop.
+- **Stored CW carrier (Pi servers since R11-25-1):** `CW_CARRIER=1;` in `~/.local/mscc/mscc.ini`, hand-edited
+  (Ron 2026-11-25: no MSCC Init checkbox for now). proficio runs it on.
 - **Rules (Ron 2026-11-01):** assume Stew makes MSCC UI (Avalonia) match the current Windows client,
   and the Ubuntu scripts/utilities match the Pi. No separate Avalonia review; document the Pi
   versions for both Linux hosts. Linux guide Release 0 reviewed (old versions, Appendix G Pi install
   wrong for today's kit, cal now in the radio).
-- **Ubuntu in our releases (Ron 2026-11-25, Stew's go-ahead):** "finished" now builds and attaches the
-  Ubuntu amd64 `mscc` + `mscc-avalonia` .debs (repo `CLAUDE.md` steps 2 and 5). Before that, Stew was
-  to attach them himself (2026-11-19) and never did for R11-22-0..R11-25-0. `linux/*-linux` are at
-  R11-19-1 level (Stew's 1.0.102), so the first one needs the Pi server changes since then copied in.
+- **Ubuntu not in releases (Ron 2026-11-25):** Stew does not want future releases to include Ubuntu
+  (reason not asked). R11-25-0 got the Ubuntu 1.0.105 / 1.7.08 amd64 files once (92699f0a) and stays
+  as it is. "finished" builds no Ubuntu packages; how-to in `CLAUDE-history.md` if ever asked.
 - **32-bit (armhf) Pi servers (Ron 2026-11-22, NOT started; for users on 32-bit Pi OS, Bookworm or Trixie):**
   set up a 32-bit build in a new folder `~/mscc-32b` on proficio (proficio stays 64-bit), copy the
   relevant source in, build all three servers + PortAudio as 32-bit. Proposal: a Bookworm armhf chroot

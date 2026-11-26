@@ -524,6 +524,7 @@
 #define CMD_SET_FAN_ON_TEMPERATURE 0xFD
 #define CMD_CHECK_GUI_STATUS 0xFE
 #define CMD_SET_STOP 0xFF
+#define CMD_SET_CW_CARRIER 0x15   /* stored CW carrier, radio + trans + recv (cw_carrier.c; from the cw-carrier repo, 2026-11-25) */
 
 //START EXTENDED COMMANDS
 #define CMD_SET_EXTENDED_COMMAND 0x0B

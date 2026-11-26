@@ -163,7 +163,11 @@ public partial class MainViewModel : ObservableObject, IDisposable
 
     [ObservableProperty]
     [NotifyPropertyChangedFor(nameof(IsRemoteAudioAllowed))]
+    [NotifyPropertyChangedFor(nameof(LaunchServersOptionEnabled))]
     private string _backendIp = "127.0.0.1";
+
+    /// <summary>Launch Servers checkbox enabled only when Host is this PC (2026-11-25, as Avalonia).</summary>
+    public bool LaunchServersOptionEnabled => IsThisPcHost(BackendIp);
 
     /// <summary>Newest first. Always includes 127.0.0.1. Max 4 (same as Avalonia).</summary>
     public ObservableCollection<string> RecentHosts { get; } = new() { "127.0.0.1" };
@@ -5949,6 +5953,43 @@ public partial class MainViewModel : ObservableObject, IDisposable
         }
     }
 
+    /// <summary>
+    /// True when the backend host is this PC: empty (default local), localhost, loopback,
+    /// this computer's name (or name.local), or one of its own addresses. Same rule as
+    /// Avalonia's IsLocalHost, except empty counts as local (WPF default). No DNS lookup.
+    /// </summary>
+    internal static bool IsThisPcHost(string? host)
+    {
+        string ip = (host ?? "").Trim();
+        if (string.IsNullOrEmpty(ip))
+            return true;
+        if (ip.Equals("localhost", StringComparison.OrdinalIgnoreCase))
+            return true;
+        try
+        {
+            string me = System.Net.Dns.GetHostName();
+            if (!string.IsNullOrEmpty(me)
+                && (ip.Equals(me, StringComparison.OrdinalIgnoreCase)
+                    || ip.Equals(me + ".local", StringComparison.OrdinalIgnoreCase)))
+                return true;
+        }
+        catch { /* not local by name */ }
+
+        if (!System.Net.IPAddress.TryParse(ip, out var addr))
+            return false;
+        if (System.Net.IPAddress.IsLoopback(addr))
+            return true;
+        try
+        {
+            foreach (var nic in System.Net.NetworkInformation.NetworkInterface.GetAllNetworkInterfaces())
+                foreach (var ua in nic.GetIPProperties().UnicastAddresses)
+                    if (ua.Address.Equals(addr))
+                        return true;
+        }
+        catch { /* not local by address */ }
+        return false;
+    }
+
     partial void OnExternalElectronicKeyerChanged(bool value)
     {
         SpectrumWaterfallSettings.ExternalElectronicKeyer = value;
@@ -6298,6 +6339,23 @@ public partial class MainViewModel : ObservableObject, IDisposable
         OnPropertyChanged(nameof(IsRemoteAudioAllowed));
         if (RemoteAudio && !IsRemoteAudioAllowed)
             RemoteAudio = false;
+        EnforceLaunchServersForHost("host changed");
+    }
+
+    /// <summary>
+    /// 2026-11-25 (Ron): a Host that is not this PC means the servers run elsewhere, so
+    /// Launch Servers is unticked (and saved) instead of staying ticked but ignored.
+    /// Called when Host changes and once at startup (an old MSCC_Client.ini may have both).
+    /// Back to a local Host: the box is enabled again but stays unticked.
+    /// </summary>
+    public void EnforceLaunchServersForHost(string reason)
+    {
+        OnPropertyChanged(nameof(LaunchServersOptionEnabled));
+        if (LaunchServersOnStart && !IsThisPcHost(BackendIp))
+        {
+            MonitorTextBoxText($" Host {BackendIp} is not this PC: Launch Servers off ({reason})");
+            LaunchServersOnStart = false;   // OnLaunchServersOnStartChanged saves it
+        }
     }
 
     partial void OnBackendPortChanged(int value)
@@ -6341,7 +6399,13 @@ public partial class MainViewModel : ObservableObject, IDisposable
             return;
         }
 
-        bool launch = LaunchServersOnStart;
+        // Launch Servers only starts backends on THIS PC. With a remote host (e.g. the Pi,
+        // proficio.local) the box is ignored and Start only connects, as Avalonia does
+        // (LaunchServers && IsLocalHost). Before 2026-11-25 WPF started local servers anyway.
+        bool launch = LaunchServersOnStart && IsThisPcHost(BackendIp);
+        if (LaunchServersOnStart && !launch)
+            MonitorTextBoxText(
+                $" Start ({reason}): backend {BackendIp} is not this PC; Launch Servers ignored (connect only)");
         if (launch)
         {
             var setup = ConfigBootstrap.EvaluateLocalSetup(launchServers: true);

@@ -76,6 +76,7 @@ SRCS = \
 	sources/udp_thread.c \
 	sources/remote_mic.c \
 	sources/alc.c \
+	sources/cw_carrier.c \
 	sources/wsfirgen.c
 
 CXX_SRCS = \

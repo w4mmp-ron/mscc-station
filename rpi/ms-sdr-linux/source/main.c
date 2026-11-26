@@ -497,6 +497,9 @@ void* Flusher_thread(void* t) {
         /* CAT tune (AC111;): ends after 10 s or when something else ended it. */
         Cat_tune_tick();
 
+        /* cw-carrier: radio still has its CW block? (a radio reset clears it) */
+        Cw_carrier_tick();
+
         if (G_Allow_Log_Write == TRUE) {
             fflush(G_fp_logfile);
             if (previous_startup_freq != G_tune_freq && G_TX == FALSE) {
@@ -1377,6 +1380,7 @@ int main(int argc, char **argv) {
                 "[%d] main. Network ready — reload cal if a live file was replaced, then Apply_Appliance_Startup\n",
                 line_number++);
             Radio_cal_startup_load("startup");
+            Cw_carrier_startup();   /* cw-carrier: off unless mscc.ini CW_CARRIER=1 */
             Apply_Appliance_Startup();
         } else {
             print_time(0);

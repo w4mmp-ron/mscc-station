@@ -86,6 +86,7 @@ public partial class MainWindow : Window
                     vm.AutoStartServers = SpectrumWaterfallSettings.AutoStartServers;
                 if (vm.LaunchServersOnStart != SpectrumWaterfallSettings.LaunchServersOnStart)
                     vm.LaunchServersOnStart = SpectrumWaterfallSettings.LaunchServersOnStart;
+                vm.EnforceLaunchServersForHost("startup");   // remote Host -> Launch Servers off
                 // External electronic keyer sticky (PROFICIO-MKII) — re-sync after Load().
                 if (vm.ExternalElectronicKeyer != SpectrumWaterfallSettings.ExternalElectronicKeyer)
                     vm.ExternalElectronicKeyer = SpectrumWaterfallSettings.ExternalElectronicKeyer;

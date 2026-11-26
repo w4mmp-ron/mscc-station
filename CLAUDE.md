@@ -80,12 +80,8 @@ The Pi and Windows servers do the same job and are kept functionally identical (
      - **File-by-file check:** unpack both (`dpkg-deb -R old.deb old`, `dpkg-deb -R new.deb new`),
        md5sum every file, diff the lists. Only the expected files may differ (control, the changed
        servers, firmware), and the file count stays the same unless a file was meant to be added.
-   - Ubuntu (amd64), every release (Stew's go-ahead, Ron 2026-11-25): bring `linux/*-linux` level
-     with the Pi server trees, then `linux-build/build-mscc-deb-amd64.sh` (Linux or WSL; the version
-     comes from the Pi control file, so Ubuntu `mscc` = Pi `mscc` number) ->
-     `installers/linux/`. Same file-by-file check against the last amd64 .deb. `mscc-avalonia`
-     amd64 (`linux-build/build-mscc-ui-deb-amd64.sh`) only if the client changed; otherwise
-     attach the current one unchanged.
+   - Ubuntu (amd64): not part of "finished" and not in releases (Stew, 2026-11-25). Build only
+     when asked; how it was done for R11-25-0 is in `rpi/CLAUDE-history.md`.
 3. **Docs:** the Addendum (`python docs/manuals/make-addendum-pdf.py`, keep it to 2 pages), the
    Updating Firmware guide if a firmware tool or step changed (`python docs/manuals/make-addendum-pdf.py MSCC-Updating-Firmware.md`),
    `installers/windows/CHANGELOG.md`, `installers/windows/INSTALL.md`, `installers/rpi/INSTALL.md`,
@@ -95,9 +91,8 @@ The Pi and Windows servers do the same job and are kept functionally identical (
 5. **GitHub Release** `R<month>-<day>-<n>` (e.g. R11-13-2):
    `gh release create R.. --title R.. --target main --notes-file notes.md <installers>`.
    **Every release carries ALL the installers** (Ron and Stew, 2026-11-19), changed or not: the
-   Windows installer, the Pi (arm64) `mscc` and `mscc-avalonia` .debs, and the Ubuntu (amd64)
-   `mscc` and `mscc-avalonia` .debs (whoever publishes builds them). The top release is always the complete
-   current set. Notes start with a short **version table** (each package, its version, changed or
+   Windows installer and the Pi (arm64) `mscc` and `mscc-avalonia` .debs. No Ubuntu files
+   (Stew, 2026-11-25). The top release is always the complete current set. Notes start with a short **version table** (each package, its version, changed or
    unchanged), then what changed, then **"Downloads: which file do I need?"** (one line per file, what
    computer it's for), then the links:
    [Windows install guide](https://github.com/w4mmp-ron/mscc-station/blob/main/installers/windows/INSTALL.md) ·
@@ -106,9 +101,8 @@ The Pi and Windows servers do the same job and are kept functionally identical (
    [Documentation](https://github.com/w4mmp-ron/mscc-station/blob/main/docs/manuals/README.md)
    (the user documentation page: every guide, one line each; add new guides to it).
    Use links, not repo paths (people on the release page have no repo). Check the uploaded sizes.
-   **Ubuntu .debs:** since 2026-11-25 (Stew's go-ahead) Ron's releases carry the two Ubuntu files
-   too, built at step 2, with their own lines in the version table and Downloads. No more
-   "Ubuntu packages: added by Stew".
+   **Ubuntu .debs:** not in releases (Stew, 2026-11-25): no Ubuntu files, rows or Downloads lines.
+   R11-25-0 carries them once; that release stays as it is.
    **Keep only the newest release and one earlier one** as the fallback: after publishing, delete
    the older releases (`gh release delete R.. -R w4mmp-ron/mscc-station --yes`; keep the git tags,
    so an old version can still be rebuilt from the repo).

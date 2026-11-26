@@ -280,6 +280,7 @@ void Stop_all(uint8_t up_date_transceiver, uint8_t shutdown_status) {
     fprintf(G_fp_logfile, "[%d] Stop_all Called. update_transceiver: %d, shutdown_status: %d\n",
             line_number++, up_date_transceiver, shutdown_status);
     G_Shutdown_Status = shutdown_status;
+    Cw_carrier_stop();   /* cw-carrier: clear the radio's stored carrier first */
     if (G_network_initialized == TRUE) {
         if (G_delete_SDRcore_init_files == 1) {
             print_time(0);
@@ -1875,6 +1876,10 @@ void * Command_Processor(void *my_param) {
             /* Version only — keep-alive is CMD_SET_KEEP_ALIVE (0xF4) from cores. */
             break;
 
+        case CMD_SET_CW_CARRIER:   /* cw-carrier: [0x15][384 bytes] block from trans */
+            Cw_carrier_block(G_receive_buf, recv_len);
+            break;
+
         case CMD_SET_KEEP_ALIVE:
             /*
              * Unified keep-alive opcode 0xF4. Payload selects source:
@@ -2892,6 +2897,17 @@ void Parse_mscc_record(char *record) {
         G_pill_stats = (cmd_value != 0) ? TRUE : FALSE;
         print_time(0);
         fprintf(G_fp_logfile, "[%d] Parse_mscc_record. PILL_STATS: %d\n", line_number++, (int) G_pill_stats);
+        status = 1;
+    }
+
+    /* cw-carrier: CW_CARRIER=1 -> stored CW carrier in the radio, streams stopped while
+     * not needed (cw_carrier.c). Default 0 (off) when the key is missing. */
+    parameter = strstr(record, "CW_CARRIER=");
+    if (parameter != NULL) {
+        cmd_value = atoi(&parameter[strlen("CW_CARRIER=")]);
+        G_cw_carrier_ini = (cmd_value != 0) ? TRUE : FALSE;
+        print_time(0);
+        fprintf(G_fp_logfile, "[%d] Parse_mscc_record. CW_CARRIER: %d\n", line_number++, (int) G_cw_carrier_ini);
         status = 1;
     }
 
