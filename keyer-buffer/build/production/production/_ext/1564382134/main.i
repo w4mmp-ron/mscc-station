@@ -7,7 +7,7 @@
 # 1 "C:\\Program Files\\Microchip\\xc8\\v2.45\\pic\\include\\language_support.h" 1 3
 # 2 "<built-in>" 2
 # 1 "C:/Users/Ron/.grok/worktrees/keyer-buffer/main.c" 2
-# 41 "C:/Users/Ron/.grok/worktrees/keyer-buffer/main.c"
+# 47 "C:/Users/Ron/.grok/worktrees/keyer-buffer/main.c"
 # 1 "C:/Users/Ron/.grok/worktrees/keyer-buffer/mcc_generated_files/mcc.h" 1
 # 49 "C:/Users/Ron/.grok/worktrees/keyer-buffer/mcc_generated_files/mcc.h"
 # 1 "C:\\Program Files\\Microchip\\xc8\\v2.45\\pic\\include\\xc.h" 1 3
@@ -10929,7 +10929,7 @@ void OSCILLATOR_Initialize(void);
 void WDT_Initialize(void);
 # 111 "C:/Users/Ron/.grok/worktrees/keyer-buffer/mcc_generated_files/mcc.h"
 void PMD_Initialize(void);
-# 41 "C:/Users/Ron/.grok/worktrees/keyer-buffer/main.c" 2
+# 47 "C:/Users/Ron/.grok/worktrees/keyer-buffer/main.c" 2
 
 # 1 "C:/Users/Ron/.grok/worktrees/keyer-buffer/defines.h" 1
 # 30 "C:/Users/Ron/.grok/worktrees/keyer-buffer/defines.h"
@@ -10939,7 +10939,7 @@ void PMD_Initialize(void);
 #pragma warning disable 1510
 #pragma warning disable 1498
 #pragma warning disable 2083
-# 42 "C:/Users/Ron/.grok/worktrees/keyer-buffer/main.c" 2
+# 48 "C:/Users/Ron/.grok/worktrees/keyer-buffer/main.c" 2
 
 # 1 "C:\\Program Files\\Microchip\\xc8\\v2.45\\pic\\include\\c99\\string.h" 1 3
 # 25 "C:\\Program Files\\Microchip\\xc8\\v2.45\\pic\\include\\c99\\string.h" 3
@@ -10998,14 +10998,14 @@ size_t strxfrm_l (char *restrict, const char *restrict, size_t, locale_t);
 
 
 void *memccpy (void *restrict, const void *restrict, int, size_t);
-# 43 "C:/Users/Ron/.grok/worktrees/keyer-buffer/main.c" 2
+# 49 "C:/Users/Ron/.grok/worktrees/keyer-buffer/main.c" 2
 
 
 # 1 "C:\\Program Files\\Microchip\\xc8\\v2.45\\pic\\include\\c99\\limits.h" 1 3
 # 10 "C:\\Program Files\\Microchip\\xc8\\v2.45\\pic\\include\\c99\\limits.h" 3
 # 1 "C:\\Program Files\\Microchip\\xc8\\v2.45\\pic\\include\\c99\\bits/limits.h" 1 3
 # 11 "C:\\Program Files\\Microchip\\xc8\\v2.45\\pic\\include\\c99\\limits.h" 2 3
-# 45 "C:/Users/Ron/.grok/worktrees/keyer-buffer/main.c" 2
+# 51 "C:/Users/Ron/.grok/worktrees/keyer-buffer/main.c" 2
 
 # 1 "C:\\Program Files\\Microchip\\xc8\\v2.45\\pic\\include\\c99\\ctype.h" 1 3
 # 10 "C:\\Program Files\\Microchip\\xc8\\v2.45\\pic\\include\\c99\\ctype.h" 3
@@ -11041,8 +11041,8 @@ int isupper_l(int, locale_t);
 int isxdigit_l(int, locale_t);
 int tolower_l(int, locale_t);
 int toupper_l(int, locale_t);
-# 46 "C:/Users/Ron/.grok/worktrees/keyer-buffer/main.c" 2
-# 114 "C:/Users/Ron/.grok/worktrees/keyer-buffer/main.c"
+# 52 "C:/Users/Ron/.grok/worktrees/keyer-buffer/main.c" 2
+# 121 "C:/Users/Ron/.grok/worktrees/keyer-buffer/main.c"
 static int cw_keyer_speed = 18;
 static int cw_keyer_weight = 50;
 static int cw_keyer_mode = 2;
@@ -11054,6 +11054,8 @@ static int cw_paddle_farns = 0;
 
 static uint16_t dot_delay = 0;
 static uint16_t dash_delay = 0;
+
+static uint16_t pd_word_gap = 0;
 
 static uint16_t mem_letter_gap = 0;
 static uint16_t mem_word_gap = 0;
@@ -11262,7 +11264,7 @@ void keyer_update() {
         cw_keyer_speed = 60;
     dot_delay = (uint16_t)(1200 / cw_keyer_speed);
     dash_delay = (uint16_t)(((uint32_t)dot_delay * 3u * (uint32_t)cw_keyer_weight) / 50u);
-# 348 "C:/Users/Ron/.grok/worktrees/keyer-buffer/main.c"
+# 357 "C:/Users/Ron/.grok/worktrees/keyer-buffer/main.c"
     text_wpm = cw_mem_text_wpm;
     if (text_wpm != 0 && text_wpm < 5)
         text_wpm = 0;
@@ -11297,6 +11299,13 @@ void keyer_update() {
     tx_word_extra = mem_word_gap;
     if (tx_word_extra < 4 * dot_delay)
         tx_word_extra = 4 * dot_delay;
+
+
+
+    if (text_wpm > 0 && text_wpm < cw_keyer_speed)
+        pd_word_gap = (uint16_t)(7 * (1200 / text_wpm));
+    else
+        pd_word_gap = (uint16_t)(5 * dot_delay);
 
     if (cw_keys_reversed) {
         kdot = &kcwr;
@@ -11672,7 +11681,7 @@ static void paddle_tick(void) {
             if (letter_open && pd_gap >= 2 * dot_delay)
                 pd_close_letter();
             if (pd_state == PD_IDLE && word_pending &&
-                pd_gap >= 5 * dot_delay) {
+                pd_gap >= pd_word_gap) {
                 word_pending = 0;
                 buf_push(0u);
             }

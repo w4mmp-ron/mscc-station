@@ -2,6 +2,17 @@
 
 Installer: `mscc-net9-R<version>-install.exe` (WPF client + Windows servers). Install the newest one; older installers in this folder are kept for roll-back only.
 
+## R11-25-2 — 2026-11-25  (keyer firmware 20261125; WPF 11.25.2 = 11.25.1 renumbered; Windows servers unchanged: ms-sdr 3.214, recv 3.155, trans 3.159)
+
+### Fixed
+- Keyer firmware `Keyer-MCU-app-20261125.hex` in `C:\mscc-net9\Keyer Firmware\` (MKII daughter board): with Farnsworth on the paddles, a normal pause between letters no longer turns into a word space. The keyer now ends a word after a pause of 7 dits at the Farnsworth speed (646 ms at 13 wpm), the same at any character speed. Before, it was 5 dits at the character speed (330 ms at 18 wpm, 240 ms at 25 wpm), so letters were often sent as separate words.
+
+### Changed
+- Windows installer `mscc-net9-R11-25-2-install.exe`. The client is the same as 11.25.1 with a new number; the Windows servers are the same as R11-19-2.
+
+### Tested
+- Keyer 20261125 in Ron's Proficio MKII (Black Pill, Pi), measured from the radio's own keying: 18/13, 18/15, 20/15, 25/13 and 25/15 wpm, letters kept together, letter and word gaps as set. Installer built on Ron's PC, not installed yet.
+
 ## R11-25-1 — 2026-11-25  (Black Pill firmware 3.29; WPF 11.25.1 Launch Servers fix; Windows servers unchanged: ms-sdr 3.214, recv 3.155, trans 3.159)
 
 ### Fixed

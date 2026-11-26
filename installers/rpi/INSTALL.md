@@ -12,7 +12,7 @@ releases stay there for roll-back). Put the `.deb` files in one folder on the Pi
 
 | Package | Version | |
 |---|---|---|
-| `mscc` | 1.0.106 | required: servers (ms-sdr 3.216, recv 3.158, trans 3.164), PortAudio, MSCC Init, MSCC Volume, PSoC + Black Pill + keyer firmware and flash tools (window "Black Pill Firmware Update" since 1.0.85) |
+| `mscc` | 1.0.107 | required: servers (ms-sdr 3.216, recv 3.158, trans 3.164), PortAudio, MSCC Init, MSCC Volume, PSoC + Black Pill + keyer firmware and flash tools (window "Black Pill Firmware Update" since 1.0.85) |
 | `mscc-avalonia` | 1.7.08 | optional: MSCC Avalonia client on the Pi (not needed with the Windows client) |
 
 ```bash
@@ -40,7 +40,7 @@ Then: log out/in (first install) → **MSCC Init** → **MSCC Start** → connec
 - Keyer (PIC on the daughter board; Black Pill 3.16 or later, or the MKII PSoC firmware in the
   Addendum): stop the servers (`mscc stop`), then
   menu **MSCC → Keyer Firmware Update** (`keyer-flash.gui`): Load File → Program. Or
-  `keyer-flash /usr/share/mscc/firmware/keyer/Keyer-MCU-app-20261112.hex`. Settings and CQ
+  `keyer-flash /usr/share/mscc/firmware/keyer/Keyer-MCU-app-20261125.hex`. Settings and CQ
   memories are kept. **Power-cycle the radio afterwards** (no RF until then). The `Keyer-MCU-full-` file is for the PICkit only (bootloader + app).
 
 ## Stored CW carrier (Black Pill 3.25 or later, optional)

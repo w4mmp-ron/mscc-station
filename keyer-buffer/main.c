@@ -37,6 +37,12 @@
   2026-11-12  I2C bootloader (bootloader/): app built at code offset 0x400.
               KEYER_ENTER_BOOT 0x9F with param 0x5C: set EEPROM 0xFF = 0x5C and
               reset; the bootloader then stays on I2C 0x5C for an update.
+  2026-11-25  Buffered Farnsworth word space (Ron, tested 18/13 to 25/15). The paddle pause that adds a
+              word space is WORD_GAP_FARNS_DITS (7) dits at the Farnsworth (text) speed when
+              Farnsworth gaps are in use (was: at the character speed, 330 ms at 18 wpm,
+              so normal pauses between letters became word spaces; worse at higher
+              character speeds). 13 wpm text = 646 ms, 15 wpm = 560 ms, at any character
+              speed (5 dits was tried first: 400 ms at 15 wpm was still too tight).
  */
 #include "mcc_generated_files/mcc.h"
 #include "defines.h"
@@ -103,6 +109,7 @@
 #define BUF_LIMIT           20  /* letters waiting -> STP, paddles suspended */
 #define LETTER_END_DITS      2  /* gap after the last mark that closes a letter */
 #define WORD_GAP_DITS        5  /* gap after the last mark that adds a word space */
+#define WORD_GAP_FARNS_DITS  7  /* the same with Farnsworth gaps, in dits at the text speed */
 #define LETTER_MAX_ELEMENTS 16  /* CQ text letters: elements kept per character */
 
 #define SYM_WORD   0u           /* buffer symbols */
@@ -122,6 +129,8 @@ static int cw_paddle_farns = 0; /* SET_PADDLE_FARNSWORTH 0x9D: 0=off, 1=buffered
 /* All times in ms (1 ms tick) */
 static uint16_t dot_delay = 0;
 static uint16_t dash_delay = 0;
+/* Paddle pause (ms) that adds a word space in buffered mode (see keyer_update) */
+static uint16_t pd_word_gap = 0;
 /* ARRL / PARIS Farnsworth gaps (see keyer_update) */
 static uint16_t mem_letter_gap = 0;
 static uint16_t mem_word_gap = 0;
@@ -379,6 +388,13 @@ void keyer_update() {
     tx_word_extra = mem_word_gap;
     if (tx_word_extra < 4 * dot_delay)
         tx_word_extra = 4 * dot_delay;
+
+    /* 2026-11-25: word-space pause counted at the Farnsworth speed when its gaps
+     * are used, so it stays the same when the character speed changes. */
+    if (text_wpm > 0 && text_wpm < cw_keyer_speed)
+        pd_word_gap = (uint16_t)(WORD_GAP_FARNS_DITS * (1200 / text_wpm));
+    else
+        pd_word_gap = (uint16_t)(WORD_GAP_DITS * dot_delay);
 
     if (cw_keys_reversed) {
         kdot = &kcwr;
@@ -754,7 +770,7 @@ static void paddle_tick(void) {
             if (letter_open && pd_gap >= LETTER_END_DITS * dot_delay)
                 pd_close_letter();
             if (pd_state == PD_IDLE && word_pending &&
-                pd_gap >= WORD_GAP_DITS * dot_delay) {
+                pd_gap >= pd_word_gap) {
                 word_pending = FALSE;
                 buf_push(SYM_WORD);
             }

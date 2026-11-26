@@ -9,7 +9,7 @@ The installer is **not in git**. Download it from the **Releases** page:
 releases stay there for roll-back).
 
 Run the newest **`mscc-net9-R*-install.exe`** (built with Actual Installer) — currently
-**`mscc-net9-R11-25-1-install.exe`** (title bar 11.25.1). Typical deploy folder: **`C:\mscc-net9`**.
+**`mscc-net9-R11-25-2-install.exe`** (title bar 11.25.2). Typical deploy folder: **`C:\mscc-net9`**.
 
 That installer is the **WPF** client plus the Windows servers (versions: see the Software
 Versions Addendum), the PSoC radio firmware, the Black Pill firmware + flash tools, and the keyer

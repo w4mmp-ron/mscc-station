@@ -2217,3 +2217,9 @@ Remote Digital TX spurs (Stew's NOTE-FOR-RON-REMOTE-DIGITAL-TX-SPURS-2026-11-17)
 - WPF 11.25.1 (Ron asked; Stew supports Avalonia only now): Launch Servers only for a Host on this PC (`IsThisPcHost`), unticked + greyed out for another Host (on Host change and at startup), Start never launches servers for a remote Host. Tested by Ron against the Pi. Note for Stew with the Avalonia option (untick, not only grey out).
 - Windows R11-25-1: client 11.25.1 + Black Pill 3.29 in the payload, Windows servers unchanged. Pi mscc 1.0.106: the three servers + Black Pill 3.29 (file-by-file check: control, 3 servers, 2 pill images renamed; 133 files both). Pi Avalonia 1.7.08 unchanged.
 - Not in this commit: the 32-bit (armhf) Pi work (paused).
+
+## R11-25-2 (2026-11-25, Ron "finished")
+
+- Keyer firmware 20261125 (keyer-buffer/main.c): buffered Farnsworth adds a word space after a paddle pause of WORD_GAP_FARNS_DITS = 7 dits at the Farnsworth (text) speed when Farnsworth gaps are in use (13 wpm = 646 ms, 15 wpm = 560 ms), instead of 5 dits at the character speed (330 ms at 18 wpm). Found with Ron's CW timing test tools (pill test build, not released); 5 dits at the text speed was tried first and was too tight at 15 wpm. Tested 18/13, 18/15, 20/15, 25/13, 25/15. Flashed in Ron's keyer (same binary as the release file). A Black Pill radio needed no power cycle after the keyer update, only mscc start (Ron kept the guide wording).
+- Windows R11-25-2: keyer 20261125 in the payload, client 11.25.2 (11.25.1 renumbered), servers unchanged. Pi mscc 1.0.107: keyer pair only (file-by-file check: control + 2 keyer files renamed, 133 files). Pi Avalonia 1.7.08 unchanged. R11-25-0 kept (Ron).
+- Note for Stew: why the Black Pill stores the CW carrier (Pi Zero 2 W), Ron also e-mails it.
