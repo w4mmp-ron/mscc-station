@@ -2223,3 +2223,12 @@ Remote Digital TX spurs (Stew's NOTE-FOR-RON-REMOTE-DIGITAL-TX-SPURS-2026-11-17)
 - Keyer firmware 20261125 (keyer-buffer/main.c): buffered Farnsworth adds a word space after a paddle pause of WORD_GAP_FARNS_DITS = 7 dits at the Farnsworth (text) speed when Farnsworth gaps are in use (13 wpm = 646 ms, 15 wpm = 560 ms), instead of 5 dits at the character speed (330 ms at 18 wpm). Found with Ron's CW timing test tools (pill test build, not released); 5 dits at the text speed was tried first and was too tight at 15 wpm. Tested 18/13, 18/15, 20/15, 25/13, 25/15. Flashed in Ron's keyer (same binary as the release file). A Black Pill radio needed no power cycle after the keyer update, only mscc start (Ron kept the guide wording).
 - Windows R11-25-2: keyer 20261125 in the payload, client 11.25.2 (11.25.1 renumbered), servers unchanged. Pi mscc 1.0.107: keyer pair only (file-by-file check: control + 2 keyer files renamed, 133 files). Pi Avalonia 1.7.08 unchanged. R11-25-0 kept (Ron).
 - Note for Stew: why the Black Pill stores the CW carrier (Pi Zero 2 W), Ron also e-mails it.
+
+## R11-26-0 (2026-11-26, Ron "finished")
+
+- Keyer firmware 20261126 (keyer-buffer/main.c): CQ memory prosigns as single characters, `*` = SK, `(` = KN, `&` = AS (with `=` BT, `+` AR); unknown characters are skipped. Repeat play: 0x9C param 4 then the pause (1..30 s); the slot plays, the radio receives for the pause (counted from the end of the last mark), then plays again; a paddle tap ends it (in the message or the pause, the tap sends nothing); PLAY, store begin or a reset also end it; RAM only. ms-sdr and the pill pass the new code unchanged. KEYER-MEMORY.md lists the characters and the repeat code. Tested by Ron on the rig (prosigns heard, repeat started and stopped with a tap).
+- Flashing the keyer with the servers running works (pill pass-through only); the update tools still ask for the servers to be stopped (Ron: leave them as they are).
+- Paddle Farnsworth code reviewed: no timing faults. Small edges left as they are: CQ pressed while keying clips one mark; a setting saved while sending holds the keyer ~8 ms.
+- Windows R11-26-0: keyer 20261126 in the payload, client 11.26.0 (11.25.1 renumbered), servers unchanged. Pi mscc 1.0.108: keyer pair only (file-by-file check: control + 2 keyer files renamed, 128 files both). Pi Avalonia 1.7.08 unchanged.
+- Notes for Stew: prosign legend and repeat play for the Avalonia CW tab.
+- Plan kept, not started: CQ memories in the PIC's program flash (EEPROM 214 of 256 bytes used).

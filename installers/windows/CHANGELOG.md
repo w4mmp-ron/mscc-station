@@ -2,6 +2,18 @@
 
 Installer: `mscc-net9-R<version>-install.exe` (WPF client + Windows servers). Install the newest one; older installers in this folder are kept for roll-back only.
 
+## R11-26-0 — 2026-11-26  (keyer firmware 20261126; WPF 11.26.0 = 11.25.1 renumbered; Windows servers unchanged: ms-sdr 3.214, recv 3.155, trans 3.159)
+
+### Added
+- Keyer firmware `Keyer-MCU-app-20261126.hex` in `C:\mscc-net9\Keyer Firmware\` (MKII daughter board): prosigns in the CQ memories, one character each: `*` = SK, `(` = KN, `&` = AS (`=` BT and `+` AR as before).
+- Same keyer firmware: repeat play. The keyer can play a memory over and over with a pause of 1 to 30 s between plays, receiving during the pause; a paddle tap stops it. The client needs a Repeat control to use it (not in this client yet).
+
+### Changed
+- Windows installer `mscc-net9-R11-26-0-install.exe`. The client is the same as 11.25.1 with a new number; the Windows servers are the same as R11-19-2.
+
+### Tested
+- Keyer 20261126 in Ron's Proficio MKII (Black Pill, Pi): prosigns on the air, repeat play started and stopped with a paddle tap. Installer built on Ron's PC, not installed yet.
+
 ## R11-25-2 — 2026-11-25  (keyer firmware 20261125; WPF 11.25.2 = 11.25.1 renumbered; Windows servers unchanged: ms-sdr 3.214, recv 3.155, trans 3.159)
 
 ### Fixed

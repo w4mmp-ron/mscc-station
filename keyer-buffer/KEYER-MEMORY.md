@@ -14,9 +14,34 @@ Client / test  →  ms-sdr (UDP)  →  Proficio USB (usbvend01)  →  I2C  →  
 | `1` | **Store begin** (clear builder for current slot) |
 | `2` | **Store end** (RAM → EEPROM for current slot) |
 | `3` | **Select slot** — **next** param is slot **0..3** (sticky) |
+| `4` | **Play repeating** — **next** param is the pause **1..30** s (keyer 20261126+) |
 | `0x20`–`0x7E` | **Append** ASCII (max **48** chars per slot) |
 
 **Slots:** 4. Default after reset: **0**. **Proficio:** no change.
+
+## Repeat play (beacon / calling CQ)
+
+    0x9C, 3   0x9C, slot   0x9C, 4   0x9C, pause
+
+The slot plays, the radio goes back to receive for the pause (counted from the
+end of the last dit or dah), then it plays again, until you tap a paddle. The
+tap only stops it; nothing is sent. A new play, a store, or a keyer reset also
+stops it. The pause is not saved in the keyer; the client sends it each time.
+An older keyer ignores code 4, so nothing plays.
+
+## What you can type in a memory
+Letters (upper or lower case), digits 0-9, and `/ ? . ,`. A space is a word space.
+
+Prosigns are one character each, sent with no gap inside:
+
+    =   BT
+    +   AR
+    *   SK
+    (   KN
+    &   AS
+
+Example: `CQ CQ DE VE6VIS VE6VIS (` ends with KN. Any other character is skipped
+(keyer 20261126 and later; older keyers know only = and +).
 
 ## Select + store + play
 ```

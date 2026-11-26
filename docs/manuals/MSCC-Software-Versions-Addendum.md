@@ -1,6 +1,6 @@
 # MSCC Software Versions Addendum
 
-**Release R11-25-2** · 2026-11-25
+**Release R11-26-0** · 2026-11-26
 
 The Operator's Guides describe how MSCC works; this addendum lists the version numbers that
 go with the current release. It is updated with every release, so the guides don't change
@@ -11,8 +11,8 @@ when only version numbers do. Downloads and what changed in each release:
 
 | Computer | File |
 |---|---|
-| Windows | `mscc-net9-R11-25-2-install.exe` → `C:\mscc-net9` |
-| Raspberry Pi (64-bit, Pi 4 / Pi 5) | `mscc_1.0.107_arm64.deb`, `mscc-avalonia_1.7.08_arm64.deb` |
+| Windows | `mscc-net9-R11-26-0-install.exe` → `C:\mscc-net9` |
+| Raspberry Pi (64-bit, Pi 4 / Pi 5) | `mscc_1.0.108_arm64.deb`, `mscc-avalonia_1.7.08_arm64.deb` |
 
 Ubuntu packages: not in this release (R11-25-0 has 1.0.105 / 1.7.08 amd64).
 
@@ -20,14 +20,14 @@ Ubuntu packages: not in this release (R11-25-0 has 1.0.105 / 1.7.08 amd64).
 
 | Program | Windows | Raspberry Pi | Ubuntu |
 |---|---|---|---|
-| MSCC client | WPF 11.25.2 | Avalonia 1.7.08 | Avalonia 1.7.08 |
+| MSCC client | WPF 11.26.0 | Avalonia 1.7.08 | Avalonia 1.7.08 |
 | ms-sdr (server) | 3.214 | 3.216 | 3.215 |
 | recv (receive server) | 3.155 | 3.158 | 3.157 |
 | trans (transmit server) | 3.159 | 3.164 | 3.163 |
 
 Avalonia 1.7.08 (Pi and Ubuntu): connect keeps the server's settings. LF not yet tested on Geminus.
 
-WPF 11.25.2 (= 11.25.1 renumbered): Launch Servers is only for a Host on this PC. Another Host turns it off and greys it out, and Connect then never starts servers on this PC. Otherwise as 11.19.2. Remote digital: a one-cable VB-Cable setup no longer sends a short burst of received audio at key-down. While keyed, MSCC stops playing receive audio into the cable, and it drops the first 400 ms of transmit audio after key-down.
+WPF 11.26.0 (= 11.25.1 renumbered): Launch Servers is only for a Host on this PC. Another Host turns it off and greys it out, and Connect then never starts servers on this PC. Otherwise as 11.19.2. Remote digital: a one-cable VB-Cable setup no longer sends a short burst of received audio at key-down. While keyed, MSCC stops playing receive audio into the cable, and it drops the first 400 ms of transmit audio after key-down.
 
 Pi ms-sdr 3.216, recv 3.158 and trans 3.164: stored CW carrier (Black Pill 3.25+), on with `CW_CARRIER=1;` in the Pi's mscc.ini (Pi install guide). `mscc status` on the Pi lists packages, servers, firmware, and the newest release. Pi ms-sdr 3.214 answers the CAT S-meter read, stops transmit on a WiFi SWR fault until reset (including a CAT key from WSJT-X), and keeps the QRO calibration in Black Pill 3.24 or later. Windows ms-sdr 3.214 uses Zadig or WinUSB; Black Pill 3.17 or later needs no Zadig.
 
@@ -61,8 +61,8 @@ Files: Windows `C:\mscc-net9\PSoC Firmware\` and `Black Pill Firmware\`; Pi `/us
 
 | Item | Version | Status |
 |---|---|---|
-| Keyer firmware | `Keyer-MCU-app-20261125.hex` (Farnsworth word spacing) | tested (Proficio MKII with Black Pill) |
-| Keyer bootloader (put on once with the PICkit) | version 2, in `Keyer-MCU-full-20261125.hex` | tested |
+| Keyer firmware | `Keyer-MCU-app-20261126.hex` (prosigns, repeat play) | tested (Proficio MKII with Black Pill) |
+| Keyer bootloader (put on once with the PICkit) | version 2, in `Keyer-MCU-full-20261126.hex` | tested |
 | Keyer Firmware Update (window and command line) | R11-12-4 | tested on Windows and Raspberry Pi |
 
 Keyer update needs Black Pill 3.16 or later. Files: `C:\mscc-net9\Keyer Firmware\` and `/usr/share/mscc/firmware/keyer/`.

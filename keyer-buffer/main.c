@@ -43,6 +43,12 @@
               so normal pauses between letters became word spaces; worse at higher
               character speeds). 13 wpm text = 646 ms, 15 wpm = 560 ms, at any character
               speed (5 dits was tried first: 400 ms at 15 wpm was still too tight).
+  2026-11-26  CQ memory prosigns as single characters: * = SK, ( = KN, & = AS
+              (with = BT and + AR as before).
+  2026-11-26  Repeat play: 0x9C param 4, then the pause (1..30 s). The slot plays,
+              the radio receives for the pause (from the end of the last mark), then
+              plays again. A paddle tap ends it (in the message or the pause; the tap
+              sends nothing); PLAY, store begin or a reset also end it. RAM only.
  */
 #include "mcc_generated_files/mcc.h"
 #include "defines.h"
@@ -76,6 +82,7 @@
 /* ms-sdr / Proficio: CMD_SET_KEYER_MEMORY
  * param: 0=play, 1=store begin, 2=store end,
  *        3=select slot (next param is slot 0..3), sticky thereafter,
+ *        4=play repeating (next param is the pause, 1..30 s),
  *        0x20-0x7E = append printable ASCII to current slot builder */
 #define CMD_SET_KEYER_MEMORY 0x9C
 /* Enter the I2C bootloader: param must be KEYER_BOOT_KEY. EEPROM 0xFF is the
@@ -88,6 +95,8 @@
 #define KEYER_MEM_STORE_BEGIN 1
 #define KEYER_MEM_STORE_END   2
 #define KEYER_MEM_SELECT      3
+#define KEYER_MEM_REPEAT      4   /* 2026-11-26: next param = pause in seconds */
+#define KEYER_REPEAT_MAX_S   30
 
 #define KEY_ON 1
 #define KEY_OFF 0
@@ -167,6 +176,11 @@ static uint8_t mem_play_pending = FALSE;   /* PLAY received, waiting for paddles
 static uint16_t mem_wait_ms = 0;
 static uint8_t mem_play_active = FALSE;
 static uint8_t mem_abort_armed = FALSE;    /* abort needs paddles open, then closed */
+/* Repeat play (KEYER_MEM_REPEAT): RAM only, ends on a paddle tap, PLAY, store or reset */
+static uint8_t mem_repeat_pending = FALSE; /* next param is the pause in seconds */
+static uint8_t mem_repeat_s = 0;           /* 0 = play once */
+static uint8_t mem_repeat_wait = FALSE;    /* in the pause between two plays */
+static uint16_t mem_repeat_ms = 0;         /* pause left */
 
 volatile uint8_t SlaveAddress, SlaveR_W, SlaveInit, msg;
 volatile uint8_t first_pass = TRUE;
@@ -216,6 +230,9 @@ static const char *morse_lookup(char c)
         case ',': return "--..--";
         case '=': return "-...-"; /* BT */
         case '+': return ".-.-."; /* AR */
+        case '*': return "...-.-"; /* SK (2026-11-26) */
+        case '(': return "-.--.";  /* KN */
+        case '&': return ".-...";  /* AS */
         case ' ': return NULL;     /* word space */
         default:  return NULL;
     }
@@ -725,6 +742,17 @@ static void paddle_tick(void) {
     kcwl = !(KEY_0_GetValue());
     kcwr = !(KEY_1_GetValue());
 
+    /* Repeat pause: a paddle tap only ends the repeat (nothing is sent) */
+    if (mem_repeat_wait) {
+        pd_mark = 0;
+        if (kcwl || kcwr) {
+            mem_repeat_wait = FALSE;
+            mem_repeat_s = 0;
+            pd_state = PD_WAIT_RELEASE;
+        }
+        return;
+    }
+
     /* CQ memory: paddles only watch for the abort (open, then closed) */
     if (mem_play_pending || mem_play_active) {
         pd_mark = 0;
@@ -735,6 +763,7 @@ static void paddle_tick(void) {
         } else if (mem_abort_armed) {
             mem_play_active = FALSE;
             mem_abort_armed = FALSE;
+            mem_repeat_s = 0;        /* the abort also ends a repeat */
             /* stop the CQ, but finish the element on the air (no clipped mark);
              * mem_tick() hands the player back to the buffer when it is idle */
             player.text_pos = player.text_len;
@@ -923,9 +952,12 @@ static void msg_save_to_eeprom(uint8_t slot) {
 
 /* PLAY received: drop anything buffered, start once the paddles are open (or 0.5 s) */
 static void mem_play_request(void) {
+    mem_repeat_wait = FALSE;
     msg_load_from_eeprom(mem_current_slot);
-    if (cw_msg_len == 0)
+    if (cw_msg_len == 0) {
+        mem_repeat_s = 0;
         return;
+    }
     buf_clear();
     letter_open = FALSE;
     word_pending = FALSE;
@@ -936,6 +968,14 @@ static void mem_play_request(void) {
 }
 
 static void mem_tick(void) {
+    if (mem_repeat_wait) {
+        /* receive during the pause; then play the same slot again */
+        if (mem_repeat_ms > 0)
+            mem_repeat_ms--;
+        if (mem_repeat_ms == 0)
+            mem_play_request();
+        return;
+    }
     if (mem_play_pending) {
         if (!paddles_closed() || ++mem_wait_ms >= MEM_START_WAIT_MS) {
             mem_play_pending = FALSE;
@@ -947,6 +987,14 @@ static void mem_tick(void) {
     } else if (!player.use_buf && player.state == SQ_IDLE &&
                player.text_pos >= player.text_len) {
         /* message done (or aborted and the last element finished): back to the buffer */
+        if (mem_play_active && mem_repeat_s != 0) {
+            /* played to the end: pause, counted from the end of the last mark
+             * (the letter gap after it is already done) */
+            mem_repeat_ms = (uint16_t)(mem_repeat_s * 1000u);
+            mem_repeat_ms = (mem_repeat_ms > tx_letter_gap) ?
+                (uint16_t)(mem_repeat_ms - tx_letter_gap) : 1u;
+            mem_repeat_wait = TRUE;
+        }
         mem_play_active = FALSE;
         player.tone = FALSE;
         player.use_buf = TRUE;
@@ -1124,11 +1172,26 @@ void CW_Update_Config() {
                 }
                 /* Not a slot — fall through and treat p1 as a normal mem param */
             }
+            /* After subcmd 4, next param is the pause (1..30 s) */
+            if (mem_repeat_pending) {
+                mem_repeat_pending = FALSE;
+                if (p1 >= 1 && p1 <= KEYER_REPEAT_MAX_S) {
+                    mem_repeat_s = p1;
+                    mem_play_request();
+                    break;
+                }
+                /* Not a pause — treat p1 as a normal mem param */
+            }
             if (p1 == KEYER_MEM_SELECT) {
                 mem_select_pending = TRUE;
+            } else if (p1 == KEYER_MEM_REPEAT) {
+                mem_repeat_pending = TRUE;
             } else if (p1 == KEYER_MEM_PLAY) {
+                mem_repeat_s = 0;
                 mem_play_request();
             } else if (p1 == KEYER_MEM_STORE_BEGIN) {
+                mem_repeat_s = 0;       /* storing ends a repeat */
+                mem_repeat_wait = FALSE;
                 cw_msg_store_len = 0;
             } else if (p1 == KEYER_MEM_STORE_END) {
                 msg_save_to_eeprom(mem_current_slot);

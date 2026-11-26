@@ -7,7 +7,7 @@
 # 1 "C:\\Program Files\\Microchip\\xc8\\v2.45\\pic\\include\\language_support.h" 1 3
 # 2 "<built-in>" 2
 # 1 "C:/Users/Ron/.grok/worktrees/keyer-buffer/main.c" 2
-# 47 "C:/Users/Ron/.grok/worktrees/keyer-buffer/main.c"
+# 53 "C:/Users/Ron/.grok/worktrees/keyer-buffer/main.c"
 # 1 "C:/Users/Ron/.grok/worktrees/keyer-buffer/mcc_generated_files/mcc.h" 1
 # 49 "C:/Users/Ron/.grok/worktrees/keyer-buffer/mcc_generated_files/mcc.h"
 # 1 "C:\\Program Files\\Microchip\\xc8\\v2.45\\pic\\include\\xc.h" 1 3
@@ -10929,7 +10929,7 @@ void OSCILLATOR_Initialize(void);
 void WDT_Initialize(void);
 # 111 "C:/Users/Ron/.grok/worktrees/keyer-buffer/mcc_generated_files/mcc.h"
 void PMD_Initialize(void);
-# 47 "C:/Users/Ron/.grok/worktrees/keyer-buffer/main.c" 2
+# 53 "C:/Users/Ron/.grok/worktrees/keyer-buffer/main.c" 2
 
 # 1 "C:/Users/Ron/.grok/worktrees/keyer-buffer/defines.h" 1
 # 30 "C:/Users/Ron/.grok/worktrees/keyer-buffer/defines.h"
@@ -10939,7 +10939,7 @@ void PMD_Initialize(void);
 #pragma warning disable 1510
 #pragma warning disable 1498
 #pragma warning disable 2083
-# 48 "C:/Users/Ron/.grok/worktrees/keyer-buffer/main.c" 2
+# 54 "C:/Users/Ron/.grok/worktrees/keyer-buffer/main.c" 2
 
 # 1 "C:\\Program Files\\Microchip\\xc8\\v2.45\\pic\\include\\c99\\string.h" 1 3
 # 25 "C:\\Program Files\\Microchip\\xc8\\v2.45\\pic\\include\\c99\\string.h" 3
@@ -10998,14 +10998,14 @@ size_t strxfrm_l (char *restrict, const char *restrict, size_t, locale_t);
 
 
 void *memccpy (void *restrict, const void *restrict, int, size_t);
-# 49 "C:/Users/Ron/.grok/worktrees/keyer-buffer/main.c" 2
+# 55 "C:/Users/Ron/.grok/worktrees/keyer-buffer/main.c" 2
 
 
 # 1 "C:\\Program Files\\Microchip\\xc8\\v2.45\\pic\\include\\c99\\limits.h" 1 3
 # 10 "C:\\Program Files\\Microchip\\xc8\\v2.45\\pic\\include\\c99\\limits.h" 3
 # 1 "C:\\Program Files\\Microchip\\xc8\\v2.45\\pic\\include\\c99\\bits/limits.h" 1 3
 # 11 "C:\\Program Files\\Microchip\\xc8\\v2.45\\pic\\include\\c99\\limits.h" 2 3
-# 51 "C:/Users/Ron/.grok/worktrees/keyer-buffer/main.c" 2
+# 57 "C:/Users/Ron/.grok/worktrees/keyer-buffer/main.c" 2
 
 # 1 "C:\\Program Files\\Microchip\\xc8\\v2.45\\pic\\include\\c99\\ctype.h" 1 3
 # 10 "C:\\Program Files\\Microchip\\xc8\\v2.45\\pic\\include\\c99\\ctype.h" 3
@@ -11041,8 +11041,8 @@ int isupper_l(int, locale_t);
 int isxdigit_l(int, locale_t);
 int tolower_l(int, locale_t);
 int toupper_l(int, locale_t);
-# 52 "C:/Users/Ron/.grok/worktrees/keyer-buffer/main.c" 2
-# 121 "C:/Users/Ron/.grok/worktrees/keyer-buffer/main.c"
+# 58 "C:/Users/Ron/.grok/worktrees/keyer-buffer/main.c" 2
+# 130 "C:/Users/Ron/.grok/worktrees/keyer-buffer/main.c"
 static int cw_keyer_speed = 18;
 static int cw_keyer_weight = 50;
 static int cw_keyer_mode = 2;
@@ -11093,6 +11093,11 @@ static uint16_t mem_wait_ms = 0;
 static uint8_t mem_play_active = 0;
 static uint8_t mem_abort_armed = 0;
 
+static uint8_t mem_repeat_pending = 0;
+static uint8_t mem_repeat_s = 0;
+static uint8_t mem_repeat_wait = 0;
+static uint16_t mem_repeat_ms = 0;
+
 volatile uint8_t SlaveAddress, SlaveR_W, SlaveInit, msg;
 volatile uint8_t first_pass = 1;
 volatile uint8_t tmpSlaveAddr;
@@ -11141,6 +11146,9 @@ static const char *morse_lookup(char c)
         case ',': return "--..--";
         case '=': return "-...-";
         case '+': return ".-.-.";
+        case '*': return "...-.-";
+        case '(': return "-.--.";
+        case '&': return ".-...";
         case ' ': return ((void*)0);
         default: return ((void*)0);
     }
@@ -11264,7 +11272,7 @@ void keyer_update() {
         cw_keyer_speed = 60;
     dot_delay = (uint16_t)(1200 / cw_keyer_speed);
     dash_delay = (uint16_t)(((uint32_t)dot_delay * 3u * (uint32_t)cw_keyer_weight) / 50u);
-# 357 "C:/Users/Ron/.grok/worktrees/keyer-buffer/main.c"
+# 374 "C:/Users/Ron/.grok/worktrees/keyer-buffer/main.c"
     text_wpm = cw_mem_text_wpm;
     if (text_wpm != 0 && text_wpm < 5)
         text_wpm = 0;
@@ -11637,6 +11645,17 @@ static void paddle_tick(void) {
     kcwr = !(PORTAbits.RA4);
 
 
+    if (mem_repeat_wait) {
+        pd_mark = 0;
+        if (kcwl || kcwr) {
+            mem_repeat_wait = 0;
+            mem_repeat_s = 0;
+            pd_state = PD_WAIT_RELEASE;
+        }
+        return;
+    }
+
+
     if (mem_play_pending || mem_play_active) {
         pd_mark = 0;
         if (!mem_play_active)
@@ -11646,6 +11665,7 @@ static void paddle_tick(void) {
         } else if (mem_abort_armed) {
             mem_play_active = 0;
             mem_abort_armed = 0;
+            mem_repeat_s = 0;
 
 
             player.text_pos = player.text_len;
@@ -11834,9 +11854,12 @@ static void msg_save_to_eeprom(uint8_t slot) {
 
 
 static void mem_play_request(void) {
+    mem_repeat_wait = 0;
     msg_load_from_eeprom(mem_current_slot);
-    if (cw_msg_len == 0)
+    if (cw_msg_len == 0) {
+        mem_repeat_s = 0;
         return;
+    }
     buf_clear();
     letter_open = 0;
     word_pending = 0;
@@ -11847,6 +11870,14 @@ static void mem_play_request(void) {
 }
 
 static void mem_tick(void) {
+    if (mem_repeat_wait) {
+
+        if (mem_repeat_ms > 0)
+            mem_repeat_ms--;
+        if (mem_repeat_ms == 0)
+            mem_play_request();
+        return;
+    }
     if (mem_play_pending) {
         if (!paddles_closed() || ++mem_wait_ms >= 500) {
             mem_play_pending = 0;
@@ -11858,6 +11889,14 @@ static void mem_tick(void) {
     } else if (!player.use_buf && player.state == SQ_IDLE &&
                player.text_pos >= player.text_len) {
 
+        if (mem_play_active && mem_repeat_s != 0) {
+
+
+            mem_repeat_ms = (uint16_t)(mem_repeat_s * 1000u);
+            mem_repeat_ms = (mem_repeat_ms > tx_letter_gap) ?
+                (uint16_t)(mem_repeat_ms - tx_letter_gap) : 1u;
+            mem_repeat_wait = 1;
+        }
         mem_play_active = 0;
         player.tone = 0;
         player.use_buf = 1;
@@ -12035,11 +12074,26 @@ void CW_Update_Config() {
                 }
 
             }
+
+            if (mem_repeat_pending) {
+                mem_repeat_pending = 0;
+                if (p1 >= 1 && p1 <= 30) {
+                    mem_repeat_s = p1;
+                    mem_play_request();
+                    break;
+                }
+
+            }
             if (p1 == 3) {
                 mem_select_pending = 1;
+            } else if (p1 == 4) {
+                mem_repeat_pending = 1;
             } else if (p1 == 0) {
+                mem_repeat_s = 0;
                 mem_play_request();
             } else if (p1 == 1) {
+                mem_repeat_s = 0;
+                mem_repeat_wait = 0;
                 cw_msg_store_len = 0;
             } else if (p1 == 2) {
                 msg_save_to_eeprom(mem_current_slot);
