@@ -21,7 +21,7 @@ make clean && make
 - Mic: match `~/.local/mscc/operator-microphone.ini` (PortAudio name substring)
 - Digital mic: `~/.local/mscc/digital-microphone.ini` (same; if missing, D falls back to operator mic)
 - Remote operator mic: client `CMD_SET_AUDIO_DEVICE` **2** (Phones + REMOTE AUDIO)  
-  - MSA1 UDP listen (default port **9101**, override in `~/.local/mscc/remote-mic.ini`)  
+  - MSA1 UDP listen (default port **9101**, override in `~/.local/mscc/remote-mic.ini`; `BUFFER_MS=` 50..300 sets the mic buffer, default 100 ms, 3.165+)  
   - **0** = Digital (local digi), **1** = Phones local mic, **2** = remote mic  
   - Digital never uses the remote mic path  
   - Stew handoff: **[STEW-REMOTE-AUDIO.md](STEW-REMOTE-AUDIO.md)** (full client doc in `mscc-remote-audio/`)

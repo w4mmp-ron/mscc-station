@@ -3,7 +3,7 @@
  * Protocol matches Windows MsccRemotePhones TX (default port 9101).
  *
  * Client CMD_SET_AUDIO_DEVICE=2 or 3 selects this mic path.
- * INI supplies PORT only (ENABLED is ignored; kept for old files).
+ * INI supplies PORT and BUFFER_MS (ENABLED is ignored; kept for old files).
  * Digital (D) ignores this module.
  */
 #include "remote_mic.h"
@@ -27,7 +27,7 @@
 #define MSA1_HEADER_SIZE    16
 #define MSA1_FORMAT_S16LE   0
 #define REMOTE_RATE         48000
-#define RING_FRAMES         16384 /* @ 48 kHz mono float */
+#define RING_FRAMES         32768 /* @ 48 kHz mono float (~680 ms: room for BUFFER_MS 300 + resync margin) */
 #define MAX_PKT_FRAMES      2048
 /* Diagnostic only. ~100 ms between repeat EVENT lines. */
 #define EVENT_LIMIT_MS          100ull
@@ -44,8 +44,21 @@
  * Big level errors (start, underrun, stall) are fixed by waiting or skipping,
  * never by changing pitch.
  */
-#define FILL_TARGET         4800u   /* 100 ms @ 48 kHz: prime to this, trim toward it */
-#define FILL_RESYNC_HIGH    12000u  /* 250 ms: above this, skip oldest back to target */
+/*
+ * Buffer target: remote-mic.ini BUFFER_MS= (50..300, default 100 ms). Prime to it,
+ * trim toward it; above target + 150 ms skip the oldest audio back to it.
+ * 3.165 (2026-11-27): settable for WiFi links that hold packets back ~100 ms
+ * (Pi Zero 2 W); 200 rides over them at 0.1 s more transmit delay.
+ */
+#define BUFFER_MS_DEFAULT   100
+#define BUFFER_MS_MIN       50
+#define BUFFER_MS_MAX       300
+#define FILL_RESYNC_MARGIN  7200u   /* 150 ms */
+static unsigned g_fill_target = 4800u;        /* frames @ 48 kHz (100 ms) */
+static unsigned g_fill_resync_high = 12000u;  /* target + margin (250 ms) */
+static int g_buffer_ms = BUFFER_MS_DEFAULT;
+#define FILL_TARGET         g_fill_target
+#define FILL_RESYNC_HIGH    g_fill_resync_high
 #define FILL_TRIM_MAX       300e-6f /* max rate trim */
 #define FILL_TRIM_GAIN      600e-6f /* trim per (level error / target) */
 #define FILL_LEVEL_ALPHA    0.005f  /* level low-pass per callback (~2 s) */
@@ -213,6 +226,9 @@ static void load_config(void)
     char line[256];
 
     g_port = 9101;
+    g_buffer_ms = BUFFER_MS_DEFAULT;
+    g_fill_target = (unsigned)(REMOTE_RATE / 1000) * (unsigned)g_buffer_ms;
+    g_fill_resync_high = g_fill_target + FILL_RESYNC_MARGIN;
 
     {
         const char *home = getenv("HOME");
@@ -252,11 +268,25 @@ static void load_config(void)
         /* ENABLED ignored — mode comes from CMD_SET_AUDIO_DEVICE=2 */
         if (strcmp(k, "PORT") == 0 || strcmp(k, "port") == 0)
             g_port = atoi(v);
+        else if (strcmp(k, "BUFFER_MS") == 0 || strcmp(k, "buffer_ms") == 0)
+            g_buffer_ms = atoi(v);
     }
     fclose(fp);
 
     if (g_port <= 0 || g_port > 65535)
         g_port = 9101;
+    if (g_buffer_ms < BUFFER_MS_MIN)
+        g_buffer_ms = BUFFER_MS_MIN;
+    if (g_buffer_ms > BUFFER_MS_MAX)
+        g_buffer_ms = BUFFER_MS_MAX;
+    g_fill_target = (unsigned)(REMOTE_RATE / 1000) * (unsigned)g_buffer_ms;
+    g_fill_resync_high = g_fill_target + FILL_RESYNC_MARGIN;
+    if (G_fp_logfile) {
+        print_time();
+        fprintf(G_fp_logfile,
+            "[%d] remote_mic: %s PORT %d BUFFER_MS %d (target %u frames, resync above %u)\n",
+            line_number++, path, g_port, g_buffer_ms, g_fill_target, g_fill_resync_high);
+    }
 }
 
 static int parse_msa1(const uint8_t *pkt, int len,

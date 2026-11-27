@@ -12,9 +12,9 @@ releases stay there for roll-back). Put the `.deb` files in one folder on the Pi
 
 | Package | Version | |
 |---|---|---|
-| `mscc` | 1.0.109 | required: servers (ms-sdr 3.217, recv 3.158, trans 3.164), PortAudio, MSCC Init, MSCC Volume, PSoC + Black Pill + keyer firmware and flash tools (window "Black Pill Firmware Update" since 1.0.85) |
+| `mscc` | 1.0.110 | required: servers (ms-sdr 3.217, recv 3.158, trans 3.165), PortAudio, MSCC Init, MSCC Volume, PSoC + Black Pill + keyer firmware and flash tools (window "Black Pill Firmware Update" since 1.0.85) |
 | `mscc-avalonia` | 1.7.08 | optional: MSCC Avalonia client on the Pi (not needed with the Windows client) |
-| `mscc` (Zero) | 1.0.109+zero1 | Pi Zero 2 W only: use `mscc_*+zero*_arm64.deb` instead of the normal `mscc` |
+| `mscc` (Zero) | 1.0.110+zero1 | Pi Zero 2 W only: use `mscc_*+zero*_arm64.deb` instead of the normal `mscc` |
 
 ```bash
 cd /path/to/the/downloaded/debs
@@ -27,6 +27,15 @@ line can't run a USB sound card next to the radio, so the Zero package has no lo
 audio: it adds two dummy sound devices (OperatorNull, OperatorNullMic) and always uses them.
 Use the client's Digital or Remote audio; Phones is greyed out. Log out and back in (or reboot)
 after the first install so the dummy devices appear.
+
+**Remote audio over WiFi:** a WiFi link can hold packets back about 0.1 s, so the transmit
+power dips briefly. Give the remote mic a bigger buffer in `~/.local/mscc/remote-mic.ini`:
+
+    BUFFER_MS=200
+
+then `mscc stop` / `mscc start` (default 100, range 50 to 300; 200 adds 0.1 s of transmit
+delay, fine for FT8). The Zero package sets 200 for you. A wired connection needs none of
+this; with both connected, give the client the wired IP address (the `.local` name may give the WiFi one).
 
 Since mscc 1.0.79 the old separate packages (`mscc-portaudio`, `mscc-init`, `mscc-volume`,
 `mscc-firmware`) are part of `mscc`; installing it removes them. Installing `mscc` asks before it

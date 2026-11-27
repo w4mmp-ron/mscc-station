@@ -27,7 +27,9 @@ The servers and every other file are the same as the normal package, apart from:
   operator lists show only the two dummies (the sound library MSCC Init uses only
   sees real cards; the servers use MSCC's own, which sees them).
 - The postinst gets `postinst-zero-insert.sh` at the end of its configure step
-  (writes the two operator ini files).
+  (writes the two operator ini files, and adds `BUFFER_MS=200` to remote-mic.ini
+  once: the Zero's WiFi holds remote mic packets back ~100 ms, more than the
+  default 100 ms buffer in trans 3.165+; a BUFFER_MS line already there is kept).
 
 The devices have a low priority, so they never become the desktop's default
 sound device.
