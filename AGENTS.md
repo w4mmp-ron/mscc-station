@@ -60,7 +60,7 @@ carries them once and stays as it is.
 
 ## Current work
 
-**Active — cmd-101 (ubuntu-stew / stew-HP):** Avalonia tab-by-tab refinement starts. Etched tab-well border (`Border.mscc-tab-well`, UiFaceEtch* resources) around the working area of every tab except MAIN; CW tab rebuilt to the WPF layout (lists in one row, SPEED/FARNSWORTH/HOLD/QSK column to the right, compact list items, no horizontal scroll), CQ memory slots sized to 48 chars so R/P fit at 1024×600, CW tab buttons converted to the `mscc-bar` light-bar style. Brief: `.mscc-coord/cmd-101-avalonia-tab-borders-cw.md`. Follows cmd-100. WPF read for reference only. No UiChromeTheme.cs change, no protocol commands, no version bump, no installer, no GitHub Release. Build commits; Stew pushes. Leave rpi/, Solidus/, installers/rpi, and the WPF tree alone.
+**Active — cmd-101b (ubuntu-stew / stew-HP):** Avalonia fixes after cmd-101: CQ memory slots show all 48 characters (monospace font list that resolves on Linux/Pi, slot MinWidth from measured 48-W width, star column capped at 560 so R/P stay visible at 1024×600); left panel fits at 1024×600 (left-rail heading margin 10 → 8 px, ≥ 4 px spare measured). Resize crash not investigated here. Brief: `.mscc-coord/cmd-101b-avalonia-cq-slots-left-fit.md`. Follows cmd-101. No UiChromeTheme.cs change, no WPF change, no protocol commands, no version bump, no installer, no GitHub Release. Build commits; Stew pushes. Leave rpi/, Solidus/, installers/rpi, and the WPF tree alone.
 
 Older notes below are stale as of 2026-10-07. Check `.mscc-coord/COMMANDS.yaml` and [`handoff.md`](handoff.md) for historical open / pending items.
 
