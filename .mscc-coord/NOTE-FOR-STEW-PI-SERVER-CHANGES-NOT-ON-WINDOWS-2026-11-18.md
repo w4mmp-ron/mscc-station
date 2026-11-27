@@ -239,6 +239,38 @@ cards); please treat 0xAD as taken in the Windows / Ubuntu `usbavrcmd.h` too.
 **Tested (Ron, Zero 2 W + Ethernet HAT):** the report arrives at connect (ms-sdr log:
 `0xAD no local operator audio: 1`), receive clean with the dummy devices.
 
+## R11-27-0: Pi trans 3.165 (remote mic buffer setting)
+
+**What it does:** the remote mic buffer in trans (`remote_mic.c`) was fixed at 100 ms. It is now
+set in `~/.local/mscc/remote-mic.ini`:
+
+    BUFFER_MS=200
+
+Range 50 to 300, default 100 (same as before, so nothing changes without the line). trans logs
+the value at start: `remote_mic: ... PORT 9101 BUFFER_MS 200 (target 9600 frames, resync above
+16800)`. The "skip the oldest audio" point moves with it (target + 150 ms; was 250 ms), and the
+ring grew from 16384 to 32768 frames (about 680 ms) so 300 + 150 ms fits.
+
+**Why:** remote audio over WiFi to a Pi Zero 2 W (the Zero's WiFi shares one radio for send and
+receive). All packets arrive (100 a second), but some are held back 50 to 120 ms, several times a
+minute. With 100 ms in reserve the buffer ran dry (`hold_last reprime`) and the transmit power
+dipped about once a second at worst. Ruled out: WiFi power saving, Bluetooth, RF (same at QRP
+into a dummy load). The router's channel can't be changed on this one. On a cable: no holdups.
+
+**Tested (Ron, Zero 2 W on WiFi, BUFFER_MS=200):** power steady; WiFi holdups up to 109 ms with
+no empty buffer during transmit; FT8 sends and a real FT8 QSO. The 0.1 s extra delay doesn't cut
+FT8: WSJT-X unkeys about 13.9 s into the slot, its audio ends about 13.14 s, and with 200 ms it
+reaches the radio by about 13.35 s.
+
+**Zero package:** its install step adds `BUFFER_MS=200` once (a line already there is kept).
+
+**Files:** `rpi/SDRcore-trans-linux/sources/remote_mic.c` (`load_config`, ring size, target /
+resync), `extern.h` (3.165), `rpi/mscc-init-files-linux/remote-mic.ini` (comment),
+`rpi/mscc-zero/postinst-zero-insert.sh`.
+
+**Windows / Ubuntu port:** not done. Their `remote_mic.c` has the same fixed 100 ms
+(`FILL_TARGET 4800u`); the same small change would let a WiFi client or host use 200.
+
 ## FYI: Black Pill 3.23 uses your USB names
 
 The Black Pill now uses the same USB names as your PSoC images: "Multus IQ", "Multus IQ Sound",
