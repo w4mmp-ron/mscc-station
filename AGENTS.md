@@ -60,7 +60,7 @@ carries them once and stays as it is.
 
 ## Current work
 
-**Active — cmd-097b (ubuntu-stew / stew-HP):** Avalonia light-bar buttons lit from above (light top, dark bottom, equal sides) and 13 equal-width band buttons that fit at 1024×600. Brief: `.mscc-coord/cmd-097b-avalonia-top-light-band-widths.md`. Follows cmd-097. No WPF change, no version bump, no installer, no GitHub Release. Build commits; Stew pushes. Leave rpi/, Solidus/, installers/rpi, and the WPF tree alone.
+**Active — cmd-098 (ubuntu-stew / stew-HP):** Avalonia VFO A/B faces as a recessed backlit LCD (cream face, dark digits, smaller Hz digits, no TX) with a lower strip showing the PowerSDR US band text for the tuned frequency (`Assets/bandplan-us.csv`). VFO sizes unchanged. Brief: `.mscc-coord/cmd-098-avalonia-lcd-vfo.md`. Follows cmd-097b. No WPF change, no version bump, no installer, no GitHub Release. Build commits; Stew pushes. Leave rpi/, Solidus/, installers/rpi, and the WPF tree alone.
 
 Older notes below are stale as of 2026-10-07. Check `.mscc-coord/COMMANDS.yaml` and [`handoff.md`](handoff.md) for historical open / pending items.
 
