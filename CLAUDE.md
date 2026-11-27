@@ -11,21 +11,21 @@ Machine-specific notes stay in the folder files: `rpi/CLAUDE.md` (Ron's Pi / STM
 |---|---|
 | "build", "build R...", "make the installer" | Builds only. Installers go into `installers/`. Nothing is committed, pushed or published. |
 | "update the notes" | Edits the notes only. No commit. |
-| **"finished"** | Runs the checklist below: installers, docs, one commit, push, GitHub Release. |
+| **"cut release"** | Runs the checklist below: installers, docs, one commit, push, GitHub Release. (Was "finished" until 2026-11-27; "finished" is now a normal word, not a keyword.) |
 | "stop" | Stops at once. |
 
 **Pull first.** Before starting any new work, run `git pull --rebase --autostash` and tell the
 owner what came in (who, when, one line each). Run `git fetch` again before the push at
-"finished"; if the other person pushed meanwhile, rebase and rebuild whatever their changes touch.
+"cut release"; if the other person pushed meanwhile, rebase and rebuild whatever their changes touch.
 
-**Nothing goes into git before "finished"**, notes included. Don't ask "shall I commit?" after
-each step; the owner says "finished" when the job is done.
+**Nothing goes into git before "cut release"**, notes included. Don't ask "shall I commit?" after
+each step; the owner says "cut release" when the job is done.
 
 ## Working style
 
 - Short, plain answers. Say what was checked and what wasn't.
 - **Ask before editing:** give the diagnosis and the proposed fix, and edit once the owner says OK.
-- One commit per finished job, with `git add` of specific paths only (other people and tools work
+- One commit per release, with `git add` of specific paths only (other people and tools work
   in this repo too).
 - READMEs, how-tos and notes for the other person: the command first, then plain instructions.
 - Notes for the other person go in `.mscc-coord/NOTE-FOR-STEW-*.md` / `NOTE-FOR-RON-*.md`. Word
@@ -36,7 +36,7 @@ each step; the owner says "finished" when the job is done.
 The Pi and Windows servers do the same job and are kept functionally identical (since 2026-11-10).
 
 - **A server change (ms-sdr, recv, trans) goes into every server tree in the same step**, not at
-  "finished":
+  "cut release":
   - Pi: `rpi/ms-sdr-linux`, `rpi/SDRcore-recv-linux`, `rpi/SDRcore-trans-linux`
   - Windows: `mscc-ui/windows-work-tree/ms-sdr-MKII`, `.../SDRcore-recv`, `.../SDRcore-trans`
   - Debian / Ubuntu: `linux/*-linux` (see `rpi/CLAUDE.md` for when this starts)
@@ -55,7 +55,7 @@ The Pi and Windows servers do the same job and are kept functionally identical (
 - ms-sdr bumps its own `VERSION_MINOR` on every build (Pi: `bump-version.sh`; Windows: pre-build
   event). recv / trans: `VERSION_MINOR` in `sources/extern.h`, bumped by hand.
 
-## "Finished" checklist
+## "Cut release" checklist
 
 1. **Pi ms-sdr version.h:** the Pi build bumps its own copy; put the Pi's copy back into
    `rpi/ms-sdr-linux/source/version.h` (Pi -> repo only).
@@ -80,7 +80,7 @@ The Pi and Windows servers do the same job and are kept functionally identical (
      - **File-by-file check:** unpack both (`dpkg-deb -R old.deb old`, `dpkg-deb -R new.deb new`),
        md5sum every file, diff the lists. Only the expected files may differ (control, the changed
        servers, firmware), and the file count stays the same unless a file was meant to be added.
-   - Ubuntu (amd64): not part of "finished" and not in releases (Stew, 2026-11-25). Build only
+   - Ubuntu (amd64): not part of "cut release" and not in releases (Stew, 2026-11-25). Build only
      when asked; how it was done for R11-25-0 is in `rpi/CLAUDE-history.md`.
 3. **Docs:** the Addendum (`python docs/manuals/make-addendum-pdf.py`, keep it to 2 pages), the
    Updating Firmware guide if a firmware tool or step changed (`python docs/manuals/make-addendum-pdf.py MSCC-Updating-Firmware.md`),
@@ -107,7 +107,7 @@ The Pi and Windows servers do the same job and are kept functionally identical (
    the older releases (`gh release delete R.. -R w4mmp-ron/mscc-station --yes`; keep the git tags,
    so an old version can still be rebuilt from the repo).
 
-If nothing installable changed, "finished" is just the commit and push; no new release.
+If nothing installable changed, "cut release" is just the commit and push; no new release.
 
 **Installers are not in git** (`.gitignore`); people download them from
 <https://github.com/w4mmp-ron/mscc-station/releases>.

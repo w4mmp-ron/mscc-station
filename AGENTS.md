@@ -11,7 +11,7 @@ On start: `git pull`, then read [`handoff.md`](handoff.md). If `.mscc-coord/COMM
 
 ---
 
-## Shared rules with Ron and Stew ("finished", releases)
+## Shared rules with Ron and Stew ("cut release", releases)
 
 These are the same rules Ron's and Stew's Claude follow. The full text is in the repo-root
 [`CLAUDE.md`](CLAUDE.md); read it before any build or release. If this file and `CLAUDE.md`
@@ -23,12 +23,12 @@ disagree on these points, `CLAUDE.md` wins.
 |---|---|
 | "build", "build R...", "make the installer" | Build only. Installers go into `installers/`. Nothing is committed, pushed or published. |
 | "update the notes" | Edit the notes only. No commit. |
-| **"finished"** | Run the "Finished" checklist in `CLAUDE.md`: installers, docs, one commit, push, GitHub Release. |
+| **"cut release"** | Run the "Cut release" checklist in `CLAUDE.md`: installers, docs, one commit, push, GitHub Release. |
 | "stop" | Stop at once. |
 
 - **Pull first:** `git pull --rebase --autostash` before new work; `git fetch` again before the
   push. If someone pushed meanwhile, rebase and rebuild whatever their change touches.
-- **Nothing goes into git before "finished"**, notes included. Then **one commit**, with
+- **Nothing goes into git before "cut release"**, notes included. Then **one commit**, with
   `git add` of specific paths only (other people and tools work in this repo).
 - **Versions** live only in the Software Versions Addendum
   (`docs/manuals/MSCC-Software-Versions-Addendum.md` + `.pdf`, keep it to 2 pages). Guides never
