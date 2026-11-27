@@ -38,7 +38,6 @@
       <GradientStop Offset="0.78" Color="#050506"/>
       <GradientStop Offset="1" Color="#3A3F48"/>
     </LinearGradientBrush>
-    <SolidColorBrush x:Key="UiSliderThumbHighlightBrush" Color="#F7F9FC"/>
     <SolidColorBrush x:Key="UiSliderThumbBorderBrush" Color="#C5CAD3"/>
     <SolidColorBrush x:Key="UiSliderValueBrush" Color="#FFE14A"/>
 
@@ -62,14 +61,7 @@
           <Border CornerRadius="1"
                   BorderThickness="1"
                   BorderBrush="{DynamicResource UiSliderThumbBorderBrush}"
-                  Background="{DynamicResource UiSliderThumbFillBrush}"
-                  ClipToBounds="True">
-            <Border Height="2"
-                    VerticalAlignment="Top"
-                    Margin="1,2,1,0"
-                    Background="{DynamicResource UiSliderThumbHighlightBrush}"
-                    Opacity="0.95"/>
-          </Border>
+                  Background="{DynamicResource UiSliderThumbFillBrush}"/>
         </ControlTemplate>
       </Setter>
     </ControlTheme>
@@ -82,7 +74,7 @@
       <Setter Property="Template">
         <ControlTemplate>
           <Grid MinHeight="22" VerticalAlignment="Center" Background="Transparent">
-            <Border Height="6"
+            <Border Height="9"
                     VerticalAlignment="Center"
                     CornerRadius="1"
                     Background="{DynamicResource UiSliderTrackFillBrush}"
@@ -119,10 +111,164 @@
         <Setter Property="Opacity" Value="0.4"/>
       </Style>
     </ControlTheme>
+
+    <!-- App-wide small checkbox: 14 px box, 16 px row. Not based on Fluent. -->
+    <ControlTheme x:Key="{x:Type CheckBox}" TargetType="CheckBox">
+      <Setter Property="MinHeight" Value="16"/>
+      <Setter Property="Padding" Value="4,0,0,0"/>
+      <Setter Property="VerticalContentAlignment" Value="Center"/>
+      <Setter Property="Background" Value="Transparent"/>
+      <Setter Property="Template">
+        <ControlTemplate>
+          <Grid ColumnDefinitions="Auto,*" MinHeight="16" Background="Transparent" VerticalAlignment="Center">
+            <Border x:Name="Box"
+                    Width="14"
+                    Height="14"
+                    CornerRadius="2"
+                    BorderThickness="1"
+                    Background="#FF1A1A1A"
+                    BorderBrush="#FF888888"
+                    VerticalAlignment="Center">
+              <Panel>
+                <Viewbox x:Name="CheckGlyph"
+                         Width="10"
+                         Height="10"
+                         IsVisible="False"
+                         HorizontalAlignment="Center"
+                         VerticalAlignment="Center">
+                  <Path Stroke="Black"
+                        StrokeThickness="2"
+                        StrokeLineCap="Round"
+                        StrokeJoin="Round"
+                        Data="M1.5,6.5 L4.5,9.5 L10.5,2.5"/>
+                </Viewbox>
+                <Border x:Name="IndeterminateMark"
+                        Width="8"
+                        Height="8"
+                        CornerRadius="1"
+                        Background="Black"
+                        IsVisible="False"
+                        HorizontalAlignment="Center"
+                        VerticalAlignment="Center"/>
+              </Panel>
+            </Border>
+            <ContentPresenter x:Name="PART_ContentPresenter"
+                              Grid.Column="1"
+                              Content="{TemplateBinding Content}"
+                              ContentTemplate="{TemplateBinding ContentTemplate}"
+                              Padding="{TemplateBinding Padding}"
+                              Foreground="{TemplateBinding Foreground}"
+                              FontFamily="{TemplateBinding FontFamily}"
+                              FontSize="{TemplateBinding FontSize}"
+                              FontWeight="{TemplateBinding FontWeight}"
+                              FontStyle="{TemplateBinding FontStyle}"
+                              VerticalAlignment="Center"
+                              VerticalContentAlignment="Center"
+                              HorizontalAlignment="Left"
+                              RecognizesAccessKey="True"/>
+          </Grid>
+        </ControlTemplate>
+      </Setter>
+      <Style Selector="^:checked /template/ Viewbox#CheckGlyph">
+        <Setter Property="IsVisible" Value="True"/>
+      </Style>
+      <Style Selector="^:checked /template/ Border#Box">
+        <Setter Property="Background" Value="{DynamicResource UiAccentBrush}"/>
+        <Setter Property="BorderBrush" Value="{DynamicResource UiAccentBrush}"/>
+      </Style>
+      <Style Selector="^:indeterminate /template/ Border#IndeterminateMark">
+        <Setter Property="IsVisible" Value="True"/>
+      </Style>
+      <Style Selector="^:indeterminate /template/ Border#Box">
+        <Setter Property="Background" Value="{DynamicResource UiAccentBrush}"/>
+        <Setter Property="BorderBrush" Value="{DynamicResource UiAccentBrush}"/>
+      </Style>
+      <Style Selector="^:pointerover /template/ Border#Box">
+        <Setter Property="BorderBrush" Value="White"/>
+      </Style>
+      <Style Selector="^:checked:pointerover /template/ Border#Box">
+        <Setter Property="BorderBrush" Value="White"/>
+      </Style>
+      <Style Selector="^:indeterminate:pointerover /template/ Border#Box">
+        <Setter Property="BorderBrush" Value="White"/>
+      </Style>
+      <Style Selector="^:disabled">
+        <Setter Property="Opacity" Value="0.45"/>
+      </Style>
+    </ControlTheme>
+
+    <!-- Host history: 24 px arrow only. Other ComboBoxes stay Fluent. -->
+    <ControlTheme x:Key="MsccHostPickTheme" TargetType="ComboBox">
+      <Setter Property="MinWidth" Value="0"/>
+      <Setter Property="Width" Value="24"/>
+      <Setter Property="MinHeight" Value="22"/>
+      <Setter Property="Height" Value="22"/>
+      <Setter Property="Padding" Value="0"/>
+      <Setter Property="Background" Value="#FF000000"/>
+      <Setter Property="Foreground" Value="#FF00FFAA"/>
+      <Setter Property="BorderBrush" Value="#FF666666"/>
+      <Setter Property="BorderThickness" Value="1"/>
+      <Setter Property="HorizontalAlignment" Value="Stretch"/>
+      <Setter Property="VerticalAlignment" Value="Center"/>
+      <Setter Property="ScrollViewer.HorizontalScrollBarVisibility" Value="Auto"/>
+      <Setter Property="ScrollViewer.VerticalScrollBarVisibility" Value="Auto"/>
+      <Setter Property="Template">
+        <ControlTemplate>
+          <Grid Width="24" Height="22" Background="Transparent">
+            <Border x:Name="Background"
+                    Background="{TemplateBinding Background}"
+                    BorderBrush="{TemplateBinding BorderBrush}"
+                    BorderThickness="{TemplateBinding BorderThickness}"
+                    CornerRadius="2"/>
+            <PathIcon x:Name="DropDownGlyph"
+                      Width="10"
+                      Height="10"
+                      HorizontalAlignment="Center"
+                      VerticalAlignment="Center"
+                      IsHitTestVisible="False"
+                      Foreground="{TemplateBinding Foreground}"
+                      Data="M1939 486L2029 576L1024 1581L19 576L109 486L1024 1401L1939 486Z"/>
+            <Popup Name="PART_Popup"
+                   WindowManagerAddShadowHint="False"
+                   Placement="Bottom"
+                   PlacementTarget="Background"
+                   IsLightDismissEnabled="True"
+                   InheritsTransform="True"
+                   IsOpen="{TemplateBinding IsDropDownOpen, Mode=TwoWay}"
+                   MinWidth="160"
+                   MaxHeight="{TemplateBinding MaxDropDownHeight}">
+              <Border Background="#FF2A2A2A"
+                      BorderBrush="#FF666666"
+                      BorderThickness="1"
+                      Padding="2"
+                      MinWidth="160">
+                <ScrollViewer HorizontalScrollBarVisibility="{TemplateBinding ScrollViewer.HorizontalScrollBarVisibility}"
+                              VerticalScrollBarVisibility="{TemplateBinding ScrollViewer.VerticalScrollBarVisibility}"
+                              IsScrollChainingEnabled="False">
+                  <ItemsPresenter Name="PART_ItemsPresenter"
+                                  ItemsPanel="{TemplateBinding ItemsPanel}"/>
+                </ScrollViewer>
+              </Border>
+            </Popup>
+          </Grid>
+        </ControlTemplate>
+      </Setter>
+      <Style Selector="^:pointerover /template/ Border#Background">
+        <Setter Property="BorderBrush" Value="White"/>
+      </Style>
+      <Style Selector="^:disabled">
+        <Setter Property="Opacity" Value="0.45"/>
+      </Style>
+    </ControlTheme>
   </Application.Resources>
 
   <Application.Styles>
     <FluentTheme />
+
+    <!-- Fluent's implicit CheckBox theme is 20 px / MinHeight 32. Force the small one. -->
+    <Style Selector="CheckBox">
+      <Setter Property="Theme" Value="{StaticResource {x:Type CheckBox}}"/>
+    </Style>
 
     <!--
       Multus buttons: Fluent paints Background on ContentPresenter, so we must
@@ -300,6 +446,18 @@
       <Setter Property="MinWidth" Value="28"/>
     </Style>
 
+    <!-- Rail slider numbers only. Left-aligned so the 6 px margin is a gap from the thumb. -->
+    <Style Selector="TextBlock.mscc-slider-value">
+      <Setter Property="Foreground" Value="{DynamicResource UiSliderValueBrush}"/>
+      <Setter Property="FontSize" Value="10"/>
+      <Setter Property="FontWeight" Value="Bold"/>
+      <Setter Property="VerticalAlignment" Value="Center"/>
+      <Setter Property="HorizontalAlignment" Value="Left"/>
+      <Setter Property="TextAlignment" Value="Left"/>
+      <Setter Property="MinWidth" Value="0"/>
+      <Setter Property="Margin" Value="6,0,0,0"/>
+    </Style>
+
     <!-- Calibration status lamp -->
     <Style Selector="Border.cal-lamp">
       <Setter Property="Background" Value="#FFFFFF"/>
@@ -346,9 +504,11 @@
       <Setter Property="Background" Value="#FF000000"/>
     </Style>
     <Style Selector="ComboBox.mscc-host-pick">
+      <Setter Property="Theme" Value="{StaticResource MsccHostPickTheme}"/>
+      <Setter Property="MinWidth" Value="0"/>
       <Setter Property="MinHeight" Value="22"/>
       <Setter Property="Height" Value="22"/>
-      <Setter Property="Width" Value="22"/>
+      <Setter Property="Width" Value="24"/>
       <Setter Property="Padding" Value="0"/>
       <Setter Property="Background" Value="#FF000000"/>
       <Setter Property="Foreground" Value="#FF00FFAA"/>
