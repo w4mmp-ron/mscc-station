@@ -1,0 +1,2 @@
+# Pi files: keep LF line endings in the Windows checkout too (core.autocrlf would make them CRLF)
+* text eol=lf

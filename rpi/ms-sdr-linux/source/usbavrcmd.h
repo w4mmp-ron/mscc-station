@@ -51,7 +51,7 @@
 //   0x5C       CMD_GET_SET_PANADAPTER_AVERAGE
 //   0x83       CMD_GET_SET_PANADAPTER_STATUS
 //   0x84       CMD_GET_SET_SMETER_STATUS
-//   0xAD       CMD_SET_COMMIT_POWER_VALUES (client Opcodes.cs still names it, unused)
+//   (0xAD taken 2026-11-26: CMD_SERVER_REPORT, see below)
 //   0xC0       CMD_SET_S_METER (pill / PSoC usbvend.h still name it, unused)
 //   0xC1, 0xC2, 0xC4  CMD_SET_FAVS_UPDATE / GET_FAVS / SET_FAVS_DELETE
 //              (sdrcore-trans names them band stack, unused)
@@ -409,7 +409,17 @@
 #define CMD_SET_BAND_VOLUME_DEFAULTS 0xAA
 #define CMD_CALIBRATION_MASTER_RESET 0xAB
 #define CMD_CALIBRATION_TUNE 0xAC
-//#define CMD_SET_COMMIT_POWER_VALUES 0xAD  /* reclaimed 2026-11-05 */
+/* 0xAD (2026-11-26, Ron): CMD_SERVER_REPORT, ms-sdr -> client only. One opcode for many
+ * small server facts so we stop using up opcodes: payload byte 0 = sub-code, byte 1 =
+ * value (Gui_send_param(CMD_SERVER_REPORT, SERVER_REPORT(sub, value))). Clients that
+ * do not know 0xAD ignore it. Sub-codes:
+ *   1 SERVER_REPORT_NO_OPERATOR_AUDIO: 1 = this Pi has no local operator audio
+ *     (operator-speaker.ini is OperatorNull, the Zero build), 0 = it has. Sent at
+ *     every client connect. Client greys out local Phones on 1.
+ * (Was CMD_SET_COMMIT_POWER_VALUES, reclaimed 2026-11-05.) */
+#define CMD_SERVER_REPORT 0xAD
+#define SERVER_REPORT(sub, value) ((int)(((sub) & 0xFF) | (((value) & 0xFF) << 8)))
+#define SERVER_REPORT_NO_OPERATOR_AUDIO 1
 #define CMD_SET_STANDARD_CARRIER 0xAF
 
 

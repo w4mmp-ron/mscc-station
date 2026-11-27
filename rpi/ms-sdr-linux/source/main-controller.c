@@ -1439,6 +1439,8 @@ void * Command_Processor(void *my_param) {
                 User_Controls_Send_To_Gui();
                 /* cw.ini was loaded at startup; re-push keyer fields now that the client session exists */
                 Send_CW_params_to_gui();
+                /* 0xAD server facts (2026-11-26): no local operator audio, ... */
+                Send_server_reports_to_gui();
                 /* Ensure freq/band globals match startup.ini for GUI display */
                 if (!G_appliance_startup_done || G_tune_freq == 0) {
                     Get_Startup(&G_tune_freq, &G_mode);
@@ -2468,6 +2470,36 @@ int Update_CW_ini() {
 }
 
 /* Push cw_record (from cw.ini) to the MSCC client. Safe to call after Session_Claim. */
+/*
+ * CMD_SERVER_REPORT (0xAD) facts for the client, sent at every client connect.
+ * Sub-code 1: no local operator audio = the operator speaker is the Zero build's dummy
+ * OperatorNull (operator-speaker.ini in ~/.local/mscc, written by MSCC Init).
+ */
+void Send_server_reports_to_gui(void) {
+    char path[PATH_MAX];
+    char name[128] = { 0 };
+    int no_operator_audio = 0;
+    FILE *fp;
+
+    char *dir = My_getenv("HOME");   /* ~/.local/mscc, like cw.ini */
+
+    if (dir == NULL)
+        return;
+    snprintf(path, sizeof(path), "%s/operator-speaker.ini", dir);
+    fp = fopen(path, "r");
+    if (fp != NULL) {
+        if (fgets(name, sizeof(name), fp) != NULL &&
+            strncmp(name, "OperatorNull", strlen("OperatorNull")) == 0)
+            no_operator_audio = 1;
+        fclose(fp);
+    }
+    Gui_send_param(CMD_SERVER_REPORT,
+        SERVER_REPORT(SERVER_REPORT_NO_OPERATOR_AUDIO, no_operator_audio));
+    print_time(0);
+    fprintf(G_fp_logfile, "[%d] Send_server_reports_to_gui. 0xAD no local operator audio: %d\n",
+        line_number++, no_operator_audio);
+}
+
 void Send_CW_params_to_gui(void) {
     uint8_t cmd_value;
 

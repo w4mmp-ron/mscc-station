@@ -2,7 +2,7 @@
 
 **This is not the Ubuntu kit.** Use [../linux/](../linux/) on an x86_64 PC.
 
-Need: Pi **4 or 5**, 64-bit Raspberry Pi OS (desktop recommended).
+Need: Pi **4 or 5** (or a **Zero 2 W**, see below), 64-bit Raspberry Pi OS (desktop recommended).
 
 ## Download
 
@@ -12,14 +12,21 @@ releases stay there for roll-back). Put the `.deb` files in one folder on the Pi
 
 | Package | Version | |
 |---|---|---|
-| `mscc` | 1.0.108 | required: servers (ms-sdr 3.216, recv 3.158, trans 3.164), PortAudio, MSCC Init, MSCC Volume, PSoC + Black Pill + keyer firmware and flash tools (window "Black Pill Firmware Update" since 1.0.85) |
+| `mscc` | 1.0.109 | required: servers (ms-sdr 3.217, recv 3.158, trans 3.164), PortAudio, MSCC Init, MSCC Volume, PSoC + Black Pill + keyer firmware and flash tools (window "Black Pill Firmware Update" since 1.0.85) |
 | `mscc-avalonia` | 1.7.08 | optional: MSCC Avalonia client on the Pi (not needed with the Windows client) |
+| `mscc` (Zero) | 1.0.109+zero1 | Pi Zero 2 W only: use `mscc_*+zero*_arm64.deb` instead of the normal `mscc` |
 
 ```bash
 cd /path/to/the/downloaded/debs
 sudo apt install -y ./mscc_*_arm64.deb             # everything for the radio
 sudo apt install -y ./mscc-avalonia_*_arm64.deb    # optional
 ```
+
+**Pi Zero 2 W:** install `mscc_*+zero*_arm64.deb` instead of the normal package. Its one USB
+line can't run a USB sound card next to the radio, so the Zero package has no local operator
+audio: it adds two dummy sound devices (OperatorNull, OperatorNullMic) and always uses them.
+Use the client's Digital or Remote audio; Phones is greyed out. Log out and back in (or reboot)
+after the first install so the dummy devices appear.
 
 Since mscc 1.0.79 the old separate packages (`mscc-portaudio`, `mscc-init`, `mscc-volume`,
 `mscc-firmware`) are part of `mscc`; installing it removes them. Installing `mscc` asks before it

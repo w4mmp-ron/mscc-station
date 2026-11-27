@@ -212,6 +212,33 @@ files and hooks with their own USB and socket calls; without the port they work 
 counters saw those seconds as drops. Black Pill 3.29 counts them apart (see the release notes);
 `audio-stats.py` shows `tx 52.9 s (5x, in_drop_tx ..., gaps_tx ...)` on each line.
 
+## R11-26-1: Pi ms-sdr 3.217 (server report 0xAD)
+
+**What it does:** at client connect, right after the CW settings, ms-sdr sends one
+`CMD_SERVER_REPORT` (0xAD, ms-sdr -> client only) saying whether the Pi has local operator audio.
+Payload (the usual 4-byte int): byte 0 = sub-code, byte 1 = value.
+
+    sub-code 1 SERVER_REPORT_NO_OPERATOR_AUDIO   value 1 = no local operator audio
+
+Value 1 when `~/.local/mscc/operator-speaker.ini` starts with `OperatorNull` (the dummy speaker
+of the new Pi Zero 2 W package), else 0. 0xAD was the unused `CMD_SET_COMMIT_POWER_VALUES`; it
+is now a multiplexed report so later server facts need no new opcode (we are short of opcodes).
+Clients that don't know 0xAD ignore it, so nothing changes for them.
+
+**Why:** the Zero 2 W has one USB 2.0 line; a USB sound card next to the radio drops audio there,
+so the Zero package uses two dummy sound devices and has no local Phones. A client that reads the
+report can grey out Phones and use Digital (option for WPF / Avalonia; not required).
+
+**Files:** `rpi/ms-sdr-linux/source/usbavrcmd.h` (`CMD_SERVER_REPORT`, `SERVER_REPORT()`, sub-code
+1), `main-controller.c` (`Send_server_reports_to_gui()`), `extern.h`. Zero package:
+`rpi/mscc-zero/` (README).
+
+**Windows / Ubuntu port:** not needed for the Windows servers (Windows PCs have their own sound
+cards); please treat 0xAD as taken in the Windows / Ubuntu `usbavrcmd.h` too.
+
+**Tested (Ron, Zero 2 W + Ethernet HAT):** the report arrives at connect (ms-sdr log:
+`0xAD no local operator audio: 1`), receive clean with the dummy devices.
+
 ## FYI: Black Pill 3.23 uses your USB names
 
 The Black Pill now uses the same USB names as your PSoC images: "Multus IQ", "Multus IQ Sound",

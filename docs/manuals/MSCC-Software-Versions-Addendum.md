@@ -1,6 +1,6 @@
 # MSCC Software Versions Addendum
 
-**Release R11-26-0** · 2026-11-26
+**Release R11-26-1** · 2026-11-26
 
 The Operator's Guides describe how MSCC works; this addendum lists the version numbers that
 go with the current release. It is updated with every release, so the guides don't change
@@ -12,7 +12,8 @@ when only version numbers do. Downloads and what changed in each release:
 | Computer | File |
 |---|---|
 | Windows | `mscc-net9-R11-26-0-install.exe` → `C:\mscc-net9` |
-| Raspberry Pi (64-bit, Pi 4 / Pi 5) | `mscc_1.0.108_arm64.deb`, `mscc-avalonia_1.7.08_arm64.deb` |
+| Raspberry Pi (64-bit, Pi 4 / Pi 5) | `mscc_1.0.109_arm64.deb`, `mscc-avalonia_1.7.08_arm64.deb` |
+| Raspberry Pi Zero 2 W (no sound card) | `mscc_1.0.109+zero1_arm64.deb` instead of `mscc_1.0.109_arm64.deb` |
 
 Ubuntu packages: not in this release (R11-25-0 has 1.0.105 / 1.7.08 amd64).
 
@@ -21,7 +22,7 @@ Ubuntu packages: not in this release (R11-25-0 has 1.0.105 / 1.7.08 amd64).
 | Program | Windows | Raspberry Pi | Ubuntu |
 |---|---|---|---|
 | MSCC client | WPF 11.26.0 | Avalonia 1.7.08 | Avalonia 1.7.08 |
-| ms-sdr (server) | 3.214 | 3.216 | 3.215 |
+| ms-sdr (server) | 3.214 | 3.217 | 3.215 |
 | recv (receive server) | 3.155 | 3.158 | 3.157 |
 | trans (transmit server) | 3.159 | 3.164 | 3.163 |
 
@@ -29,7 +30,7 @@ Avalonia 1.7.08 (Pi and Ubuntu): connect keeps the server's settings. LF not yet
 
 WPF 11.26.0 (= 11.25.1 renumbered): Launch Servers is only for a Host on this PC. Another Host turns it off and greys it out, and Connect then never starts servers on this PC. Otherwise as 11.19.2. Remote digital: a one-cable VB-Cable setup no longer sends a short burst of received audio at key-down. While keyed, MSCC stops playing receive audio into the cable, and it drops the first 400 ms of transmit audio after key-down.
 
-Pi ms-sdr 3.216, recv 3.158 and trans 3.164: stored CW carrier (Black Pill 3.25+), on with `CW_CARRIER=1;` in the Pi's mscc.ini (Pi install guide). `mscc status` on the Pi lists packages, servers, firmware, and the newest release. Pi ms-sdr 3.214 answers the CAT S-meter read, stops transmit on a WiFi SWR fault until reset (including a CAT key from WSJT-X), and keeps the QRO calibration in Black Pill 3.24 or later. Windows ms-sdr 3.214 uses Zadig or WinUSB; Black Pill 3.17 or later needs no Zadig.
+Pi ms-sdr 3.217: reports no local operator audio (Zero package, dummy sound devices) so the client can grey out Phones. Pi ms-sdr 3.216, recv 3.158 and trans 3.164: stored CW carrier (Black Pill 3.25+), on with `CW_CARRIER=1;` in the Pi's mscc.ini (Pi install guide). `mscc status` on the Pi lists packages, servers, firmware, and the newest release. Pi ms-sdr 3.214 answers the CAT S-meter read, stops transmit on a WiFi SWR fault until reset (including a CAT key from WSJT-X), and keeps the QRO calibration in Black Pill 3.24 or later. Windows ms-sdr 3.214 uses Zadig or WinUSB; Black Pill 3.17 or later needs no Zadig.
 
 Windows and Pi server numbers differ because each build counts up on its own.
 

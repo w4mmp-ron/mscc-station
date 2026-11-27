@@ -2232,3 +2232,10 @@ Remote Digital TX spurs (Stew's NOTE-FOR-RON-REMOTE-DIGITAL-TX-SPURS-2026-11-17)
 - Windows R11-26-0: keyer 20261126 in the payload, client 11.26.0 (11.25.1 renumbered), servers unchanged. Pi mscc 1.0.108: keyer pair only (file-by-file check: control + 2 keyer files renamed, 128 files both). Pi Avalonia 1.7.08 unchanged.
 - Notes for Stew: prosign legend and repeat play for the Avalonia CW tab.
 - Plan kept, not started: CQ memories in the PIC's program flash (EEPROM 214 of 256 bytes used).
+
+## R11-26-1 (2026-11-26, Ron "finished")
+
+- Pi Zero 2 W package (new, every release): `rpi/mscc-zero/make-zero-deb.sh` turns the normal mscc .deb into `mscc_<ver>+zero<N>_arm64.deb`: PipeWire null devices OperatorNull / OperatorNullMic (`/etc/pipewire/pipewire.conf.d/50-mscc-operator-null.conf`, conffile), MSCC Init lists only them (`devices-zero-append.py`), the postinst always writes them into operator-speaker.ini / operator-microphone.ini. Reason: the Zero's dwc_otg USB can't run a full-speed sound card behind the hub next to the radio (C-Media test: ~1000 NYET/s, playback fails); with the dummies receive is clean (0 drops over hours, Ethernet HAT, wired .119). recv needs an operator speaker, so the dummies stay.
+- Pi ms-sdr 3.217: 0xAD reused as `CMD_SERVER_REPORT` (sub-code 1 = no local operator audio, value 1 when operator-speaker.ini starts with OperatorNull), sent at client connect after the CW params. Old clients ignore it. Built on proficio from a /tmp copy identical to the repo; running on zero2 (proficio stays on 3.216 until it installs 1.0.109). Tested on zero2: report in the ms-sdr log at connect.
+- Pi mscc 1.0.109: ms-sdr only (file-by-file check: control + ms-sdr, 128 files). Zero 1.0.109+zero1 vs 1.0.109: control, postinst, devices.py, + conffiles + the .conf (130 files). Windows R11-26-0 and Pi Avalonia 1.7.08 unchanged (reused).
+- Notes for Stew: CW HOLD time (radio counts 10 ms units, label says ms, over 255 wraps); 0xAD section in the Pi-server-changes note.

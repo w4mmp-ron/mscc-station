@@ -350,6 +350,7 @@ extern void *Gui_send_message(void *t);
 extern int Get_random_time(void);
 extern int initialize_keyer();
 extern void Send_CW_params_to_gui(void);
+extern void Send_server_reports_to_gui(void);
 extern int Update_CW_ini();
 extern void *Manage_MKII_PTT_Switch(void *param);
 

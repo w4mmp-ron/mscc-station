@@ -24,6 +24,14 @@ keywords ("build" / "update the notes" / "finished" / "stop"), pull first, nothi
 - Windows: the server sln build bumps ms-sdr `version.h` even with no code change; put it back if
   ms-sdr didn't change. Commit the rebuilt server exes in `mscc-ui/Release/windows-wpf`.
 - Pi .deb: from the Pi build's binaries; the new .deb goes to `installers/rpi/` and V:\.
+- **Pi Zero 2 W .deb (Ron 2026-11-26), every release:** after the normal mscc .deb, run
+  `rpi/mscc-zero/make-zero-deb.sh <mscc_VER_arm64.deb> 1` (WSL; N = 1 for a new mscc version,
+  +1 for a rebuild) -> `installers/rpi/zero/mscc_VER+zeroN_arm64.deb`. It is the normal package
+  plus the dummy operator audio (OperatorNull / OperatorNullMic) and their MSCC Init entries
+  (`rpi/mscc-zero/README.md`). Check it against the normal .deb (only control, conffiles, the
+  PipeWire .conf, MSCC Init `devices.py` and the postinst differ; 2 files more). Attach it to the release with a version
+  table row and a Downloads line: "Raspberry Pi Zero 2 W without a sound card: use this instead
+  of `mscc_*.deb`". Mention it in `installers/rpi/INSTALL.md`.
 - Docs: also this file. **Keep this file short (Ron 2026-11-14):** the release entry and the
   entries it closes go straight to the end of `rpi/CLAUDE-history.md`, never into the Open list;
   only open items, rules and current setup stay here.
