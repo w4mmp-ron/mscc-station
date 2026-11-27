@@ -79,6 +79,25 @@
     <SolidColorBrush x:Key="UiBarTextTxBrush" Color="#FF8A80"/>
     <SolidColorBrush x:Key="UiBarTextDisabledBrush" Color="#8A8A8A"/>
 
+    <!-- VFO LCD. Skins swap these brushes by key. -->
+    <SolidColorBrush x:Key="UiVfoBezelBrush" Color="#FF101214"/>
+    <RadialGradientBrush x:Key="UiVfoLcdBrush" Center="50%,40%" GradientOrigin="50%,40%" RadiusX="70%" RadiusY="70%">
+      <GradientStop Offset="0" Color="#FFFFF4C4"/>
+      <GradientStop Offset="1" Color="#FFE3CF7C"/>
+    </RadialGradientBrush>
+    <LinearGradientBrush x:Key="UiVfoLcdShadeBrush" StartPoint="0%,0%" EndPoint="0%,100%">
+      <GradientStop Offset="0" Color="#59000000"/>
+      <GradientStop Offset="1" Color="#00000000"/>
+    </LinearGradientBrush>
+    <SolidColorBrush x:Key="UiVfoBevelDarkBrush" Color="#E0000000"/>
+    <SolidColorBrush x:Key="UiVfoBevelLightBrush" Color="#80FFFFFF"/>
+    <SolidColorBrush x:Key="UiVfoDigitBrush" Color="#FF1E1C12"/>
+    <SolidColorBrush x:Key="UiVfoDigitHzBrush" Color="#FF3C3824"/>
+    <SolidColorBrush x:Key="UiVfoLabelBrush" Color="#FF5A5438"/>
+    <SolidColorBrush x:Key="UiVfoModeBrush" Color="#FF1E1C12"/>
+    <SolidColorBrush x:Key="UiVfoStripBrush" Color="#26000000"/>
+    <SolidColorBrush x:Key="UiVfoStripTextBrush" Color="#FF2A281A"/>
+
     <ControlTheme x:Key="MsccPhysicalTrackButton" TargetType="RepeatButton">
       <Setter Property="Background" Value="Transparent"/>
       <Setter Property="Focusable" Value="False"/>

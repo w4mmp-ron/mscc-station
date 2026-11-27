@@ -328,6 +328,12 @@ public partial class MainViewModel : ViewModelBase, IDisposable
     [ObservableProperty] private string _frequencyText = "—";
     [ObservableProperty] private string _frequencyMhzEdit = "0.000000";
     [ObservableProperty] private string _frequencyDisplayMhz = "0.000000";
+    /// <summary>VFO A digits left of the Hz group, e.g. "14.074".</summary>
+    [ObservableProperty] private string _vfoAMhzKhz = "0.000";
+    /// <summary>VFO A last three digits (Hz).</summary>
+    [ObservableProperty] private string _vfoAHz = "000";
+    /// <summary>PowerSDR band text for VFO A. Blank at 0 Hz.</summary>
+    [ObservableProperty] private string _vfoABandText = "";
     [ObservableProperty] private string _modeText = "";
     [ObservableProperty] private string _smeterText = "—";
     /// <summary>S-meter needle, fractional S units 0–15 (cmd-073). Drives analog face.</summary>
@@ -534,6 +540,12 @@ public partial class MainViewModel : ViewModelBase, IDisposable
     [ObservableProperty] private string _logFilePath = "";
     [ObservableProperty] private SpectrumUpdate? _currentSpectrum;
     [ObservableProperty] private string _vfoBDisplayMhz = "0.000000";
+    /// <summary>VFO B digits left of the Hz group, e.g. "14.074".</summary>
+    [ObservableProperty] private string _vfoBMhzKhz = "0.000";
+    /// <summary>VFO B last three digits (Hz).</summary>
+    [ObservableProperty] private string _vfoBHz = "000";
+    /// <summary>PowerSDR band text for VFO B. Blank at 0 Hz.</summary>
+    [ObservableProperty] private string _vfoBBandText = "";
     [ObservableProperty] private string _vfoBModeText = "";
     [ObservableProperty] private bool _useVfoA = true;
 
@@ -8970,6 +8982,57 @@ public partial class MainViewModel : ViewModelBase, IDisposable
 
     private static string FormatMhz(long hz) =>
         (hz / 1_000_000.0).ToString("0.000000", CultureInfo.InvariantCulture);
+
+    partial void OnFrequencyDisplayMhzChanged(string value) => ApplyVfoFace(value, vfoA: true);
+
+    partial void OnVfoBDisplayMhzChanged(string value) => ApplyVfoFace(value, vfoA: false);
+
+    /// <summary>
+    /// "14.074000" → big "14.074", small "000", band text from the whole Hz value.
+    /// FrequencyDisplayMhz / VfoBDisplayMhz stay the full six-decimal string.
+    /// </summary>
+    private void ApplyVfoFace(string value, bool vfoA)
+    {
+        SplitVfoDisplay(value, out string mhzKhz, out string hzDigits, out long hz);
+        string band = BandPlanService.Describe(hz);
+        if (vfoA)
+        {
+            VfoAMhzKhz = mhzKhz;
+            VfoAHz = hzDigits;
+            VfoABandText = band;
+        }
+        else
+        {
+            VfoBMhzKhz = mhzKhz;
+            VfoBHz = hzDigits;
+            VfoBBandText = band;
+        }
+    }
+
+    private static void SplitVfoDisplay(string value, out string mhzKhz, out string hzDigits, out long hz)
+    {
+        mhzKhz = "";
+        hzDigits = "";
+        hz = 0;
+        if (string.IsNullOrWhiteSpace(value))
+            return;
+
+        string text = value.Trim();
+        int dot = text.IndexOf('.');
+        string whole = dot >= 0 ? text[..dot] : text;
+        string frac = dot >= 0 ? text[(dot + 1)..] : "";
+        if (frac.Length < 6)
+            frac = frac.PadRight(6, '0');
+        mhzKhz = whole + "." + frac[..3];
+        hzDigits = frac.Substring(3, 3);
+
+        if (decimal.TryParse(text, NumberStyles.Float, CultureInfo.InvariantCulture, out decimal mhz))
+        {
+            decimal hzDec = Math.Round(mhz * 1_000_000m, 0, MidpointRounding.AwayFromZero);
+            if (hzDec > 0)
+                hz = (long)hzDec;
+        }
+    }
 
     private static string FormatStep(long hz) => hz switch
     {

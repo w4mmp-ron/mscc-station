@@ -331,8 +331,9 @@ public partial class MainWindow : Window
     }
 
     /// <summary>
-    /// WPF-style digit hit-test: step = 10^(digits to the right of hovered digit).
-    /// Display is MHz F6 e.g. "7.000000" → over 1 kHz place → step 1000 Hz.
+    /// Digit hit-test: step = 10^(digits to the right of the hovered digit), then × 10^Tag.
+    /// Big digits (Tag 3) are "14.074"; the 1 kHz place steps 1000 Hz and the MHz place steps 1 000 000 Hz.
+    /// Hz digits (Tag 0) step 100 / 10 / 1 Hz. Over '.' the digit to the left is used.
     /// </summary>
     private static bool TryGetDigitStepHz(TextBlock freqTb, Point pos, out long stepHz)
     {
@@ -410,6 +411,15 @@ public partial class MainWindow : Window
 
         stepHz = 1;
         for (int k = 0; k < digitsToRight; k++)
+        {
+            if (stepHz > long.MaxValue / 10)
+                break;
+            stepHz *= 10;
+        }
+
+        // Big digits are the MHz.kHz group (Tag 3). Hz digits are Tag 0.
+        int offset = int.TryParse(freqTb.Tag?.ToString(), out int tagOffset) ? tagOffset : 0;
+        for (int k = 0; k < offset; k++)
         {
             if (stepHz > long.MaxValue / 10)
                 break;
