@@ -65,40 +65,40 @@
 
           <!-- Phones (operator path) — live when connected -->
           <TextBlock Classes="mscc-section" Text="Phones"/>
-          <Grid ColumnDefinitions="40,*,28" Height="20" Margin="0,0,0,1">
+          <Grid ColumnDefinitions="40,*,28" Height="28" Margin="0,0,0,1">
             <TextBlock Classes="mscc-label" Text="Vol"/>
-            <Slider Grid.Column="1" Classes="mscc-slider" Minimum="0" Maximum="100"
-                    SmallChange="1" PointerWheelChanged="Slider_OnPointerWheelChanged"
+            <Slider Grid.Column="1" Classes="mscc-physical" Minimum="0" Maximum="100"
+                    SmallChange="1"
                     Value="{Binding PVolume}" IsEnabled="{Binding IsConnected}"
                     ToolTip.Tip="Operator / phones volume"/>
-            <TextBlock Grid.Column="2" Classes="mscc-readout" Text="{Binding PVolume}"/>
+            <TextBlock Grid.Column="2" Classes="mscc-readout" Foreground="{DynamicResource UiSliderValueBrush}" Text="{Binding PVolume}"/>
           </Grid>
-          <Grid ColumnDefinitions="40,*,28" Height="20" Margin="0,0,0,1">
+          <Grid ColumnDefinitions="40,*,28" Height="28" Margin="0,0,0,1">
             <TextBlock Classes="mscc-label" Text="Mic"/>
-            <Slider Grid.Column="1" Classes="mscc-slider" Minimum="0" Maximum="100"
-                    SmallChange="1" PointerWheelChanged="Slider_OnPointerWheelChanged"
+            <Slider Grid.Column="1" Classes="mscc-physical" Minimum="0" Maximum="100"
+                    SmallChange="1"
                     Value="{Binding PMicGain}" IsEnabled="{Binding IsConnected}"
                     ToolTip.Tip="Operator / phones mic gain"/>
-            <TextBlock Grid.Column="2" Classes="mscc-readout" Text="{Binding PMicGain}"/>
+            <TextBlock Grid.Column="2" Classes="mscc-readout" Foreground="{DynamicResource UiSliderValueBrush}" Text="{Binding PMicGain}"/>
           </Grid>
 
           <!-- Digital (VAC / digi apps) — inactive while Remote: MSA1/VAC is the mic -->
           <TextBlock Classes="mscc-section" Text="Digital"/>
-          <Grid ColumnDefinitions="40,*,28" Height="20" Margin="0,0,0,1">
+          <Grid ColumnDefinitions="40,*,28" Height="28" Margin="0,0,0,1">
             <TextBlock Classes="mscc-label" Text="Vol"/>
-            <Slider Grid.Column="1" Classes="mscc-slider" Minimum="0" Maximum="100"
-                    SmallChange="1" PointerWheelChanged="Slider_OnPointerWheelChanged"
+            <Slider Grid.Column="1" Classes="mscc-physical" Minimum="0" Maximum="100"
+                    SmallChange="1"
                     Value="{Binding DVolume}" IsEnabled="{Binding DigitalControlsEnabled}"
                     ToolTip.Tip="Digital path volume. Inactive while Remote is on."/>
-            <TextBlock Grid.Column="2" Classes="mscc-readout" Text="{Binding DVolume}"/>
+            <TextBlock Grid.Column="2" Classes="mscc-readout" Foreground="{DynamicResource UiSliderValueBrush}" Text="{Binding DVolume}"/>
           </Grid>
-          <Grid ColumnDefinitions="40,*,28" Height="20" Margin="0,0,0,1">
+          <Grid ColumnDefinitions="40,*,28" Height="28" Margin="0,0,0,1">
             <TextBlock Classes="mscc-label" Text="Mic"/>
-            <Slider Grid.Column="1" Classes="mscc-slider" Minimum="0" Maximum="100"
-                    SmallChange="1" PointerWheelChanged="Slider_OnPointerWheelChanged"
+            <Slider Grid.Column="1" Classes="mscc-physical" Minimum="0" Maximum="100"
+                    SmallChange="1"
                     Value="{Binding DMicGain}" IsEnabled="{Binding DigitalControlsEnabled}"
                     ToolTip.Tip="Digital path mic gain. Inactive while Remote is on."/>
-            <TextBlock Grid.Column="2" Classes="mscc-readout" Text="{Binding DMicGain}"/>
+            <TextBlock Grid.Column="2" Classes="mscc-readout" Foreground="{DynamicResource UiSliderValueBrush}" Text="{Binding DMicGain}"/>
           </Grid>
           <!-- Audio: Phones | Digital on one row, Remote underneath (match WPF). -->
           <TextBlock Classes="mscc-section" Text="AUDIO"/>
@@ -149,24 +149,24 @@
           </Grid>
 
           <TextBlock Classes="mscc-section" Text="ZOOM"/>
-          <Grid ColumnDefinitions="*,28" Height="20" Margin="0,0,0,1">
-            <Slider Classes="mscc-slider" Minimum="1" Maximum="4" TickFrequency="1" IsSnapToTickEnabled="True"
-                    SmallChange="1" PointerWheelChanged="Slider_OnPointerWheelChanged"
+          <Grid ColumnDefinitions="*,28" Height="28" Margin="0,0,0,1">
+            <Slider Classes="mscc-physical" Minimum="1" Maximum="4" TickFrequency="1" IsSnapToTickEnabled="True"
+                    SmallChange="1"
                     Value="{Binding SpectrumZoom}"
                     ToolTip.Tip="Display zoom 1–4× (also in S/W window)"/>
-            <TextBlock Grid.Column="1" Classes="mscc-readout" Text="{Binding SpectrumZoom, StringFormat={}{0}×}"/>
+            <TextBlock Grid.Column="1" Classes="mscc-readout" Foreground="{DynamicResource UiSliderValueBrush}" Text="{Binding SpectrumZoom, StringFormat={}{0}×}"/>
           </Grid>
 
           <CheckBox Content="RIT" IsChecked="{Binding RitOn}"
                     IsEnabled="{Binding IsConnected}" FontSize="9" Margin="0,1,0,0"
                     ToolTip.Tip="Receive Incremental Tuning — offset RX without moving VFO"/>
-          <Grid ColumnDefinitions="40,*,32" Height="20" Margin="0,0,0,1">
+          <Grid ColumnDefinitions="40,*,32" Height="28" Margin="0,0,0,1">
             <TextBlock Classes="mscc-label" Text="Offset"/>
-            <Slider Grid.Column="1" Classes="mscc-slider" Minimum="-500" Maximum="500"
-                    SmallChange="10" PointerWheelChanged="Slider_OnPointerWheelChanged"
+            <Slider Grid.Column="1" Classes="mscc-physical" Minimum="-500" Maximum="500"
+                    SmallChange="10"
                     Value="{Binding RitOffset}" IsEnabled="{Binding IsConnected}"
                     ToolTip.Tip="RIT offset Hz (−500…+500)"/>
-            <TextBlock Grid.Column="2" Classes="mscc-readout" Text="{Binding RitOffset}"/>
+            <TextBlock Grid.Column="2" Classes="mscc-readout" Foreground="{DynamicResource UiSliderValueBrush}" Text="{Binding RitOffset}"/>
           </Grid>
           <Button Content="Clear RIT" Classes="mscc-gold" Width="72" HorizontalAlignment="Left" Margin="0,0,0,2"
                   Command="{Binding ClearRitCommand}"
@@ -1612,29 +1612,29 @@
 
           <!-- Power mirror + COMP + AGC (under operate, before modes) -->
           <TextBlock Classes="mscc-section" Text="POWER"/>
-          <Grid ColumnDefinitions="40,*,28" Height="22" Margin="0,0,0,1">
+          <Grid ColumnDefinitions="40,*,28" Height="28" Margin="0,0,0,1">
             <TextBlock Classes="mscc-label" Text="{Binding RfPowerBankLabel}"/>
-            <Slider Grid.Column="1" Classes="mscc-slider" Minimum="0" Maximum="100" Value="{Binding RfPower}"
-                    SmallChange="1" PointerWheelChanged="Slider_OnPointerWheelChanged"
+            <Slider Grid.Column="1" Classes="mscc-physical" Minimum="0" Maximum="100" Value="{Binding RfPower}"
+                    SmallChange="1"
                     IsEnabled="{Binding IsConnected}"
                     ToolTip.Tip="Drive power for what you're doing: TUN→Tune, CW→CW, AM→AM carrier, FM→FM, LSB/USB/DIG-U→SSB (any audio). Same values as the RX/TX tab."/>
-            <TextBlock Grid.Column="2" Classes="mscc-readout" Text="{Binding RfPower}"/>
+            <TextBlock Grid.Column="2" Classes="mscc-readout" Foreground="{DynamicResource UiSliderValueBrush}" Text="{Binding RfPower}"/>
           </Grid>
-          <Grid ColumnDefinitions="40,*,28" Height="22" Margin="0,0,0,1">
+          <Grid ColumnDefinitions="40,*,28" Height="28" Margin="0,0,0,1">
             <TextBlock Classes="mscc-label" Text="COMP"/>
-            <Slider Grid.Column="1" Classes="mscc-slider" Minimum="0" Maximum="24" Value="{Binding Compression}"
-                    SmallChange="1" PointerWheelChanged="Slider_OnPointerWheelChanged"
+            <Slider Grid.Column="1" Classes="mscc-physical" Minimum="0" Maximum="24" Value="{Binding Compression}"
+                    SmallChange="1"
                     IsEnabled="{Binding IsConnected}"
                     ToolTip.Tip="Speech compression amount (0–24 dB). Phones path only."/>
-            <TextBlock Grid.Column="2" Classes="mscc-readout" Text="{Binding Compression}"/>
+            <TextBlock Grid.Column="2" Classes="mscc-readout" Foreground="{DynamicResource UiSliderValueBrush}" Text="{Binding Compression}"/>
           </Grid>
-          <Grid ColumnDefinitions="40,*,36" Height="22" Margin="0,0,0,2">
+          <Grid ColumnDefinitions="40,*,36" Height="28" Margin="0,0,0,2">
             <TextBlock Classes="mscc-label" Text="AGC"/>
-            <Slider Grid.Column="1" Classes="mscc-slider" Minimum="0" Maximum="2000" Value="{Binding AgcFastRelease}"
-                    SmallChange="10" PointerWheelChanged="Slider_OnPointerWheelChanged"
+            <Slider Grid.Column="1" Classes="mscc-physical" Minimum="0" Maximum="2000" Value="{Binding AgcFastRelease}"
+                    SmallChange="10"
                     IsEnabled="{Binding IsConnected}"
                     ToolTip.Tip="AGC Fast Release (ms). Button above cycles SLO/MED/FST."/>
-            <TextBlock Grid.Column="2" Classes="mscc-readout" Text="{Binding AgcFastRelease, StringFormat={}{0}ms}" FontSize="9"/>
+            <TextBlock Grid.Column="2" Classes="mscc-readout" Foreground="{DynamicResource UiSliderValueBrush}" Text="{Binding AgcFastRelease, StringFormat={}{0}ms}" FontSize="9"/>
           </Grid>
 
           <TextBlock Classes="mscc-section" Text="MODE"/>
@@ -1685,13 +1685,13 @@
                     Classes.mscc-selected="{Binding MonitorOn}"
                     ToolTip.Tip="Monitor: hear your own transmit audio."/>
           </UniformGrid>
-          <Grid ColumnDefinitions="32,*,26" Height="20" Margin="0,0,0,1">
+          <Grid ColumnDefinitions="32,*,26" Height="28" Margin="0,0,0,1">
             <TextBlock Classes="mscc-label" Text="Pls"/>
-            <Slider Grid.Column="1" Classes="mscc-slider" Minimum="50" Maximum="510" Value="{Binding NbPulse}"
-                    SmallChange="1" PointerWheelChanged="Slider_OnPointerWheelChanged"
+            <Slider Grid.Column="1" Classes="mscc-physical" Minimum="50" Maximum="510" Value="{Binding NbPulse}"
+                    SmallChange="1"
                     IsEnabled="{Binding IsConnected}"
                     ToolTip.Tip="Noise blanker pulse width (µs)"/>
-            <TextBlock Grid.Column="2" Classes="mscc-readout" Text="{Binding NbPulse}"/>
+            <TextBlock Grid.Column="2" Classes="mscc-readout" Foreground="{DynamicResource UiSliderValueBrush}" Text="{Binding NbPulse}"/>
           </Grid>
           <Grid ColumnDefinitions="32,*,*,*" Height="20" Margin="0,0,0,1">
             <TextBlock Classes="mscc-label" Text="Thr" ToolTip.Tip="Noise blanker threshold: Low 8x / Med 6x / High 5x the band level"/>

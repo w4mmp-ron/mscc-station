@@ -315,7 +315,8 @@ public partial class MainWindow : Window
 
     /// <summary>
     /// One notch = SmallChange (or 1). Same as WPF Slider_PreviewMouseWheel.
-    /// AGC FAST RELEASE is not wired. Handled so the notch does not scroll or reach the VFO.
+    /// Tab sliders still use this. Left and right rail sliders use SliderWheel.OneStepPerNotch.
+    /// Handled so the notch does not scroll or reach the VFO.
     /// </summary>
     private void Slider_OnPointerWheelChanged(object? sender, PointerWheelEventArgs e)
     {

@@ -2,6 +2,7 @@
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              x:Class="MSCC.Avalonia.App"
              xmlns:local="using:MSCC.Avalonia"
+             xmlns:ctrl="using:MSCC.Avalonia.Controls"
              RequestedThemeVariant="Dark">
 
   <Application.DataTemplates>
@@ -21,6 +22,103 @@
     <SolidColorBrush x:Key="UiButtonSelectedBorderBrush" Color="#FF8800"/>
     <SolidColorBrush x:Key="UiAccentBrush" Color="#00FFAA"/>
     <SolidColorBrush x:Key="UiAccentMutedBrush" Color="#006B5A"/>
+
+    <!-- Rail sliders only. Settings, S/W, Remote Audio, and cal tabs stay Fluent. -->
+    <LinearGradientBrush x:Key="UiSliderTrackFillBrush" StartPoint="0%,0%" EndPoint="0%,100%">
+      <GradientStop Offset="0" Color="#050608"/>
+      <GradientStop Offset="0.55" Color="#161920"/>
+      <GradientStop Offset="1" Color="#2A2E36"/>
+    </LinearGradientBrush>
+    <SolidColorBrush x:Key="UiSliderTrackBorderBrush" Color="#3A404A"/>
+    <SolidColorBrush x:Key="UiSliderTrackHighlightBrush" Color="#6A7382"/>
+    <LinearGradientBrush x:Key="UiSliderThumbFillBrush" StartPoint="0%,0%" EndPoint="0%,100%">
+      <GradientStop Offset="0" Color="#EEF1F6"/>
+      <GradientStop Offset="0.16" Color="#8B929C"/>
+      <GradientStop Offset="0.38" Color="#1A1C20"/>
+      <GradientStop Offset="0.78" Color="#050506"/>
+      <GradientStop Offset="1" Color="#3A3F48"/>
+    </LinearGradientBrush>
+    <SolidColorBrush x:Key="UiSliderThumbHighlightBrush" Color="#F7F9FC"/>
+    <SolidColorBrush x:Key="UiSliderThumbBorderBrush" Color="#C5CAD3"/>
+    <SolidColorBrush x:Key="UiSliderValueBrush" Color="#FFE14A"/>
+
+    <ControlTheme x:Key="MsccPhysicalTrackButton" TargetType="RepeatButton">
+      <Setter Property="Background" Value="Transparent"/>
+      <Setter Property="Focusable" Value="False"/>
+      <Setter Property="Template">
+        <ControlTemplate>
+          <Border Background="{TemplateBinding Background}" MinHeight="20"/>
+        </ControlTemplate>
+      </Setter>
+    </ControlTheme>
+
+    <ControlTheme x:Key="MsccPhysicalThumbTheme" TargetType="Thumb">
+      <Setter Property="Width" Value="12"/>
+      <Setter Property="Height" Value="18"/>
+      <Setter Property="MinWidth" Value="12"/>
+      <Setter Property="MinHeight" Value="18"/>
+      <Setter Property="Template">
+        <ControlTemplate>
+          <Border CornerRadius="1"
+                  BorderThickness="1"
+                  BorderBrush="{DynamicResource UiSliderThumbBorderBrush}"
+                  Background="{DynamicResource UiSliderThumbFillBrush}"
+                  ClipToBounds="True">
+            <Border Height="2"
+                    VerticalAlignment="Top"
+                    Margin="1,2,1,0"
+                    Background="{DynamicResource UiSliderThumbHighlightBrush}"
+                    Opacity="0.95"/>
+          </Border>
+        </ControlTemplate>
+      </Setter>
+    </ControlTheme>
+
+    <ControlTheme x:Key="MsccPhysicalSliderTheme" TargetType="Slider">
+      <Setter Property="MinHeight" Value="22"/>
+      <Setter Property="Height" Value="22"/>
+      <Setter Property="Background" Value="{DynamicResource UiSliderTrackFillBrush}"/>
+      <Setter Property="Foreground" Value="{DynamicResource UiSliderThumbFillBrush}"/>
+      <Setter Property="Template">
+        <ControlTemplate>
+          <Grid MinHeight="22" VerticalAlignment="Center" Background="Transparent">
+            <Border Height="6"
+                    VerticalAlignment="Center"
+                    CornerRadius="1"
+                    Background="{DynamicResource UiSliderTrackFillBrush}"
+                    BorderBrush="{DynamicResource UiSliderTrackBorderBrush}"
+                    BorderThickness="1">
+              <Border Height="1"
+                      VerticalAlignment="Top"
+                      Margin="1,0"
+                      Background="{DynamicResource UiSliderTrackHighlightBrush}"/>
+            </Border>
+            <Track Name="PART_Track"
+                   Minimum="{TemplateBinding Minimum}"
+                   Maximum="{TemplateBinding Maximum}"
+                   Value="{TemplateBinding Value, Mode=TwoWay}"
+                   IsDirectionReversed="{TemplateBinding IsDirectionReversed}"
+                   Orientation="Horizontal"
+                   VerticalAlignment="Center">
+              <Track.DecreaseButton>
+                <RepeatButton Name="PART_DecreaseButton"
+                              Theme="{StaticResource MsccPhysicalTrackButton}"
+                              Focusable="False"/>
+              </Track.DecreaseButton>
+              <Track.IncreaseButton>
+                <RepeatButton Name="PART_IncreaseButton"
+                              Theme="{StaticResource MsccPhysicalTrackButton}"
+                              Focusable="False"/>
+              </Track.IncreaseButton>
+              <Thumb Name="thumb" Theme="{StaticResource MsccPhysicalThumbTheme}"/>
+            </Track>
+          </Grid>
+        </ControlTemplate>
+      </Setter>
+      <Style Selector="^:disabled">
+        <Setter Property="Opacity" Value="0.4"/>
+      </Style>
+    </ControlTheme>
   </Application.Resources>
 
   <Application.Styles>
@@ -178,9 +276,17 @@
       <Setter Property="VerticalAlignment" Value="Center"/>
     </Style>
 
-    <!-- Inline slider + readout row height -->
+    <!-- Inline slider + readout row height. Tab and cal sliders keep this. -->
     <Style Selector="Slider.mscc-slider">
       <Setter Property="MinHeight" Value="18"/>
+      <Setter Property="VerticalAlignment" Value="Center"/>
+      <Setter Property="Margin" Value="0"/>
+    </Style>
+
+    <!-- Left and right rails only. Do not put this class on Settings, S/W, or cal sliders. -->
+    <Style Selector="Slider.mscc-physical">
+      <Setter Property="Theme" Value="{StaticResource MsccPhysicalSliderTheme}"/>
+      <Setter Property="ctrl:SliderWheel.OneStepPerNotch" Value="True"/>
       <Setter Property="VerticalAlignment" Value="Center"/>
       <Setter Property="Margin" Value="0"/>
     </Style>
