@@ -5,9 +5,9 @@ Claude's notes for the Pi servers `sdrcore-recv`, `sdrcore-trans` and `ms-sdr`
 file is for Claude only.
 
 **Shared rules for Ron and Stew are in `../CLAUDE.md` (repo root) and are not repeated here:**
-keywords ("build" / "update the notes" / "finished" / "stop"), pull first, nothing in git before
-"finished", ask before editing, one commit with specific paths, trees in step, versions, the
-"finished" checklist, build notes. This file adds only Ron's extras.
+keywords ("build" / "update the notes" / "cut release" / "stop"), pull first, nothing in git before
+"cut release", ask before editing, one commit with specific paths, trees in step, versions, the
+"cut release" checklist, build notes. This file adds only Ron's extras.
 
 ## Working with Ron (extras)
 
@@ -18,7 +18,7 @@ keywords ("build" / "update the notes" / "finished" / "stop"), pull first, nothi
   Pi and builds there. Give him the file list, not git steps.
 - After a pull, report Stew's Windows and `linux/` changes and whether the Pi needs a matching port.
 
-## "Finished": Ron's extras to the shared checklist
+## "Cut release": Ron's extras to the shared checklist
 
 - Step 1: the Pi copy is `V:/ms-sdr-linux/source/version.h` (V: -> repo only; never repo -> V:).
 - Windows: the server sln build bumps ms-sdr `version.h` even with no code change; put it back if
@@ -56,7 +56,7 @@ until Stew sorts out the remote audio issue (Windows client digital transmit bur
 `.mscc-coord/REPORT-FOR-RON-WINDOWS-CLIENT-DIGITAL-TX-BURSTS-2026-11-17.md` + our reply
 `NOTE-FOR-STEW-DIGITAL-TX-BURSTS-REPLY-2026-11-17.md`). Firmware (pill, SWR meter, keyer) is not on hold.
 Reading / investigating is fine.
-**Since 2026-11-18 (Ron): the Pi servers are open again; Windows servers + clients still on hold.** At "finished": Windows installer yes (for the pill / keyer firmware), but never change or rebuild the Windows servers or client (Stew's pushed builds go in as they are). Pi server changes are not ported to Windows; each release lists them in a note for Stew (`.mscc-coord/NOTE-FOR-STEW-PI-SERVER-CHANGES-NOT-ON-WINDOWS-2026-11-18.md`).
+**Since 2026-11-18 (Ron): the Pi servers are open again; Windows servers + clients still on hold.** At "cut release": Windows installer yes (for the pill / keyer firmware), but never change or rebuild the Windows servers or client (Stew's pushed builds go in as they are). Pi server changes are not ported to Windows; each release lists them in a note for Stew (`.mscc-coord/NOTE-FOR-STEW-PI-SERVER-CHANGES-NOT-ON-WINDOWS-2026-11-18.md`).
 
 **Current list (updated 2026-11-06, after bb31561):**
 - **Client tooltips = Stew's (Ron 2026-11-19), note `.mscc-coord/NOTE-FOR-STEW-CLIENT-TOOLTIPS-2026-11-19.md`,
@@ -130,7 +130,7 @@ Reading / investigating is fine.
   wrong for today's kit, cal now in the radio).
 - **Ubuntu not in releases (Ron 2026-11-25):** Stew does not want future releases to include Ubuntu
   (reason not asked). R11-25-0 got the Ubuntu 1.0.105 / 1.7.08 amd64 files once (92699f0a) and stays
-  as it is. "finished" builds no Ubuntu packages; how-to in `CLAUDE-history.md` if ever asked.
+  as it is. "cut release" builds no Ubuntu packages; how-to in `CLAUDE-history.md` if ever asked.
 - **32-bit (armhf) Pi servers (Ron 2026-11-22, NOT started; for users on 32-bit Pi OS, Bookworm or Trixie):**
   set up a 32-bit build in a new folder `~/mscc-32b` on proficio (proficio stays 64-bit), copy the
   relevant source in, build all three servers + PortAudio as 32-bit. Proposal: a Bookworm armhf chroot
