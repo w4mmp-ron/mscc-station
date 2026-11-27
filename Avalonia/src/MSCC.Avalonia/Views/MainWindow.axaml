@@ -1639,22 +1639,22 @@
 
           <TextBlock Classes="mscc-section" Text="MODE"/>
           <UniformGrid Columns="3" Rows="2">
-            <Button Content="USB" Classes="mscc-gold" Command="{Binding SetModeCommand}" CommandParameter="USB"
-                    Margin="2" MinHeight="28" HorizontalAlignment="Stretch"
-                    Classes.mscc-selected="{Binding ModeIsUsb}"/>
             <Button Content="LSB" Classes="mscc-gold" Command="{Binding SetModeCommand}" CommandParameter="LSB"
                     Margin="2" MinHeight="28" HorizontalAlignment="Stretch"
                     Classes.mscc-selected="{Binding ModeIsLsb}"/>
+            <Button Content="USB" Classes="mscc-gold" Command="{Binding SetModeCommand}" CommandParameter="USB"
+                    Margin="2" MinHeight="28" HorizontalAlignment="Stretch"
+                    Classes.mscc-selected="{Binding ModeIsUsb}"/>
+            <Button Content="DIG-U" Classes="mscc-gold" Command="{Binding SetModeCommand}" CommandParameter="DIG-U"
+                    Margin="2" MinHeight="28" HorizontalAlignment="Stretch" FontSize="9"
+                    Classes.mscc-selected="{Binding ModeIsDigU}"
+                    ToolTip.Tip="DIG-U: upper sideband for digital modes. Hi filter goes down to 1.4k / 1.0k; switches audio to Digital."/>
             <Button Content="CW" Classes="mscc-gold" Command="{Binding SetModeCommand}" CommandParameter="CW"
                     Margin="2" MinHeight="28" HorizontalAlignment="Stretch"
                     Classes.mscc-selected="{Binding ModeIsCw}"/>
             <Button Content="AM" Classes="mscc-gold" Command="{Binding SetModeCommand}" CommandParameter="AM"
                     Margin="2" MinHeight="28" HorizontalAlignment="Stretch"
                     Classes.mscc-selected="{Binding ModeIsAm}"/>
-            <Button Content="DIG-U" Classes="mscc-gold" Command="{Binding SetModeCommand}" CommandParameter="DIG-U"
-                    Margin="2" MinHeight="28" HorizontalAlignment="Stretch" FontSize="9"
-                    Classes.mscc-selected="{Binding ModeIsDigU}"
-                    ToolTip.Tip="DIG-U: upper sideband for digital modes. Hi filter goes down to 1.4k / 1.0k; switches audio to Digital."/>
             <Button Content="FM" Classes="mscc-gold" Command="{Binding SetModeCommand}" CommandParameter="FM"
                     Margin="2" MinHeight="28" HorizontalAlignment="Stretch"
                     Classes.mscc-selected="{Binding ModeIsFm}"

@@ -40,12 +40,16 @@
       <Setter Property="Padding" Value="4,1"/>
       <Setter Property="MinHeight" Value="22"/>
       <Setter Property="CornerRadius" Value="3"/>
+      <Setter Property="HorizontalContentAlignment" Value="Center"/>
+      <Setter Property="VerticalContentAlignment" Value="Center"/>
     </Style>
     <Style Selector="Button.mscc-gold /template/ ContentPresenter#PART_ContentPresenter">
       <Setter Property="Background" Value="{DynamicResource UiButtonFaceBrush}"/>
       <Setter Property="BorderBrush" Value="{DynamicResource UiButtonBorderBrush}"/>
       <Setter Property="BorderThickness" Value="1"/>
       <Setter Property="CornerRadius" Value="3"/>
+      <Setter Property="HorizontalContentAlignment" Value="Center"/>
+      <Setter Property="VerticalContentAlignment" Value="Center"/>
     </Style>
 
     <!-- Idle gold hover (cycle filters, unlatched buttons) -->
@@ -156,6 +160,8 @@
       <Setter Property="Padding" Value="3,1"/>
       <Setter Property="MinHeight" Value="22"/>
       <Setter Property="CornerRadius" Value="3"/>
+      <Setter Property="HorizontalContentAlignment" Value="Center"/>
+      <Setter Property="VerticalContentAlignment" Value="Center"/>
       <Setter Property="Opacity" Value="0.85"/>
     </Style>
 
