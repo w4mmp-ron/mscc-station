@@ -32,7 +32,7 @@
           <Button Content="{Binding ConnectButtonText}"
                   Command="{Binding ToggleConnectCommand}"
                   ToolTip.Tip="{Binding ConnectToolTip}"
-                  Classes="mscc-gold" HorizontalAlignment="Stretch" Height="24"/>
+                  Classes="mscc-bar" HorizontalAlignment="Stretch" Height="24"/>
           <TextBlock Text="{Binding StatusText}" FontSize="9" Foreground="#FFCC66"
                      TextWrapping="Wrap" MaxLines="2" Margin="0,1,0,2"/>
           <StackPanel Orientation="Horizontal" Spacing="6" Margin="0,0,0,1">
@@ -102,19 +102,19 @@
           </Grid>
           <!-- Audio: Phones | Digital on one row, Remote underneath (match WPF). -->
           <TextBlock Classes="mscc-section" Text="AUDIO"/>
-          <StackPanel Orientation="Horizontal" Margin="0,0,0,3" Spacing="4">
-            <Button Content="Phones" Classes="mscc-gold" Width="70" Height="24" FontSize="10"
+          <StackPanel Orientation="Horizontal" Margin="0,0,0,4" Spacing="4">
+            <Button Content="Phones" Classes="mscc-bar" Width="70" Height="24" FontSize="10"
                     Command="{Binding SelectPhonesAudioCommand}"
                     IsEnabled="{Binding LocalAudioPathEnabled}"
                     Classes.mscc-selected="{Binding IsPhonesAudio}"
                     ToolTip.Tip="Local analog mic/speaker. Disabled while Remote — Path lives in the Remote window."/>
-            <Button Content="Digital" Classes="mscc-gold" Width="70" Height="24" FontSize="10"
+            <Button Content="Digital" Classes="mscc-bar" Width="70" Height="24" FontSize="10"
                     Command="{Binding SelectDigitalAudioCommand}"
                     IsEnabled="{Binding LocalAudioPathEnabled}"
                     Classes.mscc-selected="{Binding IsDigitalAudio}"
                     ToolTip.Tip="Local VAC on the radio. Disabled while Remote — Path lives in the Remote window."/>
           </StackPanel>
-          <Button Content="Remote" Classes="mscc-gold" Height="24" FontSize="10"
+          <Button Content="Remote" Classes="mscc-bar" Height="24" FontSize="10"
                   Margin="0,0,0,4" HorizontalAlignment="Stretch"
                   Command="{Binding ToggleRemoteAudioCommand}"
                   IsEnabled="{Binding IsRemoteAudioAllowed}"
@@ -123,28 +123,32 @@
 
           <!-- Filters / Step (live when connected) -->
           <TextBlock Classes="mscc-section" Text="FILTERS / STEP"/>
-          <Grid ColumnDefinitions="24,*" Height="22" Margin="0,0,0,1">
+          <Grid ColumnDefinitions="24,*" Height="24" Margin="0">
             <TextBlock Classes="mscc-label" Text="Lo"/>
-            <Button Grid.Column="1" Content="{Binding LowCutLabel}" Classes="mscc-gold"
+            <Button Grid.Column="1" Content="{Binding LowCutLabel}" Classes="mscc-bar"
                     Command="{Binding CycleLowCutCommand}" HorizontalAlignment="Left" Width="64"
+                    Height="20" Margin="0,2" VerticalAlignment="Center"
                     ToolTip.Tip="Low cut filter: 75, 100, 200, 300, 500 Hz."/>
           </Grid>
-          <Grid ColumnDefinitions="24,*" Height="22" Margin="0,0,0,1">
+          <Grid ColumnDefinitions="24,*" Height="24" Margin="0">
             <TextBlock Classes="mscc-label" Text="Hi"/>
-            <Button Grid.Column="1" Content="{Binding HighCutLabel}" Classes="mscc-gold"
+            <Button Grid.Column="1" Content="{Binding HighCutLabel}" Classes="mscc-bar"
                     Command="{Binding CycleHighCutCommand}" HorizontalAlignment="Left" Width="64"
+                    Height="20" Margin="0,2" VerticalAlignment="Center"
                     ToolTip.Tip="High cut filter. DIG-U: 1.0k–5.5k (7 steps). Other modes: 2.4k–5.5k."/>
           </Grid>
-          <Grid ColumnDefinitions="24,*" Height="22" Margin="0,0,0,1">
+          <Grid ColumnDefinitions="24,*" Height="24" Margin="0">
             <TextBlock Classes="mscc-label" Text="CW"/>
-            <Button Grid.Column="1" Content="{Binding CwFilterLabel}" Classes="mscc-gold"
+            <Button Grid.Column="1" Content="{Binding CwFilterLabel}" Classes="mscc-bar"
                     Command="{Binding CycleCwFilterCommand}" HorizontalAlignment="Left" Width="64"
+                    Height="20" Margin="0,2" VerticalAlignment="Center"
                     ToolTip.Tip="CW bandwidth (live). 1.8k / 400 / 200 Hz."/>
           </Grid>
-          <Grid ColumnDefinitions="24,*" Height="22" Margin="0,0,0,1">
+          <Grid ColumnDefinitions="24,*" Height="24" Margin="0">
             <TextBlock Classes="mscc-label" Text="Step"/>
-            <Button Grid.Column="1" Content="{Binding StepLabel}" Classes="mscc-gold"
+            <Button Grid.Column="1" Content="{Binding StepLabel}" Classes="mscc-bar"
                     Command="{Binding CycleStepCommand}" HorizontalAlignment="Left" Width="64"
+                    Height="20" Margin="0,2" VerticalAlignment="Center"
                     ToolTip.Tip="Mouse-wheel tuning step on the MAIN tab."/>
           </Grid>
 
@@ -168,7 +172,7 @@
                     ToolTip.Tip="RIT offset Hz (−500…+500)"/>
             <TextBlock Grid.Column="2" Classes="mscc-slider-value" Text="{Binding RitOffset}"/>
           </Grid>
-          <Button Content="Clear RIT" Classes="mscc-gold" Width="72" HorizontalAlignment="Left" Margin="0,0,0,2"
+          <Button Content="Clear RIT" Classes="mscc-bar" Width="72" HorizontalAlignment="Left" Margin="0,0,0,2"
                   Command="{Binding ClearRitCommand}"
                   ToolTip.Tip="Offset → 0 (RIT stays on)"/>
         </StackPanel>
@@ -288,14 +292,14 @@
         <Grid ColumnDefinitions="Auto,Auto,*,*,*,*,*,*,*,*,*,*,Auto"
               ColumnSpacing="2">
           <!-- LF — Geminus only -->
-          <Button Grid.Column="0" Content="2200" Classes="mscc-gold"
+          <Button Grid.Column="0" Content="2200" Classes="mscc-bar"
                   Command="{Binding SelectBandCommand}" CommandParameter="2200"
                   IsEnabled="{Binding LfBandsEnabled}"
                   Classes.mscc-selected="{Binding BandIs2200}"
                   MinHeight="26" FontSize="10" HorizontalAlignment="Stretch"
                   HorizontalContentAlignment="Center" VerticalContentAlignment="Center"
                   ToolTip.Tip="2200m — Geminus / LF"/>
-          <Button Grid.Column="1" Content="630" Classes="mscc-gold"
+          <Button Grid.Column="1" Content="630" Classes="mscc-bar"
                   Command="{Binding SelectBandCommand}" CommandParameter="630"
                   IsEnabled="{Binding LfBandsEnabled}"
                   Classes.mscc-selected="{Binding BandIs630}"
@@ -303,57 +307,57 @@
                   HorizontalContentAlignment="Center" VerticalContentAlignment="Center"
                   ToolTip.Tip="630m — Geminus / LF"/>
           <!-- HF — Proficio only -->
-          <Button Grid.Column="2" Content="160" Classes="mscc-gold" Command="{Binding SelectBandCommand}" CommandParameter="160"
+          <Button Grid.Column="2" Content="160" Classes="mscc-bar" Command="{Binding SelectBandCommand}" CommandParameter="160"
                   IsEnabled="{Binding HfBandsEnabled}" Classes.mscc-selected="{Binding BandIs160}"
                   MinHeight="26" FontSize="11" HorizontalAlignment="Stretch"
                   HorizontalContentAlignment="Center" VerticalContentAlignment="Center"
                   ToolTip.Tip="160m. Returns to your last frequency, mode and filters on this band."/>
-          <Button Grid.Column="3" Content="80" Classes="mscc-gold" Command="{Binding SelectBandCommand}" CommandParameter="80"
+          <Button Grid.Column="3" Content="80" Classes="mscc-bar" Command="{Binding SelectBandCommand}" CommandParameter="80"
                   IsEnabled="{Binding HfBandsEnabled}" Classes.mscc-selected="{Binding BandIs80}"
                   MinHeight="26" FontSize="11" HorizontalAlignment="Stretch"
                   HorizontalContentAlignment="Center" VerticalContentAlignment="Center"
                   ToolTip.Tip="80m. Returns to your last frequency, mode and filters on this band."/>
-          <Button Grid.Column="4" Content="60" Classes="mscc-gold" Command="{Binding SelectBandCommand}" CommandParameter="60"
+          <Button Grid.Column="4" Content="60" Classes="mscc-bar" Command="{Binding SelectBandCommand}" CommandParameter="60"
                   IsEnabled="{Binding HfBandsEnabled}" Classes.mscc-selected="{Binding BandIs60}"
                   MinHeight="26" FontSize="11" HorizontalAlignment="Stretch"
                   HorizontalContentAlignment="Center" VerticalContentAlignment="Center"
                   ToolTip.Tip="60m. Returns to your last frequency, mode and filters on this band."/>
-          <Button Grid.Column="5" Content="40" Classes="mscc-gold" Command="{Binding SelectBandCommand}" CommandParameter="40"
+          <Button Grid.Column="5" Content="40" Classes="mscc-bar" Command="{Binding SelectBandCommand}" CommandParameter="40"
                   IsEnabled="{Binding HfBandsEnabled}" Classes.mscc-selected="{Binding BandIs40}"
                   MinHeight="26" FontSize="11" HorizontalAlignment="Stretch"
                   HorizontalContentAlignment="Center" VerticalContentAlignment="Center"
                   ToolTip.Tip="40m. Returns to your last frequency, mode and filters on this band."/>
-          <Button Grid.Column="6" Content="30" Classes="mscc-gold" Command="{Binding SelectBandCommand}" CommandParameter="30"
+          <Button Grid.Column="6" Content="30" Classes="mscc-bar" Command="{Binding SelectBandCommand}" CommandParameter="30"
                   IsEnabled="{Binding HfBandsEnabled}" Classes.mscc-selected="{Binding BandIs30}"
                   MinHeight="26" FontSize="11" HorizontalAlignment="Stretch"
                   HorizontalContentAlignment="Center" VerticalContentAlignment="Center"
                   ToolTip.Tip="30m. Returns to your last frequency, mode and filters on this band."/>
-          <Button Grid.Column="7" Content="20" Classes="mscc-gold" Command="{Binding SelectBandCommand}" CommandParameter="20"
+          <Button Grid.Column="7" Content="20" Classes="mscc-bar" Command="{Binding SelectBandCommand}" CommandParameter="20"
                   IsEnabled="{Binding HfBandsEnabled}" Classes.mscc-selected="{Binding BandIs20}"
                   MinHeight="26" FontSize="11" HorizontalAlignment="Stretch"
                   HorizontalContentAlignment="Center" VerticalContentAlignment="Center"
                   ToolTip.Tip="20m. Returns to your last frequency, mode and filters on this band."/>
-          <Button Grid.Column="8" Content="17" Classes="mscc-gold" Command="{Binding SelectBandCommand}" CommandParameter="17"
+          <Button Grid.Column="8" Content="17" Classes="mscc-bar" Command="{Binding SelectBandCommand}" CommandParameter="17"
                   IsEnabled="{Binding HfBandsEnabled}" Classes.mscc-selected="{Binding BandIs17}"
                   MinHeight="26" FontSize="11" HorizontalAlignment="Stretch"
                   HorizontalContentAlignment="Center" VerticalContentAlignment="Center"
                   ToolTip.Tip="17m. Returns to your last frequency, mode and filters on this band."/>
-          <Button Grid.Column="9" Content="15" Classes="mscc-gold" Command="{Binding SelectBandCommand}" CommandParameter="15"
+          <Button Grid.Column="9" Content="15" Classes="mscc-bar" Command="{Binding SelectBandCommand}" CommandParameter="15"
                   IsEnabled="{Binding HfBandsEnabled}" Classes.mscc-selected="{Binding BandIs15}"
                   MinHeight="26" FontSize="11" HorizontalAlignment="Stretch"
                   HorizontalContentAlignment="Center" VerticalContentAlignment="Center"
                   ToolTip.Tip="15m. Returns to your last frequency, mode and filters on this band."/>
-          <Button Grid.Column="10" Content="12" Classes="mscc-gold" Command="{Binding SelectBandCommand}" CommandParameter="12"
+          <Button Grid.Column="10" Content="12" Classes="mscc-bar" Command="{Binding SelectBandCommand}" CommandParameter="12"
                   IsEnabled="{Binding HfBandsEnabled}" Classes.mscc-selected="{Binding BandIs12}"
                   MinHeight="26" FontSize="11" HorizontalAlignment="Stretch"
                   HorizontalContentAlignment="Center" VerticalContentAlignment="Center"
                   ToolTip.Tip="12m. Returns to your last frequency, mode and filters on this band."/>
-          <Button Grid.Column="11" Content="10" Classes="mscc-gold" Command="{Binding SelectBandCommand}" CommandParameter="10"
+          <Button Grid.Column="11" Content="10" Classes="mscc-bar" Command="{Binding SelectBandCommand}" CommandParameter="10"
                   IsEnabled="{Binding HfBandsEnabled}" Classes.mscc-selected="{Binding BandIs10}"
                   MinHeight="26" FontSize="11" HorizontalAlignment="Stretch"
                   HorizontalContentAlignment="Center" VerticalContentAlignment="Center"
                   ToolTip.Tip="10m. Returns to your last frequency, mode and filters on this band."/>
-          <Button Grid.Column="12" Content="{Binding GenButtonText}" Classes="mscc-gold"
+          <Button Grid.Column="12" Content="{Binding GenButtonText}" Classes="mscc-bar"
                   Command="{Binding SelectGenCommand}"
                   Classes.mscc-selected="{Binding BandIsGen}"
                   MinWidth="52" MinHeight="26" FontSize="10" FontWeight="Bold"
@@ -1580,29 +1584,29 @@
           <UniformGrid Columns="2" Rows="3">
             <Button Content="PTT" Margin="2" MinHeight="28" HorizontalAlignment="Stretch"
                     Command="{Binding TogglePttCommand}"
-                    Classes="mscc-gold"
+                    Classes="mscc-bar"
                     Classes.mscc-tx-on="{Binding PttOn}"
                     ToolTip.Tip="Transmit (PTT) for voice modes (USB/LSB/AM…). In CW, Proficio keys PA from the keyer/paddle line — host PTT does not drive CW RF. Red = host PTT latched."/>
             <Button Content="TUN" Margin="2" MinHeight="28" HorizontalAlignment="Stretch"
                     Command="{Binding ToggleTuneCommand}"
-                    Classes="mscc-gold"
+                    Classes="mscc-bar"
                     Classes.mscc-tx-on="{Binding TuneMode}"
                     ToolTip.Tip="Antenna tune: TUNE mode + carrier (Tune Power). Red when on."/>
             <Button Content="{Binding AgcButtonText}" Margin="2" MinHeight="28" HorizontalAlignment="Stretch"
                     Command="{Binding CycleAgcCommand}"
-                    Classes="mscc-gold"
+                    Classes="mscc-bar"
                     ToolTip.Tip="AGC speed: cycle SLOW → MED → FAST (same as WPF AGC button)"/>
             <Button Content="AMP" Margin="2" MinHeight="28" HorizontalAlignment="Stretch"
                     Command="{Binding ToggleAmpCommand}"
-                    Classes="mscc-gold"
+                    Classes="mscc-bar"
                     Classes.mscc-tx-on="{Binding AmpOn}"
                     ToolTip.Tip="AMP on: use the AMP CAL power table to drive an external amplifier (Multus amps need ~75% drive; full 5 W overdrives them). AMP off: normal QRP, up to 5 W."/>
             <Button Content="CMP" Margin="2" MinHeight="28" HorizontalAlignment="Stretch"
                     Command="{Binding ToggleCompressionCommand}"
-                    Classes="mscc-gold"
+                    Classes="mscc-bar"
                     Classes.mscc-selected="{Binding CompressionOn}"
                     ToolTip.Tip="Speech compression on/off. Level = COMP slider."/>
-            <Button Content="S/W" Classes="mscc-gold" Margin="2" MinHeight="28" HorizontalAlignment="Stretch"
+            <Button Content="S/W" Classes="mscc-bar" Margin="2" MinHeight="28" HorizontalAlignment="Stretch"
                     Click="SwButton_OnClick"
                     ToolTip.Tip="Spectrum / waterfall controls"/>
           </UniformGrid>
@@ -1636,23 +1640,23 @@
 
           <TextBlock Classes="mscc-section" Text="MODE"/>
           <UniformGrid Columns="3" Rows="2">
-            <Button Content="LSB" Classes="mscc-gold" Command="{Binding SetModeCommand}" CommandParameter="LSB"
+            <Button Content="LSB" Classes="mscc-bar" Command="{Binding SetModeCommand}" CommandParameter="LSB"
                     Margin="2" MinHeight="28" HorizontalAlignment="Stretch"
                     Classes.mscc-selected="{Binding ModeIsLsb}"/>
-            <Button Content="USB" Classes="mscc-gold" Command="{Binding SetModeCommand}" CommandParameter="USB"
+            <Button Content="USB" Classes="mscc-bar" Command="{Binding SetModeCommand}" CommandParameter="USB"
                     Margin="2" MinHeight="28" HorizontalAlignment="Stretch"
                     Classes.mscc-selected="{Binding ModeIsUsb}"/>
-            <Button Content="DIG-U" Classes="mscc-gold" Command="{Binding SetModeCommand}" CommandParameter="DIG-U"
+            <Button Content="DIG-U" Classes="mscc-bar" Command="{Binding SetModeCommand}" CommandParameter="DIG-U"
                     Margin="2" MinHeight="28" HorizontalAlignment="Stretch" FontSize="9"
                     Classes.mscc-selected="{Binding ModeIsDigU}"
                     ToolTip.Tip="DIG-U: upper sideband for digital modes. Hi filter goes down to 1.4k / 1.0k; switches audio to Digital."/>
-            <Button Content="CW" Classes="mscc-gold" Command="{Binding SetModeCommand}" CommandParameter="CW"
+            <Button Content="CW" Classes="mscc-bar" Command="{Binding SetModeCommand}" CommandParameter="CW"
                     Margin="2" MinHeight="28" HorizontalAlignment="Stretch"
                     Classes.mscc-selected="{Binding ModeIsCw}"/>
-            <Button Content="AM" Classes="mscc-gold" Command="{Binding SetModeCommand}" CommandParameter="AM"
+            <Button Content="AM" Classes="mscc-bar" Command="{Binding SetModeCommand}" CommandParameter="AM"
                     Margin="2" MinHeight="28" HorizontalAlignment="Stretch"
                     Classes.mscc-selected="{Binding ModeIsAm}"/>
-            <Button Content="FM" Classes="mscc-gold" Command="{Binding SetModeCommand}" CommandParameter="FM"
+            <Button Content="FM" Classes="mscc-bar" Command="{Binding SetModeCommand}" CommandParameter="FM"
                     Margin="2" MinHeight="28" HorizontalAlignment="Stretch"
                     Classes.mscc-selected="{Binding ModeIsFm}"
                     ToolTip.Tip="Narrow FM. Uncheck Simplex → VFO-B = A−100 kHz TX (split)."/>
@@ -1665,19 +1669,19 @@
 
           <!-- Equal-width cells so MON is not clipped on narrow right rail -->
           <UniformGrid Columns="4" Margin="0,0,0,1">
-            <Button Content="NB" Classes="mscc-gold" Command="{Binding ToggleNbCommand}"
+            <Button Content="NB" Classes="mscc-bar" Command="{Binding ToggleNbCommand}"
                     Margin="1" MinHeight="26" HorizontalAlignment="Stretch" FontSize="10" Padding="2,1"
                     Classes.mscc-selected="{Binding NbOn}"
                     ToolTip.Tip="Noise blanker on/off"/>
-            <Button Content="NR" Classes="mscc-gold" Command="{Binding ToggleNrCommand}"
+            <Button Content="NR" Classes="mscc-bar" Command="{Binding ToggleNrCommand}"
                     Margin="1" MinHeight="26" HorizontalAlignment="Stretch" FontSize="10" Padding="2,1"
                     Classes.mscc-selected="{Binding NrOn}"
                     ToolTip.Tip="Noise reduction on/off"/>
-            <Button Content="AN" Classes="mscc-gold" Command="{Binding ToggleAnCommand}"
+            <Button Content="AN" Classes="mscc-bar" Command="{Binding ToggleAnCommand}"
                     Margin="1" MinHeight="26" HorizontalAlignment="Stretch" FontSize="10" Padding="2,1"
                     Classes.mscc-selected="{Binding AnOn}"
                     ToolTip.Tip="Auto notch on/off"/>
-            <Button Content="MON" Classes="mscc-gold" Command="{Binding ToggleMonitorCommand}"
+            <Button Content="MON" Classes="mscc-bar" Command="{Binding ToggleMonitorCommand}"
                     Margin="1" MinHeight="26" HorizontalAlignment="Stretch" FontSize="10" Padding="2,1"
                     Classes.mscc-selected="{Binding MonitorOn}"
                     ToolTip.Tip="Monitor: hear your own transmit audio."/>
@@ -1692,30 +1696,30 @@
           </Grid>
           <Grid ColumnDefinitions="32,*,*,*" Height="20" Margin="0,0,0,1">
             <TextBlock Classes="mscc-label" Text="Thr" ToolTip.Tip="Noise blanker threshold: Low 8x / Med 6x / High 5x the band level"/>
-            <Button Grid.Column="1" Content="LOW" Classes="mscc-gold" Command="{Binding NbLowCommand}"
+            <Button Grid.Column="1" Content="LOW" Classes="mscc-bar" Command="{Binding NbLowCommand}"
                     Margin="1" MinHeight="18" HorizontalAlignment="Stretch" FontSize="8" Padding="1,0"
                     Classes.mscc-selected="{Binding NbLowSelected}" IsEnabled="{Binding IsConnected}"
                     ToolTip.Tip="Low: blanks only big pulses (8x the band level)"/>
-            <Button Grid.Column="2" Content="MED" Classes="mscc-gold" Command="{Binding NbMedCommand}"
+            <Button Grid.Column="2" Content="MED" Classes="mscc-bar" Command="{Binding NbMedCommand}"
                     Margin="1" MinHeight="18" HorizontalAlignment="Stretch" FontSize="8" Padding="1,0"
                     Classes.mscc-selected="{Binding NbMedSelected}" IsEnabled="{Binding IsConnected}"
                     ToolTip.Tip="Medium: 6x the band level (a good start)"/>
-            <Button Grid.Column="3" Content="HIGH" Classes="mscc-gold" Command="{Binding NbHighCommand}"
+            <Button Grid.Column="3" Content="HIGH" Classes="mscc-bar" Command="{Binding NbHighCommand}"
                     Margin="1" MinHeight="18" HorizontalAlignment="Stretch" FontSize="8" Padding="1,0"
                     Classes.mscc-selected="{Binding NbHighSelected}" IsEnabled="{Binding IsConnected}"
                     ToolTip.Tip="High: blanks smaller pulses too (5x the band level)"/>
           </Grid>
           <Grid ColumnDefinitions="32,*,*,*" Height="20" Margin="0,0,0,1">
             <TextBlock Classes="mscc-label" Text="NR" ToolTip.Tip="Noise reduction level (NR button = on/off)"/>
-            <Button Grid.Column="1" Content="LOW" Classes="mscc-gold" Command="{Binding NrLowCommand}"
+            <Button Grid.Column="1" Content="LOW" Classes="mscc-bar" Command="{Binding NrLowCommand}"
                     Margin="1" MinHeight="18" HorizontalAlignment="Stretch" FontSize="8" Padding="1,0"
                     Classes.mscc-selected="{Binding NrLowSelected}" IsEnabled="{Binding IsConnected}"
                     ToolTip.Tip="Low noise reduction (15)"/>
-            <Button Grid.Column="2" Content="MED" Classes="mscc-gold" Command="{Binding NrMedCommand}"
+            <Button Grid.Column="2" Content="MED" Classes="mscc-bar" Command="{Binding NrMedCommand}"
                     Margin="1" MinHeight="18" HorizontalAlignment="Stretch" FontSize="8" Padding="1,0"
                     Classes.mscc-selected="{Binding NrMedSelected}" IsEnabled="{Binding IsConnected}"
                     ToolTip.Tip="Medium noise reduction (50)"/>
-            <Button Grid.Column="3" Content="HIGH" Classes="mscc-gold" Command="{Binding NrHighCommand}"
+            <Button Grid.Column="3" Content="HIGH" Classes="mscc-bar" Command="{Binding NrHighCommand}"
                     Margin="1" MinHeight="18" HorizontalAlignment="Stretch" FontSize="8" Padding="1,0"
                     Classes.mscc-selected="{Binding NrHighSelected}" IsEnabled="{Binding IsConnected}"
                     ToolTip.Tip="High noise reduction (85, more warble)"/>
@@ -1723,23 +1727,23 @@
 
           <TextBlock Classes="mscc-section" Text="CW"/>
           <StackPanel Orientation="Horizontal" Spacing="2" Margin="0,0,0,2">
-            <Button Content="−" Classes="mscc-gold" Width="28"
+            <Button Content="−" Classes="mscc-bar" Width="28"
                     Command="{Binding DecCwSpeedCommand}"
                     ToolTip.Tip="CW speed −1 WPM"/>
             <TextBlock Text="{Binding CwSpeed}" Foreground="#00FFAA" FontWeight="Bold" FontSize="12"
                        VerticalAlignment="Center" Width="24" TextAlignment="Center"/>
-            <Button Content="+" Classes="mscc-gold" Width="28"
+            <Button Content="+" Classes="mscc-bar" Width="28"
                     Command="{Binding IncCwSpeedCommand}"
                     ToolTip.Tip="CW speed +1 WPM"/>
-            <Button Content="{Binding CwPitchLabel}" Classes="mscc-gold" Width="56" Margin="4,0,0,0"
+            <Button Content="{Binding CwPitchLabel}" Classes="mscc-bar" Width="56" Margin="4,0,0,0"
                     Command="{Binding CycleCwPitchCommand}"
                     ToolTip.Tip="Cycle CW pitch (400/600/800/1000 Hz)"/>
           </StackPanel>
 
-          <Button Content="LOG" Classes="mscc-gold" HorizontalAlignment="Stretch" Margin="0,4,0,0"
+          <Button Content="LOG" Classes="mscc-bar" HorizontalAlignment="Stretch" Margin="0,4,0,0"
                   MinHeight="28" Click="LogButton_OnClick"
                   ToolTip.Tip="Open debug log window"/>
-          <Button Content="Save settings" Classes="mscc-gold" HorizontalAlignment="Stretch" Margin="0,4,0,0"
+          <Button Content="Save settings" Classes="mscc-bar" HorizontalAlignment="Stretch" Margin="0,4,0,0"
                   MinHeight="28" Command="{Binding SaveSettingsCommand}"
                   ToolTip.Tip="Park the calibration files on the host for this radio type. Needed for AMP CAL, and for radios without calibration storage. QRP CAL, TX IQ and RX IQ are stored in the radio on current firmware."/>
         </StackPanel>

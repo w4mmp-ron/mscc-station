@@ -41,6 +41,43 @@
     <SolidColorBrush x:Key="UiSliderThumbBorderBrush" Color="#C5CAD3"/>
     <SolidColorBrush x:Key="UiSliderValueBrush" Color="#FFE14A"/>
 
+    <!-- Light-bar buttons (band, mode, filter/step, left/right panels). Tabs stay gold. -->
+    <LinearGradientBrush x:Key="UiBarFaceBrush" StartPoint="0%,0%" EndPoint="0%,100%">
+      <GradientStop Offset="0" Color="#3C424C"/>
+      <GradientStop Offset="0.5" Color="#1C1F24"/>
+      <GradientStop Offset="1" Color="#0B0C0E"/>
+    </LinearGradientBrush>
+    <LinearGradientBrush x:Key="UiBarFaceHoverBrush" StartPoint="0%,0%" EndPoint="0%,100%">
+      <GradientStop Offset="0" Color="#4A515C"/>
+      <GradientStop Offset="0.5" Color="#262A31"/>
+      <GradientStop Offset="1" Color="#15171B"/>
+    </LinearGradientBrush>
+    <LinearGradientBrush x:Key="UiBarFacePressedBrush" StartPoint="0%,0%" EndPoint="0%,100%">
+      <GradientStop Offset="0" Color="#101114"/>
+      <GradientStop Offset="0.5" Color="#1A1D22"/>
+      <GradientStop Offset="1" Color="#24282E"/>
+    </LinearGradientBrush>
+    <LinearGradientBrush x:Key="UiBarShineBrush" StartPoint="0%,0%" EndPoint="0%,100%">
+      <GradientStop Offset="0" Color="#55FFFFFF"/>
+      <GradientStop Offset="1" Color="#00FFFFFF"/>
+    </LinearGradientBrush>
+    <SolidColorBrush x:Key="UiBarOutlineBrush" Color="#FF000000"/>
+    <SolidColorBrush x:Key="UiBarEdgeLightBrush" Color="#66707A86"/>
+    <SolidColorBrush x:Key="UiBarEdgeDarkBrush" Color="#CC000000"/>
+    <SolidColorBrush x:Key="UiBarSlotOffBrush" Color="#3A3D42"/>
+    <LinearGradientBrush x:Key="UiBarSlotOnBrush" StartPoint="0%,0%" EndPoint="0%,100%">
+      <GradientStop Offset="0" Color="#8CC8FF"/>
+      <GradientStop Offset="0.5" Color="#2E8BFF"/>
+      <GradientStop Offset="1" Color="#1A5FD0"/>
+    </LinearGradientBrush>
+    <LinearGradientBrush x:Key="UiBarSlotTxBrush" StartPoint="0%,0%" EndPoint="0%,100%">
+      <GradientStop Offset="0" Color="#FF6B60"/>
+      <GradientStop Offset="1" Color="#E53935"/>
+    </LinearGradientBrush>
+    <SolidColorBrush x:Key="UiBarTextBrush" Color="#F0F0F0"/>
+    <SolidColorBrush x:Key="UiBarTextTxBrush" Color="#FF8A80"/>
+    <SolidColorBrush x:Key="UiBarTextDisabledBrush" Color="#8A8A8A"/>
+
     <ControlTheme x:Key="MsccPhysicalTrackButton" TargetType="RepeatButton">
       <Setter Property="Background" Value="Transparent"/>
       <Setter Property="Focusable" Value="False"/>
@@ -260,6 +297,94 @@
         <Setter Property="Opacity" Value="0.45"/>
       </Style>
     </ControlTheme>
+
+    <!-- Dark glossy face, shiny top, 3 px slot. Selected lights the slot only. -->
+    <ControlTheme x:Key="MsccLightBarButtonTheme" TargetType="Button">
+      <Setter Property="Background" Value="{DynamicResource UiBarFaceBrush}"/>
+      <Setter Property="Foreground" Value="{DynamicResource UiBarTextBrush}"/>
+      <Setter Property="FontWeight" Value="Bold"/>
+      <Setter Property="FontSize" Value="10"/>
+      <Setter Property="Padding" Value="4,0"/>
+      <Setter Property="MinHeight" Value="18"/>
+      <Setter Property="HorizontalContentAlignment" Value="Center"/>
+      <Setter Property="VerticalContentAlignment" Value="Center"/>
+      <Setter Property="CornerRadius" Value="3"/>
+      <Setter Property="Template">
+        <ControlTemplate>
+          <Border CornerRadius="3"
+                  BorderThickness="1"
+                  BorderBrush="{DynamicResource UiBarOutlineBrush}"
+                  Background="{TemplateBinding Background}"
+                  ClipToBounds="True">
+            <Grid RowDefinitions="0.45*,0.55*">
+              <Border x:Name="RaisedLight"
+                      Grid.RowSpan="2"
+                      BorderThickness="1,1,0,0"
+                      BorderBrush="{DynamicResource UiBarEdgeLightBrush}"
+                      CornerRadius="2"
+                      IsHitTestVisible="False"/>
+              <Border x:Name="RaisedDark"
+                      Grid.RowSpan="2"
+                      BorderThickness="0,0,1,1"
+                      BorderBrush="{DynamicResource UiBarEdgeDarkBrush}"
+                      CornerRadius="2"
+                      IsHitTestVisible="False"/>
+              <Border x:Name="Shine"
+                      Grid.Row="0"
+                      Margin="1,1,1,0"
+                      Background="{DynamicResource UiBarShineBrush}"
+                      CornerRadius="2,2,0,0"
+                      IsHitTestVisible="False"/>
+              <ContentPresenter x:Name="PART_ContentPresenter"
+                                Grid.RowSpan="2"
+                                Content="{TemplateBinding Content}"
+                                ContentTemplate="{TemplateBinding ContentTemplate}"
+                                Padding="{TemplateBinding Padding}"
+                                Foreground="{TemplateBinding Foreground}"
+                                FontSize="{TemplateBinding FontSize}"
+                                FontWeight="{TemplateBinding FontWeight}"
+                                HorizontalContentAlignment="{TemplateBinding HorizontalContentAlignment}"
+                                VerticalContentAlignment="{TemplateBinding VerticalContentAlignment}"
+                                RecognizesAccessKey="True"
+                                Margin="0,0,0,6"/>
+              <Border x:Name="LightBar"
+                      Grid.RowSpan="2"
+                      Height="3"
+                      VerticalAlignment="Bottom"
+                      Margin="5,0,5,2"
+                      CornerRadius="1"
+                      Background="{DynamicResource UiBarSlotOffBrush}"
+                      IsHitTestVisible="False"/>
+            </Grid>
+          </Border>
+        </ControlTemplate>
+      </Setter>
+      <Style Selector="^:pointerover">
+        <Setter Property="Background" Value="{DynamicResource UiBarFaceHoverBrush}"/>
+      </Style>
+      <Style Selector="^:pressed">
+        <Setter Property="Background" Value="{DynamicResource UiBarFacePressedBrush}"/>
+      </Style>
+      <Style Selector="^:pressed /template/ Border#RaisedLight">
+        <Setter Property="BorderBrush" Value="{DynamicResource UiBarEdgeDarkBrush}"/>
+      </Style>
+      <Style Selector="^:pressed /template/ Border#RaisedDark">
+        <Setter Property="BorderBrush" Value="{DynamicResource UiBarEdgeLightBrush}"/>
+      </Style>
+      <Style Selector="^.mscc-selected /template/ Border#LightBar">
+        <Setter Property="Background" Value="{DynamicResource UiBarSlotOnBrush}"/>
+      </Style>
+      <Style Selector="^.mscc-tx-on /template/ Border#LightBar">
+        <Setter Property="Background" Value="{DynamicResource UiBarSlotTxBrush}"/>
+      </Style>
+      <Style Selector="^.mscc-tx-on">
+        <Setter Property="Foreground" Value="{DynamicResource UiBarTextTxBrush}"/>
+      </Style>
+      <Style Selector="^:disabled">
+        <Setter Property="Opacity" Value="0.45"/>
+        <Setter Property="Foreground" Value="{DynamicResource UiBarTextDisabledBrush}"/>
+      </Style>
+    </ControlTheme>
   </Application.Resources>
 
   <Application.Styles>
@@ -268,6 +393,10 @@
     <!-- Fluent's implicit CheckBox theme is 20 px / MinHeight 32. Force the small one. -->
     <Style Selector="CheckBox">
       <Setter Property="Theme" Value="{StaticResource {x:Type CheckBox}}"/>
+    </Style>
+
+    <Style Selector="Button.mscc-bar">
+      <Setter Property="Theme" Value="{StaticResource MsccLightBarButtonTheme}"/>
     </Style>
 
     <!--
