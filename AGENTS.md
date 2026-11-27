@@ -60,7 +60,7 @@ carries them once and stays as it is.
 
 ## Current work
 
-**Active — cmd-098 (ubuntu-stew / stew-HP):** Avalonia VFO A/B faces as a recessed backlit LCD (cream face, dark digits, smaller Hz digits, no TX) with a lower strip showing the PowerSDR US band text for the tuned frequency (`Assets/bandplan-us.csv`). VFO sizes unchanged. Brief: `.mscc-coord/cmd-098-avalonia-lcd-vfo.md`. Follows cmd-097b. No WPF change, no version bump, no installer, no GitHub Release. Build commits; Stew pushes. Leave rpi/, Solidus/, installers/rpi, and the WPF tree alone.
+**Active — cmd-099 (ubuntu-stew / stew-HP):** Avalonia VFO polish: no green border (dimming marks the idle VFO), red active dot by the VFO label, larger labels/mode/digits, no hover step text; top row fits 1024×600 (VFOs 154 px each, ALC fully visible); new light-bar row under the VFOs: A>B, B>A, A<>B, SPLIT (existing CMD_SET_SPLIT path, RX A / TX B), STEP. Brief: `.mscc-coord/cmd-099-avalonia-vfo-polish-row.md`. Follows cmd-098. No WPF change, no new protocol commands, no version bump, no installer, no GitHub Release. Build commits; Stew pushes. Leave rpi/, Solidus/, installers/rpi, and the WPF tree alone.
 
 Older notes below are stale as of 2026-10-07. Check `.mscc-coord/COMMANDS.yaml` and [`handoff.md`](handoff.md) for historical open / pending items.
 
