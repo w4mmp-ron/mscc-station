@@ -488,191 +488,203 @@
         </TabItem>
 
         <TabItem Header="CW">
-          <Border Background="Transparent" BorderThickness="0" Padding="10" Margin="0">
-            <ScrollViewer HorizontalScrollBarVisibility="Auto" VerticalScrollBarVisibility="Auto">
-              <StackPanel Spacing="10">
-                <TextBlock Text="CW CONTROLS" Classes="mscc-face-heading"/>
-                <TextBlock Text="Keyer / spacing / paddle / weight / pitch. Speed &amp; pitch also on right rail."
-                           FontSize="10" Foreground="{DynamicResource UiFaceMutedTextBrush}" TextWrapping="Wrap"/>
+          <Border Classes="mscc-tab-well" Padding="10">
+            <ScrollViewer HorizontalScrollBarVisibility="Disabled" VerticalScrollBarVisibility="Auto">
+              <StackPanel Spacing="0">
+                <TextBlock Text="CW CONTROLS" Classes="mscc-face-heading" Margin="0,0,0,6"/>
 
                 <CheckBox Content="Use external electronic keyer (legacy)"
                           IsChecked="{Binding ExternalElectronicKeyer}"
                           Foreground="{DynamicResource UiFaceMutedTextBrush}" FontSize="11"
+                          MinWidth="0" Margin="0,0,0,4"
                           ToolTip.Tip="Check if you use an external keyer or a Legacy radio. Grays the built-in keyer controls (HOLD still works). Servers must restart to apply."/>
                 <TextBlock Text="Legacy mode: PIC keyer controls grayed — HOLD stays live. Restart backends after change."
                            FontSize="10" Foreground="{DynamicResource UiFaceWarnTextBrush}" TextWrapping="Wrap"
+                           Margin="0,0,0,6"
                            IsVisible="{Binding ExternalElectronicKeyer}"/>
 
-                <!-- Lists row -->
-                <StackPanel Orientation="Horizontal" Spacing="8">
-                  <StackPanel Width="100" IsEnabled="{Binding PicKeyerControlsEnabled}">
-                    <TextBlock Text="KEYER MODE" Foreground="White" FontSize="10" HorizontalAlignment="Center"/>
-                    <ListBox Height="78"
-                             ItemsSource="{Binding CwKeyerModeOptions}"
-                             SelectedIndex="{Binding CwKeyerMode}"
-                             Background="#FF222222" Foreground="White" FontSize="11"
-                             IsEnabled="{Binding IsConnected}"/>
-                  </StackPanel>
-                  <StackPanel Width="88" IsEnabled="{Binding PicKeyerControlsEnabled}">
-                    <TextBlock Text="SPACING" Foreground="White" FontSize="10" HorizontalAlignment="Center"/>
-                    <ListBox Height="56"
-                             ItemsSource="{Binding CwSpacingOptions}"
-                             SelectedIndex="{Binding CwSpacing}"
-                             Background="#FF222222" Foreground="White" FontSize="11"
-                             IsEnabled="{Binding IsConnected}"/>
-                  </StackPanel>
-                  <StackPanel Width="88" IsEnabled="{Binding PicKeyerControlsEnabled}">
-                    <TextBlock Text="PADDLE" Foreground="White" FontSize="10" HorizontalAlignment="Center"/>
-                    <ListBox Height="56"
-                             ItemsSource="{Binding CwPaddleOptions}"
-                             SelectedIndex="{Binding CwPaddle}"
-                             Background="#FF222222" Foreground="White" FontSize="11"
-                             IsEnabled="{Binding IsConnected}"/>
-                  </StackPanel>
-                  <StackPanel Width="72" IsEnabled="{Binding PicKeyerControlsEnabled}">
-                    <TextBlock Text="WEIGHT" Foreground="White" FontSize="10" HorizontalAlignment="Center"/>
-                    <ListBox Height="78"
-                             ItemsSource="{Binding CwWeightOptions}"
-                             SelectedIndex="{Binding CwWeightIndex}"
-                             Background="#FF222222" Foreground="White" FontSize="11"
-                             IsEnabled="{Binding IsConnected}"/>
-                  </StackPanel>
-                  <StackPanel Width="80">
-                    <TextBlock Text="PITCH" Foreground="White" FontSize="10" HorizontalAlignment="Center"/>
-                    <ListBox Height="100"
-                             ItemsSource="{Binding CwPitchOptions}"
-                             SelectedIndex="{Binding CwPitchIndex}"
-                             Background="#FF222222" Foreground="White" FontSize="11"
-                             IsEnabled="{Binding IsConnected}"/>
-                  </StackPanel>
-                </StackPanel>
-
-                <!-- Speed, Hold, toggles -->
-                <StackPanel Orientation="Horizontal" Spacing="16">
-                  <StackPanel Orientation="Horizontal" Spacing="4" IsEnabled="{Binding PicKeyerControlsEnabled}">
-                    <TextBlock Text="SPEED" Foreground="White" VerticalAlignment="Center" FontSize="10" Width="48"/>
-                    <Border Background="#FF444444" BorderBrush="#FF888888" BorderThickness="1" Padding="4,1" MinWidth="32">
-                      <TextBlock Text="{Binding CwSpeed}" FontSize="12" FontWeight="Bold"
-                                 Foreground="#00FFAA" HorizontalAlignment="Center"/>
-                    </Border>
-                    <Button Content="−" Classes="mscc-gold" Width="24" Height="22"
-                            Command="{Binding DecCwSpeedCommand}"/>
-                    <Button Content="+" Classes="mscc-gold" Width="24" Height="22"
-                            Command="{Binding IncCwSpeedCommand}"/>
-                    <TextBlock Text="WPM" Foreground="{DynamicResource UiFaceMutedTextBrush}" FontSize="9" VerticalAlignment="Center"/>
+                <!-- Lists, then SPEED / FARNSWORTH / HOLD stacked to the right. -->
+                <Grid ColumnDefinitions="Auto,Auto" HorizontalAlignment="Left" Margin="0,0,0,10">
+                  <StackPanel Grid.Column="0" Orientation="Horizontal" VerticalAlignment="Top">
+                    <StackPanel Margin="5,0" IsEnabled="{Binding PicKeyerControlsEnabled}">
+                      <TextBlock Text="KEYER MODE" Foreground="White" FontSize="10" HorizontalAlignment="Center"/>
+                      <ListBox Classes="mscc-cw-list" Height="75"
+                               ItemsSource="{Binding CwKeyerModeOptions}"
+                               SelectedIndex="{Binding CwKeyerMode}"
+                               Background="#FF222222" Foreground="White" FontSize="11"
+                               IsEnabled="{Binding IsConnected}"/>
+                    </StackPanel>
+                    <StackPanel Margin="5,0" IsEnabled="{Binding PicKeyerControlsEnabled}">
+                      <TextBlock Text="SPACING" Foreground="White" FontSize="10" HorizontalAlignment="Center"/>
+                      <ListBox Classes="mscc-cw-list" Height="60"
+                               ItemsSource="{Binding CwSpacingOptions}"
+                               SelectedIndex="{Binding CwSpacing}"
+                               Background="#FF222222" Foreground="White" FontSize="11"
+                               IsEnabled="{Binding IsConnected}"/>
+                    </StackPanel>
+                    <StackPanel Margin="5,0" IsEnabled="{Binding PicKeyerControlsEnabled}">
+                      <TextBlock Text="PADDLE" Foreground="White" FontSize="10" HorizontalAlignment="Center"/>
+                      <ListBox Classes="mscc-cw-list" Height="60"
+                               ItemsSource="{Binding CwPaddleOptions}"
+                               SelectedIndex="{Binding CwPaddle}"
+                               Background="#FF222222" Foreground="White" FontSize="11"
+                               IsEnabled="{Binding IsConnected}"/>
+                    </StackPanel>
+                    <StackPanel Margin="5,0" IsEnabled="{Binding PicKeyerControlsEnabled}">
+                      <TextBlock Text="WEIGHT" Foreground="White" FontSize="10" HorizontalAlignment="Center"/>
+                      <ListBox Classes="mscc-cw-list" Height="75"
+                               ItemsSource="{Binding CwWeightOptions}"
+                               SelectedIndex="{Binding CwWeightIndex}"
+                               Background="#FF222222" Foreground="White" FontSize="11"
+                               IsEnabled="{Binding IsConnected}"/>
+                    </StackPanel>
+                    <StackPanel Margin="5,0">
+                      <TextBlock Text="PITCH" Foreground="White" FontSize="10" HorizontalAlignment="Center"/>
+                      <ListBox Classes="mscc-cw-list" Height="100"
+                               ItemsSource="{Binding CwPitchOptions}"
+                               SelectedIndex="{Binding CwPitchIndex}"
+                               Background="#FF222222" Foreground="White" FontSize="11"
+                               IsEnabled="{Binding IsConnected}"/>
+                    </StackPanel>
                   </StackPanel>
 
-                  <StackPanel Orientation="Horizontal" Spacing="4" IsEnabled="{Binding PicKeyerControlsEnabled}"
-                              ToolTip.Tip="Farnsworth spacing. SPEED = letter speed; this opens gaps between letters/words (Off or 5–60). Used for CQ memory play, and for the paddles when PADDLE is ticked.">
-                    <TextBlock Text="FARNSWORTH" Foreground="White" VerticalAlignment="Center" FontSize="10" Width="72"/>
-                    <Border Background="#FF444444" BorderBrush="#FF888888" BorderThickness="1" Padding="4,1" MinWidth="36">
-                      <TextBlock Text="{Binding CwMemTextWpmLabel}" FontSize="12" FontWeight="Bold"
-                                 Foreground="#00FFAA" HorizontalAlignment="Center"/>
-                    </Border>
-                    <Button Content="−" Classes="mscc-gold" Width="24" Height="22"
-                            Command="{Binding DecCwMemTextWpmCommand}"/>
-                    <Button Content="+" Classes="mscc-gold" Width="24" Height="22"
-                            Command="{Binding IncCwMemTextWpmCommand}"/>
-                    <TextBlock Text="WPM" Foreground="{DynamicResource UiFaceMutedTextBrush}" FontSize="9" VerticalAlignment="Center"/>
-                    <CheckBox Content="PADDLE" IsChecked="{Binding CwPaddleFarnsworth}" Foreground="White" FontSize="10"
-                              VerticalAlignment="Center" Margin="6,0,0,0"
-                              ToolTip.Tip="Farnsworth on the paddles: the keyer sends your letters at SPEED with gaps set by FARNSWORTH (0x9D, kept by ms-sdr in cw.ini)."/>
-                  </StackPanel>
+                  <StackPanel Grid.Column="1" Margin="8,0,0,0" VerticalAlignment="Top">
+                    <StackPanel Orientation="Horizontal" Margin="0,0,0,8" IsEnabled="{Binding PicKeyerControlsEnabled}">
+                      <TextBlock Text="SPEED" Width="78" Foreground="White" VerticalAlignment="Center" FontSize="10"/>
+                      <Border Background="#FF444444" BorderBrush="#FF888888" BorderThickness="1" Padding="3,1" MinWidth="35">
+                        <TextBlock Text="{Binding CwSpeed}" FontSize="11" FontWeight="Bold"
+                                   Foreground="#00FFAA" HorizontalAlignment="Center"/>
+                      </Border>
+                      <Button Content="−" Classes="mscc-bar" Width="24" Height="22" Margin="2,0"
+                              FontSize="11" FontWeight="Bold"
+                              Command="{Binding DecCwSpeedCommand}"/>
+                      <Button Content="+" Classes="mscc-bar" Width="24" Height="22" Margin="0,0,2,0"
+                              FontSize="11" FontWeight="Bold"
+                              Command="{Binding IncCwSpeedCommand}"/>
+                      <TextBlock Text="WPM" Foreground="{DynamicResource UiFaceMutedTextBrush}" FontSize="9"
+                                 VerticalAlignment="Center" Margin="4,0"/>
+                    </StackPanel>
 
-                  <StackPanel Orientation="Horizontal" Spacing="4">
-                    <TextBlock Text="HOLD" Foreground="White" VerticalAlignment="Center" FontSize="10" Width="40"/>
-                    <Border Background="#FF444444" BorderBrush="#FF888888" BorderThickness="1" Padding="4,1" MinWidth="36">
-                      <TextBlock Text="{Binding CwHold}" FontSize="12" FontWeight="Bold"
-                                 Foreground="#00FFAA" HorizontalAlignment="Center"/>
-                    </Border>
-                    <Button Content="−" Classes="mscc-gold" Width="24" Height="22"
-                            Command="{Binding DecCwHoldCommand}"/>
-                    <Button Content="+" Classes="mscc-gold" Width="24" Height="22"
-                            Command="{Binding IncCwHoldCommand}"/>
-                    <TextBlock Text="ms" Foreground="{DynamicResource UiFaceMutedTextBrush}" FontSize="9" VerticalAlignment="Center"/>
-                  </StackPanel>
+                    <StackPanel Orientation="Horizontal" Margin="0,0,0,8" IsEnabled="{Binding PicKeyerControlsEnabled}"
+                                ToolTip.Tip="Farnsworth spacing. SPEED = letter speed; this opens gaps between letters/words (Off or 5–60). Used for CQ memory play, and for the paddles when PADDLE is ticked.">
+                      <TextBlock Text="FARNSWORTH" Width="78" Foreground="White" VerticalAlignment="Center" FontSize="10"/>
+                      <Border Background="#FF444444" BorderBrush="#FF888888" BorderThickness="1" Padding="3,1" MinWidth="35">
+                        <TextBlock Text="{Binding CwMemTextWpmLabel}" FontSize="11" FontWeight="Bold"
+                                   Foreground="#00FFAA" HorizontalAlignment="Center"/>
+                      </Border>
+                      <Button Content="−" Classes="mscc-bar" Width="24" Height="22" Margin="2,0"
+                              FontSize="11" FontWeight="Bold"
+                              Command="{Binding DecCwMemTextWpmCommand}"/>
+                      <Button Content="+" Classes="mscc-bar" Width="24" Height="22" Margin="0,0,2,0"
+                              FontSize="11" FontWeight="Bold"
+                              Command="{Binding IncCwMemTextWpmCommand}"/>
+                      <TextBlock Text="WPM" Foreground="{DynamicResource UiFaceMutedTextBrush}" FontSize="9"
+                                 VerticalAlignment="Center" Margin="4,0"/>
+                      <CheckBox Content="PADDLE" IsChecked="{Binding CwPaddleFarnsworth}" Foreground="White" FontSize="10"
+                                MinWidth="0" VerticalAlignment="Center" Margin="6,0,0,0"
+                                ToolTip.Tip="Farnsworth on the paddles: the keyer sends your letters at SPEED with gaps set by FARNSWORTH (0x9D, kept by ms-sdr in cw.ini)."/>
+                    </StackPanel>
 
-                  <CheckBox Content="POTENTIA / QSK" IsChecked="{Binding CwQsk}"
-                            IsEnabled="{Binding IsConnected}" Foreground="White" FontSize="10"
-                            VerticalAlignment="Center"
-                            ToolTip.Tip="Potentia 50/100 attached: amp line and PA keyed together (QSK, no amp key delay)."/>
-                </StackPanel>
+                    <StackPanel Orientation="Horizontal" Margin="0,0,0,10">
+                      <TextBlock Text="HOLD" Width="78" Foreground="White" VerticalAlignment="Center" FontSize="10"/>
+                      <Border Background="#FF444444" BorderBrush="#FF888888" BorderThickness="1" Padding="3,1" MinWidth="35">
+                        <TextBlock Text="{Binding CwHold}" FontSize="11" FontWeight="Bold"
+                                   Foreground="#00FFAA" HorizontalAlignment="Center"/>
+                      </Border>
+                      <Button Content="−" Classes="mscc-bar" Width="24" Height="22" Margin="2,0"
+                              FontSize="11" FontWeight="Bold"
+                              Command="{Binding DecCwHoldCommand}"/>
+                      <Button Content="+" Classes="mscc-bar" Width="24" Height="22" Margin="0,0,2,0"
+                              FontSize="11" FontWeight="Bold"
+                              Command="{Binding IncCwHoldCommand}"/>
+                      <TextBlock Text="ms" Foreground="{DynamicResource UiFaceMutedTextBrush}" FontSize="9"
+                                 VerticalAlignment="Center" Margin="4,0"/>
+                    </StackPanel>
+
+                    <CheckBox Content="POTENTIA / QSK" IsChecked="{Binding CwQsk}"
+                              IsEnabled="{Binding IsConnected}" Foreground="White" FontSize="10"
+                              MinWidth="0" VerticalAlignment="Center"
+                              ToolTip.Tip="Potentia 50/100 attached: amp line and PA keyed together (QSK, no amp key delay)."/>
+                  </StackPanel>
+                </Grid>
 
                 <!-- Keyer CQ memory: 4 slots × 48 chars; R=store to PIC, P=play once -->
-                <TextBlock Text="CQ MEMORY" Classes="mscc-face-heading" Margin="0,8,0,0"/>
+                <TextBlock Text="CQ MEMORY" Classes="mscc-face-heading" Margin="0,4,0,4"/>
                 <TextBlock Text="R stores slot to keyer (EEPROM). P plays that slot once. Paddle aborts play. Max 48 chars. Text sticky in client; not read back from radio."
-                           FontSize="10" Foreground="{DynamicResource UiFaceMutedTextBrush}" TextWrapping="Wrap"/>
+                           FontSize="10" Foreground="{DynamicResource UiFaceMutedTextBrush}" TextWrapping="Wrap"
+                           Margin="0,0,0,6"/>
 
-                <Grid ColumnDefinitions="*,Auto,Auto,Auto" RowDefinitions="Auto,Auto,Auto,Auto"
+                <Grid ColumnDefinitions="Auto,Auto,Auto,Auto" HorizontalAlignment="Left"
+                      RowDefinitions="Auto,Auto,Auto,Auto"
                       IsEnabled="{Binding KeyerMemPanelEnabled}">
                   <!-- Slot 0 -->
-                  <TextBox Grid.Row="0" Grid.Column="0" Margin="0,2,6,2" MaxLength="48"
+                  <TextBox Grid.Row="0" Grid.Column="0" Width="360" Margin="0,2,6,2" Padding="4,3" MaxLength="48"
                            Text="{Binding KeyerMem0}" FontSize="12" FontFamily="Consolas,Courier New,monospace"
                            Background="#FF222222" Foreground="#00FFAA" CaretBrush="#00FFAA"
                            PlaceholderText="Slot 0 message (max 48)"/>
                   <TextBlock Grid.Row="0" Grid.Column="1" Text="{Binding KeyerMem0Count}"
                              Foreground="{DynamicResource UiFaceMutedTextBrush}" FontSize="9" VerticalAlignment="Center" Margin="0,0,6,0" MinWidth="36"/>
-                  <Button Grid.Row="0" Grid.Column="2" Content="R" Classes="mscc-gold" Width="32" Height="26"
-                          Margin="0,2,4,2" FontWeight="Bold"
+                  <Button Grid.Row="0" Grid.Column="2" Content="R" Classes="mscc-bar" Width="30" Height="24"
+                          Margin="0,2,4,2" FontSize="11" FontWeight="Bold"
                           Command="{Binding RecordKeyerMemCommand}" CommandParameter="0"
                           IsEnabled="{Binding IsConnected}"
                           ToolTip.Tip="Store this message in the radio's keyer."/>
-                  <Button Grid.Row="0" Grid.Column="3" Content="P" Classes="mscc-gold" Width="32" Height="26"
-                          Margin="0,2,0,2" FontWeight="Bold"
+                  <Button Grid.Row="0" Grid.Column="3" Content="P" Classes="mscc-bar" Width="30" Height="24"
+                          Margin="0,2,0,2" FontSize="11" FontWeight="Bold"
                           Command="{Binding PlayKeyerMemCommand}" CommandParameter="0"
                           IsEnabled="{Binding IsConnected}"
                           ToolTip.Tip="Send this message once. Touch the paddle to stop."/>
 
                   <!-- Slot 1 -->
-                  <TextBox Grid.Row="1" Grid.Column="0" Margin="0,2,6,2" MaxLength="48"
+                  <TextBox Grid.Row="1" Grid.Column="0" Width="360" Margin="0,2,6,2" Padding="4,3" MaxLength="48"
                            Text="{Binding KeyerMem1}" FontSize="12" FontFamily="Consolas,Courier New,monospace"
                            Background="#FF222222" Foreground="#00FFAA" CaretBrush="#00FFAA"
                            PlaceholderText="Slot 1 message (max 48)"/>
                   <TextBlock Grid.Row="1" Grid.Column="1" Text="{Binding KeyerMem1Count}"
                              Foreground="{DynamicResource UiFaceMutedTextBrush}" FontSize="9" VerticalAlignment="Center" Margin="0,0,6,0" MinWidth="36"/>
-                  <Button Grid.Row="1" Grid.Column="2" Content="R" Classes="mscc-gold" Width="32" Height="26"
-                          Margin="0,2,4,2" FontWeight="Bold"
+                  <Button Grid.Row="1" Grid.Column="2" Content="R" Classes="mscc-bar" Width="30" Height="24"
+                          Margin="0,2,4,2" FontSize="11" FontWeight="Bold"
                           Command="{Binding RecordKeyerMemCommand}" CommandParameter="1"
                           IsEnabled="{Binding IsConnected}"
                           ToolTip.Tip="Store this message in the radio's keyer."/>
-                  <Button Grid.Row="1" Grid.Column="3" Content="P" Classes="mscc-gold" Width="32" Height="26"
-                          Margin="0,2,0,2" FontWeight="Bold"
+                  <Button Grid.Row="1" Grid.Column="3" Content="P" Classes="mscc-bar" Width="30" Height="24"
+                          Margin="0,2,0,2" FontSize="11" FontWeight="Bold"
                           Command="{Binding PlayKeyerMemCommand}" CommandParameter="1"
                           IsEnabled="{Binding IsConnected}"
                           ToolTip.Tip="Send this message once. Touch the paddle to stop."/>
 
                   <!-- Slot 2 -->
-                  <TextBox Grid.Row="2" Grid.Column="0" Margin="0,2,6,2" MaxLength="48"
+                  <TextBox Grid.Row="2" Grid.Column="0" Width="360" Margin="0,2,6,2" Padding="4,3" MaxLength="48"
                            Text="{Binding KeyerMem2}" FontSize="12" FontFamily="Consolas,Courier New,monospace"
                            Background="#FF222222" Foreground="#00FFAA" CaretBrush="#00FFAA"
                            PlaceholderText="Slot 2 message (max 48)"/>
                   <TextBlock Grid.Row="2" Grid.Column="1" Text="{Binding KeyerMem2Count}"
                              Foreground="{DynamicResource UiFaceMutedTextBrush}" FontSize="9" VerticalAlignment="Center" Margin="0,0,6,0" MinWidth="36"/>
-                  <Button Grid.Row="2" Grid.Column="2" Content="R" Classes="mscc-gold" Width="32" Height="26"
-                          Margin="0,2,4,2" FontWeight="Bold"
+                  <Button Grid.Row="2" Grid.Column="2" Content="R" Classes="mscc-bar" Width="30" Height="24"
+                          Margin="0,2,4,2" FontSize="11" FontWeight="Bold"
                           Command="{Binding RecordKeyerMemCommand}" CommandParameter="2"
                           IsEnabled="{Binding IsConnected}"
                           ToolTip.Tip="Store this message in the radio's keyer."/>
-                  <Button Grid.Row="2" Grid.Column="3" Content="P" Classes="mscc-gold" Width="32" Height="26"
-                          Margin="0,2,0,2" FontWeight="Bold"
+                  <Button Grid.Row="2" Grid.Column="3" Content="P" Classes="mscc-bar" Width="30" Height="24"
+                          Margin="0,2,0,2" FontSize="11" FontWeight="Bold"
                           Command="{Binding PlayKeyerMemCommand}" CommandParameter="2"
                           IsEnabled="{Binding IsConnected}"
                           ToolTip.Tip="Send this message once. Touch the paddle to stop."/>
 
                   <!-- Slot 3 -->
-                  <TextBox Grid.Row="3" Grid.Column="0" Margin="0,2,6,2" MaxLength="48"
+                  <TextBox Grid.Row="3" Grid.Column="0" Width="360" Margin="0,2,6,2" Padding="4,3" MaxLength="48"
                            Text="{Binding KeyerMem3}" FontSize="12" FontFamily="Consolas,Courier New,monospace"
                            Background="#FF222222" Foreground="#00FFAA" CaretBrush="#00FFAA"
                            PlaceholderText="Slot 3 message (max 48)"/>
                   <TextBlock Grid.Row="3" Grid.Column="1" Text="{Binding KeyerMem3Count}"
                              Foreground="{DynamicResource UiFaceMutedTextBrush}" FontSize="9" VerticalAlignment="Center" Margin="0,0,6,0" MinWidth="36"/>
-                  <Button Grid.Row="3" Grid.Column="2" Content="R" Classes="mscc-gold" Width="32" Height="26"
-                          Margin="0,2,4,2" FontWeight="Bold"
+                  <Button Grid.Row="3" Grid.Column="2" Content="R" Classes="mscc-bar" Width="30" Height="24"
+                          Margin="0,2,4,2" FontSize="11" FontWeight="Bold"
                           Command="{Binding RecordKeyerMemCommand}" CommandParameter="3"
                           IsEnabled="{Binding IsConnected}"
                           ToolTip.Tip="Store this message in the radio's keyer."/>
-                  <Button Grid.Row="3" Grid.Column="3" Content="P" Classes="mscc-gold" Width="32" Height="26"
-                          Margin="0,2,0,2" FontWeight="Bold"
+                  <Button Grid.Row="3" Grid.Column="3" Content="P" Classes="mscc-bar" Width="30" Height="24"
+                          Margin="0,2,0,2" FontSize="11" FontWeight="Bold"
                           Command="{Binding PlayKeyerMemCommand}" CommandParameter="3"
                           IsEnabled="{Binding IsConnected}"
                           ToolTip.Tip="Send this message once. Touch the paddle to stop."/>
@@ -680,16 +692,13 @@
 
                 <TextBlock Text="{Binding KeyerMemStatus}" FontSize="10" Foreground="{DynamicResource UiFaceMutedTextBrush}"
                            TextWrapping="Wrap" MinHeight="16"/>
-
-                <TextBlock Text="RIT is on the left rail (RIT + Offset + Clear)."
-                           FontSize="10" Foreground="{DynamicResource UiFaceMutedTextBrush}" Margin="0,4,0,0"/>
               </StackPanel>
             </ScrollViewer>
           </Border>
         </TabItem>
 
         <TabItem Header="RX/TX">
-          <Border Background="Transparent" BorderThickness="0" Padding="8" Margin="0">
+          <Border Classes="mscc-tab-well" Padding="8">
             <ScrollViewer HorizontalScrollBarVisibility="Disabled" VerticalScrollBarVisibility="Auto">
               <Grid ColumnDefinitions="*,*" ColumnSpacing="8">
                 <!-- Left: power levels + default filters placeholders -->
@@ -851,7 +860,7 @@
         </TabItem>
 
         <TabItem Header="FAVORITES">
-          <Border Background="Transparent" BorderThickness="0" CornerRadius="4" Padding="10" Margin="0">
+          <Border Classes="mscc-tab-well" Padding="10">
             <Grid RowDefinitions="Auto,Auto,*,Auto">
               <TextBlock Grid.Row="0" Text="FAVORITES (BY BAND)"
                          Classes="mscc-face-heading" FontSize="14" Margin="0,0,0,8"/>
@@ -925,7 +934,7 @@
         <!-- QRP CAL: enabled when AMP is off -->
         <TabItem x:Name="QrpCalTab" Header="QRP CAL" IsEnabled="{Binding IsPowerCalTabEnabled}"
                  ToolTip.Tip="QRP / transceiver power calibration (AMP must be off)">
-          <Border Background="Transparent" BorderThickness="0" CornerRadius="4" Padding="10" Margin="0">
+          <Border Classes="mscc-tab-well" Padding="10">
             <ScrollViewer VerticalScrollBarVisibility="Auto">
               <StackPanel Spacing="8">
                 <TextBlock Text="QRP / TRANSCEIVER" Classes="mscc-face-heading" FontSize="14"/>
@@ -1037,7 +1046,7 @@
         <!-- AMP CAL: enabled when AMP is on -->
         <TabItem x:Name="AmpCalTab" Header="AMP CAL" IsEnabled="{Binding IsAmpCalTabEnabled}"
                  ToolTip.Tip="Power amplifier calibration (AMP must be on)">
-          <Border Background="Transparent" BorderThickness="0" CornerRadius="4" Padding="10" Margin="0">
+          <Border Classes="mscc-tab-well" Padding="10">
             <ScrollViewer VerticalScrollBarVisibility="Auto">
               <StackPanel Spacing="8">
                 <TextBlock Text="POWER AMPLIFIER" Classes="mscc-face-heading" FontSize="14"/>
@@ -1148,7 +1157,7 @@
 
         <!-- RX IQ: controls top, spectrum below (no waterfall / no click-tune) -->
         <TabItem Header="RX IQ" ToolTip.Tip="Receive I/Q calibration — spectrum aids image nulling">
-          <Border Background="Transparent" BorderThickness="0" CornerRadius="4" Padding="8" Margin="0">
+          <Border Classes="mscc-tab-well" Padding="8">
             <Grid RowDefinitions="Auto,*">
               <Border Grid.Row="0" Background="Transparent" BorderThickness="0"
                       CornerRadius="4" Padding="8,6" Margin="0,0,0,6">
@@ -1255,7 +1264,7 @@
         <!-- TX IQ: QRP only (AMP off) -->
         <TabItem x:Name="TxIqTab" Header="TX IQ" IsEnabled="{Binding IsTxIqTabEnabled}"
                  ToolTip.Tip="Transmit I/Q balance — QRP only (AMP off)">
-          <Border Background="Transparent" BorderThickness="0" CornerRadius="4" Padding="10" Margin="0">
+          <Border Classes="mscc-tab-well" Padding="10">
             <ScrollViewer VerticalScrollBarVisibility="Auto">
               <StackPanel Spacing="8">
                 <TextBlock Text="TRANSMIT I/Q BALANCE" Classes="mscc-face-heading" FontSize="14"/>
@@ -1358,7 +1367,7 @@
 
         <!-- FREQ CAL: controls top, spectrum below (no waterfall) -->
         <TabItem x:Name="FreqCalTab" Header="FREQ CAL" ToolTip.Tip="Frequency calibration — WWV/standard carriers work best">
-          <Border Background="Transparent" BorderThickness="0" Padding="8" Margin="0">
+          <Border Classes="mscc-tab-well" Padding="8">
             <Grid RowDefinitions="Auto,*">
               <StackPanel Grid.Row="0" Spacing="6" Margin="0,0,0,6">
                 <TextBlock Text="FREQUENCY CALIBRATION" Classes="mscc-face-heading" FontSize="14"/>
@@ -1470,7 +1479,7 @@
         </TabItem>
 
         <TabItem Header="SETTINGS">
-          <Border Classes="mscc-panel" Margin="8">
+          <Border Classes="mscc-tab-well">
             <ScrollViewer VerticalScrollBarVisibility="Auto">
               <StackPanel Margin="16" Spacing="10" MaxWidth="560">
                 <TextBlock Text="Settings" Classes="mscc-face-heading" FontSize="18"/>

@@ -128,6 +128,9 @@
     <SolidColorBrush x:Key="UiFaceMutedTextBrush" Color="#FFD4DCE4"/>
     <SolidColorBrush x:Key="UiFaceWarnTextBrush" Color="#FFFFD08A"/>
     <SolidColorBrush x:Key="UiFaceOkTextBrush" Color="#FFA8EBC8"/>
+    <!-- Tab well: etched groove, light from above (dark line, light line under it). -->
+    <SolidColorBrush x:Key="UiFaceEtchDarkBrush" Color="#B0141A22"/>
+    <BoxShadows x:Key="UiFaceEtchShadows">inset 0 1 0 0 #26FFFFFF, 0 1 0 0 #40FFFFFF</BoxShadows>
     <!-- Fluent selected tab uses these. The selected pill is clear, so the header and pipe stay light. -->
     <SolidColorBrush x:Key="TabItemHeaderForegroundSelected" Color="#FFFFFFFF"/>
     <SolidColorBrush x:Key="TabItemHeaderBackgroundSelected" Color="#00000000"/>
@@ -751,6 +754,27 @@
       <Setter Property="BorderThickness" Value="0"/>
       <Setter Property="CornerRadius" Value="4"/>
       <Setter Property="Padding" Value="4"/>
+    </Style>
+
+    <!-- Etched groove around a tab's working area. MAIN keeps the spectrum bezel instead. -->
+    <Style Selector="Border.mscc-tab-well">
+      <Setter Property="Background" Value="Transparent"/>
+      <Setter Property="BorderBrush" Value="{DynamicResource UiFaceEtchDarkBrush}"/>
+      <Setter Property="BorderThickness" Value="1"/>
+      <Setter Property="CornerRadius" Value="4"/>
+      <Setter Property="Margin" Value="2"/>
+      <Setter Property="BoxShadow" Value="{DynamicResource UiFaceEtchShadows}"/>
+    </Style>
+
+    <!-- CW keyer lists: items ~17 px so the WPF heights show every row with no scroll bar. -->
+    <Style Selector="ListBox.mscc-cw-list">
+      <Setter Property="ScrollViewer.VerticalScrollBarVisibility" Value="Disabled"/>
+      <Setter Property="Padding" Value="0"/>
+    </Style>
+    <Style Selector="ListBox.mscc-cw-list ListBoxItem">
+      <Setter Property="Padding" Value="4,1"/>
+      <Setter Property="MinHeight" Value="0"/>
+      <Setter Property="FontSize" Value="11"/>
     </Style>
 
     <!-- Checkbox labels sit on the faceplate. Local Foreground still wins. -->
