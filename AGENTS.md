@@ -60,7 +60,7 @@ carries them once and stays as it is.
 
 ## Current work
 
-**Active — cmd-097 (ubuntu-stew / stew-HP):** Avalonia light-bar buttons (dark glossy face, 3 px slot: grey off, blue selected, red transmit) on the band bar, mode, filter/step and left/right panel buttons; FILTERS / STEP spaced like the right panel; cmd-096 fit rule kept. Brief: `.mscc-coord/cmd-097-avalonia-light-bar-buttons.md`. Builds on cmd-096. No WPF change, no version bump, no installer, no GitHub Release. Build commits; Stew pushes. Leave rpi/, Solidus/, installers/rpi, and the WPF tree alone.
+**Active — cmd-097b (ubuntu-stew / stew-HP):** Avalonia light-bar buttons lit from above (light top, dark bottom, equal sides) and 13 equal-width band buttons that fit at 1024×600. Brief: `.mscc-coord/cmd-097b-avalonia-top-light-band-widths.md`. Follows cmd-097. No WPF change, no version bump, no installer, no GitHub Release. Build commits; Stew pushes. Leave rpi/, Solidus/, installers/rpi, and the WPF tree alone.
 
 Older notes below are stale as of 2026-10-07. Check `.mscc-coord/COMMANDS.yaml` and [`handoff.md`](handoff.md) for historical open / pending items.
 
