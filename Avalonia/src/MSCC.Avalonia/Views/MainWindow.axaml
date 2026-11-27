@@ -186,7 +186,7 @@
            Meter slots sized like WPF AnalogSMeter / AnalogAlc (180×120) so layout
            stays stable when analog faces replace digital M1 later. -->
       <Border Grid.Row="0" Classes="mscc-panel" Margin="0,0,0,2" Padding="4,2">
-        <Grid ColumnDefinitions="*,Auto,*,Auto,*,Auto,*,Auto,*">
+        <Grid ColumnDefinitions="*,Auto,*,Auto,*,Auto,*">
           <!-- S-meter analog face (live dBm → 0–15); FWD power + SWR on TX / fault (WPF port) -->
           <StackPanel Grid.Column="1" VerticalAlignment="Center" HorizontalAlignment="Center">
             <ctrl:AnalogSMeterControl x:Name="SMeterControl"
@@ -208,15 +208,16 @@
                        Classes.swr-fault="{Binding SwrFault}"/>
           </StackPanel>
 
-          <!-- VFO A — click to select; digit-hover wheel. Larger digits for easier hit-test. -->
+          <!-- VFO block: two 154 faces, 6 px gap, button row. Centered in the meter row. -->
+          <Grid Grid.Column="3" ColumnDefinitions="154,6,154" RowDefinitions="92,4,24"
+                Margin="3,0" VerticalAlignment="Center">
+          <!-- VFO A — click to select; digit wheel. Double-click cycles Step. -->
           <Border x:Name="VfoAPanel"
-                  Grid.Column="3"
-                  Width="176"
+                  Grid.Row="0" Grid.Column="0"
+                  Width="154"
                   Height="92"
                   VerticalAlignment="Center"
                   Background="{DynamicResource UiVfoBezelBrush}"
-                  BorderBrush="{DynamicResource UiAccentBrush}"
-                  BorderThickness="2"
                   CornerRadius="4"
                   Padding="3"
                   Cursor="SizeNorthSouth"
@@ -235,32 +236,31 @@
                       CornerRadius="2" IsHitTestVisible="False"/>
               <Border Height="6" VerticalAlignment="Top" Margin="2,2,2,0"
                       Background="{DynamicResource UiVfoLcdShadeBrush}" IsHitTestVisible="False"/>
-              <Grid Margin="5,2,5,3" RowDefinitions="13,*,15" ColumnDefinitions="Auto,*">
-                <TextBlock Grid.Row="0" Grid.Column="0" Text="VFO A" FontSize="8" FontWeight="Bold"
-                           Foreground="{DynamicResource UiVfoLabelBrush}" VerticalAlignment="Center"/>
-                <StackPanel Grid.Row="0" Grid.Column="1" Orientation="Horizontal" HorizontalAlignment="Right" VerticalAlignment="Center" Spacing="5">
-                  <TextBlock Text="{Binding ModeText}" FontSize="10" FontWeight="Bold"
-                             Foreground="{DynamicResource UiVfoModeBrush}"/>
-                  <TextBlock Text="{Binding VfoTuneStepDisplay}" FontSize="8"
-                             Foreground="{DynamicResource UiVfoLabelBrush}"/>
+              <Grid Margin="4,2,4,3" RowDefinitions="15,*,15" ColumnDefinitions="Auto,*">
+                <StackPanel Grid.Row="0" Grid.Column="0" Orientation="Horizontal" VerticalAlignment="Center">
+                  <Panel Width="7" Height="7" Margin="0,0,4,0" VerticalAlignment="Center">
+                    <Ellipse Width="7" Height="7" Fill="{DynamicResource UiVfoActiveDotBrush}"
+                             IsVisible="{Binding UseVfoA}"/>
+                  </Panel>
+                  <TextBlock Text="VFO A" FontSize="10" FontWeight="Bold"
+                             Foreground="{DynamicResource UiVfoLabelBrush}" VerticalAlignment="Center"/>
                 </StackPanel>
+                <TextBlock Grid.Row="0" Grid.Column="1" Text="{Binding ModeText}" FontSize="12" FontWeight="Bold"
+                           Foreground="{DynamicResource UiVfoModeBrush}"
+                           HorizontalAlignment="Right" VerticalAlignment="Center"/>
                 <StackPanel Grid.Row="1" Grid.Column="0" Grid.ColumnSpan="2" Orientation="Horizontal" HorizontalAlignment="Right"
                             VerticalAlignment="Center" Spacing="0">
                   <TextBlock x:Name="VfoAFreqText"
-                             Text="{Binding VfoAMhzKhz}" FontSize="26" FontWeight="Bold"
+                             Text="{Binding VfoAMhzKhz}" FontSize="27" FontWeight="Bold"
                              FontFamily="Consolas, Courier New, monospace"
                              Foreground="{DynamicResource UiVfoDigitBrush}"
                              VerticalAlignment="Bottom" Tag="3"
-                             PointerMoved="VfoAFreqText_OnPointerMoved"
-                             PointerExited="VfoFreqText_OnPointerExited"
                              PointerWheelChanged="VfoAFreqText_OnPointerWheelChanged"/>
                   <TextBlock x:Name="VfoAFreqHzText"
-                             Text="{Binding VfoAHz}" FontSize="18" FontWeight="Bold"
+                             Text="{Binding VfoAHz}" FontSize="19" FontWeight="Bold"
                              FontFamily="Consolas, Courier New, monospace"
                              Foreground="{DynamicResource UiVfoDigitHzBrush}"
                              VerticalAlignment="Bottom" Margin="3,0,0,2" Tag="0"
-                             PointerMoved="VfoAFreqText_OnPointerMoved"
-                             PointerExited="VfoFreqText_OnPointerExited"
                              PointerWheelChanged="VfoAFreqText_OnPointerWheelChanged"/>
                 </StackPanel>
                 <Border Grid.Row="2" Grid.Column="0" Grid.ColumnSpan="2" Background="{DynamicResource UiVfoStripBrush}" CornerRadius="1">
@@ -274,15 +274,13 @@
             </Grid>
           </Border>
 
-          <!-- VFO B — active dual-VFO: click select, digit wheel, radio CMD_SET_VFO -->
+          <!-- VFO B — click select, digit wheel, radio CMD_SET_VFO -->
           <Border x:Name="VfoBPanel"
-                  Grid.Column="5"
-                  Width="156"
+                  Grid.Row="0" Grid.Column="2"
+                  Width="154"
                   Height="92"
                   VerticalAlignment="Center"
                   Background="{DynamicResource UiVfoBezelBrush}"
-                  BorderBrush="{DynamicResource UiAccentMutedBrush}"
-                  BorderThickness="1"
                   CornerRadius="4"
                   Padding="3"
                   Cursor="SizeNorthSouth"
@@ -300,30 +298,31 @@
                       CornerRadius="2" IsHitTestVisible="False"/>
               <Border Height="6" VerticalAlignment="Top" Margin="2,2,2,0"
                       Background="{DynamicResource UiVfoLcdShadeBrush}" IsHitTestVisible="False"/>
-              <Grid Margin="5,2,5,3" RowDefinitions="13,*,15" ColumnDefinitions="Auto,*">
-                <TextBlock Grid.Row="0" Grid.Column="0" Text="VFO B" FontSize="8" FontWeight="Bold"
-                           Foreground="{DynamicResource UiVfoLabelBrush}" VerticalAlignment="Center"/>
-                <StackPanel Grid.Row="0" Grid.Column="1" Orientation="Horizontal" HorizontalAlignment="Right" VerticalAlignment="Center" Spacing="5">
-                  <TextBlock Text="{Binding VfoBModeText}" FontSize="10" FontWeight="Bold"
-                             Foreground="{DynamicResource UiVfoModeBrush}"/>
+              <Grid Margin="4,2,4,3" RowDefinitions="15,*,15" ColumnDefinitions="Auto,*">
+                <StackPanel Grid.Row="0" Grid.Column="0" Orientation="Horizontal" VerticalAlignment="Center">
+                  <Panel Width="7" Height="7" Margin="0,0,4,0" VerticalAlignment="Center">
+                    <Ellipse Width="7" Height="7" Fill="{DynamicResource UiVfoActiveDotBrush}"
+                             IsVisible="{Binding UseVfoB}"/>
+                  </Panel>
+                  <TextBlock Text="VFO B" FontSize="10" FontWeight="Bold"
+                             Foreground="{DynamicResource UiVfoLabelBrush}" VerticalAlignment="Center"/>
                 </StackPanel>
+                <TextBlock Grid.Row="0" Grid.Column="1" Text="{Binding VfoBModeText}" FontSize="12" FontWeight="Bold"
+                           Foreground="{DynamicResource UiVfoModeBrush}"
+                           HorizontalAlignment="Right" VerticalAlignment="Center"/>
                 <StackPanel Grid.Row="1" Grid.Column="0" Grid.ColumnSpan="2" Orientation="Horizontal" HorizontalAlignment="Right"
                             VerticalAlignment="Center" Spacing="0">
                   <TextBlock x:Name="VfoBFreqText"
-                             Text="{Binding VfoBMhzKhz}" FontSize="22" FontWeight="Bold"
+                             Text="{Binding VfoBMhzKhz}" FontSize="27" FontWeight="Bold"
                              FontFamily="Consolas, Courier New, monospace"
                              Foreground="{DynamicResource UiVfoDigitBrush}"
                              VerticalAlignment="Bottom" Tag="3"
-                             PointerMoved="VfoBFreqText_OnPointerMoved"
-                             PointerExited="VfoFreqText_OnPointerExited"
                              PointerWheelChanged="VfoBFreqText_OnPointerWheelChanged"/>
                   <TextBlock x:Name="VfoBFreqHzText"
-                             Text="{Binding VfoBHz}" FontSize="15" FontWeight="Bold"
+                             Text="{Binding VfoBHz}" FontSize="19" FontWeight="Bold"
                              FontFamily="Consolas, Courier New, monospace"
                              Foreground="{DynamicResource UiVfoDigitHzBrush}"
                              VerticalAlignment="Bottom" Margin="3,0,0,2" Tag="0"
-                             PointerMoved="VfoBFreqText_OnPointerMoved"
-                             PointerExited="VfoFreqText_OnPointerExited"
                              PointerWheelChanged="VfoBFreqText_OnPointerWheelChanged"/>
                 </StackPanel>
                 <Border Grid.Row="2" Grid.Column="0" Grid.ColumnSpan="2" Background="{DynamicResource UiVfoStripBrush}" CornerRadius="1">
@@ -337,8 +336,39 @@
             </Grid>
           </Border>
 
+          <Grid Grid.Row="2" Grid.Column="0" Grid.ColumnSpan="3"
+                ColumnDefinitions="*,*,*,*,*" ColumnSpacing="3" Height="24">
+            <Button Grid.Column="0" Content="A&gt;B" Classes="mscc-bar"
+                    Command="{Binding CopyVfoAToBCommand}"
+                    FontSize="10" FontWeight="Bold"
+                    HorizontalAlignment="Stretch" HorizontalContentAlignment="Center" VerticalContentAlignment="Center"
+                    ToolTip.Tip="Copy VFO A frequency and mode to VFO B."/>
+            <Button Grid.Column="1" Content="B&gt;A" Classes="mscc-bar"
+                    Command="{Binding CopyVfoBToACommand}"
+                    FontSize="10" FontWeight="Bold"
+                    HorizontalAlignment="Stretch" HorizontalContentAlignment="Center" VerticalContentAlignment="Center"
+                    ToolTip.Tip="Copy VFO B frequency and mode to VFO A."/>
+            <Button Grid.Column="2" Content="A&lt;&gt;B" Classes="mscc-bar"
+                    Command="{Binding SwapVfosCommand}"
+                    FontSize="10" FontWeight="Bold"
+                    HorizontalAlignment="Stretch" HorizontalContentAlignment="Center" VerticalContentAlignment="Center"
+                    ToolTip.Tip="Swap VFO A and VFO B."/>
+            <Button Grid.Column="3" Content="SPLIT" Classes="mscc-bar"
+                    Command="{Binding ToggleSplitCommand}"
+                    Classes.mscc-selected="{Binding SplitDisplayOn}"
+                    FontSize="10" FontWeight="Bold"
+                    HorizontalAlignment="Stretch" HorizontalContentAlignment="Center" VerticalContentAlignment="Center"
+                    ToolTip.Tip="Split: receive on VFO A, transmit on VFO B."/>
+            <Button Grid.Column="4" Content="{Binding StepLabel}" Classes="mscc-bar"
+                    Command="{Binding CycleStepCommand}"
+                    FontSize="10" FontWeight="Bold"
+                    HorizontalAlignment="Stretch" HorizontalContentAlignment="Center" VerticalContentAlignment="Center"
+                    ToolTip.Tip="Tuning step. Click to change."/>
+          </Grid>
+          </Grid>
+
           <!-- ALC analog face (live 0–100, HOLD/Peak like WPF) -->
-          <ctrl:AnalogAlcMeterControl Grid.Column="7"
+          <ctrl:AnalogAlcMeterControl Grid.Column="5"
                                       Width="180" Height="120"
                                       VerticalAlignment="Center"
                                       Value="{Binding AlcValue}"

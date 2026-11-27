@@ -97,6 +97,10 @@
     <SolidColorBrush x:Key="UiVfoModeBrush" Color="#FF1E1C12"/>
     <SolidColorBrush x:Key="UiVfoStripBrush" Color="#26000000"/>
     <SolidColorBrush x:Key="UiVfoStripTextBrush" Color="#FF2A281A"/>
+    <RadialGradientBrush x:Key="UiVfoActiveDotBrush" Center="50%,50%" GradientOrigin="40%,35%" RadiusX="55%" RadiusY="55%">
+      <GradientStop Offset="0" Color="#FFFF5A4A"/>
+      <GradientStop Offset="1" Color="#FFB01818"/>
+    </RadialGradientBrush>
 
     <ControlTheme x:Key="MsccPhysicalTrackButton" TargetType="RepeatButton">
       <Setter Property="Background" Value="Transparent"/>
@@ -621,15 +625,11 @@
       <Setter Property="Background" Value="#00C853"/>
     </Style>
 
-    <!-- Active VFO face (green highlight) -->
+    <!-- Active VFO face. The idle VFO is dimmed. No border. -->
     <Style Selector="Border.mscc-vfo-active">
-      <Setter Property="BorderBrush" Value="{DynamicResource UiAccentBrush}"/>
-      <Setter Property="BorderThickness" Value="2"/>
       <Setter Property="Opacity" Value="1"/>
     </Style>
     <Style Selector="Border.mscc-vfo-idle">
-      <Setter Property="BorderBrush" Value="{DynamicResource UiAccentMutedBrush}"/>
-      <Setter Property="BorderThickness" Value="1"/>
       <Setter Property="Opacity" Value="0.78"/>
     </Style>
 

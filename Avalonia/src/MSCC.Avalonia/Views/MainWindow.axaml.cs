@@ -254,22 +254,6 @@ public partial class MainWindow : Window
         HandleDigitWheel(sender, e, vfoA: false);
     }
 
-    private void VfoAFreqText_OnPointerMoved(object? sender, PointerEventArgs e)
-    {
-        UpdateHoverStep(sender, e);
-    }
-
-    private void VfoBFreqText_OnPointerMoved(object? sender, PointerEventArgs e)
-    {
-        UpdateHoverStep(sender, e);
-    }
-
-    private void VfoFreqText_OnPointerExited(object? sender, PointerEventArgs e)
-    {
-        if (DataContext is MainViewModel vm)
-            vm.SetHoverTuneStep(0);
-    }
-
     private void HandleDigitWheel(object? sender, PointerWheelEventArgs e, bool vfoA)
     {
         if (sender is not TextBlock freqTb || DataContext is not MainViewModel vm)
@@ -290,20 +274,7 @@ public partial class MainWindow : Window
         }
 
         _ = vm.NudgeFrequencyByDigitAsync(direction, stepHz, quantize: true, vfoA: vfoA);
-        vm.SetHoverTuneStep(stepHz);
         e.Handled = true;
-    }
-
-    private void UpdateHoverStep(object? sender, PointerEventArgs e)
-    {
-        if (sender is not TextBlock freqTb || DataContext is not MainViewModel vm)
-            return;
-
-        Point pos = e.GetPosition(freqTb);
-        if (TryGetDigitStepHz(freqTb, pos, out long stepHz))
-            vm.SetHoverTuneStep(stepHz);
-        else
-            vm.SetHoverTuneStep(0);
     }
 
     private static int WheelDirection(PointerWheelEventArgs e)

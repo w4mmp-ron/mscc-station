@@ -548,6 +548,8 @@ public partial class MainViewModel : ViewModelBase, IDisposable
     [ObservableProperty] private string _vfoBBandText = "";
     [ObservableProperty] private string _vfoBModeText = "";
     [ObservableProperty] private bool _useVfoA = true;
+    /// <summary>User split: receive on VFO A, transmit on VFO B. Not saved. FM offset lights the button through SplitDisplayOn.</summary>
+    [ObservableProperty] private bool _splitOn;
 
     // ----- Audio (phones / digital paths) -----
 
@@ -1111,6 +1113,11 @@ public partial class MainViewModel : ViewModelBase, IDisposable
     /// <summary>True when VFO B is the active radio VFO.</summary>
     public bool UseVfoB => !UseVfoA;
 
+    /// <summary>SPLIT button lit: user split, or the FM offset running split.</summary>
+    public bool SplitDisplayOn => SplitOn || (IsConnected && IsFmOffsetActive());
+
+    partial void OnSplitOnChanged(bool value) => OnPropertyChanged(nameof(SplitDisplayOn));
+
     /// <summary>Default low-cut index (RX/TX tab → radio).</summary>
     [ObservableProperty] private int _lowCutDefaultIndex;
     [ObservableProperty] private int _highCutDefaultIndex;
@@ -1258,6 +1265,7 @@ public partial class MainViewModel : ViewModelBase, IDisposable
         OnPropertyChanged(nameof(DigitalControlsEnabled));
         OnPropertyChanged(nameof(LaunchOptionEnabled));
         NotifyOperateCommands();
+        OnPropertyChanged(nameof(SplitDisplayOn));
         if (!value)
         {
             CancelKeyerPlayPttRelease(releasePtt: false);
@@ -1314,6 +1322,7 @@ public partial class MainViewModel : ViewModelBase, IDisposable
         ModeIsDigU = m is "DIG-U" or "DIGU" or "DIG";
         ModeIsFm = m is "FM";
         OnPropertyChanged(nameof(FmSimplexEnabled));
+        OnPropertyChanged(nameof(SplitDisplayOn));
     }
 
     /// <summary>Simplex checkbox only meaningful in FM.</summary>
@@ -1322,6 +1331,10 @@ public partial class MainViewModel : ViewModelBase, IDisposable
     partial void OnFmSimplexChanged(bool value)
     {
         ScheduleSaveClientSettings();
+        // FM offset owns split. Drop a user split before the policy sends its own.
+        if (ModeIsFm && _radio != null && IsConnected)
+            SplitOn = false;
+        OnPropertyChanged(nameof(SplitDisplayOn));
         if (!ModeIsFm || _radio == null || !IsConnected) return;
         _ = ApplyFmOffsetPolicyAsync();
     }
@@ -1439,6 +1452,10 @@ public partial class MainViewModel : ViewModelBase, IDisposable
         ToggleNbCommand.NotifyCanExecuteChanged();
         ToggleNrCommand.NotifyCanExecuteChanged();
         ToggleAnCommand.NotifyCanExecuteChanged();
+        CopyVfoAToBCommand.NotifyCanExecuteChanged();
+        CopyVfoBToACommand.NotifyCanExecuteChanged();
+        SwapVfosCommand.NotifyCanExecuteChanged();
+        ToggleSplitCommand.NotifyCanExecuteChanged();
         OnPropertyChanged(nameof(CanUserControlTransmit));
     }
 
@@ -2206,6 +2223,7 @@ public partial class MainViewModel : ViewModelBase, IDisposable
             }
             catch { /* bounded */ }
         }
+        await ClearUserSplitOnDisconnectAsync().ConfigureAwait(true);
     }
 
     /// <summary>
@@ -2483,6 +2501,32 @@ public partial class MainViewModel : ViewModelBase, IDisposable
         if (direction == 0 || stepHz <= 0)
             return;
 
+        // Split keeps the receiver on VFO A. A VFO B wheel updates the TX frequency only.
+        if (!vfoA && SplitOn && !IsFmOffsetActive())
+        {
+            long currentB = _vfoBFrequencyHz;
+            long baseB = quantize ? currentB - (currentB % stepHz) : currentB;
+            long txHz = Math.Clamp(baseB + direction * stepHz, 10_000, 60_000_000);
+            _vfoBFrequencyHz = txHz;
+            VfoBDisplayMhz = FormatMhz(txHz);
+            if (_radio != null && IsConnected)
+            {
+                try
+                {
+                    await _radio.SetSplitTxFreqAsync(txHz).ConfigureAwait(true);
+                    StatusText = $"Split TX B {FormatMhz(txHz)}";
+                    AppendLog($"Split TX B {txHz} [{(quantize ? $"digit±{stepHz}" : $"wheel±{stepHz}")}]");
+                }
+                catch (Exception ex)
+                {
+                    StatusText = $"Split TX failed: {ex.Message}";
+                    AppendLog($"ERROR: {ex.Message}");
+                }
+            }
+            ScheduleSaveClientSettings();
+            return;
+        }
+
         // Select the VFO being tuned
         if (vfoA && !UseVfoA)
             await SelectVfoAsync(useVfoA: true).ConfigureAwait(true);
@@ -2494,21 +2538,6 @@ public partial class MainViewModel : ViewModelBase, IDisposable
         long hz = Math.Clamp(baseFreq + direction * stepHz, 10_000, 60_000_000);
         await ApplyFrequencyAsync(hz, quantize ? $"digit±{stepHz}" : $"wheel±{stepHz}").ConfigureAwait(true);
     }
-
-    /// <summary>Optional hover readout under VFO (e.g. "1 kHz").</summary>
-    public void SetHoverTuneStep(long stepHz)
-    {
-        HoverTuneStepLabel = stepHz > 0 ? FormatStep(stepHz) : "";
-        OnPropertyChanged(nameof(VfoTuneStepDisplay));
-    }
-
-    [ObservableProperty] private string _hoverTuneStepLabel = "";
-
-    /// <summary>Under VFO A: hovered digit step, or left-rail Step fallback.</summary>
-    public string VfoTuneStepDisplay =>
-        string.IsNullOrEmpty(HoverTuneStepLabel)
-            ? $"step {StepLabel}"
-            : HoverTuneStepLabel;
 
     // ----- Frequency (live) -----
 
@@ -2544,15 +2573,12 @@ public partial class MainViewModel : ViewModelBase, IDisposable
     {
         _stepIndex = (_stepIndex + 1) % StepChoicesHz.Length;
         StepLabel = FormatStep(StepChoicesHz[_stepIndex]);
-        OnPropertyChanged(nameof(VfoTuneStepDisplay));
         AppendLog($"Step → {StepLabel}");
         ScheduleSaveClientSettings();
         // The server never reports step. WPF sends it when the user changes it, not at connect.
         if (_radio != null)
             _ = _radio.SetStepAsync(_stepIndex);
     }
-
-    partial void OnStepLabelChanged(string value) => OnPropertyChanged(nameof(VfoTuneStepDisplay));
 
     /// <summary>Cycle active low cut; send when connected; refresh spectrum passband marker.</summary>
     [RelayCommand]
@@ -6996,6 +7022,9 @@ public partial class MainViewModel : ViewModelBase, IDisposable
         try
         {
             await _radio.SetFrequencyAsync(hz).ConfigureAwait(true);
+            // PTT release returns to G_Split_RX_FREQ. Keep it on the VFO A frequency just sent.
+            if (UseVfoA && SplitOn)
+                await _radio.SetSplitRxFreqAsync(hz).ConfigureAwait(true);
             SyncFavoriteBandFilterFromRadio();
             StatusText = $"Freq {(UseVfoA ? "A" : "B")} {FormatMhz(hz)}";
             AppendLog($"Sent VFO{(UseVfoA ? "A" : "B")} freq {hz} [{reason}]");
@@ -7046,6 +7075,193 @@ public partial class MainViewModel : ViewModelBase, IDisposable
         || TxIqTxOn || RxIqSessionActive
         || FreqCalInProgress || FreqCalManualMode;
 
+    private bool VfoRowBlocked()
+    {
+        if (IsCalibrationOrIqSessionActive())
+        {
+            StatusText = "VFO buttons are off during calibration / IQ.";
+            return true;
+        }
+        if (IsFmOffsetActive())
+        {
+            StatusText = "FM offset controls VFO B. Check Simplex to use VFO buttons.";
+            return true;
+        }
+        return false;
+    }
+
+    [RelayCommand(CanExecute = nameof(CanOperate))]
+    private async Task CopyVfoAToB()
+    {
+        if (VfoRowBlocked())
+            return;
+        if (_frequencyHz <= 0)
+        {
+            StatusText = "Set VFO A first.";
+            return;
+        }
+
+        _vfoBFrequencyHz = _frequencyHz;
+        VfoBDisplayMhz = FormatMhz(_frequencyHz);
+        VfoBModeText = ModeText;
+        try
+        {
+            if (!UseVfoA)
+                await PushActiveVfoToRadioAsync(force: false).ConfigureAwait(true);
+            if (SplitOn && _radio != null)
+                await _radio.SetSplitTxFreqAsync(_vfoBFrequencyHz).ConfigureAwait(true);
+            AppendLog($"A>B {FormatMhz(_vfoBFrequencyHz)} {VfoBModeText}");
+            ScheduleSaveClientSettings();
+        }
+        catch (Exception ex)
+        {
+            StatusText = $"A>B failed: {ex.Message}";
+            AppendLog($"ERROR: {ex.Message}");
+        }
+    }
+
+    [RelayCommand(CanExecute = nameof(CanOperate))]
+    private async Task CopyVfoBToA()
+    {
+        if (VfoRowBlocked())
+            return;
+        if (_vfoBFrequencyHz <= 0)
+        {
+            StatusText = "Set VFO B first.";
+            return;
+        }
+
+        _frequencyHz = _vfoBFrequencyHz;
+        UpdateFrequencyUi(_frequencyHz);
+        ModeText = VfoBModeText;
+        NotifyModeFlags();
+        try
+        {
+            if (UseVfoA)
+                await PushActiveVfoToRadioAsync(force: false).ConfigureAwait(true);
+            if (SplitOn && _radio != null)
+                await _radio.SetSplitRxFreqAsync(_frequencyHz).ConfigureAwait(true);
+            AppendLog($"B>A {FormatMhz(_frequencyHz)} {ModeText}");
+            ScheduleSaveClientSettings();
+        }
+        catch (Exception ex)
+        {
+            StatusText = $"B>A failed: {ex.Message}";
+            AppendLog($"ERROR: {ex.Message}");
+        }
+    }
+
+    [RelayCommand(CanExecute = nameof(CanOperate))]
+    private async Task SwapVfos()
+    {
+        if (VfoRowBlocked())
+            return;
+        if (_frequencyHz <= 0)
+        {
+            StatusText = "Set VFO A first.";
+            return;
+        }
+        if (_vfoBFrequencyHz <= 0)
+        {
+            StatusText = "Set VFO B first.";
+            return;
+        }
+
+        long aHz = _frequencyHz;
+        string aMode = ModeText ?? "";
+        _frequencyHz = _vfoBFrequencyHz;
+        UpdateFrequencyUi(_frequencyHz);
+        ModeText = VfoBModeText;
+        _vfoBFrequencyHz = aHz;
+        VfoBDisplayMhz = FormatMhz(aHz);
+        VfoBModeText = aMode;
+        NotifyModeFlags();
+        try
+        {
+            await PushActiveVfoToRadioAsync(force: false).ConfigureAwait(true);
+            if (SplitOn && _radio != null)
+            {
+                await _radio.SetSplitRxFreqAsync(_frequencyHz).ConfigureAwait(true);
+                await _radio.SetSplitTxFreqAsync(_vfoBFrequencyHz).ConfigureAwait(true);
+            }
+            AppendLog($"A<>B A={FormatMhz(_frequencyHz)} {ModeText} B={FormatMhz(_vfoBFrequencyHz)} {VfoBModeText}");
+            ScheduleSaveClientSettings();
+        }
+        catch (Exception ex)
+        {
+            StatusText = $"A<>B failed: {ex.Message}";
+            AppendLog($"ERROR: {ex.Message}");
+        }
+    }
+
+    [RelayCommand(CanExecute = nameof(CanOperate))]
+    private async Task ToggleSplit()
+    {
+        if (VfoRowBlocked())
+            return;
+        if (_radio == null)
+            return;
+
+        try
+        {
+            if (SplitOn)
+            {
+                await _radio.SetSplitAsync(false).ConfigureAwait(true);
+                SplitOn = false;
+                AppendLog("Split off");
+                StatusText = "Split off";
+                return;
+            }
+
+            if (_frequencyHz <= 0)
+            {
+                StatusText = "Set VFO A first.";
+                return;
+            }
+            if (_vfoBFrequencyHz <= 0)
+            {
+                StatusText = "Set VFO B first.";
+                return;
+            }
+
+            if (!UseVfoA)
+                await SelectVfoAsync(true).ConfigureAwait(true);
+
+            await _radio.SetSplitRxFreqAsync(_frequencyHz).ConfigureAwait(true);
+            await _radio.SetSplitTxFreqAsync(_vfoBFrequencyHz).ConfigureAwait(true);
+            await _radio.SetSplitAsync(true).ConfigureAwait(true);
+            SplitOn = true;
+            AppendLog($"Split on — RX A={FormatMhz(_frequencyHz)} TX B={FormatMhz(_vfoBFrequencyHz)}");
+            StatusText = "Split on";
+        }
+        catch (Exception ex)
+        {
+            StatusText = $"Split failed: {ex.Message}";
+            AppendLog($"ERROR: {ex.Message}");
+        }
+    }
+
+    /// <summary>Server keeps G_Split across sessions. Turn a user split off before the link drops.</summary>
+    private async Task ClearUserSplitOnDisconnectAsync()
+    {
+        if (!SplitOn)
+            return;
+        if (_radio != null && IsConnected)
+        {
+            try
+            {
+                using var cts = new CancellationTokenSource(TimeSpan.FromMilliseconds(500));
+                await _radio.SetSplitAsync(false).WaitAsync(cts.Token).ConfigureAwait(true);
+                AppendLog("Split off");
+            }
+            catch (Exception ex)
+            {
+                AppendLog($"Split off (disconnect) failed: {ex.Message}");
+            }
+        }
+        SplitOn = false;
+    }
+
     [RelayCommand]
     private Task SelectVfoA() => SelectVfoAsync(useVfoA: true);
 
@@ -7058,6 +7274,19 @@ public partial class MainViewModel : ViewModelBase, IDisposable
         if (UseVfoA == useVfoA)
             return;
 
+        bool clearedSplit = false;
+        if (!useVfoA && SplitOn)
+        {
+            if (_radio != null && IsConnected)
+            {
+                try { await _radio.SetSplitAsync(false).ConfigureAwait(true); }
+                catch (Exception ex) { AppendLog($"Split off error: {ex.Message}"); }
+            }
+            SplitOn = false;
+            clearedSplit = true;
+            AppendLog("Split off");
+        }
+
         // Remember last-used for the VFO we're leaving (not during cal/IQ)
         if (!IsCalibrationOrIqSessionActive())
             SaveLastUsedForCurrentBand();
@@ -7068,6 +7297,8 @@ public partial class MainViewModel : ViewModelBase, IDisposable
         AppendLog($"Select VFO {(useVfoA ? "A" : "B")}");
         await PushActiveVfoToRadioAsync(force: false).ConfigureAwait(true);
         ScheduleSaveClientSettings();
+        if (clearedSplit)
+            StatusText = "Split off — VFO B selected";
     }
 
     /// <summary>CMD_SET_VFO + freq + mode for the UI-selected VFO.</summary>
@@ -7162,6 +7393,7 @@ public partial class MainViewModel : ViewModelBase, IDisposable
             if (nowFm)
             {
                 await SendFmPowerAsync(Math.Clamp(FmPowerPercent, 0, 100)).ConfigureAwait(true);
+                SplitOn = false;
                 await ApplyFmOffsetPolicyAsync().ConfigureAwait(true);
             }
             else if (wasFm)
