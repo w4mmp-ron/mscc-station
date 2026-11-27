@@ -20,12 +20,17 @@
   </Design.DataContext>
 
   <Panel>
+    <!-- Faceplate sits in front of Window.Background (UiChromeTheme paints that) and behind the UI. -->
+    <Border Background="{DynamicResource UiFaceBaseBrush}" IsHitTestVisible="False"/>
+    <!-- Texture layer left out: tiled brush raised spectrum CPU by more than 3 points on stew-HP. UiFaceTextureBrush stays for a later skin. -->
+    <Border Background="{DynamicResource UiFaceSheenBrush}" IsHitTestVisible="False"/>
+    <Border Background="{DynamicResource UiFaceVignetteBrush}" IsHitTestVisible="False"/>
   <Grid Margin="4" ColumnDefinitions="160,*,160" RowDefinitions="*">
 
     <!-- ===================== LEFT RAIL (dense — aim: no scrollbar at 1024×600) ===================== -->
     <Border Grid.Column="0" Classes="mscc-panel" Margin="0,0,3,0">
       <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
-        <StackPanel Spacing="0">
+        <StackPanel Classes="mscc-left-rail" Spacing="0">
 
           <!-- SERVER / Connect (live) -->
           <TextBlock Classes="mscc-section" Text="SERVER" Margin="0,0,0,1"/>
@@ -121,8 +126,8 @@
                   Classes.mscc-selected="{Binding RemoteAudio}"
                   ToolTip.Tip="This PC is the operator. Opens the audio window (Path Phones/Digital there). Disabled if Server is 127.0.0.1 (local CAT). Exit Remote here — main Phones/Digital stay locked until then."/>
 
-          <!-- Filters / Step (live when connected) -->
-          <TextBlock Classes="mscc-section" Text="FILTERS / STEP"/>
+          <!-- Filters (live when connected) -->
+          <TextBlock Classes="mscc-section" Text="FILTERS"/>
           <Grid ColumnDefinitions="24,*" Height="24" Margin="0">
             <TextBlock Classes="mscc-label" Text="Lo"/>
             <Button Grid.Column="1" Content="{Binding LowCutLabel}" Classes="mscc-bar"
@@ -144,14 +149,6 @@
                     Height="20" Margin="0,2" VerticalAlignment="Center"
                     ToolTip.Tip="CW bandwidth (live). 1.8k / 400 / 200 Hz."/>
           </Grid>
-          <Grid ColumnDefinitions="24,*" Height="24" Margin="0">
-            <TextBlock Classes="mscc-label" Text="Step"/>
-            <Button Grid.Column="1" Content="{Binding StepLabel}" Classes="mscc-bar"
-                    Command="{Binding CycleStepCommand}" HorizontalAlignment="Left" Width="64"
-                    Height="20" Margin="0,2" VerticalAlignment="Center"
-                    ToolTip.Tip="Mouse-wheel tuning step on the MAIN tab."/>
-          </Grid>
-
           <TextBlock Classes="mscc-section" Text="ZOOM"/>
           <Grid ColumnDefinitions="*,32" Height="28" Margin="0,0,0,1">
             <Slider Classes="mscc-physical" Minimum="1" Maximum="4" TickFrequency="1" IsSnapToTickEnabled="True"
@@ -475,28 +472,35 @@
                 <TextBlock Text="{Binding UtcDateDisplay}" Foreground="#888" FontSize="9" VerticalAlignment="Center" Margin="4,0,0,0"/>
               </StackPanel>
             </Border>
-            <Border Grid.Row="1" Background="#FF0A0A12" BorderBrush="#FF333333" BorderThickness="1" CornerRadius="2">
-              <ctrl:SpectrumDisplayControl x:Name="SpectrumDisplay"
-                                           SpectrumUpdate="{Binding CurrentSpectrum}"
-                                           ZoomFactor="{Binding SpectrumZoom}"/>
+            <Border Grid.Row="1" Background="{DynamicResource UiVfoBezelBrush}" CornerRadius="4" Padding="3">
+              <Grid>
+                <Border Background="#FF0A0A12" CornerRadius="2"/>
+                <ctrl:SpectrumDisplayControl x:Name="SpectrumDisplay"
+                                             SpectrumUpdate="{Binding CurrentSpectrum}"
+                                             ZoomFactor="{Binding SpectrumZoom}"/>
+                <Border BorderThickness="2,2,0,0" BorderBrush="{DynamicResource UiVfoBevelDarkBrush}"
+                        CornerRadius="2" IsHitTestVisible="False"/>
+                <Border BorderThickness="0,0,2,2" BorderBrush="{DynamicResource UiVfoBevelLightBrush}"
+                        CornerRadius="2" IsHitTestVisible="False"/>
+              </Grid>
             </Border>
           </Grid>
         </TabItem>
 
         <TabItem Header="CW">
-          <Border Background="#FF1A1A1A" Padding="10" Margin="0">
+          <Border Background="Transparent" BorderThickness="0" Padding="10" Margin="0">
             <ScrollViewer HorizontalScrollBarVisibility="Auto" VerticalScrollBarVisibility="Auto">
               <StackPanel Spacing="10">
-                <TextBlock Text="CW CONTROLS" FontWeight="SemiBold" Foreground="#00FFAA"/>
+                <TextBlock Text="CW CONTROLS" Classes="mscc-face-heading"/>
                 <TextBlock Text="Keyer / spacing / paddle / weight / pitch. Speed &amp; pitch also on right rail."
-                           FontSize="10" Foreground="#888" TextWrapping="Wrap"/>
+                           FontSize="10" Foreground="{DynamicResource UiFaceMutedTextBrush}" TextWrapping="Wrap"/>
 
                 <CheckBox Content="Use external electronic keyer (legacy)"
                           IsChecked="{Binding ExternalElectronicKeyer}"
-                          Foreground="#CCC" FontSize="11"
+                          Foreground="{DynamicResource UiFaceMutedTextBrush}" FontSize="11"
                           ToolTip.Tip="Check if you use an external keyer or a Legacy radio. Grays the built-in keyer controls (HOLD still works). Servers must restart to apply."/>
                 <TextBlock Text="Legacy mode: PIC keyer controls grayed — HOLD stays live. Restart backends after change."
-                           FontSize="10" Foreground="#FFAA66" TextWrapping="Wrap"
+                           FontSize="10" Foreground="{DynamicResource UiFaceWarnTextBrush}" TextWrapping="Wrap"
                            IsVisible="{Binding ExternalElectronicKeyer}"/>
 
                 <!-- Lists row -->
@@ -555,7 +559,7 @@
                             Command="{Binding DecCwSpeedCommand}"/>
                     <Button Content="+" Classes="mscc-gold" Width="24" Height="22"
                             Command="{Binding IncCwSpeedCommand}"/>
-                    <TextBlock Text="WPM" Foreground="#AAA" FontSize="9" VerticalAlignment="Center"/>
+                    <TextBlock Text="WPM" Foreground="{DynamicResource UiFaceMutedTextBrush}" FontSize="9" VerticalAlignment="Center"/>
                   </StackPanel>
 
                   <StackPanel Orientation="Horizontal" Spacing="4" IsEnabled="{Binding PicKeyerControlsEnabled}"
@@ -569,7 +573,7 @@
                             Command="{Binding DecCwMemTextWpmCommand}"/>
                     <Button Content="+" Classes="mscc-gold" Width="24" Height="22"
                             Command="{Binding IncCwMemTextWpmCommand}"/>
-                    <TextBlock Text="WPM" Foreground="#AAA" FontSize="9" VerticalAlignment="Center"/>
+                    <TextBlock Text="WPM" Foreground="{DynamicResource UiFaceMutedTextBrush}" FontSize="9" VerticalAlignment="Center"/>
                     <CheckBox Content="PADDLE" IsChecked="{Binding CwPaddleFarnsworth}" Foreground="White" FontSize="10"
                               VerticalAlignment="Center" Margin="6,0,0,0"
                               ToolTip.Tip="Farnsworth on the paddles: the keyer sends your letters at SPEED with gaps set by FARNSWORTH (0x9D, kept by ms-sdr in cw.ini)."/>
@@ -585,7 +589,7 @@
                             Command="{Binding DecCwHoldCommand}"/>
                     <Button Content="+" Classes="mscc-gold" Width="24" Height="22"
                             Command="{Binding IncCwHoldCommand}"/>
-                    <TextBlock Text="ms" Foreground="#AAA" FontSize="9" VerticalAlignment="Center"/>
+                    <TextBlock Text="ms" Foreground="{DynamicResource UiFaceMutedTextBrush}" FontSize="9" VerticalAlignment="Center"/>
                   </StackPanel>
 
                   <CheckBox Content="POTENTIA / QSK" IsChecked="{Binding CwQsk}"
@@ -595,9 +599,9 @@
                 </StackPanel>
 
                 <!-- Keyer CQ memory: 4 slots × 48 chars; R=store to PIC, P=play once -->
-                <TextBlock Text="CQ MEMORY" FontWeight="SemiBold" Foreground="#00FFAA" Margin="0,8,0,0"/>
+                <TextBlock Text="CQ MEMORY" Classes="mscc-face-heading" Margin="0,8,0,0"/>
                 <TextBlock Text="R stores slot to keyer (EEPROM). P plays that slot once. Paddle aborts play. Max 48 chars. Text sticky in client; not read back from radio."
-                           FontSize="10" Foreground="#888" TextWrapping="Wrap"/>
+                           FontSize="10" Foreground="{DynamicResource UiFaceMutedTextBrush}" TextWrapping="Wrap"/>
 
                 <Grid ColumnDefinitions="*,Auto,Auto,Auto" RowDefinitions="Auto,Auto,Auto,Auto"
                       IsEnabled="{Binding KeyerMemPanelEnabled}">
@@ -607,7 +611,7 @@
                            Background="#FF222222" Foreground="#00FFAA" CaretBrush="#00FFAA"
                            PlaceholderText="Slot 0 message (max 48)"/>
                   <TextBlock Grid.Row="0" Grid.Column="1" Text="{Binding KeyerMem0Count}"
-                             Foreground="#666" FontSize="9" VerticalAlignment="Center" Margin="0,0,6,0" MinWidth="36"/>
+                             Foreground="{DynamicResource UiFaceMutedTextBrush}" FontSize="9" VerticalAlignment="Center" Margin="0,0,6,0" MinWidth="36"/>
                   <Button Grid.Row="0" Grid.Column="2" Content="R" Classes="mscc-gold" Width="32" Height="26"
                           Margin="0,2,4,2" FontWeight="Bold"
                           Command="{Binding RecordKeyerMemCommand}" CommandParameter="0"
@@ -625,7 +629,7 @@
                            Background="#FF222222" Foreground="#00FFAA" CaretBrush="#00FFAA"
                            PlaceholderText="Slot 1 message (max 48)"/>
                   <TextBlock Grid.Row="1" Grid.Column="1" Text="{Binding KeyerMem1Count}"
-                             Foreground="#666" FontSize="9" VerticalAlignment="Center" Margin="0,0,6,0" MinWidth="36"/>
+                             Foreground="{DynamicResource UiFaceMutedTextBrush}" FontSize="9" VerticalAlignment="Center" Margin="0,0,6,0" MinWidth="36"/>
                   <Button Grid.Row="1" Grid.Column="2" Content="R" Classes="mscc-gold" Width="32" Height="26"
                           Margin="0,2,4,2" FontWeight="Bold"
                           Command="{Binding RecordKeyerMemCommand}" CommandParameter="1"
@@ -643,7 +647,7 @@
                            Background="#FF222222" Foreground="#00FFAA" CaretBrush="#00FFAA"
                            PlaceholderText="Slot 2 message (max 48)"/>
                   <TextBlock Grid.Row="2" Grid.Column="1" Text="{Binding KeyerMem2Count}"
-                             Foreground="#666" FontSize="9" VerticalAlignment="Center" Margin="0,0,6,0" MinWidth="36"/>
+                             Foreground="{DynamicResource UiFaceMutedTextBrush}" FontSize="9" VerticalAlignment="Center" Margin="0,0,6,0" MinWidth="36"/>
                   <Button Grid.Row="2" Grid.Column="2" Content="R" Classes="mscc-gold" Width="32" Height="26"
                           Margin="0,2,4,2" FontWeight="Bold"
                           Command="{Binding RecordKeyerMemCommand}" CommandParameter="2"
@@ -661,7 +665,7 @@
                            Background="#FF222222" Foreground="#00FFAA" CaretBrush="#00FFAA"
                            PlaceholderText="Slot 3 message (max 48)"/>
                   <TextBlock Grid.Row="3" Grid.Column="1" Text="{Binding KeyerMem3Count}"
-                             Foreground="#666" FontSize="9" VerticalAlignment="Center" Margin="0,0,6,0" MinWidth="36"/>
+                             Foreground="{DynamicResource UiFaceMutedTextBrush}" FontSize="9" VerticalAlignment="Center" Margin="0,0,6,0" MinWidth="36"/>
                   <Button Grid.Row="3" Grid.Column="2" Content="R" Classes="mscc-gold" Width="32" Height="26"
                           Margin="0,2,4,2" FontWeight="Bold"
                           Command="{Binding RecordKeyerMemCommand}" CommandParameter="3"
@@ -674,25 +678,25 @@
                           ToolTip.Tip="Send this message once. Touch the paddle to stop."/>
                 </Grid>
 
-                <TextBlock Text="{Binding KeyerMemStatus}" FontSize="10" Foreground="#AAA"
+                <TextBlock Text="{Binding KeyerMemStatus}" FontSize="10" Foreground="{DynamicResource UiFaceMutedTextBrush}"
                            TextWrapping="Wrap" MinHeight="16"/>
 
                 <TextBlock Text="RIT is on the left rail (RIT + Offset + Clear)."
-                           FontSize="10" Foreground="#666" Margin="0,4,0,0"/>
+                           FontSize="10" Foreground="{DynamicResource UiFaceMutedTextBrush}" Margin="0,4,0,0"/>
               </StackPanel>
             </ScrollViewer>
           </Border>
         </TabItem>
 
         <TabItem Header="RX/TX">
-          <Border Background="#FF1A1A1A" Padding="8" Margin="0">
+          <Border Background="Transparent" BorderThickness="0" Padding="8" Margin="0">
             <ScrollViewer HorizontalScrollBarVisibility="Disabled" VerticalScrollBarVisibility="Auto">
               <Grid ColumnDefinitions="*,*" ColumnSpacing="8">
                 <!-- Left: power levels + default filters placeholders -->
-                <Border Grid.Column="0" Background="#FF222222" CornerRadius="4" Padding="10">
+                <Border Grid.Column="0" Background="Transparent" BorderThickness="0" CornerRadius="4" Padding="10">
                   <StackPanel Spacing="4">
-                    <TextBlock Text="POWER LEVELS" FontWeight="SemiBold" Foreground="#00FFAA" Margin="0,0,0,6"/>
-                    <TextBlock Text="Used by TUN / mode (wired when connected)." FontSize="10" Foreground="#888" Margin="0,0,0,4" TextWrapping="Wrap"/>
+                    <TextBlock Text="POWER LEVELS" Classes="mscc-face-heading" Margin="0,0,0,6"/>
+                    <TextBlock Text="Used by TUN / mode (wired when connected)." FontSize="10" Foreground="{DynamicResource UiFaceMutedTextBrush}" Margin="0,0,0,4" TextWrapping="Wrap"/>
 
                     <Grid ColumnDefinitions="88,*,40" Height="26">
                       <TextBlock Classes="mscc-label" Text="Tune Power" FontSize="11" VerticalAlignment="Center"/>
@@ -742,9 +746,9 @@
                                  Text="{Binding FmPowerPercent, StringFormat={}{0}%}"/>
                     </Grid>
 
-                    <TextBlock Text="DEFAULT FILTERS" FontWeight="SemiBold" Foreground="#00FFAA" Margin="0,4,0,4"/>
+                    <TextBlock Text="DEFAULT FILTERS" Classes="mscc-face-heading" Margin="0,4,0,4"/>
                     <TextBlock Text="Radio defaults (saved on server). Active Lo/Hi/CW stay on the left rail."
-                               FontSize="10" Foreground="#888" TextWrapping="Wrap"/>
+                               FontSize="10" Foreground="{DynamicResource UiFaceMutedTextBrush}" TextWrapping="Wrap"/>
                     <StackPanel Orientation="Horizontal" Spacing="8" Margin="0,6,0,0">
                       <StackPanel Width="72">
                         <TextBlock Text="LOW" Foreground="White" HorizontalAlignment="Center" FontSize="10"/>
@@ -787,11 +791,11 @@
                 </Border>
 
                 <!-- Right: TX options / processing -->
-                <Border Grid.Column="1" Background="#FF222222" CornerRadius="4" Padding="10">
+                <Border Grid.Column="1" Background="Transparent" BorderThickness="0" CornerRadius="4" Padding="10">
                   <StackPanel Spacing="6">
-                    <TextBlock Text="TX OPTIONS / PROCESSING" FontWeight="SemiBold" Foreground="#00FFAA"/>
+                    <TextBlock Text="TX OPTIONS / PROCESSING" Classes="mscc-face-heading"/>
                     <TextBlock Text="NB, NR, AN and AGC Fast Release stay on the right operate rail."
-                               FontSize="10" Foreground="#AAA" TextWrapping="Wrap"/>
+                               FontSize="10" Foreground="{DynamicResource UiFaceMutedTextBrush}" TextWrapping="Wrap"/>
 
                     <StackPanel Orientation="Horizontal" Spacing="12" Margin="0,8,0,0">
                       <StackPanel Width="80">
@@ -816,7 +820,7 @@
                       </StackPanel>
                     </StackPanel>
 
-                    <TextBlock Text="TX BUTTONS" FontWeight="SemiBold" Foreground="#00FFAA" Margin="0,12,0,4"/>
+                    <TextBlock Text="TX BUTTONS" Classes="mscc-face-heading" Margin="0,12,0,4"/>
                     <UniformGrid Columns="2" Rows="2" Width="220" HorizontalAlignment="Left">
                       <Button Content="QRP" Classes="mscc-gold" Margin="3" MinHeight="28"
                               Command="{Binding SelectQrpCommand}"
@@ -834,11 +838,11 @@
                     </UniformGrid>
 
                     <TextBlock Text="TUN uses Tune Power only. USB, LSB and DIG-U use SSB Power."
-                               FontSize="10" Foreground="#666" TextWrapping="Wrap" Margin="0,12,0,0"/>
+                               FontSize="10" Foreground="{DynamicResource UiFaceMutedTextBrush}" TextWrapping="Wrap" Margin="0,12,0,0"/>
                     <TextBlock Text="{Binding ModeText, StringFormat=Current mode: {0}}"
                                FontSize="11" Foreground="#00FFAA"/>
                     <TextBlock Text="{Binding RfPower, StringFormat=RF mirror: {0}%}"
-                               FontSize="11" Foreground="#88CCAA"/>
+                               FontSize="11" Foreground="{DynamicResource UiFaceOkTextBrush}"/>
                   </StackPanel>
                 </Border>
               </Grid>
@@ -847,10 +851,10 @@
         </TabItem>
 
         <TabItem Header="FAVORITES">
-          <Border Background="#FF222222" CornerRadius="4" Padding="10" Margin="0">
+          <Border Background="Transparent" BorderThickness="0" CornerRadius="4" Padding="10" Margin="0">
             <Grid RowDefinitions="Auto,Auto,*,Auto">
               <TextBlock Grid.Row="0" Text="FAVORITES (BY BAND)"
-                         FontWeight="SemiBold" Foreground="#00FFAA" FontSize="14" Margin="0,0,0,8"/>
+                         Classes="mscc-face-heading" FontSize="14" Margin="0,0,0,8"/>
 
               <StackPanel Grid.Row="1" Orientation="Horizontal" Spacing="6" Margin="0,0,0,8">
                 <TextBlock Text="Band" Foreground="White" VerticalAlignment="Center"/>
@@ -912,7 +916,7 @@
                 </DockPanel>
               </Border>
 
-              <TextBlock Grid.Row="3" Margin="0,8,0,0" Foreground="#AAA" FontSize="11" TextWrapping="Wrap"
+              <TextBlock Grid.Row="3" Margin="0,8,0,0" Foreground="{DynamicResource UiFaceMutedTextBrush}" FontSize="11" TextWrapping="Wrap"
                          Text="Session-only (not saved to disk yet). Per-band lists: FT-8 on 20m ≠ FT-8 on 15m. SAVE uses the radio's current band. RECALL sets freq / mode / filters."/>
             </Grid>
           </Border>
@@ -921,16 +925,16 @@
         <!-- QRP CAL: enabled when AMP is off -->
         <TabItem x:Name="QrpCalTab" Header="QRP CAL" IsEnabled="{Binding IsPowerCalTabEnabled}"
                  ToolTip.Tip="QRP / transceiver power calibration (AMP must be off)">
-          <Border Background="#FF222222" CornerRadius="4" Padding="10" Margin="0">
+          <Border Background="Transparent" BorderThickness="0" CornerRadius="4" Padding="10" Margin="0">
             <ScrollViewer VerticalScrollBarVisibility="Auto">
               <StackPanel Spacing="8">
-                <TextBlock Text="QRP / TRANSCEIVER" FontWeight="Bold" Foreground="#00FFAA" FontSize="14"/>
-                <TextBlock Text="{Binding PowerCalTabHint}" FontSize="10" Foreground="#888" TextWrapping="Wrap"/>
-                <TextBlock Text="Turn CALIBRATE off when done and choose Yes to save the band (stored in the radio)." Foreground="#D0D0D0" FontSize="11" TextWrapping="Wrap"/>
+                <TextBlock Text="QRP / TRANSCEIVER" Classes="mscc-face-heading" FontSize="14"/>
+                <TextBlock Text="{Binding PowerCalTabHint}" FontSize="10" Foreground="{DynamicResource UiFaceMutedTextBrush}" TextWrapping="Wrap"/>
+                <TextBlock Text="Turn CALIBRATE off when done and choose Yes to save the band (stored in the radio)." Foreground="{DynamicResource UiFaceMutedTextBrush}" FontSize="11" TextWrapping="Wrap"/>
 
-                <Border Background="#FF252525" BorderBrush="#444" BorderThickness="1" CornerRadius="4" Padding="10,8">
+                <Border Background="Transparent" BorderThickness="0" CornerRadius="4" Padding="10,8">
                   <StackPanel Spacing="6">
-                    <TextBlock Text="CALIBRATION STATUS" FontWeight="Bold" Foreground="#00FFAA" FontSize="12"/>
+                    <TextBlock Text="CALIBRATION STATUS" Classes="mscc-face-heading" FontSize="12"/>
                     <ItemsControl ItemsSource="{Binding PowerCalBandStatuses}">
                       <ItemsControl.ItemsPanel>
                         <ItemsPanelTemplate>
@@ -950,13 +954,13 @@
                       </ItemsControl.ItemTemplate>
                     </ItemsControl>
                     <TextBlock Text="Green = calibrated (this session). White = not calibrated."
-                               Foreground="#AAA" FontSize="10"/>
+                               Foreground="{DynamicResource UiFaceMutedTextBrush}" FontSize="10"/>
                   </StackPanel>
                 </Border>
 
-                <Border Background="#FF252525" BorderBrush="#444" BorderThickness="1" CornerRadius="4" Padding="8">
+                <Border Background="Transparent" BorderThickness="0" CornerRadius="4" Padding="8">
                   <StackPanel Spacing="6">
-                    <TextBlock Text="BAND SELECTION" FontWeight="Bold" Foreground="#00FFAA" FontSize="12"/>
+                    <TextBlock Text="BAND SELECTION" Classes="mscc-face-heading" FontSize="12"/>
                     <ItemsControl ItemsSource="{Binding PowerCalBandStatuses}">
                       <ItemsControl.ItemsPanel>
                         <ItemsPanelTemplate>
@@ -1033,16 +1037,16 @@
         <!-- AMP CAL: enabled when AMP is on -->
         <TabItem x:Name="AmpCalTab" Header="AMP CAL" IsEnabled="{Binding IsAmpCalTabEnabled}"
                  ToolTip.Tip="Power amplifier calibration (AMP must be on)">
-          <Border Background="#FF222222" CornerRadius="4" Padding="10" Margin="0">
+          <Border Background="Transparent" BorderThickness="0" CornerRadius="4" Padding="10" Margin="0">
             <ScrollViewer VerticalScrollBarVisibility="Auto">
               <StackPanel Spacing="8">
-                <TextBlock Text="POWER AMPLIFIER" FontWeight="Bold" Foreground="#00FFAA" FontSize="14"/>
-                <TextBlock Text="{Binding AmpCalTabHint}" FontSize="10" Foreground="#888" TextWrapping="Wrap"/>
-                <TextBlock Text="When done, press Save settings." Foreground="#D0D0D0" FontSize="11"/>
+                <TextBlock Text="POWER AMPLIFIER" Classes="mscc-face-heading" FontSize="14"/>
+                <TextBlock Text="{Binding AmpCalTabHint}" FontSize="10" Foreground="{DynamicResource UiFaceMutedTextBrush}" TextWrapping="Wrap"/>
+                <TextBlock Text="When done, press Save settings." Foreground="{DynamicResource UiFaceMutedTextBrush}" FontSize="11"/>
 
-                <Border Background="#FF252525" BorderBrush="#444" BorderThickness="1" CornerRadius="4" Padding="10,8">
+                <Border Background="Transparent" BorderThickness="0" CornerRadius="4" Padding="10,8">
                   <StackPanel Spacing="6">
-                    <TextBlock Text="CALIBRATION STATUS" FontWeight="Bold" Foreground="#00FFAA" FontSize="12"/>
+                    <TextBlock Text="CALIBRATION STATUS" Classes="mscc-face-heading" FontSize="12"/>
                     <ItemsControl ItemsSource="{Binding AmpCalBandStatuses}">
                       <ItemsControl.ItemsPanel>
                         <ItemsPanelTemplate>
@@ -1062,13 +1066,13 @@
                       </ItemsControl.ItemTemplate>
                     </ItemsControl>
                     <TextBlock Text="Green = calibrated (this session). Needs QRP lamp green for that band before AMP CAL."
-                               Foreground="#AAA" FontSize="10" TextWrapping="Wrap"/>
+                               Foreground="{DynamicResource UiFaceMutedTextBrush}" FontSize="10" TextWrapping="Wrap"/>
                   </StackPanel>
                 </Border>
 
-                <Border Background="#FF252525" BorderBrush="#444" BorderThickness="1" CornerRadius="4" Padding="8">
+                <Border Background="Transparent" BorderThickness="0" CornerRadius="4" Padding="8">
                   <StackPanel Spacing="6">
-                    <TextBlock Text="BAND SELECTION" FontWeight="Bold" Foreground="#00FFAA" FontSize="12"/>
+                    <TextBlock Text="BAND SELECTION" Classes="mscc-face-heading" FontSize="12"/>
                     <ItemsControl ItemsSource="{Binding AmpCalBandStatuses}">
                       <ItemsControl.ItemsPanel>
                         <ItemsPanelTemplate>
@@ -1144,20 +1148,20 @@
 
         <!-- RX IQ: controls top, spectrum below (no waterfall / no click-tune) -->
         <TabItem Header="RX IQ" ToolTip.Tip="Receive I/Q calibration — spectrum aids image nulling">
-          <Border Background="#FF222222" CornerRadius="4" Padding="8" Margin="0">
+          <Border Background="Transparent" BorderThickness="0" CornerRadius="4" Padding="8" Margin="0">
             <Grid RowDefinitions="Auto,*">
-              <Border Grid.Row="0" Background="#FF1A1A1A" BorderBrush="#555" BorderThickness="1"
+              <Border Grid.Row="0" Background="Transparent" BorderThickness="0"
                       CornerRadius="4" Padding="8,6" Margin="0,0,0,6">
                 <StackPanel Spacing="4">
                   <StackPanel Orientation="Horizontal" Spacing="8">
-                    <TextBlock Text="RECEIVE I/Q" FontWeight="Bold" Foreground="#00FFAA" FontSize="13"
+                    <TextBlock Text="RECEIVE I/Q" Classes="mscc-face-heading" FontSize="13"
                                VerticalAlignment="Center"/>
-                    <TextBlock Text="BAND" Foreground="#AAA" FontSize="11" VerticalAlignment="Center"/>
+                    <TextBlock Text="BAND" Foreground="{DynamicResource UiFaceMutedTextBrush}" FontSize="11" VerticalAlignment="Center"/>
                     <Border Background="#444" BorderBrush="#888" BorderThickness="1" Padding="8,2" MinWidth="48">
                       <TextBlock Text="{Binding RxIqBandLabel}" Foreground="#00FFAA" FontWeight="Bold"
                                  FontSize="12" HorizontalAlignment="Center"/>
                     </Border>
-                    <TextBlock Text="FREQ" Foreground="#AAA" FontSize="11" VerticalAlignment="Center"/>
+                    <TextBlock Text="FREQ" Foreground="{DynamicResource UiFaceMutedTextBrush}" FontSize="11" VerticalAlignment="Center"/>
                     <Border Background="#444" BorderBrush="#888" BorderThickness="1" Padding="8,2" MinWidth="110">
                       <TextBlock Text="{Binding RxIqFreqDisplay}" FontFamily="Consolas, Courier New, monospace"
                                  Foreground="#00FFAA" FontWeight="Bold" FontSize="12" HorizontalAlignment="Center"/>
@@ -1230,12 +1234,20 @@
                 </StackPanel>
               </Border>
 
-              <ctrl:SpectrumDisplayControl Grid.Row="1"
-                                           SpectrumUpdate="{Binding CurrentSpectrum}"
-                                           ZoomFactor="{Binding SpectrumZoom}"
-                                           IsInteractive="False"
-                                           ShowWaterfall="False"
-                                           MinHeight="220"/>
+              <Border Grid.Row="1" Background="{DynamicResource UiVfoBezelBrush}" CornerRadius="4" Padding="3">
+                <Grid>
+                  <Border Background="#FF0A0A12" CornerRadius="2"/>
+                  <ctrl:SpectrumDisplayControl SpectrumUpdate="{Binding CurrentSpectrum}"
+                                               ZoomFactor="{Binding SpectrumZoom}"
+                                               IsInteractive="False"
+                                               ShowWaterfall="False"
+                                               MinHeight="220"/>
+                  <Border BorderThickness="2,2,0,0" BorderBrush="{DynamicResource UiVfoBevelDarkBrush}"
+                          CornerRadius="2" IsHitTestVisible="False"/>
+                  <Border BorderThickness="0,0,2,2" BorderBrush="{DynamicResource UiVfoBevelLightBrush}"
+                          CornerRadius="2" IsHitTestVisible="False"/>
+                </Grid>
+              </Border>
             </Grid>
           </Border>
         </TabItem>
@@ -1243,16 +1255,16 @@
         <!-- TX IQ: QRP only (AMP off) -->
         <TabItem x:Name="TxIqTab" Header="TX IQ" IsEnabled="{Binding IsTxIqTabEnabled}"
                  ToolTip.Tip="Transmit I/Q balance — QRP only (AMP off)">
-          <Border Background="#FF222222" CornerRadius="4" Padding="10" Margin="0">
+          <Border Background="Transparent" BorderThickness="0" CornerRadius="4" Padding="10" Margin="0">
             <ScrollViewer VerticalScrollBarVisibility="Auto">
               <StackPanel Spacing="8">
-                <TextBlock Text="TRANSMIT I/Q BALANCE" FontWeight="Bold" Foreground="#00FFAA" FontSize="14"/>
-                <TextBlock Text="{Binding TxIqTabHint}" FontSize="10" Foreground="#888" TextWrapping="Wrap"/>
-                <TextBlock Text="SAVE stores the value for the selected band (in the radio)." Foreground="#D0D0D0" FontSize="11"/>
+                <TextBlock Text="TRANSMIT I/Q BALANCE" Classes="mscc-face-heading" FontSize="14"/>
+                <TextBlock Text="{Binding TxIqTabHint}" FontSize="10" Foreground="{DynamicResource UiFaceMutedTextBrush}" TextWrapping="Wrap"/>
+                <TextBlock Text="SAVE stores the value for the selected band (in the radio)." Foreground="{DynamicResource UiFaceMutedTextBrush}" FontSize="11"/>
 
-                <Border Background="#FF252525" BorderBrush="#444" BorderThickness="1" CornerRadius="4" Padding="8">
+                <Border Background="Transparent" BorderThickness="0" CornerRadius="4" Padding="8">
                   <StackPanel Spacing="6">
-                    <TextBlock Text="BAND SELECTION" FontWeight="Bold" Foreground="#00FFAA" FontSize="12"/>
+                    <TextBlock Text="BAND SELECTION" Classes="mscc-face-heading" FontSize="12"/>
                     <ItemsControl ItemsSource="{Binding TxIqBandItems}">
                       <ItemsControl.ItemsPanel>
                         <ItemsPanelTemplate>
@@ -1346,14 +1358,14 @@
 
         <!-- FREQ CAL: controls top, spectrum below (no waterfall) -->
         <TabItem x:Name="FreqCalTab" Header="FREQ CAL" ToolTip.Tip="Frequency calibration — WWV/standard carriers work best">
-          <Border Background="#FF222222" CornerRadius="4" Padding="8" Margin="0">
+          <Border Background="Transparent" BorderThickness="0" Padding="8" Margin="0">
             <Grid RowDefinitions="Auto,*">
               <StackPanel Grid.Row="0" Spacing="6" Margin="0,0,0,6">
-                <TextBlock Text="FREQUENCY CALIBRATION" FontWeight="SemiBold" Foreground="#00FFAA" FontSize="14"/>
+                <TextBlock Text="FREQUENCY CALIBRATION" Classes="mscc-face-heading" FontSize="14"/>
                 <TextBlock Text="The radio must be in CW mode during FREQ CAL. This tab switches to CW; if the mode shows anything else, press CW before AUTO or CHECK."
-                           FontSize="12" Foreground="#FFC000" TextWrapping="Wrap"/>
+                           FontSize="12" Foreground="{DynamicResource UiFaceWarnTextBrush}" TextWrapping="Wrap"/>
                 <TextBlock Text="Tune VFO to the carrier (e.g. WWV). This tab switches to CW, 200 Hz filter and 600 Hz pitch; leaving it restores your mode."
-                           FontSize="10" Foreground="#888" TextWrapping="Wrap"/>
+                           FontSize="10" Foreground="{DynamicResource UiFaceMutedTextBrush}" TextWrapping="Wrap"/>
 
                 <StackPanel Orientation="Horizontal" Spacing="6">
                   <Button Content="{Binding FreqCalLooseButtonText}" Classes="mscc-gold" Width="80" Height="28"
@@ -1383,7 +1395,7 @@
                           ToolTip.Tip="Stop the AUTO or CHECK run. The calibration is not changed."/>
                 </StackPanel>
                 <TextBlock Text="Calibration running — don't change tabs or settings until it finishes."
-                           Foreground="#FFC000" FontSize="11" TextWrapping="Wrap"
+                           Foreground="{DynamicResource UiFaceWarnTextBrush}" FontSize="11" TextWrapping="Wrap"
                            IsVisible="{Binding FreqCalInProgress}"/>
 
                 <StackPanel Orientation="Horizontal" Spacing="6">
@@ -1401,7 +1413,7 @@
                           Command="{Binding FreqCalPpmPlusCommand}"
                           IsEnabled="{Binding FreqCalPpmEnabled}"
                           ToolTip.Tip="Increase PPM by 1 (rate-limited to protect radio)"/>
-                  <TextBlock Text="ST:" Foreground="#AAA" FontSize="12" VerticalAlignment="Center" Margin="8,0,0,0"/>
+                  <TextBlock Text="ST:" Foreground="{DynamicResource UiFaceMutedTextBrush}" FontSize="12" VerticalAlignment="Center" Margin="8,0,0,0"/>
                   <TextBlock Text="{Binding FreqCalStatus}" Foreground="{Binding FreqCalStatusBrush}" FontSize="12"
                              VerticalAlignment="Center" TextWrapping="Wrap" MaxWidth="220"/>
                   <ProgressBar Width="100" Height="16" Minimum="0" Maximum="100"
@@ -1439,12 +1451,20 @@
                 </StackPanel>
               </StackPanel>
 
-              <ctrl:SpectrumDisplayControl Grid.Row="1"
-                                           SpectrumUpdate="{Binding CurrentSpectrum}"
-                                           ZoomFactor="{Binding SpectrumZoom}"
-                                           IsInteractive="False"
-                                           ShowWaterfall="False"
-                                           MinHeight="240"/>
+              <Border Grid.Row="1" Background="{DynamicResource UiVfoBezelBrush}" CornerRadius="4" Padding="3">
+                <Grid>
+                  <Border Background="#FF0A0A12" CornerRadius="2"/>
+                  <ctrl:SpectrumDisplayControl SpectrumUpdate="{Binding CurrentSpectrum}"
+                                               ZoomFactor="{Binding SpectrumZoom}"
+                                               IsInteractive="False"
+                                               ShowWaterfall="False"
+                                               MinHeight="240"/>
+                  <Border BorderThickness="2,2,0,0" BorderBrush="{DynamicResource UiVfoBevelDarkBrush}"
+                          CornerRadius="2" IsHitTestVisible="False"/>
+                  <Border BorderThickness="0,0,2,2" BorderBrush="{DynamicResource UiVfoBevelLightBrush}"
+                          CornerRadius="2" IsHitTestVisible="False"/>
+                </Grid>
+              </Border>
             </Grid>
           </Border>
         </TabItem>
@@ -1453,22 +1473,22 @@
           <Border Classes="mscc-panel" Margin="8">
             <ScrollViewer VerticalScrollBarVisibility="Auto">
               <StackPanel Margin="16" Spacing="10" MaxWidth="560">
-                <TextBlock Text="Settings" FontSize="18" FontWeight="Bold" Foreground="#00FFAA"/>
+                <TextBlock Text="Settings" Classes="mscc-face-heading" FontSize="18"/>
                 <TextBlock Text="Connection is on the left SERVER panel. COM / operator audio are set by MSCC Init on this PC (not this UI)."
-                           Foreground="#AAA" TextWrapping="Wrap"/>
+                           Foreground="{DynamicResource UiFaceMutedTextBrush}" TextWrapping="Wrap"/>
                 <TextBlock Text="Sticky client file:"
-                           Foreground="#AAA" TextWrapping="Wrap" Margin="0,4,0,0"/>
-                <TextBlock Text="{Binding SettingsFilePath}" FontSize="10" Foreground="#666" TextWrapping="Wrap"/>
+                           Foreground="{DynamicResource UiFaceMutedTextBrush}" TextWrapping="Wrap" Margin="0,4,0,0"/>
+                <TextBlock Text="{Binding SettingsFilePath}" FontSize="10" Foreground="{DynamicResource UiFaceMutedTextBrush}" TextWrapping="Wrap"/>
 
                 <!-- UI Appearance (WPF UiAppearancePanel port) -->
-                <Border Background="#FF222222" BorderBrush="#FF444444" BorderThickness="1" CornerRadius="4" Padding="10" Margin="0,8,0,0">
+                <Border Background="Transparent" BorderThickness="0" CornerRadius="4" Padding="10" Margin="0,8,0,0">
                   <StackPanel Spacing="8">
-                    <TextBlock Text="UI Appearance" FontWeight="SemiBold" Foreground="#00FFAA" FontSize="13"/>
+                    <TextBlock Text="UI Appearance" Classes="mscc-face-heading" FontSize="13"/>
                     <TextBlock Text="Live preview. CUSTOM enables RGB sliders. CUSTOM background forces panel AUTO. ACCENT AUTO is mint on dark backgrounds. Tabs stay mint."
-                               FontSize="10" Foreground="#D0D0D0" TextWrapping="Wrap"/>
+                               FontSize="10" Foreground="{DynamicResource UiFaceMutedTextBrush}" TextWrapping="Wrap"/>
                     <StackPanel Orientation="Horizontal" Spacing="12">
                       <StackPanel>
-                        <TextBlock Text="UI BACKGROUND" FontSize="9" Foreground="#D0D0D0" Margin="0,0,0,2"/>
+                        <TextBlock Text="UI BACKGROUND" FontSize="9" Foreground="{DynamicResource UiFaceMutedTextBrush}" Margin="0,0,0,2"/>
                         <ListBox ItemsSource="{Binding UiBackgroundNames}"
                                  SelectedItem="{Binding SelectedUiBackground}"
                                  Width="90" Height="130" FontSize="10"
@@ -1494,7 +1514,7 @@
                         </StackPanel>
                       </StackPanel>
                       <StackPanel>
-                        <TextBlock Text="UI PANEL" FontSize="9" Foreground="#D0D0D0" Margin="0,0,0,2"/>
+                        <TextBlock Text="UI PANEL" FontSize="9" Foreground="{DynamicResource UiFaceMutedTextBrush}" Margin="0,0,0,2"/>
                         <ListBox ItemsSource="{Binding UiPanelNames}"
                                  SelectedItem="{Binding SelectedUiPanel}"
                                  IsEnabled="{Binding UiPanelListEnabled}"
@@ -1504,7 +1524,7 @@
                                    FontFamily="Consolas" Margin="0,4,0,0"/>
                       </StackPanel>
                       <StackPanel>
-                        <TextBlock Text="UI BUTTON" FontSize="9" Foreground="#D0D0D0" Margin="0,0,0,2"/>
+                        <TextBlock Text="UI BUTTON" FontSize="9" Foreground="{DynamicResource UiFaceMutedTextBrush}" Margin="0,0,0,2"/>
                         <ListBox ItemsSource="{Binding UiButtonNames}"
                                  SelectedItem="{Binding SelectedUiButton}"
                                  Width="90" Height="130" FontSize="10"
@@ -1530,7 +1550,7 @@
                         </StackPanel>
                       </StackPanel>
                       <StackPanel>
-                        <TextBlock Text="UI ACCENT" FontSize="9" Foreground="#D0D0D0" Margin="0,0,0,2"/>
+                        <TextBlock Text="UI ACCENT" FontSize="9" Foreground="{DynamicResource UiFaceMutedTextBrush}" Margin="0,0,0,2"/>
                         <ListBox ItemsSource="{Binding UiAccentNames}"
                                  SelectedItem="{Binding SelectedUiAccent}"
                                  Width="90" Height="130" FontSize="10"
@@ -1557,7 +1577,7 @@
                       </StackPanel>
                       <StackPanel VerticalAlignment="Top" Width="140" Spacing="8" Margin="4,16,0,0">
                         <TextBlock Text="RGB shows effective color. CUSTOM bg locks panel to AUTO lift."
-                                   FontSize="9" Foreground="#D0D0D0" TextWrapping="Wrap"/>
+                                   FontSize="9" Foreground="{DynamicResource UiFaceMutedTextBrush}" TextWrapping="Wrap"/>
                         <Button Content="Reset defaults" Classes="mscc-gold" Width="120" Height="26"
                                 Command="{Binding ResetUiChromeCommand}"
                                 ToolTip.Tip="BACKGROUND BLACK, PANEL AUTO, BUTTON YELLOW, ACCENT AUTO"/>
@@ -1566,38 +1586,38 @@
                   </StackPanel>
                 </Border>
 
-                <Border Background="#FF222222" BorderBrush="#FF444444" BorderThickness="1" CornerRadius="4" Padding="10" Margin="0,8,0,0">
+                <Border Background="Transparent" BorderThickness="0" CornerRadius="4" Padding="10" Margin="0,8,0,0">
                   <StackPanel Spacing="6">
                     <DockPanel>
                       <Button Content="Refresh" Classes="mscc-gold" Width="72" Height="24"
                               Command="{Binding RefreshHostAudioCommand}" DockPanel.Dock="Right"/>
-                      <TextBlock Text="Radio host (mscc-init)" FontWeight="SemiBold" Foreground="#00FFAA" FontSize="13"
+                      <TextBlock Text="Radio host (mscc-init)" Classes="mscc-face-heading" FontSize="13"
                                  VerticalAlignment="Center"/>
                     </DockPanel>
                     <TextBlock Text="What WSJT-X / flrig should use on this PC. Change with MSCC Init, then Refresh. Digital VirtualA/B are created at server start."
-                               FontSize="10" Foreground="#D0D0D0" TextWrapping="Wrap"/>
+                               FontSize="10" Foreground="{DynamicResource UiFaceMutedTextBrush}" TextWrapping="Wrap"/>
                     <Grid ColumnDefinitions="140,*" RowDefinitions="Auto,Auto,Auto,Auto,Auto,Auto" Margin="0,4,0,0">
-                      <TextBlock Text="CAT (ms-sdr)" FontSize="11" Foreground="#AAA"/>
+                      <TextBlock Text="CAT (ms-sdr)" FontSize="11" Foreground="{DynamicResource UiFaceMutedTextBrush}"/>
                       <TextBlock Grid.Column="1" Text="{Binding HostCatRadio}" FontSize="11" Foreground="#00FFAA" TextWrapping="Wrap"/>
-                      <TextBlock Grid.Row="1" Text="CAT (WSJT-X)" FontSize="11" Foreground="#AAA" Margin="0,4,0,0"/>
+                      <TextBlock Grid.Row="1" Text="CAT (WSJT-X)" FontSize="11" Foreground="{DynamicResource UiFaceMutedTextBrush}" Margin="0,4,0,0"/>
                       <TextBlock Grid.Row="1" Grid.Column="1" Text="{Binding HostCatApp}" FontSize="11" Foreground="#00FFAA"
                                  TextWrapping="Wrap" Margin="0,4,0,0"/>
-                      <TextBlock Grid.Row="2" Text="Phones speaker" FontSize="11" Foreground="#AAA" Margin="0,4,0,0"/>
+                      <TextBlock Grid.Row="2" Text="Phones speaker" FontSize="11" Foreground="{DynamicResource UiFaceMutedTextBrush}" Margin="0,4,0,0"/>
                       <TextBlock Grid.Row="2" Grid.Column="1" Text="{Binding HostOperatorSpeaker}" FontSize="11" Foreground="#EEE"
                                  TextWrapping="Wrap" Margin="0,4,0,0"/>
-                      <TextBlock Grid.Row="3" Text="Phones mic" FontSize="11" Foreground="#AAA" Margin="0,4,0,0"/>
+                      <TextBlock Grid.Row="3" Text="Phones mic" FontSize="11" Foreground="{DynamicResource UiFaceMutedTextBrush}" Margin="0,4,0,0"/>
                       <TextBlock Grid.Row="3" Grid.Column="1" Text="{Binding HostOperatorMic}" FontSize="11" Foreground="#EEE"
                                  TextWrapping="Wrap" Margin="0,4,0,0"/>
-                      <TextBlock Grid.Row="4" Text="Digital Output" FontSize="11" Foreground="#AAA" Margin="0,4,0,0"/>
+                      <TextBlock Grid.Row="4" Text="Digital Output" FontSize="11" Foreground="{DynamicResource UiFaceMutedTextBrush}" Margin="0,4,0,0"/>
                       <TextBlock Grid.Row="4" Grid.Column="1" Text="{Binding HostDigitalSpeaker}" FontSize="11" Foreground="#00FFAA"
                                  TextWrapping="Wrap" Margin="0,4,0,0"/>
-                      <TextBlock Grid.Row="5" Text="Digital Input" FontSize="11" Foreground="#AAA" Margin="0,4,0,0"/>
+                      <TextBlock Grid.Row="5" Text="Digital Input" FontSize="11" Foreground="{DynamicResource UiFaceMutedTextBrush}" Margin="0,4,0,0"/>
                       <TextBlock Grid.Row="5" Grid.Column="1" Text="{Binding HostDigitalMic}" FontSize="11" Foreground="#00FFAA"
                                  TextWrapping="Wrap" Margin="0,4,0,0"/>
                     </Grid>
                     <TextBlock Text="WSJT-X: Rig=Kenwood TS-2000, Serial port = CAT (WSJT-X). Audio Out = Digital Output (VirtualA). Audio In = Digital Input (VirtualB.monitor)."
                                FontSize="10" Foreground="#FFCC66" TextWrapping="Wrap" Margin="0,4,0,0"/>
-                    <TextBlock Text="{Binding HostAudioIniDir}" FontSize="9" Foreground="#666" TextWrapping="Wrap"/>
+                    <TextBlock Text="{Binding HostAudioIniDir}" FontSize="9" Foreground="{DynamicResource UiFaceMutedTextBrush}" TextWrapping="Wrap"/>
                   </StackPanel>
                 </Border>
 
@@ -1605,7 +1625,7 @@
                 <Border Background="#FF1A1A1A" BorderBrush="#555" BorderThickness="1" CornerRadius="4"
                         Padding="10" Margin="0,12,0,0">
                   <StackPanel Spacing="6">
-                    <TextBlock Text="SWR METER" FontWeight="Bold" Foreground="#00FFAA" FontSize="13"/>
+                    <TextBlock Text="SWR METER" Classes="mscc-face-heading" FontSize="13"/>
                     <TextBlock Text="External WiFi SWR (HF/LF). The meter must unicast UDP to this computer, or ms-sdr relays it (SWR_METER_TO_GUI). Profile follows Proficio/Geminus. Only one meter powered at a time. IP is filled in from the first packet."
                                Foreground="#D0D0D0" FontSize="11" TextWrapping="Wrap"/>
                     <CheckBox Content="Enable external SWR meter" IsChecked="{Binding SwrEnabled}"
@@ -1618,7 +1638,7 @@
                     </StackPanel>
                     <Grid ColumnDefinitions="*,12,*">
                       <StackPanel Grid.Column="0" Spacing="4">
-                        <TextBlock Text="HF (Proficio)" FontSize="11" FontWeight="Bold" Foreground="#00FFAA"/>
+                        <TextBlock Text="HF (Proficio)" Classes="mscc-face-heading" FontSize="11"/>
                         <StackPanel Orientation="Horizontal" Spacing="4">
                           <TextBlock Text="IP:" Width="24" VerticalAlignment="Center" FontSize="11" Foreground="#CCC"/>
                           <TextBox Text="{Binding SwrHfIp}" Width="140" FontSize="11"
@@ -1626,7 +1646,7 @@
                         </StackPanel>
                       </StackPanel>
                       <StackPanel Grid.Column="2" Spacing="4">
-                        <TextBlock Text="LF (Geminus)" FontSize="11" FontWeight="Bold" Foreground="#00FFAA"/>
+                        <TextBlock Text="LF (Geminus)" Classes="mscc-face-heading" FontSize="11"/>
                         <StackPanel Orientation="Horizontal" Spacing="4">
                           <TextBlock Text="IP:" Width="24" VerticalAlignment="Center" FontSize="11" Foreground="#CCC"/>
                           <TextBox Text="{Binding SwrLfIp}" Width="140" FontSize="11"
@@ -1638,25 +1658,25 @@
                   </StackPanel>
                 </Border>
 
-                <TextBlock Text="TEMPS / STATUS" FontWeight="Bold" Foreground="#00FFAA" Margin="0,12,0,0"/>
-                <TextBlock Text="{Binding ProficioTempText, StringFormat=Proficio: {0}}" FontSize="12" Foreground="#CCCCCC"/>
-                <TextBlock Text="{Binding PaTempText, StringFormat=PA temp: {0}}" FontSize="12" Foreground="#CCCCCC"/>
+                <TextBlock Text="TEMPS / STATUS" Classes="mscc-face-heading" Margin="0,12,0,0"/>
+                <TextBlock Text="{Binding ProficioTempText, StringFormat=Proficio: {0}}" FontSize="12" Foreground="{DynamicResource UiFaceMutedTextBrush}"/>
+                <TextBlock Text="{Binding PaTempText, StringFormat=PA temp: {0}}" FontSize="12" Foreground="{DynamicResource UiFaceMutedTextBrush}"/>
                 <TextBlock Text="{Binding HeatSinkText}" FontSize="12" IsVisible="{Binding HeatSinkSeen}"
-                           Foreground="#CCCCCC" Classes.mscc-fault="{Binding HeatSinkFault}"
+                           Foreground="{DynamicResource UiFaceMutedTextBrush}" Classes.mscc-fault="{Binding HeatSinkFault}"
                            ToolTip.Tip="Heat sink temperature from the radio's thermistor (STM32 radio). OPEN / SHORTED = thermistor fault."/>
-                <TextBlock Text="{Binding PaCurrentText, StringFormat=PA current: {0}}" FontSize="12" Foreground="#CCCCCC"/>
-                <TextBlock Text="{Binding PacketStatsText}" FontSize="11" Foreground="#888888" TextWrapping="Wrap"/>
+                <TextBlock Text="{Binding PaCurrentText, StringFormat=PA current: {0}}" FontSize="12" Foreground="{DynamicResource UiFaceMutedTextBrush}"/>
+                <TextBlock Text="{Binding PacketStatsText}" FontSize="11" Foreground="{DynamicResource UiFaceMutedTextBrush}" TextWrapping="Wrap"/>
 
-                <TextBlock Text="CONNECTION" FontWeight="Bold" Foreground="#00FFAA" Margin="0,12,0,0"/>
-                <TextBlock Text="{Binding LogFilePath, StringFormat=Log: {0}}" FontSize="11" Foreground="#666" TextWrapping="Wrap"/>
+                <TextBlock Text="CONNECTION" Classes="mscc-face-heading" Margin="0,12,0,0"/>
+                <TextBlock Text="{Binding LogFilePath, StringFormat=Log: {0}}" FontSize="11" Foreground="{DynamicResource UiFaceMutedTextBrush}" TextWrapping="Wrap"/>
                 <TextBlock Text="Local RX port (pan):" Classes="mscc-label"/>
                 <TextBox Text="{Binding LocalPortText}" Classes="mscc-hostport" Width="56"
                          HorizontalAlignment="Left" IsEnabled="{Binding !IsConnected}"
                          ToolTip.Tip="Local UDP listen port for spectrum (default 8889)"/>
-                <TextBlock Text="Tune: hover VFO A and use mouse wheel. Step: left FILTERS/STEP (or double-click VFO)."
-                           Foreground="#888" TextWrapping="Wrap" FontSize="11" Margin="0,8,0,0"/>
+                <TextBlock Text="Tune: hover VFO A and use mouse wheel. Step: STEP in the VFO row, or double-click VFO A."
+                           Foreground="{DynamicResource UiFaceMutedTextBrush}" TextWrapping="Wrap" FontSize="11" Margin="0,8,0,0"/>
                 <TextBlock Text="Spectrum pane background is under S/W (palette window)."
-                           Foreground="#666" TextWrapping="Wrap" FontSize="11"/>
+                           Foreground="{DynamicResource UiFaceMutedTextBrush}" TextWrapping="Wrap" FontSize="11"/>
               </StackPanel>
             </ScrollViewer>
           </Border>
@@ -1755,7 +1775,7 @@
           <CheckBox Content="Simplex (no offset)"
                     IsChecked="{Binding FmSimplex}"
                     IsEnabled="{Binding FmSimplexEnabled}"
-                    Foreground="#CCC" FontSize="10" Margin="2,2,2,4"
+                    Foreground="{DynamicResource UiFaceMutedTextBrush}" FontSize="10" Margin="2,2,2,4"
                     ToolTip.Tip="Checked: TX=RX on VFO-A. Unchecked: TX on VFO-B (A−100 kHz) via split."/>
 
           <!-- Equal-width cells so MON is not clipped on narrow right rail -->

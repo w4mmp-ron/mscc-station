@@ -103,6 +103,36 @@
       <GradientStop Offset="1" Color="#FFB01818"/>
     </RadialGradientBrush>
 
+    <!-- ===== Faceplate (UiFace*) =====
+         Skin: Steel (default). Later presets (not in this command): Dark, Olive — swap these keys only.
+         Light source: above (matches light-bar buttons, cmd-097b): lighter high-center, darker edges. -->
+    <RadialGradientBrush x:Key="UiFaceBaseBrush" Center="50%,30%" GradientOrigin="50%,22%" RadiusX="85%" RadiusY="95%">
+      <GradientStop Offset="0"    Color="#FF4E5C6D"/>
+      <GradientStop Offset="0.55" Color="#FF3E4A58"/>
+      <GradientStop Offset="1"    Color="#FF262E38"/>
+    </RadialGradientBrush>
+    <LinearGradientBrush x:Key="UiFaceSheenBrush" StartPoint="0%,0%" EndPoint="0%,100%">
+      <GradientStop Offset="0"    Color="#1FFFFFFF"/>
+      <GradientStop Offset="0.006" Color="#10FFFFFF"/>
+      <GradientStop Offset="0.35" Color="#00FFFFFF"/>
+    </LinearGradientBrush>
+    <RadialGradientBrush x:Key="UiFaceVignetteBrush" Center="50%,45%" GradientOrigin="50%,45%" RadiusX="75%" RadiusY="80%">
+      <GradientStop Offset="0.6" Color="#00000000"/>
+      <GradientStop Offset="1"   Color="#59000000"/>
+    </RadialGradientBrush>
+    <ImageBrush x:Key="UiFaceTextureBrush" Source="avares://MSCC.Avalonia/Assets/face-brushed.png"
+                TileMode="Tile" Stretch="None" DestinationRect="0,0,256,256" Opacity="0.55"/>
+    <SolidColorBrush x:Key="UiFaceHeadingBrush" Color="#FFEEF2F6"/>
+    <Color x:Key="UiFaceHeadingShadowColor">#C0000000</Color>
+    <SolidColorBrush x:Key="UiFaceLabelBrush" Color="#FFFFFFFF"/>
+    <SolidColorBrush x:Key="UiFaceMutedTextBrush" Color="#FFD4DCE4"/>
+    <SolidColorBrush x:Key="UiFaceWarnTextBrush" Color="#FFFFD08A"/>
+    <SolidColorBrush x:Key="UiFaceOkTextBrush" Color="#FFA8EBC8"/>
+    <!-- Fluent selected tab uses these. The selected pill is clear, so the header and pipe stay light. -->
+    <SolidColorBrush x:Key="TabItemHeaderForegroundSelected" Color="#FFFFFFFF"/>
+    <SolidColorBrush x:Key="TabItemHeaderBackgroundSelected" Color="#00000000"/>
+    <SolidColorBrush x:Key="TabItemHeaderSelectedPipeFill" Color="#FFFFFFFF"/>
+
     <ControlTheme x:Key="MsccPhysicalTrackButton" TargetType="RepeatButton">
       <Setter Property="Background" Value="Transparent"/>
       <Setter Property="Focusable" Value="False"/>
@@ -570,10 +600,25 @@
     </Style>
 
     <Style Selector="TextBlock.mscc-section">
-      <Setter Property="Foreground" Value="{DynamicResource UiAccentBrush}"/>
+      <Setter Property="Foreground" Value="{DynamicResource UiFaceHeadingBrush}"/>
       <Setter Property="FontWeight" Value="Bold"/>
       <Setter Property="FontSize" Value="10"/>
       <Setter Property="Margin" Value="0,4,0,1"/>
+      <Setter Property="Effect">
+        <DropShadowEffect OffsetX="0" OffsetY="1" BlurRadius="0" Color="{StaticResource UiFaceHeadingShadowColor}" Opacity="1"/>
+      </Setter>
+    </Style>
+    <!-- Tab and card titles: same lettering as mscc-section, keep each title's FontSize. -->
+    <Style Selector="TextBlock.mscc-face-heading">
+      <Setter Property="Foreground" Value="{DynamicResource UiFaceHeadingBrush}"/>
+      <Setter Property="FontWeight" Value="Bold"/>
+      <Setter Property="Effect">
+        <DropShadowEffect OffsetX="0" OffsetY="1" BlurRadius="0" Color="{StaticResource UiFaceHeadingShadowColor}" Opacity="1"/>
+      </Setter>
+    </Style>
+    <!-- Left rail only: spend the freed Step row on the section gaps. SERVER keeps its own margin. -->
+    <Style Selector="StackPanel.mscc-left-rail > TextBlock.mscc-section">
+      <Setter Property="Margin" Value="0,10,0,1"/>
     </Style>
 
     <Style Selector="TextBlock.mscc-label">
@@ -701,11 +746,16 @@
     </Style>
 
     <Style Selector="Border.mscc-panel">
-      <Setter Property="Background" Value="{DynamicResource UiPanelBackgroundBrush}"/>
-      <Setter Property="BorderBrush" Value="#FF444444"/>
-      <Setter Property="BorderThickness" Value="1"/>
+      <Setter Property="Background" Value="Transparent"/>
+      <Setter Property="BorderBrush" Value="Transparent"/>
+      <Setter Property="BorderThickness" Value="0"/>
       <Setter Property="CornerRadius" Value="4"/>
       <Setter Property="Padding" Value="4"/>
+    </Style>
+
+    <!-- Checkbox labels sit on the faceplate. Local Foreground still wins. -->
+    <Style Selector="CheckBox">
+      <Setter Property="Foreground" Value="{DynamicResource UiFaceLabelBrush}"/>
     </Style>
 
     <!-- Tab headers — fuller WPF-style labels; room to use more of the bar -->
@@ -715,8 +765,23 @@
       <Setter Property="Padding" Value="10,4"/>
       <Setter Property="MinHeight" Value="26"/>
       <Setter Property="Margin" Value="0,0,2,0"/>
+      <Setter Property="Background" Value="Transparent"/>
+      <Setter Property="Foreground" Value="{DynamicResource UiFaceMutedTextBrush}"/>
+    </Style>
+    <Style Selector="TabItem:selected">
+      <Setter Property="Foreground" Value="{DynamicResource UiFaceLabelBrush}"/>
+    </Style>
+    <!-- Fluent's selected header foreground is for a light pill. The pill is transparent, so paint the header text and the pipe directly. -->
+    <Style Selector="TabItem:selected /template/ TextBlock">
+      <Setter Property="Foreground" Value="{DynamicResource UiFaceLabelBrush}"/>
+    </Style>
+    <Style Selector="TabItem:selected /template/ Border#PART_SelectedPipe">
+      <Setter Property="Background" Value="{DynamicResource UiFaceLabelBrush}"/>
+      <Setter Property="IsVisible" Value="True"/>
+      <Setter Property="Opacity" Value="1"/>
     </Style>
     <Style Selector="TabControl">
+      <Setter Property="Background" Value="Transparent"/>
       <Setter Property="Padding" Value="2"/>
     </Style>
   </Application.Styles>
