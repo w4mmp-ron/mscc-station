@@ -60,7 +60,7 @@ carries them once and stays as it is.
 
 ## Current work
 
-**Active — cmd-099 (ubuntu-stew / stew-HP):** Avalonia VFO polish: no green border (dimming marks the idle VFO), red active dot by the VFO label, larger labels/mode/digits, no hover step text; top row fits 1024×600 (VFOs 154 px each, ALC fully visible); new light-bar row under the VFOs: A>B, B>A, A<>B, SPLIT (existing CMD_SET_SPLIT path, RX A / TX B), STEP. Brief: `.mscc-coord/cmd-099-avalonia-vfo-polish-row.md`. Follows cmd-098. No WPF change, no new protocol commands, no version bump, no installer, no GitHub Release. Build commits; Stew pushes. Leave rpi/, Solidus/, installers/rpi, and the WPF tree alone.
+**Active — cmd-099b (ubuntu-stew / stew-HP):** Avalonia SPLIT safety (user split off when any cal/IQ session starts, when FM clears split, and on lost link; existing SetSplitAsync only) and meter polish: S-METER legend inside the face (FWD / SWR and SWR FAULT on TX), caption under the S-meter removed, larger S-meter and ALC text, S-meter level with ALC, both meter frames match the VFO recess. Brief: `.mscc-coord/cmd-099b-avalonia-split-gaps-meters.md`. Follows cmd-099. FM stays work in progress. No WPF change, no new protocol commands, no version bump, no installer, no GitHub Release. Build commits; Stew pushes. Leave rpi/, Solidus/, installers/rpi, and the WPF tree alone.
 
 Older notes below are stale as of 2026-10-07. Check `.mscc-coord/COMMANDS.yaml` and [`handoff.md`](handoff.md) for historical open / pending items.
 
