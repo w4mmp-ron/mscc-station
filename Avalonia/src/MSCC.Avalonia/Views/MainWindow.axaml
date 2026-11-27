@@ -188,25 +188,23 @@
       <Border Grid.Row="0" Classes="mscc-panel" Margin="0,0,0,2" Padding="4,2">
         <Grid ColumnDefinitions="*,Auto,*,Auto,*,Auto,*">
           <!-- S-meter analog face (live dBm → 0–15); FWD power + SWR on TX / fault (WPF port) -->
-          <StackPanel Grid.Column="1" VerticalAlignment="Center" HorizontalAlignment="Center">
-            <ctrl:AnalogSMeterControl x:Name="SMeterControl"
-                                      Width="180" Height="120"
-                                      Value="{Binding SMeter}"
-                                      Dbm="{Binding SMeterDbm}"
-                                      ShowDbm="{Binding SmeterShowDbm, Mode=TwoWay}"
-                                      HoldEnabled="{Binding SmeterHold, Mode=TwoWay}"
-                                      PeakEnabled="{Binding SmeterPeak, Mode=TwoWay}"
-                                      PeakHoldSeconds="2"
-                                      PowerMode="{Binding ShowExternalSwrFace}"
-                                      ForwardWatts="{Binding SwrForwardWatts}"
-                                      Swr="{Binding SwrValue}"
-                                      Fault="{Binding SwrFault}"
-                                      SwrThreshold="{Binding SwrThreshold}"
-                                      ToolTip.Tip="S-meter (live). Click the reading for S units / dBm. On TX with the SWR meter on: FWD power needle + SWR digital; a fault shows a red RESET."/>
-            <TextBlock Text="{Binding MeterCaption}" FontSize="11" FontWeight="Bold" Classes="meter-caption"
-                       HorizontalAlignment="Center" Margin="0,2,0,0"
-                       Classes.swr-fault="{Binding SwrFault}"/>
-          </StackPanel>
+          <ctrl:AnalogSMeterControl x:Name="SMeterControl"
+                                    Grid.Column="1"
+                                    Width="180" Height="120"
+                                    VerticalAlignment="Center"
+                                    HorizontalAlignment="Center"
+                                    Value="{Binding SMeter}"
+                                    Dbm="{Binding SMeterDbm}"
+                                    ShowDbm="{Binding SmeterShowDbm, Mode=TwoWay}"
+                                    HoldEnabled="{Binding SmeterHold, Mode=TwoWay}"
+                                    PeakEnabled="{Binding SmeterPeak, Mode=TwoWay}"
+                                    PeakHoldSeconds="2"
+                                    PowerMode="{Binding ShowExternalSwrFace}"
+                                    ForwardWatts="{Binding SwrForwardWatts}"
+                                    Swr="{Binding SwrValue}"
+                                    Fault="{Binding SwrFault}"
+                                    SwrThreshold="{Binding SwrThreshold}"
+                                    ToolTip.Tip="S-meter (live). Click the reading for S units / dBm. On TX with the SWR meter on: FWD power needle + SWR digital; a fault shows a red RESET."/>
 
           <!-- VFO block: two 154 faces, 6 px gap, button row. Centered in the meter row. -->
           <Grid Grid.Column="3" ColumnDefinitions="154,6,154" RowDefinitions="92,4,24"

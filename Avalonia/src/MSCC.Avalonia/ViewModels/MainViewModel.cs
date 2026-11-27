@@ -1276,6 +1276,7 @@ public partial class MainViewModel : ViewModelBase, IDisposable
             TuneMode = false;
             _suppressTransmitCommands = false;
             TxSetByServer = false;
+            SplitOn = false;
         }
     }
 
@@ -4729,6 +4730,7 @@ public partial class MainViewModel : ViewModelBase, IDisposable
         {
             if (turnOn)
             {
+                await EndUserSplitForSessionAsync("QRP cal TX").ConfigureAwait(true);
                 RememberModeBeforePowerCal();
                 await _radio.SetModeAsync("TUNE").ConfigureAwait(true);
                 ModeText = "TUNE";
@@ -4781,6 +4783,8 @@ public partial class MainViewModel : ViewModelBase, IDisposable
         {
             if (!await EnsureCalLoadWarningAsync().ConfigureAwait(true))
                 return;
+
+            await EndUserSplitForSessionAsync("QRP cal").ConfigureAwait(true);
 
             PowerCalAcceptPrompt = false;
             PowerCalCalibrating = true;
@@ -5105,6 +5109,7 @@ public partial class MainViewModel : ViewModelBase, IDisposable
                 return;
             try
             {
+                await EndUserSplitForSessionAsync("amp cal TX").ConfigureAwait(true);
                 _modeBeforeAmpCal = string.IsNullOrWhiteSpace(ModeText) ? "USB" : ModeText;
                 await _radio.SetTunePowerAsync(100).ConfigureAwait(true);
                 await _radio.SetModeAsync("TUNE").ConfigureAwait(true);
@@ -5188,6 +5193,7 @@ public partial class MainViewModel : ViewModelBase, IDisposable
 
         try
         {
+            await EndUserSplitForSessionAsync("amp cal").ConfigureAwait(true);
             _modeBeforeAmpCal = string.IsNullOrWhiteSpace(ModeText) ? "USB" : ModeText;
             await _radio.SetTunePowerAsync(100).ConfigureAwait(true);
             await _radio.SetModeAsync("TUNE").ConfigureAwait(true);
@@ -5470,6 +5476,7 @@ public partial class MainViewModel : ViewModelBase, IDisposable
 
         try
         {
+            await EndUserSplitForSessionAsync("RX IQ").ConfigureAwait(true);
             // 0x55 RX_IQBD FIRST, then 0x58 band (Ron 2026-11-11): ms-sdr routes 0x58 by the last
             // 0x55, so band first after a TX I/Q session took the TX path. Same order as TX I/Q.
             await _radio.SetIqCalibrationRxTxAsync(txIq: false).ConfigureAwait(true);
@@ -5801,6 +5808,7 @@ public partial class MainViewModel : ViewModelBase, IDisposable
                 return;
             try
             {
+                await EndUserSplitForSessionAsync("TX IQ").ConfigureAwait(true);
                 _modeBeforeTxIq = string.IsNullOrWhiteSpace(ModeText) ? "USB" : ModeText;
                 long freq = GetTxIqFrequencyHz(TxIqSelectedBand);
                 if (freq > 0)
@@ -6114,6 +6122,7 @@ public partial class MainViewModel : ViewModelBase, IDisposable
             return;
         }
 
+        await EndUserSplitForSessionAsync("freq cal").ConfigureAwait(true);
         await ForceCwForFreqCalAsync().ConfigureAwait(true);
 
         _freqCalProgressSteps = 0;
@@ -6164,6 +6173,7 @@ public partial class MainViewModel : ViewModelBase, IDisposable
         {
             try
             {
+                await EndUserSplitForSessionAsync("freq cal manual").ConfigureAwait(true);
                 ResetFreqCalManualPpmUi(sendToRadio: false);
                 await _radio.SetForceCalibrationAsync(true).ConfigureAwait(true);
                 FreqCalManualMode = true;
@@ -6328,6 +6338,7 @@ public partial class MainViewModel : ViewModelBase, IDisposable
                 return;
         }
 
+        await EndUserSplitForSessionAsync("freq cal").ConfigureAwait(true);
         await ForceCwForFreqCalAsync().ConfigureAwait(true);
 
         _freqCalProgressSteps = 0;
@@ -7262,6 +7273,26 @@ public partial class MainViewModel : ViewModelBase, IDisposable
         SplitOn = false;
     }
 
+    /// <summary>A cal/IQ session must transmit on its own frequency. Drop a user split first.</summary>
+    private async Task EndUserSplitForSessionAsync(string session)
+    {
+        if (!SplitOn)
+            return;
+        if (_radio != null && IsConnected)
+        {
+            try
+            {
+                await _radio.SetSplitAsync(false).ConfigureAwait(true);
+                AppendLog($"Split off ({session})");
+            }
+            catch (Exception ex)
+            {
+                AppendLog($"Split off ({session}) failed: {ex.Message}");
+            }
+        }
+        SplitOn = false;
+    }
+
     [RelayCommand]
     private Task SelectVfoA() => SelectVfoAsync(useVfoA: true);
 
@@ -7466,6 +7497,7 @@ public partial class MainViewModel : ViewModelBase, IDisposable
         try
         {
             await _radio.SetSplitAsync(false).ConfigureAwait(true);
+            SplitOn = false;
             if (_fmOffsetSnapshotValid)
             {
                 _vfoBFrequencyHz = _fmSavedVfoBHz;

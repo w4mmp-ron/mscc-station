@@ -353,12 +353,12 @@ public partial class AnalogAlcMeterControl : UserControl
             var tb = new TextBlock
             {
                 Text = label,
-                FontSize = unit == 100 ? 7 : 8,
+                FontSize = unit == 100 ? 8 : 9,
                 FontFamily = new FontFamily("Consolas, Courier New, monospace"),
                 Foreground = unit == 50 ? Brushes.White : new SolidColorBrush(Color.FromRgb(0xD0, 0xD0, 0xD0)),
                 FontWeight = unit == 50 ? FontWeight.Bold : FontWeight.Normal
             };
-            double tw = label.Length * (unit == 100 ? 4.2 : 4.8);
+            double tw = label.Length * (unit == 100 ? 4.8 : 5.4);
             double th = 10;
             Canvas.SetLeft(tb, lx - tw / 2);
             Canvas.SetTop(tb, ly - th / 2);
@@ -368,14 +368,15 @@ public partial class AnalogAlcMeterControl : UserControl
         var legend = new TextBlock
         {
             Text = "ALC",
-            FontSize = 8,
+            FontSize = 11,
             FontFamily = new FontFamily("Consolas, Courier New, monospace"),
-            Foreground = new SolidColorBrush(Color.FromRgb(0x69, 0x69, 0x69)),
+            Foreground = new SolidColorBrush(Color.FromArgb(0xFF, 0xA8, 0xA8, 0xA8)),
             FontWeight = FontWeight.Bold
         };
-        Canvas.SetLeft(legend, _cx - 10);
-        Canvas.SetTop(legend, _cy - _radius * 0.42);
         FaceCanvas.Children.Add(legend);
+        legend.Measure(Size.Infinity);
+        Canvas.SetLeft(legend, _cx - legend.DesiredSize.Width / 2);
+        Canvas.SetTop(legend, _cy - _radius * 0.42);
 
         _peakNeedle = new AvLine
         {

@@ -3,12 +3,10 @@
              x:Class="MSCC.Avalonia.Controls.AnalogAlcMeterControl"
              Width="180" Height="120"
              MinWidth="164" MinHeight="110">
-  <Border Background="#FF0C0C0C"
-          BorderBrush="#FF666666"
-          BorderThickness="1"
-          CornerRadius="4"
-          Padding="3,2">
-    <Grid RowDefinitions="*,Auto">
+  <Border Background="{DynamicResource UiVfoBezelBrush}" CornerRadius="4" Padding="3">
+    <Grid>
+      <Border Background="#FF0C0C0C" CornerRadius="2" ClipToBounds="True"/>
+      <Grid RowDefinitions="*,Auto" Margin="3,3,3,2">
       <!-- Face + needle drawn in code-behind -->
       <Canvas x:Name="FaceCanvas"
               Grid.Row="0"
@@ -50,6 +48,11 @@
                   Foreground="White"
                   ToolTip.Tip="Orange peak needle: holds the highest ALC reading ~2 seconds, then falls (client-side)."/>
       </StackPanel>
+      </Grid>
+      <Border BorderThickness="2,2,0,0" BorderBrush="{DynamicResource UiVfoBevelDarkBrush}"
+              CornerRadius="2" IsHitTestVisible="False"/>
+      <Border BorderThickness="0,0,2,2" BorderBrush="{DynamicResource UiVfoBevelLightBrush}"
+              CornerRadius="2" IsHitTestVisible="False"/>
     </Grid>
   </Border>
 </UserControl>

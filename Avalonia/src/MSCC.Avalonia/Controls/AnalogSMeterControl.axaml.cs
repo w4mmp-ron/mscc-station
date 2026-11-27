@@ -245,6 +245,7 @@ public partial class AnalogSMeterControl : UserControl
         else
             ApplyRawSample(Value, force: true);
         UpdateNeedles();
+        UpdateCenterLegend();
     }
 
     private void OnFaultChanged(bool fault)
@@ -254,6 +255,7 @@ public partial class AnalogSMeterControl : UserControl
         else
             _powerFrozen = false;
         UpdateNeedles();
+        UpdateCenterLegend();
     }
 
     private void LatchPowerFreezeFromCurrent()
@@ -510,19 +512,15 @@ public partial class AnalogSMeterControl : UserControl
         else
             BuildSmeterTicksAndZones(labelInset);
 
-        // Center legend: "S" or "W" (power dial labelled in watts)
+        // Center legend: S-METER / FWD / SWR / SWR FAULT (text and color from UpdateCenterLegend)
         _centerLegend = new TextBlock
         {
-            Text = power ? FormatMultiplier(_powerFullScaleW) : "S",
-            FontSize = 9,
+            FontSize = 11,
             FontFamily = new FontFamily("Consolas, Courier New, monospace"),
-            Foreground = power
-                ? new SolidColorBrush(Color.FromRgb(0x00, 0xCC, 0x99))
-                : new SolidColorBrush(Color.FromRgb(0x69, 0x69, 0x69)),
             FontWeight = FontWeight.Bold
         };
         FaceCanvas.Children.Add(_centerLegend);
-        PlaceCenterLegend();
+        UpdateCenterLegend();
 
         _peakNeedle = new AvLine
         {
@@ -630,7 +628,7 @@ public partial class AnalogSMeterControl : UserControl
         double lr = _radius - labelInset;
         double lx = _cx + lr * Math.Sin(rad);
         double ly = _cy - lr * Math.Cos(rad);
-        double fontSize = smallLabel ? 7 : 8;
+        double fontSize = smallLabel ? 8 : 9;
         var tb = new TextBlock
         {
             Text = label,
@@ -639,7 +637,7 @@ public partial class AnalogSMeterControl : UserControl
             Foreground = highlight ? Brushes.White : new SolidColorBrush(Color.FromRgb(0xD0, 0xD0, 0xD0)),
             FontWeight = highlight ? FontWeight.Bold : FontWeight.Normal
         };
-        double tw = label.Length * (smallLabel ? 4.0 : 4.8);
+        double tw = label.Length * (smallLabel ? 4.8 : 5.4);
         double th = 10;
         Canvas.SetLeft(tb, lx - tw / 2);
         Canvas.SetTop(tb, ly - th / 2);
@@ -651,7 +649,8 @@ public partial class AnalogSMeterControl : UserControl
     private void PlaceCenterLegend()
     {
         if (_centerLegend == null) return;
-        double tw = (_centerLegend.Text?.Length ?? 1) * 5.0;
+        _centerLegend.Measure(Size.Infinity);
+        double tw = _centerLegend.DesiredSize.Width;
         Canvas.SetLeft(_centerLegend, _cx - tw / 2);
         Canvas.SetTop(_centerLegend, _cy - _radius * 0.42);
     }
@@ -659,14 +658,34 @@ public partial class AnalogSMeterControl : UserControl
     private void UpdateCenterLegend()
     {
         if (_centerLegend == null) return;
-        string t = PowerMode ? FormatMultiplier(_powerFullScaleW) : "S";
-        if (_centerLegend.Text == t) return;
-        _centerLegend.Text = t;
+        string t;
+        Color c;
+        if (!PowerMode)
+        {
+            t = "S-METER";
+            c = Color.FromArgb(0xFF, 0xA8, 0xA8, 0xA8);
+        }
+        else if (!Fault)
+        {
+            t = "FWD / SWR";
+            c = Color.FromArgb(0xFF, 0x00, 0xCC, 0x99);
+        }
+        else
+        {
+            t = "SWR FAULT";
+            c = Color.FromArgb(0xFF, 0xFF, 0x52, 0x52);
+        }
+
+        bool same = _centerLegend.Text == t
+                    && _centerLegend.Foreground is SolidColorBrush brush
+                    && brush.Color == c;
+        if (!same)
+        {
+            _centerLegend.Text = t;
+            _centerLegend.Foreground = new SolidColorBrush(c);
+        }
         PlaceCenterLegend();
     }
-
-    /// <summary>Center legend in power mode: the dial is in watts now.</summary>
-    private static string FormatMultiplier(int fullScaleW) => "W";
 
     private static readonly int[] PowerRangesW = { 10, 20, 50, 100, 200, 500, 1000 };
     private readonly List<(TextBlock tb, int unit)> _powerLabels = new();
@@ -683,9 +702,9 @@ public partial class AnalogSMeterControl : UserControl
             if (tb.Text == t) continue;
             bool small = t.Length >= 4;
             tb.Text = t;
-            tb.FontSize = small ? 7 : 8;
+            tb.FontSize = small ? 8 : 9;
             if (tb.Tag is not Point p) continue;
-            double tw = t.Length * (small ? 4.0 : 4.8);
+            double tw = t.Length * (small ? 4.8 : 5.4);
             Canvas.SetLeft(tb, p.X - tw / 2);
         }
     }
