@@ -60,7 +60,7 @@ carries them once and stays as it is.
 
 ## Current work
 
-**Active — cmd-094 (ubuntu-stew / stew-HP):** Avalonia mode-button order and button text centering to match WPF. Brief: `.mscc-coord/cmd-094-avalonia-mode-order-button-centering.md`. Avalonia only. No WPF change, no version bump, no installer, no GitHub Release. Build commits; Stew pushes. Leave rpi/, Solidus/, installers/rpi, and the WPF tree alone.
+**Active — cmd-095 (ubuntu-stew / stew-HP):** Avalonia left/right panel sliders to a PowerSDR Classic physical look. Brief: `.mscc-coord/cmd-095-avalonia-physical-sliders.md`. Avalonia rails only. No WPF change, no version bump, no installer, no GitHub Release. Build commits; Stew pushes. Leave rpi/, Solidus/, installers/rpi, and the WPF tree alone.
 
 Older notes below are stale as of 2026-10-07. Check `.mscc-coord/COMMANDS.yaml` and [`handoff.md`](handoff.md) for historical open / pending items.
 
