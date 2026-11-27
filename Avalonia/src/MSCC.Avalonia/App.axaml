@@ -62,8 +62,9 @@
       <GradientStop Offset="1" Color="#00FFFFFF"/>
     </LinearGradientBrush>
     <SolidColorBrush x:Key="UiBarOutlineBrush" Color="#FF000000"/>
-    <SolidColorBrush x:Key="UiBarEdgeLightBrush" Color="#66707A86"/>
-    <SolidColorBrush x:Key="UiBarEdgeDarkBrush" Color="#CC000000"/>
+    <SolidColorBrush x:Key="UiBarEdgeTopBrush" Color="#66707A86"/>
+    <SolidColorBrush x:Key="UiBarEdgeBottomBrush" Color="#CC000000"/>
+    <SolidColorBrush x:Key="UiBarEdgeSideBrush" Color="#59000000"/>
     <SolidColorBrush x:Key="UiBarSlotOffBrush" Color="#3A3D42"/>
     <LinearGradientBrush x:Key="UiBarSlotOnBrush" StartPoint="0%,0%" EndPoint="0%,100%">
       <GradientStop Offset="0" Color="#8CC8FF"/>
@@ -317,16 +318,22 @@
                   Background="{TemplateBinding Background}"
                   ClipToBounds="True">
             <Grid RowDefinitions="0.45*,0.55*">
-              <Border x:Name="RaisedLight"
+              <Border x:Name="EdgeSides"
                       Grid.RowSpan="2"
-                      BorderThickness="1,1,0,0"
-                      BorderBrush="{DynamicResource UiBarEdgeLightBrush}"
+                      BorderThickness="1,0,1,0"
+                      BorderBrush="{DynamicResource UiBarEdgeSideBrush}"
                       CornerRadius="2"
                       IsHitTestVisible="False"/>
-              <Border x:Name="RaisedDark"
+              <Border x:Name="EdgeTop"
                       Grid.RowSpan="2"
-                      BorderThickness="0,0,1,1"
-                      BorderBrush="{DynamicResource UiBarEdgeDarkBrush}"
+                      BorderThickness="0,1,0,0"
+                      BorderBrush="{DynamicResource UiBarEdgeTopBrush}"
+                      CornerRadius="2"
+                      IsHitTestVisible="False"/>
+              <Border x:Name="EdgeBottom"
+                      Grid.RowSpan="2"
+                      BorderThickness="0,0,0,1"
+                      BorderBrush="{DynamicResource UiBarEdgeBottomBrush}"
                       CornerRadius="2"
                       IsHitTestVisible="False"/>
               <Border x:Name="Shine"
@@ -365,11 +372,11 @@
       <Style Selector="^:pressed">
         <Setter Property="Background" Value="{DynamicResource UiBarFacePressedBrush}"/>
       </Style>
-      <Style Selector="^:pressed /template/ Border#RaisedLight">
-        <Setter Property="BorderBrush" Value="{DynamicResource UiBarEdgeDarkBrush}"/>
+      <Style Selector="^:pressed /template/ Border#EdgeTop">
+        <Setter Property="BorderBrush" Value="{DynamicResource UiBarEdgeBottomBrush}"/>
       </Style>
-      <Style Selector="^:pressed /template/ Border#RaisedDark">
-        <Setter Property="BorderBrush" Value="{DynamicResource UiBarEdgeLightBrush}"/>
+      <Style Selector="^:pressed /template/ Border#EdgeBottom">
+        <Setter Property="BorderBrush" Value="{DynamicResource UiBarEdgeTopBrush}"/>
       </Style>
       <Style Selector="^.mscc-selected /template/ Border#LightBar">
         <Setter Property="Background" Value="{DynamicResource UiBarSlotOnBrush}"/>

@@ -289,7 +289,7 @@
 
       <!-- Band bar: LF | HF | GEN (FW major gates HF/LF) -->
       <Border Grid.Row="1" Classes="mscc-panel" Margin="0,0,0,2" Padding="3,3">
-        <Grid ColumnDefinitions="Auto,Auto,*,*,*,*,*,*,*,*,*,*,Auto"
+        <Grid ColumnDefinitions="*,*,*,*,*,*,*,*,*,*,*,*,*"
               ColumnSpacing="2">
           <!-- LF — Geminus only -->
           <Button Grid.Column="0" Content="2200" Classes="mscc-bar"
@@ -360,7 +360,8 @@
           <Button Grid.Column="12" Content="{Binding GenButtonText}" Classes="mscc-bar"
                   Command="{Binding SelectGenCommand}"
                   Classes.mscc-selected="{Binding BandIsGen}"
-                  MinWidth="52" MinHeight="26" FontSize="10" FontWeight="Bold"
+                  MinHeight="26" FontSize="10" FontWeight="Bold"
+                  HorizontalAlignment="Stretch"
                   HorizontalContentAlignment="Center" VerticalContentAlignment="Center"
                   ToolTip.Tip="{Binding GenButtonTip}"/>
         </Grid>
