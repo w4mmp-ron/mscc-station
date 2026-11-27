@@ -60,7 +60,7 @@ carries them once and stays as it is.
 
 ## Current work
 
-**Active — cmd-095 (ubuntu-stew / stew-HP):** Avalonia left/right panel sliders to a PowerSDR Classic physical look. Brief: `.mscc-coord/cmd-095-avalonia-physical-sliders.md`. Avalonia rails only. No WPF change, no version bump, no installer, no GitHub Release. Build commits; Stew pushes. Leave rpi/, Solidus/, installers/rpi, and the WPF tree alone.
+**Active — cmd-096 (ubuntu-stew / stew-HP):** Avalonia left panel fits at the minimum window size (1024×600): smaller app-wide checkboxes, Host arrow / Phones / Digital / Remote fit, slider value gap, thicker track, no white line on the thumb, pkts line removed. Brief: `.mscc-coord/cmd-096-avalonia-left-panel-fit.md`. Builds on cmd-095. No WPF change, no version bump, no installer, no GitHub Release. Build commits; Stew pushes. Leave rpi/, Solidus/, installers/rpi, and the WPF tree alone.
 
 Older notes below are stale as of 2026-10-07. Check `.mscc-coord/COMMANDS.yaml` and [`handoff.md`](handoff.md) for historical open / pending items.
 
