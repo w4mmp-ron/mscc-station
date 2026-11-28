@@ -60,7 +60,7 @@ carries them once and stays as it is.
 
 ## Current work
 
-**Active — cmd-101c (ubuntu-stew / stew-HP):** Avalonia CQ memory slot FontSize raised so 48 characters nearly fill the slot at 1024×600 (size from measured per-character width; MinWidth recomputed; height unchanged if the glyphs fit). Brief: `.mscc-coord/cmd-101c-avalonia-cq-slot-fontsize.md`. Follows cmd-101b. No UiChromeTheme.cs change, no WPF change, no protocol commands, no version bump, no installer, no GitHub Release. Build commits; Stew pushes. Leave rpi/, Solidus/, installers/rpi, and the WPF tree alone.
+**Active — cmd-102 (ubuntu-stew / stew-HP):** Avalonia RX/TX tab: compact lists (same style as CW cmd-101, all items visible), power sliders use the left-rail physical style with a boxed % readout, AGC is a SLOW/MED/FAST list bound to existing AgcLevel / SetAgcLevelAsync, Tune button (ToggleTuneCommand, red when on) replaces (reserved), all four TX buttons are mscc-bar, help/footer lines removed, fits 1024×600 with no scroll bar. Brief: `.mscc-coord/cmd-102-avalonia-rxtx-tab.md`. Follows cmd-101c. WPF read for reference only. No UiChromeTheme.cs change, no new protocol commands, no version bump, no installer, no GitHub Release. Build commits; Stew pushes. Leave rpi/, Solidus/, installers/rpi, and the WPF tree alone.
 
 Older notes below are stale as of 2026-10-07. Check `.mscc-coord/COMMANDS.yaml` and [`handoff.md`](handoff.md) for historical open / pending items.
 
