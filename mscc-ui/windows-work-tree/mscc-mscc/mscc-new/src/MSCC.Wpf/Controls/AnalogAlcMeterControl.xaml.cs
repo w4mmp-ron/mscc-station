@@ -15,6 +15,32 @@ namespace MSCC.Wpf.Controls;
 /// </summary>
 public partial class AnalogAlcMeterControl : UserControl
 {
+    // Backlit face (2026-11-27, Ron: "like the VFO back lighting"): cream LCD face from UiVfoLcdBrush,
+    // dimmed by UiBacklightDimBrush (Settings -> BACKLIGHT), dark ink for ticks and numbers.
+    private static readonly Brush InkStrong = MeterInk(0x1E, 0x1C, 0x12);
+    private static readonly Brush Ink = MeterInk(0x3C, 0x38, 0x24);
+    private static readonly Brush InkArc = MeterInk(0x6A, 0x64, 0x48);
+    private static Brush MeterInk(byte r, byte g, byte b)
+    {
+        var br = new SolidColorBrush(Color.FromRgb(r, g, b));
+        br.Freeze();
+        return br;
+    }
+
+    private void AddBacklight(double w, double h)
+    {
+        var dim = new Rectangle { Width = w, Height = h, IsHitTestVisible = false };
+        dim.SetResourceReference(Shape.FillProperty, "UiBacklightDimBrush");
+        Canvas.SetLeft(dim, 0);
+        Canvas.SetTop(dim, 0);
+        FaceCanvas.Children.Add(dim);
+        var shade = new Rectangle { Width = w, Height = 6, IsHitTestVisible = false };
+        shade.SetResourceReference(Shape.FillProperty, "UiVfoLcdShadeBrush");
+        Canvas.SetLeft(shade, 0);
+        Canvas.SetTop(shade, 0);
+        FaceCanvas.Children.Add(shade);
+    }
+
     public static readonly DependencyProperty ValueProperty =
         DependencyProperty.Register(
             nameof(Value),
@@ -276,29 +302,13 @@ public partial class AnalogAlcMeterControl : UserControl
         _radius = Math.Min(Math.Min(maxRWidth, maxRLabel), Math.Min(maxRHeight, maxRHeight2)) * 0.94;
         _radius = Math.Max(32, _radius);
 
-        double faceR = _radius * 1.03;
-        var face = new Ellipse
-        {
-            Width = faceR * 2,
-            Height = faceR * 2,
-            Fill = new RadialGradientBrush(
-                Color.FromRgb(0x26, 0x26, 0x26),
-                Color.FromRgb(0x10, 0x10, 0x10))
-            {
-                GradientOrigin = new Point(0.5, 0.35),
-                Center = new Point(0.5, 0.4)
-            },
-            Stroke = new SolidColorBrush(Color.FromRgb(0x50, 0x50, 0x50)),
-            StrokeThickness = 1
-        };
-        Canvas.SetLeft(face, _cx - face.Width / 2);
-        Canvas.SetTop(face, _cy - face.Height / 2);
-        FaceCanvas.Children.Add(face);
+        // Backlit face: the cream LCD is the canvas background; dim overlay + top shade first, then ink.
+        AddBacklight(w, h);
 
         DrawArcZone(0, 20, Color.FromRgb(0, 150, 85), 4.0);
         DrawArcZone(20, 50, Color.FromRgb(190, 150, 20), 4.0);
         DrawArcZone(50, 100, Color.FromRgb(190, 65, 48), 4.0);
-        DrawArcPath(StartAngleDeg, EndAngleDeg, _radius - 1, Brushes.Gray, 0.85);
+        DrawArcPath(StartAngleDeg, EndAngleDeg, _radius - 1, InkArc, 0.85);
 
         var points = new (int unit, string label, bool major)[]
         {
@@ -331,7 +341,7 @@ public partial class AnalogAlcMeterControl : UserControl
                 Y1 = _cy - outer * Math.Cos(rad),
                 X2 = _cx + inner * Math.Sin(rad),
                 Y2 = _cy - inner * Math.Cos(rad),
-                Stroke = highlight ? Brushes.White : Brushes.LightGray,
+                Stroke = highlight ? InkStrong : Ink,
                 StrokeThickness = unit == 50 ? 1.4 : (major ? 1.0 : 0.6),
                 Opacity = 0.95
             });
@@ -345,9 +355,9 @@ public partial class AnalogAlcMeterControl : UserControl
             var tb = new TextBlock
             {
                 Text = label,
-                FontSize = unit == 100 ? 7 : 8,
+                FontSize = unit == 100 ? 8 : 9,
                 FontFamily = new FontFamily("Consolas"),
-                Foreground = unit == 50 ? Brushes.White : Brushes.LightGray,
+                Foreground = unit == 50 ? InkStrong : Ink,
                 FontWeight = unit == 50 ? FontWeights.Bold : FontWeights.Normal
             };
             tb.Measure(new Size(double.PositiveInfinity, double.PositiveInfinity));
@@ -359,9 +369,9 @@ public partial class AnalogAlcMeterControl : UserControl
         var legend = new TextBlock
         {
             Text = "ALC",
-            FontSize = 8,
+            FontSize = 11,
             FontFamily = new FontFamily("Consolas"),
-            Foreground = Brushes.DimGray,
+            Foreground = new SolidColorBrush(Color.FromRgb(0x5A, 0x54, 0x38)),
             FontWeight = FontWeights.Bold
         };
         legend.Measure(new Size(double.PositiveInfinity, double.PositiveInfinity));
@@ -371,7 +381,7 @@ public partial class AnalogAlcMeterControl : UserControl
 
         _peakNeedle = new Line
         {
-            Stroke = new SolidColorBrush(Color.FromRgb(0xFF, 0xB0, 0x20)),
+            Stroke = new SolidColorBrush(Color.FromRgb(0xD0, 0x60, 0x00)),   // peak: deeper orange on the cream face
             StrokeThickness = 1.2,
             StrokeStartLineCap = PenLineCap.Round,
             StrokeEndLineCap = PenLineCap.Triangle,
@@ -393,7 +403,7 @@ public partial class AnalogAlcMeterControl : UserControl
         {
             Width = 7,
             Height = 7,
-            Fill = new SolidColorBrush(Color.FromRgb(0xC8, 0xC8, 0xC8)),
+            Fill = new SolidColorBrush(Color.FromRgb(0x30, 0x30, 0x30)),
             Stroke = Brushes.DimGray,
             StrokeThickness = 0.7
         };

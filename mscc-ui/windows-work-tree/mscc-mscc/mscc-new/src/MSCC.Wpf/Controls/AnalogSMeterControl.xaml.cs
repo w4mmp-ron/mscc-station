@@ -610,48 +610,27 @@ public partial class AnalogSMeterControl : UserControl
         _radius = Math.Min(Math.Min(maxRWidth, maxRLabel), Math.Min(maxRHeight, maxRHeight2)) * 0.94;
         _radius = Math.Max(32, _radius);
 
-        // Face disc — slightly cooler tint in power mode
-        Color faceInner = PowerMode ? Color.FromRgb(0x1E, 0x28, 0x2A) : Color.FromRgb(0x26, 0x26, 0x26);
-        Color faceOuter = PowerMode ? Color.FromRgb(0x0C, 0x12, 0x14) : Color.FromRgb(0x10, 0x10, 0x10);
-        double faceR = _radius * 1.03;
-        var face = new Ellipse
-        {
-            Width = faceR * 2,
-            Height = faceR * 2,
-            Fill = new RadialGradientBrush(faceInner, faceOuter)
-            {
-                GradientOrigin = new Point(0.5, 0.35),
-                Center = new Point(0.5, 0.4)
-            },
-            Stroke = new SolidColorBrush(PowerMode ? Color.FromRgb(0x40, 0x60, 0x58) : Color.FromRgb(0x50, 0x50, 0x50)),
-            StrokeThickness = 1
-        };
-        Canvas.SetLeft(face, _cx - face.Width / 2);
-        Canvas.SetTop(face, _cy - face.Height / 2);
-        FaceCanvas.Children.Add(face);
+        // Backlit face: the cream LCD is the canvas background; dim overlay + top shade first, then ink.
+        AddBacklight(w, h);
 
         if (PowerMode)
             BuildPowerTicksAndZones(labelInset);
         else
             BuildSmeterTicksAndZones(labelInset);
 
-        // Center legend: "S" or "W" (power dial labelled in watts)
+        // Center legend: S-METER / FWD / SWR / SWR FAULT (Stew's Avalonia cmd-099b; was the caption under the meter).
         _centerLegend = new TextBlock
         {
-            Text = PowerMode ? FormatMultiplier(_powerFullScaleW) : "S",
-            FontSize = PowerMode ? 9 : 8,
+            FontSize = 11,
             FontFamily = new FontFamily("Consolas"),
-            Foreground = PowerMode ? new SolidColorBrush(Color.FromRgb(0x00, 0xCC, 0x99)) : Brushes.DimGray,
             FontWeight = FontWeights.Bold
         };
-        _centerLegend.Measure(new Size(double.PositiveInfinity, double.PositiveInfinity));
-        Canvas.SetLeft(_centerLegend, _cx - _centerLegend.DesiredSize.Width / 2);
-        Canvas.SetTop(_centerLegend, _cy - _radius * 0.42);
         FaceCanvas.Children.Add(_centerLegend);
+        UpdateCenterLegend();
 
         _peakNeedle = new Line
         {
-            Stroke = new SolidColorBrush(Color.FromRgb(0xFF, 0xB0, 0x20)),
+            Stroke = new SolidColorBrush(Color.FromRgb(0xD0, 0x60, 0x00)),   // peak: deeper orange on the cream face
             StrokeThickness = 1.2,
             StrokeStartLineCap = PenLineCap.Round,
             StrokeEndLineCap = PenLineCap.Triangle,
@@ -673,7 +652,7 @@ public partial class AnalogSMeterControl : UserControl
         {
             Width = 7,
             Height = 7,
-            Fill = new SolidColorBrush(Color.FromRgb(0xC8, 0xC8, 0xC8)),
+            Fill = new SolidColorBrush(Color.FromRgb(0x30, 0x30, 0x30)),
             Stroke = Brushes.DimGray,
             StrokeThickness = 0.7
         };
@@ -691,7 +670,7 @@ public partial class AnalogSMeterControl : UserControl
         DrawArcZone(0, 9, Color.FromRgb(0, 150, 85), 4.0);
         DrawArcZone(9, 12, Color.FromRgb(190, 150, 20), 4.0);
         DrawArcZone(12, 15, Color.FromRgb(190, 65, 48), 4.0);
-        DrawArcPath(StartAngleDeg, EndAngleDeg, _radius - 1, Brushes.Gray, 0.85);
+        DrawArcPath(StartAngleDeg, EndAngleDeg, _radius - 1, InkArc, 0.85);
 
         var points = new (int unit, string label, bool major)[]
         {
@@ -719,7 +698,7 @@ public partial class AnalogSMeterControl : UserControl
         DrawArcZone(0, 6, Color.FromRgb(0, 150, 85), 4.0);
         DrawArcZone(6, 8, Color.FromRgb(190, 150, 20), 4.0);
         DrawArcZone(8, 10, Color.FromRgb(190, 65, 48), 4.0);
-        DrawArcPath(StartAngleDeg, EndAngleDeg, _radius - 1, Brushes.Gray, 0.85);
+        DrawArcPath(StartAngleDeg, EndAngleDeg, _radius - 1, InkArc, 0.85);
 
         // Major every 2 units; minor halfway
         for (int u = 0; u <= 10; u++)
@@ -744,7 +723,7 @@ public partial class AnalogSMeterControl : UserControl
             Y1 = _cy - outer * Math.Cos(rad),
             X2 = _cx + inner * Math.Sin(rad),
             Y2 = _cy - inner * Math.Cos(rad),
-            Stroke = highlight ? Brushes.White : Brushes.LightGray,
+            Stroke = highlight ? InkStrong : Ink,
             StrokeThickness = highlight ? 1.4 : (major ? 1.0 : 0.6),
             Opacity = 0.95
         });
@@ -758,9 +737,9 @@ public partial class AnalogSMeterControl : UserControl
         var tb = new TextBlock
         {
             Text = label,
-            FontSize = smallLabel ? 7 : 8,
+            FontSize = smallLabel ? 7 : 8,   // 9 pt makes 9 and +10 touch at 180 px; kept small (cmd-099b rule)
             FontFamily = new FontFamily("Consolas"),
-            Foreground = highlight ? Brushes.White : Brushes.LightGray,
+            Foreground = highlight ? InkStrong : Ink,
             FontWeight = highlight ? FontWeights.Bold : FontWeights.Normal
         };
         tb.Measure(new Size(double.PositiveInfinity, double.PositiveInfinity));
@@ -771,23 +750,59 @@ public partial class AnalogSMeterControl : UserControl
         return tb;
     }
 
+    private static readonly Brush LegendRxBrush = Frozen(Color.FromRgb(0x5A, 0x54, 0x38));      // = UiVfoLabelBrush
+    private static readonly Brush LegendPowerBrush = Frozen(Color.FromRgb(0x00, 0x6E, 0x50));   // darker green on cream
+    private static readonly Brush LegendFaultBrush = Frozen(Color.FromRgb(0xC6, 0x28, 0x28));
+    // Backlit face (2026-11-27, Ron: "like the VFO back lighting"): cream LCD face from UiVfoLcdBrush,
+    // dimmed by UiBacklightDimBrush (Settings -> BACKLIGHT), dark ink for ticks and numbers.
+    private static readonly Brush InkStrong = MeterInk(0x1E, 0x1C, 0x12);
+    private static readonly Brush Ink = MeterInk(0x3C, 0x38, 0x24);
+    private static readonly Brush InkArc = MeterInk(0x6A, 0x64, 0x48);
+    private static Brush MeterInk(byte r, byte g, byte b)
+    {
+        var br = new SolidColorBrush(Color.FromRgb(r, g, b));
+        br.Freeze();
+        return br;
+    }
+
+    private void AddBacklight(double w, double h)
+    {
+        var dim = new Rectangle { Width = w, Height = h, IsHitTestVisible = false };
+        dim.SetResourceReference(Shape.FillProperty, "UiBacklightDimBrush");
+        Canvas.SetLeft(dim, 0);
+        Canvas.SetTop(dim, 0);
+        FaceCanvas.Children.Add(dim);
+        var shade = new Rectangle { Width = w, Height = 6, IsHitTestVisible = false };
+        shade.SetResourceReference(Shape.FillProperty, "UiVfoLcdShadeBrush");
+        Canvas.SetLeft(shade, 0);
+        Canvas.SetTop(shade, 0);
+        FaceCanvas.Children.Add(shade);
+    }
+
+
+    private static Brush Frozen(Color c)
+    {
+        var b = new SolidColorBrush(c);
+        b.Freeze();
+        return b;
+    }
+
+    /// <summary>RX: S-METER (grey); TX power face: FWD / SWR (green); latched fault: SWR FAULT (red). Runs every needle update, so it only touches the TextBlock on a change.</summary>
     private void UpdateCenterLegend()
     {
         if (_centerLegend == null) return;
-        if (!PowerMode)
-        {
-            _centerLegend.Text = "S";
-            return;
-        }
-        string t = FormatMultiplier(_powerFullScaleW);
-        if (_centerLegend.Text == t) return;
+        string t;
+        Brush c;
+        if (!PowerMode) { t = "S-METER"; c = LegendRxBrush; }
+        else if (!Fault) { t = "FWD / SWR"; c = LegendPowerBrush; }
+        else { t = "SWR FAULT"; c = LegendFaultBrush; }
+        if (_centerLegend.Text == t && ReferenceEquals(_centerLegend.Foreground, c)) return;
         _centerLegend.Text = t;
+        _centerLegend.Foreground = c;
         _centerLegend.Measure(new Size(double.PositiveInfinity, double.PositiveInfinity));
         Canvas.SetLeft(_centerLegend, _cx - _centerLegend.DesiredSize.Width / 2);
+        Canvas.SetTop(_centerLegend, _cy - _radius * 0.42);
     }
-
-    /// <summary>Center legend in power mode: the dial is in watts now.</summary>
-    private static string FormatMultiplier(int fullScaleW) => "W";
 
     private static readonly int[] PowerRangesW = { 10, 20, 50, 100, 200, 500, 1000 };
     private readonly List<(TextBlock tb, int unit)> _powerLabels = new();

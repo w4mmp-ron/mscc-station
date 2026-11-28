@@ -40,6 +40,12 @@ public partial class App : Application
 
         base.OnStartup(e);
 
+        // Tooltips stay inside their window (Ron 2026-11-27). WPF only keeps them on screen.
+        EventManager.RegisterClassHandler(typeof(System.Windows.Controls.ToolTip),
+            System.Windows.Controls.ToolTip.OpenedEvent, new RoutedEventHandler(OnToolTipOpened));
+        EventManager.RegisterClassHandler(typeof(System.Windows.Controls.ToolTip),
+            System.Windows.Controls.ToolTip.ClosedEvent, new RoutedEventHandler(OnToolTipClosed));
+
         // Hook unhandled exceptions early (for debug phase - logs everything to mscc.log + crash.log)
         this.DispatcherUnhandledException += OnDispatcherUnhandledException;
         AppDomain.CurrentDomain.UnhandledException += OnAppDomainUnhandledException;
@@ -135,5 +141,52 @@ public partial class App : Application
         catch { /* ignore if we don't own it or already released */ }
 
         base.OnExit(e);
+    }
+
+    private static void OnToolTipOpened(object sender, RoutedEventArgs e)
+    {
+        if (sender is not System.Windows.Controls.ToolTip tt) return;
+        // Wait for layout so the tooltip has its size and screen position.
+        tt.Dispatcher.BeginInvoke(DispatcherPriority.Loaded, new Action(() => KeepToolTipInWindow(tt)));
+    }
+
+    private static void OnToolTipClosed(object sender, RoutedEventArgs e)
+    {
+        // Implicit tooltips are reused: start from the normal place next time.
+        if (sender is System.Windows.Controls.ToolTip tt)
+        {
+            tt.HorizontalOffset = 0;
+        }
+    }
+
+    private static void KeepToolTipInWindow(System.Windows.Controls.ToolTip tt)
+    {
+        try
+        {
+            if (!tt.IsOpen || tt.PlacementTarget is not UIElement target) return;
+            var win = Window.GetWindow(target);
+            if (win?.Content is not FrameworkElement root || !root.IsVisible || !tt.IsVisible) return;
+
+            var src = PresentationSource.FromVisual(tt);
+            if (src?.CompositionTarget == null) return;
+            var toDevice = src.CompositionTarget.TransformToDevice;   // DIP -> pixels for the tooltip's screen
+
+            Point tl = tt.PointToScreen(new Point(0, 0));
+            Point br = tt.PointToScreen(new Point(tt.ActualWidth, tt.ActualHeight));
+            Point wtl = root.PointToScreen(new Point(0, 0));
+            Point wbr = root.PointToScreen(new Point(root.ActualWidth, root.ActualHeight));
+
+            // Sideways only: a vertical move could put the tooltip under the mouse and make it flicker.
+            double dx = 0;
+            if (br.X > wbr.X) dx = wbr.X - br.X;
+            if (tl.X + dx < wtl.X) dx = wtl.X - tl.X;
+            if (dx == 0) return;
+
+            tt.HorizontalOffset += dx / toDevice.M11;
+        }
+        catch
+        {
+            /* a tooltip must never take the client down */
+        }
     }
 }

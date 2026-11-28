@@ -23,6 +23,9 @@ public class VfoState : INotifyPropertyChanged
             if (SetField(ref _frequencyHz, value))
             {
                 OnPropertyChanged(nameof(FrequencyDisplay));
+                OnPropertyChanged(nameof(FrequencyMhzKhzDisplay));
+                OnPropertyChanged(nameof(FrequencyHzDisplay));
+                OnPropertyChanged(nameof(BandText));
             }
         }
     }
@@ -84,6 +87,29 @@ public class VfoState : INotifyPropertyChanged
     /// Main frequency line only (fixed F6 width). RIT offset is shown separately below.
     /// </summary>
     public string FrequencyDisplay => $"{FrequencyHz / 1_000_000.0:F6}";
+
+    /// <summary>LCD big digits: MHz + kHz, e.g. "14.074" (FrequencyDisplay up to the third decimal).</summary>
+    public string FrequencyMhzKhzDisplay
+    {
+        get
+        {
+            string f = FrequencyDisplay;
+            return f.Length > 3 ? f[..^3] : f;
+        }
+    }
+
+    /// <summary>LCD small digits: the last three (Hz), e.g. "000".</summary>
+    public string FrequencyHzDisplay
+    {
+        get
+        {
+            string f = FrequencyDisplay;
+            return f.Length > 3 ? f[^3..] : "";
+        }
+    }
+
+    /// <summary>LCD strip: PowerSDR US band text for the dial frequency (see <see cref="BandPlan"/>).</summary>
+    public string BandText => BandPlan.Describe(FrequencyHz);
 
     /// <summary>
     /// Compact RIT offset for the line under the frequency (empty when RIT off).

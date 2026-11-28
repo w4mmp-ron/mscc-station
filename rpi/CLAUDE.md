@@ -56,7 +56,7 @@ until Stew sorts out the remote audio issue (Windows client digital transmit bur
 `.mscc-coord/REPORT-FOR-RON-WINDOWS-CLIENT-DIGITAL-TX-BURSTS-2026-11-17.md` + our reply
 `NOTE-FOR-STEW-DIGITAL-TX-BURSTS-REPLY-2026-11-17.md`). Firmware (pill, SWR meter, keyer) is not on hold.
 Reading / investigating is fine.
-**Since 2026-11-18 (Ron): the Pi servers are open again; Windows servers + clients still on hold.** At "cut release": Windows installer yes (for the pill / keyer firmware), but never change or rebuild the Windows servers or client (Stew's pushed builds go in as they are). Pi server changes are not ported to Windows; each release lists them in a note for Stew (`.mscc-coord/NOTE-FOR-STEW-PI-SERVER-CHANGES-NOT-ON-WINDOWS-2026-11-18.md`).
+**Since 2026-11-18 (Ron): the Pi servers are open again; Windows servers still on hold.** **Since 2026-11-28 the WPF client is Ron's (Stew OK'd)**: it is changed and rebuilt here, and goes into the Windows installer at "cut release". Never change or rebuild the Windows servers (Stew's pushed builds go in as they are). Pi server changes are not ported to Windows; each release lists them in a note for Stew (`.mscc-coord/NOTE-FOR-STEW-PI-SERVER-CHANGES-NOT-ON-WINDOWS-2026-11-18.md`).
 
 **Current list (updated 2026-11-06, after bb31561):**
 - **Client tooltips = Stew's (Ron 2026-11-19), note `.mscc-coord/NOTE-FOR-STEW-CLIENT-TOOLTIPS-2026-11-19.md`,

@@ -32,53 +32,99 @@
         <!-- Shared themed button: rounded corners + slightly thicker border (raised look).
              Use BasedOn + DataTrigger with UiButtonSelected* or UiButtonAlert* for latched states.
              Template required so CornerRadius is honored (default Button chrome ignores it). -->
+        <!-- Light-bar button (2026-11-27, from Stew's Avalonia MsccLightBarButtonTheme): dark glossy face lit
+             from above, 3 px light slot at the bottom. Key name kept so every BasedOn still works.
+             The slot shows the button's Background: off = UiBarSlotOffBrush (default here); the existing
+             latched DataTriggers set Background to UiButtonSelectedBrush / UiButtonAlertBrush, so the slot
+             lights in the theme's selected colour or red. Text is always light (local Foreground="Black"
+             on some buttons is ignored by the template). -->
+        <LinearGradientBrush x:Key="UiBarFaceBrush" StartPoint="0,0" EndPoint="0,1">
+            <GradientStop Offset="0" Color="#FF3C424C"/>
+            <GradientStop Offset="0.5" Color="#FF1C1F24"/>
+            <GradientStop Offset="1" Color="#FF0B0C0E"/>
+        </LinearGradientBrush>
+        <LinearGradientBrush x:Key="UiBarFaceHoverBrush" StartPoint="0,0" EndPoint="0,1">
+            <GradientStop Offset="0" Color="#FF4A515C"/>
+            <GradientStop Offset="0.5" Color="#FF262A31"/>
+            <GradientStop Offset="1" Color="#FF15171B"/>
+        </LinearGradientBrush>
+        <LinearGradientBrush x:Key="UiBarFacePressedBrush" StartPoint="0,0" EndPoint="0,1">
+            <GradientStop Offset="0" Color="#FF101114"/>
+            <GradientStop Offset="0.5" Color="#FF1A1D22"/>
+            <GradientStop Offset="1" Color="#FF24282E"/>
+        </LinearGradientBrush>
+        <LinearGradientBrush x:Key="UiBarShineBrush" StartPoint="0,0" EndPoint="0,1">
+            <GradientStop Offset="0" Color="#55FFFFFF"/>
+            <GradientStop Offset="1" Color="#00FFFFFF"/>
+        </LinearGradientBrush>
+        <SolidColorBrush x:Key="UiBarOutlineBrush" Color="#FF000000"/>
+        <SolidColorBrush x:Key="UiBarEdgeTopBrush" Color="#66707A86"/>
+        <SolidColorBrush x:Key="UiBarEdgeBottomBrush" Color="#CC000000"/>
+        <SolidColorBrush x:Key="UiBarEdgeSideBrush" Color="#59000000"/>
+        <SolidColorBrush x:Key="UiBarSlotOffBrush" Color="#FF3A3D42"/>
+        <SolidColorBrush x:Key="UiBarTextBrush" Color="#FFF0F0F0"/>
+
         <Style x:Key="MsccGoldButtonStyle" TargetType="Button">
-            <Setter Property="Background" Value="{DynamicResource UiButtonFaceBrush}"/>
-            <Setter Property="BorderBrush" Value="{DynamicResource UiButtonBorderBrush}"/>
-            <Setter Property="BorderThickness" Value="2"/>
-            <Setter Property="Foreground" Value="{DynamicResource UiButtonTextBrush}"/>
+            <Setter Property="Background" Value="{StaticResource UiBarSlotOffBrush}"/>
+            <Setter Property="BorderBrush" Value="{StaticResource UiBarOutlineBrush}"/>
+            <Setter Property="BorderThickness" Value="1"/>
+            <Setter Property="Foreground" Value="{StaticResource UiBarTextBrush}"/>
             <Setter Property="FontWeight" Value="Bold"/>
             <Setter Property="FontSize" Value="11"/>
-            <Setter Property="Padding" Value="4,2"/>
+            <Setter Property="Padding" Value="4,0"/>
             <Setter Property="Height" Value="24"/>
             <Setter Property="VerticalAlignment" Value="Center"/>
             <Setter Property="SnapsToDevicePixels" Value="True"/>
             <Setter Property="Template">
                 <Setter.Value>
-                    <!-- Single Border: simpler layout; nested borders inflated content and clipped edges. -->
                     <ControlTemplate TargetType="Button">
-                        <Border x:Name="Bd"
-                                Background="{TemplateBinding Background}"
-                                BorderBrush="{TemplateBinding BorderBrush}"
-                                BorderThickness="{TemplateBinding BorderThickness}"
-                                CornerRadius="4"
-                                Padding="{TemplateBinding Padding}"
-                                SnapsToDevicePixels="True">
-                            <ContentPresenter HorizontalAlignment="Center"
-                                              VerticalAlignment="Center"
-                                              RecognizesAccessKey="True"/>
+                        <Border x:Name="Face" CornerRadius="3" BorderThickness="1"
+                                BorderBrush="{StaticResource UiBarOutlineBrush}"
+                                Background="{StaticResource UiBarFaceBrush}"
+                                ClipToBounds="True" SnapsToDevicePixels="True">
+                            <Grid>
+                                <Grid.RowDefinitions>
+                                    <RowDefinition Height="0.45*"/>
+                                    <RowDefinition Height="0.55*"/>
+                                </Grid.RowDefinitions>
+                                <Border Grid.RowSpan="2" BorderThickness="1,0,1,0" CornerRadius="2"
+                                        BorderBrush="{StaticResource UiBarEdgeSideBrush}" IsHitTestVisible="False"/>
+                                <Border x:Name="EdgeTop" Grid.RowSpan="2" BorderThickness="0,1,0,0" CornerRadius="2"
+                                        BorderBrush="{StaticResource UiBarEdgeTopBrush}" IsHitTestVisible="False"/>
+                                <Border x:Name="EdgeBottom" Grid.RowSpan="2" BorderThickness="0,0,0,1" CornerRadius="2"
+                                        BorderBrush="{StaticResource UiBarEdgeBottomBrush}" IsHitTestVisible="False"/>
+                                <Border Grid.Row="0" Margin="1,1,1,0" CornerRadius="2,2,0,0"
+                                        Background="{StaticResource UiBarShineBrush}" IsHitTestVisible="False"/>
+                                <ContentPresenter Grid.RowSpan="2" Margin="{TemplateBinding Padding}"
+                                                  HorizontalAlignment="Center" VerticalAlignment="Center"
+                                                  RecognizesAccessKey="True"
+                                                  TextElement.Foreground="{StaticResource UiBarTextBrush}">
+                                    <ContentPresenter.RenderTransform>
+                                        <TranslateTransform Y="-2"/>
+                                    </ContentPresenter.RenderTransform>
+                                </ContentPresenter>
+                                <Border x:Name="LightBar" Grid.RowSpan="2" Height="3" VerticalAlignment="Bottom"
+                                        Margin="5,0,5,2" CornerRadius="1"
+                                        Background="{TemplateBinding Background}" IsHitTestVisible="False"/>
+                            </Grid>
                         </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="Face" Property="Background" Value="{StaticResource UiBarFaceHoverBrush}"/>
+                            </Trigger>
+                            <Trigger Property="IsPressed" Value="True">
+                                <Setter TargetName="Face" Property="Background" Value="{StaticResource UiBarFacePressedBrush}"/>
+                                <Setter TargetName="EdgeTop" Property="BorderBrush" Value="{StaticResource UiBarEdgeBottomBrush}"/>
+                                <Setter TargetName="EdgeBottom" Property="BorderBrush" Value="{StaticResource UiBarEdgeTopBrush}"/>
+                            </Trigger>
+                            <!-- Gray-out for radio-model gating (Proficio vs Geminus band sets). -->
+                            <Trigger Property="IsEnabled" Value="False">
+                                <Setter Property="Opacity" Value="0.45"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
                     </ControlTemplate>
                 </Setter.Value>
             </Setter>
-            <Style.Triggers>
-                <Trigger Property="IsMouseOver" Value="True">
-                    <Setter Property="Background" Value="{DynamicResource UiButtonHoverBrush}"/>
-                    <Setter Property="BorderBrush" Value="{DynamicResource UiButtonHoverBorderBrush}"/>
-                </Trigger>
-                <Trigger Property="IsPressed" Value="True">
-                    <Setter Property="Background" Value="{DynamicResource UiButtonSelectedBrush}"/>
-                    <Setter Property="BorderBrush" Value="{DynamicResource UiButtonSelectedBorderBrush}"/>
-                    <Setter Property="Foreground" Value="White"/>
-                </Trigger>
-                <!-- Gray-out for radio-model gating (Proficio vs Geminus band sets). -->
-                <Trigger Property="IsEnabled" Value="False">
-                    <Setter Property="Background" Value="#FF555555"/>
-                    <Setter Property="BorderBrush" Value="#FF444444"/>
-                    <Setter Property="Foreground" Value="#FF999999"/>
-                    <Setter Property="Opacity" Value="0.65"/>
-                </Trigger>
-            </Style.Triggers>
         </Style>
 
         <!-- Tab content fills client area. Header group is laid out in the spectrum (*)
@@ -314,14 +360,14 @@
     <TextBlock Text="Phones" FontWeight="Bold" Foreground="{DynamicResource UiAccentBrush}" FontSize="12" Margin="0,0,0,2"/>
     <StackPanel Orientation="Horizontal" Margin="0,0,0,3" VerticalAlignment="Center">
         <TextBlock Text="Volume" Width="52" VerticalAlignment="Center" Foreground="{DynamicResource UiPrimaryTextBrush}" FontSize="11"/>
-        <Slider Width="68" Minimum="0" Maximum="100" SmallChange="1" Value="{Binding RadioState.PVolume, Mode=TwoWay}" PreviewMouseWheel="Slider_PreviewMouseWheel" Margin="2,0,0,0"/>
+        <Slider Style="{StaticResource MsccPhysicalSlider}" Width="68" Minimum="0" Maximum="100" SmallChange="1" Value="{Binding RadioState.PVolume, Mode=TwoWay}" PreviewMouseWheel="Slider_PreviewMouseWheel" Margin="2,0,0,0"/>
         <Border Background="#FF444444" BorderThickness="1" BorderBrush="#FF888888" Margin="2,0,0,0" Padding="2,1" MinWidth="32">
             <TextBlock Text="{Binding RadioState.PVolume, StringFormat={}{0}}" FontSize="11" FontWeight="Bold" Foreground="{DynamicResource UiAccentBrush}" HorizontalAlignment="Center"/>
         </Border>
     </StackPanel>
     <StackPanel Orientation="Horizontal" Margin="0,0,0,5" VerticalAlignment="Center">
         <TextBlock Text="Mic Gain" Width="52" VerticalAlignment="Center" Foreground="{DynamicResource UiPrimaryTextBrush}" FontSize="11"/>
-        <Slider Width="68" Minimum="0" Maximum="100" SmallChange="1" Value="{Binding RadioState.PMicGain, Mode=TwoWay}" PreviewMouseWheel="Slider_PreviewMouseWheel" Margin="2,0,0,0"/>
+        <Slider Style="{StaticResource MsccPhysicalSlider}" Width="68" Minimum="0" Maximum="100" SmallChange="1" Value="{Binding RadioState.PMicGain, Mode=TwoWay}" PreviewMouseWheel="Slider_PreviewMouseWheel" Margin="2,0,0,0"/>
         <Border Background="#FF444444" BorderThickness="1" BorderBrush="#FF888888" Margin="2,0,0,0" Padding="2,1" MinWidth="32">
             <TextBlock Text="{Binding RadioState.PMicGain, StringFormat={}{0}}" FontSize="11" FontWeight="Bold" Foreground="{DynamicResource UiAccentBrush}" HorizontalAlignment="Center"/>
         </Border>
@@ -333,7 +379,7 @@
                 IsEnabled="{Binding DigitalControlsEnabled}"
                 ToolTip="Digital Volume/Mic are local VAC path only. Inactive while Remote is checked.">
         <TextBlock Text="Volume" Width="52" VerticalAlignment="Center" Foreground="{DynamicResource UiPrimaryTextBrush}" FontSize="11"/>
-        <Slider Width="68" Minimum="0" Maximum="100" SmallChange="1" Value="{Binding RadioState.DVolume, Mode=TwoWay}" PreviewMouseWheel="Slider_PreviewMouseWheel" Margin="2,0,0,0"/>
+        <Slider Style="{StaticResource MsccPhysicalSlider}" Width="68" Minimum="0" Maximum="100" SmallChange="1" Value="{Binding RadioState.DVolume, Mode=TwoWay}" PreviewMouseWheel="Slider_PreviewMouseWheel" Margin="2,0,0,0"/>
         <Border Background="#FF444444" BorderThickness="1" BorderBrush="#FF888888" Margin="2,0,0,0" Padding="2,1" MinWidth="32">
             <TextBlock Text="{Binding RadioState.DVolume, StringFormat={}{0}}" FontSize="11" FontWeight="Bold" Foreground="{DynamicResource UiAccentBrush}" HorizontalAlignment="Center"/>
         </Border>
@@ -342,7 +388,7 @@
                 IsEnabled="{Binding DigitalControlsEnabled}"
                 ToolTip="Digital Volume/Mic are local VAC path only. Inactive while Remote is checked.">
         <TextBlock Text="Mic Gain" Width="52" VerticalAlignment="Center" Foreground="{DynamicResource UiPrimaryTextBrush}" FontSize="11"/>
-        <Slider Width="68" Minimum="0" Maximum="100" SmallChange="1" Value="{Binding RadioState.DMicGain, Mode=TwoWay}" PreviewMouseWheel="Slider_PreviewMouseWheel" Margin="2,0,0,0"/>
+        <Slider Style="{StaticResource MsccPhysicalSlider}" Width="68" Minimum="0" Maximum="100" SmallChange="1" Value="{Binding RadioState.DMicGain, Mode=TwoWay}" PreviewMouseWheel="Slider_PreviewMouseWheel" Margin="2,0,0,0"/>
         <Border Background="#FF444444" BorderThickness="1" BorderBrush="#FF888888" Margin="2,0,0,0" Padding="2,1" MinWidth="32">
             <TextBlock Text="{Binding RadioState.DMicGain, StringFormat={}{0}}" FontSize="11" FontWeight="Bold" Foreground="{DynamicResource UiAccentBrush}" HorizontalAlignment="Center"/>
         </Border>
@@ -353,7 +399,8 @@
     <StackPanel Orientation="Horizontal" Margin="0,0,0,3" VerticalAlignment="Center">
         <Button Content="Phones" Width="80" Height="24" FontSize="10"
                 Command="{Binding SelectPhonesAudioCommand}"
-                ToolTip="Local analog mic/speaker. While Remote is on: click to close Remote and take local Phones.">
+                IsEnabled="{Binding LocalPhonesAvailable}" ToolTipService.ShowOnDisabled="True"
+                ToolTip="{Binding PhonesButtonToolTip}">
             <Button.Style>
                 <Style TargetType="Button" BasedOn="{StaticResource MsccGoldButtonStyle}">
                     <Style.Triggers>
@@ -409,8 +456,8 @@
         </Button.Style>
     </Button>
 
-    <!-- Main tab filter/step buttons (replacing Lo/Hi sliders; cycle presets like original) -->
-    <TextBlock Text="FILTERS / STEP" FontWeight="SemiBold" Margin="0,5,0,3" Foreground="{DynamicResource UiAccentBrush}" FontSize="10"/>
+    <!-- Main tab filter buttons (cycle presets like original). Step moved to the VFO button row (2026-11-27, Ron). -->
+    <TextBlock Text="FILTERS" FontWeight="SemiBold" Margin="0,5,0,3" Foreground="{DynamicResource UiAccentBrush}" FontSize="10"/>
     <StackPanel Orientation="Horizontal" Margin="0,0,0,3" VerticalAlignment="Center">
         <TextBlock Text="Lo" Width="25" VerticalAlignment="Center" Foreground="{DynamicResource UiPrimaryTextBrush}" FontSize="9"/>
         <Button Content="{Binding LowCutLabel}" Width="55" Height="20" Command="{Binding CycleLowCutCommand}" FontSize="9" Style="{StaticResource MsccGoldButtonStyle}" ToolTip="Low cut filter: 75, 100, 200, 300, 500 Hz."/>
@@ -419,13 +466,9 @@
         <TextBlock Text="Hi" Width="25" VerticalAlignment="Center" Foreground="{DynamicResource UiPrimaryTextBrush}" FontSize="9"/>
         <Button Content="{Binding HighCutLabel}" Width="55" Height="20" Command="{Binding CycleHighCutCommand}" FontSize="9" Style="{StaticResource MsccGoldButtonStyle}" ToolTip="High cut filter. DIG-U: 1.0k–5.5k (7 steps). Other modes: 2.4k–5.5k."/>
     </StackPanel>
-    <StackPanel Orientation="Horizontal" Margin="0,0,0,3" VerticalAlignment="Center">
+    <StackPanel Orientation="Horizontal" Margin="0,0,0,10" VerticalAlignment="Center">
         <TextBlock Text="CW" Width="25" VerticalAlignment="Center" Foreground="{DynamicResource UiPrimaryTextBrush}" FontSize="9"/>
         <Button Content="{Binding CwFilterLabel}" Width="55" Height="20" Command="{Binding CycleCwFilterCommand}" FontSize="9" Style="{StaticResource MsccGoldButtonStyle}" ToolTip="CW BANDWIDTH"/>
-    </StackPanel>
-    <StackPanel Orientation="Horizontal" Margin="0,0,0,10" VerticalAlignment="Center">
-        <TextBlock Text="Step" Width="25" VerticalAlignment="Center" Foreground="{DynamicResource UiPrimaryTextBrush}" FontSize="9"/>
-        <Button Content="{Binding StepLabel}" Width="55" Height="20" Command="{Binding CycleStepCommand}" FontSize="9" Style="{StaticResource MsccGoldButtonStyle}" ToolTip="Mouse-wheel tuning step on the MAIN tab."/>
     </StackPanel>
 
     <!-- Spectrum display zoom (client viewport; no mouse-wheel zoom on spectrum) -->
@@ -434,7 +477,7 @@
                ToolTip="Display zoom of the panadapter (1×–4×). Same RF data; magnifies center around VFO."/>
     <StackPanel Orientation="Horizontal" Margin="0,0,0,10" VerticalAlignment="Center"
                 ToolTip="Display zoom of the panadapter (1×–4×). Same RF data; magnifies center around VFO.">
-        <Slider Width="90" Minimum="1" Maximum="4" TickFrequency="1" IsSnapToTickEnabled="True"
+        <Slider Style="{StaticResource MsccPhysicalSlider}" Width="90" Minimum="1" Maximum="4" TickFrequency="1" IsSnapToTickEnabled="True"
                 SmallChange="1" LargeChange="1"
                 Value="{Binding SpectrumZoom, Mode=TwoWay}"
                 PreviewMouseWheel="Slider_PreviewMouseWheel" VerticalAlignment="Center"/>
@@ -444,15 +487,30 @@
         </Border>
     </StackPanel>
 
-    <CheckBox Content="RIT" IsChecked="{Binding RadioState.ActiveVfo.RitOn, Mode=TwoWay}" Margin="0,0,0,5" Foreground="{DynamicResource UiPrimaryTextBrush}"/>
-    <StackPanel Orientation="Horizontal" Margin="0,0,0,5" VerticalAlignment="Center">
-        <TextBlock Text="RIT Offset" Width="52" VerticalAlignment="Center" Foreground="{DynamicResource UiPrimaryTextBrush}" FontSize="11"/>
-        <Slider Width="68" Minimum="-500" Maximum="500" SmallChange="10" Value="{Binding RadioState.ActiveVfo.RitOffsetHz, Mode=TwoWay}" PreviewMouseWheel="Slider_PreviewMouseWheel" Margin="2,0,0,0"/>
-        <Border Background="#FF444444" BorderThickness="1" BorderBrush="#FF888888" Margin="2,0,0,0" Padding="2,1" MinWidth="36">
-            <TextBlock Text="{Binding RadioState.ActiveVfo.RitOffsetHz, StringFormat={}{0}}" FontSize="11" FontWeight="Bold" Foreground="{DynamicResource UiAccentBrush}" HorizontalAlignment="Center"/>
-        </Border>
-    </StackPanel>
-    <Button Content="Clear RIT" Width="80" Click="ClearRit_Click" Margin="0,0,0,5" FontSize="9" Style="{StaticResource MsccGoldButtonStyle}"/>
+    <!-- LOG + Save settings (moved from the right panel, Ron 2026-11-27) -->
+    <Button Content="LOG" Height="22" HorizontalAlignment="Stretch" Margin="0,0,0,0"
+            Command="{Binding ShowDebugLogCommand}"
+            Foreground="Black" FontSize="9" FontWeight="Bold"
+            ToolTip="Open debug log viewer (RESET LOGS / Pause)">
+        <Button.Style>
+            <Style TargetType="Button" BasedOn="{StaticResource MsccGoldButtonStyle}">
+                <Style.Triggers>
+                    <DataTrigger Binding="{Binding DebugLogVisible}" Value="True">
+                        <Setter Property="Background" Value="{DynamicResource UiButtonSelectedBrush}"/>
+                        <Setter Property="BorderBrush" Value="{DynamicResource UiButtonSelectedBorderBrush}"/>
+                        <Setter Property="Foreground" Value="White"/>
+                    </DataTrigger>
+                </Style.Triggers>
+            </Style>
+        </Button.Style>
+    </Button>
+    <Button x:Name="SaveSettingsButton"
+            Content="Save settings"
+            Height="22" HorizontalAlignment="Stretch" Margin="0,4,0,0"
+            Click="SaveSettings_Click"
+            FontSize="9" FontWeight="Bold"
+            Style="{StaticResource MsccGoldButtonStyle}"
+            ToolTip="Park the calibration files on the host for this radio type. Needed for AMP CAL, and for radios without calibration storage. QRP CAL, TX IQ and RX IQ are stored in the radio on current firmware."/>
             </StackPanel>
             <!-- Temps moved to SETTINGS (Proficio for legacy XO; PA reserved for future amp face). -->
             </Grid>
@@ -490,58 +548,34 @@
                     <ColumnDefinition Width="*" MinWidth="0"/>
                 </Grid.ColumnDefinitions>
 
-                <!-- Analog S-meter (RX) or FWD 0–10 + SWR digital (TX / fault) -->
-                <StackPanel Grid.Column="1" VerticalAlignment="Center"
-                            HorizontalAlignment="Center">
-                    <controls:AnalogSMeterControl Value="{Binding SMeter}"
-                                                  HoldEnabled="{Binding SmeterHold, Mode=TwoWay}"
-                                                  PeakEnabled="{Binding PeakNeedleOn, Mode=TwoWay}"
-                                                  PeakHoldSeconds="2"
-                                                  Dbm="{Binding SMeterDbm}"
-                                                  ShowDbm="{Binding SmeterShowDbm, Mode=TwoWay}"
-                                                  PowerMode="{Binding ShowExternalSwrFace}"
-                                                  ForwardWatts="{Binding SwrForwardWatts}"
-                                                  Swr="{Binding SwrValue}"
-                                                  Fault="{Binding SwrFault}"
-                                                  SwrThreshold="{Binding SwrThreshold}"
-                                                  ResetRequested="SwrMeterFace_ResetRequested"/>
-                    <TextBlock FontSize="12" FontWeight="Bold" Foreground="{DynamicResource UiAccentBrush}"
-                               HorizontalAlignment="Center" Margin="0,3,0,0">
-                        <TextBlock.Style>
-                            <Style TargetType="TextBlock">
-                                <Setter Property="Text" Value="S-METER"/>
-                                <Setter Property="ToolTip" Value="S-meter"/>
-                                <Style.Triggers>
-                                    <DataTrigger Binding="{Binding ShowExternalSwrFace}" Value="True">
-                                        <Setter Property="Text" Value="FWD / SWR"/>
-                                        <Setter Property="ToolTip" Value="FWD power needle + SWR digital (external WiFi meter). Fault keeps this face for RESET."/>
-                                    </DataTrigger>
-                                    <MultiDataTrigger>
-                                        <MultiDataTrigger.Conditions>
-                                            <Condition Binding="{Binding ShowExternalSwrFace}" Value="True"/>
-                                            <Condition Binding="{Binding SwrFault}" Value="True"/>
-                                        </MultiDataTrigger.Conditions>
-                                        <Setter Property="Text" Value="SWR FAULT"/>
-                                        <Setter Property="Foreground" Value="#FFFF5252"/>
-                                        <Setter Property="ToolTip" Value="High SWR fault — press red RESET on the digital readout"/>
-                                    </MultiDataTrigger>
-                                </Style.Triggers>
-                            </Style>
-                        </TextBlock.Style>
-                    </TextBlock>
-                </StackPanel>
+                <!-- Analog S-meter (RX) or FWD power + SWR (TX / fault). The face legend reads S-METER / FWD / SWR /
+                     SWR FAULT (Stew's Avalonia cmd-099b), so there is no caption under the meter. -->
+                <controls:AnalogSMeterControl Grid.Column="1" VerticalAlignment="Center" HorizontalAlignment="Center"
+                                              Value="{Binding SMeter}"
+                                              HoldEnabled="{Binding SmeterHold, Mode=TwoWay}"
+                                              PeakEnabled="{Binding PeakNeedleOn, Mode=TwoWay}"
+                                              PeakHoldSeconds="2"
+                                              Dbm="{Binding SMeterDbm}"
+                                              ShowDbm="{Binding SmeterShowDbm, Mode=TwoWay}"
+                                              PowerMode="{Binding ShowExternalSwrFace}"
+                                              ForwardWatts="{Binding SwrForwardWatts}"
+                                              Swr="{Binding SwrValue}"
+                                              Fault="{Binding SwrFault}"
+                                              SwrThreshold="{Binding SwrThreshold}"
+                                              ResetRequested="SwrMeterFace_ResetRequested"/>
 
-                <!-- VFO A — compact padding so ALC Peak fits at MinWidth 1140 -->
-                <Border Grid.Column="3" Background="#FF1A1A1A" CornerRadius="4" Padding="6,3"
-                        VerticalAlignment="Center" Cursor="Hand"
-                        BorderThickness="3"
-                        ToolTip="Click to select VFO A. Point at a digit and roll the wheel to tune that digit (digits to the right go to 0).">
+                <!-- VFO A — backlit LCD face (Avalonia cmd-098 look). Big MHz.kHz digits + small Hz digits;
+                     band strip takes the content width so it never widens the face (ALC Peak fits at MinWidth 1140). -->
+                <!-- 120 px = the meters. No accent border (cmd-099): the idle VFO is dimmed, the red dot marks the active one. -->
+                <Border Grid.Column="3" Background="{StaticResource UiVfoBezelBrush}" CornerRadius="4" Padding="3"
+                        Height="120" VerticalAlignment="Center" Cursor="Hand"
+                        ToolTip="Click to select VFO A. Point at a digit and roll the wheel to tune that digit (digits to the right go to 0).&#x0a;Big digits: MHz and kHz. Small digits: Hz.&#x0a;Strip: US band plan section (PowerSDR band text).">
                     <Border.Style>
                         <Style TargetType="Border">
-                            <Setter Property="BorderBrush" Value="{DynamicResource UiAccentMutedBrush}"/>
+                            <Setter Property="Opacity" Value="0.78"/>
                             <Style.Triggers>
                                 <DataTrigger Binding="{Binding IsVfoAActive}" Value="True">
-                                    <Setter Property="BorderBrush" Value="{DynamicResource UiAccentBrush}"/>
+                                    <Setter Property="Opacity" Value="1"/>
                                 </DataTrigger>
                             </Style.Triggers>
                         </Style>
@@ -549,33 +583,87 @@
                     <Border.InputBindings>
                         <MouseBinding MouseAction="LeftClick" Command="{Binding SelectVfoACommand}"/>
                     </Border.InputBindings>
-                    <StackPanel HorizontalAlignment="Center">
-                        <TextBlock Text="VFO A" FontSize="10" Foreground="{DynamicResource UiMutedTextBrush}" HorizontalAlignment="Center"/>
-                        <TextBlock Text="{Binding RadioState.VfoA.FrequencyDisplay}"
-                                   FontSize="36" FontWeight="Bold" FontFamily="Consolas" Foreground="#88CCFF"
-                                   HorizontalAlignment="Center"
-                                   PreviewMouseWheel="VfoFrequency_PreviewMouseWheel" Tag="A"/>
-                        <TextBlock Text="{Binding RadioState.VfoA.RitDisplay}"
-                                   Height="13" FontSize="11" FontWeight="Bold" FontFamily="Consolas"
-                                   Foreground="#FFCC00" HorizontalAlignment="Center"
-                                   TextAlignment="Center" VerticalAlignment="Center"
-                                   ToolTip="RIT offset (Hz)"/>
-                        <TextBlock Text="{Binding RadioState.VfoA.ModeDisplay}" Foreground="#D0D0D0" FontSize="12"
-                                   HorizontalAlignment="Center"/>
-                    </StackPanel>
+                    <Grid>
+                        <Border Background="{StaticResource UiVfoLcdBrush}" CornerRadius="2"/>
+                        <Border Background="{DynamicResource UiBacklightDimBrush}" CornerRadius="2" IsHitTestVisible="False"/>
+                        <Border Height="6" VerticalAlignment="Top" Margin="2,2,2,0" CornerRadius="2,2,0,0"
+                                Background="{StaticResource UiVfoLcdShadeBrush}" IsHitTestVisible="False"/>
+                        <Grid x:Name="VfoAContent" Margin="7,3,7,4">
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="Auto"/>
+                                <RowDefinition Height="*"/>
+                                <RowDefinition Height="Auto"/>
+                            </Grid.RowDefinitions>
+                            <DockPanel Grid.Row="0" LastChildFill="False">
+                                <StackPanel DockPanel.Dock="Left" Orientation="Horizontal" VerticalAlignment="Center">
+                                    <Ellipse Width="8" Height="8" Margin="0,0,4,0" VerticalAlignment="Center"
+                                             Fill="{StaticResource UiVfoActiveDotBrush}" ToolTip="Active VFO">
+                                        <Ellipse.Style>
+                                            <Style TargetType="Ellipse">
+                                                <Setter Property="Visibility" Value="Hidden"/>
+                                                <Style.Triggers>
+                                                    <DataTrigger Binding="{Binding IsVfoAActive}" Value="True">
+                                                        <Setter Property="Visibility" Value="Visible"/>
+                                                    </DataTrigger>
+                                                </Style.Triggers>
+                                            </Style>
+                                        </Ellipse.Style>
+                                    </Ellipse>
+                                    <TextBlock Text="VFO A" FontSize="11" FontWeight="Bold"
+                                               Foreground="{StaticResource UiVfoLabelBrush}" VerticalAlignment="Center"/>
+                                </StackPanel>
+                                <StackPanel DockPanel.Dock="Right" Orientation="Horizontal" VerticalAlignment="Center">
+                                    <TextBlock Text="{Binding RadioState.VfoA.RitDisplay}" FontSize="12" FontWeight="Bold"
+                                               FontFamily="Consolas" Foreground="{StaticResource UiVfoRitBrush}"
+                                               Margin="0,0,6,0" VerticalAlignment="Center" ToolTip="RIT offset (Hz)"/>
+                                    <TextBlock Text="{Binding RadioState.VfoA.ModeDisplay}" FontSize="13" FontWeight="Bold"
+                                               Foreground="{StaticResource UiVfoModeBrush}" VerticalAlignment="Center"/>
+                                </StackPanel>
+                            </DockPanel>
+                            <StackPanel Grid.Row="1" Orientation="Horizontal" HorizontalAlignment="Right" VerticalAlignment="Center">
+                                <TextBlock Text="{Binding RadioState.VfoA.FrequencyMhzKhzDisplay}"
+                                           FontSize="50" FontWeight="Bold" FontFamily="Consolas"
+                                           Foreground="{StaticResource UiVfoDigitBrush}" VerticalAlignment="Bottom"
+                                           PreviewMouseWheel="VfoFrequency_PreviewMouseWheel" Tag="A"/>
+                                <TextBlock Text="{Binding RadioState.VfoA.FrequencyHzDisplay}"
+                                           FontSize="32" FontWeight="Bold" FontFamily="Consolas"
+                                           Foreground="{StaticResource UiVfoDigitHzBrush}" VerticalAlignment="Bottom"
+                                           Margin="4,0,0,6"
+                                           PreviewMouseWheel="VfoFrequency_PreviewMouseWheel" Tag="AHz"/>
+                            </StackPanel>
+                            <Border Grid.Row="2" Background="{StaticResource UiVfoStripBrush}" CornerRadius="1"
+                                    HorizontalAlignment="Left" Padding="2,0"
+                                    Width="{Binding ActualWidth, ElementName=VfoAContent}">
+                                <TextBlock Text="{Binding RadioState.VfoA.BandText}" FontSize="12" FontWeight="SemiBold"
+                                           Foreground="{StaticResource UiVfoStripTextBrush}" HorizontalAlignment="Center"
+                                           TextTrimming="CharacterEllipsis"
+                                           ToolTip="{Binding RadioState.VfoA.BandText}"/>
+                            </Border>
+                        </Grid>
+                        <Border BorderThickness="2,2,0,0" BorderBrush="{StaticResource UiVfoBevelDarkBrush}"
+                                CornerRadius="2" IsHitTestVisible="False"/>
+                        <Border BorderThickness="0,0,2,2" BorderBrush="{StaticResource UiVfoBevelLightBrush}"
+                                CornerRadius="2" IsHitTestVisible="False"/>
+                    </Grid>
                 </Border>
 
-                <!-- VFO B — click to select -->
-                <Border Grid.Column="5" Background="#FF1A1A1A" CornerRadius="4" Padding="6,2"
-                        VerticalAlignment="Center" Cursor="Hand"
-                        BorderThickness="2"
-                        ToolTip="Click to select VFO B. Point at a digit and roll the wheel to tune that digit (digits to the right go to 0).">
+                <!-- VFO B (click to select; same LCD face, smaller digits) with the VFO button row under it
+                     (Stew's Avalonia cmd-099 row, two lines here). Block = 120 px like VFO A and the meters. -->
+                <Grid Grid.Column="5" Width="136" Height="120" VerticalAlignment="Center">
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="4"/>
+                        <RowDefinition Height="*"/>
+                    </Grid.RowDefinitions>
+                <Border Grid.Row="0" Background="{StaticResource UiVfoBezelBrush}" CornerRadius="4" Padding="3"
+                        Cursor="Hand"
+                        ToolTip="Click to select VFO B. Point at a digit and roll the wheel to tune that digit (digits to the right go to 0).&#x0a;Big digits: MHz and kHz. Small digits: Hz.&#x0a;Strip: US band plan section (PowerSDR band text).">
                     <Border.Style>
                         <Style TargetType="Border">
-                            <Setter Property="BorderBrush" Value="{DynamicResource UiAccentMutedBrush}"/>
+                            <Setter Property="Opacity" Value="0.78"/>
                             <Style.Triggers>
                                 <DataTrigger Binding="{Binding IsVfoBActive}" Value="True">
-                                    <Setter Property="BorderBrush" Value="{DynamicResource UiAccentBrush}"/>
+                                    <Setter Property="Opacity" Value="1"/>
                                 </DataTrigger>
                             </Style.Triggers>
                         </Style>
@@ -583,34 +671,126 @@
                     <Border.InputBindings>
                         <MouseBinding MouseAction="LeftClick" Command="{Binding SelectVfoBCommand}"/>
                     </Border.InputBindings>
-                    <StackPanel HorizontalAlignment="Center">
-                        <TextBlock Text="VFO B" FontSize="9" Foreground="{DynamicResource UiMutedTextBrush}" HorizontalAlignment="Center"/>
-                        <TextBlock Text="{Binding RadioState.VfoB.FrequencyDisplay}"
-                                   FontSize="18" FontWeight="Bold" FontFamily="Consolas" Foreground="#88CCFF"
-                                   HorizontalAlignment="Center"
-                                   PreviewMouseWheel="VfoFrequency_PreviewMouseWheel" Tag="B"/>
-                        <TextBlock Text="{Binding RadioState.VfoB.RitDisplay}"
-                                   Height="12" FontSize="10" FontWeight="Bold" FontFamily="Consolas"
-                                   Foreground="#FFCC00" HorizontalAlignment="Center"
-                                   TextAlignment="Center" VerticalAlignment="Center"
-                                   ToolTip="RIT offset (Hz)"/>
-                        <TextBlock Text="{Binding RadioState.VfoB.ModeDisplay}" Foreground="#D0D0D0" FontSize="11"
-                                   HorizontalAlignment="Center"/>
-                    </StackPanel>
+                    <Grid>
+                        <Border Background="{StaticResource UiVfoLcdBrush}" CornerRadius="2"/>
+                        <Border Background="{DynamicResource UiBacklightDimBrush}" CornerRadius="2" IsHitTestVisible="False"/>
+                        <Border Height="5" VerticalAlignment="Top" Margin="2,2,2,0" CornerRadius="2,2,0,0"
+                                Background="{StaticResource UiVfoLcdShadeBrush}" IsHitTestVisible="False"/>
+                        <Grid x:Name="VfoBContent" Margin="5,2,5,3">
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="Auto"/>
+                                <RowDefinition Height="Auto"/>
+                                <RowDefinition Height="Auto"/>
+                            </Grid.RowDefinitions>
+                            <DockPanel Grid.Row="0" LastChildFill="False">
+                                <StackPanel DockPanel.Dock="Left" Orientation="Horizontal" VerticalAlignment="Center">
+                                    <Ellipse Width="7" Height="7" Margin="0,0,3,0" VerticalAlignment="Center"
+                                             Fill="{StaticResource UiVfoActiveDotBrush}" ToolTip="Active VFO">
+                                        <Ellipse.Style>
+                                            <Style TargetType="Ellipse">
+                                                <Setter Property="Visibility" Value="Hidden"/>
+                                                <Style.Triggers>
+                                                    <DataTrigger Binding="{Binding IsVfoBActive}" Value="True">
+                                                        <Setter Property="Visibility" Value="Visible"/>
+                                                    </DataTrigger>
+                                                </Style.Triggers>
+                                            </Style>
+                                        </Ellipse.Style>
+                                    </Ellipse>
+                                    <TextBlock Text="VFO B" FontSize="9" FontWeight="Bold"
+                                               Foreground="{StaticResource UiVfoLabelBrush}" VerticalAlignment="Center"/>
+                                </StackPanel>
+                                <StackPanel DockPanel.Dock="Right" Orientation="Horizontal" VerticalAlignment="Center">
+                                    <TextBlock Text="{Binding RadioState.VfoB.RitDisplay}" FontSize="10" FontWeight="Bold"
+                                               FontFamily="Consolas" Foreground="{StaticResource UiVfoRitBrush}"
+                                               Margin="4,0,4,0" VerticalAlignment="Center" ToolTip="RIT offset (Hz)"/>
+                                    <TextBlock Text="{Binding RadioState.VfoB.ModeDisplay}" FontSize="10" FontWeight="Bold"
+                                               Foreground="{StaticResource UiVfoModeBrush}" VerticalAlignment="Center"/>
+                                </StackPanel>
+                            </DockPanel>
+                            <StackPanel Grid.Row="1" Orientation="Horizontal" HorizontalAlignment="Right">
+                                <TextBlock Text="{Binding RadioState.VfoB.FrequencyMhzKhzDisplay}"
+                                           FontSize="24" FontWeight="Bold" FontFamily="Consolas"
+                                           Foreground="{StaticResource UiVfoDigitBrush}" VerticalAlignment="Bottom"
+                                           PreviewMouseWheel="VfoFrequency_PreviewMouseWheel" Tag="B"/>
+                                <TextBlock Text="{Binding RadioState.VfoB.FrequencyHzDisplay}"
+                                           FontSize="17" FontWeight="Bold" FontFamily="Consolas"
+                                           Foreground="{StaticResource UiVfoDigitHzBrush}" VerticalAlignment="Bottom"
+                                           Margin="2,0,0,2"
+                                           PreviewMouseWheel="VfoFrequency_PreviewMouseWheel" Tag="BHz"/>
+                            </StackPanel>
+                            <Border Grid.Row="2" Background="{StaticResource UiVfoStripBrush}" CornerRadius="1"
+                                    HorizontalAlignment="Left" Padding="2,0"
+                                    Width="{Binding ActualWidth, ElementName=VfoBContent}">
+                                <TextBlock Text="{Binding RadioState.VfoB.BandText}" FontSize="9" FontWeight="SemiBold"
+                                           Foreground="{StaticResource UiVfoStripTextBrush}" HorizontalAlignment="Center"
+                                           TextTrimming="CharacterEllipsis"
+                                           ToolTip="{Binding RadioState.VfoB.BandText}"/>
+                            </Border>
+                        </Grid>
+                        <Border BorderThickness="2,2,0,0" BorderBrush="{StaticResource UiVfoBevelDarkBrush}"
+                                CornerRadius="2" IsHitTestVisible="False"/>
+                        <Border BorderThickness="0,0,2,2" BorderBrush="{StaticResource UiVfoBevelLightBrush}"
+                                CornerRadius="2" IsHitTestVisible="False"/>
+                    </Grid>
                 </Border>
 
-                <!-- Analog ALC meter -->
-                <StackPanel Grid.Column="7" VerticalAlignment="Center"
-                            HorizontalAlignment="Center">
-                    <controls:AnalogAlcMeterControl Value="{Binding AlcValue}"
-                                                    HoldEnabled="{Binding AlcHold, Mode=TwoWay}"
-                                                    PeakEnabled="{Binding AlcPeakNeedleOn, Mode=TwoWay}"
-                                                    PeakHoldSeconds="2"/>
-                    <TextBlock Text="ALC"
-                               FontSize="12" FontWeight="Bold" Foreground="{DynamicResource UiAccentBrush}"
-                               HorizontalAlignment="Center" Margin="0,2,0,0"
-                               ToolTip="ALC meter"/>
-                </StackPanel>
+                <Grid Grid.Row="2">
+                    <Grid.Resources>
+                        <Style x:Key="VfoRowButton" TargetType="Button" BasedOn="{StaticResource MsccGoldButtonStyle}">
+                            <Setter Property="FontSize" Value="10"/>
+                            <Setter Property="FontWeight" Value="Bold"/>
+                            <Setter Property="Padding" Value="0"/>
+                            <Setter Property="Margin" Value="1"/>
+                            <Setter Property="ToolTipService.ShowOnDisabled" Value="True"/>
+                        </Style>
+                    </Grid.Resources>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="*"/>
+                        <RowDefinition Height="*"/>
+                    </Grid.RowDefinitions>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="*"/>
+                    </Grid.ColumnDefinitions>
+                    <Button Grid.Row="0" Grid.Column="0" Grid.ColumnSpan="2" Content="A&gt;B"
+                            Style="{StaticResource VfoRowButton}" Command="{Binding CopyVfoAToBCommand}"
+                            ToolTip="Copy VFO A frequency and mode to VFO B.&#x0a;Off during cal / IQ tabs and while the FM offset runs (FM, Simplex unchecked)."/>
+                    <Button Grid.Row="0" Grid.Column="2" Grid.ColumnSpan="2" Content="B&gt;A"
+                            Style="{StaticResource VfoRowButton}" Command="{Binding CopyVfoBToACommand}"
+                            ToolTip="Copy VFO B frequency and mode to VFO A.&#x0a;Off during cal / IQ tabs and while the FM offset runs (FM, Simplex unchecked)."/>
+                    <Button Grid.Row="0" Grid.Column="4" Grid.ColumnSpan="2" Content="A&lt;&gt;B"
+                            Style="{StaticResource VfoRowButton}" Command="{Binding SwapVfosCommand}"
+                            ToolTip="Swap VFO A and VFO B (frequency and mode).&#x0a;Off during cal / IQ tabs and while the FM offset runs (FM, Simplex unchecked)."/>
+                    <Button Grid.Row="1" Grid.Column="0" Grid.ColumnSpan="3" Content="SPLIT"
+                            Command="{Binding ToggleSplitCommand}"
+                            ToolTip="Split: receive on VFO A, transmit on VFO B (in VFO A's mode). Same band only.&#x0a;Selecting VFO B, a cal / IQ tab, Disconnect or a band change on either VFO turns it off.&#x0a;Also lit while the FM offset runs split (FM, Simplex unchecked).">
+                        <Button.Style>
+                            <Style TargetType="Button" BasedOn="{StaticResource VfoRowButton}">
+                                <Style.Triggers>
+                                    <DataTrigger Binding="{Binding SplitDisplayOn}" Value="True">
+                                        <Setter Property="Background" Value="{DynamicResource UiButtonSelectedBrush}"/>
+                                    </DataTrigger>
+                                </Style.Triggers>
+                            </Style>
+                        </Button.Style>
+                    </Button>
+                    <Button Grid.Row="1" Grid.Column="3" Grid.ColumnSpan="3" Content="{Binding StepLabel}"
+                            Style="{StaticResource VfoRowButton}" Command="{Binding CycleStepCommand}"
+                            ToolTip="Wheel step over the spectrum / waterfall on the MAIN tab (not over a button or slider). Tunes the active VFO; lower digits go to 0 first.&#x0a;Click to change: 1 Hz, 10 Hz, 100 Hz, 1 kHz, 10 kHz, 100 kHz."/>
+                </Grid>
+                </Grid>
+
+                <!-- Analog ALC meter (legend in the face) -->
+                <controls:AnalogAlcMeterControl Grid.Column="7" VerticalAlignment="Center" HorizontalAlignment="Center"
+                                                Value="{Binding AlcValue}"
+                                                HoldEnabled="{Binding AlcHold, Mode=TwoWay}"
+                                                PeakEnabled="{Binding AlcPeakNeedleOn, Mode=TwoWay}"
+                                                PeakHoldSeconds="2"/>
             </Grid>
         </Border>
 
@@ -889,7 +1069,8 @@
                                 <StackPanel Orientation="Horizontal" Margin="0,0,0,10">
                                     <TextBlock Text="HOLD" Width="78" Foreground="White" VerticalAlignment="Center" FontSize="10"/>
                                     <Border Background="#FF444444" BorderThickness="1" BorderBrush="#FF888888" Padding="3,1" MinWidth="35">
-                                        <TextBlock Text="{Binding CwHold}" FontSize="11" FontWeight="Bold" Foreground="#00FFAA" HorizontalAlignment="Center"/>
+                                        <TextBlock Text="{Binding CwHoldMs}" FontSize="11" FontWeight="Bold" Foreground="#00FFAA" HorizontalAlignment="Center"
+                                                   ToolTip="Time the radio stays in transmit after the last key-up.&#x0a;Steps of 50 ms, 50 to 2550 ms."/>
                                     </Border>
                                     <Button Content="-" Width="18" Height="18" Margin="2,0" Command="{Binding DecCwHoldCommand}" Foreground="White" FontSize="9">
                                         <Button.Style>
@@ -908,6 +1089,9 @@
                                         </Button.Style>
                                     </Button>
                                     <TextBlock Text="ms" Foreground="#D0D0D0" FontSize="11" VerticalAlignment="Center" Margin="4,0"/>
+                                    <CheckBox Content="AUTO" IsChecked="{Binding CwHoldAuto, Mode=TwoWay}" Foreground="White" FontSize="10"
+                                              VerticalAlignment="Center" Margin="6,0,0,0"
+                                              ToolTip="Set the hold from SPEED and FARNSWORTH:&#x0a;transmit holds through the gaps between letters&#x0a;and drops to receive at the gaps between words."/>
                                 </StackPanel>
                                 <CheckBox Content="POTENTIA / QSK" IsChecked="{Binding CwQsk, Mode=TwoWay}" Foreground="White" FontSize="10"
                                           ToolTip="Potentia 50/100 attached: amp line and PA keyed together (QSK, no amp key delay)."/>
@@ -1004,8 +1188,24 @@
                                     IsEnabled="{Binding IsRadioRunning}"
                                     ToolTip="Send this message once. Touch the paddle to stop."/>
                         </Grid>
+                        <StackPanel Orientation="Horizontal" Margin="0,6,0,0" IsEnabled="{Binding KeyerMemPanelEnabled}">
+                            <CheckBox Content="REPEAT" IsChecked="{Binding KeyerMemRepeat}" Foreground="White"
+                                      FontSize="11" VerticalAlignment="Center"
+                                      ToolTip="P plays the memory over and over.&#x0a;The radio receives during the pause.&#x0a;Tap the paddle to stop. Needs keyer firmware 20261126 or later."/>
+                            <TextBlock Text="PAUSE" Foreground="#AAAAAA" FontSize="11" VerticalAlignment="Center" Margin="16,0,6,0"/>
+                            <TextBox Width="36" Text="{Binding KeyerMemRepeatPause, UpdateSourceTrigger=LostFocus}"
+                                     FontSize="12" FontFamily="Consolas" Background="#FF222222" Foreground="#00FFAA"
+                                     CaretBrush="#00FFAA" BorderBrush="#FF666666" BorderThickness="1" Padding="4,2"
+                                     HorizontalContentAlignment="Center"
+                                     ToolTip="Seconds between plays, 1 to 30."/>
+                            <TextBlock Text="s" Foreground="#AAAAAA" FontSize="11" VerticalAlignment="Center" Margin="4,0,0,0"/>
+                        </StackPanel>
                         <TextBlock Text="{Binding KeyerMemStatus}" FontSize="10" Foreground="#AAAAAA"
                                    TextWrapping="Wrap" Margin="0,6,0,0" MinHeight="16"/>
+                        <!-- Prosign legend (keyer 20261126: * ( & added) -->
+                        <TextBlock Text="Prosigns:   = BT    + AR    * SK    ( KN    &amp; AS"
+                                   FontSize="12" FontFamily="Consolas" Foreground="#00FFAA" Margin="0,8,0,0"
+                                   ToolTip="Type one of these characters in a memory to send the prosign.&#x0a;It is sent as one sign, with no gap inside.&#x0a;* ( &amp; need keyer firmware 20261126 or later."/>
                     </StackPanel>
                     </ScrollViewer>
                 </Border>
@@ -1027,7 +1227,7 @@
 
                                 <StackPanel Orientation="Horizontal" Margin="0,0,0,5" VerticalAlignment="Center">
                                     <TextBlock Text="Tune Power" Width="90" VerticalAlignment="Center" Foreground="White"/>
-                                    <Slider Width="140" Minimum="0" Maximum="100" SmallChange="1" Value="{Binding TunePowerPercent, Mode=TwoWay}" PreviewMouseWheel="Slider_PreviewMouseWheel"/>
+                                    <Slider Style="{StaticResource MsccPhysicalSlider}" Width="140" Minimum="0" Maximum="100" SmallChange="1" Value="{Binding TunePowerPercent, Mode=TwoWay}" PreviewMouseWheel="Slider_PreviewMouseWheel"/>
                                     <Border Background="#FF444444" BorderThickness="1" BorderBrush="#FF888888" Margin="5,0,0,0" Padding="3,1" MinWidth="40">
                                         <TextBlock Text="{Binding TunePowerPercent, StringFormat={}{0}%}" FontSize="11" FontWeight="Bold" Foreground="#00FFAA" HorizontalAlignment="Center"/>
                                     </Border>
@@ -1035,7 +1235,7 @@
 
                                 <StackPanel Orientation="Horizontal" Margin="0,0,0,5" VerticalAlignment="Center">
                                     <TextBlock Text="CW Power" Width="90" VerticalAlignment="Center" Foreground="White"/>
-                                    <Slider Width="140" Minimum="0" Maximum="100" SmallChange="1" Value="{Binding CwPowerPercent, Mode=TwoWay}" PreviewMouseWheel="Slider_PreviewMouseWheel"/>
+                                    <Slider Style="{StaticResource MsccPhysicalSlider}" Width="140" Minimum="0" Maximum="100" SmallChange="1" Value="{Binding CwPowerPercent, Mode=TwoWay}" PreviewMouseWheel="Slider_PreviewMouseWheel"/>
                                     <Border Background="#FF444444" BorderThickness="1" BorderBrush="#FF888888" Margin="5,0,0,0" Padding="3,1" MinWidth="40">
                                         <TextBlock Text="{Binding CwPowerPercent, StringFormat={}{0}%}" FontSize="11" FontWeight="Bold" Foreground="#00FFAA" HorizontalAlignment="Center"/>
                                     </Border>
@@ -1043,7 +1243,7 @@
 
                                 <StackPanel Orientation="Horizontal" Margin="0,0,0,5" VerticalAlignment="Center">
                                     <TextBlock Text="SSB Power" Width="90" VerticalAlignment="Center" Foreground="White"/>
-                                    <Slider Width="140" Minimum="0" Maximum="100" SmallChange="1" Value="{Binding SsbPowerPercent, Mode=TwoWay}" PreviewMouseWheel="Slider_PreviewMouseWheel"/>
+                                    <Slider Style="{StaticResource MsccPhysicalSlider}" Width="140" Minimum="0" Maximum="100" SmallChange="1" Value="{Binding SsbPowerPercent, Mode=TwoWay}" PreviewMouseWheel="Slider_PreviewMouseWheel"/>
                                     <Border Background="#FF444444" BorderThickness="1" BorderBrush="#FF888888" Margin="5,0,0,0" Padding="3,1" MinWidth="40">
                                         <TextBlock Text="{Binding SsbPowerPercent, StringFormat={}{0}%}" FontSize="11" FontWeight="Bold" Foreground="#00FFAA" HorizontalAlignment="Center"/>
                                     </Border>
@@ -1051,7 +1251,7 @@
 
                                 <StackPanel Orientation="Horizontal" Margin="0,0,0,5" VerticalAlignment="Center">
                                     <TextBlock Text="AM Carrier" Width="90" VerticalAlignment="Center" Foreground="White"/>
-                                    <Slider Width="140" Minimum="0" Maximum="100" SmallChange="1" Value="{Binding AmCarrierPercent, Mode=TwoWay}" PreviewMouseWheel="Slider_PreviewMouseWheel"/>
+                                    <Slider Style="{StaticResource MsccPhysicalSlider}" Width="140" Minimum="0" Maximum="100" SmallChange="1" Value="{Binding AmCarrierPercent, Mode=TwoWay}" PreviewMouseWheel="Slider_PreviewMouseWheel"/>
                                     <Border Background="#FF444444" BorderThickness="1" BorderBrush="#FF888888" Margin="5,0,0,0" Padding="3,1" MinWidth="40">
                                         <TextBlock Text="{Binding AmCarrierPercent, StringFormat={}{0}%}" FontSize="11" FontWeight="Bold" Foreground="#00FFAA" HorizontalAlignment="Center"/>
                                     </Border>
@@ -1060,7 +1260,7 @@
                                 <StackPanel Orientation="Horizontal" Margin="0,0,0,12" VerticalAlignment="Center">
                                     <TextBlock Text="FM Power" Width="90" VerticalAlignment="Center" Foreground="White"
                                                ToolTip="NFM TX drive level (independent of AM carrier)."/>
-                                    <Slider Width="140" Minimum="0" Maximum="100" SmallChange="1" Value="{Binding FmPowerPercent, Mode=TwoWay}" PreviewMouseWheel="Slider_PreviewMouseWheel"
+                                    <Slider Style="{StaticResource MsccPhysicalSlider}" Width="140" Minimum="0" Maximum="100" SmallChange="1" Value="{Binding FmPowerPercent, Mode=TwoWay}" PreviewMouseWheel="Slider_PreviewMouseWheel"
                                             ToolTip="NFM TX drive level (independent of AM carrier)."/>
                                     <Border Background="#FF444444" BorderThickness="1" BorderBrush="#FF888888" Margin="5,0,0,0" Padding="3,1" MinWidth="40">
                                         <TextBlock Text="{Binding FmPowerPercent, StringFormat={}{0}%}" FontSize="11" FontWeight="Bold" Foreground="#00FFAA" HorizontalAlignment="Center"/>
@@ -1409,7 +1609,7 @@
                                     <!-- Slider + step label (0xA2 while CALIBRATE session active) -->
                                     <StackPanel Orientation="Horizontal" Margin="0,4,0,10" VerticalAlignment="Center">
                                         <TextBlock Text="POWER" Foreground="White" VerticalAlignment="Center" Width="60" FontWeight="Bold"/>
-                                        <Slider Width="320" Minimum="0" Maximum="100" SmallChange="1" LargeChange="5"
+                                        <Slider Style="{StaticResource MsccPhysicalSlider}" Width="320" Minimum="0" Maximum="100" SmallChange="1" LargeChange="5"
                                                 Value="{Binding PowerCalSliderValue, Mode=TwoWay}"
                                                 VerticalAlignment="Center"
                                                 IsSnapToTickEnabled="True" TickFrequency="1"
@@ -1563,7 +1763,7 @@
 
                                         <TextBlock Grid.Row="0" Grid.Column="0" Text="POWER" Foreground="White"
                                                    VerticalAlignment="Center" FontWeight="Bold"/>
-                                        <Slider Grid.Row="0" Grid.Column="1" Minimum="-99" Maximum="0"
+                                        <Slider Style="{StaticResource MsccPhysicalSlider}" Grid.Row="0" Grid.Column="1" Minimum="-99" Maximum="0"
                                                 SmallChange="1" LargeChange="5"
                                                 Value="{Binding AmpCalSliderValue, Mode=TwoWay}"
                                                 VerticalAlignment="Center"
@@ -1824,7 +2024,7 @@
                                             <ColumnDefinition Width="Auto"/>
                                         </Grid.ColumnDefinitions>
                                         <TextBlock Grid.Column="0" Text="POWER" Foreground="White" VerticalAlignment="Center" FontWeight="Bold"/>
-                                        <Slider Grid.Column="1" Minimum="0" Maximum="100"
+                                        <Slider Style="{StaticResource MsccPhysicalSlider}" Grid.Column="1" Minimum="0" Maximum="100"
                                                 SmallChange="1" LargeChange="5"
                                                 Value="{Binding TxIqPower, Mode=TwoWay}"
                                                 VerticalAlignment="Center"
@@ -1843,7 +2043,7 @@
                                             <ColumnDefinition Width="Auto"/>
                                         </Grid.ColumnDefinitions>
                                         <TextBlock Grid.Column="0" Text="OFFSET" Foreground="White" VerticalAlignment="Center" FontWeight="Bold"/>
-                                        <Slider Grid.Column="1" Minimum="-200" Maximum="200"
+                                        <Slider Style="{StaticResource MsccPhysicalSlider}" Grid.Column="1" Minimum="-200" Maximum="200"
                                                 SmallChange="1" LargeChange="10"
                                                 Value="{Binding TxIqOffset, Mode=TwoWay}"
                                                 IsEnabled="{Binding TxIqTxOn}"
@@ -1863,7 +2063,7 @@
                                             <ColumnDefinition Width="Auto"/>
                                         </Grid.ColumnDefinitions>
                                         <TextBlock Grid.Column="0" Text="PHASE" Foreground="White" VerticalAlignment="Center" FontWeight="Bold"/>
-                                        <Slider Grid.Column="1" Minimum="-100" Maximum="100"
+                                        <Slider Style="{StaticResource MsccPhysicalSlider}" Grid.Column="1" Minimum="-100" Maximum="100"
                                                 SmallChange="1" LargeChange="5"
                                                 Value="{Binding TxIqPhase, Mode=TwoWay}"
                                                 IsEnabled="{Binding TxIqTxOn}"
@@ -1934,12 +2134,23 @@
 
                             <!-- Larger buttons: LOOSE, AUTO, MANUAL, CHECK, RESET, STOP -->
                             <StackPanel Orientation="Horizontal" Margin="0,0,0,3">
-                                <Button x:Name="FreqCalLooseButton" Content="LOOSE" Width="80" Height="28" Margin="2" FontSize="12" FontWeight="Bold" Click="FreqCalLooseButton_Click"/>
-                                <Button x:Name="FreqCalAutoButton" Content="AUTO" Width="70" Height="28" Margin="2" FontSize="12" FontWeight="Bold" Click="FreqCalAutoButton_Click"/>
-                                <Button x:Name="FreqCalManualButton" Content="MANUAL" Width="85" Height="28" Margin="2" FontSize="12" FontWeight="Bold" Click="FreqCalManualButton_Click"/>
-                                <Button x:Name="FreqCalCheckButton" Content="CHECK" Width="70" Height="28" Margin="2" FontSize="12" FontWeight="Bold" Click="FreqCalCheckButton_Click"/>
-                                <Button x:Name="FreqCalResetButton" Content="RESET" Width="70" Height="28" Margin="2" FontSize="12" FontWeight="Bold" Click="FreqCalResetButton_Click"/>
-                                <Button x:Name="FreqCalStopButton" Content="STOP" Width="70" Height="28" Margin="2" FontSize="12" FontWeight="Bold"
+                                <Button x:Name="FreqCalLooseButton" Content="LOOSE" Width="80" Height="28" Margin="2" FontSize="12" FontWeight="Bold" Click="FreqCalLooseButton_Click">
+                                    <Button.Style>
+                                        <!-- Light-bar (Avalonia cmd-103): lit while LOOSE is on -->
+                                        <Style TargetType="Button" BasedOn="{StaticResource MsccGoldButtonStyle}">
+                                            <Style.Triggers>
+                                                <Trigger Property="Content" Value="LOOSE">
+                                                    <Setter Property="Background" Value="{DynamicResource UiButtonSelectedBrush}"/>
+                                                </Trigger>
+                                            </Style.Triggers>
+                                        </Style>
+                                    </Button.Style>
+                                </Button>
+                                <Button x:Name="FreqCalAutoButton" Style="{StaticResource MsccGoldButtonStyle}" Content="AUTO" Width="70" Height="28" Margin="2" FontSize="12" FontWeight="Bold" Click="FreqCalAutoButton_Click"/>
+                                <Button x:Name="FreqCalManualButton" Style="{StaticResource MsccGoldButtonStyle}" Content="MANUAL" Width="85" Height="28" Margin="2" FontSize="12" FontWeight="Bold" Click="FreqCalManualButton_Click"/>
+                                <Button x:Name="FreqCalCheckButton" Style="{StaticResource MsccGoldButtonStyle}" Content="CHECK" Width="70" Height="28" Margin="2" FontSize="12" FontWeight="Bold" Click="FreqCalCheckButton_Click"/>
+                                <Button x:Name="FreqCalResetButton" Style="{StaticResource MsccGoldButtonStyle}" Content="RESET" Width="70" Height="28" Margin="2" FontSize="12" FontWeight="Bold" Click="FreqCalResetButton_Click"/>
+                                <Button x:Name="FreqCalStopButton" Style="{StaticResource MsccGoldButtonStyle}" Content="STOP" Width="70" Height="28" Margin="2" FontSize="12" FontWeight="Bold"
                                         IsEnabled="False" Click="FreqCalStopButton_Click"
                                         ToolTip="Stop the AUTO or CHECK run. The calibration is not changed."/>
                             </StackPanel>
@@ -1948,12 +2159,12 @@
                             <StackPanel Orientation="Horizontal" Margin="0,0,0,3">
                                 <TextBlock Text="MANUAL steps:" Width="90" FontSize="12" VerticalAlignment="Center"
                                            ToolTip="Steps taken in MANUAL calibration (not the stored PPM). Use − / + one step at a time."/>
-                                <Button x:Name="FreqCalPPMMinus" Content="−" Width="32" Height="26" Margin="2,0" FontSize="14" FontWeight="Bold"
+                                <Button x:Name="FreqCalPPMMinus" Style="{StaticResource MsccGoldButtonStyle}" Content="−" Width="32" Height="26" Margin="2,0" FontSize="14" FontWeight="Bold"
                                         IsEnabled="False" Click="FreqCalPPMMinus_Click"
                                         ToolTip="Decrease PPM by 1 (rate-limited to protect radio)"/>
                                 <TextBlock x:Name="FreqCalPPMValue" Text="0" Width="36" FontSize="13" FontWeight="Bold"
                                            VerticalAlignment="Center" TextAlignment="Center" Foreground="#00FFAA"/>
-                                <Button x:Name="FreqCalPPMPlus" Content="+" Width="32" Height="26" Margin="2,0" FontSize="14" FontWeight="Bold"
+                                <Button x:Name="FreqCalPPMPlus" Style="{StaticResource MsccGoldButtonStyle}" Content="+" Width="32" Height="26" Margin="2,0" FontSize="14" FontWeight="Bold"
                                         IsEnabled="False" Click="FreqCalPPMPlus_Click"
                                         ToolTip="Increase PPM by 1 (rate-limited to protect radio)"/>
                                 <TextBlock Text="ST:" FontSize="12" VerticalAlignment="Center" Margin="8,0,0,0"/>
@@ -2164,7 +2375,7 @@
                            ToolTip="Drive power for what you're doing: TUN→Tune, CW→CW, AM→AM carrier, FM→FM, LSB/USB/DIG-U→SSB (any audio). Same values as the RX/TX tab."/>
                 <StackPanel Orientation="Horizontal" Margin="0,0,0,1" VerticalAlignment="Center"
                             ToolTip="Drive power for what you're doing: TUN→Tune, CW→CW, AM→AM carrier, FM→FM, LSB/USB/DIG-U→SSB (any audio). Same values as the RX/TX tab.">
-                    <Slider Width="108" Minimum="0" Maximum="100" SmallChange="1"
+                    <Slider Style="{StaticResource MsccPhysicalSlider}" Width="108" Minimum="0" Maximum="100" SmallChange="1"
                             Value="{Binding MainOperatePowerPercent, Mode=TwoWay}"
                             PreviewMouseWheel="Slider_PreviewMouseWheel" VerticalAlignment="Center"/>
                     <Border Background="#FF444444" BorderThickness="1" BorderBrush="#FF888888" Margin="3,0,0,0" Padding="2,1" MinWidth="36">
@@ -2180,7 +2391,7 @@
                 <StackPanel Orientation="Horizontal" Margin="0,0,0,1" VerticalAlignment="Center"
                             IsEnabled="{Binding IsDigitalAudio, Converter={StaticResource InverseBoolConverter}}"
                             ToolTip="Speech compression amount (0–24 dB). Phones path only; grayed on Digital.">
-                    <Slider Width="108" Minimum="0" Maximum="24" SmallChange="1"
+                    <Slider Style="{StaticResource MsccPhysicalSlider}" Width="108" Minimum="0" Maximum="24" SmallChange="1"
                             Value="{Binding CompressionLevel, Mode=TwoWay}"
                             PreviewMouseWheel="Slider_PreviewMouseWheel" VerticalAlignment="Center"/>
                     <Border Background="#FF444444" BorderThickness="1" BorderBrush="#FF888888" Margin="3,0,0,0" Padding="2,1" MinWidth="36">
@@ -2195,7 +2406,7 @@
                            ToolTip="AGC fast release time (ms)"/>
                 <StackPanel Orientation="Horizontal" Margin="0,0,0,1" VerticalAlignment="Center"
                             ToolTip="AGC fast release time (ms)">
-                    <Slider Width="108" Minimum="0" Maximum="2000" SmallChange="10"
+                    <Slider Style="{StaticResource MsccPhysicalSlider}" Width="108" Minimum="0" Maximum="2000" SmallChange="10"
                             Value="{Binding AgcFastRelease, Mode=TwoWay}" PreviewMouseWheel="Slider_PreviewMouseWheel"
                             VerticalAlignment="Center"/>
                     <Border Background="#FF444444" BorderThickness="1" BorderBrush="#FF888888" Margin="3,0,0,0" Padding="2,1" MinWidth="48">
@@ -2315,7 +2526,7 @@
                 <CheckBox Content="Simplex (no offset)" IsChecked="{Binding FmSimplex}"
                           IsEnabled="{Binding IsFmMode}"
                           Foreground="#CCC" FontSize="10" Margin="0,2,0,4"
-                          ToolTip="Checked: TX=RX on VFO-A. Unchecked: TX on VFO-B (A−100 kHz) via split."/>
+                          ToolTip="Checked: TX=RX on VFO-A.&#x0a;Unchecked: on the 10 m repeater outputs (29.610–29.700 MHz) TX goes on VFO-B = A−100 kHz via split. FM anywhere else is always simplex."/>
 
                 <!-- First-wave operate controls (full NB controls live here; NR/MON/TX BW also).
                      "RX / TX" heading removed 11.10.13 (Ron: not needed). -->
@@ -2381,7 +2592,7 @@
                 <StackPanel Orientation="Horizontal" Margin="0,0,0,3" VerticalAlignment="Center"
                             ToolTip="Noise blanker pulse width (µs)">
                     <TextBlock Text="Pulse" Width="36" VerticalAlignment="Center" Foreground="{DynamicResource UiPrimaryTextBrush}" FontSize="9"/>
-                    <Slider Width="72" Minimum="50" Maximum="510" SmallChange="1" LargeChange="10"
+                    <Slider Style="{StaticResource MsccPhysicalSlider}" Width="72" Minimum="50" Maximum="510" SmallChange="1" LargeChange="10"
                             Value="{Binding NbPulse, Mode=TwoWay}" PreviewMouseWheel="Slider_PreviewMouseWheel"
                             VerticalAlignment="Center"/>
                     <Border Background="#FF444444" BorderThickness="1" BorderBrush="#FF888888" Margin="3,0,0,0" Padding="2,1" MinWidth="40">
@@ -2521,8 +2732,8 @@
 
                 <!-- CW SPEED (WPM) — always available; most useful in CW -->
                 <TextBlock Text="CW SPEED" FontWeight="Bold" Foreground="{DynamicResource UiAccentBrush}" FontSize="10"
-                           Margin="0,3,0,2" HorizontalAlignment="Left"/>
-                <StackPanel Orientation="Horizontal" HorizontalAlignment="Left" VerticalAlignment="Center" Margin="0,0,0,2">
+                           Margin="0,3,0,2" HorizontalAlignment="Center"/>
+                <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" VerticalAlignment="Center" Margin="0,0,0,2">
                     <Border Background="#FF444444" BorderThickness="1" BorderBrush="#FF888888"
                             Padding="3,1" MinWidth="36" VerticalAlignment="Center">
                         <TextBlock Text="{Binding CwSpeed}" FontSize="12" FontWeight="Bold"
@@ -2541,37 +2752,38 @@
 
                 <!-- CW PITCH — copy of CW tab control (cycle; same CwPitchIndex binding) -->
                 <TextBlock Text="CW PITCH" FontWeight="Bold" Foreground="{DynamicResource UiAccentBrush}" FontSize="10"
-                           Margin="0,6,0,2" HorizontalAlignment="Left"/>
+                           Margin="0,6,0,2" HorizontalAlignment="Center"/>
                 <Button Content="{Binding CwPitchButtonText}" Width="100" Height="22"
-                        HorizontalAlignment="Left" Margin="0,0,0,6"
+                        HorizontalAlignment="Center" Margin="0,0,0,6"
                         Command="{Binding CycleCwPitchCommand}"
                         Style="{StaticResource MsccGoldButtonStyle}"
                         ToolTip="Cycle CW pitch (400 / 600 / 800 / 1000 Hz) — same as CW tab"/>
 
-                <!-- LOG — fixed under CW pitch (not bottom-docked; avoids overlap when window is short) -->
-                <Button Content="LOG" Height="22" HorizontalAlignment="Stretch" Margin="0,0,0,0"
-                        Command="{Binding ShowDebugLogCommand}"
-                        Foreground="Black" FontSize="9" FontWeight="Bold"
-                        ToolTip="Open debug log viewer (RESET LOGS / Pause)">
+                <!-- RIT — with the CW controls (Ron 2026-11-27: RIT is mostly a CW control) -->
+                <!-- RIT on/off = light-bar button, lit while RIT is on (was a tick box) -->
+                <Button Content="RIT" Width="80" Height="22" HorizontalAlignment="Center" Margin="0,4,0,4"
+                        FontSize="9" FontWeight="Bold" Click="RitToggle_Click"
+                        ToolTip="RIT on / off: receive offset on the active VFO (transmit stays on the VFO frequency). Lit = on.">
                     <Button.Style>
                         <Style TargetType="Button" BasedOn="{StaticResource MsccGoldButtonStyle}">
                             <Style.Triggers>
-                                <DataTrigger Binding="{Binding DebugLogVisible}" Value="True">
+                                <DataTrigger Binding="{Binding RadioState.ActiveVfo.RitOn}" Value="True">
                                     <Setter Property="Background" Value="{DynamicResource UiButtonSelectedBrush}"/>
-                                    <Setter Property="BorderBrush" Value="{DynamicResource UiButtonSelectedBorderBrush}"/>
-                                    <Setter Property="Foreground" Value="White"/>
                                 </DataTrigger>
                             </Style.Triggers>
                         </Style>
                     </Button.Style>
                 </Button>
-                <Button x:Name="SaveSettingsButton"
-                        Content="Save settings"
-                        Height="22" HorizontalAlignment="Stretch" Margin="0,4,0,0"
-                        Click="SaveSettings_Click"
-                        FontSize="9" FontWeight="Bold"
-                        Style="{StaticResource MsccGoldButtonStyle}"
-                        ToolTip="Park the calibration files on the host for this radio type. Needed for AMP CAL, and for radios without calibration storage. QRP CAL, TX IQ and RX IQ are stored in the radio on current firmware."/>
+                <TextBlock Text="RIT OFFSET" HorizontalAlignment="Center" Margin="0,0,0,2"
+                           Foreground="{DynamicResource UiAccentBrush}" FontWeight="Bold" FontSize="10"/>
+                <StackPanel Orientation="Horizontal" Margin="0,0,0,5" VerticalAlignment="Center" HorizontalAlignment="Center">
+                    <Slider Style="{StaticResource MsccPhysicalSlider}" Width="100" Minimum="-500" Maximum="500" SmallChange="10" Value="{Binding RadioState.ActiveVfo.RitOffsetHz, Mode=TwoWay}" PreviewMouseWheel="Slider_PreviewMouseWheel" Margin="2,0,0,0"/>
+                    <Border Background="#FF444444" BorderThickness="1" BorderBrush="#FF888888" Margin="2,0,0,0" Padding="2,1" MinWidth="36">
+                        <TextBlock Text="{Binding RadioState.ActiveVfo.RitOffsetHz, StringFormat={}{0}}" FontSize="11" FontWeight="Bold" Foreground="{DynamicResource UiAccentBrush}" HorizontalAlignment="Center"/>
+                    </Border>
+                </StackPanel>
+                <Button Content="Clear RIT" Width="80" Height="22" HorizontalAlignment="Center" Click="ClearRit_Click" Margin="0,0,0,5" FontSize="9" FontWeight="Bold"
+                        Style="{StaticResource MsccGoldButtonStyle}" ToolTip="Set the RIT offset to 0 (RIT stays on or off)."/>
             </StackPanel>
         </Border>
         </Grid>

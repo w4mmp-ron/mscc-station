@@ -3,12 +3,11 @@
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              Width="180" Height="120"
              MinWidth="164" MinHeight="110">
-    <Border Background="#FF0C0C0C"
-            BorderBrush="#FF666666"
-            BorderThickness="1"
-            CornerRadius="4"
-            Padding="3,2,3,2">
-        <Grid>
+    <!-- Frame = VFO bezel + bevels (Stew's Avalonia cmd-099b; same UiVfo* brushes as the VFO faces). -->
+    <Border Background="{StaticResource UiVfoBezelBrush}" CornerRadius="4" Padding="3">
+      <Grid>
+        <Border Background="#FF0C0C0C" CornerRadius="2"/>
+        <Grid Margin="3,3,3,2">
             <Grid.RowDefinitions>
                 <RowDefinition Height="*"/>
                 <RowDefinition Height="Auto"/>
@@ -20,7 +19,7 @@
                     ClipToBounds="True"
                     HorizontalAlignment="Stretch"
                     VerticalAlignment="Stretch"
-                    Background="#FF141414"/>
+                    Background="{StaticResource UiVfoLcdBrush}"/>
 
             <!-- HOLD | S-value | Peak  (client-side meter ballistics) -->
             <StackPanel Grid.Row="1"
@@ -63,5 +62,10 @@
                           ToolTip="Orange peak needle: holds the highest reading ~2 seconds, then falls (client-side)."/>
             </StackPanel>
         </Grid>
+        <Border BorderThickness="2,2,0,0" BorderBrush="{StaticResource UiVfoBevelDarkBrush}"
+                CornerRadius="2" IsHitTestVisible="False"/>
+        <Border BorderThickness="0,0,2,2" BorderBrush="{StaticResource UiVfoBevelLightBrush}"
+                CornerRadius="2" IsHitTestVisible="False"/>
+      </Grid>
     </Border>
 </UserControl>

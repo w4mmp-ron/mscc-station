@@ -89,7 +89,12 @@ public static class Opcodes
     public const byte CMD_GET_BAND_POWER           = 0xB4;
     /// <summary>Power-cal TX carrier on/off (original Power_Calibration_Controls.CMD_CALIBRATION_TUNE).</summary>
     public const byte CMD_CALIBRATION_TUNE         = 0xAC;
-    public const byte CMD_SET_COMMIT_POWER_VALUES  = 0xAD;
+    public const byte CMD_SET_COMMIT_POWER_VALUES  = 0xAD;   // old name, unused
+    /// <summary>0xAD (Pi ms-sdr 3.217+, 2026-11-26): server facts, ms-sdr -> client only.
+    /// Payload byte 0 = sub-code, byte 1 = value.</summary>
+    public const byte CMD_SERVER_REPORT = 0xAD;
+    /// <summary>CMD_SERVER_REPORT sub-code 1: value 1 = the radio's Pi has no local operator audio (Zero build).</summary>
+    public const byte SERVER_REPORT_NO_OPERATOR_AUDIO = 1;
     public const byte CMD_CALIBRATION_MASTER_RESET = 0xAB;
 
     // Frequency Calibration (from original Frequency_Calibration_controls)
@@ -196,6 +201,9 @@ public static class Opcodes
     public const int KEYER_MEM_STORE_BEGIN = 1;
     public const int KEYER_MEM_STORE_END = 2;
     public const int KEYER_MEM_SELECT = 3;
+    /// <summary>Play repeating (keyer 20261126+): next param = pause 1..30 s. Paddle tap stops.</summary>
+    public const int KEYER_MEM_REPEAT = 4;
+    public const int KEYER_MEM_REPEAT_MAX_S = 30;
     public const int KEYER_MEM_MAX_CHARS = 48;
     public const int KEYER_MEM_SLOT_COUNT = 4;
     /// <summary>Farnsworth text/overall WPM for memory play gaps only (0=off, 5–60).</summary>

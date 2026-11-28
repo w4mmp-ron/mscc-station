@@ -4,7 +4,7 @@
              Width="180" Height="120"
              MinWidth="164" MinHeight="110">
     <!-- TX-slot external SWR face (same footprint as AnalogSMeterControl). -->
-    <Border Background="#FF0C0C0C" BorderBrush="#FF666666" BorderThickness="1" CornerRadius="4" Padding="6,4">
+    <Border Background="#FF0C0C0C" BorderBrush="#FF666666" BorderThickness="3" CornerRadius="4" Padding="6,4">
         <Grid>
             <Grid.RowDefinitions>
                 <RowDefinition Height="Auto"/>

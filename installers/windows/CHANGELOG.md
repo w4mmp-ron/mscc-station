@@ -2,6 +2,30 @@
 
 Installer: `mscc-net9-R<version>-install.exe` (WPF client + Windows servers). Install the newest one; older installers in this folder are kept for roll-back only.
 
+## R11-28-0 — 2026-11-28  (WPF 11.28.0, now maintained by Ron; Windows servers unchanged: ms-sdr 3.214, recv 3.155, trans 3.159)
+
+### Added
+- **Backlit VFO faces:** cream LCD look, large MHz.kHz digits with smaller Hz digits, and a strip showing the US band-plan section (PowerSDR band text, e.g. "20M FT8"). Roll the wheel over a digit to tune that digit. A red dot marks the active VFO; the other one is dimmed.
+- **Backlit meters:** the S-meter and ALC have the same cream face. The S-meter face reads S-METER, FWD / SWR, or SWR FAULT (red). **BACKLIGHT** slider in Settings → UI Appearance (20–100 %) dims the VFOs and meters together.
+- **VFO button row** under VFO B: A>B, B>A, A<>B, SPLIT and STEP.
+  - SPLIT receives on VFO A and transmits on VFO B, in VFO A's mode. **Same band only**: the power calibration, TX IQ and amplifier filters follow VFO A's band. Selecting VFO B, a band change, a cal / IQ tab or Disconnect turns it off.
+  - STEP sets the wheel step over the spectrum / waterfall.
+- CW tab: **REPEAT** play of a CQ memory with a pause of 1–30 s (keyer 20261126; a paddle tap stops it), and a prosign legend line.
+- CW tab **HOLD** shows real milliseconds (the radio counts 10 ms units), ± steps of 50 ms. **AUTO** sets the hold between letter and word spacing from SPEED / FARNSWORTH.
+- Phones is greyed out when the server is a Zero 2 W without a sound card (Pi ms-sdr 3.217+), and Digital is used.
+
+### Changed
+- Light-bar buttons and PowerSDR-style sliders throughout.
+- RIT moved to the right panel with the CW controls, as a light-bar RIT button. LOG and Save settings moved to the left panel. The left-panel Step button was removed (STEP is on the VFO row).
+- Tooltips wrap (max 420 px) and stay inside the window.
+
+### Fixed
+- Wheel tuning over the spectrum tunes the **active** VFO (it always tuned VFO A) and rounds to the step.
+- FM: the −100 kHz repeater offset (Simplex unchecked) is used only on the 10 m repeater outputs, 29.610–29.700 MHz. Elsewhere FM is simplex and VFO B is left alone (it was set to A − 100 kHz on every band).
+
+### Tested
+- Ron's PC with the Pi servers (Proficio MKII, Black Pill): look, VFO row, A>B band fix, backlight. SPLIT and the FM change were built and checked off-screen, not yet tested on the air. Installer built on Ron's PC, not installed yet.
+
 ## R11-26-0 — 2026-11-26  (keyer firmware 20261126; WPF 11.26.0 = 11.25.1 renumbered; Windows servers unchanged: ms-sdr 3.214, recv 3.155, trans 3.159)
 
 ### Added

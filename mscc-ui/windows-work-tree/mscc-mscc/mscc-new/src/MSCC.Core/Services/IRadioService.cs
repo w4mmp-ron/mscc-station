@@ -220,6 +220,8 @@ public interface IRadioService : IDisposable
     Task KeyerMemorySelectAsync(int slot, CancellationToken cancellationToken = default);
     /// <summary>Select slot then play once. Paddle aborts on radio.</summary>
     Task KeyerMemoryPlayAsync(int slot, CancellationToken cancellationToken = default);
+    /// <summary>Select slot then play repeating with a pause of 1..30 s between plays. Paddle tap stops.</summary>
+    Task KeyerMemoryRepeatAsync(int slot, int pauseSeconds, CancellationToken cancellationToken = default);
     /// <summary>Store text to slot (SELECT + BEGIN + chars + END). Max 48 printable ASCII.</summary>
     Task KeyerMemoryStoreAsync(int slot, string text, CancellationToken cancellationToken = default);
     /// <summary>Optional Farnsworth text WPM for memory play (0x76). 0=off; 5–60.</summary>
@@ -230,6 +232,8 @@ public interface IRadioService : IDisposable
 
     /// <summary>ms-sdr reports SET_PADDLE_FARNSWORTH (0x9D) from cw.ini at connect.</summary>
     event Action<bool> PaddleFarnsworthReported;
+    /// <summary>0xAD sub-code 1 at connect: true = the radio's Pi has no local operator audio.</summary>
+    event Action<bool> NoOperatorAudioReported;
 
     /// <summary>
     /// Sets the tuning step index (0=100kHz ... 5=1Hz) from Step button on main tab.

@@ -941,6 +941,7 @@ public class UdpRadioService : IRadioService, IDisposable
             Opcodes.KEYER_MEM_STORE_BEGIN => "STORE_BEGIN",
             Opcodes.KEYER_MEM_STORE_END => "STORE_END",
             Opcodes.KEYER_MEM_SELECT => "SELECT",
+            Opcodes.KEYER_MEM_REPEAT => "REPEAT",
             _ when p is >= 0x20 and <= 0x7E => $"'{((char)p)}'",
             _ => $"param={p}"
         };
@@ -964,6 +965,17 @@ public class UdpRadioService : IRadioService, IDisposable
         DebugMonitor.MonitorTextBoxText($" Keyer memory play slot {slot}");
         await KeyerMemorySelectAsync(slot, cancellationToken);
         await SendKeyerMemParamAsync(Opcodes.KEYER_MEM_PLAY, cancellationToken);
+    }
+
+    public async Task KeyerMemoryRepeatAsync(int slot, int pauseSeconds, CancellationToken cancellationToken = default)
+    {
+        if (!_started) return;
+        slot = Math.Clamp(slot, 0, Opcodes.KEYER_MEM_SLOT_COUNT - 1);
+        pauseSeconds = Math.Clamp(pauseSeconds, 1, Opcodes.KEYER_MEM_REPEAT_MAX_S);
+        DebugMonitor.MonitorTextBoxText($" Keyer memory repeat slot {slot}, pause {pauseSeconds} s");
+        await KeyerMemorySelectAsync(slot, cancellationToken);
+        await SendKeyerMemParamAsync(Opcodes.KEYER_MEM_REPEAT, cancellationToken);
+        await SendKeyerMemParamAsync(pauseSeconds, cancellationToken);
     }
 
     public async Task KeyerMemoryStoreAsync(int slot, string text, CancellationToken cancellationToken = default)
@@ -1000,6 +1012,7 @@ public class UdpRadioService : IRadioService, IDisposable
     }
 
     public event Action<bool>? PaddleFarnsworthReported;
+    public event Action<bool>? NoOperatorAudioReported;
 
     public async Task SetPaddleFarnsworthAsync(bool on, CancellationToken cancellationToken = default)
     {
@@ -2241,6 +2254,16 @@ public class UdpRadioService : IRadioService, IDisposable
                     if (textWpm is >= 1 and <= 4) textWpm = 0;
                     textWpm = Math.Clamp(textWpm, 0, 60);
                     CwMemTextWpmReported?.Invoke(textWpm);
+                }
+                break;
+
+            case Opcodes.CMD_SERVER_REPORT:
+                // Pi ms-sdr 3.217+: [sub-code, value]; unknown sub-codes are ignored
+                if (e.Payload.Length >= 2 && e.Payload[0] == Opcodes.SERVER_REPORT_NO_OPERATOR_AUDIO)
+                {
+                    bool none = e.Payload[1] != 0;
+                    DebugMonitor.MonitorTextBoxText($" Server report: no local operator audio = {(none ? 1 : 0)}");
+                    NoOperatorAudioReported?.Invoke(none);
                 }
                 break;
 

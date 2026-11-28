@@ -66,6 +66,13 @@ public static class SpectrumWaterfallSettings
     public static string KeyerMem1 { get; set; } = "";
     public static string KeyerMem2 { get; set; } = "";
     public static string KeyerMem3 { get; set; } = "";
+    /// <summary>P plays repeating (keyer 20261126+); pause 1..30 s between plays.</summary>
+    public static bool KeyerMemRepeat { get; set; }
+    public static int KeyerMemRepeatPause { get; set; } = 5;
+    /// <summary>CW tab HOLD AUTO: hold from the speeds (drops to receive at word gaps).</summary>
+    public static bool CwHoldAuto { get; set; }
+    /// <summary>Hand-set hold (10 ms radio units) saved when AUTO is ticked; restored when unticked.</summary>
+    public static int CwHoldManual { get; set; } = 100;
 
     /// <summary>
     /// Farnsworth memory-play text WPM (0x76). 0=off; 5–60. Sticky client hint;
@@ -482,7 +489,9 @@ public static class SpectrumWaterfallSettings
     public static WindowState WindowState { get; set; } = WindowState.Normal;
 
     // UI prefs
-    public static bool TimeDisplayOn { get; set; } = false;  // persisted via TIME_DISPLAY=1/0 in ini
+    public static bool TimeDisplayOn { get; set; } = false;
+    /// <summary>VFO + meter face backlight, 20..100 % (BACKLIGHT_PERCENT in the ini).</summary>
+    public static int BacklightPercent { get; set; } = 100;  // persisted via TIME_DISPLAY=1/0 in ini
     /// <summary>If true, call Start automatically when the main window loads.</summary>
     public static bool AutoStartServers { get; set; } = false;  // AUTO_START_SERVERS=1/0
 
@@ -879,6 +888,7 @@ public static class SpectrumWaterfallSettings
                     if (line.Contains("WINDOW_HEIGHT")) WindowHeight = ParseIniDouble(line, WindowHeight);
                     if (line.Contains("WINDOW_STATE")) WindowState = ParseIniWindowState(line, WindowState);
                     if (line.Contains("TIME_DISPLAY")) TimeDisplayOn = ParseIniBool(line, TimeDisplayOn);
+                    if (LineMatchesKey(line, "BACKLIGHT_PERCENT")) BacklightPercent = (int)Math.Clamp(ParseIniLong(line, BacklightPercent), 20, 100);
                     if (LineMatchesKey(line, "AUTO_START_SERVERS")) AutoStartServers = ParseIniBool(line, AutoStartServers);
                     if (LineMatchesKey(line, "LAUNCH_SERVERS")) LaunchServersOnStart = ParseIniBool(line, LaunchServersOnStart);
                     if (LineMatchesKey(line, "UI_BACKGROUND")) UiBackground = ParseIniString(line, UiBackground);
@@ -925,6 +935,10 @@ public static class SpectrumWaterfallSettings
                     if (LineMatchesKey(line, "KEYER_MEM1")) KeyerMem1 = ClampKeyerMemText(ParseIniString(line, KeyerMem1));
                     if (LineMatchesKey(line, "KEYER_MEM2")) KeyerMem2 = ClampKeyerMemText(ParseIniString(line, KeyerMem2));
                     if (LineMatchesKey(line, "KEYER_MEM3")) KeyerMem3 = ClampKeyerMemText(ParseIniString(line, KeyerMem3));
+                    if (LineMatchesKey(line, "KEYER_MEM_REPEAT")) KeyerMemRepeat = ParseIniBool(line, KeyerMemRepeat);
+                    if (LineMatchesKey(line, "CW_HOLD_AUTO")) CwHoldAuto = ParseIniBool(line, CwHoldAuto);
+                    if (LineMatchesKey(line, "CW_HOLD_MANUAL")) CwHoldManual = Math.Clamp(ParseIniInt(line, CwHoldManual), 5, 255);
+                    if (LineMatchesKey(line, "KEYER_MEM_REPEAT_PAUSE")) KeyerMemRepeatPause = Math.Clamp(ParseIniInt(line, KeyerMemRepeatPause), 1, 30);
                     if (LineMatchesKey(line, "CW_MEM_TEXT_WPM"))
                         CwMemTextWpm = ClampCwMemTextWpm(ParseIniInt(line, CwMemTextWpm));
                     if (LineMatchesKey(line, "EXTERNAL_ELECTRONIC_KEYER"))
@@ -1204,6 +1218,7 @@ public static class SpectrumWaterfallSettings
         UpdateOrAdd(lines, "WINDOW_HEIGHT", WindowHeight.ToString(System.Globalization.CultureInfo.InvariantCulture));
         UpdateOrAdd(lines, "WINDOW_STATE", WindowState.ToString());
         UpdateOrAdd(lines, "TIME_DISPLAY", TimeDisplayOn ? "1" : "0");
+        UpdateOrAdd(lines, "BACKLIGHT_PERCENT", BacklightPercent.ToString());
         UpdateOrAdd(lines, "AUTO_START_SERVERS", AutoStartServers ? "1" : "0");
         UpdateOrAdd(lines, "LAUNCH_SERVERS", LaunchServersOnStart ? "1" : "0");
         UpdateOrAdd(lines, "UI_BACKGROUND", UiBackground);
@@ -1246,6 +1261,10 @@ public static class SpectrumWaterfallSettings
         UpdateOrAdd(lines, "KEYER_MEM1", EscapeKeyerMemForIni(KeyerMem1));
         UpdateOrAdd(lines, "KEYER_MEM2", EscapeKeyerMemForIni(KeyerMem2));
         UpdateOrAdd(lines, "KEYER_MEM3", EscapeKeyerMemForIni(KeyerMem3));
+        UpdateOrAdd(lines, "KEYER_MEM_REPEAT", KeyerMemRepeat ? "1" : "0");
+        UpdateOrAdd(lines, "CW_HOLD_AUTO", CwHoldAuto ? "1" : "0");
+        UpdateOrAdd(lines, "CW_HOLD_MANUAL", Math.Clamp(CwHoldManual, 5, 255).ToString());
+        UpdateOrAdd(lines, "KEYER_MEM_REPEAT_PAUSE", Math.Clamp(KeyerMemRepeatPause, 1, 30).ToString());
         UpdateOrAdd(lines, "CW_MEM_TEXT_WPM", ClampCwMemTextWpm(CwMemTextWpm).ToString());
         UpdateOrAdd(lines, "EXTERNAL_ELECTRONIC_KEYER", ExternalElectronicKeyer ? "1" : "0");
         UpdateOrAdd(lines, "REMOTE_AUDIO", RemoteAudio ? "1" : "0");

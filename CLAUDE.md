@@ -41,9 +41,10 @@ The Pi and Windows servers do the same job and are kept functionally identical (
   - Windows: `mscc-ui/windows-work-tree/ms-sdr-MKII`, `.../SDRcore-recv`, `.../SDRcore-trans`
   - Debian / Ubuntu: `linux/*-linux` (see `rpi/CLAUDE.md` for when this starts)
 - Platform code stays different (USB, sockets, paths, audio device discovery).
-- **A client change goes into both clients, either way:** WPF
-  (`mscc-ui/windows-work-tree/mscc-mscc/mscc-new`) and Avalonia (`Avalonia/`). Each has its own
-  copy of `MSCC.Core`; keep shared files such as `Protocol/KenwoodTs2000.cs` identical.
+- **Clients have separate owners (2026-11-28, Stew OK'd):** the WPF client
+  (`mscc-ui/windows-work-tree/mscc-mscc/mscc-new`) is Ron's; Avalonia (`Avalonia/`) is Stew's.
+  A change in one does not have to go into the other. Each has its own copy of `MSCC.Core`;
+  protocol files (opcodes, `Protocol/KenwoodTs2000.cs`) must still agree with the servers.
   `mscc-ui/Avalonia-Migration` is no longer kept up to date (to be deleted).
 - Bump the version of every server whose code changed, in every tree.
 

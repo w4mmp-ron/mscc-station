@@ -80,6 +80,7 @@ public partial class MainWindow : Window
                     vm.MonitorTextBoxText($" Config seed: copied {seeded} template file(s) into %LocalAppData%\\MSCC-NET9");
                 vm.RefreshSetupStatus();
                 vm.TimeDisplayOn = SpectrumWaterfallSettings.TimeDisplayOn;
+                vm.BacklightPercent = SpectrumWaterfallSettings.BacklightPercent;
                 // Re-apply after SpectrumWaterfallSettings.Load() in this ctor (VM may have read earlier static load).
                 // Set backing preference without relying on property order: assign after load.
                 if (vm.AutoStartServers != SpectrumWaterfallSettings.AutoStartServers)
@@ -199,6 +200,14 @@ public partial class MainWindow : Window
     {
         // Click-to-tune path: apply AUTO SNAP (S/W popup) when enabled and not CW
         ViewModel.TuneToFrequency(frequency, fromSpectrumClick: true);
+    }
+
+    private void RitToggle_Click(object sender, RoutedEventArgs e)
+    {
+        if (ViewModel == null) return;
+        var v = ViewModel.RadioState.ActiveVfo;
+        v.RitOn = !v.RitOn;   // same path as the old tick box (VfoState.RitOn -> SetRitAsync + ini)
+        ViewModel.MonitorTextBoxText($" RIT button: {(v.RitOn ? "on" : "off")}");
     }
 
     private void ClearRit_Click(object sender, RoutedEventArgs e)
@@ -671,6 +680,9 @@ public partial class MainWindow : Window
                           (ReferenceEquals(selected, FreqCalTabItem) ||
                            string.Equals(selected.Header?.ToString(), "FREQ CAL", StringComparison.Ordinal));
 
+        // A cal / IQ tab turns a user SPLIT off and greys the VFO row (Avalonia cmd-099b).
+        ViewModel.CalOrIqTabOpen = nowPwrCal || nowAmpCal || nowTxIq || nowRxIq || nowFreqCal;
+
         // FREQ CAL leave/block runs before any other cal tab can enter.
         if (nowFreqCal && !_freqCalTabActive)
         {
@@ -870,7 +882,11 @@ public partial class MainWindow : Window
         if (sender is not TextBlock freqTb || ViewModel == null) return;
 
         string tag = freqTb.Tag?.ToString() ?? "";
-        VfoState targetVfo = tag == "A" ? ViewModel.RadioState.VfoA : ViewModel.RadioState.VfoB;
+        VfoState targetVfo = tag.StartsWith('A') ? ViewModel.RadioState.VfoA : ViewModel.RadioState.VfoB;
+
+        // LCD face (2026-11-27): Tag "A"/"B" = big MHz.kHz digits ("14.074"), whose last digit is 1 kHz,
+        // so add 3 to the digit power; Tag "AHz"/"BHz" = the small Hz digits ("000"), power as counted.
+        int digitPowerOffset = tag.EndsWith("Hz", StringComparison.Ordinal) ? 0 : 3;
 
         // Frequency line is fixed F6 only (RIT is a separate line under the digits).
         string freqPart = freqTb.Text ?? "";
@@ -953,7 +969,7 @@ public partial class MainWindow : Window
             }
 
             step = 1;
-            for (int k = 0; k < digitsToRight; k++)
+            for (int k = 0; k < digitsToRight + digitPowerOffset; k++)
                 step *= 10;
             isDigitPosition = true;
         }
@@ -1020,12 +1036,17 @@ public partial class MainWindow : Window
         long stepHz = ViewModel.GetCurrentStepHz();
         long delta = (e.Delta > 0) ? stepHz : -stepHz;
 
-        var vfoA = ViewModel.RadioState.VfoA;
-        long newFreq = Math.Max(0, vfoA.FrequencyHz + delta);
+        // 2026-11-27 (Ron): tune the ACTIVE VFO (was always VFO A, so with VFO B active the radio never moved),
+        // and round like the VFO digit wheel: digits below the step go to 0, then one step.
+        var vfo = ViewModel.RadioState.ActiveVfo;
+        if (vfo.FrequencyHz <= 0) { e.Handled = true; return; }
+        long current = vfo.FrequencyHz;
+        long baseFreq = stepHz > 0 ? current - (current % stepHz) : current;
+        long newFreq = Math.Max(0, baseFreq + delta);
 
-        ViewModel.SetVfoFrequency(vfoA, newFreq);
+        ViewModel.SetVfoFrequency(vfo, newFreq);
 
-        ViewModel.MonitorTextBoxText($" Global wheel (Main tab): Step={ViewModel.StepLabel} ({stepHz}Hz) freq={newFreq}");
+        ViewModel.MonitorTextBoxText($" Global wheel (Main tab): VFO {(vfo == ViewModel.RadioState.VfoA ? "A" : "B")} Step={ViewModel.StepLabel} ({stepHz}Hz) freq={newFreq}");
 
         e.Handled = true;
     }

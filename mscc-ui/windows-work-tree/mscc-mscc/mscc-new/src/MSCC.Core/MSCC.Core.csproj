@@ -10,4 +10,10 @@
     <PackageReference Include="CommunityToolkit.Mvvm" Version="8.4.2" />
   </ItemGroup>
 
+  <ItemGroup>
+    <!-- PowerSDR US band text for the VFO LCD strip (from Avalonia, see SOURCE.md) -->
+    <EmbeddedResource Include="Assets\bandplan-us.csv" LogicalName="MSCC.Core.bandplan-us.csv" />
+    <None Include="Assets\bandplan-us.SOURCE.md" />
+  </ItemGroup>
+
 </Project>

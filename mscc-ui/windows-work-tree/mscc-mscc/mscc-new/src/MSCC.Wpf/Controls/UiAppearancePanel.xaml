@@ -93,6 +93,19 @@
                             ToolTip="BACKGROUND BLACK, PANEL AUTO, BUTTON YELLOW, ACCENT AUTO"/>
                 </StackPanel>
             </StackPanel>
+            <!-- Backlight for the VFO and meter faces (2026-11-27) -->
+            <StackPanel Orientation="Horizontal" Margin="2,8,0,0"
+                        ToolTip="Brightness of the backlit VFO and meter faces. 100 % = full; lower dims the face, the digits and scales stay dark.">
+                <TextBlock Text="BACKLIGHT" FontSize="9" Foreground="#D0D0D0" Width="70" VerticalAlignment="Center"/>
+                <Slider Style="{StaticResource MsccPhysicalSlider}" Width="160" Minimum="20" Maximum="100"
+                        SmallChange="5" LargeChange="10" IsSnapToTickEnabled="True" TickFrequency="5"
+                        Value="{Binding BacklightPercent, Mode=TwoWay}"/>
+                <Border Background="#FF444444" BorderBrush="#FF888888" BorderThickness="1" Padding="3,1"
+                        MinWidth="40" Margin="5,0,0,0" VerticalAlignment="Center">
+                    <TextBlock Text="{Binding BacklightPercent, StringFormat={}{0}%}" FontSize="11" FontWeight="Bold"
+                               Foreground="#00FFAA" HorizontalAlignment="Center"/>
+                </Border>
+            </StackPanel>
         </StackPanel>
     </Border>
 </UserControl>

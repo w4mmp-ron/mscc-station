@@ -5,6 +5,8 @@ every pull. Newest first. Detailed write-ups for Ron go in `.mscc-coord/NOTE-FOR
 
 **Shared rules for Ron and Stew (keywords like "finished", the release checklist, keeping trees in step): `CLAUDE.md` at the repo root.** Added by Ron's Claude 2026-11-13; this file stays Stew's.
 
+**WPF client = Ron's since 2026-11-28 (Stew OK'd).** Ron's Claude changes and builds `mscc-mscc/mscc-new` and ships it at "cut release" (first: R11-28-0, WPF 11.28.0). The Windows servers here stay Stew's. Added by Ron's Claude.
+
 ## R11-19-2 Windows installer (2026-11-19, cmd-093)
 
 - Installer `mscc-net9-R11-19-2-install.exe` ships WPF 11.19.2 (one-cable Digital TX guard). Windows servers unchanged (ms-sdr 3.214, recv 3.155, trans 3.159). No client rebuild. Stew publishes; this step does not.

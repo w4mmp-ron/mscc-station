@@ -553,6 +553,9 @@ public partial class MainViewModel : ObservableObject, IDisposable
     [ObservableProperty] private int _cwWeightIndex = 1; // 50
     [ObservableProperty] private int _cwPitchIndex = 1; // 600Hz
     [ObservableProperty] private int _cwHold = 100;
+    /// <summary>AUTO hold (Ron 2026-11-26): hold set from the speeds, halfway between the
+    /// keyer's letter gap and word gap, so transmit holds through letters and drops at words.</summary>
+    [ObservableProperty] private bool _cwHoldAuto;
     [ObservableProperty] private bool _cwQsk = false;
 
     /// <summary>CW tab display: "Off" or numeric text WPM.</summary>
@@ -678,6 +681,19 @@ public partial class MainViewModel : ObservableObject, IDisposable
     private bool _remoteAudio;
 
     public bool IsRemoteAudioActive => RemoteAudio;
+
+    /// <summary>The radio's Pi has no local operator audio (0xAD report, Zero build): local
+    /// Phones is greyed out and Digital is used. Cleared on disconnect.</summary>
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(LocalPhonesAvailable))]
+    [NotifyPropertyChangedFor(nameof(PhonesButtonToolTip))]
+    private bool _noLocalOperatorAudio;
+
+    public bool LocalPhonesAvailable => !NoLocalOperatorAudio;
+
+    public string PhonesButtonToolTip => NoLocalOperatorAudio
+        ? "Not available: this radio's Pi has no local audio. Use Digital or Remote."
+        : "Local analog mic/speaker. While Remote is on: click to close Remote and take local Phones.";
 
     /// <summary>Main Phones gold only when Remote is off and local path is phones.</summary>
     public bool IsLocalPhonesSelected => !RemoteAudio && !IsDigitalAudio;
@@ -1615,6 +1631,34 @@ public partial class MainViewModel : ObservableObject, IDisposable
     [ObservableProperty] private bool _transverterOn;
     partial void OnTransverterOnChanged(bool value) { _ = _radioService.SetTransverterAsync(value); MonitorTextBoxText($" TransverterOn set: {value}"); }
 
+    /// <summary>VFO + meter face backlight 20..100 % (Settings -> BACKLIGHT). Darkens the cream faces; ink stays dark.</summary>
+    [ObservableProperty] private int _backlightPercent = 100;
+    partial void OnBacklightPercentChanged(int value)
+    {
+        int p = Math.Clamp(value, 20, 100);
+        if (p != value) { BacklightPercent = p; return; }
+        byte alpha = (byte)Math.Round((100 - p) * 0.006 * 255);   // 20 % -> 48 % black over the face (darker loses the grey labels)
+        var brush = new System.Windows.Media.SolidColorBrush(System.Windows.Media.Color.FromArgb(alpha, 0, 0, 0));
+        brush.Freeze();
+        if (System.Windows.Application.Current != null)
+            System.Windows.Application.Current.Resources["UiBacklightDimBrush"] = brush;
+        SpectrumWaterfallSettings.BacklightPercent = p;
+        ScheduleBacklightSave();
+    }
+
+    private DispatcherTimer? _backlightSaveTimer;
+    /// <summary>Slider drags fire many changes: write the ini once, 1 s after the last one.</summary>
+    private void ScheduleBacklightSave()
+    {
+        if (_backlightSaveTimer == null)
+        {
+            _backlightSaveTimer = new DispatcherTimer { Interval = TimeSpan.FromSeconds(1) };
+            _backlightSaveTimer.Tick += (_, _) => { _backlightSaveTimer!.Stop(); SpectrumWaterfallSettings.Save(); };
+        }
+        _backlightSaveTimer.Stop();
+        _backlightSaveTimer.Start();
+    }
+
     [ObservableProperty] private bool _timeDisplayOn;
     partial void OnTimeDisplayOnChanged(bool value)
     {
@@ -1993,6 +2037,7 @@ public partial class MainViewModel : ObservableObject, IDisposable
             if (newMode == RadioMode.FM)
             {
                 _ = _radioService.SetFmPowerAsync(FmPowerPercent);
+                EndUserSplitNow("FM");   // FM decides split itself (Avalonia cmd-099)
                 _ = ApplyFmOffsetPolicyAsync();
             }
             else if (oldMode == RadioMode.FM && newMode != RadioMode.FM)
@@ -2010,7 +2055,11 @@ public partial class MainViewModel : ObservableObject, IDisposable
             _fmSimplex = value;
             OnPropertyChanged();
             if (IsFmMode)
+            {
+                EndUserSplitNow("FM Simplex change");   // drop a user split before the FM policy acts
                 _ = ApplyFmOffsetPolicyAsync();
+            }
+            RefreshVfoRow();
         }
     }
     private bool _fmSimplex;
@@ -2022,14 +2071,38 @@ public partial class MainViewModel : ObservableObject, IDisposable
     private RadioMode _fmSavedVfoBMode = RadioMode.USB;
     private bool _fmOffsetSnapshotValid;
 
+    /// <summary>10 m FM repeater outputs (US band plan: outputs 29.610–29.700 MHz, inputs 100 kHz below).
+    /// The −100 kHz offset is only used here; FM anywhere else is simplex (Ron 2026-11-28).
+    /// If the FCC / band plan changes, change these two numbers.</summary>
+    private const long FmRepeaterOutLowHz = 29_610_000;
+    private const long FmRepeaterOutHighHz = 29_700_000;
+    private static bool InFmRepeaterOutputs(long hz) => hz >= FmRepeaterOutLowHz && hz <= FmRepeaterOutHighHz;
+
+    /// <summary>True while the client has the FM offset split running (so it only turns off what it turned on).</summary>
+    private bool _fmOffsetRunning;
+
     private async Task ApplyFmOffsetPolicyAsync()
     {
         try
         {
-            if (FmSimplex)
+            bool want = IsFmMode && !FmSimplex && InFmRepeaterOutputs(RadioState.VfoA.FrequencyHz);
+            if (!want)
             {
-                await _radioService.SetSplitAsync(false).ConfigureAwait(false);
-                MonitorTextBoxText(" FM Simplex — split off (TX=RX on VFO-A)");
+                if (_fmOffsetRunning)
+                {
+                    _fmOffsetRunning = false;
+                    await _radioService.SetSplitAsync(false).ConfigureAwait(false);
+                    // Give VFO B back (the offset had overwritten it).
+                    if (_fmOffsetSnapshotValid)
+                    {
+                        RadioState.VfoB.FrequencyHz = _fmSavedVfoBHz;
+                        RadioState.VfoB.Mode = _fmSavedVfoBMode;
+                    }
+                    MonitorTextBoxText(FmSimplex
+                        ? " FM Simplex — offset split off (TX=RX on VFO-A)"
+                        : $" FM outside the 10 m repeater outputs ({RadioState.VfoA.FrequencyHz}) — offset split off, simplex");
+                }
+                RefreshVfoRow();
                 return;
             }
 
@@ -2048,6 +2121,8 @@ public partial class MainViewModel : ObservableObject, IDisposable
             await _radioService.SetSplitRxFreqAsync(rx).ConfigureAwait(false);
             await _radioService.SetSplitTxFreqAsync(tx).ConfigureAwait(false);
             await _radioService.SetSplitAsync(true).ConfigureAwait(false);
+            _fmOffsetRunning = true;
+            RefreshVfoRow();
             MonitorTextBoxText($" FM offset — RX A={rx}  TX B={tx} (−100 kHz split)");
         }
         catch (Exception ex)
@@ -2061,6 +2136,9 @@ public partial class MainViewModel : ObservableObject, IDisposable
         try
         {
             await _radioService.SetSplitAsync(false).ConfigureAwait(false);
+            _fmOffsetRunning = false;
+            SetSplitOnFromAnyThread(false);
+            RefreshVfoRow();
             if (_fmOffsetSnapshotValid)
             {
                 RadioState.VfoB.FrequencyHz = _fmSavedVfoBHz;
@@ -2072,6 +2150,254 @@ public partial class MainViewModel : ObservableObject, IDisposable
         catch (Exception ex)
         {
             MonitorTextBoxText($" FM split clear error: {ex.Message}");
+        }
+    }
+
+    // ----- VFO button row: A>B, B>A, A<>B, SPLIT, STEP (port of Stew's Avalonia cmd-099 / 099b) -----
+    // Server (ms-sdr): CMD_SET_SPLIT keeps G_Split; on PTT it tunes G_Split_TX_FREQ, on release G_Split_RX_FREQ.
+    // TX mode in split = VFO A's mode (the server does not change mode on TX).
+
+    private bool _splitOn;
+    /// <summary>User split: receive on VFO A, transmit on VFO B. Not saved; false at start.</summary>
+    public bool SplitOn
+    {
+        get => _splitOn;
+        set
+        {
+            if (_splitOn == value) return;
+            _splitOn = value;
+            OnPropertyChanged();
+            OnPropertyChanged(nameof(SplitDisplayOn));
+        }
+    }
+
+    private void SetSplitOnFromAnyThread(bool value)
+    {
+        var d = System.Windows.Application.Current?.Dispatcher;
+        if (d == null || d.CheckAccess()) SplitOn = value;
+        else d.BeginInvoke(() => SplitOn = value);
+    }
+
+    /// <summary>FM with Simplex unchecked: the FM offset runs split on VFO B.</summary>
+    public bool IsFmOffsetActive => IsFmMode && !FmSimplex && InFmRepeaterOutputs(RadioState.VfoA.FrequencyHz);
+
+    /// <summary>SPLIT button lit: user split, or the FM offset running split.</summary>
+    public bool SplitDisplayOn => SplitOn || (IsRadioRunning && IsFmOffsetActive);
+
+    private bool _calOrIqTabOpen;
+    /// <summary>Set by the window when QRP CAL, AMP CAL, RX IQ, TX IQ or FREQ CAL is open.
+    /// Opening one turns a user split off first, so a cal / IQ transmit never goes out on VFO B.</summary>
+    public bool CalOrIqTabOpen
+    {
+        get => _calOrIqTabOpen;
+        set
+        {
+            if (_calOrIqTabOpen == value) return;
+            _calOrIqTabOpen = value;
+            if (value && SplitOn)
+                EndUserSplitNow("cal / IQ tab");
+            RefreshVfoRow();
+        }
+    }
+
+    /// <summary>A>B, B>A, A&lt;&gt;B, SPLIT: connected, no cal / IQ tab open, no FM offset.</summary>
+    private bool CanUseVfoRow() => IsRadioRunning && !CalOrIqTabOpen && !IsFmOffsetActive;
+
+    private void RefreshVfoRow()
+    {
+        void Do()
+        {
+            OnPropertyChanged(nameof(SplitDisplayOn));
+            CopyVfoAToBCommand.NotifyCanExecuteChanged();
+            CopyVfoBToACommand.NotifyCanExecuteChanged();
+            SwapVfosCommand.NotifyCanExecuteChanged();
+            ToggleSplitCommand.NotifyCanExecuteChanged();
+        }
+        var d = System.Windows.Application.Current?.Dispatcher;
+        if (d == null || d.CheckAccess()) Do();
+        else d.BeginInvoke(Do);
+    }
+
+    partial void OnIsRadioRunningChanged(bool value)
+    {
+        if (!value)
+            SplitOn = false;   // lost link / stop: the flag never outlives the session
+        RefreshVfoRow();
+    }
+
+    /// <summary>Send split off now (blocking, like the other Stop sends) and clear the flag.</summary>
+    private void EndUserSplitNow(string why)
+    {
+        if (!SplitOn) return;
+        try
+        {
+            // Off the UI context so the wait can never deadlock; bounded like the other Stop sends.
+            if (_radioService.IsConnected)
+                Task.Run(() => _radioService.SetSplitAsync(false)).Wait(TimeSpan.FromMilliseconds(500));
+            MonitorTextBoxText($" Split off ({why})");
+        }
+        catch (Exception ex)
+        {
+            MonitorTextBoxText($" Split off ({why}) failed: {ex.Message}");
+        }
+        SplitOn = false;
+    }
+
+    /// <summary>Same-band split only (Ron 2026-11-27): the radio LPF follows the TX frequency, but ms-sdr takes the band
+    /// (trans power / amp cal, TX IQ, Solidus / Fortis amp filters) from VFO A, so cross-band would use the wrong tables and amp filter.</summary>
+    private static bool SameAmateurBand(long aHz, long bHz)
+    {
+        string a = GetBandNameForFrequency(aHz);
+        string b = GetBandNameForFrequency(bHz);
+        return a == b && a != "?" && a != "gen";
+    }
+
+    private void EndSplitIfCrossBand()
+    {
+        if (!SplitOn || SameAmateurBand(RadioState.VfoA.FrequencyHz, RadioState.VfoB.FrequencyHz)) return;
+        void Do()
+        {
+            if (!SplitOn) return;
+            EndUserSplitNow("VFO A and VFO B on different bands");
+            System.Windows.MessageBox.Show(
+                "SPLIT is off: VFO A and VFO B are now on different bands.\nSplit works on one band only.",
+                "MSCC", System.Windows.MessageBoxButton.OK, System.Windows.MessageBoxImage.Information);
+        }
+        var d = System.Windows.Application.Current?.Dispatcher;
+        if (d == null || d.CheckAccess()) Do();
+        else d.BeginInvoke(Do);
+    }
+
+    /// <summary>While split is on, VFO A follows into G_Split_RX_FREQ (else PTT release returns to the old
+    /// RX frequency) and VFO B into G_Split_TX_FREQ. Covers wheel, digits, band buttons, spectrum and server reports.</summary>
+    private void OnVfoForSplitPropertyChanged(object? sender, PropertyChangedEventArgs e)
+    {
+        if (e.PropertyName == nameof(VfoState.Mode))
+        {
+            RefreshVfoRow();
+            return;
+        }
+        if (e.PropertyName == nameof(VfoState.FrequencyHz) && ReferenceEquals(sender, RadioState.VfoA) && IsFmMode)
+            RefreshVfoRow();
+        if (e.PropertyName != nameof(VfoState.FrequencyHz) || !SplitOn || !_radioService.IsConnected)
+            return;
+        if (!SameAmateurBand(RadioState.VfoA.FrequencyHz, RadioState.VfoB.FrequencyHz))
+        {
+            EndSplitIfCrossBand();   // never send a cross-band TX frequency
+            return;
+        }
+        if (ReferenceEquals(sender, RadioState.VfoA) && RadioState.ActiveVfo == RadioState.VfoA)
+        {
+            long hz = RadioState.VfoA.FrequencyHz;
+            if (hz > 0) _ = _radioService.SetSplitRxFreqAsync(hz);
+        }
+        else if (ReferenceEquals(sender, RadioState.VfoB))
+        {
+            long hz = RadioState.VfoB.FrequencyHz;
+            if (hz > 0)
+            {
+                _ = _radioService.SetSplitTxFreqAsync(hz);
+                MonitorTextBoxText($" Split TX B {hz}");
+            }
+        }
+    }
+
+    /// <summary>Put freq + mode on a VFO: the active one through the normal tune / mode paths, the idle one locally.</summary>
+    private void PutOnVfo(VfoState vfo, long hz, RadioMode mode)
+    {
+        if (vfo == RadioState.ActiveVfo)
+        {
+            TuneToFrequency(hz);
+            if (mode != RadioMode.None && mode != vfo.Mode)
+                ActiveMode = FormatModeDisplay(mode);
+        }
+        else
+        {
+            vfo.FrequencyHz = hz;
+            if (mode != RadioMode.None) vfo.Mode = mode;
+            // The idle VFO's remembered band must follow its new frequency, or selecting it
+            // lights the old band button (bug 2026-11-27: A>B 14.074 -> VFO B click lit 15M).
+            string band = GetBandNameForFrequency(hz);
+            if (string.IsNullOrWhiteSpace(band)) band = "";
+            if (vfo == RadioState.VfoB) _bandForVfoB = band == "?" ? "" : band;
+            else _bandForVfoA = band == "?" ? "" : band;
+            if (vfo == RadioState.VfoB) SaveCurrentVfoBRecord();
+        }
+    }
+
+    [RelayCommand(CanExecute = nameof(CanUseVfoRow))]
+    private void CopyVfoAToB()
+    {
+        var a = RadioState.VfoA;
+        if (a.FrequencyHz <= 0) { MonitorTextBoxText(" A>B: VFO A not set"); return; }
+        PutOnVfo(RadioState.VfoB, a.FrequencyHz, a.Mode);
+        MonitorTextBoxText($" A>B {a.FrequencyHz} {FormatModeDisplay(a.Mode)}");
+    }
+
+    [RelayCommand(CanExecute = nameof(CanUseVfoRow))]
+    private void CopyVfoBToA()
+    {
+        var b = RadioState.VfoB;
+        if (b.FrequencyHz <= 0) { MonitorTextBoxText(" B>A: VFO B not set"); return; }
+        PutOnVfo(RadioState.VfoA, b.FrequencyHz, b.Mode);
+        MonitorTextBoxText($" B>A {b.FrequencyHz} {FormatModeDisplay(b.Mode)}");
+    }
+
+    [RelayCommand(CanExecute = nameof(CanUseVfoRow))]
+    private void SwapVfos()
+    {
+        var a = RadioState.VfoA;
+        var b = RadioState.VfoB;
+        if (a.FrequencyHz <= 0 || b.FrequencyHz <= 0) { MonitorTextBoxText(" A<>B: both VFOs must be set"); return; }
+        long aHz = a.FrequencyHz, bHz = b.FrequencyHz;
+        RadioMode aMode = a.Mode, bMode = b.Mode;
+        // Idle VFO first (local only), then the active one through the radio paths.
+        var active = RadioState.ActiveVfo;
+        var idle = active == a ? b : a;
+        PutOnVfo(idle, idle == a ? bHz : aHz, idle == a ? bMode : aMode);
+        PutOnVfo(active, active == a ? bHz : aHz, active == a ? bMode : aMode);
+        MonitorTextBoxText($" A<>B A={a.FrequencyHz} {FormatModeDisplay(a.Mode)} B={b.FrequencyHz} {FormatModeDisplay(b.Mode)}");
+    }
+
+    [RelayCommand(CanExecute = nameof(CanUseVfoRow))]
+    private async Task ToggleSplit()
+    {
+        try
+        {
+            if (SplitOn)
+            {
+                await _radioService.SetSplitAsync(false).ConfigureAwait(true);
+                SplitOn = false;
+                MonitorTextBoxText(" Split off");
+                return;
+            }
+            if (RadioState.VfoA.FrequencyHz <= 0 || RadioState.VfoB.FrequencyHz <= 0)
+            {
+                MonitorTextBoxText(" Split: set VFO A and VFO B first");
+                return;
+            }
+            if (!SameAmateurBand(RadioState.VfoA.FrequencyHz, RadioState.VfoB.FrequencyHz))
+            {
+                MonitorTextBoxText(" Split refused: VFO A and VFO B on different bands");
+                System.Windows.MessageBox.Show(
+                    "SPLIT needs VFO A and VFO B on the same band.\nCross-band split is not supported (power cal, TX IQ and amp filters follow VFO A's band).",
+                    "MSCC", System.Windows.MessageBoxButton.OK, System.Windows.MessageBoxImage.Information);
+                return;
+            }
+            if (RadioState.ActiveVfo != RadioState.VfoA)
+                SelectVfo(useVfoB: false);   // RX is VFO A
+            long rx = RadioState.VfoA.FrequencyHz;
+            long tx = RadioState.VfoB.FrequencyHz;
+            // Same order as ApplyFmOffsetPolicyAsync.
+            await _radioService.SetSplitRxFreqAsync(rx).ConfigureAwait(true);
+            await _radioService.SetSplitTxFreqAsync(tx).ConfigureAwait(true);
+            await _radioService.SetSplitAsync(true).ConfigureAwait(true);
+            SplitOn = true;
+            MonitorTextBoxText($" Split on — RX A={rx} TX B={tx}");
+        }
+        catch (Exception ex)
+        {
+            MonitorTextBoxText($" Split error: {ex.Message}");
         }
     }
 
@@ -2256,6 +2582,9 @@ public partial class MainViewModel : ObservableObject, IDisposable
         // CW tab defaults (from original CW tab)
         CwSpeed = 20;
         CwMemTextWpm = SpectrumWaterfallSettings.ClampCwMemTextWpm(SpectrumWaterfallSettings.CwMemTextWpm);
+        _loadingCwHoldAuto = true;
+        CwHoldAuto = SpectrumWaterfallSettings.CwHoldAuto;
+        _loadingCwHoldAuto = false;
         CwKeyerMode = 1; // IAMBIC-A
         CwSpacing = 0;
         CwPaddle = 0;
@@ -2270,6 +2599,8 @@ public partial class MainViewModel : ObservableObject, IDisposable
         KeyerMem1 = SpectrumWaterfallSettings.KeyerMem1 ?? "";
         KeyerMem2 = SpectrumWaterfallSettings.KeyerMem2 ?? "";
         KeyerMem3 = SpectrumWaterfallSettings.KeyerMem3 ?? "";
+        KeyerMemRepeat = SpectrumWaterfallSettings.KeyerMemRepeat;
+        KeyerMemRepeatPause = Math.Clamp(SpectrumWaterfallSettings.KeyerMemRepeatPause, 1, 30);
         _suppressKeyerMemSave = false;
         KeyerMemStatus = "";
 
@@ -2314,12 +2645,16 @@ public partial class MainViewModel : ObservableObject, IDisposable
         if (_bandForVfoA == "?") _bandForVfoA = "";
         RestoreInactiveVfoB();
 
+        RadioState.VfoA.PropertyChanged += OnVfoForSplitPropertyChanged;
+        RadioState.VfoB.PropertyChanged += OnVfoForSplitPropertyChanged;
+
         RadioState.PropertyChanged += (s, e) =>
         {
             if (e.PropertyName == nameof(RadioState.ActiveVfo))
             {
                 OnPropertyChanged(nameof(IsVfoAActive));
                 OnPropertyChanged(nameof(IsVfoBActive));
+                RefreshVfoRow();
                 OnPropertyChanged(nameof(ActiveMode));
 
                 // CMD_SET_VFO (0xF2) first, then frequency/mode — order required for split prep.
@@ -4496,6 +4831,11 @@ public partial class MainViewModel : ObservableObject, IDisposable
     [RelayCommand]
     private void SelectPhonesAudio()
     {
+        if (NoLocalOperatorAudio)
+        {
+            MonitorTextBoxText(" Phones not available: the radio's Pi has no local audio");
+            return;
+        }
         if (RemoteAudio)
             RemoteAudio = false;
         if (IsDigitalAudio)
@@ -5072,8 +5412,12 @@ public partial class MainViewModel : ObservableObject, IDisposable
         else
             CwMemTextWpm = Math.Clamp(CwMemTextWpm - 1, 5, 60);
     }
-    [RelayCommand] private void IncCwHold() => CwHold = Math.Clamp(CwHold + 10, 1, 500);
-    [RelayCommand] private void DecCwHold() => CwHold = Math.Clamp(CwHold - 10, 1, 500);
+    // CwHold is the radio's value in 10 ms units (one byte, 0-255; pill floor 50 ms).
+    // The CW tab shows CwHoldMs = real milliseconds; +/- step 50 ms (Ron 2026-11-26).
+    // +/- land on whole 50 ms steps (5 units) even from an odd value such as AUTO's 660 ms
+    [RelayCommand] private void IncCwHold() { if (!CwHoldAuto) CwHold = Math.Clamp((CwHold / 5 + 1) * 5, 5, 255); }
+    [RelayCommand] private void DecCwHold() { if (!CwHoldAuto) CwHold = Math.Clamp(((CwHold + 4) / 5 - 1) * 5, 5, 255); }
+    public int CwHoldMs => CwHold * 10;
 
     // Mode push button (legacy cycle): LSB → USB → DIG-U → CW → AM → LSB…
     // Setting ActiveMode triggers profile swap, VFO update, filter recompute, service send, logging.
@@ -5221,6 +5565,10 @@ public partial class MainViewModel : ObservableObject, IDisposable
             : RadioState.ActiveVfo == RadioState.VfoA;
         if (already)
             return;
+
+        // Split receives on VFO A: selecting VFO B turns a user split off first (Avalonia cmd-099).
+        if (useVfoB && SplitOn)
+            EndUserSplitNow("VFO B selected");
 
         // Remember the band for the VFO we are leaving (band buttons share one CurrentBand).
         StoreBandForActiveVfo(RadioState.CurrentBand);
@@ -6067,6 +6415,7 @@ public partial class MainViewModel : ObservableObject, IDisposable
         if (ExternalElectronicKeyer) return;
         _ = _radioService.SetCwWpmAsync(value);
         MonitorTextBoxText($" CW Speed set: {value} WPM");
+        ApplyAutoCwHold();
     }
 
     partial void OnCwPaddleFarnsworthChanged(bool value)
@@ -6092,6 +6441,7 @@ public partial class MainViewModel : ObservableObject, IDisposable
             clamped <= 0
                 ? " CW Farnsworth (memory text WPM): Off"
                 : $" CW Farnsworth (memory text WPM): {clamped}");
+        ApplyAutoCwHold();
     }
 
     partial void OnCwKeyerModeChanged(int value)
@@ -6137,9 +6487,65 @@ public partial class MainViewModel : ObservableObject, IDisposable
 
     partial void OnCwHoldChanged(int value)
     {
-        value = Math.Clamp(value, 1, 500);
+        OnPropertyChanged(nameof(CwHoldMs));
+        value = Math.Clamp(value, 1, 255);   // one byte to the radio: above 255 would wrap
         _ = _radioService.SetCwTxHoldAsync(value);
-        MonitorTextBoxText($" CW TX Hold set: {value} ms");
+        MonitorTextBoxText($" CW TX Hold set: {value} ({value * 10} ms)");
+    }
+
+    private bool _loadingCwHoldAuto;
+
+    partial void OnCwHoldAutoChanged(bool value)
+    {
+        if (!_loadingCwHoldAuto)
+        {
+            if (value)
+            {
+                // keep the hand-set hold so unticking AUTO puts it back
+                SpectrumWaterfallSettings.CwHoldManual = Math.Clamp(CwHold, 5, 255);
+            }
+            else
+            {
+                int manual = Math.Clamp(SpectrumWaterfallSettings.CwHoldManual, 5, 255);
+                MonitorTextBoxText($" CW hold AUTO off: back to {manual * 10} ms");
+                CwHold = manual;
+            }
+        }
+        SpectrumWaterfallSettings.CwHoldAuto = value;
+        try { SpectrumWaterfallSettings.Save(); } catch { /* best-effort sticky */ }
+        ApplyAutoCwHold();
+    }
+
+    /// <summary>Keyer gaps in ms (same sums as the PIC keyer_update: ARRL Farnsworth when the
+    /// text WPM is set and below the character speed, else 3 / 7 dits).</summary>
+    private static (int letterMs, int wordMs) KeyerGapsMs(int charWpm, int textWpm)
+    {
+        charWpm = Math.Clamp(charWpm, 5, 60);
+        int dot = 1200 / charWpm;
+        int letter = 3 * dot, extra = 4 * dot;
+        if (textWpm >= 5 && textWpm < charWpm)
+        {
+            long gap = 50L * charWpm - 31L * textWpm;
+            if (gap > 0)
+            {
+                letter = Math.Max((int)(3 * gap * dot / (19L * textWpm)), 3 * dot);
+                extra = Math.Max((int)(4 * gap * dot / (19L * textWpm)), 4 * dot);
+            }
+        }
+        return (letter, letter + extra);
+    }
+
+    /// <summary>AUTO: hold = halfway between letter gap and word gap (10 ms radio units).</summary>
+    private void ApplyAutoCwHold()
+    {
+        if (!CwHoldAuto) return;
+        var (letter, word) = KeyerGapsMs(CwSpeed, CwMemTextWpm);
+        int units = Math.Clamp((int)Math.Round((letter + word) / 2.0 / 10.0), 5, 255);
+        if (units != CwHold)
+        {
+            MonitorTextBoxText($" CW hold AUTO: letter gap {letter} ms, word gap {word} ms -> hold {units * 10} ms");
+            CwHold = units;
+        }
     }
 
     partial void OnCwQskChanged(bool value)
@@ -6156,6 +6562,18 @@ public partial class MainViewModel : ObservableObject, IDisposable
     [ObservableProperty] private string _keyerMem3 = "";
     [ObservableProperty] private string _keyerMemStatus = "";
     [ObservableProperty] private bool _keyerMemBusy;
+    /// <summary>P plays repeating (keyer 20261126+) with KeyerMemRepeatPause seconds between plays.</summary>
+    [ObservableProperty] private bool _keyerMemRepeat;
+    [ObservableProperty] private int _keyerMemRepeatPause = 5;
+
+    partial void OnKeyerMemRepeatChanged(bool value) => PersistKeyerMemToSettings();
+
+    partial void OnKeyerMemRepeatPauseChanged(int value)
+    {
+        int c = Math.Clamp(value, 1, 30);
+        if (c != value) { KeyerMemRepeatPause = c; return; }
+        PersistKeyerMemToSettings();
+    }
 
     private bool _suppressKeyerMemSave;
 
@@ -6200,6 +6618,8 @@ public partial class MainViewModel : ObservableObject, IDisposable
         SpectrumWaterfallSettings.KeyerMem1 = SanitizeKeyerMem(KeyerMem1);
         SpectrumWaterfallSettings.KeyerMem2 = SanitizeKeyerMem(KeyerMem2);
         SpectrumWaterfallSettings.KeyerMem3 = SanitizeKeyerMem(KeyerMem3);
+        SpectrumWaterfallSettings.KeyerMemRepeat = KeyerMemRepeat;
+        SpectrumWaterfallSettings.KeyerMemRepeatPause = Math.Clamp(KeyerMemRepeatPause, 1, 30);
         SpectrumWaterfallSettings.Save();
     }
 
@@ -6299,14 +6719,23 @@ public partial class MainViewModel : ObservableObject, IDisposable
         else
             MonitorTextBoxText(" Keyer mem P: non-CW — play still 0x9C only (no host PTT latch)");
 
+        bool repeat = KeyerMemRepeat;
+        int pause = Math.Clamp(KeyerMemRepeatPause, 1, 30);
         KeyerMemStatus = modeIsCw
             ? $"Play slot {slot} (CW — keyer keys TX)…"
             : $"Play slot {slot}…";
-        MonitorTextBoxText($" Keyer mem P slot {slot}: SELECT + PLAY (0x9C) text=\"{text}\"");
+        MonitorTextBoxText(repeat
+            ? $" Keyer mem P slot {slot}: SELECT + REPEAT {pause} s (0x9C) text=\"{text}\""
+            : $" Keyer mem P slot {slot}: SELECT + PLAY (0x9C) text=\"{text}\"");
         try
         {
-            await _radioService.KeyerMemoryPlayAsync(slot).ConfigureAwait(true);
-            KeyerMemStatus = modeIsCw
+            if (repeat)
+                await _radioService.KeyerMemoryRepeatAsync(slot, pause).ConfigureAwait(true);
+            else
+                await _radioService.KeyerMemoryPlayAsync(slot).ConfigureAwait(true);
+            KeyerMemStatus = repeat
+                ? $"Repeating slot {slot} every {pause} s — tap the paddle to stop"
+                : modeIsCw
                 ? $"Play sent slot {slot} — listen for keyer CW (paddle aborts)"
                 : $"Play sequence sent for slot {slot}";
             MonitorTextBoxText($" Keyer mem P slot {slot}: play sequence sent OK");
@@ -6570,6 +6999,7 @@ public partial class MainViewModel : ObservableObject, IDisposable
                 }
                 StopRemoteAf(closeWindow: true);
             }
+            EndUserSplitNow("disconnect");   // server keeps G_Split across sessions
             _radioService.Stop();
         }
         catch (Exception ex)
@@ -6578,6 +7008,7 @@ public partial class MainViewModel : ObservableObject, IDisposable
         }
         _serversLaunchedThisSession = false;
         IsRadioRunning = false;
+        NoLocalOperatorAudio = false;   // the next server reports its own audio
         MonitorTextBoxText(" Stop complete — press Connect to connect again (or restart servers)");
     }
 
@@ -7100,12 +7531,21 @@ public partial class MainViewModel : ObservableObject, IDisposable
             MonitorTextBoxText($" CwWeight reported: {v}");
         };
         svc.CwWpmReported += v => { CwSpeed = v; MonitorTextBoxText($" CwWpm reported: {v}"); };
-        svc.CwTxHoldReported += v => { CwHold = v; MonitorTextBoxText($" CwTxHold reported: {v}"); };
+        svc.CwTxHoldReported += v => { CwHold = v; MonitorTextBoxText($" CwTxHold reported: {v}"); ApplyAutoCwHold(); };
         svc.CwMemTextWpmReported += v =>
         {
             CwMemTextWpm = SpectrumWaterfallSettings.ClampCwMemTextWpm(v);
             MonitorTextBoxText($" CwMemTextWpm (Farnsworth) reported: {(CwMemTextWpm <= 0 ? "Off" : CwMemTextWpm.ToString())}");
         };
+        svc.NoOperatorAudioReported += none => RunOnUi(() =>
+        {
+            NoLocalOperatorAudio = none;
+            if (none && !IsDigitalAudio)
+            {
+                MonitorTextBoxText(" No local operator audio on the radio's Pi: local path set to Digital");
+                IsDigitalAudio = true;
+            }
+        });
         svc.PaddleFarnsworthReported += on => RunOnUi(() =>
         {
             _suppressPaddleFarnsCommand = true;   // the server's value: don't send it back
