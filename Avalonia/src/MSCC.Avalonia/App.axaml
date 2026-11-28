@@ -621,7 +621,7 @@
     </Style>
     <!-- Left rail only: spend the freed Step row on the section gaps. SERVER keeps its own margin. -->
     <Style Selector="StackPanel.mscc-left-rail > TextBlock.mscc-section">
-      <Setter Property="Margin" Value="0,10,0,1"/>
+      <Setter Property="Margin" Value="0,8,0,1"/>
     </Style>
 
     <Style Selector="TextBlock.mscc-label">
