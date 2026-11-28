@@ -766,12 +766,12 @@
       <Setter Property="BoxShadow" Value="{DynamicResource UiFaceEtchShadows}"/>
     </Style>
 
-    <!-- CW keyer lists: items ~17 px so the WPF heights show every row with no scroll bar. -->
-    <Style Selector="ListBox.mscc-cw-list">
+    <!-- Compact lists (CW keyer and RX/TX): items ~17 px so the set heights show every row. -->
+    <Style Selector="ListBox.mscc-cw-list, ListBox.mscc-compact-list">
       <Setter Property="ScrollViewer.VerticalScrollBarVisibility" Value="Disabled"/>
       <Setter Property="Padding" Value="0"/>
     </Style>
-    <Style Selector="ListBox.mscc-cw-list ListBoxItem">
+    <Style Selector="ListBox.mscc-cw-list ListBoxItem, ListBox.mscc-compact-list ListBoxItem">
       <Setter Property="Padding" Value="4,1"/>
       <Setter Property="MinHeight" Value="0"/>
       <Setter Property="FontSize" Value="11"/>

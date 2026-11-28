@@ -701,97 +701,108 @@
           <Border Classes="mscc-tab-well" Padding="8">
             <ScrollViewer HorizontalScrollBarVisibility="Disabled" VerticalScrollBarVisibility="Auto">
               <Grid ColumnDefinitions="*,*" ColumnSpacing="8">
-                <!-- Left: power levels + default filters placeholders -->
-                <Border Grid.Column="0" Background="Transparent" BorderThickness="0" CornerRadius="4" Padding="10">
-                  <StackPanel Spacing="4">
+                <Border Grid.Column="0" Background="Transparent" BorderThickness="0" CornerRadius="4" Padding="0">
+                  <StackPanel Spacing="0">
                     <TextBlock Text="POWER LEVELS" Classes="mscc-face-heading" Margin="0,0,0,6"/>
-                    <TextBlock Text="Used by TUN / mode (wired when connected)." FontSize="10" Foreground="{DynamicResource UiFaceMutedTextBrush}" Margin="0,0,0,4" TextWrapping="Wrap"/>
 
-                    <Grid ColumnDefinitions="88,*,40" Height="26">
+                    <Grid ColumnDefinitions="90,*,Auto" Height="24" Margin="0,0,0,4">
                       <TextBlock Classes="mscc-label" Text="Tune Power" FontSize="11" VerticalAlignment="Center"/>
-                      <Slider Grid.Column="1" Classes="mscc-slider" Minimum="0" Maximum="100"
-                              SmallChange="1" PointerWheelChanged="Slider_OnPointerWheelChanged"
+                      <Slider Grid.Column="1" Classes="mscc-physical" Minimum="0" Maximum="100"
+                              SmallChange="1"
                               Value="{Binding TunePowerPercent}"
                               IsEnabled="{Binding IsConnected}"/>
-                      <TextBlock Grid.Column="2" Classes="mscc-readout"
-                                 Text="{Binding TunePowerPercent, StringFormat={}{0}%}"/>
+                      <Border Grid.Column="2" Background="#FF444444" BorderBrush="#FF888888" BorderThickness="1"
+                              Padding="3,1" MinWidth="40" Margin="5,0,0,0" VerticalAlignment="Center">
+                        <TextBlock Text="{Binding TunePowerPercent, StringFormat={}{0}%}" FontSize="11" FontWeight="Bold"
+                                   Foreground="{DynamicResource UiAccentBrush}" HorizontalAlignment="Center"/>
+                      </Border>
                     </Grid>
-                    <Grid ColumnDefinitions="88,*,40" Height="26">
+                    <Grid ColumnDefinitions="90,*,Auto" Height="24" Margin="0,0,0,4">
                       <TextBlock Classes="mscc-label" Text="CW Power" FontSize="11" VerticalAlignment="Center"/>
-                      <Slider Grid.Column="1" Classes="mscc-slider" Minimum="0" Maximum="100"
-                              SmallChange="1" PointerWheelChanged="Slider_OnPointerWheelChanged"
+                      <Slider Grid.Column="1" Classes="mscc-physical" Minimum="0" Maximum="100"
+                              SmallChange="1"
                               Value="{Binding CwPowerPercent}"
                               IsEnabled="{Binding IsConnected}"/>
-                      <TextBlock Grid.Column="2" Classes="mscc-readout"
-                                 Text="{Binding CwPowerPercent, StringFormat={}{0}%}"/>
+                      <Border Grid.Column="2" Background="#FF444444" BorderBrush="#FF888888" BorderThickness="1"
+                              Padding="3,1" MinWidth="40" Margin="5,0,0,0" VerticalAlignment="Center">
+                        <TextBlock Text="{Binding CwPowerPercent, StringFormat={}{0}%}" FontSize="11" FontWeight="Bold"
+                                   Foreground="{DynamicResource UiAccentBrush}" HorizontalAlignment="Center"/>
+                      </Border>
                     </Grid>
-                    <Grid ColumnDefinitions="88,*,40" Height="26">
+                    <Grid ColumnDefinitions="90,*,Auto" Height="24" Margin="0,0,0,4">
                       <TextBlock Classes="mscc-label" Text="SSB Power" FontSize="11" VerticalAlignment="Center"/>
-                      <Slider Grid.Column="1" Classes="mscc-slider" Minimum="0" Maximum="100"
-                              SmallChange="1" PointerWheelChanged="Slider_OnPointerWheelChanged"
+                      <Slider Grid.Column="1" Classes="mscc-physical" Minimum="0" Maximum="100"
+                              SmallChange="1"
                               Value="{Binding SsbPowerPercent}"
                               IsEnabled="{Binding IsConnected}"/>
-                      <TextBlock Grid.Column="2" Classes="mscc-readout"
-                                 Text="{Binding SsbPowerPercent, StringFormat={}{0}%}"/>
+                      <Border Grid.Column="2" Background="#FF444444" BorderBrush="#FF888888" BorderThickness="1"
+                              Padding="3,1" MinWidth="40" Margin="5,0,0,0" VerticalAlignment="Center">
+                        <TextBlock Text="{Binding SsbPowerPercent, StringFormat={}{0}%}" FontSize="11" FontWeight="Bold"
+                                   Foreground="{DynamicResource UiAccentBrush}" HorizontalAlignment="Center"/>
+                      </Border>
                     </Grid>
-                    <Grid ColumnDefinitions="88,*,40" Height="26">
+                    <Grid ColumnDefinitions="90,*,Auto" Height="24" Margin="0,0,0,4">
                       <TextBlock Classes="mscc-label" Text="AM Carrier" FontSize="11" VerticalAlignment="Center"/>
-                      <Slider Grid.Column="1" Classes="mscc-slider" Minimum="0" Maximum="100"
-                              SmallChange="1" PointerWheelChanged="Slider_OnPointerWheelChanged"
+                      <Slider Grid.Column="1" Classes="mscc-physical" Minimum="0" Maximum="100"
+                              SmallChange="1"
                               Value="{Binding AmCarrierPercent}"
                               IsEnabled="{Binding IsConnected}"/>
-                      <TextBlock Grid.Column="2" Classes="mscc-readout"
-                                 Text="{Binding AmCarrierPercent, StringFormat={}{0}%}"/>
+                      <Border Grid.Column="2" Background="#FF444444" BorderBrush="#FF888888" BorderThickness="1"
+                              Padding="3,1" MinWidth="40" Margin="5,0,0,0" VerticalAlignment="Center">
+                        <TextBlock Text="{Binding AmCarrierPercent, StringFormat={}{0}%}" FontSize="11" FontWeight="Bold"
+                                   Foreground="{DynamicResource UiAccentBrush}" HorizontalAlignment="Center"/>
+                      </Border>
                     </Grid>
-                    <Grid ColumnDefinitions="88,*,40" Height="26" Margin="0,0,0,10">
+                    <Grid ColumnDefinitions="90,*,Auto" Height="24" Margin="0,0,0,10">
                       <TextBlock Classes="mscc-label" Text="FM Power" FontSize="11" VerticalAlignment="Center"
                                  ToolTip.Tip="NFM TX drive (independent of AM carrier)."/>
-                      <Slider Grid.Column="1" Classes="mscc-slider" Minimum="0" Maximum="100"
-                              SmallChange="1" PointerWheelChanged="Slider_OnPointerWheelChanged"
+                      <Slider Grid.Column="1" Classes="mscc-physical" Minimum="0" Maximum="100"
+                              SmallChange="1"
                               Value="{Binding FmPowerPercent}"
                               IsEnabled="{Binding IsConnected}"
                               ToolTip.Tip="NFM TX drive (independent of AM carrier)."/>
-                      <TextBlock Grid.Column="2" Classes="mscc-readout"
-                                 Text="{Binding FmPowerPercent, StringFormat={}{0}%}"/>
+                      <Border Grid.Column="2" Background="#FF444444" BorderBrush="#FF888888" BorderThickness="1"
+                              Padding="3,1" MinWidth="40" Margin="5,0,0,0" VerticalAlignment="Center">
+                        <TextBlock Text="{Binding FmPowerPercent, StringFormat={}{0}%}" FontSize="11" FontWeight="Bold"
+                                   Foreground="{DynamicResource UiAccentBrush}" HorizontalAlignment="Center"/>
+                      </Border>
                     </Grid>
 
-                    <TextBlock Text="DEFAULT FILTERS" Classes="mscc-face-heading" Margin="0,4,0,4"/>
-                    <TextBlock Text="Radio defaults (saved on server). Active Lo/Hi/CW stay on the left rail."
-                               FontSize="10" Foreground="{DynamicResource UiFaceMutedTextBrush}" TextWrapping="Wrap"/>
-                    <StackPanel Orientation="Horizontal" Spacing="8" Margin="0,6,0,0">
-                      <StackPanel Width="72">
+                    <TextBlock Text="DEFAULT FILTERS" Classes="mscc-face-heading" Margin="0,4,0,6"/>
+                    <StackPanel Orientation="Horizontal" HorizontalAlignment="Left">
+                      <StackPanel Margin="0,0,8,0">
                         <TextBlock Text="LOW" Foreground="White" HorizontalAlignment="Center" FontSize="10"/>
-                        <ListBox Height="118"
+                        <ListBox Classes="mscc-compact-list" Height="100"
                                  ItemsSource="{Binding LowCutOptions}"
                                  SelectedIndex="{Binding LowCutDefaultIndex}"
-                                 Background="#FF1A1A1A" Foreground="White" FontSize="11"
+                                 Background="#FF222222" Foreground="White" FontSize="11"
                                  IsEnabled="{Binding IsConnected}"
                                  ToolTip.Tip="Default low cut"/>
                       </StackPanel>
-                      <StackPanel Width="72">
+                      <StackPanel Margin="0,0,8,0">
                         <TextBlock Text="HIGH" Foreground="White" HorizontalAlignment="Center" FontSize="10"/>
-                        <ListBox Height="118"
+                        <ListBox Classes="mscc-compact-list" Height="100"
                                  ItemsSource="{Binding HighCutOptions}"
                                  SelectedIndex="{Binding HighCutDefaultIndex}"
-                                 Background="#FF1A1A1A" Foreground="White" FontSize="11"
+                                 Background="#FF222222" Foreground="White" FontSize="11"
                                  IsEnabled="{Binding IsConnected}"
                                  ToolTip.Tip="Default high cut"/>
                       </StackPanel>
-                      <StackPanel Width="72">
+                      <StackPanel Margin="0,0,8,0">
                         <TextBlock Text="CW" Foreground="White" HorizontalAlignment="Center" FontSize="10"/>
-                        <ListBox Height="80"
+                        <ListBox Classes="mscc-compact-list" Height="60"
                                  ItemsSource="{Binding CwFilterOptions}"
                                  SelectedIndex="{Binding CwFilterDefaultIndex}"
-                                 Background="#FF1A1A1A" Foreground="White" FontSize="11"
+                                 Background="#FF222222" Foreground="White" FontSize="11"
                                  IsEnabled="{Binding IsConnected}"
                                  ToolTip.Tip="Default CW bandwidth"/>
                       </StackPanel>
-                      <StackPanel Width="72">
+                      <StackPanel>
                         <TextBlock Text="TX" Foreground="White" HorizontalAlignment="Center" FontSize="10"/>
-                        <ListBox Height="100"
+                        <ListBox Classes="mscc-compact-list" Height="100"
                                  ItemsSource="{Binding TxOptions}"
                                  SelectedIndex="{Binding TxDefaultIndex}"
-                                 Background="#FF1A1A1A" Foreground="White" FontSize="11"
+                                 Background="#FF222222" Foreground="White" FontSize="11"
                                  IsEnabled="{Binding IsConnected}"
                                  ToolTip.Tip="Default TX high cut"/>
                       </StackPanel>
@@ -799,59 +810,52 @@
                   </StackPanel>
                 </Border>
 
-                <!-- Right: TX options / processing -->
-                <Border Grid.Column="1" Background="Transparent" BorderThickness="0" CornerRadius="4" Padding="10">
-                  <StackPanel Spacing="6">
-                    <TextBlock Text="TX OPTIONS / PROCESSING" Classes="mscc-face-heading"/>
-                    <TextBlock Text="NB, NR, AN and AGC Fast Release stay on the right operate rail."
-                               FontSize="10" Foreground="{DynamicResource UiFaceMutedTextBrush}" TextWrapping="Wrap"/>
-
-                    <StackPanel Orientation="Horizontal" Spacing="12" Margin="0,8,0,0">
-                      <StackPanel Width="80">
+                <Border Grid.Column="1" Background="Transparent" BorderThickness="0" CornerRadius="4" Padding="0">
+                  <StackPanel Spacing="0">
+                    <Grid ColumnDefinitions="Auto,Auto" HorizontalAlignment="Left">
+                      <TextBlock Grid.Column="0" Text="TX OPTIONS" Classes="mscc-face-heading" Margin="0,0,8,6"/>
+                      <TextBlock Grid.Column="1" Text="PROCESSING" Classes="mscc-face-heading" Margin="0,0,0,6"/>
+                    </Grid>
+                    <StackPanel Orientation="Horizontal" HorizontalAlignment="Left">
+                      <StackPanel Margin="0,0,8,0">
                         <TextBlock Text="TX BW" Foreground="White" HorizontalAlignment="Center" FontSize="10"/>
-                        <ListBox Height="100"
+                        <ListBox Classes="mscc-compact-list" Height="100"
                                  ItemsSource="{Binding TxOptions}"
                                  SelectedIndex="{Binding TxBandwidthIndex}"
-                                 Background="#FF1A1A1A" Foreground="White" FontSize="11"
+                                 Background="#FF222222" Foreground="White" FontSize="11"
                                  IsEnabled="{Binding IsConnected}"
                                  ToolTip.Tip="Active TX bandwidth"/>
                       </StackPanel>
-                      <StackPanel Width="80" Opacity="0.7">
+                      <StackPanel>
                         <TextBlock Text="AGC" Foreground="White" HorizontalAlignment="Center" FontSize="10"/>
-                        <Border Height="100" Background="#FF1A1A1A" BorderBrush="#FF555555" BorderThickness="1" CornerRadius="2">
-                          <StackPanel VerticalAlignment="Center" Spacing="4">
-                            <TextBlock Text="{Binding AgcButtonText}" HorizontalAlignment="Center"
-                                       Foreground="#00FFAA" FontSize="14" FontWeight="Bold"/>
-                            <TextBlock Text="Use right rail" HorizontalAlignment="Center" Foreground="#666" FontSize="9"/>
-                            <TextBlock Text="AGC button" HorizontalAlignment="Center" Foreground="#666" FontSize="9"/>
-                          </StackPanel>
-                        </Border>
+                        <ListBox Classes="mscc-compact-list" Height="100"
+                                 ItemsSource="{Binding AgcOptions}"
+                                 SelectedIndex="{Binding AgcLevel}"
+                                 Background="#FF222222" Foreground="White" FontSize="11"
+                                 IsEnabled="{Binding IsConnected}"/>
                       </StackPanel>
                     </StackPanel>
 
-                    <TextBlock Text="TX BUTTONS" Classes="mscc-face-heading" Margin="0,12,0,4"/>
-                    <UniformGrid Columns="2" Rows="2" Width="220" HorizontalAlignment="Left">
-                      <Button Content="QRP" Classes="mscc-gold" Margin="3" MinHeight="28"
+                    <Grid ColumnDefinitions="Auto,Auto" RowDefinitions="Auto,Auto" HorizontalAlignment="Left" Margin="0,10,0,0">
+                      <Button Grid.Row="0" Grid.Column="0" Content="QRP" Classes="mscc-bar" Width="100" Height="28" Margin="0,0,6,6"
                               Command="{Binding SelectQrpCommand}"
                               Classes.mscc-selected="{Binding QrpMode}"
                               ToolTip.Tip="Barefoot power (same as AMP off). 100 % = your QRP CAL level (5 W)."/>
-                      <Button Content="AMP" Classes="mscc-gold" Margin="3" MinHeight="28"
+                      <Button Grid.Row="0" Grid.Column="1" Content="AMP" Classes="mscc-bar" Width="100" Height="28" Margin="0,0,0,6"
                               Command="{Binding SelectFullPowerCommand}"
                               Classes.mscc-selected="{Binding FullPower}"
                               ToolTip.Tip="Amplifier setting (same as AMP on). Uses the AMP CAL table; never drives above your QRP CAL level."/>
-                      <Button Content="2 TONE" Classes="mscc-gold" Margin="3" MinHeight="28"
+                      <Button Grid.Row="1" Grid.Column="0" Content="Tune" Classes="mscc-bar" Width="100" Height="28" Margin="0,0,6,0"
+                              Command="{Binding ToggleTuneCommand}"
+                              Classes.mscc-tx-on="{Binding TuneMode}"
+                              IsEnabled="{Binding CanUserControlTransmit}"
+                              ToolTip.Tip="Antenna tune: TUNE mode + carrier (Tune Power). Red when on."/>
+                      <Button Grid.Row="1" Grid.Column="1" Content="2 TONE" Classes="mscc-bar" Width="100" Height="28" Margin="0,0,0,0"
                               Command="{Binding ToggleTwoToneCommand}"
                               Classes.mscc-selected="{Binding TwoToneArmed}"
+                              IsEnabled="{Binding CanUserControlTransmit}"
                               ToolTip.Tip="Arms the two-tone test (700 + 1900 Hz). Then TUN transmits the two tones in SSB (USB unless already USB/LSB) through the voice path. Level = SSB power slider: at 100 % the peaks reach the TUN level (each tone 6 dB down) if the ALC allows it. Press again to disarm."/>
-                      <Button Content="(reserved)" Classes="mscc-stub" IsEnabled="False" Margin="3" MinHeight="28" Opacity="0.4"/>
-                    </UniformGrid>
-
-                    <TextBlock Text="TUN uses Tune Power only. USB, LSB and DIG-U use SSB Power."
-                               FontSize="10" Foreground="{DynamicResource UiFaceMutedTextBrush}" TextWrapping="Wrap" Margin="0,12,0,0"/>
-                    <TextBlock Text="{Binding ModeText, StringFormat=Current mode: {0}}"
-                               FontSize="11" Foreground="#00FFAA"/>
-                    <TextBlock Text="{Binding RfPower, StringFormat=RF mirror: {0}%}"
-                               FontSize="11" Foreground="{DynamicResource UiFaceOkTextBrush}"/>
+                    </Grid>
                   </StackPanel>
                 </Border>
               </Grid>

@@ -948,6 +948,8 @@ public partial class MainViewModel : ViewModelBase, IDisposable
         { "1.8KHz", "400Hz", "200Hz" };
     public ObservableCollection<string> TxOptions { get; } = new()
         { "2.4KHz", "2.7KHz", "3.0KHz", "5.5KHz" };
+    public ObservableCollection<string> AgcOptions { get; } = new()
+        { "SLOW", "MED", "FAST" };
 
     public ObservableCollection<string> CwKeyerModeOptions { get; } = new()
         { "STRAIGHT", "IAMBIC-A", "IAMBIC-B" };
