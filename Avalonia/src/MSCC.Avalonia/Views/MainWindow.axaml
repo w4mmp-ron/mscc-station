@@ -881,13 +881,13 @@
                          Text="{Binding FavoriteNameInput}"
                          MaxLength="32"
                          ToolTip.Tip="Name for this band only (e.g. FT-8)"/>
-                <Button Content="SAVE" Classes="mscc-gold" Width="64" Height="26"
+                <Button Content="SAVE" Classes="mscc-bar" Width="64" Height="26"
                         Command="{Binding SaveFavoriteCommand}"
                         ToolTip.Tip="Store current conditions under this name for the radio's current band"/>
-                <Button Content="RECALL" Classes="mscc-gold" Width="70" Height="26"
+                <Button Content="RECALL" Classes="mscc-bar" Width="70" Height="26"
                         Command="{Binding RecallFavoriteCommand}"
                         ToolTip.Tip="Apply the selected favorite"/>
-                <Button Content="DELETE" Classes="mscc-gold" Width="70" Height="26"
+                <Button Content="DELETE" Classes="mscc-bar" Width="70" Height="26"
                         Command="{Binding DeleteFavoriteCommand}"
                         ToolTip.Tip="Remove selected favorite (this session only)"/>
               </StackPanel>
@@ -984,7 +984,7 @@
                         <DataTemplate>
                           <Button Content="{Binding BandLabel}" Height="26" Margin="1,0" MinWidth="28"
                                   HorizontalAlignment="Stretch" FontSize="10" FontWeight="Bold"
-                                  Classes="mscc-gold"
+                                  Classes="mscc-bar"
                                   Classes.mscc-selected="{Binding IsSelected}"
                                   Command="{Binding $parent[Window].((vm:MainViewModel)DataContext).SelectPowerCalBandCommand}"
                                   CommandParameter="{Binding BandNumber}"
@@ -1002,41 +1002,41 @@
 
                 <Grid ColumnDefinitions="56,*,Auto" Margin="0,4,0,0">
                   <TextBlock Text="POWER" Foreground="White" FontWeight="Bold" VerticalAlignment="Center"/>
-                  <Slider Grid.Column="1" Classes="mscc-slider" Minimum="0" Maximum="100"
+                  <Slider Grid.Column="1" Classes="mscc-physical" Minimum="0" Maximum="100"
                           SmallChange="1" LargeChange="5"
                           IsSnapToTickEnabled="True" TickFrequency="1"
-                          PointerWheelChanged="Slider_OnPointerWheelChanged"
                           Value="{Binding PowerCalSliderValue, Mode=TwoWay}"
                           IsEnabled="{Binding PowerCalCalibrating}"
                           ValueChanged="PowerCalSlider_OnValueChanged"
                           ToolTip.Tip="Adjust output power while CALIBRATE is on (max 5 W)."/>
-                  <Border Grid.Column="2" Background="#444" BorderBrush="#888" BorderThickness="1"
-                          Padding="8,4" Margin="8,0,0,0" MinWidth="150">
-                    <TextBlock Text="{Binding PowerCalStepLabel}" Foreground="#00FFAA" FontWeight="Bold" FontSize="12"/>
+                  <Border Grid.Column="2" Background="#FF444444" BorderBrush="#FF888888" BorderThickness="1"
+                          Padding="3,1" Margin="8,0,0,0" MinWidth="150" VerticalAlignment="Center">
+                    <TextBlock Text="{Binding PowerCalStepLabel}" Foreground="{DynamicResource UiAccentBrush}"
+                               FontWeight="Bold" FontSize="11" HorizontalAlignment="Center"/>
                   </Border>
                 </Grid>
 
                 <StackPanel Orientation="Horizontal" Spacing="8" Margin="0,4,0,0">
-                  <Button Content="{Binding PowerCalTxButtonText}" Classes="mscc-gold" Width="100" Height="28"
+                  <Button Content="{Binding PowerCalTxButtonText}" Classes="mscc-bar" Width="100" Height="28"
                           Command="{Binding TogglePowerCalTxCommand}"
                           Classes.mscc-tx-on="{Binding PowerCalTxOn}"
                           IsEnabled="{Binding PowerCalTxButtonEnabled}"
                           ToolTip.Tip="Send a carrier at the calibration power."/>
-                  <Button Content="{Binding PowerCalCalibrateButtonText}" Classes="mscc-gold" Width="120" Height="28"
+                  <Button Content="{Binding PowerCalCalibrateButtonText}" Classes="mscc-bar" Width="120" Height="28"
                           Command="{Binding TogglePowerCalCalibrateCommand}"
                           Classes.mscc-selected="{Binding PowerCalCalibrating}"
                           ToolTip.Tip="Start/stop power calibration. Click again, then Yes saves the band in the radio, No restores the previous value."/>
-                  <Button Content="RESET ALL" Classes="mscc-gold" Width="100" Height="28"
+                  <Button Content="RESET ALL" Classes="mscc-bar" Width="100" Height="28"
                           Command="{Binding HardResetPowerCalCommand}"
                           ToolTip.Tip="Reset QRP power calibration on every band to factory values, in the files AND the radio."/>
                 </StackPanel>
 
                 <StackPanel Orientation="Horizontal" Spacing="6" IsVisible="{Binding PowerCalAcceptPrompt}">
                   <TextBlock Text="{Binding PowerCalSavePromptText}" Foreground="#FFCC66" VerticalAlignment="Center" FontSize="11"/>
-                  <Button Content="Yes" Classes="mscc-gold" Width="72" Height="24"
+                  <Button Content="Yes" Classes="mscc-bar" Width="72" Height="24"
                           Command="{Binding AcceptPowerCalCommand}"
                           ToolTip.Tip="Save this step for the band (stored in the radio)."/>
-                  <Button Content="No" Classes="mscc-gold" Width="72" Height="24"
+                  <Button Content="No" Classes="mscc-bar" Width="72" Height="24"
                           Command="{Binding CancelPowerCalCommand}"
                           ToolTip.Tip="Go back to the previous value. Nothing is saved."/>
                 </StackPanel>
@@ -1096,7 +1096,7 @@
                         <DataTemplate>
                           <Button Content="{Binding BandLabel}" Height="26" Margin="1,0" MinWidth="28"
                                   HorizontalAlignment="Stretch" FontSize="10" FontWeight="Bold"
-                                  Classes="mscc-gold"
+                                  Classes="mscc-bar"
                                   Classes.mscc-selected="{Binding IsSelected}"
                                   Command="{Binding $parent[Window].((vm:MainViewModel)DataContext).SelectAmpCalBandCommand}"
                                   CommandParameter="{Binding BandNumber}"/>
@@ -1108,48 +1108,47 @@
 
                 <Grid ColumnDefinitions="56,*,Auto,Auto" Margin="0,4,0,0">
                   <TextBlock Text="POWER" Foreground="White" FontWeight="Bold" VerticalAlignment="Center"/>
-                  <Slider Grid.Column="1" Classes="mscc-slider" Minimum="-99" Maximum="0"
+                  <Slider Grid.Column="1" Classes="mscc-physical" Minimum="-99" Maximum="0"
                           SmallChange="1" LargeChange="5"
                           IsSnapToTickEnabled="True" TickFrequency="1"
-                          PointerWheelChanged="Slider_OnPointerWheelChanged"
                           Value="{Binding AmpCalSliderValue, Mode=TwoWay}"
                           IsEnabled="{Binding AmpCalCalibrating}"
                           ValueChanged="AmpCalSlider_OnValueChanged"
                           ToolTip.Tip="Adjust amplifier drive while CALIBRATE is on."/>
-                  <Border Grid.Column="2" Background="#444" BorderBrush="#888" BorderThickness="1"
-                          Padding="8,4" Margin="8,0,0,0" MinWidth="48">
-                    <TextBlock Text="{Binding AmpCalSliderValue}" Foreground="#00FFAA" FontWeight="Bold"
-                               FontSize="12" HorizontalAlignment="Center"/>
+                  <Border Grid.Column="2" Background="#FF444444" BorderBrush="#FF888888" BorderThickness="1"
+                          Padding="3,1" Margin="8,0,0,0" MinWidth="48" VerticalAlignment="Center">
+                    <TextBlock Text="{Binding AmpCalSliderValue}" Foreground="{DynamicResource UiAccentBrush}" FontWeight="Bold"
+                               FontSize="11" HorizontalAlignment="Center"/>
                   </Border>
-                  <Border Grid.Column="3" Background="#444" BorderBrush="#888" BorderThickness="1"
-                          Padding="8,4" Margin="8,0,0,0" MinWidth="90">
-                    <TextBlock Text="{Binding AmpCalStepLabel}" Foreground="#00FFAA" FontWeight="Bold"
-                               FontSize="12" HorizontalAlignment="Center"/>
+                  <Border Grid.Column="3" Background="#FF444444" BorderBrush="#FF888888" BorderThickness="1"
+                          Padding="3,1" Margin="8,0,0,0" MinWidth="90" VerticalAlignment="Center">
+                    <TextBlock Text="{Binding AmpCalStepLabel}" Foreground="{DynamicResource UiAccentBrush}" FontWeight="Bold"
+                               FontSize="11" HorizontalAlignment="Center"/>
                   </Border>
                 </Grid>
 
                 <StackPanel Orientation="Horizontal" Spacing="8" Margin="0,4,0,0">
-                  <Button Content="{Binding AmpCalTxButtonText}" Classes="mscc-gold" Width="100" Height="28"
+                  <Button Content="{Binding AmpCalTxButtonText}" Classes="mscc-bar" Width="100" Height="28"
                           Command="{Binding ToggleAmpCalTxCommand}"
                           Classes.mscc-tx-on="{Binding AmpCalTxOn}"
                           IsEnabled="{Binding AmpCalTxButtonEnabled}"
                           ToolTip.Tip="Send a tune carrier through the amplifier path."/>
-                  <Button Content="{Binding AmpCalCalibrateButtonText}" Classes="mscc-gold" Width="120" Height="28"
+                  <Button Content="{Binding AmpCalCalibrateButtonText}" Classes="mscc-bar" Width="120" Height="28"
                           Command="{Binding ToggleAmpCalCalibrateCommand}"
                           Classes.mscc-selected="{Binding AmpCalCalibrating}"
                           ToolTip.Tip="Start/stop amplifier power calibration. Adjust POWER, then click again to accept. QRP CAL must be done for this band first."/>
-                  <Button Content="RESET ALL" Classes="mscc-gold" Width="100" Height="28"
+                  <Button Content="RESET ALL" Classes="mscc-bar" Width="100" Height="28"
                           Command="{Binding HardResetAmpCalCommand}"
                           ToolTip.Tip="Clear the amplifier calibration on every band (not calibrated). Stored on the host only."/>
                 </StackPanel>
 
                 <StackPanel Orientation="Horizontal" Spacing="6" IsVisible="{Binding AmpCalAcceptPrompt}">
                   <TextBlock Text="Accept this AMP calibration?" Foreground="#FFCC66" VerticalAlignment="Center" FontSize="11"/>
-                  <Button Content="Accept" Classes="mscc-gold" Width="72" Height="24"
+                  <Button Content="Accept" Classes="mscc-bar" Width="72" Height="24"
                           Command="{Binding AcceptAmpCalCommand}"/>
-                  <Button Content="Reject" Classes="mscc-gold" Width="72" Height="24"
+                  <Button Content="Reject" Classes="mscc-bar" Width="72" Height="24"
                           Command="{Binding RejectAmpCalCommand}"/>
-                  <Button Content="Cancel" Classes="mscc-gold" Width="72" Height="24"
+                  <Button Content="Cancel" Classes="mscc-bar" Width="72" Height="24"
                           Command="{Binding CancelAmpCalCommand}"/>
                 </StackPanel>
 
@@ -1288,7 +1287,7 @@
                         <DataTemplate>
                           <Button Content="{Binding BandLabel}" Height="26" Margin="1,0" MinWidth="28"
                                   HorizontalAlignment="Stretch" FontSize="10" FontWeight="Bold"
-                                  Classes="mscc-gold"
+                                  Classes="mscc-bar"
                                   Classes.mscc-selected="{Binding IsSelected}"
                                   IsEnabled="{Binding $parent[Window].((vm:MainViewModel)DataContext).TxIqBandSelectEnabled}"
                                   Command="{Binding $parent[Window].((vm:MainViewModel)DataContext).SelectTxIqBandCommand}"
@@ -1301,64 +1300,63 @@
 
                 <Grid ColumnDefinitions="70,*,Auto">
                   <TextBlock Text="POWER" Foreground="White" FontWeight="Bold" VerticalAlignment="Center"/>
-                  <Slider Grid.Column="1" Classes="mscc-slider" Minimum="0" Maximum="100"
-                          SmallChange="1" PointerWheelChanged="Slider_OnPointerWheelChanged"
+                  <Slider Grid.Column="1" Classes="mscc-physical" Minimum="0" Maximum="100"
+                          SmallChange="1"
                           Value="{Binding TxIqPower}"
                           ToolTip.Tip="Test carrier power."/>
-                  <Border Grid.Column="2" Background="#444" BorderBrush="#888" BorderThickness="1"
-                          Padding="8,4" Margin="12,0,0,0" MinWidth="48">
-                    <TextBlock Text="{Binding TxIqPower}" Foreground="#00FFAA" FontWeight="Bold"
-                               FontSize="12" HorizontalAlignment="Center"/>
+                  <Border Grid.Column="2" Background="#FF444444" BorderBrush="#FF888888" BorderThickness="1"
+                          Padding="3,1" Margin="12,0,0,0" MinWidth="48" VerticalAlignment="Center">
+                    <TextBlock Text="{Binding TxIqPower}" Foreground="{DynamicResource UiAccentBrush}" FontWeight="Bold"
+                               FontSize="11" HorizontalAlignment="Center"/>
                   </Border>
                 </Grid>
 
                 <Grid ColumnDefinitions="70,*,Auto">
                   <TextBlock Text="OFFSET" Foreground="White" FontWeight="Bold" VerticalAlignment="Center"/>
-                  <Slider Grid.Column="1" Classes="mscc-slider" Minimum="-200" Maximum="200"
-                          SmallChange="1" PointerWheelChanged="Slider_OnPointerWheelChanged"
+                  <Slider Grid.Column="1" Classes="mscc-physical" Minimum="-200" Maximum="200"
+                          SmallChange="1"
                           Value="{Binding TxIqOffset}" IsEnabled="{Binding TxIqTxOn}"
                           ToolTip.Tip="Adjust for the weakest transmit image (while TX is on)."/>
-                  <Border Grid.Column="2" Background="#444" BorderBrush="#888" BorderThickness="1"
-                          Padding="8,4" Margin="12,0,0,0" MinWidth="56">
-                    <TextBlock Text="{Binding TxIqOffset}" Foreground="#00FFAA" FontWeight="Bold"
-                               FontSize="12" HorizontalAlignment="Center"/>
+                  <Border Grid.Column="2" Background="#FF444444" BorderBrush="#FF888888" BorderThickness="1"
+                          Padding="3,1" Margin="12,0,0,0" MinWidth="56" VerticalAlignment="Center">
+                    <TextBlock Text="{Binding TxIqOffset}" Foreground="{DynamicResource UiAccentBrush}" FontWeight="Bold"
+                               FontSize="11" HorizontalAlignment="Center"/>
                   </Border>
                 </Grid>
 
                 <!-- PHASE (WPF 10.30.0 port): TX I/Q phase, steps of 0.05 deg -->
                 <Grid ColumnDefinitions="70,*,Auto">
                   <TextBlock Text="PHASE" Foreground="White" FontWeight="Bold" VerticalAlignment="Center"/>
-                  <Slider Grid.Column="1" Classes="mscc-slider" Minimum="-100" Maximum="100"
+                  <Slider Grid.Column="1" Classes="mscc-physical" Minimum="-100" Maximum="100"
                           SmallChange="1" LargeChange="5"
                           IsSnapToTickEnabled="True" TickFrequency="1"
-                          PointerWheelChanged="Slider_OnPointerWheelChanged"
                           Value="{Binding TxIqPhase}" IsEnabled="{Binding TxIqTxOn}"
                           ToolTip.Tip="TX I/Q phase, 0.05 degree steps (±5°). Set OFFSET first, then step PHASE one click at a time for the weakest image; recheck OFFSET."/>
-                  <Border Grid.Column="2" Background="#444" BorderBrush="#888" BorderThickness="1"
-                          Padding="8,4" Margin="12,0,0,0" MinWidth="56">
-                    <TextBlock Text="{Binding TxIqPhaseText}" Foreground="#00FFAA" FontWeight="Bold"
-                               FontSize="12" HorizontalAlignment="Center"/>
+                  <Border Grid.Column="2" Background="#FF444444" BorderBrush="#FF888888" BorderThickness="1"
+                          Padding="3,1" Margin="12,0,0,0" MinWidth="56" VerticalAlignment="Center">
+                    <TextBlock Text="{Binding TxIqPhaseText}" Foreground="{DynamicResource UiAccentBrush}" FontWeight="Bold"
+                               FontSize="11" HorizontalAlignment="Center"/>
                   </Border>
                 </Grid>
 
                 <StackPanel Orientation="Horizontal" Spacing="12">
-                  <Button Content="{Binding TxIqTxButtonText}" Classes="mscc-gold" Width="110" Height="28"
+                  <Button Content="{Binding TxIqTxButtonText}" Classes="mscc-bar" Width="110" Height="28"
                           Command="{Binding ToggleTxIqTxCommand}"
                           Classes.mscc-tx-on="{Binding TxIqTxOn}"
                           ToolTip.Tip="Start/stop the test carrier. Use SAVE to keep the value."/>
-                  <Button Content="SAVE" Classes="mscc-gold" Width="110" Height="28"
+                  <Button Content="SAVE" Classes="mscc-bar" Width="110" Height="28"
                           Command="{Binding ApplyTxIqCommand}"
                           ToolTip.Tip="Save this balance value for this band (stored in the radio)."/>
-                  <Button Content="RESET ALL" Classes="mscc-gold" Width="110" Height="28"
+                  <Button Content="RESET ALL" Classes="mscc-bar" Width="110" Height="28"
                           Command="{Binding ResetAllTxIqCommand}"
                           ToolTip.Tip="Return all bands to factory values (asks first)."/>
                 </StackPanel>
 
                 <StackPanel Orientation="Horizontal" Spacing="6" IsVisible="{Binding TxIqResetAllPrompt}">
                   <TextBlock Text="Factory-reset ALL I/Q bands?" Foreground="#FFCC66" FontSize="11" VerticalAlignment="Center"/>
-                  <Button Content="Confirm" Classes="mscc-gold" Width="72" Height="24"
+                  <Button Content="Confirm" Classes="mscc-bar" Width="72" Height="24"
                           Command="{Binding ConfirmResetAllTxIqCommand}"/>
-                  <Button Content="Cancel" Classes="mscc-gold" Width="72" Height="24"
+                  <Button Content="Cancel" Classes="mscc-bar" Width="72" Height="24"
                           Command="{Binding CancelResetAllTxIqCommand}"/>
                 </StackPanel>
 
@@ -1381,28 +1379,29 @@
                            FontSize="10" Foreground="{DynamicResource UiFaceMutedTextBrush}" TextWrapping="Wrap"/>
 
                 <StackPanel Orientation="Horizontal" Spacing="6">
-                  <Button Content="{Binding FreqCalLooseButtonText}" Classes="mscc-gold" Width="80" Height="28"
+                  <Button Content="{Binding FreqCalLooseButtonText}" Classes="mscc-bar" Width="80" Height="28"
                           Command="{Binding ToggleFreqCalLooseCommand}"
+                          Classes.mscc-selected="{Binding FreqCalLoose}"
                           IsEnabled="{Binding FreqCalActionsEnabled}"
                           ToolTip.Tip="LOOSE: easier to lock on a weak carrier. TIGHT: stricter."/>
-                  <Button Content="AUTO" Classes="mscc-gold" Width="70" Height="28"
+                  <Button Content="AUTO" Classes="mscc-bar" Width="70" Height="28"
                           Command="{Binding FreqCalAutoCommand}"
                           IsEnabled="{Binding FreqCalAutoCheckEnabled}"
                           ToolTip.Tip="Automatic calibration. Choose COARSE (±250 Hz) or FINE (±50 Hz)."/>
-                  <Button Content="{Binding FreqCalManualButtonText}" Classes="mscc-gold" Width="90" Height="28"
+                  <Button Content="{Binding FreqCalManualButtonText}" Classes="mscc-bar" Width="90" Height="28"
                           Command="{Binding ToggleFreqCalManualCommand}"
                           Classes.mscc-selected="{Binding FreqCalManualMode}"
                           IsEnabled="{Binding FreqCalManualButtonEnabled}"
                           ToolTip.Tip="Adjust the calibration by hand, one step at a time."/>
-                  <Button Content="CHECK" Classes="mscc-gold" Width="70" Height="28"
+                  <Button Content="CHECK" Classes="mscc-bar" Width="70" Height="28"
                           Command="{Binding FreqCalCheckCommand}"
                           IsEnabled="{Binding FreqCalAutoCheckEnabled}"
                           ToolTip.Tip="Measure the error without changing the calibration."/>
-                  <Button Content="RESET" Classes="mscc-gold" Width="70" Height="28"
+                  <Button Content="RESET" Classes="mscc-bar" Width="70" Height="28"
                           Command="{Binding FreqCalResetCommand}"
                           IsEnabled="{Binding FreqCalActionsEnabled}"
                           ToolTip.Tip="Return to the factory calibration (asks first)."/>
-                  <Button Content="STOP" Classes="mscc-gold" Width="70" Height="28"
+                  <Button Content="STOP" Classes="mscc-bar" Width="70" Height="28"
                           Command="{Binding FreqCalStopCommand}"
                           IsEnabled="{Binding FreqCalInProgress}"
                           ToolTip.Tip="Stop the AUTO or CHECK run. The calibration is not changed."/>
@@ -1414,15 +1413,15 @@
                 <StackPanel Orientation="Horizontal" Spacing="6">
                   <TextBlock Text="MANUAL steps:" Foreground="White" FontSize="12" VerticalAlignment="Center" Width="90"
                              ToolTip.Tip="Steps taken in MANUAL calibration (not the stored PPM). Use − / + one step at a time."/>
-                  <Button Content="−" Classes="mscc-gold" Width="32" Height="26"
+                  <Button Content="−" Classes="mscc-bar" Width="32" Height="26"
                           Command="{Binding FreqCalPpmMinusCommand}"
                           IsEnabled="{Binding FreqCalPpmEnabled}"
                           ToolTip.Tip="Decrease PPM by 1 (rate-limited to protect radio)"/>
-                  <Border Background="#444" BorderBrush="#888" BorderThickness="1" Padding="6,2" MinWidth="40">
-                    <TextBlock Text="{Binding FreqCalManualPpm}" Foreground="#00FFAA" FontWeight="Bold"
-                               FontSize="13" HorizontalAlignment="Center"/>
+                  <Border Background="#FF444444" BorderBrush="#FF888888" BorderThickness="1" Padding="3,1" MinWidth="40" VerticalAlignment="Center">
+                    <TextBlock Text="{Binding FreqCalManualPpm}" Foreground="{DynamicResource UiAccentBrush}" FontWeight="Bold"
+                               FontSize="11" HorizontalAlignment="Center"/>
                   </Border>
-                  <Button Content="+" Classes="mscc-gold" Width="32" Height="26"
+                  <Button Content="+" Classes="mscc-bar" Width="32" Height="26"
                           Command="{Binding FreqCalPpmPlusCommand}"
                           IsEnabled="{Binding FreqCalPpmEnabled}"
                           ToolTip.Tip="Increase PPM by 1 (rate-limited to protect radio)"/>
@@ -1437,29 +1436,29 @@
                 <!-- AUTO: coarse / fine -->
                 <StackPanel Orientation="Horizontal" Spacing="6" IsVisible="{Binding FreqCalAutoModePrompt}">
                   <TextBlock Text="AUTO:" Foreground="#FFCC66" VerticalAlignment="Center" FontSize="11"/>
-                  <Button Content="Coarse ±250 Hz" Classes="mscc-gold" Height="24" Padding="8,2"
+                  <Button Content="Coarse ±250 Hz" Classes="mscc-bar" Height="24" Padding="8,2"
                           Command="{Binding FreqCalAutoCoarseCommand}"/>
-                  <Button Content="Fine ±50 Hz" Classes="mscc-gold" Height="24" Padding="8,2"
+                  <Button Content="Fine ±50 Hz" Classes="mscc-bar" Height="24" Padding="8,2"
                           Command="{Binding FreqCalAutoFineCommand}"/>
-                  <Button Content="Cancel" Classes="mscc-gold" Height="24" Padding="8,2"
+                  <Button Content="Cancel" Classes="mscc-bar" Height="24" Padding="8,2"
                           Command="{Binding FreqCalAutoCancelCommand}"/>
                 </StackPanel>
 
                 <!-- MANUAL exit accept -->
                 <StackPanel Orientation="Horizontal" Spacing="6" IsVisible="{Binding FreqCalManualAcceptPrompt}">
                   <TextBlock Text="Accept manual calibration?" Foreground="#FFCC66" VerticalAlignment="Center" FontSize="11"/>
-                  <Button Content="Accept" Classes="mscc-gold" Width="72" Height="24"
+                  <Button Content="Accept" Classes="mscc-bar" Width="72" Height="24"
                           Command="{Binding AcceptFreqCalManualCommand}"/>
-                  <Button Content="Reject" Classes="mscc-gold" Width="72" Height="24"
+                  <Button Content="Reject" Classes="mscc-bar" Width="72" Height="24"
                           Command="{Binding RejectFreqCalManualCommand}"/>
                 </StackPanel>
 
                 <!-- RESET confirm -->
                 <StackPanel Orientation="Horizontal" Spacing="6" IsVisible="{Binding FreqCalResetPrompt}">
                   <TextBlock Text="Reset frequency calibration?" Foreground="#FFCC66" VerticalAlignment="Center" FontSize="11"/>
-                  <Button Content="Confirm" Classes="mscc-gold" Width="72" Height="24"
+                  <Button Content="Confirm" Classes="mscc-bar" Width="72" Height="24"
                           Command="{Binding ConfirmFreqCalResetCommand}"/>
-                  <Button Content="Cancel" Classes="mscc-gold" Width="72" Height="24"
+                  <Button Content="Cancel" Classes="mscc-bar" Width="72" Height="24"
                           Command="{Binding CancelFreqCalResetCommand}"/>
                 </StackPanel>
               </StackPanel>
