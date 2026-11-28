@@ -37,6 +37,11 @@ then `mscc stop` / `mscc start` (default 100, range 50 to 300; 200 adds 0.1 s of
 delay, fine for FT8). The Zero package sets 200 for you. A wired connection needs none of
 this; with both connected, give the client the wired IP address (the `.local` name may give the WiFi one).
 
+**Zero on WiFi:** keep the radio close to your router or a WiFi repeater, with a strong
+signal. The Zero has only a small on-board antenna, so a metal case or a few walls weaken it a
+lot. If the transmit power still dips with remote audio, move closer, add a repeater, or use a
+network cable.
+
 Since mscc 1.0.79 the old separate packages (`mscc-portaudio`, `mscc-init`, `mscc-volume`,
 `mscc-firmware`) are part of `mscc`; installing it removes them. Installing `mscc` asks before it
 stops running servers (answer `y`).
