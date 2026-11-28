@@ -60,7 +60,7 @@ carries them once and stays as it is.
 
 ## Current work
 
-**Active — cmd-101b (ubuntu-stew / stew-HP):** Avalonia fixes after cmd-101: CQ memory slots show all 48 characters (monospace font list that resolves on Linux/Pi, slot MinWidth from measured 48-W width, star column capped at 560 so R/P stay visible at 1024×600); left panel fits at 1024×600 (left-rail heading margin 10 → 8 px, ≥ 4 px spare measured). Resize crash not investigated here. Brief: `.mscc-coord/cmd-101b-avalonia-cq-slots-left-fit.md`. Follows cmd-101. No UiChromeTheme.cs change, no WPF change, no protocol commands, no version bump, no installer, no GitHub Release. Build commits; Stew pushes. Leave rpi/, Solidus/, installers/rpi, and the WPF tree alone.
+**Active — cmd-101c (ubuntu-stew / stew-HP):** Avalonia CQ memory slot FontSize raised so 48 characters nearly fill the slot at 1024×600 (size from measured per-character width; MinWidth recomputed; height unchanged if the glyphs fit). Brief: `.mscc-coord/cmd-101c-avalonia-cq-slot-fontsize.md`. Follows cmd-101b. No UiChromeTheme.cs change, no WPF change, no protocol commands, no version bump, no installer, no GitHub Release. Build commits; Stew pushes. Leave rpi/, Solidus/, installers/rpi, and the WPF tree alone.
 
 Older notes below are stale as of 2026-10-07. Check `.mscc-coord/COMMANDS.yaml` and [`handoff.md`](handoff.md) for historical open / pending items.
 
