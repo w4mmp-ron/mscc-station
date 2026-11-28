@@ -60,7 +60,7 @@ carries them once and stays as it is.
 
 ## Current work
 
-**Active — cmd-102 (ubuntu-stew / stew-HP):** Avalonia RX/TX tab: compact lists (same style as CW cmd-101, all items visible), power sliders use the left-rail physical style with a boxed % readout, AGC is a SLOW/MED/FAST list bound to existing AgcLevel / SetAgcLevelAsync, Tune button (ToggleTuneCommand, red when on) replaces (reserved), all four TX buttons are mscc-bar, help/footer lines removed, fits 1024×600 with no scroll bar. Brief: `.mscc-coord/cmd-102-avalonia-rxtx-tab.md`. Follows cmd-101c. WPF read for reference only. No UiChromeTheme.cs change, no new protocol commands, no version bump, no installer, no GitHub Release. Build commits; Stew pushes. Leave rpi/, Solidus/, installers/rpi, and the WPF tree alone.
+**Active — cmd-103 (ubuntu-stew / stew-HP):** Avalonia FAVORITES buttons to mscc-bar; QRP CAL, AMP CAL, TX IQ and FREQ CAL buttons to mscc-bar (TX/cal-active red or blue from existing bindings) and Fluent sliders to the left-rail physical style with cmd-102 boxed readouts; TX IQ OFFSET/PHASE stay one wheel step per notch. Layout and text unchanged. RX IQ and SETTINGS not in this command. Brief: `.mscc-coord/cmd-103-avalonia-fav-cal-buttons-sliders.md`. Follows cmd-102. WPF read for reference only. No UiChromeTheme.cs change, no protocol commands, no version bump, no installer, no GitHub Release. Build commits; Stew pushes. Leave rpi/, Solidus/, installers/rpi, and the WPF tree alone.
 
 Older notes below are stale as of 2026-10-07. Check `.mscc-coord/COMMANDS.yaml` and [`handoff.md`](handoff.md) for historical open / pending items.
 
